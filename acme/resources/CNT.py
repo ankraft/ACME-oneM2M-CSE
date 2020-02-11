@@ -66,7 +66,8 @@ class CNT(Resource):
 	# Handle the removal of a CIN. 
 	def childRemoved(self, childResource, originator):
 		super().childRemoved(childResource, originator)
-
+		if childResource.ty == C.tCIN:	# Validate if child was CIN
+			self.validate(originator)
 
 
 	# Validating the Container. This means recalculating cni, cbs as well as
