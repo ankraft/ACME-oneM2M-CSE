@@ -1,0 +1,13 @@
+{	"m2m:evl" : {
+		"mgd" : 1010,
+		"dc" : "an eventLogger",
+		"ri" : "evl1",
+		"pi" : "nod1",
+		"rn" : "eventlogger",	
+
+		"lgt": 0,
+		"lgd": "some log data",
+		"lgst": 1
+	}
+}
+

@@ -1,0 +1,8 @@
+{	"m2m:cb" : {
+		"ri" : "id-in",
+		"ty" : 5,
+		"rn" : "cse-in",
+		"csi" : "id-in",
+		"acpi" : [ "acpAdmin" ]
+	}
+}

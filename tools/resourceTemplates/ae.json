@@ -1,0 +1,13 @@
+{	"m2m:ae" : {
+		"ty" : 2,
+		"ri" : "aeID",
+		"rn" : "anAE",
+		"pi" : "cseID",
+		"api" : "appid",
+		"aei" : "Sae",
+		"acpi" : [ "acpID" ],
+		"poa" : [ "http://localhost:9999"],
+		"nl" : "aNode"
+
+	}
+}

@@ -1,0 +1,11 @@
+{	"m2m:grp" : {
+		"ty" : 9,
+		"ri" : "grp1",
+		"rn" : "group",
+		"pi" : "ae1",
+		"mt" : 3,
+		"mid": [ "con1" ],
+		"gn" : "a group",
+		"mnm": 10
+	}
+}

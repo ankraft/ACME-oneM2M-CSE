@@ -1,0 +1,12 @@
+{	"domain:resourceName" : {
+		"ty" : 28,
+		"ri" : "fcntID",
+		"rn" : "aFcnt",
+		"pi" : "aeID",
+
+        "cnd" : "some.domain.definition",
+        "anAttribute" : 0,
+        "another" : "value",
+        "andAnother" : true
+	}
+}

@@ -1,0 +1,12 @@
+{	"m2m:ani" : {
+		"mgd" : 1004,
+		"dc" : "an areaNwkType",
+		"ri" : "ani1",
+		"pi" : "nod1",
+		"rn" : "areaNwkType",
+		
+		"ant": "ZigBee Light Link",
+		"ldv": [ "hue1", "ikea2" ]
+	}
+}
+

@@ -1,0 +1,8 @@
+{	"m2m:cin" : {
+		"ty" : 4,
+		"ri" : "cinID",
+		"pi" : "cntID",
+		"con" : "content",
+		"cnf" : "text/plain:0"
+	}
+}

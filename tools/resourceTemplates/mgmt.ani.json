@@ -1,0 +1,11 @@
+{	"m2m:ani" : {
+		"ty" : 1004,
+		"dc" : "an areaNwkType",
+		"ri" : "aniID",
+		"pi" : "nodeID",
+		"rn" : "areaNwkType",
+		"ant": "networkType",
+		"ldv": [ "abc", "def" ]
+	}
+}
+

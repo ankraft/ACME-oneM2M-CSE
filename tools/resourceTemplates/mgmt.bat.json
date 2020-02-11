@@ -1,0 +1,9 @@
+{	"m2m:bat" : {
+		"ty" : 1006,
+		"dc" : "a battery",
+		"ri" : "batID",
+		"rn" : "battery",
+		"pi" : "nodeID",
+		"btl": 100
+	}
+}

@@ -1,0 +1,12 @@
+{	"m2m:sub" : {
+		"ty" : 23,
+		"ri" : "sub1",
+		"rn" : "subscription",
+		"pi" : "con1",
+		"enc": {
+			"net": [ 1, 2, 3, 4 ]
+		},
+		"nu" : [ "http://localhost:9999"],
+		"nct": 1
+	}
+}

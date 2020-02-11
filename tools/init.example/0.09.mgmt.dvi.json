@@ -1,0 +1,28 @@
+{	"m2m:dvi" : {
+		"mgd" : 1007,
+		"dc" : "a deviceInfo",
+		"ri" : "dvi1",
+		"pi" : "nod1",
+		"rn" : "deviceinfo",
+		
+		"dlb" : [ "label:value" ],
+		"man" : "a Manufacturer",
+		"mfdl" : "a Manufacturer Device Label",
+		"mfd" : "20010511T214200",
+		"mod" : "Heart of Gold",
+		"smod" : "No.1",
+		"dty" : "Starship",
+		"dvnm" : "a Device Name",
+		"fwv" : "1.0",
+		"swv" : "1.1",
+		"hwv" : "1.2",
+		"osv" : "1.3",
+		"cnty" : "Earth",
+		"loc" : "Sol",
+		"syst" : "20010511T214200",
+		"spur" : "http://example.com",
+		"purl" : "http://example.com/ui",
+		"ptl" : [ "http" ]
+
+	}
+}

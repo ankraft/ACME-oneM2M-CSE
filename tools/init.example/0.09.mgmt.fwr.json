@@ -1,0 +1,13 @@
+{	"m2m:fwr" : {
+		"mgd" : 1001,
+		"dc" : "a firmware",
+		"ri" : "fwr1",
+		"pi" : "nod1",
+		"rn" : "firmware",
+		
+		"vr" : "10.14.6",
+		"fwn": "Mojave",
+		"url": "example.com"
+	}
+}
+

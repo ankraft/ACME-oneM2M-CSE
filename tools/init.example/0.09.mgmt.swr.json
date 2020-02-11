@@ -1,0 +1,13 @@
+{	"m2m:swr" : {
+		"mgd" : 1002,
+		"dc" : "a software",
+		"ri" : "swr1",
+		"pi" : "nod1",
+		"rn" : "software",
+		
+		"vr" : "1.0",
+		"swn": "ACME",
+		"url": "example.com"
+	}
+}
+

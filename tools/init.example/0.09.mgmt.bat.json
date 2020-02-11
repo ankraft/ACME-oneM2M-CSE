@@ -1,0 +1,11 @@
+{	"m2m:bat" : {
+		"mgd" : 1006,
+		"dc" : "a battery",
+		"ri" : "bat1",
+		"rn" : "battery",
+		"pi" : "nod1",
+		
+		"btl": 23,
+		"bt2": 5
+	}
+}

@@ -1,0 +1,11 @@
+{	"m2m:mem" : {
+		"ty" : 1003,
+		"dc" : "a memory",
+		"ri" : "memID",
+		"pi" : "nodeID",
+		"rn" : "memory",
+		"mma" : 1000,
+		"mmt": 10000
+	}
+}
+

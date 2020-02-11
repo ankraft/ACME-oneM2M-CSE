@@ -1,0 +1,194 @@
+<html>
+<head>
+	<script src="js/tree.js"></script>
+	<script src="js/contextmenu.js"></script>
+	<script src="js/rest.js"></script>
+	<script src="js/resourceTree.js"></script>
+	<script src="js/menu.js"></script>
+	<script src="js/attributes.js"></script>
+	<script src="js/restui.js"></script>
+	<script src="js/main.js"></script>
+	<link rel="stylesheet" href="css/treejs.css" id="treejs_styles">
+	<link rel="stylesheet" href="css/contextmenu.css">
+	<link rel="stylesheet" type="text/css" href="css/style.css">
+	<link rel="stylesheet" type="text/css" href="css/picnic.css">
+</head>
+<body onload="setup()">
+
+<div style="overflow: hidden;height: 60px;">
+	<nav>
+		<a href="#" class="brand"><span>ACME - Web Access</span></a>
+
+
+		<div class="menu"><label for="info1" class="pseudo" style="margin-left: 10px">&#9432;</label></div>
+		<div class="menu"><a id="refreshButton" href="javascript:toggleRefresh()"class="button" style="padding-left: 10px;">Auto Refresh</a></div>
+		<div class="menu"><a id="connectButton" href="javascript:connectToCSE()" class="button" style="padding-left: 10px;">Connect</a></div>
+
+
+
+		<div class="menu" style="margin-right: 10px">
+			<form action="javascript:connectToCSE();" style="margin:0px; padding: 0px; display:inline;">
+				<fieldset>
+					<label><input id="originator" type="text" placeholder="originator"></label>
+				</fieldset> 
+			</form>
+		</div>    
+		<div class="menu" style="margin-right: 10px">Originator:</div>
+
+		<div class="menu" style="margin-right: 10px">
+			<form action="javascript:connectToCSE();" style="margin:0px; padding: 0px; display:inline;">
+				<fieldset>
+					<label><input id="baseri" type="text" placeholder="base rescource ri"></label>
+				</fieldset>
+			</form>
+		</div>
+		<div class="menu" style="margin-right: 10px">Base RI:</div>
+
+	</nav>
+</div>
+
+
+<div id="appArea">
+<div class="flex two" style="padding: 25px;">
+
+	<div style="margin-right: 25px;">
+		<header style="background-color: rgba(0, 0, 0, 0.1);padding-left: 10px;">
+			<h3 id="rootResourceName">&nbsp;</h3>
+		</header>
+		<!-- The following div is positioned absolutely in order to provide a scroll bar -->
+		<div id="treeContainer" style="padding: 10px; position: absolute;top:158px; bottom: 20.0px;width: 48.8%; overflow-y: scroll;" ></div>
+	</div>
+
+	<div style="width: 47%;">
+		<header style="background-color: rgba(0, 0, 0, 0.1);padding-left: 10px;">
+			<h3 id="resourceType">&nbsp;</h3>
+		</header>
+		<div class="tabs three">
+			<input id='details-1' type='radio' name='detailsTG' checked />
+			<label for="details-1" onclick="tabTo(1);" class="pseudo button toggle" >Attributes</label>
+			<input id='details-2' type='radio' name='detailsTG'>
+			<label for="details-2" onclick="tabTo(2);"class="pseudo button toggle" >JSON</label>
+			<input id='details-3' type='radio' name='detailsTG'>
+			<label for="details-3" onclick="tabTo(3);"class="pseudo button toggle" >REST UI</label>
+
+			<div class="row">
+
+				<!-- Attributes -->
+				<div>
+					<table id="details" class="primary" style="width: 100%;">
+						<thead>
+							<tr>
+								<th style="width: 15%;">Attribute</th>
+								<th>Value</th>
+							</tr>
+						</thead>
+						<tbody>
+						</tbody>
+					</table>
+				</div>
+
+				<!-- JSON -->
+				<div>
+					<textarea id="resource" rows="24" readonly></textarea>
+				</div>
+
+				<!-- REST UI -->
+				<div>
+					<div style="padding: 10px; position: absolute; top:0px; bottom: 20.0px; width: 33.4%; overflow-y: scroll;">
+						<div>
+								<fieldset>
+								<form  id="request">
+									<!-- <h4>URL</h4> -->
+									<h5>Resource ID / URL</h5>
+									<input id="rest-url" type="url" required="required" placeholder="URL" value=""/>
+									<h5>Method</h5>
+									<span id="spanget"><input id="methodget" checked type='radio' name="rest-method" value="GET"><label for="methodget" class="checkable">GET</label></span>
+									<span id="spanpost"><input id="methodpost" type='radio' name="rest-method" value="POST"><label for="methodpost" class="checkable">POST</label></span>
+									<span id="spanput"><input id="methodput" type='radio' name="rest-method" value="PUT"><label for="methodput" class="checkable">PUT</label></span>
+									<span id="spandelete"><input id="methoddelete" type='radio' name="rest-method" value="DELETE"><label for="methoddelete" class="checkable"><font color="#EC5242">DELETE</font></label></span>
+									<h5>Request Header</h5>
+									<textarea id="rest-headers" placeholder="Header Fields" required="required" rows="4"></textarea>
+									<div id="rest-requestbody" style="display: none;">
+										<h4>Request Body</h4>
+										<textarea id="rest-requestarea" readonly placeholder="Request Body" rows="8"></textarea>
+									</div>
+									<input type="text" style="display: none;" /> <!-- extra line to prevent submit on return -->
+									<a class="button success" id="sendButton" type="submit"  onclick="restSendForm()">Send</a>
+									<a class="button" id="tplButton0" type="submit"  onclick="fillTemplate(0)">x</a>
+									<a class="button" id="tplButton1" type="submit"  onclick="fillTemplate(1)">x</a>
+									<a class="button" id="tplButton2" type="submit"  onclick="fillTemplate(2)">x</a>
+									<a class="button" id="tplButton3" type="submit"  onclick="fillTemplate(3)">x</a>
+									<a class="button" id="tplButton4" type="submit"  onclick="fillTemplate(4)">x</a>
+									<a class="button" id="tplButton5" type="submit"  onclick="fillTemplate(5)">x</a>
+									<a class="button" id="tplButton6" type="submit"  onclick="fillTemplate(6)">x</a>
+									<a class="button" id="tplButton7" type="submit"  onclick="fillTemplate(7)">x</a>
+									<a class="button" id="tplButton8" type="submit"  onclick="fillTemplate(8)">x</a>
+									<a class="button" id="tplButton9" type="submit"  onclick="fillTemplate(9)">x</a>
+									<a class="button" id="tplButton10" type="submit"  onclick="fillTemplate(10)">x</a>
+								</form>
+							</fieldset>
+						</div>
+						<div>
+							<fieldset>
+							<h4>Result</h4>
+							<h5>Status Code</h5>
+							<input id="rest-status" required="required" readonly  value="" style="background-color: #f0f0f0;"/>
+							<h5>Response</h5>
+							<textarea id="rest-result" readonly style="height: 400px; background-color: #f0f0f0;"></textarea>
+							<a class="button" id="clearResultButton" type="submit" onclick="restClearResult()">Clear</a>
+
+						</fieldset>
+						</div>
+					</div>
+	<!-- 				<div>
+						<textarea id="restui" rows="20" readonly></textarea>
+					</div> -->
+
+				</div>
+			</div>
+
+		</div>
+	</div>
+</div>
+</div>
+
+<div class="modal">
+	<input id="info1" type="checkbox" />
+	<label for="info1" class="overlay"></label>
+	<article>
+		<header>
+			<h3>Keyboard Shortcuts</h3>
+		</header>
+		<section class="content">
+			<ul>
+				<li>Ctrl-R - Reload a node</li>
+				<li>Ctrl-C - (Re-) Connect to the CSE</li>
+				<li>Ctrl-H - Toggle  attributes' short / long names display</li>
+				<li>Cursor keys and Return key work on the resource tree</li>
+			</ul>
+		</section>
+		<footer>
+			<label align="right" for="info1" class="button" style="float: right;">Close</label>
+		</footer>
+	</article>
+</div>
+
+<div class="modal">
+	<input id="restui-error" type="checkbox" />
+	<label for="restui-error" class="overlay"></label>
+	<article>
+		<header>
+			<h3>Request Error</h3>
+		</header>
+		<section class="content">
+			Oops! Something went wrong.
+		</section>
+		<footer>
+			<label align="right" for="restui-error" class="button" style="float: right;">Close</label>
+		</footer>
+	</article>
+</div>
+
+
+</body>
+</html>

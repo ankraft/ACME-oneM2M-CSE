@@ -1,0 +1,10 @@
+{	"m2m:nod" : {
+		"ty" : 14,
+		"ri" : "nod1",
+		"rn" : "node-example",
+		"pi" : "id-mn",
+
+		"ni" : "myNode:anID",
+		"nid": "myWIFI"
+	}
+}

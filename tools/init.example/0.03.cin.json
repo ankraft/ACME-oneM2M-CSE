@@ -1,0 +1,7 @@
+{	"m2m:cin" : {
+		"ri" : "cin_2",
+		"pi" : "con1",
+		"con" : "Hello, World",
+		"cnf" : "text/plain:0"
+	}
+}

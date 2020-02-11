@@ -1,0 +1,10 @@
+{	"m2m:cb" : {
+		"ri" : "cseID",
+		"ty" : 5,
+		"rn" : "cseName",
+		"csi" : "cseID",
+		"acpi" : [ "acpID" ],
+		"nl" : "aNode",
+		"pi" : ""
+	}
+}

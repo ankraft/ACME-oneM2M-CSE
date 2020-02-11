@@ -1,0 +1,19 @@
+{	"m2m:acp" : {
+		"ty" : 1,
+		"ri" : "acpDefault",
+		"rn" : "defaultACP",
+		"pi" : "id-mn",
+		"pv" : {
+			"acr": {
+				"acor": [ "guest" ],
+				"acop": 2
+			}
+		},
+		"pvs": {
+			"acr": {
+				"acor": ["CAdmin"],
+				"acop": 51
+			}
+		}
+	}
+}

@@ -1,0 +1,10 @@
+{	"m2m:cnt" : {
+		"ty" : 3,
+		"ri" : "conID",
+		"rn" : "aContainer",
+		"pi" : "aeID",
+		"mni" : 10,
+		"mbs" : 10000,
+		"acpi" : [ "acpID" ]
+	}
+}

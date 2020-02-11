@@ -1,0 +1,191 @@
+#
+#	General CSE settings
+#
+
+[cse]
+# CSE type. Possible values: IN, MN, ASN. Default: IN
+type=IN
+# Directory of default resources to import. Default: ./init
+resourcesPath=./init
+# ExpirationTime before resources are removed in seconds. Default: 60*60*24*365 = 1 year
+expirationDelta=31536000
+# Enable access control checks. Default: True
+enableACPChecks=true
+# Default ACP, resource identifier (e.g. from an imported ACP). 
+# Assigned by the CSE in case the 'acpi' attribute is missing in a resource.
+# Default: acpAdmin
+defaultACPRI=acpAdmin
+# Enable notifications. Default: True
+enableNotifications=true
+# Enable remote CSE registration. Default: True
+enableRemoteCSE=true
+# Enable forwarding of requests to a remote CSE. Default: True
+enableTransitRequests=true
+
+
+#
+#	Settings for remote CSE access 
+#
+
+[cse.remote]
+# URL of the remote CSE. Default: None.
+address=http://127.0.0.1:8081
+# Remote CSE root path. Default: /
+root=/
+# CSE-ID of the remote CSE. Default: None
+cseid=in-cse
+# Originator for registering to the remote CSE. Default: CAdmin
+originator=CAdmin
+# Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.
+# Default: 30
+checkInterval=30
+
+
+#
+#	Settings for statistics
+#
+
+[cse.statistics]
+# Intervall for saving statistics data to disk in seconds. Default: 60
+writeIntervall=60
+
+
+#
+#	Resource defaults: Container
+#
+
+[cse.resource.cnt]
+# Default for maxNrOfInstances. Default: 10
+mni=10
+# Default for maxByteSize. Default: 10.000
+mbs=10000
+
+
+#
+#	Web UI settings
+#
+
+[cse.webui]
+# Enable the web UI. Default: True
+enableWebUI=true
+# Root path of the web UI. Default: /webui
+root=/webui
+
+
+#
+#	HTTP Server settings
+#
+
+[server.http]
+# Port to listen to. Default: 8080
+port=8080
+# Interface to listen to. Use 0.0.0.0 for all interfaces. Default:127.0.0.1
+listenIF=127.0.0.1
+# Own address. Should be a local/public address. Default: http://127.0.0.1:8080
+address=http://127.0.0.1:8080
+# CSE Server root. Always provide a trailing /. Default: /
+root=/
+# Run the http server single- or multi-threaded. Default: true
+multiThread=true
+
+
+#
+#	ID Mappings
+#	This section defines mappings for URI paths to IDs in the CSE. Mappings
+#	can be used to provide a more convenient way to access the CSE's resources.
+#	Each line specifies a mapping, where the key specifies a new path,
+#	and the value represents the mapping to a request (including optional arguments).
+#	The http server redirects (307) a request to one of the new paths to the
+#	repective request mapping.
+#	Please note, that the "root" path in [server.http] prefixes both the new
+#	path and the mapping.
+#
+
+[server.http.mappings]
+/access/v1/devices=/cse-mn?ty=14&fu=1&fo=2&rcn=8
+/access/v1/apps=/id-mn?ty=2&fu=1&fo=2&rcn=8
+/access/v1/devices/battery=/id-mn?ty=14&mgd=1006&fu=1&fo=2&rcn=8
+
+
+
+#
+#	Database settings
+#
+
+[database]
+# Directory for the database files. Default: ./data
+path=./data
+# Operate the database in in-memory mode. Default: false
+inMemory=false
+# Cache size in bytes, or 0 to disable caching. Default: 0
+cacheSize=0
+# Reset the databases at startup. See also command line argument --reset-db
+# Default: False
+resetAtStartup=false
+
+
+#
+#	Logging settings
+#
+
+[logging]
+# Enable logging. Default: True
+enableLogging=true
+# Basename of the log file. Default: ./logs/cse.log
+file=./logs/cse.log
+# Loglevel. Possible values: debug, info, warning, error. Default debug
+level=debug
+# Number of files for log rotation. Default: 10
+count=10
+# Size per log file. Default: 100.000 bytes
+size=100000
+
+
+#
+#	Configurations for the statistics AE
+#
+
+[app.statistics]
+# Enable the statistics AE. Default: True
+enable=true
+# Resource name of the statistics AE. Default: statistics
+aeRN='statistics'
+# App-ID of the statistics AE. Default: ae-statistics
+aeAPI='ae-statistics'
+# AE-ID of the statistics AE. Default: Sstatistics
+aeAEI='Sstatistics'
+# Resource name of the statistics flexContainer. Default: statistics
+fcntRN='statistics'
+# Content Definition of the AE's flexContainer. This is a proprietary CND. Default: acme.statistics
+fcntCND='acme.statistics'
+# Element type of the AE's flexContainer. This is a proprietary type. Default: acme:csest
+fcntType='acme:csest'
+# An ACP RI for the AE. The default is the CSE's default ACP RI.
+# Default: acpAdmin
+acpRI=acpAdmin
+# Originator for requests to the CSE. Default: CAdmin
+originator=CAdmin
+# Wait n seconds between updates of the AE in seconds. Default: 10
+intervall=10
+
+
+#
+#	Configurations for the CSE Node app
+#
+
+[app.csenode]
+# Enable the CSE Node. Default: True
+enable=true
+# Resource name of the CSE Node. Default: cse-node
+nodeRN=cse-node
+# Node-ID of the CSE Node. Default: cse-node
+nodeID=cse-node
+# Originator for requests to the CSE. Default: CAdmin
+originator=CAdmin
+# Battery level indicates as "low" in percent. Default: 20
+batteryLowLevel=20
+# batter level indicates as "fully charged" in percent. Default: 100
+batteryChargedLevel=100
+# Wait n seconds between updates of the node and sub-mgmtObjs in seconds. Default: 60
+intervall=60
+

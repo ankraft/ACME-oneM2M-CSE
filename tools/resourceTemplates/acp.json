@@ -1,0 +1,19 @@
+{	"m2m:acp" : {
+		"ty" : 1,
+		"ri" : "acpID",
+		"rn" : "anACP",
+		"pi" : "cseID",
+		"pv" : {
+			"acr": {
+				"acor": [ "CAdmin" ],
+				"acop": 63
+			}
+		},
+		"pvs": {
+			"acr": {
+				"acor": ["CAdmin"],
+				"acop": 51
+			}
+		}
+	}
+}

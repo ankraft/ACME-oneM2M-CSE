@@ -1,0 +1,9 @@
+{	"m2m:rbo" : {
+		"mgd" : 1009,
+		"dc" : "a rebooter",
+		"ri" : "rbo1",
+		"pi" : "nod1",
+		"rn" : "reboot"
+	}
+}
+

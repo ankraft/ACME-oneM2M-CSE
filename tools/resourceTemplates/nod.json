@@ -1,0 +1,10 @@
+{	"m2m:nod" : {
+		"ty" : 14,
+		"ri" : "nodeID",
+		"rn" : "aNode",
+		"pi" : "cseID",
+		"ni" : "aNode:anID",
+		"nid": "nideID",
+		"acpi" : [ "acpID" ]
+	}
+}

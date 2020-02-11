@@ -1,0 +1,12 @@
+{	"m2m:swr" : {
+		"ty" : 1002,
+		"dc" : "a software",
+		"ri" : "swrID",
+		"pi" : "nodeID",
+		"rn" : "software",
+		"vr" : "1.0",
+		"swn": "SoftwareName",
+		"url": "example.com"
+	}
+}
+

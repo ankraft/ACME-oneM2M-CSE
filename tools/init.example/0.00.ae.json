@@ -1,0 +1,10 @@
+{	"m2m:ae" : {
+		"ri" : "ae1",
+		"rn" : "ae",
+		"pi" : "id-mn",
+		"api" : "appid",
+		"aei" : "Sae1",
+		"acpi" : [ "acpAdmin", "acpDefault" ],
+		"poa" : [ "http://localhost:9999"]
+	}
+}

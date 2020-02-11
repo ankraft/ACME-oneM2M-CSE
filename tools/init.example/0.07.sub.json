@@ -1,0 +1,12 @@
+{	"m2m:sub" : {
+		"ty" : 23,
+		"ri" : "sub2",
+		"rn" : "subscription2",
+		"pi" : "con1",
+		"enc": {
+			"net": [ 1, 2, 3, 4 ]
+		},
+		"nu" : [ "ae1"],
+		"nct": 1
+	}
+}
