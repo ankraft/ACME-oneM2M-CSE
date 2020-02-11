@@ -149,17 +149,17 @@ size=100000
 # Enable the statistics AE. Default: True
 enable=true
 # Resource name of the statistics AE. Default: statistics
-aeRN='statistics'
+aeRN=statistics
 # App-ID of the statistics AE. Default: ae-statistics
-aeAPI='ae-statistics'
+aeAPI=ae-statistics
 # AE-ID of the statistics AE. Default: Sstatistics
-aeAEI='Sstatistics'
+aeAEI=Sstatistics
 # Resource name of the statistics flexContainer. Default: statistics
-fcntRN='statistics'
+fcntRN=statistics
 # Content Definition of the AE's flexContainer. This is a proprietary CND. Default: acme.statistics
-fcntCND='acme.statistics'
+fcntCND=acme.statistics
 # Element type of the AE's flexContainer. This is a proprietary type. Default: acme:csest
-fcntType='acme:csest'
+fcntType=acme:csest
 # An ACP RI for the AE. The default is the CSE's default ACP RI.
 # Default: acpAdmin
 acpRI=acpAdmin
