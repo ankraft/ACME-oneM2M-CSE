@@ -1,5 +1,8 @@
 # Other
 .DS_Store
+logs/
+data/
+acme.ini
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
