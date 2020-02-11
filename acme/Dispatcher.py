@@ -375,8 +375,8 @@ class Dispatcher(object):
 		if r is None:
 			Logging.logDebug('Resource not found')
 			return (None, C.rcNotFound)
-		if r.readOnly:
-			return (None, C.rcOperationNotAllowed)
+		# if r.readOnly:
+		# 	return (None, C.rcOperationNotAllowed)
 		if CSE.security.hasAccess(originator, r, C.permDELETE) == False:
 			return (None, C.rcOriginatorHasNoPrivilege)
 
@@ -392,10 +392,10 @@ class Dispatcher(object):
 		# notify the parent resource
 		parentResource = resource.retrieveParentResource()
 		# (parentResource, _) = self.retrieveResource(resource['pi'])
+		(_, rc) = CSE.storage.deleteResource(resource)
+		CSE.event.deleteResource(resource)	# send a delete event
 		if parentResource is not None:
 			parentResource.childRemoved(resource, originator)
-		CSE.event.deleteResource(resource)	# send a delete event
-		(_, rc) = CSE.storage.deleteResource(resource)
 		return (resource, rc)
 
 
