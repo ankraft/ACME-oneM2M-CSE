@@ -62,7 +62,7 @@ def getResourceDate(delta=0):
 def toISO8601Date(ts):
 	if isinstance(ts, float):
 		ts = datetime.datetime.utcfromtimestamp(ts)
-	return ts.strftime('%Y%m%dT%H%M%S%f')
+	return ts.strftime('%Y%m%dT%H%M%S,%f')
 
 
 def structuredPath(resource):
