@@ -20,7 +20,7 @@ class CNT(Resource):
 		super().__init__(C.tsCNT, jsn, pi, C.tCNT, create=create)
 
 		if self.json is not None:
-			self.setAttribute('mni', Configuration.get('cse,cnt.mni'), overwrite=False)
+			self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite=False)
 			self.setAttribute('mbs', Configuration.get('cse.cnt.mbs'), overwrite=False)
 			self.setAttribute('cni', 0, overwrite=False)
 			self.setAttribute('cbs', 0, overwrite=False)
