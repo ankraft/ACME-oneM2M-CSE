@@ -51,14 +51,24 @@ aeStartupDelay	= 5	# seconds
 ##############################################################################
 
 
-def startup(args):
+#def startup(args=None, configfile=None, resetdb=None, loglevel=None):
+def startup(args, **kwargs):
 	global announce, dispatcher, group, httpServer, notification, remote, security, statistics, storage, event
 	global rootDirectory
 	global aeStatistics
 
 	rootDirectory = os.getcwd()		# get the root directory
 
+
 	# Handle command line arguments and load the configuration
+	if args is None:
+		args = argparse.Namespace()		# In case args is None create a new args object and populate it
+		args.configfile	= None
+		args.resetdb	= False
+		args.loglevel	= None
+		for key, value in kwargs.items():
+			args.__setattr__(key, value)
+
 	if not Configuration.init(args):
 		return
 

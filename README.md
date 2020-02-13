@@ -150,6 +150,21 @@ You can develop your own components by following the pattern of those two compon
 There are more helper methods provided by the common *AppBase* base class, e.g. to send requests to the CSE via Mca.
 
 
+## Integrating Into Other Applications
+
+The CSE can be integrated into other applications, e.g. a Jupyter Notebook. In this case it might make sense to provide all or some of the command line arguments without getting them from the *argparse* parser .
+
+You might want to check the starter file [acme.py](acme.py) where you could replace the line:
+
+	CSE.startup(parseArgs())
+
+with a call to the CSE's *startup()* function:
+
+	CSE.startup(None, configfile=defaultConfigFile, loglevel='error')
+
+The names of the *argparse* variables can be used here. Please note that you need to keep the import statements at the top of that file.
+
+
 ## URL Mappings
 
 As a convenience to access resources on a CSE and to let requests look more like "normal" REST request you can define mappings. The format is a path that maps to another path and arguments. When issued a request to one of those mapped paths the http server issues a redirect to the other path.

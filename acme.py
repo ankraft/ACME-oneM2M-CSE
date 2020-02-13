@@ -30,4 +30,14 @@ def parseArgs():
 
 
 if __name__ == '__main__':
+
+	#	Start the CSE with command line arguments.
+	#	In case the CSE should be started without command line parsing, the values
+	#	can be passed instead. Unknown arguments are ignored.
+	#	For example:
+	#
+	#		CSE.startup(None, configfile=defaultConfigFile, loglevel='error', resetdb=None)
+	#
+	#	Note: Always pass at least 'None' as first and then the 'configfile' parameter.
+	
 	CSE.startup(parseArgs())
