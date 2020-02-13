@@ -67,7 +67,7 @@ mbs=10000
 
 [cse.webui]
 # Enable the web UI. Default: True
-enableWebUI=true
+enable=true
 # Root path of the web UI. Default: /webui
 root=/webui
 
@@ -130,7 +130,9 @@ resetAtStartup=false
 
 [logging]
 # Enable logging. Default: True
-enableLogging=true
+enable=true
+# Enable logging to file. Default: True
+enableFileLogging=true
 # Basename of the log file. Default: ./logs/cse.log
 file=./logs/cse.log
 # Loglevel. Possible values: debug, info, warning, error. Default debug

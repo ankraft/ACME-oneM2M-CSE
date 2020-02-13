@@ -32,9 +32,10 @@ class	Logging:
 		logfile and to the console.
 	"""
 
-	logger  		= None
-	logLevel 		= logging.INFO
-	loggingEnabled	= True
+	logger  			= None
+	logLevel 			= logging.INFO
+	loggingEnabled		= True
+	enableFileLogging	= True
 
 	@staticmethod
 	def init():
@@ -43,21 +44,22 @@ class	Logging:
 
 		if Logging.logger is not None:
 			return
+		Logging.enableFileLogging 	= Configuration.get('logging.enableFileLogging')
+		Logging.logLevel 			= Configuration.get('logging.level')
+		Logging.loggingEnabled		= Configuration.get('logging.enable')
+		Logging.logger				= logging.getLogger('logging')
 
-		# create log directory first
-		logfile = Configuration.get('logging.file')
-		os.makedirs(os.path.dirname(logfile), exist_ok=True)
-				
-		Logging.logger			= logging.getLogger('logging')
-		logfp					= logging.handlers.RotatingFileHandler( logfile,
+		# Log to file only when file logging is enabled
+		if Logging.enableFileLogging:
+			logfile = Configuration.get('logging.file')
+			os.makedirs(os.path.dirname(logfile), exist_ok=True)# create log directory if necessary
+			logfp				= logging.handlers.RotatingFileHandler( logfile,
 																		maxBytes=Configuration.get('logging.size'),
 																		backupCount=Configuration.get('logging.count'))
-		logformatter			= logging.Formatter('%(levelname)s %(asctime)s %(message)s')
-		Logging.logLevel 		= Configuration.get('logging.level')
-		Logging.loggingEnabled	= Configuration.get('logging.loggingEnabled')
-		logfp.setFormatter(logformatter)
-		Logging.logger.addHandler(logfp) 
-		logfp.setLevel(Logging.logLevel)
+			logfp.setLevel(Logging.logLevel)
+			logfp.setFormatter(logging.Formatter('%(levelname)s %(asctime)s %(message)s'))
+			Logging.logger.addHandler(logfp) 
+
 		Logging.logger.setLevel(Logging.logLevel)
 
 	

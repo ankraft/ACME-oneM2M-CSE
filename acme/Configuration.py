@@ -57,7 +57,8 @@ class Configuration(object):
 				#	Logging
 				#
 
-				'logging.loggingEnabled'			: config.getboolean('logging', 'loggingEnabled', 		fallback=True),
+				'logging.enable'					: config.getboolean('logging', 'enable', 				fallback=True),
+				'logging.enableFileLogging'			: config.getboolean('logging', 'enableFileLogging', 	fallback=True),
 				'logging.file'						: config.get('logging', 'file', 						fallback='./logs/cse.log'),
 				'logging.level'						: config.get('logging', 'level', 						fallback='debug'),
 				'logging.size'						: config.getint('logging', 'size', 						fallback=100000),
@@ -107,7 +108,7 @@ class Configuration(object):
 				#	Web UI
 				#
 
-				'cse.webui.enableWebUI'				: config.getboolean('cse.webui', 'enableWebUI', 		fallback=True),
+				'cse.webui.enable'					: config.getboolean('cse.webui', 'enable', 		fallback=True),
 				'cse.webui.root'					: config.get('cse.webui', 'root', 						fallback='/webui'),
 
 

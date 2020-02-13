@@ -45,7 +45,7 @@ class HttpServer(object):
 		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handleDELETE, methods=['DELETE'])
 
 		# Register the endpoint for the web UI
-		if Configuration.get('cse.webui.enableWebUI'):
+		if Configuration.get('cse.webui.enable'):
 			self.webuiRoot = Configuration.get('cse.webui.root')
 			self.webuiDirectory = '%s/webui' % CSE.rootDirectory
 			Logging.log('Registering web ui at: %s, serving from %s' % (self.webuiRoot, self.webuiDirectory))
