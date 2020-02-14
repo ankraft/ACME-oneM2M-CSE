@@ -150,19 +150,25 @@ You can develop your own components by following the pattern of those two compon
 There are more helper methods provided by the common *AppBase* base class, e.g. to send requests to the CSE via Mca.
 
 
-## Integrating Into Other Applications
+## Integration Into Other Applications
 
-The CSE can be integrated into other applications, e.g. a Jupyter Notebook. In this case it might make sense to provide all or some of the command line arguments without getting them from the *argparse* parser .
+It is possible to integrate the CSE into other applications, e.g. a Jupyter Notebook. In this case you would possibly like to provide startup arguments, for example the path of the configuration file or the logging level, directly instead of getting them from *argparse*.
 
-You might want to check the starter file [acme.py](acme.py) where you could replace the line:
+You might want to get the example from the starter file [acme.py](acme.py) where you could replace the line:
 
-	CSE.startup(parseArgs())
+```python
+CSE.startup(parseArgs())
+```
 
 with a call to the CSE's *startup()* function:
 
-	CSE.startup(None, configfile=defaultConfigFile, loglevel='error')
+```python
+CSE.startup(None, configfile=defaultConfigFile, loglevel='error')
+```
 
-The names of the *argparse* variables can be used here. Please note that you need to keep the import statements at the top of that file.
+Please note that in case you provide the arguments directly the first argument needs to be `None`.
+
+The names of the *argparse* variables can be used here. Please note that you need to keep the import statements at the top of that file (or copy them to your application).
 
 
 ## URL Mappings
