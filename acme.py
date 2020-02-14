@@ -10,7 +10,7 @@
 import argparse, sys
 sys.path.append('acme')
 sys.path.append('apps')
-from Configuration import defaultConfigFile
+from Configuration import defaultConfigFile, defaultImportDirectory
 import CSE
 
 
@@ -21,9 +21,10 @@ description = 'ACME ' + version + ' - An open source Cse Middleware for Educatio
 # Handle command line arguments
 def parseArgs():
 	parser = argparse.ArgumentParser(description=description)
-	parser.add_argument('--config', action='store', dest='configfile', default=defaultConfigFile, help='Specify configuration file')
-	parser.add_argument('--reset-db', action='store_true', dest='resetdb', default=None, help='Reset the DB when starting the CSE')
-	parser.add_argument('--log-level', action='store', dest='loglevel', default=None, choices=[ 'info', 'error', 'warn', 'debug'], type=str.lower, help='Set the logging level')
+	parser.add_argument('--config', action='store', dest='configfile', default=defaultConfigFile, help='specify configuration file')
+	parser.add_argument('--reset-db', action='store_true', dest='resetdb', default=None, help='reset the DB when starting the CSE')
+	parser.add_argument('--log-level', action='store', dest='loglevel', default=None, choices=[ 'info', 'error', 'warn', 'debug'], type=str.lower, help='set the logging level')
+	parser.add_argument('--import-directory', action='store', dest='importdirectory', default=defaultImportDirectory, help='specify the import directory')
 	return parser.parse_args()
 
 	# TODO init directory

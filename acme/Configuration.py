@@ -12,6 +12,7 @@ import logging, configparser
 from Constants import Constants as C
 
 defaultConfigFile			= 'acme.ini'
+defaultImportDirectory		= './init'
 
 
 class Configuration(object):
@@ -22,9 +23,10 @@ class Configuration(object):
 		global _configuration
 
 		# resolve the args, of any
-		argsConfigfile = args.configfile if args is not None else defaultConfigFile
-		argsLoglevel = args.loglevel if args is not None else None
-		argsResetDB = args.resetdb if args is not None else False
+		argsConfigfile		= args.configfile if args is not None else defaultConfigFile
+		argsLoglevel		= args.loglevel if args is not None else None
+		argsResetDB			= args.resetdb if args is not None else False
+		argsImportDirectory	= args.importdirectory if args is not None else None
 
 
 		config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
@@ -69,7 +71,7 @@ class Configuration(object):
 				#
 
 				'cse.type'							: config.get('cse', 'type',								fallback='IN'),		# IN, MN, ASN
-				'cse.resourcesPath'					: config.get('cse', 'resourcesPath', 					fallback='./init'),
+				'cse.resourcesPath'					: config.get('cse', 'resourcesPath', 					fallback=defaultImportDirectory),
 				'cse.expirationDelta'				: config.getint('cse', 'expirationDelta', 				fallback=60*60*24*365),	# 1 year, in seconds
 				'cse.enableACPChecks'				: config.getboolean('cse', 'enableACPChecks', 			fallback=True),
 				'cse.defaultACPRI'					: config.get('cse', 'defaultACPRI', 					fallback='acpAdmin'),
@@ -149,8 +151,7 @@ class Configuration(object):
 			Configuration._configuration['server.http.mappings'] = config.items('server.http.mappings')
 			#print(config.items('server.http.mappings'))
 
-
-		# Some clean-ups
+		# Some clean-ups and overrrites
 
 		# CSE type
 		cseType = Configuration._configuration['cse.type'].lower()
@@ -161,7 +162,7 @@ class Configuration(object):
 		else:
 			Configuration._configuration['cse.type'] = C.cseTypeIN
 
-		# Loglevel
+		# Loglevel from command line
 		logLevel = Configuration._configuration['logging.level'].lower()
 		logLevel = argsLoglevel if argsLoglevel is not None else logLevel 	# command line args override config
 		if logLevel == 'info':
@@ -176,6 +177,10 @@ class Configuration(object):
 		# Override DB reset from command line
 		if argsResetDB is True:
 			Configuration._configuration['db.resetAtStartup'] = True
+
+		# Override import directory from command line
+		if argsImportDirectory is not None:
+			Configuration._configuration['cse.resourcesPath'] = argsImportDirectory
 
 		return True
 

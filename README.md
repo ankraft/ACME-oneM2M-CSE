@@ -57,12 +57,13 @@ You can start the CSE by simply running it from a command line:
 
 In this case the configuration file *acme.ini* must be in the same directory.
 
-In additions, one can provide command line arguments:
+In additions, you can provide additional command line arguments that will override the respective values from the configuration file:
 
 - **-h**, **--help** : show a help message and exit.
 - **--config CONFIGFILE**: Specify a configuration file that is used instead of the default (*acme.ini*) one.
 - **--reset-db**: Reset and clear the database when starting the CSE.
 - **--log-level {info,error,warn,debug}**: Set the logging level.
+- **--import-directory IMPORTDIRECTORY**: Specify the import directory.
 
 
 ### Stopping the CSE
