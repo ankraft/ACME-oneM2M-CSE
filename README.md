@@ -67,7 +67,7 @@ In additions, one can provide command line arguments:
 
 ### Stopping the CSE
 
-The CSE can be stopped by pressing *CTRL-C* on the command line. 
+The CSE can be stopped by pressing *CTRL-C* **once** on the command line. 
 
 Please note, that the shutdown might take a moment (e.g. gracefully terminating background processes, writing database caches, sending notifications etc). 
 

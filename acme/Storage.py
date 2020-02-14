@@ -300,10 +300,12 @@ def _testDiscovery(r, rootSRN, handling, conditions, attributes, fo, lim, ofst, 
 				fnd += 1 if l in lbl else 0
 			found += 1 if (fo == 1 and fnd == len(lbl)) or (fo == 2 and fnd > 0) else 0	# fo==or -> find any label
 
-		if ty == C.tCIN:	# special handling for CIN
+		if ty in [ C.tCIN, C.tFCNT ]:	# special handling for CIN, FCNT
 			if (cs := r.get('cs')) is not None:
 				found += 1 if (sza := conditions.get('sza')) is not None and (str(cs) >= sza) else 0
 				found += 1 if (szb := conditions.get('szb')) is not None and (str(cs) < szb) else 0
+
+		if ty in [ C.tCIN ]:	# special handling for CIN
 			if (cnf := r.get('cnf')) is not None:
 				found += 1 if cnf in conditions['cty'] else 0
 

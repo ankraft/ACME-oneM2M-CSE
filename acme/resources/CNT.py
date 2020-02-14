@@ -75,7 +75,6 @@ class CNT(Resource):
 	def validate(self, originator=None):
 		if (res := super().validate(originator))[0] == False:
 			return res
-		Logging.logDebug('Validating container: %s' % self['ri'])
 
 		# retrieve all children
 		cs = self.contentInstances()

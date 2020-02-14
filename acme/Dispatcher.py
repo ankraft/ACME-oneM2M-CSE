@@ -340,7 +340,6 @@ class Dispatcher(object):
 		Logging.logDebug('Updating resource ri: %s, type: %d' % (resource.ri, resource.ty))
 		if doUpdateCheck and not (res := resource.update(json, originator))[0]:
 			return (None, res[1])
-			# return (None, C.rcContentsUnacceptable)
 		return CSE.storage.updateResource(resource)
 
 

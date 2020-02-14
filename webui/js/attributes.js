@@ -100,6 +100,7 @@ const shortNames = {
   "nid"   : { "ln" : "networkID", "type": "" },
   "nl"    : { "ln" : "nodeLink", "type": "" },
   "nu"    : { "ln" : "notificationURI",  "type": "" },
+  "or"    : { "ln" : "ontologyRef", "type" : "" },
   "osv"   : { "ln" : "osVersion", "type": "custom" },
   "pi"    : { "ln" : "parentID", "type": "universal" },
   "poa"   : { "ln" : "pointOfAccess", "type": "" },
