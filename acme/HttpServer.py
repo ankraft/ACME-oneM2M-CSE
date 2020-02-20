@@ -16,6 +16,8 @@ import CSE, Utils
 from Logging import Logging, RedirectHandler
 from resources.Resource import Resource
 import json, requests, logging, os
+from werkzeug.serving import WSGIRequestHandler
+
 
 
 class HttpServer(object):
@@ -67,6 +69,9 @@ class HttpServer(object):
 		# Redirect the http server (Flask) log output to the CSE logs
 		werkzeugLog = logging.getLogger('werkzeug')
 		werkzeugLog.addHandler(RedirectHandler("httpServer"))
+
+		WSGIRequestHandler.protocol_version = "HTTP/1.1"
+
 
 		# Run the http server. This runs forever.
 		# The server can run single-threadedly since some of the underlying
@@ -205,6 +210,9 @@ class HttpServer(object):
 		resp.headers['X-M2M-RSC'] = str(returnCode)
 		if 'X-M2M-RI' in request.headers:
 			resp.headers['X-M2M-RI'] = request.headers['X-M2M-RI']
+		if 'X-M2M-RVI' in request.headers:
+			resp.headers['X-M2M-RVI'] = request.headers['X-M2M-RVI']
+
 		resp.status_code = self._statusCode(returnCode)
 		resp.content_type = C.hfvContentType
 		return resp
