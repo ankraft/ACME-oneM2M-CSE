@@ -167,9 +167,9 @@ with a call to the CSE's *startup()* function:
 CSE.startup(None, configfile=defaultConfigFile, loglevel='error')
 ```
 
-Please note that in case you provide the arguments directly the first argument needs to be `None`.
+Please note that in case you provide the arguments directly the first argument needs to be `None`. 
 
-The names of the *argparse* variables can be used here. Please note that you need to keep the import statements at the top of that file (or copy them to your application).
+The names of the *argparse* variables can be used here, and you may provide all or only some of the arguments. Please note that you need to keep the import statements at the top of that file (or copy them to your application).
 
 
 ## URL Mappings
