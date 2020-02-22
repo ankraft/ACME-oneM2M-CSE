@@ -72,21 +72,24 @@ class RegistrationManager(object):
 			return None
 
 		# Create an ACP for this AE-ID if there is none set
-		print(ae.acpi)
-		if ae.acpi is None or len(ae.acpi) == 0:
-			cseOriginator = Configuration.get('cse.originator')
-			acp = ACP.ACP(pi=parentResource.ri)
-			acp.addPermissionOriginator(originator)
-			acp.addPermissionOriginator(cseOriginator)
-			acp.setPermissionOperation(Configuration.get('cse.acp.pv.acop'))
-			acp.addSelfPermissionOriginator(cseOriginator)
-			acp.setSelfPermissionOperation(Configuration.get('cse.acp.pvs.acop'))
-			if not (res := self.checkResourceCreation(acp, originator, parentResource))[0]:
-				return None
-			CSE.dispatcher.createResource(acp, parentResource=parentResource, originator=originator)
+		if Configuration.get("cse.ae.createACP"):
+			if ae.acpi is None or len(ae.acpi) == 0:
+				cseOriginator = Configuration.get('cse.originator')
+				acp = ACP.ACP(pi=parentResource.ri)
+				acp.addPermissionOriginator(originator)
+				acp.addPermissionOriginator(cseOriginator)
+				acp.setPermissionOperation(Configuration.get('cse.acp.pv.acop'))
+				acp.addSelfPermissionOriginator(cseOriginator)
+				acp.setSelfPermissionOperation(Configuration.get('cse.acp.pvs.acop'))
+				if not (res := self.checkResourceCreation(acp, originator, parentResource))[0]:
+					return None
+				CSE.dispatcher.createResource(acp, parentResource=parentResource, originator=originator)
 
-			# Set ACPI anew
-			ae['acpi'] = [ acp.ri ]
+				# Set ACPI (anew)
+				ae['acpi'] = [ acp.ri ]
+		else:
+			ae['acpi'] = [ Configuration.get('cse.defaultACPRI') ]
+
 
 
 		return originator

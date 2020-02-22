@@ -116,6 +116,13 @@ class Configuration(object):
 
 
 				#
+				#	Defaults for Application Entities
+				#
+
+				'cse.ae.createACP'					: config.getboolean('cse.resource.ae', 'createACP', 	fallback=True),
+
+
+				#
 				#	Web UI
 				#
 
@@ -160,7 +167,7 @@ class Configuration(object):
 			Configuration._configuration['server.http.mappings'] = config.items('server.http.mappings')
 			#print(config.items('server.http.mappings'))
 
-		# Some clean-ups and overrrites
+		# Some clean-ups and overrites
 
 		# CSE type
 		cseType = Configuration._configuration['cse.type'].lower()

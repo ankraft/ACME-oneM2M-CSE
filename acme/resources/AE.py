@@ -35,6 +35,7 @@ class AE(Resource):
 	def validate(self, originator):
 		if (res := super().validate(originator))[0] == False:
 			return res
+			
 		# Update the hcl attribute in the hosting node
 		nl = self['nl']
 		_nl_ = self.__node__

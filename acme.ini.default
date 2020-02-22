@@ -53,17 +53,6 @@ writeIntervall=60
 
 
 #
-#	Resource defaults: Container
-#
-
-[cse.resource.cnt]
-# Default for maxNrOfInstances. Default: 10
-mni=10
-# Default for maxByteSize. Default: 10.000
-mbs=10000
-
-
-#
 #	Resource defaults: ACP
 #
 
@@ -72,6 +61,26 @@ mbs=10000
 permissions=63
 # Default selfPermission when creating an ACP resource. Default: 51
 selfPermission=51
+
+
+#
+#	Resource defaults: AE
+#
+
+[cse.resource.ae]
+# Create a new ACP resource when an AE registers. Default: True
+createACP=true
+
+
+#
+#	Resource defaults: Container
+#
+
+[cse.resource.cnt]
+# Default for maxNrOfInstances. Default: 10
+mni=10
+# Default for maxByteSize. Default: 10.000
+mbs=10000
 
 
 #
