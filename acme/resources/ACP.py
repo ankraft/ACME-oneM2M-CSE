@@ -28,6 +28,33 @@ class ACP(Resource):
 		return (True, C.rcOK)
 
 
+	#########################################################################
+
+	#
+	#	Permission handlings
+	#
+
+	def addPermissionOriginator(self, originator):
+		if originator not in self.pv_acor:
+			self.pv_acor.append(originator)
+		self.setAttribute('pv/acr/acor', self.pv_acor)
+
+
+	def setPermissionOperation(self, operation):
+		self.pv_acop = operation
+		self.setAttribute('pv/acr/acop', self.pv_acop)
+
+	def addSelfPermissionOriginator(self, originator):
+		if originator not in self.pvs_acor:
+			self.pvs_acor.append(originator)
+		self.setAttribute('pvs/acr/acor', self.pvs_acor)
+
+
+	def setSelfPermissionOperation(self, operation):
+		self.pvs_acop = operation
+		self.setAttribute('pvs/acr/acop', self.pvs_acop)
+
+
 	def checkPermission(self, origin, requestedPermission):
 		if requestedPermission & self.pv_acop == 0:	# permission not fitting at all
 			return False

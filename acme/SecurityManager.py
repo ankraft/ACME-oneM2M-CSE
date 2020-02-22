@@ -27,14 +27,15 @@ class SecurityManager(object):
 		Logging.log('SecurityManager shut down')
 
 
-	def hasAccess(self, origin, resource, requestedPermission, checkSelf=False):
+	def hasAccess(self, originator, resource, requestedPermission, checkSelf=False):
 		if not Configuration.get('cse.enableACPChecks'):	# check or ignore the check
 			return True
 
+		# originator may be None or empty or C or S
+		if originator is None or len(originator) == 0 or originator in ['C', 'S']:
+			return True
+
 		# Check parameters
-		if origin is None:
-			Logging.logWarn("origin must not be None")
-			return False
 		if resource is None:
 			Logging.logWarn("resource must not be None")
 			return False
@@ -42,10 +43,10 @@ class SecurityManager(object):
 			Logging.logWarn("requestedPermission must not be None, and between 0 and 63")
 			return False
 
-		Logging.logDebug("Checking permission for origin: %s, ri: %s, permission: %d, selfPrivileges: %r" % (origin, resource.ri, requestedPermission, checkSelf))
+		Logging.logDebug("Checking permission for originator: %s, ri: %s, permission: %d, selfPrivileges: %r" % (originator, resource.ri, requestedPermission, checkSelf))
 
 		if resource.ty == C.tACP:	# target is an ACP resource
-			if resource.checkSelfPermission(origin, requestedPermission):
+			if resource.checkSelfPermission(originator, requestedPermission):
 				Logging.logDebug('Permission granted')
 				return True
 
@@ -54,7 +55,7 @@ class SecurityManager(object):
 			if (acpi := resource.acpi) is None or len(acpi) == 0:	
 				if resource.inheritACP:
 					(parentResource, _) = CSE.dispatcher.retrieveResource(resource.pi)
-					return self.hasAccess(origin, parentResource, requestedPermission, checkSelf)
+					return self.hasAccess(originator, parentResource, requestedPermission, checkSelf)
 				Logging.logDebug("Missing acpi in resource")
 				return False
 
@@ -63,11 +64,11 @@ class SecurityManager(object):
 				if acp is None:
 					continue
 				if checkSelf:	# forced check for self permissions
-					if acp.checkSelfPermission(origin, requestedPermission):
+					if acp.checkSelfPermission(originator, requestedPermission):
 						Logging.logDebug('Permission granted')
 						return True				
 				else:
-					if acp.checkPermission(origin, requestedPermission):
+					if acp.checkPermission(originator, requestedPermission):
 						Logging.logDebug('Permission granted')
 						return True
 

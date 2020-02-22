@@ -33,8 +33,8 @@ def uniqueRN(prefix='un'):
 
 
 # create a unique aei, M2M-SP type
-def uniqueAEI():
-	return 'S' + ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=C.maxIDLength))
+def uniqueAEI(prefix='S'):
+	return prefix + ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=C.maxIDLength))
 
 
 def fullRI(ri):

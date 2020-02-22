@@ -237,6 +237,11 @@ class Dispatcher(object):
 		#nr = resourceFromJSON(request.json, pi=pr['ri'], tpe=ty)	# Add pi
 		if (nr := Utils.resourceFromJSON(request.json, pi=pr.ri, tpe=ty)) is None:	# something wrong, perhaps wrong type
 			return (None, C.rcBadRequest)
+
+		# Check resource creation
+		if not (res := CSE.registration.checkResourceCreation(nr, originator, pr))[0]:
+			return (None, C.rcBadRequest)
+
 		return self.createResource(nr, pr, originator)
 
 

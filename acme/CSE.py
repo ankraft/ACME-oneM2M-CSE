@@ -17,6 +17,7 @@ from HttpServer import HttpServer
 from Importer import Importer
 from Logging import Logging
 from NotificationManager import NotificationManager
+from RegistrationManager import RegistrationManager
 from RemoteCSEManager import RemoteCSEManager
 from SecurityManager import SecurityManager
 from Statistics import Statistics
@@ -29,14 +30,15 @@ from CSENode import CSENode
 # components that are used throughout the CSE implementation.
 announce		= None
 dispatcher 		= None
+event			= None
 group	 		= None
 httpServer		= None
 notification	= None
+registration 	= None
 remote			= None
 security 		= None
 statistics		= None
 storage			= None
-event			= None
 
 rootDirectory	= None
 
@@ -53,7 +55,7 @@ aeStartupDelay	= 5	# seconds
 
 #def startup(args=None, configfile=None, resetdb=None, loglevel=None):
 def startup(args, **kwargs):
-	global announce, dispatcher, group, httpServer, notification, remote, security, statistics, storage, event
+	global announce, dispatcher, group, httpServer, notification, registration, remote, security, statistics, storage, event
 	global rootDirectory
 	global aeStatistics
 
@@ -88,6 +90,9 @@ def startup(args, **kwargs):
 
 	# Initialize the statistics system
 	statistics = Statistics()
+
+	# Initialize the registration manager
+	registration = RegistrationManager()
 
 	# Initialize the resource dispatcher
 	dispatcher = Dispatcher()
@@ -143,6 +148,8 @@ def shutdown():
 		dispatcher.shutdown()
 	if security is not None:
 		security.shutdown()
+	if registration is not None:
+		registration.shutdown()
 	if statistics is not None:
 		statistics.shutdown()
 	if event is not None:
