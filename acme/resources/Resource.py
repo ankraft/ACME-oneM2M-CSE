@@ -61,7 +61,7 @@ class Resource(object):
 			# if self['ty'] != C.tACP and self['acpi'] is None:
 			if self.inheritACP:
 				self.delAttribute('acpi')
-			elif self['acpi'] is None:
+			elif self['acpi'] is None and ty != C.tAE:	# Assign default ACPI only when it is not an AE
 				self['acpi'] = [ Configuration.get('cse.defaultACPRI') ]
 
 			self.setAttribute(self._rtype, self.tpe, overwrite=False)
@@ -93,6 +93,10 @@ class Resource(object):
 		Logging.logDebug('Activating resource: %s' % self.ri)
 		if not (result := self.validate(originator))[0]:
 			return result
+
+		# set creator
+		self['cr'] = originator
+		
 		return (True, C.rcOK)
 
 

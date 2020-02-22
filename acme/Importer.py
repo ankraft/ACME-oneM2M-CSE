@@ -41,6 +41,9 @@ class Importer(object):
 			Logging.logErr('CSE not found')
 			return False
 
+		# get the originator for the creator attribute of imported resources
+		originator = Configuration.get('cse.originator')
+
 		# Import
 		if path is None:
 			if Configuration.has('cse.resourcesPath'):
@@ -66,6 +69,9 @@ class Importer(object):
 				Logging.log('Importing resource: %s ' % fn)
 				with open(fn) as jfile:
 					r = resourceFromJSON(json.load(jfile), create=True)
+			# Check resource creation
+			if not CSE.registration.checkResourceCreation(r, originator):
+				continue
 			CSE.dispatcher.createResource(r)
 			ty = r.ty
 			if ty == C.tCSEBase:
@@ -108,6 +114,9 @@ class Importer(object):
 							parent = None
 							if (pi := r.pi) is not None:
 								(parent, _) = CSE.dispatcher.retrieveResource(pi)
+							# Check resource creation
+							if not CSE.registration.checkResourceCreation(r, originator):
+								continue
 							# Add the resource
 							CSE.dispatcher.createResource(r, parent)
 						else:

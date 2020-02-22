@@ -75,6 +75,7 @@ class Configuration(object):
 				'cse.expirationDelta'				: config.getint('cse', 'expirationDelta', 				fallback=60*60*24*365),	# 1 year, in seconds
 				'cse.enableACPChecks'				: config.getboolean('cse', 'enableACPChecks', 			fallback=True),
 				'cse.defaultACPRI'					: config.get('cse', 'defaultACPRI', 					fallback='acpAdmin'),
+				'cse.originator'					: config.get('cse', 'originator',						fallback='CAdmin'),
 				'cse.csi'							: '',																		# will be set by importer
 				'cse.ri'							: '',																		# will be set by importer
 				'cse.rn'							: '',																		# will be set by importer
@@ -107,10 +108,18 @@ class Configuration(object):
 				'cse.cnt.mbs'						: config.getint('cse.resource.cnt', 'mbs', 				fallback=10000),
 
 				#
+				#	Defaults for Access Control Policies
+				#
+
+				'cse.acp.pv.acop'					: config.getint('cse.resource.acp', 'permission', 		fallback=63),
+				'cse.acp.pvs.acop'					: config.getint('cse.resource.cnt', 'selfPermission', 	fallback=51),
+
+
+				#
 				#	Web UI
 				#
 
-				'cse.webui.enable'					: config.getboolean('cse.webui', 'enable', 		fallback=True),
+				'cse.webui.enable'					: config.getboolean('cse.webui', 'enable', 				fallback=True),
 				'cse.webui.root'					: config.get('cse.webui', 'root', 						fallback='/webui'),
 
 
