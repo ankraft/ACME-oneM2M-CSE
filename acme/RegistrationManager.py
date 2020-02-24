@@ -75,7 +75,7 @@ class RegistrationManager(object):
 		if Configuration.get("cse.ae.createACP"):
 			if ae.acpi is None or len(ae.acpi) == 0:
 				cseOriginator = Configuration.get('cse.originator')
-				acp = ACP.ACP(pi=parentResource.ri)
+				acp = ACP.ACP(pi=parentResource.ri, rn=ae.rn)
 				acp.addPermissionOriginator(originator)
 				acp.addPermissionOriginator(cseOriginator)
 				acp.setPermissionOperation(Configuration.get('cse.acp.pv.acop'))

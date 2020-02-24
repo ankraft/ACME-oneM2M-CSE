@@ -14,16 +14,29 @@ import Utils
 
 class ACP(Resource):
 
-	def __init__(self, jsn=None, pi=None, create=False):
+	def __init__(self, jsn=None, pi=None, rn=None, create=False):
 		super().__init__(C.tsACP, jsn, pi, C.tACP, create=create, inheritACP=True)
+
+		# override rn if given
+		if rn is not None:
+			self.setAttribute('rn', 'acp_' + rn, overwrite=True)
 
 		# store permissions for easier access
 		self._storePermissions()
 
 
+
 	def validate(self, originator):
 		if (res := super().validate(originator))[0] == False:
 			return res
+
+		# add admin
+		cseOriginator = Configuration.get('cse.originator')
+		if cseOriginator not in self.pv_acor:
+			self.addPermissionOriginator(cseOriginator)
+		if cseOriginator not in self.pvs_acor:
+			self.addSelfPermissionOriginator(cseOriginator)
+
 		self._storePermissions()
 		return (True, C.rcOK)
 
