@@ -13,7 +13,10 @@ function getChildren(node, errorCallback) {
   // get children
   var ri = resource['ri'] + "?fu=1&lvl=1&rcn=6" // TODO move this to the getchildren request
   var client = new HttpClient();
-  client.getChildren(cseid + "/" + ri, node, function(response) { // TODo
+
+  //addr = cseid + "/" + ri
+  addr = "/" + ri
+  client.getChildren(addr, node, function(response) { // TODo
     // remove all children, if any
 
     removeChildren(node)
