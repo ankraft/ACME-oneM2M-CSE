@@ -27,20 +27,23 @@ class SecurityManager(object):
 		Logging.log('SecurityManager shut down')
 
 
-	def hasAccess(self, originator, resource, requestedPermission, checkSelf=False):
+	def hasAccess(self, originator, resource, requestedPermission, checkSelf=False, ty=None, isCreateRequest=False):
 		if not Configuration.get('cse.enableACPChecks'):	# check or ignore the check
 			return True
 
-		# originator may be None or empty or C or S
+		# originator may be None or empty or C or S. 
+		# That is okay if type is AE and this is a create request
 		if originator is None or len(originator) == 0 or originator in ['C', 'S']:
-			return True
+			if ty is not None and ty == C.tAE and isCreateRequest:
+				Logging.logDebug("Empty originator for AE CREATE. OK.")
+				return True
 
 		# Check parameters
 		if resource is None:
-			Logging.logWarn("resource must not be None")
+			Logging.logWarn("Resource must not be None")
 			return False
 		if requestedPermission is None or not (0 <= requestedPermission <= C.permALL):
-			Logging.logWarn("requestedPermission must not be None, and between 0 and 63")
+			Logging.logWarn("RequestedPermission must not be None, and between 0 and 63")
 			return False
 
 		Logging.logDebug("Checking permission for originator: %s, ri: %s, permission: %d, selfPrivileges: %r" % (originator, resource.ri, requestedPermission, checkSelf))

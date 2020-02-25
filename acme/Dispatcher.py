@@ -230,7 +230,7 @@ class Dispatcher(object):
 			Logging.log('Parent resource not found')
 			return (None, C.rcNotFound)
 
-		if CSE.security.hasAccess(originator, pr, C.permCREATE) == False:
+		if CSE.security.hasAccess(originator, pr, C.permCREATE, ty=ty, isCreateRequest=True) == False:
 			return (None, C.rcOriginatorHasNoPrivilege)
 
 		# Add new resource
