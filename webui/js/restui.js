@@ -50,7 +50,14 @@ function initRestUI() {
 function setRestUI(resourceFull) {
 	currentResourceType = Object.keys(resourceFull)[0];
 	currentResource = resourceFull[currentResourceType]
-	document.getElementById("rest-url").value=document.getElementById("baseri").value + "/" + currentResource.ri
+	bri = document.getElementById("baseri").value
+	cri = "/" + currentResource.ri
+	if (bri == cri) {
+	  document.getElementById("rest-url").value=bri
+	} else {
+	  document.getElementById("rest-url").value=bri + cri
+	}
+
 
 	// check requests for this resource type
 	// First enable all buttons

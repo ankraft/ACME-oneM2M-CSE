@@ -148,7 +148,7 @@ class HttpServer(object):
 
 		# Redirect to index file. Also include base / cse RI
 		if path == None or len(path) == 0 or (path.endswith('index.html') and len(request.args) != 1):
-			return flask.redirect('%s/index.html?ri=/%s' % (self.webuiRoot, Configuration.get('cse.rn')), code=302)
+			return flask.redirect('%s/index.html?ri=/%s' % (self.webuiRoot, Configuration.get('cse.ri')), code=302)
 		else:
 			filename = '%s/%s' % (self.webuiDirectory, path)	# return any file in the web directory
 		try:
