@@ -384,6 +384,10 @@ class Dispatcher(object):
 		if CSE.security.hasAccess(originator, r, C.permDELETE) == False:
 			return (None, C.rcOriginatorHasNoPrivilege)
 
+		# Check resource deletion
+		if not (res := CSE.registration.checkResourceDeletion(r, originator))[0]:
+			return (None, C.rcBadRequest)
+
 		# remove resource
 		return self.deleteResource(r, originator)
 

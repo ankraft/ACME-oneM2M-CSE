@@ -19,7 +19,7 @@ class ACP(Resource):
 
 		# override rn if given
 		if rn is not None:
-			self.setAttribute('rn', 'acp_' + rn, overwrite=True)
+			self.setAttribute('rn', rn, overwrite=True)
 
 		# store permissions for easier access
 		self._storePermissions()

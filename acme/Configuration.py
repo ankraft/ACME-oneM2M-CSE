@@ -121,6 +121,7 @@ class Configuration(object):
 				#
 
 				'cse.ae.createACP'					: config.getboolean('cse.resource.ae', 'createACP', 	fallback=True),
+				'cse.ae.removeACP'					: config.getboolean('cse.resource.ae', 'removeACP', 	fallback=True),
 
 
 				#

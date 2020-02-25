@@ -13,10 +13,7 @@ from Configuration import Configuration
 import CSE, Utils
 from resources import ACP
 
-
-# TODO: create/delete each resource to count! resourceCreate(ty)
-
-# TODO move event creations from here to the resp modules.
+acpPrefix = 'acp_'
 
 
 class RegistrationManager(object):
@@ -36,7 +33,6 @@ class RegistrationManager(object):
 	#
 
 	def checkResourceCreation(self, resource, originator, parentResource=None):
-
 		if resource.ty in [ C.tAE ]:
 			if (originator := self.handleAERegistration(resource, originator, parentResource)) is None:
 				return (False, originator)
@@ -48,6 +44,14 @@ class RegistrationManager(object):
 		resource['cr'] = originator
 
 		return (True, originator)
+
+
+	def checkResourceDeletion(self, resource, originator):
+		if resource.ty in [ C.tAE ]:
+			if not self.handleAEDeRegistration(resource):
+				return (False, originator)
+		return (True, originator)
+
 
 
 	#########################################################################
@@ -69,7 +73,7 @@ class RegistrationManager(object):
 		ae['aei'] = originator
 
 		# Verify that parent is the CSEBase, else this is an error
-		if parentResource is None or  parentResource.ty != C.tCSEBase:
+		if parentResource is None or parentResource.ty != C.tCSEBase:
 			return None
 
 		# Create an ACP for this AE-ID if there is none set
@@ -77,7 +81,7 @@ class RegistrationManager(object):
 			if ae.acpi is None or len(ae.acpi) == 0:
 				Logging.logDebug('Adding ACP for AE')
 				cseOriginator = Configuration.get('cse.originator')
-				acp = ACP.ACP(pi=parentResource.ri, rn=ae.rn)
+				acp = ACP.ACP(pi=parentResource.ri, rn=acpPrefix + ae.rn)
 				acp.addPermissionOriginator(originator)
 				acp.addPermissionOriginator(cseOriginator)
 				acp.setPermissionOperation(Configuration.get('cse.acp.pv.acop'))
@@ -92,6 +96,23 @@ class RegistrationManager(object):
 		else:
 			ae['acpi'] = [ Configuration.get('cse.defaultACPRI') ]
 
-
-
 		return originator
+
+
+	#
+	#	Handle AE deregistration
+	#
+
+	def handleAEDeRegistration(self, resource):
+		# remove the before created ACP, if it exist
+		Logging.logDebug('DeRegisterung AE. aei: %s ' % resource.aei)
+		if Configuration.get("cse.ae.removeACP"):
+			Logging.logDebug('Removing ACP for AE')
+			acpRi = '%s/%s%s' % (Configuration.get("cse.rn"), acpPrefix, resource.rn)
+			if (res := CSE.dispatcher.retrieveResource(acpRi))[1] != C.rcOK:
+				Logging.logWarn('Could not find ACP: %s' % acpRi)
+				return False
+			CSE.dispatcher.deleteResource(res[0])
+		return True
+
+

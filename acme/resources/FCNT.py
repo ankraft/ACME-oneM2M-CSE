@@ -48,6 +48,5 @@ class FCNT(Resource):
 		
 		# May have been updated, so store the resource 
 		x = CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
-		print(x)
-
+		
 		return (True, C.rcOK)
