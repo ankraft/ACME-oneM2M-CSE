@@ -30,12 +30,13 @@ class ACP(Resource):
 		if (res := super().validate(originator))[0] == False:
 			return res
 
-		# add admin
-		cseOriginator = Configuration.get('cse.originator')
-		if cseOriginator not in self.pv_acor:
-			self.addPermissionOriginator(cseOriginator)
-		if cseOriginator not in self.pvs_acor:
-			self.addSelfPermissionOriginator(cseOriginator)
+		# add admin originator	
+		if Configuration.get('cse.acp.addAdminOrignator'):
+			cseOriginator = Configuration.get('cse.originator')
+			if cseOriginator not in self.pv_acor:
+				self.addPermissionOriginator(cseOriginator)
+			if cseOriginator not in self.pvs_acor:
+				self.addSelfPermissionOriginator(cseOriginator)
 
 		self._storePermissions()
 		return (True, C.rcOK)

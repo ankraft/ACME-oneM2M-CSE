@@ -58,10 +58,11 @@ writeIntervall=60
 
 [cse.resource.acp]
 # Default permission when creating an ACP resource. Default: 62
-permissions=63
+permission=63
 # Default selfPermission when creating an ACP resource. Default: 51
 selfPermission=51
-
+# Always add the CSE's "admin" originator. Default: true
+addAdminOrignator=true
 
 #
 #	Resource defaults: AE
@@ -164,6 +165,8 @@ count=10
 # Size per log file. Default: 100.000 bytes
 size=100000
 
+
+###############################################################################
 
 #
 #	Configurations for the statistics AE

@@ -63,6 +63,7 @@ class RegistrationManager(object):
 			originator = Utils.uniqueAEI('S')
 		elif originator is None or len(originator) == 0:
 			originator = Utils.uniqueAEI('S')
+		Logging.logDebug('Registerung AE. aei: %s ' % originator)
 
 		# set the aei to the originator
 		ae['aei'] = originator
@@ -74,6 +75,7 @@ class RegistrationManager(object):
 		# Create an ACP for this AE-ID if there is none set
 		if Configuration.get("cse.ae.createACP"):
 			if ae.acpi is None or len(ae.acpi) == 0:
+				Logging.logDebug('Adding ACP for AE')
 				cseOriginator = Configuration.get('cse.originator')
 				acp = ACP.ACP(pi=parentResource.ri, rn=ae.rn)
 				acp.addPermissionOriginator(originator)
