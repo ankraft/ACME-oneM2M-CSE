@@ -89,12 +89,12 @@
 
 				<!-- JSON -->
 				<div>
-					<textarea id="resource" rows="24" readonly></textarea>
+					<textarea id="resource" rows="65" readonly></textarea>
 				</div>
 
 				<!-- REST UI -->
 				<div>
-					<div style="padding: 10px; position: absolute; top:0px; bottom: 20.0px; width: 33.4%; overflow-y: scroll;">
+					<div style="padding: 10px; position: absolute; top:0px; bottom: 20.0px; width: 33.4%;">
 						<div>
 								<fieldset>
 								<form  id="request">
@@ -133,8 +133,10 @@
 							<h4>Result</h4>
 							<h5>Status Code</h5>
 							<input id="rest-status" required="required" readonly  value="" style="background-color: #f0f0f0;"/>
-							<h5>Response</h5>
-							<textarea id="rest-result" readonly style="height: 400px; background-color: #f0f0f0;"></textarea>
+							<h5>Response Header</h5>
+							<textarea id="rest-result-headers" readonly style="background-color: #f0f0f0;" rows="6"></textarea>
+							<h5>Response Body</h5>
+							<textarea id="rest-result-body" readonly style="background-color: #f0f0f0;" rows="30"></textarea>
 							<a class="button" id="clearResultButton" type="submit" onclick="restClearResult()">Clear</a>
 
 						</fieldset>

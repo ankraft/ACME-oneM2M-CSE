@@ -126,17 +126,18 @@ function restSendData(method, url, headers, data) {
 
 			if (this.status == 200 || this.status == 201 || this.status == 204) {
 				if (this.responseText.length > 0) {
-					document.getElementById("rest-result").value = JSON.stringify(JSON.parse(this.responseText), null, 4);                  
+					document.getElementById("rest-result-body").value = JSON.stringify(JSON.parse(this.responseText), null, 4);                  
 				}
 				if (method == "DELETE") {
-					document.getElementById("rest-result").value = "";
+					document.getElementById("rest-result-body").value = "";
 					connectToCSE();
 				} else {
 					refreshNode()
 				}
 			} else {
-				document.getElementById("rest-result").value = "";
+				document.getElementById("rest-result-body").value = "";
 			}
+			document.getElementById("rest-result-headers").value = this.getAllResponseHeaders()
 		}
 	};
 
@@ -179,7 +180,7 @@ function fillHeaderArea(ty) {
 	}
 	text += "Accept: application/json\n"
 	text += "X-M2M-Origin: " + document.getElementById("originator").value + "\n"
-	text += "X-M2M-RI: " + Math.random().toString(36).slice(2) + "\n"
+	text += "X-M2M-RI: " + Math.random().toString(36).slice(2)
 	document.getElementById("rest-headers").value = text;
 }
 
