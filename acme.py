@@ -23,7 +23,7 @@ def parseArgs():
 	parser = argparse.ArgumentParser(description=description)
 	parser.add_argument('--config', action='store', dest='configfile', default=defaultConfigFile, help='specify configuration file')
 	parser.add_argument('--reset-db', action='store_true', dest='resetdb', default=None, help='reset the DB when starting the CSE')
-	parser.add_argument('--log-level', action='store', dest='loglevel', default=None, choices=[ 'info', 'error', 'warn', 'debug'], type=str.lower, help='set the logging level')
+	parser.add_argument('--log-level', action='store', dest='loglevel', default=None, choices=[ 'info', 'error', 'warn', 'debug', 'off'], type=str.lower, help='set the log level, or turn logging off')
 	parser.add_argument('--import-directory', action='store', dest='importdirectory', default=defaultImportDirectory, help='specify the import directory')
 	return parser.parse_args()
 

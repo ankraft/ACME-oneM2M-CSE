@@ -183,7 +183,10 @@ class Configuration(object):
 		# Loglevel from command line
 		logLevel = Configuration._configuration['logging.level'].lower()
 		logLevel = argsLoglevel if argsLoglevel is not None else logLevel 	# command line args override config
-		if logLevel == 'info':
+		if logLevel == 'off':
+			Configuration._configuration['logging.enable'] = False
+			Configuration._configuration['logging.level'] = logging.DEBUG
+		elif logLevel == 'info':
 			Configuration._configuration['logging.level'] = logging.INFO
 		elif logLevel == 'warn':
 			Configuration._configuration['logging.level'] = logging.WARNING
