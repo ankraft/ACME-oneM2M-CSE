@@ -53,6 +53,7 @@ class HttpServer(object):
 			Logging.log('Registering web ui at: %s, serving from %s' % (self.webuiRoot, self.webuiDirectory))
 			self.addEndpoint(self.webuiRoot, handler=self.handleWebUIGET, methods=['GET'])
 			self.addEndpoint(self.webuiRoot + '/<path:path>', handler=self.handleWebUIGET, methods=['GET'])
+			self.addEndpoint('/', handler=self.redirectRoot, methods=['GET'])
 
 		# Add mapping / macro endpoints
 		self.mappings = {}
@@ -138,6 +139,11 @@ class HttpServer(object):
 
 
 	#########################################################################
+
+
+	# Redirect request to / to webui
+	def redirectRoot(self):
+		return flask.redirect(Configuration.get('cse.webui.root'), code=302)
 
 
 	def handleWebUIGET(self, path=None):
