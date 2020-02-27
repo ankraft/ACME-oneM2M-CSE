@@ -10,8 +10,10 @@
 from Logging import Logging
 from Configuration import Configuration
 import CSE, Utils
-import threading, time, datetime
+import datetime
 from threading import Lock
+from helpers import BackgroundWorker
+
 
 deletedResources	= 'rmRes'
 createdresources	= 'crRes'
@@ -31,18 +33,16 @@ resourceCount		= 'ctRes'
 class Statistics(object):
 
 	def __init__(self):
-		self.statisticsThread = None
-		self.stopStatisticsThread = False
-		self.dbWriteIntervall = Configuration.get('cse.statistics.writeIntervall')
-
 		# create lock
 		self.statLock = Lock()
 
 		# retrieve or create statitics record
 		self.stats = self.setupStats()
 
-		# Start thread to handle writing to DB
-		self.startDBHandling()
+		# Start b ackground worker to handle writing to DB
+		Logging.log('Starting statistics DB thread')
+		self.worker = BackgroundWorker.BackgroundWorker(Configuration.get('cse.statistics.writeIntervall'), self.statisticsDBWorker)
+		self.worker.start()
 
 		# subscripe vto various events
 		CSE.event.addHandler(CSE.event.createResource, self.handleCreateEvent)
@@ -59,7 +59,11 @@ class Statistics(object):
 
 
 	def shutdown(self):
-		self.stopDBHandling()
+		# Stop the worker
+		Logging.log('Stopping statistics DB thread')
+		self.worker.stop()
+
+		# One final write
 		self.storeDBStatistics()
 		Logging.log('Statistics shut down')
 
@@ -144,35 +148,15 @@ class Statistics(object):
 	#
 	#	Store statistics handling
 
-
-	def startDBHandling(self):
-		Logging.log('Starting statistics DB thread')
-		self.stopStatisticsThread = False
-		self.statisticsThread = threading.Thread(target=self.statisticsDBWorker)
-		self.statisticsThread.setDaemon(True)	# Make the thread a daemon of the main thread
-		self.statisticsThread.start()
-
-
-	def stopDBHandling(self):
-		Logging.log('Stopping statistics DB thread')
-
-		# Stop the thread
-		self.stopStatisticsThread = True
-		if self.statisticsThread is not None:
-			self.statisticsThread.join(self.dbWriteIntervall + 5) # wait a short time for the thread to terminate
-			self.statisticsThread = None
-
-
+	# Called by the background worker
 	def statisticsDBWorker(self):
-		Logging.logDebug('Statistics DB worker thread started')
-		while not self.stopStatisticsThread:
-			Logging.logDebug('Writing statistics DB')
-			self._sleep(self.dbWriteIntervall)
+		Logging.logDebug('Writing statistics DB')
+		try:
 			self.storeDBStatistics()
-			try:
-				self.storeDBStatistics()
-			except Exception as e:
-				Logging.logErr('Exception: %s' % e)
+		except Exception as e:
+			Logging.logErr('Exception: %s' % e)
+			return False
+		return True
 
 
 	def retrieveDBStatistics(self):
@@ -184,10 +168,3 @@ class Statistics(object):
 		with self.statLock:
 			return CSE.storage.updateStatistics(self.stats)
 	
-
-	# self-made sleep. Helps in speed-up shutdown etc
-	def _sleep(self, t):
-		for i in range(0,t):
-			time.sleep(1)
-			if self.stopStatisticsThread:
-				break

@@ -60,16 +60,17 @@ class AEStatistics(AEBase):
 		super().shutdown()
 		Logging.log('AEStatistics AE shut down')
 
+	#########################################################################
+	#
+	#	Update statistics in a worker thread
+	#
 
-	# Worker for the update thread
 	def statisticsWorker(self):
-		Logging.logDebug('Statistics worker thread started')
-		while not self.doStopWorker:
-			Logging.logDebug('Updating statistics')
-			self.updateStats()
-			self.sleep()
+		Logging.logDebug('Updating statistics')
 
-
-	def updateStats(self):
+		# Update statistics
 		stats = CSE.statistics.getStats()
 		self.updateResource(srn=self.fcsrn, jsn={ self.fcntType : stats })
+
+		return True
+

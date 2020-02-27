@@ -10,25 +10,25 @@
 #
 
 
-import threading, time, requests, json, urllib
+import requests, json, urllib
 from Configuration import Configuration
 from Logging import Logging
 from Constants import Constants as C
 import Utils, CSE
 from resources import CSR, CSEBase
+from helpers import BackgroundWorker
 
 
 class RemoteCSEManager(object):
 
 	def __init__(self):
-		self.stopHandling 	= False
 		self.csetype 		= Configuration.get('cse.type')
 		self.isConnected 	= False
 		self.remoteAddress	= Configuration.get('cse.remote.address')
 		self.remoteRoot 	= Configuration.get('cse.remote.root')
 		self.remoteCseid	= Configuration.get('cse.remote.cseid')
 		self.originator		= Configuration.get('cse.remote.originator')
-		self.connectThread	= None
+		self.worker			= None
 		self.checkInterval	= Configuration.get('cse.remote.checkInterval')
 		self.cseCsi			= Configuration.get('cse.csi')
 		self.remoteCSEURL	= self.remoteAddress + self.remoteRoot + self.remoteCseid
@@ -50,9 +50,8 @@ class RemoteCSEManager(object):
 		if not Configuration.get('cse.enableRemoteCSE'):
 			return;
 		Logging.log('Starting remote CSE connection monitor')
-		self.connectThread = threading.Thread(target=self.connectionMonitorThread)
-		self.connectThread.setDaemon(True)	# Make the thread a daemon of the main thread
-		self.connectThread.start()
+		self.worker = BackgroundWorker.BackgroundWorker(self.checkInterval, self.connectionMonitorWorker)
+		self.worker.start()
 
 
 	# Stop the monitor. Also delete the CSR resources on both sides
@@ -62,10 +61,8 @@ class RemoteCSEManager(object):
 		Logging.log('Stopping remote CSE connection monitor')
 
 		# Stop the thread
-		self.stopHandling = True
-		if self.connectThread is not None:
-			self.connectThread.join(self.checkInterval + 5) # wait a short time for the thread to terminate
-			self.connectThread = None
+		if self.worker is not None:
+			self.worker.stop()
 
 		# Remove resources
 		if self.csetype in [ C.cseTypeASN, C.cseTypeMN ]:
@@ -106,24 +103,20 @@ class RemoteCSEManager(object):
 	#					- Create a local <remoteCSE> for it
 	#		
 
-	def connectionMonitorThread(self):
-		Logging.logDebug('Remote CSE connection monitor started')
-		while not self.stopHandling:
-			Logging.logDebug('Checking connections to remote CSEs')
-			try:
-				# Check the current state of the connection to the "upstream" CSEs
-				if self.csetype in [ C.cseTypeASN, C.cseTypeMN ]:
-					self._checkOwnConnection()
+	def connectionMonitorWorker(self):
+		Logging.logDebug('Checking connections to remote CSEs')
+		try:
+			# Check the current state of the connection to the "upstream" CSEs
+			if self.csetype in [ C.cseTypeASN, C.cseTypeMN ]:
+				self._checkOwnConnection()
 
-				# Check the liveliness of other CSR connections
-				if self.csetype in [ C.cseTypeMN, C.cseTypeIN ]:
-					self._checkCSRLiveliness()
-
-				self._sleep(self.checkInterval)
-			except Exception as e:
-				Logging.logErr('Exception: %s' % e)
-
-
+			# Check the liveliness of other CSR connections
+			if self.csetype in [ C.cseTypeMN, C.cseTypeIN ]:
+				self._checkCSRLiveliness()
+		except Exception as e:
+			Logging.logErr('Exception: %s' % e)
+			return False
+		return True
 
 
 	# Check the connection for this CSE to the remote CSE.
@@ -369,13 +362,6 @@ class RemoteCSEManager(object):
 
 
 	#########################################################################
-
-	# self-made sleep. Helps in speed-up shutdown etc
-	def _sleep(self, t):
-		for i in range(0,t):
-			time.sleep(1)
-			if self.stopHandling:
-				break
 
 
 	def _copyCSE2CSE(self, target, source):

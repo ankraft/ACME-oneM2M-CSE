@@ -62,7 +62,7 @@ In additions, you can provide additional command line arguments that will overri
 - **-h**, **--help** : show a help message and exit.
 - **--config CONFIGFILE**: Specify a configuration file that is used instead of the default (*acme.ini*) one.
 - **--reset-db**: Reset and clear the database when starting the CSE.
-- **--log-level {info,error,warn,debug}**: Set the logging level.
+- **--log-level {info, error, warn, debug, off}**: Set the log level, or turn logging off.
 - **--import-directory IMPORTDIRECTORY**: Specify the import directory.
 
 

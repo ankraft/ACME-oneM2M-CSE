@@ -65,18 +65,16 @@ class CSENode(NodeBase):
 	#	Node capabilities monitoring handling
 	#
 
-
 	def nodeWorker(self):
-		Logging.logDebug('Node monitor worker thread started')
-		while not self.doStopWorker:
-			Logging.logDebug('Updating node data')
-			try:
-				self._checkBattery()
-				self._checkMemory()
-				self._checkDeviceInfo()
-			except Exception as e:
-				Logging.logErr('Exception: %s' % e)
-			self.sleep()
+		Logging.logDebug('Updating node data')
+		try:
+			self._checkBattery()
+			self._checkMemory()
+			self._checkDeviceInfo()
+		except Exception as e:
+			Logging.logErr('Exception: %s' % e)
+			return False
+		return True
 
 
 	#########################################################################

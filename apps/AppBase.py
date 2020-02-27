@@ -12,7 +12,8 @@ from Configuration import Configuration
 from Logging import Logging
 from Constants import Constants as C
 import CSE, Utils
-import json, threading, time, os
+from helpers import BackgroundWorker
+import json, os
 
 
 class AppBase(object):
@@ -25,9 +26,7 @@ class AppBase(object):
 		self.csern 					= Configuration.get('cse.rn')
 		self.srn 					= self.csern + '/' + self.rn
 		self.url 					= Configuration.get('http.address') + Configuration.get('http.root')
-		self.workerUpdateIntervall 	= 1
-		self.workerThread 			= None
-		self.doStopWorker			= False
+		self.worker 				= None
 		
 
 	def shutdown(self):
@@ -78,36 +77,15 @@ class AppBase(object):
 
 
 	#########################################################################
-	#
-	#	Worker Thread
-	#
 
-	def startWorker(self, updateIntervall, worker):
-		Logging.logDebug('Starting worker thread')
-		self.workerUpdateIntervall = updateIntervall
-		self.doStopWorker = False
-		self.workerThread = threading.Thread(target=worker)
-		self.workerThread.setDaemon(True)	# Make the thread a daemon of the main thread
-		self.workerThread.start()
+	def startWorker(self, updateInterval, worker):
+		self.stopWorker()
+		self.worker = BackgroundWorker.BackgroundWorker(updateInterval, worker)
+		self.worker.start()
 
 
 	def stopWorker(self):
-		Logging.log('Stopping worker thread')
-
-		# Stop the thread
-		self.doStopWorker = True
-		if self.workerThread is not None:
-			self.workerThread.join(self.workerUpdateIntervall + 5) # wait a short time for the thread to terminate
+		if self.worker is not None:
+			self.worker.stop()
 			self.worker = None
 
-
-	def sleep(self):
-		self._sleep(self.workerUpdateIntervall)
-
-
-	# self-made sleep. Helps in speed-up shutdown etc
-	def _sleep(self, t):
-		for i in range(0,t):
-			time.sleep(1)
-			if self.doStopWorker:
-				break
