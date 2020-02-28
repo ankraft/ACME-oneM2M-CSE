@@ -414,12 +414,15 @@ class Dispatcher(object):
 	def subResources(self, pi, ty=None):
 		return CSE.storage.subResources(pi, ty)
 
+
 	def countResources(self):
 		return CSE.storage.countResources()
+
 
 	# All resources of a type
 	def retrieveResourcesByType(self, ty):
 		return CSE.storage.retrieveResource(ty=ty)
+
 
 	#########################################################################
 

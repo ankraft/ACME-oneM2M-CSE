@@ -15,6 +15,10 @@ var originator = ""
 var printLongNames = false
 var nodeClicked = undefined
 
+// hack: if this is set to false then the REST UI will not be refreshed.
+// useful with auto refresh.
+var refreshRESTUI = true 
+
 // TODO Clickable references. For each node add ("ri" : TreePath). expand via TreeView.expandPath.
 // Select the entry and display
 
@@ -85,7 +89,11 @@ function clickOnNode(e, node) {
   fillAttributesTable(resource)
   fillJSONArea(node)
   setResourceInfo(resource)
-  setRestUI(node.resourceFull)
+  if (refreshRESTUI) {
+    setRestUI(node.resourceFull)
+  } else {
+    refreshRESTUI = true
+  }
 }
 
 
@@ -248,6 +256,7 @@ var refreshTimer = undefined
 
 function setupRefreshResource(seconds) {
     refreshTimer = setInterval(function() {
+        refreshRESTUI = false
         refreshNode()
     }, seconds*1000)
 }
