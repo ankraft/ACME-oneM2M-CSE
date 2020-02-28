@@ -166,7 +166,8 @@ function restSendData(method, url, headers, data) {
 // Callback and function to clear the status and rest resuld fields/areas.
 function restClearResult() {
 	document.getElementById("rest-status").value = '';
-	document.getElementById("rest-result").value = '';
+	document.getElementById("rest-result-headers").value = '';
+	document.getElementById("rest-result-body").value = '';
 }
 
 
