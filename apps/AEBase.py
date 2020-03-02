@@ -18,29 +18,29 @@ import json
 
 class AEBase(AppBase):
 				
-	def __init__(self, rn, api, aei, acpri=None, originator=None, nodeRN=None, nodeID=None):
+	def __init__(self, rn, api, originator=None, nodeRN=None, nodeID=None, nodeOriginator=None):
 		super().__init__(rn, originator)
 		self.ae 			= None
 		self.aeNodeBase 	= None
 
 		# Get or create the hosting node
 		if nodeRN is not None and nodeID is not None:
-			self.aeNode = NodeBase(nodeRN, nodeID, originator)
+			self.aeNode = NodeBase(nodeRN, nodeID, nodeOriginator)
 
 		# Get or create the AE resource
 		self.ae = self.retrieveCreate(	srn=self.srn,
 										jsn={ C.tsAE : {
 											'rn' : self.rn,
 											'api' : api,
-											'aei' : aei,
 											'nl' : self.aeNode.node.ri if self.aeNode.node is not None else None,
-											'acpi' : [ 
-												acpri if acpri is not None else Configuration.get('cse.defaultACPRI')
-											],
 											'poa' : Configuration.get('http.address')
 											}
 										},
 										ty=C.tAE)
+		# assign as originator the assigned aei attribute
+		self.originator = Utils.findXPath(self.ae, "aei")
+		# assign as acpi to use the first assigned acpi
+		self.acpi = Utils.findXPath(self.ae, "acpi")[0]
 
 
 	def shutdown(self):

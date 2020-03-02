@@ -20,7 +20,7 @@ from resources import Resource
 class Importer(object):
 
 	# List of "priority" resources that must be imported first for correct CSE operation
-	_firstImporters = [ 'csebase.json', 'acp.admin.json' ]
+	_firstImporters = [ 'csebase.json', 'acp.admin.json', 'acp.default.json' ]
 
 	def __init__(self):
 		Logging.log('Importer initialized')
@@ -60,7 +60,7 @@ class Importer(object):
 		self._prepareImporting()
 
 
-		# first import the priority resources, like CSE, Admin ACP
+		# first import the priority resources, like CSE, Admin ACP, Default ACP
 		hasCSE = False
 		hasACP = False
 		for rn in self._firstImporters:

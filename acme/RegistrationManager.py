@@ -41,9 +41,14 @@ class RegistrationManager(object):
 		# TODO: not for all resource types
 		if resource['cr'] is not None:	# must not be set in resource when creating
 			return (False, originator)
-		resource['cr'] = originator
-
+		#resource['cr'] = originator
+		self.handleCreator(resource, originator)
 		return (True, originator)
+
+
+	def handleCreator(self, resource, originator):
+		resource['cr'] = Configuration.get('cse.originator') if originator in ['C', 'S', '', None ] else originator
+
 
 
 	def checkResourceDeletion(self, resource, originator):
@@ -67,7 +72,7 @@ class RegistrationManager(object):
 			originator = Utils.uniqueAEI('S')
 		elif originator is None or len(originator) == 0:
 			originator = Utils.uniqueAEI('S')
-		Logging.logDebug('Registerung AE. aei: %s ' % originator)
+		Logging.logDebug('Registering AE. aei: %s ' % originator)
 
 		# set the aei to the originator
 		ae['aei'] = originator
@@ -94,7 +99,7 @@ class RegistrationManager(object):
 				# Set ACPI (anew)
 				ae['acpi'] = [ acp.ri ]
 		else:
-			ae['acpi'] = [ Configuration.get('cse.defaultACPRI') ]
+			ae['acpi'] = [ Configuration.get('cse.defaultACPI') ]
 
 		return originator
 
@@ -108,9 +113,9 @@ class RegistrationManager(object):
 		Logging.logDebug('DeRegisterung AE. aei: %s ' % resource.aei)
 		if Configuration.get("cse.ae.removeACP"):
 			Logging.logDebug('Removing ACP for AE')
-			acpRi = '%s/%s%s' % (Configuration.get("cse.rn"), acpPrefix, resource.rn)
-			if (res := CSE.dispatcher.retrieveResource(acpRi))[1] != C.rcOK:
-				Logging.logWarn('Could not find ACP: %s' % acpRi)
+			acpi = '%s/%s%s' % (Configuration.get("cse.rn"), acpPrefix, resource.rn)
+			if (res := CSE.dispatcher.retrieveResource(acpi))[1] != C.rcOK:
+				Logging.logWarn('Could not find ACP: %s' % acpi)
 				return False
 			CSE.dispatcher.deleteResource(res[0])
 		return True

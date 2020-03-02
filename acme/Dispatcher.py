@@ -140,6 +140,8 @@ class Dispatcher(object):
 
 
 	def retrieveResource(self, id):
+		if id is None:
+			return (None, C.rcNotFound)
 		oid = id
 		csi = Configuration.get('cse.csi')
 		if '/' in id:
@@ -241,6 +243,7 @@ class Dispatcher(object):
 		# Check resource creation
 		if not (res := CSE.registration.checkResourceCreation(nr, originator, pr))[0]:
 			return (None, C.rcBadRequest)
+		print(nr)
 
 		return self.createResource(nr, pr, originator)
 
@@ -258,19 +261,20 @@ class Dispatcher(object):
 		srn = Utils.structuredPath(resource)
 		resource[resource._srn] = srn
 
-		# add the resource
-		(_, rc) = CSE.storage.createResource(resource, overwrite=False)
+		# Activate the resource
+		if not (res := resource.activate(originator))[0]: 	# activate the new resource
+			return res
 
-		if rc == C.rcCreated:
-			if not (res := resource.activate(originator))[0]: 	# activate the new resource
-				resource.deactivate(originator)
-				(_, rc2) = CSE.storage.deleteResource(resource)	# Something went wrong -> remove
-				return (None, res[1])
-			if parentResource is not None:
-				parentResource.childAdded(resource, originator)		# notify the parent resource
-			CSE.event.createResource(resource)	# send a create event
-			return (resource, rc) 	# everything is fine. resource created.
-		return (None, rc)
+		# add the resource to storage
+		if (res := CSE.storage.createResource(resource, overwrite=False))[1] != C.rcCreated:
+			return (None, res[1])
+
+		if parentResource is not None:
+			parentResource.childAdded(resource, originator)		# notify the parent resource
+		CSE.event.createResource(resource)	# send a create event
+
+		return (resource, C.rcCreated) 	# everything is fine. resource created.
+
 
 
 	#
@@ -343,8 +347,12 @@ class Dispatcher(object):
 
 	def updateResource(self, resource, json=None, doUpdateCheck=True, originator=None):
 		Logging.logDebug('Updating resource ri: %s, type: %d' % (resource.ri, resource.ty))
-		if doUpdateCheck and not (res := resource.update(json, originator))[0]:
-			return (None, res[1])
+		if doUpdateCheck:
+			if not (res := resource.update(json, originator))[0]:
+				return (None, res[1])
+		else:
+			Logging.logDebug('No check, skipping resource update')
+
 		return CSE.storage.updateResource(resource)
 
 

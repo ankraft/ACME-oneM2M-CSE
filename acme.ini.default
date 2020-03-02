@@ -11,10 +11,14 @@ resourcesPath=./init
 expirationDelta=31536000
 # Enable access control checks. Default: True
 enableACPChecks=true
+# Admin ACP, resource identifier (e.g. from an imported ACP). 
+# Assigned by the CSE for admin access.
+# Default: acpAdmin
+adminACPI=acpAdmin
 # Default ACP, resource identifier (e.g. from an imported ACP). 
 # Assigned by the CSE in case the 'acpi' attribute is missing in a resource.
-# Default: acpAdmin
-defaultACPRI=acpAdmin
+# Default: acpDefault
+defaultACPI=acpDefault
 # Admin originator for the CSE. Default: CAdmin
 originator=CAdmin
 # Enable notifications. Default: True
@@ -179,19 +183,14 @@ enable=true
 aeRN=statistics
 # App-ID of the statistics AE. Default: ae-statistics
 aeAPI=ae-statistics
-# AE-ID of the statistics AE. Default: Sstatistics
-aeAEI=Sstatistics
 # Resource name of the statistics flexContainer. Default: statistics
 fcntRN=statistics
 # Content Definition of the AE's flexContainer. This is a proprietary CND. Default: acme.statistics
 fcntCND=acme.statistics
 # Element type of the AE's flexContainer. This is a proprietary type. Default: acme:csest
 fcntType=acme:csest
-# An ACP RI for the AE. The default is the CSE's default ACP RI.
-# Default: acpAdmin
-acpRI=acpAdmin
-# Originator for requests to the CSE. Default: CAdmin
-originator=CAdmin
+# Originator for requests to the CSE. Default: CStatistics
+originator=C
 # Wait n seconds between updates of the AE in seconds. Default: 10
 intervall=10
 

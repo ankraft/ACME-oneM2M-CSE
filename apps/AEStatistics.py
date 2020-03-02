@@ -20,11 +20,10 @@ class AEStatistics(AEBase):
 	def __init__(self):
 		super().__init__(	rn=Configuration.get('app.statistics.aeRN'), 
 							api=Configuration.get('app.statistics.aeAPI'), 
-							aei=Configuration.get('app.statistics.aeAEI'),
-							acpri=Configuration.get('app.statistics.acpri'),
 							originator=Configuration.get('app.statistics.originator'),
 							nodeRN=Configuration.get('app.csenode.nodeRN'),					# From CSE-Node
-							nodeID=Configuration.get('app.csenode.nodeID')					# From CSE-Node
+							nodeID=Configuration.get('app.csenode.nodeID'),					# From CSE-Node
+							nodeOriginator=Configuration.get('app.csenode.originator')		# From CSE-Node
 						)
 
 		self.fcsrn = self.srn + '/' + Configuration.get('app.statistics.fcntRN')
@@ -35,6 +34,7 @@ class AEStatistics(AEBase):
 										jsn={ self.fcntType : {
 												'rn'  : Configuration.get('app.statistics.fcntRN'),
        											'cnd' : Configuration.get('app.statistics.fcntCND'),
+       											'acpi': [ self.acpi ],	# assignde by CSE
 												Statistics.deletedResources : 0,
 												Statistics.createdresources : 0,
 												Statistics.httpRetrieves : 0,

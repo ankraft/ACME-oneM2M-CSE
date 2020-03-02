@@ -74,7 +74,8 @@ class Configuration(object):
 				'cse.resourcesPath'					: config.get('cse', 'resourcesPath', 					fallback=defaultImportDirectory),
 				'cse.expirationDelta'				: config.getint('cse', 'expirationDelta', 				fallback=60*60*24*365),	# 1 year, in seconds
 				'cse.enableACPChecks'				: config.getboolean('cse', 'enableACPChecks', 			fallback=True),
-				'cse.defaultACPRI'					: config.get('cse', 'defaultACPRI', 					fallback='acpAdmin'),
+				'cse.adminACPI'						: config.get('cse', 'adminACPI', 						fallback='acpAdmin'),
+				'cse.defaultACPI'					: config.get('cse', 'defaultACPI', 						fallback='acpDefault'),
 				'cse.originator'					: config.get('cse', 'originator',						fallback='CAdmin'),
 				'cse.csi'							: '',																		# will be set by importer
 				'cse.ri'							: '',																		# will be set by importer
@@ -139,12 +140,10 @@ class Configuration(object):
 				'app.statistics.enable'				: config.getboolean('app.statistics', 'enable', 		fallback=True),
 				'app.statistics.aeRN'				: config.get('app.statistics', 'aeRN', 					fallback='statistics'),
 				'app.statistics.aeAPI'				: config.get('app.statistics', 'aeAPI', 				fallback='ae-statistics'),
-				'app.statistics.aeAEI'				: config.get('app.statistics', 'aeAEI', 				fallback='Sstatistics'),
 				'app.statistics.fcntRN'				: config.get('app.statistics', 'fcntRN', 				fallback='statistics'),
 				'app.statistics.fcntCND'			: config.get('app.statistics', 'fcntCND', 				fallback='acme.statistics'),
 				'app.statistics.fcntType'			: config.get('app.statistics', 'fcntType', 				fallback='acme:csest'),
-				'app.statistics.acpri'				: config.get('app.statistics', 'acpRI', 				fallback=None),
-				'app.statistics.originator'			: config.get('app.statistics', 'originator',			fallback='CAdmin'),
+				'app.statistics.originator'			: config.get('app.statistics', 'originator',			fallback='C'),
 				'app.statistics.intervall'			: config.getint('app.statistics', 'intervall', 			fallback=10),		# seconds
 
 				#

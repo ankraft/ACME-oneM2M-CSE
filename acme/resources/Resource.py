@@ -58,13 +58,8 @@ class Resource(object):
 				self.setAttribute('pi', pi, overwrite=False)
 			if ty is not None:
 				self.setAttribute('ty', ty)
-			# if self['ty'] != C.tACP and self['acpi'] is None:
-			if self.inheritACP:
-				self.delAttribute('acpi')
-			elif self['acpi'] is None and ty != C.tAE:	# Assign default ACPI only when it is not an AE
-				self['acpi'] = [ Configuration.get('cse.defaultACPRI') ]
 
-			self.setAttribute(self._rtype, self.tpe, overwrite=False)
+			# Note: ACPI is set in active()
 
 
 
@@ -94,9 +89,25 @@ class Resource(object):
 		if not (result := self.validate(originator))[0]:
 			return result
 
-		# set creator
-		self['cr'] = originator
-		
+		# Note: CR is set in RegistrationManager
+
+
+
+		# Handle ACPI assignments here
+		if self.inheritACP:
+			self.delAttribute('acpi')
+		else:
+			if self.ty != C.tAE:	# Don't handle AE's here. This is done in the RegistrationManager
+				#adminACPIRI = Configuration.get('cse.adminACPI')
+				defaultACPIRI = Configuration.get('cse.defaultACPI')
+				if self.acpi is None:
+					self.setAttribute('acpi', [ defaultACPIRI ])	# Set default ACPIRIs
+					#self.setAttribute('acpi', [ adminACPIRI, defaultACPIRI ])	# Set admin and default ACPIRIs
+				# else:
+				# 	if not adminACPIRI in self.acpi:
+				# 		self.acpi.append(adminACPIRI)
+		self.setAttribute(self._rtype, self.tpe, overwrite=False) 
+
 		return (True, C.rcOK)
 
 

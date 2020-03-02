@@ -46,7 +46,7 @@ class FCNT(Resource):
 			cs += sys.getsizeof(self['attr'])
 		self['cs'] = cs
 		
-		# May have been updated, so store the resource 
+		# May have been changed, so store the resource 
 		x = CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
 		
 		return (True, C.rcOK)
