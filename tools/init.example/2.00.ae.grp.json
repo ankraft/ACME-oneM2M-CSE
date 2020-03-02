@@ -2,6 +2,7 @@
         "ri" : "ae2Grp",
         "api": "AEGRP",
         "pi": "id-mn",
-        "rn": "grpAE"
+        "rn": "grpAE",
+		"acpi" : [ "acpAdmin", "acpDefault" ]
     }
 }

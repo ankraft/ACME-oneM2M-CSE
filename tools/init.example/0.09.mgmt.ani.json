@@ -4,6 +4,7 @@
 		"ri" : "ani1",
 		"pi" : "nod1",
 		"rn" : "areaNwkType",
+		"acpi" : [ "acpAdmin", "acpDefault" ],
 		
 		"ant": "ZigBee Light Link",
 		"ldv": [ "hue1", "ikea2" ]

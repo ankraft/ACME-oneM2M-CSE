@@ -4,6 +4,7 @@
 		"ri" : "dvi1",
 		"pi" : "nod1",
 		"rn" : "deviceinfo",
+		"acpi" : [ "acpAdmin", "acpDefault" ],
 		
 		"dlb" : [ "label:value" ],
 		"man" : "a Manufacturer",

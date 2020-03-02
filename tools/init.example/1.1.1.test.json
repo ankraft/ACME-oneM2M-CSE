@@ -3,6 +3,7 @@
 		"ri" : "unk1",
 		"rn" : "unknown",
 		"pi" : "ae1",
-		"key" : "value"
+		"key" : "value",
+		"acpi" : [ "acpAdmin", "acpDefault" ]
 	}
 }

@@ -2,7 +2,7 @@
 		"ty" : 1,
 		"ri" : "acpAdmin",
 		"rn" : "adminACP",
-		"pi" : "id-mn",
+		"pi" : "id-in",
 		"pv" : {
 			"acr": {
 				"acor": [ "CAdmin" ],
@@ -14,6 +14,7 @@
 				"acor": ["CAdmin"],
 				"acop": 51
 			}
-		}
+		},
+		"cr" : "CAdmin"
 	}
 }

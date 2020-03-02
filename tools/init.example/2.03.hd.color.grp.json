@@ -2,6 +2,7 @@
 		"ty" : 28,
 		"rn" : "color",
 		"pi" : "ae2Grp",
+		"acpi" : [ "acpAdmin", "acpDefault" ],
 		
         "cnd" : "org.onem2m.home.moduleclass.colour",
         "red" : 0,

@@ -4,6 +4,7 @@
 		"ri" : "andi1",
 		"pi" : "nod1",
 		"rn" : "areaNwkDeviceInfo",
+		"acpi" : [ "acpAdmin", "acpDefault" ],
 		
 		"dvd" : "aDeviceID",
 		"dvt" : "aDeviceType",

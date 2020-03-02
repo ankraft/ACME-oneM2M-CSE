@@ -4,6 +4,7 @@
 		"ri" : "evl1",
 		"pi" : "nod1",
 		"rn" : "eventlogger",	
+		"acpi" : [ "acpAdmin", "acpDefault" ],
 
 		"lgt": 0,
 		"lgd": "some log data",

@@ -5,6 +5,7 @@
 		"pi" : "id-mn",
 
 		"ni" : "myNode:anID",
-		"nid": "myWIFI"
+		"nid": "myWIFI",
+		"acpi" : [ "acpAdmin", "acpDefault" ]
 	}
 }

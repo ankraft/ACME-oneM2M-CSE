@@ -4,6 +4,7 @@
 		"ri" : "dvc1",
 		"pi" : "nod1",
 		"rn" : "devicecapability",
+		"acpi" : [ "acpAdmin", "acpDefault" ],
 		
 		"can": "a capabilityName",
 		"att": true,

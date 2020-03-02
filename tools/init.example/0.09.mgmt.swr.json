@@ -4,6 +4,7 @@
 		"ri" : "swr1",
 		"pi" : "nod1",
 		"rn" : "software",
+		"acpi" : [ "acpAdmin", "acpDefault" ],
 		
 		"vr" : "1.0",
 		"swn": "ACME",

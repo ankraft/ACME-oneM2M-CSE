@@ -2,6 +2,7 @@
 		"ri" : "cnt2",
 		"rn" : "cnt2",
 		"pi" : "ae2Grp",
-		"mni" : 10
+		"mni" : 10,
+		"acpi" : [ "acpAdmin", "acpDefault" ]
 	}
 }

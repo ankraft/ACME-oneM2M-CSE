@@ -4,6 +4,7 @@
 		"ri" : "bat1",
 		"rn" : "battery",
 		"pi" : "nod1",
+		"acpi" : [ "acpAdmin", "acpDefault" ],
 		
 		"btl": 23,
 		"bt2": 5

@@ -3,7 +3,8 @@
 		"dc" : "a rebooter",
 		"ri" : "rbo1",
 		"pi" : "nod1",
-		"rn" : "reboot"
+		"rn" : "reboot",
+		"acpi" : [ "acpAdmin", "acpDefault" ],
 	}
 }
 
