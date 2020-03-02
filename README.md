@@ -3,7 +3,7 @@
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
 
-Version 0.1
+Version 0.2.0
 
 
 ## Introduction
