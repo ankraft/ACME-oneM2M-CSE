@@ -71,6 +71,8 @@ function setRestUI(resourceFull) {
 	spanDelete.style.display = "inline-block"
 	if (currentResourceType == "m2m:cb") {              // CSE
 		disableButton(btnDelete, spanDelete)
+	} else if (currentResourceType == "m2m:acp") {              // ACP 
+		disableButton(btnPost, spanPost)
 	} else if (currentResourceType == "m2m:cin") {      // CIN
 		disableButton(btnPost, spanPost)
 		disableButton(btnPut, spanPut)
