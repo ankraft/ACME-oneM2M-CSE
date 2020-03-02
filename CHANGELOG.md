@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased : 0.2.0 - 2020-xx-yy
+- [CSE] Checking and setting "creator" attribute when creating new resources.
 - [ACP] Always add "admin" originator to newly created ACPs (configurable).
 - [ACP] Imporved default ACP. Any new resource without ACP gets the default ACP assigned.
 - [AE] Added proper AE registration. An ACP is automatically created for a new AE, and also removed when the corresponding AE is removed.

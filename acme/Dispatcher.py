@@ -241,9 +241,9 @@ class Dispatcher(object):
 			return (None, C.rcBadRequest)
 
 		# Check resource creation
-		if not (res := CSE.registration.checkResourceCreation(nr, originator, pr))[0]:
-			return (None, C.rcBadRequest)
-		print(nr)
+		if (res := CSE.registration.checkResourceCreation(nr, originator, pr))[1] != C.rcOK:
+			return (None, res[1])
+		originator = res[0]
 
 		return self.createResource(nr, pr, originator)
 

@@ -35,20 +35,25 @@ class RegistrationManager(object):
 	def checkResourceCreation(self, resource, originator, parentResource=None):
 		if resource.ty in [ C.tAE ]:
 			if (originator := self.handleAERegistration(resource, originator, parentResource)) is None:
-				return (False, originator)
+				return (originator, C.rcOK)
 
 		# Test and set creator attribute.
-		# TODO: not for all resource types
-		if resource['cr'] is not None:	# must not be set in resource when creating
-			return (False, originator)
-		#resource['cr'] = originator
-		self.handleCreator(resource, originator)
-		return (True, originator)
+		if (rc := self.handleCreator(resource, originator)) != C.rcOK:
+			return (None, rc)
+
+		return (originator, C.rcOK)
 
 
+	# Check for (wrongly) set creator attribute as well as assign it to allowed resources.
 	def handleCreator(self, resource, originator):
-		resource['cr'] = Configuration.get('cse.originator') if originator in ['C', 'S', '', None ] else originator
-
+		# Check whether cr is set. This is wrong
+		if resource.cr is not None:
+			Logging.logWarn('Setting "creator" attribute is not allowed.')
+			return C.rcBadRequest
+		# Set cr for some of the resource types
+		if resource.ty in C.tCreatorAllowed:
+			resource['cr'] = Configuration.get('cse.originator') if originator in ['C', 'S', '', None ] else originator
+		return C.rcOK
 
 
 	def checkResourceDeletion(self, resource, originator):

@@ -42,13 +42,16 @@ class Resource(object):
 			self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite=False)
 	
 			# Check uniqueness of ri. otherwise generate a new one. Only when creating
+			# TODO: could be a BAD REQUEST?
 			if create:
 				while Utils.isUniqueRI(ri := self.attribute('ri')) == False:
 					Logging.logWarn("RI: %s is already assigned. Generating new RI." % ri)
 					self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite=True)
 	
+			# Create an RN if there is none
 			self.setAttribute('rn', Utils.uniqueRN(self.tpe), overwrite=False)
 			
+			# Set some more attributes
 			ts = Utils.getResourceDate()
 			self.setAttribute('ct', ts, overwrite=False)
 			self.setAttribute('lt', ts, overwrite=False)
@@ -59,7 +62,15 @@ class Resource(object):
 			if ty is not None:
 				self.setAttribute('ty', ty)
 
-			# Note: ACPI is set in active()
+			#
+			## Note: ACPI is set in activate()
+			#
+
+			# Remove empty / null attributes from json
+			for attr, value in self.json.items():
+				if value is None:
+					del self.json[attr]
+
 
 
 

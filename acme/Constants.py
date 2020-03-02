@@ -79,6 +79,14 @@ class Constants(object):
 	supportedContentSerializations = [ 'application/json', 'application/vnd.onem2m-res+json' ]
 	supportedReleaseVersions = [ '3' ]
 
+	# List of resource types for which "creator" is allowed
+	# Also add later: eventConfig, pollingChannel, statsCollect, statsConfig, semanticDescriptor,
+	# notificationTargetPolicy, timeSeries, crossResourceSubscription, backgroundDataTransfer
+	tCreatorAllowed = [ tCIN, tCNT, tGRP, tSUB, tFCNT ]
+
+
+
+
 
 	# max length of identifiers
 	maxIDLength	= 10
