@@ -1,11 +1,14 @@
+# ![](webui/img/acme_sm.png) 
+
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
 
 Version 0.1
 
+
 ## Introduction
 
-This CSE implements a subset of the oneM2M standard specializations (see [http://www.onem2m.org](http://www.onem2m.org)). The intention is to provide an easy to install, extensible, and easy to use and maintain CSE for educational purposes. Please also see the discussion on [Limitations](#limitations) below.
+This CSE implements a subset of the oneM2M standard specializations (see [http://www.onem2m.org](http://www.onem2m.org)). The intention is to provide an easy to install, extensible, and easy to use and maintain CSE for educational purposes. Also see the discussion on [Limitations](#limitations) below.
 
 ![](docs/images/webui.png)
 
@@ -33,19 +36,19 @@ In order to run the CSE the following prerequisites must be checked:
 
 ## Installation and Configuration
 
-The ACME CSE is installed by copying the whole distribution to a new directory. You also need to copy the configuration file [acme.ini.default](acme.ini.default) and make adjustments to it.
+Install the ACME CSE by copy the whole distribution to a new directory. You also need to copy the configuration file [acme.ini.default](acme.ini.default) to a new file *acme.ini* and make adjustments to that new file.
 
 	cp acme.ini.default acme.ini
 
 Please have a look at the configuration file. All the CSE's settings are read from this file. 
 
-There are a lot of individual things to configure here. Mostly, the defaults should be sufficient, but individual adaptions can be applied to each of the sections.
+There are a lot of individual things to configure here. Mostly, the defaults should be sufficient, but individual settings can be applied to each of the sections.
 
 ## Running
 
 ### Running the Notifications Server
 
-You might want to have a Notifications Server running first before starting the CSE. The Notification Server provided here in the [tools/notificationServer](tools/notificationServer) directory provides a very simple implementation that receives and answers all notification requests.
+If you want to work with subscriptions and notification: You might want to have a Notifications Server running first before starting the CSE. The Notification Server provided with the CSE in the [tools/notificationServer](tools/notificationServer) directory provides a very simple implementation that receives and answers notification requests.
 
 See the [README](tools/notificationServer/README.md) file for further details.
 
@@ -77,20 +80,31 @@ Please note, that the shutdown might take a moment (e.g. gracefully terminating 
 
 ### Importing Resources
 
-During the startup of the CSE it is possible to import resources into to CSE. Each single resource is read from a file in the resource directory specified in the configuration file. The default directory is the sub-directory *init* under the current working directory.
+During startup it is possible to import resources into to CSE. Each resource is read from a single file in the [init](./init) resource directory specified in the configuration file.
 
-**Please note** that importing is required for the creating the CSEBase resource and at least one ACP resource. Those two are imported before all other resources, so that the CSEBase resource can act as the root for the resource tree. The ACP resource must be the one that is assigned as the default ACP by the CSE for resources that don't specify an ACP on their own.
+Not much validation, access control, or registration procedures are performedfor imported resources.
 
-The filenames for those resources must be:
+#### Importing Mandatory Resources
 
-- *csebase.json* for the CSEBase, and
-- *acp.admin.json* for a default ACP.
+**Please note** that importing is required for creating the CSEBase resource and at least two (admin) ACP resources. Those are imported before all other resources, so that the CSEBase resource can act as the root for the resource tree. The *admin* ACP is used to access resources with the administrator originator. The *default* ACP resource is the one that is assigned for resources that don't specify an ACP on their own.
 
-All other resources in the resource directory are read in alphabetical order and are added (created) to the CSE's resource tree. 
+The filenames for these resources must be:
+
+- [csebase.json](init/csebase.json) for the CSEBase.
+- [acp.admin.json](init/acp.admin.json) for the admin ACP.
+- [acp.default.json](init/acp.default.json) for the default ACP.
+
+#### Importing Other Resources
+
+After importing the mandatory resources all other resources in the [init](./init) directory are read in alphabetical order and are added (created) to the CSE's resource tree. Imported resources must have a valid *acpi* attribute, because no default *acpi* is assigned during importing.
+
+#### Updating Resources
 
 If the filename contains the substring *update*, then the resource specified by the resource's *ri* attribute is updated instead of created.
 
-A minimal set of resources is provided in the [init](init) directory. Definitions for a more sophisticated setup can be found in the [tools/init.example](tools/init.example) directory. To use this example, you can either copy the resources to the *init* directory or change the "cse -> resourcesPath" entry in the *acme.ini* configuration file.
+#### Examples & Templates
+
+A minimal set of resources is provided in the [init](./init) directory. Definitions for a more sophisticated setup can be found in the [tools/init.example](tools/init.example) directory. To use these examples, you can either copy the resources to the *init* directory or change the "cse -> resourcesPath" entry in the *acme.ini* configuration file.
 
 The directory [tools/resourceTemplates](tools/resourceTemplates) contains templates for supported resource types. Please see the [README](tools/resourceTemplates/README.md) there for further details.
 
@@ -99,7 +113,7 @@ The directory [tools/resourceTemplates](tools/resourceTemplates) contains templa
 
 The Web UI is by default enabled and reachable under the (configurable) path *&lt;host>/webui*.
 
-- To login you need to specify a valid originator.
+- To login you need to specify a valid originator. The default "admin" originator is *CAdmin*.
 - Beside of the default *CSEBase* resource you can specify a different resource identifier as the root of the resource tree.
 - You can navigate the resource tree with arrow keys.
 - You can switch between short and long attribute names.
@@ -107,17 +121,34 @@ The Web UI is by default enabled and reachable under the (configurable) path *&l
 
 ### REST UI
 
-The web ui also provides a REST UI where you can send REST requests directed at resources on the CSE.
+The web UI also provides a REST UI where you can send REST requests directed at resources on the CSE.
 
 ![](docs/images/webui-REST.png)
 
-## Remote CSE
+## Operation
+
+### Remote CSE
 
 When a CSE is configured as an MN-CSE of ASN-CSE it can connect to a remote CSE, respectively an IN-CSE and MN-CSE can receive connection requests from those CSE types. A *remoteCSE* resource is created in case of a successful connection. A CSE checks regularly the connection to other remote CSEs and removes the *remoteCSE* if the connection could not been established.
 
 Announced resources are currently **not** supported by this implementation. But you can issue transfer requests to a remote CSE via its *remoteCSE* resource. These requests are forwarded by the CSE.
 
 You must configure the details of the remote CSE in the configuration file.
+
+### CSE Originator Assignment
+
+Whenever a new *ACP* resource is created, the CSE's admin *originator* is assigned to that resource automatically. This way resources can always accessed by this originator.
+
+This behaviour can be configured in the *[cse.resource.acp]* section of the configuration file.
+
+
+### AE Registration
+
+Whenever a new *AE* registers itself with the CSE (using the originators *C* or *S*) then a new originator for that *AE* is created. Also, the CSE automatically creates a new *ACP* resource for that new originator.
+
+Be aware that this *ACP* resource is also removed when the *AE* is deleted.
+
+The operations for the *ACP* resource can be configured in the *[cse.resource.acp]* section of the configuration file.
 
 
 ## Nodes and Applications
@@ -169,7 +200,7 @@ CSE.startup(None, configfile=defaultConfigFile, loglevel='error')
 
 Please note that in case you provide the arguments directly the first argument needs to be `None`. 
 
-The names of the *argparse* variables can be used here, and you may provide all or only some of the arguments. Please note that you need to keep the import statements at the top of that file (or copy them to your application).
+The names of the *argparse* variables can be used here, and you may provide all or only some of the arguments. Please note that you need to keep or copy the `import` and `sys.path` statements at the top of that file.
 
 
 ## URL Mappings
