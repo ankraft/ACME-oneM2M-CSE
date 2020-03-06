@@ -170,7 +170,7 @@ It can be enabled/disabled and configured in the **[app.statistics]** section of
 
 ### Developing Nodes and AEs
 
-You can develop your own components by following the pattern of those two components:
+You can develop your own components that technically run inside the CSE themselves by following the pattern of those two components:
 
 - Implement a class with either *AEBase* or *NodeBase* as a base class. This will create an &lt;AE> or &lt;node> resource for you.
 -  Implement a worker method and start it in the *\_\_init\_\_()* method. This method is called regularly in the background. This worker method can implement the main functionality of the &lt;AE> or &lt;node>.
@@ -219,6 +219,9 @@ See the configuration file for more examples.
 - Unsupported resource types are just stored, but no check or functionality is provided for those resources. The same is true for unknown resource attributes. Only a few attributes are validated.
 
 ## Supported Resource Types and Functionalities
+
+### Resources
+
 The CSE supports the following oneM2M resource types:
 
 - **CSEBase (CB)**
@@ -249,6 +252,13 @@ Any specializations is supported. There is no check performed against a schema (
 
 Resources of any other type are stored in the CSE but no further processed and no checks are performed on these resources. The type is marked as *unknown*.
 
+### Discovery
+The following result contents are implemented for Discovery:
+
+- attributes + child-resources (rcn=4)
+- attributes + child-resource-references (rcn=5)
+- child-resource-references (rcn=6)
+- child-resources (rcn=8)
 
 ## Third-Party Components
 
