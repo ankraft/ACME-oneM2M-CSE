@@ -179,7 +179,7 @@ You can develop your own components by following the pattern of those two compon
 	-  *startApps()*: starting your component.
 	-  *stopApps()*: shutting down your component.
 
-There are more helper methods provided by the common *AppBase* base class, e.g. to send requests to the CSE via Mca.
+There are more helper methods provided by the common *AppBase* and *AEBase* base classes, e.g. to send requests to the CSE via Mca, store AE data persistently etc.
 
 
 ## Integration Into Other Applications

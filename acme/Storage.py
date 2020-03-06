@@ -227,15 +227,29 @@ class Storage(object):
 	##
 
 	def getStatistics(self):
-		stats = self.db.searchStatistics()
-		#if stats is None or len(stats) != 1:
-		if stats is None:
-			return None
-		return stats
+		return self.db.searchStatistics()
 
 
 	def updateStatistics(self, stats):
 		return self.db.upsertStatistics(stats)
+
+
+
+	#########################################################################
+	##
+	##	App Support
+	##
+
+	def getAppData(self, id):
+		return self.db.searchAppData(id)
+
+
+	def updateAppData(self, data):
+		return self.db.upsertAppData(data)
+
+
+	def removeAppData(self, data):
+		return self.db.removeData(data)
 
 
 #########################################################################
@@ -368,6 +382,7 @@ class TinyDBBinding(object):
 		self.lockIdentifiers = Lock()
 		self.lockSubscriptions = Lock()
 		self.lockStatistics = Lock()
+		self.lockAppData = Lock()
 
 
 	def openDB(self):
@@ -377,16 +392,19 @@ class TinyDBBinding(object):
 			self.dbIdentifiers = TinyDB(storage=MemoryStorage)
 			self.dbSubscriptions = TinyDB(storage=MemoryStorage)
 			self.dbStatistics = TinyDB(storage=MemoryStorage)
+			self.dbAppData = TinyDB(storage=MemoryStorage)
 		else:
 			Logging.log('DB in file system')
 			self.dbResources = TinyDB(self.path + '/resources.json')
 			self.dbIdentifiers = TinyDB(self.path + '/identifiers.json')
 			self.dbSubscriptions = TinyDB(self.path + '/subscriptions.json')
 			self.dbStatistics = TinyDB(self.path + '/statistics.json')
+			self.dbAppData = TinyDB(self.path + '/appdata.json')
 		self.tabResources = self.dbResources.table('resources', cache_size=self.cacheSize)
 		self.tabIdentifiers = self.dbIdentifiers.table('identifiers', cache_size=self.cacheSize)
 		self.tabSubscriptions = self.dbSubscriptions.table('subsriptions', cache_size=self.cacheSize)
 		self.tabStatistics = self.dbStatistics.table('statistics', cache_size=self.cacheSize)
+		self.tabAppData = self.dbAppData.table('appdata', cache_size=self.cacheSize)
 
 
 	def closeDB(self):
@@ -395,6 +413,7 @@ class TinyDBBinding(object):
 		self.dbIdentifiers.close()
 		self.dbSubscriptions.close()
 		self.dbStatistics.close()
+		self.dbAppData.close()
 
 
 	def purgeDB(self):
@@ -403,6 +422,7 @@ class TinyDBBinding(object):
 		self.tabIdentifiers.purge()
 		self.tabSubscriptions.purge()
 		self.tabStatistics.purge()
+		self.tabAppData.purge()
 
 
 	#
@@ -577,3 +597,33 @@ class TinyDBBinding(object):
 			else:
 				result = self.tabStatistics.insert(stats)
 		return result is not None
+
+
+	#
+	#	App Data
+	#
+
+	def searchAppData(self, id):
+		data = None
+		with self.lockAppData:
+			data = self.tabAppData.get(Query().id == id)
+		return data if data is not None and len(data) > 0 else None
+
+
+	def upsertAppData(self, data):
+		if 'id' not in data:
+			return None
+		with self.lockAppData:
+			if len(self.tabAppData) > 0:
+				result = self.tabAppData.update(data, Query().id == data['id'])
+			else:
+				result = self.tabAppData.insert(data)
+		return result is not None
+
+
+	def removeAppData(self, data):
+		if 'id' not in data:
+			return None
+		with self.lockAppData:
+			result = self.tabAppData.remove(Query().id == data['id'])
+		return result

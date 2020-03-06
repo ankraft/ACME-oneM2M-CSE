@@ -14,8 +14,8 @@ from Configuration import defaultConfigFile, defaultImportDirectory
 import CSE
 
 
-version = '0.1'
-description = 'ACME ' + version + ' - An open source Cse Middleware for Education'
+version = '0.2.1'
+description = 'ACME ' + version + ' - An open source CSE Middleware for Education'
 
 
 # Handle command line arguments
@@ -40,5 +40,5 @@ if __name__ == '__main__':
 	#		CSE.startup(None, configfile=defaultConfigFile, loglevel='error', resetdb=None)
 	#
 	#	Note: Always pass at least 'None' as first and then the 'configfile' parameter.
-	
+	print(description)
 	CSE.startup(parseArgs())
