@@ -70,7 +70,7 @@ class Dispatcher(object):
 		if fu == 1:	# discovery
 			Logging.logDebug('Discover resources (fu: %s, drt: %s, handling: %s, conditions: %s, resultContent: %d, attributes: %s)' % (fu, drt, handling, conditions, rcn, str(attributes)))
 
-			if rcn not in [C.rcnAttributesAndChildResourceReferences, C.rcnChildResourceReferences, C.rcnChildResources]:	# Only allow those two
+			if rcn not in [C.rcnAttributesAndChildResourceReferences, C.rcnChildResourceReferences, C.rcnChildResources, C.rcnAttributesAndChildResources]:	# Only allow those two
 				return (None, C.rcInvalidArguments)
 
 			# do discovery
@@ -93,6 +93,14 @@ class Dispatcher(object):
 					if resource is None:
 						return (None, res)
 					self._resourceTreeReferences(allowedResources, resource, drt)	# the function call add attributes to the result resource
+					return (resource, C.rcOK)
+
+				# resource and child resources, full attributes
+				elif rcn == C.rcnAttributesAndChildResources:
+					(resource, res) = self.retrieveResource(id)
+					if resource is None:
+						return (None, res)
+					self._resourceTree(allowedResources, resource)	# the function call add attributes to the result resource
 					return (resource, C.rcOK)
 
 				else: 									# child resources
@@ -577,6 +585,20 @@ class Dispatcher(object):
 			# t['typ'] = r['ty']
 			# t['val'] = Utils.structuredPath(r)
 		resource['ch'] = t
+
+
+	def _resourceTree(self, rs, resource):
+		if len(rs) == 0:
+			return
+		t = []
+
+		#for r in rs:
+
+		# 	t.append({ 'nm' : r['rn'], 'typ' : r['ty'], 'val' :  Utils.structuredPath(r) })
+			# t['nm'] = r['rn']
+			# t['typ'] = r['ty']
+			# t['val'] = Utils.structuredPath(r)
+		resource['ch'] = self._childResources(rs)
 
 	def _childResources(self, rs):
 		rootResource = { 'ri' : None }	# add dummy ri
