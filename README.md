@@ -3,7 +3,19 @@
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
 
-Version 0.2.0
+Version 0.2.1
+
+<details><summary>CLICK ME</summary>
+<p>
+
+#### yes, even hidden code blocks!
+
+```python
+print("hello world!")
+```
+
+</p>
+</details>
 
 
 ## Introduction
@@ -116,7 +128,7 @@ The Web UI is by default enabled and reachable under the (configurable) path *&l
 - To login you need to specify a valid originator. The default "admin" originator is *CAdmin*.
 - Beside of the default *CSEBase* resource you can specify a different resource identifier as the root of the resource tree.
 - You can navigate the resource tree with arrow keys.
-- You can switch between short and long attribute names.
+- You can switch between short and long attribute names (press CTRL-H).
 
 
 ### REST UI
