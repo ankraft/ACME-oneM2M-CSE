@@ -75,7 +75,7 @@ class Constants(object):
 	tVirtualResources = [ tCNT_LA, tCNT_OL, tGRP_FOPT ]
 
 	# Supported by this CSE
-	supportedResourceTypes = [ tACP, tAE, tCNT, tCIN, tCSEBase, tGRP, tCSR, tMGMTOBJ, tNOD, tSUB, tFCNT ]
+	supportedResourceTypes = [ tACP, tAE, tCNT, tCIN, tCSEBase, tGRP, tMGMTOBJ, tNOD, tCSR, tSUB, tFCNT ]
 	supportedContentSerializations = [ 'application/json', 'application/vnd.onem2m-res+json' ]
 	supportedReleaseVersions = [ '3' ]
 
