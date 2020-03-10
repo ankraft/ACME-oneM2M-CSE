@@ -79,7 +79,7 @@ def startup(args, **kwargs):
 	Logging.log('============')
 	Logging.log('Starting CSE')
 	Logging.log('CSE-Type: %d' % Configuration.get('cse.type'))
-	Logging.log('Configuration: %s' % Configuration.all())
+	Logging.log('Configuration: %s' % Configuration.print())
 	
 
 	# Initiatlize the resource storage

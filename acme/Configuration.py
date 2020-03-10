@@ -77,9 +77,9 @@ class Configuration(object):
 				'cse.adminACPI'						: config.get('cse', 'adminACPI', 						fallback='acpAdmin'),
 				'cse.defaultACPI'					: config.get('cse', 'defaultACPI', 						fallback='acpDefault'),
 				'cse.originator'					: config.get('cse', 'originator',						fallback='CAdmin'),
-				'cse.csi'							: '',																		# will be set by importer
-				'cse.ri'							: '',																		# will be set by importer
-				'cse.rn'							: '',																		# will be set by importer
+				'cse.csi'							: '(not set yet)',																# will be set by importer
+				'cse.ri'							: '(not set yet)',																# will be set by importer
+				'cse.rn'							: '(not set yet)',																# will be set by importer
 				'cse.enableNotifications'			: config.getboolean('cse', 'enableNotifications', 		fallback=True),
 				'cse.enableRemoteCSE'				: config.getboolean('cse', 'enableRemoteCSE', 			fallback=True),
 				'cse.enableTransitRequests'			: config.getboolean('cse', 'enableTransitRequests',		fallback=True),
@@ -204,6 +204,12 @@ class Configuration(object):
 
 		return True
 
+	@staticmethod
+	def print():
+		result = 'Configuration:\n'
+		for kv in Configuration._configuration.items():
+			result += '  %s = %s\n' % kv
+		return result
 
 
 	@staticmethod
