@@ -5,18 +5,6 @@ An open source CSE Middleware for Education.
 
 Version 0.2.1
 
-<details><summary>CLICK ME</summary>
-<p>
-
-#### yes, even hidden code blocks!
-
-```python
-print("hello world!")
-```
-
-</p>
-</details>
-
 
 ## Introduction
 
