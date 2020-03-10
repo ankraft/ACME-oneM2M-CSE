@@ -72,8 +72,8 @@ class CNT(Resource):
 
 	# Validating the Container. This means recalculating cni, cbs as well as
 	# removing ContentInstances when the limits are met.
-	def validate(self, originator=None):
-		if (res := super().validate(originator))[0] == False:
+	def validate(self, originator=None, create=False):
+		if (res := super().validate(originator, create))[0] == False:
 			return res
 
 		# retrieve all children

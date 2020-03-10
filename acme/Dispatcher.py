@@ -148,6 +148,7 @@ class Dispatcher(object):
 
 
 	def retrieveResource(self, id):
+		Logging.logDebug('Retrieve resource: %s' % id)
 		if id is None:
 			return (None, C.rcNotFound)
 		oid = id
@@ -230,6 +231,7 @@ class Dispatcher(object):
 			return (None, C.rcBadRequest)
 
 		# Check whether the target contains a fanoutPoint in between or as the target
+		# TODO: Is this called twice (here + in createRequest)?
 		if (fanoutPointResource := Utils.fanoutPointResource(id)) is not None:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
 			return fanoutPointResource.createRequest(request, id, originator, ct, ty)
@@ -248,6 +250,14 @@ class Dispatcher(object):
 		if (nr := Utils.resourceFromJSON(request.json, pi=pr.ri, tpe=ty)) is None:	# something wrong, perhaps wrong type
 			return (None, C.rcBadRequest)
 
+		# determine and add the srn
+		nr[nr._srn] = Utils.structuredPath(nr)
+
+		# check whether the resource already exists
+		if CSE.storage.hasResource(nr.ri, nr.__srn__):
+			Logging.logWarn('Resource already registered')
+			return (None, C.rcAlreadyExists)
+
 		# Check resource creation
 		if (res := CSE.registration.checkResourceCreation(nr, originator, pr))[1] != C.rcOK:
 			return (None, res[1])
@@ -265,9 +275,9 @@ class Dispatcher(object):
 				Logging.logWarn('Invalid child resource type')
 				return (None, C.rcInvalidChildResourceType)
 
-		# retrieve and insert the srn
-		srn = Utils.structuredPath(resource)
-		resource[resource._srn] = srn
+		# if not already set: determine and add the srn
+		if resource.__srn__ is None:
+			resource[resource._srn] = Utils.structuredPath(resource)
 
 		# Activate the resource
 		if not (res := resource.activate(originator))[0]: 	# activate the new resource

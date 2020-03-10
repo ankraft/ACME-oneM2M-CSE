@@ -43,8 +43,8 @@ class CSEBase(Resource):
 									 ])
 
 
-	def validate(self, originator):
-		if (res := super().validate(originator))[0] == False:
+	def validate(self, originator, create):
+		if (res := super().validate(originator, create=False))[0] == False:
 			return res
 		# Update the hcl attribute in the hosting node
 		nl = self['nl']

@@ -55,8 +55,8 @@ class SUB(Resource):
 		return (res, C.rcOK if res else C.rcTargetNotSubscribable)
  
 
-	def validate(self, originator):
-		if (res := super().validate(originator))[0] == False:
+	def validate(self, originator, create=False):
+		if (res := super().validate(originator, create))[0] == False:
 			return res
 		Logging.logDebug('Validating subscription: %s' % self['ri'])
 		# Check necessary attributes

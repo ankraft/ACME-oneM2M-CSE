@@ -32,8 +32,8 @@ class AE(Resource):
 									 ])
 
 
-	def validate(self, originator):
-		if (res := super().validate(originator))[0] == False:
+	def validate(self, originator, create=False):
+		if (res := super().validate(originator), create)[0] == False:
 			return res
 			
 		# Update the hcl attribute in the hosting node
@@ -42,7 +42,7 @@ class AE(Resource):
 		if nl is not None or _nl_ is not None:
 			if nl != _nl_:
 				ri = self['ri']
-				# Remove from node old first
+				# Remove from old node first
 				if _nl_ is not None:
 					(n, _) = CSE.dispatcher.retrieveResource(_nl_)
 					if n is not None:
@@ -63,6 +63,5 @@ class AE(Resource):
 							n['hael'] = hael
 					CSE.dispatcher.updateResource(n)
 			self[self._node] = nl
-			# CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
 
 		return (True, C.rcOK)

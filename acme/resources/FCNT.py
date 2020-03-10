@@ -30,8 +30,8 @@ class FCNT(Resource):
 
 
 	# Checking the presentse of cnd and calculating the size
-	def validate(self, originator=None):
-		if (res := super().validate(originator))[0] == False:
+	def validate(self, originator=None, create=False):
+		if (res := super().validate(originator, create))[0] == False:
 			return res
 
 		# No CND?

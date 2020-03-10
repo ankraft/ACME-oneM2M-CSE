@@ -70,7 +70,8 @@ class Storage(object):
 			Logging.logDebug('Resource enforced overwrite')
 			self.db.upsertResource(resource)
 		else: 
-			if not self.db.hasResource(ri=ri) and not self.db.hasResource(srn=srn):	# Only when not resource does not exist yet
+			# if not self.db.hasResource(ri=ri) and not self.db.hasResource(srn=srn):	# Only when not resource does not exist yet
+			if not self.hasResource(ri, srn):	# Only when not resource does not exist yet
 				self.db.insertResource(resource)
 			else:
 				Logging.logWarn('Resource already exists (Skipping)')
@@ -79,6 +80,11 @@ class Storage(object):
 		# Add path to identifiers db
 		self.db.insertIdentifier(resource, ri, srn)
 		return (True, C.rcCreated)
+
+
+	# Check whether a resource with either the ri or the srn already exists
+	def hasResource(self, ri, srn):
+		return self.db.hasResource(ri=ri) or self.db.hasResource(srn=srn)
 
 
 	# Return a resource via different addressing methods

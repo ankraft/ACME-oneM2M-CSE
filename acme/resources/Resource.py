@@ -97,7 +97,7 @@ class Resource(object):
 	# Implemented in sub-classes.
 	def activate(self, originator):
 		Logging.logDebug('Activating resource: %s' % self.ri)
-		if not (result := self.validate(originator))[0]:
+		if not (result := self.validate(originator, create=True))[0]:
 			return result
 
 		# Note: CR is set in RegistrationManager
@@ -190,7 +190,7 @@ class Resource(object):
 
 	# Validate a resource. Usually called within activate() or
 	# update() methods.
-	def validate(self, originator=None):
+	def validate(self, originator=None, create=False):
 		Logging.logDebug('Validating resource: %s' % self.ri)
 
 		if (not Utils.isValidID(self.ri) or
