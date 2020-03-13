@@ -22,7 +22,7 @@ description = 'ACME ' + version + ' - An open source CSE Middleware for Educatio
 def parseArgs():
 	parser = argparse.ArgumentParser(description=description)
 	parser.add_argument('--config', action='store', dest='configfile', default=defaultConfigFile, help='specify configuration file')
-	parser.add_argument('--reset-db', action='store_true', dest='resetdb', default=None, help='reset the DB when starting the CSE')
+	parser.add_argument('--db-reset', action='store_true', dest='dbreset', default=None, help='reset the DB when starting the CSE')
 	parser.add_argument('--log-level', action='store', dest='loglevel', default=None, choices=[ 'info', 'error', 'warn', 'debug', 'off'], type=str.lower, help='set the log level, or turn logging off')
 	parser.add_argument('--import-directory', action='store', dest='importdirectory', default=None, help='specify the import directory')
 	return parser.parse_args()

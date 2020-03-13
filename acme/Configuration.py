@@ -25,7 +25,7 @@ class Configuration(object):
 		# resolve the args, of any
 		argsConfigfile		= args.configfile if args is not None else defaultConfigFile
 		argsLoglevel		= args.loglevel if args is not None else None
-		argsResetDB			= args.resetdb if args is not None else False
+		argsDBReset			= args.dbreset if args is not None else False
 		argsImportDirectory	= args.importdirectory if args is not None else None
 
 
@@ -195,7 +195,7 @@ class Configuration(object):
 			Configuration._configuration['logging.level'] = logging.DEBUG
 
 		# Override DB reset from command line
-		if argsResetDB is True:
+		if argsDBReset is True:
 			Configuration._configuration['db.resetAtStartup'] = True
 
 		# Override import directory from command line

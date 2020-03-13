@@ -45,6 +45,7 @@ rootDirectory	= None
 
 aeCSENode	 	= None 
 aeStatistics 	= None 
+appsStarted 	= False
 
 aeStartupDelay	= 5	# seconds
 
@@ -136,7 +137,8 @@ def startup(args, **kwargs):
 @atexit.register
 def shutdown():
 
-	stopApps()
+	if appsStarted:
+		stopApps()
 	if remote is not None:
 		remote.shutdown()
 	if group is not None:
@@ -166,9 +168,11 @@ def startAppsDelayed():
 
 
 def startApps():
-	global aeStatistics, aeCSENode
+	global appsStarted, aeStatistics, aeCSENode
 	time.sleep(aeStartupDelay)
 	Logging.log('Starting Apps')
+	appsStarted = True
+
 
 	if Configuration.get('app.csenode.enable'):
 		aeCSENode = CSENode()
@@ -179,7 +183,9 @@ def startApps():
 
 
 def stopApps():
+	global appsStarted
 	Logging.log('Stopping Apps')
+	appsStarted = False
 	if aeStatistics is not None:
 		aeStatistics.shutdown()
 	if aeCSENode is not None:
