@@ -136,6 +136,7 @@ class Constants(object):
 	cseTypeIN						=  1
 	cseTypeMN						=  2
 	cseTypeASN						=  3
+	cseTypes 						= [ '', 'IN', 'MN', 'ASN' ]
 
 
 

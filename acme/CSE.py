@@ -8,6 +8,7 @@
 #
 
 import atexit, argparse, os, threading, time
+from Constants import Constants as C
 from AnnouncementManager import AnnouncementManager
 from Configuration import Configuration, defaultConfigFile
 from Dispatcher import Dispatcher
@@ -78,8 +79,8 @@ def startup(args, **kwargs):
 	Logging.init()
 	Logging.log('============')
 	Logging.log('Starting CSE')
-	Logging.log('CSE-Type: %d' % Configuration.get('cse.type'))
-	Logging.log('Configuration: %s' % Configuration.print())
+	Logging.log('CSE-Type: %s' % C.cseTypes[Configuration.get('cse.type')])
+	Logging.log(Configuration.print())
 	
 
 	# Initiatlize the resource storage

@@ -204,6 +204,7 @@ class Configuration(object):
 
 		return True
 
+
 	@staticmethod
 	def print():
 		result = 'Configuration:\n'
