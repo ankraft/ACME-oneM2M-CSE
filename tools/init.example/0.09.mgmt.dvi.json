@@ -6,9 +6,9 @@
 		"rn" : "deviceinfo",
 		"acpi" : [ "acpAdmin", "acpDefault" ],
 		
-		"dlb" : [ "label:value" ],
+		"dlb" : "|label:value anotherLabel:value",
 		"man" : "a Manufacturer",
-		"mfdl" : "a Manufacturer Device Label",
+		"mfdl" : "https://link.to.manufacturer.com/details",
 		"mfd" : "20010511T214200",
 		"mod" : "Heart of Gold",
 		"smod" : "No.1",
