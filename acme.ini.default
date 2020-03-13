@@ -142,11 +142,12 @@ multiThread=true
 [database]
 # Directory for the database files. Default: ./data
 path=./data
-# Operate the database in in-memory mode. Attention: No data is stored persistently. Default: false
+# Operate the database in in-memory mode. Attention: No data is stored persistently.
+# See also command line argument --db-storage. Default: false
 inMemory=false
 # Cache size in bytes, or 0 to disable caching. Default: 0
 cacheSize=0
-# Reset the databases at startup. See also command line argument --reset-db
+# Reset the databases at startup. See also command line argument --db-reset
 # Default: False
 resetAtStartup=false
 

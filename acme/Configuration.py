@@ -26,6 +26,7 @@ class Configuration(object):
 		argsConfigfile		= args.configfile if args is not None else defaultConfigFile
 		argsLoglevel		= args.loglevel if args is not None else None
 		argsDBReset			= args.dbreset if args is not None else False
+		argsDBStorageMode	= args.dbstoragemode if args is not None else None
 		argsImportDirectory	= args.importdirectory if args is not None else None
 
 
@@ -197,6 +198,10 @@ class Configuration(object):
 		# Override DB reset from command line
 		if argsDBReset is True:
 			Configuration._configuration['db.resetAtStartup'] = True
+
+		# Override DB storage mode from command line
+		if argsDBStorageMode is not None:
+			Configuration._configuration['db.inMemory'] = argsDBStorageMode == 'memory'
 
 		# Override import directory from command line
 		if argsImportDirectory is not None:

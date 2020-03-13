@@ -2,6 +2,8 @@
 
 ## Unreleased 0.3.0 - 2020-xx-yy
 - [CSE] Discovery supports "attributes + children" return content.
+- [CSE] Changed command line argument --reset-db to --db-reset .
+- [CSE] Added command line argument --db-storage .
 
 ## 0.2.1 - 2020-03-06
 - [APPS] Fixed wrong originator handling for already registered AEs.
