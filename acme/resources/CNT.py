@@ -41,11 +41,11 @@ class CNT(Resource):
 		Logging.logDebug('Registering latest and oldest virtual resources for: %s' % self.ri)
 
 		# add latest
-		r = Utils.resourceFromJSON({ }, pi=self.ri, acpi=self.acpi, tpe=C.tCNT_LA)
+		r = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, tpe=C.tCNT_LA)
 		CSE.dispatcher.createResource(r)
 
 		# add oldest
-		r = Utils.resourceFromJSON({ }, pi=self.ri, acpi=self.acpi, tpe=C.tCNT_OL)
+		r = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, tpe=C.tCNT_OL)
 		CSE.dispatcher.createResource(r)
 
 		# TODO Error checking above
@@ -102,8 +102,8 @@ class CNT(Resource):
 		while cbs > mbs and i < l:
 			# remove oldest
 			cbs -= cs[i]['cs']
-			i += 1
 			CSE.dispatcher.deleteResource(cs[i])
+			i += 1
 		self['cbs'] = cbs
 
 		# TODO: support maxInstanceAge
