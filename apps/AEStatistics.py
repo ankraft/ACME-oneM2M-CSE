@@ -34,7 +34,8 @@ class AEStatistics(AEBase):
 										jsn={ self.fcntType : {
 												'rn'  : Configuration.get('app.statistics.fcntRN'),
        											'cnd' : Configuration.get('app.statistics.fcntCND'),
-       											'acpi': [ self.acpi ],	# assignde by CSE
+       											'acpi': [ self.acpi ],	# assignde by CSE,
+       											'mni' : 10,
 												Statistics.deletedResources : 0,
 												Statistics.createdresources : 0,
 												Statistics.httpRetrieves : 0,

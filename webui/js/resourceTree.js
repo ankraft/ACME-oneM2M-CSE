@@ -33,7 +33,8 @@ const types = {
     14 : "Node",
     16 : "RemoteCSE",
     23 : "Subscription",
-    28 : "FlexContainer"
+    28 : "FlexContainer",
+    52 : "FlexContainerInstance"
 }
 
 const shortTypes = {
@@ -46,7 +47,8 @@ const shortTypes = {
     14 : "NOD",
     16 : "CSR",
     23 : "SUB",
-    28 : "FCNT"
+    28 : "FCNT",
+    52 : "FCI"
 }
 
 const mgdTypes = {

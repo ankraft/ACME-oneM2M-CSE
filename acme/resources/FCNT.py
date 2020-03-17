@@ -19,6 +19,10 @@ class FCNT(Resource):
 		super().__init__(fcntType, jsn, pi, C.tFCNT, create=create)
 		if self.json is not None:
 			self.setAttribute('cs', 0, overwrite=False)
+			self.setAttribute('cni', 0, overwrite=False)
+			self.setAttribute('cbs', 0, overwrite=False)
+		self.ignoreAttributes = [ self._rtype, self._srn, self._node, 'cs', 'ri',  'ct', 'lt', 'et', 'ty', 'st', 'pi', 'rn', 'cnd', 'or', 'acpi', 'mni', 'cni', 'mbs', 'cbs', 'mia']
+
 
 	# Enable check for allowed sub-resources
 	def canHaveChild(self, resource):
@@ -29,8 +33,25 @@ class FCNT(Resource):
 									 ])
 
 
+	def activate(self, originator):
+		super().activate(originator)
+		# register latest and oldest virtual resources
+		Logging.logDebug('Registering latest and oldest virtual resources for: %s' % self.ri)
+
+		# add latest
+		r = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, tpe=C.tFCNT_LA)
+		CSE.dispatcher.createResource(r)
+
+		# add oldest
+		r = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, tpe=C.tFCNT_OL)
+		CSE.dispatcher.createResource(r)
+
+		# TODO Error checking above
+		return (True, C.rcOK)
+
+
 	# Checking the presentse of cnd and calculating the size
-	def validate(self, originator=None, create=False):
+	def validate(self, originator, create=False):
 		if (res := super().validate(originator, create))[0] == False:
 			return res
 
@@ -39,14 +60,86 @@ class FCNT(Resource):
 			return (False, C.rcContentsUnacceptable)
 
 		# Calculate contentSize
+
 		cs = 0
 		for attr in self.json:
-			if attr in [ self._rtype, self._srn, self._node, 'cs', 'ri',  'ct', 'lt', 'et', 'ty', 'st', 'pi', 'rn', 'cnd', 'or', 'acpi']:
+			if attr in self.ignoreAttributes:
 				continue
-			cs += sys.getsizeof(self['attr'])
+			cs += sys.getsizeof(self[attr])
 		self['cs'] = cs
+
+		#
+		#	Handle flexContainerInstances
+		#
+
+		if self.mni is not None or self.mbs is not None:
+			self.addFlexContainerInstance(originator)
+			fci = self.flexContainerInstances()
+
+			# check mni
+			if self.mni is not None:
+				mni = self.mni
+				fcii = len(fci)
+				i = 0
+				l = fcii
+				while fcii > mni and i < l:
+					# remove oldest
+					CSE.dispatcher.deleteResource(fci[i])
+					fcii -= 1
+					i += 1
+					changed = True
+				self['cni'] = fcii
+
+			# check size
+			if self.mbs is not None:
+				fci = self.flexContainerInstances()	# get FCIs again (bc may be different now)
+				mbs = self.mbs
+				cbs = 0
+				for f in fci:					# Calculate cbs
+					cbs += f.cs
+				i = 0
+				l = len(fci)
+				print(fci)
+				while cbs > mbs and i < l:
+					# remove oldest
+					cbs -= fci[i].cs
+					CSE.dispatcher.deleteResource(fci[i])
+					i += 1
+				self['cbs'] = cbs
+
+
+		# TODO support maxInstanceAge
 		
 		# May have been changed, so store the resource 
 		x = CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
 		
 		return (True, C.rcOK)
+
+
+	# Get all flexContainerInstances of a resource and return a sorted (by ct) list 
+	def flexContainerInstances(self):
+		return sorted(CSE.dispatcher.subResources(self.ri, C.tFCI), key=lambda x: (x.ct))
+
+
+	# Add a new FlexContainerInstance for this flexContainer
+	def addFlexContainerInstance(self, originator):
+		Logging.logDebug('Adding flexContainerInstance')
+		jsn = {	'rn'  : '%s_%d' % (self.rn, self.st),
+   				'cnd' : self.cnd,
+   				'lbl' : self.lbl,
+   				'ct'  : self.lt,
+   				'et'  : self.et,
+   				'cs'  : self.cs,
+   				'cr'  : originator
+			}
+		for attr in self.json:
+			if attr not in self.ignoreAttributes:
+				jsn[attr] = self[attr]
+
+
+		fci = Utils.resourceFromJSON(jsn = { self.tpe : jsn },
+									pi = self.ri, 
+									tpe = C.tFCI) # no ACPI
+
+		CSE.dispatcher.createResource(fci)
+

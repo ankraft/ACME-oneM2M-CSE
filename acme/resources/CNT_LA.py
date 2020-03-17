@@ -16,9 +16,8 @@ from Logging import Logging
 class CNT_LA(Resource):
 
 	def __init__(self, jsn=None, pi=None, create=False):
-		super().__init__(C.tsCNT_LA, jsn, pi, C.tCNT_LA, create=create, inheritACP=True, readOnly=True)
-		if self.json is not None:
-			self.setAttribute('rn', 'la')
+		super().__init__(C.tsCNT_LA, jsn, pi, C.tCNT_LA, create=create, inheritACP=True, readOnly=True, rn='la')
+
 
 
 	# Enable check for allowed sub-resources
@@ -33,5 +32,5 @@ class CNT_LA(Resource):
 		rs = pr.contentInstances()						# ask parent for all CIN
 		if len(rs) == 0:								# In case of none
 			return None
-		return rs[-1].asJSON()				# result is sorted, so take, and return last
+		return rs[-1].asJSON()							# result is sorted, so take, and return last
 

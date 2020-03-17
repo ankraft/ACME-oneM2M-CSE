@@ -38,23 +38,23 @@ class CNT(Resource):
 	def activate(self, originator):
 		super().activate(originator)
 		# register latest and oldest virtual resources
-		ri = self['ri']
-		Logging.logDebug('Registering latest and oldest virtual resources for: %s' % ri)
+		Logging.logDebug('Registering latest and oldest virtual resources for: %s' % self.ri)
 
 		# add latest
-		r = Utils.resourceFromJSON({ 'pi' : ri }, acpi=self['acpi'], tpe=C.tCNT_LA)
+		r = Utils.resourceFromJSON({ }, pi=self.ri, acpi=self.acpi, tpe=C.tCNT_LA)
 		CSE.dispatcher.createResource(r)
 
 		# add oldest
-		r = Utils.resourceFromJSON({ 'pi' : ri }, acpi=self['acpi'], tpe=C.tCNT_OL)
+		r = Utils.resourceFromJSON({ }, pi=self.ri, acpi=self.acpi, tpe=C.tCNT_OL)
 		CSE.dispatcher.createResource(r)
 
+		# TODO Error checking above
 		return (True, C.rcOK)
 
 
 	# Get all content instances of a resource and return a sorted (by ct) list 
 	def contentInstances(self):
-		return sorted(CSE.dispatcher.subResources(self['ri'], C.tCIN), key=lambda x: (x['ct']))
+		return sorted(CSE.dispatcher.subResources(self.ri, C.tCIN), key=lambda x: (x.ct))
 
 
 	# Handle the addition of new CIN. Basically, get rid of old ones.
@@ -72,7 +72,7 @@ class CNT(Resource):
 
 	# Validating the Container. This means recalculating cni, cbs as well as
 	# removing ContentInstances when the limits are met.
-	def validate(self, originator=None, create=False):
+	def validate(self, originator, create=False):
 		if (res := super().validate(originator, create))[0] == False:
 			return res
 
@@ -80,7 +80,7 @@ class CNT(Resource):
 		cs = self.contentInstances()
 
 		# Check number of instances
-		mni = self['mni']
+		mni = self.mni
 		cni = len(cs)
 		i = 0
 		l = cni
@@ -89,12 +89,11 @@ class CNT(Resource):
 			CSE.dispatcher.deleteResource(cs[i])
 			cni -= 1
 			i += 1
-			changed = True
 		self['cni'] = cni
 
 		# check size
 		cs = self.contentInstances()	# get CINs again
-		mbs = self['mbs']
+		mbs = self.mbs
 		cbs = 0
 		for c in cs:					# Calculate cbs
 			cbs += c['cs']
@@ -105,8 +104,9 @@ class CNT(Resource):
 			cbs -= cs[i]['cs']
 			i += 1
 			CSE.dispatcher.deleteResource(cs[i])
-			changed = True
 		self['cbs'] = cbs
+
+		# TODO: support maxInstanceAge
 
 		# Some CNT resource may have been updated, so store the resource 
 		CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check

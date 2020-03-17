@@ -10,9 +10,10 @@
 
 import datetime, random, string, sys, re
 from resources import ACP, AE, ANDI, ANI, BAT, CIN, CNT, CNT_LA, CNT_OL, CSEBase, CSR, DVC
-from resources import DVI, EVL, FCNT, FWR, GRP, GRP_FOPT, MEM, NOD, RBO, SUB, SWR, Unknown
+from resources import DVI, EVL, FCI, FCNT, FCNT_LA, FCNT_OL, FWR, GRP, GRP_FOPT, MEM, NOD, RBO, SUB, SWR, Unknown
 from Constants import Constants as C
 from Configuration import Configuration
+from Logging import Logging
 import CSE
 
 
@@ -72,10 +73,12 @@ def structuredPath(resource):
 
 	# retrieve identifier record of the parent
 	if (pi := resource.pi) is None:
+		Logging.logErr('PI is None')
 		return rn
 	rpi = CSE.storage.identifier(pi) 
 	if len(rpi) == 1:
 		return rpi[0]['srn'] + '/' + rn
+	Logging.logErr('Parent not fount in DB')
 	return rn # fallback
 
 
@@ -99,10 +102,6 @@ def resourceFromJSON(jsn, pi=None, acpi=None, tpe=None, create=False):
 	# sorted by assumed frequency (small optimization)
 	if ty == C.tCIN or root == C.tsCIN:
 		return CIN.CIN(jsn, pi=pi, create=create)
-	elif ty == C.tCNT_LA or root == C.tsCNT_LA:
-		return CNT_LA.CNT_LA(jsn, pi=pi, create=create)
-	elif ty == C.tCNT_OL or root == C.tsCNT_OL:
-		return CNT_OL.CNT_OL(jsn, pi=pi, create=create)
 	elif ty == C.tCNT or root == C.tsCNT:
 		return CNT.CNT(jsn, pi=pi, create=create)
 	elif ty == C.tGRP or root == C.tsGRP:
@@ -113,6 +112,8 @@ def resourceFromJSON(jsn, pi=None, acpi=None, tpe=None, create=False):
 		return ACP.ACP(jsn, pi=pi, create=create)
 	elif ty == C.tFCNT:
 		return FCNT.FCNT(jsn, pi=pi, fcntType=root, create=create)	
+	elif ty == C.tFCI:
+		return FCI.FCI(jsn, pi=pi, fcntType=root, create=create)	
 	elif ty == C.tAE or root == C.tsAE:
 		return AE.AE(jsn, pi=pi, create=create)
 	elif ty == C.tSUB or root == C.tsSUB:
@@ -141,6 +142,15 @@ def resourceFromJSON(jsn, pi=None, acpi=None, tpe=None, create=False):
 		return RBO.RBO(jsn, pi=pi, create=create)
 	elif (ty == C.tMGMTOBJ and mgd == C.mgdEVL) or root == C.tsEVL:
 		return EVL.EVL(jsn, pi=pi, create=create)
+	elif ty == C.tCNT_LA or root == C.tsCNT_LA:
+		return CNT_LA.CNT_LA(jsn, pi=pi, create=create)
+	elif ty == C.tCNT_OL or root == C.tsCNT_OL:
+		return CNT_OL.CNT_OL(jsn, pi=pi, create=create)
+	elif ty == C.tFCNT_LA:
+		return FCNT_LA.FCNT_LA(jsn, pi=pi, create=create)
+	elif ty == C.tFCNT_OL:
+		return FCNT_OL.FCNT_OL(jsn, pi=pi, create=create)
+
 	elif ty == C.tCSEBase or root == C.tsCSEBase:
 		return CSEBase.CSEBase(jsn, create=create)
 	else:

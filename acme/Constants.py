@@ -37,6 +37,8 @@ class Constants(object):
 	tsSUB		= 'm2m:sub'
 	tFCNT	 	= 28
 	tsFCNT		= 'm2m:fcnt'	# not an official shortname
+	tFCI 		= 52
+	tsFCI		= 'm2m:fci'		# not an official shortname
 
 	# Virtual resources (proprietary resource types)
 
@@ -46,6 +48,10 @@ class Constants(object):
 	tsCNT_LA	= 'm2m:la'
 	tGRP_FOPT	=  -20003
 	tsGRP_FOPT	= 'm2m:fopt'
+	tFCNT_OL	=  -20004
+	tsFCNT_OL	= 'm2m:ol'
+	tFCNT_LA	=  -20005
+	tsFCNT_LA	= 'm2m:la'
 
 	# <mgmtObj> Specializations
 
@@ -75,14 +81,14 @@ class Constants(object):
 	tVirtualResources = [ tCNT_LA, tCNT_OL, tGRP_FOPT ]
 
 	# Supported by this CSE
-	supportedResourceTypes = [ tACP, tAE, tCNT, tCIN, tCSEBase, tGRP, tMGMTOBJ, tNOD, tCSR, tSUB, tFCNT ]
+	supportedResourceTypes = [ tACP, tAE, tCNT, tCIN, tCSEBase, tGRP, tMGMTOBJ, tNOD, tCSR, tSUB, tFCNT, tFCI ]
 	supportedContentSerializations = [ 'application/json', 'application/vnd.onem2m-res+json' ]
 	supportedReleaseVersions = [ '3' ]
 
 	# List of resource types for which "creator" is allowed
 	# Also add later: eventConfig, pollingChannel, statsCollect, statsConfig, semanticDescriptor,
 	# notificationTargetPolicy, timeSeries, crossResourceSubscription, backgroundDataTransfer
-	tCreatorAllowed = [ tCIN, tCNT, tGRP, tSUB, tFCNT ]
+	tCreatorAllowed = [ tCIN, tCNT, tGRP, tSUB, tFCNT, tFCI ]
 
 
 

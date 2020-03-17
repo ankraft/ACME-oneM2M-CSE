@@ -250,8 +250,8 @@ class Dispatcher(object):
 		if (nr := Utils.resourceFromJSON(request.json, pi=pr.ri, tpe=ty)) is None:	# something wrong, perhaps wrong type
 			return (None, C.rcBadRequest)
 
-		# determine and add the srn
-		nr[nr._srn] = Utils.structuredPath(nr)
+		# # determine and add the srn
+		# nr[nr._srn] = Utils.structuredPath(nr)
 
 		# check whether the resource already exists
 		if CSE.storage.hasResource(nr.ri, nr.__srn__):
@@ -279,13 +279,22 @@ class Dispatcher(object):
 		if resource.__srn__ is None:
 			resource[resource._srn] = Utils.structuredPath(resource)
 
-		# Activate the resource
-		if not (res := resource.activate(originator))[0]: 	# activate the new resource
-			return res
-
 		# add the resource to storage
 		if (res := CSE.storage.createResource(resource, overwrite=False))[1] != C.rcCreated:
 			return (None, res[1])
+
+		# Activate the resource
+		# This is done *after* writing it to the DB, because in activate the resource might create or access other
+		# resources that will try to read the resource from the DB.
+		if not (res := resource.activate(originator))[0]: 	# activate the new resource
+			CSE.storage.deleteResource(resource)
+			return res
+
+		# Could be that we changed the resource in the activate, therefore write it again
+		if (res := CSE.storage.updateResource(resource))[0] is None:
+			CSE.storage.deleteResource(resource)
+			return res
+
 
 		if parentResource is not None:
 			parentResource.childAdded(resource, originator)		# notify the parent resource

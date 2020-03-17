@@ -20,7 +20,7 @@ class Resource(object):
 	_srn	= '__srn__'
 	_node	= '__node__'
 
-	def __init__(self, tpe, jsn=None, pi=None, ty=None, create=False, inheritACP=False, readOnly=False):
+	def __init__(self, tpe, jsn=None, pi=None, ty=None, create=False, inheritACP=False, readOnly=False, rn=None):
 		self.tpe = tpe
 		self.readOnly = readOnly
 		self.inheritACP = inheritACP
@@ -35,11 +35,15 @@ class Resource(object):
 			pass
 			# TODO Exception?
 
+
 		if self.json is not None:
-			if self.tpe is None and self._rtype in self:
-				self.tpe = self[self._rtype]
-	
+			if self.tpe is None: # and self._rtype in self:
+				self.tpe = self.__rtype__
 			self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite=False)
+
+			# override rn if given
+			if rn is not None:
+				self.setAttribute('rn', rn, overwrite=True)
 	
 			# Check uniqueness of ri. otherwise generate a new one. Only when creating
 			# TODO: could be a BAD REQUEST?
@@ -67,9 +71,12 @@ class Resource(object):
 			#
 
 			# Remove empty / null attributes from json
-			for attr, value in self.json.items():
-				if value is None:
-					del self.json[attr]
+			self.json = {k: v for (k, v) in self.json.items() if v is not None }
+
+			# determine and add the srn
+			self[self._srn] = Utils.structuredPath(self)
+			self[self._rtype] = self.tpe
+
 
 
 

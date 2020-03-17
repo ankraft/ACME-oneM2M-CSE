@@ -15,11 +15,8 @@ import Utils
 class ACP(Resource):
 
 	def __init__(self, jsn=None, pi=None, rn=None, create=False):
-		super().__init__(C.tsACP, jsn, pi, C.tACP, create=create, inheritACP=True)
+		super().__init__(C.tsACP, jsn, pi, C.tACP, create=create, inheritACP=True, rn=rn)
 
-		# override rn if given
-		if rn is not None:
-			self.setAttribute('rn', rn, overwrite=True)
 
 		# store permissions for easier access
 		self._storePermissions()
