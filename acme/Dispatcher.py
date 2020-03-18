@@ -100,7 +100,7 @@ class Dispatcher(object):
 					(resource, res) = self.retrieveResource(id)
 					if resource is None:
 						return (None, res)
-					self._resourceTree(allowedResources, resource)	# the function call add attributes to the result resource
+					self._childResourceTree(allowedResources, resource)	# the function call add attributes to the result resource
 					return (resource, C.rcOK)
 
 				else: 									# child resources
@@ -565,7 +565,7 @@ class Dispatcher(object):
 
 	# Recursively walk the results and build a sub-resource tree for each resource type
 	def _resourceTreeJSON(self, rs, rootResource):
-		rri = rootResource['ri']
+		rri = rootResource['ri'] if 'ri' in rootResource else None
 		while True:		# go multiple times per level through the resources until the list is empty
 			result = []
 			handledTy = None
@@ -574,6 +574,9 @@ class Dispatcher(object):
 				r = rs[idx]
 
 				if rri is not None and r.pi != rri:	# only direct children
+					idx += 1
+					continue
+				if r.ty in [ C.tCNT_OL, C.tCNT_LA, C.tFCNT_OL, C.tFCNT_LA ]:	# Skip latest, oldest virtual resources
 					idx += 1
 					continue
 				if handledTy is None:
@@ -594,34 +597,24 @@ class Dispatcher(object):
 		return rs # Return the remaining list
 
 
-	def _resourceTreeReferences(self, rs, resource, drt):
-		if len(rs) == 0:
+	# Retrieve child resource referenves of a resource and add them to a new target resource as "children"
+	def _resourceTreeReferences(self, resources, targetResource, drt):
+		if len(resources) == 0:
 			return
 		t = []
-		for r in rs:
+		for r in resources:
+			if r.ty in [ C.tCNT_OL, C.tCNT_LA, C.tFCNT_OL, C.tFCNT_LA ]:	# Skip latest, oldest virtual resources
+				continue
 			t.append({ 'nm' : r['rn'], 'typ' : r['ty'], 'val' :  Utils.structuredPath(r) if drt == C.drtStructured else r.ri})
-			# t['nm'] = r['rn']
-			# t['typ'] = r['ty']
-			# t['val'] = Utils.structuredPath(r)
-		resource['ch'] = t
+		targetResource['ch'] = t
 
 
-	def _resourceTree(self, rs, resource):
-		if len(rs) == 0:
+	# Retrieve full child resources of a resource and add them to a new target resource
+	def _childResourceTree(self, resource, targetResource):
+		if len(resource) == 0:
 			return
-		t = []
-
-		#for r in rs:
-
-		# 	t.append({ 'nm' : r['rn'], 'typ' : r['ty'], 'val' :  Utils.structuredPath(r) })
-			# t['nm'] = r['rn']
-			# t['typ'] = r['ty']
-			# t['val'] = Utils.structuredPath(r)
-		resource['ch'] = self._childResources(rs)
-
-	def _childResources(self, rs):
-		rootResource = { 'ri' : None }	# add dummy ri
-		self._resourceTreeJSON(rs, rootResource)
-		del rootResource['ri']			# remove the dummy ri
-		return rootResource
+		result = {}
+		self._resourceTreeJSON(resource, result)	# rootResource is filled with the result
+		for k,v in result.items():			# copy child resources to result resource
+			targetResource[k] = v
 

@@ -24,12 +24,13 @@ class FCNT_OL(Resource):
 		return super()._canHaveChild(resource, [])
 
 
-	def asJSON(self):	# overwrite
+	def asJSON(self, embedded=True, update=False, noACP=False):
 		pi = self['pi']
 		Logging.logDebug('Oldest FCI from FCNT: %s' % pi)
 		(pr, _) = CSE.dispatcher.retrieveResource(pi)	# get parent
 		rs = pr.flexContainerInstances()				# ask parent for all FCIs
 		if len(rs) == 0:								# In case of none
 			return None
-		return rs[0].asJSON()							# result is sorted, so take, and return last
+		return rs[0].asJSON(embedded=embedded, update=update, noACP=noACP)		# result is sorted, so take, and return first
+
 

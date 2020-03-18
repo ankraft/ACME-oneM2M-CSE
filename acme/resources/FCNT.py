@@ -125,7 +125,7 @@ class FCNT(Resource):
 	def addFlexContainerInstance(self, originator):
 		Logging.logDebug('Adding flexContainerInstance')
 		jsn = {	'rn'  : '%s_%d' % (self.rn, self.st),
-   				'cnd' : self.cnd,
+   				#'cnd' : self.cnd,
    				'lbl' : self.lbl,
    				'ct'  : self.lt,
    				'et'  : self.et,

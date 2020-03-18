@@ -15,7 +15,7 @@ import Utils
 class FCI(Resource):
 
 	def __init__(self, jsn=None, pi=None, fcntType=None, create=False):
-		super().__init__(fcntType, jsn, pi, C.tFCI, create=create, inheritACP=True, readOnly = True)
+		super().__init__(fcntType, jsn, pi, C.tFCI, create=create, inheritACP=True, readOnly=True)
 
 
 	# Enable check for allowed sub-resources. No Child for CIN
