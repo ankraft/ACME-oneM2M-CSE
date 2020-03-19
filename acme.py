@@ -22,12 +22,17 @@ description = 'ACME ' + version + ' - An open source CSE Middleware for Educatio
 def parseArgs():
 	parser = argparse.ArgumentParser(description=description)
 	parser.add_argument('--config', action='store', dest='configfile', default=defaultConfigFile, help='specify the configuration file')
-	parser.add_argument('--apps', action='store_true', dest='appsenabled', default=None, help='enable internal applications')
-	parser.add_argument('--no-apps', action='store_false', dest='appsenabled', default=None, help='disable internal applications')
+
+	# two mutual exlcusive arguments
+	group = parser.add_mutually_exclusive_group()
+	group.add_argument('--apps', action='store_true', dest='appsenabled', default=None, help='enable internal applications')
+	group.add_argument('--no-apps', action='store_false', dest='appsenabled', default=None, help='disable internal applications')
+
 	parser.add_argument('--db-reset', action='store_true', dest='dbreset', default=None, help='reset the DB when starting the CSE')
 	parser.add_argument('--db-storage', action='store', dest='dbstoragemode', default=None, choices=[ 'memory', 'disk' ], type=str.lower, help='specify the DB´s storage mode')
 	parser.add_argument('--log-level', action='store', dest='loglevel', default=None, choices=[ 'info', 'error', 'warn', 'debug', 'off'], type=str.lower, help='set the log level, or turn logging off')
 	parser.add_argument('--import-directory', action='store', dest='importdirectory', default=None, help='specify the import directory')
+	
 	return parser.parse_args()
 
 	# TODO init directory
