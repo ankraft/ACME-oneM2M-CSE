@@ -21,6 +21,10 @@ adminACPI=acpAdmin
 defaultACPI=acpDefault
 # Admin originator for the CSE. Default: CAdmin
 originator=CAdmin
+# Enable internal applications.
+# See also individual application configuratins in the [app. ...] sections.
+# Default: True
+enableApplications=true
 # Enable notifications. Default: True
 enableNotifications=true
 # Enable remote CSE registration. Default: True

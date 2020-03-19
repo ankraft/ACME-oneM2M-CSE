@@ -28,6 +28,7 @@ class Configuration(object):
 		argsDBReset			= args.dbreset if args is not None else False
 		argsDBStorageMode	= args.dbstoragemode if args is not None else None
 		argsImportDirectory	= args.importdirectory if args is not None else None
+		argsAppsEnabled		= args.appsenabled if args is not None else None
 
 
 		config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
@@ -81,6 +82,7 @@ class Configuration(object):
 				'cse.csi'							: '(not set yet)',																# will be set by importer
 				'cse.ri'							: '(not set yet)',																# will be set by importer
 				'cse.rn'							: '(not set yet)',																# will be set by importer
+				'cse.enableApplications'			: config.getboolean('cse', 'enableApplications', 		fallback=True),
 				'cse.enableNotifications'			: config.getboolean('cse', 'enableNotifications', 		fallback=True),
 				'cse.enableRemoteCSE'				: config.getboolean('cse', 'enableRemoteCSE', 			fallback=True),
 				'cse.enableTransitRequests'			: config.getboolean('cse', 'enableTransitRequests',		fallback=True),
@@ -206,6 +208,10 @@ class Configuration(object):
 		# Override import directory from command line
 		if argsImportDirectory is not None:
 			Configuration._configuration['cse.resourcesPath'] = argsImportDirectory
+
+		# Override app enablement
+		if argsAppsEnabled is not None:
+			Configuration._configuration['cse.enableApplications'] = argsAppsEnabled
 
 		return True
 

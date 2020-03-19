@@ -169,6 +169,10 @@ def startAppsDelayed():
 
 def startApps():
 	global appsStarted, aeStatistics, aeCSENode
+
+	if not Configuration.get('cse.enableApplications'):
+		return
+
 	time.sleep(aeStartupDelay)
 	Logging.log('Starting Apps')
 	appsStarted = True
@@ -184,9 +188,10 @@ def startApps():
 
 def stopApps():
 	global appsStarted
-	Logging.log('Stopping Apps')
-	appsStarted = False
-	if aeStatistics is not None:
-		aeStatistics.shutdown()
-	if aeCSENode is not None:
-		aeCSENode.shutdown()
+	if appsStarted:
+		Logging.log('Stopping Apps')
+		appsStarted = False
+		if aeStatistics is not None:
+			aeStatistics.shutdown()
+		if aeCSENode is not None:
+			aeCSENode.shutdown()
