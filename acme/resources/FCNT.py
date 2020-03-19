@@ -19,14 +19,14 @@ class FCNT(Resource):
 		super().__init__(fcntType, jsn, pi, C.tFCNT, create=create)
 		if self.json is not None:
 			self.setAttribute('cs', 0, overwrite=False)
-			self.setAttribute('cni', 0, overwrite=False)
-			self.setAttribute('cbs', 0, overwrite=False)
+
+			# "current" attributes are added when necessary in the validate() method
 
 			# Indicates whether this FC has flexContainerInstances. 
 			# Might change during the lifetime of a resource. Used for optimization
 			self.hasInstances = False
 
-		self.ignoreAttributes = [ self._rtype, self._srn, self._node, 'cs', 'ri',  'ct', 'lt', 'et', 'ty', 'st', 'pi', 'rn', 'cnd', 'or', 'acpi', 'mni', 'cni', 'mbs', 'cbs', 'mia']
+		self.ignoreAttributes = [ self._rtype, self._srn, self._node, 'acpi', 'cbs', 'cni', 'cnd', 'cs', 'cr', 'ct', 'et', 'lt', 'mbs', 'mia', 'mni', 'or', 'pi', 'ri', 'rn', 'st', 'ty' ]
 
 
 	# Enable check for allowed sub-resources
@@ -54,6 +54,7 @@ class FCNT(Resource):
 			r = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, tpe=C.tFCNT_OL)
 			CSE.dispatcher.createResource(r)
 
+
 		return (True, C.rcOK)
 
 
@@ -67,7 +68,8 @@ class FCNT(Resource):
 			return (False, C.rcContentsUnacceptable)
 
 		# Calculate contentSize
-
+		# This is not at all realistic since this is the in-memory representation
+		# TODO better implementation needed 
 		cs = 0
 		for attr in self.json:
 			if attr in self.ignoreAttributes:
@@ -99,6 +101,9 @@ class FCNT(Resource):
 					changed = True
 				self['cni'] = fcii
 
+				# Add "current" atribute, if it is not there
+				self.setAttribute('cni', 0, overwrite=False)
+
 			# check size
 			if self.mbs is not None:
 				fci = self.flexContainerInstances()	# get FCIs again (bc may be different now)
@@ -115,6 +120,11 @@ class FCNT(Resource):
 					CSE.dispatcher.deleteResource(fci[i])
 					i += 1
 				self['cbs'] = cbs
+
+				# Add "current" atribute, if it is not there
+				self.setAttribute('cbs', 0, overwrite=False)
+
+		# TODO Remove la, ol, existing FCI when mni etc are not present anymore.
 
 
 		# TODO support maxInstanceAge
@@ -139,7 +149,7 @@ class FCNT(Resource):
    				'ct'  : self.lt,
    				'et'  : self.et,
    				'cs'  : self.cs,
-   				'cr'  : originator
+   				'or'  : originator
 			}
 		for attr in self.json:
 			if attr not in self.ignoreAttributes:

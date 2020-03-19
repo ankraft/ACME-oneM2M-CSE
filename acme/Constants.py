@@ -88,7 +88,7 @@ class Constants(object):
 	# List of resource types for which "creator" is allowed
 	# Also add later: eventConfig, pollingChannel, statsCollect, statsConfig, semanticDescriptor,
 	# notificationTargetPolicy, timeSeries, crossResourceSubscription, backgroundDataTransfer
-	tCreatorAllowed = [ tCIN, tCNT, tGRP, tSUB, tFCNT, tFCI ]
+	tCreatorAllowed = [ tCIN, tCNT, tGRP, tSUB, tFCNT ]
 
 
 
