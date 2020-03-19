@@ -21,6 +21,11 @@ class FCNT(Resource):
 			self.setAttribute('cs', 0, overwrite=False)
 			self.setAttribute('cni', 0, overwrite=False)
 			self.setAttribute('cbs', 0, overwrite=False)
+
+			# Indicates whether this FC has flexContainerInstances. 
+			# Might change during the lifetime of a resource. Used for optimization
+			self.hasInstances = False
+
 		self.ignoreAttributes = [ self._rtype, self._srn, self._node, 'cs', 'ri',  'ct', 'lt', 'et', 'ty', 'st', 'pi', 'rn', 'cnd', 'or', 'acpi', 'mni', 'cni', 'mbs', 'cbs', 'mia']
 
 
@@ -35,18 +40,20 @@ class FCNT(Resource):
 
 	def activate(self, originator):
 		super().activate(originator)
+		# TODO Error checking above
+
 		# register latest and oldest virtual resources
 		Logging.logDebug('Registering latest and oldest virtual resources for: %s' % self.ri)
 
-		# add latest
-		r = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, tpe=C.tFCNT_LA)
-		CSE.dispatcher.createResource(r)
+		if self.hasInstances:
+			# add latest
+			r = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, tpe=C.tFCNT_LA)
+			CSE.dispatcher.createResource(r)
 
-		# add oldest
-		r = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, tpe=C.tFCNT_OL)
-		CSE.dispatcher.createResource(r)
+			# add oldest
+			r = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, tpe=C.tFCNT_OL)
+			CSE.dispatcher.createResource(r)
 
-		# TODO Error checking above
 		return (True, C.rcOK)
 
 
@@ -73,6 +80,8 @@ class FCNT(Resource):
 		#
 
 		if self.mni is not None or self.mbs is not None:
+			self.hasInstances = True	# Change the internal flag whether this FC has flexContainerInstances
+
 			self.addFlexContainerInstance(originator)
 			fci = self.flexContainerInstances()
 

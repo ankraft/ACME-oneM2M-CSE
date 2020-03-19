@@ -109,8 +109,6 @@ class Resource(object):
 
 		# Note: CR is set in RegistrationManager
 
-
-
 		# Handle ACPI assignments here
 		if self.inheritACP:
 			self.delAttribute('acpi')
