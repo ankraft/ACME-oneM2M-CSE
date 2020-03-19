@@ -7,6 +7,7 @@
 - [CSE] Added support for FlexContainerInstance.
 - [CSE] Fixed discovery results: ignore latest, oldest, and fixed result format.
 - [CSE] Added command line arguments --apps / --no-apps to enable and disable internal applications. Also added entry in config file.
+- [CSE] Added sorting of discovery results. Configurable.
 
 ## 0.2.1 - 2020-03-06
 - [APPS] Fixed wrong originator handling for already registered AEs.

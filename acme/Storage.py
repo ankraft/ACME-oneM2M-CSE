@@ -140,6 +140,10 @@ class Storage(object):
 		result = []
 		for r in rs:
 			result.append(Utils.resourceFromJSON(r))
+
+		# sort resources by type and then by lowercase rn
+		if Configuration.get('cse.sortDiscoveredResources'):
+			result.sort(key=lambda x:(x.ty, x.rn.lower()))
 		return result
 
 

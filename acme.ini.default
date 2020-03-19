@@ -31,6 +31,9 @@ enableNotifications=true
 enableRemoteCSE=true
 # Enable forwarding of requests to a remote CSE. Default: True
 enableTransitRequests=true
+# Enable sorting of discovery results. Default: True
+sortDiscoveredResources=true
+
 
 
 #
