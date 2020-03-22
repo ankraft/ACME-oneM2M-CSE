@@ -14,9 +14,10 @@ This CSE implements a subset of the oneM2M standard specializations (see [http:/
 
 
 ## Prerequisites
-In order to run the CSE the following prerequisites must be checked:
+In order to run the CSE the following prerequisites must be fulfilled:
 
 - **Python 3.8** : Install this or a newer version of Python with your favorite package manager.
+- You may consider to use a virtual environment manager like pyenv + virtualenv (see, for example, [this tutorial](https://realpython.com/python-virtual-environments-a-primer/)).
 - **flask**: The CSE uses the [Flask](https://flask.palletsprojects.com/) web framework. Install it by running the pip command:
   
   		pip3 install flask
