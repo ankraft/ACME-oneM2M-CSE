@@ -64,6 +64,7 @@ In this case the configuration file *acme.ini* must be in the same directory.
 In additions, you can provide additional command line arguments that will override the respective settings from the configuration file:
 
 - **-h**, **--help** : show a help message and exit.
+- **--apps**, **--noapps**: Enable or disable the build-in applications. This overrides the settings in the configuration file.
 - **--config CONFIGFILE**: Specify a configuration file that is used instead of the default (*acme.ini*) one.
 - **--db-reset**: Reset and clear the database when starting the CSE.
 - **--db-storage {memory,disk}**: Specify the DB´s storage mode.
