@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased 0.3.0 - 2020-xx-yy
+## Unreleased 0.3.0 - 2020-04-20
 - [CSE] Discovery supports "attributes + children" return content.
 - [CSE] Changed command line argument --reset-db to --db-reset .
 - [CSE] Added command line argument --db-storage .
