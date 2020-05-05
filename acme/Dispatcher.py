@@ -67,7 +67,7 @@ class Dispatcher(object):
 			return (None, C.rcInvalidArguments)
 
 
-		if fu == 1:	# discovery
+		if fu == 1 and rcn !=  C.rcnAttributes:	# discovery. rcn == Attributes is actually "normal retrieval"
 			Logging.logDebug('Discover resources (fu: %s, drt: %s, handling: %s, conditions: %s, resultContent: %d, attributes: %s)' % (fu, drt, handling, conditions, rcn, str(attributes)))
 
 			if rcn not in [C.rcnAttributesAndChildResourceReferences, C.rcnChildResourceReferences, C.rcnChildResources, C.rcnAttributesAndChildResources]:	# Only allow those two
@@ -103,12 +103,16 @@ class Dispatcher(object):
 					self._childResourceTree(allowedResources, resource)	# the function call add attributes to the result resource
 					return (resource, C.rcOK)
 
-				else: 									# child resources
-					return (self._childResources(allowedResources), C.rcOK)
+				# direct child resources, NOT the root resource
+				elif rcn == C.rcnChildResources:
+					resource = {  }			# empty 
+					self._resourceTreeJSON(allowedResources, resource)
+					return (resource, C.rcOK)
+					# return (self._childResources(allowedResources), C.rcOK)
 
 			return (None, C.rcNotFound)
 
-		elif fu == 2:	# normal retrieval
+		elif fu == 2 or rcn == C.rcnAttributes:	# normal retrieval
 			Logging.logDebug('Get resource: %s' % id)
 			(resource, res) = self.retrieveResource(id)
 			if resource is None:
@@ -554,6 +558,7 @@ class Dispatcher(object):
 		for r in resources:
 			lst.append(Utils.structuredPath(r) if drt == C.drtStructured else cseid + r.ri)
 		return { 'm2m:uril' : lst }
+
 
 	# def _attributesAndChildResources(self, parentResource, resources):
 	# 	result = parentResource.asJSON()

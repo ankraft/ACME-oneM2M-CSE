@@ -81,6 +81,9 @@ class FCNT(Resource):
 		#	Handle flexContainerInstances
 		#
 
+		# TODO When cni and cbs is set to 0, then delete mni, mbs, la, ol, and all children
+		
+
 		if self.mni is not None or self.mbs is not None:
 			self.hasInstances = True	# Change the internal flag whether this FC has flexContainerInstances
 
