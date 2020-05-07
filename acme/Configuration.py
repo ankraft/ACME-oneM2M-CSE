@@ -42,11 +42,11 @@ class Configuration(object):
 				#	HTTP Server
 				#
 
-				'http.listenIF'						: config.get('server.http', 'listenIF', 				fallback='127.0.0.01'),
+				'http.listenIF'						: config.get('server.http', 'listenIF', 				fallback='127.0.0.1'),
 				'http.port' 						: config.getint('server.http', 'port', 					fallback=8080),
 				'http.root'							: config.get('server.http', 'root', 					fallback='/'),
 				'http.address'						: config.get('server.http', 'address', 					fallback='http://127.0.0.1:8080'),
-				'http.multiThread'					: config.getboolean('server.http', 'multiThread', 		fallback=False),
+				'http.multiThread'					: config.getboolean('server.http', 'multiThread', 		fallback=True),
 
 				#
 				#	Database
