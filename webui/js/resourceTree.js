@@ -190,8 +190,10 @@ function setResourceInfo(resource) {
   if (typeof resource === "undefined") {
     return
   }
-  // extra infos in the header
-  var d  = document.getElementById("resourceType");
+  // extra infos in the headers
+
+  // type & resource identifier 
+  var d  = document.getElementById("rootResourceName");
   var ty = resource['ty']
   var t  = types[ty]
   if (ty == 13) {
@@ -211,7 +213,18 @@ function setResourceInfo(resource) {
   } else {
     d.innerText = t + ": " + cseid + "/" + resource["ri"]
   }
+
+  // the resource path
+
+  var element = document.getElementById("resourceType");
+  path = new TreePath(root, nodeClicked)
+  result = ""
+  for (p of path.toString().split(" - ")) {
+    result += "/" + p.replace(/.*: /, "")
+  }
+  element.innerText = result
 }
+
 
 function clearResourceInfo() {
   document.getElementById("resourceType").innerHTML = "&nbsp;"

@@ -10,12 +10,12 @@
 
 var HttpClient = function() {
   this.get = function(id, node, callback, errorCallback) {
-      sendRetrieveRequest(node, id, originator, callback, errorCallback )
+    sendRetrieveRequest(node, id, originator, callback, errorCallback )
   }
 
   // TODO: do we really need a separate method?
   this.getChildren = function(id, node, callback, errorCallback) {
-      sendRetrieveRequest(node, id, originator, callback, errorCallback)
+    sendRetrieveRequest(node, id, originator, callback, errorCallback)
   }
 }
 

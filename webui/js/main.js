@@ -201,7 +201,7 @@ function showAppArea(state) {
 var cursorEnabled = true;
 
 // callback for info tabs
-function tabTo( number) {
+function tabTo(number) {
   switch(number) {
     case 1: cursorEnabled = true; break;
     case 2: cursorEnabled = true; break;
