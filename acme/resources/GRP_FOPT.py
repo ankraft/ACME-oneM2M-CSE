@@ -24,9 +24,7 @@ from Constants import Constants as C
 class GRP_FOPT(Resource):
 
 	def __init__(self, jsn=None, pi=None, create=False):
-		super().__init__(C.tsGRP_FOPT, jsn, pi, C.tGRP_FOPT, create=create, inheritACP=True, readOnly=True)
-		if self.json is not None:
-			self.setAttribute('rn', 'fopt')
+		super().__init__(C.tsGRP_FOPT, jsn, pi, C.tGRP_FOPT, create=create, inheritACP=True, readOnly=True, rn='fopt')
 
 
 	# Enable check for allowed sub-resources
