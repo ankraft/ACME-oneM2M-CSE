@@ -10,11 +10,10 @@
 import argparse, sys
 sys.path.append('acme')
 sys.path.append('apps')
-from Configuration import defaultConfigFile, defaultImportDirectory
+from Configuration import defaultConfigFile, defaultImportDirectory, version
 import CSE
 
 
-version = '0.2.1'
 description = 'ACME ' + version + ' - An open source CSE Middleware for Education'
 
 

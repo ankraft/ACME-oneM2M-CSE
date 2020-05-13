@@ -10,7 +10,7 @@
 
 from flask import Flask, request, make_response
 import flask
-from Configuration import Configuration
+from Configuration import Configuration, version
 from Constants import Constants as C
 import CSE, Utils
 from Logging import Logging, RedirectHandler
@@ -54,6 +54,7 @@ class HttpServer(object):
 			self.addEndpoint(self.webuiRoot, handler=self.handleWebUIGET, methods=['GET'])
 			self.addEndpoint(self.webuiRoot + '/<path:path>', handler=self.handleWebUIGET, methods=['GET'])
 			self.addEndpoint('/', handler=self.redirectRoot, methods=['GET'])
+			self.addEndpoint('/__version__', handler=self.getVersion, methods=['GET'])
 
 		# Add mapping / macro endpoints
 		self.mappings = {}
@@ -139,12 +140,17 @@ class HttpServer(object):
 
 
 	#########################################################################
+	#
+	#	Various handlers
+	#
 
 
 	# Redirect request to / to webui
 	def redirectRoot(self):
 		return flask.redirect(Configuration.get('cse.webui.root'), code=302)
 
+	def getVersion(self):
+		return version
 
 	def handleWebUIGET(self, path=None):
 

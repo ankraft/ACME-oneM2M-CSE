@@ -90,3 +90,15 @@ img.imagefit {
   /*max-height:80vh; */
 }
 
+div.footer {
+  position: fixed;
+  left: 10px;
+  bottom: 0;
+  padding-left: 15px;
+
+  width: 100%;
+  text-align: left;
+  font-size: 10px;
+
+}
+

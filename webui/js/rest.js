@@ -46,3 +46,13 @@ function sendRequest(method, node, url, originator, callback, errorCallback) {
   request.setRequestHeader("X-M2M-RI", "123");       
   request.send(null);
 }
+
+
+function getTextFromServer(path, callback) {
+  var client = new XMLHttpRequest();
+  client.open('GET', path);
+  client.onreadystatechange = function() {
+    callback(client.responseText)
+  }
+  client.send();
+}

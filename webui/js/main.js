@@ -220,6 +220,13 @@ function setup() {
   x.value = cseid
   document.title = "ACME CSE - " + cseid
 
+  getTextFromServer("/__version__", function(version) {
+    var f = document.getElementById("version");
+    f.innerHTML = version;
+  })
+
+
+
   // hide when not connected
   showAppArea(false)
 

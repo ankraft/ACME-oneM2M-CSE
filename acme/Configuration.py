@@ -13,6 +13,7 @@ from Constants import Constants as C
 
 defaultConfigFile			= 'acme.ini'
 defaultImportDirectory		= './init'
+version						= '0.4.0-pre'
 
 
 class Configuration(object):

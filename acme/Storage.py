@@ -126,7 +126,8 @@ class Storage(object):
 		  (len(conditions['cty']) if conditions is not None else 0) - 1 
 		 )
 
-		rs = self.db.discoverResources(lambda r: _testDiscovery(r,
+		rs = self.db.discoverResources(lambda r: _testDiscovery(self,
+																r,
 																rootSRN,
 																handling,
 																conditions,
@@ -269,7 +270,7 @@ class Storage(object):
 
 
 # handler function for discovery search and matching resources
-def _testDiscovery(r, rootSRN, handling, conditions, attributes, fo, lim, ofst, allLen):
+def _testDiscovery(storage, r, rootSRN, handling, conditions, attributes, fo, lim, ofst, allLen):
 
 	# check limits
 	# TinyDB doesn't support pagination. So we need to implement it here. See also offset below.
@@ -294,6 +295,16 @@ def _testDiscovery(r, rootSRN, handling, conditions, attributes, fo, lim, ofst, 
 	# check level
 	if (h_lvl := handling.get('__lvl__')) is not None and srn.count('/') > h_lvl:
 		return False
+
+	# get the parent resource
+	#
+	#	TODO when determines how the parentAttribute is actually encoded
+	#
+	# pr = None
+	# if (pi := r.get('pi')) is not None:
+	# 	print(pi)
+	# 	pr = storage.retrieveResource(ri=pi)
+	# print(pr)
 
 	# check conditions
 	if conditions is not None:
@@ -490,8 +501,8 @@ class TinyDBBinding(object):
 
 
 	def discoverResources(self, func):
-		with self.lockResources:
-			rs = self.tabResources.search(func)
+		#with self.lockResources:
+		rs = self.tabResources.search(func)
 		return rs
 
 
