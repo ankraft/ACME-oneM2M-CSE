@@ -3,6 +3,7 @@
 ## unreleased 0.4.0 - xxxx.xx
 - [WEB] Add displaying the path of the selected resource.
 - [CSE] Fixed crashes when using group resources.
+- [CSE] Added command line arguments --remote-cse, --no-remote-cse .
 - [WEB] Improved info box.
 
 ## 0.3.0 - 2020-04-20

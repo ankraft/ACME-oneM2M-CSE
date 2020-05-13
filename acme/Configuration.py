@@ -24,12 +24,13 @@ class Configuration(object):
 		global _configuration
 
 		# resolve the args, of any
-		argsConfigfile		= args.configfile if args is not None else defaultConfigFile
-		argsLoglevel		= args.loglevel if args is not None else None
-		argsDBReset			= args.dbreset if args is not None else False
-		argsDBStorageMode	= args.dbstoragemode if args is not None else None
-		argsImportDirectory	= args.importdirectory if args is not None else None
-		argsAppsEnabled		= args.appsenabled if args is not None else None
+		argsConfigfile			= args.configfile if args is not None else defaultConfigFile
+		argsLoglevel			= args.loglevel if args is not None else None
+		argsDBReset				= args.dbreset if args is not None else False
+		argsDBStorageMode		= args.dbstoragemode if args is not None else None
+		argsImportDirectory		= args.importdirectory if args is not None else None
+		argsAppsEnabled			= args.appsenabled if args is not None else None
+		argsRemoteCSEEnabled	= args.remotecseenabled if args is not None else None
 
 
 		config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
@@ -215,6 +216,9 @@ class Configuration(object):
 		if argsAppsEnabled is not None:
 			Configuration._configuration['cse.enableApplications'] = argsAppsEnabled
 
+		# Override remote CSE enablement
+		if argsRemoteCSEEnabled is not None:
+			Configuration._configuration['cse.enableRemoteCSE'] = argsRemoteCSEEnabled
 		return True
 
 
