@@ -80,7 +80,6 @@ class Resource(object):
 
 
 
-
 	# Default encoding implementation. Overwrite in subclasses
 	def asJSON(self, embedded=True, update=False, noACP=False):
 		# remove (from a copy) all internal attributes before printing
@@ -154,7 +153,12 @@ class Resource(object):
 				# Leave out some attributes
 				if key in ['ct', 'lt', 'pi', 'ri', 'rn', 'st', 'ty']:
 					continue
-				self[key] = j[key]	# copy new value
+				value = j[key]
+				# Special handling for et when deleted: set a new et
+				if key == 'et' and value is None:
+					self['et'] = Utils.getResourceDate(Configuration.get('cse.expirationDelta'))
+					continue
+				self[key] = value	# copy new value
 
 		# - state and lt
 		if 'st' in self.json:	# Update the state
@@ -203,6 +207,7 @@ class Resource(object):
 			not Utils.isValidID(self.rn)):
 			Logging.logDebug('Invalid ID ri: %s, pi: %s, rn: %s)' % (self.ri, self.pi, self.rn))
 			return (False, C.rcContentsUnacceptable)
+
 		return (True, C.rcOK)
 
 

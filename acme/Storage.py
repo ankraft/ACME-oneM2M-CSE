@@ -18,7 +18,9 @@ from Configuration import Configuration
 from Constants import Constants as C
 from Logging import Logging
 from resources.Resource import Resource
-import Utils
+import CSE, Utils
+from helpers import BackgroundWorker
+
 
 class Storage(object):
 
@@ -42,10 +44,21 @@ class Storage(object):
 		if Configuration.get('db.resetAtStartup') is True:
 			self.db.purgeDB()
 
+		# Start background worker to handle expired resources
+		Logging.log('Starting expiration worker')
+		if (iv := Configuration.get('cse.checkExpirationsInterval')) > 0:
+			self.expirationWorker = BackgroundWorker.BackgroundWorker(iv, self.expirationDBWorker)
+			self.expirationWorker.start()
+
 		Logging.log('Storage initialized')
 
 
 	def shutdown(self):
+		# Stop the expiration worker
+		Logging.log('Stopping expiration worker')
+		if self.expirationWorker is not None:
+			self.expirationWorker.stop()
+
 		self.db.closeDB()
 		Logging.log('Storage shut down')
 
@@ -263,6 +276,24 @@ class Storage(object):
 		return self.db.removeData(data)
 
 
+	#########################################################################
+	##
+	##	Resource Expiration
+	##
+
+	def expirationDBWorker(self):
+		Logging.logDebug('Looking of expired resources')
+		et = Utils.getResourceDate()
+		rs = self.db.discoverResources(lambda r: _testExpiration(self, r, et))
+		for j in rs:
+			if (r := Utils.resourceFromJSON(j)) is not None:
+				CSE.dispatcher.deleteResource(r, withDeregistration=True)
+		return True
+
+
+
+
+
 #########################################################################
 ##
 ##	internal utilities
@@ -381,6 +412,11 @@ def _testDiscovery(storage, r, rootSRN, handling, conditions, attributes, fo, li
 
 	handling['__returned__'] += 1
 	return True
+
+
+def _testExpiration(storage, r, et):
+	return (etr := r['et']) is not None and etr < et
+
 
 
 

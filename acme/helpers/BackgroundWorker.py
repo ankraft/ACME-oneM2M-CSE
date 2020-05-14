@@ -31,7 +31,7 @@ class BackgroundWorker(object):
 		Logging.log('Stopping worker thread')
 		# Stop the thread
 		self.doStop = True
-		if self.workerThread is not None:
+		if self.workerThread is not None and self.workerUpdateIntervall is not None:
 			self.workerThread.join(self.workerUpdateIntervall + 5) # wait a short time for the thread to terminate
 			self.workerThread = None
 

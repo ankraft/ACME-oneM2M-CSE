@@ -33,6 +33,8 @@ enableRemoteCSE=true
 enableTransitRequests=true
 # Enable sorting of discovery results. Default: True
 sortDiscoveredResources=true
+# Interval to check for expired resources. 0 means "no checking". Default: 60 seconds
+checkExpirationsInterval=60
 
 
 

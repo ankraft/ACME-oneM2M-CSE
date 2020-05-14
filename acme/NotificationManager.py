@@ -61,6 +61,7 @@ class NotificationManager(object):
 
 
 	def checkSubscriptions(self, resource, reason, childResource=None):
+		Logging.logDebug('Check subscription')
 		if Configuration.get('cse.enableNotifications') is not True:
 			return
 		ri = resource.ri

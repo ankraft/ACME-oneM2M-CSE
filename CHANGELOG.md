@@ -4,6 +4,7 @@
 - [WEB] Add displaying the path of the selected resource.
 - [CSE] Fixed crashes when using group resources.
 - [CSE] Added command line arguments --remote-cse, --no-remote-cse .
+- [CSE] Improved support for expiration handling, e.g. refreshing as well as removal of expired resources.
 - [WEB] Improved info box.
 
 ## 0.3.0 - 2020-04-20

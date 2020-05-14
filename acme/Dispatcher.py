@@ -423,18 +423,20 @@ class Dispatcher(object):
 		if CSE.security.hasAccess(originator, r, C.permDELETE) == False:
 			return (None, C.rcOriginatorHasNoPrivilege)
 
-		# Check resource deletion
-		if not (res := CSE.registration.checkResourceDeletion(r, originator))[0]:
-			return (None, C.rcBadRequest)
-
 		# remove resource
-		return self.deleteResource(r, originator)
+		return self.deleteResource(r, originator, withDeregistration=True)
 
 
-	def deleteResource(self, resource, originator=None):
+	def deleteResource(self, resource, originator=None, withDeregistration=False):
 		Logging.logDebug('Removing resource ri: %s, type: %d' % (resource.ri, resource.ty))
 		if resource is None:
 			Logging.log('Resource not found')
+
+		# Check resource deletion
+		if withDeregistration:
+			if not (res := CSE.registration.checkResourceDeletion(resource, originator))[0]:
+				return (None, C.rcBadRequest)
+
 		resource.deactivate(originator)	# deactivate it first
 		# notify the parent resource
 		parentResource = resource.retrieveParentResource()
