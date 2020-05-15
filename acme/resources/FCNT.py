@@ -116,7 +116,6 @@ class FCNT(Resource):
 					cbs += f.cs
 				i = 0
 				l = len(fci)
-				print(fci)
 				while cbs > mbs and i < l:
 					# remove oldest
 					cbs -= fci[i].cs
@@ -136,6 +135,21 @@ class FCNT(Resource):
 		x = CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
 		
 		return (True, C.rcOK)
+
+
+	# Validate expirations of child resurces
+	def validateExpirations(self):
+		Logging.logDebug('Validate expirations')
+		super().validateExpirations()
+
+
+		if (mia := self.mia) is None:
+			return
+		now = Utils.getResourceDate(-mia)
+		# print(now)		# fcis = self.flexContainerInstances()
+		# TODO
+		# for fci in fcis
+
 
 
 	# Get all flexContainerInstances of a resource and return a sorted (by ct) list 
@@ -161,7 +175,8 @@ class FCNT(Resource):
 
 		fci = Utils.resourceFromJSON(jsn = { self.tpe : jsn },
 									pi = self.ri, 
-									tpe = C.tFCI) # no ACPI
+									acpi = self.acpi, # or no ACPI?
+									tpe = C.tFCI)
 
 		CSE.dispatcher.createResource(fci)
 

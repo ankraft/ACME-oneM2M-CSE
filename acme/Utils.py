@@ -89,6 +89,10 @@ def structuredPathFromRI(ri):
 
 
 def resourceFromJSON(jsn, pi=None, acpi=None, tpe=None, create=False):
+	""" Create a resource from a JSON structure.
+		This will *not* call the activate method, therefore some attributes
+		may be set separately.
+	"""
 	(jsn, root) = pureResource(jsn)	# remove optional "m2m:xxx" level
 	ty = jsn['ty'] if 'ty' in jsn else tpe
 	if ty != None and tpe != None and ty != tpe:

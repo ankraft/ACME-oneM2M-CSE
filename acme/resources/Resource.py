@@ -112,15 +112,18 @@ class Resource(object):
 		if self.inheritACP:
 			self.delAttribute('acpi')
 		else:
+			# When no ACPI provided
 			if self.ty != C.tAE:	# Don't handle AE's here. This is done in the RegistrationManager
-				#adminACPIRI = Configuration.get('cse.adminACPI')
 				defaultACPIRI = Configuration.get('cse.defaultACPI')
 				if self.acpi is None:
-					self.setAttribute('acpi', [ defaultACPIRI ])	# Set default ACPIRIs
-					#self.setAttribute('acpi', [ adminACPIRI, defaultACPIRI ])	# Set admin and default ACPIRIs
-				# else:
-				# 	if not adminACPIRI in self.acpi:
-				# 		self.acpi.append(adminACPIRI)
+
+					# If no ACPI is given, then inherit it from the parent, except when the parent is the CSE, then use the default
+					pr = self.retrieveParentResource()
+					if pr.ty != C.tCSEBase:
+						self.setAttribute('acpi', pr.acpi)
+					else:
+						self.setAttribute('acpi', [ defaultACPIRI ])	# Set default ACPIRIs
+	
 		self.setAttribute(self._rtype, self.tpe, overwrite=False) 
 
 		return (True, C.rcOK)
@@ -201,14 +204,20 @@ class Resource(object):
 	# update() methods.
 	def validate(self, originator=None, create=False):
 		Logging.logDebug('Validating resource: %s' % self.ri)
-
 		if (not Utils.isValidID(self.ri) or
 			not Utils.isValidID(self.pi) or
 			not Utils.isValidID(self.rn)):
 			Logging.logDebug('Invalid ID ri: %s, pi: %s, rn: %s)' % (self.ri, self.pi, self.rn))
 			return (False, C.rcContentsUnacceptable)
-
 		return (True, C.rcOK)
+
+
+	# Validate possible expirations, of self or child resources.
+	# MAY be implemented by child class
+	def validateExpirations(self):
+		pass
+
+
 
 
 	#########################################################################

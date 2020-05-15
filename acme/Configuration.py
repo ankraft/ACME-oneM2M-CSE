@@ -89,7 +89,7 @@ class Configuration(object):
 				'cse.enableRemoteCSE'				: config.getboolean('cse', 'enableRemoteCSE', 			fallback=True),
 				'cse.enableTransitRequests'			: config.getboolean('cse', 'enableTransitRequests',		fallback=True),
 				'cse.sortDiscoveredResources'		: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
-				'cse.checkExpirationsInterval'		: config.getint('database', 'checkExpirationsInterval',	fallback=60),		# Seconds
+				'cse.checkExpirationsInterval'		: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
 
 				#
 				#	Remote CSE

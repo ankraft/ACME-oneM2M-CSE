@@ -282,12 +282,18 @@ class Storage(object):
 	##
 
 	def expirationDBWorker(self):
-		Logging.logDebug('Looking of expired resources')
-		et = Utils.getResourceDate()
-		rs = self.db.discoverResources(lambda r: _testExpiration(self, r, et))
+		Logging.logDebug('Looking for expired resources')
+		now = Utils.getResourceDate()
+		rs = self.db.discoverResources(lambda r: 'et' in r and (et := r['et']) is not None and et < now)
 		for j in rs:
 			if (r := Utils.resourceFromJSON(j)) is not None:
 				CSE.dispatcher.deleteResource(r, withDeregistration=True)
+
+		# Check all resources with maxInstanceAge (mia)
+		rs = self.db.discoverResources(lambda r: 'mia' in r)
+		for j in rs:
+			if (r := Utils.resourceFromJSON(j)) is not None:
+				r.validateExpirations()
 		return True
 
 
