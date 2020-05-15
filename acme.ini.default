@@ -5,6 +5,12 @@
 [cse]
 # CSE type. Possible values: IN, MN, ASN. Default: IN
 type=IN
+# The CSE ID. Can be overwritten in imported CSE definition. Default: id-in
+cseID=id-in
+# The CSE's resource ID. Can be overwritten in imported CSE definition. Default: id-in
+resourceID=id-in
+# The CSE's resource name. Can be overwritten in imported CSE definition. Default: cse-in
+resourceName=cse-in
 # Directory of default resources to import. Default: ./init
 resourcesPath=./init
 # ExpirationTime before resources are removed in seconds. Default: 60*60*24*365 = 1 year

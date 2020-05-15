@@ -81,9 +81,9 @@ class Configuration(object):
 				'cse.adminACPI'						: config.get('cse', 'adminACPI', 						fallback='acpAdmin'),
 				'cse.defaultACPI'					: config.get('cse', 'defaultACPI', 						fallback='acpDefault'),
 				'cse.originator'					: config.get('cse', 'originator',						fallback='CAdmin'),
-				'cse.csi'							: '(not set yet)',																# will be set by importer
-				'cse.ri'							: '(not set yet)',																# will be set by importer
-				'cse.rn'							: '(not set yet)',																# will be set by importer
+				'cse.csi'							: config.get('cse', 'cseID',							fallback='id-in'),
+				'cse.ri'							: config.get('cse', 'resourceID',						fallback='id-in'),
+				'cse.rn'							: config.get('cse', 'resourceName',						fallback='cse-in'),
 				'cse.enableApplications'			: config.getboolean('cse', 'enableApplications', 		fallback=True),
 				'cse.enableNotifications'			: config.getboolean('cse', 'enableNotifications', 		fallback=True),
 				'cse.enableRemoteCSE'				: config.getboolean('cse', 'enableRemoteCSE', 			fallback=True),

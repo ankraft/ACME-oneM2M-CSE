@@ -8,7 +8,7 @@
 #	the CSE is actually started.
 #
 
-import json, os, fnmatch
+import json, os, fnmatch, re
 from Utils import *
 from Configuration import Configuration
 from Constants import Constants as C
@@ -67,8 +67,7 @@ class Importer(object):
 			fn = path + '/' + rn
 			if os.path.exists(fn):
 				Logging.log('Importing resource: %s ' % fn)
-				with open(fn) as jfile:
-					r = resourceFromJSON(json.load(jfile), create=True)
+				r = self.readJSON(fn)
 			# Check resource creation
 			if not CSE.registration.checkResourceCreation(r, originator):
 				continue
@@ -95,32 +94,34 @@ class Importer(object):
 		for fn in filenames:
 			if fn not in self._firstImporters:
 				Logging.log('Importing resource from file: %s' % fn)
-				with open(path + '/' + fn) as jfile:
+				filename = path + '/' + fn
 
-					# update an existing resource
-					if 'update' in fn:
-						j = json.load(jfile)
-						keys = list(j.keys())
-						if len(keys) == 1 and (k := keys[0]) and 'ri' in j[k] and (ri := j[k]['ri']) is not None:
-							(r, _) = CSE.dispatcher.retrieveResource(ri)
-							if r is not None:
-								CSE.dispatcher.updateResource(r, j)
-
-					# create a new cresource
-					else:
-						r = resourceFromJSON(json.load(jfile), create=True)
-						# Try to get parent resource
+				# update an existing resource
+				if 'update' in fn:
+					j = self.readJSON(filename, asJSON=True)
+					# j = json.load(jfile)
+					keys = list(j.keys())
+					if len(keys) == 1 and (k := keys[0]) and 'ri' in j[k] and (ri := j[k]['ri']) is not None:
+						(r, _) = CSE.dispatcher.retrieveResource(ri)
 						if r is not None:
-							parent = None
-							if (pi := r.pi) is not None:
-								(parent, _) = CSE.dispatcher.retrieveResource(pi)
-							# Check resource creation
-							if not CSE.registration.checkResourceCreation(r, originator):
-								continue
-							# Add the resource
-							CSE.dispatcher.createResource(r, parent)
-						else:
-							Logging.logWarn('Unknown resource in file: %s' % fn)
+							CSE.dispatcher.updateResource(r, j)
+
+				# create a new cresource
+				else:
+					r = self.readJSON(filename)
+					# r = resourceFromJSON(json.load(jfile), create=True)
+					# Try to get parent resource
+					if r is not None:
+						parent = None
+						if (pi := r.pi) is not None:
+							(parent, _) = CSE.dispatcher.retrieveResource(pi)
+						# Check resource creation
+						if not CSE.registration.checkResourceCreation(r, originator):
+							continue
+						# Add the resource
+						CSE.dispatcher.createResource(r, parent)
+					else:
+						Logging.logWarn('Unknown resource in file: %s' % fn)
 
 		self._finishImporting()
 		return True
@@ -130,6 +131,30 @@ class Importer(object):
 		# temporarily disable access control
 		self._oldacp = Configuration.get('cse.enableACPChecks')
 		Configuration.set('cse.enableACPChecks', False)
+		self.macroMatch = re.compile(r"\$[\w.]+\$")
+
+
+
+	def replaceMacro(self, item, filename):
+		item = item[1:-1]
+		if (value := Configuration.get(item)) is None:
+			Logging.logErr('Unknown macro $%s$ in file %s' %(item, filename))
+			return '*** UNKNWON MACRO : %s ***' % item
+		return value
+
+
+	def readJSON(self, filename, asJSON=False):
+		# read the file
+		with open(filename) as file:
+			content = file.read()
+		# replace macros
+		items = re.findall(self.macroMatch, content)
+		for item in items:
+			content = content.replace(item, self.replaceMacro(item, filename))
+		# Load JSON and return directly or as resource
+		jsn = json.loads(content)
+		return jsn if asJSON else resourceFromJSON(jsn, create=True)
+
 
 
 	def _finishImporting(self):

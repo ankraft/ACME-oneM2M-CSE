@@ -1,17 +1,17 @@
 {	"m2m:acp" : {
 		"ty" : 1,
-		"ri" : "acpAdmin",
+		"ri" : "$cse.adminACPI$",
 		"rn" : "adminACP",
-		"pi" : "id-in",
+		"pi" : "$cse.ri$",
 		"pv" : {
 			"acr": {
-				"acor": [ "CAdmin" ],
+				"acor": [ "$cse.originator$" ],
 				"acop": 63
 			}
 		},
 		"pvs": {
 			"acr": {
-				"acor": ["CAdmin"],
+				"acor": ["$cse.originator$"],
 				"acop": 51
 			}
 		}
