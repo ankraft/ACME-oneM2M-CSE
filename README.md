@@ -31,7 +31,7 @@ In order to run the CSE the following prerequisites must be fulfilled:
 
 		pip3 install requests
 
-- **tinydb** : To store resources the CSE uses the lightweight [TinyDB](https://github.com/msiemens/tinydb) document database. Install it by running the pip command:
+- **tinydb 4.x** : To store resources the CSE uses the lightweight [TinyDB](https://github.com/msiemens/tinydb) document database. Install it by running the pip command:
 
 		pip3 install tinydb
 

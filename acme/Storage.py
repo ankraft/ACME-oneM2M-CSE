@@ -481,11 +481,11 @@ class TinyDBBinding(object):
 
 	def purgeDB(self):
 		Logging.log('Purging DBs')
-		self.tabResources.purge()
-		self.tabIdentifiers.purge()
-		self.tabSubscriptions.purge()
-		self.tabStatistics.purge()
-		self.tabAppData.purge()
+		self.tabResources.truncate()
+		self.tabIdentifiers.truncate()
+		self.tabSubscriptions.truncate()
+		self.tabStatistics.truncate()
+		self.tabAppData.truncate()
 
 
 	#

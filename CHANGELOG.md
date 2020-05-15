@@ -5,7 +5,10 @@
 - [CSE] Fixed crashes when using group resources.
 - [CSE] Added command line arguments --remote-cse, --no-remote-cse .
 - [CSE] Improved support for expiration handling, e.g. refreshing as well as removal of expired resources.
+- [ACP] Changed: created resources without a provided ACPI will now have the same ACPI of the parent.
 - [WEB] Improved info box.
+- [DATABASE] Upgraded to TinyDB 4.x
+
 
 ## 0.3.0 - 2020-04-20
 - [CSE] Discovery supports "attributes + children" return content.
