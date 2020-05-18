@@ -20,6 +20,12 @@ class Dispatcher(object):
 		self.rootPath 		= Configuration.get('http.root')
 		self.enableTransit 	= Configuration.get('cse.enableTransitRequests')
 		Logging.log('Dispatcher initialized')
+		self.csi = Configuration.get('cse.csi')
+		self.cseid = Configuration.get('cse.ri')
+		self.spRelativeCseid = '~/%s' % self.cseid
+		self.csiLen = len(self.csi)
+		self.cseidLen = len(self.cseid)
+		self.spRelativeCseidLen = len(self.spRelativeCseid)
 
 
 	def shutdown(self):
@@ -54,6 +60,8 @@ class Dispatcher(object):
 
 
 	def handleRetrieveRequest(self, request, id, originator):
+		Logging.logDebug('Handle retrieve resource: %s' % id)
+
 		try:
 			attrs = self._getArguments(request)
 			fu 			= attrs.get('fu')
@@ -156,23 +164,31 @@ class Dispatcher(object):
 		if id is None:
 			return (None, C.rcNotFound)
 		oid = id
-		csi = Configuration.get('cse.csi')
+		# csi = Configuration.get('cse.csi')
+		# cseid = Configuration.get('cse.ri')
 		if '/' in id:
 
-			# when the id is in the format <cse RI>/<resource RI>
-			if id.startswith(csi):
-				id = id[len(csi)+1:]
+
+			# when the id is in the format ~/<resource RI> (SP-Relative)
+			if id.startswith(self.spRelativeCseid):
+				id = id[self.spRelativeCseidLen+1:]
+				if not '/' in id:
+					return self.retrieveResource(id)
+
+			# when the id is in the format <cse RI>/<resource RI> (CSE-Relative)
+			if id.startswith(self.csi):
+				id = id[self.csiLen+1:]
 				if not '/' in id:
 					return self.retrieveResource(id)
 
 			# elif id.startswith('-') or id.startswith('~'):	# remove shortcut (== csi) (Also the ~ makes it om2m compatible)
-			if id.startswith('-') or id.startswith('~'):	# remove shortcut (== csi) (Also the ~ makes it om2m compatible)
-				id = "%s/%s" % (csi, id[2:])
+			if id.startswith('-'):	# remove shortcut (== csi) 
+				id = "%s/%s" % (self.csi, id[2:])
 				return self.retrieveResource(id)
 
 			# Check whether it is Unstructured-CSE-relativeResource-ID
 			s = id.split('/')
-			if len(s) == 2 and s[0] == Configuration.get('cse.ri'):
+			if len(s) == 2 and s[0] == self.cseid:
 				# Logging.logDebug('Resource via Unstructured-CSE-relativeResource-ID')
 				r = CSE.storage.retrieveResource(ri=s[1])
 			else:
@@ -181,7 +197,7 @@ class Dispatcher(object):
 				r = CSE.storage.retrieveResource(srn=id)
 
 		else: # only the cseid or ri
-			if id == csi:
+			if id == self.csi:
 				# SP-relative-CSE-ID
 				# Logging.logDebug('Resource via SP-relative-CSE-ID')
 				r = CSE.storage.retrieveResource(csi=id)
@@ -557,7 +573,8 @@ class Dispatcher(object):
 
 	#	Create a m2m:uril structure from a list of resources
 	def _resourcesToURIList(self, resources, drt):
-		cseid = '/' + Configuration.get('cse.csi') + '/'
+		# cseid = '/' + Configuration.get('cse.csi') + '/'
+		cseid = '/%s/' % self.csi
 		lst = []
 		for r in resources:
 			lst.append(Utils.structuredPath(r) if drt == C.drtStructured else cseid + r.ri)
