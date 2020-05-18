@@ -182,7 +182,7 @@ def findXPath(jsn, element, default=None):
 	return data
 
 
-# set a structured element in JSON. Create if necessary, and observce the overwrite option
+# set a structured element in JSON. Create if necessary, and observe the overwrite option
 def setXPath(jsn, element, value, overwrite=True):
 	paths = element.split("/")
 	ln = len(paths)

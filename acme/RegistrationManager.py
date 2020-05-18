@@ -92,11 +92,13 @@ class RegistrationManager(object):
 				Logging.logDebug('Adding ACP for AE')
 				cseOriginator = Configuration.get('cse.originator')
 				acp = ACP.ACP(pi=parentResource.ri, rn=acpPrefix + ae.rn)
-				acp.addPermissionOriginator(originator)
-				acp.addPermissionOriginator(cseOriginator)
-				acp.setPermissionOperation(Configuration.get('cse.acp.pv.acop'))
-				acp.addSelfPermissionOriginator(cseOriginator)
-				acp.setSelfPermissionOperation(Configuration.get('cse.acp.pvs.acop'))
+				acp.addPermission([originator, cseOriginator], Configuration.get('cse.acp.pv.acop'))
+				acp.addSelfPermission([cseOriginator], Configuration.get('cse.acp.pvs.acop'))
+				# acp.addPermissionOriginator(originator)
+				# acp.addPermissionOriginator(cseOriginator)
+				# acp.setPermissionOperation(Configuration.get('cse.acp.pv.acop'))
+				# acp.addSelfPermissionOriginator(cseOriginator)
+				# acp.setSelfPermissionOperation(Configuration.get('cse.acp.pvs.acop'))
 				if not (res := self.checkResourceCreation(acp, originator, parentResource))[0]:
 					return None
 				CSE.dispatcher.createResource(acp, parentResource=parentResource, originator=originator)

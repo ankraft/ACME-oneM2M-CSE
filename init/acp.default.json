@@ -4,16 +4,16 @@
 		"rn" : "defaultACP",
 		"pi" : "$cse.ri$",
 		"pv" : {
-			"acr": {
+			"acr": [{
 				"acor": [ "CDefault", "$cse.originator$" ],
 				"acop": 63
-			}
+			}]
 		},
 		"pvs": {
-			"acr": {
+			"acr": [{
 				"acor": ["$cse.originator$"],
 				"acop": 51
-			}
+			}]
 		}
 	}
 }

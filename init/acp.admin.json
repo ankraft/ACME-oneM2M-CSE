@@ -4,16 +4,16 @@
 		"rn" : "adminACP",
 		"pi" : "$cse.ri$",
 		"pv" : {
-			"acr": {
+			"acr": [{
 				"acor": [ "$cse.originator$" ],
 				"acop": 63
-			}
+			}]
 		},
 		"pvs": {
-			"acr": {
+			"acr": [{
 				"acor": ["$cse.originator$"],
 				"acop": 51
-			}
+			}]
 		}
 	}
 }

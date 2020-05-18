@@ -16,11 +16,10 @@ class ACP(Resource):
 
 	def __init__(self, jsn=None, pi=None, rn=None, create=False):
 		super().__init__(C.tsACP, jsn, pi, C.tACP, create=create, inheritACP=True, rn=rn)
-
-
-		# store permissions for easier access
-		self._storePermissions()
-
+		
+		if self.json is not None:
+			self.setAttribute('pv/acr', [], overwrite=False)
+			self.setAttribute('pvs/acr', [], overwrite=False)
 
 
 	def validate(self, originator, create=False):
@@ -30,12 +29,8 @@ class ACP(Resource):
 		# add admin originator	
 		if Configuration.get('cse.acp.addAdminOrignator'):
 			cseOriginator = Configuration.get('cse.originator')
-			if cseOriginator not in self.pv_acor:
-				self.addPermissionOriginator(cseOriginator)
-			if cseOriginator not in self.pvs_acor:
-				self.addSelfPermissionOriginator(cseOriginator)
-
-		self._storePermissions()
+			self.addPermissionOriginator(cseOriginator)
+			self.addSelfPermissionOriginator(cseOriginator)
 		return (True, C.rcOK)
 
 
@@ -45,43 +40,43 @@ class ACP(Resource):
 	#	Permission handlings
 	#
 
+	def addPermission(self, originators, permission):
+		o = list(set(originators))	# Remove duplicates from list of originators
+		if (p := self['pv/acr']) is not None:
+			p.append({'acop' : permission, 'acor': o})
+
+
+	def addSelfPermission(self, originators, permission):
+		o = list(set(originators))	 # Remove duplicates from list of originators
+		if (p := self['pvs/acr']) is not None:
+			p.append({'acop' : permission, 'acor': o})
+
+
 	def addPermissionOriginator(self, originator):
-		if originator not in self.pv_acor:
-			self.pv_acor.append(originator)
-		self.setAttribute('pv/acr/acor', self.pv_acor)
-
-
-	def setPermissionOperation(self, operation):
-		self.pv_acop = operation
-		self.setAttribute('pv/acr/acop', self.pv_acop)
+		for p in self['pv/acr']:
+			if originator not in p['acor']:
+				p['acor'].append(originator)
 
 	def addSelfPermissionOriginator(self, originator):
-		if originator not in self.pvs_acor:
-			self.pvs_acor.append(originator)
-		self.setAttribute('pvs/acr/acor', self.pvs_acor)
-
-
-	def setSelfPermissionOperation(self, operation):
-		self.pvs_acop = operation
-		self.setAttribute('pvs/acr/acop', self.pvs_acop)
+		for p in self['pvs/acr']:
+			if originator not in p['acor']:
+				p['acor'].append(originator)
 
 
 	def checkPermission(self, origin, requestedPermission):
-		if requestedPermission & self.pv_acop == 0:	# permission not fitting at all
-			return False
-		return 'all' in self.pv_acor or origin in self.pv_acor or requestedPermission == C.permNOTIFY
+		for p in self['pv/acr']:
+			if requestedPermission & p['acop'] == 0:	# permission not fitting at all
+				continue
+			if 'all' in p['acor'] or origin in p['acor'] or requestedPermission == C.permNOTIFY:
+				return True
+		return False
 
 
 	def checkSelfPermission(self, origin, requestedPermission):
-		if requestedPermission & self.pvs_acop == 0:	# permission not fitting at all
-			return False
-		return 'all' in self.pvs_acor or origin in self.pvs_acor
-
-
-	def _storePermissions(self):
-		self.pv_acop = self.attribute('pv/acr/acop', 0)
-		self.pv_acor = self.attribute('pv/acr/acor', [])
-		self.pvs_acop = self.attribute('pvs/acr/acop', 0)
-		self.pvs_acor = self.attribute('pvs/acr/acor', [])
-
+		for p in self['pvs/acr']:
+			if requestedPermission & p['acop'] == 0:	# permission not fitting at all
+				continue
+			if 'all' in p['acor'] or origin in p['acor']:
+				return True
+		return False
 

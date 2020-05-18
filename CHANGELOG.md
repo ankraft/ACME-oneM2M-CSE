@@ -7,6 +7,7 @@
 - [CSE] Improved support for expiration handling, e.g. refreshing as well as removal of expired resources.
 - [CSE] Fixed SP-relative addressing
 - [ACP] Changed: created resources without a provided ACPI will now have the same ACPI of the parent.
+- [ACP] Fixed format of privileges and self-privileges.
 - [DATABASE] Upgraded to TinyDB 4.x
 - [IMPORTING] Added macro mechanism to use configuration settings in imported files.
 - [ALL] Many small fixes and improvements
