@@ -101,7 +101,7 @@ class Resource(object):
 	# case, e.g. when a resource object is just used temporarly.
 	# NO notification on activation/creation!
 	# Implemented in sub-classes.
-	def activate(self, originator):
+	def activate(self, parentResource, originator):
 		Logging.logDebug('Activating resource: %s' % self.ri)
 		if not (result := self.validate(originator, create=True))[0]:
 			return result
@@ -118,11 +118,16 @@ class Resource(object):
 				if self.acpi is None:
 
 					# If no ACPI is given, then inherit it from the parent, except when the parent is the CSE, then use the default
-					pr = self.retrieveParentResource()
-					if pr.ty != C.tCSEBase:
-						self.setAttribute('acpi', pr.acpi)
+					if parentResource.ty != C.tCSEBase:
+						self.setAttribute('acpi', parentResource.acpi)
 					else:
 						self.setAttribute('acpi', [ defaultACPIRI ])	# Set default ACPIRIs
+
+		# increment parent resource's state tage
+		if parentResource is not None and parentResource.st is not None:
+			parentResource.setAttribute('st', parentResource.st + 1)
+			if (res := CSE.storage.updateResource(parentResource))[0] is None:
+				return (False, res[1])
 	
 		self.setAttribute(self._rtype, self.tpe, overwrite=False) 
 

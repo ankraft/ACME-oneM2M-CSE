@@ -38,8 +38,8 @@ class FCNT(Resource):
 									 ])
 
 
-	def activate(self, originator):
-		super().activate(originator)
+	def activate(self, parentResource, originator):
+		super().activate(parentResource, originator)
 		# TODO Error checking above
 
 		# register latest and oldest virtual resources

@@ -35,8 +35,8 @@ class CNT(Resource):
 									   C.tSUB
 									 ])
 
-	def activate(self, originator):
-		super().activate(originator)
+	def activate(self, parentResource, originator):
+		super().activate(parentResource, originator)
 		# register latest and oldest virtual resources
 		Logging.logDebug('Registering latest and oldest virtual resources for: %s' % self.ri)
 

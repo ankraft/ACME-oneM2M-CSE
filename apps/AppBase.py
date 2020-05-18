@@ -56,7 +56,8 @@ class AppBase(object):
 
 	def _id(self, ri, srn):
 		if ri is not None:
-			return self.url + self.cseri + '/' + ri
+			return self.url + ri
+			# return self.url + self.cseri + '/' + ri
 		elif srn is not None:
 			return self.url + srn
 		return None

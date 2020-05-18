@@ -25,3 +25,10 @@ class CIN(Resource):
 	# Enable check for allowed sub-resources. No Child for CIN
 	def canHaveChild(self, resource):
 		return super()._canHaveChild(resource, [])
+
+
+	def activate(self, parentResource, originator):
+		super().activate(parentResource, originator)
+		self.setAttribute('st', parentResource.st)
+		return (True, C.rcOK)
+

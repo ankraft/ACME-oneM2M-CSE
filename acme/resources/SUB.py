@@ -32,11 +32,8 @@ class SUB(Resource):
 		return super()._canHaveChild(resource, [])
 
 
-	def activate(self, originator):
-		# super().activate(originator)
-		# if not (res := self.validate(originator))[0]:
-		# 	return res
-		if not (result := super().activate(originator))[0]:
+	def activate(self, parentResource, originator):
+		if not (result := super().activate(parentResource, originator))[0]:
 			return result
 		res = CSE.notification.addSubscription(self)
 		return (res, C.rcOK if res else C.rcTargetNotSubscribable)

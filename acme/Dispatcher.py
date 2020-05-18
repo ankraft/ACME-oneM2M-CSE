@@ -328,7 +328,7 @@ class Dispatcher(object):
 		# Activate the resource
 		# This is done *after* writing it to the DB, because in activate the resource might create or access other
 		# resources that will try to read the resource from the DB.
-		if not (res := resource.activate(originator))[0]: 	# activate the new resource
+		if not (res := resource.activate(parentResource, originator))[0]: 	# activate the new resource
 			CSE.storage.deleteResource(resource)
 			return res
 
@@ -336,7 +336,6 @@ class Dispatcher(object):
 		if (res := CSE.storage.updateResource(resource))[0] is None:
 			CSE.storage.deleteResource(resource)
 			return res
-
 
 		if parentResource is not None:
 			parentResource.childAdded(resource, originator)		# notify the parent resource

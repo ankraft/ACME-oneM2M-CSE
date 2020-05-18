@@ -35,10 +35,8 @@ class GRP(Resource):
 									   C.tGRP_FOPT
 									 ])
 
-	def activate(self, originator, create=False):
-		# super().activate(originator)		
-		# if not (result := self.validate(originator))[0]:
-		if not (result := super().activate(originator))[0]:
+	def activate(self, parentResource, originator):
+		if not (result := super().activate(parentResource, originator))[0]:
 			return result
 
 		# add fanOutPoint
