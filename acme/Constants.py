@@ -108,6 +108,7 @@ class Constants(object):
 	rcOperationNotAllowed			= 4005
 	rcContentsUnacceptable			= 4102
 	rcOriginatorHasNoPrivilege		= 4103
+	rcConflict						= 4105
 	rcInvalidChildResourceType		= 4108
 	rcGroupMemberTypeInconsistent	= 4110
 	rcInternalServerError			= 5000

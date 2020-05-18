@@ -298,7 +298,7 @@ class Dispatcher(object):
 		# check whether the resource already exists
 		if CSE.storage.hasResource(nr.ri, nr.__srn__):
 			Logging.logWarn('Resource already registered')
-			return (None, C.rcAlreadyExists)
+			return (None, C.rcConflict)
 
 		# Check resource creation
 		if (res := CSE.registration.checkResourceCreation(nr, originator, pr))[1] != C.rcOK:
