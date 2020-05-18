@@ -17,15 +17,22 @@ import CSE, Utils
 class Dispatcher(object):
 
 	def __init__(self):
-		self.rootPath 		= Configuration.get('http.root')
-		self.enableTransit 	= Configuration.get('cse.enableTransitRequests')
-		Logging.log('Dispatcher initialized')
-		self.csi = Configuration.get('cse.csi')
-		self.cseid = Configuration.get('cse.ri')
-		self.spRelativeCseid = '~/%s' % self.cseid
-		self.csiLen = len(self.csi)
-		self.cseidLen = len(self.cseid)
+		self.rootPath 			= Configuration.get('http.root')
+		self.enableTransit 		= Configuration.get('cse.enableTransitRequests')
+
+		self.spid 				= Configuration.get('cse.spid')
+		self.csi 				= Configuration.get('cse.csi')
+		self.cseid 				= Configuration.get('cse.ri')
+		self.csern				= Configuration.get('cse.rn')
+		self.spRelativeCseid 	= '~/%s' % self.cseid
+		self.spAbsoluteSpid 	= '_/%s' % self.spid
+		self.spidLen 			= len(self.spid)
+		self.csiLen 			= len(self.csi)
+		self.cseidLen 			= len(self.cseid)
 		self.spRelativeCseidLen = len(self.spRelativeCseid)
+		self.spAbsoluteSpidLen 	= len(self.spAbsoluteSpid)
+
+		Logging.log('Dispatcher initialized')
 
 
 	def shutdown(self):
@@ -168,23 +175,33 @@ class Dispatcher(object):
 		# cseid = Configuration.get('cse.ri')
 		if '/' in id:
 
+			# when the id is in the format _/<service provivider>/<cse id>/<resource RI> (SP-Relative)
+			if id.startswith(self.spAbsoluteSpid):
+				id = id[self.spAbsoluteSpidLen+1:]
+				# if not '/' in id:
+				# 	return self.retrieveResource(id)
+				# return self.retrieveResource(id)
 
 			# when the id is in the format ~/<resource RI> (SP-Relative)
-			if id.startswith(self.spRelativeCseid):
+			elif id.startswith(self.spRelativeCseid):
 				id = id[self.spRelativeCseidLen+1:]
-				if not '/' in id:
-					return self.retrieveResource(id)
+				# if not '/' in id:
+				# 	return self.retrieveResource(id)
+				# return self.retrieveResource(id)
 
-			# when the id is in the format <cse RI>/<resource RI> (CSE-Relative)
+
+			# remove the leading cse-ID
 			if id.startswith(self.csi):
 				id = id[self.csiLen+1:]
-				if not '/' in id:
-					return self.retrieveResource(id)
+				# if not '/' in id:
+				# 	return self.retrieveResource(id)
 
-			# elif id.startswith('-') or id.startswith('~'):	# remove shortcut (== csi) (Also the ~ makes it om2m compatible)
-			if id.startswith('-'):	# remove shortcut (== csi) 
-				id = "%s/%s" % (self.csi, id[2:])
-				return self.retrieveResource(id)
+			# replace shortcut (== csi-rn) 
+			if id.startswith('-'):
+				id = "%s/%s" % (self.csern, id[2:])
+				#return self.retrieveResource(id)			
+
+
 
 			# Check whether it is Unstructured-CSE-relativeResource-ID
 			s = id.split('/')

@@ -356,11 +356,12 @@ class RemoteCSEManager(object):
 		pathElements = id.split('/')
 		if len(pathElements) <= 2:
 			return (None, None)
-		if pathElements[0].startswith('~') and len(pathElements) >= 4:	# handle SP relative addressing
+		if pathElements[0] == '_' and len(pathElements) >= 5:	# handle SP absolute addressing
+			id = '%s/%s' % (pathElements[3], pathElements[4])
+		elif pathElements[0] == '~' and len(pathElements) >= 4:	# handle SP relative addressing
 			id = '%s/%s' % (pathElements[2], pathElements[3])
 		else:
 			id = '%s/%s' % (pathElements[0], pathElements[1])
-		print(id)
 		(r, rc) = CSE.dispatcher.retrieveResource(id)
 		return (r, pathElements)
 

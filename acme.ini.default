@@ -5,11 +5,13 @@
 [cse]
 # CSE type. Possible values: IN, MN, ASN. Default: IN
 type=IN
+# The CSE's service provider ID. Default: acme
+serviceProviderID=acme
 # The CSE ID. Can be overwritten in imported CSE definition. Default: id-in
 cseID=id-in
 # The CSE's resource ID. Can be overwritten in imported CSE definition. Default: id-in
 resourceID=id-in
-# The CSE's resource name. Can be overwritten in imported CSE definition. Default: cse-in
+# The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition. Default: cse-in
 resourceName=cse-in
 # Directory of default resources to import. Default: ./init
 resourcesPath=./init

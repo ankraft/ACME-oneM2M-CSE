@@ -75,15 +75,16 @@ class Configuration(object):
 				#
 
 				'cse.type'							: config.get('cse', 'type',								fallback='IN'),		# IN, MN, ASN
+				'cse.spid'							: config.get('cse', 'serviceProviderID',				fallback='acme'),
+				'cse.csi'							: config.get('cse', 'cseID',							fallback='id-in'),
+				'cse.ri'							: config.get('cse', 'resourceID',						fallback='id-in'),
+				'cse.rn'							: config.get('cse', 'resourceName',						fallback='cse-in'),
 				'cse.resourcesPath'					: config.get('cse', 'resourcesPath', 					fallback=defaultImportDirectory),
 				'cse.expirationDelta'				: config.getint('cse', 'expirationDelta', 				fallback=60*60*24*365),	# 1 year, in seconds
 				'cse.enableACPChecks'				: config.getboolean('cse', 'enableACPChecks', 			fallback=True),
 				'cse.adminACPI'						: config.get('cse', 'adminACPI', 						fallback='acpAdmin'),
 				'cse.defaultACPI'					: config.get('cse', 'defaultACPI', 						fallback='acpDefault'),
 				'cse.originator'					: config.get('cse', 'originator',						fallback='CAdmin'),
-				'cse.csi'							: config.get('cse', 'cseID',							fallback='id-in'),
-				'cse.ri'							: config.get('cse', 'resourceID',						fallback='id-in'),
-				'cse.rn'							: config.get('cse', 'resourceName',						fallback='cse-in'),
 				'cse.enableApplications'			: config.getboolean('cse', 'enableApplications', 		fallback=True),
 				'cse.enableNotifications'			: config.getboolean('cse', 'enableNotifications', 		fallback=True),
 				'cse.enableRemoteCSE'				: config.getboolean('cse', 'enableRemoteCSE', 			fallback=True),
