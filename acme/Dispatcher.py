@@ -205,6 +205,8 @@ class Dispatcher(object):
 
 			# Check whether it is Unstructured-CSE-relativeResource-ID
 			s = id.split('/')
+			if len(s) == 1: # only the ri is left
+				return self.retrieveResource(id)
 			if len(s) == 2 and s[0] == self.cseid:
 				# Logging.logDebug('Resource via Unstructured-CSE-relativeResource-ID')
 				r = CSE.storage.retrieveResource(ri=s[1])
