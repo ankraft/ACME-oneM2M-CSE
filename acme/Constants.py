@@ -116,6 +116,7 @@ class Constants(object):
 	rcReceiverHasNoPrivileges		= 5105
 	rcAlreadyExists					= 5106
 	rcTargetNotSubscribable			= 5203
+	rcNotAcceptable 				= 5207
 	rcMaxNumberOfMemberExceeded		= 6010
 	rcInvalidArguments				= 6023
 	rcInsufficientArguments			= 6024

@@ -286,8 +286,11 @@ class Dispatcher(object):
 		#nr = resourceFromJSON(request.json, pi=pr['ri'], tpe=ty)	# Add pi
 		if (nr := Utils.resourceFromJSON(request.json, pi=pr.ri, tpe=ty)) is None:	# something wrong, perhaps wrong type
 			return (None, C.rcBadRequest)
-		print("#######")
-		print(nr)
+
+		# Check whether the parent allows the adding
+		if not (res := pr.childWillBeAdded(nr, originator))[0]:
+			return (None, res[1])
+
 
 		# # determine and add the srn
 		# nr[nr._srn] = Utils.structuredPath(nr)

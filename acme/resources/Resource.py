@@ -179,8 +179,13 @@ class Resource(object):
 		return (True, C.rcOK)
 
 
-	# Child was added to the resource.
+	def childWillBeAdded(self, childResource, originator):
+		""" Called before a child will be added to a resource.
+			This method return True, or False in kind the adding should be rejected, and an error code."""
+		return (True, C.rcOK)
+
 	def childAdded(self, childResource, originator):
+		""" Called when a child resource was added to the resource. """
 		CSE.notification.checkSubscriptions(self, C.netCreateDirectChild, childResource)
 
 

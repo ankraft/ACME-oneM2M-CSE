@@ -10,6 +10,7 @@
 - [WEB] Improved info box.
 - [DATABASE] Upgraded to TinyDB 4.x
 - [IMPORTING] Added macro mechanism to use configuration settings in imported files.
+- [ALL] Many small fixes and improvements
 
 
 ## 0.3.0 - 2020-04-20

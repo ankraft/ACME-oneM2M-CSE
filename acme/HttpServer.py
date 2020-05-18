@@ -253,6 +253,7 @@ class HttpServer(object):
 		C.rcReceiverHasNoPrivileges		: 403,		# RECEIVER HAS NO PRIVILEGE
 		C.rcNotFound					: 404,		# NOT FOUND
 		C.rcOperationNotAllowed			: 405,		# OPERATION NOT ALLOWED
+		C.rcNotAcceptable 				: 406,		# NOT ACCEPTABLE
 		C.rcInternalServerError 		: 500,		# INTERNAL SERVER ERROR
 		C.rcNotImplemented				: 501,		# NOT IMPLEMENTED
 	}

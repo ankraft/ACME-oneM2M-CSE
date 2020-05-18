@@ -57,6 +57,16 @@ class CNT(Resource):
 		return sorted(CSE.dispatcher.subResources(self.ri, C.tCIN), key=lambda x: (x.ct))
 
 
+	# Check whether the size of the CIN doesn't exceed the mbs
+	def childWillBeAdded(self, childResource, originator):
+		if not (res := super().childWillBeAdded(childResource, originator))[0]:
+			return res
+		if childResource.ty == C.tCIN and self.mbs is not None:
+			if childResource.cs is not None and childResource.cs > self.mbs:
+				return (False, C.rcNotAcceptable)
+		return (True, C.rcOK)
+
+
 	# Handle the addition of new CIN. Basically, get rid of old ones.
 	def childAdded(self, childResource, originator):
 		super().childAdded(childResource, originator)
