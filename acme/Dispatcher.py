@@ -332,7 +332,7 @@ class Dispatcher(object):
 		# resources that will try to read the resource from the DB.
 		if not (res := resource.activate(parentResource, originator))[0]: 	# activate the new resource
 			CSE.storage.deleteResource(resource)
-			return res
+			return (None, res[1])
 
 		# Could be that we changed the resource in the activate, therefore write it again
 		if (res := CSE.storage.updateResource(resource))[0] is None:

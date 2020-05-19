@@ -10,14 +10,45 @@
 from Logging import Logging
 from Configuration import Configuration
 from Constants import Constants as C
+from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN
 import Utils, CSE
 from .Resource import *
 
 
+attributeDefinitions = {
+	# shortname : basic type, cardinality, request create, request update, announced
+	'ty'	: [ BT.positiveInteger,	CAR.car1,   RO.NP, 	RO.NP, AN.NA ],
+	'ri'	: [ BT.string, 			CAR.car1,   RO.NP, 	RO.NP, AN.NA ],
+	'rn' 	: [ BT.string, 			CAR.car1,   RO.O,  	RO.NP, AN.NA ],
+	'pi' 	: [ BT.string, 			CAR.car1,   RO.NP,	RO.NP, AN.NA ],
+	'acpi'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.MA ],
+	'ct'	: [ BT.timestamp, 		CAR.car1,   RO.NP,	RO.NP, AN.NA ],
+	'et'	: [ BT.timestamp, 		CAR.car1,   RO.O,	RO.O,  AN.MA ],
+	'lt'	: [ BT.timestamp, 		CAR.car1,   RO.NP,	RO.NP, AN.NA ],
+	'st'	: [ BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, AN.NA ],
+	'lbl'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.MA ],
+	'at'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.NA ],
+	'aa'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.NA ],
+	'daci'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.OA ],
+	'cr'	: [ BT.list, 			CAR.car01,  RO.O,	RO.NP, AN.NA ],
+	'loc'	: [ BT.list, 			CAR.car01,  RO.O,	RO.O,  AN.OA ],
+
+	'mni'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],
+	'mbs'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],
+	'mia'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],
+	'cni'	: [ BT.nonNegInteger,	CAR.car1, 	RO.NP,	RO.NP, AN.NA ],
+	'cbs'	: [ BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, AN.NA ],
+	'li'	: [ BT.anyURI,			CAR.car01,  RO.NP,	RO.NP, AN.OA ],
+	'or'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  AN.OA ],
+	'disr'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ]
+}
+
+
 class CNT(Resource):
 
+
 	def __init__(self, jsn=None, pi=None, create=False):
-		super().__init__(C.tsCNT, jsn, pi, C.tCNT, create=create)
+		super().__init__(C.tsCNT, jsn, pi, C.tCNT, create=create, attributeDefinitions=attributeDefinitions)
 
 		if self.json is not None:
 			self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite=False)
@@ -36,7 +67,9 @@ class CNT(Resource):
 									 ])
 
 	def activate(self, parentResource, originator):
-		super().activate(parentResource, originator)
+		if not (result := super().activate(parentResource, originator))[0]:
+			return result
+
 		# register latest and oldest virtual resources
 		Logging.logDebug('Registering latest and oldest virtual resources for: %s' % self.ri)
 

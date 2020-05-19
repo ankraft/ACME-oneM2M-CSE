@@ -5,7 +5,8 @@
 - [CSE] Fixed crashes when using group resources.
 - [CSE] Added command line arguments --remote-cse, --no-remote-cse .
 - [CSE] Improved support for expiration handling, e.g. refreshing as well as removal of expired resources.
-- [CSE] Fixed SP-relative addressing
+- [CSE] Fixed SP-relative addressing.
+- [CSE] Added validation of resource attributes during CREATE and UPDATE.
 - [ACP] Changed: created resources without a provided ACPI will now have the same ACPI of the parent.
 - [ACP] Fixed format of privileges and self-privileges.
 - [DATABASE] Upgraded to TinyDB 4.x
