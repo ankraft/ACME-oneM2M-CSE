@@ -9,7 +9,6 @@
 
 from Logging import Logging
 from Constants import Constants as C
-from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN
 from Configuration import Configuration
 import Utils, CSE
 import datetime, random
@@ -21,12 +20,12 @@ class Resource(object):
 	_srn	= '__srn__'
 	_node	= '__node__'
 
-	def __init__(self, tpe, jsn=None, pi=None, ty=None, create=False, inheritACP=False, readOnly=False, rn=None, attributeDefinitions=None):
+	def __init__(self, tpe, jsn=None, pi=None, ty=None, create=False, inheritACP=False, readOnly=False, rn=None, attributePolicies=None):
 		self.tpe = tpe
 		self.readOnly = readOnly
 		self.inheritACP = inheritACP
 		self.json = {}
-		self.attributeDefinitions = attributeDefinitions
+		self.attributePolicies = attributePolicies
 
 		if jsn is not None: 
 			if tpe in jsn:
@@ -108,9 +107,8 @@ class Resource(object):
 		Logging.logDebug('Activating resource: %s' % self.ri)
 
 		# validate the attributes
-		if not (result := self.validateAttributes(create=True, jsn=self._originalJson))[0]:
+		if not (result := CSE.validator.validateAttributes(self._originalJson, self.attributePolicies))[0]:
 			return result
-
 
 		# validate the resource logic
 		if not (result := self.validate(originator, create=True))[0]:
@@ -164,7 +162,7 @@ class Resource(object):
 	def update(self, jsn=None, originator=None):
 
 		# validate the attributes
-		if not (result := self.validateAttributes(create=False, jsn=jsn))[0]:
+		if not (result := CSE.validator.validateAttributes(jsn, self.attributePolicies, create=False))[0]:
 			return result
 
 		if jsn is not None:
@@ -241,57 +239,6 @@ class Resource(object):
 			MAY be implemented by child class.
 		"""
 		pass
-
-
-	def	validateAttributes(self, create=True, jsn=None):
-		Logging.logDebug('Validating attributes for resource: %s' % self.ri)
-
-		""" Validate a resources attributes for types etc."""
-		if self.attributeDefinitions is None:
-			return (True, C.rcOK)
-
-		# Either take the provided jsn or self.jsn
-		jsn = self.json if jsn is None else jsn
-
-		# determine the request column, depending on create or updates
-		reqp = 2 if create else 3
-
-		for r, p in self.attributeDefinitions.items():
-
-			# Check whether the attribute is allowed or mandatory in the request
-			if (v := jsn.get(r)) is None:
-				if p[reqp] == RO.M:		# Not okay, this attribute is mandatory
-					Logging.logDebug('Cannot find mandatory attribute: %s' % r)
-					return (False, C.rcBadRequest)
-				if p[reqp] in [ RO.NP, RO.O]:	# Okay that the attribute is not in the json, since it is provided or optional
-					continue
-			else:
-				if p[reqp] == RO.NP:
-					Logging.logDebug('Found non-provision attribute: %s' % r)
-					return (False, C.rcBadRequest)
-
-			# Check whether the value is of the correct type
-			pt = p[0]	# type
-			pc = p[1]	# cardinality
-			if pt == BT.positiveInteger and isinstance(v, int) and v > 0:
-				continue
-			if pt == BT.nonNegInteger and isinstance(v, int) and v >= 0:
-				continue
-			if pt in [ BT.string, BT.timestamp, BT.anyURI ] and isinstance(v, str):
-				continue
-			if pt == BT.list and isinstance(v, list):
-				continue
-			if pt == BT.boolean and isinstance(v, bool) and v > 0:
-				continue
-			if pt == BT.geoCoordinates and isinstance(v, dict):
-				continue
-			
-			# fall-through means: not validated
-			Logging.logDebug('Attribute/value validation error: %s=%s' % (r, str(v)))
-			return (False, C.rcBadRequest)
-
-		return (True, C.rcOK)
-
 
 
 	#########################################################################

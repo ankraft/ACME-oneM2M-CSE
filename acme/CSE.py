@@ -23,6 +23,8 @@ from RemoteCSEManager import RemoteCSEManager
 from SecurityManager import SecurityManager
 from Statistics import Statistics
 from Storage import Storage
+from Validator import Validator
+
 from AEStatistics import AEStatistics
 from CSENode import CSENode
 
@@ -40,6 +42,7 @@ remote			= None
 security 		= None
 statistics		= None
 storage			= None
+validator 		= None
 
 rootDirectory	= None
 
@@ -57,7 +60,8 @@ aeStartupDelay	= 5	# seconds
 
 #def startup(args=None, configfile=None, resetdb=None, loglevel=None):
 def startup(args, **kwargs):
-	global announce, dispatcher, group, httpServer, notification, registration, remote, security, statistics, storage, event
+	global announce, dispatcher, group, httpServer, notification, validator
+	global registration, remote, security, statistics, storage, event
 	global rootDirectory
 	global aeStatistics
 
@@ -95,6 +99,9 @@ def startup(args, **kwargs):
 
 	# Initialize the registration manager
 	registration = RegistrationManager()
+
+	# Initialize the resource validator
+	validator = Validator()
 
 	# Initialize the resource dispatcher
 	dispatcher = Dispatcher()
@@ -151,6 +158,8 @@ def shutdown():
 		dispatcher.shutdown()
 	if security is not None:
 		security.shutdown()
+	if validator is not None:
+		validator.shutdown()
 	if registration is not None:
 		registration.shutdown()
 	if statistics is not None:

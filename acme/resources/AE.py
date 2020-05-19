@@ -8,13 +8,25 @@
 #
 
 from Constants import Constants as C
+from Validator import constructPolicy
 import Utils
 from .Resource import *
+
+
+# Attribute policies for this resource are constructed during startup of the CSE
+attributePolicies = constructPolicy([ 
+	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 'loc',
+	'apn', 'api', 'aei', 'poa', 'nl', 'rr', 'csz', 'esi', 'mei', 'srv', 'regs', 'trps', 'scp', 'tren', 'ape'
+])
+
+
+
+
 
 class AE(Resource):
 
 	def __init__(self, jsn=None, pi=None, create=False):
-		super().__init__(C.tsAE, jsn, pi, C.tAE, create=create)
+		super().__init__(C.tsAE, jsn, pi, C.tAE, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('aei', Utils.uniqueAEI(), overwrite=False)

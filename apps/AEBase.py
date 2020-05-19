@@ -39,20 +39,23 @@ class AEBase(AppBase):
 											'rn' : self.rn,
 											'api' : api,
 											'nl' : self.aeNode.node.ri if self.aeNode.node is not None else None,
-											'poa' : Configuration.get('http.address')
+											'poa' : [ Configuration.get('http.address') ],
+											'rr' : True,
+											'srv' : [ "3", "4" ]
 											}
 										},
 										ty=C.tAE)
 
 
 		# assign as originator the assigned aei attribute
-		self.originator = Utils.findXPath(self.ae, "aei")
+
+		self.originator = Utils.findXPath(self.ae, "aei") if self.ae is not None else None
 
 		# Store updated application data
 		self.setAppData('_originator', self.originator)
 
 		# assign as acpi to use the first assigned acpi
-		self.acpi = Utils.findXPath(self.ae, "acpi")[0]
+		self.acpi = Utils.findXPath(self.ae, "acpi")[0] if self.ae is not None else None
 
 
 	def shutdown(self):
