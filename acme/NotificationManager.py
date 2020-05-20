@@ -33,11 +33,11 @@ class NotificationManager(object):
 		Logging.log('NotificationManager shut down')
 
 
-	def addSubscription(self, subscription):
+	def addSubscription(self, subscription, originator):
 		if Configuration.get('cse.enableNotifications') is not True:
 			return False
 		Logging.logDebug('Adding subscription')
-		if self._getAndCheckNUS(subscription) is None:	# verification requests happen here
+		if self._getAndCheckNUS(subscription, originator=originator) is None:	# verification requests happen here
 			return False
 		return CSE.storage.addSubscription(subscription)
 
@@ -99,15 +99,17 @@ class NotificationManager(object):
 			else:
 				(r, _) = CSE.dispatcher.retrieveResource(nu)
 				if r is None:
-					continue
+					Logging.logWarn('Resource not found to retrieve URL: %s' % nu)
+					continue	# TODO what is the behaviour here when not all URLs could be retrieved
 				if not CSE.security.hasAccess('', r, C.permNOTIFY):	# check whether AE/CSE may receive Notifications
+					Logging.logWarn('No access to resource: %s' % nu)
 					continue
 				if (poa := r['poa']) is not None and isinstance(poa, list):	#TODO? check whether AE or CSEBase
 					result += poa
 		return result
 
 
-	def _getAndCheckNUS(self, subscription, previousNus=None):
+	def _getAndCheckNUS(self, subscription, previousNus=None, originator=None):
 		newNus = self._getNotificationURLs(subscription['nu'])
 		# notify removed nus (deletion notification)
 		if previousNus is not None:
@@ -119,7 +121,7 @@ class NotificationManager(object):
 		# notify new nus (verification request)
 		for nu in newNus:
 			if previousNus is None or (previousNus and nu not in previousNus):
-				if not self._sendVerificationRequest(nu, subscription):
+				if not self._sendVerificationRequest(nu, subscription, originator=originator):
 					Logging.logDebug('Verification request failed: %s' % nu)
 					return None
 		return newNus
@@ -127,51 +129,62 @@ class NotificationManager(object):
 	#########################################################################
 
 
-	_verificationRequest = {
-		'm2m:sgn' : {
-			'vrq' : True,
-			'sur' : ''
-		}
-	}
 
-	def _sendVerificationRequest(self, nu, subscription):
+
+	def _sendVerificationRequest(self, nu, subscription, originator=None):
 		Logging.logDebug('Sending verification request to: %s' % nu)
-		return self._sendRequest(nu, subscription['ri'], self._verificationRequest)
-
-
-	_deletionNotification = {
-		'm2m:sgn' : {
-			'sud' : True,
-			'sur' : ''
+	
+		verificationRequest = {
+			'm2m:sgn' : {
+				'vrq' : True,
+				'sur' : ''
+			}
 		}
-	}
+	
+		return self._sendRequest(nu, subscription['ri'], verificationRequest, originator=originator)
+
 
 	def _sendDeletionNotification(self, nu, subscription):
 		Logging.logDebug('Sending deletion notification to: %s' % nu)
-		return self._sendRequest(nu, subscription['ri'], self._deletionNotification)
-
-
-	_notificationRequest = {
-		'm2m:sgn' : {
-			'nev' : {
-				'rep' : {},
-				'net' : 0
-			},
-			'sur' : ''
+	
+		deletionNotification = {
+			'm2m:sgn' : {
+				'sud' : True,
+				'sur' : ''
+			}
 		}
-	}
+		
+		return self._sendRequest(nu, subscription['ri'], deletionNotification)
+
 
 	def _sendNotification(self, subscription, nu, reason, resource):
 		Logging.logDebug('Sending notification to: %s, reason: %d' % (nu, reason))
-		return self._sendRequest(nu, subscription['ri'], self._notificationRequest, reason, resource)
+
+		notificationRequest = {
+			'm2m:sgn' : {
+				'nev' : {
+					'rep' : {},
+					'net' : 0
+				},
+				'sur' : ''
+			}
+		}
+
+		return self._sendRequest(nu, subscription['ri'], notificationRequest, reason, resource)
 
 
-	def _sendRequest(self, nu, ri, jsn, reason=None, resource=None):
+	def _sendRequest(self, nu, ri, jsn, reason=None, resource=None, originator=None):
 		Utils.setXPath(jsn, 'm2m:sgn/sur', Utils.fullRI(ri))
+
+		# Add some values to the notification
 		if reason is not None:
 			Utils.setXPath(jsn, 'm2m:sgn/nev/net', reason)
 		if resource is not None:
-			Utils.setXPath(jsn, 'm2m:sgn/nev/rep', resource.asJSON())				
+			Utils.setXPath(jsn, 'm2m:sgn/nev/rep', resource.asJSON())
+		if originator is not None:
+			Utils.setXPath(jsn, 'm2m:sgn/cr', originator)
+
 		(_, rc) = CSE.httpServer.sendCreateRequest(nu, Configuration.get('cse.csi'), data=json.dumps(jsn))
+		print(rc)
 		return rc in [C.rcOK]
 
