@@ -28,6 +28,7 @@ class Resource(object):
 		self.attributePolicies = attributePolicies
 
 		if jsn is not None: 
+			self.isImported = jsn.get(C.jsnIsImported)
 			if tpe in jsn:
 				self.json = jsn[tpe].copy()
 			else:
@@ -36,7 +37,6 @@ class Resource(object):
 		else:
 			pass
 			# TODO Exception?
-
 
 		if self.json is not None:
 			if self.tpe is None: # and self._rtype in self:
@@ -107,7 +107,7 @@ class Resource(object):
 		Logging.logDebug('Activating resource: %s' % self.ri)
 
 		# validate the attributes
-		if not (result := CSE.validator.validateAttributes(self._originalJson, self.attributePolicies))[0]:
+		if not (result := CSE.validator.validateAttributes(self._originalJson, self.attributePolicies, isImported=self.isImported))[0]:
 			return result
 
 		# validate the resource logic

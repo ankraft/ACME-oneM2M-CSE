@@ -88,7 +88,7 @@ def structuredPathFromRI(ri):
 	return None
 
 
-def resourceFromJSON(jsn, pi=None, acpi=None, tpe=None, create=False):
+def resourceFromJSON(jsn, pi=None, acpi=None, tpe=None, create=False, isImported=False):
 	""" Create a resource from a JSON structure.
 		This will *not* call the activate method, therefore some attributes
 		may be set separately.
@@ -102,6 +102,11 @@ def resourceFromJSON(jsn, pi=None, acpi=None, tpe=None, create=False):
 	# Add extra acpi
 	if acpi is not None:
 		jsn['acpi'] = acpi if type(acpi) is list else [ acpi ]
+
+	# store the import status in the original jsn
+	if isImported:
+		jsn[C.jsnIsImported] = True	# Indicate that this is an imported resource
+
 
 	# sorted by assumed frequency (small optimization)
 	if ty == C.tCIN or root == C.tsCIN:

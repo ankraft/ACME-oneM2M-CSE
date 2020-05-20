@@ -194,6 +194,13 @@ class Constants(object):
 	csyAbandonGroup					= 2
 	csySetMixed						= 3
 
+	#
+	#	Magic strings
+	#
+
+	# Additional JSON fields
+	jsnIsImported						= '__imported__'
+
 
 
 	

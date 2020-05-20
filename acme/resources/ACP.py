@@ -8,9 +8,16 @@
 #
 
 from Constants import Constants as C
+from Validator import constructPolicy
 from .Resource import *
 import Utils
 
+
+# Attribute policies for this resource are constructed during startup of the CSE
+attributePolicies = constructPolicy([ 
+	'rn', 'ty', 'ri', 'pi', 'et', 'lbl', 'ct', 'lt', 'at', 'aa', 
+	'pv', 'pvs', 'adri', 'apri', 'airi'
+])
 
 class ACP(Resource):
 

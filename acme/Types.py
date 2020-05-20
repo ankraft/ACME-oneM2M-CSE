@@ -17,6 +17,7 @@ class BasicType(IntEnum):
 	string 			= auto()
 	timestamp		= auto()
 	list 			= auto()
+	dict 			= auto()
 	anyURI			= auto()
 	boolean			= auto()
 	geoCoordinates	= auto()

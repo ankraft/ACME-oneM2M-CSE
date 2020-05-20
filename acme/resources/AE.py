@@ -21,8 +21,6 @@ attributePolicies = constructPolicy([
 
 
 
-
-
 class AE(Resource):
 
 	def __init__(self, jsn=None, pi=None, create=False):

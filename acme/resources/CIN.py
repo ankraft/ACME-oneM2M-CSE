@@ -8,9 +8,16 @@
 #
 
 from Constants import Constants as C
+from Validator import constructPolicy
 from .Resource import *
 import Utils
 
+# Attribute policies for this resource are constructed during startup of the CSE
+attributePolicies = constructPolicy([ 
+	'rn', 'ty', 'ri', 'pi', 'et', 'ct', 'lt', 'st', 'lbl', 'at', 'aa', 'cr',
+	'cnf', 'cs', 'conr', 'con', 'or'
+
+])
 
 class CIN(Resource):
 

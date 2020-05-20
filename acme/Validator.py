@@ -28,40 +28,67 @@ attributePolicies = {
 	'lbl'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.MA ],
 	'at'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.NA ],
 	'aa'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.NA ],
-	'daci'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.OA ],
-	'loc'	: [ BT.list, 			CAR.car01,  RO.O,	RO.O,  AN.OA ],
-
-	'or'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  AN.OA ],
-	'cr'	: [ BT.list, 			CAR.car01,  RO.O,	RO.NP, AN.NA ],
-
-	# CNT
-	'mni'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],
-	'mbs'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],
-	'mia'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],
-	'cni'	: [ BT.nonNegInteger,	CAR.car1, 	RO.NP,	RO.NP, AN.NA ],
-	'cbs'	: [ BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, AN.NA ],
-	'li'	: [ BT.anyURI,			CAR.car01,  RO.NP,	RO.NP, AN.OA ],
-	'disr'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],
+	'daci'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.OA ],		# AE, CSE, CNT
+	'loc'	: [ BT.list, 			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CSE, AE, CNT
 
 
-	# AE
-	'apn'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.OA ],
-	'api'	: [ BT.string,			CAR.car1,   RO.M,	RO.NP, AN.OA ],
-	'aei'	: [ BT.string,			CAR.car1,   RO.NP,	RO.NP, AN.OA ],
-	'poa'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:poaList
-	'nl'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  AN.OA ],
-	'rr'	: [ BT.boolean,			CAR.car1,   RO.M,	RO.O,  AN.OA ],
-	'csz'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:serializations
-	'esi'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.MA ],		# m2m:e2eSecInfo
-	'mei'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.NA ],		# m2m:externalID
-	'srv'	: [ BT.list,			CAR.car01,  RO.M,	RO.O,  AN.MA ],		# m2m:supportedReleaseVersions
-	'regs'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:AERegistrationStatus
-	'trps'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],
-	'scp'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:sessionCapabilities
-	'tren'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],
-	'ape'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:activityPatternElements
-	# Not defined yet: ExternalGroupID?
-	# Not defined yet: enableTimeCompensation
+
+
+
+	'adri'	: [ BT.list,			CAR.car1,	RO.O,	RO.O,  AN.MA ],		# m2m:listOfURIs - ACP
+	'aei'	: [ BT.string,			CAR.car1,   RO.NP,	RO.NP, AN.OA ],		# AE
+	'airi'	: [ BT.list,			CAR.car1,	RO.O,	RO.O,  AN.MA ],		# m2m:listOfURIs - ACP
+	'ape'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:activityPatternElements - AE
+	'api'	: [ BT.string,			CAR.car1,   RO.M,	RO.NP, AN.OA ],		# AE
+	'apn'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# AE
+	'apri'	: [ BT.list,			CAR.car1,	RO.O,	RO.O,  AN.MA ],		# m2m:listOfURIs - ACP
+	'cbs'	: [ BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, AN.NA ],		# CNT
+	'cnf'	: [ BT.string,			CAR.car01,  RO.O,	RO.NP, AN.OA ],		# m2m_contentInfo - CIN
+	'cni'	: [ BT.nonNegInteger,	CAR.car1, 	RO.NP,	RO.NP, AN.NA ],		# CNT
+	'con'	: [ BT.string,			CAR.car01,  RO.O,	RO.NP, AN.OA ],		# CIN
+	'conr'	: [ BT.dict,			CAR.car01,  RO.O,	RO.NP, AN.OA ],		# m2m:contentRef - CIN
+	'cr'	: [ BT.list, 			CAR.car01,  RO.O,	RO.NP, AN.NA ],		# CNT
+	'cs'	: [ BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, AN.NA ],		# CIN
+	'csi'	: [ BT.string,			CAR.car1,   RO.NP,	RO.NP, AN.OA ],		# CSE
+	'cst'	: [ BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, AN.OA ],		# CSE
+	'csz'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:serializations - AE, CSE (RO!)
+	'disr'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
+	'esi'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.MA ],		# m2m:e2eSecInfo - AE, CSE
+	'li'	: [ BT.anyURI,			CAR.car01,  RO.NP,	RO.NP, AN.OA ],		# CNT
+	'mbs'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
+	'mei'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.NA ],		# m2m:externalID - AE
+	'mia'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
+	'mni'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
+	'nl'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# AE, CSE
+	'or'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
+	'poa'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:poaList - AE, CSE
+	'pv'	: [ BT.dict,			CAR.car1,	RO.M,	RO.O,  AN.MA ],		# m2m:setOfArcs - ACP
+	'pvs'	: [ BT.dict,			CAR.car1,	RO.M,	RO.O,  AN.MA ],		# m2m:setOfArcs - ACP
+	'regs'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:AERegistrationStatus - AE
+	'rr'	: [ BT.boolean,			CAR.car1,   RO.M,	RO.O,  AN.OA ],		# AE
+	'scp'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:sessionCapabilities - AE
+	'srt'	: [ BT.list, 			CAR.car01,  RO.O,	RO.NP, AN.NA ],		# CSE
+	'srv'	: [ BT.list,			CAR.car01,  RO.M,	RO.O,  AN.MA ],		# m2m:supportedReleaseVersions - AE, CSE
+	'tren'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# AE
+	'trps'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# AE
+
+	# TBC Group:
+
+	'mt'	: [ BT.nonNegInteger,	CAR.car1,	RO.O,	RO.NP, AN.OA ],		# GRP
+	'spty'	: [ BT.dict,			CAR.car01,	RO.O,	RO.NP, AN.OA ],		# GRP
+
+
+	# TODO Lookup in TS-0004, 0001
+
+	# CSE notificationCongestionPolicy 'ncp'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.NP,  AN.OA ],		# CSE
+
+	# AE Not defined yet: ExternalGroupID?
+	# AE CSE Not defined yet: enableTimeCompensation
+	# CSE currentTime
+	# CIN deletionCnt
+
+	
+
 }
 
 
@@ -83,12 +110,18 @@ class Validator(object):
 	#########################################################################
 
 
-	def	validateAttributes(self, jsn, attributePolicies, create=True):
+	def	validateAttributes(self, jsn, attributePolicies, create=True, isImported=False):
 		""" Validate a resources attributes for types etc."""
 		Logging.logDebug('Validating attributes')
 
+		# Just return in case the resource instance is imported
+		if isImported is not None and isImported:
+			return (True, C.rcOK)
+
+		# No policies?
 		if attributePolicies is None:
 			return (True, C.rcOK)
+
 
 		# determine the request column, depending on create or updates
 		reqp = 2 if create else 3
@@ -120,6 +153,8 @@ class Validator(object):
 			if pt in [ BT.string, BT.timestamp, BT.anyURI ] and isinstance(v, str):
 				continue
 			if pt == BT.list and isinstance(v, list):
+				continue
+			if pt == BT.dict and isinstance(v, dict):
 				continue
 			if pt == BT.boolean and isinstance(v, bool) and v > 0:
 				continue

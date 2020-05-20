@@ -153,7 +153,7 @@ class Importer(object):
 			content = content.replace(item, self.replaceMacro(item, filename))
 		# Load JSON and return directly or as resource
 		jsn = json.loads(content)
-		return jsn if asJSON else resourceFromJSON(jsn, create=True)
+		return jsn if asJSON else resourceFromJSON(jsn, create=True, isImported=True)
 
 
 

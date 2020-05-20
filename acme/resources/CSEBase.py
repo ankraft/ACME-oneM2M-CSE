@@ -9,12 +9,21 @@
 
 from Constants import Constants as C
 from Configuration import Configuration
+from Validator import constructPolicy
 from .Resource import *
+
+
+# Attribute policies for this resource are constructed during startup of the CSE
+attributePolicies = constructPolicy([ 
+	'rn', 'ty', 'ri', 'pi',  'ct', 'lt', 'lbl', 'loc',
+	'acpi', 'poa', 'nl', 'daci', 'esi', 'srv', 'cst', 'csi', 'csz'
+])
 
 class CSEBase(Resource):
 
 	def __init__(self, jsn=None, create=False):
-		super().__init__(C.tsCSEBase, jsn, '', C.tCSEBase, create=create)
+		super().__init__(C.tsCSEBase, jsn, '', C.tCSEBase, create=create, attributePolicies=attributePolicies)
+
 
 		if self.json is not None:
 			self.setAttribute('ri', 'cseid', overwrite=False)

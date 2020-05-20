@@ -22,36 +22,6 @@ attributePolicies = constructPolicy([
 	'mni', 'mbs', 'mia', 'cni', 'cbs', 'li', 'or', 'disr'
 ])
 
-# attributeDefinitions = {
-	# shortname : basic type, cardinality, request create, request update, announced
-	#'ty'	: [ BT.positiveInteger,	CAR.car1,   RO.NP, 	RO.NP, AN.NA ],
-	# 'ty'	: AD['ty'],
-	# 'ri'	: [ BT.string, 			CAR.car1,   RO.NP, 	RO.NP, AN.NA ],
-	# 'rn' 	: [ BT.string, 			CAR.car1,   RO.O,  	RO.NP, AN.NA ],
-	# 'pi' 	: [ BT.string, 			CAR.car1,   RO.NP,	RO.NP, AN.NA ],
-	# 'acpi'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.MA ],
-	# 'ct'	: [ BT.timestamp, 		CAR.car1,   RO.NP,	RO.NP, AN.NA ],
-	# 'et'	: [ BT.timestamp, 		CAR.car1,   RO.O,	RO.O,  AN.MA ],
-	# 'lt'	: [ BT.timestamp, 		CAR.car1,   RO.NP,	RO.NP, AN.NA ],
-	# 'st'	: [ BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, AN.NA ],
-	# 'lbl'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.MA ],
-	# 'at'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.NA ],
-	# 'aa'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.NA ],
-	# 'daci'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.OA ],
-	# 'loc'	: [ BT.list, 			CAR.car01,  RO.O,	RO.O,  AN.OA ],
-
-	# 'cr'	: [ BT.list, 			CAR.car01,  RO.O,	RO.NP, AN.NA ],
-
-# 	'mni'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],
-# 	'mbs'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],
-# 	'mia'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],
-# 	'cni'	: [ BT.nonNegInteger,	CAR.car1, 	RO.NP,	RO.NP, AN.NA ],
-# 	'cbs'	: [ BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, AN.NA ],
-# 	'li'	: [ BT.anyURI,			CAR.car01,  RO.NP,	RO.NP, AN.OA ],
-# 	'or'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  AN.OA ],
-# 	'disr'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ]
-# }
-
 
 class CNT(Resource):
 
