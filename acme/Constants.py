@@ -117,6 +117,7 @@ class Constants(object):
 	rcReceiverHasNoPrivileges		= 5105
 	rcAlreadyExists					= 5106
 	rcTargetNotSubscribable			= 5203
+	rcSubscriptionVerificationInitiationFailed = 5204
 	rcNotAcceptable 				= 5207
 	rcMaxNumberOfMemberExceeded		= 6010
 	rcInvalidArguments				= 6023
@@ -151,8 +152,9 @@ class Constants(object):
 	# Header Fields
 	hfOrigin						= 'X-M2M-Origin'
 	hfRI 							= 'X-M2M-RI'
+	hfRVI							= 'X-M2M-RVI'
 	hfvContentType					= 'application/json'
-
+	hfvRVI 							= '3'
 
 	# Subscription-related
 

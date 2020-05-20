@@ -35,29 +35,31 @@ class NotificationManager(object):
 
 	def addSubscription(self, subscription, originator):
 		if Configuration.get('cse.enableNotifications') is not True:
-			return False
+			return (False, C.rcSubscriptionVerificationInitiationFailed)
 		Logging.logDebug('Adding subscription')
-		if self._getAndCheckNUS(subscription, originator=originator) is None:	# verification requests happen here
-			return False
-		return CSE.storage.addSubscription(subscription)
+		if (result := self._getAndCheckNUS(subscription, originator=originator))[0] is None:	# verification requests happen here
+			return (False, result[1])
+		return (True, C.rcOK) if CSE.storage.addSubscription(subscription) else (False, C.rcSubscriptionVerificationInitiationFailed)
 
 
 	def removeSubscription(self, subscription):
 		Logging.logDebug('Removing subscription')
 		# This check does allow for removal of subscriptions
 		if Configuration.get('cse.enableNotifications'):
-			for nu in self._getNotificationURLs(subscription.nu):
+			if (result := self._getNotificationURLs(subscription.nu))[0] is None:
+				return (False, result[1])
+			for nu in result[0]:
 				if not self._sendDeletionNotification(nu, subscription):
 					Logging.logDebug('Deletion request failed') # but ignore the error
-		return CSE.storage.removeSubscription(subscription)
+		return (True, C.rcOK) if CSE.storage.removeSubscription(subscription) else (False, C.rcInternalServerError)
 
 
 	def updateSubscription(self, subscription):
 		Logging.logDebug('Updating subscription')
 		previousSub = CSE.storage.getSubscription(subscription.ri)
-		if self._getAndCheckNUS(subscription, previousSub['nus']) is None:	# verification/delete requests happen here
-			return False
-		return CSE.storage.updateSubscription(subscription)
+		if (result := self._getAndCheckNUS(subscription, previousSub['nus']))[0] is None:	# verification/delete requests happen here
+			return (False, result[1])
+		return (True, C.rcOK) if CSE.storage.updateSubscription(subscription) else (False, result[1])
 
 
 	def checkSubscriptions(self, resource, reason, childResource=None):
@@ -99,18 +101,21 @@ class NotificationManager(object):
 			else:
 				(r, _) = CSE.dispatcher.retrieveResource(nu)
 				if r is None:
-					Logging.logWarn('Resource not found to retrieve URL: %s' % nu)
-					continue	# TODO what is the behaviour here when not all URLs could be retrieved
+					Logging.logWarn('Resource not found to get URL: %s' % nu)
+					return None
 				if not CSE.security.hasAccess('', r, C.permNOTIFY):	# check whether AE/CSE may receive Notifications
 					Logging.logWarn('No access to resource: %s' % nu)
-					continue
+					return None
 				if (poa := r['poa']) is not None and isinstance(poa, list):	#TODO? check whether AE or CSEBase
 					result += poa
 		return result
 
 
 	def _getAndCheckNUS(self, subscription, previousNus=None, originator=None):
-		newNus = self._getNotificationURLs(subscription['nu'])
+		if (newNus := self._getNotificationURLs(subscription['nu'])) is None:
+			# Fail if any of the NU's cannot be retrieved
+			return (None, C.rcSubscriptionVerificationInitiationFailed)	
+
 		# notify removed nus (deletion notification)
 		if previousNus is not None:
 			for nu in previousNus:
@@ -123,8 +128,9 @@ class NotificationManager(object):
 			if previousNus is None or (previousNus and nu not in previousNus):
 				if not self._sendVerificationRequest(nu, subscription, originator=originator):
 					Logging.logDebug('Verification request failed: %s' % nu)
-					return None
-		return newNus
+					return (None, C.rcSubscriptionVerificationInitiationFailed)	
+		return (newNus, C.rcOK)
+
 
 	#########################################################################
 
@@ -185,6 +191,5 @@ class NotificationManager(object):
 			Utils.setXPath(jsn, 'm2m:sgn/cr', originator)
 
 		(_, rc) = CSE.httpServer.sendCreateRequest(nu, Configuration.get('cse.csi'), data=json.dumps(jsn))
-		print(rc)
 		return rc in [C.rcOK]
 

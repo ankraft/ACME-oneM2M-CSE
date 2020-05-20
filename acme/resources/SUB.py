@@ -35,8 +35,9 @@ class SUB(Resource):
 	def activate(self, parentResource, originator):
 		if not (result := super().activate(parentResource, originator))[0]:
 			return result
-		res = CSE.notification.addSubscription(self, originator)
-		return (res, C.rcOK if res else C.rcTargetNotSubscribable)
+		return CSE.notification.addSubscription(self, originator)
+		# res = CSE.notification.addSubscription(self, originator)
+		# return (res, C.rcOK if res else C.rcTargetNotSubscribable)
 
 
 	def deactivate(self, originator):
@@ -48,8 +49,9 @@ class SUB(Resource):
 		(res, rc) = super().update(jsn, originator)
 		if not res:
 			return (res, rc)
-		res = CSE.notification.updateSubscription(self)
-		return (res, C.rcOK if res else C.rcTargetNotSubscribable)
+		return CSE.notification.updateSubscription(self)
+		# res = CSE.notification.updateSubscription(self)
+		# return (res, C.rcOK if res else C.rcTargetNotSubscribable)
  
 
 	def validate(self, originator, create=False):

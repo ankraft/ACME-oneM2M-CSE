@@ -191,10 +191,12 @@ class HttpServer(object):
 		return self.sendRequest(requests.delete, url, originator)
 
 
+
 	def sendRequest(self, method, url, originator, ty=None, data=None, ct='application/json'):
 		headers = { 'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % ty if ty is not None else ''), 
-					'X-M2M-Origin' 	: originator,
-					'X-M2M-RI'		: Utils.uniqueRI()
+					C.hfOrigin	 	: originator,
+					C.hfRI 			: Utils.uniqueRI(),
+					C.hfRVI			: C.hfvRVI,			# TODO this actually depends in the originator
 				   }
 		try:
 			r = method(url, data=data, headers=headers)
@@ -235,28 +237,29 @@ class HttpServer(object):
 	#
 
 	_codes = {
-		C.rcOK 							: 200,		# OK
-		C.rcDeleted 					: 200,		# DELETED
-		C.rcUpdated 					: 200,		# UPDATED
-		C.rcCreated						: 201,		# CREATED
-		C.rcBadRequest					: 400,		# BAD REQUEST
-		C.rcContentsUnacceptable		: 400,		# NOT ACCEPTABLE
-		C.rcInsufficientArguments 		: 400,		# INSUFFICIENT ARGUMENTS
-		C.rcInvalidArguments			: 400,		# INVALID ARGUMENTS
-		C.rcMaxNumberOfMemberExceeded	: 400, 		# MAX NUMBER OF MEMBER EXCEEDED
-		C.rcGroupMemberTypeInconsistent	: 400,		# GROUP MEMBER TYPE INCONSISTENT
-		C.rcOriginatorHasNoPrivilege	: 403,		# ORIGINATOR HAS NO PRIVILEGE
-		C.rcInvalidChildResourceType	: 403,		# INVALID CHILD RESOURCE TYPE
-		C.rcTargetNotReachable			: 403,		# TARGET NOT REACHABLE
-		C.rcAlreadyExists				: 403,		# ALREAD EXISTS
-		C.rcTargetNotSubscribable		: 403,		# TARGET NOT SUBSCRIBABLE
-		C.rcReceiverHasNoPrivileges		: 403,		# RECEIVER HAS NO PRIVILEGE
-		C.rcNotFound					: 404,		# NOT FOUND
-		C.rcOperationNotAllowed			: 405,		# OPERATION NOT ALLOWED
-		C.rcNotAcceptable 				: 406,		# NOT ACCEPTABLE
-		C.rcConflict					: 409,		# CONFLICT
-		C.rcInternalServerError 		: 500,		# INTERNAL SERVER ERROR
-		C.rcNotImplemented				: 501,		# NOT IMPLEMENTED
+		C.rcOK 											: 200,		# OK
+		C.rcDeleted 									: 200,		# DELETED
+		C.rcUpdated 									: 200,		# UPDATED
+		C.rcCreated										: 201,		# CREATED
+		C.rcBadRequest									: 400,		# BAD REQUEST
+		C.rcContentsUnacceptable						: 400,		# NOT ACCEPTABLE
+		C.rcInsufficientArguments 						: 400,		# INSUFFICIENT ARGUMENTS
+		C.rcInvalidArguments							: 400,		# INVALID ARGUMENTS
+		C.rcMaxNumberOfMemberExceeded					: 400, 		# MAX NUMBER OF MEMBER EXCEEDED
+		C.rcGroupMemberTypeInconsistent					: 400,		# GROUP MEMBER TYPE INCONSISTENT
+		C.rcOriginatorHasNoPrivilege					: 403,		# ORIGINATOR HAS NO PRIVILEGE
+		C.rcInvalidChildResourceType					: 403,		# INVALID CHILD RESOURCE TYPE
+		C.rcTargetNotReachable							: 403,		# TARGET NOT REACHABLE
+		C.rcAlreadyExists								: 403,		# ALREAD EXISTS
+		C.rcTargetNotSubscribable						: 403,		# TARGET NOT SUBSCRIBABLE
+		C.rcReceiverHasNoPrivileges						: 403,		# RECEIVER HAS NO PRIVILEGE
+		C.rcNotFound									: 404,		# NOT FOUND
+		C.rcOperationNotAllowed							: 405,		# OPERATION NOT ALLOWED
+		C.rcNotAcceptable 								: 406,		# NOT ACCEPTABLE
+		C.rcConflict									: 409,		# CONFLICT
+		C.rcInternalServerError 						: 500,		# INTERNAL SERVER ERROR
+		C.rcSubscriptionVerificationInitiationFailed	: 500,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
+		C.rcNotImplemented								: 501,		# NOT IMPLEMENTED
 	}
 
 
