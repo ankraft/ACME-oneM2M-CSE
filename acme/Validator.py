@@ -32,6 +32,7 @@ attributePolicies = {
 	'loc'	: [ BT.list, 			CAR.car01,  RO.O,	RO.O,  AN.OA ],
 
 	'or'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  AN.OA ],
+	'cr'	: [ BT.list, 			CAR.car01,  RO.O,	RO.NP, AN.NA ],
 
 	# CNT
 	'mni'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],
@@ -93,6 +94,9 @@ class Validator(object):
 		reqp = 2 if create else 3
 
 		for r, p in attributePolicies.items():
+			if p is None:
+				Logging.logWarn('No validation policy found for attribute: %s' % r)
+				continue
 
 			# Check whether the attribute is allowed or mandatory in the request
 			if (v := jsn.get(r)) is None:
