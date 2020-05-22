@@ -122,9 +122,9 @@ class RegistrationManager(object):
 			Logging.logDebug('Removing ACP for AE')
 			acpi = '%s/%s%s' % (Configuration.get("cse.rn"), acpPrefix, resource.rn)
 			if (res := CSE.dispatcher.retrieveResource(acpi))[1] != C.rcOK:
-				Logging.logWarn('Could not find ACP: %s' % acpi)
-				return False
-			CSE.dispatcher.deleteResource(res[0])
+				Logging.logWarn('Could not find ACP: %s' % acpi)#ACP not found, either not created or already deleted
+			else:
+				CSE.dispatcher.deleteResource(res[0])
 		return True
 
 
