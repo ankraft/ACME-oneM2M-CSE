@@ -27,6 +27,12 @@ class ACP(Resource):
 		if self.json is not None:
 			self.setAttribute('pv/acr', [], overwrite=False)
 			self.setAttribute('pvs/acr', [], overwrite=False)
+	# Enable check for allowed sub-resources
+	def canHaveChild(self, resource):
+		return super()._canHaveChild(resource,	
+									 [ C.tSUB # TODO Transaction to be added
+									 ])
+
 
 
 	def validate(self, originator, create=False):
