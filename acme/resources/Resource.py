@@ -15,10 +15,16 @@ import datetime, random
 
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)
 
+
+
 class Resource(object):
-	_rtype 	= '__rtype__'
-	_srn	= '__srn__'
-	_node	= '__node__'
+	_rtype 				= '__rtype__'
+	_srn				= '__srn__'
+	_node				= '__node__'
+	_createdByAE		= '__createdByAE__'
+	_imported			= '__imported__'
+
+	internalAttributes	= [ _rtype, _srn, _node, _createdByAE, _imported ]
 
 	def __init__(self, tpe, jsn=None, pi=None, ty=None, create=False, inheritACP=False, readOnly=False, rn=None, attributePolicies=None):
 		self.tpe = tpe
@@ -39,7 +45,7 @@ class Resource(object):
 			# TODO Exception?
 
 		if self.json is not None:
-			if self.tpe is None: # and self._rtype in self:
+			if self.tpe is None: # and _rtype in self:
 				self.tpe = self.__rtype__
 			self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite=False)
 
@@ -86,7 +92,7 @@ class Resource(object):
 	def asJSON(self, embedded=True, update=False, noACP=False):
 		# remove (from a copy) all internal attributes before printing
 		jsn = self.json.copy()
-		for k in [ self._rtype, self._srn, self._node]:
+		for k in self.internalAttributes:
 			if k in jsn: 
 				del jsn[k]
 

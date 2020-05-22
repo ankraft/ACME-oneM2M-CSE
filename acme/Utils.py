@@ -10,7 +10,7 @@
 
 import datetime, random, string, sys, re
 from resources import ACP, AE, ANDI, ANI, BAT, CIN, CNT, CNT_LA, CNT_OL, CSEBase, CSR, DVC
-from resources import DVI, EVL, FCI, FCNT, FCNT_LA, FCNT_OL, FWR, GRP, GRP_FOPT, MEM, NOD, RBO, SUB, SWR, Unknown
+from resources import DVI, EVL, FCI, FCNT, FCNT_LA, FCNT_OL, FWR, GRP, GRP_FOPT, MEM, NOD, RBO, SUB, SWR, Unknown, Resource
 from Constants import Constants as C
 from Configuration import Configuration
 from Logging import Logging
@@ -105,7 +105,7 @@ def resourceFromJSON(jsn, pi=None, acpi=None, tpe=None, create=False, isImported
 
 	# store the import status in the original jsn
 	if isImported:
-		jsn[C.jsnIsImported] = True	# Indicate that this is an imported resource
+		jsn[Resource.Resource._imported] = True	# Indicate that this is an imported resource
 
 
 	# sorted by assumed frequency (small optimization)

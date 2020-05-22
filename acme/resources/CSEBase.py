@@ -55,7 +55,8 @@ class CSEBase(Resource):
 	def validate(self, originator, create=False):
 		if (res := super().validate(originator, create))[0] == False:
 			return res
-		# Update the hcl attribute in the hosting node
+			
+		# Update the hcl attribute in the hosting node (similar to AE)
 		nl = self['nl']
 		_nl_ = self.__node__
 
@@ -66,11 +67,11 @@ class CSEBase(Resource):
 					if n is not None:
 						n['hcl'] = None # remve old link
 						CSE.dispatcher.updateResource(n)
-				self[self._node] = nl
+				self[Resource._node] = nl
 				(n, _) = CSE.dispatcher.retrieveResource(nl)
 				if n is not None:
 					n['hcl'] = self['ri']
 					CSE.dispatcher.updateResource(n)
-			self[self._node] = nl
+			self[Resource._node] = nl
 
 		return (True, C.rcOK)

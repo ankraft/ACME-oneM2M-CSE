@@ -46,7 +46,7 @@ class AE(Resource):
 		if (res := super().validate(originator), create)[0] == False:
 			return res
 			
-		# Update the hcl attribute in the hosting node
+		# Update the hcl attribute in the hosting node (similar to csebase)
 		nl = self['nl']
 		_nl_ = self.__node__
 		if nl is not None or _nl_ is not None:
@@ -60,7 +60,7 @@ class AE(Resource):
 						if hael is not None and isinstance(hael, list) and ri in hael:
 							hael.remove(ri)
 						CSE.dispatcher.updateResource(n)
-				self[self._node] = nl
+				self[Resource._node] = nl
 				# Add to new node
 				(n, _) = CSE.dispatcher.retrieveResource(nl)
 				if n is not None:
@@ -72,6 +72,6 @@ class AE(Resource):
 							hael.append(ri)
 							n['hael'] = hael
 					CSE.dispatcher.updateResource(n)
-			self[self._node] = nl
+			self[Resource._node] = nl
 
 		return (True, C.rcOK)

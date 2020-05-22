@@ -82,6 +82,9 @@ class RegistrationManager(object):
 		# set the aei to the originator
 		ae['aei'] = originator
 
+		# set the ri of the ae to the aei (TS-0001, 10.2.2.2)
+		ae['ri'] = originator
+
 		# Verify that parent is the CSEBase, else this is an error
 		if parentResource is None or parentResource.ty != C.tCSEBase:
 			return None
@@ -91,7 +94,7 @@ class RegistrationManager(object):
 			if ae.acpi is None or len(ae.acpi) == 0:
 				Logging.logDebug('Adding ACP for AE')
 				cseOriginator = Configuration.get('cse.originator')
-				acp = ACP.ACP(pi=parentResource.ri, rn=acpPrefix + ae.rn)
+				acp = ACP.ACP(pi=parentResource.ri, rn=acpPrefix + ae.rn, createdByAE=ae.ri)
 				acp.addPermission([originator, cseOriginator], Configuration.get('cse.acp.pv.acop'))
 				acp.addSelfPermission([cseOriginator], Configuration.get('cse.acp.pvs.acop'))
 				# acp.addPermissionOriginator(originator)
@@ -124,7 +127,10 @@ class RegistrationManager(object):
 			if (res := CSE.dispatcher.retrieveResource(acpi))[1] != C.rcOK:
 				Logging.logWarn('Could not find ACP: %s' % acpi)#ACP not found, either not created or already deleted
 			else:
-				CSE.dispatcher.deleteResource(res[0])
+				acp = res[0]
+				# only delete the ACP when it was created in the course of AE registration
+				if  (aeRI := acp.createdByAE()) is not None and resource.ri == aeRI:	
+					CSE.dispatcher.deleteResource(acp)
 		return True
 
 

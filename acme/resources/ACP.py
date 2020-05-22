@@ -21,12 +21,16 @@ attributePolicies = constructPolicy([
 
 class ACP(Resource):
 
-	def __init__(self, jsn=None, pi=None, rn=None, create=False):
+	def __init__(self, jsn=None, pi=None, rn=None, create=False, createdByAE=None):
 		super().__init__(C.tsACP, jsn, pi, C.tACP, create=create, inheritACP=True, rn=rn)
 		
 		if self.json is not None:
 			self.setAttribute('pv/acr', [], overwrite=False)
 			self.setAttribute('pvs/acr', [], overwrite=False)
+			if createdByAE is not None:
+				self.setAttribute(self._createdByAE, createdByAE)
+
+
 	# Enable check for allowed sub-resources
 	def canHaveChild(self, resource):
 		return super()._canHaveChild(resource,	
@@ -46,6 +50,13 @@ class ACP(Resource):
 			self.addSelfPermissionOriginator(cseOriginator)
 		return (True, C.rcOK)
 
+
+
+	#########################################################################
+
+	def createdByAE(self):
+		""" Return the AE.ri for which this ACP was created, or None. """
+		return self[self._createdByAE]
 
 	#########################################################################
 
