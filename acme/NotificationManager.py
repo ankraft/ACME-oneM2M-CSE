@@ -46,11 +46,12 @@ class NotificationManager(object):
 		Logging.logDebug('Removing subscription')
 		# This check does allow for removal of subscriptions
 		if Configuration.get('cse.enableNotifications'):
-			if (result := self._getNotificationURLs(subscription.nu))[0] is None:
-				return (False, result[1])
-			for nu in result[0]:
-				if not self._sendDeletionNotification(nu, subscription):
-					Logging.logDebug('Deletion request failed') # but ignore the error
+			if (result := self._getNotificationURLs(subscription.nu)) is None:
+				Logging.logDebug('No notification URL to send deletion notification')
+			else:
+				for nu in result[0]:
+					if not self._sendDeletionNotification(nu, subscription):
+						Logging.logDebug('Deletion request failed') # but ignore the error
 		return (True, C.rcOK) if CSE.storage.removeSubscription(subscription) else (False, C.rcInternalServerError)
 
 
