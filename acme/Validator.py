@@ -156,7 +156,7 @@ class Validator(object):
 				continue
 			if pt == BT.dict and isinstance(v, dict):
 				continue
-			if pt == BT.boolean and isinstance(v, bool) and v > 0:
+			if pt == BT.boolean and isinstance(v, bool):
 				continue
 			if pt == BT.geoCoordinates and isinstance(v, dict):
 				continue
