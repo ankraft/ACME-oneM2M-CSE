@@ -25,7 +25,7 @@ Please consult the following pages for further instructions.
 	- [Applications and Nodes](docs/ApplicationsNodes.md)
 - [Supported Resource Types and Functionalities](docs/Supported.md)
 	- [Limitations](docs/Supported.md#limitations)
-- [Development](docs/Dsevelopment.md)
+- [Development](docs/Development.md)
 
 ## Changes
 
