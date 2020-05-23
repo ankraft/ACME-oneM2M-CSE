@@ -13,6 +13,7 @@
 - [IMPORTING] Added macro mechanism to use configuration settings in imported files.
 - [NOTIFICATIONS] Corrected error handling.
 - [ALL] Many small fixes and improvements.
+- [MISC] Restructured documentation.
 
 
 ## 0.3.0 - 2020-04-20
@@ -39,7 +40,7 @@
 - [WEB] Browser request to "/"" will now redirect to the webui's URL.
 - [WEB] REST UI will not refresh anymore when automatic refresh is on.
 - [WEB] Added LOGO & favicon.
-- [MISC] Various fixes and improvements.
+- [ALL] Various fixes and improvements.
 
 ## 0.1.0 - 2020-02-09
 - First release
