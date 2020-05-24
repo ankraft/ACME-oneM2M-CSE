@@ -150,7 +150,6 @@ class Importer(object):
 		# replace macros
 		items = re.findall(self.macroMatch, content)
 		for item in items:
-			print(item)
 			content = content.replace(item, self.replaceMacro(item, filename))
 		# Load JSON and return directly or as resource
 		jsn = json.loads(content)
