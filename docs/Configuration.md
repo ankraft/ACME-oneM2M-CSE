@@ -41,8 +41,8 @@ The following macros are supported in addition to those defined in the sections 
 [\[app.csenode\] - Configurations for the CSE Node App](#cse_node)
 
 
-### [cse] - General CSE Settings
 <a name="general"></a>
+### [cse] - General CSE Settings
 
 | Keyword                  | Description                                                                                                                                                                                    | Macro Name                   |
 |:-------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------|
@@ -65,8 +65,8 @@ The following macros are supported in addition to those defined in the sections 
 | checkExpirationsInterval | Interval to check for expired resources. 0 means "no checking".<br/>Default: 60 seconds                                                                                                        | cse.checkExpirationsInterval |
 	
 
-###	[server.http] - HTTP Server Settings
 <a name="server_http"></a>
+###	[server.http] - HTTP Server Settings
 
 | Keyword     | Description                                                                                  | Macro Name       |
 |:------------|:---------------------------------------------------------------------------------------------|:-----------------|
@@ -76,8 +76,8 @@ The following macros are supported in addition to those defined in the sections 
 | root        | CSE Server root. Always provide a trailing /.<br/>Default: /                                 | http.root        |
 | multiThread | Run the http server in single- or multi-threaded mode.<br/> Default: true                    | http.multiThread |
 
-###	[database] - Database Settings
 <a name="database"></a>
+###	[database] - Database Settings
 
 | Keyword        | Description                                                                                                                                                          | Macro Name        |
 |:---------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------|
@@ -87,9 +87,8 @@ The following macros are supported in addition to those defined in the sections 
 | resetAtStartup | Reset the databases at startup.<br/>See also command line argument [--db-reset](Running.md).<br/>Default: false                                                      | db.resetAtStartup |
 
 
-###	[logging] - Logging Settings
 <a name="logging"></a>
-
+###	[logging] - Logging Settings
 
 | Keyword           | Description                                                                                                                              | Macro Name                |
 |:------------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:--------------------------|
@@ -101,8 +100,8 @@ The following macros are supported in addition to those defined in the sections 
 | size              | Size per log file.<br/>Default: 100.000 bytes                                                                                            | logging.size              |
 
 
-### [cse.remote] - Settings for Remote CSE Access 
 <a name="remote"></a>
+### [cse.remote] - Settings for Remote CSE Access 
 
 | Keyword       | Description                                                                                                                              | Macro Name               |
 |:--------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:-------------------------|
@@ -112,16 +111,16 @@ The following macros are supported in addition to those defined in the sections 
 | originator    | Originator for registering to the remote CSE.<br/>Default: CAdmin                                                                        |                          |
 | checkInterval | Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.<br/>Default: 30 | cse.remote.checkInterval |
 
-###	[cse.statistics] - Statistic Settings
 <a name="statistics"></a>
+###	[cse.statistics] - Statistic Settings
 
 | Keyword        | Description                                                               | Macro Name                    |
 |:---------------|:--------------------------------------------------------------------------|:------------------------------|
 | writeIntervall | Intervall for saving statistics data to disk in seconds.<br />Default: 60 | cse.statistics.writeIntervall |
 
 
-###	[cse.resource.acp] - Resource Defaults: ACP
 <a name="resource_acp"></a>
+###	[cse.resource.acp] - Resource Defaults: ACP
 
 | Keyword           | Description                                                                   | Macro Name                |
 |:------------------|:------------------------------------------------------------------------------|:--------------------------|
@@ -130,16 +129,17 @@ The following macros are supported in addition to those defined in the sections 
 | addAdminOrignator | Always add the CSE's "admin" originator to an ACP resource.<br/>Default: true | cse.acp.addAdminOrignator |
 
 
-###	[cse.resource.ae] - Resource Defaults: AE
 <a name="resource_ae"></a>
+###	[cse.resource.ae] - Resource Defaults: AE
 
 | Keyword   | Description                                                                          | Macro Name       |
 |:----------|:-------------------------------------------------------------------------------------|:-----------------|
 | createACP | Create a new ACP resource when an AE registers.<br/>Default: true                    | cse.ae.createACP |
 | removeACP | Remove an ACP resource that was created during an AE registration.<br/>Default: true |                  |
 
-### [cse.resource.cnt] - Resource Defaults: Container
+
 <a name="resource_cnt"></a>
+### [cse.resource.cnt] - Resource Defaults: Container
 
 | Keyword | Description                                        | Macro Name  |
 |:--------|:---------------------------------------------------|:------------|
@@ -147,8 +147,8 @@ The following macros are supported in addition to those defined in the sections 
 | mbs     | Default for maxByteSize.<br/>Default: 10.000 bytes | cse.cnt.mbs |
 
 
-###	[cse.webui] - Web UI Settings
 <a name="webui"></a>
+###	[cse.webui] - Web UI Settings
 
 | Keyword | Description                                  | Macro Name       |
 |:--------|:---------------------------------------------|:-----------------|
@@ -156,8 +156,8 @@ The following macros are supported in addition to those defined in the sections 
 | root    | Root path of the web UI.<br/>Default: /webui | cse.webui.root   |
 
 
-###	[server.http.mappings] - ID Mappings
 <a name="id_mappings"></a>
+###	[server.http.mappings] - ID Mappings
 
 This section defines mappings for URI paths to IDs in the CSE. Mappings
 can be used to provide a more convenient way to access the CSE's resources.
@@ -180,8 +180,8 @@ The following snippet only presents some example for ID mappings.
 /access/v1/devices/battery=/id-mn?ty=14&mgd=1006&fu=1&fo=2&rcn=8
 ```
 
-### [app.statistics] - Configurations for the Statistics AE
 <a name="ae_statistics"></a>
+### [app.statistics] - Configurations for the Statistics AE
 
 | Keyword    | Description                                                                                           | Macro Name                |
 |:-----------|:------------------------------------------------------------------------------------------------------|:--------------------------|
@@ -195,8 +195,8 @@ The following snippet only presents some example for ID mappings.
 | intervall  | Wait n seconds between updates of the AE in seconds.<br/>Default: 10                                  | app.statistics.intervall  |
 
 
-###	[app.csenode] - Configurations for the CSE Node App
 <a name="cse_node"></a>
+###	[app.csenode] - Configurations for the CSE Node App
 
 | Keyword             | Description                                                                             | Macro Name                      |
 |:--------------------|:----------------------------------------------------------------------------------------|:--------------------------------|
