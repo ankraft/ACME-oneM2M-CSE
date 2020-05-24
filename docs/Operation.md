@@ -30,4 +30,5 @@ As a convenience to access resources on a CSE and to let requests look more like
 
 For example, the path */access/v1/devices* can be mapped to */cse-mn?ty=14&fu=1&fo=2&rcn=8* to easily retrieve all nodes from the CSE.
 
-See the configuration file for more examples.
+See the [configuration](Configuration.md) for more examples.
+
