@@ -1,17 +1,17 @@
 {	"m2m:acp" : {
 		"ty" : 1,
-		"ri" : "$cse.defaultACPI$",
+		"ri" : "${cse.defaultACPI}",
 		"rn" : "defaultACP",
-		"pi" : "$cse.ri$",
+		"pi" : "${cse.ri}",
 		"pv" : {
 			"acr": [{
-				"acor": [ "CDefault", "$cse.originator$" ],
+				"acor": [ "CDefault", "${cse.originator}" ],
 				"acop": 63
 			}]
 		},
 		"pvs": {
 			"acr": [{
-				"acor": ["$cse.originator$"],
+				"acor": ["${cse.originator}"],
 				"acop": 51
 			}]
 		}

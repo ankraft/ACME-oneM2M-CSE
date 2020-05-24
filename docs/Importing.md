@@ -22,6 +22,23 @@ After importing the mandatory resources all other resources in the [init](../ini
 
 If the filename contains the substring *update*, then the resource specified by the resource's *ri* attribute is updated instead of created.
 
+## Accessing Configuration Settings
+
+By using macros the initial resources can be kept rather independent from individual settings. Most [configuration](Configuration.md) settings can be referenced and used by a simple macro mechanism. For this a given macro name is enclosed by $ characters, e.g. ```${cse.csi}```. 
+
+The following example shows the initial *CSEBase* resource definition.
+
+```json
+{	"m2m:cb" : {
+		"ri" : "${cse.ri}",
+		"ty" : 5,
+		"rn" : "${cse.rn}",
+		"csi" : "${cse.csi}",
+		"acpi" : [ "${cse.adminACPI}" ]
+	}
+}
+```
+
 ## Examples & Templates
 
 A minimal set of resources is provided in the [init](../init) directory. Definitions for a more sophisticated setup can be found in the [tools/init.example](../tools/init.example) directory. To use these examples, you can either copy the resources to the *init* directory or change the "cse -> resourcesPath" entry in the *acme.ini* configuration file.

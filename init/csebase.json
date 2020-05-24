@@ -1,8 +1,8 @@
 {	"m2m:cb" : {
-		"ri" : "$cse.ri$",
+		"ri" : "${cse.ri}",
 		"ty" : 5,
-		"rn" : "$cse.rn$",
-		"csi" : "$cse.csi$",
-		"acpi" : [ "$cse.adminACPI$" ]
+		"rn" : "${cse.rn}",
+		"csi" : "${cse.csi}",
+		"acpi" : [ "${cse.adminACPI}" ]
 	}
 }

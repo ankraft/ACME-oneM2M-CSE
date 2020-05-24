@@ -131,14 +131,14 @@ class Importer(object):
 		# temporarily disable access control
 		self._oldacp = Configuration.get('cse.enableACPChecks')
 		Configuration.set('cse.enableACPChecks', False)
-		self.macroMatch = re.compile(r"\$[\w.]+\$")
+		self.macroMatch = re.compile(r"\$\{[\w.]+\}")
 
 
 
 	def replaceMacro(self, item, filename):
-		item = item[1:-1]
+		item = item[2:-1]
 		if (value := Configuration.get(item)) is None:
-			Logging.logErr('Unknown macro $%s$ in file %s' %(item, filename))
+			Logging.logErr('Unknown macro ${%s} in file %s' %(item, filename))
 			return '*** UNKNWON MACRO : %s ***' % item
 		return value
 
@@ -150,6 +150,7 @@ class Importer(object):
 		# replace macros
 		items = re.findall(self.macroMatch, content)
 		for item in items:
+			print(item)
 			content = content.replace(item, self.replaceMacro(item, filename))
 		# Load JSON and return directly or as resource
 		jsn = json.loads(content)
