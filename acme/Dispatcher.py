@@ -316,7 +316,7 @@ class Dispatcher(object):
 		if parentResource is not None:
 			Logging.logDebug('Parent ri: %s' % parentResource.ri)
 			if not parentResource.canHaveChild(resource):
-				if(resource.ty == C.tSUB):
+				if resource.ty == C.tSUB:
 					Logging.logWarn('Parent resource not subscribable')
 					return (None, C.rcTargetNotSubscribable)
 				else:
@@ -543,7 +543,9 @@ class Dispatcher(object):
 			rcn = int(rcn)
 			del args['rcn']
 		else:
-			rcn = C.rcnAttributes if fu == C.fuConditionalRetrieval else C.rcnChildResourceReferences
+			# TODO Not sure whether the conditional handling makes sense
+			# rcn = C.rcnAttributes if fu == C.fuConditionalRetrieval else C.rcnChildResourceReferences
+			rcn = C.rcnAttributes
 		result['rcn'] = rcn
 
 		# handling conditions

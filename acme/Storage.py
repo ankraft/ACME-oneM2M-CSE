@@ -342,10 +342,10 @@ def _testDiscovery(storage, r, rootSRN, handling, conditions, attributes, fo, li
 	# 	print(pi)
 	# 	pr = storage.retrieveResource(ri=pi)
 	# print(pr)
+	found = 0
 
 	# check conditions
 	if conditions is not None:
-		found = 0
 		# found += 1 if (c_ty := conditions.get('ty')) is not None and (str(ty) == c_ty) else 0
 
 		if (ct := r.get('ct')) is not None:
@@ -402,7 +402,8 @@ def _testDiscovery(storage, r, rootSRN, handling, conditions, attributes, fo, li
 	# TODO parentAttribute
 
 	# Test Types
-	found += 1 if str(ty) in conditions['ty'] else 0
+	if conditions is not None:
+		found += 1 if str(ty) in conditions['ty'] else 0
 
 	# Test whether the OR or AND criteria is fullfilled
 	if not ((fo == 2 and found > 0) or 		# OR and found something
