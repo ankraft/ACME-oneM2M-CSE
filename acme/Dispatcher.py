@@ -316,7 +316,7 @@ class Dispatcher(object):
 		if parentResource is not None:
 			Logging.logDebug('Parent ri: %s' % parentResource.ri)
 			if not parentResource.canHaveChild(resource):
-				if(resource.ty == 23):
+				if(resource.ty == C.tSUB):
 					Logging.logWarn('Parent resource not subscribable')
 					return (None, C.rcTargetNotSubscribable)
 				else:
