@@ -44,17 +44,24 @@ class NotificationManager(object):
 
 	def removeSubscription(self, subscription):
 		""" Remove a subscription. Send the deletion notifications, if possible. """
-
 		Logging.logDebug('Removing subscription')
+
 		# This check does allow for removal of subscriptions
 		if Configuration.get('cse.enableNotifications'):
-			if (result := self._getNotificationURLs(subscription.nu)) is None:
-				Logging.logDebug('No notification URL to send deletion notification')
-			else:
-				for nu in result:
+
+			# Send a deletion request to the subscriberURI
+			if (su := subscription['su']) is not None:
+				if not self._sendDeletionNotification(su, subscription):
+						Logging.logDebug('Deletion request failed: %s' % su) # but ignore the error
+
+			# Send a deletion request to the associatedCrossResourceSub
+			if (acrs := subscription['acrs']) is not None and (nus := self._getNotificationURLs(acrs)) is not None:
+				for nu in nus:
 					if not self._sendDeletionNotification(nu, subscription):
-						Logging.logDebug('Deletion request failed') # but ignore the error
+						Logging.logDebug('Deletion request failed: %s' % nu) # but ignore the error
+		
 		return (True, C.rcOK) if CSE.storage.removeSubscription(subscription) else (False, C.rcInternalServerError)
+
 
 
 	def updateSubscription(self, subscription):
