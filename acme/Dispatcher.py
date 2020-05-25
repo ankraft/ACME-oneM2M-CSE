@@ -316,8 +316,12 @@ class Dispatcher(object):
 		if parentResource is not None:
 			Logging.logDebug('Parent ri: %s' % parentResource.ri)
 			if not parentResource.canHaveChild(resource):
-				Logging.logWarn('Invalid child resource type')
-				return (None, C.rcInvalidChildResourceType)
+				if(resource.ty == C.tSUB):
+					Logging.logWarn('Parent resource not subscribable')
+					return (None, C.rcTargetNotSubscribable)
+				else:
+					Logging.logWarn('Invalid child resource type')
+					return (None, C.rcInvalidChildResourceType)
 
 		# if not already set: determine and add the srn
 		if resource.__srn__ is None:
