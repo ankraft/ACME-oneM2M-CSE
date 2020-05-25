@@ -39,3 +39,5 @@ class CIN(Resource):
 		self.setAttribute('st', parentResource.st)
 		return (True, C.rcOK)
 
+	def update(self, jsn=None, originator=None):
+		return (False, C.rcOperationNotAllowed)

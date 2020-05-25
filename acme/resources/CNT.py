@@ -45,6 +45,7 @@ class CNT(Resource):
 									   C.tSUB
 									 ])
 
+
 	def activate(self, parentResource, originator):
 		if not (result := super().activate(parentResource, originator))[0]:
 			return result
@@ -69,10 +70,18 @@ class CNT(Resource):
 		return sorted(CSE.dispatcher.subResources(self.ri, C.tCIN), key=lambda x: (x.ct))
 
 
-	# Check whether the size of the CIN doesn't exceed the mbs
 	def childWillBeAdded(self, childResource, originator):
+
+		# See also CNT resource
+		
 		if not (res := super().childWillBeAdded(childResource, originator))[0]:
 			return res
+		
+		# Check whether the child's rn is "ol" or "la".
+		if (rn := childResource['rn']) is not None and rn in ['ol', 'la']:
+			return (False, C.rcOperationNotAllowed)
+	
+		# Check whether the size of the CIN doesn't exceed the mbs
 		if childResource.ty == C.tCIN and self.mbs is not None:
 			if childResource.cs is not None and childResource.cs > self.mbs:
 				return (False, C.rcNotAcceptable)
@@ -81,7 +90,8 @@ class CNT(Resource):
 
 	# Handle the addition of new CIN. Basically, get rid of old ones.
 	def childAdded(self, childResource, originator):
-		super().childAdded(childResource, originator)
+		if not (result := super().childAdded(childResource, originator))[0]:
+			return result
 		if childResource.ty == C.tCIN:	# Validate if child is CIN
 			self.validate(originator)
 

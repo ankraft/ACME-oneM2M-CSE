@@ -53,8 +53,24 @@ class FCNT(Resource):
 			# add oldest
 			r = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, tpe=C.tFCNT_OL)
 			CSE.dispatcher.createResource(r)
+		return (True, C.rcOK)
 
 
+	def childWillBeAdded(self, childResource, originator):
+	
+		# See also CNT resource
+	
+		if not (res := super().childWillBeAdded(childResource, originator))[0]:
+			return res
+
+		# Check whether the child's rn is "ol" or "la".
+		if (rn := childResource['rn']) is not None and rn in ['ol', 'la']:
+			return (False, C.rcOperationNotAllowed)
+	
+		# Check whether the size of the CIN doesn't exceed the mbs
+		if childResource.ty == C.tCIN and self.mbs is not None:
+			if childResource.cs is not None and childResource.cs > self.mbs:
+				return (False, C.rcNotAcceptable)
 		return (True, C.rcOK)
 
 
