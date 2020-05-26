@@ -50,16 +50,14 @@ class NotificationManager(object):
 		if Configuration.get('cse.enableNotifications'):
 
 			# Send a deletion request to the subscriberURI
-			if (sus := self._getNotificationURLs([subscription['su']])) is not None:
-				for su in sus:
-					if not self._sendDeletionNotification(su, subscription):
-						Logging.logDebug('Deletion request failed: %s' % su) # but ignore the error
+			for su in self._getNotificationURLs(subscription['su']):
+				if not self._sendDeletionNotification(su, subscription):
+					Logging.logDebug('Deletion request failed: %s' % su) # but ignore the error
 
 			# Send a deletion request to the associatedCrossResourceSub
-			if (acrs := subscription['acrs']) is not None and (nus := self._getNotificationURLs(acrs)) is not None:
-				for nu in nus:
-					if not self._sendDeletionNotification(nu, subscription):
-						Logging.logDebug('Deletion request failed: %s' % nu) # but ignore the error
+			for nu in self._getNotificationURLs(subscription['acrs']):
+				if not self._sendDeletionNotification(nu, subscription):
+					Logging.logDebug('Deletion request failed: %s' % nu) # but ignore the error
 		
 		return (True, C.rcOK) if CSE.storage.removeSubscription(subscription) else (False, C.rcInternalServerError)
 
@@ -104,8 +102,11 @@ class NotificationManager(object):
 
 	# Return resolved notification URLs, so also POA from referenced AE's etc
 	def _getNotificationURLs(self, nus):
+		if nus is None:
+			return []
+		nusl = nus if isinstance(nus, list) else [ nus ]	# make a list out of it even when it is a single value
 		result = []
-		for nu in nus:
+		for nu in nusl:
 			# check if it is a direct URL
 			if Utils.isURL(nu):
 				result.append(nu)
