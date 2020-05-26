@@ -23,10 +23,11 @@ class Resource(object):
 	_node				= '__node__'
 	_createdByAE		= '__createdByAE__'
 	_imported			= '__imported__'
+	_isVirtual 			= '__isVirtual__'
 
-	internalAttributes	= [ _rtype, _srn, _node, _createdByAE, _imported ]
+	internalAttributes	= [ _rtype, _srn, _node, _createdByAE, _imported, _isVirtual ]
 
-	def __init__(self, tpe, jsn=None, pi=None, ty=None, create=False, inheritACP=False, readOnly=False, rn=None, attributePolicies=None):
+	def __init__(self, tpe, jsn=None, pi=None, ty=None, create=False, inheritACP=False, readOnly=False, rn=None, attributePolicies=None, isVirtual=False):
 		self.tpe = tpe
 		self.readOnly = readOnly
 		self.inheritACP = inheritACP
@@ -59,6 +60,10 @@ class Resource(object):
 				while Utils.isUniqueRI(ri := self.attribute('ri')) == False:
 					Logging.logWarn("RI: %s is already assigned. Generating new RI." % ri)
 					self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite=True)
+
+			# Indicate whether this is a virtual resource
+			if isVirtual:
+				self.setAttribute(self._isVirtual, isVirtual)
 	
 			# Create an RN if there is none
 			self.setAttribute('rn', Utils.uniqueRN(self.tpe), overwrite=False)

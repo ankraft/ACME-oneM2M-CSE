@@ -47,7 +47,9 @@ def uniqueID():
 
 
 def isVirtualResource(resource):
-	return (ty := r.ty) and ty in C.tVirtualResources
+	result = resource[resource._isVirtual]
+	return result if result is not None else False
+	# ireturn (ty := r.ty) and ty in C.tVirtualResources
 
 
 # Check for valid ID
