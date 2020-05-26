@@ -142,7 +142,15 @@ class Validator(object):
 				if p[reqp] == RO.NP:
 					Logging.logDebug('Found non-provision attribute: %s' % r)
 					return (False, C.rcBadRequest)
-
+				#Special case for lists that are not allowed to be empty (pvs in ACP)
+				if r in ['pvs']:
+					if jsn.get(r).len == 0:
+						Logging.logDebug('Attribute %s cannot be an empty list' % r)
+						return (False, C.rcBadRequest)
+					elif jsn.get(r).len == 1:
+						if jsn.get(r['acr'][0].len == 0):
+							Logging.logDebug('Attribute %s cannot be an empty list' % r)
+							return (False, C.rcBadRequest)
 			# Check whether the value is of the correct type
 			pt = p[0]	# type
 			pc = p[1]	# cardinality
