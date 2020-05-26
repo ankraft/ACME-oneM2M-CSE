@@ -27,7 +27,7 @@ class SecurityManager(object):
 		Logging.log('SecurityManager shut down')
 
 
-	def hasAccess(self, originator, resource, requestedPermission, checkSelf=False, ty=None, isCreateRequest=False):
+	def hasAccess(self, originator, resource, requestedPermission, checkSelf=False, ty=None, isCreateRequest=False, parentResource=None):
 		if not Configuration.get('cse.enableACPChecks'):	# check or ignore the check
 			return True
 
@@ -53,8 +53,15 @@ class SecurityManager(object):
 				Logging.logDebug('Permission granted')
 				return True
 
+
+
 		else:		# target is not an ACP resource
 			
+			# If subscription, check whether originator has retrieve permissions on the subscribed-to resource (parent)	
+			if resource.ty == C.tSUB and parentResource is not None:
+				if self.hasAccess(originator, parentResource, C.permRETRIEVE) == False:
+					return (None, C.rcOriginatorHasNoPrivilege)
+
 			if (acpi := resource.acpi) is None or len(acpi) == 0:	
 				if resource.inheritACP:
 					(parentResource, _) = CSE.dispatcher.retrieveResource(resource.pi)

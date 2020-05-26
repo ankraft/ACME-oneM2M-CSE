@@ -280,15 +280,9 @@ class Dispatcher(object):
 		if pr is None:
 			Logging.log('Parent resource not found')
 			return (None, C.rcNotFound)
-
-		if CSE.security.hasAccess(originator, pr, C.permCREATE, ty=ty, isCreateRequest=True) == False:
+		if CSE.security.hasAccess(originator, pr, C.permCREATE, ty=ty, isCreateRequest=True, parentResource=pr) == False:
 			return (None, C.rcOriginatorHasNoPrivilege)
 		
-		# If subscription, check whether originator has retrieve permissions on the subscribed-to resource (parent)
-		if ty == C.tSUB:
-			if CSE.security.hasAccess(originator, pr, C.permRETRIEVE, ty=ty, isCreateRequest=True) == False:
-				return (None, C.rcOriginatorHasNoPrivilege)
-
 		# Add new resource
 		#nr = resourceFromJSON(request.json, pi=pr['ri'], tpe=ty)	# Add pi
 		if (nr := Utils.resourceFromJSON(request.json, pi=pr.ri, tpe=ty)) is None:	# something wrong, perhaps wrong type
