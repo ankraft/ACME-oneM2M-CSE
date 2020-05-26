@@ -90,8 +90,7 @@ class CNT(Resource):
 
 	# Handle the addition of new CIN. Basically, get rid of old ones.
 	def childAdded(self, childResource, originator):
-		if not (result := super().childAdded(childResource, originator)):
-			return result
+		super().childAdded(childResource, originator)
 		if childResource.ty == C.tCIN:	# Validate if child is CIN
 			self.validate(originator)
 
