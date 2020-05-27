@@ -561,7 +561,11 @@ class Dispatcher(object):
 		else:
 			# TODO Not sure whether the conditional handling makes sense
 			# rcn = C.rcnAttributes if fu == C.fuConditionalRetrieval else C.rcnChildResourceReferences
-			rcn = C.rcnAttributes
+			if fu != C.fuDiscoveryCriteria:
+				rcn = C.rcnAttributes
+			else:
+				# TODO It should be discovery-result-references or childResourceReferences, not specified
+				rcn = C.rcnChildResourceReferences
 		result['rcn'] = rcn
 
 		# handling conditions
