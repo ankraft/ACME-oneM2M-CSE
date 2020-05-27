@@ -71,12 +71,25 @@ class RegistrationManager(object):
 	#
 
 	def handleAERegistration(self, ae, originator, parentResource):
+
+		# check for empty originator and assign something
+		if originator is None or len(originator) == 0:
+			originator = 'C'
+
+		# Check for allowed orginator
+		# TODO also allow when there is an ACP?
+		if not Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedAEOriginators')):
+			Logging.logDebug('Originator not allowed')
+			return None
+
+
+		# Assign originator for the AE
 		if originator == 'C':
 			originator = Utils.uniqueAEI('C')
 		elif originator == 'S':
 			originator = Utils.uniqueAEI('S')
-		elif originator is None or len(originator) == 0:
-			originator = Utils.uniqueAEI('S')
+		# elif originator is None or len(originator) == 0:
+		# 	originator = Utils.uniqueAEI('S')
 		Logging.logDebug('Registering AE. aei: %s ' % originator)
 
 		# set the aei to the originator

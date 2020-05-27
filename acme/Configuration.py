@@ -33,7 +33,9 @@ class Configuration(object):
 		argsRemoteCSEEnabled	= args.remotecseenabled if args is not None else None
 
 
-		config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
+		config = configparser.ConfigParser(	interpolation=configparser.ExtendedInterpolation(),
+											converters={'list': lambda x: [i.strip() for i in x.split(',')]}	# Convert csv to list
+										  )
 		config.read(argsConfigfile)
 
 		try:
@@ -101,6 +103,13 @@ class Configuration(object):
 				'cse.remote.cseid'					: config.get('cse.remote', 'cseid', 					fallback=''),
 				'cse.remote.originator'				: config.get('cse.remote', 'originator', 				fallback='CAdmin'),
 				'cse.remote.checkInterval'			: config.getint('cse.remote', 'checkInterval', 			fallback=30),		# Seconds
+
+				#
+				#	Registrations
+				#
+
+				'cse.registration.allowedAEOriginators'	: config.getlist('cse.registration', 'allowedAEOriginators',	fallback=['C*','S*']),
+
 
 				#
 				#	Statistics
@@ -201,6 +210,7 @@ class Configuration(object):
 			Configuration._configuration['logging.level'] = logging.ERROR
 		else:
 			Configuration._configuration['logging.level'] = logging.DEBUG
+
 
 		# Override DB reset from command line
 		if argsDBReset is True:

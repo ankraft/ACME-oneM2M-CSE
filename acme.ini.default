@@ -89,6 +89,17 @@ resetAtStartup=false
 
 
 #
+#	Settings for self-registrations of some resources
+#
+
+[cse.registration]
+# List of AE originators that can register. This is a comma-separated list of originators.
+# Regular expressions are supported.
+# Default: C.*,S.* 
+allowedAEOriginators=C.*,S.*
+
+
+#
 #	Logging settings
 #
 

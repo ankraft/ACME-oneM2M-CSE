@@ -213,7 +213,19 @@ urlregex = re.compile(
 
 
 def isURL(url):
+	""" Check whether a given string is a URL. """
 	return url is not None and re.match(urlregex, url) is not None
+
+
+def isAllowedOriginator(originator, allowedOriginators):
+	""" Check whether an Originator is in the provided list of allowed 
+		originators. This list may contain regex.
+	"""
+	print(allowedOriginators)
+	for ao in allowedOriginators:
+		if re.fullmatch(re.compile(ao), originator):
+			return True
+	return False
 
 
 

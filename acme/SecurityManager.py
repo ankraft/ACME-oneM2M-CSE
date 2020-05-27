@@ -10,7 +10,7 @@
 
 from Logging import Logging
 from Constants import Constants as C
-import CSE
+import CSE, Utils
 from Configuration import Configuration
 
 # Mapping between request operations and permissions
@@ -40,9 +40,9 @@ class SecurityManager(object):
 
 		# originator may be None or empty or C or S. 
 		# That is okay if type is AE and this is a create request
-		if originator is None or len(originator) == 0 or originator in ['C', 'S']:
-			if ty is not None and ty == C.tAE and isCreateRequest:
-				Logging.logDebug("Empty originator for AE CREATE. OK.")
+		if ty is not None and ty == C.tAE and isCreateRequest:
+			if originator is None or len(originator) == 0 or Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedAEOriginators')):
+				Logging.logDebug("Originator for AE CREATE. OK.")
 				return True
 
 		# Check parameters

@@ -28,12 +28,14 @@ The following macros are supported in addition to those defined in the sections 
 [\[server.http\] - HTTP Server Settings](#server_http)  
 [\[database\] - Database Settings](#database)  
 [\[logging\] - Logging Settings](#logging)  
+[\[cse.registration\] - Settings for Self-Registrations](#cse_registration)  
 [\[cse.remote\] - Settings for Remote CSE Access](#remote)  
 [\[cse.statistics\]Statistic Settings](#statistics)  
 [\[cse.resource.acp\] - Resource defaults: ACP](#resource_acp)  
 [\[cse.resource.ae\] - Resource Defaults: AE](#resource_ae)  
 [\[cse.resource.cnt\] - Resource Defaults: CNT](#resource_cnt)  
 [\[cse.webui\] - Web UI Settings](#webui)  
+
 
 ### Additional Settings
 [\[server.http.mappings\] - ID Mappings](#id_mappings)  
@@ -98,6 +100,15 @@ The following macros are supported in addition to those defined in the sections 
 | level             | Loglevel. Possible values: debug, info, warning, error.<br/>See also command line argument [–log-level](Running.md).<br/> Default: debug | logging.level             |
 | count             | Number of files for log rotation.<br/>Default: 10                                                                                        | logging.count             |
 | size              | Size per log file.<br/>Default: 100.000 bytes                                                                                            | logging.size              |
+
+
+
+<a name="cse_registration"></a>
+###	[cse.registration] - Settings for Self-Registrations
+
+| Keyword              | Description                                                                                                                                               | Macro Name                            |
+|:---------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------|
+| allowedAEOriginators | List of AE originators that can register. This is a comma-separated list of originators. Regular expressions are supported.<br />Default: C.\*, S.\*<br/> | cse.registration.allowedAEOriginators |
 
 
 <a name="remote"></a>
