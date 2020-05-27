@@ -226,7 +226,12 @@ class Dispatcher(object):
 				r = CSE.storage.retrieveResource(ri=id)
 				if r is None:	# special handling for CSE. ID could be ri or srn...
 					r = CSE.storage.retrieveResource(srn=id)
+
+
 		if r is not None:
+			# Check for virtual resource
+			if Utils.isVirtualResource(r):
+				return r.handleRetrieveRequest()
 			return (r, C.rcOK)
 		Logging.logDebug('Resource not found: %s' % oid)
 		return (None, C.rcNotFound)
@@ -282,6 +287,10 @@ class Dispatcher(object):
 			return (None, C.rcNotFound)
 		if CSE.security.hasAccess(originator, pr, C.permCREATE, ty=ty, isCreateRequest=True, parentResource=pr) == False:
 			return (None, C.rcOriginatorHasNoPrivilege)
+
+		# Check for virtual resource
+		if Utils.isVirtualResource(pr):
+			return pr.handleCreateRequest(request, id, originator, ct, ty)
 		
 		# Add new resource
 		#nr = resourceFromJSON(request.json, pi=pr['ri'], tpe=ty)	# Add pi
@@ -403,6 +412,10 @@ class Dispatcher(object):
 		if CSE.security.hasAccess(originator, r, C.permUPDATE) == False:
 			return (None, C.rcOriginatorHasNoPrivilege)
 
+		# Check for virtual resource
+		if Utils.isVirtualResource(r):
+			return r.handleUpdateRequest(request, id, originator, ct)
+
 		jsonOrg = r.json.copy()
 		if (result := self.updateResource(r, jsn, originator=originator))[0] is None:
 			return (None, result[1])
@@ -464,6 +477,10 @@ class Dispatcher(object):
 		# 	return (None, C.rcOperationNotAllowed)
 		if CSE.security.hasAccess(originator, r, C.permDELETE) == False:
 			return (None, C.rcOriginatorHasNoPrivilege)
+
+		# Check for virtual resource
+		if Utils.isVirtualResource(r):
+			return r.handleDeleteRequest(request, id, originator)
 
 		# remove resource
 		return self.deleteResource(r, originator, withDeregistration=True)
