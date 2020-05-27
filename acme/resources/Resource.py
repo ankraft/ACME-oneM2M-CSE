@@ -24,6 +24,7 @@ class Resource(object):
 	_createdByAE		= '__createdByAE__'
 	_imported			= '__imported__'
 	_isVirtual 			= '__isVirtual__'
+	_isInstantiated		= '__isInstantiated__'
 
 	internalAttributes	= [ _rtype, _srn, _node, _createdByAE, _imported, _isVirtual ]
 
@@ -42,8 +43,9 @@ class Resource(object):
 				self.json = jsn.copy()
 			self._originalJson = jsn.copy()	# keep for validation later
 		else:
-			pass
-			# TODO Exception?
+			# no JSON, so the resource is instantiated programmatically
+			self.setAttribute(self._isInstantiated, True)
+
 
 		if self.json is not None:
 			if self.tpe is None: # and _rtype in self:
@@ -117,9 +119,11 @@ class Resource(object):
 	def activate(self, parentResource, originator):
 		Logging.logDebug('Activating resource: %s' % self.ri)
 
-		# validate the attributes
-		if not (result := CSE.validator.validateAttributes(self._originalJson, self.attributePolicies, isImported=self.isImported))[0]:
-			return result
+		# validate the attributes but only when the resource is not instantiated.
+		# We assume that an instantiated resource is always correct
+		if self[self._isInstantiated] is None or not self[self._isInstantiated]:
+			if not (result := CSE.validator.validateAttributes(self._originalJson, self.attributePolicies, isImported=self.isImported))[0]:
+				return result
 
 		# validate the resource logic
 		if not (result := self.validate(originator, create=True))[0]:

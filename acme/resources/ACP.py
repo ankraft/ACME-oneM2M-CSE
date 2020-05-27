@@ -22,7 +22,7 @@ attributePolicies = constructPolicy([
 class ACP(Resource):
 
 	def __init__(self, jsn=None, pi=None, rn=None, create=False, createdByAE=None):
-		super().__init__(C.tsACP, jsn, pi, C.tACP, create=create, inheritACP=True, rn=rn)
+		super().__init__(C.tsACP, jsn, pi, C.tACP, create=create, inheritACP=True, rn=rn, attributePolicies=attributePolicies)
 		
 		if self.json is not None:
 			self.setAttribute('pv/acr', [], overwrite=False)
