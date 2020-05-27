@@ -38,12 +38,22 @@ class SecurityManager(object):
 		if not Configuration.get('cse.enableACPChecks'):	# check or ignore the check
 			return True
 
-		# originator may be None or empty or C or S. 
-		# That is okay if type is AE and this is a create request
-		if ty is not None and ty == C.tAE and isCreateRequest:
-			if originator is None or len(originator) == 0 or Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedAEOriginators')):
-				Logging.logDebug("Originator for AE CREATE. OK.")
-				return True
+
+		if ty is not None:
+
+			# Checking for AE	
+			if ty == C.tAE and isCreateRequest:
+				# originator may be None or empty or C or S. 
+				# That is okay if type is AE and this is a create request
+				if originator is None or len(originator) == 0 or Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedAEOriginators')):
+					Logging.logDebug("Originator for AE CREATE. OK.")
+					return True
+
+			# Checking for remoteCSE
+			if ty == C.tCSR and isCreateRequest:
+				if Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedCSROriginators')):
+					Logging.logDebug("Originator for CSR CREATE. OK.")
+					return True
 
 		# Check parameters
 		if resource is None:

@@ -75,12 +75,12 @@ def structuredPath(resource):
 
 	# retrieve identifier record of the parent
 	if (pi := resource.pi) is None:
-		Logging.logErr('PI is None')
+		# Logging.logErr('PI is None')
 		return rn
 	rpi = CSE.storage.identifier(pi) 
 	if len(rpi) == 1:
 		return rpi[0]['srn'] + '/' + rn
-	Logging.logErr('Parent not fount in DB')
+	Logging.logErr('Parent %s not fount in DB' % pi)
 	return rn # fallback
 
 
@@ -221,7 +221,8 @@ def isAllowedOriginator(originator, allowedOriginators):
 	""" Check whether an Originator is in the provided list of allowed 
 		originators. This list may contain regex.
 	"""
-	print(allowedOriginators)
+	if originator is None or allowedOriginators is None:
+		return False
 	for ao in allowedOriginators:
 		if re.fullmatch(re.compile(ao), originator):
 			return True

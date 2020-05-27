@@ -27,7 +27,7 @@ class RemoteCSEManager(object):
 		self.remoteAddress	= Configuration.get('cse.remote.address')
 		self.remoteRoot 	= Configuration.get('cse.remote.root')
 		self.remoteCseid	= Configuration.get('cse.remote.cseid')
-		self.originator		= Configuration.get('cse.remote.originator')
+		self.originator		= Configuration.get('cse.csi')	# Originator is the own CSE-ID
 		self.worker			= None
 		self.checkInterval	= Configuration.get('cse.remote.checkInterval')
 		self.cseCsi			= Configuration.get('cse.csi')
@@ -141,7 +141,7 @@ class RemoteCSEManager(object):
 			else:
 				# Potential disconnect
 				(_, rc) = self._deleteLocalCSR(localCSR)
-				(remoteCSR, rc) = self._createRemoteCSR()
+				(_, rc) = self._createRemoteCSR()
 				if rc == C.rcCreated:
 					(remoteCSE, rc) = self._retrieveRemoteCSE()
 					if rc == C.rcOK:
@@ -205,12 +205,9 @@ class RemoteCSEManager(object):
 
 		# copy attributes
 		(localCSE, _) = Utils.getCSE()
-		csr = CSR.CSR()
-		# csr['pi'] = localCSE['ri']
-		csr['pi'] = Configuration.get('cse.ri')
+		csr = CSR.CSR(pi=localCSE.ri, rn=remoteCSE.ri) # ri as name!
 		self._copyCSE2CSE(csr, remoteCSE)
 		csr['ri'] = remoteCSE.ri
-
 		# add local CSR
 		return CSE.dispatcher.createResource(csr, localCSE)
 
@@ -232,7 +229,7 @@ class RemoteCSEManager(object):
 	#
 
 	def _retrieveRemoteCSR(self):
-		#Logging.logDebug('Retrieving remote CSR: %s' % self.remoteCseid)
+		Logging.logDebug('Retrieving remote CSR: %s' % self.remoteCseid)
 		(jsn, rc) = CSE.httpServer.sendRetrieveRequest(self.remoteCSRURL, self.originator)
 		if rc not in [C.rcOK]:
 			return (None, rc)
@@ -244,7 +241,7 @@ class RemoteCSEManager(object):
 		# get local CSEBase and copy relevant attributes
 
 		(localCSE, _) = Utils.getCSE()
-		csr = CSR.CSR()
+		csr = CSR.CSR(rn=localCSE.ri) # ri as name!
 		self._copyCSE2CSE(csr, localCSE)
 		csr['ri'] = self.cseCsi
 		data = json.dumps(csr.asJSON())
@@ -255,7 +252,8 @@ class RemoteCSEManager(object):
 				Logging.logDebug('Error creating remote CSR: %d' % rc)
 			return (None, rc)
 		Logging.logDebug('Remote CSR created: %s' % self.remoteCseid)
-		return (CSR.CSR(jsn), C.rcCreated)
+		# return (CSR.CSR(jsn), C.rcCreated)
+		return (None, C.rcCreated)
 
 
 	def _updateRemoteCSR(self, localCSE):
@@ -290,7 +288,7 @@ class RemoteCSEManager(object):
 
 	# Retrieve the remote CSE
 	def _retrieveRemoteCSE(self, url=None):
-		#Logging.logDebug('Retrieving remote CSE: %s' % self.remoteCseid)
+		Logging.logDebug('Retrieving remote CSE from: %s' % self.remoteCseid)
 		(jsn, rc) = CSE.httpServer.sendRetrieveRequest(url if url is not None else self.remoteCSEURL, self.originator)
 		if rc not in [C.rcOK]:
 			return (None, rc)
@@ -384,8 +382,8 @@ class RemoteCSEManager(object):
 			target['nl'] = source.nl
 		if 'poa' in source:
 			target['poa'] = source.poa
-		if 'rn' in source:
-			target['rn'] = source.rn
+		# if 'rn' in source:
+		# 	target['rn'] = source.rn
 		if 'rr' in source:
 			target['rr'] = source.rr
 		if 'srt' in source:
@@ -394,3 +392,4 @@ class RemoteCSEManager(object):
 			target['srv'] = source.srv
 		if 'st' in source:
 			target['st'] = source.st
+

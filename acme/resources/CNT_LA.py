@@ -38,7 +38,6 @@ class CNT_LA(Resource):
 		Logging.logDebug('Retrieving latest CIN from CNT')
 		if (r := self._getLatest()) is None:
 			return (None, C.rcNotFound)
-		print(r)
 		return (r, C.rcOK)
 
 

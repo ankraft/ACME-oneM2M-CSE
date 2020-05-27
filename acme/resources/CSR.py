@@ -13,8 +13,8 @@ from .Resource import *
 
 class CSR(Resource):
 
-	def __init__(self, jsn=None, pi=None, create=False):
-		super().__init__(C.tsCSR, jsn, pi, C.tCSR, create=create)
+	def __init__(self, jsn=None, pi=None, rn=None, create=False):
+		super().__init__(C.tsCSR, jsn, pi, C.tCSR, rn=rn, create=create)
 
 		if self.json is not None:
 			self.setAttribute('csi', 'cse', overwrite=False)

@@ -26,7 +26,7 @@ class Resource(object):
 	_isVirtual 			= '__isVirtual__'
 	_isInstantiated		= '__isInstantiated__'
 
-	internalAttributes	= [ _rtype, _srn, _node, _createdByAE, _imported, _isVirtual ]
+	internalAttributes	= [ _rtype, _srn, _node, _createdByAE, _imported, _isVirtual, _isInstantiated ]
 
 	def __init__(self, tpe, jsn=None, pi=None, ty=None, create=False, inheritACP=False, readOnly=False, rn=None, attributePolicies=None, isVirtual=False):
 		self.tpe = tpe
