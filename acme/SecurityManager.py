@@ -13,6 +13,13 @@ from Constants import Constants as C
 import CSE
 from Configuration import Configuration
 
+# Mapping between request operations and permissions
+operationsPermissions =	{ C.opRETRIEVE	: C.permRETRIEVE,
+						  C.opCREATE 	: C.permCREATE,
+						  C.opUPDATE 	: C.permUPDATE,
+		  				  C.opDELETE 	: C.permDELETE
+						}
+
 class SecurityManager(object):
 
 	def __init__(self):
@@ -48,11 +55,15 @@ class SecurityManager(object):
 
 		Logging.logDebug("Checking permission for originator: %s, ri: %s, permission: %d, selfPrivileges: %r" % (originator, resource.ri, requestedPermission, checkSelf))
 
-		#Check membersAccessControlPolicyIDs if provided, otherwise accessControlPolicyIDs to be used
-		if resource.ty == C.tGRP:
+
+		if resource.ty == C.tGRP: # target is an group resource
+			# Check membersAccessControlPolicyIDs if provided, otherwise accessControlPolicyIDs to be used
+			
 			if (macp := resource.macp) is None or len(macp) == 0:
 				Logging.logDebug("MembersAccessControlPolicyIDs not provided, using AccessControlPolicyIDs")
-			else:
+				# FALLTHROUGH to the permission checks below
+			
+			else: # handle the permission checks here
 				for a in macp:
 					(acp, _) = CSE.dispatcher.retrieveResource(a)
 					if acp is None:
@@ -61,13 +72,16 @@ class SecurityManager(object):
 						if acp.checkPermission(originator, requestedPermission):
 							Logging.logDebug('Permission granted')
 							return True
+				Logging.logDebug('Permission NOT granted')
 				return False
+
 
 		if resource.ty == C.tACP:	# target is an ACP resource
 			if resource.checkSelfPermission(originator, requestedPermission):
 				Logging.logDebug('Permission granted')
 				return True
-		else:		# target is not an ACP resource
+
+		else:		# target is any other resource type
 			
 			# If subscription, check whether originator has retrieve permissions on the subscribed-to resource (parent)	
 			if resource.ty == C.tSUB and parentResource is not None:

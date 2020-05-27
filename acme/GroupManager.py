@@ -11,7 +11,7 @@ from Logging import Logging
 from Constants import Constants as C
 import CSE, Utils
 from resources import FCNT, MgmtObj
-
+from SecurityManager import operationsPermissions
 
 
 class GroupManager(object):
@@ -117,14 +117,10 @@ class GroupManager(object):
 		group = fopt.retrieveParentResource()
 		if group is None:
 			return (None, C.rcNotFound)
-		if operation == C.opRETRIEVE:
-			permission = C.permRETRIEVE
-		elif operation == C.opCREATE:
-			permission = C.permCREATE
-		elif operation == C.opUPDATE:
-			permission = C.permUPDATE
-		elif operation == C.opDELETE:
-			permission = C.permDELETE
+
+		# get the permission flags for the request operation
+		permission = operationsPermissions[operation]
+
 		#check access rights for the originator through memberAccessControlPolicies
 		if CSE.security.hasAccess(originator, group, requestedPermission=permission, ty=ty, isCreateRequest=True if operation == C.opCREATE else False) == False:
 			return (None, C.rcOriginatorHasNoPrivilege)
@@ -170,7 +166,7 @@ class GroupManager(object):
 						  'rqi' : rqi,
 						  'pc'  : r[0].asJSON(),
 						  'to'  : r[0].__srn__,
-							'rvi': '3'
+						  'rvi'	: '3'	# TODO constant?
 						}
 				items.append(item)
 			rsp = { 'm2m:rsp' : items}
@@ -178,7 +174,8 @@ class GroupManager(object):
 		else:
 			agr = {}
 
-		return (agr, C.rcOK)
+		return (agr, C.rcOK) # Response Status Code is OK regardless of the requested fanout operation
+
 
 
 
