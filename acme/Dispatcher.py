@@ -409,7 +409,7 @@ class Dispatcher(object):
 			updateOrDelete = C.permDELETE if acpi is None else C.permUPDATE
 			if CSE.security.hasAccess(originator, r, updateOrDelete, checkSelf=True) == False:
 				return (None, C.rcOriginatorHasNoPrivilege)
-		if CSE.security.hasAccess(originator, r, C.permUPDATE) == False:
+		elif CSE.security.hasAccess(originator, r, C.permUPDATE) == False:
 			return (None, C.rcOriginatorHasNoPrivilege)
 
 		# Check for virtual resource
