@@ -48,13 +48,25 @@ class SecurityManager(object):
 
 		Logging.logDebug("Checking permission for originator: %s, ri: %s, permission: %d, selfPrivileges: %r" % (originator, resource.ri, requestedPermission, checkSelf))
 
+		#Check membersAccessControlPolicyIDs if provided, otherwise accessControlPolicyIDs to be used
+		if resource.ty == C.tGRP:
+			if (macp := resource.macp) is None or len(macp) == 0:
+				Logging.logDebug("MembersAccessControlPolicyIDs not provided, using AccessControlPolicyIDs")
+			else:
+				for a in macp:
+					(acp, _) = CSE.dispatcher.retrieveResource(a)
+					if acp is None:
+						continue
+					else:
+						if acp.checkPermission(originator, requestedPermission):
+							Logging.logDebug('Permission granted')
+							return True
+				return False
+
 		if resource.ty == C.tACP:	# target is an ACP resource
 			if resource.checkSelfPermission(originator, requestedPermission):
 				Logging.logDebug('Permission granted')
 				return True
-
-
-
 		else:		# target is not an ACP resource
 			
 			# If subscription, check whether originator has retrieve permissions on the subscribed-to resource (parent)	
