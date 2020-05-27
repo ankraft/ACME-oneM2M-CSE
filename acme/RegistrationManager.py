@@ -35,7 +35,7 @@ class RegistrationManager(object):
 	def checkResourceCreation(self, resource, originator, parentResource=None):
 		if resource.ty in [ C.tAE ]:
 			if (originator := self.handleAERegistration(resource, originator, parentResource)) is None:
-				return (originator, C.rcOK)
+				return (None, C.rcBadRequest)
 
 		# Test and set creator attribute.
 		if (rc := self.handleCreator(resource, originator)) != C.rcOK:
@@ -104,7 +104,8 @@ class RegistrationManager(object):
 				# acp.setSelfPermissionOperation(Configuration.get('cse.acp.pvs.acop'))
 				if not (res := self.checkResourceCreation(acp, originator, parentResource))[0]:
 					return None
-				CSE.dispatcher.createResource(acp, parentResource=parentResource, originator=originator)
+				if CSE.dispatcher.createResource(acp, parentResource=parentResource, originator=originator)[0] is None:
+					return None
 
 				# Set ACPI (anew)
 				ae['acpi'] = [ acp.ri ]

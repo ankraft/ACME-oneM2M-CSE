@@ -10,6 +10,7 @@
 from Logging import Logging
 from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN
 from Constants import Constants as C
+import Utils
 
 
 # TODO add wildcard, e.g. for custom attributes
@@ -122,7 +123,6 @@ class Validator(object):
 		if attributePolicies is None:
 			return (True, C.rcOK)
 
-
 		# determine the request column, depending on create or updates
 		reqp = 2 if create else 3
 
@@ -142,15 +142,10 @@ class Validator(object):
 				if p[reqp] == RO.NP:
 					Logging.logDebug('Found non-provision attribute: %s' % r)
 					return (False, C.rcBadRequest)
-				#Special case for lists that are not allowed to be empty (pvs in ACP)
-				if r in ['pvs']:
-					if jsn.get(r).len == 0:
-						Logging.logDebug('Attribute %s cannot be an empty list' % r)
-						return (False, C.rcBadRequest)
-					elif jsn.get(r).len == 1:
-						if jsn.get(r['acr'][0].len == 0):
-							Logging.logDebug('Attribute %s cannot be an empty list' % r)
-							return (False, C.rcBadRequest)
+				if r == 'pvs' and not self.validatePvs(jsn):
+					return (False, C.rcBadRequest)
+
+
 			# Check whether the value is of the correct type
 			pt = p[0]	# type
 			pc = p[1]	# cardinality
@@ -174,4 +169,26 @@ class Validator(object):
 			return (False, C.rcBadRequest)
 
 		return (True, C.rcOK)
+
+
+	def validatePvs(self, jsn):
+		""" Validating special case for lists that are not allowed to be empty (pvs in ACP). """
+
+		if (l :=len(jsn['pvs'])) == 0:
+			Logging.logDebug('Attribute pvs must not be an empty list')
+			return False
+		elif l > 1:
+			Logging.logDebug('Attribute pvs must contain only one item')
+			return False
+		if (acr := Utils.findXPath(jsn, 'pvs/acr')) is None:
+			Logging.logDebug('Attribute pvs/acr not found')
+			return False
+		if not isinstance(acr, list):
+			Logging.logDebug('Attribute pvs/acr must be a list')
+			return False
+		if len(acr) == 0:
+			Logging.logDebug('Attribute pvs/acr must not be an empty list')
+			return False
+		return True
+
 
