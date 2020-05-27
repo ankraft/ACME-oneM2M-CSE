@@ -168,8 +168,7 @@ class GroupManager(object):
 		else:
 			agr = {}
 
-		# Different "ok" results per operation
-		return (agr, [ C.rcOK, C.rcCreated, C.rcUpdated, C.rcDeleted ][operation])
+		return (agr, C.rcOK)
 
 
 
