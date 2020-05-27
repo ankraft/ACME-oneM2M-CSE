@@ -113,10 +113,21 @@ class GroupManager(object):
 		"""	Handle requests to a fanOutPoint. 
 		This method might be called recursivly, when there are groups in groups."""
 
-		# get parent / group
+		# get parent / group and check permissions
 		group = fopt.retrieveParentResource()
 		if group is None:
 			return (None, C.rcNotFound)
+		if operation == C.opRETRIEVE:
+			permission = C.permRETRIEVE
+		elif operation == C.opCREATE:
+			permission = C.permCREATE
+		elif operation == C.opUPDATE:
+			permission = C.permUPDATE
+		elif operation == C.opDELETE:
+			permission = C.permDELETE
+		#check access rights for the originator through memberAccessControlPolicies
+		if CSE.security.hasAccess(originator, group, requestedPermission=permission, ty=ty, isCreateRequest=True if operation == C.opCREATE else False) == False:
+			return (None, C.rcOriginatorHasNoPrivilege)
 
 		# get the rqi header field
 		(_, _, _, rqi, _) = Utils.getRequestHeaders(request)
@@ -124,7 +135,6 @@ class GroupManager(object):
 		# check whether there is something after the /fopt ...
 		(_, _, tail) = id.partition('/fopt/') if '/fopt/' in id else (_, _, '')
 		Logging.logDebug('Adding additional path elements: %s' % tail)
-
 
 		# walk through all members
 		result = []
