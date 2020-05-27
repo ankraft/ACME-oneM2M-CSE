@@ -46,20 +46,29 @@ attributePolicies = {
 	'cbs'	: [ BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, AN.NA ],		# CNT
 	'cnf'	: [ BT.string,			CAR.car01,  RO.O,	RO.NP, AN.OA ],		# m2m_contentInfo - CIN
 	'cni'	: [ BT.nonNegInteger,	CAR.car1, 	RO.NP,	RO.NP, AN.NA ],		# CNT
+	'cnm'	: [ BT.nonNegInteger,	CAR.car1, 	RO.NP,	RO.NP, AN.NA ],		# GRP
 	'con'	: [ BT.string,			CAR.car01,  RO.O,	RO.NP, AN.OA ],		# CIN
 	'conr'	: [ BT.dict,			CAR.car01,  RO.O,	RO.NP, AN.OA ],		# m2m:contentRef - CIN
 	'cr'	: [ BT.list, 			CAR.car01,  RO.O,	RO.NP, AN.NA ],		# CNT
 	'cs'	: [ BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, AN.NA ],		# CIN
 	'csi'	: [ BT.string,			CAR.car1,   RO.NP,	RO.NP, AN.OA ],		# CSE
 	'cst'	: [ BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, AN.OA ],		# CSE
+	'csy'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, AN.OA ],		# m2m:consistencyStrategy - GRP
 	'csz'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:serializations - AE, CSE (RO!)
 	'disr'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
 	'esi'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.MA ],		# m2m:e2eSecInfo - AE, CSE
+	'gn'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# GRP
 	'li'	: [ BT.anyURI,			CAR.car01,  RO.NP,	RO.NP, AN.OA ],		# CNT
+	'macp'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
 	'mbs'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
 	'mei'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.NA ],		# m2m:externalID - AE
 	'mia'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
+	'mid'	: [ BT.list,			CAR.car1,   RO.M,	RO.O,  AN.OA ],		# list of m2m:anyURI - GRP
 	'mni'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
+	'mnm'	: [ BT.positiveInteger,	CAR.car1,   RO.M,	RO.O,  AN.OA ],		# GRP
+	'mt'	: [ BT.list,			CAR.car1,   RO.O,	RO.NP, AN.OA ],		# m2m:memberType - GRP
+	'mtv'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.NP, AN.OA ],		# GRP
+	'nar'	: [ BT.dict,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# GRP
 	'nl'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# AE, CSE
 	'or'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
 	'poa'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:poaList - AE, CSE
@@ -68,15 +77,15 @@ attributePolicies = {
 	'regs'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:AERegistrationStatus - AE
 	'rr'	: [ BT.boolean,			CAR.car1,   RO.M,	RO.O,  AN.OA ],		# AE
 	'scp'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:sessionCapabilities - AE
+	'spty'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, AN.OA ],		# m2m:specializationType - GRP
 	'srt'	: [ BT.list, 			CAR.car01,  RO.O,	RO.NP, AN.NA ],		# CSE
 	'srv'	: [ BT.list,			CAR.car01,  RO.M,	RO.O,  AN.MA ],		# m2m:supportedReleaseVersions - AE, CSE
+	'ssi'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.NP, AN.OA ],		# GRP
 	'tren'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# AE
 	'trps'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# AE
 
 	# TBC Group:
 
-	'mt'	: [ BT.nonNegInteger,	CAR.car1,	RO.O,	RO.NP, AN.OA ],		# GRP
-	'spty'	: [ BT.dict,			CAR.car01,	RO.O,	RO.NP, AN.OA ],		# GRP
 
 
 	# TODO Lookup in TS-0004, 0001
@@ -87,6 +96,7 @@ attributePolicies = {
 	# AE CSE Not defined yet: enableTimeCompensation
 	# CSE currentTime
 	# CIN deletionCnt
+	# GRP: somecastEnable, somecastAlgorithm not defined yet (shortname)
 
 	
 

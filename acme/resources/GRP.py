@@ -13,16 +13,15 @@ import Utils
 from .Resource import *
 
 # Attribute policies for this resource are constructed during startup of the CSE
-# attributePolicies = constructPolicy([ 
-# 	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 'cr',
-
-# 	'mt'
-# ])
+attributePolicies = constructPolicy([ 
+	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 'cr',
+	'mt', 'spty', 'cnm', 'mnm', 'mid', 'macp', 'mtv', 'csy', 'gn', 'ssi', 'nar'
+])
 
 class GRP(Resource):
 
 	def __init__(self, jsn=None, pi=None, fcntType=None, create=False):
-		super().__init__(C.tsGRP, jsn, pi, C.tGRP, create=create)
+		super().__init__(C.tsGRP, jsn, pi, C.tGRP, create=create, attributePolicies=attributePolicies)
 		if self.json is not None:
 			self.setAttribute('mt', C.tMIXED, overwrite=False)
 			self.setAttribute('ssi', False, overwrite=True)
