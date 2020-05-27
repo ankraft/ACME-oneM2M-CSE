@@ -101,7 +101,6 @@ class Configuration(object):
 				'cse.remote.address'				: config.get('cse.remote', 'address', 					fallback=''),
 				'cse.remote.root'					: config.get('cse.remote', 'root', 						fallback='/'),
 				'cse.remote.cseid'					: config.get('cse.remote', 'cseid', 					fallback=''),
-				'cse.remote.originator'				: config.get('cse.remote', 'originator', 				fallback='CAdmin'),
 				'cse.remote.checkInterval'			: config.getint('cse.remote', 'checkInterval', 			fallback=30),		# Seconds
 
 				#

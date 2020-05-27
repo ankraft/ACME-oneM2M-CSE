@@ -119,7 +119,6 @@ The following macros are supported in addition to those defined in the sections 
 | address       | URL of the remote CSE.<br/>Default: no default                                                                                           | cse.remote.address       |
 | root          | Remote CSE root path.<br/>Default: /                                                                                                     | cse.remote.root          |
 | cseid         | CSE-ID of the remote CSE. Default: no default                                                                                            | cse.remote.cseid         |
-| originator    | Originator for registering to the remote CSE.<br/>Default: CAdmin                                                                        |                          |
 | checkInterval | Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.<br/>Default: 30 | cse.remote.checkInterval |
 
 <a name="statistics"></a>
