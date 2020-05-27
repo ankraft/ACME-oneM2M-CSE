@@ -159,7 +159,8 @@ class GroupManager(object):
 				item = 	{ 'rsc' : r[1], 
 						  'rqi' : rqi,
 						  'pc'  : r[0].asJSON(),
-						  'to'  : r[0].__srn__
+						  'to'  : r[0].__srn__,
+							'rvi': '3'
 						}
 				items.append(item)
 			rsp = { 'm2m:rsp' : items}
