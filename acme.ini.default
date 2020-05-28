@@ -159,16 +159,6 @@ selfPermission=51
 # Always add the CSE's "admin" originator to an ACP. Default: true
 addAdminOrignator=true
 
-#
-#	Resource defaults: AE
-#
-
-[cse.resource.ae]
-# Create a new ACP resource when an AE registers. Default: True
-createACP=true
-# Remove an ACP resource that was created during an AE registration. Default: True
-removeACP=true
-
 
 
 #

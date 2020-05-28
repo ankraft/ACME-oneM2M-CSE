@@ -438,7 +438,7 @@ class Dispatcher(object):
 				return (None, res[1])
 		else:
 			Logging.logDebug('No check, skipping resource update')
-
+		print(resource)
 		return CSE.storage.updateResource(resource)
 
 

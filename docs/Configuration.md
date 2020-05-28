@@ -32,7 +32,6 @@ The following macros are supported in addition to those defined in the sections 
 [\[cse.remote\] - Settings for Remote CSE Access](#remote)  
 [\[cse.statistics\]Statistic Settings](#statistics)  
 [\[cse.resource.acp\] - Resource defaults: ACP](#resource_acp)  
-[\[cse.resource.ae\] - Resource Defaults: AE](#resource_ae)  
 [\[cse.resource.cnt\] - Resource Defaults: CNT](#resource_cnt)  
 [\[cse.webui\] - Web UI Settings](#webui)  
 
@@ -137,15 +136,6 @@ The following macros are supported in addition to those defined in the sections 
 | permission        | Default permission when creating an ACP resource.<br />Default: 63            | cse.acp.pv.acop           |
 | selfPermission    | Default selfPermission when creating an ACP resource.<br/>Default: 51         | cse.acp.pvs.acop          |
 | addAdminOrignator | Always add the CSE's "admin" originator to an ACP resource.<br/>Default: true | cse.acp.addAdminOrignator |
-
-
-<a name="resource_ae"></a>
-###	[cse.resource.ae] - Resource Defaults: AE
-
-| Keyword   | Description                                                                          | Macro Name       |
-|:----------|:-------------------------------------------------------------------------------------|:-----------------|
-| createACP | Create a new ACP resource when an AE registers.<br/>Default: true                    | cse.ae.createACP |
-| removeACP | Remove an ACP resource that was created during an AE registration.<br/>Default: true |                  |
 
 
 <a name="resource_cnt"></a>

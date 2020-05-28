@@ -21,12 +21,12 @@ class Resource(object):
 	_rtype 				= '__rtype__'
 	_srn				= '__srn__'
 	_node				= '__node__'
-	_createdByAE		= '__createdByAE__'
+	_createdInternally	= '__createdInternally__'
 	_imported			= '__imported__'
 	_isVirtual 			= '__isVirtual__'
 	_isInstantiated		= '__isInstantiated__'
 
-	internalAttributes	= [ _rtype, _srn, _node, _createdByAE, _imported, _isVirtual, _isInstantiated ]
+	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated ]
 
 	def __init__(self, tpe, jsn=None, pi=None, ty=None, create=False, inheritACP=False, readOnly=False, rn=None, attributePolicies=None, isVirtual=False):
 		self.tpe = tpe

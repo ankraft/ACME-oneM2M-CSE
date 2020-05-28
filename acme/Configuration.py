@@ -135,14 +135,6 @@ class Configuration(object):
 
 
 				#
-				#	Defaults for Application Entities
-				#
-
-				'cse.ae.createACP'					: config.getboolean('cse.resource.ae', 'createACP', 	fallback=True),
-				'cse.ae.removeACP'					: config.getboolean('cse.resource.ae', 'removeACP', 	fallback=True),
-
-
-				#
 				#	Web UI
 				#
 
