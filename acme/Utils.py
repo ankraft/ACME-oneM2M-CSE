@@ -217,9 +217,12 @@ def isURL(url):
 	return url is not None and re.match(urlregex, url) is not None
 
 
-def getIdFromOriginator(originator):
+def getIdFromOriginator(originator, idOnly=False):
 	""" Get AE-ID-Stem or CSE-ID from the originator (in case SP-relative or Absolute was used) """
-	return originator.split("/")[-1] if originator is not None and originator.startswith('/') else originator
+	if idOnly:
+		return originator.split("/")[-1] if originator is not None  else originator
+	else:
+		return originator.split("/")[-1] if originator is not None and originator.startswith('/') else originator
 
 
 

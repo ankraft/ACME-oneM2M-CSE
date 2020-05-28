@@ -92,12 +92,14 @@ class RegistrationManager(object):
 			originator = Utils.uniqueAEI('C')
 		elif originator == 'S':
 			originator = Utils.uniqueAEI('S')
+		elif originator is not None:
+			originator = Utils.getIdFromOriginator(originator)
 		# elif originator is None or len(originator) == 0:
 		# 	originator = Utils.uniqueAEI('S')
 		Logging.logDebug('Registering AE. aei: %s ' % originator)
 
-		ae['aei'] = originator		# set the aei to the originator
-		ae['ri'] = originator		# set the ri of the ae to the aei (TS-0001, 10.2.2.2)
+		ae['aei'] = originator					# set the aei to the originator
+		ae['ri'] = Utils.getIdFromOriginator(originator, idOnly=True)		# set the ri of the ae to the aei (TS-0001, 10.2.2.2)
 
 		# Verify that parent is the CSEBase, else this is an error
 		if parentResource is None or parentResource.ty != C.tCSEBase:
