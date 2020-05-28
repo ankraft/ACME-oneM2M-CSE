@@ -221,7 +221,6 @@ def getIdFromOriginator(originator):
 	if originator[0] == "/":
 		elements = originator.split("/")
 		ln = len(elements)
-		Logging.logDebug('Originator in AE-ID-Stem format %s' % elements[ln-1])
 		return elements[ln-1]
 	else:
 		return originator
