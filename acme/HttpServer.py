@@ -253,6 +253,7 @@ class HttpServer(object):
 		C.rcAlreadyExists								: 403,		# ALREAD EXISTS
 		C.rcTargetNotSubscribable						: 403,		# TARGET NOT SUBSCRIBABLE
 		C.rcReceiverHasNoPrivileges						: 403,		# RECEIVER HAS NO PRIVILEGE
+		C.rcSecurityAssociationRequired					: 403,		# SECURITY ASSOCIATION REQUIRED
 		C.rcNotFound									: 404,		# NOT FOUND
 		C.rcOperationNotAllowed							: 405,		# OPERATION NOT ALLOWED
 		C.rcNotAcceptable 								: 406,		# NOT ACCEPTABLE
