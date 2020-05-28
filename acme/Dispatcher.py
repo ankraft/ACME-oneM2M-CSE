@@ -286,7 +286,10 @@ class Dispatcher(object):
 			Logging.log('Parent resource not found')
 			return (None, C.rcNotFound)
 		if CSE.security.hasAccess(originator, pr, C.permCREATE, ty=ty, isCreateRequest=True, parentResource=pr) == False:
-			return (None, C.rcOriginatorHasNoPrivilege)
+			if ty == C.tAE:
+				return (None, C.rcSecurityAssociationRequired)
+			else:
+				return (None, C.rcOriginatorHasNoPrivilege)
 
 		# Check for virtual resource
 		if Utils.isVirtualResource(pr):
