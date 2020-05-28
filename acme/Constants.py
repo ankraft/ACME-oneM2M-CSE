@@ -204,6 +204,8 @@ class Constants(object):
 	# Additional JSON fields
 	jsnIsImported						= '__imported__'
 
+	acpPrefix 						= 'acp_'
+
 
 
 	

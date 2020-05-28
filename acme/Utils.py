@@ -216,14 +216,12 @@ def isURL(url):
 	""" Check whether a given string is a URL. """
 	return url is not None and re.match(urlregex, url) is not None
 
+
 def getIdFromOriginator(originator):
 	""" Get AE-ID-Stem or CSE-ID from the originator (in case SP-relative or Absolute was used) """
-	if originator[0] == "/":
-		elements = originator.split("/")
-		ln = len(elements)
-		return elements[ln-1]
-	else:
-		return originator
+	return originator.split("/")[-1] if originator is not None and originator.startswith('/') else originator
+
+
 
 def isAllowedOriginator(originator, allowedOriginators):
 	""" Check whether an Originator is in the provided list of allowed 

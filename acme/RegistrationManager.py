@@ -13,8 +13,6 @@ from Configuration import Configuration
 import CSE, Utils
 from resources import ACP
 
-acpPrefix = 'acp_'
-
 
 class RegistrationManager(object):
 
@@ -34,10 +32,10 @@ class RegistrationManager(object):
 
 	def checkResourceCreation(self, resource, originator, parentResource=None):
 		if resource.ty == C.tAE:
-			if (originator := self.handleAERegistration(resource, originator, parentResource)) is None:
+			if (originator := self.handleAERegistration(resource, originator, parentResource)) is None:	# assigns new originator
 				return (None, C.rcBadRequest)
 		if resource.ty == C.tCSR:
-			if (originator := self.handleCSRRegistration(resource, originator, parentResource)) is None:
+			if not self.handleCSRRegistration(resource, originator):
 				return (None, C.rcBadRequest)
 
 		# Test and set creator attribute.
@@ -98,38 +96,27 @@ class RegistrationManager(object):
 		# 	originator = Utils.uniqueAEI('S')
 		Logging.logDebug('Registering AE. aei: %s ' % originator)
 
-		# set the aei to the originator
-		ae['aei'] = originator
-
-		# set the ri of the ae to the aei (TS-0001, 10.2.2.2)
-		ae['ri'] = originator
+		ae['aei'] = originator		# set the aei to the originator
+		ae['ri'] = originator		# set the ri of the ae to the aei (TS-0001, 10.2.2.2)
 
 		# Verify that parent is the CSEBase, else this is an error
 		if parentResource is None or parentResource.ty != C.tCSEBase:
 			return None
 
 		# Create an ACP for this AE-ID if there is none set
-		if Configuration.get("cse.ae.createACP"):
-			if ae.acpi is None or len(ae.acpi) == 0:
-				Logging.logDebug('Adding ACP for AE')
-				cseOriginator = Configuration.get('cse.originator')
-				acp = ACP.ACP(pi=parentResource.ri, rn=acpPrefix + ae.rn, createdByAE=ae.ri)
-				acp.addPermission([originator, cseOriginator], Configuration.get('cse.acp.pv.acop'))
-				acp.addSelfPermission([cseOriginator], Configuration.get('cse.acp.pvs.acop'))
-				# acp.addPermissionOriginator(originator)
-				# acp.addPermissionOriginator(cseOriginator)
-				# acp.setPermissionOperation(Configuration.get('cse.acp.pv.acop'))
-				# acp.addSelfPermissionOriginator(cseOriginator)
-				# acp.setSelfPermissionOperation(Configuration.get('cse.acp.pvs.acop'))
-				if not (res := self.checkResourceCreation(acp, originator, parentResource))[0]:
-					return None
-				if CSE.dispatcher.createResource(acp, parentResource=parentResource, originator=originator)[0] is None:
-					return None
+		if ae.acpi is None or len(ae.acpi) == 0:
+			Logging.logDebug('Adding ACP for AE')
+			cseOriginator = Configuration.get('cse.originator')
 
-				# Set ACPI (anew)
-				ae['acpi'] = [ acp.ri ]
-		else:
-			ae['acpi'] = [ Configuration.get('cse.defaultACPI') ]
+			# Add ACP for remote CSE to access the own CSE
+			acpRes = self._createACP(parentResource=parentResource,
+									 rn=C.acpPrefix + ae.rn,
+									 createdByResource=ae.ri, 
+								 	 originators=[ originator, cseOriginator ],
+								 	 permission=Configuration.get('cse.acp.pv.acop'))
+			if acpRes[0] is None:
+				return False 
+			ae['acpi'] = [ acpRes[0].ri ]		# Set ACPI (anew)
 
 		return originator
 
@@ -141,17 +128,23 @@ class RegistrationManager(object):
 	def handleAEDeRegistration(self, resource):
 		# remove the before created ACP, if it exist
 		Logging.logDebug('DeRegisterung AE. aei: %s ' % resource.aei)
-		if Configuration.get("cse.ae.removeACP"):
-			Logging.logDebug('Removing ACP for AE')
-			acpi = '%s/%s%s' % (Configuration.get("cse.rn"), acpPrefix, resource.rn)
-			if (res := CSE.dispatcher.retrieveResource(acpi))[1] != C.rcOK:
-				Logging.logWarn('Could not find ACP: %s' % acpi) # ACP not found, either not created or already deleted
-			else:
-				acp = res[0]
-				# only delete the ACP when it was created in the course of AE registration
-				if  (aeRI := acp.createdByAE()) is not None and resource.ri == aeRI:	
-					CSE.dispatcher.deleteResource(acp)
+		Logging.logDebug('Removing ACP for AE')
+
+		acpi = '%s/%s%s' % (Configuration.get('cse.rn'), C.acpPrefix, resource.rn)
+		if self._removeACP(rn=acpi, resource=resource)[0] is None:
+			return False
 		return True
+
+
+		# 	# acpi = '%s/%s%s' % (Configuration.get('cse.rn'), C.acpPrefix, resource.rn)
+		# 	if (res := CSE.dispatcher.retrieveResource(acpi))[1] != C.rcOK:
+		# 		Logging.logWarn('Could not find ACP: %s' % acpi) # ACP not found, either not created or already deleted
+		# 	else:
+		# 		acp = res[0]
+		# 		# only delete the ACP when it was created in the course of AE registration
+		# 		if  (aeRI := acp.createdInternally()) is not None and resource.ri == aeRI:	
+		# 			CSE.dispatcher.deleteResource(acp)
+		# return True
 
 
 	#########################################################################
@@ -160,45 +153,39 @@ class RegistrationManager(object):
 	#	Handle CSR registration
 	#
 
-	def handleCSRRegistration(self, csr, originator, parentResource):
+	def handleCSRRegistration(self, csr, originator):
 		Logging.logDebug('Registering CSR. csi: %s ' % csr['csi'])
 
 		# Create an ACP for this CSR if there is none set
-		if Configuration.get("cse.ae.createACP"): # TODO
-			if csr.acpi is None or len(csr.acpi) == 0:
-				Logging.logDebug('Adding ACP for CSR')
+		Logging.logDebug('Adding ACP for CSR')
+		cseOriginator = Configuration.get('cse.originator')
+		(localCSE, _) = Utils.getCSE()
 
-				# Add ACP for remote CSE to access the own CSE
-				cseOriginator = Configuration.get('cse.originator')
-				acp = ACP.ACP(pi=parentResource.ri, rn=acpPrefix + csr.rn, createdByAE=csr.ri) # TODO name of parameter may be confusing
-				acp.addPermission([originator, cseOriginator], Configuration.get('cse.acp.pv.acop'))
-				acp.addSelfPermission([cseOriginator], Configuration.get('cse.acp.pvs.acop'))
-				if not (res := self.checkResourceCreation(acp, originator, parentResource))[0]:
-					return None
-				if CSE.dispatcher.createResource(acp, parentResource=parentResource, originator=originator)[0] is None:
-					return None
+		# Add ACP for remote CSE to access the own CSE
+		acp = self._createACP(parentResource=localCSE,
+							  rn='%s%s' % (C.acpPrefix, csr.rn),
+						 	  createdByResource=csr.ri, 
+							  originators=[ originator, cseOriginator ],
+							  permission=C.permALL)
+		if acp[0] is None:
+			return False 
+		csr['acpi'] = [ acp[0].ri ]	# Set ACPI (anew)
 
-				# Add another ACP for rempte CSE to access the CSE, at least to read
-				cseAcp = ACP.ACP(pi=parentResource.ri, rn=acpPrefix + csr.rn + '_CSE', createdByAE=csr.ri) # TODO name of parameter may be confusing
-				cseAcp.addPermission([originator, cseOriginator], C.permRETRIEVE)
-				cseAcp.addSelfPermission([cseOriginator], Configuration.get('cse.acp.pvs.acop'))
-				if not (res := self.checkResourceCreation(cseAcp, originator, parentResource))[0]:
-					return None
-				if CSE.dispatcher.createResource(cseAcp, parentResource=parentResource, originator=originator)[0] is None:
-					return None
+		# Add another ACP for remote CSE to access the CSE, at least to read
+		cseAcp = self._createACP(parentResource=localCSE,
+								 rn='%s%s_CSE' % (C.acpPrefix, csr.rn),
+							 	 createdByResource=csr.ri, 
+								 originators=[ originator, cseOriginator ],
+								 permission=C.permRETRIEVE)
+		if cseAcp[0] is None:
+			return False
 
-				# retrieve the CSEBase and assign the new ACP
-				if (res := CSE.dispatcher.retrieveResource(Configuration.get('cse.csi')))[0] is not None:
-					res[0].acpi.append(cseAcp.ri)
-					CSE.dispatcher.updateResource(res[0], doUpdateCheck=False)
+		# retrieve the CSEBase and assign the new ACP
+		if (res := CSE.dispatcher.retrieveResource(localCSE.csi))[0] is not None:
+			res[0].acpi.append(cseAcp[0].ri)
+			CSE.dispatcher.updateResource(res[0], doUpdateCheck=False)
 
-
-				# Set ACPI (anew)
-				csr['acpi'] = [ acp.ri ]
-		else:
-			csr['acpi'] = [ Configuration.get('cse.defaultACPI') ]
-
-		return originator
+		return True
 
 
 	#
@@ -206,36 +193,53 @@ class RegistrationManager(object):
 	#
 
 	def handleCSRDeRegistration(self, csr):
-		# remove the before created ACP, if it exist
 		Logging.logDebug('DeRegisterung CSR. csi: %s ' % csr['csi'])
-		if Configuration.get("cse.ae.removeACP"): # TODO
-			Logging.logDebug('Removing ACPs for CSR')
 
-			# Retrieve CSR ACP
-			acpi = '%s/%s%s' % (Configuration.get("cse.rn"), acpPrefix, csr.rn)
-			if (res := CSE.dispatcher.retrieveResource(acpi))[1] != C.rcOK:
-				Logging.logWarn('Could not find ACP: %s' % acpi)	# ACP not found, either not created or already deleted
-			else:
-				acp = res[0]
-				# only delete the ACP when it was created in the course of AE registration
-				if  (aeRI := acp.createdByAE()) is not None and csr.ri == aeRI:	# TODO Name
-					CSE.dispatcher.deleteResource(acp)
+		# remove the before created ACP, if it exist
+		Logging.logDebug('Removing ACPs for CSR')
+		(localCSE, _) = Utils.getCSE()
 
-			# Retrieve CSE ACP
-			acpi = acpi + '_CSE'
-			if (res := CSE.dispatcher.retrieveResource(acpi))[1] != C.rcOK:
-				Logging.logWarn('Could not find ACP: %s' % acpi)	# ACP not found, either not created or already deleted
-			else:
-				acp = res[0]
-				# First remove it from the CSE
-				if (res := CSE.dispatcher.retrieveResource(Configuration.get('cse.csi')))[0] is not None:
-					res[0].acpi.remove(acp.ri)
-					CSE.dispatcher.updateResource(res[0], doUpdateCheck=False)
+		# Retrieve CSR ACP
+		acpi = '%s/%s%s' % (localCSE.rn, C.acpPrefix, csr.rn)
+		if self._removeACP(rn=acpi, resource=csr)[0] is None:
+			return False
 
-				# only delete the ACP when it was created in the course of AE registration
-				if  (aeRI := acp.createdByAE()) is not None and csr.ri == aeRI:	# TODO Name
-					CSE.dispatcher.deleteResource(acp)
+		# Retrieve CSE ACP
+		acpi = acpi + '_CSE'
+		if (acpRes := self._removeACP(rn=acpi, resource=csr))[0] is None:
+			return False
 
-		return True
+		#  Remove the reference from the CSE
+		localCSE.acpi.remove(acpRes[0].ri)
+		return CSE.dispatcher.updateResource(localCSE, doUpdateCheck=False)[0] is not None
 
+
+	#########################################################################
+
+
+	def _createACP(self, parentResource=None, rn=None, createdByResource=None, originators=None, permission=None):
+		""" Create an ACP with some given defaults. """
+		if parentResource is None or rn is None or originators is None or permission is None:
+			return (None, C.BadRequest)
+		cseOriginator = Configuration.get('cse.originator')
+		selfPermission = Configuration.get('cse.acp.pvs.acop')
+		origs = originators.copy()
+		origs.append(cseOriginator)	# always append cse originator
+		acp = ACP.ACP(pi=parentResource.ri, rn=rn, createdInternally=createdByResource)
+		acp.addPermission(origs, permission)
+		acp.addSelfPermission([ cseOriginator ], selfPermission)
+		if not (res := self.checkResourceCreation(acp, cseOriginator, parentResource))[0]:
+			return res
+		return CSE.dispatcher.createResource(acp, parentResource=parentResource, originator=cseOriginator)
+
+
+	def _removeACP(self, rn, resource):
+		""" Remove an ACP created during registration before. """
+		if (acpRes := CSE.dispatcher.retrieveResource(rn))[1] != C.rcOK:
+			Logging.logWarn('Could not find ACP: %s' % rn)	# ACP not found, either not created or already deleted
+		else:
+			# only delete the ACP when it was created in the course of AE registration
+			if  (ri := acpRes[0].createdInternally()) is not None and resource.ri == ri:
+				return CSE.dispatcher.deleteResource(acpRes[0])
+		return (None, C.rcBadRequest)
 
