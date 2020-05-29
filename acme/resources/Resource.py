@@ -148,6 +148,7 @@ class Resource(object):
 
 		# increment parent resource's state tage
 		if parentResource is not None and parentResource.st is not None:
+			parentResource = CSE.storage.retrieveResource(ri=parentResource.ri)
 			parentResource.setAttribute('st', parentResource.st + 1)
 			if (res := CSE.storage.updateResource(parentResource))[0] is None:
 				return (False, res[1])
