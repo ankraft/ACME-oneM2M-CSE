@@ -170,8 +170,7 @@ class RemoteCSEManager(object):
 	def _checkCSRLiveliness(self):
 		(csrs, rc) = self._retrieveLocalCSR(own=False)
 		for csr in csrs:
-			found = False
-			for url in csr.poa:
+			for url in (csr.poa or []):
 				if Utils.isURL(url):
 					(cse, rc) = self._retrieveRemoteCSE(url='%s/%s' % (url, csr.csi ))
 					if rc != C.rcOK:

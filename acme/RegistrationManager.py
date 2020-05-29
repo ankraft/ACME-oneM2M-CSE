@@ -138,16 +138,6 @@ class RegistrationManager(object):
 		return True
 
 
-		# 	# acpi = '%s/%s%s' % (Configuration.get('cse.rn'), C.acpPrefix, resource.rn)
-		# 	if (res := CSE.dispatcher.retrieveResource(acpi))[1] != C.rcOK:
-		# 		Logging.logWarn('Could not find ACP: %s' % acpi) # ACP not found, either not created or already deleted
-		# 	else:
-		# 		acp = res[0]
-		# 		# only delete the ACP when it was created in the course of AE registration
-		# 		if  (aeRI := acp.createdInternally()) is not None and resource.ri == aeRI:	
-		# 			CSE.dispatcher.deleteResource(acp)
-		# return True
-
 
 	#########################################################################
 
@@ -212,7 +202,9 @@ class RegistrationManager(object):
 			return False
 
 		#  Remove the reference from the CSE
-		localCSE.acpi.remove(acpRes[0].ri)
+
+		if acpRes[0].ri in localCSE.acpi:
+			localCSE.acpi.remove(acpRes[0].ri)
 		return CSE.dispatcher.updateResource(localCSE, doUpdateCheck=False)[0] is not None
 
 
