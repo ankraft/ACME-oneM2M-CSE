@@ -10,9 +10,15 @@
 
 """	Wrapper class for the logging subsystem. """
 
-import logging, logging.handlers, os, inspect, re, sys, datetime#
-from logging import StreamHandler
+import logging, logging.handlers, os, inspect, re, sys, datetime
+from logging import StreamHandler, LogRecord
+from pathlib import Path
 from Configuration import Configuration
+from rich.logging import RichHandler
+from rich.console import Console
+from rich.text import Text
+
+
 
 levelName = {
 	logging.INFO :    'ℹ️  I',
@@ -33,6 +39,7 @@ class	Logging:
 	"""
 
 	logger  			= None
+	loggerConsole		= None
 	logLevel 			= logging.INFO
 	loggingEnabled		= True
 	enableFileLogging	= True
@@ -48,19 +55,22 @@ class	Logging:
 		Logging.logLevel 			= Configuration.get('logging.level')
 		Logging.loggingEnabled		= Configuration.get('logging.enable')
 		Logging.logger				= logging.getLogger('logging')
+		Logging.loggerConsole		= logging.getLogger("rich")
 
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
 			logfile = Configuration.get('logging.file')
 			os.makedirs(os.path.dirname(logfile), exist_ok=True)# create log directory if necessary
-			logfp				= logging.handlers.RotatingFileHandler( logfile,
-																		maxBytes=Configuration.get('logging.size'),
-																		backupCount=Configuration.get('logging.count'))
+			logfp = logging.handlers.RotatingFileHandler(logfile,
+														 maxBytes=Configuration.get('logging.size'),
+														 backupCount=Configuration.get('logging.count'))
 			logfp.setLevel(Logging.logLevel)
 			logfp.setFormatter(logging.Formatter('%(levelname)s %(asctime)s %(message)s'))
 			Logging.logger.addHandler(logfp) 
 
-		Logging.logger.setLevel(Logging.logLevel)
+		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=[ACMERichHandler(), logfp])
+		# Logging.logger.setLevel(Logging.logLevel)
+		# Logging.loggerConsole.setLevel(Logging.logLevel)
 
 	
 
@@ -99,13 +109,14 @@ class	Logging:
 	@staticmethod
 	def _log(level, msg, withPath):
 		try:
+
 			if Logging.loggingEnabled and Logging.logLevel <= level:
-				caller = inspect.getframeinfo(inspect.stack()[2][0])
-				if withPath:
-					msg = '(%s:%d) %s' % (os.path.basename(caller.filename), caller.lineno, msg)
+				# caller = inspect.getframeinfo(inspect.stack()[2][0])
+				# if withPath:
+				# 	msg = '(%s:%d) %s' % (os.path.basename(caller.filename), caller.lineno, msg)
 				#print( "(" + time.ctime(time.time()) + ") " + msg)
-				print('%s %s %s' % (levelName[level], datetime.datetime.now().isoformat(sep=' ', timespec='milliseconds'), msg))
-				Logging.logger.log(level, msg)
+				#Logging.logger.log(level, msg)
+				Logging.loggerConsole.log(level, msg)
 		except:
 			pass
 
@@ -137,3 +148,43 @@ class RedirectHandler(StreamHandler):
 		# 	Logging.logWarn(msg, False)
 		# elif record.levelName == logging.ERROR:
 		# 	Logging.logErr(msg, False)
+
+
+#
+#	Redirect handler to support Rich formatting
+#
+
+class ACMERichHandler(RichHandler):
+
+	def __init__(self, level: int = logging.NOTSET, console: Console = None) -> None:
+		super().__init__(level=level)
+
+
+	def emit(self, record: LogRecord) -> None:
+		"""Invoked by logging."""
+		path = Path(record.pathname).name
+		log_style = f"logging.level.{record.levelname.lower()}"
+		message = self.format(record)
+		time_format = None if self.formatter is None else self.formatter.datefmt
+		log_time = datetime.datetime.fromtimestamp(record.created)
+
+		level = Text()
+		level.append(record.levelname, log_style)
+		message_text = Text(message)
+		message_text.highlight_words(self.KEYWORDS, "logging.keyword")
+		message_text = self.highlighter(message_text)
+
+		# find caller on the stack
+		caller = inspect.getframeinfo(inspect.stack()[8][0])
+
+		self.console.print(
+			self._log_render(
+				self.console,
+				[message_text],
+				log_time=log_time,
+				time_format=time_format,
+				level=level,
+				path=os.path.basename(caller.filename),
+				line_no=caller.lineno,
+			)
+		)

@@ -18,6 +18,10 @@ In order to run the CSE the following prerequisites must be fulfilled:
 
 		pip3 install requests
 
+- **Rich**: The CSE uses the [Rich](https://github.com/willmcgugan/rich) text formatter library to format various terminal output.
+
+		pip install rich
+
 - **tinydb 4.x** : To store resources the CSE uses the lightweight [TinyDB](https://github.com/msiemens/tinydb) document database. Install it by running the pip command:
 
 		pip3 install tinydb
@@ -42,9 +46,10 @@ The following third-party components are used for the ACME CSE.
 
 ### Core CSE
 - Flask: [https://flask.palletsprojects.com/](https://flask.palletsprojects.com/), BSD 3-Clause License
-- Requests: [https://requests.readthedocs.io/en/master/](https://requests.readthedocs.io/en/master/), Apache2 License
-- TinyDB: [https://github.com/msiemens/tinydb](https://github.com/msiemens/tinydb), MIT License
 - PSUtil: [https://github.com/giampaolo/psutil](https://github.com/giampaolo/psutil), BSD 3-Clause License
+- Requests: [https://requests.readthedocs.io/en/master/](https://requests.readthedocs.io/en/master/), Apache2 License
+- Rich: [https://github.com/willmcgugan/rich](https://github.com/willmcgugan/rich), MIT License 
+- TinyDB: [https://github.com/msiemens/tinydb](https://github.com/msiemens/tinydb), MIT License
 
 
 ### UI Components

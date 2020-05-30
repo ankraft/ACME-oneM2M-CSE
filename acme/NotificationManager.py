@@ -195,6 +195,7 @@ class NotificationManager(object):
 		Utils.setXPath(jsn, 'm2m:sgn/sur', Utils.fullRI(ri))
 
 		# Add some values to the notification
+		# TODO: switch statement:  (x is not None and bla())
 		if reason is not None:
 			Utils.setXPath(jsn, 'm2m:sgn/nev/net', reason)
 		if resource is not None:

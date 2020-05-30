@@ -6,6 +6,7 @@ RUN pip3 install tinydb
 RUN pip3 install flask
 RUN pip3 install psutil
 RUN pip3 install requests
+RUN pip3 install rich
 
 RUN mkdir acme-cse
 COPY acme.py acme-cse/

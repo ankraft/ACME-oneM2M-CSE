@@ -28,6 +28,7 @@ class HttpServer(object):
 		# Meaning defaults are automatically provided.
 		self.flaskApp = Flask(Configuration.get('cse.csi'))
 		self.rootPath = Configuration.get('http.root')
+
 		Logging.log('Registering http server root at: %s' % self.rootPath)
 
 		# Add endpoints
@@ -64,11 +65,17 @@ class HttpServer(object):
 			self.mappings = dict(mappings)
 
 
+		# Disable most logs from requests library 
+		logging.getLogger("requests").setLevel(logging.WARNING)
+		logging.getLogger("urllib3").setLevel(logging.WARNING)
+
+
+
 
 	def run(self):
 		# Redirect the http server (Flask) log output to the CSE logs
-		werkzeugLog = logging.getLogger('werkzeug')
-		werkzeugLog.addHandler(RedirectHandler("httpServer"))
+		#werkzeugLog = logging.getLogger('werkzeug')
+		#werkzeugLog.addHandler(RedirectHandler("httpServer"))
 
 		WSGIRequestHandler.protocol_version = "HTTP/1.1"
 
@@ -80,7 +87,8 @@ class HttpServer(object):
 			try:
 				self.flaskApp.run(host=Configuration.get('http.listenIF'), 
 								  port=Configuration.get('http.port'),
-								  threaded=Configuration.get('http.multiThread'))
+								  threaded=Configuration.get('http.multiThread'),
+								  request_handler=ACMERequestHandler)
 			except Exception as e:
 				Logging.logErr(e)
 
@@ -197,6 +205,7 @@ class HttpServer(object):
 					C.hfRVI			: C.hfvRVI,			# TODO this actually depends in the originator
 				   }
 		try:
+			Logging.logDebug('Sending request: %s %s' % (method.__name__.upper(), url))
 			r = method(url, data=data, headers=headers)
 		except Exception as e:
 			Logging.logWarn('Failed to send request: %s' % str(e))
@@ -215,7 +224,7 @@ class HttpServer(object):
 			if (r := resource.asJSON() if isinstance(resource, Resource) else resource) is None:
 				r = ''
 				returnCode = C.rcNotFound
-		Logging.logDebug('Response: \n' + str(r))
+		Logging.logDebug('<== Response (RSC: %d):\n%s\n' % (returnCode, str(r)))
 		resp = make_response(r)
 
 		# headers
@@ -265,4 +274,24 @@ class HttpServer(object):
 	def _statusCode(self, sc):
 		return self._codes[sc]
 
+
+
+#
+#	Own request handler.
+#	Actually only to redirect logging.
+#
+
+class ACMERequestHandler(WSGIRequestHandler):
+	# Just like WSGIRequestHandler, but without "- -"
+	def log(self, type, message, *args):
+		return
+		# Logging.log('%s %s\n' % (self.address_string(),
+		# 								 message % args))
+
+	# Just like WSGIRequestHandler, but without "code"
+	def log_request(self, code='-', size='-'):
+		Logging.logDebug('"%s" %s %d' % (self.requestline, size, code))
+
+	def log_message(self, format, *args):
+		return
 
