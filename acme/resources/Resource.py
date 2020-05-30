@@ -148,9 +148,9 @@ class Resource(object):
 
 		# increment parent resource's state tag
 		if parentResource is not None and parentResource.st is not None:
-			parentResource = CSE.storage.retrieveResource(ri=parentResource.ri)
+			parentResource = CSE.storage.retrieveResource(ri=parentResource.ri)	# Read the resource again in case it was updated in the DB
 			parentResource.setAttribute('st', parentResource.st + 1)
-			if (res := CSE.storage.updateResource(parentResource))[0] is None:
+			if (res := parentResource.dbUpdate())[0] is None:
 				return (False, res[1])
 	
 		self.setAttribute(self._rtype, self.tpe, overwrite=False) 
@@ -319,6 +319,26 @@ class Resource(object):
 				self[attributeName] = result
 			else: 							# single uri
 				self[attributeName] = Utils.normalizeURL(attribute)
+
+
+	#########################################################################
+
+	#
+	#	Database functions
+	#
+
+	def dbDelete(self):
+		""" Delete the Resource from the database. """
+		return CSE.storage.deleteResource(self)
+
+
+	def dbUpdate(self):
+		""" Update the Resource in the database. """
+		return CSE.storage.updateResource(self)
+
+
+	def dbCreate(self, overwrite=False):
+		return CSE.storage.createResource(self, overwrite)
 
 
 

@@ -191,5 +191,5 @@ class GroupManager(object):
 		for group in groups:
 			group['mid'].remove(ri)
 			group['cnm'] = group.cnm - 1
-			CSE.storage.updateResource(group)
+			group.dbUpdate()
 

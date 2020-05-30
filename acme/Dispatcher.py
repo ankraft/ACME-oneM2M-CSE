@@ -339,19 +339,19 @@ class Dispatcher(object):
 			resource[resource._srn] = Utils.structuredPath(resource)
 
 		# add the resource to storage
-		if (res := CSE.storage.createResource(resource, overwrite=False))[1] != C.rcCreated:
+		if (res := resource.dbCreate(overwrite=False))[1] != C.rcCreated:
 			return (None, res[1])
 
 		# Activate the resource
 		# This is done *after* writing it to the DB, because in activate the resource might create or access other
 		# resources that will try to read the resource from the DB.
 		if not (res := resource.activate(parentResource, originator))[0]: 	# activate the new resource
-			CSE.storage.deleteResource(resource)
+			resource.dbDelete()
 			return (None, res[1])
 
 		# Could be that we changed the resource in the activate, therefore write it again
-		if (res := CSE.storage.updateResource(resource))[0] is None:
-			CSE.storage.deleteResource(resource)
+		if (res := resource.dbUpdate())[0] is None:
+			resource.dbDelete()
 			return res
 
 		if parentResource is not None:
@@ -441,7 +441,7 @@ class Dispatcher(object):
 				return (None, res[1])
 		else:
 			Logging.logDebug('No check, skipping resource update')
-		return CSE.storage.updateResource(resource)
+		return resource.dbUpdate()
 
 
 
@@ -502,7 +502,7 @@ class Dispatcher(object):
 		# notify the parent resource
 		parentResource = resource.retrieveParentResource()
 		# (parentResource, _) = self.retrieveResource(resource['pi'])
-		(_, rc) = CSE.storage.deleteResource(resource)
+		(_, rc) = resource.dbDelete()
 		CSE.event.deleteResource(resource)	# send a delete event
 		if parentResource is not None:
 			parentResource.childRemoved(resource, originator)

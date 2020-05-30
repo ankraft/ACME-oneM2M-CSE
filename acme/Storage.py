@@ -87,7 +87,7 @@ class Storage(object):
 			if not self.hasResource(ri, srn):	# Only when not resource does not exist yet
 				self.db.insertResource(resource)
 			else:
-				Logging.logWarn('Resource already exists (Skipping)')
+				Logging.logWarn('Resource already exists (Skipping): %s ' % resource)
 				return (False, C.rcAlreadyExists)
 
 		# Add path to identifiers db
