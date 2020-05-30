@@ -123,11 +123,17 @@ class RedirectHandler(StreamHandler):
 	def emit(self, record):
 		msg = '(%s) %s' % (self.topic, record.getMessage())
 		msg = re.sub(r'\[.+?\] ', '', msg) # clean up (remove superflous date and time)
-		if record.levelno == logging.DEBUG:
-			Logging.logDebug(msg, False)
-		elif record.levelno == logging.INFO:
-			Logging.log(msg, False)
-		elif record.levelno == logging.WARNING:
-			Logging.logWarn(msg, False)
-		elif record.levelName == logging.ERROR:
-			Logging.logErr(msg, False)
+
+		(record.levelno == logging.DEBUG 	and Logging.logDebug(msg, False))
+		(record.levelno == logging.INFO 	and Logging.log(msg, False))
+		(record.levelno == logging.WARNING 	and Logging.logWarn(msg, False))
+		(record.levelno == logging.ERROR 	and Logging.logErr(msg, False))
+
+		# if record.levelno == logging.DEBUG:
+		# 	Logging.logDebug(msg, False)
+		# elif record.levelno == logging.INFO:
+		# 	Logging.log(msg, False)
+		# elif record.levelno == logging.WARNING:
+		# 	Logging.logWarn(msg, False)
+		# elif record.levelName == logging.ERROR:
+		# 	Logging.logErr(msg, False)
