@@ -223,6 +223,11 @@ class Configuration(object):
 		# Override remote CSE enablement
 		if argsRemoteCSEEnabled is not None:
 			Configuration._configuration['cse.enableRemoteCSE'] = argsRemoteCSEEnabled
+
+		# Correct urls
+		import Utils	# cannot import at the top because of circel import
+		Configuration._configuration['cse.remote.address'] = Utils.normalizeURL(Configuration._configuration['cse.remote.address'])
+		Configuration._configuration['http.address'] = Utils.normalizeURL(Configuration._configuration['http.address'])
 		return True
 
 

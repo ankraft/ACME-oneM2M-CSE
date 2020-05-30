@@ -45,6 +45,8 @@ class AE(Resource):
 	def validate(self, originator, create=False):
 		if (res := super().validate(originator), create)[0] == False:
 			return res
+
+		self.normalizeURIAttribute('poa')
 			
 		# Update the hcl attribute in the hosting node (similar to csebase)
 		nl = self['nl']

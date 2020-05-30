@@ -303,6 +303,24 @@ class Resource(object):
 	def __getattr__(self, name):
 		return self.attribute(name)
 
+	#########################################################################
+
+	#
+	#	Attribute specific helpers
+	#
+
+	def normalizeURIAttribute(self, attributeName):
+		""" Normalie the URLs in the poa, nu etc. """
+		if (attribute := self[attributeName]) is not None:
+			if isinstance(attribute, list):	# list of uris
+				result = []
+				for uri in attribute:
+					result.append(Utils.normalizeURL(uri))
+				self[attributeName] = result
+			else: 							# single uri
+				self[attributeName] = Utils.normalizeURL(attribute)
+
+
 
 	#########################################################################
 

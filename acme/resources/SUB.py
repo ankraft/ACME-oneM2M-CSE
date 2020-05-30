@@ -12,6 +12,8 @@ from Constants import Constants as C
 import Utils, CSE
 from .Resource import *
 
+# TODO Attribute validations
+
 # LIMIT: Only http(s) requests in nu or POA is supported yet
 
 class SUB(Resource):
@@ -22,6 +24,7 @@ class SUB(Resource):
 		if self.json is not None:
 			self.setAttribute('nct', C.nctAll, overwrite=False) # LIMIT TODO: only this notificationContentType is supported now
 			self.setAttribute('enc/net', [ C.netResourceUpdate ], overwrite=False)
+
 
 # TODO expirationCounter
 # TODO notificationForwardingURI
@@ -58,9 +61,14 @@ class SUB(Resource):
 		if (res := super().validate(originator, create))[0] == False:
 			return res
 		Logging.logDebug('Validating subscription: %s' % self['ri'])
+
 		# Check necessary attributes
 		if (nu := self['nu']) is None or not isinstance(nu, list):
 			Logging.logDebug('"nu" attribute missing for subscription: %s' % self['ri'])
 			return (False, C.rcInsufficientArguments)
-		# TODO check other attributes
+
+		# check other attributes
+		self.normalizeURIAttribute('nfu')
+		self.normalizeURIAttribute('nu')
+		self.normalizeURIAttribute('su')		
 		return (True, C.rcOK)

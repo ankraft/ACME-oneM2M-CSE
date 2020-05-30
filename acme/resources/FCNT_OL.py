@@ -40,7 +40,6 @@ class FCNT_OL(Resource):
 		Logging.logDebug('Retrieving oldest FCI from FCNT')
 		if (r := self._getOldest()) is None:
 			return (None, C.rcNotFound)
-		print(r)
 		return (r, C.rcOK)
 
 

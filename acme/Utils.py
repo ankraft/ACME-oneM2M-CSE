@@ -217,6 +217,14 @@ def isURL(url):
 	return url is not None and re.match(urlregex, url) is not None
 
 
+def normalizeURL(url):
+	""" Remove trailing / from the url. """
+	if url is not None:
+		while len(url) > 0 and url[-1] == '/':
+			url = url[:-1]
+	return url
+
+
 def getIdFromOriginator(originator, idOnly=False):
 	""" Get AE-ID-Stem or CSE-ID from the originator (in case SP-relative or Absolute was used) """
 	if idOnly:
@@ -298,7 +306,7 @@ def getRequestHeaders(request):
 	# content-type
 	ty = None
 	if (ct := request.content_type) is not None:
-		if not ct.startswith(tuple(C.supportedContentSerializations)):
+		if not ct.startswith(tuple(C.supportedContentHeaderFormat)):
 			ct = None
 		else:
 			p = ct.partition(';')

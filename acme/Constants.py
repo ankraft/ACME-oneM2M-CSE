@@ -82,7 +82,8 @@ class Constants(object):
 
 	# Supported by this CSE
 	supportedResourceTypes = [ tACP, tAE, tCNT, tCIN, tCSEBase, tGRP, tMGMTOBJ, tNOD, tCSR, tSUB, tFCNT, tFCI ]
-	supportedContentSerializations = [ 'application/json', 'application/vnd.onem2m-res+json' ]
+	supportedContentSerializations = [ 'application/json' ]
+	supportedContentHeaderFormat = [ 'application/json', 'application/vnd.onem2m-res+json' ]
 	supportedReleaseVersions = [ '3' ]
 
 	# List of resource types for which "creator" is allowed

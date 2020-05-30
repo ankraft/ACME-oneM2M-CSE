@@ -39,7 +39,6 @@ class CNT_OL(Resource):
 		Logging.logDebug('Retrieving oldest CIN from CNT')
 		if (r := self._getOldest()) is None:
 			return (None, C.rcNotFound)
-		print(r)
 		return (r, C.rcOK)
 
 
