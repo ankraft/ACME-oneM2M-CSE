@@ -8,8 +8,9 @@
 #
 
 
-import logging, configparser
+import logging, configparser, re
 from Constants import Constants as C
+
 
 defaultConfigFile			= 'acme.ini'
 defaultImportDirectory		= './init'
@@ -22,6 +23,9 @@ class Configuration(object):
 	@staticmethod
 	def init(args = None):
 		global _configuration
+
+		import Utils	# cannot import at the top because of circel import
+		from Logging import Logging
 
 		# resolve the args, of any
 		argsConfigfile			= args.configfile if args is not None else defaultConfigFile
@@ -48,7 +52,7 @@ class Configuration(object):
 
 				'http.listenIF'						: config.get('server.http', 'listenIF', 				fallback='127.0.0.1'),
 				'http.port' 						: config.getint('server.http', 'port', 					fallback=8080),
-				'http.root'							: config.get('server.http', 'root', 					fallback='/'),
+				'http.root'							: config.get('server.http', 'root', 					fallback=''),
 				'http.address'						: config.get('server.http', 'address', 					fallback='http://127.0.0.1:8080'),
 				'http.multiThread'					: config.getboolean('server.http', 'multiThread', 		fallback=True),
 
@@ -78,7 +82,7 @@ class Configuration(object):
 
 				'cse.type'							: config.get('cse', 'type',								fallback='IN'),		# IN, MN, ASN
 				'cse.spid'							: config.get('cse', 'serviceProviderID',				fallback='acme'),
-				'cse.csi'							: config.get('cse', 'cseID',							fallback='id-in'),
+				'cse.csi'							: config.get('cse', 'cseID',							fallback='/id-in'),
 				'cse.ri'							: config.get('cse', 'resourceID',						fallback='id-in'),
 				'cse.rn'							: config.get('cse', 'resourceName',						fallback='cse-in'),
 				'cse.resourcesPath'					: config.get('cse', 'resourcesPath', 					fallback=defaultImportDirectory),
@@ -99,8 +103,8 @@ class Configuration(object):
 				#
 
 				'cse.remote.address'				: config.get('cse.remote', 'address', 					fallback=''),
-				'cse.remote.root'					: config.get('cse.remote', 'root', 						fallback='/'),
-				'cse.remote.cseid'					: config.get('cse.remote', 'cseid', 					fallback=''),
+				'cse.remote.root'					: config.get('cse.remote', 'root', 						fallback=''),
+				'cse.remote.csi'					: config.get('cse.remote', 'cseID', 					fallback=''),
 				'cse.remote.checkInterval'			: config.getint('cse.remote', 'checkInterval', 			fallback=30),		# Seconds
 
 				#
@@ -190,7 +194,7 @@ class Configuration(object):
 
 		# Loglevel from command line
 		logLevel = Configuration._configuration['logging.level'].lower()
-		logLevel = argsLoglevel if argsLoglevel is not None else logLevel 	# command line args override config
+		logLevel = (argsLoglevel or logLevel) 	# command line args override config
 		if logLevel == 'off':
 			Configuration._configuration['logging.enable'] = False
 			Configuration._configuration['logging.level'] = logging.DEBUG
@@ -225,9 +229,27 @@ class Configuration(object):
 			Configuration._configuration['cse.enableRemoteCSE'] = argsRemoteCSEEnabled
 
 		# Correct urls
-		import Utils	# cannot import at the top because of circel import
 		Configuration._configuration['cse.remote.address'] = Utils.normalizeURL(Configuration._configuration['cse.remote.address'])
 		Configuration._configuration['http.address'] = Utils.normalizeURL(Configuration._configuration['http.address'])
+		Configuration._configuration['http.root'] = Utils.normalizeURL(Configuration._configuration['http.root'])
+		Configuration._configuration['cse.remote.root'] = Utils.normalizeURL(Configuration._configuration['cse.remote.root'])
+
+
+		#
+		#	Some sanity and validity checks
+		#
+
+
+		# check the csi format
+		rx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
+		if re.fullmatch(rx, (val:=Configuration._configuration['cse.csi'])) is None:
+			Logging.logErr('Configuration Error: Wrong format for [cse].cseID: %s' % val)
+			return False
+		if re.fullmatch(rx, (val:=Configuration._configuration['cse.remote.csi'])) is None:
+			Logging.logErr('Configuration Error: Wrong format for [cse.remote].cseID: %s' % val)
+			return False
+
+		# Everything is fine
 		return True
 
 

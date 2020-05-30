@@ -74,7 +74,7 @@ The following macros are supported in addition to those defined in the sections 
 | port        | Port to listen to.<br/>Default: 8080                                                         | http.port        |
 | listenIF    | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1              | http.listenIF    |
 | address     | Own address. Should be a local/public reachable address.<br/> Default: http://127.0.0.1:8080 | http.address     |
-| root        | CSE Server root. Always provide a trailing /.<br/>Default: /                                 | http.root        |
+| root        | CSE Server root. Never provide a trailing /.<br/>Default: empty string                       | http.root        |
 | multiThread | Run the http server in single- or multi-threaded mode.<br/> Default: true                    | http.multiThread |
 
 <a name="database"></a>
@@ -116,8 +116,8 @@ The following macros are supported in addition to those defined in the sections 
 | Keyword       | Description                                                                                                                              | Macro Name               |
 |:--------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:-------------------------|
 | address       | URL of the remote CSE.<br/>Default: no default                                                                                           | cse.remote.address       |
-| root          | Remote CSE root path.<br/>Default: /                                                                                                     | cse.remote.root          |
-| cseid         | CSE-ID of the remote CSE. Default: no default                                                                                            | cse.remote.cseid         |
+| root          | Remote CSE root path. Never provide a trailing /.<br/>Default: empty string                                                              | cse.remote.root          |
+| cseID         | CSE-ID of the remote CSE.<br/>Default: no default                                                                                        | cse.remote.csi           |
 | checkInterval | Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.<br/>Default: 30 | cse.remote.checkInterval |
 
 <a name="statistics"></a>

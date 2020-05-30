@@ -173,7 +173,7 @@ class RegistrationManager(object):
 			return False
 
 		# retrieve the CSEBase and assign the new ACP
-		if (res := CSE.dispatcher.retrieveResource(localCSE.csi))[0] is not None:
+		if (res := CSE.dispatcher.retrieveResource(localCSE.ri))[0] is not None:	# ri should be == csi
 			res[0].acpi.append(cseAcp[0].ri)
 			CSE.dispatcher.updateResource(res[0], doUpdateCheck=False)
 

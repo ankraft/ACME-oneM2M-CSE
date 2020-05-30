@@ -146,7 +146,7 @@ class Resource(object):
 					else:
 						self.setAttribute('acpi', [ defaultACPIRI ])	# Set default ACPIRIs
 
-		# increment parent resource's state tage
+		# increment parent resource's state tag
 		if parentResource is not None and parentResource.st is not None:
 			parentResource = CSE.storage.retrieveResource(ri=parentResource.ri)
 			parentResource.setAttribute('st', parentResource.st + 1)

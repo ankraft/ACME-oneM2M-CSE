@@ -29,8 +29,6 @@ class HttpServer(object):
 		self.flaskApp = Flask(Configuration.get('cse.csi'))
 		self.rootPath = Configuration.get('http.root')
 		Logging.log('Registering http server root at: %s' % self.rootPath)
-		while self.rootPath.endswith('/'):
-			self.rootPath = self.rootPath[:-1]
 
 		# Add endpoints
 

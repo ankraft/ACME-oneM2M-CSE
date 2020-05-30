@@ -26,13 +26,13 @@ class RemoteCSEManager(object):
 		self.isConnected 	= False
 		self.remoteAddress	= Configuration.get('cse.remote.address')
 		self.remoteRoot 	= Configuration.get('cse.remote.root')
-		self.remoteCseid	= Configuration.get('cse.remote.cseid')
+		self.remoteCsi		= Configuration.get('cse.remote.csi')
 		self.originator		= Configuration.get('cse.csi')	# Originator is the own CSE-ID
 		self.worker			= None
 		self.checkInterval	= Configuration.get('cse.remote.checkInterval')
 		self.cseCsi			= Configuration.get('cse.csi')
-		self.remoteCSEURL	= self.remoteAddress + self.remoteRoot + self.remoteCseid
-		self.remoteCSRURL	= self.remoteCSEURL + '/' + self.cseCsi	
+		self.remoteCSEURL	= self.remoteAddress + self.remoteRoot + self.remoteCsi
+		self.remoteCSRURL	= self.remoteCSEURL + self.cseCsi	
 		Logging.log('RemoteCSEManager initialized')
 
 
@@ -186,7 +186,7 @@ class RemoteCSEManager(object):
 		#Logging.logDebug('Retrieving local CSR: %s' % csi)
 		csrs = CSE.dispatcher.subResources(pi=Configuration.get('cse.ri'), ty=C.tCSR)
 		if csi is None:
-			csi = self.remoteCseid
+			csi = self.remoteCsi
 		if own:
 			for csr in csrs:
 				if (c := csr.csi) is not None and c == csi:
@@ -241,7 +241,7 @@ class RemoteCSEManager(object):
 	#
 
 	def _retrieveRemoteCSR(self):
-		Logging.logDebug('Retrieving remote CSR: %s' % self.remoteCseid)
+		Logging.logDebug('Retrieving remote CSR: %s' % self.remoteCsi)
 		(jsn, rc) = CSE.httpServer.sendRetrieveRequest(self.remoteCSRURL, self.originator)
 		if rc not in [C.rcOK]:
 			return (None, rc)
@@ -249,22 +249,25 @@ class RemoteCSEManager(object):
 
 
 	def _createRemoteCSR(self):
-		Logging.logDebug('Creating remote CSR: %s' % self.remoteCseid)
+		Logging.logDebug('Creating remote CSR: %s' % self.remoteCsi)
 		
 		# get local CSEBase and copy relevant attributes
 		(localCSE, _) = Utils.getCSE()
 		csr = CSR.CSR(rn=localCSE.ri) # ri as name!
 		self._copyCSE2CSE(csr, localCSE)
-		csr['ri'] = self.cseCsi			# override ri with the own cseID
+		csr['ri'] = self.cseCsi							# override ri with the own cseID
+		csr['cb'] = localCSE.rn
+		for _ in ['ty','ri', 'cr', 'lt']: del(csr[_])	# remove a couple of attributes
 		data = json.dumps(csr.asJSON())
 
 		# Create the <remoteCSE> in the remote CSE
+		Logging.logDebug('Creating remote CSR at: %s url: %s' % (self.remoteCsi, self.remoteCSEURL))	
 		(jsn, rc) = CSE.httpServer.sendCreateRequest(self.remoteCSEURL, self.originator, ty=C.tCSR, data=data)
 		if rc not in [C.rcCreated, C.rcOK]:
 			if rc != C.rcAlreadyExists:
 				Logging.logDebug('Error creating remote CSR: %d' % rc)
 			return (None, rc)
-		Logging.logDebug('Remote CSR created: %s' % self.remoteCseid)
+		Logging.logDebug('Remote CSR created: %s' % self.remoteCsi)
 
 		return (None, C.rcCreated)
 
@@ -281,17 +284,17 @@ class RemoteCSEManager(object):
 			if rc != C.rcAlreadyExists:
 				Logging.logDebug('Error updating remote CSR: %d' % rc)
 			return (None, rc)
-		Logging.logDebug('Remote CSR updated: %s' % self.remoteCseid)
+		Logging.logDebug('Remote CSR updated: %s' % self.remoteCsi)
 		return (CSR.CSR(jsn), C.rcUpdated)
 
 
 
 	def _deleteRemoteCSR(self):
-		Logging.logDebug('Deleting remote CSR: %s' % self.remoteCseid)
+		Logging.logDebug('Deleting remote CSR: %s url: %s' % (self.remoteCsi, self.remoteCSRURL))
 		(jsn, rc) = CSE.httpServer.sendDeleteRequest(self.remoteCSRURL, self.originator)
 		if rc not in [C.rcDeleted, C.rcOK]:	
 			return (None, rc)
-		Logging.log('Remote CSR deleted: %s' % self.remoteCseid)
+		Logging.log('Remote CSR deleted: %s' % self.remoteCsi)
 		return (None, C.rcDeleted)
 
 
@@ -301,8 +304,9 @@ class RemoteCSEManager(object):
 
 	# Retrieve the remote CSE
 	def _retrieveRemoteCSE(self, url=None):
-		Logging.logDebug('Retrieving remote CSE from: %s url: %s' % (self.remoteCseid, url))	
-		(jsn, rc) = CSE.httpServer.sendRetrieveRequest(url if url is not None else self.remoteCSEURL, self.originator)
+		url = (url or self.remoteCSEURL)
+		Logging.logDebug('Retrieving remote CSE from: %s url: %s' % (self.remoteCsi, url))	
+		(jsn, rc) = CSE.httpServer.sendRetrieveRequest(url, self.originator)
 		if rc not in [C.rcOK]:
 			return (None, rc)
 		return (CSEBase.CSEBase(jsn), C.rcOK)

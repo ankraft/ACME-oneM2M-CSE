@@ -17,7 +17,8 @@ class CSR(Resource):
 		super().__init__(C.tsCSR, jsn, pi, C.tCSR, rn=rn, create=create)
 
 		if self.json is not None:
-			self.setAttribute('csi', 'cse', overwrite=False)
+			self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
+			self['ri'] = self.csi.split('/')[-1]				# overwrite ri (only after /'s')
 			self.setAttribute('rr', False, overwrite=False)
 
 

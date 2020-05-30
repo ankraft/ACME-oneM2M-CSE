@@ -83,7 +83,7 @@ class	Logging:
 		"""Print a log message with level ERROR.
 		"""
 		import CSE
-		CSE.event.logError()	# raise logError event
+		(not CSE.event or CSE.event.logError())	# raise logError event
 		Logging._log(logging.ERROR, msg, withPath)
 
 
@@ -92,7 +92,7 @@ class	Logging:
 		"""Print a log message with level WARNING.
 		"""
 		import CSE
-		CSE.event.logWarning()	# raise logWarning event
+		(not CSE.event or CSE.event.logWarning())	# raise logWarning event
 		Logging._log(logging.WARNING, msg, withPath)
 
 
