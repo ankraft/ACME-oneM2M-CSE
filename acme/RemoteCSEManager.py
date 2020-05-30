@@ -172,7 +172,7 @@ class RemoteCSEManager(object):
 		for csr in csrs:
 			for url in (csr.poa or []):
 				if Utils.isURL(url):
-					(cse, rc) = self._retrieveRemoteCSE(url='%s/%s' % (url, csr.csi ))
+					(cse, rc) = self._retrieveRemoteCSE(url='%s%s' % (url, csr.csi ))
 					if rc != C.rcOK:
 						Logging.logWarn('Remote CSE unreachable. Removing CSR: %s' % csr.rn)
 						CSE.dispatcher.deleteResource(csr)
