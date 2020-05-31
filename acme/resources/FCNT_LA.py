@@ -39,7 +39,6 @@ class FCNT_LA(Resource):
 		Logging.logDebug('Retrieving latest FCI from FCNT')
 		if (r := self._getLatest()) is None:
 			return (None, C.rcNotFound)
-		print(r)
 		return (r, C.rcOK)
 
 
