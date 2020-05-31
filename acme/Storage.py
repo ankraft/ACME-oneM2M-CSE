@@ -371,17 +371,30 @@ def _testDiscovery(storage, r, rootSRN, handling, conditions, attributes, fo, li
 			for l in lbla:
 				fnd += 1 if l in lbl else 0
 			found += 1 if (fo == 1 and fnd == len(lbl)) or (fo == 2 and fnd > 0) else 0	# fo==or -> find any label
+			#	# TODO labelsQuery
+
+		# Types
+		# Multiple occurences of ty is always OR'ed. Therefore we add the count of
+		# ty's to found (to indicate that the whole set matches)
+		tys = conditions['ty']
+		found += len(tys) if str(ty) in tys else 0	
 
 		if ty in [ C.tCIN, C.tFCNT ]:	# special handling for CIN, FCNT
 			if (cs := r.get('cs')) is not None:
 				found += 1 if (sza := conditions.get('sza')) is not None and (str(cs) >= sza) else 0
 				found += 1 if (szb := conditions.get('szb')) is not None and (str(cs) < szb) else 0
 
+		# ContentFormats
+		# Multiple occurences of cnf is always OR'ed. Therefore we add the count of
+		# cnf's to found (to indicate that the whole set matches)
 		if ty in [ C.tCIN ]:	# special handling for CIN
-			if (cnf := r.get('cnf')) is not None:
-				found += 1 if cnf in conditions['cty'] else 0
+			cnfs = conditions['cty']
+			found += len(cnfs) if r.get('cnf') in cnfs else 0
 
-	# TODO labelsQuery
+
+
+
+
 	# TODO childLabels
 	# TODO parentLabels
 	# TODO childResourceType
@@ -401,9 +414,6 @@ def _testDiscovery(storage, r, rootSRN, handling, conditions, attributes, fo, li
 	# TODO childAttribute
 	# TODO parentAttribute
 
-	# Test Types
-	if conditions is not None:
-		found += 1 if str(ty) in conditions['ty'] else 0
 
 	# Test whether the OR or AND criteria is fullfilled
 	if not ((fo == 2 and found > 0) or 		# OR and found something
