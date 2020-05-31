@@ -69,53 +69,41 @@ class	Logging:
 			Logging.logger.addHandler(logfp) 
 
 		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=[ACMERichHandler(), logfp])
-		# Logging.logger.setLevel(Logging.logLevel)
-		# Logging.loggerConsole.setLevel(Logging.logLevel)
 
 	
 
 	@staticmethod
-	def log(msg, withPath=True):
-		"""Print a log message with level INFO.
-		"""
-		Logging._log(logging.INFO, msg, withPath)
+	def log(msg: str):
+		"""Print a log message with level INFO. """
+		Logging._log(logging.INFO, msg)
 
 
 	@staticmethod
-	def logDebug(msg, withPath=True):
-		"""Print a log message with level DEBUG.
-		"""
-		Logging._log(logging.DEBUG, msg, withPath)
+	def logDebug(msg : str):
+		"""Print a log message with level DEBUG. """
+		Logging._log(logging.DEBUG, msg)
 
 
 	@staticmethod
-	def logErr(msg, withPath=True):
-		"""Print a log message with level ERROR.
-		"""
+	def logErr(msg : str):
+		"""Print a log message with level ERROR. """
 		import CSE
 		(not CSE.event or CSE.event.logError())	# raise logError event
-		Logging._log(logging.ERROR, msg, withPath)
+		Logging._log(logging.ERROR, msg)
 
 
 	@staticmethod
-	def logWarn(msg, withPath=True):
-		"""Print a log message with level WARNING.
-		"""
+	def logWarn(msg : str):
+		"""Print a log message with level WARNING. """
 		import CSE
 		(not CSE.event or CSE.event.logWarning())	# raise logWarning event
-		Logging._log(logging.WARNING, msg, withPath)
+		Logging._log(logging.WARNING, msg)
 
 
 	@staticmethod
-	def _log(level, msg, withPath):
+	def _log(level : int, msg : str):
 		try:
-
 			if Logging.loggingEnabled and Logging.logLevel <= level:
-				# caller = inspect.getframeinfo(inspect.stack()[2][0])
-				# if withPath:
-				# 	msg = '(%s:%d) %s' % (os.path.basename(caller.filename), caller.lineno, msg)
-				#print( "(" + time.ctime(time.time()) + ") " + msg)
-				#Logging.logger.log(level, msg)
 				Logging.loggerConsole.log(level, msg)
 		except:
 			pass
@@ -140,14 +128,6 @@ class RedirectHandler(StreamHandler):
 		(record.levelno == logging.WARNING 	and Logging.logWarn(msg, False))
 		(record.levelno == logging.ERROR 	and Logging.logErr(msg, False))
 
-		# if record.levelno == logging.DEBUG:
-		# 	Logging.logDebug(msg, False)
-		# elif record.levelno == logging.INFO:
-		# 	Logging.log(msg, False)
-		# elif record.levelno == logging.WARNING:
-		# 	Logging.logWarn(msg, False)
-		# elif record.levelName == logging.ERROR:
-		# 	Logging.logErr(msg, False)
 
 
 #
