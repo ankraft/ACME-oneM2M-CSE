@@ -318,7 +318,12 @@ class Dispatcher(object):
 			return (None, res[1])
 		originator = res[0]
 
-		return self.createResource(nr, pr, originator)
+		# Create the resource. If this fails we register everything
+		if (res := self.createResource(nr, pr, originator))[0] is None:
+			CSE.registration.checkResourceDeletion(nr, originator) # deregister resource. Ignore result, we take this from the creation
+			return res
+		return res
+
 
 
 	def createResource(self, resource, parentResource=None, originator=None):
