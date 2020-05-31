@@ -12,6 +12,8 @@
 from tinydb import TinyDB, Query, where
 from tinydb.storages import MemoryStorage
 from tinydb.operations import delete
+# from tinydb_smartcache import SmartCacheTable # TODO Not compatible with TinyDB 4 yet
+
 import os, json, re
 from Configuration import Configuration
 from Constants import Constants as C
@@ -309,6 +311,8 @@ class Storage(object):
 # handler function for discovery search and matching resources
 def _testDiscovery(storage, r, rootSRN, handling, conditions, attributes, fo, lim, ofst, allLen):
 
+	# TODO: Implement a couple of optimizations. Can we determine earlier that a match will fail?
+
 	# check limits
 	# TinyDB doesn't support pagination. So we need to implement it here. See also offset below.
 	if lim is not None and handling['__returned__'] >= lim:
@@ -472,14 +476,11 @@ class TinyDBBinding(object):
 		self.appDataReadLock 		= ReadWriteLock.ReadRWLock(self.appDataLock)
 		self.appDataWriteLock 		= ReadWriteLock.WriteRWLock(self.appDataLock)
 
-		# self.lockResources = Lock()
-		# self.lockIdentifiers = Lock()
-		# self.lockSubscriptions = Lock()
-		# self.lockStatistics = Lock()
-		# self.lockAppData = Lock()
-
 
 	def openDB(self):
+		# All databases/tables will use the smart query cache
+		# TODO not compatible with TinyDB 4 yet?
+		# TinyDB.table_class = SmartCacheTable 
 		if Configuration.get('db.inMemory'):
 			Logging.log('DB in memory')
 			self.dbResources = TinyDB(storage=MemoryStorage)

@@ -3,7 +3,7 @@
 #   stream of readers may starve a writer, Lock Promotion and Context Managers
 
 import threading
-import logging
+#import logging
 
 
 class ReadWriteLock(object):
@@ -19,7 +19,7 @@ class ReadWriteLock(object):
         self._writerList = []  # List of Writer thread IDs
 
     def acquire_read(self):
-        logging.debug("RWL : acquire_read()")
+        #logging.debug("RWL : acquire_read()")
         """ Acquire a read lock. Blocks only if a thread has
 	acquired the write lock. """
         self._read_ready.acquire()
@@ -32,7 +32,7 @@ class ReadWriteLock(object):
             self._read_ready.release()
 
     def release_read(self):
-        logging.debug("RWL : release_read()")
+        #logging.debug("RWL : release_read()")
         """ Release a read lock. """
         self._read_ready.acquire()
         try:
@@ -44,7 +44,7 @@ class ReadWriteLock(object):
             self._read_ready.release()
 
     def acquire_write(self):
-        logging.debug("RWL : acquire_write()")
+        #logging.debug("RWL : acquire_write()")
         """ Acquire a write lock. Blocks until there are no
 	acquired read or write locks. """
         self._read_ready.acquire()   # A re-entrant lock lets a thread re-acquire the lock
@@ -60,7 +60,7 @@ class ReadWriteLock(object):
                 self._read_ready.wait()
 
     def release_write(self):
-        logging.debug("RWL : release_write()")
+        #logging.debug("RWL : release_write()")
         """ Release a write lock. """
         self._writers -= 1
         self._writerList.remove(threading.get_ident())
