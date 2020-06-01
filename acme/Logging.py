@@ -58,7 +58,6 @@ class	Logging:
 		Logging.logger				= logging.getLogger('logging')			# general logger
 		Logging.loggerConsole		= logging.getLogger("rich")				# Rich Console logger
 
-
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
 			logfile = Configuration.get('logging.file')
@@ -105,11 +104,13 @@ class	Logging:
 
 	@staticmethod
 	def _log(level : int, msg : str):
-		try:
-			if Logging.loggingEnabled and Logging.logLevel <= level:
-				Logging.loggerConsole.log(level, msg)
-		except:
-			pass
+		if Logging.loggingEnabled and Logging.logLevel <= level:
+			Logging.loggerConsole.log(level, msg)
+			# try:
+			# 	if Logging.loggingEnabled and Logging.logLevel <= level:
+			# 		Logging.loggerConsole.log(level, msg)
+			# except:
+			# 	pass
 
 
 #

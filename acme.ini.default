@@ -17,7 +17,7 @@ type=IN
 # The CSE's service provider ID. Default: acme
 serviceProviderID=acme
 # The CSE ID. Can be overwritten in imported CSE definition. Default: id-in
-cseID=id-in
+cseID=/id-in
 # The CSE's resource ID. Can be overwritten in imported CSE definition. Default: id-in
 resourceID=id-in
 # The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition. Default: cse-in
@@ -132,7 +132,7 @@ address=http://127.0.0.1:8081
 # Remote CSE root path. Default: /
 root=/
 # CSE-ID of the remote CSE. Default: None
-cseID=in-cse
+cseID=/in-cse
 # Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.
 # Default: 30
 checkInterval=30

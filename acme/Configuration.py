@@ -25,7 +25,6 @@ class Configuration(object):
 		global _configuration
 
 		import Utils	# cannot import at the top because of circel import
-		from Logging import Logging
 
 		# resolve the args, of any
 		argsConfigfile			= args.configfile if args is not None else defaultConfigFile
@@ -243,10 +242,10 @@ class Configuration(object):
 		# check the csi format
 		rx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
 		if re.fullmatch(rx, (val:=Configuration._configuration['cse.csi'])) is None:
-			Logging.logErr('Configuration Error: Wrong format for [cse].cseID: %s' % val)
+			print('Configuration Error: Wrong format for [cse]:cseID: %s' % val)
 			return False
 		if re.fullmatch(rx, (val:=Configuration._configuration['cse.remote.csi'])) is None:
-			Logging.logErr('Configuration Error: Wrong format for [cse.remote].cseID: %s' % val)
+			print('Configuration Error: Wrong format for [cse.remote]:cseID: %s' % val)
 			return False
 
 		# Everything is fine
