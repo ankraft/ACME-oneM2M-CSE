@@ -118,7 +118,7 @@ class HttpServer(object):
 	def handlePUT(self, path=None):
 		Logging.logDebug('==> Update: %s' % request.path)
 		Logging.logDebug('Headers: \n' + str(request.headers))
-		Logging.logDebug('Body: \n' + str(request.data))
+		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpUpdate()
 		(resource, rc) = CSE.dispatcher.updateRequest(request)
 		return self._prepareResponse(request, resource, rc)

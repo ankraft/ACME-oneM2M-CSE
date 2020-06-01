@@ -10,14 +10,15 @@
 
 """	Wrapper class for the logging subsystem. """
 
-import logging, logging.handlers, os, inspect, re, sys, datetime
+import logging, logging.handlers, os, inspect, re, sys, datetime, threading
 from logging import StreamHandler, LogRecord
 from pathlib import Path
 from Configuration import Configuration
 from rich.logging import RichHandler
+from rich.highlighter import ReprHighlighter
+from rich.style import Style
 from rich.console import Console
 from rich.text import Text
-
 
 
 levelName = {
@@ -54,8 +55,9 @@ class	Logging:
 		Logging.enableFileLogging 	= Configuration.get('logging.enableFileLogging')
 		Logging.logLevel 			= Configuration.get('logging.level')
 		Logging.loggingEnabled		= Configuration.get('logging.enable')
-		Logging.logger				= logging.getLogger('logging')
-		Logging.loggerConsole		= logging.getLogger("rich")
+		Logging.logger				= logging.getLogger('logging')			# general logger
+		Logging.loggerConsole		= logging.getLogger("rich")				# Rich Console logger
+
 
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
@@ -68,7 +70,8 @@ class	Logging:
 			logfp.setFormatter(logging.Formatter('%(levelname)s %(asctime)s %(message)s'))
 			Logging.logger.addHandler(logfp) 
 
-		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=[ACMERichHandler(), logfp])
+		# Add a Rich Console logger
+		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=[ACMERichLogHandler(), logfp])
 
 	
 
@@ -134,11 +137,34 @@ class RedirectHandler(StreamHandler):
 #	Redirect handler to support Rich formatting
 #
 
-class ACMERichHandler(RichHandler):
+class ACMERichLogHandler(RichHandler):
 
 	def __init__(self, level: int = logging.NOTSET, console: Console = None) -> None:
 		super().__init__(level=level)
 
+		# Add own styles to the current console object's styles
+		self.console._styles['repr.dim'] = Style(color="grey70", dim=True)
+		self.console._styles['repr.request'] = Style(color="magenta")
+		self.console._styles['repr.response'] = Style(color="magenta")
+
+		# Set own highlights 
+		self.highlighter.highlights = [
+			r"(?P<brace>[\{\[\(\)\]\}])",
+			r"(?P<tag_start>\<)(?P<tag_name>\w*)(?P<tag_contents>.*?)(?P<tag_end>\>)",
+			r"(?P<attrib_name>\w+?)=(?P<attrib_value>\"?\w+\"?)",
+			r"(?P<bool_true>True)|(?P<bool_false>False)|(?P<none>None)",
+			r"(?P<number>(?<!\w)\-?[0-9]+\.?[0-9]*\b)",
+			r"(?P<number>0x[0-9a-f]*)",
+			r"(?P<filename>\/\w*\.\w{3,4})\s",
+			r"(?<!\\)(?P<str>b?\'\'\'.*?(?<!\\)\'\'\'|b?\'.*?(?<!\\)\'|b?\"\"\".*?(?<!\\)\"\"\"|b?\".*?(?<!\\)\")",
+			r"(?P<url>https?:\/\/[0-9a-zA-Z\$\-\_\+\!`\(\)\,\.\?\/\;\:\&\=\%]*)",
+			r"(?P<uuid>[a-fA-F0-9]{8}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{12})",
+
+			r"(?P<dim>^[0-9]+\.?[0-9]*\b - )",		# thread ident at front
+			r"(?P<request>==>.*:)",					# Incoming request 
+			r"(?P<response><== [^ ]+ )",			# outgoing response
+		]
+		
 
 	def emit(self, record: LogRecord) -> None:
 		"""Invoked by logging."""
@@ -150,9 +176,9 @@ class ACMERichHandler(RichHandler):
 
 		level = Text()
 		level.append(record.levelname, log_style)
-		message_text = Text(message)
-		message_text.highlight_words(self.KEYWORDS, "logging.keyword")
+		message_text = Text("%d - %s" %(threading.current_thread().native_id, message))
 		message_text = self.highlighter(message_text)
+		#message_text.highlight_regex(r'(?P<dim>[0-9]+\.?[0-9]* - )(?P<NEVER_MATCH>NEVER_MATCH)*')
 
 		# find caller on the stack
 		caller = inspect.getframeinfo(inspect.stack()[8][0])
