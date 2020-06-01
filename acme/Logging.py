@@ -144,25 +144,32 @@ class ACMERichLogHandler(RichHandler):
 
 		# Add own styles to the current console object's styles
 		self.console._styles['repr.dim'] = Style(color="grey70", dim=True)
-		self.console._styles['repr.request'] = Style(color="magenta")
-		self.console._styles['repr.response'] = Style(color="magenta")
+		self.console._styles['repr.request'] = Style(color="spring_green2")
+		self.console._styles['repr.response'] = Style(color="magenta2")
+		self.console._styles['repr.id'] = Style(color="light_sky_blue1")
+		self.console._styles['repr.url'] = Style(color="sandy_brown", underline=True)
 
 		# Set own highlights 
 		self.highlighter.highlights = [
 			r"(?P<brace>[\{\[\(\)\]\}])",
-			r"(?P<tag_start>\<)(?P<tag_name>\w*)(?P<tag_contents>.*?)(?P<tag_end>\>)",
-			r"(?P<attrib_name>\w+?)=(?P<attrib_value>\"?\w+\"?)",
+			#r"(?P<tag_start>\<)(?P<tag_name>\w*)(?P<tag_contents>.*?)(?P<tag_end>\>)",
+			#r"(?P<attrib_name>\w+?)=(?P<attrib_value>\"?\w+\"?)",
 			r"(?P<bool_true>True)|(?P<bool_false>False)|(?P<none>None)",
-			r"(?P<number>(?<!\w)\-?[0-9]+\.?[0-9]*\b)",
+			r"(?P<id>(?<!\w)\-?[0-9]+\.?[0-9]*\b)",
 			r"(?P<number>0x[0-9a-f]*)",
-			r"(?P<filename>\/\w*\.\w{3,4})\s",
+			#r"(?P<filename>\/\w*\.\w{3,4})\s",
 			r"(?<!\\)(?P<str>b?\'\'\'.*?(?<!\\)\'\'\'|b?\'.*?(?<!\\)\'|b?\"\"\".*?(?<!\\)\"\"\"|b?\".*?(?<!\\)\")",
+			r"(?P<id>[\w\-_.]+[0-9]+\.?[0-9])",		# ID
 			r"(?P<url>https?:\/\/[0-9a-zA-Z\$\-\_\+\!`\(\)\,\.\?\/\;\:\&\=\%]*)",
-			r"(?P<uuid>[a-fA-F0-9]{8}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{12})",
+			#r"(?P<uuid>[a-fA-F0-9]{8}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{12})",
 
 			r"(?P<dim>^[0-9]+\.?[0-9]*\b - )",		# thread ident at front
 			r"(?P<request>==>.*:)",					# Incoming request 
 			r"(?P<response><== [^ ]+ )",			# outgoing response
+			r"(?P<number>\(RSC: [0-9]+\.?[0-9]\))",	# Result code
+			r"(?P<id> [\w/\-_]*/[\w/\-_]+)",		# ID
+			#r"(?P<id>(acp|ae|bat|cin|cnt|csest|dvi|grp|la|mem|nod|ol|sub)[0-9]+\.?[0-9])",		# ID
+
 		]
 		
 
@@ -178,7 +185,6 @@ class ACMERichLogHandler(RichHandler):
 		level.append(record.levelname, log_style)
 		message_text = Text("%d - %s" %(threading.current_thread().native_id, message))
 		message_text = self.highlighter(message_text)
-		#message_text.highlight_regex(r'(?P<dim>[0-9]+\.?[0-9]* - )(?P<NEVER_MATCH>NEVER_MATCH)*')
 
 		# find caller on the stack
 		caller = inspect.getframeinfo(inspect.stack()[8][0])
