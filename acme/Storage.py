@@ -15,13 +15,13 @@ from tinydb.operations import delete
 # from tinydb_smartcache import SmartCacheTable # TODO Not compatible with TinyDB 4 yet
 
 import os, json, re
+from threading import Lock
 from Configuration import Configuration
 from Constants import Constants as C
 from Logging import Logging
 from resources.Resource import Resource
 import CSE, Utils
 from helpers import BackgroundWorker
-from helpers import ReadWriteLock
 
 
 class Storage(object):
@@ -456,25 +456,12 @@ class TinyDBBinding(object):
 		Logging.log('Cache Size: %s' % self.cacheSize)
 
 		# create transaction locks
-		self.resourcesLock 			= ReadWriteLock.ReadWriteLock()
-		self.resourcesReadLock 		= ReadWriteLock.ReadRWLock(self.resourcesLock)
-		self.resourcesWriteLock 	= ReadWriteLock.WriteRWLock(self.resourcesLock)
-
-		self.identifiersLock 		= ReadWriteLock.ReadWriteLock()
-		self.identifiersReadLock 	= ReadWriteLock.ReadRWLock(self.identifiersLock)
-		self.identifiersWriteLock 	= ReadWriteLock.WriteRWLock(self.identifiersLock)
-
-		self.subscriptionsLock 		= ReadWriteLock.ReadWriteLock()
-		self.subscriptionsReadLock 	= ReadWriteLock.ReadRWLock(self.subscriptionsLock)
-		self.subscriptionsWriteLock	= ReadWriteLock.WriteRWLock(self.subscriptionsLock)
-
-		self.statisticsLock 		= ReadWriteLock.ReadWriteLock()
-		self.statisticsReadLock 	= ReadWriteLock.ReadRWLock(self.statisticsLock)
-		self.statisticsWriteLock 	= ReadWriteLock.WriteRWLock(self.statisticsLock)
-
-		self.appDataLock 			= ReadWriteLock.ReadWriteLock()
-		self.appDataReadLock 		= ReadWriteLock.ReadRWLock(self.appDataLock)
-		self.appDataWriteLock 		= ReadWriteLock.WriteRWLock(self.appDataLock)
+		# create transaction locks
+		self.lockResources = Lock()
+		self.lockIdentifiers = Lock()
+		self.lockSubscriptions = Lock()
+		self.lockStatistics = Lock()
+		self.lockAppData = Lock()
 
 
 	def openDB(self):
@@ -526,29 +513,29 @@ class TinyDBBinding(object):
 
 
 	def insertResource(self, resource):
-		with self.resourcesWriteLock:
+		with self.lockResources:
 			self.tabResources.insert(resource.json)
 	
 
 	def upsertResource(self, resource):
-		with self.resourcesWriteLock:
+		with self.lockResources:
 			self.tabResources.upsert(resource.json, Query().ri == resource.ri)	# Update existing or insert new when overwriting
 	
 
 	def updateResource(self, resource):
-		ri = resource.ri
-		with self.resourcesWriteLock:
+		with self.lockResources:
+			ri = resource.ri
 			self.tabResources.update(resource.json, Query().ri == ri)
 			# remove nullified fields from db and resource
 			for k in list(resource.json):
 				if resource.json[k] is None:
 					self.tabResources.update(delete(k), Query().ri == ri)
 					del resource.json[k]
-		return resource
+			return resource
 
 
 	def deleteResource(self, resource):
-		with self.resourcesWriteLock:
+		with self.lockResources:
 			self.tabResources.remove(Query().ri == resource.ri)
 	
 
@@ -560,7 +547,7 @@ class TinyDBBinding(object):
 				return self.searchResources(ri=identifiers[0]['ri'])
 			return []
 
-		with self.resourcesReadLock:
+		with self.lockResources:
 			if ri is not None:
 				r = self.tabResources.search(Query().ri == ri)
 			elif csi is not None:
@@ -571,13 +558,13 @@ class TinyDBBinding(object):
 				r = self.tabResources.search(Query().pi == pi)
 			elif ty is not None:
 				r = self.tabResources.search(Query().ty == ty)
-		return r
+			return r
 
 
 	def discoverResources(self, func):
-		with self.resourcesReadLock:
+		with self.lockResources:
 			rs = self.tabResources.search(func)
-		return rs
+			return rs
 
 
 	def hasResource(self, ri=None, csi=None, srn=None, ty=None):
@@ -587,28 +574,28 @@ class TinyDBBinding(object):
 			if len((identifiers := self.searchIdentifiers(srn=srn))) == 1:
 				return self.hasResource(ri=identifiers[0]['ri'])
 		ret = False
-		with self.resourcesReadLock:
+		with self.lockResources:
 			if ri is not None:
 				ret = self.tabResources.contains(Query().ri == ri)
 			elif csi is not None:
 				ret = self.tabResources.contains(Query().csi == csi)
 			elif ty is not None:
 				ret = self.tabResources.contains(Query().ty == ty)
-		return ret
+			return ret
 
 
 	def countResources(self):
-		with self.resourcesReadLock:
+		with self.lockResources:
 			result = len(self.tabResources)
-		return result
+			return result
 
 
 	def  searchByTypeFieldValue(self, ty, field, value):
 		"""Search and return all resources of a specific type and a value in a field,
 		and return them in an array."""
-		with self.resourcesReadLock:
+		with self.lockResources:
 			result = self.tabResources.search((Query().ty == ty) & (where(field).any(value)))
-		return result
+			return result
 
 
 
@@ -618,7 +605,7 @@ class TinyDBBinding(object):
 
 
 	def insertIdentifier(self, resource, ri, srn):
-		with self.identifiersWriteLock:
+		with self.lockIdentifiers:
 			self.tabIdentifiers.upsert(
 				# ri, rn, srn 
 				{'ri' : ri, 'rn' : resource.rn, 'srn' : srn, 'ty' : resource.ty}, 
@@ -626,17 +613,17 @@ class TinyDBBinding(object):
 
 
 	def deleteIdentifier(self, resource):
-		with self.identifiersWriteLock:
+		with self.lockIdentifiers:
 			self.tabIdentifiers.remove(Query().ri == resource.ri)
 
 
 	def searchIdentifiers(self, ri=None, srn=None):
-		with self.identifiersReadLock:
+		with self.lockIdentifiers:
 			if srn is not None:
 				r = self.tabIdentifiers.search(Query().srn == srn)
 			elif ri is not None:
 				r = self.tabIdentifiers.search(Query().ri == ri) 
-		return r
+			return r
 
 
 	#
@@ -645,18 +632,18 @@ class TinyDBBinding(object):
 
 
 	def searchSubscriptions(self, ri=None, pi=None):
-		subs = None
-		with self.subscriptionsReadLock:
+		with self.lockSubscriptions:
+			subs = None
 			if ri is not None:
 				subs = self.tabSubscriptions.search(Query().ri == ri)
 			if pi is not None:
 				subs = self.tabSubscriptions.search(Query().pi == pi)
-		return subs
+			return subs
 
 
 	def upsertSubscription(self, subscription):
-		ri = subscription.ri
-		with self.subscriptionsWriteLock:
+		with self.lockSubscriptions:
+			ri = subscription.ri
 			result = self.tabSubscriptions.upsert(
 									{	'ri'  : ri, 
 										'pi'  : subscription.pi,
@@ -665,13 +652,13 @@ class TinyDBBinding(object):
 										'nus' : subscription.nu
 									}, 
 									Query().ri == ri)
-		return result is not None
+			return result is not None
 
 
 	def removeSubscription(self, subscription):
-		with self.subscriptionsWriteLock:
+		with self.lockSubscriptions:
 			result = self.tabSubscriptions.remove(Query().ri == subscription.ri)
-		return result
+			return result
 
 
 	#
@@ -679,19 +666,19 @@ class TinyDBBinding(object):
 	#
 
 	def searchStatistics(self):
-		stats = None
-		with self.statisticsReadLock:
+		with self.lockStatistics:
+			stats = None
 			stats = self.tabStatistics.get(doc_id=1)
-		return stats if stats is not None and len(stats) > 0 else None
+			return stats if stats is not None and len(stats) > 0 else None
 
 
 	def upsertStatistics(self, stats):
-		with self.statisticsWriteLock:
+		with self.lockStatistics:
 			if len(self.tabStatistics) > 0:
 				result = self.tabStatistics.update(stats, doc_ids=[1])
 			else:
 				result = self.tabStatistics.insert(stats)
-		return result is not None
+			return result is not None
 
 
 	#
@@ -699,26 +686,26 @@ class TinyDBBinding(object):
 	#
 
 	def searchAppData(self, id):
-		data = None
-		with self.appDataReadLock:
+		with self.lockAppData:
+			data = None
 			data = self.tabAppData.get(Query().id == id)
-		return data if data is not None and len(data) > 0 else None
+			return data if data is not None and len(data) > 0 else None
 
 
 	def upsertAppData(self, data):
-		if 'id' not in data:
-			return None
-		with self.appDataWriteLock:
+		with self.lockAppData:
+			if 'id' not in data:
+				return None
 			if len(self.tabAppData) > 0:
 				result = self.tabAppData.update(data, Query().id == data['id'])
 			else:
 				result = self.tabAppData.insert(data)
-		return result is not None
+			return result is not None
 
 
 	def removeAppData(self, data):
-		if 'id' not in data:
-			return None
-		with self.appDataWriteLock:
+		with self.lockAppData:
+			if 'id' not in data:
+				return None	
 			result = self.tabAppData.remove(Query().id == data['id'])
-		return result
+			return result
