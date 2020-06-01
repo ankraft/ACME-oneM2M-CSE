@@ -23,6 +23,10 @@ def uniqueRI(prefix=''):
 	return p + uniqueID()
 
 
+def uniqueID():
+	return str(random.randint(1,sys.maxsize))
+
+
 def isUniqueRI(ri):
 	return len(CSE.storage.identifier(ri)) == 0
 
@@ -41,9 +45,6 @@ def uniqueAEI(prefix='S'):
 def fullRI(ri):
 	return '/' + Configuration.get('cse.csi') + '/' + ri
 
-
-def uniqueID():
-	return str(random.randint(1,sys.maxsize))
 
 
 def isVirtualResource(resource):
