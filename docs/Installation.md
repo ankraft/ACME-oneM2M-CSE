@@ -20,7 +20,7 @@ In order to run the CSE the following prerequisites must be fulfilled:
 
 - **Rich**: The CSE uses the [Rich](https://github.com/willmcgugan/rich) text formatter library to format various terminal output.
 
-		pip install rich
+		pip3 install rich
 
 - **tinydb 4.x** : To store resources the CSE uses the lightweight [TinyDB](https://github.com/msiemens/tinydb) document database. Install it by running the pip command:
 
