@@ -91,6 +91,18 @@ def structuredPathFromRI(ri):
 	return None
 
 
+def riFromStructuredPath(srn):
+	if len((paths := CSE.storage.structuredPath(srn))) == 1:
+		return paths[0]['ri']
+	return None
+
+def riFromCSI(csi):
+	if (res := CSE.storage.retrieveResource(csi=csi)) is None:
+		return None
+	return res.ri
+
+
+
 def resourceFromJSON(jsn, pi=None, acpi=None, tpe=None, create=False, isImported=False):
 	""" Create a resource from a JSON structure.
 		This will *not* call the activate method, therefore some attributes
@@ -268,6 +280,8 @@ def getCSE():
 	
 # Check whether the target contains a fanoutPoint in between or as the target
 def fanoutPointResource(id):
+	if id is None:
+		return None
 	nid = None
 	if id.endswith('/fopt'):
 		nid = id
@@ -285,18 +299,17 @@ def fanoutPointResource(id):
 #	HTTP request helper functions
 #
 
-def requestID(request, rootPath):
-	p = request.path
-	if p.startswith('/_'):
-		p = "/" + p[2:] #Absolute
-	if p.startswith('/~'):
-		p = p[2:] # SP-relative
-	if p.startswith('/'):
-		p = p[1:]
-	if rootPath != "/":
-		p.replace(rootPath, "")
-
-	return p
+# def requestID(request, rootPath):
+# 	p = request.path
+# 	if p.startswith('/_'):
+# 		p = "/" + p[2:] #Absolute
+# 	if p.startswith('/~'):
+# 		p = p[2:] # SP-relative
+# 	if p.startswith('/'):
+# 		p = p[1:]
+# 	if rootPath != "/":
+# 		p.replace(rootPath, "")
+# 	return p
 
 
 def requestHeaderField(request, field):

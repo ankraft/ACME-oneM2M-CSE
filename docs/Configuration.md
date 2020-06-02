@@ -118,6 +118,7 @@ The following macros are supported in addition to those defined in the sections 
 | address       | URL of the remote CSE.<br/>Default: no default                                                                                           | cse.remote.address       |
 | root          | Remote CSE root path. Never provide a trailing /.<br/>Default: empty string                                                              | cse.remote.root          |
 | cseID         | CSE-ID of the remote CSE.<br/>Default: no default                                                                                        | cse.remote.csi           |
+| resourceName  | The remote CSE's resource name. <br>Default: no default                                                                                  | cse.remote.rn                       |
 | checkInterval | Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.<br/>Default: 30 | cse.remote.checkInterval |
 
 <a name="statistics"></a>
