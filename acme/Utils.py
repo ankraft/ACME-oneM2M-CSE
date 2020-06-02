@@ -287,10 +287,15 @@ def fanoutPointResource(id):
 
 def requestID(request, rootPath):
 	p = request.path
-	if p.startswith(rootPath):
-		p = p[len(rootPath):]
+	if p.startswith('/_'):
+		p = "/" + p[2:] #Absolute
+	if p.startswith('/~'):
+		p = p[2:] # SP-relative
 	if p.startswith('/'):
 		p = p[1:]
+	if rootPath != "/":
+		p.replace(rootPath, "")
+
 	return p
 
 
