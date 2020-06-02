@@ -133,8 +133,8 @@ class RegistrationManager(object):
 		Logging.logDebug('Removing ACP for AE')
 
 		acpi = '%s/%s%s' % (Configuration.get('cse.rn'), C.acpPrefix, resource.rn)
-		if self._removeACP(rn=acpi, resource=resource)[0] is None:
-			return False
+		self._removeACP(rn=acpi, resource=resource)
+
 		return True
 
 
@@ -235,5 +235,5 @@ class RegistrationManager(object):
 			# only delete the ACP when it was created in the course of AE registration
 			if  (ri := acpRes[0].createdInternally()) is not None and resource.ri == ri:
 				return CSE.dispatcher.deleteResource(acpRes[0])
-		return (None, C.rcBadRequest)
+		return (None, C.rcOK)
 
