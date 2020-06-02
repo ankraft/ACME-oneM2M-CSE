@@ -22,9 +22,9 @@ After importing the mandatory resources all other resources in the [init](../ini
 
 If the filename contains the substring *update*, then the resource specified by the resource's *ri* attribute is updated instead of created.
 
-## Accessing Configuration Settings
+## Including Configuration Settings
 
-By using macros the initial resources can be kept rather independent from individual settings. Most [configuration](Configuration.md) settings can be referenced and used by a simple macro mechanism. For this a given macro name is enclosed by $ characters, e.g. ```${cse.csi}```. 
+By using macros the initial resources can be kept rather independent from individual settings. Most [configuration](Configuration.md) settings can be referenced and used by a simple macro mechanism. For this a given macro name is enclosed by  ```${...}```, e.g. ```${cse.csi}```.
 
 The following example shows the initial *CSEBase* resource definition.
 
