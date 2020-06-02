@@ -79,9 +79,9 @@ class AppBase(object):
 
 	#########################################################################
 
-	def startWorker(self, updateInterval, worker):
+	def startWorker(self, updateInterval, worker, name=None):
 		self.stopWorker()
-		self.worker = BackgroundWorker.BackgroundWorker(updateInterval, worker)
+		self.worker = BackgroundWorker.BackgroundWorker(updateInterval, worker, name)
 		self.worker.start()
 
 
