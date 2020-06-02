@@ -140,8 +140,10 @@ class Resource(object):
 				defaultACPIRI = Configuration.get('cse.defaultACPI')
 				if self.acpi is None:
 
-					# If no ACPI is given, then inherit it from the parent, except when the parent is the CSE, then use the default
-					if parentResource.ty != C.tCSEBase:
+
+					# If no ACPI is given, then inherit it from the parent,
+					# except when the parent is the CSE or the parent acpi is empty , then use the default
+					if parentResource.ty != C.tCSEBase and parentResource.acpi is not None:
 						self.setAttribute('acpi', parentResource.acpi)
 					else:
 						self.setAttribute('acpi', [ defaultACPIRI ])	# Set default ACPIRIs
