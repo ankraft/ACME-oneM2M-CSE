@@ -361,8 +361,8 @@ class RemoteCSEManager(object):
 	# Get the new target URL when forwarding
 	def _getForwardURL(self, path):
 		(r, pe) = self._getCSRFromPath(path)
-		if r is not None:
-			return '%s/-/%s' % (r.poa[0], '/'.join(pe[1:]))
+		if r is not None and (poas := r.poa) is not None:
+			return '%s/-/%s' % (poas[0], '/'.join(pe[1:]))	# TODO check all available poas.
 		return None
 
 
