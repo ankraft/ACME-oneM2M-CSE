@@ -69,6 +69,12 @@ class HttpServer(object):
 		logging.getLogger("requests").setLevel(logging.WARNING)
 		logging.getLogger("urllib3").setLevel(logging.WARNING)
 
+		# Keep some values for optimization
+		self.csern	= Configuration.get('cse.rn') 
+		self.cseri	= Configuration.get('cse.ri')
+		self.csi	= Configuration.get('cse.csi')
+
+
 
 
 
@@ -102,16 +108,16 @@ class HttpServer(object):
 		Logging.logDebug('==> Retrieve: %s' % request.path)
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpRetrieve()
-		(resource, rc) = CSE.dispatcher.retrieveRequest(request)
+		(resource, rc) = CSE.dispatcher.retrieveRequest(request, self._retrieveIDFromRequest(request))
 		return self._prepareResponse(request, resource, rc)
 
 
 	def handlePOST(self, path=None):
 		Logging.logDebug('==> Create: %s' % request.path)
 		Logging.logDebug('Headers: \n' + str(request.headers))
-		Logging.logDebug('Body: \n' + str(request.data))
+		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpCreate()
-		(resource, rc) = CSE.dispatcher.createRequest(request)
+		(resource, rc) = CSE.dispatcher.createRequest(request, self._retrieveIDFromRequest(request))
 		return self._prepareResponse(request, resource, rc)
 
 
@@ -120,7 +126,7 @@ class HttpServer(object):
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpUpdate()
-		(resource, rc) = CSE.dispatcher.updateRequest(request)
+		(resource, rc) = CSE.dispatcher.updateRequest(request, self._retrieveIDFromRequest(request))
 		return self._prepareResponse(request, resource, rc)
 
 
@@ -128,7 +134,7 @@ class HttpServer(object):
 		Logging.logDebug('==> Delete: %s' % request.path)
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpDelete()
-		(resource, rc) = CSE.dispatcher.deleteRequest(request)
+		(resource, rc) = CSE.dispatcher.deleteRequest(request, self._retrieveIDFromRequest(request))
 		return self._prepareResponse(request, resource, rc)
 
 
@@ -198,7 +204,7 @@ class HttpServer(object):
 
 
 
-	def sendRequest(self, method, url, originator, ty=None, data=None, ct='application/json'):
+	def sendRequest(self, method, url, originator, ty=None, data=None, ct='application/json'):	# TODO Constants
 		headers = { 'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % ty if ty is not None else ''), 
 					C.hfOrigin	 	: originator,
 					C.hfRI 			: Utils.uniqueRI(),
@@ -272,11 +278,70 @@ class HttpServer(object):
 
 
 	def _statusCode(self, sc):
+		""" Map the oneM2M RSC to an http status code. """
 		return self._codes[sc]
 
 
+	def _retrieveIDFromRequest(self, request):
+		""" Split an ID into its component and return a local ri . """
+		csi 	= None
+		spi 	= None
+		srn 	= None
+		ri 		= None
 
-#
+		# Prepare. Remove leading / and split
+		id = request.path
+		if id[0] == '/':
+			id = id[1:]
+		ids = id.split('/')
+
+		if (idsLen := len(ids)) == 0:	# There must be something!
+			return (None, None)
+
+		if ids[0] == '~' and idsLen >1:				# SP-Relative
+			# print("SP-Relative")
+			csi = ids[1]							# for csi
+			if idsLen > 2 and ids[2] == self.csern:	# structured
+				srn = '/'.join(ids[2:]) 
+			elif idsLen == 3:						# unstructured
+				ri = ids[2]
+			else:
+				return (None, None)
+
+		elif ids[0] == '_' and idsLen >= 4:			# Absolute
+			# print("Absolute")
+			spi = ids[1]
+			csi = ids[2]
+			if ids[3] == self.csern:				# structured
+				srn = '/'.join(ids[3:]) 
+			elif idsLen == 4:						# unstructured
+				ri = ids[3]
+			else:
+				return (None, None)
+
+		else:										# CSE-Relative
+			# print("CSE-Relative")
+			if idsLen == 1 and (ids[0] != self.csern or ids[0] == self.cseri):	# unstructured
+				ri = ids[0]
+			else:									# structured
+				srn = '/'.join(ids)
+
+		# Now either csi, ri or structured is set
+		# print(ri)
+		# print(srn)
+		# print(csi)
+
+		if ri is not None:
+			return (ri, csi)
+		if srn is not None:
+			return (Utils.riFromStructuredPath(srn), csi)
+		if csi is not None:
+			return (Utils.riFromCSI('/'+csi), csi)
+		return (None, None)
+
+
+#	#########################################################################
+
 #	Own request handler.
 #	Actually only to redirect logging.
 #

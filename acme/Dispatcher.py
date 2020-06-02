@@ -24,13 +24,8 @@ class Dispatcher(object):
 		self.csi 				= Configuration.get('cse.csi')
 		self.cseid 				= Configuration.get('cse.ri')
 		self.csern				= Configuration.get('cse.rn')
-		self.spRelativeCseid 	= '~/%s' % self.cseid
-		self.spAbsoluteSpid 	= '_/%s' % self.spid
-		self.spidLen 			= len(self.spid)
 		self.csiLen 			= len(self.csi)
 		self.cseidLen 			= len(self.cseid)
-		self.spRelativeCseidLen = len(self.spRelativeCseid)
-		self.spAbsoluteSpidLen 	= len(self.spAbsoluteSpid)
 
 		Logging.log('Dispatcher initialized')
 
@@ -48,14 +43,16 @@ class Dispatcher(object):
 	#	Retrieve resources
 	#
 
-	def retrieveRequest(self, request):
+	def retrieveRequest(self, request, _id):
 		(originator, _, _, _, _) = Utils.getRequestHeaders(request)
-		id = Utils.requestID(request, self.rootPath)
+		(id, csi) = _id
 		Logging.logDebug('ID: %s, originator: %s' % (id, originator))
+
+# TODO handle NONE ID
 
 		# handle transit requests
 		if CSE.remote.isTransitID(id):
-			return CSE.remote.handleTransitRetrieveRequest(request, id, originator) if self.enableTransit else (None, C.rcOperationNotAllowed)
+		 	return CSE.remote.handleTransitRetrieveRequest(request, id, originator) if self.enableTransit else (None, C.rcOperationNotAllowed)
 
 		# handle fanoutPoint requests
 		if (fanoutPointResource := Utils.fanoutPointResource(id)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
@@ -98,7 +95,6 @@ class Dispatcher(object):
 				for r in rs:
 					if CSE.security.hasAccess(originator, r, C.permDISCOVERY):
 						allowedResources.append(r)
-
 				if rcn == C.rcnChildResourceReferences: # child resource references
 					return (self._resourcesToURIList(allowedResources, drt), C.rcOK)	
 
@@ -170,70 +166,70 @@ class Dispatcher(object):
 		Logging.logDebug('Retrieve resource: %s' % id)
 		if id is None:
 			return (None, C.rcNotFound)
-		oid = id
+		# oid = id
 		# csi = Configuration.get('cse.csi')
 		# cseid = Configuration.get('cse.ri')
-		if '/' in id:
+		# if '/' in id:
 
-			# when the id is in the format _/<service provivider>/<cse id>/<resource RI> (SP-Relative)
-			if id.startswith(self.spAbsoluteSpid):
-				id = id[self.spAbsoluteSpidLen+1:]
-				# if not '/' in id:
-				# 	return self.retrieveResource(id)
-				# return self.retrieveResource(id)
+		# 	# when the id is in the format _/<service provivider>/<cse id>/<resource RI> (SP-Relative)
+		# 	if id.startswith(self.spAbsoluteSpid):
+		# 		id = id[self.spAbsoluteSpidLen+1:]
+		# 		# if not '/' in id:
+		# 		# 	return self.retrieveResource(id)
+		# 		# return self.retrieveResource(id)
 
-			# when the id is in the format ~/<resource RI> (SP-Relative)
-			elif id.startswith(self.spRelativeCseid):
-				id = id[self.spRelativeCseidLen+1:]
-				# if not '/' in id:
-				# 	return self.retrieveResource(id)
-				# return self.retrieveResource(id)
-
-
-			# remove the leading cse-ID
-			if id.startswith(self.csi):
-				id = id[self.csiLen+1:]
-				# if not '/' in id:
-				# 	return self.retrieveResource(id)
-
-			# replace shortcut (== csi-rn) 
-			if id.startswith('-'):
-				id = "%s/%s" % (self.csern, id[2:])
-				#return self.retrieveResource(id)			
+		# 	# when the id is in the format ~/<resource RI> (SP-Relative)
+		# 	elif id.startswith(self.spRelativeCseid):
+		# 		id = id[self.spRelativeCseidLen+1:]
+		# 		# if not '/' in id:
+		# 		# 	return self.retrieveResource(id)
+		# 		# return self.retrieveResource(id)
 
 
+		# 	# remove the leading cse-ID
+		# 	if id.startswith(self.csi):
+		# 		id = id[self.csiLen+1:]
+		# 		# if not '/' in id:
+		# 		# 	return self.retrieveResource(id)
 
-			# Check whether it is Unstructured-CSE-relativeResource-ID
-			s = id.split('/')
-			if len(s) == 1: # only the ri is left
-				return self.retrieveResource(id)
-			if len(s) == 2 and s[0] == self.cseid:
-				# Logging.logDebug('Resource via Unstructured-CSE-relativeResource-ID')
-				r = CSE.storage.retrieveResource(ri=s[1])
-			else:
-				# Assume it is a Structured-CSE-relativeResource-ID
-				# Logging.logDebug('Resource via Structured-CSE-relativeResource-ID')
-				r = CSE.storage.retrieveResource(srn=id)
-
-		else: # only the cseid or ri
-			if id == self.csi:
-				# SP-relative-CSE-ID
-				# Logging.logDebug('Resource via SP-relative-CSE-ID')
-				r = CSE.storage.retrieveResource(csi=id)
-			else:
-				# Unstructured-CSE-relativeResource-ID
-				# Logging.logDebug('Resource via Unstructured-CSE-relativeResource-ID')
-				r = CSE.storage.retrieveResource(ri=id)
-				if r is None:	# special handling for CSE. ID could be ri or srn...
-					r = CSE.storage.retrieveResource(srn=id)
+		# 	# replace shortcut (== csi-rn) 
+		# 	if id.startswith('-'):
+		# 		id = "%s/%s" % (self.csern, id[2:])
+		# 		#return self.retrieveResource(id)			
 
 
+
+		# 	# Check whether it is Unstructured-CSE-relativeResource-ID
+		# 	s = id.split('/')
+		# 	if len(s) == 1: # only the ri is left
+		# 		return self.retrieveResource(id)
+		# 	if len(s) == 2 and s[0] == self.cseid:
+		# 		# Logging.logDebug('Resource via Unstructured-CSE-relativeResource-ID')
+		# 		r = CSE.storage.retrieveResource(ri=s[1])
+		# 	else:
+		# 		# Assume it is a Structured-CSE-relativeResource-ID
+		# 		# Logging.logDebug('Resource via Structured-CSE-relativeResource-ID')
+		# 		r = CSE.storage.retrieveResource(srn=id)
+
+		# else: # only the cseid or ri
+		# 	if id == self.csi:
+		# 		# SP-relative-CSE-ID
+		# 		# Logging.logDebug('Resource via SP-relative-CSE-ID')
+		# 		r = CSE.storage.retrieveResource(csi=id)
+		# 	else:
+		# 		# Unstructured-CSE-relativeResource-ID
+		# 		# Logging.logDebug('Resource via Unstructured-CSE-relativeResource-ID')
+		# 		r = CSE.storage.retrieveResource(ri=id)
+		# 		if r is None:	# special handling for CSE. ID could be ri or srn...
+		# 			r = CSE.storage.retrieveResource(srn=id)
+
+		r = CSE.storage.retrieveResource(ri=id)
 		if r is not None:
 			# Check for virtual resource
 			if Utils.isVirtualResource(r):
 				return r.handleRetrieveRequest()
 			return (r, C.rcOK)
-		Logging.logDebug('Resource not found: %s' % oid)
+		Logging.logDebug('Resource not found: %s' % id)
 		return (None, C.rcNotFound)
 
 
@@ -249,10 +245,12 @@ class Dispatcher(object):
 	#	Add resources
 	#
 
-	def createRequest(self, request):
+	def createRequest(self, request, _id):
 		(originator, ct, ty, _, _) = Utils.getRequestHeaders(request)
-		id = Utils.requestID(request, self.rootPath)
+		(id, csi) = _id
 		Logging.logDebug('ID: %s, originator: %s' % (id, originator))
+
+		# TODO handle NONE ID
 
 		# handle transit requests
 		if CSE.remote.isTransitID(id):
@@ -371,10 +369,12 @@ class Dispatcher(object):
 	#	Update resources
 	#
 
-	def updateRequest(self, request):
+	def updateRequest(self, request, _id):
 		(originator, ct, _, _, _) = Utils.getRequestHeaders(request)
-		id = Utils.requestID(request, self.rootPath)
+		(id, csi) = _id
 		Logging.logDebug('ID: %s, originator: %s' % (id, originator))
+
+		# TODO handle NONE ID
 
 		# handle transit requests
 		if CSE.remote.isTransitID(id):
@@ -454,10 +454,12 @@ class Dispatcher(object):
 	#	Remove resources
 	#
 
-	def deleteRequest(self, request):
+	def deleteRequest(self, request, _id):
 		(originator, _, _, _, _) = Utils.getRequestHeaders(request)
-		id = Utils.requestID(request, self.rootPath)
+		(id, csi) = _id
 		Logging.logDebug('ID: %s, originator: %s' % (id, originator))
+
+		# TODO handle NONE ID
 
 		# handle transit requests
 		if CSE.remote.isTransitID(id):

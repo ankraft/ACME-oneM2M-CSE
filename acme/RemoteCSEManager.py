@@ -27,12 +27,13 @@ class RemoteCSEManager(object):
 		self.remoteAddress	= Configuration.get('cse.remote.address')
 		self.remoteRoot 	= Configuration.get('cse.remote.root')
 		self.remoteCsi		= Configuration.get('cse.remote.csi')
+		self.remoteCseRN	= Configuration.get('cse.remote.rn')
 		self.originator		= Configuration.get('cse.csi')	# Originator is the own CSE-ID
 		self.worker			= None
 		self.checkInterval	= Configuration.get('cse.remote.checkInterval')
 		self.cseCsi			= Configuration.get('cse.csi')
-		self.remoteCSEURL	= self.remoteAddress + self.remoteRoot + self.remoteCsi
-		self.remoteCSRURL	= self.remoteCSEURL + self.cseCsi	
+		self.remoteCSEURL	= '%s%s/~%s/%s' % (self.remoteAddress, self.remoteRoot, self.remoteCsi, self.remoteCseRN)
+		self.remoteCSRURL	= '%s%s' % (self.remoteCSEURL, self.cseCsi)
 		Logging.log('RemoteCSEManager initialized')
 
 
@@ -174,7 +175,7 @@ class RemoteCSEManager(object):
 				if Utils.isURL(url):
 					(cse, rc) = self._retrieveRemoteCSE(url='%s%s' % (url, csr.csi ))
 					if rc != C.rcOK:
-						Logging.logWarn('Remote CSE unreachable. Removing CSR: %s' % csr.rn)
+						Logging.logWarn('Remote CSE unreachable. Removing CSR: %s' % csr.rn if csr is not None else '')
 						CSE.dispatcher.deleteResource(csr)
 
 
@@ -367,7 +368,9 @@ class RemoteCSEManager(object):
 
 
 	# try to get a CSR even from a longer path (only the first 2 path elements are relevant)
-	def _getCSRFromPath(self, id):	
+	def _getCSRFromPath(self, id):
+		if id is None:
+			return (None, None)	
 		pathElements = id.split('/')
 		if len(pathElements) <= 2:
 			return (None, None)

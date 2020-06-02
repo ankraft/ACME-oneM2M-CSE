@@ -107,6 +107,7 @@ class SecurityManager(object):
 
 			for a in acpi:
 				(acp, _) = CSE.dispatcher.retrieveResource(a)
+
 				if acp is None:
 					continue
 				if checkSelf:	# forced check for self permissions

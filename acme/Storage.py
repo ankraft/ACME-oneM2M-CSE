@@ -118,6 +118,7 @@ class Storage(object):
 		elif csi is not None:	# get the CSE by its csi
 			# Logging.logDebug('Retrieving resource csi: %s' % csi)
 			resources = self.db.searchResources(csi=csi)
+			print(resources)
 
 		elif ty != -1:	# get all resources of a specific type
 			# Logging.logDebug('Retrieving all resources ty: %d' % ty)
@@ -203,6 +204,9 @@ class Storage(object):
 
 	def identifier(self, ri):
 		return self.db.searchIdentifiers(ri=ri)
+
+	def structuredPath(self, srn):
+		return self.db.searchIdentifiers(srn=srn)
 
 
 	def searchByTypeFieldValue(self, ty, field, value):

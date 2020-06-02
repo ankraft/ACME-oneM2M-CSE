@@ -104,6 +104,7 @@ class Configuration(object):
 				'cse.remote.address'				: config.get('cse.remote', 'address', 					fallback=''),
 				'cse.remote.root'					: config.get('cse.remote', 'root', 						fallback=''),
 				'cse.remote.csi'					: config.get('cse.remote', 'cseID', 					fallback=''),
+				'cse.remote.rn'						: config.get('cse.remote', 'resourceName', 				fallback=''),
 				'cse.remote.checkInterval'			: config.getint('cse.remote', 'checkInterval', 			fallback=30),		# Seconds
 
 				#
@@ -247,6 +248,10 @@ class Configuration(object):
 		if re.fullmatch(rx, (val:=Configuration._configuration['cse.remote.csi'])) is None:
 			print('Configuration Error: Wrong format for [cse.remote]:cseID: %s' % val)
 			return False
+		if len(Configuration._configuration['cse.remote.csi']) > 0 and len(Configuration._configuration['cse.remote.rn']) == 0:
+			print('Configuration Error: Missing configuration [cse.remote]:resourceName')
+			return False
+
 
 		# Everything is fine
 		return True
