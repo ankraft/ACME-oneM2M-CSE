@@ -257,7 +257,7 @@ class RemoteCSEManager(object):
 		self._copyCSE2CSE(csr, localCSE)
 		csr['ri'] = self.cseCsi							# override ri with the own cseID
 		csr['cb'] = Utils.getIdFromOriginator(localCSE.csi)	# only the stem
-		for _ in ['ty','ri', 'cr', 'lt']: del(csr[_])	# remove a couple of attributes
+		for _ in ['ty','ri', 'ct', 'lt']: del(csr[_])	# remove a couple of attributes
 		data = json.dumps(csr.asJSON())
 
 		# Create the <remoteCSE> in the remote CSE
