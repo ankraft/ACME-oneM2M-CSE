@@ -41,7 +41,7 @@ class Statistics(object):
 
 		# Start background worker to handle writing to DB
 		Logging.log('Starting statistics DB thread')
-		self.worker = BackgroundWorker.BackgroundWorker(Configuration.get('cse.statistics.writeIntervall'), self.statisticsDBWorker)
+		self.worker = BackgroundWorker.BackgroundWorker(Configuration.get('cse.statistics.writeIntervall'), self.statisticsDBWorker, 'statisticsDBWorker')
 		self.worker.start()
 
 		# subscripe vto various events

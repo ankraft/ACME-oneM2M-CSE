@@ -49,7 +49,7 @@ class Storage(object):
 		# Start background worker to handle expired resources
 		Logging.log('Starting expiration worker')
 		if (iv := Configuration.get('cse.checkExpirationsInterval')) > 0:
-			self.expirationWorker = BackgroundWorker.BackgroundWorker(iv, self.expirationDBWorker)
+			self.expirationWorker = BackgroundWorker.BackgroundWorker(iv, self.expirationDBWorker, 'expirationDBWorker')
 			self.expirationWorker.start()
 
 		Logging.log('Storage initialized')
