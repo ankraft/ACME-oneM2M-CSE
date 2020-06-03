@@ -176,7 +176,7 @@ class RemoteCSEManager(object):
 					(cse, rc) = self._retrieveRemoteCSE(url='%s%s' % (url, csr.csi ))
 					if rc != C.rcOK:
 						Logging.logWarn('Remote CSE unreachable. Removing CSR: %s' % csr.rn if csr is not None else '')
-						CSE.dispatcher.deleteResource(csr)
+						self._deleteLocalCSR()
 
 
 	#
