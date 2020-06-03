@@ -101,13 +101,14 @@ class NotificationManager(object):
 	#########################################################################
 
 	# Return resolved notification URLs, so also POA from referenced AE's etc
-	def _getNotificationURLs(self, nus):
+	def _getNotificationURLs(self, nus, originator=None):
 		if nus is None:
 			return []
 		nusl = nus if isinstance(nus, list) else [ nus ]	# make a list out of it even when it is a single value
 		result = []
 		for nu in nusl:
 			# check if it is a direct URL
+			Logging.logDebug("Checking next notification target: %s" % nu)
 			if Utils.isURL(nu):
 				result.append(nu)
 			else:
@@ -115,6 +116,11 @@ class NotificationManager(object):
 				if r is None:
 					Logging.logWarn('Resource not found to get URL: %s' % nu)
 					return None
+				if originator is not None:
+					# Originator is the notification target
+					if r.ri == originator:
+						Logging.logDebug('Notification target is the originator, no verification request for: %s' % nu)
+						continue
 				if not CSE.security.hasAccess('', r, C.permNOTIFY):	# check whether AE/CSE may receive Notifications
 					Logging.logWarn('No access to resource: %s' % nu)
 					return None
@@ -124,7 +130,7 @@ class NotificationManager(object):
 
 
 	def _getAndCheckNUS(self, subscription, previousNus=None, originator=None):
-		if (newNus := self._getNotificationURLs(subscription['nu'])) is None:
+		if (newNus := self._getNotificationURLs(subscription['nu'], originator)) is None:
 			# Fail if any of the NU's cannot be retrieved
 			return (None, C.rcSubscriptionVerificationInitiationFailed)	
 
