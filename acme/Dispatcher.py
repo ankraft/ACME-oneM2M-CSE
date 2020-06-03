@@ -162,10 +162,8 @@ class Dispatcher(object):
 			return (None, C.rcInvalidArguments)
 
 
-	def retrieveResource(self, id):
-		Logging.logDebug('Retrieve resource: %s' % id)
-		if id is None:
-			return (None, C.rcNotFound)
+	def retrieveResource(self, id : str = None, srn : str = None):
+		Logging.logDebug('Retrieve resource: %s' % (id if srn is None else srn))
 		# oid = id
 		# csi = Configuration.get('cse.csi')
 		# cseid = Configuration.get('cse.ri')
@@ -223,9 +221,13 @@ class Dispatcher(object):
 		# 		if r is None:	# special handling for CSE. ID could be ri or srn...
 		# 			r = CSE.storage.retrieveResource(srn=id)
 
-		r = CSE.storage.retrieveResource(ri=id)
-		if r is None:
-			r = CSE.storage.retrieveResource(srn=id) #Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
+		if id is not None:
+			r = CSE.storage.retrieveResource(ri=id)		# retrieve via normal ID
+		elif srn is not None:
+			r = CSE.storage.retrieveResource(srn=srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
+		else:
+			return (None, C.rcNotFound)
+
 		if r is not None:
 			# Check for virtual resource
 			if Utils.isVirtualResource(r):
