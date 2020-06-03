@@ -298,8 +298,11 @@ class Dispatcher(object):
 			return pr.handleCreateRequest(request, id, originator, ct, ty)
 		
 		# Add new resource
-		#nr = resourceFromJSON(request.json, pi=pr['ri'], tpe=ty)	# Add pi
-		if (nr := Utils.resourceFromJSON(request.json, pi=pr.ri, tpe=ty)) is None:	# something wrong, perhaps wrong type
+		try:
+			if (nr := Utils.resourceFromJSON(request.json, pi=pr.ri, tpe=ty)) is None:	# something wrong, perhaps wrong type
+				return (None, C.rcBadRequest)
+		except Exception as e:
+			Logging.logWarn('Bad request (malformed content?)')
 			return (None, C.rcBadRequest)
 
 		# Check whether the parent allows the adding
@@ -415,7 +418,12 @@ class Dispatcher(object):
 			return (None, C.rcOperationNotAllowed)
 
 		# check permissions
-		jsn = request.json
+		try:
+			jsn = request.json
+		except Exception as e:
+			Logging.logWarn('Bad request (malformed content?)')
+			return (None, C.rcBadRequest)
+
 		acpi = Utils.findXPath(jsn, list(jsn.keys())[0] + '/acpi')
 		if acpi is not None:	# update of acpi attribute means check for self privileges!
 			updateOrDelete = C.permDELETE if acpi is None else C.permUPDATE
