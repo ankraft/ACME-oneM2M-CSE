@@ -69,7 +69,8 @@ def toISO8601Date(ts):
 	return ts.strftime('%Y%m%dT%H%M%S,%f')
 
 
-def structuredPath(resource):
+def structuredPath(resource : Resource):
+	""" Determine the structured path of a resource. """
 	rn = resource.rn
 	if resource.ty == C.tCSEBase: # if CSE
 		return rn
@@ -85,21 +86,79 @@ def structuredPath(resource):
 	return rn # fallback
 
 
-def structuredPathFromRI(ri):
+def structuredPathFromRI(ri : str):
+	""" Get the structured path of a resource by its ri. """
 	if len((identifiers := CSE.storage.identifier(ri))) == 1:
 		return identifiers[0]['srn']
 	return None
 
 
-def riFromStructuredPath(srn):
+def riFromStructuredPath(srn : str):
+	""" Get the ri from a resource by its structured path. """
 	if len((paths := CSE.storage.structuredPath(srn))) == 1:
 		return paths[0]['ri']
 	return None
 
-def riFromCSI(csi):
+def riFromCSI(csi : str):
+	""" Get the ri from an CSEBase resource by its csi. """
 	if (res := CSE.storage.retrieveResource(csi=csi)) is None:
 		return None
 	return res.ri
+
+
+def retrieveIDFromPath(id : str, csern : str, cseri : str):
+	""" Split a ful path e.g. from a http request into its component and return a local ri . """
+	csi 	= None
+	spi 	= None
+	srn 	= None
+	ri 		= None
+
+	# Prepare. Remove leading / and split
+	if id[0] == '/':
+		id = id[1:]
+	ids = id.split('/')
+
+	if (idsLen := len(ids)) == 0:	# There must be something!
+		return (None, None)
+
+	if ids[0] == '~' and idsLen >1:				# SP-Relative
+		# print("SP-Relative")
+		csi = ids[1]							# for csi
+		if idsLen > 2 and ids[2] == csern:	# structured
+			srn = '/'.join(ids[2:]) 
+		elif idsLen == 3:						# unstructured
+			ri = ids[2]
+		else:
+			return (None, None)
+
+	elif ids[0] == '_' and idsLen >= 4:			# Absolute
+		# print("Absolute")
+		spi = ids[1]
+		csi = ids[2]
+		if ids[3] == csern:				# structured
+			srn = '/'.join(ids[3:]) 
+		elif idsLen == 4:						# unstructured
+			ri = ids[3]
+		else:
+			return (None, None)
+
+	else:										# CSE-Relative
+		# print("CSE-Relative")
+		if idsLen == 1 and (ids[0] != csern or ids[0] == cseri):	# unstructured
+			ri = ids[0]
+		else:									# structured
+			srn = '/'.join(ids)
+
+	# Now either csi, ri or structured is set
+	if ri is not None:
+		return (ri, csi)
+	if srn is not None:
+		return (riFromStructuredPath(srn), csi)
+	if csi is not None:
+		return (riFromCSI('/'+csi), csi)
+	# TODO do something with spi?
+	return (None, None)
+
 
 
 
@@ -298,18 +357,6 @@ def fanoutPointResource(id):
 #
 #	HTTP request helper functions
 #
-
-# def requestID(request, rootPath):
-# 	p = request.path
-# 	if p.startswith('/_'):
-# 		p = "/" + p[2:] #Absolute
-# 	if p.startswith('/~'):
-# 		p = p[2:] # SP-relative
-# 	if p.startswith('/'):
-# 		p = p[1:]
-# 	if rootPath != "/":
-# 		p.replace(rootPath, "")
-# 	return p
 
 
 def requestHeaderField(request, field):

@@ -72,9 +72,6 @@ class HttpServer(object):
 		# Keep some values for optimization
 		self.csern	= Configuration.get('cse.rn') 
 		self.cseri	= Configuration.get('cse.ri')
-		self.csi	= Configuration.get('cse.csi')
-
-
 
 
 
@@ -104,37 +101,37 @@ class HttpServer(object):
 		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods=methods)
 
 
-	def handleGET(self, path=None):
-		Logging.logDebug('==> Retrieve: %s' % request.path)
+	def handleGET(self, path : str = None):
+		Logging.logDebug('==> Retrieve: %s' % path) # path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpRetrieve()
-		(resource, rc) = CSE.dispatcher.retrieveRequest(request, self._retrieveIDFromRequest(request))
+		(resource, rc) = CSE.dispatcher.retrieveRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 		return self._prepareResponse(request, resource, rc)
 
 
-	def handlePOST(self, path=None):
-		Logging.logDebug('==> Create: %s' % request.path)
+	def handlePOST(self, path : str = None):
+		Logging.logDebug('==> Create: %s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpCreate()
-		(resource, rc) = CSE.dispatcher.createRequest(request, self._retrieveIDFromRequest(request))
+		(resource, rc) = CSE.dispatcher.createRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 		return self._prepareResponse(request, resource, rc)
 
 
-	def handlePUT(self, path=None):
-		Logging.logDebug('==> Update: %s' % request.path)
+	def handlePUT(self, path : str = None):
+		Logging.logDebug('==> Update: %s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpUpdate()
-		(resource, rc) = CSE.dispatcher.updateRequest(request, self._retrieveIDFromRequest(request))
+		(resource, rc) = CSE.dispatcher.updateRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 		return self._prepareResponse(request, resource, rc)
 
 
-	def handleDELETE(self, path=None):
-		Logging.logDebug('==> Delete: %s' % request.path)
+	def handleDELETE(self, path : str = None):
+		Logging.logDebug('==> Delete: %s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpDelete()
-		(resource, rc) = CSE.dispatcher.deleteRequest(request, self._retrieveIDFromRequest(request))
+		(resource, rc) = CSE.dispatcher.deleteRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 		return self._prepareResponse(request, resource, rc)
 
 
@@ -164,7 +161,8 @@ class HttpServer(object):
 	def getVersion(self):
 		return version
 
-	def handleWebUIGET(self, path=None):
+	def handleWebUIGET(self, path : str = None):
+		""" Handle a GET request for the web GUI. """
 
 		# security check whether the path will under the web root
 		if not (CSE.rootDirectory + request.path).startswith(CSE.rootDirectory):
@@ -280,64 +278,6 @@ class HttpServer(object):
 	def _statusCode(self, sc):
 		""" Map the oneM2M RSC to an http status code. """
 		return self._codes[sc]
-
-
-	def _retrieveIDFromRequest(self, request):
-		""" Split an ID into its component and return a local ri . """
-		csi 	= None
-		spi 	= None
-		srn 	= None
-		ri 		= None
-
-		# Prepare. Remove leading / and split
-		id = request.path
-		if id[0] == '/':
-			id = id[1:]
-		ids = id.split('/')
-
-		if (idsLen := len(ids)) == 0:	# There must be something!
-			return (None, None)
-
-		if ids[0] == '~' and idsLen >1:				# SP-Relative
-			# print("SP-Relative")
-			csi = ids[1]							# for csi
-			if idsLen > 2 and ids[2] == self.csern:	# structured
-				srn = '/'.join(ids[2:]) 
-			elif idsLen == 3:						# unstructured
-				ri = ids[2]
-			else:
-				return (None, None)
-
-		elif ids[0] == '_' and idsLen >= 4:			# Absolute
-			# print("Absolute")
-			spi = ids[1]
-			csi = ids[2]
-			if ids[3] == self.csern:				# structured
-				srn = '/'.join(ids[3:]) 
-			elif idsLen == 4:						# unstructured
-				ri = ids[3]
-			else:
-				return (None, None)
-
-		else:										# CSE-Relative
-			# print("CSE-Relative")
-			if idsLen == 1 and (ids[0] != self.csern or ids[0] == self.cseri):	# unstructured
-				ri = ids[0]
-			else:									# structured
-				srn = '/'.join(ids)
-
-		# Now either csi, ri or structured is set
-		# print(ri)
-		# print(srn)
-		# print(csi)
-
-		if ri is not None:
-			return (ri, csi)
-		if srn is not None:
-			return (Utils.riFromStructuredPath(srn), csi)
-		if csi is not None:
-			return (Utils.riFromCSI('/'+csi), csi)
-		return (None, None)
 
 
 #	#########################################################################
