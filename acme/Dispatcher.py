@@ -46,9 +46,11 @@ class Dispatcher(object):
 	def retrieveRequest(self, request, _id):
 		(originator, _, _, _, _) = Utils.getRequestHeaders(request)
 		(id, csi) = _id
-		Logging.logDebug('ID: %s, originator: %s' % (id, originator))
+		Logging.logDebug('RETRIEVE ID: %s, originator: %s' % (id, originator))
 
-# TODO handle NONE ID
+		# No ID, return immediately 
+		if id is None:
+			return (None, C.rcNotFound)
 
 		# handle transit requests
 		if CSE.remote.isTransitID(id):
@@ -164,62 +166,6 @@ class Dispatcher(object):
 
 	def retrieveResource(self, id : str = None, srn : str = None):
 		Logging.logDebug('Retrieve resource: %s' % (id if srn is None else srn))
-		# oid = id
-		# csi = Configuration.get('cse.csi')
-		# cseid = Configuration.get('cse.ri')
-		# if '/' in id:
-
-		# 	# when the id is in the format _/<service provivider>/<cse id>/<resource RI> (SP-Relative)
-		# 	if id.startswith(self.spAbsoluteSpid):
-		# 		id = id[self.spAbsoluteSpidLen+1:]
-		# 		# if not '/' in id:
-		# 		# 	return self.retrieveResource(id)
-		# 		# return self.retrieveResource(id)
-
-		# 	# when the id is in the format ~/<resource RI> (SP-Relative)
-		# 	elif id.startswith(self.spRelativeCseid):
-		# 		id = id[self.spRelativeCseidLen+1:]
-		# 		# if not '/' in id:
-		# 		# 	return self.retrieveResource(id)
-		# 		# return self.retrieveResource(id)
-
-
-		# 	# remove the leading cse-ID
-		# 	if id.startswith(self.csi):
-		# 		id = id[self.csiLen+1:]
-		# 		# if not '/' in id:
-		# 		# 	return self.retrieveResource(id)
-
-		# 	# replace shortcut (== csi-rn) 
-		# 	if id.startswith('-'):
-		# 		id = "%s/%s" % (self.csern, id[2:])
-		# 		#return self.retrieveResource(id)			
-
-
-
-		# 	# Check whether it is Unstructured-CSE-relativeResource-ID
-		# 	s = id.split('/')
-		# 	if len(s) == 1: # only the ri is left
-		# 		return self.retrieveResource(id)
-		# 	if len(s) == 2 and s[0] == self.cseid:
-		# 		# Logging.logDebug('Resource via Unstructured-CSE-relativeResource-ID')
-		# 		r = CSE.storage.retrieveResource(ri=s[1])
-		# 	else:
-		# 		# Assume it is a Structured-CSE-relativeResource-ID
-		# 		# Logging.logDebug('Resource via Structured-CSE-relativeResource-ID')
-		# 		r = CSE.storage.retrieveResource(srn=id)
-
-		# else: # only the cseid or ri
-		# 	if id == self.csi:
-		# 		# SP-relative-CSE-ID
-		# 		# Logging.logDebug('Resource via SP-relative-CSE-ID')
-		# 		r = CSE.storage.retrieveResource(csi=id)
-		# 	else:
-		# 		# Unstructured-CSE-relativeResource-ID
-		# 		# Logging.logDebug('Resource via Unstructured-CSE-relativeResource-ID')
-		# 		r = CSE.storage.retrieveResource(ri=id)
-		# 		if r is None:	# special handling for CSE. ID could be ri or srn...
-		# 			r = CSE.storage.retrieveResource(srn=id)
 
 		if id is not None:
 			r = CSE.storage.retrieveResource(ri=id)		# retrieve via normal ID
@@ -252,9 +198,11 @@ class Dispatcher(object):
 	def createRequest(self, request, _id):
 		(originator, ct, ty, _, _) = Utils.getRequestHeaders(request)
 		(id, csi) = _id
-		Logging.logDebug('ID: %s, originator: %s' % (id, originator))
+		Logging.logDebug('CREATE ID: %s, originator: %s' % (id, originator))
 
-		# TODO handle NONE ID
+		# No ID, return immediately 
+		if id is None:
+			return (None, C.rcNotFound)
 
 		# handle transit requests
 		if CSE.remote.isTransitID(id):
@@ -308,10 +256,6 @@ class Dispatcher(object):
 		# Check whether the parent allows the adding
 		if not (res := pr.childWillBeAdded(nr, originator))[0]:
 			return (None, res[1])
-
-
-		# # determine and add the srn
-		# nr[nr._srn] = Utils.structuredPath(nr)
 
 		# check whether the resource already exists
 		if CSE.storage.hasResource(nr.ri, nr.__srn__):
@@ -379,9 +323,11 @@ class Dispatcher(object):
 	def updateRequest(self, request, _id):
 		(originator, ct, _, _, _) = Utils.getRequestHeaders(request)
 		(id, csi) = _id
-		Logging.logDebug('ID: %s, originator: %s' % (id, originator))
+		Logging.logDebug('UPDATE ID: %s, originator: %s' % (id, originator))
 
-		# TODO handle NONE ID
+		# No ID, return immediately 
+		if id is None:
+			return (None, C.rcNotFound)
 
 		# handle transit requests
 		if CSE.remote.isTransitID(id):
@@ -469,9 +415,11 @@ class Dispatcher(object):
 	def deleteRequest(self, request, _id):
 		(originator, _, _, _, _) = Utils.getRequestHeaders(request)
 		(id, csi) = _id
-		Logging.logDebug('ID: %s, originator: %s' % (id, originator))
+		Logging.logDebug('DELETE ID: %s, originator: %s' % (id, originator))
 
-		# TODO handle NONE ID
+		# No ID, return immediately 
+		if id is None:
+			return (None, C.rcNotFound)
 
 		# handle transit requests
 		if CSE.remote.isTransitID(id):
