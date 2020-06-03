@@ -224,6 +224,8 @@ class Dispatcher(object):
 		# 			r = CSE.storage.retrieveResource(srn=id)
 
 		r = CSE.storage.retrieveResource(ri=id)
+		if r is None:
+			r = CSE.storage.retrieveResource(srn=id) #Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
 		if r is not None:
 			# Check for virtual resource
 			if Utils.isVirtualResource(r):
