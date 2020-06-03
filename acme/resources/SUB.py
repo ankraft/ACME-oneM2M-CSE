@@ -52,7 +52,7 @@ class SUB(Resource):
 		(res, rc) = super().update(jsn, originator)
 		if not res:
 			return (res, rc)
-		return CSE.notification.updateSubscription(self)
+		return CSE.notification.updateSubscription(self, originator)
 		# res = CSE.notification.updateSubscription(self)
 		# return (res, C.rcOK if res else C.rcTargetNotSubscribable)
  

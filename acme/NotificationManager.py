@@ -63,10 +63,10 @@ class NotificationManager(object):
 
 
 
-	def updateSubscription(self, subscription):
+	def updateSubscription(self, subscription, originator):
 		Logging.logDebug('Updating subscription')
 		previousSub = CSE.storage.getSubscription(subscription.ri)
-		if (result := self._getAndCheckNUS(subscription, previousSub['nus']))[0] is None:	# verification/delete requests happen here
+		if (result := self._getAndCheckNUS(subscription, previousSub['nus'], originator=originator))[0] is None:	# verification/delete requests happen here
 			return (False, result[1])
 		return (True, C.rcOK) if CSE.storage.updateSubscription(subscription) else (False, result[1])
 
@@ -116,11 +116,12 @@ class NotificationManager(object):
 				if r is None:
 					Logging.logWarn('Resource not found to get URL: %s' % nu)
 					return None
-				if originator is not None:
-					# Originator is the notification target
-					if r.ri == originator:
-						Logging.logDebug('Notification target is the originator, no verification request for: %s' % nu)
-						continue
+
+				# If the Originator is the notification target then exclude it from the list of targets
+				# Test for AE and CSE (CSE starts with a /)
+				if originator is not None and (r.ri == originator or r.ri == '/%s' % originator):
+					Logging.logDebug('Notification target is the originator, no verification request for: %s' % nu)
+					continue
 				if not CSE.security.hasAccess('', r, C.permNOTIFY):	# check whether AE/CSE may receive Notifications
 					Logging.logWarn('No access to resource: %s' % nu)
 					return None
