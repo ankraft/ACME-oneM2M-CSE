@@ -128,7 +128,7 @@ class RemoteCSEManager(object):
 		(localCSR, rc) = self._retrieveLocalCSR()
 		localCSR = localCSR[0] # hopefully, there is only one upstream CSR+
 		if rc == C.rcOK:
-			(remoteCSR, rc) = self._retrieveRemoteCSR()	# retrieve own 
+			(remoteCSR, rc) = self._retrieveRemoteCSR()	# retrieve own
 			if rc == C.rcOK:
 				# check for changes in remote CSE
 				(remoteCSE, rc) = self._retrieveRemoteCSE()
@@ -274,7 +274,7 @@ class RemoteCSEManager(object):
 
 
 	def _updateRemoteCSR(self, localCSE):
-		Logging.logDebug('Updating remote CSR: %s' % remoteCSR.rn)
+		Logging.logDebug('Updating remote CSR: %s' % self.remoteCsi)
 		csr = CSR.CSR()
 		self._copyCSE2CSE(csr, localCSE)
 		del csr['acpi']			# remove ACPI (don't provide ACPI in updates...a bit)
