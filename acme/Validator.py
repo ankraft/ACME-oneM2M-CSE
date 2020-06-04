@@ -66,7 +66,7 @@ attributePolicies = {
 	'mid'	: [ BT.list,			CAR.car1,   RO.M,	RO.O,  AN.OA ],		# list of m2m:anyURI - GRP
 	'mni'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
 	'mnm'	: [ BT.positiveInteger,	CAR.car1,   RO.M,	RO.O,  AN.OA ],		# GRP
-	'mt'	: [ BT.list,			CAR.car1,   RO.O,	RO.NP, AN.OA ],		# m2m:memberType - GRP
+	'mt'	: [ BT.nonNegInteger,	CAR.car1,   RO.O,	RO.NP, AN.OA ],		# m2m:memberType - GRP
 	'mtv'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.NP, AN.OA ],		# GRP
 	'nar'	: [ BT.dict,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# GRP
 	'nl'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# AE, CSE
