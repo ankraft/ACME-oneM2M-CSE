@@ -43,7 +43,7 @@ def uniqueAEI(prefix='S'):
 
 
 def fullRI(ri):
-	return '/' + Configuration.get('cse.csi') + '/' + ri
+	return Configuration.get('cse.csi') + '/' + ri
 
 
 def isSPRelative(uri : str):
