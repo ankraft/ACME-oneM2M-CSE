@@ -112,7 +112,10 @@ class NotificationManager(object):
 			if Utils.isURL(nu):
 				result.append(nu)
 			else:
-				(r, _) = CSE.dispatcher.retrieveResource(nu)
+				if Utils.isStructured(nu):
+					(r, _) = CSE.dispatcher.retrieveResource(srn=nu)
+				else:
+					(r, _) = CSE.dispatcher.retrieveResource(id=nu)
 				if r is None:
 					Logging.logWarn('Resource not found to get URL: %s' % nu)
 					return None

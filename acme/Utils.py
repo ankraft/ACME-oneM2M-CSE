@@ -382,5 +382,32 @@ def getRequestHeaders(request):
 
 	return (originator, ct, ty, rqi, C.rcOK)
 
+def isSPRelative(uri):
+	if uri is not None:
+		if uri[0] == "/" and uri [1] != "/":
+			return True
+	return False
 
+def isAbsolute(uri):
+	if uri is not None:
+		if uri[0] == "/" and uri [1] == "/":
+			return True
+	return False
 
+def isCSERelative(uri):
+	if uri is not None:
+		if uri[0] != "/":
+			return True
+	return False
+
+def isStructured(uri):
+	if isCSERelative(uri):
+		if "/" in uri:
+			return True
+	elif isSPRelative(uri):
+		if uri.count("/") > 2:
+			return True
+	elif isAbsolute(uri):
+		if uri.count("/") > 4:
+			return True
+	return False
