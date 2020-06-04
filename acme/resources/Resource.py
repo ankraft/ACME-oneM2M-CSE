@@ -150,7 +150,7 @@ class Resource(object):
 
 		# increment parent resource's state tag
 		if parentResource is not None and parentResource.st is not None:
-			parentResource = CSE.storage.retrieveResource(ri=parentResource.ri)	# Read the resource again in case it was updated in the DB
+			parentResource = parentResource.dbReload()	# Read the resource again in case it was updated in the DB
 			parentResource.setAttribute('st', parentResource.st + 1)
 			if (res := parentResource.dbUpdate())[0] is None:
 				return (False, res[1])
@@ -341,6 +341,11 @@ class Resource(object):
 
 	def dbCreate(self, overwrite=False):
 		return CSE.storage.createResource(self, overwrite)
+
+	def dbReload(self):
+		"""  Load a new copy from the database. The current resource is NOT changed. """
+		return CSE.storage.retrieveResource(ri=self.ri)
+
 
 
 

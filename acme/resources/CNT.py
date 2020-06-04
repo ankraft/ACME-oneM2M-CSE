@@ -71,9 +71,6 @@ class CNT(Resource):
 
 
 	def childWillBeAdded(self, childResource, originator):
-
-		# See also CNT resource
-		
 		if not (res := super().childWillBeAdded(childResource, originator))[0]:
 			return res
 		

@@ -242,7 +242,7 @@ class Dispatcher(object):
 		# Check for virtual resource
 		if Utils.isVirtualResource(pr):
 			return pr.handleCreateRequest(request, id, originator, ct, ty)
-		
+
 		# Add new resource
 		try:
 			if (nr := Utils.resourceFromJSON(request.json, pi=pr.ri, tpe=ty)) is None:	# something wrong, perhaps wrong type
@@ -307,7 +307,8 @@ class Dispatcher(object):
 			return res
 
 		if parentResource is not None:
-			parentResource.childAdded(resource, originator)		# notify the parent resource
+			parentResource = parentResource.dbReload()				# Read the resource again in case it was updated in the DB
+			parentResource.childAdded(resource, originator)			# notify the parent resource
 		CSE.event.createResource(resource)	# send a create event
 
 		return (resource, C.rcCreated) 	# everything is fine. resource created.
@@ -466,7 +467,6 @@ class Dispatcher(object):
 		resource.deactivate(originator)	# deactivate it first
 		# notify the parent resource
 		parentResource = resource.retrieveParentResource()
-		# (parentResource, _) = self.retrieveResource(resource['pi'])
 		(_, rc) = resource.dbDelete()
 		CSE.event.deleteResource(resource)	# send a delete event
 		if parentResource is not None:

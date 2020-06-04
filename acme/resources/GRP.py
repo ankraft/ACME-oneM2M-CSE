@@ -61,10 +61,11 @@ class GRP(Resource):
 		if (res := super().validate(originator, create))[0] == False:
 			return res
 		if (ret := CSE.group.validateGroup(self, originator))[0]:
-			self['mtv'] = True	# validaed
+			self['mtv'] = True	# validated
 			CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
 		else:
-			self['mtv'] = False	# not validateed
+			self['mtv'] = False	# not validated
+			CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
 		return ret
 
 

@@ -36,8 +36,10 @@ class CIN(Resource):
 
 	def activate(self, parentResource, originator):
 		super().activate(parentResource, originator)
+		parentResource = parentResource.dbReload()	# Read the resource again in case it was updated in the DB
 		self.setAttribute('st', parentResource.st)
 		return (True, C.rcOK)
+
 
 	def update(self, jsn=None, originator=None):
 		return (False, C.rcOperationNotAllowed)
