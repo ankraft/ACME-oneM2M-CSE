@@ -368,6 +368,9 @@ def getCSE():
 def fanoutPointResource(id):
 	if id is None:
 		return None
+	# retrieve srn
+	if not isStructured(id):
+		id = structuredPathFromRI(id)
 	nid = None
 	if id.endswith('/fopt'):
 		nid = id

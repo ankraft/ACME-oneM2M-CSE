@@ -59,7 +59,7 @@ class Dispatcher(object):
 		# handle fanoutPoint requests
 		if (fanoutPointResource := Utils.fanoutPointResource(id)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
-			return fanoutPointResource.retrieveRequest(request, id, originator)
+			return fanoutPointResource.handleRetrieveRequest(request, id, originator)
 
 		# just a normal retrieve request
 		return self.handleRetrieveRequest(request, id, originator)
@@ -180,7 +180,7 @@ class Dispatcher(object):
 
 		if r is not None:
 			# Check for virtual resource
-			if Utils.isVirtualResource(r):
+			if r.ty != C.tGRP_FOPT and Utils.isVirtualResource(r):
 				return r.handleRetrieveRequest()
 			return (r, C.rcOK)
 		Logging.logDebug('Resource not found: %s' % ri)
@@ -215,7 +215,7 @@ class Dispatcher(object):
 		# handle fanoutPoint requests
 		if (fanoutPointResource := Utils.fanoutPointResource(id)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
-			return fanoutPointResource.createRequest(request, id, originator, ct, ty)
+			return fanoutPointResource.handleCreateRequest(request, id, originator, ct, ty)
 
 		# just a normal create request
 		return self.handleCreateRequest(request, id, originator, ct, ty)
@@ -227,12 +227,6 @@ class Dispatcher(object):
 
 		if ct == None or ty == None:
 			return (None, C.rcBadRequest)
-
-		# Check whether the target contains a fanoutPoint in between or as the target
-		# TODO: Is this called twice (here + in createRequest)?
-		if (fanoutPointResource := Utils.fanoutPointResource(id)) is not None:
-			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
-			return fanoutPointResource.createRequest(request, id, originator, ct, ty)
 
 		# Get parent resource and check permissions
 		(pr, res) = self.retrieveResource(id)
@@ -340,7 +334,7 @@ class Dispatcher(object):
 		# handle fanoutPoint requests
 		if (fanoutPointResource := Utils.fanoutPointResource(id)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
-			return fanoutPointResource.updateRequest(request, id, originator, ct)
+			return fanoutPointResource.handleUpdateRequest(request, id, originator, ct)
 
 		# just a normal retrieve request
 		return self.handleUpdateRequest(request, id, originator, ct)
@@ -432,7 +426,7 @@ class Dispatcher(object):
 		# handle fanoutPoint requests
 		if (fanoutPointResource := Utils.fanoutPointResource(id)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
-			return fanoutPointResource.deleteRequest(request, id, originator)
+			return fanoutPointResource.handleDeleteRequest(request, id, originator)
 
 		# just a normal delete request
 		return self.handleDeleteRequest(request, id, originator)

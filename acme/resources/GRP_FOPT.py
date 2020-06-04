@@ -24,7 +24,7 @@ from Constants import Constants as C
 class GRP_FOPT(Resource):
 
 	def __init__(self, jsn=None, pi=None, create=False):
-		super().__init__(C.tsGRP_FOPT, jsn, pi, C.tGRP_FOPT, create=create, inheritACP=True, readOnly=True, rn='fopt')
+		super().__init__(C.tsGRP_FOPT, jsn, pi, C.tGRP_FOPT, create=create, inheritACP=True, readOnly=True, rn='fopt', isVirtual=True)
 
 
 	# Enable check for allowed sub-resources
@@ -32,22 +32,22 @@ class GRP_FOPT(Resource):
 		return super()._canHaveChild(resource, [])
 
 
-	def retrieveRequest(self, request, id, originator):
+	def handleRetrieveRequest(self, request, id, originator):
 		Logging.logDebug('Retrieving resources from fopt')
 		return CSE.group.foptRequest(C.opRETRIEVE, self, request, id, originator)
 
 
-	def createRequest(self, request, id, originator, ct, ty):
+	def handleCreateRequest(self, request, id, originator, ct, ty):
 		Logging.logDebug('Creating resources at fopt')
 		return CSE.group.foptRequest(C.opCREATE, self, request, id, originator, ct, ty)
 
 
-	def updateRequest(self, request, id, originator, ct):
+	def handleUpdateRequest(self, request, id, originator, ct):
 		Logging.logDebug('Updating resources at fopt')
 		return CSE.group.foptRequest(C.opUPDATE, self, request, id, originator, ct)
 
 
-	def deleteRequest(self, request, id, originator):
+	def handleDeleteRequest(self, request, id, originator):
 		Logging.logDebug('Deleting resources at fopt')
 		return CSE.group.foptRequest(C.opDELETE, self, request, id, originator)
 
