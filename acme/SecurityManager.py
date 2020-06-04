@@ -106,10 +106,12 @@ class SecurityManager(object):
 				return False
 
 			for a in acpi:
-				if Utils.isStructured(a):
-					(acp, _) = CSE.dispatcher.retrieveResource(srn=a)
-				else:
-					(acp, _) = CSE.dispatcher.retrieveResource(id=a)
+				(acp, _) = CSE.dispatcher.retrieveResource(a)
+
+				# if Utils.isStructured(a):
+				# 	(acp, _) = CSE.dispatcher.retrieveResource(srn=a)
+				# else:
+				# 	(acp, _) = CSE.dispatcher.retrieveResource(id=a)
 
 				if acp is None:
 					continue

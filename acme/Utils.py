@@ -46,6 +46,33 @@ def fullRI(ri):
 	return '/' + Configuration.get('cse.csi') + '/' + ri
 
 
+def isSPRelative(uri : str):
+	""" Check whether a URI is SP-Relative. """
+	return uri is not None and len(uri) >= 2 and uri[0] == "/" and uri [1] != "/"
+
+
+def isAbsolute(uri : str):
+	""" Check whether a URI is Absolute. """
+	return uri is not None and uri.startswith('//')
+
+def isCSERelative(uri : str):
+	""" Check whether a URI is CSE-Relative. """
+	return uri is not None and uri[0] != '/'
+
+
+def isStructured(uri : str):
+	if isCSERelative(uri):
+		if "/" in uri:
+			return True
+	elif isSPRelative(uri):
+		if uri.count("/") > 2:
+			return True
+	elif isAbsolute(uri):
+		if uri.count("/") > 4:
+			return True
+	return False
+
+
 
 def isVirtualResource(resource):
 	result = resource[resource._isVirtual]
@@ -381,33 +408,3 @@ def getRequestHeaders(request):
 			ty = int(t) if t.isdigit() else C.tUNKNOWN # resource type
 
 	return (originator, ct, ty, rqi, C.rcOK)
-
-def isSPRelative(uri):
-	if uri is not None:
-		if uri[0] == "/" and uri [1] != "/":
-			return True
-	return False
-
-def isAbsolute(uri):
-	if uri is not None:
-		if uri[0] == "/" and uri [1] == "/":
-			return True
-	return False
-
-def isCSERelative(uri):
-	if uri is not None:
-		if uri[0] != "/":
-			return True
-	return False
-
-def isStructured(uri):
-	if isCSERelative(uri):
-		if "/" in uri:
-			return True
-	elif isSPRelative(uri):
-		if uri.count("/") > 2:
-			return True
-	elif isAbsolute(uri):
-		if uri.count("/") > 4:
-			return True
-	return False

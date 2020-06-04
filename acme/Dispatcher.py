@@ -164,11 +164,15 @@ class Dispatcher(object):
 			return (None, C.rcInvalidArguments)
 
 
-	def retrieveResource(self, id : str = None, srn : str = None):
-		Logging.logDebug('Retrieve resource: %s' % (id if srn is None else srn))
+	def retrieveResource(self, id : str = None):
+		return self._retrieveResource(srn=id) if Utils.isStructured(id) else self._retrieveResource(ri=id)
 
-		if id is not None:
-			r = CSE.storage.retrieveResource(ri=id)		# retrieve via normal ID
+
+	def _retrieveResource(self, ri : str = None, srn : str = None):
+		Logging.logDebug('Retrieve resource: %s' % (ri if srn is None else srn))
+
+		if ri is not None:
+			r = CSE.storage.retrieveResource(ri=ri)		# retrieve via normal ID
 		elif srn is not None:
 			r = CSE.storage.retrieveResource(srn=srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
 		else:
@@ -179,7 +183,7 @@ class Dispatcher(object):
 			if Utils.isVirtualResource(r):
 				return r.handleRetrieveRequest()
 			return (r, C.rcOK)
-		Logging.logDebug('Resource not found: %s' % id)
+		Logging.logDebug('Resource not found: %s' % ri)
 		return (None, C.rcNotFound)
 
 
