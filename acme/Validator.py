@@ -144,13 +144,13 @@ class Validator(object):
 			# Check whether the attribute is allowed or mandatory in the request
 			if (v := jsn.get(r)) is None:
 				if p[reqp] == RO.M:		# Not okay, this attribute is mandatory
-					Logging.logDebug('Cannot find mandatory attribute: %s' % r)
+					Logging.logWarn('Cannot find mandatory attribute: %s' % r)
 					return (False, C.rcBadRequest)
 				if p[reqp] in [ RO.NP, RO.O]:	# Okay that the attribute is not in the json, since it is provided or optional
 					continue
 			else:
 				if p[reqp] == RO.NP:
-					Logging.logDebug('Found non-provision attribute: %s' % r)
+					Logging.logWarn('Found non-provision attribute: %s' % r)
 					return (False, C.rcBadRequest)
 				if r == 'pvs' and not self.validatePvs(jsn):
 					return (False, C.rcBadRequest)
@@ -175,7 +175,7 @@ class Validator(object):
 				continue
 			
 			# fall-through means: not validated
-			Logging.logDebug('Attribute/value validation error: %s=%s' % (r, str(v)))
+			Logging.logWarn('Attribute/value validation error: %s=%s' % (r, str(v)))
 			return (False, C.rcBadRequest)
 
 		return (True, C.rcOK)
@@ -185,19 +185,19 @@ class Validator(object):
 		""" Validating special case for lists that are not allowed to be empty (pvs in ACP). """
 
 		if (l :=len(jsn['pvs'])) == 0:
-			Logging.logDebug('Attribute pvs must not be an empty list')
+			Logging.logWarn('Attribute pvs must not be an empty list')
 			return False
 		elif l > 1:
-			Logging.logDebug('Attribute pvs must contain only one item')
+			Logging.logWarn('Attribute pvs must contain only one item')
 			return False
 		if (acr := Utils.findXPath(jsn, 'pvs/acr')) is None:
-			Logging.logDebug('Attribute pvs/acr not found')
+			Logging.logWarn('Attribute pvs/acr not found')
 			return False
 		if not isinstance(acr, list):
-			Logging.logDebug('Attribute pvs/acr must be a list')
+			Logging.logWarn('Attribute pvs/acr must be a list')
 			return False
 		if len(acr) == 0:
-			Logging.logDebug('Attribute pvs/acr must not be an empty list')
+			Logging.logWarn('Attribute pvs/acr must not be an empty list')
 			return False
 		return True
 
