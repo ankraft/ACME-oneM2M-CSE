@@ -229,7 +229,7 @@ class RegistrationManager(object):
 
 	def _removeACP(self, rn, resource):
 		""" Remove an ACP created during registration before. """
-		if (acpRes := CSE.dispatcher.retrieveResource(srn=rn))[1] != C.rcOK:
+		if (acpRes := CSE.dispatcher.retrieveResource(id=rn))[1] != C.rcOK:
 			Logging.logWarn('Could not find ACP: %s' % rn)	# ACP not found, either not created or already deleted
 		else:
 			# only delete the ACP when it was created in the course of AE registration
