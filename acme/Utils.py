@@ -371,6 +371,8 @@ def fanoutPointResource(id):
 	# retrieve srn
 	if not isStructured(id):
 		id = structuredPathFromRI(id)
+	if id is None:
+		return None
 	nid = None
 	if id.endswith('/fopt'):
 		nid = id
