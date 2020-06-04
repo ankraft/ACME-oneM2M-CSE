@@ -116,6 +116,7 @@ class Resource(object):
 	# case, e.g. when a resource object is just used temporarly.
 	# NO notification on activation/creation!
 	# Implemented in sub-classes.
+	# Note: CR and ACPI are set in RegistrationManager
 	def activate(self, parentResource, originator):
 		Logging.logDebug('Activating resource: %s' % self.ri)
 
@@ -129,29 +130,10 @@ class Resource(object):
 		if not (result := self.validate(originator, create=True))[0]:
 			return result
 
-		# Note: CR is set in RegistrationManager
-
-		# Handle ACPI assignments here
-		if self.inheritACP:
-			self.delAttribute('acpi')
-		else:
-			# When no ACPI provided
-			if self.ty != C.tAE:	# Don't handle AE's here. This is done in the RegistrationManager
-				defaultACPIRI = Configuration.get('cse.defaultACPI')
-				if self.acpi is None:
-
-
-					# If no ACPI is given, then inherit it from the parent,
-					# except when the parent is the CSE or the parent acpi is empty , then use the default
-					if parentResource.ty != C.tCSEBase and parentResource.acpi is not None:
-						self.setAttribute('acpi', parentResource.acpi)
-					else:
-						self.setAttribute('acpi', [ defaultACPIRI ])	# Set default ACPIRIs
-
 		# increment parent resource's state tag
 		if parentResource is not None and parentResource.st is not None:
 			parentResource = parentResource.dbReload()	# Read the resource again in case it was updated in the DB
-			parentResource.setAttribute('st', parentResource.st + 1)
+			parentResource['st'] = parentResource.st + 1
 			if (res := parentResource.dbUpdate())[0] is None:
 				return (False, res[1])
 	
@@ -304,6 +286,7 @@ class Resource(object):
 
 	def __getattr__(self, name):
 		return self.attribute(name)
+
 
 	#########################################################################
 

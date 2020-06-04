@@ -42,6 +42,18 @@ class RegistrationManager(object):
 		if (rc := self.handleCreator(resource, originator)) != C.rcOK:
 			return (None, rc)
 
+		# ACPI assignments 
+		if resource.ty != C.tAE:	# Don't handle AE's, this was already done already in the AE registration
+			if resource.inheritACP:
+				del resource['acpi']
+			elif resource.acpi is None:	
+				# If no ACPI is given, then inherit it from the parent,
+				# except when the parent is the CSE or the parent acpi is empty , then use the default
+				if parentResource.ty != C.tCSEBase and parentResource.acpi is not None:
+					resource['acpi'] = parentResource.acpi
+				else:
+					resource['acpi'] = [ Configuration.get('cse.defaultACPI') ]	# Set default ACPIRIs
+
 		return (originator, C.rcOK)
 
 
