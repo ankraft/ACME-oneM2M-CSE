@@ -118,13 +118,13 @@ class Storage(object):
 		elif csi is not None:	# get the CSE by its csi
 			# Logging.logDebug('Retrieving resource csi: %s' % csi)
 			resources = self.db.searchResources(csi=csi)
-			print(resources)
 
 		elif ty != -1:	# get all resources of a specific type
 			# Logging.logDebug('Retrieving all resources ty: %d' % ty)
 			return self.db.searchResources(ty=ty)
 
-		return Utils.resourceFromJSON(resources[0].copy()) if len(resources) == 1 else None
+		# return Utils.resourceFromJSON(resources[0].copy()) if len(resources) == 1 else None
+		return Utils.resourceFromJSON(resources[0]) if len(resources) == 1 else None
 
 
 	def discoverResources(self, rootResource, handling, conditions, attributes, fo):
