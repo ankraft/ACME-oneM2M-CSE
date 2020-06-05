@@ -102,7 +102,7 @@ class HttpServer(object):
 
 
 	def handleGET(self, path : str = None):
-		Logging.logDebug('==> Retrieve: %s' % path) # path = request.path  w/o the root
+		Logging.logDebug('==> Retrieve: /%s' % path) # path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpRetrieve()
 		(resource, rc) = CSE.dispatcher.retrieveRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
@@ -110,7 +110,7 @@ class HttpServer(object):
 
 
 	def handlePOST(self, path : str = None):
-		Logging.logDebug('==> Create: %s' % path)	# path = request.path  w/o the root
+		Logging.logDebug('==> Create: /%s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpCreate()
@@ -119,7 +119,7 @@ class HttpServer(object):
 
 
 	def handlePUT(self, path : str = None):
-		Logging.logDebug('==> Update: %s' % path)	# path = request.path  w/o the root
+		Logging.logDebug('==> Update: /%s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpUpdate()
@@ -128,7 +128,7 @@ class HttpServer(object):
 
 
 	def handleDELETE(self, path : str = None):
-		Logging.logDebug('==> Delete: %s' % path)	# path = request.path  w/o the root
+		Logging.logDebug('==> Delete: /%s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpDelete()
 		(resource, rc) = CSE.dispatcher.deleteRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
@@ -142,7 +142,7 @@ class HttpServer(object):
 	def requestRedirect(self):
 		path = request.path[len(self.rootPath):] if request.path.startswith(self.rootPath) else request.path
 		if path in self.mappings:
-			Logging.logDebug('==> Redirecting to: %s' % path)
+			Logging.logDebug('==> Redirecting to: /%s' % path)
 			CSE.event.httpRedirect()
 			return flask.redirect(self.mappings[path], code=307)
 		return '', 404
