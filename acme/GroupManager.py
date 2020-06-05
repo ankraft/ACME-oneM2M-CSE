@@ -59,6 +59,12 @@ class GroupManager(object):
 
 		for mid in group['mid']:
 
+			#Check whether it is a local resource or not
+			if Utils.isSPRelative(mid):
+				targetCSE = "/" + mid.split("/")[0]
+				if targetCSE != CSE.Configuration.get('cse.csi'):
+					return (False, C.rcNotFound)# TODO Retrieve resource from target CSE -> check whether target CSE is a registree or registrar, if not, check descendants, otherwise forward to registrar
+
 			# get the resource and check it
 			id = mid[:-5] if (hasFopt := mid.endswith('/fopt')) else mid 	# remove /fopt to retrieve the resource
 			if (r := CSE.dispatcher.retrieveResource(id))[0] is None:
