@@ -180,7 +180,10 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 	if ri is not None:
 		return (ri, csi)
 	if srn is not None:
-		return (riFromStructuredPath(srn), csi)
+		if "fopt" in ids:
+			return (srn, csi)
+		else:
+			return (riFromStructuredPath(srn), csi)
 	if csi is not None:
 		return (riFromCSI('/'+csi), csi)
 	# TODO do something with spi?
