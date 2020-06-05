@@ -355,33 +355,52 @@ class RemoteCSEManager(object):
 
 	# Check whether an ID is a targeting a remote CSE via a CSR
 	def isTransitID(self, id):
-		(r, _) = self._getCSRFromPath(id)
-		return r is not None and r.ty == C.tCSR
+		if Utils.isSPRelative(id):
+			ids = id.split("/")
+			return ids[0] != self.cseCsi[1:]
+		elif Utils.isAbsolute(id):
+			ids = id.split("/")
+			return ids[2] != self.cseCsi[1:]
+		else:
+			return False
+
+		#(r, _) = self._getCSRFromPath(id)
+		#return r is not None and r.ty == C.tCSR
 
 
 	# Get the new target URL when forwarding
 	def _getForwardURL(self, path):
 		(r, pe) = self._getCSRFromPath(path)
 		if r is not None and (poas := r.poa) is not None:
-			return '%s/-/%s' % (poas[0], '/'.join(pe[1:]))	# TODO check all available poas.
+			return '%s/~/%s' % (poas[0], '/'.join(pe[1:]))	# TODO check all available poas.
 		return None
 
 
 	# try to get a CSR even from a longer path (only the first 2 path elements are relevant)
 	def _getCSRFromPath(self, id):
 		if id is None:
-			return (None, None)	
-		pathElements = id.split('/')
-		if len(pathElements) <= 2:
 			return (None, None)
-		if pathElements[0] == '_' and len(pathElements) >= 5:	# handle SP absolute addressing
-			id = '%s/%s' % (pathElements[3], pathElements[4])
-		elif pathElements[0] == '~' and len(pathElements) >= 4:	# handle SP relative addressing
-			id = '%s/%s' % (pathElements[2], pathElements[3])
+		ids = id.split("/")
+		Logging.logDebug("CSR ids: %s" % ids)
+		if Utils.isSPRelative(id):
+			(r, rc) = CSE.dispatcher._retrieveResource(ri=ids[1])
+		elif Utils.isAbsolute(id):
+			(r, rc) = CSE.dispatcher._retrieveResource(ri=ids[2])
 		else:
-			id = '%s/%s' % (pathElements[0], pathElements[1])
-		(r, rc) = CSE.dispatcher.retrieveResource(id)
-		return (r, pathElements)
+			(r, rc) = CSE.dispatcher._retrieveResource(ri=id)
+		return (r, ids)
+
+		#pathElements = id.split('/')
+		#if len(pathElements) <= 2:
+		#	return (None, None)
+		#if pathElements[0] == '_' and len(pathElements) >= 5:	# handle SP absolute addressing
+		#	id = '%s/%s' % (pathElements[3], pathElements[4])
+		#elif pathElements[0] == '~' and len(pathElements) >= 4:	# handle SP relative addressing
+		#	id = '%s/%s' % (pathElements[2], pathElements[3])
+		#else:
+		#	id = '%s/%s' % (pathElements[0], pathElements[1])
+		#(r, rc) = CSE.dispatcher.retrieveResource(id)
+		#return (r, pathElements)
 
 
 	#########################################################################
