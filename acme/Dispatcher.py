@@ -46,10 +46,10 @@ class Dispatcher(object):
 	def retrieveRequest(self, request, _id):
 		(originator, _, _, _, _) = Utils.getRequestHeaders(request)
 		(id, csi, srn) = _id
-		Logging.logDebug('RETRIEVE ID: %s, originator: %s' % (id, originator))
+		Logging.logDebug('RETRIEVE ID: %s, originator: %s' % (id if id is not None else srn, originator))
 
 		# No ID, return immediately 
-		if id is None:
+		if id is None and srn is None:
 			return (None, C.rcNotFound)
 
 		# handle transit requests
@@ -202,10 +202,10 @@ class Dispatcher(object):
 	def createRequest(self, request, _id):
 		(originator, ct, ty, _, _) = Utils.getRequestHeaders(request)
 		(id, csi, srn) = _id
-		Logging.logDebug('CREATE ID: %s, originator: %s' % (id, originator))
+		Logging.logDebug('CREATE ID: %s, originator: %s' % (id if id is not None else srn, originator))
 
 		# No ID, return immediately 
-		if id is None:
+		if id is None and srn is None:
 			return (None, C.rcNotFound)
 
 		# handle transit requests
@@ -322,10 +322,10 @@ class Dispatcher(object):
 	def updateRequest(self, request, _id):
 		(originator, ct, _, _, _) = Utils.getRequestHeaders(request)
 		(id, csi, srn) = _id
-		Logging.logDebug('UPDATE ID: %s, originator: %s' % (id, originator))
+		Logging.logDebug('UPDATE ID: %s, originator: %s' % (id if id is not None else srn, originator))
 
 		# No ID, return immediately 
-		if id is None:
+		if id is None and srn is None:
 			return (None, C.rcNotFound)
 
 		# handle transit requests
@@ -337,7 +337,7 @@ class Dispatcher(object):
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
 			return fanoutPointResource.handleUpdateRequest(request, srn, originator, ct)
 
-		# just a normal retrieve request
+		# just a normal update request
 		return self.handleUpdateRequest(request, id, originator, ct)
 
 
@@ -414,10 +414,10 @@ class Dispatcher(object):
 	def deleteRequest(self, request, _id):
 		(originator, _, _, _, _) = Utils.getRequestHeaders(request)
 		(id, csi, srn) = _id
-		Logging.logDebug('DELETE ID: %s, originator: %s' % (id, originator))
+		Logging.logDebug('DELETE ID: %s, originator: %s' % (id if id is not None else srn, originator))
 
 		# No ID, return immediately 
-		if id is None:
+		if id is None and srn is None:
 			return (None, C.rcNotFound)
 
 		# handle transit requests
