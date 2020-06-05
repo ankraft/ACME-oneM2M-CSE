@@ -84,23 +84,23 @@ def isStructured(uri : str):
 
 
 
-def isVirtualResource(resource):
+def isVirtualResource(resource : Resource):
 	result = resource[resource._isVirtual]
 	return result if result is not None else False
 	# ireturn (ty := r.ty) and ty in C.tVirtualResources
 
 
-# Check for valid ID
-def isValidID(id):
+def isValidID(id : str) -> bool:
+	""" Check for valid ID. """
 	#return len(id) > 0 and '/' not in id 	# pi might be ""
 	return '/' not in id
 
 
-def getResourceDate(delta=0):
+def getResourceDate(delta :int = 0) -> str:
 	return toISO8601Date(datetime.datetime.utcnow() + datetime.timedelta(seconds=delta))
 
 
-def toISO8601Date(ts):
+def toISO8601Date(ts : float) -> str:
 	if isinstance(ts, float):
 		ts = datetime.datetime.utcfromtimestamp(ts)
 	return ts.strftime('%Y%m%dT%H%M%S,%f')
@@ -145,6 +145,7 @@ def riFromCSI(csi : str):
 
 def retrieveIDFromPath(id : str, csern : str, cseri : str):
 	""" Split a ful path e.g. from a http request into its component and return a local ri .
+		Also handle retargeting paths.
 		The return tupple is (RI, CSI, SRN).
 	"""
 	csi 	= None
@@ -160,13 +161,13 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 	if (idsLen := len(ids)) == 0:	# There must be something!
 		return (None, None, None)
 
-	if ids[0] == '~' and idsLen >1:				# SP-Relative
+	if ids[0] == '~' and idsLen > 1:			# SP-Relative
 		# print("SP-Relative")
-		csi = ids[1]							# for csi
-		if csi != cseri:
-			return ("/" + '/'.join(ids[1:]), csi, srn)
-		if idsLen > 2 and (ids[2] == csern or ids[2] == "-"):	# structured
-			ids[2] = csern if ids[2] == "-" else ids[2]
+		csi = ids[1]							# extract the csi
+		if csi != cseri:						# Not for this CSE? retargeting
+			return ('/%s' % '/'.join(ids[1:]), csi, srn)		# Early return. ri is the remaining (un)structured path
+		if idsLen > 2 and (ids[2] == csern or ids[2] == '-'):	# structured
+			ids[2] = csern if ids[2] == '-' else ids[2]
 			srn = '/'.join(ids[2:])
 		elif idsLen == 3:						# unstructured
 			ri = ids[2]
@@ -175,12 +176,12 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 
 	elif ids[0] == '_' and idsLen >= 4:			# Absolute
 		# print("Absolute")
-		spi = ids[1] #TODO Check whether it is same SPID, otherwise forward it throw mcc'
+		spi = ids[1] 	#TODO Check whether it is same SPID, otherwise forward it throw mcc'
 		csi = ids[2]
-		if csi != cseri:									# Not local resource
-			return ("/" + '/'.join(ids[2:]), csi, srn)
-		if ids[3] == csern or ids[3] == "-":				# structured
-			ids[3] = csern if ids[3] == "-" else ids[3]
+		if csi != cseri:	
+			return ('/%s' % '/'.join(ids[2:]), csi, srn)	# Not for this CSE? retargeting
+		if ids[3] == csern or ids[3] == '-':				# structured
+			ids[3] = csern if ids[3] == '-' else ids[3]
 			srn = '/'.join(ids[3:])
 		elif idsLen == 4:						# unstructured
 			ri = ids[3]
@@ -189,10 +190,10 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 
 	else:										# CSE-Relative
 		# print("CSE-Relative")
-		if idsLen == 1 and ((ids[0] != csern and ids[0] != "-") or ids[0] == cseri):	# unstructured
+		if idsLen == 1 and ((ids[0] != csern and ids[0] != '-') or ids[0] == cseri):	# unstructured
 			ri = ids[0]
 		else:									# structured
-			ids[0] = csern if ids[0] == "-" else ids[0]
+			ids[0] = csern if ids[0] == '-' else ids[0]
 			srn = '/'.join(ids)
 
 	# Now either csi, ri or structured is set

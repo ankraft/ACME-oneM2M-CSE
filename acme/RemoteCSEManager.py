@@ -319,8 +319,8 @@ class RemoteCSEManager(object):
 	#	Handling of Transit requests. Forward requests to the resp. remote CSE's.
 	#
 
-	# Forward a Retrieve request to a remote CSE
-	def handleTransitRetrieveRequest(self, request, id, origin):
+	def handleTransitRetrieveRequest(self, request, id : str, origin : str):
+		""" Forward a RETRIEVE request to a remote CSE """
 		if (url := self._getForwardURL(id)) is None:
 			return (None, C.rcNotFound)
 		if len(request.args) > 0:	# pass on other arguments, for discovery
@@ -329,65 +329,61 @@ class RemoteCSEManager(object):
 		return CSE.httpServer.sendRetrieveRequest(url, origin)
 
 
-	# Forward a Create request to a remote CSE
-	def handleTransitCreateRequest(self, request, id, origin, ty):
+	def handleTransitCreateRequest(self, request, id : str, origin : str, ty : int):
+		""" Forward a CREATE request to a remote CSE. """
 		if (url := self._getForwardURL(id)) is None:
 			return (None, C.rcNotFound)
 		Logging.log('Forwarding Create request to: %s' % url)
 		return CSE.httpServer.sendCreateRequest(url, origin, data=request.data, ty=ty)
 
 
-	# Forward a Update request to a remote CSE
-	def handleTransitUpdateRequest(self, request, id, origin):
+	def handleTransitUpdateRequest(self, request, id : str, origin : str):
+		""" Forward an UPDATE request to a remote CSE. """
 		if (url := self._getForwardURL(id)) is None:
 			return (None, C.rcNotFound)
 		Logging.log('Forwarding Update request to: %s' % url)
 		return CSE.httpServer.sendUpdateRequest(url, origin, data=request.data)
 
 
-	# Forward a Delete request to a remote CSE
-	def handleTransitDeleteRequest(self, id, origin):
+	def handleTransitDeleteRequest(self, id : str, origin : str):
+		""" Forward a DELETE request to a remote CSE. """
 		if (url := self._getForwardURL(id)) is None:
 			return (None, C.rcNotFound)
 		Logging.log('Forwarding Delete request to: %s' % url)
 		return CSE.httpServer.sendDeleteRequest(url, origin)
 
 
-	# Check whether an ID is a targeting a remote CSE via a CSR
-	def isTransitID(self, id):
+	def isTransitID(self, id : str):
+		""" Check whether an ID is a targeting a remote CSE via a CSR. """
 		if Utils.isSPRelative(id):
 			ids = id.split("/")
-			return ids[0] != self.cseCsi[1:]
+			return len(ids) > 0 and ids[0] != self.cseCsi[1:]
 		elif Utils.isAbsolute(id):
 			ids = id.split("/")
-			return ids[2] != self.cseCsi[1:]
-		else:
-			return False
-
-		#(r, _) = self._getCSRFromPath(id)
-		#return r is not None and r.ty == C.tCSR
+			return len(ids) > 2 and ids[2] != self.cseCsi[1:]
+		return False
 
 
-	# Get the new target URL when forwarding
-	def _getForwardURL(self, path):
+	def _getForwardURL(self, path : str):
+		""" Get the new target URL when forwarding. """
 		(r, pe) = self._getCSRFromPath(path)
-		if r is not None and (poas := r.poa) is not None:
+		if r is not None and (poas := r.poa) is not None and len(poas) > 0:
 			return '%s/~/%s' % (poas[0], '/'.join(pe[1:]))	# TODO check all available poas.
 		return None
 
 
-	# try to get a CSR even from a longer path (only the first 2 path elements are relevant)
-	def _getCSRFromPath(self, id):
+	def _getCSRFromPath(self, id : str):
+		""" Try to get a CSR even from a longer path (only the first 2 path elements are relevant). """
 		if id is None:
 			return (None, None)
 		ids = id.split("/")
 		Logging.logDebug("CSR ids: %s" % ids)
 		if Utils.isSPRelative(id):
-			(r, rc) = CSE.dispatcher._retrieveResource(ri=ids[1])
+			(r, _) = CSE.dispatcher._retrieveResource(ri=ids[1])
 		elif Utils.isAbsolute(id):
-			(r, rc) = CSE.dispatcher._retrieveResource(ri=ids[2])
+			(r, _) = CSE.dispatcher._retrieveResource(ri=ids[2])
 		else:
-			(r, rc) = CSE.dispatcher._retrieveResource(ri=id)
+			(r, _) = CSE.dispatcher._retrieveResource(ri=id)
 		return (r, ids)
 
 		#pathElements = id.split('/')

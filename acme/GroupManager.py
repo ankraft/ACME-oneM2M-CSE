@@ -61,12 +61,12 @@ class GroupManager(object):
 
 			#Check whether it is a local resource or not
 			if Utils.isSPRelative(mid):
-				targetCSE = "/" + mid.split("/")[0]
+				targetCSE = '/%s' % mid.split('/')[0]
 				if targetCSE != CSE.Configuration.get('cse.csi'):
-					return (False, C.rcNotFound)# TODO Retrieve resource from target CSE -> check whether target CSE is a registree or registrar, if not, check descendants, otherwise forward to registrar
+					return (False, C.rcNotFound)		# TODO Retrieve resource from target CSE -> check whether target CSE is a registree or registrar, if not, check descendants, otherwise forward to registrar
 
 			# get the resource and check it
-			id = mid[:-5] if (hasFopt := mid.endswith('/fopt')) else mid 	# remove /fopt to retrieve the resource
+			id = mid[:-5] if len(mid) > 5 and (hasFopt := mid.endswith('/fopt')) else mid 	# remove /fopt to retrieve the resource
 			if (r := CSE.dispatcher.retrieveResource(id))[0] is None:
 				return (False, C.rcNotFound)
 			resource = r[0]

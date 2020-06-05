@@ -9,6 +9,7 @@
 #
 
 from flask import Flask, request, make_response
+from typing import Any, Callable
 import flask
 from Configuration import Configuration, version
 from Constants import Constants as C
@@ -158,7 +159,7 @@ class HttpServer(object):
 	def redirectRoot(self):
 		return flask.redirect(Configuration.get('cse.webui.root'), code=302)
 
-	def getVersion(self):
+	def getVersion(self) -> str:
 		return version
 
 	def handleWebUIGET(self, path : str = None):
@@ -185,24 +186,24 @@ class HttpServer(object):
 	#	Send various types of HTTP requests
 	#
 
-	def sendRetrieveRequest(self, url, originator):
+	def sendRetrieveRequest(self, url : str, originator : str) -> (dict, int):
 		return self.sendRequest(requests.get, url, originator)
 
 
-	def sendCreateRequest(self, url, originator, ty=None, data=None):
+	def sendCreateRequest(self, url : str, originator : str, ty : int = None, data : Any = None) -> (dict, int):
 		return self.sendRequest(requests.post, url, originator, ty, data)
 
 
-	def sendUpdateRequest(self, url, originator, data):
+	def sendUpdateRequest(self, url : str, originator : str, data : Any) -> (dict, int):
 		return self.sendRequest(requests.put, url, originator, data=data)
 
 
-	def sendDeleteRequest(self, url, originator):
+	def sendDeleteRequest(self, url : str, originator : str) -> (dict, int):
 		return self.sendRequest(requests.delete, url, originator)
 
 
 
-	def sendRequest(self, method, url, originator, ty=None, data=None, ct='application/json'):	# TODO Constants
+	def sendRequest(self, method : Callable , url, originator, ty=None, data=None, ct='application/json') -> (dict, int):	# TODO Constants
 		headers = { 'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % ty if ty is not None else ''), 
 					C.hfOrigin	 	: originator,
 					C.hfRI 			: Utils.uniqueRI(),
