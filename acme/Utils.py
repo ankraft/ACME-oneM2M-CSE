@@ -34,12 +34,22 @@ def isUniqueRI(ri):
 def uniqueRN(prefix='un'):
 	p = prefix.split(':')
 	p = p[1] if len(p) == 2 else p[0]
-	return "%s_%s" % (p, ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=C.maxIDLength)))
+	# return "%s_%s" % (p, ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=C.maxIDLength)))
+	return "%s_%s" % (p, _randomID())
 
 
 # create a unique aei, M2M-SP type
 def uniqueAEI(prefix='S'):
-	return prefix + ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=C.maxIDLength))
+	# return prefix + ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=C.maxIDLength))
+	return prefix + _randomID()
+
+
+def _randomID():
+	""" Generate an ID. Prevent certain patterns in the ID. """
+	while True:
+		result = ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=C.maxIDLength))
+		if 'fopt' not in result:	# prevent 'fopt' in ID
+			return result
 
 
 def fullRI(ri):
@@ -134,7 +144,9 @@ def riFromCSI(csi : str):
 
 
 def retrieveIDFromPath(id : str, csern : str, cseri : str):
-	""" Split a ful path e.g. from a http request into its component and return a local ri . """
+	""" Split a ful path e.g. from a http request into its component and return a local ri .
+		The return tupple is (RI, CSI, SRN).
+	"""
 	csi 	= None
 	spi 	= None
 	srn 	= None
@@ -146,7 +158,7 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 	ids = id.split('/')
 
 	if (idsLen := len(ids)) == 0:	# There must be something!
-		return (None, None)
+		return (None, None, None)
 
 	if ids[0] == '~' and idsLen >1:				# SP-Relative
 		# print("SP-Relative")
@@ -156,7 +168,7 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 		elif idsLen == 3:						# unstructured
 			ri = ids[2]
 		else:
-			return (None, None)
+			return (None, None, None)
 
 	elif ids[0] == '_' and idsLen >= 4:			# Absolute
 		# print("Absolute")
@@ -167,7 +179,7 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 		elif idsLen == 4:						# unstructured
 			ri = ids[3]
 		else:
-			return (None, None)
+			return (None, None, None)
 
 	else:										# CSE-Relative
 		# print("CSE-Relative")
@@ -178,16 +190,15 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 
 	# Now either csi, ri or structured is set
 	if ri is not None:
-		return (ri, csi)
+		return (ri, csi, srn)
 	if srn is not None:
-		if "fopt" in ids:
-			return (srn, csi)
-		else:
-			return (riFromStructuredPath(srn), csi)
+		# if '/fopt' in ids:	# special handling for fanout points
+		# 	return (srn, csi, srn)
+		return (riFromStructuredPath(srn), csi, srn)
 	if csi is not None:
-		return (riFromCSI('/'+csi), csi)
+		return (riFromCSI('/'+csi), csi, srn)
 	# TODO do something with spi?
-	return (None, None)
+	return (None, None, None)
 
 
 

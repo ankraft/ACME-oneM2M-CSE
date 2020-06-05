@@ -45,7 +45,7 @@ class Dispatcher(object):
 
 	def retrieveRequest(self, request, _id):
 		(originator, _, _, _, _) = Utils.getRequestHeaders(request)
-		(id, csi) = _id
+		(id, csi, srn) = _id
 		Logging.logDebug('RETRIEVE ID: %s, originator: %s' % (id, originator))
 
 		# No ID, return immediately 
@@ -57,9 +57,9 @@ class Dispatcher(object):
 		 	return CSE.remote.handleTransitRetrieveRequest(request, id, originator) if self.enableTransit else (None, C.rcOperationNotAllowed)
 
 		# handle fanoutPoint requests
-		if (fanoutPointResource := Utils.fanoutPointResource(id)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
-			return fanoutPointResource.handleRetrieveRequest(request, id, originator)
+			return fanoutPointResource.handleRetrieveRequest(request, srn, originator)
 
 		# just a normal retrieve request
 		return self.handleRetrieveRequest(request, id, originator)
@@ -201,7 +201,7 @@ class Dispatcher(object):
 
 	def createRequest(self, request, _id):
 		(originator, ct, ty, _, _) = Utils.getRequestHeaders(request)
-		(id, csi) = _id
+		(id, csi, srn) = _id
 		Logging.logDebug('CREATE ID: %s, originator: %s' % (id, originator))
 
 		# No ID, return immediately 
@@ -213,9 +213,9 @@ class Dispatcher(object):
 			return CSE.remote.handleTransitCreateRequest(request, id, originator, ty) if self.enableTransit else (None, C.rcOperationNotAllowed)
 
 		# handle fanoutPoint requests
-		if (fanoutPointResource := Utils.fanoutPointResource(id)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
-			return fanoutPointResource.handleCreateRequest(request, id, originator, ct, ty)
+			return fanoutPointResource.handleCreateRequest(request, srn, originator, ct, ty)
 
 		# just a normal create request
 		return self.handleCreateRequest(request, id, originator, ct, ty)
@@ -321,7 +321,7 @@ class Dispatcher(object):
 
 	def updateRequest(self, request, _id):
 		(originator, ct, _, _, _) = Utils.getRequestHeaders(request)
-		(id, csi) = _id
+		(id, csi, srn) = _id
 		Logging.logDebug('UPDATE ID: %s, originator: %s' % (id, originator))
 
 		# No ID, return immediately 
@@ -333,9 +333,9 @@ class Dispatcher(object):
 			return CSE.remote.handleTransitUpdateRequest(request, id, originator) if self.enableTransit else (None, C.rcOperationNotAllowed)
 
 		# handle fanoutPoint requests
-		if (fanoutPointResource := Utils.fanoutPointResource(id)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
-			return fanoutPointResource.handleUpdateRequest(request, id, originator, ct)
+			return fanoutPointResource.handleUpdateRequest(request, srn, originator, ct)
 
 		# just a normal retrieve request
 		return self.handleUpdateRequest(request, id, originator, ct)
@@ -413,7 +413,7 @@ class Dispatcher(object):
 
 	def deleteRequest(self, request, _id):
 		(originator, _, _, _, _) = Utils.getRequestHeaders(request)
-		(id, csi) = _id
+		(id, csi, srn) = _id
 		Logging.logDebug('DELETE ID: %s, originator: %s' % (id, originator))
 
 		# No ID, return immediately 
@@ -425,9 +425,9 @@ class Dispatcher(object):
 			return CSE.remote.handleTransitDeleteRequest(id, originator) if self.enableTransit else (None, C.rcOperationNotAllowed)
 
 		# handle fanoutPoint requests
-		if (fanoutPointResource := Utils.fanoutPointResource(id)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
-			return fanoutPointResource.handleDeleteRequest(request, id, originator)
+			return fanoutPointResource.handleDeleteRequest(request, srn, originator)
 
 		# just a normal delete request
 		return self.handleDeleteRequest(request, id, originator)
