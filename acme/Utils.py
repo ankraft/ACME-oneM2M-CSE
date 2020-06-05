@@ -163,8 +163,11 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 	if ids[0] == '~' and idsLen >1:				# SP-Relative
 		# print("SP-Relative")
 		csi = ids[1]							# for csi
-		if idsLen > 2 and ids[2] == csern:	# structured
-			srn = '/'.join(ids[2:]) 
+		if csi != cseri:
+			return ("/" + '/'.join(ids[1:]), csi, srn)
+		if idsLen > 2 and (ids[2] == csern or ids[2] == "-"):	# structured
+			ids[2] = csern if ids[2] == "-" else ids[2]
+			srn = '/'.join(ids[2:])
 		elif idsLen == 3:						# unstructured
 			ri = ids[2]
 		else:
@@ -172,10 +175,13 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 
 	elif ids[0] == '_' and idsLen >= 4:			# Absolute
 		# print("Absolute")
-		spi = ids[1]
+		spi = ids[1] #TODO Check whether it is same SPID, otherwise forward it throw mcc'
 		csi = ids[2]
-		if ids[3] == csern:				# structured
-			srn = '/'.join(ids[3:]) 
+		if csi != cseri:									# Not local resource
+			return ("/" + '/'.join(ids[2:]), csi, srn)
+		if ids[3] == csern or ids[3] == "-":				# structured
+			ids[3] = csern if ids[3] == "-" else ids[3]
+			srn = '/'.join(ids[3:])
 		elif idsLen == 4:						# unstructured
 			ri = ids[3]
 		else:
@@ -183,9 +189,10 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 
 	else:										# CSE-Relative
 		# print("CSE-Relative")
-		if idsLen == 1 and (ids[0] != csern or ids[0] == cseri):	# unstructured
+		if idsLen == 1 and ((ids[0] != csern and ids[0] != "-") or ids[0] == cseri):	# unstructured
 			ri = ids[0]
 		else:									# structured
+			ids[0] = csern if ids[0] == "-" else ids[0]
 			srn = '/'.join(ids)
 
 	# Now either csi, ri or structured is set
