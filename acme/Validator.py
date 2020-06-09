@@ -155,6 +155,11 @@ class Validator(object):
 		if key is not None and not key.startswith("m2m:"):
 			pureJson = jsn
 
+		Logging.logDebug(attributePolicies.items())
+		for r in pureJson.keys():
+			if r not in attributePolicies.keys():
+				Logging.logWarn('Not existing attribute in resource: %s' % r)
+				return (False, C.rcBadRequest)
 		for r, p in attributePolicies.items():
 			if p is None:
 				Logging.logWarn('No validation policy found for attribute: %s' % r)
@@ -164,6 +169,9 @@ class Validator(object):
 				if p[reqp] == RO.M:		# Not okay, this attribute is mandatory
 					Logging.logWarn('Cannot find mandatory attribute: %s' % r)
 					return (False, C.rcBadRequest)
+				if r in pureJson and p[1] == CAR.car1:
+					Logging.logWarn('Cannot delete a mandatory attribute: %s' % r)
+					return (False, C.rcBadRequest)
 				if p[reqp] in [ RO.NP, RO.O]:	# Okay that the attribute is not in the json, since it is provided or optional
 					continue
 			else:
@@ -172,7 +180,6 @@ class Validator(object):
 					return (False, C.rcBadRequest)
 				if r == 'pvs' and not self.validatePvs(pureJson):
 					return (False, C.rcBadRequest)
-
 
 			# Check whether the value is of the correct type
 			pt = p[0]	# type
