@@ -114,7 +114,8 @@ class Dispatcher(object):
 					(resource, res) = self.retrieveResource(id)
 					if resource is None:
 						return (None, res)
-					return (self._childResourceTree(allowedResources, resource), C.rcOK)	# the function call add attributes to the result resource
+					self._childResourceTree(allowedResources, resource)	# the function call add attributes to the result resource. Don't use the return value directly
+					return (resource, C.rcOK)
 
 				# direct child resources, NOT the root resource
 				elif rcn == C.rcnChildResources:
