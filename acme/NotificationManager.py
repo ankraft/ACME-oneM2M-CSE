@@ -50,14 +50,16 @@ class NotificationManager(object):
 		if Configuration.get('cse.enableNotifications'):
 
 			# Send a deletion request to the subscriberURI
-			for su in self._getNotificationURLs(subscription['su']):
-				if not self._sendDeletionNotification(su, subscription):
-					Logging.logDebug('Deletion request failed: %s' % su) # but ignore the error
+			if (sus := self._getNotificationURLs([subscription['su']])) is not None:
+				for su in sus:
+					if not self._sendDeletionNotification(su, subscription):
+						Logging.logDebug('Deletion request failed: %s' % su) # but ignore the error
 
 			# Send a deletion request to the associatedCrossResourceSub
-			for nu in self._getNotificationURLs(subscription['acrs']):
-				if not self._sendDeletionNotification(nu, subscription):
-					Logging.logDebug('Deletion request failed: %s' % nu) # but ignore the error
+			if (acrs := subscription['acrs']) is not None and (nus := self._getNotificationURLs(acrs)) is not None:
+				for nu in nus:
+					if not self._sendDeletionNotification(nu, subscription):
+						Logging.logDebug('Deletion request failed: %s' % nu) # but ignore the error
 		
 		return (True, C.rcOK) if CSE.storage.removeSubscription(subscription) else (False, C.rcInternalServerError)
 
