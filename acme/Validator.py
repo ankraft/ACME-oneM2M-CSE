@@ -155,10 +155,10 @@ class Validator(object):
 		if key is not None and not key.startswith("m2m:"):
 			pureJson = jsn
 
-		Logging.logDebug(attributePolicies.items())
+		#Logging.logDebug(attributePolicies.items())
 		for r in pureJson.keys():
 			if r not in attributePolicies.keys():
-				Logging.logWarn('Not existing attribute in resource: %s' % r)
+				Logging.logWarn('Unknown attribute in resource: %s' % r)
 				return (False, C.rcBadRequest)
 		for r, p in attributePolicies.items():
 			if p is None:
