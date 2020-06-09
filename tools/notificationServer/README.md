@@ -6,4 +6,4 @@ The server normally listens on port 9999. This can be changed by specifying anot
 
 Start the server by running the command:
 
-		python3 notificationServer.py
+	python3 notificationServer.py
