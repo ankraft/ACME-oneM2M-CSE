@@ -202,8 +202,7 @@ class HttpServer(object):
 		return self.sendRequest(requests.delete, url, originator)
 
 
-
-	def sendRequest(self, method : Callable , url, originator, ty=None, data=None, ct='application/json') -> (dict, int):	# TODO Constants
+	def sendRequest(self, method : Callable , url : str, originator : str, ty : int = None, data : Any = None, ct : str = 'application/json') -> (dict, int):	# TODO Constants
 		headers = { 'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % ty if ty is not None else ''), 
 					C.hfOrigin	 	: originator,
 					C.hfRI 			: Utils.uniqueRI(),

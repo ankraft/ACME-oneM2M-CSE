@@ -23,21 +23,23 @@ function getChildren(node, errorCallback) {
     removeChildren(node)
 
     resource = JSON.parse(response)
-    ris = resource["m2m:uril"]
-    for (ri of ris) {
+    chs = resource["m2m:ch"]
+    if (chs != undefined) {
+      for (ch of chs) {
 
-      // TODO in extra function createNode()
-      var childNode = new TreeNode(ri);
-      childNode.on("click", clickOnNode)
-      childNode.on("expand", expandNode)
-      childNode.on("collapse", collapseNode)
-      childNode.on("contextmenu", function(e,n) { showContextMenu(e, n) })
-      childNode.ri = ri
-      childNode.wasExpanded = false
-      childNode.setExpanded(false)
-      childNode.resolved = false
+        // TODO in extra function createNode()
+        var childNode = new TreeNode(ch.val);
+        childNode.on("click", clickOnNode)
+        childNode.on("expand", expandNode)
+        childNode.on("collapse", collapseNode)
+        childNode.on("contextmenu", function(e,n) { showContextMenu(e, n) })
+        childNode.ri = ch.val
+        childNode.wasExpanded = false
+        childNode.setExpanded(false)
+        childNode.resolved = false
 
-      node.addChild(childNode)
+        node.addChild(childNode)
+      }
     }
     if (node != root) {
       if (node.wasExpanded) {
@@ -52,6 +54,7 @@ function getChildren(node, errorCallback) {
       root.setSelected(true)
       clickOnNode(null, root)
     }
+
 
     // add short info in front of name
     ty = node.resource['ty']
@@ -106,6 +109,7 @@ function getResource(ri, node, callback) {
     clearRootResourceName()
     clearAttributesTable()
     clearJSONArea()
+
       // TODO Display Error message
   })
 }

@@ -98,23 +98,23 @@ class Dispatcher(object):
 					if CSE.security.hasAccess(originator, r, C.permDISCOVERY):
 						allowedResources.append(r)
 				if rcn == C.rcnChildResourceReferences: # child resource references
-					return (self._resourcesToURIList(allowedResources, drt), C.rcOK)	
+					#return (self._resourcesToURIList(allowedResources, drt), C.rcOK)	
+					return (self._resourceTreeReferences(allowedResources, None, drt), C.rcOK)
+
 
 				# quiet strange for discovery, since children might not be direct descendants...
 				elif rcn == C.rcnAttributesAndChildResourceReferences: 
 					(resource, res) = self.retrieveResource(id)
 					if resource is None:
 						return (None, res)
-					self._resourceTreeReferences(allowedResources, resource, drt)	# the function call add attributes to the result resource
-					return (resource, C.rcOK)
+					return (self._resourceTreeReferences(allowedResources, resource, drt), C.rcOK)	# the function call add attributes to the result resource
 
 				# resource and child resources, full attributes
 				elif rcn == C.rcnAttributesAndChildResources:
 					(resource, res) = self.retrieveResource(id)
 					if resource is None:
 						return (None, res)
-					self._childResourceTree(allowedResources, resource)	# the function call add attributes to the result resource
-					return (resource, C.rcOK)
+					return (self._childResourceTree(allowedResources, resource), C.rcOK)	# the function call add attributes to the result resource
 
 				# direct child resources, NOT the root resource
 				elif rcn == C.rcnChildResources:
@@ -639,22 +639,31 @@ class Dispatcher(object):
 
 	# Retrieve child resource referenves of a resource and add them to a new target resource as "children"
 	def _resourceTreeReferences(self, resources, targetResource, drt):
+		tp = 'ch'
+		if targetResource is None:
+			targetResource = { }
+			tp = 'm2m:ch'	# top level in dict, so add qualifier.
 		if len(resources) == 0:
-			return
+			return targetResource
 		t = []
 		for r in resources:
 			if r.ty in [ C.tCNT_OL, C.tCNT_LA, C.tFCNT_OL, C.tFCNT_LA ]:	# Skip latest, oldest virtual resources
 				continue
-			t.append({ 'nm' : r['rn'], 'typ' : r['ty'], 'val' :  Utils.structuredPath(r) if drt == C.drtStructured else r.ri})
-		targetResource['ch'] = t
+			ref = { 'nm' : r['rn'], 'typ' : r['ty'], 'val' :  Utils.structuredPath(r) if drt == C.drtStructured else r.ri}
+			if r.ty == C.tFCNT:
+				ref['spty'] = r.cnd		# TODO Is this correct? Actually specializationID in TS-0004 6.3.5.29, but this seems to be wrong
+			t.append(ref)
+		targetResource[tp] = t
+		return targetResource
 
 
 	# Retrieve full child resources of a resource and add them to a new target resource
 	def _childResourceTree(self, resource, targetResource):
 		if len(resource) == 0:
-			return
+			return resource
 		result = {}
 		self._resourceTreeJSON(resource, result)	# rootResource is filled with the result
 		for k,v in result.items():			# copy child resources to result resource
 			targetResource[k] = v
+		return resource
 
