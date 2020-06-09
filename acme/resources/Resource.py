@@ -188,6 +188,9 @@ class Resource(object):
 		if 'lt' in self.json:	# Update the lastModifiedTime
 			self['lt'] = Utils.getResourceDate()
 
+		# Remove empty / null attributes from json
+		self.json = {k: v for (k, v) in self.json.items() if v is not None }
+
 			# Do some extra validations, if necessary
 		if not (res := self.validate(originator))[0]:
 			return res
