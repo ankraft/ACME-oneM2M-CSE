@@ -65,10 +65,10 @@ class NotificationManager(object):
 
 
 
-	def updateSubscription(self, subscription, previousNus, originator):
+	def updateSubscription(self, subscription, newJson, previousNus, originator):
 		Logging.logDebug('Updating subscription')
 		#previousSub = CSE.storage.getSubscription(subscription.ri)
-		if (result := self._getAndCheckNUS(subscription, previousNus, originator=originator))[0] is None:	# verification/delete requests happen here
+		if (result := self._getAndCheckNUS(subscription, newJson, previousNus, originator=originator))[0] is None:	# verification/delete requests happen here
 			return (False, result[1])
 		return (True, C.rcOK) if CSE.storage.updateSubscription(subscription) else (False, result[1])
 
@@ -132,9 +132,9 @@ class NotificationManager(object):
 		return result
 
 
-	def _getAndCheckNUS(self, subscription, previousNus=None, originator=None):
+	def _getAndCheckNUS(self, subscription, newJson, previousNus, originator=None):
 		newNus = []
-		if (nuAttribute := subscription['nu']) is not None and len(nuAttribute) > 0:
+		if nuAttribute := Utils.findXPath(newJson, 'm2m:sub/nu') is not None:
 			if (newNus := self._getNotificationURLs(nuAttribute, originator)) is None:
 				# Fail if any of the NU's cannot be retrieved
 				return (None, C.rcSubscriptionVerificationInitiationFailed)
@@ -145,11 +145,13 @@ class NotificationManager(object):
 						Logging.logDebug('Verification request failed: %s' % nu)
 						return (None, C.rcSubscriptionVerificationInitiationFailed)
 
-		else: # if nu not present then notify removed nus (deletion notification)
+		# notify removed nus (deletion notification) if nu = null
+		if 'nu' in newJson: # if nu not present, nothing to do
 			if previousNus is not None:
 				for nu in previousNus:
-					if not self._sendDeletionNotification(nu, subscription):
-						Logging.logWarn('Deletion request failed') # but ignore the error
+					if nu not in newNus:
+						if not self._sendDeletionNotification(nu, subscription):
+							Logging.logDebug('Deletion request failed') # but ignore the error
 
 		return (newNus, C.rcOK)
 
