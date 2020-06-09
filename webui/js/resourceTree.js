@@ -109,7 +109,6 @@ function expandNode(node) {
   for (ch of node.getChildren()) {
     if (ch.resolved == false) {
       getResource(ch.ri, ch) 
-      tree.reload()
     }
   }
 }
@@ -235,7 +234,7 @@ function clearResourceInfo() {
 function refreshNode() {
   if (typeof nodeClicked !== "undefined") {
     nodeClicked.wasExpanded = nodeClicked.isExpanded()
-    //removeChildren(nodeClicked)
+    removeChildren(nodeClicked)
     getResource(nodeClicked.resource.ri, nodeClicked)
   }
 }
