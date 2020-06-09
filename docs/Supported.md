@@ -1,5 +1,10 @@
 # Supported Resource Types and Functionalities
 
+## oneM2M Specification Conformance
+
+The CSE implementation successfully passes the oneM2M release 1 test cases.
+
+
 ## Resources
 
 The CSE supports the following oneM2M resource types:
@@ -29,20 +34,24 @@ The support includes the following **Management Object (mgmtObj)** specializatio
 	- **EventLog (EVL)**
 - **FlexContainer Specializations**  
 Any specializations is supported. There is no check performed against a schema (e.g. via the *cnd* attribute).
+- **FlexContainerInstance (Experimental)**  
+This is an implementation of the draft FlexContainerInstance specification.
 
 Resources of any other type are stored in the CSE but no further processed and no checks are performed on these resources. The type is marked as *unknown*.
 
 ## Discovery
 The following result contents are implemented for Discovery:
 
+- attributes (rcn=1)
 - attributes + child-resources (rcn=4)
 - attributes + child-resource-references (rcn=5)
 - child-resource-references (rcn=6)
 - child-resources (rcn=8)
+- modified attributes (rcn=9)
 
 # Limitations
 - **This is by no means a fully compliant, secure or stable CSE! Don't use it in production.**
 - This CSE is intended for educational purposes. The underlying database system is not optimized in any way for high-volume, high-accessibility.
 - No support for https yet.
 - Security: None. Please contact me if you have suggestions to improve this.
-- Unsupported resource types are just stored, but no check or functionality is provided for those resources. The same is true for unknown resource attributes. Only a few attributes are validated.
+- Unsupported resource types are just stored, but no check or functionality is provided for those resources. The same is true for unknown resource attributes.

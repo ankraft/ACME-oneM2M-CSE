@@ -4,15 +4,19 @@
 - [WEB] Add displaying the path of the selected resource and many more small improvements.
 - [CSE] Fixed crashes when using group resources.
 - [CSE] Added command line arguments --remote-cse, --no-remote-cse .
+- [CSE] Improved remote CSE handling.
+- [CSE[ Request retargeting now works correctly.
 - [CSE] Improved support for expiration handling, e.g. refreshing as well as removal of expired resources.
-- [CSE] Fixed SP-relative addressing.
+- [CSE] Fixed and reworked resource address handling.
 - [CSE] Added validation of resource attributes during CREATE and UPDATE.
+- [CSE] The CSE now passes the oneM2M test suite for R1.
 - [ACP] Changed: created resources without a provided ACPI will now have the same ACPI of the parent.
 - [ACP] Fixed format of privileges and self-privileges.
-- [DATABASE] Upgraded to TinyDB 4.x
+- [DATABASE] Upgraded to TinyDB 4.x .
+- [Logging] Now using the Rich module for improved terminal logging .
 - [IMPORTING] Added macro mechanism to use configuration settings in imported files.
 - [NOTIFICATIONS] Corrected error handling.
-- [ALL] Many small fixes and improvements.
+- [ALL] Many, many small fixes and improvements.
 - [MISC] Restructured documentation.
 
 
