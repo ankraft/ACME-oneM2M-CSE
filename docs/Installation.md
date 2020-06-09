@@ -28,7 +28,7 @@ In order to run the CSE the following prerequisites must be fulfilled:
 
 Or install all of the above packages at once:
 
-		pip3 install flask psutil requests rich tinydb
+	pip3 install flask psutil requests rich tinydb
 
 
 ## Installation and Configuration
