@@ -75,10 +75,11 @@ class Resource(object):
 			self.setAttribute('ct', ts, overwrite=False)
 			self.setAttribute('lt', ts, overwrite=False)
 			self.setAttribute('et', Utils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite=False) 
-			self.setAttribute('st', 0, overwrite=False)
 			if pi is not None:
 				self.setAttribute('pi', pi, overwrite=False)
 			if ty is not None:
+				if ty in [3,4,28]:	# Only container, contentInstance, flexContainer resources contain stateTag
+					self.setAttribute('st', 0, overwrite=False)
 				self.setAttribute('ty', ty)
 
 			#
