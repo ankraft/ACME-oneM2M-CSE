@@ -47,6 +47,7 @@ function getChildren(node, errorCallback) {
         clickOnNode(null, node)
         expandNode(node)
       } else {
+        clickOnNode(null, node)
         node.setExpanded(false)
       }
     } else { // Display the root node expanded and show attributes etc
@@ -182,7 +183,7 @@ function toggleRefresh() {
     cancelRefreshResource()
   } else {
     document.getElementById("refreshButton").className = "button success"
-    setupRefreshResource(5)
+    setupRefreshResource(5) // TODO make configurable
   }
 }
 
