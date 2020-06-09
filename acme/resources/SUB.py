@@ -55,10 +55,11 @@ class SUB(Resource):
 
 
 	def update(self, jsn, originator):
+		previousNus = self['nu'].copy()
 		(res, rc) = super().update(jsn, originator)
 		if not res:
 			return (res, rc)
-		return CSE.notification.updateSubscription(self, jsn, originator)
+		return CSE.notification.updateSubscription(self, previousNus, originator)
 		# res = CSE.notification.updateSubscription(self)
 		# return (res, C.rcOK if res else C.rcTargetNotSubscribable)
  
