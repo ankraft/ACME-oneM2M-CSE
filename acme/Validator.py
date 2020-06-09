@@ -131,10 +131,14 @@ class Validator(object):
 
 		# No policies?
 		if attributePolicies is None:
+			Logging.logWarn("No attribute policies")
 			return (True, C.rcOK)
 
 		# determine the request column, depending on create or updates
 		reqp = 2 if create else 3
+		(pureJson, key) = Utils.pureResource(jsn)
+		if key is not None and not key.startswith("m2m:"):
+			pureJson = jsn
 
 		for r, p in attributePolicies.items():
 			if p is None:
@@ -142,7 +146,7 @@ class Validator(object):
 				continue
 
 			# Check whether the attribute is allowed or mandatory in the request
-			if (v := jsn.get(r)) is None:
+			if (v := pureJson.get(r)) is None:
 				if p[reqp] == RO.M:		# Not okay, this attribute is mandatory
 					Logging.logWarn('Cannot find mandatory attribute: %s' % r)
 					return (False, C.rcBadRequest)
@@ -152,7 +156,7 @@ class Validator(object):
 				if p[reqp] == RO.NP:
 					Logging.logWarn('Found non-provision attribute: %s' % r)
 					return (False, C.rcBadRequest)
-				if r == 'pvs' and not self.validatePvs(jsn):
+				if r == 'pvs' and not self.validatePvs(pureJson):
 					return (False, C.rcBadRequest)
 
 
