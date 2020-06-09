@@ -26,6 +26,11 @@ In order to run the CSE the following prerequisites must be fulfilled:
 
 		pip3 install tinydb
 
+Or install all of the above packages at once:
+
+		pip3 install flask psutil requests rich tinydb
+
+
 ## Installation and Configuration
 
 Install the ACME CSE by copy the whole distribution to a new directory. You also need to copy the configuration file [acme.ini.default](acme.ini.default) to a new file *acme.ini* and make adjustments to that new file.
