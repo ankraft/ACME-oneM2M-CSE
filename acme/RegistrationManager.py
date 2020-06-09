@@ -205,6 +205,9 @@ class RegistrationManager(object):
 		(localCSE, _) = Utils.getCSE()
 
 		# Retrieve CSR ACP
+		# This might fail (which is okay!), because the ACP was not created during
+		# the registration of the CSR (identified by the rn that includes the 
+		# name of the CSR)
 		acpi = '%s/%s%s' % (localCSE.rn, C.acpPrefix, csr.rn)
 		self._removeACP(rn=acpi, resource=csr)
 
