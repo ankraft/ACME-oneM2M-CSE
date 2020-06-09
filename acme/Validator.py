@@ -36,6 +36,7 @@ attributePolicies = {
 
 
 
+	'acrs'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.NA ],		# m2m:listOfURIs - SUB
 	'adri'	: [ BT.list,			CAR.car1,	RO.O,	RO.O,  AN.MA ],		# m2m:listOfURIs - ACP
 	'aei'	: [ BT.string,			CAR.car1,   RO.NP,	RO.NP, AN.OA ],		# AE
 	'airi'	: [ BT.list,			CAR.car1,	RO.O,	RO.O,  AN.MA ],		# m2m:listOfURIs - ACP
@@ -43,6 +44,7 @@ attributePolicies = {
 	'api'	: [ BT.string,			CAR.car1,   RO.M,	RO.NP, AN.OA ],		# AE
 	'apn'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# AE
 	'apri'	: [ BT.list,			CAR.car1,	RO.O,	RO.O,  AN.MA ],		# m2m:listOfURIs - ACP
+	'bn'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
 	'cbs'	: [ BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, AN.NA ],		# CNT
 	'cnf'	: [ BT.string,			CAR.car01,  RO.O,	RO.NP, AN.OA ],		# m2m_contentInfo - CIN
 	'cni'	: [ BT.nonNegInteger,	CAR.car1, 	RO.NP,	RO.NP, AN.NA ],		# CNT
@@ -56,9 +58,13 @@ attributePolicies = {
 	'csy'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, AN.OA ],		# m2m:consistencyStrategy - GRP
 	'csz'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:serializations - AE, CSE (RO!)
 	'disr'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
+	'enc'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
 	'esi'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.MA ],		# m2m:e2eSecInfo - AE, CSE
+	'exc'	: [	BT.positiveInteger, CAR.car01, 	RO.O, 	RO.O,  AN.NA ],  	# SUB
 	'gn'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# GRP
+	'gpi'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
 	'li'	: [ BT.anyURI,			CAR.car01,  RO.NP,	RO.NP, AN.OA ],		# CNT
+	'ln'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
 	'macp'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
 	'mbs'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
 	'mei'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.NA ],		# m2m:externalID - AE
@@ -69,18 +75,27 @@ attributePolicies = {
 	'mt'	: [ BT.nonNegInteger,	CAR.car1,   RO.O,	RO.NP, AN.OA ],		# m2m:memberType - GRP
 	'mtv'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.NP, AN.OA ],		# GRP
 	'nar'	: [ BT.dict,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# GRP
+	'nec'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
+	'nct'	: [ BT.nonNegInteger,	CAR.car1,  	RO.O,	RO.O,  AN.NA ],		# SUB
+	'nfu'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
 	'nl'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# AE, CSE
+	'nsp'	: [ BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
+	'nu'	: [	BT.list, 			CAR.car1, 	RO.M, 	RO.O,  AN.NA],  	# SUB
 	'or'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
+	'pn'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
 	'poa'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:poaList - AE, CSE
+	'psn'	: [ BT.positiveInteger,	CAR.car01,  RO.O,	RO.NP, AN.NA ],		# SUB
 	'pv'	: [ BT.dict,			CAR.car1,	RO.M,	RO.O,  AN.MA ],		# m2m:setOfArcs - ACP
 	'pvs'	: [ BT.dict,			CAR.car1,	RO.M,	RO.O,  AN.MA ],		# m2m:setOfArcs - ACP
 	'regs'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:AERegistrationStatus - AE
+	'rl'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
 	'rr'	: [ BT.boolean,			CAR.car1,   RO.M,	RO.O,  AN.OA ],		# AE
 	'scp'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:sessionCapabilities - AE
 	'spty'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, AN.OA ],		# m2m:specializationType - GRP
 	'srt'	: [ BT.list, 			CAR.car01,  RO.O,	RO.NP, AN.NA ],		# CSE
 	'srv'	: [ BT.list,			CAR.car01,  RO.M,	RO.O,  AN.MA ],		# m2m:supportedReleaseVersions - AE, CSE
 	'ssi'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.NP, AN.OA ],		# GRP
+	'su'	: [ BT.string,			CAR.car01,  RO.O,	RO.NP, AN.NA ],		# SUB
 	'tren'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# AE
 	'trps'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# AE
 
@@ -144,7 +159,6 @@ class Validator(object):
 			if p is None:
 				Logging.logWarn('No validation policy found for attribute: %s' % r)
 				continue
-
 			# Check whether the attribute is allowed or mandatory in the request
 			if (v := pureJson.get(r)) is None:
 				if p[reqp] == RO.M:		# Not okay, this attribute is mandatory

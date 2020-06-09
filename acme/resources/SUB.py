@@ -10,16 +10,22 @@
 import random, string
 from Constants import Constants as C
 import Utils, CSE
+from Validator import constructPolicy
 from .Resource import *
 
-# TODO Attribute validations
+# Attribute policies for this resource are constructed during startup of the CSE
+attributePolicies = constructPolicy([
+	'rn', 'ty', 'ri', 'pi', 'et', 'lbl', 'ct', 'lt', 'acpi', 'daci', 'cr', 'enc',
+	'exc', 'nu', 'gpi', 'nfu', 'bn', 'rl', 'psn', 'pn', 'nsp', 'ln', 'nct', 'nec',
+	'su', 'acrs'		#	primitiveProfileID missing in TS-0004
+])
 
 # LIMIT: Only http(s) requests in nu or POA is supported yet
 
 class SUB(Resource):
 
 	def __init__(self, jsn=None, pi=None, create=False):
-		super().__init__(C.tsSUB, jsn, pi, C.tSUB, create=create)
+		super().__init__(C.tsSUB, jsn, pi, C.tSUB, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('nct', C.nctAll, overwrite=False) # LIMIT TODO: only this notificationContentType is supported now
