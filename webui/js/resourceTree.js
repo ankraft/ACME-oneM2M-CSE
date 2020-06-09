@@ -86,11 +86,15 @@ function clickOnNode(e, node) {
   node.setSelected(true)
   nodeClicked = node
   tree.reload()
-  resource = node.resource
+  updateDetailsOfNode(node)
+}
+
+
+function updateDetailsOfNode(node) {
   clearAttributesTable()
-  fillAttributesTable(resource)
+  fillAttributesTable(node.resource)
   fillJSONArea(node)
-  setResourceInfo(resource)
+  setResourceInfo(node.resource)
   if (refreshRESTUI) {
     setRestUI(node.resourceFull)
   } else {
@@ -235,7 +239,9 @@ function refreshNode() {
   if (typeof nodeClicked !== "undefined") {
     nodeClicked.wasExpanded = nodeClicked.isExpanded()
     removeChildren(nodeClicked)
-    getResource(nodeClicked.resource.ri, nodeClicked)
+    getResource(nodeClicked.resource.ri, nodeClicked, function() {
+        updateDetailsOfNode(nodeClicked)
+    })
   }
 }
 

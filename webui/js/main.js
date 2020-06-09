@@ -47,7 +47,6 @@ function getChildren(node, errorCallback) {
         clickOnNode(null, node)
         expandNode(node)
       } else {
-        clickOnNode(null, node)
         node.setExpanded(false)
       }
     } else { // Display the root node expanded and show attributes etc
@@ -77,8 +76,8 @@ function getChildren(node, errorCallback) {
         tree.reload()
     }
 
-  }, function() {
-    typeof errorCallback === 'function' && errorCallback();
+  }, function(response, status) {
+    typeof errorCallback === 'function' && errorCallback(status);
   });
 }
 
@@ -88,13 +87,19 @@ function getResource(ri, node, callback) {
     document.getElementById("connectButton").className = "button success"
     document.getElementById("connectButton").text = "Connected"
     typeof callback === 'function' && callback(node);
-  }, function() { // error callback
+  }, function(status) { // error callback
     if (node.ri.endsWith("/la") || node.ri.endsWith("/ol")) { // special handling for empty la or ol
       node.setUserObject(node.ri.slice(-2))
       node.resolved = true
       tree.reload()
       return
     } 
+    if (status == 404) {  // if not found remove the node from the tree and continue
+      node.parent.removeChild(node)
+      return    
+    }
+
+    // otherwise disconnect
 
     document.getElementById("connectButton").className = "button error"
     document.getElementById("connectButton").text = "Reconnect"
