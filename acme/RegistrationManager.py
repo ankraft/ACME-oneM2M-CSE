@@ -166,14 +166,15 @@ class RegistrationManager(object):
 		(localCSE, _) = Utils.getCSE()
 
 		# Add ACP for remote CSE to access the own CSE
-		acp = self._createACP(parentResource=localCSE,
-							  rn='%s%s' % (C.acpPrefix, csr.rn),
-						 	  createdByResource=csr.ri, 
-							  originators=[ originator, cseOriginator ],
-							  permission=C.permALL)
-		if acp[0] is None:
-			return False 
-		csr['acpi'] = [ acp[0].ri ]	# Set ACPI (anew)
+		if csr.acpi is None or len(csr.acpi) == 0:
+			acp = self._createACP(parentResource=localCSE,
+								  rn='%s%s' % (C.acpPrefix, csr.rn),
+							 	  createdByResource=csr.ri,
+								  originators=[ originator, cseOriginator ],
+								  permission=C.permALL)
+			if acp[0] is None:
+				return False
+			csr['acpi'] = [ acp[0].ri ]	# Set ACPI (anew)
 
 		# Add another ACP for remote CSE to access the CSE, at least to read
 		cseAcp = self._createACP(parentResource=localCSE,
@@ -205,8 +206,7 @@ class RegistrationManager(object):
 
 		# Retrieve CSR ACP
 		acpi = '%s/%s%s' % (localCSE.rn, C.acpPrefix, csr.rn)
-		if self._removeACP(rn=acpi, resource=csr)[0] is None:
-			return False
+		self._removeACP(rn=acpi, resource=csr)
 
 		# Retrieve CSE ACP
 		acpi = acpi + '_CSE'
