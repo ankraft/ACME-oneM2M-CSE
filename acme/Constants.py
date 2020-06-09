@@ -81,10 +81,11 @@ class Constants(object):
 	tVirtualResources = [ tCNT_LA, tCNT_OL, tGRP_FOPT ]
 
 	# Supported by this CSE
-	supportedResourceTypes = [ tACP, tAE, tCNT, tCIN, tCSEBase, tGRP, tMGMTOBJ, tNOD, tCSR, tSUB, tFCNT, tFCI ]
-	supportedContentSerializations = [ 'application/json' ]
-	supportedContentHeaderFormat = [ 'application/json', 'application/vnd.onem2m-res+json' ]
-	supportedReleaseVersions = [ '3' ]
+	supportedResourceTypes 			= [ tACP, tAE, tCNT, tCIN, tCSEBase, tGRP, tMGMTOBJ, tNOD, tCSR, tSUB, tFCNT, tFCI ]
+	stateTagResourceTypes 			= [ tCNT, tCIN, tFCNT, tFCI ]	# those resource types allow state tags
+	supportedContentSerializations 	= [ 'application/json' ]
+	supportedContentHeaderFormat 	= [ 'application/json', 'application/vnd.onem2m-res+json' ]
+	supportedReleaseVersions 		= [ '3' ]
 
 	# List of resource types for which "creator" is allowed
 	# Also add later: eventConfig, pollingChannel, statsCollect, statsConfig, semanticDescriptor,

@@ -78,7 +78,7 @@ class Resource(object):
 			if pi is not None:
 				self.setAttribute('pi', pi, overwrite=False)
 			if ty is not None:
-				if ty in [3,4,28]:	# Only container, contentInstance, flexContainer resources contain stateTag
+				if ty in C.stateTagResourceTypes:	# Only for allowed resources
 					self.setAttribute('st', 0, overwrite=False)
 				self.setAttribute('ty', ty)
 
