@@ -65,10 +65,10 @@ class NotificationManager(object):
 
 
 
-	def updateSubscription(self, subscription, originator):
+	def updateSubscription(self, subscription, json, originator):
 		Logging.logDebug('Updating subscription')
 		previousSub = CSE.storage.getSubscription(subscription.ri)
-		if (result := self._getAndCheckNUS(subscription, previousSub['nus'], originator=originator))[0] is None:	# verification/delete requests happen here
+		if (result := self._getAndCheckNUS(json, previousSub['nus'], originator=originator))[0] is None:	# verification/delete requests happen here
 			return (False, result[1])
 		return (True, C.rcOK) if CSE.storage.updateSubscription(subscription) else (False, result[1])
 
@@ -133,23 +133,26 @@ class NotificationManager(object):
 
 
 	def _getAndCheckNUS(self, subscription, previousNus=None, originator=None):
-		if (newNus := self._getNotificationURLs(subscription['nu'], originator)) is None:
-			# Fail if any of the NU's cannot be retrieved
-			return (None, C.rcSubscriptionVerificationInitiationFailed)	
+		newNus = []
+		if nuAttribute := Utils.findXPath(subscription, 'm2m:sub/nu') is not None:
+			if (newNus := self._getNotificationURLs(nuAttribute, originator)) is None:
+				# Fail if any of the NU's cannot be retrieved
+				return (None, C.rcSubscriptionVerificationInitiationFailed)
+			# notify new nus (verification request)
+			for nu in newNus:
+				if previousNus is None or (previousNus and nu not in previousNus):
+					if not self._sendVerificationRequest(nu, subscription, originator=originator):
+						Logging.logDebug('Verification request failed: %s' % nu)
+						return (None, C.rcSubscriptionVerificationInitiationFailed)
 
-		# notify removed nus (deletion notification)
-		if previousNus is not None:
-			for nu in previousNus:
-				if nu not in newNus:
-					if not self._sendDeletionNotification(nu, subscription):
-						Logging.logDebug('Deletion request failed') # but ignore the error
+		# notify removed nus (deletion notification) if nu = null
+		if 'nu' in subscription: # if nu not present, nothing to do
+			if previousNus is not None:
+				for nu in previousNus:
+					if nu not in newNus:
+						if not self._sendDeletionNotification(nu, subscription):
+							Logging.logDebug('Deletion request failed') # but ignore the error
 
-		# notify new nus (verification request)
-		for nu in newNus:
-			if previousNus is None or (previousNus and nu not in previousNus):
-				if not self._sendVerificationRequest(nu, subscription, originator=originator):
-					Logging.logDebug('Verification request failed: %s' % nu)
-					return (None, C.rcSubscriptionVerificationInitiationFailed)	
 		return (newNus, C.rcOK)
 
 
