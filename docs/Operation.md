@@ -2,9 +2,9 @@
 
 ## Remote CSE
 
-When a CSE is configured as an MN-CSE of ASN-CSE it can connect to a remote CSE, respectively an IN-CSE and MN-CSE can receive connection requests from those CSE types. A *remoteCSE* resource is created in case of a successful connection. A CSE checks regularly the connection to other remote CSEs and removes the *remoteCSE* if the connection could not been established.
+When a CSE is configured as an MN-CSE of ASN-CSE it can connect to a remote CSE, respectively an IN-CSE and MN-CSE can receive connection requests from those CSE types. A *remoteCSE* resource is created in case of a successful registration. A CSE checks regularly the connection to other remote CSEs and removes the *remoteCSE* if the connection could not been established.
 
-Announced resources are currently **not** supported by this implementation. But you can issue transfer requests to a remote CSE via its *remoteCSE* resource. These requests are forwarded by the CSE.
+Announced resources are currently **not** supported by this implementation. But you can issue transit requests to a remote CSE via its *remoteCSE* resource. These requests are forwarded by the CSE.
 
 You must configure the details of the remote CSE in the configuration file.
 
