@@ -132,15 +132,17 @@ class NotificationManager(object):
 		return result
 
 
-	def _getAndCheckNUS(self, subscription, newJson, previousNus, originator=None):
+	def _getAndCheckNUS(self, subscription, newJson=None, previousNus=None, originator=None):
 		newNus = []
-		if nuAttribute := Utils.findXPath(newJson, 'm2m:sub/nu') is not None:
+		if newJson is None:
+			newJson = subscription.asJSON()
+		if (nuAttribute := Utils.findXPath(newJson, 'm2m:sub/nu')) is not None:
 			if (newNus := self._getNotificationURLs(nuAttribute, originator)) is None:
 				# Fail if any of the NU's cannot be retrieved
 				return (None, C.rcSubscriptionVerificationInitiationFailed)
 			# notify new nus (verification request)
 			for nu in newNus:
-				if previousNus is None or (previousNus and nu not in previousNus):
+				if previousNus is None or (nu not in previousNus):
 					if not self._sendVerificationRequest(nu, subscription, originator=originator):
 						Logging.logDebug('Verification request failed: %s' % nu)
 						return (None, C.rcSubscriptionVerificationInitiationFailed)
