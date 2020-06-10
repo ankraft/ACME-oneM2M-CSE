@@ -58,7 +58,7 @@ attributePolicies = {
 	'csy'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, AN.OA ],		# m2m:consistencyStrategy - GRP
 	'csz'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:serializations - AE, CSE (RO!)
 	'disr'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
-	'enc'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
+	'enc'	: [ BT.dict,			CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
 	'esi'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.MA ],		# m2m:e2eSecInfo - AE, CSE
 	'exc'	: [	BT.positiveInteger, CAR.car01, 	RO.O, 	RO.O,  AN.NA ],  	# SUB
 	'gn'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# GRP
