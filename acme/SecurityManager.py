@@ -38,7 +38,6 @@ class SecurityManager(object):
 		if not Configuration.get('cse.enableACPChecks'):	# check or ignore the check
 			return True
 
-
 		if ty is not None:
 
 			# Checking for AE	
@@ -94,9 +93,9 @@ class SecurityManager(object):
 		else:		# target is any other resource type
 			
 			# If subscription, check whether originator has retrieve permissions on the subscribed-to resource (parent)	
-			if resource.ty == C.tSUB and parentResource is not None:
+			if ty == C.tSUB and parentResource is not None:
 				if self.hasAccess(originator, parentResource, C.permRETRIEVE) == False:
-					return (None, C.rcOriginatorHasNoPrivilege)
+					return False
 
 			if (acpi := resource.acpi) is None or len(acpi) == 0:	
 				if resource.inheritACP:
