@@ -562,12 +562,16 @@ class Dispatcher(object):
 				conditions[c] = x
 				del args[c]
 
-		# get types (multi)
-		conditions['ty'] = args.getlist('ty')
+		# get types (multi). Always create at least an empty list
+		conditions['ty'] = []
+		for e in args.getlist('ty'):
+			conditions['ty'].extend(e.split())
 		args.poplist('ty')
 
-		# get contentTypes (multi)
-		conditions['cty'] = args.getlist('cty')
+		# get contentTypes (multi). Always create at least an empty list
+		conditions['cty'] = []
+		for e in args.getlist('cty'):
+			conditions['cty'].extend(e.split())
 		args.poplist('cty')
 
 		result['__conditons__'] = conditions
