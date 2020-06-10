@@ -141,6 +141,9 @@ class NotificationManager(object):
 				# Fail if any of the NU's cannot be retrieved
 				return (None, C.rcSubscriptionVerificationInitiationFailed)
 			# notify new nus (verification request)
+			if previousNus is not None:
+				if (previousNus := self._getNotificationURLs(previousNus, originator)) is None:
+					return (None, C.rcSubscriptionVerificationInitiationFailed)
 			for nu in newNus:
 				if previousNus is None or (nu not in previousNus):
 					if not self._sendVerificationRequest(nu, subscription, originator=originator):
