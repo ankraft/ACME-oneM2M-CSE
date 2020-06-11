@@ -228,6 +228,10 @@ class Dispatcher(object):
 		if ct == None or ty == None:
 			return (None, C.rcBadRequest)
 
+		# CSEBase creation, return immediately
+		if ty == C.tCSEBase:
+			return (None, C.rcOperationNotAllowed)
+
 		# Get parent resource and check permissions
 		(pr, res) = self.retrieveResource(id)
 		if pr is None:
@@ -328,6 +332,10 @@ class Dispatcher(object):
 		if id is None and srn is None:
 			return (None, C.rcNotFound)
 
+		# ID= cse.if, return immediately
+		if id == self.cseid:
+			return (None, C.rcOperationNotAllowed)
+
 		# handle transit requests
 		if CSE.remote.isTransitID(id):
 			return CSE.remote.handleTransitUpdateRequest(request, id, originator) if self.enableTransit else (None, C.rcOperationNotAllowed)
@@ -419,6 +427,10 @@ class Dispatcher(object):
 		# No ID, return immediately 
 		if id is None and srn is None:
 			return (None, C.rcNotFound)
+
+		# ID= cse.if, return immediately
+		if id == self.cseid:
+			return (None, C.rcOperationNotAllowed)
 
 		# handle transit requests
 		if CSE.remote.isTransitID(id):
