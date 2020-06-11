@@ -84,7 +84,7 @@ class Dispatcher(object):
 		if fu == 1 and rcn !=  C.rcnAttributes:	# discovery. rcn == Attributes is actually "normal retrieval"
 			Logging.logDebug('Discover resources (fu: %s, drt: %s, handling: %s, conditions: %s, resultContent: %d, attributes: %s)' % (fu, drt, handling, conditions, rcn, str(attributes)))
 
-			if rcn not in [C.rcnAttributesAndChildResourceReferences, C.rcnChildResourceReferences, C.rcnChildResources, C.rcnAttributesAndChildResources]:	# Only allow those two
+			if rcn not in [C.rcnDiscoveryResultReferences, C.rcnAttributesAndChildResourceReferences, C.rcnChildResourceReferences, C.rcnChildResources, C.rcnAttributesAndChildResources]:	# Only allow those two
 				return (None, C.rcInvalidArguments)
 
 			# do discovery
@@ -98,10 +98,9 @@ class Dispatcher(object):
 					if CSE.security.hasAccess(originator, r, C.permDISCOVERY):
 						allowedResources.append(r)
 				if rcn == C.rcnChildResourceReferences: # child resource references
-					#return (self._resourcesToURIList(allowedResources, drt), C.rcOK)	
 					return (self._resourceTreeReferences(allowedResources, None, drt), C.rcOK)
-
-
+				elif rcn == C.rcnDiscoveryResultReferences: # URIList
+					return (self._resourcesToURIList(allowedResources, drt), C.rcOK)
 				# quiet strange for discovery, since children might not be direct descendants...
 				elif rcn == C.rcnAttributesAndChildResourceReferences: 
 					(resource, res) = self.retrieveResource(id)
@@ -532,8 +531,9 @@ class Dispatcher(object):
 			if fu != C.fuDiscoveryCriteria:
 				rcn = C.rcnAttributes
 			else:
-				# TODO It should be discovery-result-references or childResourceReferences, not specified
-				rcn = C.rcnChildResourceReferences
+				# discovery-result-references as default for Discovery operation
+				rcn = C.rcnDiscoveryResultReferences
+				#rcn = C.rcnChildResourceReferences
 		result['rcn'] = rcn
 
 		# handling conditions
@@ -647,7 +647,7 @@ class Dispatcher(object):
 		tp = 'ch'
 		if targetResource is None:
 			targetResource = { }
-			tp = 'm2m:ch'	# top level in dict, so add qualifier.
+			tp = 'm2m:rrl'	# top level in dict, so add qualifier.
 		if len(resources) == 0:
 			return targetResource
 		t = []

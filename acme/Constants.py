@@ -181,6 +181,7 @@ class Constants(object):
 	rcnChildResourceReferences				= 6
 	rcnChildResources						= 8
 	rcnModifiedAttributes					= 9
+	rcnDiscoveryResultReferences			= 11
 	# TODO support other RCN
 
 	# Desired Identifier Result Type
