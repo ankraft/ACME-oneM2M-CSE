@@ -23,7 +23,7 @@ function getChildren(node, errorCallback) {
     removeChildren(node)
 
     resource = JSON.parse(response)
-    chs = resource["m2m:ch"]
+    chs = resource["m2m:rrl"]
     if (chs != undefined) {
       for (ch of chs) {
 
