@@ -71,6 +71,7 @@ class GroupManager(object):
 					(remoteResource, rsc) = CSE.httpServer.sendRetrieveRequest(url, CSE.Configuration.get('cse.csi'))
 
 			# get the resource and check it
+			hasFopt = False
 			if isLocalResource:
 				id = mid[:-5] if len(mid) > 5 and (hasFopt := mid.endswith('/fopt')) else mid 	# remove /fopt to retrieve the resource
 				if (r := CSE.dispatcher.retrieveResource(id))[0] is None:
@@ -78,12 +79,13 @@ class GroupManager(object):
 				resource = r[0]
 			else:
 				if remoteResource is None:
-					if rsc == 4103:  # CSE has no privileges for retrieving the member
+					if rsc == C.rcOriginatorHasNoPrivilege:  # CSE has no privileges for retrieving the member
 						return (False, C.rcReceiverHasNoPrivileges)
 					else:  # Member not found
 						return (False, C.rcNotFound)
 				else:
 					resource = remoteResource
+
 			# skip if ri is already in the list
 			if isLocalResource:
 				if (ri := resource.ri) in midsList:
@@ -128,9 +130,13 @@ class GroupManager(object):
 				midsList.append(ri if not hasFopt else ri + '/fopt')		# restore fopt for ri
 			else:
 				midsList.append(mid)	# remote resource appended with original memberID
+
+		# ^^^ for end
+
 		group['mid'] = midsList				# replace with a cleaned up mid
 		group['cnm'] = len(midsList)
 		group['mtv'] = True
+		
 		return (True, C.rcOK)
 
 
