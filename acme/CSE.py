@@ -65,7 +65,10 @@ def startup(args, **kwargs):
 	global rootDirectory
 	global aeStatistics
 
-	rootDirectory = os.getcwd()		# get the root directory
+	rootDirectory = os.getcwd()					# get the root directory
+	os.environ["FLASK_ENV"] = "development"		# get rid if the warning message from flask. 
+												# Hopefully it is clear at this point that this is not a production CSE
+
 
 
 	# Handle command line arguments and load the configuration
@@ -168,6 +171,8 @@ def shutdown():
 		event.shutdown()
 	if storage is not None:
 		storage.shutdown()
+	Logging.finit()
+
 
 
 # Delay starting the AEs in the backround. This is needed because the CSE

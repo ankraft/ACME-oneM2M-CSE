@@ -8,6 +8,7 @@
 #	This manager is the main run-loop for the CSE (when using http).
 #
 
+import json, requests, logging, os, sys
 from flask import Flask, request, make_response
 from typing import Any, Callable
 import flask
@@ -16,7 +17,6 @@ from Constants import Constants as C
 import CSE, Utils
 from Logging import Logging, RedirectHandler
 from resources.Resource import Resource
-import json, requests, logging, os
 from werkzeug.serving import WSGIRequestHandler
 
 
@@ -88,11 +88,16 @@ class HttpServer(object):
 		# The server can run single-threadedly since some of the underlying
 		# components (e.g. TinyDB) may run into problems otherwise.
 		if self.flaskApp is not None:
+			# Disable the flask banner messages
+			cli = sys.modules['flask.cli']
+			cli.show_server_banner = lambda *x: None
+			# Start the server
 			try:
 				self.flaskApp.run(host=Configuration.get('http.listenIF'), 
 								  port=Configuration.get('http.port'),
 								  threaded=Configuration.get('http.multiThread'),
-								  request_handler=ACMERequestHandler)
+								  request_handler=ACMERequestHandler,
+								  debug=False)
 			except Exception as e:
 				Logging.logErr(e)
 
