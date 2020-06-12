@@ -60,13 +60,7 @@ class GRP(Resource):
 	def validate(self, originator, create=False):
 		if (res := super().validate(originator, create))[0] == False:
 			return res
-		if (ret := CSE.group.validateGroup(self, originator))[0]:
-			self['mtv'] = True	# validated
-			self.dbUpdate()
-		else:
-			self['mtv'] = False	# not validated
-			self.dbUpdate()
-		return ret
+		return CSE.group.validateGroup(self, originator)
 
 
 
