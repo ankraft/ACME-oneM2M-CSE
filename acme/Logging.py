@@ -44,9 +44,11 @@ class	Logging:
 	logLevel 			= logging.INFO
 	loggingEnabled		= True
 	enableFileLogging	= True
-	checkInterval 		= 0.2
 	worker 				= None
 	queue 				= None
+
+	checkInterval 		= 0.2		# wait (in s) between checks of the logging queue
+	queueMaxsize 		= 1000		# max number of items in the logging queue. Might otherwise grow forever on large load
 
 	@staticmethod
 	def init():
@@ -63,7 +65,7 @@ class	Logging:
 		Logging.checkInterval
 
 		# Add logging queue
-		Logging.queue = queue.SimpleQueue()
+		Logging.queue = queue.Queue(maxsize=Logging.queueMaxsize)
 
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
