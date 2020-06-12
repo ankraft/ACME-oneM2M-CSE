@@ -24,7 +24,7 @@ class SecurityManager(object):
 
 	def __init__(self):
 		Logging.log('SecurityManager initialized')
-		if Configuration.get('cse.enableACPChecks'):
+		if Configuration.get('cse.security.enableACPChecks'):
 			Logging.log('ACP checking ENABLED')
 		else:
 			Logging.log('ACP checking DISABLED')
@@ -35,7 +35,7 @@ class SecurityManager(object):
 
 
 	def hasAccess(self, originator, resource, requestedPermission, checkSelf=False, ty=None, isCreateRequest=False, parentResource=None):
-		if not Configuration.get('cse.enableACPChecks'):	# check or ignore the check
+		if not Configuration.get('cse.security.enableACPChecks'):	# check or ignore the check
 			return True
 
 		if ty is not None:

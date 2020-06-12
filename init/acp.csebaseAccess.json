@@ -1,13 +1,10 @@
 {	"m2m:acp" : {
 		"ty" : 1,
-		"ri" : "${cse.security.adminACPI}",
-		"rn" : "adminACP",
+		"ri" : "${cse.security.csebaseAccessACPI}",
+		"rn" : "csebaseAccessACP",
 		"pi" : "${cse.ri}",
 		"pv" : {
-			"acr": [{
-				"acor": [ "${cse.originator}" ],
-				"acop": 63
-			}]
+			"acr": []
 		},
 		"pvs": {
 			"acr": [{

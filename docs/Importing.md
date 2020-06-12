@@ -34,7 +34,7 @@ The following example shows the initial *CSEBase* resource definition.
 		"ty" : 5,
 		"rn" : "${cse.rn}",
 		"csi" : "${cse.csi}",
-		"acpi" : [ "${cse.adminACPI}" ]
+		"acpi" : [ "${cse.security.adminACPI}" ]
 	}
 }
 ```

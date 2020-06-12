@@ -1,6 +1,6 @@
 {	"m2m:acp" : {
 		"ty" : 1,
-		"ri" : "${cse.defaultACPI}",
+		"ri" : "${cse.security.defaultACPI}",
 		"rn" : "defaultACP",
 		"pi" : "${cse.ri}",
 		"pv" : {

@@ -48,6 +48,7 @@ The following result contents are implemented for Discovery:
 - child-resource-references (rcn=6)
 - child-resources (rcn=8)
 - modified attributes (rcn=9)
+- discovery result references	(rcn=11)
 
 # Limitations
 - **This is by no means a fully compliant, secure or stable CSE! Don't use it in production.**

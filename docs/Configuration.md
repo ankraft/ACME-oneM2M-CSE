@@ -25,6 +25,7 @@ The following macros are supported in addition to those defined in the sections 
 ## Configuration Sections
 
 [\[cse\] - General CSE Settings](#general)  
+[\[server.security\] - ACP Settings](#security)  
 [\[server.http\] - HTTP Server Settings](#server_http)  
 [\[database\] - Database Settings](#database)  
 [\[logging\] - Logging Settings](#logging)  
@@ -49,14 +50,11 @@ The following macros are supported in addition to those defined in the sections 
 |:-------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------|
 | type                     | The CSE type. Possible values: IN, MN, ASN.<br/>Default: IN                                                                                                                                    | cse.type                     |
 | serviceProviderID        | The CSE's service provider ID.<br/>Default: acme                                                                                                                                               | cse.spid                     |
-| cseID                    | The CSE ID. Can be overwritten in imported CSE definition. A CSE-ID must start with a /.<br/>Default: id-in                                                                                                                  | cse.csi                      |
+| cseID                    | The CSE ID. Can be overwritten in imported CSE definition. A CSE-ID must start with a /.<br/>Default: id-in                                                                                    | cse.csi                      |
 | resourceID               | The CSE's resource ID. Can be overwritten in imported CSE definition.<br/>Default: id-in                                                                                                       | cse.ri                       |
 | resourceName             | The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition.<br>Default: cse-in                                                                                         | cse.rn                       |
 | resourcesPath            | Directory of default resources to import.<br/>See also command line argument [–import-directory](Running.md).<br/>Default: ./init                                                              | cse.resourcesPath            |
 | expirationDelta          | ExpirationTime before resources are removed in seconds.<br/> Default: 60*60*24*365 = 31536000 = 1 year                                                                                         | cse.expirationDelta          |
-| enableACPChecks          | Enable access control checks.<br/> Default: true                                                                                                                                               | cse.enableACPChecks          |
-| adminACPI                | Admin ACP, resource identifier (e.g. from an imported ACP). Assigned by the CSE for admin access.<br /> Default: acpAdmin                                                                      | cse.adminACPI                |
-| defaultACPI              | Default ACP, resource identifier (e.g. from an imported ACP). Assigned by the CSE in case the 'acpi' attribute is missing in a resource.<br/>Default: acpDefault                               | cse.defaultACPI              |
 | originator               | Admin originator for the CSE.<br/>Default: CAdmin                                                                                                                                              | cse.originator               |
 | enableApplications       | Enable internal applications. See also individual application configuratins in the [app. ...] sections.<br/>See also command line arguments [–apps and –noapps](Running.md).<br/>Default: true | cse.enableApplications       |
 | enableNotifications      | Enable notifications.<br/>Default: true                                                                                                                                                        | cse.enableNotifications      |
@@ -64,7 +62,17 @@ The following macros are supported in addition to those defined in the sections 
 | enableTransitRequests    | Enable forwarding of requests to a remote CSE.<br/>Default: true                                                                                                                               | cse.enableTransitRequests    |
 | sortDiscoveredResources  | Enable alphabetical sorting of discovery results.<br/>Default: true                                                                                                                            | cse.sortDiscoveredResources  |
 | checkExpirationsInterval | Interval to check for expired resources. 0 means "no checking".<br/>Default: 60 seconds                                                                                                        | cse.checkExpirationsInterval |
-	
+
+<a name="security"></a>
+### [cse.security] - General CSE Security Settings
+
+| Keyword           | Description                                                                                                                                                                          | Macro Name                     |
+|:------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|
+| enableACPChecks   | Enable access control checks.<br/> Default: true                                                                                                                                     | cse.secuerity.enableACPChecks  |
+| adminACPI         | Admin ACP, resource identifier (e.g. from an imported ACP). Assigned by the CSE for admin access.<br /> Default: acpAdmin                                                            | cse.security.adminACPI         |
+| defaultACPI       | Default ACP, resource identifier (e.g. from an imported ACP). Assigned by the CSE in case the 'acpi' attribute is missing in a resource.<br/>Default: acpDefault                     | cse.security.defaultACPI       |
+| csebaseAccessACPI | The ACP resource that will dynamically receive permissions to access the CSEBase. They are assigned, for example, during AE or remoteCSE registration.<br/>Default: acpCSEBaseAccess | cse.security.csebaseAccessACPI |
+
 
 <a name="server_http"></a>
 ###	[server.http] - HTTP Server Settings

@@ -52,7 +52,7 @@ class RegistrationManager(object):
 				if parentResource.ty != C.tCSEBase and parentResource.acpi is not None:
 					resource['acpi'] = parentResource.acpi
 				else:
-					resource['acpi'] = [ Configuration.get('cse.defaultACPI') ]	# Set default ACPIRIs
+					resource['acpi'] = [ Configuration.get('cse.security.defaultACPI') ]	# Set default ACPIRIs
 
 		return (originator, C.rcOK)
 
@@ -132,6 +132,10 @@ class RegistrationManager(object):
 				return False 
 			ae['acpi'] = [ acpRes[0].ri ]		# Set ACPI (anew)
 
+		# Add the AE to the accessCSEBase ACP so that it can at least retrieve the CSEBase
+		self._addToAccessCSBaseACP(ae.aei)
+
+
 		return originator
 
 
@@ -146,6 +150,9 @@ class RegistrationManager(object):
 
 		acpi = '%s/%s%s' % (Configuration.get('cse.rn'), C.acpPrefix, resource.rn)
 		self._removeACP(rn=acpi, resource=resource)
+
+		# Remove from accessCSEBaseACP
+		self._removeFromAccessCSEBaseACP(resource.aei)
 
 		return True
 
@@ -176,19 +183,8 @@ class RegistrationManager(object):
 				return False
 			csr['acpi'] = [ acp[0].ri ]	# Set ACPI (anew)
 
-		# Add another ACP for remote CSE to access the CSE, at least to read
-		cseAcp = self._createACP(parentResource=localCSE,
-								 rn='%s%s_CSE' % (C.acpPrefix, csr.rn),
-							 	 createdByResource=csr.ri, 
-								 originators=[ originator, cseOriginator ],
-								 permission=C.permRETRIEVE)
-		if cseAcp[0] is None:
-			return False
-
-		# retrieve the CSEBase and assign the new ACP
-		if (res := CSE.dispatcher.retrieveResource(localCSE.ri))[0] is not None:	# ri should be == csi
-			res[0].acpi.append(cseAcp[0].ri)
-			CSE.dispatcher.updateResource(res[0], doUpdateCheck=False)
+		# Allow remote CSE to access the CSE, at least to read
+		self._addToAccessCSBaseACP(originator)
 
 		return True
 
@@ -211,15 +207,9 @@ class RegistrationManager(object):
 		acpi = '%s/%s%s' % (localCSE.rn, C.acpPrefix, csr.rn)
 		self._removeACP(rn=acpi, resource=csr)
 
-		# Retrieve CSE ACP
-		acpi = acpi + '_CSE'
-		if (acpRes := self._removeACP(rn=acpi, resource=csr))[0] is None:
-			return False
+		# Remove from accessCSEBaseACP
+		self._removeFromAccessCSEBaseACP(csr.csi)
 
-		#  Remove the reference from the CSE
-
-		if acpRes[0].ri in localCSE.acpi:
-			localCSE.acpi.remove(acpRes[0].ri)
 		return CSE.dispatcher.updateResource(localCSE, doUpdateCheck=False)[0] is not None
 
 
@@ -251,4 +241,16 @@ class RegistrationManager(object):
 			if  (ri := acpRes[0].createdInternally()) is not None and resource.ri == ri:
 				return CSE.dispatcher.deleteResource(acpRes[0])
 		return (None, C.rcOK)
+
+
+	def _addToAccessCSBaseACP(self, originator):
+		if (accessACP := CSE.dispatcher.retrieveResource(Configuration.get('cse.security.csebaseAccessACPI')))[0] is not None:
+			accessACP[0].addPermission([originator], C.permRETRIEVE)
+			accessACP[0].dbUpdate()
+
+
+	def _removeFromAccessCSEBaseACP(self, originator):
+		if (accessACP := CSE.dispatcher.retrieveResource(Configuration.get('cse.security.csebaseAccessACPI')))[0] is not None:
+			accessACP[0].removePermissionForOriginator(originator)
+			accessACP[0].dbUpdate()
 

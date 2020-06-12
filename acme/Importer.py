@@ -20,7 +20,7 @@ from resources import Resource
 class Importer(object):
 
 	# List of "priority" resources that must be imported first for correct CSE operation
-	_firstImporters = [ 'csebase.json', 'acp.admin.json', 'acp.default.json' ]
+	_firstImporters = [ 'csebase.json', 'acp.admin.json', 'acp.default.json', 'acp.csebaseAccess.json']
 
 	def __init__(self):
 		Logging.log('Importer initialized')
@@ -129,8 +129,8 @@ class Importer(object):
 
 	def _prepareImporting(self):
 		# temporarily disable access control
-		self._oldacp = Configuration.get('cse.enableACPChecks')
-		Configuration.set('cse.enableACPChecks', False)
+		self._oldacp = Configuration.get('cse.security.enableACPChecks')
+		Configuration.set('cse.security.enableACPChecks', False)
 		self.macroMatch = re.compile(r"\$\{[\w.]+\}")
 
 
@@ -158,5 +158,5 @@ class Importer(object):
 
 
 	def _finishImporting(self):
-		Configuration.set('cse.enableACPChecks', self._oldacp)
+		Configuration.set('cse.security.enableACPChecks', self._oldacp)
 

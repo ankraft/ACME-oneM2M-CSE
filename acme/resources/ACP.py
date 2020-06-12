@@ -64,13 +64,20 @@ class ACP(Resource):
 	#	Permission handlings
 	#
 
-	def addPermission(self, originators, permission):
+	def addPermission(self, originators : list, permission : int):
 		o = list(set(originators))	# Remove duplicates from list of originators
 		if (p := self['pv/acr']) is not None:
 			p.append({'acop' : permission, 'acor': o})
 
+	def removePermissionForOriginator(self, originator : str):
+		if (p := self['pv/acr']) is not None:
+			for acr in p:
+				if originator in acr['acor']:
+					p.remove(acr)
+					print(acr['acor'])
 
-	def addSelfPermission(self, originators, permission):
+
+	def addSelfPermission(self, originators : list, permission : int):
 		o = list(set(originators))	 # Remove duplicates from list of originators
 		if (p := self['pvs/acr']) is not None:
 			p.append({'acop' : permission, 'acor': o})

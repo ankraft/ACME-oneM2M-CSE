@@ -86,9 +86,6 @@ class Configuration(object):
 				'cse.rn'							: config.get('cse', 'resourceName',						fallback='cse-in'),
 				'cse.resourcesPath'					: config.get('cse', 'resourcesPath', 					fallback=defaultImportDirectory),
 				'cse.expirationDelta'				: config.getint('cse', 'expirationDelta', 				fallback=60*60*24*365),	# 1 year, in seconds
-				'cse.enableACPChecks'				: config.getboolean('cse', 'enableACPChecks', 			fallback=True),
-				'cse.adminACPI'						: config.get('cse', 'adminACPI', 						fallback='acpAdmin'),
-				'cse.defaultACPI'					: config.get('cse', 'defaultACPI', 						fallback='acpDefault'),
 				'cse.originator'					: config.get('cse', 'originator',						fallback='CAdmin'),
 				'cse.enableApplications'			: config.getboolean('cse', 'enableApplications', 		fallback=True),
 				'cse.enableNotifications'			: config.getboolean('cse', 'enableNotifications', 		fallback=True),
@@ -96,6 +93,14 @@ class Configuration(object):
 				'cse.enableTransitRequests'			: config.getboolean('cse', 'enableTransitRequests',		fallback=True),
 				'cse.sortDiscoveredResources'		: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
 				'cse.checkExpirationsInterval'		: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
+
+				#
+				#	CSE Security
+				#
+				'cse.security.enableACPChecks'		: config.getboolean('cse.security', 'enableACPChecks', 	fallback=True),
+				'cse.security.adminACPI'			: config.get('cse.security', 'adminACPI', 				fallback='acpAdmin'),
+				'cse.security.defaultACPI'			: config.get('cse.security', 'defaultACPI', 			fallback='acpDefault'),
+				'cse.security.csebaseAccessACPI'	: config.get('cse.security', 'csebaseAccessACPI', 		fallback='acpCSEBaseAccess'),
 
 				#
 				#	Remote CSE
