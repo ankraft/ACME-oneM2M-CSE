@@ -49,7 +49,10 @@ class BackgroundWorker(object):
 	# self-made sleep. Helps in speed-up shutdown etc
 	divider = 5.0
 	def sleep(self):
-		for i in range(0, int(self.workerUpdateIntervall * self.divider)):
-			time.sleep(1.0 / self.divider)
-			if self.doStop:
-				break
+		if self.workerUpdateIntervall < 1.0:
+			time.sleep(self.workerUpdateIntervall)
+		else:
+			for i in range(0, int(self.workerUpdateIntervall * self.divider)):
+				time.sleep(1.0 / self.divider)
+				if self.doStop:
+					break
