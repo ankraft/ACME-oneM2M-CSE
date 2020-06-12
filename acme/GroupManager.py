@@ -46,7 +46,7 @@ class GroupManager(object):
 			except ValueError:
 				return (False, C.rcInvalidArguments)
 
-
+		group.dbUpdate()
 		# TODO: check virtual resources
 		return (True, C.rcOK)
 
@@ -58,31 +58,50 @@ class GroupManager(object):
 		midsList = []		# contains the real mid list
 
 		for mid in group['mid']:
-
+			isLocalResource = True;
 			#Check whether it is a local resource or not
 			if Utils.isSPRelative(mid):
 				targetCSE = '/%s' % mid.split('/')[0]
 				if targetCSE != CSE.Configuration.get('cse.csi'):
-					return (False, C.rcNotFound)		# TODO Retrieve resource from target CSE -> check whether target CSE is a registree or registrar, if not, check descendants, otherwise forward to registrar
+					""" RETRIEVE member from a remote CSE """
+					isLocalResource = False
+					if (url := CSE.remote._getForwardURL(mid)) is None:
+						return (None, C.rcNotFound)
+					Logging.log('Retrieve request to: %s' % url)
+					(remoteResource, rsc) = CSE.httpServer.sendRetrieveRequest(url, CSE.Configuration.get('cse.csi'))
 
 			# get the resource and check it
-			id = mid[:-5] if len(mid) > 5 and (hasFopt := mid.endswith('/fopt')) else mid 	# remove /fopt to retrieve the resource
-			if (r := CSE.dispatcher.retrieveResource(id))[0] is None:
-				return (False, C.rcNotFound)
-			resource = r[0]
-
+			if isLocalResource:
+				id = mid[:-5] if len(mid) > 5 and (hasFopt := mid.endswith('/fopt')) else mid 	# remove /fopt to retrieve the resource
+				if (r := CSE.dispatcher.retrieveResource(id))[0] is None:
+					return (False, C.rcNotFound)
+				resource = r[0]
+			else:
+				if remoteResource is None:
+					if rsc == 4103:  # CSE has no privileges for retrieving the member
+						return (False, C.rcReceiverHasNoPrivileges)
+					else:  # Member not found
+						return (False, C.rcNotFound)
+				else:
+					resource = remoteResource
 			# skip if ri is already in the list
-			if (ri := resource.ri) in midsList:
-				continue
+			if isLocalResource:
+				if (ri := resource.ri) in midsList:
+					continue
+			else:
+				if mid in midsList:
+					continue
 
 			# check privileges
-			if not CSE.security.hasAccess(originator, resource, C.permRETRIEVE):
-				return (False, C.rcReceiverHasNoPrivileges)
+			if isLocalResource:
+				if not CSE.security.hasAccess(originator, resource, C.permRETRIEVE):
+					return (False, C.rcReceiverHasNoPrivileges)
 
 			# if it is a group + fopt, then recursively check members
 			if (ty := resource.ty) == C.tGRP and hasFopt:
-				if not (res := self._checkMembersAndPrivileges(resource, mt, csy, spty, originator))[0]:
-					return res
+				if isLocalResource:
+					if not (res := self._checkMembersAndPrivileges(resource, mt, csy, spty, originator))[0]:
+						return res
 				ty = resource.mt	# set the member type to the group's member type
 
 			# check specializationType spty
@@ -105,11 +124,13 @@ class GroupManager(object):
 					return (False, C.rcGroupMemberTypeInconsistent)
 
 			# member seems to be ok, so add ri to the list
-			midsList.append(ri if not hasFopt else ri + '/fopt')		# restore fopt for ri
-
+			if isLocalResource:
+				midsList.append(ri if not hasFopt else ri + '/fopt')		# restore fopt for ri
+			else:
+				midsList.append(mid)	# remote resource appended with original memberID
 		group['mid'] = midsList				# replace with a cleaned up mid
 		group['cnm'] = len(midsList)
-
+		group['mtv'] = True
 		return (True, C.rcOK)
 
 
