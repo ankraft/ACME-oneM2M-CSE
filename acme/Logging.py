@@ -10,7 +10,7 @@
 
 """	Wrapper class for the logging subsystem. """
 
-import logging, logging.handlers, os, inspect, re, sys, datetime, threading
+import logging, logging.handlers, os, inspect, re, sys, datetime, time, threading, queue
 from logging import StreamHandler, LogRecord
 from pathlib import Path
 from Configuration import Configuration
@@ -44,6 +44,9 @@ class	Logging:
 	logLevel 			= logging.INFO
 	loggingEnabled		= True
 	enableFileLogging	= True
+	checkInterval 		= 0.2
+	worker 				= None
+	queue 				= None
 
 	@staticmethod
 	def init():
@@ -56,7 +59,11 @@ class	Logging:
 		Logging.logLevel 			= Configuration.get('logging.level')
 		Logging.loggingEnabled		= Configuration.get('logging.enable')
 		Logging.logger				= logging.getLogger('logging')			# general logger
-		Logging.loggerConsole		= logging.getLogger("rich")				# Rich Console logger
+		Logging.loggerConsole		= logging.getLogger('rich')				# Rich Console logger
+		Logging.checkInterval
+
+		# Add logging queue
+		Logging.queue = queue.SimpleQueue()
 
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
@@ -72,7 +79,30 @@ class	Logging:
 		# Add a Rich Console logger
 		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=[ACMERichLogHandler(), logfp])
 
+		# Start worker to handle logs in the background
+		from helpers import BackgroundWorker
+		Logging.worker = BackgroundWorker.BackgroundWorker(Logging.checkInterval, Logging.loggingWorker, 'loggingWorker')
+		Logging.worker.start()
 	
+
+
+	@staticmethod
+	def finit():
+		if Logging.worker is not None:
+			while not Logging.queue.empty():
+				time.sleep(0.5)
+			Logging.worker.stop()
+
+
+	@staticmethod
+	def loggingWorker():
+		while not Logging.queue.empty():
+			(level, msg, caller) = Logging.queue.get()
+			file = os.path.basename(caller.filename)
+			lineno = caller.lineno
+			Logging.loggerConsole.log(level, '%s*%d*%s', file, lineno, msg)
+		return True
+
 
 	@staticmethod
 	def log(msg: str):
@@ -105,7 +135,10 @@ class	Logging:
 	@staticmethod
 	def _log(level : int, msg : str):
 		if Logging.loggingEnabled and Logging.logLevel <= level:
-			Logging.loggerConsole.log(level, msg)
+			Logging.queue.put((level, msg, inspect.getframeinfo(inspect.stack()[2][0])))
+		# if Logging.loggingEnabled and Logging.logLevel <= level:
+		# 	Logging.loggerConsole.log(level, msg)
+
 			# try:
 			# 	if Logging.loggingEnabled and Logging.logLevel <= level:
 			# 		Logging.loggerConsole.log(level, msg)
@@ -176,9 +209,15 @@ class ACMERichLogHandler(RichHandler):
 
 	def emit(self, record: LogRecord) -> None:
 		"""Invoked by logging."""
-		path = Path(record.pathname).name
+		#path = Path(record.pathname).name
 		log_style = f"logging.level.{record.levelname.lower()}"
 		message = self.format(record)
+		path = ''
+		lineno = 0
+		if len(messageElements := message.split('*', 2)) == 3:
+			path = messageElements[0]
+			lineno = messageElements[1]
+			message = messageElements[2]
 		time_format = None if self.formatter is None else self.formatter.datefmt
 		log_time = datetime.datetime.fromtimestamp(record.created)
 
@@ -187,8 +226,8 @@ class ACMERichLogHandler(RichHandler):
 		message_text = Text("%d - %s" %(threading.current_thread().native_id, message))
 		message_text = self.highlighter(message_text)
 
-		# find caller on the stack
-		caller = inspect.getframeinfo(inspect.stack()[8][0])
+		# # find caller on the stack
+		# caller = inspect.getframeinfo(inspect.stack()[8][0])
 
 		self.console.print(
 			self._log_render(
@@ -197,7 +236,16 @@ class ACMERichLogHandler(RichHandler):
 				log_time=log_time,
 				time_format=time_format,
 				level=level,
-				path=os.path.basename(caller.filename),
-				line_no=caller.lineno,
+				path=path,
+				line_no=lineno,
 			)
+			# self._log_render(
+			# 	self.console,
+			# 	[message_text],
+			# 	log_time=log_time,
+			# 	time_format=time_format,
+			# 	level=level,
+			# 	path=os.path.basename(caller.filename),
+			# 	line_no=caller.lineno,
+			# )
 		)
