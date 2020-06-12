@@ -27,7 +27,7 @@ class GRP(Resource):
 			self.setAttribute('ssi', False, overwrite=True)
 			self.setAttribute('cnm', 0, overwrite=False)	# calculated later
 			self.setAttribute('mid', [], overwrite=False)			
-			self.setAttribute('mtv', False, overwrite=True)
+			self.setAttribute('mtv', False, overwrite=False)
 			self.setAttribute('csy', C.csyAbandonMember, overwrite=False)
 
 			# These attributes are not provided by default: mnm (no default), macp (no default)
@@ -62,10 +62,10 @@ class GRP(Resource):
 			return res
 		if (ret := CSE.group.validateGroup(self, originator))[0]:
 			self['mtv'] = True	# validated
-			CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
+			self.dbUpdate()
 		else:
 			self['mtv'] = False	# not validated
-			CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
+			self.dbUpdate()
 		return ret
 
 
