@@ -146,7 +146,7 @@ class Validator(object):
 
 		# No policies?
 		if attributePolicies is None:
-			Logging.logWarn("No attribute policies")
+			Logging.logWarn("No attribute policies: %s" % jsn)
 			return (True, C.rcOK)
 
 		# determine the request column, depending on create or updates
