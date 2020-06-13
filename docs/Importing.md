@@ -13,6 +13,7 @@ The filenames for these resources must be:
 - [csebase.json](../init/csebase.json) for the CSEBase.
 - [acp.admin.json](../init/acp.admin.json) for the admin ACP.
 - [acp.default.json](../init/acp.default.json) for the default ACP.
+- [acp.csebaseAccess.json](../init/acp.csebaseAccess.json) for granting AE's and remote CSE's access to the CSEBase.
 
 ## Importing Other Resources
 
