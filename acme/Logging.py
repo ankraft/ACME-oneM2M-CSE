@@ -170,11 +170,15 @@ class ACMERichLogHandler(RichHandler):
 		super().__init__(level=level)
 
 		# Add own styles to the current console object's styles
-		self.console._styles['repr.dim'] = Style(color="grey70", dim=True)
-		self.console._styles['repr.request'] = Style(color="spring_green2")
-		self.console._styles['repr.response'] = Style(color="magenta2")
-		self.console._styles['repr.id'] = Style(color="light_sky_blue1")
-		self.console._styles['repr.url'] = Style(color="sandy_brown", underline=True)
+		self.console._styles['repr.dim'] = Style(color='grey70', dim=True)
+		self.console._styles['repr.request'] = Style(color='spring_green2')
+		self.console._styles['repr.response'] = Style(color='magenta2')
+		self.console._styles['repr.id'] = Style(color='light_sky_blue1')
+		self.console._styles['repr.url'] = Style(color='sandy_brown', underline=True)
+		self.console._styles['logging.level.debug'] = Style(color='grey50')
+		self.console._styles['logging.level.warning'] = Style(color='orange3')
+		self.console._styles['logging.level.error'] = Style(color='red', reverse=True)
+
 
 		# Set own highlights 
 		self.highlighter.highlights = [
