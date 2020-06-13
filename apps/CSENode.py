@@ -12,7 +12,8 @@ from NodeBase import *
 from Logging import Logging
 from Configuration import Configuration
 from resources import BAT
-import psutil, socket, platform, re, uuid
+import psutil, socket, platform, re, uuid, traceback
+
 
 
 class CSENode(NodeBase):
@@ -72,7 +73,7 @@ class CSENode(NodeBase):
 			self._checkMemory()
 			self._checkDeviceInfo()
 		except Exception as e:
-			Logging.logErr('Exception: %s' % e)
+			Logging.logErr('Exception: %s' % traceback.format_exc())
 			return False
 		return True
 
