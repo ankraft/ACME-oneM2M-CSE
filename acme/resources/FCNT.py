@@ -170,7 +170,7 @@ class FCNT(Resource):
 
 	# Get all flexContainerInstances of a resource and return a sorted (by ct) list 
 	def flexContainerInstances(self):
-		return sorted(CSE.dispatcher.subResources(self.ri, C.tFCI), key=lambda x: (x.ct))
+		return sorted(CSE.dispatcher.directChildResources(self.ri, C.tFCI), key=lambda x: (x.ct))
 
 
 	# Add a new FlexContainerInstance for this flexContainer

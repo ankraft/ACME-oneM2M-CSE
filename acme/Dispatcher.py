@@ -8,10 +8,12 @@
 #	through here.
 #
 
+import sys
 from Logging import Logging
 from Configuration import Configuration
 from Constants import Constants as C
 import CSE, Utils
+from resources.Resource import Resource
 
 
 class Dispatcher(object):
@@ -88,7 +90,7 @@ class Dispatcher(object):
 				return (None, C.rcInvalidArguments)
 
 			# do discovery
-			(rs, _) = self.discoverResources(id, handling, conditions, attributes, fo)
+			(rs, _) = self.discoverResources(id, originator, handling, fo, conditions, attributes)
 
 			if rs is not None:
 	
@@ -135,7 +137,7 @@ class Dispatcher(object):
 			if rcn == C.rcnAttributes:	# Just the resource & attributes
 				return (resource, res)
 			
-			(rs, rc) = self.discoverResources(id, handling, rootResource=resource)
+			(rs, rc) = self.discoverResources(id, originator, handling, rootResource=resource)
 			if rs is  None:
 				return (None, rc)
 
@@ -187,12 +189,177 @@ class Dispatcher(object):
 		return (None, C.rcNotFound)
 
 
-	def discoverResources(self, id, handling, conditions=None, attributes=None, fo=None, rootResource=None):
+	# def discoverResources(self, id, handling, fo, conditions=None, attributes=None, rootResource=None):
+	# 	if rootResource is None:
+	# 		(rootResource, _) = self.retrieveResource(id)
+	# 		if rootResource is None:
+	# 			return (None, C.rcNotFound)
+	# 	return (CSE.storage.discoverResources(rootResource, handling, conditions, attributes, fo), C.rcOK)
+
+
+	def discoverResources(self, id, originator, handling, fo, conditions=None, attributes=None, rootResource=None):
 		if rootResource is None:
 			(rootResource, _) = self.retrieveResource(id)
 			if rootResource is None:
 				return (None, C.rcNotFound)
-		return (CSE.storage.discoverResources(rootResource, handling, conditions, attributes, fo), C.rcOK)
+
+		# get all direct children
+		dcrs = self.directChildResources(id)
+
+		# Slice the page (offset and limit)
+		offset = handling['ofst'] if 'ofst' in handling else 1			# default: 1 (first resource
+		limit = handling['lim'] if 'lim' in handling else sys.maxsize	# default: system max size or "maxint"
+		dcrs = dcrs[offset-1:offset-1+limit]							# now dcrs only contains the desired child resources for ofst and lim
+
+		# Get level
+		level = handling['lvl'] if 'lvl' in handling else sys.maxsize	# default: system max size or "maxint"
+
+		# a bit of optimization. This length stays the same.
+		allLen = ((len(conditions) if conditions is not None else 0) +
+		  (len(attributes) if attributes is not None else 0) +
+		  (len(conditions.get('ty')) if conditions is not None else 0) - 1 +
+		  (len(conditions.get('cty')) if conditions is not None else 0) - 1 
+		 )
+
+		# Discover the resources
+		discoveredResources = self._discoverResources(rootResource, originator, level, fo, allLen, dcrs=dcrs, conditions=conditions, attributes=attributes)
+
+		# sort resources by type and then by lowercase rn
+		if Configuration.get('cse.sortDiscoveredResources'):
+			discoveredResources.sort(key=lambda x:(x.ty, x.rn.lower()))
+
+		return (discoveredResources, C.rcOK)
+
+		# return (CSE.storage.discoverResources(rootResource, handling, conditions, attributes, fo), C.rcOK)
+
+
+	def _discoverResources(self, rootResource : Resource, originator : str, level : int, fo : int, allLen : int, dcrs : list = None, conditions : dict = None, attributes : dict = None):
+		if rootResource is None or level == 0:		# no resource or level == 0
+			return []
+
+		# get all direct children, if not provided
+		if dcrs is None:
+			if len(dcrs := self.directChildResources(rootResource.ri)) == 0:
+				return []
+
+		# Filter and add those left to the result
+		discoveredResources = []
+		for r in dcrs:
+
+			# Exclude virtual resources
+			if Utils.isVirtualResource(r):
+				continue
+
+			# check permissions and filter. Only then add a resource
+			# First match then access. bc if no match then we don't need to check permissions (with all the overhead)
+			if self._matchResource(r, conditions, attributes, fo, allLen) and CSE.security.hasAccess(originator, r, C.permDISCOVERY):
+					discoveredResources.append(r)
+
+			# Iterate recursively over all (not only the filtered) direct child resources
+			discoveredResources.extend(self._discoverResources(r, originator, level-1, fo, allLen, conditions=conditions, attributes=attributes))
+
+		return discoveredResources
+
+
+
+	def _matchResource(self, r : Resource, conditions : dict, attributes : dict, fo : int, allLen : int) -> bool:	
+		""" Match a filter to a resource. """
+
+		# TODO: Implement a couple of optimizations. Can we determine earlier that a match will fail?
+
+		ty = r.ty
+
+		# get the parent resource
+		#
+		#	TODO when determines how the parentAttribute is actually encoded
+		#
+		# pr = None
+		# if (pi := r.get('pi')) is not None:
+		# 	print(pi)
+		# 	pr = storage.retrieveResource(ri=pi)
+		# print(pr)
+
+		# The matching works like this: go through all the conditions, compare them, and
+		# increment 'found' when matching. For fo=AND found must equal all conditions.
+		# For fo=OR found must be > 0.
+		found = 0
+
+		# check conditions
+		if conditions is not None:
+
+			# Types
+			# Multiple occurences of ty is always OR'ed. Therefore we add the count of
+			# ty's to found (to indicate that the whole set matches)
+			if (tys := conditions.get('ty')) is not None:
+				found += len(tys) if str(ty) in tys else 0
+			if (ct := r.ct) is not None:
+				found += 1 if (c_crb := conditions.get('crb')) is not None and (ct < c_crb) else 0
+				found += 1 if (c_cra := conditions.get('cra')) is not None and (ct > c_cra) else 0
+
+			if (lt := r.lt) is not None:
+				found += 1 if (c_ms := conditions.get('ms')) is not None and (lt > c_ms) else 0
+				found += 1 if (c_us := conditions.get('us')) is not None and (lt < c_us) else 0
+
+			if (st := r.st) is not None:
+				found += 1 if (c_sts := conditions.get('sts')) is not None and (str(st) > c_sts) else 0
+				found += 1 if (c_stb := conditions.get('stb')) is not None and (str(st) < c_stb) else 0
+
+			if (et := r.et) is not None:
+				found += 1 if (c_exb := conditions.get('exb')) is not None and (et < c_exb) else 0
+				found += 1 if (c_exa := conditions.get('exa')) is not None and (et > c_exa) else 0
+
+			# special handling of label-list
+			if (lbl := r.lbl) is not None and (c_lbl := conditions.get('lbl')) is not None:
+				lbla = c_lbl.split()
+				fnd = 0
+				for l in lbla:
+					fnd += 1 if l in lbl else 0
+				found += 1 if (fo == 1 and fnd == len(lbl)) or (fo == 2 and fnd > 0) else 0	# fo==or -> find any label
+				#	# TODO labelsQuery
+
+
+			if ty in [ C.tCIN, C.tFCNT ]:	# special handling for CIN, FCNT
+				if (cs := r.cs) is not None:
+					found += 1 if (sza := conditions.get('sza')) is not None and (str(cs) >= sza) else 0
+					found += 1 if (szb := conditions.get('szb')) is not None and (str(cs) < szb) else 0
+
+			# ContentFormats
+			# Multiple occurences of cnf is always OR'ed. Therefore we add the count of
+			# cnf's to found (to indicate that the whole set matches)
+			# Similar to types.
+			if ty in [ C.tCIN ]:	# special handling for CIN
+				if (cnfs := conditions.get('cty')) is not None:
+					found += len(cnfs) if r.cnf in cnfs else 0
+
+			# TODO childLabels
+			# TODO parentLabels
+			# TODO childResourceType
+			# TODO parentResourceType
+
+
+			# Attributes:
+			if attributes is not None:
+				for name in attributes:
+					val = attributes[name]
+					if '*' in val:
+						val = val.replace('*', '.*')
+						found += 1 if (rval := r[name]) is not None and re.match(val, str(rval)) else 0
+					else:
+						found += 1 if (rval := r[name]) is not None and str(val) == str(rval) else 0
+
+			# TODO childAttribute
+			# TODO parentAttribute
+
+
+		# Test whether the OR or AND criteria is fullfilled
+		if not ((fo == 2 and found > 0) or 		# OR and found something
+				(fo == 1 and allLen == found)	# AND and found everything
+			   ): 
+			return False
+
+		return True
+
+
 
 
 	#
@@ -490,8 +657,8 @@ class Dispatcher(object):
 	#	Utility methods
 	#
 
-	def subResources(self, pi, ty=None):
-		return CSE.storage.subResources(pi, ty)
+	def directChildResources(self, pi, ty=None):
+		return CSE.storage.directChildResources(pi, ty)
 
 
 	def countResources(self):

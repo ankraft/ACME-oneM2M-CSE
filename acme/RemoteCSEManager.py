@@ -185,7 +185,7 @@ class RemoteCSEManager(object):
 
 	def _retrieveLocalCSR(self, csi=None, own=True):
 		#Logging.logDebug('Retrieving local CSR: %s' % csi)
-		csrs = CSE.dispatcher.subResources(pi=Configuration.get('cse.ri'), ty=C.tCSR)
+		csrs = CSE.dispatcher.directChildResources(pi=Configuration.get('cse.ri'), ty=C.tCSR)
 		if csi is None:
 			csi = self.remoteCsi
 		if own:

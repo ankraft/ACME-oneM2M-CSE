@@ -109,7 +109,8 @@ class Resource(object):
 				del jsn['acpi']
 		if update:
 			for k in [ 'ri', 'ty', 'pi', 'ct', 'lt', 'st', 'rn', 'mgd']:
-				del jsn[k]
+				jsn.pop(k, None) # instead of using "del jsn[k]" this doesn't throw an exception if k doesn't exist
+
 		return { self.tpe : jsn } if embedded else jsn
 
 
@@ -151,8 +152,8 @@ class Resource(object):
 		# when the subresources are removed
 		CSE.notification.checkSubscriptions(self, C.netResourceDelete)
 		
-		# Remove subresources
-		rs = CSE.dispatcher.subResources(self.ri)
+		# Remove directChildResources
+		rs = CSE.dispatcher.directChildResources(self.ri)
 		for r in rs:
 			self.childRemoved(r, originator)
 			CSE.dispatcher.deleteResource(r, originator)
@@ -326,7 +327,7 @@ class Resource(object):
 		return CSE.storage.updateResource(self)
 
 
-	def dbCreate(self, overwrite=False):
+	def dbCreate(self, overwrite : bool = False):
 		return CSE.storage.createResource(self, overwrite)
 
 	def dbReload(self):
@@ -343,7 +344,13 @@ class Resource(object):
 	#
 
 	def __str__(self):
+		""" String representation. """
 		return str(self.asJSON())
+
+
+	def __repr__(self):
+		""" Object representation as string. """
+		return '%s(ri=%s)' % (self.tpe, self.ri)
 
 
 	def __eq__(self, other):

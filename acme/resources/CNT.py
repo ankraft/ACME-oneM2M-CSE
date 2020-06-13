@@ -67,7 +67,7 @@ class CNT(Resource):
 
 	# Get all content instances of a resource and return a sorted (by ct) list 
 	def contentInstances(self):
-		return sorted(CSE.dispatcher.subResources(self.ri, C.tCIN), key=lambda x: (x.ct))
+		return sorted(CSE.dispatcher.directChildResources(self.ri, C.tCIN), key=lambda x: (x.ct))
 
 
 	def childWillBeAdded(self, childResource, originator):
