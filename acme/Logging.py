@@ -99,10 +99,8 @@ class	Logging:
 	@staticmethod
 	def loggingWorker():
 		while not Logging.queue.empty():
-			(level, msg, caller) = Logging.queue.get()
-			file = os.path.basename(caller.filename)
-			lineno = caller.lineno
-			Logging.loggerConsole.log(level, '%s*%d*%s', file, lineno, msg)
+			(level, msg, caller, thread) = Logging.queue.get()
+			Logging.loggerConsole.log(level, '%s*%d*%d*%s', os.path.basename(caller.filename), caller.lineno, thread.native_id, msg)
 		return True
 
 
@@ -137,15 +135,8 @@ class	Logging:
 	@staticmethod
 	def _log(level : int, msg : str):
 		if Logging.loggingEnabled and Logging.logLevel <= level:
-			Logging.queue.put((level, msg, inspect.getframeinfo(inspect.stack()[2][0])))
-		# if Logging.loggingEnabled and Logging.logLevel <= level:
-		# 	Logging.loggerConsole.log(level, msg)
-
-			# try:
-			# 	if Logging.loggingEnabled and Logging.logLevel <= level:
-			# 		Logging.loggerConsole.log(level, msg)
-			# except:
-			# 	pass
+			# Queue a log message : (level, message, caller from stackframe, current thread)
+			Logging.queue.put((level, msg, inspect.getframeinfo(inspect.stack()[2][0]), threading.current_thread()))
 
 
 #
@@ -216,16 +207,19 @@ class ACMERichLogHandler(RichHandler):
 		message = self.format(record)
 		path = ''
 		lineno = 0
-		if len(messageElements := message.split('*', 2)) == 3:
+		threadID = 0
+		if len(messageElements := message.split('*', 3)) == 4:
 			path = messageElements[0]
 			lineno = messageElements[1]
-			message = messageElements[2]
+			threadID = messageElements[2]
+			message = messageElements[3]
 		time_format = None if self.formatter is None else self.formatter.datefmt
 		log_time = datetime.datetime.fromtimestamp(record.created)
 
 		level = Text()
 		level.append(record.levelname, log_style)
-		message_text = Text("%d - %s" %(threading.current_thread().native_id, message))
+		# message_text = Text("%d - %s" %(threading.current_thread().native_id, message))
+		message_text = Text("%s - %s" %(threadID, message))
 		message_text = self.highlighter(message_text)
 
 		# # find caller on the stack
