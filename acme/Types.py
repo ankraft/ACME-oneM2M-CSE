@@ -14,6 +14,7 @@ class BasicType(IntEnum):
 	""" Basic resource types """
 	positiveInteger	= auto()
 	nonNegInteger	= auto()
+	unsignedInt		= auto()
 	string 			= auto()
 	timestamp		= auto()
 	list 			= auto()

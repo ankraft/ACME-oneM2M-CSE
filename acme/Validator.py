@@ -30,7 +30,7 @@ attributePolicies = {
 	'at'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.NA ],
 	'aa'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.NA ],
 	'daci'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  AN.OA ],		# AE, CSE, CNT
-	'loc'	: [ BT.list, 			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CSE, AE, CNT
+	'loc'	: [ BT.list, 			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CSE, AE, CNT, FCNT
 
 
 
@@ -40,37 +40,60 @@ attributePolicies = {
 	'adri'	: [ BT.list,			CAR.car1,	RO.O,	RO.O,  AN.MA ],		# m2m:listOfURIs - ACP
 	'aei'	: [ BT.string,			CAR.car1,   RO.NP,	RO.NP, AN.OA ],		# AE
 	'airi'	: [ BT.list,			CAR.car1,	RO.O,	RO.O,  AN.MA ],		# m2m:listOfURIs - ACP
+	'ant'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  AN.OA ],		# ANI
 	'ape'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:activityPatternElements - AE
 	'api'	: [ BT.string,			CAR.car1,   RO.M,	RO.NP, AN.OA ],		# AE
 	'apn'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# AE
 	'apri'	: [ BT.list,			CAR.car1,	RO.O,	RO.O,  AN.MA ],		# m2m:listOfURIs - ACP
+	'att'	: [ BT.boolean,			CAR.car1,   RO.M,	RO.O,  AN.OA ],		# BAT
+	'awi'	: [ BT.anyURI,			CAR.car1,   RO.M,	RO.O,  AN.OA ],		# ANDI
 	'bn'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
+	'btl'	: [ BT.unsignedInt,		CAR.car1,   RO.M,	RO.O,  AN.OA ],		# BAT
+	'bts'	: [ BT.positiveInteger,	CAR.car1,   RO.M,	RO.O,  AN.OA ],		# BAT
+	'can'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  AN.OA ],		# BAT
+	'cas'	: [ BT.dict,			CAR.car1,   RO.M,	RO.O,  AN.OA ],		# BAT
 	'cbs'	: [ BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, AN.NA ],		# CNT
+	'cmlk'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# MGO
+	'cnd'	: [ BT.string,			CAR.car1,   RO.M,	RO.NP, AN.MA ],		# CND
 	'cnf'	: [ BT.string,			CAR.car01,  RO.O,	RO.NP, AN.OA ],		# m2m_contentInfo - CIN
-	'cni'	: [ BT.nonNegInteger,	CAR.car1, 	RO.NP,	RO.NP, AN.NA ],		# CNT
+	'cni'	: [ BT.nonNegInteger,	CAR.car1, 	RO.NP,	RO.NP, AN.NA ],		# CNT, FCNT (CAR01)
 	'cnm'	: [ BT.nonNegInteger,	CAR.car1, 	RO.NP,	RO.NP, AN.NA ],		# GRP
 	'con'	: [ BT.string,			CAR.car01,  RO.O,	RO.NP, AN.OA ],		# CIN
 	'conr'	: [ BT.dict,			CAR.car01,  RO.O,	RO.NP, AN.OA ],		# m2m:contentRef - CIN
 	'cr'	: [ BT.list, 			CAR.car01,  RO.O,	RO.NP, AN.NA ],		# CNT
-	'cs'	: [ BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, AN.NA ],		# CIN
+	'cs'	: [ BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, AN.NA ],		# CIN, FCNT
 	'csi'	: [ BT.string,			CAR.car1,   RO.NP,	RO.NP, AN.OA ],		# CSE
 	'cst'	: [ BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, AN.OA ],		# CSE
 	'csy'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, AN.OA ],		# m2m:consistencyStrategy - GRP
 	'csz'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:serializations - AE, CSE (RO!)
+	'cus'	: [ BT.boolean,			CAR.car1,   RO.M,	RO.O,  AN.OA ],		# BAT
+	'dc'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# MGO
+	'dis'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# BAT
 	'disr'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
+	'dvd'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  AN.OA ],		# ANDI
+	'dvt'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  AN.OA ],		# ANDI
+	'ena'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# BAT
 	'enc'	: [ BT.dict,			CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
 	'esi'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.MA ],		# m2m:e2eSecInfo - AE, CSE
 	'exc'	: [	BT.positiveInteger, CAR.car01, 	RO.O, 	RO.O,  AN.NA ],  	# SUB
 	'gn'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# GRP
 	'gpi'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
+	'hael'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# NOD
+	'hcl'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# NOD
+	'hsl'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# NOD
+	'ldv'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# ANI
 	'li'	: [ BT.anyURI,			CAR.car01,  RO.NP,	RO.NP, AN.OA ],		# CNT
 	'ln'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
+	'lnh'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# ANDI
 	'macp'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
-	'mbs'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
+	'mbs'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT, FCNT
 	'mei'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.NA ],		# m2m:externalID - AE
-	'mia'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
+	'mgca'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# NOD
+	'mgd'	: [ BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, AN.MA ],		# MGO
+	'mgs'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.NP, AN.MA ],		# MGO
+	'mia'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT, FCNT
 	'mid'	: [ BT.list,			CAR.car1,   RO.M,	RO.O,  AN.OA ],		# list of m2m:anyURI - GRP
-	'mni'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
+	'mni'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT, FCNT
 	'mnm'	: [ BT.positiveInteger,	CAR.car1,   RO.M,	RO.O,  AN.OA ],		# GRP
 	'mt'	: [ BT.nonNegInteger,	CAR.car1,   RO.O,	RO.NP, AN.OA ],		# m2m:memberType - GRP
 	'mtv'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.NP, AN.OA ],		# GRP
@@ -78,10 +101,15 @@ attributePolicies = {
 	'nec'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
 	'nct'	: [ BT.nonNegInteger,	CAR.car1,  	RO.O,	RO.O,  AN.NA ],		# SUB
 	'nfu'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
-	'nl'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# AE, CSE
+	'ni'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  AN.MA ],		# NOD
+	'nid'	: [ BT.string,			CAR.car01,  RO.NP,	RO.NP, AN.OA ],		# NOD
+	'nl'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# AE, CSE, FCNT
 	'nsp'	: [ BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
-	'nu'	: [	BT.list, 			CAR.car1, 	RO.M, 	RO.O,  AN.NA],  	# SUB
-	'or'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT
+	'nty'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],		# NOD
+	'nu'	: [	BT.list, 			CAR.car1, 	RO.M, 	RO.O,  AN.NA ],  	# SUB
+	'obis'	: [ BT.list,			CAR.car01,  RO.O,	RO.NP, AN.OA ],		# MGO
+	'obps'	: [ BT.list,			CAR.car01,  RO.O,	RO.NP, AN.OA ],		# MGO
+	'or'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# CNT, FCNT
 	'pn'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
 	'poa'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:poaList - AE, CSE
 	'psn'	: [ BT.positiveInteger,	CAR.car01,  RO.O,	RO.NP, AN.NA ],		# SUB
@@ -89,11 +117,15 @@ attributePolicies = {
 	'pvs'	: [ BT.dict,			CAR.car1,	RO.M,	RO.O,  AN.MA ],		# m2m:setOfArcs - ACP
 	'regs'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:AERegistrationStatus - AE
 	'rl'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.NA ],		# SUB
+	'rms'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.NP, AN.OA ],		# NOD
 	'rr'	: [ BT.boolean,			CAR.car1,   RO.M,	RO.O,  AN.OA ],		# AE
 	'scp'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# m2m:sessionCapabilities - AE
+	'sld'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],		# ANDI
+	'sli'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  AN.OA ],		# ANDI
 	'spty'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, AN.OA ],		# m2m:specializationType - GRP
 	'srt'	: [ BT.list, 			CAR.car01,  RO.O,	RO.NP, AN.NA ],		# CSE
 	'srv'	: [ BT.list,			CAR.car01,  RO.M,	RO.O,  AN.MA ],		# m2m:supportedReleaseVersions - AE, CSE
+	'ss'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# ANDI
 	'ssi'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.NP, AN.OA ],		# GRP
 	'su'	: [ BT.string,			CAR.car01,  RO.O,	RO.NP, AN.NA ],		# SUB
 	'tren'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# AE
@@ -119,7 +151,7 @@ attributePolicies = {
 
 
 
-def constructPolicy(attributes):
+def constructPolicy(attributes : list) -> dict:
 	""" Help to construct a dict of policies for the given list of shortnames. """
 	return { k:attributePolicies.get(k) for k in attributes }
 
@@ -136,7 +168,7 @@ class Validator(object):
 	#########################################################################
 
 
-	def	validateAttributes(self, jsn, attributePolicies, create=True, isImported=False):
+	def	validateAttributes(self, jsn : dict, tpe: str, attributePolicies : dict, create : bool = True , isImported : bool = False) -> (bool, int):
 		""" Validate a resources attributes for types etc."""
 		Logging.logDebug('Validating attributes')
 
@@ -151,14 +183,17 @@ class Validator(object):
 
 		# determine the request column, depending on create or updates
 		reqp = 2 if create else 3
-		(pureJson, key) = Utils.pureResource(jsn)
-		if key is not None and not key.startswith("m2m:"):
-			pureJson = jsn
+		(pureJson, _tpe) = Utils.pureResource(jsn)
+		tpe = _tpe if _tpe is not None and _tpe != tpe else tpe 				# determine the real tpe
+
+		# if tpe is not None and not tpe.startswith("m2m:"):
+		# 	pureJson = jsn
+		attributePolicies = self._checkAdditionalAttributes(tpe, attributePolicies)
 
 		#Logging.logDebug(attributePolicies.items())
 		for r in pureJson.keys():
 			if r not in attributePolicies.keys():
-				Logging.logWarn('Unknown attribute in resource: %s' % r)
+				Logging.logWarn('Unknown attribute: %s in resource: %s' % (r, tpe))
 				return (False, C.rcBadRequest)
 		for r, p in attributePolicies.items():
 			if p is None:
@@ -188,6 +223,8 @@ class Validator(object):
 				continue
 			if pt == BT.nonNegInteger and isinstance(v, int) and v >= 0:
 				continue
+			if pt == BT.unsignedInt and isinstance(v, int):
+				continue
 			if pt in [ BT.string, BT.timestamp, BT.anyURI ] and isinstance(v, str):
 				continue
 			if pt == BT.list and isinstance(v, list):
@@ -206,7 +243,7 @@ class Validator(object):
 		return (True, C.rcOK)
 
 
-	def validatePvs(self, jsn):
+	def validatePvs(self, jsn : dict) -> bool:
 		""" Validating special case for lists that are not allowed to be empty (pvs in ACP). """
 
 		if (l :=len(jsn['pvs'])) == 0:
@@ -226,4 +263,22 @@ class Validator(object):
 			return False
 		return True
 
+
+	#
+	#	Additional attribute definitions, e.g. for <flexContainer> specialisations.
+	#
+
+	# Will be filled by further specialization definitions.
+	additionalAttributes = { }
+
+
+	def addAdditionalAttributes(self, attributes : dict):
+		""" Add new specialization attribute definitions to the validator. """
+		self.additionalAttributes.update(attributes)
+
+
+	def _checkAdditionalAttributes(self, tpe : str, attributePolicies : dict) -> dict:
+		if tpe is not None and not tpe.startswith('m2m:') and tpe in self.additionalAttributes:
+			attributePolicies.update(self.additionalAttributes.get(tpe))
+		return attributePolicies
 

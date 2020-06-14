@@ -20,7 +20,6 @@ attributePolicies = constructPolicy([
 ])
 
 
-
 class AE(Resource):
 
 	def __init__(self, jsn=None, pi=None, create=False):
@@ -52,28 +51,31 @@ class AE(Resource):
 		nl = self['nl']
 		_nl_ = self.__node__
 		if nl is not None or _nl_ is not None:
-			if nl != _nl_:
+			if nl != _nl_:	# if different node
 				ri = self['ri']
 				# Remove from old node first
 				if _nl_ is not None:
-					(n, _) = CSE.dispatcher.retrieveResource(_nl_)
-					if n is not None:
-						hael = n['hael']
+					(node, _) = CSE.dispatcher.retrieveResource(_nl_)
+					if node is not None:
+						hael = node['hael']
 						if hael is not None and isinstance(hael, list) and ri in hael:
 							hael.remove(ri)
-						CSE.dispatcher.updateResource(n)
+							node['hael'] = hael
+							node.dbUpdate()
+							# CSE.dispatcher.updateResource(n)
 				self[Resource._node] = nl
 				# Add to new node
-				(n, _) = CSE.dispatcher.retrieveResource(nl)
-				if n is not None:
-					hael = n['hael']
+				(node, _) = CSE.dispatcher.retrieveResource(nl) # new node
+				if node is not None:
+					hael = node['hael']
 					if hael is None:
-						n['hael'] = [ ri ]
+						node['hael'] = [ ri ]
 					else:
 						if isinstance(hael, list):
 							hael.append(ri)
-							n['hael'] = hael
-					CSE.dispatcher.updateResource(n)
+							node['hael'] = hael
+					node.dbUpdate()
+					# CSE.dispatcher.updateResource(n)
 			self[Resource._node] = nl
 
 		return (True, C.rcOK)

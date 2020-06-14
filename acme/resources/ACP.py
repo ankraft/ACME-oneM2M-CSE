@@ -74,8 +74,7 @@ class ACP(Resource):
 			for acr in p:
 				if originator in acr['acor']:
 					p.remove(acr)
-					print(acr['acor'])
-
+					
 
 	def addSelfPermission(self, originators : list, permission : int):
 		o = list(set(originators))	 # Remove duplicates from list of originators

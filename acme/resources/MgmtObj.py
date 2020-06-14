@@ -13,8 +13,8 @@ import Utils
 
 class MgmtObj(Resource):
 
-	def __init__(self, jsn, pi, mgmtObjType, mgd, create=False):
-		super().__init__(mgmtObjType, jsn, pi, C.tMGMTOBJ, create=create)
+	def __init__(self, jsn, pi, mgmtObjType, mgd, create=False, attributePolicies=None):
+		super().__init__(mgmtObjType, jsn, pi, C.tMGMTOBJ, create=create, attributePolicies=attributePolicies)
 		
 		if self.json is not None:
 			self.setAttribute('mgd', mgd, overwrite=True)

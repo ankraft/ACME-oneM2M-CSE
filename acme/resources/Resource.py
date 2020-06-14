@@ -124,8 +124,9 @@ class Resource(object):
 
 		# validate the attributes but only when the resource is not instantiated.
 		# We assume that an instantiated resource is always correct
-		if self[self._isInstantiated] is None or not self[self._isInstantiated]:
-			if not (result := CSE.validator.validateAttributes(self._originalJson, self.attributePolicies, isImported=self.isImported))[0]:
+		# Also don't validate virtual resources
+		if (self[self._isInstantiated] is None or not self[self._isInstantiated]) and not self[self._isVirtual] :
+			if not (result := CSE.validator.validateAttributes(self._originalJson, self.tpe, self.attributePolicies, isImported=self.isImported))[0]:
 				return result
 
 		# validate the resource logic
@@ -162,15 +163,15 @@ class Resource(object):
 	# Update this resource with (new) fields.
 	# Call validate() afterward to react on changes.
 	def update(self, jsn=None, originator=None):
-
-		# validate the attributes
-		if not (result := CSE.validator.validateAttributes(jsn, self.attributePolicies, create=False))[0]:
-			return result
-
 		if jsn is not None:
 			if self.tpe not in jsn:
 				Logging.logWarn("Update types don't match")
 				return (False, C.rcContentsUnacceptable)
+
+			# validate the attributes
+			if not (result := CSE.validator.validateAttributes(jsn, self.tpe, self.attributePolicies, create=False))[0]:
+				return result
+
 			j = jsn[self.tpe] # get structure under the resource type specifier
 			for key in j:
 				# Leave out some attributes

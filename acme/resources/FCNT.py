@@ -9,14 +9,22 @@
 
 import sys
 from Constants import Constants as C
+from Validator import constructPolicy
 import Utils
 from .Resource import *
 
 
+# Attribute policies for this resource are constructed during startup of the CSE
+attributePolicies = constructPolicy([ 
+	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'cr', 'daci', 'loc',
+	'cnd', 'or', 'cs', 'nl', 'mni', 'mia', 'mbs', 'cni'
+
+])
+
 class FCNT(Resource):
 
 	def __init__(self, jsn=None, pi=None, fcntType=None, create=False):
-		super().__init__(fcntType, jsn, pi, C.tFCNT, create=create)
+		super().__init__(fcntType, jsn, pi, C.tFCNT, create=create, attributePolicies=attributePolicies)
 		if self.json is not None:
 			self.setAttribute('cs', 0, overwrite=False)
 
@@ -172,6 +180,12 @@ class FCNT(Resource):
 	def flexContainerInstances(self):
 		return sorted(CSE.dispatcher.directChildResources(self.ri, C.tFCI), key=lambda x: (x.ct))
 
+# TODO:
+# If the maxInstanceAge attribute is present in the targeted 
+# <flexContainer> resource, then the Hosting CSE shall set the expirationTime attribute in 
+# created <flexContainerInstance> child resource such that the time difference between expirationTime 
+# and the creationTime of the <flexContainerInstance>. The <flexContainerInstance> child resource shall 
+# not exceed the maxInstanceAge of the targeted <flexContainer> resource.
 
 	# Add a new FlexContainerInstance for this flexContainer
 	def addFlexContainerInstance(self, originator):
@@ -179,10 +193,6 @@ class FCNT(Resource):
 		jsn = {	'rn'  : '%s_%d' % (self.rn, self.st),
    				#'cnd' : self.cnd,
    				'lbl' : self.lbl,
-   				'ct'  : self.lt,
-   				'et'  : self.et,
-   				'cs'  : self.cs,
-   				'or'  : originator
 			}
 		for attr in self.json:
 			if attr not in self.ignoreAttributes:
@@ -195,4 +205,7 @@ class FCNT(Resource):
 									tpe = C.tFCI)
 
 		CSE.dispatcher.createResource(fci)
+		fci['cs'] = self.cs
+		fci.dbUpdate()
+
 
