@@ -152,6 +152,7 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 	spi 	= None
 	srn 	= None
 	ri 		= None
+	vrPresent = None
 
 	# Prepare. Remove leading / and split
 	if id[0] == '/':
@@ -161,10 +162,20 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 	if (idsLen := len(ids)) == 0:	# There must be something!
 		return (None, None, None)
 
+	# Remove virtual resource shortname if it is present
+	if ids[len(ids)-1] in ['fopt','la','ol','pcu']:
+		vrPresent = ids[len(ids)-1]
+		ids.__delitem__(len(ids)-1)
+		idsLen = idsLen - 1
+
+
+	Logging.logDebug("ID split: %s" % ids)
 	if ids[0] == '~' and idsLen > 1:			# SP-Relative
 		# print("SP-Relative")
 		csi = ids[1]							# extract the csi
 		if csi != cseri:						# Not for this CSE? retargeting
+			if vrPresent is not None:
+				ids.append(vrPresent)
 			return ('/%s' % '/'.join(ids[1:]), csi, srn)		# Early return. ri is the remaining (un)structured path
 		if idsLen > 2 and (ids[2] == csern or ids[2] == '-'):	# structured
 			ids[2] = csern if ids[2] == '-' else ids[2]
@@ -178,7 +189,9 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 		# print("Absolute")
 		spi = ids[1] 	#TODO Check whether it is same SPID, otherwise forward it throw mcc'
 		csi = ids[2]
-		if csi != cseri:	
+		if csi != cseri:
+			if vrPresent is not None:
+				ids.append(vrPresent)
 			return ('/%s' % '/'.join(ids[2:]), csi, srn)	# Not for this CSE? retargeting
 		if ids[3] == csern or ids[3] == '-':				# structured
 			ids[3] = csern if ids[3] == '-' else ids[3]
@@ -198,10 +211,14 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 
 	# Now either csi, ri or structured is set
 	if ri is not None:
+		if vrPresent is not None:
+			ri = ri + '/' + vrPresent
 		return (ri, csi, srn)
 	if srn is not None:
 		# if '/fopt' in ids:	# special handling for fanout points
 		# 	return (srn, csi, srn)
+		if vrPresent is not None:
+			srn = srn + '/' + vrPresent
 		return (riFromStructuredPath(srn), csi, srn)
 	if csi is not None:
 		return (riFromCSI('/'+csi), csi, srn)
