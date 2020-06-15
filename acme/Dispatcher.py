@@ -59,6 +59,11 @@ class Dispatcher(object):
 		 	return CSE.remote.handleTransitRetrieveRequest(request, id, originator) if self.enableTransit else (None, C.rcOperationNotAllowed)
 
 		# handle fanoutPoint requests
+		if srn is None:
+			if id.endswith('/fopt'): # Hybrid
+				if (srn := Utils.structuredPathFromRI(id[:len(id)-5])) is not None:
+					srn = srn + '/fopt'
+					id = Utils.riFromStructuredPath(srn)
 		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
 			return fanoutPointResource.handleRetrieveRequest(request, srn, originator)
@@ -380,6 +385,12 @@ class Dispatcher(object):
 			return CSE.remote.handleTransitCreateRequest(request, id, originator, ty) if self.enableTransit else (None, C.rcOperationNotAllowed)
 
 		# handle fanoutPoint requests
+		if srn is None:
+			if id.endswith('/fopt'): # Hybrid
+				if (srn := Utils.structuredPathFromRI(id[:len(id)-5])) is not None:
+					srn = srn + '/fopt'
+					id = Utils.riFromStructuredPath(srn)
+
 		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
 			return fanoutPointResource.handleCreateRequest(request, srn, originator, ct, ty)
@@ -508,6 +519,11 @@ class Dispatcher(object):
 			return CSE.remote.handleTransitUpdateRequest(request, id, originator) if self.enableTransit else (None, C.rcOperationNotAllowed)
 
 		# handle fanoutPoint requests
+		if srn is None:
+			if id.endswith('/fopt'): # Hybrid
+				if (srn := Utils.structuredPathFromRI(id[:len(id)-5])) is not None:
+					srn = srn + '/fopt'
+					id = Utils.riFromStructuredPath(srn)
 		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
 			return fanoutPointResource.handleUpdateRequest(request, srn, originator, ct)
@@ -600,6 +616,11 @@ class Dispatcher(object):
 			return (None, C.rcOperationNotAllowed)
 
 		# handle transit requests
+		if srn is None:
+			if id.endswith('/fopt'): # Hybrid
+				if (srn := Utils.structuredPathFromRI(id[:len(id)-5])) is not None:
+					srn = srn + '/fopt'
+					id = Utils.riFromStructuredPath(srn)
 		if CSE.remote.isTransitID(id):
 			return CSE.remote.handleTransitDeleteRequest(id, originator) if self.enableTransit else (None, C.rcOperationNotAllowed)
 
