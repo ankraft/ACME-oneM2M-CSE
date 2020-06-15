@@ -21,7 +21,6 @@ class Dispatcher(object):
 	def __init__(self):
 		self.rootPath 			= Configuration.get('http.root')
 		self.enableTransit 		= Configuration.get('cse.enableTransitRequests')
-
 		self.spid 				= Configuration.get('cse.spid')
 		self.csi 				= Configuration.get('cse.csi')
 		self.cseid 				= Configuration.get('cse.ri')
@@ -226,6 +225,7 @@ class Dispatcher(object):
 
 		# Discover the resources
 		discoveredResources = self._discoverResources(rootResource, originator, level, fo, allLen, dcrs=dcrs, conditions=conditions, attributes=attributes)
+		print(discoveredResources)
 
 		# sort resources by type and then by lowercase rn
 		if Configuration.get('cse.sortDiscoveredResources'):
@@ -256,7 +256,7 @@ class Dispatcher(object):
 			# check permissions and filter. Only then add a resource
 			# First match then access. bc if no match then we don't need to check permissions (with all the overhead)
 			if self._matchResource(r, conditions, attributes, fo, allLen) and CSE.security.hasAccess(originator, r, C.permDISCOVERY):
-					discoveredResources.append(r)
+				discoveredResources.append(r)
 
 			# Iterate recursively over all (not only the filtered) direct child resources
 			discoveredResources.extend(self._discoverResources(r, originator, level-1, fo, allLen, conditions=conditions, attributes=attributes))
@@ -598,7 +598,7 @@ class Dispatcher(object):
 		#
 
 		tpe = r.tpe
-		if rcn is none or rcn == C.rcnAttributes:
+		if rcn is None or rcn == C.rcnAttributes:
 			return result
 		elif rcn == C.rcnModifiedAttributes:
 			jsonNew = r.json.copy()	
@@ -696,7 +696,7 @@ class Dispatcher(object):
 		# direct child resources, NOT the root resource
 		elif rcn == C.rcnChildResources:
 			children = self.discoverChildren(id, resource, originator, handling)
-			result = {  }			# empty 
+			result = { }			# empty 
 			self._resourceTreeJSON(children, result)
 		elif rcn == C.rcnAttributesAndChildResourceReferences: 
 			children = self.discoverChildren(id, resource, originator, handling)
@@ -820,7 +820,7 @@ class Dispatcher(object):
 		result['rcn'] = rcn
 
 		# handling conditions
-		handling = {}
+		handling = { }
 		for c in ['lim', 'lvl', 'ofst']:	# integer parameters
 			if c in args:
 				handling[c] = int(args[c])
