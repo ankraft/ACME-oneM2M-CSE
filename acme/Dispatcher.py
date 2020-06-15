@@ -41,6 +41,9 @@ class Dispatcher(object):
 	# methods handle actions on the resources. Security/permission checking
 	# is done for requests, not on resource actions.
 
+
+	#########################################################################
+
 	#
 	#	Retrieve resources
 	#
@@ -59,7 +62,7 @@ class Dispatcher(object):
 		 	return CSE.remote.handleTransitRetrieveRequest(request, id, originator) if self.enableTransit else (None, C.rcOperationNotAllowed)
 
 		# handle fanout point requests
-		srn = self._buildSRNForFOPT(srn, id)
+		(srn, id) = self._buildSRNForFOPT(srn, id) # Hybrid
 		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
 			return fanoutPointResource.handleRetrieveRequest(request, srn, originator)
@@ -190,13 +193,19 @@ class Dispatcher(object):
 		return (None, C.rcNotFound)
 
 
+	#########################################################################
+
+	#
+	#	Discover Resources
+	#
+
+
 	# def discoverResources(self, id, handling, fo, conditions=None, attributes=None, rootResource=None):
 	# 	if rootResource is None:
 	# 		(rootResource, _) = self.retrieveResource(id)
 	# 		if rootResource is None:
 	# 			return (None, C.rcNotFound)
 	# 	return (CSE.storage.discoverResources(rootResource, handling, conditions, attributes, fo), C.rcOK)
-
 
 	def discoverResources(self, id, originator, handling, fo, conditions=None, attributes=None, rootResource=None):
 		if rootResource is None:
@@ -361,7 +370,7 @@ class Dispatcher(object):
 		return True
 
 
-
+	#########################################################################
 
 	#
 	#	Add resources
@@ -381,7 +390,7 @@ class Dispatcher(object):
 			return CSE.remote.handleTransitCreateRequest(request, id, originator, ty) if self.enableTransit else (None, C.rcOperationNotAllowed)
 
 		# handle fanout point requests
-		srn = self._buildSRNForFOPT(srn, id)
+		(srn, id) = self._buildSRNForFOPT(srn, id) # Hybrid
 		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
 			return fanoutPointResource.handleCreateRequest(request, srn, originator, ct, ty)
@@ -487,6 +496,7 @@ class Dispatcher(object):
 		return (resource, C.rcCreated) 	# everything is fine. resource created.
 
 
+	#########################################################################
 
 	#
 	#	Update resources
@@ -584,6 +594,7 @@ class Dispatcher(object):
 		return resource.dbUpdate()
 
 
+	#########################################################################
 
 	#
 	#	Remove resources
@@ -656,31 +667,34 @@ class Dispatcher(object):
 			parentResource.childRemoved(resource, originator)
 		return (resource, rc)
 
+	#########################################################################
 
 	#
 	#	Utility methods
 	#
 
-	def directChildResources(self, pi, ty=None):
+	def directChildResources(self, pi : str, ty : int = None) -> list:
+		""" Return all child resources of resources. """
 		return CSE.storage.directChildResources(pi, ty)
 
 
-	def countResources(self):
+	def countResources(self) -> int:
+		""" Get total number of resources. """
 		return CSE.storage.countResources()
 
 
-	# All resources of a type
-	def retrieveResourcesByType(self, ty):
+	def retrieveResourcesByType(self, ty : int) -> list:
+		""" Retrieve all resources of a type. """
 		return CSE.storage.retrieveResource(ty=ty)
 
 
-	def _buildSRNForFOPT(self, srn, id):
-		if srn is None:
-			if id.endswith('/fopt'): # Hybrid
-				if (srn := Utils.structuredPathFromRI(id[:-5])) is not None:
-					srn += '/fopt'
-					# id = Utils.riFromStructuredPath(srn) # TODO? 
-		return srn
+	def _buildSRNForFOPT(self, srn : str, id : str) -> (str, str):
+		""" Handle Hybrid ID. """
+		if srn is None and id.endswith('/fopt'): # Hybrid
+			if (srn := Utils.structuredPathFromRI(id[:-5])) is not None:
+				srn += '/fopt'
+				id = Utils.riFromStructuredPath(srn) # id becomes the ri of the fopt
+		return (srn, id)
 
 
 	#########################################################################
