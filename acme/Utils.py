@@ -290,11 +290,12 @@ def resourceFromJSON(jsn, pi=None, acpi=None, tpe=None, create=False, isImported
 	return None
 
 
-# return the "pure" json without the "m2m:xxx" resource specifier
+# return the "pure" json without the "m2m:xxx" or "<domain>:id" resource specifier
 excludeFromRoot = [ 'pi' ]
 def pureResource(jsn):
 	rootKeys = list(jsn.keys())
-	if len(rootKeys) == 1 and rootKeys[0] not in excludeFromRoot:
+	# Try to determine the root identifier 
+	if len(rootKeys) == 1 and (rk := rootKeys[0]) not in excludeFromRoot and re.match('[\w]+:[\w]', rk):
 		return (jsn[rootKeys[0]], rootKeys[0])
 	return (jsn, None)
 
