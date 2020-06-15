@@ -15,8 +15,7 @@ import Utils
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
 	'ty', 'ri', 'rn', 'pi', 'ct', 'et', 'lbl', 'acpi',
-	'cs',
-
+	'cs'
 ])
 
 class FCI(Resource):

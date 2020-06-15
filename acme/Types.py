@@ -15,6 +15,7 @@ class BasicType(IntEnum):
 	positiveInteger	= auto()
 	nonNegInteger	= auto()
 	unsignedInt		= auto()
+	unsignedLong	= auto()
 	string 			= auto()
 	timestamp		= auto()
 	list 			= auto()

@@ -117,7 +117,6 @@ class CSENode(NodeBase):
 			self.deviceInfo['dvnm'] = socket.gethostname()
 			self.deviceInfo['osv'] = '%s %s %s' % (platform.system(), platform.release(), platform.machine())
 			self.deviceInfo['syst'] = Utils.getResourceDate()
-			self.deviceInfo['dlb'] = [ '%s:%s' % ('IP', socket.gethostbyname(socket.gethostname())),
-									   '%s:%s' % ('MAC', ':'.join(re.findall('..', '%012x' % uuid.getnode())))
-									 ]
+			self.deviceInfo['dlb'] = '| %s:%s %s:%s' % ('IP', socket.gethostbyname(socket.gethostname()),
+														  'MAC', ':'.join(re.findall('..', '%012x' % uuid.getnode())))
 			self.updateDeviceInfo()

@@ -9,8 +9,15 @@
 
 from .MgmtObj import *
 from Constants import Constants as C
+from Validator import constructPolicy
 import Utils
 
+# Attribute policies for this resource are constructed during startup of the CSE
+attributePolicies = constructPolicy([ 
+	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 
+	'mgd', 'obis', 'obps', 'dc', 'mgs', 'cmlk',
+	'vr', 'swn', 'url', 'ins', 'acts', 'in', 'un', 'act', 'dea'
+])
 
 statusUninitialized = 0
 statusSuccessful = 1
@@ -26,16 +33,16 @@ defaultStatus = { 'acn' : '', 'sus' : statusUninitialized }
 class SWR(MgmtObj):
 
 	def __init__(self, jsn=None, pi=None, create=False):
-		super().__init__(jsn, pi, C.tsSWR, C.mgdSWR, create=create)
+		super().__init__(jsn, pi, C.tsSWR, C.mgdSWR, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('vr', defaultVersion, overwrite=False)
 			self.setAttribute('swn', defaultSoftwareName, overwrite=False)
 			self.setAttribute('url', defaultURL, overwrite=False)
-			self.setAttribute('ins', defaultStatus, overwrite=True)
-			self.setAttribute('acts', defaultStatus, overwrite=True)
-			self.setAttribute('in', False, overwrite=True)
-			self.setAttribute('un', False, overwrite=True)
-			self.setAttribute('act', False, overwrite=True)
-			self.setAttribute('dea', False, overwrite=True)
+			self.setAttribute('ins', defaultStatus, overwrite=False)
+			self.setAttribute('acts', defaultStatus, overwrite=False)
+			self.setAttribute('in', False, overwrite=False)
+			self.setAttribute('un', False, overwrite=False)
+			self.setAttribute('act', False, overwrite=False)
+			self.setAttribute('dea', False, overwrite=False)
 

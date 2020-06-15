@@ -16,7 +16,8 @@ import Utils
 attributePolicies = constructPolicy([ 
 	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 
 	'mgd', 'obis', 'obps', 'dc', 'mgs', 'cmlk',
-	'can', 'att', 'cas', 'ena', 'dis', 'cus'
+	'dlb', 'man', 'mfdl', 'mfd', 'mod', 'smod', 'dty', 'dvnm', 'fwv', 'swv', 
+	'hwv', 'osv', 'cnty', 'loc', 'syst', 'spur', 'purl', 'ptl'
 ])
 
 defaultDeviceType = 'unknown'
