@@ -18,9 +18,7 @@ import CSE
 
 
 def uniqueRI(prefix=''):
-	p = prefix.split(':')
-	p = p[1] if len(p) == 2 else p[0]
-	return p + uniqueID()
+	return noDomain(prefix) + uniqueID()
 
 
 def uniqueID():
@@ -32,16 +30,20 @@ def isUniqueRI(ri):
 
 
 def uniqueRN(prefix='un'):
-	p = prefix.split(':')
-	p = p[1] if len(p) == 2 else p[0]
+
 	# return "%s_%s" % (p, ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=C.maxIDLength)))
-	return "%s_%s" % (p, _randomID())
+	return "%s_%s" % (noDomain(prefix), _randomID())
 
 
 # create a unique aei, M2M-SP type
 def uniqueAEI(prefix='S'):
 	# return prefix + ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=C.maxIDLength))
 	return prefix + _randomID()
+
+
+def noDomain(id):
+	p = id.split(':')
+	return p[1] if len(p) == 2 else p[0]
 
 
 def _randomID():

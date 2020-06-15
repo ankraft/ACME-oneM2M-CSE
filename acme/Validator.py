@@ -34,8 +34,6 @@ attributePolicies = {
 
 
 
-
-
 	'acrs'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.NA ],		# m2m:listOfURIs - SUB
 	'act'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.O,  AN.OA ],		# SWR
 	'acts'	: [ BT.dict,			CAR.car01,  RO.NP,	RO.NP, AN.NA ],		# SWR
@@ -180,7 +178,6 @@ attributePolicies = {
 	# CIN deletionCnt
 	# GRP: somecastEnable, somecastAlgorithm not defined yet (shortname)
 
-	
 
 }
 

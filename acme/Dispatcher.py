@@ -138,29 +138,22 @@ class Dispatcher(object):
 				return (None, res)
 			if not CSE.security.hasAccess(originator, resource, C.permRETRIEVE):
 				return (None, C.rcOriginatorHasNoPrivilege)
+
 			if rcn == C.rcnAttributes:	# Just the resource & attributes
 				return (resource, res)
-			
-			(rs, rc) = self.discoverResources(id, originator, handling, rootResource=resource)
-			if rs is  None:
-				return (None, rc)
 
-			# check and filter by ACP
-			result = []
-			for r in rs:
-				if CSE.security.hasAccess(originator, r, C.permRETRIEVE):
-					result.append(r)
+			children = self.discoverChildren(id, resource, originator, handling)
 
 			# Handle more sophisticated result content types
 			if rcn == C.rcnAttributesAndChildResources:
-				self._resourceTreeJSON(result, resource)	# the function call add attributes to the result resource
+				self._resourceTreeJSON(children, resource)	# the function call add attributes to the result resource
 				return (resource, C.rcOK)
 
 			elif rcn == C.rcnAttributesAndChildResourceReferences:
-				self._resourceTreeReferences(result, resource, drt)	# the function call add attributes to the result resource
+				self._resourceTreeReferences(children, resource, drt)	# the function call add attributes to the result resource
 				return (resource, C.rcOK)
 			elif rcn == C.rcnChildResourceReferences: # child resource references
-				return (self._resourcesToURIList(result, drt), C.rcOK)
+				return (self._resourcesToURIList(children, drt), C.rcOK)
 
 			return (None, C.rcInvalidArguments)
 			# TODO check rcn. Allowed only 1, 4, 5 . 1= as now. If 4,5 check lim etc
@@ -207,7 +200,7 @@ class Dispatcher(object):
 	# 			return (None, C.rcNotFound)
 	# 	return (CSE.storage.discoverResources(rootResource, handling, conditions, attributes, fo), C.rcOK)
 
-	def discoverResources(self, id, originator, handling, fo, conditions=None, attributes=None, rootResource=None):
+	def discoverResources(self, id, originator, handling, fo=1, conditions=None, attributes=None, rootResource=None):
 		if rootResource is None:
 			(rootResource, _) = self.retrieveResource(id)
 			if rootResource is None:
@@ -227,9 +220,9 @@ class Dispatcher(object):
 		# a bit of optimization. This length stays the same.
 		allLen = ((len(conditions) if conditions is not None else 0) +
 		  (len(attributes) if attributes is not None else 0) +
-		  (len(conditions.get('ty')) if conditions is not None else 0) - 1 +
-		  (len(conditions.get('cty')) if conditions is not None else 0) - 1 
-		 )
+		  (len(conditions.get('ty'))-1 if conditions is not None else 0) +		# -1 : compensate for len(conditions) in line 1
+		  (len(conditions.get('cty'))-1 if conditions is not None else 0) 		# -1 : compensate for len(conditions) in line 1 
+		)
 
 		# Discover the resources
 		discoveredResources = self._discoverResources(rootResource, originator, level, fo, allLen, dcrs=dcrs, conditions=conditions, attributes=attributes)
@@ -403,6 +396,12 @@ class Dispatcher(object):
 	def handleCreateRequest(self, request, id, originator, ct, ty):
 		Logging.logDebug('Adding new resource')
 
+		try:
+			attrs = self._getArguments(request)
+			rcn   = attrs.get('rcn')
+		except Exception as e:
+			return (None, C.rcInvalidArguments)
+
 		if ct == None or ty == None:
 			return (None, C.rcBadRequest)
 
@@ -448,10 +447,30 @@ class Dispatcher(object):
 		originator = res[0]
 
 		# Create the resource. If this fails we register everything
-		if (res := self.createResource(nr, pr, originator))[0] is None:
+		if (result := self.createResource(nr, pr, originator))[0] is None:
 			CSE.registration.checkResourceDeletion(nr, originator) # deregister resource. Ignore result, we take this from the creation
-			return res
-		return res
+			return result
+
+		#
+		# Handle RCN's
+		#
+
+		tpe = result[0].tpe
+		if rcn is None or rcn == C.rcnAttributes:	# Just the resource & attributes
+			return result
+		elif rcn == C.rcnModifiedAttributes:
+			jsonOrg =request.json[tpe]
+			jsonNew = result[0].asJSON()[tpe]
+			return ( { tpe : Utils.resourceDiff(jsonOrg, jsonNew) }, result[1] )
+		elif rcn == C.rcnHierarchicalAddress:
+			return ( { 'm2m:uri' : Utils.structuredPath(result[0]) }, result[1] )
+		elif rcn == C.rcnHierarchicalAddressAttributes:
+			return ( { 'm2m:rce' : { Utils.noDomain(tpe) : result[0].asJSON()[tpe], 'uri' : Utils.structuredPath(result[0]) }}, result[1])
+		elif rcn == C.rcnNothing:
+			return (None, result[1])
+		# TODO C.rcnDiscoveryResultReferences 
+
+		return result
 
 
 
@@ -569,18 +588,25 @@ class Dispatcher(object):
 		if Utils.isVirtualResource(r):
 			return r.handleUpdateRequest(request, id, originator, ct)
 
-		jsonOrg = r.json.copy()
+		jsonOrg = r.json.copy()	# Save for later
 		if (result := self.updateResource(r, jsn, originator=originator))[0] is None:
 			return (None, result[1])
 		(r, rc) = result
 
-		# only send the diff
-		if rcn == C.rcnAttributes:
+		#
+		# Handle RCN's
+		#
+
+		tpe = r.tpe
+		if rcn is none or rcn == C.rcnAttributes:
 			return result
-		if rcn == C.rcnModifiedAttributes:
-			jsonNew = r.json.copy()
-			result = { r.tpe : Utils.resourceDiff(jsonOrg, jsonNew) }
-			return ( result if rc == C.rcUpdated else None, rc)
+		elif rcn == C.rcnModifiedAttributes:
+			jsonNew = r.json.copy()	
+			return ( { tpe : Utils.resourceDiff(jsonOrg, jsonNew) }, result[1] )
+		elif rcn == C.rcnNothing:
+			return (None, result[1])
+		# TODO C.rcnDiscoveryResultReferences 
+
 		return (None, C.rcNotImplemented)
 
 
@@ -630,22 +656,62 @@ class Dispatcher(object):
 	def handleDeleteRequest(self, request, id, originator):
 		Logging.logDebug('Removing resource')
 
+		# get arguments
+		try:
+			attrs 		= self._getArguments(request)
+			rcn  		= attrs.get('rcn')
+			drt 		= attrs.get('drt')
+			handling 	= attrs.get('__handling__')
+		except Exception as e:
+			return (None, C.rcInvalidArguments)
+
 		# get resource to be removed and check permissions
-		(r, _) = self.retrieveResource(id)
-		if r is None:
+		(resource, _) = self.retrieveResource(id)
+		if resource is None:
 			Logging.logDebug('Resource not found')
 			return (None, C.rcNotFound)
-		# if r.readOnly:
-		# 	return (None, C.rcOperationNotAllowed)
-		if CSE.security.hasAccess(originator, r, C.permDELETE) == False:
+
+		if CSE.security.hasAccess(originator, resource, C.permDELETE) == False:
 			return (None, C.rcOriginatorHasNoPrivilege)
 
 		# Check for virtual resource
-		if Utils.isVirtualResource(r):
+		if Utils.isVirtualResource(resource):
 			return r.handleDeleteRequest(request, id, originator)
 
+		#
+		# Handle RCN's first. Afterward the resource & children are no more
+		#
+
+		tpe = resource.tpe
+		result = None
+		if rcn is None or rcn == C.rcnNothing:
+			result = None
+		elif rcn == C.rcnAttributes:
+			result = resource.asJSON()
+		# resource and child resources, full attributes
+		elif rcn == C.rcnAttributesAndChildResources:
+			children = self.discoverChildren(id, resource, originator, handling)
+			self._childResourceTree(children, resource)	# the function call add attributes to the result resource. Don't use the return value directly
+			result = resource.asJSON()
+		# direct child resources, NOT the root resource
+		elif rcn == C.rcnChildResources:
+			children = self.discoverChildren(id, resource, originator, handling)
+			result = {  }			# empty 
+			self._resourceTreeJSON(children, result)
+		elif rcn == C.rcnAttributesAndChildResourceReferences: 
+			children = self.discoverChildren(id, resource, originator, handling)
+			self._resourceTreeReferences(children, resource, drt)	# the function call add attributes to the result resource
+			result = resource.asJSON()
+		elif rcn == C.rcnChildResourceReferences: # child resource references
+			children = self.discoverChildren(id, resource, originator, handling)
+			result = self._resourceTreeReferences(children, None, drt)
+		# TODO C.rcnDiscoveryResultReferences 
+
 		# remove resource
-		return self.deleteResource(r, originator, withDeregistration=True)
+		ret = self.deleteResource(resource, originator, withDeregistration=True)
+
+
+		return (result, ret[1])
 
 
 	def deleteResource(self, resource, originator=None, withDeregistration=False):
@@ -678,6 +744,18 @@ class Dispatcher(object):
 		return CSE.storage.directChildResources(pi, ty)
 
 
+	def discoverChildren(self, id, resource, originator, handling):
+		(rs, rc) = self.discoverResources(id, originator, handling, rootResource=resource)
+		if rs is  None:
+			return (None, rc)
+		# check and filter by ACP
+		children = []
+		for r in rs:
+			if CSE.security.hasAccess(originator, r, C.permRETRIEVE):
+				children.append(r)
+		return children
+
+
 	def countResources(self) -> int:
 		""" Get total number of resources. """
 		return CSE.storage.countResources()
@@ -702,7 +780,6 @@ class Dispatcher(object):
 	#
 	#	Internal methods
 	#
-
 
 
 	# Get the request arguments, or meaningful defaults.
@@ -757,11 +834,6 @@ class Dispatcher(object):
 
 		# conditions
 		conditions = {}
-
-		# TODO Check ty multiple times. Then -> "ty" : array?
-		# also contentType 
-		# Extra dictionary! as in attributes
-
 
 		for c in ['crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbl', 'lbq', 'sza', 'szb', 'catr', 'patr']:
 			if (x:= args.get(c)) is not None:

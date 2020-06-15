@@ -178,7 +178,9 @@ class Constants(object):
 
 	# Result Content types
 	rcnNothing								= 0
-	rcnAttributes 							= 1	
+	rcnAttributes 							= 1
+	rcnHierarchicalAddress					= 2
+	rcnHierarchicalAddressAttributes		= 3
 	rcnAttributesAndChildResources			= 4	
 	rcnAttributesAndChildResourceReferences	= 5
 	rcnChildResourceReferences				= 6

@@ -225,7 +225,7 @@ class HttpServer(object):
 	#########################################################################
 
 	def _prepareResponse(self, request, resource, returnCode):
-		if resource is None or returnCode == C.rcDeleted:
+		if resource is None:
 			r = ''
 		elif isinstance(resource, dict):
 			r = json.dumps(resource)
