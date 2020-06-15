@@ -148,11 +148,11 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 		Also handle retargeting paths.
 		The return tupple is (RI, CSI, SRN).
 	"""
-	csi 	= None
-	spi 	= None
-	srn 	= None
-	ri 		= None
-	vrPresent = None
+	csi 		= None
+	spi 		= None
+	srn 		= None
+	ri 			= None
+	vrPresent	= None
 
 	# Prepare. Remove leading / and split
 	if id[0] == '/':
@@ -163,18 +163,16 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 		return (None, None, None)
 
 	# Remove virtual resource shortname if it is present
-	if ids[len(ids)-1] in ['fopt','la','ol','pcu']:
-		vrPresent = ids[len(ids)-1]
-		ids.__delitem__(len(ids)-1)
-		idsLen = idsLen - 1
+	if ids[-1] in C.tVirtualResourcesNames:
+		vrPresent = ids.pop()	# remove and return last path element
+		idsLen -= 1
 
-
-	Logging.logDebug("ID split: %s" % ids)
+	# Logging.logDebug("ID split: %s" % ids)
 	if ids[0] == '~' and idsLen > 1:			# SP-Relative
 		# print("SP-Relative")
 		csi = ids[1]							# extract the csi
 		if csi != cseri:						# Not for this CSE? retargeting
-			if vrPresent is not None:
+			if vrPresent is not None:			# append last path element again
 				ids.append(vrPresent)
 			return ('/%s' % '/'.join(ids[1:]), csi, srn)		# Early return. ri is the remaining (un)structured path
 		if idsLen > 2 and (ids[2] == csern or ids[2] == '-'):	# structured
@@ -190,7 +188,7 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 		spi = ids[1] 	#TODO Check whether it is same SPID, otherwise forward it throw mcc'
 		csi = ids[2]
 		if csi != cseri:
-			if vrPresent is not None:
+			if vrPresent is not None:						# append last path element again
 				ids.append(vrPresent)
 			return ('/%s' % '/'.join(ids[2:]), csi, srn)	# Not for this CSE? retargeting
 		if ids[3] == csern or ids[3] == '-':				# structured
@@ -212,13 +210,13 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 	# Now either csi, ri or structured is set
 	if ri is not None:
 		if vrPresent is not None:
-			ri = ri + '/' + vrPresent
+			ri = '%s/%s' % (ri, vrPresent)
 		return (ri, csi, srn)
 	if srn is not None:
 		# if '/fopt' in ids:	# special handling for fanout points
 		# 	return (srn, csi, srn)
 		if vrPresent is not None:
-			srn = srn + '/' + vrPresent
+			srn = '%s/%s' % (srn, vrPresent)
 		return (riFromStructuredPath(srn), csi, srn)
 	if csi is not None:
 		return (riFromCSI('/'+csi), csi, srn)

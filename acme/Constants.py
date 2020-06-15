@@ -52,6 +52,8 @@ class Constants(object):
 	tsFCNT_OL	= 'm2m:ol'
 	tFCNT_LA	=  -20005
 	tsFCNT_LA	= 'm2m:la'
+	tPCH_PCU	=  -20006
+	tsPCH_PCU	= 'm2m:pcu'
 
 	# <mgmtObj> Specializations
 
@@ -78,7 +80,8 @@ class Constants(object):
 
 	# List of virtual resources
 
-	tVirtualResources = [ tCNT_LA, tCNT_OL, tGRP_FOPT ]
+	tVirtualResources 				= [ tCNT_LA, tCNT_OL, tGRP_FOPT, tPCH_PCU ]
+	tVirtualResourcesNames 			= [ 'fopt', 'la', 'ol', 'pcu' ]
 
 	# Supported by this CSE
 	supportedResourceTypes 			= [ tACP, tAE, tCNT, tCIN, tCSEBase, tGRP, tMGMTOBJ, tNOD, tCSR, tSUB, tFCNT, tFCI ]
