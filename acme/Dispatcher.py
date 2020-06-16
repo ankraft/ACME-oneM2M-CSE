@@ -60,8 +60,10 @@ class Dispatcher(object):
 		if CSE.remote.isTransitID(id):
 		 	return CSE.remote.handleTransitRetrieveRequest(request, id, originator) if self.enableTransit else (None, C.rcOperationNotAllowed)
 
+		# handle hybrid ids
+		(srn, id) = self._buildSRNFromHybrid(srn, id) # Hybrid
+
 		# handle fanout point requests
-		(srn, id) = self._buildSRNForFOPT(srn, id) # Hybrid
 		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
 			return fanoutPointResource.handleRetrieveRequest(request, srn, originator)
@@ -382,8 +384,10 @@ class Dispatcher(object):
 		if CSE.remote.isTransitID(id):
 			return CSE.remote.handleTransitCreateRequest(request, id, originator, ty) if self.enableTransit else (None, C.rcOperationNotAllowed)
 
+		# handle hybrid id
+		(srn, id) = self._buildSRNFromHybrid(srn, id)  # Hybrid
+
 		# handle fanout point requests
-		(srn, id) = self._buildSRNForFOPT(srn, id) # Hybrid
 		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
 			return fanoutPointResource.handleCreateRequest(request, srn, originator, ct, ty)
@@ -538,8 +542,10 @@ class Dispatcher(object):
 		if CSE.remote.isTransitID(id):
 			return CSE.remote.handleTransitUpdateRequest(request, id, originator) if self.enableTransit else (None, C.rcOperationNotAllowed)
 
+		# handle hybrid id
+		(srn, id) = self._buildSRNFromHybrid(srn, id)  # Hybrid
+
 		# handle fanout point requests
-		srn = self._buildSRNForFOPT(srn, id)
 		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
 			return fanoutPointResource.handleUpdateRequest(request, srn, originator, ct)
@@ -643,8 +649,10 @@ class Dispatcher(object):
 		if CSE.remote.isTransitID(id):
 			return CSE.remote.handleTransitDeleteRequest(id, originator) if self.enableTransit else (None, C.rcOperationNotAllowed)
 
+		# handle hybrid id
+		(srn, id) = self._buildSRNFromHybrid(srn, id)  # Hybrid
+
 		# handle fanout point requests
-		srn = self._buildSRNForFOPT(srn, id)
 		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
 			return fanoutPointResource.handleDeleteRequest(request, srn, originator)
@@ -768,11 +776,12 @@ class Dispatcher(object):
 		return CSE.storage.retrieveResource(ty=ty)
 
 
-	def _buildSRNForFOPT(self, srn : str, id : str) -> (str, str):
+	def _buildSRNFromHybrid(self, srn : str, id : str) -> (str, str):
 		""" Handle Hybrid ID. """
-		if srn is None and id.endswith('/fopt'): # Hybrid
-			if (srn := Utils.structuredPathFromRI(id[:-5])) is not None:
-				srn += '/fopt'
+		ids = id.split('/')
+		if srn is None and len(ids) > 1  and ids[-1] in C.tVirtualResourcesNames: # Hybrid
+			if (srn := Utils.structuredPathFromRI('/'.join(ids[:-1]))) is not None:
+				srn = '/'.join([srn, ids[-1]])
 				id = Utils.riFromStructuredPath(srn) # id becomes the ri of the fopt
 		return (srn, id)
 
