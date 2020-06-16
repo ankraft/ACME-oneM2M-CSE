@@ -8,7 +8,7 @@
 #	through here.
 #
 
-import sys
+import sys, traceback
 from Logging import Logging
 from Configuration import Configuration
 from Constants import Constants as C
@@ -76,7 +76,8 @@ class Dispatcher(object):
 		Logging.logDebug('Handle retrieve resource: %s' % id)
 
 		try:
-			attrs = self._getArguments(request)
+			if (attrs := self._getArguments(request)) is None:
+				return (None, C.rcInvalidArguments)
 			fu 			= attrs.get('fu')
 			drt 		= attrs.get('drt')
 			handling 	= attrs.get('__handling__')
@@ -85,6 +86,7 @@ class Dispatcher(object):
 			fo 			= attrs.get('fo')
 			rcn 		= attrs.get('rcn')
 		except Exception as e:
+			#Logging.logWarn('Exception: %s' % traceback.format_exc())
 			return (None, C.rcInvalidArguments)
 
 
@@ -155,7 +157,10 @@ class Dispatcher(object):
 				return (resource, C.rcOK)
 			elif rcn == C.rcnChildResourceReferences: # child resource references
 				return (self._resourcesToURIList(children, drt), C.rcOK)
-
+			elif rcn == C.rcnChildResources:
+				resource = {  }		# empty 
+				self._resourceTreeJSON(children, resource)
+				return (resource, C.rcOK)
 			return (None, C.rcBadRequest)
 			# TODO check rcn. Allowed only 1, 4, 5 . 1= as now. If 4,5 check lim etc
 
@@ -227,7 +232,6 @@ class Dispatcher(object):
 
 		# Discover the resources
 		discoveredResources = self._discoverResources(rootResource, originator, level, fo, allLen, dcrs=dcrs, conditions=conditions, attributes=attributes)
-		print(discoveredResources)
 
 		# sort resources by type and then by lowercase rn
 		if Configuration.get('cse.sortDiscoveredResources'):
@@ -796,6 +800,7 @@ class Dispatcher(object):
 
 	# Get the request arguments, or meaningful defaults.
 	# Only a small subset is supported yet
+	# Throws an exception when a wrong type is encountered. This is part of the validation
 	def _getArguments(self, request):
 		result = { }
 
@@ -803,6 +808,8 @@ class Dispatcher(object):
 
 		# basic attributes
 		if (fu := args.get('fu')) is not None:
+			if not CSE.validator.validateRequestArgument('fu', fu):
+				return None
 			fu = int(fu)
 			del args['fu']
 		else:
@@ -811,6 +818,8 @@ class Dispatcher(object):
 
 
 		if (drt := args.get('drt')) is not None: # 1=strucured, 2=unstructured
+			if not CSE.validator.validateRequestArgument('drt', drt):
+				return None
 			drt = int(drt)
 			del args['drt']
 		else:
@@ -818,6 +827,8 @@ class Dispatcher(object):
 		result['drt'] = drt
 
 		if (rcn := args.get('rcn')) is not None: 
+			if not CSE.validator.validateRequestArgument('rcn', rcn):
+				return None
 			rcn = int(rcn)
 			del args['rcn']
 		else:
@@ -835,11 +846,17 @@ class Dispatcher(object):
 		handling = { }
 		for c in ['lim', 'lvl', 'ofst']:	# integer parameters
 			if c in args:
-				handling[c] = int(args[c])
+				v = args[c]
+				if not CSE.validator.validateRequestArgument(c, v):
+					return None
+				handling[c] = int(v)
 				del args[c]
 		for c in ['arp']:
 			if c in args:
-				handling[c] = args[c]
+				v = args[c]
+				if not CSE.validator.validateRequestArgument(c, v):
+					return None
+				handling[c] = v # string
 				del args[c]
 		result['__handling__'] = handling
 
@@ -848,19 +865,27 @@ class Dispatcher(object):
 		conditions = {}
 
 		for c in ['crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbl', 'lbq', 'sza', 'szb', 'catr', 'patr']:
-			if (x:= args.get(c)) is not None:
-				conditions[c] = x
+			if (v := args.get(c)) is not None:
+				if not CSE.validator.validateRequestArgument(c, v):
+					return None
+				conditions[c] = v
 				del args[c]
 
 		# get types (multi). Always create at least an empty list
 		conditions['ty'] = []
 		for e in args.getlist('ty'):
+			for es in e.split():	# check for number
+				if not CSE.validator.validateRequestArgument('ty', es):
+					return None
 			conditions['ty'].extend(e.split())
 		args.poplist('ty')
 
 		# get contentTypes (multi). Always create at least an empty list
 		conditions['cty'] = []
 		for e in args.getlist('cty'):
+			for es in e.split():	# check for number
+				if not CSE.validator.validateRequestArgument('cty', es):
+					return None
 			conditions['cty'].extend(e.split())
 		args.poplist('cty')
 
@@ -868,6 +893,8 @@ class Dispatcher(object):
 
 		# filter operation
 		if (fo := args.get('fo')) is not None: # 1=AND, 2=OR
+			if not CSE.validator.validateRequestArgument('fo', fo):
+				return None
 			fo = int(fo)
 			del args['fo']
 		else:
@@ -875,7 +902,12 @@ class Dispatcher(object):
 		result['fo'] = fo
 
 		# all remaining arguments are treated as matching attributes
-		result['__attrs__'] = args.copy()
+		nargs = {}
+		for arg in args:
+			if not CSE.validator.validateRequestArgument(arg, args.get(arg)):
+				return None
+
+		result['__attrs__'] = nargs
 
 		return result
 
@@ -911,7 +943,7 @@ class Dispatcher(object):
 				if rri is not None and r.pi != rri:	# only direct children
 					idx += 1
 					continue
-				if r.ty in [ C.tCNT_OL, C.tCNT_LA, C.tFCNT_OL, C.tFCNT_LA ]:	# Skip latest, oldest virtual resources
+				if r.ty in C.tVirtualResources:	# Skip latest, oldest etc virtual resources
 					idx += 1
 					continue
 				if handledTy is None:

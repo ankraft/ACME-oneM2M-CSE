@@ -51,6 +51,8 @@ class RegistrationManager(object):
 				# except when the parent is the CSE or the parent acpi is empty , then use the default
 				if parentResource.ty != C.tCSEBase and parentResource.acpi is not None:
 					resource['acpi'] = parentResource.acpi
+				elif parentResource.ty == C.tACP:
+					pass # Don't assign any ACPI when the parent is an ACP
 				else:
 					resource['acpi'] = [ Configuration.get('cse.security.defaultACPI') ]	# Set default ACPIRIs
 

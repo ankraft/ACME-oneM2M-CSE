@@ -7,6 +7,7 @@
 #	Validation service and functions
 #
 
+from typing import Any
 from Logging import Logging
 from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN
 from Constants import Constants as C
@@ -95,7 +96,7 @@ attributePolicies = {
 	'ldv'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# ANI
 	'lga'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# ELV
 	'lgd'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  AN.OA ],		# ELV
-	'lgO'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# ELV
+	'lgo'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  AN.OA ],		# ELV
 	'lgst'	: [ BT.nonNegInteger,	CAR.car1,   RO.M,	RO.O,  AN.OA ],		# ELV
 	'lgt'	: [ BT.nonNegInteger,	CAR.car1,   RO.M,	RO.O,  AN.OA ],		# ELV
 	'li'	: [ BT.anyURI,			CAR.car01,  RO.NP,	RO.NP, AN.OA ],		# CNT
@@ -178,6 +179,34 @@ attributePolicies = {
 	# CIN deletionCnt
 	# GRP: somecastEnable, somecastAlgorithm not defined yet (shortname)
 
+	#
+	#	Request arguments
+	#
+
+	'cra'	: [ BT.timestamp,		CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'crb'	: [ BT.timestamp,		CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'cty'	: [ BT.string,			CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'drt'	: [ BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'exa'	: [ BT.timestamp,		CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'exb'	: [ BT.timestamp,		CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'fo'	: [ BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'fu'	: [ BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'lbq'	: [ BT.string,			CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'lim'	: [ BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'lvl'	: [ BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'ms'	: [ BT.timestamp,		CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'ofst'	: [ BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'rcn'	: [ BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'stb'	: [ BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'sts'	: [ BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'sza'	: [ BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'szb'	: [ BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery	
+	'ty'	: [ BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+	'us'	: [ BT.timestamp,		CAR.car01,   RO.O,	RO.O,  AN.NA ],		# discovery
+
+	# TODO lbl, catr, patr
+
+
 
 }
 
@@ -249,23 +278,7 @@ class Validator(object):
 					return (False, C.rcBadRequest)
 
 			# Check whether the value is of the correct type
-			pt = p[0]	# type
-			pc = p[1]	# cardinality
-			if pt == BT.positiveInteger and isinstance(v, int) and v > 0:
-				continue
-			if pt == BT.nonNegInteger and isinstance(v, int) and v >= 0:
-				continue
-			if pt in [ BT.unsignedInt, BT.unsignedLong ] and isinstance(v, int):
-				continue
-			if pt in [ BT.string, BT.timestamp, BT.anyURI ] and isinstance(v, str):
-				continue
-			if pt == BT.list and isinstance(v, list):
-				continue
-			if pt == BT.dict and isinstance(v, dict):
-				continue
-			if pt == BT.boolean and isinstance(v, bool):
-				continue
-			if pt == BT.geoCoordinates and isinstance(v, dict):
+			if self._validateType(p[0], v):
 				continue
 			
 			# fall-through means: not validated
@@ -296,6 +309,14 @@ class Validator(object):
 		return True
 
 
+	def validateRequestArgument(self, argument : str, value : Any) -> bool:
+		""" Validate a request argument. """
+		if (policy := attributePolicies.get(argument)) is not None:
+			return self._validateType(policy[0], value, True)
+		return False
+
+
+
 	#
 	#	Additional attribute definitions, e.g. for <flexContainer> specialisations.
 	#
@@ -313,4 +334,74 @@ class Validator(object):
 		if tpe is not None and not tpe.startswith('m2m:') and tpe in self.additionalAttributes:
 			attributePolicies.update(self.additionalAttributes.get(tpe))
 		return attributePolicies
+
+
+	def _validateType(self, tpe : BT, value : Any, convert : bool = False) -> bool:
+		""" Check a value for its type. If the convert parameter is True then it
+			is assumed that the value could be a stringified value and the method
+			will attempt to convert the value to its target type; otherwise this
+			is an error. """
+
+		if tpe == BT.positiveInteger:
+			if isinstance(value, int) and value > 0:
+				return True
+			# try to convert string to number and compare
+			if convert and isinstance(value, str):
+				try:
+					if int(value) > 0:
+						return True
+				except:
+					return False
+			return False
+
+		if tpe == BT.nonNegInteger:
+			if isinstance(value, int) and value >= 0:
+				return True
+			# try to convert string to number and compare
+			if convert and isinstance(value, str):
+				try:
+					if int(value) >= 0:
+						return True
+				except:
+					return False
+			return False
+
+		if tpe in [ BT.unsignedInt, BT.unsignedLong ]:
+			if isinstance(value, int):
+				return True
+			# try to convert string to number 
+			if convert and isinstance(value, str):
+				try:
+					int(value)
+					return True
+				except:
+					return False
+			return False
+
+		if tpe in [ BT.string, BT.timestamp, BT.anyURI ] and isinstance(value, str):
+			return True
+
+		if tpe == BT.list and isinstance(value, list):
+			return True
+		
+		if tpe == BT.dict and isinstance(value, dict):
+			return True
+		
+		if tpe == BT.boolean:
+			if isinstance(value, bool):
+				return True
+			# try to convert string to bool
+			if convert and isinstance(value, str):	# "true"/"false"
+				try:
+					bool(value)
+					return True
+				except:
+					return False
+			return False
+
+		if tpe == BT.geoCoordinates and isinstance(value, dict):
+			return True
+
+		return False
+
 
