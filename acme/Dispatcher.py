@@ -778,11 +778,12 @@ class Dispatcher(object):
 
 	def _buildSRNFromHybrid(self, srn : str, id : str) -> (str, str):
 		""" Handle Hybrid ID. """
-		ids = id.split('/')
-		if srn is None and len(ids) > 1  and ids[-1] in C.tVirtualResourcesNames: # Hybrid
-			if (srn := Utils.structuredPathFromRI('/'.join(ids[:-1]))) is not None:
-				srn = '/'.join([srn, ids[-1]])
-				id = Utils.riFromStructuredPath(srn) # id becomes the ri of the fopt
+		if id is not None:
+			ids = id.split('/')
+			if srn is None and len(ids) > 1  and ids[-1] in C.tVirtualResourcesNames: # Hybrid
+				if (srn := Utils.structuredPathFromRI('/'.join(ids[:-1]))) is not None:
+					srn = '/'.join([srn, ids[-1]])
+					id = Utils.riFromStructuredPath(srn) # id becomes the ri of the fopt
 		return (srn, id)
 
 
