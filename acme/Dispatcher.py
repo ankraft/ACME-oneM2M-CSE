@@ -154,7 +154,7 @@ class Dispatcher(object):
 			elif rcn == C.rcnChildResourceReferences: # child resource references
 				return (self._resourcesToURIList(children, drt), C.rcOK)
 
-			return (None, C.rcInvalidArguments)
+			return (None, C.rcBadRequest)
 			# TODO check rcn. Allowed only 1, 4, 5 . 1= as now. If 4,5 check lim etc
 
 
@@ -607,7 +607,7 @@ class Dispatcher(object):
 			return (None, result[1])
 		# TODO C.rcnDiscoveryResultReferences 
 
-		return (None, C.rcNotImplemented)
+		return (None, C.rcBadRequest)
 
 
 	def updateResource(self, resource, json=None, doUpdateCheck=True, originator=None):
@@ -676,7 +676,7 @@ class Dispatcher(object):
 
 		# Check for virtual resource
 		if Utils.isVirtualResource(resource):
-			return r.handleDeleteRequest(request, id, originator)
+			return resource.handleDeleteRequest(request, id, originator)
 
 		#
 		# Handle RCN's first. Afterward the resource & children are no more
@@ -687,12 +687,12 @@ class Dispatcher(object):
 		if rcn is None or rcn == C.rcnNothing:
 			result = None
 		elif rcn == C.rcnAttributes:
-			result = resource.asJSON()
+			result = resource
 		# resource and child resources, full attributes
 		elif rcn == C.rcnAttributesAndChildResources:
 			children = self.discoverChildren(id, resource, originator, handling)
 			self._childResourceTree(children, resource)	# the function call add attributes to the result resource. Don't use the return value directly
-			result = resource.asJSON()
+			result = resource
 		# direct child resources, NOT the root resource
 		elif rcn == C.rcnChildResources:
 			children = self.discoverChildren(id, resource, originator, handling)
@@ -701,11 +701,13 @@ class Dispatcher(object):
 		elif rcn == C.rcnAttributesAndChildResourceReferences: 
 			children = self.discoverChildren(id, resource, originator, handling)
 			self._resourceTreeReferences(children, resource, drt)	# the function call add attributes to the result resource
-			result = resource.asJSON()
+			result = resource
 		elif rcn == C.rcnChildResourceReferences: # child resource references
 			children = self.discoverChildren(id, resource, originator, handling)
 			result = self._resourceTreeReferences(children, None, drt)
-		# TODO C.rcnDiscoveryResultReferences 
+		# TODO C.rcnDiscoveryResultReferences
+		else:
+			return (None, C.rcBadRequest)
 
 		# remove resource
 		ret = self.deleteResource(resource, originator, withDeregistration=True)
