@@ -65,15 +65,15 @@ class CSEBase(Resource):
 		if nl is not None or _nl_ is not None:
 			if nl != _nl_:
 				if _nl_ is not None:
-					(n, _) = CSE.dispatcher.retrieveResource(_nl_)
+					n, _ = CSE.dispatcher.retrieveResource(_nl_)
 					if n is not None:
 						n['hcl'] = None # remve old link
 						CSE.dispatcher.updateResource(n)
 				self[Resource._node] = nl
-				(n, _) = CSE.dispatcher.retrieveResource(nl)
+				n, _ = CSE.dispatcher.retrieveResource(nl)
 				if n is not None:
 					n['hcl'] = self['ri']
 					CSE.dispatcher.updateResource(n)
 			self[Resource._node] = nl
 
-		return (True, C.rcOK)
+		return True, C.rcOK

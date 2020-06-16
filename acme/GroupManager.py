@@ -44,11 +44,11 @@ class GroupManager(object):
 				if len(group.mid) > int(group.mnm):
 					return (False, C.rcMaxNumberOfMemberExceeded)
 			except ValueError:
-				return (False, C.rcInvalidArguments)
+				return False, C.rcInvalidArguments
 
 		group.dbUpdate()
 		# TODO: check virtual resources
-		return (True, C.rcOK)
+		return True, C.rcOK
 
 
 
@@ -68,21 +68,21 @@ class GroupManager(object):
 					if (url := CSE.remote._getForwardURL(mid)) is None:
 						return (None, C.rcNotFound)
 					Logging.log('Retrieve request to: %s' % url)
-					(remoteResource, rsc) = CSE.httpServer.sendRetrieveRequest(url, CSE.Configuration.get('cse.csi'))
+					remoteResource, rsc = CSE.httpServer.sendRetrieveRequest(url, CSE.Configuration.get('cse.csi'))
 
 			# get the resource and check it
 			hasFopt = False
 			if isLocalResource:
 				id = mid[:-5] if len(mid) > 5 and (hasFopt := mid.endswith('/fopt')) else mid 	# remove /fopt to retrieve the resource
 				if (r := CSE.dispatcher.retrieveResource(id))[0] is None:
-					return (False, C.rcNotFound)
+					return False, C.rcNotFound
 				resource = r[0]
 			else:
 				if remoteResource is None:
 					if rsc == C.rcOriginatorHasNoPrivilege:  # CSE has no privileges for retrieving the member
-						return (False, C.rcReceiverHasNoPrivileges)
+						return False, C.rcReceiverHasNoPrivileges
 					else:  # Member not found
-						return (False, C.rcNotFound)
+						return False, C.rcNotFound
 				else:
 					resource = remoteResource
 
@@ -97,7 +97,7 @@ class GroupManager(object):
 			# check privileges
 			if isLocalResource:
 				if not CSE.security.hasAccess(originator, resource, C.permRETRIEVE):
-					return (False, C.rcReceiverHasNoPrivileges)
+					return False, C.rcReceiverHasNoPrivileges
 
 			# if it is a group + fopt, then recursively check members
 			if (ty := resource.ty) == C.tGRP and hasFopt:
@@ -110,10 +110,10 @@ class GroupManager(object):
 			if spty is not None:
 				if isinstance(spty, int):				# mgmtobj type
 					if isinstance(resource, MgmtObj.MgmtObj) and ty != spty:
-						return (False, C.rcGroupMemberTypeInconsistent)
+						return False, C.rcGroupMemberTypeInconsistent
 				elif isinstance(spty, str):				# fcnt specialization
 					if isinstance(resource, FCNT.FCNT) and resource.cnd != spty:
-						return (False, C.rcGroupMemberTypeInconsistent)
+						return False, C.rcGroupMemberTypeInconsistent
 
 			# check type of resource and member type of group
 			if not (mt == C.tMIXED or ty == mt):	# types don't match
@@ -123,7 +123,7 @@ class GroupManager(object):
 					mt = C.tMIXED
 					group['mt'] = C.tMIXED
 				else:								# abandon group
-					return (False, C.rcGroupMemberTypeInconsistent)
+					return False, C.rcGroupMemberTypeInconsistent
 
 			# member seems to be ok, so add ri to the list
 			if isLocalResource:
@@ -137,7 +137,7 @@ class GroupManager(object):
 		group['cnm'] = len(midsList)
 		group['mtv'] = True
 		
-		return (True, C.rcOK)
+		return True, C.rcOK
 
 
 
@@ -149,20 +149,20 @@ class GroupManager(object):
 		# get parent / group and check permissions
 		group = fopt.retrieveParentResource()
 		if group is None:
-			return (None, C.rcNotFound)
+			return None, C.rcNotFound
 
 		# get the permission flags for the request operation
 		permission = operationsPermissions[operation]
 
 		#check access rights for the originator through memberAccessControlPolicies
 		if CSE.security.hasAccess(originator, group, requestedPermission=permission, ty=ty, isCreateRequest=True if operation == C.opCREATE else False) == False:
-			return (None, C.rcOriginatorHasNoPrivilege)
+			return None, C.rcOriginatorHasNoPrivilege
 
 		# get the rqi header field
-		(_, _, _, rqi, _) = Utils.getRequestHeaders(request)
+		_, _, _, rqi, _ = Utils.getRequestHeaders(request)
 
 		# check whether there is something after the /fopt ...
-		(_, _, tail) = id.partition('/fopt/') if '/fopt/' in id else (_, _, '')
+		_, _, tail = id.partition('/fopt/') if '/fopt/' in id else (_, _, '')
 		Logging.logDebug('Adding additional path elements: %s' % tail)
 
 		# walk through all members
@@ -188,7 +188,7 @@ class GroupManager(object):
 				if (res := CSE.dispatcher.handleDeleteRequest(request, mid, originator))[1] != C.rcDeleted:
 					return res 
 			else:
-				return (None, C.rcOperationNotAllowed)
+				return None, C.rcOperationNotAllowed
 			result.append(res)
 
 		# construct aggregated response
@@ -207,7 +207,7 @@ class GroupManager(object):
 		else:
 			agr = {}
 
-		return (agr, C.rcOK) # Response Status Code is OK regardless of the requested fanout operation
+		return agr, C.rcOK # Response Status Code is OK regardless of the requested fanout operation
 
 
 

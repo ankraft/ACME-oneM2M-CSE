@@ -139,12 +139,12 @@ class Resource(object):
 			parentResource = parentResource.dbReload()	# Read the resource again in case it was updated in the DB
 			parentResource['st'] = parentResource.st + 1
 			if (res := parentResource.dbUpdate())[0] is None:
-				return (False, res[1])
+				return False, res[1]
 
 		self.setAttribute(self._originator, originator, overwrite=False)
 		self.setAttribute(self._rtype, self.tpe, overwrite=False) 
 
-		return (True, C.rcOK)
+		return True, C.rcOK
 
 
 	# Deactivate an active resource.
@@ -168,7 +168,7 @@ class Resource(object):
 		if jsn is not None:
 			if self.tpe not in jsn:
 				Logging.logWarn("Update types don't match")
-				return (False, C.rcContentsUnacceptable)
+				return False, C.rcContentsUnacceptable
 
 			# validate the attributes
 			if not (result := CSE.validator.validateAttributes(jsn, self.tpe, self.attributePolicies, create=False))[0]:
@@ -202,13 +202,13 @@ class Resource(object):
 		# Check subscriptions
 		CSE.notification.checkSubscriptions(self, C.netResourceUpdate)
 
-		return (True, C.rcOK)
+		return True, C.rcOK
 
 
 	def childWillBeAdded(self, childResource, originator):
 		""" Called before a child will be added to a resource.
 			This method return True, or False in kind the adding should be rejected, and an error code."""
-		return (True, C.rcOK)
+		return True, C.rcOK
 
 	def childAdded(self, childResource, originator):
 		""" Called when a child resource was added to the resource. """
@@ -238,8 +238,8 @@ class Resource(object):
 			not Utils.isValidID(self.pi) or
 			not Utils.isValidID(self.rn)):
 			Logging.logDebug('Invalid ID ri: %s, pi: %s, rn: %s)' % (self.ri, self.pi, self.rn))
-			return (False, C.rcContentsUnacceptable)
-		return (True, C.rcOK)
+			return False, C.rcContentsUnacceptable
+		return True, C.rcOK
 
 
 	def validateExpirations(self):

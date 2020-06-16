@@ -55,7 +55,7 @@ class AE(Resource):
 				ri = self['ri']
 				# Remove from old node first
 				if _nl_ is not None:
-					(node, _) = CSE.dispatcher.retrieveResource(_nl_)
+					node, _ = CSE.dispatcher.retrieveResource(_nl_)
 					if node is not None:
 						hael = node['hael']
 						if hael is not None and isinstance(hael, list) and ri in hael:
@@ -65,7 +65,7 @@ class AE(Resource):
 							# CSE.dispatcher.updateResource(n)
 				self[Resource._node] = nl
 				# Add to new node
-				(node, _) = CSE.dispatcher.retrieveResource(nl) # new node
+				node, _ = CSE.dispatcher.retrieveResource(nl) # new node
 				if node is not None:
 					hael = node['hael']
 					if hael is None:
@@ -78,4 +78,4 @@ class AE(Resource):
 					# CSE.dispatcher.updateResource(n)
 			self[Resource._node] = nl
 
-		return (True, C.rcOK)
+		return True, C.rcOK

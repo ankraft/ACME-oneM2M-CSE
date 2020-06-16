@@ -61,7 +61,7 @@ class FCNT(Resource):
 			# add oldest
 			r = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, tpe=C.tFCNT_OL)
 			CSE.dispatcher.createResource(r)
-		return (True, C.rcOK)
+		return True, C.rcOK
 
 
 	def childWillBeAdded(self, childResource, originator):
@@ -73,13 +73,13 @@ class FCNT(Resource):
 
 		# Check whether the child's rn is "ol" or "la".
 		if (rn := childResource['rn']) is not None and rn in ['ol', 'la']:
-			return (False, C.rcOperationNotAllowed)
+			return False, C.rcOperationNotAllowed
 	
 		# Check whether the size of the CIN doesn't exceed the mbs
 		if childResource.ty == C.tCIN and self.mbs is not None:
 			if childResource.cs is not None and childResource.cs > self.mbs:
-				return (False, C.rcNotAcceptable)
-		return (True, C.rcOK)
+				return False, C.rcNotAcceptable
+		return True, C.rcOK
 
 
 	# Checking the presentse of cnd and calculating the size
@@ -89,7 +89,7 @@ class FCNT(Resource):
 
 		# No CND?
 		if (cnd := self.cnd) is None or len(cnd) == 0:
-			return (False, C.rcContentsUnacceptable)
+			return False, C.rcContentsUnacceptable
 
 		# Calculate contentSize
 		# This is not at all realistic since this is the in-memory representation
@@ -158,14 +158,13 @@ class FCNT(Resource):
 		# May have been changed, so store the resource 
 		x = CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
 		
-		return (True, C.rcOK)
+		return True, C.rcOK
 
 
 	# Validate expirations of child resurces
 	def validateExpirations(self):
 		Logging.logDebug('Validate expirations')
 		super().validateExpirations()
-
 
 		if (mia := self.mia) is None:
 			return

@@ -228,7 +228,8 @@ class Dispatcher(object):
 		allLen = ((len(conditions) if conditions is not None else 0) +
 		  (len(attributes) if attributes is not None else 0) +
 		  (len(conditions.get('ty'))-1 if conditions is not None else 0) +		# -1 : compensate for len(conditions) in line 1
-		  (len(conditions.get('cty'))-1 if conditions is not None else 0) 		# -1 : compensate for len(conditions) in line 1 
+		  (len(conditions.get('cty'))-1 if conditions is not None else 0) +		# -1 : compensate for len(conditions) in line 1 
+		  (len(conditions.get('lbl'))-1 if conditions is not None else 0) 		# -1 : compensate for len(conditions) in line 1 
 		)
 
 		# Discover the resources
@@ -318,13 +319,20 @@ class Dispatcher(object):
 				found += 1 if (c_exb := conditions.get('exb')) is not None and (et < c_exb) else 0
 				found += 1 if (c_exa := conditions.get('exa')) is not None and (et > c_exa) else 0
 
+			# Check labels similar to types
+			rlbl = r.lbl
+			if rlbl is not None and (lbls := conditions.get('lbl')) is not None:
+				for l in lbls:
+					if l in rlbl:
+						found += len(lbls)
+						break
 			# special handling of label-list
-			if (lbl := r.lbl) is not None and (c_lbl := conditions.get('lbl')) is not None:
-				lbla = c_lbl.split()
-				fnd = 0
-				for l in lbla:
-					fnd += 1 if l in lbl else 0
-				found += 1 if (fo == 1 and fnd == len(lbl)) or (fo == 2 and fnd > 0) else 0	# fo==or -> find any label
+			# if (lbl := r.lbl) is not None and (c_lbl := conditions.get('lbl')) is not None:
+			# 	lbla = c_lbl.split()
+			# 	fnd = 0
+			# 	for l in lbla:
+			# 		fnd += 1 if l in lbl else 0
+			# 	found += 1 if (fo == 1 and fnd == len(lbl)) or (fo == 2 and fnd > 0) else 0	# fo==or -> find any label
 				#	# TODO labelsQuery
 
 
@@ -419,7 +427,7 @@ class Dispatcher(object):
 			return None, C.rcOperationNotAllowed
 
 		# Get parent resource and check permissions
-		(pr, res) = self.retrieveResource(id)
+		pr, res = self.retrieveResource(id)
 		if pr is None:
 			Logging.log('Parent resource not found')
 			return None, C.rcNotFound
@@ -573,7 +581,7 @@ class Dispatcher(object):
 			return None, C.rcBadRequest
 
 		# Get resource to update
-		(r, _) = self.retrieveResource(id)	
+		r, _ = self.retrieveResource(id)	
 		if r is None:
 			Logging.log('Resource not found')
 			return None, C.rcNotFound
@@ -602,7 +610,7 @@ class Dispatcher(object):
 		jsonOrg = r.json.copy()	# Save for later
 		if (result := self.updateResource(r, jsn, originator=originator))[0] is None:
 			return None, result[1]
-		(r, rc) = result
+		r, rc = result
 
 		#
 		# Handle RCN's
@@ -865,7 +873,8 @@ class Dispatcher(object):
 		# conditions
 		conditions = {}
 
-		for c in ['crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbl', 'lbq', 'sza', 'szb', 'catr', 'patr']:
+		# Extract and store other arguments
+		for c in ['crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr']:
 			if (v := args.get(c)) is not None:
 				if not CSE.validator.validateRequestArgument(c, v):
 					return None
@@ -890,7 +899,14 @@ class Dispatcher(object):
 			conditions['cty'].extend(t)
 		args.poplist('cty')
 
-		result['__conditons__'] = conditions
+		# get types (multi). Always create at least an empty list
+		# NO validation of label. It is a list.
+		conditions['lbl'] = []
+		for e in args.getlist('lbl'):
+			conditions['lbl'].append(e)
+		args.poplist('lbl')
+
+		result['__conditons__'] = conditions 	# store found conditions in result
 
 		# filter operation
 		if (fo := args.get('fo')) is not None: # 1=AND, 2=OR

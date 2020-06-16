@@ -146,7 +146,6 @@ def startup(args, **kwargs):
 # Gracefully shutdown the CSE, e.g. when receiving a keyboard interrupt
 @atexit.register
 def shutdown():
-
 	if appsStarted:
 		stopApps()
 	if remote is not None:

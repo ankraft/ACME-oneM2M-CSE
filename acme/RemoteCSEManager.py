@@ -67,8 +67,8 @@ class RemoteCSEManager(object):
 
 		# Remove resources
 		if self.csetype in [ C.cseTypeASN, C.cseTypeMN ]:
-			(_, rc) = self._deleteRemoteCSR()	# delete remote CSR
-		(csr, rc) = self._retrieveLocalCSR()	# retrieve local CSR
+			_, rc = self._deleteRemoteCSR()	# delete remote CSR
+		csr, rc = self._retrieveLocalCSR()	# retrieve local CSR
 		if rc == C.rcOK:
 			self._deleteLocalCSR(csr[0])		# delete local CSR
 
@@ -125,28 +125,28 @@ class RemoteCSEManager(object):
 	# Check the connection for this CSE to the remote CSE.
 	def _checkOwnConnection(self):
 		# first check whether there is already a local CSR
-		(localCSR, rc) = self._retrieveLocalCSR()
+		localCSR, rc = self._retrieveLocalCSR()
 		localCSR = localCSR[0] # hopefully, there is only one upstream CSR+
 		if rc == C.rcOK:
-			(remoteCSR, rc) = self._retrieveRemoteCSR()	# retrieve own
+			remoteCSR, rc = self._retrieveRemoteCSR()	# retrieve own
 			if rc == C.rcOK:
 				# check for changes in remote CSE
-				(remoteCSE, rc) = self._retrieveRemoteCSE()
+				remoteCSE, rc = self._retrieveRemoteCSE()
 				if rc == C.rcOK:
 					if remoteCSE.isModifiedSince(localCSR):	# remote CSE modified
 						self._updateLocalCSR(localCSR, remoteCSE)
 						Logging.log('Local CSR updated')
-				(localCSE, _) = Utils.getCSE()
+				localCSE, _ = Utils.getCSE()
 				if localCSE.isModifiedSince(remoteCSR):	# local CSE modified
 					self._updateRemoteCSR(localCSE)
 					Logging.log('Remote CSR updated')
 
 			else:
 				# Potential disconnect
-				(_, rc) = self._deleteLocalCSR(localCSR)
-				(_, rc) = self._createRemoteCSR()
+				_, rc = self._deleteLocalCSR(localCSR)
+				_, rc = self._createRemoteCSR()
 				if rc == C.rcCreated:
-					(remoteCSE, rc) = self._retrieveRemoteCSE()
+					remoteCSE, rc = self._retrieveRemoteCSE()
 					if rc == C.rcOK:
 						self._createLocalCSR(remoteCSE)
 						Logging.log('Remote CSE connected')
@@ -155,11 +155,11 @@ class RemoteCSEManager(object):
 		
 		else:
 			# No local CSR, so try to delete an optional remote one and re-create everything. 
-			(_, rc) = self._deleteRemoteCSR()					# delete potential remote CSR
+			_, rc = self._deleteRemoteCSR()					# delete potential remote CSR
 			if rc in [C.rcDeleted, C.rcNotFound]:
-				(_, rc) = self._createRemoteCSR()				# create remote CSR
+				_, rc = self._createRemoteCSR()				# create remote CSR
 				if rc == C.rcCreated:
-					(remoteCSE, rc) = self._retrieveRemoteCSE()	# retrieve remote CSE
+					remoteCSE, rc = self._retrieveRemoteCSE()	# retrieve remote CSE
 					if rc == C.rcOK:
 						self._createLocalCSR(remoteCSE) 		# create local CSR including ACPs to local CSR and local CSE
 						Logging.log('Remote CSE connected')
@@ -169,11 +169,11 @@ class RemoteCSEManager(object):
 	#	This is done by trying to retrie a remote CSR. If it cannot be retrieved
 	#	then the related local CSR is removed.
 	def _checkCSRLiveliness(self):
-		(csrs, rc) = self._retrieveLocalCSR(own=False)
+		csrs, rc = self._retrieveLocalCSR(own=False)
 		for csr in csrs:
 			for url in (csr.poa or []):
 				if Utils.isURL(url):
-					(cse, rc) = self._retrieveRemoteCSE(url='%s%s' % (url, csr.csi ))
+					cse, rc = self._retrieveRemoteCSE(url='%s%s' % (url, csr.csi ))
 					if rc != C.rcOK:
 						Logging.logWarn('Remote CSE unreachable. Removing CSR: %s' % csr.rn if csr is not None else '')
 						self._deleteLocalCSR()
@@ -192,21 +192,21 @@ class RemoteCSEManager(object):
 			for csr in csrs:
 				if (c := csr.csi) is not None and c == csi:
 					return ([csr], C.rcOK)
-			return ([None], C.rcBadRequest)
+			return [None], C.rcBadRequest
 		else:
 			result = []
 			for csr in csrs:
 				if (c := csr.csi) is not None and c == csi:
 					continue
 				result.append(csr)
-			return (result, C.rcOK)
+			return result, C.rcOK
 
 
 	def _createLocalCSR(self, remoteCSE):
 		Logging.logDebug('Creating local CSR: %s' % remoteCSE.ri)
 
 		# copy attributes
-		(localCSE, _) = Utils.getCSE()
+		localCSE, _ = Utils.getCSE()
 		csr = CSR.CSR(pi=localCSE.ri, rn=remoteCSE.ri)	# remoteCSE.ri as name!
 		self._copyCSE2CSE(csr, remoteCSE)
 		csr['ri'] = remoteCSE.ri 						# set the ri to the remote CSE's ri
@@ -215,7 +215,7 @@ class RemoteCSEManager(object):
 		if (res := CSE.dispatcher.createResource(csr, localCSE))[0] is None:
 			return res # Problem
 		if not CSE.registration.handleCSRRegistration(csr, remoteCSE.csi):
-			return (None, C.rcBadRequest)
+			return None, C.rcBadRequest
 		return CSE.dispatcher.updateResource(csr, doUpdateCheck=False)
 
 
@@ -243,17 +243,17 @@ class RemoteCSEManager(object):
 
 	def _retrieveRemoteCSR(self):
 		Logging.logDebug('Retrieving remote CSR: %s' % self.remoteCsi)
-		(jsn, rc) = CSE.httpServer.sendRetrieveRequest(self.remoteCSRURL, self.originator)
+		jsn, rc = CSE.httpServer.sendRetrieveRequest(self.remoteCSRURL, self.originator)
 		if rc not in [C.rcOK]:
-			return (None, rc)
-		return (CSR.CSR(jsn), C.rcOK)
+			return None, rc
+		return CSR.CSR(jsn), C.rcOK
 
 
 	def _createRemoteCSR(self):
 		Logging.logDebug('Creating remote CSR: %s' % self.remoteCsi)
 		
 		# get local CSEBase and copy relevant attributes
-		(localCSE, _) = Utils.getCSE()
+		localCSE, _ = Utils.getCSE()
 		csr = CSR.CSR(rn=localCSE.ri) # ri as name!
 		self._copyCSE2CSE(csr, localCSE)
 		csr['ri'] = self.cseCsi							# override ri with the own cseID
@@ -263,14 +263,14 @@ class RemoteCSEManager(object):
 
 		# Create the <remoteCSE> in the remote CSE
 		Logging.logDebug('Creating remote CSR at: %s url: %s' % (self.remoteCsi, self.remoteCSEURL))	
-		(jsn, rc) = CSE.httpServer.sendCreateRequest(self.remoteCSEURL, self.originator, ty=C.tCSR, data=data)
+		jsn, rc = CSE.httpServer.sendCreateRequest(self.remoteCSEURL, self.originator, ty=C.tCSR, data=data)
 		if rc not in [C.rcCreated, C.rcOK]:
 			if rc != C.rcAlreadyExists:
 				Logging.logDebug('Error creating remote CSR: %d' % rc)
-			return (None, rc)
+			return None, rc
 		Logging.logDebug('Remote CSR created: %s' % self.remoteCsi)
 
-		return (None, C.rcCreated)
+		return None, C.rcCreated
 
 
 	def _updateRemoteCSR(self, localCSE):
@@ -280,23 +280,23 @@ class RemoteCSEManager(object):
 		del csr['acpi']			# remove ACPI (don't provide ACPI in updates...a bit)
 		data = json.dumps(csr.asJSON())
 
-		(jsn, rc) = CSE.httpServer.sendUpdateRequest(self.remoteCSRURL, self.originator, data=data)
+		jsn, rc = CSE.httpServer.sendUpdateRequest(self.remoteCSRURL, self.originator, data=data)
 		if rc not in [C.rcUpdated, C.rcOK]:
 			if rc != C.rcAlreadyExists:
 				Logging.logDebug('Error updating remote CSR: %d' % rc)
-			return (None, rc)
+			return None, rc
 		Logging.logDebug('Remote CSR updated: %s' % self.remoteCsi)
-		return (CSR.CSR(jsn), C.rcUpdated)
+		return CSR.CSR(jsn), C.rcUpdated
 
 
 
 	def _deleteRemoteCSR(self):
 		Logging.logDebug('Deleting remote CSR: %s url: %s' % (self.remoteCsi, self.remoteCSRURL))
-		(jsn, rc) = CSE.httpServer.sendDeleteRequest(self.remoteCSRURL, self.originator)
+		jsn, rc = CSE.httpServer.sendDeleteRequest(self.remoteCSRURL, self.originator)
 		if rc not in [C.rcDeleted, C.rcOK]:	
-			return (None, rc)
+			return None, rc
 		Logging.log('Remote CSR deleted: %s' % self.remoteCsi)
-		return (None, C.rcDeleted)
+		return None, C.rcDeleted
 
 
 	#
@@ -307,10 +307,10 @@ class RemoteCSEManager(object):
 	def _retrieveRemoteCSE(self, url=None):
 		url = (url or self.remoteCSEURL)
 		Logging.logDebug('Retrieving remote CSE from: %s url: %s' % (self.remoteCsi, url))	
-		(jsn, rc) = CSE.httpServer.sendRetrieveRequest(url, self.originator)
+		jsn, rc = CSE.httpServer.sendRetrieveRequest(url, self.originator)
 		if rc not in [C.rcOK]:
-			return (None, rc)
-		return (CSEBase.CSEBase(jsn), C.rcOK)
+			return None, rc
+		return CSEBase.CSEBase(jsn), C.rcOK
 
 
 	#########################################################################
@@ -322,7 +322,7 @@ class RemoteCSEManager(object):
 	def handleTransitRetrieveRequest(self, request, id : str, origin : str):
 		""" Forward a RETRIEVE request to a remote CSE """
 		if (url := self._getForwardURL(id)) is None:
-			return (None, C.rcNotFound)
+			return None, C.rcNotFound
 		if len(request.args) > 0:	# pass on other arguments, for discovery
 			url += '?' + urllib.parse.urlencode(request.args)
 		Logging.log('Forwarding Retrieve/Discovery request to: %s' % url)
@@ -332,7 +332,7 @@ class RemoteCSEManager(object):
 	def handleTransitCreateRequest(self, request, id : str, origin : str, ty : int):
 		""" Forward a CREATE request to a remote CSE. """
 		if (url := self._getForwardURL(id)) is None:
-			return (None, C.rcNotFound)
+			return None, C.rcNotFound
 		Logging.log('Forwarding Create request to: %s' % url)
 		return CSE.httpServer.sendCreateRequest(url, origin, data=request.data, ty=ty)
 
@@ -340,7 +340,7 @@ class RemoteCSEManager(object):
 	def handleTransitUpdateRequest(self, request, id : str, origin : str):
 		""" Forward an UPDATE request to a remote CSE. """
 		if (url := self._getForwardURL(id)) is None:
-			return (None, C.rcNotFound)
+			return None, C.rcNotFound
 		Logging.log('Forwarding Update request to: %s' % url)
 		return CSE.httpServer.sendUpdateRequest(url, origin, data=request.data)
 
@@ -348,7 +348,7 @@ class RemoteCSEManager(object):
 	def handleTransitDeleteRequest(self, id : str, origin : str):
 		""" Forward a DELETE request to a remote CSE. """
 		if (url := self._getForwardURL(id)) is None:
-			return (None, C.rcNotFound)
+			return None, C.rcNotFound
 		Logging.log('Forwarding Delete request to: %s' % url)
 		return CSE.httpServer.sendDeleteRequest(url, origin)
 
@@ -375,16 +375,16 @@ class RemoteCSEManager(object):
 	def _getCSRFromPath(self, id : str):
 		""" Try to get a CSR even from a longer path (only the first 2 path elements are relevant). """
 		if id is None:
-			return (None, None)
+			return None, None
 		ids = id.split("/")
 		Logging.logDebug("CSR ids: %s" % ids)
 		if Utils.isSPRelative(id):
-			(r, _) = CSE.dispatcher._retrieveResource(ri=ids[1])
+			r, _ = CSE.dispatcher._retrieveResource(ri=ids[1])
 		elif Utils.isAbsolute(id):
-			(r, _) = CSE.dispatcher._retrieveResource(ri=ids[2])
+			r, _ = CSE.dispatcher._retrieveResource(ri=ids[2])
 		else:
-			(r, _) = CSE.dispatcher._retrieveResource(ri=id)
-		return (r, ids)
+			r, _ = CSE.dispatcher._retrieveResource(ri=id)
+		return r, ids
 
 		#pathElements = id.split('/')
 		#if len(pathElements) <= 2:
