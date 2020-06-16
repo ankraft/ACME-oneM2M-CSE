@@ -25,6 +25,7 @@ class Resource(object):
 	_imported			= '__imported__'
 	_isVirtual 			= '__isVirtual__'
 	_isInstantiated		= '__isInstantiated__'
+	_originator			= '__originator__'
 
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated ]
 
@@ -139,7 +140,8 @@ class Resource(object):
 			parentResource['st'] = parentResource.st + 1
 			if (res := parentResource.dbUpdate())[0] is None:
 				return (False, res[1])
-	
+
+		self.setAttribute(self._originator, originator, overwrite=False)
 		self.setAttribute(self._rtype, self.tpe, overwrite=False) 
 
 		return (True, C.rcOK)

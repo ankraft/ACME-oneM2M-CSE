@@ -102,7 +102,7 @@ class SecurityManager(object):
 					(parentResource, _) = CSE.dispatcher.retrieveResource(resource.pi)
 					return self.hasAccess(originator, parentResource, requestedPermission, checkSelf)
 				Logging.logDebug('Missing acpi in resource')
-				if (cr := resource.cr) is not None and cr == originator:
+				if (orig := resource[resource._originator]) is not None and orig == originator:
 					Logging.logDebug('Allow access for creator')
 					return True
 				return False
