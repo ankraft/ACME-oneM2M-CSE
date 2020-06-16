@@ -27,7 +27,7 @@ class Resource(object):
 	_isInstantiated		= '__isInstantiated__'
 	_originator			= '__originator__'
 
-	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated ]
+	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator ]
 
 	def __init__(self, tpe, jsn=None, pi=None, ty=None, create=False, inheritACP=False, readOnly=False, rn=None, attributePolicies=None, isVirtual=False):
 		self.tpe = tpe
