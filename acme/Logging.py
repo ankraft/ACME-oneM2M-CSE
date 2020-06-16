@@ -99,7 +99,7 @@ class	Logging:
 	@staticmethod
 	def loggingWorker():
 		while not Logging.queue.empty():
-			(level, msg, caller, thread) = Logging.queue.get()
+			level, msg, caller, thread = Logging.queue.get()
 			Logging.loggerConsole.log(level, '%s*%d*%d*%s', os.path.basename(caller.filename), caller.lineno, thread.native_id, msg)
 		return True
 

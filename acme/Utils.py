@@ -162,7 +162,7 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 	ids = id.split('/')
 
 	if (idsLen := len(ids)) == 0:	# There must be something!
-		return (None, None, None)
+		return None, None, None
 
 	# Remove virtual resource shortname if it is present
 	if ids[-1] in C.tVirtualResourcesNames:
@@ -176,14 +176,14 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 		if csi != cseri:						# Not for this CSE? retargeting
 			if vrPresent is not None:			# append last path element again
 				ids.append(vrPresent)
-			return ('/%s' % '/'.join(ids[1:]), csi, srn)		# Early return. ri is the remaining (un)structured path
+			return '/%s' % '/'.join(ids[1:]), csi, srn		# Early return. ri is the remaining (un)structured path
 		if idsLen > 2 and (ids[2] == csern or ids[2] == '-'):	# structured
 			ids[2] = csern if ids[2] == '-' else ids[2]
 			srn = '/'.join(ids[2:])
 		elif idsLen == 3:						# unstructured
 			ri = ids[2]
 		else:
-			return (None, None, None)
+			return None, None, None
 
 	elif ids[0] == '_' and idsLen >= 4:			# Absolute
 		# print("Absolute")
@@ -192,14 +192,14 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 		if csi != cseri:
 			if vrPresent is not None:						# append last path element again
 				ids.append(vrPresent)
-			return ('/%s' % '/'.join(ids[2:]), csi, srn)	# Not for this CSE? retargeting
+			return '/%s' % '/'.join(ids[2:]), csi, srn	# Not for this CSE? retargeting
 		if ids[3] == csern or ids[3] == '-':				# structured
 			ids[3] = csern if ids[3] == '-' else ids[3]
 			srn = '/'.join(ids[3:])
 		elif idsLen == 4:						# unstructured
 			ri = ids[3]
 		else:
-			return (None, None, None)
+			return None, None, None
 
 	else:										# CSE-Relative
 		# print("CSE-Relative")
@@ -213,17 +213,17 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str):
 	if ri is not None:
 		if vrPresent is not None:
 			ri = '%s/%s' % (ri, vrPresent)
-		return (ri, csi, srn)
+		return ri, csi, srn
 	if srn is not None:
 		# if '/fopt' in ids:	# special handling for fanout points
-		# 	return (srn, csi, srn)
+		# 	return srn, csi, srn
 		if vrPresent is not None:
 			srn = '%s/%s' % (srn, vrPresent)
-		return (riFromStructuredPath(srn), csi, srn)
+		return riFromStructuredPath(srn), csi, srn
 	if csi is not None:
-		return (riFromCSI('/'+csi), csi, srn)
+		return riFromCSI('/'+csi), csi, srn
 	# TODO do something with spi?
-	return (None, None, None)
+	return None, None, None
 
 
 
@@ -233,7 +233,7 @@ def resourceFromJSON(jsn, pi=None, acpi=None, tpe=None, create=False, isImported
 		This will *not* call the activate method, therefore some attributes
 		may be set separately.
 	"""
-	(jsn, root) = pureResource(jsn)	# remove optional "m2m:xxx" level
+	jsn, root = pureResource(jsn)	# remove optional "m2m:xxx" level
 	ty = jsn['ty'] if 'ty' in jsn else tpe
 	if ty != None and tpe != None and ty != tpe:
 		return None
@@ -313,8 +313,8 @@ def pureResource(jsn):
 	rootKeys = list(jsn.keys())
 	# Try to determine the root identifier 
 	if len(rootKeys) == 1 and (rk := rootKeys[0]) not in excludeFromRoot and re.match('[\w]+:[\w]', rk):
-		return (jsn[rootKeys[0]], rootKeys[0])
-	return (jsn, None)
+		return jsn[rootKeys[0]], rootKeys[0]
+	return jsn, None
 
 
 # find a structured element in JSON
@@ -452,4 +452,4 @@ def getRequestHeaders(request):
 			t = p[2].partition('=')[2]
 			ty = int(t) if t.isdigit() else C.tUNKNOWN # resource type
 
-	return (originator, ct, ty, rqi, C.rcOK)
+	return originator, ct, ty, rqi, C.rcOK
