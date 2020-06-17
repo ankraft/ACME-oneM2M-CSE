@@ -157,13 +157,15 @@ class Dispatcher(object):
 				self._resourceTreeReferences(children, resource, drt)	# the function call add attributes to the result resource
 				return resource, C.rcOK
 			elif rcn == C.rcnChildResourceReferences: # child resource references
-				return self._resourcesToURIList(children, drt), C.rcOK
+				return (self._resourceTreeReferences(children, None, drt), C.rcOK)
+			# direct child resources, NOT the root resource
 			elif rcn == C.rcnChildResources:
-				resource = {  }		# empty 
-				self._resourceTreeJSON(children, resource)
-				return resource, C.rcOK
-			return None, C.rcBadRequest
-			# TODO check rcn. Allowed only 1, 4, 5 . 1= as now. If 4,5 check lim etc
+				childResources = {resource.tpe : {}} #  Root resource with no attribute
+				self._resourceTreeJSON(children, childResources[resource.tpe]) # Adding just child resources
+				return (childResources, C.rcOK)
+			else:
+				return (None, C.rcBadRequest)
+			# TODO check rcn. Allowed only 1, 4, 5, 6, 7, 8 . 1= as now. If 4,5 check lim etc
 
 
 		else:
@@ -485,11 +487,9 @@ class Dispatcher(object):
 			return { 'm2m:rce' : { Utils.noDomain(tpe) : result[0].asJSON()[tpe], 'uri' : Utils.structuredPath(result[0]) }}, result[1]
 		elif rcn == C.rcnNothing:
 			return None, result[1]
+		else:
+			return (None, C.rcBadRequest)
 		# TODO C.rcnDiscoveryResultReferences 
-
-		return result
-
-
 
 	def createResource(self, resource, parentResource=None, originator=None):
 		Logging.logDebug('Adding resource ri: %s, type: %d' % (resource.ri, resource.ty))
@@ -717,9 +717,10 @@ class Dispatcher(object):
 		# direct child resources, NOT the root resource
 		elif rcn == C.rcnChildResources:
 			children = self.discoverChildren(id, resource, originator, handling)
-			result = { }			# empty 
-			self._resourceTreeJSON(children, result)
-		elif rcn == C.rcnAttributesAndChildResourceReferences: 
+			childResources = {resource.tpe : {}}			# Root resource with no attributes
+			self._resourceTreeJSON(children, childResources[resource.tpe])
+			result = childResources
+		elif rcn == C.rcnAttributesAndChildResourceReferences:
 			children = self.discoverChildren(id, resource, originator, handling)
 			self._resourceTreeReferences(children, resource, drt)	# the function call add attributes to the result resource
 			result = resource
