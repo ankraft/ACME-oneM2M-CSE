@@ -62,7 +62,7 @@ class CNT(Resource):
 		CSE.dispatcher.createResource(r)
 
 		# TODO Error checking above
-		return (True, C.rcOK)
+		return True, C.rcOK
 
 
 	# Get all content instances of a resource and return a sorted (by ct) list 
@@ -76,13 +76,13 @@ class CNT(Resource):
 		
 		# Check whether the child's rn is "ol" or "la".
 		if (rn := childResource['rn']) is not None and rn in ['ol', 'la']:
-			return (False, C.rcOperationNotAllowed)
+			return False, C.rcOperationNotAllowed
 	
 		# Check whether the size of the CIN doesn't exceed the mbs
 		if childResource.ty == C.tCIN and self.mbs is not None:
 			if childResource.cs is not None and childResource.cs > self.mbs:
-				return (False, C.rcNotAcceptable)
-		return (True, C.rcOK)
+				return False, C.rcNotAcceptable
+		return True, C.rcOK
 
 
 	# Handle the addition of new CIN. Basically, get rid of old ones.
@@ -139,5 +139,5 @@ class CNT(Resource):
 		# Some CNT resource may have been updated, so store the resource 
 		CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
 
-		return (True, C.rcOK)
+		return True, C.rcOK
 

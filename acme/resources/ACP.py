@@ -38,7 +38,6 @@ class ACP(Resource):
 									 ])
 
 
-
 	def validate(self, originator, create=False):
 		if (res := super().validate(originator, create))[0] == False:
 			return res
@@ -48,7 +47,7 @@ class ACP(Resource):
 			cseOriginator = Configuration.get('cse.originator')
 			self.addPermissionOriginator(cseOriginator)
 			self.addSelfPermissionOriginator(cseOriginator)
-		return (True, C.rcOK)
+		return True, C.rcOK
 
 
 

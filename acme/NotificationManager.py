@@ -35,10 +35,10 @@ class NotificationManager(object):
 
 	def addSubscription(self, subscription, originator):
 		if Configuration.get('cse.enableNotifications') is not True:
-			return (False, C.rcSubscriptionVerificationInitiationFailed)
+			return False, C.rcSubscriptionVerificationInitiationFailed
 		Logging.logDebug('Adding subscription')
 		if (result := self._getAndCheckNUS(subscription, originator=originator))[0] is None:	# verification requests happen here
-			return (False, result[1])
+			return False, result[1]
 		return (True, C.rcOK) if CSE.storage.addSubscription(subscription) else (False, C.rcSubscriptionVerificationInitiationFailed)
 
 
@@ -114,7 +114,7 @@ class NotificationManager(object):
 			if Utils.isURL(nu):
 				result.append(nu)
 			else:
-				(r, _) = CSE.dispatcher.retrieveResource(nu)
+				r, _ = CSE.dispatcher.retrieveResource(nu)
 				if r is None:
 					Logging.logWarn('Resource not found to get URL: %s' % nu)
 					return None
@@ -141,7 +141,7 @@ class NotificationManager(object):
 		if previousNus is not None:
 			if (previousNus := self._getNotificationURLs(previousNus, originator)) is None:
 				# Fail if any of the NU's cannot be retrieved
-				return (None, C.rcSubscriptionVerificationInitiationFailed)
+				return None, C.rcSubscriptionVerificationInitiationFailed
 
 		# Are there any new URI's?
 		if (nuAttribute := Utils.findXPath(newJson, 'm2m:sub/nu')) is not None:
@@ -149,14 +149,14 @@ class NotificationManager(object):
 			# Resolve the URI's for the new NU's
 			if (newNus := self._getNotificationURLs(nuAttribute, originator)) is None:
 				# Fail if any of the NU's cannot be retrieved
-				return (None, C.rcSubscriptionVerificationInitiationFailed)
+				return None, C.rcSubscriptionVerificationInitiationFailed
 
 			# notify new nus (verification request). New ones are the ones that are not in the previousNU list
 			for nu in newNus:
 				if previousNus is None or (nu not in previousNus):
 					if not self._sendVerificationRequest(nu, subscription, originator=originator):
 						Logging.logDebug('Verification request failed: %s' % nu)
-						return (None, C.rcSubscriptionVerificationInitiationFailed)
+						return None, C.rcSubscriptionVerificationInitiationFailed
 
 		# notify removed nus (deletion notification) if nu = null
 		if 'nu' in newJson: # if nu not present, nothing to do
@@ -166,7 +166,7 @@ class NotificationManager(object):
 						if not self._sendDeletionNotification(nu, subscription):
 							Logging.logDebug('Deletion request failed') # but ignore the error
 
-		return (newNus, C.rcOK)
+		return newNus, C.rcOK
 
 
 	#########################################################################
@@ -228,6 +228,6 @@ class NotificationManager(object):
 		if originator is not None:
 			Utils.setXPath(jsn, 'm2m:sgn/cr', originator)
 
-		(_, rc) = CSE.httpServer.sendCreateRequest(nu, Configuration.get('cse.csi'), data=json.dumps(jsn))
+		_, rc = CSE.httpServer.sendCreateRequest(nu, Configuration.get('cse.csi'), data=json.dumps(jsn))
 		return rc in [C.rcOK]
 

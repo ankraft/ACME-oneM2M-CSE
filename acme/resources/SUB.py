@@ -79,4 +79,4 @@ class SUB(Resource):
 		self.normalizeURIAttribute('nfu')
 		self.normalizeURIAttribute('nu')
 		self.normalizeURIAttribute('su')		
-		return (True, C.rcOK)
+		return True, C.rcOK

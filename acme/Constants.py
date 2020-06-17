@@ -80,8 +80,8 @@ class Constants(object):
 
 	# List of virtual resources
 
-	tVirtualResources 				= [ tCNT_LA, tCNT_OL, tGRP_FOPT, tPCH_PCU ]
-	tVirtualResourcesNames 			= [ 'fopt', 'la', 'ol', 'pcu' ]
+	tVirtualResources 				= [ tCNT_LA, tCNT_OL, tFCNT_LA, tFCNT_OL, tGRP_FOPT, tPCH_PCU ]
+	tVirtualResourcesNames 			= [ 'la', 'ol', 'fopt', 'pcu' ]
 
 	# Supported by this CSE
 	supportedResourceTypes 			= [ tACP, tAE, tCNT, tCIN, tCSEBase, tGRP, tMGMTOBJ, tNOD, tCSR, tSUB, tFCNT, tFCI ]

@@ -90,11 +90,11 @@ class Storage(object):
 				self.db.insertResource(resource)
 			else:
 				Logging.logWarn('Resource already exists (Skipping): %s ' % resource)
-				return (False, C.rcAlreadyExists)
+				return False, C.rcAlreadyExists
 
 		# Add path to identifiers db
 		self.db.insertIdentifier(resource, ri, srn)
-		return (True, C.rcCreated)
+		return True, C.rcCreated
 
 
 	# Check whether a resource with either the ri or the srn already exists
@@ -171,7 +171,7 @@ class Storage(object):
 		ri = resource.ri
 		# Logging.logDebug('Updating resource (ty: %d, ri: %s, rn: %s)' % (resource['ty'], ri, resource['rn']))
 		resource = self.db.updateResource(resource)
-		return (resource, C.rcUpdated)
+		return resource, C.rcUpdated
 
 
 	def deleteResource(self, resource : Resource) -> (bool, int):
@@ -181,7 +181,7 @@ class Storage(object):
 		# Logging.logDebug('Removing resource (ty: %d, ri: %s, rn: %s)' % (resource['ty'], ri, resource['rn']))
 		self.db.deleteResource(resource)
 		self.db.deleteIdentifier(resource)
-		return (True, C.rcDeleted)
+		return True, C.rcDeleted
 
 
 

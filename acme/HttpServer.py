@@ -111,7 +111,7 @@ class HttpServer(object):
 		Logging.logDebug('==> Retrieve: /%s' % path) # path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpRetrieve()
-		(resource, rc) = CSE.dispatcher.retrieveRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+		resource, rc = CSE.dispatcher.retrieveRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 		return self._prepareResponse(request, resource, rc)
 
 
@@ -120,7 +120,7 @@ class HttpServer(object):
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpCreate()
-		(resource, rc) = CSE.dispatcher.createRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+		resource, rc = CSE.dispatcher.createRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 		return self._prepareResponse(request, resource, rc)
 
 
@@ -129,7 +129,7 @@ class HttpServer(object):
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpUpdate()
-		(resource, rc) = CSE.dispatcher.updateRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+		resource, rc = CSE.dispatcher.updateRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 		return self._prepareResponse(request, resource, rc)
 
 
@@ -137,7 +137,7 @@ class HttpServer(object):
 		Logging.logDebug('==> Delete: /%s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpDelete()
-		(resource, rc) = CSE.dispatcher.deleteRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+		resource, rc = CSE.dispatcher.deleteRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 		return self._prepareResponse(request, resource, rc)
 
 
@@ -218,9 +218,9 @@ class HttpServer(object):
 			r = method(url, data=data, headers=headers)
 		except Exception as e:
 			Logging.logWarn('Failed to send request: %s' % str(e))
-			return (None, C.rcTargetNotReachable)
+			return None, C.rcTargetNotReachable
 		rc = int(r.headers['X-M2M-RSC']) if 'X-M2M-RSC' in r.headers else C.rcInternalServerError
-		return (r.json() if len(r.content) > 0 else None, rc)
+		return r.json() if len(r.content) > 0 else None, rc
 
 	#########################################################################
 

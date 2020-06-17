@@ -38,4 +38,4 @@ class CSR(Resource):
 			return res
 
 		self.normalizeURIAttribute('poa')
-		return (True, C.rcOK)
+		return True, C.rcOK

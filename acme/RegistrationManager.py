@@ -33,14 +33,14 @@ class RegistrationManager(object):
 	def checkResourceCreation(self, resource, originator, parentResource=None):
 		if resource.ty == C.tAE:
 			if (originator := self.handleAERegistration(resource, originator, parentResource)) is None:	# assigns new originator
-				return (None, C.rcBadRequest)
+				return None, C.rcBadRequest
 		if resource.ty == C.tCSR:
 			if not self.handleCSRRegistration(resource, originator):
-				return (None, C.rcBadRequest)
+				return None, C.rcBadRequest
 
 		# Test and set creator attribute.
 		if (rc := self.handleCreator(resource, originator)) != C.rcOK:
-			return (None, rc)
+			return None, rc
 
 		# ACPI assignments 
 		if resource.ty != C.tAE:	# Don't handle AE's, this was already done already in the AE registration
@@ -56,7 +56,7 @@ class RegistrationManager(object):
 				else:
 					resource['acpi'] = [ Configuration.get('cse.security.defaultACPI') ]	# Set default ACPIRIs
 
-		return (originator, C.rcOK)
+		return originator, C.rcOK
 
 
 	# Check for (wrongly) set creator attribute as well as assign it to allowed resources.
@@ -74,11 +74,11 @@ class RegistrationManager(object):
 	def checkResourceDeletion(self, resource, originator):
 		if resource.ty == C.tAE:
 			if not self.handleAEDeRegistration(resource):
-				return (False, originator)
+				return False, originator
 		if resource.ty == C.tCSR:
 			if not self.handleCSRDeRegistration(resource):
-				return (False, originator)
-		return (True, originator)
+				return False, originator
+		return True, originator
 
 
 
@@ -137,7 +137,6 @@ class RegistrationManager(object):
 		# Add the AE to the accessCSEBase ACP so that it can at least retrieve the CSEBase
 		self._addToAccessCSBaseACP(ae.aei)
 
-
 		return originator
 
 
@@ -172,7 +171,7 @@ class RegistrationManager(object):
 		# Create an ACP for this CSR if there is none set
 		Logging.logDebug('Adding ACP for CSR')
 		cseOriginator = Configuration.get('cse.originator')
-		(localCSE, _) = Utils.getCSE()
+		localCSE, _ = Utils.getCSE()
 
 		# Add ACP for remote CSE to access the own CSE
 		if csr.acpi is None or len(csr.acpi) == 0:
@@ -200,7 +199,7 @@ class RegistrationManager(object):
 
 		# remove the before created ACP, if it exist
 		Logging.logDebug('Removing ACPs for CSR')
-		(localCSE, _) = Utils.getCSE()
+		localCSE, _ = Utils.getCSE()
 
 		# Retrieve CSR ACP
 		# This might fail (which is okay!), because the ACP was not created during
@@ -221,7 +220,7 @@ class RegistrationManager(object):
 	def _createACP(self, parentResource=None, rn=None, createdByResource=None, originators=None, permission=None):
 		""" Create an ACP with some given defaults. """
 		if parentResource is None or rn is None or originators is None or permission is None:
-			return (None, C.BadRequest)
+			return None, C.BadRequest
 		cseOriginator = Configuration.get('cse.originator')
 		selfPermission = Configuration.get('cse.acp.pvs.acop')
 		origs = originators.copy()
@@ -242,7 +241,7 @@ class RegistrationManager(object):
 			# only delete the ACP when it was created in the course of AE registration
 			if  (ri := acpRes[0].createdInternally()) is not None and resource.ri == ri:
 				return CSE.dispatcher.deleteResource(acpRes[0])
-		return (None, C.rcOK)
+		return None, C.rcOK
 
 
 	def _addToAccessCSBaseACP(self, originator):

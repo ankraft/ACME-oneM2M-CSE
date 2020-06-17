@@ -22,7 +22,7 @@ attributePolicies = constructPolicy([
 class CIN(Resource):
 
 	def __init__(self, jsn=None, pi=None, create=False):
-		super().__init__(C.tsCIN, jsn, pi, C.tCIN, create=create, inheritACP=True, readOnly = True)
+		super().__init__(C.tsCIN, jsn, pi, C.tCIN, create=create, inheritACP=True, readOnly = True, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('con', '', overwrite=False)
@@ -38,8 +38,8 @@ class CIN(Resource):
 		super().activate(parentResource, originator)
 		parentResource = parentResource.dbReload()	# Read the resource again in case it was updated in the DB
 		self.setAttribute('st', parentResource.st)
-		return (True, C.rcOK)
+		return True, C.rcOK
 
 
 	def update(self, jsn=None, originator=None):
-		return (False, C.rcOperationNotAllowed)
+		return False, C.rcOperationNotAllowed
