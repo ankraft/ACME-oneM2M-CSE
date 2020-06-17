@@ -9,9 +9,9 @@
 #
 
 import json, requests, logging, os, sys
+import flask
 from flask import Flask, request, make_response
 from typing import Any, Callable
-import flask
 from Configuration import Configuration, version
 from Constants import Constants as C
 import CSE, Utils

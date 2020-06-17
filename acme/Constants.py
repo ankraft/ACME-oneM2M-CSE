@@ -134,6 +134,7 @@ class Constants(object):
 	opCREATE 						= 1
 	opUPDATE						= 2
 	opDELETE						= 3
+	opDISCOVERY						= 4
 
 
 	# Permissions

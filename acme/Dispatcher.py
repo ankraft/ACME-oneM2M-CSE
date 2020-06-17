@@ -9,6 +9,7 @@
 #
 
 import sys, traceback, re
+from flask import  request
 from typing import Any, List
 from Logging import Logging
 from Configuration import Configuration
@@ -77,7 +78,7 @@ class Dispatcher(object):
 		Logging.logDebug('Handle retrieve resource: %s' % id)
 
 		try:
-			if (attrs := self._getArguments(request)) is None:
+			if (attrs := self._getArguments(request, C.opRETRIEVE)) is None:
 				return None, C.rcBadRequest
 			fu 			= attrs.get('fu')
 			drt 		= attrs.get('drt')
@@ -416,7 +417,8 @@ class Dispatcher(object):
 		Logging.logDebug('Adding new resource')
 
 		try:
-			attrs = self._getArguments(request)
+			if (attrs := self._getArguments(request, C.opCREATE)) is None:
+				return None, C.rcBadRequest
 			rcn   = attrs.get('rcn')
 		except Exception as e:
 			return None, C.rcInvalidArguments
@@ -571,7 +573,8 @@ class Dispatcher(object):
 
 		# get arguments
 		try:
-			attrs = self._getArguments(request)
+			if (attrs := self._getArguments(request, C.opUPDATE)) is None:
+				return None, C.rcBadRequest
 			rcn   = attrs.get('rcn')
 		except Exception as e:
 			return None, C.rcInvalidArguments
@@ -679,7 +682,8 @@ class Dispatcher(object):
 
 		# get arguments
 		try:
-			attrs 		= self._getArguments(request)
+			if (attrs := self._getArguments(request, C.opDELETE)) is None:
+				return None, C.rcBadRequest
 			rcn  		= attrs.get('rcn')
 			drt 		= attrs.get('drt')
 			handling 	= attrs.get('__handling__')
@@ -811,7 +815,7 @@ class Dispatcher(object):
 	# Get the request arguments, or meaningful defaults.
 	# Only a small subset is supported yet
 	# Throws an exception when a wrong type is encountered. This is part of the validation
-	def _getArguments(self, request):
+	def _getArguments(self, request : request, operation : int = C.opRETRIEVE) -> List[Any]:
 		result = { }
 
 		args = request.args.copy()	# copy for greedy attributes checking 
@@ -842,15 +846,49 @@ class Dispatcher(object):
 			rcn = int(rcn)
 			del args['rcn']
 		else:
-			# TODO Not sure whether the conditional handling makes sense
-			# rcn = C.rcnAttributes if fu == C.fuConditionalRetrieval else C.rcnChildResourceReferences
 			if fu != C.fuDiscoveryCriteria:
-				rcn = C.rcnAttributes
+				# Different defaults for each operation
+				if operation in [ C.opRETRIEVE, C.opCREATE, C.opUPDATE ]:
+					rcn = C.rcnAttributes
+				elif operation == [ C.opDELETE ]:
+					rcn = C.rcnNothing
 			else:
 				# discovery-result-references as default for Discovery operation
 				rcn = C.rcnDiscoveryResultReferences
-				#rcn = C.rcnChildResourceReferences
+
+		# Check value of rcn depending on operation
+		if operation == C.opRETRIEVE and rcn not in [ C.rcnAttributes,
+													  C.rcnAttributesAndChildResources,
+													  C.rcnAttributesAndChildResourceReferences,
+													  C.rcnChildResourceReferences,
+													  C.rcnChildResources ]:
+			return None
+		elif operation == C.opDISCOVERY and rcn not in [ C.rcnChildResourceReferences,
+														 C.rcnDiscoveryResultReferences,
+														 C.rcnAttributesAndChildResourceReferences,
+													 	 C.rcnAttributesAndChildResources,
+														 C.rcnChildResources ]:
+			return None
+		elif operation == C.opCREATE and rcn not in [ C.rcnAttributes,
+													  C.rcnModifiedAttributes,
+													  C.rcnHierarchicalAddress,
+													  C.rcnHierarchicalAddressAttributes,
+													  C.rcnNothing ]:
+			return None
+		elif operation == C.opUPDATE and rcn not in [ C.rcnAttributes,
+													  C.rcnModifiedAttributes,
+													  C.rcnNothing ]:
+			return None
+		elif operation == C.opDELETE and rcn not in [ C.rcnAttributes,
+													  C.rcnNothing,
+													  C.rcnAttributesAndChildResources,
+													  C.rcnChildResources,
+													  C.rcnAttributesAndChildResourceReferences,
+													  C.rcnChildResourceReferences ]:
+			return None
+
 		result['rcn'] = rcn
+
 
 		# handling conditions
 		handling = { }
