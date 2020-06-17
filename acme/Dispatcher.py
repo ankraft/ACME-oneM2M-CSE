@@ -78,7 +78,7 @@ class Dispatcher(object):
 
 		try:
 			if (attrs := self._getArguments(request)) is None:
-				return None, C.rcInvalidArguments
+				return None, C.rcBadRequest
 			fu 			= attrs.get('fu')
 			drt 		= attrs.get('drt')
 			handling 	= attrs.get('__handling__')
