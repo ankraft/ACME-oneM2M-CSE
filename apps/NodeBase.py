@@ -63,7 +63,7 @@ class NodeBase(AppBase):
 
 	def updateBattery(self):
 		if self.battery is not None:
-			(n, rc) = self.updateResource(ri=self.battery.ri, jsn=self.battery.asJSON(update=True, noACP=True))
+			self.updateResource(ri=self.battery.ri, jsn=self.battery.asJSON(update=True, noACP=True))
 
 
 	#########################################################################
@@ -86,7 +86,7 @@ class NodeBase(AppBase):
 
 	def updateMemory(self):
 		if self.memory is not None:
-			(n, rc) = self.updateResource(ri=self.memory.ri, jsn=self.memory.asJSON(update=True, noACP=True))
+			self.updateResource(ri=self.memory.ri, jsn=self.memory.asJSON(update=True, noACP=True))
 
 
 	#########################################################################
@@ -113,6 +113,6 @@ class NodeBase(AppBase):
 
 	def updateDeviceInfo(self):
 		if self.memory is not None:
-			(n, rc) = self.updateResource(ri=self.deviceInfo.ri, jsn=self.deviceInfo.asJSON(update=True, noACP=True))
+			self.updateResource(ri=self.deviceInfo.ri, jsn=self.deviceInfo.asJSON(update=True, noACP=True))
 
 
