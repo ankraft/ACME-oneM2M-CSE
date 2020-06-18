@@ -169,14 +169,14 @@ class RemoteCSEManager(object):
 	#	This is done by trying to retrie a remote CSR. If it cannot be retrieved
 	#	then the related local CSR is removed.
 	def _checkCSRLiveliness(self):
-		csrs, rc = self._retrieveLocalCSR(own=False)
-		for csr in csrs:
-			for url in (csr.poa or []):
+		localCsrs, rc = self._retrieveLocalCSR(own=False)
+		for localCsr in localCsrs:
+			for url in (localCsr.poa or []):
 				if Utils.isURL(url):
-					cse, rc = self._retrieveRemoteCSE(url='%s%s' % (url, csr.csi ))
+					cse, rc = self._retrieveRemoteCSE(url='%s%s' % (url, localCsr.csi ))
 					if rc != C.rcOK:
-						Logging.logWarn('Remote CSE unreachable. Removing CSR: %s' % csr.rn if csr is not None else '')
-						self._deleteLocalCSR()
+						Logging.logWarn('Remote CSE unreachable. Removing CSR: %s' % localCsr.rn if localCsr is not None else '')
+						self._deleteLocalCSR(localCsr)
 
 
 	#
@@ -184,21 +184,21 @@ class RemoteCSEManager(object):
 	#
 
 	def _retrieveLocalCSR(self, csi=None, own=True):
-		#Logging.logDebug('Retrieving local CSR: %s' % csi)
-		csrs = CSE.dispatcher.directChildResources(pi=Configuration.get('cse.ri'), ty=C.tCSR)
+		localCsrs = CSE.dispatcher.directChildResources(pi=Configuration.get('cse.ri'), ty=C.tCSR)
 		if csi is None:
 			csi = self.remoteCsi
+		Logging.logDebug('Retrieving local CSR: %s' % csi)
 		if own:
-			for csr in csrs:
-				if (c := csr.csi) is not None and c == csi:
-					return ([csr], C.rcOK)
+			for localCsr in localCsrs:
+				if (c := localCsr.csi) is not None and c == csi:
+					return ([localCsr], C.rcOK)
 			return [None], C.rcBadRequest
 		else:
 			result = []
-			for csr in csrs:
-				if (c := csr.csi) is not None and c == csi:
+			for localCsr in localCsrs:
+				if (c := localCsr.csi) is not None and c == csi:
 					continue
-				result.append(csr)
+				result.append(localCsr)
 			return result, C.rcOK
 
 

@@ -149,8 +149,8 @@ class RegistrationManager(object):
 		Logging.logDebug('DeRegisterung AE. aei: %s ' % resource.aei)
 		Logging.logDebug('Removing ACP for AE')
 
-		acpi = '%s/%s%s' % (Configuration.get('cse.rn'), C.acpPrefix, resource.rn)
-		self._removeACP(rn=acpi, resource=resource)
+		acpSrn = '%s/%s%s' % (Configuration.get('cse.rn'), C.acpPrefix, resource.rn)
+		self._removeACP(srn=acpSrn, resource=resource)
 
 		# Remove from accessCSEBaseACP
 		self._removeFromAccessCSEBaseACP(resource.aei)
@@ -206,7 +206,7 @@ class RegistrationManager(object):
 		# the registration of the CSR (identified by the rn that includes the 
 		# name of the CSR)
 		acpi = '%s/%s%s' % (localCSE.rn, C.acpPrefix, csr.rn)
-		self._removeACP(rn=acpi, resource=csr)
+		self._removeACP(srn=acpi, resource=csr)
 
 		# Remove from accessCSEBaseACP
 		self._removeFromAccessCSEBaseACP(csr.csi)
@@ -221,6 +221,13 @@ class RegistrationManager(object):
 		""" Create an ACP with some given defaults. """
 		if parentResource is None or rn is None or originators is None or permission is None:
 			return None, C.BadRequest
+
+		# Remove existing ACP with that name first
+		acpSrn = '%s/%s' % (Configuration.get('cse.rn'), rn)
+		if (acpRes := CSE.dispatcher.retrieveResource(id=acpSrn))[1] == C.rcOK:
+			CSE.dispatcher.deleteResource(acpRes[0])	# ignore errors
+
+		# Create the ACP
 		cseOriginator = Configuration.get('cse.originator')
 		selfPermission = Configuration.get('cse.acp.pvs.acop')
 		origs = originators.copy()
@@ -233,10 +240,10 @@ class RegistrationManager(object):
 		return CSE.dispatcher.createResource(acp, parentResource=parentResource, originator=cseOriginator)
 
 
-	def _removeACP(self, rn, resource):
+	def _removeACP(self, srn, resource):
 		""" Remove an ACP created during registration before. """
-		if (acpRes := CSE.dispatcher.retrieveResource(id=rn))[1] != C.rcOK:
-			Logging.logWarn('Could not find ACP: %s' % rn)	# ACP not found, either not created or already deleted
+		if (acpRes := CSE.dispatcher.retrieveResource(id=srn))[1] != C.rcOK:
+			Logging.logWarn('Could not find ACP: %s' % srn)	# ACP not found, either not created or already deleted
 		else:
 			# only delete the ACP when it was created in the course of AE registration
 			if  (ri := acpRes[0].createdInternally()) is not None and resource.ri == ri:
