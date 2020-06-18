@@ -850,7 +850,7 @@ class Dispatcher(object):
 				# Different defaults for each operation
 				if operation in [ C.opRETRIEVE, C.opCREATE, C.opUPDATE ]:
 					rcn = C.rcnAttributes
-				elif operation == [ C.opDELETE ]:
+				elif operation == C.opDELETE:
 					rcn = C.rcnNothing
 			else:
 				# discovery-result-references as default for Discovery operation
