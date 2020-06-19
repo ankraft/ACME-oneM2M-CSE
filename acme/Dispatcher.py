@@ -158,12 +158,14 @@ class Dispatcher(object):
 				self._resourceTreeReferences(children, resource, drt)	# the function call add attributes to the result resource
 				return resource, C.rcOK
 			elif rcn == C.rcnChildResourceReferences: # child resource references
-				return (self._resourceTreeReferences(children, None, drt), C.rcOK)
+				childResources = {resource.tpe: {}}  # Root resource with no attribute
+				self._resourceTreeReferences(children,  childResources[resource.tpe], drt)
+				return childResources, C.rcOK
 			# direct child resources, NOT the root resource
 			elif rcn == C.rcnChildResources:
 				childResources = {resource.tpe : {}} #  Root resource with no attribute
 				self._resourceTreeJSON(children, childResources[resource.tpe]) # Adding just child resources
-				return (childResources, C.rcOK)
+				return childResources, C.rcOK
 			else:
 				return (None, C.rcBadRequest)
 			# TODO check rcn. Allowed only 1, 4, 5, 6, 7, 8 . 1= as now. If 4,5 check lim etc
@@ -730,7 +732,9 @@ class Dispatcher(object):
 			result = resource
 		elif rcn == C.rcnChildResourceReferences: # child resource references
 			children = self.discoverChildren(id, resource, originator, handling)
-			result = self._resourceTreeReferences(children, None, drt)
+			childResources = {resource.tpe: {}}  # Root resource with no attribute
+			self._resourceTreeReferences(children, childResources[resource.tpe], drt)
+			result = childResources
 		# TODO C.rcnDiscoveryResultReferences
 		else:
 			return None, C.rcBadRequest
