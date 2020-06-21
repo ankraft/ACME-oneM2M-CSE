@@ -1,7 +1,6 @@
 # Changelog
 
 ## 0.4.0 - 2020-06-19
-- [WEB] Add displaying the path of the selected resource and many more small improvements.
 - [CSE] Fixed crashes when using group resources.
 - [CSE] Added command line arguments --remote-cse, --no-remote-cse .
 - [CSE] Improved remote CSE handling.
@@ -19,6 +18,8 @@
 - [Logging] Now using the Rich module for improved terminal logging .
 - [IMPORTING] Added macro mechanism to use configuration settings in imported files.
 - [NOTIFICATIONS] Corrected error handling.
+- [WEB] Add displaying the path of the selected resource and many more small improvements.
+- [WEB] Providing default originator.
 - [ALL] Many, many small fixes and improvements.
 - [MISC] Restructured documentation.
 
