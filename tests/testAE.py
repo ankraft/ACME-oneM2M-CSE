@@ -26,7 +26,6 @@ class TestAE(unittest.TestCase):
 	@classmethod
 	def tearDownClass(cls):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
-		print("end")
 
 
 	def test_createAE(self):
@@ -128,7 +127,7 @@ class TestAE(unittest.TestCase):
 	def test_retrieveAEACP(self):
 		self.assertIsNotNone(TestAE.aeACPI)
 		self.assertIsInstance(TestAE.aeACPI, list)
-		self.assertTrue(len(TestAE.aeACPI) > 0)
+		self.assertGreater(len(TestAE.aeACPI), 0)
 		_, rsc = RETRIEVE('%s%s' % (URL, TestAE.aeACPI[0]), TestAE.aei)	# AE's own originator fails
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 		acp, rsc = RETRIEVE('%s%s' % (URL, TestAE.aeACPI[0]), ORIGINATOR)	# but Admin should succeed
