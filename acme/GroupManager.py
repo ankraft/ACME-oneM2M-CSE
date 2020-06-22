@@ -168,7 +168,7 @@ class GroupManager(object):
 		# walk through all members
 		result = []
 		tail = '/' + tail if len(tail) > 0 else '' # add remaining path, if any
-		for mid in group.mid:
+		for mid in group.mid.copy():	# copy mid list because it is changed in the loop
 			# Try to get the SRN and add the tail
 			if (srn := Utils.structuredPathFromRI(mid)) is not None:
 				mid = srn + tail
@@ -195,12 +195,18 @@ class GroupManager(object):
 		if len(result) > 0:
 			items = []
 			for r in result:
-				item = 	{ 'rsc' : r[1], 
-						  'rqi' : rqi,
-						  'pc'  : r[0].asJSON(),
-						  'to'  : r[0].__srn__,
-						  'rvi'	: '3'	# TODO constant?
-						}
+				if r[0] is not None:
+					item = 	{ 'rsc' : r[1], 
+							  'rqi' : rqi,
+							  'pc'  : r[0].asJSON(),
+							  'to'  : r[0].__srn__,
+							  'rvi'	: '3'	# TODO constant?
+							}
+				else:	# e.g. when deleting
+					item = 	{ 'rsc' : r[1], 
+					  'rqi' : rqi,
+					  'rvi'	: '3'	# TODO constant?
+					}
 				items.append(item)
 			rsp = { 'm2m:rsp' : items}
 			agr = { 'm2m:agr' : rsp }
