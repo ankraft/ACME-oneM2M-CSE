@@ -12,15 +12,13 @@ sys.path.append('../acme')
 from Constants import Constants as C
 from init import *
 
-aeRN = 'testAE'
-
 class TestAE(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls):
-		TestAE.aei = None
-		TestAE.aeACPI = None
-		TestAE.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
+		TestAE.originator 	= None 	# actually the AE.aei
+		TestAE.aeACPI 		= None
+		TestAE.cse, rsc 	= RETRIEVE(cseURL, ORIGINATOR)
 
 
 	@classmethod
@@ -38,9 +36,9 @@ class TestAE(unittest.TestCase):
 				}}
 		r, rsc = CREATE(cseURL, 'C', C.tAE, jsn)
 		self.assertEqual(rsc, C.rcCreated)
-		TestAE.aei = findXPath(r, 'm2m:ae/aei')
+		TestAE.originator = findXPath(r, 'm2m:ae/aei')
 		TestAE.aeACPI = findXPath(r, 'm2m:ae/acpi')
-		self.assertIsNotNone(self.aei)
+		self.assertIsNotNone(TestAE.originator)
 
 
 	def test_createAEUnderAE(self):
@@ -55,7 +53,7 @@ class TestAE(unittest.TestCase):
 
 
 	def test_retrieveAE(self):
-		_, rsc = RETRIEVE(aeURL, TestAE.aei)
+		_, rsc = RETRIEVE(aeURL, TestAE.originator)
 		self.assertEqual(rsc, C.rcOK)
 
 
@@ -64,8 +62,8 @@ class TestAE(unittest.TestCase):
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 
 
-	def test_aeAttributes(self):
-		r, rsc = RETRIEVE(aeURL, TestAE.aei)
+	def test_attributesAE(self):
+		r, rsc = RETRIEVE(aeURL, TestAE.originator)
 		self.assertEqual(rsc, C.rcOK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/aei'))
 		self.assertEqual(findXPath(r, 'm2m:ae/ty'), C.tAE)
@@ -79,48 +77,57 @@ class TestAE(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:ae/rr'), False)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/srv'))
 		self.assertEqual(findXPath(r, 'm2m:ae/srv'), [ '3' ])
+		self.assertIsNone(findXPath(r, 'm2m:ae/st'))
 		self.assertEqual(findXPath(r, 'm2m:ae/pi'), findXPath(TestAE.cse,'m2m:cb/ri'))
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/acpi'))
 		self.assertIsInstance(findXPath(r, 'm2m:ae/acpi'), list)
 		self.assertGreater(len(findXPath(r, 'm2m:ae/acpi')), 0)
 
 
-	def test_aeUpdateLbl(self):
+	def test_updateAELbl(self):
 		jsn = 	{ 'm2m:ae' : {
 					'lbl' : [ 'aTag' ]
 				}}
-		r, rsc = UPDATE(aeURL, TestAE.aei, jsn)
+		r, rsc = UPDATE(aeURL, TestAE.originator, jsn)
 		self.assertEqual(rsc, C.rcUpdated)
+		r, rsc = RETRIEVE(aeURL, TestAE.originator)		# retzrieve updated ae again
+		self.assertEqual(rsc, C.rcOK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'))
 		self.assertIsInstance(findXPath(r, 'm2m:ae/lbl'), list)
 		self.assertGreater(len(findXPath(r, 'm2m:ae/lbl')), 0)
 		self.assertTrue('aTag' in findXPath(r, 'm2m:ae/lbl'))
 
 
-	def test_aeUpdateTy(self):
+	def test_updateAETy(self):
 		jsn = 	{ 'm2m:ae' : {
 					'ty' : C.tCSEBase
 				}}
-		r, rsc = UPDATE(aeURL, TestAE.aei, jsn)
+		r, rsc = UPDATE(aeURL, TestAE.originator, jsn)
 		self.assertEqual(rsc, C.rcBadRequest)
 
 
-	def test_aeUpdatePi(self):
+	def test_updateAEPi(self):
 		jsn = 	{ 'm2m:ae' : {
 					'pi' : 'wrongID'
 				}}
-		r, rsc = UPDATE(aeURL, TestAE.aei, jsn)
+		r, rsc = UPDATE(aeURL, TestAE.originator, jsn)
 		self.assertEqual(rsc, C.rcBadRequest)
 
+
+	def test_updateAEUnknownAttribute(self):
+		jsn = 	{ 'm2m:ae' : {
+					'unknown' : 'unknown'
+				}}
+		r, rsc = UPDATE(aeURL, TestAE.originator, jsn)
+		self.assertEqual(rsc, C.rcBadRequest)
 
 	def test_deleteAEByUnknownOriginator(self):
 		_, rsc = DELETE(aeURL, 'Cwrong')
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 
 
-
 	def test_deleteAEByAssignedOriginator(self):
-		_, rsc = DELETE(aeURL, TestAE.aei)
+		_, rsc = DELETE(aeURL, TestAE.originator)
 		self.assertEqual(rsc, C.rcDeleted)
 
 
@@ -128,13 +135,13 @@ class TestAE(unittest.TestCase):
 		self.assertIsNotNone(TestAE.aeACPI)
 		self.assertIsInstance(TestAE.aeACPI, list)
 		self.assertGreater(len(TestAE.aeACPI), 0)
-		_, rsc = RETRIEVE('%s%s' % (URL, TestAE.aeACPI[0]), TestAE.aei)	# AE's own originator fails
+		_, rsc = RETRIEVE('%s%s' % (URL, TestAE.aeACPI[0]), TestAE.originator)	# AE's own originator fails
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 		acp, rsc = RETRIEVE('%s%s' % (URL, TestAE.aeACPI[0]), ORIGINATOR)	# but Admin should succeed
 		self.assertEqual(rsc, C.rcOK)
 		self.assertEqual(findXPath(acp, 'm2m:acp/rn'), 'acp_%s' % aeRN)
 		for acr in findXPath(acp, 'm2m:acp/pv/acr'):
-			if TestAE.aei in acr['acor']:
+			if TestAE.originator in acr['acor']:
 				break
 		else:
 			self.fail('Originator not in ACP:acr:acor')
@@ -146,10 +153,11 @@ if __name__ == '__main__':
 	suite.addTest(TestAE('test_createAEUnderAE'))
 	suite.addTest(TestAE('test_retrieveAE'))
 	suite.addTest(TestAE('test_retrieveAEWithWrongOriginator'))
-	suite.addTest(TestAE('test_aeAttributes'))
-	suite.addTest(TestAE('test_aeUpdateLbl'))
-	suite.addTest(TestAE('test_aeUpdateTy'))
-	suite.addTest(TestAE('test_aeUpdatePi'))
+	suite.addTest(TestAE('test_attributesAE'))
+	suite.addTest(TestAE('test_updateAELbl'))
+	suite.addTest(TestAE('test_updateAETy'))
+	suite.addTest(TestAE('test_updateAEPi'))
+	suite.addTest(TestAE('test_updateAEUnknownAttribute'))
 	suite.addTest(TestAE('test_retrieveAEACP'))
 	suite.addTest(TestAE('test_deleteAEByUnknownOriginator'))
 	suite.addTest(TestAE('test_deleteAEByAssignedOriginator'))

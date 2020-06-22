@@ -24,7 +24,7 @@ class TestCSE(unittest.TestCase):
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 
 
-	def test_cseAttributes(self):
+	def test_attributesCSE(self):
 		r, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcOK)
 		self.assertEqual(findXPath(r, 'm2m:cb/csi')[0], '/')
@@ -40,12 +40,12 @@ class TestCSE(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:cb/srv'))
 
 
-	def test_cseDelete(self):
+	def test_deleteCSE(self):
 		_, rsc = DELETE(cseURL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcOperationNotAllowed)
 
 
-	def test_cseUpdate(self):
+	def test_updateCSE(self):
 		jsn = 	{ 'm2m:cse' : {
 					'lbl' : [ 'aTag' ]
 				}}
@@ -57,8 +57,8 @@ if __name__ == '__main__':
 	suite = unittest.TestSuite()
 	suite.addTest(TestCSE('test_retrieveCSE'))
 	suite.addTest(TestCSE('test_retrieveCSEWithWrongOriginator'))
-	suite.addTest(TestCSE('test_cseAttributes'))
-	suite.addTest(TestCSE('test_cseDelete'))
-	suite.addTest(TestCSE('test_cseUpdate'))
+	suite.addTest(TestCSE('test_attributesCSE'))
+	suite.addTest(TestCSE('test_deleteCSE'))
+	suite.addTest(TestCSE('test_updateCSE'))
 	unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 

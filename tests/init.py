@@ -17,12 +17,25 @@ CSERN		= 'cse-in'
 CSEID		= '/id-in'
 ORIGINATOR	= 'CAdmin'
 
-URL			= '%s%s' % (SERVER, ROOTURL)
-cseURL = '%s%s' % (URL, CSERN)
-aeURL = '%s%s/testAE' % (URL, CSERN)
-
 
 testVerbosity = 2		# 0, 1, 2
+
+###############################################################################
+
+aeRN	= 'testAE'
+cntRN	= 'testCNT'
+cinRN	= 'testCIN'
+grpRN	= 'testGRP'
+
+
+URL		= '%s%s' % (SERVER, ROOTURL)
+cseURL 	= '%s%s' % (URL, CSERN)
+aeURL 	= '%s/%s' % (cseURL, aeRN)
+cntURL 	= '%s/%s' % (aeURL, cntRN)
+cinURL 	= '%s/%s' % (cntURL, cinRN)
+grpURL 	= '%s/%s' % (aeURL, grpRN)
+
+
 
 ###############################################################################
 
