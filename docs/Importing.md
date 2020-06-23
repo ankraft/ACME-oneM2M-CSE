@@ -1,12 +1,12 @@
 # Importing Resources
 
-During startup it is possible to import resources into to CSE. Each resource is read from a single file in the [init](../init) resource directory specified in the configuration file.
+During startup it is necessary to import resources into to CSE. Each resource is read from a single file in the [init](../init) resource directory specified in the configuration file. Besides of a few mandatory resources additional resources can be imported to create a default resource structure for the CSE.
 
-Not much validation, access control, or registration procedures are performedfor imported resources.
+Not much validation, access control, or registration procedures are performed for imported resources.
 
 ## Importing Mandatory Resources
 
-**Please note** that importing is required for creating the CSEBase resource and at least two (admin) ACP resources. Those are imported before all other resources, so that the CSEBase resource can act as the root for the resource tree. The *admin* ACP is used to access resources with the administrator originator. The *default* ACP resource is the one that is assigned for resources that don't specify an ACP on their own.
+**Please note** that importing is required for creating the CSEBase resource and at least three (admin) ACP resources. Those are imported before all other resources, so that the CSEBase resource can act as the root for the resource tree. The *admin* ACP is used to access resources with the administrator originator. The *default* ACP resource is the one that is assigned for resources that don't specify an ACP on their own.
 
 The filenames for these resources must be:
 

@@ -2,7 +2,7 @@
 
 ## oneM2M Specification Conformance
 
-The CSE implementation successfully passes the oneM2M release 1 test cases.
+The CSE implementation successfully passes most of the oneM2M release 1 test cases (353 out of 361).
 
 
 ## Resources
@@ -42,7 +42,10 @@ Resources of any other type are stored in the CSE but no further processed and n
 ## Discovery
 The following result contents are implemented for Discovery:
 
+- nothing (rcn=0)
 - attributes (rcn=1)
+- hierarchical address (rcn=2)
+- hierarchical address + attributes (rcn=3)
 - attributes + child-resources (rcn=4)
 - attributes + child-resource-references (rcn=5)
 - child-resource-references (rcn=6)
@@ -52,7 +55,7 @@ The following result contents are implemented for Discovery:
 
 # Limitations
 - **This is by no means a fully compliant, secure or stable CSE! Don't use it in production.**
-- This CSE is intended for educational purposes. The underlying database system is not optimized in any way for high-volume, high-accessibility.
+- This CSE is intended for educational purposes. The underlying database system is not optimized in any way for high-volume, high-availability, or high-reliability.
 - No support for https yet.
 - Security: None. Please contact me if you have suggestions to improve this.
 - Unsupported resource types are just stored, but no check or functionality is provided for those resources. The same is true for unknown resource attributes.

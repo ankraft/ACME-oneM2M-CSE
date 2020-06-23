@@ -224,9 +224,12 @@ function setup() {
   // document.body.style.zoom=0.6;
   this.blur();
 
-  var x = document.getElementById("baseri");
+  var riField = document.getElementById("baseri");
   cseid = getUrlParameterByName("ri")
-  x.value = cseid
+  riField.value = cseid
+  var orField = document.getElementById("originator");
+  originator = getUrlParameterByName("or")
+  orField.value = originator
   document.title = "ACME CSE - " + cseid
 
   getTextFromServer("/__version__", function(version) {

@@ -1,21 +1,25 @@
 # Changelog
 
-## unreleased 0.4.0 - xxxx.xx
-- [WEB] Add displaying the path of the selected resource and many more small improvements.
+## 0.4.0 - 2020-06-19
 - [CSE] Fixed crashes when using group resources.
 - [CSE] Added command line arguments --remote-cse, --no-remote-cse .
 - [CSE] Improved remote CSE handling.
-- [CSE[ Request retargeting now works correctly.
+- [CSE] Improved and corrected remote CSE registration and retargeting requests.
 - [CSE] Improved support for expiration handling, e.g. refreshing as well as removal of expired resources.
 - [CSE] Fixed and reworked resource address handling.
 - [CSE] Added validation of resource attributes during CREATE and UPDATE.
-- [CSE] The CSE now passes the oneM2M test suite for R1.
+- [CSE] Support for request arguments validation.
+- [CSE] The CSE now passes most of the oneM2M R1 test cases.
+- [CSE] Corrected transit requests.
+- [AE] Self-Registration.
 - [ACP] Changed: created resources without a provided ACPI will now have the same ACPI of the parent.
 - [ACP] Fixed format of privileges and self-privileges.
 - [DATABASE] Upgraded to TinyDB 4.x .
 - [Logging] Now using the Rich module for improved terminal logging .
 - [IMPORTING] Added macro mechanism to use configuration settings in imported files.
 - [NOTIFICATIONS] Corrected error handling.
+- [WEB] Add displaying the path of the selected resource and many more small improvements.
+- [WEB] Providing default originator.
 - [ALL] Many, many small fixes and improvements.
 - [MISC] Restructured documentation.
 
