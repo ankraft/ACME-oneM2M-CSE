@@ -23,6 +23,8 @@ from RemoteCSEManager import RemoteCSEManager
 from SecurityManager import SecurityManager
 from Statistics import Statistics
 from Storage import Storage
+from Validator import Validator
+
 from AEStatistics import AEStatistics
 from CSENode import CSENode
 
@@ -40,6 +42,7 @@ remote			= None
 security 		= None
 statistics		= None
 storage			= None
+validator 		= None
 
 rootDirectory	= None
 
@@ -57,11 +60,15 @@ aeStartupDelay	= 5	# seconds
 
 #def startup(args=None, configfile=None, resetdb=None, loglevel=None):
 def startup(args, **kwargs):
-	global announce, dispatcher, group, httpServer, notification, registration, remote, security, statistics, storage, event
+	global announce, dispatcher, group, httpServer, notification, validator
+	global registration, remote, security, statistics, storage, event
 	global rootDirectory
 	global aeStatistics
 
-	rootDirectory = os.getcwd()		# get the root directory
+	rootDirectory = os.getcwd()					# get the root directory
+	os.environ["FLASK_ENV"] = "development"		# get rid if the warning message from flask. 
+												# Hopefully it is clear at this point that this is not a production CSE
+
 
 
 	# Handle command line arguments and load the configuration
@@ -95,6 +102,9 @@ def startup(args, **kwargs):
 
 	# Initialize the registration manager
 	registration = RegistrationManager()
+
+	# Initialize the resource validator
+	validator = Validator()
 
 	# Initialize the resource dispatcher
 	dispatcher = Dispatcher()
@@ -136,7 +146,6 @@ def startup(args, **kwargs):
 # Gracefully shutdown the CSE, e.g. when receiving a keyboard interrupt
 @atexit.register
 def shutdown():
-
 	if appsStarted:
 		stopApps()
 	if remote is not None:
@@ -151,6 +160,8 @@ def shutdown():
 		dispatcher.shutdown()
 	if security is not None:
 		security.shutdown()
+	if validator is not None:
+		validator.shutdown()
 	if registration is not None:
 		registration.shutdown()
 	if statistics is not None:
@@ -159,6 +170,8 @@ def shutdown():
 		event.shutdown()
 	if storage is not None:
 		storage.shutdown()
+	Logging.finit()
+
 
 
 # Delay starting the AEs in the backround. This is needed because the CSE

@@ -8,11 +8,13 @@
 #
 
 
-import logging, configparser
+import logging, configparser, re
 from Constants import Constants as C
+
 
 defaultConfigFile			= 'acme.ini'
 defaultImportDirectory		= './init'
+version						= '0.4.0'
 
 
 class Configuration(object):
@@ -22,16 +24,21 @@ class Configuration(object):
 	def init(args = None):
 		global _configuration
 
+		import Utils	# cannot import at the top because of circel import
+
 		# resolve the args, of any
-		argsConfigfile		= args.configfile if args is not None else defaultConfigFile
-		argsLoglevel		= args.loglevel if args is not None else None
-		argsDBReset			= args.dbreset if args is not None else False
-		argsDBStorageMode	= args.dbstoragemode if args is not None else None
-		argsImportDirectory	= args.importdirectory if args is not None else None
-		argsAppsEnabled		= args.appsenabled if args is not None else None
+		argsConfigfile			= args.configfile if args is not None else defaultConfigFile
+		argsLoglevel			= args.loglevel if args is not None else None
+		argsDBReset				= args.dbreset if args is not None else False
+		argsDBStorageMode		= args.dbstoragemode if args is not None else None
+		argsImportDirectory		= args.importdirectory if args is not None else None
+		argsAppsEnabled			= args.appsenabled if args is not None else None
+		argsRemoteCSEEnabled	= args.remotecseenabled if args is not None else None
 
 
-		config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
+		config = configparser.ConfigParser(	interpolation=configparser.ExtendedInterpolation(),
+											converters={'list': lambda x: [i.strip() for i in x.split(',')]}	# Convert csv to list
+										  )
 		config.read(argsConfigfile)
 
 		try:
@@ -42,11 +49,11 @@ class Configuration(object):
 				#	HTTP Server
 				#
 
-				'http.listenIF'						: config.get('server.http', 'listenIF', 				fallback='127.0.0.01'),
+				'http.listenIF'						: config.get('server.http', 'listenIF', 				fallback='127.0.0.1'),
 				'http.port' 						: config.getint('server.http', 'port', 					fallback=8080),
-				'http.root'							: config.get('server.http', 'root', 					fallback='/'),
+				'http.root'							: config.get('server.http', 'root', 					fallback=''),
 				'http.address'						: config.get('server.http', 'address', 					fallback='http://127.0.0.1:8080'),
-				'http.multiThread'					: config.getboolean('server.http', 'multiThread', 		fallback=False),
+				'http.multiThread'					: config.getboolean('server.http', 'multiThread', 		fallback=True),
 
 				#
 				#	Database
@@ -73,30 +80,45 @@ class Configuration(object):
 				#
 
 				'cse.type'							: config.get('cse', 'type',								fallback='IN'),		# IN, MN, ASN
+				'cse.spid'							: config.get('cse', 'serviceProviderID',				fallback='acme'),
+				'cse.csi'							: config.get('cse', 'cseID',							fallback='/id-in'),
+				'cse.ri'							: config.get('cse', 'resourceID',						fallback='id-in'),
+				'cse.rn'							: config.get('cse', 'resourceName',						fallback='cse-in'),
 				'cse.resourcesPath'					: config.get('cse', 'resourcesPath', 					fallback=defaultImportDirectory),
 				'cse.expirationDelta'				: config.getint('cse', 'expirationDelta', 				fallback=60*60*24*365),	# 1 year, in seconds
-				'cse.enableACPChecks'				: config.getboolean('cse', 'enableACPChecks', 			fallback=True),
-				'cse.adminACPI'						: config.get('cse', 'adminACPI', 						fallback='acpAdmin'),
-				'cse.defaultACPI'					: config.get('cse', 'defaultACPI', 						fallback='acpDefault'),
 				'cse.originator'					: config.get('cse', 'originator',						fallback='CAdmin'),
-				'cse.csi'							: '(not set yet)',																# will be set by importer
-				'cse.ri'							: '(not set yet)',																# will be set by importer
-				'cse.rn'							: '(not set yet)',																# will be set by importer
 				'cse.enableApplications'			: config.getboolean('cse', 'enableApplications', 		fallback=True),
 				'cse.enableNotifications'			: config.getboolean('cse', 'enableNotifications', 		fallback=True),
 				'cse.enableRemoteCSE'				: config.getboolean('cse', 'enableRemoteCSE', 			fallback=True),
 				'cse.enableTransitRequests'			: config.getboolean('cse', 'enableTransitRequests',		fallback=True),
 				'cse.sortDiscoveredResources'		: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
+				'cse.checkExpirationsInterval'		: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
+
+				#
+				#	CSE Security
+				#
+				'cse.security.enableACPChecks'		: config.getboolean('cse.security', 'enableACPChecks', 	fallback=True),
+				'cse.security.adminACPI'			: config.get('cse.security', 'adminACPI', 				fallback='acpAdmin'),
+				'cse.security.defaultACPI'			: config.get('cse.security', 'defaultACPI', 			fallback='acpDefault'),
+				'cse.security.csebaseAccessACPI'	: config.get('cse.security', 'csebaseAccessACPI', 		fallback='acpCSEBaseAccess'),
 
 				#
 				#	Remote CSE
 				#
 
 				'cse.remote.address'				: config.get('cse.remote', 'address', 					fallback=''),
-				'cse.remote.root'					: config.get('cse.remote', 'root', 						fallback='/'),
-				'cse.remote.cseid'					: config.get('cse.remote', 'cseid', 					fallback=''),
-				'cse.remote.originator'				: config.get('cse.remote', 'originator', 				fallback='CAdmin'),
+				'cse.remote.root'					: config.get('cse.remote', 'root', 						fallback=''),
+				'cse.remote.csi'					: config.get('cse.remote', 'cseID', 					fallback=''),
+				'cse.remote.rn'						: config.get('cse.remote', 'resourceName', 				fallback=''),
 				'cse.remote.checkInterval'			: config.getint('cse.remote', 'checkInterval', 			fallback=30),		# Seconds
+
+				#
+				#	Registrations
+				#
+
+				'cse.registration.allowedAEOriginators'	: config.getlist('cse.registration', 'allowedAEOriginators',	fallback=['C*','S*']),
+				'cse.registration.allowedCSROriginators': config.getlist('cse.registration', 'allowedCSROriginators',	fallback=[]),
+
 
 				#
 				#	Statistics
@@ -119,14 +141,6 @@ class Configuration(object):
 				'cse.acp.pv.acop'					: config.getint('cse.resource.acp', 'permission', 		fallback=63),
 				'cse.acp.pvs.acop'					: config.getint('cse.resource.acp', 'selfPermission', 	fallback=51),
 				'cse.acp.addAdminOrignator'			: config.getboolean('cse.resource.acp', 'addAdminOrignator',	fallback=True),
-
-
-				#
-				#	Defaults for Application Entities
-				#
-
-				'cse.ae.createACP'					: config.getboolean('cse.resource.ae', 'createACP', 	fallback=True),
-				'cse.ae.removeACP'					: config.getboolean('cse.resource.ae', 'removeACP', 	fallback=True),
 
 
 				#
@@ -185,7 +199,7 @@ class Configuration(object):
 
 		# Loglevel from command line
 		logLevel = Configuration._configuration['logging.level'].lower()
-		logLevel = argsLoglevel if argsLoglevel is not None else logLevel 	# command line args override config
+		logLevel = (argsLoglevel or logLevel) 	# command line args override config
 		if logLevel == 'off':
 			Configuration._configuration['logging.enable'] = False
 			Configuration._configuration['logging.level'] = logging.DEBUG
@@ -197,6 +211,7 @@ class Configuration(object):
 			Configuration._configuration['logging.level'] = logging.ERROR
 		else:
 			Configuration._configuration['logging.level'] = logging.DEBUG
+
 
 		# Override DB reset from command line
 		if argsDBReset is True:
@@ -214,6 +229,36 @@ class Configuration(object):
 		if argsAppsEnabled is not None:
 			Configuration._configuration['cse.enableApplications'] = argsAppsEnabled
 
+		# Override remote CSE enablement
+		if argsRemoteCSEEnabled is not None:
+			Configuration._configuration['cse.enableRemoteCSE'] = argsRemoteCSEEnabled
+
+		# Correct urls
+		Configuration._configuration['cse.remote.address'] = Utils.normalizeURL(Configuration._configuration['cse.remote.address'])
+		Configuration._configuration['http.address'] = Utils.normalizeURL(Configuration._configuration['http.address'])
+		Configuration._configuration['http.root'] = Utils.normalizeURL(Configuration._configuration['http.root'])
+		Configuration._configuration['cse.remote.root'] = Utils.normalizeURL(Configuration._configuration['cse.remote.root'])
+
+
+		#
+		#	Some sanity and validity checks
+		#
+
+
+		# check the csi format
+		rx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
+		if re.fullmatch(rx, (val:=Configuration._configuration['cse.csi'])) is None:
+			print('Configuration Error: Wrong format for [cse]:cseID: %s' % val)
+			return False
+		if re.fullmatch(rx, (val:=Configuration._configuration['cse.remote.csi'])) is None:
+			print('Configuration Error: Wrong format for [cse.remote]:cseID: %s' % val)
+			return False
+		if len(Configuration._configuration['cse.remote.csi']) > 0 and len(Configuration._configuration['cse.remote.rn']) == 0:
+			print('Configuration Error: Missing configuration [cse.remote]:resourceName')
+			return False
+
+
+		# Everything is fine
 		return True
 
 

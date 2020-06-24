@@ -24,8 +24,6 @@
 		<div class="menu"><a id="refreshButton" href="javascript:toggleRefresh()"class="button" style="padding-left: 10px;">Auto Refresh</a></div>
 		<div class="menu"><a id="connectButton" href="javascript:connectToCSE()" class="button" style="padding-left: 10px;">Connect</a></div>
 
-
-
 		<div class="menu" style="margin-right: 10px">
 			<form action="javascript:connectToCSE();" style="margin:0px; padding: 0px; display:inline;">
 				<fieldset>
@@ -154,41 +152,57 @@
 </div>
 </div>
 
+
+<!-- Footer area -->
+<div class="footer"> </div>
+
+
+<!-- About & Help box -->
 <div class="modal">
-	<input id="info1" type="checkbox" />
-	<label for="info1" class="overlay"></label>
-	<article>
-		<header>
-			<h3>Keyboard Shortcuts</h3>
-		</header>
-		<section class="content">
-			<ul>
-				<li>Ctrl-R - Reload a node</li>
-				<li>Ctrl-C - (Re-) Connect to the CSE</li>
-				<li>Ctrl-H - Toggle  attributes' short / long names display</li>
-				<li>Cursor keys and Return key work on the resource tree</li>
-			</ul>
-		</section>
-		<footer>
-			<label align="right" for="info1" class="button" style="float: right;">Close</label>
-		</footer>
-	</article>
+<input id="info1" type="checkbox" />
+<label for="info1" class="overlay"></label>
+<article>
+	<header>
+		<h3 float="left">ACME oneM2M CSE</h3>
+		<span id="version" style="float: right"></span>
+	</header>
+	<section class="content">
+
+		<h3>Keyboard Shortcuts</h3>
+		<table class="primary">
+		  <thead><tr><th>Keys</th><th>Function</th></tr></thead>
+		  <tbody>
+		    <tr><td>Ctrl-R</td><td>Reload the current node</td></tr>
+		    <tr><td>Ctrl-C</td><td>(Re-) Connect to the CSE / Reload</td></tr>
+		    <tr><td>Ctrl-H</td><td>Toggle  attributes' short / long names display</td></tr>
+		    <tr><td>Cursor keys / Return key</td><td>Work on the resource tree</td></tr>
+		  </tbody>
+		</table>
+		<hr />
+		<div>Available on <a href="https://github.com/ankraft/ACME-oneM2M-CSE" target="_new">GitHub</a></div>
+	</section>
+	<footer>
+		<label align="right" for="info1" class="button" style="float: right;">Close</label>
+	</footer>
+</article>
 </div>
 
+
+<!-- Error box -->
 <div class="modal">
-	<input id="restui-error" type="checkbox" />
-	<label for="restui-error" class="overlay"></label>
-	<article>
-		<header>
-			<h3>Request Error</h3>
-		</header>
-		<section class="content">
-			Oops! Something went wrong.
-		</section>
-		<footer>
-			<label align="right" for="restui-error" class="button" style="float: right;">Close</label>
-		</footer>
-	</article>
+<input id="restui-error" type="checkbox" />
+<label for="restui-error" class="overlay"></label>
+<article>
+	<header>
+		<h3>Request Error</h3>
+	</header>
+	<section class="content">
+		Oops! Something went wrong.
+	</section>
+	<footer>
+		<label align="right" for="restui-error" class="button" style="float: right;">Close</label>
+	</footer>
+</article>
 </div>
 
 

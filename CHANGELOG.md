@@ -1,6 +1,30 @@
 # Changelog
 
-## Unreleased 0.3.0 - 2020-04-20
+## 0.4.0 - 2020-06-24
+- [CSE] Fixed crashes when using group resources.
+- [CSE] Added command line arguments --remote-cse, --no-remote-cse .
+- [CSE] Improved remote CSE handling.
+- [CSE] Improved and corrected remote CSE registration and retargeting requests.
+- [CSE] Improved support for expiration handling, e.g. refreshing as well as removal of expired resources.
+- [CSE] Fixed and reworked resource address handling.
+- [CSE] Added validation of resource attributes during CREATE and UPDATE.
+- [CSE] Support for request arguments validation.
+- [CSE] The CSE now passes most of the oneM2M R1 test cases.
+- [CSE] Corrected transit requests.
+- [AE] Self-Registration.
+- [ACP] Changed: created resources without a provided ACPI will now have the same ACPI of the parent.
+- [ACP] Fixed format of privileges and self-privileges.
+- [DATABASE] Upgraded to TinyDB 4.x .
+- [Logging] Now using the Rich module for improved terminal logging .
+- [IMPORTING] Added macro mechanism to use configuration settings in imported files.
+- [NOTIFICATIONS] Corrected error handling.
+- [WEB] Add displaying the path of the selected resource and many more small improvements.
+- [WEB] Providing default originator.
+- [ALL] Many, many small fixes and improvements.
+- [MISC] Restructured documentation.
+
+
+## 0.3.0 - 2020-04-20
 - [CSE] Discovery supports "attributes + children" return content.
 - [CSE] Changed command line argument --reset-db to --db-reset .
 - [CSE] Added command line argument --db-storage .
@@ -24,7 +48,7 @@
 - [WEB] Browser request to "/"" will now redirect to the webui's URL.
 - [WEB] REST UI will not refresh anymore when automatic refresh is on.
 - [WEB] Added LOGO & favicon.
-- [MISC] Various fixes and improvements.
+- [ALL] Various fixes and improvements.
 
 ## 0.1.0 - 2020-02-09
 - First release

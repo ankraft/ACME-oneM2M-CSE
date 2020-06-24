@@ -9,10 +9,15 @@
 #
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
+import json
+from rich import print
+from rich.console import Console
+from rich.syntax import Syntax
 
 
 port = 9999	# Change this variable to specify another port.
-
+console = Console()
+messageColor = "spring_green2"
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		
@@ -30,12 +35,17 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		post_data = self.rfile.read(length)
 		
 		# Print the content data
-		print('### Notification')
-		print (self.headers)
-		print(post_data.decode('utf-8'))
+		console.print('[%s]### Notification' % messageColor)
+		console.print(self.headers, highlight=False)
+		console.print(Syntax(json.dumps(json.loads(post_data.decode('utf-8')), indent=4),
+							 "json", 
+							 theme="monokai",
+							 line_numbers=False))
 
+	def log_message(self, format, *args):
+		console.print("[%s reverse] %s" % (messageColor, format%args))
 
 
 httpd = HTTPServer(('', port), SimpleHTTPRequestHandler)
-print('**starting server & listening for connections on port %s **' % port)
+console.print('[%s]**starting server & listening for connections on port %s **' % (messageColor, port))
 httpd.serve_forever()

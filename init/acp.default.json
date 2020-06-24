@@ -1,19 +1,19 @@
 {	"m2m:acp" : {
 		"ty" : 1,
-		"ri" : "acpDefault",
+		"ri" : "${cse.security.defaultACPI}",
 		"rn" : "defaultACP",
-		"pi" : "id-in",
+		"pi" : "${cse.ri}",
 		"pv" : {
-			"acr": {
-				"acor": [ "CDefault", "CAdmin" ],
+			"acr": [{
+				"acor": [ "CDefault", "${cse.originator}" ],
 				"acop": 63
-			}
+			}]
 		},
 		"pvs": {
-			"acr": {
-				"acor": ["CAdmin"],
-				"acop": 51
-			}
+			"acr": [{
+				"acor": ["${cse.originator}"],
+				"acop": 55
+			}]
 		}
 	}
 }

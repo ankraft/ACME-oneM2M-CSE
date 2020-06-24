@@ -13,9 +13,8 @@ function getChildren(node, errorCallback) {
   // get children
   var ri = resource['ri'] + "?fu=1&lvl=1&rcn=6" // TODO move this to the getchildren request
   var client = new HttpClient();
-  addr = cseid + "/" + ri
-  // addr = "/" + ri
-  client.getChildren(addr, node, function(response) { // TODo
+  // addr = cseid + "/" + ri
+  client.getChildren(ri, node, function(response) { // TODo
   //client.getChildren(cseid + "/" + ri, node, function(response) { // TODo
 
 
@@ -24,21 +23,23 @@ function getChildren(node, errorCallback) {
     removeChildren(node)
 
     resource = JSON.parse(response)
-    ris = resource["m2m:uril"]
-    for (ri of ris) {
+    chs = resource["m2m:rrl"]
+    if (chs != undefined) {
+      for (ch of chs) {
 
-      // TODO in extra function createNode()
-      var childNode = new TreeNode(ri);
-      childNode.on("click", clickOnNode)
-      childNode.on("expand", expandNode)
-      childNode.on("collapse", collapseNode)
-      childNode.on("contextmenu", function(e,n) { showContextMenu(e, n) })
-      childNode.ri = ri
-      childNode.wasExpanded = false
-      childNode.setExpanded(false)
-      childNode.resolved = false
+        // TODO in extra function createNode()
+        var childNode = new TreeNode(ch.val);
+        childNode.on("click", clickOnNode)
+        childNode.on("expand", expandNode)
+        childNode.on("collapse", collapseNode)
+        childNode.on("contextmenu", function(e,n) { showContextMenu(e, n) })
+        childNode.ri = ch.val
+        childNode.wasExpanded = false
+        childNode.setExpanded(false)
+        childNode.resolved = false
 
-      node.addChild(childNode)
+        node.addChild(childNode)
+      }
     }
     if (node != root) {
       if (node.wasExpanded) {
@@ -53,6 +54,7 @@ function getChildren(node, errorCallback) {
       root.setSelected(true)
       clickOnNode(null, root)
     }
+
 
     // add short info in front of name
     ty = node.resource['ty']
@@ -74,8 +76,8 @@ function getChildren(node, errorCallback) {
         tree.reload()
     }
 
-  }, function() {
-    typeof errorCallback === 'function' && errorCallback();
+  }, function(response, status) {
+    typeof errorCallback === 'function' && errorCallback(status);
   });
 }
 
@@ -85,13 +87,19 @@ function getResource(ri, node, callback) {
     document.getElementById("connectButton").className = "button success"
     document.getElementById("connectButton").text = "Connected"
     typeof callback === 'function' && callback(node);
-  }, function() { // error callback
+  }, function(status) { // error callback
     if (node.ri.endsWith("/la") || node.ri.endsWith("/ol")) { // special handling for empty la or ol
       node.setUserObject(node.ri.slice(-2))
       node.resolved = true
       tree.reload()
       return
     } 
+    if (status == 404) {  // if not found remove the node from the tree and continue
+      node.parent.removeChild(node)
+      return    
+    }
+
+    // otherwise disconnect
 
     document.getElementById("connectButton").className = "button error"
     document.getElementById("connectButton").text = "Reconnect"
@@ -107,6 +115,7 @@ function getResource(ri, node, callback) {
     clearRootResourceName()
     clearAttributesTable()
     clearJSONArea()
+
       // TODO Display Error message
   })
 }
@@ -179,7 +188,7 @@ function toggleRefresh() {
     cancelRefreshResource()
   } else {
     document.getElementById("refreshButton").className = "button success"
-    setupRefreshResource(5)
+    setupRefreshResource(5) // TODO make configurable
   }
 }
 
@@ -201,7 +210,7 @@ function showAppArea(state) {
 var cursorEnabled = true;
 
 // callback for info tabs
-function tabTo( number) {
+function tabTo(number) {
   switch(number) {
     case 1: cursorEnabled = true; break;
     case 2: cursorEnabled = true; break;
@@ -215,10 +224,20 @@ function setup() {
   // document.body.style.zoom=0.6;
   this.blur();
 
-  var x = document.getElementById("baseri");
+  var riField = document.getElementById("baseri");
   cseid = getUrlParameterByName("ri")
-  x.value = cseid
+  riField.value = cseid
+  var orField = document.getElementById("originator");
+  originator = getUrlParameterByName("or")
+  orField.value = originator
   document.title = "ACME CSE - " + cseid
+
+  getTextFromServer("/__version__", function(version) {
+    var f = document.getElementById("version");
+    f.innerHTML = version;
+  })
+
+
 
   // hide when not connected
   showAppArea(false)

@@ -1,8 +1,8 @@
 {	"m2m:cb" : {
-		"ri" : "id-in",
+		"ri" : "${cse.ri}",
 		"ty" : 5,
-		"rn" : "cse-in",
-		"csi" : "id-in",
-		"acpi" : [ "acpAdmin" ]
+		"rn" : "${cse.rn}",
+		"csi" : "${cse.csi}",
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.csebaseAccessACPI}" ]
 	}
 }

@@ -10,14 +10,24 @@
 from Logging import Logging
 from Configuration import Configuration
 from Constants import Constants as C
+from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN
+from Validator import constructPolicy
 import Utils, CSE
 from .Resource import *
+
+# Attribute policies for this resource are constructed during startup of the CSE
+attributePolicies = constructPolicy([ 
+	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'daci', 'loc',
+	'cr', 
+	'mni', 'mbs', 'mia', 'cni', 'cbs', 'li', 'or', 'disr'
+])
 
 
 class CNT(Resource):
 
+
 	def __init__(self, jsn=None, pi=None, create=False):
-		super().__init__(C.tsCNT, jsn, pi, C.tCNT, create=create)
+		super().__init__(C.tsCNT, jsn, pi, C.tCNT, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite=False)
@@ -35,8 +45,11 @@ class CNT(Resource):
 									   C.tSUB
 									 ])
 
-	def activate(self, originator):
-		super().activate(originator)
+
+	def activate(self, parentResource, originator):
+		if not (result := super().activate(parentResource, originator))[0]:
+			return result
+
 		# register latest and oldest virtual resources
 		Logging.logDebug('Registering latest and oldest virtual resources for: %s' % self.ri)
 
@@ -49,12 +62,27 @@ class CNT(Resource):
 		CSE.dispatcher.createResource(r)
 
 		# TODO Error checking above
-		return (True, C.rcOK)
+		return True, C.rcOK
 
 
 	# Get all content instances of a resource and return a sorted (by ct) list 
 	def contentInstances(self):
-		return sorted(CSE.dispatcher.subResources(self.ri, C.tCIN), key=lambda x: (x.ct))
+		return sorted(CSE.dispatcher.directChildResources(self.ri, C.tCIN), key=lambda x: (x.ct))
+
+
+	def childWillBeAdded(self, childResource, originator):
+		if not (res := super().childWillBeAdded(childResource, originator))[0]:
+			return res
+		
+		# Check whether the child's rn is "ol" or "la".
+		if (rn := childResource['rn']) is not None and rn in ['ol', 'la']:
+			return False, C.rcOperationNotAllowed
+	
+		# Check whether the size of the CIN doesn't exceed the mbs
+		if childResource.ty == C.tCIN and self.mbs is not None:
+			if childResource.cs is not None and childResource.cs > self.mbs:
+				return False, C.rcNotAcceptable
+		return True, C.rcOK
 
 
 	# Handle the addition of new CIN. Basically, get rid of old ones.
@@ -111,5 +139,5 @@ class CNT(Resource):
 		# Some CNT resource may have been updated, so store the resource 
 		CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
 
-		return (True, C.rcOK)
+		return True, C.rcOK
 

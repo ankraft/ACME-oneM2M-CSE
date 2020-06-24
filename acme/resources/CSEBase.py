@@ -9,12 +9,21 @@
 
 from Constants import Constants as C
 from Configuration import Configuration
+from Validator import constructPolicy
 from .Resource import *
+
+
+# Attribute policies for this resource are constructed during startup of the CSE
+attributePolicies = constructPolicy([ 
+	'rn', 'ty', 'ri', 'pi',  'ct', 'lt', 'lbl', 'loc',
+	'acpi', 'poa', 'nl', 'daci', 'esi', 'srv', 'cst', 'csi', 'csz'
+])
 
 class CSEBase(Resource):
 
 	def __init__(self, jsn=None, create=False):
-		super().__init__(C.tsCSEBase, jsn, '', C.tCSEBase, create=create)
+		super().__init__(C.tsCSEBase, jsn, '', C.tCSEBase, create=create, attributePolicies=attributePolicies)
+
 
 		if self.json is not None:
 			self.setAttribute('ri', 'cseid', overwrite=False)
@@ -46,22 +55,25 @@ class CSEBase(Resource):
 	def validate(self, originator, create=False):
 		if (res := super().validate(originator, create))[0] == False:
 			return res
-		# Update the hcl attribute in the hosting node
+		
+		self.normalizeURIAttribute('poa')
+
+		# Update the hcl attribute in the hosting node (similar to AE)
 		nl = self['nl']
 		_nl_ = self.__node__
 
 		if nl is not None or _nl_ is not None:
 			if nl != _nl_:
 				if _nl_ is not None:
-					(n, _) = CSE.dispatcher.retrieveResource(_nl_)
+					n, _ = CSE.dispatcher.retrieveResource(_nl_)
 					if n is not None:
 						n['hcl'] = None # remve old link
 						CSE.dispatcher.updateResource(n)
-				self[self._node] = nl
-				(n, _) = CSE.dispatcher.retrieveResource(nl)
+				self[Resource._node] = nl
+				n, _ = CSE.dispatcher.retrieveResource(nl)
 				if n is not None:
 					n['hcl'] = self['ri']
 					CSE.dispatcher.updateResource(n)
-			self[self._node] = nl
+			self[Resource._node] = nl
 
-		return (True, C.rcOK)
+		return True, C.rcOK

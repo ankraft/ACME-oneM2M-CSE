@@ -10,12 +10,12 @@
 
 var HttpClient = function() {
   this.get = function(id, node, callback, errorCallback) {
-      sendRetrieveRequest(node, id, originator, callback, errorCallback )
+    sendRetrieveRequest(node, id, originator, callback, errorCallback )
   }
 
   // TODO: do we really need a separate method?
   this.getChildren = function(id, node, callback, errorCallback) {
-      sendRetrieveRequest(node, id, originator, callback, errorCallback)
+    sendRetrieveRequest(node, id, originator, callback, errorCallback)
   }
 }
 
@@ -45,4 +45,14 @@ function sendRequest(method, node, url, originator, callback, errorCallback) {
   request.setRequestHeader("Accept", "application/json");
   request.setRequestHeader("X-M2M-RI", "123");       
   request.send(null);
+}
+
+
+function getTextFromServer(path, callback) {
+  var client = new XMLHttpRequest();
+  client.open('GET', path);
+  client.onreadystatechange = function() {
+    callback(client.responseText)
+  }
+  client.send();
 }

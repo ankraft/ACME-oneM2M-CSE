@@ -9,14 +9,22 @@
 
 import sys
 from Constants import Constants as C
+from Validator import constructPolicy
 import Utils
 from .Resource import *
 
 
+# Attribute policies for this resource are constructed during startup of the CSE
+attributePolicies = constructPolicy([ 
+	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'cr', 'daci', 'loc',
+	'cnd', 'or', 'cs', 'nl', 'mni', 'mia', 'mbs', 'cni'
+
+])
+
 class FCNT(Resource):
 
 	def __init__(self, jsn=None, pi=None, fcntType=None, create=False):
-		super().__init__(fcntType, jsn, pi, C.tFCNT, create=create)
+		super().__init__(fcntType, jsn, pi, C.tFCNT, create=create, attributePolicies=attributePolicies)
 		if self.json is not None:
 			self.setAttribute('cs', 0, overwrite=False)
 
@@ -26,7 +34,7 @@ class FCNT(Resource):
 			# Might change during the lifetime of a resource. Used for optimization
 			self.hasInstances = False
 
-		self.ignoreAttributes = [ self._rtype, self._srn, self._node, 'acpi', 'cbs', 'cni', 'cnd', 'cs', 'cr', 'ct', 'et', 'lt', 'mbs', 'mia', 'mni', 'or', 'pi', 'ri', 'rn', 'st', 'ty' ]
+		self.ignoreAttributes = [ self._rtype, self._srn, self._node, self._originator, 'acpi', 'cbs', 'cni', 'cnd', 'cs', 'cr', 'ct', 'et', 'lt', 'mbs', 'mia', 'mni', 'or', 'pi', 'ri', 'rn', 'st', 'ty' ]
 
 
 	# Enable check for allowed sub-resources
@@ -38,8 +46,8 @@ class FCNT(Resource):
 									 ])
 
 
-	def activate(self, originator):
-		super().activate(originator)
+	def activate(self, parentResource, originator):
+		super().activate(parentResource, originator)
 		# TODO Error checking above
 
 		# register latest and oldest virtual resources
@@ -53,9 +61,25 @@ class FCNT(Resource):
 			# add oldest
 			r = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, tpe=C.tFCNT_OL)
 			CSE.dispatcher.createResource(r)
+		return True, C.rcOK
 
 
-		return (True, C.rcOK)
+	def childWillBeAdded(self, childResource, originator):
+	
+		# See also CNT resource
+	
+		if not (res := super().childWillBeAdded(childResource, originator))[0]:
+			return res
+
+		# Check whether the child's rn is "ol" or "la".
+		if (rn := childResource['rn']) is not None and rn in ['ol', 'la']:
+			return False, C.rcOperationNotAllowed
+	
+		# Check whether the size of the CIN doesn't exceed the mbs
+		if childResource.ty == C.tCIN and self.mbs is not None:
+			if childResource.cs is not None and childResource.cs > self.mbs:
+				return False, C.rcNotAcceptable
+		return True, C.rcOK
 
 
 	# Checking the presentse of cnd and calculating the size
@@ -65,7 +89,7 @@ class FCNT(Resource):
 
 		# No CND?
 		if (cnd := self.cnd) is None or len(cnd) == 0:
-			return (False, C.rcContentsUnacceptable)
+			return False, C.rcContentsUnacceptable
 
 		# Calculate contentSize
 		# This is not at all realistic since this is the in-memory representation
@@ -116,7 +140,6 @@ class FCNT(Resource):
 					cbs += f.cs
 				i = 0
 				l = len(fci)
-				print(fci)
 				while cbs > mbs and i < l:
 					# remove oldest
 					cbs -= fci[i].cs
@@ -135,13 +158,33 @@ class FCNT(Resource):
 		# May have been changed, so store the resource 
 		x = CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
 		
-		return (True, C.rcOK)
+		return True, C.rcOK
+
+
+	# Validate expirations of child resurces
+	def validateExpirations(self):
+		Logging.logDebug('Validate expirations')
+		super().validateExpirations()
+
+		if (mia := self.mia) is None:
+			return
+		now = Utils.getResourceDate(-mia)
+		# print(now)		# fcis = self.flexContainerInstances()
+		# TODO
+		# for fci in fcis
+
 
 
 	# Get all flexContainerInstances of a resource and return a sorted (by ct) list 
 	def flexContainerInstances(self):
-		return sorted(CSE.dispatcher.subResources(self.ri, C.tFCI), key=lambda x: (x.ct))
+		return sorted(CSE.dispatcher.directChildResources(self.ri, C.tFCI), key=lambda x: (x.ct))
 
+# TODO:
+# If the maxInstanceAge attribute is present in the targeted 
+# <flexContainer> resource, then the Hosting CSE shall set the expirationTime attribute in 
+# created <flexContainerInstance> child resource such that the time difference between expirationTime 
+# and the creationTime of the <flexContainerInstance>. The <flexContainerInstance> child resource shall 
+# not exceed the maxInstanceAge of the targeted <flexContainer> resource.
 
 	# Add a new FlexContainerInstance for this flexContainer
 	def addFlexContainerInstance(self, originator):
@@ -149,10 +192,6 @@ class FCNT(Resource):
 		jsn = {	'rn'  : '%s_%d' % (self.rn, self.st),
    				#'cnd' : self.cnd,
    				'lbl' : self.lbl,
-   				'ct'  : self.lt,
-   				'et'  : self.et,
-   				'cs'  : self.cs,
-   				'or'  : originator
 			}
 		for attr in self.json:
 			if attr not in self.ignoreAttributes:
@@ -161,7 +200,11 @@ class FCNT(Resource):
 
 		fci = Utils.resourceFromJSON(jsn = { self.tpe : jsn },
 									pi = self.ri, 
-									tpe = C.tFCI) # no ACPI
+									acpi = self.acpi, # or no ACPI?
+									tpe = C.tFCI)
 
 		CSE.dispatcher.createResource(fci)
+		fci['cs'] = self.cs
+		fci.dbUpdate()
+
 

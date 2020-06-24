@@ -10,11 +10,10 @@
 import argparse, sys
 sys.path.append('acme')
 sys.path.append('apps')
-from Configuration import defaultConfigFile, defaultImportDirectory
+from Configuration import defaultConfigFile, defaultImportDirectory, version
 import CSE
 
 
-version = '0.2.1'
 description = 'ACME ' + version + ' - An open source CSE Middleware for Education'
 
 
@@ -24,9 +23,13 @@ def parseArgs():
 	parser.add_argument('--config', action='store', dest='configfile', default=defaultConfigFile, help='specify the configuration file')
 
 	# two mutual exlcusive arguments
-	group = parser.add_mutually_exclusive_group()
-	group.add_argument('--apps', action='store_true', dest='appsenabled', default=None, help='enable internal applications')
-	group.add_argument('--no-apps', action='store_false', dest='appsenabled', default=None, help='disable internal applications')
+	groupApps = parser.add_mutually_exclusive_group()
+	groupApps.add_argument('--apps', action='store_true', dest='appsenabled', default=None, help='enable internal applications')
+	groupApps.add_argument('--no-apps', action='store_false', dest='appsenabled', default=None, help='disable internal applications')
+
+	groupRemoteCSE = parser.add_mutually_exclusive_group()
+	groupRemoteCSE.add_argument('--remote-cse', action='store_true', dest='remotecseenabled', default=None, help='enable remote CSE connections')
+	groupRemoteCSE.add_argument('--no-remote-cse', action='store_false', dest='remotecseenabled', default=None, help='disable remote CSE connections')
 
 	parser.add_argument('--db-reset', action='store_true', dest='dbreset', default=None, help='reset the DB when starting the CSE')
 	parser.add_argument('--db-storage', action='store', dest='dbstoragemode', default=None, choices=[ 'memory', 'disk' ], type=str.lower, help='specify the DB´s storage mode')

@@ -11,11 +11,14 @@
 from AEBase import *
 from Logging import Logging
 from Configuration import Configuration
-import Statistics
+import Statistics, CSE
+from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN
 import threading, time
 
 
 class AEStatistics(AEBase):
+
+
 
 	def __init__(self):
 		super().__init__(	rn=Configuration.get('app.statistics.aeRN'), 
@@ -28,6 +31,27 @@ class AEStatistics(AEBase):
 
 		self.fcsrn = self.srn + '/' + Configuration.get('app.statistics.fcntRN')
 		self.fcntType = Configuration.get('app.statistics.fcntType')
+
+		# Attribute definitions for the statistics specialization
+		statisticAttributes =  {
+			self.fcntType : {
+				'rmRes'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
+				'crRes'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
+				'htRet'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
+				'htCre'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
+				'htUpd'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
+				'htDel'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
+				'cseSU'	: [ BT.timestamp,		CAR.car01, 	RO.O,	RO.O,  AN.OA ],
+				'lgErr'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
+				'lgWrn'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
+				'cseUT'	: [ BT.string,			CAR.car01, 	RO.O,	RO.O,  AN.OA ],
+				'ctRes'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ]
+			}
+		}
+
+		# Add the definitions to the validator
+		CSE.validator.addAdditionalAttributes(statisticAttributes)
+
 
 		# Create structure beneath the AE resource
 		self.fc = self.retrieveCreate(	srn=self.fcsrn,
@@ -52,7 +76,7 @@ class AEStatistics(AEBase):
 										ty=C.tFCNT)
 
 		# Update the statistic resource from time to time
-		self.startWorker(Configuration.get('app.statistics.intervall'), self.statisticsWorker)
+		self.startWorker(Configuration.get('app.statistics.intervall'), self.statisticsWorker, 'statisticsWorker')
 
 		Logging.log('AEStatistics AE registered')
 

@@ -10,18 +10,27 @@
 import random, string
 from Constants import Constants as C
 import Utils, CSE
+from Validator import constructPolicy
 from .Resource import *
+
+# Attribute policies for this resource are constructed during startup of the CSE
+attributePolicies = constructPolicy([
+	'rn', 'ty', 'ri', 'pi', 'et', 'lbl', 'ct', 'lt', 'acpi', 'daci', 'cr', 'enc',
+	'exc', 'nu', 'gpi', 'nfu', 'bn', 'rl', 'psn', 'pn', 'nsp', 'ln', 'nct', 'nec',
+	'su', 'acrs'		#	primitiveProfileID missing in TS-0004
+])
 
 # LIMIT: Only http(s) requests in nu or POA is supported yet
 
 class SUB(Resource):
 
 	def __init__(self, jsn=None, pi=None, create=False):
-		super().__init__(C.tsSUB, jsn, pi, C.tSUB, create=create)
+		super().__init__(C.tsSUB, jsn, pi, C.tSUB, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('nct', C.nctAll, overwrite=False) # LIMIT TODO: only this notificationContentType is supported now
 			self.setAttribute('enc/net', [ C.netResourceUpdate ], overwrite=False)
+
 
 # TODO expirationCounter
 # TODO notificationForwardingURI
@@ -32,14 +41,12 @@ class SUB(Resource):
 		return super()._canHaveChild(resource, [])
 
 
-	def activate(self, originator):
-		# super().activate(originator)
-		# if not (res := self.validate(originator))[0]:
-		# 	return res
-		if not (result := super().activate(originator))[0]:
+	def activate(self, parentResource, originator):
+		if not (result := super().activate(parentResource, originator))[0]:
 			return result
-		res = CSE.notification.addSubscription(self)
-		return (res, C.rcOK if res else C.rcTargetNotSubscribable)
+		return CSE.notification.addSubscription(self, originator)
+		# res = CSE.notification.addSubscription(self, originator)
+		# return (res, C.rcOK if res else C.rcTargetNotSubscribable)
 
 
 	def deactivate(self, originator):
@@ -48,20 +55,28 @@ class SUB(Resource):
 
 
 	def update(self, jsn, originator):
+		previousNus = self['nu'].copy()
+		newJson = jsn.copy()
 		(res, rc) = super().update(jsn, originator)
 		if not res:
 			return (res, rc)
-		res = CSE.notification.updateSubscription(self)
-		return (res, C.rcOK if res else C.rcTargetNotSubscribable)
+		return CSE.notification.updateSubscription(self, newJson, previousNus, originator)
+		# res = CSE.notification.updateSubscription(self)
+		# return (res, C.rcOK if res else C.rcTargetNotSubscribable)
  
 
 	def validate(self, originator, create=False):
 		if (res := super().validate(originator, create))[0] == False:
 			return res
 		Logging.logDebug('Validating subscription: %s' % self['ri'])
+
 		# Check necessary attributes
 		if (nu := self['nu']) is None or not isinstance(nu, list):
 			Logging.logDebug('"nu" attribute missing for subscription: %s' % self['ri'])
 			return (False, C.rcInsufficientArguments)
-		# TODO check other attributes
-		return (True, C.rcOK)
+
+		# check other attributes
+		self.normalizeURIAttribute('nfu')
+		self.normalizeURIAttribute('nu')
+		self.normalizeURIAttribute('su')		
+		return True, C.rcOK

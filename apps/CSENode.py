@@ -12,7 +12,8 @@ from NodeBase import *
 from Logging import Logging
 from Configuration import Configuration
 from resources import BAT
-import psutil, socket, platform, re, uuid
+import psutil, socket, platform, re, uuid, traceback
+
 
 
 class CSENode(NodeBase):
@@ -37,7 +38,7 @@ class CSENode(NodeBase):
 		self.createDeviceInfo()
 
 		# Add a thread to read and update the content from time to time
-		self.startWorker(Configuration.get('app.csenode.intervall'), self.nodeWorker)	
+		self.startWorker(Configuration.get('app.csenode.intervall'), self.nodeWorker, 'nodeWorker')	
 		Logging.log('CSENode registered')
 
 
@@ -72,7 +73,7 @@ class CSENode(NodeBase):
 			self._checkMemory()
 			self._checkDeviceInfo()
 		except Exception as e:
-			Logging.logErr('Exception: %s' % e)
+			Logging.logErr('Exception: %s' % traceback.format_exc())
 			return False
 		return True
 
@@ -116,7 +117,6 @@ class CSENode(NodeBase):
 			self.deviceInfo['dvnm'] = socket.gethostname()
 			self.deviceInfo['osv'] = '%s %s %s' % (platform.system(), platform.release(), platform.machine())
 			self.deviceInfo['syst'] = Utils.getResourceDate()
-			self.deviceInfo['dlb'] = [ '%s:%s' % ('IP', socket.gethostbyname(socket.gethostname())),
-									   '%s:%s' % ('MAC', ':'.join(re.findall('..', '%012x' % uuid.getnode())))
-									 ]
+			self.deviceInfo['dlb'] = '| %s:%s %s:%s' % ('IP', socket.gethostbyname(socket.gethostname()),
+														  'MAC', ':'.join(re.findall('..', '%012x' % uuid.getnode())))
 			self.updateDeviceInfo()

@@ -52,10 +52,10 @@ class NodeBase(AppBase):
 		self.battery = self.retrieveCreate( srn=self.batRn,
 											jsn={ 'm2m:bat' : {
 												'mgd' : C.mgdBAT,
-												'dc' : 'battery',
-												'rn' : 'battery',
-												'btl': 0,
-												'bts': BAT.btsUNKNOWN
+												'dc'  : 'battery',
+												'rn'  : 'battery',
+												'btl' : 0,
+												'bts' : BAT.btsUNKNOWN
 												}
 											}
 										  )
@@ -63,7 +63,7 @@ class NodeBase(AppBase):
 
 	def updateBattery(self):
 		if self.battery is not None:
-			(n, rc) = self.updateResource(ri=self.battery.ri, jsn=self.battery.asJSON(update=True, noACP=True))
+			self.updateResource(ri=self.battery.ri, jsn=self.battery.asJSON(update=True, noACP=True))
 
 
 	#########################################################################
@@ -75,10 +75,10 @@ class NodeBase(AppBase):
 		self.memory = self.retrieveCreate(	srn=self.memRn,
 											jsn={ 'm2m:mem' : {
 												'mgd' : C.mgdMEM,
-												'dc' : 'memory',
-												'rn' : 'memory',
-												'mma': 0,
-												'mmt': 0
+												'dc'  : 'memory',
+												'rn'  : 'memory',
+												'mma' : 0,
+												'mmt' : 0
 												}
 											}
 										  )
@@ -86,7 +86,7 @@ class NodeBase(AppBase):
 
 	def updateMemory(self):
 		if self.memory is not None:
-			(n, rc) = self.updateResource(ri=self.memory.ri, jsn=self.memory.asJSON(update=True, noACP=True))
+			self.updateResource(ri=self.memory.ri, jsn=self.memory.asJSON(update=True, noACP=True))
 
 
 	#########################################################################
@@ -98,11 +98,14 @@ class NodeBase(AppBase):
 		self.deviceInfo = self.retrieveCreate(	srn=self.dviRn, 
 												jsn={ 'm2m:dvi' : {
 													'mgd' : C.mgdDVI,
-													'dc' : 'deviceInfo',
-													'rn' : 'deviceinfo',
-													'dlb': [],
+													'dc'  : 'deviceInfo',
+													'rn'  : 'deviceinfo',
+													'dlb' : '',
+													'dty' : '',
 													'dvnm': '',
-													'osv': '',
+													'man' : '',
+													'mod' : '',
+													'osv' : '',
 													'syst': Utils.getResourceDate()
 													}
 												}
@@ -110,6 +113,6 @@ class NodeBase(AppBase):
 
 	def updateDeviceInfo(self):
 		if self.memory is not None:
-			(n, rc) = self.updateResource(ri=self.deviceInfo.ri, jsn=self.deviceInfo.asJSON(update=True, noACP=True))
+			self.updateResource(ri=self.deviceInfo.ri, jsn=self.deviceInfo.asJSON(update=True, noACP=True))
 
 

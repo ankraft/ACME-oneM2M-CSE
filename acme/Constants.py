@@ -4,7 +4,7 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Various CSE and oneM2M constante
+#	Various CSE and oneM2M constants
 #
 
 class Constants(object):
@@ -52,6 +52,8 @@ class Constants(object):
 	tsFCNT_OL	= 'm2m:ol'
 	tFCNT_LA	=  -20005
 	tsFCNT_LA	= 'm2m:la'
+	tPCH_PCU	=  -20006
+	tsPCH_PCU	= 'm2m:pcu'
 
 	# <mgmtObj> Specializations
 
@@ -78,12 +80,15 @@ class Constants(object):
 
 	# List of virtual resources
 
-	tVirtualResources = [ tCNT_LA, tCNT_OL, tGRP_FOPT ]
+	tVirtualResources 				= [ tCNT_LA, tCNT_OL, tFCNT_LA, tFCNT_OL, tGRP_FOPT, tPCH_PCU ]
+	tVirtualResourcesNames 			= [ 'la', 'ol', 'fopt', 'pcu' ]
 
 	# Supported by this CSE
-	supportedResourceTypes = [ tACP, tAE, tCNT, tCIN, tCSEBase, tGRP, tMGMTOBJ, tNOD, tCSR, tSUB, tFCNT, tFCI ]
-	supportedContentSerializations = [ 'application/json', 'application/vnd.onem2m-res+json' ]
-	supportedReleaseVersions = [ '3' ]
+	supportedResourceTypes 			= [ tACP, tAE, tCNT, tCIN, tCSEBase, tGRP, tMGMTOBJ, tNOD, tCSR, tSUB, tFCNT, tFCI ]
+	stateTagResourceTypes 			= [ tCNT, tCIN, tFCNT, tFCI ]	# those resource types allow state tags
+	supportedContentSerializations 	= [ 'application/json' ]
+	supportedContentHeaderFormat 	= [ 'application/json', 'application/vnd.onem2m-res+json' ]
+	supportedReleaseVersions 		= [ '3' ]
 
 	# List of resource types for which "creator" is allowed
 	# Also add later: eventConfig, pollingChannel, statsCollect, statsConfig, semanticDescriptor,
@@ -108,6 +113,8 @@ class Constants(object):
 	rcOperationNotAllowed			= 4005
 	rcContentsUnacceptable			= 4102
 	rcOriginatorHasNoPrivilege		= 4103
+	rcConflict						= 4105
+	rcSecurityAssociationRequired	= 4107
 	rcInvalidChildResourceType		= 4108
 	rcGroupMemberTypeInconsistent	= 4110
 	rcInternalServerError			= 5000
@@ -116,6 +123,8 @@ class Constants(object):
 	rcReceiverHasNoPrivileges		= 5105
 	rcAlreadyExists					= 5106
 	rcTargetNotSubscribable			= 5203
+	rcSubscriptionVerificationInitiationFailed = 5204
+	rcNotAcceptable 				= 5207
 	rcMaxNumberOfMemberExceeded		= 6010
 	rcInvalidArguments				= 6023
 	rcInsufficientArguments			= 6024
@@ -125,6 +134,7 @@ class Constants(object):
 	opCREATE 						= 1
 	opUPDATE						= 2
 	opDELETE						= 3
+	opDISCOVERY						= 4
 
 
 	# Permissions
@@ -149,8 +159,9 @@ class Constants(object):
 	# Header Fields
 	hfOrigin						= 'X-M2M-Origin'
 	hfRI 							= 'X-M2M-RI'
+	hfRVI							= 'X-M2M-RVI'
 	hfvContentType					= 'application/json'
-
+	hfvRVI 							= '3'
 
 	# Subscription-related
 
@@ -168,12 +179,15 @@ class Constants(object):
 
 	# Result Content types
 	rcnNothing								= 0
-	rcnAttributes 							= 1	
+	rcnAttributes 							= 1
+	rcnHierarchicalAddress					= 2
+	rcnHierarchicalAddressAttributes		= 3
 	rcnAttributesAndChildResources			= 4	
 	rcnAttributesAndChildResourceReferences	= 5
 	rcnChildResourceReferences				= 6
 	rcnChildResources						= 8
 	rcnModifiedAttributes					= 9
+	rcnDiscoveryResultReferences			= 11
 	# TODO support other RCN
 
 	# Desired Identifier Result Type
@@ -191,6 +205,15 @@ class Constants(object):
 	csyAbandonMember				= 1	# default
 	csyAbandonGroup					= 2
 	csySetMixed						= 3
+
+	#
+	#	Magic strings
+	#
+
+	# Additional JSON fields
+	jsnIsImported						= '__imported__'
+
+	acpPrefix 						= 'acp_'
 
 
 
