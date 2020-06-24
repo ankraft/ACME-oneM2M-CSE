@@ -12,9 +12,10 @@ from typing import Any, Callable
 
 
 SERVER		= 'http://localhost:8080'
-ROOTURL		= '/'
+ROOTPATH	= '/'
 CSERN		= 'cse-in'
 CSEID		= '/id-in'
+SPID 		= 'sp-in'
 ORIGINATOR	= 'CAdmin'
 
 
@@ -28,7 +29,7 @@ cinRN	= 'testCIN'
 grpRN	= 'testGRP'
 
 
-URL		= '%s%s' % (SERVER, ROOTURL)
+URL		= '%s%s' % (SERVER, ROOTPATH)
 cseURL 	= '%s%s' % (URL, CSERN)
 aeURL 	= '%s/%s' % (cseURL, aeRN)
 cntURL 	= '%s/%s' % (aeURL, cntRN)
