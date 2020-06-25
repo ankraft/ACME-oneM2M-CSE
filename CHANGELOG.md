@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.0 - xxxx-xx-xx
+
+
 ## 0.4.0 - 2020-06-24
 - [CSE] Fixed crashes when using group resources.
 - [CSE] Added command line arguments --remote-cse, --no-remote-cse .
