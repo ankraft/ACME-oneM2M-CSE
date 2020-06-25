@@ -183,6 +183,7 @@ class HttpServer(object):
 		try:
 			return flask.send_file(filename)
 		except Exception as e:
+			Logging.logWarn(str(e))
 			flask.abort(404)
 
 
