@@ -27,13 +27,13 @@ class Configuration(object):
 		import Utils	# cannot import at the top because of circel import
 
 		# resolve the args, of any
-		argsConfigfile			= args.configfile if args is not None else defaultConfigFile
-		argsLoglevel			= args.loglevel if args is not None else None
-		argsDBReset				= args.dbreset if args is not None else False
-		argsDBStorageMode		= args.dbstoragemode if args is not None else None
-		argsImportDirectory		= args.importdirectory if args is not None else None
-		argsAppsEnabled			= args.appsenabled if args is not None else None
-		argsRemoteCSEEnabled	= args.remotecseenabled if args is not None else None
+		argsConfigfile			= args.configfile if args is not None and 'configfile' in args else defaultConfigFile
+		argsLoglevel			= args.loglevel if args is not None and 'loglevel' in args else None
+		argsDBReset				= args.dbreset if args is not None and 'dbreset' in args else False
+		argsDBStorageMode		= args.dbstoragemode if args is not None and 'dbstoragemode' in args else None
+		argsImportDirectory		= args.importdirectory if args is not None and 'importdirectory' in args else None
+		argsAppsEnabled			= args.appsenabled if args is not None and 'appsenabled' in args else None
+		argsRemoteCSEEnabled	= args.remotecseenabled if args is not None and 'remotecseenabled' in args else None
 
 
 		config = configparser.ConfigParser(	interpolation=configparser.ExtendedInterpolation(),
