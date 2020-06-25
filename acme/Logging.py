@@ -67,6 +67,9 @@ class	Logging:
 		# Add logging queue
 		Logging.queue = queue.Queue(maxsize=Logging.queueMaxsize)
 
+		# List of log handlers
+		handlers = [ ACMERichLogHandler() ]
+
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
 			logfile = Configuration.get('logging.file')
@@ -77,9 +80,10 @@ class	Logging:
 			logfp.setLevel(Logging.logLevel)
 			logfp.setFormatter(logging.Formatter('%(levelname)s %(asctime)s %(message)s'))
 			Logging.logger.addHandler(logfp) 
+			handlers.append(logfp)
 
-		# Add a Rich Console logger
-		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=[ACMERichLogHandler(), logfp])
+		# config the logging system
+		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=handlers)
 
 		# Start worker to handle logs in the background
 		from helpers import BackgroundWorker
