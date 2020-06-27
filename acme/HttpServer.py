@@ -111,8 +111,8 @@ class HttpServer(object):
 		Logging.logDebug('==> Retrieve: /%s' % path) # path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpRetrieve()
-		resource, rc = CSE.dispatcher.retrieveRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
-		return self._prepareResponse(request, resource, rc)
+		resource, rc, msg = CSE.dispatcher.retrieveRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+		return self._prepareResponse(request, resource, rc, msg)
 
 
 	def handlePOST(self, path : str = None):
@@ -120,8 +120,8 @@ class HttpServer(object):
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpCreate()
-		resource, rc = CSE.dispatcher.createRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
-		return self._prepareResponse(request, resource, rc)
+		resource, rc, msg = CSE.dispatcher.createRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+		return self._prepareResponse(request, resource, rc, msg)
 
 
 	def handlePUT(self, path : str = None):
@@ -129,16 +129,16 @@ class HttpServer(object):
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpUpdate()
-		resource, rc = CSE.dispatcher.updateRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
-		return self._prepareResponse(request, resource, rc)
+		resource, rc, msg = CSE.dispatcher.updateRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+		return self._prepareResponse(request, resource, rc, msg)
 
 
 	def handleDELETE(self, path : str = None):
 		Logging.logDebug('==> Delete: /%s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpDelete()
-		resource, rc = CSE.dispatcher.deleteRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
-		return self._prepareResponse(request, resource, rc)
+		resource, rc, msg = CSE.dispatcher.deleteRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+		return self._prepareResponse(request, resource, rc, msg)
 
 
 	#########################################################################
@@ -193,23 +193,23 @@ class HttpServer(object):
 	#	Send various types of HTTP requests
 	#
 
-	def sendRetrieveRequest(self, url : str, originator : str) -> (dict, int):
+	def sendRetrieveRequest(self, url : str, originator : str) -> (dict, int, str):
 		return self.sendRequest(requests.get, url, originator)
 
 
-	def sendCreateRequest(self, url : str, originator : str, ty : int = None, data : Any = None) -> (dict, int):
+	def sendCreateRequest(self, url : str, originator : str, ty : int = None, data : Any = None) -> (dict, int, str):
 		return self.sendRequest(requests.post, url, originator, ty, data)
 
 
-	def sendUpdateRequest(self, url : str, originator : str, data : Any) -> (dict, int):
+	def sendUpdateRequest(self, url : str, originator : str, data : Any) -> (dict, int, str):
 		return self.sendRequest(requests.put, url, originator, data=data)
 
 
-	def sendDeleteRequest(self, url : str, originator : str) -> (dict, int):
+	def sendDeleteRequest(self, url : str, originator : str) -> (dict, int, str):
 		return self.sendRequest(requests.delete, url, originator)
 
 
-	def sendRequest(self, method : Callable , url : str, originator : str, ty : int = None, data : Any = None, ct : str = 'application/json') -> (dict, int):	# TODO Constants
+	def sendRequest(self, method : Callable , url : str, originator : str, ty : int = None, data : Any = None, ct : str = 'application/json') -> (dict, int, str):	# TODO Constants
 		headers = { 'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % ty if ty is not None else ''), 
 					C.hfOrigin	 	: originator,
 					C.hfRI 			: Utils.uniqueRI(),
@@ -220,14 +220,16 @@ class HttpServer(object):
 			r = method(url, data=data, headers=headers)
 		except Exception as e:
 			Logging.logWarn('Failed to send request: %s' % str(e))
-			return None, C.rcTargetNotReachable
+			return None, C.rcTargetNotReachable, 'target not reachable'
 		rc = int(r.headers['X-M2M-RSC']) if 'X-M2M-RSC' in r.headers else C.rcInternalServerError
-		return r.json() if len(r.content) > 0 else None, rc
+		return r.json() if len(r.content) > 0 else None, rc, None
 
 	#########################################################################
 
-	def _prepareResponse(self, request, resource, returnCode):
-		if resource is None:
+	def _prepareResponse(self, request, resource, returnCode, errorMessage):
+		if errorMessage is not None:
+			r = '{ "m2m:dbg" : "%s" }' % errorMessage
+		elif resource is None:
 			r = ''
 		elif isinstance(resource, dict):
 			r = json.dumps(resource)

@@ -31,7 +31,7 @@ class NOD(Resource):
 
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource):
+	def canHaveChild(self, resource : Resource) -> bool:
 		return super()._canHaveChild(resource, 
 									[ C.tMGMTOBJ,
 									  C.tSUB

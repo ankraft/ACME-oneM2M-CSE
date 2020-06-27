@@ -1,6 +1,8 @@
 # Changelog
 
 ## 0.5.0 - xxxx-xx-xx
+- [CSE] Added support for 'm2m:dbg' throughout the CSE.
+- [TESTS] Added test cases for unit tests.
 
 
 ## 0.4.0 - 2020-06-24

@@ -23,7 +23,7 @@ class CSR(Resource):
 
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource):
+	def canHaveChild(self, resource : Resource) -> bool:
 		return super()._canHaveChild(resource,
 									 [ C.tCNT,
 									   C.tFCNT,
@@ -33,9 +33,8 @@ class CSR(Resource):
 									 ])
 
 
-	def validate(self, originator, create=False):
+	def validate(self, originator : str = None, create : bool = False) -> (bool, int, str):
 		if (res := super().validate(originator), create)[0] == False:
 			return res
-
 		self.normalizeURIAttribute('poa')
-		return True, C.rcOK
+		return True, C.rcOK, None

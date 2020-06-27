@@ -7,6 +7,7 @@
 #	ResourceType: oldest (virtual resource) for flexContainer
 #
 
+from flask import request
 from Constants import Constants as C
 import CSE, Utils
 from .Resource import *
@@ -20,7 +21,7 @@ class FCNT_OL(Resource):
 
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource):
+	def canHaveChild(self, resource : Resource) -> bool:
 		return super()._canHaveChild(resource, [])
 
 
@@ -34,35 +35,36 @@ class FCNT_OL(Resource):
 	# 	return rs[0].asJSON(embedded=embedded, update=update, noACP=noACP)		# result is sorted, so take, and return first
 
 
-
-	def handleRetrieveRequest(self):
+	def handleRetrieveRequest(self, request : request = None, id : str = None, originator : str = None) -> (Resource, int, str):
 		""" Handle a RETRIEVE request. Return resource """
 		Logging.logDebug('Retrieving oldest FCI from FCNT')
 		if (r := self._getOldest()) is None:
-			return (None, C.rcNotFound)
-		return r, C.rcOK
+			return None, C.rcNotFound, 'no instance for <oldest>'
+		return r, C.rcOK, None
 
 
-	def handleCreateRequest(self, request, id, originator, ct, ty):
+	def handleCreateRequest(self, request, id, originator, ct, ty) -> (Resource, int, str):
 		""" Handle a CREATE request. Fail with error code. """
-		return None, C.rcOperationNotAllowed
+		return None, C.rcOperationNotAllowed, 'operation not allowed for <oldest> resource type'
 
 
-	def handleUpdateRequest(self, request, id, originator, ct):
+	def handleUpdateRequest(self, request, id, originator, ct) -> (Resource, int, str):
 		""" Handle a UPDATE request. Fail with error code. """
-		return None, C.rcOperationNotAllowed
+		return None, C.rcOperationNotAllowed, 'operation not allowed for <oldest> resource type'
 
 
-	def handleDeleteRequest(self, request, id, originator):
+	def handleDeleteRequest(self, request, id, originator) -> (Resource, int, str):
 		""" Handle a DELETE request. Delete the latest resource. """
 		Logging.logDebug('Deleting oldest FCI from FCNT')
 		if (r := self._getOldest()) is None:
-			return (None, C.rcNotFound)
+			return (None, C.rcNotFound), 'no instance for <oldest>'
 		return CSE.dispatcher.deleteResource(r, originator, withDeregistration=True)
 
 
-	def _getOldest(self):
+	def _getOldest(self) -> Resource:
 		pi = self['pi']
 		pr, _ = CSE.dispatcher.retrieveResource(pi)	# get parent
-		rs = pr.flexContainerInstances()						# ask parent for all CIN
+		rs = []
+		if pr is not None:
+			rs = pr.flexContainerInstances()					# ask parent for all FCI
 		return rs[0] if len(rs) > 0 else None

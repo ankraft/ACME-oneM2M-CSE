@@ -25,5 +25,5 @@ class FCI(Resource):
 
 
 	# Enable check for allowed sub-resources. No Child for CIN
-	def canHaveChild(self, resource):
+	def canHaveChild(self, resource : Resource) -> bool:
 		return super()._canHaveChild(resource, [])

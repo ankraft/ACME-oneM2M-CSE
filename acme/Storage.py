@@ -90,15 +90,15 @@ class Storage(object):
 				self.db.insertResource(resource)
 			else:
 				Logging.logWarn('Resource already exists (Skipping): %s ' % resource)
-				return False, C.rcAlreadyExists
+				return False, C.rcAlreadyExists, 'resource already exists'
 
 		# Add path to identifiers db
 		self.db.insertIdentifier(resource, ri, srn)
-		return True, C.rcCreated
+		return True, C.rcCreated, None
 
 
 	# Check whether a resource with either the ri or the srn already exists
-	def hasResource(self, ri, srn):
+	def hasResource(self, ri : str, srn : str):
 		return self.db.hasResource(ri=ri) or self.db.hasResource(srn=srn)
 
 
@@ -123,8 +123,11 @@ class Storage(object):
 			# Logging.logDebug('Retrieving all resources ty: %d' % ty)
 			return self.db.searchResources(ty=ty)
 
-		# return Utils.resourceFromJSON(resources[0].copy()) if len(resources) == 1 else None
-		return Utils.resourceFromJSON(resources[0]) if len(resources) == 1 else None
+		# return Utils.resourceFromJSON(resources[0]) if len(resources) == 1 else None,
+		if len(resources) == 1:
+			r, _ = Utils.resourceFromJSON(resources[0])
+			return r
+		return None
 
 
 	# def discoverResources(self, rootResource, handling, conditions, attributes, fo):
@@ -164,24 +167,24 @@ class Storage(object):
 	# 	return result
 
 
-	def updateResource(self, resource : Resource) -> (bool, int):
+	def updateResource(self, resource : Resource) -> (bool, int, str):
 		if resource is None:
 			Logging.logErr('resource is None')
 			raise RuntimeError('resource is None')
 		ri = resource.ri
 		# Logging.logDebug('Updating resource (ty: %d, ri: %s, rn: %s)' % (resource['ty'], ri, resource['rn']))
 		resource = self.db.updateResource(resource)
-		return resource, C.rcUpdated
+		return resource, C.rcUpdated, None
 
 
-	def deleteResource(self, resource : Resource) -> (bool, int):
+	def deleteResource(self, resource : Resource) -> (bool, int, str):
 		if resource is None:
 			Logging.logErr('resource is None')
 			raise RuntimeError('resource is None')
 		# Logging.logDebug('Removing resource (ty: %d, ri: %s, rn: %s)' % (resource['ty'], ri, resource['rn']))
 		self.db.deleteResource(resource)
 		self.db.deleteIdentifier(resource)
-		return True, C.rcDeleted
+		return True, C.rcDeleted, None
 
 
 
@@ -194,7 +197,9 @@ class Storage(object):
 		# 	rs = self.tabResources.search(Query().pi == pi)			
 		result = []
 		for r in rs:
-			result.append(Utils.resourceFromJSON(r.copy()))
+			resource, _ = Utils.resourceFromJSON(r)
+			if resource is not None:
+				result.append(resource)
 		return result
 
 
@@ -214,7 +219,9 @@ class Storage(object):
 		and return them in an array."""
 		result = []
 		for j in self.db.searchByTypeFieldValue(ty, field, value):
-			result.append(Utils.resourceFromJSON(j))
+			resource, _ = Utils.resourceFromJSON(j)
+			if resource is not None:
+				result.append(resource)
 		return result
 
 
@@ -246,7 +253,7 @@ class Storage(object):
 		return self.db.removeSubscription(subscription)
 
 
-	def updateSubscription(self, subscription):
+	def updateSubscription(self, subscription : Resource) -> bool:
 		# Logging.logDebug('Updating subscription: %s' % ri)
 		return self.db.upsertSubscription(subscription)
 
@@ -292,13 +299,15 @@ class Storage(object):
 		now = Utils.getResourceDate()
 		rs = self.db.discoverResources(lambda r: 'et' in r and (et := r['et']) is not None and et < now)
 		for j in rs:
-			if (r := Utils.resourceFromJSON(j)) is not None:
+			r, _ = Utils.resourceFromJSON(j)
+			if r  is not None:
 				CSE.dispatcher.deleteResource(r, withDeregistration=True)
 
 		# Check all resources with maxInstanceAge (mia)
 		rs = self.db.discoverResources(lambda r: 'mia' in r)
 		for j in rs:
-			if (r := Utils.resourceFromJSON(j)) is not None:
+			r, _ = Utils.resourceFromJSON(j)
+			if r is not None:
 				r.validateExpirations()
 		return True
 
@@ -545,7 +554,7 @@ class TinyDBBinding(object):
 			self.tabResources.remove(Query().ri == resource.ri)
 	
 
-	def searchResources(self, ri=None, csi=None, srn=None, pi=None, ty=None):
+	def searchResources(self, ri=None, csi=None, srn=None, pi=None, ty=None) -> list:
 
 		# find the ri first and then try again recursively
 		if srn is not None:
@@ -555,22 +564,21 @@ class TinyDBBinding(object):
 
 		with self.lockResources:
 			if ri is not None:
-				r = self.tabResources.search(Query().ri == ri)
+				return self.tabResources.search(Query().ri == ri)
 			elif csi is not None:
-				r = self.tabResources.search(Query().csi == csi)
+				return self.tabResources.search(Query().csi == csi)
 			elif pi is not None and ty is not None:
-				r = self.tabResources.search((Query().pi == pi) & (Query().ty == ty))
+				return self.tabResources.search((Query().pi == pi) & (Query().ty == ty))
 			elif pi is not None:
-				r = self.tabResources.search(Query().pi == pi)
+				return self.tabResources.search(Query().pi == pi)
 			elif ty is not None:
-				r = self.tabResources.search(Query().ty == ty)
-			return r
+				return self.tabResources.search(Query().ty == ty)
+			return []
 
 
 	def discoverResources(self, func):
 		with self.lockResources:
-			rs = self.tabResources.search(func)
-			return rs
+			return self.tabResources.search(func)
 
 
 	def hasResource(self, ri=None, csi=None, srn=None, ty=None):
@@ -579,15 +587,15 @@ class TinyDBBinding(object):
 		if srn is not None:
 			if len((identifiers := self.searchIdentifiers(srn=srn))) == 1:
 				return self.hasResource(ri=identifiers[0]['ri'])
-		ret = False
 		with self.lockResources:
 			if ri is not None:
-				ret = self.tabResources.contains(Query().ri == ri)
+				return self.tabResources.contains(Query().ri == ri)
 			elif csi is not None:
-				ret = self.tabResources.contains(Query().csi == csi)
+				return self.tabResources.contains(Query().csi == csi)
 			elif ty is not None:
-				ret = self.tabResources.contains(Query().ty == ty)
-			return ret
+				return self.tabResources.contains(Query().ty == ty)
+			else:
+				return False
 
 
 	def countResources(self):
@@ -600,8 +608,7 @@ class TinyDBBinding(object):
 		"""Search and return all resources of a specific type and a value in a field,
 		and return them in an array."""
 		with self.lockResources:
-			result = self.tabResources.search((Query().ty == ty) & (where(field).any(value)))
-			return result
+			return self.tabResources.search((Query().ty == ty) & (where(field).any(value)))
 
 
 
@@ -623,13 +630,13 @@ class TinyDBBinding(object):
 			self.tabIdentifiers.remove(Query().ri == resource.ri)
 
 
-	def searchIdentifiers(self, ri=None, srn=None):
+	def searchIdentifiers(self, ri : str = None, srn : str = None) -> list:
 		with self.lockIdentifiers:
 			if srn is not None:
-				r = self.tabIdentifiers.search(Query().srn == srn)
+				return self.tabIdentifiers.search(Query().srn == srn)
 			elif ri is not None:
-				r = self.tabIdentifiers.search(Query().ri == ri) 
-			return r
+				return self.tabIdentifiers.search(Query().ri == ri) 
+			return []
 
 
 	#
@@ -637,17 +644,16 @@ class TinyDBBinding(object):
 	#
 
 
-	def searchSubscriptions(self, ri=None, pi=None):
+	def searchSubscriptions(self, ri : str = None, pi : str = None) -> bool:
 		with self.lockSubscriptions:
-			subs = None
 			if ri is not None:
-				subs = self.tabSubscriptions.search(Query().ri == ri)
+				return self.tabSubscriptions.search(Query().ri == ri)
 			if pi is not None:
-				subs = self.tabSubscriptions.search(Query().pi == pi)
-			return subs
+				return self.tabSubscriptions.search(Query().pi == pi)
+			return None
 
 
-	def upsertSubscription(self, subscription):
+	def upsertSubscription(self, subscription : Resource) -> bool:
 		with self.lockSubscriptions:
 			ri = subscription.ri
 			result = self.tabSubscriptions.upsert(
@@ -663,8 +669,7 @@ class TinyDBBinding(object):
 
 	def removeSubscription(self, subscription):
 		with self.lockSubscriptions:
-			result = self.tabSubscriptions.remove(Query().ri == subscription.ri)
-			return result
+			return self.tabSubscriptions.remove(Query().ri == subscription.ri)
 
 
 	#
@@ -673,7 +678,6 @@ class TinyDBBinding(object):
 
 	def searchStatistics(self):
 		with self.lockStatistics:
-			stats = None
 			stats = self.tabStatistics.get(doc_id=1)
 			return stats if stats is not None and len(stats) > 0 else None
 
@@ -681,10 +685,9 @@ class TinyDBBinding(object):
 	def upsertStatistics(self, stats):
 		with self.lockStatistics:
 			if len(self.tabStatistics) > 0:
-				result = self.tabStatistics.update(stats, doc_ids=[1])
+				return self.tabStatistics.update(stats, doc_ids=[1]) is not None
 			else:
-				result = self.tabStatistics.insert(stats)
-			return result is not None
+				return self.tabStatistics.insert(stats) is not None
 
 
 	#
@@ -693,7 +696,6 @@ class TinyDBBinding(object):
 
 	def searchAppData(self, id):
 		with self.lockAppData:
-			data = None
 			data = self.tabAppData.get(Query().id == id)
 			return data if data is not None and len(data) > 0 else None
 
@@ -703,15 +705,13 @@ class TinyDBBinding(object):
 			if 'id' not in data:
 				return None
 			if len(self.tabAppData) > 0:
-				result = self.tabAppData.update(data, Query().id == data['id'])
+				return self.tabAppData.update(data, Query().id == data['id']) is not None
 			else:
-				result = self.tabAppData.insert(data)
-			return result is not None
+				return self.tabAppData.insert(data) is not None
 
 
 	def removeAppData(self, data):
 		with self.lockAppData:
 			if 'id' not in data:
 				return None	
-			result = self.tabAppData.remove(Query().id == data['id'])
-			return result
+			return self.tabAppData.remove(Query().id == data['id'])

@@ -7,6 +7,7 @@
 #	ResourceType: fanOutPoint (virtual resource)
 #
 
+from flask import request
 from Constants import Constants as C
 import CSE
 from .Resource import *
@@ -19,7 +20,7 @@ from Constants import Constants as C
 # - Handle Group Request Identifier parameter
 
 # LIMIT
-# Only blockingRequest ist supported
+# Only blockingRequest is supported
 
 class GRP_FOPT(Resource):
 
@@ -28,11 +29,11 @@ class GRP_FOPT(Resource):
 
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource):
+	def canHaveChild(self, resource : Resource) -> bool:
 		return super()._canHaveChild(resource, [])
 
 
-	def handleRetrieveRequest(self, request, id, originator):
+	def handleRetrieveRequest(self, request : request, id : str, originator : str) -> (Resource, int, str):
 		Logging.logDebug('Retrieving resources from fopt')
 		return CSE.group.foptRequest(C.opRETRIEVE, self, request, id, originator)
 

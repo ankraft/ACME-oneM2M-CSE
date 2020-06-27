@@ -30,16 +30,18 @@ class CIN(Resource):
 
 
 	# Enable check for allowed sub-resources. No Child for CIN
-	def canHaveChild(self, resource):
+	def canHaveChild(self, resource : Resource) -> bool:
 		return super()._canHaveChild(resource, [])
 
 
-	def activate(self, parentResource, originator):
-		super().activate(parentResource, originator)
+	def activate(self, parentResource, originator) -> (bool, int, str):
+		if not (result := super().activate(parentResource, originator))[0]:
+			return result
 		parentResource = parentResource.dbReload()	# Read the resource again in case it was updated in the DB
 		self.setAttribute('st', parentResource.st)
-		return True, C.rcOK
+		return True, C.rcOK, None
 
 
-	def update(self, jsn=None, originator=None):
-		return False, C.rcOperationNotAllowed
+	# Forbidd updating
+	def update(self, jsn : dict = None, originator : str = None) -> (bool, int, str):
+		return False, C.rcOperationNotAllowed, 'updating CIN is forbidden'

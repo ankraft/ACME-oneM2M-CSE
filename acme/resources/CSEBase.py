@@ -24,7 +24,6 @@ class CSEBase(Resource):
 	def __init__(self, jsn=None, create=False):
 		super().__init__(C.tsCSEBase, jsn, '', C.tCSEBase, create=create, attributePolicies=attributePolicies)
 
-
 		if self.json is not None:
 			self.setAttribute('ri', 'cseid', overwrite=False)
 			self.setAttribute('rn', 'cse', overwrite=False)
@@ -39,7 +38,7 @@ class CSEBase(Resource):
 
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource):
+	def canHaveChild(self, resource : Resource) -> bool:
 		return super()._canHaveChild(resource,	
 									 [ C.tACP,
 									   C.tAE,
@@ -52,7 +51,7 @@ class CSEBase(Resource):
 									 ])
 
 
-	def validate(self, originator, create=False):
+	def validate(self, originator : str = None, create : bool = False) -> (bool, int, str):
 		if (res := super().validate(originator, create))[0] == False:
 			return res
 		
@@ -65,15 +64,15 @@ class CSEBase(Resource):
 		if nl is not None or _nl_ is not None:
 			if nl != _nl_:
 				if _nl_ is not None:
-					n, _ = CSE.dispatcher.retrieveResource(_nl_)
+					n, _, _ = CSE.dispatcher.retrieveResource(_nl_)
 					if n is not None:
 						n['hcl'] = None # remve old link
 						CSE.dispatcher.updateResource(n)
 				self[Resource._node] = nl
-				n, _ = CSE.dispatcher.retrieveResource(nl)
+				n, _, _ = CSE.dispatcher.retrieveResource(nl)
 				if n is not None:
 					n['hcl'] = self['ri']
 					CSE.dispatcher.updateResource(n)
 			self[Resource._node] = nl
 
-		return True, C.rcOK
+		return True, C.rcOK, None

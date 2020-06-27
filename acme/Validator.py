@@ -230,18 +230,18 @@ class Validator(object):
 	#########################################################################
 
 
-	def	validateAttributes(self, jsn : dict, tpe: str, attributePolicies : dict, create : bool = True , isImported : bool = False) -> (bool, int):
+	def	validateAttributes(self, jsn : dict, tpe: str, attributePolicies : dict, create : bool = True , isImported : bool = False) -> (bool, int, str):
 		""" Validate a resources attributes for types etc."""
 		Logging.logDebug('Validating attributes')
 
 		# Just return in case the resource instance is imported
 		if isImported is not None and isImported:
-			return (True, C.rcOK)
+			return True, C.rcOK, None
 
 		# No policies?
 		if attributePolicies is None:
 			Logging.logWarn("No attribute policies: %s" % jsn)
-			return (True, C.rcOK)
+			return True, C.rcOK, None
 
 		# determine the request column, depending on create or updates
 		reqp = 2 if create else 3
@@ -255,8 +255,9 @@ class Validator(object):
 		#Logging.logDebug(attributePolicies.items())
 		for r in pureJson.keys():
 			if r not in attributePolicies.keys():
-				Logging.logWarn('Unknown attribute: %s in resource: %s' % (r, tpe))
-				return (False, C.rcBadRequest)
+				err = 'Unknown attribute: %s in resource: %s' % (r, tpe)
+				Logging.logWarn(err)
+				return False, C.rcBadRequest, err
 		for r, p in attributePolicies.items():
 			if p is None:
 				Logging.logWarn('No validation policy found for attribute: %s' % r)
@@ -264,57 +265,67 @@ class Validator(object):
 			# Check whether the attribute is allowed or mandatory in the request
 			if (v := pureJson.get(r)) is None:
 				if p[reqp] == RO.M:		# Not okay, this attribute is mandatory
-					Logging.logWarn('Cannot find mandatory attribute: %s' % r)
-					return (False, C.rcBadRequest)
+					err = 'Cannot find mandatory attribute: %s' % r
+					Logging.logWarn(err)
+					return False, C.rcBadRequest, err
 				if r in pureJson and p[1] == CAR.car1:
-					Logging.logWarn('Cannot delete a mandatory attribute: %s' % r)
-					return (False, C.rcBadRequest)
+					err = 'Cannot delete a mandatory attribute: %s' % r
+					Logging.logWarn(err)
+					return False, C.rcBadRequest, err
 				if p[reqp] in [ RO.NP, RO.O]:	# Okay that the attribute is not in the json, since it is provided or optional
 					continue
 			else:
 				if p[reqp] == RO.NP:
-					Logging.logWarn('Found non-provision attribute: %s' % r)
-					return (False, C.rcBadRequest)
-				if r == 'pvs' and not self.validatePvs(pureJson):
-					return (False, C.rcBadRequest)
+					err = 'Found non-provision attribute: %s' % r
+					Logging.logWarn(err)
+					return False, C.rcBadRequest, err
+				if r == 'pvs' and not (resp := self.validatePvs(pureJson))[0]:
+					return False, C.rcBadRequest, resp[1]
 
 			# Check whether the value is of the correct type
-			if self._validateType(p[0], v):
+			if (res := self._validateType(p[0], v))[0]:
 				continue
 			
-			# fall-through means: not validated
-			Logging.logWarn('Attribute/value validation error: %s=%s' % (r, str(v)))
-			return (False, C.rcBadRequest)
 
-		return (True, C.rcOK)
+			# fall-through means: not validated
+			err = 'Attribute/value validation error: %s=%s (%s)' % (r, str(v), res[1])
+			Logging.logWarn(err)
+			return False, C.rcBadRequest, err
+
+		return True, C.rcOK, None
 
 
 	def validatePvs(self, jsn : dict) -> bool:
 		""" Validating special case for lists that are not allowed to be empty (pvs in ACP). """
 
 		if (l :=len(jsn['pvs'])) == 0:
-			Logging.logWarn('Attribute pvs must not be an empty list')
-			return False
+			err = 'Attribute pvs must not be an empty list'
+			Logging.logWarn(err)
+			return False, err
 		elif l > 1:
-			Logging.logWarn('Attribute pvs must contain only one item')
-			return False
+			err = 'Attribute pvs must contain only one item'
+			Logging.logWarn(err)
+			return False, err
 		if (acr := Utils.findXPath(jsn, 'pvs/acr')) is None:
-			Logging.logWarn('Attribute pvs/acr not found')
-			return False
+			err = 'Attribute pvs/acr not found'
+			Logging.logWarn(err)
+			return False, err
 		if not isinstance(acr, list):
-			Logging.logWarn('Attribute pvs/acr must be a list')
-			return False
+			err = 'Attribute pvs/acr must be a list'
+			Logging.logWarn(err)
+			return False, err
 		if len(acr) == 0:
-			Logging.logWarn('Attribute pvs/acr must not be an empty list')
-			return False
-		return True
+			err = 'Attribute pvs/acr must not be an empty list'
+			Logging.logWarn(err)
+			return False, err
+		return True, None
 
 
 	def validateRequestArgument(self, argument : str, value : Any) -> bool:
 		""" Validate a request argument. """
 		if (policy := attributePolicies.get(argument)) is not None:
 			return self._validateType(policy[0], value, True)
-		return False
+		return False, 'attribute not defined'
 
 
 
@@ -337,7 +348,7 @@ class Validator(object):
 		return attributePolicies
 
 
-	def _validateType(self, tpe : BT, value : Any, convert : bool = False) -> bool:
+	def _validateType(self, tpe : BT, value : Any, convert : bool = False) -> (bool, str):
 		""" Check a value for its type. If the convert parameter is True then it
 			is assumed that the value could be a stringified value and the method
 			will attempt to convert the value to its target type; otherwise this
@@ -345,64 +356,64 @@ class Validator(object):
 
 		if tpe == BT.positiveInteger:
 			if isinstance(value, int) and value > 0:
-				return True
+				return True, None
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
 					if int(value) > 0:
-						return True
-				except:
-					return False
-			return False
+						return True, None
+				except Exception as e:
+					return False, str(e)
+			return False, 'unknown type for value'
 
 		if tpe == BT.nonNegInteger:
 			if isinstance(value, int) and value >= 0:
-				return True
+				return True, None
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
 					if int(value) >= 0:
-						return True
-				except:
-					return False
-			return False
+						return True, None
+				except Exception as e:
+					return False, str(e)
+			return False, 'unknown type for value'
 
 		if tpe in [ BT.unsignedInt, BT.unsignedLong ]:
 			if isinstance(value, int):
-				return True
+				return True, None
 			# try to convert string to number 
 			if convert and isinstance(value, str):
 				try:
 					int(value)
-					return True
-				except:
-					return False
-			return False
+					return True, None
+				except Exception as e:
+					return False, str(e)
+			return False, 'unknown type for value'
 
 		if tpe in [ BT.string, BT.timestamp, BT.anyURI ] and isinstance(value, str):
-			return True
+			return True, None
 
 		if tpe == BT.list and isinstance(value, list):
-			return True
+			return True, None
 		
 		if tpe == BT.dict and isinstance(value, dict):
-			return True
+			return True, None
 		
 		if tpe == BT.boolean:
 			if isinstance(value, bool):
-				return True
+				return True, None
 			# try to convert string to bool
 			if convert and isinstance(value, str):	# "true"/"false"
 				try:
 					bool(value)
-					return True
-				except:
-					return False
-			return False
+					return True, None
+				except Exception as e:
+					return False, str(e)
+			return False, 'unknown type for value'
 
 		if tpe == BT.geoCoordinates and isinstance(value, dict):
-			return True
+			return True, None
 
-		return False
+		return False, 'unknown type'
 
 

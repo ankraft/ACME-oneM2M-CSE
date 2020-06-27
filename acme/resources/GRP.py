@@ -41,23 +41,20 @@ class GRP(Resource):
 									   C.tGRP_FOPT
 									 ])
 
-	def activate(self, parentResource, originator):
+	def activate(self, parentResource : Resource, originator : str) -> (bool, int, str):
 		if not (result := super().activate(parentResource, originator))[0]:
 			return result
 
 		# add fanOutPoint
 		ri = self['ri']
 		Logging.logDebug('Registering fanOutPoint resource for: %s' % ri)
-		if not (res := CSE.dispatcher.createResource(
-				Utils.resourceFromJSON({ 'pi' : ri }, acpi=self['acpi'],tpe=C.tGRP_FOPT),
-				self, 
-				originator))[0]:
+		resource, _ =Utils.resourceFromJSON({ 'pi' : ri }, acpi=self['acpi'],tpe=C.tGRP_FOPT)
+		if not (res := CSE.dispatcher.createResource(resource, self, originator))[0]:
 			return res
+		return True, C.rcOK, None
 
-		return (True, C.rcOK)
 
-
-	def validate(self, originator, create=False):
+	def validate(self, originator : str = None, create : bool = False) -> (bool, int, str):
 		if (res := super().validate(originator, create))[0] == False:
 			return res
 		return CSE.group.validateGroup(self, originator)

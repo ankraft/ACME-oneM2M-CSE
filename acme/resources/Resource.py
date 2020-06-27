@@ -7,6 +7,9 @@
 #	Base class for all resources
 #
 
+# The following import allows to use "Resource" inside a method typing definition
+from __future__ import annotations
+
 from Logging import Logging
 from Constants import Constants as C
 from Configuration import Configuration
@@ -120,7 +123,7 @@ class Resource(object):
 	# NO notification on activation/creation!
 	# Implemented in sub-classes.
 	# Note: CR and ACPI are set in RegistrationManager
-	def activate(self, parentResource, originator):
+	def activate(self, parentResource : Resource.Resource, originator : str) -> (bool, int, msg):
 		Logging.logDebug('Activating resource: %s' % self.ri)
 
 		# validate the attributes but only when the resource is not instantiated.
@@ -139,17 +142,17 @@ class Resource(object):
 			parentResource = parentResource.dbReload()	# Read the resource again in case it was updated in the DB
 			parentResource['st'] = parentResource.st + 1
 			if (res := parentResource.dbUpdate())[0] is None:
-				return False, res[1]
+				return False, res[1], res[2]
 
 		self.setAttribute(self._originator, originator, overwrite=False)
 		self.setAttribute(self._rtype, self.tpe, overwrite=False) 
 
-		return True, C.rcOK
+		return True, C.rcOK, None
 
 
 	# Deactivate an active resource.
 	# Send notification on deletion
-	def deactivate(self, originator):
+	def deactivate(self, originator : str) -> None:
 		Logging.logDebug('Deactivating and removing sub-resources: %s' % self.ri)
 		# First check notification because the subscription will be removed
 		# when the subresources are removed
@@ -164,11 +167,11 @@ class Resource(object):
 
 	# Update this resource with (new) fields.
 	# Call validate() afterward to react on changes.
-	def update(self, jsn=None, originator=None):
+	def update(self, jsn : dict = None, originator : str = None) -> (bool, int, str):
 		if jsn is not None:
 			if self.tpe not in jsn:
 				Logging.logWarn("Update types don't match")
-				return False, C.rcContentsUnacceptable
+				return False, C.rcContentsUnacceptable, 'resource types mismatch'
 
 			# validate the attributes
 			if not (result := CSE.validator.validateAttributes(jsn, self.tpe, self.attributePolicies, create=False))[0]:
@@ -202,47 +205,49 @@ class Resource(object):
 		# Check subscriptions
 		CSE.notification.checkSubscriptions(self, C.netResourceUpdate)
 
-		return True, C.rcOK
+		return True, C.rcOK, None
 
 
-	def childWillBeAdded(self, childResource, originator):
+	def childWillBeAdded(self, childResource : Resource, originator : str) -> (bool, int, str):
 		""" Called before a child will be added to a resource.
 			This method return True, or False in kind the adding should be rejected, and an error code."""
-		return True, C.rcOK
+		return True, C.rcOK, None
 
-	def childAdded(self, childResource, originator):
+
+	def childAdded(self, childResource : Resource, originator : str) -> None:
 		""" Called when a child resource was added to the resource. """
 		CSE.notification.checkSubscriptions(self, C.netCreateDirectChild, childResource)
 
 
-	def childRemoved(self, childResource, originator):
+	def childRemoved(self, childResource : Resource, originator : str) -> None:
 		""" Call when child resource was removed from the resource. """
 		CSE.notification.checkSubscriptions(self, C.netDeleteDirectChild, childResource)
 
 
-	def canHaveChild(self, resource):
+	def canHaveChild(self, resource : Resource) -> bool:
 		""" MUST be implemented by each class."""
 		raise NotImplementedError('canHaveChild()')
 
 
-	def _canHaveChild(self, resource, allowedChildResourceTypes):
+	def _canHaveChild(self, resource : Resource, allowedChildResourceTypes : list) -> bool:
 		""" It checks whether a fresource may have a certain child resources. This is called from child class. """
 		from .Unknown import Unknown # Unknown imports this class, therefore import only here
 		return resource['ty'] in allowedChildResourceTypes or isinstance(resource, Unknown)
 
 
-	def validate(self, originator=None, create=False):
+	def validate(self, originator : str = None, create : bool = False) -> (bool, int, str):
 		""" Validate a resource. Usually called within activate() or update() methods. """
 		Logging.logDebug('Validating resource: %s' % self.ri)
 		if (not Utils.isValidID(self.ri) or
 			not Utils.isValidID(self.pi) or
 			not Utils.isValidID(self.rn)):
-			Logging.logDebug('Invalid ID ri: %s, pi: %s, rn: %s)' % (self.ri, self.pi, self.rn))
-			return False, C.rcContentsUnacceptable
-		return True, C.rcOK
+			err = 'Invalid ID ri: %s, pi: %s, rn: %s)' % (self.ri, self.pi, self.rn)
+			Logging.logDebug(err)
+			return False, C.rcContentsUnacceptable, err
+		return True, C.rcOK, None
 
 
-	def validateExpirations(self):
+	def validateExpirations(self) -> bool:
 		"""	Validate possible expirations, of self or child resources.
 			MAY be implemented by child class.
 		"""
@@ -320,7 +325,7 @@ class Resource(object):
 	#	Database functions
 	#
 
-	def dbDelete(self):
+	def dbDelete(self) -> (int, str):
 		""" Delete the Resource from the database. """
 		return CSE.storage.deleteResource(self)
 
@@ -365,6 +370,6 @@ class Resource(object):
 
 
 	def retrieveParentResource(self):
-		(parentResource, _) = CSE.dispatcher.retrieveResource(self.pi)
+		parentResource, _, _ = CSE.dispatcher.retrieveResource(self.pi)
 		return parentResource
 

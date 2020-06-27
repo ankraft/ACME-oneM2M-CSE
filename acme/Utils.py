@@ -173,7 +173,7 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str) -> (str, str, str):
 
 	# Logging.logDebug("ID split: %s" % ids)
 	if ids[0] == '~' and idsLen > 1:			# SP-Relative
-		# print("SP-Relative")
+		# Logging.logDebug("SP-Relative")
 		csi = ids[1]							# extract the csi
 		if csi != cseri:						# Not for this CSE? retargeting
 			if vrPresent is not None:			# append last path element again
@@ -188,7 +188,7 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str) -> (str, str, str):
 			return None, None, None
 
 	elif ids[0] == '_' and idsLen >= 4:			# Absolute
-		# print("Absolute")
+		# Logging.logDebug("Absolute")
 		spi = ids[1] 	#TODO Check whether it is same SPID, otherwise forward it throw mcc'
 		csi = ids[2]
 		if csi != cseri:
@@ -204,7 +204,7 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str) -> (str, str, str):
 			return None, None, None
 
 	else:										# CSE-Relative
-		# print("CSE-Relative")
+		# Logging.logDebug("CSE-Relative")
 		if idsLen == 1 and ((ids[0] != csern and ids[0] != '-') or ids[0] == cseri):	# unstructured
 			ri = ids[0]
 		else:									# structured
@@ -236,7 +236,7 @@ def resourceFromJSON(jsn : dict, pi : str = None, acpi : str = None, tpe : str =
 	jsn, root = pureResource(jsn)	# remove optional "m2m:xxx" level
 	ty = jsn['ty'] if 'ty' in jsn else tpe
 	if ty != None and tpe != None and ty != tpe:
-		return None
+		return None, 'type and resource specifier mismatch'
 	mgd = jsn['mgd'] if 'mgd' in jsn else None		# for mgmtObj
 
 	# Add extra acpi
@@ -250,61 +250,59 @@ def resourceFromJSON(jsn : dict, pi : str = None, acpi : str = None, tpe : str =
 
 	# sorted by assumed frequency (small optimization)
 	if ty == C.tCIN or root == C.tsCIN:
-		return CIN.CIN(jsn, pi=pi, create=create)
+		return CIN.CIN(jsn, pi=pi, create=create), None
 	elif ty == C.tCNT or root == C.tsCNT:
-		return CNT.CNT(jsn, pi=pi, create=create)
+		return CNT.CNT(jsn, pi=pi, create=create), None
 	elif ty == C.tGRP or root == C.tsGRP:
-		return GRP.GRP(jsn, pi=pi, create=create)
+		return GRP.GRP(jsn, pi=pi, create=create), None
 	elif ty == C.tGRP_FOPT or root == C.tsGRP_FOPT:
-		return GRP_FOPT.GRP_FOPT(jsn, pi=pi, create=create)
+		return GRP_FOPT.GRP_FOPT(jsn, pi=pi, create=create), None
 	elif ty == C.tACP or root == C.tsACP:
-		return ACP.ACP(jsn, pi=pi, create=create)
+		return ACP.ACP(jsn, pi=pi, create=create), None
 	elif ty == C.tFCNT:
-		return FCNT.FCNT(jsn, pi=pi, fcntType=root, create=create)	
+		return FCNT.FCNT(jsn, pi=pi, fcntType=root, create=create), None
 	elif ty == C.tFCI:
-		return FCI.FCI(jsn, pi=pi, fcntType=root, create=create)	
+		return FCI.FCI(jsn, pi=pi, fcntType=root, create=create), None	
 	elif ty == C.tAE or root == C.tsAE:
-		return AE.AE(jsn, pi=pi, create=create)
+		return AE.AE(jsn, pi=pi, create=create), None
 	elif ty == C.tSUB or root == C.tsSUB:
-		return SUB.SUB(jsn, pi=pi, create=create)
+		return SUB.SUB(jsn, pi=pi, create=create), None
 	elif ty == C.tCSR or root == C.tsCSR:
-		return CSR.CSR(jsn, pi=pi, create=create)
+		return CSR.CSR(jsn, pi=pi, create=create), None
 	elif ty == C.tNOD or root == C.tsNOD:
-		return NOD.NOD(jsn, pi=pi, create=create)
+		return NOD.NOD(jsn, pi=pi, create=create), None
 	elif (ty == C.tMGMTOBJ and mgd == C.mgdFWR) or root == C.tsFWR:
-		return FWR.FWR(jsn, pi=pi, create=create)
+		return FWR.FWR(jsn, pi=pi, create=create), None
 	elif (ty == C.tMGMTOBJ and mgd == C.mgdSWR) or root == C.tsSWR:
-		return SWR.SWR(jsn, pi=pi, create=create)
+		return SWR.SWR(jsn, pi=pi, create=create), None
 	elif (ty == C.tMGMTOBJ and mgd == C.mgdMEM) or root == C.tsMEM:
-		return MEM.MEM(jsn, pi=pi, create=create)
+		return MEM.MEM(jsn, pi=pi, create=create), None
 	elif (ty == C.tMGMTOBJ and mgd == C.mgdANI) or root == C.tsANI:
-		return ANI.ANI(jsn, pi=pi, create=create)
+		return ANI.ANI(jsn, pi=pi, create=create), None
 	elif (ty == C.tMGMTOBJ and mgd == C.mgdANDI) or root == C.tsANDI:
-		return ANDI.ANDI(jsn, pi=pi, create=create)
+		return ANDI.ANDI(jsn, pi=pi, create=create), None
 	elif (ty == C.tMGMTOBJ and mgd == C.mgdBAT) or root == C.tsBAT:
-		return BAT.BAT(jsn, pi=pi, create=create)
+		return BAT.BAT(jsn, pi=pi, create=create), None
 	elif (ty == C.tMGMTOBJ and mgd == C.mgdDVI) or root == C.tsDVI:
-		return DVI.DVI(jsn, pi=pi, create=create)
+		return DVI.DVI(jsn, pi=pi, create=create), None
 	elif (ty == C.tMGMTOBJ and mgd == C.mgdDVC) or root == C.tsDVC:
-		return DVC.DVC(jsn, pi=pi, create=create)
+		return DVC.DVC(jsn, pi=pi, create=create), None
 	elif (ty == C.tMGMTOBJ and mgd == C.mgdRBO) or root == C.tsRBO:
-		return RBO.RBO(jsn, pi=pi, create=create)
+		return RBO.RBO(jsn, pi=pi, create=create), None
 	elif (ty == C.tMGMTOBJ and mgd == C.mgdEVL) or root == C.tsEVL:
-		return EVL.EVL(jsn, pi=pi, create=create)
+		return EVL.EVL(jsn, pi=pi, create=create), None
 	elif ty == C.tCNT_LA or root == C.tsCNT_LA:
-		return CNT_LA.CNT_LA(jsn, pi=pi, create=create)
+		return CNT_LA.CNT_LA(jsn, pi=pi, create=create), None
 	elif ty == C.tCNT_OL or root == C.tsCNT_OL:
-		return CNT_OL.CNT_OL(jsn, pi=pi, create=create)
+		return CNT_OL.CNT_OL(jsn, pi=pi, create=create), None
 	elif ty == C.tFCNT_LA:
-		return FCNT_LA.FCNT_LA(jsn, pi=pi, create=create)
+		return FCNT_LA.FCNT_LA(jsn, pi=pi, create=create), None
 	elif ty == C.tFCNT_OL:
-		return FCNT_OL.FCNT_OL(jsn, pi=pi, create=create)
-
+		return FCNT_OL.FCNT_OL(jsn, pi=pi, create=create), None
 	elif ty == C.tCSEBase or root == C.tsCSEBase:
-		return CSEBase.CSEBase(jsn, create=create)
-	else:
-		return Unknown.Unknown(jsn, ty, root, pi=pi, create=create)	# Capture-All resource
-	return None
+		return CSEBase.CSEBase(jsn, create=create), None
+
+	return Unknown.Unknown(jsn, ty, root, pi=pi, create=create), None	# Capture-All resource
 
 
 excludeFromRoot = [ 'pi' ]

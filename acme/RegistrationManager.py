@@ -33,14 +33,15 @@ class RegistrationManager(object):
 	def checkResourceCreation(self, resource, originator, parentResource=None):
 		if resource.ty == C.tAE:
 			if (originator := self.handleAERegistration(resource, originator, parentResource)) is None:	# assigns new originator
-				return None, C.rcBadRequest
+				return None, C.rcBadRequest, 'cannot register AE'
 		if resource.ty == C.tCSR:
 			if not self.handleCSRRegistration(resource, originator):
-				return None, C.rcBadRequest
+				return None, C.rcBadRequest, 'cannot register CSR'
 
 		# Test and set creator attribute.
-		if (rc := self.handleCreator(resource, originator)) != C.rcOK:
-			return None, rc
+		rc, msg = self.handleCreator(resource, originator)
+		if rc != C.rcOK:
+			return None, rc, msg
 
 		# ACPI assignments 
 		if resource.ty != C.tAE:	# Don't handle AE's, this was already done already in the AE registration
@@ -56,7 +57,7 @@ class RegistrationManager(object):
 				else:
 					resource['acpi'] = [ Configuration.get('cse.security.defaultACPI') ]	# Set default ACPIRIs
 
-		return originator, C.rcOK
+		return originator, C.rcOK, None
 
 
 	# Check for (wrongly) set creator attribute as well as assign it to allowed resources.
@@ -64,21 +65,21 @@ class RegistrationManager(object):
 		# Check whether cr is set. This is wrong
 		if resource.cr is not None:
 			Logging.logWarn('Setting "creator" attribute is not allowed.')
-			return C.rcBadRequest
+			return C.rcBadRequest, 'setting "creator" attribute is not allowed'
 		# Set cr for some of the resource types
 		if resource.ty in C.tCreatorAllowed:
 			resource['cr'] = Configuration.get('cse.originator') if originator in ['C', 'S', '', None ] else originator
-		return C.rcOK
+		return C.rcOK, None
 
 
 	def checkResourceDeletion(self, resource, originator):
 		if resource.ty == C.tAE:
 			if not self.handleAEDeRegistration(resource):
-				return False, originator
+				return False, originator, 'cannot deregister AE'
 		if resource.ty == C.tCSR:
 			if not self.handleCSRDeRegistration(resource):
-				return False, originator
-		return True, originator
+				return False, originator, 'cannot deregister CSR'
+		return True, originator, None
 
 
 
@@ -220,7 +221,7 @@ class RegistrationManager(object):
 	def _createACP(self, parentResource=None, rn=None, createdByResource=None, originators=None, permission=None):
 		""" Create an ACP with some given defaults. """
 		if parentResource is None or rn is None or originators is None or permission is None:
-			return None, C.BadRequest
+			return None, C.BadRequest, 'missing attribute(s)'
 
 		# Remove existing ACP with that name first
 		acpSrn = '%s/%s' % (Configuration.get('cse.rn'), rn)
@@ -248,7 +249,7 @@ class RegistrationManager(object):
 			# only delete the ACP when it was created in the course of AE registration
 			if  (ri := acpRes[0].createdInternally()) is not None and resource.ri == ri:
 				return CSE.dispatcher.deleteResource(acpRes[0])
-		return None, C.rcOK
+		return None, C.rcOK, None
 
 
 	def _addToAccessCSBaseACP(self, originator):

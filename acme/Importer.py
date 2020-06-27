@@ -67,7 +67,7 @@ class Importer(object):
 			fn = path + '/' + rn
 			if os.path.exists(fn):
 				Logging.log('Importing resource: %s ' % fn)
-				r = self.readJSON(fn)
+				r, msg = self.readJSON(fn)
 			# Check resource creation
 			if not CSE.registration.checkResourceCreation(r, originator):
 				continue
@@ -109,7 +109,6 @@ class Importer(object):
 				# create a new cresource
 				else:
 					r = self.readJSON(filename)
-					# r = resourceFromJSON(json.load(jfile), create=True)
 					# Try to get parent resource
 					if r is not None:
 						parent = None
@@ -153,7 +152,7 @@ class Importer(object):
 			content = content.replace(item, self.replaceMacro(item, filename))
 		# Load JSON and return directly or as resource
 		jsn = json.loads(content)
-		return jsn if asJSON else resourceFromJSON(jsn, create=True, isImported=True)
+		return (jsn, None) if asJSON else resourceFromJSON(jsn, create=True, isImported=True)
 
 
 

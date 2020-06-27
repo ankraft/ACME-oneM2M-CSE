@@ -99,7 +99,7 @@ class SecurityManager(object):
 
 			if (acpi := resource.acpi) is None or len(acpi) == 0:	
 				if resource.inheritACP:
-					parentResource, _ = CSE.dispatcher.retrieveResource(resource.pi)
+					parentResource, _, _ = CSE.dispatcher.retrieveResource(resource.pi)
 					return self.hasAccess(originator, parentResource, requestedPermission, checkSelf)
 				Logging.logDebug('Missing acpi in resource')
 				if (orig := resource[resource._originator]) is not None and orig == originator:
@@ -108,7 +108,7 @@ class SecurityManager(object):
 				return False
 
 			for a in acpi:
-				acp, _ = CSE.dispatcher.retrieveResource(a)
+				acp, _, _ = CSE.dispatcher.retrieveResource(a)
 				if acp is None:
 					continue
 				if checkSelf:	# forced check for self permissions

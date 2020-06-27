@@ -18,5 +18,5 @@ class Unknown(Resource):
 		super().__init__(root, jsn, pi, ty, create=create)
 
 	# Enable check for allowed sub-resources (ie. all)
-	def canHaveChild(self, resource):
+	def canHaveChild(self, resource : Resource) -> bool:
 		return True

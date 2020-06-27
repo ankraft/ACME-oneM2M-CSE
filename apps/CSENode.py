@@ -57,7 +57,7 @@ class CSENode(NodeBase):
 					'nl' : self.node.ri
 					}
 				}
-		(n, rc) = self.updateResource(ri=self.cseri, jsn=jsn)
+		n, rc, _ = self.updateResource(ri=self.cseri, jsn=jsn)
 
 
 

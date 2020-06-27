@@ -37,11 +37,11 @@ class SUB(Resource):
 # TODO subscriberURI
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource):
+	def canHaveChild(self, resource : Resource) -> bool:
 		return super()._canHaveChild(resource, [])
 
 
-	def activate(self, parentResource, originator):
+	def activate(self, parentResource : Resource, originator : str) -> (bool, int, str):
 		if not (result := super().activate(parentResource, originator))[0]:
 			return result
 		return CSE.notification.addSubscription(self, originator)
@@ -49,23 +49,22 @@ class SUB(Resource):
 		# return (res, C.rcOK if res else C.rcTargetNotSubscribable)
 
 
-	def deactivate(self, originator):
+	def deactivate(self, originator : str) -> None:
 		super().deactivate(originator)
-		return CSE.notification.removeSubscription(self)
+		CSE.notification.removeSubscription(self)
 
 
-	def update(self, jsn, originator):
+	def update(self, jsn : dict = None, originator : str = None) -> (bool, int, str):
 		previousNus = self['nu'].copy()
 		newJson = jsn.copy()
-		(res, rc) = super().update(jsn, originator)
-		if not res:
-			return (res, rc)
+		if not (res := super().update(jsn, originator))[0]:
+			return res
 		return CSE.notification.updateSubscription(self, newJson, previousNus, originator)
 		# res = CSE.notification.updateSubscription(self)
 		# return (res, C.rcOK if res else C.rcTargetNotSubscribable)
  
 
-	def validate(self, originator, create=False):
+	def validate(self, originator : str = None, create : bool = False) -> (bool, int, str):
 		if (res := super().validate(originator, create))[0] == False:
 			return res
 		Logging.logDebug('Validating subscription: %s' % self['ri'])
@@ -73,10 +72,10 @@ class SUB(Resource):
 		# Check necessary attributes
 		if (nu := self['nu']) is None or not isinstance(nu, list):
 			Logging.logDebug('"nu" attribute missing for subscription: %s' % self['ri'])
-			return (False, C.rcInsufficientArguments)
+			return False, C.rcInsufficientArguments, '"nu" is missing or wrong type'
 
 		# check other attributes
 		self.normalizeURIAttribute('nfu')
 		self.normalizeURIAttribute('nu')
 		self.normalizeURIAttribute('su')		
-		return True, C.rcOK
+		return True, C.rcOK, None
