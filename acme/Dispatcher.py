@@ -90,7 +90,7 @@ class Dispatcher(object):
 			rcn 		= attrs.get('rcn')
 		except Exception as e:
 			#Logging.logWarn('Exception: %s' % traceback.format_exc())
-			return None, C.rcInvalidArguments, 'invalid arguments'
+			return None, C.rcInvalidArguments, 'invalid arguments (%s)' % str(e)
 
 
 		if fu == 1 and rcn !=  C.rcnAttributes:	# discovery. rcn == Attributes is actually "normal retrieval"
@@ -836,6 +836,8 @@ class Dispatcher(object):
 			del args['fu']
 		else:
 			fu = C.fuConditionalRetrieval
+		if fu == C.fuDiscoveryCriteria and operation == C.opRETRIEVE:
+			operation = C.opDISCOVERY
 		result['fu'] = fu
 
 
@@ -870,23 +872,23 @@ class Dispatcher(object):
 													  C.rcnAttributesAndChildResourceReferences,
 													  C.rcnChildResourceReferences,
 													  C.rcnChildResources ]:
-			return None, 'rcn: %d not allowed RETRIEVE operation' % rcn
+			return None, 'rcn: %d not allowed in RETRIEVE operation' % rcn
 		elif operation == C.opDISCOVERY and rcn not in [ C.rcnChildResourceReferences,
 														 C.rcnDiscoveryResultReferences,
 														 C.rcnAttributesAndChildResourceReferences,
 													 	 C.rcnAttributesAndChildResources,
 														 C.rcnChildResources ]:
-			return None, 'rcn: %d not allowed DISCOVERY operation' % rcn
+			return None, 'rcn: %d not allowed in DISCOVERY operation' % rcn
 		elif operation == C.opCREATE and rcn not in [ C.rcnAttributes,
 													  C.rcnModifiedAttributes,
 													  C.rcnHierarchicalAddress,
 													  C.rcnHierarchicalAddressAttributes,
 													  C.rcnNothing ]:
-			return None, 'rcn: %d not allowed CREATE operation' % rcn
+			return None, 'rcn: %d not allowed in CREATE operation' % rcn
 		elif operation == C.opUPDATE and rcn not in [ C.rcnAttributes,
 													  C.rcnModifiedAttributes,
 													  C.rcnNothing ]:
-			return None, 'rcn: %d not allowed UPDATE operation' % rcn
+			return None, 'rcn: %d not allowed in UPDATE operation' % rcn
 		elif operation == C.opDELETE and rcn not in [ C.rcnAttributes,
 													  C.rcnNothing,
 													  C.rcnAttributesAndChildResources,
