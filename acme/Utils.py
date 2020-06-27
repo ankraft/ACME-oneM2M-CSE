@@ -396,7 +396,7 @@ def resourceDiff(old : Resource, new : Resource) -> dict:
 	return res
 
 
-def getCSE() -> CSEBase:
+def getCSE() -> (CSEBase, int, str):
 	return CSE.dispatcher.retrieveResource(Configuration.get('cse.ri'))
 
 	

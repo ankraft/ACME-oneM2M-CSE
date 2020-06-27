@@ -172,7 +172,7 @@ class RegistrationManager(object):
 		# Create an ACP for this CSR if there is none set
 		Logging.logDebug('Adding ACP for CSR')
 		cseOriginator = Configuration.get('cse.originator')
-		localCSE, _ = Utils.getCSE()
+		localCSE, _, _ = Utils.getCSE()
 
 		# Add ACP for remote CSE to access the own CSE
 		if csr.acpi is None or len(csr.acpi) == 0:
@@ -200,7 +200,7 @@ class RegistrationManager(object):
 
 		# remove the before created ACP, if it exist
 		Logging.logDebug('Removing ACPs for CSR')
-		localCSE, _ = Utils.getCSE()
+		localCSE, _, _ = Utils.getCSE()
 
 		# Retrieve CSR ACP
 		# This might fail (which is okay!), because the ACP was not created during

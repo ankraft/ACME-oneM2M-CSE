@@ -180,7 +180,7 @@ class Dispatcher(object):
 		return self._retrieveResource(srn=id) if Utils.isStructured(id) else self._retrieveResource(ri=id)
 
 
-	def _retrieveResource(self, ri : str = None, srn : str = None):
+	def _retrieveResource(self, ri : str = None, srn : str = None) -> (Resource, int, str):
 		Logging.logDebug('Retrieve resource: %s' % (ri if srn is None else srn))
 
 		if ri is not None:

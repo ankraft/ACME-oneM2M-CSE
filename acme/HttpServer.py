@@ -222,6 +222,7 @@ class HttpServer(object):
 			Logging.logWarn('Failed to send request: %s' % str(e))
 			return None, C.rcTargetNotReachable, 'target not reachable'
 		rc = int(r.headers['X-M2M-RSC']) if 'X-M2M-RSC' in r.headers else C.rcInternalServerError
+		# Logging.logWarn(r.content)
 		return r.json() if len(r.content) > 0 else None, rc, None
 
 	#########################################################################

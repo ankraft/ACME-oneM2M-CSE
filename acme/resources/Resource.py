@@ -365,8 +365,8 @@ class Resource(object):
 		return self.ri == other.ri
 
 
-	def isModifiedSince(self, other):
-		return self.lt > other.lt
+	def isModifiedSince(self, otherResource : Resource) -> bool:
+		return self.lt > otherResource.lt
 
 
 	def retrieveParentResource(self):
