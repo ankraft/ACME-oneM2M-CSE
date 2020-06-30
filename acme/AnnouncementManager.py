@@ -19,9 +19,10 @@ from Logging import Logging
 
 class AnnouncementManager(object):
 
-	def __init__(self):
+	def __init__(self) -> None:
 		Logging.log('AnnouncementManager initialized')
 
 
-	def shutdown(self):
+	def shutdown(self) -> None:
 		Logging.log('AnnouncementManager shut down')
+

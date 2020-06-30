@@ -37,3 +37,10 @@ You can develop your own components that technically run inside the CSE themselv
 	-  *stopApps()*: shutting down your component.
 
 There are more helper methods provided by the common *AppBase* and *AEBase* base classes, e.g. to send requests to the CSE via Mca, store AE data persistently etc.
+
+
+## MyPy Static Type Checker
+
+The CSE code is statically type-checked with [mypy](http://mypy-lang.org). 
+
+Just execute the ```mypy``` command in the project's root directory. It will read its configuration from the configuration file [mypy.ini](../mypy.ini). 

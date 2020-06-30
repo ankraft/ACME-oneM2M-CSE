@@ -8,6 +8,8 @@
 #
 
 from Logging import Logging
+from typing import Tuple, Optional, Union
+from flask import Request
 from Constants import Constants as C
 import CSE, Utils
 from resources import FCNT, MgmtObj
@@ -16,19 +18,19 @@ from resources.Resource import Resource
 
 class GroupManager(object):
 
-	def __init__(self):
+	def __init__(self) -> None:
 		# Add delete event handler because we like to monitor the resources in mid
-		CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent)
+		CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent) 		# type: ignore
 		Logging.log('GroupManager initialized')
 
 
-	def shutdown(self):
+	def shutdown(self) -> None:
 		Logging.log('GroupManager shut down')
 
 
 	#########################################################################
 
-	def validateGroup(self, group : Resource, originator : str) -> (bool, int, str):
+	def validateGroup(self, group: Resource, originator: str) -> Tuple[bool, int, str]:
 
 		# Get consistencyStrategy
 		csy = group.csy
@@ -52,10 +54,13 @@ class GroupManager(object):
 
 
 
-	def _checkMembersAndPrivileges(self, group, mt, csy, spty, originator):
+	def _checkMembersAndPrivileges(self, group:Resource, mt: int, csy: int, spty: Union[int, str], originator: str) -> Tuple[bool, int, str]:
 
 		# check for duplicates and remove them
 		midsList = []		# contains the real mid list
+
+		remoteResource:dict = None
+		rsc 					= 0
 
 		for mid in group['mid']:
 			isLocalResource = True;
@@ -68,12 +73,13 @@ class GroupManager(object):
 					if (url := CSE.remote._getForwardURL(mid)) is None:
 						return None, C.rcNotFound, 'forwarding URL not found for group member: %s' % mid
 					Logging.log('Retrieve request to: %s' % url)
-					remoteResource, rsc = CSE.httpServer.sendRetrieveRequest(url, CSE.Configuration.get('cse.csi'))
+					remoteResource, rsc, _ = CSE.httpServer.sendRetrieveRequest(url, CSE.Configuration.get('cse.csi'))
 
 			# get the resource and check it
 			hasFopt = False
 			if isLocalResource:
-				id = mid[:-5] if len(mid) > 5 and (hasFopt := mid.endswith('/fopt')) else mid 	# remove /fopt to retrieve the resource
+				hasFopt = mid.endswith('/fopt')
+				id = mid[:-5] if len(mid) > 5 and hasFopt else mid 	# remove /fopt to retrieve the resource
 				if (r := CSE.dispatcher.retrieveResource(id))[0] is None:
 					return False, C.rcNotFound, r[2]
 				resource = r[0]
@@ -84,7 +90,7 @@ class GroupManager(object):
 					else:  # Member not found
 						return False, C.rcNotFound, 'remote resource not found: %s' % mid
 				else:
-					resource = remoteResource
+					resource, _ = Utils.resourceFromJSON(remoteResource)
 
 			# skip if ri is already in the list
 			if isLocalResource:
@@ -142,7 +148,7 @@ class GroupManager(object):
 
 
 
-	def foptRequest(self, operation, fopt, request, id, originator, ct=None, ty=None):
+	def foptRequest(self, operation: int, fopt: Resource, request: Request, id: str, originator: str, ct:str = None, ty: int = None) -> Tuple[Union[Resource, dict], int, str]:
 		"""	Handle requests to a fanOutPoint. 
 		This method might be called recursivly, when there are groups in groups."""
 
@@ -188,22 +194,24 @@ class GroupManager(object):
 				if (res := CSE.dispatcher.handleDeleteRequest(request, mid, originator))[1] != C.rcDeleted:
 					return res 
 			else:
-				return None, C.rcOperationNotAllowed
+				return None, C.rcOperationNotAllowed, 'operation not allowed'
 			result.append(res)
 
 		# construct aggregated response
 		if len(result) > 0:
 			items = []
 			for r in result:
-				if r[0] is not None:
-					item = 	{ 'rsc' : r[1], 
+				if r[0] is not None and isinstance(res, Resource):
+					res, rsc, _ = r
+					item = 	{ 'rsc' : rsc, 
 							  'rqi' : rqi,
-							  'pc'  : r[0].asJSON(),
-							  'to'  : r[0].__srn__,
+							  'pc'  : res.asJSON(),
+							  'to'  : res.__srn__,
 							  'rvi'	: '3'	# TODO constant?
 							}
 				else:	# e.g. when deleting
-					item = 	{ 'rsc' : r[1], 
+					_, rsc, _ = r
+					item = 	{ 'rsc' : rsc, 
 					  'rqi' : rqi,
 					  'rvi'	: '3'	# TODO constant?
 					}
@@ -221,9 +229,9 @@ class GroupManager(object):
 	#########################################################################
 
 
-	def handleDeleteEvent(self, deletedResource):
+	def handleDeleteEvent(self, deletedResource: Resource) -> None:
 		"""Handle a delete event. Check whether the deleted resource is a member
-		of group. If yes, remove the member."""
+		of group. If yes, remove the member. This method is called by the event manager. """
 
 		ri = deletedResource.ri
 		groups = CSE.storage.searchByTypeFieldValue(C.tGRP, 'mid', ri)

@@ -8,7 +8,7 @@
 #
 
 import requests, json
-from typing import List
+from typing import List, Tuple, Union
 from Logging import Logging
 from Constants import Constants as C
 from Configuration import Configuration
@@ -22,7 +22,7 @@ from resources.Resource import Resource
 
 class NotificationManager(object):
 
-	def __init__(self):
+	def __init__(self) -> None:
 		Logging.log('NotificationManager initialized')
 		if Configuration.get('cse.enableNotifications'):
 			Logging.log('Notifications ENABLED')
@@ -30,11 +30,11 @@ class NotificationManager(object):
 			Logging.log('Notifications DISABLED')
 
 
-	def shutdown(self):
+	def shutdown(self) -> None:
 		Logging.log('NotificationManager shut down')
 
 
-	def addSubscription(self, subscription : Resource, originator : str) -> (bool, int, str):
+	def addSubscription(self, subscription: Resource, originator: str) -> Tuple[bool, int, str]:
 		if not Configuration.get('cse.enableNotifications'):
 			return False, C.rcSubscriptionVerificationInitiationFailed, 'notifications are disabled'
 		Logging.logDebug('Adding subscription')
@@ -43,7 +43,7 @@ class NotificationManager(object):
 		return (True, C.rcOK, None) if CSE.storage.addSubscription(subscription) else (False, C.rcInternalServerError, 'cannot add subscription to database')
 
 
-	def removeSubscription(self, subscription : Resource) -> (bool, int, str):
+	def removeSubscription(self, subscription: Resource) -> Tuple[bool, int, str]:
 		""" Remove a subscription. Send the deletion notifications, if possible. """
 		Logging.logDebug('Removing subscription')
 
@@ -54,20 +54,20 @@ class NotificationManager(object):
 		# Send a deletion request to the subscriberURI
 		if (sus := self._getNotificationURLs([subscription['su']])) is not None:
 			for su in sus:
-				if not self._sendDeletionNotification(su, subscription):
+				if not self._sendDeletionNotification(su, subscription.ri):
 					Logging.logDebug('Deletion request failed: %s' % su) # but ignore the error
 
 		# Send a deletion request to the associatedCrossResourceSub
 		if (acrs := subscription['acrs']) is not None and (nus := self._getNotificationURLs(acrs)) is not None:
 			for nu in nus:
-				if not self._sendDeletionNotification(nu, subscription):
+				if not self._sendDeletionNotification(nu, subscription.ri):
 					Logging.logDebug('Deletion request failed: %s' % nu) # but ignore the error
 		
 		return (True, C.rcOK, None) if CSE.storage.removeSubscription(subscription) else (False, C.rcInternalServerError, 'cannot remove subscription from database')
 
 
 
-	def updateSubscription(self, subscription : Resource, newJson : dict, previousNus : List[str], originator : str) -> (bool, int, str):
+	def updateSubscription(self, subscription: Resource, newJson: dict, previousNus: List[str], originator: str) -> Tuple[bool, int, str]:
 		Logging.logDebug('Updating subscription')
 		#previousSub = CSE.storage.getSubscription(subscription.ri)
 		if (result := self._getAndCheckNUS(subscription, newJson, previousNus, originator=originator))[0] is None:	# verification/delete requests happen here
@@ -75,7 +75,7 @@ class NotificationManager(object):
 		return (True, C.rcOK, None) if CSE.storage.updateSubscription(subscription) else (False, C.rcInternalServerError, 'cannot update subscription in database')
 
 
-	def checkSubscriptions(self, resource : Resource, reason : int , childResource : Resource = None) -> None:
+	def checkSubscriptions(self, resource: Resource, reason: int, childResource: Resource = None) -> None:
 		if not Configuration.get('cse.enableNotifications'):
 			return
 
@@ -95,18 +95,18 @@ class NotificationManager(object):
 				continue
 			if reason in [C.netCreateDirectChild, C.netDeleteDirectChild]:	# reasons for child resources
 				for nu in self._getNotificationURLs(sub['nus']):
-					if not self._sendNotification(sub, nu, reason, childResource):
+					if not self._sendNotification(sub['ri'], nu, reason, childResource):
 						pass
 			else: # all other reasons that target the resource
 				for nu in self._getNotificationURLs(sub['nus']):
-					if not self._sendNotification(sub, nu, reason, resource):
+					if not self._sendNotification(sub['ri'], nu, reason, resource):
 						pass
 
 
 	#########################################################################
 
 	# Return resolved notification URLs, so also POA from referenced AE's etc
-	def _getNotificationURLs(self, nus : List[str], originator : str = None) -> List[str]:
+	def _getNotificationURLs(self, nus: Union[List[str], str], originator: str = None) -> List[str]:
 		if nus is None:
 			return []
 		nusl = nus if isinstance(nus, list) else [ nus ]	# make a list out of it even when it is a single value
@@ -137,7 +137,7 @@ class NotificationManager(object):
 		return result
 
 
-	def _getAndCheckNUS(self, subscription : Resource, newJson : dict = None, previousNus : List[str] = None, originator : str = None) -> (List[str], int, str):
+	def _getAndCheckNUS(self, subscription: Resource, newJson: dict = None, previousNus: List[str] = None, originator: str = None) -> Tuple[List[str], int, str]:
 		newNus = []
 		if newJson is None:	# If there is no new JSON structure, get the one from the subscription to work with
 			newJson = subscription.asJSON()
@@ -159,7 +159,7 @@ class NotificationManager(object):
 			# notify new nus (verification request). New ones are the ones that are not in the previousNU list
 			for nu in newNus:
 				if previousNus is None or (nu not in previousNus):
-					if not self._sendVerificationRequest(nu, subscription, originator=originator):
+					if not self._sendVerificationRequest(nu, subscription.ri, originator=originator):
 						Logging.logDebug('Verification request failed: %s' % nu)
 						return None, C.rcSubscriptionVerificationInitiationFailed, 'verification request failed for nu: %s' % nu
 
@@ -168,7 +168,7 @@ class NotificationManager(object):
 			if previousNus is not None:
 				for nu in previousNus:
 					if nu not in newNus:
-						if not self._sendDeletionNotification(nu, subscription):
+						if not self._sendDeletionNotification(nu, subscription.ri):
 							Logging.logDebug('Deletion request failed') # but ignore the error
 
 		return newNus, C.rcOK, None
@@ -179,7 +179,7 @@ class NotificationManager(object):
 
 
 
-	def _sendVerificationRequest(self, nu : str, subscription : Resource, originator : str = None) -> bool:
+	def _sendVerificationRequest(self, nu: str, ri: str, originator: str = None) -> bool:
 		Logging.logDebug('Sending verification request to: %s' % nu)
 	
 		verificationRequest = {
@@ -189,10 +189,10 @@ class NotificationManager(object):
 			}
 		}
 	
-		return self._sendRequest(nu, subscription.ri, verificationRequest, originator=originator)
+		return self._sendRequest(nu, ri, verificationRequest, originator=originator)
 
 
-	def _sendDeletionNotification(self, nu : str, subscription : Resource) -> bool:
+	def _sendDeletionNotification(self, nu: str, ri: str) -> bool:
 		Logging.logDebug('Sending deletion notification to: %s' % nu)
 	
 		deletionNotification = {
@@ -202,10 +202,10 @@ class NotificationManager(object):
 			}
 		}
 		
-		return self._sendRequest(nu, subscription.ri, deletionNotification)
+		return self._sendRequest(nu, ri, deletionNotification)
 
 
-	def _sendNotification(self, subscription : Resource, nu : str, reason : int, resource : Resource):
+	def _sendNotification(self, ri: str, nu: str, reason: int, resource: Resource) ->  bool:
 		Logging.logDebug('Sending notification to: %s, reason: %d' % (nu, reason))
 
 		notificationRequest = {
@@ -218,10 +218,10 @@ class NotificationManager(object):
 			}
 		}
 
-		return self._sendRequest(nu, subscription.ri, notificationRequest, reason, resource)
+		return self._sendRequest(nu, ri, notificationRequest, reason, resource)
 
 
-	def _sendRequest(self, nu : str, ri : str, jsn : dict, reason : int = None, resource : Resource = None, originator : str = None) -> bool:
+	def _sendRequest(self, nu: str, ri: str, jsn: dict, reason: int = None, resource: Resource = None, originator: str = None) -> bool:
 		Utils.setXPath(jsn, 'm2m:sgn/sur', Utils.fullRI(ri))
 
 		# Add some values to the notification

@@ -8,6 +8,7 @@
 #
 
 import atexit, argparse, os, threading, time
+from typing import Dict, Optional, Any
 from Constants import Constants as C
 from AnnouncementManager import AnnouncementManager
 from Configuration import Configuration, defaultConfigFile
@@ -31,26 +32,26 @@ from CSENode import CSENode
 
 # singleton main components. These variables will hold all the various manager
 # components that are used throughout the CSE implementation.
-announce		= None
-dispatcher 		= None
-event			= None
-group	 		= None
-httpServer		= None
-notification	= None
-registration 	= None
-remote			= None
-security 		= None
-statistics		= None
-storage			= None
-validator 		= None
+announce:AnnouncementManager		= None
+dispatcher:Dispatcher				= None
+event:EventManager					= None
+group:GroupManager					= None
+httpServer:HttpServer				= None
+notification:NotificationManager	= None
+registration:RegistrationManager 	= None
+remote:RemoteCSEManager				= None
+security:SecurityManager 			= None
+statistics:Statistics				= None
+storage:Storage						= None
+validator:Validator 				= None
 
-rootDirectory	= None
+rootDirectory:str					= None
 
-aeCSENode	 	= None 
-aeStatistics 	= None 
-appsStarted 	= False
+aeCSENode:CSENode				 	= None 
+aeStatistics:AEStatistics 		 	= None 
+appsStarted:bool 					= False
 
-aeStartupDelay	= 5	# seconds
+aeStartupDelay:int 					= 5	# seconds
 
 # TODO make AE registering a bit more generic
 
@@ -59,7 +60,7 @@ aeStartupDelay	= 5	# seconds
 
 
 #def startup(args=None, configfile=None, resetdb=None, loglevel=None):
-def startup(args, **kwargs):
+def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	global announce, dispatcher, group, httpServer, notification, validator
 	global registration, remote, security, statistics, storage, event
 	global rootDirectory
@@ -89,7 +90,7 @@ def startup(args, **kwargs):
 	Logging.log('Starting CSE')
 	Logging.log('CSE-Type: %s' % C.cseTypes[Configuration.get('cse.type')])
 	Logging.log(Configuration.print())
-	
+
 
 	# Initiatlize the resource storage
 	storage = Storage()
@@ -137,7 +138,7 @@ def startup(args, **kwargs):
 	startAppsDelayed()	# the Apps are actually started after the CSE finished the startup
 
 	# Start the HTTP server
-	event.cseStartup()
+	event.cseStartup()	# type: ignore
 	Logging.log('CSE started')
 	httpServer.run() # This does NOT return
 
@@ -145,7 +146,7 @@ def startup(args, **kwargs):
 
 # Gracefully shutdown the CSE, e.g. when receiving a keyboard interrupt
 @atexit.register
-def shutdown():
+def shutdown() -> None:
 	if appsStarted:
 		stopApps()
 	if remote is not None:
@@ -176,11 +177,11 @@ def shutdown():
 
 # Delay starting the AEs in the backround. This is needed because the CSE
 # has not yet started. This will be called when the cseStartup event is raised.
-def startAppsDelayed():
-	event.addHandler(event.cseStartup, startApps)
+def startAppsDelayed() -> None:
+	event.addHandler(event.cseStartup, startApps) 	# type: ignore
 
 
-def startApps():
+def startApps() -> None:
 	global appsStarted, aeStatistics, aeCSENode
 
 	if not Configuration.get('cse.enableApplications'):
@@ -199,7 +200,7 @@ def startApps():
 	# Add more apps here
 
 
-def stopApps():
+def stopApps() -> None:
 	global appsStarted
 	if appsStarted:
 		Logging.log('Stopping Apps')

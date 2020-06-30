@@ -8,6 +8,7 @@
 #
 
 import random, string
+from typing import Tuple
 from Constants import Constants as C
 import Utils, CSE
 from Validator import constructPolicy
@@ -24,7 +25,7 @@ attributePolicies = constructPolicy([
 
 class SUB(Resource):
 
-	def __init__(self, jsn=None, pi=None, create=False):
+	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
 		super().__init__(C.tsSUB, jsn, pi, C.tSUB, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
@@ -37,11 +38,11 @@ class SUB(Resource):
 # TODO subscriberURI
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource : Resource) -> bool:
+	def canHaveChild(self, resource: Resource) -> bool:
 		return super()._canHaveChild(resource, [])
 
 
-	def activate(self, parentResource : Resource, originator : str) -> (bool, int, str):
+	def activate(self, parentResource: Resource, originator : str) -> Tuple[bool, int, str]:
 		if not (result := super().activate(parentResource, originator))[0]:
 			return result
 		return CSE.notification.addSubscription(self, originator)
@@ -49,12 +50,12 @@ class SUB(Resource):
 		# return (res, C.rcOK if res else C.rcTargetNotSubscribable)
 
 
-	def deactivate(self, originator : str) -> None:
+	def deactivate(self, originator: str) -> None:
 		super().deactivate(originator)
 		CSE.notification.removeSubscription(self)
 
 
-	def update(self, jsn : dict = None, originator : str = None) -> (bool, int, str):
+	def update(self, jsn: dict = None, originator: str = None) -> Tuple[bool, int, str]:
 		previousNus = self['nu'].copy()
 		newJson = jsn.copy()
 		if not (res := super().update(jsn, originator))[0]:
@@ -64,7 +65,7 @@ class SUB(Resource):
 		# return (res, C.rcOK if res else C.rcTargetNotSubscribable)
  
 
-	def validate(self, originator : str = None, create : bool = False) -> (bool, int, str):
+	def validate(self, originator: str = None, create: bool = False) -> Tuple[bool, int, str]:
 		if (res := super().validate(originator, create))[0] == False:
 			return res
 		Logging.logDebug('Validating subscription: %s' % self['ri'])

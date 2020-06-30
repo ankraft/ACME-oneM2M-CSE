@@ -22,7 +22,7 @@ attributePolicies = constructPolicy([
 
 class DVC(MgmtObj):
 
-	def __init__(self, jsn=None, pi=None, create=False):
+	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
 		super().__init__(jsn, pi, C.tsDVC, C.mgdDVC, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:

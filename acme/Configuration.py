@@ -8,7 +8,8 @@
 #
 
 
-import logging, configparser, re
+import logging, configparser, re, argparse
+from typing import Any, Dict
 from Constants import Constants as C
 
 
@@ -18,10 +19,10 @@ version						= '0.5.0-dev'
 
 
 class Configuration(object):
-	_configuration				= {}
+	_configuration: Dict[str, Any] = {}
 
 	@staticmethod
-	def init(args = None):
+	def init(args: argparse.Namespace = None) -> bool:
 		global _configuration
 
 		import Utils	# cannot import at the top because of circel import
@@ -116,8 +117,8 @@ class Configuration(object):
 				#	Registrations
 				#
 
-				'cse.registration.allowedAEOriginators'	: config.getlist('cse.registration', 'allowedAEOriginators',	fallback=['C*','S*']),
-				'cse.registration.allowedCSROriginators': config.getlist('cse.registration', 'allowedCSROriginators',	fallback=[]),
+				'cse.registration.allowedAEOriginators'	: config.getlist('cse.registration', 'allowedAEOriginators',	fallback=['C*','S*']),		# type: ignore
+				'cse.registration.allowedCSROriginators': config.getlist('cse.registration', 'allowedCSROriginators',	fallback=[]),				# type: ignore
 
 
 				#
@@ -177,6 +178,7 @@ class Configuration(object):
 				'app.csenode.intervall'				: config.getint('app.csenode', 'updateIntervall', 		fallback=60),		# seconds
 
 			}
+
 		except Exception as e:	# about when findings errors in configuration
 			print('Error in configuration file: %s - %s' % (argsConfigfile, str(e)))
 			return False
@@ -211,7 +213,6 @@ class Configuration(object):
 			Configuration._configuration['logging.level'] = logging.ERROR
 		else:
 			Configuration._configuration['logging.level'] = logging.DEBUG
-
 
 		# Override DB reset from command line
 		if argsDBReset is True:
@@ -257,13 +258,12 @@ class Configuration(object):
 			print('Configuration Error: Missing configuration [cse.remote]:resourceName')
 			return False
 
-
 		# Everything is fine
 		return True
 
 
 	@staticmethod
-	def print():
+	def print() -> str:
 		result = 'Configuration:\n'
 		for kv in Configuration._configuration.items():
 			result += '  %s = %s\n' % kv
@@ -271,22 +271,22 @@ class Configuration(object):
 
 
 	@staticmethod
-	def all():
+	def all() -> Dict[str, Any]:
 		return Configuration._configuration
 
 
 	@staticmethod
-	def get(key):
+	def get(key: str) -> Any:
 		if not Configuration.has(key):
 			return None
 		return Configuration._configuration[key]
 
 
 	@staticmethod
-	def set(key, value):
+	def set(key: str, value: Any) -> None:
 		Configuration._configuration[key] = value
 
 
 	@staticmethod
-	def has(key):
+	def has(key: str) -> bool:
 		return key in Configuration._configuration

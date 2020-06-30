@@ -14,9 +14,9 @@ from .Resource import Resource
 
 class Unknown(Resource):
 
-	def __init__(self, jsn, ty, root, pi=None, create=False):
-		super().__init__(root, jsn, pi, ty, create=create)
+	def __init__(self, jsn: dict, ty: int, tpe: str, pi: str = None, create: bool = False) -> None:
+		super().__init__(tpe, jsn, pi, ty, create=create)
 
 	# Enable check for allowed sub-resources (ie. all)
-	def canHaveChild(self, resource : Resource) -> bool:
+	def canHaveChild(self, resource: Resource) -> bool:
 		return True

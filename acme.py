@@ -18,7 +18,7 @@ description = 'ACME ' + version + ' - An open source CSE Middleware for Educatio
 
 
 # Handle command line arguments
-def parseArgs():
+def parseArgs() -> argparse.Namespace:
 	parser = argparse.ArgumentParser(description=description)
 	parser.add_argument('--config', action='store', dest='configfile', default=defaultConfigFile, help='specify the configuration file')
 

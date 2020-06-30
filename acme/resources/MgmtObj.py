@@ -13,7 +13,7 @@ import Utils
 
 class MgmtObj(Resource):
 
-	def __init__(self, jsn, pi, mgmtObjType, mgd, create=False, attributePolicies=None):
+	def __init__(self, jsn: dict, pi: str, mgmtObjType: str, mgd: int, create: bool = False, attributePolicies: dict = None) -> None:
 		super().__init__(mgmtObjType, jsn, pi, C.tMGMTOBJ, create=create, attributePolicies=attributePolicies)
 		
 		if self.json is not None:
@@ -21,5 +21,5 @@ class MgmtObj(Resource):
 
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource : Resource) -> bool:
+	def canHaveChild(self, resource: Resource) -> bool:
 		return super()._canHaveChild(resource, [ C.tSUB ])

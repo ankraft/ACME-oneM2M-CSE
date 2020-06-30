@@ -158,7 +158,8 @@ const shortNames = {
   "htUpd" : { "ln" : "httpUpdates", "type": "custom" },
   "lgErr" : { "ln" : "logErrors", "type": "custom" },
   "lgWrn" : { "ln" : "logWarnings", "type": "custom" },
-  "rmRes" : { "ln" : "deletedResources", "type": "custom" }
+  "rmRes" : { "ln" : "deletedResources", "type": "custom" },
+  "upRes" : { "ln" : "updatedResources", "type": "custom" }
 }
 
 

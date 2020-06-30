@@ -188,7 +188,6 @@ class Constants(object):
 	rcnChildResources						= 8
 	rcnModifiedAttributes					= 9
 	rcnDiscoveryResultReferences			= 11
-	# TODO support other RCN
 
 	# Desired Identifier Result Type
 	drtStructured					= 1 # default
@@ -198,6 +197,11 @@ class Constants(object):
 	fuDiscoveryCriteria				= 1
 	fuConditionalRetrieval			= 2 # default
 	fuIPEOnDemandDiscovery			= 3
+
+	# Filter Operation
+	foAND 							= 1 # default
+	foOR 							= 2
+	foXOR 							= 3
 
 	# Group related
 

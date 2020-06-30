@@ -7,13 +7,14 @@
 #	ResourceType: RemoteCSE
 #
 
+from typing import Tuple
 from Constants import Constants as C
 from Configuration import Configuration
 from .Resource import *
 
 class CSR(Resource):
 
-	def __init__(self, jsn=None, pi=None, rn=None, create=False):
+	def __init__(self, jsn: dict = None, pi: str = None, rn: str = None, create: bool = False) -> None:
 		super().__init__(C.tsCSR, jsn, pi, C.tCSR, rn=rn, create=create)
 
 		if self.json is not None:
@@ -33,7 +34,7 @@ class CSR(Resource):
 									 ])
 
 
-	def validate(self, originator : str = None, create : bool = False) -> (bool, int, str):
+	def validate(self, originator: str = None, create: bool = False) -> Tuple[bool, int, str]:
 		if (res := super().validate(originator), create)[0] == False:
 			return res
 		self.normalizeURIAttribute('poa')

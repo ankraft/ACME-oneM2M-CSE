@@ -9,7 +9,7 @@
 
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
-
+from typing import Any, Tuple
 from Logging import Logging
 from Constants import Constants as C
 from Configuration import Configuration
@@ -32,7 +32,7 @@ class Resource(object):
 
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator ]
 
-	def __init__(self, tpe, jsn=None, pi=None, ty=None, create=False, inheritACP=False, readOnly=False, rn=None, attributePolicies=None, isVirtual=False):
+	def __init__(self, tpe: str, jsn: dict = None, pi: str = None, ty:int = None, create: bool = False, inheritACP: bool = False, readOnly: bool = False, rn: str = None, attributePolicies: dict = None, isVirtual: bool = False) -> None:
 		self.tpe = tpe
 		self.readOnly = readOnly
 		self.inheritACP = inheritACP
@@ -101,7 +101,7 @@ class Resource(object):
 
 
 	# Default encoding implementation. Overwrite in subclasses
-	def asJSON(self, embedded=True, update=False, noACP=False):
+	def asJSON(self, embedded: bool = True, update: bool = False, noACP: bool = False) -> dict:
 		# remove (from a copy) all internal attributes before printing
 		jsn = self.json.copy()
 		for k in self.internalAttributes:
@@ -123,7 +123,7 @@ class Resource(object):
 	# NO notification on activation/creation!
 	# Implemented in sub-classes.
 	# Note: CR and ACPI are set in RegistrationManager
-	def activate(self, parentResource : Resource.Resource, originator : str) -> (bool, int, msg):
+	def activate(self, parentResource: Resource, originator: str) -> Tuple[bool, int, str]:
 		Logging.logDebug('Activating resource: %s' % self.ri)
 
 		# validate the attributes but only when the resource is not instantiated.
@@ -139,7 +139,7 @@ class Resource(object):
 
 		# increment parent resource's state tag
 		if parentResource is not None and parentResource.st is not None:
-			parentResource = parentResource.dbReload()	# Read the resource again in case it was updated in the DB
+			parentResource, _, _ = parentResource.dbReload()	# Read the resource again in case it was updated in the DB
 			parentResource['st'] = parentResource.st + 1
 			if (res := parentResource.dbUpdate())[0] is None:
 				return False, res[1], res[2]
@@ -167,7 +167,7 @@ class Resource(object):
 
 	# Update this resource with (new) fields.
 	# Call validate() afterward to react on changes.
-	def update(self, jsn : dict = None, originator : str = None) -> (bool, int, str):
+	def update(self, jsn: dict = None, originator: str = None) -> Tuple[bool, int, str]:
 		if jsn is not None:
 			if self.tpe not in jsn:
 				Logging.logWarn("Update types don't match")
@@ -208,7 +208,7 @@ class Resource(object):
 		return True, C.rcOK, None
 
 
-	def childWillBeAdded(self, childResource : Resource, originator : str) -> (bool, int, str):
+	def childWillBeAdded(self, childResource: Resource, originator: str) -> Tuple[bool, int, str]:
 		""" Called before a child will be added to a resource.
 			This method return True, or False in kind the adding should be rejected, and an error code."""
 		return True, C.rcOK, None
@@ -235,7 +235,7 @@ class Resource(object):
 		return resource['ty'] in allowedChildResourceTypes or isinstance(resource, Unknown)
 
 
-	def validate(self, originator : str = None, create : bool = False) -> (bool, int, str):
+	def validate(self, originator: str = None, create: bool = False) -> Tuple[bool, int, str]:
 		""" Validate a resource. Usually called within activate() or update() methods. """
 		Logging.logDebug('Validating resource: %s' % self.ri)
 		if (not Utils.isValidID(self.ri) or
@@ -261,11 +261,11 @@ class Resource(object):
 	#
 
 
-	def setAttribute(self, name, value, overwrite=True):
-		Utils.setXPath(self.json, name, value, overwrite)
+	def setAttribute(self, key: str, value: Any, overwrite: bool = True) -> None:
+		Utils.setXPath(self.json, key, value, overwrite)
 
 
-	def attribute(self, key, default=None):
+	def attribute(self, key: str, default: Any = None) -> Any:
 		if '/' in key:	# search in path
 			return Utils.findXPath(self.json, key, default)
 		if self.hasAttribute(key):
@@ -273,32 +273,32 @@ class Resource(object):
 		return default
 
 
-	def hasAttribute(self, key):
+	def hasAttribute(self, key: str) -> bool:
 		# TODO check sub-elements as well
 		return key in self.json
 
 
-	def delAttribute(self, key):
+	def delAttribute(self, key: str) -> None:
 		if self.hasAttribute(key):
 			del self.json[key]
 
 
-	def __setitem__(self, key, value):
+	def __setitem__(self, key: str, value: Any) -> None:
 		self.setAttribute(key, value)
 
 
-	def __getitem__(self, key):
+	def __getitem__(self, key: str) -> Any:
 		return self.attribute(key)
 
-	def __delitem__(self, key):
+	def __delitem__(self, key: str) -> None:
 		self.delAttribute(key)
 
 
-	def __contains__(self, key):
+	def __contains__(self, key: str) -> bool:
 		return self.hasAttribute(key)
 
-	def __getattr__(self, name):
-		return self.attribute(name)
+	def __getattr__(self, key: str) -> Any:
+		return self.attribute(key)
 
 
 	#########################################################################
@@ -307,7 +307,7 @@ class Resource(object):
 	#	Attribute specific helpers
 	#
 
-	def normalizeURIAttribute(self, attributeName):
+	def normalizeURIAttribute(self, attributeName: str) -> None:
 		""" Normalie the URLs in the poa, nu etc. """
 		if (attribute := self[attributeName]) is not None:
 			if isinstance(attribute, list):	# list of uris
@@ -325,23 +325,23 @@ class Resource(object):
 	#	Database functions
 	#
 
-	def dbDelete(self) -> (int, str):
+	def dbDelete(self) -> Tuple[bool, int, str]:
 		""" Delete the Resource from the database. """
 		return CSE.storage.deleteResource(self)
 
 
-	def dbUpdate(self):
+	def dbUpdate(self) -> Tuple[Resource, int, str]:
 		""" Update the Resource in the database. """
 		return CSE.storage.updateResource(self)
 
 
-	def dbCreate(self, overwrite : bool = False):
+	def dbCreate(self, overwrite: bool = False) -> Tuple[bool, int, str]:
 		return CSE.storage.createResource(self, overwrite)
 
-	def dbReload(self):
+
+	def dbReload(self) -> Tuple[Resource, int, str]:
 		"""  Load a new copy from the database. The current resource is NOT changed. """
 		return CSE.storage.retrieveResource(ri=self.ri)
-
 
 
 
@@ -351,25 +351,25 @@ class Resource(object):
 	#	Misc utilities
 	#
 
-	def __str__(self):
+	def __str__(self) -> str:
 		""" String representation. """
 		return str(self.asJSON())
 
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		""" Object representation as string. """
 		return '%s(ri=%s)' % (self.tpe, self.ri)
 
 
-	def __eq__(self, other):
-		return self.ri == other.ri
+	def __eq__(self, other: object) -> bool:
+		return isinstance(other, Resource) and self.ri == other.ri
 
 
-	def isModifiedSince(self, otherResource : Resource) -> bool:
+	def isModifiedSince(self, otherResource: Resource) -> bool:
 		return self.lt > otherResource.lt
 
 
-	def retrieveParentResource(self):
+	def retrieveParentResource(self) -> Resource:
 		parentResource, _, _ = CSE.dispatcher.retrieveResource(self.pi)
 		return parentResource
 

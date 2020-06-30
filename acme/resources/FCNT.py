@@ -8,6 +8,7 @@
 #
 
 import sys
+from typing import Tuple, List
 from Constants import Constants as C
 from Validator import constructPolicy
 import Utils
@@ -23,7 +24,7 @@ attributePolicies = constructPolicy([
 
 class FCNT(Resource):
 
-	def __init__(self, jsn=None, pi=None, fcntType=None, create=False):
+	def __init__(self, jsn: dict = None, pi: str = None, fcntType: str = None, create: bool = False) -> None:
 		super().__init__(fcntType, jsn, pi, C.tFCNT, create=create, attributePolicies=attributePolicies)
 		if self.json is not None:
 			self.setAttribute('cs', 0, overwrite=False)
@@ -38,7 +39,7 @@ class FCNT(Resource):
 
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource : Resource) -> bool:
+	def canHaveChild(self, resource: Resource) -> bool:
 		return super()._canHaveChild(resource,	
 									 [ C.tCNT,
 									   C.tFCNT,
@@ -47,7 +48,7 @@ class FCNT(Resource):
 									 ])
 
 
-	def activate(self, parentResource : Resource, originator : str) -> (bool, int, str):
+	def activate(self, parentResource: Resource, originator: str) -> Tuple[bool, int, str]:
 		if not (result := super().activate(parentResource, originator))[0]:
 			return result		# TODO Error checking above
 
@@ -56,20 +57,20 @@ class FCNT(Resource):
 
 		if self.hasInstances:
 			# add latest
-			r, _ = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, tpe=C.tFCNT_LA)
+			r, _ = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=C.tFCNT_LA)
 			res = CSE.dispatcher.createResource(r)
 			if res[0] is None:
-				return res
+				return False, res[1], res[2]
 
 			# add oldest
-			r, _ = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, tpe=C.tFCNT_OL)
+			r, _ = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=C.tFCNT_OL)
 			res = CSE.dispatcher.createResource(r)
 			if res[0] is None:
-				return res
-		return True, C.rcOK
+				return False, res[1], res[2]
+		return True, C.rcOK, None
 
 
-	def childWillBeAdded(self, childResource : Resource, originator : str) -> (bool, int, str):
+	def childWillBeAdded(self, childResource: Resource, originator: str) -> Tuple[bool, int, str]:
 		if not (res := super().childWillBeAdded(childResource, originator))[0]:
 			return res
 
@@ -85,7 +86,7 @@ class FCNT(Resource):
 
 
 	# Checking the presentse of cnd and calculating the size
-	def validate(self, originator : str = None, create : bool = False) -> (bool, int, str):
+	def validate(self, originator: str = None, create: bool = False) -> Tuple[bool, int, str]:
 		if (res := super().validate(originator, create))[0] == False:
 			return res
 
@@ -164,7 +165,7 @@ class FCNT(Resource):
 
 
 	# Validate expirations of child resurces
-	def validateExpirations(self):
+	def validateExpirations(self) -> None:
 		Logging.logDebug('Validate expirations')
 		super().validateExpirations()
 
@@ -178,7 +179,7 @@ class FCNT(Resource):
 
 
 	# Get all flexContainerInstances of a resource and return a sorted (by ct) list 
-	def flexContainerInstances(self):
+	def flexContainerInstances(self) -> List[Resource]:
 		return sorted(CSE.dispatcher.directChildResources(self.ri, C.tFCI), key=lambda x: (x.ct))
 
 # TODO:
@@ -189,7 +190,7 @@ class FCNT(Resource):
 # not exceed the maxInstanceAge of the targeted <flexContainer> resource.
 
 	# Add a new FlexContainerInstance for this flexContainer
-	def addFlexContainerInstance(self, originator):
+	def addFlexContainerInstance(self, originator: str) -> None:
 		Logging.logDebug('Adding flexContainerInstance')
 		jsn = {	'rn'  : '%s_%d' % (self.rn, self.st),
    				#'cnd' : self.cnd,
@@ -203,7 +204,7 @@ class FCNT(Resource):
 		fci, _ = Utils.resourceFromJSON(jsn = { self.tpe : jsn },
 										pi = self.ri, 
 										acpi = self.acpi, # or no ACPI?
-										tpe = C.tFCI)
+										ty = C.tFCI)
 
 		CSE.dispatcher.createResource(fci)
 		fci['cs'] = self.cs

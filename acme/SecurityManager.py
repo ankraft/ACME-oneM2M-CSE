@@ -12,6 +12,8 @@ from Logging import Logging
 from Constants import Constants as C
 import CSE, Utils
 from Configuration import Configuration
+from resources.Resource import Resource
+
 
 # Mapping between request operations and permissions
 operationsPermissions =	{ C.opRETRIEVE	: C.permRETRIEVE,
@@ -22,7 +24,7 @@ operationsPermissions =	{ C.opRETRIEVE	: C.permRETRIEVE,
 
 class SecurityManager(object):
 
-	def __init__(self):
+	def __init__(self) -> None:
 		Logging.log('SecurityManager initialized')
 		if Configuration.get('cse.security.enableACPChecks'):
 			Logging.log('ACP checking ENABLED')
@@ -30,11 +32,11 @@ class SecurityManager(object):
 			Logging.log('ACP checking DISABLED')
 
 
-	def shutdown(self):
+	def shutdown(self) -> None:
 		Logging.log('SecurityManager shut down')
 
 
-	def hasAccess(self, originator, resource, requestedPermission, checkSelf=False, ty=None, isCreateRequest=False, parentResource=None):
+	def hasAccess(self, originator: str, resource: Resource, requestedPermission: int, checkSelf: bool = False, ty: int = None, isCreateRequest: bool = False, parentResource: Resource = None) -> bool:
 		if not Configuration.get('cse.security.enableACPChecks'):	# check or ignore the check
 			return True
 
@@ -74,7 +76,7 @@ class SecurityManager(object):
 			
 			else: # handle the permission checks here
 				for a in macp:
-					acp, _ = CSE.dispatcher.retrieveResource(a)
+					acp, _, _ = CSE.dispatcher.retrieveResource(a)
 					if acp is None:
 						continue
 					else:

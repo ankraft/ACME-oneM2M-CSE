@@ -20,10 +20,10 @@ attributePolicies = constructPolicy([
 
 class FCI(Resource):
 
-	def __init__(self, jsn=None, pi=None, fcntType=None, create=False):
+	def __init__(self, jsn: dict = None, pi: str = None, fcntType: str = None, create: bool = False) -> None:
 		super().__init__(fcntType, jsn, pi, C.tFCI, create=create, inheritACP=True, readOnly=True, attributePolicies=attributePolicies)
 
 
 	# Enable check for allowed sub-resources. No Child for CIN
-	def canHaveChild(self, resource : Resource) -> bool:
+	def canHaveChild(self, resource: Resource) -> bool:
 		return super()._canHaveChild(resource, [])

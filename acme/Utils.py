@@ -9,7 +9,7 @@
 #
 
 import datetime, random, string, sys, re
-from typing import Any, List
+from typing import Any, List, Tuple, Union
 from resources import ACP, AE, ANDI, ANI, BAT, CIN, CNT, CNT_LA, CNT_OL, CSEBase, CSR, DVC
 from resources import DVI, EVL, FCI, FCNT, FCNT_LA, FCNT_OL, FWR, GRP, GRP_FOPT, MEM, NOD, RBO, SUB, SWR, Unknown, Resource
 from Constants import Constants as C
@@ -19,7 +19,7 @@ import CSE
 from flask import Request
 
 
-def uniqueRI(prefix : str = '') -> str:
+def uniqueRI(prefix: str = '') -> str:
 	return noDomain(prefix) + uniqueID()
 
 
@@ -27,11 +27,11 @@ def uniqueID() -> str:
 	return str(random.randint(1,sys.maxsize))
 
 
-def isUniqueRI(ri : str) -> bool:
+def isUniqueRI(ri: str) -> bool:
 	return len(CSE.storage.identifier(ri)) == 0
 
 
-def uniqueRN(prefix : str = 'un') -> str:
+def uniqueRN(prefix: str = 'un') -> str:
 	# return "%s_%s" % (p, ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=C.maxIDLength)))
 	return "%s_%s" % (noDomain(prefix), _randomID())
 
@@ -87,29 +87,29 @@ def isStructured(uri : str) -> bool:
 	return False
 
 
-def isVirtualResource(resource : Resource) -> bool:
+def isVirtualResource(resource: Resource.Resource) -> bool:
 	result = resource[resource._isVirtual]
 	return result if result is not None else False
 	# ireturn (ty := r.ty) and ty in C.tVirtualResources
 
 
-def isValidID(id : str) -> bool:
+def isValidID(id: str) -> bool:
 	""" Check for valid ID. """
 	#return len(id) > 0 and '/' not in id 	# pi might be ""
 	return '/' not in id
 
 
-def getResourceDate(delta :int = 0) -> str:
+def getResourceDate(delta: int = 0) -> str:
 	return toISO8601Date(datetime.datetime.utcnow() + datetime.timedelta(seconds=delta))
 
 
-def toISO8601Date(ts : float) -> str:
+def toISO8601Date(ts: Union[float, datetime.datetime]) -> str:
 	if isinstance(ts, float):
 		ts = datetime.datetime.utcfromtimestamp(ts)
 	return ts.strftime('%Y%m%dT%H%M%S,%f')
 
 
-def structuredPath(resource : Resource) -> str:
+def structuredPath(resource: Resource.Resource) -> str:
 	""" Determine the structured path of a resource. """
 	rn = resource.rn
 	if resource.ty == C.tCSEBase: # if CSE
@@ -126,28 +126,28 @@ def structuredPath(resource : Resource) -> str:
 	return rn # fallback
 
 
-def structuredPathFromRI(ri : str) -> str:
+def structuredPathFromRI(ri: str) -> str:
 	""" Get the structured path of a resource by its ri. """
 	if len((identifiers := CSE.storage.identifier(ri))) == 1:
 		return identifiers[0]['srn']
 	return None
 
 
-def riFromStructuredPath(srn : str) -> str:
+def riFromStructuredPath(srn: str) -> str:
 	""" Get the ri from a resource by its structured path. """
 	if len((paths := CSE.storage.structuredPath(srn))) == 1:
 		return paths[0]['ri']
 	return None
 
 
-def riFromCSI(csi : str) -> str:
+def riFromCSI(csi: str) -> str:
 	""" Get the ri from an CSEBase resource by its csi. """
-	if (res := CSE.storage.retrieveResource(csi=csi)) is None:
+	if (res := CSE.storage.retrieveResource(csi=csi))[0] is None:
 		return None
-	return res.ri
+	return res[0].ri
 
 
-def retrieveIDFromPath(id : str, csern : str, cseri : str) -> (str, str, str):
+def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 	""" Split a ful path e.g. from a http request into its component and return a local ri .
 		Also handle retargeting paths.
 		The return tupple is (RI, CSI, SRN).
@@ -228,14 +228,14 @@ def retrieveIDFromPath(id : str, csern : str, cseri : str) -> (str, str, str):
 	return None, None, None
 
 
-def resourceFromJSON(jsn : dict, pi : str = None, acpi : str = None, tpe : str = None, create : bool = False, isImported : bool = False) -> Resource:
+def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: int = None, create: bool = False, isImported: bool = False) -> Tuple[Resource.Resource, str]:
 	""" Create a resource from a JSON structure.
 		This will *not* call the activate method, therefore some attributes
 		may be set separately.
 	"""
 	jsn, root = pureResource(jsn)	# remove optional "m2m:xxx" level
-	ty = jsn['ty'] if 'ty' in jsn else tpe
-	if ty != None and tpe != None and ty != tpe:
+	typ = jsn['ty'] if 'ty' in jsn else ty
+	if typ != None and ty != None and typ != ty:
 		return None, 'type and resource specifier mismatch'
 	mgd = jsn['mgd'] if 'mgd' in jsn else None		# for mgmtObj
 
@@ -249,64 +249,64 @@ def resourceFromJSON(jsn : dict, pi : str = None, acpi : str = None, tpe : str =
 
 
 	# sorted by assumed frequency (small optimization)
-	if ty == C.tCIN or root == C.tsCIN:
+	if typ == C.tCIN or root == C.tsCIN:
 		return CIN.CIN(jsn, pi=pi, create=create), None
-	elif ty == C.tCNT or root == C.tsCNT:
+	elif typ == C.tCNT or root == C.tsCNT:
 		return CNT.CNT(jsn, pi=pi, create=create), None
-	elif ty == C.tGRP or root == C.tsGRP:
+	elif typ == C.tGRP or root == C.tsGRP:
 		return GRP.GRP(jsn, pi=pi, create=create), None
-	elif ty == C.tGRP_FOPT or root == C.tsGRP_FOPT:
+	elif typ == C.tGRP_FOPT or root == C.tsGRP_FOPT:
 		return GRP_FOPT.GRP_FOPT(jsn, pi=pi, create=create), None
-	elif ty == C.tACP or root == C.tsACP:
+	elif typ == C.tACP or root == C.tsACP:
 		return ACP.ACP(jsn, pi=pi, create=create), None
-	elif ty == C.tFCNT:
+	elif typ == C.tFCNT:
 		return FCNT.FCNT(jsn, pi=pi, fcntType=root, create=create), None
-	elif ty == C.tFCI:
+	elif typ == C.tFCI:
 		return FCI.FCI(jsn, pi=pi, fcntType=root, create=create), None	
-	elif ty == C.tAE or root == C.tsAE:
+	elif typ == C.tAE or root == C.tsAE:
 		return AE.AE(jsn, pi=pi, create=create), None
-	elif ty == C.tSUB or root == C.tsSUB:
+	elif typ == C.tSUB or root == C.tsSUB:
 		return SUB.SUB(jsn, pi=pi, create=create), None
-	elif ty == C.tCSR or root == C.tsCSR:
+	elif typ == C.tCSR or root == C.tsCSR:
 		return CSR.CSR(jsn, pi=pi, create=create), None
-	elif ty == C.tNOD or root == C.tsNOD:
+	elif typ == C.tNOD or root == C.tsNOD:
 		return NOD.NOD(jsn, pi=pi, create=create), None
-	elif (ty == C.tMGMTOBJ and mgd == C.mgdFWR) or root == C.tsFWR:
+	elif (typ == C.tMGMTOBJ and mgd == C.mgdFWR) or root == C.tsFWR:
 		return FWR.FWR(jsn, pi=pi, create=create), None
-	elif (ty == C.tMGMTOBJ and mgd == C.mgdSWR) or root == C.tsSWR:
+	elif (typ == C.tMGMTOBJ and mgd == C.mgdSWR) or root == C.tsSWR:
 		return SWR.SWR(jsn, pi=pi, create=create), None
-	elif (ty == C.tMGMTOBJ and mgd == C.mgdMEM) or root == C.tsMEM:
+	elif (typ == C.tMGMTOBJ and mgd == C.mgdMEM) or root == C.tsMEM:
 		return MEM.MEM(jsn, pi=pi, create=create), None
-	elif (ty == C.tMGMTOBJ and mgd == C.mgdANI) or root == C.tsANI:
+	elif (typ == C.tMGMTOBJ and mgd == C.mgdANI) or root == C.tsANI:
 		return ANI.ANI(jsn, pi=pi, create=create), None
-	elif (ty == C.tMGMTOBJ and mgd == C.mgdANDI) or root == C.tsANDI:
+	elif (typ == C.tMGMTOBJ and mgd == C.mgdANDI) or root == C.tsANDI:
 		return ANDI.ANDI(jsn, pi=pi, create=create), None
-	elif (ty == C.tMGMTOBJ and mgd == C.mgdBAT) or root == C.tsBAT:
+	elif (typ == C.tMGMTOBJ and mgd == C.mgdBAT) or root == C.tsBAT:
 		return BAT.BAT(jsn, pi=pi, create=create), None
-	elif (ty == C.tMGMTOBJ and mgd == C.mgdDVI) or root == C.tsDVI:
+	elif (typ == C.tMGMTOBJ and mgd == C.mgdDVI) or root == C.tsDVI:
 		return DVI.DVI(jsn, pi=pi, create=create), None
-	elif (ty == C.tMGMTOBJ and mgd == C.mgdDVC) or root == C.tsDVC:
+	elif (typ == C.tMGMTOBJ and mgd == C.mgdDVC) or root == C.tsDVC:
 		return DVC.DVC(jsn, pi=pi, create=create), None
-	elif (ty == C.tMGMTOBJ and mgd == C.mgdRBO) or root == C.tsRBO:
+	elif (typ == C.tMGMTOBJ and mgd == C.mgdRBO) or root == C.tsRBO:
 		return RBO.RBO(jsn, pi=pi, create=create), None
-	elif (ty == C.tMGMTOBJ and mgd == C.mgdEVL) or root == C.tsEVL:
+	elif (typ == C.tMGMTOBJ and mgd == C.mgdEVL) or root == C.tsEVL:
 		return EVL.EVL(jsn, pi=pi, create=create), None
-	elif ty == C.tCNT_LA or root == C.tsCNT_LA:
+	elif typ == C.tCNT_LA or root == C.tsCNT_LA:
 		return CNT_LA.CNT_LA(jsn, pi=pi, create=create), None
-	elif ty == C.tCNT_OL or root == C.tsCNT_OL:
+	elif typ == C.tCNT_OL or root == C.tsCNT_OL:
 		return CNT_OL.CNT_OL(jsn, pi=pi, create=create), None
-	elif ty == C.tFCNT_LA:
+	elif typ == C.tFCNT_LA:
 		return FCNT_LA.FCNT_LA(jsn, pi=pi, create=create), None
-	elif ty == C.tFCNT_OL:
+	elif typ == C.tFCNT_OL:
 		return FCNT_OL.FCNT_OL(jsn, pi=pi, create=create), None
-	elif ty == C.tCSEBase or root == C.tsCSEBase:
+	elif typ == C.tCSEBase or root == C.tsCSEBase:
 		return CSEBase.CSEBase(jsn, create=create), None
 
-	return Unknown.Unknown(jsn, ty, root, pi=pi, create=create), None	# Capture-All resource
+	return Unknown.Unknown(jsn, typ, root, pi=pi, create=create), None	# Capture-All resource
 
 
 excludeFromRoot = [ 'pi' ]
-def pureResource(jsn : dict) -> (dict, str):
+def pureResource(jsn: dict) -> Tuple[dict, str]:
 	""" Return the "pure" json without the "m2m:xxx" or "<domain>:id" resource specifier."""
 	rootKeys = list(jsn.keys())
 	# Try to determine the root identifier 
@@ -316,7 +316,7 @@ def pureResource(jsn : dict) -> (dict, str):
 
 
 # find a structured element in JSON
-def findXPath(jsn : dict, element : str, default : Any = None) -> Any:
+def findXPath(jsn: Union[dict, Resource.Resource], element: str, default: Any = None) -> Any:
 	paths = element.split("/")
 	data = jsn
 	for i in range(0,len(paths)):
@@ -327,7 +327,7 @@ def findXPath(jsn : dict, element : str, default : Any = None) -> Any:
 
 
 # set a structured element in JSON. Create if necessary, and observe the overwrite option
-def setXPath(jsn : dict, element : str, value : Any, overwrite : bool = True):
+def setXPath(jsn: dict, element: str, value: Any, overwrite: bool = True) -> None:
 	paths = element.split("/")
 	ln = len(paths)
 	data = jsn
@@ -349,12 +349,12 @@ urlregex = re.compile(
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)			# optional path
 
 
-def isURL(url : str) -> bool:
+def isURL(url: str) -> bool:
 	""" Check whether a given string is a URL. """
 	return url is not None and re.match(urlregex, url) is not None
 
 
-def normalizeURL(url : str) -> str:
+def normalizeURL(url: str) -> str:
 	""" Remove trailing / from the url. """
 	if url is not None:
 		while len(url) > 0 and url[-1] == '/':
@@ -362,7 +362,7 @@ def normalizeURL(url : str) -> str:
 	return url
 
 
-def getIdFromOriginator(originator : str, idOnly : bool = False) -> str:
+def getIdFromOriginator(originator: str, idOnly: bool = False) -> str:
 	""" Get AE-ID-Stem or CSE-ID from the originator (in case SP-relative or Absolute was used) """
 	if idOnly:
 		return originator.split("/")[-1] if originator is not None  else originator
@@ -370,7 +370,7 @@ def getIdFromOriginator(originator : str, idOnly : bool = False) -> str:
 		return originator.split("/")[-1] if originator is not None and originator.startswith('/') else originator
 
 
-def isAllowedOriginator(originator : str, allowedOriginators : List[str]) -> bool:
+def isAllowedOriginator(originator: str, allowedOriginators: List[str]) -> bool:
 	""" Check whether an Originator is in the provided list of allowed 
 		originators. This list may contain regex.
 	"""
@@ -384,7 +384,7 @@ def isAllowedOriginator(originator : str, allowedOriginators : List[str]) -> boo
 
 #	Compare an old and a new resource. Keywords and values. Ignore internal __XYZ__ keys
 #	Return a dictionary.
-def resourceDiff(old : Resource, new : Resource) -> dict:
+def resourceDiff(old: Union[Resource.Resource, dict], new: Union[Resource.Resource, dict]) -> dict:
 	res = {}
 	for k,v in new.items():
 		if k.startswith('__'):	# ignore all internal attributes
@@ -396,12 +396,12 @@ def resourceDiff(old : Resource, new : Resource) -> dict:
 	return res
 
 
-def getCSE() -> (CSEBase, int, str):
+def getCSE() -> Tuple[Resource.Resource, int, str]:
 	return CSE.dispatcher.retrieveResource(Configuration.get('cse.ri'))
 
 	
 # Check whether the target contains a fanoutPoint in between or as the target
-def fanoutPointResource(id : str) -> Resource:
+def fanoutPointResource(id: str) -> Resource.Resource:
 	if id is None:
 		return None
 	# retrieve srn
@@ -427,13 +427,13 @@ def fanoutPointResource(id : str) -> Resource:
 #
 
 
-def requestHeaderField(request : Request, field : str) -> str:
+def requestHeaderField(request: Request, field : str) -> str:
 	if not request.headers.has_key(field):
 		return None
 	return request.headers.get(field)
 
 		
-def getRequestHeaders(request : Request) -> (str, str, str, str, int):
+def getRequestHeaders(request: Request) -> Tuple[str, str, int, str, int]:
 	originator = requestHeaderField(request, C.hfOrigin)
 	rqi = requestHeaderField(request, C.hfRI)
 

@@ -22,7 +22,7 @@ attributePolicies = constructPolicy([
 
 class AE(Resource):
 
-	def __init__(self, jsn=None, pi=None, create=False):
+	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
 		super().__init__(C.tsAE, jsn, pi, C.tAE, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
@@ -31,7 +31,7 @@ class AE(Resource):
 
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource):
+	def canHaveChild(self, resource: Resource) -> bool:
 		return super()._canHaveChild(resource,	
 									 [ C.tACP,
 									   C.tCNT,
@@ -41,7 +41,7 @@ class AE(Resource):
 									 ])
 
 
-	def validate(self, originator, create=False):
+	def validate(self, originator: str = None, create: bool = False) -> Tuple[bool, int, str]:
 		if (res := super().validate(originator), create)[0] == False:
 			return res
 
@@ -76,4 +76,4 @@ class AE(Resource):
 					node.dbUpdate()
 			self[Resource._node] = nl
 
-		return True, C.rcOK
+		return True, C.rcOK, None

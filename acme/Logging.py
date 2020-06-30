@@ -11,6 +11,7 @@
 """	Wrapper class for the logging subsystem. """
 
 import logging, logging.handlers, os, inspect, re, sys, datetime, time, threading, queue
+from typing import List, Any
 from logging import StreamHandler, LogRecord
 from pathlib import Path
 from Configuration import Configuration
@@ -47,11 +48,11 @@ class	Logging:
 	worker 				= None
 	queue 				= None
 
-	checkInterval 		= 0.2		# wait (in s) between checks of the logging queue
-	queueMaxsize 		= 1000		# max number of items in the logging queue. Might otherwise grow forever on large load
+	checkInterval:float	= 0.2		# wait (in s) between checks of the logging queue
+	queueMaxsize:int	= 1000		# max number of items in the logging queue. Might otherwise grow forever on large load
 
 	@staticmethod
-	def init():
+	def init() -> None:
 		"""Init the logging system.
 		"""
 
@@ -68,7 +69,7 @@ class	Logging:
 		Logging.queue = queue.Queue(maxsize=Logging.queueMaxsize)
 
 		# List of log handlers
-		handlers = [ ACMERichLogHandler() ]
+		handlers: List[Any] = [ ACMERichLogHandler() ]
 
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
@@ -91,77 +92,57 @@ class	Logging:
 		Logging.worker.start()
 	
 
-
 	@staticmethod
-	def finit():
-		if Logging.worker is not None:
+	def finit() -> None:
+		if Logging.worker is not None and Logging.queue is not None:
 			while not Logging.queue.empty():
 				time.sleep(0.5)
 			Logging.worker.stop()
 
 
 	@staticmethod
-	def loggingWorker():
-		while not Logging.queue.empty():
+	def loggingWorker() -> bool:
+		while Logging.queue is not None and not Logging.queue.empty():
 			level, msg, caller, thread = Logging.queue.get()
 			Logging.loggerConsole.log(level, '%s*%d*%d*%s', os.path.basename(caller.filename), caller.lineno, thread.native_id, msg)
 		return True
 
 
 	@staticmethod
-	def log(msg: str):
+	def log(msg: str) -> None:
 		"""Print a log message with level INFO. """
 		Logging._log(logging.INFO, msg)
 
 
 	@staticmethod
-	def logDebug(msg : str):
+	def logDebug(msg : str) -> None:
 		"""Print a log message with level DEBUG. """
 		Logging._log(logging.DEBUG, msg)
 
 
 	@staticmethod
-	def logErr(msg : str):
+	def logErr(msg : str) -> None:
 		"""Print a log message with level ERROR. """
 		import CSE
-		(not CSE.event or CSE.event.logError())	# raise logError event
+		# raise logError event
+		(not CSE.event or CSE.event.logError())	# type: ignore
 		Logging._log(logging.ERROR, msg)
 
 
 	@staticmethod
-	def logWarn(msg : str):
+	def logWarn(msg : str) -> None:
 		"""Print a log message with level WARNING. """
 		import CSE
-		(not CSE.event or CSE.event.logWarning())	# raise logWarning event
+		# raise logWarning event
+		(not CSE.event or CSE.event.logWarning()) 	# type: ignore
 		Logging._log(logging.WARNING, msg)
 
 
 	@staticmethod
-	def _log(level : int, msg : str):
-		if Logging.loggingEnabled and Logging.logLevel <= level:
+	def _log(level : int, msg : str) -> None:
+		if Logging.loggingEnabled and Logging.logLevel <= level and Logging.queue is not None:
 			# Queue a log message : (level, message, caller from stackframe, current thread)
 			Logging.queue.put((level, msg, inspect.getframeinfo(inspect.stack()[2][0]), threading.current_thread()))
-
-
-#
-#	Redirect handler to redirect other log output to our log
-#
-
-class RedirectHandler(StreamHandler):
-
-	def __init__(self, topic):
-		StreamHandler.__init__(self)
-		self.topic = topic
-
-	def emit(self, record):
-		msg = '(%s) %s' % (self.topic, record.getMessage())
-		msg = re.sub(r'\[.+?\] ', '', msg) # clean up (remove superflous date and time)
-
-		(record.levelno == logging.DEBUG 	and Logging.logDebug(msg, False))
-		(record.levelno == logging.INFO 	and Logging.log(msg, False))
-		(record.levelno == logging.WARNING 	and Logging.logWarn(msg, False))
-		(record.levelno == logging.ERROR 	and Logging.logErr(msg, False))
-
 
 
 #
@@ -213,13 +194,13 @@ class ACMERichLogHandler(RichHandler):
 		#path = Path(record.pathname).name
 		log_style = f"logging.level.{record.levelname.lower()}"
 		message = self.format(record)
-		path = ''
+		path  = ''
 		lineno = 0
 		threadID = 0
 		if len(messageElements := message.split('*', 3)) == 4:
 			path = messageElements[0]
-			lineno = messageElements[1]
-			threadID = messageElements[2]
+			lineno = int(messageElements[1])
+			threadID = int(messageElements[2])
 			message = messageElements[3]
 		time_format = None if self.formatter is None else self.formatter.datefmt
 		log_time = datetime.datetime.fromtimestamp(record.created)

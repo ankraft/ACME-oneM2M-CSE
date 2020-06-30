@@ -33,7 +33,7 @@ defaultUDS = { 'acn' : '', 'sus' : statusUninitialized }
 
 class FWR(MgmtObj):
 
-	def __init__(self, jsn=None, pi=None, create=False):
+	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
 		super().__init__(jsn, pi, C.tsFWR, C.mgdFWR, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:

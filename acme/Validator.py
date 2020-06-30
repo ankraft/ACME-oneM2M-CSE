@@ -7,9 +7,9 @@
 #	Validation service and functions
 #
 
-from typing import Any
+from typing import Any, List, Dict, Tuple
 from Logging import Logging
-from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN
+from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN 		# type: ignore
 from Constants import Constants as C
 import Utils
 
@@ -213,24 +213,24 @@ attributePolicies = {
 
 
 
-def constructPolicy(attributes : list) -> dict:
+def constructPolicy(attributes: List[str]) -> Dict[str, List[Any]]:
 	""" Help to construct a dict of policies for the given list of shortnames. """
 	return { k:attributePolicies.get(k) for k in attributes }
 
 
 class Validator(object):
 
-	def __init__(self):
+	def __init__(self) -> None:
 		Logging.log('Validator initialized')
 
 
-	def shutdown(self):
+	def shutdown(self) -> None:
 		Logging.log('Validator shut down')
 
 	#########################################################################
 
 
-	def	validateAttributes(self, jsn : dict, tpe: str, attributePolicies : dict, create : bool = True , isImported : bool = False) -> (bool, int, str):
+	def	validateAttributes(self, jsn: dict, tpe: str, attributePolicies: dict, create: bool = True , isImported: bool = False) -> Tuple[bool, int, str]:
 		""" Validate a resources attributes for types etc."""
 		Logging.logDebug('Validating attributes')
 
@@ -295,7 +295,7 @@ class Validator(object):
 		return True, C.rcOK, None
 
 
-	def validatePvs(self, jsn : dict) -> bool:
+	def validatePvs(self, jsn: dict) -> Tuple[bool, str]:
 		""" Validating special case for lists that are not allowed to be empty (pvs in ACP). """
 
 		if (l :=len(jsn['pvs'])) == 0:
@@ -321,7 +321,7 @@ class Validator(object):
 		return True, None
 
 
-	def validateRequestArgument(self, argument : str, value : Any) -> bool:
+	def validateRequestArgument(self, argument: str, value: Any) -> Tuple[bool, str]:
 		""" Validate a request argument. """
 		if (policy := attributePolicies.get(argument)) is not None:
 			return self._validateType(policy[0], value, True)
@@ -334,21 +334,21 @@ class Validator(object):
 	#
 
 	# Will be filled by further specialization definitions.
-	additionalAttributes = { }
+	additionalAttributes:Dict[str, List[Any]] = { }
 
 
-	def addAdditionalAttributes(self, attributes : dict):
+	def addAdditionalAttributes(self, attributes: dict) -> None:
 		""" Add new specialization attribute definitions to the validator. """
 		self.additionalAttributes.update(attributes)
 
 
-	def _checkAdditionalAttributes(self, tpe : str, attributePolicies : dict) -> dict:
+	def _checkAdditionalAttributes(self, tpe: str, attributePolicies: dict) -> dict:
 		if tpe is not None and not tpe.startswith('m2m:') and tpe in self.additionalAttributes:
 			attributePolicies.update(self.additionalAttributes.get(tpe))
 		return attributePolicies
 
 
-	def _validateType(self, tpe : BT, value : Any, convert : bool = False) -> (bool, str):
+	def _validateType(self, tpe: int, value: Any, convert: bool = False) -> Tuple[bool, str]:
 		""" Check a value for its type. If the convert parameter is True then it
 			is assumed that the value could be a stringified value and the method
 			will attempt to convert the value to its target type; otherwise this

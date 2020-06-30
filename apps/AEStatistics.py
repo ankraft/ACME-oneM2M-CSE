@@ -12,7 +12,8 @@ from AEBase import *
 from Logging import Logging
 from Configuration import Configuration
 import Statistics, CSE
-from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN
+# The following line incorrectly throws an error with mypy
+from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN 	# type: ignore
 import threading, time
 
 
@@ -20,7 +21,7 @@ class AEStatistics(AEBase):
 
 
 
-	def __init__(self):
+	def __init__(self) -> None:
 		super().__init__(	rn=Configuration.get('app.statistics.aeRN'), 
 							api=Configuration.get('app.statistics.aeAPI'), 
 							originator=Configuration.get('app.statistics.originator'),
@@ -37,6 +38,7 @@ class AEStatistics(AEBase):
 			self.fcntType : {
 				'rmRes'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
 				'crRes'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
+				'upRes'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
 				'htRet'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
 				'htCre'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
 				'htUpd'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
@@ -61,7 +63,8 @@ class AEStatistics(AEBase):
        											'acpi': [ self.acpi ],	# assignde by CSE,
        											'mni' : 10,
 												Statistics.deletedResources : 0,
-												Statistics.createdresources : 0,
+												Statistics.createdResources : 0,
+												Statistics.updatedResources : 0,
 												Statistics.httpRetrieves : 0,
 												Statistics.httpCreates : 0,
 												Statistics.httpUpdates : 0,
@@ -81,7 +84,7 @@ class AEStatistics(AEBase):
 		Logging.log('AEStatistics AE registered')
 
 
-	def shutdown(self):
+	def shutdown(self) -> None:
 		super().shutdown()
 		Logging.log('AEStatistics AE shut down')
 
@@ -90,7 +93,7 @@ class AEStatistics(AEBase):
 	#	Update statistics in a worker thread
 	#
 
-	def statisticsWorker(self):
+	def statisticsWorker(self) -> bool:
 		Logging.logDebug('Updating statistics')
 
 		# Update statistics

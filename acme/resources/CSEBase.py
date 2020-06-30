@@ -7,6 +7,7 @@
 #	ResourceType: CSEBase
 #
 
+from typing import Tuple
 from Constants import Constants as C
 from Configuration import Configuration
 from Validator import constructPolicy
@@ -21,7 +22,7 @@ attributePolicies = constructPolicy([
 
 class CSEBase(Resource):
 
-	def __init__(self, jsn=None, create=False):
+	def __init__(self, jsn: dict = None, create: bool = False) -> None:
 		super().__init__(C.tsCSEBase, jsn, '', C.tCSEBase, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
@@ -38,7 +39,7 @@ class CSEBase(Resource):
 
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource : Resource) -> bool:
+	def canHaveChild(self, resource: Resource) -> bool:
 		return super()._canHaveChild(resource,	
 									 [ C.tACP,
 									   C.tAE,
@@ -51,7 +52,7 @@ class CSEBase(Resource):
 									 ])
 
 
-	def validate(self, originator : str = None, create : bool = False) -> (bool, int, str):
+	def validate(self, originator: str = None, create: bool = False) -> Tuple[bool, int, str]:
 		if (res := super().validate(originator, create))[0] == False:
 			return res
 		

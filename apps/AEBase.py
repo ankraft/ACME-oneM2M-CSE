@@ -8,6 +8,7 @@
 #	many utility methods like registering with the CSE etc.
 #
 
+from typing import Any
 from AppBase import AppBase
 from NodeBase import NodeBase
 from Configuration import Configuration
@@ -18,13 +19,13 @@ import json
 
 class AEBase(AppBase):
 				
-	def __init__(self, rn, api, originator=None, nodeRN=None, nodeID=None, nodeOriginator=None):
+	def __init__(self, rn: str, api: str, originator: str = None, nodeRN: str = None, nodeID: str = None, nodeOriginator: str = None) -> None:
 		super().__init__(rn, originator)
 		self.rn 			= rn
 		self.originator 	= originator
 		self.ae 			= None
 		self.aeNodeBase 	= None
-		self.appData 		= None
+		self.appData: dict	= None
 
 		# Get or create the hosting node
 		if nodeRN is not None and nodeID is not None:
@@ -58,11 +59,11 @@ class AEBase(AppBase):
 		self.acpi = Utils.findXPath(self.ae, "acpi")[0] if self.ae is not None else None
 
 
-	def shutdown(self):
+	def shutdown(self) -> None:
 		super().shutdown()
 
 
-	def clean(self):
+	def clean(self) -> None:
 		self.shutdown()
 		self.removeAppData()
 
@@ -73,7 +74,7 @@ class AEBase(AppBase):
 
 
 	# retrieve application data. If not found, initialize and store a record
-	def retrieveAppData(self):
+	def retrieveAppData(self) -> dict:
 		if (result := CSE.storage.getAppData(self.rn)) is None:
 			self.appData = 	{ 'id': self.rn,
 							  '_originator': self.originator
@@ -84,19 +85,21 @@ class AEBase(AppBase):
 		return self.appData
 
 
-	def storeAppData(self):
-		CSE.storage.updateAppData(self.appData)
+	def storeAppData(self) -> bool:
+		return CSE.storage.updateAppData(self.appData)
 
 
-	def removeAppData(self):
-		CSE.storage.removeAppData()
+	def removeAppData(self) -> bool:
+		result = CSE.storage.removeAppData(self.appData)
+		self.AppData = None
+		return result
 
-	def setAppData(self, key, value):
+	def setAppData(self, key: str, value: Any) -> bool:
 		self.appData[key] = value
-		self.storeAppData()
+		return self.storeAppData()
 
 
-	def getAppData(self, key, default=None):
+	def getAppData(self, key: str, default: Any = None) -> Any:
 		if self.appData is None:
 			self.retrieveAppData()
 		return self.appData[key] if key in self.appData else default
