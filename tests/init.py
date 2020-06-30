@@ -11,15 +11,17 @@ import requests, random, sys, json
 from typing import Any, Callable
 
 
-SERVER		= 'http://localhost:8080'
-ROOTPATH	= '/'
-CSERN		= 'cse-in'
-CSEID		= '/id-in'
-SPID 		= 'sp-in'
-ORIGINATOR	= 'CAdmin'
+SERVER				= 'http://localhost:8080'
+ROOTPATH			= '/'
+CSERN				= 'cse-in'
+CSEID				= '/id-in'
+SPID 				= 'sp-in'
+ORIGINATOR			= 'CAdmin'
+
+NOTIFICATIONSERVER	= 'http://localhost:9999'
 
 
-testVerbosity = 2		# 0, 1, 2
+testVerbosity 		= 2		# 0, 1, 2
 
 ###############################################################################
 
@@ -27,6 +29,7 @@ aeRN	= 'testAE'
 cntRN	= 'testCNT'
 cinRN	= 'testCIN'
 grpRN	= 'testGRP'
+subRN	= 'testSUB'
 
 
 URL		= '%s%s' % (SERVER, ROOTPATH)
@@ -35,6 +38,7 @@ aeURL 	= '%s/%s' % (cseURL, aeRN)
 cntURL 	= '%s/%s' % (aeURL, cntRN)
 cinURL 	= '%s/%s' % (cntURL, cinRN)
 grpURL 	= '%s/%s' % (aeURL, grpRN)
+subURL 	= '%s/%s' % (aeURL, subRN)
 
 
 

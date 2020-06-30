@@ -70,6 +70,7 @@ class TestGRP(unittest.TestCase):
 		_, rsc = RETRIEVE(grpURL, 'Cwrong')
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 
+
 	def test_attributesGRP(self):
 		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
 		self.assertEqual(rsc, C.rcOK)
@@ -89,6 +90,25 @@ class TestGRP(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/mid'))
 		self.assertIsInstance(findXPath(r, 'm2m:grp/mid'), list)
 		self.assertEqual(len(findXPath(r, 'm2m:grp/mid')), 2)
+
+
+	def test_updateGRP(self):
+		jsn = 	{ 'm2m:grp' : { 
+					'mnm': 15
+				}}
+		r, rsc = UPDATE(grpURL, TestGRP.originator, jsn)
+		self.assertEqual(rsc, C.rcUpdated)
+		self.assertIsNotNone(findXPath(r, 'm2m:grp/mnm'))
+		self.assertEqual(findXPath(r, 'm2m:grp/mnm'), 15)
+
+
+	# Update a GRP with container. Should fail.
+	def test_updateGRPwithCNT(self):
+		jsn = 	{ 'm2m:cnt' : { 
+					'lbl' : [ 'wrong' ]
+				}}
+		r, rsc = UPDATE(grpURL, TestGRP.originator, jsn)
+		self.assertNotEqual(rsc, C.rcUpdated)
 
 
 	def test_addCNTtoGRP(self):
@@ -208,7 +228,7 @@ class TestGRP(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), cnm) # == old cnm
 
 
-# TODO add different resouse (fcnt)
+# TODO add different resource (fcnt)
 # TODO remove different resource
 #
 
@@ -226,6 +246,16 @@ class TestGRP(unittest.TestCase):
 			self.assertEqual(findXPath(c, 'rsc'), C.rcDeleted)
 
 
+	def test_deleteGRPByUnknownOriginator(self):
+		_, rsc = DELETE(grpURL, 'Cwrong')
+		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
+
+
+	def test_deleteGRPByAssignedOriginator(self):
+		_, rsc = DELETE(grpURL, TestGRP.originator)
+		self.assertEqual(rsc, C.rcDeleted)
+
+
 		#TODO check GRP itself: members
 
 
@@ -235,12 +265,16 @@ if __name__ == '__main__':
 	suite.addTest(TestGRP('test_retrieveGRP'))
 	suite.addTest(TestGRP('test_retrieveGRPWithWrongOriginator'))
 	suite.addTest(TestGRP('test_attributesGRP'))
+	suite.addTest(TestGRP('test_updateGRP'))
+	suite.addTest(TestGRP('test_updateGRPwithCNT'))
 	suite.addTest(TestGRP('test_addCNTtoGRP'))
 	suite.addTest(TestGRP('test_addCINviaFOPT'))
 	suite.addTest(TestGRP('test_retrieveLAviaFOPT'))
 	suite.addTest(TestGRP('test_updateCNTviaFOPT'))
 	suite.addTest(TestGRP('test_addExistingCNTtoGRP'))
 	suite.addTest(TestGRP('test_deleteCNTviaFOPT'))
+	suite.addTest(TestGRP('test_deleteGRPByUnknownOriginator'))
+	suite.addTest(TestGRP('test_deleteGRPByAssignedOriginator'))
 
 	unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 

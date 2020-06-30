@@ -9,8 +9,8 @@ $CMD testCIN.py
 $CMD testCNT_CIN.py
 $CMD testGRP.py
 $CMD testAddressing.py
+$CMD testSUB.py
 
-#$CMD testSUB.py
 #$CMD testRemoteCSE.py
 #$CMD testTransferRequests.py
 #$CMD testFCNT.py
