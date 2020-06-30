@@ -35,7 +35,6 @@ class SUB(Resource):
 
 # TODO expirationCounter
 # TODO notificationForwardingURI
-# TODO subscriberURI
 
 	# Enable check for allowed sub-resources
 	def canHaveChild(self, resource: Resource) -> bool:

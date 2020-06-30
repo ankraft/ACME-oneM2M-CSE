@@ -61,61 +61,83 @@ class TestSUB(unittest.TestCase):
 			        "enc": {
 			            "net": [ 1, 3 ]
         			},
-        			"nu": [ NOTIFICATIONSERVER ]
+        			"nu": [ NOTIFICATIONSERVER ],
+					'su': NOTIFICATIONSERVER
 				}}
-
-		r, rsc = CREATE(aeURL, TestSUB.originator, C.tSUB, jsn)
+		r, rsc = CREATE(cntURL, TestSUB.originator, C.tSUB, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 
 
-
-
-
-
 	def test_retrieveSUB(self):
-		_, rsc = RETRIEVE(grpURL, TestGRP.originator)
+		_, rsc = RETRIEVE(subURL, TestSUB.originator)
 		self.assertEqual(rsc, C.rcOK)
 
 
-	def test_retrieveGRPWithWrongOriginator(self):
-		_, rsc = RETRIEVE(grpURL, 'Cwrong')
+	def test_retrieveSUBWithWrongOriginator(self):
+		_, rsc = RETRIEVE(subURL, 'Cwrong')
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 
 
-	def test_attributesGRP(self):
-		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
+	def test_attributesSUB(self):
+		r, rsc = RETRIEVE(subURL, TestSUB.originator)
 		self.assertEqual(rsc, C.rcOK)
-		self.assertEqual(findXPath(r, 'm2m:grp/ty'), C.tGRP)
-		self.assertEqual(findXPath(r, 'm2m:grp/pi'), findXPath(TestGRP.ae,'m2m:ae/ri'))
-		self.assertEqual(findXPath(r, 'm2m:grp/rn'), grpRN)
-		self.assertIsNotNone(findXPath(r, 'm2m:grp/ct'))
-		self.assertIsNotNone(findXPath(r, 'm2m:grp/lt'))
-		self.assertIsNotNone(findXPath(r, 'm2m:grp/et'))
-		self.assertEqual(findXPath(r, 'm2m:grp/cr'), TestGRP.originator)
-		self.assertIsNotNone(findXPath(r, 'm2m:grp/mt'))
-		self.assertEqual(findXPath(r, 'm2m:grp/mt'), C.tMIXED)
-		self.assertIsNotNone(findXPath(r, 'm2m:grp/mnm'))
-		self.assertEqual(findXPath(r, 'm2m:grp/mnm'), 10)
-		self.assertIsNotNone(findXPath(r, 'm2m:grp/cnm'))
-		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), 2)
-		self.assertIsNotNone(findXPath(r, 'm2m:grp/mid'))
-		self.assertIsInstance(findXPath(r, 'm2m:grp/mid'), list)
-		self.assertEqual(len(findXPath(r, 'm2m:grp/mid')), 2)
+		self.assertEqual(findXPath(r, 'm2m:sub/ty'), C.tSUB)
+		self.assertEqual(findXPath(r, 'm2m:sub/pi'), findXPath(TestSUB.cnt,'m2m:cnt/ri'))
+		self.assertEqual(findXPath(r, 'm2m:sub/rn'), subRN)
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/ct'))
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/lt'))
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/et'))
+		self.assertEqual(findXPath(r, 'm2m:sub/cr'), TestSUB.originator)
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc/net'))
+		self.assertIsInstance(findXPath(r, 'm2m:sub/enc/net'), list)
+		self.assertEqual(len(findXPath(r, 'm2m:sub/enc/net')), 2)
+		self.assertEqual(findXPath(r, 'm2m:sub/enc/net'), [1, 3])
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/nu'))
+		self.assertIsInstance(findXPath(r, 'm2m:sub/nu'), list)
+		self.assertEqual(findXPath(r, 'm2m:sub/nu'), [ NOTIFICATIONSERVER ])
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/nct'))
+		self.assertIsInstance(findXPath(r, 'm2m:sub/nct'), int)
+		self.assertEqual(findXPath(r, 'm2m:sub/nct'), 1)
 
 
-	def test_updateGRP(self):
-		jsn = 	{ 'm2m:grp' : { 
-					'mnm': 15
+	def test_createSUBWrong(self):
+		jsn = 	{ 'm2m:sub' : { 
+					'rn' : '%sWrong' % subRN,
+			        "enc": {
+			            "net": [ 1, 3 ]
+        			},
+        			"nu": [ NOTIFICATIONSERVERW ]
 				}}
-		r, rsc = UPDATE(grpURL, TestGRP.originator, jsn)
+		r, rsc = CREATE(cntURL, TestSUB.originator, C.tSUB, jsn)
+		self.assertNotEqual(rsc, C.rcCreated)
+		self.assertEqual(rsc, C.rcSubscriptionVerificationInitiationFailed)
+		
+
+	def test_updateSUB(self):
+		jsn = 	{ 'm2m:sub' : { 
+					'exc': 5
+				}}
+		r, rsc = UPDATE(subURL, TestSUB.originator, jsn)
 		self.assertEqual(rsc, C.rcUpdated)
-		self.assertIsNotNone(findXPath(r, 'm2m:grp/mnm'))
-		self.assertEqual(findXPath(r, 'm2m:grp/mnm'), 15)
+		self.assertIsInstance(findXPath(r, 'm2m:sub/exc'), int)
+		self.assertEqual(findXPath(r, 'm2m:sub/exc'), 5)
+
+# add cin to cnt
+# remove sub with wrong originator
+# remove sub
+
+
+# TODO expirationCounter
+
 
 if __name__ == '__main__':
 	suite = unittest.TestSuite()
 	suite.addTest(TestSUB('test_createSUB'))
-
+	suite.addTest(TestSUB('test_retrieveSUB'))
+	suite.addTest(TestSUB('test_retrieveSUBWithWrongOriginator'))
+	suite.addTest(TestSUB('test_attributesSUB'))
+	suite.addTest(TestSUB('test_createSUBWrong'))
+	suite.addTest(TestSUB('test_updateSUB'))
 	unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 
 

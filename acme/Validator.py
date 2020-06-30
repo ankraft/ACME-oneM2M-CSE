@@ -82,7 +82,7 @@ attributePolicies = {
 	'ena'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# BAT
 	'enc'	: [ BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# SUB
 	'esi'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.MA ],		# m2m:e2eSecInfo - AE, CSE
-	'exc'	: [	BT.positiveInteger, CAR.car01, 	RO.O, 	RO.O,  RO.O, AN.NA ],  	# SUB
+	'exc'	: [	BT.positiveInteger, CAR.car01, 	RO.O, 	RO.O,  RO.O, AN.NA ],  		# SUB
 	'far'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# RBO
 	'fwn'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# FWR
 	'fwv'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI

@@ -19,6 +19,7 @@ SPID 				= 'sp-in'
 ORIGINATOR			= 'CAdmin'
 
 NOTIFICATIONSERVER	= 'http://localhost:9999'
+NOTIFICATIONSERVERW	= 'http://localhost:6666'
 
 
 testVerbosity 		= 2		# 0, 1, 2
@@ -38,7 +39,7 @@ aeURL 	= '%s/%s' % (cseURL, aeRN)
 cntURL 	= '%s/%s' % (aeURL, cntRN)
 cinURL 	= '%s/%s' % (cntURL, cinRN)
 grpURL 	= '%s/%s' % (aeURL, grpRN)
-subURL 	= '%s/%s' % (aeURL, subRN)
+subURL 	= '%s/%s' % (cntURL, subRN)
 
 
 
