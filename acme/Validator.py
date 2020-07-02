@@ -11,6 +11,7 @@ from typing import Any, List, Dict, Tuple
 from Logging import Logging
 from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN 		# type: ignore
 from Constants import Constants as C
+from Configuration import Configuration
 import Utils
 
 
@@ -221,6 +222,7 @@ def constructPolicy(attributes: List[str]) -> Dict[str, List[Any]]:
 class Validator(object):
 
 	def __init__(self) -> None:
+		self.validationEnabled = Configuration.get('cse.enableValidation')
 		Logging.log('Validator initialized')
 
 
@@ -232,11 +234,16 @@ class Validator(object):
 
 	def	validateAttributes(self, jsn: dict, tpe: str, attributePolicies: dict, create: bool = True , isImported: bool = False) -> Tuple[bool, int, str]:
 		""" Validate a resources attributes for types etc."""
+
+		if not self.validationEnabled:	# just return if disabled
+			return True, C.rcOK, None
+
 		Logging.logDebug('Validating attributes')
 
 		# Just return in case the resource instance is imported
 		if isImported is not None and isImported:
 			return True, C.rcOK, None
+
 
 		# No policies?
 		if attributePolicies is None:

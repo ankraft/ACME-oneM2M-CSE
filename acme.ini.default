@@ -38,6 +38,8 @@ enableNotifications=true
 enableRemoteCSE=true
 # Enable forwarding of requests to a remote CSE. Default: True
 enableTransitRequests=true
+# Enable the validation of attributes and arguments. Default: true
+enableValidation=true
 # Enable alphabetical sorting of discovery results. Default: True
 sortDiscoveredResources=true
 # Interval to check for expired resources. 0 means "no checking". Default: 60 seconds
