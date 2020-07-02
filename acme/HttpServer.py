@@ -8,7 +8,7 @@
 #	This manager is the main run-loop for the CSE (when using http).
 #
 
-import json, requests, logging, os, sys
+import json, requests, logging, os, sys, traceback
 from typing import Any, Callable, List, Tuple, Union
 import flask
 from flask import Flask, Request, make_response, request
@@ -108,8 +108,12 @@ class HttpServer(object):
 		Logging.logDebug('==> Retrieve: /%s' % path) # path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpRetrieve() # type: ignore
-		resource, rc, msg = CSE.dispatcher.retrieveRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
-		return self._prepareResponse(request, resource, rc, msg)
+		try:
+			resource, rc, msg = CSE.dispatcher.retrieveRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+		except Exception as e:
+			resource, rc, msg = self._prepareException(e)
+		finally:
+			return self._prepareResponse(request, resource, rc, msg)
 
 
 	def handlePOST(self, path: str = None) -> Response:
@@ -117,8 +121,12 @@ class HttpServer(object):
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpCreate()	# type: ignore
-		resource, rc, msg = CSE.dispatcher.createRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
-		return self._prepareResponse(request, resource, rc, msg)
+		try:
+			resource, rc, msg = CSE.dispatcher.createRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+		except Exception as e:
+			resource, rc, msg = self._prepareException(e)
+		finally:
+			return self._prepareResponse(request, resource, rc, msg)
 
 
 	def handlePUT(self, path: str = None) -> Response:
@@ -126,16 +134,24 @@ class HttpServer(object):
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpUpdate()	# type: ignore
-		resource, rc, msg = CSE.dispatcher.updateRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
-		return self._prepareResponse(request, resource, rc, msg)
+		try:
+			resource, rc, msg = CSE.dispatcher.updateRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+		except Exception as e:
+			resource, rc, msg = self._prepareException(e)
+		finally:
+			return self._prepareResponse(request, resource, rc, msg)
 
 
 	def handleDELETE(self, path: str = None) -> Response:
 		Logging.logDebug('==> Delete: /%s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpDelete()	# type: ignore
-		resource, rc, msg = CSE.dispatcher.deleteRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
-		return self._prepareResponse(request, resource, rc, msg)
+		try:
+			resource, rc, msg = CSE.dispatcher.deleteRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+		except Exception as e:
+			resource, rc, msg = self._prepareException(e)
+		finally:
+			return self._prepareResponse(request, resource, rc, msg)
 
 
 	#########################################################################
@@ -256,6 +272,10 @@ class HttpServer(object):
 		resp.status_code = self._statusCode(returnCode)
 		resp.content_type = C.hfvContentType
 		return resp
+
+
+	def _prepareException(self, e: Exception) -> Tuple[None, int, str]:
+		return None, C.rcInternalServerError, 'encountered exception: %s' % traceback.format_exc().replace('"', '\\"').replace('\n', '\\n')
 
 
 	#
