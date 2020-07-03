@@ -21,7 +21,7 @@ class TestSUB(unittest.TestCase):
 		# look for notification server
 		hasNotificationServer = False
 		try:
-			r = requests.post(NOTIFICATIONSERVER, data='{}')
+			r = requests.post(NOTIFICATIONSERVER, data='{"test": "test"}')
 			hasNotificationServer = True
 		except Exception as e:
 			pass
@@ -104,7 +104,7 @@ class TestSUB(unittest.TestCase):
 		jsn = 	{ 'm2m:sub' : { 
 					'rn' : '%sWrong' % subRN,
 			        "enc": {
-			            "net": [ 1, 3 ]
+			            "net": [ 1, 2, 3, 4 ]
         			},
         			"nu": [ NOTIFICATIONSERVERW ]
 				}}
@@ -122,7 +122,48 @@ class TestSUB(unittest.TestCase):
 		self.assertIsInstance(findXPath(r, 'm2m:sub/exc'), int)
 		self.assertEqual(findXPath(r, 'm2m:sub/exc'), 5)
 
-# add cin to cnt
+
+	def test_updateCNT(self):
+		jsn = 	{ 'm2m:cnt' : {
+					'lbl' : [ 'aTag' ],
+					'mni' : 10,
+					'mbs' : 9999
+ 				}}
+		cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+		self.assertEqual(rsc, C.rcUpdated)
+		cnt, rsc = RETRIEVE(cntURL, TestSUB.originator)		# retrieve cnt again
+		self.assertEqual(rsc, C.rcOK)
+		self.assertIsNotNone(findXPath(cnt, 'm2m:cnt/lbl'))
+		self.assertIsInstance(findXPath(cnt, 'm2m:cnt/lbl'), list)
+		self.assertGreater(len(findXPath(cnt, 'm2m:cnt/lbl')), 0)
+		self.assertTrue('aTag' in findXPath(cnt, 'm2m:cnt/lbl'))
+		self.assertIsNotNone(findXPath(cnt, 'm2m:cnt/mni'))
+		self.assertIsInstance(findXPath(cnt, 'm2m:cnt/mni'), int)
+		self.assertEqual(findXPath(cnt, 'm2m:cnt/mni'), 10)
+		self.assertIsNotNone(findXPath(cnt, 'm2m:cnt/mbs'))
+		self.assertIsInstance(findXPath(cnt, 'm2m:cnt/mbs'), int)
+		self.assertEqual(findXPath(cnt, 'm2m:cnt/mbs'), 9999)
+
+
+	def test_addCIN2CNT(self):
+		jsn = 	{ 'm2m:cin' : {
+					'cnf' : 'a',
+					'con' : 'aValue'
+				}}
+		r, rsc = CREATE(cntURL, TestSUB.originator, C.tCIN, jsn)
+		self.assertEqual(rsc, C.rcCreated)
+		self.assertIsNotNone(r)
+		self.assertIsNotNone(findXPath(r, 'm2m:cin/ri'))
+		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
+
+
+	def test_removeCNT(self):
+		r, rsc = DELETE(cntURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		self.assertEqual(rsc, C.rcDeleted)
+
+
+# add cnt again 
+
 # remove sub with wrong originator
 # remove sub
 
@@ -138,6 +179,9 @@ if __name__ == '__main__':
 	suite.addTest(TestSUB('test_attributesSUB'))
 	suite.addTest(TestSUB('test_createSUBWrong'))
 	suite.addTest(TestSUB('test_updateSUB'))
+	suite.addTest(TestSUB('test_updateCNT'))
+	suite.addTest(TestSUB('test_addCIN2CNT'))
+	suite.addTest(TestSUB('test_removeCNT'))
 	unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 
 
