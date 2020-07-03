@@ -8,11 +8,12 @@
 #	the CSE is actually started.
 #
 
-import json, os, fnmatch, re
+import json, os, fnmatch, re, csv
 from typing import Tuple, Union
 from Utils import *
 from Configuration import Configuration
 from Constants import Constants as C
+from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN 		# type: ignore
 import CSE
 from Logging import Logging
 from resources import Resource
@@ -93,7 +94,7 @@ class Importer(object):
 
 		# then get the filenames of all other files and sort them. Process them in order
 
-		filenames = sorted(os.listdir(path))
+		filenames = sorted(fnmatch.filter(os.listdir(path), '*.json'))
 		for fn in filenames:
 			if fn not in self._firstImporters:
 				Logging.log('Importing resource from file: %s' % fn)
@@ -131,11 +132,111 @@ class Importer(object):
 		return True
 
 
+	###########################################################################
+	#
+	#	Attribute Policies
+	#
+
+	_nameDataTypeMappings = {
+			'positiveinteger'	: BT.positiveInteger,
+			'nonneginteger'		: BT.nonNegInteger,
+			'unsignedint'		: BT.unsignedInt,
+			'unsignedlong'		: BT.unsignedLong,
+			'string' 			: BT.string,
+			'timestamp' 		: BT.timestamp,
+			'list'				: BT.list,
+			'dict' 				: BT.dict,
+			'anyuri'			: BT.anyURI,
+			'boolean'			: BT.boolean,
+			'geocoordinates'	: BT.geoCoordinates,
+	}
+
+
+	_nameCardinalityMappings = {
+		'car1'					: CAR.car1,
+		'car01'					: CAR.car01,
+		'car01l'				: CAR.car01L,
+	}
+
+
+	_nameOptionalityMappings = {
+		'np'					: RO.NP,
+		'o'						: RO.O,
+		'm'						: RO.M,
+	}
+
+	_nameAnnouncementMappings = {
+		'na'					: AN.NA,
+		'ma'					: AN.MA,
+		'oa'					: AN.OA,
+	}
+
+
+	def importAttributePolicies(self, path: str = None) -> bool:
+		fieldNames = ['resourceType', 'shortName', 'dataType', 'cardinality' , 'optionalCreate', 'optionalUpdate', 'announced' ]
+
+		# Get import path
+		if path is None:
+			if Configuration.has('cse.resourcesPath'):
+				path = Configuration.get('cse.resourcesPath')
+			else:
+				Logging.logErr('cse.resourcesPath not set')
+				raise RuntimeError('cse.resourcesPath not set')
+
+		if not os.path.exists(path):
+			Logging.logWarn('Import directory for attribute policies does not exist: %s' % path)
+			return False
+
+		filenames = fnmatch.filter(os.listdir(path), '*.ap')
+		for fn in filenames:
+			fn = os.path.join(path, fn)
+			Logging.log('Importing attribute policies from file: %s' % fn)
+			if os.path.exists(fn):
+				with open(fn, newline='') as fp:
+					reader = csv.DictReader(filter(lambda row: not row.startswith('#'), fp), fieldnames=fieldNames)
+					for row in reader:
+						if len(row) != len(fieldNames):
+							Logging.logErr('Missing element(s) for row: %s in file: %s' % (row, fn))
+							continue
+						if (tpe := row.get('resourceType')) is None or len(tpe) == 0:
+							Logging.logErr('Missing or empty resource type for row: %s in file: %s' % (row, fn))
+							return False
+						if (sn := row.get('shortName')) is None or len(sn) == 0:
+							Logging.logErr('Missing or empty shortname for row: %s in file: %s' % (row, fn))
+							return False
+						if (tmp := row.get('dataType')) is None or len(tmp) == 0:
+							Logging.logErr('Missing or empty data type for row: %s in file: %s' % (row, fn))
+							return False
+						dtpe = self._nameDataTypeMappings.get(tmp.lower())
+						if (tmp := row.get('cardinality')) is None or len(tmp) == 0:
+							Logging.logErr('Missing or empty cardinality for row: %s in file: %s' % (row, fn))
+							return False
+						car = self._nameCardinalityMappings.get(tmp.lower())
+						if (tmp := row.get('optionalCreate')) is None or len(tmp) == 0:
+							Logging.logErr('Missing or empty optional create for row: %s in file: %s' % (row, fn))
+							return False
+						opcr = self._nameOptionalityMappings.get(tmp.lower())
+						if (tmp := row.get('optionalUpdate')) is None or len(tmp) == 0:
+							Logging.logErr('Missing or empty optional create for row: %s in file: %s' % (row, fn))
+							return False
+						opup = self._nameOptionalityMappings.get(tmp.lower())
+						if (tmp := row.get('announced')) is None or len(tmp) == 0:
+							Logging.logErr('Missing or empty announced for row: %s in file: %s' % (row, fn))
+							return False
+						annc = self._nameAnnouncementMappings.get(tmp.lower())
+
+						# get possible existing definitions for that type, or create one
+						CSE.validator.addAdditionalAttributePolicy(tpe, { sn : [ dtpe, car, opcr, opup, annc] })
+
+		return True
+
+
 	def _prepareImporting(self) -> None:
 		# temporarily disable access control
 		self._oldacp = Configuration.get('cse.security.enableACPChecks')
 		Configuration.set('cse.security.enableACPChecks', False)
 		self.macroMatch = re.compile(r"\$\{[\w.]+\}")
+
 
 
 

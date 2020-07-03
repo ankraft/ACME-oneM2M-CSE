@@ -341,12 +341,29 @@ class Validator(object):
 	#
 
 	# Will be filled by further specialization definitions.
-	additionalAttributes:Dict[str, List[Any]] = { }
+	additionalAttributes:Dict[str, Dict[str, List[Any]]] = { }
 
 
-	def addAdditionalAttributes(self, attributes: dict) -> None:
-		""" Add new specialization attribute definitions to the validator. """
+	def updateAdditionalAttributes(self, attributes: dict) -> None:
+		""" Add or update new specialization attribute definitions to the validator. The dict has a single entry (the type)
+			that contains another dict of attribute definitions for that type. """
 		self.additionalAttributes.update(attributes)
+
+
+	def addAdditionalAttributePolicy(self, tpe: str, policies: dict) -> None:
+		""" Add a new policy dictionary for a type's attributes. """
+		if (defs := self.additionalAttributes.get(tpe)) is None:
+			defs = { tpe : policies }
+		else:
+			defs.update(policies)
+			defs = { tpe : defs }
+		self.updateAdditionalAttributes(defs)
+
+
+	def getAdditionAttributesFor(self, tpe: str) -> dict:
+		""" Return the list of additional attributes for a type or None. """
+		return self.additionalAttributes.get(tpe)
+
 
 
 	def _checkAdditionalAttributes(self, tpe: str, attributePolicies: dict) -> dict:

@@ -126,8 +126,9 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	group = GroupManager()
 	
 	# Import a default set of resources, e.g. the CSE, first ACP or resource structure
+	# Also import extra attribute policies for 
 	importer = Importer()
-	if not importer.importResources():
+	if not importer.importResources() or not importer.importAttributePolicies():
 		return
 
 	# Initialize the remote CSE manager

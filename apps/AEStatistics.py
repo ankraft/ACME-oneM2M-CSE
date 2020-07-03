@@ -52,7 +52,7 @@ class AEStatistics(AEBase):
 		}
 
 		# Add the definitions to the validator
-		CSE.validator.addAdditionalAttributes(statisticAttributes)
+		CSE.validator.updateAdditionalAttributes(statisticAttributes)
 
 
 		# Create structure beneath the AE resource

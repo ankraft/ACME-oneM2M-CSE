@@ -1,0 +1,9 @@
+# resourceType, shortName, dataType, cardinality, optionalCreate, optionalUpdate, announced
+
+# Additional attribute policies for <flexContainer> specializations
+# !!! Don't change the first line !!!
+
+# ModuleClass: Colour
+hd:color,red,nonNegInteger,car1,M,M,OA
+hd:color,green,nonNegInteger,car1,M,M,OA
+hd:color,blue,nonNegInteger,car1,M,M,OA

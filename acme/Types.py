@@ -42,5 +42,5 @@ class RequestOptionality(IntEnum):
 class Announced(IntEnum):
 	""" anouncent attribute indications """
 	NA				= auto()
-	MA				= auto()
 	OA				= auto()
+	MA				= auto()
