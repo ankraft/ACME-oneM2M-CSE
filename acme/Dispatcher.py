@@ -127,7 +127,7 @@ class Dispatcher(object):
 					if targetResource is None:
 						return None, res, msg
 					self._childResourceTree(allowedResources, targetResource)	# the function call add attributes to the result resource. Don't use the return value directly
-					return resource, C.rcOK, None
+					return targetResource, C.rcOK, None
 
 				# direct child resources, NOT the root resource
 				elif rcn == C.rcnChildResources:
@@ -196,7 +196,8 @@ class Dispatcher(object):
 			if r.ty != C.tGRP_FOPT and Utils.isVirtualResource(r): # fopt is handled elsewhere
 				return r.handleRetrieveRequest()
 			return r, C.rcOK, None
-		Logging.logDebug('%s: %s' % (msg, ri))
+		if msg is not None:
+			Logging.logDebug('%s: %s' % (msg, ri))
 		return None, rc, msg
 
 
@@ -437,7 +438,7 @@ class Dispatcher(object):
 		pr, res, msg = self.retrieveResource(id)
 		if pr is None:
 			Logging.log('Parent resource not found')
-			return None, C.rcNotFound,  msg
+			return None, C.rcNotFound,  'parent resource not found'
 		if CSE.security.hasAccess(originator, pr, C.permCREATE, ty=ty, isCreateRequest=True, parentResource=pr) == False:
 			if ty == C.tAE:
 				return None, C.rcSecurityAssociationRequired, 'security association required'
@@ -464,7 +465,7 @@ class Dispatcher(object):
 		# check whether the resource already exists
 		if CSE.storage.hasResource(nr.ri, nr.__srn__):
 			Logging.logWarn('Resource already registered')
-			return None, C.rcConflict, 'resource already exsist'
+			return None, C.rcConflict, 'resource already exists'
 
 		# Check resource creation
 		if (rres := CSE.registration.checkResourceCreation(nr, originator, pr))[1] != C.rcOK:
