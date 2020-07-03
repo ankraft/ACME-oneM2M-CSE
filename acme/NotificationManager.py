@@ -79,6 +79,9 @@ class NotificationManager(object):
 		if not Configuration.get('cse.enableNotifications'):
 			return
 
+		if Utils.isVirtualResource(resource):
+			return 
+
 		ri = resource.ri
 		subs = CSE.storage.getSubscriptionsForParent(ri)
 		if subs is None or len(subs) == 0:
