@@ -352,11 +352,11 @@ class Validator(object):
 
 	def addAdditionalAttributePolicy(self, tpe: str, policies: dict) -> None:
 		""" Add a new policy dictionary for a type's attributes. """
-		if (defs := self.additionalAttributes.get(tpe)) is None:
+		if (attrs := self.additionalAttributes.get(tpe)) is None:
 			defs = { tpe : policies }
 		else:
-			defs.update(policies)
-			defs = { tpe : defs }
+			attrs.update(policies)
+			defs = { tpe : attrs }
 		self.updateAdditionalAttributes(defs)
 
 
