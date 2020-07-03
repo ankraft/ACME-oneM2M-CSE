@@ -180,8 +180,10 @@ class ACMERichLogHandler(RichHandler):
 			#r"(?P<uuid>[a-fA-F0-9]{8}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{12})",
 
 			r"(?P<dim>^[0-9]+\.?[0-9]*\b - )",		# thread ident at front
-			r"(?P<request>==>.*:)",					# Incoming request 
-			r"(?P<response><== [^ ]+ )",			# outgoing response
+			r"(?P<request>==>.*:)",					# Incoming request or response
+			r"(?P<request>Request ==>:)",					# Outgoing request or response
+			r"(?P<response><== [^ :]+[ :]+)",			# outgoing response or request
+			r"(?P<response>Response <== [^ :]+[ :]+)",			# Incoming response or request
 			r"(?P<number>\(RSC: [0-9]+\.?[0-9]\))",	# Result code
 			r"(?P<id> [\w/\-_]*/[\w/\-_]+)",		# ID
 			#r"(?P<id>(acp|ae|bat|cin|cnt|csest|dvi|grp|la|mem|nod|ol|sub)[0-9]+\.?[0-9])",		# ID

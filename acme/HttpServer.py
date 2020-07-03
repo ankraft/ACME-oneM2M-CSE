@@ -232,7 +232,9 @@ class HttpServer(object):
 				   }
 		try:
 			Logging.logDebug('Sending request: %s %s' % (method.__name__.upper(), url))
+			Logging.logDebug('Request ==>:\n%s\n' % (str(data) if data is not None else ''))
 			r = method(url, data=data, headers=headers)
+			Logging.logDebug('Response <== (%s):\n%s' % (str(r.status_code), str(r.content.decode("utf-8"))))
 		except Exception as e:
 			Logging.logWarn('Failed to send request: %s' % str(e))
 			return None, C.rcTargetNotReachable, 'target not reachable'
