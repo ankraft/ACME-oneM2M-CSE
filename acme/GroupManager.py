@@ -201,7 +201,7 @@ class GroupManager(object):
 		if len(result) > 0:
 			items = []
 			for r in result:
-				if r[0] is not None and isinstance(res, Resource):
+				if r[0] is not None and isinstance(r[0], Resource):
 					res, rsc, _ = r
 					item = 	{ 'rsc' : rsc, 
 							  'rqi' : rqi,
