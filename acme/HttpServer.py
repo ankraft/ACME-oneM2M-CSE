@@ -277,6 +277,7 @@ class HttpServer(object):
 
 
 	def _prepareException(self, e: Exception) -> Tuple[None, int, str]:
+		Logging.logErr(traceback.format_exc())
 		return None, C.rcInternalServerError, 'encountered exception: %s' % traceback.format_exc().replace('"', '\\"').replace('\n', '\\n')
 
 
