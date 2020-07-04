@@ -126,9 +126,9 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	group = GroupManager()
 	
 	# Import a default set of resources, e.g. the CSE, first ACP or resource structure
-	# Also import extra attribute policies for 
+	# Import extra attribute policies for specializations first 
 	importer = Importer()
-	if not importer.importResources() or not importer.importAttributePolicies():
+	if not importer.importAttributePolicies() or not importer.importResources():
 		return
 
 	# Initialize the remote CSE manager
@@ -191,7 +191,6 @@ def startApps() -> None:
 	time.sleep(aeStartupDelay)
 	Logging.log('Starting Apps')
 	appsStarted = True
-
 
 	if Configuration.get('app.csenode.enable'):
 		aeCSENode = CSENode()
