@@ -435,6 +435,18 @@ class Validator(object):
 					return False, str(e)
 			return False, 'unknown type for value'
 
+		if tpe == BT.float:
+			if isinstance(value, float):
+				return True, None
+			# try to convert string to number and compare
+			if convert and isinstance(value, str):
+				try:
+					float(value)
+					return True, None
+				except Exception as e:
+					return False, str(e)
+			return False, 'unknown type for value'
+
 		if tpe == BT.geoCoordinates and isinstance(value, dict):
 			return True, None
 

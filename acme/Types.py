@@ -22,6 +22,7 @@ class BasicType(IntEnum):
 	dict 			= auto()
 	anyURI			= auto()
 	boolean			= auto()
+	float 			= auto()
 	geoCoordinates	= auto()
 
 

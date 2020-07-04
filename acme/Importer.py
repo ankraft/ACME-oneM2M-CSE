@@ -149,6 +149,7 @@ class Importer(object):
 			'anyuri'			: BT.anyURI,
 			'boolean'			: BT.boolean,
 			'geocoordinates'	: BT.geoCoordinates,
+			'float'				: BT.float,
 	}
 
 
