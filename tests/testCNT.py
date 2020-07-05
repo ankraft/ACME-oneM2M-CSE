@@ -92,6 +92,10 @@ class TestCNT(unittest.TestCase):
 		self.assertIsNotNone(findXPath(cnt, 'm2m:cnt/mbs'))
 		self.assertIsInstance(findXPath(cnt, 'm2m:cnt/mbs'), int)
 		self.assertEqual(findXPath(cnt, 'm2m:cnt/mbs'), 9999)
+		self.assertIsNotNone(findXPath(cnt, 'm2m:cnt/st'))
+		self.assertIsInstance(findXPath(cnt, 'm2m:cnt/st'), int)
+		self.assertEqual(findXPath(cnt, 'm2m:cnt/st'), 1)
+
 
 
 	def test_updateCNTTy(self):
@@ -174,7 +178,7 @@ class TestCNT(unittest.TestCase):
 		self.assertEqual(rsc, C.rcDeleted)
 
 
-if __name__ == '__main__':
+def run():
 	suite = unittest.TestSuite()
 	suite.addTest(TestCNT('test_createCNT'))
 	suite.addTest(TestCNT('test_retrieveCNT'))
@@ -193,5 +197,9 @@ if __name__ == '__main__':
 	suite.addTest(TestCNT('test_createCNTUnderCSE'))
 	suite.addTest(TestCNT('test_retrieveCNTUnderCSE'))
 	suite.addTest(TestCNT('test_deleteCNTUnderCSE'))
-	unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	return result.testsRun, len(result.errors + result.failures)
 
+if __name__ == '__main__':
+	_, errors = run()
+	sys.exit(errors)

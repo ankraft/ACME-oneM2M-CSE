@@ -101,7 +101,7 @@ class TestCIN(unittest.TestCase):
 
 # More tests of la, ol etc in testCNT_CNI.py
 
-if __name__ == '__main__':
+def run():
 	suite = unittest.TestSuite()
 	suite.addTest(TestCIN('test_createCIN'))
 	suite.addTest(TestCIN('test_retrieveCIN'))
@@ -109,5 +109,9 @@ if __name__ == '__main__':
 	suite.addTest(TestCIN('test_updateCIN'))
 	suite.addTest(TestCIN('test_createCINUnderAE'))
 	suite.addTest(TestCIN('test_deleteCIN'))
-	unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	return result.testsRun, len(result.errors + result.failures)
 
+if __name__ == '__main__':
+	_, errors = run()
+	sys.exit(errors)

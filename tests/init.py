@@ -30,6 +30,8 @@ aeRN	= 'testAE'
 cntRN	= 'testCNT'
 cinRN	= 'testCIN'
 grpRN	= 'testGRP'
+fcntRN	= 'testFCNT'
+nodRN 	= 'testNOD'
 subRN	= 'testSUB'
 
 
@@ -38,7 +40,9 @@ cseURL 	= '%s%s' % (URL, CSERN)
 aeURL 	= '%s/%s' % (cseURL, aeRN)
 cntURL 	= '%s/%s' % (aeURL, cntRN)
 cinURL 	= '%s/%s' % (cntURL, cinRN)
+fcntURL	= '%s/%s' % (aeURL, fcntRN)
 grpURL 	= '%s/%s' % (aeURL, grpRN)
+nodURL 	= '%s/%s' % (cseURL, nodRN)
 subURL 	= '%s/%s' % (cntURL, subRN)
 
 

@@ -82,6 +82,8 @@ class TestAE(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/acpi'))
 		self.assertIsInstance(findXPath(r, 'm2m:ae/acpi'), list)
 		self.assertGreater(len(findXPath(r, 'm2m:ae/acpi')), 0)
+		self.assertIsNone(findXPath(r, 'm2m:ae/st'))
+
 
 
 	def test_updateAELbl(self):
@@ -90,7 +92,7 @@ class TestAE(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(aeURL, TestAE.originator, jsn)
 		self.assertEqual(rsc, C.rcUpdated)
-		r, rsc = RETRIEVE(aeURL, TestAE.originator)		# retzrieve updated ae again
+		r, rsc = RETRIEVE(aeURL, TestAE.originator)		# retrieve updated ae again
 		self.assertEqual(rsc, C.rcOK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'))
 		self.assertIsInstance(findXPath(r, 'm2m:ae/lbl'), list)
@@ -147,7 +149,7 @@ class TestAE(unittest.TestCase):
 			self.fail('Originator not in ACP:acr:acor')
 
 
-if __name__ == '__main__':
+def run():
 	suite = unittest.TestSuite()
 	suite.addTest(TestAE('test_createAE'))
 	suite.addTest(TestAE('test_createAEUnderAE'))
@@ -161,5 +163,9 @@ if __name__ == '__main__':
 	suite.addTest(TestAE('test_retrieveAEACP'))
 	suite.addTest(TestAE('test_deleteAEByUnknownOriginator'))
 	suite.addTest(TestAE('test_deleteAEByAssignedOriginator'))
-	unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	return result.testsRun, len(result.errors + result.failures)
 
+if __name__ == '__main__':
+	_, errors = run()
+	sys.exit(errors)

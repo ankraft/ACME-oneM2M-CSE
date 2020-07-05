@@ -53,12 +53,16 @@ class TestCSE(unittest.TestCase):
 		self.assertEqual(rsc, C.rcOperationNotAllowed)
 
 
-if __name__ == '__main__':
+def run():
 	suite = unittest.TestSuite()
 	suite.addTest(TestCSE('test_retrieveCSE'))
 	suite.addTest(TestCSE('test_retrieveCSEWithWrongOriginator'))
 	suite.addTest(TestCSE('test_attributesCSE'))
 	suite.addTest(TestCSE('test_deleteCSE'))
 	suite.addTest(TestCSE('test_updateCSE'))
-	unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	return result.testsRun, len(result.errors + result.failures)
 
+if __name__ == '__main__':
+	_, errors = run()
+	sys.exit(errors)

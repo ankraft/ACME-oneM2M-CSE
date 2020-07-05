@@ -90,6 +90,7 @@ class TestGRP(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/mid'))
 		self.assertIsInstance(findXPath(r, 'm2m:grp/mid'), list)
 		self.assertEqual(len(findXPath(r, 'm2m:grp/mid')), 2)
+		self.assertIsNone(findXPath(r, 'm2m:grp/st'))
 
 
 	def test_updateGRP(self):
@@ -259,7 +260,7 @@ class TestGRP(unittest.TestCase):
 		#TODO check GRP itself: members
 
 
-if __name__ == '__main__':
+def run():
 	suite = unittest.TestSuite()
 	suite.addTest(TestGRP('test_createGRP'))
 	suite.addTest(TestGRP('test_retrieveGRP'))
@@ -275,6 +276,9 @@ if __name__ == '__main__':
 	suite.addTest(TestGRP('test_deleteCNTviaFOPT'))
 	suite.addTest(TestGRP('test_deleteGRPByUnknownOriginator'))
 	suite.addTest(TestGRP('test_deleteGRPByAssignedOriginator'))
+	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	return result.testsRun, len(result.errors + result.failures)
 
-	unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
-
+if __name__ == '__main__':
+	_, errors = run()
+	sys.exit(errors)

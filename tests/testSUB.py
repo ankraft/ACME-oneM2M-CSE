@@ -162,16 +162,28 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(rsc, C.rcDeleted)
 
 
-# add cnt again 
+	def test_addCNTAgain(self):
+		jsn = 	{ 'm2m:cnt' : { 
+					'rn'  : cntRN
+				}}
+		TestSUB.cnt, rsc = CREATE(aeURL, TestSUB.originator, C.tCNT, jsn)
+		assert rsc == C.rcCreated, 'cannot create container'
+		TestSUB.cntRI = findXPath(TestSUB.cnt, 'm2m:cnt/ri')
 
-# remove sub with wrong originator
-# remove sub
+
+	def test_deleteSUBByUnknownOriginator(self):
+		_, rsc = DELETE(subURL, 'Cwrong')
+		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
+
+
+	def test_deleteSUBByAssignedOriginator(self):
+		_, rsc = DELETE(subURL, TestSUB.originator)
+		self.assertEqual(rsc, C.rcDeleted)
 
 
 # TODO expirationCounter
 
-
-if __name__ == '__main__':
+def run():
 	suite = unittest.TestSuite()
 	suite.addTest(TestSUB('test_createSUB'))
 	suite.addTest(TestSUB('test_retrieveSUB'))
@@ -182,6 +194,14 @@ if __name__ == '__main__':
 	suite.addTest(TestSUB('test_updateCNT'))
 	suite.addTest(TestSUB('test_addCIN2CNT'))
 	suite.addTest(TestSUB('test_removeCNT'))
-	unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	suite.addTest(TestSUB('test_addCNTAgain'))
+	suite.addTest(TestSUB('test_createSUB'))
+	suite.addTest(TestSUB('test_deleteSUBByUnknownOriginator'))
+	suite.addTest(TestSUB('test_deleteSUBByAssignedOriginator'))
+	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	return result.testsRun, len(result.errors + result.failures)
 
+if __name__ == '__main__':
+	_, errors = run()
+	sys.exit(errors)
 

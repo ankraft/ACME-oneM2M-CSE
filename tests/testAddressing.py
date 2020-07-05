@@ -93,8 +93,7 @@ class TestAddressing(unittest.TestCase):
 		self.assertEqual(rsc, C.rcOK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
 
-
-if __name__ == '__main__':
+def run():
 	suite = unittest.TestSuite()
 	suite.addTest(TestAddressing('test_cseRelativeStructured'))
 	suite.addTest(TestAddressing('test_cseRelativeUnstructured'))
@@ -102,7 +101,10 @@ if __name__ == '__main__':
 	suite.addTest(TestAddressing('test_spRelativeUnstructured'))
 	suite.addTest(TestAddressing('test_absoluteStructured'))
 	suite.addTest(TestAddressing('test_absoluteUnstructured'))
+	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	return result.testsRun, len(result.errors + result.failures)
 
-
-	unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+if __name__ == '__main__':
+	_, errors = run()
+	sys.exit(errors)
 
