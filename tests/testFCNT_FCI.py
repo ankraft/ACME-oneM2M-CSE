@@ -149,6 +149,7 @@ def run():
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 	return result.testsRun, len(result.errors + result.failures)
 
+
 if __name__ == '__main__':
 	_, errors = run()
 	sys.exit(errors)

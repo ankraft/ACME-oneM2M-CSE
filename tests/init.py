@@ -105,3 +105,17 @@ def findXPath(jsn : dict, element : str, default : Any = None) -> Any:
 			return default
 		data = data[paths[i]]
 	return data
+
+
+def setXPath(jsn: dict, element: str, value: Any, overwrite: bool = True) -> None:
+	paths = element.split("/")
+	ln = len(paths)
+	data = jsn
+	for i in range(0,ln-1):
+		if paths[i] not in data:
+			data[paths[i]] = {}
+		data = data[paths[i]]
+	if paths[ln-1] in data is not None and not overwrite:
+			return # don't overwrite
+	data[paths[ln-1]] = value
+	

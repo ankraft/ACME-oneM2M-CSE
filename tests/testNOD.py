@@ -13,7 +13,10 @@ sys.path.append('../acme')
 from Constants import Constants as C
 from init import *
 
-nodeID = 'urn:sn:1234'
+nodeID  = 'urn:sn:1234'
+nod2RN 	= 'test2NOD'
+nod2URL = '%s/%s' % (cseURL, nod2RN)
+
 
 class TestNOD(unittest.TestCase):
 
@@ -25,6 +28,7 @@ class TestNOD(unittest.TestCase):
 	def tearDownClass(cls):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
+		DELETE(nod2URL, ORIGINATOR)	# Just delete the Node 2 and everything below it. Ignore whether it exists or not
 
 
 	def test_createNOD(self):
@@ -92,17 +96,19 @@ class TestNOD(unittest.TestCase):
 		 	'srv'	: [ '3' ],
 		 	'nl' 	: TestNOD.nodeRI
 		}}
-		ae, rsc = CREATE(cseURL, 'C', C.tAE, jsn)
+		TestNOD.ae, rsc = CREATE(cseURL, 'C', C.tAE, jsn)
 		self.assertEqual(rsc, C.rcCreated)
-		self.assertIsNotNone(findXPath(ae, 'm2m:ae/nl'))
-		self.assertEqual(findXPath(ae, 'm2m:ae/nl'), TestNOD.nodeRI)
-		self.assertIsNotNone(findXPath(ae, 'm2m:ae/ri'))
-		TestNOD.aeRI = findXPath(ae, 'm2m:ae/ri')
+		self.assertIsNotNone(findXPath(TestNOD.ae, 'm2m:ae/nl'))
+		self.assertEqual(findXPath(TestNOD.ae, 'm2m:ae/nl'), TestNOD.nodeRI)
+		self.assertIsNotNone(findXPath(TestNOD.ae, 'm2m:ae/ri'))
+		self.assertIsNotNone(findXPath(TestNOD.ae, 'm2m:ae/aei'))
+		TestNOD.aeRI = findXPath(TestNOD.ae, 'm2m:ae/ri')
+		TestNOD.originator = findXPath(TestNOD.ae, 'm2m:ae/aei')
 
 		nod, rsc = RETRIEVE(nodURL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcOK)
 		self.assertIsNotNone(findXPath(nod, 'm2m:nod/hael'))
-		self.assertIn(findXPath(ae, 'm2m:ae/ri'), findXPath(nod, 'm2m:nod/hael'))	# ae.ri in nod.hael?
+		self.assertIn(findXPath(TestNOD.ae, 'm2m:ae/ri'), findXPath(nod, 'm2m:nod/hael'))	# ae.ri in nod.hael?
 
 
 	def test_deleteAEForNOD(self):
@@ -113,8 +119,57 @@ class TestNOD(unittest.TestCase):
 		self.assertEqual(rsc, C.rcOK)
 		self.assertIsNone(findXPath(nod, 'm2m:nod/hael'))	# should have been the only AE, so the attribute should now be removed
 
-# TODO create a second node and move the AE to that node. Check the NL and HAELs
-# TODO Delete second Node, check AE.nl
+
+	def test_moveAEToNOD2(self):
+		# create AE again
+		self.test_createAEForNOD()
+
+		# create second node
+		jsn = 	{ 'm2m:nod' : { 
+			'rn' 	: nod2RN,
+			'ni'	: 'second'
+		}}
+		nod2, rsc = CREATE(cseURL, ORIGINATOR, C.tNOD, jsn)
+		self.assertEqual(rsc, C.rcCreated)
+		self.assertIsNotNone(findXPath(nod2, 'm2m:nod/ri'))
+		self.assertEqual(findXPath(nod2, 'm2m:nod/rn'), nod2RN)
+		node2RI = findXPath(nod2, 'm2m:nod/ri')
+
+		# move AE to second NOD
+		jsn = 	{ 'm2m:ae' : { 
+			'nl' : node2RI
+		}}
+		r, rsc = UPDATE(aeURL, TestNOD.originator, jsn)
+		self.assertEqual(rsc, C.rcUpdated)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/nl'))
+		self.assertEqual(findXPath(r, 'm2m:ae/nl'), node2RI)
+
+		# Check first NOD
+		nod, rsc = RETRIEVE(nodURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertIsNone(findXPath(nod, 'm2m:nod/hael'))	# should have been the only AE, so the attribute should now be removed
+
+		# Check second NOD
+		nod2, rsc = RETRIEVE(nod2URL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertIsNotNone(findXPath(nod2, 'm2m:nod/hael')) 	
+		self.assertEqual(len(findXPath(nod2, 'm2m:nod/hael')), 1)
+		self.assertIn(TestNOD.aeRI, findXPath(nod2, 'm2m:nod/hael'))
+
+
+	def test_deleteNOD2(self):
+		_, rsc = DELETE(nod2URL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcDeleted)
+
+		# Check AE
+		ae, rsc = RETRIEVE(aeURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertIsNone(findXPath(ae, 'm2m:ae/nl'))	# should have been the only AE, so the attribute should now be removed
+
+
+	def test_deleteNOD(self):
+		_, rsc = DELETE(nodURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcDeleted)
 
 
 def run():
@@ -127,9 +182,12 @@ def run():
 	suite.addTest(TestNOD('test_updateNODUnknownAttribute'))
 	suite.addTest(TestNOD('test_createAEForNOD'))
 	suite.addTest(TestNOD('test_deleteAEForNOD'))
-
+	suite.addTest(TestNOD('test_moveAEToNOD2'))
+	suite.addTest(TestNOD('test_deleteNOD2'))
+	suite.addTest(TestNOD('test_deleteNOD'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 	return result.testsRun, len(result.errors + result.failures)
+
 
 if __name__ == '__main__':
 	_, errors = run()
