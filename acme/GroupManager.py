@@ -202,11 +202,11 @@ class GroupManager(object):
 			items = []
 			for r in result:
 				if r[0] is not None and isinstance(r[0], Resource):
-					res, rsc, _ = r
+					resource, rsc, _ = r
 					item = 	{ 'rsc' : rsc, 
 							  'rqi' : rqi,
-							  'pc'  : res.asJSON(),
-							  'to'  : res.__srn__,
+							  'pc'  : resource.asJSON() if isinstance(resource, Resource) else resource, # in case 'resource' is a dict
+							  'to'  : resource[Resource._srn],
 							  'rvi'	: '3'	# TODO constant?
 							}
 				else:	# e.g. when deleting
