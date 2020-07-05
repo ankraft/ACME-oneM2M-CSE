@@ -278,9 +278,17 @@ class Resource(object):
 		return key in self.json
 
 
-	def delAttribute(self, key: str) -> None:
+	def delAttribute(self, key: str, setNone: bool = True) -> None:
+		""" Delete the attribute 'key' from the resource. By default the attribute
+			is not deleted but set to 'None' and are removed correctly in the 
+			DB later. If 'setNone' is False, then the attribute 'key' is 
+			really deleted from the resource.
+		"""
 		if self.hasAttribute(key):
-			del self.json[key]
+			if setNone:
+				self.json[key] = None
+			else:
+				del self.json[key]
 
 
 	def __setitem__(self, key: str, value: Any) -> None:

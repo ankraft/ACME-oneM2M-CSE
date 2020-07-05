@@ -46,8 +46,10 @@ class AE(Resource):
 			return res
 
 		self.normalizeURIAttribute('poa')
-			
-		# Update the hcl attribute in the hosting node (similar to csebase)
+
+		# Update the nl attribute in the hosting node (similar to csebase) in case 
+		# the AE is now on a different node. This shouldn't be happen in reality,
+		# but technically it is allowed.
 		nl = self['nl']
 		_nl_ = self.__node__
 		if nl is not None or _nl_ is not None:
@@ -55,13 +57,16 @@ class AE(Resource):
 				ri = self['ri']
 				# Remove from old node first
 				if _nl_ is not None:
-					node, _, _ = CSE.dispatcher.retrieveResource(_nl_)
-					if node is not None:
-						hael = node['hael']
-						if hael is not None and isinstance(hael, list) and ri in hael:
-							hael.remove(ri)
-							node['hael'] = hael
-							node.dbUpdate()
+					self._removeAEfromNOD(_nl_, ri)
+
+					# node, _, _ = CSE.dispatcher.retrieveResource(_nl_)
+					# if node is not None:
+					# 	hael = node['hael']
+					# 	if hael is not None and isinstance(hael, list) and ri in hael:
+					# 		hael.remove(ri)
+					# 		node['hael'] = hael
+					# 		node.dbUpdate()
+
 				self[Resource._node] = nl
 				# Add to new node
 				node, _, _ = CSE.dispatcher.retrieveResource(nl) # new node
@@ -77,3 +82,26 @@ class AE(Resource):
 			self[Resource._node] = nl
 
 		return True, C.rcOK, None
+
+
+	def deactivate(self, originator : str) -> None:
+		super().deactivate(originator)
+		if (nl := self['nl']) is None:
+			return
+		self._removeAEfromNOD(nl, self['ri'])
+
+
+	def _removeAEfromNOD(self, nodeRi: str, ri: str) -> None:
+		""" Remove AE from hosting Node. """
+
+		node, _, _ = CSE.dispatcher.retrieveResource(nodeRi)
+		if node is not None:
+			hael = node['hael']
+			if hael is not None and isinstance(hael, list) and ri in hael:
+				hael.remove(ri)
+				if len(hael) == 0:
+					node.delAttribute('hael')
+				else:
+					node['hael'] = hael
+				node.dbUpdate()
+
