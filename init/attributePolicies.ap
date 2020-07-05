@@ -9,7 +9,7 @@ hd:color,green,nonNegInteger,car1,M,M,OA
 hd:color,blue,nonNegInteger,car1,M,M,OA
 
 # ModuleClass: Temperature
-hd:tempe,curTe,float,car1,NP,NP,OA
+hd:tempe,curTe,float,car1,O,O,OA
 hd:tempe,tarTe,float,car1,O,O,OA
 hd:tempe,unit,positiveInteger,car01,O,O,OA
 hd:tempe,minVe,float,car01,O,O,OA
