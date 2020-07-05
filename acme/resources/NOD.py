@@ -36,3 +36,26 @@ class NOD(Resource):
 									[ C.tMGMTOBJ,
 									  C.tSUB
 									])
+
+
+	def deactivate(self, originator : str) -> None:
+		super().deactivate(originator)
+
+		# Remove self from all hosted AE's (their node links)
+		if (hael := self['hael']) is None:
+			return
+		ri = self['ri']
+		for ae in self['hael']:
+			self._removeNODfromAE(ae, ri)
+
+
+	def _removeNODfromAE(self, aeRI: str, ri: str) -> None:
+		""" Remove NOD.ri from AE node link. """
+
+		ae, _, _ = CSE.dispatcher.retrieveResource(aeRI)
+		if ae is not None:
+			nl = ae['nl']
+			if nl is not None and isinstance(nl, str) and ri == nl:
+				ae.delAttribute('nl')
+				ae.dbUpdate()
+
