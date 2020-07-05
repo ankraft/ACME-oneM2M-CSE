@@ -257,8 +257,10 @@ class Validator(object):
 
 		# if tpe is not None and not tpe.startswith("m2m:"):
 		# 	pureJson = jsn
-		attributePolicies = self._checkAdditionalAttributes(tpe, attributePolicies)
-
+		if (attributePolicies := self._addAdditionalAttributes(tpe, attributePolicies)) is None:
+			err = 'Unknown resource type: %s' % tpe
+			Logging.logWarn(err)
+			return False, C.rcBadRequest, err
 		#Logging.logDebug(attributePolicies.items())
 		for r in pureJson.keys():
 			if r not in attributePolicies.keys():
@@ -366,9 +368,14 @@ class Validator(object):
 
 
 
-	def _checkAdditionalAttributes(self, tpe: str, attributePolicies: dict) -> dict:
-		if tpe is not None and not tpe.startswith('m2m:') and tpe in self.additionalAttributes:
-			attributePolicies.update(self.additionalAttributes.get(tpe))
+	def _addAdditionalAttributes(self, tpe: str, attributePolicies: dict) -> dict:
+		if tpe is not None and not tpe.startswith('m2m:'):
+			if tpe in self.additionalAttributes:
+				newap = attributePolicies.copy()
+				newap.update(self.additionalAttributes.get(tpe))
+				return newap
+			else:
+				return None # tpe not defined
 		return attributePolicies
 
 
