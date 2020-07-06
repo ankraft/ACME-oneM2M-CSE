@@ -155,6 +155,7 @@ class Importer(object):
 
 	_nameCardinalityMappings = {
 		'car1'					: CAR.car1,
+		'car1L'					: CAR.car1L,
 		'car01'					: CAR.car01,
 		'car01l'				: CAR.car01L,
 	}

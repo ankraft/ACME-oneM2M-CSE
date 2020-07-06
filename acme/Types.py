@@ -29,6 +29,7 @@ class BasicType(IntEnum):
 class Cardinality(IntEnum):
 	""" Resource attribute cardinalities """
 	car1			= auto()
+	car1L			= auto()
 	car01			= auto()
 	car01L			= auto()
 
