@@ -7,9 +7,10 @@
 #	Configuration & helper functions for unit tests
 #
 
-import requests, random, sys, json
+import requests, random, sys, json, time
 from typing import Any, Callable
-
+from threading import Thread
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
 SERVER				= 'http://localhost:8080'
 ROOTPATH			= '/'
@@ -18,7 +19,9 @@ CSEID				= '/id-in'
 SPID 				= 'sp-in'
 ORIGINATOR			= 'CAdmin'
 
-NOTIFICATIONSERVER	= 'http://localhost:9999'
+
+NOTIFICATIONPORT 	= 9990
+NOTIFICATIONSERVER	= 'http://localhost:%d' % NOTIFICATIONPORT
 NOTIFICATIONSERVERW	= 'http://localhost:6666'
 
 
@@ -89,12 +92,61 @@ def sendRequest(method : Callable , url : str, originator : str, ty : int = None
 
 
 #
+#	Notification Server
+#
+
+class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+		
+	def do_POST(self):
+
+		# Construct return header
+		# Always acknowledge the verification requests
+		self.send_response(200)
+		self.send_header('X-M2M-RSC', '2000')
+		self.end_headers()
+
+		# Get headers and content data
+		length = int(self.headers['Content-Length'])
+		contentType = self.headers['Content-Type']
+		post_data = self.rfile.read(length)
+
+	def log_message(self, format, *args):
+		pass
+
+
+keepNotificationServerRunning = True
+
+def runNotificationServer():
+	global keepNotificationServerRunning
+	httpd = HTTPServer(('', NOTIFICATIONPORT), SimpleHTTPRequestHandler)
+	keepNotificationServerRunning = True
+	while keepNotificationServerRunning:
+		httpd.handle_request()
+
+
+def startNotificationServer():
+	notificationThread = Thread(target=runNotificationServer)
+	notificationThread.start()
+	time.sleep(0.5)	# give the server a moment to start
+
+
+def stopNotificationServer():
+	global keepNotificationServerRunning
+	keepNotificationServerRunning = False
+	requests.post(NOTIFICATIONSERVER)	# send empty/termination request 
+
+
+
+#
 #	ID
 #
 
 def uniqueID() -> str:
 	return str(random.randint(1,sys.maxsize))
 
+#
+#	Utilities
+#
 
 # find a structured element in JSON
 def findXPath(jsn : dict, element : str, default : Any = None) -> Any:
@@ -118,4 +170,5 @@ def setXPath(jsn: dict, element: str, value: Any, overwrite: bool = True) -> Non
 	if paths[ln-1] in data is not None and not overwrite:
 			return # don't overwrite
 	data[paths[ln-1]] = value
+
 	

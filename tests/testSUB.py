@@ -18,6 +18,9 @@ class TestSUB(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls):
+		# Start notification server
+		startNotificationServer()
+
 		# look for notification server
 		hasNotificationServer = False
 		try:
@@ -47,9 +50,13 @@ class TestSUB(unittest.TestCase):
 		cls.cntRI = findXPath(cls.cnt, 'm2m:cnt/ri')
 
 
+
+
 	@classmethod
 	def tearDownClass(cls):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		stopNotificationServer()
+
 		
 
 	def test_createSUB(self):
