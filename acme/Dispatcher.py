@@ -243,10 +243,10 @@ class Dispatcher(object):
 		# Discover the resources
 		discoveredResources = self._discoverResources(rootResource, originator, level, fo, allLen, dcrs=dcrs, conditions=conditions, attributes=attributes)
 
-		# sort resources by type and then by lowercase rn
-		if Configuration.get('cse.sortDiscoveredResources'):
-			discoveredResources.sort(key=lambda x:(x.ty, x.rn.lower()))
-
+		# NOTE: this list contains all results in the order they could be found while
+		#		walking the resource tree.
+		#		DON'T CHANGE THE ORDER. DON'T SORT.
+		#		Because otherwise the tree cannot be correctly re-constructed otherwise
 		return discoveredResources, C.rcOK, None
 
 		# return CSE.storage.discoverResources(rootResource, handling, conditions, attributes, fo), C.rcOK
@@ -1016,14 +1016,14 @@ class Dispatcher(object):
 	# 	return result
 
 	# Recursively walk the results and build a sub-resource tree for each resource type
-	def _resourceTreeJSON(self, rs: List[Resource], targetResource: Union[Resource, dict]) -> List[Resource]:
+	def _resourceTreeJSON(self, resources: List[Resource], targetResource: Union[Resource, dict]) -> List[Resource]:
 		rri = targetResource['ri'] if 'ri' in targetResource else None
 		while True:		# go multiple times per level through the resources until the list is empty
 			result = []
 			handledTy = None
 			idx = 0
-			while idx < len(rs):
-				r = rs[idx]
+			while idx < len(resources):
+				r = resources[idx]
 
 				if rri is not None and r.pi != rri:	# only direct children
 					idx += 1
@@ -1035,18 +1035,21 @@ class Dispatcher(object):
 					handledTy = r.ty					# this round we check this type
 				if r.ty == handledTy:					# handle only resources of the currently handled type
 					result.append(r)					# append the found resource 
-					rs.remove(r)						# remove resource from the original list (greedy), but don't increment the idx
-					rs = self._resourceTreeJSON(rs, r)	# check recursively whether this resource has children
+					resources.remove(r)						# remove resource from the original list (greedy), but don't increment the idx
+					resources = self._resourceTreeJSON(resources, r)	# check recursively whether this resource has children
 				else:
 					idx += 1							# next resource
 
 			# add all found resources under the same type tag to the rootResource
 			if len(result) > 0:
+				# sort resources by type and then by lowercase rn
+				if Configuration.get('cse.sortDiscoveredResources'):
+					result.sort(key=lambda x:(x.ty, x.rn.lower()))
 				targetResource[result[0].tpe] = [r.asJSON(embedded=False) for r in result]
 				# TODO not all child resources are lists [...] Handle just to-1 relations
 			else:
 				break # end of list, leave while loop
-		return rs # Return the remaining list
+		return resources # Return the remaining list
 
 
 	def _resourceTreeReferences(self, resources: List[Resource], targetResource: Union[Resource, dict], drt: int) -> Union[Resource, dict]:
@@ -1059,6 +1062,11 @@ class Dispatcher(object):
 		if len(resources) == 0:
 			return targetResource
 		t = []
+
+		# sort resources by type and then by lowercase rn
+		if Configuration.get('cse.sortDiscoveredResources'):
+			resources.sort(key=lambda x:(x.ty, x.rn.lower()))
+		
 		for r in resources:
 			if r.ty in [ C.tCNT_OL, C.tCNT_LA, C.tFCNT_OL, C.tFCNT_LA ]:	# Skip latest, oldest virtual resources
 				continue
