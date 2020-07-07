@@ -15,7 +15,7 @@ The filenames for these resources must be:
 - [csebase.json](../init/csebase.json) for the CSEBase.
 - [acp.admin.json](../init/acp.admin.json) for the admin ACP.
 - [acp.default.json](../init/acp.default.json) for the default ACP.
-- [acp.csebaseAccess.json](../init/acp.csebaseAccess.json) for granting AE's and remote CSE's access to the CSEBase.
+- [acp.csebaseAccess.json](../init/acp.csebaseAccess.json) for granting AE's and remote CSE's access to the CSEBase. This ACP is dynamically filled with permissions when an AE or remote CSE registers.
 
 ### Importing Other Resources
 
@@ -68,9 +68,9 @@ The format is basically a list of comma separated values with seven values per l
 # !!! Don't change the first line !!!
 
 # ModuleClass: Colour
-hd:color,red,nonNegInteger,car1,M,M,OA
-hd:color,green,nonNegInteger,car1,M,M,OA
-hd:color,blue,nonNegInteger,car1,M,M,OA
+hd:color,red,nonNegInteger,car1,O,O,OA
+hd:color,green,nonNegInteger,car1,O,O,OA
+hd:color,blue,nonNegInteger,car1,O,O,OA
 ```
 
 **Field Format**
@@ -91,6 +91,7 @@ hd:color,blue,nonNegInteger,car1,M,M,OA
 	-	geoCoordinates
 -  **cardinality**: The multiplicity of the attribute. This must be one of the following values:
 	- car1: multiplicity of 1
+	- car1L: multiplicity of 1, and this is a list of values.
 	- car01: multiplicity of 0 or 1
 	- car01L: multiplicity of 0 or 1, and this is a list of values
 - **CREATE optionality**: This field specifies whether this attribute must be provided etc during a CREATE request:

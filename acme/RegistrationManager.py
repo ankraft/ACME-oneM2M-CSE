@@ -255,12 +255,18 @@ class RegistrationManager(object):
 
 
 	def _addToAccessCSBaseACP(self, originator: str) -> None:
+		""" Add an originator to the ACP that allows at least RETRIEVE access
+			to any registered CSE and AE.
+		"""
 		if (accessACP := CSE.dispatcher.retrieveResource(Configuration.get('cse.security.csebaseAccessACPI')))[0] is not None:
 			accessACP[0].addPermission([originator], C.permRETRIEVE)
 			accessACP[0].dbUpdate()
 
 
 	def _removeFromAccessCSEBaseACP(self, originator: str) -> None:
+		"""	Remove an originator from the ACP that allows RETRIEVE access to
+			any registered CSE and AE.
+		"""
 		if (accessACP := CSE.dispatcher.retrieveResource(Configuration.get('cse.security.csebaseAccessACPI')))[0] is not None:
 			accessACP[0].removePermissionForOriginator(originator)
 			accessACP[0].dbUpdate()
