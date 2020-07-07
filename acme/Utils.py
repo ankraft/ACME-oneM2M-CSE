@@ -109,6 +109,7 @@ def toISO8601Date(ts: Union[float, datetime.datetime]) -> str:
 	return ts.strftime('%Y%m%dT%H%M%S,%f')
 
 
+
 def structuredPath(resource: Resource.Resource) -> str:
 	""" Determine the structured path of a resource. """
 	rn = resource.rn

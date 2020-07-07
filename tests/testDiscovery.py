@@ -69,8 +69,9 @@ class TestDiscovery(unittest.TestCase):
 		self.assertEqual(rsc, C.rcOK)
 		self.assertIsNotNone(findXPath(r, 'm2m:cnt'))
 		self.assertEqual(len(findXPath(r, 'm2m:cnt')), 2)
-		self.assertEqual(findXPath(r, 'm2m:cnt/{0}/rn'), cntRN)
-		self.assertEqual(findXPath(r, 'm2m:cnt/{1}/rn'), cnt2RN)
+		self.assertNotEqual(findXPath(r, 'm2m:cnt/{0}/rn'), findXPath(r, 'm2m:cnt/{1}/rn'))
+		self.assertIn(findXPath(r, 'm2m:cnt/{0}/rn'), (cntRN, cnt2RN))
+		self.assertIn(findXPath(r, 'm2m:cnt/{1}/rn'), (cntRN, cnt2RN))
 
 
 	def test_discoverCNTUnderCSE(self):
@@ -78,8 +79,9 @@ class TestDiscovery(unittest.TestCase):
 		self.assertEqual(rsc, C.rcOK)
 		self.assertIsNotNone(findXPath(r, 'm2m:cnt'))
 		self.assertEqual(len(findXPath(r, 'm2m:cnt')), 2)
-		self.assertEqual(findXPath(r, 'm2m:cnt/{0}/rn'), cntRN)
-		self.assertEqual(findXPath(r, 'm2m:cnt/{1}/rn'), cnt2RN)
+		self.assertNotEqual(findXPath(r, 'm2m:cnt/{0}/rn'), findXPath(r, 'm2m:cnt/{1}/rn'))
+		self.assertIn(findXPath(r, 'm2m:cnt/{0}/rn'), (cntRN, cnt2RN))
+		self.assertIn(findXPath(r, 'm2m:cnt/{1}/rn'), (cntRN, cnt2RN))
 
 
 	def test_discoverCIN(self):
@@ -94,8 +96,10 @@ class TestDiscovery(unittest.TestCase):
 		self.assertEqual(rsc, C.rcOK)
 		self.assertIsNotNone(findXPath(r, 'm2m:cin'))
 		self.assertEqual(len(findXPath(r, 'm2m:cin')), 2)
+		self.assertNotEqual(findXPath(r, 'm2m:cin/{0}/rn'), findXPath(r, 'm2m:cnt/{1}/rn'))
 		self.assertEqual(findXPath(r, 'm2m:cin/{0}/lbl/{0}'), 'tag:0')
 		self.assertEqual(findXPath(r, 'm2m:cin/{1}/lbl/{0}'), 'tag:0')
+
 
 
 # test crb,cra - ct

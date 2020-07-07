@@ -147,6 +147,11 @@ class Resource(object):
 		self.setAttribute(self._originator, originator, overwrite=False)
 		self.setAttribute(self._rtype, self.tpe, overwrite=False) 
 
+		# Check announcement
+		if self['at'] is not None:
+			CSE.announce.announceResource(self)
+			
+
 		return True, C.rcOK, None
 
 
