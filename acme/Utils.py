@@ -315,14 +315,27 @@ def pureResource(jsn: dict) -> Tuple[dict, str]:
 	return jsn, None
 
 
-# find a structured element in JSON
-def findXPath(jsn: Union[dict, Resource.Resource], element: str, default: Any = None) -> Any:
+
+decimalMatch = re.compile('{(\d+)}')
+def findXPath(jsn : dict, element : str, default : Any = None) -> Any:
+	""" Find a structured element in JSON.
+		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
+	"""
+
 	paths = element.split("/")
 	data = jsn
 	for i in range(0,len(paths)):
-		if paths[i] not in data:
+		if len(paths[i]) == 0:	# return if there is an empty path element
 			return default
-		data = data[paths[i]]
+		elif (m := decimalMatch.search(paths[i])) is not None:	# Match array index {i}
+			idx = int(m.group(1))
+			if not isinstance(data, list) or idx >= len(data):	# Check idx within range of list
+				return default
+			data = data[idx]
+		elif paths[i] not in data:	# if key not in dict
+			return default
+		else:
+			data = data[paths[i]]	# found data for the next level down
 	return data
 
 

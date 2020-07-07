@@ -49,14 +49,13 @@ class AEBase(AppBase):
 
 
 		# assign as originator the assigned aei attribute
-
-		self.originator = Utils.findXPath(self.ae, "aei") if self.ae is not None else None
+		self.originator = self.ae.aei if self.ae is not None else None
 
 		# Store updated application data
 		self.setAppData('_originator', self.originator)
 
 		# assign as acpi to use the first assigned acpi
-		self.acpi = Utils.findXPath(self.ae, "acpi")[0] if self.ae is not None else None
+		self.acpi = self.ae.acpi[0] if self.ae is not None else None
 
 
 	def shutdown(self) -> None:

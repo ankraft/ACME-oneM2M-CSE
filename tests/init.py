@@ -7,7 +7,7 @@
 #	Configuration & helper functions for unit tests
 #
 
-import requests, random, sys, json, time
+import requests, random, sys, json, re, time
 from typing import Any, Callable
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -149,13 +149,22 @@ def uniqueID() -> str:
 #
 
 # find a structured element in JSON
+decimalMatch = re.compile('{(\d+)}')
 def findXPath(jsn : dict, element : str, default : Any = None) -> Any:
 	paths = element.split("/")
 	data = jsn
 	for i in range(0,len(paths)):
-		if paths[i] not in data:
+		if len(paths[i]) == 0:	# return if there is an empty path element
 			return default
-		data = data[paths[i]]
+		elif (m := decimalMatch.search(paths[i])) is not None:	# Match array index {i}
+			idx = int(m.group(1))
+			if not isinstance(data, list) or idx >= len(data):	# Check idx within range of list
+				return default
+			data = data[idx]
+		elif paths[i] not in data:	# if key not in dict
+			return default
+		else:
+			data = data[paths[i]]	# found data for the next level down
 	return data
 
 
