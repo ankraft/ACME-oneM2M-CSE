@@ -8,8 +8,8 @@ from rich.table import Column, Table
 # testTransferRequests.py
 # testRCN.py
 # testDiscovery.py
+# testMgmt objs
 
-# spring_green2
 if __name__ == '__main__':
 	console       = Console()
 	totalErrors   = 0
