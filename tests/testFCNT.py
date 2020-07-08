@@ -11,6 +11,7 @@ import unittest, sys
 import requests
 sys.path.append('../acme')
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from init import *
 
 CND = 'org.onem2m.home.moduleclass.temperature'
@@ -26,7 +27,7 @@ class TestFCNT(unittest.TestCase):
 					'rr': False,
 					'srv': [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', C.tAE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
 		assert rsc == C.rcCreated, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
@@ -48,7 +49,7 @@ class TestFCNT(unittest.TestCase):
 					'maxVe' : 100.0,
 					'steVe'	: 0.5
 				}}
-		r, rsc = CREATE(aeURL, TestFCNT.originator, C.tFCNT, jsn)
+		r, rsc = CREATE(aeURL, TestFCNT.originator, T.FCNT, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 
 
@@ -65,7 +66,7 @@ class TestFCNT(unittest.TestCase):
 	def test_attributesFCNT(self):
 		r, rsc = RETRIEVE(fcntURL, TestFCNT.originator)
 		self.assertEqual(rsc, C.rcOK)
-		self.assertEqual(findXPath(r, 'hd:tempe/ty'), C.tFCNT)
+		self.assertEqual(findXPath(r, 'hd:tempe/ty'), T.FCNT)
 		self.assertEqual(findXPath(r, 'hd:tempe/pi'), findXPath(TestFCNT.ae,'m2m:ae/ri'))
 		self.assertEqual(findXPath(r, 'hd:tempe/rn'), fcntRN)
 		self.assertIsNotNone(findXPath(r, 'hd:tempe/ct'))
@@ -128,7 +129,7 @@ class TestFCNT(unittest.TestCase):
 					'cnd' 	: 'unknown', 
 					'attr'	: 'aValuealue',
 				}}
-		r, rsc = CREATE(aeURL, TestFCNT.originator, C.tFCNT, jsn)
+		r, rsc = CREATE(aeURL, TestFCNT.originator, T.FCNT, jsn)
 		self.assertEqual(rsc, C.rcBadRequest)
 
 
@@ -136,7 +137,7 @@ class TestFCNT(unittest.TestCase):
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN
 				}}
-		r, rsc = CREATE(fcntURL, TestFCNT.originator, C.tCNT, jsn)
+		r, rsc = CREATE(fcntURL, TestFCNT.originator, T.CNT, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 
 
@@ -150,7 +151,7 @@ class TestFCNT(unittest.TestCase):
 					'cnd' 	: CND, 
 					'rn' : fcntRN,
 				}}
-		r, rsc = CREATE(fcntURL, TestFCNT.originator, C.tFCNT, jsn)
+		r, rsc = CREATE(fcntURL, TestFCNT.originator, T.FCNT, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 
 

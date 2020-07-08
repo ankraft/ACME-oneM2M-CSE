@@ -8,6 +8,7 @@
 #
 
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from Validator import constructPolicy
 import Utils
 from .Resource import *
@@ -23,7 +24,7 @@ attributePolicies = constructPolicy([
 class AE(Resource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(C.tsAE, jsn, pi, C.tAE, create=create, attributePolicies=attributePolicies)
+		super().__init__(T.AE, jsn, pi, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('aei', Utils.uniqueAEI(), overwrite=False)
@@ -33,11 +34,11 @@ class AE(Resource):
 	# Enable check for allowed sub-resources
 	def canHaveChild(self, resource: Resource) -> bool:
 		return super()._canHaveChild(resource,	
-									 [ C.tACP,
-									   C.tCNT,
-									   C.tFCNT,
-									   C.tGRP,
-									   C.tSUB
+									 [ T.ACP,
+									   T.CNT,
+									   T.FCNT,
+									   T.GRP,
+									   T.SUB
 									 ])
 
 
@@ -55,19 +56,12 @@ class AE(Resource):
 		if nl is not None or _nl_ is not None:
 			if nl != _nl_:	# if different node
 				ri = self['ri']
+
 				# Remove from old node first
 				if _nl_ is not None:
 					self._removeAEfromNOD(_nl_, ri)
-
-					# node, _, _ = CSE.dispatcher.retrieveResource(_nl_)
-					# if node is not None:
-					# 	hael = node['hael']
-					# 	if hael is not None and isinstance(hael, list) and ri in hael:
-					# 		hael.remove(ri)
-					# 		node['hael'] = hael
-					# 		node.dbUpdate()
-
 				self[Resource._node] = nl
+
 				# Add to new node
 				node, _, _ = CSE.dispatcher.retrieveResource(nl) # new node
 				if node is not None:

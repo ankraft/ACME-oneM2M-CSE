@@ -10,6 +10,7 @@
 import unittest, sys
 sys.path.append('../acme')
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from init import *
 
 
@@ -24,14 +25,14 @@ class TestCNT_CIN(unittest.TestCase):
 				 	'rr'  : False,
 				 	'srv' : [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', C.tAE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
 		assert rsc == C.rcCreated, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN,
 					'mni' : 3
 				}}
-		cls.cnt, rsc = CREATE(aeURL, cls.originator, C.tCNT, jsn)
+		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
 		assert rsc == C.rcCreated, 'cannot create container'
 		assert findXPath(cls.cnt, 'm2m:cnt/mni') == 3, 'mni is not correct'
 
@@ -49,7 +50,7 @@ class TestCNT_CIN(unittest.TestCase):
 					'cnf' : 'a',
 					'con' : 'aValue'
 				}}
-		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, C.tCIN, jsn)
+		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 		self.assertIsNotNone(r)
 		self.assertIsNotNone(findXPath(r, 'm2m:cin/ri'))
@@ -68,7 +69,7 @@ class TestCNT_CIN(unittest.TestCase):
 					'cnf' : 'a',
 					'con' : 'bValue'
 				}}
-		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, C.tCIN, jsn)
+		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'bValue')
 
@@ -82,7 +83,7 @@ class TestCNT_CIN(unittest.TestCase):
 					'cnf' : 'a',
 					'con' : 'cValue'
 				}}
-		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, C.tCIN, jsn)
+		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'cValue')
 
@@ -97,7 +98,7 @@ class TestCNT_CIN(unittest.TestCase):
 					'cnf' : 'a',
 					'con' : 'dValue'
 				}}
-		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, C.tCIN, jsn)
+		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'dValue')
 
@@ -112,7 +113,7 @@ class TestCNT_CIN(unittest.TestCase):
 		r, rsc = RETRIEVE('%s/la' % cntURL, TestCNT_CIN.originator)
 		self.assertEqual(rsc, C.rcOK)
 		self.assertIsNotNone(r)
-		self.assertEqual(findXPath(r, 'm2m:cin/ty'), C.tCIN)
+		self.assertEqual(findXPath(r, 'm2m:cin/ty'), T.CIN)
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'dValue')
 
 
@@ -120,7 +121,7 @@ class TestCNT_CIN(unittest.TestCase):
 		r, rsc = RETRIEVE('%s/ol' % cntURL, TestCNT_CIN.originator)
 		self.assertEqual(rsc, C.rcOK)
 		self.assertIsNotNone(r)
-		self.assertEqual(findXPath(r, 'm2m:cin/ty'), C.tCIN)
+		self.assertEqual(findXPath(r, 'm2m:cin/ty'), T.CIN)
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'bValue')
 
 

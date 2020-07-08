@@ -10,6 +10,7 @@
 import unittest, sys
 sys.path.append('../acme')
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from init import *
 
 
@@ -24,13 +25,13 @@ class TestCIN(unittest.TestCase):
 				 	'rr'  : False,
 				 	'srv' : [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', C.tAE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
 		assert rsc == C.rcCreated, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
 				}}
-		cls.cnt, rsc = CREATE(aeURL, cls.originator, C.tCNT, jsn)
+		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
 		assert rsc == C.rcCreated, 'cannot create container'
 
 
@@ -48,7 +49,7 @@ class TestCIN(unittest.TestCase):
 					'cnf' : 'a',
 					'con' : 'AnyValue'
 				}}
-		r, rsc = CREATE(cntURL, TestCIN.originator, C.tCNT, jsn)
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CNT, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 
 
@@ -62,7 +63,7 @@ class TestCIN(unittest.TestCase):
 		self.assertEqual(rsc, C.rcOK)
 
 		# TEST attributess
-		self.assertEqual(findXPath(r, 'm2m:cin/ty'), C.tCIN)
+		self.assertEqual(findXPath(r, 'm2m:cin/ty'), T.CIN)
 		self.assertEqual(findXPath(r, 'm2m:cin/pi'), findXPath(TestCIN.cnt,'m2m:cnt/ri'))
 		self.assertEqual(findXPath(r, 'm2m:cin/rn'), cinRN)
 		self.assertIsNotNone(findXPath(r, 'm2m:cin/ct'))
@@ -91,7 +92,7 @@ class TestCIN(unittest.TestCase):
 					'cnf' : 'a',
 					'con' : 'AnyValue'
 				}}
-		r, rsc = CREATE(aeURL, TestCIN.originator, C.tCNT, jsn)
+		r, rsc = CREATE(aeURL, TestCIN.originator, T.CNT, jsn)
 		self.assertEqual(rsc, C.rcInvalidChildResourceType)
 
 

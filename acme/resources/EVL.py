@@ -8,7 +8,7 @@
 #
 
 from .MgmtObj import *
-from Constants import Constants as C
+from Types import ResourceTypes as T
 from Validator import constructPolicy
 import Utils
 
@@ -38,7 +38,7 @@ defaultLogStatus = lgstUnknown
 class EVL(MgmtObj):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(jsn, pi, C.tsEVL, C.mgdEVL, create=create, attributePolicies=attributePolicies)
+		super().__init__(jsn, pi, mgd=T.EVL, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('lgt', defaultLogTypeId, overwrite=False)

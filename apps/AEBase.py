@@ -12,7 +12,8 @@ from typing import Any
 from AppBase import AppBase
 from NodeBase import NodeBase
 from Configuration import Configuration
-from Constants import Constants as C
+from Types import ResourceTypes as T
+
 import CSE, Utils
 import json
 
@@ -36,7 +37,7 @@ class AEBase(AppBase):
 
 		# Get or create the AE resource
 		self.ae = self.retrieveCreate(	srn=self.srn,
-										jsn={ C.tsAE : {
+										jsn={ T.AE.tpe() : {
 											'rn' : self.rn,
 											'api' : api,
 											'nl' : self.aeNode.node.ri if self.aeNode.node is not None else None,
@@ -45,7 +46,7 @@ class AEBase(AppBase):
 											'srv' : [ "3", "4" ]
 											}
 										},
-										ty=C.tAE)
+										ty=T.AE)
 
 
 		# assign as originator the assigned aei attribute

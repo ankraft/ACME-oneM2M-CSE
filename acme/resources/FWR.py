@@ -8,7 +8,7 @@
 #
 
 from .MgmtObj import *
-from Constants import Constants as C
+from Types import ResourceTypes as T
 from Validator import constructPolicy
 import Utils
 
@@ -34,7 +34,7 @@ defaultUDS = { 'acn' : '', 'sus' : statusUninitialized }
 class FWR(MgmtObj):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(jsn, pi, C.tsFWR, C.mgdFWR, create=create, attributePolicies=attributePolicies)
+		super().__init__(jsn, pi, mgd=T.FWR, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('vr', defaultVersion, overwrite=False)

@@ -345,7 +345,7 @@ class Storage(object):
 # 		return False
 
 # 	# Ignore virtual resources TODO: correct?
-# 	# if (ty := r.get('ty')) and ty in C.tVirtualResources:
+# 	# if (ty := r.get('ty')) and ty in C.virtualResources:
 # 		# return False
 # 	ty = r.get('ty')
 

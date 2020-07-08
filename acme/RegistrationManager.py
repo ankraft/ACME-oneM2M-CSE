@@ -11,6 +11,7 @@ from Logging import Logging
 from typing import Tuple, List
 from Constants import Constants as C
 from Configuration import Configuration
+from Types import ResourceTypes as T
 from resources.Resource import Resource
 import CSE, Utils
 from resources import ACP
@@ -33,10 +34,10 @@ class RegistrationManager(object):
 	#
 
 	def checkResourceCreation(self, resource: Resource, originator: str, parentResource: Resource = None) -> Tuple[str, int, str]:
-		if resource.ty == C.tAE:
+		if resource.ty == T.AE:
 			if (originator := self.handleAERegistration(resource, originator, parentResource)) is None:	# assigns new originator
 				return None, C.rcBadRequest, 'cannot register AE'
-		if resource.ty == C.tCSR:
+		if resource.ty == T.CSR:
 			if not self.handleCSRRegistration(resource, originator):
 				return None, C.rcBadRequest, 'cannot register CSR'
 
@@ -46,15 +47,15 @@ class RegistrationManager(object):
 			return None, rc, msg
 
 		# ACPI assignments 
-		if resource.ty != C.tAE:	# Don't handle AE's, this was already done already in the AE registration
+		if resource.ty != T.AE:	# Don't handle AE's, this was already done already in the AE registration
 			if resource.inheritACP:
 				del resource['acpi']
 			elif resource.acpi is None:	
 				# If no ACPI is given, then inherit it from the parent,
 				# except when the parent is the CSE or the parent acpi is empty , then use the default
-				if parentResource.ty != C.tCSEBase and parentResource.acpi is not None:
+				if parentResource.ty != T.CSEBase and parentResource.acpi is not None:
 					resource['acpi'] = parentResource.acpi
-				elif parentResource.ty == C.tACP:
+				elif parentResource.ty == T.ACP:
 					pass # Don't assign any ACPI when the parent is an ACP
 				else:
 					resource['acpi'] = [ Configuration.get('cse.security.defaultACPI') ]	# Set default ACPIRIs
@@ -69,16 +70,16 @@ class RegistrationManager(object):
 			Logging.logWarn('Setting "creator" attribute is not allowed.')
 			return C.rcBadRequest, 'setting "creator" attribute is not allowed'
 		# Set cr for some of the resource types
-		if resource.ty in C.tCreatorAllowed:
+		if resource.ty in C.creatorAllowed:
 			resource['cr'] = Configuration.get('cse.originator') if originator in ['C', 'S', '', None ] else originator
 		return C.rcOK, None
 
 
 	def checkResourceDeletion(self, resource: Resource, originator: str) -> Tuple[bool, str, str]:
-		if resource.ty == C.tAE:
+		if resource.ty == T.AE:
 			if not self.handleAEDeRegistration(resource):
 				return False, originator, 'cannot deregister AE'
-		if resource.ty == C.tCSR:
+		if resource.ty == T.CSR:
 			if not self.handleCSRDeRegistration(resource):
 				return False, originator, 'cannot deregister CSR'
 		return True, originator, None
@@ -119,7 +120,7 @@ class RegistrationManager(object):
 		ae['ri'] = Utils.getIdFromOriginator(originator, idOnly=True)		# set the ri of the ae to the aei (TS-0001, 10.2.2.2)
 
 		# Verify that parent is the CSEBase, else this is an error
-		if parentResource is None or parentResource.ty != C.tCSEBase:
+		if parentResource is None or parentResource.ty != T.CSEBase:
 			return None
 
 		# Create an ACP for this AE-ID if there is none set

@@ -10,6 +10,7 @@
 import unittest, sys
 sys.path.append('../acme')
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from init import *
 
 class TestAE(unittest.TestCase):
@@ -34,7 +35,7 @@ class TestAE(unittest.TestCase):
 				 	'rr': False,
 				 	'srv': [ '3' ]
 				}}
-		r, rsc = CREATE(cseURL, 'C', C.tAE, jsn)
+		r, rsc = CREATE(cseURL, 'C', T.AE, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 		TestAE.originator = findXPath(r, 'm2m:ae/aei')
 		TestAE.aeACPI = findXPath(r, 'm2m:ae/acpi')
@@ -48,7 +49,7 @@ class TestAE(unittest.TestCase):
 				 	'rr': False,
 				 	'srv': [ '3' ]
 				}}
-		r, rsc = CREATE(aeURL, 'C', C.tAE, jsn)
+		r, rsc = CREATE(aeURL, 'C', T.AE, jsn)
 		self.assertEqual(rsc, C.rcBadRequest)
 
 
@@ -66,7 +67,7 @@ class TestAE(unittest.TestCase):
 		r, rsc = RETRIEVE(aeURL, TestAE.originator)
 		self.assertEqual(rsc, C.rcOK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/aei'))
-		self.assertEqual(findXPath(r, 'm2m:ae/ty'), C.tAE)
+		self.assertEqual(findXPath(r, 'm2m:ae/ty'), T.AE)
 		self.assertTrue(findXPath(r, 'm2m:ae/aei').startswith('C'))
 		self.assertEqual(findXPath(r, 'm2m:ae/api'), 'NMyApp1Id')
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/ct'))
@@ -102,7 +103,7 @@ class TestAE(unittest.TestCase):
 
 	def test_updateAETy(self):
 		jsn = 	{ 'm2m:ae' : {
-					'ty' : C.tCSEBase
+					'ty' : int(T.CSEBase)
 				}}
 		r, rsc = UPDATE(aeURL, TestAE.originator, jsn)
 		self.assertEqual(rsc, C.rcBadRequest)

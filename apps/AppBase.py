@@ -14,6 +14,7 @@ from Configuration import Configuration
 from resources.Resource import Resource
 from Logging import Logging
 from Constants import Constants as C
+from Types import ResourceTypes as T
 import CSE, Utils
 from helpers.BackgroundWorker import BackgroundWorker
 
@@ -65,7 +66,7 @@ class AppBase(object):
 		return None
 
 
-	def retrieveCreate(self, srn : str = None, jsn: dict = None, ty:int = C.tMGMTOBJ) -> Resource:
+	def retrieveCreate(self, srn : str = None, jsn: dict = None, ty:int = T.MGMTOBJ) -> Resource:
 		# First check whether node exists and create it if necessary
 		if (result := self.retrieveResource(srn=srn))[1] != C.rcOK:
 

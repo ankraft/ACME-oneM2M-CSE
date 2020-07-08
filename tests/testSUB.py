@@ -11,6 +11,7 @@ import unittest, sys
 import requests
 sys.path.append('../acme')
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from init import *
 
 
@@ -39,13 +40,13 @@ class TestSUB(unittest.TestCase):
 				 	'rr'  : False,
 				 	'srv' : [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', C.tAE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
 		assert rsc == C.rcCreated, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
 				}}
-		cls.cnt, rsc = CREATE(aeURL, cls.originator, C.tCNT, jsn)
+		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
 		assert rsc == C.rcCreated, 'cannot create container'
 		cls.cntRI = findXPath(cls.cnt, 'm2m:cnt/ri')
 
@@ -71,7 +72,7 @@ class TestSUB(unittest.TestCase):
         			"nu": [ NOTIFICATIONSERVER ],
 					'su': NOTIFICATIONSERVER
 				}}
-		r, rsc = CREATE(cntURL, TestSUB.originator, C.tSUB, jsn)
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 
 
@@ -88,7 +89,7 @@ class TestSUB(unittest.TestCase):
 	def test_attributesSUB(self):
 		r, rsc = RETRIEVE(subURL, TestSUB.originator)
 		self.assertEqual(rsc, C.rcOK)
-		self.assertEqual(findXPath(r, 'm2m:sub/ty'), C.tSUB)
+		self.assertEqual(findXPath(r, 'm2m:sub/ty'), T.SUB)
 		self.assertEqual(findXPath(r, 'm2m:sub/pi'), findXPath(TestSUB.cnt,'m2m:cnt/ri'))
 		self.assertEqual(findXPath(r, 'm2m:sub/rn'), subRN)
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/ct'))
@@ -115,7 +116,7 @@ class TestSUB(unittest.TestCase):
         			},
         			"nu": [ NOTIFICATIONSERVERW ]
 				}}
-		r, rsc = CREATE(cntURL, TestSUB.originator, C.tSUB, jsn)
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
 		self.assertNotEqual(rsc, C.rcCreated)
 		self.assertEqual(rsc, C.rcSubscriptionVerificationInitiationFailed)
 		
@@ -157,7 +158,7 @@ class TestSUB(unittest.TestCase):
 					'cnf' : 'a',
 					'con' : 'aValue'
 				}}
-		r, rsc = CREATE(cntURL, TestSUB.originator, C.tCIN, jsn)
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.CIN, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 		self.assertIsNotNone(r)
 		self.assertIsNotNone(findXPath(r, 'm2m:cin/ri'))
@@ -173,7 +174,7 @@ class TestSUB(unittest.TestCase):
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
 				}}
-		TestSUB.cnt, rsc = CREATE(aeURL, TestSUB.originator, C.tCNT, jsn)
+		TestSUB.cnt, rsc = CREATE(aeURL, TestSUB.originator, T.CNT, jsn)
 		assert rsc == C.rcCreated, 'cannot create container'
 		TestSUB.cntRI = findXPath(TestSUB.cnt, 'm2m:cnt/ri')
 

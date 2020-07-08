@@ -11,6 +11,7 @@ from Logging import Logging
 from typing import Tuple, Optional, Union
 from flask import Request
 from Constants import Constants as C
+from Types import ResourceTypes as T
 import CSE, Utils
 from resources import FCNT, MgmtObj
 from SecurityManager import operationsPermissions
@@ -106,7 +107,7 @@ class GroupManager(object):
 					return False, C.rcReceiverHasNoPrivileges, 'wrong privileges for originator to retrieve local resource: %s' % mid
 
 			# if it is a group + fopt, then recursively check members
-			if (ty := resource.ty) == C.tGRP and hasFopt:
+			if (ty := resource.ty) == T.GRP and hasFopt:
 				if isLocalResource:
 					if not (res := self._checkMembersAndPrivileges(resource, mt, csy, spty, originator))[0]:
 						return res
@@ -122,12 +123,12 @@ class GroupManager(object):
 						return False, C.rcGroupMemberTypeInconsistent, 'resource and group member specialization types mismatch: %s != %s for: %s' % (resource.cnd, spty, mid)
 
 			# check type of resource and member type of group
-			if not (mt == C.tMIXED or ty == mt):	# types don't match
+			if not (mt == T.MIXED or ty == mt):	# types don't match
 				if csy == C.csyAbandonMember:		# abandon member
 					continue
 				elif csy == C.csySetMixed:			# change group's member type
-					mt = C.tMIXED
-					group['mt'] = C.tMIXED
+					mt = T.MIXED
+					group['mt'] = T.MIXED
 				else:								# abandon group
 					return False, C.rcGroupMemberTypeInconsistent, 'group consistency strategy and type "mixed" mismatch'
 
@@ -234,7 +235,7 @@ class GroupManager(object):
 		of group. If yes, remove the member. This method is called by the event manager. """
 
 		ri = deletedResource.ri
-		groups = CSE.storage.searchByTypeFieldValue(C.tGRP, 'mid', ri)
+		groups = CSE.storage.searchByTypeFieldValue(T.GRP, 'mid', ri)
 		for group in groups:
 			group['mid'].remove(ri)
 			group['cnm'] = group.cnm - 1

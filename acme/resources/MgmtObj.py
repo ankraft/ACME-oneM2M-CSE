@@ -9,17 +9,18 @@
 
 from .Resource import *
 import Utils
+from Types import ResourceTypes as T
 
 
 class MgmtObj(Resource):
 
-	def __init__(self, jsn: dict, pi: str, mgmtObjType: str, mgd: int, create: bool = False, attributePolicies: dict = None) -> None:
-		super().__init__(mgmtObjType, jsn, pi, C.tMGMTOBJ, create=create, attributePolicies=attributePolicies)
+	def __init__(self, jsn: dict, pi: str, mgd: T, create: bool = False, attributePolicies: dict = None) -> None:
+		super().__init__(T.MGMTOBJ, jsn, pi, tpe=mgd.tpe(), create=create, attributePolicies=attributePolicies)
 		
 		if self.json is not None:
-			self.setAttribute('mgd', mgd, overwrite=True)
+			self.setAttribute('mgd', int(mgd), overwrite=True)
 
 
 	# Enable check for allowed sub-resources
 	def canHaveChild(self, resource: Resource) -> bool:
-		return super()._canHaveChild(resource, [ C.tSUB ])
+		return super()._canHaveChild(resource, [ T.SUB ])

@@ -15,6 +15,8 @@ import Statistics, CSE
 # The following line incorrectly throws an error with mypy
 from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN 	# type: ignore
 import threading, time
+from Types import ResourceTypes as T
+
 
 
 class AEStatistics(AEBase):
@@ -76,7 +78,7 @@ class AEStatistics(AEBase):
 												Statistics.resourceCount: 0
 											}
 										},
-										ty=C.tFCNT)
+										ty=T.FCNT)
 
 		# Update the statistic resource from time to time
 		self.startWorker(Configuration.get('app.statistics.intervall'), self.statisticsWorker, 'statisticsWorker')

@@ -8,7 +8,7 @@
 #
 
 from .MgmtObj import *
-from Constants import Constants as C
+from Types import ResourceTypes as T
 from Validator import constructPolicy
 import Utils
 
@@ -28,7 +28,7 @@ defaultDeviceLabel = "unknown serial id"
 class DVI(MgmtObj):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(jsn, pi, C.tsDVI, C.mgdDVI, create=create, attributePolicies=attributePolicies)
+		super().__init__(jsn, pi, mgd=T.DVI, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('dty', defaultDeviceType, overwrite=False)

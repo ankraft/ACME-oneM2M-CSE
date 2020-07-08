@@ -9,6 +9,7 @@
 
 from typing import Tuple
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from Configuration import Configuration
 from Validator import constructPolicy
 from .Resource import *
@@ -23,7 +24,7 @@ attributePolicies = constructPolicy([
 class CSEBase(Resource):
 
 	def __init__(self, jsn: dict = None, create: bool = False) -> None:
-		super().__init__(C.tsCSEBase, jsn, '', C.tCSEBase, create=create, attributePolicies=attributePolicies)
+		super().__init__(T.CSEBase, jsn, '', create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('ri', 'cseid', overwrite=False)
@@ -41,14 +42,14 @@ class CSEBase(Resource):
 	# Enable check for allowed sub-resources
 	def canHaveChild(self, resource: Resource) -> bool:
 		return super()._canHaveChild(resource,	
-									 [ C.tACP,
-									   C.tAE,
-									   C.tCSR, 
-									   C.tCNT,
-									   C.tFCNT,
-									   C.tGRP,
-									   C.tNOD,
-									   C.tSUB
+									 [ T.ACP,
+									   T.AE,
+									   T.CSR, 
+									   T.CNT,
+									   T.FCNT,
+									   T.GRP,
+									   T.NOD,
+									   T.SUB
 									 ])
 
 

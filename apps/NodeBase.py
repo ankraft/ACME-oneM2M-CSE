@@ -11,6 +11,7 @@
 from AppBase import AppBase
 from Configuration import Configuration
 from Constants import Constants as C
+from Types import ResourceTypes as T
 import CSE, Utils
 from resources import BAT
 from resources.Resource import Resource
@@ -33,12 +34,12 @@ class NodeBase(AppBase):
 
 		# First check whether node exists and create it if necessary
 		self.node = self.retrieveCreate(srn=self.srn,
-										jsn={ C.tsNOD : {
+										jsn={ T.NOD.tpe() : {
 											'rn' : self.rn,
 											'ni' : nodeID
 											}
 										},
-										ty=C.tNOD)
+										ty=T.NOD)
 
 
 	def shutdown(self) -> None:
@@ -53,7 +54,7 @@ class NodeBase(AppBase):
 	def createBattery(self) -> None:
 		self.battery = self.retrieveCreate( srn=self.batRn,
 											jsn={ 'm2m:bat' : {
-												'mgd' : C.mgdBAT,
+												'mgd' : T.BAT,
 												'dc'  : 'battery',
 												'rn'  : 'battery',
 												'btl' : 0,
@@ -76,7 +77,7 @@ class NodeBase(AppBase):
 	def createMemory(self) -> None:
 		self.memory = self.retrieveCreate(	srn=self.memRn,
 											jsn={ 'm2m:mem' : {
-												'mgd' : C.mgdMEM,
+												'mgd' : T.MEM,
 												'dc'  : 'memory',
 												'rn'  : 'memory',
 												'mma' : 0,
@@ -99,7 +100,7 @@ class NodeBase(AppBase):
 	def createDeviceInfo(self) -> None:
 		self.deviceInfo = self.retrieveCreate(	srn=self.dviRn, 
 												jsn={ 'm2m:dvi' : {
-													'mgd' : C.mgdDVI,
+													'mgd' : T.DVI,
 													'dc'  : 'deviceInfo',
 													'rn'  : 'deviceinfo',
 													'dlb' : '',

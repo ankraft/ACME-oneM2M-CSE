@@ -13,6 +13,7 @@ from typing import Tuple, Union
 from Utils import *
 from Configuration import Configuration
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN 		# type: ignore
 import CSE
 from Logging import Logging
@@ -34,7 +35,7 @@ class Importer(object):
 		if CSE.dispatcher.countResources() > 0:
 			Logging.log('Resources already imported, skipping importing')
 			# But we still need the CSI etc of the CSE
-			rss = CSE.dispatcher.retrieveResourcesByType(C.tCSEBase)
+			rss = CSE.dispatcher.retrieveResourcesByType(T.CSEBase)
 			if rss is not None:
 				Configuration.set('cse.csi', rss[0]['csi'])
 				Configuration.set('cse.ri', rss[0]['ri'])
@@ -77,12 +78,12 @@ class Importer(object):
 				continue
 			CSE.dispatcher.createResource(r)
 			ty = r.ty
-			if ty == C.tCSEBase:
+			if ty == T.CSEBase:
 				Configuration.set('cse.csi', r.csi)
 				Configuration.set('cse.ri', r.ri)
 				Configuration.set('cse.rn', r.rn)
 				hasCSE = True
-			elif ty == C.tACP:
+			elif ty == T.ACP:
 				hasACP = True
 
 		# Check presence of CSE and at least one ACP

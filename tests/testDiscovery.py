@@ -10,6 +10,7 @@
 import unittest, sys
 sys.path.append('../acme')
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from init import *
 
 cnt2RN = '%s2' % cntRN
@@ -25,7 +26,7 @@ class TestDiscovery(unittest.TestCase):
 				 	'rr'  : False,
 				 	'srv' : [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', C.tAE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
 		assert rsc == C.rcCreated, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
@@ -33,7 +34,7 @@ class TestDiscovery(unittest.TestCase):
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN,
 				}}
-		cls.cnt, rsc = CREATE(aeURL, cls.originator, C.tCNT, jsn)
+		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
 		assert rsc == C.rcCreated, 'cannot create container'
 		# create 5 contentInstances with different labels
 		for i in range(0,5):
@@ -42,13 +43,13 @@ class TestDiscovery(unittest.TestCase):
 						'con' : 'aValue',
 						'lbl' : [ 'tag:%d' %i ]
 					}}
-			r, rsc = CREATE(cntURL, TestDiscovery.originator, C.tCIN, jsn)
+			r, rsc = CREATE(cntURL, TestDiscovery.originator, T.CIN, jsn)
 
 		# create second container & CIN
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn'  : cnt2RN,
 				}}
-		cls.cnt2, rsc = CREATE(aeURL, cls.originator, C.tCNT, jsn)
+		cls.cnt2, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
 		assert rsc == C.rcCreated, 'cannot create container'
 		# create 5 contentInstances with different labels
 		for i in range(0,5):
@@ -57,7 +58,7 @@ class TestDiscovery(unittest.TestCase):
 						'con' : 'bValue',
 						'lbl' : [ 'tag:%d' %i ]
 					}}
-			r, rsc = CREATE('%s2' % cntURL, TestDiscovery.originator, C.tCIN, jsn)
+			r, rsc = CREATE('%s2' % cntURL, TestDiscovery.originator, T.CIN, jsn)
 
 	@classmethod
 	def tearDownClass(cls):
@@ -65,7 +66,7 @@ class TestDiscovery(unittest.TestCase):
 
 
 	def test_discoverCNTUnderAE(self):
-		r, rsc = RETRIEVE('%s?fu=1&rcn=8&ty=%d' % (aeURL, C.tCNT), TestDiscovery.originator)
+		r, rsc = RETRIEVE('%s?fu=1&rcn=8&ty=%d' % (aeURL, T.CNT), TestDiscovery.originator)
 		self.assertEqual(rsc, C.rcOK)
 		self.assertIsNotNone(findXPath(r, 'm2m:cnt'))
 		self.assertEqual(len(findXPath(r, 'm2m:cnt')), 2)
@@ -75,7 +76,7 @@ class TestDiscovery(unittest.TestCase):
 
 
 	def test_discoverCNTUnderCSE(self):
-		r, rsc = RETRIEVE('%s?fu=1&rcn=8&ty=%d' % (cseURL, C.tCNT), TestDiscovery.originator)
+		r, rsc = RETRIEVE('%s?fu=1&rcn=8&ty=%d' % (cseURL, T.CNT), TestDiscovery.originator)
 		self.assertEqual(rsc, C.rcOK)
 		self.assertIsNotNone(findXPath(r, 'm2m:cnt'))
 		self.assertEqual(len(findXPath(r, 'm2m:cnt')), 2)
@@ -85,7 +86,7 @@ class TestDiscovery(unittest.TestCase):
 
 
 	def test_discoverCIN(self):
-		r, rsc = RETRIEVE('%s?fu=1&rcn=8&ty=%d' % (aeURL, C.tCIN), TestDiscovery.originator)
+		r, rsc = RETRIEVE('%s?fu=1&rcn=8&ty=%d' % (aeURL, T.CIN), TestDiscovery.originator)
 		self.assertEqual(rsc, C.rcOK)
 		self.assertIsNotNone(findXPath(r, 'm2m:cin'))
 		self.assertEqual(len(findXPath(r, 'm2m:cin')), 10)

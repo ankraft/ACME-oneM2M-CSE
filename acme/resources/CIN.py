@@ -9,6 +9,7 @@
 
 from typing import Tuple
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from Validator import constructPolicy
 from .Resource import *
 import Utils
@@ -23,7 +24,7 @@ attributePolicies = constructPolicy([
 class CIN(Resource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(C.tsCIN, jsn, pi, C.tCIN, create=create, inheritACP=True, readOnly = True, attributePolicies=attributePolicies)
+		super().__init__(T.CIN, jsn, pi, create=create, inheritACP=True, readOnly = True, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('con', '', overwrite=False)

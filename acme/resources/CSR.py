@@ -9,13 +9,14 @@
 
 from typing import Tuple
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from Configuration import Configuration
 from .Resource import *
 
 class CSR(Resource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, rn: str = None, create: bool = False) -> None:
-		super().__init__(C.tsCSR, jsn, pi, C.tCSR, rn=rn, create=create)
+		super().__init__(T.CSR, jsn, pi, rn=rn, create=create)
 
 		if self.json is not None:
 			self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
@@ -26,11 +27,11 @@ class CSR(Resource):
 	# Enable check for allowed sub-resources
 	def canHaveChild(self, resource : Resource) -> bool:
 		return super()._canHaveChild(resource,
-									 [ C.tCNT,
-									   C.tFCNT,
-									   C.tGRP,
-									   C.tACP,
-									   C.tSUB
+									 [ T.CNT,
+									   T.FCNT,
+									   T.GRP,
+									   T.ACP,
+									   T.SUB
 									 ])
 
 

@@ -9,6 +9,7 @@
 
 import random, string
 from Constants import Constants as C
+from Types import ResourceTypes as T
 import Utils, CSE
 from Validator import constructPolicy
 from .Resource import *
@@ -24,7 +25,7 @@ attributePolicies = constructPolicy([
 class NOD(Resource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(C.tsNOD, jsn, pi, C.tNOD, create=create, attributePolicies=attributePolicies)
+		super().__init__(T.NOD, jsn, pi, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('ni', Utils.uniqueID(), overwrite=False)
@@ -33,8 +34,8 @@ class NOD(Resource):
 	# Enable check for allowed sub-resources
 	def canHaveChild(self, resource : Resource) -> bool:
 		return super()._canHaveChild(resource, 
-									[ C.tMGMTOBJ,
-									  C.tSUB
+									[ T.MGMTOBJ,
+									  T.SUB
 									])
 
 

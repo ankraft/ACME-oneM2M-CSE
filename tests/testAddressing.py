@@ -10,6 +10,7 @@
 import unittest, sys
 sys.path.append('../acme')
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from init import *
 
 
@@ -24,13 +25,13 @@ class TestAddressing(unittest.TestCase):
 				 	'rr'  : False,
 				 	'srv' : [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', C.tAE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
 		assert rsc == C.rcCreated, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
 				}}
-		cls.cnt, rsc = CREATE(aeURL, cls.originator, C.tCNT, jsn)
+		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
 		assert rsc == C.rcCreated, 'cannot create container'
 		cls.cntRI = findXPath(cls.cnt, 'm2m:cnt/ri')
 

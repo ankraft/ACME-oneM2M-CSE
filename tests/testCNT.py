@@ -10,6 +10,7 @@
 import unittest, sys
 sys.path.append('../acme')
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from init import *
 
 
@@ -24,7 +25,7 @@ class TestCNT(unittest.TestCase):
 				 	'rr': False,
 				 	'srv': [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', C.tAE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
 		assert rsc == C.rcCreated, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
@@ -41,7 +42,7 @@ class TestCNT(unittest.TestCase):
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN
 				}}
-		r, rsc = CREATE(aeURL, TestCNT.originator, C.tCNT, jsn)
+		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 
 
@@ -58,7 +59,7 @@ class TestCNT(unittest.TestCase):
 	def test_attributesCNT(self):
 		r, rsc = RETRIEVE(cntURL, TestCNT.originator)
 		self.assertEqual(rsc, C.rcOK)
-		self.assertEqual(findXPath(r, 'm2m:cnt/ty'), C.tCNT)
+		self.assertEqual(findXPath(r, 'm2m:cnt/ty'), T.CNT)
 		self.assertEqual(findXPath(r, 'm2m:cnt/pi'), findXPath(TestCNT.ae,'m2m:ae/ri'))
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
 		self.assertIsNotNone(findXPath(r, 'm2m:cnt/ct'))
@@ -100,7 +101,7 @@ class TestCNT(unittest.TestCase):
 
 	def test_updateCNTTy(self):
 		jsn = 	{ 'm2m:cnt' : {
-					'ty' : C.tCSEBase
+					'ty' : T.CSEBase
 				}}
 		r, rsc = UPDATE(cntURL, TestCNT.originator, jsn)
 		self.assertEqual(rsc, C.rcBadRequest)
@@ -135,7 +136,7 @@ class TestCNT(unittest.TestCase):
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN
 				}}
-		r, rsc = CREATE(cntURL, TestCNT.originator, C.tCNT, jsn) 
+		r, rsc = CREATE(cntURL, TestCNT.originator, T.CNT, jsn) 
 		self.assertEqual(rsc, C.rcCreated)
 
 
@@ -164,7 +165,7 @@ class TestCNT(unittest.TestCase):
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN
 				}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, C.tCNT, jsn) # With Admin originator
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, jsn) # With Admin originator
 		self.assertEqual(rsc, C.rcCreated)
 
 

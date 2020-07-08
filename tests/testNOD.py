@@ -11,6 +11,7 @@ import unittest, sys
 import requests
 sys.path.append('../acme')
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from init import *
 
 nodeID  = 'urn:sn:1234'
@@ -37,7 +38,7 @@ class TestNOD(unittest.TestCase):
 					'rn' 	: nodRN,
 					'ni'	: nodeID
 				}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, C.tNOD, jsn)
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 		self.assertIsNotNone(findXPath(r, 'm2m:nod/ri'))
 		TestNOD.nodeRI = findXPath(r, 'm2m:nod/ri')
@@ -56,7 +57,7 @@ class TestNOD(unittest.TestCase):
 	def test_attributesNOD(self):
 		r, rsc = RETRIEVE(nodURL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcOK)
-		self.assertEqual(findXPath(r, 'm2m:nod/ty'), C.tNOD)
+		self.assertEqual(findXPath(r, 'm2m:nod/ty'), T.NOD)
 		self.assertEqual(findXPath(r, 'm2m:nod/pi'), findXPath(TestNOD.cse,'m2m:cb/ri'))
 		self.assertEqual(findXPath(r, 'm2m:nod/rn'), nodRN)
 		self.assertIsNotNone(findXPath(r, 'm2m:nod/ct'))
@@ -96,7 +97,7 @@ class TestNOD(unittest.TestCase):
 		 	'srv'	: [ '3' ],
 		 	'nl' 	: TestNOD.nodeRI
 		}}
-		TestNOD.ae, rsc = CREATE(cseURL, 'C', C.tAE, jsn)
+		TestNOD.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 		self.assertIsNotNone(findXPath(TestNOD.ae, 'm2m:ae/nl'))
 		self.assertEqual(findXPath(TestNOD.ae, 'm2m:ae/nl'), TestNOD.nodeRI)
@@ -129,7 +130,7 @@ class TestNOD(unittest.TestCase):
 			'rn' 	: nod2RN,
 			'ni'	: 'second'
 		}}
-		nod2, rsc = CREATE(cseURL, ORIGINATOR, C.tNOD, jsn)
+		nod2, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 		self.assertIsNotNone(findXPath(nod2, 'm2m:nod/ri'))
 		self.assertEqual(findXPath(nod2, 'm2m:nod/rn'), nod2RN)

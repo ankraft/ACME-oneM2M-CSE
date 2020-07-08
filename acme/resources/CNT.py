@@ -11,6 +11,7 @@ from typing import Tuple, List
 from Logging import Logging
 from Configuration import Configuration
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from Validator import constructPolicy
 import Utils, CSE
 from .Resource import *
@@ -27,7 +28,7 @@ class CNT(Resource):
 
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(C.tsCNT, jsn, pi, C.tCNT, create=create, attributePolicies=attributePolicies)
+		super().__init__(T.CNT, jsn, pi, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite=False)
@@ -39,10 +40,10 @@ class CNT(Resource):
 	# Enable check for allowed sub-resources
 	def canHaveChild(self, resource: Resource) -> bool:
 		return super()._canHaveChild(resource,	
-									 [ C.tCNT,
-									   C.tCIN,
-									   C.tFCNT,
-									   C.tSUB
+									 [ T.CNT,
+									   T.CIN,
+									   T.FCNT,
+									   T.SUB
 									 ])
 
 
@@ -54,13 +55,13 @@ class CNT(Resource):
 		Logging.logDebug('Registering latest and oldest virtual resources for: %s' % self.ri)
 
 		# add latest
-		r, _ = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=C.tCNT_LA)
+		r, _ = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.CNT_LA)
 		res = CSE.dispatcher.createResource(r)
 		if res[0] is None:
 			return False, res[1], res[2]
 
 		# add oldest
-		r, _ = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=C.tCNT_OL)
+		r, _ = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.CNT_OL)
 		res = CSE.dispatcher.createResource(r)
 		if res[0] is None:
 			return False, res[1], res[2]
@@ -70,7 +71,7 @@ class CNT(Resource):
 
 	# Get all content instances of a resource and return a sorted (by ct) list 
 	def contentInstances(self) -> List[Resource]:
-		return sorted(CSE.dispatcher.directChildResources(self.ri, C.tCIN), key=lambda x: (x.ct))
+		return sorted(CSE.dispatcher.directChildResources(self.ri, T.CIN), key=lambda x: (x.ct))
 
 
 	def childWillBeAdded(self, childResource: Resource, originator: str) -> Tuple[bool, int, str]:
@@ -82,7 +83,7 @@ class CNT(Resource):
 			return False, C.rcOperationNotAllowed, 'resource types "latest" or "oldest" cannot be added'
 	
 		# Check whether the size of the CIN doesn't exceed the mbs
-		if childResource.ty == C.tCIN and self.mbs is not None:
+		if childResource.ty == T.CIN and self.mbs is not None:
 			if childResource.cs is not None and childResource.cs > self.mbs:
 				return False, C.rcNotAcceptable, 'children content sizes would exceed mbs'
 		return True, C.rcOK, None
@@ -91,13 +92,13 @@ class CNT(Resource):
 	# Handle the addition of new CIN. Basically, get rid of old ones.
 	def childAdded(self, childResource: Resource, originator: str) -> None:
 		super().childAdded(childResource, originator)
-		if childResource.ty == C.tCIN:	# Validate if child is CIN
+		if childResource.ty == T.CIN:	# Validate if child is CIN
 			self.validate(originator)
 
 	# Handle the removal of a CIN. 
 	def childRemoved(self, childResource: Resource, originator: str) -> None:
 		super().childRemoved(childResource, originator)
-		if childResource.ty == C.tCIN:	# Validate if child was CIN
+		if childResource.ty == T.CIN:	# Validate if child was CIN
 			self.validate(originator)
 
 

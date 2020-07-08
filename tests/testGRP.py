@@ -10,6 +10,7 @@
 import unittest, sys
 sys.path.append('../acme')
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from init import *
 
 
@@ -24,19 +25,19 @@ class TestGRP(unittest.TestCase):
 				 	'rr'  : False,
 				 	'srv' : [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', C.tAE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
 		assert rsc == C.rcCreated, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
 				}}
-		cls.cnt1, rsc = CREATE(aeURL, cls.originator, C.tCNT, jsn)
+		cls.cnt1, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
 		assert rsc == C.rcCreated, 'cannot create container'
 		cls.cnt1RI = findXPath(cls.cnt1, 'm2m:cnt/ri')
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn'  : '%s2' % cntRN
 				}}
-		cls.cnt2, rsc = CREATE(aeURL, cls.originator, C.tCNT, jsn)
+		cls.cnt2, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
 		assert rsc == C.rcCreated, 'cannot create container'
 		cls.cnt2RI = findXPath(cls.cnt2, 'm2m:cnt/ri')
 
@@ -53,11 +54,11 @@ class TestGRP(unittest.TestCase):
 		self.assertIsNotNone(TestGRP.cnt2)
 		jsn = 	{ 'm2m:grp' : { 
 					'rn' : grpRN,
-					'mt' : C.tMIXED,
+					'mt' : T.MIXED,
 					'mnm': 10,
 					'mid': [ TestGRP.cnt1RI, TestGRP.cnt2RI ]
 				}}
-		r, rsc = CREATE(aeURL, TestGRP.originator, C.tGRP, jsn)
+		r, rsc = CREATE(aeURL, TestGRP.originator, T.GRP, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 
 
@@ -74,7 +75,7 @@ class TestGRP(unittest.TestCase):
 	def test_attributesGRP(self):
 		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
 		self.assertEqual(rsc, C.rcOK)
-		self.assertEqual(findXPath(r, 'm2m:grp/ty'), C.tGRP)
+		self.assertEqual(findXPath(r, 'm2m:grp/ty'), T.GRP)
 		self.assertEqual(findXPath(r, 'm2m:grp/pi'), findXPath(TestGRP.ae,'m2m:ae/ri'))
 		self.assertEqual(findXPath(r, 'm2m:grp/rn'), grpRN)
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/ct'))
@@ -82,7 +83,7 @@ class TestGRP(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/et'))
 		self.assertEqual(findXPath(r, 'm2m:grp/cr'), TestGRP.originator)
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/mt'))
-		self.assertEqual(findXPath(r, 'm2m:grp/mt'), C.tMIXED)
+		self.assertEqual(findXPath(r, 'm2m:grp/mt'), T.MIXED)
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/mnm'))
 		self.assertEqual(findXPath(r, 'm2m:grp/mnm'), 10)
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/cnm'))
@@ -121,7 +122,7 @@ class TestGRP(unittest.TestCase):
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn'  : '%s3' % cntRN
 				}}
-		self.cnt3, rsc = CREATE(aeURL, self.originator, C.tCNT, jsn)
+		self.cnt3, rsc = CREATE(aeURL, self.originator, T.CNT, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 		self.cnt3RI = findXPath(self.cnt3, 'm2m:cnt/ri')
 		mid = findXPath(r, 'm2m:grp/mid')
@@ -142,7 +143,7 @@ class TestGRP(unittest.TestCase):
 					'cnf' : 'a',
 					'con' : 'aValue'
 				}}
-		r, rsc = CREATE('%s/fopt' % grpURL, TestGRP.originator, C.tCNT, jsn)
+		r, rsc = CREATE('%s/fopt' % grpURL, TestGRP.originator, T.CNT, jsn)
 		self.assertEqual(rsc, C.rcOK)
 		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
 		self.assertIsNotNone(rsp)

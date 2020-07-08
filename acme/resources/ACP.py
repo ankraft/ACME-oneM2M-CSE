@@ -9,6 +9,7 @@
 
 from typing import Tuple, List
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from Validator import constructPolicy
 from .Resource import *
 import Utils
@@ -23,7 +24,7 @@ attributePolicies = constructPolicy([
 class ACP(Resource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, rn: str = None, create: bool = False, createdInternally: str = None) -> None:
-		super().__init__(C.tsACP, jsn, pi, C.tACP, create=create, inheritACP=True, rn=rn, attributePolicies=attributePolicies)
+		super().__init__(T.ACP, jsn, pi, create=create, inheritACP=True, rn=rn, attributePolicies=attributePolicies)
 		
 		if self.json is not None:
 			self.setAttribute('pv/acr', [], overwrite=False)
@@ -35,7 +36,7 @@ class ACP(Resource):
 	# Enable check for allowed sub-resources
 	def canHaveChild(self, resource: Resource) -> bool:
 		return super()._canHaveChild(resource,	
-									 [ C.tSUB # TODO Transaction to be added
+									 [ T.SUB # TODO Transaction to be added
 									 ])
 
 

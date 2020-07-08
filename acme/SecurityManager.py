@@ -10,6 +10,7 @@
 
 from Logging import Logging
 from Constants import Constants as C
+from Types import ResourceTypes as T
 import CSE, Utils
 from Configuration import Configuration
 from resources.Resource import Resource
@@ -43,7 +44,7 @@ class SecurityManager(object):
 		if ty is not None:
 
 			# Checking for AE	
-			if ty == C.tAE and isCreateRequest:
+			if ty == T.AE and isCreateRequest:
 				# originator may be None or empty or C or S. 
 				# That is okay if type is AE and this is a create request
 				if originator is None or len(originator) == 0 or Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedAEOriginators')):
@@ -51,7 +52,7 @@ class SecurityManager(object):
 					return True
 
 			# Checking for remoteCSE
-			if ty == C.tCSR and isCreateRequest:
+			if ty == T.CSR and isCreateRequest:
 				if Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedCSROriginators')):
 					Logging.logDebug("Originator for CSR CREATE. OK.")
 					return True
@@ -67,7 +68,7 @@ class SecurityManager(object):
 		Logging.logDebug("Checking permission for originator: %s, ri: %s, permission: %d, selfPrivileges: %r" % (originator, resource.ri, requestedPermission, checkSelf))
 
 
-		if resource.ty == C.tGRP: # target is an group resource
+		if resource.ty == T.GRP: # target is an group resource
 			# Check membersAccessControlPolicyIDs if provided, otherwise accessControlPolicyIDs to be used
 			
 			if (macp := resource.macp) is None or len(macp) == 0:
@@ -87,7 +88,7 @@ class SecurityManager(object):
 				return False
 
 
-		if resource.ty == C.tACP:	# target is an ACP resource
+		if resource.ty == T.ACP:	# target is an ACP resource
 			if resource.checkSelfPermission(originator, requestedPermission):
 				Logging.logDebug('Permission granted')
 				return True
@@ -95,7 +96,7 @@ class SecurityManager(object):
 		else:		# target is any other resource type
 			
 			# If subscription, check whether originator has retrieve permissions on the subscribed-to resource (parent)	
-			if ty == C.tSUB and parentResource is not None:
+			if ty == T.SUB and parentResource is not None:
 				if self.hasAccess(originator, parentResource, C.permRETRIEVE) == False:
 					return False
 

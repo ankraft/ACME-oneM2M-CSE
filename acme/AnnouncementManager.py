@@ -8,8 +8,10 @@
 #
 
 from Logging import Logging
-import Utils
+import Utils, CSE
 from resources.Resource import Resource
+from resources.AnnounceableResource import AnnounceableResource
+
 
 
 # TODO: This manager will be implemented in the future.
@@ -31,8 +33,9 @@ class AnnouncementManager(object):
 
 
 
-	# Announce a Resource
 	def announceResource(self, resource: Resource) -> None:
+		"""	Announce a single resource.
+		"""
 		Logging.logDebug('Announce resource')
 
 		if (at := resource['at']) is None or len(at) == 0:
@@ -41,7 +44,8 @@ class AnnouncementManager(object):
 
 		# Handle direct URL announcement
 		if Utils.isURL(at):
-			return self.announceResourceViaDirectURL(resource, at)
+			self.announceResourceViaDirectURL(resource, at)
+			return
 
 
 # TODO create annc resource
@@ -78,3 +82,21 @@ class AnnouncementManager(object):
 	def announceResourceViaDirectURL(self, resource: Resource, at: str) -> bool:
 		Logging.logErr('TODO Direct Announcement')
 		return False
+
+
+
+	def checkResourceReanncements(self) -> None:
+		"""	Re-Announce reesource, e.g. after a CSE re-connect.
+		"""
+		pass
+
+
+	def createAnnounceableResource(self, resource: Resource) -> AnnounceableResource:
+		# check if correct type
+		# Create correct resource type.
+		# copy / set attributes from TS-0001 9.6.26.2
+		# copy all other attributes that are MA in that resource (ask validator)
+		# copy all other attributes that are in AA attribute
+		return None
+
+

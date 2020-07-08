@@ -9,9 +9,10 @@
 
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
-from typing import Any, Tuple
+from typing import Any, Tuple, Union
 from Logging import Logging
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from Configuration import Configuration
 import Utils, CSE
 import datetime, random
@@ -27,13 +28,16 @@ class Resource(object):
 	_createdInternally	= '__createdInternally__'
 	_imported			= '__imported__'
 	_isVirtual 			= '__isVirtual__'
+	_isAnnounced 		= '__isAnnounced__'
 	_isInstantiated		= '__isInstantiated__'
 	_originator			= '__originator__'
 
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator ]
 
-	def __init__(self, tpe: str, jsn: dict = None, pi: str = None, ty:int = None, create: bool = False, inheritACP: bool = False, readOnly: bool = False, rn: str = None, attributePolicies: dict = None, isVirtual: bool = False) -> None:
+	def __init__(self, ty: Union[T, int], jsn: dict = None, pi: str = None, tpe:str = None, create: bool = False, inheritACP: bool = False, readOnly: bool = False, rn: str = None, attributePolicies: dict = None, isVirtual: bool = False, isAnnounced:bool = False) -> None:
 		self.tpe = tpe
+		if isinstance(ty, T) and ty not in [ T.FCNT, T.FCI ]: 	# For some types the tpe/root is empty and will be set later in this method
+			self.tpe = ty.tpe() if tpe is None else tpe
 		self.readOnly = readOnly
 		self.inheritACP = inheritACP
 		self.json = {}
@@ -41,7 +45,7 @@ class Resource(object):
 
 		if jsn is not None: 
 			self.isImported = jsn.get(C.jsnIsImported)
-			if tpe in jsn:
+			if self.tpe in jsn:
 				self.json = jsn[tpe].copy()
 			else:
 				self.json = jsn.copy()
@@ -70,6 +74,10 @@ class Resource(object):
 			# Indicate whether this is a virtual resource
 			if isVirtual:
 				self.setAttribute(self._isVirtual, isVirtual)
+
+			# Indicate whetehr this is an announced resource
+			if isAnnounced:
+				self.setAttribute(self._isAnnounced, isAnnounced)
 	
 			# Create an RN if there is none
 			self.setAttribute('rn', Utils.uniqueRN(self.tpe), overwrite=False)
@@ -84,7 +92,7 @@ class Resource(object):
 			if ty is not None:
 				if ty in C.stateTagResourceTypes:	# Only for allowed resources
 					self.setAttribute('st', 0, overwrite=False)
-				self.setAttribute('ty', ty)
+				self.setAttribute('ty', int(ty))
 
 			#
 			## Note: ACPI is set in activate()

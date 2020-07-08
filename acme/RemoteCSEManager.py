@@ -16,6 +16,7 @@ from flask import Request
 from Configuration import Configuration
 from Logging import Logging
 from Constants import Constants as C
+from Types import ResourceTypes as T
 import Utils, CSE
 from resources import CSR, CSEBase
 from resources.Resource import Resource
@@ -189,7 +190,7 @@ class RemoteCSEManager(object):
 	#
 
 	def _retrieveLocalCSR(self, csi: str = None, own: bool = True) -> Tuple[List[Resource], int, str]:
-		localCsrs = CSE.dispatcher.directChildResources(pi=Configuration.get('cse.ri'), ty=C.tCSR)
+		localCsrs = CSE.dispatcher.directChildResources(pi=Configuration.get('cse.ri'), ty=T.CSR)
 		if csi is None:
 			csi = self.remoteCsi
 		Logging.logDebug('Retrieving local CSR: %s' % csi)
@@ -268,7 +269,7 @@ class RemoteCSEManager(object):
 
 		# Create the <remoteCSE> in the remote CSE
 		Logging.logDebug('Creating remote CSR at: %s url: %s' % (self.remoteCsi, self.remoteCSEURL))	
-		jsn, rc, msg = CSE.httpServer.sendCreateRequest(self.remoteCSEURL, self.originator, ty=C.tCSR, data=data)
+		jsn, rc, msg = CSE.httpServer.sendCreateRequest(self.remoteCSEURL, self.originator, ty=T.CSR, data=data)
 		if rc not in [C.rcCreated, C.rcOK]:
 			if rc != C.rcAlreadyExists:
 				Logging.logDebug('Error creating remote CSR: %d' % rc)

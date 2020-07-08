@@ -10,6 +10,7 @@
 from flask import Request
 from typing import Tuple, Optional
 from Constants import Constants as C
+from Types import ResourceTypes as T
 import Utils, CSE
 from .Resource import *
 from Logging import Logging
@@ -18,7 +19,7 @@ from Logging import Logging
 class CNT_OL(Resource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(C.tsCNT_OL, jsn, pi, C.tCNT_OL, create=create, inheritACP=True, readOnly=True, rn='ol', isVirtual=True)
+		super().__init__(T.CNT_OL, jsn, pi, create=create, inheritACP=True, readOnly=True, rn='ol', isVirtual=True)
 
 
 	# Enable check for allowed sub-resources

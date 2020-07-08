@@ -10,6 +10,7 @@
 import random, string
 from typing import Tuple
 from Constants import Constants as C
+from Types import ResourceTypes as T
 import Utils, CSE
 from Validator import constructPolicy
 from .Resource import *
@@ -26,7 +27,7 @@ attributePolicies = constructPolicy([
 class SUB(Resource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(C.tsSUB, jsn, pi, C.tSUB, create=create, attributePolicies=attributePolicies)
+		super().__init__(T.SUB, jsn, pi, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('nct', C.nctAll, overwrite=False) # LIMIT TODO: only this notificationContentType is supported now

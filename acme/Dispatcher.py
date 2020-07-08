@@ -14,6 +14,7 @@ from typing import Any, List, Tuple, Union
 from Logging import Logging
 from Configuration import Configuration
 from Constants import Constants as C
+from Types import ResourceTypes as T
 import CSE, Utils
 from resources.Resource import Resource
 
@@ -66,7 +67,7 @@ class Dispatcher(object):
 		srn, id = self._buildSRNFromHybrid(srn, id) # Hybrid
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
 			return fanoutPointResource.handleRetrieveRequest(request, srn, originator)
 
@@ -193,7 +194,7 @@ class Dispatcher(object):
 
 		if r is not None:
 			# Check for virtual resource
-			if r.ty != C.tGRP_FOPT and Utils.isVirtualResource(r): # fopt is handled elsewhere
+			if r.ty != T.GRP_FOPT and Utils.isVirtualResource(r): # fopt is handled elsewhere
 				return r.handleRetrieveRequest()
 			return r, C.rcOK, None
 		if msg is not None:
@@ -342,7 +343,7 @@ class Dispatcher(object):
 				#	# TODO labelsQuery
 
 
-			if ty in [ C.tCIN, C.tFCNT ]:	# special handling for CIN, FCNT
+			if ty in [ T.CIN, T.FCNT ]:	# special handling for CIN, FCNT
 				if (cs := r.cs) is not None:
 					found += 1 if (sza := conditions.get('sza')) is not None and (str(cs) >= sza) else 0
 					found += 1 if (szb := conditions.get('szb')) is not None and (str(cs) < szb) else 0
@@ -351,7 +352,7 @@ class Dispatcher(object):
 			# Multiple occurences of cnf is always OR'ed. Therefore we add the count of
 			# cnf's to found (to indicate that the whole set matches)
 			# Similar to types.
-			if ty in [ C.tCIN ]:	# special handling for CIN
+			if ty in [ T.CIN ]:	# special handling for CIN
 				if (cnfs := conditions.get('cty')) is not None:
 					found += len(cnfs) if r.cnf in cnfs else 0
 
@@ -407,7 +408,7 @@ class Dispatcher(object):
 		srn, id = self._buildSRNFromHybrid(srn, id)  # Hybrid
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
 			return fanoutPointResource.handleCreateRequest(request, srn, originator, ct, ty)
 
@@ -431,7 +432,7 @@ class Dispatcher(object):
 			return None, C.rcBadRequest, 'ct or ty is missing in request'
 
 		# CSEBase creation, return immediately
-		if ty == C.tCSEBase:
+		if ty == T.CSEBase:
 			return None, C.rcOperationNotAllowed, 'operation not allowed'
 
 		# Get parent resource and check permissions
@@ -440,7 +441,7 @@ class Dispatcher(object):
 			Logging.log('Parent resource not found')
 			return None, C.rcNotFound,  'parent resource not found'
 		if CSE.security.hasAccess(originator, pr, C.permCREATE, ty=ty, isCreateRequest=True, parentResource=pr) == False:
-			if ty == C.tAE:
+			if ty == T.AE:
 				return None, C.rcSecurityAssociationRequired, 'security association required'
 			else:
 				return None, C.rcOriginatorHasNoPrivilege, 'originator has no privileges'
@@ -505,7 +506,7 @@ class Dispatcher(object):
 		if parentResource is not None:
 			Logging.logDebug('Parent ri: %s' % parentResource.ri)
 			if not parentResource.canHaveChild(resource):
-				if resource.ty == C.tSUB:
+				if resource.ty == T.SUB:
 					err = 'Parent resource is not subscribable'
 					Logging.logWarn(err)
 					return None, C.rcTargetNotSubscribable, err
@@ -571,7 +572,7 @@ class Dispatcher(object):
 		srn, id = self._buildSRNFromHybrid(srn, id)  # Hybrid
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
 			return fanoutPointResource.handleUpdateRequest(request, srn, originator, ct)
 
@@ -683,7 +684,7 @@ class Dispatcher(object):
 		srn, id = self._buildSRNFromHybrid(srn, id)  # Hybrid
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == C.tGRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
 			return fanoutPointResource.handleDeleteRequest(request, srn, originator)
 
@@ -824,7 +825,7 @@ class Dispatcher(object):
 		""" Handle Hybrid ID. """
 		if id is not None:
 			ids = id.split('/')
-			if srn is None and len(ids) > 1  and ids[-1] in C.tVirtualResourcesNames: # Hybrid
+			if srn is None and len(ids) > 1  and ids[-1] in C.virtualResourcesNames: # Hybrid
 				if (srn := Utils.structuredPathFromRI('/'.join(ids[:-1]))) is not None:
 					srn = '/'.join([srn, ids[-1]])
 					id = Utils.riFromStructuredPath(srn) # id becomes the ri of the fopt
@@ -1028,7 +1029,7 @@ class Dispatcher(object):
 				if rri is not None and r.pi != rri:	# only direct children
 					idx += 1
 					continue
-				if r.ty in C.tVirtualResources:	# Skip latest, oldest etc virtual resources
+				if r.ty in C.virtualResources:	# Skip latest, oldest etc virtual resources
 					idx += 1
 					continue
 				if handledTy is None:
@@ -1068,10 +1069,10 @@ class Dispatcher(object):
 			resources.sort(key=lambda x:(x.ty, x.rn.lower()))
 		
 		for r in resources:
-			if r.ty in [ C.tCNT_OL, C.tCNT_LA, C.tFCNT_OL, C.tFCNT_LA ]:	# Skip latest, oldest virtual resources
+			if r.ty in [ T.CNT_OL, T.CNT_LA, T.FCNT_OL, T.FCNT_LA ]:	# Skip latest, oldest virtual resources
 				continue
 			ref = { 'nm' : r['rn'], 'typ' : r['ty'], 'val' :  Utils.structuredPath(r) if drt == C.drtStructured else r.ri}
-			if r.ty == C.tFCNT:
+			if r.ty == T.FCNT:
 				ref['spty'] = r.cnd		# TODO Is this correct? Actually specializationID in TS-0004 6.3.5.29, but this seems to be wrong
 			t.append(ref)
 		targetResource[tp] = t

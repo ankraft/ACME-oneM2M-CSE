@@ -13,6 +13,7 @@ from typing import Any, List, Tuple, Union
 from resources import ACP, AE, ANDI, ANI, BAT, CIN, CNT, CNT_LA, CNT_OL, CSEBase, CSR, DVC
 from resources import DVI, EVL, FCI, FCNT, FCNT_LA, FCNT_OL, FWR, GRP, GRP_FOPT, MEM, NOD, RBO, SUB, SWR, Unknown, Resource
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from Configuration import Configuration
 from Logging import Logging
 import CSE
@@ -90,7 +91,7 @@ def isStructured(uri : str) -> bool:
 def isVirtualResource(resource: Resource.Resource) -> bool:
 	result = resource[resource._isVirtual]
 	return result if result is not None else False
-	# ireturn (ty := r.ty) and ty in C.tVirtualResources
+	# ireturn (ty := r.ty) and ty in C.virtualResources
 
 
 def isValidID(id: str) -> bool:
@@ -113,7 +114,7 @@ def toISO8601Date(ts: Union[float, datetime.datetime]) -> str:
 def structuredPath(resource: Resource.Resource) -> str:
 	""" Determine the structured path of a resource. """
 	rn = resource.rn
-	if resource.ty == C.tCSEBase: # if CSE
+	if resource.ty == T.CSEBase: # if CSE
 		return rn
 
 	# retrieve identifier record of the parent
@@ -168,7 +169,7 @@ def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 		return None, None, None
 
 	# Remove virtual resource shortname if it is present
-	if ids[-1] in C.tVirtualResourcesNames:
+	if ids[-1] in C.virtualResourcesNames:
 		vrPresent = ids.pop()	# remove and return last path element
 		idsLen -= 1
 
@@ -229,7 +230,7 @@ def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 	return None, None, None
 
 
-def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: int = None, create: bool = False, isImported: bool = False) -> Tuple[Resource.Resource, str]:
+def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, int] = None, create: bool = False, isImported: bool = False) -> Tuple[Resource.Resource, str]:
 	""" Create a resource from a JSON structure.
 		This will *not* call the activate method, therefore some attributes
 		may be set separately.
@@ -250,57 +251,57 @@ def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: int = None
 
 
 	# sorted by assumed frequency (small optimization)
-	if typ == C.tCIN or root == C.tsCIN:
+	if typ == T.CIN or root == T.CIN.tpe():
 		return CIN.CIN(jsn, pi=pi, create=create), None
-	elif typ == C.tCNT or root == C.tsCNT:
+	elif typ == T.CNT or root == T.CNT.tpe():
 		return CNT.CNT(jsn, pi=pi, create=create), None
-	elif typ == C.tGRP or root == C.tsGRP:
+	elif typ == T.GRP or root == T.GRP.tpe():
 		return GRP.GRP(jsn, pi=pi, create=create), None
-	elif typ == C.tGRP_FOPT or root == C.tsGRP_FOPT:
+	elif typ == T.GRP_FOPT or root == T.GRP_FOPT.tpe():
 		return GRP_FOPT.GRP_FOPT(jsn, pi=pi, create=create), None
-	elif typ == C.tACP or root == C.tsACP:
+	elif typ == T.ACP or root == T.ACP.tpe():
 		return ACP.ACP(jsn, pi=pi, create=create), None
-	elif typ == C.tFCNT:
+	elif typ == T.FCNT:
 		return FCNT.FCNT(jsn, pi=pi, fcntType=root, create=create), None
-	elif typ == C.tFCI:
+	elif typ == T.FCI:
 		return FCI.FCI(jsn, pi=pi, fcntType=root, create=create), None	
-	elif typ == C.tAE or root == C.tsAE:
+	elif typ == T.AE or root == T.AE.tpe():
 		return AE.AE(jsn, pi=pi, create=create), None
-	elif typ == C.tSUB or root == C.tsSUB:
+	elif typ == T.SUB or root == T.SUB.tpe():
 		return SUB.SUB(jsn, pi=pi, create=create), None
-	elif typ == C.tCSR or root == C.tsCSR:
+	elif typ == T.CSR or root == T.CSR.tpe():
 		return CSR.CSR(jsn, pi=pi, create=create), None
-	elif typ == C.tNOD or root == C.tsNOD:
+	elif typ == T.NOD or root == T.NOD.tpe():
 		return NOD.NOD(jsn, pi=pi, create=create), None
-	elif (typ == C.tMGMTOBJ and mgd == C.mgdFWR) or root == C.tsFWR:
+	elif (typ == T.MGMTOBJ and mgd == T.FWR) or root == T.FWR.tpe():
 		return FWR.FWR(jsn, pi=pi, create=create), None
-	elif (typ == C.tMGMTOBJ and mgd == C.mgdSWR) or root == C.tsSWR:
+	elif (typ == T.MGMTOBJ and mgd == T.SWR) or root == T.SWR.tpe():
 		return SWR.SWR(jsn, pi=pi, create=create), None
-	elif (typ == C.tMGMTOBJ and mgd == C.mgdMEM) or root == C.tsMEM:
+	elif (typ == T.MGMTOBJ and mgd == T.MEM) or root == T.MEM.tpe():
 		return MEM.MEM(jsn, pi=pi, create=create), None
-	elif (typ == C.tMGMTOBJ and mgd == C.mgdANI) or root == C.tsANI:
+	elif (typ == T.MGMTOBJ and mgd == T.ANI) or root == T.ANI.tpe():
 		return ANI.ANI(jsn, pi=pi, create=create), None
-	elif (typ == C.tMGMTOBJ and mgd == C.mgdANDI) or root == C.tsANDI:
+	elif (typ == T.MGMTOBJ and mgd == T.ANDI) or root == T.ANDI.tpe():
 		return ANDI.ANDI(jsn, pi=pi, create=create), None
-	elif (typ == C.tMGMTOBJ and mgd == C.mgdBAT) or root == C.tsBAT:
+	elif (typ == T.MGMTOBJ and mgd == T.BAT) or root == T.BAT.tpe():
 		return BAT.BAT(jsn, pi=pi, create=create), None
-	elif (typ == C.tMGMTOBJ and mgd == C.mgdDVI) or root == C.tsDVI:
+	elif (typ == T.MGMTOBJ and mgd == T.DVI) or root == T.DVI.tpe():
 		return DVI.DVI(jsn, pi=pi, create=create), None
-	elif (typ == C.tMGMTOBJ and mgd == C.mgdDVC) or root == C.tsDVC:
+	elif (typ == T.MGMTOBJ and mgd == T.DVC) or root == T.DVC.tpe():
 		return DVC.DVC(jsn, pi=pi, create=create), None
-	elif (typ == C.tMGMTOBJ and mgd == C.mgdRBO) or root == C.tsRBO:
+	elif (typ == T.MGMTOBJ and mgd == T.RBO) or root == T.RBO.tpe():
 		return RBO.RBO(jsn, pi=pi, create=create), None
-	elif (typ == C.tMGMTOBJ and mgd == C.mgdEVL) or root == C.tsEVL:
+	elif (typ == T.MGMTOBJ and mgd == T.EVL) or root == T.EVL.tpe():
 		return EVL.EVL(jsn, pi=pi, create=create), None
-	elif typ == C.tCNT_LA or root == C.tsCNT_LA:
+	elif typ == T.CNT_LA or root == T.CNT_LA.tpe():
 		return CNT_LA.CNT_LA(jsn, pi=pi, create=create), None
-	elif typ == C.tCNT_OL or root == C.tsCNT_OL:
+	elif typ == T.CNT_OL or root == T.CNT_OL.tpe():
 		return CNT_OL.CNT_OL(jsn, pi=pi, create=create), None
-	elif typ == C.tFCNT_LA:
+	elif typ == T.FCNT_LA:
 		return FCNT_LA.FCNT_LA(jsn, pi=pi, create=create), None
-	elif typ == C.tFCNT_OL:
+	elif typ == T.FCNT_OL:
 		return FCNT_OL.FCNT_OL(jsn, pi=pi, create=create), None
-	elif typ == C.tCSEBase or root == C.tsCSEBase:
+	elif typ == T.CSEBase or root == T.CSEBase.tpe():
 		return CSEBase.CSEBase(jsn, create=create), None
 
 	return Unknown.Unknown(jsn, typ, root, pi=pi, create=create), None	# Capture-All resource
@@ -460,6 +461,6 @@ def getRequestHeaders(request: Request) -> Tuple[str, str, int, str, int]:
 			p = ct.partition(';')
 			ct = p[0] # content-type
 			t = p[2].partition('=')[2]
-			ty = int(t) if t.isdigit() else C.tUNKNOWN # resource type
+			ty = int(t) if t.isdigit() else T.UNKNOWN # resource type
 
 	return originator, ct, ty, rqi, C.rcOK

@@ -10,6 +10,7 @@
 import sys
 from typing import Tuple, List
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from Validator import constructPolicy
 import Utils
 from .Resource import *
@@ -25,7 +26,7 @@ attributePolicies = constructPolicy([
 class FCNT(Resource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, fcntType: str = None, create: bool = False) -> None:
-		super().__init__(fcntType, jsn, pi, C.tFCNT, create=create, attributePolicies=attributePolicies)
+		super().__init__(T.FCNT, jsn, pi, tpe=fcntType, create=create, attributePolicies=attributePolicies)
 		if self.json is not None:
 			self.setAttribute('cs', 0, overwrite=False)
 
@@ -41,9 +42,9 @@ class FCNT(Resource):
 	# Enable check for allowed sub-resources
 	def canHaveChild(self, resource: Resource) -> bool:
 		return super()._canHaveChild(resource,	
-									 [ C.tCNT,
-									   C.tFCNT,
-									   C.tSUB
+									 [ T.CNT,
+									   T.FCNT,
+									   T.SUB
 									   # FlexContainerInstances are added by the flexContainer itself
 									 ])
 
@@ -57,13 +58,13 @@ class FCNT(Resource):
 
 		if self.hasInstances:
 			# add latest
-			r, _ = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=C.tFCNT_LA)
+			r, _ = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.FCNT_LA)
 			res = CSE.dispatcher.createResource(r)
 			if res[0] is None:
 				return False, res[1], res[2]
 
 			# add oldest
-			r, _ = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=C.tFCNT_OL)
+			r, _ = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.FCNT_OL)
 			res = CSE.dispatcher.createResource(r)
 			if res[0] is None:
 				return False, res[1], res[2]
@@ -79,7 +80,7 @@ class FCNT(Resource):
 			return False, C.rcOperationNotAllowed, 'resource types "latest" or "oldest" cannot be added'
 	
 		# Check whether the size of the CIN doesn't exceed the mbs
-		if childResource.ty == C.tCIN and self.mbs is not None:
+		if childResource.ty == T.CIN and self.mbs is not None:
 			if childResource.cs is not None and childResource.cs > self.mbs:
 				return False, C.rcNotAcceptable,  'children content sizes would exceed mbs'
 		return True, C.rcOK, None
@@ -180,7 +181,7 @@ class FCNT(Resource):
 
 	# Get all flexContainerInstances of a resource and return a sorted (by ct) list 
 	def flexContainerInstances(self) -> List[Resource]:
-		return sorted(CSE.dispatcher.directChildResources(self.ri, C.tFCI), key=lambda x: (x.ct))
+		return sorted(CSE.dispatcher.directChildResources(self.ri, T.FCI), key=lambda x: (x.ct))
 
 # TODO:
 # If the maxInstanceAge attribute is present in the targeted 
@@ -204,7 +205,7 @@ class FCNT(Resource):
 		fci, _ = Utils.resourceFromJSON(jsn = { self.tpe : jsn },
 										pi = self.ri, 
 										acpi = self.acpi, # or no ACPI?
-										ty = C.tFCI)
+										ty = T.FCI)
 
 		CSE.dispatcher.createResource(fci)
 		fci['cs'] = self.cs

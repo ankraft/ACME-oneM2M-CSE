@@ -7,94 +7,30 @@
 #	Various CSE and oneM2M constants
 #
 
+from Types import ResourceTypes as T
+
 class Constants(object):
 
 
-	# Type constants
-
-	tUNKNOWN	= -1
-	tMIXED		=  0
-	tsMIXED		= 'mixed'
-	tACP 		=  1
-	tsACP 		= 'm2m:acp'
-	tAE			=  2
-	tsAE 		= 'm2m:ae'
-	tCNT		=  3
-	tsCNT		= 'm2m:cnt'
-	tCIN 		=  4
-	tsCIN 		= 'm2m:cin'
-	tCSEBase 	=  5
-	tsCSEBase	= 'm2m:cb'
-	tGRP 		=  9
-	tsGRP		= 'm2m:grp'
-	tMGMTOBJ	= 13
-	tsMGMTOBJ	= 'm2m:mgo'	# not an official shortname
-	tNOD		= 14
-	tsNOD		= 'm2m:nod'
-	tCSR		= 16
-	tsCSR 		= 'm2m:csr'
-	tSUB		= 23
-	tsSUB		= 'm2m:sub'
-	tFCNT	 	= 28
-	tsFCNT		= 'm2m:fcnt'	# not an official shortname
-	tFCI 		= 52
-	tsFCI		= 'm2m:fci'		# not an official shortname
-
-	# Virtual resources (proprietary resource types)
-
-	tCNT_OL		=  -20001
-	tsCNT_OL	= 'm2m:ol'
-	tCNT_LA		=  -20002
-	tsCNT_LA	= 'm2m:la'
-	tGRP_FOPT	=  -20003
-	tsGRP_FOPT	= 'm2m:fopt'
-	tFCNT_OL	=  -20004
-	tsFCNT_OL	= 'm2m:ol'
-	tFCNT_LA	=  -20005
-	tsFCNT_LA	= 'm2m:la'
-	tPCH_PCU	=  -20006
-	tsPCH_PCU	= 'm2m:pcu'
-
-	# <mgmtObj> Specializations
-
-	mgdFWR		= 1001
-	tsFWR		= 'm2m:fwr'
-	mgdSWR		= 1002
-	tsSWR		= 'm2m:swr'
-	mgdMEM		= 1003
-	tsMEM		= 'm2m:mem'
-	mgdANI		= 1004
-	tsANI		= 'm2m:ani'
-	mgdANDI		= 1005
-	tsANDI		= 'm2m:andi'
-	mgdBAT		= 1006
-	tsBAT		= 'm2m:bat'
-	mgdDVI 		= 1007
-	tsDVI		= 'm2m:dvi'
-	mgdDVC 		= 1008
-	tsDVC		= 'm2m:dvc'
-	mgdRBO 		= 1009
-	tsRBO		= 'm2m:rbo'
-	mgdEVL 		= 1010
-	tsEVL		= 'm2m:evl'
-
 	# List of virtual resources
 
-	tVirtualResources 				= [ tCNT_LA, tCNT_OL, tFCNT_LA, tFCNT_OL, tGRP_FOPT, tPCH_PCU ]
-	tVirtualResourcesNames 			= [ 'la', 'ol', 'fopt', 'pcu' ]
+	virtualResources 				= [ T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.GRP_FOPT, T.PCH_PCU ]
+	virtualResourcesNames 			= [ 'la', 'ol', 'fopt', 'pcu' ]
 
 	# Supported by this CSE
-	supportedResourceTypes 			= [ tACP, tAE, tCNT, tCIN, tCSEBase, tGRP, tMGMTOBJ, tNOD, tCSR, tSUB, tFCNT, tFCI ]
-	stateTagResourceTypes 			= [ tCNT, tCIN, tFCNT, tFCI ]	# those resource types allow state tags
+	supportedResourceTypes 			= [ T.ACP, T.AE, T.CNT, T.CIN, T.CSEBase, T.GRP, T.MGMTOBJ, T.NOD, T.CSR, T.SUB, T.FCNT, T.FCI ]
+	stateTagResourceTypes 			= [ T.CNT, T.CIN, T.FCNT, T.FCI ]	# those resource types allow state tags
 	supportedContentSerializations 	= [ 'application/json' ]
 	supportedContentHeaderFormat 	= [ 'application/json', 'application/vnd.onem2m-res+json' ]
 	supportedReleaseVersions 		= [ '3' ]
 
+	# List of announceable resource types
+	announceableResourceTypes 		= [ T.ACPAnnc, T.AEAnnc, T.CNTAnnc, T.CINAnnc, T.GRPAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.CSRAnnc, T.FCNTAnnc, T.FCIAnnc ]
+
 	# List of resource types for which "creator" is allowed
 	# Also add later: eventConfig, pollingChannel, statsCollect, statsConfig, semanticDescriptor,
 	# notificationTargetPolicy, timeSeries, crossResourceSubscription, backgroundDataTransfer
-	tCreatorAllowed = [ tCIN, tCNT, tGRP, tSUB, tFCNT ]
-
+	creatorAllowed = [ T.CIN, T.CNT, T.GRP, T.SUB, T.FCNT ]
 
 
 

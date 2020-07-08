@@ -13,7 +13,7 @@ from Constants import Constants as C
 import CSE
 from .Resource import *
 from Logging import Logging
-from Constants import Constants as C
+from Types import ResourceTypes as T
 
 
 # TODO:
@@ -26,7 +26,7 @@ from Constants import Constants as C
 class GRP_FOPT(Resource):
 
 	def __init__(self, jsn: dict = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(C.tsGRP_FOPT, jsn, pi, C.tGRP_FOPT, create=create, inheritACP=True, readOnly=True, rn='fopt', isVirtual=True)
+		super().__init__(T.GRP_FOPT, jsn, pi, create=create, inheritACP=True, readOnly=True, rn='fopt', isVirtual=True)
 
 
 	# Enable check for allowed sub-resources

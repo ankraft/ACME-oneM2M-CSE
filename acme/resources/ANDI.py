@@ -8,7 +8,7 @@
 #
 
 from .MgmtObj import *
-from Constants import Constants as C
+from Types import ResourceTypes as T
 from Validator import constructPolicy
 import Utils
 
@@ -26,7 +26,7 @@ defaultAreaNwkType = ''
 class ANDI(MgmtObj):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(jsn, pi, C.tsANDI, C.mgdANDI, create=create, attributePolicies=attributePolicies)
+		super().__init__(jsn, pi, mgd=T.ANDI, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('dvd', defaultAreaNwkType, overwrite=False)

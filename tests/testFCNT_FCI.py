@@ -11,6 +11,7 @@ import unittest, sys
 import requests
 sys.path.append('../acme')
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from init import *
 
 CND = 'org.onem2m.home.moduleclass.temperature'
@@ -26,7 +27,7 @@ class TestFCNT_FCI(unittest.TestCase):
 					'rr': False,
 					'srv': [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', C.tAE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
 		assert rsc == C.rcCreated, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
@@ -49,14 +50,14 @@ class TestFCNT_FCI(unittest.TestCase):
 					'steVe'	: 0.5,
 					'mni'	: 10
 				}}
-		r, rsc = CREATE(aeURL, TestFCNT_FCI.originator, C.tFCNT, jsn)
+		r, rsc = CREATE(aeURL, TestFCNT_FCI.originator, T.FCNT, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 
 
 	def test_attributesFCNT(self):
 		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)
 		self.assertEqual(rsc, C.rcOK)
-		self.assertEqual(findXPath(r, 'hd:tempe/ty'), C.tFCNT)
+		self.assertEqual(findXPath(r, 'hd:tempe/ty'), T.FCNT)
 		self.assertEqual(findXPath(r, 'hd:tempe/pi'), findXPath(TestFCNT_FCI.ae,'m2m:ae/ri'))
 		self.assertEqual(findXPath(r, 'hd:tempe/rn'), fcntRN)
 		self.assertIsNotNone(findXPath(r, 'hd:tempe/ct'))
