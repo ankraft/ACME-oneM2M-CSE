@@ -9,14 +9,16 @@
 
 from Types import ResourceTypes as T
 from .Resource import *
-from Validator import constructPolicy
+from Validator import constructPolicy, addPolicy
 import Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'ct', 'et', 'lbl', 'acpi',
-	'cs'
+	'ty', 'ri', 'rn', 'pi', 'ct', 'et', 'lbl', 'acpi', 'at', 'aa', 
 ])
+fcinPolicies = constructPolicy([ 'cs' ])
+attributePolicies =  addPolicy(attributePolicies, fcinPolicies)
+
 
 class FCI(Resource):
 
@@ -27,3 +29,13 @@ class FCI(Resource):
 	# Enable check for allowed sub-resources. No Child for CIN
 	def canHaveChild(self, resource: Resource) -> bool:
 		return super()._canHaveChild(resource, [])
+
+	# Forbidd updating
+	def update(self, jsn: dict = None, originator: str = None) -> Tuple[bool, int, str]:
+		return False, C.rcOperationNotAllowed, 'updating FCIN is forbidden'
+
+
+	# create the json stub for the announced resource
+	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
+		return super()._createAnnouncedJSON(fcinPolicies), C.rcOK, None
+

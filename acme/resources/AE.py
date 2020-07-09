@@ -91,7 +91,6 @@ class AE(Resource):
 		self._removeAEfromNOD(nl, self['ri'])
 
 
-
 	# create the json stub for the announced resource
 	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
 		return super()._createAnnouncedJSON(aePolicies), C.rcOK, None

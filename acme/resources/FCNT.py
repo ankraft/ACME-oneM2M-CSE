@@ -11,7 +11,7 @@ import sys
 from typing import Tuple, List
 from Constants import Constants as C
 from Types import ResourceTypes as T
-from Validator import constructPolicy
+from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
 
@@ -19,9 +19,12 @@ from .Resource import *
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
 	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'cr', 'daci', 'loc',
-	'cnd', 'or', 'cs', 'nl', 'mni', 'mia', 'mbs', 'cni'
-
 ])
+fcntPolicies = constructPolicy([
+	'cnd', 'or', 'cs', 'nl', 'mni', 'mia', 'mbs', 'cni'
+])
+attributePolicies = addPolicy(attributePolicies, fcntPolicies)
+
 
 class FCNT(Resource):
 
@@ -163,6 +166,13 @@ class FCNT(Resource):
 		x = CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
 		
 		return True, C.rcOK, None
+
+
+	# create the json stub for the announced resource
+	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
+		# add the attributes for this specialization
+		policies = addPolicy(attributePolicies.copy(), CSE.validator.getAdditionAttributesFor(self.tpe))
+		return super()._createAnnouncedJSON(policies), C.rcOK, None
 
 
 	# Validate expirations of child resurces

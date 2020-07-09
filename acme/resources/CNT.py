@@ -12,7 +12,7 @@ from Logging import Logging
 from Configuration import Configuration
 from Constants import Constants as C
 from Types import ResourceTypes as T
-from Validator import constructPolicy
+from Validator import constructPolicy, addPolicy
 import Utils, CSE
 from .Resource import *
 
@@ -20,8 +20,11 @@ from .Resource import *
 attributePolicies = constructPolicy([ 
 	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'daci', 'loc',
 	'cr', 
+])
+cntPolicies = constructPolicy([
 	'mni', 'mbs', 'mia', 'cni', 'cbs', 'li', 'or', 'disr'
 ])
+attributePolicies =  addPolicy(attributePolicies, cntPolicies)
 
 
 class CNT(Resource):
@@ -144,4 +147,9 @@ class CNT(Resource):
 		CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
 
 		return True, C.rcOK, None
+
+
+	# create the json stub for the announced resource
+	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
+		return super()._createAnnouncedJSON(cntPolicies), C.rcOK, None
 

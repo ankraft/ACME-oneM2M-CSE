@@ -10,16 +10,19 @@
 from typing import Tuple
 from Constants import Constants as C
 from Types import ResourceTypes as T
-from Validator import constructPolicy
+from Validator import constructPolicy, addPolicy
 from .Resource import *
 import Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
 	'rn', 'ty', 'ri', 'pi', 'et', 'ct', 'lt', 'st', 'lbl', 'at', 'aa', 'cr',
-	'cnf', 'cs', 'conr', 'con', 'or'
-
 ])
+cinPolicies = constructPolicy([
+	'cnf', 'cs', 'conr', 'con', 'or'
+])
+attributePolicies = addPolicy(attributePolicies, cinPolicies)
+
 
 class CIN(Resource):
 
@@ -47,3 +50,8 @@ class CIN(Resource):
 	# Forbidd updating
 	def update(self, jsn: dict = None, originator: str = None) -> Tuple[bool, int, str]:
 		return False, C.rcOperationNotAllowed, 'updating CIN is forbidden'
+
+
+	# create the json stub for the announced resource
+	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
+		return super()._createAnnouncedJSON(cinPolicies), C.rcOK, None

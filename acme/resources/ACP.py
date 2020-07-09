@@ -36,7 +36,6 @@ class ACP(Resource):
 			if createdInternally is not None:
 				self.setAttribute(self._createdInternally, createdInternally)
 
-		print(self.createAnnouncedResourceJSON())
 
 	# Enable check for allowed sub-resources
 	def canHaveChild(self, resource: Resource) -> bool:
