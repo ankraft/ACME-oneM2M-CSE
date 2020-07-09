@@ -1,22 +1,22 @@
 #
-#	AEAnnc.py
+#	ACPAnnc.py
 #
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	AE : Announceable variant
+#	Acp : Announceable variant
 #
 
 
 from .AnnouncedResource import AnnouncedResource
-from Typoes import ResourceTypes as T
+from Types import ResourceTypes as T
 
 
 
-class AEAnnc.py(AnnouncedResource):
+class CPAnnc.py(AnnouncedResource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(T.AEAnnc, jsn, pi=pi, create=create)
+		super().__init__(T.ACPAnnc, jsn, pi=pi, create=create)
 
 
 	# Enable check for allowed sub-resources

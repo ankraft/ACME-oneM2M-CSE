@@ -10,16 +10,20 @@
 from typing import Tuple, List
 from Constants import Constants as C
 from Types import ResourceTypes as T
-from Validator import constructPolicy
+from Validator import constructPolicy, addPolicy
 from .Resource import *
 import Utils
 
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
-	'rn', 'ty', 'ri', 'pi', 'et', 'lbl', 'ct', 'lt', 'at', 'aa', 
+	'rn', 'ty', 'ri', 'pi', 'et', 'lbl', 'ct', 'lt', 'at', 'aa'
+])
+acpPolicies = constructPolicy([
 	'pv', 'pvs', 'adri', 'apri', 'airi'
 ])
+attributePolicies =  addPolicy(attributePolicies, acpPolicies)
+
 
 class ACP(Resource):
 
@@ -32,6 +36,7 @@ class ACP(Resource):
 			if createdInternally is not None:
 				self.setAttribute(self._createdInternally, createdInternally)
 
+		print(self.createAnnouncedResourceJSON())
 
 	# Enable check for allowed sub-resources
 	def canHaveChild(self, resource: Resource) -> bool:
@@ -111,4 +116,9 @@ class ACP(Resource):
 			if 'all' in p['acor'] or origin in p['acor']:
 				return True
 		return False
+
+
+	# create the json stub for the announced resource
+	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
+		return super()._createAnnouncedJSON(acpPolicies), C.rcOK, None
 

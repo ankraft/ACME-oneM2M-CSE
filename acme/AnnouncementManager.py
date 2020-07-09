@@ -10,7 +10,7 @@
 from Logging import Logging
 import Utils, CSE
 from resources.Resource import Resource
-from resources.AnnounceableResource import AnnounceableResource
+from resources.AnnouncedResource import AnnouncedResource
 
 
 
@@ -91,7 +91,7 @@ class AnnouncementManager(object):
 		pass
 
 
-	def createAnnounceableResource(self, resource: Resource) -> AnnounceableResource:
+	def createAnnounceableResource(self, resource: Resource) -> AnnouncedResource:
 		# check if correct type
 		# Create correct resource type.
 		# copy / set attributes from TS-0001 9.6.26.2

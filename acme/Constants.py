@@ -25,7 +25,7 @@ class Constants(object):
 	supportedReleaseVersions 		= [ '3' ]
 
 	# List of announceable resource types
-	announceableResourceTypes 		= [ T.ACPAnnc, T.AEAnnc, T.CNTAnnc, T.CINAnnc, T.GRPAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.CSRAnnc, T.FCNTAnnc, T.FCIAnnc ]
+	announcedResourceTypes 			= [ T.ACPAnnc, T.AEAnnc, T.CNTAnnc, T.CINAnnc, T.GRPAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.CSRAnnc, T.FCNTAnnc, T.FCIAnnc ]
 
 	# List of resource types for which "creator" is allowed
 	# Also add later: eventConfig, pollingChannel, statsCollect, statsConfig, semanticDescriptor,

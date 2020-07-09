@@ -73,8 +73,11 @@ class AppBase(object):
 			# No, so create mgmtObj specialization
 			srn = os.path.split(srn)[0] if srn.count('/') >= 0 else ''
 			n, rc, msg = self.createResource(srn=srn, ty=ty, jsn=jsn)
-			if n is not None:
+			if rc == C.rcCreated:
 				return Utils.resourceFromJSON(n)[0]
+			else:
+				#Logging.logErr(n)
+				pass
 		else: # just retrieve
 			return Utils.resourceFromJSON(result[0])[0]
 		return None

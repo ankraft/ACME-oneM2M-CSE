@@ -81,6 +81,8 @@ class ResourceTypes(IntEnum):
 		return ResourceTypes._names[self.value] #  type: ignore
 
 ResourceTypes._names 	= {							# type: ignore
+		ResourceTypes.UNKNOWN		: 'unknown',
+
 		ResourceTypes.MIXED			: 'mixed',
 		ResourceTypes.ACP 			: 'm2m:acp',
 		ResourceTypes.AE 			: 'm2m:ae',

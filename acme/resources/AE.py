@@ -7,18 +7,24 @@
 #	ResourceType: Application Entity
 #
 
+from typing import Tuple, Dict
 from Constants import Constants as C
 from Types import ResourceTypes as T
-from Validator import constructPolicy
+from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
+from .AnnouncedResource import AnnouncedResource
 
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 'loc',
+	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 'loc'
+])
+aePolicies = constructPolicy([
 	'apn', 'api', 'aei', 'poa', 'nl', 'rr', 'csz', 'esi', 'mei', 'srv', 'regs', 'trps', 'scp', 'tren', 'ape','or'
 ])
+attributePolicies =  addPolicy(attributePolicies, aePolicies)
+
 
 
 class AE(Resource):
@@ -83,6 +89,12 @@ class AE(Resource):
 		if (nl := self['nl']) is None:
 			return
 		self._removeAEfromNOD(nl, self['ri'])
+
+
+
+	# create the json stub for the announced resource
+	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
+		return super()._createAnnouncedJSON(aePolicies), C.rcOK, None
 
 
 	def _removeAEfromNOD(self, nodeRi: str, ri: str) -> None:

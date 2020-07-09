@@ -304,7 +304,7 @@ def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, i
 	elif typ == T.CSEBase or root == T.CSEBase.tpe():
 		return CSEBase.CSEBase(jsn, create=create), None
 
-	return Unknown.Unknown(jsn, typ, root, pi=pi, create=create), None	# Capture-All resource
+	return Unknown.Unknown(jsn, root, pi=pi, create=create), None	# Capture-All resource
 
 
 excludeFromRoot = [ 'pi' ]

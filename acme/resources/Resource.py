@@ -9,13 +9,14 @@
 
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
-from typing import Any, Tuple, Union
+from typing import Any, Tuple, Union, Dict, List
 from Logging import Logging
 from Constants import Constants as C
 from Types import ResourceTypes as T
 from Configuration import Configuration
 import Utils, CSE
 import datetime, random
+from .Resource import *
 
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)
 
@@ -34,7 +35,7 @@ class Resource(object):
 
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator ]
 
-	def __init__(self, ty: Union[T, int], jsn: dict = None, pi: str = None, tpe:str = None, create: bool = False, inheritACP: bool = False, readOnly: bool = False, rn: str = None, attributePolicies: dict = None, isVirtual: bool = False, isAnnounced:bool = False) -> None:
+	def __init__(self, ty: Union[T, int], jsn: dict = None, pi: str = None, tpe:str = None, create: bool = False, inheritACP: bool = False, readOnly: bool = False, rn: str = None, attributePolicies: dict = None, isVirtual: bool = False, isAnnouncedResource:bool = False) -> None:
 		self.tpe = tpe
 		if isinstance(ty, T) and ty not in [ T.FCNT, T.FCI ]: 	# For some types the tpe/root is empty and will be set later in this method
 			self.tpe = ty.tpe() if tpe is None else tpe
@@ -76,8 +77,8 @@ class Resource(object):
 				self.setAttribute(self._isVirtual, isVirtual)
 
 			# Indicate whetehr this is an announced resource
-			if isAnnounced:
-				self.setAttribute(self._isAnnounced, isAnnounced)
+			if isAnnouncedResource:
+				self.setAttribute(self._isAnnounced, isAnnouncedResource)
 	
 			# Create an RN if there is none
 			self.setAttribute('rn', Utils.uniqueRN(self.tpe), overwrite=False)
@@ -265,6 +266,38 @@ class Resource(object):
 			MAY be implemented by child class.
 		"""
 		pass
+
+
+	def createAnnouncedJSON(self) -> Tuple[dict, int, str]:
+		"""	Create an announceable resource. This method is implemented by the
+			resource implementations that support announceable versions.
+		"""
+		return None, C.rcBadRequest, 'wrong resource type or announcement not supported'
+
+
+	# Actually create the json
+	def _createAnnouncedJSON(self, policies: Dict[str, List[Any]]) -> dict:
+		jsn = { self.tpe : {
+					'ty'	: int(self.ty),
+					'rn'	: '%s_Annc' % self.rn,
+					'lnk'	: '%s/%s' % (Configuration.get('cse.csi'), self.ri),
+					# set by parent: ri, pi, ct, lt, et
+			}
+		}
+		if (st := self.st) is not None:
+			Utils.setXPath(jsn, '%s/st' % self.tpe, st)
+		if (acpi := self.acpi) is not None:
+			Utils.setXPath(jsn, '%s/acpi' % self.tpe, acpi.copy())
+		if (lbl := self.lbl) is not None:
+			Utils.setXPath(jsn, '%s/lbl' % self.tpe, lbl.copy())
+
+		# get  all resource specific policies and add the mandatory ones
+		mandatoryAttributes, optionalAttributes = CSE.validator.getAnnouncedAttributes(self, policies)
+		for attr in mandatoryAttributes:
+			Utils.setXPath(jsn, '%s/%s' % (self.tpe, attr), self[attr])
+		for attr in optionalAttributes:
+			Utils.setXPath(jsn, '%s/%s' % (self.tpe, attr), self[attr])
+		return jsn
 
 
 	#########################################################################

@@ -12,6 +12,7 @@ from Logging import Logging
 from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN 		# type: ignore
 from Constants import Constants as C
 from Configuration import Configuration
+from resources.Resource import Resource
 import Utils
 
 
@@ -217,6 +218,12 @@ attributePolicies = {
 def constructPolicy(attributes: List[str]) -> Dict[str, List[Any]]:
 	""" Help to construct a dict of policies for the given list of shortnames. """
 	return { k:attributePolicies.get(k) for k in attributes }
+
+
+def addPolicy(policies: Dict[str, List[Any]], newPolicies: Dict[str, List[Any]]) -> Dict[str, List[Any]]:
+	"""	Add further policies to a policy dictionary. """
+	policies.update( newPolicies )
+	return policies
 
 
 class Validator(object):
@@ -458,5 +465,28 @@ class Validator(object):
 			return True, None
 
 		return False, 'unknown type'
+
+
+	#########################################################################
+	#
+	#	Policy support
+	#
+
+	def getAnnouncedAttributes(self, resource:Resource, policies:Dict[str, List[Any]]) -> Tuple[List[str], List[str]]:
+		"""	Return a list of mandatory and optional announced attributes. 
+			The function only returns those attributes that are also present in the resource!
+		"""
+		mandatory = []
+		optional = []
+		hasAA = resource.hasAttribute('aa')
+		for attr,v in policies.items():
+			if resource.hasAttribute(attr):
+				if v[5] == AN.MA:
+					mandatory.append(attr)
+				elif hasAA and v[5] == AN.OA and resource.hasAttribute(attr):	# only add optional attributes that are also in aa
+					optional.append(attr)
+		return mandatory, optional
+
+
 
 
