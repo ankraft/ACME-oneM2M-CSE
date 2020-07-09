@@ -38,18 +38,18 @@ class AEStatistics(AEBase):
 		# Attribute definitions for the statistics specialization
 		statisticAttributes =  {
 			self.fcntType : {
-				'rmRes'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
-				'crRes'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
-				'upRes'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
-				'htRet'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
-				'htCre'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
-				'htUpd'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
-				'htDel'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
-				'cseSU'	: [ BT.timestamp,		CAR.car01, 	RO.O,	RO.O,  AN.OA ],
-				'lgErr'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
-				'lgWrn'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ],
-				'cseUT'	: [ BT.string,			CAR.car01, 	RO.O,	RO.O,  AN.OA ],
-				'ctRes'	: [ BT.nonNegInteger,	CAR.car01, 	RO.O,	RO.O,  AN.OA ]
+				'rmRes'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
+				'crRes'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
+				'upRes'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
+				'htRet'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
+				'htCre'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
+				'htUpd'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
+				'htDel'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
+				'cseSU'	: [ BT.timestamp,		CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
+				'lgErr'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
+				'lgWrn'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
+				'cseUT'	: [ BT.string,			CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
+				'ctRes'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ]
 			}
 		}
 
@@ -64,6 +64,7 @@ class AEStatistics(AEBase):
        											'cnd' : Configuration.get('app.statistics.fcntCND'),
        											'acpi': [ self.acpi ],	# assignde by CSE,
        											'mni' : 10,
+       											'aa' : ['htCre'],
 												Statistics.deletedResources : 0,
 												Statistics.createdResources : 0,
 												Statistics.updatedResources : 0,

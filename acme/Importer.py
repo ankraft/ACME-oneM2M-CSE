@@ -176,7 +176,7 @@ class Importer(object):
 
 
 	def importAttributePolicies(self, path: str = None) -> bool:
-		fieldNames = ['resourceType', 'shortName', 'dataType', 'cardinality' , 'optionalCreate', 'optionalUpdate', 'announced' ]
+		fieldNames = ['resourceType', 'shortName', 'dataType', 'cardinality' , 'optionalCreate', 'optionalUpdate', 'optionalDiscovery', 'announced' ]
 
 		# Get import path
 		if path is None:
@@ -223,13 +223,17 @@ class Importer(object):
 							Logging.logErr('Missing or empty optional create for row: %s in file: %s' % (row, fn))
 							return False
 						opup = self._nameOptionalityMappings.get(tmp.lower())
+						if (tmp := row.get('optionalDiscovery')) is None or len(tmp) == 0:
+							Logging.logErr('Missing or empty optional discovery for row: %s in file: %s' % (row, fn))
+							return False
+						opdi = self._nameOptionalityMappings.get(tmp.lower())
 						if (tmp := row.get('announced')) is None or len(tmp) == 0:
 							Logging.logErr('Missing or empty announced for row: %s in file: %s' % (row, fn))
 							return False
 						annc = self._nameAnnouncementMappings.get(tmp.lower())
 
 						# get possible existing definitions for that type, or create one
-						CSE.validator.addAdditionalAttributePolicy(tpe, { sn : [ dtpe, car, opcr, opup, annc] })
+						CSE.validator.addAdditionalAttributePolicy(tpe, { sn : [ dtpe, car, opcr, opup, opdi, annc] })
 
 		return True
 

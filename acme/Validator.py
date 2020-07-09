@@ -353,10 +353,21 @@ class Validator(object):
 	additionalAttributes:Dict[str, Dict[str, List[Any]]] = { }
 
 
-	def updateAdditionalAttributes(self, attributes: dict) -> None:
-		""" Add or update new specialization attribute definitions to the validator. The dict has a single entry (the type)
-			that contains another dict of attribute definitions for that type. """
+	def updateAdditionalAttributes(self, attributes: dict) -> bool:
+		""" Add or update new specialization attribute definitions to the validator.
+			The dict has a single entry (the type) that contains another dict 
+			of attribute definitions for that type. 
+		"""
+		if len(attributes.keys()) != 1:
+			Logging.logErr('Additional attributes must only contain 1 type')
+			return False
+		entries = attributes[next(iter(attributes))]	# get first and only entry
+		for k,v in entries.items():
+			if len(v) != 6:
+				Logging.logErr('Attribute description for %s must contain 6 entries' % k)
+				return False
 		self.additionalAttributes.update(attributes)
+		return True
 
 
 	def addAdditionalAttributePolicy(self, tpe: str, policies: dict) -> None:
@@ -478,12 +489,12 @@ class Validator(object):
 		"""
 		mandatory = []
 		optional = []
-		hasAA = resource.hasAttribute('aa')
+		aa = resource.aa
 		for attr,v in policies.items():
 			if resource.hasAttribute(attr):
 				if v[5] == AN.MA:
 					mandatory.append(attr)
-				elif hasAA and v[5] == AN.OA and resource.hasAttribute(attr):	# only add optional attributes that are also in aa
+				elif aa is not None and v[5] == AN.OA and attr in aa and resource.hasAttribute(attr):	# only add optional attributes that are also in aa
 					optional.append(attr)
 		return mandatory, optional
 

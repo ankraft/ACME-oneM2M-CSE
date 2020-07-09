@@ -1,17 +1,17 @@
-# resourceType, shortName, dataType, cardinality, optionalCreate, optionalUpdate, announced
+# resourceType, shortName, dataType, cardinality, optionalCreate, optionalUpdate, optionalDiscovery, announced
 
 # Additional attribute policies for <flexContainer> specializations
 # !!! Don't change the first line !!!
 
 # ModuleClass: Colour
-hd:color,red,nonNegInteger,car1,M,M,OA
-hd:color,green,nonNegInteger,car1,M,M,OA
-hd:color,blue,nonNegInteger,car1,M,M,OA
+hd:color,red,nonNegInteger,car1,O,O,O,OA
+hd:color,green,nonNegInteger,car1,O,O,O,OA
+hd:color,blue,nonNegInteger,car1,O,O,O,OA
 
 # ModuleClass: Temperature
-hd:tempe,curTe,float,car1,O,O,OA
-hd:tempe,tarTe,float,car1,O,O,OA
-hd:tempe,unit,positiveInteger,car01,O,O,OA
-hd:tempe,minVe,float,car01,O,O,OA
-hd:tempe,maxVe,float,car01,O,O,OA
-hd:tempe,steVe,float,car01,O,O,OA
+hd:tempe,curTe,float,car1,O,O,O,OA
+hd:tempe,tarTe,float,car1,O,O,O,OA
+hd:tempe,unit,positiveInteger,car01,O,O,O,OA
+hd:tempe,minVe,float,car01,O,O,O,OA
+hd:tempe,maxVe,float,car01,O,O,O,OA
+hd:tempe,steVe,float,car01,O,O,O,OA
