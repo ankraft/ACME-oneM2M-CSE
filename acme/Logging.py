@@ -104,7 +104,8 @@ class	Logging:
 	def loggingWorker() -> bool:
 		while Logging.queue is not None and not Logging.queue.empty():
 			level, msg, caller, thread = Logging.queue.get()
-			Logging.loggerConsole.log(level, '%s*%d*%d*%s', os.path.basename(caller.filename), caller.lineno, thread.native_id, msg)
+			#Logging.loggerConsole.log(level, '%s*%d*%d*%s', os.path.basename(caller.filename), caller.lineno, thread.native_id, msg)
+			Logging.loggerConsole.log(level, '%s*%d*%-10.10s*%s', os.path.basename(caller.filename), caller.lineno, thread.name, msg)
 		return True
 
 
@@ -179,7 +180,8 @@ class ACMERichLogHandler(RichHandler):
 			r"(?P<url>https?:\/\/[0-9a-zA-Z\$\-\_\~\+\!`\(\)\,\.\?\/\;\:\&\=\%]*)",
 			#r"(?P<uuid>[a-fA-F0-9]{8}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{12})",
 
-			r"(?P<dim>^[0-9]+\.?[0-9]*\b - )",		# thread ident at front
+			# r"(?P<dim>^[0-9]+\.?[0-9]*\b - )",		# thread ident at front
+			r"(?P<dim>^[^ ]*[ ]*- )",		# thread ident at front
 			r"(?P<request>==>.*:)",					# Incoming request or response
 			r"(?P<request>Request ==>:)",					# Outgoing request or response
 			r"(?P<response><== [^ :]+[ :]+)",			# outgoing response or request
@@ -202,7 +204,7 @@ class ACMERichLogHandler(RichHandler):
 		if len(messageElements := message.split('*', 3)) == 4:
 			path = messageElements[0]
 			lineno = int(messageElements[1])
-			threadID = int(messageElements[2])
+			threadID = messageElements[2]
 			message = messageElements[3]
 		time_format = None if self.formatter is None else self.formatter.datefmt
 		log_time = datetime.datetime.fromtimestamp(record.created)

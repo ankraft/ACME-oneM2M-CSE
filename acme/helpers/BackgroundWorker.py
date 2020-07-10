@@ -27,6 +27,7 @@ class BackgroundWorker(object):
 		self.doStop = False
 		self.workerThread = Thread(target=self.work)
 		self.workerThread.setDaemon(True)	# Make the thread a daemon of the main thread
+		self.workerThread.name = self.name
 		self.workerThread.start()
 
 

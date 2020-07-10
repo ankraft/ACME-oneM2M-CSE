@@ -8,7 +8,7 @@
 #	modules and entities of the CSE.
 #
 
-import datetime, random, string, sys, re
+import datetime, random, string, sys, re, threading
 from typing import Any, List, Tuple, Union
 from resources import ACP, AE, ANDI, ANI, BAT, CIN, CNT, CNT_LA, CNT_OL, CSEBase, CSR, DVC
 from resources import DVI, EVL, FCI, FCNT, FCNT_LA, FCNT_OL, FWR, GRP, GRP_FOPT, MEM, NOD, RBO, SUB, SWR, Unknown, Resource
@@ -464,3 +464,13 @@ def getRequestHeaders(request: Request) -> Tuple[str, str, int, str, int]:
 			ty = int(t) if t.isdigit() else T.UNKNOWN # resource type
 
 	return originator, ct, ty, rqi, C.rcOK
+
+
+#
+#	Threads
+#
+
+def renameCurrentThread(name:str = None, thread:threading.Thread = None) -> None:
+	thread = threading.current_thread() if thread is None else thread
+	thread.name = name if name is not None else str(thread.native_id)
+

@@ -105,6 +105,7 @@ class HttpServer(object):
 
 
 	def handleGET(self, path: str = None) -> Response:
+		Utils.renameCurrentThread()
 		Logging.logDebug('==> Retrieve: /%s' % path) # path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpRetrieve() # type: ignore
@@ -117,6 +118,7 @@ class HttpServer(object):
 
 
 	def handlePOST(self, path: str = None) -> Response:
+		Utils.renameCurrentThread()
 		Logging.logDebug('==> Create: /%s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
@@ -130,6 +132,7 @@ class HttpServer(object):
 
 
 	def handlePUT(self, path: str = None) -> Response:
+		Utils.renameCurrentThread()
 		Logging.logDebug('==> Update: /%s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
@@ -143,6 +146,7 @@ class HttpServer(object):
 
 
 	def handleDELETE(self, path: str = None) -> Response:
+		Utils.renameCurrentThread()
 		Logging.logDebug('==> Delete: /%s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpDelete()	# type: ignore

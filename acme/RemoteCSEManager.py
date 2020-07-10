@@ -55,7 +55,7 @@ class RemoteCSEManager(object):
 		if not Configuration.get('cse.enableRemoteCSE'):
 			return;
 		Logging.log('Starting remote CSE connection monitor')
-		self.worker = BackgroundWorker(self.checkInterval, self.connectionMonitorWorker, 'remoteConnectionMonitor')
+		self.worker = BackgroundWorker(self.checkInterval, self.connectionMonitorWorker, 'csrMonitor')
 		self.worker.start()
 
 
