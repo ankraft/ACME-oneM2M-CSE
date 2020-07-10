@@ -11,7 +11,7 @@ import random, string
 from Constants import Constants as C
 from Types import ResourceTypes as T
 import Utils, CSE
-from Validator import constructPolicy
+from Validator import constructPolicy, addPolicy
 from .Resource import *
 
 # TODO Support cmdhPolicy
@@ -19,8 +19,12 @@ from .Resource import *
 
 attributePolicies = constructPolicy([ 
 	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci',
+])
+nodPolicies = constructPolicy([
 	'ni', 'hcl', 'hael', 'hsl', 'mgca', 'rms', 'nid', 'nty'
 ])
+attributePolicies = addPolicy(attributePolicies, nodPolicies)
+
 
 class NOD(Resource):
 
@@ -48,6 +52,11 @@ class NOD(Resource):
 		ri = self['ri']
 		for ae in self['hael']:
 			self._removeNODfromAE(ae, ri)
+
+
+	# create the json stub for the announced resource
+	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
+		return super()._createAnnouncedJSON(nodPolicies), C.rcOK, None
 
 
 	def _removeNODfromAE(self, aeRI: str, ri: str) -> None:

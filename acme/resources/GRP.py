@@ -10,15 +10,19 @@
 from typing import Tuple
 from Constants import Constants as C
 from Types import ResourceTypes as T
-from Validator import constructPolicy
+from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
 	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 'cr',
+])
+grpPolicies = constructPolicy([
 	'mt', 'spty', 'cnm', 'mnm', 'mid', 'macp', 'mtv', 'csy', 'gn', 'ssi', 'nar'
 ])
+attributePolicies = addPolicy(attributePolicies, grpPolicies)
+
 
 class GRP(Resource):
 
@@ -60,6 +64,11 @@ class GRP(Resource):
 		if (res := super().validate(originator, create))[0] == False:
 			return res
 		return CSE.group.validateGroup(self, originator)
+
+
+	# create the json stub for the announced resource
+	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
+		return super()._createAnnouncedJSON(grpPolicies), C.rcOK, None
 
 
 

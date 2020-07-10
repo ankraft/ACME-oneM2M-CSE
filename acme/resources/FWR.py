@@ -9,15 +9,15 @@
 
 from .MgmtObj import *
 from Types import ResourceTypes as T
-from Validator import constructPolicy
+from Validator import constructPolicy, addPolicy
 import Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 
-	'mgd', 'obis', 'obps', 'dc', 'mgs', 'cmlk',
+fwrPolicies = constructPolicy([
 	'vr', 'fwn', 'url', 'uds', 'ud'
 ])
+attributePolicies =  addPolicy(mgmtObjAttributePolicies, fwrPolicies)
+
 
 statusUninitialized = 0
 statusSuccessful = 1
@@ -44,3 +44,6 @@ class FWR(MgmtObj):
 			self.setAttribute('ud', False, overwrite=False)
 
 
+	# create the json stub for the announced resource
+	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
+		return super()._createAnnouncedJSON(fwrPolicies), C.rcOK, None

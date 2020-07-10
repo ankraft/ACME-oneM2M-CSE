@@ -9,15 +9,15 @@
 
 from .MgmtObj import *
 from Types import ResourceTypes as T
-from Validator import constructPolicy
+from Validator import constructPolicy, addPolicy
 import Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 
-	'mgd', 'obis', 'obps', 'dc', 'mgs', 'cmlk',
+evlPolicies = constructPolicy([
 	'lgt', 'lgd', 'lgst', 'lga', 'lgo'
 ])
+attributePolicies = addPolicy(mgmtObjAttributePolicies, evlPolicies)
+
 
 lgtSystem = 1
 lgtSecurity	= 2
@@ -47,3 +47,7 @@ class EVL(MgmtObj):
 			self.setAttribute('lga', False, overwrite=False)
 			self.setAttribute('lgo', False, overwrite=False)
 
+
+	# create the json stub for the announced resource
+	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
+		return super()._createAnnouncedJSON(evlPolicies), C.rcOK, None

@@ -37,5 +37,6 @@ class FCI(Resource):
 
 	# create the json stub for the announced resource
 	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
-		return super()._createAnnouncedJSON(fcinPolicies), C.rcOK, None
-
+		# add the attributes for this specialization
+		policies = addPolicy(fcinPolicies.copy(), CSE.validator.getAdditionAttributesFor(self.tpe))
+		return super()._createAnnouncedJSON(policies), C.rcOK, None

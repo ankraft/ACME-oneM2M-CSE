@@ -222,6 +222,7 @@ def constructPolicy(attributes: List[str]) -> Dict[str, List[Any]]:
 
 def addPolicy(policies: Dict[str, List[Any]], newPolicies: Dict[str, List[Any]]) -> Dict[str, List[Any]]:
 	"""	Add further policies to a policy dictionary. """
+	policies = policies.copy()
 	policies.update( newPolicies )
 	return policies
 

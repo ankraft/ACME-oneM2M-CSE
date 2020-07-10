@@ -14,6 +14,6 @@ from Types import ResourceTypes as T
 
 class AnnouncedResource(Resource):
 
-	def __init__(self, ty:T, jsn: dict, pi:str = None, create:bool = False) -> None:
-		super().__init__(ty, jsn, pi, create=create, isAnnouncedResource=True)
+	def __init__(self, ty:T, jsn: dict, pi:str = None, tpe:str = None, create:bool = False) -> None:
+		super().__init__(ty, jsn, pi, tpe=tpe, create=create, isAnnouncedResource=True)
 

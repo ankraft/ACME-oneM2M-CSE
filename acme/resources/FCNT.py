@@ -171,7 +171,7 @@ class FCNT(Resource):
 	# create the json stub for the announced resource
 	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
 		# add the attributes for this specialization
-		policies = addPolicy(attributePolicies.copy(), CSE.validator.getAdditionAttributesFor(self.tpe))
+		policies = addPolicy(fcntPolicies.copy(), CSE.validator.getAdditionAttributesFor(self.tpe))
 		return super()._createAnnouncedJSON(policies), C.rcOK, None
 
 
@@ -203,14 +203,13 @@ class FCNT(Resource):
 	# Add a new FlexContainerInstance for this flexContainer
 	def addFlexContainerInstance(self, originator: str) -> None:
 		Logging.logDebug('Adding flexContainerInstance')
-		jsn = {	'rn'  : '%s_%d' % (self.rn, self.st),
-   				#'cnd' : self.cnd,
-   				'lbl' : self.lbl,
-			}
+		jsn = {	'rn'  : '%s_%d' % (self.rn, self.st), }
+		if self.lbl is not None:
+			jsn['lbl'] = self.lbl
+
 		for attr in self.json:
 			if attr not in self.ignoreAttributes:
 				jsn[attr] = self[attr]
-
 
 		fci, _ = Utils.resourceFromJSON(jsn = { self.tpe : jsn },
 										pi = self.ri, 

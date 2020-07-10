@@ -9,15 +9,15 @@
 
 from .MgmtObj import *
 from Types import ResourceTypes as T
-from Validator import constructPolicy
+from Validator import constructPolicy, addPolicy
 import Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 
-	'mgd', 'obis', 'obps', 'dc', 'mgs', 'cmlk',
+memPolicies = constructPolicy([
 	'mma', 'mmt'
 ])
+attributePolicies =  addPolicy(mgmtObjAttributePolicies, memPolicies)
+
 
 defaultMemoryAvailable = 0
 defaultMemTotal = 0
@@ -32,3 +32,7 @@ class MEM(MgmtObj):
 			self.setAttribute('mma', defaultMemoryAvailable, overwrite=False)
 			self.setAttribute('mmt', defaultMemTotal, overwrite=False)
 
+
+	# create the json stub for the announced resource
+	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
+		return super()._createAnnouncedJSON(memPolicies), C.rcOK, None

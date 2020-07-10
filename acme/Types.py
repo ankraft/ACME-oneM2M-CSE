@@ -40,21 +40,6 @@ class ResourceTypes(IntEnum):
 	FCI 		= 58
 
 
-	# Announced Resources
-
-	ACPAnnc 	= 10001
-	AEAnnc 		= 10002	
-	CNTAnnc 	= 10003
-	CINAnnc 	= 10004
-	GRPAnnc 	= 10009
-	MGMTOBJAnnc = 10013
-	NODAnnc 	= 10014
-	CSRAnnc 	= 10016
-	FCNTAnnc 	= 10028
-	FCIAnnc 	= 10058
-
-
-
 	# Virtual resources (proprietary resource types)
 
 	CNT_OL		=  -20001
@@ -76,6 +61,19 @@ class ResourceTypes(IntEnum):
 	DVC 		= 1008
 	RBO 		= 1009
 	EVL 		= 1010
+
+	# Announced Resources
+
+	ACPAnnc 	= 10001
+	AEAnnc 		= 10002	
+	CNTAnnc 	= 10003
+	CINAnnc 	= 10004
+	GRPAnnc 	= 10009
+	MGMTOBJAnnc = 10013
+	NODAnnc 	= 10014
+	CSRAnnc 	= 10016
+	FCNTAnnc 	= 10028
+	FCIAnnc 	= 10058
 
 	def tpe(self) -> str:
 		return ResourceTypes._names[self.value] #  type: ignore

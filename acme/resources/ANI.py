@@ -13,11 +13,10 @@ from Validator import constructPolicy
 import Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 
-	'mgd', 'obis', 'obps', 'dc', 'mgs', 'cmlk',
+aniPolicies = constructPolicy([
 	'ant', 'ldv'
 ])
+attributePolicies =  addPolicy(mgmtObjAttributePolicies, aniPolicies)
 
 defaultAreaNwkType = ''
 
@@ -30,3 +29,7 @@ class ANI(MgmtObj):
 		if self.json is not None:
 			self.setAttribute('ant', defaultAreaNwkType, overwrite=False)
 
+
+	# create the json stub for the announced resource
+	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
+		return super()._createAnnouncedJSON(aniPolicies), C.rcOK, None

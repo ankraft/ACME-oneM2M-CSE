@@ -13,11 +13,10 @@ from Validator import constructPolicy
 import Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 
-	'mgd', 'obis', 'obps', 'dc', 'mgs', 'cmlk',
+batPolicies = constructPolicy([
 	'btl', 'bts'
 ])
+attributePolicies =  addPolicy(mgmtObjAttributePolicies, batPolicies)
 
 
 btsNORMAL			 = 1
@@ -41,3 +40,7 @@ class BAT(MgmtObj):
 			self.setAttribute('btl', defaultBatteryLevel, overwrite=False)
 			self.setAttribute('bts', defaultBatteryStatus, overwrite=False)
 
+
+	# create the json stub for the announced resource
+	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
+		return super()._createAnnouncedJSON(batPolicies), C.rcOK, None
