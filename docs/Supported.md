@@ -9,49 +9,82 @@ The CSE implementation successfully passes most of the oneM2M release 1 test cas
 
 The CSE supports the following oneM2M resource types:
 
-- **CSEBase (CB)**
-- **Access Control Policy (ACP)**
-- **Remote CSE (CSR)**  
-Announced resources are yet not supported. Transit request, though, to resources on the remote CSE are supported.
-- **Application Entity (AE)**
-- **Container (CNT)**
-- **Content Instance (CIN)**
-- **Subscription (SUB)**  
-Notifications via http to a direct url or an AE's Point-of-Access (POA) are supported as well.
-- **Group (GRP)**  
-The support includes requests via the *fopt* (fan-out-point) virtual resource.
-- **Node (NOD)**  
-The support includes the following **Management Object (mgmtObj)** specializations:
-	- **Firmware (FWR)**
-	- **Software (SWR)**
-	- **Memory (MEM)**
-	- **AreaNwkInfo (ANI)**
-	- **AreaNwkDeviceInfo (ANDI)**
-	- **Battery (BAT)**
-	- **DeviceInfo (DVI)**
-	- **DeviceCapability (DVC)**
-	- **Reboot (REB)**
-	- **EventLog (EVL)**
-- **FlexContainer Specializations**  
-Any specializations is supported. There is no check performed against a schema (e.g. via the *cnd* attribute).
-- **FlexContainerInstance (Experimental)**  
-This is an implementation of the draft FlexContainerInstance specification.
 
-Resources of any other type are stored in the CSE but no further processed and no checks are performed on these resources. The type is marked as *unknown*.
+| Resource Type                 | Supported | Limitations                                                                                                                     |
+|:------------------------------|:---------:|:--------------------------------------------------------------------------------------------------------------------------------|
+| CSEBase (CB)                  |  &check;  |                                                                                                                                 |
+| Remote CSE (CSR)              |  &check;  | Announced resources are yet not supported. Transit request, though, to resources on the remote CSE are supported.               |
+| Access Control Policy (ACP)   |  &check;  |                                                                                                                                 |
+| Application Entity (AE)       |  &check;  |                                                                                                                                 |
+| Container (CNT)               |  &check;  |                                                                                                                                 |
+| Content Instance (CIN)        |  &check;  |                                                                                                                                 |
+| Group (GRP)                   |  &check;  | The support includes requests via the *fopt* (fan-out-point) virtual resource.                                                  |
+| Subscription (SUB)            |  &check;  | Notifications via http to a direct url or an AE's Point-of-Access (POA) are supported as well.                                  |
+| Node (NOD)                    |  &check;  | See also the list of supported [management objects](#mgmtobjs).                                                                 |
+| FlexContainer Specializations |  &check;  | Any specialization is supported and validated. See [Importing Attribute Policies](Importing.md#attributes) for further details. |
+| FlexContainerInstance         |  &check;  | Experimental. This is an implementation of the draft FlexContainerInstance specification.                                       |
+| Polling Channel               |  &cross;  |                                                                                                                                 |
+
+<a name="mgmtobjs"></a>
+### Management Objects
+
+The following table presents the supported management object specifications.
+
+| Management Objects       |
+|--------------------------|
+| Firmware (FWR)           |
+| Software (SWR)           |
+| Memory (MEM)             |
+| AreaNwkInfo (ANI)        |
+| AreaNwkDeviceInfo (ANDI) |
+| Battery (BAT)            |
+| DeviceInfo (DVI)         |
+| DeviceCapability (DVC)   |
+| Reboot (REB)             |
+| EventLog (EVL)           |
+
+
+## Functionalities
+
+| Functionality                 | Supported | Remark                                                                |
+|:------------------------------|:---------:|:----------------------------------------------------------------------|
+| Resource addressing           |  &check;  | *CSE-Relative*, *SP-Relative* and *Absolute* addressing is supported. |
+| Discovery                     |  &check;  |                                                                       |
+| AE registration               |  &check;  |                                                                       |
+| Remote CSE registration       |  &check;  |                                                                       |
+| Resource Expiration           |  &cross;  |                                                                       |
+| Resource announcements        |  &cross;  | Only one hop is supported at the moment.                              |
+| Resource validations          |  &check;  |                                                                       |
+| Request parameter validations |  &check;  |                                                                       |
+| Transit requests              |  &check;  | Forwarding requests from one CSE to another.                          |
+| Blocking requests             |  &check;  |                                                                       |
+| Non-blocking requests         |  &cross;  |                                                                       |
 
 ## Discovery
 The following result contents are implemented for Discovery:
 
-- nothing (rcn=0)
-- attributes (rcn=1)
-- hierarchical address (rcn=2)
-- hierarchical address + attributes (rcn=3)
-- attributes + child-resources (rcn=4)
-- attributes + child-resource-references (rcn=5)
-- child-resource-references (rcn=6)
-- child-resources (rcn=8)
-- modified attributes (rcn=9)
-- discovery result references	(rcn=11)
+| Discovery Type                         | RCN |
+|:---------------------------------------|:---:|
+| nothing                                | 0   |
+| attributes                             | 1   |
+| hierarchical address                   | 2   |
+| hierarchical address + attributes      | 3   |
+| attributes + child-resources           | 4   |
+| attributes + child-resource-references | 5   |
+| child-resource-references              | 6   |
+| child-resources                        | 8   |
+| modified attributes                    | 9   |
+| discovery result references            | 11  |
+
+## Protocols Bindings
+The following Protocol Bindings are suppored:
+
+| Protocol Binding | Supported | Remark                            |
+|:-----------------|:---------:|:----------------------------------|
+| http             | &check;   | https is currently not supported. |
+| coap             | &cross;   |                                   |
+| mqtt             | &cross;   |                                   |
+
 
 # Limitations
 - **This is by no means a fully compliant, secure or stable CSE! Don't use it in production.**

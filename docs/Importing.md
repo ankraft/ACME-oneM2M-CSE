@@ -48,7 +48,7 @@ A minimal set of resources is provided in the [init](../init) directory. Definit
 
 The directory [tools/resourceTemplates](../tools/resourceTemplates) contains templates for supported resource types. Please see the [README](../tools/resourceTemplates/README.md) there for further details.
 
-
+<a name="attributes"></a>
 ## Importing Attribute Policies
 
 The CSE includes attribute policies for validating the attributes of all supported resource types (internal to the *m2m* namespace). But for all &lt;flexContainer> specializations, e.g. for oneM2M's TS-0023 ModuleClasses, those attribute policies must be provided. This can be done by providing attribute policy files for import. 
@@ -75,37 +75,15 @@ hd:color,blue,nonNegInteger,car1,O,O,OA
 
 **Field Format**
 
-- **specialization type** : Shortname of the specialization, including the domain. This can occur multiple times, once for each attribute.
-- **attribute shortname**: shortname of the attribute. This should only appear once per specialization.
-- **data type**: This field specifies the attribute's data type and must be one of the following values:
-	-	positiveInteger
-	-	nonNegInteger
-	-	unsignedInt
-	-	unsignedLong
-	-	string
-	-	timestamp
-	-	list
-	-	dict
-	-	anyURI
-	-	boolean
-	-	geoCoordinates
--  **cardinality**: The multiplicity of the attribute. This must be one of the following values:
-	- car1: multiplicity of 1
-	- car1L: multiplicity of 1, and this is a list of values.
-	- car01: multiplicity of 0 or 1
-	- car01L: multiplicity of 0 or 1, and this is a list of values
-- **CREATE optionality**: This field specifies whether this attribute must be provided etc during a CREATE request:
-	- NP: Not provided
-	- O: Optional provided
-	- M: Mandatory provided
-- **UPDATE optionality**: This field specifies whether this attribute must be provided etc during an UPDATE request:
-	- NP: Not provided
-	- O: Optional provided
-	- M: Mandatory provided
-- **Announced optionallity**: This field specifies whether an attribute is announced when the resource is announced:
-	- NA: Not announced
-	- OA: Optional announced
-	- MA: Mandatory announced
+| # | Field | Description | Values |
+|:-:|-------|-|-|
+| 1 | specialization type | Shortname of the specialization, including the domain. This can occur multiple times, once for each attribute. | domain:name |
+| 2 | attribute shortname | Shortname of the attribute. This should only appear once per specialization. | string |
+| 3 | data type | This field specifies the attribute's data type. | 	<ul><li>positiveInteger</li></ul><ul><li>nonNegInteger</li></ul><ul><li>unsignedInt</li></ul><ul><li>unsignedLong</li></ul><ul><li>string</li></ul><ul><li>timestamp</li></ul><ul><li>list</li></ul><ul><li>dict</li></ul><ul><li>anyURI</li></ul><ul><li>boolean</li></ul><ul><li>geoCoordinates</li></ul> |
+| 4 | cardinality | The multiplicity of the attribute. This must be one of the following values. | <ul><li>**car1** : multiplicity of 1</li></ul><ul><li>**car1L** : multiplicity of 1 (list)</li></ul><ul><li>**car01** : multiplicity of 0 or 1</li></ul><ul><li>**car01L** : multiplicity of 0 or 1 (list)</li></ul> |
+| 5 | CREATE optionality | This field specifies whether this attribute must be provided etc during a CREATE request.  | <ul><li>**NP** : Not provided</li></ul><ul><li>**O** : Optional provided</li></ul><ul><li>**M** : Mandatory provided</li></ul> |
+| 6 | UPDATE optionality | This field specifies whether this attribute must be provided etc during an UPDATE request. | <ul><li>**NP** : Not provided</li></ul><ul><li>**O** : Optional provided</li></ul><ul><li>**M** : Mandatory provided</li></ul> | 
+| 7 | Announced optionallity | This field specifies whether an attribute is announced when the resource is announced. | <ul><li>**NA** : Not announced</li></ul><ul><li>**OA** : Optional announced</li></ul><ul><li>**MA** : Mandatory announced</li></ul> |
 
 
 
