@@ -11,7 +11,7 @@ import threading
 from typing import Callable, Any
 from Logging import Logging
 from Constants import Constants as C
-import CSE
+import Utils, CSE
 
 # TODO: create/delete each resource to count! resourceCreate(ty)
 
@@ -44,9 +44,10 @@ class Event(list):
 	"""
 	def __call__(self, *args: Any, **kwargs: Any) -> None:
 		# Call the handlers in a thread so that we don't block everything
-		thrd = threading.Thread(target=self._callThread, args=args, kwargs=kwargs)
-		thrd.setDaemon(True)		# Make the thread a daemon of the main thread
-		thrd.start()
+		thread = threading.Thread(target=self._callThread, args=args, kwargs=kwargs)
+		thread.setDaemon(True)		# Make the thread a daemon of the main thread
+		thread.start()
+		Utils.renameCurrentThread(thread=thread)
 
 	def _callThread(self, *args: Any, **kwargs: Any) -> None:
 		for function in self:

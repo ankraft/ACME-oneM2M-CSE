@@ -82,7 +82,7 @@ class AEStatistics(AEBase):
 										ty=T.FCNT)
 
 		# Update the statistic resource from time to time
-		self.startWorker(Configuration.get('app.statistics.intervall'), self.statisticsWorker, 'statisticsWorker')
+		self.startWorker(Configuration.get('app.statistics.intervall'), self.statisticsWorker, 'statsAE')
 
 		Logging.log('AEStatistics AE registered')
 
