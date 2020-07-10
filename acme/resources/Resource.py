@@ -47,7 +47,7 @@ class Resource(object):
 		if jsn is not None: 
 			self.isImported = jsn.get(C.jsnIsImported)
 			if self.tpe in jsn:
-				self.json = jsn[tpe].copy()
+				self.json = jsn[self.tpe].copy()
 			else:
 				self.json = jsn.copy()
 			self._originalJson = jsn.copy()	# keep for validation later
