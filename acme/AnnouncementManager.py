@@ -25,7 +25,29 @@ from resources.AnnouncedResource import AnnouncedResource
 class AnnouncementManager(object):
 
 	def __init__(self) -> None:
+		CSE.event.addHandler(CSE.event.remoteCSEHasRegistered, self.remoteCSEHasRegistered)			# type: ignore
+		CSE.event.addHandler(CSE.event.remoteCSEHasDeregistered, self.remoteCSEHasDeregistered)		# type: ignore
+		CSE.event.addHandler(CSE.event.registeredToRemoteCSE, self.registeredToRemoteCSE)			# type: ignore
+		CSE.event.addHandler(CSE.event.deregisteredFromRemoteCSE, self.deregisteredFromRemoteCSE)		# type: ignore
+
 		Logging.log('AnnouncementManager initialized')
+
+
+	def remoteCSEHasRegistered(self, csr:Resource) -> None:
+		Logging.logErr('remoteCSEHasRegistered')
+		Logging.logErr(csr)
+	
+	def remoteCSEHasDeregistered(self, csr:Resource) -> None:
+		Logging.logErr('remoteCSEHasDeregistered')
+		Logging.logErr(csr)
+
+	def registeredToRemoteCSE(self, csr:Resource) -> None:
+		Logging.logErr('registeredToRemoteCSE')
+		Logging.logErr(csr)
+
+	def deregisteredFromRemoteCSE(self, csr:Resource) -> None:
+		Logging.logErr('deregisteredFromRemoteCSE')
+		Logging.logErr(csr)
 
 
 	def shutdown(self) -> None:

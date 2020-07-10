@@ -73,6 +73,10 @@ class EventManager(object):
 		self.addEvent('cseStartup')
 		self.addEvent('logError')
 		self.addEvent('logWarning')
+		self.addEvent('registeredToRemoteCSE')
+		self.addEvent('deregisteredFromRemoteCSE')
+		self.addEvent('remoteCSEHasRegistered')
+		self.addEvent('remoteCSEHasDeregistered')
 		Logging.log('EventManager initialized')
 
 

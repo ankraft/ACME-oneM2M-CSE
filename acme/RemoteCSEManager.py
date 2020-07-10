@@ -122,8 +122,8 @@ class RemoteCSEManager(object):
 				self._checkCSRLiveliness()
 		except Exception as e:
 			Logging.logErr('Exception: %s' % e)
-			# import traceback
-			# Logging.logErr(traceback.format_exc())
+			import traceback
+			Logging.logErr(traceback.format_exc())
 			return True
 		return True
 
@@ -156,8 +156,10 @@ class RemoteCSEManager(object):
 					if rc == C.rcOK:
 						self._createLocalCSR(remoteCSE)
 						Logging.log('Remote CSE connected')
+						CSE.event.registeredToRemoteCSE(remoteCSE)	# type: ignore
 				else:
 					Logging.log('Remote CSE disconnected')
+					CSE.event.deregisteredFromRemoteCSE()	# type: ignore
 		
 		else:
 			# No local CSR, so try to delete an optional remote one and re-create everything. 
@@ -169,6 +171,9 @@ class RemoteCSEManager(object):
 					if rc == C.rcOK:
 						self._createLocalCSR(remoteCSE) 		# create local CSR including ACPs to local CSR and local CSE
 						Logging.log('Remote CSE connected')
+						CSE.event.registeredToRemoteCSE(remoteCSE)	# type: ignore
+
+						
 
 
 	#	Check the liveliness of all remote CSE's that are connected to this CSE.
