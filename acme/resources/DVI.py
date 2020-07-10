@@ -18,7 +18,6 @@ dviPolicies = constructPolicy([
 	'hwv', 'osv', 'cnty', 'loc', 'syst', 'spur', 'purl', 'ptl'
 ])
 attributePolicies =  addPolicy(mgmtObjAttributePolicies, dviPolicies)
-print(attributePolicies)
 
 defaultDeviceType = 'unknown'
 defaultModel = "unknown"
