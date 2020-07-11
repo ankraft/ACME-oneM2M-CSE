@@ -106,14 +106,14 @@ class Configuration(object):
 				'cse.security.csebaseAccessACPI'	: config.get('cse.security', 'csebaseAccessACPI', 		fallback='acpCSEBaseAccess'),
 
 				#
-				#	Remote CSE
+				#	Registrar CSE
 				#
 
-				'cse.remote.address'				: config.get('cse.remote', 'address', 					fallback=''),
-				'cse.remote.root'					: config.get('cse.remote', 'root', 						fallback=''),
-				'cse.remote.csi'					: config.get('cse.remote', 'cseID', 					fallback=''),
-				'cse.remote.rn'						: config.get('cse.remote', 'resourceName', 				fallback=''),
-				'cse.remote.checkInterval'			: config.getint('cse.remote', 'checkInterval', 			fallback=30),		# Seconds
+				'cse.registrar.address'				: config.get('cse.registrar', 'address', 					fallback=''),
+				'cse.registrar.root'				: config.get('cse.registrar', 'root', 						fallback=''),
+				'cse.registrar.csi'					: config.get('cse.registrar', 'cseID', 						fallback=''),
+				'cse.registrar.rn'					: config.get('cse.registrar', 'resourceName', 				fallback=''),
+				'cse.registrar.checkInterval'		: config.getint('cse.registrar', 'checkInterval', 			fallback=30),		# Seconds
 
 				#
 				#	Registrations
@@ -241,10 +241,10 @@ class Configuration(object):
 			Configuration._configuration['cse.enableValidation'] = argsValidationEnabled
 
 		# Correct urls
-		Configuration._configuration['cse.remote.address'] = Utils.normalizeURL(Configuration._configuration['cse.remote.address'])
+		Configuration._configuration['cse.registrar.address'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.address'])
 		Configuration._configuration['http.address'] = Utils.normalizeURL(Configuration._configuration['http.address'])
 		Configuration._configuration['http.root'] = Utils.normalizeURL(Configuration._configuration['http.root'])
-		Configuration._configuration['cse.remote.root'] = Utils.normalizeURL(Configuration._configuration['cse.remote.root'])
+		Configuration._configuration['cse.registrar.root'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.root'])
 
 
 		#
@@ -257,11 +257,11 @@ class Configuration(object):
 		if re.fullmatch(rx, (val:=Configuration._configuration['cse.csi'])) is None:
 			print('Configuration Error: Wrong format for [cse]:cseID: %s' % val)
 			return False
-		if re.fullmatch(rx, (val:=Configuration._configuration['cse.remote.csi'])) is None:
-			print('Configuration Error: Wrong format for [cse.remote]:cseID: %s' % val)
+		if re.fullmatch(rx, (val:=Configuration._configuration['cse.registrar.csi'])) is None:
+			print('Configuration Error: Wrong format for [cse.registrar]:cseID: %s' % val)
 			return False
-		if len(Configuration._configuration['cse.remote.csi']) > 0 and len(Configuration._configuration['cse.remote.rn']) == 0:
-			print('Configuration Error: Missing configuration [cse.remote]:resourceName')
+		if len(Configuration._configuration['cse.registrar.csi']) > 0 and len(Configuration._configuration['cse.registrar.rn']) == 0:
+			print('Configuration Error: Missing configuration [cse.registrar]:resourceName')
 			return False
 
 		# Everything is fine

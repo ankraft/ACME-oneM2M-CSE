@@ -138,7 +138,7 @@ size=100000
 #	Settings for remote CSE access 
 #
 
-[cse.remote]
+[cse.registrar]
 # URL of the remote CSE. Default: no default
 address=http://127.0.0.1:8081
 # Remote CSE root path. Default: /

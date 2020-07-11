@@ -28,13 +28,13 @@ class RemoteCSEManager(object):
 	def __init__(self) -> None:
 		self.csetype 					= Configuration.get('cse.type')
 		self.isConnected 				= False
-		self.remoteAddress				= Configuration.get('cse.remote.address')
-		self.remoteRoot 				= Configuration.get('cse.remote.root')
-		self.remoteCsi					= Configuration.get('cse.remote.csi')
-		self.remoteCseRN				= Configuration.get('cse.remote.rn')
+		self.remoteAddress				= Configuration.get('cse.registrar.address')
+		self.remoteRoot 				= Configuration.get('cse.registrar.root')
+		self.remoteCsi					= Configuration.get('cse.registrar.csi')
+		self.remoteCseRN				= Configuration.get('cse.registrar.rn')
 		self.originator					= Configuration.get('cse.csi')	# Originator is the own CSE-ID
 		self.worker:BackgroundWorker	= None
-		self.checkInterval				= Configuration.get('cse.remote.checkInterval')
+		self.checkInterval				= Configuration.get('cse.registrar.checkInterval')
 		self.cseCsi						= Configuration.get('cse.csi')
 		self.remoteCSEURL				= '%s%s/~%s/%s' % (self.remoteAddress, self.remoteRoot, self.remoteCsi, self.remoteCseRN)
 		self.remoteCSRURL				= '%s%s' % (self.remoteCSEURL, self.cseCsi)
@@ -269,7 +269,8 @@ class RemoteCSEManager(object):
 		self._copyCSE2CSE(csr, localCSE)
 		csr['ri'] = self.cseCsi							# override ri with the own cseID
 		csr['cb'] = Utils.getIdFromOriginator(localCSE.csi)	# only the stem
-		for _ in ['ty','ri', 'ct', 'lt']: del(csr[_])	# remove a couple of attributes
+		for _ in ['ty','ri', 'ct', 'lt']: csr.delAttribute(_, setNone=False)	# remove a couple of attributes
+		#for _ in ['ty','ri', 'ct', 'lt']: del(csr[_])	# remove a couple of attributes
 		data = json.dumps(csr.asJSON())
 
 		# Create the <remoteCSE> in the remote CSE
@@ -340,7 +341,7 @@ class RemoteCSEManager(object):
 		return CSE.httpServer.sendRetrieveRequest(url, origin)
 
 
-	def handleTransitCreateRequest(self, request: Request, id: str, origin: str, ty: int) -> Tuple[dict, int, str]:
+	def handleTransitCreateRequest(self, request: Request, id: str, origin: str, ty: T) -> Tuple[dict, int, str]:
 		""" Forward a CREATE request to a remote CSE. """
 		if (url := self._getForwardURL(id)) is None:
 			return None, C.rcNotFound, 'forward URL not found for id: %s' % id
