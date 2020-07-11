@@ -28,6 +28,8 @@ from Validator import Validator
 
 from AEStatistics import AEStatistics
 from CSENode import CSENode
+import Utils
+
 
 
 # singleton main components. These variables will hold all the various manager
@@ -88,7 +90,7 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	Logging.init()
 	Logging.log('============')
 	Logging.log('Starting CSE')
-	Logging.log('CSE-Type: %s' % C.cseTypes[Configuration.get('cse.type')])
+	Logging.log('CSE-Type: %s' % Utils.getCSETypeAsString())
 	Logging.log(Configuration.print())
 
 

@@ -414,6 +414,10 @@ def resourceDiff(old: Union[Resource.Resource, dict], new: Union[Resource.Resour
 def getCSE() -> Tuple[Resource.Resource, int, str]:
 	return CSE.dispatcher.retrieveResource(Configuration.get('cse.ri'))
 
+
+def getCSETypeAsString():
+	return C.cseTypes[Configuration.get('cse.type')]
+
 	
 # Check whether the target contains a fanoutPoint in between or as the target
 def fanoutPointResource(id: str) -> Resource.Resource:
@@ -448,12 +452,13 @@ def requestHeaderField(request: Request, field : str) -> str:
 	return request.headers.get(field)
 
 		
-def getRequestHeaders(request: Request) -> Tuple[str, str, int, str, int]:
+def getRequestHeaders(request: Request) -> Tuple[str, str, T, str, int]:
 	originator = requestHeaderField(request, C.hfOrigin)
 	rqi = requestHeaderField(request, C.hfRI)
 
 	# content-type
 	ty = None
+	ct = None
 	if (ct := request.content_type) is not None:
 		if not ct.startswith(tuple(C.supportedContentHeaderFormat)):
 			ct = None
@@ -461,7 +466,7 @@ def getRequestHeaders(request: Request) -> Tuple[str, str, int, str, int]:
 			p = ct.partition(';')
 			ct = p[0] # content-type
 			t = p[2].partition('=')[2]
-			ty = int(t) if t.isdigit() else T.UNKNOWN # resource type
+			ty = T(int(t)) if t.isdigit() else T.UNKNOWN # resource type
 
 	return originator, ct, ty, rqi, C.rcOK
 

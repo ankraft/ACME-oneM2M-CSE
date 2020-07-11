@@ -20,6 +20,7 @@ from typing import Tuple, List, Callable, Any
 from threading import Lock
 from Configuration import Configuration
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from Logging import Logging
 from resources.Resource import Resource
 import CSE, Utils
@@ -41,8 +42,9 @@ class Storage(object):
 				Logging.logErr('db.path not set')
 				raise RuntimeError('db.path not set')
 
+		
 		self.db = TinyDBBinding(path)
-		self.db.openDB()
+		self.db.openDB('_%s' % Utils.getCSETypeAsString()) # add CSE type as postfix
 
 		# Reset dbs?
 		if Configuration.get('db.resetAtStartup') is True:
@@ -132,10 +134,10 @@ class Storage(object):
 
 
 
-	def retrieveResourcesByType(self, ty: int) -> List[dict]:
+	def retrieveResourcesByType(self, ty: T) -> List[dict]:
 		""" Return all resources of a certain type. """
 		# Logging.logDebug('Retrieving all resources ty: %d' % ty)
-		return self.db.searchResources(ty=ty)
+		return self.db.searchResources(ty=int(ty))
 
 
 
@@ -198,8 +200,8 @@ class Storage(object):
 
 
 
-	def directChildResources(self, pi: str, ty: int = None) -> List[Resource]:
-		rs = self.db.searchResources(pi=pi, ty=ty)
+	def directChildResources(self, pi: str, ty: T = None) -> List[Resource]:
+		rs = self.db.searchResources(pi=pi, ty=int(ty) if ty is not None else None)
 
 		# if ty is not None:
 		# 	rs = self.tabResources.search((Query().pi == pi) & (Query().ty == ty))
@@ -224,11 +226,11 @@ class Storage(object):
 		return self.db.searchIdentifiers(srn=srn)
 
 
-	def searchByTypeFieldValue(self, ty: int, field: str, value: str) -> List[Resource]:
+	def searchByTypeFieldValue(self, ty: T, field: str, value: str) -> List[Resource]:
 		"""Search and return all resources of a specific type and a value in a field,
 		and return them in an array."""
 		result = []
-		for j in self.db.searchByTypeFieldValue(ty, field, value):
+		for j in self.db.searchByTypeFieldValue(int(ty), field, value):
 			resource, _ = Utils.resourceFromJSON(j)
 			if resource is not None:
 				result.append(resource)
@@ -481,7 +483,7 @@ class TinyDBBinding(object):
 		self.lockAppData = Lock()
 
 
-	def openDB(self) -> None:
+	def openDB(self, postfix: str) -> None:
 		# All databases/tables will use the smart query cache
 		# TODO not compatible with TinyDB 4 yet?
 		# TinyDB.table_class = SmartCacheTable 
@@ -494,11 +496,11 @@ class TinyDBBinding(object):
 			self.dbAppData = TinyDB(storage=MemoryStorage)
 		else:
 			Logging.log('DB in file system')
-			self.dbResources = TinyDB(self.path + '/resources.json')
-			self.dbIdentifiers = TinyDB(self.path + '/identifiers.json')
-			self.dbSubscriptions = TinyDB(self.path + '/subscriptions.json')
-			self.dbStatistics = TinyDB(self.path + '/statistics.json')
-			self.dbAppData = TinyDB(self.path + '/appdata.json')
+			self.dbResources = TinyDB('%s/resources%s.json' % (self.path, postfix))
+			self.dbIdentifiers = TinyDB('%s/identifiers%s.json' % (self.path, postfix))
+			self.dbSubscriptions = TinyDB('%s/subscriptions%s.json' % (self.path, postfix))
+			self.dbStatistics = TinyDB('%s/statistics%s.json' % (self.path, postfix))
+			self.dbAppData = TinyDB('%s/appdata%s.json' % (self.path, postfix))
 		self.tabResources = self.dbResources.table('resources', cache_size=self.cacheSize)
 		self.tabIdentifiers = self.dbIdentifiers.table('identifiers', cache_size=self.cacheSize)
 		self.tabSubscriptions = self.dbSubscriptions.table('subsriptions', cache_size=self.cacheSize)
