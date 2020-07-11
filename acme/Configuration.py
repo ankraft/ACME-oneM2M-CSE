@@ -72,7 +72,7 @@ class Configuration(object):
 
 				'logging.enable'					: config.getboolean('logging', 'enable', 				fallback=True),
 				'logging.enableFileLogging'			: config.getboolean('logging', 'enableFileLogging', 	fallback=True),
-				'logging.file'						: config.get('logging', 'file', 						fallback='./logs/cse.log'),
+				'logging.path'						: config.get('logging', 'path', 						fallback='./logs'),
 				'logging.level'						: config.get('logging', 'level', 						fallback='debug'),
 				'logging.size'						: config.getint('logging', 'size', 						fallback=100000),
 				'logging.count'						: config.getint('logging', 'count', 					fallback=10),		# Number of log files

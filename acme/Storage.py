@@ -44,7 +44,7 @@ class Storage(object):
 
 		
 		self.db = TinyDBBinding(path)
-		self.db.openDB('_%s' % Utils.getCSETypeAsString()) # add CSE type as postfix
+		self.db.openDB('-%s' % Utils.getCSETypeAsString()) # add CSE type as postfix
 
 		# Reset dbs?
 		if Configuration.get('db.resetAtStartup') is True:

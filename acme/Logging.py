@@ -73,8 +73,11 @@ class	Logging:
 
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
-			logfile = Configuration.get('logging.file')
-			os.makedirs(os.path.dirname(logfile), exist_ok=True)# create log directory if necessary
+			import Utils
+
+			logpath = Configuration.get('logging.path')
+			os.makedirs(logpath, exist_ok=True)# create log directory if necessary
+			logfile = '%s/cse-%s.log' % (logpath, Utils.getCSETypeAsString())
 			logfp = logging.handlers.RotatingFileHandler(logfile,
 														 maxBytes=Configuration.get('logging.size'),
 														 backupCount=Configuration.get('logging.count'))
@@ -200,7 +203,7 @@ class ACMERichLogHandler(RichHandler):
 		message = self.format(record)
 		path  = ''
 		lineno = 0
-		threadID = 0
+		threadID = ''
 		if len(messageElements := message.split('*', 3)) == 4:
 			path = messageElements[0]
 			lineno = int(messageElements[1])
