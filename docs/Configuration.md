@@ -30,7 +30,7 @@ The following macros are supported in addition to those defined in the sections 
 [\[database\] - Database Settings](#database)  
 [\[logging\] - Logging Settings](#logging)  
 [\[cse.registration\] - Settings for Self-Registrations](#cse_registration)  
-[\[cse.remote\] - Settings for Remote CSE Access](#remote)  
+[\[cse.registrar\] - Settings for Remote CSE Access](#registrar)  
 [\[cse.statistics\]Statistic Settings](#statistics)  
 [\[cse.resource.acp\] - Resource defaults: ACP](#resource_acp)  
 [\[cse.resource.cnt\] - Resource Defaults: CNT](#resource_cnt)  
@@ -119,16 +119,16 @@ The following macros are supported in addition to those defined in the sections 
 | allowedAEOriginators  | List of AE originators that can register. This is a comma-separated list of originators. Regular expressions are supported.<br />Default: C.\*, S.\*  | cse.registration.allowedAEOriginators  |
 | allowedCSROriginators | List of CSR originators that can register. This is a comma-separated list of originators. Regular expressions are supported.<br />Default: empty list | cse.registration.allowedCSROriginators |
 
-<a name="remote"></a>
-### [cse.remote] - Settings for Remote CSE Access 
+<a name="registrar"></a>
+### [cse.registrar] - Settings for Remote Registrar CSE Access 
 
 | Keyword       | Description                                                                                                                              | Macro Name               |
 |:--------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:-------------------------|
-| address       | URL of the remote CSE.<br/>Default: no default                                                                                           | cse.remote.address       |
-| root          | Remote CSE root path. Never provide a trailing /.<br/>Default: empty string                                                              | cse.remote.root          |
-| cseID         | CSE-ID of the remote CSE. A CSE-ID must start with a /.<br/>Default: no default                                                                                        | cse.remote.csi           |
-| resourceName  | The remote CSE's resource name. <br>Default: no default                                                                                  | cse.remote.rn                       |
-| checkInterval | Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.<br/>Default: 30 | cse.remote.checkInterval |
+| address       | URL of the remote CSE.<br/>Default: no default                                                                                           | cse.registrar.address       |
+| root          | Remote CSE root path. Never provide a trailing /.<br/>Default: empty string                                                              | cse.registrar.root          |
+| cseID         | CSE-ID of the remote CSE. A CSE-ID must start with a /.<br/>Default: no default                                                                                        | cse.registrar.csi           |
+| resourceName  | The remote CSE's resource name. <br>Default: no default                                                                                  | cse.registrar.rn                       |
+| checkInterval | Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.<br/>Default: 30 | cse.registrar.checkInterval |
 
 <a name="statistics"></a>
 ###	[cse.statistics] - Statistic Settings
