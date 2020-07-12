@@ -33,27 +33,46 @@ class AnnouncementManager(object):
 		Logging.log('AnnouncementManager initialized')
 
 
-	def remoteCSEHasRegistered(self, csr:Resource) -> None:
-		Logging.logErr('remoteCSEHasRegistered')
-		Logging.logErr(csr)
-	
-	def remoteCSEHasDeregistered(self, csr:Resource) -> None:
-		Logging.logErr('remoteCSEHasDeregistered')
-		Logging.logErr(csr)
-
-	def registeredToRemoteCSE(self, csr:Resource) -> None:
-		Logging.logErr('registeredToRemoteCSE')
-		Logging.logErr(csr)
-
-	def deregisteredFromRemoteCSE(self, csr:Resource) -> None:
-		Logging.logErr('deregisteredFromRemoteCSE')
-		Logging.logErr(csr)
-
-
 	def shutdown(self) -> None:
 		Logging.log('AnnouncementManager shut down')
 
+	#########################################################################
+	#
+	#	Event Handlers
+	#
 
+	def remoteCSEHasRegistered(self, csr:Resource) -> None:
+		Logging.logErr('remoteCSEHasRegistered')
+		Logging.logErr(str(csr))
+	
+	def remoteCSEHasDeregistered(self, csr:Resource) -> None:
+		Logging.logErr('remoteCSEHasDeregistered')
+		Logging.logErr(str(csr))
+
+	def registeredToRemoteCSE(self, csr:Resource) -> None:
+		Logging.logErr('registeredToRemoteCSE')
+		Logging.logErr(str(csr))
+		self.checkResourcesForAnnouncement(csr)
+
+	def deregisteredFromRemoteCSE(self, csr:Resource = None) -> None:
+		Logging.logErr('deregisteredFromRemoteCSE')
+		Logging.logErr(str(csr))
+
+
+
+
+
+	def checkResourcesForAnnouncement(self, csr:Resource) -> None:
+		# get all reources for this specific csr
+		# try to announce all not-announced resources to this csr
+		pass
+
+
+# TODO for anounceable resource:
+# - Add intermediate class for announceableResources: activate/update to handle the registration here
+# - activate: add resource here
+# - update: update resource here
+# - deactivate
 
 	def announceResource(self, resource: Resource) -> None:
 		"""	Announce a single resource.
