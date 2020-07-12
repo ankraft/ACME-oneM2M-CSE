@@ -15,6 +15,7 @@ from flask import Flask, Request, make_response, request
 from werkzeug.wrappers import Response
 from Configuration import Configuration, version
 from Constants import Constants as C
+from Types import ResourceTypes as T
 import CSE, Utils
 from Logging import Logging
 from resources.Resource import Resource
@@ -30,6 +31,8 @@ class HttpServer(object):
 		# Meaning defaults are automatically provided.
 		self.flaskApp = Flask(Configuration.get('cse.csi'))
 		self.rootPath = Configuration.get('http.root')
+
+		self.serverID = 'ACME %s' % version 	# The server's ID for http response headers
 
 		Logging.log('Registering http server root at: %s' % self.rootPath)
 
@@ -216,7 +219,7 @@ class HttpServer(object):
 		return self.sendRequest(requests.get, url, originator)
 
 
-	def sendCreateRequest(self, url: str, originator: str, ty: int = None, data: Any = None) -> Tuple[dict, int, str]:
+	def sendCreateRequest(self, url: str, originator: str, ty: T = None, data: Any = None) -> Tuple[dict, int, str]:
 		return self.sendRequest(requests.post, url, originator, ty, data)
 
 
@@ -228,8 +231,8 @@ class HttpServer(object):
 		return self.sendRequest(requests.delete, url, originator)
 
 
-	def sendRequest(self, method: Callable , url: str, originator: str, ty: int = None, data: Any = None, ct: str = 'application/json') -> Tuple[dict, int, str]:	# TODO Constants
-		headers = { 'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % ty if ty is not None else ''), 
+	def sendRequest(self, method: Callable , url: str, originator: str, ty: T = None, data: Any = None, ct: str = 'application/json') -> Tuple[dict, int, str]:	# TODO Constants
+		headers = { 'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % int(ty) if ty is not None else ''), 
 					C.hfOrigin	 	: originator,
 					C.hfRI 			: Utils.uniqueRI(),
 					C.hfRVI			: C.hfvRVI,			# TODO this actually depends in the originator
@@ -269,6 +272,8 @@ class HttpServer(object):
 		resp = make_response(r)
 
 		# headers
+		resp.headers['Server'] = self.serverID	# set server field
+
 		resp.headers['X-M2M-RSC'] = str(returnCode)
 		if 'X-M2M-RI' in request.headers:
 			resp.headers['X-M2M-RI'] = request.headers['X-M2M-RI']
@@ -277,6 +282,7 @@ class HttpServer(object):
 
 		resp.status_code = self._statusCode(returnCode)
 		resp.content_type = C.hfvContentType
+		self.flaskApp.process_response(resp)
 		return resp
 
 
