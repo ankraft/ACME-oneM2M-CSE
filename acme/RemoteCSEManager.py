@@ -38,6 +38,13 @@ class RemoteCSEManager(object):
 		self.cseCsi						= Configuration.get('cse.csi')
 		self.remoteCSEURL				= '%s%s/~%s/%s' % (self.remoteAddress, self.remoteRoot, self.remoteCsi, self.remoteCseRN)
 		self.remoteCSRURL				= '%s%s' % (self.remoteCSEURL, self.cseCsi)
+		self.registeredCSIs: List[str] 	= [] 	# all CSI's of directly registerde CSE's (above and below)
+
+		CSE.event.addHandler(CSE.event.registeredToRemoteCSE, self.handleCSERegistration)			# type: ignore
+		CSE.event.addHandler(CSE.event.deregisteredFromRemoteCSE, self.handleCSEDeregistration)			# type: ignore
+		CSE.event.addHandler(CSE.event.remoteCSEHasRegistered, self.handleCSERegistration)			# type: ignore
+		CSE.event.addHandler(CSE.event.remoteCSEHasDeregistered, self.handleCSEDeregistration)			# type: ignore
+
 		Logging.log('RemoteCSEManager initialized')
 
 
@@ -128,6 +135,43 @@ class RemoteCSEManager(object):
 		return True
 
 
+	#########################################################################
+	#
+	#	Event Handlers
+	#
+
+	def handleCSERegistration(self, resource:Resource) -> None:
+		"""	Add the CSE/CSR CSI to the list of registered CSI. """
+		self._addRegisteredCSE(resource)
+
+
+
+	def handleCSEDeregistration(self, resource:Resource = None) -> None:
+		"""	Remove the CSE/CSR CSI from the list of registered CSI. """
+		self._removeRegisteredCSE(resource)
+
+
+	def _removeRegisteredCSE(self, resource:Resource) -> None:
+		if resource is None:	# If own registrar
+			self.registeredCSIs.remove(self.remoteCsi)
+		else:
+			if (csi := resource['csi']) in self.registeredCSIs:
+				self.registeredCSIs.remove(csi)
+		#Logging.logDebug(self.registeredCSIs)
+
+
+	def _addRegisteredCSE(self, resource:Resource) -> None:
+		if (csi := resource['csi']) not in self.registeredCSIs:
+			self.registeredCSIs.append(csi)
+		#Logging.logDebug(self.registeredCSIs)
+
+
+
+	#########################################################################
+	#
+	#	Connection Checkers
+	#
+
 	# Check the connection for this CSE to the remote CSE.
 	def _checkOwnConnection(self) -> None:
 		# first check whether there is already a local CSR
@@ -159,7 +203,7 @@ class RemoteCSEManager(object):
 						CSE.event.registeredToRemoteCSE(remoteCSE)	# type: ignore
 				else:
 					Logging.log('Remote CSE disconnected')
-					CSE.event.deregisteredFromRemoteCSE()	# type: ignore
+					CSE.event.deregisteredFromRemoteCSE(localCSR)	# type: ignore
 		
 		else:
 			# No local CSR, so try to delete an optional remote one and re-create everything. 
@@ -188,6 +232,8 @@ class RemoteCSEManager(object):
 					if rc != C.rcOK:
 						Logging.logWarn('Remote CSE unreachable. Removing CSR: %s' % localCsr.rn if localCsr is not None else '')
 						self._deleteLocalCSR(localCsr)
+					else:
+						self._addRegisteredCSE(localCsr)
 
 
 	#

@@ -218,7 +218,7 @@ class RegistrationManager(object):
 		# Remove from accessCSEBaseACP
 		self._removeFromAccessCSEBaseACP(csr.csi)
 
-		if (result := CSE.dispatcher.updateResource(localCSE, doUpdateCheck=False))[0] is not None:
+		if (result := CSE.dispatcher.updateResource(localCSE, doUpdateCheck=False)[0] is not None):
 			# send event
 			CSE.event.remoteCSEHasDeregistered(csr)	# type: ignore
 
