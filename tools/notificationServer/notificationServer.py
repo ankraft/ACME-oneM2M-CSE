@@ -16,8 +16,7 @@ from rich.syntax import Syntax
 
 
 port = 9999	# Change this variable to specify another port.
-console = Console()
-messageColor = "spring_green2"
+messageColor = 'spring_green2'
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		
@@ -46,6 +45,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		console.print("[%s reverse] %s" % (messageColor, format%args))
 
 
-httpd = HTTPServer(('', port), SimpleHTTPRequestHandler)
-console.print('[%s]**starting server & listening for connections on port %s **' % (messageColor, port))
-httpd.serve_forever()
+
+if __name__ == '__main__':
+	console = Console()
+	httpd = HTTPServer(('', port), SimpleHTTPRequestHandler)
+	console.print('\n[dim][[[/dim][red][i]ACME[/i][/red][dim]][/dim] - [bold]Notification Server[/bold]\n\n')
+
+	console.print('[%s]**starting server & listening for connections on port %s **' % (messageColor, port))
+	httpd.serve_forever()
