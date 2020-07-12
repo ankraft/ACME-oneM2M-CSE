@@ -39,7 +39,7 @@ class GRP_FOPT(Resource):
 		return CSE.group.foptRequest(C.opRETRIEVE, self, request, id, originator)
 
 
-	def handleCreateRequest(self, request: Request, id: str, originator: str, ct: str, ty: int) -> Tuple[Union[Resource, dict], int, str]:
+	def handleCreateRequest(self, request: Request, id:str, originator:str, ct:str, ty:T) -> Tuple[Union[Resource, dict], int, str]:
 		Logging.logDebug('Creating resources at fopt')
 		return CSE.group.foptRequest(C.opCREATE, self, request, id, originator, ct, ty)
 

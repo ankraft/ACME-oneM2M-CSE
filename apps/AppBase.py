@@ -45,7 +45,7 @@ class AppBase(object):
 		return CSE.httpServer.sendRetrieveRequest(self._id(ri, srn), self.originator)
 
 
-	def createResource(self, ri:str = None, srn:str = None, ty:int = None, jsn:Dict[str, Any] = None) -> Tuple[dict, int, str]:
+	def createResource(self, ri:str = None, srn:str = None, ty:T = None, jsn:Dict[str, Any] = None) -> Tuple[dict, int, str]:
 		return CSE.httpServer.sendCreateRequest(self._id(ri, srn), self.originator, ty, json.dumps(jsn))
 
 
@@ -66,7 +66,7 @@ class AppBase(object):
 		return None
 
 
-	def retrieveCreate(self, srn : str = None, jsn: dict = None, ty:int = T.MGMTOBJ) -> Resource:
+	def retrieveCreate(self, srn : str = None, jsn: dict = None, ty:T = T.MGMTOBJ) -> Resource:
 		# First check whether node exists and create it if necessary
 		if (result := self.retrieveResource(srn=srn))[1] != C.rcOK:
 

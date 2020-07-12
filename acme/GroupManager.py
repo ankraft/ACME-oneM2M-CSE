@@ -149,7 +149,7 @@ class GroupManager(object):
 
 
 
-	def foptRequest(self, operation: int, fopt: Resource, request: Request, id: str, originator: str, ct:str = None, ty: int = None) -> Tuple[Union[Resource, dict], int, str]:
+	def foptRequest(self, operation: int, fopt: Resource, request: Request, id: str, originator: str, ct:str = None, ty:T = None) -> Tuple[Union[Resource, dict], int, str]:
 		"""	Handle requests to a fanOutPoint. 
 		This method might be called recursivly, when there are groups in groups."""
 

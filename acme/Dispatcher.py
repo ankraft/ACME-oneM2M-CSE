@@ -417,7 +417,7 @@ class Dispatcher(object):
 
 
 
-	def handleCreateRequest(self, request: Request, id: str, originator: str, ct: str, ty: int) -> Tuple[Union[Resource, dict], int, str]:
+	def handleCreateRequest(self, request: Request, id: str, originator: str, ct: str, ty: T) -> Tuple[Union[Resource, dict], int, str]:
 		Logging.logDebug('Adding new resource')
 
 		try:
@@ -786,7 +786,7 @@ class Dispatcher(object):
 	#	Utility methods
 	#
 
-	def directChildResources(self, pi: str, ty: int = None) -> list:
+	def directChildResources(self, pi: str, ty: T = None) -> list:
 		""" Return all child resources of resources. """
 		return CSE.storage.directChildResources(pi, ty)
 
@@ -808,7 +808,7 @@ class Dispatcher(object):
 		return CSE.storage.countResources()
 
 
-	def retrieveResourcesByType(self, ty : int) -> List[Resource]:
+	def retrieveResourcesByType(self, ty:T) -> List[Resource]:
 		""" Retrieve all resources of a type. """
 		# return CSE.storage.retrieveResourcesByType(ty)
 
