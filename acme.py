@@ -8,18 +8,15 @@
 #
 
 import argparse, sys
+from rich.console import Console
 sys.path.append('acme')
 sys.path.append('apps')
 from Configuration import defaultConfigFile, defaultImportDirectory, version
 import CSE
 
-
-description = 'ACME ' + version + ' - An open source CSE Middleware for Education'
-
-
 # Handle command line arguments
 def parseArgs() -> argparse.Namespace:
-	parser = argparse.ArgumentParser(description=description)
+	parser = argparse.ArgumentParser()
 	parser.add_argument('--config', action='store', dest='configfile', default=defaultConfigFile, help='specify the configuration file')
 
 	# two mutual exlcusive arguments
@@ -55,5 +52,6 @@ if __name__ == '__main__':
 	#		CSE.startup(None, configfile=defaultConfigFile, loglevel='error', resetdb=None)
 	#
 	#	Note: Always pass at least 'None' as first and then the 'configfile' parameter.
-	print(description)
+	console = Console()
+	console.print('\n[dim][[[/dim][red][i]ACME[/i][/red][dim]][/dim] ' + version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight=False)
 	CSE.startup(parseArgs())

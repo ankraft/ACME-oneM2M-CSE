@@ -124,8 +124,8 @@ allowedCSROriginators=id-mn
 enable=true
 # Enable logging to file. Default: True
 enableFileLogging=true
-# Basename of the log file. Default: ./logs/cse.log
-file=./logs/cse.log
+# Basename of the log file. Default: ./logs
+path=./logs
 # Loglevel. Possible values: debug, info, warning, error. Default debug
 level=debug
 # Number of files for log rotation. Default: 10

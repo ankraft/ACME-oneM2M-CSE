@@ -415,7 +415,7 @@ def getCSE() -> Tuple[Resource.Resource, int, str]:
 	return CSE.dispatcher.retrieveResource(Configuration.get('cse.ri'))
 
 
-def getCSETypeAsString():
+def getCSETypeAsString() -> str:
 	return C.cseTypes[Configuration.get('cse.type')]
 
 	
