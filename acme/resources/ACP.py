@@ -29,6 +29,8 @@ class ACP(Resource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, rn: str = None, create: bool = False, createdInternally: str = None) -> None:
 		super().__init__(T.ACP, jsn, pi, create=create, inheritACP=True, rn=rn, attributePolicies=attributePolicies)
+
+		self.resourceAttributePolicies = acpPolicies	# only the resource type's own policies
 		
 		if self.json is not None:
 			self.setAttribute('pv/acr', [], overwrite=False)
@@ -115,9 +117,4 @@ class ACP(Resource):
 			if 'all' in p['acor'] or origin in p['acor']:
 				return True
 		return False
-
-
-	# create the json stub for the announced resource
-	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
-		return super()._createAnnouncedJSON(acpPolicies), C.rcOK, None
 

@@ -9,6 +9,7 @@
 
 from Types import ResourceTypes as T
 from .Resource import *
+from .AnnounceableResource import AnnounceableResource
 from Validator import constructPolicy, addPolicy
 import Utils
 
@@ -20,10 +21,12 @@ fcinPolicies = constructPolicy([ 'cs' ])
 attributePolicies =  addPolicy(attributePolicies, fcinPolicies)
 
 
-class FCI(Resource):
+class FCI(AnnounceableResource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, fcntType: str = None, create: bool = False) -> None:
 		super().__init__(T.FCI, jsn, pi, tpe=fcntType, create=create, inheritACP=True, readOnly=True, attributePolicies=attributePolicies)
+
+		self.resourceAttributePolicies = fcinPolicies	# only the resource type's own policies
 
 
 	# Enable check for allowed sub-resources. No Child for CIN
@@ -34,9 +37,3 @@ class FCI(Resource):
 	def update(self, jsn: dict = None, originator: str = None) -> Tuple[bool, int, str]:
 		return False, C.rcOperationNotAllowed, 'updating FCIN is forbidden'
 
-
-	# create the json stub for the announced resource
-	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
-		# add the attributes for this specialization
-		policies = addPolicy(fcinPolicies.copy(), CSE.validator.getAdditionAttributesFor(self.tpe))
-		return super()._createAnnouncedJSON(policies), C.rcOK, None

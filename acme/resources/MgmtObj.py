@@ -8,6 +8,7 @@
 #
 
 from .Resource import *
+from .AnnounceableResource import AnnounceableResource
 import Utils
 from Types import ResourceTypes as T
 from Validator import constructPolicy, addPolicy
@@ -17,11 +18,14 @@ mgmtObjAttributePolicies = constructPolicy([
 	'mgd', 'obis', 'obps', 'dc', 'mgs', 'cmlk',
 ])
 
-class MgmtObj(Resource):
+class MgmtObj(AnnounceableResource):
 
 	def __init__(self, jsn: dict, pi: str, mgd: T, create: bool = False, attributePolicies: dict = None) -> None:
 		super().__init__(T.MGMTOBJ, jsn, pi, tpe=mgd.tpe(), create=create, attributePolicies=attributePolicies)
 		
+		self.resourceAttributePolicies = self.resourceAttributePolicies.copy()	# We dont want to change the original policy list
+		self.resourceAttributePolicies.update(mgmtObjAttributePolicies)			# add mgmtobj policies
+
 		if self.json is not None:
 			self.setAttribute('mgd', int(mgd), overwrite=True)
 

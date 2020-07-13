@@ -13,7 +13,7 @@ from Types import ResourceTypes as T
 from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
-from .AnnouncedResource import AnnouncedResource
+from .AnnounceableResource import AnnounceableResource
 
 
 # Attribute policies for this resource are constructed during startup of the CSE
@@ -27,10 +27,12 @@ attributePolicies =  addPolicy(attributePolicies, aePolicies)
 
 
 
-class AE(Resource):
+class AE(AnnounceableResource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
 		super().__init__(T.AE, jsn, pi, create=create, attributePolicies=attributePolicies)
+
+		self.resourceAttributePolicies = aePolicies	# only the resource type's own policies
 
 		if self.json is not None:
 			self.setAttribute('aei', Utils.uniqueAEI(), overwrite=False)
@@ -89,11 +91,6 @@ class AE(Resource):
 		if (nl := self['nl']) is None:
 			return
 		self._removeAEfromNOD(nl, self['ri'])
-
-
-	# create the json stub for the announced resource
-	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
-		return super()._createAnnouncedJSON(aePolicies), C.rcOK, None
 
 
 	def _removeAEfromNOD(self, nodeRi: str, ri: str) -> None:

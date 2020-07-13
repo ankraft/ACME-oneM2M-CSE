@@ -13,6 +13,8 @@ from Types import ResourceTypes as T
 from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
+from .AnnounceableResource import AnnounceableResource
+
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
@@ -24,10 +26,13 @@ grpPolicies = constructPolicy([
 attributePolicies = addPolicy(attributePolicies, grpPolicies)
 
 
-class GRP(Resource):
+class GRP(AnnounceableResource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, fcntType: str = None, create: bool = False) -> None:
 		super().__init__(T.GRP, jsn, pi, create=create, attributePolicies=attributePolicies)
+
+		self.resourceAttributePolicies = grpPolicies	# only the resource type's own policies
+
 		if self.json is not None:
 			self.setAttribute('mt', int(T.MIXED), overwrite=False)
 			self.setAttribute('ssi', False, overwrite=True)
@@ -64,12 +69,5 @@ class GRP(Resource):
 		if (res := super().validate(originator, create))[0] == False:
 			return res
 		return CSE.group.validateGroup(self, originator)
-
-
-	# create the json stub for the announced resource
-	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
-		return super()._createAnnouncedJSON(grpPolicies), C.rcOK, None
-
-
 
 

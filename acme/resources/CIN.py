@@ -12,6 +12,7 @@ from Constants import Constants as C
 from Types import ResourceTypes as T
 from Validator import constructPolicy, addPolicy
 from .Resource import *
+from .AnnounceableResource import AnnounceableResource
 import Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
@@ -24,10 +25,12 @@ cinPolicies = constructPolicy([
 attributePolicies = addPolicy(attributePolicies, cinPolicies)
 
 
-class CIN(Resource):
+class CIN(AnnounceableResource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
 		super().__init__(T.CIN, jsn, pi, create=create, inheritACP=True, readOnly = True, attributePolicies=attributePolicies)
+
+		self.resourceAttributePolicies = cinPolicies	# only the resource type's own policies
 
 		if self.json is not None:
 			self.setAttribute('con', '', overwrite=False)
@@ -51,7 +54,3 @@ class CIN(Resource):
 	def update(self, jsn: dict = None, originator: str = None) -> Tuple[bool, int, str]:
 		return False, C.rcOperationNotAllowed, 'updating CIN is forbidden'
 
-
-	# create the json stub for the announced resource
-	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
-		return super()._createAnnouncedJSON(cinPolicies), C.rcOK, None

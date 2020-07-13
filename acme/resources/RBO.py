@@ -22,13 +22,10 @@ attributePolicies =  addPolicy(mgmtObjAttributePolicies, rboPolicies)
 class RBO(MgmtObj):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+		self.resourceAttributePolicies = rboPolicies	# only the resource type's own policies
 		super().__init__(jsn, pi, mgd=T.RBO, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('rbo', False, overwrite=False)
 			self.setAttribute('far', False, overwrite=False)
 
-
-	# create the json stub for the announced resource
-	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
-		return super()._createAnnouncedJSON(rboPolicies), C.rcOK, None

@@ -14,6 +14,8 @@ from Types import ResourceTypes as T
 from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
+from .AnnounceableResource import AnnounceableResource
+
 
 
 # Attribute policies for this resource are constructed during startup of the CSE
@@ -26,10 +28,13 @@ fcntPolicies = constructPolicy([
 attributePolicies = addPolicy(attributePolicies, fcntPolicies)
 
 
-class FCNT(Resource):
+class FCNT(AnnounceableResource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, fcntType: str = None, create: bool = False) -> None:
 		super().__init__(T.FCNT, jsn, pi, tpe=fcntType, create=create, attributePolicies=attributePolicies)
+
+		self.resourceAttributePolicies = fcntPolicies	# only the resource type's own policies
+
 		if self.json is not None:
 			self.setAttribute('cs', 0, overwrite=False)
 
@@ -166,13 +171,6 @@ class FCNT(Resource):
 		x = CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
 		
 		return True, C.rcOK, None
-
-
-	# create the json stub for the announced resource
-	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
-		# add the attributes for this specialization
-		policies = addPolicy(fcntPolicies.copy(), CSE.validator.getAdditionAttributesFor(self.tpe))
-		return super()._createAnnouncedJSON(policies), C.rcOK, None
 
 
 	# Validate expirations of child resurces

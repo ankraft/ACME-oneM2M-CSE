@@ -34,6 +34,7 @@ defaultUDS = { 'acn' : '', 'sus' : statusUninitialized }
 class FWR(MgmtObj):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+		self.resourceAttributePolicies = fwrPolicies	# only the resource type's own policies
 		super().__init__(jsn, pi, mgd=T.FWR, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
@@ -43,7 +44,3 @@ class FWR(MgmtObj):
 			self.setAttribute('uds', defaultUDS, overwrite=False)
 			self.setAttribute('ud', False, overwrite=False)
 
-
-	# create the json stub for the announced resource
-	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
-		return super()._createAnnouncedJSON(fwrPolicies), C.rcOK, None

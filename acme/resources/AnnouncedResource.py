@@ -15,5 +15,7 @@ from Types import ResourceTypes as T
 class AnnouncedResource(Resource):
 
 	def __init__(self, ty:T, jsn: dict, pi:str = None, tpe:str = None, create:bool = False) -> None:
-		super().__init__(ty, jsn, pi, tpe=tpe, create=create, isAnnouncedResource=True)
+		super().__init__(ty, jsn, pi, tpe=tpe, create=create)
 
+		# Indicate whether this is an announced resource
+		self.setAttribute(self._isAnnounced, True)

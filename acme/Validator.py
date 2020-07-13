@@ -45,7 +45,7 @@ attributePolicies = {
 	'aei'	: [ BT.string,			CAR.car1,   RO.NP,	RO.NP, RO.O, AN.OA ],		# AE
 	'airi'	: [ BT.list,			CAR.car1,	RO.O,	RO.O,  RO.O, AN.MA ],		# m2m:listOfURIs - ACP
 	'ant'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# ANI
-	'ape'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# m2m:activityPatternElements - AE
+	'ape'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# m2m:activityPatternElements - AE, CSR
 	'api'	: [ BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ],		# AE
 	'apn'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# AE
 	'apri'	: [ BT.list,			CAR.car1,	RO.O,	RO.O,  RO.O, AN.MA ],		# m2m:listOfURIs - ACP
@@ -56,6 +56,7 @@ attributePolicies = {
 	'bts'	: [ BT.positiveInteger,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# BAT
 	'can'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# BAT
 	'cas'	: [ BT.dict,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# BAT
+	'cb'	: [ BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ],		# CSR
 	'cbs'	: [ BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ],		# CNT
 	'cmlk'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# MGO
 	'cnd'	: [ BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.MA ],		# CND
@@ -67,13 +68,14 @@ attributePolicies = {
 	'conr'	: [ BT.dict,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# m2m:contentRef - CIN
 	'cr'	: [ BT.list, 			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ],		# CNT
 	'cs'	: [ BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ],		# CIN, FCNT
-	'csi'	: [ BT.string,			CAR.car1,   RO.NP,	RO.NP, RO.O, AN.OA ],		# CSE
-	'cst'	: [ BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ],		# CSE
+	'csi'	: [ BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ],		# CSE, CSR
+	'cst'	: [ BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ],		# CSE, CSR
 	'csy'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# m2m:consistencyStrategy - GRP
-	'csz'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# m2m:serializations - AE, CSE (RO!)
+	'csz'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# m2m:serializations - AE, CSE (RO!), CSR
 	'cus'	: [ BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# BAT
 	'dc'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# MGO
 	'dea'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ],		# SWR
+	'dcse'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CSR
 	'dis'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# BAT
 	'disr'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT
 	'dlb'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# DVI
@@ -81,9 +83,10 @@ attributePolicies = {
 	'dvd'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# ANDI
 	'dvnm'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
 	'dvt'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# ANDI
+	'egid'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CSR
 	'ena'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# BAT
 	'enc'	: [ BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# SUB
-	'esi'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.MA ],		# m2m:e2eSecInfo - AE, CSE
+	'esi'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.MA ],		# m2m:e2eSecInfo - AE, CSE, CSR
 	'exc'	: [	BT.positiveInteger, CAR.car01, 	RO.O, 	RO.O,  RO.O, AN.NA ],  		# SUB
 	'far'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# RBO
 	'fwn'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# FWR
@@ -109,7 +112,7 @@ attributePolicies = {
 	'macp'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT
 	'man'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# DVI
 	'mbs'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT, FCNT
-	'mei'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# m2m:externalID - AE
+	'mei'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# m2m:externalID - AE, CSR
 	'mfd'	: [ BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
 	'mfdl'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
 	'mgca'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# NOD
@@ -123,6 +126,7 @@ attributePolicies = {
 	'mnm'	: [ BT.positiveInteger,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# GRP
 	'mod'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# DVI
 	'mt'	: [ BT.nonNegInteger,	CAR.car1,   RO.O,	RO.NP, RO.O, AN.OA ],		# m2m:memberType - GRP
+	'mtcc'	: [ BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CSR
 	'mtv'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ],		# GRP
 	'nar'	: [ BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# GRP
 	'nec'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# SUB
@@ -157,14 +161,16 @@ attributePolicies = {
 	'spty'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# m2m:specializationType - GRP
 	'spur'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
 	'srt'	: [ BT.list, 			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ],		# CSE
-	'srv'	: [ BT.list,			CAR.car01,  RO.M,	RO.O,  RO.O, AN.MA ],		# m2m:supportedReleaseVersions - AE, CSE
+	'srv'	: [ BT.list,			CAR.car01,  RO.M,	RO.O,  RO.O, AN.MA ],		# m2m:supportedReleaseVersions - AE, CSE, CSR
 	'ss'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# ANDI
 	'ssi'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ],		# GRP
 	'su'	: [ BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ],		# SUB
 	'swn'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# SWR
 	'swv'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
 	'syst'	: [ BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
-	'tren'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# AE
+	'tren'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# AE, CSR
+	'tri'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CSR
+	'trn'	: [ BT.unsignedInt,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CSR
 	'trps'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# AE
 	'ud'	: [ BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# FWR
 	'uds'	: [ BT.dict,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ],		# FWR
@@ -381,7 +387,7 @@ class Validator(object):
 		self.updateAdditionalAttributes(defs)
 
 
-	def getAdditionAttributesFor(self, tpe: str) -> dict:
+	def getAdditionalAttributesFor(self, tpe: str) -> dict:
 		""" Return the list of additional attributes for a type or None. """
 		return self.additionalAttributes.get(tpe)
 

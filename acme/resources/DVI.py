@@ -27,6 +27,7 @@ defaultDeviceLabel = "unknown serial id"
 class DVI(MgmtObj):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+		self.resourceAttributePolicies = dviPolicies	# only the resource type's own policies
 		super().__init__(jsn, pi, mgd=T.DVI, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
@@ -35,7 +36,3 @@ class DVI(MgmtObj):
 			self.setAttribute('man', defaultManufacturer, overwrite=False)
 			self.setAttribute('dlb', defaultDeviceLabel, overwrite=False)
 
-
-	# create the json stub for the announced resource
-	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
-		return super()._createAnnouncedJSON(dviPolicies), C.rcOK, None

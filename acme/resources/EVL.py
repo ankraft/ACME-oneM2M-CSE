@@ -38,6 +38,7 @@ defaultLogStatus = lgstUnknown
 class EVL(MgmtObj):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+		self.resourceAttributePolicies = evlPolicies	# only the resource type's own policies
 		super().__init__(jsn, pi, mgd=T.EVL, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
@@ -47,7 +48,3 @@ class EVL(MgmtObj):
 			self.setAttribute('lga', False, overwrite=False)
 			self.setAttribute('lgo', False, overwrite=False)
 
-
-	# create the json stub for the announced resource
-	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
-		return super()._createAnnouncedJSON(evlPolicies), C.rcOK, None

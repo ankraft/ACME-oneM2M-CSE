@@ -24,14 +24,10 @@ defaultDeviceID = ''
 class ANDI(MgmtObj):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+		self.resourceAttributePolicies = andiPolicies	# only the resource type's own policies
 		super().__init__(jsn, pi, mgd=T.ANDI, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('dvd', defaultDeviceID, overwrite=False)
 			self.setAttribute('dvt', '', overwrite=False)
 			self.setAttribute('awi', '', overwrite=False)
-
-
-	# create the json stub for the announced resource
-	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
-		return super()._createAnnouncedJSON(andiPolicies), C.rcOK, None

@@ -35,7 +35,7 @@ class Resource(object):
 
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator ]
 
-	def __init__(self, ty: Union[T, int], jsn: dict = None, pi: str = None, tpe:str = None, create: bool = False, inheritACP: bool = False, readOnly: bool = False, rn: str = None, attributePolicies: dict = None, isVirtual: bool = False, isAnnouncedResource:bool = False) -> None:
+	def __init__(self, ty:Union[T, int], jsn:dict = None, pi:str = None, tpe:str = None, create:bool = False, inheritACP:bool = False, readOnly:bool = False, rn:str = None, attributePolicies:dict = None, isVirtual:bool = False) -> None:
 		self.tpe = tpe
 		if isinstance(ty, T) and ty not in [ T.FCNT, T.FCI ]: 	# For some types the tpe/root is empty and will be set later in this method
 			self.tpe = ty.tpe() if tpe is None else tpe
@@ -75,10 +75,6 @@ class Resource(object):
 			# Indicate whether this is a virtual resource
 			if isVirtual:
 				self.setAttribute(self._isVirtual, isVirtual)
-
-			# Indicate whetehr this is an announced resource
-			if isAnnouncedResource:
-				self.setAttribute(self._isAnnounced, isAnnouncedResource)
 	
 			# Create an RN if there is none
 			self.setAttribute('rn', Utils.uniqueRN(self.tpe), overwrite=False)

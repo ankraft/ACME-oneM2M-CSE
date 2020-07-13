@@ -13,6 +13,8 @@ from Types import ResourceTypes as T
 import Utils, CSE
 from Validator import constructPolicy, addPolicy
 from .Resource import *
+from .AnnounceableResource import AnnounceableResource
+
 
 # TODO Support cmdhPolicy
 # TODO Support storage
@@ -26,10 +28,12 @@ nodPolicies = constructPolicy([
 attributePolicies = addPolicy(attributePolicies, nodPolicies)
 
 
-class NOD(Resource):
+class NOD(AnnounceableResource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
 		super().__init__(T.NOD, jsn, pi, create=create, attributePolicies=attributePolicies)
+
+		self.resourceAttributePolicies = nodPolicies	# only the resource type's own policies
 
 		if self.json is not None:
 			self.setAttribute('ni', Utils.uniqueID(), overwrite=False)
@@ -52,11 +56,6 @@ class NOD(Resource):
 		ri = self['ri']
 		for ae in self['hael']:
 			self._removeNODfromAE(ae, ri)
-
-
-	# create the json stub for the announced resource
-	def createAnnouncedResourceJSON(self) ->  Tuple[dict, int, str]:
-		return super()._createAnnouncedJSON(nodPolicies), C.rcOK, None
 
 
 	def _removeNODfromAE(self, aeRI: str, ri: str) -> None:
