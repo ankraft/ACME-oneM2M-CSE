@@ -109,10 +109,10 @@ class Configuration(object):
 				#	Registrar CSE
 				#
 
-				'cse.registrar.address'				: config.get('cse.registrar', 'address', 					fallback=''),
-				'cse.registrar.root'				: config.get('cse.registrar', 'root', 						fallback=''),
-				'cse.registrar.csi'					: config.get('cse.registrar', 'cseID', 						fallback=''),
-				'cse.registrar.rn'					: config.get('cse.registrar', 'resourceName', 				fallback=''),
+				'cse.registrar.address'				: config.get('cse.registrar', 'address', 					fallback=None),
+				'cse.registrar.root'				: config.get('cse.registrar', 'root', 						fallback=None),
+				'cse.registrar.csi'					: config.get('cse.registrar', 'cseID', 						fallback=None),
+				'cse.registrar.rn'					: config.get('cse.registrar', 'resourceName', 				fallback=None),
 				'cse.registrar.checkInterval'		: config.getint('cse.registrar', 'checkInterval', 			fallback=30),		# Seconds
 
 				#
@@ -257,12 +257,14 @@ class Configuration(object):
 		if re.fullmatch(rx, (val:=Configuration._configuration['cse.csi'])) is None:
 			print('Configuration Error: Wrong format for [cse]:cseID: %s' % val)
 			return False
-		if re.fullmatch(rx, (val:=Configuration._configuration['cse.registrar.csi'])) is None:
-			print('Configuration Error: Wrong format for [cse.registrar]:cseID: %s' % val)
-			return False
-		if len(Configuration._configuration['cse.registrar.csi']) > 0 and len(Configuration._configuration['cse.registrar.rn']) == 0:
-			print('Configuration Error: Missing configuration [cse.registrar]:resourceName')
-			return False
+
+		if Configuration._configuration['cse.registrar.address'] is not None and Configuration._configuration['cse.registrar.csi'] is not None:
+			if re.fullmatch(rx, (val:=Configuration._configuration['cse.registrar.csi'])) is None:
+				print('Configuration Error: Wrong format for [cse.registrar]:cseID: %s' % val)
+				return False
+			if len(Configuration._configuration['cse.registrar.csi']) > 0 and len(Configuration._configuration['cse.registrar.rn']) == 0:
+				print('Configuration Error: Missing configuration [cse.registrar]:resourceName')
+				return False
 
 		# Everything is fine
 		return True
