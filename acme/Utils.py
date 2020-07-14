@@ -8,10 +8,12 @@
 #	modules and entities of the CSE.
 #
 
-import datetime, random, string, sys, re, threading
+import datetime, random, string, sys, re, threading, traceback
 from typing import Any, List, Tuple, Union
 from resources import ACP, AE, ANDI, ANI, BAT, CIN, CNT, CNT_LA, CNT_OL, CSEBase, CSR, DVC
 from resources import DVI, EVL, FCI, FCNT, FCNT_LA, FCNT_OL, FWR, GRP, GRP_FOPT, MEM, NOD, RBO, SUB, SWR, Unknown, Resource
+from resources import FCNTAnnc, FCIAnnc
+
 from Constants import Constants as C
 from Types import ResourceTypes as T
 from Configuration import Configuration
@@ -35,6 +37,11 @@ def isUniqueRI(ri: str) -> bool:
 def uniqueRN(prefix: str = 'un') -> str:
 	# return "%s_%s" % (p, ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=C.maxIDLength)))
 	return "%s_%s" % (noDomain(prefix), _randomID())
+
+def announcedRN(resource:Resource.Resource) -> str:
+	""" Create the announced rn for a resource.
+	"""
+	return '%s_Annc' % resource.rn
 
 
 # create a unique aei, M2M-SP type
@@ -118,12 +125,13 @@ def structuredPath(resource: Resource.Resource) -> str:
 		return rn
 
 	# retrieve identifier record of the parent
-	if (pi := resource.pi) is None:
+	if (pi := resource.pi) is None or len(pi) == 0:
 		# Logging.logErr('PI is None')
 		return rn
 	rpi = CSE.storage.identifier(pi) 
 	if len(rpi) == 1:
 		return rpi[0]['srn'] + '/' + rn
+	# Logging.logErr(traceback.format_stack())
 	Logging.logErr('Parent %s not fount in DB' % pi)
 	return rn # fallback
 
@@ -144,10 +152,15 @@ def riFromStructuredPath(srn: str) -> str:
 
 def riFromCSI(csi: str) -> str:
 	""" Get the ri from an CSEBase resource by its csi. """
+	if (res := resourceFromCSI(csi)) is None:
+		return None
+	return res.ri
+
+def resourceFromCSI(csi: str) -> Resource.Resource:
+	""" Get the CSEBase resource by its csi. """
 	if (res := CSE.storage.retrieveResource(csi=csi))[0] is None:
 		return None
-	return res[0].ri
-
+	return res[0]
 
 def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 	""" Split a ful path e.g. from a http request into its component and return a local ri .
@@ -230,6 +243,8 @@ def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 	return None, None, None
 
 
+mgmtObjTPEs = [ T.FWR.tpe(), T.SWR.tpe(), T.MEM.tpe(), T.ANI.tpe(), T.ANDI.tpe(), T.BAT.tpe(), T.DVI.tpe(), T.DVC.tpe(), T.RBO.tpe(), T.EVL.tpe() ]
+
 def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, int] = None, create: bool = False, isImported: bool = False) -> Tuple[Resource.Resource, str]:
 	""" Create a resource from a JSON structure.
 		This will *not* call the activate method, therefore some attributes
@@ -273,26 +288,6 @@ def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, i
 		return CSR.CSR(jsn, pi=pi, create=create), None
 	elif typ == T.NOD or root == T.NOD.tpe():
 		return NOD.NOD(jsn, pi=pi, create=create), None
-	elif (typ == T.MGMTOBJ and mgd == T.FWR) or root == T.FWR.tpe():
-		return FWR.FWR(jsn, pi=pi, create=create), None
-	elif (typ == T.MGMTOBJ and mgd == T.SWR) or root == T.SWR.tpe():
-		return SWR.SWR(jsn, pi=pi, create=create), None
-	elif (typ == T.MGMTOBJ and mgd == T.MEM) or root == T.MEM.tpe():
-		return MEM.MEM(jsn, pi=pi, create=create), None
-	elif (typ == T.MGMTOBJ and mgd == T.ANI) or root == T.ANI.tpe():
-		return ANI.ANI(jsn, pi=pi, create=create), None
-	elif (typ == T.MGMTOBJ and mgd == T.ANDI) or root == T.ANDI.tpe():
-		return ANDI.ANDI(jsn, pi=pi, create=create), None
-	elif (typ == T.MGMTOBJ and mgd == T.BAT) or root == T.BAT.tpe():
-		return BAT.BAT(jsn, pi=pi, create=create), None
-	elif (typ == T.MGMTOBJ and mgd == T.DVI) or root == T.DVI.tpe():
-		return DVI.DVI(jsn, pi=pi, create=create), None
-	elif (typ == T.MGMTOBJ and mgd == T.DVC) or root == T.DVC.tpe():
-		return DVC.DVC(jsn, pi=pi, create=create), None
-	elif (typ == T.MGMTOBJ and mgd == T.RBO) or root == T.RBO.tpe():
-		return RBO.RBO(jsn, pi=pi, create=create), None
-	elif (typ == T.MGMTOBJ and mgd == T.EVL) or root == T.EVL.tpe():
-		return EVL.EVL(jsn, pi=pi, create=create), None
 	elif typ == T.CNT_LA or root == T.CNT_LA.tpe():
 		return CNT_LA.CNT_LA(jsn, pi=pi, create=create), None
 	elif typ == T.CNT_OL or root == T.CNT_OL.tpe():
@@ -304,6 +299,36 @@ def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, i
 	elif typ == T.CSEBase or root == T.CSEBase.tpe():
 		return CSEBase.CSEBase(jsn, create=create), None
 
+	# Management Objects
+	elif typ == T.MGMTOBJ or root in mgmtObjTPEs:
+		if mgd == T.FWR or root == T.FWR.tpe():
+			return FWR.FWR(jsn, pi=pi, create=create), None
+		elif mgd == T.SWR or root == T.SWR.tpe():
+			return SWR.SWR(jsn, pi=pi, create=create), None
+		elif mgd == T.MEM or root == T.MEM.tpe():
+			return MEM.MEM(jsn, pi=pi, create=create), None
+		elif mgd == T.ANI or root == T.ANI.tpe():
+			return ANI.ANI(jsn, pi=pi, create=create), None
+		elif mgd == T.ANDI or root == T.ANDI.tpe():
+			return ANDI.ANDI(jsn, pi=pi, create=create), None
+		elif mgd == T.BAT or root == T.BAT.tpe():
+			return BAT.BAT(jsn, pi=pi, create=create), None
+		elif mgd == T.DVI or root == T.DVI.tpe():
+			return DVI.DVI(jsn, pi=pi, create=create), None
+		elif mgd == T.DVC or root == T.DVC.tpe():
+			return DVC.DVC(jsn, pi=pi, create=create), None
+		elif mgd == T.RBO or root == T.RBO.tpe():
+			return RBO.RBO(jsn, pi=pi, create=create), None
+		elif  mgd == T.EVL or root == T.EVL.tpe():
+			return EVL.EVL(jsn, pi=pi, create=create), None
+
+
+	# Announced Resources
+	elif typ == T.FCIAnnc:
+		return FCIAnnc.FCIAnnc(jsn, pi=pi, create=create), None
+	elif typ == T.FCNTAnnc:
+		return FCNTAnnc.FCNTAnnc(jsn, pi=pi, create=create), None
+		
 	return Unknown.Unknown(jsn, root, pi=pi, create=create), None	# Capture-All resource
 
 
@@ -315,7 +340,6 @@ def pureResource(jsn: dict) -> Tuple[dict, str]:
 	if len(rootKeys) == 1 and (rk := rootKeys[0]) not in excludeFromRoot and re.match('[\w]+:[\w]', rk):
 		return jsn[rootKeys[0]], rootKeys[0]
 	return jsn, None
-
 
 
 decimalMatch = re.compile('{(\d+)}')
@@ -331,15 +355,17 @@ def findXPath(jsn : dict, element : str, default : Any = None) -> Any:
 			return default
 		elif (m := decimalMatch.search(paths[i])) is not None:	# Match array index {i}
 			idx = int(m.group(1))
-			if not isinstance(data, list) or idx >= len(data):	# Check idx within range of list
+			if not isinstance(data, (list,dict)) or idx >= len(data):	# Check idx within range of list
 				return default
-			data = data[idx]
+			if isinstance(data, dict):
+				data = data[list(data)[i]]
+			else:
+				data = data[idx]
 		elif paths[i] not in data:	# if key not in dict
 			return default
 		else:
 			data = data[paths[i]]	# found data for the next level down
 	return data
-
 
 # set a structured element in JSON. Create if necessary, and observe the overwrite option
 def setXPath(jsn: dict, element: str, value: Any, overwrite: bool = True) -> None:
@@ -366,7 +392,7 @@ urlregex = re.compile(
 
 def isURL(url: str) -> bool:
 	""" Check whether a given string is a URL. """
-	return url is not None and re.match(urlregex, url) is not None
+	return url is not None and isinstance(url, str) and re.match(urlregex, url) is not None
 
 
 def normalizeURL(url: str) -> str:

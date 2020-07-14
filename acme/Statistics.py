@@ -50,6 +50,7 @@ class Statistics(object):
 		# subscripe vto various events
 		# mypy cannot handle dynamically created attributes
 		CSE.event.addHandler(CSE.event.createResource, self.handleCreateEvent) 		# type: ignore
+		CSE.event.addHandler(CSE.event.updateResource, self.handleUpdateEvent)		# type: ignore
 		CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent)		# type: ignore
 		CSE.event.addHandler(CSE.event.httpRetrieve, self.handleHttpRetrieveEvent)	# type: ignore
 		CSE.event.addHandler(CSE.event.httpCreate, self.handleHttpCreateEvent)		# type: ignore

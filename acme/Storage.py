@@ -237,6 +237,35 @@ class Storage(object):
 		return result
 
 
+	def searchAnnounceableResourcesForCSI(self, csi:str, isAnnounced:bool) -> List[Resource]:
+		""" Search and retrieve all resources that have the provided CSI in their 
+			'at' attribute.
+		"""
+		result = []
+
+		def _announcedFilter(r):
+			if (at := r.get('at')) is not None and csi in at:
+				if (isa := r.get(Resource._announcedTo)) is not None:
+					found = False
+					for i in isa:
+						if csi == i[0]:
+							found = True
+							break
+					return found == isAnnounced
+			return False
+
+		for j in self.db.discoverResources(_announcedFilter):
+			resource, _ = Utils.resourceFromJSON(j)
+			if resource is not None:
+				result.append(resource)
+		return result
+
+
+
+
+
+
+
 	#########################################################################
 	##
 	##	Subscriptions
@@ -322,141 +351,6 @@ class Storage(object):
 			if r is not None:
 				r.validateExpirations()
 		return True
-
-
-
-#########################################################################
-##
-##	internal utilities
-##
-
-
-# # handler function for discovery search and matching resources
-# def _testDiscovery(storage, r, rootSRN, handling, conditions, attributes, fo, lim, ofst, allLen):
-
-# 	# TODO: Implement a couple of optimizations. Can we determine earlier that a match will fail?
-
-# 	# check limits
-# 	# TinyDB doesn't support pagination. So we need to implement it here. See also offset below.
-# 	if lim is not None and handling['__returned__'] >= lim:
-# 		return False
-
-# 	# check for SRN first
-# 	# Add / to the "startswith" check to terminate the search string 
-# 	if (srn := r['__srn__']) is not None and rootSRN.count('/') >= srn.count('/') or not srn.startswith(rootSRN+'/') or srn == rootSRN:
-# 		return False
-
-# 	# Ignore virtual resources TODO: correct?
-# 	# if (ty := r.get('ty')) and ty in C.virtualResources:
-# 		# return False
-# 	ty = r.get('ty')
-
-# 	# ignore some resource types
-# 	if ty in [ C.tGRP_FOPT ]:
-# 		return False
-
-
-# 	# check level
-# 	if (h_lvl := handling.get('__lvl__')) is not None and srn.count('/') > h_lvl:
-# 		return False
-
-# 	# get the parent resource
-# 	#
-# 	#	TODO when determines how the parentAttribute is actually encoded
-# 	#
-# 	# pr = None
-# 	# if (pi := r.get('pi')) is not None:
-# 	# 	print(pi)
-# 	# 	pr = storage.retrieveResource(ri=pi)
-# 	# print(pr)
-# 	found = 0
-
-# 	# check conditions
-# 	if conditions is not None:
-# 		# found += 1 if (c_ty := conditions.get('ty')) is not None and (str(ty) == c_ty) else 0
-
-# 		if (ct := r.get('ct')) is not None:
-# 			found += 1 if (c_crb := conditions.get('crb')) is not None and (ct < c_crb) else 0
-# 			found += 1 if (c_cra := conditions.get('cra')) is not None and (ct > c_cra) else 0
-
-# 		if (lt := r.get('lt')) is not None:
-# 			found += 1 if (c_ms := conditions.get('ms')) is not None and (lt > c_ms) else 0
-# 			found += 1 if (c_us := conditions.get('us')) is not None and (lt < c_us) else 0
-
-# 		if (st := r.get('st')) is not None:
-# 			found += 1 if (c_sts := conditions.get('sts')) is not None and (str(st) > c_sts) else 0
-# 			found += 1 if (c_stb := conditions.get('stb')) is not None and (str(st) < c_stb) else 0
-
-# 		if (et := r.get('et')) is not None:
-# 			found += 1 if (c_exb := conditions.get('exb')) is not None and (et < c_exb) else 0
-# 			found += 1 if (c_exa := conditions.get('exa')) is not None and (et > c_exa) else 0
-
-# 		# special handling of label-list
-# 		if (lbl := r.get('lbl')) is not None and (c_lbl := conditions.get('lbl')) is not None:
-# 			lbla = c_lbl.split()
-# 			fnd = 0
-# 			for l in lbla:
-# 				fnd += 1 if l in lbl else 0
-# 			found += 1 if (fo == 1 and fnd == len(lbl)) or (fo == 2 and fnd > 0) else 0	# fo==or -> find any label
-# 			#	# TODO labelsQuery
-
-# 		# Types
-# 		# Multiple occurences of ty is always OR'ed. Therefore we add the count of
-# 		# ty's to found (to indicate that the whole set matches)
-# 		tys = conditions['ty']
-# 		found += len(tys) if str(ty) in tys else 0	
-
-# 		if ty in [ C.tCIN, C.tFCNT ]:	# special handling for CIN, FCNT
-# 			if (cs := r.get('cs')) is not None:
-# 				found += 1 if (sza := conditions.get('sza')) is not None and (str(cs) >= sza) else 0
-# 				found += 1 if (szb := conditions.get('szb')) is not None and (str(cs) < szb) else 0
-
-# 		# ContentFormats
-# 		# Multiple occurences of cnf is always OR'ed. Therefore we add the count of
-# 		# cnf's to found (to indicate that the whole set matches)
-# 		if ty in [ C.tCIN ]:	# special handling for CIN
-# 			cnfs = conditions['cty']
-# 			found += len(cnfs) if r.get('cnf') in cnfs else 0
-
-
-
-
-
-# 	# TODO childLabels
-# 	# TODO parentLabels
-# 	# TODO childResourceType
-# 	# TODO parentResourceType
-
-
-# 	# Attributes:
-# 	if attributes is not None:
-# 		for name in attributes:
-# 			val = attributes[name]
-# 			if '*' in val:
-# 				val = val.replace('*', '.*')
-# 				found += 1 if (rval := r.get(name)) is not None and re.match(val, str(rval)) else 0
-# 			else:
-# 				found += 1 if (rval := r.get(name)) is not None and str(val) == str(rval) else 0
-
-# 	# TODO childAttribute
-# 	# TODO parentAttribute
-
-
-# 	# Test whether the OR or AND criteria is fullfilled
-# 	if not ((fo == 2 and found > 0) or 		# OR and found something
-# 			(fo == 1 and allLen == found)	# AND and found everything
-# 	   	   ): 
-# 		return False
-
-
-# 	# Check offset. Dont match if offset not reached
-# 	handling['__matched__'] += 1
-# 	if ofst is not None and handling['__matched__'] <= ofst:
-# 		return False
-
-# 	handling['__returned__'] += 1
-# 	return True
-
 
 
 

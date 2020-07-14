@@ -17,8 +17,6 @@ from Types import ResourceTypes as T
 class Unknown(Resource):
 
 	def __init__(self, jsn: dict, tpe: str, pi: str = None, create: bool = False) -> None:
-		print("************")
-		print(jsn)
 		super().__init__(T.UNKNOWN, jsn, pi, tpe=tpe, create=create)
 
 	# Enable check for allowed sub-resources (ie. all)

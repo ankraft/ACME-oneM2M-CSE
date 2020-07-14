@@ -170,7 +170,7 @@ class RegistrationManager(object):
 	#
 
 	def handleCSRRegistration(self, csr: Resource, originator: str) -> bool:
-		Logging.logDebug('Registering CSR. csi: %s ' % csr['csi'])
+		Logging.logDebug('Registering CSR. csi: %s ' % csr.csi)
 
 		# Create an ACP for this CSR if there is none set
 		Logging.logDebug('Adding ACP for CSR')
@@ -192,7 +192,7 @@ class RegistrationManager(object):
 		self._addToAccessCSBaseACP(originator)
 
 		# send event
-		CSE.event.remoteCSEHasRegistered(csr)	# type: ignore
+		CSE.event.remoteCSEHasRegistered(csr, originator)	# type: ignore
 
 		return True
 

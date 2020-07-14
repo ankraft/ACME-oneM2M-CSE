@@ -15,7 +15,7 @@ from Constants import Constants as C
 from Types import ResourceTypes as T
 from Configuration import Configuration
 import Utils, CSE
-import datetime, random
+import datetime, random, traceback
 from .Resource import *
 
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)
@@ -29,11 +29,12 @@ class Resource(object):
 	_createdInternally	= '__createdInternally__'
 	_imported			= '__imported__'
 	_isVirtual 			= '__isVirtual__'
-	_isAnnounced 		= '__isAnnounced__'
+	_announcedTo 		= '__announcedTo__'			# List
 	_isInstantiated		= '__isInstantiated__'
 	_originator			= '__originator__'
 
-	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator ]
+	# ATTN: There is a similar definition in FCNT! Don't Forget to add attributes there as well
+	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator, _announcedTo ]
 
 	def __init__(self, ty:Union[T, int], jsn:dict = None, pi:str = None, tpe:str = None, create:bool = False, inheritACP:bool = False, readOnly:bool = False, rn:str = None, attributePolicies:dict = None, isVirtual:bool = False) -> None:
 		self.tpe = tpe
@@ -85,7 +86,8 @@ class Resource(object):
 			self.setAttribute('lt', ts, overwrite=False)
 			self.setAttribute('et', Utils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite=False) 
 			if pi is not None:
-				self.setAttribute('pi', pi, overwrite=False)
+				# self.setAttribute('pi', pi, overwrite=False)
+				self.setAttribute('pi', pi, overwrite=True)
 			if ty is not None:
 				if ty in C.stateTagResourceTypes:	# Only for allowed resources
 					self.setAttribute('st', 0, overwrite=False)
@@ -101,7 +103,7 @@ class Resource(object):
 			# determine and add the srn
 			self[self._srn] = Utils.structuredPath(self)
 			self[self._rtype] = self.tpe
-
+			self.setAttribute(self._announcedTo, [], overwrite=False)
 
 
 
@@ -152,17 +154,12 @@ class Resource(object):
 		self.setAttribute(self._originator, originator, overwrite=False)
 		self.setAttribute(self._rtype, self.tpe, overwrite=False) 
 
-		# Check announcement
-		if self['at'] is not None:
-			CSE.announce.announceResource(self)
-			
-
 		return True, C.rcOK, None
 
 
 	# Deactivate an active resource.
 	# Send notification on deletion
-	def deactivate(self, originator : str) -> None:
+	def deactivate(self, originator:str) -> None:
 		Logging.logDebug('Deactivating and removing sub-resources: %s' % self.ri)
 		# First check notification because the subscription will be removed
 		# when the subresources are removed
@@ -177,9 +174,9 @@ class Resource(object):
 
 	# Update this resource with (new) fields.
 	# Call validate() afterward to react on changes.
-	def update(self, jsn: dict = None, originator: str = None) -> Tuple[bool, int, str]:
+	def update(self, jsn: dict = None, originator:str = None) -> Tuple[bool, int, str]:
 		if jsn is not None:
-			if self.tpe not in jsn:
+			if self.tpe not in jsn and self.ty not in [T.FCNTAnnc, T.FCIAnnc]:	# Don't check announced versions of announced FCNT
 				Logging.logWarn("Update types don't match")
 				return False, C.rcContentsUnacceptable, 'resource types mismatch'
 
@@ -187,7 +184,10 @@ class Resource(object):
 			if not (result := CSE.validator.validateAttributes(jsn, self.tpe, self.attributePolicies, create=False))[0]:
 				return result
 
-			j = jsn[self.tpe] # get structure under the resource type specifier
+			if self.ty not in [T.FCNTAnnc, T.FCIAnnc]:
+				j = jsn[self.tpe] # get structure under the resource type specifier
+			else:
+				j = Utils.findXPath(jsn, '{0}')
 			for key in j:
 				# Leave out some attributes
 				if key in ['ct', 'lt', 'pi', 'ri', 'rn', 'st', 'ty']:
@@ -197,7 +197,7 @@ class Resource(object):
 				if key == 'et' and value is None:
 					self['et'] = Utils.getResourceDate(Configuration.get('cse.expirationDelta'))
 					continue
-				self[key] = value	# copy new value
+				self.setAttribute(key, value, overwrite=True) # copy new value or add new attributes
 
 		# - state and lt
 		if 'st' in self.json:	# Update the state
@@ -269,31 +269,6 @@ class Resource(object):
 			resource implementations that support announceable versions.
 		"""
 		return None, C.rcBadRequest, 'wrong resource type or announcement not supported'
-
-
-	# Actually create the json
-	def _createAnnouncedJSON(self, policies: Dict[str, List[Any]]) -> dict:
-		jsn = { self.tpe : {
-					'ty'	: int(self.ty),
-					'rn'	: '%s_Annc' % self.rn,
-					'lnk'	: '%s/%s' % (Configuration.get('cse.csi'), self.ri),
-					# set by parent: ri, pi, ct, lt, et
-			}
-		}
-		if (st := self.st) is not None:
-			Utils.setXPath(jsn, '%s/st' % self.tpe, st)
-		if (acpi := self.acpi) is not None:
-			Utils.setXPath(jsn, '%s/acpi' % self.tpe, acpi.copy())
-		if (lbl := self.lbl) is not None:
-			Utils.setXPath(jsn, '%s/lbl' % self.tpe, lbl.copy())
-
-		# get  all resource specific policies and add the mandatory ones
-		mandatoryAttributes, optionalAttributes = CSE.validator.getAnnouncedAttributes(self, policies)
-		for attr in mandatoryAttributes:
-			Utils.setXPath(jsn, '%s/%s' % (self.tpe, attr), self[attr])
-		for attr in optionalAttributes:
-			Utils.setXPath(jsn, '%s/%s' % (self.tpe, attr), self[attr])
-		return jsn
 
 
 	#########################################################################

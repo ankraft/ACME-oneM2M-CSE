@@ -51,9 +51,10 @@ rootDirectory:str					= None
 
 aeCSENode:CSENode				 	= None 
 aeStatistics:AEStatistics 		 	= None 
-appsStarted:bool 					= False
+appsStarted:True 					= False
 
 aeStartupDelay:int 					= 5	# seconds
+
 
 # TODO make AE registering a bit more generic
 
@@ -150,8 +151,9 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 # Gracefully shutdown the CSE, e.g. when receiving a keyboard interrupt
 @atexit.register
 def shutdown() -> None:
-	if appsStarted:
-		stopApps()
+	event.cseShutdown()
+	# if appsStarted:
+	# 	stopApps()
 	if remote is not None:
 		remote.shutdown()
 	if group is not None:
@@ -182,6 +184,7 @@ def shutdown() -> None:
 # has not yet started. This will be called when the cseStartup event is raised.
 def startAppsDelayed() -> None:
 	event.addHandler(event.cseStartup, startApps) 	# type: ignore
+	event.addHandler(event.cseShutdown, stopApps)	# type: ignore
 
 
 def startApps() -> None:
@@ -196,6 +199,8 @@ def startApps() -> None:
 
 	if Configuration.get('app.csenode.enable'):
 		aeCSENode = CSENode()
+	if not appsStarted:	# shutdown?
+		return
 	if Configuration.get('app.statistics.enable'):
 		aeStatistics = AEStatistics()
 
@@ -204,9 +209,10 @@ def startApps() -> None:
 
 def stopApps() -> None:
 	global appsStarted
+	appsStarted = -1
 	if appsStarted:
-		Logging.log('Stopping Apps')
 		appsStarted = False
+		Logging.log('Stopping Apps')
 		if aeStatistics is not None:
 			aeStatistics.shutdown()
 		if aeCSENode is not None:

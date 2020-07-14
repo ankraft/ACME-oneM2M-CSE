@@ -26,24 +26,29 @@ from helpers.BackgroundWorker import BackgroundWorker
 class RemoteCSEManager(object):
 
 	def __init__(self) -> None:
-		self.csetype 					= Configuration.get('cse.type')
-		self.isConnected 				= False
-		self.remoteAddress				= Configuration.get('cse.registrar.address')
-		self.remoteRoot 				= Configuration.get('cse.registrar.root')
-		self.remoteCsi					= Configuration.get('cse.registrar.csi')
-		self.remoteCseRN				= Configuration.get('cse.registrar.rn')
-		self.originator					= Configuration.get('cse.csi')	# Originator is the own CSE-ID
-		self.worker:BackgroundWorker	= None
-		self.checkInterval				= Configuration.get('cse.registrar.checkInterval')
-		self.cseCsi						= Configuration.get('cse.csi')
-		self.remoteCSEURL				= '%s%s/~%s/%s' % (self.remoteAddress, self.remoteRoot, self.remoteCsi, self.remoteCseRN)
-		self.remoteCSRURL				= '%s%s' % (self.remoteCSEURL, self.cseCsi)
-		self.registeredCSIs: List[str] 	= [] 	# all CSI's of directly registerde CSE's (above and below)
+		self.csetype 						= Configuration.get('cse.type')
+		self.isConnected 					= False
+		self.remoteAddress					= Configuration.get('cse.registrar.address')
+		self.remoteRoot 					= Configuration.get('cse.registrar.root')
+		self.remoteCsi						= Configuration.get('cse.registrar.csi')
+		self.remoteCseRN					= Configuration.get('cse.registrar.rn')
+		self.originator						= Configuration.get('cse.csi')	# Originator is the own CSE-ID
+		self.worker:BackgroundWorker		= None
+		self.checkInterval					= Configuration.get('cse.registrar.checkInterval')
+		self.cseCsi							= Configuration.get('cse.csi')
+		self.remoteCSEURL					= '%s%s/~%s/%s' % (self.remoteAddress, self.remoteRoot, self.remoteCsi, self.remoteCseRN)
+		self.remoteCSRURL					= '%s%s' % (self.remoteCSEURL, self.cseCsi)
+		self.registrarCSR					= None 	# The registrar CSR if there is one
+		self.registrarCSE					= None 	# The registrar CSE if there is one
+		self.registreeCSRs:List[Resource]	= []
+		self.registreeCSEs:List[Resource]	= []
+		self.registeredCSIs:List[str] 		= [] 	# all CSI's of directly registerde CSE's (above and below)
+
 
 		CSE.event.addHandler(CSE.event.registeredToRemoteCSE, self.handleCSERegistration)			# type: ignore
 		CSE.event.addHandler(CSE.event.deregisteredFromRemoteCSE, self.handleCSEDeregistration)			# type: ignore
-		CSE.event.addHandler(CSE.event.remoteCSEHasRegistered, self.handleCSERegistration)			# type: ignore
-		CSE.event.addHandler(CSE.event.remoteCSEHasDeregistered, self.handleCSEDeregistration)			# type: ignore
+		#CSE.event.addHandler(CSE.event.remoteCSEHasRegistered, self.handleCSERegistration)			# type: ignore
+		#CSE.event.addHandler(CSE.event.remoteCSEHasDeregistered, self.handleCSEDeregistration)			# type: ignore
 
 		Logging.log('RemoteCSEManager initialized')
 
@@ -140,9 +145,9 @@ class RemoteCSEManager(object):
 	#	Event Handlers
 	#
 
-	def handleCSERegistration(self, resource:Resource) -> None:
+	def handleCSERegistration(self, registrarCSE:Resource, registrarCSR:Resource) -> None:
 		"""	Add the CSE/CSR CSI to the list of registered CSI. """
-		self._addRegisteredCSE(resource)
+		self._addRegisteredCSE(registrarCSE)
 
 
 
@@ -176,46 +181,47 @@ class RemoteCSEManager(object):
 	def _checkOwnConnection(self) -> None:
 		# first check whether there is already a local CSR
 		localCSRs, rc, _ = self._retrieveLocalCSR()
-		localCSR = localCSRs[0] # hopefully, there is only one upstream CSR+
+		localCSR = localCSRs[0] # hopefully, there is only one registrar CSR+
 		if rc == C.rcOK:
-			remoteCSR, rc, _ = self._retrieveRemoteCSR()	# retrieve own
+			self.registrarCSR, rc, _ = self._retrieveRemoteCSR()	# retrieve own
 			if rc == C.rcOK:
 				# own CSR is still in remote CSE, so check for changes in remote CSE
-				remoteCSE, rc, _ = self._retrieveRemoteCSE()
+				self.registrarCSE, rc, _ = self._retrieveRemoteCSE()
 				if rc == C.rcOK:
-					if remoteCSE.isModifiedSince(localCSR):	# remote CSE modified
-						self._updateLocalCSR(localCSR, remoteCSE)
+					if self.registrarCSE.isModifiedSince(localCSR):	# remote CSE modified
+						self._updateLocalCSR(localCSR, self.registrarCSE)
 						Logging.log('Local CSR updated')
 				localCSE, _, _ = Utils.getCSE()
-				if localCSE.isModifiedSince(remoteCSR):	# local CSE modified
+				if localCSE.isModifiedSince(self.registrarCSR):	# local CSE modified
 					self._updateRemoteCSR(localCSE)
 					Logging.log('Remote CSR updated')
 
 			else:
 				# Potential disconnect
 				self._deleteLocalCSR(localCSR)	# ignore result
-				_, rc, _ = self._createRemoteCSR()
+				self.registrarCSR, rc, _ = self._createRemoteCSR()
 				if rc == C.rcCreated:
-					remoteCSE, rc, _ = self._retrieveRemoteCSE()
+					self.registrarCSE, rc, _ = self._retrieveRemoteCSE()
 					if rc == C.rcOK:
-						self._createLocalCSR(remoteCSE)
+						localCSR, _, _ = self._createLocalCSR(self.registrarCSE)
 						Logging.log('Remote CSE connected')
-						CSE.event.registeredToRemoteCSE(remoteCSE)	# type: ignore
+						CSE.event.registeredToRemoteCSE(self.registrarCSE, self.registrarCSR)	# type: ignore
 				else:
 					Logging.log('Remote CSE disconnected')
-					CSE.event.deregisteredFromRemoteCSE(localCSR)	# type: ignore
+					CSE.event.deregisteredFromRemoteCSE(self.registrarCSE)	# type: ignore
+					self.registrarCSE = None
 		
 		else:
 			# No local CSR, so try to delete an optional remote one and re-create everything. 
 			_, rc, _ = self._deleteRemoteCSR()					# delete potential remote CSR
 			if rc in [C.rcDeleted, C.rcNotFound]:
-				_, rc, _ = self._createRemoteCSR()				# create remote CSR
+				self.registrarCSR, rc, _ = self._createRemoteCSR()					# create remote CSR
 				if rc == C.rcCreated:
-					remoteCSE, rc, _ = self._retrieveRemoteCSE()	# retrieve remote CSE
+					self.registrarCSE, rc, _ = self._retrieveRemoteCSE()			# retrieve remote CSE
 					if rc == C.rcOK:
-						self._createLocalCSR(remoteCSE) 		# create local CSR including ACPs to local CSR and local CSE
+						localCSR, _, _ = self._createLocalCSR(self.registrarCSE) 	# create local CSR including ACPs to local CSR and local CSE
 						Logging.log('Remote CSE connected')
-						CSE.event.registeredToRemoteCSE(remoteCSE)	# type: ignore
+						CSE.event.registeredToRemoteCSE(self.registrarCSE, self.registrarCSR)	# type: ignore
 
 						
 
@@ -303,7 +309,8 @@ class RemoteCSEManager(object):
 		jsn, rc, msg = CSE.httpServer.sendRetrieveRequest(self.remoteCSRURL, self.originator)
 		if rc not in [C.rcOK]:
 			return None, rc, msg
-		return CSR.CSR(jsn), C.rcOK, None
+
+		return CSR.CSR(jsn, pi=''), C.rcOK, None
 
 
 	def _createRemoteCSR(self) -> Tuple[Resource, int, str]:
@@ -328,7 +335,7 @@ class RemoteCSEManager(object):
 			return None, rc, 'cannot create remote CSR'
 		Logging.logDebug('Remote CSR created: %s' % self.remoteCsi)
 
-		return None, C.rcCreated, None
+		return CSR.CSR(jsn, pi=''), C.rcCreated, None
 
 
 	def _updateRemoteCSR(self, localCSE: Resource) -> Tuple[Resource, int, str]:
@@ -344,7 +351,8 @@ class RemoteCSEManager(object):
 				Logging.logDebug('Error updating remote CSR: %d' % rc)
 			return None, rc, 'cannot update remote CSR'
 		Logging.logDebug('Remote CSR updated: %s' % self.remoteCsi)
-		return CSR.CSR(jsn), C.rcUpdated, None
+
+		return CSR.CSR(jsn, pi=''), C.rcUpdated, None
 
 
 
@@ -369,6 +377,21 @@ class RemoteCSEManager(object):
 		if rc not in [C.rcOK]:
 			return None, rc, msg
 		return CSEBase.CSEBase(jsn), C.rcOK, None
+
+
+	def getRemoteCSRForRemoteCSE(self, remoteCSE):
+		if self.registrarCSE is not None and self.registrarCSE.ri == remoteCSE.ri:
+			return self.registrarCSR
+		# TODO Search registree CSE/CSR
+		return None
+
+
+	def getAllRemoteCSEs(self):
+		"""	Return all remote CSE's.
+		"""
+		result = self.registreeCSEs.copy()
+		result.append(self.registrarCSE)
+		return result
 
 
 	#########################################################################

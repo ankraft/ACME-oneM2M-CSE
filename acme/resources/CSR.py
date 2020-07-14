@@ -44,10 +44,21 @@ class CSR(AnnounceableResource):
 	def canHaveChild(self, resource : Resource) -> bool:
 		return super()._canHaveChild(resource,
 									 [ T.CNT,
+									   T.CNTAnnc,
+									   T.CINAnnc,
 									   T.FCNT,
+									   T.FCNTAnnc,
+									   T.FCI,
+									   T.FCIAnnc,
 									   T.GRP,
+									   T.GRPAnnc,
 									   T.ACP,
-									   T.SUB
+									   T.ACPAnnc,
+									   T.SUB,
+									   T.CSRAnnc,
+									   T.MGMTOBJAnnc,
+									   T.NODAnnc,
+									   T.AEAnnc
 									 ])
 
 

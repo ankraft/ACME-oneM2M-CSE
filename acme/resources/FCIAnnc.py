@@ -9,10 +9,11 @@
 
 
 from .AnnouncedResource import AnnouncedResource
-from Typoes import ResourceTypes as T
+from .Resource import *
+from Types import ResourceTypes as T
 
 
-class FCINAnnc.py(AnnouncedResource):
+class FCIAnnc(AnnouncedResource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
 		super().__init__(T.FCIAnnc, jsn, pi=pi, create=create)

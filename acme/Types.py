@@ -78,15 +78,15 @@ class ResourceTypes(IntEnum):
 	FCIAnnc 	= 10058
 
 	def tpe(self) -> str:
-		return ResourceTypes._names[self.value] #  type: ignore
+		return ResourceTypes._names[self.value] 		#  type: ignore
 
 	def announced(self) -> ResourceTypes:
-		if self.value in ResourceTypes._announced:
-			return ResourceTypes._announced[self.value]
+		if self.value in ResourceTypes._announced: 		#  type: ignore
+			return ResourceTypes._announced[self.value] #  type: ignore
 		return ResourceTypes.UNKNOWN
 
 
-ResourceTypes._announced = {
+ResourceTypes._announced = {							#  type: ignore
 	ResourceTypes.ACP 		: ResourceTypes.ACPAnnc,
 	ResourceTypes.AE 		: ResourceTypes.AEAnnc,
 	ResourceTypes.CNT		: ResourceTypes.CNTAnnc,
@@ -99,7 +99,7 @@ ResourceTypes._announced = {
 	ResourceTypes.FCI		: ResourceTypes.FCIAnnc,
 }
 
-ResourceTypes._names 	= {							# type: ignore
+ResourceTypes._names 	= {								# type: ignore
 		ResourceTypes.UNKNOWN		: 'unknown',
 
 		ResourceTypes.MIXED			: 'mixed',

@@ -7,7 +7,7 @@
 #	Managing event handlers and events
 #
 
-import threading
+import threading, traceback
 from typing import Callable, Any
 from Logging import Logging
 from Constants import Constants as C
@@ -51,7 +51,10 @@ class Event(list):
 
 	def _callThread(self, *args: Any, **kwargs: Any) -> None:
 		for function in self:
-			function(*args, **kwargs)
+			try:
+				function(*args, **kwargs)
+			except Exception as e:
+				Logging.logErr('%s - %s' % (function, traceback.format_exc()))
 
 
 	def __repr__(self) -> str:
@@ -71,6 +74,7 @@ class EventManager(object):
 		self.addEvent('updateResource')
 		self.addEvent('deleteResource')
 		self.addEvent('cseStartup')
+		self.addEvent('cseShutdown')
 		self.addEvent('logError')
 		self.addEvent('logWarning')
 		self.addEvent('registeredToRemoteCSE')

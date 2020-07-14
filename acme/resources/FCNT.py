@@ -44,7 +44,7 @@ class FCNT(AnnounceableResource):
 			# Might change during the lifetime of a resource. Used for optimization
 			self.hasInstances = False
 
-		self.ignoreAttributes = [ self._rtype, self._srn, self._node, self._originator, 'acpi', 'cbs', 'cni', 'cnd', 'cs', 'cr', 'ct', 'et', 'lt', 'mbs', 'mia', 'mni', 'or', 'pi', 'ri', 'rn', 'st', 'ty' ]
+		self.ignoreAttributes = self.internalAttributes + [ 'acpi', 'cbs', 'cni', 'cnd', 'cs', 'cr', 'ct', 'et', 'lt', 'mbs', 'mia', 'mni', 'or', 'pi', 'ri', 'rn', 'st', 'ty' ]
 
 
 	# Enable check for allowed sub-resources
@@ -154,7 +154,7 @@ class FCNT(AnnounceableResource):
 				l = len(fci)
 				while cbs > mbs and i < l:
 					# remove oldest
-					cbs -= fci[i].cs
+					cbs -= fci[i].cs			
 					CSE.dispatcher.deleteResource(fci[i])
 					i += 1
 				self['cbs'] = cbs
