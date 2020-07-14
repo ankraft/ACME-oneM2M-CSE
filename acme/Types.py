@@ -7,8 +7,10 @@
 #	Various CSE and oneM2M types
 #
 
+from __future__ import annotations
 from enum import IntEnum, Enum, auto
 from collections import namedtuple
+
 
 # ResourceType = namedtuple('ResourceType', ['type', 'name'])
 
@@ -77,6 +79,25 @@ class ResourceTypes(IntEnum):
 
 	def tpe(self) -> str:
 		return ResourceTypes._names[self.value] #  type: ignore
+
+	def announced(self) -> ResourceTypes:
+		if self.value in ResourceTypes._announced:
+			return ResourceTypes._announced[self.value]
+		return ResourceTypes.UNKNOWN
+
+
+ResourceTypes._announced = {
+	ResourceTypes.ACP 		: ResourceTypes.ACPAnnc,
+	ResourceTypes.AE 		: ResourceTypes.AEAnnc,
+	ResourceTypes.CNT		: ResourceTypes.CNTAnnc,
+	ResourceTypes.CIN 		: ResourceTypes.CINAnnc,
+	ResourceTypes.GRP		: ResourceTypes.GRPAnnc,
+	ResourceTypes.MGMTOBJ	: ResourceTypes.MGMTOBJAnnc,
+	ResourceTypes.NOD		: ResourceTypes.NODAnnc,
+	ResourceTypes.CSR		: ResourceTypes.CSRAnnc,
+	ResourceTypes.FCNT		: ResourceTypes.FCNTAnnc,
+	ResourceTypes.FCI		: ResourceTypes.FCIAnnc,
+}
 
 ResourceTypes._names 	= {							# type: ignore
 		ResourceTypes.UNKNOWN		: 'unknown',
