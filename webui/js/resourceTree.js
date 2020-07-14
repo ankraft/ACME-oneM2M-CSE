@@ -48,7 +48,16 @@ const shortTypes = {
     16 : "CSR",
     23 : "SUB",
     28 : "FCNT",
-    58 : "FCI"
+    58 : "FCI",
+
+    10001 : "ACPAnnc",
+    10003 : "CNTAnnc",
+    10004 : "CINAnnc",
+    10005 : "CSEAnnc",
+    10009 : "GRPAnnc",
+    10016 : "CSRAnnc",
+    10028 : "FCNTAnnc",
+    10058 : "FCIAnnc" 
 }
 
 const mgdTypes = {
