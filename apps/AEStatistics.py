@@ -11,7 +11,7 @@
 from AEBase import *
 from Logging import Logging
 from Configuration import Configuration
-import Statistics, CSE
+import Statistics, CSE, Utils
 # The following line incorrectly throws an error with mypy
 from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN 	# type: ignore
 import threading, time
@@ -58,27 +58,32 @@ class AEStatistics(AEBase):
 
 
 		# Create structure beneath the AE resource
+		jsn = { self.fcntType : {
+				'rn'  : Configuration.get('app.statistics.fcntRN'),
+					'cnd' : Configuration.get('app.statistics.fcntCND'),
+					'acpi': [ self.acpi ],	# assignde by CSE,
+					'mni' : 2,
+					'aa' : ['rmRes', 'crRes', 'upRes', 'crRes', 'cseUT'],
+				Statistics.deletedResources : 0,
+				Statistics.createdResources : 0,
+				Statistics.updatedResources : 0,
+				Statistics.httpRetrieves : 0,
+				Statistics.httpCreates : 0,
+				Statistics.httpUpdates : 0,
+				Statistics.httpDeletes : 0,
+				Statistics.logErrors : 0,
+				Statistics.logWarnings : 0,
+				Statistics.cseStartUpTime : '',
+				Statistics.cseUpTime : '',
+				Statistics.resourceCount: 0
+			}
+		}
+		# add announceTarget if target CSI is given
+		if (rcsi:= Configuration.get('cse.registrar.csi')) is not None:
+			Utils.setXPath(jsn, '%s/at' % self.fcntType, [ rcsi])
+
 		self.fc = self.retrieveCreate(	srn=self.fcsrn,
-										jsn={ self.fcntType : {
-												'rn'  : Configuration.get('app.statistics.fcntRN'),
-       											'cnd' : Configuration.get('app.statistics.fcntCND'),
-       											'acpi': [ self.acpi ],	# assignde by CSE,
-       											'mni' : 10,
-       											'aa' : ['htCre'],
-												Statistics.deletedResources : 0,
-												Statistics.createdResources : 0,
-												Statistics.updatedResources : 0,
-												Statistics.httpRetrieves : 0,
-												Statistics.httpCreates : 0,
-												Statistics.httpUpdates : 0,
-												Statistics.httpDeletes : 0,
-												Statistics.logErrors : 0,
-												Statistics.logWarnings : 0,
-												Statistics.cseStartUpTime : '',
-												Statistics.cseUpTime : '',
-												Statistics.resourceCount: 0
-											}
-										},
+										jsn=jsn,
 										ty=T.FCNT)
 
 		# Update the statistic resource from time to time
