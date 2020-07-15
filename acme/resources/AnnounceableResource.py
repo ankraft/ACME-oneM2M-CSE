@@ -65,7 +65,7 @@ class AnnounceableResource(Resource):
 	def _createAnnouncedJSON(self, policies:Dict[str, List[Any]]) -> dict:
 		rn = Utils.announcedRN(self)
 		jsn = { self.tpe : {
-					'rn'	: rn,	# Random? Or let the remote CSE decide? RI?
+					'et'	: self.et,
 					'lnk'	: '/~%s/%s' % (Configuration.get('cse.csi'), self.ri),
 					# set by parent: ri, pi, ct, lt, et
 			}
