@@ -12,7 +12,8 @@ import datetime, random, string, sys, re, threading, traceback
 from typing import Any, List, Tuple, Union
 from resources import ACP, AE, ANDI, ANI, BAT, CIN, CNT, CNT_LA, CNT_OL, CSEBase, CSR, DVC
 from resources import DVI, EVL, FCI, FCNT, FCNT_LA, FCNT_OL, FWR, GRP, GRP_FOPT, MEM, NOD, RBO, SUB, SWR, Unknown, Resource
-from resources import FCNTAnnc, FCIAnnc
+from resources import ACPAnnc, AEAnnc, CNTAnnc, CINAnnc, GRPAnnc, MgmtObjAnnc, NODAnnc, CSRAnnc, FCNTAnnc, FCIAnnc
+
 
 from Constants import Constants as C
 from Types import ResourceTypes as T
@@ -324,11 +325,26 @@ def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, i
 
 
 	# Announced Resources
+	elif typ == T.ACPAnnc:
+		return ACPAnnc.ACPAnnc(jsn, pi=pi, create=create), None
+	elif typ == T.AEAnnc:
+		return AEAnnc.AEAnnc(jsn, pi=pi, create=create), None
+	elif typ == T.CNTAnnc:
+		return CNTAnnc.CNTAnnc(jsn, pi=pi, create=create), None
+	elif typ == T.CINAnnc:
+		return CINAnnc.CINAnnc(jsn, pi=pi, create=create), None
+	elif typ == T.GRPAnnc:
+		return GRPAnnc.GRPAnnc(jsn, pi=pi, create=create), None
+	elif typ == T.MGMTOBJAnnc:
+		return MGMTOBJAnnc.MGMTOBJAnnc(jsn, pi=pi, create=create), None
+	elif typ == T.NODAnnc:
+		return NODAnnc.NODOBJAnnc(jsn, pi=pi, create=create), None
+	elif typ == T.CSRAnnc:
+		return CSRAnnc.CSROBJAnnc(jsn, pi=pi, create=create), None
 	elif typ == T.FCIAnnc:
 		return FCIAnnc.FCIAnnc(jsn, pi=pi, create=create), None
 	elif typ == T.FCNTAnnc:
 		return FCNTAnnc.FCNTAnnc(jsn, pi=pi, create=create), None
-		
 	return Unknown.Unknown(jsn, root, pi=pi, create=create), None	# Capture-All resource
 
 

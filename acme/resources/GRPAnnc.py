@@ -9,11 +9,12 @@
 
 
 from .AnnouncedResource import AnnouncedResource
-from Typoes import ResourceTypes as T
+from .Resource import *
+from Types import ResourceTypes as T
 
 
 
-class GRPAnnc.py(AnnouncedResource):
+class GRPAnnc(AnnouncedResource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
 		super().__init__(T.GRPAnnc, jsn, pi=pi, create=create)

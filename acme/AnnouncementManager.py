@@ -30,7 +30,8 @@ class AnnouncementManager(object):
 
 	def shutdown(self) -> None:
 		for remoteCSE in CSE.remote.getAllRemoteCSEs():
-			self.checkResourcesForDeAnnouncement(remoteCSE)
+			if remoteCSE is not None:
+				self.checkResourcesForDeAnnouncement(remoteCSE)
 		Logging.log('AnnouncementManager shut down')
 
 

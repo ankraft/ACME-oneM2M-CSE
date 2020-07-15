@@ -9,11 +9,12 @@
 
 
 from .AnnouncedResource import AnnouncedResource
+from .Resource import *
 from Types import ResourceTypes as T
 
 
 
-class CPAnnc.py(AnnouncedResource):
+class CPAnnc(AnnouncedResource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
 		super().__init__(T.ACPAnnc, jsn, pi=pi, create=create)

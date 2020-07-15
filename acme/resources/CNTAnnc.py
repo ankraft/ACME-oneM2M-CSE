@@ -9,11 +9,12 @@
 
 
 from .AnnouncedResource import AnnouncedResource
-from Typoes import ResourceTypes as T
+from .Resource import *
+from Types import ResourceTypes as T
 
 
 
-class CNTAnnc.py(AnnouncedResource):
+class CNTAnnc(AnnouncedResource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
 		super().__init__(T.CNTAnnc, jsn, pi=pi, create=create)
@@ -23,7 +24,7 @@ class CNTAnnc.py(AnnouncedResource):
 	def canHaveChild(self, resource: Resource) -> bool:
 		return super()._canHaveChild(resource,	
 									 [ T.CNT,
-									   T.CNTAnnc
+									   T.CNTAnnc,
 									   T.CIN,
 									   T.CINAnnc,
 									   T.FCNT,

@@ -9,6 +9,7 @@
 
 
 from .AnnouncedResource import AnnouncedResource
+from .Resource import *
 from Types import ResourceTypes as T
 
 

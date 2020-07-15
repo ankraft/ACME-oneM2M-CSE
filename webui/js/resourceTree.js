@@ -51,10 +51,12 @@ const shortTypes = {
     58 : "FCI",
 
     10001 : "ACPAnnc",
+    10002 : "AEAnnc",
     10003 : "CNTAnnc",
     10004 : "CINAnnc",
     10005 : "CSEAnnc",
     10009 : "GRPAnnc",
+    10013 : "MGMTOBJAnnc",
     10016 : "CSRAnnc",
     10028 : "FCNTAnnc",
     10058 : "FCIAnnc" 

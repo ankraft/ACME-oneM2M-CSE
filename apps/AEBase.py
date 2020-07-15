@@ -43,7 +43,8 @@ class AEBase(AppBase):
 											'nl' : self.aeNode.node.ri if self.aeNode.node is not None else None,
 											'poa' : [ Configuration.get('http.address') ],
 											'rr' : True,
-											'srv' : [ "3", "4" ]
+											'srv' : [ "3", "4" ],
+											'at' : [ '/id-in']
 											}
 										},
 										ty=T.AE)

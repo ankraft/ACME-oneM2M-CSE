@@ -63,8 +63,7 @@ class AnnounceableResource(Resource):
 
 	# Actually create the json
 	def _createAnnouncedJSON(self, policies:Dict[str, List[Any]]) -> dict:
-		rn = Utils.announcedRN(self)
-		jsn = { self.tpe : {
+		jsn = { T(self.ty).announced().tpe() : {  # with the announced variant of the tpe
 					'et'	: self.et,
 					'lnk'	: '/~%s/%s' % (Configuration.get('cse.csi'), self.ri),
 					# set by parent: ri, pi, ct, lt, et

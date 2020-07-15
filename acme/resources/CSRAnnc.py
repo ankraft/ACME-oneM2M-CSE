@@ -9,11 +9,12 @@
 
 
 from .AnnouncedResource import AnnouncedResource
-from Typoes import ResourceTypes as T
+from .Resource import *
+from Types import ResourceTypes as T
 
 
 
-class CSRAnnc.py(AnnouncedResource):
+class CSRAnnc(AnnouncedResource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
 		super().__init__(T.CSRAnnc, jsn, pi=pi, create=create)
