@@ -63,26 +63,31 @@ class AnnounceableResource(Resource):
 
 	# Actually create the json
 	def _createAnnouncedJSON(self, policies:Dict[str, List[Any]]) -> dict:
-		jsn = { T(self.ty).announced().tpe() : {  # with the announced variant of the tpe
+		# Stub
+		tpe = T(self.ty).announced().tpe()
+		jsn = { tpe : {  # with the announced variant of the tpe
 					'et'	: self.et,
 					'lnk'	: '/~%s/%s' % (Configuration.get('cse.csi'), self.ri),
 					# set by parent: ri, pi, ct, lt, et
 			}
 		}
+		# Add more attributes attributes
+		body = jsn[T(self.ty).announced().tpe()]
 		if (st := self.st) is not None:
-			Utils.setXPath(jsn, '%s/st' % self.tpe, st)
+			body['st'] = st
 
 		# TODO ACPI
 		# if (acpi := self.acpi) is not None:
 		# 	Utils.setXPath(jsn, '%s/acpi' % self.tpe, acpi.copy())	
 		if (lbl := self.lbl) is not None:
-			Utils.setXPath(jsn, '%s/lbl' % self.tpe, lbl.copy())
+			body['lbl'] = lbl.copy()
+
 
 		# get  all resource specific policies and add the mandatory ones
 		mandatoryAttributes, optionalAttributes = CSE.validator.getAnnouncedAttributes(self, policies)
 		for attr in mandatoryAttributes:
-			Utils.setXPath(jsn, '%s/%s' % (self.tpe, attr), self[attr])
+			body[attr] = self[attr]
 		for attr in optionalAttributes:
-			Utils.setXPath(jsn, '%s/%s' % (self.tpe, attr), self[attr])
+			body[attr] = self[attr]
 		return jsn
 

@@ -218,34 +218,34 @@ class Resource(object):
 		return True, C.rcOK, None
 
 
-	def childWillBeAdded(self, childResource: Resource, originator: str) -> Tuple[bool, int, str]:
+	def childWillBeAdded(self, childResource:Resource, originator:str) -> Tuple[bool, int, str]:
 		""" Called before a child will be added to a resource.
 			This method return True, or False in kind the adding should be rejected, and an error code."""
 		return True, C.rcOK, None
 
 
-	def childAdded(self, childResource : Resource, originator : str) -> None:
+	def childAdded(self, childResource:Resource, originator:str) -> None:
 		""" Called when a child resource was added to the resource. """
 		CSE.notification.checkSubscriptions(self, C.netCreateDirectChild, childResource)
 
 
-	def childRemoved(self, childResource : Resource, originator : str) -> None:
+	def childRemoved(self, childResource:Resource, originator:str) -> None:
 		""" Call when child resource was removed from the resource. """
 		CSE.notification.checkSubscriptions(self, C.netDeleteDirectChild, childResource)
 
 
-	def canHaveChild(self, resource : Resource) -> bool:
+	def canHaveChild(self, resource:Resource) -> bool:
 		""" MUST be implemented by each class."""
 		raise NotImplementedError('canHaveChild()')
 
 
-	def _canHaveChild(self, resource : Resource, allowedChildResourceTypes : list) -> bool:
+	def _canHaveChild(self, resource:Resource, allowedChildResourceTypes:list) -> bool:
 		""" It checks whether a fresource may have a certain child resources. This is called from child class. """
 		from .Unknown import Unknown # Unknown imports this class, therefore import only here
 		return resource['ty'] in allowedChildResourceTypes or isinstance(resource, Unknown)
 
 
-	def validate(self, originator: str = None, create: bool = False) -> Tuple[bool, int, str]:
+	def validate(self, originator:str = None, create:bool = False) -> Tuple[bool, int, str]:
 		""" Validate a resource. Usually called within activate() or update() methods. """
 		Logging.logDebug('Validating resource: %s' % self.ri)
 		if (not Utils.isValidID(self.ri) or

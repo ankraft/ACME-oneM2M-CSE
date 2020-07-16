@@ -14,7 +14,7 @@ from Types import ResourceTypes as T
 
 
 
-class CPAnnc(AnnouncedResource):
+class ACPAnnc(AnnouncedResource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
 		super().__init__(T.ACPAnnc, jsn, pi=pi, create=create)

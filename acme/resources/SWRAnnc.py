@@ -7,12 +7,12 @@
 #	SWR : Announceable variant
 #
 
-from .MgmtObj import *
+from .MgmtObjAnnc import *
 from Types import ResourceTypes as T
 import Utils
 
 
-class RBOAnnc(MgmtObjAnnc):
+class SWRAnnc(MgmtObjAnnc):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
 		super().__init__(jsn, pi, mgd=T.SWR, create=create)

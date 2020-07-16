@@ -117,7 +117,7 @@ The following macros are supported in addition to those defined in the sections 
 | Keyword               | Description                                                                                                                                           | Macro Name                             |
 |:----------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------|
 | allowedAEOriginators  | List of AE originators that can register. This is a comma-separated list of originators. Regular expressions are supported.<br />Default: C.\*, S.\*  | cse.registration.allowedAEOriginators  |
-| allowedCSROriginators | List of CSR originators that can register. This is a comma-separated list of originators. Regular expressions are supported.<br />Default: empty list | cse.registration.allowedCSROriginators |
+| allowedCSROriginators | List of CSR originators that can register. This is a comma-separated list of originators. Regular expressions are supported.<br />Note: No leading "/"<br />Default: empty list | cse.registration.allowedCSROriginators |
 
 <a name="registrar"></a>
 ### [cse.registrar] - Settings for Remote Registrar CSE Access 

@@ -53,7 +53,7 @@ class CSEBase(Resource):
 									 ])
 
 
-	def validate(self, originator: str = None, create: bool = False) -> Tuple[bool, int, str]:
+	def validate(self, originator:str = None, create:bool = False) -> Tuple[bool, int, str]:
 		if (res := super().validate(originator, create))[0] == False:
 			return res
 		

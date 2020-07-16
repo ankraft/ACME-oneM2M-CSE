@@ -33,8 +33,7 @@ class CSRAnnc(AnnouncedResource):
 									   T.ACP,
 									   T.ACPAnnc,
 									   T.SUB,
-									   T.SUBAnnc,
-									   T.CSRannc,
+									   T.CSRAnnc,
 									   T.MGMTOBJAnnc,
 									   T.NODAnnc,
 									   T.AEAnnc

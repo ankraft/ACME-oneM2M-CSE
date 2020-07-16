@@ -78,15 +78,19 @@ class ResourceTypes(IntEnum):
 	FCIAnnc 	= 10058
 
 	def tpe(self) -> str:
-		return ResourceTypes._names[self.value] 		#  type: ignore
+		return ResourceTypes._names[self.value] 				#  type: ignore
 
 	def announced(self) -> ResourceTypes:
-		if self.value in ResourceTypes._announced: 		#  type: ignore
-			return ResourceTypes._announced[self.value] #  type: ignore
+		if self.value in ResourceTypes._announcedMapping:		#  type: ignore
+			return ResourceTypes._announcedMapping[self.value] 	#  type: ignore
 		return ResourceTypes.UNKNOWN
 
+	def isAnnounced(self) -> bool:
+		return self.value in ResourceTypes._announcedSet 		# type: ignore
 
-ResourceTypes._announced = {							#  type: ignore
+
+
+ResourceTypes._announcedMapping = {								#  type: ignore
 	ResourceTypes.ACP 		: ResourceTypes.ACPAnnc,
 	ResourceTypes.AE 		: ResourceTypes.AEAnnc,
 	ResourceTypes.CNT		: ResourceTypes.CNTAnnc,
@@ -98,6 +102,13 @@ ResourceTypes._announced = {							#  type: ignore
 	ResourceTypes.FCNT		: ResourceTypes.FCNTAnnc,
 	ResourceTypes.FCI		: ResourceTypes.FCIAnnc,
 }
+
+ResourceTypes._announcedSet = [
+	ResourceTypes.ACPAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc, ResourceTypes.CINAnnc,
+	ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc, 
+	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.FCIAnnc
+]
+
 
 ResourceTypes._names 	= {								# type: ignore
 		ResourceTypes.UNKNOWN		: 'unknown',

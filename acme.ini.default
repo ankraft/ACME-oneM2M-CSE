@@ -111,6 +111,7 @@ resetAtStartup=false
 allowedAEOriginators=C.*,S.*
 # List of CSR originators that can register. This is a comma-separated list of originators.
 # Regular expressions are supported.
+# Note: No leading "/"
 # Default: empty list
 allowedCSROriginators=id-mn
 

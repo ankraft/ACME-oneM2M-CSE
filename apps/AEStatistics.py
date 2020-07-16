@@ -80,7 +80,8 @@ class AEStatistics(AEBase):
 		}
 		# add announceTarget if target CSI is given
 		if (rcsi:= Configuration.get('cse.registrar.csi')) is not None:
-			Utils.setXPath(jsn, '%s/at' % self.fcntType, [ rcsi])
+			Utils.setXPath(jsn, '%s/at' % self.fcntType, [rcsi])
+		#Utils.setXPath(jsn, '%s/at' % self.fcntType, ['/id-in'])
 
 		self.fc = self.retrieveCreate(	srn=self.fcsrn,
 										jsn=jsn,

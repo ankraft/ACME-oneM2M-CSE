@@ -243,7 +243,7 @@ class Storage(object):
 		"""
 		result = []
 
-		def _announcedFilter(r):
+		def _announcedFilter(r:dict) -> bool:
 			if (at := r.get('at')) is not None and csi in at:
 				if (isa := r.get(Resource._announcedTo)) is not None:
 					found = False

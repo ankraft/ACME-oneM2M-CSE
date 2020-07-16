@@ -192,7 +192,7 @@ class RegistrationManager(object):
 		self._addToAccessCSBaseACP(originator)
 
 		# send event
-		CSE.event.remoteCSEHasRegistered(csr, originator)	# type: ignore
+		CSE.event.remoteCSEHasRegistered(csr)	# type: ignore
 
 		return True
 

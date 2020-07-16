@@ -51,7 +51,7 @@ rootDirectory:str					= None
 
 aeCSENode:CSENode				 	= None 
 aeStatistics:AEStatistics 		 	= None 
-appsStarted:True 					= False
+appsStarted:bool 					= False
 
 aeStartupDelay:int 					= 5	# seconds
 
@@ -122,9 +122,6 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	# Initialize the notification manager
 	notification = NotificationManager()
 
-	# Initialize the announcement manager
-	announce = AnnouncementManager()
-
 	# Initialize the group manager
 	group = GroupManager()
 	
@@ -136,7 +133,9 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 
 	# Initialize the remote CSE manager
 	remote = RemoteCSEManager()
-	remote.start()
+
+	# Initialize the announcement manager
+	announce = AnnouncementManager()
 
 	# Start AEs
 	startAppsDelayed()	# the Apps are actually started after the CSE finished the startup
@@ -151,15 +150,15 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 # Gracefully shutdown the CSE, e.g. when receiving a keyboard interrupt
 @atexit.register
 def shutdown() -> None:
-	event.cseShutdown()
+	event.cseShutdown() 	# type: ignore
 	# if appsStarted:
 	# 	stopApps()
+	if announce is not None:
+		announce.shutdown()
 	if remote is not None:
 		remote.shutdown()
 	if group is not None:
 		group.shutdown()
-	if announce is not None:
-		announce.shutdown()
 	if notification is not None:
 		notification.shutdown()
 	if dispatcher is not None:
@@ -209,7 +208,6 @@ def startApps() -> None:
 
 def stopApps() -> None:
 	global appsStarted
-	appsStarted = -1
 	if appsStarted:
 		appsStarted = False
 		Logging.log('Stopping Apps')

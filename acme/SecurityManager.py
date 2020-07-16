@@ -56,6 +56,17 @@ class SecurityManager(object):
 				if Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedCSROriginators')):
 					Logging.logDebug("Originator for CSR CREATE. OK.")
 					return True
+				else:
+					Logging.logWarn("Originator for CSR CREATE not found.")
+					return False
+
+			if ty.isAnnounced():
+				if Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedCSROriginators')):
+					Logging.logDebug("Originator for Announcement. OK.")
+					return True
+				else:
+					Logging.logWarn("Originator for Announcement not found.")
+					return False
 
 		# Check parameters
 		if resource is None:

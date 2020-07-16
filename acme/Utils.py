@@ -10,9 +10,11 @@
 
 import datetime, random, string, sys, re, threading, traceback
 from typing import Any, List, Tuple, Union
-from resources import ACP, AE, ANDI, ANI, BAT, CIN, CNT, CNT_LA, CNT_OL, CSEBase, CSR, DVC
-from resources import DVI, EVL, FCI, FCNT, FCNT_LA, FCNT_OL, FWR, GRP, GRP_FOPT, MEM, NOD, RBO, SUB, SWR, Unknown, Resource
-from resources import ACPAnnc, AEAnnc, CNTAnnc, CINAnnc, GRPAnnc, MgmtObjAnnc, NODAnnc, CSRAnnc, FCNTAnnc, FCIAnnc
+from resources import ACP, ACPAnnc, AE, AEAnnc, ANDI, ANDIAnnc, ANI, ANIAnnc, BAT, BATAnnc
+from resources import CIN, CINAnnc, CNT, CNTAnnc, CNT_LA, CNT_OL, CSEBase, CSR, CSRAnnc
+from resources import DVC, DVCAnnc,DVI, DVIAnnc, EVL, EVLAnnc, FCI, FCIAnnc, FCNT, FCNTAnnc, FCNT_LA, FCNT_OL
+from resources import FWR, FWRAnnc, GRP, GRPAnnc, GRP_FOPT, MEM, MEMAnnc, MgmtObj, MgmtObjAnnc, NOD, NODAnnc, RBO, RBOAnnc, SUB
+from resources import SWR, SWRAnnc, Unknown, Resource
 
 
 from Constants import Constants as C
@@ -244,7 +246,11 @@ def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 	return None, None, None
 
 
-mgmtObjTPEs = [ T.FWR.tpe(), T.SWR.tpe(), T.MEM.tpe(), T.ANI.tpe(), T.ANDI.tpe(), T.BAT.tpe(), T.DVI.tpe(), T.DVC.tpe(), T.RBO.tpe(), T.EVL.tpe() ]
+mgmtObjTPEs = [ T.FWR.tpe(), T.SWR.tpe(), T.MEM.tpe(), T.ANI.tpe(), T.ANDI.tpe(), T.BAT.tpe(), 
+				T.DVI.tpe(), T.DVC.tpe(), T.RBO.tpe(), T.EVL.tpe(),
+			 	'%sA'%T.FWR.tpe(), '%sA'%T.SWR.tpe(), '%sA'%T.MEM.tpe(), '%sA'%T.ANI.tpe(),
+			 	'%sA'%T.ANDI.tpe(), '%sA'%T.BAT.tpe(), '%sA'%T.DVI.tpe(), '%sA'%T.DVC.tpe(),
+			 	'%sA'%T.RBO.tpe(), '%sA'%T.EVL.tpe() ]
 
 def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, int] = None, create: bool = False, isImported: bool = False) -> Tuple[Resource.Resource, str]:
 	""" Create a resource from a JSON structure.
@@ -335,16 +341,35 @@ def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, i
 		return CINAnnc.CINAnnc(jsn, pi=pi, create=create), None
 	elif typ == T.GRPAnnc:
 		return GRPAnnc.GRPAnnc(jsn, pi=pi, create=create), None
-	elif typ == T.MGMTOBJAnnc:
-		return MGMTOBJAnnc.MGMTOBJAnnc(jsn, pi=pi, create=create), None
 	elif typ == T.NODAnnc:
-		return NODAnnc.NODOBJAnnc(jsn, pi=pi, create=create), None
+		return NODAnnc.NODAnnc(jsn, pi=pi, create=create), None
 	elif typ == T.CSRAnnc:
-		return CSRAnnc.CSROBJAnnc(jsn, pi=pi, create=create), None
+		return CSRAnnc.CSRAnnc(jsn, pi=pi, create=create), None
 	elif typ == T.FCIAnnc:
 		return FCIAnnc.FCIAnnc(jsn, pi=pi, create=create), None
 	elif typ == T.FCNTAnnc:
 		return FCNTAnnc.FCNTAnnc(jsn, pi=pi, create=create), None
+	elif typ == T.MGMTOBJAnnc or root in mgmtObjTPEs:
+		if mgd == T.FWR or root == '%sA'%T.FWR.tpe():
+			return FWRAnnc.FWRAnnc(jsn, pi=pi, create=create), None
+		elif mgd == T.SWR or root == '%sA'%T.SWR.tpe():
+			return SWRAnnc.SWRAnnc(jsn, pi=pi, create=create), None
+		elif mgd == T.MEM or root == '%sA'%T.MEM.tpe():
+			return MEMAnnc.MEMAnnc(jsn, pi=pi, create=create), None
+		elif mgd == T.ANI or root == '%sA'%T.ANI.tpe():
+			return ANIAnnc.ANIAnnc(jsn, pi=pi, create=create), None
+		elif mgd == T.ANDI or root == '%sA'%T.ANDI.tpe():
+			return ANDIAnnc.ANDIAnnc(jsn, pi=pi, create=create), None
+		elif mgd == T.BAT or root == '%sA'%T.BAT.tpe():
+			return BATAnnc.BATAnnc(jsn, pi=pi, create=create), None
+		elif mgd == T.DVI or root == '%sA'%T.DVI.tpe():
+			return DVIAnnc.DVIAnnc(jsn, pi=pi, create=create), None
+		elif mgd == T.DVC or root == '%sA'%T.DVC.tpe():
+			return DVCAnnc.DVCAnnc(jsn, pi=pi, create=create), None
+		elif mgd == T.RBO or root == '%sA'%T.RBO.tpe():
+			return RBOAnnc.RBOAnnc(jsn, pi=pi, create=create), None
+		elif  mgd == T.EVL or root == '%sA'%T.EVL.tpe():
+			return EVLAnnc.EVLAnnc(jsn, pi=pi, create=create), None
 	return Unknown.Unknown(jsn, root, pi=pi, create=create), None	# Capture-All resource
 
 
@@ -431,6 +456,9 @@ def isAllowedOriginator(originator: str, allowedOriginators: List[str]) -> bool:
 	""" Check whether an Originator is in the provided list of allowed 
 		originators. This list may contain regex.
 	"""
+	Logging.logDebug('Originator: %s' % originator)
+	Logging.logDebug('Allowed originators: %s' % allowedOriginators)
+
 	if originator is None or allowedOriginators is None:
 		return False
 	for ao in allowedOriginators:

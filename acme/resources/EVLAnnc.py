@@ -7,7 +7,7 @@
 #	EVL : Announceable variant
 #
 
-from .MgmtObj import *
+from .MgmtObjAnnc import *
 from Types import ResourceTypes as T
 import Utils
 

@@ -14,10 +14,10 @@ from Types import ResourceTypes as T
 
 
 
-class GRPAnnc(AnnouncedResource):
+class NODAnnc(AnnouncedResource):
 
 	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(T.GRPAnnc, jsn, pi=pi, create=create)
+		super().__init__(T.NODAnnc, jsn, pi=pi, create=create)
 
 
 	# Enable check for allowed sub-resources
