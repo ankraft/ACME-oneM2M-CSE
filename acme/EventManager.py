@@ -42,14 +42,23 @@ class Event(list):
 	for the returns. This might lead to some race conditions, so the synchronizations
 	must be done insode the functions.
 	"""
-	def __call__(self, *args: Any, **kwargs: Any) -> None:
-		# Call the handlers in a thread so that we don't block everything
-		thread = threading.Thread(target=self._callThread, args=args, kwargs=kwargs)
-		thread.setDaemon(True)		# Make the thread a daemon of the main thread
-		thread.start()
-		Utils.renameCurrentThread(thread=thread)
 
-	def _callThread(self, *args: Any, **kwargs: Any) -> None:
+	def __init__(self, runInBackground:bool=True):
+		self.runInBackground = runInBackground
+
+
+	def __call__(self, *args:Any, **kwargs:Any) -> None:
+		if self.runInBackground:
+			# Call the handlers in a thread so that we don't block everything
+			thread = threading.Thread(target=self._callThread, args=args, kwargs=kwargs)
+			thread.setDaemon(True)		# Make the thread a daemon of the main thread
+			thread.start()
+			Utils.renameCurrentThread(thread=thread)
+		else:
+			self._callThread(*args, **kwargs)
+
+
+	def _callThread(self, *args:Any, **kwargs:Any) -> None:
 		for function in self:
 			try:
 				function(*args, **kwargs)
@@ -74,7 +83,7 @@ class EventManager(object):
 		self.addEvent('updateResource')
 		self.addEvent('deleteResource')
 		self.addEvent('cseStartup')
-		self.addEvent('cseShutdown')
+		self.addEvent('cseShutdown', runInBackground=False)
 		self.addEvent('logError')
 		self.addEvent('logWarning')
 		self.addEvent('registeredToRemoteCSE')
@@ -99,26 +108,26 @@ class EventManager(object):
 	#		handler.someName()										# raises the event
 
 
-	def addEvent(self, name: str) -> Event:
+	def addEvent(self, name:str, runInBackground:bool=True) -> Event:
 		if not hasattr(self, name):
-			setattr(self, name, Event())
+			setattr(self, name, Event(runInBackground=runInBackground))
 		return getattr(self, name)
 
 
-	def removeEvent(self, name: str) -> None:
+	def removeEvent(self, name:str) -> None:
 		if hasattr(self, name):
 			delattr(self, name)
 
 
-	def hasEvent(self, name: str) -> bool:
+	def hasEvent(self, name:str) -> bool:
 		return name in self.__dict__
 
 
-	def addHandler(self, event: Event, func: Callable) -> None:
+	def addHandler(self, event:Event, func:Callable) -> None:
 		event.append(func)
 
 
-	def removeHandler(self, event: Event, func: Callable) -> None:
+	def removeHandler(self, event:Event, func:Callable) -> None:
 		try:
 			event.remove(func)
 		except Exception as e:
