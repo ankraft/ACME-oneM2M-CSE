@@ -31,6 +31,7 @@ The following macros are supported in addition to those defined in the sections 
 [\[logging\] - Logging Settings](#logging)  
 [\[cse.registration\] - Settings for Self-Registrations](#cse_registration)  
 [\[cse.registrar\] - Settings for Remote CSE Access](#registrar)  
+[\[cse.announcements\] - Settings for Resource Announcements](#announcements)  
 [\[cse.statistics\]Statistic Settings](#statistics)  
 [\[cse.resource.acp\] - Resource defaults: ACP](#resource_acp)  
 [\[cse.resource.cnt\] - Resource Defaults: CNT](#resource_cnt)  
@@ -60,7 +61,8 @@ The following macros are supported in addition to those defined in the sections 
 | enableNotifications      | Enable notifications.<br/>Default: true                                                                                                                                                        | cse.enableNotifications      |
 | enableRemoteCSE          | Enable remote CSE registration and checking.<br/>See also command line arguments [–remote-cse and –no-remote-cse](Running.md).<br/>Default: true                                               | cse.enableRemoteCSE          |
 | enableTransitRequests    | Enable forwarding of requests to a remote CSE.<br/>Default: true                                                                                                                               | cse.enableTransitRequests    |
-| enableValidation         | Enable the validation of attributes and arguments.<br />Default: true.                                                                                                                         | cse.enableValidation         |
+| enableValidation         | Enable the validation of attributes and arguments.<br />Default: true                                                                                                                          | cse.enableValidation         |
+| enableAnnouncements      | Enable announcement to remote CSE and allow announced resource registrations.<br />Default: True                                                                                               | cse.enableAnnouncements      |
 | sortDiscoveredResources  | Enable alphabetical sorting of discovery results.<br/>Default: true                                                                                                                            | cse.sortDiscoveredResources  |
 | checkExpirationsInterval | Interval to check for expired resources. 0 means "no checking".<br/>Default: 60 seconds                                                                                                        | cse.checkExpirationsInterval |
 
@@ -110,7 +112,6 @@ The following macros are supported in addition to those defined in the sections 
 | size              | Size per log file.<br/>Default: 100.000 bytes                                                                                            | logging.size              |
 
 
-
 <a name="cse_registration"></a>
 ###	[cse.registration] - Settings for Self-Registrations
 
@@ -118,6 +119,7 @@ The following macros are supported in addition to those defined in the sections 
 |:----------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------|
 | allowedAEOriginators  | List of AE originators that can register. This is a comma-separated list of originators. Regular expressions are supported.<br />Default: C.\*, S.\*  | cse.registration.allowedAEOriginators  |
 | allowedCSROriginators | List of CSR originators that can register. This is a comma-separated list of originators. Regular expressions are supported.<br />Note: No leading "/"<br />Default: empty list | cse.registration.allowedCSROriginators |
+
 
 <a name="registrar"></a>
 ### [cse.registrar] - Settings for Remote Registrar CSE Access 
@@ -129,6 +131,16 @@ The following macros are supported in addition to those defined in the sections 
 | cseID         | CSE-ID of the remote CSE. A CSE-ID must start with a /.<br/>Default: no default                                                                                        | cse.registrar.csi           |
 | resourceName  | The remote CSE's resource name. <br>Default: no default                                                                                  | cse.registrar.rn                       |
 | checkInterval | Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.<br/>Default: 30 | cse.registrar.checkInterval |
+
+<a name="announcements"></a>
+### [cse.announcements] - Settings for Resource Announcements 
+
+| Keyword             | Description                                                                                      | Macro Name                            |
+|:--------------------|:-------------------------------------------------------------------------------------------------|:--------------------------------------|
+| enableAnnouncements | Enable announcement to remote CSE and allow announced resource registrations.<br />Default: True | cse.announcements.enableAnnouncements |
+| checkInterval       | Wait n seconds between tries to to announce resources to registered remote CSE.<br />Default: 10 | cse.announcements.checkInterval       |
+
+
 
 <a name="statistics"></a>
 ###	[cse.statistics] - Statistic Settings

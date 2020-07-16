@@ -10,6 +10,7 @@
 import json, time, traceback
 from Logging import Logging
 import Utils, CSE
+from Configuration import Configuration
 from resources.Resource import Resource
 from resources.AnnouncedResource import AnnouncedResource
 from Constants import Constants as C
@@ -32,7 +33,9 @@ class AnnouncementManager(object):
 		CSE.event.addHandler(CSE.event.remoteCSEHasDeregistered, self.handleRemoteCSEHasDeregistered)	# type: ignore
 		
 		# TODO self.checkInterval						= Configuration.get('cse.announcements.checkInterval')
-		self.checkInterval	= 10
+		self.checkInterval			= Configuration.get('cse.announcements.checkInterval')
+		self.announcementsEnabled 	= Configuration.get('cse.announcements.enableAnnouncements')
+
 		self.start()
 		Logging.log('AnnouncementManager initialized')
 
@@ -51,9 +54,8 @@ class AnnouncementManager(object):
 
 	# Start the monitor in a thread. 
 	def start(self) -> None:
-		# TODO
-		#if not Configuration.get('cse.enableAnnouncements'):
-		#	return;
+		if not self.announcementsEnabled:
+			return
 		Logging.log('Starting Announcements monitor')
 		self.worker = BackgroundWorker(self.checkInterval, self.announcementMonitorWorker, 'anncMonitor')
 		self.worker.start()
@@ -61,9 +63,8 @@ class AnnouncementManager(object):
 
 	# Stop the monitor. Also delete the CSR resources on both sides
 	def stop(self) -> None:
-		# TODO
-		# if not Configuration.get('cse.enableAnnouncements'):
-		# 	return;
+		if not self.announcementsEnabled:
+			return
 		Logging.log('Stopping Announcements monitor')
 		# Stop the thread
 		if self.worker is not None:
@@ -86,19 +87,26 @@ class AnnouncementManager(object):
 	#
 
 	def handleRegisteredToRemoteCSE(self, remoteCSE:Resource, remoteCSR: Resource) -> None:
-		#time.sleep(5) # TODO configurable? Or wait for something?
+		"""	Handle registrations to a remote CSE (Registrar CSE).
+		"""
 		self.checkResourcesForAnnouncement(remoteCSR)
 
 
 	def handleDeRegisteredFromRemoteCSE(self, remoteCSR:Resource) -> None:
+		"""	Handle de-registrations from a remote CSE (registrar CSE).
+		"""
 		self.checkResourcesForDeAnnouncement(remoteCSR)
 
 
 	def handleRemoteCSEHasRegistered(self, remoteCSR:Resource) -> None:
+		"""	Handle registrations when a remote CSE has registered (registree CSE).
+		"""
 		self.checkResourcesForAnnouncement(remoteCSR)
 
 
 	def handleRemoteCSEHasDeregistered(self, remoteCSR:Resource) -> None:
+		""" Handle de-registrations when a remote CSE has de-registered (registree CSE).
+		"""
 		self.checkResourcesForDeAnnouncement(remoteCSR)
 
 
@@ -117,6 +125,8 @@ class AnnouncementManager(object):
 	def checkResourcesForAnnouncement(self, remoteCSR:Resource) -> None:
 		"""	Check all resources and announce them if necessary.
 		"""
+		if not self.announcementsEnabled:
+			return
 		if remoteCSR is None:
 			return
 		csi = remoteCSR.csi
@@ -131,6 +141,8 @@ class AnnouncementManager(object):
 	def announceResource(self, resource:Resource) -> None:
 		"""	Announce a single resource to its announcement targets.
 		"""
+		if not self.announcementsEnabled:
+			return
 		Logging.logDebug('Announce resource: %s to all connected csr' % resource.ri)
 		for csi in resource.at:
 			if (remoteCSE := Utils.resourceFromCSI(csi)) is None:
@@ -144,6 +156,7 @@ class AnnouncementManager(object):
 	def announceResourceToCSR(self, resource:Resource, remoteCSR:Resource) -> None:
 		"""	Announce a resource to a specific CSR.
 		"""
+
 		csi  = remoteCSR.csi
 		poas = remoteCSR.poa
 
@@ -178,9 +191,7 @@ class AnnouncementManager(object):
 			if rc != C.rcAlreadyExists:
 				Logging.logDebug('Error creating remote announced resource: %d' % rc)
 		else:
-			ats = resource[Resource._announcedTo]
-			ats.append((csi, Utils.findXPath(jsn, '{0}/ri')))
-			resource.setAttribute(Resource._announcedTo, ats)
+			self._addAnnouncementToResource(resource, jsn, csi)
 		Logging.logDebug('Announced resource created')
 		resource.dbUpdate()
 
@@ -190,6 +201,11 @@ class AnnouncementManager(object):
 	#
 
 	def checkResourcesForDeAnnouncement(self, remoteCSR:Resource) -> None:
+		"""	Check whether resources need announcements and initiate announcement
+			if they are.
+		"""
+		if not self.announcementsEnabled:
+			return
 		csi = remoteCSR.csi
 		Logging.logDebug('Checking resources for Unannouncement to: %s' % csi)
 		# get all reources for this specific CSI that are NOT announced to it yet
@@ -205,6 +221,8 @@ class AnnouncementManager(object):
 	def deAnnounceResource(self, resource:Resource) -> None:
 		"""	De-announce a single resource from its announcement targets.
 		"""
+		if not self.announcementsEnabled:
+			return
 		Logging.logDebug('De-Announce resource: %s from all connected csr' % resource.ri)
 
 		for (csi, remoteRI) in resource[Resource._announcedTo]:
@@ -251,6 +269,8 @@ class AnnouncementManager(object):
 
 
 	def announceUpdatedResource(self, resource:Resource) -> None:
+		if not self.announcementsEnabled:
+			return
 		Logging.logDebug('Updating announced resource: %s' % resource.ri)
 		# get all reources for this specific CSI that are  announced to it yet
 
@@ -294,7 +314,19 @@ class AnnouncementManager(object):
 		Logging.logDebug('Announced resource updated')
 
 
+	def _addAnnouncementToResource(self, resource:Resource, jsn:dict, csi:str) -> None:
+		"""	Add anouncement information to the resource. These are a list of tuples of 
+			the csi to which the resource is registered as well as the ri of the 
+			resource on the remote CSE.
+		"""
+		ats = resource[Resource._announcedTo]
+		ats.append((csi, Utils.findXPath(jsn, '{0}/ri')))
+		resource.setAttribute(Resource._announcedTo, ats)
+
+
 	def _removeAnnouncementFromResource(self, resource:Resource, csi:str) -> None:
+		"""	Remove announcement details from a resource (internal attribute).
+		"""
 		ats = resource[Resource._announcedTo]
 		for x in ats:
 			if x[0] == csi:
@@ -303,6 +335,8 @@ class AnnouncementManager(object):
 
 
 	def announceResourceViaDirectURL(self, resource: Resource, at: str) -> bool:
+		"""	Announce a resource via a direct URL, nit via a csi.
+		"""
 		Logging.logErr('TODO Direct Announcement')
 		return False
 

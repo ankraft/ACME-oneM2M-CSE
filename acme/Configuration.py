@@ -124,6 +124,14 @@ class Configuration(object):
 
 
 				#
+				#	Announcements
+				#
+
+				'cse.announcements.enableAnnouncements'	: config.getboolean('cse.announcements', 'enableAnnouncements',	fallback=True),
+				'cse.announcements.checkInterval'	: config.getint('cse.announcements', 'checkInterval',				fallback=10),
+
+
+				#
 				#	Statistics
 				#
 
