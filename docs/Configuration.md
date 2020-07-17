@@ -96,7 +96,7 @@ The following macros are supported in addition to those defined in the sections 
 | path           | Directory for the database files.<br/>Default: ./data                                                                                                                | db.path           |
 | inMemory       | Operate the database in in-memory mode. Attention: No data is stored persistently.<br/>See also command line argument [--db-storage](Running.md).<br/>Default: false | db.inMemory       |
 | cacheSize      | Cache size in bytes, or 0 to disable caching.<br/>Default: 0                                                                                                         | db.cacheSize      |
-| resetAtStartup | Reset the databases at startup.<br/>See also command line argument [--db-reset](Running.md).<br/>Default: false                                                      | db.resetAtStartup |
+| resetOnStartup | Reset the databases at startup.<br/>See also command line argument [--db-reset](Running.md).<br/>Default: false                                                      | db.resetOnStartup |
 
 
 <a name="logging"></a>

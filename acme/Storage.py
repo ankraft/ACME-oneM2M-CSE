@@ -47,7 +47,7 @@ class Storage(object):
 		self.db.openDB('-%s' % Utils.getCSETypeAsString()) # add CSE type as postfix
 
 		# Reset dbs?
-		if Configuration.get('db.resetAtStartup') is True:
+		if Configuration.get('db.resetOnStartup') is True:
 			self.db.purgeDB()
 
 		# Start background worker to handle expired resources

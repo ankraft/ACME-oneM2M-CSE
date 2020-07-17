@@ -64,7 +64,7 @@ class Configuration(object):
 				'db.path'							: config.get('database', 'path', 						fallback='./data'),
 				'db.inMemory'						: config.getboolean('database', 'inMemory', 			fallback=False),
 				'db.cacheSize'						: config.getint('database', 'cacheSize', 				fallback=0),		# Default: no caching
-				'db.resetAtStartup' 				: config.getboolean('database', 'resetAtStartup',		fallback=False),
+				'db.resetOnStartup' 				: config.getboolean('database', 'resetOnStartup',		fallback=False),
 
 				#
 				#	Logging
@@ -226,7 +226,7 @@ class Configuration(object):
 
 		# Override DB reset from command line
 		if argsDBReset is True:
-			Configuration._configuration['db.resetAtStartup'] = True
+			Configuration._configuration['db.resetOnStartup'] = True
 
 		# Override DB storage mode from command line
 		if argsDBStorageMode is not None:
