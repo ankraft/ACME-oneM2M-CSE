@@ -51,23 +51,24 @@ class AnnounceableResource(Resource):
 
 
 	# create the json stub for the announced resource
-	def createAnnouncedResourceJSON(self) ->  dict:
+	def createAnnouncedResourceJSON(self, remoteCSR:Resource, isCreate = False) ->  dict:
 		# special case for FCNT, FCI
 		if (additionalAttributes := CSE.validator.getAdditionalAttributesFor(self.tpe)) is not None:
 			policies = addPolicy(self.resourceAttributePolicies.copy(), additionalAttributes)
-			return self._createAnnouncedJSON(policies)
+			return self._createAnnouncedJSON(policies, remoteCSR, isCreate=isCreate)
 		# Normal behaviour for other resources
-		return self._createAnnouncedJSON(self.resourceAttributePolicies)
+		return self._createAnnouncedJSON(self.resourceAttributePolicies, remoteCSR, isCreate=isCreate)
 
 
 
 	# Actually create the json
-	def _createAnnouncedJSON(self, policies:Dict[str, List[Any]]) -> dict:
+	def _createAnnouncedJSON(self, policies:Dict[str, List[Any]], remoteCSR:Resource, isCreate=False) -> dict:
 		# Stub
 		tpe = T(self.ty).announced().tpe()
+		csi = Configuration.get('cse.csi')
 		jsn = { tpe : {  # with the announced variant of the tpe
 					'et'	: self.et,
-					'lnk'	: '/~%s/%s' % (Configuration.get('cse.csi'), self.ri),
+					'lnk'	: '%s/%s' % (csi, self.ri),
 					# set by parent: ri, pi, ct, lt, et
 			}
 		}
@@ -76,9 +77,6 @@ class AnnounceableResource(Resource):
 		if (st := self.st) is not None:
 			body['st'] = st
 
-		# TODO ACPI
-		# if (acpi := self.acpi) is not None:
-		# 	Utils.setXPath(jsn, '%s/acpi' % self.tpe, acpi.copy())	
 		if (lbl := self.lbl) is not None:
 			body['lbl'] = lbl.copy()
 
@@ -89,5 +87,20 @@ class AnnounceableResource(Resource):
 			body[attr] = self[attr]
 		for attr in optionalAttributes:
 			body[attr] = self[attr]
+
+
+		#
+		#	overwrite (!) acpi
+		#
+		if isCreate:	# .. but only during create operations
+			if (acpi := self.acpi) is not None:
+				acpi = [ '%s/%s' % (csi, acpi) for acpi in self.acpi ]
+			else:
+				acpi = []
+			# add remote acpi so that we will have access
+			if remoteCSR is not None and (regAcpi := remoteCSR.acpi) is not None:
+				acpi.extend(regAcpi)
+			Utils.setXPath(	jsn, '%s/acpi' % tpe, acpi)
+
 		return jsn
 

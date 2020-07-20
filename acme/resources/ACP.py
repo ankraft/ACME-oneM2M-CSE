@@ -102,7 +102,9 @@ class ACP(Resource):
 
 
 	def checkPermission(self, origin: str, requestedPermission: int) -> bool:
+		# Logging.logDebug('origin: %s requestedPermission: %s' % (origin, requestedPermission))
 		for p in self['pv/acr']:
+			# Logging.logDebug('p.acor: %s requestedPermission: %s' % (p['acor'], p['acop']))
 			if requestedPermission & p['acop'] == 0:	# permission not fitting at all
 				continue
 			if 'all' in p['acor'] or origin in p['acor'] or requestedPermission == C.permNOTIFY:

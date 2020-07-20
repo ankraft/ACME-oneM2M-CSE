@@ -8,6 +8,7 @@
 #
 
 import json, time, traceback
+from typing import Tuple, List
 from Logging import Logging
 import Utils, CSE
 from Configuration import Configuration
@@ -45,7 +46,7 @@ class AnnouncementManager(object):
 		if CSE.remote is not None:
 			for csr in CSE.remote.getAllLocalCSRs():
 				if csr is not None:
-					self.checkResourcesForDeAnnouncement(csr)
+					self.checkResourcesForUnAnnouncement(csr)
 		Logging.log('AnnouncementManager shut down')
 
 	#
@@ -95,7 +96,7 @@ class AnnouncementManager(object):
 	def handleDeRegisteredFromRemoteCSE(self, remoteCSR:Resource) -> None:
 		"""	Handle de-registrations from a remote CSE (registrar CSE).
 		"""
-		self.checkResourcesForDeAnnouncement(remoteCSR)
+		self.checkResourcesForUnAnnouncement(remoteCSR)
 
 
 	def handleRemoteCSEHasRegistered(self, remoteCSR:Resource) -> None:
@@ -107,7 +108,7 @@ class AnnouncementManager(object):
 	def handleRemoteCSEHasDeregistered(self, remoteCSR:Resource) -> None:
 		""" Handle de-registrations when a remote CSE has de-registered (registree CSE).
 		"""
-		self.checkResourcesForDeAnnouncement(remoteCSR)
+		self.checkResourcesForUnAnnouncement(remoteCSR)
 
 
 
@@ -157,8 +158,9 @@ class AnnouncementManager(object):
 		"""	Announce a resource to a specific CSR.
 		"""
 
-		csi  = remoteCSR.csi
-		poas = remoteCSR.poa
+		# retrieve the cse & poas for the remote CSR
+		csi, poas = self._getCsiPoaForRemoteCSR(remoteCSR)
+
 
 		# TODO: multi-hop announcement
 
@@ -172,7 +174,7 @@ class AnnouncementManager(object):
 			return
 
 		# Create announced json & type
-		data = resource.createAnnouncedResourceJSON()
+		data = resource.createAnnouncedResourceJSON(remoteCSR, isCreate=True)
 		tyAnnc = T(resource.ty).announced()
 
 		# Get target URL for request
@@ -200,7 +202,7 @@ class AnnouncementManager(object):
 	#	De-Announcements
 	#
 
-	def checkResourcesForDeAnnouncement(self, remoteCSR:Resource) -> None:
+	def checkResourcesForUnAnnouncement(self, remoteCSR:Resource) -> None:
 		"""	Check whether resources need announcements and initiate announcement
 			if they are.
 		"""
@@ -238,8 +240,10 @@ class AnnouncementManager(object):
 	def deAnnounceResourceFromCSR(self, resource:Resource, remoteCSR:Resource, resourceRI:str) -> None:
 		"""	De-Announce a resource from a specific CSR.
 		"""
-		csi  = remoteCSR.csi
-		poas = remoteCSR.poa
+
+		# retrieve the cse & poas for the remote CSR
+		csi, poas = self._getCsiPoaForRemoteCSR(remoteCSR)
+
 		# TODO: multi-hop announcement
 
 		Logging.logDebug('De-Announce remote resource: %s from: %s' % (resource.ri, csi))
@@ -286,14 +290,16 @@ class AnnouncementManager(object):
 	def updateResourceOnCSR(self, resource:Resource, remoteCSR:Resource, remoteRI:str) -> None:
 		"""	Update an announced resource to a specific CSR.
 		"""
-		csi  = remoteCSR.csi
-		poas = remoteCSR.poa
+
+		# retrieve the cse & poas for the remote CSR
+		csi, poas = self._getCsiPoaForRemoteCSR(remoteCSR)
+
 
 		# TODO: multi-hop announcement
 
 		Logging.logDebug('Update announced resource: %s to: %s' % (resource.ri, csi))
 
-		data = resource.createAnnouncedResourceJSON()
+		data = resource.createAnnouncedResourceJSON(remoteCSR, isCreate=False)
 		tyAnnc = T(resource.ty).announced()
 
 		# Get target URL for request
@@ -312,6 +318,22 @@ class AnnouncementManager(object):
 				Logging.logDebug('Error updating remote announced resource: %d' % rc)
 
 		Logging.logDebug('Announced resource updated')
+
+
+	def _getCsiPoaForRemoteCSR(self, remoteCSR:Resource) -> Tuple[str,List[str]]:
+		"""	This function returns the correct csi and poas for the provided remoteCSR
+			resource. This is different for getting it for the registrar CSE and for
+			the descendant CSE's. In case of a descendant CSR all the information are
+			there, but in case of own's CSR we need to get the information from the
+			registrar CSE)
+		"""
+		csi  = remoteCSR.csi
+		poas = remoteCSR.poa
+		if csi == CSE.remote.cseCsi:	# own registrar
+			if CSE.remote.registrarCSE is not None:
+				csi = CSE.remote.registrarCSE.csi
+				poas = CSE.remote.registrarCSE.poa
+		return csi, poas
 
 
 	def _addAnnouncementToResource(self, resource:Resource, jsn:dict, csi:str) -> None:

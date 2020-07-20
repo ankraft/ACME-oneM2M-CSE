@@ -415,7 +415,10 @@ class RemoteCSEManager(object):
 
 	def getCSRForRemoteCSE(self, remoteCSE:Resource) -> Resource:
 		if self.registrarCSE is not None and self.registrarCSE.csi == remoteCSE.csi:
-			return self.registrarCSE
+			return self.ownRemoteCSR
+
+		# if self.registrarCSE is not None and self.registrarCSE.csi == remoteCSE.csi:
+		# 	return self.registrarCSE
 		for csi,csr in self.descendantCSR.items():	# search the list of descendant CSR
 			if csr.ri == remoteCSE.ri:
 				return csr
