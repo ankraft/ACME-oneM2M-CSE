@@ -216,7 +216,7 @@ class Dispatcher(object):
 	# 			return (None, C.rcNotFound)
 	# 	return (CSE.storage.discoverResources(rootResource, handling, conditions, attributes, fo), C.rcOK)
 
-	def discoverResources(self, id: str, originator: str, handling: dict, fo: int = 1, conditions: dict = None, attributes: dict = None, rootResource: Resource = None) -> Tuple[List[Resource], int, str]:
+	def discoverResources(self, id: str, originator: str, handling: dict, fo: int = 1, conditions: dict = None, attributes: dict = None, rootResource: Resource = None, operation:int=C.permDISCOVERY) -> Tuple[List[Resource], int, str]:
 		if rootResource is None:
 			rootResource, _, msg = self.retrieveResource(id)
 			if rootResource is None:
@@ -248,6 +248,20 @@ class Dispatcher(object):
 		#		walking the resource tree.
 		#		DON'T CHANGE THE ORDER. DON'T SORT.
 		#		Because otherwise the tree cannot be correctly re-constructed otherwise
+
+		# Apply ARP if provided
+		if 'arp' in handling:
+			arp = handling['arp']
+			Logging.logErr(discoveredResources)
+			result = []
+			for resource in discoveredResources:
+				srn = '%s/%s' % (resource[Resource._srn], arp)
+				Logging.logErr(srn)
+				if (res := self.retrieveResource(srn))[0] is not None:
+					if CSE.security.hasAccess(originator, res[0], operation):
+						result.append(res[0])
+			discoveredResources = result	
+
 		return discoveredResources, C.rcOK, None
 
 		# return CSE.storage.discoverResources(rootResource, handling, conditions, attributes, fo), C.rcOK
