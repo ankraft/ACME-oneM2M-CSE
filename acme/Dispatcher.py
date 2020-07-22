@@ -93,89 +93,153 @@ class Dispatcher(object):
 			#Logging.logWarn('Exception: %s' % traceback.format_exc())
 			return None, C.rcInvalidArguments, 'invalid arguments (%s)' % str(e)
 
+		operation = C.permDISCOVERY if fu == 1 else C.permRETRIEVE
 
-		if fu == 1 and rcn !=  C.rcnAttributes:	# discovery. rcn == Attributes is actually "normal retrieval"
-			Logging.logDebug('Discover resources (fu: %s, drt: %s, handling: %s, conditions: %s, resultContent: %d, attributes: %s)' % (fu, drt, handling, conditions, rcn, str(attributes)))
+		# check rcn & operation
+		if operation == C.permDISCOVERY and rcn not in [ C.rcnDiscoveryResultReferences, C.rcnChildResourceReferences ]:	# Only allow those two
+			return None, C.rcInvalidArguments, 'invalid rcn: %d for fu: %d' % (rcn, fu)
+		if operation == C.permRETRIEVE and rcn not in [ C.rcnAttributes, C.rcnAttributesAndChildResources, C.rcnChildResources, C.rcnAttributesAndChildResourceReferences, C.rcnChildResourceReferences]: # TODO
+			return None, C.rcInvalidArguments, 'invalid rcn: %d for fu: %d' % (rcn, fu)
 
-			if rcn not in [C.rcnDiscoveryResultReferences, C.rcnAttributesAndChildResourceReferences, C.rcnChildResourceReferences, C.rcnChildResources, C.rcnAttributesAndChildResources]:	# Only allow those two
-				return None, C.rcInvalidArguments, 'invalid arguments for rcn'
+		Logging.logDebug('Discover/Retrieve resources (fu: %d, drt: %s, handling: %s, conditions: %s, resultContent: %d, attributes: %s)' % (fu, drt, handling, conditions, rcn, str(attributes)))
 
-			# do discovery
-			rs, _, msg = self.discoverResources(id, originator, handling, fo, conditions, attributes)
 
-			if rs is not None:
-	
-				# check and filter by ACP
-				allowedResources = []
-				for r in rs:
-					if CSE.security.hasAccess(originator, r, C.permDISCOVERY):
-						allowedResources.append(r)
+		# Retrieve the target resource, because it is needed for some rcn (and the default)
+		if rcn in [C.rcnAttributes, C.rcnAttributesAndChildResources, C.rcnAttributesAndChildResourceReferences, C.rcnChildResources]:
+			if (res := self.retrieveResource(id))[0] is None:
+			 	return res
+			if not CSE.security.hasAccess(originator, res[0], operation):
+				return None, C.rcOriginatorHasNoPrivilege, 'originator has no permission (%d)' % operation
 
-				if rcn == C.rcnChildResourceReferences: # child resource references
-					return self._resourceTreeReferences(allowedResources, None, drt), C.rcOK, None
-				elif rcn == C.rcnDiscoveryResultReferences: # URIList
-					return self._resourcesToURIList(allowedResources, drt), C.rcOK, None
-				# quiet strange for discovery, since children might not be direct descendants...
-				elif rcn == C.rcnAttributesAndChildResourceReferences: 
-					resource, res, msg = self.retrieveResource(id)
-					if resource is None:
-						return None, res, msg
-					return self._resourceTreeReferences(allowedResources, resource, drt), C.rcOK, None	# the function call add attributes to the result resource
+			# if rcn == attributes then we can return here
+			if rcn == C.rcnAttributes:
+				return res
+			resource = res[0]	# root resource for the retrieval/discovery
 
-				# resource and child resources, full attributes
-				elif rcn == C.rcnAttributesAndChildResources:
-					targetResource, res, msg = self.retrieveResource(id)
-					if targetResource is None:
-						return None, res, msg
-					self._childResourceTree(allowedResources, targetResource)	# the function call add attributes to the result resource. Don't use the return value directly
-					return targetResource, C.rcOK, None
+		# do discovery
+		rs, _, msg = self.discoverResources(id, originator, handling, fo, conditions, attributes, operation=operation)
 
-				# direct child resources, NOT the root resource
-				elif rcn == C.rcnChildResources:
-					target: dict = { }			# empty 
-					self._resourceTreeJSON(allowedResources, target)
-					return target, C.rcOK, None
-					# return (self._childResources(allowedResources), C.rcOK)
+		# check and filter by ACP. After this allowedResources only contains the resources that are allowed
+		allowedResources = []
+		for r in rs:
+			if CSE.security.hasAccess(originator, r, operation):
+				allowedResources.append(r)
 
-			return None, C.rcNotFound, 'resource not found'
+		#
+		#	Handle more sophisticated RCN
+		#
 
-		elif fu == 2 or rcn == C.rcnAttributes:	# normal retrieval
-			Logging.logDebug('Get resource: %s' % id)
-			resource, res, msg = self.retrieveResource(id)
-			if resource is None:
-				return None, res, msg
-			if not CSE.security.hasAccess(originator, resource, C.permRETRIEVE):
-				return None, C.rcOriginatorHasNoPrivilege, 'originator has no RETRIEVE permissions'
+		if rcn == C.rcnAttributesAndChildResources:
+			self._resourceTreeJSON(allowedResources, resource)	# the function call add attributes to the target resource
+			return resource, C.rcOK, None
 
-			if rcn == C.rcnAttributes:	# Just the resource & attributes
-				return resource, res, msg
+		elif rcn == C.rcnAttributesAndChildResourceReferences:
+			self._resourceTreeReferences(allowedResources, resource, drt)	# the function call add attributes to the target resource
+			return resource, C.rcOK, None
 
-			children = self.discoverChildren(id, resource, originator, handling)
+		elif rcn == C.rcnChildResourceReferences: 
+			#childResourcesRef: dict  = { resource.tpe: {} }  # Root resource as a dict with no attribute
+			childResourcesRef = self._resourceTreeReferences(allowedResources,  None, drt)
+			return childResourcesRef, C.rcOK, None
 
-			# Handle more sophisticated result content types
-			if rcn == C.rcnAttributesAndChildResources:
-				self._resourceTreeJSON(children, resource)	# the function call add attributes to the result resource
-				return resource, C.rcOK, None
+		elif rcn == C.rcnChildResources:
+			childResources: dict = { resource.tpe : {} } #  Root resource as a dict with no attribute
+			self._resourceTreeJSON(allowedResources, childResources[resource.tpe]) # Adding just child resources
+			return childResources, C.rcOK, None
 
-			elif rcn == C.rcnAttributesAndChildResourceReferences:
-				self._resourceTreeReferences(children, resource, drt)	# the function call add attributes to the result resource
-				return resource, C.rcOK, None
-			elif rcn == C.rcnChildResourceReferences: # child resource references
-				childResourcesRef: dict  = { resource.tpe: {} }  # Root resource as a dict with no attribute
-				self._resourceTreeReferences(children,  childResourcesRef[resource.tpe], drt)
-				return childResourcesRef, C.rcOK, None
-			# direct child resources, NOT the root resource
-			elif rcn == C.rcnChildResources:
-				childResources: dict = { resource.tpe : {} } #  Root resource as a dict with no attribute
-				self._resourceTreeJSON(children, childResources[resource.tpe]) # Adding just child resources
-				return childResources, C.rcOK, None
-			else:
-				return None, C.rcBadRequest, 'wrong rcn for RETRIEVE'
-			# TODO check rcn. Allowed only 1, 4, 5, 6, 7, 8 . 1= as now. If 4,5 check lim etc
-
+		elif rcn == C.rcnDiscoveryResultReferences: # URIList
+			return self._resourcesToURIList(allowedResources, drt), C.rcOK, None
 
 		else:
-			return None, C.rcInvalidArguments, 'unknown filter usage (fu)'
+			return None, C.rcBadRequest, 'wrong rcn for RETRIEVE'
+
+
+
+
+
+
+		# if fu == 1 and rcn !=  C.rcnAttributes:	# discovery. rcn == Attributes is actually "normal retrieval"
+		# 	Logging.logDebug('Discover resources (fu: %s, drt: %s, handling: %s, conditions: %s, resultContent: %d, attributes: %s)' % (fu, drt, handling, conditions, rcn, str(attributes)))
+
+		# 	if rcn not in [C.rcnDiscoveryResultReferences, C.rcnAttributesAndChildResourceReferences, C.rcnChildResourceReferences, C.rcnChildResources, C.rcnAttributesAndChildResources]:	# Only allow those two
+		# 		return None, C.rcInvalidArguments, 'invalid arguments for rcn'
+
+		# 	# do discovery
+		# 	rs, _, msg = self.discoverResources(id, originator, handling, fo, conditions, attributes)
+
+		# 	if rs is not None:
+	
+		# 		# check and filter by ACP
+		# 		allowedResources = []
+		# 		for r in rs:
+		# 			if CSE.security.hasAccess(originator, r, C.permDISCOVERY):
+		# 				allowedResources.append(r)
+
+		# 		if rcn == C.rcnChildResourceReferences: # child resource references
+		# 			return self._resourceTreeReferences(allowedResources, None, drt), C.rcOK, None
+		# 		elif rcn == C.rcnDiscoveryResultReferences: # URIList
+		# 			return self._resourcesToURIList(allowedResources, drt), C.rcOK, None
+		# 		# quiet strange for discovery, since children might not be direct descendants...
+		# 		elif rcn == C.rcnAttributesAndChildResourceReferences: 
+		# 			resource, res, msg = self.retrieveResource(id)
+		# 			if resource is None:
+		# 				return None, res, msg
+		# 			return self._resourceTreeReferences(allowedResources, resource, drt), C.rcOK, None	# the function call add attributes to the result resource
+
+		# 		# resource and child resources, full attributes
+		# 		elif rcn == C.rcnAttributesAndChildResources:
+		# 			targetResource, res, msg = self.retrieveResource(id)
+		# 			if targetResource is None:
+		# 				return None, res, msg
+		# 			self._childResourceTree(allowedResources, targetResource)	# the function call add attributes to the result resource. Don't use the return value directly
+		# 			return targetResource, C.rcOK, None
+
+		# 		# direct child resources, NOT the root resource
+		# 		elif rcn == C.rcnChildResources:
+		# 			target: dict = { }			# empty 
+		# 			self._resourceTreeJSON(allowedResources, target)
+		# 			return target, C.rcOK, None
+		# 			# return (self._childResources(allowedResources), C.rcOK)
+
+		# 	return None, C.rcNotFound, 'resource not found'
+
+		# elif fu == 2 or rcn == C.rcnAttributes:	# normal retrieval
+		# 	Logging.logDebug('Get resource: %s' % id)
+		# 	resource, res, msg = self.retrieveResource(id)
+		# 	if resource is None:
+		# 		return None, res, msg
+		# 	if not CSE.security.hasAccess(originator, resource, C.permRETRIEVE):
+		# 		return None, C.rcOriginatorHasNoPrivilege, 'originator has no RETRIEVE permissions'
+
+		# 	if rcn == C.rcnAttributes:	# Just the resource & attributes
+		# 		return resource, res, msg
+
+		# 	children = self.discoverChildren(id, resource, originator, handling)
+
+		# 	# Handle more sophisticated result content types
+		# 	if rcn == C.rcnAttributesAndChildResources:
+		# 		self._resourceTreeJSON(children, resource)	# the function call add attributes to the result resource
+		# 		return resource, C.rcOK, None
+
+		# 	elif rcn == C.rcnAttributesAndChildResourceReferences:
+		# 		self._resourceTreeReferences(children, resource, drt)	# the function call add attributes to the result resource
+		# 		return resource, C.rcOK, None
+		# 	elif rcn == C.rcnChildResourceReferences: # child resource references
+		# 		childResourcesRef: dict  = { resource.tpe: {} }  # Root resource as a dict with no attribute
+		# 		self._resourceTreeReferences(children,  childResourcesRef[resource.tpe], drt)
+		# 		return childResourcesRef, C.rcOK, None
+		# 	# direct child resources, NOT the root resource
+		# 	elif rcn == C.rcnChildResources:
+		# 		childResources: dict = { resource.tpe : {} } #  Root resource as a dict with no attribute
+		# 		self._resourceTreeJSON(children, childResources[resource.tpe]) # Adding just child resources
+		# 		return childResources, C.rcOK, None
+		# 	else:
+		# 		return None, C.rcBadRequest, 'wrong rcn for RETRIEVE'
+		# 	# TODO check rcn. Allowed only 1, 4, 5, 6, 7, 8 . 1= as now. If 4,5 check lim etc
+
+
+		# else:
+		# 	return None, C.rcInvalidArguments, 'unknown filter usage (fu)'
 
 
 	def retrieveResource(self, id: str = None) -> Tuple[Resource, int, str]:
@@ -745,21 +809,21 @@ class Dispatcher(object):
 			result = resource
 		# resource and child resources, full attributes
 		elif rcn == C.rcnAttributesAndChildResources:
-			children = self.discoverChildren(id, resource, originator, handling)
+			children = self.discoverChildren(id, resource, originator, handling, C.permDELETE)
 			self._childResourceTree(children, resource)	# the function call add attributes to the result resource. Don't use the return value directly
 			result = resource
 		# direct child resources, NOT the root resource
 		elif rcn == C.rcnChildResources:
-			children = self.discoverChildren(id, resource, originator, handling)
+			children = self.discoverChildren(id, resource, originator, handling, c.permDELETE)
 			childResources: dict = { resource.tpe : {} }			# Root resource as a dict with no attributes
 			self._resourceTreeJSON(children, childResources[resource.tpe])
 			result = childResources
 		elif rcn == C.rcnAttributesAndChildResourceReferences:
-			children = self.discoverChildren(id, resource, originator, handling)
+			children = self.discoverChildren(id, resource, originator, handling, c.permDELETE)
 			self._resourceTreeReferences(children, resource, drt)	# the function call add attributes to the result resource
 			result = resource
 		elif rcn == C.rcnChildResourceReferences: # child resource references
-			children = self.discoverChildren(id, resource, originator, handling)
+			children = self.discoverChildren(id, resource, originator, handling, c.permDELETE)
 			childResourcesRef: dict = { resource.tpe: {} }  # Root resource with no attribute
 			self._resourceTreeReferences(children, childResourcesRef[resource.tpe], drt)
 			result = childResourcesRef
@@ -805,14 +869,14 @@ class Dispatcher(object):
 		return CSE.storage.directChildResources(pi, ty)
 
 
-	def discoverChildren(self, id: str, resource: Resource, originator: str, handling: dict) -> List[Resource]:
-		rs, rc, _ = self.discoverResources(id, originator, handling, rootResource=resource)
+	def discoverChildren(self, id:str, resource:Resource, originator:str, handling:dict, operation:int) -> List[Resource]:
+		rs, rc, _ = self.discoverResources(id, originator, handling, rootResource=resource, operation=operation)
 		if rs is  None:
 			return None
 		# check and filter by ACP
 		children = []
 		for r in rs:
-			if CSE.security.hasAccess(originator, r, C.permRETRIEVE):
+			if CSE.security.hasAccess(originator, r, operation):
 				children.append(r)
 		return children
 

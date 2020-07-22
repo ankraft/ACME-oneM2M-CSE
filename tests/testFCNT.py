@@ -43,7 +43,7 @@ class TestFCNT(unittest.TestCase):
 		jsn = 	{ 'hd:tempe' : { 
 					'rn'	: fcntRN,
 					'cnd' 	: CND, 
-					'curTe'	: 23.0,
+					'curT0'	: 23.0,
 					'unit'	: 1,
 					'minVe'	: -100.0,
 					'maxVe' : 100.0,
@@ -74,7 +74,7 @@ class TestFCNT(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'hd:tempe/et'))
 		self.assertEqual(findXPath(r, 'hd:tempe/cr'), TestFCNT.originator)
 		self.assertEqual(findXPath(r, 'hd:tempe/cnd'), CND)
-		self.assertEqual(findXPath(r, 'hd:tempe/curTe'), 23.0)
+		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 23.0)
 		self.assertIsNone(findXPath(r, 'hd:tempe/tarTe'))
 		self.assertEqual(findXPath(r, 'hd:tempe/unit'), 1)
 		self.assertEqual(findXPath(r, 'hd:tempe/minVe'), -100.0)
@@ -95,7 +95,7 @@ class TestFCNT(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'hd:tempe/tarTe'))
 		self.assertIsInstance(findXPath(r, 'hd:tempe/tarTe'), float)
 		self.assertEqual(findXPath(r, 'hd:tempe/tarTe'), 5.0)
-		self.assertEqual(findXPath(r, 'hd:tempe/curTe'), 23.0)
+		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 23.0)
 		self.assertEqual(findXPath(r, 'hd:tempe/st'), 1)
 		self.assertGreater(findXPath(r, 'hd:tempe/lt'), findXPath(r, 'hd:tempe/ct'))
 

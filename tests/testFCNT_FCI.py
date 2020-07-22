@@ -43,7 +43,7 @@ class TestFCNT_FCI(unittest.TestCase):
 		jsn = 	{ 'hd:tempe' : { 
 					'rn'	: fcntRN,
 					'cnd' 	: CND, 
-					'curTe'	: 23.0,
+					'curT0'	: 23.0,
 					'unit'	: 1,
 					'minVe'	: -100.0,
 					'maxVe' : 100.0,
@@ -66,7 +66,7 @@ class TestFCNT_FCI(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'hd:tempe/st'))
 		self.assertEqual(findXPath(r, 'hd:tempe/cr'), TestFCNT_FCI.originator)
 		self.assertEqual(findXPath(r, 'hd:tempe/cnd'), CND)
-		self.assertEqual(findXPath(r, 'hd:tempe/curTe'), 23.0)
+		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 23.0)
 		self.assertIsNone(findXPath(r, 'hd:tempe/tarTe'))
 		self.assertEqual(findXPath(r, 'hd:tempe/unit'), 1)
 		self.assertEqual(findXPath(r, 'hd:tempe/minVe'), -100.0)
@@ -82,7 +82,7 @@ class TestFCNT_FCI(unittest.TestCase):
 	def test_updateFCNT(self):
 		jsn = 	{ 'hd:tempe' : {
 					'tarTe':   5.0,
-					'curTe'	: 17.0,
+					'curT0'	: 17.0,
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, jsn)
 		self.assertEqual(rsc, C.rcUpdated)
@@ -91,7 +91,7 @@ class TestFCNT_FCI(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'hd:tempe/tarTe'))
 		self.assertIsInstance(findXPath(r, 'hd:tempe/tarTe'), float)
 		self.assertEqual(findXPath(r, 'hd:tempe/tarTe'), 5.0)
-		self.assertEqual(findXPath(r, 'hd:tempe/curTe'), 17.0)
+		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 17.0)
 		self.assertEqual(findXPath(r, 'hd:tempe/st'), 1)
 		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 2)
 
@@ -100,14 +100,14 @@ class TestFCNT_FCI(unittest.TestCase):
 		r, rsc = RETRIEVE('%s/la' % fcntURL, TestFCNT_FCI.originator)
 		self.assertEqual(rsc, C.rcOK)
 		self.assertIsNotNone(r)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/curTe'))
-		self.assertEqual(findXPath(r, 'hd:tempe/curTe'), 17.0)
+		self.assertIsNotNone(findXPath(r, 'hd:tempe/curT0'))
+		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 17.0)
 
 		r, rsc = RETRIEVE('%s/ol' % fcntURL, TestFCNT_FCI.originator)
 		self.assertEqual(rsc, C.rcOK)
 		self.assertIsNotNone(r)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/curTe'))
-		self.assertEqual(findXPath(r, 'hd:tempe/curTe'), 23.0)
+		self.assertIsNotNone(findXPath(r, 'hd:tempe/curT0'))
+		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 23.0)
 
 
 	def test_updateFCNTMni(self):
