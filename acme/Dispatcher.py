@@ -117,6 +117,9 @@ class Dispatcher(object):
 			resource = res[0]	# root resource for the retrieval/discovery
 
 		# do discovery
+		if (res := self.retrieveResource(id))[0] is None:
+			return res
+
 		rs, _, msg = self.discoverResources(id, originator, handling, fo, conditions, attributes, operation=operation)
 
 		# check and filter by ACP. After this allowedResources only contains the resources that are allowed
