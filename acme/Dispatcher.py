@@ -97,9 +97,9 @@ class Dispatcher(object):
 
 		# check rcn & operation
 		if operation == C.permDISCOVERY and rcn not in [ C.rcnDiscoveryResultReferences, C.rcnChildResourceReferences ]:	# Only allow those two
-			return None, C.rcInvalidArguments, 'invalid rcn: %d for fu: %d' % (rcn, fu)
+			return None, C.rcBadRequest, 'invalid rcn: %d for fu: %d' % (rcn, fu)
 		if operation == C.permRETRIEVE and rcn not in [ C.rcnAttributes, C.rcnAttributesAndChildResources, C.rcnChildResources, C.rcnAttributesAndChildResourceReferences, C.rcnChildResourceReferences]: # TODO
-			return None, C.rcInvalidArguments, 'invalid rcn: %d for fu: %d' % (rcn, fu)
+			return None, C.rcBadRequest, 'invalid rcn: %d for fu: %d' % (rcn, fu)
 
 		Logging.logDebug('Discover/Retrieve resources (fu: %d, drt: %s, handling: %s, conditions: %s, resultContent: %d, attributes: %s)' % (fu, drt, handling, conditions, rcn, str(attributes)))
 
@@ -422,8 +422,8 @@ class Dispatcher(object):
 
 			if ty in [ T.CIN, T.FCNT ]:	# special handling for CIN, FCNT
 				if (cs := r.cs) is not None:
-					found += 1 if (sza := conditions.get('sza')) is not None and (str(cs) >= sza) else 0
-					found += 1 if (szb := conditions.get('szb')) is not None and (str(cs) < szb) else 0
+					found += 1 if (sza := conditions.get('sza')) is not None and (int(cs) >= int(sza)) else 0
+					found += 1 if (szb := conditions.get('szb')) is not None and (int(cs) < int(szb)) else 0
 
 			# ContentFormats
 			# Multiple occurences of cnf is always OR'ed. Therefore we add the count of
