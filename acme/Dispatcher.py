@@ -1138,8 +1138,7 @@ class Dispatcher(object):
 		if targetResource is None:
 			targetResource = { }
 			tp = 'm2m:rrl'	# top level in dict, so add qualifier.
-		if len(resources) == 0:
-			return targetResource
+
 		t = []
 
 		# sort resources by type and then by lowercase rn
