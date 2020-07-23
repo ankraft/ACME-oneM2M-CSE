@@ -105,7 +105,7 @@ class Dispatcher(object):
 
 
 		# Retrieve the target resource, because it is needed for some rcn (and the default)
-		if rcn in [C.rcnAttributes, C.rcnAttributesAndChildResources, C.rcnAttributesAndChildResourceReferences, C.rcnChildResources]:
+		if rcn in [C.rcnAttributes, C.rcnAttributesAndChildResources, C.rcnChildResources, C.rcnAttributesAndChildResourceReferences]:
 			if (res := self.retrieveResource(id))[0] is None:
 			 	return res
 			if not CSE.security.hasAccess(originator, res[0], operation):
@@ -117,11 +117,12 @@ class Dispatcher(object):
 			resource = res[0]	# root resource for the retrieval/discovery
 
 		# do discovery
-		rs, _, msg = self.discoverResources(id, originator, handling, fo, conditions, attributes, operation=operation)
+		if (res := self.discoverResources(id, originator, handling, fo, conditions, attributes, operation=operation))[0] is None:	# not found?
+			return res
 
 		# check and filter by ACP. After this allowedResources only contains the resources that are allowed
 		allowedResources = []
-		for r in rs:
+		for r in res[0]:
 			if CSE.security.hasAccess(originator, r, operation):
 				allowedResources.append(r)
 
@@ -316,11 +317,9 @@ class Dispatcher(object):
 		# Apply ARP if provided
 		if 'arp' in handling:
 			arp = handling['arp']
-			Logging.logErr(discoveredResources)
 			result = []
 			for resource in discoveredResources:
 				srn = '%s/%s' % (resource[Resource._srn], arp)
-				Logging.logErr(srn)
 				if (res := self.retrieveResource(srn))[0] is not None:
 					if CSE.security.hasAccess(originator, res[0], operation):
 						result.append(res[0])
@@ -928,7 +927,7 @@ class Dispatcher(object):
 
 		# basic attributes
 		if (fu := args.get('fu')) is not None:
-			if not CSE.validator.validateRequestArgument('fu', fu):
+			if not CSE.validator.validateRequestArgument('fu', fu)[0]:
 				return None, 'error validating "fu" argument'
 			fu = int(fu)
 			del args['fu']
@@ -940,7 +939,7 @@ class Dispatcher(object):
 
 
 		if (drt := args.get('drt')) is not None: # 1=strucured, 2=unstructured
-			if not CSE.validator.validateRequestArgument('drt', drt):
+			if not CSE.validator.validateRequestArgument('drt', drt)[0]:
 				return None, 'error validating "drt" argument'
 			drt = int(drt)
 			del args['drt']
@@ -949,7 +948,7 @@ class Dispatcher(object):
 		result['drt'] = drt
 
 		if (rcn := args.get('rcn')) is not None: 
-			if not CSE.validator.validateRequestArgument('rcn', rcn):
+			if not CSE.validator.validateRequestArgument('rcn', rcn)[0]:
 				return None, 'error validating "rcn" argument'
 			rcn = int(rcn)
 			del args['rcn']
@@ -1003,14 +1002,14 @@ class Dispatcher(object):
 		for c in ['lim', 'lvl', 'ofst']:	# integer parameters
 			if c in args:
 				v = args[c]
-				if not CSE.validator.validateRequestArgument(c, v):
+				if not CSE.validator.validateRequestArgument(c, v)[0]:
 					return None, 'error validating "%s" argument' % c
 				handling[c] = int(v)
 				del args[c]
 		for c in ['arp']:
 			if c in args:
 				v = args[c]
-				if not CSE.validator.validateRequestArgument(c, v):
+				if not CSE.validator.validateRequestArgument(c, v)[0]:
 					return None, 'error validating "%s" argument' % c
 				handling[c] = v # string
 				del args[c]
@@ -1023,7 +1022,7 @@ class Dispatcher(object):
 		# Extract and store other arguments
 		for c in ['crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr']:
 			if (v := args.get(c)) is not None:
-				if not CSE.validator.validateRequestArgument(c, v):
+				if not CSE.validator.validateRequestArgument(c, v)[0]:
 					return None, 'error validating "%s" argument' % c
 				conditions[c] = v
 				del args[c]
@@ -1032,7 +1031,7 @@ class Dispatcher(object):
 		conditions['ty'] = []
 		for e in args.getlist('ty'):
 			for es in (t := e.split()):	# check for number
-				if not CSE.validator.validateRequestArgument('ty', es):
+				if not CSE.validator.validateRequestArgument('ty', es)[0]:
 					return None, 'error validating "ty" argument(s)'
 			conditions['ty'].extend(t)
 		args.poplist('ty')
@@ -1041,7 +1040,7 @@ class Dispatcher(object):
 		conditions['cty'] = []
 		for e in args.getlist('cty'):
 			for es in (t := e.split()):	# check for number
-				if not CSE.validator.validateRequestArgument('cty', es):
+				if not CSE.validator.validateRequestArgument('cty', es)[0]:
 					return None, 'error validating "cty" argument(s)'
 			conditions['cty'].extend(t)
 		args.poplist('cty')
@@ -1057,7 +1056,7 @@ class Dispatcher(object):
 
 		# filter operation
 		if (fo := args.get('fo')) is not None: # 1=AND, 2=OR
-			if not CSE.validator.validateRequestArgument('fo', fo):
+			if not CSE.validator.validateRequestArgument('fo', fo)[0]:
 				return None, 'error validating "fo" argument'
 			fo = int(fo)
 			del args['fo']
@@ -1067,7 +1066,7 @@ class Dispatcher(object):
 
 		# all remaining arguments are treated as matching attributes
 		for arg, val in args.items():
-			if not CSE.validator.validateRequestArgument(arg, val):
+			if not CSE.validator.validateRequestArgument(arg, val)[0]:
 				return None, 'error validating "%s" argument)' % arg
 
 		# all arguments have passed, so add them

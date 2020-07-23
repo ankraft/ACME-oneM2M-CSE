@@ -344,7 +344,7 @@ class Validator(object):
 		return True, None
 
 
-	def validateRequestArgument(self, argument: str, value: Any) -> Tuple[bool, str]:
+	def validateRequestArgument(self, argument:str, value:Any) -> Tuple[bool, str]:
 		""" Validate a request argument. """
 		if (policy := attributePolicies.get(argument)) is not None:
 			return self._validateType(policy[0], value, True)
@@ -404,7 +404,7 @@ class Validator(object):
 		return attributePolicies
 
 
-	def _validateType(self, tpe: int, value: Any, convert: bool = False) -> Tuple[bool, str]:
+	def _validateType(self, tpe:int, value:Any, convert:bool = False) -> Tuple[bool, str]:
 		""" Check a value for its type. If the convert parameter is True then it
 			is assumed that the value could be a stringified value and the method
 			will attempt to convert the value to its target type; otherwise this
