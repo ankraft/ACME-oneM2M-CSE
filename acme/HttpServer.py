@@ -255,7 +255,7 @@ class HttpServer(object):
 		if isinstance(resource, Resource):
 			r = json.dumps(resource.asJSON())
 		elif errorMessage is not None:
-			r = '{ "m2m:dbg" : "%s" }' % errorMessage
+			r = '{ "m2m:dbg" : "%s" }' % errorMessage.replace('"', '\\"')
 		elif resource is None:
 			r = ''
 		elif isinstance(resource, dict):
