@@ -246,6 +246,10 @@ class Dispatcher(object):
 
 
 	def retrieveResource(self, id: str = None) -> Tuple[Resource, int, str]:
+		# If the ID is in SP-relative format then first check whether this is for the
+		# local CSE. 
+		# If yes, then adjust the ID and try to retrieve it. 
+		# If no, then try to retrieve the resource from a connected (!) remote CSE. 
 		if id.startswith(self.csiSlash) and len(id) > self.csiSlashLen:		# TODO for all operations?
 			id = id[self.csiSlashLen:]
 		else:
