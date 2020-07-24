@@ -60,7 +60,7 @@ class SecurityManager(object):
 					Logging.logWarn("Originator for CSR CREATE not found.")
 					return False
 
-			if ty.isAnnounced():
+			if T(ty).isAnnounced():
 				if Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedCSROriginators')):
 					Logging.logDebug("Originator for Announcement. OK.")
 					return True
@@ -90,7 +90,7 @@ class SecurityManager(object):
 				for a in macp:
 					acp, _, _ = CSE.dispatcher.retrieveResource(a)
 					if acp is None:
-						Logging.logDebug('ACP resource not found: %s', a)
+						Logging.logDebug('ACP resource not found: %s' % a)
 						continue
 					else:
 						if acp.checkPermission(originator, requestedPermission):

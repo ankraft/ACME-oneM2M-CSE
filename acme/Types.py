@@ -103,14 +103,14 @@ ResourceTypes._announcedMapping = {								#  type: ignore
 	ResourceTypes.FCI		: ResourceTypes.FCIAnnc,
 }
 
-ResourceTypes._announcedSet = [
+ResourceTypes._announcedSet = [									#  type: ignore
 	ResourceTypes.ACPAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc, ResourceTypes.CINAnnc,
 	ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc, 
 	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.FCIAnnc
 ]
 
 
-ResourceTypes._names 	= {								# type: ignore
+ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.UNKNOWN		: 'unknown',
 
 		ResourceTypes.MIXED			: 'mixed',
@@ -120,12 +120,12 @@ ResourceTypes._names 	= {								# type: ignore
 		ResourceTypes.CIN 			: 'm2m:cin',
 		ResourceTypes.CSEBase		: 'm2m:cb',
 		ResourceTypes.GRP			: 'm2m:grp',
-		ResourceTypes.MGMTOBJ		: 'm2m:mgo',	# not an official shortname
+		ResourceTypes.MGMTOBJ		: 'm2m:mgo',				# not an official shortname
 		ResourceTypes.NOD			: 'm2m:nod',
 		ResourceTypes.CSR 			: 'm2m:csr',
 		ResourceTypes.SUB			: 'm2m:sub',
-		ResourceTypes.FCNT			: 'm2m:fcnt',	# not an official shortname
-		ResourceTypes.FCI			: 'm2m:fci',	# not an official shortname
+		ResourceTypes.FCNT			: 'm2m:fcnt',				# not an official shortname
+		ResourceTypes.FCI			: 'm2m:fci',				# not an official shortname
 
 		ResourceTypes.ACPAnnc 		: 'm2m:acpA',
 		ResourceTypes.AEAnnc 		: 'm2m:aeA',

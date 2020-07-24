@@ -473,7 +473,7 @@ class RemoteCSEManager(object):
 		return CSE.httpServer.sendDeleteRequest(url, origin)
 
 
-	def retrieveRemoteResource(self, id:str, origin:str=None) -> Tuple[dict, int, str]:
+	def retrieveRemoteResource(self, id:str, origin:str=None) -> Tuple[Resource, int, str]:
 		if (url := self._getForwardURL(id)) is None:
 			return None, C.rcNotFound, 'URL not found for id: %s' % id
 		if origin is None:

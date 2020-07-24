@@ -119,12 +119,12 @@ class Dispatcher(object):
 			resource = res[0]	# root resource for the retrieval/discovery
 
 		# do discovery
-		if (res := self.discoverResources(id, originator, handling, fo, conditions, attributes, operation=operation))[0] is None:	# not found?
-			return res
+		if (resList := self.discoverResources(id, originator, handling, fo, conditions, attributes, operation=operation))[0] is None:	# not found?
+			return None, resList[1], resList[2]
 
 		# check and filter by ACP. After this allowedResources only contains the resources that are allowed
 		allowedResources = []
-		for r in res[0]:
+		for r in resList[0]:
 			if CSE.security.hasAccess(originator, r, operation):
 				allowedResources.append(r)
 
@@ -824,16 +824,16 @@ class Dispatcher(object):
 			result = resource
 		# direct child resources, NOT the root resource
 		elif rcn == C.rcnChildResources:
-			children = self.discoverChildren(id, resource, originator, handling, c.permDELETE)
+			children = self.discoverChildren(id, resource, originator, handling, C.permDELETE)
 			childResources: dict = { resource.tpe : {} }			# Root resource as a dict with no attributes
 			self._resourceTreeJSON(children, childResources[resource.tpe])
 			result = childResources
 		elif rcn == C.rcnAttributesAndChildResourceReferences:
-			children = self.discoverChildren(id, resource, originator, handling, c.permDELETE)
+			children = self.discoverChildren(id, resource, originator, handling, C.permDELETE)
 			self._resourceTreeReferences(children, resource, drt)	# the function call add attributes to the result resource
 			result = resource
 		elif rcn == C.rcnChildResourceReferences: # child resource references
-			children = self.discoverChildren(id, resource, originator, handling, c.permDELETE)
+			children = self.discoverChildren(id, resource, originator, handling, C.permDELETE)
 			childResourcesRef: dict = { resource.tpe: {} }  # Root resource with no attribute
 			self._resourceTreeReferences(children, childResourcesRef[resource.tpe], drt)
 			result = childResourcesRef
