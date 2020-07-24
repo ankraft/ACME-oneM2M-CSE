@@ -170,7 +170,7 @@ class ACMERichLogHandler(RichHandler):
 
 
 		# Set own highlights 
-		self.highlighter.highlights = [
+		self.highlighter.highlights = [	# type: ignore
 			r"(?P<brace>[\{\[\(\)\]\}])",
 			#r"(?P<tag_start>\<)(?P<tag_name>\w*)(?P<tag_contents>.*?)(?P<tag_end>\>)",
 			#r"(?P<attrib_name>\w+?)=(?P<attrib_value>\"?\w+\"?)",

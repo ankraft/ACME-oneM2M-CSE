@@ -7,8 +7,8 @@
 #	Configuration & helper functions for unit tests
 #
 
-import requests, random, sys, json, re, time
-from typing import Any, Callable
+import requests, random, sys, json, re, time, datetime
+from typing import Any, Callable, Union
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
@@ -180,4 +180,12 @@ def setXPath(jsn: dict, element: str, value: Any, overwrite: bool = True) -> Non
 			return # don't overwrite
 	data[paths[ln-1]] = value
 
+
+def getDate(delta:int = 0) -> str:
+	return toISO8601Date(datetime.datetime.utcnow() + datetime.timedelta(seconds=delta))
+
+def toISO8601Date(ts: Union[float, datetime.datetime]) -> str:
+	if isinstance(ts, float):
+		ts = datetime.datetime.utcfromtimestamp(ts)
+	return ts.strftime('%Y%m%dT%H%M%S,%f')
 	

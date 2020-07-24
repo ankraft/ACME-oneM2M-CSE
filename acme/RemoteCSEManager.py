@@ -473,6 +473,19 @@ class RemoteCSEManager(object):
 		return CSE.httpServer.sendDeleteRequest(url, origin)
 
 
+	def retrieveRemoteResource(self, id:str, origin:str=None) -> Tuple[Resource, int, str]:
+		if (url := self._getForwardURL(id)) is None:
+			return None, C.rcNotFound, 'URL not found for id: %s' % id
+		if origin is None:
+			origin = self.cseCsi
+		Logging.log('Retrieve remote resource from: %s' % url)
+		j, rc, m = CSE.httpServer.sendRetrieveRequest(url, origin)
+		if rc != C.rcOK:
+			return None, rc, m
+		r, _ = Utils.resourceFromJSON(j)
+		return r, C.rcOK, None
+
+
 	def isTransitID(self, id: str) -> bool:
 		""" Check whether an ID is a targeting a remote CSE via a CSR. """
 		if Utils.isSPRelative(id):
@@ -522,7 +535,19 @@ class RemoteCSEManager(object):
 	#########################################################################
 
 
-	def _copyCSE2CSE(self, target: Resource, source: Resource) -> None:
+	def _copyCSE2CSE(self, target:Resource, source:Resource, isUpdate:bool=False) -> None:
+		if isUpdate:
+			# rm some attributes
+			if 'ri' in target:
+				target.delAttribute('ri', setNone = False)
+			if 'rn' in target:
+				target.delAttribute('rn', setNone = False)
+			if 'ct' in target:
+				target.delAttribute('ct', setNone = False)
+			if 'ty' in target:
+				target.delAttribute('ty', setNone = False)
+
+
 		if 'csb' in source:
 			target['csb'] = self.remoteCSEURL
 		if 'csi' in source:
@@ -547,5 +572,8 @@ class RemoteCSEManager(object):
 			target['srv'] = source.srv
 		if 'st' in source:
 			target['st'] = source.st
-		if 'dcse' in source:
-			target['dcse'] = source.dcse
+
+		target['dcse'] = list(self.descendantCSR.keys())
+		target.delAttribute('acpi', setNone = False)	# remove ACPI (don't provide ACPI in updates...a bit)
+
+

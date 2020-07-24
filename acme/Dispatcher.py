@@ -26,9 +26,11 @@ class Dispatcher(object):
 		self.enableTransit 		= Configuration.get('cse.enableTransitRequests')
 		self.spid 				= Configuration.get('cse.spid')
 		self.csi 				= Configuration.get('cse.csi')
+		self.csiSlash 			= '%s/' % self.csi
 		self.cseid 				= Configuration.get('cse.ri')
 		self.csern				= Configuration.get('cse.rn')
 		self.csiLen 			= len(self.csi)
+		self.csiSlashLen 		= len(self.csiSlash)
 		self.cseidLen 			= len(self.cseid)
 
 		Logging.log('Dispatcher initialized')
@@ -72,7 +74,7 @@ class Dispatcher(object):
 			return fanoutPointResource.handleRetrieveRequest(request, srn, originator)
 
 		# just a normal retrieve request
-		return self.handleRetrieveRequest(request, id, originator)
+		return self.handleRetrieveRequest(request, id if id is not None else srn, originator)
 
 
 	def handleRetrieveRequest(self, request: Request, id: str, originator: str) ->  Tuple[Union[Resource, dict], int, str]:
@@ -97,9 +99,9 @@ class Dispatcher(object):
 
 		# check rcn & operation
 		if operation == C.permDISCOVERY and rcn not in [ C.rcnDiscoveryResultReferences, C.rcnChildResourceReferences ]:	# Only allow those two
-			return None, C.rcInvalidArguments, 'invalid rcn: %d for fu: %d' % (rcn, fu)
+			return None, C.rcBadRequest, 'invalid rcn: %d for fu: %d' % (rcn, fu)
 		if operation == C.permRETRIEVE and rcn not in [ C.rcnAttributes, C.rcnAttributesAndChildResources, C.rcnChildResources, C.rcnAttributesAndChildResourceReferences, C.rcnChildResourceReferences]: # TODO
-			return None, C.rcInvalidArguments, 'invalid rcn: %d for fu: %d' % (rcn, fu)
+			return None, C.rcBadRequest, 'invalid rcn: %d for fu: %d' % (rcn, fu)
 
 		Logging.logDebug('Discover/Retrieve resources (fu: %d, drt: %s, handling: %s, conditions: %s, resultContent: %d, attributes: %s)' % (fu, drt, handling, conditions, rcn, str(attributes)))
 
@@ -117,12 +119,12 @@ class Dispatcher(object):
 			resource = res[0]	# root resource for the retrieval/discovery
 
 		# do discovery
-		if (res := self.discoverResources(id, originator, handling, fo, conditions, attributes, operation=operation))[0] is None:	# not found?
-			return res
+		if (resList := self.discoverResources(id, originator, handling, fo, conditions, attributes, operation=operation))[0] is None:	# not found?
+			return None, resList[1], resList[2]
 
 		# check and filter by ACP. After this allowedResources only contains the resources that are allowed
 		allowedResources = []
-		for r in res[0]:
+		for r in resList[0]:
 			if CSE.security.hasAccess(originator, r, operation):
 				allowedResources.append(r)
 
@@ -244,6 +246,15 @@ class Dispatcher(object):
 
 
 	def retrieveResource(self, id: str = None) -> Tuple[Resource, int, str]:
+		# If the ID is in SP-relative format then first check whether this is for the
+		# local CSE. 
+		# If yes, then adjust the ID and try to retrieve it. 
+		# If no, then try to retrieve the resource from a connected (!) remote CSE. 
+		if id.startswith(self.csiSlash) and len(id) > self.csiSlashLen:		# TODO for all operations?
+			id = id[self.csiSlashLen:]
+		else:
+			if Utils.isSPRelative(id):
+				return CSE.remote.retrieveRemoteResource(id)
 		return self._retrieveResource(srn=id) if Utils.isStructured(id) else self._retrieveResource(ri=id)
 
 
@@ -422,8 +433,8 @@ class Dispatcher(object):
 
 			if ty in [ T.CIN, T.FCNT ]:	# special handling for CIN, FCNT
 				if (cs := r.cs) is not None:
-					found += 1 if (sza := conditions.get('sza')) is not None and (str(cs) >= sza) else 0
-					found += 1 if (szb := conditions.get('szb')) is not None and (str(cs) < szb) else 0
+					found += 1 if (sza := conditions.get('sza')) is not None and (int(cs) >= int(sza)) else 0
+					found += 1 if (szb := conditions.get('szb')) is not None and (int(cs) < int(szb)) else 0
 
 			# ContentFormats
 			# Multiple occurences of cnf is always OR'ed. Therefore we add the count of
@@ -766,7 +777,7 @@ class Dispatcher(object):
 			return fanoutPointResource.handleDeleteRequest(request, srn, originator)
 
 		# just a normal delete request
-		return self.handleDeleteRequest(request, id, originator)
+		return self.handleDeleteRequest(request, id if id is not None else srn, originator)
 
 
 	def handleDeleteRequest(self, request: Request, id: str, originator: str) -> Tuple[Resource, int, str]:
@@ -813,16 +824,16 @@ class Dispatcher(object):
 			result = resource
 		# direct child resources, NOT the root resource
 		elif rcn == C.rcnChildResources:
-			children = self.discoverChildren(id, resource, originator, handling, c.permDELETE)
+			children = self.discoverChildren(id, resource, originator, handling, C.permDELETE)
 			childResources: dict = { resource.tpe : {} }			# Root resource as a dict with no attributes
 			self._resourceTreeJSON(children, childResources[resource.tpe])
 			result = childResources
 		elif rcn == C.rcnAttributesAndChildResourceReferences:
-			children = self.discoverChildren(id, resource, originator, handling, c.permDELETE)
+			children = self.discoverChildren(id, resource, originator, handling, C.permDELETE)
 			self._resourceTreeReferences(children, resource, drt)	# the function call add attributes to the result resource
 			result = resource
 		elif rcn == C.rcnChildResourceReferences: # child resource references
-			children = self.discoverChildren(id, resource, originator, handling, c.permDELETE)
+			children = self.discoverChildren(id, resource, originator, handling, C.permDELETE)
 			childResourcesRef: dict = { resource.tpe: {} }  # Root resource with no attribute
 			self._resourceTreeReferences(children, childResourcesRef[resource.tpe], drt)
 			result = childResourcesRef
