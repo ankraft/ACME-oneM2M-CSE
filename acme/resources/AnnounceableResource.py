@@ -51,24 +51,24 @@ class AnnounceableResource(Resource):
 
 
 	# create the json stub for the announced resource
-	def createAnnouncedResourceJSON(self, remoteCSR:Resource, isCreate = False) ->  dict:
+	def createAnnouncedResourceJSON(self, remoteCSR:Resource, isCreate:bool = False, csi:str=None) ->  dict:
 		# special case for FCNT, FCI
 		if (additionalAttributes := CSE.validator.getAdditionalAttributesFor(self.tpe)) is not None:
 			policies = addPolicy(self.resourceAttributePolicies.copy(), additionalAttributes)
-			return self._createAnnouncedJSON(policies, remoteCSR, isCreate=isCreate)
+			return self._createAnnouncedJSON(policies, remoteCSR, isCreate=isCreate, remoteCsi=csi)
 		# Normal behaviour for other resources
-		return self._createAnnouncedJSON(self.resourceAttributePolicies, remoteCSR, isCreate=isCreate)
+		return self._createAnnouncedJSON(self.resourceAttributePolicies, remoteCSR, isCreate=isCreate, remoteCsi=csi)
 
 
 
 	# Actually create the json
-	def _createAnnouncedJSON(self, policies:Dict[str, List[Any]], remoteCSR:Resource, isCreate=False) -> dict:
+	def _createAnnouncedJSON(self, policies:Dict[str, List[Any]], remoteCSR:Resource, isCreate:bool=False, remoteCsi:str=None) -> dict:
 		# Stub
 		tpe = T(self.ty).announced().tpe()
-		csi = Configuration.get('cse.csi')
+		localCsi = Configuration.get('cse.csi')
 		jsn = { tpe : {  # with the announced variant of the tpe
 					'et'	: self.et,
-					'lnk'	: '%s/%s' % (csi, self.ri),
+					'lnk'	: '%s/%s' % (localCsi, self.ri),
 					# set by parent: ri, pi, ct, lt, et
 			}
 		}
@@ -94,12 +94,16 @@ class AnnounceableResource(Resource):
 		#
 		if isCreate:	# .. but only during create operations
 			if (acpi := self.acpi) is not None:
-				acpi = [ '%s/%s' % (csi, acpi) for acpi in self.acpi ]
+				acpi = [ '%s/%s' % (localCsi, acpi) for acpi in self.acpi ]
 			else:
 				acpi = []
 			# add remote acpi so that we will have access
 			if remoteCSR is not None and (regAcpi := remoteCSR.acpi) is not None:
-				acpi.extend(regAcpi)
+				if remoteCsi is not None:
+					# acpi.extend(['%s/%s' % (CSE.remote.cseCsi, a) for a in regAcpi])
+					acpi.extend([a for a in regAcpi])
+				else:
+					acpi.extend(regAcpi)
 			Utils.setXPath(	jsn, '%s/acpi' % tpe, acpi)
 
 		return jsn

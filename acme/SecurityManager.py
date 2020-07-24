@@ -90,6 +90,7 @@ class SecurityManager(object):
 				for a in macp:
 					acp, _, _ = CSE.dispatcher.retrieveResource(a)
 					if acp is None:
+						Logging.logDebug('ACP resource not found: %s', a)
 						continue
 					else:
 						if acp.checkPermission(originator, requestedPermission):
@@ -124,6 +125,7 @@ class SecurityManager(object):
 			for a in acpi:
 				acp, _, _ = CSE.dispatcher.retrieveResource(a)
 				if acp is None:
+					Logging.logDebug('ACP resource not found: %s' % a)
 					continue
 				if checkSelf:	# forced check for self permissions
 					if acp.checkSelfPermission(originator, requestedPermission):

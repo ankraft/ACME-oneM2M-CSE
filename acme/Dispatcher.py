@@ -26,9 +26,11 @@ class Dispatcher(object):
 		self.enableTransit 		= Configuration.get('cse.enableTransitRequests')
 		self.spid 				= Configuration.get('cse.spid')
 		self.csi 				= Configuration.get('cse.csi')
+		self.csiSlash 			= '%s/' % self.csi
 		self.cseid 				= Configuration.get('cse.ri')
 		self.csern				= Configuration.get('cse.rn')
 		self.csiLen 			= len(self.csi)
+		self.csiSlashLen 		= len(self.csiSlash)
 		self.cseidLen 			= len(self.cseid)
 
 		Logging.log('Dispatcher initialized')
@@ -72,7 +74,7 @@ class Dispatcher(object):
 			return fanoutPointResource.handleRetrieveRequest(request, srn, originator)
 
 		# just a normal retrieve request
-		return self.handleRetrieveRequest(request, id, originator)
+		return self.handleRetrieveRequest(request, id if id is not None else srn, originator)
 
 
 	def handleRetrieveRequest(self, request: Request, id: str, originator: str) ->  Tuple[Union[Resource, dict], int, str]:
@@ -244,6 +246,11 @@ class Dispatcher(object):
 
 
 	def retrieveResource(self, id: str = None) -> Tuple[Resource, int, str]:
+		if id.startswith(self.csiSlash) and len(id) > self.csiSlashLen:		# TODO for all operations?
+			id = id[self.csiSlashLen:]
+		else:
+			if Utils.isSPRelative(id):
+				return CSE.remote.retrieveRemoteResource(id)
 		return self._retrieveResource(srn=id) if Utils.isStructured(id) else self._retrieveResource(ri=id)
 
 
@@ -766,7 +773,7 @@ class Dispatcher(object):
 			return fanoutPointResource.handleDeleteRequest(request, srn, originator)
 
 		# just a normal delete request
-		return self.handleDeleteRequest(request, id, originator)
+		return self.handleDeleteRequest(request, id if id is not None else srn, originator)
 
 
 	def handleDeleteRequest(self, request: Request, id: str, originator: str) -> Tuple[Resource, int, str]:
