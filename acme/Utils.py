@@ -469,7 +469,7 @@ def isAllowedOriginator(originator: str, allowedOriginators: List[str]) -> bool:
 
 #	Compare an old and a new resource. Keywords and values. Ignore internal __XYZ__ keys
 #	Return a dictionary.
-def resourceDiff(old: Union[Resource.Resource, dict], new: Union[Resource.Resource, dict]) -> dict:
+def resourceDiff(old:Union[Resource.Resource, dict], new:Union[Resource.Resource, dict]) -> dict:
 	res = {}
 	for k,v in new.items():
 		if k.startswith('__'):	# ignore all internal attributes

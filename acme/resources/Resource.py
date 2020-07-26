@@ -175,6 +175,8 @@ class Resource(object):
 	# Update this resource with (new) fields.
 	# Call validate() afterward to react on changes.
 	def update(self, jsn: dict = None, originator:str = None) -> Tuple[bool, int, str]:
+		jsonOrg = self.json.copy()	# Save for later for notification
+
 		if jsn is not None:
 			if self.tpe not in jsn and self.ty not in [T.FCNTAnnc, T.FCIAnnc]:	# Don't check announced versions of announced FCNT
 				Logging.logWarn("Update types don't match")
@@ -213,7 +215,7 @@ class Resource(object):
 			return res
 
 		# Check subscriptions
-		CSE.notification.checkSubscriptions(self, C.netResourceUpdate)
+		CSE.notification.checkSubscriptions(self, C.netResourceUpdate, modifiedAttributes=Utils.resourceDiff(jsonOrg, self.json))
 
 		return True, C.rcOK, None
 

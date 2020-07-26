@@ -105,6 +105,8 @@ class Constants(object):
 	nctAll 							= 1
 	nctModifiedAttributes			= 2
 	nctRI 							= 3
+	nctTriggerPayload				= 4
+	
 
 	# eventNotificationCriteria/NotificationEventTypes
 	netResourceUpdate				= 1	# default
