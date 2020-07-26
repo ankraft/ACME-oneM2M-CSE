@@ -234,16 +234,9 @@ class NotificationManager(object):
 		Utils.setXPath(jsn, 'm2m:sgn/sur', Utils.fullRI(ri))
 
 		# Add some values to the notification
-		# TODO: switch statement:  (x is not None and bla())
 		reason is not None 		and Utils.setXPath(jsn, 'm2m:sgn/nev/net', reason)
 		data is not None 		and Utils.setXPath(jsn, 'm2m:sgn/nev/rep', data)
 		originator is not None 	and Utils.setXPath(jsn, 'm2m:sgn/cr', originator)
-		# if reason is not None:
-		# 	Utils.setXPath(jsn, 'm2m:sgn/nev/net', reason)
-		# if data is not None:
-		# 	Utils.setXPath(jsn, 'm2m:sgn/nev/rep', data)
-		# if originator is not None:
-		# 	Utils.setXPath(jsn, 'm2m:sgn/cr', originator)
 
 		_, rc, _ = CSE.httpServer.sendCreateRequest(nu, Configuration.get('cse.csi'), data=json.dumps(jsn))
 		return rc in [C.rcOK]
