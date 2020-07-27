@@ -23,7 +23,7 @@ attributePolicies = constructPolicy([
 	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'cr', 'daci', 'loc',
 ])
 fcntPolicies = constructPolicy([
-	'cnd', 'or', 'cs', 'nl', 'mni', 'mia', 'mbs', 'cni'
+	'cnd', 'or', 'cs', 'nl', 'mni', 'mia', 'mbs', 'cni', 'dgt'
 ])
 attributePolicies = addPolicy(attributePolicies, fcntPolicies)
 
