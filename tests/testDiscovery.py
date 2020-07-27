@@ -396,6 +396,27 @@ class TestDiscovery(unittest.TestCase):
 		self.assertGreater(len(findXPath(r, 'm2m:rrl')), 0)
 
 
+	def test_retrieveCNTunderAEStructured(self):
+		r, rsc = RETRIEVE('%s?rcn=%d&ty=%d&drt=%d' % (aeURL, C.rcnChildResourceReferences, T.CNT, C.drtStructured), TestDiscovery.originator)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
+		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 2)
+		cnt1 = '/%s/%s' % (aeRN, cntRN)
+		cnt2 = '/%s/%s' % (aeRN, cnt2RN)
+		self.assertTrue(findXPath(r, 'm2m:rrl/{0}/val').endswith(cnt1) or findXPath(r, 'm2m:rrl/{0}/val').endswith(cnt2))
+		self.assertTrue(findXPath(r, 'm2m:rrl/{1}/val').endswith(cnt1) or findXPath(r, 'm2m:rrl/{1}/val').endswith(cnt2))
+
+	def test_retrieveCNTunderAEUnstructured(self):
+		r, rsc = RETRIEVE('%s?rcn=%d&ty=%d&drt=%d' % (aeURL, C.rcnChildResourceReferences, T.CNT, C.drtUnstructured), TestDiscovery.originator)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
+		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 2)
+		cnt1 = '/%s/%s' % (aeRN, cntRN)
+		cnt2 = '/%s/%s' % (aeRN, cnt2RN)
+		self.assertFalse(findXPath(r, 'm2m:rrl/{0}/val').endswith(cnt1) or findXPath(r, 'm2m:rrl/{0}/val').endswith(cnt2))
+		self.assertFalse(findXPath(r, 'm2m:rrl/{1}/val').endswith(cnt1) or findXPath(r, 'm2m:rrl/{1}/val').endswith(cnt2))
+
+
 
 def run():
 	suite = unittest.TestSuite()
@@ -435,6 +456,8 @@ def run():
 	suite.addTest(TestDiscovery('test_retrieveCNIwithUSunderAE'))
 	suite.addTest(TestDiscovery('test_retrieveCNIwithEXBunderAE'))
 	suite.addTest(TestDiscovery('test_retrieveCNIwithEXAunderAE'))
+	suite.addTest(TestDiscovery('test_retrieveCNTunderAEStructured'))
+	suite.addTest(TestDiscovery('test_retrieveCNTunderAEUnstructured'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 	return result.testsRun, len(result.errors + result.failures)
 
