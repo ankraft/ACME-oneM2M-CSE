@@ -383,6 +383,16 @@ def pureResource(jsn: dict) -> Tuple[dict, str]:
 	return jsn, None
 
 
+def removeCommentsFromJSON(data:str) -> str:
+	"""	Remove C-style comments from JSON.
+	"""
+	data = re.sub('^\s+//.*\n', '\n', data)		# Comment on first line
+	data = re.sub('\n\s+//.*\n', '\n', data)	# Comments on some line in the middle
+	data = re.sub('/n\s+//.*$', '\n', data)		# Comment on last line w/o newline at the end
+	data = re.sub('/\\*.*?\\*/', '', data)
+	return data
+
+
 decimalMatch = re.compile('{(\d+)}')
 def findXPath(jsn : dict, element : str, default : Any = None) -> Any:
 	""" Find a structured element in JSON.

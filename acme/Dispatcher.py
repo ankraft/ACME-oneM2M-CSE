@@ -8,7 +8,7 @@
 #	through here.
 #
 
-import sys, traceback, re
+import sys, traceback, re, json
 from flask import Request
 from typing import Any, List, Tuple, Union
 from Logging import Logging
@@ -245,16 +245,17 @@ class Dispatcher(object):
 		# 	return None, C.rcInvalidArguments, 'unknown filter usage (fu)'
 
 
-	def retrieveResource(self, id: str = None) -> Tuple[Resource, int, str]:
+	def retrieveResource(self, id:str=None) -> Tuple[Resource, int, str]:
 		# If the ID is in SP-relative format then first check whether this is for the
 		# local CSE. 
 		# If yes, then adjust the ID and try to retrieve it. 
-		# If no, then try to retrieve the resource from a connected (!) remote CSE. 
-		if id.startswith(self.csiSlash) and len(id) > self.csiSlashLen:		# TODO for all operations?
-			id = id[self.csiSlashLen:]
-		else:
-			if Utils.isSPRelative(id):
-				return CSE.remote.retrieveRemoteResource(id)
+		# If no, then try to retrieve the resource from a connected (!) remote CSE.
+		if id is not None:
+			if id.startswith(self.csiSlash) and len(id) > self.csiSlashLen:		# TODO for all operations?
+				id = id[self.csiSlashLen:]
+			else:
+				if Utils.isSPRelative(id):
+					return CSE.remote.retrieveRemoteResource(id)
 		return self._retrieveResource(srn=id) if Utils.isStructured(id) else self._retrieveResource(ri=id)
 
 
@@ -540,7 +541,9 @@ class Dispatcher(object):
 
 		# Add new resource
 		try:
-			nr, msg = Utils.resourceFromJSON(request.json, pi=pr.ri, ty=ty)
+			jsn = json.loads(Utils.removeCommentsFromJSON(request.get_data(as_text=True)))
+			nr, msg = Utils.resourceFromJSON(jsn, pi=pr.ri, ty=ty)
+			# nr, msg = Utils.resourceFromJSON(request.json, pi=pr.ri, ty=ty)
 			if nr is None:	# something wrong, perhaps wrong type
 				return None, C.rcBadRequest, msg
 		except Exception as e:
@@ -681,7 +684,7 @@ class Dispatcher(object):
 
 		Logging.logDebug('Updating resource')
 		if ct == None:
-			return None, C.rcBadRequest, 'missing content type'
+			return None, C.rcBadRequest, 'missing or wrong content type in header'
 
 		# Get resource to update
 		r, _, msg = self.retrieveResource(id)	
@@ -693,7 +696,8 @@ class Dispatcher(object):
 
 		# check permissions
 		try:
-			jsn = request.json
+			#jsn = request.json
+			jsn = json.loads(Utils.removeCommentsFromJSON(request.get_data(as_text=True)))
 		except Exception as e:
 			Logging.logWarn('Bad request (malformed content?)')
 			return None, C.rcBadRequest, str(e)
