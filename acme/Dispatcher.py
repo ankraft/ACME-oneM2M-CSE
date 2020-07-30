@@ -27,11 +27,11 @@ class Dispatcher(object):
 		self.spid 				= Configuration.get('cse.spid')
 		self.csi 				= Configuration.get('cse.csi')
 		self.csiSlash 			= '%s/' % self.csi
-		self.cseid 				= Configuration.get('cse.ri')
+		self.cseri 				= Configuration.get('cse.ri')
 		self.csern				= Configuration.get('cse.rn')
 		self.csiLen 			= len(self.csi)
 		self.csiSlashLen 		= len(self.csiSlash)
-		self.cseidLen 			= len(self.cseid)
+		self.cseriLen 			= len(self.cseri)
 
 		Logging.log('Dispatcher initialized')
 
@@ -651,8 +651,8 @@ class Dispatcher(object):
 		if id is None and srn is None:
 			return None, C.rcNotFound, 'missing identifier'
 
-		# ID= cse.if, return immediately
-		if id == self.cseid:
+		# ID= cse.ri, return immediately
+		if id == self.cseri:
 			return None, C.rcOperationNotAllowed, 'operation not allowed for CSEBase'
 
 		# handle transit requests
@@ -764,8 +764,8 @@ class Dispatcher(object):
 		if id is None and srn is None:
 			return None, C.rcNotFound, 'missing identifier'
 
-		# ID= cse.if, return immediately
-		if id == self.cseid:
+		# ID= cse.ri, return immediately
+		if id == self.cseri:
 			return None, C.rcOperationNotAllowed, 'operation not allowed for CSEBase'
 
 		# handle transit requests
