@@ -237,6 +237,17 @@ class Storage(object):
 		return result
 
 
+	def searchByFieldValue(self, field: str, value: str) -> List[Resource]:
+		"""Search and return all resources of a specific value in a field,
+		and return them in an array."""
+		result = []
+		for j in self.db.searchByFieldValue(field, value):
+			resource, _ = Utils.resourceFromJSON(j)
+			if resource is not None:
+				result.append(resource)
+		return result
+		
+
 	def searchAnnounceableResourcesForCSI(self, csi:str, isAnnounced:bool) -> List[Resource]:
 		""" Search and retrieve all resources that have the provided CSI in their 
 			'at' attribute.
@@ -509,6 +520,12 @@ class TinyDBBinding(object):
 		with self.lockResources:
 			return self.tabResources.search((Query().ty == ty) & (where(field).any(value)))
 
+
+	def  searchByFieldValue(self, field: str, value: Any) -> List[dict]:
+		"""Search and return all resources of a value in a field,
+		and return them in an array."""
+		with self.lockResources:
+			return self.tabResources.search(where(field).any(value))
 
 
 	#

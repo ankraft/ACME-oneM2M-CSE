@@ -58,6 +58,19 @@ class ACP(Resource):
 		return True, C.rcOK, None
 
 
+	def deactivate(self, originator: str) -> None:
+		super().deactivate(originator)
+
+		# Remove own resourceID from all acpi
+		Logging.logDebug('Removing acp.ri: %s from assigned resource acpi' % self.ri)
+		for r in CSE.storage.searchByFieldValue('acpi', self.ri):
+			acpi = r.acpi
+			acpi.remove(self.ri)
+			r['acpi'] = acpi
+			r.dbUpdate()
+
+
+
 
 	#########################################################################
 
