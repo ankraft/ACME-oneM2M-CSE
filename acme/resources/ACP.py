@@ -63,11 +63,12 @@ class ACP(Resource):
 
 		# Remove own resourceID from all acpi
 		Logging.logDebug('Removing acp.ri: %s from assigned resource acpi' % self.ri)
-		for r in CSE.storage.searchByFieldValue('acpi', self.ri):
+		for r in CSE.storage.searchByValueInField('acpi', self.ri):
 			acpi = r.acpi
-			acpi.remove(self.ri)
-			r['acpi'] = acpi
-			r.dbUpdate()
+			if self.ri in acpi:
+				acpi.remove(self.ri)
+				r['acpi'] = acpi
+				r.dbUpdate()
 
 
 
