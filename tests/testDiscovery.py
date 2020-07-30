@@ -417,6 +417,37 @@ class TestDiscovery(unittest.TestCase):
 		self.assertFalse(findXPath(r, 'm2m:rrl/{1}/val').endswith(cnt1) or findXPath(r, 'm2m:rrl/{1}/val').endswith(cnt2))
 
 
+	# rcnAttributesAndChildResources (fail for discovery)
+	def test_rcn4WithDifferentFUs(self):
+		# No FU
+		r, rsc = RETRIEVE('%s?rcn=%d' % (aeURL, C.rcnAttributesAndChildResources), TestDiscovery.originator)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(len(r), 1)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae'))
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'))
+		self.assertEqual(len(findXPath(r, 'm2m:ae/m2m:cnt')), 2)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt/{0}/m2m:cin'))
+		self.assertEqual(len(findXPath(r, 'm2m:ae/m2m:cnt/{0}/m2m:cin')), 5)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt/{1}/m2m:cin'))
+		self.assertEqual(len(findXPath(r, 'm2m:ae/m2m:cnt/{1}/m2m:cin')), 5)
+
+		# Fu=1
+		r, rsc = RETRIEVE('%s?fu=1&rcn=%d' % (aeURL, C.rcnAttributesAndChildResources), TestDiscovery.originator)
+		self.assertEqual(rsc, C.rcBadRequest)
+
+		# FU=2
+		r, rsc = RETRIEVE('%s?fu=2&rcn=%d' % (aeURL, C.rcnAttributesAndChildResources), TestDiscovery.originator)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(len(r), 1)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae'))
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'))
+		self.assertEqual(len(findXPath(r, 'm2m:ae/m2m:cnt')), 2)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt/{0}/m2m:cin'))
+		self.assertEqual(len(findXPath(r, 'm2m:ae/m2m:cnt/{0}/m2m:cin')), 5)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt/{1}/m2m:cin'))
+		self.assertEqual(len(findXPath(r, 'm2m:ae/m2m:cnt/{1}/m2m:cin')), 5)
+
+
 
 def run():
 	suite = unittest.TestSuite()
@@ -458,6 +489,7 @@ def run():
 	suite.addTest(TestDiscovery('test_retrieveCNIwithEXAunderAE'))
 	suite.addTest(TestDiscovery('test_retrieveCNTunderAEStructured'))
 	suite.addTest(TestDiscovery('test_retrieveCNTunderAEUnstructured'))
+	suite.addTest(TestDiscovery('test_rcn4WithDifferentFUs'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 	return result.testsRun, len(result.errors + result.failures)
 

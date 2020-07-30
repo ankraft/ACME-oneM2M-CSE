@@ -6,8 +6,6 @@ from rich.table import Column, Table
 
 # testRemoteCSE.py
 # testTransferRequests.py
-# testRCN.py
-# testDiscovery.py
 # testMgmt objs
 
 if __name__ == '__main__':
