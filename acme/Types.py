@@ -63,6 +63,7 @@ class ResourceTypes(IntEnum):
 	DVC 		= 1008
 	RBO 		= 1009
 	EVL 		= 1010
+	NYCFC		= 1023	# myCertFileCred
 
 	# Announced Resources
 
@@ -155,6 +156,7 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.DVC			: 'm2m:dvc',
 		ResourceTypes.RBO			: 'm2m:rbo',
 		ResourceTypes.EVL			: 'm2m:evl',
+		ResourceTypes.NYCFC			: 'm2m:nycfc',
 	}
 
 

@@ -13,7 +13,8 @@ from typing import Any, List, Tuple, Union
 from resources import ACP, ACPAnnc, AE, AEAnnc, ANDI, ANDIAnnc, ANI, ANIAnnc, BAT, BATAnnc
 from resources import CIN, CINAnnc, CNT, CNTAnnc, CNT_LA, CNT_OL, CSEBase, CSR, CSRAnnc
 from resources import DVC, DVCAnnc,DVI, DVIAnnc, EVL, EVLAnnc, FCI, FCIAnnc, FCNT, FCNTAnnc, FCNT_LA, FCNT_OL
-from resources import FWR, FWRAnnc, GRP, GRPAnnc, GRP_FOPT, MEM, MEMAnnc, MgmtObj, MgmtObjAnnc, NOD, NODAnnc, RBO, RBOAnnc, SUB
+from resources import FWR, FWRAnnc, GRP, GRPAnnc, GRP_FOPT, MEM, MEMAnnc, MgmtObj, MgmtObjAnnc, NOD, NODAnnc
+from resources import NYCFC, NYCFCAnnc, RBO, RBOAnnc, SUB
 from resources import SWR, SWRAnnc, Unknown, Resource
 
 
@@ -328,7 +329,8 @@ def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, i
 			return RBO.RBO(jsn, pi=pi, create=create), None
 		elif  mgd == T.EVL or root == T.EVL.tpe():
 			return EVL.EVL(jsn, pi=pi, create=create), None
-
+		elif  mgd == T.NYCFC or root == T.NYCFC.tpe():
+			return NYCFC.NYCFC(jsn, pi=pi, create=create), None
 
 	# Announced Resources
 	elif typ == T.ACPAnnc:
@@ -370,6 +372,8 @@ def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, i
 			return RBOAnnc.RBOAnnc(jsn, pi=pi, create=create), None
 		elif  mgd == T.EVL or root == '%sA'%T.EVL.tpe():
 			return EVLAnnc.EVLAnnc(jsn, pi=pi, create=create), None
+		elif  mgd == T.NYCFC or root == '%sA'%T.NYCFC.tpe():
+			return NYCFCAnnc.NYCFCAnnc(jsn, pi=pi, create=create), None
 	return Unknown.Unknown(jsn, root, pi=pi, create=create), None	# Capture-All resource
 
 
@@ -419,7 +423,7 @@ def findXPath(jsn : dict, element : str, default : Any = None) -> Any:
 	return data
 
 # set a structured element in JSON. Create if necessary, and observe the overwrite option
-def setXPath(jsn: dict, element: str, value: Any, overwrite: bool = True) -> None:
+def setXPath(jsn: dict, element: str, value: Any, overwrite: bool = True) -> bool:
 	paths = element.split("/")
 	ln = len(paths)
 	data = jsn
@@ -428,8 +432,9 @@ def setXPath(jsn: dict, element: str, value: Any, overwrite: bool = True) -> Non
 			data[paths[i]] = {}
 		data = data[paths[i]]
 	if paths[ln-1] in data is not None and not overwrite:
-			return # don't overwrite
+			return True # don't overwrite
 	data[paths[ln-1]] = value
+	return True
 
 
 urlregex = re.compile(

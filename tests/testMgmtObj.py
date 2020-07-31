@@ -203,6 +203,59 @@ class TestMgmtObj(unittest.TestCase):
 
 
 
+	#
+	#	NYCFC
+	#
+
+	nycfcRN		= 'nycfc'
+	nycfcURL	= '%s/%s' % (nodURL, nycfcRN)
+
+
+	def test_createNYCFC(self):
+		self.assertIsNotNone(TestMgmtObj.cse)
+		jsn =  { 'm2m:nycfc' : {
+					'mgd' : T.NYCFC,
+					'rn' : self.nycfcRN,
+					'dc' : 'aNycfc',
+					'suids' : [ 99 ],
+					'mcff' : 'application/pkcs7mime',
+					'mcfc' : 'secretKey'
+				}}
+
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, jsn)
+		self.assertEqual(rsc, C.rcCreated)
+		self.assertIsNotNone(findXPath(r, 'm2m:nycfc/ri'))
+
+
+	def test_retrieveNYCFC(self):
+		r, rsc = RETRIEVE(self.nycfcURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(findXPath(r, 'm2m:nycfc/mgd'), T.NYCFC)
+
+
+	def test_attributesNYCFC(self):
+		r, rsc = RETRIEVE(self.nycfcURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(findXPath(r, 'm2m:nycfc/ty'), T.MGMTOBJ)
+		self.assertEqual(findXPath(r, 'm2m:nycfc/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
+		self.assertEqual(findXPath(r, 'm2m:nycfc/rn'), self.nycfcRN)
+		self.assertIsNotNone(findXPath(r, 'm2m:nycfc/ct'))
+		self.assertIsNotNone(findXPath(r, 'm2m:nycfc/lt'))
+		self.assertIsNotNone(findXPath(r, 'm2m:nycfc/et'))
+		self.assertIsNotNone(findXPath(r, 'm2m:nycfc/dc'))
+		self.assertEqual(findXPath(r, 'm2m:nycfc/dc'), 'aNycfc')
+		self.assertIsNotNone(findXPath(r, 'm2m:nycfc/suids'))
+		self.assertEqual(findXPath(r, 'm2m:nycfc/suids/{0}'), 99)
+		self.assertIsNotNone(findXPath(r, 'm2m:nycfc/mcff'))
+		self.assertEqual(findXPath(r, 'm2m:nycfc/mcff'), 'application/pkcs7mime')
+		self.assertIsNotNone(findXPath(r, 'm2m:nycfc/mcfc'))
+		self.assertEqual(findXPath(r, 'm2m:nycfc/mcfc'), 'secretKey')
+
+
+	def test_deleteNYCFC(self):
+		_, rsc = DELETE(self.nycfcURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcDeleted)
+
 	# ANI			= 1004
 	# ANDI		= 1005
 	# BAT			= 1006
@@ -227,6 +280,10 @@ def run():
 	suite.addTest(TestMgmtObj('test_retrieveMEM'))
 	suite.addTest(TestMgmtObj('test_attributesMEM'))
 	suite.addTest(TestMgmtObj('test_deleteMEM'))
+	suite.addTest(TestMgmtObj('test_createNYCFC'))
+	suite.addTest(TestMgmtObj('test_retrieveNYCFC'))
+	suite.addTest(TestMgmtObj('test_attributesNYCFC'))
+	suite.addTest(TestMgmtObj('test_deleteNYCFC'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 	return result.testsRun, len(result.errors + result.failures)
 

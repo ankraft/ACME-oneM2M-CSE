@@ -113,6 +113,8 @@ attributePolicies = {
 	'macp'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT
 	'man'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# DVI
 	'mbs'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT, FCNT
+	'mcfc'	: [ BT.string,			CAR.car1,   RO.M,	RO.NP,  RO.O, AN.OA ],		# NYCFC
+	'mcff'	: [ BT.anyURI,			CAR.car1,   RO.M,	RO.NP,  RO.O, AN.OA ],		# NYCFC
 	'mei'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# m2m:externalID - AE, CSR
 	'mfd'	: [ BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
 	'mfdl'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
@@ -166,6 +168,7 @@ attributePolicies = {
 	'ss'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# ANDI
 	'ssi'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ],		# GRP
 	'su'	: [ BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ],		# SUB
+	'suids'	: [ BT.list,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# NYCFC
 	'swn'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# SWR
 	'swv'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
 	'syst'	: [ BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
@@ -178,6 +181,9 @@ attributePolicies = {
 	'Un'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ],		# SWR
 	'url'	: [ BT.anyURI,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# FWR, SWR
 	'vr'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# FWR, SWR
+	
+
+	
 
 	# TODO Lookup in TS-0004, 0001
 
