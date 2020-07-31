@@ -26,6 +26,7 @@ class AppBase(object):
 		self.rn:str 					= rn
 		self.originator:str				= originator
 		self.csern:str					= Configuration.get('cse.rn')
+		self.csi:str					= Configuration.get('cse.csi')
 		self.srn:str 					= self.csern + '/' + self.rn
 		self.url:str					= Configuration.get('http.address') + Configuration.get('http.root')
 		self.worker:BackgroundWorker	= None
