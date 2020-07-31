@@ -353,21 +353,39 @@ class AnnouncementManager(object):
 	def _addAnnouncementToResource(self, resource:Resource, jsn:dict, csi:str) -> None:
 		"""	Add anouncement information to the resource. These are a list of tuples of 
 			the csi to which the resource is registered as well as the ri of the 
-			resource on the remote CSE.
+			resource on the remote CSE. Also, add the reference in the at attribute.
 		"""
+		remoteRI = Utils.findXPath(jsn, '{0}/ri')
 		ats = resource[Resource._announcedTo]
-		ats.append((csi, Utils.findXPath(jsn, '{0}/ri')))
+		ats.append((csi, remoteRI))
 		resource.setAttribute(Resource._announcedTo, ats)
+
+		# Modify the at attribute
+		if len(at := resource.at) > 0 and csi in at:
+			at.append('%s/%s' %(csi, remoteRI))
+			resource.setAttribute('at', at)
+		Logging.logErr(resource)
 
 
 	def _removeAnnouncementFromResource(self, resource:Resource, csi:str) -> None:
 		"""	Remove announcement details from a resource (internal attribute).
+			Modify the internal as well the at attributes to remove the reference
+			to the remote CSE.
 		"""
 		ats = resource[Resource._announcedTo]
+		remoteRI:str = None
 		for x in ats:
 			if x[0] == csi:
+				remoteRI = x[1]
 				ats.remove(x)
 				resource.setAttribute(Resource._announcedTo, ats)
+
+		# # Modify the at attribute
+		if remoteRI is not None:
+			atCsi = '%s/%s' %(csi, remoteRI)
+			if len(at := resource.at) > 0 and atCsi in at:
+				at.remove(atCsi)
+				resource.setAttribute('at', at)
 
 
 	def announceResourceViaDirectURL(self, resource: Resource, at: str) -> bool:

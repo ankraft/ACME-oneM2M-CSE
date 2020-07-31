@@ -44,7 +44,7 @@ class FCNT(AnnounceableResource):
 			# Might change during the lifetime of a resource. Used for optimization
 			self.hasInstances = False
 
-		self.ignoreAttributes = self.internalAttributes + [ 'acpi', 'cbs', 'cni', 'cnd', 'cs', 'cr', 'ct', 'et', 'lt', 'mbs', 'mia', 'mni', 'or', 'pi', 'ri', 'rn', 'st', 'ty' ]
+		self.ignoreAttributes = self.internalAttributes + [ 'acpi', 'cbs', 'cni', 'cnd', 'cs', 'cr', 'ct', 'et', 'lt', 'mbs', 'mia', 'mni', 'or', 'pi', 'ri', 'rn', 'st', 'ty', 'at' ]
 
 
 	# Enable check for allowed sub-resources
@@ -208,6 +208,12 @@ class FCNT(AnnounceableResource):
 		for attr in self.json:
 			if attr not in self.ignoreAttributes:
 				jsn[attr] = self[attr]
+				continue
+			# special for at attribute. It might contain additional id's when it
+			# is announced. Those we don't want to copy.
+			if attr == 'at':
+				at = [ x for x in self['at'] if x.count('/') == 1 ]
+				jsn['at'] = at
 
 		fci, _ = Utils.resourceFromJSON(jsn = { self.tpe : jsn },
 										pi = self.ri, 

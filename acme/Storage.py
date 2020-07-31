@@ -254,8 +254,16 @@ class Storage(object):
 		"""
 		result = []
 
+		mcsi = '%s/' % csi
+		def _hasCSI(at:List[str]) -> bool:
+			for a in at:
+				if a == csi or a.startswith(mcsi):
+					return True
+			return False
+
 		def _announcedFilter(r:dict) -> bool:
-			if (at := r.get('at')) is not None and csi in at:
+			# if (at := r.get('at')) is not None and csi in at:
+			if (at := r.get('at')) is not None and _hasCSI(at):
 				if (isa := r.get(Resource._announcedTo)) is not None:
 					found = False
 					for i in isa:
