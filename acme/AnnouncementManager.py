@@ -364,7 +364,6 @@ class AnnouncementManager(object):
 		if len(at := resource.at) > 0 and csi in at:
 			at.append('%s/%s' %(csi, remoteRI))
 			resource.setAttribute('at', at)
-		Logging.logErr(resource)
 
 
 	def _removeAnnouncementFromResource(self, resource:Resource, csi:str) -> None:

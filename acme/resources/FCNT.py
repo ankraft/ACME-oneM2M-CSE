@@ -199,9 +199,9 @@ class FCNT(AnnounceableResource):
 # not exceed the maxInstanceAge of the targeted <flexContainer> resource.
 
 	# Add a new FlexContainerInstance for this flexContainer
-	def addFlexContainerInstance(self, originator: str) -> None:
+	def addFlexContainerInstance(self, originator:str) -> None:
 		Logging.logDebug('Adding flexContainerInstance')
-		jsn = {	'rn'  : '%s_%d' % (self.rn, self.st), }
+		jsn:Dict[str, Any] = {	'rn'  : '%s_%d' % (self.rn, self.st), }
 		if self.lbl is not None:
 			jsn['lbl'] = self.lbl
 
@@ -212,8 +212,7 @@ class FCNT(AnnounceableResource):
 			# special for at attribute. It might contain additional id's when it
 			# is announced. Those we don't want to copy.
 			if attr == 'at':
-				at = [ x for x in self['at'] if x.count('/') == 1 ]
-				jsn['at'] = at
+				jsn['at'] = [ x for x in self['at'] if x.count('/') == 1 ]	# Only copy single csi in at
 
 		fci, _ = Utils.resourceFromJSON(jsn = { self.tpe : jsn },
 										pi = self.ri, 
