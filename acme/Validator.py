@@ -178,7 +178,7 @@ attributePolicies = {
 	'trps'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# AE
 	'ud'	: [ BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# FWR
 	'uds'	: [ BT.dict,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ],		# FWR
-	'Un'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ],		# SWR
+	'un'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ],		# SWR
 	'url'	: [ BT.anyURI,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# FWR, SWR
 	'vr'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# FWR, SWR
 	
