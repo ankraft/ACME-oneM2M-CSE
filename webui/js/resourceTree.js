@@ -72,7 +72,8 @@ const mgdTypes = {
   1007 : "DeviceInfo",
   1008 : "DeviceCapability",
   1009 : "Reboot",
-  1010 : "EventLog"
+  1010 : "EventLog",
+  1023 : "myCertFileCred"
 }
 
 const mgdShortTypes = {
@@ -85,7 +86,8 @@ const mgdShortTypes = {
   1007 : "DVI",
   1008 : "DVC",
   1009 : "REB",
-  1010 : "EVL"
+  1010 : "EVL",
+  1023 : "NYCFC"
 }
 
 
