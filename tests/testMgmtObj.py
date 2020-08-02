@@ -201,6 +201,125 @@ class TestMgmtObj(unittest.TestCase):
 		_, rsc = DELETE(self.memURL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcDeleted)
 
+	#
+	#	ANI
+	#
+
+	aniRN	= 'ANI'
+	aniURL	= '%s/%s' % (nodURL, aniRN)
+
+
+	def test_createANI(self):
+		self.assertIsNotNone(TestMgmtObj.cse)
+		jsn =  { 'm2m:ani' : {
+					'mgd' : T.ANI,
+					'rn' : self.aniRN,
+					'dc' : 'aAni',
+					'ant' : 'aniType',
+					'ldv' : [ 'dev1', 'dev2' ]
+				}}
+
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, jsn)
+		self.assertEqual(rsc, C.rcCreated)
+		self.assertIsNotNone(findXPath(r, 'm2m:ani/ri'))
+
+
+	def test_retrieveANI(self):
+		r, rsc = RETRIEVE(self.aniURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(findXPath(r, 'm2m:ani/mgd'), T.ANI)
+
+
+	def test_attributesANI(self):
+		r, rsc = RETRIEVE(self.aniURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(findXPath(r, 'm2m:ani/ty'), T.MGMTOBJ)
+		self.assertEqual(findXPath(r, 'm2m:ani/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
+		self.assertEqual(findXPath(r, 'm2m:ani/rn'), self.aniRN)
+		self.assertIsNotNone(findXPath(r, 'm2m:ani/ct'))
+		self.assertIsNotNone(findXPath(r, 'm2m:ani/lt'))
+		self.assertIsNotNone(findXPath(r, 'm2m:ani/et'))
+		self.assertIsNotNone(findXPath(r, 'm2m:ani/dc'))
+		self.assertEqual(findXPath(r, 'm2m:ani/dc'), 'aAni')
+		self.assertIsNotNone(findXPath(r, 'm2m:ani/ant'))
+		self.assertEqual(findXPath(r, 'm2m:ani/ant'), 'aniType')
+		self.assertIsNotNone(findXPath(r, 'm2m:ani/ldv'))
+		self.assertIsInstance(findXPath(r, 'm2m:ani/ldv'), list)
+		self.assertEqual(len(findXPath(r, 'm2m:ani/ldv')), 2)
+		self.assertIn('dev1', findXPath(r, 'm2m:ani/ldv'))
+		self.assertIn('dev2', findXPath(r, 'm2m:ani/ldv'))
+
+
+	def test_deleteANI(self):
+		_, rsc = DELETE(self.aniURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcDeleted)
+
+
+	#
+	#	ANDI
+	#
+
+	andiRN	= 'ANDI'
+	andiURL	= '%s/%s' % (nodURL, andiRN)
+
+
+	def test_createANDI(self):
+		self.assertIsNotNone(TestMgmtObj.cse)
+		jsn =  { 'm2m:andi' : {
+					'mgd' : T.ANDI,
+					'rn' : self.andiRN,
+					'dc' : 'aAndi',
+					'dvd' : 'aDeviceID',
+					'dvt' : 'aDeviceType',
+					'awi' : 'aNetworkID',
+					'sli' : 5,
+					'sld' : 23,
+					'lnh' : [ 'dev1', 'dev2']
+				}}
+
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, jsn)
+		self.assertEqual(rsc, C.rcCreated)
+		self.assertIsNotNone(findXPath(r, 'm2m:andi/ri'))
+
+
+	def test_retrieveANDI(self):
+		r, rsc = RETRIEVE(self.andiURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(findXPath(r, 'm2m:andi/mgd'), T.ANDI)
+
+
+	def test_attributesANDI(self):
+		r, rsc = RETRIEVE(self.andiURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(findXPath(r, 'm2m:andi/ty'), T.MGMTOBJ)
+		self.assertEqual(findXPath(r, 'm2m:andi/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
+		self.assertEqual(findXPath(r, 'm2m:andi/rn'), self.andiRN)
+		self.assertIsNotNone(findXPath(r, 'm2m:andi/ct'))
+		self.assertIsNotNone(findXPath(r, 'm2m:andi/lt'))
+		self.assertIsNotNone(findXPath(r, 'm2m:andi/et'))
+		self.assertIsNotNone(findXPath(r, 'm2m:andi/dc'))
+		self.assertEqual(findXPath(r, 'm2m:andi/dc'), 'aAndi')
+		self.assertIsNotNone(findXPath(r, 'm2m:andi/dvd'))
+		self.assertEqual(findXPath(r, 'm2m:andi/dvd'), 'aDeviceID')
+		self.assertIsNotNone(findXPath(r, 'm2m:andi/dvt'))
+		self.assertEqual(findXPath(r, 'm2m:andi/dvt'), 'aDeviceType')
+		self.assertIsNotNone(findXPath(r, 'm2m:andi/awi'))
+		self.assertEqual(findXPath(r, 'm2m:andi/awi'), 'aNetworkID')
+		self.assertIsNotNone(findXPath(r, 'm2m:andi/sli'))
+		self.assertEqual(findXPath(r, 'm2m:andi/sli'), 5)
+		self.assertIsNotNone(findXPath(r, 'm2m:andi/sld'))
+		self.assertEqual(findXPath(r, 'm2m:andi/sld'), 23)
+		self.assertIsNotNone(findXPath(r, 'm2m:andi/lnh'))
+		self.assertIsInstance(findXPath(r, 'm2m:andi/lnh'), list)
+		self.assertEqual(len(findXPath(r, 'm2m:andi/lnh')), 2)
+		self.assertIn('dev1', findXPath(r, 'm2m:andi/lnh'))
+		self.assertIn('dev2', findXPath(r, 'm2m:andi/lnh'))
+
+
+	def test_deleteANDI(self):
+		_, rsc = DELETE(self.andiURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcDeleted)
+
 
 
 	#
@@ -256,8 +375,6 @@ class TestMgmtObj(unittest.TestCase):
 		_, rsc = DELETE(self.nycfcURL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcDeleted)
 
-	# ANI			= 1004
-	# ANDI		= 1005
 	# BAT			= 1006
 	# DVI 		= 1007
 	# DVC 		= 1008
@@ -280,14 +397,22 @@ def run():
 	suite.addTest(TestMgmtObj('test_retrieveMEM'))
 	suite.addTest(TestMgmtObj('test_attributesMEM'))
 	suite.addTest(TestMgmtObj('test_deleteMEM'))
+	suite.addTest(TestMgmtObj('test_createANI'))
+	suite.addTest(TestMgmtObj('test_retrieveANI'))
+	suite.addTest(TestMgmtObj('test_attributesANI'))
+	suite.addTest(TestMgmtObj('test_deleteANI'))
+	suite.addTest(TestMgmtObj('test_createANDI'))
+	suite.addTest(TestMgmtObj('test_retrieveANDI'))
+	suite.addTest(TestMgmtObj('test_attributesANDI'))
+	suite.addTest(TestMgmtObj('test_deleteANDI'))
 	suite.addTest(TestMgmtObj('test_createNYCFC'))
 	suite.addTest(TestMgmtObj('test_retrieveNYCFC'))
 	suite.addTest(TestMgmtObj('test_attributesNYCFC'))
 	suite.addTest(TestMgmtObj('test_deleteNYCFC'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
-	return result.testsRun, len(result.errors + result.failures)
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 
 if __name__ == '__main__':
-	_, errors = run()
+	_, errors, _ = run()
 	sys.exit(errors)

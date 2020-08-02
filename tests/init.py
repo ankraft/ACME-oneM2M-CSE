@@ -19,6 +19,13 @@ CSEID				= '/id-in'
 SPID 				= 'sp-in'
 ORIGINATOR			= 'CAdmin'
 
+REMOTESERVER		= 'http://localhost:8081'
+REMOTEROOTPATH		= '/'
+REMOTECSERN			= 'cse-mn'
+REMOTECSEID			= '/id-mn'
+REMOTESPID 			= 'sp-mn'
+REMOTEORIGINATOR	= 'CAdmin'
+
 
 NOTIFICATIONPORT 	= 9990
 NOTIFICATIONSERVER	= 'http://localhost:%d' % NOTIFICATIONPORT
@@ -47,6 +54,13 @@ fcntURL	= '%s/%s' % (aeURL, fcntRN)
 grpURL 	= '%s/%s' % (aeURL, grpRN)
 nodURL 	= '%s/%s' % (cseURL, nodRN)
 subURL 	= '%s/%s' % (cntURL, subRN)
+
+REMOTEURL		= '%s%s' % (REMOTESERVER, REMOTEROOTPATH)
+REMOTEcseURL 	= '%s%s' % (REMOTEURL, REMOTECSERN)
+localCsrURL 	= '%s%s' % (cseURL, REMOTECSEID)
+remoteCsrURL 	= '%s%s' % (REMOTEcseURL, CSEID)
+
+
 
 
 
@@ -130,7 +144,7 @@ def runNotificationServer():
 def startNotificationServer():
 	notificationThread = Thread(target=runNotificationServer)
 	notificationThread.start()
-	time.sleep(0.5)	# give the server a moment to start
+	time.sleep(0.1)	# give the server a moment to start
 
 
 def stopNotificationServer():

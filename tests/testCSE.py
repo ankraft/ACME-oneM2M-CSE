@@ -61,8 +61,8 @@ def run():
 	suite.addTest(TestCSE('test_deleteCSE'))
 	suite.addTest(TestCSE('test_updateCSE'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
-	return result.testsRun, len(result.errors + result.failures)
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':
-	_, errors = run()
+	_, errors, _ = run()
 	sys.exit(errors)
