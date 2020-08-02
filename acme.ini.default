@@ -127,7 +127,7 @@ allowedCSROriginators=id-mn
 enable=true
 # Enable logging to file. Default: True
 enableFileLogging=true
-# Basename of the log file. Default: ./logs
+# Path to the log files. Default: ./logs
 path=./logs
 # Loglevel. Possible values: debug, info, warning, error. Default debug
 level=debug
