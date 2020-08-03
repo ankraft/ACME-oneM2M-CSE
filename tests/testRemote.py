@@ -24,14 +24,17 @@ noRemote = rsc != C.rcOK
 class TestRemote(unittest.TestCase):
 
 	@classmethod
+	@unittest.skipIf(noRemote, 'No remote CSEBase')
 	def setUpClass(cls):
 		# check connection to CSE's
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
-
+		cls.remoteCse, rsc = RETRIEVE(REMOTEcseURL, REMOTEORIGINATOR)
+		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % REMOTEcseURL
 
 
 	@classmethod
+	@unittest.skipIf(noRemote, 'No remote CSEBase')
 	def tearDownClass(cls):
 		pass
 		
