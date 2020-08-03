@@ -52,7 +52,7 @@ The following table presents the supported management object specifications.
 | Discovery                     |  &check;  |                                                                       |
 | AE registration               |  &check;  |                                                                       |
 | Remote CSE registration       |  &check;  |                                                                       |
-| Resource Expiration           |  &cross;  |                                                                       |
+| Resource expiration           |  &cross;  |                                                                       |
 | Resource announcements        |  &cross;  | Only one hop is supported at the moment.                              |
 | Resource validations          |  &check;  |                                                                       |
 | Request parameter validations |  &check;  |                                                                       |
