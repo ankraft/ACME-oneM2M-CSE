@@ -177,6 +177,7 @@ class Resource(object):
 	def update(self, jsn: dict = None, originator:str = None) -> Tuple[bool, int, str]:
 		jsonOrg = self.json.copy()	# Save for later for notification
 
+		j = None
 		if jsn is not None:
 			if self.tpe not in jsn and self.ty not in [T.FCNTAnnc, T.FCIAnnc]:	# Don't check announced versions of announced FCNT
 				Logging.logWarn("Update types don't match")
@@ -210,12 +211,12 @@ class Resource(object):
 		# Remove empty / null attributes from json
 		self.json = {k: v for (k, v) in self.json.items() if v is not None }
 
-			# Do some extra validations, if necessary
+		# Do some extra validations, if necessary
 		if not (res := self.validate(originator))[0]:
 			return res
 
 		# Check subscriptions
-		CSE.notification.checkSubscriptions(self, C.netResourceUpdate, modifiedAttributes=Utils.resourceDiff(jsonOrg, self.json))
+		CSE.notification.checkSubscriptions(self, C.netResourceUpdate, modifiedAttributes=Utils.resourceDiff(jsonOrg, self.json, j))
 
 		return True, C.rcOK, None
 

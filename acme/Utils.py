@@ -484,7 +484,8 @@ def isAllowedOriginator(originator: str, allowedOriginators: List[str]) -> bool:
 
 #	Compare an old and a new resource. Keywords and values. Ignore internal __XYZ__ keys
 #	Return a dictionary.
-def resourceDiff(old:Union[Resource.Resource, dict], new:Union[Resource.Resource, dict]) -> dict:
+#	if the modifier dict is given then it contains the changes that let from old to new.
+def resourceDiff(old:Union[Resource.Resource, dict], new:Union[Resource.Resource, dict], modifiers:dict=None) -> dict:
 	res = {}
 	for k,v in new.items():
 		if k.startswith('__'):	# ignore all internal attributes
@@ -492,7 +493,9 @@ def resourceDiff(old:Union[Resource.Resource, dict], new:Union[Resource.Resource
 		if not k in old:		# Key not in old
 			res[k] = v
 		elif v != old[k]:		# Value different
-			res[k] = v 
+			res[k] = v
+		elif modifiers is not None and k in modifiers:	# this means the attribute is overwritten by the same value. But still modified
+			res[k] = v
 	return res
 
 
