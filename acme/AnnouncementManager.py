@@ -157,6 +157,9 @@ class AnnouncementManager(object):
 			return
 		Logging.logDebug('Announce resource: %s to all connected csr' % resource.ri)
 		for csi in resource.at:
+			if csi == CSE.remote.cseCsi or csi.startswith('%s/' % CSE.remote,cseCsi):
+				Logging.logWarn('Targeting own CSE. Ignored.')
+				continue
 			if (csr := Utils.resourceFromCSI(csi)) is None:
 				self._removeAnnouncementFromResource(resource, csi)
 				continue
