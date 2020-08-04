@@ -251,6 +251,19 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/ty'))
 
 
+	def test_updateCNTSameModifiedAttributes(self):
+		jsn = 	{ 'm2m:cnt' : {
+					'lbl' : [ 'bTag' ]
+ 				}}
+		cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+		self.assertEqual(rsc, C.rcUpdated)
+		lastNotification = getLastNotification()
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep'))
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/lbl'), [ 'bTag'])
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/ty'))
+
+
 	def test_createSUBRI(self):
 		jsn = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
@@ -300,6 +313,7 @@ def run():
 	suite.addTest(TestSUB('test_deleteSUBByAssignedOriginator'))
 	suite.addTest(TestSUB('test_createSUBModifedAttributes'))
 	suite.addTest(TestSUB('test_updateCNTModifiedAttributes'))
+	suite.addTest(TestSUB('test_updateCNTSameModifiedAttributes'))
 	suite.addTest(TestSUB('test_deleteSUBByAssignedOriginator'))
 	suite.addTest(TestSUB('test_createSUBRI'))
 	suite.addTest(TestSUB('test_updateCNTRI'))
