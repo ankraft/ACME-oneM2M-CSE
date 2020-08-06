@@ -20,6 +20,7 @@ class TestAE(unittest.TestCase):
 		TestAE.originator 	= None 	# actually the AE.aei
 		TestAE.aeACPI 		= None
 		TestAE.cse, rsc 	= RETRIEVE(cseURL, ORIGINATOR)
+		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
 
 
 	@classmethod
@@ -84,7 +85,6 @@ class TestAE(unittest.TestCase):
 		self.assertIsInstance(findXPath(r, 'm2m:ae/acpi'), list)
 		self.assertGreater(len(findXPath(r, 'm2m:ae/acpi')), 0)
 		self.assertIsNone(findXPath(r, 'm2m:ae/st'))
-
 
 
 	def test_updateAELbl(self):

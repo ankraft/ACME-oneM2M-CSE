@@ -24,6 +24,7 @@ class TestNOD(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
+		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
 		
 
 	@classmethod

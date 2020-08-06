@@ -34,6 +34,8 @@ class TestSUB(unittest.TestCase):
 
 		# create other resources
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
+		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
+
 		jsn = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',

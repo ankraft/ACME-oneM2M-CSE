@@ -22,6 +22,8 @@ class TestDiscovery(unittest.TestCase):
 		cls.crTimestamp1 = getDate()	# first timestamp
 
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
+		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
+
 		jsn = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',

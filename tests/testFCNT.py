@@ -21,6 +21,8 @@ class TestFCNT(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
+		assert rsc == C.rcOK, 'cannot retrieve CSEBase'
+
 		jsn = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',

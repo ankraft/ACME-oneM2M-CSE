@@ -37,6 +37,7 @@ testVerbosity 		= 2		# 0, 1, 2
 ###############################################################################
 
 aeRN	= 'testAE'
+acpRN	= 'testACP'
 cntRN	= 'testCNT'
 cinRN	= 'testCIN'
 grpRN	= 'testGRP'
@@ -48,6 +49,7 @@ subRN	= 'testSUB'
 URL		= '%s%s' % (SERVER, ROOTPATH)
 cseURL 	= '%s%s' % (URL, CSERN)
 aeURL 	= '%s/%s' % (cseURL, aeRN)
+acpURL 	= '%s/%s' % (cseURL, acpRN)
 cntURL 	= '%s/%s' % (aeURL, cntRN)
 cinURL 	= '%s/%s' % (cntURL, cinRN)
 fcntURL	= '%s/%s' % (aeURL, fcntRN)
