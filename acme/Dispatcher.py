@@ -985,10 +985,7 @@ class Dispatcher(object):
 													  C.rcnChildResources ]:
 			return None, 'rcn: %d not allowed in RETRIEVE operation' % rcn
 		elif operation == C.opDISCOVERY and rcn not in [ C.rcnChildResourceReferences,
-														 C.rcnDiscoveryResultReferences,
-														 C.rcnAttributesAndChildResourceReferences,
-													 	 C.rcnAttributesAndChildResources,
-														 C.rcnChildResources ]:
+														 C.rcnDiscoveryResultReferences ]:
 			return None, 'rcn: %d not allowed in DISCOVERY operation' % rcn
 		elif operation == C.opCREATE and rcn not in [ C.rcnAttributes,
 													  C.rcnModifiedAttributes,
