@@ -295,6 +295,7 @@ class TestSUB(unittest.TestCase):
 
 
 # TODO expirationCounter
+# TODO check different NET's (ae->cnt->sub, add cnt to cnt)
 
 def run():
 	suite = unittest.TestSuite()

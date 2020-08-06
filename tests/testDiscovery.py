@@ -35,6 +35,7 @@ class TestDiscovery(unittest.TestCase):
 		# create first container & CIN
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN,
+					'lbl' : [ 'cntLbl' ]
 				}}
 		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
 		assert rsc == C.rcCreated, 'cannot create container'
@@ -362,7 +363,6 @@ class TestDiscovery(unittest.TestCase):
 		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 10)
 
 
-
 	def test_retrieveCNIwithMSunderAE(self):
 		# After first timestamp
 		r, rsc = RETRIEVE('%s?rcn=%d&ms=%s' % (aeURL, C.rcnChildResourceReferences, TestDiscovery.crTimestamp1), TestDiscovery.originator)
@@ -448,6 +448,22 @@ class TestDiscovery(unittest.TestCase):
 		self.assertEqual(len(findXPath(r, 'm2m:ae/m2m:cnt/{1}/m2m:cin')), 5)
 
 
+	# Test adding arp
+	def test_appendArp(self):
+		# create container under cnt1
+		jsn = 	{ 'm2m:cnt' : { 
+					'rn'  : 'arpCnt',
+				}}
+		arpCnt, rsc = CREATE(cntURL, TestDiscovery.originator, T.CNT, jsn)
+		self.assertEqual(rsc, C.rcCreated)
+		r, rsc = RETRIEVE('%s?rcn=%d&ty=%d&lbl=cntLbl&arp=arpCnt' % (aeURL, C.rcnChildResources, T.CNT), TestDiscovery.originator)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(findXPath(r, 'm2m:ae/m2m:cnt/{0}/rn'), 'arpCnt')
+		_, rsc = DELETE('%s/arpCnt' % cntURL, TestDiscovery.originator) # cleanup
+		self.assertEqual(rsc, C.rcDeleted)
+
+
+
 
 def run():
 	suite = unittest.TestSuite()
@@ -490,6 +506,7 @@ def run():
 	suite.addTest(TestDiscovery('test_retrieveCNTunderAEStructured'))
 	suite.addTest(TestDiscovery('test_retrieveCNTunderAEUnstructured'))
 	suite.addTest(TestDiscovery('test_rcn4WithDifferentFUs'))
+	suite.addTest(TestDiscovery('test_appendArp'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 

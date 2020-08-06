@@ -293,7 +293,7 @@ class Dispatcher(object):
 	# 			return (None, C.rcNotFound)
 	# 	return (CSE.storage.discoverResources(rootResource, handling, conditions, attributes, fo), C.rcOK)
 
-	def discoverResources(self, id: str, originator: str, handling: dict, fo: int = 1, conditions: dict = None, attributes: dict = None, rootResource: Resource = None, operation:int=C.permDISCOVERY) -> Tuple[List[Resource], int, str]:
+	def discoverResources(self, id:str, originator:str, handling:dict, fo:int=1, conditions:dict=None, attributes:dict=None, rootResource:Resource=None, operation:int=C.permDISCOVERY) -> Tuple[List[Resource], int, str]:
 		if rootResource is None:
 			rootResource, _, msg = self.retrieveResource(id)
 			if rootResource is None:
@@ -368,7 +368,6 @@ class Dispatcher(object):
 			discoveredResources.extend(self._discoverResources(r, originator, level-1, fo, allLen, conditions=conditions, attributes=attributes))
 
 		return discoveredResources
-
 
 
 	def _matchResource(self, r : Resource, conditions : dict, attributes : dict, fo : int, allLen : int) -> bool:	
