@@ -66,9 +66,9 @@ if __name__ == '__main__':
 						str(v[0]), 
 						'[yellow]%d[/yellow]' % v[4] if v[4] > 0 and v[0] > 0 else str(v[4]),
 						'[red]%d[/red]' % v[1] if v[1] > 0 and v[0] > 0 else str(v[1]),
-						'%.4f' % v[2], 
-						'%.4f' % v[3],
-						'%.4f' % (v[3]/v[2]),
+						'%.4f' % v[2] if v[0] > 0 else '', 
+						'%.4f' % v[3] if v[0] > 0 else '',
+						'%.4f' % (v[3]/v[2]) if v[0] > 0 else '',
 						style=None if v[0] > 0 else styleDisabled)
 	console.print(table)
 
