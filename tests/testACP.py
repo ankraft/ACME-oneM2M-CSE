@@ -145,7 +145,6 @@ class TestACP(unittest.TestCase):
 		self.assertEqual(rsc, C.rcUpdated)
 
 
-
 	def test_deleteACPwrongOriginator(self):
 		r, rsc = DELETE(acpURL, 'wrong')
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
@@ -155,28 +154,6 @@ class TestACP(unittest.TestCase):
 		r, rsc = DELETE(acpURL, self.acpORIGINATOR)
 		self.assertEqual(rsc, C.rcDeleted)
 
-
-	def test_handleAE(self):
-		jsn = 	{ 'm2m:ae' : {
-					'rn': aeRN, 
-					'api': 'NMyApp1Id',
-				 	'rr': False,
-				 	'srv': [ '3' ]
-				}}
-		r, rsc = CREATE(cseURL, 'C', T.AE, jsn)
-		self.assertEqual(rsc, C.rcCreated)
-		self.assertIsNotNone(findXPath(r, 'm2m:ae/acpi'))
-		self.assertIsInstance(findXPath(r, 'm2m:ae/acpi'), list)
-		self.assertGreater(len(findXPath(r, 'm2m:ae/acpi')), 0)
-		# delete the acp's and check access to the AE afterwards
-		for acpi in findXPath(r, 'm2m:ae/acpi'):
-			u = '%s%s' %(URL, acpi)
-			acp, rsc = DELETE(u, ORIGINATOR)
-			self.assertEqual(rsc, C.rcDeleted)
-
-
-# Create AE implicte ACP
-# DELETE ACP for that AE. Access to AE? How?
 
 def run():
 	suite = unittest.TestSuite()
