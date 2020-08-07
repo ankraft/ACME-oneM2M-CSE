@@ -15,6 +15,8 @@ from init import *
 
 class TestACP(unittest.TestCase):
 
+	acpORIGINATOR = 'testOriginator'
+
 	@classmethod
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
@@ -24,6 +26,7 @@ class TestACP(unittest.TestCase):
 	@classmethod
 	def tearDownClass(cls):
 		DELETE(acpURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
+		DELETE(aeURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
 
 
 	def test_createACP(self):
@@ -36,12 +39,12 @@ class TestACP(unittest.TestCase):
 					},
 					"pvs": { 
 						"acr": [ {
-							"acor": [ ORIGINATOR ],
+							"acor": [ self.acpORIGINATOR ],
 							"acop": 63
 						} ]
 					},
 				}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, jsn)
+		TestACP.acp, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 
 
@@ -86,7 +89,7 @@ class TestACP(unittest.TestCase):
 		self.assertIsInstance(findXPath(r, 'm2m:acp/pvs/acr/{0}/acor'), list)
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/pvs/acr/{0}/acor/{0}'))
 		self.assertIsInstance(findXPath(r, 'm2m:acp/pvs/acr/{0}/acor/{0}'), str)
-		self.assertEqual(findXPath(r, 'm2m:acp/pvs/acr/{0}/acor/{0}'), ORIGINATOR)
+		self.assertEqual(findXPath(r, 'm2m:acp/pvs/acr/{0}/acor/{0}'), self.acpORIGINATOR)
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/pvs/acr/{0}/acop'))
 		self.assertIsInstance(findXPath(r, 'm2m:acp/pvs/acr/{0}/acop'), int)
 		self.assertEqual(findXPath(r, 'm2m:acp/pvs/acr/{0}/acop'), 63)
@@ -96,11 +99,82 @@ class TestACP(unittest.TestCase):
 		jsn = 	{ 'm2m:acp' : {
 					'lbl' : [ 'aTag' ]
 				}}
-		r, rsc = UPDATE(acpURL, ORIGINATOR, jsn)
+		r, rsc = UPDATE(acpURL, self.acpORIGINATOR, jsn)
 		self.assertEqual(rsc, C.rcUpdated)
-		
-# update. correct, wrong originator
-# DELETE ACP
+		self.assertIsNotNone(findXPath(r, 'm2m:acp/lbl'))
+		self.assertEqual(len(findXPath(r, 'm2m:acp/lbl'), 1))
+		self.assertIn('aTag', findXPath(r, 'm2m:acp/lbl'))
+
+
+	def test_updateACPwrongOriginator(self):
+		jsn = 	{ 'm2m:acp' : {
+					'lbl' : [ 'bTag' ]
+				}}
+		r, rsc = UPDATE(acpURL, 'wrong', jsn)
+		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
+
+
+	def test_addACPtoAE(self):
+		self.assertIsNotNone(TestACP.acp)
+		jsn = 	{ 'm2m:ae' : {
+					'rn': aeRN, 
+					'api': 'NMyApp1Id',
+				 	'rr': False,
+				 	'srv': [ '3' ],
+				 	'acpi': [ findXPath(TestACP.acp, 'm2m:acp/ri') ]
+				}}
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)
+		self.assertEqual(rsc, C.rcCreated)
+		self.assertIsNotNone(findXPath(TestACP.ae, 'm2m:ae/acpi'))
+		self.assertIsInstance(findXPath(TestACP.ae, 'm2m:ae/acpi'), list)
+		self.assertGreater(len(findXPath(TestACP.ae, 'm2m:ae/acpi')), 0)
+		self.assertIn(findXPath(TestACP.acp, 'm2m:acp/ri'), findXPath(TestACP.ae, 'm2m:ae/acpi'))
+
+
+	def test_removeACPfromAE(self):
+		self.assertIsNotNone(TestACP.acp)
+		self.assertIsNotNone(TestACP.ae)
+		acpi = findXPath(TestACP.ae, 'm2m:ae/acpi').copy()
+		acpi.remove(findXPath(TestACP.acp, 'm2m:acp/ri'))
+		jsn = 	{ 'm2m:ae' : {
+				 	'acpi': acpi
+				}}
+		r, rsc = UPDATE(aeURL, findXPath(TestACP.ae, 'm2m:ae/aei'), jsn)
+		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)	# missing self-privileges
+		r, rsc = UPDATE(aeURL, ORIGINATOR, jsn)
+		self.assertEqual(rsc, C.rcUpdated)
+
+
+
+	def test_deleteACPwrongOriginator(self):
+		r, rsc = DELETE(acpURL, 'wrong')
+		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
+
+
+	def test_deleteACP(self):
+		r, rsc = DELETE(acpURL, self.acpORIGINATOR)
+		self.assertEqual(rsc, C.rcDeleted)
+
+
+	def test_handleAE(self):
+		jsn = 	{ 'm2m:ae' : {
+					'rn': aeRN, 
+					'api': 'NMyApp1Id',
+				 	'rr': False,
+				 	'srv': [ '3' ]
+				}}
+		r, rsc = CREATE(cseURL, 'C', T.AE, jsn)
+		self.assertEqual(rsc, C.rcCreated)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/acpi'))
+		self.assertIsInstance(findXPath(r, 'm2m:ae/acpi'), list)
+		self.assertGreater(len(findXPath(r, 'm2m:ae/acpi')), 0)
+		# delete the acp's and check access to the AE afterwards
+		for acpi in findXPath(r, 'm2m:ae/acpi'):
+			u = '%s%s' %(URL, acpi)
+			acp, rsc = DELETE(u, ORIGINATOR)
+			self.assertEqual(rsc, C.rcDeleted)
+
+
 # Create AE implicte ACP
 # DELETE ACP for that AE. Access to AE? How?
 
@@ -110,6 +184,12 @@ def run():
 	suite.addTest(TestACP('test_retrieveACP'))
 	suite.addTest(TestACP('test_retrieveACPwrongOriginator'))
 	suite.addTest(TestACP('test_attributesACP'))
+	suite.addTest(TestACP('test_updateACPwrongOriginator'))
+	suite.addTest(TestACP('test_addACPtoAE'))
+	suite.addTest(TestACP('test_removeACPfromAE'))
+	suite.addTest(TestACP('test_deleteACPwrongOriginator'))
+	suite.addTest(TestACP('test_deleteACP'))
+	#suite.addTest(TestACP('test_handleAE'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)

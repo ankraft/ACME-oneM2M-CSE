@@ -135,19 +135,22 @@ class RegistrationManager(object):
 			return None
 
 		# Create an ACP for this AE-ID if there is none set
-		if ae.acpi is None or len(ae.acpi) == 0:
-			Logging.logDebug('Adding ACP for AE')
-			cseOriginator = Configuration.get('cse.originator')
+		# if ae.acpi is None or len(ae.acpi) == 0:
+		Logging.logDebug('Adding ACP for AE')
+		cseOriginator = Configuration.get('cse.originator')
 
-			# Add ACP for remote CSE to access the own CSE
-			acpRes = self._createACP(parentResource=parentResource,
-									 rn=C.acpPrefix + ae.rn,
-									 createdByResource=ae.ri, 
-								 	 originators=[ originator, cseOriginator ],
-								 	 permission=Configuration.get('cse.acp.pv.acop'))
-			if acpRes[0] is None:
-				return None 
+		# Add ACP for remote CSE to access the own CSE
+		acpRes = self._createACP(parentResource=parentResource,
+								 rn=C.acpPrefix + ae.rn,
+								 createdByResource=ae.ri, 
+							 	 originators=[ originator, cseOriginator ],
+							 	 permission=Configuration.get('cse.acp.pv.acop'))
+		if acpRes[0] is None:
+			return None 
+		if ae.acpi is None or len(ae.acpi) == 0:
 			ae['acpi'] = [ acpRes[0].ri ]		# Set ACPI (anew)
+		else:
+			ae.acpi.append(acpRes[0].ri)		# append to existing
 
 		# Add the AE to the accessCSEBase ACP so that it can at least retrieve the CSEBase
 		self._addToAccessCSBaseACP(ae.aei)
@@ -272,7 +275,7 @@ class RegistrationManager(object):
 		return CSE.dispatcher.createResource(acp, parentResource=parentResource, originator=cseOriginator)
 
 
-	def _removeACP(self, srn: str, resource: Resource) -> Tuple[Resource, int, str]:
+	def _removeACP(self, srn:str, resource:Resource) -> Tuple[Resource, int, str]:
 		""" Remove an ACP created during registration before. """
 		if (acpRes := CSE.dispatcher.retrieveResource(id=srn))[1] != C.rcOK:
 			Logging.logWarn('Could not find ACP: %s' % srn)	# ACP not found, either not created or already deleted

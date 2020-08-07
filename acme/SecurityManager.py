@@ -104,6 +104,7 @@ class SecurityManager(object):
 			if resource.checkSelfPermission(originator, requestedPermission):
 				Logging.logDebug('Permission granted')
 				return True
+			# fall-through
 
 		else:		# target is any other resource type
 			
