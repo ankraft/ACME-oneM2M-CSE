@@ -403,9 +403,14 @@ def findXPath(jsn : dict, element : str, default : Any = None) -> Any:
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
 	"""
 
+	if element is None or jsn is None:
+		return default
+
 	paths = element.split("/")
 	data = jsn
 	for i in range(0,len(paths)):
+		if data is None:
+			return default
 		if len(paths[i]) == 0:	# return if there is an empty path element
 			return default
 		elif (m := decimalMatch.search(paths[i])) is not None:	# Match array index {i}

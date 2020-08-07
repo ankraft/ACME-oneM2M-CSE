@@ -106,8 +106,8 @@ class AEStatistics(AEBase):
 		Logging.logDebug('Updating statistics')
 
 		# Update statistics
-		stats = CSE.statistics.getStats()
-		self.updateResource(srn=self.fcsrn, jsn={ self.fcntType : stats })
+		if (stats := CSE.statistics.getStats()) is not None:
+			self.updateResource(srn=self.fcsrn, jsn={ self.fcntType : stats })
 
 		return True
 

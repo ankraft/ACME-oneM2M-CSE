@@ -275,6 +275,9 @@ class Validator(object):
 		# determine the request column, depending on create or updates
 		reqp = 2 if create else 3
 		(pureJson, _tpe) = Utils.pureResource(jsn)
+		if pureJson is None:
+			return False, C.rcBadRequest, 'content is None'
+
 		tpe = _tpe if _tpe is not None and _tpe != tpe else tpe 				# determine the real tpe
 
 		# if tpe is not None and not tpe.startswith("m2m:"):
