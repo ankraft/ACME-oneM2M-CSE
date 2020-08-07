@@ -29,6 +29,10 @@ def parseArgs() -> argparse.Namespace:
 	groupRemoteCSE.add_argument('--no-remote-cse', action='store_false', dest='remotecseenabled', default=None, help='disable remote CSE connections')
 
 	groupRemoteCSE = parser.add_mutually_exclusive_group()
+	groupRemoteCSE.add_argument('--statistics', action='store_true', dest='statisticsenabled', default=None, help='enable collecting CSE statics')
+	groupRemoteCSE.add_argument('--no-statistics', action='store_false', dest='statisticsenabled', default=None, help='disable collecting CSE statics')
+
+	groupRemoteCSE = parser.add_mutually_exclusive_group()
 	groupRemoteCSE.add_argument('--validation', action='store_true', dest='validationenabled', default=None, help='enable attributes and arguments validation')
 	groupRemoteCSE.add_argument('--no-validation', action='store_false', dest='validationenabled', default=None, help='disable attributes and arguments validation')
 

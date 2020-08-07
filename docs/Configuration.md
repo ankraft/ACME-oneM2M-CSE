@@ -32,7 +32,7 @@ The following macros are supported in addition to those defined in the sections 
 [\[cse.registration\] - Settings for Self-Registrations](#cse_registration)  
 [\[cse.registrar\] - Settings for Remote CSE Access](#registrar)  
 [\[cse.announcements\] - Settings for Resource Announcements](#announcements)  
-[\[cse.statistics\]Statistic Settings](#statistics)  
+[\[cse.statistics\] - Statistic Settings](#statistics)  
 [\[cse.resource.acp\] - Resource defaults: ACP](#resource_acp)  
 [\[cse.resource.cnt\] - Resource Defaults: CNT](#resource_cnt)  
 [\[cse.webui\] - Web UI Settings](#webui)  
@@ -62,7 +62,6 @@ The following macros are supported in addition to those defined in the sections 
 | enableRemoteCSE          | Enable remote CSE registration and checking.<br/>See also command line arguments [–remote-cse and –no-remote-cse](Running.md).<br/>Default: true                                               | cse.enableRemoteCSE          |
 | enableTransitRequests    | Enable forwarding of requests to a remote CSE.<br/>Default: true                                                                                                                               | cse.enableTransitRequests    |
 | enableValidation         | Enable the validation of attributes and arguments.<br />Default: true                                                                                                                          | cse.enableValidation         |
-| enableAnnouncements      | Enable announcement to remote CSE and allow announced resource registrations.<br />Default: True                                                                                               | cse.enableAnnouncements      |
 | sortDiscoveredResources  | Enable alphabetical sorting of discovery results.<br/>Default: true                                                                                                                            | cse.sortDiscoveredResources  |
 | checkExpirationsInterval | Interval to check for expired resources. 0 means "no checking".<br/>Default: 60 seconds                                                                                                        | cse.checkExpirationsInterval |
 
@@ -137,7 +136,7 @@ The following macros are supported in addition to those defined in the sections 
 
 | Keyword             | Description                                                                                      | Macro Name                            |
 |:--------------------|:-------------------------------------------------------------------------------------------------|:--------------------------------------|
-| enableAnnouncements | Enable announcement to remote CSE and allow announced resource registrations.<br />Default: True | cse.announcements.enableAnnouncements |
+| enable              | Enable announcement to remote CSE and allow announced resource registrations.<br />Default: True | cse.announcements.enable              |
 | checkInterval       | Wait n seconds between tries to to announce resources to registered remote CSE.<br />Default: 10 | cse.announcements.checkInterval       |
 
 
@@ -147,6 +146,7 @@ The following macros are supported in addition to those defined in the sections 
 
 | Keyword        | Description                                                               | Macro Name                    |
 |:---------------|:--------------------------------------------------------------------------|:------------------------------|
+| enable         | Enable or disable collecting CSE statistics.<br />Default: True           | cse.statistics.enable         |
 | writeIntervall | Intervall for saving statistics data to disk in seconds.<br />Default: 60 | cse.statistics.writeIntervall |
 
 

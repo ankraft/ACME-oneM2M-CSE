@@ -36,6 +36,7 @@ class Configuration(object):
 		argsAppsEnabled			= args.appsenabled if args is not None and 'appsenabled' in args else None
 		argsRemoteCSEEnabled	= args.remotecseenabled if args is not None and 'remotecseenabled' in args else None
 		argsValidationEnabled	= args.validationenabled if args is not None and 'validationenabled' in args else None
+		argsStatisticsEnabled	= args.statisticsenabled if args is not None and 'statisticsenabled' in args else None
 
 
 		config = configparser.ConfigParser(	interpolation=configparser.ExtendedInterpolation(),
@@ -109,11 +110,11 @@ class Configuration(object):
 				#	Registrar CSE
 				#
 
-				'cse.registrar.address'				: config.get('cse.registrar', 'address', 					fallback=None),
-				'cse.registrar.root'				: config.get('cse.registrar', 'root', 						fallback=None),
-				'cse.registrar.csi'					: config.get('cse.registrar', 'cseID', 						fallback=None),
-				'cse.registrar.rn'					: config.get('cse.registrar', 'resourceName', 				fallback=None),
-				'cse.registrar.checkInterval'		: config.getint('cse.registrar', 'checkInterval', 			fallback=30),		# Seconds
+				'cse.registrar.address'				: config.get('cse.registrar', 'address', 				fallback=None),
+				'cse.registrar.root'				: config.get('cse.registrar', 'root', 					fallback=None),
+				'cse.registrar.csi'					: config.get('cse.registrar', 'cseID', 					fallback=None),
+				'cse.registrar.rn'					: config.get('cse.registrar', 'resourceName', 			fallback=None),
+				'cse.registrar.checkInterval'		: config.getint('cse.registrar', 'checkInterval', 		fallback=30),		# Seconds
 
 				#
 				#	Registrations
@@ -127,14 +128,15 @@ class Configuration(object):
 				#	Announcements
 				#
 
-				'cse.announcements.enableAnnouncements'	: config.getboolean('cse.announcements', 'enableAnnouncements',	fallback=True),
-				'cse.announcements.checkInterval'	: config.getint('cse.announcements', 'checkInterval',				fallback=10),
+				'cse.announcements.enable'			: config.getboolean('cse.announcements', 'enable',		fallback=True),
+				'cse.announcements.checkInterval'	: config.getint('cse.announcements', 'checkInterval',	fallback=10),
 
 
 				#
 				#	Statistics
 				#
 
+				'cse.statistics.enable'				: config.getboolean('cse.statistics', 'enable', 		fallback=True),
 				'cse.statistics.writeIntervall'		: config.getint('cse.statistics', 'writeIntervall',		fallback=60),		# Seconds
 
 
@@ -247,6 +249,10 @@ class Configuration(object):
 		# Override validation enablement
 		if argsValidationEnabled is not None:
 			Configuration._configuration['cse.enableValidation'] = argsValidationEnabled
+
+		# Override statistics enablement
+		if argsStatisticsEnabled is not None:
+			Configuration._configuration['cse.statistics.enable'] = argsStatisticsEnabled
 
 		# Correct urls
 		Configuration._configuration['cse.registrar.address'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.address'])
