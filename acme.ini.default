@@ -32,6 +32,8 @@ originator=CAdmin
 # See also individual application configuratins in the [app. ...] sections.
 # Default: True
 enableApplications=true
+# Delay after the CSE startup to run internal applications in seconds. Default: 5 seconds
+applicationsStartupDelay=5
 # Enable notifications. Default: True
 enableNotifications=true
 # Enable remote CSE registration and checking. Default: True

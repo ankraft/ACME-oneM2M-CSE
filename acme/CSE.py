@@ -53,8 +53,6 @@ aeCSENode:CSENode				 	= None
 aeStatistics:AEStatistics 		 	= None 
 appsStarted:bool 					= False
 
-aeStartupDelay:int 					= 5	# seconds
-
 
 # TODO make AE registering a bit more generic
 
@@ -193,7 +191,7 @@ def startApps() -> None:
 	if not Configuration.get('cse.enableApplications'):
 		return
 
-	time.sleep(aeStartupDelay)
+	time.sleep(Configuration.get('cse.applicationsStartupDelay'))
 	Logging.log('Starting Apps')
 	appsStarted = True
 
