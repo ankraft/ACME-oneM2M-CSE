@@ -18,8 +18,9 @@ from init import *
 # The following code must be executed before anything else because it influences
 # the collection of skipped tests.
 # It checks whether there actually is a remote CSE.
-_, rsc = RETRIEVE(REMOTEcseURL, REMOTEORIGINATOR)
-noRemote = rsc != C.rcOK
+noRemote = not connectionPossible(REMOTEcseURL)
+# _, rsc = RETRIEVE(REMOTEcseURL, REMOTEORIGINATOR)
+# noRemote = rsc != C.rcOK
 
 class TestRemote_Annc(unittest.TestCase):
 

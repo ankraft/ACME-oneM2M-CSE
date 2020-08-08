@@ -47,19 +47,19 @@ if __name__ == '__main__':
 			console.print('[spring_green3]Successfully executed tests: %d' % testExecuted)
 			if errors > 0:
 				console.print('[red]Errors: %d' % errors)
-	totalProcessDuration = time.process_time() - totalProcessTimeStart
-	totalDuration 		 = time.perf_counter() - totalTimeStart
+	totalProcessTime	= time.process_time() - totalProcessTimeStart
+	totalExecTime 		= time.perf_counter() - totalTimeStart
 
 	# Print Summary
 	console.print()
-	table = Table(show_header=True, header_style="blue", show_footer=True, footer_style='', title='Test Results')
-	table.add_column('Test Suites', footer='Totals')
+	table = Table(show_header=True, header_style="blue", show_footer=True, footer_style='', title='[dim][[[/dim][red][i]ACME[/i][/red][dim]][/dim] - Test Results')
+	table.add_column('Test Suites', footer='Totals', no_wrap=True)
 	table.add_column('Test Count', footer='[spring_green3]%d[/spring_green3]' % totalRunTests if totalErrors == 0 else str(totalRunTests))
 	table.add_column('Skipped', footer='[yellow]%d[/yellow]' % totalSkipped if totalSkipped > 0 else '[spring_green3]0')
 	table.add_column('Errors', footer='[red]%d[/red]' % totalErrors if totalErrors > 0 else '[spring_green3]0')
-	table.add_column('Duration', footer='%.4f' % totalDuration)
-	table.add_column('Process Time', footer='%.4f' % totalProcessDuration)
-	table.add_column('Time Ratio', footer='%.4f' % (totalProcessDuration/totalDuration))
+	table.add_column('Exec Time', footer='%.4f' % totalExecTime)
+	table.add_column('Process Time', footer='%.4f' % totalProcessTime)
+	table.add_column('Time Ratio', footer='%.4f' % (totalProcessTime/totalExecTime))
 	styleDisabled = Style(dim=True)
 	for k,v in results.items():
 		table.add_row(	k, 

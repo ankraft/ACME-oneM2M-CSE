@@ -107,6 +107,13 @@ def sendRequest(method : Callable , url : str, originator : str, ty : int = None
 	return r.json() if len(r.content) > 0 else None, rc
 
 
+def connectionPossible(url):
+	try:
+		requests.get(url, timeout=1)
+		return True
+	except Exception: 
+		return False
+		
 #
 #	Notification Server
 #

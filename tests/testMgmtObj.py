@@ -323,6 +323,299 @@ class TestMgmtObj(unittest.TestCase):
 		self.assertEqual(rsc, C.rcDeleted)
 
 
+	#
+	#	BAT
+	#
+
+	batRN	= 'BAT'
+	batURL	= '%s/%s' % (nodURL, batRN)
+
+
+	def test_createBAT(self):
+		self.assertIsNotNone(TestMgmtObj.cse)
+		jsn =  { 'm2m:bat' : {
+					'mgd' : T.BAT,
+					'rn'  : self.batRN,
+					'dc'  : 'aBat',
+					'btl' : 23,
+					'bts' : 5
+				}}
+
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, jsn)
+		self.assertEqual(rsc, C.rcCreated)
+		self.assertIsNotNone(findXPath(r, 'm2m:bat/ri'))
+
+
+	def test_retrieveBAT(self):
+		r, rsc = RETRIEVE(self.batURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(findXPath(r, 'm2m:bat/mgd'), T.BAT)
+
+
+	def test_attributesBAT(self):
+		r, rsc = RETRIEVE(self.batURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(findXPath(r, 'm2m:bat/ty'), T.MGMTOBJ)
+		self.assertEqual(findXPath(r, 'm2m:bat/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
+		self.assertEqual(findXPath(r, 'm2m:bat/rn'), self.batRN)
+		self.assertIsNotNone(findXPath(r, 'm2m:bat/ct'))
+		self.assertIsNotNone(findXPath(r, 'm2m:bat/lt'))
+		self.assertIsNotNone(findXPath(r, 'm2m:bat/et'))
+		self.assertIsNotNone(findXPath(r, 'm2m:bat/dc'))
+		self.assertEqual(findXPath(r, 'm2m:bat/dc'), 'aBat')
+		self.assertIsNotNone(findXPath(r, 'm2m:bat/btl'))
+		self.assertEqual(findXPath(r, 'm2m:bat/btl'), 23)
+		self.assertIsNotNone(findXPath(r, 'm2m:bat/bts'))
+		self.assertEqual(findXPath(r, 'm2m:bat/bts'), 5)
+
+
+	def test_deleteBAT(self):
+		_, rsc = DELETE(self.batURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcDeleted)
+
+
+	#
+	#	DVI
+	#
+
+	dviRN	= 'DVI'
+	dviURL	= '%s/%s' % (nodURL, dviRN)
+
+
+	def test_createDVI(self):
+		self.assertIsNotNone(TestMgmtObj.cse)
+		jsn =  { 'm2m:dvi' : {
+					'mgd' : T.DVI,
+					'rn' : self.dviRN,
+					'dc' : 'aDvi',
+
+					'dlb' : '|label:value anotherLabel:value',
+					'man' : 'a Manufacturer',
+					'mfdl': 'https://link.to.manufacturer.com/details',
+					'mfd' : '20010511T214200',
+					'mod' : 'Heart of Gold',
+					'smod': 'No.1',
+					'dty' : 'Starship',
+					'dvnm': 'a Device Name',
+					'fwv' : '1.0',
+					'swv' : '1.1',
+					'hwv' : '1.2',
+					'osv' : '1.3',
+					'cnty': 'Earth',
+					'loc' : 'Sol',
+					'syst': '20010511T214200',
+					'spur': 'http://example.com',
+					'purl': 'http://example.com/ui',
+					'ptl' : [ 'http' ]
+				}}
+
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, jsn)
+		self.assertEqual(rsc, C.rcCreated)
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/ri'))
+
+
+	def test_retrieveDVI(self):
+		r, rsc = RETRIEVE(self.dviURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(findXPath(r, 'm2m:dvi/mgd'), T.DVI)
+
+
+	def test_attributesDVI(self):
+		r, rsc = RETRIEVE(self.dviURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(findXPath(r, 'm2m:dvi/ty'), T.MGMTOBJ)
+		self.assertEqual(findXPath(r, 'm2m:dvi/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/rn'), self.dviRN)
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/ct'))
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/lt'))
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/et'))
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/dc'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/dc'), 'aDvi')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/dlb'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/dlb'), '|label:value anotherLabel:value')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/man'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/man'), 'a Manufacturer')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/mfdl'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/mfdl'), 'https://link.to.manufacturer.com/details')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/man'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/man'), 'a Manufacturer')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/mfd'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/mfd'), '20010511T214200')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/mod'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/mod'), 'Heart of Gold')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/smod'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/smod'), 'No.1')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/dty'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/dty'), 'Starship')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/dvnm'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/dvnm'), 'a Device Name')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/fwv'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/fwv'), '1.0')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/swv'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/swv'), '1.1')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/hwv'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/hwv'), '1.2')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/osv'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/osv'), '1.3')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/cnty'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/cnty'), 'Earth')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/loc'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/loc'), 'Sol')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/syst'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/syst'), '20010511T214200')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/spur'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/spur'), 'http://example.com')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/purl'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/purl'), 'http://example.com/ui')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvi/ptl'))
+		self.assertEqual(findXPath(r, 'm2m:dvi/ptl'), [ 'http' ])
+
+
+
+	def test_deleteDVI(self):
+		_, rsc = DELETE(self.dviURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcDeleted)
+
+
+	#
+	#	DVC
+	#
+
+	dvcRN	= 'DVC'
+	dvcURL	= '%s/%s' % (nodURL, dvcRN)
+
+
+	def test_createDVC(self):
+		self.assertIsNotNone(TestMgmtObj.cse)
+		jsn =  { 'm2m:dvc' : {
+					'mgd' : T.DVC,
+					'rn' : self.dvcRN,
+					'dc' : 'aDvc',
+
+					'can': 'aCapabilityName',
+					'att': True,
+					'cas': { 
+						'acn' : 'anAction',
+						'sus' : 1
+			   		},
+					'cus': True
+
+				}}
+
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, jsn)
+		self.assertEqual(rsc, C.rcCreated)
+		self.assertIsNotNone(findXPath(r, 'm2m:dvc/ri'))
+
+
+	def test_retrieveDVC(self):
+		r, rsc = RETRIEVE(self.dvcURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(findXPath(r, 'm2m:dvc/mgd'), T.DVC)
+
+
+	def test_attributesDVC(self):
+		r, rsc = RETRIEVE(self.dvcURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(findXPath(r, 'm2m:dvc/ty'), T.MGMTOBJ)
+		self.assertEqual(findXPath(r, 'm2m:dvc/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
+		self.assertEqual(findXPath(r, 'm2m:dvc/rn'), self.dvcRN)
+		self.assertIsNotNone(findXPath(r, 'm2m:dvc/ct'))
+		self.assertIsNotNone(findXPath(r, 'm2m:dvc/lt'))
+		self.assertIsNotNone(findXPath(r, 'm2m:dvc/et'))
+		self.assertIsNotNone(findXPath(r, 'm2m:dvc/dc'))
+		self.assertEqual(findXPath(r, 'm2m:dvc/dc'), 'aDvc')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvc/can'))
+		self.assertEqual(findXPath(r, 'm2m:dvc/can'), 'aCapabilityName')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvc/att'))
+		self.assertTrue(findXPath(r, 'm2m:dvc/att'))
+		self.assertIsNotNone(findXPath(r, 'm2m:dvc/cas/acn'))
+		self.assertEqual(findXPath(r, 'm2m:dvc/cas/acn'), 'anAction')
+		self.assertIsNotNone(findXPath(r, 'm2m:dvc/cas/sus'))
+		self.assertEqual(findXPath(r, 'm2m:dvc/cas/sus'), 1)
+		self.assertIsNotNone(findXPath(r, 'm2m:dvc/cus'))
+		self.assertTrue(findXPath(r, 'm2m:dvc/cus'))
+		self.assertIsNotNone(findXPath(r, 'm2m:dvc/ena'))
+		self.assertTrue(findXPath(r, 'm2m:dvc/ena'))
+		self.assertIsNotNone(findXPath(r, 'm2m:dvc/dis'))
+		self.assertTrue(findXPath(r, 'm2m:dvc/dis'))
+
+
+	def test_updateDVCEnaTrue(self):
+		self.assertIsNotNone(TestMgmtObj.cse)
+		jsn =  { 'm2m:dvc' : {
+					'ena' : True,
+				}}
+
+		r, rsc = UPDATE(self.dvcURL, ORIGINATOR, jsn)
+		self.assertEqual(rsc, C.rcUpdated)
+		self.assertTrue(findXPath(r, 'm2m:dvc/ena'))
+		self.assertTrue(findXPath(r, 'm2m:dvc/dis'))
+
+
+	def test_updateDVCEnaFalse(self):
+		self.assertIsNotNone(TestMgmtObj.cse)
+		jsn =  { 'm2m:dvc' : {
+					'ena' : False,
+				}}
+
+		r, rsc = UPDATE(self.dvcURL, ORIGINATOR, jsn)
+		self.assertEqual(rsc, C.rcUpdated)
+		self.assertTrue(findXPath(r, 'm2m:dvc/ena'))
+		self.assertTrue(findXPath(r, 'm2m:dvc/dis'))
+
+
+	def test_updateDVCDisTrue(self):
+		self.assertIsNotNone(TestMgmtObj.cse)
+		jsn =  { 'm2m:dvc' : {
+					'dis' : True
+				}}
+
+		r, rsc = UPDATE(self.dvcURL, ORIGINATOR, jsn)
+		self.assertEqual(rsc, C.rcUpdated)
+		self.assertTrue(findXPath(r, 'm2m:dvc/ena'))
+		self.assertTrue(findXPath(r, 'm2m:dvc/dis'))
+
+
+	def test_updateDVCDisFalse(self):
+		self.assertIsNotNone(TestMgmtObj.cse)
+		jsn =  { 'm2m:dvc' : {
+					'dis' : False
+				}}
+
+		r, rsc = UPDATE(self.dvcURL, ORIGINATOR, jsn)
+		self.assertEqual(rsc, C.rcUpdated)
+		self.assertTrue(findXPath(r, 'm2m:dvc/ena'))
+		self.assertTrue(findXPath(r, 'm2m:dvc/dis'))
+
+
+	def test_updateDVCEnaDisTrue(self):
+		self.assertIsNotNone(TestMgmtObj.cse)
+		jsn =  { 'm2m:dvc' : {
+					'ena' : True,
+					'dis' : True
+				}}
+
+		r, rsc = UPDATE(self.dvcURL, ORIGINATOR, jsn)
+		self.assertEqual(rsc, C.rcBadRequest)
+
+
+	def test_updateDVCEnaDisFalse(self):
+		self.assertIsNotNone(TestMgmtObj.cse)
+		jsn =  { 'm2m:dvc' : {
+					'ena' : False,
+					'dis' : False
+				}}
+
+		r, rsc = UPDATE(self.dvcURL, ORIGINATOR, jsn)
+		self.assertEqual(rsc, C.rcUpdated)
+		self.assertTrue(findXPath(r, 'm2m:dvc/ena'))
+		self.assertTrue(findXPath(r, 'm2m:dvc/dis'))
+
+
+	def test_deleteDVC(self):
+		_, rsc = DELETE(self.dvcURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcDeleted)
+
 
 	#
 	#	NYCFC
@@ -377,9 +670,6 @@ class TestMgmtObj(unittest.TestCase):
 		_, rsc = DELETE(self.nycfcURL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcDeleted)
 
-	# BAT			= 1006
-	# DVI 		= 1007
-	# DVC 		= 1008
 	# RBO 		= 1009
 	# EVL 		= 1010
 
@@ -407,6 +697,24 @@ def run():
 	suite.addTest(TestMgmtObj('test_retrieveANDI'))
 	suite.addTest(TestMgmtObj('test_attributesANDI'))
 	suite.addTest(TestMgmtObj('test_deleteANDI'))
+	suite.addTest(TestMgmtObj('test_createBAT'))
+	suite.addTest(TestMgmtObj('test_retrieveBAT'))
+	suite.addTest(TestMgmtObj('test_attributesBAT'))
+	suite.addTest(TestMgmtObj('test_deleteBAT'))
+	suite.addTest(TestMgmtObj('test_createDVI'))
+	suite.addTest(TestMgmtObj('test_retrieveDVI'))
+	suite.addTest(TestMgmtObj('test_attributesDVI'))
+	suite.addTest(TestMgmtObj('test_deleteDVI'))
+	suite.addTest(TestMgmtObj('test_createDVC'))
+	suite.addTest(TestMgmtObj('test_retrieveDVC'))
+	suite.addTest(TestMgmtObj('test_attributesDVC'))
+	suite.addTest(TestMgmtObj('test_updateDVCEnaTrue'))
+	suite.addTest(TestMgmtObj('test_updateDVCEnaFalse'))
+	suite.addTest(TestMgmtObj('test_updateDVCDisTrue'))
+	suite.addTest(TestMgmtObj('test_updateDVCDisFalse'))
+	suite.addTest(TestMgmtObj('test_updateDVCEnaDisTrue'))
+	suite.addTest(TestMgmtObj('test_updateDVCEnaDisFalse'))
+	suite.addTest(TestMgmtObj('test_deleteDVC'))
 	suite.addTest(TestMgmtObj('test_createNYCFC'))
 	suite.addTest(TestMgmtObj('test_retrieveNYCFC'))
 	suite.addTest(TestMgmtObj('test_attributesNYCFC'))
