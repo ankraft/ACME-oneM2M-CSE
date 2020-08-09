@@ -2,7 +2,7 @@
 		"ty" : 1,
 		"ri" : "acpDefault",
 		"rn" : "defaultACP",
-		"pi" : "id-in",
+		"pi" : "${cse.ri}",
 		"pv" : {
 			"acr": {
 				"acor": [ "CDefault", "CAdmin" ],

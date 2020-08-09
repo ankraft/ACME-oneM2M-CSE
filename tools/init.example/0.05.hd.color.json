@@ -3,7 +3,7 @@
 		"ri" : "color1",
 		"rn" : "color",
 		"pi" : "ae1",
-		"acpi" : [ "acpAdmin", "acpDefault" ],
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ],
 		
         "cnd" : "org.onem2m.home.moduleclass.colour",
         "red" : 0,

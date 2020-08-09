@@ -8,6 +8,6 @@
 		},
 		"nu" : [ "http://localhost:9999"],
 		"nct": 1,
-		"acpi" : [ "acpID" ]
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ]
 	}
 }

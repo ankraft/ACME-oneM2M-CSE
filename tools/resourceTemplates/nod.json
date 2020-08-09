@@ -2,9 +2,9 @@
 		"ty" : 14,
 		"ri" : "nodeID",
 		"rn" : "aNode",
-		"pi" : "cseID",
+		"pi" : "${cse.ri}",
 		"ni" : "aNode:anID",
 		"nid": "nideID",
-		"acpi" : [ "acpID" ]
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ]
 	}
 }

@@ -1,10 +1,11 @@
 {	"m2m:dvc" : {
+		"ty" : 13,
 		"mgd" : 1008,
 		"dc" : "a deviceCapability",
 		"ri" : "dvc1",
 		"pi" : "nod1",
 		"rn" : "devicecapability",
-		"acpi" : [ "acpAdmin", "acpDefault" ],
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ],
 		
 		"can": "a capabilityName",
 		"att": true,

@@ -1,8 +1,9 @@
 {	"m2m:cnt" : {
+		"ty" : 3,
 		"ri" : "cnt1",
 		"rn" : "cnt1",
 		"pi" : "ae2Grp",
 		"mni" : 10,
-		"acpi" : [ "acpAdmin", "acpDefault" ],
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ]
 	}
 }

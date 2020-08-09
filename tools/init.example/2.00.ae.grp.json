@@ -1,8 +1,8 @@
 {   "m2m:ae": {
         "ri" : "ae2Grp",
         "api": "AEGRP",
-        "pi": "id-mn",
+		"pi" : "${cse.ri}",
         "rn": "grpAE",
-		"acpi" : [ "acpAdmin", "acpDefault" ]
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ]
     }
 }

@@ -1,10 +1,11 @@
 {	"m2m:evl" : {
+		"ty" : 13,
 		"mgd" : 1010,
 		"dc" : "an eventLogger",
 		"ri" : "evl1",
 		"pi" : "nod1",
 		"rn" : "eventlogger",	
-		"acpi" : [ "acpAdmin", "acpDefault" ],
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ],
 
 		"lgt": 0,
 		"lgd": "some log data",

@@ -2,9 +2,9 @@
 		"ty" : 3,
 		"ri" : "conID",
 		"rn" : "aContainer",
-		"pi" : "aeID",
+		"pi" : "${cse.ri}",
 		"mni" : 10,
 		"mbs" : 10000,
-		"acpi" : [ "acpID" ]
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ]
 	}
 }

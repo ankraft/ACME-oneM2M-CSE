@@ -1,10 +1,13 @@
 {	"m2m:ae" : {
+		"ty" : 2,
 		"ri" : "ae1",
 		"rn" : "ae",
-		"pi" : "id-mn",
+		"pi" : "${cse.ri}",
 		"api" : "appid",
-		"aei" : "Sae1",
+		"aei" : "Cae1",
 		"acpi" : [ "acpAdmin", "acpDefault" ],
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ],
+
 		"poa" : [ "http://localhost:9999"]
 	}
 }

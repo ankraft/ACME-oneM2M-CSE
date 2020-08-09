@@ -1,7 +1,9 @@
 {	"m2m:cin" : {
+		"ty" : 4,
 		"ri" : "cin_2",
 		"pi" : "con1",
 		"con" : "Hello, World",
-		"cnf" : "text/plain:0"
+		"cnf" : "text/plain:0",
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ]
 	}
 }
