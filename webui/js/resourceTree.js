@@ -34,7 +34,20 @@ const types = {
     16 : "RemoteCSE",
     23 : "Subscription",
     28 : "FlexContainer",
-    58 : "FlexContainerInstance"
+    58 : "FlexContainerInstance",
+
+    10001 : "ACPAnnc",
+    10002 : "AEAnnc",
+    10003 : "ContainerAnnc",
+    10004 : "ContentInstanceAnnc",
+    10005 : "CSEBaseAnnc",
+    10009 : "GroupAnnc",
+    10013 : "MgmtObjAnnc",
+    10014 : "NodeAnnc",
+    10016 : "RemoteCSEAnnc",
+    10028 : "FlexContainerAnnc",
+    10058 : "FlexContainerInstanceAnnc" 
+
 }
 
 const shortTypes = {
@@ -57,6 +70,7 @@ const shortTypes = {
     10005 : "CSEAnnc",
     10009 : "GRPAnnc",
     10013 : "MGMTOBJAnnc",
+    10014 : "NODAnnc",
     10016 : "CSRAnnc",
     10028 : "FCNTAnnc",
     10058 : "FCIAnnc" 
@@ -88,6 +102,21 @@ const mgdShortTypes = {
   1009 : "REB",
   1010 : "EVL",
   1023 : "NYCFC"
+}
+
+
+const mgdAnncShortTypes = {
+  1001 : "FWRAnnc",
+  1002 : "SWRAnnc",
+  1003 : "MEMAnnc",
+  1004 : "ANIAnnc",
+  1005 : "ANDIAnnc",
+  1006 : "BATAnnc",
+  1007 : "DVIAnnc",
+  1008 : "DVCAnnc",
+  1009 : "REBAnnc",
+  1010 : "EVLAnnc",
+  1023 : "NYCFCAnnc"
 }
 
 

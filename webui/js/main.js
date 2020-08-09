@@ -62,9 +62,17 @@ function getChildren(node, errorCallback) {
     if (ty == 13) { // for mgmtObj the definition type
       var mgd = node.resource['mgd']
       if (mgd == undefined) {
-        pfx = "MGO"
+        pfx = "MGMTOBJ"
       } else {
         pfx = mgdShortTypes[mgd]
+      }
+    }
+    if (ty == 10013) { // for mgmtObjAnnc the definition type
+      var mgd = node.resource['mgd']
+      if (mgd == undefined) {
+        pfx = "MGMTOBJAnnc"
+      } else {
+        pfx = mgdAnncShortTypes[mgd]
       }
     }
     if (ty == 28) {   // For FlexContainer the tpe
