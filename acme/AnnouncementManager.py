@@ -35,7 +35,7 @@ class AnnouncementManager(object):
 		
 		# TODO self.checkInterval						= Configuration.get('cse.announcements.checkInterval')
 		self.checkInterval			= Configuration.get('cse.announcements.checkInterval')
-		self.announcementsEnabled 	= Configuration.get('cse.announcements.enableAnnouncements')
+		self.announcementsEnabled 	= Configuration.get('cse.announcements.enable')
 
 		self.start()
 		Logging.log('AnnouncementManager initialized')

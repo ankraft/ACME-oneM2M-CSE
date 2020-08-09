@@ -247,11 +247,14 @@ def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 	return None, None, None
 
 
-mgmtObjTPEs = [ T.FWR.tpe(), T.SWR.tpe(), T.MEM.tpe(), T.ANI.tpe(), T.ANDI.tpe(), T.BAT.tpe(), 
-				T.DVI.tpe(), T.DVC.tpe(), T.RBO.tpe(), T.EVL.tpe(),
-			 	'%sA'%T.FWR.tpe(), '%sA'%T.SWR.tpe(), '%sA'%T.MEM.tpe(), '%sA'%T.ANI.tpe(),
-			 	'%sA'%T.ANDI.tpe(), '%sA'%T.BAT.tpe(), '%sA'%T.DVI.tpe(), '%sA'%T.DVC.tpe(),
-			 	'%sA'%T.RBO.tpe(), '%sA'%T.EVL.tpe() ]
+mgmtObjTPEs = 		[	T.FWR.tpe(), T.SWR.tpe(), T.MEM.tpe(), T.ANI.tpe(), T.ANDI.tpe(),
+						T.BAT.tpe(), T.DVI.tpe(), T.DVC.tpe(), T.RBO.tpe(), T.EVL.tpe(),
+			  		]
+
+mgmtObjAnncTPEs = 	[	T.FWRAnnc.tpe(), T.SWRAnnc.tpe(), T.MEMAnnc.tpe(), T.ANIAnnc.tpe(),
+						T.ANDIAnnc.tpe(), T.BATAnnc.tpe(), T.DVIAnnc.tpe(), T.DVCAnnc.tpe(),
+						T.RBOAnnc.tpe(), T.EVLAnnc.tpe(),
+			  		]
 
 def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, int] = None, create: bool = False, isImported: bool = False) -> Tuple[Resource.Resource, str]:
 	""" Create a resource from a JSON structure.
@@ -351,29 +354,32 @@ def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, i
 		return FCIAnnc.FCIAnnc(jsn, pi=pi, create=create), None
 	elif typ == T.FCNTAnnc:
 		return FCNTAnnc.FCNTAnnc(jsn, pi=pi, create=create), None
-	elif typ == T.MGMTOBJAnnc or root in mgmtObjTPEs:
-		if mgd == T.FWR or root == '%sA'%T.FWR.tpe():
+
+	# Announced Management Objects
+	elif typ == T.MGMTOBJAnnc or root in mgmtObjAncTPEs:
+		if mgd == T.FWRAnnc or root == T.FWRAnnc.tpe():
 			return FWRAnnc.FWRAnnc(jsn, pi=pi, create=create), None
-		elif mgd == T.SWR or root == '%sA'%T.SWR.tpe():
+		elif mgd == T.SWRAnnc or root == T.SWRAnnc.tpe():
 			return SWRAnnc.SWRAnnc(jsn, pi=pi, create=create), None
-		elif mgd == T.MEM or root == '%sA'%T.MEM.tpe():
+		elif mgd == T.MEMAnnc or root == T.MEMAnnc.tpe():
 			return MEMAnnc.MEMAnnc(jsn, pi=pi, create=create), None
-		elif mgd == T.ANI or root == '%sA'%T.ANI.tpe():
+		elif mgd == T.ANIAnnc or root == T.ANIAnnc.tpe():
 			return ANIAnnc.ANIAnnc(jsn, pi=pi, create=create), None
-		elif mgd == T.ANDI or root == '%sA'%T.ANDI.tpe():
+		elif mgd == T.ANDIAnnc or root == T.ANDIAnnc.tpe():
 			return ANDIAnnc.ANDIAnnc(jsn, pi=pi, create=create), None
-		elif mgd == T.BAT or root == '%sA'%T.BAT.tpe():
+		elif mgd == T.BATAnnc or root == T.BATAnnc.tpe():
 			return BATAnnc.BATAnnc(jsn, pi=pi, create=create), None
-		elif mgd == T.DVI or root == '%sA'%T.DVI.tpe():
+		elif mgd == T.DVIAnc or root == T.DVIAnnc.tpe():
 			return DVIAnnc.DVIAnnc(jsn, pi=pi, create=create), None
-		elif mgd == T.DVC or root == '%sA'%T.DVC.tpe():
+		elif mgd == T.DVCAnnc or root == T.DVCAnnc.tpe():
 			return DVCAnnc.DVCAnnc(jsn, pi=pi, create=create), None
-		elif mgd == T.RBO or root == '%sA'%T.RBO.tpe():
+		elif mgd == T.RBOAnnc or root == T.RBOAnnc.tpe():
 			return RBOAnnc.RBOAnnc(jsn, pi=pi, create=create), None
-		elif  mgd == T.EVL or root == '%sA'%T.EVL.tpe():
+		elif  mgd == T.EVLAnnc or root == T.EVLAnnc.tpe():
 			return EVLAnnc.EVLAnnc(jsn, pi=pi, create=create), None
-		elif  mgd == T.NYCFC or root == '%sA'%T.NYCFC.tpe():
+		elif  mgd == T.NYCFCAnnc or root == T.NYCFCAnnc.tpe():
 			return NYCFCAnnc.NYCFCAnnc(jsn, pi=pi, create=create), None
+
 	return Unknown.Unknown(jsn, root, pi=pi, create=create), None	# Capture-All resource
 
 
@@ -384,7 +390,11 @@ def pureResource(jsn: dict) -> Tuple[dict, str]:
 	# Try to determine the root identifier 
 	if len(rootKeys) == 1 and (rk := rootKeys[0]) not in excludeFromRoot and re.match('[\w]+:[\w]', rk):
 		return jsn[rootKeys[0]], rootKeys[0]
-	return jsn, None
+	# Otherwise try to get the root identifier from the resource itself (stored as a private attribute)
+	root = None
+	if Resource.Resource._rtype in jsn:
+		root = jsn[Resource.Resource._rtype]
+	return jsn, root
 
 
 def removeCommentsFromJSON(data:str) -> str:

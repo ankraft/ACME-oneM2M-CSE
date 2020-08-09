@@ -64,7 +64,11 @@ class AnnounceableResource(Resource):
 	# Actually create the json
 	def _createAnnouncedJSON(self, policies:Dict[str, List[Any]], remoteCSR:Resource, isCreate:bool=False, remoteCsi:str=None) -> dict:
 		# Stub
-		tpe = T(self.ty).announced().tpe()
+		if self.ty != T.MGMTOBJ:
+			tpe = T(self.ty).announced().tpe()
+		else:
+			tpe = T(self.ty).announcedMgd(self.mgd).tpe()
+
 		localCsi = Configuration.get('cse.csi')
 		jsn = { tpe : {  # with the announced variant of the tpe
 					'et'	: self.et,
@@ -72,8 +76,9 @@ class AnnounceableResource(Resource):
 					# set by parent: ri, pi, ct, lt, et
 			}
 		}
+		Logging.logErr(jsn)
 		# Add more attributes attributes
-		body = jsn[T(self.ty).announced().tpe()]
+		body = jsn[tpe]
 		if (st := self.st) is not None:
 			body['st'] = st
 
