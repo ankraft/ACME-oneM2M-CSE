@@ -76,7 +76,6 @@ class AnnounceableResource(Resource):
 					# set by parent: ri, pi, ct, lt, et
 			}
 		}
-		Logging.logErr(jsn)
 		# Add more attributes attributes
 		body = jsn[tpe]
 		if (st := self.st) is not None:

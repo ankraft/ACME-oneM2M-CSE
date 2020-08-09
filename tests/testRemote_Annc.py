@@ -176,6 +176,7 @@ class TestRemote_Annc(unittest.TestCase):
 # remove whole AA
 # remove from AT
 # remove whole AT
+# rcn=7 (original resource)
 
 
 

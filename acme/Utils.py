@@ -299,9 +299,9 @@ def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, i
 		return CSR.CSR(jsn, pi=pi, create=create), None
 	elif typ == T.NOD or root == T.NOD.tpe():
 		return NOD.NOD(jsn, pi=pi, create=create), None
-	elif typ == T.CNT_LA or root == T.CNT_LA.tpe():
+	elif (typ == T.CNT_LA or root == T.CNT_LA.tpe()) and typ != T.FCNT_LA:
 		return CNT_LA.CNT_LA(jsn, pi=pi, create=create), None
-	elif typ == T.CNT_OL or root == T.CNT_OL.tpe():
+	elif (typ == T.CNT_OL or root == T.CNT_OL.tpe()) and typ != T.FCNT_OL:
 		return CNT_OL.CNT_OL(jsn, pi=pi, create=create), None
 	elif typ == T.FCNT_LA:
 		return FCNT_LA.FCNT_LA(jsn, pi=pi, create=create), None
@@ -356,7 +356,7 @@ def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, i
 		return FCNTAnnc.FCNTAnnc(jsn, pi=pi, create=create), None
 
 	# Announced Management Objects
-	elif typ == T.MGMTOBJAnnc or root in mgmtObjAncTPEs:
+	elif typ == T.MGMTOBJAnnc or root in mgmtObjAnncTPEs:
 		if mgd == T.FWRAnnc or root == T.FWRAnnc.tpe():
 			return FWRAnnc.FWRAnnc(jsn, pi=pi, create=create), None
 		elif mgd == T.SWRAnnc or root == T.SWRAnnc.tpe():
@@ -369,7 +369,7 @@ def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, i
 			return ANDIAnnc.ANDIAnnc(jsn, pi=pi, create=create), None
 		elif mgd == T.BATAnnc or root == T.BATAnnc.tpe():
 			return BATAnnc.BATAnnc(jsn, pi=pi, create=create), None
-		elif mgd == T.DVIAnc or root == T.DVIAnnc.tpe():
+		elif mgd == T.DVIAnnc or root == T.DVIAnnc.tpe():
 			return DVIAnnc.DVIAnnc(jsn, pi=pi, create=create), None
 		elif mgd == T.DVCAnnc or root == T.DVCAnnc.tpe():
 			return DVCAnnc.DVCAnnc(jsn, pi=pi, create=create), None
