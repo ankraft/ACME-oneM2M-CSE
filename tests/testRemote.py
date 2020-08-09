@@ -17,7 +17,8 @@ from init import *
 
 # The following code must be executed before anything else because it influences
 # the collection of skipped tests.
-# It checks whether there actually is a remote CSE.
+# It checks whether there actually is a CSE or remote CSE running.
+noCSE = not connectionPossible(cseURL)
 noRemote = not connectionPossible(REMOTEcseURL)
 # _, rsc = RETRIEVE(REMOTEcseURL, REMOTEORIGINATOR)
 # noRemote = rsc != C.rcOK
@@ -25,7 +26,7 @@ noRemote = not connectionPossible(REMOTEcseURL)
 class TestRemote(unittest.TestCase):
 
 	@classmethod
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No remote CSEBase')
 	def setUpClass(cls):
 		# check connection to CSE's
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)

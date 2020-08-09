@@ -42,7 +42,7 @@ if __name__ == '__main__':
 			if testExecuted > 0:	# don't count none-run tests
 				totalErrors += errors
 				totalRunTests += testExecuted
-				totalSkipped += skipped
+			totalSkipped += skipped
 			results[name] = ( testExecuted, errors, duration, durationProcess, skipped )
 			console.print('[spring_green3]Successfully executed tests: %d' % testExecuted)
 			if errors > 0:

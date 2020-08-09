@@ -14,6 +14,12 @@ from Constants import Constants as C
 from Types import ResourceTypes as T
 from init import *
 
+# The following code must be executed before anything else because it influences
+# the collection of skipped tests.
+# It checks whether there actually is a CSE running.
+noCSE = not connectionPossible(cseURL)
+
+
 nodeID  = 'urn:sn:1234'
 nod2RN 	= 'test2NOD'
 nod2URL = '%s/%s' % (cseURL, nod2RN)
@@ -22,18 +28,21 @@ nod2URL = '%s/%s' % (cseURL, nod2RN)
 class TestNOD(unittest.TestCase):
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
 		
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
 		DELETE(nod2URL, ORIGINATOR)	# Just delete the Node 2 and everything below it. Ignore whether it exists or not
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createNOD(self):
 		self.assertIsNotNone(TestNOD.cse)
 		jsn = 	{ 'm2m:nod' : { 
@@ -46,16 +55,19 @@ class TestNOD(unittest.TestCase):
 		TestNOD.nodeRI = findXPath(r, 'm2m:nod/ri')
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveNOD(self):
 		_, rsc = RETRIEVE(nodURL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcOK)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveNODWithWrongOriginator(self):
 		_, rsc = RETRIEVE(nodURL, 'Cwrong')
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesNOD(self):
 		r, rsc = RETRIEVE(nodURL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcOK)
@@ -69,6 +81,7 @@ class TestNOD(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:nod/ni'), nodeID)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateNODLbl(self):
 		jsn = 	{ 'm2m:nod' : {
 					'lbl' : [ 'aTag' ]
@@ -83,6 +96,7 @@ class TestNOD(unittest.TestCase):
 		self.assertTrue('aTag' in findXPath(r, 'm2m:nod/lbl'))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateNODUnknownAttribute(self):
 		jsn = 	{ 'm2m:nod' : {
 					'unknown' : 'unknown'
@@ -91,6 +105,7 @@ class TestNOD(unittest.TestCase):
 		self.assertEqual(rsc, C.rcBadRequest)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEForNOD(self):
 		jsn = 	{ 'm2m:ae' : {
 			'rn'	: aeRN, 
@@ -114,6 +129,7 @@ class TestNOD(unittest.TestCase):
 		self.assertIn(findXPath(TestNOD.ae, 'm2m:ae/ri'), findXPath(nod, 'm2m:nod/hael'))	# ae.ri in nod.hael?
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteAEForNOD(self):
 		_, rsc = DELETE(aeURL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcDeleted)
@@ -123,6 +139,7 @@ class TestNOD(unittest.TestCase):
 		self.assertIsNone(findXPath(nod, 'm2m:nod/hael'))	# should have been the only AE, so the attribute should now be removed
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_moveAEToNOD2(self):
 		# create AE again
 		self.test_createAEForNOD()
@@ -160,6 +177,7 @@ class TestNOD(unittest.TestCase):
 		self.assertIn(TestNOD.aeRI, findXPath(nod2, 'm2m:nod/hael'))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteNOD2(self):
 		_, rsc = DELETE(nod2URL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcDeleted)
@@ -170,6 +188,7 @@ class TestNOD(unittest.TestCase):
 		self.assertIsNone(findXPath(ae, 'm2m:ae/nl'))	# should have been the only AE, so the attribute should now be removed
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteNOD(self):
 		_, rsc = DELETE(nodURL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcDeleted)

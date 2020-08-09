@@ -38,6 +38,7 @@ class TestRemote_Annc(unittest.TestCase):
 	@unittest.skipIf(noRemote, 'No remote CSEBase')
 	def tearDownClass(cls):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
 
 
 	# Create an AE with AT, but no AA
@@ -69,7 +70,7 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Retrieve the announced AE with AT, but no AA
 	@unittest.skipIf(noRemote, 'No remote CSEBase')
-	def test_retrieveAnnounceAEwithATwithoutAA(self):
+	def test_retrieveAnnouncedAEwithATwithoutAA(self):
 		if TestRemote_Annc.remoteAeRI is None:
 			self.skipTest('remote AE.ri not found')
 		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteAeRI), CSEID)
@@ -93,7 +94,7 @@ class TestRemote_Annc(unittest.TestCase):
 			self.skipTest('remote AE.ri not found')
 		_, rsc = DELETE(aeURL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcDeleted)
-		# try to retrieve the announced AE. Should be not found
+		# try to retrieve the announced AE. Should not be found
 		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteAeRI), CSEID)
 		self.assertEqual(rsc, C.rcNotFound)
 		TestRemote_Annc.ae = None
@@ -135,7 +136,7 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Retrieve the announced AE with AT and AA
 	@unittest.skipIf(noRemote, 'No remote CSEBase')
-	def test_retrieveAnnounceAEwithATwithAA(self):
+	def test_retrieveAnnouncedAEwithATwithAA(self):
 		if TestRemote_Annc.remoteAeRI is None:
 			self.skipTest('remote AE.ri not found')
 		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteAeRI), CSEID)
@@ -157,7 +158,7 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Update an non-AA AE with AA
 	@unittest.skipIf(noRemote, 'No remote CSEBase')
-	def test_addAAtoAnnouncedAEwithoutAA(self):
+	def test_addAAtoAnnounceAEwithoutAA(self):
 		jsn = 	{ 'm2m:ae' : {
 				 	'lbl':	[ 'aLabel'],
 				 	'aa': 	[ 'lbl' ]
@@ -177,24 +178,97 @@ class TestRemote_Annc(unittest.TestCase):
 # remove whole AT
 
 
+
+	# Create a Node with AT
+	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	def test_createAnnounceNode(self):
+		jsn = 	{ 'm2m:nod' : {
+					'rn': 	nodRN, 
+					'ni': 	'aNI', 
+				 	'at': 	[ REMOTECSEID ]
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, jsn)
+		self.assertEqual(rsc, C.rcCreated)
+		self.assertIsNotNone(findXPath(r, 'm2m:nod/at'))
+		self.assertIsInstance(findXPath(r, 'm2m:nod/at'), list)
+		self.assertEqual(len(findXPath(r, 'm2m:nod/at')), 2)
+		self.assertIn(REMOTECSEID, findXPath(r, 'm2m:nod/at'))
+
+		TestRemote_Annc.remoteNodRI = None
+		for x in findXPath(r, 'm2m:nod/at'):
+			if x == REMOTECSEID:
+				continue
+			TestRemote_Annc.remoteNodRI = x
+		self.assertIsNotNone(self.remoteNodRI)
+		self.assertIsNone(findXPath(r, 'm2m:Nod/aa'))
+		TestRemote_Annc.node = r
+
+
+	# Retrieve the announced Node with AT
+	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	def test_retrieveAnnouncedNode(self):
+		if TestRemote_Annc.remoteNodRI is None:
+			self.skipTest('remote Node.ri not found')
+		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteNodRI), CSEID)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertIsNotNone(findXPath(r, 'm2m:nodA'))
+		self.assertIsNotNone(findXPath(r, 'm2m:nodA/ty'))
+		self.assertEqual(findXPath(r, 'm2m:nodA/ty'), T.NODAnnc)
+		self.assertIsNotNone(findXPath(r, 'm2m:nodA/ct'))
+		self.assertIsNotNone(findXPath(r, 'm2m:nodA/lt'))
+		self.assertIsNotNone(findXPath(r, 'm2m:nodA/et'))
+		self.assertIsNotNone(findXPath(r, 'm2m:nodA/pi'))
+		self.assertTrue(CSEID.endswith(findXPath(r, 'm2m:nodA/pi')))
+		self.assertIsNotNone(findXPath(r, 'm2m:nodA/lnk'))
+		self.assertTrue(findXPath(r, 'm2m:nodA/lnk').endswith( findXPath(TestRemote_Annc.node, 'm2m:nod/ri') ))
+
+	# Create a mgmtObj under the node
+	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	def test_announceMgmtobj(self):
+		jsn = 	{ 'm2m:bat' : {
+					'mgd' : T.BAT,
+					'dc'  : 'battery',
+					'rn'  : 'battery',
+					'btl' : 23,
+					'bts' : 1,
+				 	'at': 	[ REMOTECSEID ]
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, jsn)
+		self.assertEqual(rsc, C.rcCreated)
+		self.assertIsNotNone(findXPath(r, 'm2m:bat/at'))
+		self.assertIsInstance(findXPath(r, 'm2m:bat/at'), list)
+		self.assertEqual(len(findXPath(r, 'm2m:bat/at')), 2)
+		self.assertIn(REMOTECSEID, findXPath(r, 'm2m:bat/at'))
+
+# TODO retrieve mgmtAnnc
+# delete node and test annc
+
+
+
 def run():
 	suite = unittest.TestSuite()
 
 	# create an announced AE, but no extra attributes
 	suite.addTest(TestRemote_Annc('test_createAnnounceAEwithATwithoutAA'))
-	suite.addTest(TestRemote_Annc('test_retrieveAnnounceAEwithATwithoutAA'))
+	suite.addTest(TestRemote_Annc('test_retrieveAnnouncedAEwithATwithoutAA'))
 	suite.addTest(TestRemote_Annc('test_deleteAnnounceAE'))
 
 	# create an announced AE, including announced attribute
 	suite.addTest(TestRemote_Annc('test_createAnnounceAEwithATwithAA'))
-	suite.addTest(TestRemote_Annc('test_retrieveAnnounceAEwithATwithAA'))
+	suite.addTest(TestRemote_Annc('test_retrieveAnnouncedAEwithATwithAA'))
 	suite.addTest(TestRemote_Annc('test_deleteAnnounceAE'))
 
 	# create an announced AE, add extra announced attribute later
-	suite.addTest(TestRemote_Annc('test_createAnnounceAEwithATwithoutAA'))
-	suite.addTest(TestRemote_Annc('test_addAAtoAnnouncedAEwithoutAA'))
-	suite.addTest(TestRemote_Annc('test_retrieveAnnounceAEwithATwithAA'))
-	suite.addTest(TestRemote_Annc('test_deleteAnnounceAE'))
+	# suite.addTest(TestRemote_Annc('test_createAnnounceAEwithATwithoutAA'))
+	# suite.addTest(TestRemote_Annc('test_addAAtoAnnounceAEwithoutAA'))
+	# suite.addTest(TestRemote_Annc('test_retrieveAnnounceAEwithATwithAA'))
+	# suite.addTest(TestRemote_Annc('test_deleteAnnounceAE'))
+
+	# create an announced Node
+	suite.addTest(TestRemote_Annc('test_createAnnounceNode'))
+	suite.addTest(TestRemote_Annc('test_retrieveAnnouncedNode'))
+	suite.addTest(TestRemote_Annc('test_announceMgmtobj'))
+
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)

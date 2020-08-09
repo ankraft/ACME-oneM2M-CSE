@@ -38,6 +38,7 @@ testVerbosity 		= 2		# 0, 1, 2
 
 aeRN	= 'testAE'
 acpRN	= 'testACP'
+batRN	= 'testBAT'
 cntRN	= 'testCNT'
 cinRN	= 'testCIN'
 grpRN	= 'testGRP'

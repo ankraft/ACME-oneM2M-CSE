@@ -14,10 +14,15 @@ from Constants import Constants as C
 from Types import ResourceTypes as T
 from init import *
 
+# The following code must be executed before anything else because it influences
+# the collection of skipped tests.
+# It checks whether there actually is a CSE running.
+noCSE = not connectionPossible(cseURL)
 
 class TestSUB(unittest.TestCase):
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		# Start notification server
 		startNotificationServer()
@@ -53,15 +58,14 @@ class TestSUB(unittest.TestCase):
 		cls.cntRI = findXPath(cls.cnt, 'm2m:cnt/ri')
 
 
-
-
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		stopNotificationServer()
 
-		
-
+	
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUB(self):
 		self.assertIsNotNone(TestSUB.cse)
 		self.assertIsNotNone(TestSUB.ae)
@@ -81,16 +85,19 @@ class TestSUB(unittest.TestCase):
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveSUB(self):
 		_, rsc = RETRIEVE(subURL, TestSUB.originator)
 		self.assertEqual(rsc, C.rcOK)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveSUBWithWrongOriginator(self):
 		_, rsc = RETRIEVE(subURL, 'Cwrong')
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesSUB(self):
 		r, rsc = RETRIEVE(subURL, TestSUB.originator)
 		self.assertEqual(rsc, C.rcOK)
@@ -113,6 +120,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:sub/nct'), 1)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBWrong(self):
 		jsn = 	{ 'm2m:sub' : { 
 					'rn' : '%sWrong' % subRN,
@@ -126,6 +134,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(rsc, C.rcSubscriptionVerificationInitiationFailed)
 		
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateSUB(self):
 		jsn = 	{ 'm2m:sub' : { 
 					'exc': 5
@@ -136,6 +145,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:sub/exc'), 5)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNT(self):
 		jsn = 	{ 'm2m:cnt' : {
 					'lbl' : [ 'aTag' ],
@@ -162,6 +172,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'), cntRN)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addCIN2CNT(self):
 		jsn = 	{ 'm2m:cin' : {
 					'cnf' : 'a',
@@ -178,6 +189,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cin/con'), 'aValue')
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_removeCNT(self):
 		r, rsc = DELETE(cntURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		self.assertEqual(rsc, C.rcDeleted)
@@ -185,6 +197,7 @@ class TestSUB(unittest.TestCase):
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sud'))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addCNTAgain(self):
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
@@ -194,16 +207,19 @@ class TestSUB(unittest.TestCase):
 		TestSUB.cntRI = findXPath(TestSUB.cnt, 'm2m:cnt/ri')
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteSUBByUnknownOriginator(self):
 		_, rsc = DELETE(subURL, 'Cwrong')
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteSUBByAssignedOriginator(self):
 		_, rsc = DELETE(subURL, TestSUB.originator)
 		self.assertEqual(rsc, C.rcDeleted)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBModifedAttributes(self):
 		jsn = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
@@ -222,6 +238,7 @@ class TestSUB(unittest.TestCase):
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBModifedAttributes(self):
 		jsn = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
@@ -240,6 +257,7 @@ class TestSUB(unittest.TestCase):
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTModifiedAttributes(self):
 		jsn = 	{ 'm2m:cnt' : {
 					'lbl' : [ 'bTag' ]
@@ -253,6 +271,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/ty'))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTSameModifiedAttributes(self):
 		jsn = 	{ 'm2m:cnt' : {
 					'lbl' : [ 'bTag' ]
@@ -266,6 +285,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/ty'))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBRI(self):
 		jsn = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
@@ -284,6 +304,7 @@ class TestSUB(unittest.TestCase):
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTRI(self):
 		jsn = 	{ 'm2m:cnt' : {
 					'lbl' : [ 'aTag' ]

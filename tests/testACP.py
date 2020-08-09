@@ -13,22 +13,30 @@ from Constants import Constants as C
 from Types import ResourceTypes as T
 from init import *
 
+# The following code must be executed before anything else because it influences
+# the collection of skipped tests.
+# It checks whether there actually is a CSE running.
+noCSE = not connectionPossible(cseURL)
+
 class TestACP(unittest.TestCase):
 
 	acpORIGINATOR = 'testOriginator'
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
 
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls):
 		DELETE(acpURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createACP(self):
 		jsn = 	{ "m2m:acp": {
 					"rn": acpRN,
@@ -48,16 +56,19 @@ class TestACP(unittest.TestCase):
 		self.assertEqual(rsc, C.rcCreated)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveACP(self):
 		_, rsc = RETRIEVE(acpURL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcOK)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveACPwrongOriginator(self):
 		_, rsc = RETRIEVE(acpURL, 'wrongoriginator')
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesACP(self):
 		r, rsc = RETRIEVE(acpURL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcOK)
@@ -95,6 +106,7 @@ class TestACP(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:acp/pvs/acr/{0}/acop'), 63)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateACP(self):
 		jsn = 	{ 'm2m:acp' : {
 					'lbl' : [ 'aTag' ]
@@ -106,6 +118,7 @@ class TestACP(unittest.TestCase):
 		self.assertIn('aTag', findXPath(r, 'm2m:acp/lbl'))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateACPwrongOriginator(self):
 		jsn = 	{ 'm2m:acp' : {
 					'lbl' : [ 'bTag' ]
@@ -114,6 +127,7 @@ class TestACP(unittest.TestCase):
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addACPtoAE(self):
 		self.assertIsNotNone(TestACP.acp)
 		jsn = 	{ 'm2m:ae' : {
@@ -131,6 +145,7 @@ class TestACP(unittest.TestCase):
 		self.assertIn(findXPath(TestACP.acp, 'm2m:acp/ri'), findXPath(TestACP.ae, 'm2m:ae/acpi'))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_removeACPfromAE(self):
 		self.assertIsNotNone(TestACP.acp)
 		self.assertIsNotNone(TestACP.ae)
@@ -145,11 +160,13 @@ class TestACP(unittest.TestCase):
 		self.assertEqual(rsc, C.rcUpdated)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteACPwrongOriginator(self):
 		r, rsc = DELETE(acpURL, 'wrong')
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteACP(self):
 		r, rsc = DELETE(acpURL, self.acpORIGINATOR)
 		self.assertEqual(rsc, C.rcDeleted)

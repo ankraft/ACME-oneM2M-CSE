@@ -14,11 +14,18 @@ from Constants import Constants as C
 from Types import ResourceTypes as T
 from init import *
 
+# The following code must be executed before anything else because it influences
+# the collection of skipped tests.
+# It checks whether there actually is a CSE running.
+noCSE = not connectionPossible(cseURL)
+
+
 CND = 'org.onem2m.home.moduleclass.temperature'
 
 class TestFCNT_FCI(unittest.TestCase):
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
@@ -35,10 +42,12 @@ class TestFCNT_FCI(unittest.TestCase):
 
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createFCNT(self):
 		self.assertIsNotNone(TestFCNT_FCI.cse)
 		self.assertIsNotNone(TestFCNT_FCI.ae)
@@ -56,6 +65,7 @@ class TestFCNT_FCI(unittest.TestCase):
 		self.assertEqual(rsc, C.rcCreated)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesFCNT(self):
 		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)
 		self.assertEqual(rsc, C.rcOK)
@@ -81,6 +91,7 @@ class TestFCNT_FCI(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'hd:tempe/cni'))
 		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 1)
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNT(self):
 		jsn = 	{ 'hd:tempe' : {
 					'tarTe':   5.0,
@@ -98,6 +109,7 @@ class TestFCNT_FCI(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 2)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveFCNTLaOl(self):
 		r, rsc = RETRIEVE('%s/la' % fcntURL, TestFCNT_FCI.originator)
 		self.assertEqual(rsc, C.rcOK)
@@ -112,6 +124,7 @@ class TestFCNT_FCI(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 23.0)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNTMni(self):
 		jsn = 	{ 'hd:tempe' : {
 					'mni':   1,
@@ -136,6 +149,7 @@ class TestFCNT_FCI(unittest.TestCase):
 		self.assertEqual(findXPath(rla, 'hd:tempe/ri'), findXPath(rol, 'hd:tempe/ri'))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteFCNT(self):
 		_, rsc = DELETE(fcntURL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcDeleted)

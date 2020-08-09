@@ -14,11 +14,18 @@ from Constants import Constants as C
 from Types import ResourceTypes as T
 from init import *
 
+# The following code must be executed before anything else because it influences
+# the collection of skipped tests.
+# It checks whether there actually is a CSE running.
+noCSE = not connectionPossible(cseURL)
+
+
 CND = 'org.onem2m.home.moduleclass.temperature'
 
 class TestFCNT(unittest.TestCase):
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == C.rcOK, 'cannot retrieve CSEBase'
@@ -35,10 +42,12 @@ class TestFCNT(unittest.TestCase):
 
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createFCNT(self):
 		self.assertIsNotNone(TestFCNT.cse)
 		self.assertIsNotNone(TestFCNT.ae)
@@ -55,16 +64,19 @@ class TestFCNT(unittest.TestCase):
 		self.assertEqual(rsc, C.rcCreated)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveFCNT(self):
 		_, rsc = RETRIEVE(fcntURL, TestFCNT.originator)
 		self.assertEqual(rsc, C.rcOK)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveFCNTWithWrongOriginator(self):
 		_, rsc = RETRIEVE(fcntURL, 'Cwrong')
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesFCNT(self):
 		r, rsc = RETRIEVE(fcntURL, TestFCNT.originator)
 		self.assertEqual(rsc, C.rcOK)
@@ -86,6 +98,7 @@ class TestFCNT(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'hd:tempe/st'), 0)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNT(self):
 		jsn = 	{ 'hd:tempe' : {
 					'tarTe':	5.0
@@ -102,6 +115,7 @@ class TestFCNT(unittest.TestCase):
 		self.assertGreater(findXPath(r, 'hd:tempe/lt'), findXPath(r, 'hd:tempe/ct'))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNTwithCnd(self):
 		jsn = 	{ 'hd:tempe' : {
 					'cnd' : CND,
@@ -110,6 +124,7 @@ class TestFCNT(unittest.TestCase):
 		self.assertEqual(rsc, C.rcBadRequest)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNTwithWrongType(self):
 		jsn = 	{ 'hd:tempe' : {
 					'tarTe':	'5.0'
@@ -117,6 +132,7 @@ class TestFCNT(unittest.TestCase):
 		r, rsc = UPDATE(fcntURL, TestFCNT.originator, jsn)
 		self.assertEqual(rsc, C.rcBadRequest)
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNTwithUnkownAttribute(self):
 		jsn = 	{ 'hd:tempe' : {
 					'wrong':	'aValue'
@@ -125,6 +141,7 @@ class TestFCNT(unittest.TestCase):
 		self.assertEqual(rsc, C.rcBadRequest)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createFCNTUnknown(self):
 		jsn = 	{ 'hd:unknown' : { 
 					'rn'	: 'unknown',
@@ -135,6 +152,7 @@ class TestFCNT(unittest.TestCase):
 		self.assertEqual(rsc, C.rcBadRequest)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTUnderFCNT(self):
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN
@@ -143,11 +161,13 @@ class TestFCNT(unittest.TestCase):
 		self.assertEqual(rsc, C.rcCreated)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTUnderFCNT(self):
 		_, rsc = DELETE('%s/%s' % (fcntURL, cntRN), ORIGINATOR)
 		self.assertEqual(rsc, C.rcDeleted)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createFCNTUnderFCNT(self):
 		jsn = 	{ 'hd:tempe' : { 
 					'cnd' 	: CND, 
@@ -157,11 +177,13 @@ class TestFCNT(unittest.TestCase):
 		self.assertEqual(rsc, C.rcCreated)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteFCNTUnderFCNT(self):
 		_, rsc = DELETE('%s/%s' % (fcntURL, fcntRN), ORIGINATOR)
 		self.assertEqual(rsc, C.rcDeleted)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteFCNT(self):
 		_, rsc = DELETE(fcntURL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcDeleted)

@@ -13,10 +13,16 @@ from Constants import Constants as C
 from Types import ResourceTypes as T
 from init import *
 
+# The following code must be executed before anything else because it influences
+# the collection of skipped tests.
+# It checks whether there actually is a CSE running.
+noCSE = not connectionPossible(cseURL)
+
 
 class TestCNT_CIN(unittest.TestCase):
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
@@ -40,10 +46,12 @@ class TestCNT_CIN(unittest.TestCase):
 
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addCIN(self):
 		self.assertIsNotNone(TestCNT_CIN.cse)
 		self.assertIsNotNone(TestCNT_CIN.ae)
@@ -66,6 +74,7 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:cnt/cni'), 1)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addMoreCIN(self):
 		jsn = 	{ 'm2m:cin' : {
 					'cnf' : 'a',
@@ -111,6 +120,7 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:cnt/cni'), 3)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_rerieveCNTLa(self):
 		r, rsc = RETRIEVE('%s/la' % cntURL, TestCNT_CIN.originator)
 		self.assertEqual(rsc, C.rcOK)
@@ -119,6 +129,7 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'dValue')
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_rerieveCNTOl(self):
 		r, rsc = RETRIEVE('%s/ol' % cntURL, TestCNT_CIN.originator)
 		self.assertEqual(rsc, C.rcOK)
@@ -127,6 +138,7 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'bValue')
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_changeCNTMni(self):
 		jsn = 	{ 'm2m:cnt' : {
 					'mni' : 1
