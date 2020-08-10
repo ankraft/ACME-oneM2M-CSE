@@ -1,10 +1,11 @@
 {	"m2m:andi" : {
+		"ty" : 13,
 		"mgd" : 1005,
 		"dc" : "an areaNwkDeviceInfo",
 		"ri" : "andi1",
 		"pi" : "nod1",
 		"rn" : "areaNwkDeviceInfo",
-		"acpi" : [ "acpAdmin", "acpDefault" ],
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ],
 		
 		"dvd" : "aDeviceID",
 		"dvt" : "aDeviceType",

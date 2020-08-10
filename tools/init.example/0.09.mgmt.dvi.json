@@ -1,10 +1,11 @@
 {	"m2m:dvi" : {
+		"ty" : 13,
 		"mgd" : 1007,
 		"dc" : "a deviceInfo",
 		"ri" : "dvi1",
 		"pi" : "nod1",
 		"rn" : "deviceinfo",
-		"acpi" : [ "acpAdmin", "acpDefault" ],
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ],
 		
 		"dlb" : "|label:value anotherLabel:value",
 		"man" : "a Manufacturer",

@@ -2,12 +2,11 @@
 		"ty" : 2,
 		"ri" : "aeID",
 		"rn" : "anAE",
-		"pi" : "cseID",
+		"pi" : "${cse.ri}",
 		"api" : "appid",
 		"aei" : "Sae",
-		"acpi" : [ "acpID" ],
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ],
 		"poa" : [ "http://localhost:9999"],
 		"nl" : "aNode"
-
 	}
 }
