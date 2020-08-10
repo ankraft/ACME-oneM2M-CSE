@@ -94,13 +94,13 @@ class ResourceTypes(IntEnum):
 		return ResourceTypes._names[self.value] 				#  type: ignore
 
 	def announced(self) -> ResourceTypes:
-		if self.value in ResourceTypes._announcedMapping:		#  type: ignore
-			return ResourceTypes._announcedMapping[self.value] 	#  type: ignore
+		if self.value in ResourceTypes._announcedMappings:		#  type: ignore
+			return ResourceTypes._announcedMappings[self.value] 	#  type: ignore
 		return ResourceTypes.UNKNOWN
 
 	def announcedMgd(self, mgd:int) -> ResourceTypes:
-		if mgd in ResourceTypes._announcedMapping:		#  type: ignore
-			return ResourceTypes._announcedMapping[mgd] 	#  type: ignore
+		if mgd in ResourceTypes._announcedMappingsMGD:		#  type: ignore
+			return ResourceTypes._announcedMappingsMGD[mgd] 	#  type: ignore
 		return ResourceTypes.UNKNOWN
 
 
@@ -109,7 +109,7 @@ class ResourceTypes(IntEnum):
 
 
 
-ResourceTypes._announcedMapping = {								#  type: ignore
+ResourceTypes._announcedMappings = {							#  type: ignore
 	ResourceTypes.ACP 		: ResourceTypes.ACPAnnc,
 	ResourceTypes.AE 		: ResourceTypes.AEAnnc,
 	ResourceTypes.CNT		: ResourceTypes.CNTAnnc,
@@ -120,19 +120,21 @@ ResourceTypes._announcedMapping = {								#  type: ignore
 	ResourceTypes.CSR		: ResourceTypes.CSRAnnc,
 	ResourceTypes.FCNT		: ResourceTypes.FCNTAnnc,
 	ResourceTypes.FCI		: ResourceTypes.FCIAnnc,
+}
 
-	ResourceTypes.FWR	: ResourceTypes.FWRAnnc,
-	ResourceTypes.SWR	: ResourceTypes.SWRAnnc,
-	ResourceTypes.MEM	: ResourceTypes.MEMAnnc,
-	ResourceTypes.ANI	: ResourceTypes.ANIAnnc,
-	ResourceTypes.ANDI	: ResourceTypes.ANDIAnnc,
-	ResourceTypes.BAT	: ResourceTypes.BATAnnc,
-	ResourceTypes.DVI	: ResourceTypes.DVIAnnc,
-	ResourceTypes.DVC	: ResourceTypes.DVCAnnc,
-	ResourceTypes.RBO	: ResourceTypes.RBOAnnc,
-	ResourceTypes.EVL	: ResourceTypes.EVLAnnc,
-	ResourceTypes.NYCFC	: ResourceTypes.NYCFCAnnc,
 
+ResourceTypes._announcedMappingsMGD = {							#  type: ignore
+	ResourceTypes.FWR		: ResourceTypes.FWRAnnc,
+	ResourceTypes.SWR		: ResourceTypes.SWRAnnc,
+	ResourceTypes.MEM		: ResourceTypes.MEMAnnc,
+	ResourceTypes.ANI		: ResourceTypes.ANIAnnc,
+	ResourceTypes.ANDI		: ResourceTypes.ANDIAnnc,
+	ResourceTypes.BAT		: ResourceTypes.BATAnnc,
+	ResourceTypes.DVI		: ResourceTypes.DVIAnnc,
+	ResourceTypes.DVC		: ResourceTypes.DVCAnnc,
+	ResourceTypes.RBO		: ResourceTypes.RBOAnnc,
+	ResourceTypes.EVL		: ResourceTypes.EVLAnnc,
+	ResourceTypes.NYCFC		: ResourceTypes.NYCFCAnnc,
 }
 
 ResourceTypes._announcedSet = [									#  type: ignore

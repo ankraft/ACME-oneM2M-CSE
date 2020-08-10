@@ -57,6 +57,7 @@ fcntURL	= '%s/%s' % (aeURL, fcntRN)
 grpURL 	= '%s/%s' % (aeURL, grpRN)
 nodURL 	= '%s/%s' % (cseURL, nodRN)
 subURL 	= '%s/%s' % (cntURL, subRN)
+batURL 	= '%s/%s' % (nodURL, batRN)
 
 REMOTEURL		= '%s%s' % (REMOTESERVER, REMOTEROOTPATH)
 REMOTEcseURL 	= '%s%s' % (REMOTEURL, REMOTECSERN)

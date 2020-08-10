@@ -18,7 +18,7 @@ import Utils
 
 # TODO add wildcard, e.g. for custom attributes
 
-# predefined policies
+# predefined policiespolicies
 # type, cardinality, optional.create, optional.update, optional.discovery, announcement
 attributePolicies = {
 	'ty'	: [ BT.positiveInteger,	CAR.car1,   RO.NP, 	RO.NP, RO.O, AN.NA ],
@@ -494,28 +494,5 @@ class Validator(object):
 			return True, None
 
 		return False, 'unknown type'
-
-
-	#########################################################################
-	#
-	#	Policy support
-	#
-
-	def getAnnouncedAttributes(self, resource:Resource, policies:Dict[str, List[Any]]) -> Tuple[List[str], List[str]]:
-		"""	Return a list of mandatory and optional announced attributes. 
-			The function only returns those attributes that are also present in the resource!
-		"""
-		mandatory = []
-		optional = []
-		aa = resource.aa
-		for attr,v in policies.items():
-			if resource.hasAttribute(attr):
-				if v[5] == AN.MA:
-					mandatory.append(attr)
-				elif aa is not None and v[5] == AN.OA and attr in aa and resource.hasAttribute(attr):	# only add optional attributes that are also in aa
-					optional.append(attr)
-		return mandatory, optional
-
-
 
 

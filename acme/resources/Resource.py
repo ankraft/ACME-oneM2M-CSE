@@ -32,9 +32,10 @@ class Resource(object):
 	_announcedTo 		= '__announcedTo__'			# List
 	_isInstantiated		= '__isInstantiated__'
 	_originator			= '__originator__'
+	_modified			= '__modified__'
 
 	# ATTN: There is a similar definition in FCNT! Don't Forget to add attributes there as well
-	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator, _announcedTo ]
+	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator, _announcedTo, _modified ]
 
 	def __init__(self, ty:Union[T, int], jsn:dict = None, pi:str = None, tpe:str = None, create:bool = False, inheritACP:bool = False, readOnly:bool = False, rn:str = None, attributePolicies:dict = None, isVirtual:bool = False) -> None:
 		self.tpe = tpe
@@ -98,6 +99,7 @@ class Resource(object):
 			#
 
 			# Remove empty / null attributes from json
+			# But see also the comment in update() !!!
 			self.json = {k: v for (k, v) in self.json.items() if v is not None }
 
 			# determine and add the srn
@@ -209,14 +211,20 @@ class Resource(object):
 			self['lt'] = Utils.getResourceDate()
 
 		# Remove empty / null attributes from json
-		self.json = {k: v for (k, v) in self.json.items() if v is not None }
+		# 2020-08-10 : 	TinyDB doesn't overwrite the whole document but makes an attribute-by-attribute 
+		#				update. That means that removed attributes are NOT removed. There is now a 
+		#				procedure in the Storage component that removes nulled attributes as well.
+		#self.json = {k: v for (k, v) in self.json.items() if v is not None }
 
 		# Do some extra validations, if necessary
 		if not (res := self.validate(originator))[0]:
 			return res
 
+		# store last modified attributes
+		self[self._modified] = Utils.resourceDiff(jsonOrg, self.json, j)
+
 		# Check subscriptions
-		CSE.notification.checkSubscriptions(self, C.netResourceUpdate, modifiedAttributes=Utils.resourceDiff(jsonOrg, self.json, j))
+		CSE.notification.checkSubscriptions(self, C.netResourceUpdate, modifiedAttributes=self[self._modified])
 
 		return True, C.rcOK, None
 
