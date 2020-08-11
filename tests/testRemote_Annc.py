@@ -62,7 +62,8 @@ class TestRemote_Annc(unittest.TestCase):
 		for x in findXPath(r, 'm2m:ae/at'):
 			if x == REMOTECSEID:
 				continue
-			TestRemote_Annc.remoteAeRI = x
+			if x.startswith('%s/' % REMOTECSEID):
+				TestRemote_Annc.remoteAeRI = x
 		self.assertIsNotNone(self.remoteAeRI)
 		self.assertIsNone(findXPath(r, 'm2m:ae/aa'))
 		TestRemote_Annc.ae = r
@@ -98,6 +99,7 @@ class TestRemote_Annc(unittest.TestCase):
 		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteAeRI), CSEID)
 		self.assertEqual(rsc, C.rcNotFound)
 		TestRemote_Annc.ae = None
+		TestRemote_Annc.aremoteAeRIe = None
 
 
 	# Create an AE with AT and AA
@@ -129,7 +131,8 @@ class TestRemote_Annc(unittest.TestCase):
 		for x in findXPath(r, 'm2m:ae/at'):
 			if x == REMOTECSEID:
 				continue
-			TestRemote_Annc.remoteAeRI = x
+			if x.startswith('%s/' % REMOTECSEID):
+				TestRemote_Annc.remoteAeRI = x
 		self.assertIsNotNone(self.remoteAeRI)
 		TestRemote_Annc.ae = r
 
@@ -168,15 +171,6 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'))
 
 
-
-# add ae without AT, with AA, AT later
-# update ae
-# add to AA
-
-# rcn=7 (original resource)
-
-
-
 	# Create a Node with AT
 	@unittest.skipIf(noRemote, 'No remote CSEBase')
 	def test_createAnnounceNode(self):
@@ -196,7 +190,8 @@ class TestRemote_Annc(unittest.TestCase):
 		for x in findXPath(r, 'm2m:nod/at'):
 			if x == REMOTECSEID:
 				continue
-			TestRemote_Annc.remoteNodRI = x
+			if x.startswith('%s/' % REMOTECSEID):
+				TestRemote_Annc.remoteNodRI = x
 		self.assertIsNotNone(self.remoteNodRI)
 		self.assertIsNone(findXPath(r, 'm2m:nod/aa'))
 		TestRemote_Annc.node = r
@@ -246,7 +241,8 @@ class TestRemote_Annc(unittest.TestCase):
 		for x in findXPath(r, 'm2m:bat/at'):
 			if x == REMOTECSEID:
 				continue
-			TestRemote_Annc.remoteBatRI = x
+			if x.startswith('%s/' % REMOTECSEID):
+				TestRemote_Annc.remoteBatRI = x
 		self.assertIsNotNone(self.remoteBatRI)
 		self.assertIsNotNone(findXPath(r, 'm2m:bat/aa'))
 		self.assertEqual(len(findXPath(r, 'm2m:bat/aa')), 1)
@@ -355,10 +351,79 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsNone(findXPath(r, 'm2m:batA/btl'))
 		self.assertIsNone(findXPath(r, 'm2m:batA/bts'))
 
-# remove from AT
-# remove whole AT
 
-# delete node and test annc
+	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	def test_removeMgmtObjCSIfromAT(self):
+		at = findXPath(TestRemote_Annc.bat, 'm2m:bat/at').copy()
+		at.remove(REMOTECSEID)
+		jsn = 	{ 'm2m:bat' : {
+					'at' : at 			# with REMOTECSEID removed
+				}}
+		r, rsc = UPDATE(batURL, ORIGINATOR, jsn)
+		self.assertEqual(rsc, C.rcUpdated)
+		self.assertEqual(len(findXPath(r, 'm2m:bat/at')), 0)
+
+		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteBatRI), ORIGINATOR)
+		self.assertEqual(rsc, C.rcNotFound)
+
+
+	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	def test_addMgmtObjCSItoAT(self):
+		jsn = 	{ 'm2m:bat' : {
+					'at' : [ REMOTECSEID ] 			# with REMOTECSEID added
+				}}
+		r, rsc = UPDATE(batURL, ORIGINATOR, jsn)
+		self.assertEqual(rsc, C.rcUpdated)
+		self.assertEqual(len(findXPath(r, 'm2m:bat/at')), 2)
+
+		TestRemote_Annc.remoteBatRI = None
+		for x in findXPath(r, 'm2m:bat/at'):
+			if x == REMOTECSEID:
+				continue
+			if x.startswith('%s/' % REMOTECSEID):
+				TestRemote_Annc.remoteBatRI = x
+		self.assertIsNotNone(self.remoteBatRI)
+		TestRemote_Annc.bat = r
+
+		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteBatRI), ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+
+
+	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	def test_removeMgmtObjAT(self):
+		jsn = 	{ 'm2m:bat' : {
+					'at' : None 			# with at removed
+				}}
+		r, rsc = UPDATE(batURL, ORIGINATOR, jsn)
+		self.assertEqual(rsc, C.rcUpdated)
+		self.assertIsNone(findXPath(r, 'm2m:bat/at'))
+
+		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteBatRI), ORIGINATOR)
+		self.assertEqual(rsc, C.rcNotFound)
+		TestRemote_Annc.bat = None
+		TestRemote_Annc.remoteBatRI = None
+
+
+	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	def test_deleteAnnounceNode(self):
+		if TestRemote_Annc.node is None:
+			self.skipTest('node not found')
+		_, rsc = DELETE(nodURL, ORIGINATOR)
+		self.assertEqual(rsc, C.rcDeleted)
+		# try to retrieve the announced Node. Should not be found
+		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteNodRI), CSEID)
+		self.assertEqual(rsc, C.rcNotFound)
+		TestRemote_Annc.node = None
+		TestRemote_Annc.remoteNodRI = None
+		# Actually, the mgmtobj should been deleted by now in another test case
+		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteBatRI), ORIGINATOR)
+		self.assertEqual(rsc, C.rcNotFound)
+		TestRemote_Annc.bat = None
+		TestRemote_Annc.remoteBatRI = None
+
+
+
+# rcn=7 (original resource)
 
 
 
@@ -375,10 +440,7 @@ def run():
 	suite.addTest(TestRemote_Annc('test_retrieveAnnouncedAEwithATwithAA'))
 	suite.addTest(TestRemote_Annc('test_deleteAnnounceAE'))
 
-
-
-
-	# create an announced Node
+	# create an announced Node & MgmtObj [bat]
 	suite.addTest(TestRemote_Annc('test_createAnnounceNode'))
 	suite.addTest(TestRemote_Annc('test_retrieveAnnouncedNode'))
 	suite.addTest(TestRemote_Annc('test_announceMgmtobj'))
@@ -387,7 +449,10 @@ def run():
 	suite.addTest(TestRemote_Annc('test_addMgmtObjAttribute'))
 	suite.addTest(TestRemote_Annc('test_removeMgmtObjAttribute'))
 	suite.addTest(TestRemote_Annc('test_removeMgmtObjAA'))
-
+	suite.addTest(TestRemote_Annc('test_removeMgmtObjCSIfromAT'))
+	suite.addTest(TestRemote_Annc('test_addMgmtObjCSItoAT'))
+	suite.addTest(TestRemote_Annc('test_removeMgmtObjAT'))
+	suite.addTest(TestRemote_Annc('test_deleteAnnounceNode'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)

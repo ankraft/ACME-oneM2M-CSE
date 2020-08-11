@@ -28,16 +28,18 @@ class AnnounceableResource(Resource):
 		Logging.logDebug('Activating AnnounceableResource resource: %s' % self.ri)
 		if not (result := super().activate(parentResource, originator))[0]:
 			return result
-		# Check announcement
-		if self['at'] is not None:
+
+		# Check announcements
+		if self.at is not None:
 			CSE.announce.announceResource(self)
 		return result
 
 
 	def deactivate(self, originator:str) -> None:
 		Logging.logDebug('Deactivating AnnounceableResource and removing sub-resources: %s' % self.ri)
-		# Check deannouncement
-		if self['at'] is not None:
+
+		# perform deannouncements
+		if self.at is not None:
 			CSE.announce.deAnnounceResource(self)
 		super().deactivate(originator)
 
@@ -45,11 +47,17 @@ class AnnounceableResource(Resource):
 	def update(self, jsn:dict = None, originator:str = None) -> Tuple[bool, int, str]:
 		Logging.logDebug('Updating AnnounceableResource: %s' % self.ri)
 		self._origAA = self.aa
+		self._origAT = self.at
+
 		if not (result := super().update(jsn=jsn, originator=originator))[0]:
 			return result
-		# Check announcement
-		if self['at'] is not None:
+
+		# Check announcements
+		if self.at is not None:
 			CSE.announce.announceUpdatedResource(self)
+		else:
+			if self._origAT is not None:	# at is removed in update, so remove self
+				CSE.announce.deAnnounceResource(self)
 		return result
 
 
