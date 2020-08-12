@@ -123,6 +123,7 @@ class Constants(object):
 	rcnAttributesAndChildResources			= 4	
 	rcnAttributesAndChildResourceReferences	= 5
 	rcnChildResourceReferences				= 6
+	rcnOriginalResource 					= 7
 	rcnChildResources						= 8
 	rcnModifiedAttributes					= 9
 	rcnDiscoveryResultReferences			= 11

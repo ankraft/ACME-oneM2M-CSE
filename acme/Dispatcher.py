@@ -100,23 +100,33 @@ class Dispatcher(object):
 		# check rcn & operation
 		if operation == C.permDISCOVERY and rcn not in [ C.rcnDiscoveryResultReferences, C.rcnChildResourceReferences ]:	# Only allow those two
 			return None, C.rcBadRequest, 'invalid rcn: %d for fu: %d' % (rcn, fu)
-		if operation == C.permRETRIEVE and rcn not in [ C.rcnAttributes, C.rcnAttributesAndChildResources, C.rcnChildResources, C.rcnAttributesAndChildResourceReferences, C.rcnChildResourceReferences]: # TODO
+		if operation == C.permRETRIEVE and rcn not in [ C.rcnAttributes, C.rcnAttributesAndChildResources, C.rcnChildResources, C.rcnAttributesAndChildResourceReferences, C.rcnOriginalResource, C.rcnChildResourceReferences]: # TODO
 			return None, C.rcBadRequest, 'invalid rcn: %d for fu: %d' % (rcn, fu)
 
 		Logging.logDebug('Discover/Retrieve resources (fu: %d, drt: %s, handling: %s, conditions: %s, resultContent: %d, attributes: %s)' % (fu, drt, handling, conditions, rcn, str(attributes)))
 
 
 		# Retrieve the target resource, because it is needed for some rcn (and the default)
-		if rcn in [C.rcnAttributes, C.rcnAttributesAndChildResources, C.rcnChildResources, C.rcnAttributesAndChildResourceReferences]:
+		if rcn in [C.rcnAttributes, C.rcnAttributesAndChildResources, C.rcnChildResources, C.rcnAttributesAndChildResourceReferences, C.rcnOriginalResource]:
 			if (res := self.retrieveResource(id))[0] is None:
 			 	return res
 			if not CSE.security.hasAccess(originator, res[0], operation):
 				return None, C.rcOriginatorHasNoPrivilege, 'originator has no permission (%d)' % operation
 
-			# if rcn == attributes then we can return here
+			# if rcn == attributes then we can return here, whatever the result is
 			if rcn == C.rcnAttributes:
 				return res
+
 			resource = res[0]	# root resource for the retrieval/discovery
+
+			# if rcn == original-resource we retrieve the linked resource
+			if rcn == C.rcnOriginalResource:
+				if resource is None:	# continue only when there actually is a resource
+					return res
+				if (lnk := resource.lnk) is None:	# no link attribute?
+					return None, C.rcBadRequest, 'missing lnk attribute in target resource'
+				return self.retrieveResource(lnk, originator)
+
 
 		# do discovery
 		if (resList := self.discoverResources(id, originator, handling, fo, conditions, attributes, operation=operation))[0] is None:	# not found?
@@ -245,7 +255,7 @@ class Dispatcher(object):
 		# 	return None, C.rcInvalidArguments, 'unknown filter usage (fu)'
 
 
-	def retrieveResource(self, id:str=None) -> Tuple[Resource, int, str]:
+	def retrieveResource(self, id:str=None, originator:str=None) -> Tuple[Resource, int, str]:
 		# If the ID is in SP-relative format then first check whether this is for the
 		# local CSE. 
 		# If yes, then adjust the ID and try to retrieve it. 
@@ -255,7 +265,7 @@ class Dispatcher(object):
 				id = id[self.csiSlashLen:]
 			else:
 				if Utils.isSPRelative(id):
-					return CSE.remote.retrieveRemoteResource(id)
+					return CSE.remote.retrieveRemoteResource(id, originator)
 		return self._retrieveResource(srn=id) if Utils.isStructured(id) else self._retrieveResource(ri=id)
 
 
@@ -727,7 +737,9 @@ class Dispatcher(object):
 			return result
 		elif rcn == C.rcnModifiedAttributes:
 			jsonNew = r.json.copy()	
-			return { tpe : Utils.resourceDiff(jsonOrg, jsonNew) }, result[1], None
+			# return only the diff. This includes those attributes that are updated with the same value. Luckily, 
+			# all key/values that are touched in the update request are in the resource's __modified__ variable.
+			return { tpe : Utils.resourceDiff(jsonOrg, jsonNew, modifiers=r[Resource._modified]) }, result[1], None
 		elif rcn == C.rcnNothing:
 			return None, result[1], None
 		# TODO C.rcnDiscoveryResultReferences 
@@ -982,7 +994,8 @@ class Dispatcher(object):
 													  C.rcnAttributesAndChildResources,
 													  C.rcnAttributesAndChildResourceReferences,
 													  C.rcnChildResourceReferences,
-													  C.rcnChildResources ]:
+													  C.rcnChildResources,
+													  C.rcnOriginalResource ]:
 			return None, 'rcn: %d not allowed in RETRIEVE operation' % rcn
 		elif operation == C.opDISCOVERY and rcn not in [ C.rcnChildResourceReferences,
 														 C.rcnDiscoveryResultReferences ]:

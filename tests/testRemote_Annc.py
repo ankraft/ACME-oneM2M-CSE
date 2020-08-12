@@ -1,5 +1,5 @@
 #
-#	tesRemote_Annc.py
+#	testRemote_Annc.py
 #
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
@@ -275,6 +275,19 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	def test_retrieveRCNOriginalResource(self):
+		r, rsc = RETRIEVE('%s/~%s?rcn=%d' % (REMOTEURL, TestRemote_Annc.remoteBatRI, C.rcnOriginalResource), ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertIsNotNone(findXPath(r, 'm2m:bat'))
+		self.assertIsNotNone(findXPath(r, 'm2m:bat/ty'))
+		self.assertEqual(findXPath(r, 'm2m:bat/ty'), T.MGMTOBJ)
+		self.assertIsNotNone(findXPath(r, 'm2m:bat/mgd'))
+		self.assertEqual(findXPath(r, 'm2m:bat/mgd'), T.BAT)
+		self.assertIsNotNone(findXPath(r, 'm2m:bat/aa'))
+		self.assertIsNotNone(findXPath(r, 'm2m:bat/at'))
+
+
+	@unittest.skipIf(noRemote, 'No remote CSEBase')
 	def test_updateMgmtObjAttribute(self):
 		jsn = 	{ 'm2m:bat' : {
 					'btl' : 42,
@@ -363,7 +376,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(rsc, C.rcUpdated)
 		self.assertEqual(len(findXPath(r, 'm2m:bat/at')), 0)
 
-		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteBatRI), ORIGINATOR)
+		r, rsc = RETRIEVE('%s/~%s' % (REMOTEURL, TestRemote_Annc.remoteBatRI), ORIGINATOR)
 		self.assertEqual(rsc, C.rcNotFound)
 
 
@@ -385,7 +398,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsNotNone(self.remoteBatRI)
 		TestRemote_Annc.bat = r
 
-		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteBatRI), ORIGINATOR)
+		r, rsc = RETRIEVE('%s/~%s' % (REMOTEURL, TestRemote_Annc.remoteBatRI), ORIGINATOR)
 		self.assertEqual(rsc, C.rcOK)
 
 
@@ -422,11 +435,6 @@ class TestRemote_Annc(unittest.TestCase):
 		TestRemote_Annc.remoteBatRI = None
 
 
-
-# rcn=7 (original resource)
-
-
-
 def run():
 	suite = unittest.TestSuite()
 
@@ -445,6 +453,7 @@ def run():
 	suite.addTest(TestRemote_Annc('test_retrieveAnnouncedNode'))
 	suite.addTest(TestRemote_Annc('test_announceMgmtobj'))
 	suite.addTest(TestRemote_Annc('test_retrieveAnnouncedMgmtobj'))
+	suite.addTest(TestRemote_Annc('test_retrieveRCNOriginalResource'))
 	suite.addTest(TestRemote_Annc('test_updateMgmtObjAttribute'))
 	suite.addTest(TestRemote_Annc('test_addMgmtObjAttribute'))
 	suite.addTest(TestRemote_Annc('test_removeMgmtObjAttribute'))

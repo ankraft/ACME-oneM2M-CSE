@@ -6,6 +6,8 @@
 #
 #	Unit tests for discovery requests
 #
+#	==> rcn = original-resource is tested in testRemote_Annc.py
+#
 
 import unittest, sys
 sys.path.append('../acme')
@@ -19,6 +21,8 @@ from init import *
 noCSE = not connectionPossible(cseURL)
 
 cnt2RN = '%s2' % cntRN
+cnt3RN = '%s3' % cntRN
+cntARPRN = 'arpCnt'
 
 class TestDiscovery(unittest.TestCase):
 
@@ -501,15 +505,48 @@ class TestDiscovery(unittest.TestCase):
 	def test_appendArp(self):
 		# create container under cnt1
 		jsn = 	{ 'm2m:cnt' : { 
-					'rn'  : 'arpCnt',
+					'rn'  : cntARPRN,
 				}}
 		arpCnt, rsc = CREATE(cntURL, TestDiscovery.originator, T.CNT, jsn)
 		self.assertEqual(rsc, C.rcCreated)
 		r, rsc = RETRIEVE('%s?rcn=%d&ty=%d&lbl=cntLbl&arp=arpCnt' % (aeURL, C.rcnChildResources, T.CNT), TestDiscovery.originator)
 		self.assertEqual(rsc, C.rcOK)
-		self.assertEqual(findXPath(r, 'm2m:ae/m2m:cnt/{0}/rn'), 'arpCnt')
+		self.assertEqual(findXPath(r, 'm2m:ae/m2m:cnt/{0}/rn'), cntARPRN)
 		_, rsc = DELETE('%s/arpCnt' % cntURL, TestDiscovery.originator) # cleanup
 		self.assertEqual(rsc, C.rcDeleted)
+
+
+	# Test CREATE and RCN=9 (modifiedAttributes)
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTwithRCN9(self):
+		# create another container
+		jsn = 	{ 'm2m:cnt' : { 
+					'rn'  : cnt3RN,
+					'mni' : 42,
+					'lbl' : [ 'test' ]
+				}}
+		r, rsc = CREATE('%s?rcn=%d' % (aeURL, C.rcnModifiedAttributes), TestDiscovery.originator, T.CNT, jsn)
+		self.assertEqual(rsc, C.rcCreated)
+		self.assertIsNone(findXPath(r, 'm2m:cnt/mni'))
+		self.assertIsNone(findXPath(r, 'm2m:cnt/lbl'))
+
+
+	# Test UPDATE and RCN=9 (modifiedAttributes)
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCNTwithRCN9(self):
+		# create another container
+		jsn = 	{ 'm2m:cnt' : { 
+					'mni' : 23,
+					'lbl' : [ 'test' ]
+				}}
+		r, rsc = UPDATE('%s/%s?rcn=%d' % (aeURL, cnt3RN, C.rcnModifiedAttributes), TestDiscovery.originator, jsn)
+		self.assertEqual(rsc, C.rcUpdated)
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/mni'))
+		self.assertEqual(findXPath(r, 'm2m:cnt/mni'), 23)
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/lbl'))
+		self.assertEqual(findXPath(r, 'm2m:cnt/lbl'), [ 'test' ])
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/st'))
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/lt'))
 
 
 
@@ -556,6 +593,8 @@ def run():
 	suite.addTest(TestDiscovery('test_retrieveCNTunderAEUnstructured'))
 	suite.addTest(TestDiscovery('test_rcn4WithDifferentFUs'))
 	suite.addTest(TestDiscovery('test_appendArp'))
+	suite.addTest(TestDiscovery('test_createCNTwithRCN9'))
+	suite.addTest(TestDiscovery('test_updateCNTwithRCN9'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
