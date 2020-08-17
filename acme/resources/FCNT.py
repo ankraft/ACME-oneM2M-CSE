@@ -23,7 +23,7 @@ attributePolicies = constructPolicy([
 	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'cr', 'daci', 'loc',
 ])
 fcntPolicies = constructPolicy([
-	'cnd', 'or', 'cs', 'nl', 'mni', 'mia', 'mbs', 'cni'
+	'cnd', 'or', 'cs', 'nl', 'mni', 'mia', 'mbs', 'cni', 'dgt'
 ])
 attributePolicies = addPolicy(attributePolicies, fcntPolicies)
 
@@ -44,7 +44,7 @@ class FCNT(AnnounceableResource):
 			# Might change during the lifetime of a resource. Used for optimization
 			self.hasInstances = False
 
-		self.ignoreAttributes = self.internalAttributes + [ 'acpi', 'cbs', 'cni', 'cnd', 'cs', 'cr', 'ct', 'et', 'lt', 'mbs', 'mia', 'mni', 'or', 'pi', 'ri', 'rn', 'st', 'ty' ]
+		self.ignoreAttributes = self.internalAttributes + [ 'acpi', 'cbs', 'cni', 'cnd', 'cs', 'cr', 'ct', 'et', 'lt', 'mbs', 'mia', 'mni', 'or', 'pi', 'ri', 'rn', 'st', 'ty', 'at' ]
 
 
 	# Enable check for allowed sub-resources
@@ -199,15 +199,20 @@ class FCNT(AnnounceableResource):
 # not exceed the maxInstanceAge of the targeted <flexContainer> resource.
 
 	# Add a new FlexContainerInstance for this flexContainer
-	def addFlexContainerInstance(self, originator: str) -> None:
+	def addFlexContainerInstance(self, originator:str) -> None:
 		Logging.logDebug('Adding flexContainerInstance')
-		jsn = {	'rn'  : '%s_%d' % (self.rn, self.st), }
+		jsn:Dict[str, Any] = {	'rn'  : '%s_%d' % (self.rn, self.st), }
 		if self.lbl is not None:
 			jsn['lbl'] = self.lbl
 
 		for attr in self.json:
 			if attr not in self.ignoreAttributes:
 				jsn[attr] = self[attr]
+				continue
+			# special for at attribute. It might contain additional id's when it
+			# is announced. Those we don't want to copy.
+			if attr == 'at':
+				jsn['at'] = [ x for x in self['at'] if x.count('/') == 1 ]	# Only copy single csi in at
 
 		fci, _ = Utils.resourceFromJSON(jsn = { self.tpe : jsn },
 										pi = self.ri, 

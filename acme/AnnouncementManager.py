@@ -35,7 +35,7 @@ class AnnouncementManager(object):
 		
 		# TODO self.checkInterval						= Configuration.get('cse.announcements.checkInterval')
 		self.checkInterval			= Configuration.get('cse.announcements.checkInterval')
-		self.announcementsEnabled 	= Configuration.get('cse.announcements.enableAnnouncements')
+		self.announcementsEnabled 	= Configuration.get('cse.announcements.enable')
 
 		self.start()
 		Logging.log('AnnouncementManager initialized')
@@ -157,6 +157,9 @@ class AnnouncementManager(object):
 			return
 		Logging.logDebug('Announce resource: %s to all connected csr' % resource.ri)
 		for csi in resource.at:
+			if csi == CSE.remote.cseCsi or csi.startswith('%s/' % CSE.remote.cseCsi):
+				Logging.logWarn('Targeting own CSE. Ignored.')
+				continue
 			if (csr := Utils.resourceFromCSI(csi)) is None:
 				self._removeAnnouncementFromResource(resource, csi)
 				continue
@@ -248,7 +251,6 @@ class AnnouncementManager(object):
 			self.deAnnounceResourceFromCSR(resource, csr, remoteRI)
 
 
-
 	def deAnnounceResourceFromCSR(self, resource:Resource, remoteCSR:Resource, resourceRI:str) -> None:
 		"""	De-Announce a resource from a specific CSR.
 		"""
@@ -290,15 +292,41 @@ class AnnouncementManager(object):
 		if not self.announcementsEnabled:
 			return
 		Logging.logDebug('Updating announced resource: %s' % resource.ri)
-		# get all reources for this specific CSI that are  announced to it yet
 
+		# Check for removed AT
+		# Logging.logErr(set(self._origAT))
+		# Logging.logErr(set(self.at))
+		# Logging.logErr(set(self.at) == set(self._origAT))
+
+
+		# get all reources for this specific CSI that are  announced to it yet
+		at = resource.at.copy()
+		announcedCSIs = []	
+		remoteRIs = []
 		for (csi, remoteRI) in resource[Resource._announcedTo]:
+			announcedCSIs.append(csi) # build a list of already announced CSIs
+			remoteRIs.append(csi) # build a list of remote RIs
+
+			# CSR still connected?
 			if (csr := Utils.resourceFromCSI(csi)) is None:
 				self._removeAnnouncementFromResource(resource, csi)
 				continue
+			
+			# remote csi still in at? If not then remove it
+			if csi not in at:
+				self.deAnnounceResourceFromCSR(resource, csr, remoteRI)
+				continue
+
 			# if (remoteCSR := CSE.remote.getCSRForRemoteCSE(csr)) is None:	# not yet registered
 			# 	continue
 			self.updateResourceOnCSR(resource, csr, remoteRI)
+
+		# Check for any non-announced csi in at, and possibly announce them 
+		for csi in at:
+			if csi not in announcedCSIs and csi not in remoteRIs:
+				if (csr := Utils.resourceFromCSI(csi)) is None:
+					continue
+				self.announceResourceToCSR(resource, csr)
 
 
 	def updateResourceOnCSR(self, resource:Resource, remoteCSR:Resource, remoteRI:str) -> None:
@@ -353,21 +381,38 @@ class AnnouncementManager(object):
 	def _addAnnouncementToResource(self, resource:Resource, jsn:dict, csi:str) -> None:
 		"""	Add anouncement information to the resource. These are a list of tuples of 
 			the csi to which the resource is registered as well as the ri of the 
-			resource on the remote CSE.
+			resource on the remote CSE. Also, add the reference in the at attribute.
 		"""
+		remoteRI = Utils.findXPath(jsn, '{0}/ri')
 		ats = resource[Resource._announcedTo]
-		ats.append((csi, Utils.findXPath(jsn, '{0}/ri')))
+		ats.append((csi, remoteRI))
 		resource.setAttribute(Resource._announcedTo, ats)
+
+		# Modify the at attribute
+		if len(at := resource.at) > 0 and csi in at:
+			at.append('%s/%s' %(csi, remoteRI))
+			resource.setAttribute('at', at)
 
 
 	def _removeAnnouncementFromResource(self, resource:Resource, csi:str) -> None:
 		"""	Remove announcement details from a resource (internal attribute).
+			Modify the internal as well the at attributes to remove the reference
+			to the remote CSE.
 		"""
 		ats = resource[Resource._announcedTo]
+		remoteRI:str = None
 		for x in ats:
 			if x[0] == csi:
+				remoteRI = x[1]
 				ats.remove(x)
 				resource.setAttribute(Resource._announcedTo, ats)
+
+		# # Modify the at attribute
+		if remoteRI is not None:
+			atCsi = '%s/%s' %(csi, remoteRI)
+			if (at := resource.at) is not None and len(at) > 0 and atCsi in at:
+				at.remove(atCsi)
+				resource.setAttribute('at', at)
 
 
 	def announceResourceViaDirectURL(self, resource: Resource, at: str) -> bool:

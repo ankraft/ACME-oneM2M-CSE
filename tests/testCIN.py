@@ -13,12 +13,19 @@ from Constants import Constants as C
 from Types import ResourceTypes as T
 from init import *
 
+# The following code must be executed before anything else because it influences
+# the collection of skipped tests.
+# It checks whether there actually is a CSE running.
+noCSE = not connectionPossible(cseURL)
 
 class TestCIN(unittest.TestCase):
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
+		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
+
 		jsn = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
@@ -36,12 +43,13 @@ class TestCIN(unittest.TestCase):
 
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCIN(self):
-		self.assertIsNotNone(TestCIN.cse)
 		self.assertIsNotNone(TestCIN.ae)
 		self.assertIsNotNone(TestCIN.cnt)
 		jsn = 	{ 'm2m:cin' : {
@@ -53,11 +61,13 @@ class TestCIN(unittest.TestCase):
 		self.assertEqual(rsc, C.rcCreated)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCIN(self):
 		_, rsc = RETRIEVE(cinURL, TestCIN.originator)
 		self.assertEqual(rsc, C.rcOK)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesCIN(self):
 		r, rsc = RETRIEVE(cinURL, TestCIN.originator)
 		self.assertEqual(rsc, C.rcOK)
@@ -78,6 +88,7 @@ class TestCIN(unittest.TestCase):
 		self.assertGreater(findXPath(r, 'm2m:cin/cs'), 0)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCIN(self):
 		jsn = 	{ 'm2m:cin' : {
 					'con' : 'NewValue'
@@ -86,6 +97,7 @@ class TestCIN(unittest.TestCase):
 		self.assertEqual(rsc, C.rcOperationNotAllowed)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCINUnderAE(self):
 		jsn = 	{ 'm2m:cin' : {
 					'rn'  : cinRN,
@@ -96,6 +108,7 @@ class TestCIN(unittest.TestCase):
 		self.assertEqual(rsc, C.rcInvalidChildResourceType)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCIN(self):
 		_, rsc = DELETE(cntURL, ORIGINATOR)
 		self.assertEqual(rsc, C.rcDeleted)
@@ -111,8 +124,8 @@ def run():
 	suite.addTest(TestCIN('test_createCINUnderAE'))
 	suite.addTest(TestCIN('test_deleteCIN'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
-	return result.testsRun, len(result.errors + result.failures)
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':
-	_, errors = run()
+	_, errors, _ = run()
 	sys.exit(errors)

@@ -25,8 +25,8 @@ class AppBase(object):
 	def __init__(self, rn: str, originator: str) -> None:
 		self.rn:str 					= rn
 		self.originator:str				= originator
-		self.cseri:str					= Configuration.get('cse.ri')
 		self.csern:str					= Configuration.get('cse.rn')
+		self.csi:str					= Configuration.get('cse.csi')
 		self.srn:str 					= self.csern + '/' + self.rn
 		self.url:str					= Configuration.get('http.address') + Configuration.get('http.root')
 		self.worker:BackgroundWorker	= None
@@ -60,7 +60,6 @@ class AppBase(object):
 	def _id(self, ri: str, srn: str) -> str:
 		if ri is not None:
 			return self.url + '/' + ri
-			# return self.url + self.cseri + '/' + ri
 		elif srn is not None:
 			return self.url + '/' + srn
 		return None

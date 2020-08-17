@@ -2,7 +2,13 @@
 
 ## The Messy Details
 
+### Components
+
 ![](images/cse_uml.png)
+
+### Resource Class Hierarchy
+
+![](images/resources_uml.png)
 
 ## Integration Into Other Applications
 

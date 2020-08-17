@@ -13,6 +13,10 @@ var HttpClient = function() {
     sendRetrieveRequest(node, id, originator, callback, errorCallback )
   }
 
+  this.delete = function(id, node, callback, errorCallback) {
+    sendDeleteRequest(node, id, originator, callback, errorCallback )
+  }
+
   // TODO: do we really need a separate method?
   this.getChildren = function(id, node, callback, errorCallback) {
     sendRetrieveRequest(node, id, originator, callback, errorCallback)
@@ -22,6 +26,11 @@ var HttpClient = function() {
 
 function sendRetrieveRequest(node, id, originator, callback, errorCallback) {
   sendRequest("GET", node, id, originator, callback, errorCallback)
+}
+
+
+function sendDeleteRequest(node, id, originator, callback, errorCallback) {
+  sendRequest("DELETE", node, id, originator, callback, errorCallback)
 }
 
 

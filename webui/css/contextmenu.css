@@ -24,7 +24,7 @@
   list-style-type: none;
   padding: 0;
   margin: 0;
-  background-color: #FFF;
+  background-color: #ccc;
   box-shadow: 0 0 5px #333;
 }
 
@@ -36,25 +36,22 @@
 }
 
 .cm_container li:hover{
-  box-shadow: inset 0 0 0 99em rgba(17, 17, 17, 0.1);
-  transition: all 0.3s;
+  background-color: #bbb;
 }
 
 .cm_container li .cm_icon_span{
-  /*width: 1.5em;*/
-  width: 0em;
+  width: 1.5em;
   height: 1.2em;
-  vertical-align: bottom;
+  /*vertical-align: bottom;*/
   display: inline-block;
-  /*border-right: 1px solid #aaa;*/
+  border-right: 1px solid #aaa;
   margin-right: 5px;
   padding-right: 5px;
   text-align: center;
 }
 
 .cm_container li .cm_sub_span{
-  /*width: 1em;*/
-  width: 0em;
+  width: 1em;
   display: inline-block;
   text-align: center;
   position: absolute;

@@ -13,22 +13,30 @@ from Constants import Constants as C
 from Types import ResourceTypes as T
 from init import *
 
+# The following code must be executed before anything else because it influences
+# the collection of skipped tests.
+# It checks whether there actually is a CSE running.
+noCSE = not connectionPossible(cseURL)
+
 class TestAE(unittest.TestCase):
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		TestAE.originator 	= None 	# actually the AE.aei
 		TestAE.aeACPI 		= None
 		TestAE.cse, rsc 	= RETRIEVE(cseURL, ORIGINATOR)
+		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
 
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAE(self):
-		self.assertIsNotNone(TestAE.cse)
 		jsn = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
@@ -42,6 +50,7 @@ class TestAE(unittest.TestCase):
 		self.assertIsNotNone(TestAE.originator)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEUnderAE(self):
 		jsn = 	{ 'm2m:ae' : {
 					'rn': '%s2' % aeRN, 
@@ -53,16 +62,19 @@ class TestAE(unittest.TestCase):
 		self.assertEqual(rsc, C.rcBadRequest)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveAE(self):
 		_, rsc = RETRIEVE(aeURL, TestAE.originator)
 		self.assertEqual(rsc, C.rcOK)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveAEWithWrongOriginator(self):
 		_, rsc = RETRIEVE(aeURL, 'Cwrong')
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesAE(self):
 		r, rsc = RETRIEVE(aeURL, TestAE.originator)
 		self.assertEqual(rsc, C.rcOK)
@@ -86,7 +98,7 @@ class TestAE(unittest.TestCase):
 		self.assertIsNone(findXPath(r, 'm2m:ae/st'))
 
 
-
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAELbl(self):
 		jsn = 	{ 'm2m:ae' : {
 					'lbl' : [ 'aTag' ]
@@ -101,6 +113,7 @@ class TestAE(unittest.TestCase):
 		self.assertTrue('aTag' in findXPath(r, 'm2m:ae/lbl'))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAETy(self):
 		jsn = 	{ 'm2m:ae' : {
 					'ty' : int(T.CSEBase)
@@ -109,6 +122,7 @@ class TestAE(unittest.TestCase):
 		self.assertEqual(rsc, C.rcBadRequest)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAEPi(self):
 		jsn = 	{ 'm2m:ae' : {
 					'pi' : 'wrongID'
@@ -117,6 +131,7 @@ class TestAE(unittest.TestCase):
 		self.assertEqual(rsc, C.rcBadRequest)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAEUnknownAttribute(self):
 		jsn = 	{ 'm2m:ae' : {
 					'unknown' : 'unknown'
@@ -124,16 +139,19 @@ class TestAE(unittest.TestCase):
 		r, rsc = UPDATE(aeURL, TestAE.originator, jsn)
 		self.assertEqual(rsc, C.rcBadRequest)
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteAEByUnknownOriginator(self):
 		_, rsc = DELETE(aeURL, 'Cwrong')
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteAEByAssignedOriginator(self):
 		_, rsc = DELETE(aeURL, TestAE.originator)
 		self.assertEqual(rsc, C.rcDeleted)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveAEACP(self):
 		self.assertIsNotNone(TestAE.aeACPI)
 		self.assertIsInstance(TestAE.aeACPI, list)
@@ -165,8 +183,8 @@ def run():
 	suite.addTest(TestAE('test_deleteAEByUnknownOriginator'))
 	suite.addTest(TestAE('test_deleteAEByAssignedOriginator'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
-	return result.testsRun, len(result.errors + result.failures)
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':
-	_, errors = run()
+	_, errors, _ = run()
 	sys.exit(errors)

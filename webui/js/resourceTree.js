@@ -34,7 +34,20 @@ const types = {
     16 : "RemoteCSE",
     23 : "Subscription",
     28 : "FlexContainer",
-    58 : "FlexContainerInstance"
+    58 : "FlexContainerInstance",
+
+    10001 : "ACPAnnc",
+    10002 : "AEAnnc",
+    10003 : "ContainerAnnc",
+    10004 : "ContentInstanceAnnc",
+    10005 : "CSEBaseAnnc",
+    10009 : "GroupAnnc",
+    10013 : "MgmtObjAnnc",
+    10014 : "NodeAnnc",
+    10016 : "RemoteCSEAnnc",
+    10028 : "FlexContainerAnnc",
+    10058 : "FlexContainerInstanceAnnc" 
+
 }
 
 const shortTypes = {
@@ -57,6 +70,7 @@ const shortTypes = {
     10005 : "CSEAnnc",
     10009 : "GRPAnnc",
     10013 : "MGMTOBJAnnc",
+    10014 : "NODAnnc",
     10016 : "CSRAnnc",
     10028 : "FCNTAnnc",
     10058 : "FCIAnnc" 
@@ -72,7 +86,8 @@ const mgdTypes = {
   1007 : "DeviceInfo",
   1008 : "DeviceCapability",
   1009 : "Reboot",
-  1010 : "EventLog"
+  1010 : "EventLog",
+  1023 : "myCertFileCred"
 }
 
 const mgdShortTypes = {
@@ -85,7 +100,23 @@ const mgdShortTypes = {
   1007 : "DVI",
   1008 : "DVC",
   1009 : "REB",
-  1010 : "EVL"
+  1010 : "EVL",
+  1023 : "NYCFC"
+}
+
+
+const mgdAnncShortTypes = {
+  1001 : "FWRAnnc",
+  1002 : "SWRAnnc",
+  1003 : "MEMAnnc",
+  1004 : "ANIAnnc",
+  1005 : "ANDIAnnc",
+  1006 : "BATAnnc",
+  1007 : "DVIAnnc",
+  1008 : "DVCAnnc",
+  1009 : "REBAnnc",
+  1010 : "EVLAnnc",
+  1023 : "NYCFCAnnc"
 }
 
 
@@ -105,7 +136,7 @@ function updateDetailsOfNode(node) {
   clearAttributesTable()
   fillAttributesTable(node.resource)
   fillJSONArea(node)
-  setResourceInfo(node.resource)
+  setResourceInfo(node)
   if (refreshRESTUI) {
     setRestUI(node.resourceFull)
   } else {
@@ -142,6 +173,7 @@ function removeChildren(node) {
     node.removeChildPos(0)
   }
 }
+
 
 
 function clearAttributesTable() {
@@ -201,7 +233,8 @@ function clearRootResourceName() {
 }
 
 
-function setResourceInfo(resource) {
+function setResourceInfo(node) {
+  resource = node.resource
   if (typeof resource === "undefined") {
     return
   }
@@ -219,6 +252,9 @@ function setResourceInfo(resource) {
       t = mgdTypes[mgd]
     }
   }
+  if (ty == 28) {
+    t = node.tpe
+  }
   if (t == undefined) {
     t = "Unknown"
   }
@@ -232,13 +268,26 @@ function setResourceInfo(resource) {
   // the resource path
 
   var element = document.getElementById("resourceType");
-  path = new TreePath(root, nodeClicked)
+  element.innerText =_getResourcePath(nodeClicked)
+
+}
+
+
+
+function _getResourcePath(node) {
+  var element = document.getElementById("resourceType");
+  path = new TreePath(root, node)
   result = ""
   for (p of path.toString().split(" - ")) {
-    result += "/" + p.replace(/.*: /, "")
+    if (result.length > 0) {  // not for the first element
+      result += "/" 
+    }
+    result += p.replace(/.*: /, "")
   }
-  element.innerText = result
+  return result
+  // return node.ri
 }
+
 
 
 function clearResourceInfo() {
@@ -247,6 +296,41 @@ function clearResourceInfo() {
 
 
 function refreshNode() {
+  if (typeof nodeClicked !== "undefined") {
+    nodeClicked.wasExpanded = nodeClicked.isExpanded()
+    removeChildren(nodeClicked)
+    getResource(nodeClicked.resource.ri, nodeClicked, function() {
+        updateDetailsOfNode(nodeClicked)
+    })
+  }
+}
+
+
+function removeNode(node) {
+  var client = new HttpClient();
+  ri = node.resource.ri
+  client.delete(ri, node, function(response) {  
+    if (typeof node.parent !== "undefined") {
+      parent = node.parent
+      parent.removeChild(node)
+      clickOnNode(null, parent)
+      refreshNode(parent)
+    }
+  }, 
+  null);
+}
+
+
+
+function setNodeAsRoot(node) {
+  var riField = document.getElementById("baseri");
+  riField.value = _getResourcePath(node)
+  connectToCSE()
+}
+
+
+
+function deleteNode() {
   if (typeof nodeClicked !== "undefined") {
     nodeClicked.wasExpanded = nodeClicked.isExpanded()
     removeChildren(nodeClicked)

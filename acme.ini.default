@@ -32,6 +32,8 @@ originator=CAdmin
 # See also individual application configuratins in the [app. ...] sections.
 # Default: True
 enableApplications=true
+# Delay after the CSE startup to run internal applications in seconds. Default: 5 seconds
+applicationsStartupDelay=5
 # Enable notifications. Default: True
 enableNotifications=true
 # Enable remote CSE registration and checking. Default: True
@@ -40,8 +42,6 @@ enableRemoteCSE=true
 enableTransitRequests=true
 # Enable the validation of attributes and arguments. Default: true
 enableValidation=true
-# Enable announcement to remote CSE and allow announced resource registrations. Default: True
-enableAnnouncements=true
 # Enable alphabetical sorting of discovery results. Default: True
 sortDiscoveredResources=true
 # Interval to check for expired resources. 0 means "no checking". Default: 60 seconds
@@ -127,7 +127,7 @@ allowedCSROriginators=id-mn
 enable=true
 # Enable logging to file. Default: True
 enableFileLogging=true
-# Basename of the log file. Default: ./logs
+# Path to the log files. Default: ./logs
 path=./logs
 # Loglevel. Possible values: debug, info, warning, error. Default debug
 level=debug
@@ -161,7 +161,7 @@ checkInterval=30
 
 [cse.announcements]
 # Enable announcement to remote CSE and allow announced resource registrations. Default: True
-enableAnnouncements=true
+enable=true
 # Wait n seconds between tries to to announce resources to registered remote CSE.
 # Default: 10
 checkInterval=10
@@ -172,6 +172,8 @@ checkInterval=10
 #
 
 [cse.statistics]
+# Enable or disable statistics. Default: True
+enable=true
 # Intervall for saving statistics data to disk in seconds. Default: 60
 writeIntervall=60
 

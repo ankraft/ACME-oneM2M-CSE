@@ -13,12 +13,20 @@ from Constants import Constants as C
 from Types import ResourceTypes as T
 from init import *
 
+# The following code must be executed before anything else because it influences
+# the collection of skipped tests.
+# It checks whether there actually is a CSE running.
+noCSE = not connectionPossible(cseURL)
+
 
 class TestGRP(unittest.TestCase):
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
+		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
+
 		jsn = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
@@ -43,10 +51,12 @@ class TestGRP(unittest.TestCase):
 
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createGRP(self):
 		self.assertIsNotNone(TestGRP.cse)
 		self.assertIsNotNone(TestGRP.ae)
@@ -62,16 +72,19 @@ class TestGRP(unittest.TestCase):
 		self.assertEqual(rsc, C.rcCreated)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveGRP(self):
 		_, rsc = RETRIEVE(grpURL, TestGRP.originator)
 		self.assertEqual(rsc, C.rcOK)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveGRPWithWrongOriginator(self):
 		_, rsc = RETRIEVE(grpURL, 'Cwrong')
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesGRP(self):
 		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
 		self.assertEqual(rsc, C.rcOK)
@@ -94,6 +107,7 @@ class TestGRP(unittest.TestCase):
 		self.assertIsNone(findXPath(r, 'm2m:grp/st'))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateGRP(self):
 		jsn = 	{ 'm2m:grp' : { 
 					'mnm': 15
@@ -105,6 +119,7 @@ class TestGRP(unittest.TestCase):
 
 
 	# Update a GRP with container. Should fail.
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateGRPwithCNT(self):
 		jsn = 	{ 'm2m:cnt' : { 
 					'lbl' : [ 'wrong' ]
@@ -113,6 +128,7 @@ class TestGRP(unittest.TestCase):
 		self.assertNotEqual(rsc, C.rcUpdated)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addCNTtoGRP(self):
 		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
 		self.assertEqual(rsc, C.rcOK)
@@ -137,6 +153,7 @@ class TestGRP(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), 3)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addCINviaFOPT(self):
 		# add CIN via fopt
 		jsn = 	{ 'm2m:cin' : {
@@ -172,6 +189,7 @@ class TestGRP(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveLAviaFOPT(self):
 		# Retrieve via fopt
 		r, rsc = RETRIEVE('%s/fopt/la' % grpURL, TestGRP.originator)
@@ -192,6 +210,7 @@ class TestGRP(unittest.TestCase):
 			self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTviaFOPT(self):
 		# add CIN via fopt
 		jsn = 	{ 'm2m:cnt' : {
@@ -215,6 +234,7 @@ class TestGRP(unittest.TestCase):
 			self.assertTrue('aTag' in findXPath(r, 'm2m:cnt/lbl'))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addExistingCNTtoGRP(self):
 		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
 		self.assertEqual(rsc, C.rcOK)
@@ -278,8 +298,8 @@ def run():
 	suite.addTest(TestGRP('test_deleteGRPByUnknownOriginator'))
 	suite.addTest(TestGRP('test_deleteGRPByAssignedOriginator'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
-	return result.testsRun, len(result.errors + result.failures)
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':
-	_, errors = run()
+	_, errors, _ = run()
 	sys.exit(errors)

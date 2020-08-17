@@ -36,40 +36,45 @@ resourceCount		= 'ctRes'
 class Statistics(object):
 
 	def __init__(self) -> None:
-		# create lock
-		self.statLock = Lock()
+		self.statisticsEnabled = Configuration.get('cse.statistics.enable')
 
-		# retrieve or create statitics record
-		self.stats = self.setupStats()
+		if self.statisticsEnabled:
+			# create lock
+			self.statLock = Lock()
 
-		# Start background worker to handle writing to DB
-		Logging.log('Starting statistics DB thread')
-		self.worker = BackgroundWorker.BackgroundWorker(Configuration.get('cse.statistics.writeIntervall'), self.statisticsDBWorker, 'statsDBWorker')
-		self.worker.start()
+			# retrieve or create statitics record
+			self.stats = self.setupStats()
 
-		# subscripe vto various events
-		# mypy cannot handle dynamically created attributes
-		CSE.event.addHandler(CSE.event.createResource, self.handleCreateEvent) 		# type: ignore
-		CSE.event.addHandler(CSE.event.updateResource, self.handleUpdateEvent)		# type: ignore
-		CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent)		# type: ignore
-		CSE.event.addHandler(CSE.event.httpRetrieve, self.handleHttpRetrieveEvent)	# type: ignore
-		CSE.event.addHandler(CSE.event.httpCreate, self.handleHttpCreateEvent)		# type: ignore
-		CSE.event.addHandler(CSE.event.httpUpdate, self.handleHttpUpdateEvent)		# type: ignore
-		CSE.event.addHandler(CSE.event.httpDelete, self.handleHttpDeleteEvent)		# type: ignore
-		CSE.event.addHandler(CSE.event.cseStartup, self.handleCseStartup)			# type: ignore
-		CSE.event.addHandler(CSE.event.logError, self.handleLogError)				# type: ignore
-		CSE.event.addHandler(CSE.event.logWarning, self.handleLogWarning)			# type: ignore
+			# Start background worker to handle writing to DB
+			Logging.log('Starting statistics DB thread')
+			self.worker = BackgroundWorker.BackgroundWorker(Configuration.get('cse.statistics.writeIntervall'), self.statisticsDBWorker, 'statsDBWorker')
+			self.worker.start()
+
+			# subscripe vto various events
+			# mypy cannot handle dynamically created attributes
+			CSE.event.addHandler(CSE.event.createResource, self.handleCreateEvent) 		# type: ignore
+			CSE.event.addHandler(CSE.event.updateResource, self.handleUpdateEvent)		# type: ignore
+			CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent)		# type: ignore
+			CSE.event.addHandler(CSE.event.httpRetrieve, self.handleHttpRetrieveEvent)	# type: ignore
+			CSE.event.addHandler(CSE.event.httpCreate, self.handleHttpCreateEvent)		# type: ignore
+			CSE.event.addHandler(CSE.event.httpUpdate, self.handleHttpUpdateEvent)		# type: ignore
+			CSE.event.addHandler(CSE.event.httpDelete, self.handleHttpDeleteEvent)		# type: ignore
+			CSE.event.addHandler(CSE.event.cseStartup, self.handleCseStartup)			# type: ignore
+			CSE.event.addHandler(CSE.event.logError, self.handleLogError)				# type: ignore
+			CSE.event.addHandler(CSE.event.logWarning, self.handleLogWarning)			# type: ignore
 
 		Logging.log('Statistics initialized')
 
 
 	def shutdown(self) -> None:
-		# Stop the worker
-		Logging.log('Stopping statistics DB thread')
-		self.worker.stop()
+		if self.statisticsEnabled:
+			# Stop the worker
+			Logging.log('Stopping statistics DB thread')
+			self.worker.stop()
 
-		# One final write
-		self.storeDBStatistics()
+			# One final write
+			self.storeDBStatistics()
+
 		Logging.log('Statistics shut down')
 
 
@@ -92,6 +97,9 @@ class Statistics(object):
 
 	# Return stats
 	def getStats(self) -> dict:
+		if not self.statisticsEnabled:
+			return None
+			
 		s = self.stats.copy()
 
 		# Calculate some stats

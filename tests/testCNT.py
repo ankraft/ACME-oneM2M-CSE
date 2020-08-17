@@ -13,12 +13,19 @@ from Constants import Constants as C
 from Types import ResourceTypes as T
 from init import *
 
+# The following code must be executed before anything else because it influences
+# the collection of skipped tests.
+# It checks whether there actually is a CSE running.
+noCSE = not connectionPossible(cseURL)
 
 class TestCNT(unittest.TestCase):
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
+		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
+
 		jsn = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
@@ -31,11 +38,13 @@ class TestCNT(unittest.TestCase):
 
 
 	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE('%s/%s' % (cseURL, cntRN), ORIGINATOR)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNT(self):
 		self.assertIsNotNone(TestCNT.cse)
 		self.assertIsNotNone(TestCNT.ae)
@@ -46,16 +55,19 @@ class TestCNT(unittest.TestCase):
 		self.assertEqual(rsc, C.rcCreated)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCNT(self):
 		_, rsc = RETRIEVE(cntURL, TestCNT.originator)
 		self.assertEqual(rsc, C.rcOK)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCNTWithWrongOriginator(self):
 		_, rsc = RETRIEVE(cntURL, 'Cwrong')
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesCNT(self):
 		r, rsc = RETRIEVE(cntURL, TestCNT.originator)
 		self.assertEqual(rsc, C.rcOK)
@@ -74,6 +86,7 @@ class TestCNT(unittest.TestCase):
 		self.assertIsNone(findXPath(r, 'm2m:cnt/lbl'))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNT(self):
 		jsn = 	{ 'm2m:cnt' : {
 					'lbl' : [ 'aTag' ],
@@ -100,6 +113,7 @@ class TestCNT(unittest.TestCase):
 
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTTy(self):
 		jsn = 	{ 'm2m:cnt' : {
 					'ty' : T.CSEBase
@@ -108,6 +122,7 @@ class TestCNT(unittest.TestCase):
 		self.assertEqual(rsc, C.rcBadRequest)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTPi(self):
 		jsn = 	{ 'm2m:cnt' : {
 					'pi' : 'wrongID'
@@ -116,6 +131,7 @@ class TestCNT(unittest.TestCase):
 		self.assertEqual(rsc, C.rcBadRequest)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTUnknownAttribute(self):
 		jsn = 	{ 'm2m:cnt' : {
 					'unknown' : 'unknown'
@@ -124,6 +140,7 @@ class TestCNT(unittest.TestCase):
 		self.assertEqual(rsc, C.rcBadRequest)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTWrongMNI(self):
 		jsn = 	{ 'm2m:cnt' : {
 					'mni' : -1
@@ -132,6 +149,7 @@ class TestCNT(unittest.TestCase):
 		self.assertEqual(rsc, C.rcBadRequest)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTUnderCNT(self):
 		self.assertIsNotNone(TestCNT.cse)
 		jsn = 	{ 'm2m:cnt' : { 
@@ -141,26 +159,31 @@ class TestCNT(unittest.TestCase):
 		self.assertEqual(rsc, C.rcCreated)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCNTUnderCNT(self):
 		_, rsc = RETRIEVE('%s/%s' % (cntURL, cntRN), ORIGINATOR)
 		self.assertEqual(rsc, C.rcOK)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTUnderCNT(self):
 		_, rsc = DELETE('%s/%s' % (cntURL, cntRN), ORIGINATOR)
 		self.assertEqual(rsc, C.rcDeleted)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTByUnknownOriginator(self):
 		_, rsc = DELETE(cntURL, 'Cwrong')
 		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTByAssignedOriginator(self):
 		_, rsc = DELETE(cntURL, TestCNT.originator)
 		self.assertEqual(rsc, C.rcDeleted)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTUnderCSE(self):
 		self.assertIsNotNone(TestCNT.cse)
 		jsn = 	{ 'm2m:cnt' : { 
@@ -170,11 +193,13 @@ class TestCNT(unittest.TestCase):
 		self.assertEqual(rsc, C.rcCreated)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCNTUnderCSE(self):
 		_, rsc = RETRIEVE('%s/%s' % (cseURL, cntRN), ORIGINATOR)
 		self.assertEqual(rsc, C.rcOK)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTUnderCSE(self):
 		_, rsc = DELETE('%s/%s' % (cseURL, cntRN), ORIGINATOR)
 		self.assertEqual(rsc, C.rcDeleted)
@@ -200,8 +225,8 @@ def run():
 	suite.addTest(TestCNT('test_retrieveCNTUnderCSE'))
 	suite.addTest(TestCNT('test_deleteCNTUnderCSE'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
-	return result.testsRun, len(result.errors + result.failures)
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':
-	_, errors = run()
+	_, errors, _ = run()
 	sys.exit(errors)

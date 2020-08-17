@@ -61,7 +61,7 @@ class SecurityManager(object):
 					return False
 
 			if T(ty).isAnnounced():
-				if Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedCSROriginators')):
+				if Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedCSROriginators')) or originator[1:] == parentResource.ri:
 					Logging.logDebug("Originator for Announcement. OK.")
 					return True
 				else:
@@ -104,6 +104,7 @@ class SecurityManager(object):
 			if resource.checkSelfPermission(originator, requestedPermission):
 				Logging.logDebug('Permission granted')
 				return True
+			# fall-through
 
 		else:		# target is any other resource type
 			

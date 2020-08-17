@@ -1,9 +1,11 @@
 {	"m2m:bat" : {
-		"ty" : 1006,
+		"ty" : 13,
+		"mgd" : 1006,
 		"dc" : "a battery",
 		"ri" : "batID",
 		"rn" : "battery",
 		"pi" : "nodeID",
-		"btl": 100
+		"btl": 100,
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ]
 	}
 }

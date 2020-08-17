@@ -6,6 +6,7 @@
 		"mt" : 3,
 		"mid": [ "con1" ],
 		"gn" : "a group",
-		"mnm": 10
+		"mnm": 10,
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ]
 	}
 }

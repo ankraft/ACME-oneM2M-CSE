@@ -8,6 +8,13 @@ Announced resources are currently **not** supported by this implementation. But 
 
 You must configure the details of the remote CSE in the configuration file.
 
+
+## Resource Announcements
+
+Resource announcement is currently allowed for one hop.
+
+When a resource is announced to a remote CSE then access is automatically granted when the announced resource's parent is the CSR of the original resource's hosting CSE.
+
 ## CSE Originator Assignment
 
 Whenever a new &lt;ACP> resource is created, the CSE's admin *originator* is assigned to that resource automatically. This way resources can always accessed by this originator.

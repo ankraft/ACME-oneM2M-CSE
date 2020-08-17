@@ -1,12 +1,14 @@
 {	"m2m:fwr" : {
-		"ty" : 1001,
+		"ty" : 13,
+		"mgd" : 1001,
 		"dc" : "a firmware",
 		"ri" : "fwrID",
 		"pi" : "nodeID",
 		"rn" : "firmware",
 		"vr" : "1.0",
 		"fwn": "aFirmware",
-		"url": "example.com"
+		"url": "example.com",
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ]
 	}
 }
 

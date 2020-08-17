@@ -19,6 +19,13 @@ CSEID				= '/id-in'
 SPID 				= 'sp-in'
 ORIGINATOR			= 'CAdmin'
 
+REMOTESERVER		= 'http://localhost:8081'
+REMOTEROOTPATH		= '/'
+REMOTECSERN			= 'cse-mn'
+REMOTECSEID			= '/id-mn'
+REMOTESPID 			= 'sp-mn'
+REMOTEORIGINATOR	= 'CAdmin'
+
 
 NOTIFICATIONPORT 	= 9990
 NOTIFICATIONSERVER	= 'http://localhost:%d' % NOTIFICATIONPORT
@@ -30,6 +37,8 @@ testVerbosity 		= 2		# 0, 1, 2
 ###############################################################################
 
 aeRN	= 'testAE'
+acpRN	= 'testACP'
+batRN	= 'testBAT'
 cntRN	= 'testCNT'
 cinRN	= 'testCIN'
 grpRN	= 'testGRP'
@@ -41,12 +50,21 @@ subRN	= 'testSUB'
 URL		= '%s%s' % (SERVER, ROOTPATH)
 cseURL 	= '%s%s' % (URL, CSERN)
 aeURL 	= '%s/%s' % (cseURL, aeRN)
+acpURL 	= '%s/%s' % (cseURL, acpRN)
 cntURL 	= '%s/%s' % (aeURL, cntRN)
 cinURL 	= '%s/%s' % (cntURL, cinRN)
 fcntURL	= '%s/%s' % (aeURL, fcntRN)
 grpURL 	= '%s/%s' % (aeURL, grpRN)
 nodURL 	= '%s/%s' % (cseURL, nodRN)
 subURL 	= '%s/%s' % (cntURL, subRN)
+batURL 	= '%s/%s' % (nodURL, batRN)
+
+REMOTEURL		= '%s%s' % (REMOTESERVER, REMOTEROOTPATH)
+REMOTEcseURL 	= '%s%s' % (REMOTEURL, REMOTECSERN)
+localCsrURL 	= '%s%s' % (cseURL, REMOTECSEID)
+remoteCsrURL 	= '%s%s' % (REMOTEcseURL, CSEID)
+
+
 
 
 
@@ -91,6 +109,13 @@ def sendRequest(method : Callable , url : str, originator : str, ty : int = None
 	return r.json() if len(r.content) > 0 else None, rc
 
 
+def connectionPossible(url):
+	try:
+		requests.get(url, timeout=1)
+		return True
+	except Exception: 
+		return False
+		
 #
 #	Notification Server
 #
@@ -109,6 +134,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		length = int(self.headers['Content-Length'])
 		contentType = self.headers['Content-Type']
 		post_data = self.rfile.read(length)
+		if len(post_data) > 0:
+			setLastNotification(json.loads(post_data.decode('utf-8')))
+
 
 	def log_message(self, format, *args):
 		pass
@@ -127,13 +155,22 @@ def runNotificationServer():
 def startNotificationServer():
 	notificationThread = Thread(target=runNotificationServer)
 	notificationThread.start()
-	time.sleep(0.5)	# give the server a moment to start
+	time.sleep(0.1)	# give the server a moment to start
 
 
 def stopNotificationServer():
 	global keepNotificationServerRunning
 	keepNotificationServerRunning = False
 	requests.post(NOTIFICATIONSERVER)	# send empty/termination request 
+
+lastNotification = None
+
+def setLastNotification(notification:str):
+	global lastNotification
+	lastNotification = notification
+
+def getLastNotification():
+	return lastNotification
 
 
 

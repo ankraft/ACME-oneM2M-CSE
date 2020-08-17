@@ -105,6 +105,8 @@ class Constants(object):
 	nctAll 							= 1
 	nctModifiedAttributes			= 2
 	nctRI 							= 3
+	nctTriggerPayload				= 4
+	
 
 	# eventNotificationCriteria/NotificationEventTypes
 	netResourceUpdate				= 1	# default
@@ -121,6 +123,7 @@ class Constants(object):
 	rcnAttributesAndChildResources			= 4	
 	rcnAttributesAndChildResourceReferences	= 5
 	rcnChildResourceReferences				= 6
+	rcnOriginalResource 					= 7
 	rcnChildResources						= 8
 	rcnModifiedAttributes					= 9
 	rcnDiscoveryResultReferences			= 11

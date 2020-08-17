@@ -15,6 +15,27 @@ var cmenu = [
 						refreshNode()
 					}
 				}
+			},
+			// {
+			// 	"text": "Set Root",
+			// 	"events": {
+			// 		"click": function(e) {
+			// 			setNodeAsRoot(nodeClicked)
+			// 		}
+			// 	}
+			// },
+	        {
+	          "type": ContextMenu.DIVIDER
+	        },
+			{
+				"text": "Delete",
+				"icon": '&#x21;',
+
+				"events": {
+					"click": function(e) {
+						removeNode(nodeClicked)
+					}
+				}
 			}
 		];
 

@@ -53,8 +53,6 @@ aeCSENode:CSENode				 	= None
 aeStatistics:AEStatistics 		 	= None 
 appsStarted:bool 					= False
 
-aeStartupDelay:int 					= 5	# seconds
-
 
 # TODO make AE registering a bit more generic
 
@@ -150,7 +148,8 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 # Gracefully shutdown the CSE, e.g. when receiving a keyboard interrupt
 @atexit.register
 def shutdown() -> None:
-	event.cseShutdown() 	# type: ignore
+	if event is not None:
+		event.cseShutdown() 	# type: ignore
 	# if appsStarted:
 	# 	stopApps()
 	if announce is not None:
@@ -192,7 +191,7 @@ def startApps() -> None:
 	if not Configuration.get('cse.enableApplications'):
 		return
 
-	time.sleep(aeStartupDelay)
+	time.sleep(Configuration.get('cse.applicationsStartupDelay'))
 	Logging.log('Starting Apps')
 	appsStarted = True
 

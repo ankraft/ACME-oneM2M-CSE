@@ -18,7 +18,7 @@ import Utils
 
 # TODO add wildcard, e.g. for custom attributes
 
-# predefined policies
+# predefined policiespolicies
 # type, cardinality, optional.create, optional.update, optional.discovery, announcement
 attributePolicies = {
 	'ty'	: [ BT.positiveInteger,	CAR.car1,   RO.NP, 	RO.NP, RO.O, AN.NA ],
@@ -76,6 +76,7 @@ attributePolicies = {
 	'dc'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# MGO
 	'dea'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ],		# SWR
 	'dcse'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CSR
+	'dgt'	: [ BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# FCNT
 	'dis'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# BAT
 	'disr'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT
 	'dlb'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# DVI
@@ -112,6 +113,8 @@ attributePolicies = {
 	'macp'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT
 	'man'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# DVI
 	'mbs'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT, FCNT
+	'mcfc'	: [ BT.string,			CAR.car1,   RO.M,	RO.NP,  RO.O, AN.OA ],		# NYCFC
+	'mcff'	: [ BT.anyURI,			CAR.car1,   RO.M,	RO.NP,  RO.O, AN.OA ],		# NYCFC
 	'mei'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# m2m:externalID - AE, CSR
 	'mfd'	: [ BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
 	'mfdl'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
@@ -165,6 +168,7 @@ attributePolicies = {
 	'ss'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# ANDI
 	'ssi'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ],		# GRP
 	'su'	: [ BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ],		# SUB
+	'suids'	: [ BT.list,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# NYCFC
 	'swn'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# SWR
 	'swv'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
 	'syst'	: [ BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
@@ -174,9 +178,12 @@ attributePolicies = {
 	'trps'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# AE
 	'ud'	: [ BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# FWR
 	'uds'	: [ BT.dict,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ],		# FWR
-	'Un'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ],		# SWR
+	'un'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ],		# SWR
 	'url'	: [ BT.anyURI,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# FWR, SWR
 	'vr'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# FWR, SWR
+	
+
+	
 
 	# TODO Lookup in TS-0004, 0001
 
@@ -212,6 +219,7 @@ attributePolicies = {
 	'szb'	: [ BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ],		# discovery	
 	#'ty'	: [ BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ],		# discovery
 	'us'	: [ BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ],		# discovery
+	'arp'	: [ BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ],		# discovery
 
 	# TODO lbl, catr, patr
 
@@ -267,6 +275,9 @@ class Validator(object):
 		# determine the request column, depending on create or updates
 		reqp = 2 if create else 3
 		(pureJson, _tpe) = Utils.pureResource(jsn)
+		if pureJson is None:
+			return False, C.rcBadRequest, 'content is None'
+
 		tpe = _tpe if _tpe is not None and _tpe != tpe else tpe 				# determine the real tpe
 
 		# if tpe is not None and not tpe.startswith("m2m:"):
@@ -483,28 +494,5 @@ class Validator(object):
 			return True, None
 
 		return False, 'unknown type'
-
-
-	#########################################################################
-	#
-	#	Policy support
-	#
-
-	def getAnnouncedAttributes(self, resource:Resource, policies:Dict[str, List[Any]]) -> Tuple[List[str], List[str]]:
-		"""	Return a list of mandatory and optional announced attributes. 
-			The function only returns those attributes that are also present in the resource!
-		"""
-		mandatory = []
-		optional = []
-		aa = resource.aa
-		for attr,v in policies.items():
-			if resource.hasAttribute(attr):
-				if v[5] == AN.MA:
-					mandatory.append(attr)
-				elif aa is not None and v[5] == AN.OA and attr in aa and resource.hasAttribute(attr):	# only add optional attributes that are also in aa
-					optional.append(attr)
-		return mandatory, optional
-
-
 
 

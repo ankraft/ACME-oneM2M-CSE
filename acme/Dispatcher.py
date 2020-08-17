@@ -8,7 +8,7 @@
 #	through here.
 #
 
-import sys, traceback, re
+import sys, traceback, re, json
 from flask import Request
 from typing import Any, List, Tuple, Union
 from Logging import Logging
@@ -27,11 +27,11 @@ class Dispatcher(object):
 		self.spid 				= Configuration.get('cse.spid')
 		self.csi 				= Configuration.get('cse.csi')
 		self.csiSlash 			= '%s/' % self.csi
-		self.cseid 				= Configuration.get('cse.ri')
+		self.cseri 				= Configuration.get('cse.ri')
 		self.csern				= Configuration.get('cse.rn')
 		self.csiLen 			= len(self.csi)
 		self.csiSlashLen 		= len(self.csiSlash)
-		self.cseidLen 			= len(self.cseid)
+		self.cseriLen 			= len(self.cseri)
 
 		Logging.log('Dispatcher initialized')
 
@@ -100,23 +100,33 @@ class Dispatcher(object):
 		# check rcn & operation
 		if operation == C.permDISCOVERY and rcn not in [ C.rcnDiscoveryResultReferences, C.rcnChildResourceReferences ]:	# Only allow those two
 			return None, C.rcBadRequest, 'invalid rcn: %d for fu: %d' % (rcn, fu)
-		if operation == C.permRETRIEVE and rcn not in [ C.rcnAttributes, C.rcnAttributesAndChildResources, C.rcnChildResources, C.rcnAttributesAndChildResourceReferences, C.rcnChildResourceReferences]: # TODO
+		if operation == C.permRETRIEVE and rcn not in [ C.rcnAttributes, C.rcnAttributesAndChildResources, C.rcnChildResources, C.rcnAttributesAndChildResourceReferences, C.rcnOriginalResource, C.rcnChildResourceReferences]: # TODO
 			return None, C.rcBadRequest, 'invalid rcn: %d for fu: %d' % (rcn, fu)
 
 		Logging.logDebug('Discover/Retrieve resources (fu: %d, drt: %s, handling: %s, conditions: %s, resultContent: %d, attributes: %s)' % (fu, drt, handling, conditions, rcn, str(attributes)))
 
 
 		# Retrieve the target resource, because it is needed for some rcn (and the default)
-		if rcn in [C.rcnAttributes, C.rcnAttributesAndChildResources, C.rcnChildResources, C.rcnAttributesAndChildResourceReferences]:
+		if rcn in [C.rcnAttributes, C.rcnAttributesAndChildResources, C.rcnChildResources, C.rcnAttributesAndChildResourceReferences, C.rcnOriginalResource]:
 			if (res := self.retrieveResource(id))[0] is None:
 			 	return res
 			if not CSE.security.hasAccess(originator, res[0], operation):
 				return None, C.rcOriginatorHasNoPrivilege, 'originator has no permission (%d)' % operation
 
-			# if rcn == attributes then we can return here
+			# if rcn == attributes then we can return here, whatever the result is
 			if rcn == C.rcnAttributes:
 				return res
+
 			resource = res[0]	# root resource for the retrieval/discovery
+
+			# if rcn == original-resource we retrieve the linked resource
+			if rcn == C.rcnOriginalResource:
+				if resource is None:	# continue only when there actually is a resource
+					return res
+				if (lnk := resource.lnk) is None:	# no link attribute?
+					return None, C.rcBadRequest, 'missing lnk attribute in target resource'
+				return self.retrieveResource(lnk, originator)
+
 
 		# do discovery
 		if (resList := self.discoverResources(id, originator, handling, fo, conditions, attributes, operation=operation))[0] is None:	# not found?
@@ -245,16 +255,17 @@ class Dispatcher(object):
 		# 	return None, C.rcInvalidArguments, 'unknown filter usage (fu)'
 
 
-	def retrieveResource(self, id: str = None) -> Tuple[Resource, int, str]:
+	def retrieveResource(self, id:str=None, originator:str=None) -> Tuple[Resource, int, str]:
 		# If the ID is in SP-relative format then first check whether this is for the
 		# local CSE. 
 		# If yes, then adjust the ID and try to retrieve it. 
-		# If no, then try to retrieve the resource from a connected (!) remote CSE. 
-		if id.startswith(self.csiSlash) and len(id) > self.csiSlashLen:		# TODO for all operations?
-			id = id[self.csiSlashLen:]
-		else:
-			if Utils.isSPRelative(id):
-				return CSE.remote.retrieveRemoteResource(id)
+		# If no, then try to retrieve the resource from a connected (!) remote CSE.
+		if id is not None:
+			if id.startswith(self.csiSlash) and len(id) > self.csiSlashLen:		# TODO for all operations?
+				id = id[self.csiSlashLen:]
+			else:
+				if Utils.isSPRelative(id):
+					return CSE.remote.retrieveRemoteResource(id, originator)
 		return self._retrieveResource(srn=id) if Utils.isStructured(id) else self._retrieveResource(ri=id)
 
 
@@ -292,7 +303,7 @@ class Dispatcher(object):
 	# 			return (None, C.rcNotFound)
 	# 	return (CSE.storage.discoverResources(rootResource, handling, conditions, attributes, fo), C.rcOK)
 
-	def discoverResources(self, id: str, originator: str, handling: dict, fo: int = 1, conditions: dict = None, attributes: dict = None, rootResource: Resource = None, operation:int=C.permDISCOVERY) -> Tuple[List[Resource], int, str]:
+	def discoverResources(self, id:str, originator:str, handling:dict, fo:int=1, conditions:dict=None, attributes:dict=None, rootResource:Resource=None, operation:int=C.permDISCOVERY) -> Tuple[List[Resource], int, str]:
 		if rootResource is None:
 			rootResource, _, msg = self.retrieveResource(id)
 			if rootResource is None:
@@ -367,7 +378,6 @@ class Dispatcher(object):
 			discoveredResources.extend(self._discoverResources(r, originator, level-1, fo, allLen, conditions=conditions, attributes=attributes))
 
 		return discoveredResources
-
 
 
 	def _matchResource(self, r : Resource, conditions : dict, attributes : dict, fo : int, allLen : int) -> bool:	
@@ -540,7 +550,9 @@ class Dispatcher(object):
 
 		# Add new resource
 		try:
-			nr, msg = Utils.resourceFromJSON(request.json, pi=pr.ri, ty=ty)
+			jsn = json.loads(Utils.removeCommentsFromJSON(request.get_data(as_text=True)))
+			nr, msg = Utils.resourceFromJSON(jsn, pi=pr.ri, ty=ty)
+			# nr, msg = Utils.resourceFromJSON(request.json, pi=pr.ri, ty=ty)
 			if nr is None:	# something wrong, perhaps wrong type
 				return None, C.rcBadRequest, msg
 		except Exception as e:
@@ -648,8 +660,8 @@ class Dispatcher(object):
 		if id is None and srn is None:
 			return None, C.rcNotFound, 'missing identifier'
 
-		# ID= cse.if, return immediately
-		if id == self.cseid:
+		# ID= cse.ri, return immediately
+		if id == self.cseri:
 			return None, C.rcOperationNotAllowed, 'operation not allowed for CSEBase'
 
 		# handle transit requests
@@ -681,7 +693,7 @@ class Dispatcher(object):
 
 		Logging.logDebug('Updating resource')
 		if ct == None:
-			return None, C.rcBadRequest, 'missing content type'
+			return None, C.rcBadRequest, 'missing or wrong content type in header'
 
 		# Get resource to update
 		r, _, msg = self.retrieveResource(id)	
@@ -693,7 +705,8 @@ class Dispatcher(object):
 
 		# check permissions
 		try:
-			jsn = request.json
+			#jsn = request.json
+			jsn = json.loads(Utils.removeCommentsFromJSON(request.get_data(as_text=True)))
 		except Exception as e:
 			Logging.logWarn('Bad request (malformed content?)')
 			return None, C.rcBadRequest, str(e)
@@ -724,7 +737,9 @@ class Dispatcher(object):
 			return result
 		elif rcn == C.rcnModifiedAttributes:
 			jsonNew = r.json.copy()	
-			return { tpe : Utils.resourceDiff(jsonOrg, jsonNew) }, result[1], None
+			# return only the diff. This includes those attributes that are updated with the same value. Luckily, 
+			# all key/values that are touched in the update request are in the resource's __modified__ variable.
+			return { tpe : Utils.resourceDiff(jsonOrg, jsonNew, modifiers=r[Resource._modified]) }, result[1], None
 		elif rcn == C.rcnNothing:
 			return None, result[1], None
 		# TODO C.rcnDiscoveryResultReferences 
@@ -760,8 +775,8 @@ class Dispatcher(object):
 		if id is None and srn is None:
 			return None, C.rcNotFound, 'missing identifier'
 
-		# ID= cse.if, return immediately
-		if id == self.cseid:
+		# ID= cse.ri, return immediately
+		if id == self.cseri:
 			return None, C.rcOperationNotAllowed, 'operation not allowed for CSEBase'
 
 		# handle transit requests
@@ -979,13 +994,11 @@ class Dispatcher(object):
 													  C.rcnAttributesAndChildResources,
 													  C.rcnAttributesAndChildResourceReferences,
 													  C.rcnChildResourceReferences,
-													  C.rcnChildResources ]:
+													  C.rcnChildResources,
+													  C.rcnOriginalResource ]:
 			return None, 'rcn: %d not allowed in RETRIEVE operation' % rcn
 		elif operation == C.opDISCOVERY and rcn not in [ C.rcnChildResourceReferences,
-														 C.rcnDiscoveryResultReferences,
-														 C.rcnAttributesAndChildResourceReferences,
-													 	 C.rcnAttributesAndChildResources,
-														 C.rcnChildResources ]:
+														 C.rcnDiscoveryResultReferences ]:
 			return None, 'rcn: %d not allowed in DISCOVERY operation' % rcn
 		elif operation == C.opCREATE and rcn not in [ C.rcnAttributes,
 													  C.rcnModifiedAttributes,

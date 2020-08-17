@@ -1,10 +1,11 @@
 {	"m2m:mem" : {
+		"ty" : 13,
 		"mgd" : 1003,
 		"dc" : "a memory",
 		"ri" : "mem1",
 		"pi" : "nod1",
 		"rn" : "memory",
-		"acpi" : [ "acpAdmin", "acpDefault" ],
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ],
 		
 		"mma" : 1000,
 		"mmt": 10000

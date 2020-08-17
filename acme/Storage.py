@@ -237,14 +237,33 @@ class Storage(object):
 		return result
 
 
+	def searchByValueInField(self, field: str, value: str) -> List[Resource]:
+		"""Search and return all resources of a specific value in a field,
+		and return them in an array."""
+		result = []
+		for j in self.db.searchByValueInField(field, value):
+			resource, _ = Utils.resourceFromJSON(j)
+			if resource is not None:
+				result.append(resource)
+		return result
+		
+
 	def searchAnnounceableResourcesForCSI(self, csi:str, isAnnounced:bool) -> List[Resource]:
 		""" Search and retrieve all resources that have the provided CSI in their 
 			'at' attribute.
 		"""
 		result = []
 
+		mcsi = '%s/' % csi
+		def _hasCSI(at:List[str]) -> bool:
+			for a in at:
+				if a == csi or a.startswith(mcsi):
+					return True
+			return False
+
 		def _announcedFilter(r:dict) -> bool:
-			if (at := r.get('at')) is not None and csi in at:
+			# if (at := r.get('at')) is not None and csi in at:
+			if (at := r.get('at')) is not None and _hasCSI(at):
 				if (isa := r.get(Resource._announcedTo)) is not None:
 					found = False
 					for i in isa:
@@ -509,6 +528,13 @@ class TinyDBBinding(object):
 		with self.lockResources:
 			return self.tabResources.search((Query().ty == ty) & (where(field).any(value)))
 
+
+	def  searchByValueInField(self, field: str, value: Any) -> List[dict]:
+		"""Search and return all resources of a value in a field,
+		and return them in an array."""
+		with self.lockResources:
+			#return self.tabResources.search(where(field).any(value))
+			return self.tabResources.search(where(field).test(lambda s: value in s))
 
 
 	#

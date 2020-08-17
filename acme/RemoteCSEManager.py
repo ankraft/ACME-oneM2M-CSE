@@ -307,7 +307,6 @@ class RemoteCSEManager(object):
 		csr = CSR.CSR(pi=localCSE.ri, rn=remoteCSE.ri)	# remoteCSE.ri as name!
 		self._copyCSE2CSE(csr, remoteCSE)
 		csr['ri'] = remoteCSE.ri 						# set the ri to the remote CSE's ri
-		
 		# add local CSR and ACP's
 		if (res := CSE.dispatcher.createResource(csr, localCSE))[0] is None:
 			return res # Problem
@@ -355,7 +354,7 @@ class RemoteCSEManager(object):
 		csr = CSR.CSR(rn=localCSE.ri) # ri as name!
 		self._copyCSE2CSE(csr, localCSE)
 		csr['ri'] = self.cseCsi							# override ri with the own cseID
-		csr['cb'] = Utils.getIdFromOriginator(localCSE.csi)	# only the stem
+		#csr['cb'] = Utils.getIdFromOriginator(localCSE.csi)	# only the stem
 		for _ in ['ty','ri', 'ct', 'lt']: csr.delAttribute(_, setNone=False)	# remove a couple of attributes
 		#for _ in ['ty','ri', 'ct', 'lt']: del(csr[_])	# remove a couple of attributes
 		data = json.dumps(csr.asJSON())
@@ -473,13 +472,13 @@ class RemoteCSEManager(object):
 		return CSE.httpServer.sendDeleteRequest(url, origin)
 
 
-	def retrieveRemoteResource(self, id:str, origin:str=None) -> Tuple[Resource, int, str]:
+	def retrieveRemoteResource(self, id:str, originator:str=None) -> Tuple[Resource, int, str]:
 		if (url := self._getForwardURL(id)) is None:
 			return None, C.rcNotFound, 'URL not found for id: %s' % id
-		if origin is None:
-			origin = self.cseCsi
+		if originator is None:
+			originator = self.cseCsi
 		Logging.log('Retrieve remote resource from: %s' % url)
-		j, rc, m = CSE.httpServer.sendRetrieveRequest(url, origin)
+		j, rc, m = CSE.httpServer.sendRetrieveRequest(url, originator)
 		if rc != C.rcOK:
 			return None, rc, m
 		r, _ = Utils.resourceFromJSON(j)
@@ -572,7 +571,8 @@ class RemoteCSEManager(object):
 			target['srv'] = source.srv
 		if 'st' in source:
 			target['st'] = source.st
-
+		
+		target['cb'] = Utils.getIdFromOriginator(source.csi)	# only the stem
 		target['dcse'] = list(self.descendantCSR.keys())
 		target.delAttribute('acpi', setNone = False)	# remove ACPI (don't provide ACPI in updates...a bit)
 

@@ -63,6 +63,7 @@ class ResourceTypes(IntEnum):
 	DVC 		= 1008
 	RBO 		= 1009
 	EVL 		= 1010
+	NYCFC		= 1023	# myCertFileCred
 
 	# Announced Resources
 
@@ -77,20 +78,38 @@ class ResourceTypes(IntEnum):
 	FCNTAnnc 	= 10028
 	FCIAnnc 	= 10058
 
+	FWRAnnc		= -30001
+	SWRAnnc		= -30002
+	MEMAnnc		= -30003
+	ANIAnnc		= -30004
+	ANDIAnnc	= -30005
+	BATAnnc		= -30006
+	DVIAnnc		= -30007
+	DVCAnnc		= -30008
+	RBOAnnc		= -30009
+	EVLAnnc		= -30010
+	NYCFCAnnc	= -30023
+
 	def tpe(self) -> str:
 		return ResourceTypes._names[self.value] 				#  type: ignore
 
 	def announced(self) -> ResourceTypes:
-		if self.value in ResourceTypes._announcedMapping:		#  type: ignore
-			return ResourceTypes._announcedMapping[self.value] 	#  type: ignore
+		if self.value in ResourceTypes._announcedMappings:		#  type: ignore
+			return ResourceTypes._announcedMappings[self.value] 	#  type: ignore
 		return ResourceTypes.UNKNOWN
+
+	def announcedMgd(self, mgd:int) -> ResourceTypes:
+		if mgd in ResourceTypes._announcedMappingsMGD:		#  type: ignore
+			return ResourceTypes._announcedMappingsMGD[mgd] 	#  type: ignore
+		return ResourceTypes.UNKNOWN
+
 
 	def isAnnounced(self) -> bool:
 		return self.value in ResourceTypes._announcedSet 		# type: ignore
 
 
 
-ResourceTypes._announcedMapping = {								#  type: ignore
+ResourceTypes._announcedMappings = {							#  type: ignore
 	ResourceTypes.ACP 		: ResourceTypes.ACPAnnc,
 	ResourceTypes.AE 		: ResourceTypes.AEAnnc,
 	ResourceTypes.CNT		: ResourceTypes.CNTAnnc,
@@ -103,10 +122,29 @@ ResourceTypes._announcedMapping = {								#  type: ignore
 	ResourceTypes.FCI		: ResourceTypes.FCIAnnc,
 }
 
+
+ResourceTypes._announcedMappingsMGD = {							#  type: ignore
+	ResourceTypes.FWR		: ResourceTypes.FWRAnnc,
+	ResourceTypes.SWR		: ResourceTypes.SWRAnnc,
+	ResourceTypes.MEM		: ResourceTypes.MEMAnnc,
+	ResourceTypes.ANI		: ResourceTypes.ANIAnnc,
+	ResourceTypes.ANDI		: ResourceTypes.ANDIAnnc,
+	ResourceTypes.BAT		: ResourceTypes.BATAnnc,
+	ResourceTypes.DVI		: ResourceTypes.DVIAnnc,
+	ResourceTypes.DVC		: ResourceTypes.DVCAnnc,
+	ResourceTypes.RBO		: ResourceTypes.RBOAnnc,
+	ResourceTypes.EVL		: ResourceTypes.EVLAnnc,
+	ResourceTypes.NYCFC		: ResourceTypes.NYCFCAnnc,
+}
+
 ResourceTypes._announcedSet = [									#  type: ignore
 	ResourceTypes.ACPAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc, ResourceTypes.CINAnnc,
 	ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc, 
-	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.FCIAnnc
+	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.FCIAnnc,
+
+	ResourceTypes.FWRAnnc, ResourceTypes.SWRAnnc, ResourceTypes.MEMAnnc, ResourceTypes.ANIAnnc,
+	ResourceTypes.ANDIAnnc, ResourceTypes.BATAnnc, ResourceTypes.DVIAnnc, ResourceTypes.DVCAnnc, 
+	ResourceTypes.RBOAnnc, ResourceTypes.EVLAnnc, ResourceTypes.NYCFCAnnc,
 ]
 
 
@@ -155,6 +193,20 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.DVC			: 'm2m:dvc',
 		ResourceTypes.RBO			: 'm2m:rbo',
 		ResourceTypes.EVL			: 'm2m:evl',
+		ResourceTypes.NYCFC			: 'm2m:nycfc',
+
+		ResourceTypes.FWRAnnc		: 'm2m:fwrA',
+		ResourceTypes.SWRAnnc		: 'm2m:swrA',
+		ResourceTypes.MEMAnnc		: 'm2m:memA',
+		ResourceTypes.ANIAnnc		: 'm2m:aniA',
+		ResourceTypes.ANDIAnnc		: 'm2m:andiA',
+		ResourceTypes.BATAnnc		: 'm2m:batA',
+		ResourceTypes.DVIAnnc		: 'm2m:dviA',
+		ResourceTypes.DVCAnnc		: 'm2m:dvcA',
+		ResourceTypes.RBOAnnc		: 'm2m:rboA',
+		ResourceTypes.EVLAnnc		: 'm2m:evlA',
+		ResourceTypes.NYCFCAnnc		: 'm2m:nycfcA',
+
 	}
 
 

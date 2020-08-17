@@ -75,7 +75,7 @@ class NotificationManager(object):
 		return (True, C.rcOK, None) if CSE.storage.updateSubscription(subscription) else (False, C.rcInternalServerError, 'cannot update subscription in database')
 
 
-	def checkSubscriptions(self, resource: Resource, reason: int, childResource: Resource = None) -> None:
+	def checkSubscriptions(self, resource:Resource, reason:int, childResource:Resource=None, modifiedAttributes:dict=None) -> None:
 		if not Configuration.get('cse.enableNotifications'):
 			return
 
@@ -98,11 +98,11 @@ class NotificationManager(object):
 				continue
 			if reason in [C.netCreateDirectChild, C.netDeleteDirectChild]:	# reasons for child resources
 				for nu in self._getNotificationURLs(sub['nus']):
-					if not self._sendNotification(sub['ri'], nu, reason, childResource):
+					if not self._sendNotification(sub['ri'], nu, reason, childResource, sub['nct'], modifiedAttributes=modifiedAttributes):
 						pass
 			else: # all other reasons that target the resource
 				for nu in self._getNotificationURLs(sub['nus']):
-					if not self._sendNotification(sub['ri'], nu, reason, resource):
+					if not self._sendNotification(sub['ri'], nu, reason, resource, sub['nct'], modifiedAttributes=modifiedAttributes):
 						pass
 
 
@@ -208,7 +208,7 @@ class NotificationManager(object):
 		return self._sendRequest(nu, ri, deletionNotification)
 
 
-	def _sendNotification(self, ri: str, nu: str, reason: int, resource: Resource) ->  bool:
+	def _sendNotification(self, ri:str, nu:str, reason:int, resource:Resource, nct:int, modifiedAttributes:dict=None) ->  bool:
 		Logging.logDebug('Sending notification to: %s, reason: %d' % (nu, reason))
 
 		notificationRequest = {
@@ -221,20 +221,22 @@ class NotificationManager(object):
 			}
 		}
 
-		return self._sendRequest(nu, ri, notificationRequest, reason, resource)
+		data = None
+		nct == C.nctAll 				and (data := resource.asJSON())
+		nct == C.nctRI  				and (data := { 'm2m:uri' : Utils.fullRI(resource.ri) })
+		nct == C.nctModifiedAttributes	and (data := { resource.tpe : modifiedAttributes })
+		# TODO nxt == C.nctTriggerPayload
+
+		return self._sendRequest(nu, ri, notificationRequest, reason, data)
 
 
-	def _sendRequest(self, nu: str, ri: str, jsn: dict, reason: int = None, resource: Resource = None, originator: str = None) -> bool:
+	def _sendRequest(self, nu:str, ri:str, jsn:dict, reason:int=None, data:dict=None, originator:str=None) -> bool:
 		Utils.setXPath(jsn, 'm2m:sgn/sur', Utils.fullRI(ri))
 
 		# Add some values to the notification
-		# TODO: switch statement:  (x is not None and bla())
-		if reason is not None:
-			Utils.setXPath(jsn, 'm2m:sgn/nev/net', reason)
-		if resource is not None:
-			Utils.setXPath(jsn, 'm2m:sgn/nev/rep', resource.asJSON())
-		if originator is not None:
-			Utils.setXPath(jsn, 'm2m:sgn/cr', originator)
+		reason is not None 		and Utils.setXPath(jsn, 'm2m:sgn/nev/net', reason)
+		data is not None 		and Utils.setXPath(jsn, 'm2m:sgn/nev/rep', data)
+		originator is not None 	and Utils.setXPath(jsn, 'm2m:sgn/cr', originator)
 
 		_, rc, _ = CSE.httpServer.sendCreateRequest(nu, Configuration.get('cse.csi'), data=json.dumps(jsn))
 		return rc in [C.rcOK]

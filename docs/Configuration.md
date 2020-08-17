@@ -32,7 +32,7 @@ The following macros are supported in addition to those defined in the sections 
 [\[cse.registration\] - Settings for Self-Registrations](#cse_registration)  
 [\[cse.registrar\] - Settings for Remote CSE Access](#registrar)  
 [\[cse.announcements\] - Settings for Resource Announcements](#announcements)  
-[\[cse.statistics\]Statistic Settings](#statistics)  
+[\[cse.statistics\] - Statistic Settings](#statistics)  
 [\[cse.resource.acp\] - Resource defaults: ACP](#resource_acp)  
 [\[cse.resource.cnt\] - Resource Defaults: CNT](#resource_cnt)  
 [\[cse.webui\] - Web UI Settings](#webui)  
@@ -52,17 +52,17 @@ The following macros are supported in addition to those defined in the sections 
 | type                     | The CSE type. Possible values: IN, MN, ASN.<br/>Default: IN                                                                                                                                    | cse.type                     |
 | serviceProviderID        | The CSE's service provider ID.<br/>Default: acme                                                                                                                                               | cse.spid                     |
 | cseID                    | The CSE ID. Can be overwritten in imported CSE definition. A CSE-ID must start with a /.<br/>Default: id-in                                                                                    | cse.csi                      |
-| resourceID               | The CSE's resource ID. Can be overwritten in imported CSE definition.<br/>Default: id-in                                                                                                       | cse.ri                       |
+| resourceID               | The CSE's resource ID. This should be the *cseid* without the leading "/". Can be overwritten in imported CSE definition.<br/>Default: id-in                                                   | cse.ri                       |
 | resourceName             | The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition.<br>Default: cse-in                                                                                         | cse.rn                       |
 | resourcesPath            | Directory of default resources to import.<br/>See also command line argument [–import-directory](Running.md).<br/>Default: ./init                                                              | cse.resourcesPath            |
 | expirationDelta          | ExpirationTime before resources are removed in seconds.<br/> Default: 60*60*24*365 = 31536000 = 1 year                                                                                         | cse.expirationDelta          |
 | originator               | Admin originator for the CSE.<br/>Default: CAdmin                                                                                                                                              | cse.originator               |
 | enableApplications       | Enable internal applications. See also individual application configuratins in the [app. ...] sections.<br/>See also command line arguments [–apps and –noapps](Running.md).<br/>Default: true | cse.enableApplications       |
+| applicationsStartupDelay | Delay after the CSE startup to run internal applications in seconds.<br/>Default: 5                                                                                                            | cse.applicationsStartupDelay |
 | enableNotifications      | Enable notifications.<br/>Default: true                                                                                                                                                        | cse.enableNotifications      |
 | enableRemoteCSE          | Enable remote CSE registration and checking.<br/>See also command line arguments [–remote-cse and –no-remote-cse](Running.md).<br/>Default: true                                               | cse.enableRemoteCSE          |
 | enableTransitRequests    | Enable forwarding of requests to a remote CSE.<br/>Default: true                                                                                                                               | cse.enableTransitRequests    |
 | enableValidation         | Enable the validation of attributes and arguments.<br />Default: true                                                                                                                          | cse.enableValidation         |
-| enableAnnouncements      | Enable announcement to remote CSE and allow announced resource registrations.<br />Default: True                                                                                               | cse.enableAnnouncements      |
 | sortDiscoveredResources  | Enable alphabetical sorting of discovery results.<br/>Default: true                                                                                                                            | cse.sortDiscoveredResources  |
 | checkExpirationsInterval | Interval to check for expired resources. 0 means "no checking".<br/>Default: 60 seconds                                                                                                        | cse.checkExpirationsInterval |
 
@@ -137,7 +137,7 @@ The following macros are supported in addition to those defined in the sections 
 
 | Keyword             | Description                                                                                      | Macro Name                            |
 |:--------------------|:-------------------------------------------------------------------------------------------------|:--------------------------------------|
-| enableAnnouncements | Enable announcement to remote CSE and allow announced resource registrations.<br />Default: True | cse.announcements.enableAnnouncements |
+| enable              | Enable announcement to remote CSE and allow announced resource registrations.<br />Default: True | cse.announcements.enable              |
 | checkInterval       | Wait n seconds between tries to to announce resources to registered remote CSE.<br />Default: 10 | cse.announcements.checkInterval       |
 
 
@@ -147,6 +147,7 @@ The following macros are supported in addition to those defined in the sections 
 
 | Keyword        | Description                                                               | Macro Name                    |
 |:---------------|:--------------------------------------------------------------------------|:------------------------------|
+| enable         | Enable or disable collecting CSE statistics.<br />Default: True           | cse.statistics.enable         |
 | writeIntervall | Intervall for saving statistics data to disk in seconds.<br />Default: 60 | cse.statistics.writeIntervall |
 
 
