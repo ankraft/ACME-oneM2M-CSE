@@ -33,6 +33,10 @@ class DVC(MgmtObj):
 			self.setAttribute('ena', True, overwrite=True)	# always True
 			self.setAttribute('dis', True, overwrite=True)	# always True
 
+	#
+	#	Handling the special behaviour for ena and dis attributes in 
+	#	validate() and update()
+	#
 
 	def validate(self, originator:str=None, create:bool=False) -> Result:
 		if not (res := super().validate(originator, create)).status:
