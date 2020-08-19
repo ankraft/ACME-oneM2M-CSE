@@ -35,20 +35,20 @@ class RBO(MgmtObj):
 	#	validate() and update()
 	#
 
-	def validate(self, originator: str = None, create: bool = False) -> Tuple[bool, int, str]:
-		if (res := super().validate(originator, create))[0] == False:
+	def validate(self, originator: str = None, create: bool = False) -> Result:
+		if not (res := super().validate(originator, create)).status:
 			return res
 		self.setAttribute('rbo', False, overwrite=True)	# always set (back) to True
 		self.setAttribute('far', False, overwrite=True)	# always set (back) to True
-		return True, C.rcOK, None
+		return Result(status=True)
 
 
-	def update(self, jsn:dict=None, originator:str=None) -> Tuple[bool, int, str]:
+	def update(self, jsn:dict=None, originator:str=None) -> Result:
 		# Check for rbo & far updates 
 		if jsn is not None and self.tpe in jsn:
 			rbo = Utils.findXPath(jsn, 'm2m:rbo/rbo')
 			far = Utils.findXPath(jsn, 'm2m:rbo/far')
 			if rbo is not None and far is not None and rbo and far:
-				return False, C.rcBadRequest, 'update both rbo and far to True is not allowed'
+				return Result(status=False, rsc=C.rcBadRequest, dbg='update both rbo and far to True is not allowed')
 
 		return super().update(jsn, originator)
