@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Any, Tuple, Union, Dict, List
 from Logging import Logging
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result
 from Configuration import Configuration
 import Utils, CSE
 import datetime, random, traceback
@@ -37,7 +37,7 @@ class Resource(object):
 	# ATTN: There is a similar definition in FCNT! Don't Forget to add attributes there as well
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator, _announcedTo, _modified ]
 
-	def __init__(self, ty:Union[T, int], jsn:dict = None, pi:str = None, tpe:str = None, create:bool = False, inheritACP:bool = False, readOnly:bool = False, rn:str = None, attributePolicies:dict = None, isVirtual:bool = False) -> None:
+	def __init__(self, ty:Union[T, int], jsn:dict=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str=None, attributePolicies:dict=None, isVirtual:bool=False) -> None:
 		self.tpe = tpe
 		if isinstance(ty, T) and ty not in [ T.FCNT, T.FCI ]: 	# For some types the tpe/root is empty and will be set later in this method
 			self.tpe = ty.tpe() if tpe is None else tpe
@@ -132,31 +132,31 @@ class Resource(object):
 	# NO notification on activation/creation!
 	# Implemented in sub-classes.
 	# Note: CR and ACPI are set in RegistrationManager
-	def activate(self, parentResource: Resource, originator: str) -> Tuple[bool, int, str]:
+	def activate(self, parentResource: Resource, originator: str) -> Result:
 		Logging.logDebug('Activating resource: %s' % self.ri)
 
 		# validate the attributes but only when the resource is not instantiated.
 		# We assume that an instantiated resource is always correct
 		# Also don't validate virtual resources
 		if (self[self._isInstantiated] is None or not self[self._isInstantiated]) and not self[self._isVirtual] :
-			if not (result := CSE.validator.validateAttributes(self._originalJson, self.tpe, self.attributePolicies, isImported=self.isImported))[0]:
-				return result
+			if not (res := CSE.validator.validateAttributes(self._originalJson, self.tpe, self.attributePolicies, isImported=self.isImported)).status:
+				return res
 
 		# validate the resource logic
-		if not (result := self.validate(originator, create=True))[0]:
-			return result
+		if not (res := self.validate(originator, create=True)).status:
+			return res
 
 		# increment parent resource's state tag
 		if parentResource is not None and parentResource.st is not None:
-			parentResource, _, _ = parentResource.dbReload()	# Read the resource again in case it was updated in the DB
+			parentResource = parentResource.dbReload().resource	# Read the resource again in case it was updated in the DB
 			parentResource['st'] = parentResource.st + 1
-			if (res := parentResource.dbUpdate())[0] is None:
-				return False, res[1], res[2]
+			if (res := parentResource.dbUpdate()).resource is None:
+				return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
 		self.setAttribute(self._originator, originator, overwrite=False)
 		self.setAttribute(self._rtype, self.tpe, overwrite=False) 
 
-		return True, C.rcOK, None
+		return Result(status=True, rsc=C.rcOK)
 
 
 	# Deactivate an active resource.
@@ -176,18 +176,18 @@ class Resource(object):
 
 	# Update this resource with (new) fields.
 	# Call validate() afterward to react on changes.
-	def update(self, jsn: dict = None, originator:str = None) -> Tuple[bool, int, str]:
+	def update(self, jsn:dict=None, originator:str=None) -> Result:
 		jsonOrg = self.json.copy()	# Save for later for notification
 
 		j = None
 		if jsn is not None:
 			if self.tpe not in jsn and self.ty not in [T.FCNTAnnc, T.FCIAnnc]:	# Don't check announced versions of announced FCNT
 				Logging.logWarn("Update types don't match")
-				return False, C.rcContentsUnacceptable, 'resource types mismatch'
+				return Result(status=False, rsc=C.rcContentsUnacceptable, dbg='resource types mismatch')
 
 			# validate the attributes
-			if not (result := CSE.validator.validateAttributes(jsn, self.tpe, self.attributePolicies, create=False))[0]:
-				return result
+			if not (res := CSE.validator.validateAttributes(jsn, self.tpe, self.attributePolicies, create=False)).status:
+				return res
 
 			if self.ty not in [T.FCNTAnnc, T.FCIAnnc]:
 				j = jsn[self.tpe] # get structure under the resource type specifier
@@ -217,7 +217,7 @@ class Resource(object):
 		#self.json = {k: v for (k, v) in self.json.items() if v is not None }
 
 		# Do some extra validations, if necessary
-		if not (res := self.validate(originator))[0]:
+		if not (res := self.validate(originator)).status:
 			return res
 
 		# store last modified attributes
@@ -226,13 +226,13 @@ class Resource(object):
 		# Check subscriptions
 		CSE.notification.checkSubscriptions(self, C.netResourceUpdate, modifiedAttributes=self[self._modified])
 
-		return True, C.rcOK, None
+		return Result(status=True)
 
 
-	def childWillBeAdded(self, childResource:Resource, originator:str) -> Tuple[bool, int, str]:
+	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
 		""" Called before a child will be added to a resource.
 			This method return True, or False in kind the adding should be rejected, and an error code."""
-		return True, C.rcOK, None
+		return Result(status=True)
 
 
 	def childAdded(self, childResource:Resource, originator:str) -> None:
@@ -256,7 +256,7 @@ class Resource(object):
 		return resource['ty'] in allowedChildResourceTypes or isinstance(resource, Unknown)
 
 
-	def validate(self, originator:str = None, create:bool = False) -> Tuple[bool, int, str]:
+	def validate(self, originator:str=None, create:bool=False) -> Result:
 		""" Validate a resource. Usually called within activate() or update() methods. """
 		Logging.logDebug('Validating resource: %s' % self.ri)
 		if (not Utils.isValidID(self.ri) or
@@ -264,8 +264,8 @@ class Resource(object):
 			not Utils.isValidID(self.rn)):
 			err = 'Invalid ID ri: %s, pi: %s, rn: %s)' % (self.ri, self.pi, self.rn)
 			Logging.logDebug(err)
-			return False, C.rcContentsUnacceptable, err
-		return True, C.rcOK, None
+			return Result(status=False, rsc=C.rcContentsUnacceptable, dbg=err)
+		return Result(status=True)
 
 
 	def validateExpirations(self) -> bool:
@@ -361,21 +361,21 @@ class Resource(object):
 	#	Database functions
 	#
 
-	def dbDelete(self) -> Tuple[bool, int, str]:
+	def dbDelete(self) -> Result:
 		""" Delete the Resource from the database. """
 		return CSE.storage.deleteResource(self)
 
 
-	def dbUpdate(self) -> Tuple[Resource, int, str]:
+	def dbUpdate(self) -> Result:
 		""" Update the Resource in the database. """
 		return CSE.storage.updateResource(self)
 
 
-	def dbCreate(self, overwrite: bool = False) -> Tuple[bool, int, str]:
+	def dbCreate(self, overwrite: bool = False) -> Result:
 		return CSE.storage.createResource(self, overwrite)
 
 
-	def dbReload(self) -> Tuple[Resource, int, str]:
+	def dbReload(self) -> Result:
 		"""  Load a new copy from the database. The current resource is NOT changed. """
 		return CSE.storage.retrieveResource(ri=self.ri)
 
@@ -406,6 +406,5 @@ class Resource(object):
 
 
 	def retrieveParentResource(self) -> Resource:
-		parentResource, _, _ = CSE.dispatcher.retrieveResource(self.pi)
-		return parentResource
+		return CSE.dispatcher.retrieveResource(self.pi).resource
 

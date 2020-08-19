@@ -7,11 +7,11 @@
 #	ResourceType: Container
 #
 
-from typing import Tuple, List
+from typing import List
 from Logging import Logging
 from Configuration import Configuration
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result
 from Validator import constructPolicy, addPolicy
 import Utils, CSE
 from .Resource import *
@@ -32,7 +32,7 @@ attributePolicies =  addPolicy(attributePolicies, cntPolicies)
 class CNT(AnnounceableResource):
 
 
-	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+	def __init__(self, jsn:dict=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.CNT, jsn, pi, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = cntPolicies	# only the resource type's own policies
@@ -54,26 +54,25 @@ class CNT(AnnounceableResource):
 									 ])
 
 
-	def activate(self, parentResource: Resource, originator: str) -> Tuple[bool, int, str]:
-		if not (result := super().activate(parentResource, originator))[0]:
-			return result
+	def activate(self, parentResource:Resource, originator:str) -> Result:
+		if not (res := super().activate(parentResource, originator)).status:
+			return res
 
 		# register latest and oldest virtual resources
 		Logging.logDebug('Registering latest and oldest virtual resources for: %s' % self.ri)
 
 		# add latest
-		r, _ = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.CNT_LA)
-		res = CSE.dispatcher.createResource(r)
-		if res[0] is None:
-			return False, res[1], res[2]
+		latestResource = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.CNT_LA).resource
+		if (res := CSE.dispatcher.createResource(latestResource)).resource is None:
+			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
 		# add oldest
-		r, _ = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.CNT_OL)
-		res = CSE.dispatcher.createResource(r)
-		if res[0] is None:
-			return False, res[1], res[2]
+		oldestResource = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.CNT_OL).resource
+	
+		if (res := CSE.dispatcher.createResource(oldestResource)).resource is None:
+			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
-		return True, C.rcOK, None
+		return Result(status=True)
 
 
 	# Get all content instances of a resource and return a sorted (by ct) list 
@@ -81,29 +80,29 @@ class CNT(AnnounceableResource):
 		return sorted(CSE.dispatcher.directChildResources(self.ri, T.CIN), key=lambda x: (x.ct))
 
 
-	def childWillBeAdded(self, childResource: Resource, originator: str) -> Tuple[bool, int, str]:
-		if not (res := super().childWillBeAdded(childResource, originator))[0]:
+	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
+		if not (res := super().childWillBeAdded(childResource, originator)).status:
 			return res
 		
 		# Check whether the child's rn is "ol" or "la".
 		if (rn := childResource['rn']) is not None and rn in ['ol', 'la']:
-			return False, C.rcOperationNotAllowed, 'resource types "latest" or "oldest" cannot be added'
+			return Result(status=False, rsc=C.rcOperationNotAllowed, dbg='resource types "latest" or "oldest" cannot be added')
 	
 		# Check whether the size of the CIN doesn't exceed the mbs
 		if childResource.ty == T.CIN and self.mbs is not None:
 			if childResource.cs is not None and childResource.cs > self.mbs:
-				return False, C.rcNotAcceptable, 'children content sizes would exceed mbs'
-		return True, C.rcOK, None
+				return Result(status=False, rsc=C.rcNotAcceptable, dbg='children content sizes would exceed mbs')
+		return Result(status=True)
 
 
 	# Handle the addition of new CIN. Basically, get rid of old ones.
-	def childAdded(self, childResource: Resource, originator: str) -> None:
+	def childAdded(self, childResource:Resource, originator:str) -> None:
 		super().childAdded(childResource, originator)
 		if childResource.ty == T.CIN:	# Validate if child is CIN
 			self.validate(originator)
 
 	# Handle the removal of a CIN. 
-	def childRemoved(self, childResource: Resource, originator: str) -> None:
+	def childRemoved(self, childResource:Resource, originator:str) -> None:
 		super().childRemoved(childResource, originator)
 		if childResource.ty == T.CIN:	# Validate if child was CIN
 			self.validate(originator)
@@ -111,8 +110,8 @@ class CNT(AnnounceableResource):
 
 	# Validating the Container. This means recalculating cni, cbs as well as
 	# removing ContentInstances when the limits are met.
-	def validate(self, originator: str = None, create: bool = False) -> Tuple[bool, int, str]:
-		if (res := super().validate(originator, create))[0] == False:
+	def validate(self, originator:str=None, create:bool=False) -> Result:
+		if (res := super().validate(originator, create)).status == False:
 			return res
 
 		# retrieve all children
@@ -150,4 +149,4 @@ class CNT(AnnounceableResource):
 		# Some CNT resource may have been updated, so store the resource 
 		CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
 
-		return True, C.rcOK, None
+		return Result(status=True)

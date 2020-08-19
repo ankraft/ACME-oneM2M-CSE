@@ -19,7 +19,7 @@ from resources import SWR, SWRAnnc, Unknown, Resource
 
 
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result
 from Configuration import Configuration
 from Logging import Logging
 import CSE
@@ -162,9 +162,9 @@ def riFromCSI(csi: str) -> str:
 
 def resourceFromCSI(csi: str) -> Resource.Resource:
 	""" Get the CSEBase resource by its csi. """
-	if (res := CSE.storage.retrieveResource(csi=csi))[0] is None:
+	if (res := CSE.storage.retrieveResource(csi=csi)).resource is None:
 		return None
-	return res[0]
+	return res.resource
 
 def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 	""" Split a ful path e.g. from a http request into its component and return a local ri .
@@ -256,7 +256,7 @@ mgmtObjAnncTPEs = 	[	T.FWRAnnc.tpe(), T.SWRAnnc.tpe(), T.MEMAnnc.tpe(), T.ANIAnn
 						T.RBOAnnc.tpe(), T.EVLAnnc.tpe(),
 			  		]
 
-def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, int] = None, create: bool = False, isImported: bool = False) -> Tuple[Resource.Resource, str]:
+def resourceFromJSON(jsn: dict,pi:str=None, acpi:str=None, ty:Union[T, int]=None, create:bool=False, isImported:bool=False) -> Result:
 	""" Create a resource from a JSON structure.
 		This will *not* call the activate method, therefore some attributes
 		may be set separately.
@@ -264,7 +264,7 @@ def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, i
 	jsn, root = pureResource(jsn)	# remove optional "m2m:xxx" level
 	typ = jsn['ty'] if 'ty' in jsn else ty
 	if typ != None and ty != None and typ != ty:
-		return None, 'type and resource specifier mismatch'
+		return Result(dbg='type and resource specifier mismatch')
 	mgd = jsn['mgd'] if 'mgd' in jsn else None		# for mgmtObj
 
 	# Add extra acpi
@@ -278,109 +278,109 @@ def resourceFromJSON(jsn: dict, pi: str = None, acpi: str = None, ty: Union[T, i
 
 	# sorted by assumed frequency (small optimization)
 	if typ == T.CIN or root == T.CIN.tpe():
-		return CIN.CIN(jsn, pi=pi, create=create), None
+		return Result(resource=CIN.CIN(jsn, pi=pi, create=create))
 	elif typ == T.CNT or root == T.CNT.tpe():
-		return CNT.CNT(jsn, pi=pi, create=create), None
+		return Result(resource=CNT.CNT(jsn, pi=pi, create=create))
 	elif typ == T.GRP or root == T.GRP.tpe():
-		return GRP.GRP(jsn, pi=pi, create=create), None
+		return Result(GRP.GRP(jsn, pi=pi, create=create))
 	elif typ == T.GRP_FOPT or root == T.GRP_FOPT.tpe():
-		return GRP_FOPT.GRP_FOPT(jsn, pi=pi, create=create), None
+		return Result(resource=GRP_FOPT.GRP_FOPT(jsn, pi=pi, create=create))
 	elif typ == T.ACP or root == T.ACP.tpe():
-		return ACP.ACP(jsn, pi=pi, create=create), None
+		return Result(resource=ACP.ACP(jsn, pi=pi, create=create))
 	elif typ == T.FCNT:
-		return FCNT.FCNT(jsn, pi=pi, fcntType=root, create=create), None
+		return Result(resource=FCNT.FCNT(jsn, pi=pi, fcntType=root, create=create))
 	elif typ == T.FCI:
-		return FCI.FCI(jsn, pi=pi, fcntType=root, create=create), None	
+		return Result(resource=FCI.FCI(jsn, pi=pi, fcntType=root, create=create))	
 	elif typ == T.AE or root == T.AE.tpe():
-		return AE.AE(jsn, pi=pi, create=create), None
+		return Result(resource=AE.AE(jsn, pi=pi, create=create))
 	elif typ == T.SUB or root == T.SUB.tpe():
-		return SUB.SUB(jsn, pi=pi, create=create), None
+		return Result(resource=SUB.SUB(jsn, pi=pi, create=create))
 	elif typ == T.CSR or root == T.CSR.tpe():
-		return CSR.CSR(jsn, pi=pi, create=create), None
+		return Result(resource=CSR.CSR(jsn, pi=pi, create=create))
 	elif typ == T.NOD or root == T.NOD.tpe():
-		return NOD.NOD(jsn, pi=pi, create=create), None
+		return Result(resource=NOD.NOD(jsn, pi=pi, create=create))
 	elif (typ == T.CNT_LA or root == T.CNT_LA.tpe()) and typ != T.FCNT_LA:
-		return CNT_LA.CNT_LA(jsn, pi=pi, create=create), None
+		return Result(resource=CNT_LA.CNT_LA(jsn, pi=pi, create=create))
 	elif (typ == T.CNT_OL or root == T.CNT_OL.tpe()) and typ != T.FCNT_OL:
-		return CNT_OL.CNT_OL(jsn, pi=pi, create=create), None
+		return Result(resource=CNT_OL.CNT_OL(jsn, pi=pi, create=create))
 	elif typ == T.FCNT_LA:
-		return FCNT_LA.FCNT_LA(jsn, pi=pi, create=create), None
+		return Result(resource=FCNT_LA.FCNT_LA(jsn, pi=pi, create=create))
 	elif typ == T.FCNT_OL:
-		return FCNT_OL.FCNT_OL(jsn, pi=pi, create=create), None
+		return Result(resource=FCNT_OL.FCNT_OL(jsn, pi=pi, create=create))
 	elif typ == T.CSEBase or root == T.CSEBase.tpe():
-		return CSEBase.CSEBase(jsn, create=create), None
+		return Result(resource=CSEBase.CSEBase(jsn, create=create))
 
 	# Management Objects
 	elif typ == T.MGMTOBJ or root in mgmtObjTPEs:
 		if mgd == T.FWR or root == T.FWR.tpe():
-			return FWR.FWR(jsn, pi=pi, create=create), None
+			return Result(resource=FWR.FWR(jsn, pi=pi, create=create))
 		elif mgd == T.SWR or root == T.SWR.tpe():
-			return SWR.SWR(jsn, pi=pi, create=create), None
+			return Result(resource=SWR.SWR(jsn, pi=pi, create=create))
 		elif mgd == T.MEM or root == T.MEM.tpe():
-			return MEM.MEM(jsn, pi=pi, create=create), None
+			return Result(resource=MEM.MEM(jsn, pi=pi, create=create))
 		elif mgd == T.ANI or root == T.ANI.tpe():
-			return ANI.ANI(jsn, pi=pi, create=create), None
+			return Result(resource=ANI.ANI(jsn, pi=pi, create=create))
 		elif mgd == T.ANDI or root == T.ANDI.tpe():
-			return ANDI.ANDI(jsn, pi=pi, create=create), None
+			return Result(resource=ANDI.ANDI(jsn, pi=pi, create=create))
 		elif mgd == T.BAT or root == T.BAT.tpe():
-			return BAT.BAT(jsn, pi=pi, create=create), None
+			return Result(resource=BAT.BAT(jsn, pi=pi, create=create))
 		elif mgd == T.DVI or root == T.DVI.tpe():
-			return DVI.DVI(jsn, pi=pi, create=create), None
+			return Result(resource=DVI.DVI(jsn, pi=pi, create=create))
 		elif mgd == T.DVC or root == T.DVC.tpe():
-			return DVC.DVC(jsn, pi=pi, create=create), None
+			return Result(resource=DVC.DVC(jsn, pi=pi, create=create))
 		elif mgd == T.RBO or root == T.RBO.tpe():
-			return RBO.RBO(jsn, pi=pi, create=create), None
+			return Result(resource=RBO.RBO(jsn, pi=pi, create=create))
 		elif  mgd == T.EVL or root == T.EVL.tpe():
-			return EVL.EVL(jsn, pi=pi, create=create), None
+			return Result(resource=EVL.EVL(jsn, pi=pi, create=create))
 		elif  mgd == T.NYCFC or root == T.NYCFC.tpe():
-			return NYCFC.NYCFC(jsn, pi=pi, create=create), None
+			return Result(resource=NYCFC.NYCFC(jsn, pi=pi, create=create))
 
 	# Announced Resources
 	elif typ == T.ACPAnnc:
-		return ACPAnnc.ACPAnnc(jsn, pi=pi, create=create), None
+		return Result(resource=ACPAnnc.ACPAnnc(jsn, pi=pi, create=create))
 	elif typ == T.AEAnnc:
-		return AEAnnc.AEAnnc(jsn, pi=pi, create=create), None
+		return Result(resource=AEAnnc.AEAnnc(jsn, pi=pi, create=create))
 	elif typ == T.CNTAnnc:
-		return CNTAnnc.CNTAnnc(jsn, pi=pi, create=create), None
+		return Result(resource=CNTAnnc.CNTAnnc(jsn, pi=pi, create=create))
 	elif typ == T.CINAnnc:
-		return CINAnnc.CINAnnc(jsn, pi=pi, create=create), None
+		return Result(resource=CINAnnc.CINAnnc(jsn, pi=pi, create=create))
 	elif typ == T.GRPAnnc:
-		return GRPAnnc.GRPAnnc(jsn, pi=pi, create=create), None
+		return Result(resource=GRPAnnc.GRPAnnc(jsn, pi=pi, create=create))
 	elif typ == T.NODAnnc:
-		return NODAnnc.NODAnnc(jsn, pi=pi, create=create), None
+		return Result(resource=NODAnnc.NODAnnc(jsn, pi=pi, create=create))
 	elif typ == T.CSRAnnc:
-		return CSRAnnc.CSRAnnc(jsn, pi=pi, create=create), None
+		return Result(resource=CSRAnnc.CSRAnnc(jsn, pi=pi, create=create))
 	elif typ == T.FCIAnnc:
-		return FCIAnnc.FCIAnnc(jsn, pi=pi, create=create), None
+		return Result(resource=FCIAnnc.FCIAnnc(jsn, pi=pi, create=create))
 	elif typ == T.FCNTAnnc:
-		return FCNTAnnc.FCNTAnnc(jsn, pi=pi, create=create), None
+		return Result(resource=FCNTAnnc.FCNTAnnc(jsn, pi=pi, create=create))
 
 	# Announced Management Objects
 	elif typ == T.MGMTOBJAnnc or root in mgmtObjAnncTPEs:
 		if mgd == T.FWRAnnc or root == T.FWRAnnc.tpe():
-			return FWRAnnc.FWRAnnc(jsn, pi=pi, create=create), None
+			return Result(resource=FWRAnnc.FWRAnnc(jsn, pi=pi, create=create))
 		elif mgd == T.SWRAnnc or root == T.SWRAnnc.tpe():
-			return SWRAnnc.SWRAnnc(jsn, pi=pi, create=create), None
+			return Result(resource=SWRAnnc.SWRAnnc(jsn, pi=pi, create=create))
 		elif mgd == T.MEMAnnc or root == T.MEMAnnc.tpe():
-			return MEMAnnc.MEMAnnc(jsn, pi=pi, create=create), None
+			return Result(resource=MEMAnnc.MEMAnnc(jsn, pi=pi, create=create))
 		elif mgd == T.ANIAnnc or root == T.ANIAnnc.tpe():
-			return ANIAnnc.ANIAnnc(jsn, pi=pi, create=create), None
+			return Result(resource=ANIAnnc.ANIAnnc(jsn, pi=pi, create=create))
 		elif mgd == T.ANDIAnnc or root == T.ANDIAnnc.tpe():
-			return ANDIAnnc.ANDIAnnc(jsn, pi=pi, create=create), None
+			return Result(resource=ANDIAnnc.ANDIAnnc(jsn, pi=pi, create=create))
 		elif mgd == T.BATAnnc or root == T.BATAnnc.tpe():
-			return BATAnnc.BATAnnc(jsn, pi=pi, create=create), None
+			return Result(resource=BATAnnc.BATAnnc(jsn, pi=pi, create=create))
 		elif mgd == T.DVIAnnc or root == T.DVIAnnc.tpe():
-			return DVIAnnc.DVIAnnc(jsn, pi=pi, create=create), None
+			return Result(resource=DVIAnnc.DVIAnnc(jsn, pi=pi, create=create))
 		elif mgd == T.DVCAnnc or root == T.DVCAnnc.tpe():
-			return DVCAnnc.DVCAnnc(jsn, pi=pi, create=create), None
+			return Result(resource=DVCAnnc.DVCAnnc(jsn, pi=pi, create=create))
 		elif mgd == T.RBOAnnc or root == T.RBOAnnc.tpe():
-			return RBOAnnc.RBOAnnc(jsn, pi=pi, create=create), None
+			return Result(resource=RBOAnnc.RBOAnnc(jsn, pi=pi, create=create))
 		elif  mgd == T.EVLAnnc or root == T.EVLAnnc.tpe():
-			return EVLAnnc.EVLAnnc(jsn, pi=pi, create=create), None
+			return Result(resource=EVLAnnc.EVLAnnc(jsn, pi=pi, create=create))
 		elif  mgd == T.NYCFCAnnc or root == T.NYCFCAnnc.tpe():
-			return NYCFCAnnc.NYCFCAnnc(jsn, pi=pi, create=create), None
+			return Result(resource=NYCFCAnnc.NYCFCAnnc(jsn, pi=pi, create=create))
 
-	return Unknown.Unknown(jsn, root, pi=pi, create=create), None	# Capture-All resource
+	return Result(resource=Unknown.Unknown(jsn, root, pi=pi, create=create))	# Capture-All resource
 
 
 excludeFromRoot = [ 'pi' ]
@@ -514,7 +514,7 @@ def resourceDiff(old:Union[Resource.Resource, dict], new:Union[Resource.Resource
 	return res
 
 
-def getCSE() -> Tuple[Resource.Resource, int, str]:
+def getCSE() -> Result:
 	return CSE.dispatcher.retrieveResource(Configuration.get('cse.ri'))
 
 
@@ -538,8 +538,8 @@ def fanoutPointResource(id: str) -> Resource.Resource:
 		(head, sep, tail) = id.partition('/fopt/')
 		nid = head + '/fopt'
 	if nid is not None:
-		if (result := CSE.dispatcher.retrieveResource(nid))[0] is not None:
-			return result[0]
+		if (result := CSE.dispatcher.retrieveResource(nid)).resource is not None:
+			return result.resource
 	return None
 
 

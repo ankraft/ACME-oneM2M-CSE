@@ -37,7 +37,7 @@ class SecurityManager(object):
 		Logging.log('SecurityManager shut down')
 
 
-	def hasAccess(self, originator: str, resource: Resource, requestedPermission: int, checkSelf: bool = False, ty: int = None, isCreateRequest: bool = False, parentResource: Resource = None) -> bool:
+	def hasAccess(self, originator:str, resource:Resource, requestedPermission:int, checkSelf:bool=False, ty:int=None, isCreateRequest:bool=False, parentResource:Resource=None) -> bool:
 		if not Configuration.get('cse.security.enableACPChecks'):	# check or ignore the check
 			return True
 
@@ -88,8 +88,7 @@ class SecurityManager(object):
 			
 			else: # handle the permission checks here
 				for a in macp:
-					acp, _, _ = CSE.dispatcher.retrieveResource(a)
-					if acp is None:
+					if (acp := CSE.dispatcher.retrieveResource(a).resource) is None:
 						Logging.logDebug('ACP resource not found: %s' % a)
 						continue
 					else:
@@ -115,7 +114,7 @@ class SecurityManager(object):
 
 			if (acpi := resource.acpi) is None or len(acpi) == 0:	
 				if resource.inheritACP:
-					parentResource, _, _ = CSE.dispatcher.retrieveResource(resource.pi)
+					parentResource = CSE.dispatcher.retrieveResource(resource.pi).resource
 					return self.hasAccess(originator, parentResource, requestedPermission, checkSelf)
 				Logging.logDebug('Missing acpi in resource')
 				if (orig := resource[resource._originator]) is not None and orig == originator:
@@ -124,8 +123,7 @@ class SecurityManager(object):
 				return False
 
 			for a in acpi:
-				acp, _, _ = CSE.dispatcher.retrieveResource(a)
-				if acp is None:
+				if (acp := CSE.dispatcher.retrieveResource(a).resource) is None:
 					Logging.logDebug('ACP resource not found: %s' % a)
 					continue
 				if checkSelf:	# forced check for self permissions

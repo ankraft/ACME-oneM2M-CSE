@@ -15,7 +15,7 @@ from Configuration import Configuration
 from resources.Resource import Resource
 from resources.AnnouncedResource import AnnouncedResource
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result
 from helpers.BackgroundWorker import BackgroundWorker
 
 # TODO for anounceable resource:
@@ -87,7 +87,7 @@ class AnnouncementManager(object):
 	#	Event Handlers. Listen on remote CSE registrations
 	#
 
-	def handleRegisteredToRemoteCSE(self, remoteCSE:Resource, remoteCSR: Resource) -> None:
+	def handleRegisteredToRemoteCSE(self, remoteCSE:Resource, remoteCSR:Resource) -> None:
 		"""	Handle registrations to a remote CSE (Registrar CSE).
 		"""
 		time.sleep(waitBeforeAnnouncement)	# Give some time until remote CSE fully connected
@@ -202,13 +202,13 @@ class AnnouncementManager(object):
 
 		# Create the announed resource on the remote CSE
 		Logging.logDebug('Creating announced resource at: %s url: %s' % (csi, url))	
-		jsn, rc, msg = CSE.httpServer.sendCreateRequest(url, CSE.remote.originator, ty=tyAnnc, data=json.dumps(data))
-		if rc not in [C.rcCreated, C.rcOK]:
-			if rc != C.rcAlreadyExists:
-				Logging.logDebug('Error creating remote announced resource: %d' % rc)
+		res = CSE.httpServer.sendCreateRequest(url, CSE.remote.originator, ty=tyAnnc, data=json.dumps(data))
+		if res.rsc not in [ C.rcCreated, C.rcOK ]:
+			if res.rsc != C.rcAlreadyExists:	# assume that it is ok if the remote resource already exists 
+				Logging.logDebug('Error creating remote announced resource: %d' % res.rsc)
 				return
 		else:
-			self._addAnnouncementToResource(resource, jsn, csi)
+			self._addAnnouncementToResource(resource, res.jsn, csi)
 		Logging.logDebug('Announced resource created')
 		resource.dbUpdate()
 
@@ -272,12 +272,11 @@ class AnnouncementManager(object):
 
 		# Delete the announed resource from the remote CSE
 		Logging.logDebug('Delete announced resource from: %s url: %s' % (csi, url))	
-		jsn, rc, msg = CSE.httpServer.sendDeleteRequest(url, CSE.remote.originator)
-		if rc not in [C.rcDeleted, C.rcOK]:
-			if rc != C.rcAlreadyExists:
-				Logging.logDebug('Error deleting remote announced resource: %d' % rc)
-				# ignore the fact that we cannot delete the announced resource.
-				# fall-through for some house-keeping
+		res = CSE.httpServer.sendDeleteRequest(url, CSE.remote.originator)
+		if res.rsc not in [ C.rcDeleted, C.rcOK ]:
+			Logging.logDebug('Error deleting remote announced resource: %d' % res.rsc)
+			# ignore the fact that we cannot delete the announced resource.
+			# fall-through for some house-keeping
 		self._removeAnnouncementFromResource(resource, csi)
 		Logging.logDebug('Announced resource deleted')
 		resource.dbUpdate()
@@ -354,11 +353,10 @@ class AnnouncementManager(object):
 
 		# Create the announed resource on the remote CSE
 		Logging.logDebug('Updating announced resource at: %s url: %s' % (csi, url))	
-		jsn, rc, msg = CSE.httpServer.sendUpdateRequest(url, CSE.remote.originator, data=json.dumps(data))
-		if rc not in [C.rcUpdated, C.rcOK]:
-			if rc != C.rcAlreadyExists:
-				Logging.logDebug('Error updating remote announced resource: %d' % rc)
-
+		res = CSE.httpServer.sendUpdateRequest(url, CSE.remote.originator, data=json.dumps(data))
+		if res.rsc not in [ C.rcUpdated, C.rcOK ]:
+			Logging.logDebug('Error updating remote announced resource: %d' % res.rsc)
+			# Ignore and fallthrough
 		Logging.logDebug('Announced resource updated')
 
 

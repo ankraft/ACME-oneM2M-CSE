@@ -16,11 +16,11 @@ from tinydb.operations import delete 			# type: ignore
 # from tinydb_smartcache import SmartCacheTable # TODO Not compatible with TinyDB 4 yet
 
 import os, json, re
-from typing import Tuple, List, Callable, Any
+from typing import List, Callable, Any
 from threading import Lock
 from Configuration import Configuration
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result
 from Logging import Logging
 from resources.Resource import Resource
 import CSE, Utils
@@ -75,7 +75,7 @@ class Storage(object):
 	##
 
 
-	def createResource(self, resource: Resource, overwrite: bool = True) -> Tuple[bool, int, str]:
+	def createResource(self, resource: Resource, overwrite: bool = True) -> Result:
 		if resource is None:
 			Logging.logErr('resource is None')
 			raise RuntimeError('resource is None')
@@ -94,11 +94,11 @@ class Storage(object):
 				self.db.insertResource(resource)
 			else:
 				Logging.logWarn('Resource already exists (Skipping): %s ' % resource)
-				return False, C.rcAlreadyExists, 'resource already exists'
+				return Result(status=False, rsc=C.rcAlreadyExists, dbg='resource already exists')
 
 		# Add path to identifiers db
 		self.db.insertIdentifier(resource, ri, srn)
-		return True, C.rcCreated, None
+		return Result(status=True, rsc=C.rcCreated)
 
 
 	# Check whether a resource with either the ri or the srn already exists
@@ -106,7 +106,7 @@ class Storage(object):
 		return self.db.hasResource(ri=ri) or self.db.hasResource(srn=srn)
 
 
-	def retrieveResource(self, ri: str = None, csi: str = None, srn: str = None) -> Tuple[Resource, int, str]:
+	def retrieveResource(self, ri: str = None, csi: str = None, srn: str = None) -> Result:
 		""" Return a resource via different addressing methods. """
 		resources = []
 
@@ -125,12 +125,11 @@ class Storage(object):
 
 		# return Utils.resourceFromJSON(resources[0]) if len(resources) == 1 else None,
 		if (l := len(resources)) == 1:
-			r, _ = Utils.resourceFromJSON(resources[0])
-			return r, C.rcOK, None
+			return Utils.resourceFromJSON(resources[0])
 		elif l == 0:
-			return None, C.rcNotFound, None
-	
-		return None, C.rcInternalServerError, 'database inconsistency'
+			return Result(rsc=C.rcNotFound)
+
+		return Result(rsc=C.rcInternalServerError, dbg='database inconsistency')
 
 
 
@@ -179,24 +178,23 @@ class Storage(object):
 	# 	return result
 
 
-	def updateResource(self, resource: Resource) -> Tuple[Resource, int, str]:
+	def updateResource(self, resource: Resource) -> Result:
 		if resource is None:
 			Logging.logErr('resource is None')
 			raise RuntimeError('resource is None')
 		ri = resource.ri
 		# Logging.logDebug('Updating resource (ty: %d, ri: %s, rn: %s)' % (resource['ty'], ri, resource['rn']))
-		resource = self.db.updateResource(resource)
-		return resource, C.rcUpdated, None
+		return Result(resource=self.db.updateResource(resource), rsc=C.rcUpdated)
 
 
-	def deleteResource(self, resource: Resource) -> Tuple[bool, int, str]:
+	def deleteResource(self, resource: Resource) -> Result:
 		if resource is None:
 			Logging.logErr('resource is None')
 			raise RuntimeError('resource is None')
 		# Logging.logDebug('Removing resource (ty: %d, ri: %s, rn: %s)' % (resource['ty'], ri, resource['rn']))
 		self.db.deleteResource(resource)
 		self.db.deleteIdentifier(resource)
-		return True, C.rcDeleted, None
+		return Result(status=True, rsc=C.rcDeleted)
 
 
 
@@ -209,9 +207,9 @@ class Storage(object):
 		# 	rs = self.tabResources.search(Query().pi == pi)			
 		result = []
 		for r in rs:
-			resource, _ = Utils.resourceFromJSON(r)
-			if resource is not None:
-				result.append(resource)
+			res = Utils.resourceFromJSON(r)
+			if res.resource is not None:
+				result.append(res.resource)
 		return result
 
 
@@ -231,9 +229,9 @@ class Storage(object):
 		and return them in an array."""
 		result = []
 		for j in self.db.searchByTypeFieldValue(int(ty), field, value):
-			resource, _ = Utils.resourceFromJSON(j)
-			if resource is not None:
-				result.append(resource)
+			res = Utils.resourceFromJSON(j)
+			if res.resource is not None:
+				result.append(res.resource)
 		return result
 
 
@@ -242,9 +240,9 @@ class Storage(object):
 		and return them in an array."""
 		result = []
 		for j in self.db.searchByValueInField(field, value):
-			resource, _ = Utils.resourceFromJSON(j)
-			if resource is not None:
-				result.append(resource)
+			res = Utils.resourceFromJSON(j)
+			if res.resource is not None:
+				result.append(res.resource)
 		return result
 		
 
@@ -274,9 +272,9 @@ class Storage(object):
 			return False
 
 		for j in self.db.discoverResources(_announcedFilter):
-			resource, _ = Utils.resourceFromJSON(j)
-			if resource is not None:
-				result.append(resource)
+			res = Utils.resourceFromJSON(j)
+			if res.resource is not None:
+				result.append(res.resource)
 		return result
 
 
@@ -359,16 +357,16 @@ class Storage(object):
 		now = Utils.getResourceDate()
 		rs = self.db.discoverResources(lambda r: 'et' in r and (et := r['et']) is not None and et < now)
 		for j in rs:
-			r, _ = Utils.resourceFromJSON(j)
-			if r  is not None:
-				CSE.dispatcher.deleteResource(r, withDeregistration=True)
+			res = Utils.resourceFromJSON(j)
+			if res.resource is not None:
+				CSE.dispatcher.deleteResource(res.resource, withDeregistration=True)
 
 		# Check all resources with maxInstanceAge (mia)
 		rs = self.db.discoverResources(lambda r: 'mia' in r)
 		for j in rs:
-			r, _ = Utils.resourceFromJSON(j)
-			if r is not None:
-				r.validateExpirations()
+			res = Utils.resourceFromJSON(j)
+			if res.resource is not None:
+				res.resource.validateExpirations()
 		return True
 
 

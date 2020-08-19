@@ -9,12 +9,12 @@
 #
 
 import json, os
-from typing import Optional, Tuple, Dict, Any, Callable
+from typing import Dict, Any, Callable
 from Configuration import Configuration
 from resources.Resource import Resource
 from Logging import Logging
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result
 import CSE, Utils
 from helpers.BackgroundWorker import BackgroundWorker
 
@@ -41,19 +41,19 @@ class AppBase(object):
 	#	Requests
 	#
 
-	def retrieveResource(self, ri: str = None, srn:str = None) -> Tuple[dict, int, str]:
+	def retrieveResource(self, ri:str=None, srn:str=None) -> Result:
 		return CSE.httpServer.sendRetrieveRequest(self._id(ri, srn), self.originator)
 
 
-	def createResource(self, ri:str = None, srn:str = None, ty:T = None, jsn:Dict[str, Any] = None) -> Tuple[dict, int, str]:
+	def createResource(self, ri:str=None, srn:str=None, ty:T=None, jsn:Dict[str, Any]=None) -> Result:
 		return CSE.httpServer.sendCreateRequest(self._id(ri, srn), self.originator, ty, json.dumps(jsn))
 
 
-	def updateResource(self, ri: str = None, srn: str = None, jsn: dict = None) -> Tuple[dict, int, str]:
+	def updateResource(self, ri:str=None, srn:str=None, jsn:dict=None) -> Result:
 		return CSE.httpServer.sendUpdateRequest(self._id(ri, srn), self.originator, json.dumps(jsn))
 
 
-	def deleteResource(self, ri: str = None, srn: str = None) -> Tuple[dict, int, str]:
+	def deleteResource(self, ri:str=None, srn:str=None) -> Result:
 		return CSE.httpServer.sendDeleteRequest(self._id(ri, srn), self.originator)
 
 
@@ -65,26 +65,26 @@ class AppBase(object):
 		return None
 
 
-	def retrieveCreate(self, srn : str = None, jsn: dict = None, ty:T = T.MGMTOBJ) -> Resource:
+	def retrieveCreate(self, srn:str=None, jsn:dict=None, ty:T=T.MGMTOBJ) -> Resource:
 		# First check whether node exists and create it if necessary
-		if (result := self.retrieveResource(srn=srn))[1] != C.rcOK:
+		if (result := self.retrieveResource(srn=srn)).rsc != C.rcOK:
 
 			# No, so create mgmtObj specialization
 			srn = os.path.split(srn)[0] if srn.count('/') >= 0 else ''
-			n, rc, msg = self.createResource(srn=srn, ty=ty, jsn=jsn)
-			if rc == C.rcCreated:
-				return Utils.resourceFromJSON(n)[0]
+			result = self.createResource(srn=srn, ty=ty, jsn=jsn)
+			if result.rsc == C.rcCreated:
+				return Utils.resourceFromJSON(result.jsn).resource
 			else:
 				#Logging.logErr(n)
 				pass
 		else: # just retrieve
-			return Utils.resourceFromJSON(result[0])[0]
+			return Utils.resourceFromJSON(result.jsn).resource
 		return None
 
 
 	#########################################################################
 
-	def startWorker(self, updateInterval: float, worker: Callable, name: str = None) -> None:
+	def startWorker(self, updateInterval:float, worker:Callable, name:str=None) -> None:
 		self.stopWorker()
 		self.worker = BackgroundWorker(updateInterval, worker, name)
 		self.worker.start()

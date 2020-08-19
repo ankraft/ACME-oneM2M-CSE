@@ -8,9 +8,10 @@
 #
 
 import requests, json
-from typing import List, Tuple, Union
+from typing import List, Union
 from Logging import Logging
 from Constants import Constants as C
+from Types import Result
 from Configuration import Configuration
 import Utils, CSE
 from resources.Resource import Resource
@@ -34,22 +35,22 @@ class NotificationManager(object):
 		Logging.log('NotificationManager shut down')
 
 
-	def addSubscription(self, subscription: Resource, originator: str) -> Tuple[bool, int, str]:
+	def addSubscription(self, subscription:Resource, originator:str) -> Result:
 		if not Configuration.get('cse.enableNotifications'):
-			return False, C.rcSubscriptionVerificationInitiationFailed, 'notifications are disabled'
+			return Result(status=False, rsc=C.rcSubscriptionVerificationInitiationFailed, dbg='notifications are disabled')
 		Logging.logDebug('Adding subscription')
-		if (result := self._getAndCheckNUS(subscription, originator=originator))[0] is None:	# verification requests happen here
-			return False, result[1], result[2]
-		return (True, C.rcOK, None) if CSE.storage.addSubscription(subscription) else (False, C.rcInternalServerError, 'cannot add subscription to database')
+		if (res := self._getAndCheckNUS(subscription, originator=originator)).lst is None:	# verification requests happen here
+			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+		return Result(status=True) if CSE.storage.addSubscription(subscription) else Result(status=False, rsc=C.rcInternalServerError, dbg='cannot add subscription to database')
 
 
-	def removeSubscription(self, subscription: Resource) -> Tuple[bool, int, str]:
+	def removeSubscription(self, subscription: Resource) -> Result:
 		""" Remove a subscription. Send the deletion notifications, if possible. """
 		Logging.logDebug('Removing subscription')
 
 		# This check does allow for removal of subscriptions
 		if not Configuration.get('cse.enableNotifications'):
-			return False, C.rcSubscriptionVerificationInitiationFailed, 'notifications are disabled'
+			return Result(status=False, rsc=C.rcSubscriptionVerificationInitiationFailed, dbg='notifications are disabled')
 
 		# Send a deletion request to the subscriberURI
 		if (sus := self._getNotificationURLs([subscription['su']])) is not None:
@@ -63,16 +64,16 @@ class NotificationManager(object):
 				if not self._sendDeletionNotification(nu, subscription.ri):
 					Logging.logDebug('Deletion request failed: %s' % nu) # but ignore the error
 		
-		return (True, C.rcOK, None) if CSE.storage.removeSubscription(subscription) else (False, C.rcInternalServerError, 'cannot remove subscription from database')
+		return Result(status=True) if CSE.storage.removeSubscription(subscription) else Result(status=False, rsc=C.rcInternalServerError, dbg='cannot remove subscription from database')
 
 
 
-	def updateSubscription(self, subscription: Resource, newJson: dict, previousNus: List[str], originator: str) -> Tuple[bool, int, str]:
+	def updateSubscription(self, subscription:Resource, newJson:dict, previousNus:List[str], originator:str) -> Result:
 		Logging.logDebug('Updating subscription')
 		#previousSub = CSE.storage.getSubscription(subscription.ri)
-		if (result := self._getAndCheckNUS(subscription, newJson, previousNus, originator=originator))[0] is None:	# verification/delete requests happen here
-			return False, result[1], result[2]
-		return (True, C.rcOK, None) if CSE.storage.updateSubscription(subscription) else (False, C.rcInternalServerError, 'cannot update subscription in database')
+		if (res := self._getAndCheckNUS(subscription, newJson, previousNus, originator=originator)).lst is None:	# verification/delete requests happen here
+			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+		return Result(status=True) if CSE.storage.updateSubscription(subscription) else Result(status=False, rsc=C.rcInternalServerError, dbg='cannot update subscription in database')
 
 
 	def checkSubscriptions(self, resource:Resource, reason:int, childResource:Resource=None, modifiedAttributes:dict=None) -> None:
@@ -109,7 +110,7 @@ class NotificationManager(object):
 	#########################################################################
 
 	# Return resolved notification URLs, so also POA from referenced AE's etc
-	def _getNotificationURLs(self, nus: Union[List[str], str], originator: str = None) -> List[str]:
+	def _getNotificationURLs(self, nus:Union[List[str], str], originator:str=None) -> List[str]:
 		if nus is None:
 			return []
 		nusl = nus if isinstance(nus, list) else [ nus ]	# make a list out of it even when it is a single value
@@ -122,25 +123,24 @@ class NotificationManager(object):
 			if Utils.isURL(nu):
 				result.append(nu)
 			else:
-				r, _, _ = CSE.dispatcher.retrieveResource(nu)
-				if r is None:
+				if (resource := CSE.dispatcher.retrieveResource(nu).resource) is None:
 					Logging.logWarn('Resource not found to get URL: %s' % nu)
 					return None
 
 				# If the Originator is the notification target then exclude it from the list of targets
 				# Test for AE and CSE (CSE starts with a /)
-				if originator is not None and (r.ri == originator or r.ri == '/%s' % originator):
+				if originator is not None and (resource.ri == originator or resource.ri == '/%s' % originator):
 					Logging.logDebug('Notification target is the originator, no verification request for: %s' % nu)
 					continue
-				if not CSE.security.hasAccess('', r, C.permNOTIFY):	# check whether AE/CSE may receive Notifications
+				if not CSE.security.hasAccess('', resource, C.permNOTIFY):	# check whether AE/CSE may receive Notifications
 					Logging.logWarn('No access to resource: %s' % nu)
 					return None
-				if (poa := r['poa']) is not None and isinstance(poa, list):	#TODO? check whether AE or CSEBase
+				if (poa := resource.poa) is not None and isinstance(poa, list):	#TODO? check whether AE or CSEBase
 					result += poa
 		return result
 
 
-	def _getAndCheckNUS(self, subscription: Resource, newJson: dict = None, previousNus: List[str] = None, originator: str = None) -> Tuple[List[str], int, str]:
+	def _getAndCheckNUS(self, subscription:Resource, newJson:dict=None, previousNus:List[str]=None, originator:str=None) -> Result:
 		newNus = []
 		if newJson is None:	# If there is no new JSON structure, get the one from the subscription to work with
 			newJson = subscription.asJSON()
@@ -149,7 +149,7 @@ class NotificationManager(object):
 		if previousNus is not None:
 			if (previousNus := self._getNotificationURLs(previousNus, originator)) is None:
 				# Fail if any of the NU's cannot be retrieved
-				return None, C.rcSubscriptionVerificationInitiationFailed, 'cannot retrieve all previous nu''s'
+				return Result(rsc=C.rcSubscriptionVerificationInitiationFailed, dbg='cannot retrieve all previous nu''s')
 
 		# Are there any new URI's?
 		if (nuAttribute := Utils.findXPath(newJson, 'm2m:sub/nu')) is not None:
@@ -157,14 +157,14 @@ class NotificationManager(object):
 			# Resolve the URI's for the new NU's
 			if (newNus := self._getNotificationURLs(nuAttribute, originator)) is None:
 				# Fail if any of the NU's cannot be retrieved
-				return None, C.rcSubscriptionVerificationInitiationFailed, 'cannot retrieve all new nu''s'
+				return Result(rsc=C.rcSubscriptionVerificationInitiationFailed, dbg='cannot retrieve all new nu''s')
 
 			# notify new nus (verification request). New ones are the ones that are not in the previousNU list
 			for nu in newNus:
 				if previousNus is None or (nu not in previousNus):
 					if not self._sendVerificationRequest(nu, subscription.ri, originator=originator):
 						Logging.logDebug('Verification request failed: %s' % nu)
-						return None, C.rcSubscriptionVerificationInitiationFailed, 'verification request failed for nu: %s' % nu
+						return Result(rsc=C.rcSubscriptionVerificationInitiationFailed, dbg='verification request failed for nu: %s' % nu)
 
 		# notify removed nus (deletion notification) if nu = null
 		if 'nu' in newJson: # if nu not present, nothing to do
@@ -174,15 +174,13 @@ class NotificationManager(object):
 						if not self._sendDeletionNotification(nu, subscription.ri):
 							Logging.logDebug('Deletion request failed') # but ignore the error
 
-		return newNus, C.rcOK, None
+		return Result(lst=newNus)
 
 
 	#########################################################################
 
 
-
-
-	def _sendVerificationRequest(self, nu: str, ri: str, originator: str = None) -> bool:
+	def _sendVerificationRequest(self, nu:str, ri:str, originator:str=None) -> bool:
 		Logging.logDebug('Sending verification request to: %s' % nu)
 	
 		verificationRequest = {
@@ -238,6 +236,5 @@ class NotificationManager(object):
 		data is not None 		and Utils.setXPath(jsn, 'm2m:sgn/nev/rep', data)
 		originator is not None 	and Utils.setXPath(jsn, 'm2m:sgn/cr', originator)
 
-		_, rc, _ = CSE.httpServer.sendCreateRequest(nu, Configuration.get('cse.csi'), data=json.dumps(jsn))
-		return rc in [C.rcOK]
+		return CSE.httpServer.sendCreateRequest(nu, Configuration.get('cse.csi'), data=json.dumps(jsn)).rsc == C.rcOK
 

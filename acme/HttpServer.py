@@ -15,7 +15,7 @@ from flask import Flask, Request, make_response, request
 from werkzeug.wrappers import Response
 from Configuration import Configuration, version
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result
 import CSE, Utils
 from Logging import Logging
 from resources.Resource import Resource
@@ -103,62 +103,62 @@ class HttpServer(object):
 
 
 
-	def addEndpoint(self, endpoint: str = None, endpoint_name: str = None, handler: Callable = None, methods: List[str] = None) -> None:
+	def addEndpoint(self, endpoint:str=None, endpoint_name:str=None, handler:Callable=None, methods:List[str]=None) -> None:
 		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods=methods)
 
 
-	def handleGET(self, path: str = None) -> Response:
+	def handleGET(self, path:str=None) -> Response:
 		Utils.renameCurrentThread()
 		Logging.logDebug('==> Retrieve: /%s' % path) # path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpRetrieve() # type: ignore
 		try:
-			resource, rc, msg = CSE.dispatcher.retrieveRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = CSE.dispatcher.retrieveRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 		except Exception as e:
-			resource, rc, msg = self._prepareException(e)
+			result = self._prepareException(e)
 		finally:
-			return self._prepareResponse(request, resource, rc, msg)
+			return self._prepareResponse(request, result)
 
 
-	def handlePOST(self, path: str = None) -> Response:
+	def handlePOST(self, path:str=None) -> Response:
 		Utils.renameCurrentThread()
 		Logging.logDebug('==> Create: /%s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpCreate()	# type: ignore
 		try:
-			resource, rc, msg = CSE.dispatcher.createRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = CSE.dispatcher.createRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 		except Exception as e:
-			resource, rc, msg = self._prepareException(e)
+			result = self._prepareException(e)
 		finally:
-			return self._prepareResponse(request, resource, rc, msg)
+			return self._prepareResponse(request, result)
 
 
-	def handlePUT(self, path: str = None) -> Response:
+	def handlePUT(self, path:str=None) -> Response:
 		Utils.renameCurrentThread()
 		Logging.logDebug('==> Update: /%s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpUpdate()	# type: ignore
 		try:
-			resource, rc, msg = CSE.dispatcher.updateRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = CSE.dispatcher.updateRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 		except Exception as e:
-			resource, rc, msg = self._prepareException(e)
+			result = self._prepareException(e)
 		finally:
-			return self._prepareResponse(request, resource, rc, msg)
+			return self._prepareResponse(request, result)
 
 
-	def handleDELETE(self, path: str = None) -> Response:
+	def handleDELETE(self, path:str=None) -> Response:
 		Utils.renameCurrentThread()
 		Logging.logDebug('==> Delete: /%s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpDelete()	# type: ignore
 		try:
-			resource, rc, msg = CSE.dispatcher.deleteRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = CSE.dispatcher.deleteRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 		except Exception as e:
-			resource, rc, msg = self._prepareException(e)
+			result = self._prepareException(e)
 		finally:
-			return self._prepareResponse(request, resource, rc, msg)
+			return self._prepareResponse(request, result)
 
 
 	#########################################################################
@@ -215,23 +215,23 @@ class HttpServer(object):
 	#	Send various types of HTTP requests
 	#
 
-	def sendRetrieveRequest(self, url: str, originator: str) -> Tuple[dict, int, str]:
+	def sendRetrieveRequest(self, url: str, originator: str) -> Result:
 		return self.sendRequest(requests.get, url, originator)
 
 
-	def sendCreateRequest(self, url: str, originator: str, ty: T = None, data: Any = None) -> Tuple[dict, int, str]:
+	def sendCreateRequest(self, url: str, originator: str, ty: T = None, data: Any = None) -> Result:
 		return self.sendRequest(requests.post, url, originator, ty, data)
 
 
-	def sendUpdateRequest(self, url: str, originator: str, data: Any) -> Tuple[dict, int, str]:
+	def sendUpdateRequest(self, url: str, originator: str, data: Any) -> Result:
 		return self.sendRequest(requests.put, url, originator, data=data)
 
 
-	def sendDeleteRequest(self, url: str, originator: str) -> Tuple[dict, int, str]:
+	def sendDeleteRequest(self, url: str, originator: str) -> Result:
 		return self.sendRequest(requests.delete, url, originator)
 
 
-	def sendRequest(self, method: Callable , url: str, originator: str, ty: T = None, data: Any = None, ct: str = 'application/json') -> Tuple[dict, int, str]:	# TODO Constants
+	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:str='application/json') -> Result:	# TODO Constants
 		headers = { 'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % int(ty) if ty is not None else ''), 
 					C.hfOrigin	 	: originator,
 					C.hfRI 			: Utils.uniqueRI(),
@@ -244,51 +244,51 @@ class HttpServer(object):
 			Logging.logDebug('Response <== (%s):\n%s' % (str(r.status_code), str(r.content.decode("utf-8"))))
 		except Exception as e:
 			Logging.logWarn('Failed to send request: %s' % str(e))
-			return None, C.rcTargetNotReachable, 'target not reachable'
+			return Result(rsc=C.rcTargetNotReachable, dbg='target not reachable')
 		rc = int(r.headers['X-M2M-RSC']) if 'X-M2M-RSC' in r.headers else C.rcInternalServerError
 		# Logging.logWarn(r.content)
-		return r.json() if len(r.content) > 0 else None, rc, None
+		return Result(jsn=r.json() if len(r.content) > 0 else None, rsc=rc)
 
 	#########################################################################
 
-	def _prepareResponse(self, request: Request, resource: Union[Resource, dict, str], returnCode: int, errorMessage: str) -> Response:
-		if isinstance(resource, Resource):
-			r = json.dumps(resource.asJSON())
-		elif errorMessage is not None:
-			r = '{ "m2m:dbg" : "%s" }' % errorMessage.replace('"', '\\"')
-		elif resource is None:
+	def _prepareResponse(self, request:Request, result:Result) -> Response:
+		if isinstance(result.resource, Resource):
+			r = json.dumps(result.resource.asJSON())
+		elif result.dbg is not None:
+			r = '{ "m2m:dbg" : "%s" }' % result.dbg.replace('"', '\\"')
+		elif result.resource is None:
 			r = ''
-		elif isinstance(resource, dict):
-			r = json.dumps(resource)
-		elif isinstance(resource, str):
-			r = resource
+		elif isinstance(result.resource, dict):
+			r = json.dumps(result.resource)
+		elif isinstance(result.resource, str):
+			r = result.resource
 		else:
 			r = ''
-			returnCode = C.rcNotFound
+			result.rsc = C.rcNotFound
 			# if (r := resource.asJSON() if isinstance(resource, Resource) else resource) is None:
 			# 	r = ''
 			# 	returnCode = C.rcNotFound
-		Logging.logDebug('<== Response (RSC: %d):\n%s\n' % (returnCode, str(r)))
+		Logging.logDebug('<== Response (RSC: %d):\n%s\n' % (result.rsc, str(r)))
 		resp = make_response(r)
 
 		# headers
 		resp.headers['Server'] = self.serverID	# set server field
 
-		resp.headers['X-M2M-RSC'] = str(returnCode)
+		resp.headers['X-M2M-RSC'] = str(result.rsc)
 		if 'X-M2M-RI' in request.headers:
 			resp.headers['X-M2M-RI'] = request.headers['X-M2M-RI']
 		if 'X-M2M-RVI' in request.headers:
 			resp.headers['X-M2M-RVI'] = request.headers['X-M2M-RVI']
 
-		resp.status_code = self._statusCode(returnCode)
+		resp.status_code = self._statusCode(result.rsc)
 		resp.content_type = C.hfvContentType
 		self.flaskApp.process_response(resp)
 		return resp
 
 
-	def _prepareException(self, e: Exception) -> Tuple[None, int, str]:
+	def _prepareException(self, e: Exception) -> Result:
 		Logging.logErr(traceback.format_exc())
-		return None, C.rcInternalServerError, 'encountered exception: %s' % traceback.format_exc().replace('"', '\\"').replace('\n', '\\n')
+		return Result(rsc=C.rcInternalServerError, dbg='encountered exception: %s' % traceback.format_exc().replace('"', '\\"').replace('\n', '\\n'))
 
 
 	#

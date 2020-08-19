@@ -9,7 +9,6 @@
 #
 
 import json, os, fnmatch, re, csv
-from typing import Tuple, Union
 from Utils import *
 from Configuration import Configuration
 from Constants import Constants as C
@@ -29,7 +28,7 @@ class Importer(object):
 		Logging.log('Importer initialized')
 
 
-	def importResources(self, path: str = None) -> bool:
+	def importResources(self, path:str=None) -> bool:
 
 		# Only when the DB is empty else don't imports
 		if CSE.dispatcher.countResources() > 0:
@@ -71,17 +70,17 @@ class Importer(object):
 			if os.path.exists(fn):
 				Logging.log('Importing resource: %s ' % fn)
 				jsn = self.readJSONFromFile(fn)
-				r, _ = resourceFromJSON(jsn, create=True, isImported=True)
+				resource = resourceFromJSON(jsn, create=True, isImported=True).resource
 
 			# Check resource creation
-			if not CSE.registration.checkResourceCreation(r, originator):
+			if not CSE.registration.checkResourceCreation(resource, originator):
 				continue
-			CSE.dispatcher.createResource(r)
-			ty = r.ty
+			CSE.dispatcher.createResource(resource)
+			ty = resource.ty
 			if ty == T.CSEBase:
-				Configuration.set('cse.csi', r.csi)
-				Configuration.set('cse.ri', r.ri)
-				Configuration.set('cse.rn', r.rn)
+				Configuration.set('cse.csi', resource.csi)
+				Configuration.set('cse.ri', resource.ri)
+				Configuration.set('cse.rn', resource.rn)
 				hasCSE = True
 			elif ty == T.ACP:
 				hasACP = True
@@ -106,26 +105,22 @@ class Importer(object):
 					jsn = self.readJSONFromFile(filename)
 					keys = list(jsn.keys())
 					if len(keys) == 1 and (k := keys[0]) and 'ri' in jsn[k] and (ri := jsn[k]['ri']) is not None:
-						r, _, _ = CSE.dispatcher.retrieveResource(ri)
-						if r is not None:
-							CSE.dispatcher.updateResource(r, jsn)
+						if (resource := CSE.dispatcher.retrieveResource(ri).resource) is not None:
+							CSE.dispatcher.updateResource(resource, jsn)
 						# TODO handle error
 
 				# create a new cresource
 				else:
-					jsn = self.readJSONFromFile(filename)
-					r, _ = resourceFromJSON(jsn, create=True, isImported=True)
-
 					# Try to get parent resource
-					if r is not None:
-						parent = None
-						if (pi := r.pi) is not None:
-							parent, _, _ = CSE.dispatcher.retrieveResource(pi)
+					if (resource := resourceFromJSON(self.readJSONFromFile(filename), create=True, isImported=True).resource) is not None:
+						parentResource = None
+						if (pi := resource.pi) is not None:
+							parentResource = CSE.dispatcher.retrieveResource(pi).resource
 						# Check resource creation
-						if not CSE.registration.checkResourceCreation(r, originator):
+						if not CSE.registration.checkResourceCreation(resource, originator):
 							continue
 						# Add the resource
-						CSE.dispatcher.createResource(r, parent)
+						CSE.dispatcher.createResource(resource, parentResource)
 					else:
 						Logging.logWarn('Unknown resource in file: %s' % fn)
 

@@ -8,9 +8,9 @@
 #
 
 import sys
-from typing import Tuple, List
+from typing import List
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result
 from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
@@ -30,7 +30,7 @@ attributePolicies = addPolicy(attributePolicies, fcntPolicies)
 
 class FCNT(AnnounceableResource):
 
-	def __init__(self, jsn: dict = None, pi: str = None, fcntType: str = None, create: bool = False) -> None:
+	def __init__(self, jsn:dict=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
 		super().__init__(T.FCNT, jsn, pi, tpe=fcntType, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = fcntPolicies	# only the resource type's own policies
@@ -48,7 +48,7 @@ class FCNT(AnnounceableResource):
 
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource: Resource) -> bool:
+	def canHaveChild(self, resource:Resource) -> bool:
 		return super()._canHaveChild(resource,	
 									 [ T.CNT,
 									   T.FCNT,
@@ -57,51 +57,49 @@ class FCNT(AnnounceableResource):
 									 ])
 
 
-	def activate(self, parentResource: Resource, originator: str) -> Tuple[bool, int, str]:
-		if not (result := super().activate(parentResource, originator))[0]:
-			return result		# TODO Error checking above
+	def activate(self, parentResource:Resource, originator:str) -> Result:
+		if not (res := super().activate(parentResource, originator)).status:
+			return res
 
 		# register latest and oldest virtual resources
 		Logging.logDebug('Registering latest and oldest virtual resources for: %s' % self.ri)
 
 		if self.hasInstances:
 			# add latest
-			r, _ = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.FCNT_LA)
-			res = CSE.dispatcher.createResource(r)
-			if res[0] is None:
-				return False, res[1], res[2]
+			resource = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.FCNT_LA).resource
+			if (res := CSE.dispatcher.createResource(resource)).resource is None:
+				return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
 			# add oldest
-			r, _ = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.FCNT_OL)
-			res = CSE.dispatcher.createResource(r)
-			if res[0] is None:
-				return False, res[1], res[2]
-		return True, C.rcOK, None
+			resource = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.FCNT_OL).resource
+			if (res := CSE.dispatcher.createResource(resource)).resource is None:
+				return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+		return Result(status=True)
 
 
-	def childWillBeAdded(self, childResource: Resource, originator: str) -> Tuple[bool, int, str]:
-		if not (res := super().childWillBeAdded(childResource, originator))[0]:
+	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
+		if not (res := super().childWillBeAdded(childResource, originator)).status:
 			return res
 
 		# Check whether the child's rn is "ol" or "la".
 		if (rn := childResource['rn']) is not None and rn in ['ol', 'la']:
-			return False, C.rcOperationNotAllowed, 'resource types "latest" or "oldest" cannot be added'
+			return Result(status=False, rsc=C.rcOperationNotAllowed, dbg='resource types "latest" or "oldest" cannot be added')
 	
 		# Check whether the size of the CIN doesn't exceed the mbs
 		if childResource.ty == T.CIN and self.mbs is not None:
 			if childResource.cs is not None and childResource.cs > self.mbs:
-				return False, C.rcNotAcceptable,  'children content sizes would exceed mbs'
-		return True, C.rcOK, None
+				return Result(status=False, rsc=C.rcNotAcceptable, dbg='children content sizes would exceed mbs')
+		return Result(status=True)
 
 
 	# Checking the presentse of cnd and calculating the size
-	def validate(self, originator: str = None, create: bool = False) -> Tuple[bool, int, str]:
-		if (res := super().validate(originator, create))[0] == False:
+	def validate(self, originator:str=None, create:bool=False) -> Result:
+		if not (res := super().validate(originator, create)).status:
 			return res
 
 		# No CND?
 		if (cnd := self.cnd) is None or len(cnd) == 0:
-			return False, C.rcContentsUnacceptable, 'cnd attribute missing or empty'
+			return Result(status=False, rsc=C.rcContentsUnacceptable, dbg='cnd attribute missing or empty')
 
 		# Calculate contentSize
 		# This is not at all realistic since this is the in-memory representation
@@ -167,10 +165,10 @@ class FCNT(AnnounceableResource):
 
 		# TODO support maxInstanceAge
 		
-		# May have been changed, so store the resource 
-		x = CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
-		
-		return True, C.rcOK, None
+		# May have been changed, so store the resource
+		# CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
+		self.dbUpdate()
+		return Result(status=True)
 
 
 	# Validate expirations of child resurces
@@ -214,13 +212,9 @@ class FCNT(AnnounceableResource):
 			if attr == 'at':
 				jsn['at'] = [ x for x in self['at'] if x.count('/') == 1 ]	# Only copy single csi in at
 
-		fci, _ = Utils.resourceFromJSON(jsn = { self.tpe : jsn },
-										pi = self.ri, 
-										acpi = self.acpi, # or no ACPI?
-										ty = T.FCI)
-
-		CSE.dispatcher.createResource(fci)
-		fci['cs'] = self.cs
-		fci.dbUpdate()
+		resource = Utils.resourceFromJSON(jsn={ self.tpe : jsn }, pi=self.ri, acpi=self.acpi, ty=T.FCI).resource
+		CSE.dispatcher.createResource(resource)
+		resource['cs'] = self.cs
+		resource.dbUpdate()	# store
 
 

@@ -30,7 +30,7 @@ attributePolicies = addPolicy(attributePolicies, nodPolicies)
 
 class NOD(AnnounceableResource):
 
-	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+	def __init__(self, jsn:dict=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.NOD, jsn, pi, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = nodPolicies	# only the resource type's own policies
@@ -40,14 +40,14 @@ class NOD(AnnounceableResource):
 
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource : Resource) -> bool:
+	def canHaveChild(self, resource:Resource) -> bool:
 		return super()._canHaveChild(resource, 
 									[ T.MGMTOBJ,
 									  T.SUB
 									])
 
 
-	def deactivate(self, originator : str) -> None:
+	def deactivate(self, originator:str) -> None:
 		super().deactivate(originator)
 
 		# Remove self from all hosted AE's (their node links)
@@ -58,13 +58,11 @@ class NOD(AnnounceableResource):
 			self._removeNODfromAE(ae, ri)
 
 
-	def _removeNODfromAE(self, aeRI: str, ri: str) -> None:
+	def _removeNODfromAE(self, aeRI:str, ri:str) -> None:
 		""" Remove NOD.ri from AE node link. """
-
-		ae, _, _ = CSE.dispatcher.retrieveResource(aeRI)
-		if ae is not None:
-			nl = ae['nl']
+		if (aeResource := CSE.dispatcher.retrieveResource(aeRI).resource) is not None:
+			nl = aeResource['nl']
 			if nl is not None and isinstance(nl, str) and ri == nl:
-				ae.delAttribute('nl')
-				ae.dbUpdate()
+				aeResource.delAttribute('nl')
+				aeResource.dbUpdate()
 

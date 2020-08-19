@@ -7,9 +7,8 @@
 #	ResourceType: ContentInstance
 #
 
-from typing import Tuple
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result
 from Validator import constructPolicy, addPolicy
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
@@ -42,15 +41,15 @@ class CIN(AnnounceableResource):
 		return super()._canHaveChild(resource, [])
 
 
-	def activate(self, parentResource: Resource, originator: str) -> Tuple[bool, int, str]:
-		if not (result := super().activate(parentResource, originator))[0]:
-			return result
-		parentResource, _, _ = parentResource.dbReload()	# Read the resource again in case it was updated in the DB
-		self.setAttribute('st', parentResource.st)
-		return True, C.rcOK, None
+	def activate(self, parentResource: Resource, originator: str) -> Result:
+		if not (res := super().activate(parentResource, originator)).status:
+			return res
+		if (parentResource := parentResource.dbReload().resource) is not None:		# Read the resource again in case it was updated in the DB
+			self.setAttribute('st', parentResource.st)
+		return Result(status=True)
 
 
 	# Forbidd updating
-	def update(self, jsn: dict = None, originator: str = None) -> Tuple[bool, int, str]:
-		return False, C.rcOperationNotAllowed, 'updating CIN is forbidden'
+	def update(self, jsn: dict = None, originator: str = None) -> Result:
+		return Result(status=False, rsc=C.rcOperationNotAllowed, dbg='updating CIN is forbidden')
 

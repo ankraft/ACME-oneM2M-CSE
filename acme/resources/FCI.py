@@ -7,7 +7,7 @@
 #	ResourceType: FlexContainerInstance
 #
 
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
 from Validator import constructPolicy, addPolicy
@@ -23,17 +23,17 @@ attributePolicies =  addPolicy(attributePolicies, fcinPolicies)
 
 class FCI(AnnounceableResource):
 
-	def __init__(self, jsn: dict = None, pi: str = None, fcntType: str = None, create: bool = False) -> None:
+	def __init__(self, jsn:dict=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
 		super().__init__(T.FCI, jsn, pi, tpe=fcntType, create=create, inheritACP=True, readOnly=True, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = fcinPolicies	# only the resource type's own policies
 
 
 	# Enable check for allowed sub-resources. No Child for CIN
-	def canHaveChild(self, resource: Resource) -> bool:
+	def canHaveChild(self, resource:Resource) -> bool:
 		return super()._canHaveChild(resource, [])
 
 	# Forbidd updating
-	def update(self, jsn: dict = None, originator: str = None) -> Tuple[bool, int, str]:
-		return False, C.rcOperationNotAllowed, 'updating FCIN is forbidden'
+	def update(self, jsn:dict=None, originator:str=None) -> Result:
+		return Result(status=False, rsc=C.rcOperationNotAllowed, dbg='updating FCIN is forbidden')
 
