@@ -164,7 +164,8 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'))
 
 
-	# Create an AE with non-announced attributes
+	# Create an AE with non-announceable attributes
+	# AA should be corrected, null, but still present when rcn=modifiedAttributes
 	@unittest.skipIf(noRemote, 'No remote CSEBase')
 	def test_createAnnounceAEwithNAAttributes(self):
 		jsn = 	{ 'm2m:ae' : {
@@ -175,39 +176,20 @@ class TestRemote_Annc(unittest.TestCase):
 				 	'at': 	[ REMOTECSEID ],
 				 	'aa': 	[ 'rn', 'ri', 'pi', 'ct','lt','st','acpi' ]
 				}}
-		r, rsc = CREATE(cseURL, 'C', T.AE, jsn)
+		r, rsc = CREATE('%s?rcn=%d' % (cseURL, C.rcnModifiedAttributes), 'C', T.AE, jsn)
 		self.assertEqual(rsc, C.rcCreated)
-		self.assertIsNone(findXPath(r, 'm2m:ae/aa'))	# This must be None/Null!
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/at'))
 		self.assertIsInstance(findXPath(r, 'm2m:ae/at'), list)
 		self.assertEqual(len(findXPath(r, 'm2m:ae/at')), 1)
 		self.assertTrue(findXPath(r, 'm2m:ae/at')[0].startswith('%s/' % REMOTECSEID))
 		TestRemote_Annc.remoteAeRI = findXPath(r, 'm2m:ae/at')[0]
 		self.assertIsNotNone(self.remoteAeRI)
-		self.assertIsNone(findXPath(r, 'm2m:ae/aa'))
+
+		# aa should be in the resource, but null
+		self.assertIn('aa', findXPath(r, 'm2m:ae')) 
+		self.assertIsNone(findXPath(r, 'm2m:ae/aa'))	# This must be None/Null!
+
 		TestRemote_Annc.ae = r
-
-
-	# # Retrieve the announced AE with AT, but no AA
-	# @unittest.skipIf(noRemote, 'No remote CSEBase')
-	# def test_retrieveAnnouncedAEwithATwithoutAA(self):
-	# 	if TestRemote_Annc.remoteAeRI is None:
-	# 		self.skipTest('remote AE.ri not found')
-	# 	r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteAeRI), CSEID)
-	# 	self.assertEqual(rsc, C.rcOK)
-	# 	self.assertIsNotNone(findXPath(r, 'm2m:aeA'))
-	# 	self.assertIsNotNone(findXPath(r, 'm2m:aeA/ty'))
-	# 	self.assertEqual(findXPath(r, 'm2m:aeA/ty'), T.AEAnnc)
-	# 	self.assertIsNotNone(findXPath(r, 'm2m:aeA/ct'))
-	# 	self.assertIsNotNone(findXPath(r, 'm2m:aeA/lt'))
-	# 	self.assertIsNotNone(findXPath(r, 'm2m:aeA/et'))
-	# 	self.assertIsNotNone(findXPath(r, 'm2m:aeA/pi'))
-	# 	self.assertTrue(CSEID.endswith(findXPath(r, 'm2m:aeA/pi')))
-	# 	self.assertIsNotNone(findXPath(r, 'm2m:aeA/lnk'))
-	# 	self.assertTrue(findXPath(r, 'm2m:aeA/lnk').endswith( findXPath(TestRemote_Annc.ae, 'm2m:ae/ri') ))
-
-
-
 
 
 	# Create a Node with AT
@@ -476,7 +458,6 @@ def run():
 
 	# create an announced AE, including NA announced attribute
 	suite.addTest(TestRemote_Annc('test_createAnnounceAEwithNAAttributes'))
-	# suite.addTest(TestRemote_Annc('test_retrieveAnnouncedAEwithNAAttributes'))
 	suite.addTest(TestRemote_Annc('test_deleteAnnounceAE'))
 
 	# create an announced Node & MgmtObj [bat]
