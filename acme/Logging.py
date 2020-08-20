@@ -114,19 +114,19 @@ class	Logging:
 
 
 	@staticmethod
-	def log(msg: str) -> None:
+	def log(msg:str) -> None:
 		"""Print a log message with level INFO. """
 		Logging._log(logging.INFO, msg)
 
 
 	@staticmethod
-	def logDebug(msg : str) -> None:
+	def logDebug(msg:str) -> None:
 		"""Print a log message with level DEBUG. """
 		Logging._log(logging.DEBUG, msg)
 
 
 	@staticmethod
-	def logErr(msg : str) -> None:
+	def logErr(msg:str) -> None:
 		"""Print a log message with level ERROR. """
 		import CSE
 		# raise logError event
@@ -136,7 +136,7 @@ class	Logging:
 
 
 	@staticmethod
-	def logWarn(msg : str) -> None:
+	def logWarn(msg:str) -> None:
 		"""Print a log message with level WARNING. """
 		import CSE
 		# raise logWarning event
@@ -145,10 +145,10 @@ class	Logging:
 
 
 	@staticmethod
-	def _log(level : int, msg : str) -> None:
+	def _log(level:int, msg:str) -> None:
 		if Logging.loggingEnabled and Logging.logLevel <= level and Logging.queue is not None:
 			# Queue a log message : (level, message, caller from stackframe, current thread)
-			Logging.queue.put((level, msg, inspect.getframeinfo(inspect.stack()[2][0]), threading.current_thread()))
+			Logging.queue.put((level, str(msg), inspect.getframeinfo(inspect.stack()[2][0]), threading.current_thread()))
 
 
 #
