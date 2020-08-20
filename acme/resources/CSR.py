@@ -29,7 +29,7 @@ attributePolicies = addPolicy(attributePolicies, csrPolicies)
 class CSR(AnnounceableResource):
 
 	def __init__(self, jsn:dict=None, pi:str=None, rn:str=None, create:bool=False) -> None:
-		super().__init__(T.CSR, jsn, pi, rn=rn, create=create)
+		super().__init__(T.CSR, jsn, pi, rn=rn, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = csrPolicies	# only the resource type's own policies
 

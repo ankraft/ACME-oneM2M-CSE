@@ -70,7 +70,7 @@ attributePolicies = {
 	'cr'	: [ BT.list, 			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ],		# CNT
 	'cs'	: [ BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ],		# CIN, FCNT
 	'csi'	: [ BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ],		# CSE, CSR
-	'cst'	: [ BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ],		# CSE, CSR
+	'cst'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# CSE, CSR
 	'csy'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# m2m:consistencyStrategy - GRP
 	'csz'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# m2m:serializations - AE, CSE (RO!), CSR
 	'cus'	: [ BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# BAT
