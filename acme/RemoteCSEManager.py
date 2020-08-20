@@ -556,8 +556,8 @@ class RemoteCSEManager(object):
 		# 	target['rn'] = source.rn
 		if 'rr' in source:
 			target['rr'] = source.rr
-		if 'srt' in source:
-			target['srt'] = source.srt
+		# if 'srt' in source:
+		# 	target['srt'] = source.srt
 		if 'srv' in source:
 			target['srv'] = source.srv
 		if 'st' in source:
