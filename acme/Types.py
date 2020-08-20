@@ -8,18 +8,11 @@
 #
 
 from __future__ import annotations
+from dataclasses import dataclass
+from typing import Any, List
 from enum import IntEnum, Enum, auto
-from collections import namedtuple
+from flask import Request
 
-
-# ResourceType = namedtuple('ResourceType', ['type', 'name'])
-
-# class ResourceTypes(Enum):
-# 	ACP 		=  ResourceType(1, 'm2m:acp')
-
-# 	@property
-# 	def name(self):
-# 		return self.value.name
 
 class ResourceTypes(IntEnum):
 
@@ -248,3 +241,28 @@ class Announced(IntEnum):
 	NA				= auto()
 	OA				= auto()
 	MA				= auto()
+
+
+##############################################################################
+#
+#	Result Data Class
+#
+
+
+@dataclass
+class Result:
+	resource:	Any			= None		# Actually this is a Resource type, but have a circular import problem.
+	jsn: 		dict 		= None
+	lst:		List[Any]   = None		# List of Anything
+	rsc:		int 		= 2000		# C.rcOK, again problem with circular import
+	dbg:		str 		= None
+	request:	Request 	= None  	# may contain the original http request object
+	status:		bool 		= None
+	originator:	str 		= None
+
+
+	def errorResult(self) -> Result:
+		""" Copy only the rsc and dbg to a new result instance.
+		"""
+		return Result(rsc=self.rsc, dbg=self.dbg)
+

@@ -7,9 +7,8 @@
 #	ResourceType: Application Entity
 #
 
-from typing import Tuple, Dict
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result
 from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
@@ -29,7 +28,7 @@ attributePolicies =  addPolicy(attributePolicies, aePolicies)
 
 class AE(AnnounceableResource):
 
-	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+	def __init__(self, jsn:dict=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.AE, jsn, pi, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = aePolicies	# only the resource type's own policies
@@ -40,7 +39,7 @@ class AE(AnnounceableResource):
 
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource: Resource) -> bool:
+	def canHaveChild(self, resource:Resource) -> bool:
 		return super()._canHaveChild(resource,	
 									 [ T.ACP,
 									   T.CNT,
@@ -50,8 +49,8 @@ class AE(AnnounceableResource):
 									 ])
 
 
-	def validate(self, originator: str = None, create: bool = False) -> Tuple[bool, int, str]:
-		if (res := super().validate(originator), create)[0] == False:
+	def validate(self, originator:str=None, create:bool=False) -> Result:
+		if not (res := super().validate(originator, create)).status:
 			return res
 
 		self.normalizeURIAttribute('poa')
@@ -71,10 +70,8 @@ class AE(AnnounceableResource):
 				self[Resource._node] = nl
 
 				# Add to new node
-				node, _, _ = CSE.dispatcher.retrieveResource(nl) # new node
-				if node is not None:
-					hael = node['hael']
-					if hael is None:
+				if (node := CSE.dispatcher.retrieveResource(nl).resource) is not None:	# new node
+					if (hael := node['hael']) is None:
 						node['hael'] = [ ri ]
 					else:
 						if isinstance(hael, list):
@@ -83,10 +80,10 @@ class AE(AnnounceableResource):
 					node.dbUpdate()
 			self[Resource._node] = nl
 
-		return True, C.rcOK, None
+		return Result(status=True)
 
 
-	def deactivate(self, originator : str) -> None:
+	def deactivate(self, originator:str) -> None:
 		super().deactivate(originator)
 		if (nl := self['nl']) is None:
 			return
@@ -96,10 +93,9 @@ class AE(AnnounceableResource):
 	def _removeAEfromNOD(self, nodeRi: str, ri: str) -> None:
 		""" Remove AE from hosting Node. """
 
-		node, _, _ = CSE.dispatcher.retrieveResource(nodeRi)
-		if node is not None:
-			hael = node['hael']
-			if hael is not None and isinstance(hael, list) and ri in hael:
+
+		if (node := CSE.dispatcher.retrieveResource(nodeRi).resource) is not None:
+			if (hael := node['hael']) is not None and isinstance(hael, list) and ri in hael:
 				hael.remove(ri)
 				if len(hael) == 0:
 					node.delAttribute('hael')

@@ -8,10 +8,10 @@
 #
 
 from Logging import Logging
-from typing import Tuple, Optional, Union
+from typing import Union, List
 from flask import Request
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result
 import CSE, Utils
 from resources import FCNT, MgmtObj
 from SecurityManager import operationsPermissions
@@ -31,34 +31,34 @@ class GroupManager(object):
 
 	#########################################################################
 
-	def validateGroup(self, group: Resource, originator: str) -> Tuple[bool, int, str]:
+	def validateGroup(self, group:Resource, originator:str) -> Result:
 
 		# Get consistencyStrategy
 		csy = group.csy
 
 		# Check member types and group set type
 		# Recursive for sub groups, if .../fopt. Check privileges of originator
-		if not (res := self._checkMembersAndPrivileges(group, group.mt, group.csy, group.spty, originator))[0]:
+		if not (res := self._checkMembersAndPrivileges(group, group.mt, group.csy, group.spty, originator)).status:
 			return res
 
 		# Check for max members
 		if group.hasAttribute('mnm'):		# only if mnm attribute is set
 			try: 							# mnm may not be a number
 				if len(group.mid) > int(group.mnm):
-					return False, C.rcMaxNumberOfMemberExceeded, 'max number of members exceeded'
+					return Result(status=False, rsc=C.rcMaxNumberOfMemberExceeded, dbg='max number of members exceeded')
 			except ValueError:
-				return False, C.rcInvalidArguments, 'invalid arguments'
+				return Result(status=False, rsc=C.rcInvalidArguments, dbg='invalid arguments')
 
 		group.dbUpdate()
 		# TODO: check virtual resources
-		return True, C.rcOK, None
+		return Result(status=True)
 
 
 
-	def _checkMembersAndPrivileges(self, group:Resource, mt: int, csy: int, spty: Union[int, str], originator: str) -> Tuple[bool, int, str]:
+	def _checkMembersAndPrivileges(self, group:Resource, mt:int, csy:int, spty:Union[int, str], originator:str) -> Result:
 
 		# check for duplicates and remove them
-		midsList = []		# contains the real mid list
+		midsList = []		# contains the real mi
 
 		remoteResource:dict = None
 		rsc 					= 0
@@ -72,28 +72,28 @@ class GroupManager(object):
 					""" RETRIEVE member from a remote CSE """
 					isLocalResource = False
 					if (url := CSE.remote._getForwardURL(mid)) is None:
-						return None, C.rcNotFound, 'forwarding URL not found for group member: %s' % mid
+						return Result(status=False, rsc=C.rcNotFound, dbg='forwarding URL not found for group member: %s' % mid)
 					Logging.log('Retrieve request to: %s' % url)
-					remoteResource, rsc, _ = CSE.httpServer.sendRetrieveRequest(url, CSE.Configuration.get('cse.csi'))
+					remoteResult = CSE.httpServer.sendRetrieveRequest(url, CSE.Configuration.get('cse.csi'))
 
 			# get the resource and check it
 			hasFopt = False
 			if isLocalResource:
 				hasFopt = mid.endswith('/fopt')
 				id = mid[:-5] if len(mid) > 5 and hasFopt else mid 	# remove /fopt to retrieve the resource
-				if (r := CSE.dispatcher.retrieveResource(id))[0] is None:
-					return False, C.rcNotFound, r[2]
-				resource = r[0]
+				if (res := CSE.dispatcher.retrieveResource(id)).resource is None:
+					return Result(status=False, rsc=C.rcNotFound, dbg=res.dbg)
+				resource = res.resource
 			else:
-				if remoteResource is None:
-					if rsc == C.rcOriginatorHasNoPrivilege:  # CSE has no privileges for retrieving the member
-						return False, C.rcReceiverHasNoPrivileges, 'wrong privileges for CSE to retrieve remote resource'
+				if remoteResult.jsn is None:
+					if remoteResult.rsc == C.rcOriginatorHasNoPrivilege:  # CSE has no privileges for retrieving the member
+						return Result(status=False, rsc=C.rcReceiverHasNoPrivileges, dbg='wrong privileges for CSE to retrieve remote resource')
 					else:  # Member not found
-						return False, C.rcNotFound, 'remote resource not found: %s' % mid
+						return Result(status=False, rsc=C.rcNotFound, dbg='remote resource not found: %s' % mid)
 				else:
-					resource, _ = Utils.resourceFromJSON(remoteResource)
+					resource = Utils.resourceFromJSON(remoteResult.jsn).resource
 
-			# skip if ri is already in the list
+			# skip if ri is already in th
 			if isLocalResource:
 				if (ri := resource.ri) in midsList:
 					continue
@@ -104,12 +104,12 @@ class GroupManager(object):
 			# check privileges
 			if isLocalResource:
 				if not CSE.security.hasAccess(originator, resource, C.permRETRIEVE):
-					return False, C.rcReceiverHasNoPrivileges, 'wrong privileges for originator to retrieve local resource: %s' % mid
+					return Result(status=False, rsc=C.rcReceiverHasNoPrivileges, dbg='wrong privileges for originator to retrieve local resource: %s' % mid)
 
 			# if it is a group + fopt, then recursively check members
 			if (ty := resource.ty) == T.GRP and hasFopt:
 				if isLocalResource:
-					if not (res := self._checkMembersAndPrivileges(resource, mt, csy, spty, originator))[0]:
+					if not (res := self._checkMembersAndPrivileges(resource, mt, csy, spty, originator)).status:
 						return res
 				ty = resource.mt	# set the member type to the group's member type
 
@@ -117,10 +117,10 @@ class GroupManager(object):
 			if spty is not None:
 				if isinstance(spty, int):				# mgmtobj type
 					if isinstance(resource, MgmtObj.MgmtObj) and ty != spty:
-						return False, C.rcGroupMemberTypeInconsistent, 'resource and group member types mismatch: %d != %d for: %s' % (ty, spty, mid)
+						return Result(status=False, rsc=C.rcGroupMemberTypeInconsistent, dbg='resource and group member types mismatch: %d != %d for: %s' % (ty, spty, mid))
 				elif isinstance(spty, str):				# fcnt specialization
 					if isinstance(resource, FCNT.FCNT) and resource.cnd != spty:
-						return False, C.rcGroupMemberTypeInconsistent, 'resource and group member specialization types mismatch: %s != %s for: %s' % (resource.cnd, spty, mid)
+						return Result(status=False, rsc=C.rcGroupMemberTypeInconsistent, dbg='resource and group member specialization types mismatch: %s != %s for: %s' % (resource.cnd, spty, mid))
 
 			# check type of resource and member type of group
 			if not (mt == T.MIXED or ty == mt):	# types don't match
@@ -130,9 +130,9 @@ class GroupManager(object):
 					mt = T.MIXED
 					group['mt'] = T.MIXED
 				else:								# abandon group
-					return False, C.rcGroupMemberTypeInconsistent, 'group consistency strategy and type "mixed" mismatch'
+					return Result(status=False, rsc=C.rcGroupMemberTypeInconsistent, dbg='group consistency strategy and type "mixed" mismatch')
 
-			# member seems to be ok, so add ri to the list
+			# member seems to be ok, so add ri to th
 			if isLocalResource:
 				midsList.append(ri if not hasFopt else ri + '/fopt')		# restore fopt for ri
 			else:
@@ -144,26 +144,26 @@ class GroupManager(object):
 		group['cnm'] = len(midsList)
 		group['mtv'] = True
 		
-		return True, C.rcOK, None
+		return Result(status=True)
 
 
 
 
-	def foptRequest(self, operation: int, fopt: Resource, request: Request, id: str, originator: str, ct:str = None, ty:T = None) -> Tuple[Union[Resource, dict], int, str]:
+	def foptRequest(self, operation: int, fopt: Resource, request: Request, id: str, originator: str, ct:str = None, ty:T = None) -> Result:
 		"""	Handle requests to a fanOutPoint. 
 		This method might be called recursivly, when there are groups in groups."""
 
 		# get parent / group and check permissions
 		group = fopt.retrieveParentResource()
 		if group is None:
-			return None, C.rcNotFound, 'group resource not found'
+			return Result(rsc=C.rcNotFound, dbg='group resource not found')
 
 		# get the permission flags for the request operation
 		permission = operationsPermissions[operation]
 
 		#check access rights for the originator through memberAccessControlPolicies
 		if CSE.security.hasAccess(originator, group, requestedPermission=permission, ty=ty, isCreateRequest=True if operation == C.opCREATE else False) == False:
-			return None, C.rcOriginatorHasNoPrivilege, 'access denied'
+			return Result(rsc=C.rcOriginatorHasNoPrivilege, dbg='access denied')
 
 		# get the rqi header field
 		_, _, _, rqi, _ = Utils.getRequestHeaders(request)
@@ -173,9 +173,10 @@ class GroupManager(object):
 		Logging.logDebug('Adding additional path elements: %s' % tail)
 
 		# walk through all members
-		result = []
+		resultList:List[Result] = []
+
 		tail = '/' + tail if len(tail) > 0 else '' # add remaining path, if any
-		for mid in group.mid.copy():	# copy mid list because it is changed in the loop
+		for mid in group.mid.copy():	# copy mi because it is changed in the loop
 			# Try to get the SRN and add the tail
 			if (srn := Utils.structuredPathFromRI(mid)) is not None:
 				mid = srn + tail
@@ -183,36 +184,34 @@ class GroupManager(object):
 				mid = mid + tail
 			# Invoke the request
 			if operation == C.opRETRIEVE:
-				if (res := CSE.dispatcher.handleRetrieveRequest(request, mid, originator))[0] is None:
+				if (res := CSE.dispatcher.handleRetrieveRequest(request, mid, originator)).resource is None:
 					return res
 			elif operation == C.opCREATE:
-				if (res := CSE.dispatcher.handleCreateRequest(request, mid, originator, ct, ty))[0] is None:
+				if (res := CSE.dispatcher.handleCreateRequest(request, mid, originator, ct, ty)).resource is None:
 					return res
 			elif operation == C.opUPDATE:
-				if (res := CSE.dispatcher.handleUpdateRequest(request, mid, originator, ct))[0] is None:
+				if (res := CSE.dispatcher.handleUpdateRequest(request, mid, originator, ct)).resource is None:
 					return res 
 			elif operation == C.opDELETE:
-				if (res := CSE.dispatcher.handleDeleteRequest(request, mid, originator))[1] != C.rcDeleted:
+				if (res := CSE.dispatcher.handleDeleteRequest(request, mid, originator)).rsc != C.rcDeleted:
 					return res 
 			else:
-				return None, C.rcOperationNotAllowed, 'operation not allowed'
-			result.append(res)
+				return Result(rsc=C.rcOperationNotAllowed, dbg='operation not allowed')
+			resultList.append(res)
 
 		# construct aggregated response
-		if len(result) > 0:
+		if len(resultList) > 0:
 			items = []
-			for r in result:
-				if r[0] is not None and isinstance(r[0], Resource):
-					resource, rsc, _ = r
-					item = 	{ 'rsc' : rsc, 
+			for result in resultList:
+				if result.resource is not None and isinstance(result.resource, Resource):
+					item = 	{ 'rsc' : result.rsc, 
 							  'rqi' : rqi,
-							  'pc'  : resource.asJSON() if isinstance(resource, Resource) else resource, # in case 'resource' is a dict
-							  'to'  : resource[Resource._srn],
+							  'pc'  : result.resource.asJSON() if isinstance(result.resource, Resource) else result.resource, # in case 'resource' is a dict
+							  'to'  : result.resource[Resource._srn],
 							  'rvi'	: '3'	# TODO constant?
 							}
 				else:	# e.g. when deleting
-					_, rsc, _ = r
-					item = 	{ 'rsc' : rsc, 
+					item = 	{ 'rsc' : result.rsc, 
 					  'rqi' : rqi,
 					  'rvi'	: '3'	# TODO constant?
 					}
@@ -222,7 +221,7 @@ class GroupManager(object):
 		else:
 			agr = {}
 
-		return agr, C.rcOK, None # Response Status Code is OK regardless of the requested fanout operation
+		return Result(resource=agr) # Response Status Code is OK regardless of the requested fanout operation
 
 
 
@@ -230,7 +229,7 @@ class GroupManager(object):
 	#########################################################################
 
 
-	def handleDeleteEvent(self, deletedResource: Resource) -> None:
+	def handleDeleteEvent(self, deletedResource:Resource) -> None:
 		"""Handle a delete event. Check whether the deleted resource is a member
 		of group. If yes, remove the member. This method is called by the event manager. """
 

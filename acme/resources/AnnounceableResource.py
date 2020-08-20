@@ -10,7 +10,7 @@
 
 from .Resource import *
 import Utils
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result
 from Types import Announced as AN 		# type: ignore
 from Validator import addPolicy
 
@@ -19,20 +19,21 @@ from Validator import addPolicy
 
 class AnnounceableResource(Resource):
 
-	def __init__(self, ty:Union[T, int], jsn:dict = None, pi:str = None, tpe:str = None, create:bool = False, inheritACP:bool = False, readOnly:bool = False, rn:str = None, attributePolicies:dict = None, isVirtual:bool = False) -> None:
+	def __init__(self, ty:Union[T, int], jsn:dict=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str
+		=None, attributePolicies:dict=None, isVirtual:bool=False) -> None:
 		super().__init__(ty, jsn, pi, tpe=tpe, create=create, inheritACP=inheritACP, readOnly=readOnly, rn=rn, attributePolicies=attributePolicies, isVirtual=isVirtual)
 		self._origAA = None	# hold original announceableAttributes when doing an update
 
 
-	def activate(self, parentResource:Resource, originator:str) -> Tuple[bool, int, str]:
+	def activate(self, parentResource:Resource, originator:str) -> Result:
 		Logging.logDebug('Activating AnnounceableResource resource: %s' % self.ri)
-		if not (result := super().activate(parentResource, originator))[0]:
-			return result
+		if not (res := super().activate(parentResource, originator)).status:
+			return res
 
 		# Check announcements
 		if self.at is not None:
 			CSE.announce.announceResource(self)
-		return result
+		return res
 
 
 	def deactivate(self, originator:str) -> None:
@@ -44,13 +45,12 @@ class AnnounceableResource(Resource):
 		super().deactivate(originator)
 
 
-	def update(self, jsn:dict = None, originator:str = None) -> Tuple[bool, int, str]:
+	def update(self, jsn:dict=None, originator:str=None) -> Result:
 		Logging.logDebug('Updating AnnounceableResource: %s' % self.ri)
 		self._origAA = self.aa
 		self._origAT = self.at
-
-		if not (result := super().update(jsn=jsn, originator=originator))[0]:
-			return result
+		if not (res := super().update(jsn=jsn, originator=originator)).status:
+			return res
 
 		# Check announcements
 		if self.at is not None:
@@ -58,11 +58,11 @@ class AnnounceableResource(Resource):
 		else:
 			if self._origAT is not None:	# at is removed in update, so remove self
 				CSE.announce.deAnnounceResource(self)
-		return result
+		return res
 
 
 	# create the json stub for the announced resource
-	def createAnnouncedResourceJSON(self, remoteCSR:Resource, isCreate:bool = False, csi:str=None) ->  dict:
+	def createAnnouncedResourceJSON(self, remoteCSR:Resource, isCreate:bool=False, csi:str=None) ->  dict:
 		# special case for FCNT, FCI
 		if (additionalAttributes := CSE.validator.getAdditionalAttributesFor(self.tpe)) is not None:
 			policies = addPolicy(self.resourceAttributePolicies.copy(), additionalAttributes)

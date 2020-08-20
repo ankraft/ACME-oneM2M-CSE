@@ -7,9 +7,8 @@
 #	ResourceType: Group
 #
 
-from typing import Tuple
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result
 from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
@@ -28,7 +27,7 @@ attributePolicies = addPolicy(attributePolicies, grpPolicies)
 
 class GRP(AnnounceableResource):
 
-	def __init__(self, jsn: dict = None, pi: str = None, fcntType: str = None, create: bool = False) -> None:
+	def __init__(self, jsn:dict=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
 		super().__init__(T.GRP, jsn, pi, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = grpPolicies	# only the resource type's own policies
@@ -46,27 +45,27 @@ class GRP(AnnounceableResource):
 
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource: Resource) -> bool:
+	def canHaveChild(self, resource:Resource) -> bool:
 		return super()._canHaveChild(resource,	
 									 [ T.SUB, 
 									   T.GRP_FOPT
 									 ])
 
-	def activate(self, parentResource: Resource, originator: str) -> Tuple[bool, int, str]:
-		if not (result := super().activate(parentResource, originator))[0]:
-			return result
+	def activate(self, parentResource:Resource, originator:str) -> Result:
+		if not (res := super().activate(parentResource, originator)).status:
+			return res
 
 		# add fanOutPoint
 		ri = self['ri']
 		Logging.logDebug('Registering fanOutPoint resource for: %s' % ri)
-		fanOutPointResource, _ = Utils.resourceFromJSON({ 'pi' : ri }, acpi=self['acpi'], ty=T.GRP_FOPT)
-		if not (res := CSE.dispatcher.createResource(fanOutPointResource, self, originator))[0]:
-			return False, res[1], res[2]
-		return True, C.rcOK, None
+		fanOutPointResource = Utils.resourceFromJSON({ 'pi' : ri }, acpi=self['acpi'], ty=T.GRP_FOPT).resource
+		if (res := CSE.dispatcher.createResource(fanOutPointResource, self, originator)).resource is None:
+			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+		return Result(status=True)
 
 
-	def validate(self, originator: str = None, create: bool = False) -> Tuple[bool, int, str]:
-		if (res := super().validate(originator, create))[0] == False:
+	def validate(self, originator:str=None, create:bool=False) -> Result:
+		if not (res := super().validate(originator, create)).status:
 			return res
 		return CSE.group.validateGroup(self, originator)
 

@@ -8,7 +8,7 @@
 #
 
 from .MgmtObj import *
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result
 from Validator import constructPolicy, addPolicy
 import Utils
 
@@ -33,22 +33,26 @@ class DVC(MgmtObj):
 			self.setAttribute('ena', True, overwrite=True)	# always True
 			self.setAttribute('dis', True, overwrite=True)	# always True
 
+	#
+	#	Handling the special behaviour for ena and dis attributes in 
+	#	validate() and update()
+	#
 
-	def validate(self, originator: str = None, create: bool = False) -> Tuple[bool, int, str]:
-		if (res := super().validate(originator, create))[0] == False:
+	def validate(self, originator:str=None, create:bool=False) -> Result:
+		if not (res := super().validate(originator, create)).status:
 			return res
 		self.setAttribute('ena', True, overwrite=True)	# always set (back) to True
 		self.setAttribute('dis', True, overwrite=True)	# always set (back) to True
-		return True, C.rcOK, None
+		return Result(status=True)
 
 
-	def update(self, jsn:dict=None, originator:str=None) -> Tuple[bool, int, str]:
+	def update(self, jsn:dict=None, originator:str=None) -> Result:
 		# Check for ena & dis updates 
 		if jsn is not None and self.tpe in jsn:
 			ena = Utils.findXPath(jsn, 'm2m:dvc/ena')
 			dis = Utils.findXPath(jsn, 'm2m:dvc/dis')
 			if ena is not None and dis is not None and ena and dis:
-				return False, C.rcBadRequest, 'both ena and dis updated to True is not allowed'
+				return Result(status=False, rsc=C.rcBadRequest, dbg='both ena and dis updated to True is not allowed')
 
 		return super().update(jsn, originator)
 

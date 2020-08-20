@@ -7,9 +7,8 @@
 #	ResourceType: RemoteCSE
 #
 
-from typing import Tuple
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result
 from Configuration import Configuration
 from Validator import constructPolicy, addPolicy
 from .Resource import *
@@ -29,7 +28,7 @@ attributePolicies = addPolicy(attributePolicies, csrPolicies)
 
 class CSR(AnnounceableResource):
 
-	def __init__(self, jsn: dict = None, pi: str = None, rn: str = None, create: bool = False) -> None:
+	def __init__(self, jsn:dict=None, pi:str=None, rn:str=None, create:bool=False) -> None:
 		super().__init__(T.CSR, jsn, pi, rn=rn, create=create)
 
 		self.resourceAttributePolicies = csrPolicies	# only the resource type's own policies
@@ -41,7 +40,7 @@ class CSR(AnnounceableResource):
 
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource : Resource) -> bool:
+	def canHaveChild(self, resource:Resource) -> bool:
 		return super()._canHaveChild(resource,
 									 [ T.CNT,
 									   T.CNTAnnc,
@@ -62,8 +61,8 @@ class CSR(AnnounceableResource):
 									 ])
 
 
-	def validate(self, originator: str = None, create: bool = False) -> Tuple[bool, int, str]:
-		if (res := super().validate(originator), create)[0] == False:
+	def validate(self, originator:str=None, create:bool=False) -> Result:
+		if (res := super().validate(originator, create)).status == False:
 			return res
 		self.normalizeURIAttribute('poa')
-		return True, C.rcOK, None
+		return Result(status=True)
