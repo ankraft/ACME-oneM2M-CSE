@@ -473,7 +473,10 @@ class RemoteCSEManager(object):
 		return CSE.httpServer.sendDeleteRequest(url, origin)
 
 
-	def retrieveRemoteResource(self, id:str, originator:str=None) -> Result:
+	def retrieveRemoteResource(self, id:str, originator:str=None, raw=False) -> Result:
+		"""	Retrieve a resource from a remote CSE. If 'raw' is True then no resource
+			object is created, but the raw content from the retrieval is returned.
+		"""
 		if (url := self._getForwardURL(id)) is None:
 			return Result(rsc=C.rcNotFound, dbg='URL not found for id: %s' % id)
 		if originator is None:
@@ -482,7 +485,7 @@ class RemoteCSEManager(object):
 		res = CSE.httpServer.sendRetrieveRequest(url, originator)
 		if res.rsc != C.rcOK:
 			return res.errorResult()
-		return Utils.resourceFromJSON(res.jsn)
+		return Utils.resourceFromJSON(res.jsn) if not raw else Result(resource=res.jsn)
 
 
 	def isTransitID(self, id:str) -> bool:

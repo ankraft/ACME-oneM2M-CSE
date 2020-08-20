@@ -125,7 +125,7 @@ class Dispatcher(object):
 					return res
 				if (lnk := resource.lnk) is None:	# no link attribute?
 					return Result(rsc=C.rcBadRequest, dbg='missing lnk attribute in target resource')
-				return self.retrieveResource(lnk, originator)
+				return self.retrieveResource(lnk, originator, raw=True)
 
 
 		# do discovery
@@ -253,7 +253,7 @@ class Dispatcher(object):
 		# 	return None, C.rcInvalidArguments, 'unknown filter usage (fu)'
 
 
-	def retrieveResource(self, id:str=None, originator:str=None) -> Result:
+	def retrieveResource(self, id:str=None, originator:str=None, raw=False) -> Result:
 		# If the ID is in SP-relative format then first check whether this is for the
 		# local CSE. 
 		# If yes, then adjust the ID and try to retrieve it. 
@@ -263,7 +263,7 @@ class Dispatcher(object):
 				id = id[self.csiSlashLen:]
 			else:
 				if Utils.isSPRelative(id):
-					return CSE.remote.retrieveRemoteResource(id, originator)
+					return CSE.remote.retrieveRemoteResource(id, originator, raw)
 		return self._retrieveResource(srn=id) if Utils.isStructured(id) else self._retrieveResource(ri=id)
 
 
