@@ -19,8 +19,7 @@ from Validator import addPolicy
 
 class AnnounceableResource(Resource):
 
-	def __init__(self, ty:Union[T, int], jsn:dict=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str
-		=None, attributePolicies:dict=None, isVirtual:bool=False) -> None:
+	def __init__(self, ty:Union[T, int], jsn:dict=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str=None, attributePolicies:dict=None, isVirtual:bool=False) -> None:
 		super().__init__(ty, jsn, pi, tpe=tpe, create=create, inheritACP=inheritACP, readOnly=readOnly, rn=rn, attributePolicies=attributePolicies, isVirtual=isVirtual)
 		self._origAA = None	# hold original announceableAttributes when doing an update
 
@@ -59,6 +58,26 @@ class AnnounceableResource(Resource):
 			if self._origAT is not None:	# at is removed in update, so remove self
 				CSE.announce.deAnnounceResource(self)
 		return res
+
+
+
+	def validate(self, originator:str=None, create:bool=False) -> Result:
+		Logging.logDebug('Validating AnnounceableResource: %s' % self.ri)
+		if (res := super().validate(originator, create)).status == False:
+			return res
+
+		announceableAttributes = []
+		if self.aa is not None:
+			announceableAttributes = self.aa.copy()
+		for attr, v in self.attributePolicies.items():
+			# Removing non announceable attributes
+			if attr in announceableAttributes and v[5] == AN.NA:  # remove attributes which are not announceable
+				announceableAttributes.remove(attr)
+
+		# If announceableAttributes is now an empty list, set aa to None
+		self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
+		self.dbUpdate()
+		return Result(status=True)
 
 
 	# create the json stub for the announced resource
@@ -162,6 +181,29 @@ class AnnounceableResource(Resource):
 	#	Policy support
 	#
 
+	# def _getAnnouncedAttributes(self, policies:Dict[str, List[Any]]) -> List[str]:
+	# 	"""	Return a list of mandatory and optional announced attributes. 
+	# 		The function only returns those attributes that are also present in the resource!
+	# 	"""
+	# 	mandatory = []
+	# 	optional = []
+	# 	announceableAttributes = []
+	# 	if self.aa is not None:
+	# 		announceableAttributes = self.aa.copy()
+	# 	for attr,v in policies.items():
+	# 		# Removing non announceable attributes
+	# 		if attr in announceableAttributes and v[5] == AN.NA:  # remove attributes which are not announceable
+	# 			announceableAttributes.remove(attr)
+	# 		if self.hasAttribute(attr):
+	# 			if v[5] == AN.MA:
+	# 				mandatory.append(attr)
+	# 			elif v[5] == AN.OA and attr in announceableAttributes:	# only add optional attributes that are also in aa
+	# 				optional.append(attr)
+
+	# 	# If announceableAttributes is now an empty list, set aa to None
+	# 	self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
+
+	# 	return mandatory + optional
 	def _getAnnouncedAttributes(self, policies:Dict[str, List[Any]]) -> List[str]:
 		"""	Return a list of mandatory and optional announced attributes. 
 			The function only returns those attributes that are also present in the resource!
@@ -170,18 +212,13 @@ class AnnounceableResource(Resource):
 		optional = []
 		announceableAttributes = []
 		if self.aa is not None:
-			announceableAttributes = self.aa.copy()
+			announceableAttributes = self.aa
 		for attr,v in policies.items():
-			# Removing non announceable attributes
-			if attr in announceableAttributes and v[5] == AN.NA:  # remove attributes which are not announceable
-				announceableAttributes.remove(attr)
 			if self.hasAttribute(attr):
 				if v[5] == AN.MA:
 					mandatory.append(attr)
 				elif v[5] == AN.OA and attr in announceableAttributes:	# only add optional attributes that are also in aa
 					optional.append(attr)
-
-		# If announceableAttributes is now an empty list, set aa to None
-		self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
+				# else: just ignore AN.NA
 
 		return mandatory + optional

@@ -502,7 +502,7 @@ def isAllowedOriginator(originator: str, allowedOriginators: List[str]) -> bool:
 #	if the modifier dict is given then it contains the changes that let from old to new.
 def resourceDiff(old:Union[Resource.Resource, dict], new:Union[Resource.Resource, dict], modifiers:dict=None) -> dict:
 	res = {}
-	for k,v in new.items():
+	for k, v in new.items():
 		if k.startswith('__'):	# ignore all internal attributes
 			continue
 		if not k in old:		# Key not in old
@@ -512,13 +512,17 @@ def resourceDiff(old:Union[Resource.Resource, dict], new:Union[Resource.Resource
 		elif modifiers is not None and k in modifiers:	# this means the attribute is overwritten by the same value. But still modified
 			res[k] = v
 
-	# Process deletion of attributes. This is necessary since attributes can be
-	# explicitly set to None/Nulls. This fact should not just silently be processed
-	# but also expressed in the resulting difference / the result of this function
-	if modifiers is not None:
-		for k,v in modifiers.items():
-			if v is None:
-				res[k] = v
+	# Process deleted attributes. This is necessary since attributes can be
+	# explicitly set to None/Nulls.
+	for k, v in old.items():
+		if k not in new:
+			res[k] = None
+
+	# ==> Old try to process Null attributes
+	# if modifiers is not None:
+	# 	for k,v in modifiers.items():
+	# 		if v is None:
+	# 			res[k] = v
 
 	return res
 
