@@ -511,6 +511,13 @@ def resourceDiff(old:Union[Resource.Resource, dict], new:Union[Resource.Resource
 			res[k] = v
 		elif modifiers is not None and k in modifiers:	# this means the attribute is overwritten by the same value. But still modified
 			res[k] = v
+
+	#Process deletion of attributes
+	if modifiers is not None:
+		for k,v in modifiers.items():
+			if v is None:
+				res[k] = v
+
 	return res
 
 
