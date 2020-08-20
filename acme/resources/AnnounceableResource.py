@@ -135,6 +135,11 @@ class AnnounceableResource(Resource):
 				if attr in modifiedAttributes:
 					body[attr] = self[attr]
 
+			#Add more attributes
+			for attr in modifiedAttributes:
+				if attr in ('lbl'):
+					body[attr] = self[attr]
+
 			# if aa was modified check also those attributes even when they are not modified
 			if 'aa' in modifiedAttributes and modifiedAttributes['aa'] is not None:
 				for attr in modifiedAttributes['aa']:
@@ -163,9 +168,26 @@ class AnnounceableResource(Resource):
 		mandatory = []
 		optional = []
 		for attr,v in policiespolicies.items():
+			# Removing non announceable attributes
+			if announceableAttributes is not None:
+				if attr in announceableAttributes and v[5] == AN.NA:  # remove attributes which are not announceable
+					Logging.logDebug('Removing non announceable attribute: %d' % attr)
+					announceableAttributes.remove(attr)
 			if self.hasAttribute(attr):
 				if v[5] == AN.MA:
 					mandatory.append(attr)
 				elif announceableAttributes is not None and v[5] == AN.OA and attr in announceableAttributes:	# only add optional attributes that are also in aa
 					optional.append(attr)
+
+		#Process other attributes which were not in the policies (those are NA like pi)
+		if announceableAttributes is not None:
+			for attr in announceableAttributes:	#Remaining attributes (common/universal) which are all NA
+				if attr in ('rn', 'ri', 'pi', 'ct','lt','st','acpi'):
+					announceableAttributes.remove(attr)
+			#If empty list, set aa to None
+			if len(announceableAttributes) == 0:
+				self.setAttribute('aa',None)
+			else:
+				self.setAttribute('aa', announceableAttributes)
+
 		return mandatory + optional
