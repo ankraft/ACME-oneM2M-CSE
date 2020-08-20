@@ -55,15 +55,9 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(rsc, C.rcCreated)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/at'))
 		self.assertIsInstance(findXPath(r, 'm2m:ae/at'), list)
-		self.assertEqual(len(findXPath(r, 'm2m:ae/at')), 2)
-		self.assertIn(REMOTECSEID, findXPath(r, 'm2m:ae/at'))
-
-		TestRemote_Annc.remoteAeRI = None
-		for x in findXPath(r, 'm2m:ae/at'):
-			if x == REMOTECSEID:
-				continue
-			if x.startswith('%s/' % REMOTECSEID):
-				TestRemote_Annc.remoteAeRI = x
+		self.assertEqual(len(findXPath(r, 'm2m:ae/at')), 1)
+		self.assertTrue(findXPath(r, 'm2m:ae/at')[0].startswith('%s/' % REMOTECSEID))
+		TestRemote_Annc.remoteAeRI = findXPath(r, 'm2m:ae/at')[0]
 		self.assertIsNotNone(self.remoteAeRI)
 		self.assertIsNone(findXPath(r, 'm2m:ae/aa'))
 		TestRemote_Annc.ae = r
@@ -121,18 +115,12 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(len(findXPath(r, 'm2m:ae/lbl')), 1)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/at'))
 		self.assertIsInstance(findXPath(r, 'm2m:ae/at'), list)
-		self.assertEqual(len(findXPath(r, 'm2m:ae/at')), 2)
-		self.assertIn(REMOTECSEID, findXPath(r, 'm2m:ae/at'))
+		self.assertEqual(len(findXPath(r, 'm2m:ae/at')), 1)
 		self.assertIsInstance(findXPath(r, 'm2m:ae/aa'), list)
 		self.assertEqual(len(findXPath(r, 'm2m:ae/aa')), 1)
 		self.assertIn('lbl', findXPath(r, 'm2m:ae/aa'))
-
-		TestRemote_Annc.remoteAeRI = None
-		for x in findXPath(r, 'm2m:ae/at'):
-			if x == REMOTECSEID:
-				continue
-			if x.startswith('%s/' % REMOTECSEID):
-				TestRemote_Annc.remoteAeRI = x
+		self.assertTrue(findXPath(r, 'm2m:ae/at')[0].startswith('%s/' % REMOTECSEID))
+		TestRemote_Annc.remoteAeRI = findXPath(r, 'm2m:ae/at')[0]
 		self.assertIsNotNone(self.remoteAeRI)
 		TestRemote_Annc.ae = r
 
@@ -171,6 +159,52 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'))
 
 
+	# Create an AE with non-announced attributes
+	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	def test_createAnnounceAEwithNAAttributes(self):
+		jsn = 	{ 'm2m:ae' : {
+					'rn': 	aeRN, 
+					'api': 	'NMyApp1Id',
+				 	'rr': 	False,
+				 	'srv': 	[ '3' ],
+				 	'at': 	[ REMOTECSEID ],
+				 	'aa': 	[ 'rn', 'ri', 'pi', 'ct','lt','st','acpi' ]
+				}}
+		r, rsc = CREATE(cseURL, 'C', T.AE, jsn)
+		self.assertEqual(rsc, C.rcCreated)
+		self.assertIsNone(findXPath(r, 'm2m:ae/aa'))	# This must be None/Null!
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/at'))
+		self.assertIsInstance(findXPath(r, 'm2m:ae/at'), list)
+		self.assertEqual(len(findXPath(r, 'm2m:ae/at')), 1)
+		self.assertTrue(findXPath(r, 'm2m:ae/at')[0].startswith('%s/' % REMOTECSEID))
+		TestRemote_Annc.remoteAeRI = findXPath(r, 'm2m:ae/at')[0]
+		self.assertIsNotNone(self.remoteAeRI)
+		self.assertIsNone(findXPath(r, 'm2m:ae/aa'))
+		TestRemote_Annc.ae = r
+
+
+	# # Retrieve the announced AE with AT, but no AA
+	# @unittest.skipIf(noRemote, 'No remote CSEBase')
+	# def test_retrieveAnnouncedAEwithATwithoutAA(self):
+	# 	if TestRemote_Annc.remoteAeRI is None:
+	# 		self.skipTest('remote AE.ri not found')
+	# 	r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteAeRI), CSEID)
+	# 	self.assertEqual(rsc, C.rcOK)
+	# 	self.assertIsNotNone(findXPath(r, 'm2m:aeA'))
+	# 	self.assertIsNotNone(findXPath(r, 'm2m:aeA/ty'))
+	# 	self.assertEqual(findXPath(r, 'm2m:aeA/ty'), T.AEAnnc)
+	# 	self.assertIsNotNone(findXPath(r, 'm2m:aeA/ct'))
+	# 	self.assertIsNotNone(findXPath(r, 'm2m:aeA/lt'))
+	# 	self.assertIsNotNone(findXPath(r, 'm2m:aeA/et'))
+	# 	self.assertIsNotNone(findXPath(r, 'm2m:aeA/pi'))
+	# 	self.assertTrue(CSEID.endswith(findXPath(r, 'm2m:aeA/pi')))
+	# 	self.assertIsNotNone(findXPath(r, 'm2m:aeA/lnk'))
+	# 	self.assertTrue(findXPath(r, 'm2m:aeA/lnk').endswith( findXPath(TestRemote_Annc.ae, 'm2m:ae/ri') ))
+
+
+
+
+
 	# Create a Node with AT
 	@unittest.skipIf(noRemote, 'No remote CSEBase')
 	def test_createAnnounceNode(self):
@@ -183,15 +217,9 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(rsc, C.rcCreated)
 		self.assertIsNotNone(findXPath(r, 'm2m:nod/at'))
 		self.assertIsInstance(findXPath(r, 'm2m:nod/at'), list)
-		self.assertEqual(len(findXPath(r, 'm2m:nod/at')), 2)
-		self.assertIn(REMOTECSEID, findXPath(r, 'm2m:nod/at'))
-
-		TestRemote_Annc.remoteNodRI = None
-		for x in findXPath(r, 'm2m:nod/at'):
-			if x == REMOTECSEID:
-				continue
-			if x.startswith('%s/' % REMOTECSEID):
-				TestRemote_Annc.remoteNodRI = x
+		self.assertEqual(len(findXPath(r, 'm2m:nod/at')), 1)
+		self.assertTrue(findXPath(r, 'm2m:nod/at')[0].startswith('%s/' % REMOTECSEID))
+		TestRemote_Annc.remoteNodRI = findXPath(r, 'm2m:nod/at')[0]
 		self.assertIsNotNone(self.remoteNodRI)
 		self.assertIsNone(findXPath(r, 'm2m:nod/aa'))
 		TestRemote_Annc.node = r
@@ -232,17 +260,11 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(rsc, C.rcCreated)
 		self.assertIsNotNone(findXPath(r, 'm2m:bat/at'))
 		self.assertIsInstance(findXPath(r, 'm2m:bat/at'), list)
-		self.assertEqual(len(findXPath(r, 'm2m:bat/at')), 2)
-		self.assertIn(REMOTECSEID, findXPath(r, 'm2m:bat/at'))
+		self.assertEqual(len(findXPath(r, 'm2m:bat/at')), 1)
 		self.assertEqual(findXPath(r, 'm2m:bat/btl'), 23)
 		self.assertEqual(findXPath(r, 'm2m:bat/bts'), 1)
-
-		TestRemote_Annc.remoteBatRI = None
-		for x in findXPath(r, 'm2m:bat/at'):
-			if x == REMOTECSEID:
-				continue
-			if x.startswith('%s/' % REMOTECSEID):
-				TestRemote_Annc.remoteBatRI = x
+		self.assertTrue(findXPath(r, 'm2m:bat/at')[0].startswith('%s/' % REMOTECSEID))
+		TestRemote_Annc.remoteBatRI = findXPath(r, 'm2m:bat/at')[0]
 		self.assertIsNotNone(self.remoteBatRI)
 		self.assertIsNotNone(findXPath(r, 'm2m:bat/aa'))
 		self.assertEqual(len(findXPath(r, 'm2m:bat/aa')), 1)
@@ -297,7 +319,6 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(rsc, C.rcUpdated)
 		self.assertEqual(findXPath(r, 'm2m:bat/btl'), 42)
 		self.assertEqual(findXPath(r, 'm2m:bat/bts'), 2)
-
 		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteBatRI), ORIGINATOR)
 		self.assertEqual(rsc, C.rcOK)
 		self.assertIsNotNone(findXPath(r, 'm2m:batA/btl'))
@@ -368,7 +389,7 @@ class TestRemote_Annc(unittest.TestCase):
 	@unittest.skipIf(noRemote, 'No remote CSEBase')
 	def test_removeMgmtObjCSIfromAT(self):
 		at = findXPath(TestRemote_Annc.bat, 'm2m:bat/at').copy()
-		at.remove(REMOTECSEID)
+		at.pop(0) # remove REMOTECSEID
 		jsn = 	{ 'm2m:bat' : {
 					'at' : at 			# with REMOTECSEID removed
 				}}
@@ -387,7 +408,7 @@ class TestRemote_Annc(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(batURL, ORIGINATOR, jsn)
 		self.assertEqual(rsc, C.rcUpdated)
-		self.assertEqual(len(findXPath(r, 'm2m:bat/at')), 2)
+		self.assertEqual(len(findXPath(r, 'm2m:bat/at')), 1)
 
 		TestRemote_Annc.remoteBatRI = None
 		for x in findXPath(r, 'm2m:bat/at'):
@@ -446,6 +467,11 @@ def run():
 	# create an announced AE, including announced attribute
 	suite.addTest(TestRemote_Annc('test_createAnnounceAEwithATwithAA'))
 	suite.addTest(TestRemote_Annc('test_retrieveAnnouncedAEwithATwithAA'))
+	suite.addTest(TestRemote_Annc('test_deleteAnnounceAE'))
+
+	# create an announced AE, including NA announced attribute
+	suite.addTest(TestRemote_Annc('test_createAnnounceAEwithNAAttributes'))
+	# suite.addTest(TestRemote_Annc('test_retrieveAnnouncedAEwithNAAttributes'))
 	suite.addTest(TestRemote_Annc('test_deleteAnnounceAE'))
 
 	# create an announced Node & MgmtObj [bat]

@@ -26,7 +26,7 @@ attributePolicies = {
 	'ri'	: [ BT.string, 			CAR.car1,   RO.NP, 	RO.NP, RO.O, AN.NA ],
 	'rn' 	: [ BT.string, 			CAR.car1,   RO.O,  	RO.NP, RO.O, AN.NA ],
 	'pi' 	: [ BT.string, 			CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ],
-	'acpi'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.MA ],
+	'acpi'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.NA ],
 	'ct'	: [ BT.timestamp, 		CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ],
 	'et'	: [ BT.timestamp, 		CAR.car1,   RO.O,	RO.O,  RO.O, AN.MA ],
 	'lt'	: [ BT.timestamp, 		CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ],

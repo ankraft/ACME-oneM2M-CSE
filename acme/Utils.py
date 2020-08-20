@@ -136,7 +136,7 @@ def structuredPath(resource: Resource.Resource) -> str:
 	if len(rpi) == 1:
 		return rpi[0]['srn'] + '/' + rn
 	# Logging.logErr(traceback.format_stack())
-	Logging.logErr('Parent %s not fount in DB' % pi)
+	Logging.logErr('Parent %s not found in DB' % pi)
 	return rn # fallback
 
 
@@ -512,7 +512,9 @@ def resourceDiff(old:Union[Resource.Resource, dict], new:Union[Resource.Resource
 		elif modifiers is not None and k in modifiers:	# this means the attribute is overwritten by the same value. But still modified
 			res[k] = v
 
-	#Process deletion of attributes
+	# Process deletion of attributes. This is necessary since attributes can be
+	# explicitly set to None/Nulls. This fact should not just silently be processed
+	# but also expressed in the resulting difference / the result of this function
 	if modifiers is not None:
 		for k,v in modifiers.items():
 			if v is None:

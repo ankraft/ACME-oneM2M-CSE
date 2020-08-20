@@ -302,7 +302,8 @@ class AnnouncementManager(object):
 		at = resource.at.copy()
 		CSIsFromAnnounceTo = []
 		for announcedResource in at:
-			CSIsFromAnnounceTo.append("/" + announcedResource.split("/")[1])
+			if len(sp := announcedResource.split('/')) >= 2:
+				CSIsFromAnnounceTo.append('/%s' % sp[1])
 
 		announcedCSIs = []
 		remoteRIs = []
@@ -392,7 +393,7 @@ class AnnouncementManager(object):
 
 		# Modify the at attribute
 		if len(at := resource.at) > 0 and csi in at:
-			at[at.index(csi)] = '%s/%s' %(csi, remoteRI)
+			at[at.index(csi)] = '%s/%s' %(csi, remoteRI) # replace the element in at
 			resource.setAttribute('at', at)
 
 
