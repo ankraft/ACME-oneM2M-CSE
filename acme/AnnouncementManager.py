@@ -300,7 +300,11 @@ class AnnouncementManager(object):
 
 		# get all reources for this specific CSI that are  announced to it yet
 		at = resource.at.copy()
-		announcedCSIs = []	
+		CSIsFromAnnounceTo = []
+		for announcedResource in at:
+			CSIsFromAnnounceTo.append("/" + announcedResource.split("/")[1])
+
+		announcedCSIs = []
 		remoteRIs = []
 		for (csi, remoteRI) in resource[Resource._announcedTo]:
 			announcedCSIs.append(csi) # build a list of already announced CSIs
@@ -312,7 +316,7 @@ class AnnouncementManager(object):
 				continue
 			
 			# remote csi still in at? If not then remove it
-			if csi not in at:
+			if csi not in CSIsFromAnnounceTo:
 				self.deAnnounceResourceFromCSR(resource, csr, remoteRI)
 				continue
 
@@ -321,7 +325,7 @@ class AnnouncementManager(object):
 			self.updateResourceOnCSR(resource, csr, remoteRI)
 
 		# Check for any non-announced csi in at, and possibly announce them 
-		for csi in at:
+		for csi in CSIsFromAnnounceTo:
 			if csi not in announcedCSIs and csi not in remoteRIs:
 				if (csr := Utils.resourceFromCSI(csi)) is None:
 					continue
@@ -388,7 +392,7 @@ class AnnouncementManager(object):
 
 		# Modify the at attribute
 		if len(at := resource.at) > 0 and csi in at:
-			at.append('%s/%s' %(csi, remoteRI))
+			at[at.index(csi)] = '%s/%s' %(csi, remoteRI)
 			resource.setAttribute('at', at)
 
 
