@@ -10,6 +10,7 @@
 
 """	Wrapper class for the logging subsystem. """
 
+import traceback
 import logging, logging.handlers, os, inspect, re, sys, datetime, time, threading, queue
 from typing import List, Any
 from logging import StreamHandler, LogRecord
@@ -130,7 +131,8 @@ class	Logging:
 		import CSE
 		# raise logError event
 		(not CSE.event or CSE.event.logError())	# type: ignore
-		Logging._log(logging.ERROR, msg)
+		strace = ''.join(map(str, traceback.format_stack()[:-1]))
+		Logging._log(logging.ERROR, '%s\n%s' % (msg, strace))
 
 
 	@staticmethod

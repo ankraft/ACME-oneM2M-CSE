@@ -168,20 +168,20 @@ class AnnounceableResource(Resource):
 		"""
 		mandatory = []
 		optional = []
+		announceableAttributes = []
 		if self.aa is not None:
 			announceableAttributes = self.aa.copy()
-			for attr,v in policies.items():
-				# Removing non announceable attributes
-				if attr in announceableAttributes and v[5] == AN.NA:  # remove attributes which are not announceable
-					announceableAttributes.remove(attr)
-				if self.hasAttribute(attr):
-					if v[5] == AN.MA:
-						mandatory.append(attr)
-					elif v[5] == AN.OA and attr in announceableAttributes:	# only add optional attributes that are also in aa
-						optional.append(attr)
+		for attr,v in policies.items():
+			# Removing non announceable attributes
+			if attr in announceableAttributes and v[5] == AN.NA:  # remove attributes which are not announceable
+				announceableAttributes.remove(attr)
+			if self.hasAttribute(attr):
+				if v[5] == AN.MA:
+					mandatory.append(attr)
+				elif v[5] == AN.OA and attr in announceableAttributes:	# only add optional attributes that are also in aa
+					optional.append(attr)
 
-			# If announceableAttributes is now an empty list, set aa to None
-			self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
-			Logging.logErr(self)
+		# If announceableAttributes is now an empty list, set aa to None
+		self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
 
 		return mandatory + optional

@@ -80,6 +80,8 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertTrue(CSEID.endswith(findXPath(r, 'm2m:aeA/pi')))
 		self.assertIsNotNone(findXPath(r, 'm2m:aeA/lnk'))
 		self.assertTrue(findXPath(r, 'm2m:aeA/lnk').endswith( findXPath(TestRemote_Annc.ae, 'm2m:ae/ri') ))
+		self.assertIsNotNone(findXPath(r, 'm2m:aeA/srv'))	# MA attribute
+		self.assertEqual(findXPath(r, 'm2m:aeA/srv'), [ '3' ])
 
 
 	# Delete the AE with AT, but no AA
@@ -145,6 +147,9 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:aeA/lbl'))
 		self.assertEqual(len(findXPath(r, 'm2m:aeA/lbl')), 1)
 		self.assertIn('aLabel', findXPath(r, 'm2m:aeA/lbl'))
+		self.assertIsNotNone(findXPath(r, 'm2m:aeA/srv'))	# MA attribute
+		self.assertEqual(findXPath(r, 'm2m:aeA/srv'), [ '3' ])
+
 
 
 	# Update an non-AA AE with AA
