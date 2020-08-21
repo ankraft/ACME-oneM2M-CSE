@@ -1,3 +1,5 @@
+[← README](../README.md) 
+
 # Installation
 
 ## Prerequisites
@@ -60,3 +62,5 @@ The following third-party components are used for the ACME CSE.
 ### UI Components
 - TreeJS: [https://github.com/m-thalmann/treejs](https://github.com/m-thalmann/treejs), MIT License
 - Picnic CSS : [https://picnicss.com](https://picnicss.com), MIT License
+
+[← README](../README.md) 

@@ -1,3 +1,5 @@
+[← README](../README.md) 
+
 # Supported Resource Types and Functionalities
 
 ## oneM2M Specification Conformance
@@ -64,6 +66,7 @@ The following table presents the supported management object specifications.
 | Blocking requests             |  &check;  |                                                                       |
 | Non-blocking requests         |  &cross;  |                                                                       |
 
+
 ## Result Content Types
 The following result contents are implemented for standard oneM2M requests & discovery:
 
@@ -82,13 +85,23 @@ The following result contents are implemented for standard oneM2M requests & dis
 | discovery result references            | 11  |
 
 ## Protocols Bindings
-The following Protocol Bindings are suppored:
+The following Protocol Bindings are supported:
 
 | Protocol Binding | Supported | Remark                            |
 |:-----------------|:---------:|:----------------------------------|
 | http             | &check;   | https is currently not supported. |
 | coap             | &cross;   |                                   |
 | mqtt             | &cross;   |                                   |
+
+## Serialization Types
+The following serialization types are supported:
+
+| Serialization Type | Supported | Remark                                                                                               |
+|:-------------------|:---------:|:-----------------------------------------------------------------------------------------------------|
+| XML                |  &cross;  |                                                                                                      |
+| JSON               |  &check;  | In addition to normal JSON syntax, C-style comments ("//..." and "/* ... */") are supported as well. |
+| CBOR               |  &cross;  |                                                                                                      |
+
 
 
 # Limitations
@@ -97,3 +110,5 @@ The following Protocol Bindings are suppored:
 - No support for https yet.
 - Security: None. Please contact me if you have suggestions to improve this.
 - Unsupported resource types are just stored, but no check or functionality is provided for those resources. The same is true for unknown resource attributes.
+
+[← README](../README.md) 

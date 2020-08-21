@@ -1,3 +1,5 @@
+[← README](../README.md) 
+
 # Applications and Nodes
 
 Currently, two component implementations are provided in addtion to the main CSE. They serve as examples how implement components that are hosted by the CSE itself.
@@ -19,3 +21,5 @@ It can be enabled/disabled and configured in the **[app.statistics]** section of
 ## Developing Nodes and AEs
 
 See also [Developing Nodes and AEs](Development.md#developing-nodes-and-aes) on how to develop build-in nodes and applications.
+
+[← README](../README.md) 

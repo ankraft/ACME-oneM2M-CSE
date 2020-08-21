@@ -1,3 +1,5 @@
+[← README](../README.md) 
+
 # Running
 
 
@@ -39,3 +41,5 @@ Please note, that the shutdown might take a moment (e.g. gracefully terminating 
 If you want to work with subscriptions and notification then you might want to have a Notifications Server running first before starting the CSE. The Notification Server provided with the CSE in the [tools/notificationServer](../tools/notificationServer) directory provides a very simple implementation that receives and answers notification requests.
 
 See the [Notification Server's README](../tools/notificationServer/README.md) file for further details.
+
+[← README](../README.md) 

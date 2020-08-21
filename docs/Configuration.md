@@ -1,3 +1,5 @@
+[← README](../README.md) 
+
 # Configuration
 
 The Configuration file contains all configuratble and customizable settings for the CSE.
@@ -231,3 +233,4 @@ The following snippet only presents some example for ID mappings.
 | batteryChargedLevel | Battery level indicates as "fully charged" in percent.<br/>Default: 100                 | app.csenode.batteryChargedLevel |
 | intervall           | Wait n seconds between updates of the node and sub-mgmtObjs in seconds.<br/>Default: 60 | app.csenode.intervall           |
 
+[← README](../README.md) 
