@@ -151,15 +151,22 @@ class AnnounceableResource(Resource):
 			jsn = { tpe : { } } # with the announced variant of the tpe
 			body = jsn[tpe]
 
+
 			# copy only the updated attributes
-			for attr in announcedAttributes:
-				if attr in modifiedAttributes:
+			for attr in modifiedAttributes:
+				if attr in announcedAttributes or (attr in policies and policies[attr][5] == AN.MA):	# either announced or an MA attribute
 					body[attr] = self[attr]
 
+			# copy only the updated attributes
+			# for attr in announcedAttributes:
+			# 	if attr in modifiedAttributes:
+			# 		body[attr] = self[attr]
+
 			#Add more attributes
-			for attr in modifiedAttributes:
-				if attr in [ 'lbl' ]:
-					body[attr] = self[attr]
+			# TODO: remove?
+			# for attr in modifiedAttributes:
+			# 	if attr in [ 'lbl' ]:
+			# 		body[attr] = self[attr]
 
 			# if aa was modified check also those attributes even when they are not modified
 			if 'aa' in modifiedAttributes and modifiedAttributes['aa'] is not None:

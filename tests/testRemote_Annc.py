@@ -195,15 +195,13 @@ class TestRemote_Annc(unittest.TestCase):
 	@unittest.skipIf(noRemote, 'No remote CSEBase')
 	def test_addLBLtoAnnouncedAE(self):
 		jsn = 	{ 'm2m:ae' : {
-				 	'lbl':	[ 'aLabel'],
-				 	'aa': 	[ 'lbl' ]
+				 	'lbl':	[ 'aLabel']	# LBL is conditional announced, so no need for adding it to aa
 				}}
 		r, rsc = UPDATE(aeURL, ORIGINATOR, jsn)
 		self.assertEqual(rsc, C.rcUpdated)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'))
 		self.assertEqual(findXPath(r, 'm2m:ae/lbl'), [ 'aLabel' ])
-		self.assertIsNotNone(findXPath(r, 'm2m:ae/aa'))
-		self.assertEqual(findXPath(r, 'm2m:ae/aa'), [ 'lbl' ])
+
 
 		# retrieve the announced AE
 		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteAeRI), ORIGINATOR)
@@ -216,13 +214,11 @@ class TestRemote_Annc(unittest.TestCase):
 	@unittest.skipIf(noRemote, 'No remote CSEBase')
 	def test_removeLBLfromAnnouncedAE(self):
 		jsn = 	{ 'm2m:ae' : {
-					'lbl': None,
-				 	'aa': 	None
+					'lbl': None
 				}}
 		r, rsc = UPDATE(aeURL, ORIGINATOR, jsn)
 		self.assertEqual(rsc, C.rcUpdated)
 		self.assertIsNone(findXPath(r, 'm2m:ae/lbl'))
-		self.assertIsNone(findXPath(r, 'm2m:ae/aa'))
 
 		# retrieve the announced AE
 		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteAeRI), ORIGINATOR)
