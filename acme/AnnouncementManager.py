@@ -206,6 +206,12 @@ class AnnouncementManager(object):
 		if res.rsc not in [ C.rcCreated, C.rcOK ]:
 			if res.rsc != C.rcAlreadyExists:	# assume that it is ok if the remote resource already exists 
 				Logging.logDebug('Error creating remote announced resource: %d' % res.rsc)
+				if (at := resource.at) is not None and len(at) > 0 and csi in at:
+					at.remove(csi)
+					if len(at) == 0:
+						resource.setAttribute('at', None)
+					else:
+						resource.setAttribute('at', at)
 				return
 		else:
 			self._addAnnouncementToResource(resource, res.jsn, csi)
