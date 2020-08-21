@@ -188,8 +188,46 @@ class TestRemote_Annc(unittest.TestCase):
 		# aa should be in the resource, but null
 		self.assertIn('aa', findXPath(r, 'm2m:ae')) 
 		self.assertIsNone(findXPath(r, 'm2m:ae/aa'))	# This must be None/Null!
-
 		TestRemote_Annc.ae = r
+
+
+	# Update an non-AA AE with AA
+	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	def test_addLBLtoAnnouncedAE(self):
+		jsn = 	{ 'm2m:ae' : {
+				 	'lbl':	[ 'aLabel'],
+				 	'aa': 	[ 'lbl' ]
+				}}
+		r, rsc = UPDATE(aeURL, ORIGINATOR, jsn)
+		self.assertEqual(rsc, C.rcUpdated)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'))
+		self.assertEqual(findXPath(r, 'm2m:ae/lbl'), [ 'aLabel' ])
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/aa'))
+		self.assertEqual(findXPath(r, 'm2m:ae/aa'), [ 'lbl' ])
+
+		# retrieve the announced AE
+		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteAeRI), ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertIsNotNone(findXPath(r, 'm2m:aeA/lbl'))
+		self.assertEqual(findXPath(r, 'm2m:aeA/lbl'), [ 'aLabel' ])
+
+
+	# Update an non-AA AE with AA
+	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	def test_removeLBLfromAnnouncedAE(self):
+		jsn = 	{ 'm2m:ae' : {
+					'lbl': None,
+				 	'aa': 	None
+				}}
+		r, rsc = UPDATE(aeURL, ORIGINATOR, jsn)
+		self.assertEqual(rsc, C.rcUpdated)
+		self.assertIsNone(findXPath(r, 'm2m:ae/lbl'))
+		self.assertIsNone(findXPath(r, 'm2m:ae/aa'))
+
+		# retrieve the announced AE
+		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteAeRI), ORIGINATOR)
+		self.assertEqual(rsc, C.rcOK)
+		self.assertIsNone(findXPath(r, 'm2m:aeA/lbl'))
 
 
 	# Create a Node with AT
@@ -458,6 +496,8 @@ def run():
 
 	# create an announced AE, including NA announced attribute
 	suite.addTest(TestRemote_Annc('test_createAnnounceAEwithNAAttributes'))
+	suite.addTest(TestRemote_Annc('test_addLBLtoAnnouncedAE'))
+	suite.addTest(TestRemote_Annc('test_removeLBLfromAnnouncedAE'))
 	suite.addTest(TestRemote_Annc('test_deleteAnnounceAE'))
 
 	# create an announced Node & MgmtObj [bat]
