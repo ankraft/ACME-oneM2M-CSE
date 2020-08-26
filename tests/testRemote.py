@@ -1,5 +1,5 @@
 #
-#	tesRemote.py
+#	testRemote.py
 #
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
@@ -11,7 +11,7 @@
 import unittest, sys
 sys.path.append('../acme')
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
 
 
@@ -20,8 +20,7 @@ from init import *
 # It checks whether there actually is a CSE or remote CSE running.
 noCSE = not connectionPossible(cseURL)
 noRemote = not connectionPossible(REMOTEcseURL)
-# _, rsc = RETRIEVE(REMOTEcseURL, REMOTEORIGINATOR)
-# noRemote = rsc != C.rcOK
+
 
 class TestRemote(unittest.TestCase):
 
@@ -30,9 +29,9 @@ class TestRemote(unittest.TestCase):
 	def setUpClass(cls):
 		# check connection to CSE's
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
+		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
 		cls.remoteCse, rsc = RETRIEVE(REMOTEcseURL, REMOTEORIGINATOR)
-		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % REMOTEcseURL
+		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % REMOTEcseURL
 
 
 	@classmethod

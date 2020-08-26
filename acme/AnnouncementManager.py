@@ -15,7 +15,7 @@ from Configuration import Configuration
 from resources.Resource import Resource
 from resources.AnnouncedResource import AnnouncedResource
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, ResponseCode as RC
 from helpers.BackgroundWorker import BackgroundWorker
 
 # TODO for anounceable resource:
@@ -203,8 +203,8 @@ class AnnouncementManager(object):
 		# Create the announed resource on the remote CSE
 		Logging.logDebug('Creating announced resource at: %s url: %s' % (csi, url))	
 		res = CSE.httpServer.sendCreateRequest(url, CSE.remote.originator, ty=tyAnnc, data=json.dumps(data))
-		if res.rsc not in [ C.rcCreated, C.rcOK ]:
-			if res.rsc != C.rcAlreadyExists:	# assume that it is ok if the remote resource already exists 
+		if res.rsc not in [ RC.created, RC.OK ]:
+			if res.rsc != RC.alreadyExists:	# assume that it is ok if the remote resource already exists 
 				Logging.logDebug('Error creating remote announced resource: %d' % res.rsc)
 				if (at := resource.at) is not None and len(at) > 0 and csi in at:
 					at.remove(csi)
@@ -279,7 +279,7 @@ class AnnouncementManager(object):
 		# Delete the announed resource from the remote CSE
 		Logging.logDebug('Delete announced resource from: %s url: %s' % (csi, url))	
 		res = CSE.httpServer.sendDeleteRequest(url, CSE.remote.originator)
-		if res.rsc not in [ C.rcDeleted, C.rcOK ]:
+		if res.rsc not in [ RC.deleted, RC.OK ]:
 			Logging.logDebug('Error deleting remote announced resource: %d' % res.rsc)
 			# ignore the fact that we cannot delete the announced resource.
 			# fall-through for some house-keeping
@@ -365,7 +365,7 @@ class AnnouncementManager(object):
 		# Create the announed resource on the remote CSE
 		Logging.logDebug('Updating announced resource at: %s url: %s' % (csi, url))	
 		res = CSE.httpServer.sendUpdateRequest(url, CSE.remote.originator, data=json.dumps(data))
-		if res.rsc not in [ C.rcUpdated, C.rcOK ]:
+		if res.rsc not in [ RC.updated, RC.OK ]:
 			Logging.logDebug('Error updating remote announced resource: %d' % res.rsc)
 			# Ignore and fallthrough
 		Logging.logDebug('Announced resource updated')

@@ -20,7 +20,7 @@ from typing import List, Callable, Any
 from threading import Lock
 from Configuration import Configuration
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, ResponseCode as RC
 from Logging import Logging
 from resources.Resource import Resource
 import CSE, Utils
@@ -94,11 +94,11 @@ class Storage(object):
 				self.db.insertResource(resource)
 			else:
 				Logging.logWarn('Resource already exists (Skipping): %s ' % resource)
-				return Result(status=False, rsc=C.rcAlreadyExists, dbg='resource already exists')
+				return Result(status=False, rsc=RC.alreadyExists, dbg='resource already exists')
 
 		# Add path to identifiers db
 		self.db.insertIdentifier(resource, ri, srn)
-		return Result(status=True, rsc=C.rcCreated)
+		return Result(status=True, rsc=RC.created)
 
 
 	# Check whether a resource with either the ri or the srn already exists
@@ -127,9 +127,9 @@ class Storage(object):
 		if (l := len(resources)) == 1:
 			return Utils.resourceFromJSON(resources[0])
 		elif l == 0:
-			return Result(rsc=C.rcNotFound)
+			return Result(rsc=RC.notFound)
 
-		return Result(rsc=C.rcInternalServerError, dbg='database inconsistency')
+		return Result(rsc=RC.internalServerError, dbg='database inconsistency')
 
 
 
@@ -184,7 +184,7 @@ class Storage(object):
 			raise RuntimeError('resource is None')
 		ri = resource.ri
 		# Logging.logDebug('Updating resource (ty: %d, ri: %s, rn: %s)' % (resource['ty'], ri, resource['rn']))
-		return Result(resource=self.db.updateResource(resource), rsc=C.rcUpdated)
+		return Result(resource=self.db.updateResource(resource), rsc=RC.updated)
 
 
 	def deleteResource(self, resource: Resource) -> Result:
@@ -194,7 +194,7 @@ class Storage(object):
 		# Logging.logDebug('Removing resource (ty: %d, ri: %s, rn: %s)' % (resource['ty'], ri, resource['rn']))
 		self.db.deleteResource(resource)
 		self.db.deleteIdentifier(resource)
-		return Result(status=True, rsc=C.rcDeleted)
+		return Result(status=True, rsc=RC.deleted)
 
 
 

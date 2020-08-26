@@ -7,7 +7,7 @@
 #	ResourceType: FlexContainerInstance
 #
 
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, ResponseCode as RC
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
 from Validator import constructPolicy, addPolicy
@@ -35,5 +35,5 @@ class FCI(AnnounceableResource):
 
 	# Forbidd updating
 	def update(self, jsn:dict=None, originator:str=None) -> Result:
-		return Result(status=False, rsc=C.rcOperationNotAllowed, dbg='updating FCIN is forbidden')
+		return Result(status=False, rsc=RC.operationNotAllowed, dbg='updating FCIN is forbidden')
 

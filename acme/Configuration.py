@@ -11,6 +11,7 @@
 import logging, configparser, re, argparse
 from typing import Any, Dict
 from Constants import Constants as C
+from Types import CSEType
 
 
 defaultConfigFile			= 'acme.ini'
@@ -206,11 +207,11 @@ class Configuration(object):
 		# CSE type
 		cseType = Configuration._configuration['cse.type'].lower()
 		if  cseType == 'asn':
-			Configuration._configuration['cse.type'] = C.cseTypeASN
+			Configuration._configuration['cse.type'] = CSEType.ASN
 		elif cseType == 'mn':
-			Configuration._configuration['cse.type'] = C.cseTypeMN
+			Configuration._configuration['cse.type'] = CSEType.MN
 		else:
-			Configuration._configuration['cse.type'] = C.cseTypeIN
+			Configuration._configuration['cse.type'] = CSEType.IN
 
 		# Loglevel from command line
 		logLevel = Configuration._configuration['logging.level'].lower()

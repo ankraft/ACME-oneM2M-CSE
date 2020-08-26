@@ -9,7 +9,7 @@
 
 from flask import Request
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, ResponseCode as RC
 import Utils, CSE
 from .Resource import *
 from Logging import Logging
@@ -30,25 +30,25 @@ class CNT_OL(Resource):
 		""" Handle a RETRIEVE request. Return resource """
 		Logging.logDebug('Retrieving oldest CIN from CNT')
 		if (r := self._getOldest()) is None:
-			return Result(rsc=C.rcNotFound, dbg='no instance for <oldest>')
+			return Result(rsc=RC.notFound, dbg='no instance for <oldest>')
 		return Result(resource=r)
 
 
 	def handleCreateRequest(self, request:Request, id:str, originator:str, ct:str, ty:int) -> Result:
 		""" Handle a CREATE request. Fail with error code. """
-		return Result(rsc=C.rcOperationNotAllowed, dbg='operation not allowed for <oldest> resource type')
+		return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for <oldest> resource type')
 
 
 	def handleUpdateRequest(self, request:Request, id:str, originator:str, ct:str) -> Result:
 		""" Handle a UPDATE request. Fail with error code. """
-		return Result(rsc=C.rcOperationNotAllowed, dbg='operation not allowed for <oldest> resource type')
+		return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for <oldest> resource type')
 
 
 	def handleDeleteRequest(self, request:Request, id:str, originator:str) -> Result:
 		""" Handle a DELETE request. Delete the oldest resource. """
 		Logging.logDebug('Deleting oldest CIN from CNT')
 		if (r := self._getOldest()) is None:
-			return Result(rsc=C.rcNotFound, dbg='no instance for <oldest>')
+			return Result(rsc=RC.notFound, dbg='no instance for <oldest>')
 		return CSE.dispatcher.deleteResource(r, originator, withDeregistration=True)
 
 

@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Any, Tuple, Union, Dict, List
 from Logging import Logging
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC
 from Configuration import Configuration
 import Utils, CSE
 import datetime, random, traceback
@@ -156,7 +156,7 @@ class Resource(object):
 		self.setAttribute(self._originator, originator, overwrite=False)
 		self.setAttribute(self._rtype, self.tpe, overwrite=False) 
 
-		return Result(status=True, rsc=C.rcOK)
+		return Result(status=True, rsc=RC.OK)
 
 
 	# Deactivate an active resource.
@@ -165,7 +165,7 @@ class Resource(object):
 		Logging.logDebug('Deactivating and removing sub-resources: %s' % self.ri)
 		# First check notification because the subscription will be removed
 		# when the subresources are removed
-		CSE.notification.checkSubscriptions(self, C.netResourceDelete)
+		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceDelete)
 		
 		# Remove directChildResources
 		rs = CSE.dispatcher.directChildResources(self.ri)
@@ -183,7 +183,7 @@ class Resource(object):
 		if jsn is not None:
 			if self.tpe not in jsn and self.ty not in [T.FCNTAnnc, T.FCIAnnc]:	# Don't check announced versions of announced FCNT
 				Logging.logWarn("Update types don't match")
-				return Result(status=False, rsc=C.rcContentsUnacceptable, dbg='resource types mismatch')
+				return Result(status=False, rsc=RC.contentsUnacceptable, dbg='resource types mismatch')
 
 			# validate the attributes
 			if not (res := CSE.validator.validateAttributes(jsn, self.tpe, self.attributePolicies, create=False)).status:
@@ -224,7 +224,7 @@ class Resource(object):
 		self[self._modified] = Utils.resourceDiff(jsonOrg, self.json, j)
 
 		# Check subscriptions
-		CSE.notification.checkSubscriptions(self, C.netResourceUpdate, modifiedAttributes=self[self._modified])
+		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceUpdate, modifiedAttributes=self[self._modified])
 
 		return Result(status=True)
 
@@ -237,12 +237,12 @@ class Resource(object):
 
 	def childAdded(self, childResource:Resource, originator:str) -> None:
 		""" Called when a child resource was added to the resource. """
-		CSE.notification.checkSubscriptions(self, C.netCreateDirectChild, childResource)
+		CSE.notification.checkSubscriptions(self, NotificationEventType.createDirectChild, childResource)
 
 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
 		""" Call when child resource was removed from the resource. """
-		CSE.notification.checkSubscriptions(self, C.netDeleteDirectChild, childResource)
+		CSE.notification.checkSubscriptions(self, NotificationEventType.deleteDirectChild, childResource)
 
 
 	def canHaveChild(self, resource:Resource) -> bool:
@@ -264,7 +264,7 @@ class Resource(object):
 			not Utils.isValidID(self.rn)):
 			err = 'Invalid ID ri: %s, pi: %s, rn: %s)' % (self.ri, self.pi, self.rn)
 			Logging.logDebug(err)
-			return Result(status=False, rsc=C.rcContentsUnacceptable, dbg=err)
+			return Result(status=False, rsc=RC.contentsUnacceptable, dbg=err)
 		return Result(status=True)
 
 
@@ -279,7 +279,7 @@ class Resource(object):
 		"""	Create an announceable resource. This method is implemented by the
 			resource implementations that support announceable versions.
 		"""
-		return None, C.rcBadRequest, 'wrong resource type or announcement not supported'
+		return None, RC.badRequest, 'wrong resource type or announcement not supported'
 
 
 	#########################################################################

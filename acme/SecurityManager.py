@@ -10,18 +10,11 @@
 
 from Logging import Logging
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Permission, Operation
 import CSE, Utils
 from Configuration import Configuration
 from resources.Resource import Resource
 
-
-# Mapping between request operations and permissions
-operationsPermissions =	{ C.opRETRIEVE	: C.permRETRIEVE,
-						  C.opCREATE 	: C.permCREATE,
-						  C.opUPDATE 	: C.permUPDATE,
-		  				  C.opDELETE 	: C.permDELETE
-						}
 
 class SecurityManager(object):
 
@@ -37,7 +30,7 @@ class SecurityManager(object):
 		Logging.log('SecurityManager shut down')
 
 
-	def hasAccess(self, originator:str, resource:Resource, requestedPermission:int, checkSelf:bool=False, ty:int=None, isCreateRequest:bool=False, parentResource:Resource=None) -> bool:
+	def hasAccess(self, originator:str, resource:Resource, requestedPermission:Permission, checkSelf:bool=False, ty:int=None, isCreateRequest:bool=False, parentResource:Resource=None) -> bool:
 		if not Configuration.get('cse.security.enableACPChecks'):	# check or ignore the check
 			return True
 
@@ -72,7 +65,7 @@ class SecurityManager(object):
 		if resource is None:
 			Logging.logWarn("Resource must not be None")
 			return False
-		if requestedPermission is None or not (0 <= requestedPermission <= C.permALL):
+		if requestedPermission is None or not (0 <= requestedPermission <= Permission.ALL):
 			Logging.logWarn("RequestedPermission must not be None, and between 0 and 63")
 			return False
 
@@ -109,7 +102,7 @@ class SecurityManager(object):
 			
 			# If subscription, check whether originator has retrieve permissions on the subscribed-to resource (parent)	
 			if ty == T.SUB and parentResource is not None:
-				if self.hasAccess(originator, parentResource, C.permRETRIEVE) == False:
+				if self.hasAccess(originator, parentResource, Permission.RETRIEVE) == False:
 					return False
 
 			if (acpi := resource.acpi) is None or len(acpi) == 0:	

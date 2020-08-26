@@ -166,6 +166,7 @@ class ACMERichLogHandler(RichHandler):
 		self.console._styles['repr.response'] = Style(color='magenta2')
 		self.console._styles['repr.id'] = Style(color='light_sky_blue1')
 		self.console._styles['repr.url'] = Style(color='sandy_brown', underline=True)
+		self.console._styles['repr.start'] = Style(color='orange1')
 		self.console._styles['logging.level.debug'] = Style(color='grey50')
 		self.console._styles['logging.level.warning'] = Style(color='orange3')
 		self.console._styles['logging.level.error'] = Style(color='red', reverse=True)
@@ -185,14 +186,19 @@ class ACMERichLogHandler(RichHandler):
 			r"(?P<url>https?:\/\/[0-9a-zA-Z\$\-\_\~\+\!`\(\)\,\.\?\/\;\:\&\=\%]*)",
 			#r"(?P<uuid>[a-fA-F0-9]{8}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{12})",
 
-			# r"(?P<dim>^[0-9]+\.?[0-9]*\b - )",		# thread ident at front
-			r"(?P<dim>^[^ ]*[ ]*- )",		# thread ident at front
-			r"(?P<request>==>.*:)",					# Incoming request or response
+			# r"(?P<dim>^[0-9]+\.?[0-9]*\b - )",			# thread ident at front
+			r"(?P<dim>^[^ ]*[ ]*- )",						# thread ident at front
+			r"(?P<request>==>.*:)",							# Incoming request or response
 			r"(?P<request>Request ==>:)",					# Outgoing request or response
-			r"(?P<response><== [^ :]+[ :]+)",			# outgoing response or request
-			r"(?P<response>Response <== [^ :]+[ :]+)",			# Incoming response or request
-			r"(?P<number>\(RSC: [0-9]+\.?[0-9]\))",	# Result code
-			r"(?P<id> [\w/\-_]*/[\w/\-_]+)",		# ID
+			r"(?P<response><== [^ :]+[ :]+)",				# outgoing response or request
+			r"(?P<response>Response <== [^ :]+[ :]+)",		# Incoming response or request
+			r"(?P<number>\(RSC: [0-9]+\.?[0-9]\))",			# Result code
+			r"(?P<id> [\w/\-_]*/[\w/\-_]+)",				# ID
+			r"(?P<request>CSE started$)",					# CSE startup message
+			r"(?P<request>CSE shutdown$)",					# CSE shutdown message
+			r"(?P<start>CSE shutting down$)",				# CSE shutdown message
+			r"(?P<start>Starting CSE$)",				# CSE shutdown message
+
 			#r"(?P<id>(acp|ae|bat|cin|cnt|csest|dvi|grp|la|mem|nod|ol|sub)[0-9]+\.?[0-9])",		# ID
 
 		]

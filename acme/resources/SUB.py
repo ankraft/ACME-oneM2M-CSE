@@ -9,10 +9,11 @@
 
 import random, string
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, NotificationContentType, NotificationEventType
 import Utils, CSE
 from Validator import constructPolicy
 from .Resource import *
+from Types import ResponseCode as RC
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([
@@ -29,8 +30,8 @@ class SUB(Resource):
 		super().__init__(T.SUB, jsn, pi, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
-			self.setAttribute('nct', C.nctAll, overwrite=False) # LIMIT TODO: only this notificationContentType is supported now
-			self.setAttribute('enc/net', [ C.netResourceUpdate ], overwrite=False)
+			self.setAttribute('nct', NotificationContentType.all, overwrite=False) # LIMIT TODO: only this notificationContentType is supported now
+			self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate ], overwrite=False)
 
 
 # TODO expirationCounter
@@ -45,8 +46,6 @@ class SUB(Resource):
 		if not (result := super().activate(parentResource, originator)).status:
 			return result
 		return CSE.notification.addSubscription(self, originator)
-		# res = CSE.notification.addSubscription(self, originator)
-		# return (res, C.rcOK if res else C.rcTargetNotSubscribable)
 
 
 	def deactivate(self, originator:str) -> None:
@@ -60,8 +59,7 @@ class SUB(Resource):
 		if not (res := super().update(jsn, originator)).status:
 			return res
 		return CSE.notification.updateSubscription(self, newJson, previousNus, originator)
-		# res = CSE.notification.updateSubscription(self)
-		# return (res, C.rcOK if res else C.rcTargetNotSubscribable)
+
  
 
 	def validate(self, originator:str=None, create:bool=False) -> Result:
@@ -72,7 +70,7 @@ class SUB(Resource):
 		# Check necessary attributes
 		if (nu := self['nu']) is None or not isinstance(nu, list):
 			Logging.logDebug('"nu" attribute missing for subscription: %s' % self['ri'])
-			return Result(status=False, rsc=C.rcInsufficientArguments, dbg='"nu" is missing or wrong type')
+			return Result(status=False, rsc=RC.insufficientArguments, dbg='"nu" is missing or wrong type')
 
 		# check other attributes
 		self.normalizeURIAttribute('nfu')

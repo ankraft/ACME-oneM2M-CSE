@@ -15,7 +15,7 @@ from flask import Flask, Request, make_response, request
 from werkzeug.wrappers import Response
 from Configuration import Configuration, version
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, ResponseCode as RC
 import CSE, Utils
 from Logging import Logging
 from resources.Resource import Resource
@@ -244,9 +244,8 @@ class HttpServer(object):
 			Logging.logDebug('Response <== (%s):\n%s' % (str(r.status_code), str(r.content.decode("utf-8"))))
 		except Exception as e:
 			Logging.logWarn('Failed to send request: %s' % str(e))
-			return Result(rsc=C.rcTargetNotReachable, dbg='target not reachable')
-		rc = int(r.headers['X-M2M-RSC']) if 'X-M2M-RSC' in r.headers else C.rcInternalServerError
-		# Logging.logWarn(r.content)
+			return Result(rsc=RC.targetNotReachable, dbg='target not reachable')
+		rc = RC(int(r.headers['X-M2M-RSC'])) if 'X-M2M-RSC' in r.headers else RC.internalServerError
 		return Result(jsn=r.json() if len(r.content) > 0 else None, rsc=rc)
 
 	#########################################################################
@@ -264,23 +263,20 @@ class HttpServer(object):
 			r = result.resource
 		else:
 			r = ''
-			result.rsc = C.rcNotFound
-			# if (r := resource.asJSON() if isinstance(resource, Resource) else resource) is None:
-			# 	r = ''
-			# 	returnCode = C.rcNotFound
+			result.rsc = RC.notFound
 		Logging.logDebug('<== Response (RSC: %d):\n%s\n' % (result.rsc, str(r)))
 		resp = make_response(r)
 
 		# headers
 		resp.headers['Server'] = self.serverID	# set server field
 
-		resp.headers['X-M2M-RSC'] = str(result.rsc)
+		resp.headers['X-M2M-RSC'] = '%d' % result.rsc
 		if 'X-M2M-RI' in request.headers:
 			resp.headers['X-M2M-RI'] = request.headers['X-M2M-RI']
 		if 'X-M2M-RVI' in request.headers:
 			resp.headers['X-M2M-RVI'] = request.headers['X-M2M-RVI']
 
-		resp.status_code = self._statusCode(result.rsc)
+		resp.status_code = result.rsc.httpStatusCode()
 		resp.content_type = C.hfvContentType
 		self.flaskApp.process_response(resp)
 		return resp
@@ -288,48 +284,11 @@ class HttpServer(object):
 
 	def _prepareException(self, e: Exception) -> Result:
 		Logging.logErr(traceback.format_exc())
-		return Result(rsc=C.rcInternalServerError, dbg='encountered exception: %s' % traceback.format_exc().replace('"', '\\"').replace('\n', '\\n'))
+		return Result(rsc=RC.internalServerError, dbg='encountered exception: %s' % traceback.format_exc().replace('"', '\\"').replace('\n', '\\n'))
 
 
-	#
-	#	Mapping of oneM2M return codes to http status codes
-	#
-
-	_codes = {
-		C.rcOK 											: 200,		# OK
-		C.rcDeleted 									: 200,		# DELETED
-		C.rcUpdated 									: 200,		# UPDATED
-		C.rcCreated										: 201,		# CREATED
-		C.rcBadRequest									: 400,		# BAD REQUEST
-		C.rcContentsUnacceptable						: 400,		# NOT ACCEPTABLE
-		C.rcInsufficientArguments 						: 400,		# INSUFFICIENT ARGUMENTS
-		C.rcInvalidArguments							: 400,		# INVALID ARGUMENTS
-		C.rcMaxNumberOfMemberExceeded					: 400, 		# MAX NUMBER OF MEMBER EXCEEDED
-		C.rcGroupMemberTypeInconsistent					: 400,		# GROUP MEMBER TYPE INCONSISTENT
-		C.rcOriginatorHasNoPrivilege					: 403,		# ORIGINATOR HAS NO PRIVILEGE
-		C.rcInvalidChildResourceType					: 403,		# INVALID CHILD RESOURCE TYPE
-		C.rcTargetNotReachable							: 403,		# TARGET NOT REACHABLE
-		C.rcAlreadyExists								: 403,		# ALREAD EXISTS
-		C.rcTargetNotSubscribable						: 403,		# TARGET NOT SUBSCRIBABLE
-		C.rcReceiverHasNoPrivileges						: 403,		# RECEIVER HAS NO PRIVILEGE
-		C.rcSecurityAssociationRequired					: 403,		# SECURITY ASSOCIATION REQUIRED
-		C.rcNotFound									: 404,		# NOT FOUND
-		C.rcOperationNotAllowed							: 405,		# OPERATION NOT ALLOWED
-		C.rcNotAcceptable 								: 406,		# NOT ACCEPTABLE
-		C.rcConflict									: 409,		# CONFLICT
-		C.rcInternalServerError 						: 500,		# INTERNAL SERVER ERROR
-		C.rcSubscriptionVerificationInitiationFailed	: 500,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
-		C.rcNotImplemented								: 501,		# NOT IMPLEMENTED
-	}
-
-
-	def _statusCode(self, sc: int) -> int:
-		""" Map the oneM2M RSC to an http status code. """
-		return self._codes[sc]
-
-
-#	#########################################################################
-
+##########################################################################
+#
 #	Own request handler.
 #	Actually only to redirect logging.
 #

@@ -10,6 +10,7 @@
 import unittest, sys
 sys.path.append('../acme')
 from Constants import Constants as C
+from Types import ResponseCode as RC
 from init import *
 
 # The following code must be executed before anything else because it influences
@@ -34,19 +35,19 @@ class TestCSE(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCSE(self):
 		_, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCSEWithWrongOriginator(self):
 		_, rsc = RETRIEVE(cseURL, 'CWron')
-		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesCSE(self):
 		r, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cb/csi')[0], '/')
 		self.assertEqual(findXPath(r, 'm2m:cb/csi'), CSEID)
 		self.assertEqual(findXPath(r, 'm2m:cb/pi'), '')
@@ -63,7 +64,7 @@ class TestCSE(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCSE(self):
 		_, rsc = DELETE(cseURL, ORIGINATOR)
-		self.assertEqual(rsc, C.rcOperationNotAllowed)
+		self.assertEqual(rsc, RC.operationNotAllowed)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -72,7 +73,7 @@ class TestCSE(unittest.TestCase):
 					'lbl' : [ 'aTag' ]
 				}}
 		_, rsc = UPDATE(cseURL, ORIGINATOR, jsn)
-		self.assertEqual(rsc, C.rcOperationNotAllowed)
+		self.assertEqual(rsc, RC.operationNotAllowed)
 
 
 def run():

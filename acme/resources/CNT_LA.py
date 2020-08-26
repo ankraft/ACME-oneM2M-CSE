@@ -9,7 +9,7 @@
 
 from flask import Request
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, ResponseCode as RC
 import CSE, Utils
 from .Resource import *
 from Logging import Logging
@@ -30,25 +30,25 @@ class CNT_LA(Resource):
 		""" Handle a RETRIEVE request. Return resource """
 		Logging.logDebug('Retrieving latest CIN from CNT')
 		if (r := self._getLatest()) is None:
-			return Result(rsc=C.rcNotFound, dbg='no instance for <latest>')
+			return Result(rsc=RC.notFound, dbg='no instance for <latest>')
 		return Result(resource=r)
 
 
 	def handleCreateRequest(self, request:Request, id:str, originator:str, ct:str, ty:int) -> Result:
 		""" Handle a CREATE request. Fail with error code. """
-		return Result(rsc=C.rcOperationNotAllowed, dbg='operation not allowed for <latest> resource type')
+		return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for <latest> resource type')
 
 
 	def handleUpdateRequest(self, request:Request, id:str, originator:str, ct:str) -> Result:
 		""" Handle a UPDATE request. Fail with error code. """
-		return Result(rsc=C.rcOperationNotAllowed, dbg='operation not allowed for <latest> resource type')
+		return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for <latest> resource type')
 
 
 	def handleDeleteRequest(self, request:Request, id:str, originator:str) -> Result:
 		""" Handle a DELETE request. Delete the latest resource. """
 		Logging.logDebug('Deleting latest CIN from CNT')
 		if (r := self._getLatest()) is None:
-			return Result(rsc=C.rcNotFound, dbg='no instance for <latest>')
+			return Result(rsc=RC.notFound, dbg='no instance for <latest>')
 		return CSE.dispatcher.deleteResource(r, originator, withDeregistration=True)
 
 

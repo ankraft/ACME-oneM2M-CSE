@@ -10,7 +10,7 @@
 import unittest, sys
 sys.path.append('../acme')
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
 
 # The following code must be executed before anything else because it influences
@@ -25,7 +25,7 @@ class TestGRP(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
+		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
 
 		jsn = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
@@ -34,19 +34,19 @@ class TestGRP(unittest.TestCase):
 				 	'srv' : [ '3' ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
-		assert rsc == C.rcCreated, 'cannot create parent AE'
+		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
 				}}
 		cls.cnt1, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
-		assert rsc == C.rcCreated, 'cannot create container'
+		assert rsc == RC.created, 'cannot create container'
 		cls.cnt1RI = findXPath(cls.cnt1, 'm2m:cnt/ri')
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn'  : '%s2' % cntRN
 				}}
 		cls.cnt2, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
-		assert rsc == C.rcCreated, 'cannot create container'
+		assert rsc == RC.created, 'cannot create container'
 		cls.cnt2RI = findXPath(cls.cnt2, 'm2m:cnt/ri')
 
 
@@ -69,25 +69,25 @@ class TestGRP(unittest.TestCase):
 					'mid': [ TestGRP.cnt1RI, TestGRP.cnt2RI ]
 				}}
 		r, rsc = CREATE(aeURL, TestGRP.originator, T.GRP, jsn)
-		self.assertEqual(rsc, C.rcCreated)
+		self.assertEqual(rsc, RC.created)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveGRP(self):
 		_, rsc = RETRIEVE(grpURL, TestGRP.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveGRPWithWrongOriginator(self):
 		_, rsc = RETRIEVE(grpURL, 'Cwrong')
-		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesGRP(self):
 		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:grp/ty'), T.GRP)
 		self.assertEqual(findXPath(r, 'm2m:grp/pi'), findXPath(TestGRP.ae,'m2m:ae/ri'))
 		self.assertEqual(findXPath(r, 'm2m:grp/rn'), grpRN)
@@ -113,7 +113,7 @@ class TestGRP(unittest.TestCase):
 					'mnm': 15
 				}}
 		r, rsc = UPDATE(grpURL, TestGRP.originator, jsn)
-		self.assertEqual(rsc, C.rcUpdated)
+		self.assertEqual(rsc, RC.updated)
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/mnm'))
 		self.assertEqual(findXPath(r, 'm2m:grp/mnm'), 15)
 
@@ -125,13 +125,13 @@ class TestGRP(unittest.TestCase):
 					'lbl' : [ 'wrong' ]
 				}}
 		r, rsc = UPDATE(grpURL, TestGRP.originator, jsn)
-		self.assertNotEqual(rsc, C.rcUpdated)
+		self.assertNotEqual(rsc, RC.updated)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addCNTtoGRP(self):
 		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/cnm'))
 		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), 2)
 
@@ -139,7 +139,7 @@ class TestGRP(unittest.TestCase):
 					'rn'  : '%s3' % cntRN
 				}}
 		self.cnt3, rsc = CREATE(aeURL, self.originator, T.CNT, jsn)
-		self.assertEqual(rsc, C.rcCreated)
+		self.assertEqual(rsc, RC.created)
 		self.cnt3RI = findXPath(self.cnt3, 'm2m:cnt/ri')
 		mid = findXPath(r, 'm2m:grp/mid')
 		mid.append(self.cnt3RI)
@@ -148,7 +148,7 @@ class TestGRP(unittest.TestCase):
 					'mid'  : mid
 				}}
 		r, rsc = UPDATE(grpURL, TestGRP.originator, jsn)
-		self.assertEqual(rsc, C.rcUpdated)
+		self.assertEqual(rsc, RC.updated)
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/cnm'))
 		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), 3)
 
@@ -161,7 +161,7 @@ class TestGRP(unittest.TestCase):
 					'con' : 'aValue'
 				}}
 		r, rsc = CREATE('%s/fopt' % grpURL, TestGRP.originator, T.CNT, jsn)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
 		self.assertIsNotNone(rsp)
 		self.assertIsInstance(rsp, list)
@@ -169,23 +169,23 @@ class TestGRP(unittest.TestCase):
 
 		# check the returned structure
 		for c in rsp:
-			self.assertEqual(findXPath(c, 'rsc'), C.rcCreated)
+			self.assertEqual(findXPath(c, 'rsc'), RC.created)
 			self.assertIsNotNone(findXPath(c, 'pc/m2m:cin'))
 			to = findXPath(c, 'to')
 			self.assertIsNotNone(to)
 			r, rsc = RETRIEVE('%s%s' % (URL, to), TestGRP.originator)	# retrieve the CIN by the returned ri
-			self.assertEqual(rsc, C.rcOK)
+			self.assertEqual(rsc, RC.OK)
 			self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
 
 		# try to retrieve the created CIN's directly 
 		r, rsc = RETRIEVE('%s/la' % cntURL, TestGRP.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
 		r, rsc = RETRIEVE('%s2/la' % cntURL, TestGRP.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
 		r, rsc = RETRIEVE('%s3/la' % cntURL, TestGRP.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
 
 
@@ -193,7 +193,7 @@ class TestGRP(unittest.TestCase):
 	def test_retrieveLAviaFOPT(self):
 		# Retrieve via fopt
 		r, rsc = RETRIEVE('%s/fopt/la' % grpURL, TestGRP.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
 		self.assertIsNotNone(rsp)
 		self.assertIsInstance(rsp, list)
@@ -201,12 +201,12 @@ class TestGRP(unittest.TestCase):
 
 		# check the returned structure
 		for c in rsp:
-			self.assertEqual(findXPath(c, 'rsc'), C.rcOK)
+			self.assertEqual(findXPath(c, 'rsc'), RC.OK)
 			self.assertIsNotNone(findXPath(c, 'pc/m2m:cin'))
 			to = findXPath(c, 'to')
 			self.assertIsNotNone(to)
 			r, rsc = RETRIEVE('%s%s' % (URL, to), TestGRP.originator)	# retrieve the CIN by the returned ri
-			self.assertEqual(rsc, C.rcOK)
+			self.assertEqual(rsc, RC.OK)
 			self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
 
 
@@ -217,7 +217,7 @@ class TestGRP(unittest.TestCase):
 					'lbl' :  [ 'aTag' ]
 				}}
 		r, rsc = UPDATE('%s/fopt' % grpURL, TestGRP.originator, jsn)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
 		self.assertIsNotNone(rsp)
 		self.assertIsInstance(rsp, list)
@@ -225,19 +225,19 @@ class TestGRP(unittest.TestCase):
 
 		# check the returned structure
 		for c in rsp:
-			self.assertEqual(findXPath(c, 'rsc'), C.rcUpdated)
+			self.assertEqual(findXPath(c, 'rsc'), RC.updated)
 			self.assertIsNotNone(findXPath(c, 'pc/m2m:cnt'))
 			to = findXPath(c, 'to')
 			self.assertIsNotNone(to)
 			r, rsc = RETRIEVE('%s%s' % (URL, to), TestGRP.originator)	# retrieve the CIN by the returned ri
-			self.assertEqual(rsc, C.rcOK)
+			self.assertEqual(rsc, RC.OK)
 			self.assertTrue('aTag' in findXPath(r, 'm2m:cnt/lbl'))
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addExistingCNTtoGRP(self):
 		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		cnm = findXPath(r, 'm2m:grp/cnm')
 		mid = findXPath(r, 'm2m:grp/mid')
 		mid.append(self.cnt1RI)
@@ -246,7 +246,7 @@ class TestGRP(unittest.TestCase):
 					'mid'  : mid
 				}}
 		r, rsc = UPDATE(grpURL, TestGRP.originator, jsn)
-		self.assertEqual(rsc, C.rcUpdated)
+		self.assertEqual(rsc, RC.updated)
 		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), cnm) # == old cnm
 
 
@@ -257,7 +257,7 @@ class TestGRP(unittest.TestCase):
 
 	def test_deleteCNTviaFOPT(self):
 		r, rsc = DELETE('%s/fopt' % grpURL, TestGRP.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
 		self.assertIsNotNone(rsp)
 		self.assertIsInstance(rsp, list)
@@ -265,17 +265,17 @@ class TestGRP(unittest.TestCase):
 
 		# check the returned structure
 		for c in rsp:
-			self.assertEqual(findXPath(c, 'rsc'), C.rcDeleted)
+			self.assertEqual(findXPath(c, 'rsc'), RC.deleted)
 
 
 	def test_deleteGRPByUnknownOriginator(self):
 		_, rsc = DELETE(grpURL, 'Cwrong')
-		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	def test_deleteGRPByAssignedOriginator(self):
 		_, rsc = DELETE(grpURL, TestGRP.originator)
-		self.assertEqual(rsc, C.rcDeleted)
+		self.assertEqual(rsc, RC.deleted)
 
 
 		#TODO check GRP itself: members

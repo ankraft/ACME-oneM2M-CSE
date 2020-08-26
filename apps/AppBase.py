@@ -14,7 +14,7 @@ from Configuration import Configuration
 from resources.Resource import Resource
 from Logging import Logging
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, ResponseCode as RC
 import CSE, Utils
 from helpers.BackgroundWorker import BackgroundWorker
 
@@ -67,12 +67,12 @@ class AppBase(object):
 
 	def retrieveCreate(self, srn:str=None, jsn:dict=None, ty:T=T.MGMTOBJ) -> Resource:
 		# First check whether node exists and create it if necessary
-		if (result := self.retrieveResource(srn=srn)).rsc != C.rcOK:
+		if (result := self.retrieveResource(srn=srn)).rsc != RC.OK:
 
 			# No, so create mgmtObj specialization
 			srn = os.path.split(srn)[0] if srn.count('/') >= 0 else ''
 			result = self.createResource(srn=srn, ty=ty, jsn=jsn)
-			if result.rsc == C.rcCreated:
+			if result.rsc == RC.created:
 				return Utils.resourceFromJSON(result.jsn).resource
 			else:
 				#Logging.logErr(n)

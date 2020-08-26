@@ -8,7 +8,7 @@
 #
 
 from .MgmtObj import *
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, ResponseCode as RC
 from Validator import constructPolicy, addPolicy
 import Utils
 
@@ -49,6 +49,6 @@ class RBO(MgmtObj):
 			rbo = Utils.findXPath(jsn, 'm2m:rbo/rbo')
 			far = Utils.findXPath(jsn, 'm2m:rbo/far')
 			if rbo is not None and far is not None and rbo and far:
-				return Result(status=False, rsc=C.rcBadRequest, dbg='update both rbo and far to True is not allowed')
+				return Result(status=False, rsc=RC.badRequest, dbg='update both rbo and far to True is not allowed')
 
 		return super().update(jsn, originator)

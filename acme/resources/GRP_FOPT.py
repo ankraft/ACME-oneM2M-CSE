@@ -12,7 +12,7 @@ from Constants import Constants as C
 import CSE
 from .Resource import *
 from Logging import Logging
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, Operation
 
 
 # TODO:
@@ -35,21 +35,21 @@ class GRP_FOPT(Resource):
 
 	def handleRetrieveRequest(self, request:Request, id:str, originator:str) -> Result:
 		Logging.logDebug('Retrieving resources from fopt')
-		return CSE.group.foptRequest(C.opRETRIEVE, self, request, id, originator)
+		return CSE.group.foptRequest(Operation.RETRIEVE, self, request, id, originator)
 
 
 	def handleCreateRequest(self, request: Request, id:str, originator:str, ct:str, ty:T) -> Result:
 		Logging.logDebug('Creating resources at fopt')
-		return CSE.group.foptRequest(C.opCREATE, self, request, id, originator, ct, ty)
+		return CSE.group.foptRequest(Operation.CREATE, self, request, id, originator, ct, ty)
 
 
 	def handleUpdateRequest(self, request: Request, id: str, originator: str, ct: str) -> Result:
 		Logging.logDebug('Updating resources at fopt')
-		return CSE.group.foptRequest(C.opUPDATE, self, request, id, originator, ct)
+		return CSE.group.foptRequest(Operation.UPDATE, self, request, id, originator, ct)
 
 
 	def handleDeleteRequest(self, request: Request, id: str, originator: str) -> Result:
 		Logging.logDebug('Deleting resources at fopt')
-		return CSE.group.foptRequest(C.opDELETE, self, request, id, originator)
+		return CSE.group.foptRequest(Operation.DELETE, self, request, id, originator)
 
 

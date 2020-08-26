@@ -8,7 +8,7 @@
 #
 
 from .MgmtObj import *
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, ResponseCode as RC
 from Validator import constructPolicy, addPolicy
 import Utils
 
@@ -52,7 +52,7 @@ class DVC(MgmtObj):
 			ena = Utils.findXPath(jsn, 'm2m:dvc/ena')
 			dis = Utils.findXPath(jsn, 'm2m:dvc/dis')
 			if ena is not None and dis is not None and ena and dis:
-				return Result(status=False, rsc=C.rcBadRequest, dbg='both ena and dis updated to True is not allowed')
+				return Result(status=False, rsc=RC.badRequest, dbg='both ena and dis updated to True is not allowed')
 
 		return super().update(jsn, originator)
 

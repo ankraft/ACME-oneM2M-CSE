@@ -9,7 +9,7 @@
 
 from typing import List
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, Permission
 from Validator import constructPolicy, addPolicy
 from .Resource import *
 import Utils
@@ -121,7 +121,7 @@ class ACP(Resource):
 			# Logging.logDebug('p.acor: %s requestedPermission: %s' % (p['acor'], p['acop']))
 			if requestedPermission & p['acop'] == 0:	# permission not fitting at all
 				continue
-			if 'all' in p['acor'] or origin in p['acor'] or requestedPermission == C.permNOTIFY:
+			if 'all' in p['acor'] or origin in p['acor'] or requestedPermission == Permission.NOTIFY:
 				return True
 		return False
 

@@ -10,7 +10,7 @@
 import unittest, sys
 sys.path.append('../acme')
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
 
 # The following code must be executed before anything else because it influences
@@ -26,7 +26,7 @@ class TestAE(unittest.TestCase):
 		TestAE.originator 	= None 	# actually the AE.aei
 		TestAE.aeACPI 		= None
 		TestAE.cse, rsc 	= RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
+		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
 
 
 	@classmethod
@@ -44,7 +44,7 @@ class TestAE(unittest.TestCase):
 				 	'srv': [ '3' ]
 				}}
 		r, rsc = CREATE(cseURL, 'C', T.AE, jsn)
-		self.assertEqual(rsc, C.rcCreated)
+		self.assertEqual(rsc, RC.created)
 		TestAE.originator = findXPath(r, 'm2m:ae/aei')
 		TestAE.aeACPI = findXPath(r, 'm2m:ae/acpi')
 		self.assertIsNotNone(TestAE.originator)
@@ -59,25 +59,25 @@ class TestAE(unittest.TestCase):
 				 	'srv': [ '3' ]
 				}}
 		r, rsc = CREATE(aeURL, 'C', T.AE, jsn)
-		self.assertEqual(rsc, C.rcBadRequest)
+		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveAE(self):
 		_, rsc = RETRIEVE(aeURL, TestAE.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveAEWithWrongOriginator(self):
 		_, rsc = RETRIEVE(aeURL, 'Cwrong')
-		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesAE(self):
 		r, rsc = RETRIEVE(aeURL, TestAE.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/aei'))
 		self.assertEqual(findXPath(r, 'm2m:ae/ty'), T.AE)
 		self.assertTrue(findXPath(r, 'm2m:ae/aei').startswith('C'))
@@ -104,9 +104,9 @@ class TestAE(unittest.TestCase):
 					'lbl' : [ 'aTag' ]
 				}}
 		r, rsc = UPDATE(aeURL, TestAE.originator, jsn)
-		self.assertEqual(rsc, C.rcUpdated)
+		self.assertEqual(rsc, RC.updated)
 		r, rsc = RETRIEVE(aeURL, TestAE.originator)		# retrieve updated ae again
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'))
 		self.assertIsInstance(findXPath(r, 'm2m:ae/lbl'), list)
 		self.assertGreater(len(findXPath(r, 'm2m:ae/lbl')), 0)
@@ -119,7 +119,7 @@ class TestAE(unittest.TestCase):
 					'ty' : int(T.CSEBase)
 				}}
 		r, rsc = UPDATE(aeURL, TestAE.originator, jsn)
-		self.assertEqual(rsc, C.rcBadRequest)
+		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -128,7 +128,7 @@ class TestAE(unittest.TestCase):
 					'pi' : 'wrongID'
 				}}
 		r, rsc = UPDATE(aeURL, TestAE.originator, jsn)
-		self.assertEqual(rsc, C.rcBadRequest)
+		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -137,18 +137,18 @@ class TestAE(unittest.TestCase):
 					'unknown' : 'unknown'
 				}}
 		r, rsc = UPDATE(aeURL, TestAE.originator, jsn)
-		self.assertEqual(rsc, C.rcBadRequest)
+		self.assertEqual(rsc, RC.badRequest)
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteAEByUnknownOriginator(self):
 		_, rsc = DELETE(aeURL, 'Cwrong')
-		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteAEByAssignedOriginator(self):
 		_, rsc = DELETE(aeURL, TestAE.originator)
-		self.assertEqual(rsc, C.rcDeleted)
+		self.assertEqual(rsc, RC.deleted)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -157,9 +157,9 @@ class TestAE(unittest.TestCase):
 		self.assertIsInstance(TestAE.aeACPI, list)
 		self.assertGreater(len(TestAE.aeACPI), 0)
 		_, rsc = RETRIEVE('%s%s' % (URL, TestAE.aeACPI[0]), TestAE.originator)	# AE's own originator fails
-		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 		acp, rsc = RETRIEVE('%s%s' % (URL, TestAE.aeACPI[0]), ORIGINATOR)	# but Admin should succeed
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(acp, 'm2m:acp/rn'), 'acp_%s' % aeRN)
 		for acr in findXPath(acp, 'm2m:acp/pv/acr'):
 			if TestAE.originator in acr['acor']:

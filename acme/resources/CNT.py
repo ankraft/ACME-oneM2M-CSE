@@ -11,7 +11,7 @@ from typing import List
 from Logging import Logging
 from Configuration import Configuration
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, ResponseCode as RC
 from Validator import constructPolicy, addPolicy
 import Utils, CSE
 from .Resource import *
@@ -86,12 +86,12 @@ class CNT(AnnounceableResource):
 		
 		# Check whether the child's rn is "ol" or "la".
 		if (rn := childResource['rn']) is not None and rn in ['ol', 'la']:
-			return Result(status=False, rsc=C.rcOperationNotAllowed, dbg='resource types "latest" or "oldest" cannot be added')
+			return Result(status=False, rsc=RC.operationNotAllowed, dbg='resource types "latest" or "oldest" cannot be added')
 	
 		# Check whether the size of the CIN doesn't exceed the mbs
 		if childResource.ty == T.CIN and self.mbs is not None:
 			if childResource.cs is not None and childResource.cs > self.mbs:
-				return Result(status=False, rsc=C.rcNotAcceptable, dbg='children content sizes would exceed mbs')
+				return Result(status=False, rsc=RC.notAcceptable, dbg='children content sizes would exceed mbs')
 		return Result(status=True)
 
 

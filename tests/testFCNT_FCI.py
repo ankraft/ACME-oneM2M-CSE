@@ -11,7 +11,7 @@ import unittest, sys
 import requests
 sys.path.append('../acme')
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
 
 # The following code must be executed before anything else because it influences
@@ -28,7 +28,7 @@ class TestFCNT_FCI(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
+		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
 
 		jsn = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
@@ -37,7 +37,7 @@ class TestFCNT_FCI(unittest.TestCase):
 					'srv': [ '3' ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
-		assert rsc == C.rcCreated, 'cannot create parent AE'
+		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
 
@@ -62,13 +62,13 @@ class TestFCNT_FCI(unittest.TestCase):
 					'mni'	: 10
 				}}
 		r, rsc = CREATE(aeURL, TestFCNT_FCI.originator, T.FCNT, jsn)
-		self.assertEqual(rsc, C.rcCreated)
+		self.assertEqual(rsc, RC.created)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesFCNT(self):
 		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'hd:tempe/ty'), T.FCNT)
 		self.assertEqual(findXPath(r, 'hd:tempe/pi'), findXPath(TestFCNT_FCI.ae,'m2m:ae/ri'))
 		self.assertEqual(findXPath(r, 'hd:tempe/rn'), fcntRN)
@@ -98,9 +98,9 @@ class TestFCNT_FCI(unittest.TestCase):
 					'curT0'	: 17.0,
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, jsn)
-		self.assertEqual(rsc, C.rcUpdated)
+		self.assertEqual(rsc, RC.updated)
 		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)		# retrieve fcnt again
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'hd:tempe/tarTe'))
 		self.assertIsInstance(findXPath(r, 'hd:tempe/tarTe'), float)
 		self.assertEqual(findXPath(r, 'hd:tempe/tarTe'), 5.0)
@@ -112,13 +112,13 @@ class TestFCNT_FCI(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveFCNTLaOl(self):
 		r, rsc = RETRIEVE('%s/la' % fcntURL, TestFCNT_FCI.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
 		self.assertIsNotNone(findXPath(r, 'hd:tempe/curT0'))
 		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 17.0)
 
 		r, rsc = RETRIEVE('%s/ol' % fcntURL, TestFCNT_FCI.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
 		self.assertIsNotNone(findXPath(r, 'hd:tempe/curT0'))
 		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 23.0)
@@ -130,19 +130,19 @@ class TestFCNT_FCI(unittest.TestCase):
 					'mni':   1,
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, jsn)
-		self.assertEqual(rsc, C.rcUpdated)
+		self.assertEqual(rsc, RC.updated)
 		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)		# retrieve fcnt again
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'hd:tempe/mni'), 1)
 		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 1)
 		self.assertEqual(findXPath(r, 'hd:tempe/st'), 2)
 
 		rla, rsc = RETRIEVE('%s/la' % fcntURL, TestFCNT_FCI.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
 
 		rol, rsc = RETRIEVE('%s/ol' % fcntURL, TestFCNT_FCI.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
 
 		# al == ol ?
@@ -152,7 +152,7 @@ class TestFCNT_FCI(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteFCNT(self):
 		_, rsc = DELETE(fcntURL, ORIGINATOR)
-		self.assertEqual(rsc, C.rcDeleted)
+		self.assertEqual(rsc, RC.deleted)
 
 
 def run():

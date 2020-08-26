@@ -8,7 +8,7 @@
 #
 
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, ConsistencyStrategy
 from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
@@ -38,7 +38,7 @@ class GRP(AnnounceableResource):
 			self.setAttribute('cnm', 0, overwrite=False)	# calculated later
 			self.setAttribute('mid', [], overwrite=False)			
 			self.setAttribute('mtv', False, overwrite=False)
-			self.setAttribute('csy', C.csyAbandonMember, overwrite=False)
+			self.setAttribute('csy', ConsistencyStrategy.abandonMember, overwrite=False)
 
 			# These attributes are not provided by default: mnm (no default), macp (no default)
 			# optional set: spty, gn, nar

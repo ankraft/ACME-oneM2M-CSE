@@ -9,7 +9,7 @@
 
 from typing import Any, List, Dict
 from Logging import Logging
-from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN 		# type: ignore
+from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, ResponseCode as RC 		# type: ignore
 from Constants import Constants as C
 from Types import Result
 from Configuration import Configuration
@@ -275,7 +275,7 @@ class Validator(object):
 		reqp = 2 if create else 3
 		(pureJson, _tpe) = Utils.pureResource(jsn)
 		if pureJson is None:
-			return Result(status=False, rsc=C.rcBadRequest, dbg='content is None')
+			return Result(status=False, rsc=RC.badRequest, dbg='content is None')
 
 		tpe = _tpe if _tpe is not None and _tpe != tpe else tpe 				# determine the real tpe
 
@@ -284,14 +284,14 @@ class Validator(object):
 		if (attributePolicies := self._addAdditionalAttributes(tpe, attributePolicies)) is None:
 			err = 'Unknown resource type: %s' % tpe
 			Logging.logWarn(err)
-			return Result(status=False, rsc=C.rcBadRequest, dbg=err)
+			return Result(status=False, rsc=RC.badRequest, dbg=err)
 
 		#Logging.logDebug(attributePolicies.items())
 		for r in pureJson.keys():
 			if r not in attributePolicies.keys():
 				err = 'Unknown attribute: %s in resource: %s' % (r, tpe)
 				Logging.logWarn(err)
-				return Result(status=False, rsc=C.rcBadRequest, dbg=err)
+				return Result(status=False, rsc=RC.badRequest, dbg=err)
 		for r, p in attributePolicies.items():
 			if p is None:
 				Logging.logWarn('No validation policy found for attribute: %s' % r)
@@ -301,20 +301,20 @@ class Validator(object):
 				if p[reqp] == RO.M:		# Not okay, this attribute is mandatory
 					err = 'Cannot find mandatory attribute: %s' % r
 					Logging.logWarn(err)
-					return Result(status=False, rsc=C.rcBadRequest, dbg=err)
+					return Result(status=False, rsc=RC.badRequest, dbg=err)
 				if r in pureJson and p[1] == CAR.car1:
 					err = 'Cannot delete a mandatory attribute: %s' % r
 					Logging.logWarn(err)
-					return Result(status=False, rsc=C.rcBadRequest, dbg=err)
+					return Result(status=False, rsc=RC.badRequest, dbg=err)
 				if p[reqp] in [ RO.NP, RO.O ]:	# Okay that the attribute is not in the json, since it is provided or optional
 					continue
 			else:
 				if p[reqp] == RO.NP:
 					err = 'Found non-provision attribute: %s' % r
 					Logging.logWarn(err)
-					return Result(status=False, rsc=C.rcBadRequest, dbg=err)
+					return Result(status=False, rsc=RC.badRequest, dbg=err)
 				if r == 'pvs' and not (res := self.validatePvs(pureJson)).status:
-					return Result(status=False, rsc=C.rcBadRequest, dbg=res.dbg)
+					return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
 
 			# Check whether the value is of the correct type
 			if (res := self._validateType(p[0], v)).status:
@@ -323,7 +323,7 @@ class Validator(object):
 			# fall-through means: not validated
 			err = 'Attribute/value validation error: %s=%s (%s)' % (r, str(v), res.dbg)
 			Logging.logWarn(err)
-			return Result(status=False, rsc=C.rcBadRequest, dbg=err)
+			return Result(status=False, rsc=RC.badRequest, dbg=err)
 
 		return Result(status=True)
 

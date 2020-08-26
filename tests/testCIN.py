@@ -10,7 +10,7 @@
 import unittest, sys
 sys.path.append('../acme')
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
 
 # The following code must be executed before anything else because it influences
@@ -24,7 +24,7 @@ class TestCIN(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == C.rcOK, 'Cannot retrieve CSEBase: %s' % cseURL
+		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
 
 		jsn = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
@@ -33,13 +33,13 @@ class TestCIN(unittest.TestCase):
 				 	'srv' : [ '3' ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
-		assert rsc == C.rcCreated, 'cannot create parent AE'
+		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
 				}}
 		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
-		assert rsc == C.rcCreated, 'cannot create container'
+		assert rsc == RC.created, 'cannot create container'
 
 
 	@classmethod
@@ -58,19 +58,19 @@ class TestCIN(unittest.TestCase):
 					'con' : 'AnyValue'
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CNT, jsn)
-		self.assertEqual(rsc, C.rcCreated)
+		self.assertEqual(rsc, RC.created)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCIN(self):
 		_, rsc = RETRIEVE(cinURL, TestCIN.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesCIN(self):
 		r, rsc = RETRIEVE(cinURL, TestCIN.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 
 		# TEST attributess
 		self.assertEqual(findXPath(r, 'm2m:cin/ty'), T.CIN)
@@ -94,7 +94,7 @@ class TestCIN(unittest.TestCase):
 					'con' : 'NewValue'
 				}}
 		r, rsc = UPDATE(cinURL, TestCIN.originator, jsn)
-		self.assertEqual(rsc, C.rcOperationNotAllowed)
+		self.assertEqual(rsc, RC.operationNotAllowed)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -105,13 +105,13 @@ class TestCIN(unittest.TestCase):
 					'con' : 'AnyValue'
 				}}
 		r, rsc = CREATE(aeURL, TestCIN.originator, T.CNT, jsn)
-		self.assertEqual(rsc, C.rcInvalidChildResourceType)
+		self.assertEqual(rsc, RC.invalidChildResourceType)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCIN(self):
 		_, rsc = DELETE(cntURL, ORIGINATOR)
-		self.assertEqual(rsc, C.rcDeleted)
+		self.assertEqual(rsc, RC.deleted)
 
 # More tests of la, ol etc in testCNT_CNI.py
 

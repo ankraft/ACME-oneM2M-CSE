@@ -11,7 +11,7 @@ import unittest, sys
 import requests
 sys.path.append('../acme')
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
 
 # The following code must be executed before anything else because it influences
@@ -28,7 +28,7 @@ class TestFCNT(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == C.rcOK, 'cannot retrieve CSEBase'
+		assert rsc == RC.OK, 'cannot retrieve CSEBase'
 
 		jsn = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
@@ -37,7 +37,7 @@ class TestFCNT(unittest.TestCase):
 					'srv': [ '3' ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
-		assert rsc == C.rcCreated, 'cannot create parent AE'
+		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
 
@@ -61,25 +61,25 @@ class TestFCNT(unittest.TestCase):
 					'steVe'	: 0.5
 				}}
 		r, rsc = CREATE(aeURL, TestFCNT.originator, T.FCNT, jsn)
-		self.assertEqual(rsc, C.rcCreated)
+		self.assertEqual(rsc, RC.created)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveFCNT(self):
 		_, rsc = RETRIEVE(fcntURL, TestFCNT.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveFCNTWithWrongOriginator(self):
 		_, rsc = RETRIEVE(fcntURL, 'Cwrong')
-		self.assertEqual(rsc, C.rcOriginatorHasNoPrivilege)
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesFCNT(self):
 		r, rsc = RETRIEVE(fcntURL, TestFCNT.originator)
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'hd:tempe/ty'), T.FCNT)
 		self.assertEqual(findXPath(r, 'hd:tempe/pi'), findXPath(TestFCNT.ae,'m2m:ae/ri'))
 		self.assertEqual(findXPath(r, 'hd:tempe/rn'), fcntRN)
@@ -104,9 +104,9 @@ class TestFCNT(unittest.TestCase):
 					'tarTe':	5.0
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT.originator, jsn)
-		self.assertEqual(rsc, C.rcUpdated)
+		self.assertEqual(rsc, RC.updated)
 		r, rsc = RETRIEVE(fcntURL, TestFCNT.originator)		# retrieve fcnt again
-		self.assertEqual(rsc, C.rcOK)
+		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'hd:tempe/tarTe'))
 		self.assertIsInstance(findXPath(r, 'hd:tempe/tarTe'), float)
 		self.assertEqual(findXPath(r, 'hd:tempe/tarTe'), 5.0)
@@ -121,7 +121,7 @@ class TestFCNT(unittest.TestCase):
 					'cnd' : CND,
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT.originator, jsn)
-		self.assertEqual(rsc, C.rcBadRequest)
+		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -130,7 +130,7 @@ class TestFCNT(unittest.TestCase):
 					'tarTe':	'5.0'
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT.originator, jsn)
-		self.assertEqual(rsc, C.rcBadRequest)
+		self.assertEqual(rsc, RC.badRequest)
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNTwithUnkownAttribute(self):
@@ -138,7 +138,7 @@ class TestFCNT(unittest.TestCase):
 					'wrong':	'aValue'
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT.originator, jsn)
-		self.assertEqual(rsc, C.rcBadRequest)
+		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -149,7 +149,7 @@ class TestFCNT(unittest.TestCase):
 					'attr'	: 'aValuealue',
 				}}
 		r, rsc = CREATE(aeURL, TestFCNT.originator, T.FCNT, jsn)
-		self.assertEqual(rsc, C.rcBadRequest)
+		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -158,13 +158,13 @@ class TestFCNT(unittest.TestCase):
 					'rn' : cntRN
 				}}
 		r, rsc = CREATE(fcntURL, TestFCNT.originator, T.CNT, jsn)
-		self.assertEqual(rsc, C.rcCreated)
+		self.assertEqual(rsc, RC.created)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTUnderFCNT(self):
 		_, rsc = DELETE('%s/%s' % (fcntURL, cntRN), ORIGINATOR)
-		self.assertEqual(rsc, C.rcDeleted)
+		self.assertEqual(rsc, RC.deleted)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -174,19 +174,19 @@ class TestFCNT(unittest.TestCase):
 					'rn' : fcntRN,
 				}}
 		r, rsc = CREATE(fcntURL, TestFCNT.originator, T.FCNT, jsn)
-		self.assertEqual(rsc, C.rcCreated)
+		self.assertEqual(rsc, RC.created)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteFCNTUnderFCNT(self):
 		_, rsc = DELETE('%s/%s' % (fcntURL, fcntRN), ORIGINATOR)
-		self.assertEqual(rsc, C.rcDeleted)
+		self.assertEqual(rsc, RC.deleted)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteFCNT(self):
 		_, rsc = DELETE(fcntURL, ORIGINATOR)
-		self.assertEqual(rsc, C.rcDeleted)
+		self.assertEqual(rsc, RC.deleted)
 
 
 

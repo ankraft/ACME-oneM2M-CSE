@@ -14,6 +14,7 @@ from Configuration import Configuration
 from resources import BAT
 import psutil 	# type: ignore
 import socket, platform, re, uuid, traceback
+from Types import ResponseCode as RC
 
 
 
@@ -51,7 +52,7 @@ class CSENode(NodeBase):
 
 	# Set this node as the hosting node for the CSE Base
 	def updateCSEBase(self) -> None:
-		if (result := self.retrieveResource(ri=self.csi)).rsc != C.rcOK:
+		if (result := self.retrieveResource(ri=self.csi)).rsc != RC.OK:
 			Logging.logErr('CSENode: cannot retrieve CSEBase')
 			return
 		jsn =	{ 'm2m:cb' : {

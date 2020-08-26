@@ -11,7 +11,7 @@ from Logging import Logging
 from typing import List
 from Constants import Constants as C
 from Configuration import Configuration
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, Permission, ResponseCode as RC
 from resources.Resource import Resource
 import CSE, Utils
 from resources import ACP
@@ -36,16 +36,16 @@ class RegistrationManager(object):
 	def checkResourceCreation(self, resource: Resource, originator: str, parentResource: Resource = None) -> Result:
 		if resource.ty == T.AE:
 			if (originator := self.handleAERegistration(resource, originator, parentResource).originator) is None:	# assigns new originator
-				return Result(rsc=C.rcBadRequest, dbg='cannot register AE')
+				return Result(rsc=RC.badRequest, dbg='cannot register AE')
 		if resource.ty == T.CSR:
 			if Configuration.get('cse.type') == 'ASN':
-				return Result(rsc=C.rcOperationNotAllowed, dbg='cannot register to ASN CSE')
+				return Result(rsc=RC.operationNotAllowed, dbg='cannot register to ASN CSE')
 			if not self.handleCSRRegistration(resource, originator):
-				return Result(rsc=C.rcBadRequest, dbg='cannot register CSR')
+				return Result(rsc=RC.badRequest, dbg='cannot register CSR')
 
 		# Test and set creator attribute.
 		
-		if (res := self.handleCreator(resource, originator)).rsc != C.rcOK:
+		if (res := self.handleCreator(resource, originator)).rsc != RC.OK:
 			return res
 
 		# ACPI assignments 
@@ -78,7 +78,7 @@ class RegistrationManager(object):
 		# Check whether cr is set. This is wrong
 		if resource.cr is not None:
 			Logging.logWarn('Setting "creator" attribute is not allowed.')
-			return Result(rsc=C.rcBadRequest, dbg='setting "creator" attribute is not allowed')
+			return Result(rsc=RC.badRequest, dbg='setting "creator" attribute is not allowed')
 		# Set cr for some of the resource types
 		if resource.ty in C.creatorAllowed:
 			resource['cr'] = Configuration.get('cse.originator') if originator in ['C', 'S', '', None ] else originator
@@ -113,7 +113,7 @@ class RegistrationManager(object):
 		# TODO also allow when there is an ACP?
 		if not Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedAEOriginators')):
 			Logging.logDebug('Originator not allowed')
-			return Result(rsc=C.rcNotAcceptable)
+			return Result(rsc=RC.notAcceptable)
 
 		# Assign originator for the AE
 		if originator == 'C':
@@ -131,7 +131,7 @@ class RegistrationManager(object):
 
 		# Verify that parent is the CSEBase, else this is an error
 		if parentResource is None or parentResource.ty != T.CSEBase:
-			return Result(rsc=C.rcNotAcceptable)
+			return Result(rsc=RC.notAcceptable)
 
 		# Create an ACP for this AE-ID if there is none set
 		# if ae.acpi is None or len(ae.acpi) == 0:
@@ -145,7 +145,7 @@ class RegistrationManager(object):
 									  originators=[ originator, cseOriginator ],
 									  permission=Configuration.get('cse.acp.pv.acop')).resource
 		if acpResource is None:
-			return Result(rsc=C.rcNotAcceptable)
+			return Result(rsc=RC.notAcceptable)
 		if ae.acpi is None or len(ae.acpi) == 0:
 			ae['acpi'] = [ acpResource.ri ]		# Set ACPI (anew)
 		else:
@@ -196,7 +196,7 @@ class RegistrationManager(object):
 								  rn='%s%s' % (C.acpPrefix, csr.rn),
 							 	  createdByResource=csr.ri,
 								  originators=[ originator, cseOriginator ],
-								  permission=C.permALL,
+								  permission=Permission.ALL,
 								  selfOriginators=[csr.csi]).resource
 			if acpResource is None:
 				return False
@@ -245,11 +245,11 @@ class RegistrationManager(object):
 	def _createACP(self, parentResource:Resource=None, rn:str=None, createdByResource:str=None, originators:List[str]=None, permission:int=None, selfOriginators:List[str]=None) -> Result:
 		""" Create an ACP with some given defaults. """
 		if parentResource is None or rn is None or originators is None or permission is None:
-			return Result(rsc=C.rcBadRequest, dbg='missing attribute(s)')
+			return Result(rsc=RC.badRequest, dbg='missing attribute(s)')
 
 		# Remove existing ACP with that name first
 		acpSrn = '%s/%s' % (Configuration.get('cse.rn'), rn)
-		if (acpRes := CSE.dispatcher.retrieveResource(id=acpSrn)).rsc == C.rcOK:
+		if (acpRes := CSE.dispatcher.retrieveResource(id=acpSrn)).rsc == RC.OK:
 			CSE.dispatcher.deleteResource(acpRes.resource)	# ignore errors
 
 		# Create the ACP
@@ -268,20 +268,20 @@ class RegistrationManager(object):
 		acp.addPermission(origs, permission)
 		acp.addSelfPermission(selfOrigs, selfPermission)
 
-		if (res := self.checkResourceCreation(acp, cseOriginator, parentResource)).rsc != C.rcOK:
+		if (res := self.checkResourceCreation(acp, cseOriginator, parentResource)).rsc != RC.OK:
 			return res.errorResult()
 		return CSE.dispatcher.createResource(acp, parentResource=parentResource, originator=cseOriginator)
 
 
 	def _removeACP(self, srn:str, resource:Resource) -> Result:
 		""" Remove an ACP created during registration before. """
-		if (acpRes := CSE.dispatcher.retrieveResource(id=srn)).rsc != C.rcOK:
+		if (acpRes := CSE.dispatcher.retrieveResource(id=srn)).rsc != RC.OK:
 			Logging.logWarn('Could not find ACP: %s' % srn)	# ACP not found, either not created or already deleted
 		else:
 			# only delete the ACP when it was created in the course of AE registration
 			if  (ri := acpRes.resource.createdInternally()) is not None and resource.ri == ri:
 				return CSE.dispatcher.deleteResource(acpRes.resource)
-		return Result(rsc=C.rcDeleted)
+		return Result(rsc=RC.deleted)
 
 
 	def _addToAccessCSBaseACP(self, originator: str) -> None:
@@ -289,7 +289,7 @@ class RegistrationManager(object):
 			to any registered CSE and AE.
 		"""
 		if (res := CSE.dispatcher.retrieveResource(Configuration.get('cse.security.csebaseAccessACPI'))).resource is not None:
-			res.resource.addPermission([originator], C.permRETRIEVE)
+			res.resource.addPermission([originator], Permission.RETRIEVE)
 			res.resource.dbUpdate()
 
 

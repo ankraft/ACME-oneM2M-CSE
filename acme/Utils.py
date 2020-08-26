@@ -19,7 +19,7 @@ from resources import SWR, SWRAnnc, Unknown, Resource
 
 
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, ResponseCode as RC
 from Configuration import Configuration
 from Logging import Logging
 import CSE
@@ -532,7 +532,7 @@ def getCSE() -> Result:
 
 
 def getCSETypeAsString() -> str:
-	return C.cseTypes[Configuration.get('cse.type')]
+	return Configuration.get('cse.type').name
 
 	
 # Check whether the target contains a fanoutPoint in between or as the target
@@ -584,7 +584,7 @@ def getRequestHeaders(request: Request) -> Tuple[str, str, T, str, int]:
 			t = p[2].partition('=')[2]
 			ty = T(int(t)) if t.isdigit() else T.UNKNOWN # resource type
 
-	return originator, ct, ty, rqi, C.rcOK
+	return originator, ct, ty, rqi, RC.OK
 
 
 #
