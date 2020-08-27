@@ -17,6 +17,7 @@
 - [TESTS] Added unit tests.
 - [WEB] Added deletion of resources in the webb UI via right-click menu.
 - [MISC] Added Python type hints throughout the source code.
+- [MISC] Refactored most constants to enums.
 
 
 ## 0.4.0 - 2020-06-24
