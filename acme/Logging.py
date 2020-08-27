@@ -174,7 +174,7 @@ class ACMERichLogHandler(RichHandler):
 
 		# Set own highlights 
 		self.highlighter.highlights = [	# type: ignore
-			r"(?P<brace>[\{\[\(\)\]\}])",
+			# r"(?P<brace>[\{\[\(\)\]\}])",
 			#r"(?P<tag_start>\<)(?P<tag_name>\w*)(?P<tag_contents>.*?)(?P<tag_end>\>)",
 			#r"(?P<attrib_name>\w+?)=(?P<attrib_value>\"?\w+\"?)",
 			r"(?P<bool_true>True)|(?P<bool_false>False)|(?P<none>None)",
@@ -194,10 +194,10 @@ class ACMERichLogHandler(RichHandler):
 			r"(?P<response>Response <== [^ :]+[ :]+)",		# Incoming response or request
 			r"(?P<number>\(RSC: [0-9]+\.?[0-9]\))",			# Result code
 			r"(?P<id> [\w/\-_]*/[\w/\-_]+)",				# ID
-			r"(?P<request>CSE started$)",					# CSE startup message
-			r"(?P<request>CSE shutdown$)",					# CSE shutdown message
-			r"(?P<start>CSE shutting down$)",				# CSE shutdown message
-			r"(?P<start>Starting CSE$)",				# CSE shutdown message
+			# r"(?P<request>CSE started$)",					# CSE startup message
+			# r"(?P<request>CSE shutdown$)",					# CSE shutdown message
+			# r"(?P<start>CSE shutting down$)",				# CSE shutdown message
+			# r"(?P<start>Starting CSE$)",				# CSE shutdown message
 
 			#r"(?P<id>(acp|ae|bat|cin|cnt|csest|dvi|grp|la|mem|nod|ol|sub)[0-9]+\.?[0-9])",		# ID
 
