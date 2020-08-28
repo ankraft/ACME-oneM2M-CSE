@@ -8,7 +8,7 @@ It follows the Windows INI file format with sections, keywords and values. A con
 
 ## General Usage
 
-A default configuration file is provided with the file [acme.ini.default](../acme.ini.default). Don't make changes to this file, but rather copy it to a new file named *acme.ini*, which is the default configuration file name. You can use another filename, but must then specify it with the *--config* command line argument when running the the (see [Running the CSE](Running.md#running-the-cse).
+A default configuration file is provided with the file [acme.ini.default](../acme.ini.default). Don't make changes to this file, but rather copy it to a new file named *acme.ini*, which is the default configuration file name. You can use another filename, but must then specify it with the *--config* command line argument when running the the (see [Running the CSE](Running.md#running-the-cse)).
 
 ### Configuration References
 
