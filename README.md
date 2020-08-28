@@ -38,9 +38,9 @@ Please see the [Changelog](CHANGELOG.md) for the latest changes.
 
 ## Acknowledgements
 
-Thank you for contributed code, patches, testing, bug fixes, time and more!
+Thank you for contributed code, patches, testing, bug fixes, time, and more!
 
-![reinaortega](https://github.com/reinaortega.png?size=20) [Miguel Angel Reina Ortega](https://github.com/reinaortega)
+![reinaortega](https://github.com/reinaortega.png?size=24) [Miguel Angel Reina Ortega](https://github.com/reinaortega)
 
 
 ## License
