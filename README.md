@@ -36,6 +36,13 @@ Please consult the following pages for further instructions.
 
 Please see the [Changelog](CHANGELOG.md) for the latest changes.
 
+## Acknowledgements
+
+Thank you for contributed code, patches, testing, bug fixes, time and more!
+
+![reinaortega](https://github.com/reinaortega.png?size=20) [Miguel Angel Reina Ortega](https://github.com/reinaortega)
+
+
 ## License
 BSD 3-Clause License for the CSE and its native components and modules. Please see the individual licenses of the used third-party components.
 
