@@ -24,7 +24,7 @@ In additions, you can provide additional command line arguments that will overri
 | --import-directory IMPORTDIRECTORY | Specify the import directory. |
 | --remote-cse, --no-remote-cse | Enable or disable remote CSE connections and checking. |
 | --statistics, --no-statistics | Enable or disable collecting CSE statics |
-| --validation, --no-validation | Enable or disable sattributes and arguments validation. |
+| --validation, --no-validation | Enable or disable attribute and argument validations. |
 
 
 ## Stopping the CSE
