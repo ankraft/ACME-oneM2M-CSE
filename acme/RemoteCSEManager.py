@@ -169,13 +169,13 @@ class RemoteCSEManager(object):
 		self.descendantCSR[csi] = remoteCSR
 
 		Logging.logDebug('Descendant CSE registered %s' % csi)
-		localCSE = Utils.getCSE().resource
-		dsce = []
-		for csi in self.descendantCSR:
-			if self.registrarCSE is None or (self.registrarCSE is not None and csi != self.registrarCSE.csi):
-				dsce.append(csi)
-		localCSE['dsce'] = dsce
-		localCSE.dbUpdate()	# update in DB
+		# localCSE = Utils.getCSE().resource
+		# dcse = []
+		# for csi in self.descendantCSR:
+		# 	if self.registrarCSE is None or (self.registrarCSE is not None and csi != self.registrarCSE.csi):
+		# 		dcse.append(csi)
+		# localCSE['dcse'] = dcse
+		# localCSE.dbUpdate()	# update in DB
 		if self.csetype in [ CSEType.ASN, CSEType.MN ]:
 			self._updateRemoteCSR(localCSE)
 
@@ -307,7 +307,7 @@ class RemoteCSEManager(object):
 		# copy local CSE attributes into a new CSR
 		localCSE = Utils.getCSE().resource
 		csr = CSR.CSR(pi=localCSE.ri, rn=remoteCSE.ri)	# remoteCSE.ri as name!
-		self._copyCSE2CSE(csr, remoteCSE)
+		self._copyCSE2CSR(csr, remoteCSE)
 		csr['ri'] = remoteCSE.ri 						# set the ri to the remote CSE's ri
 		# add local CSR and ACP's
 		if (result := CSE.dispatcher.createResource(csr, localCSE)).resource is None:
@@ -321,7 +321,7 @@ class RemoteCSEManager(object):
 	def _updateLocalCSR(self, localCSR:Resource, remoteCSE:Resource) -> Result:
 		Logging.logDebug('Updating local CSR: %s' % localCSR.rn)
 		# copy attributes
-		self._copyCSE2CSE(localCSR, remoteCSE)
+		self._copyCSE2CSR(localCSR, remoteCSE)
 		return CSE.dispatcher.updateResource(localCSR)
 
 
@@ -353,7 +353,7 @@ class RemoteCSEManager(object):
 		# get local CSEBase and copy relevant attributes
 		localCSE = Utils.getCSE().resource
 		csr = CSR.CSR(rn=localCSE.ri) # ri as name!
-		self._copyCSE2CSE(csr, localCSE)
+		self._copyCSE2CSR(csr, localCSE)
 		csr['ri'] = self.cseCsi							# override ri with the own cseID
 		#csr['cb'] = Utils.getIdFromOriginator(localCSE.csi)	# only the stem
 		for _ in ['ty','ri', 'ct', 'lt']: csr.delAttribute(_, setNone=False)	# remove a couple of attributes
@@ -375,7 +375,7 @@ class RemoteCSEManager(object):
 	def _updateRemoteCSR(self, localCSE:Resource) -> Result:
 		Logging.logDebug('Updating remote CSR: %s' % self.remoteCsi)
 		csr = CSR.CSR()
-		self._copyCSE2CSE(csr, localCSE)
+		self._copyCSE2CSR(csr, localCSE)
 		del csr['acpi']			# remove ACPI (don't provide ACPI in updates...a bit)
 		data = json.dumps(csr.asJSON())
 
@@ -525,7 +525,7 @@ class RemoteCSEManager(object):
 	#########################################################################
 
 
-	def _copyCSE2CSE(self, target:Resource, source:Resource, isUpdate:bool=False) -> None:
+	def _copyCSE2CSR(self, target:Resource, source:Resource, isUpdate:bool=False) -> None:
 		if isUpdate:
 			# rm some attributes
 			if 'ri' in target:
