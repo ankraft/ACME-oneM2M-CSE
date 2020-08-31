@@ -33,7 +33,7 @@ class RegistrationManager(object):
 	#	Handle new resources in general
 	#
 
-	def checkResourceCreation(self, resource: Resource, originator: str, parentResource: Resource = None) -> Result:
+	def checkResourceCreation(self, resource:Resource, originator:str, parentResource:Resource=None) -> Result:
 		if resource.ty == T.AE:
 			if (originator := self.handleAERegistration(resource, originator, parentResource).originator) is None:	# assigns new originator
 				return Result(rsc=RC.badRequest, dbg='cannot register AE')
@@ -83,6 +83,15 @@ class RegistrationManager(object):
 		if resource.ty in C.creatorAllowed:
 			resource['cr'] = Configuration.get('cse.originator') if originator in ['C', 'S', '', None ] else originator
 		return Result() # implicit OK
+
+
+
+	def checkResourceUpdate(self, resource:Resource) -> Result:
+		if resource.ty == T.CSR:
+			if not self.handleCSRUpdate(resource):
+				return Result(status=False, dbg='cannot update CSR')
+		return Result(status=True)
+
 
 
 	def checkResourceDeletion(self, resource:Resource) -> Result:
@@ -236,6 +245,18 @@ class RegistrationManager(object):
 			# send event
 			CSE.event.remoteCSEHasDeregistered(csr)	# type: ignore
 		return res
+
+
+	#
+	#	Handle CSR Update
+	#
+
+	def handleCSRUpdate(self, csr:Resource) -> bool:
+		Logging.logDebug('Updating CSR. csi: %s ' % csr['csi'])
+		# send event
+		CSE.event.remoteCSEUpdate(csr)	# type: ignore
+		return True
+
 
 
 

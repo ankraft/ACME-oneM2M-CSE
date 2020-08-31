@@ -89,6 +89,7 @@ class EventManager(object):
 		self.addEvent('registeredToRemoteCSE')
 		self.addEvent('deregisteredFromRemoteCSE')
 		self.addEvent('remoteCSEHasRegistered')
+		self.addEvent('remoteCSEUpdate')
 		self.addEvent('remoteCSEHasDeregistered')
 		Logging.log('EventManager initialized')
 

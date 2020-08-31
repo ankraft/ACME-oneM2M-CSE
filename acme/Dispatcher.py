@@ -631,11 +631,17 @@ class Dispatcher(object):
 		elif CSE.security.hasAccess(originator, resource, Permission.UPDATE) == False:
 			return Result(rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
 
+
 		# Check for virtual resource
 		if Utils.isVirtualResource(resource):
 			return resource.handleUpdateRequest(request, id, originator, ct)
 
 		jsonOrg = resource.json.copy()	# Save for later
+
+		# Check resource update with registration
+		if (rres := CSE.registration.checkResourceUpdate(resource)).rsc != RC.OK:
+			return rres.errorResult()
+
 		if (res := self.updateResource(resource, jsn, originator=originator)).resource is None:
 			return res.errorResult()
 		resource = res.resource 	# re-assign resource (might have been changed during update)
