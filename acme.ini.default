@@ -66,6 +66,12 @@ defaultACPI=acpDefault
 # They are assigned, for example, during AE or remoteCSE registration.
 # Default: acpCSEBaseAccess
 csebaseAccessACPI=acpCSEBaseAccess
+# See oneM2M TS-0003 Clause 8.2.1 Overview on Security Association Establishment Frameworks
+useTls=False
+# Set to False when using self-signed certificates. Default: False
+verifyCert=False
+# Path the the bundle of certificates. Default: ''
+ca_path=./certs/
 
 
 #
