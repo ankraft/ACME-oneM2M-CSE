@@ -107,6 +107,9 @@ class Configuration(object):
 				'cse.security.adminACPI'			: config.get('cse.security', 'adminACPI', 				fallback='acpAdmin'),
 				'cse.security.defaultACPI'			: config.get('cse.security', 'defaultACPI', 			fallback='acpDefault'),
 				'cse.security.csebaseAccessACPI'	: config.get('cse.security', 'csebaseAccessACPI', 		fallback='acpCSEBaseAccess'),
+				'cse.security.useTls'		: config.getboolean('cse.security', 'useTls', 	fallback=False),
+				'cse.security.verifyCert'		: config.getboolean('cse.security', 'verifyCert', 	fallback=False),
+				'cse.security.ca_path'		: config.get('cse.security', 'ca_path', 	fallback=''),
 
 				#
 				#	Registrar CSE
@@ -261,6 +264,9 @@ class Configuration(object):
 		Configuration._configuration['http.address'] = Utils.normalizeURL(Configuration._configuration['http.address'])
 		Configuration._configuration['http.root'] = Utils.normalizeURL(Configuration._configuration['http.root'])
 		Configuration._configuration['cse.registrar.root'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.root'])
+		if Configuration._configuration['cse.security.useTls']:
+			Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('http:', 'https:')
+			Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('http:', 'https:')
 
 
 		#

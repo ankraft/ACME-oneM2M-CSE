@@ -20,7 +20,7 @@ import CSE, Utils
 from Logging import Logging
 from resources.Resource import Resource
 from werkzeug.serving import WSGIRequestHandler
-
+import ssl
 
 
 class HttpServer(object):
@@ -31,10 +31,16 @@ class HttpServer(object):
 		# Meaning defaults are automatically provided.
 		self.flaskApp = Flask(Configuration.get('cse.csi'))
 		self.rootPath = Configuration.get('http.root')
+		self.useTls = Configuration.get('cse.security.useTls')
+		self.verify_cert = Configuration.get('cse.security.verifyCert')
 
 		self.serverID = 'ACME %s' % version 	# The server's ID for http response headers
 
+		if self.useTls:
+			Logging.log('Registering https server root at: %s' % self.rootPath)
+		else:
 		Logging.log('Registering http server root at: %s' % self.rootPath)
+			self.verify_cert = False
 
 		# Add endpoints
 
@@ -93,11 +99,17 @@ class HttpServer(object):
 			cli.show_server_banner = lambda *x: None 	# type: ignore
 			# Start the server
 			try:
+				context = None
+				if self.useTls:
+					Logging.log('Setup SSL context: %s/%s' % (str(Configuration.get('cse.security.ca_path')) + 'acme_cert.pem', str(Configuration.get('cse.security.ca_path')) + 'acme_key.pem'))
+					context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+					context.load_cert_chain(str(Configuration.get('cse.security.ca_path')) + 'acme_cert.pem', str(Configuration.get('cse.security.ca_path')) + 'acme_key.pem')
 				self.flaskApp.run(host=Configuration.get('http.listenIF'), 
 								  port=Configuration.get('http.port'),
 								  threaded=Configuration.get('http.multiThread'),
 								  request_handler=ACMERequestHandler,
-								  debug=False)
+                                                  ssl_context=context,
+						  debug=True)
 			except Exception as e:
 				Logging.logErr(str(e))
 
@@ -240,7 +252,7 @@ class HttpServer(object):
 		try:
 			Logging.logDebug('Sending request: %s %s' % (method.__name__.upper(), url))
 			Logging.logDebug('Request ==>:\n%s\n' % (str(data) if data is not None else ''))
-			r = method(url, data=data, headers=headers)
+			r = method(url, data=data, headers=headers, verify=self.verify_cert)
 			Logging.logDebug('Response <== (%s):\n%s' % (str(r.status_code), str(r.content.decode("utf-8"))))
 		except Exception as e:
 			Logging.logWarn('Failed to send request: %s' % str(e))
