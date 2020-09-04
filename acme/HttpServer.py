@@ -39,7 +39,7 @@ class HttpServer(object):
 		if self.useTls:
 			Logging.log('Registering https server root at: %s' % self.rootPath)
 		else:
-		Logging.log('Registering http server root at: %s' % self.rootPath)
+			Logging.log('Registering http server root at: %s' % self.rootPath)
 			self.verify_cert = False
 
 		# Add endpoints
@@ -105,9 +105,9 @@ class HttpServer(object):
 					context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 					context.load_cert_chain(str(Configuration.get('cse.security.ca_path')) + 'acme_cert.pem', str(Configuration.get('cse.security.ca_path')) + 'acme_key.pem')
 				self.flaskApp.run(host=Configuration.get('http.listenIF'), 
-								  port=Configuration.get('http.port'),
-								  threaded=Configuration.get('http.multiThread'),
-								  request_handler=ACMERequestHandler,
+						  port=Configuration.get('http.port'),
+						  threaded=Configuration.get('http.multiThread'),
+						  request_handler=ACMERequestHandler,
                                                   ssl_context=context,
 						  debug=True)
 			except Exception as e:
