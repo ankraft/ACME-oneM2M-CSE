@@ -9,7 +9,7 @@
 #
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import json
+import json, argparse, sys, ssl
 from rich import print
 from rich.console import Console
 from rich.syntax import Syntax
@@ -48,8 +48,32 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
 	console = Console()
-	httpd = HTTPServer(('', port), SimpleHTTPRequestHandler)
-	console.print('\n[dim][[[/dim][red][i]ACME[/i][/red][dim]][/dim] - [bold]Notification Server[/bold]\n\n')
+	console.print('\n[dim]\[[/dim][red][i]ACME[/i][/red][dim]][/dim] - [bold]Notification Server[/bold]\n\n')
 
-	console.print('[%s]**starting server & listening for connections on port %s **' % (messageColor, port))
+
+	# parse command line argiments
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--port', action='store', dest='port', default=port, type=int, help='specify the server port')
+
+	# two mutual exlcusive arguments
+	groupApps = parser.add_mutually_exclusive_group()
+	groupApps.add_argument('--http', action='store_false', dest='usehttps', default=None, help='run as http server (default)')
+	groupApps.add_argument('--https', action='store_true', dest='usehttps', default=None, help='run as https server')
+
+	parser.add_argument('--certfile', action='store', dest='certfile', required='--https' in sys.argv, metavar='<filename>', help='specify the certificate file for https')
+	parser.add_argument('--keyfile', action='store', dest='keyfile', required='--https' in sys.argv, metavar='<filename>', 	help='specify the key file for https')
+	args = parser.parse_args()
+
+	# run http(s) server
+	httpd = HTTPServer(('', args.port), SimpleHTTPRequestHandler)
+	
+	if args.usehttps:
+		# init ssl socket
+		context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)					# Create a SSL Context
+		context.load_cert_chain(args.certfile, args.keyfile)				# Load the certificate and private key
+		httpd.socket = context.wrap_socket(httpd.socket, server_side=True)	# wrap the original http server socket as an SSL/TLS socket
+	
+	console.print('[%s]**starting server & listening for connections on port %s **' % (messageColor, args.port))
 	httpd.serve_forever()
+
+
