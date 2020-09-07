@@ -17,9 +17,13 @@ import CSE
 # Handle command line arguments
 def parseArgs() -> argparse.Namespace:
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--config', action='store', dest='configfile', default=defaultConfigFile, help='specify the configuration file')
+	parser.add_argument('--config', action='store', dest='configfile', default=defaultConfigFile, metavar='<filename>', help='specify the configuration file')
 
 	# two mutual exlcusive arguments
+	groupRemoteCSE = parser.add_mutually_exclusive_group()
+	groupRemoteCSE.add_argument('--http', action='store_false', dest='http', default=None, help='run CSE with http server')
+	groupRemoteCSE.add_argument('--https', action='store_true', dest='https', default=None, help='run CSE with https server')
+
 	groupApps = parser.add_mutually_exclusive_group()
 	groupApps.add_argument('--apps', action='store_true', dest='appsenabled', default=None, help='enable internal applications')
 	groupApps.add_argument('--no-apps', action='store_false', dest='appsenabled', default=None, help='disable internal applications')
@@ -39,7 +43,7 @@ def parseArgs() -> argparse.Namespace:
 	parser.add_argument('--db-reset', action='store_true', dest='dbreset', default=None, help='reset the DB when starting the CSE')
 	parser.add_argument('--db-storage', action='store', dest='dbstoragemode', default=None, choices=[ 'memory', 'disk' ], type=str.lower, help='specify the DB´s storage mode')
 	parser.add_argument('--log-level', action='store', dest='loglevel', default=None, choices=[ 'info', 'error', 'warn', 'debug', 'off'], type=str.lower, help='set the log level, or turn logging off')
-	parser.add_argument('--import-directory', action='store', dest='importdirectory', default=None, help='specify the import directory')
+	parser.add_argument('--import-directory', action='store', dest='importdirectory', default=None, metavar='<directory>', help='specify the import directory')
 	
 	return parser.parse_args()
 
@@ -57,5 +61,5 @@ if __name__ == '__main__':
 	#
 	#	Note: Always pass at least 'None' as first and then the 'configfile' parameter.
 	console = Console()
-	console.print('\n[dim][[[/dim][red][i]ACME[/i][/red][dim]][/dim] ' + version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight=False)
+	console.print('\n[dim]\[[/dim][red][i]ACME[/i][/red][dim]][/dim] ' + version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight=False)
 	CSE.startup(parseArgs())
