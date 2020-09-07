@@ -89,7 +89,7 @@ The following Protocol Bindings are supported:
 
 | Protocol Binding | Supported | Remark                            |
 |:-----------------|:---------:|:----------------------------------|
-| http             | &check;   | https is currently not supported. |
+| http             | &check;   | incl https. |
 | coap             | &cross;   |                                   |
 | mqtt             | &cross;   |                                   |
 
@@ -105,10 +105,8 @@ The following serialization types are supported:
 
 
 # Limitations
-- **This is by no means a fully compliant, secure or stable CSE! Don't use it in production.**
+- **This is by no means a fully compliant, secure, fast, or stable CSE! Don't use it in production.**
 - This CSE is intended for educational purposes. The underlying database system is not optimized in any way for high-volume, high-availability, or high-reliability.
-- No support for https yet.
-- Security: None. Please contact me if you have suggestions to improve this.
 - Unsupported resource types are just stored, but no check or functionality is provided for those resources. The same is true for unknown resource attributes.
 
 [← README](../README.md) 

@@ -66,6 +66,21 @@ defaultACPI=acpDefault
 # They are assigned, for example, during AE or remoteCSE registration.
 # Default: acpCSEBaseAccess
 csebaseAccessACPI=acpCSEBaseAccess
+# Enable TLS for communications.
+# See oneM2M TS-0003 Clause 8.2.1 Overview on Security Association Establishment Frameworks
+# Default: False
+useTLS=True
+# TLS version to be used in connections.
+# Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate
+# version negotiation.
+# Default: auto
+tlsVersion=auto
+# Verify certificates in requests. Set to False when using self-signed certificates. Default: False
+verifyCertificate=False
+# Path and filename of the certificate file. Default: None
+caCertificateFile=./certs/acme_cert.pem
+# Path and filename of the private key file. Default: None
+caPrivateKeyFile=./certs/acme_key.pem
 
 
 #

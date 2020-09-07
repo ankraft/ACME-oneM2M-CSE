@@ -19,30 +19,30 @@ from init import *
 # The following code must be executed before anything else because it influences
 # the collection of skipped tests.
 # It checks whether there actually is a remote CSE.
+noCSE = not connectionPossible(cseURL)
 noRemote = not connectionPossible(REMOTEcseURL)
-
 
 class TestRemote_Annc(unittest.TestCase):
 
 	@classmethod
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def setUpClass(cls):
 		# check connection to CSE's
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
 		cls.remoteCse, rsc = RETRIEVE(REMOTEcseURL, REMOTEORIGINATOR)
-		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % REMOTEcseURL
+		assert rsc == RC.OK, 'Cannot retrieve remote CSEBase: %s' % REMOTEcseURL
 
 
 	@classmethod
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def tearDownClass(cls):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
 
 
 	# Create an AE with AT, but no AA
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createAnnounceAEwithATwithoutAA(self):
 		jsn = 	{ 'm2m:ae' : {
 					'rn': 	aeRN, 
@@ -64,7 +64,7 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	# Retrieve the announced AE with AT, but no AA
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_retrieveAnnouncedAEwithATwithoutAA(self):
 		if TestRemote_Annc.remoteAeRI is None:
 			self.skipTest('remote AE.ri not found')
@@ -85,7 +85,7 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	# Delete the AE with AT, but no AA
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_deleteAnnounceAE(self):
 		if TestRemote_Annc.remoteAeRI is None:
 			self.skipTest('remote AE.ri not found')
@@ -99,7 +99,7 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	# Create an AE with AT and AA
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createAnnounceAEwithATwithAA(self):
 		jsn = 	{ 'm2m:ae' : {
 					'rn': 	aeRN, 
@@ -128,7 +128,7 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	# Retrieve the announced AE with AT and AA
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_retrieveAnnouncedAEwithATwithAA(self):
 		if TestRemote_Annc.remoteAeRI is None:
 			self.skipTest('remote AE.ri not found')
@@ -153,7 +153,7 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	# Update an non-AA AE with AA
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_addAAtoAnnounceAEwithoutAA(self):
 		jsn = 	{ 'm2m:ae' : {
 				 	'lbl':	[ 'aLabel'],
@@ -166,7 +166,7 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Create an AE with non-announceable attributes
 	# AA should be corrected, null, but still present when rcn=modifiedAttributes
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createAnnounceAEwithNAAttributes(self):
 		jsn = 	{ 'm2m:ae' : {
 					'rn': 	aeRN, 
@@ -192,7 +192,7 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	# Update an non-AA AE with AA
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_addLBLtoAnnouncedAE(self):
 		jsn = 	{ 'm2m:ae' : {
 				 	'lbl':	[ 'aLabel']	# LBL is conditional announced, so no need for adding it to aa
@@ -211,7 +211,7 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	# Update an non-AA AE with AA
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_removeLBLfromAnnouncedAE(self):
 		jsn = 	{ 'm2m:ae' : {
 					'lbl': None
@@ -227,7 +227,7 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	# Create a Node with AT
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createAnnounceNode(self):
 		jsn = 	{ 'm2m:nod' : {
 					'rn': 	nodRN, 
@@ -247,7 +247,7 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	# Retrieve the announced Node with AT
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_retrieveAnnouncedNode(self):
 		if TestRemote_Annc.remoteNodRI is None:
 			self.skipTest('remote Node.ri not found')
@@ -266,7 +266,7 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	# Create a mgmtObj under the node
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_announceMgmtobj(self):
 		jsn = 	{ 'm2m:bat' : {
 					'mgd' : T.BAT,
@@ -294,7 +294,7 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	# Retrieve the announced mgmtobj 
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_retrieveAnnouncedMgmtobj(self):
 		if TestRemote_Annc.remoteBatRI is None:
 			self.skipTest('remote bat.ri not found')
@@ -317,7 +317,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsNone(findXPath(r, 'm2m:batA/bts'))
 
 
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_retrieveRCNOriginalResource(self):
 		r, rsc = RETRIEVE('%s/~%s?rcn=%d' % (REMOTEURL, TestRemote_Annc.remoteBatRI, RCN.originalResource), ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
@@ -330,7 +330,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:bat/at'))
 
 
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_updateMgmtObjAttribute(self):
 		jsn = 	{ 'm2m:bat' : {
 					'btl' : 42,
@@ -347,7 +347,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsNone(findXPath(r, 'm2m:batA/bts'))
 
 
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_addMgmtObjAttribute(self):
 		jsn = 	{ 'm2m:bat' : {
 					'aa' : [ 'btl', 'bts']
@@ -369,7 +369,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:batA/bts'), 2)
 
 
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_removeMgmtObjAttribute(self):
 		jsn = 	{ 'm2m:bat' : {
 					'aa' : [ 'bts']
@@ -390,7 +390,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:batA/bts'), 2)
 
 
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_removeMgmtObjAA(self):
 		jsn = 	{ 'm2m:bat' : {
 					'aa' : None
@@ -407,7 +407,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsNone(findXPath(r, 'm2m:batA/bts'))
 
 
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_removeMgmtObjCSIfromAT(self):
 		at = findXPath(TestRemote_Annc.bat, 'm2m:bat/at').copy()
 		at.pop(0) # remove REMOTECSEID
@@ -422,7 +422,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(rsc, RC.notFound)
 
 
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_addMgmtObjCSItoAT(self):
 		jsn = 	{ 'm2m:bat' : {
 					'at' : [ REMOTECSEID ] 			# with REMOTECSEID added
@@ -444,7 +444,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK)
 
 
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_removeMgmtObjAT(self):
 		jsn = 	{ 'm2m:bat' : {
 					'at' : None 			# with at removed
@@ -459,7 +459,7 @@ class TestRemote_Annc(unittest.TestCase):
 		TestRemote_Annc.remoteBatRI = None
 
 
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_deleteAnnounceNode(self):
 		if TestRemote_Annc.node is None:
 			self.skipTest('node not found')

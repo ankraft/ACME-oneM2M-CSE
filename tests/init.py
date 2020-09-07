@@ -12,14 +12,17 @@ from typing import Any, Callable, Union
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-SERVER				= 'http://localhost:8080'
+PROTOCOL			= 'http'	# possible values: http, https
+
+
+SERVER				= '%s://localhost:8080' % PROTOCOL
 ROOTPATH			= '/'
 CSERN				= 'cse-in'
 CSEID				= '/id-in'
 SPID 				= 'sp-in'
 ORIGINATOR			= 'CAdmin'
 
-REMOTESERVER		= 'http://localhost:8081'
+REMOTESERVER		= '%s://localhost:8081' % PROTOCOL
 REMOTEROOTPATH		= '/'
 REMOTECSERN			= 'cse-mn'
 REMOTECSEID			= '/id-mn'
@@ -33,6 +36,8 @@ NOTIFICATIONSERVERW	= 'http://localhost:6666'
 
 
 testVerbosity 		= 2		# 0, 1, 2
+
+verifyCertificate	= False	# verify the certificate when using https?
 
 ###############################################################################
 
@@ -75,23 +80,23 @@ remoteCsrURL 	= '%s%s' % (REMOTEcseURL, CSEID)
 #	HTTP Requests
 #
 
-def RETRIEVE(url : str, originator : str) -> (dict, int):
-	return sendRequest(requests.get, url, originator)
+def RETRIEVE(url:str, originator:str, timeout=None) -> (dict, int):
+	return sendRequest(requests.get, url, originator, timeout=timeout)
 
 
-def CREATE(url : str, originator : str, ty : int = None, data : Any = None) -> (dict, int):
+def CREATE(url:str, originator:str, ty:int=None, data:Any=None) -> (dict, int):
 	return sendRequest(requests.post, url, originator, ty, data)
 
 
-def UPDATE(url : str, originator : str, data : Any) -> (dict, int):
+def UPDATE(url:str, originator:str, data:Any) -> (dict, int):
 	return sendRequest(requests.put, url, originator, data=data)
 
 
-def DELETE(url : str, originator : str) -> (dict, int):
+def DELETE(url:str, originator:str) -> (dict, int):
 	return sendRequest(requests.delete, url, originator)
 
 
-def sendRequest(method : Callable , url : str, originator : str, ty : int = None, data : Any = None, ct : str = 'application/json') -> (dict, int):	# TODO Constants
+def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any=None, ct:str='application/json', timeout=None) -> (dict, int):	# TODO Constants
 	headers = { 'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % ty if ty is not None else ''), 
 				'X-M2M-Origin'	 	: originator,
 				'X-M2M-RI' 			: uniqueID(),
@@ -101,9 +106,9 @@ def sendRequest(method : Callable , url : str, originator : str, ty : int = None
 		#print('Sending request: %s %s' % (method.__name__.upper(), url))
 		if isinstance(data, dict):
 			data = json.dumps(data)
-		r = method(url, data=data, headers=headers)
+		r = method(url, data=data, headers=headers, verify=verifyCertificate)
 	except Exception as e:
-		print('Failed to send request: %s' % str(e))
+		#print('Failed to send request: %s' % str(e))
 		return None, 5103
 	rc = int(r.headers['X-M2M-RSC']) if 'X-M2M-RSC' in r.headers else 5000
 	return r.json() if len(r.content) > 0 else None, rc
@@ -111,11 +116,17 @@ def sendRequest(method : Callable , url : str, originator : str, ty : int = None
 
 def connectionPossible(url):
 	try:
-		requests.get(url, timeout=1)
-		return True
-	except Exception: 
+		return RETRIEVE(url, 'none', timeout=1.0)[0] is not None
+	except Exception as e:
 		return False
 		
+
+# Surpress warnings for insecure requests, e.g. self-signed certificates
+if not verifyCertificate:
+	requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning) 
+
+
+
 #
 #	Notification Server
 #

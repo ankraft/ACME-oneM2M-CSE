@@ -27,7 +27,7 @@ The following macros are supported in addition to those defined in the sections 
 ## Configuration Sections
 
 [\[cse\] - General CSE Settings](#general)  
-[\[server.security\] - ACP Settings](#security)  
+[\[server.security\] - ACP & TLS Settings](#security)  
 [\[server.http\] - HTTP Server Settings](#server_http)  
 [\[database\] - Database Settings](#database)  
 [\[logging\] - Logging Settings](#logging)  
@@ -71,13 +71,17 @@ The following macros are supported in addition to those defined in the sections 
 <a name="security"></a>
 ### [cse.security] - General CSE Security Settings
 
-| Keyword           | Description                                                                                                                                                                          | Macro Name                     |
-|:------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|
-| enableACPChecks   | Enable access control checks.<br/> Default: true                                                                                                                                     | cse.secuerity.enableACPChecks  |
-| adminACPI         | Admin ACP, resource identifier (e.g. from an imported ACP). Assigned by the CSE for admin access.<br /> Default: acpAdmin                                                            | cse.security.adminACPI         |
-| defaultACPI       | Default ACP, resource identifier (e.g. from an imported ACP). Assigned by the CSE in case the 'acpi' attribute is missing in a resource.<br/>Default: acpDefault                     | cse.security.defaultACPI       |
-| csebaseAccessACPI | The ACP resource that will dynamically receive permissions to access the CSEBase. They are assigned, for example, during AE or remoteCSE registration.<br/>Default: acpCSEBaseAccess | cse.security.csebaseAccessACPI |
-
+| Keyword           | Description                                                                                                                                                                                                                                     | Macro Name                     |
+|:------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|
+| enableACPChecks   | Enable access control checks.<br/> Default: true                                                                                                                                                                                                | cse.secuerity.enableACPChecks  |
+| adminACPI         | Admin ACP, resource identifier (e.g. from an imported ACP). Assigned by the CSE for admin access.<br /> Default: acpAdmin                                                                                                                       | cse.security.adminACPI         |
+| defaultACPI       | Default ACP, resource identifier (e.g. from an imported ACP). Assigned by the CSE in case the 'acpi' attribute is missing in a resource.<br/>Default: acpDefault                                                                                | cse.security.defaultACPI       |
+| csebaseAccessACPI | The ACP resource that will dynamically receive permissions to access the CSEBase. They are assigned, for example, during AE or remoteCSE registration.<br/>Default: acpCSEBaseAccess                                                            | cse.security.csebaseAccessACPI |
+| useTLS            | Enable TLS for communications.<br />This can be overridden by the command line arguments [--http and --https](Running.md).<br />See oneM2M TS-0003 Clause 8.2.1 "Overview on Security Association Establishment Frameworks".<br />Default: False | cse.security.useTLS            |
+| tlsVersion        | TLS version to be used in connections. <br />Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate version negotiation.<br />Default: auto                                                                     | cse.security.tlsVersion        |
+| verifyCertificate | Verify certificates in requests. Set to *False* when using self-signed certificates.<br />Default: False                                                                                                                                        | cse.security.verifyCertificate |
+| caCertificateFile | Path and filename of the certificate file.<br />Default: None                                                                                                                                                                                   | cse.security.caCertificateFile |
+| caPrivateKeyFile  | Path and filename of the private key file.<br />Default: None                                                                                                                                                                                   | cse.security.caPrivateKeyFile  |
 
 <a name="server_http"></a>
 ###	[server.http] - HTTP Server Settings
