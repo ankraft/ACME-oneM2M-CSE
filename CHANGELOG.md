@@ -16,6 +16,7 @@
 - [SUB] Improved support for 'nct' in subscriptions.
 - [TESTS] Added unit tests.
 - [WEB] Added deletion of resources in the webb UI via right-click menu.
+- [HTTP] Added https support for the http server and for requests.
 - [MISC] Added Python type hints throughout the source code.
 - [MISC] Refactored most constants to enums.
 
