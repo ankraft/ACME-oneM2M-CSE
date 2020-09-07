@@ -24,6 +24,9 @@ noRemote = not connectionPossible(REMOTEcseURL)
 
 class TestRemote_Annc(unittest.TestCase):
 
+	acpORIGINATOR = 'testOriginator'
+
+
 	@classmethod
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def setUpClass(cls):
@@ -39,6 +42,7 @@ class TestRemote_Annc(unittest.TestCase):
 	def tearDownClass(cls):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
+		DELETE(acpURL, ORIGINATOR)	# Just delete the ACP 
 
 
 	# Create an AE with AT, but no AA
@@ -477,6 +481,72 @@ class TestRemote_Annc(unittest.TestCase):
 		TestRemote_Annc.remoteBatRI = None
 
 
+	# Create an ACP 
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_createAnnouncedACP(self):
+		jsn = 	{ "m2m:acp": {
+					"rn": acpRN,
+					"pv": {
+						"acr": [ { 	"acor": [ ORIGINATOR ],
+									"acop": 63
+								} ]
+					},
+					"pvs": { 
+						"acr": [ {
+							"acor": [ self.acpORIGINATOR ],
+							"acop": 63
+						} ]
+					},
+				 	'at': 	[ REMOTECSEID ]
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, jsn)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(r, 'm2m:acp/at'))
+		self.assertIsInstance(findXPath(r, 'm2m:acp/at'), list)
+		self.assertEqual(len(findXPath(r, 'm2m:acp/at')), 1)
+		self.assertTrue(findXPath(r, 'm2m:acp/at')[0].startswith('%s/' % REMOTECSEID))
+		TestRemote_Annc.remoteAcpRI = findXPath(r, 'm2m:acp/at')[0]
+		self.assertIsNotNone(self.remoteAcpRI)
+		self.assertIsNone(findXPath(r, 'm2m:acp/aa'))
+		TestRemote_Annc.acp = r
+
+
+	# Retrieve the announced AE with AT, but no AA
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_retrieveAnnouncedACP(self):
+		if TestRemote_Annc.remoteAcpRI is None:
+			self.skipTest('remote ACP.ri not found')
+		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteAcpRI), CSEID)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'm2m:acpA'))
+		self.assertIsNotNone(findXPath(r, 'm2m:acpA/ty'))
+		self.assertEqual(findXPath(r, 'm2m:acpA/ty'), T.ACPAnnc)
+		self.assertIsNotNone(findXPath(r, 'm2m:acpA/ct'))
+		self.assertIsNotNone(findXPath(r, 'm2m:acpA/lt'))
+		self.assertIsNotNone(findXPath(r, 'm2m:acpA/et'))
+		self.assertIsNotNone(findXPath(r, 'm2m:acpA/pi'))
+		self.assertTrue(CSEID.endswith(findXPath(r, 'm2m:acpA/pi')))
+		self.assertIsNotNone(findXPath(r, 'm2m:acpA/lnk'))
+		self.assertTrue(findXPath(r, 'm2m:acpA/lnk').endswith( findXPath(TestRemote_Annc.acp, 'm2m:acp/ri') ))
+		self.assertIsNotNone(findXPath(r, 'm2m:acpA/pv'))	# MA attribute
+		self.assertIsInstance(findXPath(r, 'm2m:acpA/pv'), dict)
+		self.assertIsNotNone(findXPath(r, 'm2m:acpA/pvs'))	# MA attribute
+		self.assertIsInstance(findXPath(r, 'm2m:acpA/pvs'), dict)
+
+
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_deleteAnnounceACP(self):
+		if TestRemote_Annc.acp is None:
+			self.skipTest('acp not found')
+		_, rsc = DELETE(acpURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.deleted)
+		# try to retrieve the announced Node. Should not be found
+		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteAcpRI), CSEID)
+		self.assertEqual(rsc, RC.notFound)
+		TestRemote_Annc.acp = None
+		TestRemote_Annc.remoteAcpRI = None
+
+
 def run():
 	suite = unittest.TestSuite()
 
@@ -510,6 +580,12 @@ def run():
 	suite.addTest(TestRemote_Annc('test_addMgmtObjCSItoAT'))
 	suite.addTest(TestRemote_Annc('test_removeMgmtObjAT'))
 	suite.addTest(TestRemote_Annc('test_deleteAnnounceNode'))
+
+	# create an announced ACP
+	suite.addTest(TestRemote_Annc('test_createAnnouncedACP'))
+	suite.addTest(TestRemote_Annc('test_retrieveAnnouncedACP'))
+	suite.addTest(TestRemote_Annc('test_deleteAnnounceACP'))
+
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
