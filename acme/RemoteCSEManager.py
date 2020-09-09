@@ -41,7 +41,7 @@ class RemoteCSEManager(object):
 		self.registrarCSRURL					= '%s%s' % (self.registrarCSEURL, self.cseCsi)
 		self.ownRegistrarCSR:Resource			= None 	# The own CSR at the registrar if there is one
 		self.registrarCSE:Resource				= None 	# The registrar CSE if there is one
-		self.descendantCSR:Dict[str, (Resource, str)]	= {}	# dict of descendantCSR's . csi : (CSR, registeredATcsi)
+		self.descendantCSR:Dict[str, Tuple[Resource, str]]	= {}	# dict of descendantCSR's . csi : (CSR, registeredATcsi)
 
 
 		CSE.event.addHandler(CSE.event.registeredToRemoteCSE, self.handleRegistrarRegistration)				# type: ignore

@@ -1,5 +1,5 @@
 #
-#	Constante.py
+#	Constants.py
 #
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
@@ -10,6 +10,9 @@
 from Types import ResourceTypes as T
 
 class Constants(object):
+
+	# ACME Version
+	version						= '0.5.0-dev'
 
 
 	# List of virtual resources
@@ -43,6 +46,13 @@ class Constants(object):
 	hfvContentType					= 'application/json'
 	hfvRVI 							= '3'
 	
+
+	#
+	#	Configuration meta defaults
+	#
+
+	defaultConfigFile			= 'acme.ini'
+	defaultImportDirectory		= './init'
 
 	#
 	#	Magic strings and numbers

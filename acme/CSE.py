@@ -11,7 +11,7 @@ import atexit, argparse, os, threading, time
 from typing import Dict, Optional, Any
 from Constants import Constants as C
 from AnnouncementManager import AnnouncementManager
-from Configuration import Configuration, defaultConfigFile
+from Configuration import Configuration
 from Dispatcher import Dispatcher
 from EventManager import EventManager
 from GroupManager import GroupManager

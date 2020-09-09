@@ -13,7 +13,7 @@ from typing import Any, Callable, List, Tuple, Union
 import flask
 from flask import Flask, Request, make_response, request
 from werkzeug.wrappers import Response
-from Configuration import Configuration, version
+from Configuration import Configuration
 from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC
 import CSE, Utils
@@ -37,7 +37,7 @@ class HttpServer(object):
 		self.caCertificateFile	= Configuration.get('cse.security.caCertificateFile')
 		self.caPrivateKeyFile	= Configuration.get('cse.security.caPrivateKeyFile')
 
-		self.serverID	= 'ACME %s' % version 	# The server's ID for http response headers
+		self.serverID	= 'ACME %s' % C.version 	# The server's ID for http response headers
 
 		Logging.log('Registering http server root at: %s' % self.rootPath)
 		if self.useTLS:
@@ -205,7 +205,7 @@ class HttpServer(object):
 
 
 	def getVersion(self) -> str:
-		return version
+		return C.version
 
 
 	def handleWebUIGET(self, path: str = None) -> Union[Response, Any, Tuple[str, int]]:

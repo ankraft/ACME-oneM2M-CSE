@@ -15,12 +15,6 @@ from Types import CSEType
 from rich.console import Console
 
 
-
-defaultConfigFile			= 'acme.ini'
-defaultImportDirectory		= './init'
-version						= '0.5.0-dev'
-
-
 class Configuration(object):
 	_configuration: Dict[str, Any] = {}
 
@@ -33,7 +27,7 @@ class Configuration(object):
 		import Utils	# cannot import at the top because of circel import
 
 		# resolve the args, of any
-		argsConfigfile			= args.configfile if args is not None and 'configfile' in args else defaultConfigFile
+		argsConfigfile			= args.configfile if args is not None and 'configfile' in args else C.defaultConfigFile
 		argsLoglevel			= args.loglevel if args is not None and 'loglevel' in args else None
 		argsDBReset				= args.dbreset if args is not None and 'dbreset' in args else False
 		argsDBStorageMode		= args.dbstoragemode if args is not None and 'dbstoragemode' in args else None
@@ -50,7 +44,7 @@ class Configuration(object):
 											converters={'list': lambda x: [i.strip() for i in x.split(',')]}	# Convert csv to list
 										  )
 		try:
-			if len(config.read(argsConfigfile)) == 0:
+			if len(config.read(argsConfigfile)) == 0 and argsConfigfile != C.defaultConfigFile:		# Allow 
 				console.print('[red]Configuration file missing or not readable: %s' % argsConfigfile)
 				return False
 		except configparser.Error as e:
@@ -105,7 +99,7 @@ class Configuration(object):
 				'cse.csi'							: config.get('cse', 'cseID',							fallback='/id-in'),
 				'cse.ri'							: config.get('cse', 'resourceID',						fallback='id-in'),
 				'cse.rn'							: config.get('cse', 'resourceName',						fallback='cse-in'),
-				'cse.resourcesPath'					: config.get('cse', 'resourcesPath', 					fallback=defaultImportDirectory),
+				'cse.resourcesPath'					: config.get('cse', 'resourcesPath', 					fallback=C.defaultImportDirectory),
 				'cse.expirationDelta'				: config.getint('cse', 'expirationDelta', 				fallback=60*60*24*365),	# 1 year, in seconds
 				'cse.originator'					: config.get('cse', 'originator',						fallback='CAdmin'),
 				'cse.enableApplications'			: config.getboolean('cse', 'enableApplications', 		fallback=True),
