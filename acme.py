@@ -11,13 +11,13 @@ import argparse, sys
 from rich.console import Console
 sys.path.append('acme')
 sys.path.append('apps')
-from Configuration import defaultConfigFile, defaultImportDirectory, version
+from Constants import Constants as C
 import CSE
 
 # Handle command line arguments
 def parseArgs() -> argparse.Namespace:
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--config', action='store', dest='configfile', default=defaultConfigFile, metavar='<filename>', help='specify the configuration file')
+	parser.add_argument('--config', action='store', dest='configfile', default=C.defaultConfigFile, metavar='<filename>', help='specify the configuration file')
 
 	# two mutual exlcusive arguments
 	groupRemoteCSE = parser.add_mutually_exclusive_group()
@@ -61,5 +61,5 @@ if __name__ == '__main__':
 	#
 	#	Note: Always pass at least 'None' as first and then the 'configfile' parameter.
 	console = Console()
-	console.print('\n[dim]\[[/dim][red][i]ACME[/i][/red][dim]][/dim] ' + version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight=False)
+	console.print('\n[dim]\[[/dim][red][i]ACME[/i][/red][dim]][/dim] ' + C.version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight=False)
 	CSE.startup(parseArgs())
