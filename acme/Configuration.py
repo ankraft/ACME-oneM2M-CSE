@@ -45,10 +45,22 @@ class Configuration(object):
 		argsRunAsHttps			= args.https if args is not None and 'https' in args else None
 
 
+		# Read and parse the configuration file
 		config = configparser.ConfigParser(	interpolation=configparser.ExtendedInterpolation(),
 											converters={'list': lambda x: [i.strip() for i in x.split(',')]}	# Convert csv to list
 										  )
-		config.read(argsConfigfile)
+		try:
+			if len(config.read(argsConfigfile)) == 0:
+				console.print('[red]Configuration file missing or not readable: %s' % argsConfigfile)
+				return False
+		except configparser.Error as e:
+			console.print('[red]Error in configuration file')
+			console.print(e)
+			return False
+
+		#
+		#	Retrieve configuration values
+		#
 
 		try:
 			Configuration._configuration = {
