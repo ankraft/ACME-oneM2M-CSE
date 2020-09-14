@@ -451,6 +451,8 @@ class NotificationEventType(IntEnum):
 	createDirectChild	= 3
 	deleteDirectChild	= 4	
 	retrieveCNTNoChild	= 5	# TODO not supported yet
+	triggerReceivedForAE= 6 # TODO not supported yet
+	blockingUpdate 		= 7 # TODO not supported yet
 
 
 
