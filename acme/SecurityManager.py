@@ -92,7 +92,7 @@ class SecurityManager(object):
 				return False
 
 
-		if resource.ty == T.ACP:	# target is an ACP resource
+		if resource.ty in [T.ACP, T.ACPAnnc]:	# target is an ACP or ACPAnnc resource
 			if resource.checkSelfPermission(originator, requestedPermission):
 				Logging.logDebug('Permission granted')
 				return True
