@@ -10,7 +10,7 @@
 
 from .AnnouncedResource import AnnouncedResource
 from .Resource import *
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Permission
 
 
 
@@ -24,9 +24,10 @@ class ACPAnnc(AnnouncedResource):
 	def canHaveChild(self, resource: Resource) -> bool:
 		return super()._canHaveChild(resource, [ T.SUB ])
 
+
 	def checkSelfPermission(self, origin:str, requestedPermission:int) -> bool:
 		for p in self['pvs/acr']:
-			if requestedPermission & p['acop'] == 0:	# permission not fitting at all
+			if requestedPermission & p['acop'] == Permission.NONE:	# permission not fitting at all
 				continue
 			if 'all' in p['acor'] or origin in p['acor']:
 				return True

@@ -494,6 +494,7 @@ class TestRemote_Annc(unittest.TestCase):
 					"pvs": { 
 						"acr": [ {
 							"acor": [ self.acpORIGINATOR ],
+							#"acor": [ 'all' ],
 							"acop": 63
 						} ]
 					},
@@ -511,12 +512,14 @@ class TestRemote_Annc(unittest.TestCase):
 		TestRemote_Annc.acp = r
 
 
-	# Retrieve the announced AE with AT, but no AA
+	# Retrieve the announced ACP
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_retrieveAnnouncedACP(self):
 		if TestRemote_Annc.remoteAcpRI is None:
 			self.skipTest('remote ACP.ri not found')
-		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteAcpRI), CSEID)
+		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteAcpRI), 'other')
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteAcpRI), self.acpORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:acpA'))
 		self.assertIsNotNone(findXPath(r, 'm2m:acpA/ty'))
@@ -532,6 +535,24 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsInstance(findXPath(r, 'm2m:acpA/pv'), dict)
 		self.assertIsNotNone(findXPath(r, 'm2m:acpA/pvs'))	# MA attribute
 		self.assertIsInstance(findXPath(r, 'm2m:acpA/pvs'), dict)
+
+
+	# Retrieve the announced ACP with wrong originator
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_retrieveAnnouncedACPwithWrongOriginator(self):
+		if TestRemote_Annc.remoteAcpRI is None:
+			self.skipTest('remote ACP.ri not found')
+		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteAcpRI), 'wrong')
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+
+
+	# Retrieve the announced ACP with the CSE-ID
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_retrieveAnnouncedACPwithCSI(self):
+		if TestRemote_Annc.remoteAcpRI is None:
+			self.skipTest('remote ACP.ri not found')
+		r, rsc = RETRIEVE('%s/~%s' %(REMOTEURL, TestRemote_Annc.remoteAcpRI), CSEID)
+		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
@@ -583,7 +604,9 @@ def run():
 
 	# create an announced ACP
 	suite.addTest(TestRemote_Annc('test_createAnnouncedACP'))
+	suite.addTest(TestRemote_Annc('test_retrieveAnnouncedACPwithWrongOriginator'))
 	suite.addTest(TestRemote_Annc('test_retrieveAnnouncedACP'))
+	suite.addTest(TestRemote_Annc('test_retrieveAnnouncedACPwithCSI'))
 	suite.addTest(TestRemote_Annc('test_deleteAnnounceACP'))
 
 

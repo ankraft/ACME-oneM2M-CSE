@@ -72,6 +72,11 @@ class ACP(AnnounceableResource):
 				r.dbUpdate()
 
 
+	def validateAnnouncedJSON(self, jsn:dict) -> dict:
+		acr = Utils.findXPath(jsn, '%s/pvs/acr' % T.ACPAnnc.tpe())
+		acr.append( { 'acor': [ CSE.remote.cseCsi ], 'acop': Permission.ALL } )
+		return jsn
+
 
 
 	#########################################################################
@@ -120,7 +125,7 @@ class ACP(AnnounceableResource):
 		# Logging.logDebug('origin: %s requestedPermission: %s' % (origin, requestedPermission))
 		for p in self['pv/acr']:
 			# Logging.logDebug('p.acor: %s requestedPermission: %s' % (p['acor'], p['acop']))
-			if requestedPermission & p['acop'] == 0:	# permission not fitting at all
+			if requestedPermission & p['acop'] == Permission.NONE:	# permission not fitting at all
 				continue
 			if 'all' in p['acor'] or origin in p['acor'] or requestedPermission == Permission.NOTIFY:
 				return True

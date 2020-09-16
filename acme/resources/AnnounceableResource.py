@@ -89,7 +89,16 @@ class AnnounceableResource(Resource):
 			return self._createAnnouncedJSON(policies, remoteCSR, isCreate=isCreate, remoteCsi=csi)
 		# Normal behaviour for other resources
 		# return self._createAnnouncedJSON(self.resourceAttributePolicies, remoteCSR, isCreate=isCreate, remoteCsi=csi)
-		return self._createAnnouncedJSON(self.attributePolicies, remoteCSR, isCreate=isCreate, remoteCsi=csi)
+		jsn = self._createAnnouncedJSON(self.attributePolicies, remoteCSR, isCreate=isCreate, remoteCsi=csi)
+		return self.validateAnnouncedJSON(jsn)
+
+
+	def validateAnnouncedJSON(self, jsn:dict) -> dict:
+		""" Possibility to add or modify the announced JSON. This can be implemented
+			in the child classes.
+		"""
+		Logging.logErr('hu?')
+		return jsn
 
 
 	# Actually create the json
