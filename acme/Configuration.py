@@ -74,7 +74,7 @@ class Configuration(object):
 				#	Database
 				#
 
-				'db.path'							: config.get('database', 'path', 						fallback='./data'),
+				'db.path'							: config.get('database', 'path', 						fallback=C.defaultDataDirectory),
 				'db.inMemory'						: config.getboolean('database', 'inMemory', 			fallback=False),
 				'db.cacheSize'						: config.getint('database', 'cacheSize', 				fallback=0),		# Default: no caching
 				'db.resetOnStartup' 				: config.getboolean('database', 'resetOnStartup',		fallback=False),
@@ -85,7 +85,7 @@ class Configuration(object):
 
 				'logging.enable'					: config.getboolean('logging', 'enable', 				fallback=True),
 				'logging.enableFileLogging'			: config.getboolean('logging', 'enableFileLogging', 	fallback=True),
-				'logging.path'						: config.get('logging', 'path', 						fallback='./logs'),
+				'logging.path'						: config.get('logging', 'path', 						fallback=C.defaultLogDirectory),
 				'logging.level'						: config.get('logging', 'level', 						fallback='debug'),
 				'logging.size'						: config.getint('logging', 'size', 						fallback=100000),
 				'logging.count'						: config.getint('logging', 'count', 					fallback=10),		# Number of log files

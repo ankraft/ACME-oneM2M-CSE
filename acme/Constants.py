@@ -53,6 +53,8 @@ class Constants(object):
 
 	defaultConfigFile			= 'acme.ini'
 	defaultImportDirectory		= './init'
+	defaultDataDirectory		= './data'
+	defaultLogDirectory			= './logs'
 
 	#
 	#	Magic strings and numbers
