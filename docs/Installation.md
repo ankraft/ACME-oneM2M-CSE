@@ -1,34 +1,36 @@
+[← README](../README.md) 
+
 # Installation
 
 ## Prerequisites
 In order to run the CSE the following prerequisites must be fulfilled:
 
-- **Python 3.8** : Install this or a newer version of Python with your favorite package manager.
-- You may consider to use a virtual environment manager like pyenv + virtualenv (see, for example, [this tutorial](https://realpython.com/python-virtual-environments-a-primer/)).
-- **flask**: The CSE uses the [Flask](https://flask.palletsprojects.com/) web framework. Install it by running the pip command:
-  
-  		pip3 install flask
+### Python
 
+ACME requires **Python 3.8** or newer. Install it with your favorite package manager.
+
+You may consider to use a virtual environment manager like pyenv + virtualenv (see, for example, [this tutorial](https://realpython.com/python-virtual-environments-a-primer/)).
+
+### Frameworks and Libraries
+
+- **flask**: The CSE uses the [Flask](https://flask.palletsprojects.com/) web framework.
 - **psutil**: The [psutil](https://pypi.org/project/psutil/)
- package is used to gather various system information for the CSE's hosting node resource. Install it by running the pip command:
-
-		pip3 install psutil
-
-- **requests**: The CSE uses the [Requests](https://requests.readthedocs.io) HTTP Library to send requests vi http. Install it by running the pip command:
-
-		pip3 install requests
-
+package is used to gather various system information for the CSE's hosting node resource.
+- **requests**: The CSE uses the [Requests](https://requests.readthedocs.io) HTTP Library to send requests vi http.
 - **Rich**: The CSE uses the [Rich](https://github.com/willmcgugan/rich) text formatter library to format various terminal output.
+- **tinydb 4.x** : To store resources the CSE uses the lightweight [TinyDB](https://github.com/msiemens/tinydb) document database.
 
-		pip3 install rich
+Install these packages by running the following command:
 
-- **tinydb 4.x** : To store resources the CSE uses the lightweight [TinyDB](https://github.com/msiemens/tinydb) document database. Install it by running the pip command:
+```bash
+pip3 install -r requirements.txt
+```  
 
-		pip3 install tinydb
+or install all of them manually:  
 
-Or install all of the above packages at once:
-
-	pip3 install flask psutil requests rich tinydb
+```bash
+pip3 install flask psutil requests rich tinydb
+```  
 
 
 ## Installation and Configuration
@@ -60,3 +62,5 @@ The following third-party components are used for the ACME CSE.
 ### UI Components
 - TreeJS: [https://github.com/m-thalmann/treejs](https://github.com/m-thalmann/treejs), MIT License
 - Picnic CSS : [https://picnicss.com](https://picnicss.com), MIT License
+
+[← README](../README.md) 

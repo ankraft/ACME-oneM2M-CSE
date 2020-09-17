@@ -8,21 +8,22 @@
 #
 
 import argparse, sys
+from rich.console import Console
 sys.path.append('acme')
 sys.path.append('apps')
-from Configuration import defaultConfigFile, defaultImportDirectory, version
+from Constants import Constants as C
 import CSE
 
-
-description = 'ACME ' + version + ' - An open source CSE Middleware for Education'
-
-
 # Handle command line arguments
-def parseArgs():
-	parser = argparse.ArgumentParser(description=description)
-	parser.add_argument('--config', action='store', dest='configfile', default=defaultConfigFile, help='specify the configuration file')
+def parseArgs() -> argparse.Namespace:
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--config', action='store', dest='configfile', default=C.defaultConfigFile, metavar='<filename>', help='specify the configuration file')
 
 	# two mutual exlcusive arguments
+	groupRemoteCSE = parser.add_mutually_exclusive_group()
+	groupRemoteCSE.add_argument('--http', action='store_false', dest='http', default=None, help='run CSE with http server')
+	groupRemoteCSE.add_argument('--https', action='store_true', dest='https', default=None, help='run CSE with https server')
+
 	groupApps = parser.add_mutually_exclusive_group()
 	groupApps.add_argument('--apps', action='store_true', dest='appsenabled', default=None, help='enable internal applications')
 	groupApps.add_argument('--no-apps', action='store_false', dest='appsenabled', default=None, help='disable internal applications')
@@ -31,10 +32,18 @@ def parseArgs():
 	groupRemoteCSE.add_argument('--remote-cse', action='store_true', dest='remotecseenabled', default=None, help='enable remote CSE connections')
 	groupRemoteCSE.add_argument('--no-remote-cse', action='store_false', dest='remotecseenabled', default=None, help='disable remote CSE connections')
 
+	groupRemoteCSE = parser.add_mutually_exclusive_group()
+	groupRemoteCSE.add_argument('--statistics', action='store_true', dest='statisticsenabled', default=None, help='enable collecting CSE statics')
+	groupRemoteCSE.add_argument('--no-statistics', action='store_false', dest='statisticsenabled', default=None, help='disable collecting CSE statics')
+
+	groupRemoteCSE = parser.add_mutually_exclusive_group()
+	groupRemoteCSE.add_argument('--validation', action='store_true', dest='validationenabled', default=None, help='enable attributes and arguments validation')
+	groupRemoteCSE.add_argument('--no-validation', action='store_false', dest='validationenabled', default=None, help='disable attributes and arguments validation')
+
 	parser.add_argument('--db-reset', action='store_true', dest='dbreset', default=None, help='reset the DB when starting the CSE')
 	parser.add_argument('--db-storage', action='store', dest='dbstoragemode', default=None, choices=[ 'memory', 'disk' ], type=str.lower, help='specify the DB´s storage mode')
 	parser.add_argument('--log-level', action='store', dest='loglevel', default=None, choices=[ 'info', 'error', 'warn', 'debug', 'off'], type=str.lower, help='set the log level, or turn logging off')
-	parser.add_argument('--import-directory', action='store', dest='importdirectory', default=None, help='specify the import directory')
+	parser.add_argument('--import-directory', action='store', dest='importdirectory', default=None, metavar='<directory>', help='specify the import directory')
 	
 	return parser.parse_args()
 
@@ -51,5 +60,6 @@ if __name__ == '__main__':
 	#		CSE.startup(None, configfile=defaultConfigFile, loglevel='error', resetdb=None)
 	#
 	#	Note: Always pass at least 'None' as first and then the 'configfile' parameter.
-	print(description)
+	console = Console()
+	console.print('\n[dim]\[[/dim][red][i]ACME[/i][/red][dim]][/dim] ' + C.version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight=False)
 	CSE.startup(parseArgs())

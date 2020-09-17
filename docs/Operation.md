@@ -1,3 +1,5 @@
+[← README](../README.md) 
+
 # Operation
 
 ## Remote CSE
@@ -7,6 +9,13 @@ When a CSE is configured as an MN-CSE of ASN-CSE it can connect to a remote CSE,
 Announced resources are currently **not** supported by this implementation. But you can issue transit requests to a remote CSE via its &lt;remoteCSE> resource. These requests are forwarded by the CSE.
 
 You must configure the details of the remote CSE in the configuration file.
+
+
+## Resource Announcements
+
+Resource announcement is currently allowed for one hop.
+
+When a resource is announced to a remote CSE then access is automatically granted when the announced resource's parent is the CSR of the original resource's hosting CSE.
 
 ## CSE Originator Assignment
 
@@ -32,3 +41,5 @@ For example, the path */access/v1/devices* can be mapped to */cse-mn?ty=14&fu=1&
 
 See the [configuration](Configuration.md) for more examples.
 
+
+[← README](../README.md) 

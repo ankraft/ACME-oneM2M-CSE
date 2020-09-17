@@ -59,13 +59,24 @@ function getChildren(node, errorCallback) {
     // add short info in front of name
     ty = node.resource['ty']
     pfx = shortTypes[ty]
-    if (ty == 13) {
+    if (ty == 13) { // for mgmtObj the definition type
       var mgd = node.resource['mgd']
       if (mgd == undefined) {
-        pfx = "MGO"
+        pfx = "MGMTOBJ"
       } else {
         pfx = mgdShortTypes[mgd]
       }
+    }
+    if (ty == 10013) { // for mgmtObjAnnc the definition type
+      var mgd = node.resource['mgd']
+      if (mgd == undefined) {
+        pfx = "MGMTOBJAnnc"
+      } else {
+        pfx = mgdAnncShortTypes[mgd]
+      }
+    }
+    if (ty == 28) {   // For FlexContainer the tpe
+      pfx = node.tpe
     }
     if (pfx == undefined) {
       pfx = "unknown"
@@ -141,6 +152,7 @@ function _getResource(ri, node, callback, errorCallback) {
       node.setUserObject(resource[k].rn)  
     }
     node.resource = resource[k]
+    node.tpe = k
     node.resourceFull = resource
     node.resolved = true
     node.ri = ri

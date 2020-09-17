@@ -8,21 +8,28 @@
 #
 
 from Constants import Constants as C
-from Validator import constructPolicy
+from Types import ResourceTypes as T, Result, ResponseCode as RC
+from Validator import constructPolicy, addPolicy
 from .Resource import *
+from .AnnounceableResource import AnnounceableResource
 import Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
 	'rn', 'ty', 'ri', 'pi', 'et', 'ct', 'lt', 'st', 'lbl', 'at', 'aa', 'cr',
-	'cnf', 'cs', 'conr', 'con', 'or'
-
 ])
+cinPolicies = constructPolicy([
+	'cnf', 'cs', 'conr', 'con', 'or'
+])
+attributePolicies = addPolicy(attributePolicies, cinPolicies)
 
-class CIN(Resource):
 
-	def __init__(self, jsn=None, pi=None, create=False):
-		super().__init__(C.tsCIN, jsn, pi, C.tCIN, create=create, inheritACP=True, readOnly = True, attributePolicies=attributePolicies)
+class CIN(AnnounceableResource):
+
+	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+		super().__init__(T.CIN, jsn, pi, create=create, inheritACP=True, readOnly = True, attributePolicies=attributePolicies)
+
+		self.resourceAttributePolicies = cinPolicies	# only the resource type's own policies
 
 		if self.json is not None:
 			self.setAttribute('con', '', overwrite=False)
@@ -30,16 +37,19 @@ class CIN(Resource):
 
 
 	# Enable check for allowed sub-resources. No Child for CIN
-	def canHaveChild(self, resource):
+	def canHaveChild(self, resource: Resource) -> bool:
 		return super()._canHaveChild(resource, [])
 
 
-	def activate(self, parentResource, originator):
-		super().activate(parentResource, originator)
-		parentResource = parentResource.dbReload()	# Read the resource again in case it was updated in the DB
-		self.setAttribute('st', parentResource.st)
-		return True, C.rcOK
+	def activate(self, parentResource: Resource, originator: str) -> Result:
+		if not (res := super().activate(parentResource, originator)).status:
+			return res
+		if (parentResource := parentResource.dbReload().resource) is not None:		# Read the resource again in case it was updated in the DB
+			self.setAttribute('st', parentResource.st)
+		return Result(status=True)
 
 
-	def update(self, jsn=None, originator=None):
-		return False, C.rcOperationNotAllowed
+	# Forbidd updating
+	def update(self, jsn: dict = None, originator: str = None) -> Result:
+		return Result(status=False, rsc=RC.operationNotAllowed, dbg='updating CIN is forbidden')
+

@@ -32,12 +32,16 @@ originator=CAdmin
 # See also individual application configuratins in the [app. ...] sections.
 # Default: True
 enableApplications=true
+# Delay after the CSE startup to run internal applications in seconds. Default: 5 seconds
+applicationsStartupDelay=5
 # Enable notifications. Default: True
 enableNotifications=true
 # Enable remote CSE registration and checking. Default: True
 enableRemoteCSE=true
 # Enable forwarding of requests to a remote CSE. Default: True
 enableTransitRequests=true
+# Enable the validation of attributes and arguments. Default: true
+enableValidation=true
 # Enable alphabetical sorting of discovery results. Default: True
 sortDiscoveredResources=true
 # Interval to check for expired resources. 0 means "no checking". Default: 60 seconds
@@ -62,6 +66,21 @@ defaultACPI=acpDefault
 # They are assigned, for example, during AE or remoteCSE registration.
 # Default: acpCSEBaseAccess
 csebaseAccessACPI=acpCSEBaseAccess
+# Enable TLS for communications.
+# See oneM2M TS-0003 Clause 8.2.1 Overview on Security Association Establishment Frameworks
+# Default: False
+useTLS=True
+# TLS version to be used in connections.
+# Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate
+# version negotiation.
+# Default: auto
+tlsVersion=auto
+# Verify certificates in requests. Set to False when using self-signed certificates. Default: False
+verifyCertificate=False
+# Path and filename of the certificate file. Default: None
+caCertificateFile=./certs/acme_cert.pem
+# Path and filename of the private key file. Default: None
+caPrivateKeyFile=./certs/acme_key.pem
 
 
 #
@@ -93,9 +112,9 @@ path=./data
 inMemory=false
 # Cache size in bytes, or 0 to disable caching. Default: 0
 cacheSize=0
-# Reset the databases at startup. See also command line argument --db-reset
+# Reset the databases on startup. See also command line argument --db-reset
 # Default: False
-resetAtStartup=false
+resetOnStartup=false
 
 
 #
@@ -109,6 +128,7 @@ resetAtStartup=false
 allowedAEOriginators=C.*,S.*
 # List of CSR originators that can register. This is a comma-separated list of originators.
 # Regular expressions are supported.
+# Note: No leading "/"
 # Default: empty list
 allowedCSROriginators=id-mn
 
@@ -122,8 +142,8 @@ allowedCSROriginators=id-mn
 enable=true
 # Enable logging to file. Default: True
 enableFileLogging=true
-# Basename of the log file. Default: ./logs/cse.log
-file=./logs/cse.log
+# Path to the log files. Default: ./logs
+path=./logs
 # Loglevel. Possible values: debug, info, warning, error. Default debug
 level=debug
 # Number of files for log rotation. Default: 10
@@ -136,7 +156,7 @@ size=100000
 #	Settings for remote CSE access 
 #
 
-[cse.remote]
+[cse.registrar]
 # URL of the remote CSE. Default: no default
 address=http://127.0.0.1:8081
 # Remote CSE root path. Default: /
@@ -151,10 +171,24 @@ checkInterval=30
 
 
 #
+#	Settings for resource anouncements 
+#
+
+[cse.announcements]
+# Enable announcement to remote CSE and allow announced resource registrations. Default: True
+enable=true
+# Wait n seconds between tries to to announce resources to registered remote CSE.
+# Default: 10
+checkInterval=10
+
+
+#
 #	Statistic settings 
 #
 
 [cse.statistics]
+# Enable or disable statistics. Default: True
+enable=true
 # Intervall for saving statistics data to disk in seconds. Default: 60
 writeIntervall=60
 

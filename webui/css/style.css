@@ -102,3 +102,17 @@ div.footer {
 
 }
 
+#cmenu{
+  width: 100%;
+  height: 100%;
+  background-color: #2980b9;
+  padding: 10px;
+  color: #fff;
+}
+
+pre.inline {
+   display: inline;
+   font-family: "Courier New";
+   font-weight: medium;
+   background-color: transparent;
+}

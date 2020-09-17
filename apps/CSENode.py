@@ -12,13 +12,15 @@ from NodeBase import *
 from Logging import Logging
 from Configuration import Configuration
 from resources import BAT
-import psutil, socket, platform, re, uuid, traceback
+import psutil 	# type: ignore
+import socket, platform, re, uuid, traceback
+from Types import ResponseCode as RC
 
 
 
 class CSENode(NodeBase):
 
-	def __init__(self):
+	def __init__(self) -> None:
 		super().__init__(rn=Configuration.get('app.csenode.nodeRN'),
 						 nodeID=Configuration.get('app.csenode.nodeID'),
 						 originator=Configuration.get('app.csenode.originator'))
@@ -43,21 +45,21 @@ class CSENode(NodeBase):
 
 
 
-	def shutdown(self):
+	def shutdown(self) -> None:
 		super().shutdown()
 		Logging.log('CSENode shut down')
 
 
 	# Set this node as the hosting node for the CSE Base
-	def updateCSEBase(self):
-		if (result := self.retrieveResource(ri=self.cseri))[1] != C.rcOK:
+	def updateCSEBase(self) -> None:
+		if (result := self.retrieveResource(ri=self.csi)).rsc != RC.OK:
 			Logging.logErr('CSENode: cannot retrieve CSEBase')
 			return
 		jsn =	{ 'm2m:cb' : {
 					'nl' : self.node.ri
 					}
 				}
-		(n, rc) = self.updateResource(ri=self.cseri, jsn=jsn)
+		self.updateResource(ri=self.csi, jsn=jsn) # ignore result
 
 
 
@@ -66,7 +68,7 @@ class CSENode(NodeBase):
 	#	Node capabilities monitoring handling
 	#
 
-	def nodeWorker(self):
+	def nodeWorker(self) -> bool:
 		Logging.logDebug('Updating node data')
 		try:
 			self._checkBattery()
@@ -83,7 +85,7 @@ class CSENode(NodeBase):
 	#	Update Management Objects of the node
 	#
 
-	def _checkBattery(self):
+	def _checkBattery(self) -> None:
 		if self.battery is not None:
 			if (sensorBat := psutil.sensors_battery()) is not None:
 				(percent, _, plugged) = sensorBat
@@ -101,7 +103,7 @@ class CSENode(NodeBase):
 			self.updateBattery()
 
 
-	def _checkMemory(self):
+	def _checkMemory(self) -> None:
 		if self.memory is not None:
 			mmt = psutil.virtual_memory().total
 			mma = psutil.virtual_memory().available
@@ -112,7 +114,7 @@ class CSENode(NodeBase):
 				self.updateMemory()
 
 
-	def _checkDeviceInfo(self):
+	def _checkDeviceInfo(self) -> None:
 		if self.deviceInfo is not None:
 			self.deviceInfo['dvnm'] = socket.gethostname()
 			self.deviceInfo['osv'] = '%s %s %s' % (platform.system(), platform.release(), platform.machine())

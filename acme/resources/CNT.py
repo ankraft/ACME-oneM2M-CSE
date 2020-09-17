@@ -7,27 +7,35 @@
 #	ResourceType: Container
 #
 
+from typing import List
 from Logging import Logging
 from Configuration import Configuration
 from Constants import Constants as C
-from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN
-from Validator import constructPolicy
+from Types import ResourceTypes as T, Result, ResponseCode as RC
+from Validator import constructPolicy, addPolicy
 import Utils, CSE
 from .Resource import *
+from .AnnounceableResource import AnnounceableResource
+
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
 	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'daci', 'loc',
 	'cr', 
+])
+cntPolicies = constructPolicy([
 	'mni', 'mbs', 'mia', 'cni', 'cbs', 'li', 'or', 'disr'
 ])
+attributePolicies =  addPolicy(attributePolicies, cntPolicies)
 
 
-class CNT(Resource):
+class CNT(AnnounceableResource):
 
 
-	def __init__(self, jsn=None, pi=None, create=False):
-		super().__init__(C.tsCNT, jsn, pi, C.tCNT, create=create, attributePolicies=attributePolicies)
+	def __init__(self, jsn:dict=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.CNT, jsn, pi, create=create, attributePolicies=attributePolicies)
+
+		self.resourceAttributePolicies = cntPolicies	# only the resource type's own policies
 
 		if self.json is not None:
 			self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite=False)
@@ -37,71 +45,73 @@ class CNT(Resource):
 
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource):
+	def canHaveChild(self, resource: Resource) -> bool:
 		return super()._canHaveChild(resource,	
-									 [ C.tCNT,
-									   C.tCIN,
-									   C.tFCNT,
-									   C.tSUB
+									 [ T.CNT,
+									   T.CIN,
+									   T.FCNT,
+									   T.SUB
 									 ])
 
 
-	def activate(self, parentResource, originator):
-		if not (result := super().activate(parentResource, originator))[0]:
-			return result
+	def activate(self, parentResource:Resource, originator:str) -> Result:
+		if not (res := super().activate(parentResource, originator)).status:
+			return res
 
 		# register latest and oldest virtual resources
 		Logging.logDebug('Registering latest and oldest virtual resources for: %s' % self.ri)
 
 		# add latest
-		r = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, tpe=C.tCNT_LA)
-		CSE.dispatcher.createResource(r)
+		latestResource = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.CNT_LA).resource
+		if (res := CSE.dispatcher.createResource(latestResource)).resource is None:
+			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
 		# add oldest
-		r = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, tpe=C.tCNT_OL)
-		CSE.dispatcher.createResource(r)
+		oldestResource = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.CNT_OL).resource
+	
+		if (res := CSE.dispatcher.createResource(oldestResource)).resource is None:
+			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
-		# TODO Error checking above
-		return True, C.rcOK
+		return Result(status=True)
 
 
 	# Get all content instances of a resource and return a sorted (by ct) list 
-	def contentInstances(self):
-		return sorted(CSE.dispatcher.directChildResources(self.ri, C.tCIN), key=lambda x: (x.ct))
+	def contentInstances(self) -> List[Resource]:
+		return sorted(CSE.dispatcher.directChildResources(self.ri, T.CIN), key=lambda x: (x.ct))
 
 
-	def childWillBeAdded(self, childResource, originator):
-		if not (res := super().childWillBeAdded(childResource, originator))[0]:
+	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
+		if not (res := super().childWillBeAdded(childResource, originator)).status:
 			return res
 		
 		# Check whether the child's rn is "ol" or "la".
 		if (rn := childResource['rn']) is not None and rn in ['ol', 'la']:
-			return False, C.rcOperationNotAllowed
+			return Result(status=False, rsc=RC.operationNotAllowed, dbg='resource types "latest" or "oldest" cannot be added')
 	
 		# Check whether the size of the CIN doesn't exceed the mbs
-		if childResource.ty == C.tCIN and self.mbs is not None:
+		if childResource.ty == T.CIN and self.mbs is not None:
 			if childResource.cs is not None and childResource.cs > self.mbs:
-				return False, C.rcNotAcceptable
-		return True, C.rcOK
+				return Result(status=False, rsc=RC.notAcceptable, dbg='children content sizes would exceed mbs')
+		return Result(status=True)
 
 
 	# Handle the addition of new CIN. Basically, get rid of old ones.
-	def childAdded(self, childResource, originator):
+	def childAdded(self, childResource:Resource, originator:str) -> None:
 		super().childAdded(childResource, originator)
-		if childResource.ty == C.tCIN:	# Validate if child is CIN
+		if childResource.ty == T.CIN:	# Validate if child is CIN
 			self.validate(originator)
 
 	# Handle the removal of a CIN. 
-	def childRemoved(self, childResource, originator):
+	def childRemoved(self, childResource:Resource, originator:str) -> None:
 		super().childRemoved(childResource, originator)
-		if childResource.ty == C.tCIN:	# Validate if child was CIN
+		if childResource.ty == T.CIN:	# Validate if child was CIN
 			self.validate(originator)
 
 
 	# Validating the Container. This means recalculating cni, cbs as well as
 	# removing ContentInstances when the limits are met.
-	def validate(self, originator, create=False):
-		if (res := super().validate(originator, create))[0] == False:
+	def validate(self, originator:str=None, create:bool=False) -> Result:
+		if (res := super().validate(originator, create)).status == False:
 			return res
 
 		# retrieve all children
@@ -139,5 +149,4 @@ class CNT(Resource):
 		# Some CNT resource may have been updated, so store the resource 
 		CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
 
-		return True, C.rcOK
-
+		return Result(status=True)

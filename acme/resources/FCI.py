@@ -7,23 +7,33 @@
 #	ResourceType: FlexContainerInstance
 #
 
-from Constants import Constants as C
+from Types import ResourceTypes as T, Result, ResponseCode as RC
 from .Resource import *
-from Validator import constructPolicy
+from .AnnounceableResource import AnnounceableResource
+from Validator import constructPolicy, addPolicy
 import Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'ct', 'et', 'lbl', 'acpi',
-	'cs'
+	'ty', 'ri', 'rn', 'pi', 'ct', 'et', 'lbl', 'acpi', 'at', 'aa', 
 ])
+fcinPolicies = constructPolicy([ 'cs' ])
+attributePolicies =  addPolicy(attributePolicies, fcinPolicies)
 
-class FCI(Resource):
 
-	def __init__(self, jsn=None, pi=None, fcntType=None, create=False):
-		super().__init__(fcntType, jsn, pi, C.tFCI, create=create, inheritACP=True, readOnly=True, attributePolicies=attributePolicies)
+class FCI(AnnounceableResource):
+
+	def __init__(self, jsn:dict=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
+		super().__init__(T.FCI, jsn, pi, tpe=fcntType, create=create, inheritACP=True, readOnly=True, attributePolicies=attributePolicies)
+
+		self.resourceAttributePolicies = fcinPolicies	# only the resource type's own policies
 
 
 	# Enable check for allowed sub-resources. No Child for CIN
-	def canHaveChild(self, resource):
+	def canHaveChild(self, resource:Resource) -> bool:
 		return super()._canHaveChild(resource, [])
+
+	# Forbidd updating
+	def update(self, jsn:dict=None, originator:str=None) -> Result:
+		return Result(status=False, rsc=RC.operationNotAllowed, dbg='updating FCIN is forbidden')
+

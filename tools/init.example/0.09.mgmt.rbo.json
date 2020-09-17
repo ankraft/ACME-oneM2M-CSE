@@ -1,10 +1,11 @@
 {	"m2m:rbo" : {
+		"ty" : 13,
 		"mgd" : 1009,
 		"dc" : "a rebooter",
 		"ri" : "rbo1",
 		"pi" : "nod1",
 		"rn" : "reboot",
-		"acpi" : [ "acpAdmin", "acpDefault" ],
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ],
 	}
 }
 

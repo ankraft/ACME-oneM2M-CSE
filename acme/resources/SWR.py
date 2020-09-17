@@ -8,16 +8,16 @@
 #
 
 from .MgmtObj import *
-from Constants import Constants as C
-from Validator import constructPolicy
+from Types import ResourceTypes as T
+from Validator import constructPolicy, addPolicy
 import Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 
-	'mgd', 'obis', 'obps', 'dc', 'mgs', 'cmlk',
+swrPolicies = constructPolicy([
 	'vr', 'swn', 'url', 'ins', 'acts', 'in', 'un', 'act', 'dea'
 ])
+attributePolicies =  addPolicy(mgmtObjAttributePolicies, swrPolicies)
+
 
 statusUninitialized = 0
 statusSuccessful = 1
@@ -32,8 +32,9 @@ defaultStatus = { 'acn' : '', 'sus' : statusUninitialized }
 
 class SWR(MgmtObj):
 
-	def __init__(self, jsn=None, pi=None, create=False):
-		super().__init__(jsn, pi, C.tsSWR, C.mgdSWR, create=create, attributePolicies=attributePolicies)
+	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+		self.resourceAttributePolicies = swrPolicies	# only the resource type's own policies
+		super().__init__(jsn, pi, mgd=T.SWR, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('vr', defaultVersion, overwrite=False)

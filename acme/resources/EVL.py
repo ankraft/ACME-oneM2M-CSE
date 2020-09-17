@@ -8,16 +8,16 @@
 #
 
 from .MgmtObj import *
-from Constants import Constants as C
-from Validator import constructPolicy
+from Types import ResourceTypes as T
+from Validator import constructPolicy, addPolicy
 import Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 
-	'mgd', 'obis', 'obps', 'dc', 'mgs', 'cmlk',
+evlPolicies = constructPolicy([
 	'lgt', 'lgd', 'lgst', 'lga', 'lgo'
 ])
+attributePolicies = addPolicy(mgmtObjAttributePolicies, evlPolicies)
+
 
 lgtSystem = 1
 lgtSecurity	= 2
@@ -37,8 +37,9 @@ defaultLogStatus = lgstUnknown
 
 class EVL(MgmtObj):
 
-	def __init__(self, jsn=None, pi=None, create=False):
-		super().__init__(jsn, pi, C.tsEVL, C.mgdEVL, create=create, attributePolicies=attributePolicies)
+	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+		self.resourceAttributePolicies = evlPolicies	# only the resource type's own policies
+		super().__init__(jsn, pi, mgd=T.EVL, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('lgt', defaultLogTypeId, overwrite=False)

@@ -11,35 +11,38 @@
 from AppBase import AppBase
 from Configuration import Configuration
 from Constants import Constants as C
+from Types import ResourceTypes as T
 import CSE, Utils
 from resources import BAT
+from resources.Resource import Resource
+
 
 # TODO support further specializations
 
 
 class NodeBase(AppBase):
 				
-	def __init__(self, rn,  nodeID, originator):
+	def __init__(self, rn: str,  nodeID: str, originator: str) -> None:
 		super().__init__(rn, originator)
-		self.batRn		= self.srn + '/battery'
-		self.memRn		= self.srn + '/memory'
-		self.dviRn 		= self.srn + '/deviceinfo'
-		self.node 		= None
-		self.battery 	= None
-		self.memory 	= None
-		self.deviceInfo = None
+		self.batRn					= self.srn + '/battery'
+		self.memRn					= self.srn + '/memory'
+		self.dviRn 					= self.srn + '/deviceinfo'
+		self.node:Resource 			= None
+		self.battery:Resource 		= None
+		self.memory:Resource 		= None
+		self.deviceInfo:Resource	= None
 
 		# First check whether node exists and create it if necessary
 		self.node = self.retrieveCreate(srn=self.srn,
-										jsn={ C.tsNOD : {
+										jsn={ T.NOD.tpe() : {
 											'rn' : self.rn,
 											'ni' : nodeID
 											}
 										},
-										ty=C.tNOD)
+										ty=T.NOD)
 
 
-	def shutdown(self):
+	def shutdown(self) -> None:
 		super().shutdown()
 
 
@@ -48,10 +51,10 @@ class NodeBase(AppBase):
 	#	MgmtObj: Battery
 	#
 
-	def createBattery(self):
+	def createBattery(self) -> None:
 		self.battery = self.retrieveCreate( srn=self.batRn,
 											jsn={ 'm2m:bat' : {
-												'mgd' : C.mgdBAT,
+												'mgd' : T.BAT,
 												'dc'  : 'battery',
 												'rn'  : 'battery',
 												'btl' : 0,
@@ -61,7 +64,7 @@ class NodeBase(AppBase):
 										  )
 
 
-	def updateBattery(self):
+	def updateBattery(self) -> None:
 		if self.battery is not None:
 			self.updateResource(ri=self.battery.ri, jsn=self.battery.asJSON(update=True, noACP=True))
 
@@ -71,10 +74,10 @@ class NodeBase(AppBase):
 	#	MgmtObj: Memory
 	#
 
-	def createMemory(self):
+	def createMemory(self) -> None:
 		self.memory = self.retrieveCreate(	srn=self.memRn,
 											jsn={ 'm2m:mem' : {
-												'mgd' : C.mgdMEM,
+												'mgd' : T.MEM,
 												'dc'  : 'memory',
 												'rn'  : 'memory',
 												'mma' : 0,
@@ -84,7 +87,7 @@ class NodeBase(AppBase):
 										  )
 
 
-	def updateMemory(self):
+	def updateMemory(self) -> None:
 		if self.memory is not None:
 			self.updateResource(ri=self.memory.ri, jsn=self.memory.asJSON(update=True, noACP=True))
 
@@ -94,10 +97,10 @@ class NodeBase(AppBase):
 	#	MgmtObj: DeviceInfo
 	#
 
-	def createDeviceInfo(self):
+	def createDeviceInfo(self) -> None:
 		self.deviceInfo = self.retrieveCreate(	srn=self.dviRn, 
 												jsn={ 'm2m:dvi' : {
-													'mgd' : C.mgdDVI,
+													'mgd' : T.DVI,
 													'dc'  : 'deviceInfo',
 													'rn'  : 'deviceinfo',
 													'dlb' : '',
@@ -111,7 +114,7 @@ class NodeBase(AppBase):
 												}
 											 )
 
-	def updateDeviceInfo(self):
+	def updateDeviceInfo(self) -> None:
 		if self.memory is not None:
 			self.updateResource(ri=self.deviceInfo.ri, jsn=self.deviceInfo.asJSON(update=True, noACP=True))
 

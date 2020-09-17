@@ -2,7 +2,7 @@
 		"ty" : 1,
 		"ri" : "acpAdmin",
 		"rn" : "adminACP",
-		"pi" : "id-in",
+		"pi" : "${cse.ri}",
 		"pv" : {
 			"acr": {
 				"acor": [ "CAdmin" ],

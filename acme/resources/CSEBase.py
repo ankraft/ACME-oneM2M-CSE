@@ -8,6 +8,7 @@
 #
 
 from Constants import Constants as C
+from Types import ResourceTypes as T
 from Configuration import Configuration
 from Validator import constructPolicy
 from .Resource import *
@@ -21,9 +22,8 @@ attributePolicies = constructPolicy([
 
 class CSEBase(Resource):
 
-	def __init__(self, jsn=None, create=False):
-		super().__init__(C.tsCSEBase, jsn, '', C.tCSEBase, create=create, attributePolicies=attributePolicies)
-
+	def __init__(self, jsn:dict=None, create:bool=False) -> None:
+		super().__init__(T.CSEBase, jsn, '', create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('ri', 'cseid', overwrite=False)
@@ -39,21 +39,21 @@ class CSEBase(Resource):
 
 
 	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource):
+	def canHaveChild(self, resource:Resource) -> bool:
 		return super()._canHaveChild(resource,	
-									 [ C.tACP,
-									   C.tAE,
-									   C.tCSR, 
-									   C.tCNT,
-									   C.tFCNT,
-									   C.tGRP,
-									   C.tNOD,
-									   C.tSUB
+									 [ T.ACP,
+									   T.AE,
+									   T.CSR, 
+									   T.CNT,
+									   T.FCNT,
+									   T.GRP,
+									   T.NOD,
+									   T.SUB
 									 ])
 
 
-	def validate(self, originator, create=False):
-		if (res := super().validate(originator, create))[0] == False:
+	def validate(self, originator:str=None, create:bool=False) -> Result:
+		if not (res := super().validate(originator, create)).status:
 			return res
 		
 		self.normalizeURIAttribute('poa')
@@ -65,15 +65,15 @@ class CSEBase(Resource):
 		if nl is not None or _nl_ is not None:
 			if nl != _nl_:
 				if _nl_ is not None:
-					n, _ = CSE.dispatcher.retrieveResource(_nl_)
-					if n is not None:
-						n['hcl'] = None # remve old link
-						CSE.dispatcher.updateResource(n)
+					nresource = CSE.dispatcher.retrieveResource(_nl_).resource
+					if nresource is not None:
+						nresource['hcl'] = None # remove old link
+						CSE.dispatcher.updateResource(nresource)
 				self[Resource._node] = nl
-				n, _ = CSE.dispatcher.retrieveResource(nl)
-				if n is not None:
-					n['hcl'] = self['ri']
-					CSE.dispatcher.updateResource(n)
+				nresource = CSE.dispatcher.retrieveResource(nl)
+				if nresource is not None:
+					nresource['hcl'] = self['ri']
+					CSE.dispatcher.updateResource(nresource)
 			self[Resource._node] = nl
 
-		return True, C.rcOK
+		return Result(status=True)

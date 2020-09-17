@@ -1,3 +1,5 @@
+[← README](../README.md) 
+
 # Configuration
 
 The Configuration file contains all configuratble and customizable settings for the CSE.
@@ -6,7 +8,7 @@ It follows the Windows INI file format with sections, keywords and values. A con
 
 ## General Usage
 
-A default configuration file is provided with the file [acme.ini.default](../acme.ini.default). Don't make changes to this file, but rather copy it to a new file named *acme.ini*, which is the default configuration file name. You can use another filename, but must then specify it with the *--config* command line argument when running the the (see [Running the CSE](Running.md#running-the-cse).
+A default configuration file is provided with the file [acme.ini.default](../acme.ini.default). Don't make changes to this file, but rather copy it to a new file named *acme.ini*, which is the default configuration file name. You can use another filename, but must then specify it with the *--config* command line argument when running the the (see [Running the CSE](Running.md#running-the-cse)).
 
 ### Configuration References
 
@@ -25,13 +27,14 @@ The following macros are supported in addition to those defined in the sections 
 ## Configuration Sections
 
 [\[cse\] - General CSE Settings](#general)  
-[\[server.security\] - ACP Settings](#security)  
+[\[server.security\] - ACP & TLS Settings](#security)  
 [\[server.http\] - HTTP Server Settings](#server_http)  
 [\[database\] - Database Settings](#database)  
 [\[logging\] - Logging Settings](#logging)  
 [\[cse.registration\] - Settings for Self-Registrations](#cse_registration)  
-[\[cse.remote\] - Settings for Remote CSE Access](#remote)  
-[\[cse.statistics\]Statistic Settings](#statistics)  
+[\[cse.registrar\] - Settings for Remote CSE Access](#registrar)  
+[\[cse.announcements\] - Settings for Resource Announcements](#announcements)  
+[\[cse.statistics\] - Statistic Settings](#statistics)  
 [\[cse.resource.acp\] - Resource defaults: ACP](#resource_acp)  
 [\[cse.resource.cnt\] - Resource Defaults: CNT](#resource_cnt)  
 [\[cse.webui\] - Web UI Settings](#webui)  
@@ -51,28 +54,34 @@ The following macros are supported in addition to those defined in the sections 
 | type                     | The CSE type. Possible values: IN, MN, ASN.<br/>Default: IN                                                                                                                                    | cse.type                     |
 | serviceProviderID        | The CSE's service provider ID.<br/>Default: acme                                                                                                                                               | cse.spid                     |
 | cseID                    | The CSE ID. Can be overwritten in imported CSE definition. A CSE-ID must start with a /.<br/>Default: id-in                                                                                    | cse.csi                      |
-| resourceID               | The CSE's resource ID. Can be overwritten in imported CSE definition.<br/>Default: id-in                                                                                                       | cse.ri                       |
+| resourceID               | The CSE's resource ID. This should be the *cseid* without the leading "/". Can be overwritten in imported CSE definition.<br/>Default: id-in                                                   | cse.ri                       |
 | resourceName             | The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition.<br>Default: cse-in                                                                                         | cse.rn                       |
 | resourcesPath            | Directory of default resources to import.<br/>See also command line argument [–import-directory](Running.md).<br/>Default: ./init                                                              | cse.resourcesPath            |
 | expirationDelta          | ExpirationTime before resources are removed in seconds.<br/> Default: 60*60*24*365 = 31536000 = 1 year                                                                                         | cse.expirationDelta          |
 | originator               | Admin originator for the CSE.<br/>Default: CAdmin                                                                                                                                              | cse.originator               |
 | enableApplications       | Enable internal applications. See also individual application configuratins in the [app. ...] sections.<br/>See also command line arguments [–apps and –noapps](Running.md).<br/>Default: true | cse.enableApplications       |
+| applicationsStartupDelay | Delay after the CSE startup to run internal applications in seconds.<br/>Default: 5                                                                                                            | cse.applicationsStartupDelay |
 | enableNotifications      | Enable notifications.<br/>Default: true                                                                                                                                                        | cse.enableNotifications      |
 | enableRemoteCSE          | Enable remote CSE registration and checking.<br/>See also command line arguments [–remote-cse and –no-remote-cse](Running.md).<br/>Default: true                                               | cse.enableRemoteCSE          |
 | enableTransitRequests    | Enable forwarding of requests to a remote CSE.<br/>Default: true                                                                                                                               | cse.enableTransitRequests    |
+| enableValidation         | Enable the validation of attributes and arguments.<br />Default: true                                                                                                                          | cse.enableValidation         |
 | sortDiscoveredResources  | Enable alphabetical sorting of discovery results.<br/>Default: true                                                                                                                            | cse.sortDiscoveredResources  |
 | checkExpirationsInterval | Interval to check for expired resources. 0 means "no checking".<br/>Default: 60 seconds                                                                                                        | cse.checkExpirationsInterval |
 
 <a name="security"></a>
 ### [cse.security] - General CSE Security Settings
 
-| Keyword           | Description                                                                                                                                                                          | Macro Name                     |
-|:------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|
-| enableACPChecks   | Enable access control checks.<br/> Default: true                                                                                                                                     | cse.secuerity.enableACPChecks  |
-| adminACPI         | Admin ACP, resource identifier (e.g. from an imported ACP). Assigned by the CSE for admin access.<br /> Default: acpAdmin                                                            | cse.security.adminACPI         |
-| defaultACPI       | Default ACP, resource identifier (e.g. from an imported ACP). Assigned by the CSE in case the 'acpi' attribute is missing in a resource.<br/>Default: acpDefault                     | cse.security.defaultACPI       |
-| csebaseAccessACPI | The ACP resource that will dynamically receive permissions to access the CSEBase. They are assigned, for example, during AE or remoteCSE registration.<br/>Default: acpCSEBaseAccess | cse.security.csebaseAccessACPI |
-
+| Keyword           | Description                                                                                                                                                                                                                                     | Macro Name                     |
+|:------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|
+| enableACPChecks   | Enable access control checks.<br/> Default: true                                                                                                                                                                                                | cse.secuerity.enableACPChecks  |
+| adminACPI         | Admin ACP, resource identifier (e.g. from an imported ACP). Assigned by the CSE for admin access.<br /> Default: acpAdmin                                                                                                                       | cse.security.adminACPI         |
+| defaultACPI       | Default ACP, resource identifier (e.g. from an imported ACP). Assigned by the CSE in case the 'acpi' attribute is missing in a resource.<br/>Default: acpDefault                                                                                | cse.security.defaultACPI       |
+| csebaseAccessACPI | The ACP resource that will dynamically receive permissions to access the CSEBase. They are assigned, for example, during AE or remoteCSE registration.<br/>Default: acpCSEBaseAccess                                                            | cse.security.csebaseAccessACPI |
+| useTLS            | Enable TLS for communications.<br />This can be overridden by the command line arguments [--http and --https](Running.md).<br />See oneM2M TS-0003 Clause 8.2.1 "Overview on Security Association Establishment Frameworks".<br />Default: False | cse.security.useTLS            |
+| tlsVersion        | TLS version to be used in connections. <br />Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate version negotiation.<br />Default: auto                                                                     | cse.security.tlsVersion        |
+| verifyCertificate | Verify certificates in requests. Set to *False* when using self-signed certificates.<br />Default: False                                                                                                                                        | cse.security.verifyCertificate |
+| caCertificateFile | Path and filename of the certificate file.<br />Default: None                                                                                                                                                                                   | cse.security.caCertificateFile |
+| caPrivateKeyFile  | Path and filename of the private key file.<br />Default: None                                                                                                                                                                                   | cse.security.caPrivateKeyFile  |
 
 <a name="server_http"></a>
 ###	[server.http] - HTTP Server Settings
@@ -93,7 +102,7 @@ The following macros are supported in addition to those defined in the sections 
 | path           | Directory for the database files.<br/>Default: ./data                                                                                                                | db.path           |
 | inMemory       | Operate the database in in-memory mode. Attention: No data is stored persistently.<br/>See also command line argument [--db-storage](Running.md).<br/>Default: false | db.inMemory       |
 | cacheSize      | Cache size in bytes, or 0 to disable caching.<br/>Default: 0                                                                                                         | db.cacheSize      |
-| resetAtStartup | Reset the databases at startup.<br/>See also command line argument [--db-reset](Running.md).<br/>Default: false                                                      | db.resetAtStartup |
+| resetOnStartup | Reset the databases at startup.<br/>See also command line argument [--db-reset](Running.md).<br/>Default: false                                                      | db.resetOnStartup |
 
 
 <a name="logging"></a>
@@ -103,11 +112,10 @@ The following macros are supported in addition to those defined in the sections 
 |:------------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:--------------------------|
 | enable            | Enable logging.<br/>Default: true                                                                                                        | logging.enable            |
 | enableFileLogging | Enable logging to file.<br/>Default: true                                                                                                | logging.enableFileLogging |
-| file              | Basename of the log file.<br />Default: ./logs/cse.log                                                                                   | logging.file              |
+| path              | Pathname for log files.<br />Default: ./logs                                                                                             | logging.path              |
 | level             | Loglevel. Possible values: debug, info, warning, error.<br/>See also command line argument [–log-level](Running.md).<br/> Default: debug | logging.level             |
 | count             | Number of files for log rotation.<br/>Default: 10                                                                                        | logging.count             |
 | size              | Size per log file.<br/>Default: 100.000 bytes                                                                                            | logging.size              |
-
 
 
 <a name="cse_registration"></a>
@@ -116,24 +124,36 @@ The following macros are supported in addition to those defined in the sections 
 | Keyword               | Description                                                                                                                                           | Macro Name                             |
 |:----------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------|
 | allowedAEOriginators  | List of AE originators that can register. This is a comma-separated list of originators. Regular expressions are supported.<br />Default: C.\*, S.\*  | cse.registration.allowedAEOriginators  |
-| allowedCSROriginators | List of CSR originators that can register. This is a comma-separated list of originators. Regular expressions are supported.<br />Default: empty list | cse.registration.allowedCSROriginators |
+| allowedCSROriginators | List of CSR originators that can register. This is a comma-separated list of originators. Regular expressions are supported.<br />Note: No leading "/"<br />Default: empty list | cse.registration.allowedCSROriginators |
 
-<a name="remote"></a>
-### [cse.remote] - Settings for Remote CSE Access 
+
+<a name="registrar"></a>
+### [cse.registrar] - Settings for Remote Registrar CSE Access 
 
 | Keyword       | Description                                                                                                                              | Macro Name               |
 |:--------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:-------------------------|
-| address       | URL of the remote CSE.<br/>Default: no default                                                                                           | cse.remote.address       |
-| root          | Remote CSE root path. Never provide a trailing /.<br/>Default: empty string                                                              | cse.remote.root          |
-| cseID         | CSE-ID of the remote CSE. A CSE-ID must start with a /.<br/>Default: no default                                                                                        | cse.remote.csi           |
-| resourceName  | The remote CSE's resource name. <br>Default: no default                                                                                  | cse.remote.rn                       |
-| checkInterval | Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.<br/>Default: 30 | cse.remote.checkInterval |
+| address       | URL of the remote CSE.<br/>Default: no default                                                                                           | cse.registrar.address       |
+| root          | Remote CSE root path. Never provide a trailing /.<br/>Default: empty string                                                              | cse.registrar.root          |
+| cseID         | CSE-ID of the remote CSE. A CSE-ID must start with a /.<br/>Default: no default                                                                                        | cse.registrar.csi           |
+| resourceName  | The remote CSE's resource name. <br>Default: no default                                                                                  | cse.registrar.rn                       |
+| checkInterval | Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.<br/>Default: 30 | cse.registrar.checkInterval |
+
+<a name="announcements"></a>
+### [cse.announcements] - Settings for Resource Announcements 
+
+| Keyword             | Description                                                                                      | Macro Name                            |
+|:--------------------|:-------------------------------------------------------------------------------------------------|:--------------------------------------|
+| enable              | Enable announcement to remote CSE and allow announced resource registrations.<br />Default: True | cse.announcements.enable              |
+| checkInterval       | Wait n seconds between tries to to announce resources to registered remote CSE.<br />Default: 10 | cse.announcements.checkInterval       |
+
+
 
 <a name="statistics"></a>
 ###	[cse.statistics] - Statistic Settings
 
 | Keyword        | Description                                                               | Macro Name                    |
 |:---------------|:--------------------------------------------------------------------------|:------------------------------|
+| enable         | Enable or disable collecting CSE statistics.<br />Default: True           | cse.statistics.enable         |
 | writeIntervall | Intervall for saving statistics data to disk in seconds.<br />Default: 60 | cse.statistics.writeIntervall |
 
 
@@ -217,3 +237,4 @@ The following snippet only presents some example for ID mappings.
 | batteryChargedLevel | Battery level indicates as "fully charged" in percent.<br/>Default: 100                 | app.csenode.batteryChargedLevel |
 | intervall           | Wait n seconds between updates of the node and sub-mgmtObjs in seconds.<br/>Default: 60 | app.csenode.intervall           |
 
+[← README](../README.md) 

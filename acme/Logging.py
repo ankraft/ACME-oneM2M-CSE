@@ -10,7 +10,9 @@
 
 """	Wrapper class for the logging subsystem. """
 
+import traceback
 import logging, logging.handlers, os, inspect, re, sys, datetime, time, threading, queue
+from typing import List, Any
 from logging import StreamHandler, LogRecord
 from pathlib import Path
 from Configuration import Configuration
@@ -47,11 +49,11 @@ class	Logging:
 	worker 				= None
 	queue 				= None
 
-	checkInterval 		= 0.2		# wait (in s) between checks of the logging queue
-	queueMaxsize 		= 1000		# max number of items in the logging queue. Might otherwise grow forever on large load
+	checkInterval:float	= 0.2		# wait (in s) between checks of the logging queue
+	queueMaxsize:int	= 1000		# max number of items in the logging queue. Might otherwise grow forever on large load
 
 	@staticmethod
-	def init():
+	def init() -> None:
 		"""Init the logging system.
 		"""
 
@@ -67,19 +69,26 @@ class	Logging:
 		# Add logging queue
 		Logging.queue = queue.Queue(maxsize=Logging.queueMaxsize)
 
+		# List of log handlers
+		handlers: List[Any] = [ ACMERichLogHandler() ]
+
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
-			logfile = Configuration.get('logging.file')
-			os.makedirs(os.path.dirname(logfile), exist_ok=True)# create log directory if necessary
+			import Utils
+
+			logpath = Configuration.get('logging.path')
+			os.makedirs(logpath, exist_ok=True)# create log directory if necessary
+			logfile = '%s/cse-%s.log' % (logpath, Utils.getCSETypeAsString())
 			logfp = logging.handlers.RotatingFileHandler(logfile,
 														 maxBytes=Configuration.get('logging.size'),
 														 backupCount=Configuration.get('logging.count'))
 			logfp.setLevel(Logging.logLevel)
 			logfp.setFormatter(logging.Formatter('%(levelname)s %(asctime)s %(message)s'))
 			Logging.logger.addHandler(logfp) 
+			handlers.append(logfp)
 
-		# Add a Rich Console logger
-		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=[ACMERichLogHandler(), logfp])
+		# config the logging system
+		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=handlers)
 
 		# Start worker to handle logs in the background
 		from helpers import BackgroundWorker
@@ -87,77 +96,59 @@ class	Logging:
 		Logging.worker.start()
 	
 
-
 	@staticmethod
-	def finit():
-		if Logging.worker is not None:
+	def finit() -> None:
+		if Logging.worker is not None and Logging.queue is not None:
 			while not Logging.queue.empty():
 				time.sleep(0.5)
 			Logging.worker.stop()
 
 
 	@staticmethod
-	def loggingWorker():
-		while not Logging.queue.empty():
+	def loggingWorker() -> bool:
+		while Logging.queue is not None and not Logging.queue.empty():
 			level, msg, caller, thread = Logging.queue.get()
-			Logging.loggerConsole.log(level, '%s*%d*%d*%s', os.path.basename(caller.filename), caller.lineno, thread.native_id, msg)
+			#Logging.loggerConsole.log(level, '%s*%d*%d*%s', os.path.basename(caller.filename), caller.lineno, thread.native_id, msg)
+			Logging.loggerConsole.log(level, '%s*%d*%-10.10s*%s', os.path.basename(caller.filename), caller.lineno, thread.name, msg)
 		return True
 
 
 	@staticmethod
-	def log(msg: str):
+	def log(msg:str) -> None:
 		"""Print a log message with level INFO. """
 		Logging._log(logging.INFO, msg)
 
 
 	@staticmethod
-	def logDebug(msg : str):
+	def logDebug(msg:str) -> None:
 		"""Print a log message with level DEBUG. """
 		Logging._log(logging.DEBUG, msg)
 
 
 	@staticmethod
-	def logErr(msg : str):
+	def logErr(msg:str) -> None:
 		"""Print a log message with level ERROR. """
 		import CSE
-		(not CSE.event or CSE.event.logError())	# raise logError event
-		Logging._log(logging.ERROR, msg)
+		# raise logError event
+		(not CSE.event or CSE.event.logError())	# type: ignore
+		strace = ''.join(map(str, traceback.format_stack()[:-1]))
+		Logging._log(logging.ERROR, '%s\n%s' % (msg, strace))
 
 
 	@staticmethod
-	def logWarn(msg : str):
+	def logWarn(msg:str) -> None:
 		"""Print a log message with level WARNING. """
 		import CSE
-		(not CSE.event or CSE.event.logWarning())	# raise logWarning event
+		# raise logWarning event
+		(not CSE.event or CSE.event.logWarning()) 	# type: ignore
 		Logging._log(logging.WARNING, msg)
 
 
 	@staticmethod
-	def _log(level : int, msg : str):
-		if Logging.loggingEnabled and Logging.logLevel <= level:
+	def _log(level:int, msg:str) -> None:
+		if Logging.loggingEnabled and Logging.logLevel <= level and Logging.queue is not None:
 			# Queue a log message : (level, message, caller from stackframe, current thread)
-			Logging.queue.put((level, msg, inspect.getframeinfo(inspect.stack()[2][0]), threading.current_thread()))
-
-
-#
-#	Redirect handler to redirect other log output to our log
-#
-
-class RedirectHandler(StreamHandler):
-
-	def __init__(self, topic):
-		StreamHandler.__init__(self)
-		self.topic = topic
-
-	def emit(self, record):
-		msg = '(%s) %s' % (self.topic, record.getMessage())
-		msg = re.sub(r'\[.+?\] ', '', msg) # clean up (remove superflous date and time)
-
-		(record.levelno == logging.DEBUG 	and Logging.logDebug(msg, False))
-		(record.levelno == logging.INFO 	and Logging.log(msg, False))
-		(record.levelno == logging.WARNING 	and Logging.logWarn(msg, False))
-		(record.levelno == logging.ERROR 	and Logging.logErr(msg, False))
-
+			Logging.queue.put((level, str(msg), inspect.getframeinfo(inspect.stack()[2][0]), threading.current_thread()))
 
 
 #
@@ -175,14 +166,15 @@ class ACMERichLogHandler(RichHandler):
 		self.console._styles['repr.response'] = Style(color='magenta2')
 		self.console._styles['repr.id'] = Style(color='light_sky_blue1')
 		self.console._styles['repr.url'] = Style(color='sandy_brown', underline=True)
+		self.console._styles['repr.start'] = Style(color='orange1')
 		self.console._styles['logging.level.debug'] = Style(color='grey50')
 		self.console._styles['logging.level.warning'] = Style(color='orange3')
 		self.console._styles['logging.level.error'] = Style(color='red', reverse=True)
 
 
 		# Set own highlights 
-		self.highlighter.highlights = [
-			r"(?P<brace>[\{\[\(\)\]\}])",
+		self.highlighter.highlights = [	# type: ignore
+			# r"(?P<brace>[\{\[\(\)\]\}])",
 			#r"(?P<tag_start>\<)(?P<tag_name>\w*)(?P<tag_contents>.*?)(?P<tag_end>\>)",
 			#r"(?P<attrib_name>\w+?)=(?P<attrib_value>\"?\w+\"?)",
 			r"(?P<bool_true>True)|(?P<bool_false>False)|(?P<none>None)",
@@ -194,11 +186,19 @@ class ACMERichLogHandler(RichHandler):
 			r"(?P<url>https?:\/\/[0-9a-zA-Z\$\-\_\~\+\!`\(\)\,\.\?\/\;\:\&\=\%]*)",
 			#r"(?P<uuid>[a-fA-F0-9]{8}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{12})",
 
-			r"(?P<dim>^[0-9]+\.?[0-9]*\b - )",		# thread ident at front
-			r"(?P<request>==>.*:)",					# Incoming request 
-			r"(?P<response><== [^ ]+ )",			# outgoing response
-			r"(?P<number>\(RSC: [0-9]+\.?[0-9]\))",	# Result code
-			r"(?P<id> [\w/\-_]*/[\w/\-_]+)",		# ID
+			# r"(?P<dim>^[0-9]+\.?[0-9]*\b - )",			# thread ident at front
+			r"(?P<dim>^[^ ]*[ ]*- )",						# thread ident at front
+			r"(?P<request>==>.*:)",							# Incoming request or response
+			r"(?P<request>Request ==>:)",					# Outgoing request or response
+			r"(?P<response><== [^ :]+[ :]+)",				# outgoing response or request
+			r"(?P<response>Response <== [^ :]+[ :]+)",		# Incoming response or request
+			r"(?P<number>\(RSC: [0-9]+\.?[0-9]\))",			# Result code
+			r"(?P<id> [\w/\-_]*/[\w/\-_]+)",				# ID
+			# r"(?P<request>CSE started$)",					# CSE startup message
+			# r"(?P<request>CSE shutdown$)",					# CSE shutdown message
+			# r"(?P<start>CSE shutting down$)",				# CSE shutdown message
+			# r"(?P<start>Starting CSE$)",				# CSE shutdown message
+
 			#r"(?P<id>(acp|ae|bat|cin|cnt|csest|dvi|grp|la|mem|nod|ol|sub)[0-9]+\.?[0-9])",		# ID
 
 		]
@@ -209,12 +209,12 @@ class ACMERichLogHandler(RichHandler):
 		#path = Path(record.pathname).name
 		log_style = f"logging.level.{record.levelname.lower()}"
 		message = self.format(record)
-		path = ''
+		path  = ''
 		lineno = 0
-		threadID = 0
+		threadID = ''
 		if len(messageElements := message.split('*', 3)) == 4:
 			path = messageElements[0]
-			lineno = messageElements[1]
+			lineno = int(messageElements[1])
 			threadID = messageElements[2]
 			message = messageElements[3]
 		time_format = None if self.formatter is None else self.formatter.datefmt

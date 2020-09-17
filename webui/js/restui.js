@@ -50,13 +50,14 @@ function initRestUI() {
 function setRestUI(resourceFull) {
 	currentResourceType = Object.keys(resourceFull)[0];
 	currentResource = resourceFull[currentResourceType]
-	bri = document.getElementById("baseri").value
-	cri = "/" + currentResource.ri
-	if (bri == cri) {
-	  document.getElementById("rest-url").value=bri
-	} else {
-	  document.getElementById("rest-url").value=bri + cri
-	}
+	// bri = document.getElementById("baseri").value
+	// cri = "/" + currentResource.ri
+	// if (bri == cri) {
+	//   document.getElementById("rest-url").value=bri
+	// } else {
+	//   document.getElementById("rest-url").value=bri + cri
+	// }
+	document.getElementById("rest-url").value=currentResource.ri
 
 
 	// check requests for this resource type
@@ -99,7 +100,7 @@ function disableButton(btn, spn) {
 
 function restSendForm() {
 	restSendData(document.querySelector('input[name="rest-method"]:checked').value,
-				 document.getElementById("rest-url").value,
+				 '/'+document.getElementById("rest-url").value,
 				 document.getElementById("rest-headers").value,
 				 requestarea.value)
 }

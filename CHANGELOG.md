@@ -1,4 +1,25 @@
+[← README](README.md) 
+
 # Changelog
+
+## 0.5.0 - 2020-09-17
+- [CSE] Added Resource Announcements to remote CSEs.
+- [CSE] Added support for 'm2m:dbg' throughout the CSE. This should provide better error reporting for clients.
+- [CSE] Reimplemented discovery, filter functions and rcn's.
+- [CSE] Added configuration and command line argument to enable and disable validation of attributes and arguments.
+- [CSE] Added configuration and command line argument to enable and disable statistics.
+- [CSE] Added configuration to make CSE startup delay configurable.
+- [CSE] Added import of attribute policies for &lt;flexContainer> specializations validation.
+- [CSE] Support for 'arp' request argument.
+- [CSE] JSON in requests may now contain C-style comments ("// ..." and "/* ... */").
+- [CSE] Support for *myCertFileCred* ManagementObject.
+- [SUB] Improved support for 'nct' in subscriptions.
+- [TESTS] Added unit tests.
+- [WEB] Added deletion of resources in the webb UI via right-click menu.
+- [HTTP] Added https support for the http server and for requests.
+- [MISC] Added Python type hints throughout the source code.
+- [MISC] Refactored most constants to enums.
+
 
 ## 0.4.0 - 2020-06-24
 - [CSE] Fixed crashes when using group resources.
@@ -52,3 +73,5 @@
 
 ## 0.1.0 - 2020-02-09
 - First release
+
+[← README](README.md) 

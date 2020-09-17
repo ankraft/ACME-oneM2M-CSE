@@ -2,10 +2,10 @@
 		"ty" : 14,
 		"ri" : "nod1",
 		"rn" : "node-example",
-		"pi" : "id-mn",
+		"pi" : "${cse.ri}",
 
 		"ni" : "myNode:anID",
 		"nid": "myWIFI",
-		"acpi" : [ "acpAdmin", "acpDefault" ]
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ]
 	}
 }

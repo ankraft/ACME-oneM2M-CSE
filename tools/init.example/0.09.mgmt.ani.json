@@ -1,10 +1,11 @@
 {	"m2m:ani" : {
+		"ty" : 13,
 		"mgd" : 1004,
 		"dc" : "an areaNwkType",
 		"ri" : "ani1",
 		"pi" : "nod1",
 		"rn" : "areaNwkType",
-		"acpi" : [ "acpAdmin", "acpDefault" ],
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ],
 		
 		"ant": "ZigBee Light Link",
 		"ldv": [ "hue1", "ikea2" ]

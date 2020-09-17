@@ -8,38 +8,53 @@
 #
 
 
-import logging, configparser, re
+import logging, configparser, re, argparse, ssl, os.path
+from typing import Any, Dict
 from Constants import Constants as C
-
-
-defaultConfigFile			= 'acme.ini'
-defaultImportDirectory		= './init'
-version						= '0.4.0'
+from Types import CSEType
+from rich.console import Console
 
 
 class Configuration(object):
-	_configuration				= {}
+	_configuration: Dict[str, Any] = {}
 
 	@staticmethod
-	def init(args = None):
+	def init(args: argparse.Namespace = None) -> bool:
 		global _configuration
+		console = Console()
+
 
 		import Utils	# cannot import at the top because of circel import
 
 		# resolve the args, of any
-		argsConfigfile			= args.configfile if args is not None else defaultConfigFile
-		argsLoglevel			= args.loglevel if args is not None else None
-		argsDBReset				= args.dbreset if args is not None else False
-		argsDBStorageMode		= args.dbstoragemode if args is not None else None
-		argsImportDirectory		= args.importdirectory if args is not None else None
-		argsAppsEnabled			= args.appsenabled if args is not None else None
-		argsRemoteCSEEnabled	= args.remotecseenabled if args is not None else None
+		argsConfigfile			= args.configfile if args is not None and 'configfile' in args else C.defaultConfigFile
+		argsLoglevel			= args.loglevel if args is not None and 'loglevel' in args else None
+		argsDBReset				= args.dbreset if args is not None and 'dbreset' in args else False
+		argsDBStorageMode		= args.dbstoragemode if args is not None and 'dbstoragemode' in args else None
+		argsImportDirectory		= args.importdirectory if args is not None and 'importdirectory' in args else None
+		argsAppsEnabled			= args.appsenabled if args is not None and 'appsenabled' in args else None
+		argsRemoteCSEEnabled	= args.remotecseenabled if args is not None and 'remotecseenabled' in args else None
+		argsValidationEnabled	= args.validationenabled if args is not None and 'validationenabled' in args else None
+		argsStatisticsEnabled	= args.statisticsenabled if args is not None and 'statisticsenabled' in args else None
+		argsRunAsHttps			= args.https if args is not None and 'https' in args else None
 
 
+		# Read and parse the configuration file
 		config = configparser.ConfigParser(	interpolation=configparser.ExtendedInterpolation(),
 											converters={'list': lambda x: [i.strip() for i in x.split(',')]}	# Convert csv to list
 										  )
-		config.read(argsConfigfile)
+		try:
+			if len(config.read(argsConfigfile)) == 0 and argsConfigfile != C.defaultConfigFile:		# Allow 
+				console.print('[red]Configuration file missing or not readable: %s' % argsConfigfile)
+				return False
+		except configparser.Error as e:
+			console.print('[red]Error in configuration file')
+			console.print(e)
+			return False
+
+		#
+		#	Retrieve configuration values
+		#
 
 		try:
 			Configuration._configuration = {
@@ -59,10 +74,10 @@ class Configuration(object):
 				#	Database
 				#
 
-				'db.path'							: config.get('database', 'path', 						fallback='./data'),
+				'db.path'							: config.get('database', 'path', 						fallback=C.defaultDataDirectory),
 				'db.inMemory'						: config.getboolean('database', 'inMemory', 			fallback=False),
 				'db.cacheSize'						: config.getint('database', 'cacheSize', 				fallback=0),		# Default: no caching
-				'db.resetAtStartup' 				: config.getboolean('database', 'resetAtStartup',		fallback=False),
+				'db.resetOnStartup' 				: config.getboolean('database', 'resetOnStartup',		fallback=False),
 
 				#
 				#	Logging
@@ -70,7 +85,7 @@ class Configuration(object):
 
 				'logging.enable'					: config.getboolean('logging', 'enable', 				fallback=True),
 				'logging.enableFileLogging'			: config.getboolean('logging', 'enableFileLogging', 	fallback=True),
-				'logging.file'						: config.get('logging', 'file', 						fallback='./logs/cse.log'),
+				'logging.path'						: config.get('logging', 'path', 						fallback=C.defaultLogDirectory),
 				'logging.level'						: config.get('logging', 'level', 						fallback='debug'),
 				'logging.size'						: config.getint('logging', 'size', 						fallback=100000),
 				'logging.count'						: config.getint('logging', 'count', 					fallback=10),		# Number of log files
@@ -84,13 +99,15 @@ class Configuration(object):
 				'cse.csi'							: config.get('cse', 'cseID',							fallback='/id-in'),
 				'cse.ri'							: config.get('cse', 'resourceID',						fallback='id-in'),
 				'cse.rn'							: config.get('cse', 'resourceName',						fallback='cse-in'),
-				'cse.resourcesPath'					: config.get('cse', 'resourcesPath', 					fallback=defaultImportDirectory),
+				'cse.resourcesPath'					: config.get('cse', 'resourcesPath', 					fallback=C.defaultImportDirectory),
 				'cse.expirationDelta'				: config.getint('cse', 'expirationDelta', 				fallback=60*60*24*365),	# 1 year, in seconds
 				'cse.originator'					: config.get('cse', 'originator',						fallback='CAdmin'),
 				'cse.enableApplications'			: config.getboolean('cse', 'enableApplications', 		fallback=True),
+				'cse.applicationsStartupDelay'		: config.getint('cse', 'applicationsStartupDelay',		fallback=5),		# Seconds
 				'cse.enableNotifications'			: config.getboolean('cse', 'enableNotifications', 		fallback=True),
 				'cse.enableRemoteCSE'				: config.getboolean('cse', 'enableRemoteCSE', 			fallback=True),
 				'cse.enableTransitRequests'			: config.getboolean('cse', 'enableTransitRequests',		fallback=True),
+				'cse.enableValidation'				: config.getboolean('cse', 'enableValidation', 			fallback=True),
 				'cse.sortDiscoveredResources'		: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
 				'cse.checkExpirationsInterval'		: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
 
@@ -101,29 +118,43 @@ class Configuration(object):
 				'cse.security.adminACPI'			: config.get('cse.security', 'adminACPI', 				fallback='acpAdmin'),
 				'cse.security.defaultACPI'			: config.get('cse.security', 'defaultACPI', 			fallback='acpDefault'),
 				'cse.security.csebaseAccessACPI'	: config.get('cse.security', 'csebaseAccessACPI', 		fallback='acpCSEBaseAccess'),
+				'cse.security.useTLS'				: config.getboolean('cse.security', 'useTLS', 			fallback=False),
+				'cse.security.tlsVersion'			: config.get('cse.security', 'tlsVersion', 				fallback='auto'),
+				'cse.security.verifyCertificate'	: config.getboolean('cse.security', 'verifyCertificate',fallback=False),
+				'cse.security.caCertificateFile'	: config.get('cse.security', 'caCertificateFile', 		fallback=None),
+				'cse.security.caPrivateKeyFile'		: config.get('cse.security', 'caPrivateKeyFile', 		fallback=None),
 
 				#
-				#	Remote CSE
+				#	Registrar CSE
 				#
 
-				'cse.remote.address'				: config.get('cse.remote', 'address', 					fallback=''),
-				'cse.remote.root'					: config.get('cse.remote', 'root', 						fallback=''),
-				'cse.remote.csi'					: config.get('cse.remote', 'cseID', 					fallback=''),
-				'cse.remote.rn'						: config.get('cse.remote', 'resourceName', 				fallback=''),
-				'cse.remote.checkInterval'			: config.getint('cse.remote', 'checkInterval', 			fallback=30),		# Seconds
+				'cse.registrar.address'				: config.get('cse.registrar', 'address', 				fallback=None),
+				'cse.registrar.root'				: config.get('cse.registrar', 'root', 					fallback=None),
+				'cse.registrar.csi'					: config.get('cse.registrar', 'cseID', 					fallback=None),
+				'cse.registrar.rn'					: config.get('cse.registrar', 'resourceName', 			fallback=None),
+				'cse.registrar.checkInterval'		: config.getint('cse.registrar', 'checkInterval', 		fallback=30),		# Seconds
 
 				#
 				#	Registrations
 				#
 
-				'cse.registration.allowedAEOriginators'	: config.getlist('cse.registration', 'allowedAEOriginators',	fallback=['C*','S*']),
-				'cse.registration.allowedCSROriginators': config.getlist('cse.registration', 'allowedCSROriginators',	fallback=[]),
+				'cse.registration.allowedAEOriginators'	: config.getlist('cse.registration', 'allowedAEOriginators',	fallback=['C*','S*']),		# type: ignore
+				'cse.registration.allowedCSROriginators': config.getlist('cse.registration', 'allowedCSROriginators',	fallback=[]),				# type: ignore
+
+
+				#
+				#	Announcements
+				#
+
+				'cse.announcements.enable'			: config.getboolean('cse.announcements', 'enable',		fallback=True),
+				'cse.announcements.checkInterval'	: config.getint('cse.announcements', 'checkInterval',	fallback=10),
 
 
 				#
 				#	Statistics
 				#
 
+				'cse.statistics.enable'				: config.getboolean('cse.statistics', 'enable', 		fallback=True),
 				'cse.statistics.writeIntervall'		: config.getint('cse.statistics', 'writeIntervall',		fallback=60),		# Seconds
 
 
@@ -177,8 +208,9 @@ class Configuration(object):
 				'app.csenode.intervall'				: config.getint('app.csenode', 'updateIntervall', 		fallback=60),		# seconds
 
 			}
+
 		except Exception as e:	# about when findings errors in configuration
-			print('Error in configuration file: %s - %s' % (argsConfigfile, str(e)))
+			console.print('[red]Error in configuration file: %s - %s' % (argsConfigfile, str(e)))
 			return False
 
 		# Read id-mappings
@@ -186,16 +218,18 @@ class Configuration(object):
 			Configuration._configuration['server.http.mappings'] = config.items('server.http.mappings')
 			#print(config.items('server.http.mappings'))
 
-		# Some clean-ups and overrites
+		# Some clean-ups and overrides
 
 		# CSE type
 		cseType = Configuration._configuration['cse.type'].lower()
 		if  cseType == 'asn':
-			Configuration._configuration['cse.type'] = C.cseTypeASN
+			Configuration._configuration['cse.type'] = CSEType.ASN
 		elif cseType == 'mn':
-			Configuration._configuration['cse.type'] = C.cseTypeMN
+			Configuration._configuration['cse.type'] = CSEType.MN
 		else:
-			Configuration._configuration['cse.type'] = C.cseTypeIN
+			Configuration._configuration['cse.type'] = CSEType.IN
+
+
 
 		# Loglevel from command line
 		logLevel = Configuration._configuration['logging.level'].lower()
@@ -212,10 +246,9 @@ class Configuration(object):
 		else:
 			Configuration._configuration['logging.level'] = logging.DEBUG
 
-
 		# Override DB reset from command line
 		if argsDBReset is True:
-			Configuration._configuration['db.resetAtStartup'] = True
+			Configuration._configuration['db.resetOnStartup'] = True
 
 		# Override DB storage mode from command line
 		if argsDBStorageMode is not None:
@@ -233,29 +266,83 @@ class Configuration(object):
 		if argsRemoteCSEEnabled is not None:
 			Configuration._configuration['cse.enableRemoteCSE'] = argsRemoteCSEEnabled
 
+		# Override validation enablement
+		if argsValidationEnabled is not None:
+			Configuration._configuration['cse.enableValidation'] = argsValidationEnabled
+
+		# Override statistics enablement
+		if argsStatisticsEnabled is not None:
+			Configuration._configuration['cse.statistics.enable'] = argsStatisticsEnabled
+
+		# Override useTLS
+		if argsRunAsHttps is not None:
+			Configuration._configuration['cse.security.useTLS'] = argsRunAsHttps
+
 		# Correct urls
-		Configuration._configuration['cse.remote.address'] = Utils.normalizeURL(Configuration._configuration['cse.remote.address'])
+		Configuration._configuration['cse.registrar.address'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.address'])
 		Configuration._configuration['http.address'] = Utils.normalizeURL(Configuration._configuration['http.address'])
 		Configuration._configuration['http.root'] = Utils.normalizeURL(Configuration._configuration['http.root'])
-		Configuration._configuration['cse.remote.root'] = Utils.normalizeURL(Configuration._configuration['cse.remote.root'])
+		Configuration._configuration['cse.registrar.root'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.root'])
+
+		# Just in case: check the URL's
+		if Configuration._configuration['cse.security.useTLS']:
+			if Configuration._configuration['http.address'].startswith('http:'):
+				console.print('[orange3]Configuration Warning: Changing "http" to "https" in \[server.http]:address')
+				Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('http:', 'https:')
+			# registrar might still be accessible vi another protocol
+			# if Configuration._configuration['cse.registrar.address'].startswith('http:'):
+			# 	console.print('[orange3]Configuration Warning: Changing "http" to "https" in \[cse.registrar]:address')
+			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('http:', 'https:')
+		else: 
+			if Configuration._configuration['http.address'].startswith('https:'):
+				console.print('[orange3]Configuration Warning: Changing "https" to "http" in \[server.http]:address')
+				Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('https:', 'http:')
+			# registrar might still be accessible vi another protocol
+			# if Configuration._configuration['cse.registrar.address'].startswith('https:'):
+			# 	console.print('[orange3]Configuration Warning: Changing "https" to "http" in \[cse.registrar]:address')
+			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('https:', 'http:')
 
 
 		#
 		#	Some sanity and validity checks
 		#
 
+		# TLS & certificates
+		if not Configuration._configuration['cse.security.useTLS']:	# clear certificates configuration if not in use
+			Configuration._configuration['cse.security.verifyCertificate'] = False
+			Configuration._configuration['cse.security.tlsVersion'] = 'auto'
+			Configuration._configuration['cse.security.caCertificateFile'] = None
+			Configuration._configuration['cse.security.caPrivateKeyFile'] = None
+		else:
+			if not (val := Configuration._configuration['cse.security.tlsVersion']).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
+				console.print('[red]Configuration Error: Unknown value for \[cse.security]:tlsVersion: %s' % val)
+				return False
+			if (val := Configuration._configuration['cse.security.caCertificateFile']) is None:
+				console.print('[red]Configuration Error: \[cse.security]:caCertificateFile must be set when TLS is enabled')
+				return False
+			if not os.path.exists(val):
+				console.print('[red]Configuration Error: \[cse.security]:caCertificateFile does not exists or is not accessible: %s' % val)
+				return False
+			if (val := Configuration._configuration['cse.security.caPrivateKeyFile']) is None:
+				console.print('[red]Configuration Error: \[cse.security]:caPrivateKeyFile must be set when TLS is enabled')
+				return False
+			if not os.path.exists(val):
+				console.print('[red]Configuration Error: \[cse.security]:caPrivateKeyFile does not exists or is not accessible: %s' % val)
+				return False
 
 		# check the csi format
 		rx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
 		if re.fullmatch(rx, (val:=Configuration._configuration['cse.csi'])) is None:
-			print('Configuration Error: Wrong format for [cse]:cseID: %s' % val)
+			console.print('[red]Configuration Error: Wrong format for \[cse]:cseID: %s' % val)
 			return False
-		if re.fullmatch(rx, (val:=Configuration._configuration['cse.remote.csi'])) is None:
-			print('Configuration Error: Wrong format for [cse.remote]:cseID: %s' % val)
-			return False
-		if len(Configuration._configuration['cse.remote.csi']) > 0 and len(Configuration._configuration['cse.remote.rn']) == 0:
-			print('Configuration Error: Missing configuration [cse.remote]:resourceName')
-			return False
+
+		if Configuration._configuration['cse.registrar.address'] is not None and Configuration._configuration['cse.registrar.csi'] is not None:
+			if re.fullmatch(rx, (val:=Configuration._configuration['cse.registrar.csi'])) is None:
+				console.print('[red]Configuration Error: Wrong format for \[cse.registrar]:cseID: %s' % val)
+				return False
+			if len(Configuration._configuration['cse.registrar.csi']) > 0 and len(Configuration._configuration['cse.registrar.rn']) == 0:
+				console.print('[red]Configuration Error: Missing configuration [cse.registrar]:resourceName')
+				return False
 
 
 		# Everything is fine
@@ -263,7 +350,7 @@ class Configuration(object):
 
 
 	@staticmethod
-	def print():
+	def print() -> str:
 		result = 'Configuration:\n'
 		for kv in Configuration._configuration.items():
 			result += '  %s = %s\n' % kv
@@ -271,22 +358,22 @@ class Configuration(object):
 
 
 	@staticmethod
-	def all():
+	def all() -> Dict[str, Any]:
 		return Configuration._configuration
 
 
 	@staticmethod
-	def get(key):
+	def get(key: str) -> Any:
 		if not Configuration.has(key):
 			return None
 		return Configuration._configuration[key]
 
 
 	@staticmethod
-	def set(key, value):
+	def set(key: str, value: Any) -> None:
 		Configuration._configuration[key] = value
 
 
 	@staticmethod
-	def has(key):
+	def has(key: str) -> bool:
 		return key in Configuration._configuration

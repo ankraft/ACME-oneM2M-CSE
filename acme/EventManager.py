@@ -7,71 +7,17 @@
 #	Managing event handlers and events
 #
 
-import threading
+import threading, traceback
+from typing import Callable, Any
 from Logging import Logging
 from Constants import Constants as C
-import CSE
+import Utils, CSE
 
 # TODO: create/delete each resource to count! resourceCreate(ty)
 
 # TODO move event creations from here to the resp modules.
 
 
-class EventManager(object):
-
-	def __init__(self):
-		self.addEvent('httpRetrieve')
-		self.addEvent('httpCreate')
-		self.addEvent('httpDelete')
-		self.addEvent('httpUpdate')
-		self.addEvent('httpRedirect')
-		self.addEvent('createResource')
-		self.addEvent('deleteResource')
-		self.addEvent('cseStartup')
-		self.addEvent('logError')
-		self.addEvent('logWarning')
-		Logging.log('EventManager initialized')
-
-
-	def shutdown(self):
-		Logging.log('EventManager shut down')
-
-
-	#########################################################################
-
-
-	#	Event topics are added as new methods of the handler class with the 
-	#	given name and can be raised by calling those new methods, e.g.
-	#
-	#		manager.addEvent("someName")							# add new event topic
-	#		manager.addHandler(manager.someName, handlerFunction)	# add an event handler
-	#		handler.someName()										# raises the event
-
-
-	def addEvent(self, name):
-		if not hasattr(self, name):
-			setattr(self, name, Event())
-		return getattr(self, name)
-
-
-	def removeEvent(self, name):
-		if hasattr(self, name):
-			delattr(self, name)
-
-
-	def hasEvent(self, name):
-		return name in self.__dict__
-
-
-	def addHandler(self, event, func):
-		event.append(func)
-
-
-	def removeHandler(self, event, func):
-		try:
-			del event[func]
-		except Exception as e:
-			pass
 
 
 	#########################################################################
@@ -96,16 +42,94 @@ class Event(list):
 	for the returns. This might lead to some race conditions, so the synchronizations
 	must be done insode the functions.
 	"""
-	def __call__(self, *args, **kwargs):
-		# Call the handlers in a thread so that we don't block everything
-		thrd = threading.Thread(target=self._callThread, args=args, kwargs=kwargs)
-		thrd.setDaemon(True)		# Make the thread a daemon of the main thread
-		thrd.start()
 
-	def _callThread(self, *args, **kwargs):
+	def __init__(self, runInBackground:bool=True):
+		self.runInBackground = runInBackground
+
+
+	def __call__(self, *args:Any, **kwargs:Any) -> None:
+		if self.runInBackground:
+			# Call the handlers in a thread so that we don't block everything
+			thread = threading.Thread(target=self._callThread, args=args, kwargs=kwargs)
+			thread.setDaemon(True)		# Make the thread a daemon of the main thread
+			thread.start()
+			Utils.renameCurrentThread(thread=thread)
+		else:
+			self._callThread(*args, **kwargs)
+
+
+	def _callThread(self, *args:Any, **kwargs:Any) -> None:
 		for function in self:
-			function(*args, **kwargs)
+			try:
+				function(*args, **kwargs)
+			except Exception as e:
+				Logging.logErr('%s - %s' % (function, traceback.format_exc()))
 
 
-	def __repr__(self):
+	def __repr__(self) -> str:
 		return "Event(%s)" % list.__repr__(self)
+
+
+
+class EventManager(object):
+
+	def __init__(self) -> None:
+		self.addEvent('httpRetrieve')
+		self.addEvent('httpCreate')
+		self.addEvent('httpDelete')
+		self.addEvent('httpUpdate')
+		self.addEvent('httpRedirect')
+		self.addEvent('createResource')
+		self.addEvent('updateResource')
+		self.addEvent('deleteResource')
+		self.addEvent('cseStartup')
+		self.addEvent('cseShutdown', runInBackground=False)
+		self.addEvent('logError')
+		self.addEvent('logWarning')
+		self.addEvent('registeredToRemoteCSE')
+		self.addEvent('deregisteredFromRemoteCSE')
+		self.addEvent('remoteCSEHasRegistered')
+		self.addEvent('remoteCSEUpdate')
+		self.addEvent('remoteCSEHasDeregistered')
+		Logging.log('EventManager initialized')
+
+
+	def shutdown(self) -> None:
+		Logging.log('EventManager shut down')
+
+
+	#########################################################################
+
+
+	#	Event topics are added as new methods of the handler class with the 
+	#	given name and can be raised by calling those new methods, e.g.
+	#
+	#		manager.addEvent("someName")							# add new event topic
+	#		manager.addHandler(manager.someName, handlerFunction)	# add an event handler
+	#		handler.someName()										# raises the event
+
+
+	def addEvent(self, name:str, runInBackground:bool=True) -> Event:
+		if not hasattr(self, name):
+			setattr(self, name, Event(runInBackground=runInBackground))
+		return getattr(self, name)
+
+
+	def removeEvent(self, name:str) -> None:
+		if hasattr(self, name):
+			delattr(self, name)
+
+
+	def hasEvent(self, name:str) -> bool:
+		return name in self.__dict__
+
+
+	def addHandler(self, event:Event, func:Callable) -> None:
+		event.append(func)
+
+
+	def removeHandler(self, event:Event, func:Callable) -> None:
+		try:
+			event.remove(func)
+		except Exception as e:
+			pass

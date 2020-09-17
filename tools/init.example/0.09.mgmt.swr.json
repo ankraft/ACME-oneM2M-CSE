@@ -1,10 +1,11 @@
 {	"m2m:swr" : {
+		"ty" : 13,
 		"mgd" : 1002,
 		"dc" : "a software",
 		"ri" : "swr1",
 		"pi" : "nod1",
 		"rn" : "software",
-		"acpi" : [ "acpAdmin", "acpDefault" ],
+		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ],
 		
 		"vr" : "1.0",
 		"swn": "ACME",

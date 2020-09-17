@@ -1,3 +1,5 @@
+[← README](../README.md) 
+
 # Running
 
 
@@ -11,14 +13,35 @@ In this case the configuration file *acme.ini* must be in the same directory.
 
 In additions, you can provide additional command line arguments that will override the respective settings from the configuration file:
 
-- **-h**, **--help**: show a help message and exit.
-- **--apps**, **--noapps**: Enable or disable the build-in applications. This overrides the settings in the configuration file.
-- **--config CONFIGFILE**: Specify a configuration file that is used instead of the default (*acme.ini*) one.
-- **--db-reset**: Reset and clear the database when starting the CSE.
-- **--db-storage {memory,disk}**: Specify the DB´s storage mode.
-- **--log-level {info, error, warn, debug, off}**: Set the log level, or turn logging off.
-- **--import-directory IMPORTDIRECTORY**: Specify the import directory.
-- **--remote-cse**, **--no-remote-cse**: Enable or disable remote CSE connections and checking.
+| Command Line Argument                       | Description                                                                                                                                       |
+|:--------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------|
+| -h, --help                                  | Show a help message and exit.                                                                                                                     |
+| --http, --https                             | Run the CSE with http or https server.<br />This overrides the [useTLS](Configuration.md#security) configuration setting.                         |
+| --apps, --noapps                            | Enable or disable the build-in applications.<br />This overrides the [enableApplications](Configuration.md#general) configuration setting.        |
+| --config CONFIGFILE                         | Specify a configuration file that is used instead of the default (*acme.ini*) one.                                                                |
+| --db-reset                                  | Reset and clear the database when starting the CSE.                                                                                               |
+| --db-storage {memory,disk}                  | Specify the DB´s storage mode.<br />This overrides the [inMemory](Configuration.md#database) configuration setting.                               |
+| --log-level {info, error, warn, debug, off} | Set the log level, or turn logging off.<br />This overrides the [level](Configuration.md#logging) configuration setting.                          |
+| --import-directory IMPORTDIRECTORY          | Specify the import directory.<br />This overrides the [resourcesPath](Configuration.md#general) configuration setting.                            |
+| --remote-cse, --no-remote-cse               | Enable or disable remote CSE connections and checking.<br />This overrides the [enableRemoteCSE](Configuration.md#general) configuration setting. |
+| --statistics, --no-statistics               | Enable or disable collecting CSE statics.<br />This overrides the [enable](Configuration.md#statistics) configuration setting.                    |
+| --validation, --no-validation               | Enable or disable attribute and argument validations.<br />This overrides the [enableValidation](Configuration.md#general) configuration setting. |
+
+### Certificates and Support for https
+
+To enable https you have to set various settings [ [cse.security] configuration section](Configuration.md#security), and provide a certificate and a key file. 
+One way to generate those files is the [openssl](https://www.openssl.org) tool that may already be installed on your OS. The following example shows how to 
+generate a self-signed certificate:
+
+		openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -nodes -days 1000
+
+This will generate the self-signed certificate and private key without password protection (*-nodes*), and stores them in the files *cert.pem* and *key.pem* respectively. 
+openssl will prompt you with questions for *Country Name* etc, but you can just hit *Enter* and accept the defaults. The *-days* parameter affects the certificate's
+expiration date.
+
+Please also consult the *openssl* manual for further instructions. 
+
+After you generated these files you can move them to a separate directory (for example you may create a new directory named *cert* in ACME's installation directory) and set the *caCertificateFile* and *caPrivateKeyFile* configuration parameters accordingly.
 
 
 ## Stopping the CSE
@@ -35,3 +58,5 @@ Please note, that the shutdown might take a moment (e.g. gracefully terminating 
 If you want to work with subscriptions and notification then you might want to have a Notifications Server running first before starting the CSE. The Notification Server provided with the CSE in the [tools/notificationServer](../tools/notificationServer) directory provides a very simple implementation that receives and answers notification requests.
 
 See the [Notification Server's README](../tools/notificationServer/README.md) file for further details.
+
+[← README](../README.md) 

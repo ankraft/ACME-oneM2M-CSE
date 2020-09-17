@@ -1,0 +1,108 @@
+# resourceType, shortName, dataType, cardinality, optionalCreate, optionalUpdate, optionalDiscovery, announced
+
+# Additional attribute policies for <flexContainer> specializations
+# !!! Don't change the first line !!!
+
+# ModuleClass: Battery
+hd:bat,lvl,nonNegInteger,car1,O,O,O,OA
+hd:bat,capay,nonNegInteger,car01,O,O,O,OA
+hd:bat,charg,boolean,car01,O,O,O,OA
+hd:bat,discg,boolean,car01,O,O,O,OA
+hd:bat,lowBy,boolean,car01,O,O,O,OA
+hd:bat,batTd,nonNegInteger,car01,O,O,O,OA
+hd:bat,eleEy,nonNegInteger,car01,O,O,O,optionalDiscovery
+hd:bat,volte,float,car01,O,O,O,OA
+hd:bat,matel,string,car01,O,O,O,OA
+
+
+# ModuleClass: binaryObject
+hd:binOt,objet,string,car1,O,O,O,OA
+hd:binOt,objTe,string,car1,O,O,O,OA
+hd:binOt,size,nonNegInteger,car01,O,O,O,OA
+hd:binOt,hash,string,car01,O,O,O,OA
+
+
+# ModuleClass: Colour
+hd:color,red,nonNegInteger,car1,O,O,O,OA
+hd:color,green,nonNegInteger,car1,O,O,O,OA
+hd:color,blue,nonNegInteger,car1,O,O,O,OA
+
+
+# ModuleClass: Connecivity
+hd:conny,rsrp,nonNegInteger,car1,O,O,O,OA
+hd:conny,rsrq,nonNegInteger,car01,O,O,O,OA
+hd:conny,celID,nonNegInteger,car01,O,O,O,OA
+hd:conny,rssi,nonNegInteger,car01,O,O,O,OA
+hd:conny,siECL,nonNegInteger,car01,O,O,O,OA
+hd:conny,sinr,nonNegInteger,car01,O,O,O,OA
+hd:conny,pci,nonNegInteger,car01,O,O,O,OA
+hd:conny,daATe,nonNegInteger,car01,O,O,O,OA
+hd:conny,dNOCs,nonNegInteger,car01,O,O,O,OA
+hd:conny,coFVe,nonNegInteger,car01,O,O,O,OA
+hd:conny,cuCBn,timestamp,car01,O,O,O,OA
+hd:conny,cuCVe,nonNegInteger,car01,O,O,O,OA
+hd:conny,cCTEs,nonNegInteger,car01,O,O,O,OA
+hd:conny,miCLy,nonNegInteger,car01,O,O,O,OA
+
+
+# ModuleClass: Credentials
+hd:creds,logNe,string,car01,O,O,O,OA
+hd:creds,pwd,string,car01,O,O,O,OA
+hd:creds,tk,string,car01,O,O,O,OA
+
+
+# ModuleClass: GeoLocation
+hd:geoLn,latie,float,car1,O,O,O,OA
+hd:geoLn,longe,float,car1,O,O,O,OA
+hd:geoLn,altie,float,car01,O,O,O,OA
+hd:geoLn,headg,float,car01,O,O,O,OA
+hd:geoLn,horAy,float,car01,O,O,O,OA
+hd:geoLn,verAy,float,car01,O,O,O,OA
+hd:geoLn,heaAy,float,car01,O,O,O,OA
+hd:geoLn,tarLe,float,car01,O,O,O,OA
+hd:geoLn,tarL0,float,car01,O,O,O,OA
+hd:geoLn,tarAe,float,car01,O,O,O,OA
+
+
+# ModuleClass: ImpactSensor
+hd:impSr,impSs,boolean,car1,O,O,O,OA
+hd:impSr,impLl,float,car1,O,O,O,OA
+hd:impSr,imDHl,float,car01,O,O,O,OA
+hd:impSr,imDVl,float,car01,O,O,O,OA
+
+
+# ModuleClass: PushButton
+hd:pusBn,pushd,boolean,car1,O,O,O,OA
+
+
+# ModuleClass: Temperature
+hd:tempe,curT0,float,car1,O,O,O,OA
+hd:tempe,tarTe,float,car1,O,O,O,OA
+hd:tempe,unit,positiveInteger,car01,O,O,O,OA
+hd:tempe,minVe,float,car01,O,O,O,OA
+hd:tempe,maxVe,float,car01,O,O,O,OA
+hd:tempe,steVe,float,car01,O,O,O,OA
+
+
+# ModuleClass: TextMessage
+hd:texMe,texMe,string,car1,O,O,O,OA
+hd:texMe,suMVs,list,car01,O,O,O,OA
+hd:texMe,minLh,nonNegInteger,car01,O,O,O,OA
+hd:texMe,maxLh,nonNegInteger,car01,O,O,O,OA
+hd:texMe,mesEg,string,car01,O,O,O,OA
+hd:texMe,defVe,nonNegInteger,car01,O,O,O,OA
+
+
+# Action: TextMessage.resetTextMessage
+hd:reTMe,none,none,car01,O,O,O,OA
+
+
+
+
+
+#
+#	DeviceClasses
+#
+
+# DeviceClass: deSBn
+hd:deSBn,none,none,car01,O,O,O,OA

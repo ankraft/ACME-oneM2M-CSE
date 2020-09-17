@@ -8,16 +8,16 @@
 #
 
 from .MgmtObj import *
-from Constants import Constants as C
-from Validator import constructPolicy
+from Types import ResourceTypes as T
+from Validator import constructPolicy, addPolicy
 import Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 
-	'mgd', 'obis', 'obps', 'dc', 'mgs', 'cmlk',
+fwrPolicies = constructPolicy([
 	'vr', 'fwn', 'url', 'uds', 'ud'
 ])
+attributePolicies =  addPolicy(mgmtObjAttributePolicies, fwrPolicies)
+
 
 statusUninitialized = 0
 statusSuccessful = 1
@@ -33,8 +33,9 @@ defaultUDS = { 'acn' : '', 'sus' : statusUninitialized }
 
 class FWR(MgmtObj):
 
-	def __init__(self, jsn=None, pi=None, create=False):
-		super().__init__(jsn, pi, C.tsFWR, C.mgdFWR, create=create, attributePolicies=attributePolicies)
+	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+		self.resourceAttributePolicies = fwrPolicies	# only the resource type's own policies
+		super().__init__(jsn, pi, mgd=T.FWR, create=create, attributePolicies=attributePolicies)
 
 		if self.json is not None:
 			self.setAttribute('vr', defaultVersion, overwrite=False)
@@ -42,5 +43,4 @@ class FWR(MgmtObj):
 			self.setAttribute('url', defaultURL, overwrite=False)
 			self.setAttribute('uds', defaultUDS, overwrite=False)
 			self.setAttribute('ud', False, overwrite=False)
-
 
