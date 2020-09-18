@@ -29,18 +29,20 @@ class HttpServer(object):
 
 		# Initialize the http server
 		# Meaning defaults are automatically provided.
-		self.flaskApp = Flask(Configuration.get('cse.csi'))
-		self.rootPath = Configuration.get('http.root')
-		self.useTls = Configuration.get('cse.security.useTls')
-		self.verify_cert = Configuration.get('cse.security.verifyCert')
+		self.flaskApp			= Flask(Configuration.get('cse.csi'))
+		self.rootPath			= Configuration.get('http.root')
+		self.useTLS 			= Configuration.get('cse.security.useTLS')
+		self.verifyCert			= Configuration.get('cse.security.verifyCert')
+		self.tlsVersion			= Configuration.get('cse.security.tlsVersion').lower()
+		self.caCertificateFile	= Configuration.get('cse.security.caCertificateFile')
+		self.caPrivateKeyFile	= Configuration.get('cse.security.caPrivateKeyFile')
 
-		self.serverID = 'ACME %s' % version 	# The server's ID for http response headers
+		self.serverID	= 'ACME %s' % version 	# The server's ID for http response headers
 
-		if self.useTls:
-			Logging.log('Registering https server root at: %s' % self.rootPath)
-		else:
-			Logging.log('Registering http server root at: %s' % self.rootPath)
-			self.verify_cert = False
+		Logging.log('Registering http server root at: %s' % self.rootPath)
+		if self.useTLS:
+			Logging.log('TLS enabled. HTTP server serves via https.')
+
 
 		# Add endpoints
 
@@ -100,16 +102,21 @@ class HttpServer(object):
 			# Start the server
 			try:
 				context = None
-				if self.useTls:
-					Logging.log('Setup SSL context: %s/%s' % (str(Configuration.get('cse.security.ca_path')) + 'acme_cert.pem', str(Configuration.get('cse.security.ca_path')) + 'acme_key.pem'))
-					context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-					context.load_cert_chain(str(Configuration.get('cse.security.ca_path')) + 'acme_cert.pem', str(Configuration.get('cse.security.ca_path')) + 'acme_key.pem')
+				if self.useTLS:
+					Logging.logDebug('Setup SSL context. Certfile: %s, KeyFile:%s' % (self.caCertificateFile, self.caPrivateKeyFile))
+					context = ssl.SSLContext(
+									{ 	'tls1.1' : ssl.PROTOCOL_TLSv1_1,
+										'tls1.2' : ssl.PROTOCOL_TLSv1_2,
+										'auto'   : ssl.PROTOCOL_TLS,			# since Python 3.6. Automatically choose the highest protocol version between client & server
+									}[self.tlsVersion.lower()]
+								)
+					context.load_cert_chain(self.caCertificateFile, self.caPrivateKeyFile)
 				self.flaskApp.run(host=Configuration.get('http.listenIF'), 
-						  port=Configuration.get('http.port'),
-						  threaded=Configuration.get('http.multiThread'),
-						  request_handler=ACMERequestHandler,
-                                                  ssl_context=context,
-						  debug=True)
+								  port=Configuration.get('http.port'),
+								  threaded=Configuration.get('http.multiThread'),
+								  request_handler=ACMERequestHandler,
+								  ssl_context=context,
+								  debug=False)
 			except Exception as e:
 				Logging.logErr(str(e))
 
@@ -253,7 +260,7 @@ class HttpServer(object):
 		try:
 			Logging.logDebug('Sending request: %s %s' % (method.__name__.upper(), url))
 			Logging.logDebug('Request ==>:\n%s\n' % (str(data) if data is not None else ''))
-			r = method(url, data=data, headers=headers, verify=self.verify_cert)
+			r = method(url, data=data, headers=headers, verify=self.verifyCert)
 			Logging.logDebug('Response <== (%s):\n%s' % (str(r.status_code), str(r.content.decode("utf-8"))))
 		except Exception as e:
 			Logging.logWarn('Failed to send request: %s' % str(e))
@@ -309,6 +316,7 @@ class HttpServer(object):
 class ACMERequestHandler(WSGIRequestHandler):
 	# Just like WSGIRequestHandler, but without "- -"
 	def log(self, type, message, *args): # type: ignore
+		Logging.logDebug(message % args)
 		return
 		# Logging.log('%s %s\n' % (self.address_string(),
 		# 								 message % args))
@@ -318,4 +326,5 @@ class ACMERequestHandler(WSGIRequestHandler):
 		Logging.logDebug('"%s" %s %d' % (self.requestline, size, code))
 
 	def log_message(self, format, *args): 	# type: ignore
+		Logging.logDebug(format % args)
 		return

@@ -25,23 +25,23 @@ noRemote = not connectionPossible(REMOTEcseURL)
 class TestRemote(unittest.TestCase):
 
 	@classmethod
-	@unittest.skipIf(noRemote or noCSE, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def setUpClass(cls):
 		# check connection to CSE's
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
 		cls.remoteCse, rsc = RETRIEVE(REMOTEcseURL, REMOTEORIGINATOR)
-		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % REMOTEcseURL
+		assert rsc == RC.OK, 'Cannot retrieve remote CSEBase: %s' % REMOTEcseURL
 
 
 	@classmethod
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def tearDownClass(cls):
 		pass
 		
 
 	# Retrieve the CSR on the local CSE
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_retrieveLocalCSR(self):
 		r, rsc = RETRIEVE(localCsrURL, ORIGINATOR)
 		self.assertIsNotNone(r)
@@ -61,7 +61,7 @@ class TestRemote(unittest.TestCase):
 
 
 	# Retrieve the own CSR on the remote CSE
-	@unittest.skipIf(noRemote, 'No remote CSEBase')
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_retrieveRemoteCSR(self):
 		r, rsc = RETRIEVE(remoteCsrURL, ORIGINATOR)
 		self.assertIsNotNone(r)
