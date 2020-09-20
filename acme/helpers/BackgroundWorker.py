@@ -14,12 +14,13 @@ from typing import Callable
 
 class BackgroundWorker(object):
 
-	def __init__(self, updateIntervall: float, workerCallback: Callable, name: str = None) -> None:
+	def __init__(self, updateIntervall:float, workerCallback:Callable, name:str=None, startWithDelay:bool=False) -> None:
 		self.workerUpdateIntervall = updateIntervall
 		self.workerCallback = workerCallback
 		self.doStop = True
 		self.workerThread: Thread = None
 		self.name = name
+		self.startWithDelay = startWithDelay
 
 
 	def start(self) -> None:
@@ -41,12 +42,20 @@ class BackgroundWorker(object):
 
 
 	def work(self) -> None:
+		if self.startWithDelay:	# First execution of the worker after a sleep=
+			self.sleep()
 		while not self.doStop:
-			if self.workerCallback():
-				self.sleep()
-			else:
-				Logging.logDebug('Stopping worker thread: %s' % self.name)
-				self.doStop = True
+			result = True
+			try:
+				result = self.workerCallback()
+			except Exception as e:
+				Logging.logErr(e)
+			finally:
+				if result:
+					self.sleep()
+				else:
+					Logging.logDebug('Stopping worker thread: %s' % self.name)
+					self.doStop = True
 
 
 	# self-made sleep. Helps in speed-up shutdown etc
