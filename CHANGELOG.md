@@ -2,6 +2,8 @@
 
 # Changelog
 
+## 0.6.0 - xxxx-xx-xx
+
 ## 0.5.0 - 2020-09-17
 - [CSE] Added Resource Announcements to remote CSEs.
 - [CSE] Added support for 'm2m:dbg' throughout the CSE. This should provide better error reporting for clients.
