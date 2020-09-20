@@ -159,8 +159,10 @@ class AnnouncementManager(object):
 		for csi in resource.at:
 			if csi == CSE.remote.cseCsi or csi.startswith('%s/' % CSE.remote.cseCsi):
 				Logging.logWarn('Targeting own CSE. Ignored.')
+				self._removeAnnouncementFromResource(resource, csi)
 				continue
 			if (csr := Utils.resourceFromCSI(csi)) is None:
+				Logging.logWarn('Announcement Target CSE not found. Ignored.')
 				self._removeAnnouncementFromResource(resource, csi)
 				continue
 			# if (remoteCSR := CSE.remote.getCSRForRemoteCSE(csr)) is None:	# not yet registered
@@ -309,7 +311,9 @@ class AnnouncementManager(object):
 		CSIsFromAnnounceTo = []
 		for announcedResource in at:
 			if len(sp := announcedResource.split('/')) >= 2:
-				CSIsFromAnnounceTo.append('/%s' % sp[1])
+				if (csi := '/%s' % sp[1]) == CSE.remote.cseCsi or csi.startswith('%s/' % CSE.remote.cseCsi):	# Ignore own CSE as target
+					continue
+				CSIsFromAnnounceTo.append(csi)
 
 		announcedCSIs = []
 		remoteRIs = []
