@@ -24,7 +24,7 @@ resourceID=id-in
 resourceName=cse-in
 # Directory of default resources to import. Default: ./init
 resourcesPath=./init
-# ExpirationTime before resources are removed in seconds. Default: 60*60*24*365 = 1 year
+# ExpirationTime before resources are removed in seconds. Default: 60*60*24*365 = 1 year = 31536000
 expirationDelta=31536000
 # Admin originator for the CSE. Default: CAdmin
 originator=CAdmin
