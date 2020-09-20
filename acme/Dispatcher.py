@@ -523,7 +523,7 @@ class Dispatcher(object):
 					Logging.logWarn(err)
 					return Result(rsc=RC.targetNotSubscribable, dbg=err)
 				else:
-					err = 'Invalid child resource type'
+					err = 'Invalid child resource type: %s' % T(resource.ty).value
 					Logging.logWarn(err)
 					return Result(rsc=RC.invalidChildResourceType, dbg=err)
 
