@@ -148,7 +148,11 @@ class	Logging:
 	def _log(level:int, msg:str) -> None:
 		if Logging.loggingEnabled and Logging.logLevel <= level and Logging.queue is not None:
 			# Queue a log message : (level, message, caller from stackframe, current thread)
-			Logging.queue.put((level, str(msg), inspect.getframeinfo(inspect.stack()[2][0]), threading.current_thread()))
+			try:
+				Logging.queue.put((level, str(msg), inspect.getframeinfo(inspect.stack()[2][0]), threading.current_thread()))
+			except Exception as e:
+				# sometimes this raises an exception. Just ignore it.
+				pass
 
 
 #
