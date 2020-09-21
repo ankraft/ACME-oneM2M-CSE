@@ -58,7 +58,7 @@ The following table presents the supported management object specifications.
 | Notifications                 |  &check;  | E.g. for subscriptions                                                | 
 | AE registration               |  &check;  |                                                                       |
 | Remote CSE registration       |  &check;  |                                                                       |
-| Resource expiration           |  &cross;  |                                                                       |
+| Resource expiration           |  &check;  |                                                                       |
 | Resource announcements        |  &check;  | Only one hop is supported at the moment.                              |
 | Resource validations          |  &check;  |                                                                       |
 | Request parameter validations |  &check;  |                                                                       |

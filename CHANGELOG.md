@@ -3,6 +3,7 @@
 # Changelog
 
 ## 0.6.0 - xxxx-xx-xx
+- [CSE] Improved resource expiration.
 
 ## 0.5.0 - 2020-09-17
 - [CSE] Added Resource Announcements to remote CSEs.
