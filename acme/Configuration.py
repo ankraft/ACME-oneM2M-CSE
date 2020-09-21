@@ -101,6 +101,7 @@ class Configuration(object):
 				'cse.rn'							: config.get('cse', 'resourceName',						fallback='cse-in'),
 				'cse.resourcesPath'					: config.get('cse', 'resourcesPath', 					fallback=C.defaultImportDirectory),
 				'cse.expirationDelta'				: config.getint('cse', 'expirationDelta', 				fallback=60*60*24*365),	# 1 year, in seconds
+				'cse.maxExpirationDelta'			: config.getint('cse', 'maxExpirationDelta',			fallback=60*60*24*365*5),	# 5 years, in seconds
 				'cse.originator'					: config.get('cse', 'originator',						fallback='CAdmin'),
 				'cse.enableApplications'			: config.getboolean('cse', 'enableApplications', 		fallback=True),
 				'cse.applicationsStartupDelay'		: config.getint('cse', 'applicationsStartupDelay',		fallback=5),		# Seconds

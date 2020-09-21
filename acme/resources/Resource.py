@@ -267,6 +267,7 @@ class Resource(object):
 			Logging.logDebug(err)
 			return Result(status=False, rsc=RC.contentsUnacceptable, dbg=err)
 
+		# expirationTime handling
 		if (et := self.et) is not None:
 			if self.ty == T.CSEBase:
 				err = 'expirationTime is not allowed in CSEBase'
@@ -276,6 +277,9 @@ class Resource(object):
 				err = 'expirationTime is in the past: %s < %s' % (et, etNow)
 				Logging.logWarn(err)
 				return Result(status=False, rsc=RC.badRequest, dbg=err)
+			if et > (etMax := Utils.getResourceDate(Configuration.get('cse.maxExpirationDelta'))):
+				Logging.logDebug('Correcting expirationDate to maxExpiration: %s -> %s' % (et, etMax))
+				self['et'] = etMax
 		return Result(status=True)
 
 

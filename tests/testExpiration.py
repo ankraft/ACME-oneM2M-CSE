@@ -47,11 +47,23 @@ class TestExpiration(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTWithToLargeET(self):
+		self.assertIsNotNone(TestExpiration.cse)
+		self.assertIsNotNone(TestExpiration.ae)
+		jsn = 	{ 'm2m:cnt' : { 
+					'et' : '99991231T235959',	# wrongly updated
+					'rn' : cntRN
+				}}
+		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, jsn)
+		self.assertEqual(rsc, RC.created)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTExpirationInThePast(self):
 		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
 		jsn = 	{ 'm2m:cnt' : { 
-					'rn' : cntRN,
+					'rn' : '%s2' % cntRN,
 					'et' : getDate(-60) # 1 minute in the past
 				}}
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, jsn)
@@ -61,6 +73,7 @@ class TestExpiration(unittest.TestCase):
 
 def run():
 	suite = unittest.TestSuite()
+	suite.addTest(TestExpiration('test_createCNTWithToLargeET'))
 	suite.addTest(TestExpiration('test_createCNTExpirationInThePast'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
