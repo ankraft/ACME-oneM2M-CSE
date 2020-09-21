@@ -8,7 +8,7 @@
 #	modules and entities of the CSE.
 #
 
-import datetime, random, string, sys, re, threading, traceback
+import datetime, random, string, sys, re, threading, traceback, time
 from typing import Any, List, Tuple, Union
 from resources import ACP, ACPAnnc, AE, AEAnnc, ANDI, ANDIAnnc, ANI, ANIAnnc, BAT, BATAnnc
 from resources import CIN, CINAnnc, CNT, CNTAnnc, CNT_LA, CNT_OL, CSEBase, CSR, CSRAnnc
@@ -119,6 +119,14 @@ def toISO8601Date(ts: Union[float, datetime.datetime]) -> str:
 	if isinstance(ts, float):
 		ts = datetime.datetime.utcfromtimestamp(ts)
 	return ts.strftime('%Y%m%dT%H%M%S,%f')
+
+
+def fromISO8601Date(timestamp:str) -> float:
+	try:
+		return datetime.datetime.strptime(timestamp, '%Y%m%dT%H%M%S,%f').timestamp()
+	except Exception as e:
+		Logging.logWarn('Wrong format for timestamp: %s' % timestamp)
+		return 0.0
 
 
 

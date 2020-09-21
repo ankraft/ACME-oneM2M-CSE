@@ -75,7 +75,9 @@ class Importer(object):
 			# Check resource creation
 			if not CSE.registration.checkResourceCreation(resource, originator):
 				continue
-			CSE.dispatcher.createResource(resource)
+			if (res := CSE.dispatcher.createResource(resource)).resource is None:
+				Logging.logErr('Error during import: %s' % res.dbg)
+				return False
 			ty = resource.ty
 			if ty == T.CSEBase:
 				Configuration.set('cse.csi', resource.csi)

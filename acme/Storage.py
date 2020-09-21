@@ -24,7 +24,6 @@ from Types import ResourceTypes as T, Result, ResponseCode as RC
 from Logging import Logging
 from resources.Resource import Resource
 import CSE, Utils
-from helpers import BackgroundWorker
 
 
 class Storage(object):
@@ -50,22 +49,10 @@ class Storage(object):
 		if Configuration.get('db.resetOnStartup') is True:
 			self.db.purgeDB()
 
-		# Start background worker to handle expired resources
-		Logging.log('Starting expiration worker')
-		self.expirationWorker = None
-		if (iv := Configuration.get('cse.checkExpirationsInterval')) > 0:
-			self.expirationWorker = BackgroundWorker.BackgroundWorker(iv, self.expirationDBWorker, 'expirationDBWorker')
-			self.expirationWorker.start()
-
 		Logging.log('Storage initialized')
 
 
 	def shutdown(self) -> None:
-		# Stop the expiration worker
-		Logging.log('Stopping expiration worker')
-		if self.expirationWorker is not None:
-			self.expirationWorker.stop()
-
 		self.db.closeDB()
 		Logging.log('Storage shut down')
 
@@ -103,11 +90,11 @@ class Storage(object):
 
 
 	# Check whether a resource with either the ri or the srn already exists
-	def hasResource(self, ri: str, srn: str) -> bool:
+	def hasResource(self, ri:str=None, srn:str=None) -> bool:
 		return self.db.hasResource(ri=ri) or self.db.hasResource(srn=srn)
 
 
-	def retrieveResource(self, ri: str = None, csi: str = None, srn: str = None) -> Result:
+	def retrieveResource(self, ri:str=None, csi:str=None, srn:str=None) -> Result:
 		""" Return a resource via different addressing methods. """
 		resources = []
 
@@ -133,50 +120,10 @@ class Storage(object):
 		return Result(rsc=RC.internalServerError, dbg='database inconsistency')
 
 
-
 	def retrieveResourcesByType(self, ty: T) -> List[dict]:
 		""" Return all resources of a certain type. """
 		# Logging.logDebug('Retrieving all resources ty: %d' % ty)
 		return self.db.searchResources(ty=int(ty))
-
-
-
-
-	# def discoverResources(self, rootResource, handling, conditions, attributes, fo):
-	# 	# preparations
-	# 	rootSRN = rootResource.__srn__
-	# 	handling['__returned__'] = 0
-	# 	handling['__matched__'] = 0
-	# 	if 'lvl' in handling:
-	# 		handling['__lvl__'] = rootSRN.count('/') + handling['lvl']
-
-	# 	# a bit of optimization. This length stays the same.
-	# 	allLen = ((len(conditions) if conditions is not None else 0) +
-	# 	  (len(attributes) if attributes is not None else 0) +
-	# 	  (len(conditions['ty']) if conditions is not None else 0) - 1 +
-	# 	  (len(conditions['cty']) if conditions is not None else 0) - 1 
-	# 	 )
-
-	# 	rs = self.db.discoverResources(lambda r: _testDiscovery(self,
-	# 															r,
-	# 															rootSRN,
-	# 															handling,
-	# 															conditions,
-	# 															attributes,
-	# 															fo,
-	# 															handling['lim'] if 'lim' in handling else None,
-	# 															handling['ofst'] if 'ofst' in handling else None,
-	# 															allLen))
-		
-	# 	# transform JSONs to resources
-	# 	result = []
-	# 	for r in rs:
-	# 		result.append(Utils.resourceFromJSON(r))
-
-	# 	# sort resources by type and then by lowercase rn
-	# 	if Configuration.get('cse.sortDiscoveredResources'):
-	# 		result.sort(key=lambda x:(x.ty, x.rn.lower()))
-	# 	return result
 
 
 	def updateResource(self, resource: Resource) -> Result:
@@ -218,14 +165,14 @@ class Storage(object):
 		return self.db.countResources()
 
 
-	def identifier(self, ri: str) -> List[dict]:
+	def identifier(self, ri:str) -> List[dict]:
 		return self.db.searchIdentifiers(ri=ri)
 
-	def structuredPath(self, srn: str) -> List[dict]:
+	def structuredPath(self, srn:str) -> List[dict]:
 		return self.db.searchIdentifiers(srn=srn)
 
 
-	def searchByTypeFieldValue(self, ty: T, field: str, value: str) -> List[Resource]:
+	def searchByTypeFieldValue(self, ty:T, field:str, value:str) -> List[Resource]:
 		"""Search and return all resources of a specific type and a value in a field,
 		and return them in an array."""
 		result = []
@@ -236,7 +183,7 @@ class Storage(object):
 		return result
 
 
-	def searchByValueInField(self, field: str, value: str) -> List[Resource]:
+	def searchByValueInField(self, field:str, value:str) -> List[Resource]:
 		"""Search and return all resources of a specific value in a field,
 		and return them in an array."""
 		result = []
@@ -245,6 +192,13 @@ class Storage(object):
 			if res.resource is not None:
 				result.append(res.resource)
 		return result
+
+
+	def searchByFilter(self, filter:Callable) -> List[Resource]:
+		"""	Return a list of resouces that match the given filter, or an empty list.
+		"""
+		return self.db.discoverResources(filter)
+
 		
 
 	def searchAnnounceableResourcesForCSI(self, csi:str, isAnnounced:bool) -> List[Resource]:
@@ -346,30 +300,6 @@ class Storage(object):
 
 	def removeAppData(self, data: dict) -> bool:
 		return self.db.removeAppData(data)
-
-
-	#########################################################################
-	##
-	##	Resource Expiration
-	##
-
-	def expirationDBWorker(self) -> bool:
-		Logging.logDebug('Looking for expired resources')
-		now = Utils.getResourceDate()
-		rs = self.db.discoverResources(lambda r: 'et' in r and (et := r['et']) is not None and et < now)
-		for j in rs:
-			res = Utils.resourceFromJSON(j)
-			if res.resource is not None:
-				CSE.dispatcher.deleteResource(res.resource, withDeregistration=True)
-
-		# Check all resources with maxInstanceAge (mia)
-		rs = self.db.discoverResources(lambda r: 'mia' in r)
-		for j in rs:
-			res = Utils.resourceFromJSON(j)
-			if res.resource is not None:
-				res.resource.validateExpirations()
-		return True
-
 
 
 #########################################################################

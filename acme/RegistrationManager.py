@@ -4,7 +4,7 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Managing resource / AE registrations
+#	Managing resources and AE, CSE registrations
 #
 
 from Logging import Logging
@@ -15,15 +15,28 @@ from Types import ResourceTypes as T, Result, Permission, ResponseCode as RC
 from resources.Resource import Resource
 import CSE, Utils
 from resources import ACP
+from helpers import BackgroundWorker
+
 
 
 class RegistrationManager(object):
 
 	def __init__(self) -> None:
+		# Start background worker to handle expired resources
+		Logging.log('Starting expiration worker')
+		self.expirationWorker = None
+		if (interval := Configuration.get('cse.checkExpirationsInterval')) > 0:
+			self.expirationWorker = BackgroundWorker.BackgroundWorker(interval, self.expirationDBWorker, 'expirationDBWorker', startWithDelay=True)
+			self.expirationWorker.start()
+
 		Logging.log('RegistrationManager initialized')
 
 
 	def shutdown(self) -> None:
+		# Stop the expiration worker
+		Logging.log('Stopping expiration worker')
+		if self.expirationWorker is not None:
+			self.expirationWorker.stop()
 		Logging.log('RegistrationManager shut down')
 
 
@@ -255,6 +268,38 @@ class RegistrationManager(object):
 		Logging.logDebug('Updating CSR. csi: %s ' % csr['csi'])
 		# send event
 		CSE.event.remoteCSEUpdate(csr)	# type: ignore
+		return True
+
+
+
+
+	#########################################################################
+	##
+	##	Resource Expiration
+	##
+
+	def expirationDBWorker(self) -> bool:
+		Logging.logDebug('Looking for expired resources')
+		now = Utils.getResourceDate()
+		rs = CSE.storage.searchByFilter(lambda r: 'et' in r and (et := r['et']) is not None and et < now)
+		for j in rs:
+			# try to retrieve the resource first bc it might have been deleted as a child resource
+			# of an expired resource
+			if not CSE.storage.hasResource(ri=j['ri']):
+				continue
+			res = Utils.resourceFromJSON(j)
+		
+			Logging.logDebug('Expiring resource (and child resouces): %s' % res.resource.ri)
+			if res.resource is not None:
+				CSE.dispatcher.deleteResource(res.resource, withDeregistration=True)	# ignore result
+
+		# Check all resources with maxInstanceAge (mia)
+		rs = CSE.storage.searchByFilter(lambda r: 'mia' in r)
+		for j in rs:
+			res = Utils.resourceFromJSON(j)
+			if res.resource is not None:
+				res.resource.validateExpirations()
+				
 		return True
 
 

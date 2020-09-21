@@ -85,7 +85,8 @@ class Resource(object):
 			ts = Utils.getResourceDate()
 			self.setAttribute('ct', ts, overwrite=False)
 			self.setAttribute('lt', ts, overwrite=False)
-			self.setAttribute('et', Utils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite=False) 
+			if self.ty not in [ T.CSEBase ]:
+				self.setAttribute('et', Utils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite=False) 
 			if pi is not None:
 				# self.setAttribute('pi', pi, overwrite=False)
 				self.setAttribute('pi', pi, overwrite=True)
@@ -265,6 +266,16 @@ class Resource(object):
 			err = 'Invalid ID ri: %s, pi: %s, rn: %s)' % (self.ri, self.pi, self.rn)
 			Logging.logDebug(err)
 			return Result(status=False, rsc=RC.contentsUnacceptable, dbg=err)
+
+		if (et := self.et) is not None:
+			if self.ty == T.CSEBase:
+				err = 'expirationTime is not allowed in CSEBase'
+				Logging.logWarn(err)
+				return Result(status=False, rsc=RC.badRequest, dbg=err)
+			if len(et) > 0 and et < (etNow := Utils.getResourceDate()):
+				err = 'expirationTime is in the past: %s < %s' % (et, etNow)
+				Logging.logWarn(err)
+				return Result(status=False, rsc=RC.badRequest, dbg=err)
 		return Result(status=True)
 
 

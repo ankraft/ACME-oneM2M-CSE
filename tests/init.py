@@ -116,6 +116,8 @@ def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any
 
 def connectionPossible(url):
 	try:
+		# The following request is not supposed to return a resource, it just
+		# tests whether a connection can be established at all.
 		return RETRIEVE(url, 'none', timeout=1.0)[0] is not None
 	except Exception as e:
 		return False
@@ -231,6 +233,7 @@ def setXPath(jsn: dict, element: str, value: Any, overwrite: bool = True) -> Non
 
 def getDate(delta:int = 0) -> str:
 	return toISO8601Date(datetime.datetime.utcnow() + datetime.timedelta(seconds=delta))
+
 
 def toISO8601Date(ts: Union[float, datetime.datetime]) -> str:
 	if isinstance(ts, float):
