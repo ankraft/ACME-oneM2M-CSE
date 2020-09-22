@@ -40,6 +40,10 @@ def parseArgs() -> argparse.Namespace:
 	groupRemoteCSE.add_argument('--validation', action='store_true', dest='validationenabled', default=None, help='enable attributes and arguments validation')
 	groupRemoteCSE.add_argument('--no-validation', action='store_false', dest='validationenabled', default=None, help='disable attributes and arguments validation')
 
+	groupApps = parser.add_mutually_exclusive_group()
+	groupApps.add_argument('--remote-configuration', action='store_true', dest='remoteconfigenabled', default=None, help='enable http remote configuration endpoint')
+	groupApps.add_argument('--no-remote-configuration', action='store_false', dest='remoteconfigenabled', default=None, help='disable http remote configuration endpoint')
+
 	parser.add_argument('--db-reset', action='store_true', dest='dbreset', default=None, help='reset the DB when starting the CSE')
 	parser.add_argument('--db-storage', action='store', dest='dbstoragemode', default=None, choices=[ 'memory', 'disk' ], type=str.lower, help='specify the DB´s storage mode')
 	parser.add_argument('--log-level', action='store', dest='loglevel', default=None, choices=[ 'info', 'error', 'warn', 'debug', 'off'], type=str.lower, help='set the log level, or turn logging off')

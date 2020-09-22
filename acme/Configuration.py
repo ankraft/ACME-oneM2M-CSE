@@ -37,6 +37,7 @@ class Configuration(object):
 		argsValidationEnabled	= args.validationenabled if args is not None and 'validationenabled' in args else None
 		argsStatisticsEnabled	= args.statisticsenabled if args is not None and 'statisticsenabled' in args else None
 		argsRunAsHttps			= args.https if args is not None and 'https' in args else None
+		argsRemoteConfigEnabled	= args.remoteconfigenabled if args is not None and 'remoteconfigenabled' in args else None
 
 
 		# Read and parse the configuration file
@@ -69,6 +70,7 @@ class Configuration(object):
 				'http.root'							: config.get('server.http', 'root', 					fallback=''),
 				'http.address'						: config.get('server.http', 'address', 					fallback='http://127.0.0.1:8080'),
 				'http.multiThread'					: config.getboolean('server.http', 'multiThread', 		fallback=True),
+				'http.enableRemoteConfiguration'	: config.getboolean('server.http', 'enableRemoteConfiguration', fallback=False),
 
 				#
 				#	Database
@@ -278,6 +280,10 @@ class Configuration(object):
 		# Override useTLS
 		if argsRunAsHttps is not None:
 			Configuration._configuration['cse.security.useTLS'] = argsRunAsHttps
+
+		# Override remote/httpConfiguration
+		if argsRemoteConfigEnabled is not None:
+			Configuration._configuration['http.enableRemoteConfiguration'] = argsRemoteConfigEnabled
 
 		# Correct urls
 		Configuration._configuration['cse.registrar.address'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.address'])

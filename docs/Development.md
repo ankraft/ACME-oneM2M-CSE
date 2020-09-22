@@ -50,10 +50,12 @@ There are more helper methods provided by the common *AppBase* and *AEBase* base
 Various aspects of the ACME implementation are covered by unit tests based on the Python [unittest](https://docs.python.org/3/library/unittest.html) framework. The files for test cases and the runner application reside in the [tests](../tests) directory.
 
 
-### Configuration
+### Configuration & Running
 Each test suite imports the file [init.py](../tests/init.py) that contains various configuration values used by the test suites. You may change these for your individual set-up.
 
-In the file [init.py](../tests/init.py) there is also a configuration setting for the request protocol that should be used. Currently, *http* and *https* are supported. Please note, that all CSE's involved in the test runs must use the same protocol type.		
+In the file [init.py](../tests/init.py) there is also a configuration setting for the request protocol that should be used. Currently, *http* and *https* are supported. Please note, that all CSE's involved in the test runs must use the same protocol type.
+
+The CSE under test should be started with the remote configuration interface enabled. During test runs the test suite will temporarily change some of the CSE's delays (e.g. the check for resource expirations) in order to speed up the test. You can either do this by changing the configuation [enableRemoteConfiguration](Configuration.md#server_http) in the [configuration file](../acme.ini.default), or by providing the [--remote-configuration](Running.md) command line argument during startup.
 
 ### Test Suites
 

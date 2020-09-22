@@ -100,6 +100,12 @@ address=http://127.0.0.1:8080
 root=/
 # Run the http server in single- or multi-threaded mode. Default: true
 multiThread=true
+# Enable an endpoint for get and set certain configuration values via a 
+# REST interface.
+# ATTENTION: Enabling this feature exposes configuration values, IDs and
+# passwords, and is a security risk.
+# Default: False
+enableRemoteConfiguration=true
 
 
 #

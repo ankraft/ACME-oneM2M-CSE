@@ -68,6 +68,14 @@ class HttpServer(object):
 			self.addEndpoint('/', handler=self.redirectRoot, methods=['GET'])
 			self.addEndpoint('/__version__', handler=self.getVersion, methods=['GET'])
 
+		# Enable the config endpoint
+		if Configuration.get('http.enableRemoteConfiguration'):
+			configEndpoint = '%s/__config__' % self.rootPath
+			Logging.log('Registering configuration endpoint at: %s' % configEndpoint)
+			self.addEndpoint(configEndpoint, handler=self.handleConfig, methods=['GET'], strictSlashes=False)
+			self.addEndpoint('%s/<path:path>' % configEndpoint, handler=self.handleConfig, methods=['GET', 'PUT'])
+
+
 		# Add mapping / macro endpoints
 		self.mappings = {}
 		if (mappings := Configuration.get('server.http.mappings')) is not None:
@@ -122,8 +130,8 @@ class HttpServer(object):
 
 
 
-	def addEndpoint(self, endpoint:str=None, endpoint_name:str=None, handler:Callable=None, methods:List[str]=None) -> None:
-		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods=methods)
+	def addEndpoint(self, endpoint:str=None, endpoint_name:str=None, handler:Callable=None, methods:List[str]=None, strictSlashes=True) -> None:
+		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods=methods, strict_slashes=strictSlashes)
 
 
 	def handleGET(self, path:str=None) -> Response:
@@ -208,7 +216,32 @@ class HttpServer(object):
 		return C.version
 
 
-	def handleWebUIGET(self, path: str = None) -> Union[Response, Any, Tuple[str, int]]:
+	def handleConfig(self, path:str=None) -> str:
+		if request.method == 'GET':
+			if path == None or len(path) == 0:
+				return Configuration.print()
+			if Configuration.has(path):
+				return Configuration.get(path)
+			return ''
+		elif request.method =='PUT':
+			data = request.data.decode('utf-8').rstrip()
+			try:
+				if path == 'cse.checkExpirationsInterval':
+					if (d := int(data)) < 1:
+						return 'nak'
+					Configuration.set(path, d)
+					CSE.registration.stopExpirationWorker()
+					CSE.registration.startExpirationWorker()
+					return 'ack'
+			except:
+				return 'nak'
+			return 'nak'
+		return 'unsupported'
+
+
+
+
+	def handleWebUIGET(self, path:str=None) -> Union[Response, Any, Tuple[str, int]]:
 		""" Handle a GET request for the web GUI. """
 
 		# security check whether the path will under the web root
@@ -234,19 +267,19 @@ class HttpServer(object):
 	#	Send various types of HTTP requests
 	#
 
-	def sendRetrieveRequest(self, url: str, originator: str) -> Result:
+	def sendRetrieveRequest(self, url:str, originator:str) -> Result:
 		return self.sendRequest(requests.get, url, originator)
 
 
-	def sendCreateRequest(self, url: str, originator: str, ty: T = None, data: Any = None) -> Result:
+	def sendCreateRequest(self, url:str, originator:str, ty:T=None, data:Any=None) -> Result:
 		return self.sendRequest(requests.post, url, originator, ty, data)
 
 
-	def sendUpdateRequest(self, url: str, originator: str, data: Any) -> Result:
+	def sendUpdateRequest(self, url:str, originator:str, data:Any) -> Result:
 		return self.sendRequest(requests.put, url, originator, data=data)
 
 
-	def sendDeleteRequest(self, url: str, originator: str) -> Result:
+	def sendDeleteRequest(self, url:str, originator:str) -> Result:
 		return self.sendRequest(requests.delete, url, originator)
 
 

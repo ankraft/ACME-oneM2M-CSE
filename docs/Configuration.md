@@ -87,13 +87,14 @@ The following macros are supported in addition to those defined in the sections 
 <a name="server_http"></a>
 ###	[server.http] - HTTP Server Settings
 
-| Keyword     | Description                                                                                  | Macro Name       |
-|:------------|:---------------------------------------------------------------------------------------------|:-----------------|
-| port        | Port to listen to.<br/>Default: 8080                                                         | http.port        |
-| listenIF    | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1              | http.listenIF    |
-| address     | Own address. Should be a local/public reachable address.<br/> Default: http://127.0.0.1:8080 | http.address     |
-| root        | CSE Server root. Never provide a trailing /.<br/>Default: empty string                       | http.root        |
-| multiThread | Run the http server in single- or multi-threaded mode.<br/> Default: true                    | http.multiThread |
+| Keyword                   | Description                                                                                                                                                                                                                  | Macro Name                     |
+|:--------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|
+| port                      | Port to listen to.<br/>Default: 8080                                                                                                                                                                                         | http.port                      |
+| listenIF                  | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1                                                                                                                                              | http.listenIF                  |
+| address                   | Own address. Should be a local/public reachable address.<br/> Default: http://127.0.0.1:8080                                                                                                                                 | http.address                   |
+| root                      | CSE Server root. Never provide a trailing /.<br/>Default: empty string                                                                                                                                                       | http.root                      |
+| multiThread               | Run the http server in single- or multi-threaded mode.<br/> Default: true                                                                                                                                                    | http.multiThread               |
+| enableRemoteConfiguration | Enable an endpoint for get and set certain configuration values via a REST interface.<br />**ATTENTION: Enabling this feature exposes configuration values, IDs and passwords, and is a security risk.**<br/> Default: false | http.enableRemoteConfiguration |
 
 <a name="database"></a>
 ###	[database] - Database Settings

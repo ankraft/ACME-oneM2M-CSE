@@ -22,21 +22,12 @@ from helpers import BackgroundWorker
 class RegistrationManager(object):
 
 	def __init__(self) -> None:
-		# Start background worker to handle expired resources
-		Logging.log('Starting expiration worker')
-		self.expirationWorker = None
-		if (interval := Configuration.get('cse.checkExpirationsInterval')) > 0:
-			self.expirationWorker = BackgroundWorker.BackgroundWorker(interval, self.expirationDBWorker, 'expirationDBWorker', startWithDelay=True)
-			self.expirationWorker.start()
-
+		self.startExpirationWorker()
 		Logging.log('RegistrationManager initialized')
 
 
 	def shutdown(self) -> None:
-		# Stop the expiration worker
-		Logging.log('Stopping expiration worker')
-		if self.expirationWorker is not None:
-			self.expirationWorker.stop()
+		self.stopExpirationWorker()
 		Logging.log('RegistrationManager shut down')
 
 
@@ -277,6 +268,22 @@ class RegistrationManager(object):
 	##
 	##	Resource Expiration
 	##
+
+	def startExpirationWorker(self):
+		# Start background worker to handle expired resources
+		Logging.log('Starting expiration worker')
+		self.expirationWorker = None
+		if (interval := Configuration.get('cse.checkExpirationsInterval')) > 0:
+			self.expirationWorker = BackgroundWorker.BackgroundWorker(interval, self.expirationDBWorker, 'expirationWorker', startWithDelay=True)
+			self.expirationWorker.start()
+
+
+	def stopExpirationWorker(self):
+		# Stop the expiration worker
+		Logging.log('Stopping expiration worker')
+		if self.expirationWorker is not None:
+			self.expirationWorker.stop()
+
 
 	def expirationDBWorker(self) -> bool:
 		Logging.logDebug('Looking for expired resources')
