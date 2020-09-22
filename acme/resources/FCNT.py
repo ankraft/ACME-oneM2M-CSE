@@ -92,15 +92,27 @@ class FCNT(AnnounceableResource):
 		return Result(status=True)
 
 
+	# Handle the removal of a FCIN. 
+	def childRemoved(self, childResource:Resource, originator:str) -> None:
+		super().childRemoved(childResource, originator)
+		if childResource.ty == T.FCI:	# Validate if child was FCIN
+			self._validateChildren(originator)
+
+
 	# Checking the presentse of cnd and calculating the size
 	def validate(self, originator:str=None, create:bool=False) -> Result:
 		if not (res := super().validate(originator, create)).status:
 			return res
+		return self._validateChildren(originator)
 
-		# No CND?
-		if (cnd := self.cnd) is None or len(cnd) == 0:
-			return Result(status=False, rsc=RC.contentsUnacceptable, dbg='cnd attribute missing or empty')
+		# No CND? -> Validator
+		# if (cnd := self.cnd) is None or len(cnd) == 0:
+		# 	return Result(status=False, rsc=RC.contentsUnacceptable, dbg='cnd attribute missing or empty')
 
+	def _validateChildren(self, originator:str) -> Result:
+		""" Internal validation and checks. This called more often then just from
+			the validate() method.
+		"""
 		# Calculate contentSize
 		# This is not at all realistic since this is the in-memory representation
 		# TODO better implementation needed 
@@ -166,7 +178,6 @@ class FCNT(AnnounceableResource):
 		# TODO support maxInstanceAge
 		
 		# May have been changed, so store the resource
-		# CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
 		self.dbUpdate()
 		return Result(status=True)
 

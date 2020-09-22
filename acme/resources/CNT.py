@@ -105,7 +105,7 @@ class CNT(AnnounceableResource):
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
 		super().childRemoved(childResource, originator)
 		if childResource.ty == T.CIN:	# Validate if child was CIN
-			self.validate(originator)
+			self._validateChildren()
 
 
 	# Validating the Container. This means recalculating cni, cbs as well as
@@ -113,7 +113,13 @@ class CNT(AnnounceableResource):
 	def validate(self, originator:str=None, create:bool=False) -> Result:
 		if (res := super().validate(originator, create)).status == False:
 			return res
+		return self._validateChildren()
 
+
+	def _validateChildren(self) -> Result:
+		""" Internal validation and checks. This called more often then just from
+			the validate() method.
+		"""
 		# retrieve all children
 		cs = self.contentInstances()
 
@@ -147,6 +153,6 @@ class CNT(AnnounceableResource):
 		# TODO: support maxInstanceAge
 
 		# Some CNT resource may have been updated, so store the resource 
-		CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
+		self.dbUpdate()
 
 		return Result(status=True)
