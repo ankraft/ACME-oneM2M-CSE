@@ -221,12 +221,13 @@ class HttpServer(object):
 			if path == None or len(path) == 0:
 				return Configuration.print()
 			if Configuration.has(path):
-				return Configuration.get(path)
+				return str(Configuration.get(path))
 			return ''
 		elif request.method =='PUT':
 			data = request.data.decode('utf-8').rstrip()
 			try:
 				if path == 'cse.checkExpirationsInterval':
+					Logging.logDebug('New remote configuration: %s = %s' % (path, data))
 					if (d := int(data)) < 1:
 						return 'nak'
 					Configuration.set(path, d)

@@ -34,6 +34,8 @@ NOTIFICATIONPORT 	= 9990
 NOTIFICATIONSERVER	= 'http://localhost:%d' % NOTIFICATIONPORT
 NOTIFICATIONSERVERW	= 'http://localhost:6666'
 
+CONFIGURL			= '%s%s__config__' % (SERVER, ROOTPATH)
+
 
 testVerbosity 		= 2		# 0, 1, 2
 
@@ -110,8 +112,14 @@ def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any
 	except Exception as e:
 		#print('Failed to send request: %s' % str(e))
 		return None, 5103
-	rc = int(r.headers['X-M2M-RSC']) if 'X-M2M-RSC' in r.headers else 5000
-	return r.json() if len(r.content) > 0 else None, rc
+	rc = int(r.headers['X-M2M-RSC']) if 'X-M2M-RSC' in r.headers else r.status_code
+
+	# response doesn't always contain JSON
+	try:
+		result = r.json() if len(r.content) > 0 else None, rc
+	except Exception as e:
+		result = r.content, rc
+	return result
 
 
 def connectionPossible(url):
@@ -121,6 +129,17 @@ def connectionPossible(url):
 		return RETRIEVE(url, 'none', timeout=1.0)[0] is not None
 	except Exception as e:
 		return False
+
+
+def setExpirationCheck(interval:int) -> int:
+	c, rc = RETRIEVE(CONFIGURL, '')
+	if rc == 200 and c.startswith(b'Configuration:'):
+		# retrieve the old value
+		c, rc = RETRIEVE('%s/cse.checkExpirationsInterval' % CONFIGURL, '')
+		oldValue = int(c)
+		c, rc = UPDATE('%s/cse.checkExpirationsInterval' % CONFIGURL, '', str(interval))
+		return oldValue if c == b'ack' else -1
+	return -1
 		
 
 # Surpress warnings for insecure requests, e.g. self-signed certificates
