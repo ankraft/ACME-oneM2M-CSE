@@ -197,7 +197,12 @@ class Storage(object):
 	def searchByFilter(self, filter:Callable) -> List[Resource]:
 		"""	Return a list of resouces that match the given filter, or an empty list.
 		"""
-		return self.db.discoverResources(filter)
+		result = []
+		for j in self.db.discoverResources(filter):
+			res = Utils.resourceFromJSON(j)
+			if res.resource is not None:
+				result.append(res.resource)
+		return result
 
 		
 

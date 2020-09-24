@@ -269,7 +269,7 @@ class RegistrationManager(object):
 	##	Resource Expiration
 	##
 
-	def startExpirationWorker(self):
+	def startExpirationWorker(self) -> None:
 		# Start background worker to handle expired resources
 		Logging.log('Starting expiration worker')
 		self.expirationWorker = None
@@ -278,7 +278,7 @@ class RegistrationManager(object):
 			self.expirationWorker.start()
 
 
-	def stopExpirationWorker(self):
+	def stopExpirationWorker(self) -> None:
 		# Stop the expiration worker
 		Logging.log('Stopping expiration worker')
 		if self.expirationWorker is not None:
@@ -288,24 +288,19 @@ class RegistrationManager(object):
 	def expirationDBWorker(self) -> bool:
 		Logging.logDebug('Looking for expired resources')
 		now = Utils.getResourceDate()
-		rs = CSE.storage.searchByFilter(lambda r: 'et' in r and (et := r['et']) is not None and et < now)
-		for j in rs:
+		resources = CSE.storage.searchByFilter(lambda r: 'et' in r and (et := r['et']) is not None and et < now)
+		for resource in resources:
 			# try to retrieve the resource first bc it might have been deleted as a child resource
 			# of an expired resource
-			if not CSE.storage.hasResource(ri=j['ri']):
+			if not CSE.storage.hasResource(ri=resource.ri):
 				continue
-			res = Utils.resourceFromJSON(j)
-		
-			Logging.logDebug('Expiring resource (and child resouces): %s' % res.resource.ri)
-			if res.resource is not None:
-				CSE.dispatcher.deleteResource(res.resource, withDeregistration=True)	# ignore result
+			Logging.logDebug('Expiring resource (and child resouces): %s' % resource.ri)
+			CSE.dispatcher.deleteResource(resource, withDeregistration=True)	# ignore result
 
 		# Check all resources with maxInstanceAge (mia)
-		rs = CSE.storage.searchByFilter(lambda r: 'mia' in r)
-		for j in rs:
-			res = Utils.resourceFromJSON(j)
-			if res.resource is not None:
-				res.resource.validateExpirations()
+		resources = CSE.storage.searchByFilter(lambda r: 'mia' in r)
+		for resource in resources:
+			resource.validateExpirations()
 				
 		return True
 

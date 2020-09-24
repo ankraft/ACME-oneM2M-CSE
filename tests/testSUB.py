@@ -74,8 +74,8 @@ class TestSUB(unittest.TestCase):
 					'rn' : subRN,
 			        "enc": {
 			            "net": [ 1, 3 ]
-        			},
-        			"nu": [ NOTIFICATIONSERVER ],
+					},
+					"nu": [ NOTIFICATIONSERVER ],
 					'su': NOTIFICATIONSERVER
 				}}
 		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)

@@ -49,7 +49,7 @@ class BackgroundWorker(object):
 			try:
 				result = self.workerCallback()
 			except Exception as e:
-				Logging.logErr(e)
+				Logging.logErr(str(e))
 			finally:
 				if result:
 					self.sleep()
