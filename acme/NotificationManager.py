@@ -76,7 +76,7 @@ class NotificationManager(object):
 		return Result(status=True) if CSE.storage.updateSubscription(subscription) else Result(status=False, rsc=RC.internalServerError, dbg='cannot update subscription in database')
 
 
-	def checkSubscriptions(self, resource:Resource, reason:int, childResource:Resource=None, modifiedAttributes:dict=None) -> None:
+	def checkSubscriptions(self, resource:Resource, reason:NotificationEventType, childResource:Resource=None, modifiedAttributes:dict=None) -> None:
 		if not Configuration.get('cse.enableNotifications'):
 			return
 
@@ -84,6 +84,10 @@ class NotificationManager(object):
 			return 
 
 		ri = resource.ri
+
+		# ATTN: The "subscription" returned here are NOT the <sub> resources,
+		# but an internal representation from the 'subscription' DB !!!
+		# Access to attributes is different bc the structure is flattened
 		subs = CSE.storage.getSubscriptionsForParent(ri)
 		if subs is None or len(subs) == 0:
 			return
@@ -206,7 +210,7 @@ class NotificationManager(object):
 		return self._sendRequest(nu, ri, deletionNotification)
 
 
-	def _sendNotification(self, ri:str, nu:str, reason:int, resource:Resource, nct:int, modifiedAttributes:dict=None) ->  bool:
+	def _sendNotification(self, ri:str, nu:str, reason:NotificationEventType, resource:Resource, nct:int, modifiedAttributes:dict=None) ->  bool:
 		Logging.logDebug('Sending notification to: %s, reason: %d' % (nu, reason))
 
 		notificationRequest = {
@@ -228,7 +232,7 @@ class NotificationManager(object):
 		return self._sendRequest(nu, ri, notificationRequest, reason, data)
 
 
-	def _sendRequest(self, nu:str, ri:str, jsn:dict, reason:int=None, data:dict=None, originator:str=None) -> bool:
+	def _sendRequest(self, nu:str, ri:str, jsn:dict, reason:NotificationEventType=None, data:dict=None, originator:str=None) -> bool:
 		Utils.setXPath(jsn, 'm2m:sgn/sur', Utils.fullRI(ri))
 
 		# Add some values to the notification

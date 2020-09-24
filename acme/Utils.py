@@ -416,7 +416,7 @@ def removeCommentsFromJSON(data:str) -> str:
 
 
 decimalMatch = re.compile('{(\d+)}')
-def findXPath(jsn : dict, element : str, default : Any = None) -> Any:
+def findXPath(jsn:dict, element:str, default:Any = None) -> Any:
 	""" Find a structured element in JSON.
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
 	"""

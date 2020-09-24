@@ -28,7 +28,7 @@ attributePolicies = {
 	'pi' 	: [ BT.string, 			CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ],
 	'acpi'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.NA ],
 	'ct'	: [ BT.timestamp, 		CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ],
-	'et'	: [ BT.timestamp, 		CAR.car1,   RO.O,	RO.O,  RO.O, AN.MA ],
+	'et'	: [ BT.timestamp, 		CAR.car1N,  RO.O,	RO.O,  RO.O, AN.MA ],
 	'lt'	: [ BT.timestamp, 		CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ],
 	'st'	: [ BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ],
 	'lbl'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.MA ],
@@ -302,7 +302,7 @@ class Validator(object):
 					err = 'Cannot find mandatory attribute: %s' % r
 					Logging.logWarn(err)
 					return Result(status=False, rsc=RC.badRequest, dbg=err)
-				if r in pureJson and p[1] == CAR.car1:
+				if r in pureJson and p[1] == CAR.car1: # but ignore CAR.car1N (which may be Null/None)
 					err = 'Cannot delete a mandatory attribute: %s' % r
 					Logging.logWarn(err)
 					return Result(status=False, rsc=RC.badRequest, dbg=err)

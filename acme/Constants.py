@@ -65,6 +65,8 @@ class Constants(object):
 
 	acpPrefix 						= 'acp_'
 
+	invalidValue 					= '__iNvAliD___'
+
 
 	# max length of identifiers
 	maxIDLength	= 10

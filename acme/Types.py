@@ -234,6 +234,7 @@ class Cardinality(IntEnum):
 	car1L			= auto()
 	car01			= auto()
 	car01L			= auto()
+	car1N			= auto() # mandatory, but may be Null/None
 
 
 class RequestOptionality(IntEnum):

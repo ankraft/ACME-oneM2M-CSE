@@ -199,7 +199,8 @@ class Resource(object):
 				if key in ['ct', 'lt', 'pi', 'ri', 'rn', 'st', 'ty']:
 					continue
 				value = j[key]
-				# Special handling for et when deleted: set a new et
+
+				# Special handling for et when deleted/set to Null: set a new et
 				if key == 'et' and value is None:
 					self['et'] = Utils.getResourceDate(Configuration.get('cse.expirationDelta'))
 					continue

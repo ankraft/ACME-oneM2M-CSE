@@ -60,8 +60,8 @@ class TestExpiration(unittest.TestCase):
 		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
 		jsn = 	{ 'm2m:cnt' : { 
-					'et' : getDate(expirationCheckDelay), # 2 seconds in the future
-					'rn' : cntRN
+					'rn' : cntRN,
+					'et' : getDate(expirationCheckDelay) # 2 seconds in the future
 				}}
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, jsn)
 		self.assertEqual(rsc, RC.created)
@@ -108,8 +108,8 @@ class TestExpiration(unittest.TestCase):
 		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
 		jsn = 	{ 'm2m:cnt' : { 
-					'et' : '99991231T235959',	# wrongly updated
-					'rn' : cntRN
+					'rn' : cntRN,
+					'et' : '99991231T235959'	# wrongly updated
 				}}
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, jsn)
 		self.assertEqual(rsc, RC.created)
@@ -128,8 +128,31 @@ class TestExpiration(unittest.TestCase):
 				}}
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, jsn)
 		self.assertEqual(rsc, RC.badRequest)
+		# should fail
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCNTWithEtNull(self):
+		self.assertIsNotNone(TestExpiration.cse)
+		self.assertIsNotNone(TestExpiration.ae)
+		jsn = 	{ 'm2m:cnt' : { 
+					'rn' : cntRN,
+					'et' : getDate(60) # 1 minute in the future
+				}}
+		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, jsn)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone((origEt := findXPath(r, 'm2m:cnt/et')))
+		jsn = 	{ 'm2m:cnt' : { 
+					'et' : None # 1 minute in the future
+				}}
+		r, rsc = UPDATE(cntURL, TestExpiration.originator, jsn)
+		self.assertEqual(rsc, RC.updated)
+	
+		r, rsc = DELETE(cntURL, TestExpiration.originator)
+		self.assertEqual(rsc, RC.deleted)
+
+
+# TODO CNT update with valid et value
 
 def run():
 	suite = unittest.TestSuite()
@@ -137,6 +160,7 @@ def run():
 	suite.addTest(TestExpiration('test_expireCNTAndCIN'))
 	suite.addTest(TestExpiration('test_createCNTWithToLargeET'))
 	suite.addTest(TestExpiration('test_createCNTExpirationInThePast'))
+	suite.addTest(TestExpiration('test_updateCNTWithEtNull'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
