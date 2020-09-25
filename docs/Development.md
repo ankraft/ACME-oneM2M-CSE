@@ -1,16 +1,28 @@
 [← README](../README.md) 
 # Development
 
+[The Messy Details](#messy_details)  
+[Resource Class Hierarchy](#classes)  
+[Integration Into Other Applications](#integration)  
+[Developing Nodes and AEs](#developing_nodes_aes)  
+[Running Test Cases](#test_cases)  
+[HTTP Server Remote Configuration Interface](#config_interface)  
+[MyPy Static Type Checker](#mypy)  
+
+
+<a name="messy_details"></a>
 ## The Messy Details
 
 ### Components
 
 ![](images/cse_uml.png)
 
+<a name="classes"></a>
 ### Resource Class Hierarchy
 
 ![](images/resources_uml.png)
 
+<a name="integration"></a>
 ## Integration Into Other Applications
 
 It is possible to integrate the CSE into other applications, e.g. a Jupyter Notebook. In this case you would possibly like to provide startup arguments, for example the path of the configuration file or the logging level, directly instead of getting them from *argparse*.
@@ -32,6 +44,7 @@ Please note that in case you provide the arguments directly the first argument n
 The names of the *argparse* variables can be used here, and you may provide all or only some of the arguments. Please note that you need to keep or copy the `import` and `sys.path` statements at the top of that file.
 
 
+<a name="developing_nodes_aes"></a>
 ## Developing Nodes and AEs
 
 You can develop your own components that technically run inside the CSE themselves by following the pattern of those two components:
@@ -45,7 +58,8 @@ You can develop your own components that technically run inside the CSE themselv
 
 There are more helper methods provided by the common *AppBase* and *AEBase* base classes, e.g. to send requests to the CSE via Mca, store AE data persistently etc.
 
-## Test Cases
+<a name="test_cases"></a>
+## Running Test Cases
 
 Various aspects of the ACME implementation are covered by unit tests based on the Python [unittest](https://docs.python.org/3/library/unittest.html) framework. The files for test cases and the runner application reside in the [tests](../tests) directory.
 
@@ -119,7 +133,41 @@ Some test cases in each test suite build on each other (such as adding a resourc
 
 Some test suites (for example *testRemote*) need in addition to a running IN- or MN-CSE another MN-CSE that registers to the "main" CSE in order to run registration and announcement tests.
 
+<a name="config_interface"></a>
+## HTTP Server Remote Configuration Interface
 
+The http server can register a remote configuration interface (see [enableRemoteConfiguration](Configuration.md#server_http)). This "\_\_config__" endpoint is available under the http server's root. 
+
+**ATTENTION: Enabling this feature exposes configuration values, IDs and passwords, and is a security risk.**
+
+This feature is mainly used for testing and debugging.
+
+### GET Configuration
+When sending a GET request to the endpoint then the full configuration is returned. Example:
+
+	Request: GET /__config__
+
+
+When sending a GET request to the endpoint followed by the name of a configuration macro then the current value of that configuration setting is returned. Example:
+
+	Request: GET /__config__/cse.maxExpirationDelta
+ 
+### PUT Configuration
+When sending a PUT request to the endpoint followed by the name of a configuration macro and with a new value in the body of the request then a new value is assigned to that configuation setting.  Example
+
+	Request: POST /__config__/cse.checkExpirationsInterval
+	Body: 2
+
+A successful operation is answeredd with an *ack* response, an error or failure to process is answered with a *nak* response.
+
+Only the following configration settings can updated by this method yet:
+
+| Macro name                   | Description                                                                                                   |
+|:-----------------------------|:--------------------------------------------------------------------------------------------------------------|
+| cse.checkExpirationsInterval | Assigning a new value to this configuration setting will also force a restart CSE's *Registration* component. |
+
+
+<a name="mypy"></a>
 ## MyPy Static Type Checker
 
 The CSE code is statically type-checked with [mypy](http://mypy-lang.org). 
