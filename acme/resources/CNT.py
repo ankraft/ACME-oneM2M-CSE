@@ -97,12 +97,24 @@ class CNT(AnnounceableResource):
 
 	# Handle the addition of new CIN. Basically, get rid of old ones.
 	def childAdded(self, childResource:Resource, originator:str) -> None:
+		Logging.logDebug('Child resource added: %s' % childResource.ri)
 		super().childAdded(childResource, originator)
 		if childResource.ty == T.CIN:	# Validate if child is CIN
+
+			# Check for mia handling
+			if self.mia is not None:
+				# Take either mia or the maxExpirationDelta, whatever is smaller
+				maxEt = Utils.getResourceDate(self.mia if self.mia <= (med := Configuration.get('cse.maxExpirationDelta')) else med)
+				# Only replace the childresource's et if it is greater than the calculated maxEt
+				if childResource.et > maxEt:
+					childResource.setAttribute('et', maxEt)
+					childResource.dbUpdate()
+
 			self.validate(originator)
 
 	# Handle the removal of a CIN. 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
+		Logging.logDebug('Child resource removed: %s' % childResource.ri)
 		super().childRemoved(childResource, originator)
 		if childResource.ty == T.CIN:	# Validate if child was CIN
 			self._validateChildren()

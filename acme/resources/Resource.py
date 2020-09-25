@@ -284,13 +284,6 @@ class Resource(object):
 		return Result(status=True)
 
 
-	def validateExpirations(self) -> bool:
-		"""	Validate possible expirations, of self or child resources.
-			MAY be implemented by child class.
-		"""
-		pass
-
-
 	def createAnnouncedJSON(self) -> Tuple[dict, int, str]:
 		"""	Create an announceable resource. This method is implemented by the
 			resource implementations that support announceable versions.
@@ -305,11 +298,11 @@ class Resource(object):
 	#
 
 
-	def setAttribute(self, key: str, value: Any, overwrite: bool = True) -> None:
+	def setAttribute(self, key:str, value:Any, overwrite:bool=True) -> None:
 		Utils.setXPath(self.json, key, value, overwrite)
 
 
-	def attribute(self, key: str, default: Any = None) -> Any:
+	def attribute(self, key:str, default:Any=None) -> Any:
 		if '/' in key:	# search in path
 			return Utils.findXPath(self.json, key, default)
 		if self.hasAttribute(key):

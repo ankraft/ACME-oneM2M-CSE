@@ -90,6 +90,8 @@ class TestFCNT_FCI(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'hd:tempe/mni'), 10)
 		self.assertIsNotNone(findXPath(r, 'hd:tempe/cni'))
 		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 1)
+		self.assertIsNotNone(findXPath(r, 'hd:tempe/cbs'))
+		self.assertGreater(findXPath(r, 'hd:tempe/cbs'), 0)
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNT(self):
@@ -107,6 +109,7 @@ class TestFCNT_FCI(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 17.0)
 		self.assertEqual(findXPath(r, 'hd:tempe/st'), 1)
 		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 2)
+		self.assertGreater(findXPath(r, 'hd:tempe/cbs'), 0)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

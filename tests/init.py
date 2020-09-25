@@ -140,6 +140,15 @@ def setExpirationCheck(interval:int) -> int:
 		c, rc = UPDATE('%s/cse.checkExpirationsInterval' % CONFIGURL, '', str(interval))
 		return oldValue if c == b'ack' else -1
 	return -1
+
+
+def getMaxExpiration() -> int:
+	c, rc = RETRIEVE(CONFIGURL, '')
+	if rc == 200 and c.startswith(b'Configuration:'):
+		# retrieve the old value
+		c, rc = RETRIEVE('%s/cse.maxExpirationDelta' % CONFIGURL, '')
+		return int(c)
+	return -1
 		
 
 # Surpress warnings for insecure requests, e.g. self-signed certificates
