@@ -16,7 +16,7 @@ from resources.Resource import Resource
 from resources.AnnouncedResource import AnnouncedResource
 from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC
-from helpers.BackgroundWorker import BackgroundWorker
+from helpers.BackgroundWorker import BackgroundWorkerPool
 
 # TODO for anounceable resource:
 # - update: update resource here
@@ -26,8 +26,6 @@ waitBeforeAnnouncement = 3
 class AnnouncementManager(object):
 
 	def __init__(self) -> None:
-		self.worker:BackgroundWorker			= None
-
 		CSE.event.addHandler(CSE.event.registeredToRemoteCSE, self.handleRegisteredToRemoteCSE)			# type: ignore
 		CSE.event.addHandler(CSE.event.deregisteredFromRemoteCSE, self.handleDeRegisteredFromRemoteCSE)	# type: ignore
 		CSE.event.addHandler(CSE.event.remoteCSEHasRegistered, self.handleRemoteCSEHasRegistered)			# type: ignore
@@ -58,8 +56,7 @@ class AnnouncementManager(object):
 		if not self.announcementsEnabled:
 			return
 		Logging.log('Starting Announcements monitor')
-		self.worker = BackgroundWorker(self.checkInterval, self.announcementMonitorWorker, 'anncMonitor')
-		self.worker.start()
+		BackgroundWorkerPool.newWorker(self.checkInterval, self.announcementMonitorWorker, 'anncMonitor').start()
 
 
 	# Stop the monitor. Also delete the CSR resources on both sides
@@ -68,8 +65,7 @@ class AnnouncementManager(object):
 			return
 		Logging.log('Stopping Announcements monitor')
 		# Stop the thread
-		if self.worker is not None:
-			self.worker.stop()
+		BackgroundWorkerPool.stopWorkers('anncMonitor')
 
 
 	def announcementMonitorWorker(self) -> bool:

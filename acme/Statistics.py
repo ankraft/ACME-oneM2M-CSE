@@ -12,7 +12,7 @@ from Configuration import Configuration
 import CSE, Utils
 import datetime
 from threading import Lock
-from helpers import BackgroundWorker
+from helpers.BackgroundWorker import BackgroundWorkerPool
 from resources.Resource import Resource
 
 
@@ -47,8 +47,7 @@ class Statistics(object):
 
 			# Start background worker to handle writing to DB
 			Logging.log('Starting statistics DB thread')
-			self.worker = BackgroundWorker.BackgroundWorker(Configuration.get('cse.statistics.writeIntervall'), self.statisticsDBWorker, 'statsDBWorker')
-			self.worker.start()
+			BackgroundWorkerPool.newWorker(Configuration.get('cse.statistics.writeIntervall'), self.statisticsDBWorker, 'statsDBWorker').start()
 
 			# subscripe vto various events
 			# mypy cannot handle dynamically created attributes
@@ -70,7 +69,7 @@ class Statistics(object):
 		if self.statisticsEnabled:
 			# Stop the worker
 			Logging.log('Stopping statistics DB thread')
-			self.worker.stop()
+			BackgroundWorkerPool.stopWorkers('statsDBWorker')
 
 			# One final write
 			self.storeDBStatistics()

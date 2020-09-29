@@ -15,7 +15,7 @@ from Types import ResourceTypes as T, Result, Permission, ResponseCode as RC
 from resources.Resource import Resource
 import CSE, Utils
 from resources import ACP
-from helpers import BackgroundWorker
+from helpers.BackgroundWorker import BackgroundWorkerPool
 
 
 
@@ -272,17 +272,14 @@ class RegistrationManager(object):
 	def startExpirationWorker(self) -> None:
 		# Start background worker to handle expired resources
 		Logging.log('Starting expiration worker')
-		self.expirationWorker = None
 		if (interval := Configuration.get('cse.checkExpirationsInterval')) > 0:
-			self.expirationWorker = BackgroundWorker.BackgroundWorker(interval, self.expirationDBWorker, 'expirationWorker', startWithDelay=True)
-			self.expirationWorker.start()
+			BackgroundWorkerPool.newWorker(interval, self.expirationDBWorker, 'expirationWorker', startWithDelay=True).start()
 
 
 	def stopExpirationWorker(self) -> None:
 		# Stop the expiration worker
 		Logging.log('Stopping expiration worker')
-		if self.expirationWorker is not None:
-			self.expirationWorker.stop()
+		BackgroundWorkerPool.stopWorkers('expirationWorker')
 
 
 	def expirationDBWorker(self) -> bool:

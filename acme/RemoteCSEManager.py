@@ -20,7 +20,7 @@ from Types import ResourceTypes as T, Result, CSEType, ResponseCode as RC
 import Utils, CSE
 from resources import CSR, CSEBase
 from resources.Resource import Resource
-from helpers.BackgroundWorker import BackgroundWorker
+from helpers.BackgroundWorker import BackgroundWorkerPool
 
 
 class RemoteCSEManager(object):
@@ -35,7 +35,6 @@ class RemoteCSEManager(object):
 		self.originator							= Configuration.get('cse.csi')	# Originator is the own CSE-ID
 		self.cseCsi								= Configuration.get('cse.csi')
 		self.cseRI								= Configuration.get('cse.ri')
-		self.worker:BackgroundWorker			= None
 		self.checkInterval						= Configuration.get('cse.registrar.checkInterval')
 		self.registrarCSEURL					= '%s%s/~%s/%s' % (self.remoteAddress, self.remoteRoot, self.registrarCSI, self.registrarCseRN)
 		self.registrarCSRURL					= '%s%s' % (self.registrarCSEURL, self.cseCsi)
@@ -68,8 +67,7 @@ class RemoteCSEManager(object):
 		if not Configuration.get('cse.enableRemoteCSE'):
 			return;
 		Logging.log('Starting remote CSE connection monitor')
-		self.worker = BackgroundWorker(self.checkInterval, self.connectionMonitorWorker, 'csrMonitor')
-		self.worker.start()
+		BackgroundWorkerPool.newWorker(self.checkInterval, self.connectionMonitorWorker, 'csrMonitor').start()
 
 
 	# Stop the monitor. Also delete the CSR resources on both sides
@@ -78,9 +76,8 @@ class RemoteCSEManager(object):
 			return;
 		Logging.log('Stopping remote CSE connection monitor')
 
-		# Stop the thread
-		if self.worker is not None:
-			self.worker.stop()
+		# Stop the worker
+		BackgroundWorkerPool.stopWorkers('csrMonitor')
 
 		# Remove resources
 		if self.csetype in [ CSEType.ASN, CSEType.MN ]:

@@ -91,17 +91,17 @@ class	Logging:
 		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=handlers)
 
 		# Start worker to handle logs in the background
-		from helpers import BackgroundWorker
-		Logging.worker = BackgroundWorker.BackgroundWorker(Logging.checkInterval, Logging.loggingWorker, 'loggingWorker')
-		Logging.worker.start()
+		from helpers.BackgroundWorker import BackgroundWorkerPool
+		BackgroundWorkerPool.newWorker(Logging.checkInterval, Logging.loggingWorker, 'loggingWorker').start()
 	
 
 	@staticmethod
 	def finit() -> None:
-		if Logging.worker is not None and Logging.queue is not None:
+		if Logging.queue is not None:
 			while not Logging.queue.empty():
 				time.sleep(0.5)
-			Logging.worker.stop()
+		from helpers.BackgroundWorker import BackgroundWorkerPool
+		BackgroundWorkerPool.stopWorkers('loggingWorker')
 
 
 	@staticmethod
