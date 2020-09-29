@@ -9,6 +9,7 @@
 
 import random, string
 from Constants import Constants as C
+from Configuration import Configuration
 from Types import ResourceTypes as T, Result, NotificationContentType, NotificationEventType
 import Utils, CSE
 from Validator import constructPolicy
@@ -32,6 +33,9 @@ class SUB(Resource):
 		if self.json is not None:
 			self.setAttribute('nct', NotificationContentType.all, overwrite=False) # LIMIT TODO: only this notificationContentType is supported now
 			self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate ], overwrite=False)
+			if self.bn is not None:		# set batchNotify default attributes
+				self.setAttribute('bn/dur', Configuration.get('cse.sub.dur'), overwrite=False)
+
 
 
 # TODO expirationCounter

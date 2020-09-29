@@ -5,6 +5,7 @@
 ## 0.6.0 - xxxx-xx-xx
 - [CSE] Improved resource expiration a lot.
 - [CSE] Added support for mia attribute in CNT and FCNT.
+- [SUB] Added support for batchNotifications.
 - [HTTP] Added possibility to enable an API to get and set selected configuration values remotely.
 
 ## 0.5.0 - 2020-09-17

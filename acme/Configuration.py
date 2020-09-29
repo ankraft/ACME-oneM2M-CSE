@@ -178,6 +178,13 @@ class Configuration(object):
 
 
 				#
+				#	Defaults for Subscription Resources
+				#
+
+				'cse.sub.dur'						: config.getint('cse.resource.sub', 'batchNotifyDuration', 	fallback=60),	# seconds
+
+
+				#
 				#	Web UI
 				#
 
@@ -351,6 +358,10 @@ class Configuration(object):
 				console.print('[red]Configuration Error: Missing configuration [cse.registrar]:resourceName')
 				return False
 
+		# Check default subscription duration
+		if Configuration._configuration['cse.sub.dur'] < 1:
+			console.print('[red]Configuration Error: [cse.resource.sub]:batchNotifyDuration must be > 0')
+			return False
 
 		# Everything is fine
 		return True

@@ -239,10 +239,6 @@ class Storage(object):
 
 
 
-
-
-
-
 	#########################################################################
 	##
 	##	Subscriptions
@@ -274,6 +270,29 @@ class Storage(object):
 	def updateSubscription(self, subscription : Resource) -> bool:
 		# Logging.logDebug('Updating subscription: %s' % ri)
 		return self.db.upsertSubscription(subscription)
+
+
+
+
+	#########################################################################
+	##
+	##	BatchNotifications
+	##
+
+	def addBatchNotification(self, ri:str, nu:str, request:dict) -> bool:
+		return self.db.addBatchNotification(ri, nu, request)
+
+
+	def countBatchNotifications(self, ri:str, nu:str) -> int:
+		return self.db.countBatchNotifications(ri, nu)
+
+
+	def getBatchNotifications(self, ri:str, nu:str) -> List[dict]:
+		return self.db.getBatchNotifications(ri, nu)
+
+
+	def removeBatchNotifications(self, ri:str, nu:str) -> List[dict]:
+		return self.db.removeBatchNotifications(ri, nu)
 
 
 	#########################################################################
@@ -326,6 +345,7 @@ class TinyDBBinding(object):
 		self.lockResources = Lock()
 		self.lockIdentifiers = Lock()
 		self.lockSubscriptions = Lock()
+		self.lockBatchNotifications = Lock()
 		self.lockStatistics = Lock()
 		self.lockAppData = Lock()
 
@@ -339,6 +359,7 @@ class TinyDBBinding(object):
 			self.dbResources = TinyDB(storage=MemoryStorage)
 			self.dbIdentifiers = TinyDB(storage=MemoryStorage)
 			self.dbSubscriptions = TinyDB(storage=MemoryStorage)
+			self.dbBatchNotifications = TinyDB(storage=MemoryStorage)
 			self.dbStatistics = TinyDB(storage=MemoryStorage)
 			self.dbAppData = TinyDB(storage=MemoryStorage)
 		else:
@@ -346,11 +367,13 @@ class TinyDBBinding(object):
 			self.dbResources = TinyDB('%s/resources%s.json' % (self.path, postfix))
 			self.dbIdentifiers = TinyDB('%s/identifiers%s.json' % (self.path, postfix))
 			self.dbSubscriptions = TinyDB('%s/subscriptions%s.json' % (self.path, postfix))
+			self.dbBatchNotifications = TinyDB('%s/batchNotifications%s.json' % (self.path, postfix))
 			self.dbStatistics = TinyDB('%s/statistics%s.json' % (self.path, postfix))
 			self.dbAppData = TinyDB('%s/appdata%s.json' % (self.path, postfix))
 		self.tabResources = self.dbResources.table('resources', cache_size=self.cacheSize)
 		self.tabIdentifiers = self.dbIdentifiers.table('identifiers', cache_size=self.cacheSize)
 		self.tabSubscriptions = self.dbSubscriptions.table('subsriptions', cache_size=self.cacheSize)
+		self.tabBatchNotifications = self.dbBatchNotifications.table('batchNotifications', cache_size=self.cacheSize)
 		self.tabStatistics = self.dbStatistics.table('statistics', cache_size=self.cacheSize)
 		self.tabAppData = self.dbAppData.table('appdata', cache_size=self.cacheSize)
 
@@ -360,6 +383,7 @@ class TinyDBBinding(object):
 		self.dbResources.close()
 		self.dbIdentifiers.close()
 		self.dbSubscriptions.close()
+		self.dbBatchNotifications.close()
 		self.dbStatistics.close()
 		self.dbAppData.close()
 
@@ -369,6 +393,7 @@ class TinyDBBinding(object):
 		self.tabResources.truncate()
 		self.tabIdentifiers.truncate()
 		self.tabSubscriptions.truncate()
+		self.tabBatchNotifications.truncate()
 		self.tabStatistics.truncate()
 		self.tabAppData.truncate()
 
@@ -520,7 +545,8 @@ class TinyDBBinding(object):
 										'pi'  : subscription.pi,
 										'nct' : subscription.nct,
 										'net' : subscription['enc/net'],
-										'nus' : subscription.nu
+										'nus' : subscription.nu,
+										'bn'  : subscription.bn
 									}, 
 									Query().ri == ri)
 			return result is not None
@@ -530,6 +556,37 @@ class TinyDBBinding(object):
 		with self.lockSubscriptions:
 			return self.tabSubscriptions.remove(Query().ri == subscription.ri)
 
+
+	#
+	#	BatchNotifications
+	#
+
+	def addBatchNotification(self, ri:str, nu:str, notificationRequest:dict) -> bool:
+		with self.lockBatchNotifications:
+			result = self.tabBatchNotifications.insert(
+									{	'ri' 		: ri,
+										'nu' 		: nu,
+										'request'	: notificationRequest
+									})
+			return result is not None
+
+
+	def countBatchNotifications(self, ri:str, nu:str) -> int:
+		with self.lockBatchNotifications:
+			q = Query()
+			return self.tabBatchNotifications.count((q.ri == ri) & (q.nu == nu))
+
+
+	def getBatchNotifications(self, ri:str, nu:str) -> List[dict]:
+		with self.lockBatchNotifications:
+			q = Query()
+			return self.tabBatchNotifications.search((q.ri == ri) & (q.nu == nu))
+
+
+	def removeBatchNotifications(self, ri:str, nu:str) -> List[dict]:
+		with self.lockBatchNotifications:
+			q = Query()
+			return self.tabBatchNotifications.remove((q.ri == ri) & (q.nu == nu))
 
 	#
 	#	Statistics

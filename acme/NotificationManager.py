@@ -9,11 +9,13 @@
 
 import requests, json
 from typing import List, Union
+from threading import Lock
 from Logging import Logging
 from Constants import Constants as C
 from Types import Result, NotificationContentType, NotificationEventType, Permission, ResponseCode as RC
 from Configuration import Configuration
 import Utils, CSE
+from helpers.BackgroundWorker import BackgroundWorkerPool
 from resources.Resource import Resource
 
 # TODO: removal policy (e.g. unsuccessful tries)
@@ -24,11 +26,13 @@ from resources.Resource import Resource
 class NotificationManager(object):
 
 	def __init__(self) -> None:
-		Logging.log('NotificationManager initialized')
+		self.lockBatchNotification = Lock()	# Lock for batchNotifications
+
 		if Configuration.get('cse.enableNotifications'):
 			Logging.log('Notifications ENABLED')
 		else:
 			Logging.log('Notifications DISABLED')
+		Logging.log('NotificationManager initialized')
 
 
 	def shutdown(self) -> None:
@@ -52,6 +56,9 @@ class NotificationManager(object):
 		if not Configuration.get('cse.enableNotifications'):
 			return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg='notifications are disabled')
 
+		# Send outstanding batchNotifications
+		self._flushBatchNotifications(subscription)
+
 		# Send a deletion request to the subscriberURI
 		if (sus := self._getNotificationURLs([subscription['su']])) is not None:
 			for su in sus:
@@ -64,8 +71,8 @@ class NotificationManager(object):
 				if not self._sendDeletionNotification(nu, subscription.ri):
 					Logging.logDebug('Deletion request failed: %s' % nu) # but ignore the error
 		
+		# Finally remove subscriptions from storage
 		return Result(status=True) if CSE.storage.removeSubscription(subscription) else Result(status=False, rsc=RC.internalServerError, dbg='cannot remove subscription from database')
-
 
 
 	def updateSubscription(self, subscription:Resource, newJson:dict, previousNus:List[str], originator:str) -> Result:
@@ -103,13 +110,23 @@ class NotificationManager(object):
 				continue
 			if reason in [ NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]:	# reasons for child resources
 				for nu in self._getNotificationURLs(sub['nus']):
-					if not self._sendNotification(sub['ri'], nu, reason, childResource, sub['nct'], modifiedAttributes=modifiedAttributes):
+					if not self._sendSubscriptionNotification(sub, nu, reason, childResource, modifiedAttributes=modifiedAttributes):
 						pass
 			else: # all other reasons that target the resource
 				for nu in self._getNotificationURLs(sub['nus']):
-					if not self._sendNotification(sub['ri'], nu, reason, resource, sub['nct'], modifiedAttributes=modifiedAttributes):
+					if not self._sendSubscriptionNotification(sub, nu, reason, resource, modifiedAttributes=modifiedAttributes):
 						pass
 
+
+	# def sendOutstandingNotifications(self, ri:str) -> None:
+	# 	"""	Send outstanding Notifications for a subscription (for ri).
+	# 	"""
+	# 	subs = CSE.storage.getSubscriptions(ri)
+	# 	if subs is None or len(subs) == 0:
+	# 		return
+	# 	for sub in subs:
+	# 		for nu in self._getNotificationURLs(sub['nus']):
+	# 			pass # TODO
 
 	#########################################################################
 
@@ -190,55 +207,138 @@ class NotificationManager(object):
 		verificationRequest = {
 			'm2m:sgn' : {
 				'vrq' : True,
-				'sur' : ''
+				'sur' : Utils.fullRI(ri)
+
 			}
 		}
-	
-		return self._sendRequest(nu, ri, verificationRequest, originator=originator)
+		originator is not None and Utils.setXPath(verificationRequest, 'm2m:sgn/cr', originator)
+		return self._sendRequest(nu, verificationRequest)
 
 
-	def _sendDeletionNotification(self, nu: str, ri: str) -> bool:
+	def _sendDeletionNotification(self, nu:str, ri:str) -> bool:
 		Logging.logDebug('Sending deletion notification to: %s' % nu)
 	
 		deletionNotification = {
 			'm2m:sgn' : {
 				'sud' : True,
-				'sur' : ''
+				'sur' : Utils.fullRI(ri)
 			}
 		}
 		
-		return self._sendRequest(nu, ri, deletionNotification)
+		return self._sendRequest(nu, deletionNotification)
 
 
-	def _sendNotification(self, ri:str, nu:str, reason:NotificationEventType, resource:Resource, nct:int, modifiedAttributes:dict=None) ->  bool:
+	def _sendSubscriptionNotification(self, sub:dict, nu:str, reason:NotificationEventType, resource:Resource, modifiedAttributes:dict=None) ->  bool:
 		Logging.logDebug('Sending notification to: %s, reason: %d' % (nu, reason))
 
 		notificationRequest = {
 			'm2m:sgn' : {
 				'nev' : {
 					'rep' : {},
-					'net' : 0
+					'net' : NotificationEventType.resourceUpdate
 				},
-				'sur' : ''
+				'sur' : Utils.fullRI(sub['ri'])
 			}
 		}
 
 		data = None
+		nct = sub['nct']
 		nct == NotificationContentType.all					and (data := resource.asJSON())
 		nct == NotificationContentType.ri 					and (data := { 'm2m:uri' : Utils.fullRI(resource.ri) })
 		nct == NotificationContentType.modifiedAttributes	and (data := { resource.tpe : modifiedAttributes })
 		# TODO nct == NotificationContentType.triggerPayload
 
-		return self._sendRequest(nu, ri, notificationRequest, reason, data)
-
-
-	def _sendRequest(self, nu:str, ri:str, jsn:dict, reason:NotificationEventType=None, data:dict=None, originator:str=None) -> bool:
-		Utils.setXPath(jsn, 'm2m:sgn/sur', Utils.fullRI(ri))
-
 		# Add some values to the notification
-		reason is not None 		and Utils.setXPath(jsn, 'm2m:sgn/nev/net', reason)
-		data is not None 		and Utils.setXPath(jsn, 'm2m:sgn/nev/rep', data)
-		originator is not None 	and Utils.setXPath(jsn, 'm2m:sgn/cr', originator)
+		reason is not None 									and Utils.setXPath(notificationRequest, 'm2m:sgn/nev/net', reason)
+		data is not None 									and Utils.setXPath(notificationRequest, 'm2m:sgn/nev/rep', data)
 
-		return CSE.httpServer.sendCreateRequest(nu, Configuration.get('cse.csi'), data=json.dumps(jsn)).rsc == RC.OK
+		if sub['bn'] is not None:
+			return self._handleBatchNotification(nu, sub, notificationRequest)
+		else:
+			return self._sendRequest(nu, notificationRequest)
+
+
+	def _sendRequest(self, nu:str, notificationRequest:dict) -> bool:
+		"""	Actually send a Notification request.
+		"""
+		return CSE.httpServer.sendCreateRequest(nu, Configuration.get('cse.csi'), data=json.dumps(notificationRequest)).rsc == RC.OK
+
+
+	def _flushBatchNotifications(self, subscription:Resource) -> None:
+		ri = subscription.ri
+		sub = CSE.storage.getSubscription(ri)
+
+		for nu in self._getNotificationURLs(sub['nus']):
+			self._stopNotificationBatchWorker(ri, nu)					# Stop a potential worker
+			self._sendSubscriptionAggregatedBatchNotification(ri, nu)	# Send all remaining notifications
+
+
+	def _handleBatchNotification(self, nu:str, sub:dict, notificationRequest:dict) -> bool:
+		"""	Store a subscription's notification for later sending.
+		"""
+		# Rename key name
+		if 'm2m:sgn' in notificationRequest:
+			notificationRequest['sgn'] = notificationRequest.pop('m2m:sgn')
+
+		# Alway add the notification first before doing the other handling
+		ri = sub['ri']
+		CSE.storage.addBatchNotification(ri, nu, notificationRequest)
+
+		#  Check for actions
+		if (num := Utils.findXPath(sub, 'bn/num')) is not None and (countBN := CSE.storage.countBatchNotifications(ri, nu)) >= num:
+			self._stopNotificationBatchWorker(ri, nu)	# Stop the worker, not needed
+			self._sendSubscriptionAggregatedBatchNotification(ri, nu)
+
+		# Check / start Timer worker to guard the batch notification duration
+		else:
+			self._startNewBatchNotificationWorker(ri, nu, Utils.findXPath(sub, 'bn/dur'))
+		return True
+
+
+	def _sendSubscriptionAggregatedBatchNotification(self, ri:str, nu:str) -> bool:
+		"""	Send and remove(!) the available BatchNotifications for an ri & nu.
+		"""
+		with self.lockBatchNotification: # TODO check whether this is actually necessary
+			Logging.log('Sending aggregated subscription notifications for ri: %s' % ri)
+			# Collect the notifications	
+			notifications = []		
+			for notification in CSE.storage.getBatchNotifications(ri, nu):
+				notifications.append(notification['request'])
+			if len(notifications) == 0:	# This can happen when the subscription is deleted and there are no outstanding notifications
+				return False
+
+			# Aggregate and send
+			notificationRequest = {
+				'm2m:agn' : notifications
+			}
+			if not self._sendRequest(nu, notificationRequest):
+				Logging.logWarn('Error sending aggregated batch notifications')
+				return False
+
+			# Delete old notifications
+			if not CSE.storage.removeBatchNotifications(ri, nu):
+				Logging.logWarn('Error removing aggregated batch notifications')
+				return False
+
+			return True
+
+
+	def _startNewBatchNotificationWorker(self, ri:str, nu:str, dur:int) -> bool:
+		if dur is None or dur < 1:
+			Logging.logErr('BatchNotification duration is < 1')
+			return False
+
+		# Check and start a notification worker to send notifications after some time
+		if len(BackgroundWorkerPool.findWorkers(self._workerID(ri, nu))) > 0:	# worker started, return
+			return True
+		BackgroundWorkerPool.newActor(dur, self._sendSubscriptionAggregatedBatchNotification, name=self._workerID(ri, nu)).start(ri=ri, nu=nu)
+		return True
+
+
+	def _stopNotificationBatchWorker(self, ri:str, nu:str) -> None:
+		BackgroundWorkerPool.stopWorkers(self._workerID(ri, nu))
+
+
+	def _workerID(self, ri:str, nu:str) -> str:
+		return '%s;%s' % (ri, nu)
 

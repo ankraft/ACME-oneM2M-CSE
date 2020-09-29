@@ -52,7 +52,7 @@ attributePolicies = {
 	'apri'	: [ BT.list,			CAR.car1,	RO.O,	RO.O,  RO.O, AN.MA ],		# m2m:listOfURIs - ACP
 	'att'	: [ BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# BAT
 	'awi'	: [ BT.anyURI,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# ANDI
-	'bn'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# SUB
+	'bn'	: [ BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# SUB
 	'btl'	: [ BT.unsignedInt,		CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# BAT
 	'bts'	: [ BT.positiveInteger,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# BAT
 	'can'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# BAT

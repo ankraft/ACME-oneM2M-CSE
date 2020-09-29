@@ -227,6 +227,15 @@ mbs=10000
 
 
 #
+#	Resource defaults: Subscription
+#
+
+[cse.resource.sub]
+# Default for batchNotify/duration in seconds. Must be >0. Default: 60 
+batchNotifyDuration=60
+
+
+#
 #	Web UI settings
 #
 

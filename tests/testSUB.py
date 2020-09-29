@@ -19,6 +19,9 @@ from init import *
 # It checks whether there actually is a CSE running.
 noCSE = not connectionPossible(cseURL)
 
+numberOfBatchNotifications = 5
+durationForBatchNotifications = 2
+
 class TestSUB(unittest.TestCase):
 
 	@classmethod
@@ -72,10 +75,10 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(TestSUB.cnt)
 		jsn = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
-			        "enc": {
-			            "net": [ 1, 3 ]
+			        'enc': {
+			            'net': [ 1, 3 ]
 					},
-					"nu": [ NOTIFICATIONSERVER ],
+					'nu': [ NOTIFICATIONSERVER ],
 					'su': NOTIFICATIONSERVER
 				}}
 		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
@@ -317,6 +320,114 @@ class TestSUB(unittest.TestCase):
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:uri').endswith(findXPath(cnt, 'm2m:cnt/ri')))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSUBForBatchNotificationNumber(self):
+		self.assertIsNotNone(TestSUB.cse)
+		self.assertIsNotNone(TestSUB.ae)
+		self.assertIsNotNone(TestSUB.cnt)
+		jsn = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'net': [ 1 ]
+					},
+					'nu': [ NOTIFICATIONSERVER ],
+					# No su! bc we want receive the last notification of a batch
+					'bn': { 
+						'num' : numberOfBatchNotifications
+					}
+				}}
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/bn'))
+		self.assertEqual(findXPath(r, 'm2m:sub/bn/num'), numberOfBatchNotifications)
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/bn/dur'))
+		self.assertGreater(findXPath(r, 'm2m:sub/bn/dur'), 0)
+		lastNotification = getLastNotification()
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCNTBatch(self):
+		for i in range(0, numberOfBatchNotifications):
+			jsn = 	{ 'm2m:cnt' : {
+						'lbl' : [ '%d' % i ]
+					}}
+			cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+			self.assertEqual(rsc, RC.updated)
+		lastNotification = getLastNotification()
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn'))
+		notifications = findXPath(lastNotification, 'm2m:agn')
+		for i in range(0, numberOfBatchNotifications):	# check availability and correct order
+			self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn/{%d}/sgn/nev/rep/m2m:cnt/lbl' % i))
+			self.assertEqual(findXPath(lastNotification, 'm2m:agn/{%d}/sgn/nev/rep/m2m:cnt/lbl/{0}' % i), '%d' % i)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteSUBForBatchReceiveRemainingNotifications(self):
+		# Generate one last notification
+		jsn = 	{ 'm2m:cnt' : {
+					'lbl' : [ '99' ]
+				}}
+		cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+		self.assertEqual(rsc, RC.updated)
+		# Delete the sub
+		_, rsc = DELETE(subURL, TestSUB.originator)
+		self.assertEqual(rsc, RC.deleted)
+
+		# Should have received the outstanding notification
+		lastNotification = getLastNotification()
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn'))
+		self.assertEqual(len(findXPath(lastNotification, 'm2m:agn')), 1)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn/{0}/sgn/nev/rep/m2m:cnt/lbl'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:agn/{0}/sgn/nev/rep/m2m:cnt/lbl/{0}'), '99')
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSUBForBatchNotificationDuration(self):
+		self.assertIsNotNone(TestSUB.cse)
+		self.assertIsNotNone(TestSUB.ae)
+		self.assertIsNotNone(TestSUB.cnt)
+		jsn = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'net': [ 1 ]
+					},
+					'nu': [ NOTIFICATIONSERVER ],
+					# No su! bc we want receive the last notification of a batch
+					'bn': { 
+						'dur' : durationForBatchNotifications
+					}
+				}}
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/bn'))
+		self.assertIsNone(findXPath(r, 'm2m:sub/bn/num'))
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/bn/dur'))
+		self.assertEqual(findXPath(r, 'm2m:sub/bn/dur'), durationForBatchNotifications)
+		lastNotification = getLastNotification()
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCNTBatchDuration(self):
+		for i in range(0, numberOfBatchNotifications):
+			jsn = 	{ 'm2m:cnt' : {
+						'lbl' : [ '%d' % i ]
+					}}
+			cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+			self.assertEqual(rsc, RC.updated)
+		lastNotification = getLastNotification()	# Notifications should not have arrived yes
+		self.assertIsNone(findXPath(lastNotification, 'm2m:agn'))
+
+		time.sleep(durationForBatchNotifications * 2) 	# wait a moment
+		lastNotification = getLastNotification()
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn'))	# Should have arrived now
+		for i in range(0, numberOfBatchNotifications):	# check availability and correct order
+			self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn/{%d}/sgn/nev/rep/m2m:cnt/lbl' % i))
+			self.assertEqual(findXPath(lastNotification, 'm2m:agn/{%d}/sgn/nev/rep/m2m:cnt/lbl/{0}' % i), '%d' % i)
+
 # TODO expirationCounter
 # TODO check different NET's (ae->cnt->sub, add cnt to cnt)
 
@@ -341,6 +452,12 @@ def run():
 	suite.addTest(TestSUB('test_deleteSUBByAssignedOriginator'))
 	suite.addTest(TestSUB('test_createSUBRI'))
 	suite.addTest(TestSUB('test_updateCNTRI'))
+	suite.addTest(TestSUB('test_deleteSUBByAssignedOriginator'))
+	suite.addTest(TestSUB('test_createSUBForBatchNotificationNumber'))
+	suite.addTest(TestSUB('test_updateCNTBatch'))
+	suite.addTest(TestSUB('test_deleteSUBForBatchReceiveRemainingNotifications'))
+	suite.addTest(TestSUB('test_createSUBForBatchNotificationDuration'))
+	suite.addTest(TestSUB('test_updateCNTBatchDuration'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)

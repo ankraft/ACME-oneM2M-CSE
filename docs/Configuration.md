@@ -37,6 +37,7 @@ The following macros are supported in addition to those defined in the sections 
 [\[cse.statistics\] - Statistic Settings](#statistics)  
 [\[cse.resource.acp\] - Resource defaults: ACP](#resource_acp)  
 [\[cse.resource.cnt\] - Resource Defaults: CNT](#resource_cnt)  
+[\[cse.resource.sub\] - Resource Defaults: SUB](#resource_sub)  
 [\[cse.webui\] - Web UI Settings](#webui)  
 
 
@@ -176,6 +177,14 @@ The following macros are supported in addition to those defined in the sections 
 |:--------|:---------------------------------------------------|:------------|
 | mni     | Default for maxNrOfInstances.<br/> Default: 10     | cse.cnt.mni |
 | mbs     | Default for maxByteSize.<br/>Default: 10.000 bytes | cse.cnt.mbs |
+
+
+<a name="resource_sub"></a>
+### [cse.resource.sub] - Resource Defaults: Subscription
+
+| Keyword             | Description                                                                           | Macro Name  |
+|:--------------------|:--------------------------------------------------------------------------------------|:------------|
+| batchNotifyDuration | Default for the batchNotify/duration in seconds. Must be >0.<br />Default: 60 seconds | cse.sub.dur |
 
 
 <a name="webui"></a>
