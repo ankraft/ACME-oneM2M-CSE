@@ -32,10 +32,10 @@ class HttpServer(object):
 		self.flaskApp			= Flask(Configuration.get('cse.csi'))
 		self.rootPath			= Configuration.get('http.root')
 		self.useTLS 			= Configuration.get('cse.security.useTLS')
-		self.verifyCert			= Configuration.get('cse.security.verifyCert')
+		self.verifyCertificate		= Configuration.get('cse.security.verifyCertificate')
 		self.tlsVersion			= Configuration.get('cse.security.tlsVersion').lower()
-		self.caCertificateFile	= Configuration.get('cse.security.caCertificateFile')
-		self.caPrivateKeyFile	= Configuration.get('cse.security.caPrivateKeyFile')
+		self.caCertificateFile		= Configuration.get('cse.security.caCertificateFile')
+		self.caPrivateKeyFile		= Configuration.get('cse.security.caPrivateKeyFile')
 
 		self.serverID	= 'ACME %s' % C.version 	# The server's ID for http response headers
 
@@ -111,7 +111,7 @@ class HttpServer(object):
 			try:
 				context = None
 				if self.useTLS:
-					Logging.logDebug('Setup SSL context. Certfile: %s, KeyFile:%s' % (self.caCertificateFile, self.caPrivateKeyFile))
+					Logging.logDebug('Setup SSL context. Certfile: %s, KeyFile:%s, TLS version: %s' % (self.caCertificateFile, self.caPrivateKeyFile, self.tlsVersion))
 					context = ssl.SSLContext(
 									{ 	'tls1.1' : ssl.PROTOCOL_TLSv1_1,
 										'tls1.2' : ssl.PROTOCOL_TLSv1_2,
@@ -294,7 +294,7 @@ class HttpServer(object):
 		try:
 			Logging.logDebug('Sending request: %s %s' % (method.__name__.upper(), url))
 			Logging.logDebug('Request ==>:\n%s\n' % (str(data) if data is not None else ''))
-			r = method(url, data=data, headers=headers, verify=self.verifyCert)
+			r = method(url, data=data, headers=headers, verify=self.verifyCertificate)
 			Logging.logDebug('Response <== (%s):\n%s' % (str(r.status_code), str(r.content.decode("utf-8"))))
 		except Exception as e:
 			Logging.logWarn('Failed to send request: %s' % str(e))
