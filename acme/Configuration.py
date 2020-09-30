@@ -8,10 +8,12 @@
 #
 
 
-import logging, configparser, re, argparse
+import logging, configparser, re, argparse, ssl, os.path
 from typing import Any, Dict
 from Constants import Constants as C
 from Types import CSEType
+from rich.console import Console
+
 
 
 defaultConfigFile			= 'acme.ini'
@@ -25,6 +27,8 @@ class Configuration(object):
 	@staticmethod
 	def init(args: argparse.Namespace = None) -> bool:
 		global _configuration
+		console = Console()
+
 
 		import Utils	# cannot import at the top because of circel import
 
@@ -38,6 +42,7 @@ class Configuration(object):
 		argsRemoteCSEEnabled	= args.remotecseenabled if args is not None and 'remotecseenabled' in args else None
 		argsValidationEnabled	= args.validationenabled if args is not None and 'validationenabled' in args else None
 		argsStatisticsEnabled	= args.statisticsenabled if args is not None and 'statisticsenabled' in args else None
+		argsRunAsHttps			= args.https if args is not None and 'https' in args else None
 
 
 		config = configparser.ConfigParser(	interpolation=configparser.ExtendedInterpolation(),
@@ -107,9 +112,11 @@ class Configuration(object):
 				'cse.security.adminACPI'			: config.get('cse.security', 'adminACPI', 				fallback='acpAdmin'),
 				'cse.security.defaultACPI'			: config.get('cse.security', 'defaultACPI', 			fallback='acpDefault'),
 				'cse.security.csebaseAccessACPI'	: config.get('cse.security', 'csebaseAccessACPI', 		fallback='acpCSEBaseAccess'),
-				'cse.security.useTls'		: config.getboolean('cse.security', 'useTls', 	fallback=False),
-				'cse.security.verifyCert'		: config.getboolean('cse.security', 'verifyCert', 	fallback=False),
-				'cse.security.ca_path'		: config.get('cse.security', 'ca_path', 	fallback=''),
+				'cse.security.useTLS'				: config.getboolean('cse.security', 'useTLS', 			fallback=False),
+				'cse.security.tlsVersion'			: config.get('cse.security', 'tlsVersion', 				fallback='auto'),
+				'cse.security.verifyCertificate'	: config.getboolean('cse.security', 'verifyCertificate',fallback=False),
+				'cse.security.caCertificateFile'	: config.get('cse.security', 'caCertificateFile', 		fallback=None),
+				'cse.security.caPrivateKeyFile'		: config.get('cse.security', 'caPrivateKeyFile', 		fallback=None),
 
 				#
 				#	Registrar CSE
@@ -197,7 +204,7 @@ class Configuration(object):
 			}
 
 		except Exception as e:	# about when findings errors in configuration
-			print('Error in configuration file: %s - %s' % (argsConfigfile, str(e)))
+			console.print('[red]Error in configuration file: %s - %s' % (argsConfigfile, str(e)))
 			return False
 
 		# Read id-mappings
@@ -205,7 +212,7 @@ class Configuration(object):
 			Configuration._configuration['server.http.mappings'] = config.items('server.http.mappings')
 			#print(config.items('server.http.mappings'))
 
-		# Some clean-ups and overrites
+		# Some clean-ups and overrides
 
 		# CSE type
 		cseType = Configuration._configuration['cse.type'].lower()
@@ -215,6 +222,8 @@ class Configuration(object):
 			Configuration._configuration['cse.type'] = CSEType.MN
 		else:
 			Configuration._configuration['cse.type'] = CSEType.IN
+
+
 
 		# Loglevel from command line
 		logLevel = Configuration._configuration['logging.level'].lower()
@@ -259,34 +268,76 @@ class Configuration(object):
 		if argsStatisticsEnabled is not None:
 			Configuration._configuration['cse.statistics.enable'] = argsStatisticsEnabled
 
+		# Override useTLS
+		if argsRunAsHttps is not None:
+			Configuration._configuration['cse.security.useTLS'] = argsRunAsHttps
+
 		# Correct urls
 		Configuration._configuration['cse.registrar.address'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.address'])
 		Configuration._configuration['http.address'] = Utils.normalizeURL(Configuration._configuration['http.address'])
 		Configuration._configuration['http.root'] = Utils.normalizeURL(Configuration._configuration['http.root'])
 		Configuration._configuration['cse.registrar.root'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.root'])
-		if Configuration._configuration['cse.security.useTls']:
-			Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('http:', 'https:')
-			Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('http:', 'https:')
+
+		# Just in case: check the URL's
+		if Configuration._configuration['cse.security.useTLS']:
+			if Configuration._configuration['http.address'].startswith('http:'):
+				console.print('[orange3]Configuration Warning: Changing "http" to "https" in \[server.http]:address')
+				Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('http:', 'https:')
+			# registrar might still be accessible vi another protocol
+			# if Configuration._configuration['cse.registrar.address'].startswith('http:'):
+			# 	console.print('[orange3]Configuration Warning: Changing "http" to "https" in \[cse.registrar]:address')
+			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('http:', 'https:')
+		else: 
+			if Configuration._configuration['http.address'].startswith('https:'):
+				console.print('[orange3]Configuration Warning: Changing "https" to "http" in \[server.http]:address')
+				Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('https:', 'http:')
+			# registrar might still be accessible vi another protocol
+			# if Configuration._configuration['cse.registrar.address'].startswith('https:'):
+			# 	console.print('[orange3]Configuration Warning: Changing "https" to "http" in \[cse.registrar]:address')
+			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('https:', 'http:')
 
 
 		#
 		#	Some sanity and validity checks
 		#
 
+		# TLS & certificates
+		if not Configuration._configuration['cse.security.useTLS']:	# clear certificates configuration if not in use
+			Configuration._configuration['cse.security.verifyCertificate'] = False
+			Configuration._configuration['cse.security.tlsVersion'] = 'auto'
+			Configuration._configuration['cse.security.caCertificateFile'] = None
+			Configuration._configuration['cse.security.caPrivateKeyFile'] = None
+		else:
+			if not (val := Configuration._configuration['cse.security.tlsVersion']).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
+				console.print('[red]Configuration Error: Unknown value for \[cse.security]:tlsVersion: %s' % val)
+				return False
+			if (val := Configuration._configuration['cse.security.caCertificateFile']) is None:
+				console.print('[red]Configuration Error: \[cse.security]:caCertificateFile must be set when TLS is enabled')
+				return False
+			if not os.path.exists(val):
+				console.print('[red]Configuration Error: \[cse.security]:caCertificateFile does not exists or is not accessible: %s' % val)
+				return False
+			if (val := Configuration._configuration['cse.security.caPrivateKeyFile']) is None:
+				console.print('[red]Configuration Error: \[cse.security]:caPrivateKeyFile must be set when TLS is enabled')
+				return False
+			if not os.path.exists(val):
+				console.print('[red]Configuration Error: \[cse.security]:caPrivateKeyFile does not exists or is not accessible: %s' % val)
+				return False
 
 		# check the csi format
 		rx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
 		if re.fullmatch(rx, (val:=Configuration._configuration['cse.csi'])) is None:
-			print('Configuration Error: Wrong format for [cse]:cseID: %s' % val)
+			console.print('[red]Configuration Error: Wrong format for \[cse]:cseID: %s' % val)
 			return False
 
 		if Configuration._configuration['cse.registrar.address'] is not None and Configuration._configuration['cse.registrar.csi'] is not None:
 			if re.fullmatch(rx, (val:=Configuration._configuration['cse.registrar.csi'])) is None:
-				print('Configuration Error: Wrong format for [cse.registrar]:cseID: %s' % val)
+				console.print('[red]Configuration Error: Wrong format for \[cse.registrar]:cseID: %s' % val)
 				return False
 			if len(Configuration._configuration['cse.registrar.csi']) > 0 and len(Configuration._configuration['cse.registrar.rn']) == 0:
-				print('Configuration Error: Missing configuration [cse.registrar]:resourceName')
+				console.print('[red]Configuration Error: Missing configuration [cse.registrar]:resourceName')
 				return False
+
 
 		# Everything is fine
 		return True

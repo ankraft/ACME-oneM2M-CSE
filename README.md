@@ -40,7 +40,10 @@ Please see the [Changelog](CHANGELOG.md) for the latest changes.
 
 Thank you for contributed code, patches, testing, bug fixes, time, and more!
 
-![reinaortega](https://github.com/reinaortega.png?size=24) [Miguel Angel Reina Ortega](https://github.com/reinaortega)
+![reinaortega](https://github.com/reinaortega.png?size=24) [Miguel Angel Reina Ortega](https://github.com/reinaortega)  
+![YannGarcia](https://github.com/YannGarcia.png?size=24) [Yann Garcia](https://github.com/YannGarcia)  
+
+
 
 
 ## License
@@ -50,7 +53,6 @@ BSD 3-Clause License for the CSE and its native components and modules. Please s
 ## Roadmap & Backlog
 - CSE: support non-blocking requests
 - CSE: Support the PollingChannel resource type
-- CSE: Announcements
 - CSE: Timeseries
 - UI: Support for resource specific actions (e.g. latest, oldest)
 - UI: Graph for Container reosurces

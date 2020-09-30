@@ -1,9 +1,12 @@
 # Other
 .DS_Store
-logs*/
+certs/
 data*/
-acme.*ini
 init.mn/
+logs*/
+acme.*ini
+acme.mn
+acme.asn
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

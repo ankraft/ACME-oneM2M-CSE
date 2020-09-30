@@ -12,6 +12,7 @@ from Constants import Constants as C
 from Types import ResourceTypes as T, Result, Permission
 from Validator import constructPolicy, addPolicy
 from .Resource import *
+from .AnnounceableResource import AnnounceableResource
 import Utils
 
 
@@ -25,7 +26,7 @@ acpPolicies = constructPolicy([
 attributePolicies =  addPolicy(attributePolicies, acpPolicies)
 
 
-class ACP(Resource):
+class ACP(AnnounceableResource):
 
 	def __init__(self, jsn:dict=None, pi:str=None, rn:str=None, create:bool=False, createdInternally:str=None) -> None:
 		super().__init__(T.ACP, jsn, pi, create=create, inheritACP=True, rn=rn, attributePolicies=attributePolicies)
