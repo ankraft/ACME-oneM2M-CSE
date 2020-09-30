@@ -103,7 +103,7 @@ class HttpServer(object):
 			try:
 				context = None
 				if self.useTLS:
-					Logging.logDebug('Setup SSL context. Certfile: %s, KeyFile:%s, TLS verion: %s' % (self.caCertificateFile, self.caPrivateKeyFile, self.tlsVersion))
+					Logging.logDebug('Setup SSL context. Certfile: %s, KeyFile:%s, TLS version: %s' % (self.caCertificateFile, self.caPrivateKeyFile, self.tlsVersion))
 					context = ssl.SSLContext(
 									{ 	'tls1.1' : ssl.PROTOCOL_TLSv1_1,
 										'tls1.2' : ssl.PROTOCOL_TLSv1_2,
