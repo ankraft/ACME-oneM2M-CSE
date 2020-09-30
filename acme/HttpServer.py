@@ -104,6 +104,7 @@ class HttpServer(object):
 					Logging.log('Setup SSL context: %s/%s' % (str(Configuration.get('cse.security.ca_path')) + 'acme_cert.pem', str(Configuration.get('cse.security.ca_path')) + 'acme_key.pem'))
 					context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
 					context.load_cert_chain(str(Configuration.get('cse.security.ca_path')) + 'acme_cert.pem', str(Configuration.get('cse.security.ca_path')) + 'acme_key.pem')
+					#context.load_verify_locations(str(Configuration.get('cse.security.ca_path')) + 'cert_client.pem')
 				self.flaskApp.run(host=Configuration.get('http.listenIF'), 
 						  port=Configuration.get('http.port'),
 						  threaded=Configuration.get('http.multiThread'),
@@ -244,7 +245,8 @@ class HttpServer(object):
 
 
 	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:str='application/json') -> Result:	# TODO Constants
-		headers = { 'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % int(ty) if ty is not None else ''), 
+		headers = { 'User-Agent'	: self.serverID,
+					'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % int(ty) if ty is not None else ''), 
 					C.hfOrigin	 	: originator,
 					C.hfRI 			: Utils.uniqueRI(),
 					C.hfRVI			: C.hfvRVI,			# TODO this actually depends in the originator
