@@ -21,6 +21,7 @@ noCSE = not connectionPossible(cseURL)
 
 numberOfBatchNotifications = 5
 durationForBatchNotifications = 2
+durationForBatchNotificationsISO8601 = 'PT02S'
 
 class TestSUB(unittest.TestCase):
 
@@ -396,7 +397,7 @@ class TestSUB(unittest.TestCase):
 					'nu': [ NOTIFICATIONSERVER ],
 					# No su! bc we want receive the last notification of a batch
 					'bn': { 
-						'dur' : durationForBatchNotifications
+						'dur' : durationForBatchNotificationsISO8601
 					}
 				}}
 		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
@@ -404,7 +405,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/bn'))
 		self.assertIsNone(findXPath(r, 'm2m:sub/bn/num'))
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/bn/dur'))
-		self.assertEqual(findXPath(r, 'm2m:sub/bn/dur'), durationForBatchNotifications)
+		self.assertEqual(findXPath(r, 'm2m:sub/bn/dur'), durationForBatchNotificationsISO8601)
 		lastNotification = getLastNotification()
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))

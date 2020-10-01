@@ -8,6 +8,7 @@
 #
 
 import requests, json
+import isodate
 from typing import List, Union
 from threading import Lock
 from Logging import Logging
@@ -291,7 +292,11 @@ class NotificationManager(object):
 
 		# Check / start Timer worker to guard the batch notification duration
 		else:
-			self._startNewBatchNotificationWorker(ri, nu, Utils.findXPath(sub, 'bn/dur'))
+			try:
+				dur = isodate.parse_duration(Utils.findXPath(sub, 'bn/dur')).total_seconds()
+			except Exception as e:
+				return False
+			self._startNewBatchNotificationWorker(ri, nu, dur)
 		return True
 
 
@@ -327,6 +332,7 @@ class NotificationManager(object):
 		if dur is None or dur < 1:
 			Logging.logErr('BatchNotification duration is < 1')
 			return False
+		Logging.logDebug('Starting new batchNotificationsWorker. Duration : %d seconds' % dur)
 
 		# Check and start a notification worker to send notifications after some time
 		if len(BackgroundWorkerPool.findWorkers(self._workerID(ri, nu))) > 0:	# worker started, return

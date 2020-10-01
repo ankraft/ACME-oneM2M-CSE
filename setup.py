@@ -9,7 +9,8 @@ setup(
     description='An open source CSE Middleware for Education',
     packages=find_packages(),
 	install_requires=[
-		'flask', 
+		'flask',
+		'isodate', 
 		'psutil',  
 		'requests', 
 		'rich', 

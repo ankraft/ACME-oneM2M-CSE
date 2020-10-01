@@ -14,6 +14,7 @@ You may consider to use a virtual environment manager like pyenv + virtualenv (s
 ### Frameworks and Libraries
 
 - **flask**: The CSE uses the [Flask](https://flask.palletsprojects.com/) web framework.
+- **isodate**: The [isodate](https://github.com/gweis/isodate) package is usedTo parse and handle ISO 8601 time, date, and duration.
 - **psutil**: The [psutil](https://pypi.org/project/psutil/)
 package is used to gather various system information for the CSE's hosting node resource.
 - **requests**: The CSE uses the [Requests](https://requests.readthedocs.io) HTTP Library to send requests vi http.
@@ -53,6 +54,7 @@ The following third-party components are used for the ACME CSE.
 
 ### Core CSE
 - Flask: [https://flask.palletsprojects.com/](https://flask.palletsprojects.com/), BSD 3-Clause License
+- isodate: [https://github.com/gweis/isodate](https://github.com/gweis/isodate), BSD License
 - PSUtil: [https://github.com/giampaolo/psutil](https://github.com/giampaolo/psutil), BSD 3-Clause License
 - Requests: [https://requests.readthedocs.io/en/master/](https://requests.readthedocs.io/en/master/), Apache2 License
 - Rich: [https://github.com/willmcgugan/rich](https://github.com/willmcgugan/rich), MIT License 
