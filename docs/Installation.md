@@ -30,7 +30,7 @@ pip3 install -r requirements.txt
 or install all of them manually:  
 
 ```bash
-pip3 install flask psutil requests rich tinydb
+pip3 install flask isodate psutil requests rich tinydb
 ```  
 
 
