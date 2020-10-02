@@ -360,8 +360,8 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn'))
 		notifications = findXPath(lastNotification, 'm2m:agn')
 		for i in range(0, numberOfBatchNotifications):	# check availability and correct order
-			self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn/{%d}/sgn/nev/rep/m2m:cnt/lbl' % i))
-			self.assertEqual(findXPath(lastNotification, 'm2m:agn/{%d}/sgn/nev/rep/m2m:cnt/lbl/{0}' % i), '%d' % i)
+			self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn/m2m:sgn/{%d}/nev/rep/m2m:cnt/lbl' % i))
+			self.assertEqual(findXPath(lastNotification, 'm2m:agn/m2m:sgn/{%d}/nev/rep/m2m:cnt/lbl/{0}' % i), '%d' % i)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -380,8 +380,8 @@ class TestSUB(unittest.TestCase):
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn'))
 		self.assertEqual(len(findXPath(lastNotification, 'm2m:agn')), 1)
-		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn/{0}/sgn/nev/rep/m2m:cnt/lbl'))
-		self.assertEqual(findXPath(lastNotification, 'm2m:agn/{0}/sgn/nev/rep/m2m:cnt/lbl/{0}'), '99')
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn/m2m:sgn/{0}/nev/rep/m2m:cnt/lbl'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:agn/m2m:sgn/{0}/nev/rep/m2m:cnt/lbl/{0}'), '99')
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -426,8 +426,8 @@ class TestSUB(unittest.TestCase):
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn'))	# Should have arrived now
 		for i in range(0, numberOfBatchNotifications):	# check availability and correct order
-			self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn/{%d}/sgn/nev/rep/m2m:cnt/lbl' % i))
-			self.assertEqual(findXPath(lastNotification, 'm2m:agn/{%d}/sgn/nev/rep/m2m:cnt/lbl/{0}' % i), '%d' % i)
+			self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn/m2m:sgn/{%d}/nev/rep/m2m:cnt/lbl' % i))
+			self.assertEqual(findXPath(lastNotification, 'm2m:agn/m2m:sgn/{%d}/nev/rep/m2m:cnt/lbl/{0}' % i), '%d' % i)
 
 # TODO expirationCounter
 # TODO check different NET's (ae->cnt->sub, add cnt to cnt)

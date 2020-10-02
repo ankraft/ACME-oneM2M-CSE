@@ -52,6 +52,7 @@ grpRN	= 'testGRP'
 fcntRN	= 'testFCNT'
 nodRN 	= 'testNOD'
 subRN	= 'testSUB'
+reqRN	= 'testREQ'
 
 
 URL		= '%s%s' % (SERVER, ROOTPATH)

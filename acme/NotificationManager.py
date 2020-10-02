@@ -308,13 +308,14 @@ class NotificationManager(object):
 			# Collect the notifications	
 			notifications = []		
 			for notification in CSE.storage.getBatchNotifications(ri, nu):
-				notifications.append(notification['request'])
+				if (n := Utils.findXPath(notification['request'], 'sgn')) is not None:
+					notifications.append(n)
 			if len(notifications) == 0:	# This can happen when the subscription is deleted and there are no outstanding notifications
 				return False
 
 			# Aggregate and send
 			notificationRequest = {
-				'm2m:agn' : notifications
+				'm2m:agn' : { 'm2m:sgn' : notifications }
 			}
 			if not self._sendRequest(nu, notificationRequest):
 				Logging.logWarn('Error sending aggregated batch notifications')
