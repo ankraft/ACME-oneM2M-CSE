@@ -266,6 +266,7 @@ class ResponseCode(IntEnum):
 	badRequest									= 4000
 	notFound 									= 4004
 	operationNotAllowed							= 4005
+	subscriptionCreatorHasNoPrivilege			= 4101
 	contentsUnacceptable						= 4102
 	originatorHasNoPrivilege					= 4103
 	conflict									= 4105
@@ -279,6 +280,7 @@ class ResponseCode(IntEnum):
 	alreadyExists								= 5106
 	targetNotSubscribable						= 5203
 	subscriptionVerificationInitiationFailed	= 5204
+	subscriptionHostHasNoPrivilege				= 5205
 	notAcceptable 								= 5207
 	maxNumberOfMemberExceeded					= 6010
 	invalidArguments							= 6023
