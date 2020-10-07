@@ -272,8 +272,8 @@ class HttpServer(object):
 		return self.sendRequest(requests.get, url, originator)
 
 
-	def sendCreateRequest(self, url:str, originator:str, ty:T=None, data:Any=None) -> Result:
-		return self.sendRequest(requests.post, url, originator, ty, data)
+	def sendCreateRequest(self, url:str, originator:str, ty:T=None, data:Any=None, headers:dict=None) -> Result:
+		return self.sendRequest(requests.post, url, originator, ty, data, headers=headers)
 
 
 	def sendUpdateRequest(self, url:str, originator:str, data:Any) -> Result:
@@ -284,17 +284,25 @@ class HttpServer(object):
 		return self.sendRequest(requests.delete, url, originator)
 
 
-	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:str='application/json') -> Result:	# TODO Constants
-		headers = {	'User-Agent'	: self.serverID,
-					'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % int(ty) if ty is not None else ''), 
-					C.hfOrigin	 	: originator,
-					C.hfRI 			: Utils.uniqueRI(),
-					C.hfRVI			: C.hfvRVI,			# TODO this actually depends in the originator
-				   }
+	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:str='application/json', headers:dict=None) -> Result:	# TODO Constants
+
+		# Set basic headers
+		hds = {	'User-Agent'	: self.serverID,
+				'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % int(ty) if ty is not None else ''), 
+				C.hfOrigin	 	: originator,
+				C.hfRI 			: Utils.uniqueRI(),
+				C.hfRVI			: C.hfvRVI,			# TODO this actually depends in the originator
+			   }
+
+		# Add additional headers
+		if headers is not None:
+			if C.hfcEC in headers:				# Event Category
+				hds[C.hfEC] = headers[C.hfcEC]
+
 		try:
 			Logging.logDebug('Sending request: %s %s' % (method.__name__.upper(), url))
 			Logging.logDebug('Request ==>:\n%s\n' % (str(data) if data is not None else ''))
-			r = method(url, data=data, headers=headers, verify=self.verifyCertificate)
+			r = method(url, data=data, headers=hds, verify=self.verifyCertificate)
 			Logging.logDebug('Response <== (%s):\n%s' % (str(r.status_code), str(r.content.decode("utf-8"))))
 		except Exception as e:
 			Logging.logWarn('Failed to send request: %s' % str(e))

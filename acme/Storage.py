@@ -15,7 +15,7 @@ from tinydb.operations import delete 			# type: ignore
 # TODO remove mypy type checking supressions above as soon as tinydb provides typing stubs
 # from tinydb_smartcache import SmartCacheTable # TODO Not compatible with TinyDB 4 yet
 
-import os, json, re
+import os, json, re, time
 from typing import List, Callable, Any
 from threading import Lock
 from Configuration import Configuration
@@ -545,6 +545,9 @@ class TinyDBBinding(object):
 										'pi'  : subscription.pi,
 										'nct' : subscription.nct,
 										'net' : subscription['enc/net'],
+										'atr' : subscription['enc/atr'],
+										'exc' : subscription.exc,
+										'ln' : subscription.ln,
 										'nus' : subscription.nu,
 										'bn'  : subscription.bn
 									}, 
@@ -566,6 +569,7 @@ class TinyDBBinding(object):
 			result = self.tabBatchNotifications.insert(
 									{	'ri' 		: ri,
 										'nu' 		: nu,
+										'tstamp'	: time.time(),
 										'request'	: notificationRequest
 									})
 			return result is not None

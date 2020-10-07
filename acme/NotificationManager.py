@@ -91,6 +91,7 @@ class NotificationManager(object):
 		if Utils.isVirtualResource(resource):
 			return 
 
+		Logging.logDebug('Checking subscriptions for notifications')
 		ri = resource.ri
 
 		# ATTN: The "subscription" returned here are NOT the <sub> resources,
@@ -113,6 +114,20 @@ class NotificationManager(object):
 				for nu in self._getNotificationURLs(sub['nus']):
 					if not self._sendSubscriptionNotification(sub, nu, reason, childResource, modifiedAttributes=modifiedAttributes):
 						pass
+
+			# Check Update and enc/atr  vs the modified attribuets 
+			elif reason == NotificationEventType.resourceUpdate and (atr := sub['atr']) is not None and modifiedAttributes is not None:
+				found = False
+				for k in atr:
+					if k in modifiedAttributes:
+						found = True
+				if found:
+					for nu in self._getNotificationURLs(sub['nus']):
+						if not self._sendSubscriptionNotification(sub, nu, reason, resource, modifiedAttributes=modifiedAttributes):
+							pass
+				else:
+					Logging.logDebug('Skipping notification: No matching attributes found')
+
 			else: # all other reasons that target the resource
 				for nu in self._getNotificationURLs(sub['nus']):
 					if not self._sendSubscriptionNotification(sub, nu, reason, resource, modifiedAttributes=modifiedAttributes):
@@ -259,10 +274,10 @@ class NotificationManager(object):
 			return self._sendRequest(nu, notificationRequest)
 
 
-	def _sendRequest(self, nu:str, notificationRequest:dict) -> bool:
+	def _sendRequest(self, nu:str, notificationRequest:dict, headers:dict=None) -> bool:
 		"""	Actually send a Notification request.
 		"""
-		return CSE.httpServer.sendCreateRequest(nu, Configuration.get('cse.csi'), data=json.dumps(notificationRequest)).rsc == RC.OK
+		return CSE.httpServer.sendCreateRequest(nu, Configuration.get('cse.csi'), data=json.dumps(notificationRequest), headers=headers).rsc == RC.OK
 
 
 	def _flushBatchNotifications(self, subscription:Resource) -> None:
@@ -270,13 +285,14 @@ class NotificationManager(object):
 		sub = CSE.storage.getSubscription(ri)
 
 		if (nus := self._getNotificationURLs(sub['nus'])) is not None:
+			ln = sub['ln'] if 'ln' in sub else False
 			for nu in nus:
 				self._stopNotificationBatchWorker(ri, nu)					# Stop a potential worker
-				self._sendSubscriptionAggregatedBatchNotification(ri, nu)	# Send all remaining notifications
+				self._sendSubscriptionAggregatedBatchNotification(ri, nu, ln)	# Send all remaining notifications
 
 
 	def _handleBatchNotification(self, nu:str, sub:dict, notificationRequest:dict) -> bool:
-		"""	Store a subscription's notification for later sending.
+		"""	Store a subscription's notification for later sending. For a single nu.
 		"""
 		# Rename key name
 		if 'm2m:sgn' in notificationRequest:
@@ -288,8 +304,9 @@ class NotificationManager(object):
 
 		#  Check for actions
 		if (num := Utils.findXPath(sub, 'bn/num')) is not None and (countBN := CSE.storage.countBatchNotifications(ri, nu)) >= num:
+			ln = sub['ln'] if 'ln' in sub else False
 			self._stopNotificationBatchWorker(ri, nu)	# Stop the worker, not needed
-			self._sendSubscriptionAggregatedBatchNotification(ri, nu)
+			self._sendSubscriptionAggregatedBatchNotification(ri, nu, ln)
 
 		# Check / start Timer worker to guard the batch notification duration
 		else:
@@ -301,24 +318,29 @@ class NotificationManager(object):
 		return True
 
 
-	def _sendSubscriptionAggregatedBatchNotification(self, ri:str, nu:str) -> bool:
+	def _sendSubscriptionAggregatedBatchNotification(self, ri:str, nu:str, ln:bool=False) -> bool:
 		"""	Send and remove(!) the available BatchNotifications for an ri & nu.
 		"""
 		with self.lockBatchNotification: # TODO check whether this is actually necessary
 			Logging.log('Sending aggregated subscription notifications for ri: %s' % ri)
 			# Collect the notifications	
 			notifications = []		
-			for notification in CSE.storage.getBatchNotifications(ri, nu):
+			for notification in sorted(CSE.storage.getBatchNotifications(ri, nu), key=lambda x: x['tstamp']):	# sort by timestamp added
 				if (n := Utils.findXPath(notification['request'], 'sgn')) is not None:
 					notifications.append(n)
 			if len(notifications) == 0:	# This can happen when the subscription is deleted and there are no outstanding notifications
 				return False
 
+			additionalHeaders = None
+			if ln:
+				notifications = notifications[-1:]
+				additionalHeaders = { C.hfcEC : 'latest' }
+
 			# Aggregate and send
 			notificationRequest = {
 				'm2m:agn' : { 'm2m:sgn' : notifications }
 			}
-			if not self._sendRequest(nu, notificationRequest):
+			if not self._sendRequest(nu, notificationRequest, headers=additionalHeaders):
 				Logging.logWarn('Error sending aggregated batch notifications')
 				return False
 
@@ -328,6 +350,14 @@ class NotificationManager(object):
 				return False
 
 			return True
+
+# TODO
+
+	# def _checkExpirationCounter(self, sub:dict) -> bool:
+	# 	if 'exc' in sub and (exc := sub['exc'] is not None:
+	# 		if (subscription := CSE.dispatcher.retrieveResource(sub['ri']).resource) is None:
+	# 			return False
+	# 	return Result(status=True) if CSE.storage.updateSubscription(subscription) else Result(status=False, rsc=RC.internalServerError, dbg='cannot update subscription in database')
 
 
 	def _startNewBatchNotificationWorker(self, ri:str, nu:str, dur:int) -> bool:

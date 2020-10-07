@@ -45,7 +45,9 @@ class Constants(object):
 	hfRVI							= 'X-M2M-RVI'
 	hfvContentType					= 'application/json'
 	hfvRVI 							= '3'
-	
+	hfEC 							= 'X-M2M-EC'
+	hfcEC 							= 'Event Category'
+			
 
 	#
 	#	Configuration meta defaults

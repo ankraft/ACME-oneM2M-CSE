@@ -178,6 +178,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		post_data = self.rfile.read(length)
 		if len(post_data) > 0:
 			setLastNotification(json.loads(post_data.decode('utf-8')))
+		setLastNotificationHeaders(self.headers)
 
 
 	def log_message(self, format, *args):
@@ -206,6 +207,7 @@ def stopNotificationServer():
 	requests.post(NOTIFICATIONSERVER)	# send empty/termination request 
 
 lastNotification = None
+lastNotificationHeaders = {}
 
 def setLastNotification(notification:str):
 	global lastNotification
@@ -214,6 +216,16 @@ def setLastNotification(notification:str):
 def getLastNotification():
 	return lastNotification
 
+def clearLastNotification():
+	global lastNotification
+	lastNotification = None
+
+def setLastNotificationHeaders(headers:dict):
+	global lastNotificationHeaders
+	lastNotificationHeaders = headers
+
+def getLastNotificationHeaders():
+	return lastNotificationHeaders
 
 
 #

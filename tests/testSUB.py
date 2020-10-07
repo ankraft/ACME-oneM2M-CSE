@@ -429,6 +429,121 @@ class TestSUB(unittest.TestCase):
 			self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn/m2m:sgn/{%d}/nev/rep/m2m:cnt/lbl' % i))
 			self.assertEqual(findXPath(lastNotification, 'm2m:agn/m2m:sgn/{%d}/nev/rep/m2m:cnt/lbl/{0}' % i), '%d' % i)
 
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteSUBForBatchNotificationDuration(self):
+		# Delete the sub
+		_, rsc = DELETE(subURL, TestSUB.originator)
+		self.assertEqual(rsc, RC.deleted)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSUBWithEncAtr(self):
+		self.assertIsNotNone(TestSUB.cse)
+		self.assertIsNotNone(TestSUB.ae)
+		self.assertIsNotNone(TestSUB.cnt)
+		jsn = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'net': [ 1 ],
+			            'atr': ['lbl' ]
+					},
+					'nu': [ NOTIFICATIONSERVER ]
+				}}
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc/atr'))
+		self.assertEqual(findXPath(r, 'm2m:sub/enc/atr'), [ 'lbl' ])
+		lastNotification = getLastNotification()
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCNTWithEncAtrLbl(self):
+		clearLastNotification()
+		jsn = 	{ 'm2m:cnt' : {
+					'lbl' : [ 'hello' ]
+				}}
+		cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+		self.assertEqual(rsc, RC.updated)
+
+		lastNotification = getLastNotification()	# Notifications should not have arrived yes
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep'))
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/lbl'), [ 'hello'])
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCNTWithEncAtrLblWrong(self):
+		clearLastNotification() # clear notification first, we don't want to receive a notification
+		jsn = 	{ 'm2m:cnt' : {
+					'mni' : 99
+				}}
+		cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+		self.assertEqual(rsc, RC.updated)
+
+		lastNotification = getLastNotification()	# Notifications should not have arrived yes
+		self.assertIsNone(lastNotification)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteSUBWithEncAtr(self):
+		# Delete the sub
+		_, rsc = DELETE(subURL, TestSUB.originator)
+		self.assertEqual(rsc, RC.deleted)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSUBBatchNotificationNumberWithLn(self):
+		self.assertIsNotNone(TestSUB.cse)
+		self.assertIsNotNone(TestSUB.ae)
+		self.assertIsNotNone(TestSUB.cnt)
+		jsn = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'net': [ 1 ],
+					},
+					'ln': True,
+					'nu': [ NOTIFICATIONSERVER ],
+					'bn': { 
+						'num' : numberOfBatchNotifications
+					}
+				}}
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/bn'))
+		self.assertEqual(findXPath(r, 'm2m:sub/bn/num'), numberOfBatchNotifications)
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/ln'))
+		self.assertEqual(findXPath(r, 'm2m:sub/ln'), True)
+		lastNotification = getLastNotification()
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCNTBatchWithLn(self):
+		for i in range(0, numberOfBatchNotifications):	# Adding more notification
+			jsn = 	{ 'm2m:cnt' : {
+						'lbl' : [ '%d' % i ]
+					}}
+			cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+			self.assertEqual(rsc, RC.updated)
+		lastNotification = getLastNotification()
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn/m2m:sgn'))
+		self.assertEqual(len(findXPath(lastNotification, 'm2m:agn/m2m:sgn')), 1)	 # ... but expecting only one
+		lastNotificationHeaders = getLastNotificationHeaders()
+		self.assertIsNotNone(lastNotificationHeaders['X-M2M-EC'])
+		self.assertEqual(lastNotificationHeaders['X-M2M-EC'], 'latest')
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteSUBBatchNotificationNumberWithLn(self):
+		# Delete the sub
+		_, rsc = DELETE(subURL, TestSUB.originator)
+		self.assertEqual(rsc, RC.deleted)
+
+
 # TODO expirationCounter
 # TODO check different NET's (ae->cnt->sub, add cnt to cnt)
 
@@ -438,27 +553,44 @@ def run():
 	suite.addTest(TestSUB('test_retrieveSUB'))
 	suite.addTest(TestSUB('test_retrieveSUBWithWrongOriginator'))
 	suite.addTest(TestSUB('test_attributesSUB'))
+
 	suite.addTest(TestSUB('test_createSUBWrong'))
 	suite.addTest(TestSUB('test_updateSUB'))
 	suite.addTest(TestSUB('test_updateCNT'))
 	suite.addTest(TestSUB('test_addCIN2CNT'))
 	suite.addTest(TestSUB('test_removeCNT'))
 	suite.addTest(TestSUB('test_addCNTAgain'))
+
 	suite.addTest(TestSUB('test_createSUB'))
 	suite.addTest(TestSUB('test_deleteSUBByUnknownOriginator'))
 	suite.addTest(TestSUB('test_deleteSUBByAssignedOriginator'))
+
 	suite.addTest(TestSUB('test_createSUBModifedAttributes'))
 	suite.addTest(TestSUB('test_updateCNTModifiedAttributes'))
 	suite.addTest(TestSUB('test_updateCNTSameModifiedAttributes'))
 	suite.addTest(TestSUB('test_deleteSUBByAssignedOriginator'))
+
 	suite.addTest(TestSUB('test_createSUBRI'))
 	suite.addTest(TestSUB('test_updateCNTRI'))
 	suite.addTest(TestSUB('test_deleteSUBByAssignedOriginator'))
+
 	suite.addTest(TestSUB('test_createSUBForBatchNotificationNumber'))
 	suite.addTest(TestSUB('test_updateCNTBatch'))
 	suite.addTest(TestSUB('test_deleteSUBForBatchReceiveRemainingNotifications'))
+
 	suite.addTest(TestSUB('test_createSUBForBatchNotificationDuration'))
 	suite.addTest(TestSUB('test_updateCNTBatchDuration'))
+	suite.addTest(TestSUB('test_deleteSUBForBatchNotificationDuration'))
+
+	suite.addTest(TestSUB('test_createSUBWithEncAtr'))	# attribute
+	suite.addTest(TestSUB('test_updateCNTWithEncAtrLbl'))
+	suite.addTest(TestSUB('test_updateCNTWithEncAtrLblWrong'))
+	suite.addTest(TestSUB('test_deleteSUBWithEncAtr'))
+
+	suite.addTest(TestSUB('test_createSUBBatchNotificationNumberWithLn'))	# Batch + latestNotify
+	suite.addTest(TestSUB('test_updateCNTBatchWithLn'))
+	suite.addTest(TestSUB('test_deleteSUBBatchNotificationNumberWithLn'))
+
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)

@@ -21,7 +21,7 @@ The CSE supports the following oneM2M resource types:
 | Container (CNT)               |  &check;  |                                                                                                                                 |
 | Content Instance (CIN)        |  &check;  |                                                                                                                                 |
 | Group (GRP)                   |  &check;  | The support includes requests via the *fopt* (fan-out-point) virtual resource.                                                  |
-| Subscription (SUB)            |  &check;  | Notifications via http to a direct url or an AE's Point-of-Access (POA) are supported as well.                                  |
+| Subscription (SUB)            |  &check;  | Notifications via http(s) (direct url or an AE's Point-of-Access (POA)). BatchNotifications, attributes.                        |
 | Node (NOD)                    |  &check;  |                                                                                                                                 |
 | Management Objects            |  &check;  | See also the list of supported [management objects](#mgmtobjs).                                                                 |
 | FlexContainer Specializations |  &check;  | Any specialization is supported and validated. See [Importing Attribute Policies](Importing.md#attributes) for further details. |
@@ -48,7 +48,7 @@ The following table presents the supported management object specifications.
 | myCertFileCred (NYCFC)   |
 
 
-## Functionalities
+## Functions
 
 | Functionality                 | Supported | Remark                                                                |
 |:------------------------------|:---------:|:----------------------------------------------------------------------|
