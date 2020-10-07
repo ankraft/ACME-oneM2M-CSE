@@ -33,7 +33,9 @@ class ResourceTypes(IntEnum):
 	GRP 		=  9
 	MGMTOBJ		= 13
 	NOD			= 14
+	PCH 		= 15
 	CSR			= 16
+	REQ 		= 17
 	SUB			= 23
 	FCNT	 	= 28
 	FCI 		= 58
@@ -157,13 +159,15 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.CNT			: 'm2m:cnt',
 		ResourceTypes.CIN 			: 'm2m:cin',
 		ResourceTypes.CSEBase		: 'm2m:cb',
+		ResourceTypes.CSR 			: 'm2m:csr',
+		ResourceTypes.FCI			: 'm2m:fci',				# not an official shortname
+		ResourceTypes.FCNT			: 'm2m:fcnt',				# not an official shortname
 		ResourceTypes.GRP			: 'm2m:grp',
 		ResourceTypes.MGMTOBJ		: 'm2m:mgo',				# not an official shortname
 		ResourceTypes.NOD			: 'm2m:nod',
-		ResourceTypes.CSR 			: 'm2m:csr',
+		ResourceTypes.PCH			: 'm2m:pch',
+		ResourceTypes.REQ			: 'm2m:req',
 		ResourceTypes.SUB			: 'm2m:sub',
-		ResourceTypes.FCNT			: 'm2m:fcnt',				# not an official shortname
-		ResourceTypes.FCI			: 'm2m:fci',				# not an official shortname
 
 		ResourceTypes.ACPAnnc 		: 'm2m:acpA',
 		ResourceTypes.AEAnnc 		: 'm2m:aeA',
@@ -182,6 +186,8 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.FCNT_OL		: 'm2m:ol',
 		ResourceTypes.FCNT_LA		: 'm2m:la',
 		ResourceTypes.PCH_PCU		: 'm2m:pcu',
+
+		# MgmtObj Specializations
 
 		ResourceTypes.FWR			: 'm2m:fwr',
 		ResourceTypes.SWR			: 'm2m:swr',
@@ -315,6 +321,8 @@ ResponseCode._httpStatusCodes = {											# type: ignore
 		ResponseCode.targetNotSubscribable						: 403,		# TARGET NOT SUBSCRIBABLE
 		ResponseCode.receiverHasNoPrivileges					: 403,		# RECEIVER HAS NO PRIVILEGE
 		ResponseCode.securityAssociationRequired				: 403,		# SECURITY ASSOCIATION REQUIRED
+		ResponseCode.subscriptionCreatorHasNoPrivilege			: 403,		# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
+		ResponseCode.subscriptionHostHasNoPrivilege				: 403,		# SUBSCRIPTION HOST HAS NO PRIVILEGE
 		ResponseCode.notFound									: 404,		# NOT FOUND
 		ResponseCode.operationNotAllowed						: 405,		# OPERATION NOT ALLOWED
 		ResponseCode.notAcceptable 								: 406,		# NOT ACCEPTABLE
@@ -403,11 +411,13 @@ class Permission(IntEnum):
 
 class Operation(IntEnum):
 	# Operations
-	RETRIEVE			= 0
 	CREATE 				= 1
-	UPDATE				= 2
-	DELETE				= 3
-	DISCOVERY			= 4
+	RETRIEVE			= 2
+	UPDATE				= 3
+	DELETE				= 4
+	NOTIFY 				= 6
+	DISCOVERY			= 5
+
 
 	def permission(self) -> Permission:
 		""" Return the corresponding permission for an operation """
@@ -419,8 +429,38 @@ Operation._permissionsMapping =	{				# type: ignore
 	Operation.RETRIEVE	: Permission.RETRIEVE,
 	Operation.CREATE 	: Permission.CREATE,
 	Operation.UPDATE 	: Permission.UPDATE,
-	Operation.DELETE 	: Permission.DELETE
+	Operation.DELETE 	: Permission.DELETE,
+	Operation.NOTIFY 	: Permission.NOTIFY,
+	Operation.DISCOVERY : Permission.DISCOVERY,
 }
+
+
+##############################################################################
+#
+#	ResponseType 
+#
+
+class ResponseType(IntEnum):
+	"""	Reponse Types """
+	nonBlockingRequestSynch		= 1
+	nonBlockingRequestAsynch	= 2
+	blockingRequest				= 3	# default
+	flexBlocking				= 4
+	noResponse					= 5
+	
+
+##############################################################################
+#
+#	Request Status 
+#
+
+class RequestStatus(IntEnum):
+	"""	Reponse Types """
+	COMPLETED			= 1
+	FAILED				= 2
+	PENDING				= 3
+	FORWARDED			= 4
+	PARTIALLY_COMPLETED	= 5
 
 
 ##############################################################################
