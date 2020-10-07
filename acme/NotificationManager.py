@@ -245,7 +245,7 @@ class NotificationManager(object):
 		data = None
 		nct = sub['nct']
 		nct == NotificationContentType.all					and (data := resource.asJSON())
-		nct == NotificationContentType.ri 					and (data := { 'm2m:uri' : Utils.fullRI(resource.ri) })
+		nct == NotificationContentType.ri 					and (data := { 'm2m:uri' : resource.ri })
 		nct == NotificationContentType.modifiedAttributes	and (data := { resource.tpe : modifiedAttributes })
 		# TODO nct == NotificationContentType.triggerPayload
 
@@ -269,9 +269,10 @@ class NotificationManager(object):
 		ri = subscription.ri
 		sub = CSE.storage.getSubscription(ri)
 
-		for nu in self._getNotificationURLs(sub['nus']):
-			self._stopNotificationBatchWorker(ri, nu)					# Stop a potential worker
-			self._sendSubscriptionAggregatedBatchNotification(ri, nu)	# Send all remaining notifications
+		if (nus := self._getNotificationURLs(sub['nus'])) is not None:
+			for nu in nus:
+				self._stopNotificationBatchWorker(ri, nu)					# Stop a potential worker
+				self._sendSubscriptionAggregatedBatchNotification(ri, nu)	# Send all remaining notifications
 
 
 	def _handleBatchNotification(self, nu:str, sub:dict, notificationRequest:dict) -> bool:
