@@ -334,7 +334,7 @@ class NotificationManager(object):
 			additionalHeaders = None
 			if ln:
 				notifications = notifications[-1:]
-				additionalHeaders = { C.hfcEC : 'latest' }
+				additionalHeaders = { C.hfcEC : '4' }
 
 			# Aggregate and send
 			notificationRequest = {
