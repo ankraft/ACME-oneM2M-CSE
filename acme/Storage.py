@@ -546,8 +546,9 @@ class TinyDBBinding(object):
 										'nct' : subscription.nct,
 										'net' : subscription['enc/net'],
 										'atr' : subscription['enc/atr'],
+										'chty': subscription['enc/chty'],
 										'exc' : subscription.exc,
-										'ln' : subscription.ln,
+										'ln'  : subscription.ln,
 										'nus' : subscription.nu,
 										'bn'  : subscription.bn
 									}, 

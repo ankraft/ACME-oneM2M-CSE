@@ -111,6 +111,9 @@ class NotificationManager(object):
 			if reason not in sub['net']:	# check whether reason is actually included in the subscription
 				continue
 			if reason in [ NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]:	# reasons for child resources
+				chty = sub['chty']
+				if chty is not None and not childResource.ty in chty:	# skip if chty is set and child.type is not in the list
+					continue
 				for nu in self._getNotificationURLs(sub['nus']):
 					if not self._sendSubscriptionNotification(sub, nu, reason, childResource, modifiedAttributes=modifiedAttributes):
 						pass

@@ -502,7 +502,7 @@ class TestSUB(unittest.TestCase):
 		jsn = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
-			            'net': [ 1 ],
+			            'net': [ 1 ],	# update resource
 					},
 					'ln': True,
 					'nu': [ NOTIFICATIONSERVER ],
@@ -543,6 +543,63 @@ class TestSUB(unittest.TestCase):
 		_, rsc = DELETE(subURL, TestSUB.originator)
 		self.assertEqual(rsc, RC.deleted)
 
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSUBWithEncChty(self):
+		self.assertIsNotNone(TestSUB.cse)
+		self.assertIsNotNone(TestSUB.ae)
+		self.assertIsNotNone(TestSUB.cnt)
+		jsn = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'net': [ 3 ],	# create direct child resource
+						'chty': [ 3 ] 	# only cnt
+					},
+					'ln': True,
+					'nu': [ NOTIFICATIONSERVER ]
+				}}
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc/chty'))
+		self.assertEqual(findXPath(r, 'm2m:sub/enc/chty'), [ 3 ])
+		lastNotification = getLastNotification()
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINWithEncChty(self):
+		clearLastNotification()	# clear the notification first
+		for i in range(0, numberOfBatchNotifications):	# Adding more notification
+			jsn = 	{ 'm2m:cnt' : {
+						'lbl' : [ '%d' % i ]
+					}}
+			cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+			self.assertEqual(rsc, RC.updated)
+		self.assertIsNone(getLastNotification())	# this shouldn't have caused a notification
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTWithEncChty(self):
+		clearLastNotification()	# clear the notification first
+		jsn = 	{ 'm2m:cnt' : { 
+					'rn'  : '%sSub' % cntRN
+				}}
+		TestSUB.cnt, rsc = CREATE(cntURL, TestSUB.originator, T.CNT, jsn)
+		self.assertEqual(rsc, RC.created)
+		lastNotification = getLastNotification()
+		self.assertIsNotNone(lastNotification)		# this must have caused a notification
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'), '%sSub' % cntRN)
+		_, rsc = DELETE('%s/%sSub' % (cntURL, cntRN), TestSUB.originator)	# delete the sub-cnt
+		self.assertEqual(rsc, RC.deleted)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteSUBWithEncChty(self):
+		# Delete the sub
+		_, rsc = DELETE(subURL, TestSUB.originator)
+		self.assertEqual(rsc, RC.deleted)
 
 # TODO expirationCounter
 # TODO check different NET's (ae->cnt->sub, add cnt to cnt)
@@ -590,6 +647,11 @@ def run():
 	suite.addTest(TestSUB('test_createSUBBatchNotificationNumberWithLn'))	# Batch + latestNotify
 	suite.addTest(TestSUB('test_updateCNTBatchWithLn'))
 	suite.addTest(TestSUB('test_deleteSUBBatchNotificationNumberWithLn'))
+
+	suite.addTest(TestSUB('test_createSUBWithEncChty'))	# child resource type
+	suite.addTest(TestSUB('test_createCINWithEncChty'))
+	suite.addTest(TestSUB('test_createCNTWithEncChty'))
+	suite.addTest(TestSUB('test_deleteSUBWithEncChty'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
