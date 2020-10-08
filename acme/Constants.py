@@ -47,6 +47,7 @@ class Constants(object):
 	hfvRVI 							= '3'
 	hfEC 							= 'X-M2M-EC'
 	hfcEC 							= 'Event Category'
+	hfvECLatest 					= '4'
 			
 
 	#

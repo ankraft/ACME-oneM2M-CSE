@@ -534,7 +534,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(len(findXPath(lastNotification, 'm2m:agn/m2m:sgn')), 1)	 # ... but expecting only one
 		lastNotificationHeaders = getLastNotificationHeaders()
 		self.assertIsNotNone(lastNotificationHeaders['X-M2M-EC'])
-		self.assertEqual(lastNotificationHeaders['X-M2M-EC'], 'latest')
+		self.assertEqual(lastNotificationHeaders['X-M2M-EC'], '4') # 'latest'
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
