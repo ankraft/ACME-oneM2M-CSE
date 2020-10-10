@@ -48,6 +48,7 @@ class CSEBase(Resource):
 									   T.FCNT,
 									   T.GRP,
 									   T.NOD,
+									   T.REQ,
 									   T.SUB
 									 ])
 

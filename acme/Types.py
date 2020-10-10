@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, List
 from enum import IntEnum, Enum, auto
 from flask import Request
@@ -265,6 +265,9 @@ class Announced(IntEnum):
 
 class ResponseCode(IntEnum):
 	""" Response codes """
+	accepted									= 1000
+	accepedNonBlockingRequestSynch				= 1001
+	accepedNonBlockingRequestAsynch				= 1002
 	OK											= 2000
 	created 									= 2001
 	deleted 									= 2002
@@ -308,6 +311,9 @@ ResponseCode._httpStatusCodes = {											# type: ignore
 		ResponseCode.deleted 									: 200,		# DELETED
 		ResponseCode.updated 									: 200,		# UPDATED
 		ResponseCode.created									: 201,		# CREATED
+		ResponseCode.accepted 									: 202, 		# ACCEPTED
+		ResponseCode.accepedNonBlockingRequestSynch 			: 202,		# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
+		ResponseCode.accepedNonBlockingRequestAsynch			: 202,		# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
 		ResponseCode.badRequest									: 400,		# BAD REQUEST
 		ResponseCode.contentsUnacceptable						: 400,		# NOT ACCEPTABLE
 		ResponseCode.insufficientArguments 						: 400,		# INSUFFICIENT ARGUMENTS
@@ -501,24 +507,51 @@ class NotificationEventType(IntEnum):
 
 ##############################################################################
 #
-#	Result Data Class
+#	Result and Argument and Header Data Classes
 #
 
 
 @dataclass
 class Result:
-	resource:	Any				= None		# Actually this is a Resource type, but have a circular import problem.
-	jsn: 		dict 			= None
-	lst:		List[Any]   	= None		# List of Anything
-	rsc:		ResponseCode	= ResponseCode.OK	# OK
-	dbg:		str 			= None
-	request:	Request 		= None  	# may contain the original http request object
-	status:		bool 			= None
-	originator:	str 			= None
+	resource 	: Any			= None		# Actually this is a Resource type, but have a circular import problem.
+	jsn 		: dict 			= None
+	lst 		: List[Any]   	= None		# List of Anything
+	rsc 		: ResponseCode	= ResponseCode.OK	# OK
+	dbg 		: str 			= None
+	request 	: Request 		= None  	# may contain the original http request object
+	status 		: bool 			= None
+	originator 	: str 			= None
 
 
 	def errorResult(self) -> Result:
 		""" Copy only the rsc and dbg to a new result instance.
 		"""
 		return Result(rsc=self.rsc, dbg=self.dbg)
+
+
+@dataclass
+class RequestArguments:
+	fu 			: FilterUsage 					= FilterUsage.conditionalRetrieval
+	drt 		: DesiredIdentifierResultType	= DesiredIdentifierResultType.structured
+	fo 			: FilterOperation 				= FilterOperation.AND
+	rcn 		: ResultContentType 			= ResultContentType.discoveryResultReferences
+	rt 			: ResponseType					= ResponseType.blockingRequest 					# response type
+	rp 			: str 							= None 											# result persistence
+	rpts 		: str 							= None 											# ... as a timestamp
+	handling 	: dict 							= field(default_factory=dict)
+	conditions 	: dict 							= field(default_factory=dict)
+	attributes 	: dict 							= field(default_factory=dict)
+
+
+@dataclass
+class RequestHeaders:
+	originator 					: str 			= None 	# X-M2M-Origin
+	requestIdentifier			: str 			= None	# X-M2M-RI
+	contentType 				: str 			= None	# Content-Type
+	resourceType 				: ResourceTypes	= None
+	requestExpirationTimestamp	: str 			= None 	# X-M2M-RET
+	responseExpirationTimestamp	: str 			= None 	# X-M2M-RST
+	operationExecutionTime		: str 			= None 	# X-M2M-OET
+	releaseVersionIndicator		: str 			= None 	# X-M2M-RVI
+
 

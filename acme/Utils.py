@@ -9,17 +9,19 @@
 #
 
 import datetime, random, string, sys, re, threading, traceback, time
-from typing import Any, List, Tuple, Union
+import isodate
+from typing import Any, List, Tuple, Union, Dict
 from resources import ACP, ACPAnnc, AE, AEAnnc, ANDI, ANDIAnnc, ANI, ANIAnnc, BAT, BATAnnc
 from resources import CIN, CINAnnc, CNT, CNTAnnc, CNT_LA, CNT_OL, CSEBase, CSR, CSRAnnc
 from resources import DVC, DVCAnnc,DVI, DVIAnnc, EVL, EVLAnnc, FCI, FCIAnnc, FCNT, FCNTAnnc, FCNT_LA, FCNT_OL
 from resources import FWR, FWRAnnc, GRP, GRPAnnc, GRP_FOPT, MEM, MEMAnnc, MgmtObj, MgmtObjAnnc, NOD, NODAnnc
-from resources import NYCFC, NYCFCAnnc, RBO, RBOAnnc, SUB
+from resources import NYCFC, NYCFCAnnc, PCH, REQ, RBO, RBOAnnc, SUB
 from resources import SWR, SWRAnnc, Unknown, Resource
 
 
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ResponseCode as RC
+from Types import ResourceTypes as T, ResponseCode as RC
+from Types import Result,  RequestHeaders, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType, ResultContentType, ResponseType, FilterOperation
 from Configuration import Configuration
 from Logging import Logging
 import CSE
@@ -108,7 +110,7 @@ def isVirtualResource(resource: Resource.Resource) -> bool:
 def isValidID(id: str) -> bool:
 	""" Check for valid ID. """
 	#return len(id) > 0 and '/' not in id 	# pi might be ""
-	return '/' not in id
+	return id is not None and '/' not in id
 
 
 def getResourceDate(delta: int = 0) -> str:
@@ -264,7 +266,7 @@ mgmtObjAnncTPEs = 	[	T.FWRAnnc.tpe(), T.SWRAnnc.tpe(), T.MEMAnnc.tpe(), T.ANIAnn
 						T.RBOAnnc.tpe(), T.EVLAnnc.tpe(),
 			  		]
 
-def resourceFromJSON(jsn: dict,pi:str=None, acpi:str=None, ty:Union[T, int]=None, create:bool=False, isImported:bool=False) -> Result:
+def resourceFromJSON(jsn:dict, pi:str=None, acpi:str=None, ty:Union[T, int]=None, create:bool=False, isImported:bool=False) -> Result:
 	""" Create a resource from a JSON structure.
 		This will *not* call the activate method, therefore some attributes
 		may be set separately.
@@ -315,6 +317,10 @@ def resourceFromJSON(jsn: dict,pi:str=None, acpi:str=None, ty:Union[T, int]=None
 		return Result(resource=FCNT_LA.FCNT_LA(jsn, pi=pi, create=create))
 	elif typ == T.FCNT_OL:
 		return Result(resource=FCNT_OL.FCNT_OL(jsn, pi=pi, create=create))
+	elif typ == T.REQ or root == T.REQ.tpe():
+		return Result(resource=REQ.REQ(jsn, pi=pi, create=create))
+	elif typ == T.PCH or root == T.PCH.tpe():
+		return Result(resource=PCH.PCH(jsn, pi=pi, create=create))
 	elif typ == T.CSEBase or root == T.CSEBase.tpe():
 		return Result(resource=CSEBase.CSEBase(jsn, create=create))
 
@@ -416,7 +422,7 @@ def removeCommentsFromJSON(data:str) -> str:
 
 
 decimalMatch = re.compile('{(\d+)}')
-def findXPath(jsn:dict, element:str, default:Any = None) -> Any:
+def findXPath(jsn:dict, element:str, default:Any=None) -> Any:
 	""" Find a structured element in JSON.
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
 	"""
@@ -445,8 +451,9 @@ def findXPath(jsn:dict, element:str, default:Any = None) -> Any:
 			data = data[paths[i]]	# found data for the next level down
 	return data
 
+
 # set a structured element in JSON. Create if necessary, and observe the overwrite option
-def setXPath(jsn: dict, element: str, value: Any, overwrite: bool = True) -> bool:
+def setXPath(jsn:Dict[str, Any], element:str, value:Any, overwrite:bool=True) -> bool:
 	paths = element.split("/")
 	ln = len(paths)
 	data = jsn
@@ -458,6 +465,12 @@ def setXPath(jsn: dict, element: str, value: Any, overwrite: bool = True) -> boo
 			return True # don't overwrite
 	data[paths[ln-1]] = value
 	return True
+
+
+def deleteNoneValuesFromJSON(jsn:Any) -> dict:
+    if not isinstance(jsn, dict):
+        return jsn
+    return { key:value for key,value in ((key, deleteNoneValuesFromJSON(value)) for key,value in jsn.items()) if value is not None }
 
 
 urlregex = re.compile(
@@ -575,24 +588,249 @@ def requestHeaderField(request: Request, field : str) -> str:
 		return None
 	return request.headers.get(field)
 
+
+# Get the request arguments, or meaningful defaults.
+# Only a small subset is supported yet
+# Throws an exception when a wrong type is encountered. This is part of the validation
+def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE) -> Tuple[dict, str, RequestArguments]:
+	result: dict = { }
+	result2 = RequestArguments()
+
+	# copy for greedy attributes checking
+	args = request.args.copy()	 	# type: ignore
+
+	# FU - Filter Usage
+	if (fu := args.get('fu')) is not None:
+		if not CSE.validator.validateRequestArgument('fu', fu).status:
+			return None, 'error validating \'fu\' argument', None
+		try:
+			fu = FilterUsage(int(fu))
+		except ValueError as exc:
+			return None, '\'%s\' is not a valid value for fu' % fu, None
+		del args['fu']
+	else:
+		fu = FilterUsage.conditionalRetrieval
+	if fu == FilterUsage.discoveryCriteria and operation == Operation.RETRIEVE:
+		operation = Operation.DISCOVERY
+	result['fu'] = fu
+	result2.fu = fu
+
+
+	# DRT - Desired Identifier Result Type
+	if (drt := args.get('drt')) is not None: # 1=strucured, 2=unstructured
+		if not CSE.validator.validateRequestArgument('drt', drt).status:
+			return None, 'error validating \'drt\' argument', None
+		try:
+			drt = DesiredIdentifierResultType(int(drt))
+		except ValueError as exc:
+			return None, '\'%s\' is not a valid value for drt' % drt, None
+		del args['drt']
+	else:
+		drt = DesiredIdentifierResultType.structured
+	result['drt'] = drt
+	result2.drt = drt
+
+
+	# FO - Filter Operation
+	if (fo := args.get('fo')) is not None: # 1=AND, 2=OR
+		if not CSE.validator.validateRequestArgument('fo', fo).status:
+			return None, 'error validating \'fo\' argument', None
+		try:
+			fo = FilterOperation(int(fo))
+		except ValueError as exc:
+			return None, '\'%s\' is not a valid value for fo' % fo, None
+		del args['fo']
+	else:
+		fo = FilterOperation.AND # default
+	result['fo'] = fo
+	result2.fo = fo
+
+
+	# RCN Result Content Type
+	if (rcn := args.get('rcn')) is not None: 
+		if not CSE.validator.validateRequestArgument('rcn', rcn).status:
+			return None, 'error validating \'rcn\' argument', None
+		rcn = int(rcn)
+		del args['rcn']
+	else:
+		if fu != FilterUsage.discoveryCriteria:
+			# Different defaults for each operation
+			if operation in [ Operation.RETRIEVE, Operation.CREATE, Operation.UPDATE ]:
+				rcn = ResultContentType.attributes
+			elif operation == Operation.DELETE:
+				rcn = ResultContentType.nothing
+		else:
+			# discovery-result-references as default for Discovery operation
+			rcn = ResultContentType.discoveryResultReferences
+
+	# Check value of rcn depending on operation
+	if operation == Operation.RETRIEVE and rcn not in [ ResultContentType.attributes,
+														ResultContentType.attributesAndChildResources,
+														ResultContentType.attributesAndChildResourceReferences,
+														ResultContentType.childResourceReferences,
+														ResultContentType.childResources,
+														ResultContentType.originalResource ]:
+		return None, 'rcn: %d not allowed in RETRIEVE operation' % rcn, None
+	elif operation == Operation.DISCOVERY and rcn not in [ ResultContentType.childResourceReferences,
+														   ResultContentType.discoveryResultReferences ]:
+		return None, 'rcn: %d not allowed in DISCOVERY operation' % rcn, None
+	elif operation == Operation.CREATE and rcn not in [ ResultContentType.attributes,
+														ResultContentType.modifiedAttributes,
+														ResultContentType.hierarchicalAddress,
+														ResultContentType.hierarchicalAddressAttributes,
+														ResultContentType.nothing ]:
+		return None, 'rcn: %d not allowed in CREATE operation' % rcn, None
+	elif operation == Operation.UPDATE and rcn not in [ ResultContentType.attributes,
+														ResultContentType.modifiedAttributes,
+														ResultContentType.nothing ]:
+		return None, 'rcn: %d not allowed in UPDATE operation' % rcn, None
+	elif operation == Operation.DELETE and rcn not in [ ResultContentType.attributes,
+														ResultContentType.nothing,
+														ResultContentType.attributesAndChildResources,
+														ResultContentType.childResources,
+														ResultContentType.attributesAndChildResourceReferences,
+														ResultContentType.childResourceReferences ]:
+		return None, 'rcn: %d not allowed DELETE operation' % rcn, None
+
+	result['rcn'] = rcn
+	result2.rcn = rcn
+
+
+	# RT - Response Type
+	if (rt := args.get('rt')) is not None: 
+		if not CSE.validator.validateRequestArgument('rt', rt).status:
+			return None, 'error validating \'rt\' argument', None
+		try:
+			rt = ResponseType(int(rt))
+		except ValueError as exc:
+			return None, '\'%s\' is not a valid value for rt' % rt, None
+		del args['rt']
+	else:
+		rt = ResponseType.blockingRequest
+	result['rt'] = rt
+	result2.rt = rt
+
+
+	# RP - Response Persistence
+	if (rp := args.get('rp')) is not None: 
+		if not CSE.validator.validateRequestArgument('rp', rp).status:
+			return None, 'error validating \'rp\' argument', None
+		try:
+			if rp.startswith('P'):
+				rpts = getResourceDate(isodate.parse_duration(rp).total_seconds())
+			elif 'T' in rp:
+				rpts = rp
+			else:
+				raise ValueError
+		except ValueError as exc:
+			return None, '\'%s\' is not a valid value for rp' % rp, None
+		del args['rp']
+	else:
+		rp = None
+		rpts = None
+	result['rp'] = rp
+	result['rpts'] = rpts
+	result2.rp = rp
+	result2.rpts = rpts
+
+
+	# handling conditions
+	handling = { }
+	for c in ['lim', 'lvl', 'ofst']:	# integer parameters
+		if c in args:
+			v = args[c]
+			if not CSE.validator.validateRequestArgument(c, v).status:
+				return None, 'error validating "%s" argument' % c, None
+			handling[c] = int(v)
+			del args[c]
+	for c in ['arp']:
+		if c in args:
+			v = args[c]
+			if not CSE.validator.validateRequestArgument(c, v).status:
+				return None, 'error validating "%s" argument' % c, None
+			handling[c] = v # string
+			del args[c]
+	result['__handling__'] = handling
+	result2.handling = handling
+
+
+	# conditions
+	conditions = {}
+
+	# Extract and store other arguments
+	for c in ['crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr']:
+		if (v := args.get(c)) is not None:
+			if not CSE.validator.validateRequestArgument(c, v).status:
+				return None, 'error validating "%s" argument' % c, None
+			conditions[c] = v
+			del args[c]
+
+	# get types (multi). Always create at least an empty list
+	tyAr = []
+	for e in args.getlist('ty'):
+		for es in (t := e.split()):	# check for number
+			if not CSE.validator.validateRequestArgument('ty', es).status:
+				return None, 'error validating "ty" argument(s)', None
+		tyAr.extend(t)
+	if len(tyAr) > 0:
+		conditions['ty'] = tyAr
+	args.poplist('ty')
+
+	# get contentTypes (multi). Always create at least an empty list
+	ctyAr = []
+	for e in args.getlist('cty'):
+		for es in (t := e.split()):	# check for number
+			if not CSE.validator.validateRequestArgument('cty', es).status:
+				return None, 'error validating "cty" argument(s)', None
+		ctyAr.extend(t)
+	if len(ctyAr) > 0:
+		conditions['cty'] = ctyAr
+	args.poplist('cty')
+
+	# get types (multi). Always create at least an empty list
+	# NO validation of label. It is a list.
+	lblAr = []
+	for e in args.getlist('lbl'):
+		lblAr.append(e)
+	if len(lblAr) > 0:
+		conditions['lbl'] = lblAr
+	args.poplist('lbl')
+
+	result['__conditons__'] = conditions 	# store found conditions in result
+	result2.conditions = conditions
+
+	# all remaining arguments are treated as matching attributes
+	for arg, val in args.items():
+		if not CSE.validator.validateRequestArgument(arg, val).status:
+			return None, 'error validating (unknown?) \'%s\' argument)' % arg, None
+
+	# all arguments have passed, so add the remaining 
+	result['__attrs__'] = args
+	result2.attributes = args
+
+	return result, None, result2
 		
-def getRequestHeaders(request: Request) -> Tuple[str, str, T, str, int]:
-	originator = requestHeaderField(request, C.hfOrigin)
-	rqi = requestHeaderField(request, C.hfRI)
+def getRequestHeaders(request: Request) -> Tuple[RequestHeaders, int]:
+	rh 								= RequestHeaders()
+	rh.originator 					= requestHeaderField(request, C.hfOrigin)
+	rh.requestIdentifier			= requestHeaderField(request, C.hfRI)
+	rh.requestExpirationTimestamp 	= requestHeaderField(request, C.hfRET)
+	rh.responseExpirationTimestamp 	= requestHeaderField(request, C.hfRST)
+	rh.operationExecutionTime 		= requestHeaderField(request, C.hfOET)
+	rh.releaseVersionIndicator 		= requestHeaderField(request, C.hfRVI)
 
 	# content-type
-	ty = None
-	ct = None
-	if (ct := request.content_type) is not None:
-		if not ct.startswith(tuple(C.supportedContentHeaderFormat)):
-			ct = None
+	rh.contentType 	= request.content_type
+	if rh.contentType is not None:
+		if not rh.contentType.startswith(tuple(C.supportedContentHeaderFormat)):
+			rh.contentType 	= None
 		else:
-			p = ct.partition(';')
-			ct = p[0] # content-type
-			t = p[2].partition('=')[2]
-			ty = T(int(t)) if t.isdigit() else T.UNKNOWN # resource type
+			p 				= rh.contentType.partition(';')
+			rh.contentType 	= p[0] # content-type
+			t  				= p[2].partition('=')[2]
+			rh.resourceType = T(int(t)) if t.isdigit() else T.UNKNOWN # resource type
 
-	return originator, ct, ty, rqi, RC.OK
+	return rh, RC.OK
 
 
 #

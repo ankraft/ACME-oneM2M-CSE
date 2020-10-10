@@ -101,8 +101,8 @@ class Resource(object):
 
 			# Remove empty / null attributes from json
 			# But see also the comment in update() !!!
-			self.json = {k: v for (k, v) in self.json.items() if v is not None }
-
+			#self.json = {k: v for (k, v) in self.json.items() if v is not None }
+			self.json = Utils.deleteNoneValuesFromJSON(self.json)
 			# determine and add the srn
 			self[self._srn] = Utils.structuredPath(self)
 			self[self._rtype] = self.tpe

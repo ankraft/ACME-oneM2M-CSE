@@ -317,12 +317,14 @@ class HttpServer(object):
 			r = json.dumps(result.resource.asJSON())
 		elif result.dbg is not None:
 			r = '{ "m2m:dbg" : "%s" }' % result.dbg.replace('"', '\\"')
-		elif result.resource is None:
-			r = ''
 		elif isinstance(result.resource, dict):
 			r = json.dumps(result.resource)
 		elif isinstance(result.resource, str):
 			r = result.resource
+		elif isinstance(result.jsn, dict):		# explicit json
+			r = json.dumps(result.jsn)
+		elif result.resource is None and result.jsn is None:
+			r = ''
 		else:
 			r = ''
 			result.rsc = RC.notFound

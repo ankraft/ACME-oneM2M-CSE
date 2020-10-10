@@ -41,6 +41,9 @@ class RegistrationManager(object):
 		if resource.ty == T.AE:
 			if (originator := self.handleAERegistration(resource, originator, parentResource).originator) is None:	# assigns new originator
 				return Result(rsc=RC.badRequest, dbg='cannot register AE')
+		if resource.ty == T.REQ:
+			if not self.handleREQRegistration(resource, originator):
+				return Result(rsc=RC.badRequest, dbg='cannot register REQ')
 		if resource.ty == T.CSR:
 			if Configuration.get('cse.type') == 'ASN':
 				return Result(rsc=RC.operationNotAllowed, dbg='cannot register to ASN CSE')
@@ -89,7 +92,6 @@ class RegistrationManager(object):
 		return Result() # implicit OK
 
 
-
 	def checkResourceUpdate(self, resource:Resource) -> Result:
 		if resource.ty == T.CSR:
 			if not self.handleCSRUpdate(resource):
@@ -97,11 +99,13 @@ class RegistrationManager(object):
 		return Result(status=True)
 
 
-
 	def checkResourceDeletion(self, resource:Resource) -> Result:
 		if resource.ty == T.AE:
 			if not self.handleAEDeRegistration(resource):
 				return Result(status=False, dbg='cannot deregister AE')
+		if resource.ty == T.REQ:
+			if not self.handleREQDeRegistration(resource):
+				return Result(status=False, dbg='cannot deregister REQ')
 		if resource.ty == T.CSR:
 			if not self.handleCSRDeRegistration(resource):
 				return Result(status=False, dbg='cannot deregister CSR')
@@ -263,6 +267,55 @@ class RegistrationManager(object):
 
 
 
+	#########################################################################
+
+	#
+	#	Handle REQ registration
+	#
+
+	def handleREQRegistration(self, req:Resource, originator:str) -> bool:
+		Logging.logDebug('Registering REQ: %s ' % req.ri)
+
+		# Create an REQ specific ACP
+		Logging.logDebug('Adding ACP for REQ')
+		cseOriginator = Configuration.get('cse.originator')
+		localCSE = Utils.getCSE().resource
+		acp = self._createACP(parentResource=localCSE,
+							  rn='%s%s' % (C.acpPrefix, req.rn),
+						 	  createdByResource=req.ri,
+							  originators=[ cseOriginator ],
+							  permission=Permission.RETRIEVE + Permission.UPDATE + Permission.DELETE,
+							  selfOriginators=[cseOriginator]
+						  ).resource
+		if acp is None:
+			return False
+
+		# add additional permissions for the originator
+		acp.addPermission([ originator ], Permission.RETRIEVE + Permission.DELETE)
+		acp.addSelfPermission([ originator ], Permission.UPDATE)
+		acp.dbUpdate()
+
+
+		# add acpi to request resource
+		req['acpi'] =  [ acp.ri ]	
+
+		return True
+
+
+	#
+	#	Handle REQ deregistration
+	#
+
+	def handleREQDeRegistration(self, resource: Resource) -> bool:
+		# remove the before created ACP, if it exist
+		Logging.logDebug('DeRegisterung REQ. ri: %s ' % resource.ri)
+		Logging.logDebug('Removing ACP for REQ')
+
+		acpSrn = '%s/%s%s' % (Configuration.get('cse.rn'), C.acpPrefix, resource.rn)
+		self._removeACP(srn=acpSrn, resource=resource)
+
+		return True
+
 
 	#########################################################################
 	##
@@ -307,7 +360,7 @@ class RegistrationManager(object):
 	#########################################################################
 
 
-	def _createACP(self, parentResource:Resource=None, rn:str=None, createdByResource:str=None, originators:List[str]=None, permission:int=None, selfOriginators:List[str]=None) -> Result:
+	def _createACP(self, parentResource:Resource=None, rn:str=None, createdByResource:str=None, originators:List[str]=None, permission:int=None, selfOriginators:List[str]=None, selfPermission:int=None) -> Result:
 		""" Create an ACP with some given defaults. """
 		if parentResource is None or rn is None or originators is None or permission is None:
 			return Result(rsc=RC.badRequest, dbg='missing attribute(s)')
@@ -319,7 +372,7 @@ class RegistrationManager(object):
 
 		# Create the ACP
 		cseOriginator = Configuration.get('cse.originator')
-		selfPermission = Configuration.get('cse.acp.pvs.acop')
+		selfPermission = selfPermission if selfPermission is not None else Configuration.get('cse.acp.pvs.acop')
 
 		origs = originators.copy()
 		origs.append(cseOriginator)	# always append cse originator

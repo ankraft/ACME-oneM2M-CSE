@@ -122,6 +122,7 @@ attributePolicies = {
 	'mgca'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# NOD
 	'mgd'	: [ BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.MA ],		# MGO
 	'mgs'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.MA ],		# MGO
+	'mi'	: [ BT.dict,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ],		# REQ
 	'mia'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT, FCNT
 	'mid'	: [ BT.list,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# list of m2m:anyURI - GRP
 	'mma'	: [ BT.unsignedLong,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# MEM
@@ -144,8 +145,11 @@ attributePolicies = {
 	'nu'	: [	BT.list, 			CAR.car1, 	RO.M, 	RO.O,  RO.O, AN.NA ],  	# SUB
 	'obis'	: [ BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# MGO
 	'obps'	: [ BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# MGO
-	'or'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT, FCNT
+	'op'	: [ BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.NA ],		# REQ
+	'or'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT, FCNT, REQ
+	'ors'	: [ BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT, FCNT, REQ
 	'osv'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
+	'pc'	: [ BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# REQ
 	'pn'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# SUB
 	'poa'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# m2m:poaList - AE, CSE
 	'psn'	: [ BT.positiveInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ],		# SUB
@@ -155,9 +159,11 @@ attributePolicies = {
 	'pvs'	: [ BT.dict,			CAR.car1,	RO.M,	RO.O,  RO.O, AN.MA ],		# m2m:setOfArcs - ACP
 	'rbo'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# RBO
 	'regs'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# m2m:AERegistrationStatus - AE
+	'rid'	: [ BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ],		# REQ
 	'rl'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# SUB
 	'rms'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ],		# NOD
 	'rr'	: [ BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# AE
+	'rs'	: [ BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ],		# REQ
 	'scp'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# m2m:sessionCapabilities - AE
 	'sld'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# ANDI
 	'sli'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# ANDI
@@ -173,6 +179,7 @@ attributePolicies = {
 	'swn'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# SWR
 	'swv'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
 	'syst'	: [ BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
+	'tg'	: [ BT.anyURI,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.NA ],		# REQ
 	'tren'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# AE, CSR
 	'tri'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CSR
 	'trn'	: [ BT.unsignedInt,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CSR
@@ -221,6 +228,8 @@ attributePolicies = {
 	#'ty'	: [ BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ],		# discovery
 	'us'	: [ BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ],		# discovery
 	'arp'	: [ BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ],		# discovery
+	'rt'	: [ BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ],		# request
+	'rp'	: [ BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ],		# request 
 
 	# TODO lbl, catr, patr
 

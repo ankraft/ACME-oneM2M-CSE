@@ -420,6 +420,7 @@ class TinyDBBinding(object):
 			ri = resource.ri
 			self.tabResources.update(resource.json, Query().ri == ri)
 			# remove nullified fields from db and resource
+			# TODO remove Null values recursively
 			for k in list(resource.json):
 				if resource.json[k] is None:
 					self.tabResources.update(delete(k), Query().ri == ri)

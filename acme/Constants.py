@@ -21,8 +21,8 @@ class Constants(object):
 	virtualResourcesNames 			= [ 'la', 'ol', 'fopt', 'pcu' ]
 
 	# Supported resource types by this CSE
-	supportedResourceTypes 			= [ T.ACP, T.AE, T.CNT, T.CIN, T.CSEBase, T.GRP, T.MGMTOBJ, T.NOD, T.CSR, T.SUB, T.FCNT, T.FCI ]
-	stateTagResourceTypes 			= [ T.CNT, T.CIN, T.FCNT, T.FCI ]	# those resource types allow state tags
+	supportedResourceTypes 			= [ T.ACP, T.AE, T.CNT, T.CIN, T.CSEBase, T.GRP, T.MGMTOBJ, T.NOD, T.CSR, T.REQ, T.SUB, T.FCNT, T.FCI ]
+	stateTagResourceTypes 			= [ T.CNT, T.CIN, T.FCNT, T.FCI, T.REQ ]	# those resource types allow state tags
 	supportedContentSerializations 	= [ 'application/json' ]
 	supportedContentHeaderFormat 	= [ 'application/json', 'application/vnd.onem2m-res+json' ]
 	supportedReleaseVersions 		= [ '3' ]
@@ -48,6 +48,9 @@ class Constants(object):
 	hfEC 							= 'X-M2M-EC'
 	hfcEC 							= 'Event Category'
 	hfvECLatest 					= '4'
+	hfRET 							= 'X-M2M-RET'
+	hfRST 							= 'X-M2M-RST'
+	hfOET 							= 'X-M2M-OET'
 			
 
 	#

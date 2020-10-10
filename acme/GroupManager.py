@@ -165,7 +165,7 @@ class GroupManager(object):
 			return Result(rsc=RC.originatorHasNoPrivilege, dbg='access denied')
 
 		# get the rqi header field
-		_, _, _, rqi, _ = Utils.getRequestHeaders(request)
+		rh, _ = Utils.getRequestHeaders(request)
 
 		# check whether there is something after the /fopt ...
 		_, _, tail = id.partition('/fopt/') if '/fopt/' in id else (_, _, '')
@@ -204,14 +204,14 @@ class GroupManager(object):
 			for result in resultList:
 				if result.resource is not None and isinstance(result.resource, Resource):
 					item = 	{ 'rsc' : result.rsc, 
-							  'rqi' : rqi,
+							  'rqi' : rh.requestIdentifier,
 							  'pc'  : result.resource.asJSON() if isinstance(result.resource, Resource) else result.resource, # in case 'resource' is a dict
 							  'to'  : result.resource[Resource._srn],
 							  'rvi'	: '3'	# TODO constant?
 							}
 				else:	# e.g. when deleting
 					item = 	{ 'rsc' : result.rsc, 
-					  'rqi' : rqi,
+					  'rqi' : rh.requestIdentifier,
 					  'rvi'	: '3'	# TODO constant?
 					}
 				items.append(item)

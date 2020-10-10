@@ -7,8 +7,9 @@
 #	ResourceType: Request
 #
 
+from typing import Dict, Any
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, RequestArguments, RequestHeaders, Operation, RequestStatus
 from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
@@ -20,8 +21,7 @@ attributePolicies = constructPolicy([
 	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'daci', 
 ])
 reqPolicies = constructPolicy([
-	'op', 'tg', 'or', 'rid'
-
+	'op', 'tg', 'or', 'rid', 'mi', 'pc', 'rs', 'ors'
 ])
 attributePolicies = addPolicy(attributePolicies, reqPolicies)
 
@@ -33,46 +33,60 @@ class REQ(Resource):
 		super().__init__(T.REQ, jsn, pi, create=create, attributePolicies=attributePolicies)
 
 
-
-
-
-
-
-		if self.json is not None:
-			self.setAttribute('mt', int(T.MIXED), overwrite=False)
-			self.setAttribute('ssi', False, overwrite=True)
-			self.setAttribute('cnm', 0, overwrite=False)	# calculated later
-			self.setAttribute('mid', [], overwrite=False)			
-			self.setAttribute('mtv', False, overwrite=False)
-			self.setAttribute('csy', ConsistencyStrategy.abandonMember, overwrite=False)
-
-			# These attributes are not provided by default: mnm (no default), macp (no default)
-			# optional set: spty, gn, nar
-
-
 	# Enable check for allowed sub-resources
 	def canHaveChild(self, resource:Resource) -> bool:
 		return super()._canHaveChild(resource, [ T.SUB ])
 
 
+	@staticmethod
+	def createRequestResource(arguments:RequestArguments, headers:RequestHeaders, operation:Operation, target:str, content:dict=None) -> Result:
+		"""	Create an initialized <request> resource.
+		"""
+		# calculate request et
+		minEt = Utils.getResourceDate(5) 	# TODO config
+		maxEt = Utils.getResourceDate(20) 	# TODO config
+		if arguments.rp is not None:
+			et = arguments.rp if arguments.rp < maxEt else maxEt
+		else:
+			et = minEt
 
+		jsn:Dict[str, Any] = {
+			'm2m:req' : {
+				'et'	: et,
+				'lbl'	: [ headers.originator ],
+				'op'	: operation,
+				'tg'	: target,
+				'or'	: headers.originator,
+				'rid'	: headers.requestIdentifier,
+				'mi'	: {
+					'ty'	: headers.resourceType,
+					'ot'	: Utils.getResourceDate(),
+					'rqet'	: headers.requestExpirationTimestamp,
+					'rset'	: headers.responseExpirationTimestamp,
+					'rt'	: arguments.rt,
+					'rp'	: arguments.rp,
+					'rcn'	: arguments.rcn,
+					'fc'	: {
+						'fu'	: arguments.fu,
+						'fo'	: arguments.fo,
+					},
+					'drt'	: arguments.drt,
+					'rvi'	: headers.releaseVersionIndicator if headers.releaseVersionIndicator is not None else C.hfvRVI,
+				},
+				'rs'	: RequestStatus.PENDING,
+				'ors'	: {
+				}
+		}}
 
-	def activate(self, parentResource:Resource, originator:str) -> Result:
-		if not (res := super().activate(parentResource, originator)).status:
-			return res
+		# add handlings, conditions and attributes from filter
+		for k,v in { **arguments.handling, **arguments.conditions, **arguments.attributes}.items():
+			Utils.setXPath(jsn, 'm2m:req/mi/fc/%s' % k, v, True)
 
-		# add fanOutPoint
-		ri = self['ri']
-		Logging.logDebug('Registering fanOutPoint resource for: %s' % ri)
-		fanOutPointResource = Utils.resourceFromJSON({ 'pi' : ri }, acpi=self['acpi'], ty=T.GRP_FOPT).resource
-		if (res := CSE.dispatcher.createResource(fanOutPointResource, self, originator)).resource is None:
-			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
-		return Result(status=True)
+		if content is not None:
+			Utils.setXPath(jsn, 'm2m:req/pc', content, True)
 
-
-	def validate(self, originator:str=None, create:bool=False) -> Result:
-		if not (res := super().validate(originator, create)).status:
-			return res
-		return CSE.group.validateGroup(self, originator)
+		if (cseres := Utils.getCSE()).resource is None:
+			return Result(rsc=RC.badRequest, dbg=cseres.dbg)
+		return Utils.resourceFromJSON(jsn, pi=cseres.resource.ri, ty=T.REQ)
 
 
