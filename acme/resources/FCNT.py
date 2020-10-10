@@ -190,20 +190,6 @@ class FCNT(AnnounceableResource):
 		return Result(status=True)
 
 
-	# Validate expirations of child resurces
-	def validateExpirations(self) -> None:
-		Logging.logDebug('Validate expirations')
-		super().validateExpirations()
-
-		if (mia := self.mia) is None:
-			return
-		now = Utils.getResourceDate(-mia)
-		# fcis = self.flexContainerInstances()
-		# TODO
-		# for fci in fcis
-
-
-
 	# Get all flexContainerInstances of a resource and return a sorted (by ct) list 
 	def flexContainerInstances(self) -> List[Resource]:
 		return sorted(CSE.dispatcher.directChildResources(self.ri, T.FCI), key=lambda x: (x.ct))
