@@ -11,7 +11,8 @@
 function getChildren(node, errorCallback) {
   resource = node.resource
   // get children
-  var ri = resource['ri'] + "?fu=1&lvl=1&rcn=6" // TODO move this to the getchildren request
+  //var ri = resource['ri'] + "?fu=1&lvl=1&rcn=6" // TODO move this to the getchildren request
+  var ri = resource['ri'] + "?lvl=1&rcn=6" // TODO move this to the getchildren request
   var client = new HttpClient();
   // addr = cseid + "/" + ri
   client.getChildren(ri, node, function(response) { // TODo
