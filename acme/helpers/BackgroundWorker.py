@@ -11,7 +11,7 @@ from __future__ import annotations
 from Logging import Logging
 import time, random, sys
 from threading import Thread
-from typing import Callable, List, Dict	
+from typing import Callable, List, Dict, Any
 
 
 class BackgroundWorker(object):
@@ -29,7 +29,7 @@ class BackgroundWorker(object):
 		self.id = id
 
 
-	def start(self, **args:str) -> BackgroundWorker:
+	def start(self, **args:Any) -> BackgroundWorker:
 		if self.running:
 			self.stop()
 		Logging.logDebug('Starting worker thread: %s' % self.name)
@@ -97,6 +97,7 @@ class BackgroundWorker(object):
 		if self.dispose:
 			BackgroundWorkerPool._removeBackgroundWorkerFromPool(self)
 
+
 	def __repr__(self) -> str:
 		return 'BackgroundWorker(name=%s, callback=%s, running=%r, updateIntervall=%f, startWithDelay=%r, numberOfRuns=%s, dispose=%r, id=%s)' % (self.name, str(self.callback), self.running, self.updateIntervall, self.startWithDelay, self.numberOfRuns, self.dispose, self.id)
 
@@ -125,9 +126,9 @@ class BackgroundWorkerPool(object):
 
 	@classmethod
 	def newActor(cls, delay:float, workerCallback:Callable, name:str=None, dispose:bool=True) -> BackgroundWorker:
-		"""	Create a new background worker that runs only once after a delay.
+		"""	Create a new background worker that runs only once after a delay (the 'delay' may be 0.0s, though).
 		"""
-		return cls.newWorker(delay, workerCallback, name=name, startWithDelay=True, count=1, dispose=dispose)
+		return cls.newWorker(delay, workerCallback, name=name, startWithDelay=delay>0.0, count=1, dispose=dispose)
 
 
 	@classmethod
