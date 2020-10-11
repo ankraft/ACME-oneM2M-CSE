@@ -164,6 +164,16 @@ def riFromStructuredPath(srn: str) -> str:
 	return None
 
 
+def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
+	""" Handle Hybrid ID. """
+	if id is not None:
+		ids = id.split('/')
+		if srn is None and len(ids) > 1  and ids[-1] in C.virtualResourcesNames: # Hybrid
+			if (srn := structuredPathFromRI('/'.join(ids[:-1]))) is not None:
+				srn = '/'.join([srn, ids[-1]])
+				id = riFromStructuredPath(srn) # id becomes the ri of the fopt
+	return srn, id
+
 def riFromCSI(csi: str) -> str:
 	""" Get the ri from an CSEBase resource by its csi. """
 	if (res := resourceFromCSI(csi)) is None:

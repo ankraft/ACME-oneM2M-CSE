@@ -65,7 +65,7 @@ class Statistics(object):
 		Logging.log('Statistics initialized')
 
 
-	def shutdown(self) -> None:
+	def shutdown(self) -> bool:
 		if self.statisticsEnabled:
 			# Stop the worker
 			Logging.log('Stopping statistics DB thread')
@@ -75,6 +75,7 @@ class Statistics(object):
 			self.storeDBStatistics()
 
 		Logging.log('Statistics shut down')
+		return True
 
 
 	def setupStats(self) -> dict:

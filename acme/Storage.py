@@ -52,9 +52,10 @@ class Storage(object):
 		Logging.log('Storage initialized')
 
 
-	def shutdown(self) -> None:
+	def shutdown(self) -> bool:
 		self.db.closeDB()
 		Logging.log('Storage shut down')
+		return True
 
 
 	#########################################################################
@@ -115,7 +116,7 @@ class Storage(object):
 		if (l := len(resources)) == 1:
 			return Utils.resourceFromJSON(resources[0])
 		elif l == 0:
-			return Result(rsc=RC.notFound)
+			return Result(rsc=RC.notFound, dbg='resource not found')
 
 		return Result(rsc=RC.internalServerError, dbg='database inconsistency')
 

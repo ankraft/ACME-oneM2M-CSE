@@ -36,8 +36,9 @@ class NotificationManager(object):
 		Logging.log('NotificationManager initialized')
 
 
-	def shutdown(self) -> None:
+	def shutdown(self) -> bool:
 		Logging.log('NotificationManager shut down')
+		return True
 
 
 	def addSubscription(self, subscription:Resource, originator:str) -> Result:

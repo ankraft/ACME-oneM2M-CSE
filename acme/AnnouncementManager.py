@@ -39,13 +39,14 @@ class AnnouncementManager(object):
 		Logging.log('AnnouncementManager initialized')
 
 
-	def shutdown(self) -> None:
+	def shutdown(self) -> bool:
 		self.stop()
 		if CSE.remote is not None:
 			for csr in CSE.remote.getAllLocalCSRs():
 				if csr is not None:
 					self.checkResourcesForUnAnnouncement(csr)
 		Logging.log('AnnouncementManager shut down')
+		return True
 
 	#
 	#	Announcement Monitor

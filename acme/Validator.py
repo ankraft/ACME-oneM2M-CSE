@@ -258,8 +258,9 @@ class Validator(object):
 		Logging.log('Validator initialized')
 
 
-	def shutdown(self) -> None:
+	def shutdown(self) -> bool:
 		Logging.log('Validator shut down')
+		return True
 
 	#########################################################################
 

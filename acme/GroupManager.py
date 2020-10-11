@@ -24,8 +24,9 @@ class GroupManager(object):
 		Logging.log('GroupManager initialized')
 
 
-	def shutdown(self) -> None:
+	def shutdown(self) -> bool:
 		Logging.log('GroupManager shut down')
+		return True
 
 
 	#########################################################################
@@ -183,7 +184,7 @@ class GroupManager(object):
 				mid = mid + tail
 			# Invoke the request
 			if operation == Operation.RETRIEVE:
-				if (res := CSE.dispatcher.handleRetrieveRequest(request, mid, originator)).resource is None:
+				if (res := CSE.request.handleRetrieveRequest(request, mid, originator)).resource is None:
 					return res
 			elif operation == Operation.CREATE:
 				if (res := CSE.dispatcher.handleCreateRequest(request, mid, originator, ct, ty)).resource is None:

@@ -4,8 +4,7 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Main request dispatcher. All external and most internal requests are routed
-#	through here.
+#	Most internal requests are routed through here.
 #
 
 import sys, traceback, re, json
@@ -30,28 +29,24 @@ from Types import RequestHeaders
 from Types import RequestStatus
 import CSE, Utils
 from resources.Resource import Resource
-from resources.REQ import REQ
 
 
 class Dispatcher(object):
 
 	def __init__(self) -> None:
-		self.rootPath 			= Configuration.get('http.root')
 		self.enableTransit 		= Configuration.get('cse.enableTransitRequests')
-		self.spid 				= Configuration.get('cse.spid')
 		self.csi 				= Configuration.get('cse.csi')
 		self.csiSlash 			= '%s/' % self.csi
-		self.cseri 				= Configuration.get('cse.ri')
-		self.csern				= Configuration.get('cse.rn')
-		self.csiLen 			= len(self.csi)
 		self.csiSlashLen 		= len(self.csiSlash)
-		self.cseriLen 			= len(self.cseri)
+
+		self.cseri 				= Configuration.get('cse.ri') # TODO delete later
 
 		Logging.log('Dispatcher initialized')
 
 
-	def shutdown(self) -> None:
+	def shutdown(self) -> bool:
 		Logging.log('Dispatcher shut down')
+		return True
 
 
 
@@ -65,63 +60,6 @@ class Dispatcher(object):
 	#
 	#	Retrieve resources
 	#
-
-	def retrieveRequest(self, request:Request, _id:Tuple[str, str, str]) ->  Result:
-		rh, _ = Utils.getRequestHeaders(request)
-		id, csi, srn = _id
-		Logging.logDebug('RETRIEVE ID: %s, originator: %s' % (id if id is not None else srn, rh.originator))
-
-		# No ID, return immediately 
-		if id is None and srn is None:
-			return Result(rsc=RC.notFound, dbg='missing identifier')
-
-		# handle transit requests
-		if CSE.remote.isTransitID(id):
-		 	return CSE.remote.handleTransitRetrieveRequest(request, id, rh.originator) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
-
-		# handle hybrid ids
-		srn, id = self._buildSRNFromHybrid(srn, id) # Hybrid
-
-		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
-			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
-			return fanoutPointResource.handleRetrieveRequest(request, srn, rh.originator)
-
-		# just a normal retrieve request
-		return self.handleRetrieveRequest(request, id if id is not None else srn, rh.originator, rh)
-
-
-
-	def handleRetrieveRequest(self, request:Request, id:str, originator:str, requestHeaders:RequestHeaders=None) -> Result:
-		Logging.logDebug('Handle retrieve resource: %s' % id)
-
-		try:
-			attrs, msg, args = Utils.getRequestArguments(request, Operation.RETRIEVE)
-			if args is None:
-				return Result(rsc=RC.badRequest, dbg=msg)
-		except Exception as e:
-			return Result(rsc=RC.invalidArguments, dbg='invalid arguments (%s)' % str(e))
-
-		# if async: create request resource and proceed in a thread, also: return with req_ref
-		# otherwise proceed normally
-
-		if args.rt == ResponseType.blockingRequest:
-			return self.processRetrieveRequest(args, id, originator)
-		elif args.rt == ResponseType.nonBlockingRequestSynch:
-			if (res := self._createRequestResource(args, requestHeaders, Operation.RETRIEVE, id)).resource is None:
-				return res
-			
-
-			# TODO run request in background
-
-
-			return self._createNonBlockingResponse(res.resource, RC.accepedNonBlockingRequestSynch)
-			#
-		# elif args.rt == ResponseType.nonBlockingRequestAsynch:
-		# 	self._createRequestResource(args, requestHeaders, Operation.RETRIEVE, id)
-		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % args.rt)
-
-
 
 	def processRetrieveRequest(self, args:RequestArguments, id:str, originator:str) -> Result:
 
@@ -209,10 +147,10 @@ class Dispatcher(object):
 			else:
 				if Utils.isSPRelative(id):
 					return CSE.remote.retrieveRemoteResource(id, originator, raw)
-		return self._retrieveResource(srn=id) if Utils.isStructured(id) else self._retrieveResource(ri=id)
+		return self.retrieveLocalResource(srn=id) if Utils.isStructured(id) else self.retrieveLocalResource(ri=id)
 
 
-	def _retrieveResource(self, ri:str=None, srn:str=None) -> Result:
+	def retrieveLocalResource(self, ri:str=None, srn:str=None) -> Result:
 		Logging.logDebug('Retrieve resource: %s' % (ri if srn is None else srn))
 
 		if ri is not None:
@@ -445,7 +383,7 @@ class Dispatcher(object):
 			return CSE.remote.handleTransitCreateRequest(request, id, rh.originator, rh.resourceType) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
 
 		# handle hybrid id
-		srn, id = self._buildSRNFromHybrid(srn, id)  # Hybrid
+		srn, id = Utils.srnFromHybrid(srn, id)  # Hybrid
 
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
@@ -617,7 +555,7 @@ class Dispatcher(object):
 			return CSE.remote.handleTransitUpdateRequest(request, id, rh.originator) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
 
 		# handle hybrid id
-		srn, id = self._buildSRNFromHybrid(srn, id)  # Hybrid
+		srn, id = Utils.srnFromHybrid(srn, id)  # Hybrid
 
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
@@ -738,7 +676,7 @@ class Dispatcher(object):
 			return CSE.remote.handleTransitDeleteRequest(id, rh.originator) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
 
 		# handle hybrid id
-		srn, id = self._buildSRNFromHybrid(srn, id)  # Hybrid
+		srn, id = Utils.srnFromHybrid(srn, id)  # Hybrid
 
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
@@ -872,44 +810,6 @@ class Dispatcher(object):
 		for rs in (rss or []):
 			result.append(Utils.resourceFromJSON(rs).resource)
 		return result
-
-
-	def _buildSRNFromHybrid(self, srn:str, id:str) -> Tuple[str, str]:
-		""" Handle Hybrid ID. """
-		if id is not None:
-			ids = id.split('/')
-			if srn is None and len(ids) > 1  and ids[-1] in C.virtualResourcesNames: # Hybrid
-				if (srn := Utils.structuredPathFromRI('/'.join(ids[:-1]))) is not None:
-					srn = '/'.join([srn, ids[-1]])
-					id = Utils.riFromStructuredPath(srn) # id becomes the ri of the fopt
-		return srn, id
-
-
-	#########################################################################
-
-	#
-	#	<request> handling
-	#
-
-	def _createRequestResource(self, arguments:RequestArguments, headers:RequestHeaders, operation:Operation, target:str, content:dict=None) -> Result:
-
-		# Get initialized resource
-		if (nres := REQ.createRequestResource(arguments, headers, operation, target, content)).resource is None:
-			return Result(rsc=RC.badRequest, dbg=nres.dbg)
-
-		# Register <request>
-		if (cseres := Utils.getCSE()).resource is None:
-			return Result(rsc=RC.badRequest, dbg=cseres.dbg)
-		if (rres := CSE.registration.checkResourceCreation(nres.resource, headers.originator, cseres.resource)).rsc != RC.OK:
-			return rres.errorResult()
-
-		# create <request>
-		return self.createResource(nres.resource, cseres.resource, headers.originator)
-
-
-	def _createNonBlockingResponse(self, request:Resource, rsc:RC) -> Result:
-		jsn:Dict[str, Any] = { 'm2m:rid' : request.ri }
-		return Result(jsn=jsn, rsc=rsc)
 
 
 

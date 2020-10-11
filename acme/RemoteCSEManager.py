@@ -53,9 +53,10 @@ class RemoteCSEManager(object):
 		Logging.log('RemoteCSEManager initialized')
 
 
-	def shutdown(self) -> None:
+	def shutdown(self) -> bool:
 		self.stop()
 		Logging.log('RemoteCSEManager shut down')
+		return True
 
 
 	#
@@ -542,11 +543,11 @@ class RemoteCSEManager(object):
 		ids = id.split("/")
 		Logging.logDebug("CSR ids: %s" % ids)
 		if Utils.isSPRelative(id):
-			resource = CSE.dispatcher._retrieveResource(ri=ids[1]).resource
+			resource = CSE.dispatcher.retrieveLocalResource(ri=ids[1]).resource
 		elif Utils.isAbsolute(id):
-			resource = CSE.dispatcher._retrieveResource(ri=ids[2]).resource
+			resource = CSE.dispatcher.retrieveLocalResource(ri=ids[2]).resource
 		else:
-			resource = CSE.dispatcher._retrieveResource(ri=id).resource
+			resource = CSE.dispatcher.retrieveLocalResource(ri=id).resource
 		return resource, ids
 
 

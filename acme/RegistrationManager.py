@@ -26,9 +26,10 @@ class RegistrationManager(object):
 		Logging.log('RegistrationManager initialized')
 
 
-	def shutdown(self) -> None:
+	def shutdown(self) -> bool:
 		self.stopExpirationWorker()
 		Logging.log('RegistrationManager shut down')
+		return True
 
 
 	#########################################################################

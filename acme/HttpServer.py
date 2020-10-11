@@ -140,7 +140,7 @@ class HttpServer(object):
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpRetrieve() # type: ignore
 		try:
-			result = CSE.dispatcher.retrieveRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = CSE.request.retrieveRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 		except Exception as e:
 			result = self._prepareException(e)
 		finally:
