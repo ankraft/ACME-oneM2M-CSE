@@ -14,8 +14,6 @@ from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
 
-expirationCheckDelay = 2
-expirationSleep = expirationCheckDelay * 3
 
 CND = 'org.onem2m.home.moduleclass.temperature'
 
@@ -25,18 +23,15 @@ CND = 'org.onem2m.home.moduleclass.temperature'
 # It checks whether there actually is a CSE running.
 noCSE = not connectionPossible(cseURL)
 
-# Reconfigure the server to check faster for expirations. This is set to the
-# old value in the tearDowndClass() method.
-orgExpCheck = setExpirationCheck(expirationCheckDelay)
-# Retrieve the max expiration delta from the CSE
-maxExpiration = getMaxExpiration()
-tooLargeExpirationDelta = maxExpiration * 2	# double of what is allowed
+# Reconfigure the server to check faster for expirations.
+enableShortExpirations()
 
 class TestExpiration(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
+
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
 		jsn = 	{ 'm2m:ae' : {
@@ -53,13 +48,12 @@ class TestExpiration(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls):
-		if orgExpCheck != -1:
-			setExpirationCheck(orgExpCheck)
+		disableShortExpirations()
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipIf(orgExpCheck == -1, 'Couldn\'t reconfigure expiration check')
+	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
 	def test_expireCNT(self):
 		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
@@ -76,7 +70,7 @@ class TestExpiration(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipIf(orgExpCheck == -1, 'Couldn\'t reconfigure expiration check')
+	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
 	def test_expireCNTAndCIN(self):
 		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
@@ -157,8 +151,7 @@ class TestExpiration(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipIf(orgExpCheck == -1, 'Couldn\'t reconfigure expiration check')
-	@unittest.skipIf(maxExpiration == -1, 'Couldn\'t get max expiration delta')
+	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
 	def test_expireCNTViaMIA(self):
 		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
@@ -190,24 +183,23 @@ class TestExpiration(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipIf(orgExpCheck == -1, 'Couldn\'t reconfigure expiration check')
-	@unittest.skipIf(maxExpiration == -1, 'Couldn\'t get max expiration delta')
+	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
 	def test_expireCNTViaMIALarge(self):
 		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
-					'mia': tooLargeExpirationDelta
+					'mia': tooLargeExpirationDelta()
 				}}
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, jsn)
 		self.assertEqual(rsc, RC.created)
-		self.assertEqual(findXPath(r, 'm2m:cnt/mia'), tooLargeExpirationDelta)
+		self.assertEqual(findXPath(r, 'm2m:cnt/mia'), tooLargeExpirationDelta())
 
 		jsn = 	{ 'm2m:cin' : {
 					'cnf' : 'a',
 					'con' : 'AnyValue'
 				}}
-		tooLargeET = getDate(tooLargeExpirationDelta)
+		tooLargeET = getDate(tooLargeExpirationDelta())
 		for _ in range(0, 5):
 			r, rsc = CREATE(cntURL, TestExpiration.originator, T.CNT, jsn)
 			self.assertEqual(rsc, RC.created)
@@ -224,8 +216,7 @@ class TestExpiration(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipIf(orgExpCheck == -1, 'Couldn\'t reconfigure expiration check')
-	@unittest.skipIf(maxExpiration == -1, 'Couldn\'t get max expiration delta')
+	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
 	def test_expireFCNTViaMIA(self):
 		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)

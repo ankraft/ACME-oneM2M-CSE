@@ -41,6 +41,13 @@ testVerbosity 		= 2		# 0, 1, 2
 
 verifyCertificate	= False	# verify the certificate when using https?
 
+# Expirations
+expirationCheckDelay 	= 2
+expirationSleep			= expirationCheckDelay * 3
+
+requestETDuration 		= 'PT%dS' % expirationCheckDelay
+
+
 ###############################################################################
 
 aeRN	= 'testAE'
@@ -77,7 +84,6 @@ remoteCsrURL 	= '%s%s' % (REMOTEcseURL, CSEID)
 
 
 ###############################################################################
-
 
 #
 #	HTTP Requests
@@ -131,6 +137,12 @@ def connectionPossible(url):
 	except Exception as e:
 		return False
 
+###############################################################################
+
+#
+#	Expirations
+#
+
 
 def setExpirationCheck(interval:int) -> int:
 	c, rc = RETRIEVE(CONFIGURL, '')
@@ -150,7 +162,39 @@ def getMaxExpiration() -> int:
 		c, rc = RETRIEVE('%s/cse.maxExpirationDelta' % CONFIGURL, '')
 		return int(c)
 	return -1
-		
+	
+
+_orgExpCheck = -1
+_maxExpiration = -1
+_tooLargeExpirationDelta = -1
+
+# Reconfigure the server to check faster for expirations. This is set to the
+# old value in the tearDowndClass() method.
+def enableShortExpirations():
+	global _orgExpCheck, _maxExpiration, _tooLargeExpirationDelta
+
+	_orgExpCheck = setExpirationCheck(expirationCheckDelay)
+	# Retrieve the max expiration delta from the CSE
+	_maxExpiration = getMaxExpiration()
+	_tooLargeExpirationDelta = _maxExpiration * 2	# double of what is allowed
+
+
+def disableShortExpirations():
+	global _orgExpCheck
+	if _orgExpCheck != -1:
+		setExpirationCheck(_orgExpCheck)
+		_orgExpCheck = -1
+
+
+def isTestExpirations():
+	return _orgExpCheck != -1
+
+
+def tooLargeExpirationDelta():
+	return _tooLargeExpirationDelta
+
+
+###############################################################################
 
 # Surpress warnings for insecure requests, e.g. self-signed certificates
 if not verifyCertificate:
