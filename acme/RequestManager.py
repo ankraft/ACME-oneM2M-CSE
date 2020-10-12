@@ -7,6 +7,7 @@
 #	Main request dispatcher. All external requests are routed through here.
 #
 
+import json
 from Logging import Logging
 from Configuration import Configuration
 from Types import Operation
@@ -28,6 +29,20 @@ from typing import Any, List, Tuple, Union, Dict
 
 
 
+
+
+# TODO
+#
+#	Implement "noResponse"
+#
+# in REQ.py: configurable
+#			minEt = Utils.getResourceDate(5) 	# TODO config
+#			maxEt = Utils.getResourceDate(20) 	# TODO config
+#
+
+
+
+
 class RequestManager(object):
 
 	def __init__(self) -> None:
@@ -42,11 +57,9 @@ class RequestManager(object):
 		return True
 
 
-
 	#########################################################################
-
 	#
-	#	Retrieve Request
+	#	RETRIEVE Request
 	#
 
 	def retrieveRequest(self, request:Request, _id:Tuple[str, str, str]) ->  Result:
@@ -68,7 +81,7 @@ class RequestManager(object):
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
-			return fanoutPointResource.handleRetrieveRequest(request, srn, requestHeaders.originator, requestHeaders)
+			return fanoutPointResource.handleRetrieveRequest(request, srn, requestHeaders.originator)
 
 		# just a normal retrieve request
 		return self.handleRetrieveRequest(request, id if id is not None else srn, requestHeaders.originator, requestHeaders)
@@ -79,7 +92,7 @@ class RequestManager(object):
 		Logging.logDebug('Handle retrieve resource: %s' % id)
 
 		try:
-			attrs, msg, args = Utils.getRequestArguments(request, Operation.RETRIEVE)
+			_, msg, args = Utils.getRequestArguments(request, Operation.RETRIEVE)
 			if args is None:
 				return Result(rsc=RC.badRequest, dbg=msg)
 		except Exception as e:
@@ -90,34 +103,116 @@ class RequestManager(object):
 
 		if args.rt == ResponseType.blockingRequest:
 			return CSE.dispatcher.processRetrieveRequest(args, id, originator)
-		elif args.rt == ResponseType.nonBlockingRequestSynch:
-			return self.handleNonBlockingRequestSyncRetrieve(args, id, requestHeaders)
-
+		elif args.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
+			return self._handleNonBlockingRequest(id, args, requestHeaders)
 
 		# TODO other nonBlocking 
-		# elif args.rt == ResponseType.nonBlockingRequestAsynch:
-		# 	self._createRequestResource(args, requestHeaders, Operation.RETRIEVE, id)
+
 
 		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % args.rt)
 
 
 
-	def handleNonBlockingRequestSyncRetrieve(self, args:RequestArguments, id:str, requestHeaders:RequestHeaders ) -> Result:
+	#########################################################################
+	#
+	#	CREATE resources
+	#
+
+	def createRequest(self, request:Request, _id:Tuple[str, str, str]) -> Result:
+		requestHeaders, _ = Utils.getRequestHeaders(request)
+		id, csi, srn = _id
+		Logging.logDebug('CREATE ID: %s, originator: %s' % (id if id is not None else srn, requestHeaders.originator))
+
+		# No ID, return immediately 
+		if id is None and srn is None:
+			return Result(rsc=RC.notFound, dbg='missing identifier')
+
+		# handle transit requests
+		if CSE.remote.isTransitID(id):
+			return CSE.remote.handleTransitCreateRequest(request, id, requestHeaders.originator, requestHeaders.resourceType) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
+
+		# handle hybrid id
+		srn, id = Utils.srnFromHybrid(srn, id)  # Hybrid
+
+		# handle fanout point requests
+		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
+			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
+			return fanoutPointResource.handleCreateRequest(request, srn, requestHeaders.originator, requestHeaders.contentType, requestHeaders.resourceType)
+
+		# just a normal create request
+		return self.handleCreateRequest(request, id, requestHeaders.originator, requestHeaders.contentType, requestHeaders.resourceType, requestHeaders)
+
+
+	def handleCreateRequest(self, request:Request, id:str, originator:str, ct:str, ty:T, requestHeaders:RequestHeaders=None) -> Result:
+		Logging.logDebug('Adding new resource')
+
+		try:
+			_, msg, args = Utils.getRequestArguments(request, Operation.CREATE)
+			if args is None:
+				return Result(rsc=RC.badRequest, dbg=msg)
+		except Exception as e:
+			return Result(rsc=RC.invalidArguments, dbg='invalid arguments (%s)' % str(e))
+
+		if args.rt == ResponseType.blockingRequest:
+			return CSE.dispatcher.processCreateRequest(args, id, originator, ct, ty)
+		elif args.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
+			return self._handleNonBlockingRequest(id, args, requestHeaders)
+
+		# TODO other nonBlocking 
+
+		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % args.rt)
+
+
+
+	#########################################################################
+
+	#
+	#	<request> handling
+	#
+
+	def _createRequestResource(self, arguments:RequestArguments, headers:RequestHeaders, operation:Operation, target:str, content:dict=None) -> Result:
+
+		# Get initialized resource
+		if (nres := REQ.createRequestResource(arguments, headers, operation, target, content)).resource is None:
+			return Result(rsc=RC.badRequest, dbg=nres.dbg)
+
+		# Register <request>
+		if (cseres := Utils.getCSE()).resource is None:
+			return Result(rsc=RC.badRequest, dbg=cseres.dbg)
+		if (rres := CSE.registration.checkResourceCreation(nres.resource, headers.originator, cseres.resource)).rsc != RC.OK:
+			return rres.errorResult()
+
+		# create <request>
+		return CSE.dispatcher.createResource(nres.resource, cseres.resource, headers.originator)
+
+
+	def _handleNonBlockingRequest(self, id:str, args:RequestArguments, requestHeaders:RequestHeaders ) -> Result:
+		"""	This method creates a <request> resource, initiates the execution of the desired operation in
+			the background, but immediately returns with the reference of the <request> resource that
+			will contain the result of the operation.
+		"""
+
 		# Create the <request> resource first
-		if (reqres := self._createRequestResource(args, requestHeaders, Operation.RETRIEVE, id)).resource is None:
+		if (reqres := self._createRequestResource(args, requestHeaders, args.operation, id)).resource is None:
 			return reqres
 
-		# Run RETRIEVE in the background
-		BackgroundWorkerPool.newActor(0.0, self._runNBRSyncRetrieve, 'retrieve').start(args=args, id=id, originator=requestHeaders.originator, reqRi=reqres.resource.ri)
+		# Run operation in the background
+		BackgroundWorkerPool.newActor(0.0, self._runNonBlockingRequestSync, 'request_%s' % requestHeaders.requestIdentifier).start(id=id, args=args, requestHeaders=requestHeaders, reqRi=reqres.resource.ri)
 
-		# Create the response content with the <request> ri 
-		jsn:Dict[str, Any] = { 'm2m:uri' : reqres.resource.ri }
-		return Result(jsn=jsn, rsc=RC.accepedNonBlockingRequestSynch)
+		if args.rt == ResponseType.nonBlockingRequestSynch:
+			# Create the response content with the <request> ri 
+			jsn:Dict[str, Any] = { 'm2m:uri' : reqres.resource.ri }
+			return Result(jsn=jsn, rsc=RC.accepedNonBlockingRequestSynch)
+
+		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % args.rt)
 
 
-	def _runNBRSyncRetrieve(self, args:RequestArguments, id:str, originator:str, reqRi:str) -> bool:
-		# Run the actual request
-		result = CSE.dispatcher.processRetrieveRequest(args, id, originator)
+	def _runNonBlockingRequestSync(self, id:str, args:RequestArguments, requestHeaders:RequestHeaders, reqRi:str) -> bool:
+		""" Execute the actual request and store the result in the respective <request> resource.
+		"""
+
+		args.operation == Operation.RETRIEVE and (result := CSE.dispatcher.processRetrieveRequest(args, id, requestHeaders.originator)) is not None
+		args.operation == Operation.CREATE and (result := CSE.dispatcher.processCreateRequest(args, id, requestHeaders.originator, requestHeaders.contentType, requestHeaders.resourceType)) is not None
 
 		# Retrieve the <request>
 		if (reqres := CSE.dispatcher.retrieveResource(reqRi)).resource is None:	
@@ -143,27 +238,4 @@ class RequestManager(object):
 		request.dbUpdate()
 
 		return True
-
-	#########################################################################
-
-	#
-	#	<request> handling
-	#
-
-	def _createRequestResource(self, arguments:RequestArguments, headers:RequestHeaders, operation:Operation, target:str, content:dict=None) -> Result:
-
-		# Get initialized resource
-		if (nres := REQ.createRequestResource(arguments, headers, operation, target, content)).resource is None:
-			return Result(rsc=RC.badRequest, dbg=nres.dbg)
-
-		# Register <request>
-		if (cseres := Utils.getCSE()).resource is None:
-			return Result(rsc=RC.badRequest, dbg=cseres.dbg)
-		if (rres := CSE.registration.checkResourceCreation(nres.resource, headers.originator, cseres.resource)).rsc != RC.OK:
-			return rres.errorResult()
-
-		# create <request>
-		return CSE.dispatcher.createResource(nres.resource, cseres.resource, headers.originator)
-
-
 

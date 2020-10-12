@@ -64,7 +64,7 @@ class REQ(Resource):
 					'rqet'	: headers.requestExpirationTimestamp,
 					'rset'	: headers.responseExpirationTimestamp,
 					'rt'	: { 
-						'rtv' : arguments.rt,
+						'rtv' : arguments.rt
 					},
 					'rp'	: arguments.rp,
 					'rcn'	: arguments.rcn,

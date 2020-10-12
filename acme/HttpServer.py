@@ -154,7 +154,7 @@ class HttpServer(object):
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpCreate()	# type: ignore
 		try:
-			result = CSE.dispatcher.createRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = CSE.request.createRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 		except Exception as e:
 			result = self._prepareException(e)
 		finally:

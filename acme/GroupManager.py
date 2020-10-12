@@ -187,7 +187,7 @@ class GroupManager(object):
 				if (res := CSE.request.handleRetrieveRequest(request, mid, originator)).resource is None:
 					return res
 			elif operation == Operation.CREATE:
-				if (res := CSE.dispatcher.handleCreateRequest(request, mid, originator, ct, ty)).resource is None:
+				if (res := CSE.request.handleCreateRequest(request, mid, originator, ct, ty)).resource is None:
 					return res
 			elif operation == Operation.UPDATE:
 				if (res := CSE.dispatcher.handleUpdateRequest(request, mid, originator, ct)).resource is None:

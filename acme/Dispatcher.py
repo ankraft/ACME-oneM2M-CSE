@@ -364,53 +364,11 @@ class Dispatcher(object):
 
 
 	#########################################################################
-
 	#
 	#	Add resources
 	#
 
-	def createRequest(self, request: Request, _id: Tuple[str, str, str]) -> Result:
-		rh, _ = Utils.getRequestHeaders(request)
-		id, csi, srn = _id
-		Logging.logDebug('CREATE ID: %s, originator: %s' % (id if id is not None else srn, rh.originator))
-
-		# No ID, return immediately 
-		if id is None and srn is None:
-			return Result(rsc=RC.notFound, dbg='missing identifier')
-
-		# handle transit requests
-		if CSE.remote.isTransitID(id):
-			return CSE.remote.handleTransitCreateRequest(request, id, rh.originator, rh.resourceType) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
-
-		# handle hybrid id
-		srn, id = Utils.srnFromHybrid(srn, id)  # Hybrid
-
-		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
-			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
-			return fanoutPointResource.handleCreateRequest(request, srn, rh.originator, rh.contentType, rh.resourceType)
-
-		# just a normal create request
-		return self.handleCreateRequest(request, id, rh.originator, rh.contentType, rh.resourceType)
-
-
-
-	def handleCreateRequest(self, request:Request, id:str, originator:str, ct:str, ty:T) -> Result:
-		Logging.logDebug('Adding new resource')
-
-		try:
-			attrs, msg, args = Utils.getRequestArguments(request, Operation.CREATE)
-			if args is None:
-				return Result(rsc=RC.badRequest, dbg=msg)
-			rcn   = attrs.get('rcn')
-		except Exception as e:
-			return Result(rsc=RC.invalidArguments, dbg=str(e))
-
-
-		#
-		##### Here split requests
-		#
-
+	def processCreateRequest(self, args:RequestArguments, id:str, originator:str, ct:str, ty:T) -> Result:
 
 		if ct == None or ty == None:
 			return Result(rsc=RC.badRequest, dbg='ct or ty is missing in request')
@@ -420,7 +378,7 @@ class Dispatcher(object):
 			return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
 
 		# Get parent resource and check permissions
-		if (res := self.retrieveResource(id)).resource is None:
+		if (res := CSE.dispatcher.retrieveResource(id)).resource is None:
 			Logging.log('Parent resource not found')
 			return Result(rsc=RC.notFound, dbg='parent resource not found')
 		parentResource = res.resource
@@ -433,11 +391,11 @@ class Dispatcher(object):
 
 		# Check for virtual resource
 		if Utils.isVirtualResource(parentResource):
-			return parentResource.handleCreateRequest(request, id, originator, ct, ty)
+			return parentResource.handleCreateRequest(args.request, id, originator, ct, ty)
 
 		# Add new resource
 		try:
-			jsn = json.loads(Utils.removeCommentsFromJSON(request.get_data(as_text=True)))
+			jsn = json.loads(Utils.removeCommentsFromJSON(args.request.get_data(as_text=True)))
 			if (nres := Utils.resourceFromJSON(jsn, pi=parentResource.ri, ty=ty)).resource is None:	# something wrong, perhaps wrong type
 				return Result(rsc=RC.badRequest, dbg=nres.dbg)
 		except Exception as e:
@@ -460,7 +418,7 @@ class Dispatcher(object):
 		originator = rres.originator 	# originator might have changed during this check
 
 		# Create the resource. If this fails we register everything
-		if (res := self.createResource(nresource, parentResource, originator)).resource is None:
+		if (res := CSE.dispatcher.createResource(nresource, parentResource, originator)).resource is None:
 			CSE.registration.checkResourceDeletion(nresource) # deregister resource. Ignore result, we take this from the creation
 			return res
 
@@ -469,21 +427,24 @@ class Dispatcher(object):
 		#
 
 		tpe = res.resource.tpe
-		if rcn is None or rcn == RCN.attributes:	# Just the resource & attributes
+		if args.rcn is None or args.rcn == RCN.attributes:	# Just the resource & attributes
 			return res
-		elif rcn == RCN.modifiedAttributes:
-			jsonOrg =request.json[tpe]
+		elif args.rcn == RCN.modifiedAttributes:
+			jsonOrg =args.request.json[tpe]
 			jsonNew = res.resource.asJSON()[tpe]
 			return Result(resource={ tpe : Utils.resourceDiff(jsonOrg, jsonNew) }, rsc=res.rsc, dbg=res.dbg)
-		elif rcn == RCN.hierarchicalAddress:
+		elif args.rcn == RCN.hierarchicalAddress:
 			return Result(resource={ 'm2m:uri' : Utils.structuredPath(res.resource) }, rsc=res.rsc, dbg=res.dbg)
-		elif rcn == RCN.hierarchicalAddressAttributes:
+		elif args.rcn == RCN.hierarchicalAddressAttributes:
 			return Result(resource={ 'm2m:rce' : { Utils.noDomain(tpe) : res.resource.asJSON()[tpe], 'uri' : Utils.structuredPath(res.resource) }}, rsc=res.rsc, dbg=res.dbg)
-		elif rcn == RCN.nothing:
+		elif args.rcn == RCN.nothing:
 			return Result(rsc=res.rsc, dbg=res.dbg)
 		else:
 			return Result(rsc=RC.badRequest, dbg='wrong rcn for CREATE')
 		# TODO C.rcnDiscoveryResultReferences 
+
+
+
 
 
 	def createResource(self, resource:Resource, parentResource:Resource=None, originator:str=None) -> Result:

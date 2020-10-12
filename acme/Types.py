@@ -531,16 +531,18 @@ class Result:
 
 @dataclass
 class RequestArguments:
-	fu 			: FilterUsage 					= FilterUsage.conditionalRetrieval
-	drt 		: DesiredIdentifierResultType	= DesiredIdentifierResultType.structured
-	fo 			: FilterOperation 				= FilterOperation.AND
-	rcn 		: ResultContentType 			= ResultContentType.discoveryResultReferences
-	rt 			: ResponseType					= ResponseType.blockingRequest 					# response type
-	rp 			: str 							= None 											# result persistence
-	rpts 		: str 							= None 											# ... as a timestamp
-	handling 	: dict 							= field(default_factory=dict)
-	conditions 	: dict 							= field(default_factory=dict)
-	attributes 	: dict 							= field(default_factory=dict)
+	fu 							: FilterUsage 					= FilterUsage.conditionalRetrieval
+	drt 						: DesiredIdentifierResultType	= DesiredIdentifierResultType.structured
+	fo 							: FilterOperation 				= FilterOperation.AND
+	rcn 						: ResultContentType 			= ResultContentType.discoveryResultReferences
+	rt 							: ResponseType					= ResponseType.blockingRequest 					# response type
+	rp 							: str 							= None 											# result persistence
+	rpts 						: str 							= None 											# ... as a timestamp
+	handling 					: dict 							= field(default_factory=dict)
+	conditions 					: dict 							= field(default_factory=dict)
+	attributes 					: dict 							= field(default_factory=dict)
+	operation 					: Operation 					= None
+	request 					: Request 						= None
 
 
 @dataclass

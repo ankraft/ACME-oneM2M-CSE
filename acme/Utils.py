@@ -604,7 +604,7 @@ def requestHeaderField(request: Request, field : str) -> str:
 # Throws an exception when a wrong type is encountered. This is part of the validation
 def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE) -> Tuple[dict, str, RequestArguments]:
 	result: dict = { }
-	result2 = RequestArguments()
+	result2 = RequestArguments(operation=operation, request=request)
 
 	# copy for greedy attributes checking
 	args = request.args.copy()	 	# type: ignore
