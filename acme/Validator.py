@@ -431,8 +431,10 @@ class Validator(object):
 			is an error. """
 
 		if tpe == BT.positiveInteger:
-			if isinstance(value, int) and value > 0:
-				return Result(status=True)
+			if isinstance(value, int):
+				if value > 0:
+					return Result(status=True)
+				return Result(status=False, dbg='value must be > 0')
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
@@ -443,8 +445,10 @@ class Validator(object):
 			return Result(status=False, dbg='unknown type for value')
 
 		if tpe == BT.nonNegInteger:
-			if isinstance(value, int) and value >= 0:
-				return Result(status=True)
+			if isinstance(value, int):
+				if value >= 0:
+					return Result(status=True)
+				return Result(status=False, dbg='value must be >= 0')
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
