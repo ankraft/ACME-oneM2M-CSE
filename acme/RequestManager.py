@@ -111,7 +111,7 @@ class RequestManager(object):
 		BackgroundWorkerPool.newActor(0.0, self._runNBRSyncRetrieve, 'retrieve').start(args=args, id=id, originator=requestHeaders.originator, reqRi=reqres.resource.ri)
 
 		# Create the response content with the <request> ri 
-		jsn:Dict[str, Any] = { 'm2m:rid' : reqres.resource.ri }
+		jsn:Dict[str, Any] = { 'm2m:uri' : reqres.resource.ri }
 		return Result(jsn=jsn, rsc=RC.accepedNonBlockingRequestSynch)
 
 
