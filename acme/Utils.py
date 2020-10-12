@@ -828,6 +828,12 @@ def getRequestHeaders(request: Request) -> Tuple[RequestHeaders, int]:
 	rh.responseExpirationTimestamp 	= requestHeaderField(request, C.hfRST)
 	rh.operationExecutionTime 		= requestHeaderField(request, C.hfOET)
 	rh.releaseVersionIndicator 		= requestHeaderField(request, C.hfRVI)
+	rtu 							= requestHeaderField(request, C.hfRTU)
+
+	# handle rtu list
+	if rtu is not None:		
+		rh.responseTypeURI = rtu.split('&')
+	Logging.logWarn(str(rh))
 
 	# content-type
 	rh.contentType 	= request.content_type

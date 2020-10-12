@@ -51,6 +51,7 @@ class Constants(object):
 	hfRET 							= 'X-M2M-RET'
 	hfRST 							= 'X-M2M-RST'
 	hfOET 							= 'X-M2M-OET'
+	hfRTU 							= 'X-M2M-RTU'
 			
 
 	#

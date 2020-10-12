@@ -63,7 +63,9 @@ class REQ(Resource):
 					'ot'	: Utils.getResourceDate(),
 					'rqet'	: headers.requestExpirationTimestamp,
 					'rset'	: headers.responseExpirationTimestamp,
-					'rt'	: arguments.rt,
+					'rt'	: { 
+						'rtv' : arguments.rt,
+					},
 					'rp'	: arguments.rp,
 					'rcn'	: arguments.rcn,
 					'fc'	: {
@@ -82,8 +84,13 @@ class REQ(Resource):
 		for k,v in { **arguments.handling, **arguments.conditions, **arguments.attributes}.items():
 			Utils.setXPath(jsn, 'm2m:req/mi/fc/%s' % k, v, True)
 
+		# add content
 		if content is not None:
 			Utils.setXPath(jsn, 'm2m:req/pc', content, True)
+
+		# calculate and assign rtu for rt
+		if (rtu := headers.responseTypeURI) is not None and len(rtu) > 0:
+			Utils.setXPath(jsn, 'm2m:req/mi/rt/nu', [ u for u in rtu if len(u) > 0] )
 
 		if (cseres := Utils.getCSE()).resource is None:
 			return Result(rsc=RC.badRequest, dbg=cseres.dbg)

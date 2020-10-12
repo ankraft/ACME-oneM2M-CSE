@@ -553,5 +553,5 @@ class RequestHeaders:
 	responseExpirationTimestamp	: str 			= None 	# X-M2M-RST
 	operationExecutionTime		: str 			= None 	# X-M2M-OET
 	releaseVersionIndicator		: str 			= None 	# X-M2M-RVI
-
+	responseTypeURI				: List[str]		= field(default_factory=list)	# X-M2M-RTU
 
