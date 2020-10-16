@@ -15,7 +15,7 @@ from flask import Flask, Request, make_response, request
 from werkzeug.wrappers import Response
 from Configuration import Configuration
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ResponseCode as RC
+from Types import ResourceTypes as T, Result, ResponseCode as RC, Operation
 import CSE, Utils
 from Logging import Logging
 from resources.Resource import Resource
@@ -32,10 +32,10 @@ class HttpServer(object):
 		self.flaskApp			= Flask(Configuration.get('cse.csi'))
 		self.rootPath			= Configuration.get('http.root')
 		self.useTLS 			= Configuration.get('cse.security.useTLS')
-		self.verifyCertificate		= Configuration.get('cse.security.verifyCertificate')
+		self.verifyCertificate	= Configuration.get('cse.security.verifyCertificate')
 		self.tlsVersion			= Configuration.get('cse.security.tlsVersion').lower()
-		self.caCertificateFile		= Configuration.get('cse.security.caCertificateFile')
-		self.caPrivateKeyFile		= Configuration.get('cse.security.caPrivateKeyFile')
+		self.caCertificateFile	= Configuration.get('cse.security.caCertificateFile')
+		self.caPrivateKeyFile	= Configuration.get('cse.security.caPrivateKeyFile')
 
 		self.serverID	= 'ACME %s' % C.version 	# The server's ID for http response headers
 
@@ -140,7 +140,9 @@ class HttpServer(object):
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpRetrieve() # type: ignore
 		try:
-			result = CSE.request.retrieveRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = Utils.dissectHttpRequest(request, Operation.RETRIEVE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			if result.request is not None:
+				result = CSE.request.retrieveRequest(result.request)
 		except Exception as e:
 			result = self._prepareException(e)
 		finally:
@@ -154,7 +156,9 @@ class HttpServer(object):
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpCreate()	# type: ignore
 		try:
-			result = CSE.request.createRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = Utils.dissectHttpRequest(request, Operation.CREATE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			if result.request is not None:
+				result = CSE.request.createRequest(result.request)
 		except Exception as e:
 			result = self._prepareException(e)
 		finally:
@@ -168,7 +172,9 @@ class HttpServer(object):
 		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpUpdate()	# type: ignore
 		try:
-			result = CSE.dispatcher.updateRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = Utils.dissectHttpRequest(request, Operation.UPDATE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			if result.request is not None:
+				result = CSE.request.updateRequest(result.request)
 		except Exception as e:
 			result = self._prepareException(e)
 		finally:
@@ -181,7 +187,9 @@ class HttpServer(object):
 		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpDelete()	# type: ignore
 		try:
-			result = CSE.dispatcher.deleteRequest(request, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = Utils.dissectHttpRequest(request, Operation.DELETE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			if result.request is not None:
+				result = CSE.request.deleteRequest(result.request)
 		except Exception as e:
 			result = self._prepareException(e)
 		finally:

@@ -12,11 +12,10 @@
 
 import requests, json, urllib.parse
 from typing import List, Tuple, Dict
-from flask import Request
 from Configuration import Configuration
 from Logging import Logging
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, CSEType, ResponseCode as RC
+from Types import ResourceTypes as T, Result, CSEType, ResponseCode as RC, CSERequest
 import Utils, CSE
 from resources import CSR, CSEBase
 from resources.Resource import Resource
@@ -468,38 +467,44 @@ class RemoteCSEManager(object):
 	#	Handling of Transit requests. Forward requests to the resp. remote CSE's.
 	#
 
-	def handleTransitRetrieveRequest(self, request: Request, id: str, origin: str) -> Result:
+	def handleTransitRetrieveRequest(self, request:CSERequest) -> Result:
 		""" Forward a RETRIEVE request to a remote CSE """
-		if (url := self._getForwardURL(id)) is None:
+		if (url := self._getForwardURL(request.id)) is None:
 			return Result(rsc=RC.notFound, dbg='forward URL not found for id: %s' % id)
-		if len(request.args) > 0:	# pass on other arguments, for discovery
-			url += '?' + urllib.parse.urlencode(request.args)
+		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
+			url += '?' + urllib.parse.urlencode(request.originalArgs)
 		Logging.log('Forwarding Retrieve/Discovery request to: %s' % url)
-		return CSE.httpServer.sendRetrieveRequest(url, origin)
+		return CSE.httpServer.sendRetrieveRequest(url, request.headers.originator)
 
 
-	def handleTransitCreateRequest(self, request: Request, id: str, origin: str, ty: T) -> Result:
+	def handleTransitCreateRequest(self, request:CSERequest) -> Result:
 		""" Forward a CREATE request to a remote CSE. """
-		if (url := self._getForwardURL(id)) is None:
+		if (url := self._getForwardURL(request.id)) is None:
 			return Result(rsc=RC.notFound, dbg='forward URL not found for id: %s' % id)
+		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
+			url += '?' + urllib.parse.urlencode(request.originalArgs)
 		Logging.log('Forwarding Create request to: %s' % url)
-		return CSE.httpServer.sendCreateRequest(url, origin, data=request.data, ty=ty)
+		return CSE.httpServer.sendCreateRequest(url, request.headers.originator, data=request.data, ty=request.headers.resourceType)
 
 
-	def handleTransitUpdateRequest(self, request: Request, id: str, origin: str) -> Result:
+	def handleTransitUpdateRequest(self, request:CSERequest) -> Result:
 		""" Forward an UPDATE request to a remote CSE. """
-		if (url := self._getForwardURL(id)) is None:
+		if (url := self._getForwardURL(request.id)) is None:
 			return Result(rsc=RC.notFound, dbg='forward URL not found for id: %s' % id)
+		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
+			url += '?' + urllib.parse.urlencode(request.originalArgs)
 		Logging.log('Forwarding Update request to: %s' % url)
-		return CSE.httpServer.sendUpdateRequest(url, origin, data=request.data)
+		return CSE.httpServer.sendUpdateRequest(url, request.headers.originator, data=request.data)
 
 
-	def handleTransitDeleteRequest(self, id:str, origin:str) -> Result:
+	def handleTransitDeleteRequest(self, request:CSERequest) -> Result:
 		""" Forward a DELETE request to a remote CSE. """
-		if (url := self._getForwardURL(id)) is None:
+		if (url := self._getForwardURL(request.id)) is None:
 			return Result(rsc=RC.notFound, dbg='forward URL not found for id: %s' % id)
+		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
+			url += '?' + urllib.parse.urlencode(request.originalArgs)
 		Logging.log('Forwarding Delete request to: %s' % url)
-		return CSE.httpServer.sendDeleteRequest(url, origin)
+		return CSE.httpServer.sendDeleteRequest(url, request.headers.originator)
 
 
 	def retrieveRemoteResource(self, id:str, originator:str=None, raw:bool=False) -> Result:

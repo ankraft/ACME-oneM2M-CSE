@@ -67,7 +67,7 @@ class ReadWriteLock(object):
         self._read_ready.notifyAll()
         self._read_ready.release()
 
-#-------------------------------------------------------------------------
+##############################################################################
 
 
 class ReadRWLock(object):
@@ -84,7 +84,7 @@ class ReadRWLock(object):
         self.rwLock.release_read()
         return False        # Raise the exception, if exited due to an exception
 
-#-------------------------------------------------------------------------
+##############################################################################
 
 
 class WriteRWLock(object):

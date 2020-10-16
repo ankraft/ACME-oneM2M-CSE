@@ -518,7 +518,7 @@ class Result:
 	lst 		: List[Any]   	= None		# List of Anything
 	rsc 		: ResponseCode	= ResponseCode.OK	# OK
 	dbg 		: str 			= None
-	request 	: Request 		= None  	# may contain the original http request object
+	request 	: CSERequest	= None  	# may contain the processed http request object
 	status 		: bool 			= None
 	originator 	: str 			= None
 
@@ -528,6 +528,11 @@ class Result:
 		"""
 		return Result(rsc=self.rsc, dbg=self.dbg)
 
+
+##############################################################################
+#
+#	Requests
+#
 
 @dataclass
 class RequestArguments:
@@ -556,4 +561,15 @@ class RequestHeaders:
 	operationExecutionTime		: str 			= None 	# X-M2M-OET
 	releaseVersionIndicator		: str 			= None 	# X-M2M-RVI
 	responseTypeURI				: List[str]		= field(default_factory=list)	# X-M2M-RTU
+
+
+class CSERequest:
+	headers 					: RequestHeaders 	= None
+	args 						: RequestArguments 	= None
+	originalArgs 				: Any 				= None	# Actually a MultiDict
+	data 						: str 				= None 	# The request data
+	id 							: str 				= None 	# target ID
+	srn 						: str 				= None 	# target structured resource name
+	csi 						: str 				= None 	# target csi
+
 

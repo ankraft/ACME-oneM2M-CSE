@@ -26,7 +26,7 @@ class CNT_LA(Resource):
 		return super()._canHaveChild(resource, [])
 
 
-	def handleRetrieveRequest(self, request:Request=None, id:str=None, originator:str=None) -> Result:
+	def handleRetrieveRequest(self) -> Result:
 		""" Handle a RETRIEVE request. Return resource """
 		Logging.logDebug('Retrieving latest CIN from CNT')
 		if (r := self._getLatest()) is None:
@@ -34,12 +34,12 @@ class CNT_LA(Resource):
 		return Result(resource=r)
 
 
-	def handleCreateRequest(self, request:Request, id:str, originator:str, ct:str, ty:int) -> Result:
+	def handleCreateRequest(self, request:Request, id:str, originator:str) -> Result:
 		""" Handle a CREATE request. Fail with error code. """
 		return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for <latest> resource type')
 
 
-	def handleUpdateRequest(self, request:Request, id:str, originator:str, ct:str) -> Result:
+	def handleUpdateRequest(self, request:Request, id:str, originator:str) -> Result:
 		""" Handle a UPDATE request. Fail with error code. """
 		return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for <latest> resource type')
 

@@ -22,6 +22,7 @@ from resources import SWR, SWRAnnc, Unknown, Resource
 from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC
 from Types import Result,  RequestHeaders, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType, ResultContentType, ResponseType, FilterOperation
+from Types import CSERequest
 from Configuration import Configuration
 from Logging import Logging
 import CSE
@@ -185,6 +186,7 @@ def resourceFromCSI(csi: str) -> Resource.Resource:
 	if (res := CSE.storage.retrieveResource(csi=csi)).resource is None:
 		return None
 	return res.resource
+
 
 def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 	""" Split a ful path e.g. from a http request into its component and return a local ri .
@@ -593,6 +595,29 @@ def fanoutPointResource(id: str) -> Resource.Resource:
 #
 
 
+def dissectHttpRequest(request:Request, operation:Operation, _id:Tuple[str, str, str]) -> Result:
+	result = CSERequest()
+	
+	# handle ID's 
+	result.id, result.csi, result.srn = _id
+
+	# No ID, return immediately 
+	if result.id is None and result.srn is None:
+		return Result(rsc=RC.notFound, dbg='missing identifier')
+
+	result.headers, _ = getRequestHeaders(request)
+	try:
+		result.args, msg = getRequestArguments(request, operation)
+		if result.args is None:
+			return Result(rsc=RC.badRequest, dbg=msg)
+	except Exception as e:
+		return Result(rsc=RC.invalidArguments, dbg='invalid arguments (%s)' % str(e))
+	result.originalArgs	= request.args.copy()	#type: ignore
+	result.data = request.get_data(as_text=True)
+	return Result(request=result)
+
+
+
 def requestHeaderField(request: Request, field : str) -> str:
 	if not request.headers.has_key(field):
 		return None
@@ -602,9 +627,8 @@ def requestHeaderField(request: Request, field : str) -> str:
 # Get the request arguments, or meaningful defaults.
 # Only a small subset is supported yet
 # Throws an exception when a wrong type is encountered. This is part of the validation
-def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE) -> Tuple[dict, str, RequestArguments]:
-	result: dict = { }
-	result2 = RequestArguments(operation=operation, request=request)
+def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, str]:
+	result = RequestArguments(operation=operation, request=request)
 
 	# copy for greedy attributes checking
 	args = request.args.copy()	 	# type: ignore
@@ -612,54 +636,51 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 	# FU - Filter Usage
 	if (fu := args.get('fu')) is not None:
 		if not CSE.validator.validateRequestArgument('fu', fu).status:
-			return None, 'error validating \'fu\' argument', None
+			return None, 'error validating \'fu\' argument'
 		try:
 			fu = FilterUsage(int(fu))
 		except ValueError as exc:
-			return None, '\'%s\' is not a valid value for fu' % fu, None
+			return None, '\'%s\' is not a valid value for fu' % fu
 		del args['fu']
 	else:
 		fu = FilterUsage.conditionalRetrieval
 	if fu == FilterUsage.discoveryCriteria and operation == Operation.RETRIEVE:
 		operation = Operation.DISCOVERY
-	result['fu'] = fu
-	result2.fu = fu
+	result.fu = fu
 
 
 	# DRT - Desired Identifier Result Type
 	if (drt := args.get('drt')) is not None: # 1=strucured, 2=unstructured
 		if not CSE.validator.validateRequestArgument('drt', drt).status:
-			return None, 'error validating \'drt\' argument', None
+			return None, 'error validating \'drt\' argument'
 		try:
 			drt = DesiredIdentifierResultType(int(drt))
 		except ValueError as exc:
-			return None, '\'%s\' is not a valid value for drt' % drt, None
+			return None, '\'%s\' is not a valid value for drt' % drt
 		del args['drt']
 	else:
 		drt = DesiredIdentifierResultType.structured
-	result['drt'] = drt
-	result2.drt = drt
+	result.drt = drt
 
 
 	# FO - Filter Operation
 	if (fo := args.get('fo')) is not None: # 1=AND, 2=OR
 		if not CSE.validator.validateRequestArgument('fo', fo).status:
-			return None, 'error validating \'fo\' argument', None
+			return None, 'error validating \'fo\' argument'
 		try:
 			fo = FilterOperation(int(fo))
 		except ValueError as exc:
-			return None, '\'%s\' is not a valid value for fo' % fo, None
+			return None, '\'%s\' is not a valid value for fo' % fo
 		del args['fo']
 	else:
 		fo = FilterOperation.AND # default
-	result['fo'] = fo
-	result2.fo = fo
+	result.fo = fo
 
 
 	# RCN Result Content Type
 	if (rcn := args.get('rcn')) is not None: 
 		if not CSE.validator.validateRequestArgument('rcn', rcn).status:
-			return None, 'error validating \'rcn\' argument', None
+			return None, 'error validating \'rcn\' argument'
 		rcn = int(rcn)
 		del args['rcn']
 	else:
@@ -680,51 +701,49 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 														ResultContentType.childResourceReferences,
 														ResultContentType.childResources,
 														ResultContentType.originalResource ]:
-		return None, 'rcn: %d not allowed in RETRIEVE operation' % rcn, None
+		return None, 'rcn: %d not allowed in RETRIEVE operation' % rcn
 	elif operation == Operation.DISCOVERY and rcn not in [ ResultContentType.childResourceReferences,
 														   ResultContentType.discoveryResultReferences ]:
-		return None, 'rcn: %d not allowed in DISCOVERY operation' % rcn, None
+		return None, 'rcn: %d not allowed in DISCOVERY operation' % rcn
 	elif operation == Operation.CREATE and rcn not in [ ResultContentType.attributes,
 														ResultContentType.modifiedAttributes,
 														ResultContentType.hierarchicalAddress,
 														ResultContentType.hierarchicalAddressAttributes,
 														ResultContentType.nothing ]:
-		return None, 'rcn: %d not allowed in CREATE operation' % rcn, None
+		return None, 'rcn: %d not allowed in CREATE operation' % rcn
 	elif operation == Operation.UPDATE and rcn not in [ ResultContentType.attributes,
 														ResultContentType.modifiedAttributes,
 														ResultContentType.nothing ]:
-		return None, 'rcn: %d not allowed in UPDATE operation' % rcn, None
+		return None, 'rcn: %d not allowed in UPDATE operation' % rcn
 	elif operation == Operation.DELETE and rcn not in [ ResultContentType.attributes,
 														ResultContentType.nothing,
 														ResultContentType.attributesAndChildResources,
 														ResultContentType.childResources,
 														ResultContentType.attributesAndChildResourceReferences,
 														ResultContentType.childResourceReferences ]:
-		return None, 'rcn: %d not allowed DELETE operation' % rcn, None
+		return None, 'rcn: %d not allowed DELETE operation' % rcn
 
-	result['rcn'] = rcn
-	result2.rcn = rcn
+	result.rcn = rcn
 
 
 	# RT - Response Type
 	if (rt := args.get('rt')) is not None: 
 		if not CSE.validator.validateRequestArgument('rt', rt).status:
-			return None, 'error validating \'rt\' argument', None
+			return None, 'error validating \'rt\' argument'
 		try:
 			rt = ResponseType(int(rt))
 		except ValueError as exc:
-			return None, '\'%s\' is not a valid value for rt' % rt, None
+			return None, '\'%s\' is not a valid value for rt' % rt
 		del args['rt']
 	else:
 		rt = ResponseType.blockingRequest
-	result['rt'] = rt
-	result2.rt = rt
+	result.rt = rt
 
 
 	# RP - Response Persistence
 	if (rp := args.get('rp')) is not None: 
 		if not CSE.validator.validateRequestArgument('rp', rp).status:
-			return None, 'error validating \'rp\' argument', None
+			return None, 'error validating \'rp\' argument'
 		try:
 			if rp.startswith('P'):
 				rpts = getResourceDate(isodate.parse_duration(rp).total_seconds())
@@ -733,15 +752,13 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 			else:
 				raise ValueError
 		except ValueError as exc:
-			return None, '\'%s\' is not a valid value for rp' % rp, None
+			return None, '\'%s\' is not a valid value for rp' % rp
 		del args['rp']
 	else:
 		rp = None
 		rpts = None
-	result['rp'] = rp
-	result['rpts'] = rpts
-	result2.rp = rp
-	result2.rpts = rpts
+	result.rp = rp
+	result.rpts = rpts
 
 
 	# handling conditions
@@ -750,18 +767,17 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 		if c in args:
 			v = args[c]
 			if not CSE.validator.validateRequestArgument(c, v).status:
-				return None, 'error validating "%s" argument' % c, None
+				return None, 'error validating "%s" argument' % c
 			handling[c] = int(v)
 			del args[c]
 	for c in ['arp']:
 		if c in args:
 			v = args[c]
 			if not CSE.validator.validateRequestArgument(c, v).status:
-				return None, 'error validating "%s" argument' % c, None
+				return None, 'error validating "%s" argument' % c
 			handling[c] = v # string
 			del args[c]
-	result['__handling__'] = handling
-	result2.handling = handling
+	result.handling = handling
 
 
 	# conditions
@@ -771,7 +787,7 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 	for c in ['crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr']:
 		if (v := args.get(c)) is not None:
 			if not CSE.validator.validateRequestArgument(c, v).status:
-				return None, 'error validating "%s" argument' % c, None
+				return None, 'error validating "%s" argument' % c
 			conditions[c] = v
 			del args[c]
 
@@ -780,7 +796,7 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 	for e in args.getlist('ty'):
 		for es in (t := e.split()):	# check for number
 			if not CSE.validator.validateRequestArgument('ty', es).status:
-				return None, 'error validating "ty" argument(s)', None
+				return None, 'error validating "ty" argument(s)'
 		tyAr.extend(t)
 	if len(tyAr) > 0:
 		conditions['ty'] = tyAr
@@ -791,7 +807,7 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 	for e in args.getlist('cty'):
 		for es in (t := e.split()):	# check for number
 			if not CSE.validator.validateRequestArgument('cty', es).status:
-				return None, 'error validating "cty" argument(s)', None
+				return None, 'error validating "cty" argument(s)'
 		ctyAr.extend(t)
 	if len(ctyAr) > 0:
 		conditions['cty'] = ctyAr
@@ -806,19 +822,19 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 		conditions['lbl'] = lblAr
 	args.poplist('lbl')
 
-	result['__conditons__'] = conditions 	# store found conditions in result
-	result2.conditions = conditions
+	result.conditions = conditions
 
 	# all remaining arguments are treated as matching attributes
 	for arg, val in args.items():
 		if not CSE.validator.validateRequestArgument(arg, val).status:
-			return None, 'error validating (unknown?) \'%s\' argument)' % arg, None
+			return None, 'error validating (unknown?) \'%s\' argument)' % arg
 
 	# all arguments have passed, so add the remaining 
-	result['__attrs__'] = args
-	result2.attributes = args
+	result.attributes = args
 
-	return result, None, result2
+	# Finally return the collected arguments
+	return result, None
+
 		
 def getRequestHeaders(request: Request) -> Tuple[RequestHeaders, int]:
 	rh 								= RequestHeaders()
@@ -833,7 +849,6 @@ def getRequestHeaders(request: Request) -> Tuple[RequestHeaders, int]:
 	# handle rtu list
 	if rtu is not None:		
 		rh.responseTypeURI = rtu.split('&')
-	Logging.logWarn(str(rh))
 
 	# content-type
 	rh.contentType 	= request.content_type
@@ -844,7 +859,7 @@ def getRequestHeaders(request: Request) -> Tuple[RequestHeaders, int]:
 			p 				= rh.contentType.partition(';')
 			rh.contentType 	= p[0] # content-type
 			t  				= p[2].partition('=')[2]
-			rh.resourceType = T(int(t)) if t.isdigit() else T.UNKNOWN # resource type
+			rh.resourceType = T(int(t)) if t.isdigit() else None # resource type
 
 	return rh, RC.OK
 

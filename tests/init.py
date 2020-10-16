@@ -42,10 +42,11 @@ testVerbosity 		= 2		# 0, 1, 2
 verifyCertificate	= False	# verify the certificate when using https?
 
 # Expirations
-expirationCheckDelay 	= 2
+expirationCheckDelay 	= 2	# seconds
 expirationSleep			= expirationCheckDelay * 3
 
 requestETDuration 		= 'PT%dS' % expirationCheckDelay
+requestCheckDelay		= 1	#seconds
 
 
 ###############################################################################
@@ -64,6 +65,7 @@ reqRN	= 'testREQ'
 
 URL		= '%s%s' % (SERVER, ROOTPATH)
 cseURL 	= '%s%s' % (URL, CSERN)
+csiURL 	= '%s~%s' % (URL, CSEID)
 aeURL 	= '%s/%s' % (cseURL, aeRN)
 acpURL 	= '%s/%s' % (cseURL, acpRN)
 cntURL 	= '%s/%s' % (aeURL, cntRN)
@@ -108,9 +110,10 @@ def DELETE(url:str, originator:str) -> (dict, int):
 def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any=None, ct:str='application/json', timeout=None) -> (dict, int):	# TODO Constants
 	headers = { 'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % ty if ty is not None else ''), 
 				'X-M2M-Origin'	 	: originator,
-				'X-M2M-RI' 			: uniqueID(),
+				'X-M2M-RI' 			: (rid := uniqueID()),
 				'X-M2M-RVI'			: '3',			# TODO this actually depends in the originator
 			   }
+	setLastRequestID(rid)
 	try:
 		#print('Sending request: %s %s' % (method.__name__.upper(), url))
 		if isinstance(data, dict):
@@ -128,6 +131,16 @@ def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any
 		result = r.content, rc
 	return result
 
+
+_lastRequstID = None
+
+def setLastRequestID(rid):
+	global _lastRequstID
+	_lastRequstID = rid
+
+
+def lastRequestID():
+	return _lastRequstID
 
 def connectionPossible(url):
 	try:

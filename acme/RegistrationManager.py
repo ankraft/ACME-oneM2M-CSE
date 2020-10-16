@@ -292,7 +292,7 @@ class RegistrationManager(object):
 			return False
 
 		# add additional permissions for the originator
-		acp.addPermission([ originator ], Permission.RETRIEVE + Permission.DELETE)
+		acp.addPermission([ cseOriginator ], Permission.ALL)
 		acp.addSelfPermission([ originator ], Permission.UPDATE)
 		acp.dbUpdate()
 

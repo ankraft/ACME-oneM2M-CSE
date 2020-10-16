@@ -112,6 +112,7 @@ class Storage(object):
 			# Logging.logDebug('Retrieving resource csi: %s' % csi)
 			resources = self.db.searchResources(csi=csi)
 
+		# Logging.logDebug(resources)
 		# return Utils.resourceFromJSON(resources[0]) if len(resources) == 1 else None,
 		if (l := len(resources)) == 1:
 			return Utils.resourceFromJSON(resources[0])

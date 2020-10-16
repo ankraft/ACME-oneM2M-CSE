@@ -113,6 +113,7 @@ class Configuration(object):
 				'cse.enableValidation'				: config.getboolean('cse', 'enableValidation', 			fallback=True),
 				'cse.sortDiscoveredResources'		: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
 				'cse.checkExpirationsInterval'		: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
+				'cse.flexBlockingPreference'		: config.get('cse', 'flexBlockingPreference',			fallback='blocking'),
 
 				#
 				#	CSE Security
@@ -162,19 +163,28 @@ class Configuration(object):
 
 
 				#
-				#	Defaults for Container Resources
-				#
-
-				'cse.cnt.mni'						: config.getint('cse.resource.cnt', 'mni', 				fallback=10),
-				'cse.cnt.mbs'						: config.getint('cse.resource.cnt', 'mbs', 				fallback=10000),
-
-				#
 				#	Defaults for Access Control Policies
 				#
 
 				'cse.acp.pv.acop'					: config.getint('cse.resource.acp', 'permission', 		fallback=63),
 				'cse.acp.pvs.acop'					: config.getint('cse.resource.acp', 'selfPermission', 	fallback=51),
 				'cse.acp.addAdminOrignator'			: config.getboolean('cse.resource.acp', 'addAdminOrignator',	fallback=True),
+
+
+				#
+				#	Defaults for Container Resources
+				#
+
+				'cse.cnt.mni'						: config.getint('cse.resource.cnt', 'mni', 				fallback=10),
+				'cse.cnt.mbs'						: config.getint('cse.resource.cnt', 'mbs', 				fallback=10000),
+
+
+				#
+				#	Defaults for Request Resources
+				#
+
+				'cse.req.minet'						: config.getint('cse.resource.req', 'minimumExpirationTime', fallback=60),
+				'cse.req.maxet'						: config.getint('cse.resource.req', 'maximumExpirationTime', fallback=180),
 
 
 				#
@@ -238,7 +248,6 @@ class Configuration(object):
 			Configuration._configuration['cse.type'] = CSEType.MN
 		else:
 			Configuration._configuration['cse.type'] = CSEType.IN
-
 
 
 		# Loglevel from command line
@@ -361,6 +370,12 @@ class Configuration(object):
 		# Check default subscription duration
 		if Configuration._configuration['cse.sub.dur'] < 1:
 			console.print('[red]Configuration Error: [cse.resource.sub]:batchNotifyDuration must be > 0')
+			return False
+
+		# Check flexBlocking value
+		Configuration._configuration['cse.flexBlockingPreference'] = Configuration._configuration['cse.flexBlockingPreference'].lower()
+		if Configuration._configuration['cse.flexBlockingPreference'] not in ['blocking', 'nonblocking']:
+			console.print('[red]Configuration Error: [cse]:flexBlockingPreference must be "blocking" or "nonblocking"')
 			return False
 
 		# Everything is fine

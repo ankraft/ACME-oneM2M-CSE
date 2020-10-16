@@ -37,6 +37,7 @@ The following macros are supported in addition to those defined in the sections 
 [\[cse.statistics\] - Statistic Settings](#statistics)  
 [\[cse.resource.acp\] - Resource defaults: ACP](#resource_acp)  
 [\[cse.resource.cnt\] - Resource Defaults: CNT](#resource_cnt)  
+[\[cse.resource.req\] - Resource Defaults: REQ](#resource_req)  
 [\[cse.resource.sub\] - Resource Defaults: SUB](#resource_sub)  
 [\[cse.webui\] - Web UI Settings](#webui)  
 
@@ -58,7 +59,7 @@ The following macros are supported in addition to those defined in the sections 
 | resourceID               | The CSE's resource ID. This should be the *cseid* without the leading "/". Can be overwritten in imported CSE definition.<br/>Default: id-in                                                   | cse.ri                       |
 | resourceName             | The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition.<br>Default: cse-in                                                                                         | cse.rn                       |
 | resourcesPath            | Directory of default resources to import.<br/>See also command line argument [–import-directory](Running.md).<br/>Default: ./init                                                              | cse.resourcesPath            |
-| expirationDelta          | ExpirationTime before resources are removed in seconds.<br/> Default: 60*60*24*365 = 31536000 = 1 year                                                                                         | cse.expirationDelta          |
+| expirationDelta          | Expiration time before resources are removed in seconds.<br/> Default: 60*60*24*365 = 31536000 = 1 year                                                                                        | cse.expirationDelta          |
 | maxExpirationDelta       | Maximum expirationTime allowed for resources in seconds.<br/>Default: 5 years = 157680000                                                                                                      | cse.maxExpirationDelta       |
 | originator               | Admin originator for the CSE.<br/>Default: CAdmin                                                                                                                                              | cse.originator               |
 | enableApplications       | Enable internal applications. See also individual application configuratins in the [app. ...] sections.<br/>See also command line arguments [–apps and –noapps](Running.md).<br/>Default: true | cse.enableApplications       |
@@ -69,6 +70,9 @@ The following macros are supported in addition to those defined in the sections 
 | enableValidation         | Enable the validation of attributes and arguments.<br />Default: true                                                                                                                          | cse.enableValidation         |
 | sortDiscoveredResources  | Enable alphabetical sorting of discovery results.<br/>Default: true                                                                                                                            | cse.sortDiscoveredResources  |
 | checkExpirationsInterval | Interval to check for expired resources. 0 means "no checking".<br/>Default: 60 seconds                                                                                                        | cse.checkExpirationsInterval |
+| flexBlockingPreference   | Indicate the preference for flexBlocking response types. Allowed values: "blocking", "nonblocking".<br />Default: blocking                                                                     | cse.flexBlockingPreference   |
+
+
 
 <a name="security"></a>
 ### [cse.security] - General CSE Security Settings
@@ -177,6 +181,15 @@ The following macros are supported in addition to those defined in the sections 
 |:--------|:---------------------------------------------------|:------------|
 | mni     | Default for maxNrOfInstances.<br/> Default: 10     | cse.cnt.mni |
 | mbs     | Default for maxByteSize.<br/>Default: 10.000 bytes | cse.cnt.mbs |
+
+
+<a name="resource_req"></a>
+### [cse.resource.req] - Resource Defaults: Request
+
+| Keyword               | Description                                                                               | Macro Name    |
+|:----------------------|:------------------------------------------------------------------------------------------|:--------------|
+| minimumExpirationTime | A \<request> resource's minimum expiration time in seconds. Must be >0.<br />Default: 60  | cse.req.minet |
+| maximumExpirationTime | A \<request> resource's maximum expiration time in seconds. Must be >0.<br />Default: 180 | cse.req.maxet |
 
 
 <a name="resource_sub"></a>
