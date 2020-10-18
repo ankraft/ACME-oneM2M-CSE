@@ -233,10 +233,11 @@ class RequestManager(object):
 			'ot'	: reqres['mi/ot'],
 			'rset'	: reqres.et
 		}
-		if operationResult.rsc == RC.OK or operationResult.rsc == RC.created:			# OK -> resource
+		if operationResult.rsc in [ RC.OK, RC.created, RC.updated, RC.deleted ] :			# OK, created, updated, deleted -> resource
 			reqres['rs'] = RequestStatus.COMPLETED
-			reqres['ors/pc'] = operationResult.resource.asJSON()
-		else:							# Error
+			if operationResult.resource is not None:
+				reqres['ors/pc'] = operationResult.resource.asJSON()
+		else:																				# Error
 			reqres['rs'] = RequestStatus.FAILED
 			if operationResult.dbg is not None:
 				reqres['ors/pc'] = { 'm2m:dbg' : operationResult.dbg }

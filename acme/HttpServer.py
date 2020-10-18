@@ -234,14 +234,20 @@ class HttpServer(object):
 		elif request.method =='PUT':
 			data = request.data.decode('utf-8').rstrip()
 			try:
+				Logging.logDebug('New remote configuration: %s = %s' % (path, data))
 				if path == 'cse.checkExpirationsInterval':
-					Logging.logDebug('New remote configuration: %s = %s' % (path, data))
 					if (d := int(data)) < 1:
 						return 'nak'
 					Configuration.set(path, d)
 					CSE.registration.stopExpirationWorker()
 					CSE.registration.startExpirationWorker()
 					return 'ack'
+				elif path in [ 'cse.req.minet', 'cse.req.maxnet' ]:
+					if (d := int(data)) < 1:
+							return 'nak'
+					Configuration.set(path, d)
+					return 'ack'
+
 			except:
 				return 'nak'
 			return 'nak'

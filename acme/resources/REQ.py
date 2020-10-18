@@ -48,8 +48,8 @@ class REQ(Resource):
 		# calculate request et
 		minEt = Utils.getResourceDate(Configuration.get('cse.req.minet'))
 		maxEt = Utils.getResourceDate(Configuration.get('cse.req.maxet'))
-		if request.args.rp is not None:
-			et = request.args.rp if request.args.rp < maxEt else maxEt
+		if request.args.rpts is not None:
+			et = request.args.rpts if request.args.rpts < maxEt else maxEt
 		else:
 			et = minEt
 

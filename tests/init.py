@@ -175,29 +175,23 @@ def getMaxExpiration() -> int:
 		c, rc = RETRIEVE('%s/cse.maxExpirationDelta' % CONFIGURL, '')
 		return int(c)
 	return -1
-	
+
 
 _orgExpCheck = -1
+_orgREQExpCheck = -1
 _maxExpiration = -1
 _tooLargeExpirationDelta = -1
 
-# Reconfigure the server to check faster for expirations. This is set to the
-# old value in the tearDowndClass() method.
-def enableShortExpirations():
-	global _orgExpCheck, _maxExpiration, _tooLargeExpirationDelta
-
-	_orgExpCheck = setExpirationCheck(expirationCheckDelay)
-	# Retrieve the max expiration delta from the CSE
-	_maxExpiration = getMaxExpiration()
-	_tooLargeExpirationDelta = _maxExpiration * 2	# double of what is allowed
 
 
 def disableShortExpirations():
-	global _orgExpCheck
+	global _orgExpCheck, _orgREQExpCheck
 	if _orgExpCheck != -1:
 		setExpirationCheck(_orgExpCheck)
 		_orgExpCheck = -1
-
+	if _orgREQExpCheck != -1:
+		setRequestMinET(_orgREQExpCheck)
+		_orgREQExpCheck = -1
 
 def isTestExpirations():
 	return _orgExpCheck != -1
@@ -205,6 +199,40 @@ def isTestExpirations():
 
 def tooLargeExpirationDelta():
 	return _tooLargeExpirationDelta
+
+
+#	Request expirations
+
+def setRequestMinET(interval:int) -> int:
+	c, rc = RETRIEVE(CONFIGURL, '')
+	if rc == 200 and c.startswith(b'Configuration:'):
+		# retrieve the old value
+		c, rc = RETRIEVE('%s/cse.req.minet' % CONFIGURL, '')
+		oldValue = int(c)
+		c, rc = UPDATE('%s/cse.req.minet' % CONFIGURL, '', str(interval))
+		return oldValue if c == b'ack' else -1
+	return -1
+
+
+def getRequestMinET() -> int:
+	c, rc = RETRIEVE(CONFIGURL, '')
+	if rc == 200 and c.startswith(b'Configuration:'):
+		# retrieve the old value
+		c, rc = RETRIEVE('%s/cse.req.minet' % CONFIGURL, '')
+		return int(c)
+	return -1
+	
+
+
+# Reconfigure the server to check faster for expirations. This is set to the
+# old value in the tearDowndClass() method.
+def enableShortExpirations():
+	global _orgExpCheck, _orgREQExpCheck, _maxExpiration, _tooLargeExpirationDelta
+	_orgExpCheck = setExpirationCheck(expirationCheckDelay)
+	_orgREQExpCheck = setRequestMinET(expirationCheckDelay)
+	# Retrieve the max expiration delta from the CSE
+	_maxExpiration = getMaxExpiration()
+	_tooLargeExpirationDelta = _maxExpiration * 2	# double of what is allowed
 
 
 ###############################################################################

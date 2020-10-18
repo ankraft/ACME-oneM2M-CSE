@@ -284,7 +284,7 @@ class RegistrationManager(object):
 		acp = self._createACP(parentResource=localCSE,
 							  rn='%s%s' % (C.acpPrefix, req.rn),
 						 	  createdByResource=req.ri,
-							  originators=[ cseOriginator ],
+							  originators=[ originator ],
 							  permission=Permission.RETRIEVE + Permission.UPDATE + Permission.DELETE,
 							  selfOriginators=[cseOriginator]
 						  ).resource
