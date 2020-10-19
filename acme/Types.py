@@ -8,6 +8,7 @@
 #
 
 from __future__ import annotations
+import json
 from dataclasses import dataclass, field
 from typing import Any, List
 from enum import IntEnum, Enum, auto
@@ -510,23 +511,39 @@ class NotificationEventType(IntEnum):
 #	Result and Argument and Header Data Classes
 #
 
-
 @dataclass
 class Result:
-	resource 	: Any			= None		# Actually this is a Resource type, but have a circular import problem.
-	jsn 		: dict 			= None
-	lst 		: List[Any]   	= None		# List of Anything
-	rsc 		: ResponseCode	= ResponseCode.OK	# OK
-	dbg 		: str 			= None
-	request 	: CSERequest	= None  	# may contain the processed http request object
-	status 		: bool 			= None
-	originator 	: str 			= None
+	resource 			: Resource		= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
+	jsn 				: dict 			= None
+	lst 				: List[Any]   	= None		# List of Anything
+	rsc 				: ResponseCode	= ResponseCode.OK	# OK
+	dbg 				: str 			= None
+	request 			: CSERequest	= None  	# may contain the processed http request object
+	status 				: bool 			= None
+	originator 			: str 			= None
 
 
 	def errorResult(self) -> Result:
 		""" Copy only the rsc and dbg to a new result instance.
 		"""
 		return Result(rsc=self.rsc, dbg=self.dbg)
+
+	def toString(self) -> str:
+		from resources.Resource import Resource
+
+		if isinstance(self.resource, Resource):
+			r = json.dumps(self.resource.asJSON())
+		elif self.dbg is not None:
+			r = '{ "m2m:dbg" : "%s" }' % self.dbg.replace('"', '\\"')
+		elif isinstance(self.resource, dict):
+			r = json.dumps(self.resource)
+		elif isinstance(self.resource, str):
+			r = self.resource
+		elif isinstance(self.jsn, dict):		# explicit json
+			r = json.dumps(self.jsn)
+		elif self.resource is None and self.jsn is None:
+			r = ''
+		return r
 
 
 ##############################################################################
@@ -560,7 +577,7 @@ class RequestHeaders:
 	responseExpirationTimestamp	: str 			= None 	# X-M2M-RST
 	operationExecutionTime		: str 			= None 	# X-M2M-OET
 	releaseVersionIndicator		: str 			= None 	# X-M2M-RVI
-	responseTypeURI				: List[str]		= field(default_factory=list)	# X-M2M-RTU
+	responseTypeNUs				: List[str]		= field(default_factory=list)	# X-M2M-RTU
 
 
 class CSERequest:

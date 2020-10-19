@@ -327,21 +327,22 @@ class HttpServer(object):
 	#########################################################################
 
 	def _prepareResponse(self, request:Request, result:Result) -> Response:
-		if isinstance(result.resource, Resource):
-			r = json.dumps(result.resource.asJSON())
-		elif result.dbg is not None:
-			r = '{ "m2m:dbg" : "%s" }' % result.dbg.replace('"', '\\"')
-		elif isinstance(result.resource, dict):
-			r = json.dumps(result.resource)
-		elif isinstance(result.resource, str):
-			r = result.resource
-		elif isinstance(result.jsn, dict):		# explicit json
-			r = json.dumps(result.jsn)
-		elif result.resource is None and result.jsn is None:
-			r = ''
-		else:
-			r = ''
-			result.rsc = RC.notFound
+		# if isinstance(result.resource, Resource):
+		# 	r = json.dumps(result.resource.asJSON())
+		# elif result.dbg is not None:
+		# 	r = '{ "m2m:dbg" : "%s" }' % result.dbg.replace('"', '\\"')
+		# elif isinstance(result.resource, dict):
+		# 	r = json.dumps(result.resource)
+		# elif isinstance(result.resource, str):
+		# 	r = result.resource
+		# elif isinstance(result.jsn, dict):		# explicit json
+		# 	r = json.dumps(result.jsn)
+		# elif result.resource is None and result.jsn is None:
+		# 	r = ''
+		# else:
+		# 	r = ''
+		# 	result.rsc = RC.notFound
+		r = result.toString()
 		Logging.logDebug('<== Response (RSC: %d):\n%s\n' % (result.rsc, str(r)))
 		resp = make_response(r)
 
