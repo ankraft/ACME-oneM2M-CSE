@@ -92,7 +92,7 @@ class REQ(Resource):
 			Utils.setXPath(jsn, 'm2m:req/pc', content, True)
 
 		# calculate and assign rtu for rt
-		if (rtu := request.headers.responseTypeURI) is not None and len(rtu) > 0:
+		if (rtu := request.headers.responseTypeNUs) is not None and len(rtu) > 0:
 			Utils.setXPath(jsn, 'm2m:req/mi/rt/nu', [ u for u in rtu if len(u) > 0] )
 
 		if (cseres := Utils.getCSE()).resource is None:

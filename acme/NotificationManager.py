@@ -40,6 +40,10 @@ class NotificationManager(object):
 		Logging.log('NotificationManager shut down')
 		return True
 
+	###########################################################################
+	#
+	#	Subscriptions
+	#
 
 	def addSubscription(self, subscription:Resource, originator:str) -> Result:
 		if not Configuration.get('cse.enableNotifications'):
@@ -147,6 +151,17 @@ class NotificationManager(object):
 	# 	for sub in subs:
 	# 		for nu in self._getNotificationURLs(sub['nus']):
 	# 			pass # TODO
+
+	###########################################################################
+	#
+	#	Notifications in general
+	#
+
+	def sendNotificationWithJSON(self, jsn:dict, nus:Union[List[str], str], originator:str=None) -> None:
+		for nu in self._getNotificationURLs(nus):
+			self._sendRequest(nu, jsn, originator=originator)
+
+
 
 	#########################################################################
 
@@ -278,10 +293,11 @@ class NotificationManager(object):
 			return self._sendRequest(nu, notificationRequest)
 
 
-	def _sendRequest(self, nu:str, notificationRequest:dict, headers:dict=None) -> bool:
+	def _sendRequest(self, nu:str, notificationRequest:dict, headers:dict=None, originator:str=None) -> bool:
 		"""	Actually send a Notification request.
 		"""
-		return CSE.httpServer.sendCreateRequest(nu, Configuration.get('cse.csi'), data=json.dumps(notificationRequest), headers=headers).rsc == RC.OK
+		originator = originator if originator is not None else Configuration.get('cse.csi')
+		return CSE.httpServer.sendCreateRequest(nu, originator, data=json.dumps(notificationRequest), headers=headers).rsc == RC.OK
 
 
 	def _flushBatchNotifications(self, subscription:Resource) -> None:

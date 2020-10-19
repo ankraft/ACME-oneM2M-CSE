@@ -91,34 +91,38 @@ remoteCsrURL 	= '%s%s' % (REMOTEcseURL, CSEID)
 #	HTTP Requests
 #
 
-def RETRIEVE(url:str, originator:str, timeout=None) -> (dict, int):
-	return sendRequest(requests.get, url, originator, timeout=timeout)
+def RETRIEVE(url:str, originator:str, timeout=None, headers=None) -> (dict, int):
+	return sendRequest(requests.get, url, originator, timeout=timeout, headers=headers)
 
 
-def CREATE(url:str, originator:str, ty:int=None, data:Any=None) -> (dict, int):
-	return sendRequest(requests.post, url, originator, ty, data)
+def CREATE(url:str, originator:str, ty:int=None, data:Any=None, headers=None) -> (dict, int):
+	return sendRequest(requests.post, url, originator, ty, data, headers=headers)
 
 
-def UPDATE(url:str, originator:str, data:Any) -> (dict, int):
-	return sendRequest(requests.put, url, originator, data=data)
+def UPDATE(url:str, originator:str, data:Any, headers=None) -> (dict, int):
+	return sendRequest(requests.put, url, originator, data=data, headers=headers)
 
 
-def DELETE(url:str, originator:str) -> (dict, int):
-	return sendRequest(requests.delete, url, originator)
+def DELETE(url:str, originator:str, headers=None) -> (dict, int):
+	return sendRequest(requests.delete, url, originator, headers=headers)
 
 
-def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any=None, ct:str='application/json', timeout=None) -> (dict, int):	# TODO Constants
-	headers = { 'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % ty if ty is not None else ''), 
-				'X-M2M-Origin'	 	: originator,
-				'X-M2M-RI' 			: (rid := uniqueID()),
-				'X-M2M-RVI'			: '3',			# TODO this actually depends in the originator
-			   }
+def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any=None, ct:str='application/json', timeout=None, headers=None) -> (dict, int):	# TODO Constants
+	hds = { 
+		'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % ty if ty is not None else ''), 
+		'X-M2M-Origin'	 	: originator,
+		'X-M2M-RI' 			: (rid := uniqueID()),
+		'X-M2M-RVI'			: '3',			# TODO this actually depends in the originator
+	}
+	if headers is not None:		# extend with other headers
+		hds.update(headers)
+
 	setLastRequestID(rid)
 	try:
 		#print('Sending request: %s %s' % (method.__name__.upper(), url))
 		if isinstance(data, dict):
 			data = json.dumps(data)
-		r = method(url, data=data, headers=headers, verify=verifyCertificate)
+		r = method(url, data=data, headers=hds, verify=verifyCertificate)
 	except Exception as e:
 		#print('Failed to send request: %s' % str(e))
 		return None, 5103

@@ -7,7 +7,6 @@
 #	Main request dispatcher. All external requests are routed through here.
 #
 
-import json
 from Logging import Logging
 from Configuration import Configuration
 from Types import Operation
@@ -27,18 +26,6 @@ from helpers.BackgroundWorker import BackgroundWorkerPool
 import CSE, Utils
 from flask import Request
 from typing import Any, List, Tuple, Union, Dict
-
-
-
-
-
-# TODO
-#
-#
-#
-#	Implement "ASYNC"
-
-
 
 
 class RequestManager(object):
@@ -68,13 +55,17 @@ class RequestManager(object):
 		if CSE.remote.isTransitID(request.id):
 		 	return CSE.remote.handleTransitRetrieveRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
 
-		if request.args.rt == ResponseType.blockingRequest or (request.args.rt == ResponseType.flexBlocking and self.flexBlockingBlocking):
+		if request.args.rt == ResponseType.blockingRequest:
 			return CSE.dispatcher.processRetrieveRequest(request, request.headers.originator)
 
 		elif request.args.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
 			return self._handleNonBlockingRequest(request)
 
-		# TODO other nonBlocking 
+		elif request.args.rt == ResponseType.flexBlocking:
+			if self.flexBlockingBlocking:			# flexBlocking as blocking
+				return CSE.dispatcher.processRetrieveRequest(request, request.headers.originator)
+			else:									# flexBlocking as non-blocking
+				return self._handleNonBlockingRequest(request)
 
 		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % request.args.rt)
 
@@ -96,13 +87,17 @@ class RequestManager(object):
 		if request.headers.contentType == None or request.headers.contentType == None:
 			return Result(rsc=RC.badRequest, dbg='missing or wrong contentType or resourceType in request')
 
-		if request.args.rt == ResponseType.blockingRequest or (request.args.rt == ResponseType.flexBlocking and self.flexBlockingBlocking):
+		if request.args.rt == ResponseType.blockingRequest:
 			return CSE.dispatcher.processCreateRequest(request, request.headers.originator)
 
 		elif request.args.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
 			return self._handleNonBlockingRequest(request)
 
-		# TODO other nonBlocking 
+		elif request.args.rt == ResponseType.flexBlocking:
+			if self.flexBlockingBlocking:			# flexBlocking as blocking
+				return CSE.dispatcher.processCreateRequest(request, request.headers.originator)
+			else:									# flexBlocking as non-blocking
+				return self._handleNonBlockingRequest(request)
 
 		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % request.args.rt)
 
@@ -127,13 +122,17 @@ class RequestManager(object):
 		if request.headers.contentType == None:
 			return Result(rsc=RC.badRequest, dbg='missing or wrong content type in request')
 
-		if request.args.rt == ResponseType.blockingRequest or (request.args.rt == ResponseType.flexBlocking and self.flexBlockingBlocking):
+		if request.args.rt == ResponseType.blockingRequest:
 			return CSE.dispatcher.processUpdateRequest(request, request.headers.originator)
 
 		elif request.args.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
 			return self._handleNonBlockingRequest(request)
 
-		# TODO other nonBlocking 
+		elif request.args.rt == ResponseType.flexBlocking:
+			if self.flexBlockingBlocking:			# flexBlocking as blocking
+				return CSE.dispatcher.processUpdateRequest(request, request.headers.originator)
+			else:									# flexBlocking as non-blocking
+				return self._handleNonBlockingRequest(request)
 
 		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % request.args.rt)
 
@@ -161,7 +160,11 @@ class RequestManager(object):
 		elif request.args.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
 			return self._handleNonBlockingRequest(request)
 
-		# TODO other nonBlocking 
+		elif request.args.rt == ResponseType.flexBlocking:
+			if self.flexBlockingBlocking:			# flexBlocking as blocking
+				return CSE.dispatcher.processDeleteRequest(request, request.headers.originator)
+			else:									# flexBlocking as non-blocking
+				return self._handleNonBlockingRequest(request)
 
 		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % request.args.rt)
 
@@ -198,19 +201,65 @@ class RequestManager(object):
 		if (reqres := self._createRequestResource(request)).resource is None:
 			return reqres
 
-		# Run operation in the background
-		BackgroundWorkerPool.newActor(0.0, self._runNonBlockingRequestSync, 'request_%s' % request.headers.requestIdentifier).start(request=request, reqRi=reqres.resource.ri)
-
+		jsn:Dict[str, Any] = None
+		# Synchronous handling
 		if request.args.rt == ResponseType.nonBlockingRequestSynch:
+			# Run operation in the background
+			BackgroundWorkerPool.newActor(0.0, self._runNonBlockingRequestSync, 'request_%s' % request.headers.requestIdentifier).start(request=request, reqRi=reqres.resource.ri)
 			# Create the response content with the <request> ri 
-			jsn:Dict[str, Any] = { 'm2m:uri' : reqres.resource.ri }
+			jsn = { 'm2m:uri' : reqres.resource.ri }
 			return Result(jsn=jsn, rsc=RC.accepedNonBlockingRequestSynch)
 
+		# Asynchronous handling
+		if request.args.rt == ResponseType.nonBlockingRequestAsynch:
+			# Run operation in the background
+			BackgroundWorkerPool.newActor(0.0, self._runNonBlockingRequestAsync, 'request_%s' % request.headers.requestIdentifier).start(request=request, reqRi=reqres.resource.ri)
+			# Create the response content with the <request> ri 
+			jsn = { 'm2m:uri' : reqres.resource.ri }
+			return Result(jsn=jsn, rsc=RC.accepedNonBlockingRequestAsynch)
+
+		# Error
 		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % request.args.rt)
 
 
 	def _runNonBlockingRequestSync(self, request:CSERequest, reqRi:str) -> bool:
 		""" Execute the actual request and store the result in the respective <request> resource.
+		"""
+		return self._executeOperation(request, reqRi).status
+
+
+	def _runNonBlockingRequestAsync(self, request:CSERequest, reqRi:str) -> bool:
+		""" Execute the actual request and store the result in the respective <request> resource.
+			In addition notify the notification targets.
+		"""
+		if not (result := self._executeOperation(request, reqRi)).status:
+			return False
+
+		# TODO move the notification to the notificationManager
+
+		# The result contains the request resource  (the one from the actual operation).
+		# So we can just copy the individual attributes
+		responseNotification = {
+			'm2m:rsp' : {
+				'rsc'	:	result.resource['ors/rsc'],
+				'rid'	:	result.resource['ors/rid'],
+				'pc'	:	result.resource['ors/pc'],
+				'to' 	:	result.resource['ors/to'],
+				'fr' 	: 	result.resource['ors/fr'],
+				'rvi'	: 	request.headers.releaseVersionIndicator
+			}
+		}
+
+		# send notifications.Ignore any errors here
+		CSE.notification.sendNotificationWithJSON(responseNotification, request.headers.responseTypeNUs)
+
+		return True
+
+
+
+	def _executeOperation(self, request:CSERequest, reqRi:str) -> Result:
+		"""	Execute a request operation and fill the respective request resource
+			accordingly.
 		"""
 
 		# Execute the actual operation
@@ -221,7 +270,7 @@ class RequestManager(object):
 
 		# Retrieve the <request> resource
 		if (res := CSE.dispatcher.retrieveResource(reqRi)).resource is None:	
-			return True 														# No idea what we should do if this fails
+			return Result(status=False) 														# No idea what we should do if this fails
 		reqres = res.resource
 
 		# Fill the <request>
@@ -229,7 +278,7 @@ class RequestManager(object):
 			'rsc'	: operationResult.rsc,
 			'rid'	: reqres.rid,
 			'to'	: request.id,
-			'fr'	: reqres.originator,
+			'fr'	: reqres['or'],
 			'ot'	: reqres['mi/ot'],
 			'rset'	: reqres.et
 		}
@@ -244,5 +293,5 @@ class RequestManager(object):
 
 		# Update in DB
 		reqres.dbUpdate()
-		return True
 
+		return Result(resource=reqres, status=True)

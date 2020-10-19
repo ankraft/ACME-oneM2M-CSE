@@ -27,6 +27,9 @@ class TestREQ(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
+		# Start notification server
+		startNotificationServer()
+
 		# create other resources
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
@@ -48,7 +51,7 @@ class TestREQ(unittest.TestCase):
 		time.sleep(expirationSleep)	# give the server a moment to expire the resource
 		disableShortExpirations()
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
-
+		stopNotificationServer()
 
 
 
@@ -202,9 +205,6 @@ class TestREQ(unittest.TestCase):
 		self.assertIn('aLabel', findXPath(r, 'm2m:req/ors/pc/m2m:cnt/lbl'))
 
 
-
-
-
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTNBSynch(self):
 		r, rsc = DELETE('%s?rt=%d&rp=%s' % (cntURL, ResponseType.nonBlockingRequestSynch, requestETDuration), TestREQ.originator)
@@ -223,6 +223,31 @@ class TestREQ(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:req/ors/rsc'), RC.deleted)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCSENBAsynch(self):
+		headers = {
+			C.hfRTU	: NOTIFICATIONSERVER
+
+		}
+		r, rsc = RETRIEVE('%s?rt=%d&rp=%s' % (cseURL, ResponseType.nonBlockingRequestAsynch, requestETDuration), TestREQ.originator, headers=headers)
+		rid = lastRequestID()
+		self.assertEqual(rsc, RC.accepedNonBlockingRequestAsynch)
+		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
+		requestURI = findXPath(r, 'm2m:uri')
+
+		time.sleep(requestCheckDelay)
+		lastNotification = getLastNotification()
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rsc'), RC.OK)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/to'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/to'), CSEID[1:])
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/fr'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/fr'), TestREQ.originator)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc'))
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb'))
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb/ty'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb/ty'), T.CSEBase)
 
 
 # RETRIEVE resource synch. wait too long, retrieve request, check et etc -> fail
@@ -231,13 +256,19 @@ class TestREQ(unittest.TestCase):
 
 def run():
 	suite = unittest.TestSuite()
+
 	suite.addTest(TestREQ('test_createREQFail'))
+
+	# nonBlockingSync
 	suite.addTest(TestREQ('test_retrieveCSENBSynch'))
 	suite.addTest(TestREQ('test_retrieveUnknownNBSynch'))
-	suite.addTest(TestREQ('test_retrieveCNTNBFlex'))
+	suite.addTest(TestREQ('test_retrieveCNTNBFlex'))		# flex
 	suite.addTest(TestREQ('test_createCNTNBSynch'))
 	suite.addTest(TestREQ('test_updateCNTNBSynch'))
 	suite.addTest(TestREQ('test_deleteCNTNBSynch'))
+
+	# nonBlockingAsync
+	suite.addTest(TestREQ('test_retrieveCSENBAsynch'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
