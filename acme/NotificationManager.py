@@ -172,7 +172,7 @@ class NotificationManager(object):
 		nusl = nus if isinstance(nus, list) else [ nus ]	# make a list out of it even when it is a single value
 		result = []
 		for nu in nusl:
-			if nu is None:
+			if nu is None or len(nu) == 0:
 				continue
 			# check if it is a direct URL
 			Logging.logDebug("Checking next notification target: %s" % nu)

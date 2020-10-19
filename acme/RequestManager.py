@@ -208,7 +208,7 @@ class RequestManager(object):
 			BackgroundWorkerPool.newActor(0.0, self._runNonBlockingRequestSync, 'request_%s' % request.headers.requestIdentifier).start(request=request, reqRi=reqres.resource.ri)
 			# Create the response content with the <request> ri 
 			jsn = { 'm2m:uri' : reqres.resource.ri }
-			return Result(jsn=jsn, rsc=RC.accepedNonBlockingRequestSynch)
+			return Result(jsn=jsn, rsc=RC.acceptedNonBlockingRequestSynch)
 
 		# Asynchronous handling
 		if request.args.rt == ResponseType.nonBlockingRequestAsynch:
@@ -216,7 +216,7 @@ class RequestManager(object):
 			BackgroundWorkerPool.newActor(0.0, self._runNonBlockingRequestAsync, 'request_%s' % request.headers.requestIdentifier).start(request=request, reqRi=reqres.resource.ri)
 			# Create the response content with the <request> ri 
 			jsn = { 'm2m:uri' : reqres.resource.ri }
-			return Result(jsn=jsn, rsc=RC.accepedNonBlockingRequestAsynch)
+			return Result(jsn=jsn, rsc=RC.acceptedNonBlockingRequestAsynch)
 
 		# Error
 		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % request.args.rt)
@@ -225,6 +225,7 @@ class RequestManager(object):
 	def _runNonBlockingRequestSync(self, request:CSERequest, reqRi:str) -> bool:
 		""" Execute the actual request and store the result in the respective <request> resource.
 		"""
+		Logging.logDebug('Executing nonBlockingRequestSync')
 		return self._executeOperation(request, reqRi).status
 
 
@@ -232,26 +233,38 @@ class RequestManager(object):
 		""" Execute the actual request and store the result in the respective <request> resource.
 			In addition notify the notification targets.
 		"""
+		Logging.logDebug('Executing nonBlockingRequestAsync')
 		if not (result := self._executeOperation(request, reqRi)).status:
 			return False
 
+		Logging.logDebug('Sending result notifications for nonBlockingRequestAsynch')
 		# TODO move the notification to the notificationManager
 
 		# The result contains the request resource  (the one from the actual operation).
 		# So we can just copy the individual attributes
+		originator = result.resource['ors/fr']
 		responseNotification = {
 			'm2m:rsp' : {
 				'rsc'	:	result.resource['ors/rsc'],
 				'rid'	:	result.resource['ors/rid'],
 				'pc'	:	result.resource['ors/pc'],
 				'to' 	:	result.resource['ors/to'],
-				'fr' 	: 	result.resource['ors/fr'],
+				'fr' 	: 	originator,
 				'rvi'	: 	request.headers.releaseVersionIndicator
 			}
 		}
 
+		if (nus := request.headers.responseTypeNUs) is None:
+			# RTU is not set, get POA's from the resp. AE.poa
+			aes = CSE.storage.searchByTypeFieldValue(ty=T.AE, field='aei', value=originator)
+			if len(aes) != 1:
+				logWarn('Wrong number of AEs with aei: %s (%d)' % (originator, len(aes)))
+			else:
+				Logging.logDebug('No RTU. Get NUS from originator ae: %s' % aes[0].ri)
+				nus = aes[0].poa
+
 		# send notifications.Ignore any errors here
-		CSE.notification.sendNotificationWithJSON(responseNotification, request.headers.responseTypeNUs)
+		CSE.notification.sendNotificationWithJSON(responseNotification, nus)
 
 		return True
 
@@ -261,7 +274,6 @@ class RequestManager(object):
 		"""	Execute a request operation and fill the respective request resource
 			accordingly.
 		"""
-
 		# Execute the actual operation
 		request.args.operation == Operation.RETRIEVE and (operationResult := CSE.dispatcher.processRetrieveRequest(request, request.headers.originator)) is not None
 		request.args.operation == Operation.CREATE   and (operationResult := CSE.dispatcher.processCreateRequest(request, request.headers.originator)) is not None

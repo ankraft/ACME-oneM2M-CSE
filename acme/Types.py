@@ -267,8 +267,8 @@ class Announced(IntEnum):
 class ResponseCode(IntEnum):
 	""" Response codes """
 	accepted									= 1000
-	accepedNonBlockingRequestSynch				= 1001
-	accepedNonBlockingRequestAsynch				= 1002
+	acceptedNonBlockingRequestSynch				= 1001
+	acceptedNonBlockingRequestAsynch			= 1002
 	OK											= 2000
 	created 									= 2001
 	deleted 									= 2002
@@ -313,8 +313,8 @@ ResponseCode._httpStatusCodes = {											# type: ignore
 		ResponseCode.updated 									: 200,		# UPDATED
 		ResponseCode.created									: 201,		# CREATED
 		ResponseCode.accepted 									: 202, 		# ACCEPTED
-		ResponseCode.accepedNonBlockingRequestSynch 			: 202,		# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
-		ResponseCode.accepedNonBlockingRequestAsynch			: 202,		# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
+		ResponseCode.acceptedNonBlockingRequestSynch 			: 202,		# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
+		ResponseCode.acceptedNonBlockingRequestAsynch			: 202,		# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
 		ResponseCode.badRequest									: 400,		# BAD REQUEST
 		ResponseCode.contentsUnacceptable						: 400,		# NOT ACCEPTABLE
 		ResponseCode.insufficientArguments 						: 400,		# INSUFFICIENT ARGUMENTS
@@ -577,7 +577,7 @@ class RequestHeaders:
 	responseExpirationTimestamp	: str 			= None 	# X-M2M-RST
 	operationExecutionTime		: str 			= None 	# X-M2M-OET
 	releaseVersionIndicator		: str 			= None 	# X-M2M-RVI
-	responseTypeNUs				: List[str]		= field(default_factory=list)	# X-M2M-RTU
+	responseTypeNUs				: List[str]		= None	# X-M2M-RTU
 
 
 class CSERequest:
