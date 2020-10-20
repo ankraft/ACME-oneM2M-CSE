@@ -152,22 +152,22 @@ class RegistrationManager(object):
 			return Result(rsc=RC.notAcceptable)
 
 		# Create an ACP for this AE-ID if there is none set
-		# if ae.acpi is None or len(ae.acpi) == 0:
-		Logging.logDebug('Adding ACP for AE')
-		cseOriginator = Configuration.get('cse.originator')
+		if ae.acpi is None or len(ae.acpi) == 0:
+			Logging.logDebug('Adding ACP for AE')
+			cseOriginator = Configuration.get('cse.originator')
 
-		# Add ACP for remote CSE to access the own CSE
-		acpResource = self._createACP(parentResource=parentResource,
+			# Add ACP for remote CSE to access the own CSE
+			acpResource = self._createACP(parentResource=parentResource,
 									  rn=C.acpPrefix + ae.rn,
 									  createdByResource=ae.ri, 
 									  originators=[ originator, cseOriginator ],
 									  permission=Configuration.get('cse.acp.pv.acop')).resource
-		if acpResource is None:
-			return Result(rsc=RC.notAcceptable)
-		if ae.acpi is None or len(ae.acpi) == 0:
-			ae['acpi'] = [ acpResource.ri ]		# Set ACPI (anew)
-		else:
-			ae.acpi.append(acpResource.ri)		# append to existing
+			if acpResource is None:
+				return Result(rsc=RC.notAcceptable)
+			if ae.acpi is None or len(ae.acpi) == 0:
+				ae['acpi'] = [ acpResource.ri ]		# Set ACPI (anew)
+			else:
+				ae.acpi.append(acpResource.ri)		# append to existing
 
 		# Add the AE to the accessCSEBase ACP so that it can at least retrieve the CSEBase
 		self._addToAccessCSBaseACP(ae.aei)
