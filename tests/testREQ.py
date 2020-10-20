@@ -77,7 +77,7 @@ class TestREQ(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCSENBSynch(self):
 		r, rsc = RETRIEVE('%s?rt=%d&rp=%s' % (cseURL, ResponseType.nonBlockingRequestSynch, requestETDuration), TestREQ.originator)
-		rid = lastRequestID()
+		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')
@@ -92,18 +92,18 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:req/op'))
 		self.assertEqual(findXPath(r, 'm2m:req/op'), Operation.RETRIEVE)
 		self.assertIsNotNone(findXPath(r, 'm2m:req/tg'))
-		self.assertIsNotNone(findXPath(r, 'm2m:req/or'))
-		self.assertEqual(findXPath(r, 'm2m:req/or'), TestREQ.originator)
+		self.assertIsNotNone(findXPath(r, 'm2m:req/org'))
+		self.assertEqual(findXPath(r, 'm2m:req/org'), TestREQ.originator)
 		self.assertIsNotNone(findXPath(r, 'm2m:req/rid'))
-		self.assertEqual(findXPath(r, 'm2m:req/rid'), rid)	# test the request ID from the original request
+		self.assertEqual(findXPath(r, 'm2m:req/rid'), rqi)	# test the request ID from the original request
 		self.assertIsNotNone(findXPath(r, 'm2m:req/mi'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/mi/rt'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/mi/rt/rtv'))
 		self.assertEqual(findXPath(r, 'm2m:req/mi/rt/rtv'), ResponseType.nonBlockingRequestSynch) 
 		self.assertIsNotNone(findXPath(r, 'm2m:req/mi/rp'), requestETDuration)
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors'))
-		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/rid'))
-		self.assertEqual(findXPath(r, 'm2m:req/ors/rid'), rid)	# test the request ID from the original request
+		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/rqi'))
+		self.assertEqual(findXPath(r, 'm2m:req/ors/rqi'), rqi)	# test the request ID from the original request
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/rsc'))
 		self.assertEqual(findXPath(r, 'm2m:req/ors/rsc'), RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/pc'))
@@ -168,7 +168,7 @@ class TestREQ(unittest.TestCase):
 					'rn' : cntRN
 				}}
 		r, rsc = CREATE('%s?rt=%d&rp=%s' % (aeURL, ResponseType.nonBlockingRequestSynch, requestETDuration), TestREQ.originator, T.CNT, jsn)
-		rid = lastRequestID()
+		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')
@@ -184,8 +184,8 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/pc'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/pc/m2m:cnt'))
 		self.assertEqual(findXPath(r, 'm2m:req/ors/pc/m2m:cnt/ty'), T.CNT)
-		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/rid'))
-		self.assertEqual(findXPath(r, 'm2m:req/ors/rid'), rid)
+		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/rqi'))
+		self.assertEqual(findXPath(r, 'm2m:req/ors/rqi'), rqi)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -194,7 +194,7 @@ class TestREQ(unittest.TestCase):
 					'lbl' : [ 'aLabel' ]
 				}}
 		r, rsc = UPDATE('%s?rt=%d&rp=%s' % (cntURL, ResponseType.nonBlockingRequestSynch, requestETDuration), TestREQ.originator, jsn)
-		rid = lastRequestID()
+		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')
@@ -212,14 +212,14 @@ class TestREQ(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:req/ors/pc/m2m:cnt/ty'), T.CNT)
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/pc/m2m:cnt/lbl'))
 		self.assertIn('aLabel', findXPath(r, 'm2m:req/ors/pc/m2m:cnt/lbl'))
-		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/rid'))
-		self.assertEqual(findXPath(r, 'm2m:req/ors/rid'), rid)
+		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/rqi'))
+		self.assertEqual(findXPath(r, 'm2m:req/ors/rqi'), rqi)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTNBSynch(self):
 		r, rsc = DELETE('%s?rt=%d&rp=%s' % (cntURL, ResponseType.nonBlockingRequestSynch, requestETDuration), TestREQ.originator)
-		rid = lastRequestID()
+		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')
@@ -232,14 +232,14 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/rsc'))
 		self.assertEqual(findXPath(r, 'm2m:req/ors/rsc'), RC.deleted)
-		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/rid'))
-		self.assertEqual(findXPath(r, 'm2m:req/ors/rid'), rid)
+		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/rqi'))
+		self.assertEqual(findXPath(r, 'm2m:req/ors/rqi'), rqi)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCSENBAsynch(self):
 		r, rsc = RETRIEVE('%s?rt=%d&rp=%s' % (cseURL, ResponseType.nonBlockingRequestAsynch, requestETDuration), TestREQ.originator, headers=headers)
-		rid = lastRequestID()
+		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')
@@ -258,8 +258,8 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb/ty'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb/ty'), T.CSEBase)
-		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rid'))
-		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rid'), rid)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rqi'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rqi'), rqi)
 
 
 	# no notification is sent
@@ -267,7 +267,7 @@ class TestREQ(unittest.TestCase):
 	def test_retrieveCSENBAsynchEmptyRTU(self):
 		clearLastNotification()
 		r, rsc = RETRIEVE('%s?rt=%d&rp=%s' % (cseURL, ResponseType.nonBlockingRequestAsynch, requestETDuration), TestREQ.originator, headers=headersEmpty)
-		rid = lastRequestID()
+		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')
@@ -283,7 +283,7 @@ class TestREQ(unittest.TestCase):
 	def test_retrieveCSENBAsynchNoRTU(self):
 		clearLastNotification()
 		r, rsc = RETRIEVE('%s?rt=%d&rp=%s' % (cseURL, ResponseType.nonBlockingRequestAsynch, requestETDuration), TestREQ.originator)
-		rid = lastRequestID()
+		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')
@@ -302,14 +302,14 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb/ty'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb/ty'), T.CSEBase)
-		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rid'))
-		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rid'), rid)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rqi'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rqi'), rqi)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveUnknownNBAsynch(self):
 		r, rsc = RETRIEVE('%swrong?rt=%d&rp=%s' % (cseURL, ResponseType.nonBlockingRequestAsynch, requestETDuration), TestREQ.originator, headers=headers)
-		rid = lastRequestID()
+		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')
@@ -320,8 +320,8 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rsc'), RC.notFound)
-		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rid'))
-		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rid'), rid)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rqi'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rqi'), rqi)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -330,7 +330,7 @@ class TestREQ(unittest.TestCase):
 					'rn' : cntRN
 				}}
 		r, rsc = CREATE('%s?rt=%d&rp=%s' % (aeURL, ResponseType.nonBlockingRequestAsynch, requestETDuration), TestREQ.originator, T.CNT, jsn, headers=headers)
-		rid = lastRequestID()
+		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')
@@ -341,8 +341,8 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rsc'), RC.created)
-		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rid'))
-		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rid'), rid)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rqi'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rqi'), rqi)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cnt'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cnt/ty'), T.CNT)
@@ -355,7 +355,7 @@ class TestREQ(unittest.TestCase):
 					'lbl' : [ 'aLabel' ]
 				}}
 		r, rsc = UPDATE('%s?rt=%d&rp=%s' % (cntURL, ResponseType.nonBlockingRequestAsynch, requestETDuration), TestREQ.originator, jsn, headers=headers)
-		rid = lastRequestID()
+		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')
@@ -366,23 +366,23 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rsc'), RC.updated)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/fr'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/fr'), TestREQ.originator)
-		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cnt'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cnt/ty'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cnt/ty'), T.CNT)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cnt/lbl'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cnt/ty'), T.CNT)
 		self.assertIn('aLabel', findXPath(lastNotification, 'm2m:rsp/pc/m2m:cnt/lbl'))
-		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rid'))
-		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rid'), rid)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rqi'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rqi'), rqi)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTNBASynch(self):
 		r, rsc = DELETE('%s?rt=%d&rp=%s' % (cntURL, ResponseType.nonBlockingRequestAsynch, requestETDuration), TestREQ.originator, headers=headers)
-		rid = lastRequestID()
+		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')
@@ -393,8 +393,8 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rsc'), RC.deleted)
-		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rid'))
-		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rid'), rid)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rqi'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rqi'), rqi)
 
 # RETRIEVE resource synch. wait too long, retrieve request, check et etc -> fail
 

@@ -181,11 +181,15 @@ class RequestManager(object):
 		if (nres := REQ.createRequestResource(request, content)).resource is None:
 			return Result(rsc=RC.badRequest, dbg=nres.dbg)
 
+
 		# Register <request>
 		if (cseres := Utils.getCSE()).resource is None:
 			return Result(rsc=RC.badRequest, dbg=cseres.dbg)
 		if (rres := CSE.registration.checkResourceCreation(nres.resource, request.headers.originator, cseres.resource)).rsc != RC.OK:
 			return rres.errorResult()
+		
+		# set the CSE.ri as indicator that this resource was created internally
+		nres.resource.setCreatedInternally(cseres.resource.pi)
 
 		# create <request>
 		return CSE.dispatcher.createResource(nres.resource, cseres.resource, request.headers.originator)
@@ -290,7 +294,7 @@ class RequestManager(object):
 			'rsc'	: operationResult.rsc,
 			'rqi'	: reqres.rid,
 			'to'	: request.id,
-			'fr'	: reqres['or'],
+			'fr'	: reqres.org,
 			'ot'	: reqres['mi/ot'],
 			'rset'	: reqres.et
 		}

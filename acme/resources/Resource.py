@@ -26,7 +26,7 @@ class Resource(object):
 	_rtype 				= '__rtype__'
 	_srn				= '__srn__'
 	_node				= '__node__'
-	_createdInternally	= '__createdInternally__'
+	_createdInternally	= '__createdInternally__'	# TODO better name. This is actually an RI
 	_imported			= '__imported__'
 	_isVirtual 			= '__isVirtual__'
 	_announcedTo 		= '__announcedTo__'			# List
@@ -140,7 +140,7 @@ class Resource(object):
 		# We assume that an instantiated resource is always correct
 		# Also don't validate virtual resources
 		if (self[self._isInstantiated] is None or not self[self._isInstantiated]) and not self[self._isVirtual] :
-			if not (res := CSE.validator.validateAttributes(self._originalJson, self.tpe, self.attributePolicies, isImported=self.isImported)).status:
+			if not (res := CSE.validator.validateAttributes(self._originalJson, self.tpe, self.attributePolicies, isImported=self.isImported, createdInternally=self.isCreatedInternally())).status:
 				return res
 
 		# validate the resource logic
@@ -187,7 +187,7 @@ class Resource(object):
 				return Result(status=False, rsc=RC.contentsUnacceptable, dbg='resource types mismatch')
 
 			# validate the attributes
-			if not (res := CSE.validator.validateAttributes(jsn, self.tpe, self.attributePolicies, create=False)).status:
+			if not (res := CSE.validator.validateAttributes(jsn, self.tpe, self.attributePolicies, create=False, createdInternally=self.isCreatedInternally())).status:
 				return res
 
 			if self.ty not in [T.FCNTAnnc, T.FCIAnnc]:
@@ -289,6 +289,23 @@ class Resource(object):
 			resource implementations that support announceable versions.
 		"""
 		return None, RC.badRequest, 'wrong resource type or announcement not supported'
+
+	#########################################################################
+
+	def createdInternally(self) -> str:
+		""" Return the resource.ri for which this ACP was created, or None. """
+		return self[self._createdInternally]
+
+
+	def isCreatedInternally(self) -> bool:
+		""" Return the resource.ri for which this resource was created, or None. """
+		return self[self._createdInternally] is not None
+
+	def setCreatedInternally(self, value:str) -> None:
+		"""	Save the RI for which this resource was created for. This has some
+			impacts on internal handling and checks.
+		"""
+		self[self._createdInternally] = value
 
 
 	#########################################################################

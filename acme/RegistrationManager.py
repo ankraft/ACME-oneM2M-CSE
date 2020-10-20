@@ -401,7 +401,7 @@ class RegistrationManager(object):
 		if (acpRes := CSE.dispatcher.retrieveResource(id=srn)).rsc != RC.OK:
 			Logging.logWarn('Could not find ACP: %s' % srn)	# ACP not found, either not created or already deleted
 		else:
-			# only delete the ACP when it was created in the course of AE registration
+			# only delete the ACP when it was created in the course of AE registration internally
 			if  (ri := acpRes.resource.createdInternally()) is not None and resource.ri == ri:
 				return CSE.dispatcher.deleteResource(acpRes.resource)
 		return Result(rsc=RC.deleted)
