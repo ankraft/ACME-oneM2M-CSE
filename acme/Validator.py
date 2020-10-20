@@ -146,7 +146,8 @@ attributePolicies = {
 	'obis'	: [ BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# MGO
 	'obps'	: [ BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# MGO
 	'op'	: [ BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.NA ],		# REQ
-	'or'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT, FCNT, REQ
+	'or'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT, FCNT
+	'org'	: [ BT.string,			CAR.car1,   RO.NP,	RO.NP, RO.NP,AN.NA ],		# REQ
 	'ors'	: [ BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT, FCNT, REQ
 	'osv'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
 	'pc'	: [ BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# REQ

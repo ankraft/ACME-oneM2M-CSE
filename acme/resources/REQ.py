@@ -23,7 +23,7 @@ attributePolicies = constructPolicy([
 	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'daci', 
 ])
 reqPolicies = constructPolicy([
-	'op', 'tg', 'or', 'rid', 'mi', 'pc', 'rs', 'ors'
+	'op', 'tg', 'org', 'rid', 'mi', 'pc', 'rs', 'ors'
 ])
 attributePolicies = addPolicy(attributePolicies, reqPolicies)
 
@@ -59,7 +59,7 @@ class REQ(Resource):
 				'lbl'	: [ request.headers.originator ],
 				'op'	: request.args.operation,
 				'tg'	: request.id,
-				'or'	: request.headers.originator,
+				'org'	: request.headers.originator,
 				'rid'	: request.headers.requestIdentifier,
 				'mi'	: {
 					'ty'	: request.headers.resourceType,

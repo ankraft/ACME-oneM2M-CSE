@@ -246,7 +246,7 @@ class RequestManager(object):
 		responseNotification = {
 			'm2m:rsp' : {
 				'rsc'	:	result.resource['ors/rsc'],
-				'rid'	:	result.resource['ors/rid'],
+				'rqi'	:	result.resource['ors/rqi'],
 				'pc'	:	result.resource['ors/pc'],
 				'to' 	:	result.resource['ors/to'],
 				'fr' 	: 	originator,
@@ -288,7 +288,7 @@ class RequestManager(object):
 		# Fill the <request>
 		reqres['ors'] = {	# operationResult
 			'rsc'	: operationResult.rsc,
-			'rid'	: reqres.rid,
+			'rqi'	: reqres.rid,
 			'to'	: request.id,
 			'fr'	: reqres['or'],
 			'ot'	: reqres['mi/ot'],
