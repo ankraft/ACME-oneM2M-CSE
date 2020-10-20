@@ -12,8 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [CSE] Improved resource expiration a lot.
 - [CSE] Added support for mia attribute in CNT and FCNT.
+- [CSE] Added support for synchronous and asynchronous non-blocking requests (as well as flex-blocking).
+- [REQ] Added support for &lt;request> resource type.
 - [SUB] Added support for batchNotifications, latestNotify, eventNotificationCriteria/childResourceType, and eventNotificationCriteria/attribute in subscriptions.
-- [HTTP] Added possibility to enable an API to get and set selected configuration values remotely.
+- [HTTP] Added possibility to enable an API to get and set some configuration values remotely.
 
 ### Fixed
 - [HTTP] Fixed wrong configuration settings for TLS certificates.

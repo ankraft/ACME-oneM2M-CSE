@@ -51,10 +51,9 @@ BSD 3-Clause License for the CSE and its native components and modules. Please s
 
 
 ## Roadmap & Backlog
-- CSE: support non-blocking requests
 - CSE: Support the PollingChannel resource type
 - CSE: Timeseries
 - UI: Support for resource specific actions (e.g. latest, oldest)
 - UI: Graph for Container reosurces
 - Importer: Automatically import/update resources when the CSE is running
-- App development: support more specializations
+- App development: support more TS-0023 specializations

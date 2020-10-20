@@ -23,15 +23,11 @@ package is used to gather various system information for the CSE's hosting node 
 
 Install these packages by running the following command:
 
-```bash
-pip3 install -r requirements.txt
-```  
+	pip3 install -r requirements.txt
 
 or install all of them manually:  
 
-```bash
-pip3 install flask isodate psutil requests rich tinydb
-```  
+	pip3 install flask isodate psutil requests rich tinydb
 
 
 ## Installation and Configuration
