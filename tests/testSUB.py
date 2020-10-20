@@ -21,7 +21,7 @@ noCSE = not connectionPossible(cseURL)
 
 numberOfBatchNotifications = 5
 durationForBatchNotifications = 2
-durationForBatchNotificationsISO8601 = 'PT02S'
+durationForBatchNotificationsISO8601 = 'PT2S'
 
 class TestSUB(unittest.TestCase):
 

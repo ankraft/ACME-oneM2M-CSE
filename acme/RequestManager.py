@@ -258,7 +258,7 @@ class RequestManager(object):
 			# RTU is not set, get POA's from the resp. AE.poa
 			aes = CSE.storage.searchByTypeFieldValue(ty=T.AE, field='aei', value=originator)
 			if len(aes) != 1:
-				logWarn('Wrong number of AEs with aei: %s (%d)' % (originator, len(aes)))
+				Logging.logWarn('Wrong number of AEs with aei: %s (%d)' % (originator, len(aes)))
 			else:
 				Logging.logDebug('No RTU. Get NUS from originator ae: %s' % aes[0].ri)
 				nus = aes[0].poa
