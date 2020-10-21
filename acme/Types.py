@@ -585,6 +585,7 @@ class CSERequest:
 	args 						: RequestArguments 	= None
 	originalArgs 				: Any 				= None	# Actually a MultiDict
 	data 						: str 				= None 	# The request data
+	json 						: dict 				= None	# The request data as JSON
 	id 							: str 				= None 	# target ID
 	srn 						: str 				= None 	# target structured resource name
 	csi 						: str 				= None 	# target csi

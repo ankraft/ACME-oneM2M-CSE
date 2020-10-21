@@ -41,7 +41,7 @@ class REQ(Resource):
 
 
 	@staticmethod
-	def createRequestResource(request:CSERequest, content:dict=None) -> Result:
+	def createRequestResource(request:CSERequest) -> Result:
 		"""	Create an initialized <request> resource.
 		"""
 		
@@ -88,8 +88,8 @@ class REQ(Resource):
 			Utils.setXPath(jsn, 'm2m:req/mi/fc/%s' % k, v, True)
 
 		# add content
-		if content is not None and content != '':
-			Utils.setXPath(jsn, 'm2m:req/pc', content, True)
+		if request.json is not None and len(request.json) > 0:
+			Utils.setXPath(jsn, 'm2m:req/pc', request.json, True)
 
 		# calculate and assign rtu for rt
 		if (rtu := request.headers.responseTypeNUs) is not None and len(rtu) > 0:

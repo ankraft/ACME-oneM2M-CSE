@@ -8,7 +8,7 @@
 #	modules and entities of the CSE.
 #
 
-import datetime, random, string, sys, re, threading, traceback, time
+import datetime, json, random, string, sys, re, threading, traceback, time
 import isodate
 from typing import Any, List, Tuple, Union, Dict
 from resources import ACP, ACPAnnc, AE, AEAnnc, ANDI, ANDIAnnc, ANI, ANIAnnc, BAT, BATAnnc
@@ -613,7 +613,13 @@ def dissectHttpRequest(request:Request, operation:Operation, _id:Tuple[str, str,
 	except Exception as e:
 		return Result(rsc=RC.invalidArguments, dbg='invalid arguments (%s)' % str(e))
 	result.originalArgs	= request.args.copy()	#type: ignore
-	result.data = request.get_data(as_text=True)
+	result.data = request.get_data(as_text=True)	# alternative: request.data.decode("utf-8")
+	if result.data is not None and len(result.data) > 0:
+		try:
+			result.json = json.loads(removeCommentsFromJSON(result.data))
+		except Exception as e:
+			Logging.logWarn('Bad request (malformed content?)')
+			return Result(rsc=RC.badRequest, dbg=str(e))
 	return Result(request=result)
 
 

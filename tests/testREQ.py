@@ -92,6 +92,7 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:req/op'))
 		self.assertEqual(findXPath(r, 'm2m:req/op'), Operation.RETRIEVE)
 		self.assertIsNotNone(findXPath(r, 'm2m:req/tg'))
+		self.assertIsNone(findXPath(r, 'm2m:req/pc'))		# original content should be not set for retrieve
 		self.assertIsNotNone(findXPath(r, 'm2m:req/org'))
 		self.assertEqual(findXPath(r, 'm2m:req/org'), TestREQ.originator)
 		self.assertIsNotNone(findXPath(r, 'm2m:req/rid'))
@@ -178,6 +179,8 @@ class TestREQ(unittest.TestCase):
 		r, rsc = RETRIEVE('%s/%s' % (csiURL, requestURI), TestREQ.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:req'))
+		self.assertIsNotNone(findXPath(r, 'm2m:req/pc'))			# original content should be set for CREATE
+		self.assertIsNotNone(findXPath(r, 'm2m:req/pc/m2m:cnt'))	# just a quick check
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/rsc'))
 		self.assertEqual(findXPath(r, 'm2m:req/ors/rsc'), RC.created)
@@ -206,6 +209,8 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:req'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/rsc'))
+		self.assertIsNotNone(findXPath(r, 'm2m:req/pc'))			# original content should be set for UPDATE
+		self.assertIsNotNone(findXPath(r, 'm2m:req/pc/m2m:cnt'))	# just a quick check
 		self.assertEqual(findXPath(r, 'm2m:req/ors/rsc'), RC.updated)
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/pc'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/pc/m2m:cnt'))

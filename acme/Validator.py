@@ -150,7 +150,7 @@ attributePolicies = {
 	'org'	: [ BT.string,			CAR.car1,   RO.NP,	RO.NP, RO.NP,AN.NA ],		# REQ
 	'ors'	: [ BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT, FCNT, REQ
 	'osv'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
-	'pc'	: [ BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# REQ
+	'pc'	: [ BT.dict,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# REQ
 	'pn'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# SUB
 	'poa'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# m2m:poaList - AE, CSE
 	'psn'	: [ BT.positiveInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ],		# SUB

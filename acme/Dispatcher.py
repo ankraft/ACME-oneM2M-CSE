@@ -422,13 +422,8 @@ class Dispatcher(object):
 			return parentResource.handleCreateRequest(request, id, originator)
 
 		# Add new resource
-		try:
-			jsn = json.loads(Utils.removeCommentsFromJSON(request.data))
-			if (nres := Utils.resourceFromJSON(jsn, pi=parentResource.ri, ty=ty)).resource is None:	# something wrong, perhaps wrong type
-				return Result(rsc=RC.badRequest, dbg=nres.dbg)
-		except Exception as e:
-			Logging.logWarn('Bad request (malformed content?)')
-			return Result(rsc=RC.badRequest, dbg=str(e))
+		if (nres := Utils.resourceFromJSON(request.json, pi=parentResource.ri, ty=ty)).resource is None:	# something wrong, perhaps wrong type
+			return Result(rsc=RC.badRequest, dbg=nres.dbg)
 		nresource = nres.resource
 
 		# Check whether the parent allows the adding
@@ -547,13 +542,7 @@ class Dispatcher(object):
 			return Result(rsc=RC.operationNotAllowed, dbg='resource is read-only')
 
 		# check permissions
-		try:
-			jsn = json.loads(Utils.removeCommentsFromJSON(request.data))
-		except Exception as e:
-			Logging.logWarn('Bad request (malformed content?)')
-			return Result(rsc=RC.badRequest, dbg=str(e))
-
-		acpi = Utils.findXPath(jsn, list(jsn.keys())[0] + '/acpi')
+		acpi = Utils.findXPath(request.json, list(request.json.keys())[0] + '/acpi')
 		if acpi is not None:	# update of acpi attribute means check for self privileges!
 			updateOrDelete = Permission.DELETE if acpi is None else Permission.UPDATE
 			if CSE.security.hasAccess(originator, resource, updateOrDelete, checkSelf=True) == False:
@@ -571,7 +560,7 @@ class Dispatcher(object):
 		if (rres := CSE.registration.checkResourceUpdate(resource)).rsc != RC.OK:
 			return rres.errorResult()
 
-		if (res := self.updateResource(resource, jsn, originator=originator)).resource is None:
+		if (res := self.updateResource(resource, request.json, originator=originator)).resource is None:
 			return res.errorResult()
 		resource = res.resource 	# re-assign resource (might have been changed during update)
 

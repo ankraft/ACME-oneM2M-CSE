@@ -153,11 +153,12 @@ class HttpServer(object):
 		Utils.renameCurrentThread()
 		Logging.logDebug('==> Create: /%s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
-		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
+		# Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpCreate()	# type: ignore
 		try:
 			result = Utils.dissectHttpRequest(request, Operation.CREATE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 			if result.request is not None:
+				Logging.logDebug('Body: \n' + result.request.data)
 				result = CSE.request.createRequest(result.request)
 		except Exception as e:
 			result = self._prepareException(e)
@@ -169,11 +170,12 @@ class HttpServer(object):
 		Utils.renameCurrentThread()
 		Logging.logDebug('==> Update: /%s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
-		Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
+		#Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpUpdate()	# type: ignore
 		try:
 			result = Utils.dissectHttpRequest(request, Operation.UPDATE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 			if result.request is not None:
+				Logging.logDebug('Body: \n' + result.request.data)
 				result = CSE.request.updateRequest(result.request)
 		except Exception as e:
 			result = self._prepareException(e)

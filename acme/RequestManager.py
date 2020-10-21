@@ -175,10 +175,10 @@ class RequestManager(object):
 	#	<request> handling
 	#
 
-	def _createRequestResource(self, request:CSERequest, content:dict=None) -> Result:
+	def _createRequestResource(self, request:CSERequest) -> Result:
 
 		# Get initialized resource
-		if (nres := REQ.createRequestResource(request, content)).resource is None:
+		if (nres := REQ.createRequestResource(request)).resource is None:
 			return Result(rsc=RC.badRequest, dbg=nres.dbg)
 
 
@@ -202,7 +202,7 @@ class RequestManager(object):
 		"""
 
 		# Create the <request> resource first
-		if (reqres := self._createRequestResource(request, request.data)).resource is None:
+		if (reqres := self._createRequestResource(request)).resource is None:
 			return reqres
 
 		jsn:Dict[str, Any] = None
