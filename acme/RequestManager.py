@@ -202,7 +202,7 @@ class RequestManager(object):
 		"""
 
 		# Create the <request> resource first
-		if (reqres := self._createRequestResource(request)).resource is None:
+		if (reqres := self._createRequestResource(request, request.data)).resource is None:
 			return reqres
 
 		jsn:Dict[str, Any] = None

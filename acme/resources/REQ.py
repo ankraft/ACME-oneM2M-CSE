@@ -88,7 +88,7 @@ class REQ(Resource):
 			Utils.setXPath(jsn, 'm2m:req/mi/fc/%s' % k, v, True)
 
 		# add content
-		if content is not None:
+		if content is not None and content != '':
 			Utils.setXPath(jsn, 'm2m:req/pc', content, True)
 
 		# calculate and assign rtu for rt
