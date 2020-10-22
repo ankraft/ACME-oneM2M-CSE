@@ -343,7 +343,7 @@ class NotificationManager(object):
 		"""	Send and remove(!) the available BatchNotifications for an ri & nu.
 		"""
 		with self.lockBatchNotification: # TODO check whether this is actually necessary
-			Logging.log('Sending aggregated subscription notifications for ri: %s' % ri)
+			Logging.logWarn('Sending aggregated subscription notifications for ri: %s' % ri)
 			# Collect the notifications	
 			notifications = []		
 			for notification in sorted(CSE.storage.getBatchNotifications(ri, nu), key=lambda x: x['tstamp']):	# sort by timestamp added
