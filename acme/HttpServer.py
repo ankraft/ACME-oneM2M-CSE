@@ -145,8 +145,7 @@ class HttpServer(object):
 				result = CSE.request.retrieveRequest(result.request)
 		except Exception as e:
 			result = self._prepareException(e)
-		finally:
-			return self._prepareResponse(request, result)
+		return self._prepareResponse(request, result)
 
 
 	def handlePOST(self, path:str=None) -> Response:
@@ -162,8 +161,7 @@ class HttpServer(object):
 				result = CSE.request.createRequest(result.request)
 		except Exception as e:
 			result = self._prepareException(e)
-		finally:
-			return self._prepareResponse(request, result)
+		return self._prepareResponse(request, result)
 
 
 	def handlePUT(self, path:str=None) -> Response:
@@ -179,8 +177,7 @@ class HttpServer(object):
 				result = CSE.request.updateRequest(result.request)
 		except Exception as e:
 			result = self._prepareException(e)
-		finally:
-			return self._prepareResponse(request, result)
+		return self._prepareResponse(request, result)
 
 
 	def handleDELETE(self, path:str=None) -> Response:
@@ -194,8 +191,7 @@ class HttpServer(object):
 				result = CSE.request.deleteRequest(result.request)
 		except Exception as e:
 			result = self._prepareException(e)
-		finally:
-			return self._prepareResponse(request, result)
+		return self._prepareResponse(request, result)
 
 
 	#########################################################################
@@ -385,6 +381,7 @@ class ACMERequestHandler(WSGIRequestHandler):
 	# Just like WSGIRequestHandler, but without "code"
 	def log_request(self, code='-', size='-'): 	# type: ignore
 		Logging.logDebug('"%s" %s %d' % (self.requestline, size, code))
+		return
 
 	def log_message(self, format, *args): 	# type: ignore
 		Logging.logDebug(format % args)

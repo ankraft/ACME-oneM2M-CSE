@@ -534,7 +534,7 @@ class Result:
 		if isinstance(self.resource, Resource):
 			r = json.dumps(self.resource.asJSON())
 		elif self.dbg is not None:
-			r = '{ "m2m:dbg" : "%s" }' % self.dbg.replace('"', '\\"')
+			r = json.dumps({ 'm2m:dbg' : self.dbg })
 		elif isinstance(self.resource, dict):
 			r = json.dumps(self.resource)
 		elif isinstance(self.resource, str):
@@ -543,6 +543,8 @@ class Result:
 			r = json.dumps(self.jsn)
 		elif self.resource is None and self.jsn is None:
 			r = ''
+		else:
+		 	r = ''
 		return r
 
 

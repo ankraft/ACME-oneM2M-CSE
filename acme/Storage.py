@@ -177,10 +177,20 @@ class Storage(object):
 	def searchByTypeFieldValue(self, ty:T, field:str, value:str) -> List[Resource]:
 		"""Search and return all resources of a specific type and a value in a field,
 		and return them in an array."""
-		result = []
-		return self.searchByFilter(lambda r: 'ty' in r and r['ty'] == ty and field in r and r[field] == value)
+		def filterFunc(r:dict) -> bool:
+			if 'ty' in r and r['ty'] == ty and field in r:
+				f = r[field]
+				if isinstance(f, (list, dict)):
+					return value in f
+				return value == f
+			return False
 
 
+		return self.searchByFilter(filterFunc)
+		# return self.searchByFilter(lambda r: 'ty' in r and r['ty'] == ty and field in r and r[field] == value)
+
+
+		# result = []
 		# for j in self.db.searchByTypeFieldValue(int(ty), field, value):
 		# 	res = Utils.resourceFromJSON(j)
 		# 	if res.resource is not None:
