@@ -605,7 +605,9 @@ def dissectHttpRequest(request:Request, operation:Operation, _id:Tuple[str, str,
 	if result.id is None and result.srn is None:
 		return Result(rsc=RC.notFound, dbg='missing identifier')
 
-	result.headers, _ = getRequestHeaders(request)
+	if (res := getRequestHeaders(request)).data is None:
+		return res.errorResult()
+	result.headers = res.data
 	try:
 		result.args, msg = getRequestArguments(request, operation)
 		if result.args is None:
@@ -729,7 +731,7 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 														ResultContentType.childResourceReferences ]:
 		return None, 'rcn: %d not allowed DELETE operation' % rcn
 
-	result.rcn = rcn
+	result.rcn = ResultContentType(rcn)
 
 
 	# RT - Response Type
@@ -842,7 +844,7 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 	return result, None
 
 		
-def getRequestHeaders(request: Request) -> Tuple[RequestHeaders, int]:
+def getRequestHeaders(request: Request) -> Result:
 	rh 								= RequestHeaders()
 	rh.originator 					= requestHeaderField(request, C.hfOrigin)
 	rh.requestIdentifier			= requestHeaderField(request, C.hfRI)
@@ -860,12 +862,15 @@ def getRequestHeaders(request: Request) -> Tuple[RequestHeaders, int]:
 		if not rh.contentType.startswith(tuple(C.supportedContentHeaderFormat)):
 			rh.contentType 	= None
 		else:
-			p 				= rh.contentType.partition(';')
+			p 				= rh.contentType.partition(';')	# always returns a 3-tuple
 			rh.contentType 	= p[0] # content-type
 			t  				= p[2].partition('=')[2]
-			rh.resourceType = T(int(t)) if t.isdigit() else None # resource type
-
-	return rh, RC.OK
+			if len(t) > 0:	# check only if there is a resource type
+				if t.isdigit() and (_t := int(t)) and T.has(_t):
+					rh.resourceType = T(_t)
+				else:
+					return Result(rsc=RC.badRequest, dbg='Unknown resource type: %s' % t)
+	return Result(data=rh, rsc=RC.OK)
 
 
 #

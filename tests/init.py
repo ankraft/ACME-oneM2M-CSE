@@ -109,7 +109,7 @@ def DELETE(url:str, originator:str, headers=None) -> (dict, int):
 
 def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any=None, ct:str='application/json', timeout=None, headers=None) -> (dict, int):	# TODO Constants
 	hds = { 
-		'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % ty if ty is not None else ''), 
+		'Content-Type' 	: '%s%s' % (ct, ';ty=%s' % str(ty) if ty is not None else ''), 
 		'X-M2M-Origin'	 	: originator,
 		'X-M2M-RI' 			: (rid := uniqueID()),
 		'X-M2M-RVI'			: '3',			# TODO this actually depends in the originator

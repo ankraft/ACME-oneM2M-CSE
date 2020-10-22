@@ -111,6 +111,15 @@ class ResourceTypes(IntEnum):
 		return self.value in ResourceTypes._announcedSet 		# type: ignore
 
 
+	def __str__(self) -> str:
+		return str(self.value)
+
+
+	@classmethod
+	def has(cls, value:int) -> bool:
+		return value in cls.__members__.values()
+
+
 
 ResourceTypes._announcedMappings = {							#  type: ignore
 	ResourceTypes.ACP 		: ResourceTypes.ACPAnnc,
@@ -515,6 +524,7 @@ class NotificationEventType(IntEnum):
 class Result:
 	resource 			: Resource		= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
 	jsn 				: dict 			= None
+	data 				: Any 			= None 		# Anything
 	lst 				: List[Any]   	= None		# List of Anything
 	rsc 				: ResponseCode	= ResponseCode.OK	# OK
 	dbg 				: str 			= None
