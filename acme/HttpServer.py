@@ -355,7 +355,7 @@ class HttpServer(object):
 
 		resp.status_code = result.rsc.httpStatusCode()
 		resp.content_type = C.hfvContentType
-		self.flaskApp.process_response(resp)
+		#self.flaskApp.process_response(resp)
 		return resp
 
 
