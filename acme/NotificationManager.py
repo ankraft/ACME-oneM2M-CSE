@@ -158,8 +158,9 @@ class NotificationManager(object):
 	#
 
 	def sendNotificationWithJSON(self, jsn:dict, nus:Union[List[str], str], originator:str=None) -> None:
-		for nu in self._getNotificationURLs(nus):
-			self._sendRequest(nu, jsn, originator=originator)
+		if nus is not None and len(nus) > 0:
+			for nu in self._getNotificationURLs(nus):
+				self._sendRequest(nu, jsn, originator=originator)
 
 
 

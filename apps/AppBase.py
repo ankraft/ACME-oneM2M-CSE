@@ -16,7 +16,7 @@ from Logging import Logging
 from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC
 import CSE, Utils
-from helpers.BackgroundWorker import BackgroundWorkerPool
+from helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
 
 
 class AppBase(object):
@@ -29,6 +29,7 @@ class AppBase(object):
 		self.csi:str					= Configuration.get('cse.csi')
 		self.srn:str 					= self.csern + '/' + self.rn
 		self.url:str					= Configuration.get('http.address') + Configuration.get('http.root')
+		self.worker:BackgroundWorker 	= None
 		
 
 	def shutdown(self) -> None:
