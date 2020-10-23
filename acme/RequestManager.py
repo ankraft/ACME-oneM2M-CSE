@@ -274,7 +274,6 @@ class RequestManager(object):
 		return True
 
 
-
 	def _executeOperation(self, request:CSERequest, reqRi:str) -> Result:
 		"""	Execute a request operation and fill the respective request resource
 			accordingly.

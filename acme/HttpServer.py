@@ -339,33 +339,28 @@ class HttpServer(object):
 		# else:
 		# 	r = ''
 		# 	result.rsc = RC.notFound
-		text = result.toString()
-		Logging.logDebug('<== Response (RSC: %d):\n%s\n' % (result.rsc, str(text)))
-		##resp = make_response(text)
 
-		# headers
+		# Prepare the response content
+		content = result.toString()
+		
+		# Build the headers
 		headers = {}
-
-		headers['Server'] = self.serverID	# set server field
-		##resp.headers['Server'] = self.serverID	# set server field
-
-		headers['X-M2M-RSC'] = '%d' % result.rsc
-		##resp.headers['X-M2M-RSC'] = '%d' % result.rsc
-		if 'X-M2M-RI' in request.headers:
+		headers['Server'] = self.serverID						# set server field
+		headers['X-M2M-RSC'] = '%d' % result.rsc				# set the response status code
+		if 'X-M2M-RI' in request.headers:						# set the request identifier
 			headers['X-M2M-RI'] = request.headers['X-M2M-RI']
-			##resp.headers['X-M2M-RI'] = request.headers['X-M2M-RI']
-		if 'X-M2M-RVI' in request.headers:
+		if 'X-M2M-RVI' in request.headers:						# set the version
 			headers['X-M2M-RVI'] = request.headers['X-M2M-RVI']
-			##resp.headers['X-M2M-RVI'] = request.headers['X-M2M-RVI']
 
+		# HTTP status code
 		statusCode = result.rsc.httpStatusCode()
-		##resp.status_code = result.rsc.httpStatusCode()
-		contentType = C.hfvContentType
-		##resp.content_type = C.hfvContentType
-		#self.flaskApp.process_response(resp)
-		##return resp
-		return Response(response=text, status=statusCode, content_type=contentType, headers=headers)
 
+		# HTTP Conten-type
+		contentType = C.hfvContentType
+
+		# Build and return the response
+		Logging.logDebug('<== Response (RSC: %d):\n%s\n' % (result.rsc, str(content)))
+		return Response(response=content, status=statusCode, content_type=contentType, headers=headers)
 
 
 	def _prepareException(self, e: Exception) -> Result:
@@ -377,7 +372,8 @@ class HttpServer(object):
 ##########################################################################
 #
 #	Own request handler.
-#	Actually only to redirect logging.
+#	Actually only to redirect some logging of the http server.
+#	This handler does NOT handle requests.
 #
 
 class ACMERequestHandler(WSGIRequestHandler):

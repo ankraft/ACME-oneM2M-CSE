@@ -140,6 +140,22 @@ class TestREQ(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCSENBSynchExpireRequest(self):
+		r, rsc = RETRIEVE('%s?rt=%d&rp=%s' % (cseURL, ResponseType.nonBlockingRequestSynch, requestETDuration), TestREQ.originator)
+		rqi = lastRequestID()
+		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch)
+		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
+		requestURI = findXPath(r, 'm2m:uri')
+
+		# Sleep "too" long
+		time.sleep(expirationSleep)
+
+		# get and check resource
+		r, rsc = RETRIEVE('%s/%s' % (csiURL, requestURI), TestREQ.originator)
+		self.assertEqual(rsc, RC.notFound)	# <request> should have been deleted
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveUnknownNBSynch(self):
 		r, rsc = RETRIEVE('%swrong?rt=%d&rp=%s' % (cseURL, ResponseType.nonBlockingRequestSynch, requestETDuration), TestREQ.originator)
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch)
@@ -296,6 +312,7 @@ class TestREQ(unittest.TestCase):
 		# Wait and then check notification
 		time.sleep(requestCheckDelay)
 		lastNotification = getLastNotification()
+		self.assertIsNotNone(lastNotification)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rsc'), RC.OK)
@@ -313,6 +330,7 @@ class TestREQ(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveUnknownNBAsynch(self):
+		clearLastNotification()
 		r, rsc = RETRIEVE('%swrong?rt=%d&rp=%s' % (cseURL, ResponseType.nonBlockingRequestAsynch, requestETDuration), TestREQ.originator, headers=headers)
 		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
@@ -322,6 +340,7 @@ class TestREQ(unittest.TestCase):
 		# Wait and then check notification
 		time.sleep(requestCheckDelay)
 		lastNotification = getLastNotification()
+		self.assertIsNotNone(lastNotification)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rsc'), RC.notFound)
@@ -331,6 +350,7 @@ class TestREQ(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTNBAsynch(self):
+		clearLastNotification()
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN
 				}}
@@ -343,6 +363,7 @@ class TestREQ(unittest.TestCase):
 		# Wait and then check notification
 		time.sleep(requestCheckDelay)
 		lastNotification = getLastNotification()
+		self.assertIsNotNone(lastNotification)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rsc'), RC.created)
@@ -353,9 +374,9 @@ class TestREQ(unittest.TestCase):
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cnt/ty'), T.CNT)
 
 
-
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTNBAsynch(self):
+		clearLastNotification()
 		jsn = 	{ 'm2m:cnt' : { 
 					'lbl' : [ 'aLabel' ]
 				}}
@@ -368,6 +389,7 @@ class TestREQ(unittest.TestCase):
 		# Wait and then check notification
 		time.sleep(requestCheckDelay)
 		lastNotification = getLastNotification()
+		self.assertIsNotNone(lastNotification)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rsc'), RC.updated)
@@ -386,6 +408,7 @@ class TestREQ(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTNBASynch(self):
+		clearLastNotification()
 		r, rsc = DELETE('%s?rt=%d&rp=%s' % (cntURL, ResponseType.nonBlockingRequestAsynch, requestETDuration), TestREQ.originator, headers=headers)
 		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
@@ -395,14 +418,12 @@ class TestREQ(unittest.TestCase):
 		# Wait and then check notification
 		time.sleep(requestCheckDelay)
 		lastNotification = getLastNotification()
+		self.assertIsNotNone(lastNotification)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rsc'), RC.deleted)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rqi'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rqi'), rqi)
-
-# RETRIEVE resource synch. wait too long, retrieve request, check et etc -> fail
-
 
 
 def run():
@@ -413,6 +434,7 @@ def run():
 	# nonBlockingSync
 	suite.addTest(TestREQ('test_retrieveCSENBSynch'))
 	suite.addTest(TestREQ('test_retrieveUnknownNBSynch'))
+	suite.addTest(TestREQ('test_retrieveCSENBSynchExpireRequest'))
 	suite.addTest(TestREQ('test_retrieveCNTNBFlex'))		# flex
 	suite.addTest(TestREQ('test_createCNTNBSynch'))
 	suite.addTest(TestREQ('test_updateCNTNBSynch'))

@@ -31,7 +31,7 @@ class TestDiscovery(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
-		cls.crTimestamp1 = getDate()	# first timestamp
+		cls.crTimestamp1 = getDate(-timeDelta)	# first timestamp
 
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL

@@ -23,7 +23,7 @@ package is used to gather various system information for the CSE's hosting node 
 
 Install these packages by running the following command:
 
-	pip3 install -r requirements.txt
+	python3 -m pip install -r requirements.txt
 
 or install all of them manually:  
 

@@ -41,6 +41,10 @@ testVerbosity 		= 2		# 0, 1, 2
 
 verifyCertificate	= False	# verify the certificate when using https?
 
+# possible time delta between test system and CSE
+# This is not really important, but for discoveries and others
+timeDelta 				= 0 # seconds
+
 # Expirations
 expirationCheckDelay 	= 2	# seconds
 expirationSleep			= expirationCheckDelay * 3
@@ -330,7 +334,9 @@ def uniqueID() -> str:
 
 # find a structured element in JSON
 decimalMatch = re.compile('{(\d+)}')
-def findXPath(jsn : dict, element : str, default : Any = None) -> Any:
+def findXPath(jsn:dict, element:str, default:Any=None) -> Any:
+	if jsn is None:
+		return default
 	paths = element.split("/")
 	data = jsn
 	for i in range(0,len(paths)):
