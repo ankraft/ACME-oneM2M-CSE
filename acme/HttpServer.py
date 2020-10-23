@@ -11,8 +11,8 @@
 import json, requests, logging, os, sys, traceback
 from typing import Any, Callable, List, Tuple, Union
 import flask
-from flask import Flask, Request, make_response, request
-from werkzeug.wrappers import Response
+from flask import Flask, Request, make_response, request, Response
+#from werkzeug.wrappers import Response
 from Configuration import Configuration
 from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC, Operation
@@ -95,7 +95,6 @@ class HttpServer(object):
 		self.cseri	= Configuration.get('cse.ri')
 
 
-
 	def run(self) -> None:
 		WSGIRequestHandler.protocol_version = "HTTP/1.1"
 
@@ -141,7 +140,7 @@ class HttpServer(object):
 		CSE.event.httpRetrieve() # type: ignore
 		try:
 			result = Utils.dissectHttpRequest(request, Operation.RETRIEVE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
-			if result.request is not None:
+			if result.status:
 				result = CSE.request.retrieveRequest(result.request)
 		except Exception as e:
 			result = self._prepareException(e)
@@ -152,11 +151,11 @@ class HttpServer(object):
 		Utils.renameCurrentThread()
 		Logging.logDebug('==> Create: /%s' % path)	# path = request.path  w/o the root
 		Logging.logDebug('Headers: \n' + str(request.headers))
-		# Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
+		#Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpCreate()	# type: ignore
 		try:
 			result = Utils.dissectHttpRequest(request, Operation.CREATE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
-			if result.request is not None:
+			if result.status:
 				Logging.logDebug('Body: \n' + result.request.data)
 				result = CSE.request.createRequest(result.request)
 		except Exception as e:
@@ -172,7 +171,7 @@ class HttpServer(object):
 		CSE.event.httpUpdate()	# type: ignore
 		try:
 			result = Utils.dissectHttpRequest(request, Operation.UPDATE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
-			if result.request is not None:
+			if result.status:
 				Logging.logDebug('Body: \n' + result.request.data)
 				result = CSE.request.updateRequest(result.request)
 		except Exception as e:
@@ -187,7 +186,7 @@ class HttpServer(object):
 		CSE.event.httpDelete()	# type: ignore
 		try:
 			result = Utils.dissectHttpRequest(request, Operation.DELETE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
-			if result.request is not None:
+			if result.status:
 				result = CSE.request.deleteRequest(result.request)
 		except Exception as e:
 			result = self._prepareException(e)
@@ -340,28 +339,39 @@ class HttpServer(object):
 		# else:
 		# 	r = ''
 		# 	result.rsc = RC.notFound
-		r = result.toString()
-		Logging.logDebug('<== Response (RSC: %d):\n%s\n' % (result.rsc, str(r)))
-		resp = make_response(r)
+		text = result.toString()
+		Logging.logDebug('<== Response (RSC: %d):\n%s\n' % (result.rsc, str(text)))
+		##resp = make_response(text)
 
 		# headers
-		resp.headers['Server'] = self.serverID	# set server field
+		headers = {}
 
-		resp.headers['X-M2M-RSC'] = '%d' % result.rsc
+		headers['Server'] = self.serverID	# set server field
+		##resp.headers['Server'] = self.serverID	# set server field
+
+		headers['X-M2M-RSC'] = '%d' % result.rsc
+		##resp.headers['X-M2M-RSC'] = '%d' % result.rsc
 		if 'X-M2M-RI' in request.headers:
-			resp.headers['X-M2M-RI'] = request.headers['X-M2M-RI']
+			headers['X-M2M-RI'] = request.headers['X-M2M-RI']
+			##resp.headers['X-M2M-RI'] = request.headers['X-M2M-RI']
 		if 'X-M2M-RVI' in request.headers:
-			resp.headers['X-M2M-RVI'] = request.headers['X-M2M-RVI']
+			headers['X-M2M-RVI'] = request.headers['X-M2M-RVI']
+			##resp.headers['X-M2M-RVI'] = request.headers['X-M2M-RVI']
 
-		resp.status_code = result.rsc.httpStatusCode()
-		resp.content_type = C.hfvContentType
+		statusCode = result.rsc.httpStatusCode()
+		##resp.status_code = result.rsc.httpStatusCode()
+		contentType = C.hfvContentType
+		##resp.content_type = C.hfvContentType
 		#self.flaskApp.process_response(resp)
-		return resp
+		##return resp
+		return Response(response=text, status=statusCode, content_type=contentType, headers=headers)
+
 
 
 	def _prepareException(self, e: Exception) -> Result:
 		Logging.logErr(traceback.format_exc())
 		return Result(rsc=RC.internalServerError, dbg='encountered exception: %s' % traceback.format_exc().replace('"', '\\"').replace('\n', '\\n'))
+
 
 
 ##########################################################################
@@ -386,3 +396,5 @@ class ACMERequestHandler(WSGIRequestHandler):
 	def log_message(self, format, *args): 	# type: ignore
 		Logging.logDebug(format % args)
 		return
+	
+

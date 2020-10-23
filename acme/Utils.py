@@ -597,32 +597,35 @@ def fanoutPointResource(id: str) -> Resource.Resource:
 
 def dissectHttpRequest(request:Request, operation:Operation, _id:Tuple[str, str, str]) -> Result:
 	result = CSERequest()
+
+	# get the data first. This marks the request as consumed 
+	result.data = request.get_data(as_text=True)	# alternative: request.data.decode("utf-8")
 	
 	# handle ID's 
 	result.id, result.csi, result.srn = _id
 
 	# No ID, return immediately 
 	if result.id is None and result.srn is None:
-		return Result(rsc=RC.notFound, dbg='missing identifier')
+		return Result(request=request, rsc=RC.notFound, dbg='missing identifier', status=False)
 
 	if (res := getRequestHeaders(request)).data is None:
-		return res.errorResult()
+		return Result(request=request, rsc=res.rsc, dbg=res.dbg, status=False)
 	result.headers = res.data
+	
 	try:
 		result.args, msg = getRequestArguments(request, operation)
 		if result.args is None:
-			return Result(rsc=RC.badRequest, dbg=msg)
+			return Result(request=request, rsc=RC.badRequest, dbg=msg, status=False)
 	except Exception as e:
-		return Result(rsc=RC.invalidArguments, dbg='invalid arguments (%s)' % str(e))
+		return Result(request=request, rsc=RC.invalidArguments, dbg='invalid arguments (%s)' % str(e), status=False)
 	result.originalArgs	= request.args.copy()	#type: ignore
-	result.data = request.get_data(as_text=True)	# alternative: request.data.decode("utf-8")
 	if result.data is not None and len(result.data) > 0:
 		try:
 			result.json = json.loads(removeCommentsFromJSON(result.data))
 		except Exception as e:
 			Logging.logWarn('Bad request (malformed content?)')
-			return Result(rsc=RC.badRequest, dbg=str(e))
-	return Result(request=result)
+			return Result(request=request, rsc=RC.badRequest, dbg=str(e), status=False)
+	return Result(request=result, status=True)
 
 
 
