@@ -15,8 +15,8 @@ You may consider to use a virtual environment manager like pyenv + virtualenv (s
 
 - **flask**: The CSE uses the [Flask](https://flask.palletsprojects.com/) web framework.
 - **isodate**: The [isodate](https://github.com/gweis/isodate) package is usedTo parse and handle ISO 8601 time, date, and duration.
-- **psutil**: The [psutil](https://pypi.org/project/psutil/)
-package is used to gather various system information for the CSE's hosting node resource.
+- **psutil**: The [psutil](https://pypi.org/project/psutil/) package is used to gather various system information for the CSE's hosting node resource.
+This package might not be available for every hardware  or OS platform. In this case you should remove it from the install command below. You should also disable the **CSE-Node** application in the configuration file (see [Configurations for the CSE Node App](Configuration.md#cse_node)).
 - **requests**: The CSE uses the [Requests](https://requests.readthedocs.io) HTTP Library to send requests vi http.
 - **Rich**: The CSE uses the [Rich](https://github.com/willmcgugan/rich) text formatter library to format various terminal output.
 - **tinydb 4.x** : To store resources the CSE uses the lightweight [TinyDB](https://github.com/msiemens/tinydb) document database.
@@ -27,7 +27,7 @@ Install these packages by running the following command:
 
 or install all of them manually:  
 
-	pip3 install flask isodate psutil requests rich tinydb
+	python3 -m pip install flask isodate psutil requests rich tinydb
 
 
 ## Installation and Configuration

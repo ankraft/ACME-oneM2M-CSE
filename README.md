@@ -32,6 +32,7 @@ Please consult the following pages for further instructions.
 - [Supported Resource Types and Functionalities](docs/Supported.md)
 	- [Limitations](docs/Supported.md#limitations)
 - [Development](docs/Development.md)
+- [FAQ](docs/FAQ.md)
 
 ## Changes
 
