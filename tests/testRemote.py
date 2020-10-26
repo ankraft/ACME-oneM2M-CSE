@@ -26,7 +26,7 @@ class TestRemote(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def setUpClass(cls):
+	def setUpClass(cls) -> None:
 		# check connection to CSE's
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
@@ -36,19 +36,19 @@ class TestRemote(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		pass
 		
 
 	# Retrieve the CSR on the local CSE
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_retrieveLocalCSR(self):
+	def test_retrieveLocalCSR(self) -> None:
 		r, rsc = RETRIEVE(localCsrURL, ORIGINATOR)
 		self.assertIsNotNone(r)
 		self.assertEqual(findXPath(r, 'm2m:csr/ty'), T.CSR)
 		self.assertEqual(findXPath(r, 'm2m:csr/rn'), REMOTECSEID[1:])
 		self.assertEqual(findXPath(r, 'm2m:csr/ri'), REMOTECSEID[1:])
-		self.assertEqual(findXPath(r, 'm2m:csr/cb'), REMOTECSEID[1:])
+		self.assertEqual(findXPath(r, 'm2m:csr/cb'), '%s/%s' % (REMOTECSEID, REMOTECSERN))
 		self.assertEqual(findXPath(r, 'm2m:csr/csi'), REMOTECSEID)
 		self.assertIsNotNone(findXPath(r, 'm2m:csr/acpi'))
 		self.assertIsInstance(findXPath(r, 'm2m:csr/acpi'), list)
@@ -62,13 +62,13 @@ class TestRemote(unittest.TestCase):
 
 	# Retrieve the own CSR on the remote CSE
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_retrieveRemoteCSR(self):
+	def test_retrieveRemoteCSR(self) -> None:
 		r, rsc = RETRIEVE(remoteCsrURL, ORIGINATOR)
 		self.assertIsNotNone(r)
 		self.assertEqual(findXPath(r, 'm2m:csr/ty'), T.CSR)
 		self.assertEqual(findXPath(r, 'm2m:csr/rn'), CSEID[1:])
 		self.assertEqual(findXPath(r, 'm2m:csr/ri'), CSEID[1:])
-		self.assertEqual(findXPath(r, 'm2m:csr/cb'), CSEID[1:])
+		self.assertEqual(findXPath(r, 'm2m:csr/cb'), '%s/%s' % (CSEID, CSERN))
 		self.assertEqual(findXPath(r, 'm2m:csr/csi'), CSEID)
 		self.assertIsNotNone(findXPath(r, 'm2m:csr/acpi'))
 		self.assertIsInstance(findXPath(r, 'm2m:csr/acpi'), list)
@@ -80,7 +80,7 @@ class TestRemote(unittest.TestCase):
 		self.assertGreater(len(findXPath(r, 'm2m:csr/poa')), 0)
 
 
-def run():
+def run() -> None:
 	suite = unittest.TestSuite()
 	suite.addTest(TestRemote('test_retrieveLocalCSR'))
 	suite.addTest(TestRemote('test_retrieveRemoteCSR'))

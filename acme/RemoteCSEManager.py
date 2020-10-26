@@ -589,7 +589,7 @@ class RemoteCSEManager(object):
 			target['st'] = source.st
 		
 
-		target['cb'] = Utils.getIdFromOriginator(source.csi)	# only the stem
+		target['cb'] = '%s/%s' % (source.csi, source.rn)
 		target['dcse'] = list(self.descendantCSR.keys())		# Always do this bc it might be different, even empty for an update
 		target.delAttribute('acpi', setNone = False)	# remove ACPI (don't provide ACPI in updates...a bit)
 
@@ -598,3 +598,4 @@ class RemoteCSEManager(object):
 			for attr in [ 'ri', 'rn', 'ct', 'lt', 'ty', 'cst', 'cb', 'csi']:
 				if attr in target:
 					target.delAttribute(attr, setNone = False)
+

@@ -40,6 +40,7 @@ The ACME CSE supports the following oneM2M resource types:
 | Polling Channel               |  &cross;  |                                                                                                                                 |
 
 <a name="mgmtobjs"></a>
+
 ### Management Objects
 
 The following table presents the supported management object specifications.
@@ -57,7 +58,6 @@ The following table presents the supported management object specifications.
 | Reboot (REB)             |
 | EventLog (EVL)           |
 | myCertFileCred (NYCFC)   |
-
 
 ## Functions
 
