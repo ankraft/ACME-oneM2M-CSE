@@ -35,6 +35,7 @@ class RemoteCSEManager(object):
 		self.cseCsi								= Configuration.get('cse.csi')
 		self.cseRI								= Configuration.get('cse.ri')
 		self.checkInterval						= Configuration.get('cse.registrar.checkInterval')
+		self.checkLiveliness					= Configuration.get('cse.registration.checkLiveliness')
 		self.registrarCSEURL					= '%s%s/~%s/%s' % (self.remoteAddress, self.remoteRoot, self.registrarCSI, self.registrarCseRN)
 		self.registrarCSRURL					= '%s%s' % (self.registrarCSEURL, self.cseCsi)
 		self.ownRegistrarCSR:Resource			= None 	# The own CSR at the registrar if there is one
@@ -121,15 +122,28 @@ class RemoteCSEManager(object):
 	#		
 
 	def connectionMonitorWorker(self) -> bool:
-		Logging.logDebug('Checking connections to remote CSEs')
 		try:
+
 			# Check the current state of the connection to the "upstream" CSEs
 			if self.csetype in [ CSEType.ASN, CSEType.MN ]:
+
+				# when validateRegistrations == False then only check when there is no connection
+				if not self.checkLiveliness:
+					if (r := self._retrieveLocalCSRs(own=True)).lst is not None and len(r.lst) == 1:
+						return True
+			
+				# Check the connection to the registrar CSE and establish one if necessary
+				Logging.logDebug('Checking connection to registrar CSE')
+
 				self._checkOwnConnection()
 
 			# Check the liveliness of other CSR connections
+			# Only when we validate the registrations
 			if self.csetype in [ CSEType.MN, CSEType.IN ]:
-				self._checkCSRLiveliness()
+				if  self.checkLiveliness:	
+					Logging.logDebug('Checking connections to registree CSEs')
+					self._checkCSRLiveliness()
+
 		except Exception as e:
 			Logging.logErr('Exception: %s' % e)
 			import traceback
@@ -313,7 +327,7 @@ class RemoteCSEManager(object):
 		localCsrs = CSE.dispatcher.directChildResources(pi=self.cseRI, ty=T.CSR)
 		if csi is None:
 			csi = self.registrarCSI
-		Logging.logDebug('Retrieving local CSR: %s' % csi)
+		# Logging.logDebug('Retrieving local CSR: %s' % csi)
 		if own:
 			for localCsr in localCsrs:
 				if (c := localCsr.csi) is not None and c == csi:

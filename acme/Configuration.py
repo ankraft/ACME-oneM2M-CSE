@@ -147,6 +147,7 @@ class Configuration(object):
 
 				'cse.registration.allowedAEOriginators'	: config.getlist('cse.registration', 'allowedAEOriginators',	fallback=['C*','S*']),		# type: ignore
 				'cse.registration.allowedCSROriginators': config.getlist('cse.registration', 'allowedCSROriginators',	fallback=[]),				# type: ignore
+				'cse.registration.checkLiveliness'		: config.getboolean('cse.registration', 'checkLiveliness',		fallback=True),
 
 
 				#
