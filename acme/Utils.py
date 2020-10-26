@@ -596,36 +596,36 @@ def fanoutPointResource(id: str) -> Resource.Resource:
 
 
 def dissectHttpRequest(request:Request, operation:Operation, _id:Tuple[str, str, str]) -> Result:
-	result = CSERequest()
+	cseRequest = CSERequest()
 
 	# get the data first. This marks the request as consumed 
-	result.data = request.get_data(as_text=True)	# alternative: request.data.decode("utf-8")
+	cseRequest.data = request.get_data(as_text=True)	# alternative: request.data.decode("utf-8")
 	
 	# handle ID's 
-	result.id, result.csi, result.srn = _id
+	cseRequest.id, cseRequest.csi, cseRequest.srn = _id
 
 	# No ID, return immediately 
-	if result.id is None and result.srn is None:
-		return Result(request=request, rsc=RC.notFound, dbg='missing identifier', status=False)
+	if cseRequest.id is None and cseRequest.srn is None:
+		return Result(rsc=RC.notFound, dbg='missing identifier', status=False)
 
 	if (res := getRequestHeaders(request)).data is None:
-		return Result(request=request, rsc=res.rsc, dbg=res.dbg, status=False)
-	result.headers = res.data
+		return Result(rsc=res.rsc, dbg=res.dbg, status=False)
+	cseRequest.headers = res.data
 	
 	try:
-		result.args, msg = getRequestArguments(request, operation)
-		if result.args is None:
-			return Result(request=request, rsc=RC.badRequest, dbg=msg, status=False)
+		cseRequest.args, msg = getRequestArguments(request, operation)
+		if cseRequest.args is None:
+			return Result(rsc=RC.badRequest, dbg=msg, status=False)
 	except Exception as e:
-		return Result(request=request, rsc=RC.invalidArguments, dbg='invalid arguments (%s)' % str(e), status=False)
-	result.originalArgs	= request.args.copy()	#type: ignore
-	if result.data is not None and len(result.data) > 0:
+		return Result(rsc=RC.invalidArguments, dbg='invalid arguments (%s)' % str(e), status=False)
+	cseRequest.originalArgs	= request.args.copy()	#type: ignore
+	if cseRequest.data is not None and len(cseRequest.data) > 0:
 		try:
-			result.json = json.loads(removeCommentsFromJSON(result.data))
+			cseRequest.json = json.loads(removeCommentsFromJSON(cseRequest.data))
 		except Exception as e:
 			Logging.logWarn('Bad request (malformed content?)')
-			return Result(request=request, rsc=RC.badRequest, dbg=str(e), status=False)
-	return Result(request=result, status=True)
+			return Result(rsc=RC.badRequest, dbg=str(e), status=False)
+	return Result(request=cseRequest, status=True)
 
 
 

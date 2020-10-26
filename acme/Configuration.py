@@ -16,6 +16,9 @@ from rich.console import Console
 
 
 class Configuration(object):
+	"""	The static class Configuration holds all the configuration values of the CSE. It is initialized only once by calling the static
+		method init(). Access to configuration valus is done by calling Configuration.get(<key>).
+	"""
 	_configuration: Dict[str, Any] = {}
 
 	@staticmethod
@@ -397,6 +400,8 @@ class Configuration(object):
 
 	@staticmethod
 	def get(key: str) -> Any:
+		"""	Retrieve a configuration value or None if no configuration could be found for a key.
+		"""
 		if not Configuration.has(key):
 			return None
 		return Configuration._configuration[key]

@@ -17,8 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SUB] Added support for batchNotifications, latestNotify, eventNotificationCriteria/childResourceType, and eventNotificationCriteria/attribute in subscriptions.
 - [HTTP] Added possibility to enable an API to get and set some configuration values remotely.
 
+### Changed
+- [CSE] Removed possibility to register unknown resources of an unknown resource type.
+
 ### Fixed
 - [HTTP] Fixed wrong configuration settings for TLS certificates.
+- [CSR] Fixed format of *csebase* attribute.
 
 
 ## [0.5.0] - 2020-09-17
