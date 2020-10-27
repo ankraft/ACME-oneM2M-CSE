@@ -24,8 +24,10 @@ resourceID=id-in
 resourceName=cse-in
 # Directory of default resources to import. Default: ./init
 resourcesPath=./init
-# ExpirationTime before resources are removed in seconds. Default: 60*60*24*365 = 1 year
+# ExpirationTime before resources are removed in seconds. Default: 60*60*24*365 = 1 year = 31536000
 expirationDelta=31536000
+# Maximum expirationTime allowed for resources in seconds. Default: 5 years = 157680000 
+maxExpirationDelta=157680000
 # Admin originator for the CSE. Default: CAdmin
 originator=CAdmin
 # Enable internal applications.
@@ -98,6 +100,12 @@ address=http://127.0.0.1:8080
 root=/
 # Run the http server in single- or multi-threaded mode. Default: true
 multiThread=true
+# Enable an endpoint for get and set certain configuration values via a 
+# REST interface.
+# ATTENTION: Enabling this feature exposes configuration values, IDs and
+# passwords, and is a security risk.
+# Default: False
+enableRemoteConfiguration=true
 
 
 #
@@ -206,7 +214,6 @@ selfPermission=51
 addAdminOrignator=true
 
 
-
 #
 #	Resource defaults: Container
 #
@@ -216,6 +223,26 @@ addAdminOrignator=true
 mni=10
 # Default for maxByteSize. Default: 10.000 bytes
 mbs=10000
+
+
+#
+#	Resource defaults: Request
+#
+
+[cse.resource.req]
+# A <request> resource's minimum expiration time in seconds. Must be >0. Default: 60 
+minimumExpirationTime=60
+# A <request> resource's maximum expiration time in seconds. Must be >0. Default: 180
+maximumExpirationTime=180
+
+
+#
+#	Resource defaults: Subscription
+#
+
+[cse.resource.sub]
+# Default for batchNotify/duration in seconds. Must be >0. Default: 60 
+batchNotifyDuration=60
 
 
 #

@@ -4,25 +4,30 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	Main request dispatcher. All external and most internal requests are routed
-#	through here.
+#	Most internal requests are routed through here.
 #
 
 import sys, traceback, re, json
+import isodate
 from flask import Request
-from typing import Any, List, Tuple, Union
+from typing import Any, List, Tuple, Union, Dict
 from Logging import Logging
 from Configuration import Configuration
 from Constants import Constants as C
 from Types import ResourceTypes as T
 from Types import FilterOperation
 from Types import FilterUsage
+from Types import ResponseType
 from Types import Permission
 from Types import Operation
 from Types import DesiredIdentifierResultType
 from Types import ResultContentType as RCN
 from Types import ResponseCode as RC
 from Types import Result
+from Types import RequestArguments
+from Types import RequestHeaders
+from Types import RequestStatus
+from Types import CSERequest
 import CSE, Utils
 from resources.Resource import Resource
 
@@ -30,22 +35,15 @@ from resources.Resource import Resource
 class Dispatcher(object):
 
 	def __init__(self) -> None:
-		self.rootPath 			= Configuration.get('http.root')
-		self.enableTransit 		= Configuration.get('cse.enableTransitRequests')
-		self.spid 				= Configuration.get('cse.spid')
 		self.csi 				= Configuration.get('cse.csi')
 		self.csiSlash 			= '%s/' % self.csi
-		self.cseri 				= Configuration.get('cse.ri')
-		self.csern				= Configuration.get('cse.rn')
-		self.csiLen 			= len(self.csi)
 		self.csiSlashLen 		= len(self.csiSlash)
-		self.cseriLen 			= len(self.cseri)
-
 		Logging.log('Dispatcher initialized')
 
 
-	def shutdown(self) -> None:
+	def shutdown(self) -> bool:
 		Logging.log('Dispatcher shut down')
+		return True
 
 
 
@@ -60,75 +58,49 @@ class Dispatcher(object):
 	#	Retrieve resources
 	#
 
-	def retrieveRequest(self, request:Request, _id:Tuple[str, str, str]) ->  Result:
-		originator, _, _, _, _ = Utils.getRequestHeaders(request)
-		id, csi, srn = _id
-		Logging.logDebug('RETRIEVE ID: %s, originator: %s' % (id if id is not None else srn, originator))
+	def processRetrieveRequest(self, request:CSERequest, originator:str, id:str=None) -> Result:
+		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
-		# No ID, return immediately 
-		if id is None and srn is None:
-			return Result(rsc=RC.notFound, dbg='missing identifier')
-
-		# handle transit requests
-		if CSE.remote.isTransitID(id):
-		 	return CSE.remote.handleTransitRetrieveRequest(request, id, originator) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
-
-		# handle hybrid ids
-		srn, id = self._buildSRNFromHybrid(srn, id) # Hybrid
+		# # overwrite id if another is given
+		# if id is not None:
+		# 	id = id
+		# 	srn = None
+		# else:
+		# 	id = request.id
+		# 	srn = request.srn
+		# fopsrn, id = Utils.srnFromHybrid(srn, id) # Hybrid
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
-			return fanoutPointResource.handleRetrieveRequest(request, srn, originator)
+			return fanoutPointResource.handleRetrieveRequest(request, fopsrn, request.headers.originator)
 
-		# just a normal retrieve request
-		return self.handleRetrieveRequest(request, id if id is not None else srn, originator)
-
-
-	def handleRetrieveRequest(self, request: Request, id: str, originator: str) -> Result:
-		Logging.logDebug('Handle retrieve resource: %s' % id)
-
-		try:
-			attrs, msg = self._getArguments(request, Operation.RETRIEVE)
-			if attrs is None:
-				return Result(rsc=RC.badRequest, dbg=msg)
-			fu 			= attrs.get('fu')
-			drt 		= attrs.get('drt')
-			handling 	= attrs.get('__handling__')
-			conditions 	= attrs.get('__conditons__')
-			attributes 	= attrs.get('__attrs__')
-			fo 			= attrs.get('fo')
-			rcn 		= attrs.get('rcn')
-		except Exception as e:
-			#Logging.logWarn('Exception: %s' % traceback.format_exc())
-			return Result(rsc=RC.invalidArguments, dbg='invalid arguments (%s)' % str(e))
-
-		permission = Permission.DISCOVERY if fu == 1 else Permission.RETRIEVE
+		permission = Permission.DISCOVERY if request.args.fu == 1 else Permission.RETRIEVE
 
 		# check rcn & operation
-		if permission == Permission.DISCOVERY and rcn not in [ RCN.discoveryResultReferences, RCN.childResourceReferences ]:	# Only allow those two
-			return Result(rsc=RC.badRequest, dbg='invalid rcn: %d for fu: %d' % (rcn, fu))
-		if permission == Permission.RETRIEVE and rcn not in [ RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource, RCN.childResourceReferences]: # TODO
-			return Result(rsc=RC.badRequest, dbg='invalid rcn: %d for fu: %d' % (rcn, fu))
+		if permission == Permission.DISCOVERY and request.args.rcn not in [ RCN.discoveryResultReferences, RCN.childResourceReferences ]:	# Only allow those two
+			return Result(rsc=RC.badRequest, dbg='invalid rcn: %d for fu: %d' % (request.args.rcn, request.args.fu))
+		if permission == Permission.RETRIEVE and request.args.rcn not in [ RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource, RCN.childResourceReferences]: # TODO
+			return Result(rsc=RC.badRequest, dbg='invalid rcn: %d for fu: %d' % (request.args.rcn, request.args.fu))
 
-		Logging.logDebug('Discover/Retrieve resources (fu: %d, drt: %s, handling: %s, conditions: %s, resultContent: %d, attributes: %s)' % (fu, drt, handling, conditions, rcn, str(attributes)))
+		Logging.logDebug('Discover/Retrieve resources (fu: %d, drt: %s, handling: %s, conditions: %s, resultContent: %d, attributes: %s)' % (request.args.fu, request.args.drt, request.args.handling, request.args.conditions, request.args.rcn, str(request.args.attributes)))
 
 
 		# Retrieve the target resource, because it is needed for some rcn (and the default)
-		if rcn in [RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource]:
+		if request.args.rcn in [RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource]:
 			if (res := self.retrieveResource(id)).resource is None:
 			 	return res
 			if not CSE.security.hasAccess(originator, res.resource, permission):
 				return Result(rsc=RC.originatorHasNoPrivilege, dbg='originator has no permission (%d)' % permission)
 
 			# if rcn == attributes then we can return here, whatever the result is
-			if rcn == RCN.attributes:
+			if request.args.rcn == RCN.attributes:
 				return res
 
 			resource = res.resource	# root resource for the retrieval/discovery
 
 			# if rcn == original-resource we retrieve the linked resource
-			if rcn == RCN.originalResource:
+			if request.args.rcn == RCN.originalResource:
 				if resource is None:	# continue only when there actually is a resource
 					return res
 				if (lnk := resource.lnk) is None:	# no link attribute?
@@ -137,7 +109,8 @@ class Dispatcher(object):
 
 
 		# do discovery
-		if (res := self.discoverResources(id, originator, handling, fo, conditions, attributes, permission=permission)).lst is None:	# not found?
+		# TODO simplify arguments
+		if (res := self.discoverResources(id, originator, request.args.handling, request.args.fo, request.args.conditions, request.args.attributes, permission=permission)).lst is None:	# not found?
 			return res.errorResult()
 
 		# check and filter by ACP. After this allowedResources only contains the resources that are allowed
@@ -150,31 +123,29 @@ class Dispatcher(object):
 		#	Handle more sophisticated RCN
 		#
 
-		if rcn == RCN.attributesAndChildResources:
+		if request.args.rcn == RCN.attributesAndChildResources:
 			self._resourceTreeJSON(allowedResources, resource)	# the function call add attributes to the target resource
 			return Result(resource=resource)
 
-		elif rcn == RCN.attributesAndChildResourceReferences:
-			self._resourceTreeReferences(allowedResources, resource, drt)	# the function call add attributes to the target resource
+		elif request.args.rcn == RCN.attributesAndChildResourceReferences:
+			self._resourceTreeReferences(allowedResources, resource, request.args.drt)	# the function call add attributes to the target resource
 			return Result(resource=resource)
 
-		elif rcn == RCN.childResourceReferences: 
+		elif request.args.rcn == RCN.childResourceReferences: 
 			#childResourcesRef: dict  = { resource.tpe: {} }  # Root resource as a dict with no attribute
-			childResourcesRef = self._resourceTreeReferences(allowedResources,  None, drt)
+			childResourcesRef = self._resourceTreeReferences(allowedResources,  None, request.args.drt)
 			return Result(resource=childResourcesRef)
 
-		elif rcn == RCN.childResources:
+		elif request.args.rcn == RCN.childResources:
 			childResources: dict = { resource.tpe : {} } #  Root resource as a dict with no attribute
 			self._resourceTreeJSON(allowedResources, childResources[resource.tpe]) # Adding just child resources
 			return Result(resource=childResources)
 
-		elif rcn == RCN.discoveryResultReferences: # URIList
-			return Result(resource=self._resourcesToURIList(allowedResources, drt))
+		elif request.args.rcn == RCN.discoveryResultReferences: # URIList
+			return Result(resource=self._resourcesToURIList(allowedResources, request.args.drt))
 
 		else:
 			return Result(rsc=RC.badRequest, dbg='wrong rcn for RETRIEVE')
-
-
 
 
 
@@ -189,10 +160,10 @@ class Dispatcher(object):
 			else:
 				if Utils.isSPRelative(id):
 					return CSE.remote.retrieveRemoteResource(id, originator, raw)
-		return self._retrieveResource(srn=id) if Utils.isStructured(id) else self._retrieveResource(ri=id)
+		return self.retrieveLocalResource(srn=id) if Utils.isStructured(id) else self.retrieveLocalResource(ri=id)
 
 
-	def _retrieveResource(self, ri:str=None, srn:str=None) -> Result:
+	def retrieveLocalResource(self, ri:str=None, srn:str=None) -> Result:
 		Logging.logDebug('Retrieve resource: %s' % (ri if srn is None else srn))
 
 		if ri is not None:
@@ -218,6 +189,8 @@ class Dispatcher(object):
 	#
 
 	def discoverResources(self, id:str, originator:str, handling:dict, fo:int=1, conditions:dict=None, attributes:dict=None, rootResource:Resource=None, permission:Permission=Permission.DISCOVERY) -> Result:
+		Logging.logDebug('Discovering resources')
+
 		if rootResource is None:
 			if (res := self.retrieveResource(id)).resource is None:
 				return Result(rsc=RC.notFound, dbg=res.dbg)
@@ -235,15 +208,23 @@ class Dispatcher(object):
 		level = handling['lvl'] if 'lvl' in handling else sys.maxsize	# default: system max size or "maxint"
 
 		# a bit of optimization. This length stays the same.
-		allLen = ((len(conditions) if conditions is not None else 0) +
-		  (len(attributes) if attributes is not None else 0) +
-		  (len(conditions.get('ty'))-1 if conditions is not None else 0) +		# -1 : compensate for len(conditions) in line 1
-		  (len(conditions.get('cty'))-1 if conditions is not None else 0) +		# -1 : compensate for len(conditions) in line 1 
-		  (len(conditions.get('lbl'))-1 if conditions is not None else 0) 		# -1 : compensate for len(conditions) in line 1 
-		)
+		allLen = len(attributes) if attributes is not None else 0
+		if conditions is not None:
+			allLen += ( len(conditions) +
+			  (len(conditions.get('ty'))-1 if 'ty' in conditions else 0) +		# -1 : compensate for len(conditions) in line 1
+			  (len(conditions.get('cty'))-1 if 'cty' in conditions else 0) +		# -1 : compensate for len(conditions) in line 1 
+			  (len(conditions.get('lbl'))-1 if 'lbl' in conditions else 0) 		# -1 : compensate for len(conditions) in line 1 
+			)
+
+		# allLen = ((len(conditions) if conditions is not None else 0) +
+		#   (len(attributes) if attributes is not None else 0) +
+		#   (len(conditions.get('ty'))-1 if conditions is not None and 'ty' in conditions else 0) +		# -1 : compensate for len(conditions) in line 1
+		#   (len(conditions.get('cty'))-1 if conditions is not None else 0) +		# -1 : compensate for len(conditions) in line 1 
+		#   (len(conditions.get('lbl'))-1 if conditions is not None else 0) 		# -1 : compensate for len(conditions) in line 1 
+		# )
 
 		# Discover the resources
-		discoveredResources = self._discoverResources(rootResource, originator, level, fo, allLen, dcrs=dcrs, conditions=conditions, attributes=attributes)
+		discoveredResources = self._discoverResources(rootResource, originator, level, fo, allLen, dcrs=dcrs, conditions=conditions, attributes=attributes, permission=permission)
 
 		# NOTE: this list contains all results in the order they could be found while
 		#		walking the resource tree.
@@ -264,7 +245,7 @@ class Dispatcher(object):
 		return Result(lst=discoveredResources)
 
 
-	def _discoverResources(self, rootResource : Resource, originator : str, level : int, fo : int, allLen : int, dcrs : list = None, conditions : dict = None, attributes : dict = None) -> List[Resource]:
+	def _discoverResources(self, rootResource:Resource, originator:str, level:int, fo:int, allLen:int, dcrs:list=None, conditions:dict=None, attributes:dict=None, permission:Permission=Permission.DISCOVERY) -> List[Resource]:
 		if rootResource is None or level == 0:		# no resource or level == 0
 			return []
 
@@ -283,7 +264,7 @@ class Dispatcher(object):
 
 			# check permissions and filter. Only then add a resource
 			# First match then access. bc if no match then we don't need to check permissions (with all the overhead)
-			if self._matchResource(r, conditions, attributes, fo, allLen) and CSE.security.hasAccess(originator, r, Permission.DISCOVERY):
+			if self._matchResource(r, conditions, attributes, fo, allLen) and CSE.security.hasAccess(originator, r, permission):
 				discoveredResources.append(r)
 
 			# Iterate recursively over all (not only the filtered) direct child resources
@@ -396,57 +377,36 @@ class Dispatcher(object):
 
 
 	#########################################################################
-
 	#
 	#	Add resources
 	#
 
-	def createRequest(self, request: Request, _id: Tuple[str, str, str]) -> Result:
-		originator, ct, ty, _, _ = Utils.getRequestHeaders(request)
-		id, csi, srn = _id
-		Logging.logDebug('CREATE ID: %s, originator: %s' % (id if id is not None else srn, originator))
+	def processCreateRequest(self, request:CSERequest, originator:str, id:str=None) -> Result:
+		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
-		# No ID, return immediately 
-		if id is None and srn is None:
-			return Result(rsc=RC.notFound, dbg='missing identifier')
-
-		# handle transit requests
-		if CSE.remote.isTransitID(id):
-			return CSE.remote.handleTransitCreateRequest(request, id, originator, ty) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
-
-		# handle hybrid id
-		srn, id = self._buildSRNFromHybrid(srn, id)  # Hybrid
+		# # overwrite id if another is given
+		# if id is not None:
+		# 	id = id
+		# 	srn = None
+		# else:
+		# 	id = request.id
+		# 	srn = request.srn
+		# fopsrn, id = Utils.srnFromHybrid(srn, id) # Hybrid
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
-			return fanoutPointResource.handleCreateRequest(request, srn, originator, ct, ty)
+			return fanoutPointResource.handleCreateRequest(request, fopsrn, request.headers.originator)
 
-		# just a normal create request
-		return self.handleCreateRequest(request, id, originator, ct, ty)
+		ct 			= request.headers.contentType
+		ty 			= request.headers.resourceType
 
-
-
-	def handleCreateRequest(self, request:Request, id:str, originator:str, ct:str, ty:T) -> Result:
-		Logging.logDebug('Adding new resource')
-
-		try:
-			attrs, msg = self._getArguments(request, Operation.CREATE)
-			if attrs is None:
-				return Result(rsc=RC.badRequest, dbg=msg)
-			rcn   = attrs.get('rcn')
-		except Exception as e:
-			return Result(rsc=RC.invalidArguments, dbg=str(e))
-
-		if ct == None or ty == None:
-			return Result(rsc=RC.badRequest, dbg='ct or ty is missing in request')
-
-		# CSEBase creation, return immediately
-		if ty == T.CSEBase:
+		# Some Resources are not allowed to be created in a request, return immediately
+		if ty in [ T.CSEBase, T.REQ ]:
 			return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
 
 		# Get parent resource and check permissions
-		if (res := self.retrieveResource(id)).resource is None:
+		if (res := CSE.dispatcher.retrieveResource(id)).resource is None:
 			Logging.log('Parent resource not found')
 			return Result(rsc=RC.notFound, dbg='parent resource not found')
 		parentResource = res.resource
@@ -459,16 +419,11 @@ class Dispatcher(object):
 
 		# Check for virtual resource
 		if Utils.isVirtualResource(parentResource):
-			return parentResource.handleCreateRequest(request, id, originator, ct, ty)
+			return parentResource.handleCreateRequest(request, id, originator)
 
 		# Add new resource
-		try:
-			jsn = json.loads(Utils.removeCommentsFromJSON(request.get_data(as_text=True)))
-			if (nres := Utils.resourceFromJSON(jsn, pi=parentResource.ri, ty=ty)).resource is None:	# something wrong, perhaps wrong type
-				return Result(rsc=RC.badRequest, dbg=nres.dbg)
-		except Exception as e:
-			Logging.logWarn('Bad request (malformed content?)')
-			return Result(rsc=RC.badRequest, dbg=str(e))
+		if (nres := Utils.resourceFromJSON(request.json, pi=parentResource.ri, ty=ty)).resource is None:	# something wrong, perhaps wrong type
+			return Result(rsc=RC.badRequest, dbg=nres.dbg)
 		nresource = nres.resource
 
 		# Check whether the parent allows the adding
@@ -486,7 +441,7 @@ class Dispatcher(object):
 		originator = rres.originator 	# originator might have changed during this check
 
 		# Create the resource. If this fails we register everything
-		if (res := self.createResource(nresource, parentResource, originator)).resource is None:
+		if (res := CSE.dispatcher.createResource(nresource, parentResource, originator)).resource is None:
 			CSE.registration.checkResourceDeletion(nresource) # deregister resource. Ignore result, we take this from the creation
 			return res
 
@@ -495,17 +450,17 @@ class Dispatcher(object):
 		#
 
 		tpe = res.resource.tpe
-		if rcn is None or rcn == RCN.attributes:	# Just the resource & attributes
+		if request.args.rcn is None or request.args.rcn == RCN.attributes:	# Just the resource & attributes
 			return res
-		elif rcn == RCN.modifiedAttributes:
-			jsonOrg =request.json[tpe]
+		elif request.args.rcn == RCN.modifiedAttributes:
+			jsonOrg = request.args.request.json[tpe]
 			jsonNew = res.resource.asJSON()[tpe]
 			return Result(resource={ tpe : Utils.resourceDiff(jsonOrg, jsonNew) }, rsc=res.rsc, dbg=res.dbg)
-		elif rcn == RCN.hierarchicalAddress:
+		elif request.args.rcn == RCN.hierarchicalAddress:
 			return Result(resource={ 'm2m:uri' : Utils.structuredPath(res.resource) }, rsc=res.rsc, dbg=res.dbg)
-		elif rcn == RCN.hierarchicalAddressAttributes:
+		elif request.args.rcn == RCN.hierarchicalAddressAttributes:
 			return Result(resource={ 'm2m:rce' : { Utils.noDomain(tpe) : res.resource.asJSON()[tpe], 'uri' : Utils.structuredPath(res.resource) }}, rsc=res.rsc, dbg=res.dbg)
-		elif rcn == RCN.nothing:
+		elif request.args.rcn == RCN.nothing:
 			return Result(rsc=res.rsc, dbg=res.dbg)
 		else:
 			return Result(rsc=RC.badRequest, dbg='wrong rcn for CREATE')
@@ -523,7 +478,7 @@ class Dispatcher(object):
 					Logging.logWarn(err)
 					return Result(rsc=RC.targetNotSubscribable, dbg=err)
 				else:
-					err = 'Invalid child resource type'
+					err = 'Invalid child resource type: %s' % T(resource.ty).value
 					Logging.logWarn(err)
 					return Result(rsc=RC.invalidChildResourceType, dbg=err)
 
@@ -558,54 +513,25 @@ class Dispatcher(object):
 
 
 	#########################################################################
-
 	#
 	#	Update resources
 	#
 
-	def updateRequest(self, request:Request, _id:Tuple[str, str, str]) -> Result:
-		originator, ct, _, _, _ = Utils.getRequestHeaders(request)
-		id, csi, srn = _id
-		Logging.logDebug('UPDATE ID: %s, originator: %s' % (id if id is not None else srn, originator))
-
-		# No ID, return immediately 
-		if id is None and srn is None:
-			return Result(rsc=RC.notFound, dbg='missing identifier')
-
-		# ID= cse.ri, return immediately
-		if id == self.cseri:
-			return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for CSEBase')
-
-		# handle transit requests
-		if CSE.remote.isTransitID(id):
-			return CSE.remote.handleTransitUpdateRequest(request, id, originator) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
-
-		# handle hybrid id
-		srn, id = self._buildSRNFromHybrid(srn, id)  # Hybrid
+	def processUpdateRequest(self, request:CSERequest, originator:str, id:str=None) -> Result: 
+		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
+		# # overwrite id if another is given
+		# if id is not None:
+		# 	id = id
+		# 	srn = None
+		# else:
+		# 	id = request.id
+		# 	srn = request.srn
+		# fopsrn, id = Utils.srnFromHybrid(srn, id) # Hybrid
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
-			return fanoutPointResource.handleUpdateRequest(request, srn, originator, ct)
-
-		# just a normal update request
-		return self.handleUpdateRequest(request, id, originator, ct)
-
-
-	def handleUpdateRequest(self, request:Request, id:str, originator:str, ct:str) -> Result: 
-
-		# get arguments
-		try:
-			attrs, msg = self._getArguments(request, Operation.UPDATE)
-			if attrs is None:
-				return Result(rsc=RC.badRequest, dbg=msg)
-			rcn = attrs.get('rcn')
-		except Exception as e:
-			return Result(rsc=RC.invalidArguments, dbg=str(e))
-
-		Logging.logDebug('Updating resource')
-		if ct == None:
-			return Result(rsc=RC.badRequest, dbg='missing or wrong content type in header')
+			return fanoutPointResource.handleUpdateRequest(request, fopsrn, request.headers.originator)
 
 		# Get resource to update
 		if (res := self.retrieveResource(id)).resource is None:
@@ -616,14 +542,7 @@ class Dispatcher(object):
 			return Result(rsc=RC.operationNotAllowed, dbg='resource is read-only')
 
 		# check permissions
-		try:
-			#jsn = request.json
-			jsn = json.loads(Utils.removeCommentsFromJSON(request.get_data(as_text=True)))
-		except Exception as e:
-			Logging.logWarn('Bad request (malformed content?)')
-			return Result(rsc=RC.badRequest, dbg=str(e))
-
-		acpi = Utils.findXPath(jsn, list(jsn.keys())[0] + '/acpi')
+		acpi = Utils.findXPath(request.json, list(request.json.keys())[0] + '/acpi')
 		if acpi is not None:	# update of acpi attribute means check for self privileges!
 			updateOrDelete = Permission.DELETE if acpi is None else Permission.UPDATE
 			if CSE.security.hasAccess(originator, resource, updateOrDelete, checkSelf=True) == False:
@@ -631,10 +550,9 @@ class Dispatcher(object):
 		elif CSE.security.hasAccess(originator, resource, Permission.UPDATE) == False:
 			return Result(rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
 
-
 		# Check for virtual resource
 		if Utils.isVirtualResource(resource):
-			return resource.handleUpdateRequest(request, id, originator, ct)
+			return resource.handleUpdateRequest(request, id, originator)
 
 		jsonOrg = resource.json.copy()	# Save for later
 
@@ -642,7 +560,7 @@ class Dispatcher(object):
 		if (rres := CSE.registration.checkResourceUpdate(resource)).rsc != RC.OK:
 			return rres.errorResult()
 
-		if (res := self.updateResource(resource, jsn, originator=originator)).resource is None:
+		if (res := self.updateResource(resource, request.json, originator=originator)).resource is None:
 			return res.errorResult()
 		resource = res.resource 	# re-assign resource (might have been changed during update)
 
@@ -651,14 +569,14 @@ class Dispatcher(object):
 		#
 
 		tpe = resource.tpe
-		if rcn is None or rcn == RCN.attributes:
+		if request.args.rcn is None or request.args.rcn == RCN.attributes:
 			return res
-		elif rcn == RCN.modifiedAttributes:
+		elif request.args.rcn == RCN.modifiedAttributes:
 			jsonNew = resource.json.copy()	
 			# return only the diff. This includes those attributes that are updated with the same value. Luckily, 
 			# all key/values that are touched in the update request are in the resource's __modified__ variable.
 			return Result(resource={ tpe : Utils.resourceDiff(jsonOrg, jsonNew, modifiers=resource[Resource._modified]) }, rsc=res.rsc)
-		elif rcn == RCN.nothing:
+		elif request.args.rcn == RCN.nothing:
 			return Result(rsc=res.rsc)
 		# TODO C.rcnDiscoveryResultReferences 
 		else:
@@ -679,53 +597,25 @@ class Dispatcher(object):
 
 
 	#########################################################################
-
 	#
 	#	Remove resources
 	#
 
-	def deleteRequest(self, request: Request, _id: Tuple[str, str, str]) -> Result:
-		originator, _, _, _, _ = Utils.getRequestHeaders(request)
-		id, csi, srn = _id
-		Logging.logDebug('DELETE ID: %s, originator: %s' % (id if id is not None else srn, originator))
-
-		# No ID, return immediately 
-		if id is None and srn is None:
-			return Result(rsc=RC.notFound, dbg='missing identifier')
-
-		# ID= cse.ri, return immediately
-		if id == self.cseri:
-			return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for CSEBase')
-
-		# handle transit requests
-		if CSE.remote.isTransitID(id):
-			return CSE.remote.handleTransitDeleteRequest(id, originator) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
-
-		# handle hybrid id
-		srn, id = self._buildSRNFromHybrid(srn, id)  # Hybrid
+	def processDeleteRequest(self, request:CSERequest, originator:str, id:str=None) -> Result:
+		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
+		# if id is not None:
+		# 	id = id
+		# 	srn = None
+		# else:
+		# 	id = request.id
+		# 	srn = request.srn
+		# fopsrn, id = Utils.srnFromHybrid(srn, id) # Hybrid
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(srn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
 			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
-			return fanoutPointResource.handleDeleteRequest(request, srn, originator)
+			return fanoutPointResource.handleDeleteRequest(request, fopsrn, request.headers.originator)
 
-		# just a normal delete request
-		return self.handleDeleteRequest(request, id if id is not None else srn, originator)
-
-
-	def handleDeleteRequest(self, request:Request, id:str, originator:str) -> Result:
-		Logging.logDebug('Removing resource')
-
-		# get arguments
-		try:
-			attrs, msg = self._getArguments(request, Operation.DELETE)
-			if attrs is None:
-				return Result(rsc=RC.badRequest, dbg=msg)
-			rcn  		= attrs.get('rcn')
-			drt 		= attrs.get('drt')
-			handling 	= attrs.get('__handling__')
-		except Exception as e:
-			return Result(rsc=RC.invalidArguments, dbg=str(e))
 
 		# get resource to be removed and check permissions
 		if (res := self.retrieveResource(id)).resource is None:
@@ -746,29 +636,29 @@ class Dispatcher(object):
 
 		tpe = resource.tpe
 		result: Any = None
-		if rcn is None or rcn == RCN.nothing:
+		if request.args.rcn is None or request.args.rcn == RCN.nothing:
 			result = None
-		elif rcn == RCN.attributes:
+		elif request.args.rcn == RCN.attributes:
 			result = resource
 		# resource and child resources, full attributes
-		elif rcn == RCN.attributesAndChildResources:
-			children = self.discoverChildren(id, resource, originator, handling, Permission.DELETE)
+		elif request.args.rcn == RCN.attributesAndChildResources:
+			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
 			self._childResourceTree(children, resource)	# the function call add attributes to the result resource. Don't use the return value directly
 			result = resource
 		# direct child resources, NOT the root resource
-		elif rcn == RCN.childResources:
-			children = self.discoverChildren(id, resource, originator, handling, Permission.DELETE)
+		elif request.args.rcn == RCN.childResources:
+			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
 			childResources: dict = { resource.tpe : {} }			# Root resource as a dict with no attributes
 			self._resourceTreeJSON(children, childResources[resource.tpe])
 			result = childResources
-		elif rcn == RCN.attributesAndChildResourceReferences:
-			children = self.discoverChildren(id, resource, originator, handling, Permission.DELETE)
-			self._resourceTreeReferences(children, resource, drt)	# the function call add attributes to the result resource
+		elif request.args.rcn == RCN.attributesAndChildResourceReferences:
+			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
+			self._resourceTreeReferences(children, resource, request.args.drt)	# the function call add attributes to the result resource
 			result = resource
-		elif rcn == RCN.childResourceReferences: # child resource references
-			children = self.discoverChildren(id, resource, originator, handling, Permission.DELETE)
+		elif request.args.rcn == RCN.childResourceReferences: # child resource references
+			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
 			childResourcesRef: dict = { resource.tpe: {} }  # Root resource with no attribute
-			self._resourceTreeReferences(children, childResourcesRef[resource.tpe], drt)
+			self._resourceTreeReferences(children, childResourcesRef[resource.tpe], request.args.drt)
 			result = childResourcesRef
 		# TODO RCN.discoveryResultReferences
 		else:
@@ -801,8 +691,8 @@ class Dispatcher(object):
 			parentResource.childRemoved(resource, originator)
 		return Result(resource=resource, rsc=res.rsc, dbg=res.dbg)
 
-	#########################################################################
 
+	#########################################################################
 	#
 	#	Utility methods
 	#
@@ -838,189 +728,10 @@ class Dispatcher(object):
 		return result
 
 
-	def _buildSRNFromHybrid(self, srn:str, id:str) -> Tuple[str, str]:
-		""" Handle Hybrid ID. """
-		if id is not None:
-			ids = id.split('/')
-			if srn is None and len(ids) > 1  and ids[-1] in C.virtualResourcesNames: # Hybrid
-				if (srn := Utils.structuredPathFromRI('/'.join(ids[:-1]))) is not None:
-					srn = '/'.join([srn, ids[-1]])
-					id = Utils.riFromStructuredPath(srn) # id becomes the ri of the fopt
-		return srn, id
-
-
 	#########################################################################
-
 	#
-	#	Internal methods
+	#	Internal methods for collecting resources and child resources into structures
 	#
-
-
-	# Get the request arguments, or meaningful defaults.
-	# Only a small subset is supported yet
-	# Throws an exception when a wrong type is encountered. This is part of the validation
-	def _getArguments(self, request:Request, operation:Operation=Operation.RETRIEVE) -> Tuple[dict, str]:
-		result: dict = { }
-
-		# copy for greedy attributes checking
-		args = request.args.copy()	 	# type: ignore
-
-		# FU - Filter Usage
-		if (fu := args.get('fu')) is not None:
-			if not CSE.validator.validateRequestArgument('fu', fu).status:
-				return None, 'error validating \'fu\' argument'
-			try:
-				fu = FilterUsage(int(fu))
-			except ValueError as exc:
-				return None, '\'%s\' is not a valid value for fu' % fu
-			del args['fu']
-		else:
-			fu = FilterUsage.conditionalRetrieval
-		if fu == FilterUsage.discoveryCriteria and operation == Operation.RETRIEVE:
-			operation = Operation.DISCOVERY
-		result['fu'] = fu
-
-		# DRT - Desired Identifier Result Type
-		if (drt := args.get('drt')) is not None: # 1=strucured, 2=unstructured
-			if not CSE.validator.validateRequestArgument('drt', drt).status:
-				return None, 'error validating \'drt\' argument'
-			try:
-				drt = DesiredIdentifierResultType(int(drt))
-			except ValueError as exc:
-				return None, '\'%s\' is not a valid value for drt' % drt
-			del args['drt']
-		else:
-			drt = DesiredIdentifierResultType.structured
-		result['drt'] = drt
-
-		# FO - Filter Operation
-		if (fo := args.get('fo')) is not None: # 1=AND, 2=OR
-			if not CSE.validator.validateRequestArgument('fo', fo).status:
-				return None, 'error validating \'fo\' argument'
-			try:
-				fo = FilterOperation(int(fo))
-			except ValueError as exc:
-				return None, '\'%s\' is not a valid value for fo' % fo
-			del args['fo']
-		else:
-			fo = FilterOperation.AND # default
-		result['fo'] = fo
-
-		if (rcn := args.get('rcn')) is not None: 
-			if not CSE.validator.validateRequestArgument('rcn', rcn).status:
-				return None, 'error validating \'rcn\' argument'
-			rcn = int(rcn)
-			del args['rcn']
-		else:
-			if fu != FilterUsage.discoveryCriteria:
-				# Different defaults for each operation
-				if operation in [ Operation.RETRIEVE, Operation.CREATE, Operation.UPDATE ]:
-					rcn = RCN.attributes
-				elif operation == Operation.DELETE:
-					rcn = RCN.nothing
-			else:
-				# discovery-result-references as default for Discovery operation
-				rcn = RCN.discoveryResultReferences
-
-		# Check value of rcn depending on operation
-		if operation == Operation.RETRIEVE and rcn not in [ RCN.attributes,
-															RCN.attributesAndChildResources,
-															RCN.attributesAndChildResourceReferences,
-															RCN.childResourceReferences,
-															RCN.childResources,
-															RCN.originalResource ]:
-			return None, 'rcn: %d not allowed in RETRIEVE operation' % rcn
-		elif operation == Operation.DISCOVERY and rcn not in [ RCN.childResourceReferences,
-															   RCN.discoveryResultReferences ]:
-			return None, 'rcn: %d not allowed in DISCOVERY operation' % rcn
-		elif operation == Operation.CREATE and rcn not in [ RCN.attributes,
-															RCN.modifiedAttributes,
-															RCN.hierarchicalAddress,
-															RCN.hierarchicalAddressAttributes,
-															RCN.nothing ]:
-			return None, 'rcn: %d not allowed in CREATE operation' % rcn
-		elif operation == Operation.UPDATE and rcn not in [ RCN.attributes,
-															RCN.modifiedAttributes,
-															RCN.nothing ]:
-			return None, 'rcn: %d not allowed in UPDATE operation' % rcn
-		elif operation == Operation.DELETE and rcn not in [ RCN.attributes,
-															RCN.nothing,
-															RCN.attributesAndChildResources,
-															RCN.childResources,
-															RCN.attributesAndChildResourceReferences,
-															RCN.childResourceReferences ]:
-			return None, 'rcn: %d not allowed DELETE operation' % rcn
-
-		result['rcn'] = rcn
-
-
-		# handling conditions
-		handling = { }
-		for c in ['lim', 'lvl', 'ofst']:	# integer parameters
-			if c in args:
-				v = args[c]
-				if not CSE.validator.validateRequestArgument(c, v).status:
-					return None, 'error validating "%s" argument' % c
-				handling[c] = int(v)
-				del args[c]
-		for c in ['arp']:
-			if c in args:
-				v = args[c]
-				if not CSE.validator.validateRequestArgument(c, v).status:
-					return None, 'error validating "%s" argument' % c
-				handling[c] = v # string
-				del args[c]
-		result['__handling__'] = handling
-
-
-		# conditions
-		conditions = {}
-
-		# Extract and store other arguments
-		for c in ['crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr']:
-			if (v := args.get(c)) is not None:
-				if not CSE.validator.validateRequestArgument(c, v).status:
-					return None, 'error validating "%s" argument' % c
-				conditions[c] = v
-				del args[c]
-
-		# get types (multi). Always create at least an empty list
-		conditions['ty'] = []
-		for e in args.getlist('ty'):
-			for es in (t := e.split()):	# check for number
-				if not CSE.validator.validateRequestArgument('ty', es).status:
-					return None, 'error validating "ty" argument(s)'
-			conditions['ty'].extend(t)
-		args.poplist('ty')
-
-		# get contentTypes (multi). Always create at least an empty list
-		conditions['cty'] = []
-		for e in args.getlist('cty'):
-			for es in (t := e.split()):	# check for number
-				if not CSE.validator.validateRequestArgument('cty', es).status:
-					return None, 'error validating "cty" argument(s)'
-			conditions['cty'].extend(t)
-		args.poplist('cty')
-
-		# get types (multi). Always create at least an empty list
-		# NO validation of label. It is a list.
-		conditions['lbl'] = []
-		for e in args.getlist('lbl'):
-			conditions['lbl'].append(e)
-		args.poplist('lbl')
-
-		result['__conditons__'] = conditions 	# store found conditions in result
-
-		# all remaining arguments are treated as matching attributes
-		for arg, val in args.items():
-			if not CSE.validator.validateRequestArgument(arg, val).status:
-				return None, 'error validating (unknown?) \'%s\' argument)' % arg
-
-		# all arguments have passed, so add them
-		result['__attrs__'] = args
-
-		return result, None
-
 
 	#	Create a m2m:uril structure from a list of resources
 	def _resourcesToURIList(self, resources:List[Resource], drt:int) -> dict:
@@ -1031,14 +742,6 @@ class Dispatcher(object):
 			lst.append(Utils.structuredPath(r) if drt == DesiredIdentifierResultType.structured else cseid + r.ri)
 		return { 'm2m:uril' : lst }
 
-
-	# def _attributesAndChildResources(self, parentResource, resources):
-	# 	result = parentResource.asJSON()
-	# 	ch = []
-	# 	for r in resources:
-	# 		ch.append(r.asJSON(embedded=False))
-	# 	result[parentResource.tpe]['ch'] = ch
-	# 	return result
 
 	# Recursively walk the results and build a sub-resource tree for each resource type
 	def _resourceTreeJSON(self, resources:List[Resource], targetResource:Union[Resource, dict]) -> List[Resource]:
@@ -1110,4 +813,19 @@ class Dispatcher(object):
 		self._resourceTreeJSON(resources, result)	# rootResource is filled with the result
 		for k,v in result.items():			# copy child resources to result resource
 			targetResource[k] = v
+
+
+	#########################################################################
+	#
+	#	Internal methods for ID handling
+	#
+
+	def _checkHybridID(self, request:CSERequest, id:str) -> Tuple[str, str]:
+		"""	Return a corrected ID and SRN in case this is a hybrid ID.
+			srn might be None. 
+			Returns: (srn, id)
+		"""
+		if id is not None:
+			return Utils.srnFromHybrid(None, id) # Hybrid
+		return Utils.srnFromHybrid(request.srn, request.id) # Hybrid
 

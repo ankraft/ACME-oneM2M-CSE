@@ -28,7 +28,7 @@ attributePolicies = {
 	'pi' 	: [ BT.string, 			CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ],
 	'acpi'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.NA ],
 	'ct'	: [ BT.timestamp, 		CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ],
-	'et'	: [ BT.timestamp, 		CAR.car1,   RO.O,	RO.O,  RO.O, AN.MA ],
+	'et'	: [ BT.timestamp, 		CAR.car1N,  RO.O,	RO.O,  RO.O, AN.MA ],
 	'lt'	: [ BT.timestamp, 		CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ],
 	'st'	: [ BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ],
 	'lbl'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.MA ],
@@ -52,7 +52,7 @@ attributePolicies = {
 	'apri'	: [ BT.list,			CAR.car1,	RO.O,	RO.O,  RO.O, AN.MA ],		# m2m:listOfURIs - ACP
 	'att'	: [ BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# BAT
 	'awi'	: [ BT.anyURI,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# ANDI
-	'bn'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# SUB
+	'bn'	: [ BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# SUB
 	'btl'	: [ BT.unsignedInt,		CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# BAT
 	'bts'	: [ BT.positiveInteger,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# BAT
 	'can'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# BAT
@@ -122,6 +122,7 @@ attributePolicies = {
 	'mgca'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# NOD
 	'mgd'	: [ BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.MA ],		# MGO
 	'mgs'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.MA ],		# MGO
+	'mi'	: [ BT.dict,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ],		# REQ
 	'mia'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT, FCNT
 	'mid'	: [ BT.list,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# list of m2m:anyURI - GRP
 	'mma'	: [ BT.unsignedLong,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# MEM
@@ -141,11 +142,15 @@ attributePolicies = {
 	'nl'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# AE, CSE, FCNT
 	'nsp'	: [ BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# SUB
 	'nty'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# NOD
-	'nu'	: [	BT.list, 			CAR.car1, 	RO.M, 	RO.O,  RO.O, AN.NA ],  	# SUB
+	'nu'	: [	BT.list, 			CAR.car1, 	RO.M, 	RO.O,  RO.O, AN.NA ],  		# SUB
 	'obis'	: [ BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# MGO
 	'obps'	: [ BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# MGO
+	'op'	: [ BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.NA ],		# REQ
 	'or'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT, FCNT
+	'org'	: [ BT.string,			CAR.car1,   RO.NP,	RO.NP, RO.NP,AN.NA ],		# REQ
+	'ors'	: [ BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT, FCNT, REQ
 	'osv'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
+	'pc'	: [ BT.dict,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# REQ
 	'pn'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# SUB
 	'poa'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# m2m:poaList - AE, CSE
 	'psn'	: [ BT.positiveInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ],		# SUB
@@ -155,9 +160,11 @@ attributePolicies = {
 	'pvs'	: [ BT.dict,			CAR.car1,	RO.M,	RO.O,  RO.O, AN.MA ],		# m2m:setOfArcs - ACP
 	'rbo'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# RBO
 	'regs'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# m2m:AERegistrationStatus - AE
+	'rid'	: [ BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ],		# REQ
 	'rl'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# SUB
 	'rms'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ],		# NOD
 	'rr'	: [ BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# AE
+	'rs'	: [ BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ],		# REQ
 	'scp'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# m2m:sessionCapabilities - AE
 	'sld'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# ANDI
 	'sli'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# ANDI
@@ -173,6 +180,7 @@ attributePolicies = {
 	'swn'	: [ BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ],		# SWR
 	'swv'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
 	'syst'	: [ BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
+	'tg'	: [ BT.anyURI,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.NA ],		# REQ
 	'tren'	: [ BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# AE, CSR
 	'tri'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CSR
 	'trn'	: [ BT.unsignedInt,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CSR
@@ -221,6 +229,8 @@ attributePolicies = {
 	#'ty'	: [ BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ],		# discovery
 	'us'	: [ BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ],		# discovery
 	'arp'	: [ BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ],		# discovery
+	'rt'	: [ BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ],		# request
+	'rp'	: [ BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ],		# request 
 
 	# TODO lbl, catr, patr
 
@@ -249,13 +259,14 @@ class Validator(object):
 		Logging.log('Validator initialized')
 
 
-	def shutdown(self) -> None:
+	def shutdown(self) -> bool:
 		Logging.log('Validator shut down')
+		return True
 
 	#########################################################################
 
 
-	def	validateAttributes(self, jsn:dict, tpe:str, attributePolicies:dict, create:bool=True , isImported:bool=False) -> Result:
+	def	validateAttributes(self, jsn:dict, tpe:str, attributePolicies:dict, create:bool=True , isImported:bool=False, createdInternally:bool=False) -> Result:
 		""" Validate a resources attributes for types etc."""
 		if not self.validationEnabled:	# just return if disabled
 			return Result(status=True)
@@ -302,17 +313,18 @@ class Validator(object):
 					err = 'Cannot find mandatory attribute: %s' % r
 					Logging.logWarn(err)
 					return Result(status=False, rsc=RC.badRequest, dbg=err)
-				if r in pureJson and p[1] == CAR.car1:
+				if r in pureJson and p[1] == CAR.car1: # but ignore CAR.car1N (which may be Null/None)
 					err = 'Cannot delete a mandatory attribute: %s' % r
 					Logging.logWarn(err)
 					return Result(status=False, rsc=RC.badRequest, dbg=err)
 				if p[reqp] in [ RO.NP, RO.O ]:	# Okay that the attribute is not in the json, since it is provided or optional
 					continue
 			else:
-				if p[reqp] == RO.NP:
-					err = 'Found non-provision attribute: %s' % r
-					Logging.logWarn(err)
-					return Result(status=False, rsc=RC.badRequest, dbg=err)
+				if not createdInternally:
+					if p[reqp] == RO.NP:
+						err = 'Found non-provision attribute: %s' % r
+						Logging.logWarn(err)
+						return Result(status=False, rsc=RC.badRequest, dbg=err)
 				if r == 'pvs' and not (res := self.validatePvs(pureJson)).status:
 					return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
 
@@ -421,8 +433,10 @@ class Validator(object):
 			is an error. """
 
 		if tpe == BT.positiveInteger:
-			if isinstance(value, int) and value > 0:
-				return Result(status=True)
+			if isinstance(value, int):
+				if value > 0:
+					return Result(status=True)
+				return Result(status=False, dbg='value must be > 0')
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
@@ -433,8 +447,10 @@ class Validator(object):
 			return Result(status=False, dbg='unknown type for value')
 
 		if tpe == BT.nonNegInteger:
-			if isinstance(value, int) and value >= 0:
-				return Result(status=True)
+			if isinstance(value, int):
+				if value >= 0:
+					return Result(status=True)
+				return Result(status=False, dbg='value must be >= 0')
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:

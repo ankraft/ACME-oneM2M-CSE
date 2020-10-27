@@ -8,7 +8,8 @@
 #
 
 from __future__ import annotations
-from dataclasses import dataclass
+import json
+from dataclasses import dataclass, field
 from typing import Any, List
 from enum import IntEnum, Enum, auto
 from flask import Request
@@ -33,7 +34,9 @@ class ResourceTypes(IntEnum):
 	GRP 		=  9
 	MGMTOBJ		= 13
 	NOD			= 14
+	PCH 		= 15
 	CSR			= 16
+	REQ 		= 17
 	SUB			= 23
 	FCNT	 	= 28
 	FCI 		= 58
@@ -108,6 +111,15 @@ class ResourceTypes(IntEnum):
 		return self.value in ResourceTypes._announcedSet 		# type: ignore
 
 
+	def __str__(self) -> str:
+		return str(self.value)
+
+
+	@classmethod
+	def has(cls, value:int) -> bool:
+		return value in cls.__members__.values()
+
+
 
 ResourceTypes._announcedMappings = {							#  type: ignore
 	ResourceTypes.ACP 		: ResourceTypes.ACPAnnc,
@@ -157,13 +169,15 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.CNT			: 'm2m:cnt',
 		ResourceTypes.CIN 			: 'm2m:cin',
 		ResourceTypes.CSEBase		: 'm2m:cb',
+		ResourceTypes.CSR 			: 'm2m:csr',
+		ResourceTypes.FCI			: 'm2m:fci',				# not an official shortname
+		ResourceTypes.FCNT			: 'm2m:fcnt',				# not an official shortname
 		ResourceTypes.GRP			: 'm2m:grp',
 		ResourceTypes.MGMTOBJ		: 'm2m:mgo',				# not an official shortname
 		ResourceTypes.NOD			: 'm2m:nod',
-		ResourceTypes.CSR 			: 'm2m:csr',
+		ResourceTypes.PCH			: 'm2m:pch',
+		ResourceTypes.REQ			: 'm2m:req',
 		ResourceTypes.SUB			: 'm2m:sub',
-		ResourceTypes.FCNT			: 'm2m:fcnt',				# not an official shortname
-		ResourceTypes.FCI			: 'm2m:fci',				# not an official shortname
 
 		ResourceTypes.ACPAnnc 		: 'm2m:acpA',
 		ResourceTypes.AEAnnc 		: 'm2m:aeA',
@@ -182,6 +196,8 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.FCNT_OL		: 'm2m:ol',
 		ResourceTypes.FCNT_LA		: 'm2m:la',
 		ResourceTypes.PCH_PCU		: 'm2m:pcu',
+
+		# MgmtObj Specializations
 
 		ResourceTypes.FWR			: 'm2m:fwr',
 		ResourceTypes.SWR			: 'm2m:swr',
@@ -234,6 +250,7 @@ class Cardinality(IntEnum):
 	car1L			= auto()
 	car01			= auto()
 	car01L			= auto()
+	car1N			= auto() # mandatory, but may be Null/None
 
 
 class RequestOptionality(IntEnum):
@@ -258,6 +275,9 @@ class Announced(IntEnum):
 
 class ResponseCode(IntEnum):
 	""" Response codes """
+	accepted									= 1000
+	acceptedNonBlockingRequestSynch				= 1001
+	acceptedNonBlockingRequestAsynch			= 1002
 	OK											= 2000
 	created 									= 2001
 	deleted 									= 2002
@@ -265,6 +285,7 @@ class ResponseCode(IntEnum):
 	badRequest									= 4000
 	notFound 									= 4004
 	operationNotAllowed							= 4005
+	subscriptionCreatorHasNoPrivilege			= 4101
 	contentsUnacceptable						= 4102
 	originatorHasNoPrivilege					= 4103
 	conflict									= 4105
@@ -278,6 +299,7 @@ class ResponseCode(IntEnum):
 	alreadyExists								= 5106
 	targetNotSubscribable						= 5203
 	subscriptionVerificationInitiationFailed	= 5204
+	subscriptionHostHasNoPrivilege				= 5205
 	notAcceptable 								= 5207
 	maxNumberOfMemberExceeded					= 6010
 	invalidArguments							= 6023
@@ -299,6 +321,9 @@ ResponseCode._httpStatusCodes = {											# type: ignore
 		ResponseCode.deleted 									: 200,		# DELETED
 		ResponseCode.updated 									: 200,		# UPDATED
 		ResponseCode.created									: 201,		# CREATED
+		ResponseCode.accepted 									: 202, 		# ACCEPTED
+		ResponseCode.acceptedNonBlockingRequestSynch 			: 202,		# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
+		ResponseCode.acceptedNonBlockingRequestAsynch			: 202,		# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
 		ResponseCode.badRequest									: 400,		# BAD REQUEST
 		ResponseCode.contentsUnacceptable						: 400,		# NOT ACCEPTABLE
 		ResponseCode.insufficientArguments 						: 400,		# INSUFFICIENT ARGUMENTS
@@ -312,6 +337,8 @@ ResponseCode._httpStatusCodes = {											# type: ignore
 		ResponseCode.targetNotSubscribable						: 403,		# TARGET NOT SUBSCRIBABLE
 		ResponseCode.receiverHasNoPrivileges					: 403,		# RECEIVER HAS NO PRIVILEGE
 		ResponseCode.securityAssociationRequired				: 403,		# SECURITY ASSOCIATION REQUIRED
+		ResponseCode.subscriptionCreatorHasNoPrivilege			: 403,		# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
+		ResponseCode.subscriptionHostHasNoPrivilege				: 403,		# SUBSCRIPTION HOST HAS NO PRIVILEGE
 		ResponseCode.notFound									: 404,		# NOT FOUND
 		ResponseCode.operationNotAllowed						: 405,		# OPERATION NOT ALLOWED
 		ResponseCode.notAcceptable 								: 406,		# NOT ACCEPTABLE
@@ -400,11 +427,13 @@ class Permission(IntEnum):
 
 class Operation(IntEnum):
 	# Operations
-	RETRIEVE			= 0
 	CREATE 				= 1
-	UPDATE				= 2
-	DELETE				= 3
-	DISCOVERY			= 4
+	RETRIEVE			= 2
+	UPDATE				= 3
+	DELETE				= 4
+	NOTIFY 				= 6
+	DISCOVERY			= 5
+
 
 	def permission(self) -> Permission:
 		""" Return the corresponding permission for an operation """
@@ -416,8 +445,38 @@ Operation._permissionsMapping =	{				# type: ignore
 	Operation.RETRIEVE	: Permission.RETRIEVE,
 	Operation.CREATE 	: Permission.CREATE,
 	Operation.UPDATE 	: Permission.UPDATE,
-	Operation.DELETE 	: Permission.DELETE
+	Operation.DELETE 	: Permission.DELETE,
+	Operation.NOTIFY 	: Permission.NOTIFY,
+	Operation.DISCOVERY : Permission.DISCOVERY,
 }
+
+
+##############################################################################
+#
+#	ResponseType 
+#
+
+class ResponseType(IntEnum):
+	"""	Reponse Types """
+	nonBlockingRequestSynch		= 1
+	nonBlockingRequestAsynch	= 2
+	blockingRequest				= 3	# default
+	flexBlocking				= 4
+	noResponse					= 5
+	
+
+##############################################################################
+#
+#	Request Status 
+#
+
+class RequestStatus(IntEnum):
+	"""	Reponse Types """
+	COMPLETED			= 1
+	FAILED				= 2
+	PENDING				= 3
+	FORWARDED			= 4
+	PARTIALLY_COMPLETED	= 5
 
 
 ##############################################################################
@@ -458,24 +517,89 @@ class NotificationEventType(IntEnum):
 
 ##############################################################################
 #
-#	Result Data Class
+#	Result and Argument and Header Data Classes
 #
-
 
 @dataclass
 class Result:
-	resource:	Any				= None		# Actually this is a Resource type, but have a circular import problem.
-	jsn: 		dict 			= None
-	lst:		List[Any]   	= None		# List of Anything
-	rsc:		ResponseCode	= ResponseCode.OK	# OK
-	dbg:		str 			= None
-	request:	Request 		= None  	# may contain the original http request object
-	status:		bool 			= None
-	originator:	str 			= None
+	resource 			: Resource		= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
+	jsn 				: dict 			= None
+	data 				: Any 			= None 		# Anything
+	lst 				: List[Any]   	= None		# List of Anything
+	rsc 				: ResponseCode	= ResponseCode.OK	# OK
+	dbg 				: str 			= None
+	request 			: CSERequest	= None  	# may contain the processed http request object
+	status 				: bool 			= None
+	originator 			: str 			= None
 
 
 	def errorResult(self) -> Result:
 		""" Copy only the rsc and dbg to a new result instance.
 		"""
 		return Result(rsc=self.rsc, dbg=self.dbg)
+
+	def toString(self) -> str:
+		from resources.Resource import Resource
+
+		if isinstance(self.resource, Resource):
+			r = json.dumps(self.resource.asJSON())
+		elif self.dbg is not None:
+			r = json.dumps({ 'm2m:dbg' : self.dbg })
+		elif isinstance(self.resource, dict):
+			r = json.dumps(self.resource)
+		elif isinstance(self.resource, str):
+			r = self.resource
+		elif isinstance(self.jsn, dict):		# explicit json
+			r = json.dumps(self.jsn)
+		elif self.resource is None and self.jsn is None:
+			r = ''
+		else:
+		 	r = ''
+		return r
+
+
+##############################################################################
+#
+#	Requests
+#
+
+@dataclass
+class RequestArguments:
+	fu 							: FilterUsage 					= FilterUsage.conditionalRetrieval
+	drt 						: DesiredIdentifierResultType	= DesiredIdentifierResultType.structured
+	fo 							: FilterOperation 				= FilterOperation.AND
+	rcn 						: ResultContentType 			= ResultContentType.discoveryResultReferences
+	rt 							: ResponseType					= ResponseType.blockingRequest 					# response type
+	rp 							: str 							= None 											# result persistence
+	rpts 						: str 							= None 											# ... as a timestamp
+	handling 					: dict 							= field(default_factory=dict)
+	conditions 					: dict 							= field(default_factory=dict)
+	attributes 					: dict 							= field(default_factory=dict)
+	operation 					: Operation 					= None
+	request 					: Request 						= None
+
+
+@dataclass
+class RequestHeaders:
+	originator 					: str 			= None 	# X-M2M-Origin
+	requestIdentifier			: str 			= None	# X-M2M-RI
+	contentType 				: str 			= None	# Content-Type
+	resourceType 				: ResourceTypes	= None
+	requestExpirationTimestamp	: str 			= None 	# X-M2M-RET
+	responseExpirationTimestamp	: str 			= None 	# X-M2M-RST
+	operationExecutionTime		: str 			= None 	# X-M2M-OET
+	releaseVersionIndicator		: str 			= None 	# X-M2M-RVI
+	responseTypeNUs				: List[str]		= None	# X-M2M-RTU
+
+
+class CSERequest:
+	headers 					: RequestHeaders 	= None
+	args 						: RequestArguments 	= None
+	originalArgs 				: Any 				= None	# Actually a MultiDict
+	data 						: str 				= None 	# The request data
+	json 						: dict 				= None	# The request data as JSON
+	id 							: str 				= None 	# target ID
+	srn 						: str 				= None 	# target structured resource name
+	csi 						: str 				= None 	# target csi
+
 

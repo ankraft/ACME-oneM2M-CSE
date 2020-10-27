@@ -7,10 +7,20 @@
 The CSE implementation successfully passes most of the oneM2M release 1 test cases (353 out of 361).
 
 
+## CSE Types
+
+The ACME CSE supports the following CSE types:
+
+| CSE Type | Supported |
+|:---------|:---------:|
+| IN       |  &check;  |
+| MN       |  &check;  |
+| ASN      |  &check;  |
+
+
 ## Resources
 
-The CSE supports the following oneM2M resource types:
-
+The ACME CSE supports the following oneM2M resource types:
 
 | Resource Type                 | Supported | Limitations                                                                                                                     |
 |:------------------------------|:---------:|:--------------------------------------------------------------------------------------------------------------------------------|
@@ -21,14 +31,16 @@ The CSE supports the following oneM2M resource types:
 | Container (CNT)               |  &check;  |                                                                                                                                 |
 | Content Instance (CIN)        |  &check;  |                                                                                                                                 |
 | Group (GRP)                   |  &check;  | The support includes requests via the *fopt* (fan-out-point) virtual resource.                                                  |
-| Subscription (SUB)            |  &check;  | Notifications via http to a direct url or an AE's Point-of-Access (POA) are supported as well.                                  |
+| Subscription (SUB)            |  &check;  | Notifications via http(s) (direct url or an AE's Point-of-Access (POA)). BatchNotifications, attributes.                        |
 | Node (NOD)                    |  &check;  |                                                                                                                                 |
 | Management Objects            |  &check;  | See also the list of supported [management objects](#mgmtobjs).                                                                 |
 | FlexContainer Specializations |  &check;  | Any specialization is supported and validated. See [Importing Attribute Policies](Importing.md#attributes) for further details. |
 | FlexContainerInstance         |  &check;  | Experimental. This is an implementation of the draft FlexContainerInstance specification.                                       |
+| Request (REQ)                 |  &check;  | To support non-blocking requests.                                                                                               |
 | Polling Channel               |  &cross;  |                                                                                                                                 |
 
 <a name="mgmtobjs"></a>
+
 ### Management Objects
 
 The following table presents the supported management object specifications.
@@ -47,24 +59,24 @@ The following table presents the supported management object specifications.
 | EventLog (EVL)           |
 | myCertFileCred (NYCFC)   |
 
+## Functions
 
-## Functionalities
-
-| Functionality                 | Supported | Remark                                                                |
-|:------------------------------|:---------:|:----------------------------------------------------------------------|
-| Resource addressing           |  &check;  | *CSE-Relative*, *SP-Relative* and *Absolute* addressing is supported. |
-| Standard oneM2M requests      |  &check;  | CREATE, RETRIEVE, UPDATE, DELETE                                      |
-| Discovery                     |  &check;  |                                                                       |
-| Notifications                 |  &check;  | E.g. for subscriptions                                                | 
-| AE registration               |  &check;  |                                                                       |
-| Remote CSE registration       |  &check;  |                                                                       |
-| Resource expiration           |  &cross;  |                                                                       |
-| Resource announcements        |  &check;  | Only one hop is supported at the moment.                              |
-| Resource validations          |  &check;  |                                                                       |
-| Request parameter validations |  &check;  |                                                                       |
-| Transit requests              |  &check;  | Forwarding requests from one CSE to another.                          |
-| Blocking requests             |  &check;  |                                                                       |
-| Non-blocking requests         |  &cross;  |                                                                       |
+| Functionality                 | Supported | Remark                                                                                   |
+|:------------------------------|:---------:|:-----------------------------------------------------------------------------------------|
+| Resource addressing           |  &check;  | *CSE-Relative*, *SP-Relative* and *Absolute* as well as hybrid addressing are supported. |
+| Standard oneM2M requests      |  &check;  | CREATE, RETRIEVE, UPDATE, DELETE                                                         |
+| Discovery                     |  &check;  |                                                                                          |
+| Subscriptions                 |  &check;  | incl. batch notification, and resource type and attribute filtering.                      |
+| Notifications                 |  &check;  | E.g. for subscriptions and non-blocking requests.                                        |
+| AE registration               |  &check;  |                                                                                          |
+| Remote CSE registration       |  &check;  |                                                                                          |
+| Resource expiration           |  &check;  |                                                                                          |
+| Resource announcements        |  &check;  | Only one hop is supported at the moment.                                                 |
+| Resource validations          |  &check;  |                                                                                          |
+| Request parameter validations |  &check;  |                                                                                          |
+| Transit requests              |  &check;  | Forwarding requests from one CSE to another.                                             |
+| Blocking requests             |  &check;  |                                                                                          |
+| Non-blocking requests         |  &check;  | Non-blocking synchronous and asynchronous, and flex-blocking are supported.              |
 
 
 ## Result Content Types
@@ -84,12 +96,26 @@ The following result contents are implemented for standard oneM2M requests & dis
 | modified attributes                    | 9   |
 | discovery result references            | 11  |
 
+
+## Notification Event Types for Subscriptions
+
+| Notification Event Types | Supported |
+|:-------------------------|:---------:|
+| resourceUpdate           |  &check;  |
+| resourceUpdate           |  &check;  |
+| createDirectChild        |  &check;  |
+| deleteDirectChild        |  &check;  |
+| retrieveCNTNoChild       |  &cross;  |
+| triggerReceivedForAE     |  &cross;  |
+| blockingUpdate           |  &cross;  |
+
+
 ## Protocols Bindings
 The following Protocol Bindings are supported:
 
 | Protocol Binding | Supported | Remark                            |
 |:-----------------|:---------:|:----------------------------------|
-| http             | &check;   | incl https. |
+| http             | &check;   | incl https.                       |
 | coap             | &cross;   |                                   |
 | mqtt             | &cross;   |                                   |
 

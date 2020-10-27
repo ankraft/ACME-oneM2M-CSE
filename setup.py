@@ -2,14 +2,15 @@ from setuptools import setup, find_packages
 
 setup(
     name='ACME-oneM2M-CSE',
-    version='0.5.0',
+    version='0.6.0',
     url='https://github.com/ankraft/ACME-oneM2M-CSE',
     author='Andreas Kraft',
     author_email='an.kraft@gmail.com',
     description='An open source CSE Middleware for Education',
     packages=find_packages(),
 	install_requires=[
-		'flask', 
+		'flask',
+		'isodate', 
 		'psutil',  
 		'requests', 
 		'rich', 

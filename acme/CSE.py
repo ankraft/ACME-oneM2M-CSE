@@ -13,6 +13,7 @@ from Constants import Constants as C
 from AnnouncementManager import AnnouncementManager
 from Configuration import Configuration
 from Dispatcher import Dispatcher
+from RequestManager import RequestManager
 from EventManager import EventManager
 from GroupManager import GroupManager
 from HttpServer import HttpServer
@@ -36,6 +37,7 @@ import Utils
 # components that are used throughout the CSE implementation.
 announce:AnnouncementManager		= None
 dispatcher:Dispatcher				= None
+request:RequestManager				= None
 event:EventManager					= None
 group:GroupManager					= None
 httpServer:HttpServer				= None
@@ -63,7 +65,7 @@ appsStarted:bool 					= False
 #def startup(args=None, configfile=None, resetdb=None, loglevel=None):
 def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	global announce, dispatcher, group, httpServer, notification, validator
-	global registration, remote, security, statistics, storage, event
+	global registration, remote, request, security, statistics, storage, event
 	global rootDirectory
 	global aeStatistics
 
@@ -111,6 +113,9 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	# Initialize the resource dispatcher
 	dispatcher = Dispatcher()
 
+	# Initialize the request manager
+	request = RequestManager()
+
 	# Initialize the security manager
 	security = SecurityManager()
 
@@ -151,30 +156,18 @@ def shutdown() -> None:
 	Logging.log('CSE shutting down')
 	if event is not None:
 		event.cseShutdown() 	# type: ignore
-	# if appsStarted:
-	# 	stopApps()
-	if announce is not None:
-		announce.shutdown()
-	if remote is not None:
-		remote.shutdown()
-	if group is not None:
-		group.shutdown()
-	if notification is not None:
-		notification.shutdown()
-	if dispatcher is not None:
-		dispatcher.shutdown()
-	if security is not None:
-		security.shutdown()
-	if validator is not None:
-		validator.shutdown()
-	if registration is not None:
-		registration.shutdown()
-	if statistics is not None:
-		statistics.shutdown()
-	if event is not None:
-		event.shutdown()
-	if storage is not None:
-		storage.shutdown()
+	announce is not None and announce.shutdown()
+	remote is not None and remote.shutdown()
+	group is not None and group.shutdown()
+	notification is not None and notification.shutdown()
+	request is not None and request.shutdown()
+	dispatcher is not None and dispatcher.shutdown()
+	security is not None and security.shutdown()
+	validator is not None and validator.shutdown()
+	registration is not None and registration.shutdown()
+	statistics is not None and statistics.shutdown()
+	event is not None and event.shutdown()
+	storage is not None and storage.shutdown()
 	Logging.log('CSE shutdown')
 	Logging.finit()
 

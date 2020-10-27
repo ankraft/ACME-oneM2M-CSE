@@ -26,8 +26,9 @@ class SecurityManager(object):
 			Logging.log('ACP checking DISABLED')
 
 
-	def shutdown(self) -> None:
+	def shutdown(self) -> bool:
 		Logging.log('SecurityManager shut down')
+		return True
 
 
 	def hasAccess(self, originator:str, resource:Resource, requestedPermission:Permission, checkSelf:bool=False, ty:int=None, isCreateRequest:bool=False, parentResource:Resource=None) -> bool:

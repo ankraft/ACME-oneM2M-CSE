@@ -16,6 +16,9 @@ from rich.console import Console
 
 
 class Configuration(object):
+	"""	The static class Configuration holds all the configuration values of the CSE. It is initialized only once by calling the static
+		method init(). Access to configuration valus is done by calling Configuration.get(<key>).
+	"""
 	_configuration: Dict[str, Any] = {}
 
 	@staticmethod
@@ -37,6 +40,7 @@ class Configuration(object):
 		argsValidationEnabled	= args.validationenabled if args is not None and 'validationenabled' in args else None
 		argsStatisticsEnabled	= args.statisticsenabled if args is not None and 'statisticsenabled' in args else None
 		argsRunAsHttps			= args.https if args is not None and 'https' in args else None
+		argsRemoteConfigEnabled	= args.remoteconfigenabled if args is not None and 'remoteconfigenabled' in args else None
 
 
 		# Read and parse the configuration file
@@ -69,6 +73,7 @@ class Configuration(object):
 				'http.root'							: config.get('server.http', 'root', 					fallback=''),
 				'http.address'						: config.get('server.http', 'address', 					fallback='http://127.0.0.1:8080'),
 				'http.multiThread'					: config.getboolean('server.http', 'multiThread', 		fallback=True),
+				'http.enableRemoteConfiguration'	: config.getboolean('server.http', 'enableRemoteConfiguration', fallback=False),
 
 				#
 				#	Database
@@ -101,6 +106,7 @@ class Configuration(object):
 				'cse.rn'							: config.get('cse', 'resourceName',						fallback='cse-in'),
 				'cse.resourcesPath'					: config.get('cse', 'resourcesPath', 					fallback=C.defaultImportDirectory),
 				'cse.expirationDelta'				: config.getint('cse', 'expirationDelta', 				fallback=60*60*24*365),	# 1 year, in seconds
+				'cse.maxExpirationDelta'			: config.getint('cse', 'maxExpirationDelta',			fallback=60*60*24*365*5),	# 5 years, in seconds
 				'cse.originator'					: config.get('cse', 'originator',						fallback='CAdmin'),
 				'cse.enableApplications'			: config.getboolean('cse', 'enableApplications', 		fallback=True),
 				'cse.applicationsStartupDelay'		: config.getint('cse', 'applicationsStartupDelay',		fallback=5),		# Seconds
@@ -110,6 +116,7 @@ class Configuration(object):
 				'cse.enableValidation'				: config.getboolean('cse', 'enableValidation', 			fallback=True),
 				'cse.sortDiscoveredResources'		: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
 				'cse.checkExpirationsInterval'		: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
+				'cse.flexBlockingPreference'		: config.get('cse', 'flexBlockingPreference',			fallback='blocking'),
 
 				#
 				#	CSE Security
@@ -140,6 +147,7 @@ class Configuration(object):
 
 				'cse.registration.allowedAEOriginators'	: config.getlist('cse.registration', 'allowedAEOriginators',	fallback=['C*','S*']),		# type: ignore
 				'cse.registration.allowedCSROriginators': config.getlist('cse.registration', 'allowedCSROriginators',	fallback=[]),				# type: ignore
+				'cse.registration.checkLiveliness'		: config.getboolean('cse.registration', 'checkLiveliness',		fallback=True),
 
 
 				#
@@ -159,19 +167,35 @@ class Configuration(object):
 
 
 				#
-				#	Defaults for Container Resources
-				#
-
-				'cse.cnt.mni'						: config.getint('cse.resource.cnt', 'mni', 				fallback=10),
-				'cse.cnt.mbs'						: config.getint('cse.resource.cnt', 'mbs', 				fallback=10000),
-
-				#
 				#	Defaults for Access Control Policies
 				#
 
 				'cse.acp.pv.acop'					: config.getint('cse.resource.acp', 'permission', 		fallback=63),
 				'cse.acp.pvs.acop'					: config.getint('cse.resource.acp', 'selfPermission', 	fallback=51),
 				'cse.acp.addAdminOrignator'			: config.getboolean('cse.resource.acp', 'addAdminOrignator',	fallback=True),
+
+
+				#
+				#	Defaults for Container Resources
+				#
+
+				'cse.cnt.mni'						: config.getint('cse.resource.cnt', 'mni', 				fallback=10),
+				'cse.cnt.mbs'						: config.getint('cse.resource.cnt', 'mbs', 				fallback=10000),
+
+
+				#
+				#	Defaults for Request Resources
+				#
+
+				'cse.req.minet'						: config.getint('cse.resource.req', 'minimumExpirationTime', fallback=60),
+				'cse.req.maxet'						: config.getint('cse.resource.req', 'maximumExpirationTime', fallback=180),
+
+
+				#
+				#	Defaults for Subscription Resources
+				#
+
+				'cse.sub.dur'						: config.getint('cse.resource.sub', 'batchNotifyDuration', 	fallback=60),	# seconds
 
 
 				#
@@ -230,7 +254,6 @@ class Configuration(object):
 			Configuration._configuration['cse.type'] = CSEType.IN
 
 
-
 		# Loglevel from command line
 		logLevel = Configuration._configuration['logging.level'].lower()
 		logLevel = (argsLoglevel or logLevel) 	# command line args override config
@@ -277,6 +300,10 @@ class Configuration(object):
 		# Override useTLS
 		if argsRunAsHttps is not None:
 			Configuration._configuration['cse.security.useTLS'] = argsRunAsHttps
+
+		# Override remote/httpConfiguration
+		if argsRemoteConfigEnabled is not None:
+			Configuration._configuration['http.enableRemoteConfiguration'] = argsRemoteConfigEnabled
 
 		# Correct urls
 		Configuration._configuration['cse.registrar.address'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.address'])
@@ -344,6 +371,16 @@ class Configuration(object):
 				console.print('[red]Configuration Error: Missing configuration [cse.registrar]:resourceName')
 				return False
 
+		# Check default subscription duration
+		if Configuration._configuration['cse.sub.dur'] < 1:
+			console.print('[red]Configuration Error: [cse.resource.sub]:batchNotifyDuration must be > 0')
+			return False
+
+		# Check flexBlocking value
+		Configuration._configuration['cse.flexBlockingPreference'] = Configuration._configuration['cse.flexBlockingPreference'].lower()
+		if Configuration._configuration['cse.flexBlockingPreference'] not in ['blocking', 'nonblocking']:
+			console.print('[red]Configuration Error: [cse]:flexBlockingPreference must be "blocking" or "nonblocking"')
+			return False
 
 		# Everything is fine
 		return True
@@ -364,6 +401,8 @@ class Configuration(object):
 
 	@staticmethod
 	def get(key: str) -> Any:
+		"""	Retrieve a configuration value or None if no configuration could be found for a key.
+		"""
 		if not Configuration.has(key):
 			return None
 		return Configuration._configuration[key]

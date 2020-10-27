@@ -16,7 +16,7 @@ from resources.Resource import Resource
 from resources.AnnouncedResource import AnnouncedResource
 from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC
-from helpers.BackgroundWorker import BackgroundWorker
+from helpers.BackgroundWorker import BackgroundWorkerPool
 
 # TODO for anounceable resource:
 # - update: update resource here
@@ -26,8 +26,6 @@ waitBeforeAnnouncement = 3
 class AnnouncementManager(object):
 
 	def __init__(self) -> None:
-		self.worker:BackgroundWorker			= None
-
 		CSE.event.addHandler(CSE.event.registeredToRemoteCSE, self.handleRegisteredToRemoteCSE)			# type: ignore
 		CSE.event.addHandler(CSE.event.deregisteredFromRemoteCSE, self.handleDeRegisteredFromRemoteCSE)	# type: ignore
 		CSE.event.addHandler(CSE.event.remoteCSEHasRegistered, self.handleRemoteCSEHasRegistered)			# type: ignore
@@ -41,13 +39,14 @@ class AnnouncementManager(object):
 		Logging.log('AnnouncementManager initialized')
 
 
-	def shutdown(self) -> None:
+	def shutdown(self) -> bool:
 		self.stop()
 		if CSE.remote is not None:
 			for csr in CSE.remote.getAllLocalCSRs():
 				if csr is not None:
 					self.checkResourcesForUnAnnouncement(csr)
 		Logging.log('AnnouncementManager shut down')
+		return True
 
 	#
 	#	Announcement Monitor
@@ -58,8 +57,7 @@ class AnnouncementManager(object):
 		if not self.announcementsEnabled:
 			return
 		Logging.log('Starting Announcements monitor')
-		self.worker = BackgroundWorker(self.checkInterval, self.announcementMonitorWorker, 'anncMonitor')
-		self.worker.start()
+		BackgroundWorkerPool.newWorker(self.checkInterval, self.announcementMonitorWorker, 'anncMonitor').start()
 
 
 	# Stop the monitor. Also delete the CSR resources on both sides
@@ -68,8 +66,7 @@ class AnnouncementManager(object):
 			return
 		Logging.log('Stopping Announcements monitor')
 		# Stop the thread
-		if self.worker is not None:
-			self.worker.stop()
+		BackgroundWorkerPool.stopWorkers('anncMonitor')
 
 
 	def announcementMonitorWorker(self) -> bool:
@@ -159,8 +156,10 @@ class AnnouncementManager(object):
 		for csi in resource.at:
 			if csi == CSE.remote.cseCsi or csi.startswith('%s/' % CSE.remote.cseCsi):
 				Logging.logWarn('Targeting own CSE. Ignored.')
+				self._removeAnnouncementFromResource(resource, csi)
 				continue
 			if (csr := Utils.resourceFromCSI(csi)) is None:
+				Logging.logWarn('Announcement Target CSE not found. Ignored.')
 				self._removeAnnouncementFromResource(resource, csi)
 				continue
 			# if (remoteCSR := CSE.remote.getCSRForRemoteCSE(csr)) is None:	# not yet registered
@@ -309,7 +308,9 @@ class AnnouncementManager(object):
 		CSIsFromAnnounceTo = []
 		for announcedResource in at:
 			if len(sp := announcedResource.split('/')) >= 2:
-				CSIsFromAnnounceTo.append('/%s' % sp[1])
+				if (csi := '/%s' % sp[1]) == CSE.remote.cseCsi or csi.startswith('%s/' % CSE.remote.cseCsi):	# Ignore own CSE as target
+					continue
+				CSIsFromAnnounceTo.append(csi)
 
 		announcedCSIs = []
 		remoteRIs = []

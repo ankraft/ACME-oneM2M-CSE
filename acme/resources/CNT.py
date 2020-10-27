@@ -97,15 +97,27 @@ class CNT(AnnounceableResource):
 
 	# Handle the addition of new CIN. Basically, get rid of old ones.
 	def childAdded(self, childResource:Resource, originator:str) -> None:
+		Logging.logDebug('Child resource added: %s' % childResource.ri)
 		super().childAdded(childResource, originator)
 		if childResource.ty == T.CIN:	# Validate if child is CIN
+
+			# Check for mia handling
+			if self.mia is not None:
+				# Take either mia or the maxExpirationDelta, whatever is smaller
+				maxEt = Utils.getResourceDate(self.mia if self.mia <= (med := Configuration.get('cse.maxExpirationDelta')) else med)
+				# Only replace the childresource's et if it is greater than the calculated maxEt
+				if childResource.et > maxEt:
+					childResource.setAttribute('et', maxEt)
+					childResource.dbUpdate()
+
 			self.validate(originator)
 
 	# Handle the removal of a CIN. 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
+		Logging.logDebug('Child resource removed: %s' % childResource.ri)
 		super().childRemoved(childResource, originator)
 		if childResource.ty == T.CIN:	# Validate if child was CIN
-			self.validate(originator)
+			self._validateChildren()
 
 
 	# Validating the Container. This means recalculating cni, cbs as well as
@@ -113,7 +125,13 @@ class CNT(AnnounceableResource):
 	def validate(self, originator:str=None, create:bool=False) -> Result:
 		if (res := super().validate(originator, create)).status == False:
 			return res
+		return self._validateChildren()
 
+
+	def _validateChildren(self) -> Result:
+		""" Internal validation and checks. This called more often then just from
+			the validate() method.
+		"""
 		# retrieve all children
 		cs = self.contentInstances()
 
@@ -147,6 +165,6 @@ class CNT(AnnounceableResource):
 		# TODO: support maxInstanceAge
 
 		# Some CNT resource may have been updated, so store the resource 
-		CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
+		self.dbUpdate()
 
 		return Result(status=True)

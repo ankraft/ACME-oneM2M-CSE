@@ -168,6 +168,8 @@ class TestAE(unittest.TestCase):
 			self.fail('Originator not in ACP:acr:acor')
 
 
+# TODO register multiple AEs
+
 def run():
 	suite = unittest.TestSuite()
 	suite.addTest(TestAE('test_createAE'))

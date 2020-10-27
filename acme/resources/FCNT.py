@@ -15,6 +15,8 @@ from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
+import functools 
+
 
 
 
@@ -77,6 +79,8 @@ class FCNT(AnnounceableResource):
 		return Result(status=True)
 
 
+	# This method is NOT called when adding FCIN!!
+
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
 		if not (res := super().childWillBeAdded(childResource, originator)).status:
 			return res
@@ -85,22 +89,31 @@ class FCNT(AnnounceableResource):
 		if (rn := childResource['rn']) is not None and rn in ['ol', 'la']:
 			return Result(status=False, rsc=RC.operationNotAllowed, dbg='resource types "latest" or "oldest" cannot be added')
 	
-		# Check whether the size of the CIN doesn't exceed the mbs
-		if childResource.ty == T.CIN and self.mbs is not None:
-			if childResource.cs is not None and childResource.cs > self.mbs:
-				return Result(status=False, rsc=RC.notAcceptable, dbg='children content sizes would exceed mbs')
 		return Result(status=True)
 
 
-	# Checking the presentse of cnd and calculating the size
+	# Handle the removal of a FCIN. 
+	def childRemoved(self, childResource:Resource, originator:str) -> None:
+		super().childRemoved(childResource, originator)
+		if childResource.ty == T.FCI:	# Validate if child was FCIN
+			self._validateChildren(originator, deletingFCI=True)
+
+
+	# Checking the presence of cnd and calculating the size
 	def validate(self, originator:str=None, create:bool=False) -> Result:
 		if not (res := super().validate(originator, create)).status:
 			return res
+		return self._validateChildren(originator)
 
-		# No CND?
-		if (cnd := self.cnd) is None or len(cnd) == 0:
-			return Result(status=False, rsc=RC.contentsUnacceptable, dbg='cnd attribute missing or empty')
+		# No CND? -> Validator
+		# if (cnd := self.cnd) is None or len(cnd) == 0:
+		# 	return Result(status=False, rsc=RC.contentsUnacceptable, dbg='cnd attribute missing or empty')
 
+
+	def _validateChildren(self, originator:str, deletingFCI:bool=False) -> Result:
+		""" Internal validation and checks. This called more often then just from
+			the validate() method, for example when deleting a FCIN.
+		"""
 		# Calculate contentSize
 		# This is not at all realistic since this is the in-memory representation
 		# TODO better implementation needed 
@@ -118,16 +131,18 @@ class FCNT(AnnounceableResource):
 		# TODO When cni and cbs is set to 0, then delete mni, mbs, la, ol, and all children
 		
 
-		if self.mni is not None or self.mbs is not None:
+		if self.mni is not None or self.mbs is not None or self.mia is not None: # not when this method is called when already deleting a child resource
 			self.hasInstances = True	# Change the internal flag whether this FC has flexContainerInstances
 
-			self.addFlexContainerInstance(originator)
+			if not deletingFCI:
+				self.addFlexContainerInstance(originator)
+			
 			fci = self.flexContainerInstances()
+			fcii = len(fci)	# number of instances
 
 			# check mni
 			if self.mni is not None:
 				mni = self.mni
-				fcii = len(fci)
 				i = 0
 				l = fcii
 				while fcii > mni and i < l:
@@ -136,65 +151,49 @@ class FCNT(AnnounceableResource):
 					fcii -= 1
 					i += 1
 					changed = True
-				self['cni'] = fcii
 
 				# Add "current" atribute, if it is not there
 				self.setAttribute('cni', 0, overwrite=False)
+				fci = self.flexContainerInstances()	# get FCIs again (bc may be different now)
+				fcii = len(fci)
+
+			# Always assign cni. Might have changed above
+			self['cni'] = fcii 
+			
+			# Calculate cbs
+			cbs = 0
+			for f in fci:					
+				cbs += f.cs
 
 			# check size
 			if self.mbs is not None:
-				fci = self.flexContainerInstances()	# get FCIs again (bc may be different now)
 				mbs = self.mbs
-				cbs = 0
-				for f in fci:					# Calculate cbs
-					cbs += f.cs
 				i = 0
-				l = len(fci)
-				while cbs > mbs and i < l:
+				#l = len(fci)
+				while cbs > mbs and i < fcii:
 					# remove oldest
 					cbs -= fci[i].cs			
 					CSE.dispatcher.deleteResource(fci[i])
 					i += 1
-				self['cbs'] = cbs
 
 				# Add "current" atribute, if it is not there
 				self.setAttribute('cbs', 0, overwrite=False)
+			
+			# Always assign cbs. Might have changed above
+			self['cbs'] = cbs
 
 		# TODO Remove la, ol, existing FCI when mni etc are not present anymore.
 
-
-		# TODO support maxInstanceAge
 		
 		# May have been changed, so store the resource
-		# CSE.dispatcher.updateResource(self, doUpdateCheck=False) # To avoid recursion, dont do an update check
 		self.dbUpdate()
 		return Result(status=True)
-
-
-	# Validate expirations of child resurces
-	def validateExpirations(self) -> None:
-		Logging.logDebug('Validate expirations')
-		super().validateExpirations()
-
-		if (mia := self.mia) is None:
-			return
-		now = Utils.getResourceDate(-mia)
-		# fcis = self.flexContainerInstances()
-		# TODO
-		# for fci in fcis
-
 
 
 	# Get all flexContainerInstances of a resource and return a sorted (by ct) list 
 	def flexContainerInstances(self) -> List[Resource]:
 		return sorted(CSE.dispatcher.directChildResources(self.ri, T.FCI), key=lambda x: (x.ct))
 
-# TODO:
-# If the maxInstanceAge attribute is present in the targeted 
-# <flexContainer> resource, then the Hosting CSE shall set the expirationTime attribute in 
-# created <flexContainerInstance> child resource such that the time difference between expirationTime 
-# and the creationTime of the <flexContainerInstance>. The <flexContainerInstance> child resource shall 
-# not exceed the maxInstanceAge of the targeted <flexContainer> resource.
 
 	# Add a new FlexContainerInstance for this flexContainer
 	def addFlexContainerInstance(self, originator:str) -> None:
@@ -215,6 +214,15 @@ class FCNT(AnnounceableResource):
 		resource = Utils.resourceFromJSON(jsn={ self.tpe : jsn }, pi=self.ri, acpi=self.acpi, ty=T.FCI).resource
 		CSE.dispatcher.createResource(resource)
 		resource['cs'] = self.cs
+
+		# Check for mia handling
+		if self.mia is not None:
+			# Take either mia or the maxExpirationDelta, whatever is smaller
+			maxEt = Utils.getResourceDate(self.mia if self.mia <= (med := Configuration.get('cse.maxExpirationDelta')) else med)
+			# Only replace the childresource's et if it is greater than the calculated maxEt
+			if resource.et > maxEt:
+				resource.setAttribute('et', maxEt)
+
 		resource.dbUpdate()	# store
 
 

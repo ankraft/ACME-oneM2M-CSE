@@ -94,8 +94,9 @@ class EventManager(object):
 		Logging.log('EventManager initialized')
 
 
-	def shutdown(self) -> None:
+	def shutdown(self) -> bool:
 		Logging.log('EventManager shut down')
+		return True
 
 
 	#########################################################################

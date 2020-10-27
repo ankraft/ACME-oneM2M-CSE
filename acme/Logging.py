@@ -21,6 +21,8 @@ from rich.highlighter import ReprHighlighter
 from rich.style import Style
 from rich.console import Console
 from rich.text import Text
+from rich.default_styles import DEFAULT_STYLES
+from rich.theme import Theme
 
 
 levelName = {
@@ -91,17 +93,17 @@ class	Logging:
 		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=handlers)
 
 		# Start worker to handle logs in the background
-		from helpers import BackgroundWorker
-		Logging.worker = BackgroundWorker.BackgroundWorker(Logging.checkInterval, Logging.loggingWorker, 'loggingWorker')
-		Logging.worker.start()
+		from helpers.BackgroundWorker import BackgroundWorkerPool
+		BackgroundWorkerPool.newWorker(Logging.checkInterval, Logging.loggingWorker, 'loggingWorker').start()
 	
 
 	@staticmethod
 	def finit() -> None:
-		if Logging.worker is not None and Logging.queue is not None:
+		if Logging.queue is not None:
 			while not Logging.queue.empty():
 				time.sleep(0.5)
-			Logging.worker.stop()
+		from helpers.BackgroundWorker import BackgroundWorkerPool
+		BackgroundWorkerPool.stopWorkers('loggingWorker')
 
 
 	@staticmethod
@@ -148,7 +150,11 @@ class	Logging:
 	def _log(level:int, msg:str) -> None:
 		if Logging.loggingEnabled and Logging.logLevel <= level and Logging.queue is not None:
 			# Queue a log message : (level, message, caller from stackframe, current thread)
-			Logging.queue.put((level, str(msg), inspect.getframeinfo(inspect.stack()[2][0]), threading.current_thread()))
+			try:
+				Logging.queue.put((level, str(msg), inspect.getframeinfo(inspect.stack()[2][0]), threading.current_thread()))
+			except Exception as e:
+				# sometimes this raises an exception. Just ignore it.
+				pass
 
 
 #
@@ -158,18 +164,23 @@ class	Logging:
 class ACMERichLogHandler(RichHandler):
 
 	def __init__(self, level: int = logging.NOTSET, console: Console = None) -> None:
-		super().__init__(level=level)
 
-		# Add own styles to the current console object's styles
-		self.console._styles['repr.dim'] = Style(color='grey70', dim=True)
-		self.console._styles['repr.request'] = Style(color='spring_green2')
-		self.console._styles['repr.response'] = Style(color='magenta2')
-		self.console._styles['repr.id'] = Style(color='light_sky_blue1')
-		self.console._styles['repr.url'] = Style(color='sandy_brown', underline=True)
-		self.console._styles['repr.start'] = Style(color='orange1')
-		self.console._styles['logging.level.debug'] = Style(color='grey50')
-		self.console._styles['logging.level.warning'] = Style(color='orange3')
-		self.console._styles['logging.level.error'] = Style(color='red', reverse=True)
+		# Add own styles to the default styles and create a new theme for the console
+		ACMEStyles = { 
+			'repr.dim' 				: Style(color='grey70', dim=True),
+			'repr.request'			: Style(color='spring_green2'),
+			'repr.response'			: Style(color='magenta2'),
+			'repr.id'				: Style(color='light_sky_blue1'),
+			'repr.url'				: Style(color='sandy_brown', underline=True),
+			'repr.start'			: Style(color='orange1'),
+			'logging.level.debug'	: Style(color='grey50'),
+			'logging.level.warning'	: Style(color='orange3'),
+			'logging.level.error'	: Style(color='red', reverse=True)
+		}
+		_styles = DEFAULT_STYLES.copy()
+		_styles.update(ACMEStyles)
+
+		super().__init__(level=level, console=Console(theme=Theme(_styles)))
 
 
 		# Set own highlights 

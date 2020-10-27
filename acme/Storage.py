@@ -15,7 +15,7 @@ from tinydb.operations import delete 			# type: ignore
 # TODO remove mypy type checking supressions above as soon as tinydb provides typing stubs
 # from tinydb_smartcache import SmartCacheTable # TODO Not compatible with TinyDB 4 yet
 
-import os, json, re
+import os, json, re, time
 from typing import List, Callable, Any
 from threading import Lock
 from Configuration import Configuration
@@ -24,7 +24,6 @@ from Types import ResourceTypes as T, Result, ResponseCode as RC
 from Logging import Logging
 from resources.Resource import Resource
 import CSE, Utils
-from helpers import BackgroundWorker
 
 
 class Storage(object):
@@ -50,24 +49,13 @@ class Storage(object):
 		if Configuration.get('db.resetOnStartup') is True:
 			self.db.purgeDB()
 
-		# Start background worker to handle expired resources
-		Logging.log('Starting expiration worker')
-		self.expirationWorker = None
-		if (iv := Configuration.get('cse.checkExpirationsInterval')) > 0:
-			self.expirationWorker = BackgroundWorker.BackgroundWorker(iv, self.expirationDBWorker, 'expirationDBWorker')
-			self.expirationWorker.start()
-
 		Logging.log('Storage initialized')
 
 
-	def shutdown(self) -> None:
-		# Stop the expiration worker
-		Logging.log('Stopping expiration worker')
-		if self.expirationWorker is not None:
-			self.expirationWorker.stop()
-
+	def shutdown(self) -> bool:
 		self.db.closeDB()
 		Logging.log('Storage shut down')
+		return True
 
 
 	#########################################################################
@@ -103,11 +91,11 @@ class Storage(object):
 
 
 	# Check whether a resource with either the ri or the srn already exists
-	def hasResource(self, ri: str, srn: str) -> bool:
+	def hasResource(self, ri:str=None, srn:str=None) -> bool:
 		return self.db.hasResource(ri=ri) or self.db.hasResource(srn=srn)
 
 
-	def retrieveResource(self, ri: str = None, csi: str = None, srn: str = None) -> Result:
+	def retrieveResource(self, ri:str=None, csi:str=None, srn:str=None) -> Result:
 		""" Return a resource via different addressing methods. """
 		resources = []
 
@@ -124,59 +112,20 @@ class Storage(object):
 			# Logging.logDebug('Retrieving resource csi: %s' % csi)
 			resources = self.db.searchResources(csi=csi)
 
+		# Logging.logDebug(resources)
 		# return Utils.resourceFromJSON(resources[0]) if len(resources) == 1 else None,
 		if (l := len(resources)) == 1:
 			return Utils.resourceFromJSON(resources[0])
 		elif l == 0:
-			return Result(rsc=RC.notFound)
+			return Result(rsc=RC.notFound, dbg='resource not found')
 
 		return Result(rsc=RC.internalServerError, dbg='database inconsistency')
-
 
 
 	def retrieveResourcesByType(self, ty: T) -> List[dict]:
 		""" Return all resources of a certain type. """
 		# Logging.logDebug('Retrieving all resources ty: %d' % ty)
 		return self.db.searchResources(ty=int(ty))
-
-
-
-
-	# def discoverResources(self, rootResource, handling, conditions, attributes, fo):
-	# 	# preparations
-	# 	rootSRN = rootResource.__srn__
-	# 	handling['__returned__'] = 0
-	# 	handling['__matched__'] = 0
-	# 	if 'lvl' in handling:
-	# 		handling['__lvl__'] = rootSRN.count('/') + handling['lvl']
-
-	# 	# a bit of optimization. This length stays the same.
-	# 	allLen = ((len(conditions) if conditions is not None else 0) +
-	# 	  (len(attributes) if attributes is not None else 0) +
-	# 	  (len(conditions['ty']) if conditions is not None else 0) - 1 +
-	# 	  (len(conditions['cty']) if conditions is not None else 0) - 1 
-	# 	 )
-
-	# 	rs = self.db.discoverResources(lambda r: _testDiscovery(self,
-	# 															r,
-	# 															rootSRN,
-	# 															handling,
-	# 															conditions,
-	# 															attributes,
-	# 															fo,
-	# 															handling['lim'] if 'lim' in handling else None,
-	# 															handling['ofst'] if 'ofst' in handling else None,
-	# 															allLen))
-		
-	# 	# transform JSONs to resources
-	# 	result = []
-	# 	for r in rs:
-	# 		result.append(Utils.resourceFromJSON(r))
-
-	# 	# sort resources by type and then by lowercase rn
-	# 	if Configuration.get('cse.sortDiscoveredResources'):
-	# 		result.sort(key=lambda x:(x.ty, x.rn.lower()))
-	# 	return result
 
 
 	def updateResource(self, resource: Resource) -> Result:
@@ -218,25 +167,38 @@ class Storage(object):
 		return self.db.countResources()
 
 
-	def identifier(self, ri: str) -> List[dict]:
+	def identifier(self, ri:str) -> List[dict]:
 		return self.db.searchIdentifiers(ri=ri)
 
-	def structuredPath(self, srn: str) -> List[dict]:
+	def structuredPath(self, srn:str) -> List[dict]:
 		return self.db.searchIdentifiers(srn=srn)
 
 
-	def searchByTypeFieldValue(self, ty: T, field: str, value: str) -> List[Resource]:
+	def searchByTypeFieldValue(self, ty:T, field:str, value:str) -> List[Resource]:
 		"""Search and return all resources of a specific type and a value in a field,
 		and return them in an array."""
-		result = []
-		for j in self.db.searchByTypeFieldValue(int(ty), field, value):
-			res = Utils.resourceFromJSON(j)
-			if res.resource is not None:
-				result.append(res.resource)
-		return result
+		def filterFunc(r:dict) -> bool:
+			if 'ty' in r and r['ty'] == ty and field in r:
+				f = r[field]
+				if isinstance(f, (list, dict)):
+					return value in f
+				return value == f
+			return False
 
 
-	def searchByValueInField(self, field: str, value: str) -> List[Resource]:
+		return self.searchByFilter(filterFunc)
+		# return self.searchByFilter(lambda r: 'ty' in r and r['ty'] == ty and field in r and r[field] == value)
+
+
+		# result = []
+		# for j in self.db.searchByTypeFieldValue(int(ty), field, value):
+		# 	res = Utils.resourceFromJSON(j)
+		# 	if res.resource is not None:
+		# 		result.append(res.resource)
+		# return result
+
+
+	def searchByValueInField(self, field:str, value:str) -> List[Resource]:
 		"""Search and return all resources of a specific value in a field,
 		and return them in an array."""
 		result = []
@@ -245,6 +207,18 @@ class Storage(object):
 			if res.resource is not None:
 				result.append(res.resource)
 		return result
+
+
+	def searchByFilter(self, filter:Callable) -> List[Resource]:
+		"""	Return a list of resouces that match the given filter, or an empty list.
+		"""
+		result = []
+		for j in self.db.discoverResources(filter):
+			res = Utils.resourceFromJSON(j)
+			if res.resource is not None:
+				result.append(res.resource)
+		return result
+
 		
 
 	def searchAnnounceableResourcesForCSI(self, csi:str, isAnnounced:bool) -> List[Resource]:
@@ -277,10 +251,6 @@ class Storage(object):
 			if res.resource is not None:
 				result.append(res.resource)
 		return result
-
-
-
-
 
 
 
@@ -317,6 +287,29 @@ class Storage(object):
 		return self.db.upsertSubscription(subscription)
 
 
+
+
+	#########################################################################
+	##
+	##	BatchNotifications
+	##
+
+	def addBatchNotification(self, ri:str, nu:str, request:dict) -> bool:
+		return self.db.addBatchNotification(ri, nu, request)
+
+
+	def countBatchNotifications(self, ri:str, nu:str) -> int:
+		return self.db.countBatchNotifications(ri, nu)
+
+
+	def getBatchNotifications(self, ri:str, nu:str) -> List[dict]:
+		return self.db.getBatchNotifications(ri, nu)
+
+
+	def removeBatchNotifications(self, ri:str, nu:str) -> List[dict]:
+		return self.db.removeBatchNotifications(ri, nu)
+
+
 	#########################################################################
 	##
 	##	Statistics
@@ -348,30 +341,6 @@ class Storage(object):
 		return self.db.removeAppData(data)
 
 
-	#########################################################################
-	##
-	##	Resource Expiration
-	##
-
-	def expirationDBWorker(self) -> bool:
-		Logging.logDebug('Looking for expired resources')
-		now = Utils.getResourceDate()
-		rs = self.db.discoverResources(lambda r: 'et' in r and (et := r['et']) is not None and et < now)
-		for j in rs:
-			res = Utils.resourceFromJSON(j)
-			if res.resource is not None:
-				CSE.dispatcher.deleteResource(res.resource, withDeregistration=True)
-
-		# Check all resources with maxInstanceAge (mia)
-		rs = self.db.discoverResources(lambda r: 'mia' in r)
-		for j in rs:
-			res = Utils.resourceFromJSON(j)
-			if res.resource is not None:
-				res.resource.validateExpirations()
-		return True
-
-
-
 #########################################################################
 #
 #	DB class that implements the TinyDB binding
@@ -391,6 +360,7 @@ class TinyDBBinding(object):
 		self.lockResources = Lock()
 		self.lockIdentifiers = Lock()
 		self.lockSubscriptions = Lock()
+		self.lockBatchNotifications = Lock()
 		self.lockStatistics = Lock()
 		self.lockAppData = Lock()
 
@@ -404,6 +374,7 @@ class TinyDBBinding(object):
 			self.dbResources = TinyDB(storage=MemoryStorage)
 			self.dbIdentifiers = TinyDB(storage=MemoryStorage)
 			self.dbSubscriptions = TinyDB(storage=MemoryStorage)
+			self.dbBatchNotifications = TinyDB(storage=MemoryStorage)
 			self.dbStatistics = TinyDB(storage=MemoryStorage)
 			self.dbAppData = TinyDB(storage=MemoryStorage)
 		else:
@@ -411,11 +382,13 @@ class TinyDBBinding(object):
 			self.dbResources = TinyDB('%s/resources%s.json' % (self.path, postfix))
 			self.dbIdentifiers = TinyDB('%s/identifiers%s.json' % (self.path, postfix))
 			self.dbSubscriptions = TinyDB('%s/subscriptions%s.json' % (self.path, postfix))
+			self.dbBatchNotifications = TinyDB('%s/batchNotifications%s.json' % (self.path, postfix))
 			self.dbStatistics = TinyDB('%s/statistics%s.json' % (self.path, postfix))
 			self.dbAppData = TinyDB('%s/appdata%s.json' % (self.path, postfix))
 		self.tabResources = self.dbResources.table('resources', cache_size=self.cacheSize)
 		self.tabIdentifiers = self.dbIdentifiers.table('identifiers', cache_size=self.cacheSize)
 		self.tabSubscriptions = self.dbSubscriptions.table('subsriptions', cache_size=self.cacheSize)
+		self.tabBatchNotifications = self.dbBatchNotifications.table('batchNotifications', cache_size=self.cacheSize)
 		self.tabStatistics = self.dbStatistics.table('statistics', cache_size=self.cacheSize)
 		self.tabAppData = self.dbAppData.table('appdata', cache_size=self.cacheSize)
 
@@ -425,6 +398,7 @@ class TinyDBBinding(object):
 		self.dbResources.close()
 		self.dbIdentifiers.close()
 		self.dbSubscriptions.close()
+		self.dbBatchNotifications.close()
 		self.dbStatistics.close()
 		self.dbAppData.close()
 
@@ -434,6 +408,7 @@ class TinyDBBinding(object):
 		self.tabResources.truncate()
 		self.tabIdentifiers.truncate()
 		self.tabSubscriptions.truncate()
+		self.tabBatchNotifications.truncate()
 		self.tabStatistics.truncate()
 		self.tabAppData.truncate()
 
@@ -460,6 +435,7 @@ class TinyDBBinding(object):
 			ri = resource.ri
 			self.tabResources.update(resource.json, Query().ri == ri)
 			# remove nullified fields from db and resource
+			# TODO remove Null values recursively
 			for k in list(resource.json):
 				if resource.json[k] is None:
 					self.tabResources.update(delete(k), Query().ri == ri)
@@ -521,11 +497,13 @@ class TinyDBBinding(object):
 			return len(self.tabResources)
 
 
-	def  searchByTypeFieldValue(self, ty: int, field: str, value: Any) -> List[dict]:
-		"""Search and return all resources of a specific type and a value in a field,
-		and return them in an array."""
-		with self.lockResources:
-			return self.tabResources.search((Query().ty == ty) & (where(field).any(value)))
+	# def  searchByTypeFieldValue(self, ty: int, field: str, value: Any) -> List[dict]:
+	# 	"""Search and return all resources of a specific type and a value in a field,
+	# 	and return them in an array."""
+	# 	with self.lockResources:
+	# 		# Q = Query()
+	# 		# return self.tabResources.search((Q.ty == ty) & (Q[field].any(value)))
+	# 		return self.tabResources.search(where[field].test(lambda s: value in s))
 
 
 	def  searchByValueInField(self, field: str, value: Any) -> List[dict]:
@@ -585,7 +563,12 @@ class TinyDBBinding(object):
 										'pi'  : subscription.pi,
 										'nct' : subscription.nct,
 										'net' : subscription['enc/net'],
-										'nus' : subscription.nu
+										'atr' : subscription['enc/atr'],
+										'chty': subscription['enc/chty'],
+										'exc' : subscription.exc,
+										'ln'  : subscription.ln,
+										'nus' : subscription.nu,
+										'bn'  : subscription.bn
 									}, 
 									Query().ri == ri)
 			return result is not None
@@ -595,6 +578,38 @@ class TinyDBBinding(object):
 		with self.lockSubscriptions:
 			return self.tabSubscriptions.remove(Query().ri == subscription.ri)
 
+
+	#
+	#	BatchNotifications
+	#
+
+	def addBatchNotification(self, ri:str, nu:str, notificationRequest:dict) -> bool:
+		with self.lockBatchNotifications:
+			result = self.tabBatchNotifications.insert(
+									{	'ri' 		: ri,
+										'nu' 		: nu,
+										'tstamp'	: time.time(),
+										'request'	: notificationRequest
+									})
+			return result is not None
+
+
+	def countBatchNotifications(self, ri:str, nu:str) -> int:
+		with self.lockBatchNotifications:
+			q = Query()
+			return self.tabBatchNotifications.count((q.ri == ri) & (q.nu == nu))
+
+
+	def getBatchNotifications(self, ri:str, nu:str) -> List[dict]:
+		with self.lockBatchNotifications:
+			q = Query()
+			return self.tabBatchNotifications.search((q.ri == ri) & (q.nu == nu))
+
+
+	def removeBatchNotifications(self, ri:str, nu:str) -> List[dict]:
+		with self.lockBatchNotifications:
+			q = Query()
+			return self.tabBatchNotifications.remove((q.ri == ri) & (q.nu == nu))
 
 	#
 	#	Statistics

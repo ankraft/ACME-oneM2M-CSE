@@ -26,7 +26,7 @@ class Resource(object):
 	_rtype 				= '__rtype__'
 	_srn				= '__srn__'
 	_node				= '__node__'
-	_createdInternally	= '__createdInternally__'
+	_createdInternally	= '__createdInternally__'	# TODO better name. This is actually an RI
 	_imported			= '__imported__'
 	_isVirtual 			= '__isVirtual__'
 	_announcedTo 		= '__announcedTo__'			# List
@@ -85,7 +85,8 @@ class Resource(object):
 			ts = Utils.getResourceDate()
 			self.setAttribute('ct', ts, overwrite=False)
 			self.setAttribute('lt', ts, overwrite=False)
-			self.setAttribute('et', Utils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite=False) 
+			if self.ty not in [ T.CSEBase ]:
+				self.setAttribute('et', Utils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite=False) 
 			if pi is not None:
 				# self.setAttribute('pi', pi, overwrite=False)
 				self.setAttribute('pi', pi, overwrite=True)
@@ -100,8 +101,8 @@ class Resource(object):
 
 			# Remove empty / null attributes from json
 			# But see also the comment in update() !!!
-			self.json = {k: v for (k, v) in self.json.items() if v is not None }
-
+			#self.json = {k: v for (k, v) in self.json.items() if v is not None }
+			self.json = Utils.deleteNoneValuesFromJSON(self.json)
 			# determine and add the srn
 			self[self._srn] = Utils.structuredPath(self)
 			self[self._rtype] = self.tpe
@@ -139,7 +140,7 @@ class Resource(object):
 		# We assume that an instantiated resource is always correct
 		# Also don't validate virtual resources
 		if (self[self._isInstantiated] is None or not self[self._isInstantiated]) and not self[self._isVirtual] :
-			if not (res := CSE.validator.validateAttributes(self._originalJson, self.tpe, self.attributePolicies, isImported=self.isImported)).status:
+			if not (res := CSE.validator.validateAttributes(self._originalJson, self.tpe, self.attributePolicies, isImported=self.isImported, createdInternally=self.isCreatedInternally())).status:
 				return res
 
 		# validate the resource logic
@@ -186,7 +187,7 @@ class Resource(object):
 				return Result(status=False, rsc=RC.contentsUnacceptable, dbg='resource types mismatch')
 
 			# validate the attributes
-			if not (res := CSE.validator.validateAttributes(jsn, self.tpe, self.attributePolicies, create=False)).status:
+			if not (res := CSE.validator.validateAttributes(jsn, self.tpe, self.attributePolicies, create=False, createdInternally=self.isCreatedInternally())).status:
 				return res
 
 			if self.ty not in [T.FCNTAnnc, T.FCIAnnc]:
@@ -198,7 +199,8 @@ class Resource(object):
 				if key in ['ct', 'lt', 'pi', 'ri', 'rn', 'st', 'ty']:
 					continue
 				value = j[key]
-				# Special handling for et when deleted: set a new et
+
+				# Special handling for et when deleted/set to Null: set a new et
 				if key == 'et' and value is None:
 					self['et'] = Utils.getResourceDate(Configuration.get('cse.expirationDelta'))
 					continue
@@ -265,14 +267,21 @@ class Resource(object):
 			err = 'Invalid ID ri: %s, pi: %s, rn: %s)' % (self.ri, self.pi, self.rn)
 			Logging.logDebug(err)
 			return Result(status=False, rsc=RC.contentsUnacceptable, dbg=err)
+
+		# expirationTime handling
+		if (et := self.et) is not None:
+			if self.ty == T.CSEBase:
+				err = 'expirationTime is not allowed in CSEBase'
+				Logging.logWarn(err)
+				return Result(status=False, rsc=RC.badRequest, dbg=err)
+			if len(et) > 0 and et < (etNow := Utils.getResourceDate()):
+				err = 'expirationTime is in the past: %s < %s' % (et, etNow)
+				Logging.logWarn(err)
+				return Result(status=False, rsc=RC.badRequest, dbg=err)
+			if et > (etMax := Utils.getResourceDate(Configuration.get('cse.maxExpirationDelta'))):
+				Logging.logDebug('Correcting expirationDate to maxExpiration: %s -> %s' % (et, etMax))
+				self['et'] = etMax
 		return Result(status=True)
-
-
-	def validateExpirations(self) -> bool:
-		"""	Validate possible expirations, of self or child resources.
-			MAY be implemented by child class.
-		"""
-		pass
 
 
 	def createAnnouncedJSON(self) -> Tuple[dict, int, str]:
@@ -280,6 +289,23 @@ class Resource(object):
 			resource implementations that support announceable versions.
 		"""
 		return None, RC.badRequest, 'wrong resource type or announcement not supported'
+
+	#########################################################################
+
+	def createdInternally(self) -> str:
+		""" Return the resource.ri for which this ACP was created, or None. """
+		return self[self._createdInternally]
+
+
+	def isCreatedInternally(self) -> bool:
+		""" Return the resource.ri for which this resource was created, or None. """
+		return self[self._createdInternally] is not None
+
+	def setCreatedInternally(self, value:str) -> None:
+		"""	Save the RI for which this resource was created for. This has some
+			impacts on internal handling and checks.
+		"""
+		self[self._createdInternally] = value
 
 
 	#########################################################################
@@ -289,11 +315,11 @@ class Resource(object):
 	#
 
 
-	def setAttribute(self, key: str, value: Any, overwrite: bool = True) -> None:
+	def setAttribute(self, key:str, value:Any, overwrite:bool=True) -> None:
 		Utils.setXPath(self.json, key, value, overwrite)
 
 
-	def attribute(self, key: str, default: Any = None) -> Any:
+	def attribute(self, key:str, default:Any=None) -> Any:
 		if '/' in key:	# search in path
 			return Utils.findXPath(self.json, key, default)
 		if self.hasAttribute(key):

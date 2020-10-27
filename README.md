@@ -3,9 +3,10 @@
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
 
-Version 0.5.0
+Version 0.6.0-dev
 
-[![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.8-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-green.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-green)](LICENSE) [![MyPy](https://img.shields.io/badge/MyPy-covered-green)](LICENSE)
+[![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.8-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-green.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-green)](LICENSE) [![MyPy](https://img.shields.io/badge/MyPy-covered-green)](LICENSE)  
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/acmeCSE.svg?style=social&label=%40acmeCSE)](https://twitter.com/acmeCSE)
 
 
 
@@ -31,6 +32,7 @@ Please consult the following pages for further instructions.
 - [Supported Resource Types and Functionalities](docs/Supported.md)
 	- [Limitations](docs/Supported.md#limitations)
 - [Development](docs/Development.md)
+- [FAQ](docs/FAQ.md)
 
 ## Changes
 
@@ -51,10 +53,9 @@ BSD 3-Clause License for the CSE and its native components and modules. Please s
 
 
 ## Roadmap & Backlog
-- CSE: support non-blocking requests
 - CSE: Support the PollingChannel resource type
 - CSE: Timeseries
 - UI: Support for resource specific actions (e.g. latest, oldest)
 - UI: Graph for Container reosurces
 - Importer: Automatically import/update resources when the CSE is running
-- App development: support more specializations
+- App development: support more TS-0023 specializations

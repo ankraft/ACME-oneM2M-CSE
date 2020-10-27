@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
 	# Print Summary
 	console.print()
-	table = Table(show_header=True, header_style="blue", show_footer=True, footer_style='', title='[dim]\[[/dim][red][i]ACME[/i][/red][dim]][/dim] - Test Results')
+	table = Table(show_header=True, header_style='blue', show_footer=True, footer_style='', title='[dim]\[[/dim][red][i]ACME[/i][/red][dim]][/dim] - Test Results')
 	table.add_column('Test Suites', footer='Totals', no_wrap=True)
 	table.add_column('Test Count', footer='[spring_green3]%d[/spring_green3]' % totalRunTests if totalErrors == 0 else str(totalRunTests))
 	table.add_column('Skipped', footer='[yellow]%d[/yellow]' % totalSkipped if totalSkipped > 0 else '[spring_green3]0')
