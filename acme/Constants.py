@@ -12,7 +12,7 @@ from Types import ResourceTypes as T
 class Constants(object):
 
 	# ACME Version
-	version						= '0.6.0-dev'
+	version						= '0.6.0'
 
 
 	# List of virtual resources
