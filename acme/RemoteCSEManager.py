@@ -12,11 +12,10 @@
 
 import requests, json, urllib.parse
 from typing import List, Tuple, Dict
-from flask import Request
 from Configuration import Configuration
 from Logging import Logging
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, CSEType, ResponseCode as RC
+from Types import ResourceTypes as T, Result, CSEType, ResponseCode as RC, CSERequest
 import Utils, CSE
 from resources import CSR, CSEBase
 from resources.Resource import Resource
@@ -36,6 +35,7 @@ class RemoteCSEManager(object):
 		self.cseCsi								= Configuration.get('cse.csi')
 		self.cseRI								= Configuration.get('cse.ri')
 		self.checkInterval						= Configuration.get('cse.registrar.checkInterval')
+		self.checkLiveliness					= Configuration.get('cse.registration.checkLiveliness')
 		self.registrarCSEURL					= '%s%s/~%s/%s' % (self.remoteAddress, self.remoteRoot, self.registrarCSI, self.registrarCseRN)
 		self.registrarCSRURL					= '%s%s' % (self.registrarCSEURL, self.cseCsi)
 		self.ownRegistrarCSR:Resource			= None 	# The own CSR at the registrar if there is one
@@ -122,15 +122,28 @@ class RemoteCSEManager(object):
 	#		
 
 	def connectionMonitorWorker(self) -> bool:
-		Logging.logDebug('Checking connections to remote CSEs')
 		try:
+
 			# Check the current state of the connection to the "upstream" CSEs
 			if self.csetype in [ CSEType.ASN, CSEType.MN ]:
+
+				# when validateRegistrations == False then only check when there is no connection
+				if not self.checkLiveliness:
+					if (r := self._retrieveLocalCSRs(own=True)).lst is not None and len(r.lst) == 1:
+						return True
+			
+				# Check the connection to the registrar CSE and establish one if necessary
+				Logging.logDebug('Checking connection to registrar CSE')
+
 				self._checkOwnConnection()
 
 			# Check the liveliness of other CSR connections
+			# Only when we validate the registrations
 			if self.csetype in [ CSEType.MN, CSEType.IN ]:
-				self._checkCSRLiveliness()
+				if  self.checkLiveliness:	
+					Logging.logDebug('Checking connections to registree CSEs')
+					self._checkCSRLiveliness()
+
 		except Exception as e:
 			Logging.logErr('Exception: %s' % e)
 			import traceback
@@ -314,7 +327,7 @@ class RemoteCSEManager(object):
 		localCsrs = CSE.dispatcher.directChildResources(pi=self.cseRI, ty=T.CSR)
 		if csi is None:
 			csi = self.registrarCSI
-		Logging.logDebug('Retrieving local CSR: %s' % csi)
+		# Logging.logDebug('Retrieving local CSR: %s' % csi)
 		if own:
 			for localCsr in localCsrs:
 				if (c := localCsr.csi) is not None and c == csi:
@@ -468,38 +481,44 @@ class RemoteCSEManager(object):
 	#	Handling of Transit requests. Forward requests to the resp. remote CSE's.
 	#
 
-	def handleTransitRetrieveRequest(self, request: Request, id: str, origin: str) -> Result:
+	def handleTransitRetrieveRequest(self, request:CSERequest) -> Result:
 		""" Forward a RETRIEVE request to a remote CSE """
-		if (url := self._getForwardURL(id)) is None:
+		if (url := self._getForwardURL(request.id)) is None:
 			return Result(rsc=RC.notFound, dbg='forward URL not found for id: %s' % id)
-		if len(request.args) > 0:	# pass on other arguments, for discovery
-			url += '?' + urllib.parse.urlencode(request.args)
+		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
+			url += '?' + urllib.parse.urlencode(request.originalArgs)
 		Logging.log('Forwarding Retrieve/Discovery request to: %s' % url)
-		return CSE.httpServer.sendRetrieveRequest(url, origin)
+		return CSE.httpServer.sendRetrieveRequest(url, request.headers.originator)
 
 
-	def handleTransitCreateRequest(self, request: Request, id: str, origin: str, ty: T) -> Result:
+	def handleTransitCreateRequest(self, request:CSERequest) -> Result:
 		""" Forward a CREATE request to a remote CSE. """
-		if (url := self._getForwardURL(id)) is None:
+		if (url := self._getForwardURL(request.id)) is None:
 			return Result(rsc=RC.notFound, dbg='forward URL not found for id: %s' % id)
+		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
+			url += '?' + urllib.parse.urlencode(request.originalArgs)
 		Logging.log('Forwarding Create request to: %s' % url)
-		return CSE.httpServer.sendCreateRequest(url, origin, data=request.data, ty=ty)
+		return CSE.httpServer.sendCreateRequest(url, request.headers.originator, data=request.data, ty=request.headers.resourceType)
 
 
-	def handleTransitUpdateRequest(self, request: Request, id: str, origin: str) -> Result:
+	def handleTransitUpdateRequest(self, request:CSERequest) -> Result:
 		""" Forward an UPDATE request to a remote CSE. """
-		if (url := self._getForwardURL(id)) is None:
+		if (url := self._getForwardURL(request.id)) is None:
 			return Result(rsc=RC.notFound, dbg='forward URL not found for id: %s' % id)
+		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
+			url += '?' + urllib.parse.urlencode(request.originalArgs)
 		Logging.log('Forwarding Update request to: %s' % url)
-		return CSE.httpServer.sendUpdateRequest(url, origin, data=request.data)
+		return CSE.httpServer.sendUpdateRequest(url, request.headers.originator, data=request.data)
 
 
-	def handleTransitDeleteRequest(self, id:str, origin:str) -> Result:
+	def handleTransitDeleteRequest(self, request:CSERequest) -> Result:
 		""" Forward a DELETE request to a remote CSE. """
-		if (url := self._getForwardURL(id)) is None:
+		if (url := self._getForwardURL(request.id)) is None:
 			return Result(rsc=RC.notFound, dbg='forward URL not found for id: %s' % id)
+		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
+			url += '?' + urllib.parse.urlencode(request.originalArgs)
 		Logging.log('Forwarding Delete request to: %s' % url)
-		return CSE.httpServer.sendDeleteRequest(url, origin)
+		return CSE.httpServer.sendDeleteRequest(url, request.headers.originator)
 
 
 	def retrieveRemoteResource(self, id:str, originator:str=None, raw:bool=False) -> Result:
@@ -584,7 +603,7 @@ class RemoteCSEManager(object):
 			target['st'] = source.st
 		
 
-		target['cb'] = Utils.getIdFromOriginator(source.csi)	# only the stem
+		target['cb'] = '%s/%s' % (source.csi, source.rn)
 		target['dcse'] = list(self.descendantCSR.keys())		# Always do this bc it might be different, even empty for an update
 		target.delAttribute('acpi', setNone = False)	# remove ACPI (don't provide ACPI in updates...a bit)
 
@@ -593,3 +612,4 @@ class RemoteCSEManager(object):
 			for attr in [ 'ri', 'rn', 'ct', 'lt', 'ty', 'cst', 'cb', 'csi']:
 				if attr in target:
 					target.delAttribute(attr, setNone = False)
+

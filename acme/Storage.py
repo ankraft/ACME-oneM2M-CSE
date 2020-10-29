@@ -112,6 +112,7 @@ class Storage(object):
 			# Logging.logDebug('Retrieving resource csi: %s' % csi)
 			resources = self.db.searchResources(csi=csi)
 
+		# Logging.logDebug(resources)
 		# return Utils.resourceFromJSON(resources[0]) if len(resources) == 1 else None,
 		if (l := len(resources)) == 1:
 			return Utils.resourceFromJSON(resources[0])
@@ -176,12 +177,25 @@ class Storage(object):
 	def searchByTypeFieldValue(self, ty:T, field:str, value:str) -> List[Resource]:
 		"""Search and return all resources of a specific type and a value in a field,
 		and return them in an array."""
-		result = []
-		for j in self.db.searchByTypeFieldValue(int(ty), field, value):
-			res = Utils.resourceFromJSON(j)
-			if res.resource is not None:
-				result.append(res.resource)
-		return result
+		def filterFunc(r:dict) -> bool:
+			if 'ty' in r and r['ty'] == ty and field in r:
+				f = r[field]
+				if isinstance(f, (list, dict)):
+					return value in f
+				return value == f
+			return False
+
+
+		return self.searchByFilter(filterFunc)
+		# return self.searchByFilter(lambda r: 'ty' in r and r['ty'] == ty and field in r and r[field] == value)
+
+
+		# result = []
+		# for j in self.db.searchByTypeFieldValue(int(ty), field, value):
+		# 	res = Utils.resourceFromJSON(j)
+		# 	if res.resource is not None:
+		# 		result.append(res.resource)
+		# return result
 
 
 	def searchByValueInField(self, field:str, value:str) -> List[Resource]:
@@ -483,11 +497,13 @@ class TinyDBBinding(object):
 			return len(self.tabResources)
 
 
-	def  searchByTypeFieldValue(self, ty: int, field: str, value: Any) -> List[dict]:
-		"""Search and return all resources of a specific type and a value in a field,
-		and return them in an array."""
-		with self.lockResources:
-			return self.tabResources.search((Query().ty == ty) & (where(field).any(value)))
+	# def  searchByTypeFieldValue(self, ty: int, field: str, value: Any) -> List[dict]:
+	# 	"""Search and return all resources of a specific type and a value in a field,
+	# 	and return them in an array."""
+	# 	with self.lockResources:
+	# 		# Q = Query()
+	# 		# return self.tabResources.search((Q.ty == ty) & (Q[field].any(value)))
+	# 		return self.tabResources.search(where[field].test(lambda s: value in s))
 
 
 	def  searchByValueInField(self, field: str, value: Any) -> List[dict]:

@@ -165,6 +165,8 @@ Only the following configration settings can updated by this method yet:
 | Macro name                   | Description                                                                                                   |
 |:-----------------------------|:--------------------------------------------------------------------------------------------------------------|
 | cse.checkExpirationsInterval | Assigning a new value to this configuration setting will also force a restart CSE's *Registration* component. |
+| cse.req.minet                | Minimum time for &lt;request> resource expiration.                                                            |
+| cse.req.maxnet               | Maximum time for &lt;request> resource expiration.                                                            |
 
 
 <a name="mypy"></a>

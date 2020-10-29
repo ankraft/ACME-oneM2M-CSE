@@ -31,7 +31,7 @@ class TestDiscovery(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
-		cls.crTimestamp1 = getDate()	# first timestamp
+		cls.crTimestamp1 = getDate(-timeDelta)	# first timestamp
 
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
@@ -551,6 +551,18 @@ class TestDiscovery(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:cnt/lt'))
 
 
+	# Test UPDATE and RCN=9 (modifiedAttributes)
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCNTwithWrongRCN2(self):
+		# create another container
+		jsn = 	{ 'm2m:cnt' : { 
+					'mni' : 23,
+					'lbl' : [ 'test2' ]
+				}}
+		r, rsc = UPDATE('%s/%s?rcn=%d' % (aeURL, cnt3RN, RCN.hierarchicalAddress), TestDiscovery.originator, jsn)
+		self.assertEqual(rsc, RC.badRequest)
+
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveWithWrongArgument(self):
 		r, rsc = RETRIEVE('%s?rcn=%d&wrong=wrong' % (aeURL, RCN.attributes), TestDiscovery.originator)
@@ -620,6 +632,7 @@ def run():
 	suite.addTest(TestDiscovery('test_appendArp'))
 	suite.addTest(TestDiscovery('test_createCNTwithRCN9'))
 	suite.addTest(TestDiscovery('test_updateCNTwithRCN9'))
+	suite.addTest(TestDiscovery('test_updateCNTwithWrongRCN2'))
 	suite.addTest(TestDiscovery('test_retrieveWithWrongArgument'))
 	suite.addTest(TestDiscovery('test_retrieveWithWrongFU'))
 	suite.addTest(TestDiscovery('test_retrieveWithWrongDRT'))

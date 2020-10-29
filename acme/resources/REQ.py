@@ -9,11 +9,13 @@
 
 from typing import Dict, Any
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, RequestArguments, RequestHeaders, Operation, RequestStatus
+from Types import ResourceTypes as T, Result, RequestArguments, RequestHeaders, Operation, RequestStatus, CSERequest
 from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
+from Configuration import Configuration
+
 
 
 # Attribute policies for this resource are constructed during startup of the CSE
@@ -21,7 +23,7 @@ attributePolicies = constructPolicy([
 	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'daci', 
 ])
 reqPolicies = constructPolicy([
-	'op', 'tg', 'or', 'rid', 'mi', 'pc', 'rs', 'ors'
+	'op', 'tg', 'org', 'rid', 'mi', 'pc', 'rs', 'ors'
 ])
 attributePolicies = addPolicy(attributePolicies, reqPolicies)
 
@@ -39,41 +41,42 @@ class REQ(Resource):
 
 
 	@staticmethod
-	def createRequestResource(arguments:RequestArguments, headers:RequestHeaders, operation:Operation, target:str, content:dict=None) -> Result:
+	def createRequestResource(request:CSERequest) -> Result:
 		"""	Create an initialized <request> resource.
 		"""
+		
 		# calculate request et
-		minEt = Utils.getResourceDate(5) 	# TODO config
-		maxEt = Utils.getResourceDate(20) 	# TODO config
-		if arguments.rp is not None:
-			et = arguments.rp if arguments.rp < maxEt else maxEt
+		minEt = Utils.getResourceDate(Configuration.get('cse.req.minet'))
+		maxEt = Utils.getResourceDate(Configuration.get('cse.req.maxet'))
+		if request.args.rpts is not None:
+			et = request.args.rpts if request.args.rpts < maxEt else maxEt
 		else:
 			et = minEt
 
 		jsn:Dict[str, Any] = {
 			'm2m:req' : {
 				'et'	: et,
-				'lbl'	: [ headers.originator ],
-				'op'	: operation,
-				'tg'	: target,
-				'or'	: headers.originator,
-				'rid'	: headers.requestIdentifier,
+				'lbl'	: [ request.headers.originator ],
+				'op'	: request.args.operation,
+				'tg'	: request.id,
+				'org'	: request.headers.originator,
+				'rid'	: request.headers.requestIdentifier,
 				'mi'	: {
-					'ty'	: headers.resourceType,
+					'ty'	: request.headers.resourceType,
 					'ot'	: Utils.getResourceDate(),
-					'rqet'	: headers.requestExpirationTimestamp,
-					'rset'	: headers.responseExpirationTimestamp,
+					'rqet'	: request.headers.requestExpirationTimestamp,
+					'rset'	: request.headers.responseExpirationTimestamp,
 					'rt'	: { 
-						'rtv' : arguments.rt
+						'rtv' : request.args.rt
 					},
-					'rp'	: arguments.rp,
-					'rcn'	: arguments.rcn,
+					'rp'	: request.args.rp,
+					'rcn'	: request.args.rcn,
 					'fc'	: {
-						'fu'	: arguments.fu,
-						'fo'	: arguments.fo,
+						'fu'	: request.args.fu,
+						'fo'	: request.args.fo,
 					},
-					'drt'	: arguments.drt,
-					'rvi'	: headers.releaseVersionIndicator if headers.releaseVersionIndicator is not None else C.hfvRVI,
+					'drt'	: request.args.drt,
+					'rvi'	: request.headers.releaseVersionIndicator if request.headers.releaseVersionIndicator is not None else C.hfvRVI,
 				},
 				'rs'	: RequestStatus.PENDING,
 				'ors'	: {
@@ -81,15 +84,15 @@ class REQ(Resource):
 		}}
 
 		# add handlings, conditions and attributes from filter
-		for k,v in { **arguments.handling, **arguments.conditions, **arguments.attributes}.items():
+		for k,v in { **request.args.handling, **request.args.conditions, **request.args.attributes}.items():
 			Utils.setXPath(jsn, 'm2m:req/mi/fc/%s' % k, v, True)
 
 		# add content
-		if content is not None:
-			Utils.setXPath(jsn, 'm2m:req/pc', content, True)
+		if request.json is not None and len(request.json) > 0:
+			Utils.setXPath(jsn, 'm2m:req/pc', request.json, True)
 
 		# calculate and assign rtu for rt
-		if (rtu := headers.responseTypeURI) is not None and len(rtu) > 0:
+		if (rtu := request.headers.responseTypeNUs) is not None and len(rtu) > 0:
 			Utils.setXPath(jsn, 'm2m:req/mi/rt/nu', [ u for u in rtu if len(u) > 0] )
 
 		if (cseres := Utils.getCSE()).resource is None:

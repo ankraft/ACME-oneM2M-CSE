@@ -40,6 +40,10 @@ class NotificationManager(object):
 		Logging.log('NotificationManager shut down')
 		return True
 
+	###########################################################################
+	#
+	#	Subscriptions
+	#
 
 	def addSubscription(self, subscription:Resource, originator:str) -> Result:
 		if not Configuration.get('cse.enableNotifications'):
@@ -148,6 +152,18 @@ class NotificationManager(object):
 	# 		for nu in self._getNotificationURLs(sub['nus']):
 	# 			pass # TODO
 
+	###########################################################################
+	#
+	#	Notifications in general
+	#
+
+	def sendNotificationWithJSON(self, jsn:dict, nus:Union[List[str], str], originator:str=None) -> None:
+		if nus is not None and len(nus) > 0:
+			for nu in self._getNotificationURLs(nus):
+				self._sendRequest(nu, jsn, originator=originator)
+
+
+
 	#########################################################################
 
 	# Return resolved notification URLs, so also POA from referenced AE's etc
@@ -157,7 +173,7 @@ class NotificationManager(object):
 		nusl = nus if isinstance(nus, list) else [ nus ]	# make a list out of it even when it is a single value
 		result = []
 		for nu in nusl:
-			if nu is None:
+			if nu is None or len(nu) == 0:
 				continue
 			# check if it is a direct URL
 			Logging.logDebug("Checking next notification target: %s" % nu)
@@ -278,10 +294,11 @@ class NotificationManager(object):
 			return self._sendRequest(nu, notificationRequest)
 
 
-	def _sendRequest(self, nu:str, notificationRequest:dict, headers:dict=None) -> bool:
+	def _sendRequest(self, nu:str, notificationRequest:dict, headers:dict=None, originator:str=None) -> bool:
 		"""	Actually send a Notification request.
 		"""
-		return CSE.httpServer.sendCreateRequest(nu, Configuration.get('cse.csi'), data=json.dumps(notificationRequest), headers=headers).rsc == RC.OK
+		originator = originator if originator is not None else Configuration.get('cse.csi')
+		return CSE.httpServer.sendCreateRequest(nu, originator, data=json.dumps(notificationRequest), headers=headers).rsc == RC.OK
 
 
 	def _flushBatchNotifications(self, subscription:Resource) -> None:
@@ -326,7 +343,7 @@ class NotificationManager(object):
 		"""	Send and remove(!) the available BatchNotifications for an ri & nu.
 		"""
 		with self.lockBatchNotification: # TODO check whether this is actually necessary
-			Logging.log('Sending aggregated subscription notifications for ri: %s' % ri)
+			Logging.logWarn('Sending aggregated subscription notifications for ri: %s' % ri)
 			# Collect the notifications	
 			notifications = []		
 			for notification in sorted(CSE.storage.getBatchNotifications(ri, nu), key=lambda x: x['tstamp']):	# sort by timestamp added

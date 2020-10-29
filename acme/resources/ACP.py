@@ -37,7 +37,7 @@ class ACP(AnnounceableResource):
 			self.setAttribute('pv/acr', [], overwrite=False)
 			self.setAttribute('pvs/acr', [], overwrite=False)
 			if createdInternally is not None:
-				self.setAttribute(self._createdInternally, createdInternally)
+				self.setCreatedInternally(createdInternally)
 
 
 	# Enable check for allowed sub-resources
@@ -77,13 +77,6 @@ class ACP(AnnounceableResource):
 		acr.append( { 'acor': [ CSE.remote.cseCsi ], 'acop': Permission.ALL } )
 		return jsn
 
-
-
-	#########################################################################
-
-	def createdInternally(self) -> str:
-		""" Return the resource.ri for which this ACP was created, or None. """
-		return self[self._createdInternally]
 
 	#########################################################################
 

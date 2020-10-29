@@ -142,14 +142,15 @@ attributePolicies = {
 	'nl'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# AE, CSE, FCNT
 	'nsp'	: [ BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# SUB
 	'nty'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# NOD
-	'nu'	: [	BT.list, 			CAR.car1, 	RO.M, 	RO.O,  RO.O, AN.NA ],  	# SUB
+	'nu'	: [	BT.list, 			CAR.car1, 	RO.M, 	RO.O,  RO.O, AN.NA ],  		# SUB
 	'obis'	: [ BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# MGO
 	'obps'	: [ BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# MGO
 	'op'	: [ BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.NA ],		# REQ
-	'or'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT, FCNT, REQ
+	'or'	: [ BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT, FCNT
+	'org'	: [ BT.string,			CAR.car1,   RO.NP,	RO.NP, RO.NP,AN.NA ],		# REQ
 	'ors'	: [ BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CNT, FCNT, REQ
 	'osv'	: [ BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# DVI
-	'pc'	: [ BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# REQ
+	'pc'	: [ BT.dict,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ],		# REQ
 	'pn'	: [ BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],		# SUB
 	'poa'	: [ BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# m2m:poaList - AE, CSE
 	'psn'	: [ BT.positiveInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ],		# SUB
@@ -265,7 +266,7 @@ class Validator(object):
 	#########################################################################
 
 
-	def	validateAttributes(self, jsn:dict, tpe:str, attributePolicies:dict, create:bool=True , isImported:bool=False) -> Result:
+	def	validateAttributes(self, jsn:dict, tpe:str, attributePolicies:dict, create:bool=True , isImported:bool=False, createdInternally:bool=False) -> Result:
 		""" Validate a resources attributes for types etc."""
 		if not self.validationEnabled:	# just return if disabled
 			return Result(status=True)
@@ -319,10 +320,11 @@ class Validator(object):
 				if p[reqp] in [ RO.NP, RO.O ]:	# Okay that the attribute is not in the json, since it is provided or optional
 					continue
 			else:
-				if p[reqp] == RO.NP:
-					err = 'Found non-provision attribute: %s' % r
-					Logging.logWarn(err)
-					return Result(status=False, rsc=RC.badRequest, dbg=err)
+				if not createdInternally:
+					if p[reqp] == RO.NP:
+						err = 'Found non-provision attribute: %s' % r
+						Logging.logWarn(err)
+						return Result(status=False, rsc=RC.badRequest, dbg=err)
 				if r == 'pvs' and not (res := self.validatePvs(pureJson)).status:
 					return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
 

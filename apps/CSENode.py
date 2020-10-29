@@ -12,7 +12,7 @@ from NodeBase import *
 from Logging import Logging
 from Configuration import Configuration
 from resources import BAT
-import psutil 	# type: ignore
+# import psutil 	# type: ignore
 import socket, platform, re, uuid, traceback
 from Types import ResponseCode as RC
 
@@ -86,6 +86,7 @@ class CSENode(NodeBase):
 	#
 
 	def _checkBattery(self) -> None:
+		import psutil 	# type: ignore
 		if self.battery is not None:
 			if (sensorBat := psutil.sensors_battery()) is not None:
 				(percent, _, plugged) = sensorBat
@@ -104,6 +105,7 @@ class CSENode(NodeBase):
 
 
 	def _checkMemory(self) -> None:
+		import psutil 	# type: ignore
 		if self.memory is not None:
 			mmt = psutil.virtual_memory().total
 			mma = psutil.virtual_memory().available

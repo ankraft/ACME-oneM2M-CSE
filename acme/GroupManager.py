@@ -9,9 +9,8 @@
 
 from Logging import Logging
 from typing import Union, List
-from flask import Request
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseCode as RC
+from Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseCode as RC, CSERequest
 import CSE, Utils
 from resources import FCNT, MgmtObj
 from resources.Resource import Resource
@@ -149,7 +148,7 @@ class GroupManager(object):
 
 
 
-	def foptRequest(self, operation:Operation, fopt:Resource, request:Request, id:str, originator:str, ct:str=None, ty:T=None) -> Result:
+	def foptRequest(self, operation:Operation, fopt:Resource, request:CSERequest, id:str, originator:str) -> Result:
 		"""	Handle requests to a fanOutPoint. 
 		This method might be called recursivly, when there are groups in groups."""
 
@@ -162,14 +161,11 @@ class GroupManager(object):
 		permission = operation.permission()
 
 		#check access rights for the originator through memberAccessControlPolicies
-		if CSE.security.hasAccess(originator, group, requestedPermission=permission, ty=ty, isCreateRequest=True if operation == Operation.CREATE else False) == False:
+		if CSE.security.hasAccess(originator, group, requestedPermission=permission, ty=request.headers.resourceType, isCreateRequest=True if operation == Operation.CREATE else False) == False:
 			return Result(rsc=RC.originatorHasNoPrivilege, dbg='access denied')
 
-		# get the rqi header field
-		rh, _ = Utils.getRequestHeaders(request)
-
 		# check whether there is something after the /fopt ...
-		_, _, tail = id.partition('/fopt/') if '/fopt/' in id else (_, _, '')
+		_, _, tail = id.partition('/fopt/') if '/fopt/' in id else (None, None, '')
 		Logging.logDebug('Adding additional path elements: %s' % tail)
 
 		# walk through all members
@@ -184,16 +180,16 @@ class GroupManager(object):
 				mid = mid + tail
 			# Invoke the request
 			if operation == Operation.RETRIEVE:
-				if (res := CSE.request.handleRetrieveRequest(request, mid, originator)).resource is None:
+				if (res := CSE.dispatcher.processRetrieveRequest(request, originator, mid)).resource is None:
 					return res
 			elif operation == Operation.CREATE:
-				if (res := CSE.request.handleCreateRequest(request, mid, originator, ct, ty)).resource is None:
+				if (res := CSE.dispatcher.processCreateRequest(request, originator, mid)).resource is None:
 					return res
 			elif operation == Operation.UPDATE:
-				if (res := CSE.dispatcher.handleUpdateRequest(request, mid, originator, ct)).resource is None:
+				if (res := CSE.dispatcher.processUpdateRequest(request, originator, mid)).resource is None:
 					return res 
 			elif operation == Operation.DELETE:
-				if (res := CSE.dispatcher.handleDeleteRequest(request, mid, originator)).rsc != RC.deleted:
+				if (res := CSE.dispatcher.processDeleteRequest(request, originator, mid)).rsc != RC.deleted:
 					return res 
 			else:
 				return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
@@ -205,14 +201,14 @@ class GroupManager(object):
 			for result in resultList:
 				if result.resource is not None and isinstance(result.resource, Resource):
 					item = 	{ 'rsc' : result.rsc, 
-							  'rqi' : rh.requestIdentifier,
+							  'rqi' : request.headers.requestIdentifier,
 							  'pc'  : result.resource.asJSON() if isinstance(result.resource, Resource) else result.resource, # in case 'resource' is a dict
 							  'to'  : result.resource[Resource._srn],
 							  'rvi'	: '3'	# TODO constant?
 							}
 				else:	# e.g. when deleting
 					item = 	{ 'rsc' : result.rsc, 
-					  'rqi' : rh.requestIdentifier,
+					  'rqi' : request.headers.requestIdentifier,
 					  'rvi'	: '3'	# TODO constant?
 					}
 				items.append(item)

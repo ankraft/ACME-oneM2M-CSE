@@ -34,7 +34,7 @@ To enable https you have to set various settings [ [cse.security] configuration 
 One way to generate those files is the [openssl](https://www.openssl.org) tool that may already be installed on your OS. The following example shows how to 
 generate a self-signed certificate:
 
-		openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -nodes -days 1000
+	openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -nodes -days 1000
 
 This will generate the self-signed certificate and private key without password protection (*-nodes*), and stores them in the files *cert.pem* and *key.pem* respectively. 
 openssl will prompt you with questions for *Country Name* etc, but you can just hit *Enter* and accept the defaults. The *-days* parameter affects the certificate's

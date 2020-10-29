@@ -7,12 +7,11 @@
 #	ResourceType: fanOutPoint (virtual resource)
 #
 
-from flask import Request
 from Constants import Constants as C
 import CSE
 from .Resource import *
 from Logging import Logging
-from Types import ResourceTypes as T, Result, Operation
+from Types import ResourceTypes as T, Result, Operation, CSERequest
 
 
 # TODO:
@@ -33,22 +32,22 @@ class GRP_FOPT(Resource):
 		return super()._canHaveChild(resource, [])
 
 
-	def handleRetrieveRequest(self, request:Request, id:str, originator:str) -> Result:
+	def handleRetrieveRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		Logging.logDebug('Retrieving resources from fopt')
 		return CSE.group.foptRequest(Operation.RETRIEVE, self, request, id, originator)
 
 
-	def handleCreateRequest(self, request: Request, id:str, originator:str, ct:str, ty:T) -> Result:
+	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		Logging.logDebug('Creating resources at fopt')
-		return CSE.group.foptRequest(Operation.CREATE, self, request, id, originator, ct, ty)
+		return CSE.group.foptRequest(Operation.CREATE, self, request, id, originator)
 
 
-	def handleUpdateRequest(self, request: Request, id: str, originator: str, ct: str) -> Result:
+	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		Logging.logDebug('Updating resources at fopt')
-		return CSE.group.foptRequest(Operation.UPDATE, self, request, id, originator, ct)
+		return CSE.group.foptRequest(Operation.UPDATE, self, request, id, originator)
 
 
-	def handleDeleteRequest(self, request: Request, id: str, originator: str) -> Result:
+	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		Logging.logDebug('Deleting resources at fopt')
 		return CSE.group.foptRequest(Operation.DELETE, self, request, id, originator)
 

@@ -9,14 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - xxxx-xx-xx
 
+## [0.6.0] - 2020-10-26
+
 ### Added
 - [CSE] Improved resource expiration a lot.
 - [CSE] Added support for mia attribute in CNT and FCNT.
+- [CSE] Added support for synchronous and asynchronous non-blocking requests (as well as flex-blocking).
+- [CSE] Added configuration to enable or disable regular liveliness checks of remote CSE connects (cse.registration.checkLiveliness).
+- [REQ] Added support for &lt;request> resource type.
 - [SUB] Added support for batchNotifications, latestNotify, eventNotificationCriteria/childResourceType, and eventNotificationCriteria/attribute in subscriptions.
-- [HTTP] Added possibility to enable an API to get and set selected configuration values remotely.
+- [HTTP] Added possibility to enable an API to get and set some configuration values remotely.
+
+### Changed
+- [CSE] Removed possibility to register unknown resources of an unknown resource type.
 
 ### Fixed
 - [HTTP] Fixed wrong configuration settings for TLS certificates.
+- [CSR] Fixed format of *csebase* attribute.
 
 
 ## [0.5.0] - 2020-09-17
