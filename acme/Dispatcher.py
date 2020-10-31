@@ -36,7 +36,7 @@ class Dispatcher(object):
 
 	def __init__(self) -> None:
 		self.csi 				= Configuration.get('cse.csi')
-		self.csiSlash 			= '%s/' % self.csi
+		self.csiSlash 			= f'{self.csi}/' 
 		self.csiSlashLen 		= len(self.csiSlash)
 		Logging.log('Dispatcher initialized')
 
@@ -61,29 +61,20 @@ class Dispatcher(object):
 	def processRetrieveRequest(self, request:CSERequest, originator:str, id:str=None) -> Result:
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
-		# # overwrite id if another is given
-		# if id is not None:
-		# 	id = id
-		# 	srn = None
-		# else:
-		# 	id = request.id
-		# 	srn = request.srn
-		# fopsrn, id = Utils.srnFromHybrid(srn, id) # Hybrid
-
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
-			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
+			Logging.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
 			return fanoutPointResource.handleRetrieveRequest(request, fopsrn, request.headers.originator)
 
 		permission = Permission.DISCOVERY if request.args.fu == 1 else Permission.RETRIEVE
 
 		# check rcn & operation
 		if permission == Permission.DISCOVERY and request.args.rcn not in [ RCN.discoveryResultReferences, RCN.childResourceReferences ]:	# Only allow those two
-			return Result(rsc=RC.badRequest, dbg='invalid rcn: %d for fu: %d' % (request.args.rcn, request.args.fu))
+			return Result(rsc=RC.badRequest, dbg=f'invalid rcn: {request.args.rcn:d} for fu: {request.args.fu:d}')
 		if permission == Permission.RETRIEVE and request.args.rcn not in [ RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource, RCN.childResourceReferences]: # TODO
-			return Result(rsc=RC.badRequest, dbg='invalid rcn: %d for fu: %d' % (request.args.rcn, request.args.fu))
+			return Result(rsc=RC.badRequest, dbg=f'invalid rcn: {request.args.rcn:d} for fu: {request.args.fu:d}')
 
-		Logging.logDebug('Discover/Retrieve resources (fu: %d, drt: %s, handling: %s, conditions: %s, resultContent: %d, attributes: %s)' % (request.args.fu, request.args.drt, request.args.handling, request.args.conditions, request.args.rcn, str(request.args.attributes)))
+		Logging.logDebug(f'Discover/Retrieve resources (fu: {request.args.fu:d}, drt: {request.args.drt}, handling: {request.args.handling}, conditions: {request.args.conditions}, resultContent: {request.args.rcn:d}, attributes: {str(request.args.attributes)})')
 
 
 		# Retrieve the target resource, because it is needed for some rcn (and the default)
@@ -91,7 +82,7 @@ class Dispatcher(object):
 			if (res := self.retrieveResource(id)).resource is None:
 			 	return res
 			if not CSE.security.hasAccess(originator, res.resource, permission):
-				return Result(rsc=RC.originatorHasNoPrivilege, dbg='originator has no permission (%d)' % permission)
+				return Result(rsc=RC.originatorHasNoPrivilege, dbg=f'originator has no permission ({permission:d})')
 
 			# if rcn == attributes then we can return here, whatever the result is
 			if request.args.rcn == RCN.attributes:
@@ -164,7 +155,7 @@ class Dispatcher(object):
 
 
 	def retrieveLocalResource(self, ri:str=None, srn:str=None) -> Result:
-		Logging.logDebug('Retrieve resource: %s' % (ri if srn is None else srn))
+		Logging.logDebug(f'Retrieve resource: {ri if srn is None else srn}')
 
 		if ri is not None:
 			res = CSE.storage.retrieveResource(ri=ri)		# retrieve via normal ID
@@ -179,7 +170,7 @@ class Dispatcher(object):
 				return resource.handleRetrieveRequest()
 			return Result(resource=resource)
 		if res.dbg is not None:
-			Logging.logDebug('%s: %s' % (res.dbg, ri))
+			Logging.logDebug(f'{res.dbg}: {ri}')
 		return Result(rsc=res.rsc, dbg=res.dbg)
 
 
@@ -236,7 +227,7 @@ class Dispatcher(object):
 			arp = handling['arp']
 			result = []
 			for resource in discoveredResources:
-				srn = '%s/%s' % (resource[Resource._srn], arp)
+				srn = f'{resource[Resource._srn]}/{arp}'
 				if (res := self.retrieveResource(srn)).resource is not None:
 					if CSE.security.hasAccess(originator, res.resource, permission):
 						result.append(res.resource)
@@ -395,7 +386,7 @@ class Dispatcher(object):
 
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
-			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
+			Logging.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
 			return fanoutPointResource.handleCreateRequest(request, fopsrn, request.headers.originator)
 
 		ct 			= request.headers.contentType
@@ -468,17 +459,17 @@ class Dispatcher(object):
 
 
 	def createResource(self, resource:Resource, parentResource:Resource=None, originator:str=None) -> Result:
-		Logging.logDebug('Adding resource ri: %s, type: %d' % (resource.ri, resource.ty))
+		Logging.logDebug(f'Adding resource ri: {resource.ri}, type: {resource.ty:d}')
 
 		if parentResource is not None:
-			Logging.logDebug('Parent ri: %s' % parentResource.ri)
+			Logging.logDebug(f'Parent ri: {parentResource.ri}')
 			if not parentResource.canHaveChild(resource):
 				if resource.ty == T.SUB:
 					err = 'Parent resource is not subscribable'
 					Logging.logWarn(err)
 					return Result(rsc=RC.targetNotSubscribable, dbg=err)
 				else:
-					err = 'Invalid child resource type: %s' % T(resource.ty).value
+					err = f'Invalid child resource type: {T(resource.ty).value}' 
 					Logging.logWarn(err)
 					return Result(rsc=RC.invalidChildResourceType, dbg=err)
 
@@ -530,7 +521,7 @@ class Dispatcher(object):
 
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
-			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
+			Logging.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
 			return fanoutPointResource.handleUpdateRequest(request, fopsrn, request.headers.originator)
 
 		# Get resource to update
@@ -584,7 +575,7 @@ class Dispatcher(object):
 
 
 	def updateResource(self, resource:Resource, json:dict=None, doUpdateCheck:bool=True, originator:str=None) -> Result:
-		Logging.logDebug('Updating resource ri: %s, type: %d' % (resource.ri, resource.ty))
+		Logging.logDebug(f'Updating resource ri: {resource.ri}, type: {resource.ty:d}')
 		if doUpdateCheck:
 			if not (res := resource.update(json, originator)).status:
 				return res.errorResult()
@@ -613,13 +604,13 @@ class Dispatcher(object):
 
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
-			Logging.logDebug('Redirecting request to fanout point: %s' % fanoutPointResource.__srn__)
+			Logging.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
 			return fanoutPointResource.handleDeleteRequest(request, fopsrn, request.headers.originator)
 
 
 		# get resource to be removed and check permissions
 		if (res := self.retrieveResource(id)).resource is None:
-			Logging.logDebug('Resource not found: %s' % res.dbg)
+			Logging.logDebug(f'Resource not found: {res.dbg}')
 			return Result(rsc=RC.notFound, dbg=res.dbg)
 		resource = res.resource
 
@@ -670,9 +661,7 @@ class Dispatcher(object):
 
 
 	def deleteResource(self, resource:Resource, originator:str=None, withDeregistration:bool=False) -> Result:
-		Logging.logDebug('Removing resource ri: %s, type: %d' % (resource.ri, resource.ty))
-		# if resource is None:
-		# 	Logging.log('Resource not found')
+		Logging.logDebug(f'Removing resource ri: {resource.ri}, type: {resource.ty:d}')
 
 		# Check resource deletion
 		if withDeregistration:
@@ -736,7 +725,7 @@ class Dispatcher(object):
 	#	Create a m2m:uril structure from a list of resources
 	def _resourcesToURIList(self, resources:List[Resource], drt:int) -> dict:
 		# cseid = '/' + Configuration.get('cse.csi') + '/'
-		cseid = '/%s/' % self.csi
+		cseid = f'/{self.csi}/'
 		lst = []
 		for r in resources:
 			lst.append(Utils.structuredPath(r) if drt == DesiredIdentifierResultType.structured else cseid + r.ri)

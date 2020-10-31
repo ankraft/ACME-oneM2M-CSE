@@ -106,7 +106,7 @@ class NotificationManager(object):
 		if subs is None or len(subs) == 0:
 			return
 
-		Logging.logDebug('Checking subscription for: %s, reason: %d' % (ri, reason))
+		Logging.logDebug(f'Checking subscription for: {ri}, reason: {reason:d}')
 		for sub in subs:
 			# Prevent own notifications for subscriptions 
 			if childResource is not None and \
@@ -265,7 +265,7 @@ class NotificationManager(object):
 
 
 	def _sendSubscriptionNotification(self, sub:dict, nu:str, reason:NotificationEventType, resource:Resource, modifiedAttributes:dict=None) ->  bool:
-		Logging.logDebug('Sending notification to: %s, reason: %d' % (nu, reason))
+		Logging.logDebug(f'Sending notification to: {nu}, reason: {reason:d}')
 
 		notificationRequest = {
 			'm2m:sgn' : {
@@ -381,11 +381,11 @@ class NotificationManager(object):
 	# 	return Result(status=True) if CSE.storage.updateSubscription(subscription) else Result(status=False, rsc=RC.internalServerError, dbg='cannot update subscription in database')
 
 
-	def _startNewBatchNotificationWorker(self, ri:str, nu:str, dur:int) -> bool:
+	def _startNewBatchNotificationWorker(self, ri:str, nu:str, dur:float) -> bool:
 		if dur is None or dur < 1:
 			Logging.logErr('BatchNotification duration is < 1')
 			return False
-		Logging.logDebug('Starting new batchNotificationsWorker. Duration : %d seconds' % dur)
+		Logging.logDebug(f'Starting new batchNotificationsWorker. Duration : {dur:f} seconds')
 
 		# Check and start a notification worker to send notifications after some time
 		if len(BackgroundWorkerPool.findWorkers(self._workerID(ri, nu))) > 0:	# worker started, return

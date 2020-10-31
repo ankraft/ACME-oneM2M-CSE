@@ -66,13 +66,13 @@ class GroupManager(object):
 			isLocalResource = True;
 			#Check whether it is a local resource or not
 			if Utils.isSPRelative(mid):
-				targetCSE = '/%s' % mid.split('/')[0]
+				targetCSE = f'/{mid.split("/")[0]}'
 				if targetCSE != CSE.Configuration.get('cse.csi'):
 					""" RETRIEVE member from a remote CSE """
 					isLocalResource = False
 					if (url := CSE.remote._getForwardURL(mid)) is None:
-						return Result(status=False, rsc=RC.notFound, dbg='forwarding URL not found for group member: %s' % mid)
-					Logging.log('Retrieve request to: %s' % url)
+						return Result(status=False, rsc=RC.notFound, dbg=f'forwarding URL not found for group member: {mid}')
+					Logging.log(f'Retrieve request to: {url}')
 					remoteResult = CSE.httpServer.sendRetrieveRequest(url, CSE.Configuration.get('cse.csi'))
 
 			# get the resource and check it
@@ -88,7 +88,7 @@ class GroupManager(object):
 					if remoteResult.rsc == RC.originatorHasNoPrivilege:  # CSE has no privileges for retrieving the member
 						return Result(status=False, rsc=RC.receiverHasNoPrivileges, dbg='wrong privileges for CSE to retrieve remote resource')
 					else:  # Member not found
-						return Result(status=False, rsc=RC.notFound, dbg='remote resource not found: %s' % mid)
+						return Result(status=False, rsc=RC.notFound, dbg=f'remote resource not found: {mid}')
 				else:
 					resource = Utils.resourceFromJSON(remoteResult.jsn).resource
 
@@ -103,7 +103,7 @@ class GroupManager(object):
 			# check privileges
 			if isLocalResource:
 				if not CSE.security.hasAccess(originator, resource, Permission.RETRIEVE):
-					return Result(status=False, rsc=RC.receiverHasNoPrivileges, dbg='wrong privileges for originator to retrieve local resource: %s' % mid)
+					return Result(status=False, rsc=RC.receiverHasNoPrivileges, dbg=f'wrong privileges for originator to retrieve local resource: {mid}')
 
 			# if it is a group + fopt, then recursively check members
 			if (ty := resource.ty) == T.GRP and hasFopt:
@@ -116,10 +116,10 @@ class GroupManager(object):
 			if spty is not None:
 				if isinstance(spty, int):				# mgmtobj type
 					if isinstance(resource, MgmtObj.MgmtObj) and ty != spty:
-						return Result(status=False, rsc=RC.groupMemberTypeInconsistent, dbg='resource and group member types mismatch: %d != %d for: %s' % (ty, spty, mid))
+						return Result(status=False, rsc=RC.groupMemberTypeInconsistent, dbg=f'resource and group member types mismatch: {ty:d} != {spty:d} for: {mid}')
 				elif isinstance(spty, str):				# fcnt specialization
 					if isinstance(resource, FCNT.FCNT) and resource.cnd != spty:
-						return Result(status=False, rsc=RC.groupMemberTypeInconsistent, dbg='resource and group member specialization types mismatch: %s != %s for: %s' % (resource.cnd, spty, mid))
+						return Result(status=False, rsc=RC.groupMemberTypeInconsistent, dbg=f'resource and group member specialization types mismatch: {resource.cnd} != {spty} for: {mid}')
 
 			# check type of resource and member type of group
 			if not (mt == T.MIXED or ty == mt):	# types don't match
@@ -166,7 +166,7 @@ class GroupManager(object):
 
 		# check whether there is something after the /fopt ...
 		_, _, tail = id.partition('/fopt/') if '/fopt/' in id else (None, None, '')
-		Logging.logDebug('Adding additional path elements: %s' % tail)
+		Logging.logDebug(f'Adding additional path elements: {tail}')
 
 		# walk through all members
 		resultList:List[Result] = []

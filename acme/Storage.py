@@ -43,7 +43,7 @@ class Storage(object):
 
 		
 		self.db = TinyDBBinding(path)
-		self.db.openDB('-%s' % Utils.getCSETypeAsString()) # add CSE type as postfix
+		self.db.openDB(f'-{Utils.getCSETypeAsString()}') # add CSE type as postfix
 
 		# Reset dbs?
 		if Configuration.get('db.resetOnStartup') is True:
@@ -71,7 +71,7 @@ class Storage(object):
 
 		ri = resource.ri
 
-		# Logging.logDebug('Adding resource (ty: %d, ri: %s, rn: %s)' % (resource['ty'], resource['ri'], resource['rn']))
+		# Logging.logDebug(f'Adding resource (ty: {resource.ty:d}, ri: {resource.ri}, rn: {resource.rn})'
 		did = None
 		srn = resource.__srn__
 		if overwrite:
@@ -100,16 +100,16 @@ class Storage(object):
 		resources = []
 
 		if ri is not None:		# get a resource by its ri
-			# Logging.logDebug('Retrieving resource ri: %s' % ri)
+			# Logging.logDebug(f'Retrieving resource ri: {ri}')
 			resources = self.db.searchResources(ri=ri)
 
 		elif srn is not None:	# get a resource by its structured rn
-			# Logging.logDebug('Retrieving resource srn: %s' % srn)
+			# Logging.logDebug(f'Retrieving resource srn: {srn}')
 			# get the ri via the srn from the identifers table
 			resources = self.db.searchResources(srn=srn)
 
 		elif csi is not None:	# get the CSE by its csi
-			# Logging.logDebug('Retrieving resource csi: %s' % csi)
+			# Logging.logDebug(f'Retrieving resource csi: {csi}')
 			resources = self.db.searchResources(csi=csi)
 
 		# Logging.logDebug(resources)
@@ -124,7 +124,7 @@ class Storage(object):
 
 	def retrieveResourcesByType(self, ty: T) -> List[dict]:
 		""" Return all resources of a certain type. """
-		# Logging.logDebug('Retrieving all resources ty: %d' % ty)
+		# Logging.logDebug(f'Retrieving all resources ty: {ty:d}')
 		return self.db.searchResources(ty=int(ty))
 
 
@@ -227,7 +227,7 @@ class Storage(object):
 		"""
 		result = []
 
-		mcsi = '%s/' % csi
+		mcsi = f'{csi}/'
 		def _hasCSI(at:List[str]) -> bool:
 			for a in at:
 				if a == csi or a.startswith(mcsi):
@@ -353,9 +353,8 @@ class TinyDBBinding(object):
 	def __init__(self, path: str = None) -> None:
 		self.path = path
 		self.cacheSize = Configuration.get('db.cacheSize')
-		Logging.log('Cache Size: %s' % self.cacheSize)
+		Logging.log(f'Cache Size: {self.cacheSize:d}')
 
-		# create transaction locks
 		# create transaction locks
 		self.lockResources = Lock()
 		self.lockIdentifiers = Lock()

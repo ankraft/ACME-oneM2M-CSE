@@ -64,7 +64,7 @@ class FCNT(AnnounceableResource):
 			return res
 
 		# register latest and oldest virtual resources
-		Logging.logDebug('Registering latest and oldest virtual resources for: %s' % self.ri)
+		Logging.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		if self.hasInstances:
 			# add latest
@@ -198,7 +198,7 @@ class FCNT(AnnounceableResource):
 	# Add a new FlexContainerInstance for this flexContainer
 	def addFlexContainerInstance(self, originator:str) -> None:
 		Logging.logDebug('Adding flexContainerInstance')
-		jsn:Dict[str, Any] = {	'rn'  : '%s_%d' % (self.rn, self.st), }
+		jsn:Dict[str, Any] = {	'rn'  : f'{self.rn}_{self.st:d}', }
 		if self.lbl is not None:
 			jsn['lbl'] = self.lbl
 

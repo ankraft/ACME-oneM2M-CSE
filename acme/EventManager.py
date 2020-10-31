@@ -63,11 +63,11 @@ class Event(list):
 			try:
 				function(*args, **kwargs)
 			except Exception as e:
-				Logging.logErr('%s - %s' % (function, traceback.format_exc()))
+				Logging.logErr(f'{function} - {traceback.format_exc()}')
 
 
 	def __repr__(self) -> str:
-		return "Event(%s)" % list.__repr__(self)
+		return f'Event({list.__repr__(self)})' 
 
 
 

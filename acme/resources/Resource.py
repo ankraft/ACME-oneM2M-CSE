@@ -71,7 +71,7 @@ class Resource(object):
 			# TODO: could be a BAD REQUEST?
 			if create:
 				while Utils.isUniqueRI(ri := self.attribute('ri')) == False:
-					Logging.logWarn("RI: %s is already assigned. Generating new RI." % ri)
+					Logging.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
 					self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite=True)
 
 			# Indicate whether this is a virtual resource
@@ -134,7 +134,7 @@ class Resource(object):
 	# Implemented in sub-classes.
 	# Note: CR and ACPI are set in RegistrationManager
 	def activate(self, parentResource: Resource, originator: str) -> Result:
-		Logging.logDebug('Activating resource: %s' % self.ri)
+		Logging.logDebug(f'Activating resource: {self.ri}')
 
 		# validate the attributes but only when the resource is not instantiated.
 		# We assume that an instantiated resource is always correct
@@ -163,7 +163,7 @@ class Resource(object):
 	# Deactivate an active resource.
 	# Send notification on deletion
 	def deactivate(self, originator:str) -> None:
-		Logging.logDebug('Deactivating and removing sub-resources: %s' % self.ri)
+		Logging.logDebug(f'Deactivating and removing sub-resources: {self.ri}')
 		# First check notification because the subscription will be removed
 		# when the subresources are removed
 		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceDelete)

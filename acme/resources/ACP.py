@@ -63,7 +63,7 @@ class ACP(AnnounceableResource):
 		super().deactivate(originator)
 
 		# Remove own resourceID from all acpi
-		Logging.logDebug('Removing acp.ri: %s from assigned resource acpi' % self.ri)
+		Logging.logDebug(f'Removing acp.ri: {self.ri} from assigned resource acpi')
 		for r in CSE.storage.searchByValueInField('acpi', self.ri):
 			acpi = r.acpi
 			if self.ri in acpi:
@@ -73,7 +73,7 @@ class ACP(AnnounceableResource):
 
 
 	def validateAnnouncedJSON(self, jsn:dict) -> dict:
-		acr = Utils.findXPath(jsn, '%s/pvs/acr' % T.ACPAnnc.tpe())
+		acr = Utils.findXPath(jsn, f'{T.ACPAnnc.tpe()}/pvs/acr')
 		acr.append( { 'acor': [ CSE.remote.cseCsi ], 'acop': Permission.ALL } )
 		return jsn
 
@@ -115,9 +115,9 @@ class ACP(AnnounceableResource):
 
 
 	def checkPermission(self, origin:str, requestedPermission:int) -> bool:
-		# Logging.logDebug('origin: %s requestedPermission: %s' % (origin, requestedPermission))
+		# Logging.logDebug(f'origin: {origin} requestedPermission: {requestedPermission}')
 		for p in self['pv/acr']:
-			# Logging.logDebug('p.acor: %s requestedPermission: %s' % (p['acor'], p['acop']))
+			# Logging.logDebug(f'p.acor: {p['acor']} requestedPermission: {p['acop']}')
 			if requestedPermission & p['acop'] == Permission.NONE:	# permission not fitting at all
 				continue
 			if 'all' in p['acor'] or origin in p['acor'] or requestedPermission == Permission.NOTIFY:

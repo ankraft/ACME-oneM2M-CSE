@@ -58,22 +58,21 @@ class SUB(Resource):
 
 
 	def update(self, jsn:dict=None, originator:str=None) -> Result:
-		previousNus = self['nu'].copy()
+		previousNus = self.nu.copy()
 		newJson = jsn.copy()
 		if not (res := super().update(jsn, originator)).status:
 			return res
 		return CSE.notification.updateSubscription(self, newJson, previousNus, originator)
 
  
-
 	def validate(self, originator:str=None, create:bool=False) -> Result:
 		if (res := super().validate(originator, create)).status == False:
 			return res
-		Logging.logDebug('Validating subscription: %s' % self['ri'])
+		Logging.logDebug(f'Validating subscription: {self.ri}')
 
 		# Check necessary attributes
-		if (nu := self['nu']) is None or not isinstance(nu, list):
-			Logging.logDebug('"nu" attribute missing for subscription: %s' % self['ri'])
+		if (nu := self.nu) is None or not isinstance(nu, list):
+			Logging.logDebug(f'"nu" attribute missing for subscription: {self.ri}')
 			return Result(status=False, rsc=RC.insufficientArguments, dbg='"nu" is missing or wrong type')
 
 		# check other attributes

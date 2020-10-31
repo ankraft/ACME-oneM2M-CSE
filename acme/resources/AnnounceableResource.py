@@ -97,7 +97,6 @@ class AnnounceableResource(Resource):
 		""" Possibility to add or modify the announced JSON. This can be implemented
 			in the child classes.
 		"""
-		Logging.logErr('hu?')
 		return jsn
 
 

@@ -34,7 +34,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		post_data = self.rfile.read(length)
 		
 		# Print the content data
-		console.print('[%s]### Notification' % messageColor)
+		console.print(f'[{messageColor}]### Notification')
 		console.print(self.headers, highlight=False)
 		console.print(Syntax(json.dumps(json.loads(post_data.decode('utf-8')), indent=4),
 							 "json", 
@@ -42,7 +42,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 							 line_numbers=False))
 
 	def log_message(self, format, *args):
-		console.print("[%s reverse] %s" % (messageColor, format%args))
+		console.print(f'[{messageColor} reverse] {format%args}')
 
 
 

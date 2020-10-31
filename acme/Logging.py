@@ -80,7 +80,7 @@ class	Logging:
 
 			logpath = Configuration.get('logging.path')
 			os.makedirs(logpath, exist_ok=True)# create log directory if necessary
-			logfile = '%s/cse-%s.log' % (logpath, Utils.getCSETypeAsString())
+			logfile = f'{logpath}/cse-{Utils.getCSETypeAsString()}.log'
 			logfp = logging.handlers.RotatingFileHandler(logfile,
 														 maxBytes=Configuration.get('logging.size'),
 														 backupCount=Configuration.get('logging.count'))
@@ -110,7 +110,6 @@ class	Logging:
 	def loggingWorker() -> bool:
 		while Logging.queue is not None and not Logging.queue.empty():
 			level, msg, caller, thread = Logging.queue.get()
-			#Logging.loggerConsole.log(level, '%s*%d*%d*%s', os.path.basename(caller.filename), caller.lineno, thread.native_id, msg)
 			Logging.loggerConsole.log(level, '%s*%d*%-10.10s*%s', os.path.basename(caller.filename), caller.lineno, thread.name, msg)
 		return True
 
@@ -134,7 +133,7 @@ class	Logging:
 		# raise logError event
 		(not CSE.event or CSE.event.logError())	# type: ignore
 		strace = ''.join(map(str, traceback.format_stack()[:-1]))
-		Logging._log(logging.ERROR, '%s\n%s' % (msg, strace))
+		Logging._log(logging.ERROR, f'{msg}\n{strace}')
 
 
 	@staticmethod
@@ -233,8 +232,7 @@ class ACMERichLogHandler(RichHandler):
 
 		level = Text()
 		level.append(record.levelname, log_style)
-		# message_text = Text("%d - %s" %(threading.current_thread().native_id, message))
-		message_text = Text("%s - %s" %(threadID, message))
+		message_text = Text(f'{threadID} - {message}')
 		message_text = self.highlighter(message_text)
 
 		# # find caller on the stack

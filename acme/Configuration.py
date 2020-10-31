@@ -49,7 +49,7 @@ class Configuration(object):
 										  )
 		try:
 			if len(config.read(argsConfigfile)) == 0 and argsConfigfile != C.defaultConfigFile:		# Allow 
-				console.print('[red]Configuration file missing or not readable: %s' % argsConfigfile)
+				console.print(f'[red]Configuration file missing or not readable: {argsConfigfile}')
 				return False
 		except configparser.Error as e:
 			console.print('[red]Error in configuration file')
@@ -234,7 +234,7 @@ class Configuration(object):
 			}
 
 		except Exception as e:	# about when findings errors in configuration
-			console.print('[red]Error in configuration file: %s - %s' % (argsConfigfile, str(e)))
+			console.print(f'[red]Error in configuration file: {argsConfigfile} - {str(e)}')
 			return False
 
 		# Read id-mappings
@@ -342,30 +342,30 @@ class Configuration(object):
 			Configuration._configuration['cse.security.caPrivateKeyFile'] = None
 		else:
 			if not (val := Configuration._configuration['cse.security.tlsVersion']).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
-				console.print('[red]Configuration Error: Unknown value for \[cse.security]:tlsVersion: %s' % val)
+				console.print(f'[red]Configuration Error: Unknown value for \[cse.security]:tlsVersion: {val}')
 				return False
 			if (val := Configuration._configuration['cse.security.caCertificateFile']) is None:
 				console.print('[red]Configuration Error: \[cse.security]:caCertificateFile must be set when TLS is enabled')
 				return False
 			if not os.path.exists(val):
-				console.print('[red]Configuration Error: \[cse.security]:caCertificateFile does not exists or is not accessible: %s' % val)
+				console.print(f'[red]Configuration Error: \[cse.security]:caCertificateFile does not exists or is not accessible: {val}')
 				return False
 			if (val := Configuration._configuration['cse.security.caPrivateKeyFile']) is None:
 				console.print('[red]Configuration Error: \[cse.security]:caPrivateKeyFile must be set when TLS is enabled')
 				return False
 			if not os.path.exists(val):
-				console.print('[red]Configuration Error: \[cse.security]:caPrivateKeyFile does not exists or is not accessible: %s' % val)
+				console.print(f'[red]Configuration Error: \[cse.security]:caPrivateKeyFile does not exists or is not accessible: {val}')
 				return False
 
 		# check the csi format
 		rx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
 		if re.fullmatch(rx, (val:=Configuration._configuration['cse.csi'])) is None:
-			console.print('[red]Configuration Error: Wrong format for \[cse]:cseID: %s' % val)
+			console.print(f'[red]Configuration Error: Wrong format for \[cse]:cseID: {val}')
 			return False
 
 		if Configuration._configuration['cse.registrar.address'] is not None and Configuration._configuration['cse.registrar.csi'] is not None:
 			if re.fullmatch(rx, (val:=Configuration._configuration['cse.registrar.csi'])) is None:
-				console.print('[red]Configuration Error: Wrong format for \[cse.registrar]:cseID: %s' % val)
+				console.print(f'[red]Configuration Error: Wrong format for \[cse.registrar]:cseID: {val}')
 				return False
 			if len(Configuration._configuration['cse.registrar.csi']) > 0 and len(Configuration._configuration['cse.registrar.rn']) == 0:
 				console.print('[red]Configuration Error: Missing configuration [cse.registrar]:resourceName')
@@ -389,8 +389,8 @@ class Configuration(object):
 	@staticmethod
 	def print() -> str:
 		result = 'Configuration:\n'
-		for kv in Configuration._configuration.items():
-			result += '  %s = %s\n' % kv
+		for (k,v) in Configuration._configuration.items():
+			result += f'  {k} = {v}\n'
 		return result
 
 

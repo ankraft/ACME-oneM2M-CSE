@@ -33,10 +33,10 @@ if __name__ == '__main__':
 		if hasattr(module, 'run'):
 			totalSuites += 1
 			name = module.__name__
-			console.print('[blue]Running tests from [bold]%s' % name)
+			console.print(f'[blue]Running tests from [bold]{name}')
 			startProcessTime = time.process_time()
 			startPerfTime = time.perf_counter()
-			testExecuted, errors, skipped = module.run()
+			testExecuted, errors, skipped = module.run()	# type: ignore
 			durationProcess = time.process_time() - startProcessTime
 			duration = time.perf_counter() - startPerfTime
 			if testExecuted > 0:	# don't count none-run tests

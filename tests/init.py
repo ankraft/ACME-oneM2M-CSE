@@ -15,14 +15,14 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 PROTOCOL			= 'http'	# possible values: http, https
 
 
-SERVER				= '%s://localhost:8080' % PROTOCOL
+SERVER				= f'{PROTOCOL}://localhost:8080'
 ROOTPATH			= '/'
 CSERN				= 'cse-in'
 CSEID				= '/id-in'
 SPID 				= 'sp-in'
 ORIGINATOR			= 'CAdmin'
 
-REMOTESERVER		= '%s://localhost:8081' % PROTOCOL
+REMOTESERVER		= f'{PROTOCOL}://localhost:8081'
 REMOTEROOTPATH		= '/'
 REMOTECSERN			= 'cse-mn'
 REMOTECSEID			= '/id-mn'
@@ -31,10 +31,10 @@ REMOTEORIGINATOR	= 'CAdmin'
 
 
 NOTIFICATIONPORT 	= 9990
-NOTIFICATIONSERVER	= 'http://localhost:%d' % NOTIFICATIONPORT
+NOTIFICATIONSERVER	= f'http://localhost:{NOTIFICATIONPORT}' 
 NOTIFICATIONSERVERW	= 'http://localhost:6666'
 
-CONFIGURL			= '%s%s__config__' % (SERVER, ROOTPATH)
+CONFIGURL			= f'{SERVER}{ROOTPATH}__config__'
 
 
 testVerbosity 		= 2		# 0, 1, 2
@@ -49,7 +49,7 @@ timeDelta 				= 0 # seconds
 expirationCheckDelay 	= 2	# seconds
 expirationSleep			= expirationCheckDelay * 3
 
-requestETDuration 		= 'PT%dS' % expirationCheckDelay
+requestETDuration 		= f'PT{expirationCheckDelay:d}S'
 requestCheckDelay		= 1	#seconds
 
 
@@ -78,7 +78,7 @@ fcntURL	= '%s/%s' % (aeURL, fcntRN)
 grpURL 	= '%s/%s' % (aeURL, grpRN)
 nodURL 	= '%s/%s' % (cseURL, nodRN)
 subURL 	= '%s/%s' % (cntURL, subRN)
-batURL 	= '%s/%s' % (nodURL, batRN)
+batURL 	= f'{nodURL}/{batRN}'
 
 REMOTEURL		= '%s%s' % (REMOTESERVER, REMOTEROOTPATH)
 REMOTEcseURL 	= '%s%s' % (REMOTEURL, REMOTECSERN)
@@ -147,10 +147,10 @@ def setLastRequestID(rid):
 	_lastRequstID = rid
 
 
-def lastRequestID():
+def lastRequestID() -> str:
 	return _lastRequstID
 
-def connectionPossible(url):
+def connectionPossible(url:str) -> bool:
 	try:
 		# The following request is not supposed to return a resource, it just
 		# tests whether a connection can be established at all.

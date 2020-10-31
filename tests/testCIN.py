@@ -24,7 +24,7 @@ class TestCIN(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
+		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}' 
 
 		jsn = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
