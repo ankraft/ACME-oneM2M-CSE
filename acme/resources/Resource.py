@@ -260,11 +260,11 @@ class Resource(object):
 
 	def validate(self, originator:str=None, create:bool=False) -> Result:
 		""" Validate a resource. Usually called within activate() or update() methods. """
-		Logging.logDebug('Validating resource: %s' % self.ri)
+		Logging.logDebug(f'Validating resource: {self.ri}')
 		if (not Utils.isValidID(self.ri) or
 			not Utils.isValidID(self.pi) or
 			not Utils.isValidID(self.rn)):
-			err = 'Invalid ID ri: %s, pi: %s, rn: %s)' % (self.ri, self.pi, self.rn)
+			err = f'Invalid ID ri: {self.ri}, pi: {self.pi}, rn: {self.rn})'
 			Logging.logDebug(err)
 			return Result(status=False, rsc=RC.contentsUnacceptable, dbg=err)
 
@@ -275,11 +275,11 @@ class Resource(object):
 				Logging.logWarn(err)
 				return Result(status=False, rsc=RC.badRequest, dbg=err)
 			if len(et) > 0 and et < (etNow := Utils.getResourceDate()):
-				err = 'expirationTime is in the past: %s < %s' % (et, etNow)
+				err = f'expirationTime is in the past: {et} < {etNow}'
 				Logging.logWarn(err)
 				return Result(status=False, rsc=RC.badRequest, dbg=err)
 			if et > (etMax := Utils.getResourceDate(Configuration.get('cse.maxExpirationDelta'))):
-				Logging.logDebug('Correcting expirationDate to maxExpiration: %s -> %s' % (et, etMax))
+				Logging.logDebug(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
 				self['et'] = etMax
 		return Result(status=True)
 
@@ -420,7 +420,7 @@ class Resource(object):
 
 	def __repr__(self) -> str:
 		""" Object representation as string. """
-		return '%s(ri=%s)' % (self.tpe, self.ri)
+		return f'{self.tpe}(ri={self.ri}, srn={self._srn})'
 
 
 	def __eq__(self, other: object) -> bool:

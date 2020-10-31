@@ -54,10 +54,10 @@ class Importer(object):
 				Logging.logErr('cse.resourcesPath not set')
 				raise RuntimeError('cse.resourcesPath not set')
 		if not os.path.exists(path):
-			Logging.logWarn('Import directory does not exist: %s' % path)
+			Logging.logWarn(f'Import directory does not exist: {path}')
 			return False
 
-		Logging.log('Importing resources from directory: %s' % path)
+		Logging.log(f'Importing resources from directory: {path}')
 
 		self._prepareImporting()
 
@@ -68,7 +68,7 @@ class Importer(object):
 		for rn in self._firstImporters:
 			fn = path + '/' + rn
 			if os.path.exists(fn):
-				Logging.log('Importing resource: %s ' % fn)
+				Logging.log(f'Importing resource: {fn}')
 				jsn = self.readJSONFromFile(fn)
 				resource = resourceFromJSON(jsn, create=True, isImported=True).resource
 
@@ -76,7 +76,7 @@ class Importer(object):
 			if not CSE.registration.checkResourceCreation(resource, originator):
 				continue
 			if (res := CSE.dispatcher.createResource(resource)).resource is None:
-				Logging.logErr('Error during import: %s' % res.dbg)
+				Logging.logErr(f'Error during import: {res.dbg}')
 				return False
 			ty = resource.ty
 			if ty == T.CSEBase:
@@ -99,7 +99,7 @@ class Importer(object):
 		filenames = sorted(fnmatch.filter(os.listdir(path), '*.json'))
 		for fn in filenames:
 			if fn not in self._firstImporters:
-				Logging.log('Importing resource from file: %s' % fn)
+				Logging.log(f'Importing resource from file: {fn}')
 				filename = path + '/' + fn
 
 				# update an existing resource
@@ -124,7 +124,7 @@ class Importer(object):
 						# Add the resource
 						CSE.dispatcher.createResource(resource, parentResource)
 					else:
-						Logging.logWarn('Unknown resource in file: %s' % fn)
+						Logging.logWarn(f'Unknown resource in file: {fn}')
 
 		self._finishImporting()
 		return True
@@ -184,48 +184,48 @@ class Importer(object):
 				raise RuntimeError('cse.resourcesPath not set')
 
 		if not os.path.exists(path):
-			Logging.logWarn('Import directory for attribute policies does not exist: %s' % path)
+			Logging.logWarn(f'Import directory for attribute policies does not exist: {path}')
 			return False
 
 		filenames = fnmatch.filter(os.listdir(path), '*.ap')
 		for fn in filenames:
 			fn = os.path.join(path, fn)
-			Logging.log('Importing attribute policies from file: %s' % fn)
+			Logging.log(f'Importing attribute policies from file: {fn}')
 			if os.path.exists(fn):
 				with open(fn, newline='') as fp:
 					reader = csv.DictReader(filter(lambda row: not row.startswith('#'), fp), fieldnames=fieldNames)
 					for row in reader:
 						if len(row) != len(fieldNames):
-							Logging.logErr('Missing element(s) for row: %s in file: %s' % (row, fn))
+							Logging.logErr(f'Missing element(s) for row: {row} in file: {fn}')
 							continue
 						if (tpe := row.get('resourceType')) is None or len(tpe) == 0:
-							Logging.logErr('Missing or empty resource type for row: %s in file: %s' % (row, fn))
+							Logging.logErr(f'Missing or empty resource type for row: {row} in file: {fn}')
 							return False
 						if (sn := row.get('shortName')) is None or len(sn) == 0:
-							Logging.logErr('Missing or empty shortname for row: %s in file: %s' % (row, fn))
+							Logging.logErr(f'Missing or empty shortname for row: {row} in file: {fn}')
 							return False
 						if (tmp := row.get('dataType')) is None or len(tmp) == 0:
-							Logging.logErr('Missing or empty data type for row: %s in file: %s' % (row, fn))
+							Logging.logErr(f'Missing or empty data type for row: {row} in file: {fn}')
 							return False
 						dtpe = self._nameDataTypeMappings.get(tmp.lower())
 						if (tmp := row.get('cardinality')) is None or len(tmp) == 0:
-							Logging.logErr('Missing or empty cardinality for row: %s in file: %s' % (row, fn))
+							Logging.logErr(f'Missing or empty cardinality for row: {row} in file: {fn}')
 							return False
 						car = self._nameCardinalityMappings.get(tmp.lower())
 						if (tmp := row.get('optionalCreate')) is None or len(tmp) == 0:
-							Logging.logErr('Missing or empty optional create for row: %s in file: %s' % (row, fn))
+							Logging.logErr(f'Missing or empty optional create for row: {row} in file: {fn}')
 							return False
 						opcr = self._nameOptionalityMappings.get(tmp.lower())
 						if (tmp := row.get('optionalUpdate')) is None or len(tmp) == 0:
-							Logging.logErr('Missing or empty optional create for row: %s in file: %s' % (row, fn))
+							Logging.logErr(f'Missing or empty optional create for row: {row} in file: {fn}')
 							return False
 						opup = self._nameOptionalityMappings.get(tmp.lower())
 						if (tmp := row.get('optionalDiscovery')) is None or len(tmp) == 0:
-							Logging.logErr('Missing or empty optional discovery for row: %s in file: %s' % (row, fn))
+							Logging.logErr(f'Missing or empty optional discovery for row: {row} in file: {fn}')
 							return False
 						opdi = self._nameOptionalityMappings.get(tmp.lower())
 						if (tmp := row.get('announced')) is None or len(tmp) == 0:
-							Logging.logErr('Missing or empty announced for row: %s in file: %s' % (row, fn))
+							Logging.logErr(f'Missing or empty announced for row: {row} in file: {fn}')
 							return False
 						annc = self._nameAnnouncementMappings.get(tmp.lower())
 
@@ -247,8 +247,8 @@ class Importer(object):
 	def replaceMacro(self, macro: str, filename: str) -> str:
 		macro = macro[2:-1]
 		if (value := Configuration.get(macro)) is None:
-			Logging.logErr('Unknown macro ${%s} in file %s' %(macro, filename))
-			return '*** UNKNWON MACRO : %s ***' % macro
+			Logging.logErr(f'Unknown macro ${{{macro}}} in file {filename}')
+			return f'*** UNKNWON MACRO : {macro} ***'
 		return value
 
 

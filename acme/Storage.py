@@ -82,7 +82,7 @@ class Storage(object):
 			if not self.hasResource(ri, srn):	# Only when not resource does not exist yet
 				self.db.insertResource(resource)
 			else:
-				Logging.logWarn('Resource already exists (Skipping): %s ' % resource)
+				Logging.logWarn(f'Resource already exists (Skipping): {resource}')
 				return Result(status=False, rsc=RC.alreadyExists, dbg='resource already exists')
 
 		# Add path to identifiers db
@@ -133,7 +133,7 @@ class Storage(object):
 			Logging.logErr('resource is None')
 			raise RuntimeError('resource is None')
 		ri = resource.ri
-		# Logging.logDebug('Updating resource (ty: %d, ri: %s, rn: %s)' % (resource['ty'], ri, resource['rn']))
+		# Logging.logDebug(f'Updating resource (ty: {resource.ty:d}, ri: {ri}, rn: {resource.rn})')
 		return Result(resource=self.db.updateResource(resource), rsc=RC.updated)
 
 
@@ -141,7 +141,7 @@ class Storage(object):
 		if resource is None:
 			Logging.logErr('resource is None')
 			raise RuntimeError('resource is None')
-		# Logging.logDebug('Removing resource (ty: %d, ri: %s, rn: %s)' % (resource['ty'], ri, resource['rn']))
+		# Logging.logDebug(f'Removing resource (ty: {resource.ty:d}, ri: {ri}, rn: {resource.rn})'
 		self.db.deleteResource(resource)
 		self.db.deleteIdentifier(resource)
 		return Result(status=True, rsc=RC.deleted)
@@ -260,7 +260,7 @@ class Storage(object):
 	##
 
 	def getSubscription(self, ri: str) -> dict:
-		# Logging.logDebug('Retrieving subscription: %s' % ri)
+		# Logging.logDebug(f'Retrieving subscription: {ri}')
 		subs = self.db.searchSubscriptions(ri=ri)
 		if subs is None or len(subs) != 1:
 			return None
@@ -268,22 +268,22 @@ class Storage(object):
 
 
 	def getSubscriptionsForParent(self, pi: str) -> List[dict]:
-		# Logging.logDebug('Retrieving subscriptions for parent: %s' % pi)
+		# Logging.logDebug(f'Retrieving subscriptions for parent: {pi}')
 		return self.db.searchSubscriptions(pi=pi)
 
 
 	def addSubscription(self, subscription: Resource) -> bool:
-		# Logging.logDebug('Adding subscription: %s' % ri)
+		# Logging.logDebug(f'Adding subscription: {ri}')
 		return self.db.upsertSubscription(subscription)
 
 
 	def removeSubscription(self, subscription: Resource) -> bool:
-		# Logging.logDebug('Removing subscription: %s' % subscription.ri)
+		# Logging.logDebug(f'Removing subscription: {subscription.ri}')
 		return self.db.removeSubscription(subscription)
 
 
 	def updateSubscription(self, subscription : Resource) -> bool:
-		# Logging.logDebug('Updating subscription: %s' % ri)
+		# Logging.logDebug(f'Updating subscription: {ri}')
 		return self.db.upsertSubscription(subscription)
 
 
@@ -378,12 +378,12 @@ class TinyDBBinding(object):
 			self.dbAppData = TinyDB(storage=MemoryStorage)
 		else:
 			Logging.log('DB in file system')
-			self.dbResources = TinyDB('%s/resources%s.json' % (self.path, postfix))
-			self.dbIdentifiers = TinyDB('%s/identifiers%s.json' % (self.path, postfix))
-			self.dbSubscriptions = TinyDB('%s/subscriptions%s.json' % (self.path, postfix))
-			self.dbBatchNotifications = TinyDB('%s/batchNotifications%s.json' % (self.path, postfix))
-			self.dbStatistics = TinyDB('%s/statistics%s.json' % (self.path, postfix))
-			self.dbAppData = TinyDB('%s/appdata%s.json' % (self.path, postfix))
+			self.dbResources = TinyDB(f'{self.path}/resources{postfix}.json')
+			self.dbIdentifiers = TinyDB(f'{self.path}/identifiers{postfix}.json')
+			self.dbSubscriptions = TinyDB(f'{self.path}/subscriptions{postfix}.json')
+			self.dbBatchNotifications = TinyDB(f'{self.path}/batchNotifications{postfix}.json')
+			self.dbStatistics = TinyDB(f'{self.path}/statistics{postfix}.json')
+			self.dbAppData = TinyDB(f'{self.path}/appdata{postfix}.json')
 		self.tabResources = self.dbResources.table('resources', cache_size=self.cacheSize)
 		self.tabIdentifiers = self.dbIdentifiers.table('identifiers', cache_size=self.cacheSize)
 		self.tabSubscriptions = self.dbSubscriptions.table('subsriptions', cache_size=self.cacheSize)

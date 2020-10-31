@@ -28,7 +28,7 @@ class TestFCNT_FCI(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
+		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
 		jsn = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
@@ -114,13 +114,13 @@ class TestFCNT_FCI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveFCNTLaOl(self):
-		r, rsc = RETRIEVE('%s/la' % fcntURL, TestFCNT_FCI.originator)
+		r, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
 		self.assertIsNotNone(findXPath(r, 'hd:tempe/curT0'))
 		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 17.0)
 
-		r, rsc = RETRIEVE('%s/ol' % fcntURL, TestFCNT_FCI.originator)
+		r, rsc = RETRIEVE(f'{fcntURL}/ol', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
 		self.assertIsNotNone(findXPath(r, 'hd:tempe/curT0'))
@@ -140,11 +140,11 @@ class TestFCNT_FCI(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 1)
 		self.assertEqual(findXPath(r, 'hd:tempe/st'), 2)
 
-		rla, rsc = RETRIEVE('%s/la' % fcntURL, TestFCNT_FCI.originator)
+		rla, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
 
-		rol, rsc = RETRIEVE('%s/ol' % fcntURL, TestFCNT_FCI.originator)
+		rol, rsc = RETRIEVE(f'{fcntURL}/ol', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
 

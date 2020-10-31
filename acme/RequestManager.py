@@ -67,7 +67,7 @@ class RequestManager(object):
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % request.args.rt)
+		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: {request.args.rt}')
 
 
 
@@ -99,7 +99,7 @@ class RequestManager(object):
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % request.args.rt)
+		return Result(rsc=RC.badRequest, dbg=f'Unknown or unsupported ResponseType: {request.args.rt}')
 
 
 	#########################################################################
@@ -134,7 +134,7 @@ class RequestManager(object):
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % request.args.rt)
+		return Result(rsc=RC.badRequest, dbg=f'Unknown or unsupported ResponseType: {request.args.rt}')
 
 
 	#########################################################################
@@ -166,7 +166,7 @@ class RequestManager(object):
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % request.args.rt)
+		return Result(rsc=RC.badRequest, dbg=f'Unknown or unsupported ResponseType: {request.args.rt}')
 
 
 
@@ -223,7 +223,7 @@ class RequestManager(object):
 			return Result(jsn=jsn, rsc=RC.acceptedNonBlockingRequestAsynch)
 
 		# Error
-		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % request.args.rt)
+		return Result(rsc=RC.badRequest, dbg=f'Unknown or unsupported ResponseType: {request.args.rt}')
 
 
 	def _runNonBlockingRequestSync(self, request:CSERequest, reqRi:str) -> bool:

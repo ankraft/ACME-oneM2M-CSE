@@ -22,7 +22,7 @@ noCSE = not connectionPossible(cseURL)
 
 nodeID  = 'urn:sn:1234'
 nod2RN 	= 'test2NOD'
-nod2URL = '%s/%s' % (cseURL, nod2RN)
+nod2URL = f'{cseURL}/{nod2RN}'
 
 
 class TestNOD(unittest.TestCase):
@@ -31,7 +31,7 @@ class TestNOD(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
+		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 		
 
 	@classmethod

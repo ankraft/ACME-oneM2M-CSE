@@ -75,7 +75,7 @@ class CSENode(NodeBase):
 			self._checkMemory()
 			self._checkDeviceInfo()
 		except Exception as e:
-			Logging.logErr('Exception: %s' % traceback.format_exc())
+			Logging.logErr(f'Exception: {traceback.format_exc()}')
 			return False
 		return True
 
@@ -119,8 +119,7 @@ class CSENode(NodeBase):
 	def _checkDeviceInfo(self) -> None:
 		if self.deviceInfo is not None:
 			self.deviceInfo['dvnm'] = socket.gethostname()
-			self.deviceInfo['osv'] = '%s %s %s' % (platform.system(), platform.release(), platform.machine())
+			self.deviceInfo['osv'] = f'{platform.system()} {platform.release()} {platform.machine()}'
 			self.deviceInfo['syst'] = Utils.getResourceDate()
-			self.deviceInfo['dlb'] = '| %s:%s %s:%s' % ('IP', socket.gethostbyname(socket.gethostname()),
-														  'MAC', ':'.join(re.findall('..', '%012x' % uuid.getnode())))
+			self.deviceInfo['dlb'] = f'| IP:{socket.gethostbyname(socket.gethostname())} MAC:{":".join(re.findall("..", "%012x" % uuid.getnode()))}'
 			self.updateDeviceInfo()

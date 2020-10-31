@@ -69,13 +69,13 @@ class NotificationManager(object):
 		if (sus := self._getNotificationURLs([subscription['su']])) is not None:
 			for su in sus:
 				if not self._sendDeletionNotification(su, subscription.ri):
-					Logging.logDebug('Deletion request failed: %s' % su) # but ignore the error
+					Logging.logDebug(f'Deletion request failed: {su}') # but ignore the error
 
 		# Send a deletion request to the associatedCrossResourceSub
 		if (acrs := subscription['acrs']) is not None and (nus := self._getNotificationURLs(acrs)) is not None:
 			for nu in nus:
 				if not self._sendDeletionNotification(nu, subscription.ri):
-					Logging.logDebug('Deletion request failed: %s' % nu) # but ignore the error
+					Logging.logDebug(f'Deletion request failed: {nu}') # but ignore the error
 		
 		# Finally remove subscriptions from storage
 		return Result(status=True) if CSE.storage.removeSubscription(subscription) else Result(status=False, rsc=RC.internalServerError, dbg='cannot remove subscription from database')
@@ -176,21 +176,21 @@ class NotificationManager(object):
 			if nu is None or len(nu) == 0:
 				continue
 			# check if it is a direct URL
-			Logging.logDebug("Checking next notification target: %s" % nu)
+			Logging.logDebug(f'Checking next notification target: {nu}')
 			if Utils.isURL(nu):
 				result.append(nu)
 			else:
 				if (resource := CSE.dispatcher.retrieveResource(nu).resource) is None:
-					Logging.logWarn('Resource not found to get URL: %s' % nu)
+					Logging.logWarn(f'Resource not found to get URL: {nu}')
 					return None
 
 				# If the Originator is the notification target then exclude it from the list of targets
 				# Test for AE and CSE (CSE starts with a /)
-				if originator is not None and (resource.ri == originator or resource.ri == '/%s' % originator):
-					Logging.logDebug('Notification target is the originator, no verification request for: %s' % nu)
+				if originator is not None and (resource.ri == originator or resource.ri == f'/{originator}'):
+					Logging.logDebug(f'Notification target is the originator, no verification request for: {nu}')
 					continue
 				if not CSE.security.hasAccess('', resource, Permission.NOTIFY):	# check whether AE/CSE may receive Notifications
-					Logging.logWarn('No access to resource: %s' % nu)
+					Logging.logWarn(f'No access to resource: {nu}' % nu)
 					return None
 				if (poa := resource.poa) is not None and isinstance(poa, list):	#TODO? check whether AE or CSEBase
 					result += poa
@@ -220,8 +220,8 @@ class NotificationManager(object):
 			for nu in newNus:
 				if previousNus is None or (nu not in previousNus):
 					if not self._sendVerificationRequest(nu, subscription.ri, originator=originator):
-						Logging.logDebug('Verification request failed: %s' % nu)
-						return Result(rsc=RC.subscriptionVerificationInitiationFailed, dbg='verification request failed for nu: %s' % nu)
+						Logging.logDebug(f'Verification request failed: {nu}')
+						return Result(rsc=RC.subscriptionVerificationInitiationFailed, dbg=f'verification request failed for nu: {nu}')
 
 		# notify removed nus (deletion notification) if nu = null
 		if 'nu' in newJson: # if nu not present, nothing to do
@@ -238,7 +238,7 @@ class NotificationManager(object):
 
 
 	def _sendVerificationRequest(self, nu:str, ri:str, originator:str=None) -> bool:
-		Logging.logDebug('Sending verification request to: %s' % nu)
+		Logging.logDebug(f'Sending verification request to: {nu}')
 	
 		verificationRequest = {
 			'm2m:sgn' : {
@@ -252,7 +252,7 @@ class NotificationManager(object):
 
 
 	def _sendDeletionNotification(self, nu:str, ri:str) -> bool:
-		Logging.logDebug('Sending deletion notification to: %s' % nu)
+		Logging.logDebug(f'Sending deletion notification to: {nu}')
 	
 		deletionNotification = {
 			'm2m:sgn' : {
@@ -343,7 +343,7 @@ class NotificationManager(object):
 		"""	Send and remove(!) the available BatchNotifications for an ri & nu.
 		"""
 		with self.lockBatchNotification: # TODO check whether this is actually necessary
-			Logging.logWarn('Sending aggregated subscription notifications for ri: %s' % ri)
+			Logging.logWarn(f'Sending aggregated subscription notifications for ri: {ri}')
 			# Collect the notifications	
 			notifications = []		
 			for notification in sorted(CSE.storage.getBatchNotifications(ri, nu), key=lambda x: x['tstamp']):	# sort by timestamp added
@@ -399,5 +399,5 @@ class NotificationManager(object):
 
 
 	def _workerID(self, ri:str, nu:str) -> str:
-		return '%s;%s' % (ri, nu)
+		return f'{ri};{nu}'
 

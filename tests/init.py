@@ -67,17 +67,17 @@ subRN	= 'testSUB'
 reqRN	= 'testREQ'
 
 
-URL		= '%s%s' % (SERVER, ROOTPATH)
-cseURL 	= '%s%s' % (URL, CSERN)
-csiURL 	= '%s~%s' % (URL, CSEID)
-aeURL 	= '%s/%s' % (cseURL, aeRN)
-acpURL 	= '%s/%s' % (cseURL, acpRN)
-cntURL 	= '%s/%s' % (aeURL, cntRN)
-cinURL 	= '%s/%s' % (cntURL, cinRN)
-fcntURL	= '%s/%s' % (aeURL, fcntRN)
-grpURL 	= '%s/%s' % (aeURL, grpRN)
-nodURL 	= '%s/%s' % (cseURL, nodRN)
-subURL 	= '%s/%s' % (cntURL, subRN)
+URL		= f'{SERVER}{ROOTPATH}'
+cseURL 	= f'{URL}{CSERN}'
+csiURL 	= f'{URL}~{CSEID}'
+aeURL 	= f'{cseURL}/{aeRN}'
+acpURL 	= f'{cseURL}/{acpRN}'
+cntURL 	= f'{aeURL}/{cntRN}'
+cinURL 	= f'{cntURL}/{cinRN}'
+fcntURL	= f'{aeURL}/{fcntRN}'
+grpURL 	= f'{aeURL}/{grpRN}'
+nodURL 	= f'{cseURL}/{nodRN}'
+subURL 	= f'{cntURL}/{subRN}'
 batURL 	= f'{nodURL}/{batRN}'
 
 REMOTEURL		= '%s%s' % (REMOTESERVER, REMOTEROOTPATH)

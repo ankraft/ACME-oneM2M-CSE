@@ -25,7 +25,7 @@ class TestGRP(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
+		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
 		jsn = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
@@ -43,7 +43,7 @@ class TestGRP(unittest.TestCase):
 		assert rsc == RC.created, 'cannot create container'
 		cls.cnt1RI = findXPath(cls.cnt1, 'm2m:cnt/ri')
 		jsn = 	{ 'm2m:cnt' : { 
-					'rn'  : '%s2' % cntRN
+					'rn'  : f'{cntRN}2'
 				}}
 		cls.cnt2, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
 		assert rsc == RC.created, 'cannot create container'
@@ -136,7 +136,7 @@ class TestGRP(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), 2)
 
 		jsn = 	{ 'm2m:cnt' : { 
-					'rn'  : '%s3' % cntRN
+					'rn'  : f'{cntRN}3' 
 				}}
 		self.cnt3, rsc = CREATE(aeURL, self.originator, T.CNT, jsn)
 		self.assertEqual(rsc, RC.created)
@@ -173,7 +173,7 @@ class TestGRP(unittest.TestCase):
 			self.assertIsNotNone(findXPath(c, 'pc/m2m:cin'))
 			to = findXPath(c, 'to')
 			self.assertIsNotNone(to)
-			r, rsc = RETRIEVE('%s%s' % (URL, to), TestGRP.originator)	# retrieve the CIN by the returned ri
+			r, rsc = RETRIEVE(f'{URL}{to}', TestGRP.originator)	# retrieve the CIN by the returned ri
 			self.assertEqual(rsc, RC.OK)
 			self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
 
