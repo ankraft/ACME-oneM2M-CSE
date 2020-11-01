@@ -26,7 +26,7 @@ class TestAE(unittest.TestCase):
 		TestAE.originator 	= None 	# actually the AE.aei
 		TestAE.aeACPI 		= None
 		TestAE.cse, rsc 	= RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
+		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
 
 	@classmethod
@@ -53,7 +53,7 @@ class TestAE(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEUnderAE(self):
 		jsn = 	{ 'm2m:ae' : {
-					'rn': '%s2' % aeRN, 
+					'rn': f'{aeRN}', 
 					'api': 'NMyApp2Id',
 				 	'rr': False,
 				 	'srv': [ '3' ]
@@ -156,11 +156,11 @@ class TestAE(unittest.TestCase):
 		self.assertIsNotNone(TestAE.aeACPI)
 		self.assertIsInstance(TestAE.aeACPI, list)
 		self.assertGreater(len(TestAE.aeACPI), 0)
-		_, rsc = RETRIEVE('%s%s' % (URL, TestAE.aeACPI[0]), TestAE.originator)	# AE's own originator fails
+		_, rsc = RETRIEVE(f'{URL}{TestAE.aeACPI[0]}', TestAE.originator)	# AE's own originator fails
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
-		acp, rsc = RETRIEVE('%s%s' % (URL, TestAE.aeACPI[0]), ORIGINATOR)	# but Admin should succeed
+		acp, rsc = RETRIEVE(f'{URL}{TestAE.aeACPI[0]}', ORIGINATOR)	# but Admin should succeed
 		self.assertEqual(rsc, RC.OK)
-		self.assertEqual(findXPath(acp, 'm2m:acp/rn'), 'acp_%s' % aeRN)
+		self.assertEqual(findXPath(acp, 'm2m:acp/rn'), f'acp_{aeRN}')
 		for acr in findXPath(acp, 'm2m:acp/pv/acr'):
 			if TestAE.originator in acr['acor']:
 				break

@@ -19,6 +19,14 @@ from init import *
 noCSE = not connectionPossible(cseURL)
 
 
+
+
+# TODO add different resource (fcnt)
+# TODO remove different resource
+#
+
+
+
 class TestGRP(unittest.TestCase):
 
 	@classmethod
@@ -160,7 +168,7 @@ class TestGRP(unittest.TestCase):
 					'cnf' : 'a',
 					'con' : 'aValue'
 				}}
-		r, rsc = CREATE('%s/fopt' % grpURL, TestGRP.originator, T.CNT, jsn)
+		r, rsc = CREATE(f'{grpURL}/fopt', TestGRP.originator, T.CNT, jsn)
 		self.assertEqual(rsc, RC.OK)
 		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
 		self.assertIsNotNone(rsp)
@@ -178,13 +186,13 @@ class TestGRP(unittest.TestCase):
 			self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
 
 		# try to retrieve the created CIN's directly 
-		r, rsc = RETRIEVE('%s/la' % cntURL, TestGRP.originator)
+		r, rsc = RETRIEVE(f'{cntURL}/la', TestGRP.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
-		r, rsc = RETRIEVE('%s2/la' % cntURL, TestGRP.originator)
+		r, rsc = RETRIEVE(f'{cntURL}2/la', TestGRP.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
-		r, rsc = RETRIEVE('%s3/la' % cntURL, TestGRP.originator)
+		r, rsc = RETRIEVE(f'{cntURL}3/la', TestGRP.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
 
@@ -192,7 +200,7 @@ class TestGRP(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveLAviaFOPT(self):
 		# Retrieve via fopt
-		r, rsc = RETRIEVE('%s/fopt/la' % grpURL, TestGRP.originator)
+		r, rsc = RETRIEVE(f'{grpURL}/fopt/la', TestGRP.originator)
 		self.assertEqual(rsc, RC.OK)
 		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
 		self.assertIsNotNone(rsp)
@@ -205,7 +213,7 @@ class TestGRP(unittest.TestCase):
 			self.assertIsNotNone(findXPath(c, 'pc/m2m:cin'))
 			to = findXPath(c, 'to')
 			self.assertIsNotNone(to)
-			r, rsc = RETRIEVE('%s%s' % (URL, to), TestGRP.originator)	# retrieve the CIN by the returned ri
+			r, rsc = RETRIEVE(f'{URL}{to}', TestGRP.originator)	# retrieve the CIN by the returned ri
 			self.assertEqual(rsc, RC.OK)
 			self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
 
@@ -216,7 +224,7 @@ class TestGRP(unittest.TestCase):
 		jsn = 	{ 'm2m:cnt' : {
 					'lbl' :  [ 'aTag' ]
 				}}
-		r, rsc = UPDATE('%s/fopt' % grpURL, TestGRP.originator, jsn)
+		r, rsc = UPDATE(f'{grpURL}/fopt', TestGRP.originator, jsn)
 		self.assertEqual(rsc, RC.OK)
 		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
 		self.assertIsNotNone(rsp)
@@ -229,7 +237,7 @@ class TestGRP(unittest.TestCase):
 			self.assertIsNotNone(findXPath(c, 'pc/m2m:cnt'))
 			to = findXPath(c, 'to')
 			self.assertIsNotNone(to)
-			r, rsc = RETRIEVE('%s%s' % (URL, to), TestGRP.originator)	# retrieve the CIN by the returned ri
+			r, rsc = RETRIEVE(f'{URL}{to}', TestGRP.originator)	# retrieve the CIN by the returned ri
 			self.assertEqual(rsc, RC.OK)
 			self.assertTrue('aTag' in findXPath(r, 'm2m:cnt/lbl'))
 
@@ -250,13 +258,9 @@ class TestGRP(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), cnm) # == old cnm
 
 
-# TODO add different resource (fcnt)
-# TODO remove different resource
-#
-
 
 	def test_deleteCNTviaFOPT(self):
-		r, rsc = DELETE('%s/fopt' % grpURL, TestGRP.originator)
+		r, rsc = DELETE(f'{grpURL}/fopt', TestGRP.originator)
 		self.assertEqual(rsc, RC.OK)
 		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
 		self.assertIsNotNone(rsp)

@@ -80,10 +80,10 @@ nodURL 	= f'{cseURL}/{nodRN}'
 subURL 	= f'{cntURL}/{subRN}'
 batURL 	= f'{nodURL}/{batRN}'
 
-REMOTEURL		= '%s%s' % (REMOTESERVER, REMOTEROOTPATH)
-REMOTEcseURL 	= '%s%s' % (REMOTEURL, REMOTECSERN)
-localCsrURL 	= '%s%s' % (cseURL, REMOTECSEID)
-remoteCsrURL 	= '%s%s' % (REMOTEcseURL, CSEID)
+REMOTEURL		= f'{REMOTESERVER}{REMOTEROOTPATH}'
+REMOTEcseURL 	= f'{REMOTEURL}{REMOTECSERN}'
+localCsrURL 	= f'{cseURL}{REMOTECSEID}'
+remoteCsrURL 	= f'{REMOTEcseURL}{CSEID}'
 
 
 
@@ -112,8 +112,9 @@ def DELETE(url:str, originator:str, headers=None) -> (dict, int):
 
 
 def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any=None, ct:str='application/json', timeout=None, headers=None) -> (dict, int):	# TODO Constants
+	tys = f';ty={ty}' if ty is not None else ''
 	hds = { 
-		'Content-Type' 	: '%s%s' % (ct, ';ty=%s' % str(ty) if ty is not None else ''), 
+		'Content-Type' 		: f'{ct}{tys}',
 		'X-M2M-Origin'	 	: originator,
 		'X-M2M-RI' 			: (rid := uniqueID()),
 		'X-M2M-RVI'			: '3',			# TODO this actually depends in the originator
@@ -123,12 +124,11 @@ def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any
 
 	setLastRequestID(rid)
 	try:
-		#print('Sending request: %s %s' % (method.__name__.upper(), url))
 		if isinstance(data, dict):
 			data = json.dumps(data)
 		r = method(url, data=data, headers=hds, verify=verifyCertificate)
 	except Exception as e:
-		#print('Failed to send request: %s' % str(e))
+		#print(f'Failed to send request: {str(e)}')
 		return None, 5103
 	rc = int(r.headers['X-M2M-RSC']) if 'X-M2M-RSC' in r.headers else r.status_code
 
@@ -169,9 +169,9 @@ def setExpirationCheck(interval:int) -> int:
 	c, rc = RETRIEVE(CONFIGURL, '')
 	if rc == 200 and c.startswith(b'Configuration:'):
 		# retrieve the old value
-		c, rc = RETRIEVE('%s/cse.checkExpirationsInterval' % CONFIGURL, '')
+		c, rc = RETRIEVE(f'{CONFIGURL}/cse.checkExpirationsInterval', '')
 		oldValue = int(c)
-		c, rc = UPDATE('%s/cse.checkExpirationsInterval' % CONFIGURL, '', str(interval))
+		c, rc = UPDATE(f'{CONFIGURL}/cse.checkExpirationsInterval', '', str(interval))
 		return oldValue if c == b'ack' else -1
 	return -1
 
@@ -180,7 +180,7 @@ def getMaxExpiration() -> int:
 	c, rc = RETRIEVE(CONFIGURL, '')
 	if rc == 200 and c.startswith(b'Configuration:'):
 		# retrieve the old value
-		c, rc = RETRIEVE('%s/cse.maxExpirationDelta' % CONFIGURL, '')
+		c, rc = RETRIEVE(f'{CONFIGURL}/cse.maxExpirationDelta', '')
 		return int(c)
 	return -1
 
@@ -215,9 +215,9 @@ def setRequestMinET(interval:int) -> int:
 	c, rc = RETRIEVE(CONFIGURL, '')
 	if rc == 200 and c.startswith(b'Configuration:'):
 		# retrieve the old value
-		c, rc = RETRIEVE('%s/cse.req.minet' % CONFIGURL, '')
+		c, rc = RETRIEVE(f'{CONFIGURL}/cse.req.minet', '')
 		oldValue = int(c)
-		c, rc = UPDATE('%s/cse.req.minet' % CONFIGURL, '', str(interval))
+		c, rc = UPDATE(f'{CONFIGURL}/cse.req.minet', '', str(interval))
 		return oldValue if c == b'ack' else -1
 	return -1
 
@@ -226,7 +226,7 @@ def getRequestMinET() -> int:
 	c, rc = RETRIEVE(CONFIGURL, '')
 	if rc == 200 and c.startswith(b'Configuration:'):
 		# retrieve the old value
-		c, rc = RETRIEVE('%s/cse.req.minet' % CONFIGURL, '')
+		c, rc = RETRIEVE(f'{CONFIGURL}/cse.req.minet', '')
 		return int(c)
 	return -1
 	

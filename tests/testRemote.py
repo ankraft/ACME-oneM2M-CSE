@@ -29,9 +29,9 @@ class TestRemote(unittest.TestCase):
 	def setUpClass(cls) -> None:
 		# check connection to CSE's
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
+		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 		cls.remoteCse, rsc = RETRIEVE(REMOTEcseURL, REMOTEORIGINATOR)
-		assert rsc == RC.OK, 'Cannot retrieve remote CSEBase: %s' % REMOTEcseURL
+		assert rsc == RC.OK, f'Cannot retrieve remote CSEBase: {REMOTEcseURL}'
 
 
 	@classmethod
@@ -48,13 +48,13 @@ class TestRemote(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:csr/ty'), T.CSR)
 		self.assertEqual(findXPath(r, 'm2m:csr/rn'), REMOTECSEID[1:])
 		self.assertEqual(findXPath(r, 'm2m:csr/ri'), REMOTECSEID[1:])
-		self.assertEqual(findXPath(r, 'm2m:csr/cb'), '%s/%s' % (REMOTECSEID, REMOTECSERN))
+		self.assertEqual(findXPath(r, 'm2m:csr/cb'), f'{REMOTECSEID}/{REMOTECSERN}')
 		self.assertEqual(findXPath(r, 'm2m:csr/csi'), REMOTECSEID)
 		self.assertIsNotNone(findXPath(r, 'm2m:csr/acpi'))
 		self.assertIsInstance(findXPath(r, 'm2m:csr/acpi'), list)
 		self.assertGreater(len(findXPath(r, 'm2m:csr/acpi')), 0)
 		for a in findXPath(r, 'm2m:csr/acpi'):
-			self.assertTrue(a.startswith('%s/' % CSEID))
+			self.assertTrue(a.startswith(f'{CSEID}/'))
 		self.assertIsNotNone(findXPath(r, 'm2m:csr/poa'))
 		self.assertIsInstance(findXPath(r, 'm2m:csr/poa'), list)
 		self.assertGreater(len(findXPath(r, 'm2m:csr/poa')), 0)
@@ -68,13 +68,13 @@ class TestRemote(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:csr/ty'), T.CSR)
 		self.assertEqual(findXPath(r, 'm2m:csr/rn'), CSEID[1:])
 		self.assertEqual(findXPath(r, 'm2m:csr/ri'), CSEID[1:])
-		self.assertEqual(findXPath(r, 'm2m:csr/cb'), '%s/%s' % (CSEID, CSERN))
+		self.assertEqual(findXPath(r, 'm2m:csr/cb'), f'{CSEID}/{CSERN}')
 		self.assertEqual(findXPath(r, 'm2m:csr/csi'), CSEID)
 		self.assertIsNotNone(findXPath(r, 'm2m:csr/acpi'))
 		self.assertIsInstance(findXPath(r, 'm2m:csr/acpi'), list)
 		self.assertGreater(len(findXPath(r, 'm2m:csr/acpi')), 0)
 		for a in findXPath(r, 'm2m:csr/acpi'):
-			self.assertTrue(a.startswith('%s/' % REMOTECSEID))
+			self.assertTrue(a.startswith(f'{REMOTECSEID}/'))
 		self.assertIsNotNone(findXPath(r, 'm2m:csr/poa'))
 		self.assertIsInstance(findXPath(r, 'm2m:csr/poa'), list)
 		self.assertGreater(len(findXPath(r, 'm2m:csr/poa')), 0)
