@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - xxxx-xx-xx
 
+### Changed
+- [WEB] The web UI can now also be used as a stand-alone application to connect to third-party CSEs.
+
+
 ## [0.6.0] - 2020-10-26
 
 ### Added

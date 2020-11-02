@@ -21,6 +21,7 @@ from Logging import Logging
 from resources.Resource import Resource
 from werkzeug.serving import WSGIRequestHandler
 import ssl
+from webUI import WebUI
 
 
 class HttpServer(object):
@@ -38,7 +39,8 @@ class HttpServer(object):
 		self.tlsVersion			= Configuration.get('cse.security.tlsVersion').lower()
 		self.caCertificateFile	= Configuration.get('cse.security.caCertificateFile')
 		self.caPrivateKeyFile	= Configuration.get('cse.security.caPrivateKeyFile')
-
+		self.webuiRoot 			= Configuration.get('cse.webui.root')
+		self.webuiDirectory 	= f'{CSE.rootDirectory}/webui'
 
 		self.serverID	= f'ACME {C.version}' 	# The server's ID for http response headers
 
@@ -62,14 +64,13 @@ class HttpServer(object):
 		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handleDELETE, methods=['DELETE'])
 
 		# Register the endpoint for the web UI
-		if Configuration.get('cse.webui.enable'):
-			self.webuiRoot = Configuration.get('cse.webui.root')
-			self.webuiDirectory = f'{CSE.rootDirectory}/webui'
-			Logging.log(f'Registering web ui at: {self.webuiRoot}, serving from {self.webuiDirectory}')
-			self.addEndpoint(self.webuiRoot, handler=self.handleWebUIGET, methods=['GET'])
-			self.addEndpoint(self.webuiRoot + '/<path:path>', handler=self.handleWebUIGET, methods=['GET'])
-			self.addEndpoint('/', handler=self.redirectRoot, methods=['GET'])
-			self.addEndpoint('/__version__', handler=self.getVersion, methods=['GET'])
+		# This is done by instancing the otherwise "external" web UI
+		self.webui = WebUI(self.flaskApp, 
+						   defaultRI=self.cseri, 
+						   defaultOriginator=self.cseOriginator, 
+						   root=self.webuiRoot,
+						   webuiDirectory=self.webuiDirectory,
+						   version=C.version)
 
 		# Enable the config endpoint
 		if Configuration.get('http.enableRemoteConfiguration'):
@@ -100,7 +101,6 @@ class HttpServer(object):
 
 	def run(self) -> None:
 		WSGIRequestHandler.protocol_version = "HTTP/1.1"
-
 
 		# Run the http server. This runs forever.
 		# The server can run single-threadedly since some of the underlying
@@ -252,27 +252,6 @@ class HttpServer(object):
 				return 'nak'
 			return 'nak'
 		return 'unsupported'
-
-
-
-
-	def handleWebUIGET(self, path:str=None) -> Union[Response, Any, Tuple[str, int]]:
-		""" Handle a GET request for the web GUI. """
-
-		# security check whether the path will under the web root
-		if not (CSE.rootDirectory + request.path).startswith(CSE.rootDirectory):
-			return None, 404
-
-		# Redirect to index file. Also include base / cse RI
-		if path == None or len(path) == 0 or (path.endswith('index.html') and len(request.args) != 2):
-			return flask.redirect(f'{self.webuiRoot}/index.html?ri=/{self.cseri}&or={self.cseOriginator}', code=302)
-		else:
-			filename = f'{self.webuiDirectory}/{path}'	# return any file in the web directory
-		try:
-			return flask.send_file(filename)
-		except Exception as e:
-			Logging.logWarn(str(e))
-			return flask.abort(404)
 
 
 	#########################################################################
