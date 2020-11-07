@@ -193,7 +193,7 @@ class Importer(object):
 			Logging.log(f'Importing attribute policies from file: {fn}')
 			if os.path.exists(fn):
 				with open(fn, newline='') as fp:
-					reader = csv.DictReader(filter(lambda row: not row.startswith('#'), fp), fieldnames=fieldNames)
+					reader = csv.DictReader(filter(lambda row: not row.startswith('#') and len(row.strip()) > 0, fp), fieldnames=fieldNames)
 					for row in reader:
 						if len(row) != len(fieldNames):
 							Logging.logErr(f'Missing element(s) for row: {row} in file: {fn}')

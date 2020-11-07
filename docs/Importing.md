@@ -85,7 +85,8 @@ hd:color,blue,nonNegInteger,car1,O,O,OA
 | 4 | cardinality | The multiplicity of the attribute. This must be one of the following values. | <ul><li>**car1** : multiplicity of 1</li></ul><ul><li>**car1L** : multiplicity of 1 (list)</li></ul><ul><li>**car01** : multiplicity of 0 or 1</li></ul><ul><li>**car01L** : multiplicity of 0 or 1 (list)</li></ul> |
 | 5 | CREATE optionality | This field specifies whether this attribute must be provided etc during a CREATE request.  | <ul><li>**NP** : Not provided</li></ul><ul><li>**O** : Optional provided</li></ul><ul><li>**M** : Mandatory provided</li></ul> |
 | 6 | UPDATE optionality | This field specifies whether this attribute must be provided etc during an UPDATE request. | <ul><li>**NP** : Not provided</li></ul><ul><li>**O** : Optional provided</li></ul><ul><li>**M** : Mandatory provided</li></ul> | 
-| 7 | Announced optionallity | This field specifies whether an attribute is announced when the resource is announced. | <ul><li>**NA** : Not announced</li></ul><ul><li>**OA** : Optional announced</li></ul><ul><li>**MA** : Mandatory announced</li></ul> |
+| 7 | DISCOVERY optionality | This field specifies whether this attribute can be provided etc during an DISCOVERY request. | <ul><li>**NP** : Not provided</li></ul><ul><li>**O** : Optional provided</li></ul><ul><li>**M** : Mandatory provided</li></ul> | 
+| 8 | Announced optionality | This field specifies whether an attribute is announced when the resource is announced. | <ul><li>**NA** : Not announced</li></ul><ul><li>**OA** : Optional announced</li></ul><ul><li>**MA** : Mandatory announced</li></ul> |
 
 
 [← README](../README.md) 
