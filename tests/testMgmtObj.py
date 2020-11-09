@@ -21,7 +21,7 @@ noCSE = not connectionPossible(cseURL)
 
 nodeID  = 'urn:sn:1234'
 nod2RN 	= 'test2NOD'
-nod2URL = '%s/%s' % (cseURL, nod2RN)
+nod2URL = f'{cseURL}/{nod2RN}'
 
 
 class TestMgmtObj(unittest.TestCase):
@@ -30,7 +30,7 @@ class TestMgmtObj(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
+		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
 		jsn = 	{ 'm2m:nod' : { 
 					'rn' 	: nodRN,
@@ -50,7 +50,7 @@ class TestMgmtObj(unittest.TestCase):
 	#
 
 	fwrRN	= 'fwr'
-	fwrURL	= '%s/%s' % (nodURL, fwrRN)
+	fwrURL	= f'{nodURL}/{fwrRN}'
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -110,7 +110,7 @@ class TestMgmtObj(unittest.TestCase):
 	#
 
 	swrRN	= 'swr'
-	swrURL	= '%s/%s' % (nodURL, swrRN)
+	swrURL	= f'{nodURL}/{swrRN}'
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -169,7 +169,7 @@ class TestMgmtObj(unittest.TestCase):
 	#
 
 	memRN	= 'mem'
-	memURL	= '%s/%s' % (nodURL, memRN)
+	memURL	= f'{nodURL}/{memRN}'
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createMEM(self):
@@ -220,7 +220,7 @@ class TestMgmtObj(unittest.TestCase):
 	#
 
 	aniRN	= 'ANI'
-	aniURL	= '%s/%s' % (nodURL, aniRN)
+	aniURL	= f'{nodURL}/{aniRN}'
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createANI(self):
@@ -275,7 +275,7 @@ class TestMgmtObj(unittest.TestCase):
 	#
 
 	andiRN	= 'ANDI'
-	andiURL	= '%s/%s' % (nodURL, andiRN)
+	andiURL	= f'{nodURL}/{andiRN}'
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createANDI(self):
@@ -342,7 +342,7 @@ class TestMgmtObj(unittest.TestCase):
 	#
 
 	batRN	= 'BAT'
-	batURL	= '%s/%s' % (nodURL, batRN)
+	batURL	= f'{nodURL}/{batRN}'
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createBAT(self):
@@ -394,7 +394,7 @@ class TestMgmtObj(unittest.TestCase):
 	#
 
 	dviRN	= 'DVI'
-	dviURL	= '%s/%s' % (nodURL, dviRN)
+	dviURL	= f'{nodURL}/{dviRN}'
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createDVI(self):
@@ -497,7 +497,7 @@ class TestMgmtObj(unittest.TestCase):
 	#
 
 	dvcRN	= 'DVC'
-	dvcURL	= '%s/%s' % (nodURL, dvcRN)
+	dvcURL	= f'{nodURL}/{dvcRN}'
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createDVC(self):
@@ -632,7 +632,7 @@ class TestMgmtObj(unittest.TestCase):
 	#
 
 	rboRN	= 'RBO'
-	rboURL	= '%s/%s' % (nodURL, rboRN)
+	rboURL	= f'{nodURL}/{rboRN}'
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createRBO(self):
@@ -751,7 +751,7 @@ class TestMgmtObj(unittest.TestCase):
 	#
 
 	nycfcRN		= 'nycfc'
-	nycfcURL	= '%s/%s' % (nodURL, nycfcRN)
+	nycfcURL	= f'{nodURL}/{nycfcRN}'
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createNYCFC(self):
@@ -806,7 +806,7 @@ class TestMgmtObj(unittest.TestCase):
 	#
 
 	evlRN	= 'EVL'
-	evlURL	= '%s/%s' % (nodURL, evlRN)
+	evlURL	= f'{nodURL}/{evlRN}'
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createEVL(self):

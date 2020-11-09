@@ -37,7 +37,7 @@ class RemoteCSEManager(object):
 		self.checkInterval						= Configuration.get('cse.registrar.checkInterval')
 		self.checkLiveliness					= Configuration.get('cse.registration.checkLiveliness')
 		self.registrarCSEURL					= f'{self.remoteAddress}{self.remoteRoot}/~{self.registrarCSI}/{self.registrarCseRN}'
-		self.registrarCSRURL					= '{self.registrarCSEURL}{self.cseCsi}'
+		self.registrarCSRURL					= f'{self.registrarCSEURL}{self.cseCsi}'
 		self.ownRegistrarCSR:Resource			= None 	# The own CSR at the registrar if there is one
 		self.registrarCSE:Resource				= None 	# The registrar CSE if there is one
 		self.descendantCSR:Dict[str, Tuple[Resource, str]]	= {}	# dict of descendantCSR's . csi : (CSR, registeredATcsi)
@@ -551,7 +551,7 @@ class RemoteCSEManager(object):
 		""" Get the new target URL when forwarding. """
 		r, pe = self._getCSRFromPath(path)
 		if r is not None and (poas := r.poa) is not None and len(poas) > 0:
-			return '{poas[0]}/~/{"/".join(pe[1:])}'	# TODO check all available poas.
+			return f'{poas[0]}/~/{"/".join(pe[1:])}'	# TODO check all available poas.
 		return None
 
 

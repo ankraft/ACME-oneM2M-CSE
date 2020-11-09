@@ -11,6 +11,7 @@ import argparse, sys
 from rich.console import Console
 sys.path.append('acme')
 sys.path.append('apps')
+sys.path.append('webui')
 from Constants import Constants as C
 import CSE
 
