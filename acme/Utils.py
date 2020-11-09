@@ -677,7 +677,7 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 		try:
 			fo = FilterOperation(int(fo))
 		except ValueError as exc:
-			return None, '"{fo}" is not a valid value for fo'
+			return None, f'"{fo}" is not a valid value for fo'
 		del args['fo']
 	else:
 		fo = FilterOperation.AND # default

@@ -25,12 +25,15 @@ noCSE = not connectionPossible(cseURL)
 cnt2RN = f'{cntRN}2' 
 cnt3RN = f'{cntRN}3'
 cntARPRN = 'arpCnt'
+bat2RN	= f'{batRN}2'
+nodeID  = 'urn:sn:1234'
+
 
 class TestDiscovery(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def setUpClass(cls):
+	def setUpClass(cls) -> None:
 		cls.crTimestamp1 = getDate(-timeDelta)	# first timestamp
 
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
@@ -76,32 +79,68 @@ class TestDiscovery(unittest.TestCase):
 						'lbl' : [ 'tag:%d' %i ]
 					}}
 			r, rsc = CREATE(f'{cntURL}2', TestDiscovery.originator, T.CIN, jsn)
+		
+		# create Node & MgmtObjs
+		jsn = 	{ 'm2m:nod' : { 
+			'rn' 	: nodRN,
+			'ni'	: nodeID
+		}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, jsn)
+		assert rsc == RC.created, 'cannot create Node'
+		jsn =  { 'm2m:mem' : {
+			'mgd' : T.MEM,
+			'rn' : memRN,
+			'dc' : 'aMem',
+			'mma' : 1234,
+			'mmt' : 4321
+		}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, jsn)
+		assert rsc == RC.created, 'cannot create m2m:mem'
+		jsn =  { 'm2m:bat' : {
+					'mgd' : T.BAT,
+					'rn'  : batRN,
+					'dc'  : 'aBat',
+					'btl' : 23,
+					'bts' : 5
+				}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, jsn)
+		assert rsc == RC.created, 'cannot create m2m:bat'
+		jsn =  { 'm2m:bat' : {
+			'mgd' : T.BAT,
+			'rn'  : bat2RN,
+			'dc'  : 'aBat',
+			'btl' : 23,
+			'bts' : 5
+		}}
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, jsn)
+		assert rsc == RC.created, 'cannot create m2m:bat (2)'
 
 		cls.crTimestamp2 = getDate()	# Second timestamp
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveUnknownResource(self):
+	def test_retrieveUnknownResource(self) -> None:
 		# Before first timestamp
 		r, rsc = RETRIEVE(f'{aeURL}_unknown', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.notFound)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_discoverUnknownResource(self):
+	def test_discoverUnknownResource(self) -> None:
 		# Before first timestamp
 		r, rsc = RETRIEVE(f'{aeURL}_unknown?fu=1', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.notFound)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_discoverUnknownAttribute(self):
+	def test_discoverUnknownAttribute(self) -> None:
 		# Before first timestamp
 		r, rsc = RETRIEVE(f'{aeURL}?xxx=yyy', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.badRequest)
@@ -242,7 +281,7 @@ class TestDiscovery(unittest.TestCase):
 
 	# childResources
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTunderAERCN8(self):
+	def test_retrieveCNTunderAERCN8(self) -> None:
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResources:d}&ty={T.CNT:d}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae'))
@@ -258,7 +297,7 @@ class TestDiscovery(unittest.TestCase):
 
 	# modifiedAttributes (fail for retrieve)
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTunderAEWrongRCN9(self):
+	def test_retrieveCNTunderAEWrongRCN9(self) -> None:
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.modifiedAttributes:d}&ty={T.CNT:d}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.badRequest)
 
@@ -577,15 +616,27 @@ class TestDiscovery(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveWithWrongDRT(self):
+	def test_retrieveWithWrongDRT(self) -> None:
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributes:d}&drt=4223', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveWithWrongFO(self):
+	def test_retrieveWithWrongFO(self) -> None:
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributes:d}&fo=4223', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveMgmtObjsRCN8(self) -> None:
+		r, rsc = RETRIEVE(f'{nodURL}?rcn={RCN.childResources}&ty={T.MGMTOBJ}', ORIGINATOR)
+		self.assertEqual(rsc, RC.OK)
+		# Excpected: m2m:bat and m2m:mem are separate fields
+		self.assertIsNotNone(findXPath(r, 'm2m:nod'))
+		self.assertIsNotNone(findXPath(r, 'm2m:nod/m2m:bat'))
+		self.assertEqual(len(findXPath(r, 'm2m:nod/m2m:bat')), 2)
+		self.assertIsNotNone(findXPath(r, 'm2m:nod/m2m:mem'))
+		self.assertEqual(len(findXPath(r, 'm2m:nod/m2m:mem')), 1)
 
 
 
@@ -638,6 +689,7 @@ def run():
 	suite.addTest(TestDiscovery('test_retrieveWithWrongFU'))
 	suite.addTest(TestDiscovery('test_retrieveWithWrongDRT'))
 	suite.addTest(TestDiscovery('test_retrieveWithWrongFO'))
+	suite.addTest(TestDiscovery('test_retrieveMgmtObjsRCN8'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)

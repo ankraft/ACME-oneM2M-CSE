@@ -65,6 +65,8 @@ fcntRN	= 'testFCNT'
 nodRN 	= 'testNOD'
 subRN	= 'testSUB'
 reqRN	= 'testREQ'
+memRN	= 'mem'
+batRN	= 'bat'
 
 
 URL		= f'{SERVER}{ROOTPATH}'
@@ -79,12 +81,14 @@ grpURL 	= f'{aeURL}/{grpRN}'
 nodURL 	= f'{cseURL}/{nodRN}'
 subURL 	= f'{cntURL}/{subRN}'
 batURL 	= f'{nodURL}/{batRN}'
+memURL	= f'{nodURL}/{memRN}'
+batURL	= f'{nodURL}/{batRN}'
+
 
 REMOTEURL		= f'{REMOTESERVER}{REMOTEROOTPATH}'
 REMOTEcseURL 	= f'{REMOTEURL}{REMOTECSERN}'
 localCsrURL 	= f'{cseURL}{REMOTECSEID}'
 remoteCsrURL 	= f'{REMOTEcseURL}{CSEID}'
-
 
 
 

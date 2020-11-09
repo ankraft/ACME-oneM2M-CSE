@@ -168,14 +168,11 @@ class TestMgmtObj(unittest.TestCase):
 	#	MEM
 	#
 
-	memRN	= 'mem'
-	memURL	= f'{nodURL}/{memRN}'
-
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createMEM(self):
 		jsn =  { 'm2m:mem' : {
 					'mgd' : T.MEM,
-					'rn' : self.memRN,
+					'rn' : memRN,
 					'dc' : 'aMem',
 					'mma' : 1234,
 					'mmt' : 4321
@@ -187,18 +184,18 @@ class TestMgmtObj(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveMEM(self):
-		r, rsc = RETRIEVE(self.memURL, ORIGINATOR)
+		r, rsc = RETRIEVE(memURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:mem/mgd'), T.MEM)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesMEM(self):
-		r, rsc = RETRIEVE(self.memURL, ORIGINATOR)
+		r, rsc = RETRIEVE(memURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:mem/ty'), T.MGMTOBJ)
 		self.assertEqual(findXPath(r, 'm2m:mem/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
-		self.assertEqual(findXPath(r, 'm2m:mem/rn'), self.memRN)
+		self.assertEqual(findXPath(r, 'm2m:mem/rn'), memRN)
 		self.assertIsNotNone(findXPath(r, 'm2m:mem/ct'))
 		self.assertIsNotNone(findXPath(r, 'm2m:mem/lt'))
 		self.assertIsNotNone(findXPath(r, 'm2m:mem/et'))
@@ -212,7 +209,7 @@ class TestMgmtObj(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteMEM(self):
-		_, rsc = DELETE(self.memURL, ORIGINATOR)
+		_, rsc = DELETE(memURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
 	#
@@ -332,7 +329,7 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteANDI(self):
+	def test_deleteANDI(self) -> None:
 		_, rsc = DELETE(self.andiURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
@@ -341,14 +338,11 @@ class TestMgmtObj(unittest.TestCase):
 	#	BAT
 	#
 
-	batRN	= 'BAT'
-	batURL	= f'{nodURL}/{batRN}'
-
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createBAT(self):
+	def test_createBAT(self) -> None:
 		jsn =  { 'm2m:bat' : {
 					'mgd' : T.BAT,
-					'rn'  : self.batRN,
+					'rn'  : batRN,
 					'dc'  : 'aBat',
 					'btl' : 23,
 					'bts' : 5
@@ -359,19 +353,19 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveBAT(self):
-		r, rsc = RETRIEVE(self.batURL, ORIGINATOR)
+	def test_retrieveBAT(self) ->None:
+		r, rsc = RETRIEVE(batURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:bat/mgd'), T.BAT)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesBAT(self):
-		r, rsc = RETRIEVE(self.batURL, ORIGINATOR)
+	def test_attributesBAT(self) -> None:
+		r, rsc = RETRIEVE(batURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:bat/ty'), T.MGMTOBJ)
 		self.assertEqual(findXPath(r, 'm2m:bat/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
-		self.assertEqual(findXPath(r, 'm2m:bat/rn'), self.batRN)
+		self.assertEqual(findXPath(r, 'm2m:bat/rn'), batRN)
 		self.assertIsNotNone(findXPath(r, 'm2m:bat/ct'))
 		self.assertIsNotNone(findXPath(r, 'm2m:bat/lt'))
 		self.assertIsNotNone(findXPath(r, 'm2m:bat/et'))
@@ -384,8 +378,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteBAT(self):
-		_, rsc = DELETE(self.batURL, ORIGINATOR)
+	def test_deleteBAT(self) -> None:
+		_, rsc = DELETE(batURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
 
@@ -397,7 +391,7 @@ class TestMgmtObj(unittest.TestCase):
 	dviURL	= f'{nodURL}/{dviRN}'
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createDVI(self):
+	def test_createDVI(self) -> None:
 		jsn =  { 'm2m:dvi' : {
 					'mgd' : T.DVI,
 					'rn' : self.dviRN,
@@ -809,10 +803,10 @@ class TestMgmtObj(unittest.TestCase):
 	evlURL	= f'{nodURL}/{evlRN}'
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createEVL(self):
+	def test_createEVL(self) -> None:
 		jsn =  { 'm2m:bat' : {
 					'mgd' : T.BAT,
-					'rn'  : self.batRN,
+					'rn'  : batRN,
 					'dc'  : 'aBat',
 					'btl' : 23,
 					'bts' : 5
@@ -823,19 +817,19 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveBAT(self):
-		r, rsc = RETRIEVE(self.batURL, ORIGINATOR)
+	def test_retrieveBAT(self) -> None:
+		r, rsc = RETRIEVE(batURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:bat/mgd'), T.BAT)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesBAT(self):
-		r, rsc = RETRIEVE(self.batURL, ORIGINATOR)
+	def test_attributesBAT(self) -> None:
+		r, rsc = RETRIEVE(batURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:bat/ty'), T.MGMTOBJ)
 		self.assertEqual(findXPath(r, 'm2m:bat/pi'), findXPath(TestMgmtObj.nod,'m2m:nod/ri'))
-		self.assertEqual(findXPath(r, 'm2m:bat/rn'), self.batRN)
+		self.assertEqual(findXPath(r, 'm2m:bat/rn'), batRN)
 		self.assertIsNotNone(findXPath(r, 'm2m:bat/ct'))
 		self.assertIsNotNone(findXPath(r, 'm2m:bat/lt'))
 		self.assertIsNotNone(findXPath(r, 'm2m:bat/et'))
@@ -848,8 +842,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteBAT(self):
-		_, rsc = DELETE(self.batURL, ORIGINATOR)
+	def test_deleteBAT(self) -> None:
+		_, rsc = DELETE(batURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
 

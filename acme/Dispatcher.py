@@ -738,6 +738,7 @@ class Dispatcher(object):
 		while True:		# go multiple times per level through the resources until the list is empty
 			result = []
 			handledTy = None
+			handledTPE = None
 			idx = 0
 			while idx < len(resources):
 				r = resources[idx]
@@ -750,7 +751,8 @@ class Dispatcher(object):
 					continue
 				if handledTy is None:
 					handledTy = r.ty					# this round we check this type
-				if r.ty == handledTy:					# handle only resources of the currently handled type
+					handledTPE = r.tpe					# ... and this TPE (important to distinguish specializations in mgmtObj and fcnt )
+				if r.ty == handledTy and r.tpe == handledTPE:		# handle only resources of the currently handled type and TPE!
 					result.append(r)					# append the found resource 
 					resources.remove(r)						# remove resource from the original list (greedy), but don't increment the idx
 					resources = self._resourceTreeJSON(resources, r)	# check recursively whether this resource has children

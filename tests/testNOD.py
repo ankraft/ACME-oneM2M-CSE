@@ -20,7 +20,6 @@ from init import *
 noCSE = not connectionPossible(cseURL)
 
 
-nodeID  = 'urn:sn:1234'
 nod2RN 	= 'test2NOD'
 nod2URL = f'{cseURL}/{nod2RN}'
 
