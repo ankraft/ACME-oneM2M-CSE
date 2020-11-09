@@ -373,7 +373,7 @@ class TestDiscovery(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCNTorCINunderAE(self):
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CNT:d}&ty={T.CIN:d}', TestDiscovery.originator)
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CNT:d}+{T.CIN:d}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
 		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 12)
@@ -381,6 +381,18 @@ class TestDiscovery(unittest.TestCase):
 		self.assertEqual(sum(x['typ'] == T.CIN for x in findXPath(r, 'm2m:rrl')), 10)
 
 
+	# This one tests a different argument handling (2 * ty)
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCNTorCINunderAE2(self):
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CNT:d}&ty={T.CIN:d}', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
+		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 12)
+		self.assertEqual(sum(x['typ'] == T.CNT for x in findXPath(r, 'm2m:rrl')), 2)
+		self.assertEqual(sum(x['typ'] == T.CIN for x in findXPath(r, 'm2m:rrl')), 10)
+
+	
+	# Find both CIN with a tag:0 label
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCINandLBLunderAE(self):
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CIN:d}&lbl=tag:0', TestDiscovery.originator)
@@ -389,6 +401,18 @@ class TestDiscovery(unittest.TestCase):
 		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 2)
 		self.assertEqual(sum(x['typ'] == T.CNT for x in findXPath(r, 'm2m:rrl')), 0)
 		self.assertEqual(sum(x['typ'] == T.CIN for x in findXPath(r, 'm2m:rrl')), 2)
+
+
+	# Find four CIN with a tag:0 or tag:1 label. Use + encoding for the label
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCINandLBLunderAE2(self):
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CIN:d}&lbl=tag:0+tag:1', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
+		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 4)
+		self.assertEqual(sum(x['typ'] == T.CNT for x in findXPath(r, 'm2m:rrl')), 0)
+		self.assertEqual(sum(x['typ'] == T.CIN for x in findXPath(r, 'm2m:rrl')), 4)
+
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -667,7 +691,9 @@ def run():
 	suite.addTest(TestDiscovery('test_retrieveCNTbyCNIunderAEEmpty'))
 	suite.addTest(TestDiscovery('test_retrieveCNTbyCNIunderAEEmpty2'))
 	suite.addTest(TestDiscovery('test_retrieveCNTorCINunderAE'))
+	suite.addTest(TestDiscovery('test_retrieveCNTorCINunderAE2'))
 	suite.addTest(TestDiscovery('test_retrieveCINandLBLunderAE'))
+	suite.addTest(TestDiscovery('test_retrieveCINandLBLunderAE2'))
 	suite.addTest(TestDiscovery('test_retrieveCNTorLBLunderAE'))
 	suite.addTest(TestDiscovery('test_retrieveWithCRBunderAE'))
 	suite.addTest(TestDiscovery('test_retrieveWithCRAunderAE'))

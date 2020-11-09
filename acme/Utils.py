@@ -634,11 +634,29 @@ def requestHeaderField(request: Request, field : str) -> str:
 # Get the request arguments, or meaningful defaults.
 # Only a small subset is supported yet
 # Throws an exception when a wrong type is encountered. This is part of the validation
-def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, str]:
+def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, str]:
+	
+	# copy arguments for greedy attributes checking
+	args = request.args.copy()	 	# type: ignore
+
+	def _extractMultipleArgs(argName:str, target:dict, validate:bool=True) -> Tuple[bool, str]:
+		"""	Get multi-arguments. Always create at least an empty list. Remove
+			the found arguments from the original list.
+		"""
+		lst = []
+		for e in args.getlist(argName):
+			for es in (t := e.split()):	# check for number
+				if validate:
+					if not CSE.validator.validateRequestArgument(argName, es).status:
+						return False, f'error validating "{argName}" argument(s)'
+			lst.extend(t)
+		if len(lst) > 0:
+			target[argName] = lst
+		args.poplist(argName)
+		return True, None
+
 	result = RequestArguments(operation=operation, request=request)
 
-	# copy for greedy attributes checking
-	args = request.args.copy()	 	# type: ignore
 
 	# FU - Filter Usage
 	if (fu := args.get('fu')) is not None:
@@ -786,9 +804,8 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 			del args[c]
 	result.handling = handling
 
-
 	# conditions
-	conditions = {}
+	conditions:dict = {}
 
 	# Extract and store other arguments
 	for c in ['crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr']:
@@ -798,36 +815,12 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 			conditions[c] = v
 			del args[c]
 
-	# get types (multi). Always create at least an empty list
-	tyAr = []
-	for e in args.getlist('ty'):
-		for es in (t := e.split()):	# check for number
-			if not CSE.validator.validateRequestArgument('ty', es).status:
-				return None, 'error validating "ty" argument(s)'
-		tyAr.extend(t)
-	if len(tyAr) > 0:
-		conditions['ty'] = tyAr
-	args.poplist('ty')
-
-	# get contentTypes (multi). Always create at least an empty list
-	ctyAr = []
-	for e in args.getlist('cty'):
-		for es in (t := e.split()):	# check for number
-			if not CSE.validator.validateRequestArgument('cty', es).status:
-				return None, 'error validating "cty" argument(s)'
-		ctyAr.extend(t)
-	if len(ctyAr) > 0:
-		conditions['cty'] = ctyAr
-	args.poplist('cty')
-
-	# get types (multi). Always create at least an empty list
-	# NO validation of label. It is a list.
-	lblAr = []
-	for e in args.getlist('lbl'):
-		lblAr.append(e)
-	if len(lblAr) > 0:
-		conditions['lbl'] = lblAr
-	args.poplist('lbl')
+	if not (res := _extractMultipleArgs('ty', conditions))[0]:
+		return None, res[1]
+	if not (res := _extractMultipleArgs('cty', conditions))[0]:
+		return None, res[1]
+	if not (res := _extractMultipleArgs('lbl', conditions, validate=False))[0]:
+		return None, res[1]
 
 	result.conditions = conditions
 
@@ -835,9 +828,15 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 	for arg, val in args.items():
 		if not CSE.validator.validateRequestArgument(arg, val).status:
 			return None, f'error validating (unknown?) "{arg}" argument)'
-
 	# all arguments have passed, so add the remaining 
 	result.attributes = args
+
+	# Alternative: in case attributes are handled like ty, lbl, cty
+	# attributes:dict = {}
+	# for key in list(args.keys()):
+	# 	if not (res := _extractMultipleArgs(key, attributes))[0]:
+	# 		return None, res[1]
+	# result.attributes = attributes
 
 	# Finally return the collected arguments
 	return result, None
