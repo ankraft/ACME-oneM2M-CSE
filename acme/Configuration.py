@@ -41,7 +41,8 @@ class Configuration(object):
 		argsStatisticsEnabled	= args.statisticsenabled if args is not None and 'statisticsenabled' in args else None
 		argsRunAsHttps			= args.https if args is not None and 'https' in args else None
 		argsRemoteConfigEnabled	= args.remoteconfigenabled if args is not None and 'remoteconfigenabled' in args else None
-
+		argsListenIF			= args.listenif if args is not None and 'listenif' in args else '127.0.0.1'
+		argsHttpAddress			= args.httpaddress if args is not None and 'httpaddress' in args else 'http://127.0.0.1:8080'
 
 		# Read and parse the configuration file
 		config = configparser.ConfigParser(	interpolation=configparser.ExtendedInterpolation(),
@@ -68,10 +69,10 @@ class Configuration(object):
 				#	HTTP Server
 				#
 
-				'http.listenIF'						: config.get('server.http', 'listenIF', 				fallback='127.0.0.1'),
+				'http.listenIF'						: config.get('server.http', 'listenIF', 				fallback=argsListenIF),
 				'http.port' 						: config.getint('server.http', 'port', 					fallback=8080),
 				'http.root'							: config.get('server.http', 'root', 					fallback=''),
-				'http.address'						: config.get('server.http', 'address', 					fallback='http://127.0.0.1:8080'),
+				'http.address'						: config.get('server.http', 'address', 					fallback=argsHttpAddress),
 				'http.multiThread'					: config.getboolean('server.http', 'multiThread', 		fallback=True),
 				'http.enableRemoteConfiguration'	: config.getboolean('server.http', 'enableRemoteConfiguration', fallback=False),
 
@@ -269,41 +270,17 @@ class Configuration(object):
 		else:
 			Configuration._configuration['logging.level'] = logging.DEBUG
 
-		# Override DB reset from command line
-		if argsDBReset is True:
-			Configuration._configuration['db.resetOnStartup'] = True
-
-		# Override DB storage mode from command line
-		if argsDBStorageMode is not None:
-			Configuration._configuration['db.inMemory'] = argsDBStorageMode == 'memory'
-
-		# Override import directory from command line
-		if argsImportDirectory is not None:
-			Configuration._configuration['cse.resourcesPath'] = argsImportDirectory
-
-		# Override app enablement
-		if argsAppsEnabled is not None:
-			Configuration._configuration['cse.enableApplications'] = argsAppsEnabled
-
-		# Override remote CSE enablement
-		if argsRemoteCSEEnabled is not None:
-			Configuration._configuration['cse.enableRemoteCSE'] = argsRemoteCSEEnabled
-
-		# Override validation enablement
-		if argsValidationEnabled is not None:
-			Configuration._configuration['cse.enableValidation'] = argsValidationEnabled
-
-		# Override statistics enablement
-		if argsStatisticsEnabled is not None:
-			Configuration._configuration['cse.statistics.enable'] = argsStatisticsEnabled
-
-		# Override useTLS
-		if argsRunAsHttps is not None:
-			Configuration._configuration['cse.security.useTLS'] = argsRunAsHttps
-
-		# Override remote/httpConfiguration
-		if argsRemoteConfigEnabled is not None:
-			Configuration._configuration['http.enableRemoteConfiguration'] = argsRemoteConfigEnabled
+		if argsDBReset is True:					Configuration._configuration['db.resetOnStartup'] = True									# Override DB reset from command line
+		if argsDBStorageMode is not None:		Configuration._configuration['db.inMemory'] = argsDBStorageMode == 'memory'					# Override DB storage mode from command line
+		if argsImportDirectory is not None:		Configuration._configuration['cse.resourcesPath'] = argsImportDirectory						# Override import directory from command line
+		if argsAppsEnabled is not None:			Configuration._configuration['cse.enableApplications'] = argsAppsEnabled					# Override app enablement
+		if argsRemoteCSEEnabled is not None:	Configuration._configuration['cse.enableRemoteCSE'] = argsRemoteCSEEnabled					# Override remote CSE enablement
+		if argsValidationEnabled is not None:	Configuration._configuration['cse.enableValidation'] = argsValidationEnabled				# Override validation enablement
+		if argsStatisticsEnabled is not None:	Configuration._configuration['cse.statistics.enable'] = argsStatisticsEnabled				# Override statistics enablement
+		if argsRunAsHttps is not None:			Configuration._configuration['cse.security.useTLS'] = argsRunAsHttps						# Override useTLS
+		if argsRemoteConfigEnabled is not None:	Configuration._configuration['http.enableRemoteConfiguration'] = argsRemoteConfigEnabled	# Override remote/httpConfiguration
+		if argsListenIF is not None:			Configuration._configuration['http.listenIF'] = argsListenIF								# Override binding network interface
+		if argsHttpAddress is not None:			Configuration._configuration['http.address'] = argsHttpAddress								# Override server http address
 
 		# Correct urls
 		Configuration._configuration['cse.registrar.address'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.address'])

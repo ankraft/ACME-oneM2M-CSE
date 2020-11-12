@@ -539,10 +539,10 @@ class RemoteCSEManager(object):
 	def isTransitID(self, id:str) -> bool:
 		""" Check whether an ID is a targeting a remote CSE via a CSR. """
 		if Utils.isSPRelative(id):
-			ids = id.split("/")
+			ids = id.split('/')
 			return len(ids) > 0 and ids[0] != self.cseCsi[1:]
 		elif Utils.isAbsolute(id):
-			ids = id.split("/")
+			ids = id.split('/')
 			return len(ids) > 2 and ids[2] != self.cseCsi[1:]
 		return False
 

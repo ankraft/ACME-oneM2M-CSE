@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - xxxx-xx-xx
 
+### Added
+- [CSE] Added *--http-address* and *--network-interface* command line arguments.
+
 ### Changed
 - [WEB] The web UI can now also be used as a stand-alone application to connect to third-party CSEs.
 
