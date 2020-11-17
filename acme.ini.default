@@ -71,7 +71,7 @@ csebaseAccessACPI=acpCSEBaseAccess
 # Enable TLS for communications.
 # See oneM2M TS-0003 Clause 8.2.1 Overview on Security Association Establishment Frameworks
 # Default: False
-useTLS=True
+useTLS=False
 # TLS version to be used in connections.
 # Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate
 # version negotiation.

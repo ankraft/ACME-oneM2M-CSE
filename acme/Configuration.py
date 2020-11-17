@@ -41,8 +41,8 @@ class Configuration(object):
 		argsStatisticsEnabled	= args.statisticsenabled if args is not None and 'statisticsenabled' in args else None
 		argsRunAsHttps			= args.https if args is not None and 'https' in args else None
 		argsRemoteConfigEnabled	= args.remoteconfigenabled if args is not None and 'remoteconfigenabled' in args else None
-		argsListenIF			= args.listenif if args is not None and 'listenif' in args else '127.0.0.1'
-		argsHttpAddress			= args.httpaddress if args is not None and 'httpaddress' in args else 'http://127.0.0.1:8080'
+		argsListenIF			= args.listenif if args is not None and 'listenif' in args else None
+		argsHttpAddress			= args.httpaddress if args is not None and 'httpaddress' in args else None
 
 		# Read and parse the configuration file
 		config = configparser.ConfigParser(	interpolation=configparser.ExtendedInterpolation(),
@@ -69,10 +69,10 @@ class Configuration(object):
 				#	HTTP Server
 				#
 
-				'http.listenIF'						: config.get('server.http', 'listenIF', 				fallback=argsListenIF),
+				'http.listenIF'						: config.get('server.http', 'listenIF', 				fallback='127.0.0.1'),
 				'http.port' 						: config.getint('server.http', 'port', 					fallback=8080),
 				'http.root'							: config.get('server.http', 'root', 					fallback=''),
-				'http.address'						: config.get('server.http', 'address', 					fallback=argsHttpAddress),
+				'http.address'						: config.get('server.http', 'address', 					fallback='http://127.0.0.1:8080'),
 				'http.multiThread'					: config.getboolean('server.http', 'multiThread', 		fallback=True),
 				'http.enableRemoteConfiguration'	: config.getboolean('server.http', 'enableRemoteConfiguration', fallback=False),
 
