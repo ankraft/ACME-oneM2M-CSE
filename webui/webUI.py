@@ -172,7 +172,7 @@ if __name__ == '__main__':
 	parser.add_argument('--cseurl', action='store', dest='targetURL', default='http://127.0.0.1:8080/', help='the target CSE\'s base URL (default: %(default)s)')	
 	parser.add_argument('--ri', action='store', dest='targetRI', default='/id-in', help='the target CSE\'s default base RI (default: %(default)s)')	
 	parser.add_argument('--originator', action='store', dest='targetOriginator', default='CAdmin', help='the target CSE\'s default originator (default: %(default)s)')	
-	parser.add_argument('--logging', action='store_true', dest='logging', default=False, help='Ensble logging')
+	parser.add_argument('--logging', action='store_true', dest='logging', default=False, help='Enable logging')
 
 	args 				= parser.parse_args()
 	doLogging 			= args.logging
