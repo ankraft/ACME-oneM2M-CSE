@@ -73,8 +73,8 @@ class ACP(AnnounceableResource):
 
 
 	def validateAnnouncedJSON(self, jsn:dict) -> dict:
-		acr = Utils.findXPath(jsn, f'{T.ACPAnnc.tpe()}/pvs/acr')
-		acr.append( { 'acor': [ CSE.remote.cseCsi ], 'acop': Permission.ALL } )
+		if (acr := Utils.findXPath(jsn, f'{T.ACPAnnc.tpe()}/pvs/acr')) is not None:
+			acr.append( { 'acor': [ CSE.remote.cseCsi ], 'acop': Permission.ALL } )
 		return jsn
 
 
