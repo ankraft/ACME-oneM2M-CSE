@@ -196,10 +196,13 @@ class Importer(object):
 					reader = csv.DictReader(filter(lambda row: not row.startswith('#') and len(row.strip()) > 0, fp), fieldnames=fieldNames)
 					for row in reader:
 						if len(row) != len(fieldNames):
-							Logging.logErr(f'Missing element(s) for row: {row} in file: {fn}')
-							continue
+							Logging.logErr(f'Wrong number elements ({len(row)}) for row: {row} in file: {fn}. Must be {len(fieldNames)}.')
+							return False
 						if (tpe := row.get('resourceType')) is None or len(tpe) == 0:
 							Logging.logErr(f'Missing or empty resource type for row: {row} in file: {fn}')
+							return False
+						if tpe.startswith('m2m:'):
+							Logging.logErr(f'Adding attribute policies for "m2m" namspace is not allowed: {row}')
 							return False
 						if (sn := row.get('shortName')) is None or len(sn) == 0:
 							Logging.logErr(f'Missing or empty shortname for row: {row} in file: {fn}')

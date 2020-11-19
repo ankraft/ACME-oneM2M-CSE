@@ -293,15 +293,13 @@ class Validator(object):
 		# if tpe is not None and not tpe.startswith("m2m:"):
 		# 	pureJson = jsn
 		if (attributePolicies := self._addAdditionalAttributes(tpe, attributePolicies)) is None:
-			err = f'Unknown resource type: {tpe}'
-			Logging.logWarn(err)
+			Logging.logWarn(err := f'Unknown resource type: {tpe}')
 			return Result(status=False, rsc=RC.badRequest, dbg=err)
 
 		#Logging.logDebug(attributePolicies.items())
 		for r in pureJson.keys():
 			if r not in attributePolicies.keys():
-				err = f'Unknown attribute: {r} in resource: {tpe}'
-				Logging.logWarn(err)
+				Logging.logWarn(err := f'Unknown attribute: {r} in resource: {tpe}')
 				return Result(status=False, rsc=RC.badRequest, dbg=err)
 		for r, p in attributePolicies.items():
 			if p is None:
@@ -310,20 +308,17 @@ class Validator(object):
 			# Check whether the attribute is allowed or mandatory in the request
 			if (v := pureJson.get(r)) is None:
 				if p[reqp] == RO.M:		# Not okay, this attribute is mandatory
-					err = f'Cannot find mandatory attribute: {r}'
-					Logging.logWarn(err)
+					Logging.logWarn(err := f'Cannot find mandatory attribute: {r}')
 					return Result(status=False, rsc=RC.badRequest, dbg=err)
 				if r in pureJson and p[1] == CAR.car1: # but ignore CAR.car1N (which may be Null/None)
-					err = f'Cannot delete a mandatory attribute: {r}'
-					Logging.logWarn(err)
+					Logging.logWarn(err := f'Cannot delete a mandatory attribute: {r}')
 					return Result(status=False, rsc=RC.badRequest, dbg=err)
 				if p[reqp] in [ RO.NP, RO.O ]:	# Okay that the attribute is not in the json, since it is provided or optional
 					continue
 			else:
 				if not createdInternally:
 					if p[reqp] == RO.NP:
-						err = f'Found non-provision attribute: {r}'
-						Logging.logWarn(err)
+						Logging.logWarn(err := f'Found non-provision attribute: {r}')
 						return Result(status=False, rsc=RC.badRequest, dbg=err)
 				if r == 'pvs' and not (res := self.validatePvs(pureJson)).status:
 					return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
@@ -333,8 +328,7 @@ class Validator(object):
 				continue
 
 			# fall-through means: not validated
-			err = f'Attribute/value validation error: {r}={str(v)} ({res.dbg})'
-			Logging.logWarn(err)
+			Logging.logWarn(err := f'Attribute/value validation error: {r}={str(v)} ({res.dbg})')
 			return Result(status=False, rsc=RC.badRequest, dbg=err)
 
 		return Result(status=True)
