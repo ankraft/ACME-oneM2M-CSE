@@ -292,6 +292,7 @@ class ResponseCode(IntEnum):
 	securityAssociationRequired					= 4107
 	invalidChildResourceType					= 4108
 	groupMemberTypeInconsistent					= 4110
+	appRuleValidationFailed						= 4126
 	internalServerError							= 5000
 	notImplemented								= 5001
 	targetNotReachable 							= 5103
@@ -339,6 +340,7 @@ ResponseCode._httpStatusCodes = {											# type: ignore
 		ResponseCode.securityAssociationRequired				: 403,		# SECURITY ASSOCIATION REQUIRED
 		ResponseCode.subscriptionCreatorHasNoPrivilege			: 403,		# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
 		ResponseCode.subscriptionHostHasNoPrivilege				: 403,		# SUBSCRIPTION HOST HAS NO PRIVILEGE
+		ResponseCode.appRuleValidationFailed					: 403,		# APP RULE VALIDATION FAILED
 		ResponseCode.notFound									: 404,		# NOT FOUND
 		ResponseCode.operationNotAllowed						: 405,		# OPERATION NOT ALLOWED
 		ResponseCode.notAcceptable 								: 406,		# NOT ACCEPTABLE

@@ -134,7 +134,7 @@ class RegistrationManager(object):
 		# TODO also allow when there is an ACP?
 		if not Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedAEOriginators')):
 			Logging.logDebug('Originator not allowed')
-			return Result(rsc=RC.notAcceptable)
+			return Result(rsc=RC.appRuleValidationFailed)
 
 		# Assign originator for the AE
 		if originator == 'C':
