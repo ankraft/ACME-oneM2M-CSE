@@ -190,7 +190,7 @@ class NotificationManager(object):
 					Logging.logDebug(f'Notification target is the originator, no verification request for: {nu}')
 					continue
 				if not CSE.security.hasAccess('', resource, Permission.NOTIFY):	# check whether AE/CSE may receive Notifications
-					Logging.logWarn(f'No access to resource: {nu}' % nu)
+					Logging.logWarn(f'No access to resource: {nu}')
 					return None
 				if (poa := resource.poa) is not None and isinstance(poa, list):	#TODO? check whether AE or CSEBase
 					result += poa
