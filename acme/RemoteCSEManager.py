@@ -158,19 +158,25 @@ class RemoteCSEManager(object):
 	#
 
 	def handleRegistrarRegistration(self, registrarCSE:Resource, ownRegistrarCSR:Resource) -> None:
-		"""	Add the CSE/CSR CSI to the list of registered CSI. """
+		""" Event handler for adding a CSE/CSR CSI to the list
+			of registered CSI. 
+		"""
 		self.registrarCSE = registrarCSE
 		self.ownRegistrarCSR = ownRegistrarCSR
 
 
 	def handleRegistrarDeregistration(self, remoteCSR:Resource = None) -> None:
-		"""	Remove the CSE/CSR CSI from the list of registered CSI. """
+		"""	Event handler for removing the CSE/CSR CSI from the list
+			of registered CSI.
+		"""
 		self.registrarCSE = None
 		self.ownRegistrarCSR = None
 
 
 	def handleRemoteCSERegistration(self, remoteCSR:Resource) -> None:
-		"""	Add the the remote CSE's CSR CSI to the list of registered CSI. """
+		"""	Event handler for adding a remote CSE's CSR CSI to the
+			list of registered CSI. 
+		"""
 		if (csi := remoteCSR.csi) is None:
 			return
 		if csi in self.descendantCSR:	# already registered
@@ -200,7 +206,9 @@ class RemoteCSEManager(object):
 
 
 	def handleRemoteCSEDeregistration(self, remoteCSR:Resource ) -> None:
-		"""	Remove the CSE/CSR CSI from the list of registered CSI. """
+		"""	Event handler for removals of the CSE/CSR CSI
+			from the list of registered CSI. 
+		"""
 		if (csi := remoteCSR.csi) is not None and csi in self.descendantCSR:
 			del self.descendantCSR[csi]
 		if self.csetype in [ CSEType.ASN, CSEType.MN ]:
@@ -208,10 +216,14 @@ class RemoteCSEManager(object):
 
 
 	def handleRemoteCSEUpdate(self, remoteCSR:Resource) -> None:
+		"""	Event handler for updates of the remote CSE.
+		"""
+		Logging.logDebug(f'Handle remote CSE update: {remoteCSR}')
+
 		# handle update of dcse in remoteCSR
 		csi = remoteCSR.csi
 		# remove all descendant tuples that are from this CSR
-		for key in self.descendantCSR.keys():
+		for key in list(self.descendantCSR.keys()):
 			(_, hostedcsi) = self.descendantCSR[key]
 			if hostedcsi == csi:
 				del self.descendantCSR[hostedcsi]
