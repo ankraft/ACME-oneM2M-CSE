@@ -133,7 +133,7 @@ class	Logging:
 		# raise logError event
 		(not CSE.event or CSE.event.logError())	# type: ignore
 		strace = ''.join(map(str, traceback.format_stack()[:-1]))
-		Logging._log(logging.ERROR, f'{msg}\n{strace}')
+		Logging._log(logging.ERROR, f'{msg}\n\n{strace}')
 
 
 	@staticmethod
