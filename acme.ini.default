@@ -139,6 +139,8 @@ allowedAEOriginators=C.*,S.*
 # Note: No leading "/"
 # Default: empty list
 allowedCSROriginators=id-mn
+# Check the liveliness if the registrations to the registrar CSE and also from the registree CSEs. Default: True
+checkLiveliness=True
 
 
 #
