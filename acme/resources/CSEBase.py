@@ -33,7 +33,7 @@ class CSEBase(Resource):
 			self.setAttribute('rr', False, overwrite=False)
 			self.setAttribute('srt', C.supportedResourceTypes, overwrite=False)
 			self.setAttribute('csz', C.supportedContentSerializations, overwrite=False)
-			self.setAttribute('srv', C.supportedReleaseVersions, overwrite=False)
+			self.setAttribute('srv', C.supportedReleaseVersions, overwrite=False)	# This must be a list
 			self.setAttribute('poa', [ Configuration.get('http.address') ], overwrite=False)
 			self.setAttribute('cst', Configuration.get('cse.type'), overwrite=False)
 
