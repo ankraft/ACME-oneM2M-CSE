@@ -13,6 +13,8 @@ from Logging import Logging
 from Constants import Constants as C
 import Utils, CSE
 
+_running:bool = False
+
 # TODO: create/delete each resource to count! resourceCreate(ty)
 
 # TODO move event creations from here to the resp modules.
@@ -48,6 +50,8 @@ class Event(list):
 
 
 	def __call__(self, *args:Any, **kwargs:Any) -> None:
+		if not _running:
+			return
 		if self.runInBackground:
 			# Call the handlers in a thread so that we don't block everything
 			thread = threading.Thread(target=self._callThread, args=args, kwargs=kwargs)
@@ -74,6 +78,8 @@ class Event(list):
 class EventManager(object):
 
 	def __init__(self) -> None:
+		global _running
+
 		self.addEvent('httpRetrieve')
 		self.addEvent('httpCreate')
 		self.addEvent('httpDelete')
@@ -91,10 +97,14 @@ class EventManager(object):
 		self.addEvent('remoteCSEHasRegistered')
 		self.addEvent('remoteCSEUpdate')
 		self.addEvent('remoteCSEHasDeregistered')
+		_running = True
 		Logging.log('EventManager initialized')
 
 
 	def shutdown(self) -> bool:
+		global _running
+		
+		_running = False
 		Logging.log('EventManager shut down')
 		return True
 
