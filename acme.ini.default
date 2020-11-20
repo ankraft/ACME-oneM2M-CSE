@@ -154,13 +154,14 @@ enable=true
 enableFileLogging=true
 # Path to the log files. Default: ./logs
 path=./logs
-# Loglevel. Possible values: debug, info, warning, error. Default debug
+# Loglevel. Possible values: debug, info, warning, error. Default: debug
 level=debug
 # Number of files for log rotation. Default: 10
 count=10
 # Size per log file. Default: 100.000 bytes
 size=100000
-
+# Print a stack trace when logging an 'error' level message. Default: True
+stackTraceOnError=False
 
 #
 #	Settings for remote CSE access 

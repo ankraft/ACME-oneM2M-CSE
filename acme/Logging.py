@@ -48,6 +48,7 @@ class	Logging:
 	logLevel 			= logging.INFO
 	loggingEnabled		= True
 	enableFileLogging	= True
+	stackTraceOnError	= True
 	worker 				= None
 	queue 				= None
 
@@ -64,6 +65,8 @@ class	Logging:
 		Logging.enableFileLogging 	= Configuration.get('logging.enableFileLogging')
 		Logging.logLevel 			= Configuration.get('logging.level')
 		Logging.loggingEnabled		= Configuration.get('logging.enable')
+		Logging.stackTraceOnError	= Configuration.get('logging.stackTraceOnError')
+
 		Logging.logger				= logging.getLogger('logging')			# general logger
 		Logging.loggerConsole		= logging.getLogger('rich')				# Rich Console logger
 		Logging.checkInterval
@@ -132,8 +135,11 @@ class	Logging:
 		import CSE
 		# raise logError event
 		(not CSE.event or CSE.event.logError())	# type: ignore
-		strace = ''.join(map(str, traceback.format_stack()[:-1]))
-		Logging._log(logging.ERROR, f'{msg}\n\n{strace}')
+		if Logging.stackTraceOnError:
+			strace = ''.join(map(str, traceback.format_stack()[:-1]))
+			Logging._log(logging.ERROR, f'{msg}\n\n{strace}')
+		else:
+			Logging._log(logging.ERROR, msg)
 
 
 	@staticmethod

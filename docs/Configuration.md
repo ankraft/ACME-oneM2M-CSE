@@ -123,6 +123,7 @@ The following macros are supported in addition to those defined in the sections 
 | level             | Loglevel. Possible values: debug, info, warning, error.<br/>See also command line argument [–log-level](Running.md).<br/> Default: debug | logging.level             |
 | count             | Number of files for log rotation.<br/>Default: 10                                                                                        | logging.count             |
 | size              | Size per log file.<br/>Default: 100.000 bytes                                                                                            | logging.size              |
+| stackTraceOnError | Print a stack trace when logging an 'error' level message.<br />Default: True                                                            | logging.stackTraceOnError |
 
 
 <a name="cse_registration"></a>
