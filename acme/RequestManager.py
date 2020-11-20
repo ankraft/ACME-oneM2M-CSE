@@ -49,7 +49,7 @@ class RequestManager(object):
 	#
 
 	def retrieveRequest(self, request:CSERequest) ->  Result:
-		Logging.logDebug('RETRIEVE ID: %s, originator: %s' % (request.id if request.id is not None else request.srn, request.headers.originator))
+		Logging.logDebug(f'RETRIEVE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
 
 		# handle transit requests
 		if CSE.remote.isTransitID(request.id):
@@ -67,7 +67,7 @@ class RequestManager(object):
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % request.args.rt)
+		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: {request.args.rt}')
 
 
 
@@ -77,7 +77,7 @@ class RequestManager(object):
 	#
 
 	def createRequest(self, request:CSERequest) -> Result:
-		Logging.logDebug('CREATE ID: %s, originator: %s' % (request.id if request.id is not None else request.srn, request.headers.originator))
+		Logging.logDebug(f'CREATE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
 
 		# handle transit requests
 		if CSE.remote.isTransitID(request.id):
@@ -99,7 +99,7 @@ class RequestManager(object):
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % request.args.rt)
+		return Result(rsc=RC.badRequest, dbg=f'Unknown or unsupported ResponseType: {request.args.rt}')
 
 
 	#########################################################################
@@ -108,7 +108,7 @@ class RequestManager(object):
 	#
 
 	def updateRequest(self, request:CSERequest) -> Result:
-		Logging.logDebug('UPDATE ID: %s, originator: %s' % (request.id if request.id is not None else request.srn, request.headers.originator))
+		Logging.logDebug(f'UPDATE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
 
 		# Don't update the CSEBase
 		if request.id == self.cseri:
@@ -134,7 +134,7 @@ class RequestManager(object):
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % request.args.rt)
+		return Result(rsc=RC.badRequest, dbg=f'Unknown or unsupported ResponseType: {request.args.rt}')
 
 
 	#########################################################################
@@ -144,7 +144,7 @@ class RequestManager(object):
 
 
 	def deleteRequest(self, request:CSERequest,) -> Result:
-		Logging.logDebug('DELETE ID: %s, originator: %s' % (request.id if request.id is not None else request.srn, request.headers.originator))
+		Logging.logDebug(f'DELETE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
 
 		# Don't update the CSEBase
 		if request.id == self.cseri:
@@ -166,7 +166,7 @@ class RequestManager(object):
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % request.args.rt)
+		return Result(rsc=RC.badRequest, dbg=f'Unknown or unsupported ResponseType: {request.args.rt}')
 
 
 
@@ -209,7 +209,7 @@ class RequestManager(object):
 		# Synchronous handling
 		if request.args.rt == ResponseType.nonBlockingRequestSynch:
 			# Run operation in the background
-			BackgroundWorkerPool.newActor(0.0, self._runNonBlockingRequestSync, 'request_%s' % request.headers.requestIdentifier).start(request=request, reqRi=reqres.resource.ri)
+			BackgroundWorkerPool.newActor(0.0, self._runNonBlockingRequestSync, f'request_{request.headers.requestIdentifier}').start(request=request, reqRi=reqres.resource.ri)
 			# Create the response content with the <request> ri 
 			jsn = { 'm2m:uri' : reqres.resource.ri }
 			return Result(jsn=jsn, rsc=RC.acceptedNonBlockingRequestSynch)
@@ -217,13 +217,13 @@ class RequestManager(object):
 		# Asynchronous handling
 		if request.args.rt == ResponseType.nonBlockingRequestAsynch:
 			# Run operation in the background
-			BackgroundWorkerPool.newActor(0.0, self._runNonBlockingRequestAsync, 'request_%s' % request.headers.requestIdentifier).start(request=request, reqRi=reqres.resource.ri)
+			BackgroundWorkerPool.newActor(0.0, self._runNonBlockingRequestAsync, f'request_{request.headers.requestIdentifier}').start(request=request, reqRi=reqres.resource.ri)
 			# Create the response content with the <request> ri 
 			jsn = { 'm2m:uri' : reqres.resource.ri }
 			return Result(jsn=jsn, rsc=RC.acceptedNonBlockingRequestAsynch)
 
 		# Error
-		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: %d' % request.args.rt)
+		return Result(rsc=RC.badRequest, dbg=f'Unknown or unsupported ResponseType: {request.args.rt}')
 
 
 	def _runNonBlockingRequestSync(self, request:CSERequest, reqRi:str) -> bool:
@@ -262,10 +262,10 @@ class RequestManager(object):
 			# RTU is not set, get POA's from the resp. AE.poa
 			aes = CSE.storage.searchByTypeFieldValue(ty=T.AE, field='aei', value=originator)
 			if len(aes) != 1:
-				Logging.logWarn('Wrong number of AEs with aei: %s (%d): %s' % (originator, len(aes), str(aes)))
+				Logging.logWarn(f'Wrong number of AEs with aei: {originator} ({len(aes):d}): {str(aes)}')
 				nus = aes[0].poa
 			else:
-				Logging.logDebug('No RTU. Get NUS from originator ae: %s' % aes[0].ri)
+				Logging.logDebug(f'No RTU. Get NUS from originator ae: {aes[0].ri}')
 				nus = aes[0].poa
 
 		# send notifications.Ignore any errors here

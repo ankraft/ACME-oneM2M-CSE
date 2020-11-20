@@ -15,14 +15,14 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 PROTOCOL			= 'http'	# possible values: http, https
 
 
-SERVER				= '%s://localhost:8080' % PROTOCOL
+SERVER				= f'{PROTOCOL}://localhost:8080'
 ROOTPATH			= '/'
 CSERN				= 'cse-in'
 CSEID				= '/id-in'
 SPID 				= 'sp-in'
 ORIGINATOR			= 'CAdmin'
 
-REMOTESERVER		= '%s://localhost:8081' % PROTOCOL
+REMOTESERVER		= f'{PROTOCOL}://localhost:8081'
 REMOTEROOTPATH		= '/'
 REMOTECSERN			= 'cse-mn'
 REMOTECSEID			= '/id-mn'
@@ -31,10 +31,10 @@ REMOTEORIGINATOR	= 'CAdmin'
 
 
 NOTIFICATIONPORT 	= 9990
-NOTIFICATIONSERVER	= 'http://localhost:%d' % NOTIFICATIONPORT
+NOTIFICATIONSERVER	= f'http://localhost:{NOTIFICATIONPORT}' 
 NOTIFICATIONSERVERW	= 'http://localhost:6666'
 
-CONFIGURL			= '%s%s__config__' % (SERVER, ROOTPATH)
+CONFIGURL			= f'{SERVER}{ROOTPATH}__config__'
 
 
 testVerbosity 		= 2		# 0, 1, 2
@@ -49,7 +49,7 @@ timeDelta 				= 0 # seconds
 expirationCheckDelay 	= 2	# seconds
 expirationSleep			= expirationCheckDelay * 3
 
-requestETDuration 		= 'PT%dS' % expirationCheckDelay
+requestETDuration 		= f'PT{expirationCheckDelay:d}S'
 requestCheckDelay		= 1	#seconds
 
 
@@ -65,26 +65,30 @@ fcntRN	= 'testFCNT'
 nodRN 	= 'testNOD'
 subRN	= 'testSUB'
 reqRN	= 'testREQ'
+memRN	= 'mem'
+batRN	= 'bat'
 
 
-URL		= '%s%s' % (SERVER, ROOTPATH)
-cseURL 	= '%s%s' % (URL, CSERN)
-csiURL 	= '%s~%s' % (URL, CSEID)
-aeURL 	= '%s/%s' % (cseURL, aeRN)
-acpURL 	= '%s/%s' % (cseURL, acpRN)
-cntURL 	= '%s/%s' % (aeURL, cntRN)
-cinURL 	= '%s/%s' % (cntURL, cinRN)
-fcntURL	= '%s/%s' % (aeURL, fcntRN)
-grpURL 	= '%s/%s' % (aeURL, grpRN)
-nodURL 	= '%s/%s' % (cseURL, nodRN)
-subURL 	= '%s/%s' % (cntURL, subRN)
-batURL 	= '%s/%s' % (nodURL, batRN)
+URL		= f'{SERVER}{ROOTPATH}'
+cseURL 	= f'{URL}{CSERN}'
+csiURL 	= f'{URL}~{CSEID}'
+aeURL 	= f'{cseURL}/{aeRN}'
+acpURL 	= f'{cseURL}/{acpRN}'
+cntURL 	= f'{aeURL}/{cntRN}'
+cinURL 	= f'{cntURL}/{cinRN}'
+fcntURL	= f'{aeURL}/{fcntRN}'
+grpURL 	= f'{aeURL}/{grpRN}'
+nodURL 	= f'{cseURL}/{nodRN}'
+subURL 	= f'{cntURL}/{subRN}'
+batURL 	= f'{nodURL}/{batRN}'
+memURL	= f'{nodURL}/{memRN}'
+batURL	= f'{nodURL}/{batRN}'
 
-REMOTEURL		= '%s%s' % (REMOTESERVER, REMOTEROOTPATH)
-REMOTEcseURL 	= '%s%s' % (REMOTEURL, REMOTECSERN)
-localCsrURL 	= '%s%s' % (cseURL, REMOTECSEID)
-remoteCsrURL 	= '%s%s' % (REMOTEcseURL, CSEID)
 
+REMOTEURL		= f'{REMOTESERVER}{REMOTEROOTPATH}'
+REMOTEcseURL 	= f'{REMOTEURL}{REMOTECSERN}'
+localCsrURL 	= f'{cseURL}{REMOTECSEID}'
+remoteCsrURL 	= f'{REMOTEcseURL}{CSEID}'
 
 
 
@@ -112,8 +116,9 @@ def DELETE(url:str, originator:str, headers=None) -> (dict, int):
 
 
 def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any=None, ct:str='application/json', timeout=None, headers=None) -> (dict, int):	# TODO Constants
+	tys = f';ty={ty}' if ty is not None else ''
 	hds = { 
-		'Content-Type' 	: '%s%s' % (ct, ';ty=%s' % str(ty) if ty is not None else ''), 
+		'Content-Type' 		: f'{ct}{tys}',
 		'X-M2M-Origin'	 	: originator,
 		'X-M2M-RI' 			: (rid := uniqueID()),
 		'X-M2M-RVI'			: '3',			# TODO this actually depends in the originator
@@ -123,12 +128,11 @@ def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any
 
 	setLastRequestID(rid)
 	try:
-		#print('Sending request: %s %s' % (method.__name__.upper(), url))
 		if isinstance(data, dict):
 			data = json.dumps(data)
 		r = method(url, data=data, headers=hds, verify=verifyCertificate)
 	except Exception as e:
-		#print('Failed to send request: %s' % str(e))
+		#print(f'Failed to send request: {str(e)}')
 		return None, 5103
 	rc = int(r.headers['X-M2M-RSC']) if 'X-M2M-RSC' in r.headers else r.status_code
 
@@ -147,10 +151,10 @@ def setLastRequestID(rid):
 	_lastRequstID = rid
 
 
-def lastRequestID():
+def lastRequestID() -> str:
 	return _lastRequstID
 
-def connectionPossible(url):
+def connectionPossible(url:str) -> bool:
 	try:
 		# The following request is not supposed to return a resource, it just
 		# tests whether a connection can be established at all.
@@ -169,9 +173,9 @@ def setExpirationCheck(interval:int) -> int:
 	c, rc = RETRIEVE(CONFIGURL, '')
 	if rc == 200 and c.startswith(b'Configuration:'):
 		# retrieve the old value
-		c, rc = RETRIEVE('%s/cse.checkExpirationsInterval' % CONFIGURL, '')
+		c, rc = RETRIEVE(f'{CONFIGURL}/cse.checkExpirationsInterval', '')
 		oldValue = int(c)
-		c, rc = UPDATE('%s/cse.checkExpirationsInterval' % CONFIGURL, '', str(interval))
+		c, rc = UPDATE(f'{CONFIGURL}/cse.checkExpirationsInterval', '', str(interval))
 		return oldValue if c == b'ack' else -1
 	return -1
 
@@ -180,7 +184,7 @@ def getMaxExpiration() -> int:
 	c, rc = RETRIEVE(CONFIGURL, '')
 	if rc == 200 and c.startswith(b'Configuration:'):
 		# retrieve the old value
-		c, rc = RETRIEVE('%s/cse.maxExpirationDelta' % CONFIGURL, '')
+		c, rc = RETRIEVE(f'{CONFIGURL}/cse.maxExpirationDelta', '')
 		return int(c)
 	return -1
 
@@ -215,9 +219,9 @@ def setRequestMinET(interval:int) -> int:
 	c, rc = RETRIEVE(CONFIGURL, '')
 	if rc == 200 and c.startswith(b'Configuration:'):
 		# retrieve the old value
-		c, rc = RETRIEVE('%s/cse.req.minet' % CONFIGURL, '')
+		c, rc = RETRIEVE(f'{CONFIGURL}/cse.req.minet', '')
 		oldValue = int(c)
-		c, rc = UPDATE('%s/cse.req.minet' % CONFIGURL, '', str(interval))
+		c, rc = UPDATE(f'{CONFIGURL}/cse.req.minet', '', str(interval))
 		return oldValue if c == b'ack' else -1
 	return -1
 
@@ -226,7 +230,7 @@ def getRequestMinET() -> int:
 	c, rc = RETRIEVE(CONFIGURL, '')
 	if rc == 200 and c.startswith(b'Configuration:'):
 		# retrieve the old value
-		c, rc = RETRIEVE('%s/cse.req.minet' % CONFIGURL, '')
+		c, rc = RETRIEVE(f'{CONFIGURL}/cse.req.minet', '')
 		return int(c)
 	return -1
 	

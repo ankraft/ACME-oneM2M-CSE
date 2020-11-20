@@ -163,7 +163,7 @@ class TestFCNT(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTUnderFCNT(self):
-		_, rsc = DELETE('%s/%s' % (fcntURL, cntRN), ORIGINATOR)
+		_, rsc = DELETE(f'{fcntURL}/{cntRN}', ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
 
@@ -179,7 +179,7 @@ class TestFCNT(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteFCNTUnderFCNT(self):
-		_, rsc = DELETE('%s/%s' % (fcntURL, fcntRN), ORIGINATOR)
+		_, rsc = DELETE(f'{fcntURL}/{fcntRN}', ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
 

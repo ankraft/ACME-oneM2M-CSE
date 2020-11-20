@@ -24,7 +24,7 @@ class TestCNT(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
+		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
 		jsn = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
@@ -41,7 +41,7 @@ class TestCNT(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
-		DELETE('%s/%s' % (cseURL, cntRN), ORIGINATOR)
+		DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -161,13 +161,13 @@ class TestCNT(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCNTUnderCNT(self):
-		_, rsc = RETRIEVE('%s/%s' % (cntURL, cntRN), ORIGINATOR)
+		_, rsc = RETRIEVE(f'{cntURL}/{cntRN}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTUnderCNT(self):
-		_, rsc = DELETE('%s/%s' % (cntURL, cntRN), ORIGINATOR)
+		_, rsc = DELETE(f'{cntURL}/{cntRN}', ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
 
@@ -195,13 +195,13 @@ class TestCNT(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCNTUnderCSE(self):
-		_, rsc = RETRIEVE('%s/%s' % (cseURL, cntRN), ORIGINATOR)
+		_, rsc = RETRIEVE(f'{cseURL}/{cntRN}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTUnderCSE(self):
-		_, rsc = DELETE('%s/%s' % (cseURL, cntRN), ORIGINATOR)
+		_, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
 

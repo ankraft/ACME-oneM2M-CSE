@@ -59,7 +59,7 @@ class CNT(AnnounceableResource):
 			return res
 
 		# register latest and oldest virtual resources
-		Logging.logDebug('Registering latest and oldest virtual resources for: %s' % self.ri)
+		Logging.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
 		latestResource = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.CNT_LA).resource
@@ -97,7 +97,7 @@ class CNT(AnnounceableResource):
 
 	# Handle the addition of new CIN. Basically, get rid of old ones.
 	def childAdded(self, childResource:Resource, originator:str) -> None:
-		Logging.logDebug('Child resource added: %s' % childResource.ri)
+		Logging.logDebug(f'Child resource added: {childResource.ri}')
 		super().childAdded(childResource, originator)
 		if childResource.ty == T.CIN:	# Validate if child is CIN
 
@@ -114,7 +114,7 @@ class CNT(AnnounceableResource):
 
 	# Handle the removal of a CIN. 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
-		Logging.logDebug('Child resource removed: %s' % childResource.ri)
+		Logging.logDebug(f'Child resource removed: {childResource.ri}')
 		super().childRemoved(childResource, originator)
 		if childResource.ty == T.CIN:	# Validate if child was CIN
 			self._validateChildren()

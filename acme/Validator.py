@@ -279,7 +279,7 @@ class Validator(object):
 
 		# No policies?
 		if attributePolicies is None:
-			Logging.logWarn("No attribute policies: %s" % jsn)
+			Logging.logWarn(f'No attribute policies: {jsn}')
 			return Result(status=True)
 
 		# determine the request column, depending on create or updates
@@ -293,28 +293,28 @@ class Validator(object):
 		# if tpe is not None and not tpe.startswith("m2m:"):
 		# 	pureJson = jsn
 		if (attributePolicies := self._addAdditionalAttributes(tpe, attributePolicies)) is None:
-			err = 'Unknown resource type: %s' % tpe
+			err = f'Unknown resource type: {tpe}'
 			Logging.logWarn(err)
 			return Result(status=False, rsc=RC.badRequest, dbg=err)
 
 		#Logging.logDebug(attributePolicies.items())
 		for r in pureJson.keys():
 			if r not in attributePolicies.keys():
-				err = 'Unknown attribute: %s in resource: %s' % (r, tpe)
+				err = f'Unknown attribute: {r} in resource: {tpe}'
 				Logging.logWarn(err)
 				return Result(status=False, rsc=RC.badRequest, dbg=err)
 		for r, p in attributePolicies.items():
 			if p is None:
-				Logging.logWarn('No validation policy found for attribute: %s' % r)
+				Logging.logWarn(f'No validation policy found for attribute: {r}')
 				continue
 			# Check whether the attribute is allowed or mandatory in the request
 			if (v := pureJson.get(r)) is None:
 				if p[reqp] == RO.M:		# Not okay, this attribute is mandatory
-					err = 'Cannot find mandatory attribute: %s' % r
+					err = f'Cannot find mandatory attribute: {r}'
 					Logging.logWarn(err)
 					return Result(status=False, rsc=RC.badRequest, dbg=err)
 				if r in pureJson and p[1] == CAR.car1: # but ignore CAR.car1N (which may be Null/None)
-					err = 'Cannot delete a mandatory attribute: %s' % r
+					err = f'Cannot delete a mandatory attribute: {r}'
 					Logging.logWarn(err)
 					return Result(status=False, rsc=RC.badRequest, dbg=err)
 				if p[reqp] in [ RO.NP, RO.O ]:	# Okay that the attribute is not in the json, since it is provided or optional
@@ -322,7 +322,7 @@ class Validator(object):
 			else:
 				if not createdInternally:
 					if p[reqp] == RO.NP:
-						err = 'Found non-provision attribute: %s' % r
+						err = f'Found non-provision attribute: {r}'
 						Logging.logWarn(err)
 						return Result(status=False, rsc=RC.badRequest, dbg=err)
 				if r == 'pvs' and not (res := self.validatePvs(pureJson)).status:
@@ -333,7 +333,7 @@ class Validator(object):
 				continue
 
 			# fall-through means: not validated
-			err = 'Attribute/value validation error: %s=%s (%s)' % (r, str(v), res.dbg)
+			err = f'Attribute/value validation error: {r}={str(v)} ({res.dbg})'
 			Logging.logWarn(err)
 			return Result(status=False, rsc=RC.badRequest, dbg=err)
 
@@ -393,7 +393,7 @@ class Validator(object):
 		entries = attributes[next(iter(attributes))]	# get first and only entry
 		for k,v in entries.items():
 			if len(v) != 6:
-				Logging.logErr('Attribute description for %s must contain 6 entries' % k)
+				Logging.logErr(f'Attribute description for {k} must contain 6 entries')
 				return False
 		self.additionalAttributes.update(attributes)
 		return True

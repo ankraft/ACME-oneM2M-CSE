@@ -29,7 +29,7 @@ import CSE
 from flask import Request
 
 
-def uniqueRI(prefix: str = '') -> str:
+def uniqueRI(prefix:str='') -> str:
 	return noDomain(prefix) + uniqueID()
 
 
@@ -37,27 +37,25 @@ def uniqueID() -> str:
 	return str(random.randint(1,sys.maxsize))
 
 
-def isUniqueRI(ri: str) -> bool:
+def isUniqueRI(ri:str) -> bool:
 	return len(CSE.storage.identifier(ri)) == 0
 
 
-def uniqueRN(prefix: str = 'un') -> str:
-	# return "%s_%s" % (p, ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=C.maxIDLength)))
-	return "%s_%s" % (noDomain(prefix), _randomID())
+def uniqueRN(prefix:str='un') -> str:
+	return f'{noDomain(prefix)}_{_randomID()}'
 
 def announcedRN(resource:Resource.Resource) -> str:
 	""" Create the announced rn for a resource.
 	"""
-	return '%s_Annc' % resource.rn
+	return f'{resource.rn}_Annc'
 
 
 # create a unique aei, M2M-SP type
-def uniqueAEI(prefix : str = 'S') -> str:
-	# return prefix + ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=C.maxIDLength))
-	return prefix + _randomID()
+def uniqueAEI(prefix:str='S') -> str:
+	return f'{prefix}{_randomID()}'
 
 
-def noDomain(id : str) -> str:
+def noDomain(id:str) -> str:
 	p = id.split(':')
 	return p[1] if len(p) == 2 else p[0]
 
@@ -70,34 +68,34 @@ def _randomID() -> str:
 			return result
 
 
-def fullRI(ri : str) -> str:
-	return Configuration.get('cse.csi') + '/' + ri
+def fullRI(ri:str) -> str:
+	return f'{Configuration.get("cse.csi")}/{ri}'
 
 
-def isSPRelative(uri : str) -> bool:
+def isSPRelative(uri:str) -> bool:
 	""" Check whether a URI is SP-Relative. """
-	return uri is not None and len(uri) >= 2 and uri[0] == "/" and uri [1] != "/"
+	return uri is not None and len(uri) >= 2 and uri[0] == '/' and uri [1] != '/'
 
 
-def isAbsolute(uri : str) -> bool:
+def isAbsolute(uri:str) -> bool:
 	""" Check whether a URI is Absolute. """
 	return uri is not None and uri.startswith('//')
 
 
-def isCSERelative(uri : str) -> bool:
+def isCSERelative(uri:str) -> bool:
 	""" Check whether a URI is CSE-Relative. """
 	return uri is not None and uri[0] != '/'
 
 
-def isStructured(uri : str) -> bool:
+def isStructured(uri:str) -> bool:
 	if isCSERelative(uri):
-		if "/" in uri:
+		if '/' in uri:
 			return True
 	elif isSPRelative(uri):
-		if uri.count("/") > 2:
+		if uri.count('/') > 2:
 			return True
 	elif isAbsolute(uri):
-		if uri.count("/") > 4:
+		if uri.count('/') > 4:
 			return True
 	return False
 
@@ -128,9 +126,8 @@ def fromISO8601Date(timestamp:str) -> float:
 	try:
 		return datetime.datetime.strptime(timestamp, '%Y%m%dT%H%M%S,%f').timestamp()
 	except Exception as e:
-		Logging.logWarn('Wrong format for timestamp: %s' % timestamp)
+		Logging.logWarn(f'Wrong format for timestamp: {timestamp}')
 		return 0.0
-
 
 
 def structuredPath(resource: Resource.Resource) -> str:
@@ -147,7 +144,7 @@ def structuredPath(resource: Resource.Resource) -> str:
 	if len(rpi) == 1:
 		return rpi[0]['srn'] + '/' + rn
 	# Logging.logErr(traceback.format_stack())
-	Logging.logErr('Parent %s not found in DB' % pi)
+	Logging.logErr(f'Parent {pi} not found in DB')
 	return rn # fallback
 
 
@@ -212,14 +209,13 @@ def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 		vrPresent = ids.pop()	# remove and return last path element
 		idsLen -= 1
 
-	# Logging.logDebug("ID split: %s" % ids)
 	if ids[0] == '~' and idsLen > 1:			# SP-Relative
 		# Logging.logDebug("SP-Relative")
 		csi = ids[1]							# extract the csi
 		if csi != cseri:						# Not for this CSE? retargeting
 			if vrPresent is not None:			# append last path element again
 				ids.append(vrPresent)
-			return '/%s' % '/'.join(ids[1:]), csi, srn		# Early return. ri is the remaining (un)structured path
+			return f'/{"/".join(ids[1:])}', csi, srn		# Early return. ri is the remaining (un)structured path
 		if idsLen > 2 and (ids[2] == csern or ids[2] == '-'):	# structured
 			ids[2] = csern if ids[2] == '-' else ids[2]
 			srn = '/'.join(ids[2:])
@@ -235,7 +231,7 @@ def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 		if csi != cseri:
 			if vrPresent is not None:						# append last path element again
 				ids.append(vrPresent)
-			return '/%s' % '/'.join(ids[2:]), csi, srn	# Not for this CSE? retargeting
+			return f'/{"/".join(ids[2:])}', csi, srn	# Not for this CSE? retargeting
 		if ids[3] == csern or ids[3] == '-':				# structured
 			ids[3] = csern if ids[3] == '-' else ids[3]
 			srn = '/'.join(ids[3:])
@@ -255,16 +251,16 @@ def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 	# Now either csi, ri or structured is set
 	if ri is not None:
 		if vrPresent is not None:
-			ri = '%s/%s' % (ri, vrPresent)
+			ri = f'{ri}/{vrPresent}'
 		return ri, csi, srn
 	if srn is not None:
 		# if '/fopt' in ids:	# special handling for fanout points
 		# 	return srn, csi, srn
 		if vrPresent is not None:
-			srn = '%s/%s' % (srn, vrPresent)
+			srn = f'{srn}/{vrPresent}'
 		return riFromStructuredPath(srn), csi, srn
 	if csi is not None:
-		return riFromCSI('/'+csi), csi, srn
+		return riFromCSI(f'/{csi}'), csi, srn
 	# TODO do something with spi?
 	return None, None, None
 
@@ -519,8 +515,8 @@ def isAllowedOriginator(originator: str, allowedOriginators: List[str]) -> bool:
 	""" Check whether an Originator is in the provided list of allowed 
 		originators. This list may contain regex.
 	"""
-	Logging.logDebug('Originator: %s' % originator)
-	Logging.logDebug('Allowed originators: %s' % allowedOriginators)
+	Logging.logDebug(f'Originator: {originator}')
+	Logging.logDebug(f'Allowed originators: {allowedOriginators}')
 
 	if originator is None or allowedOriginators is None:
 		return False
@@ -617,7 +613,7 @@ def dissectHttpRequest(request:Request, operation:Operation, _id:Tuple[str, str,
 		if cseRequest.args is None:
 			return Result(rsc=RC.badRequest, dbg=msg, status=False)
 	except Exception as e:
-		return Result(rsc=RC.invalidArguments, dbg='invalid arguments (%s)' % str(e), status=False)
+		return Result(rsc=RC.invalidArguments, dbg=f'invalid arguments ({str(e)})', status=False)
 	cseRequest.originalArgs	= request.args.copy()	#type: ignore
 	if cseRequest.data is not None and len(cseRequest.data) > 0:
 		try:
@@ -638,20 +634,38 @@ def requestHeaderField(request: Request, field : str) -> str:
 # Get the request arguments, or meaningful defaults.
 # Only a small subset is supported yet
 # Throws an exception when a wrong type is encountered. This is part of the validation
-def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, str]:
+def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, str]:
+	
+	# copy arguments for greedy attributes checking
+	args = request.args.copy()	 	# type: ignore
+
+	def _extractMultipleArgs(argName:str, target:dict, validate:bool=True) -> Tuple[bool, str]:
+		"""	Get multi-arguments. Always create at least an empty list. Remove
+			the found arguments from the original list.
+		"""
+		lst = []
+		for e in args.getlist(argName):
+			for es in (t := e.split()):	# check for number
+				if validate:
+					if not CSE.validator.validateRequestArgument(argName, es).status:
+						return False, f'error validating "{argName}" argument(s)'
+			lst.extend(t)
+		if len(lst) > 0:
+			target[argName] = lst
+		args.poplist(argName)
+		return True, None
+
 	result = RequestArguments(operation=operation, request=request)
 
-	# copy for greedy attributes checking
-	args = request.args.copy()	 	# type: ignore
 
 	# FU - Filter Usage
 	if (fu := args.get('fu')) is not None:
 		if not CSE.validator.validateRequestArgument('fu', fu).status:
-			return None, 'error validating \'fu\' argument'
+			return None, 'error validating "fu" argument'
 		try:
 			fu = FilterUsage(int(fu))
 		except ValueError as exc:
-			return None, '\'%s\' is not a valid value for fu' % fu
+			return None, f'"{fu}" is not a valid value for fu'
 		del args['fu']
 	else:
 		fu = FilterUsage.conditionalRetrieval
@@ -663,11 +677,11 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 	# DRT - Desired Identifier Result Type
 	if (drt := args.get('drt')) is not None: # 1=strucured, 2=unstructured
 		if not CSE.validator.validateRequestArgument('drt', drt).status:
-			return None, 'error validating \'drt\' argument'
+			return None, 'error validating "drt" argument'
 		try:
 			drt = DesiredIdentifierResultType(int(drt))
 		except ValueError as exc:
-			return None, '\'%s\' is not a valid value for drt' % drt
+			return None, f'"{drt}" is not a valid value for drt'
 		del args['drt']
 	else:
 		drt = DesiredIdentifierResultType.structured
@@ -677,11 +691,11 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 	# FO - Filter Operation
 	if (fo := args.get('fo')) is not None: # 1=AND, 2=OR
 		if not CSE.validator.validateRequestArgument('fo', fo).status:
-			return None, 'error validating \'fo\' argument'
+			return None, 'error validating "fo" argument'
 		try:
 			fo = FilterOperation(int(fo))
 		except ValueError as exc:
-			return None, '\'%s\' is not a valid value for fo' % fo
+			return None, f'"{fo}" is not a valid value for fo'
 		del args['fo']
 	else:
 		fo = FilterOperation.AND # default
@@ -691,7 +705,7 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 	# RCN Result Content Type
 	if (rcn := args.get('rcn')) is not None: 
 		if not CSE.validator.validateRequestArgument('rcn', rcn).status:
-			return None, 'error validating \'rcn\' argument'
+			return None, 'error validating "rcn" argument'
 		rcn = int(rcn)
 		del args['rcn']
 	else:
@@ -712,27 +726,27 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 														ResultContentType.childResourceReferences,
 														ResultContentType.childResources,
 														ResultContentType.originalResource ]:
-		return None, 'rcn: %d not allowed in RETRIEVE operation' % rcn
+		return None, f'rcn: {rcn:d} not allowed in RETRIEVE operation'
 	elif operation == Operation.DISCOVERY and rcn not in [ ResultContentType.childResourceReferences,
 														   ResultContentType.discoveryResultReferences ]:
-		return None, 'rcn: %d not allowed in DISCOVERY operation' % rcn
+		return None, f'rcn: {rcn:d} not allowed in DISCOVERY operation'
 	elif operation == Operation.CREATE and rcn not in [ ResultContentType.attributes,
 														ResultContentType.modifiedAttributes,
 														ResultContentType.hierarchicalAddress,
 														ResultContentType.hierarchicalAddressAttributes,
 														ResultContentType.nothing ]:
-		return None, 'rcn: %d not allowed in CREATE operation' % rcn
+		return None, f'rcn: {rcn:d} not allowed in CREATE operation'
 	elif operation == Operation.UPDATE and rcn not in [ ResultContentType.attributes,
 														ResultContentType.modifiedAttributes,
 														ResultContentType.nothing ]:
-		return None, 'rcn: %d not allowed in UPDATE operation' % rcn
+		return None, f'rcn: {rcn:d} not allowed in UPDATE operation'
 	elif operation == Operation.DELETE and rcn not in [ ResultContentType.attributes,
 														ResultContentType.nothing,
 														ResultContentType.attributesAndChildResources,
 														ResultContentType.childResources,
 														ResultContentType.attributesAndChildResourceReferences,
 														ResultContentType.childResourceReferences ]:
-		return None, 'rcn: %d not allowed DELETE operation' % rcn
+		return None, f'rcn:  not allowed DELETE operation'
 
 	result.rcn = ResultContentType(rcn)
 
@@ -740,11 +754,11 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 	# RT - Response Type
 	if (rt := args.get('rt')) is not None: 
 		if not CSE.validator.validateRequestArgument('rt', rt).status:
-			return None, 'error validating \'rt\' argument'
+			return None, 'error validating "rt" argument'
 		try:
 			rt = ResponseType(int(rt))
 		except ValueError as exc:
-			return None, '\'%s\' is not a valid value for rt' % rt
+			return None, f'"{rt}" is not a valid value for rt'
 		del args['rt']
 	else:
 		rt = ResponseType.blockingRequest
@@ -754,7 +768,7 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 	# RP - Response Persistence
 	if (rp := args.get('rp')) is not None: 
 		if not CSE.validator.validateRequestArgument('rp', rp).status:
-			return None, 'error validating \'rp\' argument'
+			return None, 'error validating "rp" argument'
 		try:
 			if rp.startswith('P'):
 				rpts = getResourceDate(isodate.parse_duration(rp).total_seconds())
@@ -763,7 +777,7 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 			else:
 				raise ValueError
 		except ValueError as exc:
-			return None, '\'%s\' is not a valid value for rp' % rp
+			return None, f'"{rp}" is not a valid value for rp'
 		del args['rp']
 	else:
 		rp = None
@@ -778,70 +792,51 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 		if c in args:
 			v = args[c]
 			if not CSE.validator.validateRequestArgument(c, v).status:
-				return None, 'error validating "%s" argument' % c
+				return None, f'error validating "{c}" argument'
 			handling[c] = int(v)
 			del args[c]
 	for c in ['arp']:
 		if c in args:
 			v = args[c]
 			if not CSE.validator.validateRequestArgument(c, v).status:
-				return None, 'error validating "%s" argument' % c
+				return None, f'error validating "{c}" argument'
 			handling[c] = v # string
 			del args[c]
 	result.handling = handling
 
-
 	# conditions
-	conditions = {}
+	conditions:dict = {}
 
 	# Extract and store other arguments
 	for c in ['crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr']:
 		if (v := args.get(c)) is not None:
 			if not CSE.validator.validateRequestArgument(c, v).status:
-				return None, 'error validating "%s" argument' % c
+				return None, f'error validating "{c}" argument'
 			conditions[c] = v
 			del args[c]
 
-	# get types (multi). Always create at least an empty list
-	tyAr = []
-	for e in args.getlist('ty'):
-		for es in (t := e.split()):	# check for number
-			if not CSE.validator.validateRequestArgument('ty', es).status:
-				return None, 'error validating "ty" argument(s)'
-		tyAr.extend(t)
-	if len(tyAr) > 0:
-		conditions['ty'] = tyAr
-	args.poplist('ty')
-
-	# get contentTypes (multi). Always create at least an empty list
-	ctyAr = []
-	for e in args.getlist('cty'):
-		for es in (t := e.split()):	# check for number
-			if not CSE.validator.validateRequestArgument('cty', es).status:
-				return None, 'error validating "cty" argument(s)'
-		ctyAr.extend(t)
-	if len(ctyAr) > 0:
-		conditions['cty'] = ctyAr
-	args.poplist('cty')
-
-	# get types (multi). Always create at least an empty list
-	# NO validation of label. It is a list.
-	lblAr = []
-	for e in args.getlist('lbl'):
-		lblAr.append(e)
-	if len(lblAr) > 0:
-		conditions['lbl'] = lblAr
-	args.poplist('lbl')
+	if not (res := _extractMultipleArgs('ty', conditions))[0]:
+		return None, res[1]
+	if not (res := _extractMultipleArgs('cty', conditions))[0]:
+		return None, res[1]
+	if not (res := _extractMultipleArgs('lbl', conditions, validate=False))[0]:
+		return None, res[1]
 
 	result.conditions = conditions
 
 	# all remaining arguments are treated as matching attributes
 	for arg, val in args.items():
 		if not CSE.validator.validateRequestArgument(arg, val).status:
-			return None, 'error validating (unknown?) \'%s\' argument)' % arg
-
+			return None, f'error validating (unknown?) "{arg}" argument)'
 	# all arguments have passed, so add the remaining 
 	result.attributes = args
+
+	# Alternative: in case attributes are handled like ty, lbl, cty
+	# attributes:dict = {}
+	# for key in list(args.keys()):
+	# 	if not (res := _extractMultipleArgs(key, attributes))[0]:
+	# 		return None, res[1]
+	# result.attributes = attributes
 
 	# Finally return the collected arguments
 	return result, None
@@ -872,7 +867,7 @@ def getRequestHeaders(request: Request) -> Result:
 				if t.isdigit() and (_t := int(t)) and T.has(_t):
 					rh.resourceType = T(_t)
 				else:
-					return Result(rsc=RC.badRequest, dbg='Unknown resource type: %s' % t)
+					return Result(rsc=RC.badRequest, dbg=f'Unknown resource type: {t}')
 	return Result(data=rh, rsc=RC.OK)
 
 

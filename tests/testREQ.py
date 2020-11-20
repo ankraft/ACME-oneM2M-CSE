@@ -40,7 +40,7 @@ class TestREQ(unittest.TestCase):
 
 		# create other resources
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
+		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
 		jsn = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
@@ -76,7 +76,7 @@ class TestREQ(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCSENBSynch(self):
-		r, rsc = RETRIEVE('%s?rt=%d&rp=%s' % (cseURL, ResponseType.nonBlockingRequestSynch, requestETDuration), TestREQ.originator)
+		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.nonBlockingRequestSynch:d}&rp={requestETDuration}', TestREQ.originator)
 		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
@@ -84,7 +84,7 @@ class TestREQ(unittest.TestCase):
 
 		# get and check resource
 		time.sleep(requestCheckDelay)
-		r, rsc = RETRIEVE('%s/%s' % (csiURL, requestURI), TestREQ.originator)
+		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:req'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/lbl'))
@@ -115,7 +115,7 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:req/acpi'))
 		self.assertEqual(len(findXPath(r, 'm2m:req/acpi')), 1)
 		acpi = findXPath(r, 'm2m:req/acpi/{0}')
-		r, rsc = RETRIEVE('%s/%s' % (URL, acpi), ORIGINATOR)
+		r, rsc = RETRIEVE(f'{URL}/{acpi}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:acp'))
 
@@ -135,13 +135,13 @@ class TestREQ(unittest.TestCase):
 		self.assertTrue(found)
 
 		# retrieve with AE's originator. Should fail
-		r, rsc = RETRIEVE('%s/%s' % (URL, acpi), TestREQ.originator)
+		r, rsc = RETRIEVE(f'{URL}/{acpi}', TestREQ.originator)
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCSENBSynchExpireRequest(self):
-		r, rsc = RETRIEVE('%s?rt=%d&rp=%s' % (cseURL, ResponseType.nonBlockingRequestSynch, requestETDuration), TestREQ.originator)
+		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.nonBlockingRequestSynch:d}&rp={requestETDuration}', TestREQ.originator)
 		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
@@ -151,20 +151,20 @@ class TestREQ(unittest.TestCase):
 		time.sleep(expirationSleep)
 
 		# get and check resource
-		r, rsc = RETRIEVE('%s/%s' % (csiURL, requestURI), TestREQ.originator)
+		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.notFound)	# <request> should have been deleted
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveUnknownNBSynch(self):
-		r, rsc = RETRIEVE('%swrong?rt=%d&rp=%s' % (cseURL, ResponseType.nonBlockingRequestSynch, requestETDuration), TestREQ.originator)
+		r, rsc = RETRIEVE(f'{cseURL}wrong?rt={ResponseType.nonBlockingRequestSynch:d}&rp={requestETDuration}', TestREQ.originator)
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')
 
 		# get and check resource
 		time.sleep(requestCheckDelay)
-		r, rsc = RETRIEVE('%s/%s' % (csiURL, requestURI), TestREQ.originator)
+		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:req'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors'))
@@ -174,7 +174,7 @@ class TestREQ(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCNTNBFlex(self):
-		r, rsc = RETRIEVE('%s?rt=%d&rp=%s' % (cseURL, ResponseType.flexBlocking, requestETDuration), TestREQ.originator)
+		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.flexBlocking:d}&rp={requestETDuration}', TestREQ.originator)
 		self.assertIn(rsc, [ RC.OK, RC.acceptedNonBlockingRequestSynch, RC.acceptedNonBlockingRequestAsynch ] )
 		# -> Ignore the result
 
@@ -184,7 +184,7 @@ class TestREQ(unittest.TestCase):
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN
 				}}
-		r, rsc = CREATE('%s?rt=%d&rp=%s' % (aeURL, ResponseType.nonBlockingRequestSynch, requestETDuration), TestREQ.originator, T.CNT, jsn)
+		r, rsc = CREATE(f'{aeURL}?rt={ResponseType.nonBlockingRequestSynch:d}&rp={requestETDuration}', TestREQ.originator, T.CNT, jsn)
 		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
@@ -192,7 +192,7 @@ class TestREQ(unittest.TestCase):
 
 		# get and check resource
 		time.sleep(requestCheckDelay)
-		r, rsc = RETRIEVE('%s/%s' % (csiURL, requestURI), TestREQ.originator)
+		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:req'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/pc'))			# original content should be set for CREATE
@@ -212,7 +212,7 @@ class TestREQ(unittest.TestCase):
 		jsn = 	{ 'm2m:cnt' : { 
 					'lbl' : [ 'aLabel' ]
 				}}
-		r, rsc = UPDATE('%s?rt=%d&rp=%s' % (cntURL, ResponseType.nonBlockingRequestSynch, requestETDuration), TestREQ.originator, jsn)
+		r, rsc = UPDATE(f'{cntURL}?rt={ResponseType.nonBlockingRequestSynch:d}&rp={requestETDuration}', TestREQ.originator, jsn)
 		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
@@ -220,7 +220,7 @@ class TestREQ(unittest.TestCase):
 
 		# get and check resource
 		time.sleep(requestCheckDelay)
-		r, rsc = RETRIEVE('%s/%s' % (csiURL, requestURI), TestREQ.originator)
+		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:req'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors'))
@@ -239,7 +239,7 @@ class TestREQ(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTNBSynch(self):
-		r, rsc = DELETE('%s?rt=%d&rp=%s' % (cntURL, ResponseType.nonBlockingRequestSynch, requestETDuration), TestREQ.originator)
+		r, rsc = DELETE(f'{cntURL}?rt={ResponseType.nonBlockingRequestSynch:d}&rp={requestETDuration}', TestREQ.originator)
 		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
@@ -247,7 +247,7 @@ class TestREQ(unittest.TestCase):
 
 		# get and check resource
 		time.sleep(requestCheckDelay)
-		r, rsc = RETRIEVE('%s/%s' % (csiURL, requestURI), TestREQ.originator)
+		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:req'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors'))
@@ -259,7 +259,7 @@ class TestREQ(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCSENBAsynch(self):
-		r, rsc = RETRIEVE('%s?rt=%d&rp=%s' % (cseURL, ResponseType.nonBlockingRequestAsynch, requestETDuration), TestREQ.originator, headers=headers)
+		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.nonBlockingRequestAsynch:d}&rp={requestETDuration}', TestREQ.originator, headers=headers)
 		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
@@ -287,7 +287,7 @@ class TestREQ(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCSENBAsynchEmptyRTU(self):
 		clearLastNotification()
-		r, rsc = RETRIEVE('%s?rt=%d&rp=%s' % (cseURL, ResponseType.nonBlockingRequestAsynch, requestETDuration), TestREQ.originator, headers=headersEmpty)
+		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.nonBlockingRequestAsynch:d}&rp={requestETDuration}', TestREQ.originator, headers=headersEmpty)
 		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
@@ -303,7 +303,7 @@ class TestREQ(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCSENBAsynchNoRTU(self):
 		clearLastNotification()
-		r, rsc = RETRIEVE('%s?rt=%d&rp=%s' % (cseURL, ResponseType.nonBlockingRequestAsynch, requestETDuration), TestREQ.originator)
+		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.nonBlockingRequestAsynch:d}&rp={requestETDuration}', TestREQ.originator)
 		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
@@ -331,7 +331,7 @@ class TestREQ(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveUnknownNBAsynch(self):
 		clearLastNotification()
-		r, rsc = RETRIEVE('%swrong?rt=%d&rp=%s' % (cseURL, ResponseType.nonBlockingRequestAsynch, requestETDuration), TestREQ.originator, headers=headers)
+		r, rsc = RETRIEVE(f'{cseURL}wrong?rt={ResponseType.nonBlockingRequestAsynch:d}&rp={requestETDuration}', TestREQ.originator, headers=headers)
 		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
@@ -354,7 +354,7 @@ class TestREQ(unittest.TestCase):
 		jsn = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN
 				}}
-		r, rsc = CREATE('%s?rt=%d&rp=%s' % (aeURL, ResponseType.nonBlockingRequestAsynch, requestETDuration), TestREQ.originator, T.CNT, jsn, headers=headers)
+		r, rsc = CREATE(f'{aeURL}?rt={ResponseType.nonBlockingRequestAsynch:d}&rp={requestETDuration}', TestREQ.originator, T.CNT, jsn, headers=headers)
 		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
@@ -380,7 +380,7 @@ class TestREQ(unittest.TestCase):
 		jsn = 	{ 'm2m:cnt' : { 
 					'lbl' : [ 'aLabel' ]
 				}}
-		r, rsc = UPDATE('%s?rt=%d&rp=%s' % (cntURL, ResponseType.nonBlockingRequestAsynch, requestETDuration), TestREQ.originator, jsn, headers=headers)
+		r, rsc = UPDATE(f'{cntURL}?rt={ResponseType.nonBlockingRequestAsynch:d}&rp={requestETDuration}', TestREQ.originator, jsn, headers=headers)
 		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
@@ -409,7 +409,7 @@ class TestREQ(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTNBASynch(self):
 		clearLastNotification()
-		r, rsc = DELETE('%s?rt=%d&rp=%s' % (cntURL, ResponseType.nonBlockingRequestAsynch, requestETDuration), TestREQ.originator, headers=headers)
+		r, rsc = DELETE(f'{cntURL}?rt={ResponseType.nonBlockingRequestAsynch:d}&rp={requestETDuration}', TestREQ.originator, headers=headers)
 		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))

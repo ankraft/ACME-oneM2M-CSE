@@ -171,7 +171,7 @@ class Statistics(object):
 		try:
 			self.storeDBStatistics()
 		except Exception as e:
-			Logging.logErr('Exception: %s' % e)
+			Logging.logErr(f'Exception: {str(e)}')
 			return False
 		return True
 

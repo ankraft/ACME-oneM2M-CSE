@@ -71,7 +71,7 @@ class Resource(object):
 			# TODO: could be a BAD REQUEST?
 			if create:
 				while Utils.isUniqueRI(ri := self.attribute('ri')) == False:
-					Logging.logWarn("RI: %s is already assigned. Generating new RI." % ri)
+					Logging.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
 					self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite=True)
 
 			# Indicate whether this is a virtual resource
@@ -134,7 +134,7 @@ class Resource(object):
 	# Implemented in sub-classes.
 	# Note: CR and ACPI are set in RegistrationManager
 	def activate(self, parentResource: Resource, originator: str) -> Result:
-		Logging.logDebug('Activating resource: %s' % self.ri)
+		Logging.logDebug(f'Activating resource: {self.ri}')
 
 		# validate the attributes but only when the resource is not instantiated.
 		# We assume that an instantiated resource is always correct
@@ -163,7 +163,7 @@ class Resource(object):
 	# Deactivate an active resource.
 	# Send notification on deletion
 	def deactivate(self, originator:str) -> None:
-		Logging.logDebug('Deactivating and removing sub-resources: %s' % self.ri)
+		Logging.logDebug(f'Deactivating and removing sub-resources: {self.ri}')
 		# First check notification because the subscription will be removed
 		# when the subresources are removed
 		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceDelete)
@@ -260,11 +260,11 @@ class Resource(object):
 
 	def validate(self, originator:str=None, create:bool=False) -> Result:
 		""" Validate a resource. Usually called within activate() or update() methods. """
-		Logging.logDebug('Validating resource: %s' % self.ri)
+		Logging.logDebug(f'Validating resource: {self.ri}')
 		if (not Utils.isValidID(self.ri) or
 			not Utils.isValidID(self.pi) or
 			not Utils.isValidID(self.rn)):
-			err = 'Invalid ID ri: %s, pi: %s, rn: %s)' % (self.ri, self.pi, self.rn)
+			err = f'Invalid ID ri: {self.ri}, pi: {self.pi}, rn: {self.rn})'
 			Logging.logDebug(err)
 			return Result(status=False, rsc=RC.contentsUnacceptable, dbg=err)
 
@@ -275,11 +275,11 @@ class Resource(object):
 				Logging.logWarn(err)
 				return Result(status=False, rsc=RC.badRequest, dbg=err)
 			if len(et) > 0 and et < (etNow := Utils.getResourceDate()):
-				err = 'expirationTime is in the past: %s < %s' % (et, etNow)
+				err = f'expirationTime is in the past: {et} < {etNow}'
 				Logging.logWarn(err)
 				return Result(status=False, rsc=RC.badRequest, dbg=err)
 			if et > (etMax := Utils.getResourceDate(Configuration.get('cse.maxExpirationDelta'))):
-				Logging.logDebug('Correcting expirationDate to maxExpiration: %s -> %s' % (et, etMax))
+				Logging.logDebug(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
 				self['et'] = etMax
 		return Result(status=True)
 
@@ -420,7 +420,7 @@ class Resource(object):
 
 	def __repr__(self) -> str:
 		""" Object representation as string. """
-		return '%s(ri=%s)' % (self.tpe, self.ri)
+		return f'{self.tpe}(ri={self.ri}, srn={self._srn})'
 
 
 	def __eq__(self, other: object) -> bool:

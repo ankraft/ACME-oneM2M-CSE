@@ -32,7 +32,7 @@ class BackgroundWorker(object):
 	def start(self, **args:Any) -> BackgroundWorker:
 		if self.running:
 			self.stop()
-		Logging.logDebug('Starting worker thread: %s' % self.name)
+		Logging.logDebug(f'Starting worker thread: {self.name}')
 		self.running = True
 		self.args = args
 		self.workerThread = Thread(target=self.work)
@@ -43,7 +43,7 @@ class BackgroundWorker(object):
 
 
 	def stop(self) -> BackgroundWorker:
-		Logging.logDebug('Stopping worker thread: %s' % self.name)
+		Logging.logDebug(f'Stopping worker thread: {self.name}')
 		# Stop the thread
 		self.running = False
 		if self.workerThread is not None and self.updateIntervall is not None:
@@ -74,7 +74,7 @@ class BackgroundWorker(object):
 					continue
 
 			# if we reached this we will stop
-			Logging.logDebug('Stopping worker thread: %s' % self.name)
+			Logging.logDebug(f'Stopping worker thread: {self.name}')
 			self.running = False
 		self._postCall()
 
@@ -99,7 +99,7 @@ class BackgroundWorker(object):
 
 
 	def __repr__(self) -> str:
-		return 'BackgroundWorker(name=%s, callback=%s, running=%r, updateIntervall=%f, startWithDelay=%r, numberOfRuns=%s, dispose=%r, id=%s)' % (self.name, str(self.callback), self.running, self.updateIntervall, self.startWithDelay, self.numberOfRuns, self.dispose, self.id)
+		return f'BackgroundWorker(name={self.name}, callback={str(self.callback)}, running={self.running}, updateIntervall={self.updateIntervall:f}, startWithDelay={self.startWithDelay}, numberOfRuns={self.numberOfRuns:d}, dispose={self.dispose}, id={self.id})'
 
 
 
@@ -108,7 +108,7 @@ class BackgroundWorkerPool(object):
 	backgroundWorkers:Dict[int, BackgroundWorker] = {}
 
 	def __new__(cls, *args:str, **kwargs:str) -> BackgroundWorkerPool:
-		raise TypeError('%s may not be instantiated' % BackgroundWorkerPool.__name__)
+		raise TypeError(f'{BackgroundWorkerPool.__name__} must not be instantiated')
 
 
 	@classmethod

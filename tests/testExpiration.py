@@ -33,7 +33,7 @@ class TestExpiration(unittest.TestCase):
 	def setUpClass(cls):
 
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
+		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 		jsn = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
@@ -90,14 +90,14 @@ class TestExpiration(unittest.TestCase):
 			cinRn = findXPath(r, 'm2m:cin/rn')
 		self.assertIsNotNone(cinRn)
 
-		r, rsc = RETRIEVE('%s/%s' % (cntURL, cinRn), TestExpiration.originator)
+		r, rsc = RETRIEVE(f'{cntURL}/{cinRn}', TestExpiration.originator)
 		self.assertEqual(rsc, RC.OK)
 		time.sleep(expirationSleep)	# give the server a moment to expire the resource
 
 		r, rsc = RETRIEVE(cntURL, TestExpiration.originator)	# retrieve CNT again
 		self.assertEqual(rsc, RC.notFound)
 
-		r, rsc = RETRIEVE('%s/%s' % (cntURL, cinRn), TestExpiration.originator)	# retrieve CIN again
+		r, rsc = RETRIEVE(f'{cntURL}/{cinRn}', TestExpiration.originator)	# retrieve CIN again
 		self.assertEqual(rsc, RC.notFound)
 
 

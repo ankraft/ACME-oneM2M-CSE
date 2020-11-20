@@ -25,7 +25,7 @@ class AnnounceableResource(Resource):
 
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
-		Logging.logDebug('Activating AnnounceableResource resource: %s' % self.ri)
+		Logging.logDebug(f'Activating AnnounceableResource resource: {self.ri}')
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
 
@@ -36,7 +36,7 @@ class AnnounceableResource(Resource):
 
 
 	def deactivate(self, originator:str) -> None:
-		Logging.logDebug('Deactivating AnnounceableResource and removing sub-resources: %s' % self.ri)
+		Logging.logDebug(f'Deactivating AnnounceableResource and removing sub-resources: {self.ri}')
 
 		# perform deannouncements
 		if self.at is not None:
@@ -45,7 +45,7 @@ class AnnounceableResource(Resource):
 
 
 	def update(self, jsn:dict=None, originator:str=None) -> Result:
-		Logging.logDebug('Updating AnnounceableResource: %s' % self.ri)
+		Logging.logDebug(f'Updating AnnounceableResource: {self.ri}')
 		self._origAA = self.aa
 		self._origAT = self.at
 		if not (res := super().update(jsn=jsn, originator=originator)).status:
@@ -62,7 +62,7 @@ class AnnounceableResource(Resource):
 
 
 	def validate(self, originator:str=None, create:bool=False) -> Result:
-		Logging.logDebug('Validating AnnounceableResource: %s' % self.ri)
+		Logging.logDebug(f'Validating AnnounceableResource: {self.ri}')
 		if (res := super().validate(originator, create)).status == False:
 			return res
 
@@ -97,7 +97,6 @@ class AnnounceableResource(Resource):
 		""" Possibility to add or modify the announced JSON. This can be implemented
 			in the child classes.
 		"""
-		Logging.logErr('hu?')
 		return jsn
 
 
@@ -119,7 +118,7 @@ class AnnounceableResource(Resource):
 
 			jsn = { tpe : {  # with the announced variant of the tpe
 						'et'	: self.et,
-						'lnk'	: '%s/%s' % (localCsi, self.ri),
+						'lnk'	: f'{localCsi}/{self.ri}',
 						# set by parent: ri, pi, ct, lt, et
 				}
 			}
@@ -140,17 +139,17 @@ class AnnounceableResource(Resource):
 			#	overwrite (!) acpi
 			#
 			if (acpi := self.acpi) is not None:
-				acpi = [ '%s/%s' % (localCsi, acpi) for acpi in self.acpi ]
+				acpi = [ '{localCsi}/{acpi}' for acpi in self.acpi ]
 			else:
 				acpi = []
 			# add remote acpi so that we will have access
 			if remoteCSR is not None and (regAcpi := remoteCSR.acpi) is not None:
 				if remoteCsi is not None:
-					# acpi.extend(['%s/%s' % (CSE.remote.cseCsi, a) for a in regAcpi])
+					# acpi.extend([f'{CSE.remote.cseCsi}/{a}' for a in regAcpi])
 					acpi.extend([a for a in regAcpi])
 				else:
 					acpi.extend(regAcpi)
-			Utils.setXPath(	jsn, '%s/acpi' % tpe, acpi)
+			Utils.setXPath(	jsn, f'{tpe}/acpi', acpi)
 
 		else: # update. Works a bit different
 

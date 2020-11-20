@@ -57,7 +57,7 @@ class GRP(AnnounceableResource):
 
 		# add fanOutPoint
 		ri = self['ri']
-		Logging.logDebug('Registering fanOutPoint resource for: %s' % ri)
+		Logging.logDebug(f'Registering fanOutPoint resource for: {ri}')
 		fanOutPointResource = Utils.resourceFromJSON({ 'pi' : ri }, acpi=self['acpi'], ty=T.GRP_FOPT).resource
 		if (res := CSE.dispatcher.createResource(fanOutPointResource, self, originator)).resource is None:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)

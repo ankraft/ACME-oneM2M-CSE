@@ -42,35 +42,35 @@ class SecurityManager(object):
 				# originator may be None or empty or C or S. 
 				# That is okay if type is AE and this is a create request
 				if originator is None or len(originator) == 0 or Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedAEOriginators')):
-					Logging.logDebug("Originator for AE CREATE. OK.")
+					Logging.logDebug('Originator for AE CREATE. OK.')
 					return True
 
 			# Checking for remoteCSE
 			if ty == T.CSR and isCreateRequest:
 				if Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedCSROriginators')):
-					Logging.logDebug("Originator for CSR CREATE. OK.")
+					Logging.logDebug('Originator for CSR CREATE. OK.')
 					return True
 				else:
-					Logging.logWarn("Originator for CSR CREATE not found.")
+					Logging.logWarn('Originator for CSR CREATE not found.')
 					return False
 
 			if T(ty).isAnnounced():
 				if Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedCSROriginators')) or originator[1:] == parentResource.ri:
-					Logging.logDebug("Originator for Announcement. OK.")
+					Logging.logDebug('Originator for Announcement. OK.')
 					return True
 				else:
-					Logging.logWarn("Originator for Announcement not found.")
+					Logging.logWarn('Originator for Announcement not found.')
 					return False
 
 		# Check parameters
 		if resource is None:
-			Logging.logWarn("Resource must not be None")
+			Logging.logWarn('Resource must not be None')
 			return False
 		if requestedPermission is None or not (0 <= requestedPermission <= Permission.ALL):
-			Logging.logWarn("RequestedPermission must not be None, and between 0 and 63")
+			Logging.logWarn('RequestedPermission must not be None, and between 0 and 63')
 			return False
 
-		Logging.logDebug("Checking permission for originator: %s, ri: %s, permission: %d, selfPrivileges: %r" % (originator, resource.ri, requestedPermission, checkSelf))
+		Logging.logDebug(f'Checking permission for originator: {originator}, ri: {resource.ri}, permission: {requestedPermission:d}, selfPrivileges: {checkSelf}')
 
 
 		if resource.ty == T.GRP: # target is an group resource
@@ -83,7 +83,7 @@ class SecurityManager(object):
 			else: # handle the permission checks here
 				for a in macp:
 					if (acp := CSE.dispatcher.retrieveResource(a).resource) is None:
-						Logging.logDebug('ACP resource not found: %s' % a)
+						Logging.logDebug(f'ACP resource not found: {a}')
 						continue
 					else:
 						if acp.checkPermission(originator, requestedPermission):
@@ -118,7 +118,7 @@ class SecurityManager(object):
 
 			for a in acpi:
 				if (acp := CSE.dispatcher.retrieveResource(a).resource) is None:
-					Logging.logDebug('ACP resource not found: %s' % a)
+					Logging.logDebug(f'ACP resource not found: {a}')
 					continue
 				if checkSelf:	# forced check for self permissions
 					if acp.checkSelfPermission(originator, requestedPermission):

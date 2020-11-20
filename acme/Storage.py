@@ -43,7 +43,7 @@ class Storage(object):
 
 		
 		self.db = TinyDBBinding(path)
-		self.db.openDB('-%s' % Utils.getCSETypeAsString()) # add CSE type as postfix
+		self.db.openDB(f'-{Utils.getCSETypeAsString()}') # add CSE type as postfix
 
 		# Reset dbs?
 		if Configuration.get('db.resetOnStartup') is True:
@@ -71,7 +71,7 @@ class Storage(object):
 
 		ri = resource.ri
 
-		# Logging.logDebug('Adding resource (ty: %d, ri: %s, rn: %s)' % (resource['ty'], resource['ri'], resource['rn']))
+		# Logging.logDebug(f'Adding resource (ty: {resource.ty:d}, ri: {resource.ri}, rn: {resource.rn})'
 		did = None
 		srn = resource.__srn__
 		if overwrite:
@@ -82,7 +82,7 @@ class Storage(object):
 			if not self.hasResource(ri, srn):	# Only when not resource does not exist yet
 				self.db.insertResource(resource)
 			else:
-				Logging.logWarn('Resource already exists (Skipping): %s ' % resource)
+				Logging.logWarn(f'Resource already exists (Skipping): {resource}')
 				return Result(status=False, rsc=RC.alreadyExists, dbg='resource already exists')
 
 		# Add path to identifiers db
@@ -100,16 +100,16 @@ class Storage(object):
 		resources = []
 
 		if ri is not None:		# get a resource by its ri
-			# Logging.logDebug('Retrieving resource ri: %s' % ri)
+			# Logging.logDebug(f'Retrieving resource ri: {ri}')
 			resources = self.db.searchResources(ri=ri)
 
 		elif srn is not None:	# get a resource by its structured rn
-			# Logging.logDebug('Retrieving resource srn: %s' % srn)
+			# Logging.logDebug(f'Retrieving resource srn: {srn}')
 			# get the ri via the srn from the identifers table
 			resources = self.db.searchResources(srn=srn)
 
 		elif csi is not None:	# get the CSE by its csi
-			# Logging.logDebug('Retrieving resource csi: %s' % csi)
+			# Logging.logDebug(f'Retrieving resource csi: {csi}')
 			resources = self.db.searchResources(csi=csi)
 
 		# Logging.logDebug(resources)
@@ -124,7 +124,7 @@ class Storage(object):
 
 	def retrieveResourcesByType(self, ty: T) -> List[dict]:
 		""" Return all resources of a certain type. """
-		# Logging.logDebug('Retrieving all resources ty: %d' % ty)
+		# Logging.logDebug(f'Retrieving all resources ty: {ty:d}')
 		return self.db.searchResources(ty=int(ty))
 
 
@@ -133,7 +133,7 @@ class Storage(object):
 			Logging.logErr('resource is None')
 			raise RuntimeError('resource is None')
 		ri = resource.ri
-		# Logging.logDebug('Updating resource (ty: %d, ri: %s, rn: %s)' % (resource['ty'], ri, resource['rn']))
+		# Logging.logDebug(f'Updating resource (ty: {resource.ty:d}, ri: {ri}, rn: {resource.rn})')
 		return Result(resource=self.db.updateResource(resource), rsc=RC.updated)
 
 
@@ -141,7 +141,7 @@ class Storage(object):
 		if resource is None:
 			Logging.logErr('resource is None')
 			raise RuntimeError('resource is None')
-		# Logging.logDebug('Removing resource (ty: %d, ri: %s, rn: %s)' % (resource['ty'], ri, resource['rn']))
+		# Logging.logDebug(f'Removing resource (ty: {resource.ty:d}, ri: {ri}, rn: {resource.rn})'
 		self.db.deleteResource(resource)
 		self.db.deleteIdentifier(resource)
 		return Result(status=True, rsc=RC.deleted)
@@ -227,7 +227,7 @@ class Storage(object):
 		"""
 		result = []
 
-		mcsi = '%s/' % csi
+		mcsi = f'{csi}/'
 		def _hasCSI(at:List[str]) -> bool:
 			for a in at:
 				if a == csi or a.startswith(mcsi):
@@ -260,7 +260,7 @@ class Storage(object):
 	##
 
 	def getSubscription(self, ri: str) -> dict:
-		# Logging.logDebug('Retrieving subscription: %s' % ri)
+		# Logging.logDebug(f'Retrieving subscription: {ri}')
 		subs = self.db.searchSubscriptions(ri=ri)
 		if subs is None or len(subs) != 1:
 			return None
@@ -268,22 +268,22 @@ class Storage(object):
 
 
 	def getSubscriptionsForParent(self, pi: str) -> List[dict]:
-		# Logging.logDebug('Retrieving subscriptions for parent: %s' % pi)
+		# Logging.logDebug(f'Retrieving subscriptions for parent: {pi}')
 		return self.db.searchSubscriptions(pi=pi)
 
 
 	def addSubscription(self, subscription: Resource) -> bool:
-		# Logging.logDebug('Adding subscription: %s' % ri)
+		# Logging.logDebug(f'Adding subscription: {ri}')
 		return self.db.upsertSubscription(subscription)
 
 
 	def removeSubscription(self, subscription: Resource) -> bool:
-		# Logging.logDebug('Removing subscription: %s' % subscription.ri)
+		# Logging.logDebug(f'Removing subscription: {subscription.ri}')
 		return self.db.removeSubscription(subscription)
 
 
 	def updateSubscription(self, subscription : Resource) -> bool:
-		# Logging.logDebug('Updating subscription: %s' % ri)
+		# Logging.logDebug(f'Updating subscription: {ri}')
 		return self.db.upsertSubscription(subscription)
 
 
@@ -353,9 +353,8 @@ class TinyDBBinding(object):
 	def __init__(self, path: str = None) -> None:
 		self.path = path
 		self.cacheSize = Configuration.get('db.cacheSize')
-		Logging.log('Cache Size: %s' % self.cacheSize)
+		Logging.log(f'Cache Size: {self.cacheSize:d}')
 
-		# create transaction locks
 		# create transaction locks
 		self.lockResources = Lock()
 		self.lockIdentifiers = Lock()
@@ -379,12 +378,12 @@ class TinyDBBinding(object):
 			self.dbAppData = TinyDB(storage=MemoryStorage)
 		else:
 			Logging.log('DB in file system')
-			self.dbResources = TinyDB('%s/resources%s.json' % (self.path, postfix))
-			self.dbIdentifiers = TinyDB('%s/identifiers%s.json' % (self.path, postfix))
-			self.dbSubscriptions = TinyDB('%s/subscriptions%s.json' % (self.path, postfix))
-			self.dbBatchNotifications = TinyDB('%s/batchNotifications%s.json' % (self.path, postfix))
-			self.dbStatistics = TinyDB('%s/statistics%s.json' % (self.path, postfix))
-			self.dbAppData = TinyDB('%s/appdata%s.json' % (self.path, postfix))
+			self.dbResources = TinyDB(f'{self.path}/resources{postfix}.json')
+			self.dbIdentifiers = TinyDB(f'{self.path}/identifiers{postfix}.json')
+			self.dbSubscriptions = TinyDB(f'{self.path}/subscriptions{postfix}.json')
+			self.dbBatchNotifications = TinyDB(f'{self.path}/batchNotifications{postfix}.json')
+			self.dbStatistics = TinyDB(f'{self.path}/statistics{postfix}.json')
+			self.dbAppData = TinyDB(f'{self.path}/appdata{postfix}.json')
 		self.tabResources = self.dbResources.table('resources', cache_size=self.cacheSize)
 		self.tabIdentifiers = self.dbIdentifiers.table('identifiers', cache_size=self.cacheSize)
 		self.tabSubscriptions = self.dbSubscriptions.table('subsriptions', cache_size=self.cacheSize)

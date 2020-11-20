@@ -91,7 +91,7 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	Logging.init()
 	Logging.log('============')
 	Logging.log('Starting CSE')
-	Logging.log('CSE-Type: %s' % Utils.getCSETypeAsString())
+	Logging.log(f'CSE-Type: {Utils.getCSETypeAsString()}')
 	Logging.log(Configuration.print())
 
 

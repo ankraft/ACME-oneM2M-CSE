@@ -138,23 +138,14 @@ class AnnouncementManager(object):
 			self.announceResource(resource)
 
 
-
-		# Logging.logDebug('Checking resources for Announcement to: %s' % csi)
-		# # get all reources for this specific CSI that are NOT announced to it yet
-		# resources = CSE.storage.searchAnnounceableResourcesForCSI(csi, False) # only return the resources that are *not* announced to this csi yet
-		# # try to announce all not-announced resources to this csr
-		# for resource in resources:
-		# 	self.announceResourceToCSR(resource, remoteCSR)
-
-
 	def announceResource(self, resource:Resource) -> None:
 		"""	Announce a single resource to its announcement targets.
 		"""
 		if not self.announcementsEnabled:
 			return
-		Logging.logDebug('Announce resource: %s to all connected csr' % resource.ri)
+		Logging.logDebug(f'Announce resource: {resource.ri} to all connected csr')
 		for csi in resource.at:
-			if csi == CSE.remote.cseCsi or csi.startswith('%s/' % CSE.remote.cseCsi):
+			if csi == CSE.remote.cseCsi or csi.startswith(f'{CSE.remote.cseCsi}/'):
 				Logging.logWarn('Targeting own CSE. Ignored.')
 				self._removeAnnouncementFromResource(resource, csi)
 				continue
@@ -177,13 +168,13 @@ class AnnouncementManager(object):
 
 		# TODO: multi-hop announcement
 
-		Logging.logDebug('Announce resource: %s to: %s' % (resource.ri, csi))
+		Logging.logDebug(f'Announce resource: {resource.ri} to: {csi}')
 
 		if (at := resource.at) is None or len(at) == 0:
 			Logging.logWarn('at attribute is empty')
 			return
 		if csi not in at:
-			Logging.logWarn('CSI: %s not found for at: %s' % (csi,at))
+			Logging.logWarn(f'CSI: {csi} not found for at: {at}')
 			return
 
 		# Create announced json & type
@@ -193,18 +184,17 @@ class AnnouncementManager(object):
 		# Get target URL for request
 		if poas is not None and len(poas) > 0:
 			poa = poas[0]												# Only first POA
-			#url = '%s/~%s%s' % (poa, csi, CSE.remote.cseCsi)			# remote CSR is always own csi
-			url = '%s%s' % (poa, CSE.remote.cseCsi)			# remote CSR is always own csi
+			url = f'{poa}{CSE.remote.cseCsi}'			# remote CSR is always own csi
 		else:
 			Logging.logWarn('Cannot get URL')
 			return
 
 		# Create the announed resource on the remote CSE
-		Logging.logDebug('Creating announced resource at: %s url: %s' % (csi, url))	
+		Logging.logDebug(f'Creating announced resource at: {csi} url: {url}')	
 		res = CSE.httpServer.sendCreateRequest(url, CSE.remote.originator, ty=tyAnnc, data=json.dumps(data))
 		if res.rsc not in [ RC.created, RC.OK ]:
 			if res.rsc != RC.alreadyExists:	# assume that it is ok if the remote resource already exists 
-				Logging.logDebug('Error creating remote announced resource: %d' % res.rsc)
+				Logging.logDebug(f'Error creating remote announced resource: {res.rsc:d}')
 				if (at := resource.at) is not None and len(at) > 0 and csi in at:
 					at.remove(csi)
 					if len(at) == 0:
@@ -229,7 +219,7 @@ class AnnouncementManager(object):
 		if not self.announcementsEnabled:
 			return
 		csi = remoteCSR.csi
-		Logging.logDebug('Checking resources for Unannouncement to: %s' % csi)
+		Logging.logDebug(f'Checking resources for Unannouncement to: {csi}')
 		# get all reources for this specific CSI that are NOT announced to it yet
 		resources = CSE.storage.searchAnnounceableResourcesForCSI(csi, True)
 		# try to announce all not-announced resources to this csr
@@ -245,7 +235,7 @@ class AnnouncementManager(object):
 		"""
 		if not self.announcementsEnabled:
 			return
-		Logging.logDebug('De-Announce resource: %s from all connected csr' % resource.ri)
+		Logging.logDebug(f'De-Announce resource: {resource.ri} from all connected csr')
 
 		for (csi, remoteRI) in resource[Resource._announcedTo]:
 			if (csr := Utils.resourceFromCSI(csi)) is None:
@@ -265,21 +255,20 @@ class AnnouncementManager(object):
 
 		# TODO: multi-hop announcement
 
-		Logging.logDebug('De-Announce remote resource: %s from: %s' % (resource.ri, csi))
+		Logging.logDebug(f'De-Announce remote resource: {resource.ri} from: {csi}')
 
 		# Get target URL for request
 		if poas is not None and len(poas) > 0:
-			# url = '%s/~%s/%s' % (poa, csi, resourceRI)	# TODO check all available poas. remote CSR is always own csi
-			url = '%s/%s' % (poas[0],resourceRI)	# TODO check all available poas. remote CSR is always own csi
+			url = f'{poas[0]}/{resourceRI}'	# TODO check all available poas. remote CSR is always own csi
 		else:
 			Logging.logWarn('Cannot get URL')
 			return
 
 		# Delete the announed resource from the remote CSE
-		Logging.logDebug('Delete announced resource from: %s url: %s' % (csi, url))	
+		Logging.logDebug(f'Delete announced resource from: %{csi} url: {url}')	
 		res = CSE.httpServer.sendDeleteRequest(url, CSE.remote.originator)
 		if res.rsc not in [ RC.deleted, RC.OK ]:
-			Logging.logDebug('Error deleting remote announced resource: %d' % res.rsc)
+			Logging.logDebug(f'Error deleting remote announced resource: {res.rsc}')
 			# ignore the fact that we cannot delete the announced resource.
 			# fall-through for some house-keeping
 		self._removeAnnouncementFromResource(resource, csi)
@@ -295,7 +284,7 @@ class AnnouncementManager(object):
 	def announceUpdatedResource(self, resource:Resource) -> None:
 		if not self.announcementsEnabled:
 			return
-		Logging.logDebug('Updating announced resource: %s' % resource.ri)
+		Logging.logDebug(f'Updating announced resource: {resource.ri}')
 
 		# Check for removed AT
 		# Logging.logErr(set(self._origAT))
@@ -308,7 +297,7 @@ class AnnouncementManager(object):
 		CSIsFromAnnounceTo = []
 		for announcedResource in at:
 			if len(sp := announcedResource.split('/')) >= 2:
-				if (csi := '/%s' % sp[1]) == CSE.remote.cseCsi or csi.startswith('%s/' % CSE.remote.cseCsi):	# Ignore own CSE as target
+				if (csi := f'/{sp[1]}') == CSE.remote.cseCsi or csi.startswith(f'{CSE.remote.cseCsi}/'):	# Ignore own CSE as target
 					continue
 				CSIsFromAnnounceTo.append(csi)
 
@@ -350,24 +339,23 @@ class AnnouncementManager(object):
 
 		# TODO: multi-hop announcement
 
-		Logging.logDebug('Update announced resource: %s to: %s' % (resource.ri, csi))
+		Logging.logDebug(f'Update announced resource: {resource.ri} to: {csi}')
 
 		data = resource.createAnnouncedResourceJSON(remoteCSR, isCreate=False, csi=csi)
 		tyAnnc = T(resource.ty).announced()
 
 		# Get target URL for request
 		if poas is not None and len(poas) > 0:
-			# url = '%s/~%s/%s' % (poas[0], csi, remoteRI)	# TODO check all available poas.
-			url = '%s/%s' % (poas[0], remoteRI)	# TODO check all available poas.
+			url = f'{poas[0]}/{remoteRI}'	# TODO check all available poas.
 		else:
 			Logging.logWarn('Cannot get URL')
 			return
 
 		# Create the announed resource on the remote CSE
-		Logging.logDebug('Updating announced resource at: %s url: %s' % (csi, url))	
+		Logging.logDebug(f'Updating announced resource at: {csi} url: {url}')	
 		res = CSE.httpServer.sendUpdateRequest(url, CSE.remote.originator, data=json.dumps(data))
 		if res.rsc not in [ RC.updated, RC.OK ]:
-			Logging.logDebug('Error updating remote announced resource: %d' % res.rsc)
+			Logging.logDebug(f'Error updating remote announced resource: {res.rsc:d}')
 			# Ignore and fallthrough
 		Logging.logDebug('Announced resource updated')
 
@@ -400,7 +388,7 @@ class AnnouncementManager(object):
 
 		# Modify the at attribute
 		if len(at := resource.at) > 0 and csi in at:
-			at[at.index(csi)] = '%s/%s' %(csi, remoteRI) # replace the element in at
+			at[at.index(csi)] = f'{csi}/{remoteRI}' # replace the element in at
 			resource.setAttribute('at', at)
 
 
@@ -419,7 +407,7 @@ class AnnouncementManager(object):
 
 		# # Modify the at attribute
 		if remoteRI is not None:
-			atCsi = '%s/%s' %(csi, remoteRI)
+			atCsi = f'{csi}/{remoteRI}'
 			if (at := resource.at) is not None and len(at) > 0 and atCsi in at:
 				at.remove(atCsi)
 				resource.setAttribute('at', at)

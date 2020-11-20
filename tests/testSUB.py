@@ -43,7 +43,7 @@ class TestSUB(unittest.TestCase):
 
 		# create other resources
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
+		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
 		jsn = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
@@ -127,7 +127,7 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBWrong(self):
 		jsn = 	{ 'm2m:sub' : { 
-					'rn' : '%sWrong' % subRN,
+					'rn' : f'{subRN}Wrong',
 			        'enc': {
 			            'net': [ 1, 2, 3, 4 ]
         			},
@@ -583,15 +583,15 @@ class TestSUB(unittest.TestCase):
 	def test_createCNTWithEncChty(self):
 		clearLastNotification()	# clear the notification first
 		jsn = 	{ 'm2m:cnt' : { 
-					'rn'  : '%sSub' % cntRN
+					'rn'  : f'{cntRN}Sub'
 				}}
 		TestSUB.cnt, rsc = CREATE(cntURL, TestSUB.originator, T.CNT, jsn)
 		self.assertEqual(rsc, RC.created)
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(lastNotification)		# this must have caused a notification
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'))
-		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'), '%sSub' % cntRN)
-		_, rsc = DELETE('%s/%sSub' % (cntURL, cntRN), TestSUB.originator)	# delete the sub-cnt
+		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'), f'{cntRN}Sub')
+		_, rsc = DELETE(f'{cntURL}/{cntRN}Sub', TestSUB.originator)	# delete the sub-cnt
 		self.assertEqual(rsc, RC.deleted)
 
 

@@ -24,7 +24,7 @@ class TestAddressing(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
+		assert rsc == RC.OK, f'Cannot retrieve CSEBase:{cseURL}'
 
 		jsn = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
@@ -51,11 +51,11 @@ class TestAddressing(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_cseRelativeStructured(self):
-		url = '%s%s/%s/%s' % (URL, CSERN, aeRN, cntRN)
+		url = f'{URL}{CSERN}/{aeRN}/{cntRN}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
-		url = '%s-/%s/%s' % (URL, aeRN, cntRN)
+		url = f'{URL}-/{aeRN}/{cntRN}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
@@ -63,7 +63,7 @@ class TestAddressing(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_cseRelativeUnstructured(self):
-		url = '%s%s' % (URL, TestAddressing.cntRI)
+		url = f'{URL}{TestAddressing.cntRI}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
@@ -71,11 +71,11 @@ class TestAddressing(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_spRelativeStructured(self):
-		url = '%s~%s/%s/%s/%s' % (URL, CSEID, CSERN, aeRN, cntRN)
+		url = f'{URL}~{CSEID}/{CSERN}/{aeRN}/{cntRN}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
-		url = '%s~%s/-/%s/%s' % (URL, CSEID, aeRN, cntRN)
+		url = f'{URL}~{CSEID}/-/{aeRN}/{cntRN}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
@@ -83,7 +83,7 @@ class TestAddressing(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_spRelativeUnstructured(self):
-		url = '%s~%s/%s' % (URL, CSEID, TestAddressing.cntRI)
+		url = f'{URL}~{CSEID}/{TestAddressing.cntRI}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
@@ -91,11 +91,11 @@ class TestAddressing(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_absoluteStructured(self):
-		url = '%s_/%s%s/%s/%s/%s' % (URL, SPID, CSEID, CSERN, aeRN, cntRN)
+		url = f'{URL}_/{SPID}{CSEID}/{CSERN}/{aeRN}/{cntRN}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
-		url = '%s_/%s%s/-/%s/%s' % (URL, SPID, CSEID, aeRN, cntRN)
+		url = f'{URL}_/{SPID}{CSEID}/-/{aeRN}/{cntRN}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
@@ -103,7 +103,7 @@ class TestAddressing(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_absoluteUnstructured(self):
-		url = '%s_/%s%s/%s' % (URL, SPID, CSEID, TestAddressing.cntRI)
+		url = f'{URL}_/{SPID}{CSEID}/{TestAddressing.cntRI}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)

@@ -85,7 +85,7 @@ class REQ(Resource):
 
 		# add handlings, conditions and attributes from filter
 		for k,v in { **request.args.handling, **request.args.conditions, **request.args.attributes}.items():
-			Utils.setXPath(jsn, 'm2m:req/mi/fc/%s' % k, v, True)
+			Utils.setXPath(jsn, f'm2m:req/mi/fc/{k}', v, True)
 
 		# add content
 		if request.json is not None and len(request.json) > 0:
