@@ -11,7 +11,7 @@
 import json
 from typing import Any, List, Tuple, Union, Dict
 
-from Constants_ import Constants_ as C
+from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC
 from Types import Result,  RequestHeaders, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType, ResultContentType, ResponseType, FilterOperation
 from Types import CSERequest

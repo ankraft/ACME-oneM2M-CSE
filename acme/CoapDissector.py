@@ -1,3 +1,13 @@
+#
+#	CoapDissector.py
+#
+#	(c) 2020 by Andreas Kraft
+#	License: BSD 3-Clause License. See the LICENSE file for further details.
+#
+#	This module contains various utilty functions that are used from various
+#	modules and entities of the CSE.
+#
+
 
 from Logging import Logging
 
@@ -1656,12 +1666,12 @@ class CoapDissector(object):
 	PUT = CodeItem(3, 'PUT')
 	DELETE = CodeItem(4, 'DELETE')
 	OK = CodeItem(205, 'CREATED')
-	CREATED = CodeItem(201, 'CREATED')
-	DELETED = CodeItem(202, 'DELETED')
-	VALID = CodeItem(203, 'VALID')
-	CHANGED = CodeItem(204, 'CHANGED')
-	CONTENT = CodeItem(205, 'CONTENT')
-	CONTINUE = CodeItem(231, 'CONTINUE')
+	CREATED = CodeItem(65, 'CREATED')
+	DELETED = CodeItem(66, 'DELETED')
+	VALID = CodeItem(67, 'VALID')
+	CHANGED = CodeItem(68, 'CHANGED')
+	CONTENT = CodeItem(69, 'CONTENT')
+	CONTINUE = CodeItem(95, 'CONTINUE')
 	BAD_REQUEST = CodeItem(400, 'BAD_REQUEST')
 	FORBIDDEN = CodeItem(403, 'FORBIDDEN')
 	NOT_FOUND = CodeItem(404, 'NOT_FOUND')
@@ -1685,13 +1695,12 @@ class CoapDissector(object):
 		3: PUT,
 		4: DELETE,
 
-		205: OK,
-		201: CREATED,
-		202: DELETE,
-		203: VALID,
-		204: CHANGED,
-		205: CONTENT,
-		231: CONTINUE,
+		65: CREATED,
+		66: DELETE,
+		67: VALID,
+		68: CHANGED,
+		69: CONTENT,
+		95: CONTINUE,
 
 		400: BAD_REQUEST,
 		403: FORBIDDEN,

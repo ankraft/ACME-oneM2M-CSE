@@ -41,10 +41,10 @@ class HttpServer(IBindingLayer):
 		self.tlsVersion			= Configuration.get('cse.security.tlsVersion').lower()
 		self.caCertificateFile	= Configuration.get('cse.security.caCertificateFile')
 		self.caPrivateKeyFile	= Configuration.get('cse.security.caPrivateKeyFile')
-		self.webuiRoot 			= Configuration.get('cse.webui.root')
-		self.webuiDirectory 	= f'{CSE.rootDirectory}/webui'
 		self.privateKeyFile		= Configuration.get('cse.security.privateKeyFile')
 		self.certificateFile	= Configuration.get('cse.security.certificateFile')
+		self.webuiRoot 			= Configuration.get('cse.webui.root')
+		self.webuiDirectory 	= f'{CSE.rootDirectory}/webui'
 
 		self.serverID	= f'ACME {C.version}' 	# The server's ID for http response headers
 

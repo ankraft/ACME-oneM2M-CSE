@@ -1,17 +1,30 @@
+#
+#	MqttBinding.py
+#
+#	(c) 2020 by Andreas Kraft
+#	License: BSD 3-Clause License. See the LICENSE file for further details.
+#
+#	This module contains various utilty functions that are used from various
+#	modules and entities of the CSE.
+#
+
 from IBindingLayer import IBindingLayer
-import json, requests, logging, os, sys, traceback
+
+import json, requests, logging, os, sys, traceback, queue
 from typing import Any, Callable, List, Tuple, Union
-import flask
-from flask import Flask, Request, make_response, request
-from werkzeug.wrappers import Response
 from Configuration import Configuration
-from Constants_ import Constants_ as C
-from Types import ResourceTypes as T, Result, ResponseCode as RC, Operation
+from Constants import Constants as C
+from Types import ResourceTypes as T, Result,  RequestHeaders, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType, ResultContentType, ResponseType, ResponseCode as RC, FilterOperation
+from Types import CSERequest
 import CSE, Utils
 from Logging import Logging
 from resources.Resource import Resource
-from werkzeug.serving import WSGIRequestHandler
-import ssl
+
+from werkzeug.datastructures import MultiDict
+
+#from MqttDissector import MqttDissector, MqttMessage, MqttMessageRequest, MqttMessageResponse
+#import TcpServer
+
 
 
 class MqttBinding(IBindingLayer):

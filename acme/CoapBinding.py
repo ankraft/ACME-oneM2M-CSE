@@ -1,9 +1,19 @@
+#
+#	CoapBinding.py
+#
+#	(c) 2020 by Andreas Kraft
+#	License: BSD 3-Clause License. See the LICENSE file for further details.
+#
+#	This module contains various utilty functions that are used from various
+#	modules and entities of the CSE.
+#
+
 from IBindingLayer import IBindingLayer
 
 import json, requests, logging, os, sys, traceback, queue
 from typing import Any, Callable, List, Tuple, Union
 from Configuration import Configuration
-from Constants_ import Constants_ as C
+from Constants import Constants as C
 from Types import ResourceTypes as T, Result,  RequestHeaders, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType, ResultContentType, ResponseType, ResponseCode as RC, FilterOperation
 from Types import CSERequest
 import CSE, Utils
@@ -23,9 +33,9 @@ class CoapBinding(IBindingLayer):
 		self.transport		= UdpServer.UdpServer(Configuration.get('coap.listenIF'), Configuration.get('coap.port'), self.process_incoming_data)
 		self.rootPath		= Configuration.get('coap.root')
 		self.useTLS 		= Configuration.get('cse.security.useTLS')
-		self.serverID		= 'ACME %s' % C.version 	# The server's ID for http response headers
+		self.serverID		= f'ACME {C.version}' 	# The server's ID for http response headers
 
-		Logging.log('Registering CoAP server root at: %s' % self.rootPath)
+		Logging.log('Registering CoAP server root at: {self.rootPath}}')
 		if self.useTLS:
 			Logging.log('TLS enabled. CoAP server serves via coaps.')
 
@@ -47,7 +57,7 @@ class CoapBinding(IBindingLayer):
 		# End of run method
 
 	def process_incoming_data(self, data, client_address, p_queue:queue):
-		Logging.log('>>> CoapBinding.process_incoming_data: %s' % str(client_address))
+		Logging.log('>>> CoapBinding.process_incoming_data: {str(client_address)}')
 		coapMessage = CoapDissector.decode(p_data = data, p_source = client_address)
 		Logging.log('CoapBinding.process_incoming_data: coapMessage = %s' % str(coapMessage))
 		coapResponse = None
@@ -225,12 +235,18 @@ class CoapBinding(IBindingLayer):
 				response.code = 65					# Created
 			elif result.rsc == 2002:
 				response.code = 66					# Deleted
+			elif result.rsc == 2003:
+				response.code = 67					# Valid
+			elif result.rsc == 2004:
+				response.code = 68					# Changed
+			elif result.rsc == 2005:
+				response.code = 69					# Content
 			elif result.rsc == 4105:
-				response.code = 131					# Bad Request
+				response.code = 400					# Bad Request
 			elif result.rsc == 5000:
 				response.code = 500					# Server Internal Error
 			else:
-				raise Exception('CoapBindong._prepareResponse', '%s' % str(result.rsc))
+				raise Exception('CoapBinding._prepareResponse', '%s' % str(result.rsc))
 		response.rqi = p_coapMessage.rqi			# setheaders['X-M2M-RI']
 		response.rvi = C.hfvRVI
 		response.svi = C.hfvRVI

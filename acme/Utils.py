@@ -599,7 +599,7 @@ def requestHeaderField(request: Request, field : str) -> str:
 # Throws an exception when a wrong type is encountered. This is part of the validation
 def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, str]:
 	# copy arguments for greedy attributes checking
-	args = request.args.copy()	 	# type: ignore
+	args = request.p_args.copy()	 	# type: ignore
 	result = RequestArguments(operation=operation, request=request)
 	return processRequestArguments(result, args, operation)
 
@@ -610,7 +610,7 @@ def processRequestArguments(p_result:RequestArguments, p_args:MultiDict, p_opera
 			the found arguments from the original list.
 		"""
 		lst = []
-		for e in args.getlist(argName):
+		for e in p_args.getlist(argName):
 			for es in (t := e.split()):	# check for number
 				if validate:
 					if not CSE.validator.validateRequestArgument(argName, es).status:
@@ -618,118 +618,118 @@ def processRequestArguments(p_result:RequestArguments, p_args:MultiDict, p_opera
 			lst.extend(t)
 		if len(lst) > 0:
 			target[argName] = lst
-		args.poplist(argName)
+		p_args.poplist(argName)
 		return True, None
 
 	# FU - Filter Usage
-	if (fu := args.get('fu')) is not None:
+	if (fu := p_args.get('fu')) is not None:
 		if not CSE.validator.validateRequestArgument('fu', fu).status:
 			return None, 'error validating "fu" argument'
 		try:
 			fu = FilterUsage(int(fu))
 		except ValueError as exc:
 			return None, f'"{fu}" is not a valid value for fu'
-		del args['fu']
+		del p_args['fu']
 	else:
 		fu = FilterUsage.conditionalRetrieval
-	if fu == FilterUsage.discoveryCriteria and operation == Operation.RETRIEVE:
-		operation = Operation.DISCOVERY
-	result.fu = fu
+	if fu == FilterUsage.discoveryCriteria and p_operation == Operation.RETRIEVE:
+		p_operation = Operation.DISCOVERY
+	p_result.fu = fu
 
 
 	# DRT - Desired Identifier Result Type
-	if (drt := args.get('drt')) is not None: # 1=strucured, 2=unstructured
+	if (drt := p_args.get('drt')) is not None: # 1=strucured, 2=unstructured
 		if not CSE.validator.validateRequestArgument('drt', drt).status:
 			return None, 'error validating "drt" argument'
 		try:
 			drt = DesiredIdentifierResultType(int(drt))
 		except ValueError as exc:
 			return None, f'"{drt}" is not a valid value for drt'
-		del args['drt']
+		del p_args['drt']
 	else:
 		drt = DesiredIdentifierResultType.structured
-	result.drt = drt
+	p_result.drt = drt
 
 
 	# FO - Filter Operation
-	if (fo := args.get('fo')) is not None: # 1=AND, 2=OR
+	if (fo := p_args.get('fo')) is not None: # 1=AND, 2=OR
 		if not CSE.validator.validateRequestArgument('fo', fo).status:
 			return None, 'error validating "fo" argument'
 		try:
 			fo = FilterOperation(int(fo))
 		except ValueError as exc:
 			return None, f'"{fo}" is not a valid value for fo'
-		del args['fo']
+		del p_args['fo']
 	else:
 		fo = FilterOperation.AND # default
-	result.fo = fo
+	p_result.fo = fo
 
 
 	# RCN Result Content Type
-	if (rcn := args.get('rcn')) is not None: 
+	if (rcn := p_args.get('rcn')) is not None: 
 		if not CSE.validator.validateRequestArgument('rcn', rcn).status:
 			return None, 'error validating "rcn" argument'
 		rcn = int(rcn)
-		del args['rcn']
+		del p_args['rcn']
 	else:
 		if fu != FilterUsage.discoveryCriteria:
-			# Different defaults for each operation
-			if operation in [ Operation.RETRIEVE, Operation.CREATE, Operation.UPDATE ]:
+			# Different defaults for each p_operation
+			if p_operation in [ Operation.RETRIEVE, Operation.CREATE, Operation.UPDATE ]:
 				rcn = ResultContentType.attributes
-			elif operation == Operation.DELETE:
+			elif p_operation == Operation.DELETE:
 				rcn = ResultContentType.nothing
 		else:
-			# discovery-result-references as default for Discovery operation
+			# discovery-p_result-references as default for Discovery p_operation
 			rcn = ResultContentType.discoveryResultReferences
 
-	# Check value of rcn depending on operation
-	if operation == Operation.RETRIEVE and rcn not in [ ResultContentType.attributes,
+	# Check value of rcn depending on p_operation
+	if p_operation == Operation.RETRIEVE and rcn not in [ ResultContentType.attributes,
 														ResultContentType.attributesAndChildResources,
 														ResultContentType.attributesAndChildResourceReferences,
 														ResultContentType.childResourceReferences,
 														ResultContentType.childResources,
 														ResultContentType.originalResource ]:
-		return None, f'rcn: {rcn:d} not allowed in RETRIEVE operation'
-	elif operation == Operation.DISCOVERY and rcn not in [ ResultContentType.childResourceReferences,
+		return None, f'rcn: {rcn:d} not allowed in RETRIEVE p_operation'
+	elif p_operation == Operation.DISCOVERY and rcn not in [ ResultContentType.childResourceReferences,
 														   ResultContentType.discoveryResultReferences ]:
-		return None, f'rcn: {rcn:d} not allowed in DISCOVERY operation'
-	elif operation == Operation.CREATE and rcn not in [ ResultContentType.attributes,
+		return None, f'rcn: {rcn:d} not allowed in DISCOVERY p_operation'
+	elif p_operation == Operation.CREATE and rcn not in [ ResultContentType.attributes,
 														ResultContentType.modifiedAttributes,
 														ResultContentType.hierarchicalAddress,
 														ResultContentType.hierarchicalAddressAttributes,
 														ResultContentType.nothing ]:
-		return None, f'rcn: {rcn:d} not allowed in CREATE operation'
-	elif operation == Operation.UPDATE and rcn not in [ ResultContentType.attributes,
+		return None, f'rcn: {rcn:d} not allowed in CREATE p_operation'
+	elif p_operation == Operation.UPDATE and rcn not in [ ResultContentType.attributes,
 														ResultContentType.modifiedAttributes,
 														ResultContentType.nothing ]:
-		return None, f'rcn: {rcn:d} not allowed in UPDATE operation'
-	elif operation == Operation.DELETE and rcn not in [ ResultContentType.attributes,
+		return None, f'rcn: {rcn:d} not allowed in UPDATE p_operation'
+	elif p_operation == Operation.DELETE and rcn not in [ ResultContentType.attributes,
 														ResultContentType.nothing,
 														ResultContentType.attributesAndChildResources,
 														ResultContentType.childResources,
 														ResultContentType.attributesAndChildResourceReferences,
 														ResultContentType.childResourceReferences ]:
-		return None, f'rcn:  not allowed DELETE operation'
+		return None, f'rcn:  not allowed DELETE p_operation'
 
-	result.rcn = ResultContentType(rcn)
+	p_result.rcn = ResultContentType(rcn)
 
 
 	# RT - Response Type
-	if (rt := args.get('rt')) is not None: 
+	if (rt := p_args.get('rt')) is not None: 
 		if not CSE.validator.validateRequestArgument('rt', rt).status:
 			return None, 'error validating "rt" argument'
 		try:
 			rt = ResponseType(int(rt))
 		except ValueError as exc:
 			return None, f'"{rt}" is not a valid value for rt'
-		del args['rt']
+		del p_args['rt']
 	else:
 		rt = ResponseType.blockingRequest
-	result.rt = rt
+	p_result.rt = rt
 
 
 	# RP - Response Persistence
-	if (rp := args.get('rp')) is not None: 
+	if (rp := p_args.get('rp')) is not None: 
 		if not CSE.validator.validateRequestArgument('rp', rp).status:
 			return None, 'error validating "rp" argument'
 		try:
@@ -741,42 +741,42 @@ def processRequestArguments(p_result:RequestArguments, p_args:MultiDict, p_opera
 				raise ValueError
 		except ValueError as exc:
 			return None, f'"{rp}" is not a valid value for rp'
-		del args['rp']
+		del p_args['rp']
 	else:
 		rp = None
 		rpts = None
-	result.rp = rp
-	result.rpts = rpts
+	p_result.rp = rp
+	p_result.rpts = rpts
 
 
 	# handling conditions
 	handling = { }
 	for c in ['lim', 'lvl', 'ofst']:	# integer parameters
-		if c in args:
-			v = args[c]
+		if c in p_args:
+			v = p_args[c]
 			if not CSE.validator.validateRequestArgument(c, v).status:
 				return None, f'error validating "{c}" argument'
 			handling[c] = int(v)
-			del args[c]
+			del p_args[c]
 	for c in ['arp']:
-		if c in args:
-			v = args[c]
+		if c in p_args:
+			v = p_args[c]
 			if not CSE.validator.validateRequestArgument(c, v).status:
 				return None, f'error validating "{c}" argument'
 			handling[c] = v # string
-			del args[c]
-	result.handling = handling
+			del p_args[c]
+	p_result.handling = handling
 
 	# conditions
 	conditions:dict = {}
 
 	# Extract and store other arguments
 	for c in ['crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr']:
-		if (v := args.get(c)) is not None:
+		if (v := p_args.get(c)) is not None:
 			if not CSE.validator.validateRequestArgument(c, v).status:
 				return None, f'error validating "{c}" argument'
 			conditions[c] = v
-			del args[c]
+			del p_args[c]
 
 	if not (res := _extractMultipleArgs('ty', conditions))[0]:
 		return None, res[1]
@@ -785,24 +785,24 @@ def processRequestArguments(p_result:RequestArguments, p_args:MultiDict, p_opera
 	if not (res := _extractMultipleArgs('lbl', conditions, validate=False))[0]:
 		return None, res[1]
 
-	result.conditions = conditions
+	p_result.conditions = conditions
 
 	# all remaining arguments are treated as matching attributes
-	for arg, val in args.items():
+	for arg, val in p_args.items():
 		if not CSE.validator.validateRequestArgument(arg, val).status:
 			return None, f'error validating (unknown?) "{arg}" argument)'
 	# all arguments have passed, so add the remaining 
-	result.attributes = args
+	p_result.attributes = p_args
 
 	# Alternative: in case attributes are handled like ty, lbl, cty
 	# attributes:dict = {}
-	# for key in list(args.keys()):
+	# for key in list(p_args.keys()):
 	# 	if not (res := _extractMultipleArgs(key, attributes))[0]:
 	# 		return None, res[1]
-	# result.attributes = attributes
+	# p_result.attributes = attributes
 
 	# Finally return the collected arguments
-	return result, None
+	return p_result, None
 
 		
 def getRequestHeaders(request: Request) -> Result:

@@ -1,4 +1,12 @@
-
+#
+#	UdpServer.py
+#
+#	(c) 2020 by Andreas Kraft
+#	License: BSD 3-Clause License. See the LICENSE file for further details.
+#
+#	This module contains various utilty functions that are used from various
+#	modules and entities of the CSE.
+#
 
 import threading, queue, traceback
 from typing import Callable
@@ -30,14 +38,11 @@ class UdpServer(object):
 		self.certificateFile	= Configuration.get('cse.security.certificateFile')
 		self.ssl_ctx			= None
 		self.mtu				= 512 #1500
-
 		# End of ctor
 
 	def listen(self, p_timeout:int = 5): # This does NOT return
 		self.listen_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 		self.listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		#self.listen_socket.bind((self.addr, self.port))
-		#self.listen_socket.settimeout(p_timeout)
 		if self.useTLS == True:
 			Logging.logDebug('Setup SSL context. CaCertfile: %s, CaKeyFile:%s, Certfile: %s, KeyFile:%s, TLS version: %s' % (self.caCertificateFile, self.caPrivateKeyFile, self.certificateFile, self.privateKeyFile, self.tlsVersion))
 			self.ssl_ctx = wrap_server(
@@ -80,6 +85,8 @@ class UdpServer(object):
 					continue
 				# End of 'while' statement
 		else:
+			self.listen_socket.bind((self.addr, self.port))
+			self.listen_socket.settimeout(p_timeout)
 			while True:
 				try:
 					data, client_address = self.listen_socket.recvfrom(4096)
