@@ -1368,7 +1368,7 @@ class CoapDissector(object):
 			# and provide a traceback.
 			Logging.logDebug(fmt)
 			Logging.logDebug(values)
-			Logging.exception('Failed to pack structure')
+			Logging.logErr('Failed to pack structure')
 
 		return datagram
 		# End of method encode

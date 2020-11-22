@@ -243,6 +243,8 @@ class CoapBinding(IBindingLayer):
 				response.code = 69					# Content
 			elif result.rsc == 4105:
 				response.code = 400					# Bad Request
+			elif result.rsc == 4107:
+				response.code = 500					# Server Internal Error
 			elif result.rsc == 5000:
 				response.code = 500					# Server Internal Error
 			else:
