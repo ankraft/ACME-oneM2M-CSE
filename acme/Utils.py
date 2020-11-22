@@ -28,6 +28,7 @@ from Logging import Logging
 import CSE
 from flask import Request
 
+from werkzeug.datastructures import MultiDict
 
 def uniqueRI(prefix:str='') -> str:
 	return noDomain(prefix) + uniqueID()
@@ -586,44 +587,6 @@ def fanoutPointResource(id: str) -> Resource.Resource:
 
 
 
-#
-#	HTTP request helper functions
-#
-
-
-def dissectHttpRequest(request:Request, operation:Operation, _id:Tuple[str, str, str]) -> Result:
-	cseRequest = CSERequest()
-
-	# get the data first. This marks the request as consumed 
-	cseRequest.data = request.get_data(as_text=True)	# alternative: request.data.decode("utf-8")
-	
-	# handle ID's 
-	cseRequest.id, cseRequest.csi, cseRequest.srn = _id
-
-	# No ID, return immediately 
-	if cseRequest.id is None and cseRequest.srn is None:
-		return Result(rsc=RC.notFound, dbg='missing identifier', status=False)
-
-	if (res := getRequestHeaders(request)).data is None:
-		return Result(rsc=res.rsc, dbg=res.dbg, status=False)
-	cseRequest.headers = res.data
-	
-	try:
-		cseRequest.args, msg = getRequestArguments(request, operation)
-		if cseRequest.args is None:
-			return Result(rsc=RC.badRequest, dbg=msg, status=False)
-	except Exception as e:
-		return Result(rsc=RC.invalidArguments, dbg=f'invalid arguments ({str(e)})', status=False)
-	cseRequest.originalArgs	= request.args.copy()	#type: ignore
-	if cseRequest.data is not None and len(cseRequest.data) > 0:
-		try:
-			cseRequest.json = json.loads(removeCommentsFromJSON(cseRequest.data))
-		except Exception as e:
-			Logging.logWarn('Bad request (malformed content?)')
-			return Result(rsc=RC.badRequest, dbg=str(e), status=False)
-	return Result(request=cseRequest, status=True)
-
-
 
 def requestHeaderField(request: Request, field : str) -> str:
 	if not request.headers.has_key(field):
@@ -635,10 +598,13 @@ def requestHeaderField(request: Request, field : str) -> str:
 # Only a small subset is supported yet
 # Throws an exception when a wrong type is encountered. This is part of the validation
 def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, str]:
-	
 	# copy arguments for greedy attributes checking
 	args = request.args.copy()	 	# type: ignore
+	result = RequestArguments(operation=operation, request=request)
+	return processRequestArguments(result, args, operation)
 
+def processRequestArguments(p_result:RequestArguments, p_args:MultiDict, p_operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, str]:
+	
 	def _extractMultipleArgs(argName:str, target:dict, validate:bool=True) -> Tuple[bool, str]:
 		"""	Get multi-arguments. Always create at least an empty list. Remove
 			the found arguments from the original list.
@@ -654,9 +620,6 @@ def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE)
 			target[argName] = lst
 		args.poplist(argName)
 		return True, None
-
-	result = RequestArguments(operation=operation, request=request)
-
 
 	# FU - Filter Usage
 	if (fu := args.get('fu')) is not None:

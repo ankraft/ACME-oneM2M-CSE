@@ -40,6 +40,8 @@ class Configuration(object):
 		argsValidationEnabled	= args.validationenabled if args is not None and 'validationenabled' in args else None
 		argsStatisticsEnabled	= args.statisticsenabled if args is not None and 'statisticsenabled' in args else None
 		argsRunAsHttps			= args.https if args is not None and 'https' in args else None
+		argsRunAsCoaps			= args.coaps if args is not None and 'coaps' in args else None
+		argsRunAsMqtts			= args.mqtts if args is not None and 'mqtts' in args else None
 		argsRemoteConfigEnabled	= args.remoteconfigenabled if args is not None and 'remoteconfigenabled' in args else None
 		argsListenIF			= args.listenif if args is not None and 'listenif' in args else None
 		argsHttpAddress			= args.httpaddress if args is not None and 'httpaddress' in args else None
@@ -64,6 +66,26 @@ class Configuration(object):
 		try:
 			Configuration._configuration = {
 				'configfile'					: argsConfigfile,
+
+				#
+				#	CoAP Server
+				#
+
+				'coap.listenIF'						: config.get('server.coap', 'listenIF', 				fallback='127.0.0.1'),
+				'coap.port' 						: config.getint('server.coap', 'port', 					fallback=8080),
+				'coap.root'							: config.get('server.coap', 'root', 					fallback=''),
+				'coap.address'						: config.get('server.coap', 'address', 					fallback='coap://127.0.0.1:8080'),
+				'coap.multiThread'					: config.getboolean('server.coap', 'multiThread', 		fallback=True),
+
+				#
+				#	MQTT Server
+				#
+
+				'mqtt.listenIF'						: config.get('server.mqtt', 'listenIF', 				fallback='127.0.0.1'),
+				'mqtt.port' 						: config.getint('server.mqtt', 'port', 					fallback=8080),
+				'mqtt.root'							: config.get('server.mqtt', 'root', 					fallback=''),
+				'mqtt.address'						: config.get('server.mqtt', 'address', 					fallback='mqtt://127.0.0.1:8080'),
+				'mqtt.multiThread'					: config.getboolean('server.mqtt', 'multiThread', 		fallback=True),
 
 				#
 				#	HTTP Server
@@ -118,6 +140,7 @@ class Configuration(object):
 				'cse.sortDiscoveredResources'		: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
 				'cse.checkExpirationsInterval'		: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
 				'cse.flexBlockingPreference'		: config.get('cse', 'flexBlockingPreference',			fallback='blocking'),
+				'cse.transportLayer'				: config.get('cse', 'transportLayer',					fallback='http'),
 
 				#
 				#	CSE Security
@@ -131,6 +154,8 @@ class Configuration(object):
 				'cse.security.verifyCertificate'	: config.getboolean('cse.security', 'verifyCertificate',fallback=False),
 				'cse.security.caCertificateFile'	: config.get('cse.security', 'caCertificateFile', 		fallback=None),
 				'cse.security.caPrivateKeyFile'		: config.get('cse.security', 'caPrivateKeyFile', 		fallback=None),
+				'cse.security.privateKeyFile'		: config.get('cse.security', 'privateKeyFile', 		fallback=None),
+				'cse.security.certificateFile'	: config.get('cse.security', 'certificateFile', 		fallback=None),
 
 				#
 				#	Registrar CSE
@@ -281,11 +306,21 @@ class Configuration(object):
 		if argsRemoteConfigEnabled is not None:	Configuration._configuration['http.enableRemoteConfiguration'] = argsRemoteConfigEnabled	# Override remote/httpConfiguration
 		if argsListenIF is not None:			Configuration._configuration['http.listenIF'] = argsListenIF								# Override binding network interface
 		if argsHttpAddress is not None:			Configuration._configuration['http.address'] = argsHttpAddress								# Override server http address
+		# Override transport layer
+		if argsRunAsHttps is not None:			Configuration._configuration['cse.transportLayer'] = 'http'
+		elif argsRunAsCoaps is not None:		Configuration._configuration['cse.transportLayer'] = 'coap'
+		elif argsRunAsMqtts is not None:		Configuration._configuration['cse.transportLayer'] = 'mqtt'
+		# Override useTLS
+		if argsRunAsHttps is not None:			Configuration._configuration['cse.security.useTLS'] = argsRunAsHttps
+		elif argsRunAsCoaps is not None:		Configuration._configuration['cse.security.useTLS'] = argsRunAsCoaps
+		elif argsRunAsMqtts is not None:		Configuration._configuration['cse.security.useTLS'] = argsRunAsMqtts
 
 		# Correct urls
 		Configuration._configuration['cse.registrar.address'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.address'])
 		Configuration._configuration['http.address'] = Utils.normalizeURL(Configuration._configuration['http.address'])
 		Configuration._configuration['http.root'] = Utils.normalizeURL(Configuration._configuration['http.root'])
+		Configuration._configuration['coap.address'] = Utils.normalizeURL(Configuration._configuration['coap.address'])
+		Configuration._configuration['coap.root'] = Utils.normalizeURL(Configuration._configuration['coap.root'])
 		Configuration._configuration['cse.registrar.root'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.root'])
 
 		# Just in case: check the URL's
@@ -293,7 +328,10 @@ class Configuration(object):
 			if Configuration._configuration['http.address'].startswith('http:'):
 				console.print('[orange3]Configuration Warning: Changing "http" to "https" in \[server.http]:address')
 				Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('http:', 'https:')
-			# registrar might still be accessible vi another protocol
+			if Configuration._configuration['coap.address'].startswith('coap:'):
+				console.print('[orange3]Configuration Warning: Changing "coap" to "coaps" in \[server.coap]:address')
+				Configuration._configuration['coap.address'] = Configuration._configuration['coap.address'].replace('coap:', 'coaps:')
+			# registrar might still be accessible via another protocol
 			# if Configuration._configuration['cse.registrar.address'].startswith('http:'):
 			# 	console.print('[orange3]Configuration Warning: Changing "http" to "https" in \[cse.registrar]:address')
 			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('http:', 'https:')
@@ -301,7 +339,10 @@ class Configuration(object):
 			if Configuration._configuration['http.address'].startswith('https:'):
 				console.print('[orange3]Configuration Warning: Changing "https" to "http" in \[server.http]:address')
 				Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('https:', 'http:')
-			# registrar might still be accessible vi another protocol
+			if Configuration._configuration['coap.address'].startswith('coaps:'):
+				console.print('[orange3]Configuration Warning: Changing "coaps" to "coap" in \[server.coap]:address')
+				Configuration._configuration['coap.address'] = Configuration._configuration['coap.address'].replace('coaps:', 'coap:')
+			# registrar might still be accessible via another protocol
 			# if Configuration._configuration['cse.registrar.address'].startswith('https:'):
 			# 	console.print('[orange3]Configuration Warning: Changing "https" to "http" in \[cse.registrar]:address')
 			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('https:', 'http:')
@@ -317,6 +358,8 @@ class Configuration(object):
 			Configuration._configuration['cse.security.tlsVersion'] = 'auto'
 			Configuration._configuration['cse.security.caCertificateFile'] = None
 			Configuration._configuration['cse.security.caPrivateKeyFile'] = None
+			Configuration._configuration['cse.security.privateKeyFile'] = None
+			Configuration._configuration['cse.security.certificateFile'] = None
 		else:
 			if not (val := Configuration._configuration['cse.security.tlsVersion']).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
 				console.print(f'[red]Configuration Error: Unknown value for \[cse.security]:tlsVersion: {val}')
@@ -328,10 +371,22 @@ class Configuration(object):
 				console.print(f'[red]Configuration Error: \[cse.security]:caCertificateFile does not exists or is not accessible: {val}')
 				return False
 			if (val := Configuration._configuration['cse.security.caPrivateKeyFile']) is None:
-				console.print('[red]Configuration Error: \[cse.security]:caPrivateKeyFile must be set when TLS is enabled')
+				console.print(f'[red]Configuration Error: \[cse.security]:CaPrivateKeyFile must be set when TLS is enabled')
 				return False
 			if not os.path.exists(val):
-				console.print(f'[red]Configuration Error: \[cse.security]:caPrivateKeyFile does not exists or is not accessible: {val}')
+				console.print(f'[red]Configuration Error: \[cse.security]:CaPrivateKeyFile does not exists or is not accessible: %s' % val)
+				return False
+			if (val := Configuration._configuration['cse.security.certificateFile']) is None:
+				console.print(f'[red]Configuration Error: \[cse.security]:CertificateFile does not exists or is not accessible: %s' % val)
+				return False
+			if not os.path.exists(val):
+				console.print(f'[red]Configuration Error: \[cse.security]:certificateFile does not exists or is not accessible: %s' % val)
+				return False
+			if (val := Configuration._configuration['cse.security.privateKeyFile']) is None:
+				console.print(f'[red]Configuration Error: \[cse.security]:PrivateKeyFile must be set when TLS is enabled')
+				return False
+			if not os.path.exists(val):
+				console.print(f'[red]Configuration Error: \[cse.security]:PrivateKeyFile does not exists or is not accessible: %s' % val)
 				return False
 
 		# check the csi format

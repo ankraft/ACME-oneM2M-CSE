@@ -16,7 +16,7 @@ from Dispatcher import Dispatcher
 from RequestManager import RequestManager
 from EventManager import EventManager
 from GroupManager import GroupManager
-from HttpServer import HttpServer
+from BindingLayer import BindingLayer
 from Importer import Importer
 from Logging import Logging
 from NotificationManager import NotificationManager
@@ -40,7 +40,7 @@ dispatcher:Dispatcher				= None
 request:RequestManager				= None
 event:EventManager					= None
 group:GroupManager					= None
-httpServer:HttpServer				= None
+httpServer:BindingLayer				= None
 notification:NotificationManager	= None
 registration:RegistrationManager 	= None
 remote:RemoteCSEManager				= None
@@ -120,7 +120,7 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	security = SecurityManager()
 
 	# Initialize the HTTP server
-	httpServer = HttpServer()
+	httpServer = BindingLayer(Configuration.get('cse.transportLayer'))
 
 	# Initialize the notification manager
 	notification = NotificationManager()

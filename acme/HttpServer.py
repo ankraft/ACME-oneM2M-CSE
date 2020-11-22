@@ -8,6 +8,7 @@
 #	This manager is the main run-loop for the CSE (when using http).
 #
 
+from IBindingLayer import IBindingLayer
 import json, requests, logging, os, sys, traceback
 from typing import Any, Callable, List, Tuple, Union
 import flask
@@ -17,6 +18,7 @@ from Configuration import Configuration
 from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC, Operation
 import CSE, Utils
+import HttpDissector
 from Logging import Logging
 from resources.Resource import Resource
 from werkzeug.serving import WSGIRequestHandler
@@ -24,7 +26,7 @@ import ssl
 from webUI import WebUI
 
 
-class HttpServer(object):
+class HttpServer(IBindingLayer):
 
 	def __init__(self) -> None:
 
@@ -41,6 +43,8 @@ class HttpServer(object):
 		self.caPrivateKeyFile	= Configuration.get('cse.security.caPrivateKeyFile')
 		self.webuiRoot 			= Configuration.get('cse.webui.root')
 		self.webuiDirectory 	= f'{CSE.rootDirectory}/webui'
+		self.privateKeyFile		= Configuration.get('cse.security.privateKeyFile')
+		self.certificateFile	= Configuration.get('cse.security.certificateFile')
 
 		self.serverID	= f'ACME {C.version}' 	# The server's ID for http response headers
 
@@ -113,7 +117,7 @@ class HttpServer(object):
 			try:
 				context = None
 				if self.useTLS:
-					Logging.logDebug(f'Setup SSL context. Certfile: {self.caCertificateFile}, KeyFile:{self.caPrivateKeyFile}, TLS version: {self.tlsVersion}')
+					Logging.logDebug(f'Setup SSL context. CaCertfile:{self.caCertificateFile}, CaKeyFile{self.caPrivateKeyFile}, Certfile: {self.certificateFile}, KeyFile:{self.privateKeyFile}, TLS version: {self.tlsVersion}')
 					context = ssl.SSLContext(
 									{ 	'tls1.1' : ssl.PROTOCOL_TLSv1_1,
 										'tls1.2' : ssl.PROTOCOL_TLSv1_2,
@@ -121,6 +125,7 @@ class HttpServer(object):
 									}[self.tlsVersion.lower()]
 								)
 					context.load_cert_chain(self.caCertificateFile, self.caPrivateKeyFile)
+					context.load_cert_chain(self.certificateFile, self.privateKeyFile)
 				self.flaskApp.run(host=Configuration.get('http.listenIF'), 
 								  port=Configuration.get('http.port'),
 								  threaded=Configuration.get('http.multiThread'),
@@ -142,7 +147,7 @@ class HttpServer(object):
 		Logging.logDebug(f'Headers: \n{str(request.headers)}')
 		CSE.event.httpRetrieve() # type: ignore
 		try:
-			result = Utils.dissectHttpRequest(request, Operation.RETRIEVE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = HttpDissector.dissectHttpRequest(request, Operation.RETRIEVE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 			if result.status:
 				result = CSE.request.retrieveRequest(result.request)
 		except Exception as e:
@@ -157,7 +162,7 @@ class HttpServer(object):
 		#Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpCreate()	# type: ignore
 		try:
-			result = Utils.dissectHttpRequest(request, Operation.CREATE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = HttpDissector.dissectHttpRequest(request, Operation.CREATE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 			if result.status:
 				Logging.logDebug(f'Body: \n{result.request.data}')
 				result = CSE.request.createRequest(result.request)
@@ -173,7 +178,7 @@ class HttpServer(object):
 		#Logging.logDebug(f'Body: \n{request.data.decode("utf-8")}')
 		CSE.event.httpUpdate()	# type: ignore
 		try:
-			result = Utils.dissectHttpRequest(request, Operation.UPDATE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = HttpDissector.dissectHttpRequest(request, Operation.UPDATE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 			if result.status:
 				Logging.logDebug(f'Body: \n{result.request.data}')
 				result = CSE.request.updateRequest(result.request)
@@ -188,7 +193,7 @@ class HttpServer(object):
 		Logging.logDebug(f'Headers: \n{str(request.headers)}')
 		CSE.event.httpDelete()	# type: ignore
 		try:
-			result = Utils.dissectHttpRequest(request, Operation.DELETE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = HttpDissector.dissectHttpRequest(request, Operation.DELETE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
 			if result.status:
 				result = CSE.request.deleteRequest(result.request)
 		except Exception as e:

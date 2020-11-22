@@ -25,6 +25,12 @@ def parseArgs() -> argparse.Namespace:
 	groupRemoteCSE.add_argument('--http', action='store_false', dest='http', default=None, help='run CSE with http server')
 	groupRemoteCSE.add_argument('--https', action='store_true', dest='https', default=None, help='run CSE with https server')
 
+	groupRemoteCSE.add_argument('--coap', action='store_false', dest='coap', default=None, help='run CSE with coap server')
+	groupRemoteCSE.add_argument('--coaps', action='store_true', dest='coaps', default=None, help='run CSE with coaps server')
+
+	groupRemoteCSE.add_argument('--mqtt', action='store_false', dest='mqtt', default=None, help='run CSE with mqtt server')
+	groupRemoteCSE.add_argument('--mqtts', action='store_true', dest='mqtts', default=None, help='run CSE with mqtts server')
+
 	groupApps = parser.add_mutually_exclusive_group()
 	groupApps.add_argument('--apps', action='store_true', dest='appsenabled', default=None, help='enable internal applications')
 	groupApps.add_argument('--no-apps', action='store_false', dest='appsenabled', default=None, help='disable internal applications')
