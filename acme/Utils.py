@@ -419,15 +419,40 @@ def pureResource(jsn: dict) -> Tuple[dict, str]:
 	return jsn, root
 
 
-def removeCommentsFromJSON(data:str) -> str:
-	"""	Remove C-style comments from JSON.
-	"""
-	data = re.sub('^\s+//.*\n', '\n', data)		# Comment on first line
-	data = re.sub('\n\s+//.*\n', '\n', data)	# Comments on some line in the middle
-	data = re.sub('/n\s+//.*$', '\n', data)		# Comment on last line w/o newline at the end
-	data = re.sub('/\\*.*?\\*/', '', data)
-	return data
+# def removeCommentsFromJSON(data:str) -> str:
+# 	"""	Remove C-style comments from JSON.
+# 	"""
+# 	data = re.sub(r'^[\s]*//[^\n]*\n', '\n', data)		# Comment on first line
+# 	data = re.sub(r'\n[\s]*//[^\n]*\n', '\n', data)	# Comments on some line in the middle
+# 	data = re.sub(r'\n[\s]*//[^\n]*$', '\n', data)		# Comment on last line w/o newline at the end
+# 	data = re.sub(r'/\\*.*?\\*/', '', data)
+# 	return data
 
+
+#commentPattern = r'(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*$)'
+commentPattern = r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$)'	# recognized escaped comments
+# first group captures quoted strings (double or single)
+# second group captures comments (//single-line or /* multi-line */)
+commentRegex = re.compile(commentPattern, re.MULTILINE|re.DOTALL)
+
+def removeCommentsFromJSON(data:str) -> str:
+	"""	This WILL remove:
+			/* multi-line comments */
+			// single-line comments
+		
+		Will NOT remove:
+			String var1 = "this is /* not a comment. */";
+			char *var2 = "this is // not a comment, either.";
+			url = 'http://not.comment.com';
+	"""
+	def _replacer(match):
+		# if the 2nd group (capturing comments) is not None,
+		# it means we have captured a non-quoted (real) comment string.
+		if match.group(2) is not None:
+			return "" # so we will return empty to remove the comment
+		else: # otherwise, we will return the 1st group
+			return match.group(1) # captured quoted-string
+	return commentRegex.sub(_replacer, data)
 
 decimalMatch = re.compile('{(\d+)}')
 def findXPath(jsn:dict, element:str, default:Any=None) -> Any:
@@ -476,18 +501,18 @@ def setXPath(jsn:Dict[str, Any], element:str, value:Any, overwrite:bool=True) ->
 
 
 def deleteNoneValuesFromJSON(jsn:Any) -> dict:
-    if not isinstance(jsn, dict):
-        return jsn
-    return { key:value for key,value in ((key, deleteNoneValuesFromJSON(value)) for key,value in jsn.items()) if value is not None }
+	if not isinstance(jsn, dict):
+		return jsn
+	return { key:value for key,value in ((key, deleteNoneValuesFromJSON(value)) for key,value in jsn.items()) if value is not None }
 
 
 urlregex = re.compile(
-        r'^(?:http|ftp)s?://' 						# http://, https://, ftp://, ftps://
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain
-        r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9]))|' # localhost or single name w/o domain
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' 		# ipv4
-        r'(?::\d+)?' 								# optional port
-        r'(?:/?|[/?]\S+)$', re.IGNORECASE)			# optional path
+		r'^(?:http|ftp)s?://' 						# http://, https://, ftp://, ftps://
+		r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain
+		r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9]))|' # localhost or single name w/o domain
+		r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' 		# ipv4
+		r'(?::\d+)?' 								# optional port
+		r'(?:/?|[/?]\S+)$', re.IGNORECASE)			# optional path
 
 
 def isURL(url: str) -> bool:

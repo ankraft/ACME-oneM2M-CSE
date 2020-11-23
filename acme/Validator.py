@@ -302,6 +302,8 @@ class Validator(object):
 				Logging.logWarn(err := f'Unknown attribute: {r} in resource: {tpe}')
 				return Result(status=False, rsc=RC.badRequest, dbg=err)
 		for r, p in attributePolicies.items():
+			# print(r)
+			# print(p)
 			if p is None:
 				Logging.logWarn(f'No validation policy found for attribute: {r}')
 				continue
@@ -389,18 +391,22 @@ class Validator(object):
 			if len(v) != 6:
 				Logging.logErr(f'Attribute description for {k} must contain 6 entries')
 				return False
-		self.additionalAttributes.update(attributes)
+		try:
+			self.additionalAttributes.update(attributes)
+		except Exception as e:
+			Logging.logErr(str(e))
+			return False
 		return True
 
 
-	def addAdditionalAttributePolicy(self, tpe: str, policies: dict) -> None:
+	def addAdditionalAttributePolicy(self, tpe: str, policies: dict) -> bool:
 		""" Add a new policy dictionary for a type's attributes. """
 		if (attrs := self.additionalAttributes.get(tpe)) is None:
 			defs = { tpe : policies }
 		else:
 			attrs.update(policies)
 			defs = { tpe : attrs }
-		self.updateAdditionalAttributes(defs)
+		return self.updateAdditionalAttributes(defs)
 
 
 	def getAdditionalAttributesFor(self, tpe: str) -> dict:
@@ -410,7 +416,8 @@ class Validator(object):
 
 
 	def _addAdditionalAttributes(self, tpe: str, attributePolicies: dict) -> dict:
-		if tpe is not None and not tpe.startswith('m2m:'):
+		#if tpe is not None and not tpe.startswith('m2m:'):
+		if tpe is not None and tpe in self.additionalAttributes:
 			if tpe in self.additionalAttributes:
 				newap = attributePolicies.copy()
 				newap.update(self.additionalAttributes.get(tpe))
@@ -494,6 +501,18 @@ class Validator(object):
 			if convert and isinstance(value, str):
 				try:
 					float(value)
+					return Result(status=True)
+				except Exception as e:
+					return Result(status=False, dbg=str(e))
+			return Result(status=False, dbg='unknown type for value')
+
+		if tpe == BT.integer:
+			if isinstance(value, int):
+				return Result(status=True)
+			# try to convert string to number and compare
+			if convert and isinstance(value, str):
+				try:
+					integer(value)
 					return Result(status=True)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))

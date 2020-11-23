@@ -51,10 +51,10 @@ class TestFCNT_FCI(unittest.TestCase):
 	def test_createFCNT(self):
 		self.assertIsNotNone(TestFCNT_FCI.cse)
 		self.assertIsNotNone(TestFCNT_FCI.ae)
-		jsn = 	{ 'hd:tempe' : { 
+		jsn = 	{ 'cod:tempe' : { 
 					'rn'	: fcntRN,
 					'cnd' 	: CND, 
-					'curT0'	: 23.0,
+					'curTe'	: 23.0,
 					'unit'	: 1,
 					'minVe'	: -100.0,
 					'maxVe' : 100.0,
@@ -69,47 +69,47 @@ class TestFCNT_FCI(unittest.TestCase):
 	def test_attributesFCNT(self):
 		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
-		self.assertEqual(findXPath(r, 'hd:tempe/ty'), T.FCNT)
-		self.assertEqual(findXPath(r, 'hd:tempe/pi'), findXPath(TestFCNT_FCI.ae,'m2m:ae/ri'))
-		self.assertEqual(findXPath(r, 'hd:tempe/rn'), fcntRN)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/ct'))
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/lt'))
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/et'))
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/st'))
-		self.assertEqual(findXPath(r, 'hd:tempe/cr'), TestFCNT_FCI.originator)
-		self.assertEqual(findXPath(r, 'hd:tempe/cnd'), CND)
-		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 23.0)
-		self.assertIsNone(findXPath(r, 'hd:tempe/tarTe'))
-		self.assertEqual(findXPath(r, 'hd:tempe/unit'), 1)
-		self.assertEqual(findXPath(r, 'hd:tempe/minVe'), -100.0)
-		self.assertEqual(findXPath(r, 'hd:tempe/maxVe'), 100.0)
-		self.assertEqual(findXPath(r, 'hd:tempe/steVe'), 0.5)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/st'))
-		self.assertEqual(findXPath(r, 'hd:tempe/st'), 0)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/mni'))
-		self.assertEqual(findXPath(r, 'hd:tempe/mni'), 10)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/cni'))
-		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 1)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/cbs'))
-		self.assertGreater(findXPath(r, 'hd:tempe/cbs'), 0)
+		self.assertEqual(findXPath(r, 'cod:tempe/ty'), T.FCNT)
+		self.assertEqual(findXPath(r, 'cod:tempe/pi'), findXPath(TestFCNT_FCI.ae,'m2m:ae/ri'))
+		self.assertEqual(findXPath(r, 'cod:tempe/rn'), fcntRN)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/ct'))
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/lt'))
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/et'))
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/st'))
+		self.assertEqual(findXPath(r, 'cod:tempe/cr'), TestFCNT_FCI.originator)
+		self.assertEqual(findXPath(r, 'cod:tempe/cnd'), CND)
+		self.assertEqual(findXPath(r, 'cod:tempe/curTe'), 23.0)
+		self.assertIsNone(findXPath(r, 'cod:tempe/tarTe'))
+		self.assertEqual(findXPath(r, 'cod:tempe/unit'), 1)
+		self.assertEqual(findXPath(r, 'cod:tempe/minVe'), -100.0)
+		self.assertEqual(findXPath(r, 'cod:tempe/maxVe'), 100.0)
+		self.assertEqual(findXPath(r, 'cod:tempe/steVe'), 0.5)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/st'))
+		self.assertEqual(findXPath(r, 'cod:tempe/st'), 0)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/mni'))
+		self.assertEqual(findXPath(r, 'cod:tempe/mni'), 10)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/cni'))
+		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 1)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/cbs'))
+		self.assertGreater(findXPath(r, 'cod:tempe/cbs'), 0)
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNT(self):
-		jsn = 	{ 'hd:tempe' : {
+		jsn = 	{ 'cod:tempe' : {
 					'tarTe':   5.0,
-					'curT0'	: 17.0,
+					'curTe'	: 17.0,
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, jsn)
 		self.assertEqual(rsc, RC.updated)
 		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)		# retrieve fcnt again
 		self.assertEqual(rsc, RC.OK)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/tarTe'))
-		self.assertIsInstance(findXPath(r, 'hd:tempe/tarTe'), float)
-		self.assertEqual(findXPath(r, 'hd:tempe/tarTe'), 5.0)
-		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 17.0)
-		self.assertEqual(findXPath(r, 'hd:tempe/st'), 1)
-		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 2)
-		self.assertGreater(findXPath(r, 'hd:tempe/cbs'), 0)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/tarTe'))
+		self.assertIsInstance(findXPath(r, 'cod:tempe/tarTe'), float)
+		self.assertEqual(findXPath(r, 'cod:tempe/tarTe'), 5.0)
+		self.assertEqual(findXPath(r, 'cod:tempe/curTe'), 17.0)
+		self.assertEqual(findXPath(r, 'cod:tempe/st'), 1)
+		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 2)
+		self.assertGreater(findXPath(r, 'cod:tempe/cbs'), 0)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -117,28 +117,28 @@ class TestFCNT_FCI(unittest.TestCase):
 		r, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/curT0'))
-		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 17.0)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/curTe'))
+		self.assertEqual(findXPath(r, 'cod:tempe/curTe'), 17.0)
 
 		r, rsc = RETRIEVE(f'{fcntURL}/ol', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/curT0'))
-		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 23.0)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/curTe'))
+		self.assertEqual(findXPath(r, 'cod:tempe/curTe'), 23.0)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNTMni(self):
-		jsn = 	{ 'hd:tempe' : {
+		jsn = 	{ 'cod:tempe' : {
 					'mni':   1,
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, jsn)
 		self.assertEqual(rsc, RC.updated)
 		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)		# retrieve fcnt again
 		self.assertEqual(rsc, RC.OK)
-		self.assertEqual(findXPath(r, 'hd:tempe/mni'), 1)
-		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 1)
-		self.assertEqual(findXPath(r, 'hd:tempe/st'), 2)
+		self.assertEqual(findXPath(r, 'cod:tempe/mni'), 1)
+		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 1)
+		self.assertEqual(findXPath(r, 'cod:tempe/st'), 2)
 
 		rla, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
@@ -149,7 +149,7 @@ class TestFCNT_FCI(unittest.TestCase):
 		self.assertIsNotNone(r)
 
 		# al == ol ?
-		self.assertEqual(findXPath(rla, 'hd:tempe/ri'), findXPath(rol, 'hd:tempe/ri'))
+		self.assertEqual(findXPath(rla, 'cod:tempe/ri'), findXPath(rol, 'cod:tempe/ri'))
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

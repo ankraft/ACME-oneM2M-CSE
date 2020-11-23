@@ -1,0 +1,14 @@
+// Created by SDTTool
+// oneM2M Release: 4.5.0
+// Domain:         agd
+[
+    // DeviceClass: deviceCowActivityMonitor
+    {
+        "type"  : "agd:dCAMr",
+        "lname" : "deviceCowActivityMonitor",
+        "attrs" : [
+            { "sname" : "__NONE__", "type"  : "void" }
+        ]
+    }
+
+]

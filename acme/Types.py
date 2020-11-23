@@ -242,6 +242,7 @@ class BasicType(IntEnum):
 	boolean			= auto()
 	float 			= auto()
 	geoCoordinates	= auto()
+	integer			= auto()
 
 
 class Cardinality(IntEnum):

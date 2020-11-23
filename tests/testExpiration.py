@@ -220,33 +220,33 @@ class TestExpiration(unittest.TestCase):
 	def test_expireFCNTViaMIA(self):
 		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
-		jsn = 	{ 'hd:tempe' : { 
+		jsn = 	{ 'cod:tempe' : { 
 					'rn'	: fcntRN,
 					'cnd' 	: CND,
 					'mia'	: expirationCheckDelay,
-					'curT0'	: 23.0
+					'curTe'	: 23.0
 				}}
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.FCNT, jsn)
 		self.assertEqual(rsc, RC.created)
-		self.assertEqual(findXPath(r, 'hd:tempe/mia'), expirationCheckDelay)
-		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 1)
-		self.assertGreater(findXPath(r, 'hd:tempe/cbs'), 0)	
+		self.assertEqual(findXPath(r, 'cod:tempe/mia'), expirationCheckDelay)
+		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 1)
+		self.assertGreater(findXPath(r, 'cod:tempe/cbs'), 0)	
 
-		jsn = 	{ 'hd:tempe' : {
+		jsn = 	{ 'cod:tempe' : {
 					'tarTe':	5.0
 				}}
 		for _ in range(0, 5):
 			r, rsc = UPDATE(fcntURL, TestExpiration.originator, jsn)
 			self.assertEqual(rsc, RC.updated)
-		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 6)
-		self.assertGreater(findXPath(r, 'hd:tempe/cbs'), 0)	
+		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 6)
+		self.assertGreater(findXPath(r, 'cod:tempe/cbs'), 0)	
 
 		time.sleep(expirationSleep)	# give the server a moment to expire the CIN's
 
 		r, rsc = RETRIEVE(fcntURL, TestExpiration.originator)
 		self.assertEqual(rsc, RC.OK)
-		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 0)	# no children anymore
-		self.assertEqual(findXPath(r, 'hd:tempe/cbs'), 0)	
+		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 0)	# no children anymore
+		self.assertEqual(findXPath(r, 'cod:tempe/cbs'), 0)	
 
 		r, rsc = DELETE(fcntURL, TestExpiration.originator)
 		self.assertEqual(rsc, RC.deleted)

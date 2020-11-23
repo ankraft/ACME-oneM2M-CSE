@@ -51,10 +51,10 @@ class TestFCNT(unittest.TestCase):
 	def test_createFCNT(self):
 		self.assertIsNotNone(TestFCNT.cse)
 		self.assertIsNotNone(TestFCNT.ae)
-		jsn = 	{ 'hd:tempe' : { 
+		jsn = 	{ 'cod:tempe' : { 
 					'rn'	: fcntRN,
 					'cnd' 	: CND, 
-					'curT0'	: 23.0,
+					'curTe'	: 23.0,
 					'unit'	: 1,
 					'minVe'	: -100.0,
 					'maxVe' : 100.0,
@@ -80,44 +80,44 @@ class TestFCNT(unittest.TestCase):
 	def test_attributesFCNT(self):
 		r, rsc = RETRIEVE(fcntURL, TestFCNT.originator)
 		self.assertEqual(rsc, RC.OK)
-		self.assertEqual(findXPath(r, 'hd:tempe/ty'), T.FCNT)
-		self.assertEqual(findXPath(r, 'hd:tempe/pi'), findXPath(TestFCNT.ae,'m2m:ae/ri'))
-		self.assertEqual(findXPath(r, 'hd:tempe/rn'), fcntRN)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/ct'))
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/lt'))
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/et'))
-		self.assertEqual(findXPath(r, 'hd:tempe/cr'), TestFCNT.originator)
-		self.assertEqual(findXPath(r, 'hd:tempe/cnd'), CND)
-		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 23.0)
-		self.assertIsNone(findXPath(r, 'hd:tempe/tarTe'))
-		self.assertEqual(findXPath(r, 'hd:tempe/unit'), 1)
-		self.assertEqual(findXPath(r, 'hd:tempe/minVe'), -100.0)
-		self.assertEqual(findXPath(r, 'hd:tempe/maxVe'), 100.0)
-		self.assertEqual(findXPath(r, 'hd:tempe/steVe'), 0.5)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/st'))
-		self.assertEqual(findXPath(r, 'hd:tempe/st'), 0)
+		self.assertEqual(findXPath(r, 'cod:tempe/ty'), T.FCNT)
+		self.assertEqual(findXPath(r, 'cod:tempe/pi'), findXPath(TestFCNT.ae,'m2m:ae/ri'))
+		self.assertEqual(findXPath(r, 'cod:tempe/rn'), fcntRN)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/ct'))
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/lt'))
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/et'))
+		self.assertEqual(findXPath(r, 'cod:tempe/cr'), TestFCNT.originator)
+		self.assertEqual(findXPath(r, 'cod:tempe/cnd'), CND)
+		self.assertEqual(findXPath(r, 'cod:tempe/curTe'), 23.0)
+		self.assertIsNone(findXPath(r, 'cod:tempe/tarTe'))
+		self.assertEqual(findXPath(r, 'cod:tempe/unit'), 1)
+		self.assertEqual(findXPath(r, 'cod:tempe/minVe'), -100.0)
+		self.assertEqual(findXPath(r, 'cod:tempe/maxVe'), 100.0)
+		self.assertEqual(findXPath(r, 'cod:tempe/steVe'), 0.5)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/st'))
+		self.assertEqual(findXPath(r, 'cod:tempe/st'), 0)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNT(self):
-		jsn = 	{ 'hd:tempe' : {
+		jsn = 	{ 'cod:tempe' : {
 					'tarTe':	5.0
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT.originator, jsn)
 		self.assertEqual(rsc, RC.updated)
 		r, rsc = RETRIEVE(fcntURL, TestFCNT.originator)		# retrieve fcnt again
 		self.assertEqual(rsc, RC.OK)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/tarTe'))
-		self.assertIsInstance(findXPath(r, 'hd:tempe/tarTe'), float)
-		self.assertEqual(findXPath(r, 'hd:tempe/tarTe'), 5.0)
-		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 23.0)
-		self.assertEqual(findXPath(r, 'hd:tempe/st'), 1)
-		self.assertGreater(findXPath(r, 'hd:tempe/lt'), findXPath(r, 'hd:tempe/ct'))
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/tarTe'))
+		self.assertIsInstance(findXPath(r, 'cod:tempe/tarTe'), float)
+		self.assertEqual(findXPath(r, 'cod:tempe/tarTe'), 5.0)
+		self.assertEqual(findXPath(r, 'cod:tempe/curTe'), 23.0)
+		self.assertEqual(findXPath(r, 'cod:tempe/st'), 1)
+		self.assertGreater(findXPath(r, 'cod:tempe/lt'), findXPath(r, 'cod:tempe/ct'))
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNTwithCnd(self):
-		jsn = 	{ 'hd:tempe' : {
+		jsn = 	{ 'cod:tempe' : {
 					'cnd' : CND,
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT.originator, jsn)
@@ -126,7 +126,7 @@ class TestFCNT(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNTwithWrongType(self):
-		jsn = 	{ 'hd:tempe' : {
+		jsn = 	{ 'cod:tempe' : {
 					'tarTe':	'5.0'
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT.originator, jsn)
@@ -134,7 +134,7 @@ class TestFCNT(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNTwithUnkownAttribute(self):
-		jsn = 	{ 'hd:tempe' : {
+		jsn = 	{ 'cod:tempe' : {
 					'wrong':	'aValue'
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT.originator, jsn)
@@ -143,7 +143,7 @@ class TestFCNT(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createFCNTUnknown(self):
-		jsn = 	{ 'hd:unknown' : { 
+		jsn = 	{ 'cod:unknown' : { 
 					'rn'	: 'unknown',
 					'cnd' 	: 'unknown', 
 					'attr'	: 'aValuealue',
@@ -169,7 +169,7 @@ class TestFCNT(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createFCNTUnderFCNT(self):
-		jsn = 	{ 'hd:tempe' : { 
+		jsn = 	{ 'cod:tempe' : { 
 					'cnd' 	: CND, 
 					'rn' : fcntRN,
 				}}
