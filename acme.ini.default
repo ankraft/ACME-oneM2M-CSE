@@ -31,7 +31,7 @@ maxExpirationDelta=157680000
 # Admin originator for the CSE. Default: CAdmin
 originator=CAdmin
 # Enable internal applications.
-# See also individual application configuratins in the [app. ...] sections.
+# See also individual application configurations in the [app. ...] sections.
 # Default: True
 enableApplications=true
 # Delay after the CSE startup to run internal applications in seconds. Default: 5 seconds
