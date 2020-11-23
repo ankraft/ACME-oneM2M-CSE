@@ -512,7 +512,7 @@ class Validator(object):
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
-					integer(value)
+					int(value)
 					return Result(status=True)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
