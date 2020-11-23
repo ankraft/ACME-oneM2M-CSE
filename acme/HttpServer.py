@@ -296,7 +296,7 @@ class HttpServer(object):
 			Logging.logDebug(f'Sending request: {method.__name__.upper()} {url}')
 			Logging.logDebug(f'Request ==>:\n{str(data) if data is not None else ""}\n')
 			r = method(url, data=data, headers=hds, verify=self.verifyCertificate)
-			Logging.logDebug(f'Response <== ({str(r.status_code)}):\n{str(r.content.decode("utf-8"))}')
+			Logging.logDebug(f'Response <== ({str(r.status_code)}):\n{str(r.headers)}\n{str(r.content.decode("utf-8"))}')
 		except Exception as e:
 			Logging.logWarn(f'Failed to send request: {str(e)}')
 			return Result(rsc=RC.targetNotReachable, dbg='target not reachable')
