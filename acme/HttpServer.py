@@ -8,7 +8,7 @@
 #	This manager is the main run-loop for the CSE (when using http).
 #
 
-import json, requests, logging, os, sys, traceback
+import json, requests, logging, os, sys, traceback, urllib3
 from typing import Any, Callable, List, Tuple, Union
 import flask
 from flask import Flask, Request, make_response, request
@@ -90,9 +90,11 @@ class HttpServer(object):
 			self.mappings = dict(mappings)
 
 
-		# Disable most logs from requests library 
+		# Disable most logs from requests and urllib3 library 
 		logging.getLogger("requests").setLevel(logging.WARNING)
 		logging.getLogger("urllib3").setLevel(logging.WARNING)
+		if not self.verifyCertificate:	# only when we also verify  certificates
+			urllib3.disable_warnings()
 
 		# Keep some values for optimization
 		self.csern	= Configuration.get('cse.rn') 
