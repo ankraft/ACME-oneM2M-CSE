@@ -7,7 +7,7 @@
 #	Configuration & helper functions for unit tests
 #
 
-import requests, random, sys, json, re, time, datetime
+import requests, random, sys, json, re, time, datetime, ssl
 from typing import Any, Callable, Union
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -31,8 +31,8 @@ REMOTEORIGINATOR	= 'CAdmin'
 
 
 NOTIFICATIONPORT 	= 9990
-NOTIFICATIONSERVER	= f'http://localhost:{NOTIFICATIONPORT}' 
-NOTIFICATIONSERVERW	= 'http://localhost:6666'
+NOTIFICATIONSERVER	= f'{PROTOCOL}://localhost:{NOTIFICATIONPORT}' 
+NOTIFICATIONSERVERW	= f'{PROTOCOL}://localhost:6666'
 
 CONFIGURL			= f'{SERVER}{ROOTPATH}__config__'
 
@@ -262,7 +262,6 @@ if not verifyCertificate:
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		
 	def do_POST(self):
-
 		# Construct return header
 		# Always acknowledge the verification requests
 		self.send_response(200)
@@ -287,6 +286,12 @@ keepNotificationServerRunning = True
 def runNotificationServer():
 	global keepNotificationServerRunning
 	httpd = HTTPServer(('', NOTIFICATIONPORT), SimpleHTTPRequestHandler)
+	if PROTOCOL == 'https':
+		# init ssl socket
+		context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)					# Create a SSL Context
+		context.load_cert_chain(certfile='../certs/acme_cert.pem', keyfile='../certs/acme_key.pem')	# Load the certificate and private key
+		httpd.socket = context.wrap_socket(httpd.socket, server_side=True)	# wrap the original http server socket as an SSL/TLS socket
+
 	keepNotificationServerRunning = True
 	while keepNotificationServerRunning:
 		httpd.handle_request()
@@ -301,7 +306,7 @@ def startNotificationServer():
 def stopNotificationServer():
 	global keepNotificationServerRunning
 	keepNotificationServerRunning = False
-	requests.post(NOTIFICATIONSERVER)	# send empty/termination request 
+	requests.post(NOTIFICATIONSERVER, verify=verifyCertificate)	# send empty/termination request 
 
 lastNotification = None
 lastNotificationHeaders = {}

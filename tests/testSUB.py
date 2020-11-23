@@ -34,7 +34,7 @@ class TestSUB(unittest.TestCase):
 		# look for notification server
 		hasNotificationServer = False
 		try:
-			r = requests.post(NOTIFICATIONSERVER, data='{"test": "test"}')
+			r = requests.post(NOTIFICATIONSERVER, data='{"test": "test"}', verify=verifyCertificate)
 			hasNotificationServer = True
 		except Exception as e:
 			pass
