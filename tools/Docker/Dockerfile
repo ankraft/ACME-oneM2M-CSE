@@ -4,6 +4,7 @@ RUN apt-get update && apt-get -y update
 
 RUN pip3 install tinydb
 RUN pip3 install flask
+RUN pip3 install isodate
 RUN pip3 install psutil
 RUN pip3 install requests
 RUN pip3 install rich
