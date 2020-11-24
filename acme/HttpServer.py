@@ -30,7 +30,8 @@ class HttpServer(object):
 
 		# Initialize the http server
 		# Meaning defaults are automatically provided.
-		self.flaskApp			= Flask(Configuration.get('cse.csi'))
+		self.csi 				= Configuration.get('cse.csi')
+		self.flaskApp			= Flask(self.csi)
 		self.cseri 				= Configuration.get('cse.ri')
 		self.cseOriginator		= Configuration.get('cse.originator')
 		self.rootPath			= Configuration.get('http.root')
@@ -144,7 +145,7 @@ class HttpServer(object):
 		Logging.logDebug(f'Headers: \n{str(request.headers)}')
 		CSE.event.httpRetrieve() # type: ignore
 		try:
-			result = Utils.dissectHttpRequest(request, Operation.RETRIEVE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = Utils.dissectHttpRequest(request, Operation.RETRIEVE, Utils.retrieveIDFromPath(path, self.csern, self.csi))
 			if result.status:
 				result = CSE.request.retrieveRequest(result.request)
 		except Exception as e:
@@ -159,7 +160,7 @@ class HttpServer(object):
 		#Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpCreate()	# type: ignore
 		try:
-			result = Utils.dissectHttpRequest(request, Operation.CREATE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = Utils.dissectHttpRequest(request, Operation.CREATE, Utils.retrieveIDFromPath(path, self.csern, self.csi))
 			if result.status:
 				Logging.logDebug(f'Body: \n{result.request.data}')
 				result = CSE.request.createRequest(result.request)
@@ -175,7 +176,7 @@ class HttpServer(object):
 		#Logging.logDebug(f'Body: \n{request.data.decode("utf-8")}')
 		CSE.event.httpUpdate()	# type: ignore
 		try:
-			result = Utils.dissectHttpRequest(request, Operation.UPDATE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = Utils.dissectHttpRequest(request, Operation.UPDATE, Utils.retrieveIDFromPath(path, self.csern, self.csi))
 			if result.status:
 				Logging.logDebug(f'Body: \n{result.request.data}')
 				result = CSE.request.updateRequest(result.request)
@@ -190,7 +191,7 @@ class HttpServer(object):
 		Logging.logDebug(f'Headers: \n{str(request.headers)}')
 		CSE.event.httpDelete()	# type: ignore
 		try:
-			result = Utils.dissectHttpRequest(request, Operation.DELETE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
+			result = Utils.dissectHttpRequest(request, Operation.DELETE, Utils.retrieveIDFromPath(path, self.csern, self.csi))
 			if result.status:
 				result = CSE.request.deleteRequest(result.request)
 		except Exception as e:
@@ -296,9 +297,9 @@ class HttpServer(object):
 
 		try:
 			Logging.logDebug(f'Sending request: {method.__name__.upper()} {url}')
-			Logging.logDebug(f'Request ==>:\n{str(data) if data is not None else ""}\n')
+			Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: {str(data) if data is not None else ""}\n')
 			r = method(url, data=data, headers=hds, verify=self.verifyCertificate)
-			Logging.logDebug(f'Response <== ({str(r.status_code)}):\n{str(r.headers)}\n{str(r.content.decode("utf-8"))}')
+			Logging.logDebug(f'Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: {str(r.content.decode("utf-8"))}')
 		except Exception as e:
 			Logging.logWarn(f'Failed to send request: {str(e)}')
 			return Result(rsc=RC.targetNotReachable, dbg='target not reachable')

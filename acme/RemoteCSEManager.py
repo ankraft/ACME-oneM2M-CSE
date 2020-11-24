@@ -359,9 +359,10 @@ class RemoteCSEManager(object):
 
 		# copy local CSE attributes into a new CSR
 		localCSE = Utils.getCSE().resource
-		csr = CSR.CSR(pi=localCSE.ri, rn=remoteCSE.ri)	# remoteCSE.ri as name!
+		csr = CSR.CSR(pi=localCSE.ri, rn=remoteCSE.csi[1:])	# remoteCSE.csi as name!
 		self._copyCSE2CSR(csr, remoteCSE)
-		csr['ri'] = remoteCSE.ri 						# set the ri to the remote CSE's ri
+		#csr['ri'] = remoteCSE.ri 						# set the ri to the remote CSE's ri
+		csr['ri'] = remoteCSE.csi[1:] 						# set the ri to the remote CSE's ri
 		# add local CSR and ACP's
 		if (result := CSE.dispatcher.createResource(csr, localCSE)).resource is None:
 			return result # Problem
@@ -406,7 +407,7 @@ class RemoteCSEManager(object):
 		localCSE = Utils.getCSE().resource
 		csr = CSR.CSR(rn=localCSE.ri) # ri as name!
 		self._copyCSE2CSR(csr, localCSE)
-		csr['ri'] = self.cseCsi							# override ri with the own cseID
+		#csr['ri'] = self.cseCsi							# override ri with the own cseID
 		#csr['cb'] = Utils.getIdFromOriginator(localCSE.csi)	# only the stem
 		for _ in ['ty','ri', 'ct', 'lt']: csr.delAttribute(_, setNone=False)	# remove a couple of attributes
 		#for _ in ['ty','ri', 'ct', 'lt']: del(csr[_])	# remove a couple of attributes
@@ -496,7 +497,7 @@ class RemoteCSEManager(object):
 	def handleTransitRetrieveRequest(self, request:CSERequest) -> Result:
 		""" Forward a RETRIEVE request to a remote CSE """
 		if (url := self._getForwardURL(request.id)) is None:
-			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {id}')
+			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
 		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 			url += '?' + urllib.parse.urlencode(request.originalArgs)
 		Logging.log(f'Forwarding Retrieve/Discovery request to: {url}')
@@ -506,7 +507,7 @@ class RemoteCSEManager(object):
 	def handleTransitCreateRequest(self, request:CSERequest) -> Result:
 		""" Forward a CREATE request to a remote CSE. """
 		if (url := self._getForwardURL(request.id)) is None:
-			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {id}')
+			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
 		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 			url += '?' + urllib.parse.urlencode(request.originalArgs)
 		Logging.log(f'Forwarding Create request to: {url}')
@@ -516,7 +517,7 @@ class RemoteCSEManager(object):
 	def handleTransitUpdateRequest(self, request:CSERequest) -> Result:
 		""" Forward an UPDATE request to a remote CSE. """
 		if (url := self._getForwardURL(request.id)) is None:
-			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {id}')
+			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
 		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 			url += '?' + urllib.parse.urlencode(request.originalArgs)
 		Logging.log(f'Forwarding Update request to: {url}')
@@ -526,7 +527,7 @@ class RemoteCSEManager(object):
 	def handleTransitDeleteRequest(self, request:CSERequest) -> Result:
 		""" Forward a DELETE request to a remote CSE. """
 		if (url := self._getForwardURL(request.id)) is None:
-			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {id}')
+			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
 		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 			url += '?' + urllib.parse.urlencode(request.originalArgs)
 		Logging.log(f'Forwarding Delete request to: {url}')
@@ -561,7 +562,9 @@ class RemoteCSEManager(object):
 
 	def _getForwardURL(self, path:str) -> str:
 		""" Get the new target URL when forwarding. """
+		Logging.logDebug(path)
 		r, pe = self._getCSRFromPath(path)
+		Logging.logDebug(str(r))
 		if r is not None and (poas := r.poa) is not None and len(poas) > 0:
 			return f'{poas[0]}/~/{"/".join(pe[1:])}'	# TODO check all available poas.
 		return None
@@ -603,12 +606,8 @@ class RemoteCSEManager(object):
 			target['nl'] = source.nl
 		if 'poa' in source:
 			target['poa'] = source.poa
-		# if 'rn' in source:
-		# 	target['rn'] = source.rn
 		if 'rr' in source:
 			target['rr'] = source.rr
-		# if 'srt' in source:
-		# 	target['srt'] = source.srt
 		if 'srv' in source:
 			target['srv'] = source.srv
 		if 'st' in source:

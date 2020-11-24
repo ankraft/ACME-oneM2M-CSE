@@ -53,7 +53,7 @@ class RequestManager(object):
 
 		# handle transit requests
 		if CSE.remote.isTransitID(request.id):
-		 	return CSE.remote.handleTransitRetrieveRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
+			return CSE.remote.handleTransitRetrieveRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
 
 		if request.args.rt == ResponseType.blockingRequest:
 			return CSE.dispatcher.processRetrieveRequest(request, request.headers.originator)

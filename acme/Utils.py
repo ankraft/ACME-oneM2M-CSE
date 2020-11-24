@@ -185,7 +185,7 @@ def resourceFromCSI(csi: str) -> Resource.Resource:
 	return res.resource
 
 
-def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
+def retrieveIDFromPath(id: str, csern: str, csecsi: str) -> Tuple[str, str, str]:
 	""" Split a ful path e.g. from a http request into its component and return a local ri .
 		Also handle retargeting paths.
 		The return tupple is (RI, CSI, SRN).
@@ -200,6 +200,7 @@ def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 	if id[0] == '/':
 		id = id[1:]
 	ids = id.split('/')
+	csecsi = csecsi[1:]	# remove leading / from csi for our comparisons here
 
 	if (idsLen := len(ids)) == 0:	# There must be something!
 		return None, None, None
@@ -212,7 +213,7 @@ def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 	if ids[0] == '~' and idsLen > 1:			# SP-Relative
 		# Logging.logDebug("SP-Relative")
 		csi = ids[1]							# extract the csi
-		if csi != cseri:						# Not for this CSE? retargeting
+		if csi != csecsi:						# Not for this CSE? retargeting
 			if vrPresent is not None:			# append last path element again
 				ids.append(vrPresent)
 			return f'/{"/".join(ids[1:])}', csi, srn		# Early return. ri is the remaining (un)structured path
@@ -228,7 +229,7 @@ def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 		# Logging.logDebug("Absolute")
 		spi = ids[1] 	#TODO Check whether it is same SPID, otherwise forward it throw mcc'
 		csi = ids[2]
-		if csi != cseri:
+		if csi != csecsi:
 			if vrPresent is not None:						# append last path element again
 				ids.append(vrPresent)
 			return f'/{"/".join(ids[2:])}', csi, srn	# Not for this CSE? retargeting
@@ -242,7 +243,7 @@ def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 
 	else:										# CSE-Relative
 		# Logging.logDebug("CSE-Relative")
-		if idsLen == 1 and ((ids[0] != csern and ids[0] != '-') or ids[0] == cseri):	# unstructured
+		if idsLen == 1 and ((ids[0] != csern and ids[0] != '-') or ids[0] == csecsi):	# unstructured
 			ri = ids[0]
 		else:									# structured
 			ids[0] = csern if ids[0] == '-' else ids[0]
