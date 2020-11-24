@@ -58,7 +58,8 @@ class TestCSE(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:cb/ct'))
 		self.assertIsNotNone(findXPath(r, 'm2m:cb/cst'))
 		self.assertIsNotNone(findXPath(r, 'm2m:cb/srt'))
-		self.assertIsNotNone(findXPath(r, 'm2m:cb/srv'))
+		self.assertIsNotNone(srv := findXPath(r, 'm2m:cb/srv'))
+		self.assertIsInstance(srv, list)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

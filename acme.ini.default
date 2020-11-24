@@ -48,6 +48,11 @@ enableValidation=true
 sortDiscoveredResources=true
 # Interval to check for expired resources. 0 means "no checking". Default: 60 seconds
 checkExpirationsInterval=60
+# A comma-separated list of supported release versions. This list can contain a single or multiple values.
+# Default: 1,2,2a,3
+supportedReleaseVersions=1,2,2a,3
+# The release version indicator for requests. Default: 3
+releaseVersion=3
 
 
 #

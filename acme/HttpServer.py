@@ -35,6 +35,7 @@ class HttpServer(object):
 		self.cseri 				= Configuration.get('cse.ri')
 		self.cseOriginator		= Configuration.get('cse.originator')
 		self.rootPath			= Configuration.get('http.root')
+		self.serverAddress		= Configuration.get('http.address')
 		self.useTLS 			= Configuration.get('cse.security.useTLS')
 		self.verifyCertificate	= Configuration.get('cse.security.verifyCertificate')
 		self.tlsVersion			= Configuration.get('cse.security.tlsVersion').lower()
@@ -42,6 +43,8 @@ class HttpServer(object):
 		self.caPrivateKeyFile	= Configuration.get('cse.security.caPrivateKeyFile')
 		self.webuiRoot 			= Configuration.get('cse.webui.root')
 		self.webuiDirectory 	= f'{CSE.rootDirectory}/webui'
+		self.hfvRVI				= Configuration.get('cse.releaseVersion')
+
 
 		self.serverID	= f'ACME {C.version}' 	# The server's ID for http response headers
 
@@ -287,7 +290,7 @@ class HttpServer(object):
 				'Content-Type' 	: f'{ct}{hty}', 
 				C.hfOrigin	 	: originator,
 				C.hfRI 			: Utils.uniqueRI(),
-				C.hfRVI			: C.hfvRVI,			# TODO this actually depends in the originator
+				C.hfRVI			: self.hfvRVI,			# TODO this actually depends in the originator
 			   }
 
 		# Add additional headers

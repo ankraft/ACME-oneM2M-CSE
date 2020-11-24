@@ -25,7 +25,6 @@ from helpers.BackgroundWorker import BackgroundWorkerPool
 class RemoteCSEManager(object):
 
 	def __init__(self) -> None:
-		self.csetype 							= Configuration.get('cse.type')
 		self.isConnected 						= False
 		self.remoteAddress						= Configuration.get('cse.registrar.address')
 		self.remoteRoot 						= Configuration.get('cse.registrar.root')
@@ -81,7 +80,7 @@ class RemoteCSEManager(object):
 		BackgroundWorkerPool.stopWorkers('csrMonitor')
 
 		# Remove resources
-		if self.csetype in [ CSEType.ASN, CSEType.MN ]:
+		if CSE.cseType in [ CSEType.ASN, CSEType.MN ]:
 			self._deleteCSRonRegistrarCSE()	# delete remote CSR. Ignore result
 		res = self._retrieveLocalCSRs()	# retrieve local CSR
 		if res.rsc == RC.OK:
@@ -125,7 +124,7 @@ class RemoteCSEManager(object):
 		try:
 
 			# Check the current state of the connection to the "upstream" CSEs
-			if self.csetype in [ CSEType.ASN, CSEType.MN ]:
+			if CSE.cseType in [ CSEType.ASN, CSEType.MN ]:
 
 				# when validateRegistrations == False then only check when there is no connection
 				if not self.checkLiveliness:
@@ -139,7 +138,7 @@ class RemoteCSEManager(object):
 
 			# Check the liveliness of other CSR connections
 			# Only when we validate the registrations
-			if self.csetype in [ CSEType.MN, CSEType.IN ]:
+			if CSE.cseType in [ CSEType.MN, CSEType.IN ]:
 				if  self.checkLiveliness:	
 					Logging.logDebug('Checking connections to registree CSEs')
 					self._checkCSRLiveliness()
@@ -201,7 +200,7 @@ class RemoteCSEManager(object):
 		# 		dcse.append(csi)
 		# localCSE['dcse'] = dcse
 		# localCSE.dbUpdate()	# update in DB
-		if self.csetype in [ CSEType.ASN, CSEType.MN ]:
+		if CSE.cseType in [ CSEType.ASN, CSEType.MN ]:
 			self._updateCSRonRegistrarCSE()
 
 
@@ -211,7 +210,7 @@ class RemoteCSEManager(object):
 		"""
 		if (csi := remoteCSR.csi) is not None and csi in self.descendantCSR:
 			del self.descendantCSR[csi]
-		if self.csetype in [ CSEType.ASN, CSEType.MN ]:
+		if CSE.cseType in [ CSEType.ASN, CSEType.MN ]:
 			self._updateCSRonRegistrarCSE()
 
 
@@ -236,7 +235,7 @@ class RemoteCSEManager(object):
 				self.descendantCSR[dcsecsi] = (None, csi)
 
 
-		if self.csetype in [ CSEType.ASN, CSEType.MN ]:	# update own registrar CSR
+		if CSE.cseType in [ CSEType.ASN, CSEType.MN ]:	# update own registrar CSR
 			self._updateCSRonRegistrarCSE()
 
 

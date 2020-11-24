@@ -76,7 +76,7 @@ class REQ(Resource):
 						'fo'	: request.args.fo,
 					},
 					'drt'	: request.args.drt,
-					'rvi'	: request.headers.releaseVersionIndicator if request.headers.releaseVersionIndicator is not None else C.hfvRVI,
+					'rvi'	: request.headers.releaseVersionIndicator if request.headers.releaseVersionIndicator is not None else Configuration.get('cse.releaseVersion'),
 				},
 				'rs'	: RequestStatus.PENDING,
 				'ors'	: {

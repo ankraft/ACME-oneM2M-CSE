@@ -25,7 +25,6 @@ class Constants(object):
 	stateTagResourceTypes 			= [ T.CNT, T.CIN, T.FCNT, T.FCI, T.REQ ]	# those resource types allow state tags
 	supportedContentSerializations 	= [ 'application/json' ]
 	supportedContentHeaderFormat 	= [ 'application/json', 'application/vnd.onem2m-res+json' ]
-	supportedReleaseVersions 		= [ '3' ]
 
 	# List of announceable resource types
 	announcedResourceTypes 			= [ T.ACPAnnc, T.AEAnnc, T.CNTAnnc, T.CINAnnc, T.GRPAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.CSRAnnc, T.FCNTAnnc, T.FCIAnnc ]
@@ -44,7 +43,6 @@ class Constants(object):
 	hfRI 							= 'X-M2M-RI'
 	hfRVI							= 'X-M2M-RVI'
 	hfvContentType					= 'application/json'
-	hfvRVI 							= '3'
 	hfEC 							= 'X-M2M-EC'
 	hfcEC 							= 'Event Category'
 	hfvECLatest 					= '4'

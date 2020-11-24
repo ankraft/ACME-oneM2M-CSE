@@ -71,6 +71,8 @@ The following macros are supported in addition to those defined in the sections 
 | sortDiscoveredResources  | Enable alphabetical sorting of discovery results.<br/>Default: true                                                                                                                            | cse.sortDiscoveredResources  |
 | checkExpirationsInterval | Interval to check for expired resources. 0 means "no checking".<br/>Default: 60 seconds                                                                                                        | cse.checkExpirationsInterval |
 | flexBlockingPreference   | Indicate the preference for flexBlocking response types. Allowed values: "blocking", "nonblocking".<br />Default: blocking                                                                     | cse.flexBlockingPreference   |
+| supportedReleaseVersions | A comma-separated list of supported release versions. This list can contain a single or multiple values.<br />Default: 1,2,2a,3                                                                | cse.supportedReleaseVersions |
+| releaseVersion           | The release version indicator for requests.<br />Default: 3                                                                                                                                    | cse.releaseVersion           |
 
 
 

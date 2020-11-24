@@ -52,6 +52,9 @@ expirationSleep			= expirationCheckDelay * 3
 requestETDuration 		= f'PT{expirationCheckDelay:d}S'
 requestCheckDelay		= 1	#seconds
 
+# ReleaseVersionIndicator
+RVI						 ='3'
+
 
 ###############################################################################
 
@@ -121,7 +124,7 @@ def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any
 		'Content-Type' 		: f'{ct}{tys}',
 		'X-M2M-Origin'	 	: originator,
 		'X-M2M-RI' 			: (rid := uniqueID()),
-		'X-M2M-RVI'			: '3',			# TODO this actually depends in the originator
+		'X-M2M-RVI'			: RVI,			# TODO this actually depends in the originator
 	}
 	if headers is not None:		# extend with other headers
 		hds.update(headers)
@@ -136,6 +139,9 @@ def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any
 		return None, 5103
 	rc = int(r.headers['X-M2M-RSC']) if 'X-M2M-RSC' in r.headers else r.status_code
 
+	# save last header for later
+	setLastHeaders(r.headers)
+
 	# response doesn't always contain JSON
 	try:
 		result = r.json() if len(r.content) > 0 else None, rc
@@ -146,7 +152,7 @@ def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any
 
 _lastRequstID = None
 
-def setLastRequestID(rid):
+def setLastRequestID(rid:str) -> None:
 	global _lastRequstID
 	_lastRequstID = rid
 
@@ -161,6 +167,16 @@ def connectionPossible(url:str) -> bool:
 		return RETRIEVE(url, 'none', timeout=1.0)[0] is not None
 	except Exception as e:
 		return False
+
+_lastHeaders = None
+
+def setLastHeaders(hds:dict) -> None:
+	global _lastHeaders
+	_lastHeaders = hds
+
+def lastHeaders() -> dict:
+	return _lastHeaders
+
 
 ###############################################################################
 

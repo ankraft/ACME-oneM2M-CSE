@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [WEB] The web UI can now also be used as a stand-alone application to connect to third-party CSEs.
 - [CSE] The filter query for *ty*, *cty*, and *lbl* can now be construct with + operator (e.g. ty=3+4) instead of specifying those filter elements twice.
 - [CSE] Changed the importing of attribute policies to a JSON based format.
+- [CSE] Supported release version are now configurable via the config file.
 
 ## [0.6.0] - 2020-10-26
 

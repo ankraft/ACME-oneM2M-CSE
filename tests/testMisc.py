@@ -31,6 +31,14 @@ class TestMisc(unittest.TestCase):
 	def tearDownClass(cls):
 		pass
 
+	# TODO move to http test
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_checkHTTPRVI(self):
+		_, rsc = RETRIEVE(cseURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIn('X-M2M-RVI', lastHeaders())
+		self.assertEqual(lastHeaders()['X-M2M-RVI'], RVI)
+
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createUnknownResourceType(self):
@@ -52,6 +60,7 @@ class TestMisc(unittest.TestCase):
 
 def run():
 	suite = unittest.TestSuite()
+	suite.addTest(TestMisc('test_checkHTTPRVI'))
 	suite.addTest(TestMisc('test_createUnknownResourceType'))
 	suite.addTest(TestMisc('test_createAlphaResourceType'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)

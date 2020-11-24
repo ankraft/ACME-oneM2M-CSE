@@ -26,6 +26,7 @@ from SecurityManager import SecurityManager
 from Statistics import Statistics
 from Storage import Storage
 from Validator import Validator
+from Types import CSEType
 
 from AEStatistics import AEStatistics
 from CSENode import CSENode
@@ -55,6 +56,9 @@ aeCSENode:CSENode				 	= None
 aeStatistics:AEStatistics 		 	= None 
 appsStarted:bool 					= False
 
+supportedReleaseVersions:list 		= None
+cseType:CSEType						= None
+# TODO move further configurable "constants" here
 
 # TODO make AE registering a bit more generic
 
@@ -68,6 +72,7 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	global registration, remote, request, security, statistics, storage, event
 	global rootDirectory
 	global aeStatistics
+	global supportedReleaseVersions, cseType
 
 	rootDirectory = os.getcwd()					# get the root directory
 	os.environ["FLASK_ENV"] = "development"		# get rid if the warning message from flask. 
@@ -86,6 +91,10 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 
 	if not Configuration.init(args):
 		return
+
+	# Initialize configurable constants
+	supportedReleaseVersions = Configuration.get('cse.supportedReleaseVersions')
+	cseType					 = Configuration.get('cse.type')
 
 	# init Logging
 	Logging.init()

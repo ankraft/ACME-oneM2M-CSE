@@ -446,7 +446,7 @@ def removeCommentsFromJSON(data:str) -> str:
 			char *var2 = "this is // not a comment, either.";
 			url = 'http://not.comment.com';
 	"""
-	def _replacer(match):
+	def _replacer(match):	# type: ignore
 		# if the 2nd group (capturing comments) is not None,
 		# it means we have captured a non-quoted (real) comment string.
 		if match.group(2) is not None:
@@ -587,7 +587,7 @@ def getCSE() -> Result:
 
 
 def getCSETypeAsString() -> str:
-	return Configuration.get('cse.type').name
+	return CSE.cseType.name
 
 	
 # Check whether the target contains a fanoutPoint in between or as the target

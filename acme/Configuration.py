@@ -119,6 +119,8 @@ class Configuration(object):
 				'cse.sortDiscoveredResources'		: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
 				'cse.checkExpirationsInterval'		: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
 				'cse.flexBlockingPreference'		: config.get('cse', 'flexBlockingPreference',			fallback='blocking'),
+				'cse.supportedReleaseVersions'		: config.getlist('cse', 'supportedReleaseVersions',		fallback=['1', '2', '2a', '3']), # type: ignore
+				'cse.releaseVersion'				: config.get('cse', 'releaseVersion',					fallback='3'),
 
 				#
 				#	CSE Security
@@ -360,6 +362,13 @@ class Configuration(object):
 			console.print('[red]Configuration Error: [cse]:flexBlockingPreference must be "blocking" or "nonblocking"')
 			return False
 
+		# Check release version
+		if len(Configuration._configuration['cse.releaseVersion']) == 0:
+			console.print('[red]Configuration Error: [cse]:releaseVersion must not be empty')
+			return False
+		if len(Configuration._configuration['cse.supportedReleaseVersions']) == 0:
+			console.print('[red]Configuration Error: [cse]:supportedReleaseVersions must not be empty')
+			return False
 		# Everything is fine
 		return True
 
