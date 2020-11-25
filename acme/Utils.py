@@ -597,11 +597,11 @@ def requestHeaderField(request: Request, field : str) -> str:
 # Get the request arguments, or meaningful defaults.
 # Only a small subset is supported yet
 # Throws an exception when a wrong type is encountered. This is part of the validation
-def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, str]:
+def getRequestArguments(p_request:Request, p_operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, str]:
 	# copy arguments for greedy attributes checking
-	args = request.p_args.copy()	 	# type: ignore
-	result = RequestArguments(operation=operation, request=request)
-	return processRequestArguments(result, args, operation)
+	args = p_request.args.copy()	 	# type: ignore
+	result = RequestArguments(operation=p_operation, request=p_request)
+	return processRequestArguments(result, args, p_operation)
 
 def processRequestArguments(p_result:RequestArguments, p_args:MultiDict, p_operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, str]:
 	

@@ -95,7 +95,7 @@ class HttpServer(IBindingLayer):
 
 
 		# Disable most logs from requests library 
-		logging.getLogger("requests").setLevel(logging.WARNING)
+		logging.getLogger("requests").setLevel(logging.DEBUG)
 		logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 		# Keep some values for optimization

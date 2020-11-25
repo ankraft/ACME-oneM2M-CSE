@@ -10,7 +10,7 @@
 
 from IBindingLayer import IBindingLayer
 
-import json, requests, logging, os, sys, traceback, queue
+import json, requests, logging, os, sys, traceback, threading
 from typing import Any, Callable, List, Tuple, Union
 from Configuration import Configuration
 from Constants import Constants as C
@@ -27,13 +27,15 @@ import UdpServer
 
 from urllib.parse import urlparse
 
+sync_ack_lock	= threading.Event()
+sync_ack		= dict()
+
 class CoapBinding(IBindingLayer):
 
 	def __init__(self) -> None:
 		self.transport		= UdpServer.UdpServer(Configuration.get('coap.listenIF'), Configuration.get('coap.port'), self.process_incoming_data)
 		self.rootPath		= Configuration.get('coap.root')
 		self.useTLS 		= Configuration.get('cse.security.useTLS')
-		self.serverID		= f'ACME {C.version}' 	# The server's ID for http response headers
 
 		Logging.log('Registering CoAP server root at: {self.rootPath}}')
 		if self.useTLS:
@@ -56,10 +58,11 @@ class CoapBinding(IBindingLayer):
 			# Return
 		# End of run method
 
-	def process_incoming_data(self, data, client_address, p_queue:queue):
-		Logging.log('>>> CoapBinding.process_incoming_data: {str(client_address)}')
+	def process_incoming_data(self, data, client_address):
+		global sync_ack, sync_ack_lock
+		Logging.log(f'>>> CoapBinding.process_incoming_data: {str(client_address)}')
 		coapMessage = CoapDissector.decode(p_data = data, p_source = client_address)
-		Logging.log('CoapBinding.process_incoming_data: coapMessage = %s' % str(coapMessage))
+		Logging.log(f'CoapBinding.process_incoming_data: coapMessage = {str(coapMessage)}')
 		coapResponse = None
 		if isinstance(coapMessage, CoapMessageRequest):
 			if coapMessage.code == CoapDissector.GET.number:
@@ -71,13 +74,19 @@ class CoapBinding(IBindingLayer):
 			elif coapMessage.code == CoapDissector.DELETE.number: 		
 				coapResponse = self.handleDELETE(coapMessage)
 			else:
-				raise Exception('CoapBinding.process_incoming_data: Unknown message type', '%s' % str(coapMessage))
+				raise Exception(f'CoapBinding.process_incoming_data: Unknown message type', f'{str(coapMessage)}')
+			self.transport.sendTo((coapResponse, client_address))
 		elif isinstance(coapMessage, CoapMessageResponse):
-			pass
+			Logging.log(f'>>> CoapBinding.process_incoming_data: {str(client_address)}')
+			if len(sync_ack) != 0:
+				if str(coapMessage.mid) in sync_ack:
+					sync_ack[str(coapMessage.mid)] = coapMessage
+					# Set lock
+					sync_ack_lock.set()
+				else:
+					raise Exception(f'CoapBinding.process_incoming_data: Unbalamnced ACK received for {str(coapMessage.mid)}', f'{str(coapMessage)}')
 		else:
 			pass
-		if not coapResponse is None:
-			p_queue.put((CoapDissector.encode(coapResponse), client_address))
 
 	def handleGET(self, coapMessage:CoapMessageRequest) -> CoapMessageResponse:
 		Utils.renameCurrentThread()
@@ -129,23 +138,119 @@ class CoapBinding(IBindingLayer):
 		return self._prepareResponse(coapMessage, result)
 
 	def sendRetrieveRequest(self, url:str, originator:str) -> Result:
-		Logging.log('>>> CoapBinding.sendRetrieveRequest: %s - %s' % (url, originator))
+		return self.sendRequest(requests.get, url, originator)
 
 	def sendCreateRequest(self, url:str, originator:str, ty:T=None, data:Any=None, headers:dict=None) -> Result:
-		Logging.log('>>> CoapBinding.sendCreateRequest: %s - %s' % (url, originator))
+		return self.sendRequest(requests.post, url, originator, ty, data, headers=headers)
 
 	def sendUpdateRequest(self, url:str, originator:str, data:Any) -> Result:
-		Logging.log('>>> CoapBinding.sendUpdateRequest: %s - %s' % (url, originator))
-		pass
+		return self.sendRequest(requests.put, url, originator, data=data)
 
 	def sendDeleteRequest(self, url:str, originator:str) -> Result:
-		Logging.log('>>> CoapBinding.sendDeleteRequest: %s - %s' % (url, originator))
+		return self.sendRequest(requests.delete, url, originator)
 
-	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:str='application/json', headers:dict=None) -> Result:
-		Logging.log('>>> CoapBinding.sendRequest: %s - %s' % (url, originator))
+	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:str='application/json', headers:dict=None) -> Result:	# TODO Constants
+		global sync_ack, sync_ack_lock
+		Logging.log(f'>>> CoapBinding.sendRequest: url:{url} - from:{originator} - ty:{ty} - headers:{headers}')
+		request = CoapMessageRequest()
+		request.type = 0 # CON
+		request.token = None
+		request.mid = int(Utils.uniqueID()) % 32768 # Only positive signed short value
+
+		o = urlparse(url)
+		request.uri_host = o.hostname
+		request.uri_port = int(o.port)
+		if o.path[0] == '/':
+			request.uri_path = o.path[1:]
+		else:
+			request.uri_path = o.path
+		Logging.log(f'CoapBinding.sendRequest: host:{request.uri_host} - port:{request.uri_port} - path:{request.uri_path}')
+
+		# Set basic headers
+		request.ty = int(ty) if ty is not None else ''
+		Logging.log(f'CoapBinding.sendRequest: ty:{request.ty}')
+		if ct == 'application/xml': # See TS-0008 Table 6.2.2.2-1: CoAP oneM2M Specific Content-Formats
+			request.content_type = 41
+		elif ct == 'application/json':
+			request.content_type = 10001
+		else:
+			request.content_type = None # FIXME: Think about serialization XML, CBOR & TEXT
+		request.accept = request.content_type
+
+		request.originator = originator
+		request.rqi = Utils.uniqueRI()
+		request.rvi = C.hfvRVI
+
+		# Add additional headers
+		if headers is not None:
+			if C.hfcEC in headers:				# Event Category
+				request.ec = headers[C.hfcEC]
+
+		# Set HTTP method
+		s = method.__name__.upper()
+		if s == 'GET':
+			request.code = CoapDissector.GET.number
+		elif s == 'POST':
+			request.code = CoapDissector.POST.number
+		elif s == 'PUT':
+			request.code = CoapDissector.PUT.number
+		elif s == 'DELETE':
+			request.code = CoapDissector.DELETE.number
+		else:
+			raise Exception(f'CoapBinding.sendRequest: Invalid code: {s}')
+		
+		# Set HTTP message
+		request.payload = str(data) if data is not None else None
+
+		# Send CoAP message and wait the response
+		try:
+			data = CoapDissector.encode(request)
+			Logging.logDebug(f'Sending request: method:{s} dest:{url}')
+			Logging.logDebug(f'Request ==>:\n{str(data) if data is not None else ""}\n')
+			self.transport.sendTo((data, (o.hostname, o.port)))
+			sync_ack[str(request.mid)] = None
+			Logging.logDebug(f'CoapBinding.sendRequest: Wait ACK for {str(request.mid)}')
+			while not sync_ack_lock.is_set():
+				sync_ack_lock.wait(1)
+			response = sync_ack[str(request.mid)]
+			sync_ack.pop(str(request.mid))
+			sync_ack_lock.clear()
+			Logging.logDebug(f'CoapBinding.sendRequest: Got ACK for {str(request.mid)} - response:{response}')
+		except Exception as e:
+			Logging.logWarn(f'CoapBinding.sendRequest: Failed to send request: {str(e)}')
+			return Result(rsc=RC.targetNotReachable, dbg='target not reachable')
+		rsc = None
+		if response.code == 69:					# TS-0008 Table 6.2.4-1: Mapping between oneM2M Response Status Code and CoAP Response Code
+			rsc = 2000							# OK
+		elif response.code == 65:				# TS-0008 Table 6.2.4-1: Mapping between oneM2M Response Status Code and CoAP Response Code
+			rsc = 2001							# Created
+		elif response.code == 66:
+			rsc = 2002							# Deleted
+		elif response.code == 67:
+			rsc = 2003							# Valid
+		elif response.code == 68:
+			rsc = 2004							# Changed
+		elif response.code == 128:
+			rsc = 4000							# Bad Request
+		elif response.code == 131:
+			rsc = 4003							# Forbidden
+		elif response.code == 132:
+			rsc = 4004							# Not Found
+		elif response.code == 160:
+			rsc = 5000							# Server Internal Error
+		else:
+			Logging.logErr(f'CoapBinding.sendRequest: {str(response.code)}')
+		Logging.logDebug(f'CoapBinding.sendRequest: rsc={rsc}')
+		rc = RC(rsc if not rsc is None else RC.internalServerError)
+		jsn = None
+		if not response.payload is None:
+			jsn = json.loads(response.payload)
+		Logging.logDebug(f'CoapBinding.sendRequest: jsn={jsn}')
+		return Result(jsn=jsn, rsc=rc)
+	# End of method sendRequest
 
 	def CoapMessage2Result(self, p_coapMessage:CoapMessageRequest, p_operation:Operation, _id:Tuple[str, str, str]) -> Result:
-		cseRequest = CSERequest()		
+		cseRequest = CSERequest()
 		# get the data first. This marks the request as consumed 
 		cseRequest.data = p_coapMessage.payload
 		# handle ID's 
@@ -185,12 +290,12 @@ class CoapBinding(IBindingLayer):
 
 		# content-type
 		value = p_coapMessage.content_type
-		if value == 10000: # See TS-0008 Table 6.2.2.2-1: CoAP oneM2M Specific Content-Formats
+		if value == 41 or value == 10002 or value == 10006 or value == 10008 or value == 10014: # See TS-0008 Table 6.2.2.2-1: CoAP oneM2M Specific Content-Formats
 			rh.contentType = 'application/vnd.onem2m-res+xml'
-		elif value == 10001:
+		elif value == 50 or value == 10001 or value == 10003 or value == 10007 or value == 10000:
 			rh.contentType = 'application/vnd.onem2m-res+json'
 		else:
-			rh.contentType = None
+			rh.contentType = None # FIXME: Think about serialization XML, CBOR & TEXT
 		if rh.contentType is not None:
 			if not rh.contentType.startswith(tuple(C.supportedContentHeaderFormat)):
 				rh.contentType 	= None
@@ -207,62 +312,50 @@ class CoapBinding(IBindingLayer):
 		args = MultiDict([]) # FIXME request.args.copy()	 	# type: ignore
 		return Utils.processRequestArguments(result, args, p_operation)
 
-	def _prepareResponse(self, p_coapMessage:CoapMessageRequest, result:Result) -> CoapMessageResponse:
-		# if isinstance(result.resource, Resource):
-		# 	r = json.dumps(result.resource.asJSON())
-		# elif result.dbg is not None:
-		# 	r = '{ "m2m:dbg" : "%s" }' % result.dbg.replace('"', '\\"')
-		# elif isinstance(result.resource, dict):
-		# 	r = json.dumps(result.resource)
-		# elif isinstance(result.resource, str):
-		# 	r = result.resource
-		# elif isinstance(result.jsn, dict):		# explicit json
-		# 	r = json.dumps(result.jsn)
-		# elif result.resource is None and result.jsn is None:
-		# 	r = ''
-		# else:
-		# 	r = ''
-		# 	result.rsc = RC.notFound
-
+	def _prepareResponse(self, p_coapMessage:CoapMessageRequest, result:Result):
 		response = CoapMessageResponse()
 		response.version = p_coapMessage.version
 		response.type = 2 #FIXME: CoapDissector.ACK
 		response.mid = p_coapMessage.mid
 
 		if result.rsc is not None:
-			response.rsc = '%d' % result.rsc		# set the response status code
-			if result.rsc == 2001:                  # TS-0008 Table 6.2.4-1: Mapping between oneM2M Response Status Code and CoAP Response Code
-				response.code = 65					# Created
+			response.rsc = '%d' % result.rsc				# set the response status code
+			if result.rsc == 2000:                  		# TS-0008 Table 6.2.4-1: Mapping between oneM2M Response Status Code and CoAP Response Code
+				response.code = 69							# OK
+			elif result.rsc == 1000 or result.rsc == 2001:	# TS-0008 Table 6.2.4-1: Mapping between oneM2M Response Status Code and CoAP Response Code
+				response.code = 65							# Created
 			elif result.rsc == 2002:
-				response.code = 66					# Deleted
+				response.code = 66							# Deleted
 			elif result.rsc == 2003:
-				response.code = 67					# Valid
+				response.code = 67							# Valid
 			elif result.rsc == 2004:
-				response.code = 68					# Changed
+				response.code = 68							# Changed
 			elif result.rsc == 2005:
-				response.code = 69					# Content
-			elif result.rsc == 4105:
-				response.code = 400					# Bad Request
-			elif result.rsc == 4107:
-				response.code = 500					# Server Internal Error
+				response.code = 69							# Content
+			elif result.rsc == 4000 or result.rsc == 4001 or result.rsc == 4002 or result.rsc == 4004 or result.rsc == 4110:
+				response.code = 128							# Bad Request
+			elif result.rsc == 4003 or result.rsc == 4101 or result.rsc == 4103 or result.rsc == 4105 or result.rsc == 4106 or result.rsc == 4107 or result.rsc == 4109 or result.rsc == 4109:
+				response.code = 131							# Forbidden
+			elif result.rsc == 4004 or result.rsc == 4008:
+				response.code = 132							# Not Found
 			elif result.rsc == 5000:
-				response.code = 500					# Server Internal Error
+				response.code = 160							# Server Internal Error
 			else:
 				raise Exception('CoapBinding._prepareResponse', '%s' % str(result.rsc))
 		response.rqi = p_coapMessage.rqi			# setheaders['X-M2M-RI']
 		response.rvi = C.hfvRVI
 		response.svi = C.hfvRVI
 		# Content-type
-		if C.hfvContentType.find('xml') != -1:
-			response.content_type = 10000
+		if C.hfvContentType.find('xml') != -1: # FIXME: Think about serialization XML, CBOR & TEXT
+			response.content_type = 41
 		elif C.hfvContentType.find('json') != -1:
 			response.content_type = 10001
-			if result.resource is not None:
-				response.location_path = result.resource.json.get('ri')
-			response.payload = result.toString()
+		if result.resource is not None:
+			response.rqi = result.resource.json.get('ri')
+		response.payload = result.toString()
 
 		Logging.logDebug('<== Response (RSC: %d):\n%s\n' % (result.rsc, str(response.payload)))
-		return response
+		return CoapDissector.encode(response)
 
 	def _prepareException(self, e: Exception) -> Result:
 		Logging.logErr(traceback.format_exc())

@@ -12,7 +12,7 @@ from typing import Any, Callable, Union
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-PROTOCOL			= 'http'	# possible values: http, https
+PROTOCOL			= 'https'	# possible values: http, https
 
 
 SERVER				= f'{PROTOCOL}://localhost:8080'

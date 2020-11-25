@@ -332,9 +332,9 @@ class Configuration(object):
 				console.print('[orange3]Configuration Warning: Changing "coap" to "coaps" in \[server.coap]:address')
 				Configuration._configuration['coap.address'] = Configuration._configuration['coap.address'].replace('coap:', 'coaps:')
 			# registrar might still be accessible via another protocol
-			# if Configuration._configuration['cse.registrar.address'].startswith('http:'):
-			# 	console.print('[orange3]Configuration Warning: Changing "http" to "https" in \[cse.registrar]:address')
-			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('http:', 'https:')
+			if Configuration._configuration['cse.registrar.address'].startswith('http:'):
+				console.print('[orange3]Configuration Warning: Changing "http" to "https" in \[cse.registrar]:address')
+				Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('http:', 'https:')
 		else: 
 			if Configuration._configuration['http.address'].startswith('https:'):
 				console.print('[orange3]Configuration Warning: Changing "https" to "http" in \[server.http]:address')
@@ -343,9 +343,9 @@ class Configuration(object):
 				console.print('[orange3]Configuration Warning: Changing "coaps" to "coap" in \[server.coap]:address')
 				Configuration._configuration['coap.address'] = Configuration._configuration['coap.address'].replace('coaps:', 'coap:')
 			# registrar might still be accessible via another protocol
-			# if Configuration._configuration['cse.registrar.address'].startswith('https:'):
-			# 	console.print('[orange3]Configuration Warning: Changing "https" to "http" in \[cse.registrar]:address')
-			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('https:', 'http:')
+			if Configuration._configuration['cse.registrar.address'].startswith('https:'):
+				console.print('[orange3]Configuration Warning: Changing "https" to "http" in \[cse.registrar]:address')
+				Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('https:', 'http:')
 
 
 		#

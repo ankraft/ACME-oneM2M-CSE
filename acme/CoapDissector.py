@@ -19,7 +19,7 @@ import random
 import string
 
 class CoapMessage(object):
-	def __init__(self):
+	def __init__(self) -> None :
 		"""
 		Data structure that represent a CoAP message
 		"""
@@ -466,8 +466,8 @@ class CoapMessage(object):
 		for e in uri_host:
 			option = CoapOption()
 			option.number = CoapDissector.URI_HOST.number
-			if not  isinstance(e, bytes):
-				e = bytes(e, "utf-8")
+			#if not  isinstance(e, bytes):
+			#	e = bytes(e, "utf-8")
 			option.value = e
 			self.add_option(option)
 
@@ -687,6 +687,41 @@ class CoapMessage(object):
 		self.del_option_by_number(CoapDissector.CONTENT_TYPE.number)
 
 	@property
+	def content(self):
+		"""
+		Get the Content-Type option of a response.
+
+		:return: the Content-Type value or 0 if not specified by the response
+		"""
+		value = 0
+		for option in self.options:
+			if option.number == CoapDissector.CONTENT.number:
+				value = int(option.value)
+				return value
+		return value
+
+	@content.setter
+	def content(self, content):
+		"""
+		Set the Content-Type option of a response.
+
+		:type content: int
+		:param content: the Content-Type
+		"""
+		option = CoapOption()
+		option.number = CoapDissector.CONTENT.number
+		option.value = int(content)
+		self.add_option(option)
+
+	@content.deleter
+	def content(self):
+		"""
+		Delete the Content-Type option of a response.
+		"""
+
+		self.del_option_by_number(CoapDissector.CONTENT.number)
+
+	@property
 	def originator(self):
 		"""
 		Check if the request is an observing request.
@@ -695,7 +730,10 @@ class CoapMessage(object):
 		"""
 		for option in self.options:
 			if option.number == CoapDissector.OPT_ONEM2M_FR.number:
-				return option.value
+				if option.value != str(b''):
+					return option.value
+				else:
+					break
 		return None
 
 	@originator.deleter
@@ -928,6 +966,42 @@ class CoapMessage(object):
 		option.number = CoapDissector.OPT_ONEM2M_RTURI.number
 		option.value = rturi
 		self.del_option_by_number(CoapDissector.OPT_ONEM2M_RTURI.number)
+		self.add_option(option)
+
+	@property
+	def ec(self):
+		"""
+		Check if the request is an obserturing request.
+
+		:return: 0, if the request is an obserturing request
+		"""
+		for option in self.options:
+			if option.number == CoapDissector.OPT_ONEM2M_EC.number:
+				# if option.value is None:
+				#	return 0
+				if option.value is None:
+					return 0
+				return option.value
+		return None
+
+	@ec.deleter
+	def ec(self, ec):
+		"""
+		Delete the Observe option.
+		"""
+		self.del_option_by_number(CoapDissector.OPT_ONEM2M_EC.number)
+
+	@ec.setter
+	def ec(self, ec):
+		"""
+		Add the Observe option.
+
+		:param ob: observe count
+		"""
+		option = CoapOption()
+		option.number = CoapDissector.OPT_ONEM2M_EC.number
+		option.value = ec
+		self.del_option_by_number(CoapDissector.OPT_ONEM2M_EC.number)
 		self.add_option(option)
 
 	@property
@@ -1672,21 +1746,22 @@ class CoapDissector(object):
 	CHANGED = CodeItem(68, 'CHANGED')
 	CONTENT = CodeItem(69, 'CONTENT')
 	CONTINUE = CodeItem(95, 'CONTINUE')
-	BAD_REQUEST = CodeItem(400, 'BAD_REQUEST')
-	FORBIDDEN = CodeItem(403, 'FORBIDDEN')
-	NOT_FOUND = CodeItem(404, 'NOT_FOUND')
-	METHOD_NOT_ALLOWED = CodeItem(405, 'METHOD_NOT_ALLOWED')
-	NOT_ACCEPTABLE = CodeItem(406, 'NOT_ACCEPTABLE')
-	REQUEST_ENTITY_INCOMPLETE = CodeItem(408, 'REQUEST_ENTITY_INCOMPLETE')
-	PRECONDITION_FAILED = CodeItem(412, 'PRECONDITION_FAILED')
-	REQUEST_ENTITY_TOO_LARGE = CodeItem(413, 'REQUEST_ENTITY_TOO_LARGE')
-	UNSUPPORTED_CONTENT_FORMAT = CodeItem(415, 'UNSUPPORTED_CONTENT_FORMAT')
-	INTERNAL_SERVER_ERROR = CodeItem(500, 'INTERNAL_SERVER_ERROR')
-	NOT_IMPLEMENTED = CodeItem(501, 'NOT_IMPLEMENTED')
-	BAD_GATEWAY = CodeItem(502, 'BAD_GATEWAY')
-	SERVICE_UNAVAILABLE = CodeItem(503, 'SERVICE_UNAVAILABLE')
-	GATEWAY_TIMEOUT = CodeItem(504, 'GATEWAY_TIMEOUT')
-	PROXY_NOT_SUPPORTED = CodeItem(505, 'PROXY_NOT_SUPPORTED')
+	BAD_REQUEST = CodeItem(128, 'BAD_REQUEST')
+	FORBIDDEN = CodeItem(131, 'FORBIDDEN')
+	NOT_FOUND = CodeItem(132, 'NOT_FOUND')
+	METHOD_NOT_ALLOWED = CodeItem(133, 'METHOD_NOT_ALLOWED')
+	NOT_ACCEPTABLE = CodeItem(134, 'NOT_ACCEPTABLE')
+	REQUEST_ENTITY_INCOMPLETE = CodeItem(136, 'REQUEST_ENTITY_INCOMPLETE')
+	PRECONDITION_FAILED = CodeItem(140, 'PRECONDITION_FAILED')
+	REQUEST_ENTITY_TOO_LARGE = CodeItem(141, 'REQUEST_ENTITY_TOO_LARGE')
+	UNSUPPORTED_CONTENT_FORMAT = CodeItem(143, 'UNSUPPORTED_CONTENT_FORMAT')
+
+	INTERNAL_SERVER_ERROR = CodeItem(160, 'INTERNAL_SERVER_ERROR')
+	NOT_IMPLEMENTED = CodeItem(161, 'NOT_IMPLEMENTED')
+	BAD_GATEWAY = CodeItem(162, 'BAD_GATEWAY')
+	SERVICE_UNAVAILABLE = CodeItem(163, 'SERVICE_UNAVAILABLE')
+	GATEWAY_TIMEOUT = CodeItem(164, 'GATEWAY_TIMEOUT')
+	PROXY_NOT_SUPPORTED = CodeItem(165, 'PROXY_NOT_SUPPORTED')
 
 	LIST_CODES = {
 		0: EMPTY,
@@ -1702,22 +1777,22 @@ class CoapDissector(object):
 		69: CONTENT,
 		95: CONTINUE,
 
-		400: BAD_REQUEST,
-		403: FORBIDDEN,
-		404: NOT_FOUND,
-		405: METHOD_NOT_ALLOWED,
-		406: NOT_ACCEPTABLE,
-		408: REQUEST_ENTITY_INCOMPLETE,
-		412: PRECONDITION_FAILED,
-		413: REQUEST_ENTITY_TOO_LARGE,
-		415: UNSUPPORTED_CONTENT_FORMAT,
+		128: BAD_REQUEST,
+		131: FORBIDDEN,
+		132: NOT_FOUND,
+		133: METHOD_NOT_ALLOWED,
+		134: NOT_ACCEPTABLE,
+		136: REQUEST_ENTITY_INCOMPLETE,
+		140: PRECONDITION_FAILED,
+		141: REQUEST_ENTITY_TOO_LARGE,
+		143: UNSUPPORTED_CONTENT_FORMAT,
 
-		500: INTERNAL_SERVER_ERROR,
-		501: NOT_IMPLEMENTED,
-		502: BAD_GATEWAY,
-		503: SERVICE_UNAVAILABLE,
-		504: GATEWAY_TIMEOUT,
-		505: PROXY_NOT_SUPPORTED
+		160: INTERNAL_SERVER_ERROR,
+		161: NOT_IMPLEMENTED,
+		162: BAD_GATEWAY,
+		163: SERVICE_UNAVAILABLE,
+		164: GATEWAY_TIMEOUT,
+		165: PROXY_NOT_SUPPORTED
 	}
 
 	@staticmethod

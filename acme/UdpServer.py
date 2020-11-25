@@ -8,7 +8,7 @@
 #	modules and entities of the CSE.
 #
 
-import threading, queue, traceback
+import threading, traceback
 from typing import Callable
 from Configuration import Configuration
 from Logging import Logging
@@ -63,25 +63,22 @@ class UdpServer(object):
 			self.ssl_ctx.listen(0)
 			self.flag = True
 			while self.flag:
-				Logging.logDebug('UdpServer.listen: In loop: ' + str(self.flag))
+				Logging.logDebug(f'UdpServer.listen: In loop: {str(self.flag)}')
 				try:
 					data, client_address = self.ssl_ctx.recvfrom(4096)
-					Logging.logDebug('UdpServer.listen: client_address: ' + str(client_address))
+					Logging.logDebug(f'UdpServer.listen: client_address: {str(client_address)}')
 					if len(client_address) > 2:
 						client_address = (client_address[0], client_address[1])
-					Logging.logDebug('UdpServer.listen: receive_datagram (1) - ' + str(data))
+					Logging.logDebug(f'UdpServer.listen: receive_datagram (1) - {str(data)}')
 					if not data is None:
-						Logging.log('UdpServer.listen: receive_datagram - ' + str(data))
-						q = queue.Queue()
-						t = threading.Thread(target=self.received_data_callback, args=(data, client_address, q))
+						Logging.log(f'UdpServer.listen: receive_datagram - - {str(data)}')
+						t = threading.Thread(target=self.received_data_callback, args=(data, client_address))
 						t.setDaemon(True)
 						t.start()
-						response = q.get()
-						self.ssl_ctx.sendto(response)
 				except socket.timeout:
 					continue
 				except Exception as e:
-					Logging.logWarn('UdpServer.listen (secure): %s' % str(e))
+					Logging.logWarn(f'UdpServer.listen (secure): {str(e)}')
 					continue
 				# End of 'while' statement
 		else:
@@ -92,17 +89,14 @@ class UdpServer(object):
 					data, client_address = self.listen_socket.recvfrom(4096)
 					if len(client_address) > 2:
 						client_address = (client_address[0], client_address[1])
-					Logging.log('UdpServer.listen: receive_datagram - ' + str(data))
-					q = queue.Queue()
-					t = threading.Thread(target=self.received_data_callback, args=(data, client_address, q))
+					Logging.log(f'UdpServer.listen: receive_datagram - {str(data)}')
+					t = threading.Thread(target=self.received_data_callback, args=(data, client_address))
 					t.setDaemon(True)
 					t.start()
-					response = q.get()
-					self.sendTo(response)
 				except socket.timeout:
 					continue
 				except Exception as e:
-					Logging.logWarn('UdpServer.listen: %s' % str(e))
+					Logging.logWarn(f'UdpServer.listen: {str(e)}')
 					break
 				# End of 'while' statement
 
@@ -157,7 +151,8 @@ class UdpServer(object):
 	def close(self):
 		self.flag = False
 		if not self.listen_socket is None:
-			self.ssl_ctx.unwrap()
+			if not self.ssl_ctx is None:
+				self.ssl_ctx.unwrap()
 			self.listen_socket.close()
 			self.ssl_ctx = None
 			self.listen_socket = None
@@ -166,14 +161,14 @@ class UdpServer(object):
 			self.socket = None
 
 	def sendTo(self, p_datagram):
-		Logging.logDebug('==> UdpServer.sendTo: /%s' % str(p_datagram[1]))
+		Logging.logDebug(f'==> UdpServer.sendTo: /{str(p_datagram[0])} - {str(p_datagram[1])}')
 		try:
 			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
 			if self.useTLS == True:
 				sock = wrap_client(sock, cert_reqs=ssl.CERT_REQUIRED, keyfile=self.privateKeyFile, certfile=self.certificateFile, ca_certs=self.caCertificateFile, do_handshake_on_connect=True, ssl_version=self.ssl_version)
 			sock.sendto(p_datagram[0], p_datagram[1])
 		except Exception as e:
-			Logging.logWarn('UdpServer.sendTo: %s' % str(e))
+			Logging.logWarn(f'UdpServer.sendTo: {str(e)}')
 		finally:
 			sock.close()
 

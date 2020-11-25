@@ -66,7 +66,7 @@ class RemoteCSEManager(object):
 	# Start the monitor in a thread. 
 	def start(self) -> None:
 		if not Configuration.get('cse.enableRemoteCSE'):
-			return;
+			return
 		Logging.log('Starting remote CSE connection monitor')
 		BackgroundWorkerPool.newWorker(self.checkInterval, self.connectionMonitorWorker, 'csrMonitor').start()
 
@@ -74,7 +74,7 @@ class RemoteCSEManager(object):
 	# Stop the monitor. Also delete the CSR resources on both sides
 	def stop(self) -> None:
 		if not Configuration.get('cse.enableRemoteCSE'):
-			return;
+			return
 		Logging.log('Stopping remote CSE connection monitor')
 
 		# Stop the worker
