@@ -210,6 +210,8 @@ class ACMERichLogHandler(RichHandler):
 			r"(?P<response>Response <== [^ :]+[ :]+)",		# Incoming response or request
 			r"(?P<number>\(RSC: [0-9]+\.?[0-9]\))",			# Result code
 			r"(?P<id> [\w/\-_]*/[\w/\-_]+)",				# ID
+			r"(?P<number>\nHeaders: )",
+			r"(?P<number>\nBody: )",
 			# r"(?P<request>CSE started$)",					# CSE startup message
 			# r"(?P<request>CSE shutdown$)",					# CSE shutdown message
 			# r"(?P<start>CSE shutting down$)",				# CSE shutdown message

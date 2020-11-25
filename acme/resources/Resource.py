@@ -173,6 +173,9 @@ class Resource(object):
 		for r in rs:
 			self.childRemoved(r, originator)
 			CSE.dispatcher.deleteResource(r, originator)
+		
+		# Removal of a deleted resource from group(s) us done 
+		# asynchronous in GroupManager, triggered by an event.
 
 
 	# Update this resource with (new) fields.

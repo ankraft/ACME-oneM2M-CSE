@@ -145,7 +145,7 @@ class RegistrationManager(object):
 			originator = Utils.getIdFromOriginator(originator)
 		# elif originator is None or len(originator) == 0:
 		# 	originator = Utils.uniqueAEI('S')
-		Logging.logDebug(f'Registering AE. aei: %{originator}')
+		Logging.logDebug(f'Registering AE. aei: {originator}')
 
 		ae['aei'] = originator					# set the aei to the originator
 		ae['ri'] = Utils.getIdFromOriginator(originator, idOnly=True)		# set the ri of the ae to the aei (TS-0001, 10.2.2.2)
