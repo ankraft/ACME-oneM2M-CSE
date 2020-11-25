@@ -301,7 +301,7 @@ def run():
 	suite.addTest(TestGRP('test_deleteCNTviaFOPT'))
 	suite.addTest(TestGRP('test_deleteGRPByUnknownOriginator'))
 	suite.addTest(TestGRP('test_deleteGRPByAssignedOriginator'))
-	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':

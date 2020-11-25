@@ -171,7 +171,7 @@ def run():
 	suite.addTest(TestCNT_CIN('test_rerieveCNTLa'))
 	suite.addTest(TestCNT_CIN('test_rerieveCNTOl'))
 	suite.addTest(TestCNT_CIN('test_changeCNTMni'))
-	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':

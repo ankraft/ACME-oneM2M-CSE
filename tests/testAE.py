@@ -33,6 +33,7 @@ class TestAE(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
+		pass
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -60,6 +61,18 @@ class TestAE(unittest.TestCase):
 				}}
 		r, rsc = CREATE(aeURL, 'C', T.AE, jsn)
 		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAEAgain(self):
+		jsn = 	{ 'm2m:ae' : {
+					'rn': aeRN, 
+					'api': 'NMyApp1Id',
+				 	'rr': False,
+				 	'srv': [ '3' ]
+				}}
+		r, rsc = CREATE(cseURL, 'C', T.AE, jsn)
+		self.assertEqual(rsc, RC.conflict)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -174,6 +187,7 @@ def run():
 	suite = unittest.TestSuite()
 	suite.addTest(TestAE('test_createAE'))
 	suite.addTest(TestAE('test_createAEUnderAE'))
+	suite.addTest(TestAE('test_createAEAgain'))
 	suite.addTest(TestAE('test_retrieveAE'))
 	suite.addTest(TestAE('test_retrieveAEWithWrongOriginator'))
 	suite.addTest(TestAE('test_attributesAE'))
@@ -182,9 +196,9 @@ def run():
 	suite.addTest(TestAE('test_updateAEPi'))
 	suite.addTest(TestAE('test_updateAEUnknownAttribute'))
 	suite.addTest(TestAE('test_retrieveAEACP'))
-	suite.addTest(TestAE('test_deleteAEByUnknownOriginator'))
-	suite.addTest(TestAE('test_deleteAEByAssignedOriginator'))
-	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	#suite.addTest(TestAE('test_deleteAEByUnknownOriginator'))
+	#suite.addTest(TestAE('test_deleteAEByAssignedOriginator'))
+	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':

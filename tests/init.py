@@ -37,7 +37,8 @@ NOTIFICATIONSERVERW	= f'{PROTOCOL}://localhost:6666'
 CONFIGURL			= f'{SERVER}{ROOTPATH}__config__'
 
 
-testVerbosity 		= 2		# 0, 1, 2
+testVerbosity:int	= 2		# 0, 1, 2
+testFailFast:bool	= False	# Fail a whole test suite immediately or continue
 
 verifyCertificate	= False	# verify the certificate when using https?
 

@@ -84,7 +84,7 @@ def run() -> None:
 	suite = unittest.TestSuite()
 	suite.addTest(TestRemote('test_retrieveLocalCSR'))
 	suite.addTest(TestRemote('test_retrieveRemoteCSR'))
-	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 

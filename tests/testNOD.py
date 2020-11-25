@@ -206,7 +206,7 @@ def run():
 	suite.addTest(TestNOD('test_moveAEToNOD2'))
 	suite.addTest(TestNOD('test_deleteNOD2'))
 	suite.addTest(TestNOD('test_deleteNOD'))
-	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 
