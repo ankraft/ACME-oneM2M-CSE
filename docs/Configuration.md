@@ -141,13 +141,15 @@ The following macros are supported in addition to those defined in the sections 
 <a name="registrar"></a>
 ### [cse.registrar] - Settings for Remote Registrar CSE Access 
 
-| Keyword       | Description                                                                                                                              | Macro Name               |
-|:--------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:-------------------------|
-| address       | URL of the remote CSE.<br/>Default: no default                                                                                           | cse.registrar.address       |
-| root          | Remote CSE root path. Never provide a trailing /.<br/>Default: empty string                                                              | cse.registrar.root          |
-| cseID         | CSE-ID of the remote CSE. A CSE-ID must start with a /.<br/>Default: no default                                                                                        | cse.registrar.csi           |
-| resourceName  | The remote CSE's resource name. <br>Default: no default                                                                                  | cse.registrar.rn                       |
-| checkInterval | Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.<br/>Default: 30 | cse.registrar.checkInterval |
+| Keyword              | Description                                                                                                                              | Macro Name                         |
+|:---------------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------|
+| address              | URL of the remote CSE.<br/>Default: no default                                                                                           | cse.registrar.address              |
+| root                 | Remote CSE root path. Never provide a trailing /.<br/>Default: empty string                                                              | cse.registrar.root                 |
+| cseID                | CSE-ID of the remote CSE. A CSE-ID must start with a /.<br/>Default: no default                                                          | cse.registrar.csi                  |
+| resourceName         | The remote CSE's resource name. <br>Default: no default                                                                                  | cse.registrar.rn                   |
+| checkInterval        | Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.<br/>Default: 30 | cse.registrar.checkInterval        |
+| excludeCSRAttributes | List of resources that are excluded when creating a registrar CSR.<br />Default: empty list                                              | cse.registrar.excludeCSRAttributes |
+
 
 <a name="announcements"></a>
 ### [cse.announcements] - Settings for Resource Announcements 

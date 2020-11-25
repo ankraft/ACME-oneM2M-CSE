@@ -28,15 +28,16 @@ class RemoteCSEManager(object):
 		self.isConnected 						= False
 		self.remoteAddress						= Configuration.get('cse.registrar.address')
 		self.remoteRoot 						= Configuration.get('cse.registrar.root')
-		self.registrarCSI						= Configuration.get('cse.registrar.csi')
-		self.registrarCseRN						= Configuration.get('cse.registrar.rn')
 		self.originator							= Configuration.get('cse.csi')	# Originator is the own CSE-ID
 		self.cseCsi								= Configuration.get('cse.csi')
 		self.cseRI								= Configuration.get('cse.ri')
 		self.checkInterval						= Configuration.get('cse.registrar.checkInterval')
 		self.checkLiveliness					= Configuration.get('cse.registration.checkLiveliness')
+		self.registrarCSI						= Configuration.get('cse.registrar.csi')
+		self.registrarCseRN						= Configuration.get('cse.registrar.rn')
 		self.registrarCSEURL					= f'{self.remoteAddress}{self.remoteRoot}/~{self.registrarCSI}/{self.registrarCseRN}'
 		self.registrarCSRURL					= f'{self.registrarCSEURL}{self.cseCsi}'
+		self.excludeCSRAttributes				= Configuration.get('cse.registrar.excludeCSRAttributes')
 		self.ownRegistrarCSR:Resource			= None 	# The own CSR at the registrar if there is one
 		self.registrarCSE:Resource				= None 	# The registrar CSE if there is one
 		self.descendantCSR:Dict[str, Tuple[Resource, str]]	= {}	# dict of descendantCSR's . csi : (CSR, registeredATcsi)
@@ -589,34 +590,53 @@ class RemoteCSEManager(object):
 
 	def _copyCSE2CSR(self, target:Resource, source:Resource, isUpdate:bool=False) -> None:
 
+		def _copyAttribute(attr:str) -> None:
+			if attr in source and attr not in self.excludeCSRAttributes:
+				target[attr] = source[attr]
 
-
-		if 'csb' in source:
+		if 'csb' in source and 'csb' not in self.excludeCSRAttributes:
 			target['csb'] = self.registrarCSEURL
-		if 'csi' in source:
-			target['csi'] = source.csi
-		if 'cst' in source:
-			target['cst'] = source.cst
-		if 'csz' in source:
-			target['csz'] = source.csz
-		if 'lbl' in source:
-			target['lbl'] = source.lbl
-		if 'nl' in source:
-			target['nl'] = source.nl
-		if 'poa' in source:
-			target['poa'] = source.poa
-		if 'rr' in source:
-			target['rr'] = source.rr
-		if 'srv' in source:
-			target['srv'] = source.srv
-		if 'st' in source:
-			target['st'] = source.st
+		_copyAttribute('csi')
+		_copyAttribute('cst')
+		_copyAttribute('csz')
+		_copyAttribute('lbl')
+		_copyAttribute('nl')
+		_copyAttribute('poa')
+		_copyAttribute('rr')
+		_copyAttribute('srv')
+		_copyAttribute('st')
+		
+		# if 'csi' in source:
+		# 	target['csi'] = source.csi
+		# if 'cst' in source:
+		# 	target['cst'] = source.cst
+		# if 'csz' in source:
+		# 	target['csz'] = source.csz
+		# if 'lbl' in source:
+		# 	target['lbl'] = source.lbl
+		# if 'nl' in source:
+		# 	target['nl'] = source.nl
+		# if 'poa' in source:
+		# 	target['poa'] = source.poa
+		# if 'rr' in source:
+		# 	target['rr'] = source.rr
+		# if 'srv' in source:
+		# 	target['srv'] = source.srv
+		# if 'st' in source:
+		# 	target['st'] = source.st
+		
+		if 'cb' not in self.excludeCSRAttributes:
+			target['cb'] = f'{source.csi}/{source.rn}'
+		if 'dcse' not in self.excludeCSRAttributes:
+			target['dcse'] = list(self.descendantCSR.keys())		# Always do this bc it might be different, even empty for an update
 		
 
-		target['cb'] = f'{source.csi}/{source.rn}'
-		target['dcse'] = list(self.descendantCSR.keys())		# Always do this bc it might be different, even empty for an update
-		target.delAttribute('acpi', setNone = False)	# remove ACPI (don't provide ACPI in updates...a bit)
-
+		# Always remove some attributes
+		for attr in [ 'acpi' ]:
+			if attr in target:
+				target.delAttribute(attr, setNone = False)
+		
+		# Remove attributes in updates
 		if isUpdate:
 			# rm some attributes
 			for attr in [ 'ri', 'rn', 'ct', 'lt', 'ty', 'cst', 'cb', 'csi']:

@@ -144,6 +144,7 @@ class Configuration(object):
 				'cse.registrar.csi'					: config.get('cse.registrar', 'cseID', 					fallback=None),
 				'cse.registrar.rn'					: config.get('cse.registrar', 'resourceName', 			fallback=None),
 				'cse.registrar.checkInterval'		: config.getint('cse.registrar', 'checkInterval', 		fallback=30),		# Seconds
+				'cse.registrar.excludeCSRAttributes': config.getlist('cse.registrar', 'excludeCSRAttributes',fallback=[]),		
 
 				#
 				#	Registrations
