@@ -24,9 +24,9 @@ resourceID=id-in
 resourceName=cse-in
 # Directory of default resources to import. Default: ./init
 resourcesPath=./init
-# ExpirationTime before resources are removed in seconds. Default: 60*60*24*365 = 1 year = 31536000
+# ExpirationTime before resources are removed in seconds. Default: 60*60*24*365 -> 1 year -> 31536000
 expirationDelta=31536000
-# Maximum expirationTime allowed for resources in seconds. Default: 5 years = 157680000 
+# Maximum expirationTime allowed for resources in seconds. Default: 5 years -> 157680000 
 maxExpirationDelta=157680000
 # Admin originator for the CSE. Default: CAdmin
 originator=CAdmin
@@ -184,7 +184,8 @@ resourceName=cse-in
 # Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.
 # Default: 30
 checkInterval=30
-
+# List of resources that are excluded when creating a registrar CSR. Default: empty list
+excludeCSRAttributes=
 
 #
 #	Settings for resource anouncements 

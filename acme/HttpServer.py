@@ -332,7 +332,7 @@ class HttpServer(object):
 		contentType = C.hfvContentType
 
 		# Build and return the response
-		Logging.logDebug(f'<== Response (RSC: {result.rsc:d}):\n{str(content)}\n')
+		Logging.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
 		return Response(response=content, status=statusCode, content_type=contentType, headers=headers)
 
 

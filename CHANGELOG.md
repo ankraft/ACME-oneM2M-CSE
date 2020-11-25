@@ -11,12 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - [CSE] Added *--http-address* and *--network-interface* command line arguments.
+- [CSE] Added configuration to exclude certain attributes in CSR creations and updates.
 
 ### Changed
 - [WEB] The web UI can now also be used as a stand-alone application to connect to third-party CSEs.
 - [CSE] The filter query for *ty*, *cty*, and *lbl* can now be construct with + operator (e.g. ty=3+4) instead of specifying those filter elements twice.
 - [CSE] Changed the importing of attribute policies to a JSON based format.
-- [CSE] Supported release version are now configurable via the config file.
+- [CSE] Supported release version can now be configured via the config file.
+- [TESTS] The behavior whether a failed test skips the remaining tests in a test suite can now be configured.
 
 ## [0.6.0] - 2020-10-26
 
