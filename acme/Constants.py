@@ -20,14 +20,20 @@ class Constants(object):
 	virtualResources 				= [ T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.GRP_FOPT, T.PCH_PCU ]
 	virtualResourcesNames 			= [ 'la', 'ol', 'fopt', 'pcu' ]
 
+	# List of announceable resource types
+	announcedResourceTypes 			= [ T.ACPAnnc, T.AEAnnc, T.CNTAnnc, T.CINAnnc, T.GRPAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.CSRAnnc, T.FCNTAnnc, T.FCIAnnc ]
+
 	# Supported resource types by this CSE
-	supportedResourceTypes 			= [ T.ACP, T.AE, T.CNT, T.CIN, T.CSEBase, T.GRP, T.MGMTOBJ, T.NOD, T.CSR, T.REQ, T.SUB, T.FCNT, T.FCI ]
+	supportedResourceTypes 			= [	# Supported normal resource
+										T.ACP, T.AE, T.CNT, T.CIN, T.CSEBase, T.GRP, T.MGMTOBJ, T.NOD, T.CSR, 
+										T.REQ, T.SUB, T.FCNT, T.FCI
+									  ]
+	supportedResourceTypes			+= announcedResourceTypes	# add announced resource types as well
+
 	stateTagResourceTypes 			= [ T.CNT, T.CIN, T.FCNT, T.FCI, T.REQ ]	# those resource types allow state tags
 	supportedContentSerializations 	= [ 'application/json' ]
 	supportedContentHeaderFormat 	= [ 'application/json', 'application/vnd.onem2m-res+json' ]
 
-	# List of announceable resource types
-	announcedResourceTypes 			= [ T.ACPAnnc, T.AEAnnc, T.CNTAnnc, T.CINAnnc, T.GRPAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.CSRAnnc, T.FCNTAnnc, T.FCIAnnc ]
 
 	# List of resource types for which "creator" is allowed
 	# Also add later: eventConfig, pollingChannel, statsCollect, statsConfig, semanticDescriptor,

@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Supported release version can now be configured via the config file.
 - [TESTS] The behavior whether a failed test skips the remaining tests in a test suite can now be configured.
 
+### Fixed
+- [CSE] CSEBase.srt attribute now also returns the announced attributes.
+
+
 ## [0.6.0] - 2020-10-26
 
 ### Added

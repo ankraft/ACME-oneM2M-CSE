@@ -63,6 +63,15 @@ class TestCSE(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_CSESupportedResourceTypes(self):
+		r, rsc = RETRIEVE(cseURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(srt := findXPath(r, 'm2m:cb/srt'))
+		for t in C.supportedResourceTypes:
+			self.assertIn(t, srt)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCSE(self):
 		_, rsc = DELETE(cseURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.operationNotAllowed)
@@ -82,6 +91,7 @@ def run():
 	suite.addTest(TestCSE('test_retrieveCSE'))
 	suite.addTest(TestCSE('test_retrieveCSEWithWrongOriginator'))
 	suite.addTest(TestCSE('test_attributesCSE'))
+	suite.addTest(TestCSE('test_CSESupportedResourceTypes'))
 	suite.addTest(TestCSE('test_deleteCSE'))
 	suite.addTest(TestCSE('test_updateCSE'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
