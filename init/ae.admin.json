@@ -1,0 +1,14 @@
+{
+    "m2m:ae": {
+        "ty": 2,
+        "ri": "${cse.originator}",
+        "rn": "${cse.originator}",
+        "pi": "${cse.ri}",
+        "api": "${cse.originator}",
+        "aei": "${cse.originator}",
+        "acpi": [
+            "${cse.security.adminACPI}",
+            "${cse.security.defaultACPI}"
+        ]
+    }
+}
