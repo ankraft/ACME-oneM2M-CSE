@@ -9,6 +9,7 @@
 #
 
 import datetime, json, random, string, sys, re, threading, traceback, time
+import cbor2
 from copy import deepcopy
 import isodate
 from typing import Any, List, Tuple, Union, Dict
@@ -623,7 +624,9 @@ def dissectHttpRequest(request:Request, operation:Operation, _id:Tuple[str, str,
 	cseRequest = CSERequest()
 
 	# get the data first. This marks the request as consumed 
-	cseRequest.data = request.get_data(as_text=True)	# alternative: request.data.decode("utf-8")
+	#cseRequest.data = request.get_data(as_text=True)	# alternative: request.data.decode("utf-8")
+	#cseRequest.data = request.data.decode("utf-8")		# alternative: request.get_data(as_text=True)
+	cseRequest.data = request.data
 
 	# handle ID's 
 	cseRequest.id, cseRequest.csi, cseRequest.srn = _id
@@ -645,18 +648,17 @@ def dissectHttpRequest(request:Request, operation:Operation, _id:Tuple[str, str,
 	except Exception as e:
 		return Result(rsc=RC.invalidArguments, request=cseRequest, dbg=f'invalid arguments ({str(e)})', status=False)
 	cseRequest.originalArgs	= deepcopy(request.args)	#type: ignore
+
 	if cseRequest.data is not None and len(cseRequest.data) > 0:
 		try:
-			ct = ContentSerializationType.getType(cseRequest.headers.contentType, default=ContentSerializationType.JSON) # TODO make configurable
-			if ct == ContentSerializationType.JSON:
-				cseRequest.dict = json.loads(removeCommentsFromJSON(cseRequest.data))
-			elif ct == ContentSerializationType.CBOR:
-				cseRequest.dict = cbor2.loads(cseRequest.data)
-			else:
+			ct = ContentSerializationType.getType(cseRequest.headers.contentType, default=CSE.defaultSerialization)
+			if (_d := deserializeData(cseRequest.data, ct)) is None:
 				return Result(rsc=RC.unsupportedMediaType, request=cseRequest, dbg=f'Unsuppored media type for content-type: {cseRequest.headers.contentType}', status=False)
+			cseRequest.dict = _d
 		except Exception as e:
 			Logging.logWarn('Bad request (malformed content?)')
 			return Result(rsc=RC.badRequest, request=cseRequest, dbg=str(e), status=False)
+			
 	return Result(request=cseRequest, status=True)
 
 
@@ -913,10 +915,28 @@ def getRequestHeaders(request: Request) -> Result:
 	# accept
 	rh.accept = request.headers.getlist('accept')
 	if ((l := len(rh.accept)) == 1 and '*/*' in rh.accept) or l == 0:
-		rh.accept = [ ContentSerializationType.JSON.toString() ]	# TODO configurable default
+		rh.accept = [ CSE.defaultSerialization.toHeader() ]
 
 	return Result(data=rh, rsc=RC.OK)
 
+
+def serializeData(data:dict, ct:ContentSerializationType) -> Union[str, bytes]:
+	"""	Serialize a dictionary, depending on the serialization type.
+	"""
+	encoder = json if ct == ContentSerializationType.JSON else cbor2 if ct == ContentSerializationType.CBOR else None
+	if encoder is None:
+		return None
+	return encoder.dumps(data)
+
+
+def deserializeData(data:bytes, ct:ContentSerializationType) -> dict:
+	"""	Deserialize data into a dictionary, depending on the serialization type.
+	"""
+	if ct == ContentSerializationType.JSON:
+		return json.loads(data.decode("utf-8"))
+	elif ct == ContentSerializationType.CBOR:
+		return cbor2.loads(data)
+	return None
 
 #
 #	Threads

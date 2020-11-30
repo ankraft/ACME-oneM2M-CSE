@@ -73,7 +73,7 @@ The following macros are supported in addition to those defined in the sections 
 | flexBlockingPreference   | Indicate the preference for flexBlocking response types. Allowed values: "blocking", "nonblocking".<br />Default: blocking                                                                     | cse.flexBlockingPreference   |
 | supportedReleaseVersions | A comma-separated list of supported release versions. This list can contain a single or multiple values.<br />Default: 1,2,2a,3                                                                | cse.supportedReleaseVersions |
 | releaseVersion           | The release version indicator for requests.<br />Default: 3                                                                                                                                    | cse.releaseVersion           |
-
+| defaultSerialization     | Indicate the serialization format if none was given in a request and cannot be determined otherwise.<br/>Possible values: json, cbor.<br/>Default: json                                        | cse.defaultSerialization     |
 
 
 <a name="security"></a>

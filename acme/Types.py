@@ -10,7 +10,7 @@
 from __future__ import annotations
 import json, cbor2
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import Any, List, Union
 from enum import IntEnum, Enum, auto
 from flask import Request
 
@@ -531,14 +531,29 @@ class ContentSerializationType(IntEnum):
 	CBOR				= auto()
 	UNKNOWN				= auto()
 
-	def toString(self) -> str:
-		if self.value == self.XML:	return 'application/xml'
+	def toHeader(self) -> str:
+		"""	Return the header for a enum value.
+		"""
 		if self.value == self.JSON:	return 'application/json'
 		if self.value == self.CBOR:	return 'application/cbor'
+		if self.value == self.XML:	return 'application/xml'
 		return None
 	
 	@classmethod
+	def to(cls, t:str) -> ContentSerializationType:
+		"""	Return the enum from a string.
+		"""
+		t = t.lower()
+		if t == 'json':	return cls.JSON
+		if t == 'cbor':	return cls.CBOR
+		if t == 'xml':	return cls.XML
+		return cls.UNKNOWN
+
+	
+	@classmethod
 	def getType(cls, hdr:str, default:ContentSerializationType=None) -> ContentSerializationType:
+		"""	Return the enum from a header definition.
+		"""
 		default = cls.UNKNOWN if default is None else default
 		if hdr is None:													return default
 		if hdr.lower().startswith('application/json'):					return cls.JSON
@@ -579,21 +594,27 @@ class Result:
 		"""
 		return Result(rsc=self.rsc, dbg=self.dbg)
 
-	def toString(self, ct:ContentSerializationType=ContentSerializationType.JSON) -> str:
+	def toData(self, ct:ContentSerializationType=ContentSerializationType.JSON) -> Union[str, bytes]:
 		from resources.Resource import Resource
+		from Utils import serializeData
 
-		encoder = json if ct == ContentSerializationType.JSON else cbor2 if ct == ContentSerializationType.CBOR else None
+
+		# encoder = json if ct == ContentSerializationType.JSON else cbor2 if ct == ContentSerializationType.CBOR else None
 
 		if isinstance(self.resource, Resource):
-			r = encoder.dumps(self.resource.asDict())	# TODO check for encoder null
+			r = serializeData(self.resource.asDict(), ct)
+			# r = encoder.dumps(self.resource.asDict())	
 		elif self.dbg is not None:
-			r = encoder.dumps({ 'm2m:dbg' : self.dbg })
+			r = serializeData({ 'm2m:dbg' : self.dbg }, ct)
+			# r = encoder.dumps({ 'm2m:dbg' : self.dbg })
 		elif isinstance(self.resource, dict):
-			r = encoder.dumps(self.resource)
+			r = serializeData(self.resource, ct)
+			# r = encoder.dumps(self.resource)
 		elif isinstance(self.resource, str):
 			r = self.resource
 		elif isinstance(self.dict, dict):		# explicit json or cbor
-			r = encoder.dumps(self.dict)
+			r = serializeData(self.dict, ct)
+			# r = encoder.dumps(self.dict)
 		elif self.resource is None and self.dict is None:
 			r = ''
 		else:
@@ -641,7 +662,7 @@ class CSERequest:
 	headers 					: RequestHeaders 	= None
 	args 						: RequestArguments 	= None
 	originalArgs 				: Any 				= None	# Actually a MultiDict
-	data 						: str 				= None 	# The request original data
+	data 						: bytes 			= None 	# The request original data
 	dict 						: dict 				= None	# The request data as a dictionary
 	id 							: str 				= None 	# target ID
 	srn 						: str 				= None 	# target structured resource name

@@ -53,7 +53,9 @@ checkExpirationsInterval=60
 supportedReleaseVersions=1,2,2a,3
 # The release version indicator for requests. Default: 3
 releaseVersion=3
-
+# Indicate the serialization format if none was given in a request and cannot be determined otherwise.
+# Possible values: json, cbor. Default: json
+defaultSerialization=json
 
 #
 #	Settings for CSE security

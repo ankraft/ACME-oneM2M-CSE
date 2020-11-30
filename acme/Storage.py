@@ -14,7 +14,6 @@ from tinydb.storages import MemoryStorage		# type: ignore
 from tinydb.table import Document
 from tinydb.operations import delete 			# type: ignore
 # TODO remove mypy type checking supressions above as soon as tinydb provides typing stubs
-# from tinydb_smartcache import SmartCacheTable # TODO Not compatible with TinyDB 4 yet
 
 import os, json, re, time
 from typing import List, Callable, Any, Union, cast
@@ -179,6 +178,13 @@ class Storage(object):
 	def searchByTypeFieldValue(self, ty:T, field:str, value:str) -> List[Resource]:
 		"""Search and return all resources of a specific type and a value in a field,
 		and return them in an array."""
+		# def filterFunc(r:dict) -> bool:
+		# 	if 'ty' in r and r['ty'] == ty and field in r:
+		# 		f = r[field]
+		# 		if isinstance(f, (list, dict)):
+		# 			return value in f
+		# 		return value == f
+		# 	return False
 		def filterFunc(r:dict) -> bool:
 			if 'ty' in r and r['ty'] == ty and field in r:
 				f = r[field]
@@ -368,8 +374,6 @@ class TinyDBBinding(object):
 
 	def openDB(self, postfix: str) -> None:
 		# All databases/tables will use the smart query cache
-		# TODO not compatible with TinyDB 4 yet?
-		# TinyDB.table_class = SmartCacheTable 
 		if Configuration.get('db.inMemory'):
 			Logging.log('DB in memory')
 			self.dbResources = TinyDB(storage=MemoryStorage)										# type: ignore
@@ -474,7 +478,7 @@ class TinyDBBinding(object):
 
 	def discoverResources(self, func:Callable) -> List[Document]:
 		with self.lockResources:
-			return self.tabResources.search(Query().test(func))	# type: ignore
+			return self.tabResources.search(func)	# type: ignore
 
 
 	def hasResource(self, ri: str = None, csi: str = None, srn: str = None, ty: int = None) -> bool:

@@ -31,8 +31,8 @@ class Constants(object):
 	supportedResourceTypes			+= announcedResourceTypes	# add announced resource types as well
 
 	stateTagResourceTypes 			= [ T.CNT, T.CIN, T.FCNT, T.FCI, T.REQ ]	# those resource types allow state tags
-	supportedContentSerializations 	= [ CST.JSON.toString(), CST.CBOR.toString() ]
-	supportedContentHeaderFormat 	= [ CST.JSON.toString(), CST.CBOR.toString(),'application/vnd.onem2m-res+json', 'application/vnd.onem2m-res+cbor' ]
+	supportedContentSerializations 	= [ CST.JSON.toHeader(), CST.CBOR.toHeader() ]
+	supportedContentHeaderFormat 	= [ CST.JSON.toHeader(), CST.CBOR.toHeader(),'application/vnd.onem2m-res+json', 'application/vnd.onem2m-res+cbor' ]
 
 
 	# List of resource types for which "creator" is allowed

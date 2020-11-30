@@ -161,7 +161,7 @@ class HttpServer(object):
 			httpRequestResult = Utils.dissectHttpRequest(request, operation, Utils.retrieveIDFromPath(path, self.csern, self.csi))
 			if httpRequestResult.status:
 				if operation in [ Operation.CREATE, Operation.UPDATE ]:
-					Logging.logDebug(f'Body: \n{httpRequestResult.request.data}')
+					Logging.logDebug(f'Body: \n{str(httpRequestResult.request.data)}')
 				responseResult = self._requestHandlers[operation](httpRequestResult.request)
 			else:
 				responseResult = httpRequestResult
@@ -259,30 +259,29 @@ class HttpServer(object):
 	#	Send various types of HTTP requests
 	#
 
-	def sendRetrieveRequest(self, url:str, originator:str) -> Result:
-		return self.sendRequest(requests.get, url, originator)
+	def sendRetrieveRequest(self, url:str, originator:str, ct:ContentSerializationType=None) -> Result:
+		return self.sendRequest(requests.get, url, originator, ct=ct)
 
 
-	def sendCreateRequest(self, url:str, originator:str, ty:T=None, data:Any=None, headers:dict=None) -> Result:
-		return self.sendRequest(requests.post, url, originator, ty, data, headers=headers)
+	def sendCreateRequest(self, url:str, originator:str, ty:T=None, data:Any=None, headers:dict=None, ct:ContentSerializationType=None) -> Result:
+		return self.sendRequest(requests.post, url, originator, ty, data, headers=headers, ct=ct)
 
 
-	def sendUpdateRequest(self, url:str, originator:str, data:Any) -> Result:
-		return self.sendRequest(requests.put, url, originator, data=data)
+	def sendUpdateRequest(self, url:str, originator:str, data:Any, ct:ContentSerializationType=None) -> Result:
+		return self.sendRequest(requests.put, url, originator, data=data, ct=ct)
 
 
-	def sendDeleteRequest(self, url:str, originator:str) -> Result:
-		return self.sendRequest(requests.delete, url, originator)
+	def sendDeleteRequest(self, url:str, originator:str, ct:ContentSerializationType=None) -> Result:
+		return self.sendRequest(requests.delete, url, originator, ct=ct)
 
 
-	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:str=None, headers:dict=None) -> Result:	# TODO Constants
-
-		ct = 'application/json' if ct is None else ct # TODO make configurable
+	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:ContentSerializationType=None, headers:dict=None) -> Result:
+		ct = CSE.defaultSerialization if ct is None else ct
 
 		# Set basic headers
 		hty = f';ty={int(ty):d}' if ty is not None else ''
 		hds = {	'User-Agent'	: self.serverID,
-				'Content-Type' 	: f'{ct}{hty}', 
+				'Content-Type' 	: f'{ct.toHeader()}{hty}', 
 				C.hfOrigin	 	: originator,
 				C.hfRI 			: Utils.uniqueRI(),
 				C.hfRVI			: self.hfvRVI,			# TODO this actually depends in the originator
@@ -293,11 +292,13 @@ class HttpServer(object):
 			if C.hfcEC in headers:				# Event Category
 				hds[C.hfEC] = headers[C.hfcEC]
 
-		_data = json.dumps(data)	# TODO not only JSON!
+		# serialize data (only if dictionary, pass on non-dict data)
+		content = Utils.serializeData(data, ct) if isinstance(data, dict) else data
+
 		try:
 			Logging.logDebug(f'Sending request: {method.__name__.upper()} {url}')
-			Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: {str(_data) if _data is not None else ""}\n')
-			r = method(url, data=_data, headers=hds, verify=self.verifyCertificate)
+			Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: {str(content) if content is not None else ""}\n')
+			r = method(url, data=content, headers=hds, verify=self.verifyCertificate)
 			Logging.logDebug(f'Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: {str(r.content.decode("utf-8"))}')
 		except Exception as e:
 			Logging.logWarn(f'Failed to send request: {str(e)}')
@@ -313,7 +314,7 @@ class HttpServer(object):
 	#########################################################################
 
 	def _prepareResponse(self, result:Result) -> Response:
-		content = ''
+		content:Union[str, bytes] = ''
 
 		# Build the headers
 		headers = {}
@@ -326,16 +327,14 @@ class HttpServer(object):
 		statusCode = result.rsc.httpStatusCode()
 
 		# HTTP Content-type and content
-		contentType = ContentSerializationType.JSON.toString()	# TODO make configurable and depends in the accept
+		contentType = CSE.defaultSerialization.toHeader()
 		if len(result.request.headers.accept) > 0:
 			if ContentSerializationType.JSON == result.request.headers.accept[0]:
-			# if (ct := ContentSerializationType.JSON.toString()) in request.headers.accept:
-				contentType = ContentSerializationType.JSON.toString()
-				content = result.toString(ContentSerializationType.JSON)
+				contentType = ContentSerializationType.JSON.toHeader()
+				content = result.toData(ContentSerializationType.JSON)
 			elif ContentSerializationType.CBOR == result.request.headers.accept[0]:
-			# elif (ct := ContentSerializationType.CBOR.toString()) in request.headers.accept:
-				contentType = ContentSerializationType.CBOR.toString()
-				content = result.toString(ContentSerializationType.CBOR)
+				contentType = ContentSerializationType.CBOR.toHeader()
+				content = result.toData(ContentSerializationType.CBOR)
 			headers['Content-Type'] = contentType
 				
 		# Build and return the response

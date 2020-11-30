@@ -124,9 +124,9 @@ The following serialization types are supported:
 
 | Serialization Type | Supported | Remark                                                                                               |
 |:-------------------|:---------:|:-----------------------------------------------------------------------------------------------------|
-| XML                |  &cross;  |                                                                                                      |
 | JSON               |  &check;  | In addition to normal JSON syntax, C-style comments ("//..." and "/* ... */") are supported as well. |
-| CBOR               |  &cross;  |                                                                                                      |
+| CBOR               |  &check;  |                                                                                                      |
+| XML                |  &cross;  |                                                                                                      |
 
 
 

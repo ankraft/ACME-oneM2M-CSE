@@ -11,7 +11,7 @@
 import logging, configparser, re, argparse, ssl, os.path
 from typing import Any, Dict
 from Constants import Constants as C
-from Types import CSEType
+from Types import CSEType, ContentSerializationType
 from rich.console import Console
 
 
@@ -121,6 +121,7 @@ class Configuration(object):
 				'cse.flexBlockingPreference'		: config.get('cse', 'flexBlockingPreference',			fallback='blocking'),
 				'cse.supportedReleaseVersions'		: config.getlist('cse', 'supportedReleaseVersions',		fallback=['1', '2', '2a', '3']), # type: ignore
 				'cse.releaseVersion'				: config.get('cse', 'releaseVersion',					fallback='3'),
+				'cse.defaultSerialization'			: config.get('cse', 'defaultSerialization',				fallback='json'),
 
 				#
 				#	CSE Security
@@ -258,6 +259,12 @@ class Configuration(object):
 		else:
 			Configuration._configuration['cse.type'] = CSEType.IN
 
+		# CSE Serialization
+		ct = Configuration._configuration['cse.defaultSerialization']
+		Configuration._configuration['cse.defaultSerialization'] = ContentSerializationType.to(ct)
+		if Configuration._configuration['cse.defaultSerialization'] == ContentSerializationType.UNKNOWN:
+			console.print(f'[red]Configuration Error: Unsupported \[cse]:defaultSerialization: {ct}')
+			return False
 
 		# Loglevel from command line
 		logLevel = Configuration._configuration['logging.level'].lower()
