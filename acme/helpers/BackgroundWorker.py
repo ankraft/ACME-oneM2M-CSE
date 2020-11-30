@@ -64,7 +64,7 @@ class BackgroundWorker(object):
 				self.numberOfRuns += 1
 				result = self.callback(**self.args)
 			except Exception as e:
-				Logging.logErr(str(e))
+				Logging.logErr(f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}')
 			finally:
 				if self.count is not None and self.numberOfRuns >= self.count:
 					self.running = False
