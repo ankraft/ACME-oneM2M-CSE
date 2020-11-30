@@ -48,14 +48,14 @@ class TestRemote_Annc(unittest.TestCase):
 	# Create an AE with AT, but no AA
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createAnnounceAEwithATwithoutAA(self):
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'rn': 	aeRN, 
 					'api': 	'NMyApp1Id',
 				 	'rr': 	False,
 				 	'srv': 	[ '3' ],
 				 	'at': 	[ REMOTECSEID ]
 				}}
-		r, rsc = CREATE(cseURL, 'C', T.AE, jsn)
+		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/at'))
 		self.assertIsInstance(findXPath(r, 'm2m:ae/at'), list)
@@ -105,7 +105,7 @@ class TestRemote_Annc(unittest.TestCase):
 	# Create an AE with AT and AA
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createAnnounceAEwithATwithAA(self):
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'rn': 	aeRN, 
 					'api': 	'NMyApp1Id',
 				 	'rr': 	False,
@@ -114,7 +114,7 @@ class TestRemote_Annc(unittest.TestCase):
 				 	'at': 	[ REMOTECSEID ],
 				 	'aa': 	[ 'lbl' ]
 				}}
-		r, rsc = CREATE(cseURL, 'C', T.AE, jsn)
+		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'))
 		self.assertIsInstance(findXPath(r, 'm2m:ae/lbl'), list)
@@ -159,11 +159,11 @@ class TestRemote_Annc(unittest.TestCase):
 	# Update an non-AA AE with AA
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_addAAtoAnnounceAEwithoutAA(self):
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 				 	'lbl':	[ 'aLabel'],
 				 	'aa': 	[ 'lbl' ]
 				}}
-		r, rsc = UPDATE(aeURL, ORIGINATOR, jsn)
+		r, rsc = UPDATE(aeURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'))
 
@@ -172,7 +172,7 @@ class TestRemote_Annc(unittest.TestCase):
 	# AA should be corrected, null, but still present when rcn=modifiedAttributes
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createAnnounceAEwithNAAttributes(self):
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'rn': 	aeRN, 
 					'api': 	'NMyApp1Id',
 				 	'rr': 	False,
@@ -180,7 +180,7 @@ class TestRemote_Annc(unittest.TestCase):
 				 	'at': 	[ REMOTECSEID ],
 				 	'aa': 	[ 'rn', 'ri', 'pi', 'ct','lt','st','acpi' ]
 				}}
-		r, rsc = CREATE(f'{cseURL}?rcn={RCN.modifiedAttributes:d}', 'C', T.AE, jsn)
+		r, rsc = CREATE(f'{cseURL}?rcn={RCN.modifiedAttributes:d}', 'C', T.AE, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/at'))
 		self.assertIsInstance(findXPath(r, 'm2m:ae/at'), list)
@@ -198,10 +198,10 @@ class TestRemote_Annc(unittest.TestCase):
 	# Update an non-AA AE with AA
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_addLBLtoAnnouncedAE(self):
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 				 	'lbl':	[ 'aLabel']	# LBL is conditional announced, so no need for adding it to aa
 				}}
-		r, rsc = UPDATE(aeURL, ORIGINATOR, jsn)
+		r, rsc = UPDATE(aeURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'))
 		self.assertEqual(findXPath(r, 'm2m:ae/lbl'), [ 'aLabel' ])
@@ -217,10 +217,10 @@ class TestRemote_Annc(unittest.TestCase):
 	# Update an non-AA AE with AA
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_removeLBLfromAnnouncedAE(self):
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'lbl': None
 				}}
-		r, rsc = UPDATE(aeURL, ORIGINATOR, jsn)
+		r, rsc = UPDATE(aeURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertIsNone(findXPath(r, 'm2m:ae/lbl'))
 
@@ -233,12 +233,12 @@ class TestRemote_Annc(unittest.TestCase):
 	# Create a Node with AT
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createAnnounceNode(self):
-		jsn = 	{ 'm2m:nod' : {
+		dct = 	{ 'm2m:nod' : {
 					'rn': 	nodRN, 
 					'ni': 	'aNI', 
 				 	'at': 	[ REMOTECSEID ]
 				}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, jsn)
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:nod/at'))
 		self.assertIsInstance(findXPath(r, 'm2m:nod/at'), list)
@@ -272,7 +272,7 @@ class TestRemote_Annc(unittest.TestCase):
 	# Create a mgmtObj under the node
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_announceMgmtobj(self):
-		jsn = 	{ 'm2m:bat' : {
+		dct = 	{ 'm2m:bat' : {
 					'mgd' : T.BAT,
 					'dc'  : 'battery',
 					'rn'  : batRN,
@@ -281,7 +281,7 @@ class TestRemote_Annc(unittest.TestCase):
 				 	'at'  : [ REMOTECSEID ],
 				 	'aa'  : [ 'btl']
 				}}
-		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, jsn)
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:bat/at'))
 		self.assertIsInstance(findXPath(r, 'm2m:bat/at'), list)
@@ -336,11 +336,11 @@ class TestRemote_Annc(unittest.TestCase):
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_updateMgmtObjAttribute(self):
-		jsn = 	{ 'm2m:bat' : {
+		dct = 	{ 'm2m:bat' : {
 					'btl' : 42,
 					'bts' : 2
 				}}
-		r, rsc = UPDATE(batURL, ORIGINATOR, jsn)
+		r, rsc = UPDATE(batURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertEqual(findXPath(r, 'm2m:bat/btl'), 42)
 		self.assertEqual(findXPath(r, 'm2m:bat/bts'), 2)
@@ -353,10 +353,10 @@ class TestRemote_Annc(unittest.TestCase):
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_addMgmtObjAttribute(self):
-		jsn = 	{ 'm2m:bat' : {
+		dct = 	{ 'm2m:bat' : {
 					'aa' : [ 'btl', 'bts']
 				}}
-		r, rsc = UPDATE(batURL, ORIGINATOR, jsn)
+		r, rsc = UPDATE(batURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertEqual(findXPath(r, 'm2m:bat/btl'), 42)
 		self.assertEqual(findXPath(r, 'm2m:bat/bts'), 2)
@@ -375,10 +375,10 @@ class TestRemote_Annc(unittest.TestCase):
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_removeMgmtObjAttribute(self):
-		jsn = 	{ 'm2m:bat' : {
+		dct = 	{ 'm2m:bat' : {
 					'aa' : [ 'bts']
 				}}
-		r, rsc = UPDATE(batURL, ORIGINATOR, jsn)
+		r, rsc = UPDATE(batURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertEqual(findXPath(r, 'm2m:bat/btl'), 42)
 		self.assertEqual(findXPath(r, 'm2m:bat/bts'), 2)
@@ -396,10 +396,10 @@ class TestRemote_Annc(unittest.TestCase):
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_removeMgmtObjAA(self):
-		jsn = 	{ 'm2m:bat' : {
+		dct = 	{ 'm2m:bat' : {
 					'aa' : None
 				}}
-		r, rsc = UPDATE(batURL, ORIGINATOR, jsn)
+		r, rsc = UPDATE(batURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertEqual(findXPath(r, 'm2m:bat/btl'), 42)
 		self.assertEqual(findXPath(r, 'm2m:bat/bts'), 2)
@@ -415,10 +415,10 @@ class TestRemote_Annc(unittest.TestCase):
 	def test_removeMgmtObjCSIfromAT(self):
 		at = findXPath(TestRemote_Annc.bat, 'm2m:bat/at').copy()
 		at.pop(0) # remove REMOTECSEID
-		jsn = 	{ 'm2m:bat' : {
+		dct = 	{ 'm2m:bat' : {
 					'at' : at 			# with REMOTECSEID removed
 				}}
-		r, rsc = UPDATE(batURL, ORIGINATOR, jsn)
+		r, rsc = UPDATE(batURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertEqual(len(findXPath(r, 'm2m:bat/at')), 0)
 
@@ -428,10 +428,10 @@ class TestRemote_Annc(unittest.TestCase):
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_addMgmtObjCSItoAT(self):
-		jsn = 	{ 'm2m:bat' : {
+		dct = 	{ 'm2m:bat' : {
 					'at' : [ REMOTECSEID ] 			# with REMOTECSEID added
 				}}
-		r, rsc = UPDATE(batURL, ORIGINATOR, jsn)
+		r, rsc = UPDATE(batURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertEqual(len(findXPath(r, 'm2m:bat/at')), 1)
 
@@ -450,10 +450,10 @@ class TestRemote_Annc(unittest.TestCase):
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_removeMgmtObjAT(self):
-		jsn = 	{ 'm2m:bat' : {
+		dct = 	{ 'm2m:bat' : {
 					'at' : None 			# with at removed
 				}}
-		r, rsc = UPDATE(batURL, ORIGINATOR, jsn)
+		r, rsc = UPDATE(batURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertIsNone(findXPath(r, 'm2m:bat/at'))
 
@@ -484,7 +484,7 @@ class TestRemote_Annc(unittest.TestCase):
 	# Create an ACP 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_createAnnouncedACP(self):
-		jsn = 	{ "m2m:acp": {
+		dct = 	{ "m2m:acp": {
 					"rn": acpRN,
 					"pv": {
 						"acr": [ { 	"acor": [ ORIGINATOR ],
@@ -500,7 +500,7 @@ class TestRemote_Annc(unittest.TestCase):
 					},
 				 	'at': 	[ REMOTECSEID ]
 				}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, jsn)
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/at'))
 		self.assertIsInstance(findXPath(r, 'm2m:acp/at'), list)

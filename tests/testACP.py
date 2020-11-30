@@ -38,7 +38,7 @@ class TestACP(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createACP(self) -> None:
-		jsn = 	{ "m2m:acp": {
+		dct = 	{ "m2m:acp": {
 					"rn": acpRN,
 					"pv": {
 						"acr": [ { 	"acor": [ ORIGINATOR ],
@@ -52,7 +52,7 @@ class TestACP(unittest.TestCase):
 						} ]
 					},
 				}}
-		TestACP.acp, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, jsn)
+		TestACP.acp, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
 		self.assertEqual(rsc, RC.created)
 
 
@@ -108,10 +108,10 @@ class TestACP(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateACP(self):
-		jsn = 	{ 'm2m:acp' : {
+		dct = 	{ 'm2m:acp' : {
 					'lbl' : [ 'aTag' ]
 				}}
-		r, rsc = UPDATE(acpURL, self.acpORIGINATOR, jsn)
+		r, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/lbl'))
 		self.assertEqual(len(findXPath(r, 'm2m:acp/lbl'), 1))
@@ -120,24 +120,24 @@ class TestACP(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateACPwrongOriginator(self):
-		jsn = 	{ 'm2m:acp' : {
+		dct = 	{ 'm2m:acp' : {
 					'lbl' : [ 'bTag' ]
 				}}
-		r, rsc = UPDATE(acpURL, 'wrong', jsn)
+		r, rsc = UPDATE(acpURL, 'wrong', dct)
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addACPtoAE(self):
 		self.assertIsNotNone(TestACP.acp)
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
 				 	'rr': False,
 				 	'srv': [ '3' ],
 				 	'acpi': [ findXPath(TestACP.acp, 'm2m:acp/ri') ]
 				}}
-		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)
+		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(TestACP.ae, 'm2m:ae/acpi'))
 		self.assertIsInstance(findXPath(TestACP.ae, 'm2m:ae/acpi'), list)
@@ -151,12 +151,12 @@ class TestACP(unittest.TestCase):
 		self.assertIsNotNone(TestACP.ae)
 		acpi = findXPath(TestACP.ae, 'm2m:ae/acpi').copy()
 		acpi.remove(findXPath(TestACP.acp, 'm2m:acp/ri'))
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 				 	'acpi': acpi
 				}}
-		r, rsc = UPDATE(aeURL, findXPath(TestACP.ae, 'm2m:ae/aei'), jsn)
+		r, rsc = UPDATE(aeURL, findXPath(TestACP.ae, 'm2m:ae/aei'), dct)
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)	# missing self-privileges
-		r, rsc = UPDATE(aeURL, ORIGINATOR, jsn)
+		r, rsc = UPDATE(aeURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
 
 

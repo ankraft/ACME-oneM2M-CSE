@@ -79,10 +79,10 @@ class TestCSE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCSE(self):
-		jsn = 	{ 'm2m:cse' : {
+		dct = 	{ 'm2m:cse' : {
 					'lbl' : [ 'aTag' ]
 				}}
-		_, rsc = UPDATE(cseURL, ORIGINATOR, jsn)
+		_, rsc = UPDATE(cseURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.operationNotAllowed)
 
 

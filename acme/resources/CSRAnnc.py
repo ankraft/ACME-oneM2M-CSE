@@ -16,8 +16,8 @@ from Types import ResourceTypes as T
 
 class CSRAnnc(AnnouncedResource):
 
-	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(T.CSRAnnc, jsn, pi=pi, create=create)
+	def __init__(self, dct: dict = None, pi: str = None, create: bool = False) -> None:
+		super().__init__(T.CSRAnnc, dct, pi=pi, create=create)
 
 
 	# Enable check for allowed sub-resources

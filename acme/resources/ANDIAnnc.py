@@ -14,6 +14,6 @@ import Utils
 
 class ANDIAnnc(MgmtObjAnnc):
 
-	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(jsn, pi, mgd=T.ANDI, create=create)
+	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(dct, pi, mgd=T.ANDI, create=create)
 

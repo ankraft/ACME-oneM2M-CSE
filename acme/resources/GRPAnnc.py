@@ -16,8 +16,8 @@ from Types import ResourceTypes as T
 
 class GRPAnnc(AnnouncedResource):
 
-	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(T.GRPAnnc, jsn, pi=pi, create=create)
+	def __init__(self, dct: dict = None, pi: str = None, create: bool = False) -> None:
+		super().__init__(T.GRPAnnc, dct, pi=pi, create=create)
 
 
 	# Enable check for allowed sub-resources

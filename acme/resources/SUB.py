@@ -8,6 +8,7 @@
 #
 
 import random, string
+from copy import deepcopy
 from Constants import Constants as C
 from Configuration import Configuration
 from Types import ResourceTypes as T, Result, NotificationContentType, NotificationEventType
@@ -27,10 +28,10 @@ attributePolicies = constructPolicy([
 
 class SUB(Resource):
 
-	def __init__(self, jsn:dict=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.SUB, jsn, pi, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.SUB, dct, pi, create=create, attributePolicies=attributePolicies)
 
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('nct', NotificationContentType.all, overwrite=False) # LIMIT TODO: only this notificationContentType is supported now
 			self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate ], overwrite=False)
 			if self.bn is not None:		# set batchNotify default attributes
@@ -57,12 +58,12 @@ class SUB(Resource):
 		CSE.notification.removeSubscription(self)
 
 
-	def update(self, jsn:dict=None, originator:str=None) -> Result:
-		previousNus = self.nu.copy()
-		newJson = jsn.copy()
-		if not (res := super().update(jsn, originator)).status:
+	def update(self, dct:dict=None, originator:str=None) -> Result:
+		previousNus = deepcopy(self.nu)
+		newDict = deepcopy(dct)
+		if not (res := super().update(dct, originator)).status:
 			return res
-		return CSE.notification.updateSubscription(self, newJson, previousNus, originator)
+		return CSE.notification.updateSubscription(self, newDict, previousNus, originator)
 
  
 	def validate(self, originator:str=None, create:bool=False) -> Result:

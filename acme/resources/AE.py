@@ -28,12 +28,12 @@ attributePolicies =  addPolicy(attributePolicies, aePolicies)
 
 class AE(AnnounceableResource):
 
-	def __init__(self, jsn:dict=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.AE, jsn, pi, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.AE, dct, pi, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = aePolicies	# only the resource type's own policies
 
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('aei', Utils.uniqueAEI(), overwrite=False)
 			self.setAttribute('rr', False, overwrite=False)
 

@@ -32,12 +32,12 @@ attributePolicies = addPolicy(attributePolicies, fcntPolicies)
 
 class FCNT(AnnounceableResource):
 
-	def __init__(self, jsn:dict=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
-		super().__init__(T.FCNT, jsn, pi, tpe=fcntType, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:dict=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
+		super().__init__(T.FCNT, dct, pi, tpe=fcntType, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = fcntPolicies	# only the resource type's own policies
 
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('cs', 0, overwrite=False)
 
 			# "current" attributes are added when necessary in the validate() method
@@ -68,12 +68,12 @@ class FCNT(AnnounceableResource):
 
 		if self.hasInstances:
 			# add latest
-			resource = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.FCNT_LA).resource
+			resource = Utils.resourceFromDict({}, pi=self.ri, acpi=self.acpi, ty=T.FCNT_LA).resource
 			if (res := CSE.dispatcher.createResource(resource)).resource is None:
 				return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
 			# add oldest
-			resource = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.FCNT_OL).resource
+			resource = Utils.resourceFromDict({}, pi=self.ri, acpi=self.acpi, ty=T.FCNT_OL).resource
 			if (res := CSE.dispatcher.createResource(resource)).resource is None:
 				return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 		return Result(status=True)
@@ -118,7 +118,7 @@ class FCNT(AnnounceableResource):
 		# This is not at all realistic since this is the in-memory representation
 		# TODO better implementation needed 
 		cs = 0
-		for attr in self.json:
+		for attr in self.dict:
 			if attr in self.ignoreAttributes:
 				continue
 			cs += sys.getsizeof(self[attr])
@@ -198,20 +198,20 @@ class FCNT(AnnounceableResource):
 	# Add a new FlexContainerInstance for this flexContainer
 	def addFlexContainerInstance(self, originator:str) -> None:
 		Logging.logDebug('Adding flexContainerInstance')
-		jsn:Dict[str, Any] = {	'rn'  : f'{self.rn}_{self.st:d}', }
+		dct:Dict[str, Any] = {	'rn'  : f'{self.rn}_{self.st:d}', }
 		if self.lbl is not None:
-			jsn['lbl'] = self.lbl
+			dct['lbl'] = self.lbl
 
-		for attr in self.json:
+		for attr in self.dict:
 			if attr not in self.ignoreAttributes:
-				jsn[attr] = self[attr]
+				dct[attr] = self[attr]
 				continue
 			# special for at attribute. It might contain additional id's when it
 			# is announced. Those we don't want to copy.
 			if attr == 'at':
-				jsn['at'] = [ x for x in self['at'] if x.count('/') == 1 ]	# Only copy single csi in at
+				dct['at'] = [ x for x in self['at'] if x.count('/') == 1 ]	# Only copy single csi in at
 
-		resource = Utils.resourceFromJSON(jsn={ self.tpe : jsn }, pi=self.ri, acpi=self.acpi, ty=T.FCI).resource
+		resource = Utils.resourceFromDict(resDict={ self.tpe : dct }, pi=self.ri, acpi=self.acpi, ty=T.FCI).resource
 		CSE.dispatcher.createResource(resource)
 		resource['cs'] = self.cs
 

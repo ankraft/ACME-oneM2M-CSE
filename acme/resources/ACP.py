@@ -28,12 +28,12 @@ attributePolicies =  addPolicy(attributePolicies, acpPolicies)
 
 class ACP(AnnounceableResource):
 
-	def __init__(self, jsn:dict=None, pi:str=None, rn:str=None, create:bool=False, createdInternally:str=None) -> None:
-		super().__init__(T.ACP, jsn, pi, create=create, inheritACP=True, rn=rn, attributePolicies=attributePolicies)
+	def __init__(self, dct:dict=None, pi:str=None, rn:str=None, create:bool=False, createdInternally:str=None) -> None:
+		super().__init__(T.ACP, dct, pi, create=create, inheritACP=True, rn=rn, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = acpPolicies	# only the resource type's own policies
 		
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('pv/acr', [], overwrite=False)
 			self.setAttribute('pvs/acr', [], overwrite=False)
 			if createdInternally is not None:
@@ -72,10 +72,10 @@ class ACP(AnnounceableResource):
 				r.dbUpdate()
 
 
-	def validateAnnouncedJSON(self, jsn:dict) -> dict:
-		if (acr := Utils.findXPath(jsn, f'{T.ACPAnnc.tpe()}/pvs/acr')) is not None:
+	def validateAnnouncedDict(self, dct:dict) -> dict:
+		if (acr := Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs/acr')) is not None:
 			acr.append( { 'acor': [ CSE.remote.cseCsi ], 'acop': Permission.ALL } )
-		return jsn
+		return dct
 
 
 	#########################################################################

@@ -70,8 +70,7 @@ class Importer(object):
 			fn = path + '/' + rn
 			if os.path.exists(fn):
 				Logging.log(f'Importing resource: {fn}')
-				jsn = self.readJSONFromFile(fn)
-				resource = resourceFromJSON(jsn, create=True, isImported=True).resource
+				resource = resourceFromDict(self.readJSONFromFile(fn), create=True, isImported=True).resource
 
 			# Check resource creation
 			if not CSE.registration.checkResourceCreation(resource, originator):
@@ -104,17 +103,17 @@ class Importer(object):
 
 				# update an existing resource
 				if 'update' in fn:
-					jsn = self.readJSONFromFile(filename)
-					keys = list(jsn.keys())
-					if len(keys) == 1 and (k := keys[0]) and 'ri' in jsn[k] and (ri := jsn[k]['ri']) is not None:
+					dct = self.readJSONFromFile(filename)
+					keys = list(dct.keys())
+					if len(keys) == 1 and (k := keys[0]) and 'ri' in dct[k] and (ri := dct[k]['ri']) is not None:
 						if (resource := CSE.dispatcher.retrieveResource(ri).resource) is not None:
-							CSE.dispatcher.updateResource(resource, jsn)
+							CSE.dispatcher.updateResource(resource, dct)
 						# TODO handle error
 
 				# create a new cresource
 				else:
 					# Try to get parent resource
-					if (resource := resourceFromJSON(self.readJSONFromFile(filename), create=True, isImported=True).resource) is not None:
+					if (resource := resourceFromDict(self.readJSONFromFile(filename), create=True, isImported=True).resource) is not None:
 						parentResource = None
 						if (pi := resource.pi) is not None:
 							parentResource = CSE.dispatcher.retrieveResource(pi).resource
@@ -196,9 +195,9 @@ class Importer(object):
 			fn = os.path.join(path, fn)
 			Logging.log(f'Importing attribute policies from file: {fn}')
 			if os.path.exists(fn):
-				if (jsn := self.readJSONFromFile(fn)) is None:
+				if (dct := self.readJSONFromFile(fn)) is None:
 					continue
-				for ap in jsn:
+				for ap in dct:
 					if (tpe := findXPath(ap, 'type')) is None or len(tpe) == 0:
 						Logging.logErr(f'Missing or empty resource type in file: {fn}')
 						return False
@@ -349,11 +348,11 @@ class Importer(object):
 			content = content.replace(item, self.replaceMacro(item, filename))
 		# Load JSON and return directly or as resource
 		try:
-			jsn = json.loads(content)
+			dct = json.loads(content)
 		except json.decoder.JSONDecodeError as e:
 			Logging.logErr(str(e))
 			return None
-		return jsn
+		return dct
 
 
 	def _finishImporting(self) -> None:

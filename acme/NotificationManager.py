@@ -7,7 +7,7 @@
 #	This entity handles subscriptions and sending of notifications. 
 #
 
-import requests, json
+import requests
 import isodate
 from typing import List, Union
 from threading import Lock
@@ -81,10 +81,10 @@ class NotificationManager(object):
 		return Result(status=True) if CSE.storage.removeSubscription(subscription) else Result(status=False, rsc=RC.internalServerError, dbg='cannot remove subscription from database')
 
 
-	def updateSubscription(self, subscription:Resource, newJson:dict, previousNus:List[str], originator:str) -> Result:
+	def updateSubscription(self, subscription:Resource, newDict:dict, previousNus:List[str], originator:str) -> Result:
 		Logging.logDebug('Updating subscription')
 		#previousSub = CSE.storage.getSubscription(subscription.ri)
-		if (res := self._getAndCheckNUS(subscription, newJson, previousNus, originator=originator)).lst is None:	# verification/delete requests happen here
+		if (res := self._getAndCheckNUS(subscription, newDict, previousNus, originator=originator)).lst is None:	# verification/delete requests happen here
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 		return Result(status=True) if CSE.storage.updateSubscription(subscription) else Result(status=False, rsc=RC.internalServerError, dbg='cannot update subscription in database')
 
@@ -157,10 +157,10 @@ class NotificationManager(object):
 	#	Notifications in general
 	#
 
-	def sendNotificationWithJSON(self, jsn:dict, nus:Union[List[str], str], originator:str=None) -> None:
+	def sendNotificationWithDict(self, data:dict, nus:Union[List[str], str], originator:str=None) -> None:
 		if nus is not None and len(nus) > 0:
 			for nu in self._getNotificationURLs(nus):
-				self._sendRequest(nu, jsn, originator=originator)
+				self._sendRequest(nu, data, originator=originator)
 
 
 
@@ -197,10 +197,10 @@ class NotificationManager(object):
 		return result
 
 
-	def _getAndCheckNUS(self, subscription:Resource, newJson:dict=None, previousNus:List[str]=None, originator:str=None) -> Result:
+	def _getAndCheckNUS(self, subscription:Resource, newDict:dict=None, previousNus:List[str]=None, originator:str=None) -> Result:
 		newNus = []
-		if newJson is None:	# If there is no new JSON structure, get the one from the subscription to work with
-			newJson = subscription.asJSON()
+		if newDict is None:	# If there is no new resource structure, get the one from the subscription to work with
+			newDict = subscription.asDict()
 
 		# Resolve the URI's in the previousNus.
 		if previousNus is not None:
@@ -209,7 +209,7 @@ class NotificationManager(object):
 				return Result(rsc=RC.subscriptionVerificationInitiationFailed, dbg='cannot retrieve all previous nu''s')
 
 		# Are there any new URI's?
-		if (nuAttribute := Utils.findXPath(newJson, 'm2m:sub/nu')) is not None:
+		if (nuAttribute := Utils.findXPath(newDict, 'm2m:sub/nu')) is not None:
 
 			# Resolve the URI's for the new NU's
 			if (newNus := self._getNotificationURLs(nuAttribute, originator)) is None:
@@ -224,7 +224,7 @@ class NotificationManager(object):
 						return Result(rsc=RC.subscriptionVerificationInitiationFailed, dbg=f'verification request failed for nu: {nu}')
 
 		# notify removed nus (deletion notification) if nu = null
-		if 'nu' in newJson: # if nu not present, nothing to do
+		if 'nu' in newDict: # if nu not present, nothing to do
 			if previousNus is not None:
 				for nu in previousNus:
 					if nu not in newNus:
@@ -279,7 +279,7 @@ class NotificationManager(object):
 
 		data = None
 		nct = sub['nct']
-		nct == NotificationContentType.all					and (data := resource.asJSON())
+		nct == NotificationContentType.all					and (data := resource.asDict())
 		nct == NotificationContentType.ri 					and (data := { 'm2m:uri' : resource.ri })
 		nct == NotificationContentType.modifiedAttributes	and (data := { resource.tpe : modifiedAttributes })
 		# TODO nct == NotificationContentType.triggerPayload
@@ -298,7 +298,7 @@ class NotificationManager(object):
 		"""	Actually send a Notification request.
 		"""
 		originator = originator if originator is not None else Configuration.get('cse.csi')
-		return CSE.httpServer.sendCreateRequest(nu, originator, data=json.dumps(notificationRequest), headers=headers).rsc == RC.OK
+		return CSE.httpServer.sendCreateRequest(nu, originator, data=notificationRequest, headers=headers).rsc == RC.OK
 
 
 	def _flushBatchNotifications(self, subscription:Resource) -> None:
@@ -342,7 +342,7 @@ class NotificationManager(object):
 	def _sendSubscriptionAggregatedBatchNotification(self, ri:str, nu:str, ln:bool=False) -> bool:
 		"""	Send and remove(!) the available BatchNotifications for an ri & nu.
 		"""
-		with self.lockBatchNotification: # TODO check whether this is actually necessary
+		with self.lockBatchNotification:
 			Logging.logWarn(f'Sending aggregated subscription notifications for ri: {ri}')
 			# Collect the notifications	
 			notifications = []		
@@ -372,7 +372,7 @@ class NotificationManager(object):
 
 			return True
 
-# TODO
+# TODO expiration counter
 
 	# def _checkExpirationCounter(self, sub:dict) -> bool:
 	# 	if 'exc' in sub and (exc := sub['exc'] is not None:

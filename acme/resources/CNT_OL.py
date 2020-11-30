@@ -17,8 +17,8 @@ from Logging import Logging
 
 class CNT_OL(Resource):
 
-	def __init__(self, jsn:dict=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.CNT_OL, jsn, pi, create=create, inheritACP=True, readOnly=True, rn='ol', isVirtual=True)
+	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.CNT_OL, dct, pi, create=create, inheritACP=True, readOnly=True, rn='ol', isVirtual=True)
 
 
 	# Enable check for allowed sub-resources

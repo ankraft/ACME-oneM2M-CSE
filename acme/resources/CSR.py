@@ -28,12 +28,12 @@ attributePolicies = addPolicy(attributePolicies, csrPolicies)
 
 class CSR(AnnounceableResource):
 
-	def __init__(self, jsn:dict=None, pi:str=None, rn:str=None, create:bool=False) -> None:
-		super().__init__(T.CSR, jsn, pi, rn=rn, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:dict=None, pi:str=None, rn:str=None, create:bool=False) -> None:
+		super().__init__(T.CSR, dct, pi, rn=rn, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = csrPolicies	# only the resource type's own policies
 
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
 			self['ri'] = self.csi.split('/')[-1]				# overwrite ri (only after /'s')
 			self.setAttribute('rr', False, overwrite=False)

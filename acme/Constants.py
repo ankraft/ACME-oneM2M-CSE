@@ -7,7 +7,7 @@
 #	Various CSE and oneM2M constants
 #
 
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, ContentSerializationType as CST
 
 class Constants(object):
 
@@ -31,8 +31,8 @@ class Constants(object):
 	supportedResourceTypes			+= announcedResourceTypes	# add announced resource types as well
 
 	stateTagResourceTypes 			= [ T.CNT, T.CIN, T.FCNT, T.FCI, T.REQ ]	# those resource types allow state tags
-	supportedContentSerializations 	= [ 'application/json' ]
-	supportedContentHeaderFormat 	= [ 'application/json', 'application/vnd.onem2m-res+json' ]
+	supportedContentSerializations 	= [ CST.JSON.toString(), CST.CBOR.toString() ]
+	supportedContentHeaderFormat 	= [ CST.JSON.toString(), CST.CBOR.toString(),'application/vnd.onem2m-res+json', 'application/vnd.onem2m-res+cbor' ]
 
 
 	# List of resource types for which "creator" is allowed
@@ -56,6 +56,7 @@ class Constants(object):
 	hfRST 							= 'X-M2M-RST'
 	hfOET 							= 'X-M2M-OET'
 	hfRTU 							= 'X-M2M-RTU'
+	hfAccept						= 'Accept'
 			
 
 	#
@@ -71,12 +72,12 @@ class Constants(object):
 	#	Magic strings and numbers
 	#
 
-	# Additional JSON fields
-	jsnIsImported					= '__imported__'
+	# Additional internal resource fields
+	isImported					= '__imported__'
 
-	acpPrefix 						= 'acp_'
+	acpPrefix 					= 'acp_'
 
-	invalidValue 					= '__iNvAliD___'
+	invalidValue 				= '__iNvAliD___'
 
 
 	# max length of identifiers

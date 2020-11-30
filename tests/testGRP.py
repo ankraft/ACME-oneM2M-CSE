@@ -35,25 +35,25 @@ class TestGRP(unittest.TestCase):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
 				 	'rr'  : False,
 				 	'srv' : [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
 				}}
-		cls.cnt1, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
+		cls.cnt1, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
 		assert rsc == RC.created, 'cannot create container'
 		cls.cnt1RI = findXPath(cls.cnt1, 'm2m:cnt/ri')
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : f'{cntRN}2'
 				}}
-		cls.cnt2, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
+		cls.cnt2, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
 		assert rsc == RC.created, 'cannot create container'
 		cls.cnt2RI = findXPath(cls.cnt2, 'm2m:cnt/ri')
 
@@ -70,13 +70,13 @@ class TestGRP(unittest.TestCase):
 		self.assertIsNotNone(TestGRP.ae)
 		self.assertIsNotNone(TestGRP.cnt1)
 		self.assertIsNotNone(TestGRP.cnt2)
-		jsn = 	{ 'm2m:grp' : { 
+		dct = 	{ 'm2m:grp' : { 
 					'rn' : grpRN,
 					'mt' : T.MIXED,
 					'mnm': 10,
 					'mid': [ TestGRP.cnt1RI, TestGRP.cnt2RI ]
 				}}
-		r, rsc = CREATE(aeURL, TestGRP.originator, T.GRP, jsn)
+		r, rsc = CREATE(aeURL, TestGRP.originator, T.GRP, dct)
 		self.assertEqual(rsc, RC.created)
 
 
@@ -117,10 +117,10 @@ class TestGRP(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateGRP(self):
-		jsn = 	{ 'm2m:grp' : { 
+		dct = 	{ 'm2m:grp' : { 
 					'mnm': 15
 				}}
-		r, rsc = UPDATE(grpURL, TestGRP.originator, jsn)
+		r, rsc = UPDATE(grpURL, TestGRP.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/mnm'))
 		self.assertEqual(findXPath(r, 'm2m:grp/mnm'), 15)
@@ -129,10 +129,10 @@ class TestGRP(unittest.TestCase):
 	# Update a GRP with container. Should fail.
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateGRPwithCNT(self):
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'lbl' : [ 'wrong' ]
 				}}
-		r, rsc = UPDATE(grpURL, TestGRP.originator, jsn)
+		r, rsc = UPDATE(grpURL, TestGRP.originator, dct)
 		self.assertNotEqual(rsc, RC.updated)
 
 
@@ -143,19 +143,19 @@ class TestGRP(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/cnm'))
 		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), 2)
 
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : f'{cntRN}3' 
 				}}
-		self.cnt3, rsc = CREATE(aeURL, self.originator, T.CNT, jsn)
+		self.cnt3, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
 		self.cnt3RI = findXPath(self.cnt3, 'm2m:cnt/ri')
 		mid = findXPath(r, 'm2m:grp/mid')
 		mid.append(self.cnt3RI)
 
-		jsn = 	{ 'm2m:grp' : { 
+		dct = 	{ 'm2m:grp' : { 
 					'mid'  : mid
 				}}
-		r, rsc = UPDATE(grpURL, TestGRP.originator, jsn)
+		r, rsc = UPDATE(grpURL, TestGRP.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/cnm'))
 		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), 3)
@@ -164,11 +164,11 @@ class TestGRP(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addCINviaFOPT(self):
 		# add CIN via fopt
-		jsn = 	{ 'm2m:cin' : {
+		dct = 	{ 'm2m:cin' : {
 					'cnf' : 'a',
 					'con' : 'aValue'
 				}}
-		r, rsc = CREATE(f'{grpURL}/fopt', TestGRP.originator, T.CNT, jsn)
+		r, rsc = CREATE(f'{grpURL}/fopt', TestGRP.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.OK)
 		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
 		self.assertIsNotNone(rsp)
@@ -221,10 +221,10 @@ class TestGRP(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTviaFOPT(self):
 		# add CIN via fopt
-		jsn = 	{ 'm2m:cnt' : {
+		dct = 	{ 'm2m:cnt' : {
 					'lbl' :  [ 'aTag' ]
 				}}
-		r, rsc = UPDATE(f'{grpURL}/fopt', TestGRP.originator, jsn)
+		r, rsc = UPDATE(f'{grpURL}/fopt', TestGRP.originator, dct)
 		self.assertEqual(rsc, RC.OK)
 		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
 		self.assertIsNotNone(rsp)
@@ -250,10 +250,10 @@ class TestGRP(unittest.TestCase):
 		mid = findXPath(r, 'm2m:grp/mid')
 		mid.append(self.cnt1RI)
 		self.assertEqual(len(mid), cnm+1)
-		jsn = 	{ 'm2m:grp' : { 
+		dct = 	{ 'm2m:grp' : { 
 					'mid'  : mid
 				}}
-		r, rsc = UPDATE(grpURL, TestGRP.originator, jsn)
+		r, rsc = UPDATE(grpURL, TestGRP.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), cnm) # == old cnm
 

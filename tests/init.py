@@ -38,7 +38,7 @@ CONFIGURL			= f'{SERVER}{ROOTPATH}__config__'
 
 
 testVerbosity:int	= 2		# 0, 1, 2
-testFailFast:bool	= False	# Fail a whole test suite immediately or continue
+testFailFast:bool	= True	# Fail a whole test suite immediately or continue
 
 verifyCertificate	= False	# verify the certificate when using https?
 
@@ -360,11 +360,11 @@ def uniqueID() -> str:
 
 # find a structured element in JSON
 decimalMatch = re.compile('{(\d+)}')
-def findXPath(jsn:dict, element:str, default:Any=None) -> Any:
-	if jsn is None:
+def findXPath(dct:dict, element:str, default:Any=None) -> Any:
+	if dct is None:
 		return default
 	paths = element.split("/")
-	data = jsn
+	data = dct
 	for i in range(0,len(paths)):
 		if len(paths[i]) == 0:	# return if there is an empty path element
 			return default
@@ -380,10 +380,10 @@ def findXPath(jsn:dict, element:str, default:Any=None) -> Any:
 	return data
 
 
-def setXPath(jsn: dict, element: str, value: Any, overwrite: bool = True) -> None:
+def setXPath(dct:dict, element:str, value:Any, overwrite:bool=True) -> None:
 	paths = element.split("/")
 	ln = len(paths)
-	data = jsn
+	data = dct
 	for i in range(0,ln-1):
 		if paths[i] not in data:
 			data[paths[i]] = {}

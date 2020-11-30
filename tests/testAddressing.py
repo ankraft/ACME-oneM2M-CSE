@@ -26,19 +26,19 @@ class TestAddressing(unittest.TestCase):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase:{cseURL}'
 
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
 				 	'rr'  : False,
 				 	'srv' : [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
 				}}
-		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
+		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
 		assert rsc == RC.created, 'cannot create container'
 		cls.cntRI = findXPath(cls.cnt, 'm2m:cnt/ri')
 

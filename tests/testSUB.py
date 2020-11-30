@@ -45,19 +45,19 @@ class TestSUB(unittest.TestCase):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
 				 	'rr'  : False,
 				 	'srv' : [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
 				}}
-		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
+		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
 		assert rsc == RC.created, 'cannot create container'
 		cls.cntRI = findXPath(cls.cnt, 'm2m:cnt/ri')
 
@@ -74,7 +74,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(TestSUB.cse)
 		self.assertIsNotNone(TestSUB.ae)
 		self.assertIsNotNone(TestSUB.cnt)
-		jsn = 	{ 'm2m:sub' : { 
+		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
 			            'net': [ 1, 3 ]
@@ -82,7 +82,7 @@ class TestSUB(unittest.TestCase):
 					'nu': [ NOTIFICATIONSERVER ],
 					'su': NOTIFICATIONSERVER
 				}}
-		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)
 		self.assertEqual(rsc, RC.created)
 		lastNotification = getLastNotification()
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
@@ -126,24 +126,24 @@ class TestSUB(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBWrong(self):
-		jsn = 	{ 'm2m:sub' : { 
+		dct = 	{ 'm2m:sub' : { 
 					'rn' : f'{subRN}Wrong',
 			        'enc': {
 			            'net': [ 1, 2, 3, 4 ]
         			},
         			'nu': [ NOTIFICATIONSERVERW ]
 				}}
-		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)
 		self.assertNotEqual(rsc, RC.created)
 		self.assertEqual(rsc, RC.subscriptionVerificationInitiationFailed)
 		
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateSUB(self):
-		jsn = 	{ 'm2m:sub' : { 
+		dct = 	{ 'm2m:sub' : { 
 					'exc': 5
 				}}
-		r, rsc = UPDATE(subURL, TestSUB.originator, jsn)
+		r, rsc = UPDATE(subURL, TestSUB.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertIsInstance(findXPath(r, 'm2m:sub/exc'), int)
 		self.assertEqual(findXPath(r, 'm2m:sub/exc'), 5)
@@ -151,12 +151,12 @@ class TestSUB(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNT(self):
-		jsn = 	{ 'm2m:cnt' : {
+		dct = 	{ 'm2m:cnt' : {
 					'lbl' : [ 'aTag' ],
 					'mni' : 10,
 					'mbs' : 9999
  				}}
-		cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+		cnt, rsc = UPDATE(cntURL, TestSUB.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		cnt, rsc = RETRIEVE(cntURL, TestSUB.originator)		# retrieve cnt again
 		self.assertEqual(rsc, RC.OK)
@@ -178,11 +178,11 @@ class TestSUB(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addCIN2CNT(self):
-		jsn = 	{ 'm2m:cin' : {
+		dct = 	{ 'm2m:cin' : {
 					'cnf' : 'a',
 					'con' : 'aValue'
 				}}
-		r, rsc = CREATE(cntURL, TestSUB.originator, T.CIN, jsn)
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.CIN, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(r)
 		self.assertIsNotNone(findXPath(r, 'm2m:cin/ri'))
@@ -203,10 +203,10 @@ class TestSUB(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addCNTAgain(self):
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
 				}}
-		TestSUB.cnt, rsc = CREATE(aeURL, TestSUB.originator, T.CNT, jsn)
+		TestSUB.cnt, rsc = CREATE(aeURL, TestSUB.originator, T.CNT, dct)
 		assert rsc == RC.created, 'cannot create container'
 		TestSUB.cntRI = findXPath(TestSUB.cnt, 'm2m:cnt/ri')
 
@@ -225,7 +225,7 @@ class TestSUB(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBModifedAttributes(self):
-		jsn = 	{ 'm2m:sub' : { 
+		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
 			            'net': [ 1, 3 ]
@@ -234,7 +234,7 @@ class TestSUB(unittest.TestCase):
 					'su': NOTIFICATIONSERVER,
 					'nct': NotificationContentType.modifiedAttributes
 				}}
-		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertEqual(findXPath(r, 'm2m:sub/nct'), NotificationContentType.modifiedAttributes)
 		lastNotification = getLastNotification()
@@ -244,7 +244,7 @@ class TestSUB(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBModifedAttributes(self):
-		jsn = 	{ 'm2m:sub' : { 
+		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
 			            'net': [ 1, 3 ]
@@ -253,7 +253,7 @@ class TestSUB(unittest.TestCase):
 					'su': NOTIFICATIONSERVER,
 					'nct': NotificationContentType.modifiedAttributes
 				}}
-		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertEqual(findXPath(r, 'm2m:sub/nct'), NotificationContentType.modifiedAttributes)
 		lastNotification = getLastNotification()
@@ -263,10 +263,10 @@ class TestSUB(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTModifiedAttributes(self):
-		jsn = 	{ 'm2m:cnt' : {
+		dct = 	{ 'm2m:cnt' : {
 					'lbl' : [ 'bTag' ]
  				}}
-		cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+		cnt, rsc = UPDATE(cntURL, TestSUB.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep'))
@@ -277,10 +277,10 @@ class TestSUB(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTSameModifiedAttributes(self):
-		jsn = 	{ 'm2m:cnt' : {
+		dct = 	{ 'm2m:cnt' : {
 					'lbl' : [ 'bTag' ]
  				}}
-		cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+		cnt, rsc = UPDATE(cntURL, TestSUB.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep'))
@@ -291,7 +291,7 @@ class TestSUB(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBRI(self):
-		jsn = 	{ 'm2m:sub' : { 
+		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
 			            'net': [ 1, 3 ]
@@ -300,7 +300,7 @@ class TestSUB(unittest.TestCase):
 					'su': NOTIFICATIONSERVER,
 					'nct': NotificationContentType.ri
 				}}
-		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertEqual(findXPath(r, 'm2m:sub/nct'), NotificationContentType.ri)
 		lastNotification = getLastNotification()
@@ -310,10 +310,10 @@ class TestSUB(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTRI(self):
-		jsn = 	{ 'm2m:cnt' : {
+		dct = 	{ 'm2m:cnt' : {
 					'lbl' : [ 'aTag' ]
  				}}
-		cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+		cnt, rsc = UPDATE(cntURL, TestSUB.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep'))
@@ -326,7 +326,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(TestSUB.cse)
 		self.assertIsNotNone(TestSUB.ae)
 		self.assertIsNotNone(TestSUB.cnt)
-		jsn = 	{ 'm2m:sub' : { 
+		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
 			            'net': [ 1 ]
@@ -337,7 +337,7 @@ class TestSUB(unittest.TestCase):
 						'num' : numberOfBatchNotifications
 					}
 				}}
-		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/bn'))
 		self.assertEqual(findXPath(r, 'm2m:sub/bn/num'), numberOfBatchNotifications)
@@ -351,10 +351,10 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTBatch(self):
 		for i in range(0, numberOfBatchNotifications):
-			jsn = 	{ 'm2m:cnt' : {
+			dct = 	{ 'm2m:cnt' : {
 						'lbl' : [ '%d' % i ]
 					}}
-			cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+			cnt, rsc = UPDATE(cntURL, TestSUB.originator, dct)
 			self.assertEqual(rsc, RC.updated)
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn'))
@@ -367,10 +367,10 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteSUBForBatchReceiveRemainingNotifications(self):
 		# Generate one last notification
-		jsn = 	{ 'm2m:cnt' : {
+		dct = 	{ 'm2m:cnt' : {
 					'lbl' : [ '99' ]
 				}}
-		cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+		cnt, rsc = UPDATE(cntURL, TestSUB.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		# Delete the sub
 		_, rsc = DELETE(subURL, TestSUB.originator)
@@ -389,7 +389,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(TestSUB.cse)
 		self.assertIsNotNone(TestSUB.ae)
 		self.assertIsNotNone(TestSUB.cnt)
-		jsn = 	{ 'm2m:sub' : { 
+		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
 			            'net': [ 1 ]
@@ -400,7 +400,7 @@ class TestSUB(unittest.TestCase):
 						'dur' : durationForBatchNotificationsISO8601
 					}
 				}}
-		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/bn'))
 		self.assertIsNone(findXPath(r, 'm2m:sub/bn/num'))
@@ -414,10 +414,10 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTBatchDuration(self):
 		for i in range(0, numberOfBatchNotifications):
-			jsn = 	{ 'm2m:cnt' : {
+			dct = 	{ 'm2m:cnt' : {
 						'lbl' : [ '%d' % i ]
 					}}
-			cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+			cnt, rsc = UPDATE(cntURL, TestSUB.originator, dct)
 			self.assertEqual(rsc, RC.updated)
 		lastNotification = getLastNotification()	# Notifications should not have arrived yes
 		self.assertIsNone(findXPath(lastNotification, 'm2m:agn'))
@@ -442,7 +442,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(TestSUB.cse)
 		self.assertIsNotNone(TestSUB.ae)
 		self.assertIsNotNone(TestSUB.cnt)
-		jsn = 	{ 'm2m:sub' : { 
+		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
 			            'net': [ 1 ],
@@ -450,7 +450,7 @@ class TestSUB(unittest.TestCase):
 					},
 					'nu': [ NOTIFICATIONSERVER ]
 				}}
-		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc/atr'))
 		self.assertEqual(findXPath(r, 'm2m:sub/enc/atr'), [ 'lbl' ])
@@ -462,10 +462,10 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTWithEncAtrLbl(self):
 		clearLastNotification()
-		jsn = 	{ 'm2m:cnt' : {
+		dct = 	{ 'm2m:cnt' : {
 					'lbl' : [ 'hello' ]
 				}}
-		cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+		cnt, rsc = UPDATE(cntURL, TestSUB.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 
 		lastNotification = getLastNotification()	# Notifications should not have arrived yes
@@ -477,10 +477,10 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTWithEncAtrLblWrong(self):
 		clearLastNotification() # clear notification first, we don't want to receive a notification
-		jsn = 	{ 'm2m:cnt' : {
+		dct = 	{ 'm2m:cnt' : {
 					'mni' : 99
 				}}
-		cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+		cnt, rsc = UPDATE(cntURL, TestSUB.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 
 		lastNotification = getLastNotification()	# Notifications should not have arrived yes
@@ -499,7 +499,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(TestSUB.cse)
 		self.assertIsNotNone(TestSUB.ae)
 		self.assertIsNotNone(TestSUB.cnt)
-		jsn = 	{ 'm2m:sub' : { 
+		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
 			            'net': [ 1 ],	# update resource
@@ -510,7 +510,7 @@ class TestSUB(unittest.TestCase):
 						'num' : numberOfBatchNotifications
 					}
 				}}
-		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/bn'))
 		self.assertEqual(findXPath(r, 'm2m:sub/bn/num'), numberOfBatchNotifications)
@@ -524,10 +524,10 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTBatchWithLn(self):
 		for i in range(0, numberOfBatchNotifications):	# Adding more notification
-			jsn = 	{ 'm2m:cnt' : {
+			dct = 	{ 'm2m:cnt' : {
 						'lbl' : [ '%d' % i ]
 					}}
-			cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+			cnt, rsc = UPDATE(cntURL, TestSUB.originator, dct)
 			self.assertEqual(rsc, RC.updated)
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn/m2m:sgn'))
@@ -549,7 +549,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(TestSUB.cse)
 		self.assertIsNotNone(TestSUB.ae)
 		self.assertIsNotNone(TestSUB.cnt)
-		jsn = 	{ 'm2m:sub' : { 
+		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
 			            'net': [ 3 ],	# create direct child resource
@@ -558,7 +558,7 @@ class TestSUB(unittest.TestCase):
 					'ln': True,
 					'nu': [ NOTIFICATIONSERVER ]
 				}}
-		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, jsn)
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc/chty'))
 		self.assertEqual(findXPath(r, 'm2m:sub/enc/chty'), [ 3 ])
@@ -571,10 +571,10 @@ class TestSUB(unittest.TestCase):
 	def test_createCINWithEncChty(self):
 		clearLastNotification()	# clear the notification first
 		for i in range(0, numberOfBatchNotifications):	# Adding more notification
-			jsn = 	{ 'm2m:cnt' : {
+			dct = 	{ 'm2m:cnt' : {
 						'lbl' : [ '%d' % i ]
 					}}
-			cnt, rsc = UPDATE(cntURL, TestSUB.originator, jsn)
+			cnt, rsc = UPDATE(cntURL, TestSUB.originator, dct)
 			self.assertEqual(rsc, RC.updated)
 		self.assertIsNone(getLastNotification())	# this shouldn't have caused a notification
 
@@ -582,10 +582,10 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTWithEncChty(self):
 		clearLastNotification()	# clear the notification first
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : f'{cntRN}Sub'
 				}}
-		TestSUB.cnt, rsc = CREATE(cntURL, TestSUB.originator, T.CNT, jsn)
+		TestSUB.cnt, rsc = CREATE(cntURL, TestSUB.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(lastNotification)		# this must have caused a notification

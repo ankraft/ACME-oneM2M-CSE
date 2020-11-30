@@ -26,13 +26,13 @@ class TestCNT(unittest.TestCase):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
 				 	'rr': False,
 				 	'srv': [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
@@ -48,10 +48,10 @@ class TestCNT(unittest.TestCase):
 	def test_createCNT(self):
 		self.assertIsNotNone(TestCNT.cse)
 		self.assertIsNotNone(TestCNT.ae)
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN
 				}}
-		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, jsn)
+		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
 
 
@@ -88,12 +88,12 @@ class TestCNT(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNT(self):
-		jsn = 	{ 'm2m:cnt' : {
+		dct = 	{ 'm2m:cnt' : {
 					'lbl' : [ 'aTag' ],
 					'mni' : 10,
 					'mbs' : 9999
  				}}
-		cnt, rsc = UPDATE(cntURL, TestCNT.originator, jsn)
+		cnt, rsc = UPDATE(cntURL, TestCNT.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		cnt, rsc = RETRIEVE(cntURL, TestCNT.originator)		# retrieve cnt again
 		self.assertEqual(rsc, RC.OK)
@@ -115,47 +115,47 @@ class TestCNT(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTTy(self):
-		jsn = 	{ 'm2m:cnt' : {
+		dct = 	{ 'm2m:cnt' : {
 					'ty' : T.CSEBase
 				}}
-		r, rsc = UPDATE(cntURL, TestCNT.originator, jsn)
+		r, rsc = UPDATE(cntURL, TestCNT.originator, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTPi(self):
-		jsn = 	{ 'm2m:cnt' : {
+		dct = 	{ 'm2m:cnt' : {
 					'pi' : 'wrongID'
 				}}
-		r, rsc = UPDATE(cntURL, TestCNT.originator, jsn)
+		r, rsc = UPDATE(cntURL, TestCNT.originator, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTUnknownAttribute(self):
-		jsn = 	{ 'm2m:cnt' : {
+		dct = 	{ 'm2m:cnt' : {
 					'unknown' : 'unknown'
 				}}
-		r, rsc = UPDATE(cntURL, TestCNT.originator, jsn)
+		r, rsc = UPDATE(cntURL, TestCNT.originator, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTWrongMNI(self):
-		jsn = 	{ 'm2m:cnt' : {
+		dct = 	{ 'm2m:cnt' : {
 					'mni' : -1
 				}}
-		r, rsc = UPDATE(cntURL, TestCNT.originator, jsn)
+		r, rsc = UPDATE(cntURL, TestCNT.originator, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTUnderCNT(self):
 		self.assertIsNotNone(TestCNT.cse)
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN
 				}}
-		r, rsc = CREATE(cntURL, TestCNT.originator, T.CNT, jsn) 
+		r, rsc = CREATE(cntURL, TestCNT.originator, T.CNT, dct) 
 		self.assertEqual(rsc, RC.created)
 
 
@@ -186,10 +186,10 @@ class TestCNT(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTUnderCSE(self):
 		self.assertIsNotNone(TestCNT.cse)
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN
 				}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, jsn) # With Admin originator
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct) # With Admin originator
 		self.assertEqual(rsc, RC.created)
 
 

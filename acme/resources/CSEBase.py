@@ -22,10 +22,10 @@ attributePolicies = constructPolicy([
 
 class CSEBase(Resource):
 
-	def __init__(self, jsn:dict=None, create:bool=False) -> None:
-		super().__init__(T.CSEBase, jsn, '', create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:dict=None, create:bool=False) -> None:
+		super().__init__(T.CSEBase, dct, '', create=create, attributePolicies=attributePolicies)
 
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('ri', 'cseid', overwrite=False)
 			self.setAttribute('rn', 'cse', overwrite=False)
 			self.setAttribute('csi', 'cse', overwrite=False)

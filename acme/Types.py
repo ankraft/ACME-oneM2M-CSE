@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-import json
+import json, cbor2
 from dataclasses import dataclass, field
 from typing import Any, List
 from enum import IntEnum, Enum, auto
@@ -286,6 +286,7 @@ class ResponseCode(IntEnum):
 	badRequest									= 4000
 	notFound 									= 4004
 	operationNotAllowed							= 4005
+	unsupportedMediaType						= 4015
 	subscriptionCreatorHasNoPrivilege			= 4101
 	contentsUnacceptable						= 4102
 	originatorHasNoPrivilege					= 4103
@@ -346,6 +347,7 @@ ResponseCode._httpStatusCodes = {											# type: ignore
 		ResponseCode.operationNotAllowed						: 405,		# OPERATION NOT ALLOWED
 		ResponseCode.notAcceptable 								: 406,		# NOT ACCEPTABLE
 		ResponseCode.conflict									: 409,		# CONFLICT
+		ResponseCode.unsupportedMediaType						: 415,		# UNSUPPORTED_MEDIA_TYPE
 		ResponseCode.internalServerError 						: 500,		# INTERNAL SERVER ERROR
 		ResponseCode.subscriptionVerificationInitiationFailed	: 500,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
 		ResponseCode.notImplemented								: 501,		# NOT IMPLEMENTED
@@ -517,6 +519,42 @@ class NotificationEventType(IntEnum):
 	blockingUpdate 		= 7 # TODO not supported yet
 
 
+##############################################################################
+#
+#	Content Serializations
+#
+
+class ContentSerializationType(IntEnum):
+	"""	Content Serialization Types """
+	XML					= auto()
+	JSON				= auto()
+	CBOR				= auto()
+	UNKNOWN				= auto()
+
+	def toString(self) -> str:
+		if self.value == self.XML:	return 'application/xml'
+		if self.value == self.JSON:	return 'application/json'
+		if self.value == self.CBOR:	return 'application/cbor'
+		return None
+	
+	@classmethod
+	def getType(cls, hdr:str, default:ContentSerializationType=None) -> ContentSerializationType:
+		default = cls.UNKNOWN if default is None else default
+		if hdr is None:													return default
+		if hdr.lower().startswith('application/json'):					return cls.JSON
+		if hdr.lower().startswith('application/vnd.onem2m-res+json'):	return cls.JSON
+		if hdr.lower().startswith('application/cbor'):					return cls.CBOR
+		if hdr.lower().startswith('application/vnd.onem2m-res+cbor'):	return cls.CBOR
+		if hdr.lower().startswith('application/xml'):					return cls.XML
+		if hdr.lower().startswith('application/vnd.onem2m-res+XML'):	return cls.XML
+		return cls.UNKNOWN
+	
+	def __eq__(self, other:object) -> bool:
+		if not isinstance(other, str):
+			return NotImplemented
+		return self.value == self.getType(str(other))
+
+
 
 ##############################################################################
 #
@@ -526,7 +564,7 @@ class NotificationEventType(IntEnum):
 @dataclass
 class Result:
 	resource 			: Resource		= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
-	jsn 				: dict 			= None
+	dict 				: dict 			= None		# Contains the result dictionary
 	data 				: Any 			= None 		# Anything
 	lst 				: List[Any]   	= None		# List of Anything
 	rsc 				: ResponseCode	= ResponseCode.OK	# OK
@@ -541,20 +579,22 @@ class Result:
 		"""
 		return Result(rsc=self.rsc, dbg=self.dbg)
 
-	def toString(self) -> str:
+	def toString(self, ct:ContentSerializationType=ContentSerializationType.JSON) -> str:
 		from resources.Resource import Resource
 
+		encoder = json if ct == ContentSerializationType.JSON else cbor2 if ct == ContentSerializationType.CBOR else None
+
 		if isinstance(self.resource, Resource):
-			r = json.dumps(self.resource.asJSON())
+			r = encoder.dumps(self.resource.asDict())	# TODO check for encoder null
 		elif self.dbg is not None:
-			r = json.dumps({ 'm2m:dbg' : self.dbg })
+			r = encoder.dumps({ 'm2m:dbg' : self.dbg })
 		elif isinstance(self.resource, dict):
-			r = json.dumps(self.resource)
+			r = encoder.dumps(self.resource)
 		elif isinstance(self.resource, str):
 			r = self.resource
-		elif isinstance(self.jsn, dict):		# explicit json
-			r = json.dumps(self.jsn)
-		elif self.resource is None and self.jsn is None:
+		elif isinstance(self.dict, dict):		# explicit json or cbor
+			r = encoder.dumps(self.dict)
+		elif self.resource is None and self.dict is None:
 			r = ''
 		else:
 		 	r = ''
@@ -579,7 +619,7 @@ class RequestArguments:
 	conditions 					: dict 							= field(default_factory=dict)
 	attributes 					: dict 							= field(default_factory=dict)
 	operation 					: Operation 					= None
-	request 					: Request 						= None
+	#request 					: Request 						= None
 
 
 @dataclass
@@ -587,6 +627,7 @@ class RequestHeaders:
 	originator 					: str 			= None 	# X-M2M-Origin
 	requestIdentifier			: str 			= None	# X-M2M-RI
 	contentType 				: str 			= None	# Content-Type
+	accept						: list			= None	# Accept
 	resourceType 				: ResourceTypes	= None
 	requestExpirationTimestamp	: str 			= None 	# X-M2M-RET
 	responseExpirationTimestamp	: str 			= None 	# X-M2M-RST
@@ -595,12 +636,13 @@ class RequestHeaders:
 	responseTypeNUs				: List[str]		= None	# X-M2M-RTU
 
 
+@dataclass
 class CSERequest:
 	headers 					: RequestHeaders 	= None
 	args 						: RequestArguments 	= None
 	originalArgs 				: Any 				= None	# Actually a MultiDict
-	data 						: str 				= None 	# The request data
-	json 						: dict 				= None	# The request data as JSON
+	data 						: str 				= None 	# The request original data
+	dict 						: dict 				= None	# The request data as a dictionary
 	id 							: str 				= None 	# target ID
 	srn 						: str 				= None 	# target structured resource name
 	csi 						: str 				= None 	# target csi

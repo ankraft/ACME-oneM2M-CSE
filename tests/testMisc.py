@@ -42,19 +42,19 @@ class TestMisc(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createUnknownResourceType(self):
-		jsn = 	{ 'foo:bar' : { 
+		dct = 	{ 'foo:bar' : { 
 					'rn' : 'foo',
 				}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, 999, jsn)
+		r, rsc = CREATE(cseURL, ORIGINATOR, 999, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAlphaResourceType(self):
-		jsn = 	{ 'foo:bar' : { 
+		dct = 	{ 'foo:bar' : { 
 					'rn' : 'foo',
 				}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, 'wrong', jsn)
+		r, rsc = CREATE(cseURL, ORIGINATOR, 'wrong', dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 

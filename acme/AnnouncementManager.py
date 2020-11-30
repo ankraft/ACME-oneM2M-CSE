@@ -7,7 +7,8 @@
 #	Managing entity for resource announcements
 #
 
-import json, time, traceback
+import time, traceback
+from copy import deepcopy
 from typing import Tuple, List
 from Logging import Logging
 import Utils, CSE
@@ -177,8 +178,8 @@ class AnnouncementManager(object):
 			Logging.logWarn(f'CSI: {csi} not found for at: {at}')
 			return
 
-		# Create announced json & type
-		data = resource.createAnnouncedResourceJSON(remoteCSR, isCreate=True, csi=csi)
+		# Create announced resource & type
+		data = resource.createAnnouncedResourceDict(remoteCSR, isCreate=True, csi=csi)
 		tyAnnc = T(resource.ty).announced()
 
 		# Get target URL for request
@@ -191,7 +192,7 @@ class AnnouncementManager(object):
 
 		# Create the announed resource on the remote CSE
 		Logging.logDebug(f'Creating announced resource at: {csi} url: {url}')	
-		res = CSE.httpServer.sendCreateRequest(url, CSE.remote.originator, ty=tyAnnc, data=json.dumps(data))
+		res = CSE.httpServer.sendCreateRequest(url, CSE.remote.originator, ty=tyAnnc, data=data)
 		if res.rsc not in [ RC.created, RC.OK ]:
 			if res.rsc != RC.alreadyExists:	# assume that it is ok if the remote resource already exists 
 				Logging.logDebug(f'Error creating remote announced resource: {res.rsc:d}')
@@ -203,7 +204,7 @@ class AnnouncementManager(object):
 						resource.setAttribute('at', at)
 				return
 		else:
-			self._addAnnouncementToResource(resource, res.jsn, csi)
+			self._addAnnouncementToResource(resource, res.dict, csi)
 		Logging.logDebug('Announced resource created')
 		resource.dbUpdate()
 
@@ -293,7 +294,7 @@ class AnnouncementManager(object):
 
 
 		# get all reources for this specific CSI that are  announced to it yet
-		at = resource.at.copy()
+		at = deepcopy(resource.at)
 		CSIsFromAnnounceTo = []
 		for announcedResource in at:
 			if len(sp := announcedResource.split('/')) >= 2:
@@ -341,7 +342,7 @@ class AnnouncementManager(object):
 
 		Logging.logDebug(f'Update announced resource: {resource.ri} to: {csi}')
 
-		data = resource.createAnnouncedResourceJSON(remoteCSR, isCreate=False, csi=csi)
+		data = resource.createAnnouncedResourceDict(remoteCSR, isCreate=False, csi=csi)
 		tyAnnc = T(resource.ty).announced()
 
 		# Get target URL for request
@@ -353,7 +354,7 @@ class AnnouncementManager(object):
 
 		# Create the announed resource on the remote CSE
 		Logging.logDebug(f'Updating announced resource at: {csi} url: {url}')	
-		res = CSE.httpServer.sendUpdateRequest(url, CSE.remote.originator, data=json.dumps(data))
+		res = CSE.httpServer.sendUpdateRequest(url, CSE.remote.originator, data=data)
 		if res.rsc not in [ RC.updated, RC.OK ]:
 			Logging.logDebug(f'Error updating remote announced resource: {res.rsc:d}')
 			# Ignore and fallthrough
@@ -376,12 +377,12 @@ class AnnouncementManager(object):
 		return csi, poas
 
 
-	def _addAnnouncementToResource(self, resource:Resource, jsn:dict, csi:str) -> None:
+	def _addAnnouncementToResource(self, resource:Resource, dct:dict, csi:str) -> None:
 		"""	Add anouncement information to the resource. These are a list of tuples of 
 			the csi to which the resource is registered as well as the ri of the 
 			resource on the remote CSE. Also, add the reference in the at attribute.
 		"""
-		remoteRI = Utils.findXPath(jsn, '{0}/ri')
+		remoteRI = Utils.findXPath(dct, '{0}/ri')
 		ats = resource[Resource._announcedTo]
 		ats.append((csi, remoteRI))
 		resource.setAttribute(Resource._announcedTo, ats)

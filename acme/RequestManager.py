@@ -88,7 +88,8 @@ class RequestManager(object):
 			return Result(rsc=RC.badRequest, dbg='missing or wrong contentType or resourceType in request')
 
 		if request.args.rt == ResponseType.blockingRequest:
-			return CSE.dispatcher.processCreateRequest(request, request.headers.originator)
+			res = CSE.dispatcher.processCreateRequest(request, request.headers.originator)
+			return res
 
 		elif request.args.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
 			return self._handleNonBlockingRequest(request)
@@ -205,22 +206,19 @@ class RequestManager(object):
 		if (reqres := self._createRequestResource(request)).resource is None:
 			return reqres
 
-		jsn:Dict[str, Any] = None
 		# Synchronous handling
 		if request.args.rt == ResponseType.nonBlockingRequestSynch:
 			# Run operation in the background
 			BackgroundWorkerPool.newActor(0.0, self._runNonBlockingRequestSync, f'request_{request.headers.requestIdentifier}').start(request=request, reqRi=reqres.resource.ri)
 			# Create the response content with the <request> ri 
-			jsn = { 'm2m:uri' : reqres.resource.ri }
-			return Result(jsn=jsn, rsc=RC.acceptedNonBlockingRequestSynch)
+			return Result(dict={ 'm2m:uri' : reqres.resource.ri }, rsc=RC.acceptedNonBlockingRequestSynch)
 
 		# Asynchronous handling
 		if request.args.rt == ResponseType.nonBlockingRequestAsynch:
 			# Run operation in the background
 			BackgroundWorkerPool.newActor(0.0, self._runNonBlockingRequestAsync, f'request_{request.headers.requestIdentifier}').start(request=request, reqRi=reqres.resource.ri)
 			# Create the response content with the <request> ri 
-			jsn = { 'm2m:uri' : reqres.resource.ri }
-			return Result(jsn=jsn, rsc=RC.acceptedNonBlockingRequestAsynch)
+			return Result(dict={ 'm2m:uri' : reqres.resource.ri }, rsc=RC.acceptedNonBlockingRequestAsynch)
 
 		# Error
 		return Result(rsc=RC.badRequest, dbg=f'Unknown or unsupported ResponseType: {request.args.rt}')
@@ -269,7 +267,7 @@ class RequestManager(object):
 				nus = aes[0].poa
 
 		# send notifications.Ignore any errors here
-		CSE.notification.sendNotificationWithJSON(responseNotification, nus)
+		CSE.notification.sendNotificationWithDict(responseNotification, nus)
 
 		return True
 
@@ -301,7 +299,7 @@ class RequestManager(object):
 		if operationResult.rsc in [ RC.OK, RC.created, RC.updated, RC.deleted ] :			# OK, created, updated, deleted -> resource
 			reqres['rs'] = RequestStatus.COMPLETED
 			if operationResult.resource is not None:
-				reqres['ors/pc'] = operationResult.resource.asJSON()
+				reqres['ors/pc'] = operationResult.resource.asDict()
 		else:																				# Error
 			reqres['rs'] = RequestStatus.FAILED
 			if operationResult.dbg is not None:

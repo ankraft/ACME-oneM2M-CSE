@@ -8,7 +8,7 @@
 #	many utility methods like registering with the CSE etc.
 #
 
-import json, os
+import os
 from typing import Dict, Any, Callable
 from Configuration import Configuration
 from resources.Resource import Resource
@@ -45,12 +45,12 @@ class AppBase(object):
 		return CSE.httpServer.sendRetrieveRequest(self._id(ri, srn), self.originator)
 
 
-	def createResource(self, ri:str=None, srn:str=None, ty:T=None, jsn:Dict[str, Any]=None) -> Result:
-		return CSE.httpServer.sendCreateRequest(self._id(ri, srn), self.originator, ty, json.dumps(jsn))
+	def createResource(self, ri:str=None, srn:str=None, ty:T=None, data:Dict[str, Any]=None) -> Result:
+		return CSE.httpServer.sendCreateRequest(self._id(ri, srn), self.originator, ty, data)
 
 
-	def updateResource(self, ri:str=None, srn:str=None, jsn:dict=None) -> Result:
-		return CSE.httpServer.sendUpdateRequest(self._id(ri, srn), self.originator, json.dumps(jsn))
+	def updateResource(self, ri:str=None, srn:str=None, data:dict=None) -> Result:
+		return CSE.httpServer.sendUpdateRequest(self._id(ri, srn), self.originator, data)
 
 
 	def deleteResource(self, ri:str=None, srn:str=None) -> Result:
@@ -65,20 +65,20 @@ class AppBase(object):
 		return None
 
 
-	def retrieveCreate(self, srn:str=None, jsn:dict=None, ty:T=T.MGMTOBJ) -> Resource:
+	def retrieveCreate(self, srn:str=None, data:dict=None, ty:T=T.MGMTOBJ) -> Resource:
 		# First check whether node exists and create it if necessary
 		if (result := self.retrieveResource(srn=srn)).rsc != RC.OK:
 
 			# No, so create mgmtObj specialization
 			srn = os.path.split(srn)[0] if srn.count('/') >= 0 else ''
-			result = self.createResource(srn=srn, ty=ty, jsn=jsn)
+			result = self.createResource(srn=srn, ty=ty, data=data)
 			if result.rsc == RC.created:
-				return Utils.resourceFromJSON(result.jsn).resource
+				return Utils.resourceFromDict(result.dict).resource
 			else:
 				#Logging.logErr(n)
 				pass
 		else: # just retrieve
-			return Utils.resourceFromJSON(result.jsn).resource
+			return Utils.resourceFromDict(result.dict).resource
 		return None
 
 

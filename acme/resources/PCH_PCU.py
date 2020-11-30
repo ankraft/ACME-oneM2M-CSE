@@ -17,8 +17,8 @@ from Logging import Logging
 
 class PCH_PCU(Resource):
 
-	def __init__(self, jsn:dict=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.PCH_PCU, jsn, pi, create=create, inheritACP=True, readOnly=True, rn='ol', isVirtual=True)
+	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.PCH_PCU, dct, pi, create=create, inheritACP=True, readOnly=True, rn='ol', isVirtual=True)
 
 
 

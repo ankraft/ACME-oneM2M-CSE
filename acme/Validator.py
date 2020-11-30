@@ -7,6 +7,7 @@
 #	Validation service and functions
 #
 
+from copy import deepcopy
 from typing import Any, List, Dict
 from Logging import Logging
 from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, ResponseCode as RC 		# type: ignore
@@ -247,7 +248,7 @@ def constructPolicy(attributes: List[str]) -> Dict[str, List[Any]]:
 
 def addPolicy(policies: Dict[str, List[Any]], newPolicies: Dict[str, List[Any]]) -> Dict[str, List[Any]]:
 	"""	Add further policies to a policy dictionary. """
-	policies = policies.copy()
+	policies = deepcopy(policies)
 	policies.update( newPolicies )
 	return policies
 
@@ -266,7 +267,7 @@ class Validator(object):
 	#########################################################################
 
 
-	def	validateAttributes(self, jsn:dict, tpe:str, attributePolicies:dict, create:bool=True , isImported:bool=False, createdInternally:bool=False) -> Result:
+	def	validateAttributes(self, dct:dict, tpe:str, attributePolicies:dict, create:bool=True , isImported:bool=False, createdInternally:bool=False) -> Result:
 		""" Validate a resources attributes for types etc."""
 		if not self.validationEnabled:	# just return if disabled
 			return Result(status=True)
@@ -279,25 +280,25 @@ class Validator(object):
 
 		# No policies?
 		if attributePolicies is None:
-			Logging.logWarn(f'No attribute policies: {jsn}')
+			Logging.logWarn(f'No attribute policies: {dct}')
 			return Result(status=True)
 
 		# determine the request column, depending on create or updates
 		reqp = 2 if create else 3
-		(pureJson, _tpe) = Utils.pureResource(jsn)
-		if pureJson is None:
+		(pureResDict, _tpe) = Utils.pureResource(dct)
+		if pureResDict is None:
 			return Result(status=False, rsc=RC.badRequest, dbg='content is None')
 
 		tpe = _tpe if _tpe is not None and _tpe != tpe else tpe 				# determine the real tpe
 
 		# if tpe is not None and not tpe.startswith("m2m:"):
-		# 	pureJson = jsn
+		# 	pureResDict = dct
 		if (attributePolicies := self._addAdditionalAttributes(tpe, attributePolicies)) is None:
 			Logging.logWarn(err := f'Unknown resource type: {tpe}')
 			return Result(status=False, rsc=RC.badRequest, dbg=err)
 
 		#Logging.logDebug(attributePolicies.items())
-		for r in pureJson.keys():
+		for r in pureResDict.keys():
 			if r not in attributePolicies.keys():
 				Logging.logWarn(err := f'Unknown attribute: {r} in resource: {tpe}')
 				return Result(status=False, rsc=RC.badRequest, dbg=err)
@@ -308,21 +309,21 @@ class Validator(object):
 				Logging.logWarn(f'No validation policy found for attribute: {r}')
 				continue
 			# Check whether the attribute is allowed or mandatory in the request
-			if (v := pureJson.get(r)) is None:
+			if (v := pureResDict.get(r)) is None:
 				if p[reqp] == RO.M:		# Not okay, this attribute is mandatory
 					Logging.logWarn(err := f'Cannot find mandatory attribute: {r}')
 					return Result(status=False, rsc=RC.badRequest, dbg=err)
-				if r in pureJson and p[1] == CAR.car1: # but ignore CAR.car1N (which may be Null/None)
+				if r in pureResDict and p[1] == CAR.car1: # but ignore CAR.car1N (which may be Null/None)
 					Logging.logWarn(err := f'Cannot delete a mandatory attribute: {r}')
 					return Result(status=False, rsc=RC.badRequest, dbg=err)
-				if p[reqp] in [ RO.NP, RO.O ]:	# Okay that the attribute is not in the json, since it is provided or optional
+				if p[reqp] in [ RO.NP, RO.O ]:	# Okay that the attribute is not in the dict, since it is provided or optional
 					continue
 			else:
 				if not createdInternally:
 					if p[reqp] == RO.NP:
 						Logging.logWarn(err := f'Found non-provision attribute: {r}')
 						return Result(status=False, rsc=RC.badRequest, dbg=err)
-				if r == 'pvs' and not (res := self.validatePvs(pureJson)).status:
+				if r == 'pvs' and not (res := self.validatePvs(pureResDict)).status:
 					return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
 
 			# Check whether the value is of the correct type
@@ -336,10 +337,10 @@ class Validator(object):
 		return Result(status=True)
 
 
-	def validatePvs(self, jsn: dict) -> Result:
+	def validatePvs(self, dct:dict) -> Result:
 		""" Validating special case for lists that are not allowed to be empty (pvs in ACP). """
 
-		if (l :=len(jsn['pvs'])) == 0:
+		if (l :=len(dct['pvs'])) == 0:
 			err = 'Attribute pvs must not be an empty list'
 			Logging.logWarn(err)
 			return Result(status=False, dbg=err)
@@ -347,7 +348,7 @@ class Validator(object):
 			err = 'Attribute pvs must contain only one item'
 			Logging.logWarn(err)
 			return Result(status=False, dbg=err)
-		if (acr := Utils.findXPath(jsn, 'pvs/acr')) is None:
+		if (acr := Utils.findXPath(dct, 'pvs/acr')) is None:
 			err = 'Attribute pvs/acr not found'
 			Logging.logWarn(err)
 			return Result(status=False, dbg=err)
@@ -419,7 +420,7 @@ class Validator(object):
 		#if tpe is not None and not tpe.startswith('m2m:'):
 		if tpe is not None and tpe in self.additionalAttributes:
 			if tpe in self.additionalAttributes:
-				newap = attributePolicies.copy()
+				newap = deepcopy(attributePolicies)
 				newap.update(self.additionalAttributes.get(tpe))
 				return newap
 			else:

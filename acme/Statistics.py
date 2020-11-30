@@ -11,6 +11,7 @@ from Logging import Logging
 from Configuration import Configuration
 import CSE, Utils
 import datetime
+from copy import deepcopy
 from threading import Lock
 from helpers.BackgroundWorker import BackgroundWorkerPool
 from resources.Resource import Resource
@@ -100,7 +101,7 @@ class Statistics(object):
 		if not self.statisticsEnabled:
 			return None
 			
-		s = self.stats.copy()
+		s = deepcopy(self.stats)
 
 		# Calculate some stats
 		s[cseUpTime] = str(datetime.timedelta(seconds=int(datetime.datetime.utcnow().timestamp() - s[cseStartUpTime])))

@@ -7,17 +7,15 @@
 #	CIN : Announceable variant
 #
 
-
 from .AnnouncedResource import AnnouncedResource
 from .Resource import *
 from Types import ResourceTypes as T
 
 
-
 class CINAnnc(AnnouncedResource):
 
-	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(T.CINAnnc, jsn, pi=pi, create=create)
+	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.CINAnnc, dct, pi=pi, create=create)
 
 
 	# Enable check for allowed sub-resources

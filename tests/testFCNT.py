@@ -30,13 +30,13 @@ class TestFCNT(unittest.TestCase):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, 'cannot retrieve CSEBase'
 
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
 					'rr': False,
 					'srv': [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
@@ -51,7 +51,7 @@ class TestFCNT(unittest.TestCase):
 	def test_createFCNT(self):
 		self.assertIsNotNone(TestFCNT.cse)
 		self.assertIsNotNone(TestFCNT.ae)
-		jsn = 	{ 'cod:tempe' : { 
+		dct = 	{ 'cod:tempe' : { 
 					'rn'	: fcntRN,
 					'cnd' 	: CND, 
 					'curTe'	: 23.0,
@@ -60,7 +60,7 @@ class TestFCNT(unittest.TestCase):
 					'maxVe' : 100.0,
 					'steVe'	: 0.5
 				}}
-		r, rsc = CREATE(aeURL, TestFCNT.originator, T.FCNT, jsn)
+		r, rsc = CREATE(aeURL, TestFCNT.originator, T.FCNT, dct)
 		self.assertEqual(rsc, RC.created)
 
 
@@ -100,10 +100,10 @@ class TestFCNT(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNT(self):
-		jsn = 	{ 'cod:tempe' : {
+		dct = 	{ 'cod:tempe' : {
 					'tarTe':	5.0
 				}}
-		r, rsc = UPDATE(fcntURL, TestFCNT.originator, jsn)
+		r, rsc = UPDATE(fcntURL, TestFCNT.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		r, rsc = RETRIEVE(fcntURL, TestFCNT.originator)		# retrieve fcnt again
 		self.assertEqual(rsc, RC.OK)
@@ -117,47 +117,47 @@ class TestFCNT(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNTwithCnd(self):
-		jsn = 	{ 'cod:tempe' : {
+		dct = 	{ 'cod:tempe' : {
 					'cnd' : CND,
 				}}
-		r, rsc = UPDATE(fcntURL, TestFCNT.originator, jsn)
+		r, rsc = UPDATE(fcntURL, TestFCNT.originator, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNTwithWrongType(self):
-		jsn = 	{ 'cod:tempe' : {
+		dct = 	{ 'cod:tempe' : {
 					'tarTe':	'5.0'
 				}}
-		r, rsc = UPDATE(fcntURL, TestFCNT.originator, jsn)
+		r, rsc = UPDATE(fcntURL, TestFCNT.originator, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNTwithUnkownAttribute(self):
-		jsn = 	{ 'cod:tempe' : {
+		dct = 	{ 'cod:tempe' : {
 					'wrong':	'aValue'
 				}}
-		r, rsc = UPDATE(fcntURL, TestFCNT.originator, jsn)
+		r, rsc = UPDATE(fcntURL, TestFCNT.originator, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createFCNTUnknown(self):
-		jsn = 	{ 'cod:unknown' : { 
+		dct = 	{ 'cod:unknown' : { 
 					'rn'	: 'unknown',
 					'cnd' 	: 'unknown', 
 					'attr'	: 'aValuealue',
 				}}
-		r, rsc = CREATE(aeURL, TestFCNT.originator, T.FCNT, jsn)
+		r, rsc = CREATE(aeURL, TestFCNT.originator, T.FCNT, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTUnderFCNT(self):
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN
 				}}
-		r, rsc = CREATE(fcntURL, TestFCNT.originator, T.CNT, jsn)
+		r, rsc = CREATE(fcntURL, TestFCNT.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
 
 
@@ -169,11 +169,11 @@ class TestFCNT(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createFCNTUnderFCNT(self):
-		jsn = 	{ 'cod:tempe' : { 
+		dct = 	{ 'cod:tempe' : { 
 					'cnd' 	: CND, 
 					'rn' : fcntRN,
 				}}
-		r, rsc = CREATE(fcntURL, TestFCNT.originator, T.FCNT, jsn)
+		r, rsc = CREATE(fcntURL, TestFCNT.originator, T.FCNT, dct)
 		self.assertEqual(rsc, RC.created)
 
 

@@ -32,12 +32,12 @@ attributePolicies =  addPolicy(attributePolicies, cntPolicies)
 class CNT(AnnounceableResource):
 
 
-	def __init__(self, jsn:dict=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.CNT, jsn, pi, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.CNT, dct, pi, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = cntPolicies	# only the resource type's own policies
 
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite=False)
 			self.setAttribute('mbs', Configuration.get('cse.cnt.mbs'), overwrite=False)
 			self.setAttribute('cni', 0, overwrite=False)
@@ -62,12 +62,12 @@ class CNT(AnnounceableResource):
 		Logging.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		latestResource = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.CNT_LA).resource
+		latestResource = Utils.resourceFromDict({}, pi=self.ri, acpi=self.acpi, ty=T.CNT_LA).resource
 		if (res := CSE.dispatcher.createResource(latestResource)).resource is None:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
 		# add oldest
-		oldestResource = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.CNT_OL).resource
+		oldestResource = Utils.resourceFromDict({}, pi=self.ri, acpi=self.acpi, ty=T.CNT_OL).resource
 	
 		if (res := CSE.dispatcher.createResource(oldestResource)).resource is None:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)

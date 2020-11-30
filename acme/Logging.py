@@ -193,12 +193,14 @@ class ACMERichLogHandler(RichHandler):
 			# r"(?P<brace>[\{\[\(\)\]\}])",
 			#r"(?P<tag_start>\<)(?P<tag_name>\w*)(?P<tag_contents>.*?)(?P<tag_end>\>)",
 			#r"(?P<attrib_name>\w+?)=(?P<attrib_value>\"?\w+\"?)",
-			r"(?P<bool_true>True)|(?P<bool_false>False)|(?P<none>None)",
-			r"(?P<id>(?<!\w)\-?[0-9]+\.?[0-9]*\b)",
-			r"(?P<number>0x[0-9a-f]*)",
+			#r"(?P<bool_true>True)|(?P<bool_false>False)|(?P<none>None)",
+			r"(?P<none>None)",
+			#r"(?P<id>(?<!\w)\-?[0-9]+\.?[0-9]*\b)",
+			# r"(?P<number>\-?[0-9a-f])",
+			r"(?P<number>\-?0x[0-9a-f]+)",
 			#r"(?P<filename>\/\w*\.\w{3,4})\s",
 			r"(?<!\\)(?P<str>b?\'\'\'.*?(?<!\\)\'\'\'|b?\'.*?(?<!\\)\'|b?\"\"\".*?(?<!\\)\"\"\"|b?\".*?(?<!\\)\")",
-			r"(?P<id>[\w\-_.]+[0-9]+\.?[0-9])",		# ID
+			#r"(?P<id>[\w\-_.]+[0-9]+\.?[0-9])",		# ID
 			r"(?P<url>https?:\/\/[0-9a-zA-Z\$\-\_\~\+\!`\(\)\,\.\?\/\;\:\&\=\%]*)",
 			#r"(?P<uuid>[a-fA-F0-9]{8}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{12})",
 
@@ -209,9 +211,11 @@ class ACMERichLogHandler(RichHandler):
 			r"(?P<response><== [^ :]+[ :]+)",				# outgoing response or request
 			r"(?P<response>Response <== [^ :]+[ :]+)",		# Incoming response or request
 			r"(?P<number>\(RSC: [0-9]+\.?[0-9]\))",			# Result code
-			r"(?P<id> [\w/\-_]*/[\w/\-_]+)",				# ID
+			#r"(?P<id> [\w/\-_]*/[\w/\-_]+)",				# ID
 			r"(?P<number>\nHeaders: )",
+			r"(?P<number> \- Headers: )",
 			r"(?P<number>\nBody: )",
+			r"(?P<number> \- Body: )",
 			# r"(?P<request>CSE started$)",					# CSE startup message
 			# r"(?P<request>CSE shutdown$)",					# CSE shutdown message
 			# r"(?P<start>CSE shutting down$)",				# CSE shutdown message
@@ -221,7 +225,6 @@ class ACMERichLogHandler(RichHandler):
 
 		]
 		
-
 	def emit(self, record: LogRecord) -> None:
 		"""Invoked by logging."""
 		#path = Path(record.pathname).name

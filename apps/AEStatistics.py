@@ -58,7 +58,7 @@ class AEStatistics(AEBase):
 
 
 		# Create structure beneath the AE resource
-		jsn = { self.fcntType : {
+		dct = { self.fcntType : {
 				'rn'  : Configuration.get('app.statistics.fcntRN'),
 					'cnd' : Configuration.get('app.statistics.fcntCND'),
 					'acpi': [ self.acpi ],	# assignde by CSE,
@@ -80,11 +80,11 @@ class AEStatistics(AEBase):
 		}
 		# add announceTarget if target CSI is given
 		if (rcsi:= Configuration.get('cse.registrar.csi')) is not None:
-			Utils.setXPath(jsn, f'{self.fcntType}/at', [rcsi])
-		#Utils.setXPath(jsn, f'{self.fcntType}/at', ['/id-in'])
+			Utils.setXPath(dct, f'{self.fcntType}/at', [rcsi])
+		#Utils.setXPath(dct, f'{self.fcntType}/at', ['/id-in'])
 
 		self.fc = self.retrieveCreate(	srn=self.fcsrn,
-										jsn=jsn,
+										data=dct,
 										ty=T.FCNT)
 
 		# Update the statistic resource from time to time
@@ -107,7 +107,7 @@ class AEStatistics(AEBase):
 
 		# Update statistics
 		if (stats := CSE.statistics.getStats()) is not None:
-			self.updateResource(srn=self.fcsrn, jsn={ self.fcntType : stats })
+			self.updateResource(srn=self.fcsrn, data={ self.fcntType : stats })
 
 		return True
 

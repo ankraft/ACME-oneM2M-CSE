@@ -113,9 +113,9 @@ class Storage(object):
 			resources = self.db.searchResources(csi=csi)
 
 		# Logging.logDebug(resources)
-		# return Utils.resourceFromJSON(resources[0]) if len(resources) == 1 else None,
+		# return Utils.resourceFromDict(resources[0]) if len(resources) == 1 else None,
 		if (l := len(resources)) == 1:
-			return Utils.resourceFromJSON(resources[0])
+			return Utils.resourceFromDict(resources[0])
 		elif l == 0:
 			return Result(rsc=RC.notFound, dbg='resource not found')
 
@@ -157,7 +157,7 @@ class Storage(object):
 		# 	rs = self.tabResources.search(Query().pi == pi)			
 		result = []
 		for r in rs:
-			res = Utils.resourceFromJSON(r)
+			res = Utils.resourceFromDict(r)
 			if res.resource is not None:
 				result.append(res.resource)
 		return result
@@ -192,7 +192,7 @@ class Storage(object):
 
 		# result = []
 		# for j in self.db.searchByTypeFieldValue(int(ty), field, value):
-		# 	res = Utils.resourceFromJSON(j)
+		# 	res = Utils.resourceFromDict(j)
 		# 	if res.resource is not None:
 		# 		result.append(res.resource)
 		# return result
@@ -203,7 +203,7 @@ class Storage(object):
 		and return them in an array."""
 		result = []
 		for j in self.db.searchByValueInField(field, value):
-			res = Utils.resourceFromJSON(j)
+			res = Utils.resourceFromDict(j)
 			if res.resource is not None:
 				result.append(res.resource)
 		return result
@@ -214,7 +214,7 @@ class Storage(object):
 		"""
 		result = []
 		for j in self.db.discoverResources(filter):
-			res = Utils.resourceFromJSON(j)
+			res = Utils.resourceFromDict(j)
 			if res.resource is not None:
 				result.append(res.resource)
 		return result
@@ -247,7 +247,7 @@ class Storage(object):
 			return False
 
 		for j in self.db.discoverResources(_announcedFilter):
-			res = Utils.resourceFromJSON(j)
+			res = Utils.resourceFromDict(j)
 			if res.resource is not None:
 				result.append(res.resource)
 		return result
@@ -419,26 +419,26 @@ class TinyDBBinding(object):
 
 	def insertResource(self, resource: Resource) -> None:
 		with self.lockResources:
-			self.tabResources.insert(resource.json)
+			self.tabResources.insert(resource.dict)
 	
 
 	def upsertResource(self, resource: Resource) -> None:
 		#Logging.logDebug(resource)
 		with self.lockResources:
-			self.tabResources.upsert(resource.json, Query().ri == resource.ri)	# Update existing or insert new when overwriting
+			self.tabResources.upsert(resource.dict, Query().ri == resource.ri)	# Update existing or insert new when overwriting
 	
 
 	def updateResource(self, resource: Resource) -> Resource:
 		#Logging.logDebug(resource)
 		with self.lockResources:
 			ri = resource.ri
-			self.tabResources.update(resource.json, Query().ri == ri)
+			self.tabResources.update(resource.dict, Query().ri == ri)
 			# remove nullified fields from db and resource
 			# TODO remove Null values recursively
-			for k in list(resource.json):
-				if resource.json[k] is None:
+			for k in list(resource.dict):
+				if resource.dict[k] is None:
 					self.tabResources.update(delete(k), Query().ri == ri)
-					del resource.json[k]
+					del resource.dict[k]
 			return resource
 
 

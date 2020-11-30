@@ -10,7 +10,7 @@
 #
 
 
-import requests, json, urllib.parse
+import requests, urllib.parse
 from typing import List, Tuple, Dict
 from Configuration import Configuration
 from Logging import Logging
@@ -398,7 +398,7 @@ class RemoteCSEManager(object):
 		result = CSE.httpServer.sendRetrieveRequest(self.registrarCSRURL, self.originator)
 		if result.rsc not in [ RC.OK ]:
 			return result.errorResult()
-		return Result(resource=CSR.CSR(result.jsn, pi=''), rsc=RC.OK)
+		return Result(resource=CSR.CSR(result.dict, pi=''), rsc=RC.OK)
 
 
 	def _createCSRonRegistrarCSE(self) -> Result:
@@ -411,17 +411,16 @@ class RemoteCSEManager(object):
 		#csr['cb'] = Utils.getIdFromOriginator(localCSE.csi)	# only the stem
 		for _ in ['ty','ri', 'ct', 'lt']: csr.delAttribute(_, setNone=False)	# remove a couple of attributes
 		#for _ in ['ty','ri', 'ct', 'lt']: del(csr[_])	# remove a couple of attributes
-		data = json.dumps(csr.asJSON())
 
 		# Create the <remoteCSE> in the remote CSE
 		Logging.logDebug(f'Creating registrar CSR at: {self.registrarCSI} url: {self.registrarCSEURL}')	
-		res = CSE.httpServer.sendCreateRequest(self.registrarCSEURL, self.originator, ty=T.CSR, data=data)
+		res = CSE.httpServer.sendCreateRequest(self.registrarCSEURL, self.originator, ty=T.CSR, data=csr.asDict())
 		if res.rsc not in [ RC.created, RC.OK ]:
 			if res.rsc != RC.alreadyExists:
 				Logging.logDebug(f'Error creating registrar CSR: {res.rsc:d}')
 			return Result(rsc=res.rsc, dbg='cannot create remote CSR')
 		Logging.logDebug(f'Registrar CSR created: {self.registrarCSI}')
-		return Result(resource=CSR.CSR(res.jsn, pi=''), rsc=RC.created)
+		return Result(resource=CSR.CSR(res.dict, pi=''), rsc=RC.created)
 
 
 	def _updateCSRonRegistrarCSE(self, localCSE:Resource=None) -> Result:
@@ -431,15 +430,14 @@ class RemoteCSEManager(object):
 		csr = CSR.CSR()
 		self._copyCSE2CSR(csr, localCSE, isUpdate=True)
 		del csr['acpi']			# remove ACPI (don't provide ACPI in updates...a bit)
-		data = json.dumps(csr.asJSON())
 
-		res = CSE.httpServer.sendUpdateRequest(self.registrarCSRURL, self.originator, data=data)
+		res = CSE.httpServer.sendUpdateRequest(self.registrarCSRURL, self.originator, data=csr.asDict())
 		if res.rsc not in [ RC.updated, RC.OK ]:
 			if res.rsc != RC.alreadyExists:
 				Logging.logDebug(f'Error updating registrar CSR in CSE: {res.rsc:d}')
 			return Result(rsc=res.rsc, dbg='cannot update remote CSR')
 		Logging.logDebug(f'Registrar CSR updated in CSE: {self.registrarCSI}')
-		return Result(resource=CSR.CSR(res.jsn, pi=''), rsc=RC.updated)
+		return Result(resource=CSR.CSR(res.dict, pi=''), rsc=RC.updated)
 
 
 
@@ -463,7 +461,7 @@ class RemoteCSEManager(object):
 		res = CSE.httpServer.sendRetrieveRequest(url, self.originator)
 		if res.rsc not in [ RC.OK ]:
 			return res.errorResult()
-		return Result(resource=CSEBase.CSEBase(res.jsn), rsc=RC.OK)
+		return Result(resource=CSEBase.CSEBase(res.dict), rsc=RC.OK)
 
 
 	def getCSRForRemoteCSE(self, remoteCSE:Resource) -> Resource:
@@ -546,7 +544,7 @@ class RemoteCSEManager(object):
 		res = CSE.httpServer.sendRetrieveRequest(url, originator)
 		if res.rsc != RC.OK:
 			return res.errorResult()
-		return Utils.resourceFromJSON(res.jsn) if not raw else Result(resource=res.jsn)
+		return Utils.resourceFromDict(res.dict) if not raw else Result(resource=res.dict)
 
 
 	def isTransitID(self, id:str) -> bool:

@@ -23,8 +23,8 @@ from Types import ResourceTypes as T, Result, Operation, CSERequest
 
 class GRP_FOPT(Resource):
 
-	def __init__(self, jsn:dict=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.GRP_FOPT, jsn, pi, create=create, inheritACP=True, readOnly=True, rn='fopt', isVirtual=True)
+	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.GRP_FOPT, dct, pi, create=create, inheritACP=True, readOnly=True, rn='fopt', isVirtual=True)
 
 
 	# Enable check for allowed sub-resources

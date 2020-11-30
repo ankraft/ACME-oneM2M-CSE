@@ -15,10 +15,10 @@ from Types import ResourceTypes as T
 
 class MgmtObjAnnc(AnnouncedResource):
 
-	def __init__(self, jsn: dict, pi: str, mgd: T, create: bool = False) -> None:
-		super().__init__(T.MGMTOBJAnnc, jsn, pi, tpe=f'{mgd.tpe()}A', create=create)
+	def __init__(self, dct:dict, pi:str, mgd:T, create:bool=False) -> None:
+		super().__init__(T.MGMTOBJAnnc, dct, pi, tpe=f'{mgd.tpe()}A', create=create)
 		
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('mgd', int(mgd), overwrite=True)
 
 

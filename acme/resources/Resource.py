@@ -16,6 +16,7 @@ from Types import ResourceTypes as T, Result, NotificationEventType, ResponseCod
 from Configuration import Configuration
 import Utils, CSE
 import datetime, random, traceback
+from copy import deepcopy
 from .Resource import *
 
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)
@@ -37,28 +38,28 @@ class Resource(object):
 	# ATTN: There is a similar definition in FCNT! Don't Forget to add attributes there as well
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator, _announcedTo, _modified ]
 
-	def __init__(self, ty:Union[T, int], jsn:dict=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str=None, attributePolicies:dict=None, isVirtual:bool=False) -> None:
+	def __init__(self, ty:Union[T, int], dct:dict=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str=None, attributePolicies:dict=None, isVirtual:bool=False) -> None:
 		self.tpe = tpe
 		if isinstance(ty, T) and ty not in [ T.FCNT, T.FCI ]: 	# For some types the tpe/root is empty and will be set later in this method
 			self.tpe = ty.tpe() if tpe is None else tpe
 		self.readOnly = readOnly
 		self.inheritACP = inheritACP
-		self.json = {}
+		self.dict = {}
 		self.attributePolicies = attributePolicies
 
-		if jsn is not None: 
-			self.isImported = jsn.get(C.jsnIsImported)
-			if self.tpe in jsn:
-				self.json = jsn[self.tpe].copy()
+		if dct is not None: 
+			self.isImported = dct.get(C.isImported)
+			if self.tpe in dct:
+				self.dict = deepcopy(dct[self.tpe])
 			else:
-				self.json = jsn.copy()
-			self._originalJson = jsn.copy()	# keep for validation later
+				self.dict = deepcopy(dct)
+			self._originalDict = deepcopy(dct)	# keep for validation later
 		else:
-			# no JSON, so the resource is instantiated programmatically
+			# no Dict, so the resource is instantiated programmatically
 			self.setAttribute(self._isInstantiated, True)
 
 
-		if self.json is not None:
+		if self.dict is not None:
 			if self.tpe is None: # and _rtype in self:
 				self.tpe = self.__rtype__
 			self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite=False)
@@ -99,10 +100,10 @@ class Resource(object):
 			## Note: ACPI is set in activate()
 			#
 
-			# Remove empty / null attributes from json
+			# Remove empty / null attributes from dict
 			# But see also the comment in update() !!!
-			#self.json = {k: v for (k, v) in self.json.items() if v is not None }
-			self.json = Utils.deleteNoneValuesFromJSON(self.json)
+			#self.dict = {k: v for (k, v) in self.dict.items() if v is not None }
+			self.dict = Utils.deleteNoneValuesFromDict(self.dict)
 			# determine and add the srn
 			self[self._srn] = Utils.structuredPath(self)
 			self[self._rtype] = self.tpe
@@ -111,21 +112,21 @@ class Resource(object):
 
 
 	# Default encoding implementation. Overwrite in subclasses
-	def asJSON(self, embedded: bool = True, update: bool = False, noACP: bool = False) -> dict:
+	def asDict(self, embedded: bool = True, update: bool = False, noACP: bool = False) -> dict:
 		# remove (from a copy) all internal attributes before printing
-		jsn = self.json.copy()
+		dct = deepcopy(self.dict)
 		for k in self.internalAttributes:
-			if k in jsn: 
-				del jsn[k]
+			if k in dct: 
+				del dct[k]
 
 		if noACP:
-			if 'acpi' in jsn:
-				del jsn['acpi']
+			if 'acpi' in dct:
+				del dct['acpi']
 		if update:
 			for k in [ 'ri', 'ty', 'pi', 'ct', 'lt', 'st', 'rn', 'mgd']:
-				jsn.pop(k, None) # instead of using "del jsn[k]" this doesn't throw an exception if k doesn't exist
+				dct.pop(k, None) # instead of using "del dct[k]" this doesn't throw an exception if k doesn't exist
 
-		return { self.tpe : jsn } if embedded else jsn
+		return { self.tpe : dct } if embedded else dct
 
 
 	# This method is called to to activate a resource. This is not always the
@@ -140,7 +141,7 @@ class Resource(object):
 		# We assume that an instantiated resource is always correct
 		# Also don't validate virtual resources
 		if (self[self._isInstantiated] is None or not self[self._isInstantiated]) and not self[self._isVirtual] :
-			if not (res := CSE.validator.validateAttributes(self._originalJson, self.tpe, self.attributePolicies, isImported=self.isImported, createdInternally=self.isCreatedInternally())).status:
+			if not (res := CSE.validator.validateAttributes(self._originalDict, self.tpe, self.attributePolicies, isImported=self.isImported, createdInternally=self.isCreatedInternally())).status:
 				return res
 
 		# validate the resource logic
@@ -180,23 +181,23 @@ class Resource(object):
 
 	# Update this resource with (new) fields.
 	# Call validate() afterward to react on changes.
-	def update(self, jsn:dict=None, originator:str=None) -> Result:
-		jsonOrg = self.json.copy()	# Save for later for notification
+	def update(self, dct:dict=None, originator:str=None) -> Result:
+		dictOrg = deepcopy(self.dict)	# Save for later for notification
 
 		j = None
-		if jsn is not None:
-			if self.tpe not in jsn and self.ty not in [T.FCNTAnnc, T.FCIAnnc]:	# Don't check announced versions of announced FCNT
+		if dct is not None:
+			if self.tpe not in dct and self.ty not in [T.FCNTAnnc, T.FCIAnnc]:	# Don't check announced versions of announced FCNT
 				Logging.logWarn("Update types don't match")
 				return Result(status=False, rsc=RC.contentsUnacceptable, dbg='resource types mismatch')
 
 			# validate the attributes
-			if not (res := CSE.validator.validateAttributes(jsn, self.tpe, self.attributePolicies, create=False, createdInternally=self.isCreatedInternally())).status:
+			if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.attributePolicies, create=False, createdInternally=self.isCreatedInternally())).status:
 				return res
 
 			if self.ty not in [T.FCNTAnnc, T.FCIAnnc]:
-				j = jsn[self.tpe] # get structure under the resource type specifier
+				j = dct[self.tpe] # get structure under the resource type specifier
 			else:
-				j = Utils.findXPath(jsn, '{0}')
+				j = Utils.findXPath(dct, '{0}')
 			for key in j:
 				# Leave out some attributes
 				if key in ['ct', 'lt', 'pi', 'ri', 'rn', 'st', 'ty']:
@@ -210,23 +211,23 @@ class Resource(object):
 				self.setAttribute(key, value, overwrite=True) # copy new value or add new attributes
 
 		# - state and lt
-		if 'st' in self.json:	# Update the state
+		if 'st' in self.dict:	# Update the state
 			self['st'] += 1
-		if 'lt' in self.json:	# Update the lastModifiedTime
+		if 'lt' in self.dict:	# Update the lastModifiedTime
 			self['lt'] = Utils.getResourceDate()
 
-		# Remove empty / null attributes from json
+		# Remove empty / null attributes from dict
 		# 2020-08-10 : 	TinyDB doesn't overwrite the whole document but makes an attribute-by-attribute 
 		#				update. That means that removed attributes are NOT removed. There is now a 
 		#				procedure in the Storage component that removes nulled attributes as well.
-		#self.json = {k: v for (k, v) in self.json.items() if v is not None }
+		#self.dict = {k: v for (k, v) in self.dict.items() if v is not None }
 
 		# Do some extra validations, if necessary
 		if not (res := self.validate(originator)).status:
 			return res
 
 		# store last modified attributes
-		self[self._modified] = Utils.resourceDiff(jsonOrg, self.json, j)
+		self[self._modified] = Utils.resourceDiff(dictOrg, self.dict, j)
 
 		# Check subscriptions
 		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceUpdate, modifiedAttributes=self[self._modified])
@@ -287,7 +288,7 @@ class Resource(object):
 		return Result(status=True)
 
 
-	def createAnnouncedJSON(self) -> Tuple[dict, int, str]:
+	def createAnnouncedDict(self) -> Tuple[dict, int, str]:
 		"""	Create an announceable resource. This method is implemented by the
 			resource implementations that support announceable versions.
 		"""
@@ -319,20 +320,20 @@ class Resource(object):
 
 
 	def setAttribute(self, key:str, value:Any, overwrite:bool=True) -> None:
-		Utils.setXPath(self.json, key, value, overwrite)
+		Utils.setXPath(self.dict, key, value, overwrite)
 
 
 	def attribute(self, key:str, default:Any=None) -> Any:
 		if '/' in key:	# search in path
-			return Utils.findXPath(self.json, key, default)
+			return Utils.findXPath(self.dict, key, default)
 		if self.hasAttribute(key):
-			return self.json[key]
+			return self.dict[key]
 		return default
 
 
 	def hasAttribute(self, key: str) -> bool:
 		# TODO check sub-elements as well
-		return key in self.json
+		return key in self.dict
 
 
 	def delAttribute(self, key: str, setNone: bool = True) -> None:
@@ -343,9 +344,9 @@ class Resource(object):
 		"""
 		if self.hasAttribute(key):
 			if setNone:
-				self.json[key] = None
+				self.dict[key] = None
 			else:
-				del self.json[key]
+				del self.dict[key]
 
 
 	def __setitem__(self, key: str, value: Any) -> None:
@@ -418,7 +419,7 @@ class Resource(object):
 
 	def __str__(self) -> str:
 		""" String representation. """
-		return str(self.asJSON())
+		return str(self.asDict())
 
 
 	def __repr__(self) -> str:

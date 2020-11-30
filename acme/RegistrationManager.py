@@ -7,6 +7,7 @@
 #	Managing resources and AE, CSE registrations
 #
 
+from copy import deepcopy
 from Logging import Logging
 from typing import List
 from Constants import Constants as C
@@ -379,7 +380,7 @@ class RegistrationManager(object):
 		# Create the ACP
 		selfPermission = selfPermission if selfPermission is not None else Configuration.get('cse.acp.pvs.acop')
 
-		origs = originators.copy()
+		origs = deepcopy(originators)
 		origs.append(self.cseOriginator)	# always append cse originator
 
 		selfOrigs = [ self.cseOriginator ]

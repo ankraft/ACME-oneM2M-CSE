@@ -30,13 +30,13 @@ class TestFCNT_FCI(unittest.TestCase):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
 					'rr': False,
 					'srv': [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
@@ -51,7 +51,7 @@ class TestFCNT_FCI(unittest.TestCase):
 	def test_createFCNT(self):
 		self.assertIsNotNone(TestFCNT_FCI.cse)
 		self.assertIsNotNone(TestFCNT_FCI.ae)
-		jsn = 	{ 'cod:tempe' : { 
+		dct = 	{ 'cod:tempe' : { 
 					'rn'	: fcntRN,
 					'cnd' 	: CND, 
 					'curTe'	: 23.0,
@@ -61,7 +61,7 @@ class TestFCNT_FCI(unittest.TestCase):
 					'steVe'	: 0.5,
 					'mni'	: 10
 				}}
-		r, rsc = CREATE(aeURL, TestFCNT_FCI.originator, T.FCNT, jsn)
+		r, rsc = CREATE(aeURL, TestFCNT_FCI.originator, T.FCNT, dct)
 		self.assertEqual(rsc, RC.created)
 
 
@@ -95,11 +95,11 @@ class TestFCNT_FCI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNT(self):
-		jsn = 	{ 'cod:tempe' : {
+		dct = 	{ 'cod:tempe' : {
 					'tarTe':   5.0,
 					'curTe'	: 17.0,
 				}}
-		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, jsn)
+		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)		# retrieve fcnt again
 		self.assertEqual(rsc, RC.OK)
@@ -129,10 +129,10 @@ class TestFCNT_FCI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNTMni(self):
-		jsn = 	{ 'cod:tempe' : {
+		dct = 	{ 'cod:tempe' : {
 					'mni':   1,
 				}}
-		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, jsn)
+		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)		# retrieve fcnt again
 		self.assertEqual(rsc, RC.OK)

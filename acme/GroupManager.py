@@ -84,13 +84,13 @@ class GroupManager(object):
 					return Result(status=False, rsc=RC.notFound, dbg=res.dbg)
 				resource = res.resource
 			else:
-				if remoteResult.jsn is None:
+				if remoteResult.dict is None:
 					if remoteResult.rsc == RC.originatorHasNoPrivilege:  # CSE has no privileges for retrieving the member
 						return Result(status=False, rsc=RC.receiverHasNoPrivileges, dbg='wrong privileges for CSE to retrieve remote resource')
 					else:  # Member not found
 						return Result(status=False, rsc=RC.notFound, dbg=f'remote resource not found: {mid}')
 				else:
-					resource = Utils.resourceFromJSON(remoteResult.jsn).resource
+					resource = Utils.resourceFromDict(remoteResult.dict).resource
 
 			# skip if ri is already in th
 			if isLocalResource:
@@ -202,14 +202,14 @@ class GroupManager(object):
 				if result.resource is not None and isinstance(result.resource, Resource):
 					item = 	{ 'rsc' : result.rsc, 
 							  'rqi' : request.headers.requestIdentifier,
-							  'pc'  : result.resource.asJSON() if isinstance(result.resource, Resource) else result.resource, # in case 'resource' is a dict
+							  'pc'  : result.resource.asDict() if isinstance(result.resource, Resource) else result.resource, # in case 'resource' is a dict
 							  'to'  : result.resource[Resource._srn],
-							  'rvi'	: '3'	# TODO constant?
+							  'rvi'	: '3'	# TODO constant? from conifguration
 							}
 				else:	# e.g. when deleting
 					item = 	{ 'rsc' : result.rsc, 
 					  'rqi' : request.headers.requestIdentifier,
-					  'rvi'	: '3'	# TODO constant?
+					  'rvi'	: '3'	# TODO constant? from configuration
 					}
 				items.append(item)
 			rsp = { 'm2m:rsp' : items}

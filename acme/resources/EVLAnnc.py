@@ -14,6 +14,6 @@ import Utils
 
 class EVLAnnc(MgmtObjAnnc):
 
-	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(jsn, pi, mgd=T.EVL, create=create)
+	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(dct, pi, mgd=T.EVL, create=create)
 

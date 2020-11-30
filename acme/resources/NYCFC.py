@@ -19,11 +19,9 @@ fwrPolicies = constructPolicy([
 attributePolicies =  addPolicy(mgmtObjAttributePolicies, fwrPolicies)
 
 
-
-
 class NYCFC(MgmtObj):
 
-	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
 		self.resourceAttributePolicies = fwrPolicies	# only the resource type's own policies
-		super().__init__(jsn, pi, mgd=T.NYCFC, create=create, attributePolicies=attributePolicies)
+		super().__init__(dct, pi, mgd=T.NYCFC, create=create, attributePolicies=attributePolicies)
 

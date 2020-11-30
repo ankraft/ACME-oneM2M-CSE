@@ -15,8 +15,6 @@ from Configuration import Configuration
 from Types import ResourceTypes as T
 
 import CSE, Utils
-import json
-
 
 class AEBase(AppBase):
 				
@@ -37,15 +35,16 @@ class AEBase(AppBase):
 
 		# Get or create the AE resource
 		self.ae = self.retrieveCreate(	srn=self.srn,
-										jsn={ T.AE.tpe() : {
-											'rn' : self.rn,
-											'api' : api,
-											'nl' : self.aeNode.node.ri if self.aeNode.node is not None else None,
-											'poa' : [ Configuration.get('http.address') ],
-											'rr' : True,
-											'srv' : [ "3", "4" ],
-											'at' : [ '/id-in']
-											}
+										data={
+												T.AE.tpe() : {
+													'rn' : self.rn,
+													'api' : api,
+													'nl' : self.aeNode.node.ri if self.aeNode.node is not None else None,
+													'poa' : [ Configuration.get('http.address') ],
+													'rr' : True,
+													'srv' : [ "3", "4" ],
+													'at' : [ '/id-in']
+												}
 										},
 										ty=T.AE)
 

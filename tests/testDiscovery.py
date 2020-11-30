@@ -39,80 +39,80 @@ class TestDiscovery(unittest.TestCase):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
 				 	'rr'  : False,
 				 	'srv' : [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
 		# create first container & CIN
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN,
 					'lbl' : [ 'cntLbl' ]
 				}}
-		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
+		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
 		assert rsc == RC.created, 'cannot create container'
 		# create 5 contentInstances with different labels
 		for i in range(0,5):
-			jsn = 	{ 'm2m:cin' : {
+			dct = 	{ 'm2m:cin' : {
 						'cnf' : 'a',
 						'con' : 'aValue',
 						'lbl' : [ 'tag:%d' %i ]
 					}}
-			r, rsc = CREATE(cntURL, TestDiscovery.originator, T.CIN, jsn)
+			r, rsc = CREATE(cntURL, TestDiscovery.originator, T.CIN, dct)
 
 		# create second container & CIN
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cnt2RN,
 				}}
-		cls.cnt2, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
+		cls.cnt2, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
 		assert rsc == RC.created, 'cannot create container'
 		# create 5 contentInstances with different labels
 		for i in range(0,5):
-			jsn = 	{ 'm2m:cin' : {
+			dct = 	{ 'm2m:cin' : {
 						'cnf' : 'b',
 						'con' : 'bValue',
 						'lbl' : [ 'tag:%d' %i ]
 					}}
-			r, rsc = CREATE(f'{cntURL}2', TestDiscovery.originator, T.CIN, jsn)
+			r, rsc = CREATE(f'{cntURL}2', TestDiscovery.originator, T.CIN, dct)
 		
 		# create Node & MgmtObjs
-		jsn = 	{ 'm2m:nod' : { 
+		dct = 	{ 'm2m:nod' : { 
 			'rn' 	: nodRN,
 			'ni'	: nodeID
 		}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, jsn)
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
 		assert rsc == RC.created, 'cannot create Node'
-		jsn =  { 'm2m:mem' : {
+		dct =  { 'm2m:mem' : {
 			'mgd' : T.MEM,
 			'rn' : memRN,
 			'dc' : 'aMem',
 			'mma' : 1234,
 			'mmt' : 4321
 		}}
-		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, jsn)
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
 		assert rsc == RC.created, 'cannot create m2m:mem'
-		jsn =  { 'm2m:bat' : {
+		dct =  { 'm2m:bat' : {
 					'mgd' : T.BAT,
 					'rn'  : batRN,
 					'dc'  : 'aBat',
 					'btl' : 23,
 					'bts' : 5
 				}}
-		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, jsn)
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
 		assert rsc == RC.created, 'cannot create m2m:bat'
-		jsn =  { 'm2m:bat' : {
+		dct =  { 'm2m:bat' : {
 			'mgd' : T.BAT,
 			'rn'  : bat2RN,
 			'dc'  : 'aBat',
 			'btl' : 23,
 			'bts' : 5
 		}}
-		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, jsn)
+		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
 		assert rsc == RC.created, 'cannot create m2m:bat (2)'
 
 		cls.crTimestamp2 = getDate()	# Second timestamp
@@ -570,10 +570,10 @@ class TestDiscovery(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_appendArp(self):
 		# create container under cnt1
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntARPRN,
 				}}
-		arpCnt, rsc = CREATE(cntURL, TestDiscovery.originator, T.CNT, jsn)
+		arpCnt, rsc = CREATE(cntURL, TestDiscovery.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResources:d}&ty={T.CNT:d}&lbl=cntLbl&arp=arpCnt', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
@@ -586,12 +586,12 @@ class TestDiscovery(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTwithRCN9(self):
 		# create another container
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cnt3RN,
 					'mni' : 42,
 					'lbl' : [ 'test' ]
 				}}
-		r, rsc = CREATE(f'{aeURL}?rcn={RCN.modifiedAttributes:d}', TestDiscovery.originator, T.CNT, jsn)
+		r, rsc = CREATE(f'{aeURL}?rcn={RCN.modifiedAttributes:d}', TestDiscovery.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNone(findXPath(r, 'm2m:cnt/mni'))
 		self.assertIsNone(findXPath(r, 'm2m:cnt/lbl'))
@@ -601,11 +601,11 @@ class TestDiscovery(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTwithRCN9(self):
 		# create another container
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'mni' : 23,
 					'lbl' : [ 'test' ]
 				}}
-		r, rsc = UPDATE(f'{aeURL}/{cnt3RN}?rcn={RCN.modifiedAttributes:d}', TestDiscovery.originator, jsn)
+		r, rsc = UPDATE(f'{aeURL}/{cnt3RN}?rcn={RCN.modifiedAttributes:d}', TestDiscovery.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertIsNotNone(findXPath(r, 'm2m:cnt/mni'))
 		self.assertEqual(findXPath(r, 'm2m:cnt/mni'), 23)
@@ -619,11 +619,11 @@ class TestDiscovery(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTwithWrongRCN2(self):
 		# create another container
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'mni' : 23,
 					'lbl' : [ 'test2' ]
 				}}
-		r, rsc = UPDATE(f'{aeURL}/{cnt3RN}?rcn={RCN.hierarchicalAddress:d}', TestDiscovery.originator, jsn)
+		r, rsc = UPDATE(f'{aeURL}/{cnt3RN}?rcn={RCN.hierarchicalAddress:d}', TestDiscovery.originator, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 

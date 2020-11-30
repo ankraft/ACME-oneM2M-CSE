@@ -9,6 +9,7 @@
 #
 
 import datetime, json, random, string, sys, re, threading, traceback, time
+from copy import deepcopy
 import isodate
 from typing import Any, List, Tuple, Union, Dict
 from resources import ACP, ACPAnnc, AE, AEAnnc, ANDI, ANDIAnnc, ANI, ANIAnnc, BAT, BATAnnc
@@ -22,11 +23,12 @@ from resources import SWR, SWRAnnc, Unknown, Resource
 from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC
 from Types import Result,  RequestHeaders, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType, ResultContentType, ResponseType, FilterOperation
-from Types import CSERequest
+from Types import CSERequest, ContentSerializationType
 from Configuration import Configuration
 from Logging import Logging
 import CSE
 from flask import Request
+import cbor2
 
 
 def uniqueRI(prefix:str='') -> str:
@@ -275,149 +277,149 @@ mgmtObjAnncTPEs = 	[	T.FWRAnnc.tpe(), T.SWRAnnc.tpe(), T.MEMAnnc.tpe(), T.ANIAnn
 						T.RBOAnnc.tpe(), T.EVLAnnc.tpe(),
 			  		]
 
-def resourceFromJSON(jsn:dict, pi:str=None, acpi:str=None, ty:Union[T, int]=None, create:bool=False, isImported:bool=False) -> Result:
-	""" Create a resource from a JSON structure.
+def resourceFromDict(resDict:dict, pi:str=None, acpi:str=None, ty:Union[T, int]=None, create:bool=False, isImported:bool=False) -> Result:
+	""" Create a resource from a dictionary structure.
 		This will *not* call the activate method, therefore some attributes
 		may be set separately.
 	"""
-	jsn, root = pureResource(jsn)	# remove optional "m2m:xxx" level
-	typ = jsn['ty'] if 'ty' in jsn else ty
+	resDict, root = pureResource(resDict)	# remove optional "m2m:xxx" level
+	typ = resDict['ty'] if 'ty' in resDict else ty
 	if typ != None and ty != None and typ != ty:
 		return Result(dbg='type and resource specifier mismatch')
-	mgd = jsn['mgd'] if 'mgd' in jsn else None		# for mgmtObj
+	mgd = resDict['mgd'] if 'mgd' in resDict else None		# for mgmtObj
 
 	# Add extra acpi
 	if acpi is not None:
-		jsn['acpi'] = acpi if type(acpi) is list else [ acpi ]
+		resDict['acpi'] = acpi if type(acpi) is list else [ acpi ]
 
-	# store the import status in the original jsn
+	# store the import status in the original resDict
 	if isImported:
-		jsn[Resource.Resource._imported] = True	# Indicate that this is an imported resource
+		resDict[Resource.Resource._imported] = True	# Indicate that this is an imported resource
 
 
 	# sorted by assumed frequency (small optimization)
 	if typ == T.CIN or root == T.CIN.tpe():
-		return Result(resource=CIN.CIN(jsn, pi=pi, create=create))
+		return Result(resource=CIN.CIN(resDict, pi=pi, create=create))
 	elif typ == T.CNT or root == T.CNT.tpe():
-		return Result(resource=CNT.CNT(jsn, pi=pi, create=create))
+		return Result(resource=CNT.CNT(resDict, pi=pi, create=create))
 	elif typ == T.GRP or root == T.GRP.tpe():
-		return Result(GRP.GRP(jsn, pi=pi, create=create))
+		return Result(GRP.GRP(resDict, pi=pi, create=create))
 	elif typ == T.GRP_FOPT or root == T.GRP_FOPT.tpe():
-		return Result(resource=GRP_FOPT.GRP_FOPT(jsn, pi=pi, create=create))
+		return Result(resource=GRP_FOPT.GRP_FOPT(resDict, pi=pi, create=create))
 	elif typ == T.ACP or root == T.ACP.tpe():
-		return Result(resource=ACP.ACP(jsn, pi=pi, create=create))
+		return Result(resource=ACP.ACP(resDict, pi=pi, create=create))
 	elif typ == T.FCNT:
-		return Result(resource=FCNT.FCNT(jsn, pi=pi, fcntType=root, create=create))
+		return Result(resource=FCNT.FCNT(resDict, pi=pi, fcntType=root, create=create))
 	elif typ == T.FCI:
-		return Result(resource=FCI.FCI(jsn, pi=pi, fcntType=root, create=create))	
+		return Result(resource=FCI.FCI(resDict, pi=pi, fcntType=root, create=create))	
 	elif typ == T.AE or root == T.AE.tpe():
-		return Result(resource=AE.AE(jsn, pi=pi, create=create))
+		return Result(resource=AE.AE(resDict, pi=pi, create=create))
 	elif typ == T.SUB or root == T.SUB.tpe():
-		return Result(resource=SUB.SUB(jsn, pi=pi, create=create))
+		return Result(resource=SUB.SUB(resDict, pi=pi, create=create))
 	elif typ == T.CSR or root == T.CSR.tpe():
-		return Result(resource=CSR.CSR(jsn, pi=pi, create=create))
+		return Result(resource=CSR.CSR(resDict, pi=pi, create=create))
 	elif typ == T.NOD or root == T.NOD.tpe():
-		return Result(resource=NOD.NOD(jsn, pi=pi, create=create))
+		return Result(resource=NOD.NOD(resDict, pi=pi, create=create))
 	elif (typ == T.CNT_LA or root == T.CNT_LA.tpe()) and typ != T.FCNT_LA:
-		return Result(resource=CNT_LA.CNT_LA(jsn, pi=pi, create=create))
+		return Result(resource=CNT_LA.CNT_LA(resDict, pi=pi, create=create))
 	elif (typ == T.CNT_OL or root == T.CNT_OL.tpe()) and typ != T.FCNT_OL:
-		return Result(resource=CNT_OL.CNT_OL(jsn, pi=pi, create=create))
+		return Result(resource=CNT_OL.CNT_OL(resDict, pi=pi, create=create))
 	elif typ == T.FCNT_LA:
-		return Result(resource=FCNT_LA.FCNT_LA(jsn, pi=pi, create=create))
+		return Result(resource=FCNT_LA.FCNT_LA(resDict, pi=pi, create=create))
 	elif typ == T.FCNT_OL:
-		return Result(resource=FCNT_OL.FCNT_OL(jsn, pi=pi, create=create))
+		return Result(resource=FCNT_OL.FCNT_OL(resDict, pi=pi, create=create))
 	elif typ == T.REQ or root == T.REQ.tpe():
-		return Result(resource=REQ.REQ(jsn, pi=pi, create=create))
+		return Result(resource=REQ.REQ(resDict, pi=pi, create=create))
 	elif typ == T.PCH or root == T.PCH.tpe():
-		return Result(resource=PCH.PCH(jsn, pi=pi, create=create))
+		return Result(resource=PCH.PCH(resDict, pi=pi, create=create))
 	elif typ == T.CSEBase or root == T.CSEBase.tpe():
-		return Result(resource=CSEBase.CSEBase(jsn, create=create))
+		return Result(resource=CSEBase.CSEBase(resDict, create=create))
 
 	# Management Objects
 	elif typ == T.MGMTOBJ or root in mgmtObjTPEs:
 		if mgd == T.FWR or root == T.FWR.tpe():
-			return Result(resource=FWR.FWR(jsn, pi=pi, create=create))
+			return Result(resource=FWR.FWR(resDict, pi=pi, create=create))
 		elif mgd == T.SWR or root == T.SWR.tpe():
-			return Result(resource=SWR.SWR(jsn, pi=pi, create=create))
+			return Result(resource=SWR.SWR(resDict, pi=pi, create=create))
 		elif mgd == T.MEM or root == T.MEM.tpe():
-			return Result(resource=MEM.MEM(jsn, pi=pi, create=create))
+			return Result(resource=MEM.MEM(resDict, pi=pi, create=create))
 		elif mgd == T.ANI or root == T.ANI.tpe():
-			return Result(resource=ANI.ANI(jsn, pi=pi, create=create))
+			return Result(resource=ANI.ANI(resDict, pi=pi, create=create))
 		elif mgd == T.ANDI or root == T.ANDI.tpe():
-			return Result(resource=ANDI.ANDI(jsn, pi=pi, create=create))
+			return Result(resource=ANDI.ANDI(resDict, pi=pi, create=create))
 		elif mgd == T.BAT or root == T.BAT.tpe():
-			return Result(resource=BAT.BAT(jsn, pi=pi, create=create))
+			return Result(resource=BAT.BAT(resDict, pi=pi, create=create))
 		elif mgd == T.DVI or root == T.DVI.tpe():
-			return Result(resource=DVI.DVI(jsn, pi=pi, create=create))
+			return Result(resource=DVI.DVI(resDict, pi=pi, create=create))
 		elif mgd == T.DVC or root == T.DVC.tpe():
-			return Result(resource=DVC.DVC(jsn, pi=pi, create=create))
+			return Result(resource=DVC.DVC(resDict, pi=pi, create=create))
 		elif mgd == T.RBO or root == T.RBO.tpe():
-			return Result(resource=RBO.RBO(jsn, pi=pi, create=create))
+			return Result(resource=RBO.RBO(resDict, pi=pi, create=create))
 		elif  mgd == T.EVL or root == T.EVL.tpe():
-			return Result(resource=EVL.EVL(jsn, pi=pi, create=create))
+			return Result(resource=EVL.EVL(resDict, pi=pi, create=create))
 		elif  mgd == T.NYCFC or root == T.NYCFC.tpe():
-			return Result(resource=NYCFC.NYCFC(jsn, pi=pi, create=create))
+			return Result(resource=NYCFC.NYCFC(resDict, pi=pi, create=create))
 
 	# Announced Resources
 	elif typ == T.ACPAnnc:
-		return Result(resource=ACPAnnc.ACPAnnc(jsn, pi=pi, create=create))
+		return Result(resource=ACPAnnc.ACPAnnc(resDict, pi=pi, create=create))
 	elif typ == T.AEAnnc:
-		return Result(resource=AEAnnc.AEAnnc(jsn, pi=pi, create=create))
+		return Result(resource=AEAnnc.AEAnnc(resDict, pi=pi, create=create))
 	elif typ == T.CNTAnnc:
-		return Result(resource=CNTAnnc.CNTAnnc(jsn, pi=pi, create=create))
+		return Result(resource=CNTAnnc.CNTAnnc(resDict, pi=pi, create=create))
 	elif typ == T.CINAnnc:
-		return Result(resource=CINAnnc.CINAnnc(jsn, pi=pi, create=create))
+		return Result(resource=CINAnnc.CINAnnc(resDict, pi=pi, create=create))
 	elif typ == T.GRPAnnc:
-		return Result(resource=GRPAnnc.GRPAnnc(jsn, pi=pi, create=create))
+		return Result(resource=GRPAnnc.GRPAnnc(resDict, pi=pi, create=create))
 	elif typ == T.NODAnnc:
-		return Result(resource=NODAnnc.NODAnnc(jsn, pi=pi, create=create))
+		return Result(resource=NODAnnc.NODAnnc(resDict, pi=pi, create=create))
 	elif typ == T.CSRAnnc:
-		return Result(resource=CSRAnnc.CSRAnnc(jsn, pi=pi, create=create))
+		return Result(resource=CSRAnnc.CSRAnnc(resDict, pi=pi, create=create))
 	elif typ == T.FCIAnnc:
-		return Result(resource=FCIAnnc.FCIAnnc(jsn, pi=pi, create=create))
+		return Result(resource=FCIAnnc.FCIAnnc(resDict, pi=pi, create=create))
 	elif typ == T.FCNTAnnc:
-		return Result(resource=FCNTAnnc.FCNTAnnc(jsn, pi=pi, create=create))
+		return Result(resource=FCNTAnnc.FCNTAnnc(resDict, pi=pi, create=create))
 
 	# Announced Management Objects
 	elif typ == T.MGMTOBJAnnc or root in mgmtObjAnncTPEs:
 		if mgd == T.FWRAnnc or root == T.FWRAnnc.tpe():
-			return Result(resource=FWRAnnc.FWRAnnc(jsn, pi=pi, create=create))
+			return Result(resource=FWRAnnc.FWRAnnc(resDict, pi=pi, create=create))
 		elif mgd == T.SWRAnnc or root == T.SWRAnnc.tpe():
-			return Result(resource=SWRAnnc.SWRAnnc(jsn, pi=pi, create=create))
+			return Result(resource=SWRAnnc.SWRAnnc(resDict, pi=pi, create=create))
 		elif mgd == T.MEMAnnc or root == T.MEMAnnc.tpe():
-			return Result(resource=MEMAnnc.MEMAnnc(jsn, pi=pi, create=create))
+			return Result(resource=MEMAnnc.MEMAnnc(resDict, pi=pi, create=create))
 		elif mgd == T.ANIAnnc or root == T.ANIAnnc.tpe():
-			return Result(resource=ANIAnnc.ANIAnnc(jsn, pi=pi, create=create))
+			return Result(resource=ANIAnnc.ANIAnnc(resDict, pi=pi, create=create))
 		elif mgd == T.ANDIAnnc or root == T.ANDIAnnc.tpe():
-			return Result(resource=ANDIAnnc.ANDIAnnc(jsn, pi=pi, create=create))
+			return Result(resource=ANDIAnnc.ANDIAnnc(resDict, pi=pi, create=create))
 		elif mgd == T.BATAnnc or root == T.BATAnnc.tpe():
-			return Result(resource=BATAnnc.BATAnnc(jsn, pi=pi, create=create))
+			return Result(resource=BATAnnc.BATAnnc(resDict, pi=pi, create=create))
 		elif mgd == T.DVIAnnc or root == T.DVIAnnc.tpe():
-			return Result(resource=DVIAnnc.DVIAnnc(jsn, pi=pi, create=create))
+			return Result(resource=DVIAnnc.DVIAnnc(resDict, pi=pi, create=create))
 		elif mgd == T.DVCAnnc or root == T.DVCAnnc.tpe():
-			return Result(resource=DVCAnnc.DVCAnnc(jsn, pi=pi, create=create))
+			return Result(resource=DVCAnnc.DVCAnnc(resDict, pi=pi, create=create))
 		elif mgd == T.RBOAnnc or root == T.RBOAnnc.tpe():
-			return Result(resource=RBOAnnc.RBOAnnc(jsn, pi=pi, create=create))
+			return Result(resource=RBOAnnc.RBOAnnc(resDict, pi=pi, create=create))
 		elif  mgd == T.EVLAnnc or root == T.EVLAnnc.tpe():
-			return Result(resource=EVLAnnc.EVLAnnc(jsn, pi=pi, create=create))
+			return Result(resource=EVLAnnc.EVLAnnc(resDict, pi=pi, create=create))
 		elif  mgd == T.NYCFCAnnc or root == T.NYCFCAnnc.tpe():
-			return Result(resource=NYCFCAnnc.NYCFCAnnc(jsn, pi=pi, create=create))
+			return Result(resource=NYCFCAnnc.NYCFCAnnc(resDict, pi=pi, create=create))
 
-	return Result(resource=Unknown.Unknown(jsn, root, pi=pi, create=create))	# Capture-All resource
+	return Result(resource=Unknown.Unknown(resDict, root, pi=pi, create=create))	# Capture-All resource
 
 
 excludeFromRoot = [ 'pi' ]
-def pureResource(jsn: dict) -> Tuple[dict, str]:
-	""" Return the "pure" json without the "m2m:xxx" or "<domain>:id" resource specifier."""
-	rootKeys = list(jsn.keys())
+def pureResource(dct:dict) -> Tuple[dict, str]:
+	""" Return the "pure" structure without the "m2m:xxx" or "<domain>:id" resource specifier."""
+	rootKeys = list(dct.keys())
 	# Try to determine the root identifier 
 	if len(rootKeys) == 1 and (rk := rootKeys[0]) not in excludeFromRoot and re.match('[\w]+:[\w]', rk):
-		return jsn[rootKeys[0]], rootKeys[0]
+		return dct[rootKeys[0]], rootKeys[0]
 	# Otherwise try to get the root identifier from the resource itself (stored as a private attribute)
 	root = None
-	if Resource.Resource._rtype in jsn:
-		root = jsn[Resource.Resource._rtype]
-	return jsn, root
+	if Resource.Resource._rtype in dct:
+		root = dct[Resource.Resource._rtype]
+	return dct, root
 
 
 # def removeCommentsFromJSON(data:str) -> str:
@@ -456,16 +458,16 @@ def removeCommentsFromJSON(data:str) -> str:
 	return commentRegex.sub(_replacer, data)
 
 decimalMatch = re.compile('{(\d+)}')
-def findXPath(jsn:dict, element:str, default:Any=None) -> Any:
-	""" Find a structured element in JSON.
+def findXPath(dct:dict, element:str, default:Any=None) -> Any:
+	""" Find a structured element in dictionary.
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
 	"""
 
-	if element is None or jsn is None:
+	if element is None or dct is None:
 		return default
 
 	paths = element.split("/")
-	data = jsn
+	data = dct
 	for i in range(0,len(paths)):
 		if data is None:
 			return default
@@ -486,11 +488,11 @@ def findXPath(jsn:dict, element:str, default:Any=None) -> Any:
 	return data
 
 
-# set a structured element in JSON. Create if necessary, and observe the overwrite option
-def setXPath(jsn:Dict[str, Any], element:str, value:Any, overwrite:bool=True) -> bool:
+# set a structured element in dictionary. Create if necessary, and observe the overwrite option
+def setXPath(dct:Dict[str, Any], element:str, value:Any, overwrite:bool=True) -> bool:
 	paths = element.split("/")
 	ln = len(paths)
-	data = jsn
+	data = dct
 	for i in range(0,ln-1):
 		if paths[i] not in data:
 			data[paths[i]] = {}
@@ -501,10 +503,10 @@ def setXPath(jsn:Dict[str, Any], element:str, value:Any, overwrite:bool=True) ->
 	return True
 
 
-def deleteNoneValuesFromJSON(jsn:Any) -> dict:
-	if not isinstance(jsn, dict):
-		return jsn
-	return { key:value for key,value in ((key, deleteNoneValuesFromJSON(value)) for key,value in jsn.items()) if value is not None }
+def deleteNoneValuesFromDict(dct:dict) -> dict:
+	if not isinstance(dct, dict):
+		return dct
+	return { key:value for key,value in ((key, deleteNoneValuesFromDict(value)) for key,value in dct.items()) if value is not None }
 
 
 urlregex = re.compile(
@@ -622,31 +624,39 @@ def dissectHttpRequest(request:Request, operation:Operation, _id:Tuple[str, str,
 
 	# get the data first. This marks the request as consumed 
 	cseRequest.data = request.get_data(as_text=True)	# alternative: request.data.decode("utf-8")
-	
+
 	# handle ID's 
 	cseRequest.id, cseRequest.csi, cseRequest.srn = _id
 
+	# Copy the original request headers
+	res = getRequestHeaders(request)
+	cseRequest.headers = res.data	# copy the headers
+	if res.rsc != RC.OK:			# but still, something might be wrong
+		return Result(rsc=res.rsc, request=cseRequest, dbg=res.dbg, status=False)
+
 	# No ID, return immediately 
 	if cseRequest.id is None and cseRequest.srn is None:
-		return Result(rsc=RC.notFound, dbg='missing identifier', status=False)
-
-	if (res := getRequestHeaders(request)).data is None:
-		return Result(rsc=res.rsc, dbg=res.dbg, status=False)
-	cseRequest.headers = res.data
+		return Result(rsc=RC.notFound, request=cseRequest, dbg='missing identifier', status=False)
 	
 	try:
 		cseRequest.args, msg = getRequestArguments(request, operation)
 		if cseRequest.args is None:
-			return Result(rsc=RC.badRequest, dbg=msg, status=False)
+			return Result(rsc=RC.badRequest, request=cseRequest, dbg=msg, status=False)
 	except Exception as e:
-		return Result(rsc=RC.invalidArguments, dbg=f'invalid arguments ({str(e)})', status=False)
-	cseRequest.originalArgs	= request.args.copy()	#type: ignore
+		return Result(rsc=RC.invalidArguments, request=cseRequest, dbg=f'invalid arguments ({str(e)})', status=False)
+	cseRequest.originalArgs	= deepcopy(request.args)	#type: ignore
 	if cseRequest.data is not None and len(cseRequest.data) > 0:
 		try:
-			cseRequest.json = json.loads(removeCommentsFromJSON(cseRequest.data))
+			ct = ContentSerializationType.getType(cseRequest.headers.contentType, default=ContentSerializationType.JSON) # TODO make configurable
+			if ct == ContentSerializationType.JSON:
+				cseRequest.dict = json.loads(removeCommentsFromJSON(cseRequest.data))
+			elif ct == ContentSerializationType.CBOR:
+				cseRequest.dict = cbor2.loads(cseRequest.data)
+			else:
+				return Result(rsc=RC.unsupportedMediaType, request=cseRequest, dbg=f'Unsuppored media type for content-type: {cseRequest.headers.contentType}', status=False)
 		except Exception as e:
 			Logging.logWarn('Bad request (malformed content?)')
-			return Result(rsc=RC.badRequest, dbg=str(e), status=False)
+			return Result(rsc=RC.badRequest, request=cseRequest, dbg=str(e), status=False)
 	return Result(request=cseRequest, status=True)
 
 
@@ -681,7 +691,8 @@ def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE)
 		args.poplist(argName)
 		return True, None
 
-	result = RequestArguments(operation=operation, request=request)
+	# result = RequestArguments(operation=operation, request=request)
+	result = RequestArguments(operation=operation)
 
 
 	# FU - Filter Usage
@@ -877,11 +888,15 @@ def getRequestHeaders(request: Request) -> Result:
 	rh.operationExecutionTime 		= requestHeaderField(request, C.hfOET)
 	rh.releaseVersionIndicator 		= requestHeaderField(request, C.hfRVI)
 
+
 	if (rtu := requestHeaderField(request, C.hfRTU)) is not None:			# handle rtu list
 		rh.responseTypeNUs = rtu.split('&')
 
-	# content-type
+	# content-type and accept
 	rh.contentType 	= request.content_type
+	rh.accept		= [ mt for mt, _ in request.accept_mimetypes ]	# get (multiple) accept headers from MIMEType[(x,nr)]
+
+
 	if rh.contentType is not None:
 		if not rh.contentType.startswith(tuple(C.supportedContentHeaderFormat)):
 			rh.contentType 	= None
@@ -893,7 +908,13 @@ def getRequestHeaders(request: Request) -> Result:
 				if t.isdigit() and (_t := int(t)) and T.has(_t):
 					rh.resourceType = T(_t)
 				else:
-					return Result(rsc=RC.badRequest, dbg=f'Unknown resource type: {t}')
+					return Result(rsc=RC.badRequest, data=rh, dbg=f'Unknown resource type: {t}')
+	
+	# accept
+	rh.accept = request.headers.getlist('accept')
+	if ((l := len(rh.accept)) == 1 and '*/*' in rh.accept) or l == 0:
+		rh.accept = [ ContentSerializationType.JSON.toString() ]	# TODO configurable default
+
 	return Result(data=rh, rsc=RC.OK)
 
 
@@ -905,3 +926,35 @@ def renameCurrentThread(name:str = None, thread:threading.Thread = None) -> None
 	thread = threading.current_thread() if thread is None else thread
 	thread.name = name if name is not None else str(thread.native_id)
 
+
+#
+#	Text formattings
+#
+
+def toHex(bts:bytes, toBinary:bool=False) -> str:
+	result = ''
+	n = 0
+	b = bts[n:n+16]
+
+	while b and len(b) > 0:
+
+		if toBinary:
+			s1 = ' '.join([f'{i:08b}' for i in b])
+			s1 = f'{s1[0:71]} {s1[71:]}'
+			width = 144
+		else:
+			s1 = ' '.join([f'{i:02x}' for i in b])
+			s1 = f'{s1[0:23]} {s1[23:]}'
+			width = 48
+		# else:
+
+
+		s2 = ''.join([chr(i) if 32 <= i <= 127 else '.' for i in b])
+		s2 = f'{s2[0:8]} {s2[8:]}'
+		result += f'0x{n:08x}  {s1:<{width}}  | {s2}\n'
+
+		n += 16
+		b = bts[n:n+16]
+	result += f'0x{len(bts):08x}'
+
+	return result

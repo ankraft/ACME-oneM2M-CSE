@@ -26,8 +26,8 @@ attributePolicies = addPolicy(attributePolicies, reqPolicies)
 
 class PCH(Resource):
 
-	def __init__(self, jsn:dict=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.PCH, jsn, pi, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.PCH, dct, pi, create=create, attributePolicies=attributePolicies)
 
 		# TODO attribute requestAggregation
 

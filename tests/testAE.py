@@ -38,13 +38,13 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAE(self):
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
 				 	'rr': False,
 				 	'srv': [ '3' ]
 				}}
-		r, rsc = CREATE(cseURL, 'C', T.AE, jsn)
+		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
 		self.assertEqual(rsc, RC.created)
 		TestAE.originator = findXPath(r, 'm2m:ae/aei')
 		TestAE.aeACPI = findXPath(r, 'm2m:ae/acpi')
@@ -53,25 +53,25 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEUnderAE(self):
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'rn': f'{aeRN}', 
 					'api': 'NMyApp2Id',
 				 	'rr': False,
 				 	'srv': [ '3' ]
 				}}
-		r, rsc = CREATE(aeURL, 'C', T.AE, jsn)
+		r, rsc = CREATE(aeURL, 'C', T.AE, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEAgain(self):
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
 				 	'rr': False,
 				 	'srv': [ '3' ]
 				}}
-		r, rsc = CREATE(cseURL, 'C', T.AE, jsn)
+		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
 		self.assertEqual(rsc, RC.conflict)
 
 
@@ -113,10 +113,10 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAELbl(self):
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'lbl' : [ 'aTag' ]
 				}}
-		r, rsc = UPDATE(aeURL, TestAE.originator, jsn)
+		r, rsc = UPDATE(aeURL, TestAE.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		r, rsc = RETRIEVE(aeURL, TestAE.originator)		# retrieve updated ae again
 		self.assertEqual(rsc, RC.OK)
@@ -128,28 +128,28 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAETy(self):
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'ty' : int(T.CSEBase)
 				}}
-		r, rsc = UPDATE(aeURL, TestAE.originator, jsn)
+		r, rsc = UPDATE(aeURL, TestAE.originator, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAEPi(self):
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'pi' : 'wrongID'
 				}}
-		r, rsc = UPDATE(aeURL, TestAE.originator, jsn)
+		r, rsc = UPDATE(aeURL, TestAE.originator, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAEUnknownAttribute(self):
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'unknown' : 'unknown'
 				}}
-		r, rsc = UPDATE(aeURL, TestAE.originator, jsn)
+		r, rsc = UPDATE(aeURL, TestAE.originator, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

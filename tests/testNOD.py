@@ -44,11 +44,11 @@ class TestNOD(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createNOD(self):
 		self.assertIsNotNone(TestNOD.cse)
-		jsn = 	{ 'm2m:nod' : { 
+		dct = 	{ 'm2m:nod' : { 
 					'rn' 	: nodRN,
 					'ni'	: nodeID
 				}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, jsn)
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:nod/ri'))
 		TestNOD.nodeRI = findXPath(r, 'm2m:nod/ri')
@@ -82,10 +82,10 @@ class TestNOD(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateNODLbl(self):
-		jsn = 	{ 'm2m:nod' : {
+		dct = 	{ 'm2m:nod' : {
 					'lbl' : [ 'aTag' ]
 				}}
-		r, rsc = UPDATE(nodURL, ORIGINATOR, jsn)
+		r, rsc = UPDATE(nodURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
 		r, rsc = RETRIEVE(nodURL, ORIGINATOR)		# retrieve updated ae again
 		self.assertEqual(rsc, RC.OK)
@@ -97,23 +97,23 @@ class TestNOD(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateNODUnknownAttribute(self):
-		jsn = 	{ 'm2m:nod' : {
+		dct = 	{ 'm2m:nod' : {
 					'unknown' : 'unknown'
 				}}
-		r, rsc = UPDATE(nodURL, ORIGINATOR, jsn)
+		r, rsc = UPDATE(nodURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEForNOD(self):
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 			'rn'	: aeRN, 
 			'api'	: 'NMyApp1Id',
 		 	'rr'	: False,
 		 	'srv'	: [ '3' ],
 		 	'nl' 	: TestNOD.nodeRI
 		}}
-		TestNOD.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)
+		TestNOD.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(TestNOD.ae, 'm2m:ae/nl'))
 		self.assertEqual(findXPath(TestNOD.ae, 'm2m:ae/nl'), TestNOD.nodeRI)
@@ -144,21 +144,21 @@ class TestNOD(unittest.TestCase):
 		self.test_createAEForNOD()
 
 		# create second node
-		jsn = 	{ 'm2m:nod' : { 
+		dct = 	{ 'm2m:nod' : { 
 			'rn' 	: nod2RN,
 			'ni'	: 'second'
 		}}
-		nod2, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, jsn)
+		nod2, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(nod2, 'm2m:nod/ri'))
 		self.assertEqual(findXPath(nod2, 'm2m:nod/rn'), nod2RN)
 		node2RI = findXPath(nod2, 'm2m:nod/ri')
 
 		# move AE to second NOD
-		jsn = 	{ 'm2m:ae' : { 
+		dct = 	{ 'm2m:ae' : { 
 			'nl' : node2RI
 		}}
-		r, rsc = UPDATE(aeURL, TestNOD.originator, jsn)
+		r, rsc = UPDATE(aeURL, TestNOD.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/nl'))
 		self.assertEqual(findXPath(r, 'm2m:ae/nl'), node2RI)

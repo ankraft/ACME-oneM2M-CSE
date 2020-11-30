@@ -55,11 +55,11 @@ class CSENode(NodeBase):
 		if (result := self.retrieveResource(ri=self.csi)).rsc != RC.OK:
 			Logging.logErr('CSENode: cannot retrieve CSEBase')
 			return
-		jsn =	{ 'm2m:cb' : {
-					'nl' : self.node.ri
+		dct:dict = { 'm2m:cb' : {
+						'nl' : self.node.ri
 					}
 				}
-		self.updateResource(ri=self.csi, jsn=jsn) # ignore result
+		self.updateResource(ri=self.csi, data=dct) # ignore result
 
 
 

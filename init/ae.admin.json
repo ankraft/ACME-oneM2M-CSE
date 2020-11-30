@@ -9,6 +9,8 @@
         "acpi": [
             "${cse.security.adminACPI}",
             "${cse.security.defaultACPI}"
-        ]
+        ],
+        "csz" : [ "application/json", "application/cbor" ]
+
     }
 }

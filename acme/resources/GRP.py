@@ -27,12 +27,12 @@ attributePolicies = addPolicy(attributePolicies, grpPolicies)
 
 class GRP(AnnounceableResource):
 
-	def __init__(self, jsn:dict=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
-		super().__init__(T.GRP, jsn, pi, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:dict=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
+		super().__init__(T.GRP, dct, pi, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = grpPolicies	# only the resource type's own policies
 
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('mt', int(T.MIXED), overwrite=False)
 			self.setAttribute('ssi', False, overwrite=True)
 			self.setAttribute('cnm', 0, overwrite=False)	# calculated later
@@ -58,7 +58,7 @@ class GRP(AnnounceableResource):
 		# add fanOutPoint
 		ri = self['ri']
 		Logging.logDebug(f'Registering fanOutPoint resource for: {ri}')
-		fanOutPointResource = Utils.resourceFromJSON({ 'pi' : ri }, acpi=self['acpi'], ty=T.GRP_FOPT).resource
+		fanOutPointResource = Utils.resourceFromDict({ 'pi' : ri }, acpi=self['acpi'], ty=T.GRP_FOPT).resource
 		if (res := CSE.dispatcher.createResource(fanOutPointResource, self, originator)).resource is None:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 		return Result(status=True)

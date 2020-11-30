@@ -17,8 +17,8 @@ from Logging import Logging
 
 class FCNT_LA(Resource):
 
-	def __init__(self, jsn:dict=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.FCNT_LA, jsn, pi, create=create, inheritACP=True, readOnly=True, rn='la', isVirtual=True)
+	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.FCNT_LA, dct, pi, create=create, inheritACP=True, readOnly=True, rn='la', isVirtual=True)
 
 
 	# Enable check for allowed sub-resources

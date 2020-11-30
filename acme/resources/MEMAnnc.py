@@ -14,6 +14,6 @@ import Utils
 
 class MEMAnnc(MgmtObjAnnc):
 
-	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(jsn, pi, mgd=T.MEM, create=create)
+	def __init__(self, dct: dict = None, pi: str = None, create: bool = False) -> None:
+		super().__init__(dct, pi, mgd=T.MEM, create=create)
 

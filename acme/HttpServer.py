@@ -15,7 +15,7 @@ from flask import Flask, Request, make_response, request
 from werkzeug.wrappers import Response
 from Configuration import Configuration
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ResponseCode as RC, Operation
+from Types import ResourceTypes as T, Result, ResponseCode as RC, Operation, CSERequest, ContentSerializationType
 import CSE, Utils
 from Logging import Logging
 from resources.Resource import Resource
@@ -44,6 +44,14 @@ class HttpServer(object):
 		self.webuiRoot 			= Configuration.get('cse.webui.root')
 		self.webuiDirectory 	= f'{CSE.rootDirectory}/webui'
 		self.hfvRVI				= Configuration.get('cse.releaseVersion')
+
+		# request handlers for operations
+		self._requestHandlers:dict = {
+			Operation.RETRIEVE	: CSE.request.retrieveRequest,
+			Operation.CREATE	: CSE.request.createRequest,
+			Operation.UPDATE	: CSE.request.updateRequest,
+			Operation.DELETE	: CSE.request.deleteRequest
+		}
 
 
 		self.serverID	= f'ACME {C.version}' 	# The server's ID for http response headers
@@ -142,64 +150,49 @@ class HttpServer(object):
 		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods=methods, strict_slashes=strictSlashes)
 
 
+	def _handleRequest(self, path:str, operation:Operation) -> Response:
+		"""	Get and check all the necessary information from the request and
+			build the internal strutures. Then, depending on the operation,
+			call the associated request handler.
+		"""
+		Logging.logDebug(f'==> {operation.name}: /{path}') 	# path = request.path  w/o the root
+		Logging.logDebug(f'Headers: \n{str(request.headers)}')
+		try:
+			httpRequestResult = Utils.dissectHttpRequest(request, operation, Utils.retrieveIDFromPath(path, self.csern, self.csi))
+			if httpRequestResult.status:
+				if operation in [ Operation.CREATE, Operation.UPDATE ]:
+					Logging.logDebug(f'Body: \n{httpRequestResult.request.data}')
+				responseResult = self._requestHandlers[operation](httpRequestResult.request)
+			else:
+				responseResult = httpRequestResult
+		except Exception as e:
+			responseResult = self._prepareException(e)
+		responseResult.request = httpRequestResult.request
+		return self._prepareResponse(responseResult)
+
+
 	def handleGET(self, path:str=None) -> Response:
 		Utils.renameCurrentThread()
-		Logging.logDebug(f'==> Retrieve: /{path}') 	# path = request.path  w/o the root
-		Logging.logDebug(f'Headers: \n{str(request.headers)}')
 		CSE.event.httpRetrieve() # type: ignore
-		try:
-			result = Utils.dissectHttpRequest(request, Operation.RETRIEVE, Utils.retrieveIDFromPath(path, self.csern, self.csi))
-			if result.status:
-				result = CSE.request.retrieveRequest(result.request)
-		except Exception as e:
-			result = self._prepareException(e)
-		return self._prepareResponse(request, result)
+		return self._handleRequest(path, Operation.RETRIEVE)
 
 
 	def handlePOST(self, path:str=None) -> Response:
 		Utils.renameCurrentThread()
-		Logging.logDebug(f'==> Create: /{path}')		# path = request.path  w/o the root
-		Logging.logDebug(f'Headers: \n{str(request.headers)}')
-		#Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpCreate()	# type: ignore
-		try:
-			result = Utils.dissectHttpRequest(request, Operation.CREATE, Utils.retrieveIDFromPath(path, self.csern, self.csi))
-			if result.status:
-				Logging.logDebug(f'Body: \n{result.request.data}')
-				result = CSE.request.createRequest(result.request)
-		except Exception as e:
-			result = self._prepareException(e)
-		return self._prepareResponse(request, result)
+		return self._handleRequest(path, Operation.CREATE)
 
 
 	def handlePUT(self, path:str=None) -> Response:
 		Utils.renameCurrentThread()
-		Logging.logDebug(f'==> Update: /{path}')	# path = request.path  w/o the root
-		Logging.logDebug(f'Headers: \n{str(request.headers)}')
-		#Logging.logDebug(f'Body: \n{request.data.decode("utf-8")}')
 		CSE.event.httpUpdate()	# type: ignore
-		try:
-			result = Utils.dissectHttpRequest(request, Operation.UPDATE, Utils.retrieveIDFromPath(path, self.csern, self.csi))
-			if result.status:
-				Logging.logDebug(f'Body: \n{result.request.data}')
-				result = CSE.request.updateRequest(result.request)
-		except Exception as e:
-			result = self._prepareException(e)
-		return self._prepareResponse(request, result)
+		return self._handleRequest(path, Operation.UPDATE)
 
 
 	def handleDELETE(self, path:str=None) -> Response:
 		Utils.renameCurrentThread()
-		Logging.logDebug(f'==> Delete: /{path}')			# path = request.path  w/o the root
-		Logging.logDebug(f'Headers: \n{str(request.headers)}')
 		CSE.event.httpDelete()	# type: ignore
-		try:
-			result = Utils.dissectHttpRequest(request, Operation.DELETE, Utils.retrieveIDFromPath(path, self.csern, self.csi))
-			if result.status:
-				result = CSE.request.deleteRequest(result.request)
-		except Exception as e:
-			result = self._prepareException(e)
-		return self._prepareResponse(request, result)
+		return self._handleRequest(path, Operation.DELETE)
 
 
 	#########################################################################
@@ -282,7 +275,9 @@ class HttpServer(object):
 		return self.sendRequest(requests.delete, url, originator)
 
 
-	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:str='application/json', headers:dict=None) -> Result:	# TODO Constants
+	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:str=None, headers:dict=None) -> Result:	# TODO Constants
+
+		ct = 'application/json' if ct is None else ct # TODO make configurable
 
 		# Set basic headers
 		hty = f';ty={int(ty):d}' if ty is not None else ''
@@ -298,41 +293,56 @@ class HttpServer(object):
 			if C.hfcEC in headers:				# Event Category
 				hds[C.hfEC] = headers[C.hfcEC]
 
+		_data = json.dumps(data)	# TODO not only JSON!
 		try:
 			Logging.logDebug(f'Sending request: {method.__name__.upper()} {url}')
-			Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: {str(data) if data is not None else ""}\n')
-			r = method(url, data=data, headers=hds, verify=self.verifyCertificate)
+			Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: {str(_data) if _data is not None else ""}\n')
+			r = method(url, data=_data, headers=hds, verify=self.verifyCertificate)
 			Logging.logDebug(f'Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: {str(r.content.decode("utf-8"))}')
 		except Exception as e:
 			Logging.logWarn(f'Failed to send request: {str(e)}')
 			return Result(rsc=RC.targetNotReachable, dbg='target not reachable')
 		rc = RC(int(r.headers['X-M2M-RSC'])) if 'X-M2M-RSC' in r.headers else RC.internalServerError
-		return Result(jsn=r.json() if len(r.content) > 0 else None, rsc=rc)
+		
+		
+		
+		# TODO not only json!!!
+		# TODO don't crash! exception
+		return Result(dict=r.json() if len(r.content) > 0 else None, rsc=rc)
 
 	#########################################################################
 
-	def _prepareResponse(self, request:Request, result:Result) -> Response:
+	def _prepareResponse(self, result:Result) -> Response:
+		content = ''
 
-		# Prepare the response content
-		content = result.toString()
-		
 		# Build the headers
 		headers = {}
 		headers['Server'] = self.serverID						# set server field
 		headers['X-M2M-RSC'] = f'{result.rsc}'					# set the response status code
-		if 'X-M2M-RI' in request.headers:						# set the request identifier
-			headers['X-M2M-RI'] = request.headers['X-M2M-RI']
-		if 'X-M2M-RVI' in request.headers:						# set the version
-			headers['X-M2M-RVI'] = request.headers['X-M2M-RVI']
+		headers['X-M2M-RI'] = result.request.headers.requestIdentifier
+		headers['X-M2M-RVI'] = result.request.headers.releaseVersionIndicator
 
 		# HTTP status code
 		statusCode = result.rsc.httpStatusCode()
 
-		# HTTP Conten-type
-		contentType = C.hfvContentType
-
+		# HTTP Content-type and content
+		contentType = ContentSerializationType.JSON.toString()	# TODO make configurable and depends in the accept
+		if len(result.request.headers.accept) > 0:
+			if ContentSerializationType.JSON == result.request.headers.accept[0]:
+			# if (ct := ContentSerializationType.JSON.toString()) in request.headers.accept:
+				contentType = ContentSerializationType.JSON.toString()
+				content = result.toString(ContentSerializationType.JSON)
+			elif ContentSerializationType.CBOR == result.request.headers.accept[0]:
+			# elif (ct := ContentSerializationType.CBOR.toString()) in request.headers.accept:
+				contentType = ContentSerializationType.CBOR.toString()
+				content = result.toString(ContentSerializationType.CBOR)
+			headers['Content-Type'] = contentType
+				
 		# Build and return the response
-		Logging.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
+		if isinstance(content, bytes):
+			Logging.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{Utils.toHex(content)}\n')
+		else:
+			Logging.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
 		return Response(response=content, status=statusCode, content_type=contentType, headers=headers)
 
 

@@ -30,14 +30,13 @@ defaultURL = 'unknown'
 defaultUDS = { 'acn' : '', 'sus' : statusUninitialized }
 
 
-
 class FWR(MgmtObj):
 
-	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
 		self.resourceAttributePolicies = fwrPolicies	# only the resource type's own policies
-		super().__init__(jsn, pi, mgd=T.FWR, create=create, attributePolicies=attributePolicies)
+		super().__init__(dct, pi, mgd=T.FWR, create=create, attributePolicies=attributePolicies)
 
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('vr', defaultVersion, overwrite=False)
 			self.setAttribute('fwn', defaultFirmwareName, overwrite=False)
 			self.setAttribute('url', defaultURL, overwrite=False)

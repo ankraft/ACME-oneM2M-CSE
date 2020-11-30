@@ -31,8 +31,8 @@ attributePolicies = addPolicy(attributePolicies, reqPolicies)
 
 class REQ(Resource):
 
-	def __init__(self, jsn:dict=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.REQ, jsn, pi, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.REQ, dct, pi, create=create, attributePolicies=attributePolicies)
 
 
 	# Enable check for allowed sub-resources
@@ -53,7 +53,7 @@ class REQ(Resource):
 		else:
 			et = minEt
 
-		jsn:Dict[str, Any] = {
+		dct:Dict[str, Any] = {
 			'm2m:req' : {
 				'et'	: et,
 				'lbl'	: [ request.headers.originator ],
@@ -85,18 +85,18 @@ class REQ(Resource):
 
 		# add handlings, conditions and attributes from filter
 		for k,v in { **request.args.handling, **request.args.conditions, **request.args.attributes}.items():
-			Utils.setXPath(jsn, f'm2m:req/mi/fc/{k}', v, True)
+			Utils.setXPath(dct, f'm2m:req/mi/fc/{k}', v, True)
 
 		# add content
-		if request.json is not None and len(request.json) > 0:
-			Utils.setXPath(jsn, 'm2m:req/pc', request.json, True)
+		if request.dict is not None and len(request.dict) > 0:
+			Utils.setXPath(dct, 'm2m:req/pc', request.dict, True)
 
 		# calculate and assign rtu for rt
 		if (rtu := request.headers.responseTypeNUs) is not None and len(rtu) > 0:
-			Utils.setXPath(jsn, 'm2m:req/mi/rt/nu', [ u for u in rtu if len(u) > 0] )
+			Utils.setXPath(dct, 'm2m:req/mi/rt/nu', [ u for u in rtu if len(u) > 0] )
 
 		if (cseres := Utils.getCSE()).resource is None:
 			return Result(rsc=RC.badRequest, dbg=cseres.dbg)
-		return Utils.resourceFromJSON(jsn, pi=cseres.resource.ri, ty=T.REQ)
+		return Utils.resourceFromDict(dct, pi=cseres.resource.ri, ty=T.REQ)
 
 

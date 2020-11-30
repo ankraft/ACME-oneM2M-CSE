@@ -9,6 +9,7 @@ setup(
     description='An open source CSE Middleware for Education',
     packages=find_packages(),
 	install_requires=[
+		'cbor2',
 		'flask',
 		'isodate', 
 		'psutil',  

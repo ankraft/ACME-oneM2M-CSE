@@ -21,11 +21,11 @@ attributePolicies =  addPolicy(mgmtObjAttributePolicies, rboPolicies)
 
 class RBO(MgmtObj):
 
-	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+	def __init__(self, dct: dict = None, pi: str = None, create: bool = False) -> None:
 		self.resourceAttributePolicies = rboPolicies	# only the resource type's own policies
-		super().__init__(jsn, pi, mgd=T.RBO, create=create, attributePolicies=attributePolicies)
+		super().__init__(dct, pi, mgd=T.RBO, create=create, attributePolicies=attributePolicies)
 
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('rbo', False, overwrite=True)	# always False
 			self.setAttribute('far', False, overwrite=True)	# always False
 
@@ -43,12 +43,12 @@ class RBO(MgmtObj):
 		return Result(status=True)
 
 
-	def update(self, jsn:dict=None, originator:str=None) -> Result:
+	def update(self, dct:dict=None, originator:str=None) -> Result:
 		# Check for rbo & far updates 
-		if jsn is not None and self.tpe in jsn:
-			rbo = Utils.findXPath(jsn, 'm2m:rbo/rbo')
-			far = Utils.findXPath(jsn, 'm2m:rbo/far')
+		if dct is not None and self.tpe in dct:
+			rbo = Utils.findXPath(dct, 'm2m:rbo/rbo')
+			far = Utils.findXPath(dct, 'm2m:rbo/far')
 			if rbo is not None and far is not None and rbo and far:
 				return Result(status=False, rsc=RC.badRequest, dbg='update both rbo and far to True is not allowed')
 
-		return super().update(jsn, originator)
+		return super().update(dct, originator)
