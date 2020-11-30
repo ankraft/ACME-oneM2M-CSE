@@ -77,7 +77,7 @@ class CNT(AnnounceableResource):
 
 	# Get all content instances of a resource and return a sorted (by ct) list 
 	def contentInstances(self) -> List[Resource]:
-		return sorted(CSE.dispatcher.directChildResources(self.ri, T.CIN), key=lambda x: (x.ct))
+		return sorted(CSE.dispatcher.directChildResources(self.ri, T.CIN), key=lambda x: (x.ct))	# type: ignore
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
@@ -142,7 +142,7 @@ class CNT(AnnounceableResource):
 		l = cni
 		while cni > mni and i < l:
 			# remove oldest
-			CSE.dispatcher.deleteResource(cs[i])
+			CSE.dispatcher.deleteResource(cs[i])	# type: ignore
 			cni -= 1
 			i += 1
 		self['cni'] = cni
@@ -158,11 +158,9 @@ class CNT(AnnounceableResource):
 		while cbs > mbs and i < l:
 			# remove oldest
 			cbs -= cs[i]['cs']
-			CSE.dispatcher.deleteResource(cs[i])
+			CSE.dispatcher.deleteResource(cs[i])	# type: ignore
 			i += 1
 		self['cbs'] = cbs
-
-		# TODO: support maxInstanceAge
 
 		# Some CNT resource may have been updated, so store the resource 
 		self.dbUpdate()

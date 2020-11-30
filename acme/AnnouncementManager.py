@@ -15,6 +15,7 @@ import Utils, CSE
 from Configuration import Configuration
 from resources.Resource import Resource
 from resources.AnnouncedResource import AnnouncedResource
+from resources.AnnounceableResource import AnnounceableResource
 from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC
 from helpers.BackgroundWorker import BackgroundWorkerPool
@@ -139,7 +140,7 @@ class AnnouncementManager(object):
 			self.announceResource(resource)
 
 
-	def announceResource(self, resource:Resource) -> None:
+	def announceResource(self, resource:AnnounceableResource) -> None:
 		"""	Announce a single resource to its announcement targets.
 		"""
 		if not self.announcementsEnabled:
@@ -159,7 +160,7 @@ class AnnouncementManager(object):
 			self.announceResourceToCSR(resource, csr)
 
 
-	def announceResourceToCSR(self, resource:Resource, remoteCSR:Resource) -> None:
+	def announceResourceToCSR(self, resource:AnnounceableResource, remoteCSR:Resource) -> None:
 		"""	Announce a resource to a specific CSR.
 		"""
 
@@ -231,7 +232,7 @@ class AnnouncementManager(object):
 
 
 
-	def deAnnounceResource(self, resource:Resource) -> None:
+	def deAnnounceResource(self, resource:AnnounceableResource) -> None:
 		"""	De-announce a single resource from its announcement targets.
 		"""
 		if not self.announcementsEnabled:
@@ -247,7 +248,7 @@ class AnnouncementManager(object):
 			self.deAnnounceResourceFromCSR(resource, csr, remoteRI)
 
 
-	def deAnnounceResourceFromCSR(self, resource:Resource, remoteCSR:Resource, resourceRI:str) -> None:
+	def deAnnounceResourceFromCSR(self, resource:AnnounceableResource, remoteCSR:Resource, resourceRI:str) -> None:
 		"""	De-Announce a resource from a specific CSR.
 		"""
 
@@ -282,7 +283,7 @@ class AnnouncementManager(object):
 	#
 
 
-	def announceUpdatedResource(self, resource:Resource) -> None:
+	def announceUpdatedResource(self, resource:AnnounceableResource) -> None:
 		if not self.announcementsEnabled:
 			return
 		Logging.logDebug(f'Updating announced resource: {resource.ri}')

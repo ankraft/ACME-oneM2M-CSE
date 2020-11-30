@@ -392,7 +392,6 @@ class Dispatcher(object):
 
 		ct 			= request.headers.contentType
 		ty 			= request.headers.resourceType
-		Logging.logWarn(request.dict)
 
 		# Some Resources are not allowed to be created in a request, return immediately
 		if ty in [ T.CSEBase, T.REQ ]:

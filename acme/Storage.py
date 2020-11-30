@@ -9,20 +9,22 @@
 #	or just in memory.
 #
 
-from tinydb import TinyDB, Query, where 		# type: ignore
+from tinydb import TinyDB, Query, where
 from tinydb.storages import MemoryStorage		# type: ignore
+from tinydb.table import Document
 from tinydb.operations import delete 			# type: ignore
 # TODO remove mypy type checking supressions above as soon as tinydb provides typing stubs
 # from tinydb_smartcache import SmartCacheTable # TODO Not compatible with TinyDB 4 yet
 
 import os, json, re, time
-from typing import List, Callable, Any
+from typing import List, Callable, Any, Union, cast
 from threading import Lock
 from Configuration import Configuration
 from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC
 from Logging import Logging
 from resources.Resource import Resource
+from resources.AnnounceableResource import AnnounceableResource
 import CSE, Utils
 
 
@@ -122,7 +124,7 @@ class Storage(object):
 		return Result(rsc=RC.internalServerError, dbg='database inconsistency')
 
 
-	def retrieveResourcesByType(self, ty: T) -> List[dict]:
+	def retrieveResourcesByType(self, ty: T) -> List[Document]:
 		""" Return all resources of a certain type. """
 		# Logging.logDebug(f'Retrieving all resources ty: {ty:d}')
 		return self.db.searchResources(ty=int(ty))
@@ -167,10 +169,10 @@ class Storage(object):
 		return self.db.countResources()
 
 
-	def identifier(self, ri:str) -> List[dict]:
+	def identifier(self, ri:str) -> Union[List[dict], List[Document]]:
 		return self.db.searchIdentifiers(ri=ri)
 
-	def structuredPath(self, srn:str) -> List[dict]:
+	def structuredPath(self, srn:str) -> Union[List[dict], List[Document]]:
 		return self.db.searchIdentifiers(srn=srn)
 
 
@@ -221,7 +223,7 @@ class Storage(object):
 
 		
 
-	def searchAnnounceableResourcesForCSI(self, csi:str, isAnnounced:bool) -> List[Resource]:
+	def searchAnnounceableResourcesForCSI(self, csi:str, isAnnounced:bool) -> List[AnnounceableResource]:
 		""" Search and retrieve all resources that have the provided CSI in their 
 			'at' attribute.
 		"""
@@ -267,7 +269,7 @@ class Storage(object):
 		return subs[0]
 
 
-	def getSubscriptionsForParent(self, pi: str) -> List[dict]:
+	def getSubscriptionsForParent(self, pi: str) -> List[Document]:
 		# Logging.logDebug(f'Retrieving subscriptions for parent: {pi}')
 		return self.db.searchSubscriptions(pi=pi)
 
@@ -302,11 +304,11 @@ class Storage(object):
 		return self.db.countBatchNotifications(ri, nu)
 
 
-	def getBatchNotifications(self, ri:str, nu:str) -> List[dict]:
+	def getBatchNotifications(self, ri:str, nu:str) -> List[Document]:
 		return self.db.getBatchNotifications(ri, nu)
 
 
-	def removeBatchNotifications(self, ri:str, nu:str) -> List[dict]:
+	def removeBatchNotifications(self, ri:str, nu:str) -> bool:
 		return self.db.removeBatchNotifications(ri, nu)
 
 
@@ -370,20 +372,20 @@ class TinyDBBinding(object):
 		# TinyDB.table_class = SmartCacheTable 
 		if Configuration.get('db.inMemory'):
 			Logging.log('DB in memory')
-			self.dbResources = TinyDB(storage=MemoryStorage)
-			self.dbIdentifiers = TinyDB(storage=MemoryStorage)
-			self.dbSubscriptions = TinyDB(storage=MemoryStorage)
-			self.dbBatchNotifications = TinyDB(storage=MemoryStorage)
-			self.dbStatistics = TinyDB(storage=MemoryStorage)
-			self.dbAppData = TinyDB(storage=MemoryStorage)
+			self.dbResources = TinyDB(storage=MemoryStorage)										# type: ignore
+			self.dbIdentifiers = TinyDB(storage=MemoryStorage)										# type: ignore
+			self.dbSubscriptions = TinyDB(storage=MemoryStorage)									# type: ignore
+			self.dbBatchNotifications = TinyDB(storage=MemoryStorage)								# type: ignore
+			self.dbStatistics = TinyDB(storage=MemoryStorage)										# type: ignore
+			self.dbAppData = TinyDB(storage=MemoryStorage)											# type: ignore
 		else:
 			Logging.log('DB in file system')
-			self.dbResources = TinyDB(f'{self.path}/resources{postfix}.json')
-			self.dbIdentifiers = TinyDB(f'{self.path}/identifiers{postfix}.json')
-			self.dbSubscriptions = TinyDB(f'{self.path}/subscriptions{postfix}.json')
-			self.dbBatchNotifications = TinyDB(f'{self.path}/batchNotifications{postfix}.json')
-			self.dbStatistics = TinyDB(f'{self.path}/statistics{postfix}.json')
-			self.dbAppData = TinyDB(f'{self.path}/appdata{postfix}.json')
+			self.dbResources = TinyDB(f'{self.path}/resources{postfix}.json')						# type: ignore
+			self.dbIdentifiers = TinyDB(f'{self.path}/identifiers{postfix}.json')					# type: ignore
+			self.dbSubscriptions = TinyDB(f'{self.path}/subscriptions{postfix}.json')				# type: ignore
+			self.dbBatchNotifications = TinyDB(f'{self.path}/batchNotifications{postfix}.json')		# type: ignore
+			self.dbStatistics = TinyDB(f'{self.path}/statistics{postfix}.json')						# type: ignore
+			self.dbAppData = TinyDB(f'{self.path}/appdata{postfix}.json')							# type: ignore
 		self.tabResources = self.dbResources.table('resources', cache_size=self.cacheSize)
 		self.tabIdentifiers = self.dbIdentifiers.table('identifiers', cache_size=self.cacheSize)
 		self.tabSubscriptions = self.dbSubscriptions.table('subsriptions', cache_size=self.cacheSize)
@@ -425,29 +427,30 @@ class TinyDBBinding(object):
 	def upsertResource(self, resource: Resource) -> None:
 		#Logging.logDebug(resource)
 		with self.lockResources:
-			self.tabResources.upsert(resource.dict, Query().ri == resource.ri)	# Update existing or insert new when overwriting
+			# Update existing or insert new when overwriting
+			self.tabResources.upsert(resource.dict, Query().ri == resource.ri)		# type: ignore
 	
 
 	def updateResource(self, resource: Resource) -> Resource:
 		#Logging.logDebug(resource)
 		with self.lockResources:
 			ri = resource.ri
-			self.tabResources.update(resource.dict, Query().ri == ri)
+			self.tabResources.update(resource.dict, Query().ri == ri)	# type: ignore
 			# remove nullified fields from db and resource
 			# TODO remove Null values recursively
 			for k in list(resource.dict):
 				if resource.dict[k] is None:
-					self.tabResources.update(delete(k), Query().ri == ri)
+					self.tabResources.update(delete(k), Query().ri == ri)	# type: ignore
 					del resource.dict[k]
 			return resource
 
 
 	def deleteResource(self, resource: Resource) -> None:
 		with self.lockResources:
-			self.tabResources.remove(Query().ri == resource.ri)
+			self.tabResources.remove(Query().ri == resource.ri)		# type: ignore
 	
 
-	def searchResources(self, ri: str = None, csi: str = None, srn: str = None, pi: str = None, ty: int = None) -> List[dict]:
+	def searchResources(self, ri: str = None, csi: str = None, srn: str = None, pi: str = None, ty: int = None) -> List[Document]:
 
 		# find the ri first and then try again recursively
 		if srn is not None:
@@ -457,21 +460,21 @@ class TinyDBBinding(object):
 
 		with self.lockResources:
 			if ri is not None:
-				return self.tabResources.search(Query().ri == ri)
+				return self.tabResources.search(Query().ri == ri)	# type: ignore
 			elif csi is not None:
-				return self.tabResources.search(Query().csi == csi)
+				return self.tabResources.search(Query().csi == csi)	# type: ignore
 			elif pi is not None and ty is not None:
-				return self.tabResources.search((Query().pi == pi) & (Query().ty == ty))
+				return self.tabResources.search((Query().pi == pi) & (Query().ty == ty))	# type: ignore
 			elif pi is not None:
-				return self.tabResources.search(Query().pi == pi)
+				return self.tabResources.search(Query().pi == pi)	# type: ignore
 			elif ty is not None:
-				return self.tabResources.search(Query().ty == ty)
+				return self.tabResources.search(Query().ty == ty)	# type: ignore
 			return []
 
 
-	def discoverResources(self, func: Callable) -> List[dict]:
+	def discoverResources(self, func:Callable) -> List[Document]:
 		with self.lockResources:
-			return self.tabResources.search(func)
+			return self.tabResources.search(Query().test(func))	# type: ignore
 
 
 	def hasResource(self, ri: str = None, csi: str = None, srn: str = None, ty: int = None) -> bool:
@@ -482,11 +485,11 @@ class TinyDBBinding(object):
 				return self.hasResource(ri=identifiers[0]['ri'])
 		with self.lockResources:
 			if ri is not None:
-				return self.tabResources.contains(Query().ri == ri)
+				return self.tabResources.contains(Query().ri == ri)		# type: ignore
 			elif csi is not None:
-				return self.tabResources.contains(Query().csi == csi)
+				return self.tabResources.contains(Query().csi == csi)	# type: ignore
 			elif ty is not None:
-				return self.tabResources.contains(Query().ty == ty)
+				return self.tabResources.contains(Query().ty == ty)		# type: ignore
 			else:
 				return False
 
@@ -505,12 +508,12 @@ class TinyDBBinding(object):
 	# 		return self.tabResources.search(where[field].test(lambda s: value in s))
 
 
-	def  searchByValueInField(self, field: str, value: Any) -> List[dict]:
+	def  searchByValueInField(self, field: str, value: Any) -> List[Document]:
 		"""Search and return all resources of a value in a field,
 		and return them in an array."""
 		with self.lockResources:
 			#return self.tabResources.search(where(field).any(value))
-			return self.tabResources.search(where(field).test(lambda s: value in s))
+			return self.tabResources.search(where(field).test(lambda s: value in s))	# type: ignore
 
 
 	#
@@ -523,20 +526,20 @@ class TinyDBBinding(object):
 			self.tabIdentifiers.upsert(
 				# ri, rn, srn 
 				{'ri' : ri, 'rn' : resource.rn, 'srn' : srn, 'ty' : resource.ty}, 
-				Query().ri == ri)
+				Query().ri == ri)	# type: ignore
 
 
 	def deleteIdentifier(self, resource: Resource) -> None:
 		with self.lockIdentifiers:
-			self.tabIdentifiers.remove(Query().ri == resource.ri)
+			self.tabIdentifiers.remove(Query().ri == resource.ri)	# type: ignore
 
 
-	def searchIdentifiers(self, ri: str = None, srn: str = None) -> List[dict]:
+	def searchIdentifiers(self, ri: str = None, srn: str = None) -> List[Document]:
 		with self.lockIdentifiers:
 			if srn is not None:
-				return self.tabIdentifiers.search(Query().srn == srn)
+				return self.tabIdentifiers.search(Query().srn == srn)		# type: ignore
 			elif ri is not None:
-				return self.tabIdentifiers.search(Query().ri == ri) 
+				return self.tabIdentifiers.search(Query().ri == ri) 		# type: ignore
 			return []
 
 
@@ -545,12 +548,12 @@ class TinyDBBinding(object):
 	#
 
 
-	def searchSubscriptions(self, ri : str = None, pi : str = None) -> List[dict]:
+	def searchSubscriptions(self, ri : str = None, pi : str = None) -> List[Document]:
 		with self.lockSubscriptions:
 			if ri is not None:
-				return self.tabSubscriptions.search(Query().ri == ri)
+				return self.tabSubscriptions.search(Query().ri == ri)		# type: ignore
 			if pi is not None:
-				return self.tabSubscriptions.search(Query().pi == pi)
+				return self.tabSubscriptions.search(Query().pi == pi)		# type: ignore
 			return None
 
 
@@ -569,13 +572,13 @@ class TinyDBBinding(object):
 										'nus' : subscription.nu,
 										'bn'  : subscription.bn
 									}, 
-									Query().ri == ri)
+									Query().ri == ri)	# type: ignore
 			return result is not None
 
 
 	def removeSubscription(self, subscription: Resource) -> bool:
 		with self.lockSubscriptions:
-			return self.tabSubscriptions.remove(Query().ri == subscription.ri)
+			return len(self.tabSubscriptions.remove(Query().ri == subscription.ri)) > 0		# type: ignore
 
 
 	#
@@ -595,20 +598,20 @@ class TinyDBBinding(object):
 
 	def countBatchNotifications(self, ri:str, nu:str) -> int:
 		with self.lockBatchNotifications:
-			q = Query()
+			q = Query()	# type: ignore
 			return self.tabBatchNotifications.count((q.ri == ri) & (q.nu == nu))
 
 
-	def getBatchNotifications(self, ri:str, nu:str) -> List[dict]:
+	def getBatchNotifications(self, ri:str, nu:str) -> List[Document]:
 		with self.lockBatchNotifications:
-			q = Query()
+			q = Query()	# type: ignore
 			return self.tabBatchNotifications.search((q.ri == ri) & (q.nu == nu))
 
 
-	def removeBatchNotifications(self, ri:str, nu:str) -> List[dict]:
+	def removeBatchNotifications(self, ri:str, nu:str) -> bool:
 		with self.lockBatchNotifications:
-			q = Query()
-			return self.tabBatchNotifications.remove((q.ri == ri) & (q.nu == nu))
+			q = Query()	# type: ignore
+			return len(self.tabBatchNotifications.remove((q.ri == ri) & (q.nu == nu))) > 0
 
 	#
 	#	Statistics
@@ -634,7 +637,7 @@ class TinyDBBinding(object):
 
 	def searchAppData(self, id: str) -> dict:
 		with self.lockAppData:
-			data = self.tabAppData.get(Query().id == id)
+			data = self.tabAppData.get(Query().id == id)	# type: ignore
 			return data if data is not None and len(data) > 0 else None
 
 
@@ -643,7 +646,7 @@ class TinyDBBinding(object):
 			if 'id' not in data:
 				return None
 			if len(self.tabAppData) > 0:
-				return self.tabAppData.update(data, Query().id == data['id']) is not None
+				return self.tabAppData.update(data, Query().id == data['id']) is not None 	# type: ignore
 			else:
 				return self.tabAppData.insert(data) is not None
 
@@ -651,5 +654,5 @@ class TinyDBBinding(object):
 	def removeAppData(self, data: dict) -> bool:
 		with self.lockAppData:
 			if 'id' not in data:
-				return None	
-			return self.tabAppData.remove(Query().id == data['id'])
+				return False	
+			return len(self.tabAppData.remove(Query().id == data['id'])) > 0 # type: ignore

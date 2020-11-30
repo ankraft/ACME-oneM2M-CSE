@@ -14,6 +14,7 @@ from Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, O
 import CSE, Utils
 from resources import FCNT, MgmtObj
 from resources.Resource import Resource
+from resources.GRP_FOPT import GRP_FOPT
 
 class GroupManager(object):
 
@@ -148,7 +149,7 @@ class GroupManager(object):
 
 
 
-	def foptRequest(self, operation:Operation, fopt:Resource, request:CSERequest, id:str, originator:str) -> Result:
+	def foptRequest(self, operation:Operation, fopt:GRP_FOPT, request:CSERequest, id:str, originator:str) -> Result:
 		"""	Handle requests to a fanOutPoint. 
 		This method might be called recursivly, when there are groups in groups."""
 

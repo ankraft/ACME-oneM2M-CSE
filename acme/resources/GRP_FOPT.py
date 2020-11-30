@@ -14,9 +14,8 @@ from Logging import Logging
 from Types import ResourceTypes as T, Result, Operation, CSERequest
 
 
-# TODO:
-# - Handle Group Request Target Members parameter
-# - Handle Group Request Identifier parameter
+# TODO - Handle Group Request Target Members parameter
+# TODO - Handle Group Request Identifier parameter
 
 # LIMIT
 # Only blockingRequest is supported
@@ -34,7 +33,7 @@ class GRP_FOPT(Resource):
 
 	def handleRetrieveRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		Logging.logDebug('Retrieving resources from fopt')
-		return CSE.group.foptRequest(Operation.RETRIEVE, self, request, id, originator)
+		return CSE.group.foptRequest(Operation.RETRIEVE, self, request, id, originator)	
 
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:

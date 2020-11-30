@@ -69,7 +69,6 @@ class Resource(object):
 				self.setAttribute('rn', rn, overwrite=True)
 	
 			# Check uniqueness of ri. otherwise generate a new one. Only when creating
-			# TODO: could be a BAD REQUEST?
 			if create:
 				while Utils.isUniqueRI(ri := self.attribute('ri')) == False:
 					Logging.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
@@ -332,7 +331,7 @@ class Resource(object):
 
 
 	def hasAttribute(self, key: str) -> bool:
-		# TODO check sub-elements as well
+		# TODO check sub-elements as well via findXPath
 		return key in self.dict
 
 

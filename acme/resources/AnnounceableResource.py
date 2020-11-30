@@ -28,7 +28,7 @@ class AnnounceableResource(Resource):
 
 		# Check announcements
 		if self.at is not None:
-			CSE.announce.announceResource(self)
+			CSE.announce.announceResource(self)	# type: ignore
 		return res
 
 
@@ -37,7 +37,7 @@ class AnnounceableResource(Resource):
 
 		# perform deannouncements
 		if self.at is not None:
-			CSE.announce.deAnnounceResource(self)
+			CSE.announce.deAnnounceResource(self)	# type: ignore
 		super().deactivate(originator)
 
 
@@ -50,10 +50,10 @@ class AnnounceableResource(Resource):
 
 		# Check announcements
 		if self.at is not None:
-			CSE.announce.announceUpdatedResource(self)
+			CSE.announce.announceUpdatedResource(self)	# type: ignore
 		else:
 			if self._origAT is not None:	# at is removed in update, so remove self
-				CSE.announce.deAnnounceResource(self)
+				CSE.announce.deAnnounceResource(self)	# type: ignore
 		return res
 
 

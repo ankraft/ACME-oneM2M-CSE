@@ -353,11 +353,6 @@ class RegistrationManager(object):
 				continue
 			Logging.logDebug(f'Expiring resource (and child resouces): {resource.ri}')
 			CSE.dispatcher.deleteResource(resource, withDeregistration=True)	# ignore result
-
-		# # Check all resources with maxInstanceAge (mia)
-		# resources = CSE.storage.searchByFilter(lambda r: 'mia' in r)
-		# for resource in resources:
-		# 	resource.validateExpirations()
 				
 		return True
 
