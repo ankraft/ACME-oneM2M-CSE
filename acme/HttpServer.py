@@ -275,13 +275,19 @@ class HttpServer(object):
 		return self.sendRequest(requests.delete, url, originator, ct=ct)
 
 
+	def _printContent(self, content:bytes, ct:ContentSerializationType) -> str:
+		if content is None:	return ''
+		if isinstance(content, str): return content
+		return content.decode('utf-8') if ct == ContentSerializationType.JSON else Utils.toHex(content)
+
 	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:ContentSerializationType=None, headers:dict=None) -> Result:
 		ct = CSE.defaultSerialization if ct is None else ct
 
 		# Set basic headers
 		hty = f';ty={int(ty):d}' if ty is not None else ''
 		hds = {	'User-Agent'	: self.serverID,
-				'Content-Type' 	: f'{ct.toHeader()}{hty}', 
+				'Content-Type' 	: f'{ct.toHeader()}{hty}',
+				'Accept'		: ct.toHeader(),
 				C.hfOrigin	 	: originator,
 				C.hfRI 			: Utils.uniqueRI(),
 				C.hfRVI			: self.hfvRVI,			# TODO this actually depends in the originator
@@ -295,21 +301,20 @@ class HttpServer(object):
 		# serialize data (only if dictionary, pass on non-dict data)
 		content = Utils.serializeData(data, ct) if isinstance(data, dict) else data
 
+		# ! Don't forget: requests are done through the request library, not flask.
+		# ! The attribute names are different
 		try:
 			Logging.logDebug(f'Sending request: {method.__name__.upper()} {url}')
-			Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: {str(content) if content is not None else ""}\n')
+			Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._printContent(content, ct)}\n')
 			r = method(url, data=content, headers=hds, verify=self.verifyCertificate)
-			Logging.logDebug(f'Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: {str(r.content.decode("utf-8"))}')
+			rct = ContentSerializationType.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
+			rc = RC(int(r.headers['X-M2M-RSC'])) if 'X-M2M-RSC' in r.headers else RC.internalServerError
+			Logging.logDebug(f'Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._printContent(r.content, rct)}\n')
 		except Exception as e:
 			Logging.logWarn(f'Failed to send request: {str(e)}')
 			return Result(rsc=RC.targetNotReachable, dbg='target not reachable')
-		rc = RC(int(r.headers['X-M2M-RSC'])) if 'X-M2M-RSC' in r.headers else RC.internalServerError
+		return Result(dict=Utils.deserializeData(r.content, rct), rsc=rc)
 		
-		
-		
-		# TODO not only json!!!
-		# TODO don't crash! exception
-		return Result(dict=r.json() if len(r.content) > 0 else None, rsc=rc)
 
 	#########################################################################
 

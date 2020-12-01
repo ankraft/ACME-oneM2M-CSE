@@ -953,11 +953,17 @@ def serializeData(data:dict, ct:ContentSerializationType) -> Union[str, bytes]:
 
 def deserializeData(data:bytes, ct:ContentSerializationType) -> dict:
 	"""	Deserialize data into a dictionary, depending on the serialization type.
+		If the len of the data is 0 then an empty dictionary is returned. 
 	"""
-	if ct == ContentSerializationType.JSON:
-		return json.loads(data.decode("utf-8"))
-	elif ct == ContentSerializationType.CBOR:
-		return cbor2.loads(data)
+	try:
+		if len(data) == 0:
+			return {}
+		if ct == ContentSerializationType.JSON:
+			return json.loads(data.decode("utf-8"))
+		elif ct == ContentSerializationType.CBOR:
+			return cbor2.loads(data)
+	except Exception as e:
+		Logging.logErr(f'Deserialization error: {str(e)}')
 	return None
 
 #
@@ -973,7 +979,10 @@ def renameCurrentThread(name:str = None, thread:threading.Thread = None) -> None
 #	Text formattings
 #
 
-def toHex(bts:bytes, toBinary:bool=False) -> str:
+def toHex(bts:bytes, toBinary:bool=False, withLength:bool=False) -> str:
+	"""	Print bts as hex output, similar to the 'od' command.
+	"""
+	if len(bts) == 0 and not withLength: return ''
 	result = ''
 	n = 0
 	b = bts[n:n+16]

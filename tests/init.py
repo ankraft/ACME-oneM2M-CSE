@@ -8,6 +8,7 @@
 #
 
 import requests, random, sys, json, re, time, datetime, ssl
+import cbor2
 from typing import Any, Callable, Union
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -123,6 +124,7 @@ def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any
 	tys = f';ty={ty}' if ty is not None else ''
 	hds = { 
 		'Content-Type' 		: f'{ct}{tys}',
+		'Accept'			: ct,
 		'X-M2M-Origin'	 	: originator,
 		'X-M2M-RI' 			: (rid := uniqueID()),
 		'X-M2M-RVI'			: RVI,			# TODO this actually depends in the originator
@@ -287,10 +289,13 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 		# Get headers and content data
 		length = int(self.headers['Content-Length'])
-		contentType = self.headers['Content-Type']
 		post_data = self.rfile.read(length)
 		if len(post_data) > 0:
-			setLastNotification(json.loads(post_data.decode('utf-8')))
+			contentType = self.headers['Content-Type'].lower()
+			if contentType == 'application/json':
+				setLastNotification(json.loads(post_data.decode('utf-8')))
+			elif contentType == 'application/cbor':
+				setLastNotification(cbor2.loads(post_data))
 		setLastNotificationHeaders(self.headers)
 
 
@@ -359,7 +364,7 @@ def uniqueID() -> str:
 #
 
 # find a structured element in JSON
-decimalMatch = re.compile('{(\d+)}')
+decimalMatch = re.compile(r'{(\d+)}')
 def findXPath(dct:dict, element:str, default:Any=None) -> Any:
 	if dct is None:
 		return default
