@@ -79,11 +79,11 @@ class	Logging:
 
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
-			import Utils
+			import Utils, CSE
 
 			logpath = Configuration.get('logging.path')
 			os.makedirs(logpath, exist_ok=True)# create log directory if necessary
-			logfile = f'{logpath}/cse-{Utils.getCSETypeAsString()}.log'
+			logfile = f'{logpath}/cse-{CSE.cseType.name}.log'
 			logfp = logging.handlers.RotatingFileHandler(logfile,
 														 maxBytes=Configuration.get('logging.size'),
 														 backupCount=Configuration.get('logging.count'))
