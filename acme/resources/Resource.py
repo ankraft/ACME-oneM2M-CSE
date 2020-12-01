@@ -423,7 +423,7 @@ class Resource(object):
 
 	def __repr__(self) -> str:
 		""" Object representation as string. """
-		return f'{self.tpe}(ri={self.ri}, srn={self._srn})'
+		return f'{self.tpe}(ri={self.ri}, srn={self[self._srn]})'
 
 
 	def __eq__(self, other: object) -> bool:
