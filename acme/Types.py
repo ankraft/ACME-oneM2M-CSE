@@ -594,27 +594,24 @@ class Result:
 		"""
 		return Result(rsc=self.rsc, dbg=self.dbg)
 
-	def toData(self, ct:ContentSerializationType=ContentSerializationType.JSON) -> Union[str, bytes]:
+	def toData(self, ct:ContentSerializationType=None) -> Union[str, bytes]:
 		from resources.Resource import Resource
 		from Utils import serializeData
+		from CSE import defaultSerialization
 
-
-		# encoder = json if ct == ContentSerializationType.JSON else cbor2 if ct == ContentSerializationType.CBOR else None
+		# determine the default serialization type if none was given
+		ct = defaultSerialization if ct is None else ct
 
 		if isinstance(self.resource, Resource):
 			r = serializeData(self.resource.asDict(), ct)
-			# r = encoder.dumps(self.resource.asDict())	
 		elif self.dbg is not None:
 			r = serializeData({ 'm2m:dbg' : self.dbg }, ct)
-			# r = encoder.dumps({ 'm2m:dbg' : self.dbg })
 		elif isinstance(self.resource, dict):
 			r = serializeData(self.resource, ct)
-			# r = encoder.dumps(self.resource)
 		elif isinstance(self.resource, str):
 			r = self.resource
 		elif isinstance(self.dict, dict):		# explicit json or cbor
 			r = serializeData(self.dict, ct)
-			# r = encoder.dumps(self.dict)
 		elif self.resource is None and self.dict is None:
 			r = ''
 		else:

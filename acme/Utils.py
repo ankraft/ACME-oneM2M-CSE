@@ -175,11 +175,13 @@ def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
 				id = riFromStructuredPath(srn) # id becomes the ri of the fopt
 	return srn, id
 
+
 def riFromCSI(csi: str) -> str:
 	""" Get the ri from an CSEBase resource by its csi. """
 	if (res := resourceFromCSI(csi)) is None:
 		return None
 	return res.ri
+
 
 def resourceFromCSI(csi: str) -> Resource.Resource:
 	""" Get the CSEBase resource by its csi. """
@@ -458,7 +460,7 @@ def removeCommentsFromJSON(data:str) -> str:
 			return match.group(1) # captured quoted-string
 	return commentRegex.sub(_replacer, data)
 
-decimalMatch = re.compile('{(\d+)}')
+decimalMatch = re.compile(r'{(\d+)}')
 def findXPath(dct:dict, element:str, default:Any=None) -> Any:
 	""" Find a structured element in dictionary.
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
@@ -555,10 +557,11 @@ def isAllowedOriginator(originator: str, allowedOriginators: List[str]) -> bool:
 	return False
 
 
-#	Compare an old and a new resource. Keywords and values. Ignore internal __XYZ__ keys
-#	Return a dictionary.
-#	if the modifier dict is given then it contains the changes that let from old to new.
 def resourceDiff(old:Union[Resource.Resource, dict], new:Union[Resource.Resource, dict], modifiers:dict=None) -> dict:
+	"""	Compare an old and a new resource. Keywords and values. Ignore internal __XYZ__ keys.
+		Return a dictionary.
+		If the modifier dict is given then it contains the changes that let from old to new.
+	"""
 	res = {}
 	for k, v in new.items():
 		if k.startswith('__'):	# ignore all internal attributes
@@ -588,13 +591,10 @@ def resourceDiff(old:Union[Resource.Resource, dict], new:Union[Resource.Resource
 def getCSE() -> Result:
 	return CSE.dispatcher.retrieveResource(Configuration.get('cse.ri'))
 
-
-def getCSETypeAsString() -> str:
-	return CSE.cseType.name
-
 	
-# Check whether the target contains a fanoutPoint in between or as the target
 def fanoutPointResource(id: str) -> Resource.Resource:
+	"""	Check whether the target contains a fanoutPoint in between or as the target.
+	"""
 	if id is None:
 		return None
 	# retrieve srn
@@ -614,6 +614,28 @@ def fanoutPointResource(id: str) -> Resource.Resource:
 	return None
 
 
+def getSerializationFromOriginator(originator:str) -> List[ContentSerializationType]:
+	"""	Look for the content serializations of a registered originator.
+		It is either an AE, a CSE or a CSR.
+		Return a list of types.
+	"""
+	# First check whether there is an AE with that originator
+	if (l := len(aes := CSE.storage.searchByValueInField('aei', originator))) > 0:
+		if l > 1:
+			Logging.logErr(f'More then one AE with the same aei: {originator}')
+			return []
+		csz = aes[0].csz
+	# Else try whether there is a CSE or CSR
+	elif (l := len(cses := CSE.storage.searchByValueInField('csi', getIdFromOriginator(originator)))) > 0:
+		if l > 1:
+			Logging.logErr(f'More then one CSE with the same csi: {originator}')
+			return []
+		csz = cses[0].csz
+	# Else just an empty list
+	else:
+		return []
+	# Convert the poa to a list of ContentSerializationTypes
+	return [ ContentSerializationType.getType(c) for c in csz]
 
 #
 #	HTTP request helper functions
@@ -898,7 +920,6 @@ def getRequestHeaders(request: Request) -> Result:
 	rh.contentType 	= request.content_type
 	rh.accept		= [ mt for mt, _ in request.accept_mimetypes ]	# get (multiple) accept headers from MIMEType[(x,nr)]
 
-
 	if rh.contentType is not None:
 		if not rh.contentType.startswith(tuple(C.supportedContentHeaderFormat)):
 			rh.contentType 	= None
@@ -914,8 +935,9 @@ def getRequestHeaders(request: Request) -> Result:
 	
 	# accept
 	rh.accept = request.headers.getlist('accept')
-	if ((l := len(rh.accept)) == 1 and '*/*' in rh.accept) or l == 0:
-		rh.accept = [ CSE.defaultSerialization.toHeader() ]
+	rh.accept = [ a for a in rh.accept if a != '*/*' ]
+	# if ((l := len(rh.accept)) == 1 and '*/*' in rh.accept) or l == 0:
+	# 	rh.accept = [ CSE.defaultSerialization.toHeader() ]
 
 	return Result(data=rh, rsc=RC.OK)
 

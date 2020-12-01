@@ -326,23 +326,31 @@ class HttpServer(object):
 		# HTTP status code
 		statusCode = result.rsc.httpStatusCode()
 
-		# HTTP Content-type and content
-		contentType = CSE.defaultSerialization.toHeader()
+		#
+		# Determine the accept type and encode the content accordinly
+		#
+		# Look whether there is a accept header in the original request
 		if len(result.request.headers.accept) > 0:
-			if ContentSerializationType.JSON == result.request.headers.accept[0]:
-				contentType = ContentSerializationType.JSON.toHeader()
-				content = result.toData(ContentSerializationType.JSON)
-			elif ContentSerializationType.CBOR == result.request.headers.accept[0]:
-				contentType = ContentSerializationType.CBOR.toHeader()
-				content = result.toData(ContentSerializationType.CBOR)
-			headers['Content-Type'] = contentType
+			ct = ContentSerializationType.getType(result.request.headers.accept[0])
+		
+		# No accept, check originator
+		elif len(csz := Utils.getSerializationFromOriginator(result.request.headers.originator)) > 0:
+			ct = csz[0]
+		
+		# Default: configured CSE's default
+		else:
+			ct = CSE.defaultSerialization
+		
+		# Assign and encode content accordingly
+		headers['Content-Type'] = (cts := ct.toHeader())
+		content = result.toData(ct)
 				
 		# Build and return the response
 		if isinstance(content, bytes):
 			Logging.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{Utils.toHex(content)}\n')
 		else:
 			Logging.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
-		return Response(response=content, status=statusCode, content_type=contentType, headers=headers)
+		return Response(response=content, status=statusCode, content_type=cts, headers=headers)
 
 
 	def _prepareException(self, e: Exception) -> Result:
