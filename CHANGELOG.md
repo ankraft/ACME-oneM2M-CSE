@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added *--http-address* and *--network-interface* command line arguments.
 - [CSE] Added configuration to exclude certain attributes in CSR creations and updates.
 - [NOTIFICATIONS] Added support for handling CBOR serialization and other binary formats.
+- [WEB] Added dark mode (for supported browsers).
 
 ### Changed
 - [WEB] The web UI can now also be used as a stand-alone application to connect to third-party CSEs.
