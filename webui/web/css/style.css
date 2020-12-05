@@ -116,3 +116,8 @@ pre.inline {
    font-weight: medium;
    background-color: transparent;
 }
+
+
+#resource, #rest-headers, #rest-requestarea, #rest-result-headers, #rest-result-body {
+    font-family: 'DejaVu Sans Mono', monospace;
+}
