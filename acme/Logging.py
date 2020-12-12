@@ -242,7 +242,7 @@ class ACMERichLogHandler(RichHandler):
 		log_time = datetime.datetime.fromtimestamp(record.created)
 
 		level = Text()
-		level.append(record.levelname, log_style)
+		level.append(f'{record.levelname:<7}', log_style)	# add trainling spaces to level name for a bit nicer formatting
 		message_text = Text(f'{threadID} - {message}')
 		message_text = self.highlighter(message_text)
 
