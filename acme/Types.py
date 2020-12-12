@@ -568,6 +568,9 @@ class ContentSerializationType(IntEnum):
 		if not isinstance(other, str):
 			return NotImplemented
 		return self.value == self.getType(str(other))
+	
+	def __repr__(self) -> str:
+		return self.name
 
 
 

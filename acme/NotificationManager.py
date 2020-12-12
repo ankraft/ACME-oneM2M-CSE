@@ -20,7 +20,11 @@ from helpers.BackgroundWorker import BackgroundWorkerPool
 from resources.Resource import Resource
 
 # TODO: removal policy (e.g. unsuccessful tries)
-# TODO: no async notifications yet, no batches etc
+# TODO: latestNotify support
+
+# TODO: completly rework the batch handling. Store the notification, but only evaluate the TO when sending!
+# TODO: Change the evaluation of poa's. Only one successful receiver per POA. This means that evaluation of TO happens at the very end just before sending the requestz.
+# TODO: support different serializations. Also ct= argument in URL
 
 
 

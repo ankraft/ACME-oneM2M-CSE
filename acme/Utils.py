@@ -997,8 +997,6 @@ def toHex(bts:bytes, toBinary:bool=False, withLength:bool=False) -> str:
 			s1 = ' '.join([f'{i:02x}' for i in b])
 			s1 = f'{s1[0:23]} {s1[23:]}'
 			width = 48
-		# else:
-
 
 		s2 = ''.join([chr(i) if 32 <= i <= 127 else '.' for i in b])
 		s2 = f'{s2[0:8]} {s2[8:]}'
