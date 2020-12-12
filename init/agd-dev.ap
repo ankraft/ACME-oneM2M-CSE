@@ -1,13 +1,18 @@
 // Created by SDTTool
 // oneM2M Release: 4.5.0
-// Domain:         agd
+// Domain:         org.onem2m.agriculture
 [
+
     // DeviceClass: deviceCowActivityMonitor
     {
-        "type"  : "agd:dCAMr",
-        "lname" : "deviceCowActivityMonitor",
-        "attrs" : [
-            { "sname" : "__NONE__", "type"  : "void" }
+        "type"      : "agd:dCAMr",
+        "lname"     : "deviceCowActivityMonitor",
+        "cnd"       : "org.onem2m.agriculture.device.deviceCowActivityMonitor",
+        "children"  : [
+            "agd:coAMr", 
+            "cod:bat", 
+            "cod:conny", 
+            "cod:peRCg"
         ]
     }
 

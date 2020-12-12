@@ -1,0 +1,21 @@
+// Created by SDTTool
+// oneM2M Release: 4.5.0
+// Domain:         org.onem2m.railway
+[
+    // ModuleClass: baliseTransmissionModule (baTMe)
+    {
+        "type"      : "rad:baTMe",
+        "lname"     : "baliseTransmissionModule",
+        "cnd"       : "org.onem2m.railway.moduleclass.baliseTransmissionModule",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: baliseSystemId
+            { "sname" : "baSId", "lname" : "baliseSystemId", "type" : "nonNegInteger", "car" : "01" }, 
+            // DataPoint: telegramMessage
+            { "sname" : "telMe", "lname" : "telegramMessage", "type" : "string", "car" : "01" }
+        ]
+    }
+
+
+]

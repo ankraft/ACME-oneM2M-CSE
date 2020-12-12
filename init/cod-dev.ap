@@ -1,0 +1,241 @@
+// Created by SDTTool
+// oneM2M Release: 4.5.0
+// Domain:         org.onem2m.common
+[
+    // SubDevice: subDevicePowerOutlet
+    {
+        "type"      : "cod:sDPOt",
+        "lname"     : "sDPOt",
+        "cnd"       : "org.onem2m.common.subdevice.subDevicePowerOutlet",
+        "children"  : [
+            "cod:binSh", 
+            "cod:eneCn", 
+            "cod:oveSr", 
+            "cod:numVe"
+        ]
+    }
+,
+    // DeviceClass: deviceThreeDPrinter
+    {
+        "type"      : "cod:dTDPr",
+        "lname"     : "deviceThreeDPrinter",
+        "cnd"       : "org.onem2m.common.device.deviceThreeDPrinter",
+        "children"  : [
+            "cod:binSh", 
+            "cod:fauDn", 
+            "cod:thDPr", 
+            "cod:runSe", 
+            "cod:tempe", 
+            "cod:priQe"
+        ]
+    }, 
+    // DeviceClass: deviceAirQualityMonitor
+    {
+        "type"      : "cod:dAQMr",
+        "lname"     : "deviceAirQualityMonitor",
+        "cnd"       : "org.onem2m.common.device.deviceAirQualityMonitor",
+        "children"  : [
+            "cod:aiQSr", 
+            "cod:bat", 
+            "cod:conny", 
+            "cod:peRCg"
+        ]
+    }, 
+    // DeviceClass: deviceAudioReceiver
+    {
+        "type"      : "cod:deARr",
+        "lname"     : "deviceAudioReceiver",
+        "cnd"       : "org.onem2m.common.device.deviceAudioReceiver",
+        "children"  : [
+            "cod:binSh", 
+            "cod:audVe", 
+            "cod:medSt", 
+            "cod:medSt"
+        ]
+    }, 
+    // DeviceClass: deviceCamera
+    {
+        "type"      : "cod:devCa",
+        "lname"     : "deviceCamera",
+        "cnd"       : "org.onem2m.common.device.deviceCamera",
+        "children"  : [
+            "cod:sesDn", 
+            "cod:plaCl", 
+            "cod:motSr"
+        ]
+    }, 
+    // DeviceClass: deviceDoor
+    {
+        "type"      : "cod:devDr",
+        "lname"     : "deviceDoor",
+        "cnd"       : "org.onem2m.common.device.deviceDoor",
+        "children"  : [
+            "cod:opeLl", 
+            "cod:lock", 
+            "cod:dooSs"
+        ]
+    }, 
+    // DeviceClass: deviceDoorLock
+    {
+        "type"      : "cod:deDLk",
+        "lname"     : "deviceDoorLock",
+        "cnd"       : "org.onem2m.common.device.deviceDoorLock",
+        "children"  : [
+            "cod:lock", 
+            "cod:dooSs", 
+            "cod:bat"
+        ]
+    }, 
+    // DeviceClass: deviceGenericSensor
+    {
+        "type"      : "cod:deGSr",
+        "lname"     : "deviceGenericSensor",
+        "cnd"       : "org.onem2m.common.device.deviceGenericSensor",
+        "children"  : [
+            "cod:temAm", 
+            "cod:acoSr", 
+            "cod:impSr", 
+            "cod:motSr", 
+            "cod:smoSr", 
+            "cod:uveSr", 
+            "cod:watSr"
+        ]
+    }, 
+    // DeviceClass: deviceLight
+    {
+        "type"      : "cod:devLt",
+        "lname"     : "deviceLight",
+        "cnd"       : "org.onem2m.common.device.deviceLight",
+        "children"  : [
+            "cod:fauDn", 
+            "cod:binSh", 
+            "cod:runSe", 
+            "cod:color", 
+            "cod:colSn", 
+            "cod:brigs"
+        ]
+    }, 
+    // DeviceClass: deviceMultiFunctionPrinter
+    {
+        "type"      : "cod:dMFPr",
+        "lname"     : "deviceMultiFunctionPrinter",
+        "cnd"       : "org.onem2m.common.device.deviceMultiFunctionPrinter",
+        "children"  : [
+            "cod:binSh", 
+            "cod:runSe", 
+            "cod:runSe", 
+            "cod:auDFr", 
+            "cod:priQe"
+        ]
+    }, 
+    // DeviceClass: devicePrinter
+    {
+        "type"      : "cod:devPr",
+        "lname"     : "devicePrinter",
+        "cnd"       : "org.onem2m.common.device.devicePrinter",
+        "children"  : [
+            "cod:binSh", 
+            "cod:runSe", 
+            "cod:priQe"
+        ]
+    }, 
+    // DeviceClass: deviceScanner
+    {
+        "type"      : "cod:devSr",
+        "lname"     : "deviceScanner",
+        "cnd"       : "org.onem2m.common.device.deviceScanner",
+        "children"  : [
+            "cod:binSh", 
+            "cod:runSe", 
+            "cod:auDFr"
+        ]
+    }, 
+    // DeviceClass: deviceThermostat
+    {
+        "type"      : "cod:devTt",
+        "lname"     : "deviceThermostat",
+        "cnd"       : "org.onem2m.common.device.deviceThermostat",
+        "children"  : [
+            "cod:runSe", 
+            "cod:timer", 
+            "cod:tempe"
+        ]
+    }, 
+    // DeviceClass: deviceServiceButton
+    {
+        "type"      : "cod:deSBn",
+        "lname"     : "deviceServiceButton",
+        "cnd"       : "org.onem2m.common.device.deviceServiceButton",
+        "children"  : [
+            "cod:pusBn", 
+            "cod:conny", 
+            "cod:opeMe", 
+            "cod:bat", 
+            "cod:texMe", 
+            "cod:image", 
+            "cod:creds", 
+            "cod:geoLn"
+        ]
+    }, 
+    // DeviceClass: deviceSmartPlug
+    {
+        "type"      : "cod:deSPg",
+        "lname"     : "deviceSmartPlug",
+        "cnd"       : "org.onem2m.common.device.deviceSmartPlug",
+        "children"  : [
+            "cod:binSh", 
+            "cod:fauDn", 
+            "cod:reCEe", 
+            "cod:sDPOt"
+        ]
+    }, 
+    // DeviceClass: deviceSwitch
+    {
+        "type"      : "cod:devSh",
+        "lname"     : "deviceSwitch",
+        "cnd"       : "org.onem2m.common.device.deviceSwitch",
+        "children"  : [
+            "cod:binSh"
+        ]
+    }, 
+    // DeviceClass: deviceThermometer
+    {
+        "type"      : "cod:devTr",
+        "lname"     : "deviceThermometer",
+        "cnd"       : "org.onem2m.common.device.deviceThermometer",
+        "children"  : [
+            "cod:tempe", 
+            "cod:bat"
+        ]
+    }, 
+    // DeviceClass: deviceThermostat
+    {
+        "type"      : "cod:devTt",
+        "lname"     : "deviceThermostat",
+        "cnd"       : "org.onem2m.common.device.deviceThermostat",
+        "children"  : [
+            "cod:runSe", 
+            "cod:timer", 
+            "cod:tempe"
+        ]
+    }, 
+    // DeviceClass: deviceWaterValve
+    {
+        "type"      : "cod:deWVe",
+        "lname"     : "deviceWaterValve",
+        "cnd"       : "org.onem2m.common.device.deviceWaterValve",
+        "children"  : [
+            "cod:opeLl"
+        ]
+    }, 
+    // DeviceClass: deviceWaterValve
+    {
+        "type"      : "cod:deWVe",
+        "lname"     : "deviceWaterValve",
+        "cnd"       : "org.onem2m.common.device.deviceWaterValve",
+        "children"  : [
+            "cod:opeLl"
+        ]
+    }
+
+]

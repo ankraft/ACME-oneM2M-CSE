@@ -1,0 +1,122 @@
+// Created by SDTTool
+// oneM2M Release: 4.5.0
+// Domain:         org.onem2m.city
+[
+
+    // DeviceClass: deviceOutdoorLamp
+    {
+        "type"      : "cid:deOLp",
+        "lname"     : "deviceOutdoorLamp",
+        "cnd"       : "org.onem2m.city.device.deviceOutdoorLamp",
+        "children"  : [
+            "cod:binSh", 
+            "cod:brigs", 
+            "cod:motSr", 
+            "cod:aiQSr", 
+            "cod:uveSr", 
+            "cod:timer", 
+            "cod:fauDn"
+        ]
+    }, 
+    // DeviceClass: deviceMagneticParkingMonitor
+    {
+        "type"      : "cid:dMPMr",
+        "lname"     : "deviceMagneticParkingMonitor",
+        "cnd"       : "org.onem2m.city.device.deviceMagneticParkingMonitor",
+        "children"  : [
+            "cod:bat", 
+            "cod:conny", 
+            "cod:peRCg", 
+            "cod:parSs", 
+            "cod:maSPs"
+        ]
+    }, 
+    // DeviceClass: deviceSmartElectricMeter
+    {
+        "type"      : "cid:dSEMr",
+        "lname"     : "deviceSmartElectricMeter",
+        "cnd"       : "org.onem2m.city.device.deviceSmartElectricMeter",
+        "children"  : [
+            "cod:fauDn", 
+            "cod:binSh", 
+            "cod:runSe", 
+            "cod:clock", 
+            "cod:eneCn", 
+            "cod:eneGn"
+        ]
+    }, 
+    // DeviceClass: deviceSmartGasMeter
+    {
+        "type"      : "cid:dSGMr",
+        "lname"     : "deviceSmartGasMeter",
+        "cnd"       : "org.onem2m.city.device.deviceSmartGasMeter",
+        "children"  : [
+            "cod:bat", 
+            "cod:fauDn", 
+            "cod:conny", 
+            "cod:peRCg", 
+            "cod:gMRIo", 
+            "cod:binSh", 
+            "cod:gaMAm"
+        ]
+    }, 
+    // DeviceClass: deviceSmartWaterMeter
+    {
+        "type"      : "cid:dSWMr",
+        "lname"     : "deviceSmartWaterMeter",
+        "cnd"       : "org.onem2m.city.device.deviceSmartWaterMeter",
+        "children"  : [
+            "cod:bat", 
+            "cod:fauDn", 
+            "cod:conny", 
+            "cod:peRCg", 
+            "cod:waMSg", 
+            "cod:wMRIo", 
+            "cod:binSh", 
+            "cod:waMAm"
+        ]
+    }, 
+    // DeviceClass: deviceStreetLightController
+    {
+        "type"      : "cid:dSLCr",
+        "lname"     : "deviceStreetLightController",
+        "cnd"       : "org.onem2m.city.device.deviceStreetLightController",
+        "children"  : [
+            "cod:geoLn", 
+            "cod:conny", 
+            "cod:peRCg", 
+            "cod:slRIo", 
+            "cod:slPSg", 
+            "cod:slcAm"
+        ]
+    }, 
+    // DeviceClass: deviceWaterQualityMonitor
+    {
+        "type"      : "cid:dWQMr",
+        "lname"     : "deviceWaterQualityMonitor",
+        "cnd"       : "org.onem2m.city.device.deviceWaterQualityMonitor",
+        "children"  : [
+            "cod:bat", 
+            "cod:conny", 
+            "cod:peRCg", 
+            "cod:waQMr"
+        ]
+    }, 
+    // DeviceClass: deviceWeatherStation
+    {
+        "type"      : "cid:deWSn",
+        "lname"     : "deviceWeatherStation",
+        "cnd"       : "org.onem2m.city.device.deviceWeatherStation",
+        "children"  : [
+            "cod:tempe", 
+            "cod:tempe", 
+            "cod:aiQSr", 
+            "cod:anemr", 
+            "cod:baror", 
+            "cod:raiGe", 
+            "cod:acoSr", 
+            "cod:uveSr"
+        ]
+    }
+
+]

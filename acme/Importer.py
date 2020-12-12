@@ -30,6 +30,8 @@ class Importer(object):
 
 
 	def importResources(self, path:str=None) -> bool:
+		countImport = 0
+		countUpdate = 0
 
 		# Only when the DB is empty else don't imports
 		if CSE.dispatcher.countResources() > 0:
@@ -86,6 +88,8 @@ class Importer(object):
 				hasCSE = True
 			elif ty == T.ACP:
 				hasACP = True
+			countImport += 1
+
 
 		# Check presence of CSE and at least one ACP
 		if not (hasCSE and hasACP):
@@ -108,6 +112,7 @@ class Importer(object):
 					if len(keys) == 1 and (k := keys[0]) and 'ri' in dct[k] and (ri := dct[k]['ri']) is not None:
 						if (resource := CSE.dispatcher.retrieveResource(ri).resource) is not None:
 							CSE.dispatcher.updateResource(resource, dct)
+							countUpdate += 1
 						# TODO handle error
 
 				# create a new cresource
@@ -122,10 +127,13 @@ class Importer(object):
 							continue
 						# Add the resource
 						CSE.dispatcher.createResource(resource, parentResource)
+						countImport += 1
 					else:
 						Logging.logWarn(f'Unknown resource in file: {fn}')
 
 		self._finishImporting()
+		Logging.logDebug(f'Imported {countImport} resources')
+		Logging.logDebug(f'Updated  {countUpdate} resources')
 		return True
 
 
@@ -177,6 +185,7 @@ class Importer(object):
 
 
 	def importAttributePolicies(self, path:str=None) -> bool:
+		countAP = 0
 
 		# Get import path
 		if path is None:
@@ -201,9 +210,11 @@ class Importer(object):
 					if (tpe := findXPath(ap, 'type')) is None or len(tpe) == 0:
 						Logging.logErr(f'Missing or empty resource type in file: {fn}')
 						return False
-					if (attrs := findXPath(ap, 'attrs')) is None or not isinstance(attrs, list) or len(attrs) == 0:
-						Logging.logErr(f'Missing, empty, or wrong attributes list for type: {tpe} in file: {fn}')
-						return False
+					
+					# Attributes are optional. However, add a dummy entry
+					if (attrs := findXPath(ap, 'attrs')) is None:
+						attrs = [ { "sname" : "__none__", "lname" : "__none__", "type" : "void", "car" : "01" } ]
+						
 					for attr in attrs:
 						if (sn := findXPath(attr, 'sname')) is None or not isinstance(sn, str) or len(sn) == 0:
 							Logging.logErr(f'Missing, empty, or wrong short name for type: {tpe} in file: {fn}')
@@ -244,11 +255,12 @@ class Importer(object):
 							if not CSE.validator.addAdditionalAttributePolicy(tpe, { sn : [ dty, car, oc, ou, od, annc] }):
 								Logging.logErr(f'Cannot add attribute policies for attribute: {sn} type: {tpe}')
 								return False
+							countAP += 1
 						except Exception as e:
 							Logging.logErr(str(e))
 							return False
-
-
+		
+		Logging.logDebug(f'Imported {countAP} attribute policies')
 		return True
 
 

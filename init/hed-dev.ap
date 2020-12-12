@@ -1,0 +1,72 @@
+// Created by SDTTool
+// oneM2M Release: 4.5.0
+// Domain:         org.onem2m.health
+[
+    // SubDevice: subDeviceCuff
+    {
+        "type"      : "hed:suDCf",
+        "lname"     : "suDCf",
+        "cnd"       : "org.onem2m.health.subdevice.subDeviceCuff",
+        "children"  : [
+            "hod:binSh", 
+            "hod:sphyr", 
+            "hod:pulsr"
+        ]
+    }
+,
+    // DeviceClass: deviceBloodPressureMonitor
+    {
+        "type"      : "hed:dBPMr",
+        "lname"     : "deviceBloodPressureMonitor",
+        "cnd"       : "org.onem2m.health.device.deviceBloodPressureMonitor",
+        "children"  : [
+            "cod:bat", 
+            "cod:binSh", 
+            "hed:suDCf"
+        ]
+    }, 
+    // DeviceClass: deviceGlucosemeter
+    {
+        "type"      : "hed:devGr",
+        "lname"     : "deviceGlucosemeter",
+        "cnd"       : "org.onem2m.health.device.deviceGlucosemeter",
+        "children"  : [
+            "cod:glucr", 
+            "cod:bat"
+        ]
+    }, 
+    // DeviceClass: deviceHeartRateMonitor
+    {
+        "type"      : "hed:dHRMr",
+        "lname"     : "deviceHeartRateMonitor",
+        "cnd"       : "org.onem2m.health.device.deviceHeartRateMonitor",
+        "children"  : [
+            "cod:pulsr", 
+            "cod:bat"
+        ]
+    }, 
+    // DeviceClass: devicePulseOximeter
+    {
+        "type"      : "hed:dePOr",
+        "lname"     : "devicePulseOximeter",
+        "cnd"       : "org.onem2m.health.device.devicePulseOximeter",
+        "children"  : [
+            "cod:pulsr", 
+            "cod:oximr", 
+            "cod:bat"
+        ]
+    }, 
+    // DeviceClass: deviceWeightScaleAndBodyCompositionAnalyser
+    {
+        "type"      : "hed:dWSAB",
+        "lname"     : "deviceWeightScaleAndBodyCompositionAnalyser",
+        "cnd"       : "org.onem2m.health.device.deviceWeightScaleAndBodyCompositionAnalyser",
+        "children"  : [
+            "cod:weigt", 
+            "cod:boCAr", 
+            "cod:bEIAs", 
+            "cod:bat"
+        ]
+    }
+
+]
