@@ -12,8 +12,10 @@ import cbor2
 from typing import Any, Callable, Union
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
+import cbor2
 
 PROTOCOL			= 'http'	# possible values: http, https
+# ENCODING 			= 
 
 
 SERVER				= f'{PROTOCOL}://localhost:8080'
@@ -120,8 +122,9 @@ def DELETE(url:str, originator:str, headers=None) -> (dict, int):
 	return sendRequest(requests.delete, url, originator, headers=headers)
 
 
-def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any=None, ct:str='application/json', timeout=None, headers=None) -> (dict, int):	# TODO Constants
+def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any=None, ct:str=None, timeout=None, headers=None) -> (dict, int):	# TODO Constants
 	tys = f';ty={ty}' if ty is not None else ''
+	ct = 'application/json'
 	hds = { 
 		'Content-Type' 		: f'{ct}{tys}',
 		'Accept'			: ct,
@@ -136,6 +139,7 @@ def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any
 	try:
 		if isinstance(data, dict):
 			data = json.dumps(data)
+			# data = cbor2.dumps(data)
 		r = method(url, data=data, headers=hds, verify=verifyCertificate)
 	except Exception as e:
 		#print(f'Failed to send request: {str(e)}')

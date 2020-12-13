@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Changed the importing of attribute policies to a JSON based format.
 - [CSE] Supported release version can now be configured via the config file.
 - [TESTS] The behavior whether a failed test skips the remaining tests in a test suite can now be configured.
+- [MISC] Allow ```# single-line comments``` in JSON
 
 ### Fixed
 - [CSE] CSEBase.srt attribute now also returns the announced attributes.

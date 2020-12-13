@@ -436,7 +436,8 @@ def pureResource(dct:dict) -> Tuple[dict, str]:
 
 
 #commentPattern = r'(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*$)'
-commentPattern = r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$)'	# recognized escaped comments
+#commentPattern = r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$)'	# recognized escaped comments
+commentPattern = r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$)'	# recognized escaped comments
 # first group captures quoted strings (double or single)
 # second group captures comments (//single-line or /* multi-line */)
 commentRegex = re.compile(commentPattern, re.MULTILINE|re.DOTALL)
@@ -445,6 +446,7 @@ def removeCommentsFromJSON(data:str) -> str:
 	"""	This WILL remove:
 			/* multi-line comments */
 			// single-line comments
+			# single-line comments
 		
 		Will NOT remove:
 			String var1 = "this is /* not a comment. */";
@@ -458,6 +460,7 @@ def removeCommentsFromJSON(data:str) -> str:
 			return "" # so we will return empty to remove the comment
 		else: # otherwise, we will return the 1st group
 			return match.group(1) # captured quoted-string
+	Logging.logWarn(commentRegex.sub(_replacer, data))
 	return commentRegex.sub(_replacer, data)
 
 decimalMatch = re.compile(r'{(\d+)}')

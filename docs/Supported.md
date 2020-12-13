@@ -122,11 +122,11 @@ The following Protocol Bindings are supported:
 ## Serialization Types
 The following serialization types are supported:
 
-| Serialization Type | Supported | Remark                                                                                               |
-|:-------------------|:---------:|:-----------------------------------------------------------------------------------------------------|
-| JSON               |  &check;  | In addition to normal JSON syntax, C-style comments ("//..." and "/* ... */") are supported as well. |
-| CBOR               |  &check;  |                                                                                                      |
-| XML                |  &cross;  |                                                                                                      |
+| Serialization Type | Supported | Remark                                                                                                       |
+|:-------------------|:---------:|:-------------------------------------------------------------------------------------------------------------|
+| JSON               |  &check;  | In addition to normal JSON syntax, C-style comments ("//...", "#..." and "/* ... */") are supported as well. |
+| CBOR               |  &check;  |                                                                                                              |
+| XML                |  &cross;  |                                                                                                              |
 
 
 
