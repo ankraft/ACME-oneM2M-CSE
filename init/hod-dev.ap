@@ -23,7 +23,43 @@
             "cod:aiQSr", 
             "cod:filIo"
         ]
+    },
+
+    // DeviceClass Announced: deviceAirConditionerAnnc
+    {
+        "type"      : "hod:deACrAnnc",
+        "lname"     : "deviceAirConditionerAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceAirConditionerAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:aCJMe", 
+            "cod:aCJMeAnnc", 
+            "cod:opeMe", 
+            "cod:opeMeAnnc", 
+            "cod:opeMe", 
+            "cod:opeMeAnnc", 
+            "cod:tempe", 
+            "cod:tempeAnnc", 
+            "cod:timer", 
+            "cod:timerAnnc", 
+            "cod:timer", 
+            "cod:timerAnnc", 
+            "cod:turbo", 
+            "cod:turboAnnc", 
+            "cod:airFw", 
+            "cod:airFwAnnc", 
+            "cod:powSe", 
+            "cod:powSeAnnc", 
+            "cod:aiQSr", 
+            "cod:aiQSrAnnc", 
+            "cod:filIo", 
+            "cod:filIoAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceAirPurifier
     {
         "type"      : "hod:deAPr",
@@ -39,7 +75,33 @@
             "cod:aiQSr", 
             "cod:filIo"
         ]
+    },
+
+    // DeviceClass Announced: deviceAirPurifierAnnc
+    {
+        "type"      : "hod:deAPrAnnc",
+        "lname"     : "deviceAirPurifierAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceAirPurifierAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:aPJMe", 
+            "cod:aPJMeAnnc", 
+            "cod:opeMe", 
+            "cod:opeMeAnnc", 
+            "cod:timer", 
+            "cod:timerAnnc", 
+            "cod:powSe", 
+            "cod:powSeAnnc", 
+            "cod:aiQSr", 
+            "cod:aiQSrAnnc", 
+            "cod:filIo", 
+            "cod:filIoAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceBottleWarmer
     {
         "type"      : "hod:deBWr",
@@ -50,7 +112,23 @@
             "cod:keeWm", 
             "cod:runSe"
         ]
+    },
+
+    // DeviceClass Announced: deviceBottleWarmerAnnc
+    {
+        "type"      : "hod:deBWrAnnc",
+        "lname"     : "deviceBottleWarmerAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceBottleWarmerAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:keeWm", 
+            "cod:keeWmAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceClothesDryer
     {
         "type"      : "hod:deCDr",
@@ -62,7 +140,25 @@
             "cod:cDJMe", 
             "cod:opeMe"
         ]
+    },
+
+    // DeviceClass Announced: deviceClothesDryerAnnc
+    {
+        "type"      : "hod:deCDrAnnc",
+        "lname"     : "deviceClothesDryerAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceClothesDryerAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:cDJMe", 
+            "cod:cDJMeAnnc", 
+            "cod:opeMe", 
+            "cod:opeMeAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceClothesWasher
     {
         "type"      : "hod:deCWr",
@@ -77,7 +173,31 @@
             "cod:reCEe", 
             "cod:timer"
         ]
+    },
+
+    // DeviceClass Announced: deviceClothesWasherAnnc
+    {
+        "type"      : "hod:deCWrAnnc",
+        "lname"     : "deviceClothesWasherAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceClothesWasherAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:opeMe", 
+            "cod:opeMeAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:cWJMe", 
+            "cod:cWJMeAnnc", 
+            "cod:cWJMO", 
+            "cod:cWJMOAnnc", 
+            "cod:reCEe", 
+            "cod:reCEeAnnc", 
+            "cod:timer", 
+            "cod:timerAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceClothesWasherDryer
     {
         "type"      : "hod:dCWDr",
@@ -92,7 +212,31 @@
             "cod:reCEe", 
             "cod:timer"
         ]
+    },
+
+    // DeviceClass Announced: deviceClothesWasherDryerAnnc
+    {
+        "type"      : "hod:dCWDrAnnc",
+        "lname"     : "deviceClothesWasherDryerAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceClothesWasherDryerAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:opeMe", 
+            "cod:opeMeAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:cWDJM", 
+            "cod:cWDJMAnnc", 
+            "cod:cWJMO", 
+            "cod:cWJMOAnnc", 
+            "cod:reCEe", 
+            "cod:reCEeAnnc", 
+            "cod:timer", 
+            "cod:timerAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceCoffeeMachine
     {
         "type"      : "hod:deCMe",
@@ -111,7 +255,39 @@
             "cod:binSh", 
             "cod:keeWm"
         ]
+    },
+
+    // DeviceClass Announced: deviceCoffeeMachineAnnc
+    {
+        "type"      : "hod:deCMeAnnc",
+        "lname"     : "deviceCoffeeMachineAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceCoffeeMachineAnnc",
+        "children"  : [
+            "cod:fauDn", 
+            "cod:fauDnAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:clock", 
+            "cod:clockAnnc", 
+            "cod:brewg", 
+            "cod:brewgAnnc", 
+            "cod:liqRg", 
+            "cod:liqRgAnnc", 
+            "cod:liqRg", 
+            "cod:liqRgAnnc", 
+            "cod:grinr", 
+            "cod:grinrAnnc", 
+            "cod:foamg", 
+            "cod:foamgAnnc", 
+            "cod:liqLl", 
+            "cod:liqLlAnnc", 
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:keeWm", 
+            "cod:keeWmAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceCookerHood
     {
         "type"      : "hod:deCHd",
@@ -123,7 +299,25 @@
             "cod:airFw", 
             "cod:cHJMe"
         ]
+    },
+
+    // DeviceClass Announced: deviceCookerHoodAnnc
+    {
+        "type"      : "hod:deCHdAnnc",
+        "lname"     : "deviceCookerHoodAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceCookerHoodAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:airFw", 
+            "cod:airFwAnnc", 
+            "cod:cHJMe", 
+            "cod:cHJMeAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceCooktop
     {
         "type"      : "hod:devCp",
@@ -137,7 +331,29 @@
             "cod:heaZe", 
             "cod:heaZe"
         ]
+    },
+
+    // DeviceClass Announced: deviceCooktopAnnc
+    {
+        "type"      : "hod:devCpAnnc",
+        "lname"     : "deviceCooktopAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceCooktopAnnc",
+        "children"  : [
+            "cod:heaZe", 
+            "cod:heaZeAnnc", 
+            "cod:heaZe", 
+            "cod:heaZeAnnc", 
+            "cod:heaZe", 
+            "cod:heaZeAnnc", 
+            "cod:heaZe", 
+            "cod:heaZeAnnc", 
+            "cod:heaZe", 
+            "cod:heaZeAnnc", 
+            "cod:heaZe", 
+            "cod:heaZeAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceDehumidifier
     {
         "type"      : "hod:devDr",
@@ -152,7 +368,31 @@
             "cod:timer", 
             "cod:powSe"
         ]
+    },
+
+    // DeviceClass Announced: deviceDehumidifierAnnc
+    {
+        "type"      : "hod:devDrAnnc",
+        "lname"     : "deviceDehumidifierAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceDehumidifierAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:relHy", 
+            "cod:relHyAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:deJMe", 
+            "cod:deJMeAnnc", 
+            "cod:opeMe", 
+            "cod:opeMeAnnc", 
+            "cod:timer", 
+            "cod:timerAnnc", 
+            "cod:powSe", 
+            "cod:powSeAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceDigitalGallery
     {
         "type"      : "hod:deDGy",
@@ -164,7 +404,25 @@
             "cod:powSe", 
             "cod:clock"
         ]
+    },
+
+    // DeviceClass Announced: deviceDigitalGalleryAnnc
+    {
+        "type"      : "hod:deDGyAnnc",
+        "lname"     : "deviceDigitalGalleryAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceDigitalGalleryAnnc",
+        "children"  : [
+            "cod:galMe", 
+            "cod:galMeAnnc", 
+            "cod:medSt", 
+            "cod:medStAnnc", 
+            "cod:powSe", 
+            "cod:powSeAnnc", 
+            "cod:clock", 
+            "cod:clockAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceDishWasher
     {
         "type"      : "hod:deDWr",
@@ -175,7 +433,23 @@
             "cod:runSe", 
             "cod:dWJMe"
         ]
+    },
+
+    // DeviceClass Announced: deviceDishWasherAnnc
+    {
+        "type"      : "hod:deDWrAnnc",
+        "lname"     : "deviceDishWasherAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceDishWasherAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:dWJMe", 
+            "cod:dWJMeAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceFan
     {
         "type"      : "hod:devFn",
@@ -184,7 +458,19 @@
         "children"  : [
             "cod:binSh"
         ]
+    },
+
+    // DeviceClass Announced: deviceFanAnnc
+    {
+        "type"      : "hod:devFnAnnc",
+        "lname"     : "deviceFanAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceFanAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceFoodProbe
     {
         "type"      : "hod:deFPe",
@@ -193,7 +479,19 @@
         "children"  : [
             "cod:tempe"
         ]
+    },
+
+    // DeviceClass Announced: deviceFoodProbeAnnc
+    {
+        "type"      : "hod:deFPeAnnc",
+        "lname"     : "deviceFoodProbeAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceFoodProbeAnnc",
+        "children"  : [
+            "cod:tempe", 
+            "cod:tempeAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceFreezer
     {
         "type"      : "hod:devFr",
@@ -202,7 +500,19 @@
         "children"  : [
             "cod:tempe"
         ]
+    },
+
+    // DeviceClass Announced: deviceFreezerAnnc
+    {
+        "type"      : "hod:devFrAnnc",
+        "lname"     : "deviceFreezerAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceFreezerAnnc",
+        "children"  : [
+            "cod:tempe", 
+            "cod:tempeAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceGarbageDisposal
     {
         "type"      : "hod:deGDl",
@@ -213,7 +523,23 @@
             "cod:runSe", 
             "cod:displ"
         ]
+    },
+
+    // DeviceClass Announced: deviceGarbageDisposalAnnc
+    {
+        "type"      : "hod:deGDlAnnc",
+        "lname"     : "deviceGarbageDisposalAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceGarbageDisposalAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:displ", 
+            "cod:displAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceHomeCCTV
     {
         "type"      : "hod:dHCCT",
@@ -233,7 +559,41 @@
             "cod:fauDn", 
             "cod:alaSr"
         ]
+    },
+
+    // DeviceClass Announced: deviceHomeCCTVAnnc
+    {
+        "type"      : "hod:dHCCTAnnc",
+        "lname"     : "deviceHomeCCTVAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceHomeCCTVAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:sesDn", 
+            "cod:sesDnAnnc", 
+            "cod:plaCl", 
+            "cod:plaClAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:motSr", 
+            "cod:motSrAnnc", 
+            "cod:aiQSr", 
+            "cod:aiQSrAnnc", 
+            "cod:ozoMr", 
+            "cod:ozoMrAnnc", 
+            "cod:smoSr", 
+            "cod:smoSrAnnc", 
+            "cod:acoSr", 
+            "cod:acoSrAnnc", 
+            "cod:impSr", 
+            "cod:impSrAnnc", 
+            "cod:fauDn", 
+            "cod:fauDnAnnc", 
+            "cod:alaSr", 
+            "cod:alaSrAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceHumidifier
     {
         "type"      : "hod:devHr",
@@ -242,7 +602,19 @@
         "children"  : [
             "cod:binSh"
         ]
+    },
+
+    // DeviceClass Announced: deviceHumidifierAnnc
+    {
+        "type"      : "hod:devHrAnnc",
+        "lname"     : "deviceHumidifierAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceHumidifierAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceKettle
     {
         "type"      : "hod:devKe",
@@ -256,7 +628,29 @@
             "cod:tempe", 
             "cod:keeWm"
         ]
+    },
+
+    // DeviceClass Announced: deviceKettleAnnc
+    {
+        "type"      : "hod:devKeAnnc",
+        "lname"     : "deviceKettleAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceKettleAnnc",
+        "children"  : [
+            "cod:fauDn", 
+            "cod:fauDnAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:liqRg", 
+            "cod:liqRgAnnc", 
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:tempe", 
+            "cod:tempeAnnc", 
+            "cod:keeWm", 
+            "cod:keeWmAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceMicrogeneration
     {
         "type"      : "hod:devMn",
@@ -268,7 +662,25 @@
             "cod:runSe", 
             "cod:eneGn"
         ]
+    },
+
+    // DeviceClass Announced: deviceMicrogenerationAnnc
+    {
+        "type"      : "hod:devMnAnnc",
+        "lname"     : "deviceMicrogenerationAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceMicrogenerationAnnc",
+        "children"  : [
+            "cod:fauDn", 
+            "cod:fauDnAnnc", 
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:eneGn", 
+            "cod:eneGnAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceOven
     {
         "type"      : "hod:devOn",
@@ -280,7 +692,25 @@
             "cod:timer", 
             "cod:tempe"
         ]
+    },
+
+    // DeviceClass Announced: deviceOvenAnnc
+    {
+        "type"      : "hod:devOnAnnc",
+        "lname"     : "deviceOvenAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceOvenAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:timer", 
+            "cod:timerAnnc", 
+            "cod:tempe", 
+            "cod:tempeAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceRefrigerator
     {
         "type"      : "hod:devRr",
@@ -297,7 +727,35 @@
             "cod:lock", 
             "cod:filIo"
         ]
+    },
+
+    // DeviceClass Announced: deviceRefrigeratorAnnc
+    {
+        "type"      : "hod:devRrAnnc",
+        "lname"     : "deviceRefrigeratorAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceRefrigeratorAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:powSe", 
+            "cod:powSeAnnc", 
+            "cod:dooSs", 
+            "cod:dooSsAnnc", 
+            "cod:tempe", 
+            "cod:tempeAnnc", 
+            "cod:tempe", 
+            "cod:tempeAnnc", 
+            "cod:tempe", 
+            "cod:tempeAnnc", 
+            "cod:refrn", 
+            "cod:refrnAnnc", 
+            "cod:lock", 
+            "cod:lockAnnc", 
+            "cod:filIo", 
+            "cod:filIoAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceRiceCooker
     {
         "type"      : "hod:deRCr",
@@ -310,7 +768,27 @@
             "cod:timer", 
             "cod:keeWm"
         ]
+    },
+
+    // DeviceClass Announced: deviceRiceCookerAnnc
+    {
+        "type"      : "hod:deRCrAnnc",
+        "lname"     : "deviceRiceCookerAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceRiceCookerAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:fauDn", 
+            "cod:fauDnAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:timer", 
+            "cod:timerAnnc", 
+            "cod:keeWm", 
+            "cod:keeWmAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceRobotCleaner
     {
         "type"      : "hod:deRCr",
@@ -324,7 +802,29 @@
             "cod:bat", 
             "cod:timer"
         ]
+    },
+
+    // DeviceClass Announced: deviceRobotCleanerAnnc
+    {
+        "type"      : "hod:deRCrAnnc",
+        "lname"     : "deviceRobotCleanerAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceRobotCleanerAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:rCJMe", 
+            "cod:rCJMeAnnc", 
+            "cod:opeMe", 
+            "cod:opeMeAnnc", 
+            "cod:bat", 
+            "cod:batAnnc", 
+            "cod:timer", 
+            "cod:timerAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceSecurityPanel
     {
         "type"      : "hod:deSPl",
@@ -333,7 +833,19 @@
         "children"  : [
             "cod:secMe"
         ]
+    },
+
+    // DeviceClass Announced: deviceSecurityPanelAnnc
+    {
+        "type"      : "hod:deSPlAnnc",
+        "lname"     : "deviceSecurityPanelAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceSecurityPanelAnnc",
+        "children"  : [
+            "cod:secMe", 
+            "cod:secMeAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceSetTopBox
     {
         "type"      : "hod:dSTBx",
@@ -346,7 +858,27 @@
             "cod:medSt", 
             "cod:medSt"
         ]
+    },
+
+    // DeviceClass Announced: deviceSetTopBoxAnnc
+    {
+        "type"      : "hod:dSTBxAnnc",
+        "lname"     : "deviceSetTopBoxAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceSetTopBoxAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:audVe", 
+            "cod:audVeAnnc", 
+            "cod:telCl", 
+            "cod:telClAnnc", 
+            "cod:medSt", 
+            "cod:medStAnnc", 
+            "cod:medSt", 
+            "cod:medStAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceSteamCloset
     {
         "type"      : "hod:deSCt",
@@ -358,7 +890,25 @@
             "cod:sCJMe", 
             "cod:opeMe"
         ]
+    },
+
+    // DeviceClass Announced: deviceSteamClosetAnnc
+    {
+        "type"      : "hod:deSCtAnnc",
+        "lname"     : "deviceSteamClosetAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceSteamClosetAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:sCJMe", 
+            "cod:sCJMeAnnc", 
+            "cod:opeMe", 
+            "cod:opeMeAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceStorageBattery
     {
         "type"      : "hod:deSBy",
@@ -370,7 +920,25 @@
             "cod:runSe", 
             "cod:bat"
         ]
+    },
+
+    // DeviceClass Announced: deviceStorageBatteryAnnc
+    {
+        "type"      : "hod:deSByAnnc",
+        "lname"     : "deviceStorageBatteryAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceStorageBatteryAnnc",
+        "children"  : [
+            "cod:fauDn", 
+            "cod:fauDnAnnc", 
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:bat", 
+            "cod:batAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceTelevision
     {
         "type"      : "hod:devTn",
@@ -384,7 +952,29 @@
             "cod:medSt", 
             "cod:medSt"
         ]
+    },
+
+    // DeviceClass Announced: deviceTelevisionAnnc
+    {
+        "type"      : "hod:devTnAnnc",
+        "lname"     : "deviceTelevisionAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceTelevisionAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:audVe", 
+            "cod:audVeAnnc", 
+            "cod:telCl", 
+            "cod:telClAnnc", 
+            "cod:plaCl", 
+            "cod:plaClAnnc", 
+            "cod:medSt", 
+            "cod:medStAnnc", 
+            "cod:medSt", 
+            "cod:medStAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceWaterHeater
     {
         "type"      : "hod:deWHr",
@@ -398,7 +988,29 @@
             "cod:boilr", 
             "cod:hoWSy"
         ]
+    },
+
+    // DeviceClass Announced: deviceWaterHeaterAnnc
+    {
+        "type"      : "hod:deWHrAnnc",
+        "lname"     : "deviceWaterHeaterAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceWaterHeaterAnnc",
+        "children"  : [
+            "cod:fauDn", 
+            "cod:fauDnAnnc", 
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:clock", 
+            "cod:clockAnnc", 
+            "cod:boilr", 
+            "cod:boilrAnnc", 
+            "cod:hoWSy", 
+            "cod:hoWSyAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceWaterPurifier
     {
         "type"      : "hod:deWPr",
@@ -413,7 +1025,31 @@
             "cod:liqRg", 
             "cod:waFIo"
         ]
+    },
+
+    // DeviceClass Announced: deviceWaterPurifierAnnc
+    {
+        "type"      : "hod:deWPrAnnc",
+        "lname"     : "deviceWaterPurifierAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceWaterPurifierAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:timer", 
+            "cod:timerAnnc", 
+            "cod:waQMr", 
+            "cod:waQMrAnnc", 
+            "cod:filIo", 
+            "cod:filIoAnnc", 
+            "cod:liqRg", 
+            "cod:liqRgAnnc", 
+            "cod:waFIo", 
+            "cod:waFIoAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceWindowShade
     {
         "type"      : "hod:deWSe",
@@ -423,6 +1059,20 @@
             "cod:opeLl", 
             "cod:bat"
         ]
+    },
+
+    // DeviceClass Announced: deviceWindowShadeAnnc
+    {
+        "type"      : "hod:deWSeAnnc",
+        "lname"     : "deviceWindowShadeAnnc",
+        "cnd"       : "org.onem2m.home.device.deviceWindowShadeAnnc",
+        "children"  : [
+            "cod:opeLl", 
+            "cod:opeLlAnnc", 
+            "cod:bat", 
+            "cod:batAnnc"
+        ]
     }
+
 
 ]

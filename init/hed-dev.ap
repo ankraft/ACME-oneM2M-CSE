@@ -12,7 +12,23 @@
             "hod:sphyr", 
             "hod:pulsr"
         ]
+    },
+
+    // SubDevice Announced: subDeviceCuffAnnc
+    {
+        "type"      : "hed:suDCfAnnc",
+        "lname"     : "suDCfAnnc",
+        "cnd"       : "org.onem2m.health.subdevice.subDeviceCuffAnnc",
+        "children"  : [
+            "hod:binSh", 
+            "hod:binShAnnc", 
+            "hod:sphyr", 
+            "hod:sphyrAnnc", 
+            "hod:pulsr", 
+            "hod:pulsrAnnc"
+        ]
     }
+
 ,
     // DeviceClass: deviceBloodPressureMonitor
     {
@@ -24,7 +40,23 @@
             "cod:binSh", 
             "hed:suDCf"
         ]
+    },
+
+    // DeviceClass Announced: deviceBloodPressureMonitorAnnc
+    {
+        "type"      : "hed:dBPMrAnnc",
+        "lname"     : "deviceBloodPressureMonitorAnnc",
+        "cnd"       : "org.onem2m.health.device.deviceBloodPressureMonitorAnnc",
+        "children"  : [
+            "cod:bat", 
+            "cod:batAnnc", 
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "hed:suDCf", 
+            "hed:suDCfAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceGlucosemeter
     {
         "type"      : "hed:devGr",
@@ -34,7 +66,21 @@
             "cod:glucr", 
             "cod:bat"
         ]
+    },
+
+    // DeviceClass Announced: deviceGlucosemeterAnnc
+    {
+        "type"      : "hed:devGrAnnc",
+        "lname"     : "deviceGlucosemeterAnnc",
+        "cnd"       : "org.onem2m.health.device.deviceGlucosemeterAnnc",
+        "children"  : [
+            "cod:glucr", 
+            "cod:glucrAnnc", 
+            "cod:bat", 
+            "cod:batAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceHeartRateMonitor
     {
         "type"      : "hed:dHRMr",
@@ -44,7 +90,21 @@
             "cod:pulsr", 
             "cod:bat"
         ]
+    },
+
+    // DeviceClass Announced: deviceHeartRateMonitorAnnc
+    {
+        "type"      : "hed:dHRMrAnnc",
+        "lname"     : "deviceHeartRateMonitorAnnc",
+        "cnd"       : "org.onem2m.health.device.deviceHeartRateMonitorAnnc",
+        "children"  : [
+            "cod:pulsr", 
+            "cod:pulsrAnnc", 
+            "cod:bat", 
+            "cod:batAnnc"
+        ]
     }, 
+
     // DeviceClass: devicePulseOximeter
     {
         "type"      : "hed:dePOr",
@@ -55,7 +115,23 @@
             "cod:oximr", 
             "cod:bat"
         ]
+    },
+
+    // DeviceClass Announced: devicePulseOximeterAnnc
+    {
+        "type"      : "hed:dePOrAnnc",
+        "lname"     : "devicePulseOximeterAnnc",
+        "cnd"       : "org.onem2m.health.device.devicePulseOximeterAnnc",
+        "children"  : [
+            "cod:pulsr", 
+            "cod:pulsrAnnc", 
+            "cod:oximr", 
+            "cod:oximrAnnc", 
+            "cod:bat", 
+            "cod:batAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceWeightScaleAndBodyCompositionAnalyser
     {
         "type"      : "hed:dWSAB",
@@ -67,6 +143,24 @@
             "cod:bEIAs", 
             "cod:bat"
         ]
+    },
+
+    // DeviceClass Announced: deviceWeightScaleAndBodyCompositionAnalyserAnnc
+    {
+        "type"      : "hed:dWSABAnnc",
+        "lname"     : "deviceWeightScaleAndBodyCompositionAnalyserAnnc",
+        "cnd"       : "org.onem2m.health.device.deviceWeightScaleAndBodyCompositionAnalyserAnnc",
+        "children"  : [
+            "cod:weigt", 
+            "cod:weigtAnnc", 
+            "cod:boCAr", 
+            "cod:boCArAnnc", 
+            "cod:bEIAs", 
+            "cod:bEIAsAnnc", 
+            "cod:bat", 
+            "cod:batAnnc"
+        ]
     }
+
 
 ]

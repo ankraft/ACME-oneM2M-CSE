@@ -21,7 +21,39 @@
             "cod:runSe", 
             "cod:sigSh"
         ]
+    },
+
+    // DeviceClass Announced: deviceHandheldPTTTerminalAnnc
+    {
+        "type"      : "rad:dHPTTAnnc",
+        "lname"     : "deviceHandheldPTTTerminalAnnc",
+        "cnd"       : "org.onem2m.railway.device.deviceHandheldPTTTerminalAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:audVe", 
+            "cod:audVeAnnc", 
+            "cod:bat", 
+            "cod:batAnnc", 
+            "cod:clock", 
+            "cod:clockAnnc", 
+            "cod:eneCn", 
+            "cod:eneCnAnnc", 
+            "cod:keypd", 
+            "cod:keypdAnnc", 
+            "cod:opeMe", 
+            "cod:opeMeAnnc", 
+            "cod:phoCl", 
+            "cod:phoClAnnc", 
+            "cod:pusBn", 
+            "cod:pusBnAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:sigSh", 
+            "cod:sigShAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceTrainborneTerminal
     {
         "type"      : "rad:deTTl",
@@ -41,6 +73,40 @@
             "rad:baTMe", 
             "cod:conny"
         ]
+    },
+
+    // DeviceClass Announced: deviceTrainborneTerminalAnnc
+    {
+        "type"      : "rad:deTTlAnnc",
+        "lname"     : "deviceTrainborneTerminalAnnc",
+        "cnd"       : "org.onem2m.railway.device.deviceTrainborneTerminalAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:audVe", 
+            "cod:audVeAnnc", 
+            "cod:clock", 
+            "cod:clockAnnc", 
+            "cod:eneCn", 
+            "cod:eneCnAnnc", 
+            "cod:keypd", 
+            "cod:keypdAnnc", 
+            "cod:opeMe", 
+            "cod:opeMeAnnc", 
+            "cod:phoCl", 
+            "cod:phoClAnnc", 
+            "cod:pusBn", 
+            "cod:pusBnAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:sigSh", 
+            "cod:sigShAnnc", 
+            "rad:baTMe", 
+            "rad:baTMeAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc"
+        ]
     }
+
 
 ]

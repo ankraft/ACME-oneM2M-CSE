@@ -13,7 +13,25 @@
             "cod:oveSr", 
             "cod:numVe"
         ]
+    },
+
+    // SubDevice Announced: subDevicePowerOutletAnnc
+    {
+        "type"      : "cod:sDPOtAnnc",
+        "lname"     : "sDPOtAnnc",
+        "cnd"       : "org.onem2m.common.subdevice.subDevicePowerOutletAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:eneCn", 
+            "cod:eneCnAnnc", 
+            "cod:oveSr", 
+            "cod:oveSrAnnc", 
+            "cod:numVe", 
+            "cod:numVeAnnc"
+        ]
     }
+
 ,
     // DeviceClass: deviceThreeDPrinter
     {
@@ -28,7 +46,29 @@
             "cod:tempe", 
             "cod:priQe"
         ]
+    },
+
+    // DeviceClass Announced: deviceThreeDPrinterAnnc
+    {
+        "type"      : "cod:dTDPrAnnc",
+        "lname"     : "deviceThreeDPrinterAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceThreeDPrinterAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:fauDn", 
+            "cod:fauDnAnnc", 
+            "cod:thDPr", 
+            "cod:thDPrAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:tempe", 
+            "cod:tempeAnnc", 
+            "cod:priQe", 
+            "cod:priQeAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceAirQualityMonitor
     {
         "type"      : "cod:dAQMr",
@@ -40,7 +80,25 @@
             "cod:conny", 
             "cod:peRCg"
         ]
+    },
+
+    // DeviceClass Announced: deviceAirQualityMonitorAnnc
+    {
+        "type"      : "cod:dAQMrAnnc",
+        "lname"     : "deviceAirQualityMonitorAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceAirQualityMonitorAnnc",
+        "children"  : [
+            "cod:aiQSr", 
+            "cod:aiQSrAnnc", 
+            "cod:bat", 
+            "cod:batAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:peRCg", 
+            "cod:peRCgAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceAudioReceiver
     {
         "type"      : "cod:deARr",
@@ -52,7 +110,25 @@
             "cod:medSt", 
             "cod:medSt"
         ]
+    },
+
+    // DeviceClass Announced: deviceAudioReceiverAnnc
+    {
+        "type"      : "cod:deARrAnnc",
+        "lname"     : "deviceAudioReceiverAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceAudioReceiverAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:audVe", 
+            "cod:audVeAnnc", 
+            "cod:medSt", 
+            "cod:medStAnnc", 
+            "cod:medSt", 
+            "cod:medStAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceCamera
     {
         "type"      : "cod:devCa",
@@ -63,7 +139,23 @@
             "cod:plaCl", 
             "cod:motSr"
         ]
+    },
+
+    // DeviceClass Announced: deviceCameraAnnc
+    {
+        "type"      : "cod:devCaAnnc",
+        "lname"     : "deviceCameraAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceCameraAnnc",
+        "children"  : [
+            "cod:sesDn", 
+            "cod:sesDnAnnc", 
+            "cod:plaCl", 
+            "cod:plaClAnnc", 
+            "cod:motSr", 
+            "cod:motSrAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceDoor
     {
         "type"      : "cod:devDr",
@@ -74,7 +166,23 @@
             "cod:lock", 
             "cod:dooSs"
         ]
+    },
+
+    // DeviceClass Announced: deviceDoorAnnc
+    {
+        "type"      : "cod:devDrAnnc",
+        "lname"     : "deviceDoorAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceDoorAnnc",
+        "children"  : [
+            "cod:opeLl", 
+            "cod:opeLlAnnc", 
+            "cod:lock", 
+            "cod:lockAnnc", 
+            "cod:dooSs", 
+            "cod:dooSsAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceDoorLock
     {
         "type"      : "cod:deDLk",
@@ -85,7 +193,23 @@
             "cod:dooSs", 
             "cod:bat"
         ]
+    },
+
+    // DeviceClass Announced: deviceDoorLockAnnc
+    {
+        "type"      : "cod:deDLkAnnc",
+        "lname"     : "deviceDoorLockAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceDoorLockAnnc",
+        "children"  : [
+            "cod:lock", 
+            "cod:lockAnnc", 
+            "cod:dooSs", 
+            "cod:dooSsAnnc", 
+            "cod:bat", 
+            "cod:batAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceGenericSensor
     {
         "type"      : "cod:deGSr",
@@ -100,7 +224,31 @@
             "cod:uveSr", 
             "cod:watSr"
         ]
+    },
+
+    // DeviceClass Announced: deviceGenericSensorAnnc
+    {
+        "type"      : "cod:deGSrAnnc",
+        "lname"     : "deviceGenericSensorAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceGenericSensorAnnc",
+        "children"  : [
+            "cod:temAm", 
+            "cod:temAmAnnc", 
+            "cod:acoSr", 
+            "cod:acoSrAnnc", 
+            "cod:impSr", 
+            "cod:impSrAnnc", 
+            "cod:motSr", 
+            "cod:motSrAnnc", 
+            "cod:smoSr", 
+            "cod:smoSrAnnc", 
+            "cod:uveSr", 
+            "cod:uveSrAnnc", 
+            "cod:watSr", 
+            "cod:watSrAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceLight
     {
         "type"      : "cod:devLt",
@@ -114,7 +262,29 @@
             "cod:colSn", 
             "cod:brigs"
         ]
+    },
+
+    // DeviceClass Announced: deviceLightAnnc
+    {
+        "type"      : "cod:devLtAnnc",
+        "lname"     : "deviceLightAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceLightAnnc",
+        "children"  : [
+            "cod:fauDn", 
+            "cod:fauDnAnnc", 
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:color", 
+            "cod:colorAnnc", 
+            "cod:colSn", 
+            "cod:colSnAnnc", 
+            "cod:brigs", 
+            "cod:brigsAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceMultiFunctionPrinter
     {
         "type"      : "cod:dMFPr",
@@ -127,7 +297,27 @@
             "cod:auDFr", 
             "cod:priQe"
         ]
+    },
+
+    // DeviceClass Announced: deviceMultiFunctionPrinterAnnc
+    {
+        "type"      : "cod:dMFPrAnnc",
+        "lname"     : "deviceMultiFunctionPrinterAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceMultiFunctionPrinterAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:auDFr", 
+            "cod:auDFrAnnc", 
+            "cod:priQe", 
+            "cod:priQeAnnc"
+        ]
     }, 
+
     // DeviceClass: devicePrinter
     {
         "type"      : "cod:devPr",
@@ -138,7 +328,23 @@
             "cod:runSe", 
             "cod:priQe"
         ]
+    },
+
+    // DeviceClass Announced: devicePrinterAnnc
+    {
+        "type"      : "cod:devPrAnnc",
+        "lname"     : "devicePrinterAnnc",
+        "cnd"       : "org.onem2m.common.device.devicePrinterAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:priQe", 
+            "cod:priQeAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceScanner
     {
         "type"      : "cod:devSr",
@@ -149,7 +355,23 @@
             "cod:runSe", 
             "cod:auDFr"
         ]
+    },
+
+    // DeviceClass Announced: deviceScannerAnnc
+    {
+        "type"      : "cod:devSrAnnc",
+        "lname"     : "deviceScannerAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceScannerAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:auDFr", 
+            "cod:auDFrAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceThermostat
     {
         "type"      : "cod:devTt",
@@ -160,7 +382,23 @@
             "cod:timer", 
             "cod:tempe"
         ]
+    },
+
+    // DeviceClass Announced: deviceThermostatAnnc
+    {
+        "type"      : "cod:devTtAnnc",
+        "lname"     : "deviceThermostatAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceThermostatAnnc",
+        "children"  : [
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:timer", 
+            "cod:timerAnnc", 
+            "cod:tempe", 
+            "cod:tempeAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceServiceButton
     {
         "type"      : "cod:deSBn",
@@ -176,7 +414,33 @@
             "cod:creds", 
             "cod:geoLn"
         ]
+    },
+
+    // DeviceClass Announced: deviceServiceButtonAnnc
+    {
+        "type"      : "cod:deSBnAnnc",
+        "lname"     : "deviceServiceButtonAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceServiceButtonAnnc",
+        "children"  : [
+            "cod:pusBn", 
+            "cod:pusBnAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:opeMe", 
+            "cod:opeMeAnnc", 
+            "cod:bat", 
+            "cod:batAnnc", 
+            "cod:texMe", 
+            "cod:texMeAnnc", 
+            "cod:image", 
+            "cod:imageAnnc", 
+            "cod:creds", 
+            "cod:credsAnnc", 
+            "cod:geoLn", 
+            "cod:geoLnAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceSmartPlug
     {
         "type"      : "cod:deSPg",
@@ -188,7 +452,25 @@
             "cod:reCEe", 
             "cod:sDPOt"
         ]
+    },
+
+    // DeviceClass Announced: deviceSmartPlugAnnc
+    {
+        "type"      : "cod:deSPgAnnc",
+        "lname"     : "deviceSmartPlugAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceSmartPlugAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:fauDn", 
+            "cod:fauDnAnnc", 
+            "cod:reCEe", 
+            "cod:reCEeAnnc", 
+            "cod:sDPOt", 
+            "cod:sDPOtAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceSwitch
     {
         "type"      : "cod:devSh",
@@ -197,7 +479,19 @@
         "children"  : [
             "cod:binSh"
         ]
+    },
+
+    // DeviceClass Announced: deviceSwitchAnnc
+    {
+        "type"      : "cod:devShAnnc",
+        "lname"     : "deviceSwitchAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceSwitchAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceThermometer
     {
         "type"      : "cod:devTr",
@@ -207,7 +501,21 @@
             "cod:tempe", 
             "cod:bat"
         ]
+    },
+
+    // DeviceClass Announced: deviceThermometerAnnc
+    {
+        "type"      : "cod:devTrAnnc",
+        "lname"     : "deviceThermometerAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceThermometerAnnc",
+        "children"  : [
+            "cod:tempe", 
+            "cod:tempeAnnc", 
+            "cod:bat", 
+            "cod:batAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceThermostat
     {
         "type"      : "cod:devTt",
@@ -218,7 +526,23 @@
             "cod:timer", 
             "cod:tempe"
         ]
+    },
+
+    // DeviceClass Announced: deviceThermostatAnnc
+    {
+        "type"      : "cod:devTtAnnc",
+        "lname"     : "deviceThermostatAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceThermostatAnnc",
+        "children"  : [
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:timer", 
+            "cod:timerAnnc", 
+            "cod:tempe", 
+            "cod:tempeAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceWaterValve
     {
         "type"      : "cod:deWVe",
@@ -227,7 +551,19 @@
         "children"  : [
             "cod:opeLl"
         ]
+    },
+
+    // DeviceClass Announced: deviceWaterValveAnnc
+    {
+        "type"      : "cod:deWVeAnnc",
+        "lname"     : "deviceWaterValveAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceWaterValveAnnc",
+        "children"  : [
+            "cod:opeLl", 
+            "cod:opeLlAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceWaterValve
     {
         "type"      : "cod:deWVe",
@@ -235,7 +571,19 @@
         "cnd"       : "org.onem2m.common.device.deviceWaterValve",
         "children"  : [
             "cod:opeLl"
+        ]
+    },
+
+    // DeviceClass Announced: deviceWaterValveAnnc
+    {
+        "type"      : "cod:deWVeAnnc",
+        "lname"     : "deviceWaterValveAnnc",
+        "cnd"       : "org.onem2m.common.device.deviceWaterValveAnnc",
+        "children"  : [
+            "cod:opeLl", 
+            "cod:opeLlAnnc"
         ]
     }
+
 
 ]

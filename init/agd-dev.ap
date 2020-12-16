@@ -14,6 +14,24 @@
             "cod:conny", 
             "cod:peRCg"
         ]
+    },
+
+    // DeviceClass Announced: deviceCowActivityMonitorAnnc
+    {
+        "type"      : "agd:dCAMrAnnc",
+        "lname"     : "deviceCowActivityMonitorAnnc",
+        "cnd"       : "org.onem2m.agriculture.device.deviceCowActivityMonitorAnnc",
+        "children"  : [
+            "agd:coAMr", 
+            "agd:coAMrAnnc", 
+            "cod:bat", 
+            "cod:batAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:peRCg", 
+            "cod:peRCgAnnc"
+        ]
     }
+
 
 ]
