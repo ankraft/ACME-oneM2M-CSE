@@ -33,14 +33,22 @@
     {
         "type"      : "cod:staDt",
         "lname"     : "start3Dprint",
-        "cnd"       : "org.onem2m.common.action.start3Dprint"
+        "cnd"       : "org.onem2m.common.action.start3Dprint",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // Action: stop3Dprint
     {
         "type"      : "cod:stoDt",
         "lname"     : "stop3Dprint",
-        "cnd"       : "org.onem2m.common.action.stop3Dprint"
+        "cnd"       : "org.onem2m.common.action.stop3Dprint",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // ModuleClass Announced: threeDPrinterAnnc (thDPrAnnc)
@@ -71,20 +79,28 @@
             "cod:stoDtAnnc"
         ]
     }, 
-
     // Action Announced: start3DprintAnnc
     {
         "type"      : "cod:staDtAnnc",
         "lname"     : "start3DprintAnnc",
-        "cnd"       : "org.onem2m.common.action.start3DprintAnncAnnc"
+        "cnd"       : "org.onem2m.common.action.start3DprintAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     }, 
 
     // Action Announced: stop3DprintAnnc
     {
         "type"      : "cod:stoDtAnnc",
         "lname"     : "stop3DprintAnnc",
-        "cnd"       : "org.onem2m.common.action.stop3DprintAnncAnnc"
-    }, 
+        "cnd"       : "org.onem2m.common.action.stop3DprintAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }
+, 
 
     // ModuleClass: acousticSensor (acoSr)
     {
@@ -423,14 +439,22 @@
     {
         "type"      : "cod:upoVe",
         "lname"     : "upVolume",
-        "cnd"       : "org.onem2m.common.action.upVolume"
+        "cnd"       : "org.onem2m.common.action.upVolume",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // Action: downVolume
     {
         "type"      : "cod:dowVe",
         "lname"     : "downVolume",
-        "cnd"       : "org.onem2m.common.action.downVolume"
+        "cnd"       : "org.onem2m.common.action.downVolume",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // ModuleClass Announced: audioVolumeAnnc (audVeAnnc)
@@ -457,20 +481,28 @@
             "cod:dowVeAnnc"
         ]
     }, 
-
     // Action Announced: upVolumeAnnc
     {
         "type"      : "cod:upoVeAnnc",
         "lname"     : "upVolumeAnnc",
-        "cnd"       : "org.onem2m.common.action.upVolumeAnncAnnc"
+        "cnd"       : "org.onem2m.common.action.upVolumeAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     }, 
 
     // Action Announced: downVolumeAnnc
     {
         "type"      : "cod:dowVeAnnc",
         "lname"     : "downVolumeAnnc",
-        "cnd"       : "org.onem2m.common.action.downVolumeAnncAnnc"
-    }, 
+        "cnd"       : "org.onem2m.common.action.downVolumeAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }
+, 
 
     // ModuleClass: autoDocumentFeeder (auDFr)
     {
@@ -656,7 +688,11 @@
     {
         "type"      : "cod:togge",
         "lname"     : "toggle",
-        "cnd"       : "org.onem2m.common.action.toggle"
+        "cnd"       : "org.onem2m.common.action.toggle",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // ModuleClass Announced: binarySwitchAnnc (binShAnnc)
@@ -675,13 +711,17 @@
             "cod:toggeAnnc"
         ]
     }, 
-
     // Action Announced: toggleAnnc
     {
         "type"      : "cod:toggeAnnc",
         "lname"     : "toggleAnnc",
-        "cnd"       : "org.onem2m.common.action.toggleAnncAnnc"
-    }, 
+        "cnd"       : "org.onem2m.common.action.toggleAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }
+, 
 
     // ModuleClass: bioElectricalImpedanceAnalysis (bEIAs)
     {
@@ -2375,21 +2415,33 @@
     {
         "type"      : "cod:deNVe",
         "lname"     : "decrementNumberValue",
-        "cnd"       : "org.onem2m.common.action.decrementNumberValue"
+        "cnd"       : "org.onem2m.common.action.decrementNumberValue",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // Action: incrementNumberValue
     {
         "type"      : "cod:inNVe",
         "lname"     : "incrementNumberValue",
-        "cnd"       : "org.onem2m.common.action.incrementNumberValue"
+        "cnd"       : "org.onem2m.common.action.incrementNumberValue",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // Action: resetNumberValue
     {
         "type"      : "cod:reNVe",
         "lname"     : "resetNumberValue",
-        "cnd"       : "org.onem2m.common.action.resetNumberValue"
+        "cnd"       : "org.onem2m.common.action.resetNumberValue",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // ModuleClass Announced: numberValueAnnc (numVeAnnc)
@@ -2420,27 +2472,39 @@
             "cod:reNVeAnnc"
         ]
     }, 
-
     // Action Announced: decrementNumberValueAnnc
     {
         "type"      : "cod:deNVeAnnc",
         "lname"     : "decrementNumberValueAnnc",
-        "cnd"       : "org.onem2m.common.action.decrementNumberValueAnncAnnc"
+        "cnd"       : "org.onem2m.common.action.decrementNumberValueAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     }, 
 
     // Action Announced: incrementNumberValueAnnc
     {
         "type"      : "cod:inNVeAnnc",
         "lname"     : "incrementNumberValueAnnc",
-        "cnd"       : "org.onem2m.common.action.incrementNumberValueAnncAnnc"
+        "cnd"       : "org.onem2m.common.action.incrementNumberValueAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     }, 
 
     // Action Announced: resetNumberValueAnnc
     {
         "type"      : "cod:reNVeAnnc",
         "lname"     : "resetNumberValueAnnc",
-        "cnd"       : "org.onem2m.common.action.resetNumberValueAnncAnnc"
-    }, 
+        "cnd"       : "org.onem2m.common.action.resetNumberValueAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }
+, 
 
     // ModuleClass: openLevel (opeLl)
     {
@@ -2469,14 +2533,22 @@
     {
         "type"      : "cod:open",
         "lname"     : "open",
-        "cnd"       : "org.onem2m.common.action.open"
+        "cnd"       : "org.onem2m.common.action.open",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // Action: close
     {
         "type"      : "cod:close",
         "lname"     : "close",
-        "cnd"       : "org.onem2m.common.action.close"
+        "cnd"       : "org.onem2m.common.action.close",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // ModuleClass Announced: openLevelAnnc (opeLlAnnc)
@@ -2503,20 +2575,28 @@
             "cod:closeAnnc"
         ]
     }, 
-
     // Action Announced: openAnnc
     {
         "type"      : "cod:openAnnc",
         "lname"     : "openAnnc",
-        "cnd"       : "org.onem2m.common.action.openAnncAnnc"
+        "cnd"       : "org.onem2m.common.action.openAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     }, 
 
     // Action Announced: closeAnnc
     {
         "type"      : "cod:closeAnnc",
         "lname"     : "closeAnnc",
-        "cnd"       : "org.onem2m.common.action.closeAnncAnnc"
-    }, 
+        "cnd"       : "org.onem2m.common.action.closeAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }
+, 
 
     // ModuleClass: operationMode (opeMe)
     {
@@ -2732,21 +2812,33 @@
     {
         "type"      : "cod:call",
         "lname"     : "call",
-        "cnd"       : "org.onem2m.common.action.call"
+        "cnd"       : "org.onem2m.common.action.call",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // Action: answer
     {
         "type"      : "cod:answr",
         "lname"     : "answer",
-        "cnd"       : "org.onem2m.common.action.answer"
+        "cnd"       : "org.onem2m.common.action.answer",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // Action: hangup
     {
         "type"      : "cod:hangp",
         "lname"     : "hangup",
-        "cnd"       : "org.onem2m.common.action.hangup"
+        "cnd"       : "org.onem2m.common.action.hangup",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // ModuleClass Announced: phoneCallAnnc (phoClAnnc)
@@ -2773,27 +2865,39 @@
             "cod:hangpAnnc"
         ]
     }, 
-
     // Action Announced: callAnnc
     {
         "type"      : "cod:callAnnc",
         "lname"     : "callAnnc",
-        "cnd"       : "org.onem2m.common.action.callAnncAnnc"
+        "cnd"       : "org.onem2m.common.action.callAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     }, 
 
     // Action Announced: answerAnnc
     {
         "type"      : "cod:answrAnnc",
         "lname"     : "answerAnnc",
-        "cnd"       : "org.onem2m.common.action.answerAnncAnnc"
+        "cnd"       : "org.onem2m.common.action.answerAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     }, 
 
     // Action Announced: hangupAnnc
     {
         "type"      : "cod:hangpAnnc",
         "lname"     : "hangupAnnc",
-        "cnd"       : "org.onem2m.common.action.hangupAnncAnnc"
-    }, 
+        "cnd"       : "org.onem2m.common.action.hangupAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }
+, 
 
     // ModuleClass: playerControl (plaCl)
     {
@@ -2822,14 +2926,22 @@
     {
         "type"      : "cod:nexTk",
         "lname"     : "nextTrack",
-        "cnd"       : "org.onem2m.common.action.nextTrack"
+        "cnd"       : "org.onem2m.common.action.nextTrack",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // Action: previousTrack
     {
         "type"      : "cod:preTk",
         "lname"     : "previousTrack",
-        "cnd"       : "org.onem2m.common.action.previousTrack"
+        "cnd"       : "org.onem2m.common.action.previousTrack",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // ModuleClass Announced: playerControlAnnc (plaClAnnc)
@@ -2856,20 +2968,28 @@
             "cod:preTkAnnc"
         ]
     }, 
-
     // Action Announced: nextTrackAnnc
     {
         "type"      : "cod:nexTkAnnc",
         "lname"     : "nextTrackAnnc",
-        "cnd"       : "org.onem2m.common.action.nextTrackAnncAnnc"
+        "cnd"       : "org.onem2m.common.action.nextTrackAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     }, 
 
     // Action Announced: previousTrackAnnc
     {
         "type"      : "cod:preTkAnnc",
         "lname"     : "previousTrackAnnc",
-        "cnd"       : "org.onem2m.common.action.previousTrackAnncAnnc"
-    }, 
+        "cnd"       : "org.onem2m.common.action.previousTrackAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }
+, 
 
     // ModuleClass: powerSave (powSe)
     {
@@ -3011,7 +3131,11 @@
     {
         "type"      : "cod:rst",
         "lname"     : "reset",
-        "cnd"       : "org.onem2m.common.action.reset"
+        "cnd"       : "org.onem2m.common.action.reset",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // ModuleClass Announced: rainGaugeAnnc (raiGeAnnc)
@@ -3030,13 +3154,17 @@
             "cod:rstAnnc"
         ]
     }, 
-
     // Action Announced: resetAnnc
     {
         "type"      : "cod:rstAnnc",
         "lname"     : "resetAnnc",
-        "cnd"       : "org.onem2m.common.action.resetAnncAnnc"
-    }, 
+        "cnd"       : "org.onem2m.common.action.resetAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }
+, 
 
     // ModuleClass: recorder (recor)
     {
@@ -3474,7 +3602,11 @@
     {
         "type"      : "cod:mute",
         "lname"     : "mute",
-        "cnd"       : "org.onem2m.common.action.mute"
+        "cnd"       : "org.onem2m.common.action.mute",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // ModuleClass Announced: smokeSensorAnnc (smoSrAnnc)
@@ -3507,13 +3639,17 @@
             "cod:muteAnnc"
         ]
     }, 
-
     // Action Announced: muteAnnc
     {
         "type"      : "cod:muteAnnc",
         "lname"     : "muteAnnc",
-        "cnd"       : "org.onem2m.common.action.muteAnncAnnc"
-    }, 
+        "cnd"       : "org.onem2m.common.action.muteAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }
+, 
 
     // ModuleClass: sphygmomanometer (sphyr)
     {
@@ -3636,14 +3772,22 @@
     {
         "type"      : "cod:uphCl",
         "lname"     : "upChannel",
-        "cnd"       : "org.onem2m.common.action.upChannel"
+        "cnd"       : "org.onem2m.common.action.upChannel",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // Action: downChannel
     {
         "type"      : "cod:dowCl",
         "lname"     : "downChannel",
-        "cnd"       : "org.onem2m.common.action.downChannel"
+        "cnd"       : "org.onem2m.common.action.downChannel",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // ModuleClass Announced: televisionChannelAnnc (telClAnnc)
@@ -3670,20 +3814,28 @@
             "cod:dowClAnnc"
         ]
     }, 
-
     // Action Announced: upChannelAnnc
     {
         "type"      : "cod:uphClAnnc",
         "lname"     : "upChannelAnnc",
-        "cnd"       : "org.onem2m.common.action.upChannelAnncAnnc"
+        "cnd"       : "org.onem2m.common.action.upChannelAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     }, 
 
     // Action Announced: downChannelAnnc
     {
         "type"      : "cod:dowClAnnc",
         "lname"     : "downChannelAnnc",
-        "cnd"       : "org.onem2m.common.action.downChannelAnncAnnc"
-    }, 
+        "cnd"       : "org.onem2m.common.action.downChannelAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }
+, 
 
     // ModuleClass: temperature (tempe)
     {
@@ -3799,7 +3951,11 @@
     {
         "type"      : "cod:reTMe",
         "lname"     : "resetTextMessage",
-        "cnd"       : "org.onem2m.common.action.resetTextMessage"
+        "cnd"       : "org.onem2m.common.action.resetTextMessage",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // ModuleClass Announced: textMessageAnnc (texMeAnnc)
@@ -3828,13 +3984,17 @@
             "cod:reTMeAnnc"
         ]
     }, 
-
     // Action Announced: resetTextMessageAnnc
     {
         "type"      : "cod:reTMeAnnc",
         "lname"     : "resetTextMessageAnnc",
-        "cnd"       : "org.onem2m.common.action.resetTextMessageAnncAnnc"
-    }, 
+        "cnd"       : "org.onem2m.common.action.resetTextMessageAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }
+, 
 
     // ModuleClass: timer (timer)
     {
@@ -3871,14 +4031,22 @@
     {
         "type"      : "cod:acCTr",
         "lname"     : "activateClockTimer",
-        "cnd"       : "org.onem2m.common.action.activateClockTimer"
+        "cnd"       : "org.onem2m.common.action.activateClockTimer",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // Action: deactivateClockTimer
     {
         "type"      : "cod:deCTr",
         "lname"     : "deactivateClockTimer",
-        "cnd"       : "org.onem2m.common.action.deactivateClockTimer"
+        "cnd"       : "org.onem2m.common.action.deactivateClockTimer",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     },
 
     // ModuleClass Announced: timerAnnc (timerAnnc)
@@ -3913,20 +4081,28 @@
             "cod:deCTrAnnc"
         ]
     }, 
-
     // Action Announced: activateClockTimerAnnc
     {
         "type"      : "cod:acCTrAnnc",
         "lname"     : "activateClockTimerAnnc",
-        "cnd"       : "org.onem2m.common.action.activateClockTimerAnncAnnc"
+        "cnd"       : "org.onem2m.common.action.activateClockTimerAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
     }, 
 
     // Action Announced: deactivateClockTimerAnnc
     {
         "type"      : "cod:deCTrAnnc",
         "lname"     : "deactivateClockTimerAnnc",
-        "cnd"       : "org.onem2m.common.action.deactivateClockTimerAnncAnnc"
-    }, 
+        "cnd"       : "org.onem2m.common.action.deactivateClockTimerAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }
+, 
 
     // ModuleClass: turbo (turbo)
     {
