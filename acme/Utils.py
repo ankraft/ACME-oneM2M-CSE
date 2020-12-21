@@ -460,7 +460,6 @@ def removeCommentsFromJSON(data:str) -> str:
 			return "" # so we will return empty to remove the comment
 		else: # otherwise, we will return the 1st group
 			return match.group(1) # captured quoted-string
-	Logging.logWarn(commentRegex.sub(_replacer, data))
 	return commentRegex.sub(_replacer, data)
 
 decimalMatch = re.compile(r'{(\d+)}')
