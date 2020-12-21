@@ -17,7 +17,31 @@
             "cod:timer", 
             "cod:fauDn"
         ]
+    },
+
+    // DeviceClass Announced: deviceOutdoorLampAnnc
+    {
+        "type"      : "cid:deOLpAnnc",
+        "lname"     : "deviceOutdoorLampAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceOutdoorLampAnnc",
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:brigs", 
+            "cod:brigsAnnc", 
+            "cod:motSr", 
+            "cod:motSrAnnc", 
+            "cod:aiQSr", 
+            "cod:aiQSrAnnc", 
+            "cod:uveSr", 
+            "cod:uveSrAnnc", 
+            "cod:timer", 
+            "cod:timerAnnc", 
+            "cod:fauDn", 
+            "cod:fauDnAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceMagneticParkingMonitor
     {
         "type"      : "cid:dMPMr",
@@ -30,7 +54,27 @@
             "cod:parSs", 
             "cod:maSPs"
         ]
+    },
+
+    // DeviceClass Announced: deviceMagneticParkingMonitorAnnc
+    {
+        "type"      : "cid:dMPMrAnnc",
+        "lname"     : "deviceMagneticParkingMonitorAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceMagneticParkingMonitorAnnc",
+        "children"  : [
+            "cod:bat", 
+            "cod:batAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:peRCg", 
+            "cod:peRCgAnnc", 
+            "cod:parSs", 
+            "cod:parSsAnnc", 
+            "cod:maSPs", 
+            "cod:maSPsAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceSmartElectricMeter
     {
         "type"      : "cid:dSEMr",
@@ -44,7 +88,29 @@
             "cod:eneCn", 
             "cod:eneGn"
         ]
+    },
+
+    // DeviceClass Announced: deviceSmartElectricMeterAnnc
+    {
+        "type"      : "cid:dSEMrAnnc",
+        "lname"     : "deviceSmartElectricMeterAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceSmartElectricMeterAnnc",
+        "children"  : [
+            "cod:fauDn", 
+            "cod:fauDnAnnc", 
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:clock", 
+            "cod:clockAnnc", 
+            "cod:eneCn", 
+            "cod:eneCnAnnc", 
+            "cod:eneGn", 
+            "cod:eneGnAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceSmartGasMeter
     {
         "type"      : "cid:dSGMr",
@@ -59,7 +125,31 @@
             "cod:binSh", 
             "cod:gaMAm"
         ]
+    },
+
+    // DeviceClass Announced: deviceSmartGasMeterAnnc
+    {
+        "type"      : "cid:dSGMrAnnc",
+        "lname"     : "deviceSmartGasMeterAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceSmartGasMeterAnnc",
+        "children"  : [
+            "cod:bat", 
+            "cod:batAnnc", 
+            "cod:fauDn", 
+            "cod:fauDnAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:peRCg", 
+            "cod:peRCgAnnc", 
+            "cod:gMRIo", 
+            "cod:gMRIoAnnc", 
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:gaMAm", 
+            "cod:gaMAmAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceSmartWaterMeter
     {
         "type"      : "cid:dSWMr",
@@ -75,7 +165,33 @@
             "cod:binSh", 
             "cod:waMAm"
         ]
+    },
+
+    // DeviceClass Announced: deviceSmartWaterMeterAnnc
+    {
+        "type"      : "cid:dSWMrAnnc",
+        "lname"     : "deviceSmartWaterMeterAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceSmartWaterMeterAnnc",
+        "children"  : [
+            "cod:bat", 
+            "cod:batAnnc", 
+            "cod:fauDn", 
+            "cod:fauDnAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:peRCg", 
+            "cod:peRCgAnnc", 
+            "cod:waMSg", 
+            "cod:waMSgAnnc", 
+            "cod:wMRIo", 
+            "cod:wMRIoAnnc", 
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:waMAm", 
+            "cod:waMAmAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceStreetLightController
     {
         "type"      : "cid:dSLCr",
@@ -89,7 +205,29 @@
             "cod:slPSg", 
             "cod:slcAm"
         ]
+    },
+
+    // DeviceClass Announced: deviceStreetLightControllerAnnc
+    {
+        "type"      : "cid:dSLCrAnnc",
+        "lname"     : "deviceStreetLightControllerAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceStreetLightControllerAnnc",
+        "children"  : [
+            "cod:geoLn", 
+            "cod:geoLnAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:peRCg", 
+            "cod:peRCgAnnc", 
+            "cod:slRIo", 
+            "cod:slRIoAnnc", 
+            "cod:slPSg", 
+            "cod:slPSgAnnc", 
+            "cod:slcAm", 
+            "cod:slcAmAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceWaterQualityMonitor
     {
         "type"      : "cid:dWQMr",
@@ -101,7 +239,25 @@
             "cod:peRCg", 
             "cod:waQMr"
         ]
+    },
+
+    // DeviceClass Announced: deviceWaterQualityMonitorAnnc
+    {
+        "type"      : "cid:dWQMrAnnc",
+        "lname"     : "deviceWaterQualityMonitorAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceWaterQualityMonitorAnnc",
+        "children"  : [
+            "cod:bat", 
+            "cod:batAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:peRCg", 
+            "cod:peRCgAnnc", 
+            "cod:waQMr", 
+            "cod:waQMrAnnc"
+        ]
     }, 
+
     // DeviceClass: deviceWeatherStation
     {
         "type"      : "cid:deWSn",
@@ -117,6 +273,32 @@
             "cod:acoSr", 
             "cod:uveSr"
         ]
+    },
+
+    // DeviceClass Announced: deviceWeatherStationAnnc
+    {
+        "type"      : "cid:deWSnAnnc",
+        "lname"     : "deviceWeatherStationAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceWeatherStationAnnc",
+        "children"  : [
+            "cod:tempe", 
+            "cod:tempeAnnc", 
+            "cod:tempe", 
+            "cod:tempeAnnc", 
+            "cod:aiQSr", 
+            "cod:aiQSrAnnc", 
+            "cod:anemr", 
+            "cod:anemrAnnc", 
+            "cod:baror", 
+            "cod:barorAnnc", 
+            "cod:raiGe", 
+            "cod:raiGeAnnc", 
+            "cod:acoSr", 
+            "cod:acoSrAnnc", 
+            "cod:uveSr", 
+            "cod:uveSrAnnc"
+        ]
     }
+
 
 ]
