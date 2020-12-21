@@ -120,7 +120,7 @@ The following macros are supported in addition to those defined in the sections 
 | Keyword           | Description                                                                                                                              | Macro Name                |
 |:------------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:--------------------------|
 | enable            | Enable logging.<br/>Default: true                                                                                                        | logging.enable            |
-| enableFileLogging | Enable logging to file.<br/>Default: true                                                                                                | logging.enableFileLogging |
+| enableFileLogging | Enable logging to file.<br/>Default: false                                                                                               | logging.enableFileLogging |
 | path              | Pathname for log files.<br />Default: ./logs                                                                                             | logging.path              |
 | level             | Loglevel. Possible values: debug, info, warning, error.<br/>See also command line argument [–log-level](Running.md).<br/> Default: debug | logging.level             |
 | count             | Number of files for log rotation.<br/>Default: 10                                                                                        | logging.count             |

@@ -90,7 +90,7 @@ class Configuration(object):
 				#
 
 				'logging.enable'					: config.getboolean('logging', 'enable', 				fallback=True),
-				'logging.enableFileLogging'			: config.getboolean('logging', 'enableFileLogging', 	fallback=True),
+				'logging.enableFileLogging'			: config.getboolean('logging', 'enableFileLogging', 	fallback=False),
 				'logging.path'						: config.get('logging', 'path', 						fallback=C.defaultLogDirectory),
 				'logging.level'						: config.get('logging', 'level', 						fallback='debug'),
 				'logging.size'						: config.getint('logging', 'size', 						fallback=100000),

@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Supported release version can now be configured via the config file.
 - [TESTS] The behavior whether a failed test skips the remaining tests in a test suite can now be configured.
 - [MISC] Allow ```# single-line comments``` in JSON
+- [MISC] Default configuration for file logging is now *False* (to better support Raspberry Pi and similar systems with flash card file systems).
 
 ### Fixed
 - [CSE] CSEBase.srt attribute now also returns the announced attributes.

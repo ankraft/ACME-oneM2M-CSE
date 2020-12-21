@@ -157,8 +157,8 @@ checkLiveliness=True
 [logging]
 # Enable logging. Default: True
 enable=true
-# Enable logging to file. Default: True
-enableFileLogging=true
+# Enable logging to file. Default: False
+enableFileLogging=False
 # Path to the log files. Default: ./logs
 path=./logs
 # Loglevel. Possible values: debug, info, warning, error. Default: debug
