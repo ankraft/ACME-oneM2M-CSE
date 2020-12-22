@@ -297,7 +297,7 @@ class Validator(object):
 			Logging.logWarn(err := f'Unknown resource type: {tpe}')
 			return Result(status=False, rsc=RC.badRequest, dbg=err)
 
-		#Logging.logDebug(attributePolicies.items())
+		# Logging.logDebug(attributePolicies.items())
 		for r in pureResDict.keys():
 			if r not in attributePolicies.keys():
 				Logging.logWarn(err := f'Unknown attribute: {r} in resource: {tpe}')

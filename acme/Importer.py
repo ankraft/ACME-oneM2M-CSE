@@ -212,7 +212,7 @@ class Importer(object):
 						return False
 					
 					# Attributes are optional. However, add a dummy entry
-					if (attrs := findXPath(ap, 'attrs')) is None:
+					if (attrs := findXPath(ap, 'attributes')) is None:
 						attrs = [ { "sname" : "__none__", "lname" : "__none__", "type" : "void", "car" : "01" } ]
 						
 					for attr in attrs:
