@@ -22,22 +22,22 @@ The ACME CSE supports the following CSE types:
 
 The ACME CSE supports the following oneM2M resource types:
 
-| Resource Type                 | Supported | Limitations                                                                                                                     |
-|:------------------------------|:---------:|:--------------------------------------------------------------------------------------------------------------------------------|
-| CSEBase (CB)                  |  &check;  |                                                                                                                                 |
-| Remote CSE (CSR)              |  &check;  | Announced resources are yet not supported. Transit request, though, to resources on the remote CSE are supported.               |
-| Access Control Policy (ACP)   |  &check;  |                                                                                                                                 |
-| Application Entity (AE)       |  &check;  |                                                                                                                                 |
-| Container (CNT)               |  &check;  |                                                                                                                                 |
-| Content Instance (CIN)        |  &check;  |                                                                                                                                 |
-| Group (GRP)                   |  &check;  | The support includes requests via the *fopt* (fan-out-point) virtual resource.                                                  |
-| Subscription (SUB)            |  &check;  | Notifications via http(s) (direct url or an AE's Point-of-Access (POA)). BatchNotifications, attributes.                        |
-| Node (NOD)                    |  &check;  |                                                                                                                                 |
-| Management Objects            |  &check;  | See also the list of supported [management objects](#mgmtobjs).                                                                 |
-| FlexContainer Specializations |  &check;  | Any specialization is supported and validated. See [Importing Attribute Policies](Importing.md#attributes) for further details. |
-| FlexContainerInstance         |  &check;  | Experimental. This is an implementation of the draft FlexContainerInstance specification.                                       |
-| Request (REQ)                 |  &check;  | To support non-blocking requests.                                                                                               |
-| Polling Channel               |  &cross;  |                                                                                                                                 |
+| Resource Type                 | Supported | Limitations                                                                                                                                                                                               |
+|:------------------------------|:---------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| CSEBase (CB)                  |  &check;  |                                                                                                                                                                                                           |
+| Remote CSE (CSR)              |  &check;  | Announced resources are yet not supported. Transit request, though, to resources on the remote CSE are supported.                                                                                         |
+| Access Control Policy (ACP)   |  &check;  |                                                                                                                                                                                                           |
+| Application Entity (AE)       |  &check;  |                                                                                                                                                                                                           |
+| Container (CNT)               |  &check;  |                                                                                                                                                                                                           |
+| Content Instance (CIN)        |  &check;  |                                                                                                                                                                                                           |
+| Group (GRP)                   |  &check;  | The support includes requests via the *fopt* (fan-out-point) virtual resource.                                                                                                                            |
+| Subscription (SUB)            |  &check;  | Notifications via http(s) (direct url or an AE's Point-of-Access (POA)). BatchNotifications, attributes.                                                                                                  |
+| Node (NOD)                    |  &check;  |                                                                                                                                                                                                           |
+| Management Objects            |  &check;  | See also the list of supported [management objects](#mgmtobjs).                                                                                                                                           |
+| FlexContainer Specializations |  &check;  | Any specialization is supported and validated. See [Importing Attribute Policies](Importing.md#attributes) for further details.<br />Supported spezialisations: TS-0023 R4, GenericInterworking, AllJoyn. |
+| FlexContainerInstance         |  &check;  | Experimental. This is an implementation of the draft FlexContainerInstance specification.                                                                                                                 |
+| Request (REQ)                 |  &check;  | To support non-blocking requests.                                                                                                                                                                         |
+| Polling Channel               |  &cross;  |                                                                                                                                                                                                           |
 
 <a name="mgmtobjs"></a>
 

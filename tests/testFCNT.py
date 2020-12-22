@@ -21,6 +21,9 @@ noCSE = not connectionPossible(cseURL)
 
 
 CND = 'org.onem2m.home.moduleclass.temperature'
+GISCND = 'someCND'
+GISRN  = 'gis'
+gisURL = f'{aeURL}/{GISRN}'
 
 class TestFCNT(unittest.TestCase):
 
@@ -54,7 +57,7 @@ class TestFCNT(unittest.TestCase):
 		dct = 	{ 'cod:tempe' : { 
 					'rn'	: fcntRN,
 					'cnd' 	: CND, 
-					'curTe'	: 23.0,
+					'curT0'	: 23.0,
 					'unit'	: 1,
 					'minVe'	: -100.0,
 					'maxVe' : 100.0,
@@ -88,7 +91,7 @@ class TestFCNT(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'cod:tempe/et'))
 		self.assertEqual(findXPath(r, 'cod:tempe/cr'), TestFCNT.originator)
 		self.assertEqual(findXPath(r, 'cod:tempe/cnd'), CND)
-		self.assertEqual(findXPath(r, 'cod:tempe/curTe'), 23.0)
+		self.assertEqual(findXPath(r, 'cod:tempe/curT0'), 23.0)
 		self.assertIsNone(findXPath(r, 'cod:tempe/tarTe'))
 		self.assertEqual(findXPath(r, 'cod:tempe/unit'), 1)
 		self.assertEqual(findXPath(r, 'cod:tempe/minVe'), -100.0)
@@ -110,7 +113,7 @@ class TestFCNT(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'cod:tempe/tarTe'))
 		self.assertIsInstance(findXPath(r, 'cod:tempe/tarTe'), float)
 		self.assertEqual(findXPath(r, 'cod:tempe/tarTe'), 5.0)
-		self.assertEqual(findXPath(r, 'cod:tempe/curTe'), 23.0)
+		self.assertEqual(findXPath(r, 'cod:tempe/curT0'), 23.0)
 		self.assertEqual(findXPath(r, 'cod:tempe/st'), 1)
 		self.assertGreater(findXPath(r, 'cod:tempe/lt'), findXPath(r, 'cod:tempe/ct'))
 
@@ -188,6 +191,64 @@ class TestFCNT(unittest.TestCase):
 		_, rsc = DELETE(fcntURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createGenericInterworking(self):
+		dct = 	{ 'm2m:gis' : { 
+					'cnd' 	: GISCND,
+					'gisn'	: 'abc',
+					'rn'	: GISRN
+				}}
+		r, rsc = CREATE(aeURL, TestFCNT.originator, T.FCNT, dct)
+		self.assertEqual(rsc, RC.created)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createGenericInterworkingWrong(self):
+		dct = 	{ 'm2m:gis' : { 
+					'cnd' 	: GISCND
+				}}
+		r, rsc = CREATE(aeURL, TestFCNT.originator, T.FCNT, dct)
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createGenericInterworkingWrong2(self):
+		dct = 	{ 'm2m:gis' : { 
+					'cnd' 	: GISCND,
+					'gisn'	: 'abc',
+					'wrong'	: 'wrong'	# Unknown attribute
+				}}
+		r, rsc = CREATE(aeURL, TestFCNT.originator, T.FCNT, dct)
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createGenericInterworkingOperationInstance(self):
+		dct = 	{ 'm2m:gio' : { 
+					'cnd' 	: GISCND,
+					'gion'	: 'anOperation',
+					'gios'	: 'aStatus'
+				}}
+		r, rsc = CREATE(gisURL, TestFCNT.originator, T.FCNT, dct)
+		self.assertEqual(rsc, RC.created)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createGenericInterworkingOperationInstance2(self):
+		dct = 	{ 'm2m:gio' : { 
+					'cnd' 	: GISCND,
+					'gion'	: 'anOperation',
+					'giip'	: [ 'link1', 'link2' ],
+					'gios'	: 'aStatus'
+				}}
+		r, rsc = CREATE(gisURL, TestFCNT.originator, T.FCNT, dct)
+		self.assertEqual(rsc, RC.created)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteGenericInterworking(self):
+		_, rsc = DELETE(gisURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.deleted)
 
 
 def run():
@@ -206,6 +267,12 @@ def run():
 	suite.addTest(TestFCNT('test_createFCNTUnderFCNT'))
 	suite.addTest(TestFCNT('test_deleteFCNTUnderFCNT'))
 	suite.addTest(TestFCNT('test_deleteFCNT'))
+	suite.addTest(TestFCNT('test_createGenericInterworking'))
+	suite.addTest(TestFCNT('test_createGenericInterworkingWrong'))
+	suite.addTest(TestFCNT('test_createGenericInterworkingWrong2'))
+	suite.addTest(TestFCNT('test_createGenericInterworkingOperationInstance'))
+	suite.addTest(TestFCNT('test_createGenericInterworkingOperationInstance2'))
+	suite.addTest(TestFCNT('test_deleteGenericInterworking'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
