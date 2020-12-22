@@ -4,7 +4,7 @@
 [
     // SubDevice: subDeviceCuff
     {
-        "type"      : "hed:suDCf",
+        "type"      : "hed:suDC0",
         "lname"     : "suDCf",
         "cnd"       : "org.onem2m.health.subdevice.subDeviceCuff",
         "children"  : [
@@ -16,7 +16,7 @@
 
     // SubDevice Announced: subDeviceCuffAnnc
     {
-        "type"      : "hed:suDCfAnnc",
+        "type"      : "hed:suDC0Annc",
         "lname"     : "suDCfAnnc",
         "cnd"       : "org.onem2m.health.subdevice.subDeviceCuffAnnc",
         "children"  : [

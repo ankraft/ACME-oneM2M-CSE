@@ -791,7 +791,7 @@
 
     // DeviceClass: deviceRobotCleaner
     {
-        "type"      : "hod:deRCr",
+        "type"      : "hod:deRC0",
         "lname"     : "deviceRobotCleaner",
         "cnd"       : "org.onem2m.home.device.deviceRobotCleaner",
         "children"  : [
@@ -806,7 +806,7 @@
 
     // DeviceClass Announced: deviceRobotCleanerAnnc
     {
-        "type"      : "hod:deRCrAnnc",
+        "type"      : "hod:deRC0Annc",
         "lname"     : "deviceRobotCleanerAnnc",
         "cnd"       : "org.onem2m.home.device.deviceRobotCleanerAnnc",
         "children"  : [

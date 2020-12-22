@@ -1,19 +1,207 @@
-// Additional attribute policies for <flexContainer> specializations
+// Various additional attribute policies for <flexContainer> specializations
 
 [
+    //
+    //  Generic Interworking specializations
+    //  From TS-0004, Annex J (normative): Specializations of <flexContainer> resource
+    //
+    
     {
         "type"  : "m2m:gis",
-        "attrs" : [
-            {
-                "sname" : "gisn",
-                "type"  : "string",
-                "car"   : "01",
-                "oc"    : "O",
-                "ou"    : "o",
-                "od"    : "M",
-                "annc"  : "MA"
-            }
+        "lname" : "genericInterworkingService",
+        "attributes" : [
+            { "sname" : "gisn", "lname" : "serviceName",          "type" : "string", "car" : "01", "oc" : "M", "ou" : "NP", "od" : "O", "annc"  : "OA" },
+            { "sname" : "giip", "lname" : "inputDataPointLinks",  "type" : "list",   "car" : "01", "oc" : "O", "ou" : "O",  "od" : "O", "annc"  : "OA" },
+            { "sname" : "giop", "lname" : "outputDataPointLinks", "type" : "list",   "car" : "01", "oc" : "O", "ou" : "O",  "od" : "O", "annc"  : "OA" }
+        ],
+        "children" : [
+            "m2m:gis",
+            "m2m:gio"
+        ]
+    },
+    {
+        "type"  : "m2m:gisA",
+        "lname" : "genericInterworkingServiceAnnc",
+        "attributes" : [
+            { "sname" : "gisn", "lname" : "serviceName",          "type" : "string", "car" : "1",  "oc" : "M", "ou" : "NP", "od" : "O", "annc"  : "OA" },
+            { "sname" : "giip", "lname" : "inputDataPointLinks",  "type" : "list",   "car" : "01", "oc" : "O", "ou" : "O",  "od" : "O", "annc"  : "OA" },
+            { "sname" : "giop", "lname" : "outputDataPointLinks", "type" : "list",   "car" : "01", "oc" : "O", "ou" : "O",  "od" : "O", "annc"  : "OA" }
+        ],
+        "children" : [
+            "m2m:gis",
+            "m2m:gisA",
+            "m2m:gio",
+            "m2m:gioA"
+        ]
+    },
+    {
+        "type"  : "m2m:gio",
+        "lname" : "genericInterworkingOperationInstance",
+        "attributes" : [
+            { "sname" : "gion", "lname" : "operationName",        "type" : "string", "car" : "1",  "oc" : "M", "ou" : "NP", "od" : "O", "annc"  : "OA" },
+            { "sname" : "giip", "lname" : "inputDataPointLinks",  "type" : "list",   "car" : "01", "oc" : "O", "ou" : "O",  "od" : "O", "annc"  : "OA" },
+            { "sname" : "giop", "lname" : "outputDataPointLinks", "type" : "list",   "car" : "01", "oc" : "O", "ou" : "O",  "od" : "O", "annc"  : "OA" },
+            { "sname" : "giil", "lname" : "inputLinks",           "type" : "list",   "car" : "01", "oc" : "O", "ou" : "O",  "od" : "O", "annc"  : "OA" },
+            { "sname" : "giol", "lname" : "outputLinks",          "type" : "list",   "car" : "01", "oc" : "O", "ou" : "O",  "od" : "O", "annc"  : "OA" },
+            { "sname" : "gios", "lname" : "operationState",       "type" : "string", "car" : "1",  "oc" : "M", "ou" : "O",  "od" : "O", "annc"  : "OA" }
+        ]
+    },
+    {
+        "type"  : "m2m:gioA",
+        "lname" : "genericInterworkingOperationInstanceAnnc",
+        "attributes" : [
+            { "sname" : "gion",  "lname" : "operationName",        "type" : "string", "car" : "1",  "oc" : "M", "ou" : "NP", "od" : "O", "annc"  : "OA" },
+            { "sname" : "giip",  "lname" : "inputDataPointLinks",  "type" : "list",   "car" : "01", "oc" : "O", "ou" : "O",  "od" : "O", "annc"  : "OA" },
+            { "sname" : "giop",  "lname" : "outputDataPointLinks", "type" : "list",   "car" : "01", "oc" : "O", "ou" : "O",  "od" : "O", "annc"  : "OA" },
+            { "sname" : "giil",  "lname" : "inputLinks",           "type" : "list",   "car" : "01", "oc" : "O", "ou" : "O",  "od" : "O", "annc"  : "OA" },
+            { "sname" : "giol",  "lname" : "outputLinks",          "type" : "list",   "car" : "01", "oc" : "O", "ou" : "O",  "od" : "O", "annc"  : "OA" },
+            { "sname" : "gios",  "lname" : "operationState",       "type" : "string", "car" : "1",  "oc" : "M", "ou" : "O",  "od" : "O", "annc"  : "OA" }
+        ]
+    },
+
+    //
+    //  AllJyon Interworking specializations
+    //  From TS-0004, Annex J (normative): Specializations of <flexContainer> resource
+    //
+
+    {
+        "type"  : "m2m:ajsw",
+        "lname" : "svcObjWrapper",
+        "children" : [
+            "cod:ajap"
+        ]
+    },
+    {
+        "type"  : "m2m:ajswA",
+        "lname" : "svcObjWrapperAnnc",
+        "children" : [
+            "cod:ajap",
+            "cod:ajapA"
+        ]
+    },
+    {
+        "type"  : "m2m:ajfw",
+        "lname" : "svcFwWrapper"
+    },
+    {
+        "type"  : "m2m:ajfwA",
+        "lname" : "svcFwWrapperAnnc"
+    },
+    {
+        "type"  : "m2m:ajap",
+        "lname" : "allJoynApp",
+        "attributes" : [
+            { "sname" : "dir", "lname" : "direction", "type" : "integer", "car" : "1",  "oc" : "M", "ou" : "NP", "od" : "O", "annc"  : "OA" }
+        ],
+        "children" : [
+            "m2m:ajso"
+        ]
+    },
+    {
+        "type"  : "m2m:ajapA",
+        "lname" : "allJoynAppAnnc",
+        "attributes" : [
+            { "sname" : "dir", "lname" : "direction", "type" : "integer", "car" : "1",  "oc" : "M", "ou" : "NP", "od" : "O", "annc"  : "OA" }
+        ],
+        "children" : [
+            "m2m:ajso",
+            "m2m:ajsoA"
+        ]
+    },
+    {
+        "type"  : "m2m:ajso",
+        "lname" : "allJoynSvcObject",
+        "attributes" : [
+            { "sname" : "ajop", "lname" : "objectPath", "type" : "string", "car" : "1",  "oc" : "M", "ou" : "NP", "od" : "O", "annc"  : "OA" },
+            { "sname" : "ena",  "lname" : "enable",     "type" : "bool",   "car" : "1",  "oc" : "M", "ou" : "O", "od" : "O", "annc"  : "OA" }
+        ],
+        "children" : [
+            "m2m:ajif"
+        ]
+    },
+    {
+        "type"  : "m2m:ajsoA",
+        "lname" : "allJoynSvcObjectAnnc",
+        "attributes" : [
+            { "sname" : "ajop", "lname" : "objectPath", "type" : "string", "car" : "1",  "oc" : "M", "ou" : "NP", "od" : "O", "annc"  : "OA" },
+            { "sname" : "ena",  "lname" : "enable",     "type" : "bool",   "car" : "1",  "oc" : "M", "ou" : "O", "od" : "O", "annc"  : "OA" }
+        ],
+        "children" : [
+            "m2m:ajif",
+            "m2m:ajifA"
+        ]
+    },
+    {
+        "type"  : "m2m:ajif",
+        "lname" : "allJoynInterface",
+        "attributes" : [
+            { "sname" : "ajir",  "lname" : "interfaceIntrospectXmlRef", "type" : "uri", "car" : "1",  "oc" : "M", "ou" : "O", "od" : "O", "annc"  : "OA" }
+        ],
+        "children" : [
+            "m2m:ajmd",
+            "m2m:ajpr"
+        ]
+    },
+    {
+        "type"  : "m2m:ajifA",
+        "lname" : "allJoynInterfaceAnnc",
+        "attributes" : [
+            { "sname" : "ajir",  "lname" : "interfaceIntrospectXmlRef", "type" : "uri", "car" : "1",  "oc" : "M", "ou" : "O", "od" : "O", "annc"  : "OA" }
+        ],
+        "children" : [
+            "m2m:ajmd",
+            "m2m:ajmdA",
+            "m2m:ajpr",
+            "m2m:ajprA"
+        ]
+    },
+    {
+        "type"  : "m2m:ajmd",
+        "lname" : "allJoynMethod",
+        "children" : [
+            "m2m:ajmc"
+        ]
+    },
+    {
+        "type"  : "m2m:ajmdA",
+        "lname" : "allJoynMethodAnnc",
+        "children" : [
+            "m2m:ajmc",
+            "m2m:ajmcA"
+        ]
+    },
+    {
+        "type"  : "m2m:ajmc",
+        "lname" : "allJoynMethod",
+        "attributes" : [
+            { "sname" : "inp",  "lname" : "input",      "type" : "string", "car" : "1",  "oc" : "O", "ou" : "NP", "od" : "O", "annc"  : "OA" },
+            { "sname" : "clst", "lname" : "callStatus", "type" : "string", "car" : "1",  "oc" : "O", "ou" : "O", "od" : "O", "annc"  : "OA" },
+            { "sname" : "out",  "lname" : "output",     "type" : "string", "car" : "1",  "oc" : "O", "ou" : "O", "od" : "O", "annc"  : "OA" }
+        ]
+    },
+    {
+        "type"  : "m2m:ajmcA",
+        "lname" : "allJoynMethodAnnc",
+        "attributes" : [
+            { "sname" : "inp",  "lname" : "input",      "type" : "string", "car" : "1",  "oc" : "O", "ou" : "NP", "od" : "O", "annc"  : "OA" },
+            { "sname" : "clst", "lname" : "callStatus", "type" : "string", "car" : "1",  "oc" : "O", "ou" : "O", "od" : "O", "annc"  : "OA" },
+            { "sname" : "out",  "lname" : "output",     "type" : "string", "car" : "1",  "oc" : "O", "ou" : "O", "od" : "O", "annc"  : "OA" }
+        ]
+    },
+    {
+        "type"  : "m2m:ajpr",
+        "lname" : "allJoynProperty",
+        "attributes" : [
+            { "sname" : "crv",  "lname" : "currentValue",      "type" : "string", "car" : "1",  "oc" : "O", "ou" : "NP", "od" : "O", "annc"  : "OA" },
+            { "sname" : "rqv", "lname" : "requestedValue", "type" : "string", "car" : "1",  "oc" : "O", "ou" : "O", "od" : "O", "annc"  : "OA" }
+        ]
+    },
+    {
+        "type"  : "m2m:ajprA",
+        "lname" : "allJoynPropertyAnnc",
+        "attributes" : [
+            { "sname" : "crv",  "lname" : "currentValue",      "type" : "string", "car" : "1",  "oc" : "O", "ou" : "NP", "od" : "O", "annc"  : "OA" },
+            { "sname" : "rqv", "lname" : "requestedValue", "type" : "string", "car" : "1",  "oc" : "O", "ou" : "O", "od" : "O", "annc"  : "OA" }
         ]
     }
-
 ]

@@ -4,7 +4,7 @@
 [
     // SubDevice: subDevicePowerOutlet
     {
-        "type"      : "cod:sDPOt",
+        "type"      : "cod:sDPO0",
         "lname"     : "sDPOt",
         "cnd"       : "org.onem2m.common.subdevice.subDevicePowerOutlet",
         "children"  : [
@@ -17,7 +17,7 @@
 
     // SubDevice Announced: subDevicePowerOutletAnnc
     {
-        "type"      : "cod:sDPOtAnnc",
+        "type"      : "cod:sDPO0Annc",
         "lname"     : "sDPOtAnnc",
         "cnd"       : "org.onem2m.common.subdevice.subDevicePowerOutletAnnc",
         "children"  : [

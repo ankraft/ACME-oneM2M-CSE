@@ -1854,7 +1854,7 @@
             // DataPoint: targetLatitude
             { "sname" : "tarLe", "lname" : "targetLatitude", "type" : "float", "car" : "01" }, 
             // DataPoint: targetLongitude
-            { "sname" : "tarLe", "lname" : "targetLongitude", "type" : "float", "car" : "01" }, 
+            { "sname" : "tarL0", "lname" : "targetLongitude", "type" : "float", "car" : "01" }, 
             // DataPoint: targetAltitude
             { "sname" : "tarAe", "lname" : "targetAltitude", "type" : "float", "car" : "01" }
         ]
@@ -1885,7 +1885,7 @@
             // DataPoint: targetLatitude
             { "sname" : "tarLe", "lname" : "targetLatitude", "type" : "float", "car" : "01" }, 
             // DataPoint: targetLongitude
-            { "sname" : "tarLe", "lname" : "targetLongitude", "type" : "float", "car" : "01" }, 
+            { "sname" : "tarL0", "lname" : "targetLongitude", "type" : "float", "car" : "01" }, 
             // DataPoint: targetAltitude
             { "sname" : "tarAe", "lname" : "targetAltitude", "type" : "float", "car" : "01" }
         ]
@@ -2991,9 +2991,9 @@
     }
 , 
 
-    // ModuleClass: powerSave (powSe)
+    // ModuleClass: powerSave (powS0)
     {
-        "type"      : "cod:powSe",
+        "type"      : "cod:powS0",
         "lname"     : "powerSave",
         "cnd"       : "org.onem2m.common.moduleclass.powerSave",
         "attributes": [
@@ -3004,9 +3004,9 @@
         ]
     },
 
-    // ModuleClass Announced: powerSaveAnnc (powSeAnnc)
+    // ModuleClass Announced: powerSaveAnnc (powS0Annc)
     {
-        "type"      : "cod:powSeAnnc",
+        "type"      : "cod:powS0Annc",
         "lname"     : "powerSaveAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.powerSaveAnnc",
         "attributes": [
@@ -3511,7 +3511,7 @@
             // DataPoint: lightVoltage
             { "sname" : "ligVe", "lname" : "lightVoltage", "type" : "float", "car" : "1" }, 
             // DataPoint: lightCurrent
-            { "sname" : "ligCt", "lname" : "lightCurrent", "type" : "float", "car" : "1" }, 
+            { "sname" : "ligC0", "lname" : "lightCurrent", "type" : "float", "car" : "1" }, 
             // DataPoint: lightDimmingValue
             { "sname" : "liDVe", "lname" : "lightDimmingValue", "type" : "integer", "car" : "1" }, 
             // DataPoint: lightPowerFactor
@@ -3521,7 +3521,7 @@
             // DataPoint: lightReactivePower
             { "sname" : "liRPr", "lname" : "lightReactivePower", "type" : "float", "car" : "01" }, 
             // DataPoint: lightApparentPower
-            { "sname" : "liAPr", "lname" : "lightApparentPower", "type" : "float", "car" : "01" }, 
+            { "sname" : "liAP0", "lname" : "lightApparentPower", "type" : "float", "car" : "01" }, 
             // DataPoint: lightPolarizationAxis
             { "sname" : "liPAs", "lname" : "lightPolarizationAxis", "type" : "float", "car" : "01" }, 
             // DataPoint: colourTemperature
@@ -3548,7 +3548,7 @@
             // DataPoint: lightVoltage
             { "sname" : "ligVe", "lname" : "lightVoltage", "type" : "float", "car" : "1" }, 
             // DataPoint: lightCurrent
-            { "sname" : "ligCt", "lname" : "lightCurrent", "type" : "float", "car" : "1" }, 
+            { "sname" : "ligC0", "lname" : "lightCurrent", "type" : "float", "car" : "1" }, 
             // DataPoint: lightDimmingValue
             { "sname" : "liDVe", "lname" : "lightDimmingValue", "type" : "integer", "car" : "1" }, 
             // DataPoint: lightPowerFactor
@@ -3558,7 +3558,7 @@
             // DataPoint: lightReactivePower
             { "sname" : "liRPr", "lname" : "lightReactivePower", "type" : "float", "car" : "01" }, 
             // DataPoint: lightApparentPower
-            { "sname" : "liAPr", "lname" : "lightApparentPower", "type" : "float", "car" : "01" }, 
+            { "sname" : "liAP0", "lname" : "lightApparentPower", "type" : "float", "car" : "01" }, 
             // DataPoint: lightPolarizationAxis
             { "sname" : "liPAs", "lname" : "lightPolarizationAxis", "type" : "float", "car" : "01" }, 
             // DataPoint: colourTemperature
@@ -3846,7 +3846,7 @@
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: currentTemperature
-            { "sname" : "curTe", "lname" : "currentTemperature", "type" : "float", "car" : "1" }, 
+            { "sname" : "curT0", "lname" : "currentTemperature", "type" : "float", "car" : "1" }, 
             // DataPoint: targetTemperature
             { "sname" : "tarTe", "lname" : "targetTemperature", "type" : "float", "car" : "01" }, 
             // DataPoint: unit
@@ -3869,7 +3869,7 @@
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: currentTemperature
-            { "sname" : "curTe", "lname" : "currentTemperature", "type" : "float", "car" : "1" }, 
+            { "sname" : "curT0", "lname" : "currentTemperature", "type" : "float", "car" : "1" }, 
             // DataPoint: targetTemperature
             { "sname" : "tarTe", "lname" : "targetTemperature", "type" : "float", "car" : "01" }, 
             // DataPoint: unit
@@ -4019,7 +4019,7 @@
             // DataPoint: absoluteStartTime
             { "sname" : "abSTe", "lname" : "absoluteStartTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: absoluteStopTime
-            { "sname" : "abSTe", "lname" : "absoluteStopTime", "type" : "timestamp", "car" : "01" }
+            { "sname" : "abST0", "lname" : "absoluteStopTime", "type" : "timestamp", "car" : "01" }
         ], 
         "children"  : [
             "cod:acCTr", 
@@ -4072,7 +4072,7 @@
             // DataPoint: absoluteStartTime
             { "sname" : "abSTe", "lname" : "absoluteStartTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: absoluteStopTime
-            { "sname" : "abSTe", "lname" : "absoluteStopTime", "type" : "timestamp", "car" : "01" }
+            { "sname" : "abST0", "lname" : "absoluteStopTime", "type" : "timestamp", "car" : "01" }
         ], 
         "children"  : [
             "cod:acCTr",
