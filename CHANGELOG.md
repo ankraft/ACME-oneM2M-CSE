@@ -15,13 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [NOTIFICATIONS] Added support for handling CBOR serialization and other binary formats.
 - [WEB] Added dark mode (for supported browsers).
 - [CSE] Added attribute policies for TS-0023 R4 ModuleClasses, Devices etc.
-- [CSE] Added attribute policies for Generic Interworking and AllJoyn specialisazions.
+- [CSE] Added attribute policies for Generic Interworking and AllJoyn specialisations.
 
 ### Changed
 - [WEB] The web UI can now also be used as a stand-alone application to connect to third-party CSEs.
 - [CSE] The filter query for *ty*, *cty*, and *lbl* can now be construct with + operator (e.g. ty=3+4) instead of specifying those filter elements twice.
 - [CSE] Changed the importing of attribute policies to a JSON based format.
 - [CSE] Supported release version can now be configured via the config file.
+- [CSE] Added checks for remote CSE's *csi* (does it exist? Does it begin with a /?)
 - [TESTS] The behavior whether a failed test skips the remaining tests in a test suite can now be configured.
 - [MISC] Allow ```# single-line comments``` in JSON
 - [MISC] Default configuration for file logging is now *False* (to better support Raspberry Pi and similar systems with flash card file systems).

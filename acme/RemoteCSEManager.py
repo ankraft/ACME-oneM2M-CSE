@@ -461,6 +461,13 @@ class RemoteCSEManager(object):
 		res = CSE.httpServer.sendRetrieveRequest(url, self.originator)
 		if res.rsc not in [ RC.OK ]:
 			return res.errorResult()
+		if (csi := Utils.findXPath(res.dict, 'm2m:cb/csi')) == None:
+			Logging.logErr(err := 'csi not found in remote CSE resource')
+			return Result(rsc=RC.badRequest, dbg=err)
+		if not csi.startswith('/'):
+			Logging.logWarn('Remote CSE.csi doesn\'t start with /. Correcting.')
+			Utils.setXPath(res.dict, 'm2m:cb/csi', f'/{csi}')
+
 		return Result(resource=CSEBase.CSEBase(res.dict), rsc=RC.OK)
 
 
