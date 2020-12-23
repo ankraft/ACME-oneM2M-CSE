@@ -119,7 +119,7 @@ class Configuration(object):
 				'cse.sortDiscoveredResources'		: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
 				'cse.checkExpirationsInterval'		: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
 				'cse.flexBlockingPreference'		: config.get('cse', 'flexBlockingPreference',			fallback='blocking'),
-				'cse.supportedReleaseVersions'		: config.getlist('cse', 'supportedReleaseVersions',		fallback=['1', '2', '2a', '3']), # type: ignore
+				'cse.supportedReleaseVersions'		: config.getlist('cse', 'supportedReleaseVersions',		fallback=C.supportedReleaseVersions), # type: ignore
 				'cse.releaseVersion'				: config.get('cse', 'releaseVersion',					fallback='3'),
 				'cse.defaultSerialization'			: config.get('cse', 'defaultSerialization',				fallback='json'),
 
@@ -356,27 +356,38 @@ class Configuration(object):
 				console.print(f'[red]Configuration Error: Wrong format for \[cse.registrar]:cseID: {val}')
 				return False
 			if len(Configuration._configuration['cse.registrar.csi']) > 0 and len(Configuration._configuration['cse.registrar.rn']) == 0:
-				console.print('[red]Configuration Error: Missing configuration [cse.registrar]:resourceName')
+				console.print('[red]Configuration Error: Missing configuration \[cse.registrar]:resourceName')
 				return False
 
 		# Check default subscription duration
 		if Configuration._configuration['cse.sub.dur'] < 1:
-			console.print('[red]Configuration Error: [cse.resource.sub]:batchNotifyDuration must be > 0')
+			console.print('[red]Configuration Error: \[cse.resource.sub]:batchNotifyDuration must be > 0')
 			return False
 
 		# Check flexBlocking value
 		Configuration._configuration['cse.flexBlockingPreference'] = Configuration._configuration['cse.flexBlockingPreference'].lower()
 		if Configuration._configuration['cse.flexBlockingPreference'] not in ['blocking', 'nonblocking']:
-			console.print('[red]Configuration Error: [cse]:flexBlockingPreference must be "blocking" or "nonblocking"')
+			console.print('[red]Configuration Error: \[cse]:flexBlockingPreference must be "blocking" or "nonblocking"')
 			return False
 
-		# Check release version
-		if len(Configuration._configuration['cse.releaseVersion']) == 0:
-			console.print('[red]Configuration Error: [cse]:releaseVersion must not be empty')
-			return False
+		# Check release versions
 		if len(Configuration._configuration['cse.supportedReleaseVersions']) == 0:
-			console.print('[red]Configuration Error: [cse]:supportedReleaseVersions must not be empty')
+			console.print('[red]Configuration Error: \[cse]:supportedReleaseVersions must not be empty')
 			return False
+		for rv in Configuration._configuration['cse.supportedReleaseVersions']:
+			if rv not in C.supportedReleaseVersions:
+				console.print(f'[red]Configuration Error: \[cse]:supportedReleaseVersions: unsupported version: {rv}')
+				return False
+
+		if len(Configuration._configuration['cse.releaseVersion']) == 0:
+			console.print('[red]Configuration Error: \[cse]:releaseVersion must not be empty')
+			return False
+		for rv in Configuration._configuration['cse.releaseVersion']:
+			srv = Configuration._configuration['cse.supportedReleaseVersions']
+			if rv not in srv:
+				console.print(f'[red]Configuration Error: \[cse]:releaseVersion: {rv} not in \[cse].supportedReleaseVersions: {srv}')
+				return False
+
 		# Everything is fine
 		return True
 

@@ -14,7 +14,10 @@ class Constants(object):
 	# ACME Version
 	version						= '0.7.0-dev'
 
+	# Supported release vesions
+	supportedReleaseVersions = ['1', '2', '2a', '3', '4']
 
+	
 	# List of virtual resources
 
 	virtualResources 				= [ T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.GRP_FOPT, T.PCH_PCU ]
