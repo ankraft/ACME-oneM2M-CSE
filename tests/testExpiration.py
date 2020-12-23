@@ -224,7 +224,7 @@ class TestExpiration(unittest.TestCase):
 					'rn'	: fcntRN,
 					'cnd' 	: CND,
 					'mia'	: expirationCheckDelay,
-					'curTe'	: 23.0
+					'curT0'	: 23.0
 				}}
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.FCNT, dct)
 		self.assertEqual(rsc, RC.created)
