@@ -109,14 +109,10 @@ class AnnounceableResource(Resource):
 		# get  all resource specific policies and add the mandatory ones
 		announcedAttributes = self._getAnnouncedAttributes(policies)
 
-
 		if isCreate:
-
-			localCsi = Configuration.get('cse.csi')
-
 			dct:dict = { tpe : {  # with the announced variant of the tpe
 							'et'	: self.et,
-							'lnk'	: f'{localCsi}/{self.ri}',
+							'lnk'	: f'{CSE.cseCsi}/{self.ri}',
 							# set by parent: ri, pi, ct, lt, et
 						}
 				}
@@ -137,7 +133,7 @@ class AnnounceableResource(Resource):
 			#	overwrite (!) acpi
 			#
 			if (acpi := self.acpi) is not None:
-				acpi = [ f'{localCsi}/{acpi}' for acpi in self.acpi ]
+				acpi = [ f'{CSE.cseCsi}/{acpi}' for acpi in self.acpi ]	# set to local CSE.csi
 			else:
 				acpi = []
 			# add remote acpi so that we will have access

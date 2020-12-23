@@ -74,7 +74,7 @@ class ACP(AnnounceableResource):
 
 	def validateAnnouncedDict(self, dct:dict) -> dict:
 		if (acr := Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs/acr')) is not None:
-			acr.append( { 'acor': [ CSE.remote.cseCsi ], 'acop': Permission.ALL } )
+			acr.append( { 'acor': [ CSE.cseCsi ], 'acop': Permission.ALL } )
 		return dct
 
 

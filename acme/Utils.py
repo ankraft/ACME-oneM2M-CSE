@@ -72,7 +72,7 @@ def _randomID() -> str:
 
 
 def fullRI(ri:str) -> str:
-	return f'{Configuration.get("cse.csi")}/{ri}'
+	return f'{CSE.cseCsi}/{ri}'
 
 
 def isSPRelative(uri:str) -> bool:

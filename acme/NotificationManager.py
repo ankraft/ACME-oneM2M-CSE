@@ -32,8 +32,9 @@ class NotificationManager(object):
 
 	def __init__(self) -> None:
 		self.lockBatchNotification = Lock()	# Lock for batchNotifications
+		self.enableNotifications = Configuration.get('cse.enableNotifications')
 
-		if Configuration.get('cse.enableNotifications'):
+		if self.enableNotifications:
 			Logging.log('Notifications ENABLED')
 		else:
 			Logging.log('Notifications DISABLED')
@@ -50,7 +51,7 @@ class NotificationManager(object):
 	#
 
 	def addSubscription(self, subscription:Resource, originator:str) -> Result:
-		if not Configuration.get('cse.enableNotifications'):
+		if not self.enableNotifications:
 			return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg='notifications are disabled')
 		Logging.logDebug('Adding subscription')
 		if (res := self._getAndCheckNUS(subscription, originator=originator)).lst is None:	# verification requests happen here
@@ -63,7 +64,7 @@ class NotificationManager(object):
 		Logging.logDebug('Removing subscription')
 
 		# This check does allow for removal of subscriptions
-		if not Configuration.get('cse.enableNotifications'):
+		if not self.enableNotifications:
 			return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg='notifications are disabled')
 
 		# Send outstanding batchNotifications
@@ -94,7 +95,7 @@ class NotificationManager(object):
 
 
 	def checkSubscriptions(self, resource:Resource, reason:NotificationEventType, childResource:Resource=None, modifiedAttributes:dict=None) -> None:
-		if not Configuration.get('cse.enableNotifications'):
+		if not self.enableNotifications:
 			return
 
 		if Utils.isVirtualResource(resource):
@@ -301,7 +302,7 @@ class NotificationManager(object):
 	def _sendRequest(self, nu:str, notificationRequest:dict, headers:dict=None, originator:str=None) -> bool:
 		"""	Actually send a Notification request.
 		"""
-		originator = originator if originator is not None else Configuration.get('cse.csi')
+		originator = originator if originator is not None else CSE.cseCsi
 		return CSE.httpServer.sendCreateRequest(nu, originator, data=notificationRequest, headers=headers).rsc == RC.OK
 
 

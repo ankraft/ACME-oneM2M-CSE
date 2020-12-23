@@ -33,7 +33,7 @@ class AnnouncementManager(object):
 		CSE.event.addHandler(CSE.event.remoteCSEHasRegistered, self.handleRemoteCSEHasRegistered)			# type: ignore
 		CSE.event.addHandler(CSE.event.remoteCSEHasDeregistered, self.handleRemoteCSEHasDeregistered)	# type: ignore
 		
-		# TODO self.checkInterval						= Configuration.get('cse.announcements.checkInterval')
+		# Configuration values
 		self.checkInterval			= Configuration.get('cse.announcements.checkInterval')
 		self.announcementsEnabled 	= Configuration.get('cse.announcements.enable')
 
@@ -147,7 +147,7 @@ class AnnouncementManager(object):
 			return
 		Logging.logDebug(f'Announce resource: {resource.ri} to all connected csr')
 		for csi in resource.at:
-			if csi == CSE.remote.cseCsi or csi.startswith(f'{CSE.remote.cseCsi}/'):
+			if csi == CSE.cseCsi or csi.startswith(f'{CSE.cseCsi}/'):
 				Logging.logWarn('Targeting own CSE. Ignored.')
 				self._removeAnnouncementFromResource(resource, csi)
 				continue
@@ -185,8 +185,8 @@ class AnnouncementManager(object):
 
 		# Get target URL for request
 		if poas is not None and len(poas) > 0:
-			poa = poas[0]												# Only first POA
-			url = f'{poa}{CSE.remote.cseCsi}'			# remote CSR is always own csi
+			poa = poas[0]						# Only first POA
+			url = f'{poa}{CSE.cseCsi}'			# remote CSR is always own csi
 		else:
 			Logging.logWarn('Cannot get URL')
 			return
@@ -299,7 +299,7 @@ class AnnouncementManager(object):
 		CSIsFromAnnounceTo = []
 		for announcedResource in at:
 			if len(sp := announcedResource.split('/')) >= 2:
-				if (csi := f'/{sp[1]}') == CSE.remote.cseCsi or csi.startswith(f'{CSE.remote.cseCsi}/'):	# Ignore own CSE as target
+				if (csi := f'/{sp[1]}') == CSE.cseCsi or csi.startswith(f'{CSE.cseCsi}/'):	# Ignore own CSE as target
 					continue
 				CSIsFromAnnounceTo.append(csi)
 
@@ -344,7 +344,6 @@ class AnnouncementManager(object):
 		Logging.logDebug(f'Update announced resource: {resource.ri} to: {csi}')
 
 		data = resource.createAnnouncedResourceDict(remoteCSR, isCreate=False, csi=csi)
-		tyAnnc = T(resource.ty).announced()
 
 		# Get target URL for request
 		if poas is not None and len(poas) > 0:
@@ -371,7 +370,7 @@ class AnnouncementManager(object):
 		"""
 		csi  = remoteCSR.csi
 		poas = remoteCSR.poa
-		if csi == CSE.remote.cseCsi:	# own registrar
+		if csi == CSE.cseCsi:	# own registrar
 			if CSE.remote.registrarCSE is not None:
 				csi = CSE.remote.registrarCSE.csi
 				poas = CSE.remote.registrarCSE.poa

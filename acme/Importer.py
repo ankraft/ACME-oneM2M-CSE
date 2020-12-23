@@ -39,9 +39,9 @@ class Importer(object):
 			# But we still need the CSI etc of the CSE
 			rss = CSE.dispatcher.retrieveResourcesByType(T.CSEBase)
 			if rss is not None:
-				Configuration.set('cse.csi', rss[0]['csi'])
-				Configuration.set('cse.ri', rss[0]['ri'])
-				Configuration.set('cse.rn', rss[0]['rn'])
+				Configuration.set('cse.csi', rss[0].csi)
+				Configuration.set('cse.ri', rss[0].ri)
+				Configuration.set('cse.rn', rss[0].rn)
 				return True
 			Logging.logErr('CSE not found')
 			return False
@@ -82,7 +82,7 @@ class Importer(object):
 				return False
 			ty = resource.ty
 			if ty == T.CSEBase:
-				Configuration.set('cse.csi', resource.csi)
+				Configuration.set('cse.csi', resource.csi)	# TODO set in CSE as well!!!
 				Configuration.set('cse.ri', resource.ri)
 				Configuration.set('cse.rn', resource.rn)
 				hasCSE = True

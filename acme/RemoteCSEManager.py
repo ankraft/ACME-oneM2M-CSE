@@ -28,15 +28,14 @@ class RemoteCSEManager(object):
 		self.isConnected 						= False
 		self.remoteAddress						= Configuration.get('cse.registrar.address')
 		self.remoteRoot 						= Configuration.get('cse.registrar.root')
-		self.originator							= Configuration.get('cse.csi')	# Originator is the own CSE-ID
-		self.cseCsi								= Configuration.get('cse.csi')
+		self.originator							= CSE.cseCsi					# Originator is the own CSE-ID
 		self.cseRI								= Configuration.get('cse.ri')
 		self.checkInterval						= Configuration.get('cse.registrar.checkInterval')
 		self.checkLiveliness					= Configuration.get('cse.registration.checkLiveliness')
 		self.registrarCSI						= Configuration.get('cse.registrar.csi')
 		self.registrarCseRN						= Configuration.get('cse.registrar.rn')
 		self.registrarCSEURL					= f'{self.remoteAddress}{self.remoteRoot}/~{self.registrarCSI}/{self.registrarCseRN}'
-		self.registrarCSRURL					= f'{self.registrarCSEURL}{self.cseCsi}'
+		self.registrarCSRURL					= f'{self.registrarCSEURL}{CSE.cseCsi}'
 		self.excludeCSRAttributes				= Configuration.get('cse.registrar.excludeCSRAttributes')
 		self.ownRegistrarCSR:Resource			= None 	# The own CSR at the registrar if there is one
 		self.registrarCSE:Resource				= None 	# The registrar CSE if there is one
@@ -407,7 +406,7 @@ class RemoteCSEManager(object):
 		localCSE = Utils.getCSE().resource
 		csr = CSR.CSR(rn=localCSE.ri) # ri as name!
 		self._copyCSE2CSR(csr, localCSE)
-		#csr['ri'] = self.cseCsi							# override ri with the own cseID
+		#csr['ri'] = CSE.cseCsi							# override ri with the own cseID
 		#csr['cb'] = Utils.getIdFromOriginator(localCSE.csi)	# only the stem
 		for _ in ['ty','ri', 'ct', 'lt']: csr.delAttribute(_, setNone=False)	# remove a couple of attributes
 		#for _ in ['ty','ri', 'ct', 'lt']: del(csr[_])	# remove a couple of attributes
@@ -546,7 +545,7 @@ class RemoteCSEManager(object):
 		if (url := self._getForwardURL(id)) is None:
 			return Result(rsc=RC.notFound, dbg=f'URL not found for id: {id}')
 		if originator is None:
-			originator = self.cseCsi
+			originator = CSE.cseCsi
 		Logging.log('Retrieve remote resource from: {url}')
 		res = CSE.httpServer.sendRetrieveRequest(url, originator)
 		if res.rsc != RC.OK:
@@ -558,10 +557,10 @@ class RemoteCSEManager(object):
 		""" Check whether an ID is a targeting a remote CSE via a CSR. """
 		if Utils.isSPRelative(id):
 			ids = id.split('/')
-			return len(ids) > 0 and ids[0] != self.cseCsi[1:]
+			return len(ids) > 0 and ids[0] != CSE.cseCsi[1:]
 		elif Utils.isAbsolute(id):
 			ids = id.split('/')
-			return len(ids) > 2 and ids[2] != self.cseCsi[1:]
+			return len(ids) > 2 and ids[2] != CSE.cseCsi[1:]
 		return False
 
 

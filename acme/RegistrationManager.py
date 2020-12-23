@@ -225,7 +225,7 @@ class RegistrationManager(object):
 								  selfOriginators=[csr.csi]).resource
 			if acpResource is None:
 				return False
-			csr['acpi'] = [ f'{CSE.remote.cseCsi}/{acpResource.ri}' ]	# Set ACPI (anew)
+			csr['acpi'] = [ f'{CSE.cseCsi}/{acpResource.ri}' ]	# Set ACPI (anew)
 
 		# Allow remote CSE to access the CSE, at least to read
 		self._addToAccessCSBaseACP(originator)

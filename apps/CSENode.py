@@ -52,14 +52,14 @@ class CSENode(NodeBase):
 
 	# Set this node as the hosting node for the CSE Base
 	def updateCSEBase(self) -> None:
-		if (result := self.retrieveResource(ri=self.csi)).rsc != RC.OK:
+		if (result := self.retrieveResource(ri=CSE.cseCsi)).rsc != RC.OK:
 			Logging.logErr('CSENode: cannot retrieve CSEBase')
 			return
 		dct:dict = { 'm2m:cb' : {
 						'nl' : self.node.ri
 					}
 				}
-		self.updateResource(ri=self.csi, data=dct) # ignore result
+		self.updateResource(ri=CSE.cseCsi, data=dct) # ignore result
 
 
 

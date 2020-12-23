@@ -36,8 +36,7 @@ from resources.Resource import Resource
 class Dispatcher(object):
 
 	def __init__(self) -> None:
-		self.csi 				= Configuration.get('cse.csi')
-		self.csiSlash 			= f'{self.csi}/' 
+		self.csiSlash 			= f'{CSE.cseCsi}/' 
 		self.csiSlashLen 		= len(self.csiSlash)
 		Logging.log('Dispatcher initialized')
 
@@ -725,8 +724,7 @@ class Dispatcher(object):
 
 	#	Create a m2m:uril structure from a list of resources
 	def _resourcesToURIList(self, resources:List[Resource], drt:int) -> dict:
-		# cseid = '/' + Configuration.get('cse.csi') + '/'
-		cseid = f'/{self.csi}/'
+		cseid = f'{CSE.cseCsi}/'	# SP relative. csi already starts with a "/"
 		lst = []
 		for r in resources:
 			lst.append(Utils.structuredPath(r) if drt == DesiredIdentifierResultType.structured else cseid + r.ri)

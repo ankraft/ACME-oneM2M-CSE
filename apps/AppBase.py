@@ -25,8 +25,8 @@ class AppBase(object):
 	def __init__(self, rn: str, originator: str) -> None:
 		self.rn:str 					= rn
 		self.originator:str				= originator
+		self.cseCsi						= CSE.cseCsi
 		self.csern:str					= Configuration.get('cse.rn')
-		self.csi:str					= Configuration.get('cse.csi')
 		self.srn:str 					= self.csern + '/' + self.rn
 		self.url:str					= Configuration.get('http.address') + Configuration.get('http.root')
 		self.worker:BackgroundWorker 	= None

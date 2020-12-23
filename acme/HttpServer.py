@@ -30,8 +30,7 @@ class HttpServer(object):
 
 		# Initialize the http server
 		# Meaning defaults are automatically provided.
-		self.csi 				= Configuration.get('cse.csi')
-		self.flaskApp			= Flask(self.csi)
+		self.flaskApp			= Flask(CSE.cseCsi)
 		self.cseri 				= Configuration.get('cse.ri')
 		self.cseOriginator		= Configuration.get('cse.originator')
 		self.rootPath			= Configuration.get('http.root')
@@ -158,7 +157,7 @@ class HttpServer(object):
 		Logging.logDebug(f'==> {operation.name}: /{path}') 	# path = request.path  w/o the root
 		Logging.logDebug(f'Headers: \n{str(request.headers)}')
 		try:
-			httpRequestResult = Utils.dissectHttpRequest(request, operation, Utils.retrieveIDFromPath(path, self.csern, self.csi))
+			httpRequestResult = Utils.dissectHttpRequest(request, operation, Utils.retrieveIDFromPath(path, self.csern, CSE.cseCsi))
 			if httpRequestResult.status:
 				if operation in [ Operation.CREATE, Operation.UPDATE ]:
 					Logging.logDebug(f'Body: \n{str(httpRequestResult.request.data)}')

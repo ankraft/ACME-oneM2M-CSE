@@ -68,13 +68,13 @@ class GroupManager(object):
 			#Check whether it is a local resource or not
 			if Utils.isSPRelative(mid):
 				targetCSE = f'/{mid.split("/")[0]}'
-				if targetCSE != CSE.Configuration.get('cse.csi'):
+				if targetCSE != CSE.cseCsi:
 					""" RETRIEVE member from a remote CSE """
 					isLocalResource = False
 					if (url := CSE.remote._getForwardURL(mid)) is None:
 						return Result(status=False, rsc=RC.notFound, dbg=f'forwarding URL not found for group member: {mid}')
 					Logging.log(f'Retrieve request to: {url}')
-					remoteResult = CSE.httpServer.sendRetrieveRequest(url, CSE.Configuration.get('cse.csi'))
+					remoteResult = CSE.httpServer.sendRetrieveRequest(url, CSE.cseCsi)
 
 			# get the resource and check it
 			hasFopt = False
