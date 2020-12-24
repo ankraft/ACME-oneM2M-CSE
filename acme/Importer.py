@@ -30,6 +30,18 @@ class Importer(object):
 
 
 	def importResources(self, path:str=None) -> bool:
+
+		def setCSEParameters(csi:str, ri:str, rn:str) -> None:
+			""" Set some values in the configuration and the CSE instance.
+			"""
+			CSE.cseCsi = csi
+			Configuration.set('cse.csi', csi)
+			CSE.cseRi  = ri
+			Configuration.set('cse.ri', ri)
+			CSE.cseRn  = rn
+			Configuration.set('cse.rn', rn)
+
+
 		countImport = 0
 		countUpdate = 0
 
@@ -39,15 +51,11 @@ class Importer(object):
 			# But we still need the CSI etc of the CSE
 			rss = CSE.dispatcher.retrieveResourcesByType(T.CSEBase)
 			if rss is not None:
-				Configuration.set('cse.csi', rss[0].csi)
-				Configuration.set('cse.ri', rss[0].ri)
-				Configuration.set('cse.rn', rss[0].rn)
+				# Set some values in the configuration and the CSE instance
+				setCSEParameters(rss[0].csi, rss[0].ri, rss[0].rn)
 				return True
 			Logging.logErr('CSE not found')
 			return False
-
-		# get the originator for the creator attribute of imported resources
-		originator = Configuration.get('cse.originator')
 
 		# Import
 		if path is None:
@@ -75,16 +83,15 @@ class Importer(object):
 				resource = resourceFromDict(self.readJSONFromFile(fn), create=True, isImported=True).resource
 
 			# Check resource creation
-			if not CSE.registration.checkResourceCreation(resource, originator):
+			if not CSE.registration.checkResourceCreation(resource, CSE.cseOriginator):
 				continue
 			if (res := CSE.dispatcher.createResource(resource)).resource is None:
 				Logging.logErr(f'Error during import: {res.dbg}')
 				return False
 			ty = resource.ty
 			if ty == T.CSEBase:
-				Configuration.set('cse.csi', resource.csi)	# TODO set in CSE as well!!!
-				Configuration.set('cse.ri', resource.ri)
-				Configuration.set('cse.rn', resource.rn)
+				# Set some values in the configuration and the CSE instance
+				setCSEParameters(resource.csi, resource.ri, resource.rn)
 				hasCSE = True
 			elif ty == T.ACP:
 				hasACP = True
@@ -123,7 +130,7 @@ class Importer(object):
 						if (pi := resource.pi) is not None:
 							parentResource = CSE.dispatcher.retrieveResource(pi).resource
 						# Check resource creation
-						if not CSE.registration.checkResourceCreation(resource, originator):
+						if not CSE.registration.checkResourceCreation(resource, CSE.cseOriginator):
 							continue
 						# Add the resource
 						CSE.dispatcher.createResource(resource, parentResource)

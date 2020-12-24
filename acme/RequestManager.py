@@ -32,7 +32,6 @@ class RequestManager(object):
 
 	def __init__(self) -> None:
 		self.enableTransit 			= Configuration.get('cse.enableTransitRequests')
-		self.cseri 					= Configuration.get('cse.ri')
 		self.flexBlockingBlocking	= Configuration.get('cse.flexBlockingPreference') == 'blocking'
 
 		Logging.log('RequestManager initialized')
@@ -112,7 +111,7 @@ class RequestManager(object):
 		Logging.logDebug(f'UPDATE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
 
 		# Don't update the CSEBase
-		if request.id == self.cseri:
+		if request.id == CSE.cseRi:
 			return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for CSEBase')
 
 		# handle transit requests
@@ -148,7 +147,7 @@ class RequestManager(object):
 		Logging.logDebug(f'DELETE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
 
 		# Don't update the CSEBase
-		if request.id == self.cseri:
+		if request.id == CSE.cseRi:
 			return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for CSEBase')
 
 		# handle transit requests

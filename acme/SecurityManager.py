@@ -19,8 +19,12 @@ from resources.Resource import Resource
 class SecurityManager(object):
 
 	def __init__(self) -> None:
+		self.enableACPChecks 		= Configuration.get('cse.security.enableACPChecks')
+		self.defaultACPI 			= Configuration.get('cse.security.defaultACPI')
+		self.csebaseAccessACPI		= Configuration.get('cse.security.csebaseAccessACPI')
+
 		Logging.log('SecurityManager initialized')
-		if Configuration.get('cse.security.enableACPChecks'):
+		if self.enableACPChecks:
 			Logging.log('ACP checking ENABLED')
 		else:
 			Logging.log('ACP checking DISABLED')
@@ -32,7 +36,7 @@ class SecurityManager(object):
 
 
 	def hasAccess(self, originator:str, resource:Resource, requestedPermission:Permission, checkSelf:bool=False, ty:int=None, isCreateRequest:bool=False, parentResource:Resource=None) -> bool:
-		if not Configuration.get('cse.security.enableACPChecks'):	# check or ignore the check
+		if not self.enableACPChecks:	# check or ignore the check
 			return True
 
 		if ty is not None:
@@ -41,13 +45,13 @@ class SecurityManager(object):
 			if ty == T.AE and isCreateRequest:
 				# originator may be None or empty or C or S. 
 				# That is okay if type is AE and this is a create request
-				if originator is None or len(originator) == 0 or Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedAEOriginators')):
+				if originator is None or len(originator) == 0 or Utils.isAllowedOriginator(originator, CSE.registration.allowedAEOriginators):
 					Logging.logDebug('Originator for AE CREATE. OK.')
 					return True
 
 			# Checking for remoteCSE
 			if ty == T.CSR and isCreateRequest:
-				if Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedCSROriginators')):
+				if Utils.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators):
 					Logging.logDebug('Originator for CSR CREATE. OK.')
 					return True
 				else:
@@ -55,7 +59,7 @@ class SecurityManager(object):
 					return False
 
 			if T(ty).isAnnounced():
-				if Utils.isAllowedOriginator(originator, Configuration.get('cse.registration.allowedCSROriginators')) or originator[1:] == parentResource.ri:
+				if Utils.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators) or originator[1:] == parentResource.ri:
 					Logging.logDebug('Originator for Announcement. OK.')
 					return True
 				else:

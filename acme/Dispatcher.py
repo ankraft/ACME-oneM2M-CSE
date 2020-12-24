@@ -36,8 +36,9 @@ from resources.Resource import Resource
 class Dispatcher(object):
 
 	def __init__(self) -> None:
-		self.csiSlash 			= f'{CSE.cseCsi}/' 
-		self.csiSlashLen 		= len(self.csiSlash)
+		self.csiSlash 					= f'{CSE.cseCsi}/' 
+		self.csiSlashLen 				= len(self.csiSlash)
+		self.sortDiscoveryResources 	= Configuration.get('cse.sortDiscoveredResources')
 		Logging.log('Dispatcher initialized')
 
 
@@ -761,7 +762,7 @@ class Dispatcher(object):
 			# add all found resources under the same type tag to the rootResource
 			if len(result) > 0:
 				# sort resources by type and then by lowercase rn
-				if Configuration.get('cse.sortDiscoveredResources'):
+				if self.sortDiscoveryResources:
 					result.sort(key=lambda x:(x.ty, x.rn.lower()))
 				targetResource[result[0].tpe] = [r.asDict(embedded=False) for r in result]
 				# TODO not all child resources are lists [...] Handle just to-1 relations
@@ -781,7 +782,7 @@ class Dispatcher(object):
 		t = []
 
 		# sort resources by type and then by lowercase rn
-		if Configuration.get('cse.sortDiscoveredResources'):
+		if self.sortDiscoveryResources:
 			resources.sort(key=lambda x:(x.ty, x.rn.lower()))
 		
 		for r in resources:

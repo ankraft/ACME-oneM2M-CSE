@@ -53,9 +53,8 @@ class ACP(AnnounceableResource):
 
 		# add admin originator	
 		if Configuration.get('cse.acp.addAdminOrignator'):
-			cseOriginator = Configuration.get('cse.originator')
-			self.addPermissionOriginator(cseOriginator)
-			self.addSelfPermissionOriginator(cseOriginator)
+			self.addPermissionOriginator(CSE.cseOriginator)
+			self.addSelfPermissionOriginator(CSE.cseOriginator)
 		return Result(status=True)
 
 

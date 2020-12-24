@@ -31,8 +31,6 @@ class HttpServer(object):
 		# Initialize the http server
 		# Meaning defaults are automatically provided.
 		self.flaskApp			= Flask(CSE.cseCsi)
-		self.cseri 				= Configuration.get('cse.ri')
-		self.cseOriginator		= Configuration.get('cse.originator')
 		self.rootPath			= Configuration.get('http.root')
 		self.serverAddress		= Configuration.get('http.address')
 		self.useTLS 			= Configuration.get('cse.security.useTLS')
@@ -77,8 +75,8 @@ class HttpServer(object):
 		# Register the endpoint for the web UI
 		# This is done by instancing the otherwise "external" web UI
 		self.webui = WebUI(self.flaskApp, 
-						   defaultRI=self.cseri, 
-						   defaultOriginator=self.cseOriginator, 
+						   defaultRI=CSE.cseRi, 
+						   defaultOriginator=CSE.cseOriginator, 
 						   root=self.webuiRoot,
 						   webuiDirectory=self.webuiDirectory,
 						   version=C.version)
@@ -107,9 +105,6 @@ class HttpServer(object):
 		if not self.verifyCertificate:	# only when we also verify  certificates
 			urllib3.disable_warnings()
 
-		# Keep some values for optimization
-		self.csern	= Configuration.get('cse.rn') 
-		self.cseri	= Configuration.get('cse.ri')
 
 
 	def run(self) -> None:
@@ -157,7 +152,7 @@ class HttpServer(object):
 		Logging.logDebug(f'==> {operation.name}: /{path}') 	# path = request.path  w/o the root
 		Logging.logDebug(f'Headers: \n{str(request.headers)}')
 		try:
-			httpRequestResult = Utils.dissectHttpRequest(request, operation, Utils.retrieveIDFromPath(path, self.csern, CSE.cseCsi))
+			httpRequestResult = Utils.dissectHttpRequest(request, operation, Utils.retrieveIDFromPath(path, CSE.cseRn, CSE.cseCsi))
 			if httpRequestResult.status:
 				if operation in [ Operation.CREATE, Operation.UPDATE ]:
 					Logging.logDebug(f'Body: \n{str(httpRequestResult.request.data)}')
@@ -215,7 +210,7 @@ class HttpServer(object):
 
 	# Redirect request to / to webui
 	def redirectRoot(self) -> Response:
-		return flask.redirect(Configuration.get('cse.webui.root'), code=302)
+		return flask.redirect(self.webuiRoot, code=302)
 
 
 	def getVersion(self) -> str:

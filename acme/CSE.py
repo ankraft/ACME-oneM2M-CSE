@@ -59,6 +59,9 @@ appsStarted:bool 					= False
 supportedReleaseVersions:list 					= None
 cseType:CSEType									= None
 cseCsi:str										= None
+cseRi:str 										= None
+cseRn:str										= None
+cseOriginator:str								= None
 defaultSerialization:ContentSerializationType	= None
 
 
@@ -76,7 +79,8 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	global registration, remote, request, security, statistics, storage, event
 	global rootDirectory
 	global aeStatistics
-	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi
+	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseRi, cseRn
+	global cseOriginator
 
 	rootDirectory = os.getcwd()					# get the root directory
 	os.environ["FLASK_ENV"] = "development"		# get rid if the warning message from flask. 
@@ -99,6 +103,10 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	supportedReleaseVersions = Configuration.get('cse.supportedReleaseVersions')
 	cseType					 = Configuration.get('cse.type')
 	cseCsi					 = Configuration.get('cse.csi')
+	cseRi					 = Configuration.get('cse.ri')
+	cseRn					 = Configuration.get('cse.rn')
+	cseOriginator			 = Configuration.get('cse.originator')
+
 	defaultSerialization	 = Configuration.get('cse.defaultSerialization')
 
 	# init Logging

@@ -40,7 +40,7 @@ class AEBase(AppBase):
 													'rn' : self.rn,
 													'api' : api,
 													'nl' : self.aeNode.node.ri if self.aeNode.node is not None else None,
-													'poa' : [ Configuration.get('http.address') ],
+													'poa' : [ CSE.httpServer.serverAddress ],
 													'rr' : True,
 													'srv' : [ "3", "4" ],
 													'at' : [ '/id-in']

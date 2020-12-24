@@ -591,7 +591,7 @@ def resourceDiff(old:Union[Resource.Resource, dict], new:Union[Resource.Resource
 
 
 def getCSE() -> Result:
-	return CSE.dispatcher.retrieveResource(Configuration.get('cse.ri'))
+	return CSE.dispatcher.retrieveResource(CSE.cseRi)
 
 	
 def fanoutPointResource(id: str) -> Resource.Resource:
