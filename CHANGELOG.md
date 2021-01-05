@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [WEB] Added dark mode (for supported browsers).
 - [CSE] Added attribute policies for TS-0023 R4 ModuleClasses, Devices etc.
 - [CSE] Added attribute policies for Generic Interworking and AllJoyn specialisations.
+- [CSE] Added diagram generation (in PlantUML format) of resource tree and deployment structure.
 
 ### Changed
 - [WEB] The web UI can now also be used as a stand-alone application to connect to third-party CSEs.
