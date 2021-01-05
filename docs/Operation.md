@@ -42,4 +42,17 @@ For example, the path */access/v1/devices* can be mapped to */cse-mn?ty=14&fu=1&
 See the [configuration](Configuration.md) for more examples.
 
 
+## Resource Tree and Deployment Infrastructure
+
+The CSE can generate a diagram with an overview about the hosted resource tree and the current deployment infrastructure of remote CSE's.
+
+![](images/structure.png)
+
+This feature must be enabled in the configuration file under "\[server.http]->enableStructureEndpoint" (see also [Configuration](Configuration.md#server_http)). 
+
+**ATTENTION**: Enabling this feature might reveal sensitive data and should be disabled if not used.
+
+When enabled the http server creates an additional endpoint */\_\_structure__*. A GET request to that endpoint returns a diagram description in [PlanUML](https://plantuml.com) format that can be transformed in images with various tools (for example, with the online editor on the PlantUML website). An optional argument *lvl=&lt;int>* can be provided to the URL to limit the size of the resource tree in the diagram.
+
+
 [← README](../README.md) 

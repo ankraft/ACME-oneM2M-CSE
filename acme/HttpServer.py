@@ -33,6 +33,8 @@ class HttpServer(object):
 		self.flaskApp			= Flask(CSE.cseCsi)
 		self.rootPath			= Configuration.get('http.root')
 		self.serverAddress		= Configuration.get('http.address')
+		self.listenIF			= Configuration.get('http.listenIF')
+		self.port 				= Configuration.get('http.port')
 		self.useTLS 			= Configuration.get('cse.security.useTLS')
 		self.verifyCertificate	= Configuration.get('cse.security.verifyCertificate')
 		self.tlsVersion			= Configuration.get('cse.security.tlsVersion').lower()
@@ -88,6 +90,12 @@ class HttpServer(object):
 			self.addEndpoint(configEndpoint, handler=self.handleConfig, methods=['GET'], strictSlashes=False)
 			self.addEndpoint(f'{configEndpoint}/<path:path>', handler=self.handleConfig, methods=['GET', 'PUT'])
 
+		# Enable the config endpoint
+		if Configuration.get('http.enableStructureEndpoint'):
+			structureEndpoint = f'{self.rootPath}/__structure__'
+			Logging.log(f'Registering structure endpoint at: {structureEndpoint}')
+			self.addEndpoint(structureEndpoint, handler=self.handleStructure, methods=['GET'], strictSlashes=False)
+			self.addEndpoint(f'{structureEndpoint}/<path:path>', handler=self.handleStructure, methods=['GET', 'PUT'])
 
 		# Add mapping / macro endpoints
 		self.mappings = {}
@@ -129,8 +137,8 @@ class HttpServer(object):
 									}[self.tlsVersion.lower()]
 								)
 					context.load_cert_chain(self.caCertificateFile, self.caPrivateKeyFile)
-				self.flaskApp.run(host=Configuration.get('http.listenIF'), 
-								  port=Configuration.get('http.port'),
+				self.flaskApp.run(host=self.listenIF, 
+								  port=self.port,
 								  threaded=Configuration.get('http.multiThread'),
 								  request_handler=ACMERequestHandler,
 								  ssl_context=context,
@@ -210,14 +218,22 @@ class HttpServer(object):
 
 	# Redirect request to / to webui
 	def redirectRoot(self) -> Response:
+		"""	Redirect a request to the webroot to the web UI.
+		"""
 		return flask.redirect(self.webuiRoot, code=302)
 
 
 	def getVersion(self) -> str:
+		"""	Handle a GET request to return the CSE version.
+		"""
 		return C.version
 
 
 	def handleConfig(self, path:str=None) -> str:
+		"""	Handle a configuration request. This can either be e GET request to query a 
+			configuration value, or a PUT request to set a new value to a configuration setting.
+			Note, that only a few of configuration settings are supported.
+		"""
 		if request.method == 'GET':
 			if path == None or len(path) == 0:
 				return Configuration.print()
@@ -245,6 +261,17 @@ class HttpServer(object):
 				return 'nak'
 			return 'nak'
 		return 'unsupported'
+
+
+	def handleStructure(self, path:str='puml') -> Union[Response, Tuple[str, int], str]:
+		"""	Handle a structure request. Return a description of the CSE's current resource
+			and registrar / registree deployment.
+			An optional parameter 'lvl=<int>' can limit the generated resource tree's depth.
+		"""
+		lvl = request.args.get('lvl', default=0, type=int)
+		if path == 'puml':
+			return CSE.statistics.getStructurePuml(lvl)
+		return 'unsupported', 422
 
 
 	#########################################################################

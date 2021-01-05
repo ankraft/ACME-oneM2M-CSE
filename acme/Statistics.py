@@ -11,10 +11,12 @@ from Logging import Logging
 from Configuration import Configuration
 import CSE, Utils
 import datetime
+from urllib.parse import urlparse
 from copy import deepcopy
 from threading import Lock
 from helpers.BackgroundWorker import BackgroundWorkerPool
 from resources.Resource import Resource
+from Types import CSEType, ResourceTypes as T
 
 
 
@@ -186,3 +188,104 @@ class Statistics(object):
 		with self.statLock:
 			return CSE.storage.updateStatistics(self.stats)
 	
+	#########################################################################
+	#
+	#	CSE Structure handling
+
+	def getStructurePuml(self, maxLevel:int=0) -> str:
+		"""	This function will generate a PlanUML graph of a CSE's structure, including:
+				- The CSE, Type, http, port
+				- The CSE's resource tree
+				- The Registrar CSE (if any)
+				- A list of descendant CSE's (if any)
+		"""
+
+		def getChildren(res:Resource, level:int) -> str:
+			""" Find and print the children in the tree structure. """
+			result = ''
+			if maxLevel > 0 and level == maxLevel:
+				return result
+			chs = CSE.dispatcher.directChildResources(res.ri)
+			for ch in chs:
+				result += ' ' * 2 * level + f'|_ {ch.rn} <color:grey>< {T(ch.ty).tpe()} ></color>\n'
+				result += getChildren(ch, level+1)
+			return result
+
+		result = """@startuml
+!define lightgrey eeeeee
+skinparam defaultTextAlignment center
+skinparam note {
+    BorderColor grey
+    backgroundColor lightgrey
+    RoundCorner 25
+    TextAlignment left
+    FontSize 10
+}
+skinparam rectangle {
+	Shadowing<< CSE >> false
+	bordercolor<< CSE >> #cccccc
+}
+"""
+
+		# Own CSE node & http interface
+		result += 'rectangle << CSE >> {\n'
+		address = urlparse(CSE.httpServer.serverAddress)
+		(ip, _) = tuple(address.netloc.split(':'))
+		result += f'node CSE as "<color:green>{CSE.cseCsi[1:]}</color> ({CSE.cseType.name})\\n{ip}" #white\n'
+
+		# Own http interface
+		http = 'https' if CSE.httpServer.useTLS else 'http'
+		result += f'interface "{http}\\n{CSE.httpServer.port}" as http_own #white\n'
+
+		# Build Resource Tree
+		result += 'note right of CSE\n'
+		result += '**Resource Tree**\n\n'
+		cse = Utils.getCSE().resource
+		result += f'{cse.rn}\n'
+		result += getChildren(cse, 0)
+		result += 'end note\n'
+
+		# Build Own
+		result += 'http_own - [CSE] : \\t\n'
+		result += '}\n' # rectangle
+
+		# Has parent Registrar CSE?
+		if CSE.cseType != CSEType.IN and CSE.remote.remoteAddress is not None:
+			registrarCSE = CSE.remote.registrarCSE
+			bg = 'white' if registrarCSE is not None else 'lightgrey'
+			color = 'green' if registrarCSE is not None else 'black'
+			address = urlparse(CSE.remote.remoteAddress)
+			(ip, port) = tuple(address.netloc.split(':'))
+			registrarType = CSEType(registrarCSE.cst).name if registrarCSE is not None else '???'
+			result += f'cloud PARENT as "<color:{color}>{CSE.remote.registrarCSI[1:]}</color> ({registrarType})\\n{CSE.remote.remoteAddress}" #{bg}\n'
+			result += 'CSE -UP- PARENT\n'
+
+		
+		# Has CSE descendants?
+		if CSE.cseType != CSEType.ASN:
+			cnt = 0
+			connections = {}
+			for desc in CSE.remote.descendantCSR.keys():
+				csi = desc[1:]
+				(csr, atCsi) = CSE.remote.descendantCSR[desc]
+				address = f'\\n{csr.poa}' if csr is not None else ''
+				tpe = f' ({CSEType(csr.cst).name})' if csr is not None else ''
+				shape = 'node' if csr else 'rectangle'
+				result += f'{shape} d{cnt} as "<color:green>{csi}</color>{tpe}{address}" #white\n'
+				connections[desc] = (cnt, atCsi)
+				cnt += 1
+			
+			for key in connections.keys():
+				connection = connections[key]
+				nodeNr = connection[0]
+				atCsi = connection[1]
+				if atCsi == CSE.cseCsi:
+					result += f'd{nodeNr} -UP- CSE\n'
+				else:
+					if atCsi in connections:
+						subcon = connections[atCsi]
+						result += f'd{connection[0]} -UP- d{subcon[0]}\n'
+
+		# end
+		result += '@enduml'
+		return result
