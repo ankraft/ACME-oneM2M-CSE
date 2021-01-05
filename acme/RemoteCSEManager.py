@@ -25,7 +25,6 @@ from helpers.BackgroundWorker import BackgroundWorkerPool
 class RemoteCSEManager(object):
 
 	def __init__(self) -> None:
-		self.isConnected 						= False
 		self.remoteAddress						= Configuration.get('cse.registrar.address')
 		self.remoteRoot 						= Configuration.get('cse.registrar.root')
 		self.checkInterval						= Configuration.get('cse.registrar.checkInterval')
@@ -37,7 +36,7 @@ class RemoteCSEManager(object):
 		self.excludeCSRAttributes				= Configuration.get('cse.registrar.excludeCSRAttributes')
 		self.ownRegistrarCSR:Resource			= None 	# The own CSR at the registrar if there is one
 		self.registrarCSE:Resource				= None 	# The registrar CSE if there is one
-		self.descendantCSR:Dict[str, Tuple[Resource, str]]	= {}	# dict of descendantCSR's . csi : (CSR, registeredATcsi)
+		self.descendantCSR:Dict[str, Tuple[Resource, str]]	= {}	# dict of descendantCSR's - "csi : (CSR, registeredATcsi)". CSR is None for CSEs further down 
 		self.enableRemoteCSE				 	= Configuration.get('cse.enableRemoteCSE')
 
 
@@ -64,7 +63,19 @@ class RemoteCSEManager(object):
 	# Start the monitor in a thread. 
 	def start(self) -> None:
 		if not self.enableRemoteCSE:
-			return;
+			return
+		
+		Logging.logDebug('Rebuild internal descendants list')
+		self.descendantCSR.clear()
+		for csr in CSE.dispatcher.retrieveResourcesByType(T.CSR):
+			if (csi := csr.csi) != self.registrarCSI:			# Skipping the own registrar csr
+				Logging.logDebug(f'Addind remote CSE: {csi}')
+				self.descendantCSR[csi] = (csr, CSE.cseCsi)		# Add the direct child CSR
+				for dcse in csr.dcse:							# Add the descendant CSE's
+					Logging.logDebug(f'Adding descendant CSE: {csi} -> {dcse}')
+					self.descendantCSR[dcse] = (None, csi)
+
+
 		Logging.log('Starting remote CSE connection monitor')
 		BackgroundWorkerPool.newWorker(self.checkInterval, self.connectionMonitorWorker, 'csrMonitor').start()
 
@@ -72,7 +83,7 @@ class RemoteCSEManager(object):
 	# Stop the monitor. Also delete the CSR resources on both sides
 	def stop(self) -> None:
 		if not self.enableRemoteCSE:
-			return;
+			return
 		Logging.log('Stopping remote CSE connection monitor')
 
 		# Stop the worker
@@ -184,7 +195,7 @@ class RemoteCSEManager(object):
 			return
 
 		# Add the descendants
-		self.descendantCSR[csi] = (remoteCSR, csi)
+		self.descendantCSR[csi] = (remoteCSR, CSE.cseCsi)
 		if remoteCSR.dcse is not None:			# add also this csi from the dcse attribute
 			for dcsecsi in remoteCSR.dcse:
 				if dcsecsi in self.descendantCSR:	# don't overwrite existing ones
@@ -207,32 +218,46 @@ class RemoteCSEManager(object):
 		"""	Event handler for removals of the CSE/CSR CSI
 			from the list of registered CSI. 
 		"""
+		# Remove the deregistering CSE from the descendant list
 		if (csi := remoteCSR.csi) is not None and csi in self.descendantCSR:
 			del self.descendantCSR[csi]
+		# Also remove all descendants that are refer to that remote CSE
+		for key in list(self.descendantCSR):	# List might change in the loop
+			dcse = self.descendantCSR[key]
+			if dcse[1] == csi:	# registered to deregistering remote CSE?
+				del self.descendantCSR[key]
+		
 		if CSE.cseType in [ CSEType.ASN, CSEType.MN ]:
 			self._updateCSRonRegistrarCSE()
 
 
-	def handleRemoteCSEUpdate(self, remoteCSR:Resource) -> None:
+	def handleRemoteCSEUpdate(self, remoteCSR:Resource, updateDict:dict) -> None:
 		"""	Event handler for updates of the remote CSE.
 		"""
-		Logging.logDebug(f'Handle remote CSE update: {remoteCSR}')
+		Logging.logDebug(f'Handle remote CSE update: {remoteCSR}\nupdate: {updateDict}')
 
 		# handle update of dcse in remoteCSR
 		csi = remoteCSR.csi
+		Logging.logDebug(f'DescendantCSRs: {self.descendantCSR}')
 		# remove all descendant tuples that are from this CSR
-		for key in list(self.descendantCSR.keys()):
-			(_, hostedcsi) = self.descendantCSR[key]
-			if hostedcsi == csi:
-				del self.descendantCSR[hostedcsi]
+		for key in list(self.descendantCSR.keys()):	# !!! make a copy of the keys bc the list changes in this loop
+			if key in self.descendantCSR:	# Entry could have been deleted, nevertheless
+				(_, registeredATcsi) = self.descendantCSR[key]
+				if registeredATcsi != CSE.cseCsi:	# remove all descedants EXCEPT the ones hosted on THIS CSE
+					Logging.logDebug(f'Removing from internal dcse list: {registeredATcsi}')
+					del self.descendantCSR[registeredATcsi]
 
 		# add new/updated values from remoteCSR
-		if remoteCSR.dcse is not None:		# TODO same as above. Function?
-			for dcsecsi in remoteCSR.dcse:
+		# if remoteCSR.dcse is not None:		# TODO same as above. Function?
+		# 	for dcsecsi in remoteCSR.dcse:
+		# 		if dcsecsi in self.descendantCSR:	# don't overwrite existing ones
+		# 			continue
+		# 		self.descendantCSR[dcsecsi] = (None, csi)
+		if (dcse := Utils.findXPath(updateDict, 'm2m:csr/dcse')) is not None:		# TODO same as above. Function?
+			for dcsecsi in dcse:
 				if dcsecsi in self.descendantCSR:	# don't overwrite existing ones
 					continue
-				self.descendantCSR[dcsecsi] = (None, csi)
-
+				self.descendantCSR[dcsecsi] = (None, csi)	# don't have the CSR for further descendants available
 
 		if CSE.cseType in [ CSEType.ASN, CSEType.MN ]:	# update own registrar CSR
 			self._updateCSRonRegistrarCSE()
@@ -483,10 +508,10 @@ class RemoteCSEManager(object):
 
 
 	def getAllLocalCSRs(self) -> List[Resource]:
-		"""	Return all local CSR's.
+		"""	Return all local CSR's. This includes the CSR of the registrar CSE.
+			This function builds the list from a temporary internal list, but not from the database.
 		"""
 		result = [ csr for (csr, _) in self.descendantCSR.values() if csr is not None ]
-		#result = list(self.descendantCSR.values())
 		result.append(self.ownRegistrarCSR)
 		return result
 

@@ -97,9 +97,9 @@ class RegistrationManager(object):
 		return Result() # implicit OK
 
 
-	def checkResourceUpdate(self, resource:Resource) -> Result:
+	def checkResourceUpdate(self, resource:Resource, updateDict:dict) -> Result:
 		if resource.ty == T.CSR:
-			if not self.handleCSRUpdate(resource):
+			if not self.handleCSRUpdate(resource, updateDict):
 				return Result(status=False, dbg='cannot update CSR')
 		return Result(status=True)
 
@@ -267,10 +267,10 @@ class RegistrationManager(object):
 	#	Handle CSR Update
 	#
 
-	def handleCSRUpdate(self, csr:Resource) -> bool:
+	def handleCSRUpdate(self, csr:Resource, updateDict:dict) -> bool:
 		Logging.logDebug(f'Updating CSR. csi: {csr.csi}')
 		# send event
-		CSE.event.remoteCSEUpdate(csr)	# type: ignore
+		CSE.event.remoteCSEUpdate(csr, updateDict)	# type: ignore
 		return True
 
 

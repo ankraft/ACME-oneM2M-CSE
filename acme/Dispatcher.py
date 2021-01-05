@@ -549,7 +549,7 @@ class Dispatcher(object):
 		dictOrg = deepcopy(resource.dict)	# Save for later
 
 		# Check resource update with registration
-		if (rres := CSE.registration.checkResourceUpdate(resource)).rsc != RC.OK:
+		if (rres := CSE.registration.checkResourceUpdate(resource, deepcopy(request.dict))).rsc != RC.OK:
 			return rres.errorResult()
 
 		if (res := self.updateResource(resource, deepcopy(request.dict), originator=originator)).resource is None:
