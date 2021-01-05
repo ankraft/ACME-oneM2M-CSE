@@ -621,6 +621,8 @@ def getSerializationFromOriginator(originator:str) -> List[ContentSerializationT
 		It is either an AE, a CSE or a CSR.
 		Return a list of types.
 	"""
+	if originator is None or len(originator):
+		return []
 	# First check whether there is an AE with that originator
 	if (l := len(aes := CSE.storage.searchByValueInField('aei', originator))) > 0:
 		if l > 1:
