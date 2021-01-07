@@ -19,7 +19,8 @@ class BackgroundWorker(object):
 	def __init__(self, updateIntervall:float, callback:Callable, name:str=None, startWithDelay:bool=False, count:int=None, dispose:bool=True, id:int=None) -> None:
 		self.updateIntervall = updateIntervall
 		self.callback = callback
-		self.running = False
+		self.running = False		# Indicator that a worker is running or will be stopped
+		self.isStopped = True		# Indicator that a worker has really stopped
 		self.workerThread: Thread = None
 		self.name = name
 		self.startWithDelay = startWithDelay
@@ -34,6 +35,7 @@ class BackgroundWorker(object):
 			self.stop()
 		Logging.logDebug(f'Starting worker thread: {self.name}')
 		self.running = True
+		self.isStopped = True
 		self.args = args
 		self.workerThread = Thread(target=self.work)
 		self.workerThread.setDaemon(True)	# Make the thread a daemon of the main thread
@@ -96,6 +98,8 @@ class BackgroundWorker(object):
 		"""
 		if self.dispose:
 			BackgroundWorkerPool._removeBackgroundWorkerFromPool(self)
+		self.running = False
+		self.isStopped = True
 
 
 	def __repr__(self) -> str:
@@ -137,10 +141,13 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def stopWorkers(cls, name:str) -> List[BackgroundWorker]:
+	def stopWorkers(cls, name:str, wait:bool=True) -> List[BackgroundWorker]:
 		workers = cls.findWorkers(name=name)
 		for w in workers:
 			w.stop()
+			if wait:
+				while not w.isStopped:
+					time.sleep(0.01)
 		return workers
 
 
