@@ -172,9 +172,10 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 
 
 
-# Gracefully shutdown the CSE, e.g. when receiving a keyboard interrupt
 @atexit.register
 def shutdown() -> None:
+	"""	Gracefully shutdown the CSE, e.g. when receiving a keyboard interrupt.
+	"""
 	Logging.log('CSE shutting down')
 	if event is not None:
 		event.cseShutdown() 	# type: ignore

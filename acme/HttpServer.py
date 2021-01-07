@@ -328,13 +328,13 @@ class HttpServer(object):
 			Logging.logDebug(f'Sending request: {method.__name__.upper()} {url}')
 			Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._printContent(content, ct)}\n')
 			r = method(url, data=content, headers=hds, verify=self.verifyCertificate)
-			rct = ContentSerializationType.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
+			responseCt = ContentSerializationType.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
 			rc = RC(int(r.headers['X-M2M-RSC'])) if 'X-M2M-RSC' in r.headers else RC.internalServerError
-			Logging.logDebug(f'Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._printContent(r.content, rct)}\n')
+			Logging.logDebug(f'Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._printContent(r.content, responseCt)}\n')
 		except Exception as e:
 			Logging.logWarn(f'Failed to send request: {str(e)}')
 			return Result(rsc=RC.targetNotReachable, dbg='target not reachable')
-		return Result(dict=Utils.deserializeData(r.content, rct), rsc=rc)
+		return Result(dict=Utils.deserializeData(r.content, responseCt), rsc=rc)
 		
 
 	#########################################################################

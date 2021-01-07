@@ -12,7 +12,7 @@
 #
 
 [cse]
-# CSE type. Possible values: IN, MN, ASN. Default: IN
+# CSE type. Allowed values: IN, MN, ASN. Default: IN
 type=IN
 # The CSE's service provider ID. Default: acme
 serviceProviderID=acme
@@ -54,7 +54,7 @@ supportedReleaseVersions=1,2,2a,3,4
 # The release version indicator for requests. Allowed values: 1,2,3,3a,4. Default: 3
 releaseVersion=3
 # Indicate the serialization format if none was given in a request and cannot be determined otherwise.
-# Possible values: json, cbor. Default: json
+# Allowed values: json, cbor. Default: json
 defaultSerialization=json
 
 #
@@ -165,7 +165,7 @@ enable=true
 enableFileLogging=False
 # Path to the log files. Default: ./logs
 path=./logs
-# Loglevel. Possible values: debug, info, warning, error. Default: debug
+# Loglevel. Allowed values: debug, info, warning, error. Default: debug
 level=debug
 # Number of files for log rotation. Default: 10
 count=10
@@ -187,6 +187,9 @@ root=/
 cseID=/in-cse
 # The remote CSE's resource name. Default: None
 resourceName=cse-in
+# Specify the serialization type that must be used for the registration to the registrar CSE.
+# Allowed values: json, cbor. Default: json
+serialization=json
 # Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.
 # Default: 30
 checkInterval=30

@@ -147,6 +147,7 @@ class Configuration(object):
 				'cse.registrar.rn'					: config.get('cse.registrar', 'resourceName', 			fallback=None),
 				'cse.registrar.checkInterval'		: config.getint('cse.registrar', 'checkInterval', 		fallback=30),		# Seconds
 				'cse.registrar.excludeCSRAttributes': config.getlist('cse.registrar', 'excludeCSRAttributes',fallback=[]),		# type: ignore
+				'cse.registrar.serialization'		: config.get('cse.registrar', 'serialization',			fallback='json'),
 
 				#
 				#	Registrations
@@ -265,6 +266,14 @@ class Configuration(object):
 		Configuration._configuration['cse.defaultSerialization'] = ContentSerializationType.to(ct)
 		if Configuration._configuration['cse.defaultSerialization'] == ContentSerializationType.UNKNOWN:
 			console.print(f'[red]Configuration Error: Unsupported \[cse]:defaultSerialization: {ct}')
+			return False
+		
+		# Registrar Serialization
+		ct = Configuration._configuration['cse.registrar.serialization']
+		Configuration._configuration['cse.registrar.serialization'] = ContentSerializationType.to(ct)
+		print(ct)
+		if Configuration._configuration['cse.registrar.serialization'] == ContentSerializationType.UNKNOWN:
+			console.print(f'[red]Configuration Error: Unsupported \[cse.registrar]:serialization: {ct}')
 			return False
 
 		# Loglevel from command line

@@ -53,7 +53,7 @@ The following macros are supported in addition to those defined in the sections 
 
 | Keyword                  | Description                                                                                                                                                                                    | Macro Name                   |
 |:-------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------|
-| type                     | The CSE type. Possible values: IN, MN, ASN.<br/>Default: IN                                                                                                                                    | cse.type                     |
+| type                     | The CSE type. Allowed values: IN, MN, ASN.<br/>Default: IN                                                                                                                                     | cse.type                     |
 | serviceProviderID        | The CSE's service provider ID.<br/>Default: acme                                                                                                                                               | cse.spid                     |
 | cseID                    | The CSE ID. Can be overwritten in imported CSE definition. A CSE-ID must start with a /.<br/>Default: id-in                                                                                    | cse.csi                      |
 | resourceID               | The CSE's resource ID. This should be the *cseid* without the leading "/". Can be overwritten in imported CSE definition.<br/>Default: id-in                                                   | cse.ri                       |
@@ -72,8 +72,8 @@ The following macros are supported in addition to those defined in the sections 
 | checkExpirationsInterval | Interval to check for expired resources. 0 means "no checking".<br/>Default: 60 seconds                                                                                                        | cse.checkExpirationsInterval |
 | flexBlockingPreference   | Indicate the preference for flexBlocking response types. Allowed values: "blocking", "nonblocking".<br />Default: blocking                                                                     | cse.flexBlockingPreference   |
 | supportedReleaseVersions | A comma-separated list of supported release versions. This list can contain a single or multiple values.<br />Default: 1,2,2a,3                                                                | cse.supportedReleaseVersions |
-| releaseVersion           | The release version indicator for requests. Allowed values: 1, 2, 3, 3a, 4.<br />Default: 3                                                                                                                                    | cse.releaseVersion           |
-| defaultSerialization     | Indicate the serialization format if none was given in a request and cannot be determined otherwise.<br/>Possible values: json, cbor.<br/>Default: json                                        | cse.defaultSerialization     |
+| releaseVersion           | The release version indicator for requests. Allowed values: 1, 2, 3, 3a, 4.<br />Default: 3                                                                                                    | cse.releaseVersion           |
+| defaultSerialization     | Indicate the serialization format if none was given in a request and cannot be determined otherwise.<br/>Allowed values: json, cbor.<br/>Default: json                                         | cse.defaultSerialization     |
 
 
 <a name="security"></a>
@@ -124,7 +124,7 @@ The following macros are supported in addition to those defined in the sections 
 | enable            | Enable logging.<br/>Default: true                                                                                                        | logging.enable            |
 | enableFileLogging | Enable logging to file.<br/>Default: false                                                                                               | logging.enableFileLogging |
 | path              | Pathname for log files.<br />Default: ./logs                                                                                             | logging.path              |
-| level             | Loglevel. Possible values: debug, info, warning, error.<br/>See also command line argument [–log-level](Running.md).<br/> Default: debug | logging.level             |
+| level             | Loglevel. Allowed values: debug, info, warning, error.<br/>See also command line argument [–log-level](Running.md).<br/> Default: debug  | logging.level             |
 | count             | Number of files for log rotation.<br/>Default: 10                                                                                        | logging.count             |
 | size              | Size per log file.<br/>Default: 100.000 bytes                                                                                            | logging.size              |
 | stackTraceOnError | Print a stack trace when logging an 'error' level message.<br />Default: True                                                            | logging.stackTraceOnError |
@@ -143,14 +143,15 @@ The following macros are supported in addition to those defined in the sections 
 <a name="registrar"></a>
 ### [cse.registrar] - Settings for Remote Registrar CSE Access 
 
-| Keyword              | Description                                                                                                                              | Macro Name                         |
-|:---------------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------|
-| address              | URL of the remote CSE.<br/>Default: no default                                                                                           | cse.registrar.address              |
-| root                 | Remote CSE root path. Never provide a trailing /.<br/>Default: empty string                                                              | cse.registrar.root                 |
-| cseID                | CSE-ID of the remote CSE. A CSE-ID must start with a /.<br/>Default: no default                                                          | cse.registrar.csi                  |
-| resourceName         | The remote CSE's resource name. <br>Default: no default                                                                                  | cse.registrar.rn                   |
-| checkInterval        | Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.<br/>Default: 30 | cse.registrar.checkInterval        |
-| excludeCSRAttributes | List of resources that are excluded when creating a registrar CSR.<br />Default: empty list                                              | cse.registrar.excludeCSRAttributes |
+| Keyword              | Description                                                                                                                                     | Macro Name                         |
+|:---------------------|:------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------|
+| address              | URL of the remote CSE.<br/>Default: no default                                                                                                  | cse.registrar.address              |
+| root                 | Remote CSE root path. Never provide a trailing /.<br/>Default: empty string                                                                     | cse.registrar.root                 |
+| cseID                | CSE-ID of the remote CSE. A CSE-ID must start with a /.<br/>Default: no default                                                                 | cse.registrar.csi                  |
+| resourceName         | The remote CSE's resource name. <br>Default: no default                                                                                         | cse.registrar.rn                   |
+| serialization        | Specify the serialization type that must be used for the registration to the registrar CSE.<br />Allowed values: json, cbor<br />Default: json  | cse.registrar.serialization        |
+| checkInterval        | Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.<br/>Default: 30        | cse.registrar.checkInterval        |
+| excludeCSRAttributes | List of resources that are excluded when creating a registrar CSR.<br />Default: empty list                                                     | cse.registrar.excludeCSRAttributes |
 
 
 <a name="announcements"></a>
