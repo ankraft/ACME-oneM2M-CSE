@@ -664,21 +664,26 @@ class Dispatcher(object):
 	def deleteResource(self, resource:Resource, originator:str=None, withDeregistration:bool=False) -> Result:
 		Logging.logDebug(f'Removing resource ri: {resource.ri}, type: {resource.ty:d}')
 
+		resource.deactivate(originator)	# deactivate it first
+
 		# Check resource deletion
 		if withDeregistration:
 			if not (res := CSE.registration.checkResourceDeletion(resource)).status:
 				return Result(rsc=RC.badRequest, dbg=res.dbg)
 
-		resource.deactivate(originator)	# deactivate it first
-		# notify the parent resource
+		# Retrieve the parent resource now, because we need it later
 		parentResource = resource.retrieveParentResource()
+
+		# delete the resource from the DB. Save the result to return later
 		res = resource.dbDelete()
 
 		# send a delete event
 		CSE.event.deleteResource(resource) 	# type: ignore
 
+		# Now notify the parent resource
 		if parentResource is not None:
 			parentResource.childRemoved(resource, originator)
+
 		return Result(resource=resource, rsc=res.rsc, dbg=res.dbg)
 
 
