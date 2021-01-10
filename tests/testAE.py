@@ -22,7 +22,7 @@ class TestAE(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def setUpClass(cls):
+	def setUpClass(cls) -> None:
 		TestAE.originator 	= None 	# actually the AE.aei
 		TestAE.aeACPI 		= None
 		TestAE.cse, rsc 	= RETRIEVE(cseURL, ORIGINATOR)
@@ -31,13 +31,14 @@ class TestAE(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
 		pass
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createAE(self):
+	def test_createAE(self) -> None:
+		""" Create/register an AE """
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
@@ -52,7 +53,8 @@ class TestAE(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createAEUnderAE(self):
+	def test_createAEUnderAE(self) -> None:
+		""" Create/register an AE under an AE -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'rn': f'{aeRN}', 
 					'api': 'NMyApp2Id',
@@ -64,7 +66,8 @@ class TestAE(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createAEAgain(self):
+	def test_createAEAgain(self) -> None:
+		""" Create/register an AE with same rn again -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
@@ -76,19 +79,22 @@ class TestAE(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveAE(self):
+	def test_retrieveAE(self) -> None:
+		""" Retrieve AE """
 		_, rsc = RETRIEVE(aeURL, TestAE.originator)
 		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveAEWithWrongOriginator(self):
+	def test_retrieveAEWithWrongOriginator(self) -> None:
+		""" Retrieve AE with wrong originator -> Fail """
 		_, rsc = RETRIEVE(aeURL, 'Cwrong')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesAE(self):
+	def test_attributesAE(self) -> None:
+		""" Retrieve AE and check attributes """
 		r, rsc = RETRIEVE(aeURL, TestAE.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/aei'))
@@ -112,7 +118,8 @@ class TestAE(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateAELbl(self):
+	def test_updateAELbl(self) -> None:
+		""" Update AE with lbl """
 		dct = 	{ 'm2m:ae' : {
 					'lbl' : [ 'aTag' ]
 				}}
@@ -127,7 +134,8 @@ class TestAE(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateAETy(self):
+	def test_updateAETy(self) -> None:
+		""" Update AE with ty=CSEBase -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'ty' : int(T.CSEBase)
 				}}
@@ -136,7 +144,8 @@ class TestAE(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateAEPi(self):
+	def test_updateAEPi(self) -> None:
+		""" Update AE with pi=wrong -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'pi' : 'wrongID'
 				}}
@@ -145,27 +154,18 @@ class TestAE(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateAEUnknownAttribute(self):
+	def test_updateAEUnknownAttribute(self) -> None:
+		""" Update AE with unknown attribute -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'unknown' : 'unknown'
 				}}
 		r, rsc = UPDATE(aeURL, TestAE.originator, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
-	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteAEByUnknownOriginator(self):
-		_, rsc = DELETE(aeURL, 'Cwrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
-
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteAEByAssignedOriginator(self):
-		_, rsc = DELETE(aeURL, TestAE.originator)
-		self.assertEqual(rsc, RC.deleted)
-
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveAEACP(self):
+	def test_retrieveAEACP(self) -> None:
+		""" Retrieve AE's acp """
 		self.assertIsNotNone(TestAE.aeACPI)
 		self.assertIsInstance(TestAE.aeACPI, list)
 		self.assertGreater(len(TestAE.aeACPI), 0)
@@ -179,6 +179,56 @@ class TestAE(unittest.TestCase):
 				break
 		else:
 			self.fail('Originator not in ACP:acr:acor')
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteAEByUnknownOriginator(self) -> None:
+		""" Delete AE with wrong originator -> Fail """
+		_, rsc = DELETE(aeURL, 'Cwrong')
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteAEByAssignedOriginator(self) -> None:
+		""" Delete AE with correct originator -> AE deleted """
+		_, rsc = DELETE(aeURL, TestAE.originator)
+		self.assertEqual(rsc, RC.deleted)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAEWrongCSZ(self) -> None:
+		""" Create AE with wrong csz content -> Fail """
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN, 
+					'api': 'NMyApp1Id',
+				 	'rr': False,
+				 	'srv': [ '3' ],
+					'csz': [ 'wrong' ]
+				}}
+		_, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAECSZ(self) -> None:
+		""" Create AE with correct csz value"""
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN, 
+					'api': 'NMyApp1Id',
+				 	'rr': False,
+				 	'srv': [ '3' ],
+					'csz': [ 'application/cbor', 'application/json' ]
+				}}
+		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.created)
+		TestAE.originator2 = findXPath(r, 'm2m:ae/aei')
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteAECSZ(self) -> None:
+		""" Delete AE with csr -> AE deleted """
+		_, rsc = DELETE(aeURL, TestAE.originator2)
+		self.assertEqual(rsc, RC.deleted)
+
 
 
 # TODO register multiple AEs
@@ -196,8 +246,11 @@ def run():
 	suite.addTest(TestAE('test_updateAEPi'))
 	suite.addTest(TestAE('test_updateAEUnknownAttribute'))
 	suite.addTest(TestAE('test_retrieveAEACP'))
-	#suite.addTest(TestAE('test_deleteAEByUnknownOriginator'))
-	#suite.addTest(TestAE('test_deleteAEByAssignedOriginator'))
+	suite.addTest(TestAE('test_deleteAEByUnknownOriginator'))
+	suite.addTest(TestAE('test_deleteAEByAssignedOriginator'))
+	suite.addTest(TestAE('test_createAEWrongCSZ'))
+	suite.addTest(TestAE('test_createAECSZ'))	
+	suite.addTest(TestAE('test_deleteAECSZ'))	
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 

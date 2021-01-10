@@ -35,6 +35,8 @@ class Constants(object):
 
 	stateTagResourceTypes 			= [ T.CNT, T.CIN, T.FCNT, T.FCI, T.REQ ]	# those resource types allow state tags
 	supportedContentSerializations 	= [ CST.JSON.toHeader(), CST.CBOR.toHeader() ]
+	supportedContentSerializationsSimple = [ CST.JSON.toSimple(), CST.CBOR.toSimple() ]
+
 	supportedContentHeaderFormat 	= [ CST.JSON.toHeader(), CST.CBOR.toHeader(),'application/vnd.onem2m-res+json', 'application/vnd.onem2m-res+cbor' ]
 
 
@@ -61,6 +63,16 @@ class Constants(object):
 	hfRTU 							= 'X-M2M-RTU'
 	hfAccept						= 'Accept'
 			
+
+	#
+	#	Supported URL schemes
+	#
+	supportedSchemes = ['http', 'https']	# Supported by the CSE
+	# TODO add Coap here later
+
+	#
+	#	Supported content serializations
+	#
 
 	#
 	#	Configuration meta defaults

@@ -532,21 +532,29 @@ class ContentSerializationType(IntEnum):
 	UNKNOWN				= auto()
 
 	def toHeader(self) -> str:
-		"""	Return the header for a enum value.
+		"""	Return the mime header for a enum value.
 		"""
 		if self.value == self.JSON:	return 'application/json'
 		if self.value == self.CBOR:	return 'application/cbor'
 		if self.value == self.XML:	return 'application/xml'
 		return None
 	
+	def toSimple(self) -> str:
+		"""	Return the simple string for a enum value.
+		"""
+		if self.value == self.JSON:	return 'json'
+		if self.value == self.CBOR:	return 'cbor'
+		if self.value == self.XML:	return 'xml'
+		return None
+
 	@classmethod
 	def to(cls, t:str) -> ContentSerializationType:
 		"""	Return the enum from a string.
 		"""
 		t = t.lower()
-		if t == 'json':	return cls.JSON
-		if t == 'cbor':	return cls.CBOR
-		if t == 'xml':	return cls.XML
+		if t in [ 'cbor', 'application/cbor' ]:	return cls.CBOR
+		if t in [ 'json', 'application/json' ]:	return cls.JSON
+		if t in [ 'xml',  'application/xml'  ]:	return cls.XML
 		return cls.UNKNOWN
 
 	

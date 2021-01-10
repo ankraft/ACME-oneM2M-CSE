@@ -79,6 +79,12 @@ class AE(AnnounceableResource):
 							node['hael'] = hael
 					node.dbUpdate()
 			self[Resource._node] = nl
+		
+		# check csz attribute
+		if (csz := self['csz']) is not None:
+			for c in csz:
+				if c not in C.supportedContentSerializations:
+					return Result(status=False, rsc=RC.badRequest, dbg=f'unsupported content serialization: {c}')
 
 		return Result(status=True)
 
