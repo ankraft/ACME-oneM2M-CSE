@@ -20,7 +20,7 @@ from typing import List, Callable, Any, Union, cast
 from threading import Lock
 from Configuration import Configuration
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ResponseCode as RC
+from Types import ResourceTypes as T, Result, ResponseCode as RC, ContentSerializationType
 from Logging import Logging
 from resources.Resource import Resource
 from resources.AnnounceableResource import AnnounceableResource
@@ -301,8 +301,8 @@ class Storage(object):
 	##	BatchNotifications
 	##
 
-	def addBatchNotification(self, ri:str, nu:str, request:dict) -> bool:
-		return self.db.addBatchNotification(ri, nu, request)
+	def addBatchNotification(self, ri:str, nu:str, request:dict, serialization:ContentSerializationType) -> bool:
+		return self.db.addBatchNotification(ri, nu, request, serialization)
 
 
 	def countBatchNotifications(self, ri:str, nu:str) -> int:
@@ -588,11 +588,12 @@ class TinyDBBinding(object):
 	#	BatchNotifications
 	#
 
-	def addBatchNotification(self, ri:str, nu:str, notificationRequest:dict) -> bool:
+	def addBatchNotification(self, ri:str, nu:str, notificationRequest:dict, serialization:ContentSerializationType) -> bool:
 		with self.lockBatchNotifications:
 			result = self.tabBatchNotifications.insert(
 									{	'ri' 		: ri,
 										'nu' 		: nu,
+										'csz'		: serialization.value,
 										'tstamp'	: time.time(),
 										'request'	: notificationRequest
 									})

@@ -140,7 +140,7 @@ class RemoteCSEManager(object):
 
 				# when validateRegistrations == False then only check when there is no connection
 				if not self.checkLiveliness:
-					if (r := self._retrieveLocalCSRs(own=True)).lst is not None and len(r.lst) == 1:
+					if (r := self._retrieveLocalCSRs(onlyOwn=True)).lst is not None and len(r.lst) == 1:
 						return True
 			
 				# Check the connection to the registrar CSE and establish one if necessary

@@ -12,11 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [CSE] Added *--http-address* and *--network-interface* command line arguments.
 - [CSE] Added configuration to exclude certain attributes in CSR creations and updates.
+- [CSE] Added support for CBOR serialization.
 - [NOTIFICATIONS] Added support for handling CBOR serialization and other binary formats to the notification server.
 - [WEB] Added dark mode (for supported browsers).
 - [CSE] Added attribute policies for TS-0023 R4 ModuleClasses, Devices etc.
 - [CSE] Added attribute policies for Generic Interworking and AllJoyn specialisations.
 - [CSE] Added diagram generation (in PlantUML format) of resource tree and deployment structure.
+- [CSE] Added better checks for content serialization in AE.
 
 ### Changed
 - [WEB] The web UI can now also be used as a stand-alone application to connect to third-party CSEs.
@@ -25,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Supported release version can now be configured via the config file.
 - [CSE] Added checks for remote CSE's *csi* (does it exist? Does it begin with a /?)
 - [TESTS] The behavior whether a failed test skips the remaining tests in a test suite can now be configured.
+- [TESTS] Improved documentation. Doc strings provide a bit more information about a currently running test.
 - [MISC] Allow ```# single-line comments``` in JSON
 - [MISC] Default configuration for file logging is now *False* (to better support Raspberry Pi and similar systems with flash card file systems).
 - [DATABASE] Changed the postfix of data files to the CSE-ID.

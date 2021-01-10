@@ -118,6 +118,7 @@ class SecurityManager(object):
 				if (orig := resource[resource._originator]) is not None and orig == originator:
 					Logging.logDebug('Allow access for creator')
 					return True
+				Logging.logDebug('Permission NOT granted')
 				return False
 
 			for a in acpi:

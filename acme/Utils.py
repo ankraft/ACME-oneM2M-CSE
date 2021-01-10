@@ -515,13 +515,13 @@ def deleteNoneValuesFromDict(dct:dict) -> dict:
 
 
 urlregex = re.compile(
-		r'^(?:http|ftp)s?://' 						# http://, https://, ftp://, ftps://
+		r'^(?:http|ftp)s?://|^(?:coap|mqtt)://' 	# http://, https://, ftp://, ftps://, coap://, mqtt://
 		r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain
 		r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9]))|' # localhost or single name w/o domain
 		r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' 		# ipv4
 		r'(?::\d+)?' 								# optional port
-		r'(?:/?|[/?]\S+)$', re.IGNORECASE)			# optional path
-
+		r'(?:/?|[/?]\S+)$', re.IGNORECASE			# optional path
+		)
 
 def isURL(url: str) -> bool:
 	""" Check whether a given string is a URL. """

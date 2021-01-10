@@ -295,11 +295,16 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		length = int(self.headers['Content-Length'])
 		post_data = self.rfile.read(length)
 		if len(post_data) > 0:
-			contentType = self.headers['Content-Type'].lower()
+			contentType = ''
+			if (val := self.headers.get('Content-Type')) is not None:
+				contentType = val.lower()
 			if contentType == 'application/json':
 				setLastNotification(json.loads(post_data.decode('utf-8')))
 			elif contentType == 'application/cbor':
 				setLastNotification(cbor2.loads(post_data))
+			else:
+				setLastNotification(post_data.decode('utf-8'))
+
 		setLastNotificationHeaders(self.headers)
 
 
