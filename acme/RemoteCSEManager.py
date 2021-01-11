@@ -15,7 +15,7 @@ from typing import List, Tuple, Dict
 from Configuration import Configuration
 from Logging import Logging
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, CSEType, ResponseCode as RC, CSERequest
+from Types import ResourceTypes as T, Result, CSEType, ResponseCode as RC, CSERequest, ContentSerializationType
 import Utils, CSE
 from resources import CSR, CSEBase
 from resources.Resource import Resource
@@ -350,11 +350,24 @@ class RemoteCSEManager(object):
 	#	then the related local CSR is removed.
 	def _checkCSRLiveliness(self) -> None:
 		for localCsr in self._retrieveLocalCSRs(onlyOwn=False).lst:
+			# Determine content serialization
+			ct = CSE.defaultSerialization
+			for csz in localCsr.csz:
+				if csz in C.supportedContentSerializations:
+					ct = ContentSerializationType.to(csz)
+					break
+	
+			# Retrieve remote CSE via a method given in the poa (might contain more than one URI)
+			found = False
 			for url in (localCsr.poa or []):
 				if Utils.isURL(url):
-					if self._retrieveRemoteCSE(url=f'{url}{localCsr.csi}').rsc != RC.OK:
-						Logging.logWarn(f'Remote CSE unreachable. Removing CSR: {localCsr.rn if localCsr is not None else ""}')
-						self._deleteLocalCSR(localCsr)
+					if self._retrieveRemoteCSE(url=f'{url}{localCsr.csi}', ct=ct).rsc == RC.OK:
+						found = True
+						break
+			if not found:
+				Logging.logWarn(f'Remote CSE unreachable. Removing CSR: {localCsr.rn if localCsr is not None else ""}')
+				self._deleteLocalCSR(localCsr)
+
 
 
 
@@ -482,13 +495,12 @@ class RemoteCSEManager(object):
 	#
 
 	# Retrieve the remote CSE
-	def _retrieveRemoteCSE(self, url:str=None) -> Result:
+	def _retrieveRemoteCSE(self, url:str=None, ct:ContentSerializationType=None) -> Result:
 
-		# Determine URL and content serialization
-		ct = None
+		# Determine URL and content serialization for registrar CSE
 		if url is None:
 			url = self.registrarCSEURL
-			ct  = self.registrarSerialization
+			ct  = self.registrarSerialization	# overwrite ct (???)
 
 		Logging.logDebug(f'Retrieving remote CSE from: {self.registrarCSI} url: {url}')	
 		res = CSE.httpServer.sendRetrieveRequest(url, CSE.cseCsi, ct=ct)	# own CSE.csi is the originator
