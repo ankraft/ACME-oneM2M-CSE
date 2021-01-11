@@ -210,7 +210,6 @@ class NotificationManager(object):
 	def _checkNusInSubscription(self, subscription:Resource, newDict:dict=None, previousNus:List[str]=None, originator:str=None) -> Result:
 		"""	Check all the notification URI's in a subscription. 
 			A verification request is sent to new URI's.
-			A deletion request is sent when URI's are removed.
 		"""
 		newNus = []
 		if newDict is None:	# If there is no new resource structure, get the one from the subscription to work with
@@ -237,20 +236,7 @@ class NotificationManager(object):
 						Logging.logDebug(f'Verification request failed: {nu}')
 						return Result(rsc=RC.subscriptionVerificationInitiationFailed, dbg=f'verification request failed for nu: {nu}')
 
-
-# TODO is this really correct? Also the above (new verification request) There is nothing in the spec about this, except TS-0001 10.2.10.4 Update <subscription>
-		# notify removed nus (deletion notification) if nu = null
-		if 'nu' in newDict: # if nu not present, nothing to do
-			if previousNus is not None:
-				for nu in previousNus:
-					if nu not in newNus:
-						if not self._sendDeletionNotification(nu, subscription.ri):
-							Logging.logDebug('Deletion request failed') # but ignore the error
-
 		return Result(lst=newNus)
-
-	# def _buildReceipientList(self, sub:Resource) -> list:
-
 
 
 	#########################################################################

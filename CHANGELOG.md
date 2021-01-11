@@ -13,12 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added *--http-address* and *--network-interface* command line arguments.
 - [CSE] Added configuration to exclude certain attributes in CSR creations and updates.
 - [CSE] Added support for CBOR serialization.
-- [NOTIFICATIONS] Added support for handling CBOR serialization and other binary formats to the notification server.
-- [WEB] Added dark mode (for supported browsers).
 - [CSE] Added attribute policies for TS-0023 R4 ModuleClasses, Devices etc.
 - [CSE] Added attribute policies for Generic Interworking and AllJoyn specialisations.
 - [CSE] Added diagram generation (in PlantUML format) of resource tree and deployment structure.
 - [CSE] Added better checks for content serialization in AE.
+- [NOTIFICATIONS] Added support for handling CBOR serialization and other binary formats to the notification server.
+- [WEB] Added dark mode (for supported browsers).
 
 ### Changed
 - [WEB] The web UI can now also be used as a stand-alone application to connect to third-party CSEs.
@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [CSE] CSEBase.srt attribute now also returns the announced attributes.
 - [CSE] Improved shutdown behaviour. Waiting for internal threads to finish.
+- [CSE] When updating a subscription resource's *nu* attribute: Removed URI's don't cause a "deletion notification" anymore.
 
 
 ## [0.6.0] - 2020-10-26
