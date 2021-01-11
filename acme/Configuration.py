@@ -271,7 +271,6 @@ class Configuration(object):
 		# Registrar Serialization
 		ct = Configuration._configuration['cse.registrar.serialization']
 		Configuration._configuration['cse.registrar.serialization'] = ContentSerializationType.to(ct)
-		print(ct)
 		if Configuration._configuration['cse.registrar.serialization'] == ContentSerializationType.UNKNOWN:
 			console.print(f'[red]Configuration Error: Unsupported \[cse.registrar]:serialization: {ct}')
 			return False
