@@ -230,6 +230,63 @@ class TestAE(unittest.TestCase):
 		self.assertEqual(rsc, RC.deleted)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAENoAPI(self) -> None:
+		""" Create AE with missing api attribute"""
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN, 
+				 	'rr': False,
+				 	'srv': [ '3' ]
+				}}
+		_, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertNotEqual(rsc, RC.created)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAEAPIWrongPrefix(self) -> None:
+		""" Create AE with unknown api prefix"""
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN, 
+					'api': 'Xwrong',
+				 	'rr': False,
+				 	'srv': [ '3' ]
+				}}
+		_, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertNotEqual(rsc, RC.created)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAEAPICorrectR(self) -> None:
+		""" Create AE with correct api value (Registered)"""
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN,
+					'api': 'Rabc.com.example.acme',
+				 	'rr': False,
+				 	'srv': [ '3' ]
+				}}
+		ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(ae, 'm2m:ae/aei'))
+		_, rsc = DELETE(aeURL, findXPath(ae, 'm2m:ae/aei'))
+		self.assertEqual(rsc, RC.deleted)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAEAPICorrectN(self) -> None:
+		""" Create AE with correct api value (Non-Registered)"""
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN,
+					'api': 'Nacme',
+				 	'rr': False,
+				 	'srv': [ '3' ]
+				}}
+		ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(ae, 'm2m:ae/aei'))
+		_, rsc = DELETE(aeURL, findXPath(ae, 'm2m:ae/aei'))
+		self.assertEqual(rsc, RC.deleted)
+
+
 
 # TODO register multiple AEs
 
@@ -251,6 +308,10 @@ def run():
 	suite.addTest(TestAE('test_createAEWrongCSZ'))
 	suite.addTest(TestAE('test_createAECSZ'))	
 	suite.addTest(TestAE('test_deleteAECSZ'))	
+	suite.addTest(TestAE('test_createAENoAPI'))	
+	suite.addTest(TestAE('test_createAEAPIWrongPrefix'))	
+	suite.addTest(TestAE('test_createAEAPICorrectR'))	
+	suite.addTest(TestAE('test_createAEAPICorrectN'))	
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
