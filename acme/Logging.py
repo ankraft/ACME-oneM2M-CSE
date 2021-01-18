@@ -12,7 +12,7 @@
 
 import traceback
 import logging, logging.handlers, os, inspect, re, sys, datetime, time, threading, queue
-from typing import List, Any
+from typing import List, Any, Union
 from logging import StreamHandler, LogRecord
 from pathlib import Path
 from Configuration import Configuration
@@ -20,9 +20,11 @@ from rich.logging import RichHandler
 from rich.highlighter import ReprHighlighter
 from rich.style import Style
 from rich.console import Console
+from rich.markdown import Markdown
 from rich.text import Text
 from rich.default_styles import DEFAULT_STYLES
 from rich.theme import Theme
+from rich.tree import Tree
 
 
 levelName = {
@@ -42,6 +44,17 @@ class	Logging:
 		methods for printing log, error and warning messages to a 
 		logfile and to the console.
 	"""
+	INFO 	= logging.INFO
+	DEBUG 	= logging.DEBUG
+	ERROR 	= logging.ERROR
+	WARNING = logging.WARNING
+
+	logLevelNames = {
+		INFO    : 'INFO',
+		DEBUG   : 'DEBUG',
+		ERROR   : 'ERROR',
+		WARNING : 'WARNING',
+	}
 
 	logger  			= None
 	loggerConsole		= None
@@ -54,6 +67,8 @@ class	Logging:
 
 	checkInterval:float	= 0.2		# wait (in s) between checks of the logging queue
 	queueMaxsize:int	= 1000		# max number of items in the logging queue. Might otherwise grow forever on large load
+
+	_console			= None
 
 	@staticmethod
 	def init() -> None:
@@ -69,7 +84,7 @@ class	Logging:
 
 		Logging.logger				= logging.getLogger('logging')			# general logger
 		Logging.loggerConsole		= logging.getLogger('rich')				# Rich Console logger
-		Logging.checkInterval
+		Logging._console			= Console()								# Console object
 
 		# Add logging queue
 		Logging.queue = queue.Queue(maxsize=Logging.queueMaxsize)
@@ -160,6 +175,18 @@ class	Logging:
 			except Exception as e:
 				# sometimes this raises an exception. Just ignore it.
 				pass
+	
+
+	@staticmethod
+	def console(msg:Union[str, Tree]='&nbsp;', extranl:bool=False) -> None:
+		if extranl:
+			Logging._console.print()
+		if isinstance(msg, Tree):
+			Logging._console.print(msg, style=Style(color='spring_green2'))
+		elif isinstance(msg, str):
+			Logging._console.print(Markdown(msg), style=Style(color='spring_green2'))
+		if extranl:
+			Logging._console.print()
 
 
 #
@@ -180,7 +207,8 @@ class ACMERichLogHandler(RichHandler):
 			'repr.start'			: Style(color='orange1'),
 			'logging.level.debug'	: Style(color='grey50'),
 			'logging.level.warning'	: Style(color='orange3'),
-			'logging.level.error'	: Style(color='red', reverse=True)
+			'logging.level.error'	: Style(color='red', reverse=True),
+			'logging.console'		: Style(color='spring_green2'),
 		}
 		_styles = DEFAULT_STYLES.copy()
 		_styles.update(ACMEStyles)
@@ -269,3 +297,5 @@ class ACMERichLogHandler(RichHandler):
 			# 	line_no=caller.lineno,
 			# )
 		)
+
+
