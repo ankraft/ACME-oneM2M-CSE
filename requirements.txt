@@ -19,7 +19,7 @@ markupsafe==1.1.1         # via jinja2
 psutil==5.7.3             # via ACME-oneM2M-CSE (setup.py)
 pygments==2.7.2           # via rich
 requests==2.25.0          # via ACME-oneM2M-CSE (setup.py)
-rich==9.2.0               # via ACME-oneM2M-CSE (setup.py)
+rich==9.8.1               # via ACME-oneM2M-CSE (setup.py)
 six==1.15.0               # via isodate
 tinydb==4.3.0             # via ACME-oneM2M-CSE (setup.py)
 typing-extensions==3.7.4.3  # via rich

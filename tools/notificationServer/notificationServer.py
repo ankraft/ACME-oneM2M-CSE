@@ -105,7 +105,7 @@ def toHex(bts:bytes, toBinary:bool=False, withLength:bool=False) -> str:
 
 if __name__ == '__main__':
 	console = Console()
-	console.print('\n[dim]\[[/dim][red][i]ACME[/i][/red][dim]][/dim] - [bold]Notification Server[/bold]\n\n')
+	console.print('\n[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim] - [bold]Notification Server[/bold]\n\n')
 
 
 	# parse command line argiments
