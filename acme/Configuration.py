@@ -403,7 +403,7 @@ class Configuration(object):
 
 	@staticmethod
 	def print() -> str:
-		result = 'Configuration:\n'
+		result = 'Configuration:\n'		# Magic string used e.g. in tests, don't remove
 		for (k,v) in Configuration._configuration.items():
 			result += f'  {k} = {v}\n'
 		return result

@@ -42,7 +42,7 @@ class Event(list):
 
 	The function will be called in a separate thread in order to prevent waiting
 	for the returns. This might lead to some race conditions, so the synchronizations
-	must be done insode the functions.
+	must be done inside the functions.
 	"""
 
 	def __init__(self, runInBackground:bool=True):
