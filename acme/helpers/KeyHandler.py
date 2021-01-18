@@ -20,7 +20,7 @@ except ImportError:
 		# Just give up here.
 		raise ImportError('getch not available')
 	else:
-		getch = msvcrt.getch
+		getch = msvcrt.getch	# type: ignore
 else:
 	def getch() -> str:
 		"""getch() -> key character
