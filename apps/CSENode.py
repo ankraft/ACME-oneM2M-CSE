@@ -118,8 +118,11 @@ class CSENode(NodeBase):
 
 	def _checkDeviceInfo(self) -> None:
 		if self.deviceInfo is not None:
-			self.deviceInfo['dvnm'] = socket.gethostname()
-			self.deviceInfo['osv'] = f'{platform.system()} {platform.release()} {platform.machine()}'
-			self.deviceInfo['syst'] = Utils.getResourceDate()
-			self.deviceInfo['dlb'] = f'| IP:{socket.gethostbyname(socket.gethostname())} MAC:{":".join(re.findall("..", "%012x" % uuid.getnode()))}'
-			self.updateDeviceInfo()
+			try:
+				self.deviceInfo['dvnm'] = socket.gethostname()
+				self.deviceInfo['osv'] = f'{platform.system()} {platform.release()} {platform.machine()}'
+				self.deviceInfo['syst'] = Utils.getResourceDate()
+				self.deviceInfo['dlb'] = f'| IP:{socket.gethostbyname(socket.gethostname())} MAC:{":".join(re.findall("..", "%012x" % uuid.getnode()))}'
+				self.updateDeviceInfo()
+			except Exception as e:
+				Logging.logDebug(e.msg)
