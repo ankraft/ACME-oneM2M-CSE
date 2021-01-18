@@ -125,4 +125,4 @@ class CSENode(NodeBase):
 				self.deviceInfo['dlb'] = f'| IP:{socket.gethostbyname(socket.gethostname())} MAC:{":".join(re.findall("..", "%012x" % uuid.getnode()))}'
 				self.updateDeviceInfo()
 			except Exception as e:
-				Logging.logDebug(e.msg)
+				Logging.logDebug(str(e))
