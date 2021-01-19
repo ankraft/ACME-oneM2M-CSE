@@ -22,6 +22,7 @@ from resources.Resource import Resource
 from werkzeug.serving import WSGIRequestHandler
 import ssl
 from webUI import WebUI
+from helpers.BackgroundWorker import *
 
 
 class HttpServer(object):
@@ -52,6 +53,7 @@ class HttpServer(object):
 			Operation.DELETE	: CSE.request.deleteRequest
 		}
 
+		self.backgroundActor:BackgroundWorker = None
 
 		self.serverID	= f'ACME {C.version}' 	# The server's ID for http response headers
 
@@ -116,6 +118,16 @@ class HttpServer(object):
 
 
 	def run(self) -> None:
+		self.httpActor = BackgroundWorkerPool.newActor(0.0, self._run, 'HTTP Server')
+		self.httpActor.start()
+	
+
+	def shutdown(self) -> bool:
+		Logging.log('HttpServer shut down')
+		return True
+		
+	
+	def _run(self) -> None:
 		WSGIRequestHandler.protocol_version = "HTTP/1.1"
 
 		# Run the http server. This runs forever.

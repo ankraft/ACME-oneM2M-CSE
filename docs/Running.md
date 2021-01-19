@@ -49,11 +49,29 @@ After you generated these files you can move them to a separate directory (for e
 
 ## Stopping the CSE
 
-The CSE can be stopped by pressing *CTRL-C* **once** on the command line. 
+The CSE can be stopped by pressing pressing the uppercase *Q* key or *CTRL-C* **once** on the command line. 
 
 Please note, that the shutdown might take a moment (e.g. gracefully terminating background processes, writing database caches, sending notifications etc). 
 
 **Being impatient and hitting *CTRL-C* twice might lead to data corruption.**
+
+
+## Command Console
+
+The CSE has a simple command console interface to execute build-in commands. Currently these commands are available:
+
+ - h, ?  - This help
+ - Q, ^C - Shutdown CSE
+ - c     - Show configuration
+ - l     - Toggle logging on/off
+ - r     - Show CSE registrations
+ - s     - Show statistics
+ - t     - Show resource tree
+ - w     - Show worker threads status
+
+ The following screenshot shows, for example, a CSE's resource tree:
+
+![](images/console_tree.png)
 
 
 ## Running a Notifications Server

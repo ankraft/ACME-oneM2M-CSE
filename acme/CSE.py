@@ -31,6 +31,8 @@ from Types import CSEType, ContentSerializationType
 from AEStatistics import AEStatistics
 from CSENode import CSENode
 import Utils
+from helpers.KeyHandler import loop
+from helpers.BackgroundWorker import BackgroundWorkerPool
 
 
 
@@ -68,6 +70,8 @@ defaultSerialization:ContentSerializationType	= None
 # TODO move further configurable "constants" here
 
 # TODO make AE registering a bit more generic
+
+
 
 
 ##############################################################################
@@ -111,9 +115,11 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 
 	# init Logging
 	Logging.init()
+	Logging.console('Press ? for help')
 	Logging.log('============')
 	Logging.log('Starting CSE')
 	Logging.log(f'CSE-Type: {cseType.name}')
+	Logging.log('Configuration:')
 	Logging.log(Configuration.print())
 
 
@@ -167,8 +173,31 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 
 	# Start the HTTP server
 	event.cseStartup()	# type: ignore
+	httpServer.run() # This does return (!)
+	
 	Logging.log('CSE started')
-	httpServer.run() # This does NOT return
+
+	#
+	#	Enter an endless loop.
+	#	Execute keyboard commands in the keyboardHandler's loop() function.
+	#
+	commands = {
+		'?'     : _keyHelp,
+		'h'		: _keyHelp,
+		'\n'	: lambda c: print(),	# 1 empty line
+		'\x03'  : _keyShutdownCSE,		# See handler below
+		'c'		: _keyConfiguration,
+		'l'     : _keyToggleLogging,
+		'Q'		: _keyShutdownCSE,		# See handler below
+		'r'		: _keyCSERegistrations,
+		's'		: _keyStatistics,
+		't'		: _keyResourceTree,
+		'w'		: _keyWorkers,
+	}
+
+	#	Endless runtime loop. This handles key input & commands
+	#	The CSE's shutdown happens in one of the key handlers below
+	loop(commands, catchKeyboardInterrupt=True)
 
 
 
@@ -179,6 +208,7 @@ def shutdown() -> None:
 	Logging.log('CSE shutting down')
 	if event is not None:
 		event.cseShutdown() 	# type: ignore
+	httpServer is not None and httpServer.shutdown()
 	announce is not None and announce.shutdown()
 	remote is not None and remote.shutdown()
 	group is not None and group.shutdown()
@@ -232,3 +262,85 @@ def stopApps() -> None:
 			aeStatistics.shutdown()
 		if aeCSENode is not None:
 			aeCSENode.shutdown()
+
+
+##############################################################################
+#
+#	Various keyboard command handlers
+#
+
+def _keyHelp(key:str) -> None:
+	"""	Print help for keyboard commands.
+	"""
+	Logging.console("""**Console Commands**  
+- h, ?  - This help
+- Q, ^C - Shutdown CSE
+- c     - Show configuration
+- l     - Toggle logging on/off
+- r     - Show CSE registrations
+- s     - Show statistics
+- t     - Show resource tree
+- w     - Show worker threads status
+-
+""", extranl=True)
+
+
+def _keyShutdownCSE(key:str) -> None:
+	"""	Shutdown the CSE.
+	"""
+	Logging.console('Shutdown CSE')
+	exit()
+
+
+def _keyToggleLogging(key:str) -> None:
+	"""	Toggle through the log levels.
+	"""
+	Logging.loggingEnabled = not Logging.loggingEnabled
+	Logging.console(f'Logging enabled -> **{Logging.loggingEnabled}**')
+
+
+def _keyWorkers(key:str) -> None:
+	"""	Print the worker and actor threads.
+	"""
+	result = '**Worker & Actor Threads**\n'
+	for w in BackgroundWorkerPool.backgroundWorkers.values():
+		a = 'A' if w.count == 1 else 'W'
+		result += f'- {w.name:20} ({a}) | interval : {w.updateIntervall:<8} | runs : {w.numberOfRuns:<8}\n'
+	Logging.console(result, extranl=True)
+
+
+def _keyConfiguration(key:str) -> None:
+	"""	Print the configuration.
+	"""
+	result = '**Configuration**\n'
+	conf = Configuration.print().split('\n')
+	for c in conf:
+		if c.startswith('Configuration:'):
+			continue
+		c = c.replace('*', '\\*')
+		result += f'- {c}\n'
+	Logging.console(result, extranl=True)
+
+
+def _keyResourceTree(key:str) -> None:
+	"""	Render the CSE's resource tree.
+	"""
+	Logging.console('**Resource Tree**', extranl=True)
+	Logging.console(statistics.getResourceTreeRich())
+	Logging.console()
+
+
+def _keyCSERegistrations(key:str) -> None:
+	"""	Render CSE registrations.
+	"""
+	Logging.console('**CSE Registrations**', extranl=True)
+	Logging.console(statistics.getCSERegistrationsRich())
+	Logging.console()
+
+
+def _keyStatistics(key:str) -> None:
+	""" Render various statistics & counts.
+	"""
+	Logging.console('**Statistics**', extranl=True)
+	Logging.console(statistics.getStatisticsRich())
+	Logging.console()

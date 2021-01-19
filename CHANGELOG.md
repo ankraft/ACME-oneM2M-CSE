@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added attribute policies for Generic Interworking and AllJoyn specialisations.
 - [CSE] Added diagram generation (in PlantUML format) of resource tree and deployment structure.
 - [CSE] Added better checks for content serialization in AE.
+- [CSE] Added command interface to the terminal console (for stopping the CSE, printing statistics, CSE registrations, the resource tree, etc).
 - [NOTIFICATIONS] Added support for handling CBOR serialization and other binary formats to the notification server.
 - [WEB] Added dark mode (for supported browsers).
 
@@ -31,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [MISC] Allow ```# single-line comments``` in JSON
 - [MISC] Default configuration for file logging is now *False* (to better support Raspberry Pi and similar systems with flash card file systems).
 - [DATABASE] Changed the postfix of data files to the CSE-ID.
+- [HTTP] Server runs now in background.
 
 ### Fixed
 - [CSE] CSEBase.srt attribute now also returns the announced attributes.

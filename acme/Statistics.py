@@ -17,6 +17,7 @@ from threading import Lock
 from helpers.BackgroundWorker import BackgroundWorkerPool
 from resources.Resource import Resource
 from Types import CSEType, ResourceTypes as T
+from rich.tree import Tree
 
 
 
@@ -33,7 +34,7 @@ cseStartUpTime		= 'cseSU'
 cseUpTime			= 'cseUT'
 resourceCount		= 'ctRes'
 
-# TODO startup, uptime, restartcount, errors, warnings
+# TODO  restartcount, 
 
 
 class Statistics(object):
@@ -288,4 +289,102 @@ skinparam rectangle {
 
 		# end
 		result += '@enduml'
+		return result
+
+
+
+	def getResourceTreeRich(self, maxLevel:int=0) -> Tree:
+		"""	This function will generate a Rich tree of a CSE's resource structure.
+		"""
+
+		def info(res:Resource) -> str:
+			if res.ty == T.FCNT:
+				return f'{res.rn} [dim]{res.__rtype__} ({res.cnd}) | ri={res.ri}[/dim]'
+			if res.ty == T.CSEBase:
+				return f'{res.rn} [dim]{res.__rtype__} | ri={res.ri} csi={res.csi}[/dim]'
+			if res.__isVirtual__:
+				return f'{res.rn}'
+			return f'{res.rn} [dim]{res.__rtype__} | ri={res.ri}[/dim]'
+
+		def getChildren(res:Resource, tree:Tree, level:int) -> None:
+			""" Find and print the children in the tree structure. """
+			result = ''
+			if maxLevel > 0 and level == maxLevel:
+				return
+			chs = CSE.dispatcher.directChildResources(res.ri)
+			for ch in chs:
+				branch = tree.add(info(ch))
+				getChildren(ch, branch, level+1)
+
+		cse = Utils.getCSE().resource
+		tree = Tree(info(cse))
+		getChildren(cse, tree, 0)
+		return tree
+
+
+	def getCSERegistrationsRich(self) -> str:
+		"""	Return an overview in Rich format about the registrar, registrees, and
+			descendant CSE's.
+		"""
+
+		result = ''
+		if CSE.cseType != CSEType.IN and CSE.remote.remoteAddress is not None:
+			registrarCSE = CSE.remote.registrarCSE
+			registrarType = CSEType(registrarCSE.cst).name if registrarCSE is not None else '???'
+			result += f'- **Registrar CSE**  \n{CSE.remote.registrarCSI[1:]} ({registrarType}) @ {CSE.remote.remoteAddress}\n'
+
+		if CSE.cseType != CSEType.ASN:
+			connections = {}
+			if len(CSE.remote.descendantCSR) > 0:
+				result += f'- **Registree CSEs**\n'
+
+				for desc in CSE.remote.descendantCSR.keys():
+					(csr, atCsi) = CSE.remote.descendantCSR[desc]
+					if csr is not None:
+						result += f'  - {desc[1:]} ({CSEType(csr.cst).name}) @ {csr.poa}\n'
+					else:
+						result += f'  - {desc[1:]}\n'
+					connections[desc] = atCsi
+				
+				for key in connections.keys():
+					atCsi = connections[key]
+					if atCsi != CSE.cseCsi:
+						result += f'    - {key}\n'
+		
+		return result
+
+# TODO events transit requests
+	def getStatisticsRich(self) -> str:
+		"""	Generate an overview about various resources and event counts.
+		"""
+
+		result = ''
+		stats = self.getStats()
+		result += '- **Resources**\n'
+		result += f'    - Created     : {stats[createdResources]}\n'
+		result += f'    - Updated     : {stats[updatedResources]}\n'
+		result += f'    - Deleted     : {stats[deletedResources]}\n'
+		result += f'    - Count       : {stats[resourceCount]}\n'
+		result += '- **Resource Types**\n'
+		result += f'    - AE          : {len(CSE.dispatcher.retrieveResourcesByType(T.AE))}\n'
+		result += f'    - ACP         : {len(CSE.dispatcher.retrieveResourcesByType(T.ACP))}\n'
+		result += f'    - CIN         : {len(CSE.dispatcher.retrieveResourcesByType(T.CIN))}\n'
+		result += f'    - CNT         : {len(CSE.dispatcher.retrieveResourcesByType(T.CNT))}\n'
+		result += f'    - FCNT        : {len(CSE.dispatcher.retrieveResourcesByType(T.FCNT))}\n'
+		result += f'    - MGMTOBJ     : {len(CSE.dispatcher.retrieveResourcesByType(T.MGMTOBJ))}\n'
+		result += f'    - NOD         : {len(CSE.dispatcher.retrieveResourcesByType(T.NOD))}\n'
+		result += f'    - SUB         : {len(CSE.dispatcher.retrieveResourcesByType(T.SUB))}\n'
+		result += '- **HTTP Requests**\n'
+		result += '    - **Received**\n'
+		result += f'        - RETRIEVE : {stats[httpRetrieves]}\n'
+		result += f'        - CREATE   : {stats[httpCreates]}\n'
+		result += f'        - UPDATE   : {stats[httpUpdates]}\n'
+		result += f'        - DELETE   : {stats[httpDeletes]}\n'
+		result += '- **Logs**\n'
+		result += f'    - Errors      : {stats[logErrors]}\n'
+		result += f'    - Warnings    : {stats[logWarnings]}\n'
+		result += '- **Misc**\n'
+		result += f'    - StartTime   : {stats[cseStartUpTime]}\n'
+		result += f'    - Uptime      : {stats[cseUpTime]}\n'
+
 		return result

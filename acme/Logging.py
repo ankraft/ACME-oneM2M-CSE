@@ -69,6 +69,7 @@ class	Logging:
 	queueMaxsize:int	= 1000		# max number of items in the logging queue. Might otherwise grow forever on large load
 
 	_console			= None
+	_handlers:List[Any] = None
 
 	@staticmethod
 	def init() -> None:
@@ -90,7 +91,7 @@ class	Logging:
 		Logging.queue = queue.Queue(maxsize=Logging.queueMaxsize)
 
 		# List of log handlers
-		handlers: List[Any] = [ ACMERichLogHandler() ]
+		Logging._handlers = [ ACMERichLogHandler() ]
 
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
@@ -105,16 +106,16 @@ class	Logging:
 			logfp.setLevel(Logging.logLevel)
 			logfp.setFormatter(logging.Formatter('%(levelname)s %(asctime)s %(message)s'))
 			Logging.logger.addHandler(logfp) 
-			handlers.append(logfp)
+			Logging._handlers.append(logfp)
 
 		# config the logging system
-		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=handlers)
+		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=Logging._handlers)
 
 		# Start worker to handle logs in the background
 		from helpers.BackgroundWorker import BackgroundWorkerPool
 		BackgroundWorkerPool.newWorker(Logging.checkInterval, Logging.loggingWorker, 'loggingWorker').start()
 	
-
+	
 	@staticmethod
 	def finit() -> None:
 		if Logging.queue is not None:
@@ -253,8 +254,10 @@ class ACMERichLogHandler(RichHandler):
 
 		]
 		
-	def emit(self, record: LogRecord) -> None:
+	def emit(self, record:LogRecord) -> None:
 		"""Invoked by logging."""
+		if not Logging.loggingEnabled or record.levelno < Logging.logLevel:
+			return
 		#path = Path(record.pathname).name
 		log_style = f"logging.level.{record.levelname.lower()}"
 		message = self.format(record)
