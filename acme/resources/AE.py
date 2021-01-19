@@ -85,6 +85,18 @@ class AE(AnnounceableResource):
 			for c in csz:
 				if c not in C.supportedContentSerializations:
 					return Result(status=False, rsc=RC.badRequest, dbg=f'unsupported content serialization: {c}')
+		
+		# check api attribute
+		if (api := self['api']) is None or len(api) < 2:	# at least R|N + another char
+			return Result(status=False, rsc=RC.badRequest, dbg=f'missing or empty attribute: "api"')
+		if api.startswith('N'):
+			pass # simple format
+		elif api.startswith('R'):
+			if len((apiElements := api.split('.'))) < 3:
+				return Result(status=False, rsc=RC.badRequest, dbg=f'wrong format for registered ID in attribute "api": to few elements')
+		else:
+			return Result(status=False, rsc=RC.badRequest, dbg=f'wrong format for ID in attribute "api": must start with "R" or "N"')
+
 
 		return Result(status=True)
 
