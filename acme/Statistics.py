@@ -42,12 +42,13 @@ class Statistics(object):
 	def __init__(self) -> None:
 		self.statisticsEnabled = Configuration.get('cse.statistics.enable')
 
-		if self.statisticsEnabled:
-			# create lock
-			self.statLock = Lock()
+		# create lock
+		self.statLock = Lock()
 
-			# retrieve or create statitics record
-			self.stats = self.setupStats()
+		# retrieve or create statistics record, even when statistics are disabled
+		self.stats = self.setupStats()
+
+		if self.statisticsEnabled:
 
 			# Start background worker to handle writing to DB
 			Logging.log('Starting statistics DB thread')
@@ -100,10 +101,7 @@ class Statistics(object):
 		}
 
 	# Return stats
-	def getStats(self) -> dict:
-		if not self.statisticsEnabled:
-			return None
-			
+	def getStats(self) -> dict:			
 		s = deepcopy(self.stats)
 
 		# Calculate some stats
@@ -308,7 +306,6 @@ skinparam rectangle {
 
 		def getChildren(res:Resource, tree:Tree, level:int) -> None:
 			""" Find and print the children in the tree structure. """
-			result = ''
 			if maxLevel > 0 and level == maxLevel:
 				return
 			chs = CSE.dispatcher.directChildResources(res.ri)
@@ -351,7 +348,8 @@ skinparam rectangle {
 					if atCsi != CSE.cseCsi:
 						result += f'    - {key}\n'
 		
-		return result
+		return result if len(result) else 'None'
+		
 
 # TODO events transit requests
 	def getStatisticsRich(self) -> str:
@@ -360,11 +358,12 @@ skinparam rectangle {
 
 		result = ''
 		stats = self.getStats()
-		result += '- **Resources**\n'
-		result += f'    - Created     : {stats[createdResources]}\n'
-		result += f'    - Updated     : {stats[updatedResources]}\n'
-		result += f'    - Deleted     : {stats[deletedResources]}\n'
-		result += f'    - Count       : {stats[resourceCount]}\n'
+		if self.statisticsEnabled:
+			result += '- **Resources**\n'
+			result += f'    - Created     : {stats[createdResources]}\n'
+			result += f'    - Updated     : {stats[updatedResources]}\n'
+			result += f'    - Deleted     : {stats[deletedResources]}\n'
+			result += f'    - Count       : {stats[resourceCount]}\n'
 		result += '- **Resource Types**\n'
 		result += f'    - AE          : {len(CSE.dispatcher.retrieveResourcesByType(T.AE))}\n'
 		result += f'    - ACP         : {len(CSE.dispatcher.retrieveResourcesByType(T.ACP))}\n'
@@ -374,17 +373,21 @@ skinparam rectangle {
 		result += f'    - MGMTOBJ     : {len(CSE.dispatcher.retrieveResourcesByType(T.MGMTOBJ))}\n'
 		result += f'    - NOD         : {len(CSE.dispatcher.retrieveResourcesByType(T.NOD))}\n'
 		result += f'    - SUB         : {len(CSE.dispatcher.retrieveResourcesByType(T.SUB))}\n'
-		result += '- **HTTP Requests**\n'
-		result += '    - **Received**\n'
-		result += f'        - RETRIEVE : {stats[httpRetrieves]}\n'
-		result += f'        - CREATE   : {stats[httpCreates]}\n'
-		result += f'        - UPDATE   : {stats[httpUpdates]}\n'
-		result += f'        - DELETE   : {stats[httpDeletes]}\n'
-		result += '- **Logs**\n'
-		result += f'    - Errors      : {stats[logErrors]}\n'
-		result += f'    - Warnings    : {stats[logWarnings]}\n'
+		if self.statisticsEnabled:
+			result += '- **HTTP Requests**\n'
+			result += '    - **Received**\n'
+			result += f'        - RETRIEVE : {stats[httpRetrieves]}\n'
+			result += f'        - CREATE   : {stats[httpCreates]}\n'
+			result += f'        - UPDATE   : {stats[httpUpdates]}\n'
+			result += f'        - DELETE   : {stats[httpDeletes]}\n'
+			result += '- **Logs**\n'
+			result += f'    - Errors      : {stats[logErrors]}\n'
+			result += f'    - Warnings    : {stats[logWarnings]}\n'
 		result += '- **Misc**\n'
 		result += f'    - StartTime   : {stats[cseStartUpTime]}\n'
 		result += f'    - Uptime      : {stats[cseUpTime]}\n'
+
+		if not self.statisticsEnabled:
+			result += f'\n(statistics are disabled)\n'
 
 		return result
