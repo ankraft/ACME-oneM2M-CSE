@@ -52,10 +52,12 @@ def loop(commands:dict, quit:str=None, catchKeyboardInterrupt:bool=False) -> Non
 		If 'catchKeyboardInterrupt' is True, then this key is handled as the ^C key,
 		otherweise a KeyboardInterrup event is raised.
 	"""
-	while True:
+	while True:	
 		# Get a key. Catch a ctrl-c keyboard interrup and handle it according to configuration
 		try:
 			ch = getch() # this also returns the key pressed, if you want to store it
+			if isinstance(ch, bytes):	# Windows getch() returns a byte-string
+				ch = ch.decode('utf-8') 
 		except KeyboardInterrupt as e:
 			if catchKeyboardInterrupt:
 				ch = '\x03'
