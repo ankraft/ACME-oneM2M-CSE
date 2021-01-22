@@ -122,8 +122,8 @@ class CNT(AnnounceableResource):
 
 	# Validating the Container. This means recalculating cni, cbs as well as
 	# removing ContentInstances when the limits are met.
-	def validate(self, originator:str=None, create:bool=False) -> Result:
-		if (res := super().validate(originator, create)).status == False:
+	def validate(self, originator:str=None, create:bool=False, dct:dict=None) -> Result:
+		if (res := super().validate(originator, create, dct)).status == False:
 			return res
 		return self._validateChildren()
 

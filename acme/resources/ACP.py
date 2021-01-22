@@ -47,9 +47,21 @@ class ACP(AnnounceableResource):
 									 ])
 
 
-	def validate(self, originator:str=None, create:bool=False) -> Result:
-		if not (res := super().validate(originator, create)).status:
+
+
+
+	def validate(self, originator:str=None, create:bool=False, dct:dict=None) -> Result:
+		if not (res := super().validate(originator, create, dct)).status:
 			return res
+		
+
+
+		
+		if dct is not None and (pvs := Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs')) is not None:
+			if len(pvs) == 0:
+				return Result(status=False, rsc=RC.badRequest, dbg='pvs must not be empty')
+		if self.pvs is None or len(self.pvs) == 0:
+			return Result(status=False, rsc=RC.badRequest, dbg='pvs must not be empty')
 
 		# add admin originator	
 		if Configuration.get('cse.acp.addAdminOrignator'):

@@ -222,7 +222,7 @@ class Resource(object):
 		#self.dict = {k: v for (k, v) in self.dict.items() if v is not None }
 
 		# Do some extra validations, if necessary
-		if not (res := self.validate(originator)).status:
+		if not (res := self.validate(originator, dct=dct)).status:
 			return res
 
 		# store last modified attributes
@@ -261,7 +261,7 @@ class Resource(object):
 		return resource['ty'] in allowedChildResourceTypes or isinstance(resource, Unknown)
 
 
-	def validate(self, originator:str=None, create:bool=False) -> Result:
+	def validate(self, originator:str=None, create:bool=False, dct:dict=None) -> Result:
 		""" Validate a resource. Usually called within activate() or update() methods. """
 		Logging.logDebug(f'Validating resource: {self.ri}')
 		if (not Utils.isValidID(self.ri) or

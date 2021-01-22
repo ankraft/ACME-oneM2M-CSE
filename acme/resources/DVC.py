@@ -38,8 +38,8 @@ class DVC(MgmtObj):
 	#	validate() and update()
 	#
 
-	def validate(self, originator:str=None, create:bool=False) -> Result:
-		if not (res := super().validate(originator, create)).status:
+	def validate(self, originator:str=None, create:bool=False, dct:dict=None) -> Result:
+		if not (res := super().validate(originator, create, dct)).status:
 			return res
 		self.setAttribute('ena', True, overwrite=True)	# always set (back) to True
 		self.setAttribute('dis', True, overwrite=True)	# always set (back) to True

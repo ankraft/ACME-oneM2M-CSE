@@ -64,8 +64,8 @@ class GRP(AnnounceableResource):
 		return Result(status=True)
 
 
-	def validate(self, originator:str=None, create:bool=False) -> Result:
-		if not (res := super().validate(originator, create)).status:
+	def validate(self, originator:str=None, create:bool=False, dct:dict=None) -> Result:
+		if not (res := super().validate(originator, create, dct)).status:
 			return res
 		return CSE.group.validateGroup(self, originator)
 

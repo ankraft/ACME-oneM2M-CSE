@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added checks for remote CSE's *csi* (does it exist? Does it begin with a /?)
 - [TESTS] The behavior whether a failed test skips the remaining tests in a test suite can now be configured.
 - [TESTS] Improved documentation. Doc strings provide a bit more information about a currently running test.
+- [TESTS] Tests now pass mypy checks.
 - [MISC] Allow ```# single-line comments``` in JSON
 - [MISC] Default configuration for file logging is now *False* (to better support Raspberry Pi and similar systems with flash card file systems).
 - [DATABASE] Changed the postfix of data files to the CSE-ID.
@@ -38,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] CSEBase.srt attribute now also returns the announced attributes.
 - [CSE] Improved shutdown behaviour. Waiting for internal threads to finish.
 - [CSE] When updating a subscription resource's *nu* attribute: Removed URI's don't cause a "deletion notification" anymore.
+- [ACP] Added check that *pvs* is not empty during CREATE or UPDATE.
 
 
 ## [0.6.0] - 2020-10-26

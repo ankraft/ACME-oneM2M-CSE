@@ -42,7 +42,7 @@ class TestACP(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createACP(self) -> None:
-		"""	Create an <ACP> """
+		"""	Create <ACP> """
 		dct = 	{ "m2m:acp": {
 					"rn": acpRN,
 					"pv": {
@@ -59,25 +59,27 @@ class TestACP(unittest.TestCase):
 				}}
 		TestACP.acp, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
 		self.assertEqual(rsc, RC.created)
+	
+
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveACP(self) -> None:
-		"""	Retrieve the <ACP> """
+		"""	Retrieve <ACP> """
 		_, rsc = RETRIEVE(acpURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveACPwrongOriginator(self) -> None:
-		"""	Retrieve the <ACP> with wrong originator """
+		"""	Retrieve <ACP> with wrong originator """
 		_, rsc = RETRIEVE(acpURL, 'wrongoriginator')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesACP(self) -> None:
-		"""	Check the <ACP>'s attributes """
+		"""	Test <ACP>'s attributes """
 		r, rsc = RETRIEVE(acpURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:acp/ty'), T.ACP)
@@ -116,7 +118,7 @@ class TestACP(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateACP(self) -> None:
-		"""	Update the <ACP> """
+		"""	Update <ACP> """
 		dct = 	{ 'm2m:acp' : {
 					'lbl' : [ 'aTag' ]
 				}}
@@ -129,7 +131,7 @@ class TestACP(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateACPwrongOriginator(self) -> None:
-		"""	Update the <ACP> with wrong originator """
+		"""	Update <ACP> with wrong originator """
 		dct = 	{ 'm2m:acp' : {
 					'lbl' : [ 'bTag' ]
 				}}
@@ -139,7 +141,7 @@ class TestACP(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addACPtoAE(self) -> None:
-		"""	Reference the <ACP> in a new <AE> """
+		"""	Reference <ACP> in a new <AE> """
 		self.assertIsNotNone(TestACP.acp)
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
@@ -173,6 +175,26 @@ class TestACP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateACPEmptyPVS(self) -> None:
+		"""	Update <ACP> with empty PVS -> Fail """
+		dct = 	{ 'm2m:acp' : {
+					'pvs' : {}
+				}}
+		acp, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateACPNoPVS(self) -> None:
+		"""	Update <ACP> with None PVS -> Fail """
+		dct = 	{ 'm2m:acp' : {
+					'pvs' : None
+				}}
+		acp, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteACPwrongOriginator(self) -> None:
 		""" Delete <ACP> with wrong originator """
 		_, rsc = DELETE(acpURL, 'wrong')
@@ -184,6 +206,38 @@ class TestACP(unittest.TestCase):
 		""" Delete <ACP> with correct originator """
 		_, rsc = DELETE(acpURL, self.acpORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
+	
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPNoPVS(self) -> None:
+		"""	Create <ACP> with no PVS -> Fail """
+		dct = 	{ "m2m:acp": {
+					"rn": acpRN,
+					"pv": {
+						"acr": [ { 	"acor": [ ORIGINATOR ],
+									"acop": 63
+								} ]
+					}
+				}}
+		TestACP.acp, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPEmptyPVS(self) -> None:
+		"""	Create <ACP> with empty PVS -> Fail """
+		dct = 	{ "m2m:acp": {
+					"rn": acpRN,
+					"pv": {
+						"acr": [ { 	"acor": [ ORIGINATOR ],
+									"acop": 63
+								} ]
+					},
+					"pvs": {
+					},
+				}}
+		TestACP.acp, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
+		self.assertEqual(rsc, RC.badRequest)
 
 
 def run() -> Tuple[int, int, int]:
@@ -192,11 +246,18 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestACP('test_retrieveACP'))
 	suite.addTest(TestACP('test_retrieveACPwrongOriginator'))
 	suite.addTest(TestACP('test_attributesACP'))
+	suite.addTest(TestACP('test_updateACP'))
 	suite.addTest(TestACP('test_updateACPwrongOriginator'))
+	suite.addTest(TestACP('test_updateACPEmptyPVS'))
+	suite.addTest(TestACP('test_updateACPNoPVS'))
 	suite.addTest(TestACP('test_addACPtoAE'))
 	suite.addTest(TestACP('test_removeACPfromAE'))
 	suite.addTest(TestACP('test_deleteACPwrongOriginator'))
 	suite.addTest(TestACP('test_deleteACP'))
+	suite.addTest(TestACP('test_createACPNoPVS'))
+	suite.addTest(TestACP('test_createACPEmptyPVS'))
+
+
 	#suite.addTest(TestACP('test_handleAE'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
