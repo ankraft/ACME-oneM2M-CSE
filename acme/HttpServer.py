@@ -44,6 +44,7 @@ class HttpServer(object):
 		self.webuiRoot 			= Configuration.get('cse.webui.root')
 		self.webuiDirectory 	= f'{CSE.rootDirectory}/webui'
 		self.hfvRVI				= Configuration.get('cse.releaseVersion')
+		self.isStopped			= False
 
 		# request handlers for operations
 		self._requestHandlers:dict = {
@@ -124,6 +125,7 @@ class HttpServer(object):
 
 	def shutdown(self) -> bool:
 		Logging.log('HttpServer shut down')
+		self.isStopped = True
 		return True
 		
 	
@@ -176,11 +178,15 @@ class HttpServer(object):
 			if httpRequestResult.status:
 				if operation in [ Operation.CREATE, Operation.UPDATE ]:
 					Logging.logDebug(f'Body: \n{str(httpRequestResult.request.data)}')
-				responseResult = self._requestHandlers[operation](httpRequestResult.request)
+				
+				if self.isStopped:
+					responseResult = Result(rsc=RC.internalServerError, dbg='http server not running	', status=False)
+				else:
+					responseResult = self._requestHandlers[operation](httpRequestResult.request)
 			else:
 				responseResult = httpRequestResult
 		except Exception as e:
-			responseResult = self._prepareException(e)
+			responseResult = self._prepareException(e)	
 		responseResult.request = httpRequestResult.request
 		return self._prepareResponse(responseResult)
 
