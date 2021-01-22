@@ -26,9 +26,12 @@ nod2URL = f'{cseURL}/{nod2RN}'
 
 class TestMgmtObj(unittest.TestCase):
 
+	cse 		= None
+	nod 		= None
+
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def setUpClass(cls):
+	def setUpClass(cls) -> None:
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
@@ -42,7 +45,7 @@ class TestMgmtObj(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
 
 	#
@@ -54,7 +57,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createFWR(self):
+	def test_createFWR(self) -> None:
+		"""	Create [Firmware] """
 		dct =  { 'm2m:fwr' : {
 					'mgd' : T.FWR,
 					'rn' : self.fwrRN,
@@ -70,14 +74,16 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveFWR(self):
+	def test_retrieveFWR(self) -> None:
+		"""	Retrieve [Firmware] """
 		r, rsc = RETRIEVE(self.fwrURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:fwr/mgd'), T.FWR)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesFWR(self):
+	def test_attributesFWR(self) -> None:
+		"""	Test [Firmware] attributes """
 		r, rsc = RETRIEVE(self.fwrURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:fwr/ty'), T.MGMTOBJ)
@@ -101,7 +107,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteFWR(self):
+	def test_deleteFWR(self) -> None:
+		"""	Delete [Firmware] """
 		_, rsc = DELETE(self.fwrURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
@@ -114,7 +121,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createSWR(self):
+	def test_createSWR(self) -> None:
+		"""Create [Software] """
 		dct =  { 'm2m:swr' : {
 					'mgd' : T.SWR,
 					'rn' : self.swrRN,
@@ -129,14 +137,16 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveSWR(self):
+	def test_retrieveSWR(self) -> None:
+		"""	Retrieve [Software] """
 		r, rsc = RETRIEVE(self.swrURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:swr/mgd'), T.SWR)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesSWR(self):
+	def test_attributesSWR(self) -> None:
+		""" Test [Software] attributes """
 		r, rsc = RETRIEVE(self.swrURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:swr/ty'), T.MGMTOBJ)
@@ -159,7 +169,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteSWR(self):
+	def test_deleteSWR(self) -> None:
+		"""	Delete [Software] """
 		_, rsc = DELETE(self.swrURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
@@ -169,7 +180,8 @@ class TestMgmtObj(unittest.TestCase):
 	#
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createMEM(self):
+	def test_createMEM(self) -> None:
+		""" Create [Memory] """
 		dct =  { 'm2m:mem' : {
 					'mgd' : T.MEM,
 					'rn' : memRN,
@@ -183,14 +195,16 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveMEM(self):
+	def test_retrieveMEM(self) -> None:
+		"""	Retrieve [Memory] """
 		r, rsc = RETRIEVE(memURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:mem/mgd'), T.MEM)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesMEM(self):
+	def test_attributesMEM(self) -> None:
+		""" Test [Memory] attributes """
 		r, rsc = RETRIEVE(memURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:mem/ty'), T.MGMTOBJ)
@@ -208,7 +222,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteMEM(self):
+	def test_deleteMEM(self) -> None:
+		""" Delete [Memory] """
 		_, rsc = DELETE(memURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
@@ -220,7 +235,8 @@ class TestMgmtObj(unittest.TestCase):
 	aniURL	= f'{nodURL}/{aniRN}'
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createANI(self):
+	def test_createANI(self) -> None:
+		""" Create [areaNwkInfo] """
 		dct =  { 'm2m:ani' : {
 					'mgd' : T.ANI,
 					'rn' : self.aniRN,
@@ -234,14 +250,16 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveANI(self):
+	def test_retrieveANI(self) -> None:
+		""" Retrieve [areaNwkInfo] """
 		r, rsc = RETRIEVE(self.aniURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:ani/mgd'), T.ANI)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesANI(self):
+	def test_attributesANI(self) -> None:
+		"""	Test [areaNwkInfo] attributes """
 		r, rsc = RETRIEVE(self.aniURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:ani/ty'), T.MGMTOBJ)
@@ -262,7 +280,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteANI(self):
+	def test_deleteANI(self) -> None:
+		"""	Delete [areaNwkInfo] """
 		_, rsc = DELETE(self.aniURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
@@ -275,7 +294,8 @@ class TestMgmtObj(unittest.TestCase):
 	andiURL	= f'{nodURL}/{andiRN}'
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createANDI(self):
+	def test_createANDI(self) -> None:
+		""" Create [areaNwkDeviceInfo] """
 		dct =  { 'm2m:andi' : {
 					'mgd' : T.ANDI,
 					'rn' : self.andiRN,
@@ -293,14 +313,16 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveANDI(self):
+	def test_retrieveANDI(self) -> None:
+		""" Retrieve [areaNwkDeviceInfo] """
 		r, rsc = RETRIEVE(self.andiURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:andi/mgd'), T.ANDI)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesANDI(self):
+	def test_attributesANDI(self) -> None:
+		""" Test [areaNwkDeviceInfo] attributes """
 		r, rsc = RETRIEVE(self.andiURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:andi/ty'), T.MGMTOBJ)
@@ -330,6 +352,7 @@ class TestMgmtObj(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteANDI(self) -> None:
+		""" Delete [areaNwkDeviceInfo] """
 		_, rsc = DELETE(self.andiURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
@@ -340,6 +363,7 @@ class TestMgmtObj(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createBAT(self) -> None:
+		""" Create [battery] """
 		dct =  { 'm2m:bat' : {
 					'mgd' : T.BAT,
 					'rn'  : batRN,
@@ -353,7 +377,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveBAT(self) ->None:
+	def test_retrieveBAT(self) -> None:
+		""" Retrieve [battery] """
 		r, rsc = RETRIEVE(batURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:bat/mgd'), T.BAT)
@@ -361,6 +386,7 @@ class TestMgmtObj(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesBAT(self) -> None:
+		""" Test [battery] attributes """
 		r, rsc = RETRIEVE(batURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:bat/ty'), T.MGMTOBJ)
@@ -379,6 +405,7 @@ class TestMgmtObj(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteBAT(self) -> None:
+		""" Delete [battery] """
 		_, rsc = DELETE(batURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
@@ -392,6 +419,7 @@ class TestMgmtObj(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createDVI(self) -> None:
+		"""	Create [deviceInfo] """
 		dct =  { 'm2m:dvi' : {
 					'mgd' : T.DVI,
 					'rn' : self.dviRN,
@@ -422,14 +450,16 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveDVI(self):
+	def test_retrieveDVI(self) -> None:
+		""" Retrieve [deviceInfo] """
 		r, rsc = RETRIEVE(self.dviURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:dvi/mgd'), T.DVI)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesDVI(self):
+	def test_attributesDVI(self) -> None:
+		""" Test [deviceInfo] attributes """
 		r, rsc = RETRIEVE(self.dviURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:dvi/ty'), T.MGMTOBJ)
@@ -481,7 +511,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteDVI(self):
+	def test_deleteDVI(self) -> None:
+		""" Delete [deviceInfo] """
 		_, rsc = DELETE(self.dviURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
@@ -494,7 +525,8 @@ class TestMgmtObj(unittest.TestCase):
 	dvcURL	= f'{nodURL}/{dvcRN}'
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createDVC(self):
+	def test_createDVC(self) -> None:
+		""" Create [deviceCapability] """
 		dct =  { 'm2m:dvc' : {
 					'mgd' : T.DVC,
 					'rn' : self.dvcRN,
@@ -515,14 +547,16 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveDVC(self):
+	def test_retrieveDVC(self) -> None:
+		""" Retrieve [deviceCapability] """
 		r, rsc = RETRIEVE(self.dvcURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:dvc/mgd'), T.DVC)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesDVC(self):
+	def test_attributesDVC(self) -> None:
+		""" Test [deviceCapability] attributes """
 		r, rsc = RETRIEVE(self.dvcURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:dvc/ty'), T.MGMTOBJ)
@@ -550,7 +584,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateDVCEnaTrue(self):
+	def test_updateDVCEnaTrue(self) -> None:
+		""" Update [deviceCapability] ENA=False """
 		dct =  { 'm2m:dvc' : {
 					'ena' : True,
 				}}
@@ -561,7 +596,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateDVCEnaFalse(self):
+	def test_updateDVCEnaFalse(self) -> None:
+		""" Update [deviceCapability] ENA=False """
 		dct =  { 'm2m:dvc' : {
 					'ena' : False,
 				}}
@@ -572,7 +608,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateDVCDisTrue(self):
+	def test_updateDVCDisTrue(self) -> None:
+		""" Test [deviceCapability] DIS """
 		dct =  { 'm2m:dvc' : {
 					'dis' : True
 				}}
@@ -583,7 +620,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateDVCDisFalse(self):
+	def test_updateDVCDisFalse(self) -> None:
+		""" Test [deviceCapability] DIS """
 		dct =  { 'm2m:dvc' : {
 					'dis' : False
 				}}
@@ -594,7 +632,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateDVCEnaDisTrue(self):
+	def test_updateDVCEnaDisTrue(self) -> None:
+		""" Test [deviceCapability] ENA=True & DIS = True -> Fail """
 		dct =  { 'm2m:dvc' : {
 					'ena' : True,
 					'dis' : True
@@ -604,7 +643,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateDVCEnaDisFalse(self):
+	def test_updateDVCEnaDisFalse(self) -> None:
+		"""	Update [deviceCapability] ENA=False & DIS=False -> ENA=True & DIS=True """
 		dct =  { 'm2m:dvc' : {
 					'ena' : False,
 					'dis' : False
@@ -616,7 +656,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteDVC(self):
+	def test_deleteDVC(self) -> None:
+		"""	Delete [deviceCapability] """
 		_, rsc = DELETE(self.dvcURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
@@ -629,7 +670,8 @@ class TestMgmtObj(unittest.TestCase):
 	rboURL	= f'{nodURL}/{rboRN}'
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createRBO(self):
+	def test_createRBO(self) -> None:
+		"""	Create [reboot] """
 		dct =  { 'm2m:rbo' : {
 					'mgd' : T.RBO,
 					'rn'  : self.rboRN,
@@ -644,14 +686,16 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveRBO(self):
+	def test_retrieveRBO(self) -> None:
+		"""	Retrieve [reboot] """
 		r, rsc = RETRIEVE(self.rboURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:rbo/mgd'), T.RBO)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesRBO(self):
+	def test_attributesRBO(self) -> None:
+		""" Test [reboot] attributes """
 		r, rsc = RETRIEVE(self.rboURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:rbo/ty'), T.MGMTOBJ)
@@ -669,7 +713,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateRBORboTrue(self):
+	def test_updateRBORboTrue(self) -> None:
+		"""	Update [reboot] with RBO=True -> RBO=False """
 		dct =  { 'm2m:rbo' : {
 					'rbo' : True,
 				}}
@@ -680,7 +725,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateRBORboFalse(self):
+	def test_updateRBORboFalse(self) -> None:
+		""" Update [reboot] with RBO=False -> RBO=False """
 		dct =  { 'm2m:rbo' : {
 					'rbo' : False,
 				}}
@@ -691,7 +737,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateRBOFarTrue(self):
+	def test_updateRBOFarTrue(self) -> None:
+		"""	Update [reboot] FAR=True -> FAR=False """
 		dct =  { 'm2m:rbo' : {
 					'far' : True
 				}}
@@ -702,7 +749,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateRBOFarFalse(self):
+	def test_updateRBOFarFalse(self) -> None:
+		"""	Update [reboot] FAR=False -> FAR=False """
 		dct =  { 'm2m:rbo' : {
 					'far' : False
 				}}
@@ -713,7 +761,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateRBORboFarTrue(self):
+	def test_updateRBORboFarTrue(self) -> None:
+		""" Update [reboot] with RBO=True & FAR=True -> Fail """
 		dct =  { 'm2m:rbo' : {
 					'rbo' : True,
 					'far' : True
@@ -723,7 +772,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateRBORboFarFalse(self):
+	def test_updateRBORboFarFalse(self) -> None:
+		""" Update [reboot] with RBO=False & FAR=False  -> RBO=False & FAR=False """
 		dct =  { 'm2m:rbo' : {
 					'rbo' : False,
 					'far' : False
@@ -735,7 +785,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteRBO(self):
+	def test_deleteRBO(self) -> None:
+		"""	Delete [reboot] """
 		_, rsc = DELETE(self.rboURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
@@ -748,7 +799,8 @@ class TestMgmtObj(unittest.TestCase):
 	nycfcURL	= f'{nodURL}/{nycfcRN}'
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createNYCFC(self):
+	def test_createNYCFC(self) -> None:
+		"""	Create [myCertFileCred] """
 		dct =  { 'm2m:nycfc' : {
 					'mgd' : T.NYCFC,
 					'rn' : self.nycfcRN,
@@ -763,14 +815,16 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveNYCFC(self):
+	def test_retrieveNYCFC(self) -> None:
+		""" Retrieve [myCertFileCred] """
 		r, rsc = RETRIEVE(self.nycfcURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:nycfc/mgd'), T.NYCFC)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesNYCFC(self):
+	def test_attributesNYCFC(self) -> None:
+		""" Test [myCertFileCred] attributes """
 		r, rsc = RETRIEVE(self.nycfcURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:nycfc/ty'), T.MGMTOBJ)
@@ -790,7 +844,8 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteNYCFC(self):
+	def test_deleteNYCFC(self) -> None:
+		"""	Delete [myCertFileCred] """
 		_, rsc = DELETE(self.nycfcURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
@@ -804,6 +859,7 @@ class TestMgmtObj(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createEVL(self) -> None:
+		"""	Create [EventLog] """
 		dct =  { 'm2m:bat' : {
 					'mgd' : T.BAT,
 					'rn'  : batRN,
@@ -817,14 +873,16 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveBAT(self) -> None:
+	def test_retrieveEVL(self) -> None:
+		"""	Retrieve [eventLog] """
 		r, rsc = RETRIEVE(batURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:bat/mgd'), T.BAT)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesBAT(self) -> None:
+	def test_attributesEVL(self) -> None:
+		"""	Test [eventLog] attributes """
 		r, rsc = RETRIEVE(batURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:bat/ty'), T.MGMTOBJ)
@@ -842,17 +900,15 @@ class TestMgmtObj(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteBAT(self) -> None:
+	def test_deleteEVL(self) -> None:
+		""" Delete [eventLog] """
 		_, rsc = DELETE(batURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
 
 
-	# EVL 		= 1010
 
-
-
-def run():
+def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestMgmtObj('test_createFWR'))
 	suite.addTest(TestMgmtObj('test_retrieveFWR'))
@@ -902,11 +958,16 @@ def run():
 	suite.addTest(TestMgmtObj('test_updateRBORboFarTrue'))
 	suite.addTest(TestMgmtObj('test_updateRBORboFarFalse'))
 	suite.addTest(TestMgmtObj('test_deleteRBO'))
-
 	suite.addTest(TestMgmtObj('test_createNYCFC'))
 	suite.addTest(TestMgmtObj('test_retrieveNYCFC'))
 	suite.addTest(TestMgmtObj('test_attributesNYCFC'))
 	suite.addTest(TestMgmtObj('test_deleteNYCFC'))
+	suite.addTest(TestMgmtObj('test_createEVL'))
+	suite.addTest(TestMgmtObj('test_retrieveEVL'))
+	suite.addTest(TestMgmtObj('test_attributesEVL'))
+	suite.addTest(TestMgmtObj('test_deleteEVL'))
+	
+		
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 

@@ -22,6 +22,10 @@ class TestACP(unittest.TestCase):
 
 	acpORIGINATOR = 'testOriginator'
 
+	cse 			= None
+	ae 				= None
+	acp 			= None
+
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
@@ -31,13 +35,14 @@ class TestACP(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		DELETE(acpURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createACP(self) -> None:
+		"""	Create an <ACP> """
 		dct = 	{ "m2m:acp": {
 					"rn": acpRN,
 					"pv": {
@@ -57,19 +62,22 @@ class TestACP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveACP(self):
+	def test_retrieveACP(self) -> None:
+		"""	Retrieve the <ACP> """
 		_, rsc = RETRIEVE(acpURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveACPwrongOriginator(self):
+	def test_retrieveACPwrongOriginator(self) -> None:
+		"""	Retrieve the <ACP> with wrong originator """
 		_, rsc = RETRIEVE(acpURL, 'wrongoriginator')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesACP(self):
+	def test_attributesACP(self) -> None:
+		"""	Check the <ACP>'s attributes """
 		r, rsc = RETRIEVE(acpURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:acp/ty'), T.ACP)
@@ -107,19 +115,21 @@ class TestACP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateACP(self):
+	def test_updateACP(self) -> None:
+		"""	Update the <ACP> """
 		dct = 	{ 'm2m:acp' : {
 					'lbl' : [ 'aTag' ]
 				}}
-		r, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
+		acp, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
-		self.assertIsNotNone(findXPath(r, 'm2m:acp/lbl'))
-		self.assertEqual(len(findXPath(r, 'm2m:acp/lbl'), 1))
-		self.assertIn('aTag', findXPath(r, 'm2m:acp/lbl'))
+		self.assertIsNotNone(findXPath(acp, 'm2m:acp/lbl'))
+		self.assertEqual(len(findXPath(acp, 'm2m:acp/lbl')), 1)
+		self.assertIn('aTag', findXPath(acp, 'm2m:acp/lbl'))
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateACPwrongOriginator(self):
+	def test_updateACPwrongOriginator(self) -> None:
+		"""	Update the <ACP> with wrong originator """
 		dct = 	{ 'm2m:acp' : {
 					'lbl' : [ 'bTag' ]
 				}}
@@ -128,7 +138,8 @@ class TestACP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_addACPtoAE(self):
+	def test_addACPtoAE(self) -> None:
+		"""	Reference the <ACP> in a new <AE> """
 		self.assertIsNotNone(TestACP.acp)
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
@@ -146,7 +157,8 @@ class TestACP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_removeACPfromAE(self):
+	def test_removeACPfromAE(self) -> None:
+		""" Remove the <ACP> reference from an <AE> """
 		self.assertIsNotNone(TestACP.acp)
 		self.assertIsNotNone(TestACP.ae)
 		acpi = findXPath(TestACP.ae, 'm2m:ae/acpi').copy()
@@ -156,23 +168,25 @@ class TestACP(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(aeURL, findXPath(TestACP.ae, 'm2m:ae/aei'), dct)
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)	# missing self-privileges
-		r, rsc = UPDATE(aeURL, ORIGINATOR, dct)
+		_, rsc = UPDATE(aeURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteACPwrongOriginator(self):
-		r, rsc = DELETE(acpURL, 'wrong')
+	def test_deleteACPwrongOriginator(self) -> None:
+		""" Delete <ACP> with wrong originator """
+		_, rsc = DELETE(acpURL, 'wrong')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteACP(self):
-		r, rsc = DELETE(acpURL, self.acpORIGINATOR)
+	def test_deleteACP(self) -> None:
+		""" Delete <ACP> with correct originator """
+		_, rsc = DELETE(acpURL, self.acpORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
 
-def run():
+def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestACP('test_createACP'))
 	suite.addTest(TestACP('test_retrieveACP'))

@@ -26,10 +26,14 @@ GISRN  = 'gis'
 gisURL = f'{aeURL}/{GISRN}'
 
 class TestFCNT(unittest.TestCase):
+	
+	cse 		= None
+	ae 			= None
+	originator 	= None
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def setUpClass(cls):
+	def setUpClass(cls) -> None:
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, 'cannot retrieve CSEBase'
 
@@ -46,12 +50,13 @@ class TestFCNT(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createFCNT(self):
+	def test_createFCNT(self) -> None:
+		""" Create <FCNT> [cod:tempe] """
 		self.assertIsNotNone(TestFCNT.cse)
 		self.assertIsNotNone(TestFCNT.ae)
 		dct = 	{ 'cod:tempe' : { 
@@ -68,19 +73,22 @@ class TestFCNT(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveFCNT(self):
+	def test_retrieveFCNT(self) -> None:
+		""" Retrieve <FCNT> """
 		_, rsc = RETRIEVE(fcntURL, TestFCNT.originator)
 		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveFCNTWithWrongOriginator(self):
+	def test_retrieveFCNTWithWrongOriginator(self) -> None:
+		"""	Retrieve <FCNT> """
 		_, rsc = RETRIEVE(fcntURL, 'Cwrong')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesFCNT(self):
+	def test_attributesFCNT(self) -> None:
+		"""	Test <FCNT> attributes """
 		r, rsc = RETRIEVE(fcntURL, TestFCNT.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'cod:tempe/ty'), T.FCNT)
@@ -102,7 +110,8 @@ class TestFCNT(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateFCNT(self):
+	def test_updateFCNT(self) -> None:
+		"""	Update <FCNT> [cod:tempe] TARTE """
 		dct = 	{ 'cod:tempe' : {
 					'tarTe':	5.0
 				}}
@@ -119,7 +128,8 @@ class TestFCNT(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateFCNTwithCnd(self):
+	def test_updateFCNTwithCnd(self) -> None:
+		"""	Update <FCNT> [cod:tempe] CND -> Fail """
 		dct = 	{ 'cod:tempe' : {
 					'cnd' : CND,
 				}}
@@ -128,15 +138,19 @@ class TestFCNT(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateFCNTwithWrongType(self):
+	def test_updateFCNTwithWrongType(self) -> None:
+		"""	Update <FCNT> [cod:tempe] TARTE wrong type -> Fail """
 		dct = 	{ 'cod:tempe' : {
 					'tarTe':	'5.0'
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT.originator, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateFCNTwithUnkownAttribute(self):
+	def test_updateFCNTwithUnkownAttribute(self) -> None:
+		"""	Update <FCNT> [cod:tempe] unknown attribute -> Fail """
+
 		dct = 	{ 'cod:tempe' : {
 					'wrong':	'aValue'
 				}}
@@ -145,7 +159,8 @@ class TestFCNT(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createFCNTUnknown(self):
+	def test_createFCNTUnknown(self) -> None:
+		"""	Create unknown <FCNT> -> Fail """
 		dct = 	{ 'cod:unknown' : { 
 					'rn'	: 'unknown',
 					'cnd' 	: 'unknown', 
@@ -156,7 +171,8 @@ class TestFCNT(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createCNTUnderFCNT(self):
+	def test_createCNTUnderFCNT(self) -> None:
+		"""	Create <CNT> under <FCNT> """
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN
 				}}
@@ -165,13 +181,15 @@ class TestFCNT(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteCNTUnderFCNT(self):
+	def test_deleteCNTUnderFCNT(self) -> None:
+		"""	Delete <CNT> under FCNT """
 		_, rsc = DELETE(f'{fcntURL}/{cntRN}', ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createFCNTUnderFCNT(self):
+	def test_createFCNTUnderFCNT(self) -> None:
+		""" Create <FCNT> under <FCNT> """
 		dct = 	{ 'cod:tempe' : { 
 					'cnd' 	: CND, 
 					'rn' : fcntRN,
@@ -181,18 +199,22 @@ class TestFCNT(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteFCNTUnderFCNT(self):
+	def test_deleteFCNTUnderFCNT(self) -> None:
+		"""	Delete <FCNT> under <FCNT> """
 		_, rsc = DELETE(f'{fcntURL}/{fcntRN}', ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteFCNT(self):
+	def test_deleteFCNT(self) -> None:
+		"""	Delete <FCNT> """
 		_, rsc = DELETE(fcntURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createGenericInterworking(self):
+	def test_createGenericInterworking(self) -> None:
+		"""	Create <FCNT> [GIS] """
 		dct = 	{ 'm2m:gis' : { 
 					'cnd' 	: GISCND,
 					'gisn'	: 'abc',
@@ -203,7 +225,8 @@ class TestFCNT(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createGenericInterworkingWrong(self):
+	def test_createGenericInterworkingWrong(self) -> None:
+		""" Create <FCNT> [GIS] missing M attributes -> Fail """
 		dct = 	{ 'm2m:gis' : { 
 					'cnd' 	: GISCND
 				}}
@@ -212,7 +235,8 @@ class TestFCNT(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createGenericInterworkingWrong2(self):
+	def test_createGenericInterworkingWrong2(self) -> None:
+		"""	Create <FCNT> [GIS] unknown attribute -> Fail """
 		dct = 	{ 'm2m:gis' : { 
 					'cnd' 	: GISCND,
 					'gisn'	: 'abc',
@@ -223,7 +247,8 @@ class TestFCNT(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createGenericInterworkingOperationInstance(self):
+	def test_createGenericInterworkingOperationInstance(self) -> None:
+		"""	Create <FCNT> [GIS] GION & GIOS """
 		dct = 	{ 'm2m:gio' : { 
 					'cnd' 	: GISCND,
 					'gion'	: 'anOperation',
@@ -234,7 +259,8 @@ class TestFCNT(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createGenericInterworkingOperationInstance2(self):
+	def test_createGenericInterworkingOperationInstance2(self) -> None:
+		"""	Create <FCNT> [GIS] GION, GIOS, GIIP """
 		dct = 	{ 'm2m:gio' : { 
 					'cnd' 	: GISCND,
 					'gion'	: 'anOperation',
@@ -246,12 +272,13 @@ class TestFCNT(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteGenericInterworking(self):
+	def test_deleteGenericInterworking(self) -> None:
+		"""	Delete <FCNT> [GIS] """
 		_, rsc = DELETE(gisURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
 
-def run():
+def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestFCNT('test_createFCNT'))
 	suite.addTest(TestFCNT('test_retrieveFCNT'))

@@ -7,9 +7,9 @@
 #	Configuration & helper functions for unit tests
 #
 
-import requests, random, sys, json, re, time, datetime, ssl
+import requests, random, sys, json, re, time, datetime, ssl, urllib3
 import cbor2
-from typing import Any, Callable, Union
+from typing import Any, Callable, Union, Tuple, cast
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import cbor2
@@ -106,23 +106,42 @@ remoteCsrURL 	= f'{REMOTEcseURL}{CSEID}'
 #	HTTP Requests
 #
 
-def RETRIEVE(url:str, originator:str, timeout=None, headers=None) -> (dict, int):
+def _RETRIEVE(url:str, originator:str, timeout:float=None, headers:dict=None) -> Tuple[Union[bytes, dict], int]:
 	return sendRequest(requests.get, url, originator, timeout=timeout, headers=headers)
 
+def RETRIEVEBYTES(url:str, originator:str, timeout:float=None, headers:dict=None) -> Tuple[bytes, int]:
+	x,rsc = _RETRIEVE(url=url, originator=originator, timeout=timeout, headers=headers)
+	return cast(bytes, x), rsc
 
-def CREATE(url:str, originator:str, ty:int=None, data:Any=None, headers=None) -> (dict, int):
+def RETRIEVE(url:str, originator:str, timeout:float=None, headers:dict=None) -> Tuple[dict, int]:
+	x,rsc = _RETRIEVE(url=url, originator=originator, timeout=timeout, headers=headers)
+	return cast(dict, x), rsc
+
+def _CREATE(url:str, originator:str, ty:int=None, data:Any=None, headers:dict=None) -> Tuple[Union[bytes, dict], int]:
 	return sendRequest(requests.post, url, originator, ty, data, headers=headers)
 
+def CREATE(url:str, originator:str, ty:int=None, data:Any=None, headers:dict=None) -> Tuple[dict, int]:
+	x,rsc = _CREATE(url=url, originator=originator, ty=ty, data=data, headers=headers)
+	return cast(dict, x), rsc
 
-def UPDATE(url:str, originator:str, data:Any, headers=None) -> (dict, int):
+
+def _UPDATE(url:str, originator:str, data:Any, headers:dict=None) -> Tuple[Union[bytes, dict], int]:
 	return sendRequest(requests.put, url, originator, data=data, headers=headers)
 
+def UPDATEBYTES(url:str, originator:str, data:Any, headers:dict=None) -> Tuple[bytes, int]:
+	x, rsc = _UPDATE(url=url, originator=originator, data=data, headers=headers)
+	return cast(bytes, x), rsc
 
-def DELETE(url:str, originator:str, headers=None) -> (dict, int):
-	return sendRequest(requests.delete, url, originator, headers=headers)
+def UPDATE(url:str, originator:str, data:Any, headers:dict=None) -> Tuple[dict, int]:
+	x, rsc = _UPDATE(url=url, originator=originator, data=data, headers=headers)
+	return cast(dict, x), rsc
+
+def DELETE(url:str, originator:str, headers:dict=None) -> Tuple[dict, int]:
+	x, rsc = sendRequest(requests.delete, url, originator, headers=headers)
+	return cast(dict, x), rsc
 
 
-def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any=None, ct:str=None, timeout=None, headers=None) -> (dict, int):	# TODO Constants
+def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any=None, ct:str=None, timeout:float=None, headers:dict=None) -> Tuple[Union[bytes, dict], int]:	# TODO Constants
 	tys = f';ty={ty}' if ty is not None else ''
 	ct = 'application/json'
 	hds = { 
@@ -193,21 +212,21 @@ def lastHeaders() -> dict:
 
 
 def setExpirationCheck(interval:int) -> int:
-	c, rc = RETRIEVE(CONFIGURL, '')
+	c, rc = RETRIEVEBYTES(CONFIGURL, '')
 	if rc == 200 and c.startswith(b'Configuration:'):
 		# retrieve the old value
-		c, rc = RETRIEVE(f'{CONFIGURL}/cse.checkExpirationsInterval', '')
+		c, rc = RETRIEVEBYTES(f'{CONFIGURL}/cse.checkExpirationsInterval', '')
 		oldValue = int(c)
-		c, rc = UPDATE(f'{CONFIGURL}/cse.checkExpirationsInterval', '', str(interval))
+		c, rc = UPDATEBYTES(f'{CONFIGURL}/cse.checkExpirationsInterval', '', str(interval))
 		return oldValue if c == b'ack' else -1
 	return -1
 
 
 def getMaxExpiration() -> int:
-	c, rc = RETRIEVE(CONFIGURL, '')
+	c, rc = RETRIEVEBYTES(CONFIGURL, '')
 	if rc == 200 and c.startswith(b'Configuration:'):
 		# retrieve the old value
-		c, rc = RETRIEVE(f'{CONFIGURL}/cse.maxExpirationDelta', '')
+		c, rc = RETRIEVEBYTES(f'{CONFIGURL}/cse.maxExpirationDelta', '')
 		return int(c)
 	return -1
 
@@ -219,7 +238,7 @@ _tooLargeExpirationDelta = -1
 
 
 
-def disableShortExpirations():
+def disableShortExpirations() -> None:
 	global _orgExpCheck, _orgREQExpCheck
 	if _orgExpCheck != -1:
 		setExpirationCheck(_orgExpCheck)
@@ -228,32 +247,32 @@ def disableShortExpirations():
 		setRequestMinET(_orgREQExpCheck)
 		_orgREQExpCheck = -1
 
-def isTestExpirations():
+def isTestExpirations() -> bool:
 	return _orgExpCheck != -1
 
 
-def tooLargeExpirationDelta():
+def tooLargeExpirationDelta() -> int:
 	return _tooLargeExpirationDelta
 
 
 #	Request expirations
 
 def setRequestMinET(interval:int) -> int:
-	c, rc = RETRIEVE(CONFIGURL, '')
+	c, rc = RETRIEVEBYTES(CONFIGURL, '')
 	if rc == 200 and c.startswith(b'Configuration:'):
 		# retrieve the old value
-		c, rc = RETRIEVE(f'{CONFIGURL}/cse.req.minet', '')
+		c, rc = RETRIEVEBYTES(f'{CONFIGURL}/cse.req.minet', '')
 		oldValue = int(c)
-		c, rc = UPDATE(f'{CONFIGURL}/cse.req.minet', '', str(interval))
+		c, rc = UPDATEBYTES(f'{CONFIGURL}/cse.req.minet', '', str(interval))
 		return oldValue if c == b'ack' else -1
 	return -1
 
 
 def getRequestMinET() -> int:
-	c, rc = RETRIEVE(CONFIGURL, '')
+	c, rc = RETRIEVEBYTES(CONFIGURL, '')
 	if rc == 200 and c.startswith(b'Configuration:'):
 		# retrieve the old value
-		c, rc = RETRIEVE(f'{CONFIGURL}/cse.req.minet', '')
+		c, rc = RETRIEVEBYTES(f'{CONFIGURL}/cse.req.minet', '')
 		return int(c)
 	return -1
 	
@@ -261,7 +280,7 @@ def getRequestMinET() -> int:
 
 # Reconfigure the server to check faster for expirations. This is set to the
 # old value in the tearDowndClass() method.
-def enableShortExpirations():
+def enableShortExpirations() -> None:
 	global _orgExpCheck, _orgREQExpCheck, _maxExpiration, _tooLargeExpirationDelta
 	_orgExpCheck = setExpirationCheck(expirationCheckDelay)
 	_orgREQExpCheck = setRequestMinET(expirationCheckDelay)
@@ -274,7 +293,8 @@ def enableShortExpirations():
 
 # Surpress warnings for insecure requests, e.g. self-signed certificates
 if not verifyCertificate:
-	requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning) 
+	#requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning) 
+	urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning) 
 
 
 
@@ -284,7 +304,7 @@ if not verifyCertificate:
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		
-	def do_POST(self):
+	def do_POST(self) -> None:
 		# Construct return header
 		# Always acknowledge the verification requests
 		self.send_response(200)
@@ -302,19 +322,19 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 				setLastNotification(json.loads(post_data.decode('utf-8')))
 			elif contentType == 'application/cbor':
 				setLastNotification(cbor2.loads(post_data))
-			else:
-				setLastNotification(post_data.decode('utf-8'))
+			# else:
+			# 	setLastNotification(post_data.decode('utf-8'))
 
-		setLastNotificationHeaders(self.headers)
+		setLastNotificationHeaders(dict(self.headers))	# make a dict out of the headers
 
 
-	def log_message(self, format, *args):
+	def log_message(self, format:str, *args:int) -> None:
 		pass
 
 
 keepNotificationServerRunning = True
 
-def runNotificationServer():
+def runNotificationServer() -> None:
 	global keepNotificationServerRunning
 	httpd = HTTPServer(('', NOTIFICATIONPORT), SimpleHTTPRequestHandler)
 	if PROTOCOL == 'https':
@@ -328,36 +348,36 @@ def runNotificationServer():
 		httpd.handle_request()
 
 
-def startNotificationServer():
+def startNotificationServer() -> None:
 	notificationThread = Thread(target=runNotificationServer)
 	notificationThread.start()
 	time.sleep(0.1)	# give the server a moment to start
 
 
-def stopNotificationServer():
+def stopNotificationServer() -> None:
 	global keepNotificationServerRunning
 	keepNotificationServerRunning = False
 	requests.post(NOTIFICATIONSERVER, verify=verifyCertificate)	# send empty/termination request 
 
-lastNotification = None
+lastNotification:dict	= None
 lastNotificationHeaders = {}
 
-def setLastNotification(notification:str):
+def setLastNotification(notification:dict) -> None:
 	global lastNotification
 	lastNotification = notification
 
-def getLastNotification():
+def getLastNotification() -> dict:
 	return lastNotification
 
-def clearLastNotification():
+def clearLastNotification() -> None:
 	global lastNotification
 	lastNotification = None
 
-def setLastNotificationHeaders(headers:dict):
+def setLastNotificationHeaders(headers:dict) -> None:
 	global lastNotificationHeaders
 	lastNotificationHeaders = headers
 
-def getLastNotificationHeaders():
+def getLastNotificationHeaders() -> dict:
 	return lastNotificationHeaders
 
 

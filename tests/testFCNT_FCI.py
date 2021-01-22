@@ -24,9 +24,13 @@ CND = 'org.onem2m.home.moduleclass.temperature'
 
 class TestFCNT_FCI(unittest.TestCase):
 
+	cse 		= None
+	ae 			= None 
+	originator 	= None
+
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def setUpClass(cls):
+	def setUpClass(cls) -> None:
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
@@ -43,12 +47,13 @@ class TestFCNT_FCI(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createFCNT(self):
+	def test_createFCNT(self) -> None:
+		"""	Create a <FCNT> """
 		self.assertIsNotNone(TestFCNT_FCI.cse)
 		self.assertIsNotNone(TestFCNT_FCI.ae)
 		dct = 	{ 'cod:tempe' : { 
@@ -66,7 +71,8 @@ class TestFCNT_FCI(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesFCNT(self):
+	def test_attributesFCNT(self) -> None:
+		"""	Validate <FCNT> attributes """
 		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'cod:tempe/ty'), T.FCNT)
@@ -93,8 +99,10 @@ class TestFCNT_FCI(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'cod:tempe/cbs'))
 		self.assertGreater(findXPath(r, 'cod:tempe/cbs'), 0)
 
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateFCNT(self):
+	def test_updateFCNT(self) -> None:
+		"""	Update <FCNT> """
 		dct = 	{ 'cod:tempe' : {
 					'tarTe':   5.0,
 					'curT0'	: 17.0,
@@ -113,7 +121,8 @@ class TestFCNT_FCI(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveFCNTLaOl(self):
+	def test_retrieveFCNTLaOl(self) -> None:
+		"""	Retrieve <FCI> via <FCNT>/la and <FCNT>/ol """
 		r, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
@@ -128,7 +137,8 @@ class TestFCNT_FCI(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateFCNTMni(self):
+	def test_updateFCNTMni(self) -> None:
+		""" Update <FCNT> MNI """
 		dct = 	{ 'cod:tempe' : {
 					'mni':   1,
 				}}
@@ -153,12 +163,16 @@ class TestFCNT_FCI(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteFCNT(self):
+	def test_deleteFCNT(self) -> None:
+		""" Delete <FCNT> """
 		_, rsc = DELETE(fcntURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
 
-def run():
+# TODO other FCNT controlling attributes
+# TODO more tests
+
+def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestFCNT_FCI('test_createFCNT'))
 	suite.addTest(TestFCNT_FCI('test_attributesFCNT'))

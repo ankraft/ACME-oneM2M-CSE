@@ -24,12 +24,22 @@ noRemote = not connectionPossible(REMOTEcseURL)
 
 class TestRemote_Annc(unittest.TestCase):
 
-	acpORIGINATOR = 'testOriginator'
+	acpORIGINATOR 	= 'testOriginator'
+	cse 			= None
+	ae				= None
+	node 			= None
+	bat 			= None
+	acp 			= None
+	remoteCse 		= None
+	remoteAeRI		= None
+	remoteNodRI		= None
+	remoteBatRI 	= None
+	remoteAcpRI 	= None
 
 
 	@classmethod
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def setUpClass(cls):
+	def setUpClass(cls) -> None:
 		# check connection to CSE's
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
@@ -39,7 +49,7 @@ class TestRemote_Annc(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
 		DELETE(acpURL, ORIGINATOR)	# Just delete the ACP 
@@ -47,7 +57,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Create an AE with AT, but no AA
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_createAnnounceAEwithATwithoutAA(self):
+	def test_createAnnounceAEwithATwithoutAA(self) -> None:
+		""" Create and announce <AE> (AT, no AA) """
 		dct = 	{ 'm2m:ae' : {
 					'rn': 	aeRN, 
 					'api': 	'NMyApp1Id',
@@ -69,7 +80,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Retrieve the announced AE with AT, but no AA
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_retrieveAnnouncedAEwithATwithoutAA(self):
+	def test_retrieveAnnouncedAEwithATwithoutAA(self) -> None:
+		""" Retrieve announced <AE> from remote (AT, no AA) """
 		if TestRemote_Annc.remoteAeRI is None:
 			self.skipTest('remote AE.ri not found')
 		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteAeRI}', CSEID)
@@ -90,7 +102,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Delete the AE with AT, but no AA
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_deleteAnnounceAE(self):
+	def test_deleteAnnounceAE(self) -> None:
+		""" Delete announced <AE> """
 		if TestRemote_Annc.remoteAeRI is None:
 			self.skipTest('remote AE.ri not found')
 		_, rsc = DELETE(aeURL, ORIGINATOR)
@@ -99,12 +112,12 @@ class TestRemote_Annc(unittest.TestCase):
 		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteAeRI}', CSEID)
 		self.assertEqual(rsc, RC.notFound)
 		TestRemote_Annc.ae = None
-		TestRemote_Annc.aremoteAeRIe = None
 
 
 	# Create an AE with AT and AA
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_createAnnounceAEwithATwithAA(self):
+	def test_createAnnounceAEwithATwithAA(self) -> None:
+		""" Create and announce <AE> (AT, AA) """
 		dct = 	{ 'm2m:ae' : {
 					'rn': 	aeRN, 
 					'api': 	'NMyApp1Id',
@@ -133,7 +146,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Retrieve the announced AE with AT and AA
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_retrieveAnnouncedAEwithATwithAA(self):
+	def test_retrieveAnnouncedAEwithATwithAA(self) -> None:
+		"""	Retrieve announced <AE> from remote (AT, AA) """
 		if TestRemote_Annc.remoteAeRI is None:
 			self.skipTest('remote AE.ri not found')
 		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteAeRI}', CSEID)
@@ -158,7 +172,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Update an non-AA AE with AA
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_addAAtoAnnounceAEwithoutAA(self):
+	def test_addAAtoAnnounceAEwithoutAA(self) -> None:
+		""" Add AA to <AE> with missing AA """
 		dct = 	{ 'm2m:ae' : {
 				 	'lbl':	[ 'aLabel'],
 				 	'aa': 	[ 'lbl' ]
@@ -171,7 +186,8 @@ class TestRemote_Annc(unittest.TestCase):
 	# Create an AE with non-announceable attributes
 	# AA should be corrected, null, but still present when rcn=modifiedAttributes
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_createAnnounceAEwithNAAttributes(self):
+	def test_createAnnounceAEwithNAAttributes(self) -> None:
+		""" Create <AE> with AA with NA attributes. AA shall be empty, but present in result """
 		dct = 	{ 'm2m:ae' : {
 					'rn': 	aeRN, 
 					'api': 	'NMyApp1Id',
@@ -197,7 +213,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Update an non-AA AE with AA
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_addLBLtoAnnouncedAE(self):
+	def test_addLBLtoAnnouncedAE(self) -> None:
+		""" Add AA to <AE> without AA (Update) """
 		dct = 	{ 'm2m:ae' : {
 				 	'lbl':	[ 'aLabel']	# LBL is conditional announced, so no need for adding it to aa
 				}}
@@ -206,7 +223,6 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'))
 		self.assertEqual(findXPath(r, 'm2m:ae/lbl'), [ 'aLabel' ])
 
-
 		# retrieve the announced AE
 		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteAeRI}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
@@ -214,9 +230,10 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:aeA/lbl'), [ 'aLabel' ])
 
 
-	# Update an non-AA AE with AA
+	# Remove annouced attribute from original resource
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_removeLBLfromAnnouncedAE(self):
+	def test_removeLBLfromAnnouncedAE(self) -> None:
+		""" Remove annouced attribute from original resource """
 		dct = 	{ 'm2m:ae' : {
 					'lbl': None
 				}}
@@ -232,7 +249,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Create a Node with AT
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_createAnnounceNode(self):
+	def test_createAnnounceNode(self) -> None:
+		""" Create announced <node> """
 		dct = 	{ 'm2m:nod' : {
 					'rn': 	nodRN, 
 					'ni': 	'aNI', 
@@ -252,7 +270,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Retrieve the announced Node with AT
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_retrieveAnnouncedNode(self):
+	def test_retrieveAnnouncedNode(self) -> None:
+		""" Retrieve announced <node> """
 		if TestRemote_Annc.remoteNodRI is None:
 			self.skipTest('remote Node.ri not found')
 		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteNodRI}', CSEID)
@@ -271,7 +290,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Create a mgmtObj under the node
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_announceMgmtobj(self):
+	def test_announceMgmtobj(self) -> None:
+		""" Create announced <mgmtObj> [Battery] """
 		dct = 	{ 'm2m:bat' : {
 					'mgd' : T.BAT,
 					'dc'  : 'battery',
@@ -299,7 +319,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Retrieve the announced mgmtobj 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_retrieveAnnouncedMgmtobj(self):
+	def test_retrieveAnnouncedMgmtobj(self) -> None:
+		""" Retrieve announced [Battery] and test attributes """
 		if TestRemote_Annc.remoteBatRI is None:
 			self.skipTest('remote bat.ri not found')
 		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
@@ -322,7 +343,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_retrieveRCNOriginalResource(self):
+	def test_retrieveRCNOriginalResource(self) -> None:
+		""" Retrieve original resource from remote CSE """
 		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteBatRI}?rcn={RCN.originalResource:d}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:bat'))
@@ -335,7 +357,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_updateMgmtObjAttribute(self):
+	def test_updateMgmtObjAttribute(self) -> None:
+		"""	Update [Battery] """
 		dct = 	{ 'm2m:bat' : {
 					'btl' : 42,
 					'bts' : 2
@@ -352,7 +375,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_addMgmtObjAttribute(self):
+	def test_addMgmtObjAttribute(self) -> None:
+		""" Announce new (mgmtObj) attributes for [Battery] """
 		dct = 	{ 'm2m:bat' : {
 					'aa' : [ 'btl', 'bts']
 				}}
@@ -374,7 +398,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_removeMgmtObjAttribute(self):
+	def test_removeMgmtObjAttribute(self) -> None:
+		""" Unannounce(mgmtObj) attribute for [Battery] """
 		dct = 	{ 'm2m:bat' : {
 					'aa' : [ 'bts']
 				}}
@@ -395,7 +420,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_removeMgmtObjAA(self):
+	def test_removeMgmtObjAA(self) -> None:
+		""" Unanounce all AA announced attributes for [Battery] """
 		dct = 	{ 'm2m:bat' : {
 					'aa' : None
 				}}
@@ -412,7 +438,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_removeMgmtObjCSIfromAT(self):
+	def test_removeMgmtObjCSIfromAT(self) -> None:
+		""" Unanounce [Battery] (remove target CSI from AT) """
 		at = findXPath(TestRemote_Annc.bat, 'm2m:bat/at').copy()
 		at.pop(0) # remove REMOTECSEID
 		dct = 	{ 'm2m:bat' : {
@@ -427,7 +454,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_addMgmtObjCSItoAT(self):
+	def test_addMgmtObjCSItoAT(self) -> None:
+		""" Announce [Battery] again to remote CSE (add target to AT) """
 		dct = 	{ 'm2m:bat' : {
 					'at' : [ REMOTECSEID ] 			# with REMOTECSEID added
 				}}
@@ -449,7 +477,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_removeMgmtObjAT(self):
+	def test_removeMgmtObjAT(self) -> None:
+		""" Remove At attribute from [Battery] (unanounce) """
 		dct = 	{ 'm2m:bat' : {
 					'at' : None 			# with at removed
 				}}
@@ -464,7 +493,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_deleteAnnounceNode(self):
+	def test_deleteAnnounceNode(self) -> None:
+		""" Delete announced <node> """
 		if TestRemote_Annc.node is None:
 			self.skipTest('node not found')
 		_, rsc = DELETE(nodURL, ORIGINATOR)
@@ -483,7 +513,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Create an ACP 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_createAnnouncedACP(self):
+	def test_createAnnouncedACP(self) -> None:
+		""" Create an announced <ACP> """
 		dct = 	{ "m2m:acp": {
 					"rn": acpRN,
 					"pv": {
@@ -514,7 +545,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Retrieve the announced ACP
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_retrieveAnnouncedACP(self):
+	def test_retrieveAnnouncedACP(self) -> None:
+		""" Retrieve remote <ACPA> """
 		if TestRemote_Annc.remoteAcpRI is None:
 			self.skipTest('remote ACP.ri not found')
 		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteAcpRI}', 'other')
@@ -539,7 +571,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Retrieve the announced ACP with wrong originator
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_retrieveAnnouncedACPwithWrongOriginator(self):
+	def test_retrieveAnnouncedACPwithWrongOriginator(self) -> None:
+		""" Retrieve remote <ACPA> with wrong originator """
 		if TestRemote_Annc.remoteAcpRI is None:
 			self.skipTest('remote ACP.ri not found')
 		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteAcpRI}', 'wrong')
@@ -548,7 +581,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 	# Retrieve the announced ACP with the CSE-ID
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_retrieveAnnouncedACPwithCSI(self):
+	def test_retrieveAnnouncedACPwithCSI(self) -> None:
+		""" Retrieve remote <ACPA> with remote CSE's CSI """
 		if TestRemote_Annc.remoteAcpRI is None:
 			self.skipTest('remote ACP.ri not found')
 		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteAcpRI}', CSEID)
@@ -556,7 +590,8 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
-	def test_deleteAnnounceACP(self):
+	def test_deleteAnnounceACP(self) -> None:
+		""" Delete remote <ACPA> directly. Should fail """
 		if TestRemote_Annc.acp is None:
 			self.skipTest('acp not found')
 		_, rsc = DELETE(acpURL, ORIGINATOR)
@@ -568,7 +603,7 @@ class TestRemote_Annc(unittest.TestCase):
 		TestRemote_Annc.remoteAcpRI = None
 
 
-def run():
+def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 
 	# create an announced AE, but no extra attributes

@@ -29,9 +29,18 @@ noCSE = not connectionPossible(cseURL)
 
 class TestGRP(unittest.TestCase):
 
+	cse 		= None
+	ae 			= None
+	cnt1 		= None
+	cnt2 		= None
+	cnt1RI 		= None
+	cnt2RI 		= None
+	originator 	= None
+
+
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def setUpClass(cls):
+	def setUpClass(cls) -> None:
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
@@ -60,12 +69,13 @@ class TestGRP(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createGRP(self):
+	def test_createGRP(self) -> None:
+		""" Create <GRP> """
 		self.assertIsNotNone(TestGRP.cse)
 		self.assertIsNotNone(TestGRP.ae)
 		self.assertIsNotNone(TestGRP.cnt1)
@@ -81,19 +91,22 @@ class TestGRP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveGRP(self):
+	def test_retrieveGRP(self) -> None:
+		""" Retrieve <GRP> """
 		_, rsc = RETRIEVE(grpURL, TestGRP.originator)
 		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveGRPWithWrongOriginator(self):
+	def test_retrieveGRPWithWrongOriginator(self) -> None:
+		"""	Retrieve <GRP> with wrong originator """
 		_, rsc = RETRIEVE(grpURL, 'Cwrong')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesGRP(self):
+	def test_attributesGRP(self) -> None:
+		""" Validate <GRP> attributes """
 		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:grp/ty'), T.GRP)
@@ -116,7 +129,8 @@ class TestGRP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateGRP(self):
+	def test_updateGRP(self) -> None:
+		""" Update <GRP> """
 		dct = 	{ 'm2m:grp' : { 
 					'mnm': 15
 				}}
@@ -128,7 +142,8 @@ class TestGRP(unittest.TestCase):
 
 	# Update a GRP with container. Should fail.
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateGRPwithCNT(self):
+	def test_updateGRPwithCNT(self) -> None:
+		""" Update <GRP> with <CNT> -> Fail """
 		dct = 	{ 'm2m:cnt' : { 
 					'lbl' : [ 'wrong' ]
 				}}
@@ -137,7 +152,8 @@ class TestGRP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_addCNTtoGRP(self):
+	def test_addCNTtoGRP(self) -> None:
+		"""	Add <CNT> to <GRP> """
 		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/cnm'))
@@ -162,7 +178,8 @@ class TestGRP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_addCINviaFOPT(self):
+	def test_addCINviaFOPT(self) -> None:
+		"""	Add <CIN> to <CNT>s in <GRP> """
 		# add CIN via fopt
 		dct = 	{ 'm2m:cin' : {
 					'cnf' : 'a',
@@ -198,7 +215,8 @@ class TestGRP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveLAviaFOPT(self):
+	def test_retrieveLAviaFOPT(self) -> None:
+		"""	Retrieve <CNT>'s LA """
 		# Retrieve via fopt
 		r, rsc = RETRIEVE(f'{grpURL}/fopt/la', TestGRP.originator)
 		self.assertEqual(rsc, RC.OK)
@@ -219,7 +237,8 @@ class TestGRP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCNTviaFOPT(self):
+	def test_updateCNTviaFOPT(self) -> None:
+		"""	Update all <CNT>s in <GRP> """
 		# add CIN via fopt
 		dct = 	{ 'm2m:cnt' : {
 					'lbl' :  [ 'aTag' ]
@@ -243,7 +262,8 @@ class TestGRP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_addExistingCNTtoGRP(self):
+	def test_addExistingCNTtoGRP(self) -> None:
+		"""	Add same CNT> to <GRP> again """
 		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
 		self.assertEqual(rsc, RC.OK)
 		cnm = findXPath(r, 'm2m:grp/cnm')
@@ -258,8 +278,9 @@ class TestGRP(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), cnm) # == old cnm
 
 
-
-	def test_deleteCNTviaFOPT(self):
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteCNTviaFOPT(self) -> None:
+		""" Delete all <CNT> via <GRP> """
 		r, rsc = DELETE(f'{grpURL}/fopt', TestGRP.originator)
 		self.assertEqual(rsc, RC.OK)
 		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
@@ -272,12 +293,16 @@ class TestGRP(unittest.TestCase):
 			self.assertEqual(findXPath(c, 'rsc'), RC.deleted)
 
 
-	def test_deleteGRPByUnknownOriginator(self):
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteGRPByUnknownOriginator(self) -> None:
+		"""	Delete <GRP> by wrong originator """
 		_, rsc = DELETE(grpURL, 'Cwrong')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
-	def test_deleteGRPByAssignedOriginator(self):
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteGRPByAssignedOriginator(self) -> None:
+		""" Delete <GRP> by correct originator """
 		_, rsc = DELETE(grpURL, TestGRP.originator)
 		self.assertEqual(rsc, RC.deleted)
 
@@ -285,7 +310,7 @@ class TestGRP(unittest.TestCase):
 		#TODO check GRP itself: members
 
 
-def run():
+def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestGRP('test_createGRP'))
 	suite.addTest(TestGRP('test_retrieveGRP'))

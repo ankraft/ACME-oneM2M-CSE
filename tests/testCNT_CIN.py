@@ -21,9 +21,14 @@ noCSE = not connectionPossible(cseURL)
 
 class TestCNT_CIN(unittest.TestCase):
 
+	cse 		= None
+	ae 			= None
+	originator 	= None
+	cnt 		= None
+
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def setUpClass(cls):
+	def setUpClass(cls) -> None:
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
@@ -47,12 +52,13 @@ class TestCNT_CIN(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_addCIN(self):
+	def test_addCIN(self) -> None:
+		"""	Create <CIN> under <CNT> """
 		self.assertIsNotNone(TestCNT_CIN.cse)
 		self.assertIsNotNone(TestCNT_CIN.ae)
 		self.assertIsNotNone(TestCNT_CIN.cnt)
@@ -75,7 +81,8 @@ class TestCNT_CIN(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_addMoreCIN(self):
+	def test_addMoreCIN(self) -> None:
+		"""	Create more <CIN>s under <CNT> """
 		dct = 	{ 'm2m:cin' : {
 					'cnf' : 'a',
 					'con' : 'bValue'
@@ -121,7 +128,8 @@ class TestCNT_CIN(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_rerieveCNTLa(self):
+	def test_retrieveCNTLa(self) -> None:
+		"""	Retrieve <CNT>.LA """
 		r, rsc = RETRIEVE(f'{cntURL}/la', TestCNT_CIN.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
@@ -130,7 +138,8 @@ class TestCNT_CIN(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_rerieveCNTOl(self):
+	def test_retrieveCNTOl(self) -> None:
+		""" Retrieve <CNT>.OL """
 		r, rsc = RETRIEVE(f'{cntURL}/ol', TestCNT_CIN.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
@@ -139,7 +148,8 @@ class TestCNT_CIN(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_changeCNTMni(self):
+	def test_changeCNTMni(self) -> None:
+		"""	Change <CNT>.MNI to 1 -> OL == AL """
 		dct = 	{ 'm2m:cnt' : {
 					'mni' : 1
  				}}
@@ -164,12 +174,12 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'dValue')
 
 
-def run():
+def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestCNT_CIN('test_addCIN'))
 	suite.addTest(TestCNT_CIN('test_addMoreCIN'))
-	suite.addTest(TestCNT_CIN('test_rerieveCNTLa'))
-	suite.addTest(TestCNT_CIN('test_rerieveCNTOl'))
+	suite.addTest(TestCNT_CIN('test_retrieveCNTLa'))
+	suite.addTest(TestCNT_CIN('test_retrieveCNTOl'))
 	suite.addTest(TestCNT_CIN('test_changeCNTMni'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)

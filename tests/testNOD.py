@@ -26,23 +26,30 @@ nod2URL = f'{cseURL}/{nod2RN}'
 
 class TestNOD(unittest.TestCase):
 
+	cse  		= None
+	ae 			= None
+	nodeRI 		= None
+	aeRI 		= None
+	originator	= None
+
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def setUpClass(cls):
+	def setUpClass(cls) -> None:
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 		
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
 		DELETE(nod2URL, ORIGINATOR)	# Just delete the Node 2 and everything below it. Ignore whether it exists or not
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createNOD(self):
+	def test_createNOD(self) -> None:
+		""" Create <NOD> """
 		self.assertIsNotNone(TestNOD.cse)
 		dct = 	{ 'm2m:nod' : { 
 					'rn' 	: nodRN,
@@ -55,19 +62,22 @@ class TestNOD(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveNOD(self):
+	def test_retrieveNOD(self) -> None:
+		""" Retrieve <NOD> """
 		_, rsc = RETRIEVE(nodURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveNODWithWrongOriginator(self):
+	def test_retrieveNODWithWrongOriginator(self) -> None:
+		""" Retrieve <NOD> with wrong originator -> Fail """
 		_, rsc = RETRIEVE(nodURL, 'Cwrong')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesNOD(self):
+	def test_attributesNOD(self) -> None:
+		""" Retrieve <NOD> and test attributes """
 		r, rsc = RETRIEVE(nodURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:nod/ty'), T.NOD)
@@ -81,7 +91,8 @@ class TestNOD(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateNODLbl(self):
+	def test_updateNODLbl(self) -> None:
+		""" Update <NOD> lbl """
 		dct = 	{ 'm2m:nod' : {
 					'lbl' : [ 'aTag' ]
 				}}
@@ -96,16 +107,18 @@ class TestNOD(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateNODUnknownAttribute(self):
+	def test_updateNODUnknownAttribute(self) -> None:
+		""" Update <NOD> with unknown attribute -> Fail """
 		dct = 	{ 'm2m:nod' : {
 					'unknown' : 'unknown'
 				}}
-		r, rsc = UPDATE(nodURL, ORIGINATOR, dct)
+		_, rsc = UPDATE(nodURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createAEForNOD(self):
+	def test_createAEForNOD(self) -> None:
+		""" Create <AE> for <NOD> & test link """
 		dct = 	{ 'm2m:ae' : {
 			'rn'	: aeRN, 
 			'api'	: 'NMyApp1Id',
@@ -129,7 +142,8 @@ class TestNOD(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteAEForNOD(self):
+	def test_deleteAEForNOD(self) -> None:
+		""" Delete <AE> for <NOD> & test link """
 		_, rsc = DELETE(aeURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
@@ -139,7 +153,8 @@ class TestNOD(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_moveAEToNOD2(self):
+	def test_moveAEToNOD2(self) -> None:
+		""" Create second <NOD> and move <AE> """
 		# create AE again
 		self.test_createAEForNOD()
 
@@ -177,7 +192,8 @@ class TestNOD(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteNOD2(self):
+	def test_deleteNOD2(self) -> None:
+		""" Delete second <NOD> """
 		_, rsc = DELETE(nod2URL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
@@ -188,12 +204,13 @@ class TestNOD(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteNOD(self):
+	def test_deleteNOD(self) -> None:
+		""" Delete <NOD> """
 		_, rsc = DELETE(nodURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
 
-def run():
+def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestNOD('test_createNOD'))
 	suite.addTest(TestNOD('test_retrieveNOD'))

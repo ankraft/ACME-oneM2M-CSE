@@ -28,9 +28,13 @@ enableShortExpirations()
 
 class TestExpiration(unittest.TestCase):
 
+	cse 			= None
+	ae 				= None
+	originator 		= None
+
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def setUpClass(cls):
+	def setUpClass(cls) -> None:
 
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
@@ -47,14 +51,15 @@ class TestExpiration(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		disableShortExpirations()
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
-	def test_expireCNT(self):
+	def test_expireCNT(self) -> None:
+		""" Create and expire <CNT> """
 		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
@@ -71,7 +76,8 @@ class TestExpiration(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
-	def test_expireCNTAndCIN(self):
+	def test_expireCNTAndCIN(self) -> None:
+		""" Create and expire <CNT> and <CIN> """
 		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
@@ -102,7 +108,8 @@ class TestExpiration(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createCNTWithToLargeET(self):
+	def test_createCNTWithToLargeET(self) -> None:
+		"""	Create <CNT> and long ET -> Corrected ET """
 		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
@@ -117,7 +124,8 @@ class TestExpiration(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createCNTExpirationInThePast(self):
+	def test_createCNTExpirationInThePast(self) -> None:
+		"""	Create <CNT> and ET in the past -> Fail """
 		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
@@ -130,7 +138,8 @@ class TestExpiration(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCNTWithEtNull(self):
+	def test_updateCNTWithEtNull(self) -> None:
+		""" Update <CNT> and remove ET in another update """
 		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
@@ -152,7 +161,8 @@ class TestExpiration(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
-	def test_expireCNTViaMIA(self):
+	def test_expireCNTViaMIA(self) -> None:
+		""" Expire <CNT> via MIA """
 		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
@@ -184,7 +194,8 @@ class TestExpiration(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
-	def test_expireCNTViaMIALarge(self):
+	def test_expireCNTViaMIALarge(self) -> None:
+		""" Expire <CNT> via too large MIA """
 		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
@@ -217,7 +228,8 @@ class TestExpiration(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
-	def test_expireFCNTViaMIA(self):
+	def test_expireFCNTViaMIA(self) -> None:
+		""" Expire <FCNT> via MIA """
 		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'cod:tempe' : { 
@@ -250,9 +262,8 @@ class TestExpiration(unittest.TestCase):
 
 		r, rsc = DELETE(fcntURL, TestExpiration.originator)
 		self.assertEqual(rsc, RC.deleted)
-# TODO same with fcnt
 
-def run():
+def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestExpiration('test_expireCNT'))
 	suite.addTest(TestExpiration('test_expireCNTAndCIN'))

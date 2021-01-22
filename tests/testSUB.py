@@ -25,9 +25,17 @@ durationForBatchNotificationsISO8601 = 'PT2S'
 
 class TestSUB(unittest.TestCase):
 
+	cse 			= None
+	ae 				= None
+	originator 		= None
+	cnt 			= None
+	cntRI 			= None
+	ae2URL 			= None
+	ae2Originator	= None
+
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def setUpClass(cls):
+	def setUpClass(cls) -> None:
 		# Start notification server
 		startNotificationServer()
 
@@ -764,7 +772,7 @@ class TestSUB(unittest.TestCase):
 # TODO check different NET's (ae->cnt->sub, add cnt to cnt)
 
 
-def run():
+def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 
 	suite.addTest(TestSUB('test_createSUB'))

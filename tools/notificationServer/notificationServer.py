@@ -9,6 +9,7 @@
 #
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from typing import overload
 import json, argparse, sys, ssl
 import cbor2
 from rich.console import Console
@@ -20,7 +21,7 @@ messageColor = 'spring_green2'
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
-	def do_GET(self):
+	def do_GET(self) -> None:
 		"""	Just provide a simple web page.
 		"""
 		self.send_response(200)
@@ -29,7 +30,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		self.wfile.write(bytes("<html><head><title>[ACME] Notification Server</title></head><body>This server doesn't provide a web page.</body></html>","utf-8")) 
 
 
-	def do_POST(self):
+	def do_POST(self) -> None:
+		"""	Handle notification.
+		"""
 
 		# Construct return header
 		# Always acknowledge the verification requests
@@ -68,8 +71,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 			console.print('[dim]Content as Hexdump:\n')
 			print(toHex(post_data))
 
-
-	def log_message(self, format, *args):
+	def log_message(self, format:str, *args:int) -> None:
 		if (msg := format%args).startswith('"GET'):	return	# ignore GET log messages
 		console.print(f'[{messageColor} reverse]{msg}')
 

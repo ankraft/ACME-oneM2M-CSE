@@ -20,6 +20,12 @@ noCSE = not connectionPossible(cseURL)
 
 class TestAE(unittest.TestCase):
 
+	cse 		= None
+	ae 			= None
+	originator 	= None
+	originator2	= None
+	aeACPI 		= None
+
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
@@ -38,7 +44,7 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAE(self) -> None:
-		""" Create/register an AE """
+		""" Create/register an <AE> """
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
@@ -54,7 +60,7 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEUnderAE(self) -> None:
-		""" Create/register an AE under an AE -> Fail """
+		""" Create/register an <AE> under an <AE> -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'rn': f'{aeRN}', 
 					'api': 'NMyApp2Id',
@@ -67,7 +73,7 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEAgain(self) -> None:
-		""" Create/register an AE with same rn again -> Fail """
+		""" Create/register an <AE> with same rn again -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
@@ -80,21 +86,21 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveAE(self) -> None:
-		""" Retrieve AE """
+		""" Retrieve <AE> """
 		_, rsc = RETRIEVE(aeURL, TestAE.originator)
 		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveAEWithWrongOriginator(self) -> None:
-		""" Retrieve AE with wrong originator -> Fail """
+		""" Retrieve <AE> with wrong originator -> Fail """
 		_, rsc = RETRIEVE(aeURL, 'Cwrong')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesAE(self) -> None:
-		""" Retrieve AE and check attributes """
+		""" Retrieve <AE> and check attributes """
 		r, rsc = RETRIEVE(aeURL, TestAE.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/aei'))
@@ -119,7 +125,7 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAELbl(self) -> None:
-		""" Update AE with lbl """
+		""" Update <AE> with lbl """
 		dct = 	{ 'm2m:ae' : {
 					'lbl' : [ 'aTag' ]
 				}}
@@ -135,7 +141,7 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAETy(self) -> None:
-		""" Update AE with ty=CSEBase -> Fail """
+		""" Update <AE> with ty=CSEBase -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'ty' : int(T.CSEBase)
 				}}
@@ -145,7 +151,7 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAEPi(self) -> None:
-		""" Update AE with pi=wrong -> Fail """
+		""" Update <AE> with pi=wrong -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'pi' : 'wrongID'
 				}}
@@ -155,7 +161,7 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAEUnknownAttribute(self) -> None:
-		""" Update AE with unknown attribute -> Fail """
+		""" Update <AE> with unknown attribute -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'unknown' : 'unknown'
 				}}
@@ -165,7 +171,7 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveAEACP(self) -> None:
-		""" Retrieve AE's acp """
+		""" Retrieve <AE>'s acp """
 		self.assertIsNotNone(TestAE.aeACPI)
 		self.assertIsInstance(TestAE.aeACPI, list)
 		self.assertGreater(len(TestAE.aeACPI), 0)
@@ -183,21 +189,21 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteAEByUnknownOriginator(self) -> None:
-		""" Delete AE with wrong originator -> Fail """
+		""" Delete <AE> with wrong originator -> Fail """
 		_, rsc = DELETE(aeURL, 'Cwrong')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteAEByAssignedOriginator(self) -> None:
-		""" Delete AE with correct originator -> AE deleted """
+		""" Delete <AE> with correct originator -> <AE> deleted """
 		_, rsc = DELETE(aeURL, TestAE.originator)
 		self.assertEqual(rsc, RC.deleted)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEWrongCSZ(self) -> None:
-		""" Create AE with wrong csz content -> Fail """
+		""" Create <AE> with wrong csz content -> Fail """
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
@@ -211,7 +217,7 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAECSZ(self) -> None:
-		""" Create AE with correct csz value"""
+		""" Create <AE> with correct csz value"""
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
@@ -225,14 +231,14 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteAECSZ(self) -> None:
-		""" Delete AE with csr -> AE deleted """
+		""" Delete <AE> with csr -> <AE> deleted """
 		_, rsc = DELETE(aeURL, TestAE.originator2)
 		self.assertEqual(rsc, RC.deleted)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAENoAPI(self) -> None:
-		""" Create AE with missing api attribute"""
+		""" Create <AE> with missing api attribute"""
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 				 	'rr': False,
@@ -244,7 +250,7 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEAPIWrongPrefix(self) -> None:
-		""" Create AE with unknown api prefix"""
+		""" Create <AE> with unknown api prefix"""
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'Xwrong',
@@ -257,7 +263,7 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEAPICorrectR(self) -> None:
-		""" Create AE with correct api value (Registered)"""
+		""" Create <AE> with correct api value (Registered)"""
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN,
 					'api': 'Rabc.com.example.acme',
@@ -273,7 +279,7 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEAPICorrectN(self) -> None:
-		""" Create AE with correct api value (Non-Registered)"""
+		""" Create <AE> with correct api value (Non-Registered)"""
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN,
 					'api': 'Nacme',
@@ -290,7 +296,7 @@ class TestAE(unittest.TestCase):
 
 # TODO register multiple AEs
 
-def run():
+def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestAE('test_createAE'))
 	suite.addTest(TestAE('test_createAEUnderAE'))

@@ -24,6 +24,9 @@ noRemote = not connectionPossible(REMOTEcseURL)
 
 class TestRemote(unittest.TestCase):
 
+	cse 		= None
+	remoteCse 	= None
+
 	@classmethod
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def setUpClass(cls) -> None:
@@ -43,7 +46,8 @@ class TestRemote(unittest.TestCase):
 	# Retrieve the CSR on the local CSE
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_retrieveLocalCSR(self) -> None:
-		r, rsc = RETRIEVE(localCsrURL, ORIGINATOR)
+		"""	Retrieve the local registree CSR """
+		r, _ = RETRIEVE(localCsrURL, ORIGINATOR)
 		self.assertIsNotNone(r)
 		self.assertEqual(findXPath(r, 'm2m:csr/ty'), T.CSR)
 		self.assertEqual(findXPath(r, 'm2m:csr/rn'), REMOTECSEID[1:])
@@ -63,7 +67,8 @@ class TestRemote(unittest.TestCase):
 	# Retrieve the own CSR on the remote CSE
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_retrieveRemoteCSR(self) -> None:
-		r, rsc = RETRIEVE(remoteCsrURL, ORIGINATOR)
+		""" Retrieve own remote CSE """
+		r, _ = RETRIEVE(remoteCsrURL, ORIGINATOR)
 		self.assertIsNotNone(r)
 		self.assertEqual(findXPath(r, 'm2m:csr/ty'), T.CSR)
 		self.assertEqual(findXPath(r, 'm2m:csr/rn'), CSEID[1:])
@@ -80,7 +85,7 @@ class TestRemote(unittest.TestCase):
 		self.assertGreater(len(findXPath(r, 'm2m:csr/poa')), 0)
 
 
-def run() -> None:
+def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestRemote('test_retrieveLocalCSR'))
 	suite.addTest(TestRemote('test_retrieveRemoteCSR'))

@@ -22,30 +22,33 @@ class TestCSE(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def setUpClass(cls):
+	def setUpClass(cls) -> None:
 		pass
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		pass
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCSE(self):
+	def test_retrieveCSE(self) -> None:
+		"""	Retrieve <CB> """
 		_, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCSEWithWrongOriginator(self):
+	def test_retrieveCSEWithWrongOriginator(self) -> None:
+		""" Retrieve <CB> with wrong originator -> Fail """
 		_, rsc = RETRIEVE(cseURL, 'CWron')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesCSE(self):
+	def test_attributesCSE(self) -> None:
+		"""	Validate <CB> attributes """
 		r, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cb/csi')[0], '/')
@@ -63,7 +66,8 @@ class TestCSE(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_CSESupportedResourceTypes(self):
+	def test_CSESupportedResourceTypes(self) -> None:
+		"""	Check <CB> SRT """
 		r, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(srt := findXPath(r, 'm2m:cb/srt'))
@@ -72,13 +76,15 @@ class TestCSE(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteCSE(self):
+	def test_deleteCSE(self) -> None:
+		"""	Delete <CB> -> Fail """
 		_, rsc = DELETE(cseURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.operationNotAllowed)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCSE(self):
+	def test_updateCSE(self) -> None:
+		"""	Update <CB> -> Fail """
 		dct = 	{ 'm2m:cse' : {
 					'lbl' : [ 'aTag' ]
 				}}
@@ -86,7 +92,7 @@ class TestCSE(unittest.TestCase):
 		self.assertEqual(rsc, RC.operationNotAllowed)
 
 
-def run():
+def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestCSE('test_retrieveCSE'))
 	suite.addTest(TestCSE('test_retrieveCSEWithWrongOriginator'))

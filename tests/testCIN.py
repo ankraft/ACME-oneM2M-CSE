@@ -20,9 +20,15 @@ noCSE = not connectionPossible(cseURL)
 
 class TestCIN(unittest.TestCase):
 
+	cse 		= None
+	ae 			= None
+	cnt 		= None
+	originator 	= None
+
+
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def setUpClass(cls):
+	def setUpClass(cls) -> None:
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}' 
 
@@ -44,12 +50,13 @@ class TestCIN(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createCIN(self):
+	def test_createCIN(self) -> None:
+		""" Create a <CIN> resource """
 		self.assertIsNotNone(TestCIN.ae)
 		self.assertIsNotNone(TestCIN.cnt)
 		dct = 	{ 'm2m:cin' : {
@@ -62,13 +69,15 @@ class TestCIN(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCIN(self):
+	def test_retrieveCIN(self) -> None:
+		""" Retrieve <CIN> resource """
 		_, rsc = RETRIEVE(cinURL, TestCIN.originator)
 		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesCIN(self):
+	def test_attributesCIN(self) -> None:
+		""" Test <CIN> attributes """
 		r, rsc = RETRIEVE(cinURL, TestCIN.originator)
 		self.assertEqual(rsc, RC.OK)
 
@@ -89,7 +98,8 @@ class TestCIN(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCIN(self):
+	def test_updateCIN(self) -> None:
+		""" Update <CIN> -> Fail """
 		dct = 	{ 'm2m:cin' : {
 					'con' : 'NewValue'
 				}}
@@ -98,7 +108,8 @@ class TestCIN(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createCINUnderAE(self):
+	def test_createCINUnderAE(self) -> None:
+		""" Create <CIN> resource under <AE> -> Fail """
 		dct = 	{ 'm2m:cin' : {
 					'rn'  : cinRN,
 					'cnf' : 'a',
@@ -109,13 +120,14 @@ class TestCIN(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteCIN(self):
+	def test_deleteCIN(self) -> None:
+		""" Delete <CIN> resource """
 		_, rsc = DELETE(cntURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
 # More tests of la, ol etc in testCNT_CNI.py
 
-def run():
+def run() -> Tuple [int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestCIN('test_createCIN'))
 	suite.addTest(TestCIN('test_retrieveCIN'))

@@ -22,18 +22,19 @@ class TestMisc(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def setUpClass(cls):
+	def setUpClass(cls) -> None:
 		pass
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		pass
 
 	# TODO move to http test
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_checkHTTPRVI(self):
+	def test_checkHTTPRVI(self) -> None:
+		"""	Check RVI parameter in response """
 		_, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIn('X-M2M-RVI', lastHeaders())
@@ -41,7 +42,8 @@ class TestMisc(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createUnknownResourceType(self):
+	def test_createUnknownResourceType(self) -> None:
+		"""	Create an unknown resource type -> Fail """
 		dct = 	{ 'foo:bar' : { 
 					'rn' : 'foo',
 				}}
@@ -50,15 +52,16 @@ class TestMisc(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createAlphaResourceType(self):
+	def test_createAlphaResourceType(self) -> None:
+		""" Create a resource with alphanumerical type -> Fail """
 		dct = 	{ 'foo:bar' : { 
 					'rn' : 'foo',
 				}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, 'wrong', dct)
+		r, rsc = CREATE(cseURL, ORIGINATOR, 'wrong', dct)	# type: ignore # Ignore type of type
 		self.assertEqual(rsc, RC.badRequest)
 
 
-def run():
+def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestMisc('test_checkHTTPRVI'))
 	suite.addTest(TestMisc('test_createUnknownResourceType'))
