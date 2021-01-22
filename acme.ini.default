@@ -155,6 +155,29 @@ checkLiveliness=True
 
 
 #
+#	Settings for Registrar CSE access 
+#
+
+[cse.registrar]
+# URL of the Registrar CSE. Default: no default
+address=http://127.0.0.1:8081
+# Registrar CSE root path. Default: /
+root=/
+# CSE-ID of the Registrar CSE. Default: None
+cseID=/id-in
+# The Registrar CSE's resource name. Default: None
+resourceName=cse-in
+# Specify the serialization type that must be used for the registration to the registrar CSE.
+# Allowed values: json, cbor. Default: json
+serialization=json
+# Wait n seconds between tries to to connect to the Registrar CSE and to check validity of Registrar CSE connections in seconds.
+# Default: 30
+checkInterval=30
+# List of resources that are excluded when creating a registrar CSR. Default: empty list
+excludeCSRAttributes=
+
+
+#
 #	Logging settings
 #
 
@@ -174,27 +197,6 @@ size=100000
 # Print a stack trace when logging an 'error' level message. Default: True
 stackTraceOnError=False
 
-#
-#	Settings for Registrar CSE access 
-#
-
-[cse.registrar]
-# URL of the Registrar CSE. Default: no default
-address=http://127.0.0.1:8081
-# Registrar CSE root path. Default: /
-root=/
-# CSE-ID of the Registrar CSE. Default: None
-cseID=/in-cse
-# The Registrar CSE's resource name. Default: None
-resourceName=cse-in
-# Specify the serialization type that must be used for the registration to the registrar CSE.
-# Allowed values: json, cbor. Default: json
-serialization=json
-# Wait n seconds between tries to to connect to the Registrar CSE and to check validity of Registrar CSE connections in seconds.
-# Default: 30
-checkInterval=30
-# List of resources that are excluded when creating a registrar CSR. Default: empty list
-excludeCSRAttributes=
 
 #
 #	Settings for resource anouncements 
