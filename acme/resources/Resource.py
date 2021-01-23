@@ -183,31 +183,39 @@ class Resource(object):
 	def update(self, dct:dict=None, originator:str=None) -> Result:
 		dictOrg = deepcopy(self.dict)	# Save for later for notification
 
-		j = None
+		updatedAttributes = None
 		if dct is not None:
 			if self.tpe not in dct and self.ty not in [T.FCNTAnnc, T.FCIAnnc]:	# Don't check announced versions of announced FCNT
-				Logging.logWarn("Update types don't match")
+				Logging.logWarn("Update type doesn't match target")
 				return Result(status=False, rsc=RC.contentsUnacceptable, dbg='resource types mismatch')
+
 
 			# validate the attributes
 			if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.attributePolicies, create=False, createdInternally=self.isCreatedInternally())).status:
 				return res
 
 			if self.ty not in [T.FCNTAnnc, T.FCIAnnc]:
-				j = dct[self.tpe] # get structure under the resource type specifier
+				updatedAttributes = dct[self.tpe] # get structure under the resource type specifier
 			else:
-				j = Utils.findXPath(dct, '{0}')
-			for key in j:
+				updatedAttributes = Utils.findXPath(dct, '{0}')
+
+			# Check that acpi, if present, is the only attribute
+			if 'acpi' in updatedAttributes and len(updatedAttributes) > 1:
+				return Result(status=False, rsc=RC.badRequest, dbg='"acpi" must be the only attribute in update')
+
+			# Update attributes
+			for key in updatedAttributes:
 				# Leave out some attributes
 				if key in ['ct', 'lt', 'pi', 'ri', 'rn', 'st', 'ty']:
 					continue
-				value = j[key]
+				value = updatedAttributes[key]
 
 				# Special handling for et when deleted/set to Null: set a new et
 				if key == 'et' and value is None:
 					self['et'] = Utils.getResourceDate(Configuration.get('cse.expirationDelta'))
 					continue
 				self.setAttribute(key, value, overwrite=True) # copy new value or add new attributes
+			
 
 		# - state and lt
 		if 'st' in self.dict:	# Update the state
@@ -226,7 +234,7 @@ class Resource(object):
 			return res
 
 		# store last modified attributes
-		self[self._modified] = Utils.resourceDiff(dictOrg, self.dict, j)
+		self[self._modified] = Utils.resourceDiff(dictOrg, self.dict, updatedAttributes)
 
 		# Check subscriptions
 		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceUpdate, modifiedAttributes=self[self._modified])

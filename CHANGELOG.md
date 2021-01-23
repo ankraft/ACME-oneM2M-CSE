@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Improved shutdown behaviour. Waiting for internal threads to finish.
 - [CSE] When updating a subscription resource's *nu* attribute: Removed URI's don't cause a "deletion notification" anymore.
 - [ACP] Added check that *pvs* is not empty during CREATE or UPDATE.
+- [ACP] Added check that 'acpi', if present, is the only attribute in a request.
 
 
 ## [0.6.0] - 2020-10-26

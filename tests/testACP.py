@@ -61,8 +61,6 @@ class TestACP(unittest.TestCase):
 		self.assertEqual(rsc, RC.created)
 	
 
-
-
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveACP(self) -> None:
 		"""	Retrieve <ACP> """
@@ -159,8 +157,19 @@ class TestACP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateAEACPIWrong(self) -> None:
+		"""	Update <ACP> with ACPI together with second attribute -> Fail """
+		dct:dict =	{ 'm2m:ae': {
+						'lbl' : [ 'a' ],
+						'acpi': [ 'anID' ]
+					}}
+		r, rsc = UPDATE(aeURL, ORIGINATOR, dct)
+		self.assertNotEqual(rsc, RC.updated)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_removeACPfromAE(self) -> None:
-		""" Remove the <ACP> reference from an <AE> """
+		""" Remove <ACP> reference from <AE> / ACPI only attribute in update """
 		self.assertIsNotNone(TestACP.acp)
 		self.assertIsNotNone(TestACP.ae)
 		acpi = findXPath(TestACP.ae, 'm2m:ae/acpi').copy()
@@ -251,7 +260,9 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestACP('test_updateACPEmptyPVS'))
 	suite.addTest(TestACP('test_updateACPNoPVS'))
 	suite.addTest(TestACP('test_addACPtoAE'))
+	suite.addTest(TestACP('test_updateAEACPIWrong'))
 	suite.addTest(TestACP('test_removeACPfromAE'))
+
 	suite.addTest(TestACP('test_deleteACPwrongOriginator'))
 	suite.addTest(TestACP('test_deleteACP'))
 	suite.addTest(TestACP('test_createACPNoPVS'))
