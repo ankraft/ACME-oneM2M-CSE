@@ -165,9 +165,9 @@ class TestACP(unittest.TestCase):
 		self.assertIsNotNone(TestACP.ae)
 		acpi = findXPath(TestACP.ae, 'm2m:ae/acpi').copy()
 		acpi.remove(findXPath(TestACP.acp, 'm2m:acp/ri'))
-		dct = 	{ 'm2m:ae' : {
-				 	'acpi': acpi
-				}}
+		dct:dict = 	{ 'm2m:ae' : {
+				 		'acpi': acpi
+					}}
 		r, rsc = UPDATE(aeURL, findXPath(TestACP.ae, 'm2m:ae/aei'), dct)
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)	# missing self-privileges
 		_, rsc = UPDATE(aeURL, ORIGINATOR, dct)
@@ -177,9 +177,9 @@ class TestACP(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateACPEmptyPVS(self) -> None:
 		"""	Update <ACP> with empty PVS -> Fail """
-		dct = 	{ 'm2m:acp' : {
-					'pvs' : {}
-				}}
+		dct:dict = 	{ 'm2m:acp' : {
+						'pvs' : {}
+					}}
 		acp, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
@@ -187,9 +187,9 @@ class TestACP(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateACPNoPVS(self) -> None:
 		"""	Update <ACP> with None PVS -> Fail """
-		dct = 	{ 'm2m:acp' : {
-					'pvs' : None
-				}}
+		dct:dict = 	{ 'm2m:acp' : {
+						'pvs' : None
+					}}
 		acp, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
@@ -211,14 +211,14 @@ class TestACP(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createACPNoPVS(self) -> None:
 		"""	Create <ACP> with no PVS -> Fail """
-		dct = 	{ "m2m:acp": {
-					"rn": acpRN,
-					"pv": {
-						"acr": [ { 	"acor": [ ORIGINATOR ],
-									"acop": 63
-								} ]
-					}
-				}}
+		dct:dict = 	{ "m2m:acp": {
+						"rn": acpRN,
+						"pv": {
+							"acr": [ { 	"acor": [ ORIGINATOR ],
+										"acop": 63
+									} ]
+						}
+					}}
 		TestACP.acp, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
@@ -226,16 +226,16 @@ class TestACP(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createACPEmptyPVS(self) -> None:
 		"""	Create <ACP> with empty PVS -> Fail """
-		dct = 	{ "m2m:acp": {
-					"rn": acpRN,
-					"pv": {
-						"acr": [ { 	"acor": [ ORIGINATOR ],
-									"acop": 63
-								} ]
-					},
-					"pvs": {
-					},
-				}}
+		dct:dict = 	{ "m2m:acp": {
+						"rn": acpRN,
+						"pv": {
+							"acr": [ { 	"acor": [ ORIGINATOR ],
+										"acop": 63
+									} ]
+						},
+						"pvs": {
+						},
+					}}
 		TestACP.acp, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
