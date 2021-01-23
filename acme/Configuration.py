@@ -396,6 +396,11 @@ class Configuration(object):
 			if rv not in srv:
 				console.print(f'[red]Configuration Error: \[cse]:releaseVersion: {rv} not in \[cse].supportedReleaseVersions: {srv}')
 				return False
+		
+		# Check configured app api
+		if len(api := Configuration._configuration['app.statistics.aeAPI']) < 2 or api[0] not in ['R', 'N']:
+			console.print('[red]Configuration Error: \[app.statistics]:aeAPI must not be empty and must start with "N" or "R"')
+			return False
 
 		# Everything is fine
 		return True

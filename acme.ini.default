@@ -305,7 +305,7 @@ root=/webui
 enable=true
 # Resource name of the statistics AE. Default: statistics
 aeRN=statistics
-# App-ID of the statistics AE. Default: ae-statistics
+# App-ID of the statistics AE. Must start with "N" or "R". Default: ae-statistics
 aeAPI=ae-statistics
 # Resource name of the statistics flexContainer. Default: statistics
 fcntRN=statistics
