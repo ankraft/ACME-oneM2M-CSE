@@ -71,3 +71,17 @@ def loop(commands:dict, quit:str=None, catchKeyboardInterrupt:bool=False) -> Non
 		# handle all other keys
 		if ch in commands:
 			commands[ch](ch)
+
+
+def readline(prompt:str='>') -> str:
+	"""	Read a line from the console. 
+		Catch EOF (^D) and Keyboard Interrup (^C). I that case None is returned.
+	"""
+	result = None
+	try:
+		result = input(prompt)
+	except KeyboardInterrupt as e:
+		pass
+	except Exception:
+		pass
+	return result

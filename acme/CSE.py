@@ -31,7 +31,7 @@ from Types import CSEType, ContentSerializationType
 from AEStatistics import AEStatistics
 from CSENode import CSENode
 import Utils
-from helpers.KeyHandler import loop
+from helpers.KeyHandler import loop, readline
 from helpers.BackgroundWorker import BackgroundWorkerPool
 
 
@@ -356,9 +356,10 @@ def _keyDeleteResource(key:str) -> None:
 	Logging.console('**Delete Resource**', extranl=True)
 	loggingOld = Logging.loggingEnabled
 	Logging.loggingEnabled = False
-	#Logging.console('Remove ri=', end='', plain=True)
-	ri = input('ri=')
-	if len(ri) > 0:
+
+	if (ri := readline('ri=')) is None:
+		Logging.console()
+	elif len(ri) > 0:
 		if (res := dispatcher.retrieveResource(ri)).resource is None:
 			Logging.console(res.dbg, isError=True)
 		else:
@@ -366,6 +367,7 @@ def _keyDeleteResource(key:str) -> None:
 				Logging.console(res.dbg, isError=True)
 			else:
 				Logging.console('ok')
+				
 	Logging.loggingEnabled = loggingOld
 
 
@@ -375,11 +377,13 @@ def _keyInspectResource(key:str) -> None:
 	Logging.console('**Inspect Resource**', extranl=True)
 	loggingOld = Logging.loggingEnabled
 	Logging.loggingEnabled = False
-	#Logging.console('Remove ri=', end='', plain=True)
-	ri = input('ri=')
-	if len(ri) > 0:
+	
+	if (ri := readline('ri=')) is None:
+		Logging.console()
+	elif len(ri) > 0:
 		if (res := dispatcher.retrieveResource(ri)).resource is None:
 			Logging.console(res.dbg, isError=True)
 		else:
 			Logging.console(res.resource.asDict())
+
 	Logging.loggingEnabled = loggingOld
