@@ -591,6 +591,8 @@ def resourceDiff(old:Union[Resource.Resource, dict], new:Union[Resource.Resource
 
 
 def getCSE() -> Result:
+	"""	Return the <CSEBase> resource.
+	"""
 	return CSE.dispatcher.retrieveResource(CSE.cseRi)
 
 	

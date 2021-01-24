@@ -63,6 +63,9 @@ defaultSerialization=json
 [cse.security]
 # Enable access control checks. Default: True
 enableACPChecks=true
+# Always grant the admin originator full access (bypass access checks). 
+# Default: True
+fullAccessAdmin=True
 # Admin ACP, resource identifier (e.g. from an imported ACP). 
 # Assigned by the CSE for admin access.
 # Default: acpAdmin

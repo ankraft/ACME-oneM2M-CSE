@@ -21,6 +21,7 @@ class SecurityManager(object):
 	def __init__(self) -> None:
 		self.enableACPChecks 		= Configuration.get('cse.security.enableACPChecks')
 		self.csebaseAccessACPI		= Configuration.get('cse.security.csebaseAccessACPI')
+		self.fullAccessAdmin		= Configuration.get('cse.security.fullAccessAdmin')
 
 		Logging.log('SecurityManager initialized')
 		if self.enableACPChecks:
@@ -35,7 +36,13 @@ class SecurityManager(object):
 
 
 	def hasAccess(self, originator:str, resource:Resource, requestedPermission:Permission, checkSelf:bool=False, ty:int=None, isCreateRequest:bool=False, parentResource:Resource=None) -> bool:
-		if not self.enableACPChecks:	# check or ignore the check
+
+		#  Do or ignore the check
+		if not self.enableACPChecks:
+			return True
+		
+		# grant full access to the CSE originator
+		if originator == CSE.cseOriginator and self.fullAccessAdmin:
 			return True
 		
 

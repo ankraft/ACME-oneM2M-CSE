@@ -128,6 +128,7 @@ class Configuration(object):
 				#	CSE Security
 				#
 				'cse.security.enableACPChecks'		: config.getboolean('cse.security', 'enableACPChecks', 	fallback=True),
+				'cse.security.fullAccessAdmin'		: config.getboolean('cse.security', 'fullAccessAdmin', 	fallback=True),
 				'cse.security.adminACPI'			: config.get('cse.security', 'adminACPI', 				fallback='acpAdmin'),
 				'cse.security.csebaseAccessACPI'	: config.get('cse.security', 'csebaseAccessACPI', 		fallback='acpCSEBaseAccess'),
 				'cse.security.useTLS'				: config.getboolean('cse.security', 'useTLS', 			fallback=False),
