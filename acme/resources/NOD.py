@@ -20,7 +20,7 @@ from .AnnounceableResource import AnnounceableResource
 # TODO Support storage
 
 attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci',
+	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 'hld',
 ])
 nodPolicies = constructPolicy([
 	'ni', 'hcl', 'hael', 'hsl', 'mgca', 'rms', 'nid', 'nty'

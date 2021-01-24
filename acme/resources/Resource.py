@@ -32,7 +32,7 @@ class Resource(object):
 	_isVirtual 			= '__isVirtual__'
 	_announcedTo 		= '__announcedTo__'			# List
 	_isInstantiated		= '__isInstantiated__'
-	_originator			= '__originator__'
+	_originator			= '__originator__'			# Or creator
 	_modified			= '__modified__'
 
 	# ATTN: There is a similar definition in FCNT! Don't Forget to add attributes there as well

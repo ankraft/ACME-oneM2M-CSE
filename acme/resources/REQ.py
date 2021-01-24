@@ -20,7 +20,7 @@ from Configuration import Configuration
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'daci', 
+	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'daci', 'hld',
 ])
 reqPolicies = constructPolicy([
 	'op', 'tg', 'org', 'rid', 'mi', 'pc', 'rs', 'ors'

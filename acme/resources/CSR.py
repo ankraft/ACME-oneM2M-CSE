@@ -16,7 +16,7 @@ from .AnnounceableResource import AnnounceableResource
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'cr', 'daci', 'loc',
+	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'cr', 'daci', 'loc', 'hld'
 ])
 csrPolicies = constructPolicy([
 	'cst', 'poa', 'cb', 'csi', 'mei', 'tri', 'rr', 'nl', 'csz', 'esi', 'trn', 'dcse', 'mtcc', 'egid', 'tren', 'ape', 'srv'

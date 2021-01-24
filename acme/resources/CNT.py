@@ -20,8 +20,7 @@ from .AnnounceableResource import AnnounceableResource
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'daci', 'loc',
-	'cr', 
+	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'daci', 'loc', 'hld', 'cr',
 ])
 cntPolicies = constructPolicy([
 	'mni', 'mbs', 'mia', 'cni', 'cbs', 'li', 'or', 'disr'

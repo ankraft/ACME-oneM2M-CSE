@@ -19,7 +19,7 @@ from Types import ResponseCode as RC
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([
-	'rn', 'ty', 'ri', 'pi', 'et', 'lbl', 'ct', 'lt', 'acpi', 'daci', 'cr', 'enc',
+	'rn', 'ty', 'ri', 'pi', 'et', 'lbl', 'ct', 'lt', 'cr', 'hld', 'acpi', 'daci', 'enc',
 	'exc', 'nu', 'gpi', 'nfu', 'bn', 'rl', 'psn', 'pn', 'nsp', 'ln', 'nct', 'nec',
 	'su', 'acrs'		#	primitiveProfileID missing in TS-0004
 ])

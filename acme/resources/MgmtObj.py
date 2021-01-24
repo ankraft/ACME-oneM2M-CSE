@@ -14,7 +14,7 @@ from Types import ResourceTypes as T
 from Validator import constructPolicy, addPolicy
 
 mgmtObjAttributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 
+	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 'hld', 
 	'mgd', 'obis', 'obps', 'dc', 'mgs', 'cmlk',
 ])
 

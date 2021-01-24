@@ -17,7 +17,7 @@ from .AnnounceableResource import AnnounceableResource
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 'loc', 'st'
+	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 'loc', 'st', 'hld',
 ])
 aePolicies = constructPolicy([
 	'apn', 'api', 'aei', 'poa', 'nl', 'rr', 'csz', 'esi', 'mei', 'srv', 'regs', 'trps', 'scp', 'tren', 'ape','or'
@@ -95,6 +95,7 @@ class AE(AnnounceableResource):
 			if len((apiElements := api.split('.'))) < 3:
 				return Result(status=False, rsc=RC.badRequest, dbg=f'wrong format for registered ID in attribute "api": to few elements')
 		else:
+			Logging.logDebug('wrong format for ID in attribute "api": must start with "R" or "N"')
 			return Result(status=False, rsc=RC.badRequest, dbg=f'wrong format for ID in attribute "api": must start with "R" or "N"')
 
 

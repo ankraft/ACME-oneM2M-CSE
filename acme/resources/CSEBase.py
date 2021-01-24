@@ -16,7 +16,7 @@ from .Resource import *
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
-	'rn', 'ty', 'ri', 'pi',  'ct', 'lt', 'lbl', 'loc',
+	'rn', 'ty', 'ri', 'pi',  'ct', 'lt', 'lbl', 'loc', 'hld',
 	'acpi', 'poa', 'nl', 'daci', 'esi', 'srv', 'cst', 'csi', 'csz'
 ])
 

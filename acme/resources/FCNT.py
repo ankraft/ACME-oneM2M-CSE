@@ -22,7 +22,7 @@ import functools
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'cr', 'daci', 'loc',
+	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'cr', 'hld', 'daci', 'loc',
 ])
 fcntPolicies = constructPolicy([
 	'cnd', 'or', 'cs', 'nl', 'mni', 'mia', 'mbs', 'cni', 'dgt'
@@ -212,7 +212,7 @@ class FCNT(AnnounceableResource):
 				dct['at'] = [ x for x in self['at'] if x.count('/') == 1 ]	# Only copy single csi in at
 
 		resource = Utils.resourceFromDict(resDict={ self.tpe : dct }, pi=self.ri, acpi=self.acpi, ty=T.FCI).resource
-		CSE.dispatcher.createResource(resource)
+		CSE.dispatcher.createResource(resource, originator=originator)
 		resource['cs'] = self.cs
 
 		# Check for mia handling
