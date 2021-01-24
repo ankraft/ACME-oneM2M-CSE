@@ -186,7 +186,8 @@ class HttpServer(object):
 			else:
 				responseResult = httpRequestResult
 		except Exception as e:
-			responseResult = self._prepareException(e)	
+			responseResult = self._prepareException(e)
+			responseResult.request = request	# might not have been set when the exception happened in dissectHttpRequest()
 		responseResult.request = httpRequestResult.request
 		return self._prepareResponse(responseResult)
 
