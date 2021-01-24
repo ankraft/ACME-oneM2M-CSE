@@ -218,7 +218,7 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_removeCNT(self) -> None:
 		"""	Remove container -> Subscription deleted as well. Send deletion notification"""
-		r, rsc = DELETE(cntURL, ORIGINATOR)	# Just delete the Container and everything below it. Ignore whether it exists or not
+		r, rsc = DELETE(cntURL, TestSUB.originator)	# Just delete the Container and everything below it. Ignore whether it exists or not
 		self.assertEqual(rsc, RC.deleted)
 		lastNotification = getLastNotification()
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sud'))

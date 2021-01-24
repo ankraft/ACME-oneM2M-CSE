@@ -37,6 +37,8 @@ attributePolicies = {
 	'aa'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.NA ],
 	'daci'	: [ BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.OA ],		# AE, CSE, CNT
 	'loc'	: [ BT.list, 			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ],		# CSE, AE, CNT, FCNT
+	'hld' 	: [ BT.string, 			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ],
+
 
 
 

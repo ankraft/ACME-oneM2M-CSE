@@ -183,7 +183,7 @@ class TestFCNT(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTUnderFCNT(self) -> None:
 		"""	Delete <CNT> under FCNT """
-		_, rsc = DELETE(f'{fcntURL}/{cntRN}', ORIGINATOR)
+		_, rsc = DELETE(f'{fcntURL}/{cntRN}', TestFCNT.originator)
 		self.assertEqual(rsc, RC.deleted)
 
 
@@ -201,14 +201,14 @@ class TestFCNT(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteFCNTUnderFCNT(self) -> None:
 		"""	Delete <FCNT> under <FCNT> """
-		_, rsc = DELETE(f'{fcntURL}/{fcntRN}', ORIGINATOR)
+		_, rsc = DELETE(f'{fcntURL}/{fcntRN}', TestFCNT.originator)
 		self.assertEqual(rsc, RC.deleted)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteFCNT(self) -> None:
 		"""	Delete <FCNT> """
-		_, rsc = DELETE(fcntURL, ORIGINATOR)
+		_, rsc = DELETE(fcntURL, TestFCNT.originator)
 		self.assertEqual(rsc, RC.deleted)
 
 
@@ -274,7 +274,7 @@ class TestFCNT(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteGenericInterworking(self) -> None:
 		"""	Delete <FCNT> [GIS] """
-		_, rsc = DELETE(gisURL, ORIGINATOR)
+		_, rsc = DELETE(gisURL, TestFCNT.originator)
 		self.assertEqual(rsc, RC.deleted)
 
 

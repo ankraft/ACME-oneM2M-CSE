@@ -71,16 +71,7 @@ class RegistrationManager(object):
 
 		elif resource.ty != T.AE:	# Don't handle AE's, this was already done already in the AE registration
 			if resource.inheritACP:
-				del resource['acpi']
-			elif resource.acpi is None:	
-				# If no ACPI is given, then inherit it from the parent,
-				# except when the parent is the CSE or the parent acpi is empty , then use the default
-				if parentResource.ty != T.CSEBase and parentResource.acpi is not None:
-					resource['acpi'] = parentResource.acpi
-				elif parentResource.ty == T.ACP:
-					pass # Don't assign any ACPI when the parent is an ACP
-				else:
-					resource['acpi'] = [ CSE.security.defaultACPI ]	# Set default ACPIRIs
+				del resource['acpi']	# This should not happen bc resource rejected during validaten. But better remove acpi here
 
 		return Result(originator=originator) # return (possibly new) originator
 

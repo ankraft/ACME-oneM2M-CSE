@@ -20,7 +20,6 @@ class SecurityManager(object):
 
 	def __init__(self) -> None:
 		self.enableACPChecks 		= Configuration.get('cse.security.enableACPChecks')
-		self.defaultACPI 			= Configuration.get('cse.security.defaultACPI')
 		self.csebaseAccessACPI		= Configuration.get('cse.security.csebaseAccessACPI')
 
 		Logging.log('SecurityManager initialized')
@@ -38,6 +37,7 @@ class SecurityManager(object):
 	def hasAccess(self, originator:str, resource:Resource, requestedPermission:Permission, checkSelf:bool=False, ty:int=None, isCreateRequest:bool=False, parentResource:Resource=None) -> bool:
 		if not self.enableACPChecks:	# check or ignore the check
 			return True
+		
 
 		if ty is not None:
 
@@ -77,7 +77,7 @@ class SecurityManager(object):
 		Logging.logDebug(f'Checking permission for originator: {originator}, ri: {resource.ri}, permission: {requestedPermission:d}, selfPrivileges: {checkSelf}')
 
 
-		if resource.ty == T.GRP: # target is an group resource
+		if resource.ty == T.GRP: # target is a group resource
 			# Check membersAccessControlPolicyIDs if provided, otherwise accessControlPolicyIDs to be used
 			
 			if (macp := resource.macp) is None or len(macp) == 0:
@@ -110,15 +110,36 @@ class SecurityManager(object):
 				if self.hasAccess(originator, parentResource, Permission.RETRIEVE) == False:
 					return False
 
-			if (acpi := resource.acpi) is None or len(acpi) == 0:	
-				if resource.inheritACP:
-					parentResource = CSE.dispatcher.retrieveResource(resource.pi).resource
-					return self.hasAccess(originator, parentResource, requestedPermission, checkSelf)
-				Logging.logDebug('Missing acpi in resource')
-				if (orig := resource[resource._originator]) is not None and orig == originator:
-					Logging.logDebug('Allow access for creator')
-					return True
-				Logging.logDebug('Permission NOT granted')
+
+			# When no acpi is configured for the resource
+			if (acpi := resource.acpi) is None or len(acpi) == 0:
+				Logging.logDebug('Handle with missing acpi in resource')
+				Logging.logWarn(str(resource))
+
+				# if the resource *may* have an acpi
+				if 'acpi' in resource.attributePolicies:
+					# Check holder attribute
+					if (holder := resource.hld) is not None:
+						if holder == originator:	# resource.holder == originator -> all access
+							Logging.logDebug('Allow access for holder')
+							return True
+						# When holder is set, but doesn't match the originator then fall-through to fail
+						
+					# Check resource creator
+					elif (creator := resource[resource._originator]) is not None and creator == originator:
+						Logging.logDebug('Allow access for creator')
+						return True
+					
+					# Fall-through to fail
+
+				# resource doesn't support acpi attribute
+				else:
+					if resource.inheritACP:
+						Logging.logDebug('Checking parent\'s permission')
+						parentResource = CSE.dispatcher.retrieveResource(resource.pi).resource
+						return self.hasAccess(originator, parentResource, requestedPermission, checkSelf, ty, isCreateRequest)
+
+				Logging.logDebug('Permission NOT granted for resource w/o acpi')
 				return False
 
 			for a in acpi:

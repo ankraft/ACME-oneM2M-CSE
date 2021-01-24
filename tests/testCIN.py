@@ -122,7 +122,7 @@ class TestCIN(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCIN(self) -> None:
 		""" Delete <CIN> resource """
-		_, rsc = DELETE(cntURL, ORIGINATOR)
+		_, rsc = DELETE(cntURL, TestCIN.originator)
 		self.assertEqual(rsc, RC.deleted)
 
 # More tests of la, ol etc in testCNT_CNI.py

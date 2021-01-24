@@ -4,12 +4,10 @@
         "ri": "${cse.originator}",
         "rn": "${cse.originator}",
         "pi": "${cse.ri}",
-        "api": "${cse.originator}",
+        "hld" : "${cse.originator}",
+        "api": "N${cse.originator}",
         "aei": "${cse.originator}",
-        "acpi": [
-            "${cse.security.adminACPI}",
-            "${cse.security.defaultACPI}"
-        ],
+        "acpi": ["${cse.security.adminACPI}"],
         "csz" : [ "application/json", "application/cbor" ]
 
     }

@@ -67,10 +67,6 @@ enableACPChecks=true
 # Assigned by the CSE for admin access.
 # Default: acpAdmin
 adminACPI=acpAdmin
-# Default ACP, resource identifier (e.g. from an imported ACP). 
-# Assigned by the CSE in case the 'acpi' attribute is missing in a resource.
-# Default: acpDefault
-defaultACPI=acpDefault
 # The ACP resource that will dynamically receive permissions to access the CSEBase.
 # They are assigned, for example, during AE or remoteCSE registration.
 # Default: acpCSEBaseAccess

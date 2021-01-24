@@ -22,7 +22,7 @@ from resources import Resource
 class Importer(object):
 
 	# List of "priority" resources that must be imported first for correct CSE operation
-	_firstImporters = [ 'csebase.json', 'acp.admin.json', 'acp.default.json', 'acp.csebaseAccess.json']
+	_firstImporters = [ 'csebase.json', 'acp.admin.json', 'acp.csebaseAccess.json']
 
 	def __init__(self) -> None:
 		self.macroMatch = re.compile(r"\$\{[\w.]+\}")

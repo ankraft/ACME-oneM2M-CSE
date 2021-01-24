@@ -24,6 +24,7 @@ class TestACP(unittest.TestCase):
 
 	cse 			= None
 	ae 				= None
+	originator 		= None
 	acp 			= None
 
 	@classmethod
@@ -149,6 +150,7 @@ class TestACP(unittest.TestCase):
 				 	'acpi': [ findXPath(TestACP.acp, 'm2m:acp/ri') ]
 				}}
 		TestACP.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		TestACP.originator = findXPath(TestACP.ae, 'm2m:ae/aei')
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(TestACP.ae, 'm2m:ae/acpi'))
 		self.assertIsInstance(findXPath(TestACP.ae, 'm2m:ae/acpi'), list)
@@ -247,6 +249,78 @@ class TestACP(unittest.TestCase):
 					}}
 		TestACP.acp, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
 		self.assertEqual(rsc, RC.badRequest)
+	
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTwithNoACPI(self) -> None:
+		"""	Create <CNT> without ACPI """
+		dct = 	{ 'm2m:cnt' : { 
+					'rn' : cntRN
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.AE, dct)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNone(findXPath(r, 'm2m:ae/acpi')) # no ACPI?
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCNTwithNoACPI(self) -> None:
+		"""	Retrieve <CNT> without ACPI """
+		_, rsc = RETRIEVE(cntURL, TestACP.originator)
+		self.assertEqual(rsc, RC.OK)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCNTwithNoACPIWrongOriginator(self) -> None:
+		"""	Retrieve <CNT> without ACPI and wrong originator -> Fail """
+		_, rsc = RETRIEVE(cntURL, 'wrong')
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteCNTwithNoACPI(self) -> None:
+		"""	Delete <CNT> without ACPI """
+		_, rsc = DELETE(cntURL, TestACP.originator)
+		self.assertEqual(rsc, RC.deleted)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTwithNoACPIAndHolder(self) -> None:
+		"""	Create <CNT> without ACPI / with holder """
+		dct = 	{ 'm2m:cnt' : { 
+					'rn' : cntRN,
+					'hld': 'someone'
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.AE, dct)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNone(findXPath(r, 'm2m:ae/acpi')) # no ACPI?
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCNTwithNoACPIAndHolder(self) -> None:
+		"""	Retrieve <CNT> without ACPI / with holder and holder """
+		_, rsc = RETRIEVE(cntURL, 'someone')
+		self.assertEqual(rsc, RC.OK)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCNTwithNoACPIAndHolderAEOriginator(self) -> None:
+		"""	Retrieve <CNT> without ACPI / with holder and AE originator -> Fail """
+		_, rsc = RETRIEVE(cntURL, TestACP.originator)
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCNTwithNoACPIAndHolderWrongOriginator(self) -> None:
+		"""	Retrieve <CNT> without ACPI / with holder and wrong originator -> Fail """
+		_, rsc = RETRIEVE(cntURL, 'wrong')
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteCNTwithNoACPIAndHolder(self) -> None:
+		"""	Delete <CNT> without ACPI / with holder and holder """
+		_, rsc = DELETE(cntURL, "someone")
+		self.assertEqual(rsc, RC.deleted)
 
 
 def run() -> Tuple[int, int, int]:
@@ -268,6 +342,16 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestACP('test_createACPNoPVS'))
 	suite.addTest(TestACP('test_createACPEmptyPVS'))
 
+	suite.addTest(TestACP('test_createCNTwithNoACPI'))
+	suite.addTest(TestACP('test_retrieveCNTwithNoACPI'))
+	suite.addTest(TestACP('test_retrieveCNTwithNoACPIWrongOriginator'))
+	suite.addTest(TestACP('test_deleteCNTwithNoACPI'))
+
+	suite.addTest(TestACP('test_createCNTwithNoACPIAndHolder'))
+	suite.addTest(TestACP('test_retrieveCNTwithNoACPIAndHolder'))
+	suite.addTest(TestACP('test_retrieveCNTwithNoACPIAndHolderAEOriginator'))
+	suite.addTest(TestACP('test_retrieveCNTwithNoACPIAndHolderWrongOriginator'))
+	suite.addTest(TestACP('test_deleteCNTwithNoACPIAndHolder'))
 
 	#suite.addTest(TestACP('test_handleAE'))
 

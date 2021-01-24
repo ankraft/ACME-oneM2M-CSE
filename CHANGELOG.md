@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added diagram generation (in PlantUML format) of resource tree and deployment structure.
 - [CSE] Added better checks for content serialization in AE.
 - [CSE] Added command interface to the terminal console (for stopping the CSE, printing statistics, CSE registrations, the resource tree, etc).
+- [CSE] Added support for *holder* attribute. Added access control behaviour for *holder* and resource creator when a resource may have an *acpi* attribute, but doesn't.
 - [NOTIFICATIONS] Added support for handling CBOR serialization and other binary formats to the notification server.
 - [WEB] Added dark mode (for supported browsers).
 
@@ -27,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Changed the importing of attribute policies to a JSON based format.
 - [CSE] Supported release version can now be configured via the config file.
 - [CSE] Added checks for remote CSE's *csi* (does it exist? Does it begin with a /?)
+- [CSE] Removed defaultACPI support. Now supporting correct behaviour for *holder* attribute resp resource creator.
 - [TESTS] The behavior whether a failed test skips the remaining tests in a test suite can now be configured.
 - [TESTS] Improved documentation. Doc strings provide a bit more information about a currently running test.
 - [TESTS] Tests now pass mypy checks.

@@ -165,7 +165,7 @@ class TestFCNT_FCI(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteFCNT(self) -> None:
 		""" Delete <FCNT> """
-		_, rsc = DELETE(fcntURL, ORIGINATOR)
+		_, rsc = DELETE(fcntURL, TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.deleted)
 
 

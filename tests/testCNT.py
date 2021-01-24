@@ -175,14 +175,14 @@ class TestCNT(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCNTUnderCNT(self) -> None:
 		"""	Retrieve <CNT> under <CNT> """
-		_, rsc = RETRIEVE(f'{cntURL}/{cntRN}', ORIGINATOR)
+		_, rsc = RETRIEVE(f'{cntURL}/{cntRN}', TestCNT.originator)
 		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTUnderCNT(self) -> None:
 		"""	Delete <CNT> under <CNT> """
-		_, rsc = DELETE(f'{cntURL}/{cntRN}', ORIGINATOR)
+		_, rsc = DELETE(f'{cntURL}/{cntRN}', TestCNT.originator)
 		self.assertEqual(rsc, RC.deleted)
 
 
@@ -202,25 +202,25 @@ class TestCNT(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTUnderCSE(self) -> None:
-		"""	Create <CNT> under <CB> """
+		"""	Create <CNT> under <CB> with admin Originator """
 		self.assertIsNotNone(TestCNT.cse)
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN
 				}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct) # With Admin originator
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct) # With Admin originator !!
 		self.assertEqual(rsc, RC.created)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCNTUnderCSE(self) -> None:
-		"""	Retrieve <CNT> under <CB> """
+		"""	Retrieve <CNT> under <CB> with admin Originator """
 		_, rsc = RETRIEVE(f'{cseURL}/{cntRN}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTUnderCSE(self) -> None:
-		"""	Delete <CNT> under <CB> """
+		"""	Delete <CNT> under <CB> with admin Originator """
 		_, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
