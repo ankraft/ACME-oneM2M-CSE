@@ -187,6 +187,8 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 		'\n'	: lambda c: print(),	# 1 empty line
 		'\x03'  : _keyShutdownCSE,		# See handler below
 		'c'		: _keyConfiguration,
+		'D'		: _keyDeleteResource,
+		'i'		: _keyInspectResource,
 		'l'     : _keyToggleLogging,
 		'Q'		: _keyShutdownCSE,		# See handler below
 		'r'		: _keyCSERegistrations,
@@ -276,6 +278,8 @@ def _keyHelp(key:str) -> None:
 - h, ?  - This help
 - Q, ^C - Shutdown CSE
 - c     - Show configuration
+- D     - Delete resource
+- i     - Inspect resource
 - l     - Toggle logging on/off
 - r     - Show CSE registrations
 - s     - Show statistics
@@ -344,3 +348,38 @@ def _keyStatistics(key:str) -> None:
 	Logging.console('**Statistics**', extranl=True)
 	Logging.console(statistics.getStatisticsRich())
 	Logging.console()
+
+
+def _keyDeleteResource(key:str) -> None:
+	"""	Delete a resource from the CSE.
+	"""
+	Logging.console('**Delete Resource**', extranl=True)
+	loggingOld = Logging.loggingEnabled
+	Logging.loggingEnabled = False
+	#Logging.console('Remove ri=', end='', plain=True)
+	ri = input('ri=')
+	if len(ri) > 0:
+		if (res := dispatcher.retrieveResource(ri)).resource is None:
+			Logging.console(res.dbg, isError=True)
+		else:
+			if (res := dispatcher.deleteResource(res.resource, withDeregistration=True)).resource is None:
+				Logging.console(res.dbg, isError=True)
+			else:
+				Logging.console('ok')
+	Logging.loggingEnabled = loggingOld
+
+
+def _keyInspectResource(key:str) -> None:
+	"""	Inspect a resource.
+	"""
+	Logging.console('**Inspect Resource**', extranl=True)
+	loggingOld = Logging.loggingEnabled
+	Logging.loggingEnabled = False
+	#Logging.console('Remove ri=', end='', plain=True)
+	ri = input('ri=')
+	if len(ri) > 0:
+		if (res := dispatcher.retrieveResource(ri)).resource is None:
+			Logging.console(res.dbg, isError=True)
+		else:
+			Logging.console(res.resource.asDict())
+	Logging.loggingEnabled = loggingOld

@@ -179,13 +179,17 @@ class	Logging:
 	
 
 	@staticmethod
-	def console(msg:Union[str, Tree]='&nbsp;', extranl:bool=False) -> None:
+	def console(msg:Union[str, Tree, dict]='&nbsp;', extranl:bool=False, end:str='\n', plain:bool=False, isError=False) -> None:
+		style = Style(color='spring_green2') if not isError else Style(color='red')
 		if extranl:
 			Logging._console.print()
 		if isinstance(msg, Tree):
-			Logging._console.print(msg, style=Style(color='spring_green2'))
+			Logging._console.print(msg, style=style, end=end)
 		elif isinstance(msg, str):
-			Logging._console.print(Markdown(msg), style=Style(color='spring_green2'))
+			Logging._console.print(msg if plain else Markdown(msg), style=style, end=end)
+		elif isinstance(msg, dict):
+			Logging._console.print(msg, style=style, end=end)
+
 		if extranl:
 			Logging._console.print()
 
