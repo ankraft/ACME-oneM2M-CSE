@@ -310,9 +310,12 @@ class NotificationManager(object):
 
 		result = self._sendNotification(sub['nus'], sender)	# ! This is not a <sub> resource, but the internal data structure, therefore 'nus
 		if result and (exc := sub['exc']) is not None:
+			Logging.logDebug(f'Decrement expirationCounter: {exc} -> {exc-1}')
+
 			exc -= 1
 			subResource = CSE.storage.retrieveResource(ri=sub['ri']).resource
 			if exc < 1:
+				Logging.logDebug(f'expirationCounter expired. Removing subscription: {subResource.ri}')
 				CSE.dispatcher.deleteResource(subResource)	# This also deletes the internal sub
 			else:
 				subResource.setAttribute('exc', exc)		# Update the exc attribute
