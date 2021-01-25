@@ -308,8 +308,18 @@ class NotificationManager(object):
 			else:
 				return self._sendRequest(url, notificationRequest, serialization=serialization)
 
+		result = self._sendNotification(sub['nus'], sender)	# ! This is not a <sub> resource, but the internal data structure, therefore 'nus
+		if result and (exc := sub['exc']) is not None:
+			exc -= 1
+			subResource = CSE.storage.retrieveResource(ri=sub['ri']).resource
+			if exc < 1:
+				CSE.dispatcher.deleteResource(subResource)	# This also deletes the internal sub
+			else:
+				subResource.setAttribute('exc', exc)		# Update the exc attribute
+				subResource.dbUpdate()						# Update the real subscription
+				CSE.storage.updateSubscription(subResource)	# Also update the internal sub
+		return result					
 
-		return self._sendNotification(sub['nus'], sender)	# ! This is not a <sub> resource, but the internal data structure, therefore 'nus
 
 
 

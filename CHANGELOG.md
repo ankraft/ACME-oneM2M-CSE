@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added better checks for content serialization in AE.
 - [CSE] Added command interface to the terminal console (for stopping the CSE, printing statistics, CSE registrations, the resource tree, etc).
 - [CSE] Added support for *holder* attribute. Added access control behaviour for *holder* and resource creator when a resource may have an *acpi* attribute, but doesn't.
+- [CSE] Added support for Subscription's *expirationCounter*.
 - [NOTIFICATIONS] Added support for handling CBOR serialization and other binary formats to the notification server.
 - [WEB] Added dark mode (for supported browsers).
 
@@ -42,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Improved shutdown behaviour. Waiting for internal threads to finish.
 - [CSE] When updating a subscription resource's *nu* attribute: Removed URI's don't cause a "deletion notification" anymore.
 - [ACP] Added check that *pvs* is not empty during CREATE or UPDATE.
-- [ACP] Added check that 'acpi', if present, is the only attribute in a request.
+- [ACP] Added check that 'acpi', if present, is the only attribute in an UPDATE request.
 
 
 ## [0.6.0] - 2020-10-26
