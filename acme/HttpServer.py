@@ -347,7 +347,10 @@ class HttpServer(object):
 		# ! The attribute names are different
 		try:
 			Logging.logDebug(f'Sending request: {method.__name__.upper()} {url}')
-			Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._printContent(content, ct)}\n')
+			if ct == ContentSerializationType.CBOR:
+				Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._printContent(content, ct)}\n=>\n{str(data)}\n')
+			else:
+				Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._printContent(content, ct)}\n')
 			r = method(url, data=content, headers=hds, verify=self.verifyCertificate)
 			responseCt = ContentSerializationType.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
 			rc = RC(int(r.headers['X-M2M-RSC'])) if 'X-M2M-RSC' in r.headers else RC.internalServerError
