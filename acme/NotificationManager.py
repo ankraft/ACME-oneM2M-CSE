@@ -24,8 +24,6 @@ from resources.Resource import Resource
 # TODO: latestNotify support
 
 # TODO: completly rework the batch handling. Store the notification, but only evaluate the TO when sending!
-# TODO: Change the evaluation of poa's. Only one successful receiver per POA. This means that evaluation of TO happens at the very end just before sending the requestz.
-# TODO: support different serializations. Also ct= argument in URL
 
 
 
@@ -202,8 +200,11 @@ class NotificationManager(object):
 				# if not CSE.security.hasAccess('', resource, Permission.NOTIFY):	# check whether AE/CSE may receive Notifications
 					Logging.logWarn(f'No access to resource: {nu}')
 					return None
-				if (poa := resource.poa) is not None and isinstance(poa, list):	#TODO? check whether AE or CSEBase
+				if (poa := resource.poa) is not None and isinstance(poa, list):
 					result += poa
+				else:
+					Logging.logWarn(f'Notification target has no poa: {resource.ri}')
+					return None
 		return result
 
 
@@ -219,7 +220,7 @@ class NotificationManager(object):
 		if previousNus is not None:
 			if (previousNus := self._getNotificationURLs(previousNus, originator)) is None:
 				# Fail if any of the NU's cannot be retrieved or accessed
-				return Result(rsc=RC.subscriptionVerificationInitiationFailed, dbg='cannot retrieve all previous nu''s')
+				return Result(rsc=RC.subscriptionVerificationInitiationFailed, dbg='cannot retrieve all previous nu\'s')
 
 		# Are there any new URI's?
 		if (nuAttribute := Utils.findXPath(newDict, 'm2m:sub/nu')) is not None:
@@ -227,7 +228,7 @@ class NotificationManager(object):
 			# Resolve the URI's for the new NU's
 			if (newNus := self._getNotificationURLs(nuAttribute, originator)) is None:
 				# Fail if any of the NU's cannot be retrieved
-				return Result(rsc=RC.subscriptionVerificationInitiationFailed, dbg='cannot retrieve all new nu''s')
+				return Result(rsc=RC.subscriptionVerificationInitiationFailed, dbg='cannot retrieve or find all (new) nu\'s')
 
 			# notify new nus (verification request). New ones are the ones that are not in the previousNU list
 			for nu in newNus:

@@ -27,6 +27,7 @@ class TestSUB(unittest.TestCase):
 
 	cse 			= None
 	ae 				= None
+	aeNoPoa 		= None
 	originator 		= None
 	cnt 			= None
 	cntRI 			= None
@@ -62,6 +63,14 @@ class TestSUB(unittest.TestCase):
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
+		dct = 	{ 'm2m:ae' : {
+					'rn'  : f'{aeRN}NoPOA', 
+					'api' : 'NMyApp1Id',
+					'rr'  : False,
+					'srv' : [ '3' ]
+				}}
+		cls.aeNoPoa, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
+		assert rsc == RC.created, 'cannot create AE withoutt poa'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
@@ -79,6 +88,7 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		DELETE(f'{aeURL}NoPOA', ORIGINATOR)	# Just delete the NoPoa AE and everything below it. Ignore whether it exists or not
 		DELETE(cls.ae2URL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		stopNotificationServer()
 
@@ -825,6 +835,23 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(rsc, RC.notFound)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSUBwithUnknownPoa(self) -> None:
+		""" Create new <SUB> with NU to not-existing POA -> Fail """
+		# Create the sub
+		clearLastNotification()	# clear the notification first
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN+'NOPOA',
+			        'enc': {
+			            'net': [ 1, 3 ]
+					},
+					'nu': [ findXPath(TestSUB.aeNoPoa, 'm2m:ae/ri') ]	# this ae has no poa
+				}}
+		TestSUB.excSub, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.subscriptionVerificationInitiationFailed)
+		
+
+
 # TODO check different NET's (ae->cnt->sub, add cnt to cnt)
 
 
@@ -890,6 +917,8 @@ def run() -> Tuple[int, int, int]:
 
 	suite.addTest(TestSUB('test_createSUBwithEXC'))
 	suite.addTest(TestSUB('test_createCNTforEXC'))
+
+	suite.addTest(TestSUB('test_createSUBwithUnknownPoa'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
