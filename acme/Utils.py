@@ -679,8 +679,8 @@ def dissectHttpRequest(request:Request, operation:Operation, _id:Tuple[str, str,
 
 	if cseRequest.data is not None and len(cseRequest.data) > 0:
 		try:
-			ct = ContentSerializationType.getType(cseRequest.headers.contentType, default=CSE.defaultSerialization)
-			if (_d := deserializeData(cseRequest.data, ct)) is None:
+			cseRequest.ct = ContentSerializationType.getType(cseRequest.headers.contentType, default=CSE.defaultSerialization)
+			if (_d := deserializeData(cseRequest.data, cseRequest.ct)) is None:
 				return Result(rsc=RC.unsupportedMediaType, request=cseRequest, dbg=f'Unsuppored media type for content-type: {cseRequest.headers.contentType}', status=False)
 			cseRequest.dict = _d
 		except Exception as e:

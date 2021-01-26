@@ -177,7 +177,10 @@ class HttpServer(object):
 			httpRequestResult = Utils.dissectHttpRequest(request, operation, Utils.retrieveIDFromPath(path, CSE.cseRn, CSE.cseCsi))
 			if httpRequestResult.status:
 				if operation in [ Operation.CREATE, Operation.UPDATE ]:
-					Logging.logDebug(f'Body: \n{str(httpRequestResult.request.data)}')
+					if httpRequestResult.request.ct == ContentSerializationType.CBOR:
+						Logging.logDebug(f'Body: \n{Utils.toHex(httpRequestResult.request.data)}\n=>\n{httpRequestResult.request.dict}')
+					else:
+						Logging.logDebug(f'Body: \n{str(httpRequestResult.request.data)}')
 				
 				if self.isStopped:
 					responseResult = Result(rsc=RC.internalServerError, dbg='http server not running	', status=False)
@@ -187,7 +190,6 @@ class HttpServer(object):
 				responseResult = httpRequestResult
 		except Exception as e:
 			responseResult = self._prepareException(e)
-			responseResult.request = request	# might not have been set when the exception happened in dissectHttpRequest()
 		responseResult.request = httpRequestResult.request
 		return self._prepareResponse(responseResult)
 
@@ -392,7 +394,7 @@ class HttpServer(object):
 				
 		# Build and return the response
 		if isinstance(content, bytes):
-			Logging.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{Utils.toHex(content)}\n')
+			Logging.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{Utils.toHex(content)}\n=>\n{str(result.toData())}')
 		else:
 			Logging.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
 		return Response(response=content, status=statusCode, content_type=cts, headers=headers)

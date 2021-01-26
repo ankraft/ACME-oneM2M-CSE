@@ -667,13 +667,14 @@ class RequestHeaders:
 
 @dataclass
 class CSERequest:
-	headers 					: RequestHeaders 	= None
-	args 						: RequestArguments 	= None
-	originalArgs 				: Any 				= None	# Actually a MultiDict
-	data 						: bytes 			= None 	# The request original data
-	dict 						: dict 				= None	# The request data as a dictionary
-	id 							: str 				= None 	# target ID
-	srn 						: str 				= None 	# target structured resource name
-	csi 						: str 				= None 	# target csi
+	headers 					: RequestHeaders 			= None
+	args 						: RequestArguments 			= None
+	ct 							: ContentSerializationType	= None
+	originalArgs 				: Any 						= None	# Actually a MultiDict
+	data 						: bytes 					= None 	# The request original data
+	dict 						: dict 						= None	# The request data as a dictionary
+	id 							: str 						= None 	# target ID
+	srn 						: str 						= None 	# target structured resource name
+	csi 						: str 						= None 	# target csi
 
 
