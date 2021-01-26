@@ -713,7 +713,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'), f'{cntRN}2')
 		self.assertIn('Content-Type', lastHeaders)
-		self.assertEqual(lastHeaders['Content-Type'], 'application/cbor')
+		self.assertIn(lastHeaders['Content-Type'], [ 'application/cbor', 'application/vnd.onem2m-res+cbor' ])
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -769,7 +769,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'))
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'), f'{cntRN}2')
 		self.assertIn('Content-Type', lastHeaders)
-		self.assertEqual(lastHeaders['Content-Type'], 'application/cbor')
+		self.assertIn(lastHeaders['Content-Type'], [ 'application/cbor', 'application/vnd.onem2m-res+cbor' ])
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

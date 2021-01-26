@@ -318,9 +318,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 			contentType = ''
 			if (val := self.headers.get('Content-Type')) is not None:
 				contentType = val.lower()
-			if contentType == 'application/json':
+			if contentType in [ 'application/json', 'application/vnd.onem2m-res+json' ]:
 				setLastNotification(json.loads(post_data.decode('utf-8')))
-			elif contentType == 'application/cbor':
+			elif contentType in [ 'application/cbor', 'application/vnd.onem2m-res+cbor' ]:
 				setLastNotification(cbor2.loads(post_data))
 			# else:
 			# 	setLastNotification(post_data.decode('utf-8'))
