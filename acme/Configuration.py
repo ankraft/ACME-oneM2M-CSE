@@ -220,7 +220,7 @@ class Configuration(object):
 	
 				'app.statistics.enable'				: config.getboolean('app.statistics', 'enable', 		fallback=True),
 				'app.statistics.aeRN'				: config.get('app.statistics', 'aeRN', 					fallback='statistics'),
-				'app.statistics.aeAPI'				: config.get('app.statistics', 'aeAPI', 				fallback='ae-statistics'),
+				'app.statistics.aeAPI'				: config.get('app.statistics', 'aeAPI', 				fallback='Nstatistics'),
 				'app.statistics.fcntRN'				: config.get('app.statistics', 'fcntRN', 				fallback='statistics'),
 				'app.statistics.fcntCND'			: config.get('app.statistics', 'fcntCND', 				fallback='acme.statistics'),
 				'app.statistics.fcntType'			: config.get('app.statistics', 'fcntType', 				fallback='acme:csest'),

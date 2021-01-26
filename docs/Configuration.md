@@ -249,7 +249,7 @@ The following snippet only presents some example for ID mappings.
 |:-----------|:------------------------------------------------------------------------------------------------------|:--------------------------|
 | enable     | Enable the statistics AE.<br/>Default: true                                                           | app.statistics.enable     |
 | aeRN       | Resource name of the statistics AE.<br/>Default: statistics                                           | app.statistics.aeRN       |
-| aeAPI      | App-ID of the statistics AE. Must start with "N" or "R".<br/>Default: ae-statistics                   | app.statistics.aeAPI      |
+| aeAPI      | App-ID of the statistics AE. Must start with "N" or "R".<br/>Default: Ntatistics                      | app.statistics.aeAPI      |
 | fcntRN     | Resource name of the statistics flexContainer.<br/> Default: statistics                               | app.statistics.fcntRN     |
 | fcntCND    | Content Definition of the AE's flexContainer. This is a proprietary CND.<br/>Default: acme.statistics | app.statistics.fcntCND    |
 | fcntType   | Element type of the AE's flexContainer. This is a proprietary type.<br/>Default: acme:csest           | app.statistics.fcntType   |
