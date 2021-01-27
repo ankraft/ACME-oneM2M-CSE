@@ -146,7 +146,7 @@ class Resource(object):
 		# validate the resource logic
 		if not (res := self.validate(originator, create=True)).status:
 			return res
-
+		self.dbUpdate()
 		# increment parent resource's state tag
 		if parentResource is not None and parentResource.st is not None:
 			parentResource = parentResource.dbReload().resource	# Read the resource again in case it was updated in the DB
@@ -238,7 +238,7 @@ class Resource(object):
 
 		# Check subscriptions
 		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceUpdate, modifiedAttributes=self[self._modified])
-
+		self.dbUpdate()
 		return Result(status=True)
 
 

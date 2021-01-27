@@ -121,7 +121,6 @@ class SecurityManager(object):
 			# When no acpi is configured for the resource
 			if (acpi := resource.acpi) is None or len(acpi) == 0:
 				Logging.logDebug('Handle with missing acpi in resource')
-				Logging.logWarn(str(resource))
 
 				# if the resource *may* have an acpi
 				if 'acpi' in resource.attributePolicies:

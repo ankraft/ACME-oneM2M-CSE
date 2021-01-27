@@ -53,6 +53,17 @@ class TestGRP(unittest.TestCase):
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
+		cls._createContainers()
+
+
+	@classmethod
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def tearDownClass(cls) -> None:
+		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+
+
+	@classmethod
+	def _createContainers(cls) -> None:
 		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
 				}}
@@ -66,12 +77,6 @@ class TestGRP(unittest.TestCase):
 		assert rsc == RC.created, 'cannot create container'
 		cls.cnt2RI = findXPath(cls.cnt2, 'm2m:cnt/ri')
 
-
-	@classmethod
-	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls) -> None:
-		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
-		
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createGRP(self) -> None:
@@ -307,6 +312,65 @@ class TestGRP(unittest.TestCase):
 		self.assertEqual(rsc, RC.deleted)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createGRP2(self) -> None:
+		""" Create another <GRP> """
+		# Re-create containers
+		TestGRP._createContainers()
+		# Create another grp
+		dct = 	{ 'm2m:grp' : { 
+					'rn' : grpRN,
+					'mt' : T.MIXED,
+					'mnm': 2,
+					'mid': [ TestGRP.cnt1RI, TestGRP.cnt2RI ]
+				}}
+		r, rsc = CREATE(aeURL, TestGRP.originator, T.GRP, dct)
+		self.assertEqual(rsc, RC.created)
+	
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_addTooManyCNTToGRP2(self) -> None:
+		""" Update <GRP> with too many MID -> Fail """
+		# Add another <CNT>
+		dct = 	{ 'm2m:cnt' : { 
+					'rn'  : f'{cntRN}3'
+				}}
+		TestGRP.cnt3, rsc = CREATE(aeURL, TestGRP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.created)
+		TestGRP.cnt3RI = findXPath(TestGRP.cnt3, 'm2m:cnt/ri')
+
+		dct2 = 	{ 'm2m:grp' : { 
+					'mid': [ TestGRP.cnt1RI, TestGRP.cnt2RI, TestGRP.cnt3RI ]
+				}}
+		_, rsc = UPDATE(grpURL, TestGRP.originator, dct2)
+		self.assertEqual(rsc, RC.maxNumberOfMemberExceeded)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_attributesGRP2(self) -> None:
+		""" Validate <GRP> attributes after failed MID update"""
+		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
+		print(r)
+
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'm2m:grp/ty'), T.GRP)
+		self.assertEqual(findXPath(r, 'm2m:grp/pi'), findXPath(TestGRP.ae,'m2m:ae/ri'))
+		self.assertEqual(findXPath(r, 'm2m:grp/rn'), grpRN)
+		self.assertIsNotNone(findXPath(r, 'm2m:grp/ct'))
+		self.assertIsNotNone(findXPath(r, 'm2m:grp/lt'))
+		self.assertIsNotNone(findXPath(r, 'm2m:grp/et'))
+		self.assertEqual(findXPath(r, 'm2m:grp/cr'), TestGRP.originator)
+		self.assertIsNotNone(findXPath(r, 'm2m:grp/mt'))
+		self.assertEqual(findXPath(r, 'm2m:grp/mt'), T.MIXED)
+		self.assertIsNotNone(findXPath(r, 'm2m:grp/mnm'))
+		self.assertEqual(findXPath(r, 'm2m:grp/mnm'), 2)
+		self.assertIsNotNone(findXPath(r, 'm2m:grp/cnm'))
+		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), 2)
+		self.assertIsNotNone(findXPath(r, 'm2m:grp/mid'))
+		self.assertIsInstance(findXPath(r, 'm2m:grp/mid'), list)
+		self.assertEqual(len(findXPath(r, 'm2m:grp/mid')), 2)
+		self.assertIsNone(findXPath(r, 'm2m:grp/st'))
+
+
 		#TODO check GRP itself: members
 
 
@@ -326,6 +390,12 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestGRP('test_deleteCNTviaFOPT'))
 	suite.addTest(TestGRP('test_deleteGRPByUnknownOriginator'))
 	suite.addTest(TestGRP('test_deleteGRPByAssignedOriginator'))
+
+	suite.addTest(TestGRP('test_createGRP2'))	# create <GRP> again
+	suite.addTest(TestGRP('test_addTooManyCNTToGRP2'))
+	suite.addTest(TestGRP('test_attributesGRP2'))
+
+
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 

@@ -73,7 +73,6 @@ class AnnounceableResource(Resource):
 
 		# If announceableAttributes is now an empty list, set aa to None
 		self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
-		self.dbUpdate()
 		return Result(status=True)
 
 

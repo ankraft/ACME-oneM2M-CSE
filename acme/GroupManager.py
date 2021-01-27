@@ -170,7 +170,7 @@ class GroupManager(object):
 		Logging.logDebug(f'Adding additional path elements: {tail}')
 
 		# walk through all members
-		resultList:List[Result] = []
+		resultList:list[Result] = []
 
 		tail = '/' + tail if len(tail) > 0 else '' # add remaining path, if any
 		for mid in group.mid.copy():	# copy mi because it is changed in the loop

@@ -100,31 +100,32 @@ The Python script [runTests.py](../tests/runTests.py) can be used to run all tes
 
 	...
 
-	Successfully executed tests: 19
-
-	                                   [ACME] - Test Results
-	┏━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
-	┃ Test Suites     ┃ Test Count ┃ Skipped ┃ Errors ┃ Exec Time ┃ Process Time ┃ Time Ratio ┃
-	┡━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━┩
-	│ testACP         │ 9          │ 0       │ 0      │ 0.0811    │ 0.0394       │ 0.4856     │
-	│ testAE          │ 12         │ 0       │ 0      │ 0.1142    │ 0.0501       │ 0.4386     │
-	│ testAddressing  │ 6          │ 0       │ 0      │ 0.0796    │ 0.0378       │ 0.4747     │
-	│ testCIN         │ 6          │ 0       │ 0      │ 0.0753    │ 0.0304       │ 0.4040     │
-	│ testCNT         │ 17         │ 0       │ 0      │ 0.1517    │ 0.0673       │ 0.4434     │
-	│ testCNT_CIN     │ 5          │ 0       │ 0      │ 0.1375    │ 0.0521       │ 0.3788     │
-	│ testCSE         │ 5          │ 0       │ 0      │ 0.0293    │ 0.0155       │ 0.5293     │
-	│ testDiscovery   │ 42         │ 0       │ 0      │ 1.7608    │ 0.2052       │ 0.1165     │
-	│ testFCNT        │ 14         │ 0       │ 0      │ 0.1418    │ 0.0554       │ 0.3907     │
-	│ testFCNT_FCI    │ 6          │ 0       │ 0      │ 0.1009    │ 0.0434       │ 0.4301     │
-	│ testGRP         │ 14         │ 0       │ 0      │ 0.2804    │ 0.1135       │ 0.4047     │
-	│ testMgmtObj     │ 52         │ 0       │ 0      │ 1.3827    │ 0.1785       │ 0.1291     │
-	│ testNOD         │ 11         │ 0       │ 0      │ 0.1507    │ 0.0702       │ 0.4657     │
-	│ testRemote      │ 2          │ 0       │ 0      │ 0.0221    │ 0.0114       │ 0.5172     │
-	│ testRemote_Annc │ 23         │ 0       │ 0      │ 0.4381    │ 0.1325       │ 0.3025     │
-	│ testSUB         │ 19         │ 0       │ 0      │ 1.3818    │ 0.0926       │ 0.0670     │
-	├─────────────────┼────────────┼─────────┼────────┼───────────┼──────────────┼────────────┤
-	│ Totals          │ 243        │ 0       │ 0      │ 6.3459    │ 1.2125       │ 0.1911     │
-	└─────────────────┴────────────┴─────────┴────────┴───────────┴──────────────┴────────────┘
+									[ACME] - Test Results
+	┏━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
+	┃ Test Suites     ┃ Test Count ┃ Skipped ┃ Errors ┃ Exec Time ┃ Process Time ┃ Time / Test ┃
+	┡━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
+	│ testACP         │ 24         │ 0       │ 0      │ 0.254555  │ 0.0883       │ 0.0106      │
+	│ testAE          │ 20         │ 0       │ 0      │ 0.264547  │ 0.0795       │ 0.0132      │
+	│ testAddressing  │ 6          │ 0       │ 0      │ 0.109203  │ 0.0385       │ 0.0182      │
+	│ testCIN         │ 6          │ 0       │ 0      │ 0.112126  │ 0.0310       │ 0.0187      │
+	│ testCNT         │ 17         │ 0       │ 0      │ 0.285828  │ 0.0714       │ 0.0168      │
+	│ testCNT_CIN     │ 5          │ 0       │ 0      │ 0.207681  │ 0.0530       │ 0.0415      │
+	│ testCSE         │ 6          │ 0       │ 0      │ 0.034428  │ 0.0180       │ 0.0057      │
+	│ testDiscovery   │ 50         │ 0       │ 0      │ 2.394407  │ 0.2640       │ 0.0479      │
+	│ testExpiration  │ 8          │ 0       │ 0      │ 30.936923 │ 0.1602       │ 3.8671      │
+	│ testFCNT        │ 20         │ 0       │ 0      │ 0.265955  │ 0.0801       │ 0.0133      │
+	│ testFCNT_FCI    │ 6          │ 0       │ 0      │ 0.188589  │ 0.0463       │ 0.0314      │
+	│ testGRP         │ 17         │ 0       │ 0      │ 0.653116  │ 0.1336       │ 0.0384      │
+	│ testMgmtObj     │ 56         │ 0       │ 0      │ 0.521094  │ 0.1958       │ 0.0093      │
+	│ testMisc        │ 3          │ 0       │ 0      │ 0.016969  │ 0.0094       │ 0.0057      │
+	│ testNOD         │ 11         │ 0       │ 0      │ 0.287916  │ 0.0766       │ 0.0262      │
+	│ testREQ         │ 17         │ 0       │ 0      │ 26.000516 │ 0.1090       │ 1.5294      │
+	│ testRemote      │ 2          │ 0       │ 0      │ 0.040013  │ 0.0121       │ 0.0200      │
+	│ testRemote_Annc │ 28         │ 0       │ 0      │ 2.969211  │ 0.1714       │ 0.1060      │
+	│ testSUB         │ 48         │ 0       │ 0      │ 9.867077  │ 0.3084       │ 0.2056      │
+	├─────────────────┼────────────┼─────────┼────────┼───────────┼──────────────┼─────────────┤
+	│ Totals          │ 350        │ 0       │ 0      │ 75.4322   │ 1.9680       │ 0.2155      │
+	└─────────────────┴────────────┴─────────┴────────┴───────────┴──────────────┴─────────────┘
 
 ### Dependencies
 Each test suite may set-up resources in the CSE that are used during the tests. Usually, those resources should be removed from the CSE at the end of each test suite, but under certain circumstances (like a crash or forceful interruption of the test suite's run) those resources may still be present in the CSE and must be removed manually (or by a reset-restart of the CSE).
