@@ -85,7 +85,7 @@ class GroupManager(object):
 					return Result(status=False, rsc=RC.notFound, dbg=res.dbg)
 				resource = res.resource
 			else:
-				if remoteResult.dict is None:
+				if remoteResult.dict is None or len(remoteResult.dict) == 0:
 					if remoteResult.rsc == RC.originatorHasNoPrivilege:  # CSE has no privileges for retrieving the member
 						return Result(status=False, rsc=RC.receiverHasNoPrivileges, dbg='wrong privileges for CSE to retrieve remote resource')
 					else:  # Member not found
