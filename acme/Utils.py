@@ -8,18 +8,12 @@
 #	modules and entities of the CSE.
 #
 
+from __future__ import annotations
 import datetime, json, random, string, sys, re, threading, traceback, time
 import cbor2
 from copy import deepcopy
 import isodate
-from typing import Any, List, Tuple, Union, Dict
-from resources import ACP, ACPAnnc, AE, AEAnnc, ANDI, ANDIAnnc, ANI, ANIAnnc, BAT, BATAnnc
-from resources import CIN, CINAnnc, CNT, CNTAnnc, CNT_LA, CNT_OL, CSEBase, CSR, CSRAnnc
-from resources import DVC, DVCAnnc,DVI, DVIAnnc, EVL, EVLAnnc, FCI, FCIAnnc, FCNT, FCNTAnnc, FCNT_LA, FCNT_OL
-from resources import FWR, FWRAnnc, GRP, GRPAnnc, GRP_FOPT, MEM, MEMAnnc, MgmtObj, MgmtObjAnnc, NOD, NODAnnc
-from resources import NYCFC, NYCFCAnnc, PCH, REQ, RBO, RBOAnnc, SUB
-from resources import SWR, SWRAnnc, Unknown, Resource
-
+from typing import Any, List, Tuple, Union, Dict, Callable
 
 from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC
@@ -27,6 +21,7 @@ from Types import Result,  RequestHeaders, Operation, RequestArguments, FilterUs
 from Types import CSERequest, ContentSerializationType
 from Configuration import Configuration
 from Logging import Logging
+from resources.Resource import Resource
 import CSE
 from flask import Request
 import cbor2
@@ -47,7 +42,7 @@ def isUniqueRI(ri:str) -> bool:
 def uniqueRN(prefix:str='un') -> str:
 	return f'{noDomain(prefix)}_{_randomID()}'
 
-def announcedRN(resource:Resource.Resource) -> str:
+def announcedRN(resource:Resource) -> str:
 	""" Create the announced rn for a resource.
 	"""
 	return f'{resource.rn}_Annc'
@@ -103,7 +98,7 @@ def isStructured(uri:str) -> bool:
 	return False
 
 
-def isVirtualResource(resource: Resource.Resource) -> bool:
+def isVirtualResource(resource: Resource) -> bool:
 	result = resource[resource._isVirtual]
 	return result if result is not None else False
 	# ireturn (ty := r.ty) and ty in C.virtualResources
@@ -133,7 +128,7 @@ def fromISO8601Date(timestamp:str) -> float:
 		return 0.0
 
 
-def structuredPath(resource: Resource.Resource) -> str:
+def structuredPath(resource: Resource) -> str:
 	""" Determine the structured path of a resource. """
 	rn = resource.rn
 	if resource.ty == T.CSEBase: # if CSE
@@ -183,7 +178,7 @@ def riFromCSI(csi: str) -> str:
 	return res.ri
 
 
-def resourceFromCSI(csi: str) -> Resource.Resource:
+def resourceFromCSI(csi: str) -> Resource:
 	""" Get the CSEBase resource by its csi. """
 	if (res := CSE.storage.retrieveResource(csi=csi)).resource is None:
 		return None
@@ -280,136 +275,6 @@ mgmtObjAnncTPEs = 	[	T.FWRAnnc.tpe(), T.SWRAnnc.tpe(), T.MEMAnnc.tpe(), T.ANIAnn
 						T.RBOAnnc.tpe(), T.EVLAnnc.tpe(),
 			  		]
 
-def resourceFromDict(resDict:dict, pi:str=None, acpi:str=None, ty:Union[T, int]=None, create:bool=False, isImported:bool=False) -> Result:
-	""" Create a resource from a dictionary structure.
-		This will *not* call the activate method, therefore some attributes
-		may be set separately.
-	"""
-	resDict, root = pureResource(resDict)	# remove optional "m2m:xxx" level
-	typ = resDict['ty'] if 'ty' in resDict else ty
-	if typ != None and ty != None and typ != ty:
-		return Result(dbg='type and resource specifier mismatch')
-	mgd = resDict['mgd'] if 'mgd' in resDict else None		# for mgmtObj
-
-	# Add extra acpi
-	if acpi is not None:
-		resDict['acpi'] = acpi if type(acpi) is list else [ acpi ]
-
-	# store the import status in the original resDict
-	if isImported:
-		resDict[Resource.Resource._imported] = True	# Indicate that this is an imported resource
-
-
-	# sorted by assumed frequency (small optimization)
-	if typ == T.CIN or root == T.CIN.tpe():
-		return Result(resource=CIN.CIN(resDict, pi=pi, create=create))
-	elif typ == T.CNT or root == T.CNT.tpe():
-		return Result(resource=CNT.CNT(resDict, pi=pi, create=create))
-	elif typ == T.GRP or root == T.GRP.tpe():
-		return Result(GRP.GRP(resDict, pi=pi, create=create))
-	elif typ == T.GRP_FOPT or root == T.GRP_FOPT.tpe():
-		return Result(resource=GRP_FOPT.GRP_FOPT(resDict, pi=pi, create=create))
-	elif typ == T.ACP or root == T.ACP.tpe():
-		return Result(resource=ACP.ACP(resDict, pi=pi, create=create))
-	elif typ == T.FCNT:
-		return Result(resource=FCNT.FCNT(resDict, pi=pi, fcntType=root, create=create))
-	elif typ == T.FCI:
-		return Result(resource=FCI.FCI(resDict, pi=pi, fcntType=root, create=create))	
-	elif typ == T.AE or root == T.AE.tpe():
-		return Result(resource=AE.AE(resDict, pi=pi, create=create))
-	elif typ == T.SUB or root == T.SUB.tpe():
-		return Result(resource=SUB.SUB(resDict, pi=pi, create=create))
-	elif typ == T.CSR or root == T.CSR.tpe():
-		return Result(resource=CSR.CSR(resDict, pi=pi, create=create))
-	elif typ == T.NOD or root == T.NOD.tpe():
-		return Result(resource=NOD.NOD(resDict, pi=pi, create=create))
-	elif (typ == T.CNT_LA or root == T.CNT_LA.tpe()) and typ != T.FCNT_LA:
-		return Result(resource=CNT_LA.CNT_LA(resDict, pi=pi, create=create))
-	elif (typ == T.CNT_OL or root == T.CNT_OL.tpe()) and typ != T.FCNT_OL:
-		return Result(resource=CNT_OL.CNT_OL(resDict, pi=pi, create=create))
-	elif typ == T.FCNT_LA:
-		return Result(resource=FCNT_LA.FCNT_LA(resDict, pi=pi, create=create))
-	elif typ == T.FCNT_OL:
-		return Result(resource=FCNT_OL.FCNT_OL(resDict, pi=pi, create=create))
-	elif typ == T.REQ or root == T.REQ.tpe():
-		return Result(resource=REQ.REQ(resDict, pi=pi, create=create))
-	elif typ == T.PCH or root == T.PCH.tpe():
-		return Result(resource=PCH.PCH(resDict, pi=pi, create=create))
-	elif typ == T.CSEBase or root == T.CSEBase.tpe():
-		return Result(resource=CSEBase.CSEBase(resDict, create=create))
-
-	# Management Objects
-	elif typ == T.MGMTOBJ or root in mgmtObjTPEs:
-		if mgd == T.FWR or root == T.FWR.tpe():
-			return Result(resource=FWR.FWR(resDict, pi=pi, create=create))
-		elif mgd == T.SWR or root == T.SWR.tpe():
-			return Result(resource=SWR.SWR(resDict, pi=pi, create=create))
-		elif mgd == T.MEM or root == T.MEM.tpe():
-			return Result(resource=MEM.MEM(resDict, pi=pi, create=create))
-		elif mgd == T.ANI or root == T.ANI.tpe():
-			return Result(resource=ANI.ANI(resDict, pi=pi, create=create))
-		elif mgd == T.ANDI or root == T.ANDI.tpe():
-			return Result(resource=ANDI.ANDI(resDict, pi=pi, create=create))
-		elif mgd == T.BAT or root == T.BAT.tpe():
-			return Result(resource=BAT.BAT(resDict, pi=pi, create=create))
-		elif mgd == T.DVI or root == T.DVI.tpe():
-			return Result(resource=DVI.DVI(resDict, pi=pi, create=create))
-		elif mgd == T.DVC or root == T.DVC.tpe():
-			return Result(resource=DVC.DVC(resDict, pi=pi, create=create))
-		elif mgd == T.RBO or root == T.RBO.tpe():
-			return Result(resource=RBO.RBO(resDict, pi=pi, create=create))
-		elif  mgd == T.EVL or root == T.EVL.tpe():
-			return Result(resource=EVL.EVL(resDict, pi=pi, create=create))
-		elif  mgd == T.NYCFC or root == T.NYCFC.tpe():
-			return Result(resource=NYCFC.NYCFC(resDict, pi=pi, create=create))
-
-	# Announced Resources
-	elif typ == T.ACPAnnc:
-		return Result(resource=ACPAnnc.ACPAnnc(resDict, pi=pi, create=create))
-	elif typ == T.AEAnnc:
-		return Result(resource=AEAnnc.AEAnnc(resDict, pi=pi, create=create))
-	elif typ == T.CNTAnnc:
-		return Result(resource=CNTAnnc.CNTAnnc(resDict, pi=pi, create=create))
-	elif typ == T.CINAnnc:
-		return Result(resource=CINAnnc.CINAnnc(resDict, pi=pi, create=create))
-	elif typ == T.GRPAnnc:
-		return Result(resource=GRPAnnc.GRPAnnc(resDict, pi=pi, create=create))
-	elif typ == T.NODAnnc:
-		return Result(resource=NODAnnc.NODAnnc(resDict, pi=pi, create=create))
-	elif typ == T.CSRAnnc:
-		return Result(resource=CSRAnnc.CSRAnnc(resDict, pi=pi, create=create))
-	elif typ == T.FCIAnnc:
-		return Result(resource=FCIAnnc.FCIAnnc(resDict, pi=pi, create=create))
-	elif typ == T.FCNTAnnc:
-		return Result(resource=FCNTAnnc.FCNTAnnc(resDict, pi=pi, create=create))
-
-	# Announced Management Objects
-	elif typ == T.MGMTOBJAnnc or root in mgmtObjAnncTPEs:
-		if mgd == T.FWRAnnc or root == T.FWRAnnc.tpe():
-			return Result(resource=FWRAnnc.FWRAnnc(resDict, pi=pi, create=create))
-		elif mgd == T.SWRAnnc or root == T.SWRAnnc.tpe():
-			return Result(resource=SWRAnnc.SWRAnnc(resDict, pi=pi, create=create))
-		elif mgd == T.MEMAnnc or root == T.MEMAnnc.tpe():
-			return Result(resource=MEMAnnc.MEMAnnc(resDict, pi=pi, create=create))
-		elif mgd == T.ANIAnnc or root == T.ANIAnnc.tpe():
-			return Result(resource=ANIAnnc.ANIAnnc(resDict, pi=pi, create=create))
-		elif mgd == T.ANDIAnnc or root == T.ANDIAnnc.tpe():
-			return Result(resource=ANDIAnnc.ANDIAnnc(resDict, pi=pi, create=create))
-		elif mgd == T.BATAnnc or root == T.BATAnnc.tpe():
-			return Result(resource=BATAnnc.BATAnnc(resDict, pi=pi, create=create))
-		elif mgd == T.DVIAnnc or root == T.DVIAnnc.tpe():
-			return Result(resource=DVIAnnc.DVIAnnc(resDict, pi=pi, create=create))
-		elif mgd == T.DVCAnnc or root == T.DVCAnnc.tpe():
-			return Result(resource=DVCAnnc.DVCAnnc(resDict, pi=pi, create=create))
-		elif mgd == T.RBOAnnc or root == T.RBOAnnc.tpe():
-			return Result(resource=RBOAnnc.RBOAnnc(resDict, pi=pi, create=create))
-		elif  mgd == T.EVLAnnc or root == T.EVLAnnc.tpe():
-			return Result(resource=EVLAnnc.EVLAnnc(resDict, pi=pi, create=create))
-		elif  mgd == T.NYCFCAnnc or root == T.NYCFCAnnc.tpe():
-			return Result(resource=NYCFCAnnc.NYCFCAnnc(resDict, pi=pi, create=create))
-
-	return Result(resource=Unknown.Unknown(resDict, root, pi=pi, create=create))	# Capture-All resource
-
 
 excludeFromRoot = [ 'pi' ]
 def pureResource(dct:dict) -> Tuple[dict, str]:
@@ -420,8 +285,8 @@ def pureResource(dct:dict) -> Tuple[dict, str]:
 		return dct[rootKeys[0]], rootKeys[0]
 	# Otherwise try to get the root identifier from the resource itself (stored as a private attribute)
 	root = None
-	if Resource.Resource._rtype in dct:
-		root = dct[Resource.Resource._rtype]
+	if Resource._rtype in dct:
+		root = dct[Resource._rtype]
 	return dct, root
 
 
@@ -503,7 +368,9 @@ def setXPath(dct:Dict[str, Any], element:str, value:Any, overwrite:bool=True) ->
 			data[paths[i]] = {}
 		data = data[paths[i]]
 	if paths[ln-1] in data is not None and not overwrite:
-			return True # don't overwrite
+		return True # don't overwrite
+	if not isinstance(data, dict):
+		return False
 	data[paths[ln-1]] = value
 	return True
 
@@ -559,7 +426,7 @@ def isAllowedOriginator(originator: str, allowedOriginators: List[str]) -> bool:
 	return False
 
 
-def resourceDiff(old:Union[Resource.Resource, dict], new:Union[Resource.Resource, dict], modifiers:dict=None) -> dict:
+def resourceDiff(old:Union[Resource, dict], new:Union[Resource, dict], modifiers:dict=None) -> dict:
 	"""	Compare an old and a new resource. Keywords and values. Ignore internal __XYZ__ keys.
 		Return a dictionary.
 		If the modifier dict is given then it contains the changes that let from old to new.
@@ -596,7 +463,7 @@ def getCSE() -> Result:
 	return CSE.dispatcher.retrieveResource(CSE.cseRi)
 
 	
-def fanoutPointResource(id: str) -> Resource.Resource:
+def fanoutPointResource(id: str) -> Resource:
 	"""	Check whether the target contains a fanoutPoint in between or as the target.
 	"""
 	if id is None:

@@ -18,6 +18,7 @@ from .Resource import *
 from .AnnounceableResource import AnnounceableResource
 
 
+
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
 	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'daci', 'loc', 'hld', 'cr',
@@ -56,18 +57,19 @@ class CNT(AnnounceableResource):
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
+		
+		from .Factory import Factory
 
 		# register latest and oldest virtual resources
 		Logging.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		latestResource = Utils.resourceFromDict({}, pi=self.ri, acpi=self.acpi, ty=T.CNT_LA).resource
+		latestResource = Factory.resourceFromDict({}, pi=self.ri, ty=T.CNT_LA).resource
 		if (res := CSE.dispatcher.createResource(latestResource)).resource is None:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
 		# add oldest
-		oldestResource = Utils.resourceFromDict({}, pi=self.ri, acpi=self.acpi, ty=T.CNT_OL).resource
-	
+		oldestResource = Factory.resourceFromDict({}, pi=self.ri, ty=T.CNT_OL).resource
 		if (res := CSE.dispatcher.createResource(oldestResource)).resource is None:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 

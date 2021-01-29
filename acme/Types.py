@@ -92,23 +92,17 @@ class ResourceTypes(IntEnum):
 
 
 	def tpe(self) -> str:
-		return ResourceTypes._names[self.value] 				#  type: ignore
+		return ResourceTypes._names[self.value] 					#  type: ignore
 
 
 	def announced(self) -> ResourceTypes:
-		if self.value in ResourceTypes._announcedMappings:		#  type: ignore
+		if self.value in ResourceTypes._announcedMappings:			#  type: ignore
 			return ResourceTypes._announcedMappings[self.value] 	#  type: ignore
 		return ResourceTypes.UNKNOWN
 
 
-	def announcedMgd(self, mgd:int) -> ResourceTypes:
-		if mgd in ResourceTypes._announcedMappingsMGD:		#  type: ignore
-			return ResourceTypes._announcedMappingsMGD[mgd] 	#  type: ignore
-		return ResourceTypes.UNKNOWN
-
-
 	def isAnnounced(self) -> bool:
-		return self.value in ResourceTypes._announcedSet 		# type: ignore
+		return self.value in ResourceTypes._announcedSet 			# type: ignore
 
 
 	def __str__(self) -> str:
@@ -118,7 +112,21 @@ class ResourceTypes(IntEnum):
 	@classmethod
 	def has(cls, value:int) -> bool:
 		return value in cls.__members__.values()
+	
 
+	@classmethod
+	def fromTPE(cls, tpe:str) -> ResourceTypes:
+		try:
+			return next(key for key, value in ResourceTypes._names.items() if value == tpe)	# type: ignore
+		except StopIteration:
+			return None
+
+
+	@classmethod
+	def announcedMgd(cls, mgd:int) -> ResourceTypes:
+		if mgd in ResourceTypes._announcedMappingsMGD:				#  type: ignore
+			return ResourceTypes._announcedMappingsMGD[mgd] 		#  type: ignore
+		return ResourceTypes.UNKNOWN
 
 
 ResourceTypes._announcedMappings = {							#  type: ignore
@@ -159,6 +167,7 @@ ResourceTypes._announcedSet = [									#  type: ignore
 	ResourceTypes.RBOAnnc, ResourceTypes.EVLAnnc, ResourceTypes.NYCFCAnnc,
 ]
 
+# Mapping between oneM2M resource types to type identifies
 
 ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.UNKNOWN		: 'unknown',
@@ -224,6 +233,8 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.NYCFCAnnc		: 'm2m:nycfcA',
 
 	}
+
+	
 
 
 

@@ -63,17 +63,19 @@ class FCNT(AnnounceableResource):
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
 
+		from .Factory import Factory
+
 		# register latest and oldest virtual resources
 		Logging.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		if self.hasInstances:
 			# add latest
-			resource = Utils.resourceFromDict({}, pi=self.ri, acpi=self.acpi, ty=T.FCNT_LA).resource
+			resource = Factory.resourceFromDict({}, pi=self.ri, ty=T.FCNT_LA).resource
 			if (res := CSE.dispatcher.createResource(resource)).resource is None:
 				return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
 			# add oldest
-			resource = Utils.resourceFromDict({}, pi=self.ri, acpi=self.acpi, ty=T.FCNT_OL).resource
+			resource = Factory.resourceFromDict({}, pi=self.ri, ty=T.FCNT_OL).resource
 			if (res := CSE.dispatcher.createResource(resource)).resource is None:
 				return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 		return Result(status=True)
@@ -197,6 +199,8 @@ class FCNT(AnnounceableResource):
 
 	# Add a new FlexContainerInstance for this flexContainer
 	def addFlexContainerInstance(self, originator:str) -> None:
+		from .Factory import Factory
+
 		Logging.logDebug('Adding flexContainerInstance')
 		dct:Dict[str, Any] = {	'rn'  : f'{self.rn}_{self.st:d}', }
 		if self.lbl is not None:
@@ -211,7 +215,7 @@ class FCNT(AnnounceableResource):
 			if attr == 'at':
 				dct['at'] = [ x for x in self['at'] if x.count('/') == 1 ]	# Only copy single csi in at
 
-		resource = Utils.resourceFromDict(resDict={ self.tpe : dct }, pi=self.ri, acpi=self.acpi, ty=T.FCI).resource
+		resource = Factory.resourceFromDict(resDict={ self.tpe : dct }, pi=self.ri, ty=T.FCI).resource
 		CSE.dispatcher.createResource(resource, originator=originator)
 		resource['cs'] = self.cs
 

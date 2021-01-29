@@ -10,7 +10,7 @@
 import unittest, sys
 sys.path.append('../acme')
 from Constants import Constants as C
-from Types import ResponseCode as RC
+from Types import ResponseCode as RC, ResourceTypes as T
 from init import *
 
 # The following code must be executed before anything else because it influences
@@ -61,11 +61,23 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createWithWrongResourceType(self) -> None:
+		"""	Create resource w -> Fail """
+		dct = 	{ 'm2m:ae' : { 
+					'rn' : 'foo',
+				}}
+		_, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
+		self.assertEqual(rsc, RC.badRequest)
+
+
 def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestMisc('test_checkHTTPRVI'))
 	suite.addTest(TestMisc('test_createUnknownResourceType'))
 	suite.addTest(TestMisc('test_createAlphaResourceType'))
+	suite.addTest(TestMisc('test_createWithWrongResourceType'))
+
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 

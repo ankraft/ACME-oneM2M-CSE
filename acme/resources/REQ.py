@@ -44,7 +44,8 @@ class REQ(Resource):
 	def createRequestResource(request:CSERequest) -> Result:
 		"""	Create an initialized <request> resource.
 		"""
-		
+		from .Factory import Factory
+
 		# calculate request et
 		minEt = Utils.getResourceDate(Configuration.get('cse.req.minet'))
 		maxEt = Utils.getResourceDate(Configuration.get('cse.req.maxet'))
@@ -97,6 +98,7 @@ class REQ(Resource):
 
 		if (cseres := Utils.getCSE()).resource is None:
 			return Result(rsc=RC.badRequest, dbg=cseres.dbg)
-		return Utils.resourceFromDict(dct, pi=cseres.resource.ri, ty=T.REQ)
+
+		return Factory.resourceFromDict(dct, pi=cseres.resource.ri, ty=T.REQ)
 
 

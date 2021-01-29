@@ -20,7 +20,7 @@ noCSE = not connectionPossible(cseURL)
 
 class TestACP(unittest.TestCase):
 
-	acpORIGINATOR = 'testOriginator'
+	acpORIGINATOR = 'CtestOriginator'
 
 	cse 			= None
 	ae 				= None
@@ -170,22 +170,6 @@ class TestACP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_removeACPfromAE(self) -> None:
-		""" Remove <ACP> reference from <AE> / ACPI only attribute in update """
-		self.assertIsNotNone(TestACP.acp)
-		self.assertIsNotNone(TestACP.ae)
-		acpi = findXPath(TestACP.ae, 'm2m:ae/acpi').copy()
-		acpi.remove(findXPath(TestACP.acp, 'm2m:acp/ri'))
-		dct:dict = 	{ 'm2m:ae' : {
-				 		'acpi': acpi
-					}}
-		r, rsc = UPDATE(aeURL, findXPath(TestACP.ae, 'm2m:ae/aei'), dct)
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)	# missing self-privileges
-		_, rsc = UPDATE(aeURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated)
-
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateACPEmptyPVS(self) -> None:
 		"""	Update <ACP> with empty PVS -> Fail """
 		dct:dict = 	{ 'm2m:acp' : {
@@ -201,36 +185,22 @@ class TestACP(unittest.TestCase):
 		dct:dict = 	{ 'm2m:acp' : {
 						'pvs' : None
 					}}
-		acp, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
+		_, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteACPwrongOriginator(self) -> None:
-		""" Delete <ACP> with wrong originator """
-		_, rsc = DELETE(acpURL, 'wrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
-
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteACP(self) -> None:
-		""" Delete <ACP> with correct originator """
-		_, rsc = DELETE(acpURL, self.acpORIGINATOR)
-		self.assertEqual(rsc, RC.deleted)
-	
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createACPNoPVS(self) -> None:
 		"""	Create <ACP> with no PVS -> Fail """
 		dct:dict = 	{ "m2m:acp": {
-						"rn": acpRN,
+						"rn": f'{acpRN}2',
 						"pv": {
 							"acr": [ { 	"acor": [ ORIGINATOR ],
 										"acop": 63
 									} ]
 						}
 					}}
-		TestACP.acp, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
+		_, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 
@@ -238,16 +208,15 @@ class TestACP(unittest.TestCase):
 	def test_createACPEmptyPVS(self) -> None:
 		"""	Create <ACP> with empty PVS -> Fail """
 		dct:dict = 	{ "m2m:acp": {
-						"rn": acpRN,
+						"rn": f'{acpRN}2',
 						"pv": {
 							"acr": [ { 	"acor": [ ORIGINATOR ],
 										"acop": 63
 									} ]
 						},
-						"pvs": {
-						},
+						"pvs": {},
 					}}
-		TestACP.acp, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
+		_, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
 		self.assertEqual(rsc, RC.badRequest)
 	
 
@@ -257,7 +226,7 @@ class TestACP(unittest.TestCase):
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN
 				}}
-		r, rsc = CREATE(aeURL, TestACP.originator, T.AE, dct)
+		r, rsc = CREATE(aeURL, ORIGINATOR, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNone(findXPath(r, 'm2m:ae/acpi')) # no ACPI?
 
@@ -265,7 +234,7 @@ class TestACP(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCNTwithNoACPI(self) -> None:
 		"""	Retrieve <CNT> without ACPI """
-		_, rsc = RETRIEVE(cntURL, TestACP.originator)
+		_, rsc = RETRIEVE(cntURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 
 
@@ -279,7 +248,7 @@ class TestACP(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTwithNoACPI(self) -> None:
 		"""	Delete <CNT> without ACPI """
-		_, rsc = DELETE(cntURL, TestACP.originator)
+		_, rsc = DELETE(cntURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
 
@@ -290,7 +259,7 @@ class TestACP(unittest.TestCase):
 					'rn' : cntRN,
 					'hld': 'someone'
 				}}
-		r, rsc = CREATE(aeURL, TestACP.originator, T.AE, dct)
+		r, rsc = CREATE(aeURL, ORIGINATOR, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNone(findXPath(r, 'm2m:ae/acpi')) # no ACPI?
 
@@ -323,6 +292,36 @@ class TestACP(unittest.TestCase):
 		self.assertEqual(rsc, RC.deleted)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_removeACPfromAE(self) -> None:
+		""" Remove <ACP> reference from <AE> / ACPI only attribute in update """
+		self.assertIsNotNone(TestACP.acp)
+		self.assertIsNotNone(TestACP.ae)
+		acpi = findXPath(TestACP.ae, 'm2m:ae/acpi').copy()
+		acpi.remove(findXPath(TestACP.acp, 'm2m:acp/ri'))
+		dct:dict = 	{ 'm2m:ae' : {
+				 		'acpi': acpi
+					}}
+		r, rsc = UPDATE(aeURL, findXPath(TestACP.ae, 'm2m:ae/aei'), dct)
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege)	# missing self-privileges
+		_, rsc = UPDATE(aeURL, ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.updated)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteACPwrongOriginator(self) -> None:
+		""" Delete <ACP> with wrong originator """
+		_, rsc = DELETE(acpURL, 'wrong')
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteACP(self) -> None:
+		""" Delete <ACP> with correct originator """
+		_, rsc = DELETE(acpURL, self.acpORIGINATOR)
+		self.assertEqual(rsc, RC.deleted)
+
+
 def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestACP('test_createACP'))
@@ -335,10 +334,7 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestACP('test_updateACPNoPVS'))
 	suite.addTest(TestACP('test_addACPtoAE'))
 	suite.addTest(TestACP('test_updateAEACPIWrong'))
-	suite.addTest(TestACP('test_removeACPfromAE'))
 
-	suite.addTest(TestACP('test_deleteACPwrongOriginator'))
-	suite.addTest(TestACP('test_deleteACP'))
 	suite.addTest(TestACP('test_createACPNoPVS'))
 	suite.addTest(TestACP('test_createACPEmptyPVS'))
 
@@ -352,6 +348,10 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestACP('test_retrieveCNTwithNoACPIAndHolderAEOriginator'))
 	suite.addTest(TestACP('test_retrieveCNTwithNoACPIAndHolderWrongOriginator'))
 	suite.addTest(TestACP('test_deleteCNTwithNoACPIAndHolder'))
+
+	suite.addTest(TestACP('test_removeACPfromAE'))
+	suite.addTest(TestACP('test_deleteACPwrongOriginator'))
+	suite.addTest(TestACP('test_deleteACP'))
 
 	#suite.addTest(TestACP('test_handleAE'))
 

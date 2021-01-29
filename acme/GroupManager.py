@@ -15,6 +15,8 @@ import CSE, Utils
 from resources import FCNT, MgmtObj
 from resources.Resource import Resource
 from resources.GRP_FOPT import GRP_FOPT
+from resources.Factory import Factory
+
 
 class GroupManager(object):
 
@@ -91,7 +93,7 @@ class GroupManager(object):
 					else:  # Member not found
 						return Result(status=False, rsc=RC.notFound, dbg=f'remote resource not found: {mid}')
 				else:
-					resource = Utils.resourceFromDict(remoteResult.dict).resource
+					resource = Factory.resourceFromDict(remoteResult.dict).resource
 
 			# skip if ri is already in th
 			if isLocalResource:

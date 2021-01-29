@@ -103,7 +103,7 @@ class AnnounceableResource(Resource):
 		if self.ty != T.MGMTOBJ:
 			tpe = T(self.ty).announced().tpe()
 		else:
-			tpe = T(self.ty).announcedMgd(self.mgd).tpe()
+			tpe = T.announcedMgd(self.mgd).tpe()
 
 		# get  all resource specific policies and add the mandatory ones
 		announcedAttributes = self._getAnnouncedAttributes(policies)

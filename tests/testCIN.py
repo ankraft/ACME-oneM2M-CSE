@@ -64,7 +64,7 @@ class TestCIN(unittest.TestCase):
 					'cnf' : 'a',
 					'con' : 'AnyValue'
 				}}
-		r, rsc = CREATE(cntURL, TestCIN.originator, T.CNT, dct)
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)
 		self.assertEqual(rsc, RC.created)
 
 
@@ -115,7 +115,7 @@ class TestCIN(unittest.TestCase):
 					'cnf' : 'a',
 					'con' : 'AnyValue'
 				}}
-		r, rsc = CREATE(aeURL, TestCIN.originator, T.CNT, dct)
+		r, rsc = CREATE(aeURL, TestCIN.originator, T.CIN, dct)
 		self.assertEqual(rsc, RC.invalidChildResourceType)
 
 

@@ -119,6 +119,7 @@ class SecurityManager(object):
 
 
 			# When no acpi is configured for the resource
+			# Logging.logWarn(resource)
 			if (acpi := resource.acpi) is None or len(acpi) == 0:
 				Logging.logDebug('Handle with missing acpi in resource')
 
@@ -157,6 +158,7 @@ class SecurityManager(object):
 						Logging.logDebug('Permission granted')
 						return True				
 				else:
+					# Logging.logWarn(acp)
 					if acp.checkPermission(originator, requestedPermission):
 						Logging.logDebug('Permission granted')
 						return True

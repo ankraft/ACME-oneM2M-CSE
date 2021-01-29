@@ -23,6 +23,7 @@ from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC, ContentSerializationType
 from Logging import Logging
 from resources.Resource import Resource
+from resources.Factory import Factory
 from resources.AnnounceableResource import AnnounceableResource
 import CSE, Utils
 
@@ -113,9 +114,9 @@ class Storage(object):
 			resources = self.db.searchResources(csi=csi)
 
 		# Logging.logDebug(resources)
-		# return Utils.resourceFromDict(resources[0]) if len(resources) == 1 else None,
+		# return CSE.dispatcher.resourceFromDict(resources[0]) if len(resources) == 1 else None,
 		if (l := len(resources)) == 1:
-			return Utils.resourceFromDict(resources[0])
+			return Factory.resourceFromDict(resources[0])
 		elif l == 0:
 			return Result(rsc=RC.notFound, dbg='resource not found')
 
@@ -157,7 +158,7 @@ class Storage(object):
 		# 	rs = self.tabResources.search(Query().pi == pi)			
 		result = []
 		for r in rs:
-			res = Utils.resourceFromDict(r)
+			res = Factory.resourceFromDict(r)
 			if res.resource is not None:
 				result.append(res.resource)
 		return result
@@ -199,7 +200,7 @@ class Storage(object):
 
 		# result = []
 		# for j in self.db.searchByTypeFieldValue(int(ty), field, value):
-		# 	res = Utils.resourceFromDict(j)
+		# 	res = CSE.dispatcher.resourceFromDict(j)
 		# 	if res.resource is not None:
 		# 		result.append(res.resource)
 		# return result
@@ -210,7 +211,7 @@ class Storage(object):
 		and return them in an array."""
 		result = []
 		for j in self.db.searchByValueInField(field, value):
-			res = Utils.resourceFromDict(j)
+			res = Factory.resourceFromDict(j)
 			if res.resource is not None:
 				result.append(res.resource)
 		return result
@@ -221,7 +222,7 @@ class Storage(object):
 		"""
 		result = []
 		for j in self.db.discoverResources(filter):
-			res = Utils.resourceFromDict(j)
+			res = Factory.resourceFromDict(j)
 			if res.resource is not None:
 				result.append(res.resource)
 		return result
@@ -254,7 +255,7 @@ class Storage(object):
 			return False
 
 		for j in self.db.discoverResources(_announcedFilter):
-			res = Utils.resourceFromDict(j)
+			res = Factory.resourceFromDict(j)
 			if res.resource is not None:
 				result.append(res.resource)
 		return result

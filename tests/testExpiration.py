@@ -66,11 +66,11 @@ class TestExpiration(unittest.TestCase):
 					'rn' : cntRN,
 					'et' : getDate(expirationCheckDelay) # 2 seconds in the future
 				}}
-		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
+		_, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
 		time.sleep(expirationSleep)	# give the server a moment to expire the resource
 		
-		r, rsc = RETRIEVE(cntURL, TestExpiration.originator)
+		_, rsc = RETRIEVE(cntURL, TestExpiration.originator)
 		self.assertEqual(rsc, RC.notFound)
 
 
@@ -91,7 +91,7 @@ class TestExpiration(unittest.TestCase):
 					'con' : 'AnyValue'
 				}}
 		for _ in range(0, 5):
-			r, rsc = CREATE(cntURL, TestExpiration.originator, T.CNT, dct)
+			r, rsc = CREATE(cntURL, TestExpiration.originator, T.CIN, dct)
 			self.assertEqual(rsc, RC.created)
 			cinRn = findXPath(r, 'm2m:cin/rn')
 		self.assertIsNotNone(cinRn)
@@ -179,7 +179,7 @@ class TestExpiration(unittest.TestCase):
 				}}
 
 		for _ in range(0, 5):
-			r, rsc = CREATE(cntURL, TestExpiration.originator, T.CNT, dct)
+			r, rsc = CREATE(cntURL, TestExpiration.originator, T.CIN, dct)
 			self.assertEqual(rsc, RC.created)
 
 		time.sleep(expirationSleep)	# give the server a moment to expire the CIN's
@@ -212,7 +212,7 @@ class TestExpiration(unittest.TestCase):
 				}}
 		tooLargeET = getDate(tooLargeExpirationDelta())
 		for _ in range(0, 5):
-			r, rsc = CREATE(cntURL, TestExpiration.originator, T.CNT, dct)
+			r, rsc = CREATE(cntURL, TestExpiration.originator, T.CIN, dct)
 			self.assertEqual(rsc, RC.created)
 			self.assertLess(findXPath(r, 'm2m:cin/et'), tooLargeET)
 

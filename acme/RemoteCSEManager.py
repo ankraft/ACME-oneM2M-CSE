@@ -19,6 +19,7 @@ from Types import ResourceTypes as T, Result, CSEType, ResponseCode as RC, CSERe
 import Utils, CSE
 from resources import CSR, CSEBase
 from resources.Resource import Resource
+from resources.Factory import Factory
 from helpers.BackgroundWorker import BackgroundWorkerPool
 
 
@@ -596,7 +597,7 @@ class RemoteCSEManager(object):
 		res = CSE.httpServer.sendRetrieveRequest(url, originator)
 		if res.rsc != RC.OK:
 			return res.errorResult()
-		return Utils.resourceFromDict(res.dict) if not raw else Result(resource=res.dict)
+		return Factory.resourceFromDict(res.dict) if not raw else Result(resource=res.dict)
 
 
 	def isTransitID(self, id:str) -> bool:

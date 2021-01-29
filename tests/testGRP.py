@@ -190,7 +190,7 @@ class TestGRP(unittest.TestCase):
 					'cnf' : 'a',
 					'con' : 'aValue'
 				}}
-		r, rsc = CREATE(f'{grpURL}/fopt', TestGRP.originator, T.CNT, dct)
+		r, rsc = CREATE(f'{grpURL}/fopt', TestGRP.originator, T.CIN, dct)
 		self.assertEqual(rsc, RC.OK)
 		rsp = findXPath(r, 'm2m:agr/m2m:rsp')
 		self.assertIsNotNone(rsp)
@@ -349,7 +349,6 @@ class TestGRP(unittest.TestCase):
 	def test_attributesGRP2(self) -> None:
 		""" Validate <GRP> attributes after failed MID update"""
 		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
-		print(r)
 
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:grp/ty'), T.GRP)

@@ -11,7 +11,7 @@ import sys, traceback, re
 from copy import deepcopy
 import isodate
 from flask import Request
-from typing import Any, List, Tuple, Union, Dict
+from typing import Any, List, Tuple, Union, Dict, Callable
 from Logging import Logging
 from Configuration import Configuration
 from Constants import Constants as C
@@ -31,6 +31,8 @@ from Types import RequestStatus
 from Types import CSERequest
 import CSE, Utils
 from resources.Resource import Resource
+from resources.Factory import Factory
+
 
 
 class Dispatcher(object):
@@ -414,7 +416,7 @@ class Dispatcher(object):
 			return parentResource.handleCreateRequest(request, id, originator)
 
 		# Add new resource
-		if (nres := Utils.resourceFromDict(deepcopy(request.dict), pi=parentResource.ri, ty=ty)).resource is None:	# something wrong, perhaps wrong type
+		if (nres := Factory.resourceFromDict(deepcopy(request.dict), pi=parentResource.ri, ty=ty)).resource is None:	# something wrong, perhaps wrong type
 			return Result(rsc=RC.badRequest, dbg=nres.dbg)
 		nresource = nres.resource
 
@@ -719,7 +721,7 @@ class Dispatcher(object):
 		result = []
 		rss = CSE.storage.retrieveResourcesByType(ty)
 		for rs in (rss or []):
-			result.append(Utils.resourceFromDict(rs).resource)
+			result.append(Factory.resourceFromDict(rs).resource)
 		return result
 
 

@@ -9,7 +9,7 @@
 #
 
 import json, os, fnmatch, re, csv
-from Utils import *
+from Utils import findXPath, removeCommentsFromJSON
 from Configuration import Configuration
 from Constants import Constants as C
 from Types import ResourceTypes as T
@@ -17,6 +17,7 @@ from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO,
 import CSE
 from Logging import Logging
 from resources import Resource
+from resources.Factory import Factory
 
 
 class Importer(object):
@@ -80,7 +81,7 @@ class Importer(object):
 			fn = path + '/' + rn
 			if os.path.exists(fn):
 				Logging.log(f'Importing resource: {fn}')
-				resource = resourceFromDict(self.readJSONFromFile(fn), create=True, isImported=True).resource
+				resource = Factory.resourceFromDict(self.readJSONFromFile(fn), create=True, isImported=True).resource
 
 			# Check resource creation
 			if not CSE.registration.checkResourceCreation(resource, CSE.cseOriginator):
@@ -125,7 +126,7 @@ class Importer(object):
 				# create a new cresource
 				else:
 					# Try to get parent resource
-					if (resource := resourceFromDict(self.readJSONFromFile(filename), create=True, isImported=True).resource) is not None:
+					if (resource := Factory.resourceFromDict(self.readJSONFromFile(filename), create=True, isImported=True).resource) is not None:
 						parentResource = None
 						if (pi := resource.pi) is not None:
 							parentResource = CSE.dispatcher.retrieveResource(pi).resource

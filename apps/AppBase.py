@@ -15,7 +15,8 @@ from resources.Resource import Resource
 from Logging import Logging
 from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC
-import CSE, Utils
+import CSE
+from resources.Factory import Factory
 from helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
 
 
@@ -73,12 +74,12 @@ class AppBase(object):
 			srn = os.path.split(srn)[0] if srn.count('/') >= 0 else ''
 			result = self.createResource(srn=srn, ty=ty, data=data)
 			if result.rsc == RC.created:
-				return Utils.resourceFromDict(result.dict).resource
+				return Factory.resourceFromDict(result.dict).resource
 			else:
 				#Logging.logErr(n)
 				pass
 		else: # just retrieve
-			return Utils.resourceFromDict(result.dict).resource
+			return Factory.resourceFromDict(result.dict).resource
 		return None
 
 

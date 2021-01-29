@@ -54,11 +54,13 @@ class GRP(AnnounceableResource):
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
+		
+		from .Factory import Factory
 
 		# add fanOutPoint
 		ri = self['ri']
 		Logging.logDebug(f'Registering fanOutPoint resource for: {ri}')
-		fanOutPointResource = Utils.resourceFromDict({ 'pi' : ri }, acpi=self['acpi'], ty=T.GRP_FOPT).resource
+		fanOutPointResource = Factory.resourceFromDict({ 'pi' : ri }, ty=T.GRP_FOPT).resource
 		if (res := CSE.dispatcher.createResource(fanOutPointResource, self, originator)).resource is None:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 		return Result(status=True)
