@@ -40,15 +40,20 @@ class PCH(Resource):
 		return super()._canHaveChild(resource, [ T.PCH_PCU ])
 
 
+# TODO test Retrieve by AE only! Add new willBeRetrieved() function
+# TODO continue with 10.2.5.14 Retrieve <pollingChannel>
+
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
-		
-		# register latest and oldest virtual resources
-		Logging.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
-		# add PCU
-		pcu = Factory.resourceFromDict({}, pi=self.ri, ty=T.PCH_PCU).resource
+		# NOTE Check for uniqueness is done in <AE>.childWillBeAdded()
+		# TODO the same for CSR
+			
+		
+		# register pollingChannelURI virtual resource
+		Logging.logDebug(f'Registering <PCU> for: {self.ri}')
+		pcu = Factory.resourceFromDict(pi=self.ri, ty=T.PCH_PCU).resource
 		if (res := CSE.dispatcher.createResource(pcu)).resource is None:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 

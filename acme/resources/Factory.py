@@ -42,6 +42,7 @@ from resources.MgmtObjAnnc import MgmtObjAnnc
 from resources.NOD import NOD
 from resources.NODAnnc import NODAnnc
 from resources.PCH import PCH
+from resources.PCH_PCU import PCH_PCU
 from resources.REQ import REQ
 from resources.SUB import SUB
 
@@ -93,6 +94,7 @@ resourceFactoryMap:Dict[T, Callable[[dict, str, str, bool], Resource]] = {
 	T.GRP_FOPT	: lambda dct, tpe, pi, create : GRP_FOPT(dct, pi=pi, create=create),
 	T.NOD		: lambda dct, tpe, pi, create : NOD(dct, pi=pi, create=create),
 	T.PCH		: lambda dct, tpe, pi, create : PCH(dct, pi=pi, create=create),
+	T.PCH_PCU	: lambda dct, tpe, pi, create : PCH_PCU(dct, pi=pi, create=create),
 	T.REQ		: lambda dct, tpe, pi, create : REQ(dct, pi=pi, create=create),
 	T.SUB		: lambda dct, tpe, pi, create : SUB(dct, pi=pi, create=create),
 
@@ -145,7 +147,7 @@ resourceFactoryMap:Dict[T, Callable[[dict, str, str, bool], Resource]] = {
 
 
 
-def resourceFromDict(resDict:dict, pi:str=None, ty:T=None, create:bool=False, isImported:bool=False) -> Result:
+def resourceFromDict(resDict:dict={}, pi:str=None, ty:T=None, create:bool=False, isImported:bool=False) -> Result:
 	""" Create a resource from a dictionary structure.
 		This will *not* call the activate method, therefore some attributes
 		may be set separately.

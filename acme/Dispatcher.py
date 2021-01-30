@@ -7,6 +7,7 @@
 #	Most internal requests are routed through here.
 #
 
+from __future__ import annotations
 import sys, traceback, re
 from copy import deepcopy
 import isodate
@@ -694,9 +695,14 @@ class Dispatcher(object):
 	#	Utility methods
 	#
 
-	def directChildResources(self, pi: str, ty: T = None) -> List[Resource]:
-		""" Return all child resources of resources. """
+	def directChildResources(self, pi:str, ty:T=None) -> list[Resource]:
+		""" Return all child resources of a resource, optionally filtered by type. """
 		return CSE.storage.directChildResources(pi, ty)
+
+
+	def countDirectChildResources(self, pi: str, ty: T = None) -> int:
+		""" Return the number of all child resources of resource, optionally filtered by type. """
+		return CSE.storage.countDirectChildResources(pi, ty)
 
 
 	def discoverChildren(self, id:str, resource:Resource, originator:str, handling:dict, permission:Permission) -> List[Resource]:

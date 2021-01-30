@@ -150,19 +150,22 @@ class Storage(object):
 
 
 
-	def directChildResources(self, pi: str, ty: T = None) -> list[Resource]:
+	def directChildResources(self, pi:str, ty:T=None) -> list[Resource]:
+		"""	Return a list of direct child resources.
+		"""
 		rs = self.db.searchResources(pi=pi, ty=int(ty) if ty is not None else None)
-
-		# if ty is not None:
-		# 	rs = self.tabResources.search((Query().pi == pi) & (Query().ty == ty))
-		# else:
-		# 	rs = self.tabResources.search(Query().pi == pi)			
 		result = []
 		for r in rs:
 			res = Factory.resourceFromDict(r)
 			if res.resource is not None:
 				result.append(res.resource)
 		return result
+
+
+	def countDirectChildResources(self, pi:str, ty:T = None) -> int:
+		"""	Count the direct child resources.
+		"""
+		return len(self.db.searchResources(pi=pi, ty=int(ty) if ty is not None else None))
 
 
 	def countResources(self) -> int:

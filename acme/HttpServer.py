@@ -348,7 +348,7 @@ class HttpServer(object):
 		try:
 			Logging.logDebug(f'Sending request: {method.__name__.upper()} {url}')
 			if ct == ContentSerializationType.CBOR:
-				Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._printContent(content, ct)}\n=>\n{str(data)}\n')
+				Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._printContent(content, ct)}\n=>\n{str(data) if data is not None else ""}\n')
 			else:
 				Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._printContent(content, ct)}\n')
 			r = method(url, data=content, headers=hds, verify=self.verifyCertificate)

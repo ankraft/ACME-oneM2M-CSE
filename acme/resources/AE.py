@@ -45,8 +45,27 @@ class AE(AnnounceableResource):
 									   T.CNT,
 									   T.FCNT,
 									   T.GRP,
+									   T.PCH,
 									   T.SUB
 									 ])
+
+
+	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
+		if not (res := super().childWillBeAdded(childResource, originator)).status:
+			return res
+
+		# Perform checks for <PCH>	
+		if childResource.ty == T.PCH:
+			# Check correct originator. Even the ADMIN is not allowed that		
+			if self.aei != originator:
+				Logging.logDebug(dbg := f'Originator must be the parent <AE>')
+				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
+
+			# check that there will only by one PCH as a child
+			if CSE.dispatcher.countDirectChildResources(self.ri, ty=T.PCH) > 0:
+				return Result(status=False, rsc=RC.badRequest, dbg='Only one PCH per AE is allowed')
+
+		return Result(status=True)
 
 
 	def validate(self, originator:str=None, create:bool=False, dct:dict=None) -> Result:

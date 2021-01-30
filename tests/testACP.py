@@ -310,7 +310,7 @@ class TestACP(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteACPwrongOriginator(self) -> None:
-		""" Delete <ACP> with wrong originator """
+		""" Delete <ACP> with wrong originator -> Fail """
 		_, rsc = DELETE(acpURL, 'wrong')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
