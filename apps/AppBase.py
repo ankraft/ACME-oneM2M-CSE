@@ -16,8 +16,8 @@ from Logging import Logging
 from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC
 import CSE
-from resources.Factory import Factory
 from helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
+import resources.Factory as Factory
 
 
 class AppBase(object):

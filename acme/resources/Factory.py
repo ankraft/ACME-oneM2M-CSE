@@ -145,45 +145,41 @@ resourceFactoryMap:Dict[T, Callable[[dict, str, str, bool], Resource]] = {
 
 
 
-class Factory(object):
+def resourceFromDict(resDict:dict, pi:str=None, ty:T=None, create:bool=False, isImported:bool=False) -> Result:
+	""" Create a resource from a dictionary structure.
+		This will *not* call the activate method, therefore some attributes
+		may be set separately.
+	"""
+	resDict, tpe = Utils.pureResource(resDict)	# remove optional "m2m:xxx" level
+	typ = resDict['ty'] if 'ty' in resDict else ty
 
+	# Check whether given type during CREATE matches the resource's ty attribute
+	if typ != None and ty != None and typ != ty:
+		Logging.logWarn(dbg := f'parameter type ({ty}) and resource type ({typ}) mismatch')
+		return Result(dbg=dbg, rsc=RC.badRequest)
+	
+	# Check whether given type during CREATE matches the resource type specifier
+	if ty != None and tpe != None and ty not in [ T.FCNT, T.FCNTAnnc, T.FCI, T.FCIAnnc, T.MGMTOBJ, T.MGMTOBJAnnc ]  and ty.tpe() != tpe:
+		Logging.logWarn(dbg := f'parameter type ({ty}) and resource type specifier ({tpe}) mismatch')
+		return Result(dbg=dbg, rsc=RC.badRequest)
+	
+	# store the import status in the original resDict
+	if isImported:
+		resDict[Resource._imported] = True	# Indicate that this is an imported resource
 
-	@classmethod
-	def resourceFromDict(cls, resDict:dict, pi:str=None, ty:T=None, create:bool=False, isImported:bool=False) -> Result:
-		""" Create a resource from a dictionary structure.
-			This will *not* call the activate method, therefore some attributes
-			may be set separately.
-		"""
-		resDict, tpe = Utils.pureResource(resDict)	# remove optional "m2m:xxx" level
-		typ = resDict['ty'] if 'ty' in resDict else ty
+	# Determine a factory and call it
+	factory:Callable[[dict, str, str, bool], Resource] = None
+	if typ == T.MGMTOBJ:										# for <mgmtObj>
+		mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
+		factory = resourceFactoryMap.get(mgd)
+	elif typ == T.MGMTOBJAnnc:									# for <mgmtObjA>
+		mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
+		factory = resourceFactoryMap.get(T.announcedMgd(mgd))	# Get the announced version
+	else:
+		factory = resourceFactoryMap.get(typ)
+	if factory is not None:
+		return Result(resource=factory(resDict, tpe, pi, create))
 
-		# Check whether given type during CREATE matches the resource's ty attribute
-		if typ != None and ty != None and typ != ty:
-			Logging.logWarn(dbg := f'parameter type ({ty}) and resource type ({typ}) mismatch')
-			return Result(dbg=dbg, rsc=RC.badRequest)
-		
-		# Check whether given type during CREATE matches the resource type specifier
-		if ty != None and tpe != None and ty not in [ T.FCNT, T.FCNTAnnc, T.FCI, T.FCIAnnc, T.MGMTOBJ, T.MGMTOBJAnnc ]  and ty.tpe() != tpe:
-			Logging.logWarn(dbg := f'parameter type ({ty}) and resource type specifier ({tpe}) mismatch')
-			return Result(dbg=dbg, rsc=RC.badRequest)
-		
-		# store the import status in the original resDict
-		if isImported:
-			resDict[Resource._imported] = True	# Indicate that this is an imported resource
-
-		# Determine a factory and call it
-		factory:Callable[[dict, str, str, bool], Resource] = None
-		if typ == T.MGMTOBJ:										# for <mgmtObj>
-			mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
-			factory = resourceFactoryMap.get(mgd)
-		elif typ == T.MGMTOBJAnnc:									# for <mgmtObjA>
-			mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
-			factory = resourceFactoryMap.get(T.announcedMgd(mgd))	# Get the announced version
-		else:
-			factory = resourceFactoryMap.get(typ)
-		if factory is not None:
-			return Result(resource=factory(resDict, tpe, pi, create))
-
-		return Result(resource=Unknown(resDict, tpe, pi=pi, create=create))	# Capture-All resource
+	return Result(resource=Unknown(resDict, tpe, pi=pi, create=create))	# Capture-All resource
 
 

@@ -19,7 +19,7 @@ from Types import ResourceTypes as T, Result, CSEType, ResponseCode as RC, CSERe
 import Utils, CSE
 from resources import CSR, CSEBase
 from resources.Resource import Resource
-from resources.Factory import Factory
+import resources.Factory as Factory
 from helpers.BackgroundWorker import BackgroundWorkerPool
 
 

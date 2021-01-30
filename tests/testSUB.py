@@ -167,6 +167,11 @@ class TestSUB(unittest.TestCase):
 		self.assertNotEqual(rsc, RC.created)
 		self.assertEqual(rsc, RC.subscriptionVerificationInitiationFailed)
 		
+		# Try to retrieve subscription - Should fail
+		_, rsc = RETRIEVE(f'{cntURL}/{subRN}Wrong', TestSUB.originator)
+		self.assertEqual(rsc, RC.notFound)
+
+
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateSUB(self) -> None:

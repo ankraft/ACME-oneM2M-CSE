@@ -31,7 +31,7 @@ from Types import RequestStatus
 from Types import CSERequest
 import CSE, Utils
 from resources.Resource import Resource
-from resources.Factory import Factory
+import resources.Factory as Factory
 
 
 

@@ -13,6 +13,7 @@ from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
+import resources.Factory as Factory
 
 
 # Attribute policies for this resource are constructed during startup of the CSE
@@ -55,8 +56,6 @@ class GRP(AnnounceableResource):
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
 		
-		from .Factory import Factory
-
 		# add fanOutPoint
 		ri = self['ri']
 		Logging.logDebug(f'Registering fanOutPoint resource for: {ri}')

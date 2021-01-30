@@ -9,6 +9,7 @@
 #	or just in memory.
 #
 
+from __future__ import annotations
 from tinydb import TinyDB, Query, where
 from tinydb.storages import MemoryStorage		# type: ignore
 from tinydb.table import Document
@@ -16,14 +17,14 @@ from tinydb.operations import delete 			# type: ignore
 # TODO remove mypy type checking supressions above as soon as tinydb provides typing stubs
 
 import os, json, re, time
-from typing import List, Callable, Any, Union, cast
+from typing import Callable, Any, cast
 from threading import Lock
 from Configuration import Configuration
 from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC, ContentSerializationType
 from Logging import Logging
 from resources.Resource import Resource
-from resources.Factory import Factory
+import resources.Factory as Factory
 from resources.AnnounceableResource import AnnounceableResource
 import CSE, Utils
 
@@ -66,7 +67,7 @@ class Storage(object):
 	##
 
 
-	def createResource(self, resource: Resource, overwrite: bool = True) -> Result:
+	def createResource(self, resource:Resource, overwrite:bool=True) -> Result:
 		if resource is None:
 			Logging.logErr('resource is None')
 			raise RuntimeError('resource is None')
@@ -123,7 +124,7 @@ class Storage(object):
 		return Result(rsc=RC.internalServerError, dbg='database inconsistency')
 
 
-	def retrieveResourcesByType(self, ty: T) -> List[Document]:
+	def retrieveResourcesByType(self, ty: T) -> list[Document]:
 		""" Return all resources of a certain type. """
 		# Logging.logDebug(f'Retrieving all resources ty: {ty:d}')
 		return self.db.searchResources(ty=int(ty))
@@ -149,7 +150,7 @@ class Storage(object):
 
 
 
-	def directChildResources(self, pi: str, ty: T = None) -> List[Resource]:
+	def directChildResources(self, pi: str, ty: T = None) -> list[Resource]:
 		rs = self.db.searchResources(pi=pi, ty=int(ty) if ty is not None else None)
 
 		# if ty is not None:
@@ -168,14 +169,14 @@ class Storage(object):
 		return self.db.countResources()
 
 
-	def identifier(self, ri:str) -> Union[List[dict], List[Document]]:
+	def identifier(self, ri:str) -> list[dict] | list[Document]:
 		return self.db.searchIdentifiers(ri=ri)
 
-	def structuredPath(self, srn:str) -> Union[List[dict], List[Document]]:
+	def structuredPath(self, srn:str) -> list[dict] | list[Document]:
 		return self.db.searchIdentifiers(srn=srn)
 
 
-	def searchByTypeFieldValue(self, ty:T, field:str, value:str) -> List[Resource]:
+	def searchByTypeFieldValue(self, ty:T, field:str, value:str) -> list[Resource]:
 		"""Search and return all resources of a specific type and a value in a field,
 		and return them in an array."""
 		# def filterFunc(r:dict) -> bool:
@@ -206,7 +207,7 @@ class Storage(object):
 		# return result
 
 
-	def searchByValueInField(self, field:str, value:str) -> List[Resource]:
+	def searchByValueInField(self, field:str, value:str) -> list[Resource]:
 		"""Search and return all resources of a specific value in a field,
 		and return them in an array."""
 		result = []
@@ -217,7 +218,7 @@ class Storage(object):
 		return result
 
 
-	def searchByFilter(self, filter:Callable) -> List[Resource]:
+	def searchByFilter(self, filter:Callable) -> list[Resource]:
 		"""	Return a list of resouces that match the given filter, or an empty list.
 		"""
 		result = []
@@ -229,14 +230,14 @@ class Storage(object):
 
 		
 
-	def searchAnnounceableResourcesForCSI(self, csi:str, isAnnounced:bool) -> List[AnnounceableResource]:
+	def searchAnnounceableResourcesForCSI(self, csi:str, isAnnounced:bool) -> list[AnnounceableResource]:
 		""" Search and retrieve all resources that have the provided CSI in their 
 			'at' attribute.
 		"""
 		result = []
 
 		mcsi = f'{csi}/'
-		def _hasCSI(at:List[str]) -> bool:
+		def _hasCSI(at:list[str]) -> bool:
 			for a in at:
 				if a == csi or a.startswith(mcsi):
 					return True
@@ -275,7 +276,7 @@ class Storage(object):
 		return subs[0]
 
 
-	def getSubscriptionsForParent(self, pi: str) -> List[Document]:
+	def getSubscriptionsForParent(self, pi: str) -> list[Document]:
 		# Logging.logDebug(f'Retrieving subscriptions for parent: {pi}')
 		return self.db.searchSubscriptions(pi=pi)
 
@@ -310,7 +311,7 @@ class Storage(object):
 		return self.db.countBatchNotifications(ri, nu)
 
 
-	def getBatchNotifications(self, ri:str, nu:str) -> List[Document]:
+	def getBatchNotifications(self, ri:str, nu:str) -> list[Document]:
 		return self.db.getBatchNotifications(ri, nu)
 
 
@@ -454,7 +455,7 @@ class TinyDBBinding(object):
 			self.tabResources.remove(Query().ri == resource.ri)		# type: ignore
 	
 
-	def searchResources(self, ri: str = None, csi: str = None, srn: str = None, pi: str = None, ty: int = None) -> List[Document]:
+	def searchResources(self, ri: str = None, csi: str = None, srn: str = None, pi: str = None, ty: int = None) -> list[Document]:
 
 		# find the ri first and then try again recursively
 		if srn is not None:
@@ -476,7 +477,7 @@ class TinyDBBinding(object):
 			return []
 
 
-	def discoverResources(self, func:Callable) -> List[Document]:
+	def discoverResources(self, func:Callable) -> list[Document]:
 		with self.lockResources:
 			return self.tabResources.search(func)	# type: ignore
 
@@ -503,7 +504,7 @@ class TinyDBBinding(object):
 			return len(self.tabResources)
 
 
-	# def  searchByTypeFieldValue(self, ty: int, field: str, value: Any) -> List[dict]:
+	# def  searchByTypeFieldValue(self, ty: int, field: str, value: Any) -> list[dict]:
 	# 	"""Search and return all resources of a specific type and a value in a field,
 	# 	and return them in an array."""
 	# 	with self.lockResources:
@@ -512,7 +513,7 @@ class TinyDBBinding(object):
 	# 		return self.tabResources.search(where[field].test(lambda s: value in s))
 
 
-	def  searchByValueInField(self, field: str, value: Any) -> List[Document]:
+	def  searchByValueInField(self, field: str, value: Any) -> list[Document]:
 		"""Search and return all resources of a value in a field,
 		and return them in an array."""
 		with self.lockResources:
@@ -538,7 +539,7 @@ class TinyDBBinding(object):
 			self.tabIdentifiers.remove(Query().ri == resource.ri)	# type: ignore
 
 
-	def searchIdentifiers(self, ri: str = None, srn: str = None) -> List[Document]:
+	def searchIdentifiers(self, ri: str = None, srn: str = None) -> list[Document]:
 		with self.lockIdentifiers:
 			if srn is not None:
 				return self.tabIdentifiers.search(Query().srn == srn)		# type: ignore
@@ -552,7 +553,7 @@ class TinyDBBinding(object):
 	#
 
 
-	def searchSubscriptions(self, ri : str = None, pi : str = None) -> List[Document]:
+	def searchSubscriptions(self, ri : str = None, pi : str = None) -> list[Document]:
 		with self.lockSubscriptions:
 			if ri is not None:
 				return self.tabSubscriptions.search(Query().ri == ri)		# type: ignore
@@ -608,7 +609,7 @@ class TinyDBBinding(object):
 			return self.tabBatchNotifications.count((q.ri == ri) & (q.nu == nu))
 
 
-	def getBatchNotifications(self, ri:str, nu:str) -> List[Document]:
+	def getBatchNotifications(self, ri:str, nu:str) -> list[Document]:
 		with self.lockBatchNotifications:
 			q = Query()	# type: ignore
 			return self.tabBatchNotifications.search((q.ri == ri) & (q.nu == nu))

@@ -17,7 +17,7 @@ from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO,
 import CSE
 from Logging import Logging
 from resources import Resource
-from resources.Factory import Factory
+import resources.Factory as Factory
 
 
 class Importer(object):

@@ -15,7 +15,7 @@ import CSE, Utils
 from resources import FCNT, MgmtObj
 from resources.Resource import Resource
 from resources.GRP_FOPT import GRP_FOPT
-from resources.Factory import Factory
+import resources.Factory as Factory
 
 
 class GroupManager(object):

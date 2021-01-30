@@ -15,6 +15,8 @@ import Utils
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
 from Configuration import Configuration
+import resources.Factory as Factory
+
 
 
 
@@ -44,7 +46,6 @@ class REQ(Resource):
 	def createRequestResource(request:CSERequest) -> Result:
 		"""	Create an initialized <request> resource.
 		"""
-		from .Factory import Factory
 
 		# calculate request et
 		minEt = Utils.getResourceDate(Configuration.get('cse.req.minet'))

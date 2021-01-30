@@ -7,6 +7,7 @@
 #	This entity handles subscriptions and sending of notifications. 
 #
 
+from __future__ import annotations
 import requests
 import isodate
 from urllib.parse import urlparse, urlencode, parse_qs, urlunparse
@@ -94,7 +95,7 @@ class NotificationManager(object):
 		return Result(status=True) if CSE.storage.removeSubscription(subscription) else Result(status=False, rsc=RC.internalServerError, dbg='cannot remove subscription from database')
 
 
-	def updateSubscription(self, subscription:Resource, newDict:dict, previousNus:List[str], originator:str) -> Result:
+	def updateSubscription(self, subscription:Resource, newDict:dict, previousNus:list[str], originator:str) -> Result:
 		Logging.logDebug('Updating subscription')
 		#previousSub = CSE.storage.getSubscription(subscription.ri)
 		if (res := self._checkNusInSubscription(subscription, newDict, previousNus, originator=originator)).lst is None:	# verification/delete requests happen here
@@ -163,7 +164,7 @@ class NotificationManager(object):
 	#	Notifications in general
 	#
 
-	def sendNotificationWithDict(self, data:dict, nus:Union[List[str], str], originator:str=None) -> None:
+	def sendNotificationWithDict(self, data:dict, nus:list[str] | str, originator:str=None) -> None:
 		if nus is not None and len(nus) > 0:
 			for nu in self._getNotificationURLs(nus):
 				self._sendRequest(nu, data, originator=originator)
@@ -173,7 +174,7 @@ class NotificationManager(object):
 	#########################################################################
 
 	# Return resolved notification URLs, so also POA from referenced AE's etc
-	def _getNotificationURLs(self, nus:Union[List[str], str], originator:str=None) -> List[str]:
+	def _getNotificationURLs(self, nus:list[str] | str, originator:str=None) -> list[str]:
 
 		if nus is None:
 			return []
@@ -208,7 +209,7 @@ class NotificationManager(object):
 		return result
 
 
-	def _checkNusInSubscription(self, subscription:Resource, newDict:dict=None, previousNus:List[str]=None, originator:str=None) -> Result:
+	def _checkNusInSubscription(self, subscription:Resource, newDict:dict=None, previousNus:list[str]=None, originator:str=None) -> Result:
 		"""	Check all the notification URI's in a subscription. 
 			A verification request is sent to new URI's.
 		"""
@@ -254,7 +255,7 @@ class NotificationManager(object):
 				}
 			}
 			originator is not None and Utils.setXPath(verificationRequest, 'm2m:sgn/cr', originator)
-			return self._sendRequest(url, verificationRequest)
+			return self._sendRequest(url, verificationRequest, serialization=serialization)
 
 
 		return self._sendNotification([ uri ], sender)
@@ -270,7 +271,7 @@ class NotificationManager(object):
 					'sur' : Utils.fullRI(ri)
 				}
 			}
-			return self._sendRequest(url, deletionNotification)
+			return self._sendRequest(url, deletionNotification, serialization=serialization)
 
 
 		return self._sendNotification([ uri ], sender)
@@ -334,7 +335,7 @@ class NotificationManager(object):
 			Call a callback function to do the actual sending.
 		"""
 		
-		def _sendNotificationWithSerialization(url:str, sendingFunction:Callable, csz:list=None) -> bool:
+		def _sendNotificationWithSerialization(url:str, sendingFunction:Callable, csz:list[str]=None) -> bool:
 			""" Prepare to send a notification. Determine which content serialization to use first.
 				This is done either by looking at the 'ct' argument in a URL, the given csz list, or the CSE default.
 				The actual sending is done in a handler function.
@@ -385,6 +386,23 @@ class NotificationManager(object):
 		#
 
 		for notificationTarget in uris:
+
+
+
+			#
+			#	TODO PollingChannel Handling
+			#
+			#	Move (?) the following to the actual sending part. Only execute this
+			#	when there is NO polling channel for the target
+			#	Otherwise add to polling channel queue.
+			#
+			#	OR add the notification to the polling channel here!!!
+			#
+			#
+
+
+
+
 			if not Utils.isURL(notificationTarget):	# test for id or url
 				# The notification target is an indirect resource with poa
 				if (resource := CSE.dispatcher.retrieveResource(notificationTarget).resource) is None:

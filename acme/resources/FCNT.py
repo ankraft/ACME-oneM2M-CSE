@@ -15,6 +15,7 @@ from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
+import resources.Factory as Factory
 import functools 
 
 
@@ -62,8 +63,6 @@ class FCNT(AnnounceableResource):
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
-
-		from .Factory import Factory
 
 		# register latest and oldest virtual resources
 		Logging.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
@@ -199,7 +198,6 @@ class FCNT(AnnounceableResource):
 
 	# Add a new FlexContainerInstance for this flexContainer
 	def addFlexContainerInstance(self, originator:str) -> None:
-		from .Factory import Factory
 
 		Logging.logDebug('Adding flexContainerInstance')
 		dct:Dict[str, Any] = {	'rn'  : f'{self.rn}_{self.st:d}', }

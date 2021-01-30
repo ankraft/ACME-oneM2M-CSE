@@ -13,6 +13,8 @@ from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
+import resources.Factory as Factory
+
 
 
 
@@ -42,8 +44,6 @@ class PCH(Resource):
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
 		
-		from .Factory import Factory
-
 		# register latest and oldest virtual resources
 		Logging.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
