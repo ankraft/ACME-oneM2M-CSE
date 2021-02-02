@@ -344,6 +344,7 @@ class RegistrationManager(object):
 				continue
 			Logging.logDebug(f'Expiring resource (and child resouces): {resource.ri}')
 			CSE.dispatcher.deleteResource(resource, withDeregistration=True)	# ignore result
+			CSE.event.expireResource(resource) # type: ignore
 				
 		return True
 

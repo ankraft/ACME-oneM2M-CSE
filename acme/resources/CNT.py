@@ -65,12 +65,12 @@ class CNT(AnnounceableResource):
 		Logging.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		latestResource = Factory.resourceFromDict({}, pi=self.ri, ty=T.CNT_LA).resource
+		latestResource = Factory.resourceFromDict({}, pi=self.ri, ty=T.CNT_LA).resource		# rn is assigned by resource itself
 		if (res := CSE.dispatcher.createResource(latestResource)).resource is None:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
 		# add oldest
-		oldestResource = Factory.resourceFromDict({}, pi=self.ri, ty=T.CNT_OL).resource
+		oldestResource = Factory.resourceFromDict({}, pi=self.ri, ty=T.CNT_OL).resource		# rn is assigned by resource itself
 		if (res := CSE.dispatcher.createResource(oldestResource)).resource is None:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 

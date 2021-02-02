@@ -85,9 +85,14 @@ class EventManager(object):
 		self.addEvent('httpDelete')
 		self.addEvent('httpUpdate')
 		self.addEvent('httpRedirect')
+		self.addEvent('httpSendRetrieve')
+		self.addEvent('httpSendCreate')
+		self.addEvent('httpSendUpdate')
+		self.addEvent('httpSendDelete')
 		self.addEvent('createResource')
 		self.addEvent('updateResource')
 		self.addEvent('deleteResource')
+		self.addEvent('expireResource')
 		self.addEvent('cseStartup')
 		self.addEvent('cseShutdown', runInBackground=False)
 		self.addEvent('logError')
@@ -97,6 +102,7 @@ class EventManager(object):
 		self.addEvent('remoteCSEHasRegistered')
 		self.addEvent('remoteCSEUpdate')
 		self.addEvent('remoteCSEHasDeregistered')
+		self.addEvent('notification')
 		_running = True
 		Logging.log('EventManager initialized')
 

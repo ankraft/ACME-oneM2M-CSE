@@ -53,7 +53,7 @@ class PCH(Resource):
 		
 		# register pollingChannelURI virtual resource
 		Logging.logDebug(f'Registering <PCU> for: {self.ri}')
-		pcu = Factory.resourceFromDict(pi=self.ri, ty=T.PCH_PCU).resource
+		pcu = Factory.resourceFromDict(pi=self.ri, ty=T.PCH_PCU).resource	# rn is assigned by resource itself
 		if (res := CSE.dispatcher.createResource(pcu)).resource is None:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 

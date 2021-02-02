@@ -10,7 +10,7 @@
 #
 
 
-import requests, urllib.parse
+import requests
 from typing import List, Tuple, Dict
 from Configuration import Configuration
 from Logging import Logging
@@ -436,7 +436,7 @@ class RemoteCSEManager(object):
 
 	def _retrieveCSRfromRegistrarCSE(self) -> Result:
 		Logging.logDebug(f'Retrieving remote CSR: {self.registrarCSI}')
-		result = CSE.httpServer.sendRetrieveRequest(self.registrarCSRURL, CSE.cseCsi, ct=self.registrarSerialization)	# own CSE.csi is the originator
+		result = CSE.request.sendRetrieveRequest(self.registrarCSRURL, CSE.cseCsi, ct=self.registrarSerialization)	# own CSE.csi is the originator
 		if result.rsc not in [ RC.OK ]:
 			return result.errorResult()
 		return Result(resource=CSR.CSR(result.dict, pi=''), rsc=RC.OK)
@@ -455,7 +455,7 @@ class RemoteCSEManager(object):
 
 		# Create the <remoteCSE> in the remote CSE
 		Logging.logDebug(f'Creating registrar CSR at: {self.registrarCSI} url: {self.registrarCSEURL}')	
-		res = CSE.httpServer.sendCreateRequest(self.registrarCSEURL, CSE.cseCsi, ty=T.CSR, data=csr.asDict(), ct=self.registrarSerialization) # own CSE.csi is the originator
+		res = CSE.request.sendCreateRequest(self.registrarCSEURL, CSE.cseCsi, ty=T.CSR, data=csr.asDict(), ct=self.registrarSerialization) # own CSE.csi is the originator
 		if res.rsc not in [ RC.created, RC.OK ]:
 			if res.rsc != RC.alreadyExists:
 				Logging.logDebug(f'Error creating registrar CSR: {res.rsc:d}')
@@ -472,7 +472,7 @@ class RemoteCSEManager(object):
 		self._copyCSE2CSR(csr, localCSE, isUpdate=True)
 		del csr['acpi']			# remove ACPI (don't provide ACPI in updates...a bit)
 
-		res = CSE.httpServer.sendUpdateRequest(self.registrarCSRURL, CSE.cseCsi, data=csr.asDict(), ct=self.registrarSerialization) 	# own CSE.csi is the originator
+		res = CSE.request.sendUpdateRequest(self.registrarCSRURL, CSE.cseCsi, data=csr.asDict(), ct=self.registrarSerialization) 	# own CSE.csi is the originator
 		if res.rsc not in [ RC.updated, RC.OK ]:
 			if res.rsc != RC.alreadyExists:
 				Logging.logDebug(f'Error updating registrar CSR in CSE: {res.rsc:d}')
@@ -484,7 +484,7 @@ class RemoteCSEManager(object):
 
 	def _deleteCSRonRegistrarCSE(self) -> Result:
 		Logging.logDebug(f'Deleting registrar CSR: {self.registrarCSI} url: {self.registrarCSRURL}')
-		res = CSE.httpServer.sendDeleteRequest(self.registrarCSRURL, CSE.cseCsi, ct=self.registrarSerialization)	# own CSE.csi is the originator
+		res = CSE.request.sendDeleteRequest(self.registrarCSRURL, CSE.cseCsi, ct=self.registrarSerialization)	# own CSE.csi is the originator
 		if res.rsc not in [ RC.deleted, RC.OK ]:
 			return Result(rsc=res.rsc, dbg='cannot delete registrar CSR')
 		Logging.log(f'Registrar CSR deleted: {self.registrarCSI}')
@@ -504,7 +504,7 @@ class RemoteCSEManager(object):
 			ct  = self.registrarSerialization	# overwrite ct (???)
 
 		Logging.logDebug(f'Retrieving remote CSE from: {self.registrarCSI} url: {url}')	
-		res = CSE.httpServer.sendRetrieveRequest(url, CSE.cseCsi, ct=ct)	# own CSE.csi is the originator
+		res = CSE.request.sendRetrieveRequest(url, CSE.cseCsi, ct=ct)	# own CSE.csi is the originator
 		if res.rsc not in [ RC.OK ]:
 			return res.errorResult()
 		if (csi := Utils.findXPath(res.dict, 'm2m:cb/csi')) == None:
@@ -541,87 +541,24 @@ class RemoteCSEManager(object):
 
 	#########################################################################
 
-	#
-	#	Handling of Transit requests. Forward requests to the resp. remote CSE's.
-	#
-
-	def handleTransitRetrieveRequest(self, request:CSERequest) -> Result:
-		""" Forward a RETRIEVE request to a remote CSE """
-		if (url := self._getForwardURL(request.id)) is None:
-			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
-		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
-			url += '?' + urllib.parse.urlencode(request.originalArgs)
-		Logging.log(f'Forwarding Retrieve/Discovery request to: {url}')
-		return CSE.httpServer.sendRetrieveRequest(url, request.headers.originator)
-
-
-	def handleTransitCreateRequest(self, request:CSERequest) -> Result:
-		""" Forward a CREATE request to a remote CSE. """
-		if (url := self._getForwardURL(request.id)) is None:
-			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
-		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
-			url += '?' + urllib.parse.urlencode(request.originalArgs)
-		Logging.log(f'Forwarding Create request to: {url}')
-		return CSE.httpServer.sendCreateRequest(url, request.headers.originator, data=request.data, ty=request.headers.resourceType)
-
-
-	def handleTransitUpdateRequest(self, request:CSERequest) -> Result:
-		""" Forward an UPDATE request to a remote CSE. """
-		if (url := self._getForwardURL(request.id)) is None:
-			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
-		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
-			url += '?' + urllib.parse.urlencode(request.originalArgs)
-		Logging.log(f'Forwarding Update request to: {url}')
-		return CSE.httpServer.sendUpdateRequest(url, request.headers.originator, data=request.data)
-
-
-	def handleTransitDeleteRequest(self, request:CSERequest) -> Result:
-		""" Forward a DELETE request to a remote CSE. """
-		if (url := self._getForwardURL(request.id)) is None:
-			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
-		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
-			url += '?' + urllib.parse.urlencode(request.originalArgs)
-		Logging.log(f'Forwarding Delete request to: {url}')
-		return CSE.httpServer.sendDeleteRequest(url, request.headers.originator)
 
 
 	def retrieveRemoteResource(self, id:str, originator:str=None, raw:bool=False) -> Result:
 		"""	Retrieve a resource from a remote CSE. If 'raw' is True then no resource
 			object is created, but the raw content from the retrieval is returned.
 		"""
-		if (url := self._getForwardURL(id)) is None:
+		if (url := CSE.request._getForwardURL(id)) is None:
 			return Result(rsc=RC.notFound, dbg=f'URL not found for id: {id}')
 		if originator is None:
 			originator = CSE.cseCsi
 		Logging.log('Retrieve remote resource from: {url}')
-		res = CSE.httpServer.sendRetrieveRequest(url, originator)
+		res = CSE.request.sendRetrieveRequest(url, originator)	## todo
 		if res.rsc != RC.OK:
 			return res.errorResult()
 		return Factory.resourceFromDict(res.dict) if not raw else Result(resource=res.dict)
 
 
-	def isTransitID(self, id:str) -> bool:
-		""" Check whether an ID is a targeting a remote CSE via a CSR. """
-		if Utils.isSPRelative(id):
-			ids = id.split('/')
-			return len(ids) > 0 and ids[0] != CSE.cseCsi[1:]
-		elif Utils.isAbsolute(id):
-			ids = id.split('/')
-			return len(ids) > 2 and ids[2] != CSE.cseCsi[1:]
-		return False
-
-
-	def _getForwardURL(self, path:str) -> str:
-		""" Get the new target URL when forwarding. """
-		Logging.logDebug(path)
-		r, pe = self._getCSRFromPath(path)
-		Logging.logDebug(str(r))
-		if r is not None and (poas := r.poa) is not None and len(poas) > 0:
-			return f'{poas[0]}/~/{"/".join(pe[1:])}'	# TODO check all available poas.
-		return None
-
-
-	def _getCSRFromPath(self, id:str) -> Tuple[Resource, List[str]]:
+	def getCSRFromPath(self, id:str) -> Tuple[Resource, List[str]]:
 		""" Try to get a CSR even from a longer path (only the first 2 path elements are relevant). """
 		if id is None:
 			return None, None

@@ -13,6 +13,7 @@ sys.path.append('../acme')
 from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
+from typing import Tuple
 
 # The following code must be executed before anything else because it influences
 # the collection of skipped tests.

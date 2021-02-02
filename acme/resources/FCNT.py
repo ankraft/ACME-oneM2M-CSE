@@ -12,11 +12,13 @@ from typing import List
 from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC
 from Validator import constructPolicy, addPolicy
-import Utils
+import Utils, CSE
+from Logging import Logging
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
 import resources.Factory as Factory
 import functools 
+
 
 
 
@@ -69,12 +71,12 @@ class FCNT(AnnounceableResource):
 
 		if self.hasInstances:
 			# add latest
-			resource = Factory.resourceFromDict({}, pi=self.ri, ty=T.FCNT_LA).resource
+			resource = Factory.resourceFromDict({}, pi=self.ri, ty=T.FCNT_LA).resource	# rn is assigned by resource itself
 			if (res := CSE.dispatcher.createResource(resource)).resource is None:
 				return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
 			# add oldest
-			resource = Factory.resourceFromDict({}, pi=self.ri, ty=T.FCNT_OL).resource
+			resource = Factory.resourceFromDict({}, pi=self.ri, ty=T.FCNT_OL).resource	# rn is assigned by resource itself
 			if (res := CSE.dispatcher.createResource(resource)).resource is None:
 				return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 		return Result(status=True)

@@ -22,7 +22,6 @@ from helpers.BackgroundWorker import BackgroundWorkerPool
 from resources.Resource import Resource
 
 # TODO: removal policy (e.g. unsuccessful tries)
-# TODO: latestNotify support
 
 # TODO: completly rework the batch handling. Store the notification, but only evaluate the TO when sending!
 
@@ -201,7 +200,7 @@ class NotificationManager(object):
 				# if not CSE.security.hasAccess('', resource, Permission.NOTIFY):	# check whether AE/CSE may receive Notifications
 					Logging.logWarn(f'No access to resource: {nu}')
 					return None
-				if (poa := resource.poa) is not None and isinstance(poa, list):
+				if (poa := resource.poa) is not None and isinstance(poa, list):			# TODO is this wromg???
 					result += poa
 				else:
 					Logging.logWarn(f'Notification target has no poa: {resource.ri}')
@@ -246,7 +245,8 @@ class NotificationManager(object):
 
 	def _sendVerificationRequest(self, uri:str, ri:str, originator:str=None) -> bool:
 
-		def sender(url:str, serialization:ContentSerializationType) -> bool:
+		# Sender callback function for verificationn notifications
+		def sender(url:str, serialization:ContentSerializationType, targetResource:Resource=None) -> bool:
 			Logging.logDebug(f'Sending verification request to: {url}')
 			verificationRequest = {
 				'm2m:sgn' : {
@@ -255,15 +255,15 @@ class NotificationManager(object):
 				}
 			}
 			originator is not None and Utils.setXPath(verificationRequest, 'm2m:sgn/cr', originator)
-			return self._sendRequest(url, verificationRequest, serialization=serialization)
-
+			return self._sendRequest(url, verificationRequest, serialization=serialization, targetResource=targetResource)
 
 		return self._sendNotification([ uri ], sender)
 
 
 	def _sendDeletionNotification(self, uri:str, ri:str) -> bool:
 	
-		def sender(url:str, serialization:ContentSerializationType) -> bool:
+		# Sender callback function for deletion notifications
+		def sender(url:str, serialization:ContentSerializationType, targetResource:Resource=None) -> bool:
 			Logging.logDebug(f'Sending deletion notification to: {url}')
 			deletionNotification = {
 				'm2m:sgn' : {
@@ -271,8 +271,7 @@ class NotificationManager(object):
 					'sur' : Utils.fullRI(ri)
 				}
 			}
-			return self._sendRequest(url, deletionNotification, serialization=serialization)
-
+			return self._sendRequest(url, deletionNotification, serialization=serialization, targetResource=targetResource)
 
 		return self._sendNotification([ uri ], sender)
 
@@ -282,7 +281,8 @@ class NotificationManager(object):
 		"""
 		Logging.logDebug(f'Handling notification for reason: {reason}')
 
-		def sender(url:str, serialization:ContentSerializationType) -> bool:
+		# Sender callback function for normal subscription notifications
+		def sender(url:str, serialization:ContentSerializationType, targetResource:Resource=None) -> bool:
 			Logging.logDebug(f'Sending notification to: {url}, reason: {reason}')
 			notificationRequest = {
 				'm2m:sgn' : {
@@ -306,11 +306,21 @@ class NotificationManager(object):
 
 			# Check for batch notifications
 			if sub['bn'] is not None:
+
+
+				# TODO implement hasPCH()
+
+
+				if targetResource is not None and targetResource.hasPCH():	# if the target resource has a PCH child resource then that will be the target later
+					url = targetResource.ri
 				return self._storeBatchNotification(url, sub, notificationRequest, serialization)
 			else:
-				return self._sendRequest(url, notificationRequest, serialization=serialization)
+				return self._sendRequest(url, notificationRequest, serialization=serialization, targetResource=targetResource)
+
 
 		result = self._sendNotification(sub['nus'], sender)	# ! This is not a <sub> resource, but the internal data structure, therefore 'nus
+
+		# Handle subscription expiration
 		if result and (exc := sub['exc']) is not None:
 			Logging.logDebug(f'Decrement expirationCounter: {exc} -> {exc-1}')
 
@@ -327,15 +337,15 @@ class NotificationManager(object):
 
 
 
-
-
 	def _sendNotification(self, uris:list, sendingFunction:Callable) -> bool:
 		"""	Send a notification to multiple targets if necessary. Determine the content serialization from either the ct parameter
 			or the csz attribute of an AE/CSE, or the CSE's default.
 			Call a callback function to do the actual sending.
 		"""
-		
-		def _sendNotificationWithSerialization(url:str, sendingFunction:Callable, csz:list[str]=None) -> bool:
+		#	Event when notification is happening, not sent
+		CSE.event.notification() # type: ignore
+
+		def _sendNotificationWithSerialization(url:str, sendingFunction:Callable, csz:list[str]=None, targetResource:Resource=None) -> bool:
 			""" Prepare to send a notification. Determine which content serialization to use first.
 				This is done either by looking at the 'ct' argument in a URL, the given csz list, or the CSE default.
 				The actual sending is done in a handler function.
@@ -378,7 +388,7 @@ class NotificationManager(object):
 				cst = CSE.defaultSerialization
 
 			# Actual send the notification
-			return sendingFunction(url, cst)
+			return sendingFunction(url, cst, targetResource)
 
 		#
 		# Iterate over the notification target list.
@@ -387,52 +397,39 @@ class NotificationManager(object):
 
 		for notificationTarget in uris:
 
-
-
-			#
-			#	TODO PollingChannel Handling
-			#
-			#	Move (?) the following to the actual sending part. Only execute this
-			#	when there is NO polling channel for the target
-			#	Otherwise add to polling channel queue.
-			#
-			#	OR add the notification to the polling channel here!!!
-			#
-			#
-
-
-
-
 			if not Utils.isURL(notificationTarget):	# test for id or url
 				# The notification target is an indirect resource with poa
-				if (resource := CSE.dispatcher.retrieveResource(notificationTarget).resource) is None:
+				if (targetResource := CSE.dispatcher.retrieveResource(notificationTarget).resource) is None:
 					Logging.logWarn(f'Resource not found to get URL: {notificationTarget}')
 					return False
 				# if not CSE.security.hasAccess('', resource, Permission.NOTIFY):	# check whether AE/CSE may receive Notifications
 				# 	Logging.logWarn(f'No access to resource: {nu}')
 				# 	return None
-				if resource.poa is None:	# check that the resource has a poa
+
+				# Use the poa of a target resource
+				if targetResource.poa is None:	# check that the resource has a poa
 					Logging.logWarn(f'Resource {notificationTarget} has no "poa" attribute')
 					return False
 				
 				# Send the notification to one (!) of the indirect resource's poa
-				for p in resource.poa:
-					if _sendNotificationWithSerialization(p, sendingFunction, resource.csz):	# only send to 1 URL in the indirect resource
+				for p in targetResource.poa:
+					if _sendNotificationWithSerialization(p, sendingFunction, targetResource.csz, targetResource):	# only send to 1 URL in the indirect resource
 						break
 				else:
 					return False	# Loop went through, but not one connection was OK
 			else:
+				# target is a direct URL, so just send directly, not via a target resource
 				if not _sendNotificationWithSerialization(notificationTarget, sendingFunction):
 					return False
 
 		return True
 
 
-	def _sendRequest(self, url:str, notificationRequest:dict, headers:dict=None, originator:str=None, serialization:ContentSerializationType=None) -> bool:
+	def _sendRequest(self, url:str, notificationRequest:dict, parameters:dict=None, originator:str=None, serialization:ContentSerializationType=None, targetResource:Resource=None) -> bool:
 		"""	Actually send a Notification request.
 		"""
 		originator = originator if originator is not None else CSE.cseCsi
-		return CSE.httpServer.sendCreateRequest(url, originator, data=notificationRequest, headers=headers, ct=serialization).rsc == RC.OK
+		return CSE.request.sendCreateRequest(url, originator, data=notificationRequest, parameters=parameters, ct=serialization, targetResource=targetResource).rsc == RC.OK
 
 
 	#
@@ -483,7 +480,8 @@ class NotificationManager(object):
 		"""
 		with self.lockBatchNotification:
 			Logging.logDebug(f'Sending aggregated subscription notifications for ri: {ri}')
-			# Collect the notifications	
+
+			# Collect the stored notifications for the batch and aggregate them
 			notifications = []
 			serialization = None
 			for notification in sorted(CSE.storage.getBatchNotifications(ri, nu), key=lambda x: x['tstamp']):	# sort by timestamp added
@@ -493,16 +491,27 @@ class NotificationManager(object):
 			if len(notifications) == 0:	# This can happen when the subscription is deleted and there are no outstanding notifications
 				return False
 
-			additionalHeaders = None
+			additionalParameters = None
 			if ln:
 				notifications = notifications[-1:]
-				additionalHeaders = { C.hfcEC : C.hfvECLatest }
+				additionalParameters = { C.hfcEC : C.hfvECLatest }
 
 			# Aggregate and send
 			notificationRequest = {
 				'm2m:agn' : { 'm2m:sgn' : notifications }
 			}
-			if not self._sendRequest(nu, notificationRequest, headers=additionalHeaders, serialization=serialization):
+
+			#
+			#
+			#	TODO check whether nu is an RI. Get that resource as target reosurce and pass it on to the send request
+			#
+			#	TODO This could actually be the part to handle batch notifications correctly. always store the target's ri
+			#		 if it is a resource. only determine which poa and the ct later (ie here).
+			#
+			targetResource = None	# TODO get resource
+
+
+			if not self._sendRequest(nu, notificationRequest, parameters=additionalParameters, serialization=serialization, targetResource=targetResource):
 				Logging.logWarn('Error sending aggregated batch notifications')
 				return False
 

@@ -193,7 +193,7 @@ class AnnouncementManager(object):
 
 		# Create the announed resource on the remote CSE
 		Logging.logDebug(f'Creating announced resource at: {csi} url: {url}')	
-		res = CSE.httpServer.sendCreateRequest(url, CSE.cseCsi, ty=tyAnnc, data=data)
+		res = CSE.request.sendCreateRequest(url, CSE.cseCsi, ty=tyAnnc, data=data)
 		if res.rsc not in [ RC.created, RC.OK ]:
 			if res.rsc != RC.alreadyExists:	# assume that it is ok if the remote resource already exists 
 				Logging.logDebug(f'Error creating remote announced resource: {res.rsc:d}')
@@ -268,7 +268,7 @@ class AnnouncementManager(object):
 
 		# Delete the announed resource from the remote CSE
 		Logging.logDebug(f'Delete announced resource from: %{csi} url: {url}')	
-		res = CSE.httpServer.sendDeleteRequest(url, CSE.cseCsi)
+		res = CSE.request.sendDeleteRequest(url, CSE.cseCsi)
 		if res.rsc not in [ RC.deleted, RC.OK ]:
 			Logging.logDebug(f'Error deleting remote announced resource: {res.rsc}')
 			# ignore the fact that we cannot delete the announced resource.
@@ -354,7 +354,7 @@ class AnnouncementManager(object):
 
 		# Create the announed resource on the remote CSE
 		Logging.logDebug(f'Updating announced resource at: {csi} url: {url}')	
-		res = CSE.httpServer.sendUpdateRequest(url, CSE.cseCsi, data=data)
+		res = CSE.request.sendUpdateRequest(url, CSE.cseCsi, data=data)
 		if res.rsc not in [ RC.updated, RC.OK ]:
 			Logging.logDebug(f'Error updating remote announced resource: {res.rsc:d}')
 			# Ignore and fallthrough

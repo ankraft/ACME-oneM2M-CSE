@@ -8,8 +8,9 @@
 #	This manager is the main run-loop for the CSE (when using http).
 #
 
+from __future__ import annotations
 import json, requests, logging, os, sys, traceback, urllib3
-from typing import Any, Callable, List, Tuple, Union
+from typing import Any, Callable, Tuple
 import flask
 from flask import Flask, Request, make_response, request
 from werkzeug.wrappers import Response
@@ -162,7 +163,7 @@ class HttpServer(object):
 
 
 
-	def addEndpoint(self, endpoint:str=None, endpoint_name:str=None, handler:Callable=None, methods:List[str]=None, strictSlashes:bool=True) -> None:
+	def addEndpoint(self, endpoint:str=None, endpoint_name:str=None, handler:Callable=None, methods:list[str]=None, strictSlashes:bool=True) -> None:
 		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods=methods, strict_slashes=strictSlashes)
 
 
@@ -222,7 +223,7 @@ class HttpServer(object):
 
 
 	# Handle requests to mapped paths
-	def requestRedirect(self) -> Union[Response, Tuple[str, int]]:
+	def requestRedirect(self) -> Response | Tuple[str, int]:
 		path = request.path[len(self.rootPath):] if request.path.startswith(self.rootPath) else request.path
 		if path in self.mappings:
 			Logging.logDebug(f'==> Redirecting to: /{path}')
@@ -284,7 +285,7 @@ class HttpServer(object):
 		return 'unsupported'
 
 
-	def handleStructure(self, path:str='puml') -> Union[Response, Tuple[str, int], str]:
+	def handleStructure(self, path:str='puml') -> Response | Tuple[str, int] | str:
 		"""	Handle a structure request. Return a description of the CSE's current resource
 			and registrar / registree deployment.
 			An optional parameter 'lvl=<int>' can limit the generated resource tree's depth.
@@ -298,31 +299,16 @@ class HttpServer(object):
 	#########################################################################
 
 	#
-	#	Send various types of HTTP requests
+	#	Send HTTP requests
 	#
 
-	def sendRetrieveRequest(self, url:str, originator:str, ct:ContentSerializationType=None) -> Result:
-		return self.sendRequest(requests.get, url, originator, ct=ct)
-
-
-	def sendCreateRequest(self, url:str, originator:str, ty:T=None, data:Any=None, headers:dict=None, ct:ContentSerializationType=None) -> Result:
-		return self.sendRequest(requests.post, url, originator, ty, data, headers=headers, ct=ct)
-
-
-	def sendUpdateRequest(self, url:str, originator:str, data:Any, ct:ContentSerializationType=None) -> Result:
-		return self.sendRequest(requests.put, url, originator, data=data, ct=ct)
-
-
-	def sendDeleteRequest(self, url:str, originator:str, ct:ContentSerializationType=None) -> Result:
-		return self.sendRequest(requests.delete, url, originator, ct=ct)
-
-
-	def _printContent(self, content:bytes, ct:ContentSerializationType) -> str:
+	def _prepContent(self, content:bytes, ct:ContentSerializationType) -> str:
 		if content is None:	return ''
 		if isinstance(content, str): return content
 		return content.decode('utf-8') if ct == ContentSerializationType.JSON else Utils.toHex(content)
 
-	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:ContentSerializationType=None, headers:dict=None) -> Result:
+
+	def sendHttpRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, parameters:dict=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
 		ct = CSE.defaultSerialization if ct is None else ct
 
 		# Set basic headers
@@ -336,9 +322,9 @@ class HttpServer(object):
 			   }
 
 		# Add additional headers
-		if headers is not None:
-			if C.hfcEC in headers:				# Event Category
-				hds[C.hfEC] = headers[C.hfcEC]
+		if parameters is not None:
+			if C.hfcEC in parameters:				# Event Category
+				hds[C.hfEC] = parameters[C.hfcEC]
 
 		# serialize data (only if dictionary, pass on non-dict data)
 		content = Utils.serializeData(data, ct) if isinstance(data, dict) else data
@@ -348,13 +334,13 @@ class HttpServer(object):
 		try:
 			Logging.logDebug(f'Sending request: {method.__name__.upper()} {url}')
 			if ct == ContentSerializationType.CBOR:
-				Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._printContent(content, ct)}\n=>\n{str(data) if data is not None else ""}\n')
+				Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n=>\n{str(data) if data is not None else ""}\n')
 			else:
-				Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._printContent(content, ct)}\n')
+				Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n')
 			r = method(url, data=content, headers=hds, verify=self.verifyCertificate)
 			responseCt = ContentSerializationType.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
 			rc = RC(int(r.headers['X-M2M-RSC'])) if 'X-M2M-RSC' in r.headers else RC.internalServerError
-			Logging.logDebug(f'Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._printContent(r.content, responseCt)}\n')
+			Logging.logDebug(f'Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
 		except Exception as e:
 			Logging.logWarn(f'Failed to send request: {str(e)}')
 			return Result(rsc=RC.targetNotReachable, dbg='target not reachable')
@@ -364,7 +350,7 @@ class HttpServer(object):
 	#########################################################################
 
 	def _prepareResponse(self, result:Result) -> Response:
-		content:Union[str, bytes] = ''
+		content:str|bytes = ''
 
 		# Build the headers
 		headers = {}
@@ -403,7 +389,7 @@ class HttpServer(object):
 		return Response(response=content, status=statusCode, content_type=cts, headers=headers)
 
 
-	def _prepareException(self, e: Exception) -> Result:
+	def _prepareException(self, e:Exception) -> Result:
 		tb = traceback.format_exc()
 		Logging.logErr(tb)
 		tbs = tb.replace('"', '\\"').replace('\n', '\\n')

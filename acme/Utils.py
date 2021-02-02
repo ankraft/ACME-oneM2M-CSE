@@ -395,6 +395,12 @@ def isURL(url: str) -> bool:
 	return url is not None and isinstance(url, str) and re.match(urlregex, url) is not None
 
 
+def isHttpUrl(url:str) -> bool:
+	"""	Check whether a URL is a http URL. 
+	"""
+	return url.startswith(('http', 'https'))
+
+
 def normalizeURL(url: str) -> str:
 	""" Remove trailing / from the url. """
 	if url is not None:

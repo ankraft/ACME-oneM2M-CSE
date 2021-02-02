@@ -24,10 +24,16 @@ from rich.tree import Tree
 deletedResources	= 'rmRes'
 createdResources	= 'crRes'
 updatedResources	= 'upRes'
+expiredResources 	= 'exRes'
 httpRetrieves		= 'htRet'
 httpCreates			= 'htCre'
 httpUpdates			= 'htUpd'
 httpDeletes			= 'htDel'
+httpSendRetrieves	= 'htSRt'
+httpSendCreates		= 'htSCr'
+httpSendUpdates		= 'htSUp'
+httpSendDeletes		= 'htSDl'
+notifications		= 'notif'
 logErrors			= 'lgErr'
 logWarnings			= 'lgWrn'
 cseStartUpTime		= 'cseSU'
@@ -56,16 +62,22 @@ class Statistics(object):
 
 			# subscripe vto various events
 			# mypy cannot handle dynamically created attributes
-			CSE.event.addHandler(CSE.event.createResource, self.handleCreateEvent) 		# type: ignore
-			CSE.event.addHandler(CSE.event.updateResource, self.handleUpdateEvent)		# type: ignore
-			CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent)		# type: ignore
-			CSE.event.addHandler(CSE.event.httpRetrieve, self.handleHttpRetrieveEvent)	# type: ignore
-			CSE.event.addHandler(CSE.event.httpCreate, self.handleHttpCreateEvent)		# type: ignore
-			CSE.event.addHandler(CSE.event.httpUpdate, self.handleHttpUpdateEvent)		# type: ignore
-			CSE.event.addHandler(CSE.event.httpDelete, self.handleHttpDeleteEvent)		# type: ignore
-			CSE.event.addHandler(CSE.event.cseStartup, self.handleCseStartup)			# type: ignore
-			CSE.event.addHandler(CSE.event.logError, self.handleLogError)				# type: ignore
-			CSE.event.addHandler(CSE.event.logWarning, self.handleLogWarning)			# type: ignore
+			CSE.event.addHandler(CSE.event.createResource, self.handleCreateEvent) 				# type: ignore
+			CSE.event.addHandler(CSE.event.updateResource, self.handleUpdateEvent)				# type: ignore
+			CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent)				# type: ignore
+			CSE.event.addHandler(CSE.event.expireResource, self.handleExpireResource)			# type: ignore
+			CSE.event.addHandler(CSE.event.httpRetrieve, self.handleHttpRetrieveEvent)			# type: ignore
+			CSE.event.addHandler(CSE.event.httpCreate, self.handleHttpCreateEvent)				# type: ignore
+			CSE.event.addHandler(CSE.event.httpUpdate, self.handleHttpUpdateEvent)				# type: ignore
+			CSE.event.addHandler(CSE.event.httpDelete, self.handleHttpDeleteEvent)				# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendRetrieve, self.handleHttpSendRetrieveEvent)	# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendCreate, self.handleHttpSendCreateEvent)		# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendUpdate, self.handleHttpSendUpdateEvent)		# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendDelete, self.handleHttpSendDeleteEvent)		# type: ignore
+			CSE.event.addHandler(CSE.event.notification, self.handleNotification)				# type: ignore
+			CSE.event.addHandler(CSE.event.cseStartup, self.handleCseStartup)					# type: ignore
+			CSE.event.addHandler(CSE.event.logError, self.handleLogError)						# type: ignore
+			CSE.event.addHandler(CSE.event.logWarning, self.handleLogWarning)					# type: ignore
 
 		Logging.log('Statistics initialized')
 
@@ -91,10 +103,16 @@ class Statistics(object):
 			deletedResources	: 0,
 			createdResources	: 0,
 			updatedResources	: 0,
+			expiredResources 	: 0,
+			notifications		: 0,
 			httpRetrieves		: 0,
 			httpCreates			: 0,
 			httpUpdates 		: 0,
 			httpDeletes 		: 0,
+			httpSendRetrieves	: 0,
+			httpSendCreates		: 0,
+			httpSendUpdates 	: 0,
+			httpSendDeletes 	: 0,
 			cseStartUpTime		: 0.0,
 			logErrors 			: 0,
 			logWarnings 		: 0
@@ -116,18 +134,25 @@ class Statistics(object):
 	#	Event handlers
 	#
 
-	def handleCreateEvent(self, resource: Resource) -> None:
+	def handleCreateEvent(self, resource:Resource) -> None:
 		with self.statLock:
 			self.stats[createdResources] += 1
 	
 
-	def handleDeleteEvent(self, resource: Resource) -> None:
+	def handleDeleteEvent(self, resource:Resource) -> None:
 		with self.statLock:
 			self.stats[deletedResources] += 1
 	
-	def handleUpdateEvent(self, resource: Resource) -> None:
+
+	def handleUpdateEvent(self, resource:Resource) -> None:
 		with self.statLock:
 			self.stats[updatedResources] += 1
+
+
+	def handleExpireResource(self, resource:Resource) -> None:
+		with self.statLock:
+			self.stats[expiredResources] += 1
+
 
 	def handleHttpRetrieveEvent(self) -> None:
 		with self.statLock:
@@ -149,6 +174,26 @@ class Statistics(object):
 			self.stats[httpDeletes] += 1
 
 
+	def handleHttpSendRetrieveEvent(self) -> None:
+		with self.statLock:
+			self.stats[httpSendRetrieves] += 1
+
+
+	def handleHttpSendCreateEvent(self) -> None:
+		with self.statLock:
+			self.stats[httpSendCreates] += 1
+
+
+	def handleHttpSendUpdateEvent(self) -> None:
+		with self.statLock:
+			self.stats[httpSendUpdates] += 1
+
+
+	def handleHttpSendDeleteEvent(self) -> None:
+		with self.statLock:
+			self.stats[httpSendDeletes] += 1
+
+
 	def handleCseStartup(self) -> None:
 		with self.statLock:
 			self.stats[cseStartUpTime] = datetime.datetime.utcnow().timestamp()
@@ -162,6 +207,12 @@ class Statistics(object):
 	def handleLogWarning(self) -> None:
 		with self.statLock:
 			self.stats[logWarnings] += 1
+
+
+	def handleNotification(self) -> None:
+		with self.statLock:
+			self.stats[notifications] += 1
+
 
 	#########################################################################
 	#
@@ -359,33 +410,42 @@ skinparam rectangle {
 		result = ''
 		stats = self.getStats()
 		if self.statisticsEnabled:
-			result += '- **Resources**\n'
-			result += f'    - Created     : {stats[createdResources]}\n'
-			result += f'    - Updated     : {stats[updatedResources]}\n'
-			result += f'    - Deleted     : {stats[deletedResources]}\n'
-			result += f'    - Count       : {stats[resourceCount]}\n'
+			result += '- **Resource Operations**\n'
+			result += f'    - Created       : {stats[createdResources]}\n'
+			result += f'    - Updated       : {stats[updatedResources]}\n'
+			result += f'    - Deleted       : {stats[deletedResources]}\n'
+			result += f'    - Expired       : {stats[expiredResources]}\n'
+			result += f'    - Notifications : {stats[notifications]}\n'
 		result += '- **Resource Types**\n'
-		result += f'    - AE          : {len(CSE.dispatcher.retrieveResourcesByType(T.AE))}\n'
-		result += f'    - ACP         : {len(CSE.dispatcher.retrieveResourcesByType(T.ACP))}\n'
-		result += f'    - CIN         : {len(CSE.dispatcher.retrieveResourcesByType(T.CIN))}\n'
-		result += f'    - CNT         : {len(CSE.dispatcher.retrieveResourcesByType(T.CNT))}\n'
-		result += f'    - FCNT        : {len(CSE.dispatcher.retrieveResourcesByType(T.FCNT))}\n'
-		result += f'    - MGMTOBJ     : {len(CSE.dispatcher.retrieveResourcesByType(T.MGMTOBJ))}\n'
-		result += f'    - NOD         : {len(CSE.dispatcher.retrieveResourcesByType(T.NOD))}\n'
-		result += f'    - SUB         : {len(CSE.dispatcher.retrieveResourcesByType(T.SUB))}\n'
+		result += f'    - AE            : {len(CSE.dispatcher.retrieveResourcesByType(T.AE))}\n'
+		result += f'    - ACP           : {len(CSE.dispatcher.retrieveResourcesByType(T.ACP))}\n'
+		result += f'    - CIN           : {len(CSE.dispatcher.retrieveResourcesByType(T.CIN))}\n'
+		result += f'    - CNT           : {len(CSE.dispatcher.retrieveResourcesByType(T.CNT))}\n'
+		result += f'    - CSR           : {len(CSE.dispatcher.retrieveResourcesByType(T.CSR))}\n'
+		result += f'    - FCNT          : {len(CSE.dispatcher.retrieveResourcesByType(T.FCNT))}\n'
+		result += f'    - FCI           : {len(CSE.dispatcher.retrieveResourcesByType(T.FCI))}\n'
+		result += f'    - MGMTOBJ       : {len(CSE.dispatcher.retrieveResourcesByType(T.MGMTOBJ))}\n'
+		result += f'    - NOD           : {len(CSE.dispatcher.retrieveResourcesByType(T.NOD))}\n'
+		result += f'    - SUB           : {len(CSE.dispatcher.retrieveResourcesByType(T.SUB))}\n'
+		result += f'    - Total         : {stats[resourceCount]}\n'
 		if self.statisticsEnabled:
 			result += '- **HTTP Requests**\n'
 			result += '    - **Received**\n'
-			result += f'        - RETRIEVE : {stats[httpRetrieves]}\n'
-			result += f'        - CREATE   : {stats[httpCreates]}\n'
-			result += f'        - UPDATE   : {stats[httpUpdates]}\n'
-			result += f'        - DELETE   : {stats[httpDeletes]}\n'
+			result += f'        - RETRIEVE   : {stats[httpRetrieves]}\n'
+			result += f'        - CREATE     : {stats[httpCreates]}\n'
+			result += f'        - UPDATE     : {stats[httpUpdates]}\n'
+			result += f'        - DELETE     : {stats[httpDeletes]}\n'
+			result += '    - **Sent**\n'
+			result += f'        - RETRIEVE   : {stats[httpSendRetrieves]}\n'
+			result += f'        - CREATE     : {stats[httpSendCreates]}\n'
+			result += f'        - UPDATE     : {stats[httpSendUpdates]}\n'
+			result += f'        - DELETE     : {stats[httpSendDeletes]}\n'
 			result += '- **Logs**\n'
-			result += f'    - Errors      : {stats[logErrors]}\n'
-			result += f'    - Warnings    : {stats[logWarnings]}\n'
+			result += f'    - Errors        : {stats[logErrors]}\n'
+			result += f'    - Warnings      : {stats[logWarnings]}\n'
 		result += '- **Misc**\n'
-		result += f'    - StartTime   : {stats[cseStartUpTime]}\n'
-		result += f'    - Uptime      : {stats[cseUpTime]}\n'
+		result += f'    - StartTime     : {stats[cseStartUpTime]}\n'
+		result += f'    - Uptime        : {stats[cseUpTime]}\n'
 
 		if not self.statisticsEnabled:
 			result += f'\n(statistics are disabled)\n'

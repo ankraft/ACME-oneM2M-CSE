@@ -43,19 +43,19 @@ class AppBase(object):
 	#
 
 	def retrieveResource(self, ri:str=None, srn:str=None) -> Result:
-		return CSE.httpServer.sendRetrieveRequest(self._id(ri, srn), self.originator)
+		return CSE.request.sendRetrieveRequest(self._id(ri, srn), self.originator)
 
 
 	def createResource(self, ri:str=None, srn:str=None, ty:T=None, data:Dict[str, Any]=None) -> Result:
-		return CSE.httpServer.sendCreateRequest(self._id(ri, srn), self.originator, ty, data)
+		return CSE.request.sendCreateRequest(self._id(ri, srn), self.originator, ty, data)
 
 
 	def updateResource(self, ri:str=None, srn:str=None, data:dict=None) -> Result:
-		return CSE.httpServer.sendUpdateRequest(self._id(ri, srn), self.originator, data)
+		return CSE.request.sendUpdateRequest(self._id(ri, srn), self.originator, data)
 
 
 	def deleteResource(self, ri:str=None, srn:str=None) -> Result:
-		return CSE.httpServer.sendDeleteRequest(self._id(ri, srn), self.originator)
+		return CSE.request.sendDeleteRequest(self._id(ri, srn), self.originator)
 
 
 	def _id(self, ri: str, srn: str) -> str:
