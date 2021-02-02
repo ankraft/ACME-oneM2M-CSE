@@ -42,10 +42,11 @@ class ResourceTypes(IntEnum):
 	FCI 		= 58
 
 
-	# Virtual resources (proprietary resource types)
+	# Virtual resources (some are proprietary resource types)
 
-	CNT_OL		=  -20001
-	CNT_LA		=  -20002
+	CNT_OL		=  20001
+	CNT_LA		=  20002
+
 	GRP_FOPT	=  -20003
 	FCNT_OL		=  -20004
 	FCNT_LA		=  -20005
