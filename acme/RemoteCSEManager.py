@@ -241,15 +241,15 @@ class RemoteCSEManager(object):
 		Logging.logDebug(f'Handle remote CSE update: {remoteCSR}\nupdate: {updateDict}')
 
 		# handle update of dcse in remoteCSR
-		csi = remoteCSR.csi
+		remoteCsi = remoteCSR.csi
 		Logging.logDebug(f'DescendantCSRs: {self.descendantCSR}')
 		# remove all descendant tuples that are from this CSR
 		for key in list(self.descendantCSR.keys()):	# !!! make a copy of the keys bc the list changes in this loop
 			if key in self.descendantCSR:	# Entry could have been deleted, nevertheless
 				(_, registeredATcsi) = self.descendantCSR[key]
-				if registeredATcsi != CSE.cseCsi:	# remove all descedants EXCEPT the ones hosted on THIS CSE
-					Logging.logDebug(f'Removing from internal dcse list: {registeredATcsi}')
-					del self.descendantCSR[registeredATcsi]
+				if registeredATcsi == remoteCsi :	# remove all descedants EXCEPT the ones hosted on THIS CSE
+					Logging.logDebug(f'Removing from internal dcse list: {key}')
+					del self.descendantCSR[key]
 
 		# add new/updated values from remoteCSR
 		# if remoteCSR.dcse is not None:		# TODO same as above. Function?
@@ -261,7 +261,7 @@ class RemoteCSEManager(object):
 			for dcsecsi in dcse:
 				if dcsecsi in self.descendantCSR:	# don't overwrite existing ones
 					continue
-				self.descendantCSR[dcsecsi] = (None, csi)	# don't have the CSR for further descendants available
+				self.descendantCSR[dcsecsi] = (None, remoteCsi)	# don't have the CSR for further descendants available
 
 		if CSE.cseType in [ CSEType.ASN, CSEType.MN ]:	# update own registrar CSR
 			self._updateCSRonRegistrarCSE()

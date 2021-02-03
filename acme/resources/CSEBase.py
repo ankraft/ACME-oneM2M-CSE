@@ -34,7 +34,7 @@ class CSEBase(Resource):
 			self.setAttribute('srt', C.supportedResourceTypes, overwrite=False)
 			self.setAttribute('csz', C.supportedContentSerializations, overwrite=False)
 			self.setAttribute('srv', CSE.supportedReleaseVersions, overwrite=False)	# This must be a list
-			self.setAttribute('poa', [ CSE.httpServer.serverAddress ], overwrite=False)
+			self.setAttribute('poa', [ CSE.httpServer.serverAddress ], overwrite=False)		# TODO add more address schemes when available
 			self.setAttribute('cst', CSE.cseType, overwrite=False)
 
 

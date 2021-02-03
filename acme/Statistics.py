@@ -386,18 +386,26 @@ skinparam rectangle {
 			if len(CSE.remote.descendantCSR) > 0:
 				result += f'- **Registree CSEs**\n'
 
+				# for desc in CSE.remote.descendantCSR.keys():
+				# 	(csr, atCsi) = CSE.remote.descendantCSR[desc]
+				# 	if csr is not None:
+				# 		result += f'  - {desc[1:]} ({CSEType(csr.cst).name}) @ {csr.poa}\n'
+				# 	else:	 	
+				# 		result += f'  - {desc[1:]}\n'
+				# 	connections[desc] = atCsi
+				
+				# for key in connections.keys():
+				# 	atCsi = connections[key]
+				# 	if atCsi != CSE.cseCsi:
+				# 		result += f'    - {key}\n'
 				for desc in CSE.remote.descendantCSR.keys():
 					(csr, atCsi) = CSE.remote.descendantCSR[desc]
 					if csr is not None:
 						result += f'  - {desc[1:]} ({CSEType(csr.cst).name}) @ {csr.poa}\n'
-					else:
-						result += f'  - {desc[1:]}\n'
-					connections[desc] = atCsi
-				
-				for key in connections.keys():
-					atCsi = connections[key]
-					if atCsi != CSE.cseCsi:
-						result += f'    - {key}\n'
+						for desc2 in CSE.remote.descendantCSR.keys():
+							(csr2, atCsi2) = CSE.remote.descendantCSR[desc2]
+							if csr2 is None and atCsi2 == desc:
+								result += f'    - {desc2[1:]}\n'
 		
 		return result if len(result) else 'None'
 		
