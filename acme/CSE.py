@@ -7,6 +7,7 @@
 #	Container that holds references to instances of various managing entities.
 #
 
+from __future__ import annotations
 import atexit, argparse, os, threading, time
 from typing import Dict, Optional, Any
 from Constants import Constants as C
@@ -58,7 +59,7 @@ aeCSENode:CSENode				 	= None
 aeStatistics:AEStatistics 		 	= None 
 appsStarted:bool 					= False
 
-supportedReleaseVersions:list 					= None
+supportedReleaseVersions:list[str]				= None
 cseType:CSEType									= None
 cseCsi:str										= None
 cseRi:str 										= None
@@ -367,7 +368,7 @@ def _keyDeleteResource(key:str) -> None:
 				Logging.console(res.dbg, isError=True)
 			else:
 				Logging.console('ok')
-				
+
 	Logging.loggingEnabled = loggingOld
 
 

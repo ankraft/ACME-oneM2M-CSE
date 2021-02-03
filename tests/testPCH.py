@@ -10,6 +10,7 @@
 import unittest, sys, time
 import requests
 sys.path.append('../acme')
+from typing import Tuple
 from Constants import Constants as C
 from Types import ResourceTypes as T, NotificationContentType, ResponseCode as RC, Operation, ResponseType, Permission
 from init import *
@@ -34,7 +35,7 @@ class TestPCH(unittest.TestCase):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
-		dct:dict = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyAppId',
 				 	'rr'  : False,
@@ -55,7 +56,7 @@ class TestPCH(unittest.TestCase):
 	def test_createPCHwithWrongOriginator(self) -> None:
 		"""	Create <PCH> with valid but different originator -> Fail"""
 		self.assertIsNotNone(TestPCH.ae)
-		dct:dict = 	{ 'm2m:pch' : { 
+		dct = 	{ 'm2m:pch' : { 
 					'rn' : pchRN,
 				}}
 		_, rsc = CREATE(aeURL, ORIGINATOR, T.PCH, dct)	# Admin, should still fail
@@ -66,7 +67,7 @@ class TestPCH(unittest.TestCase):
 	def test_createPCH(self) -> None:
 		"""	Create <PCH>"""
 		self.assertIsNotNone(TestPCH.ae)
-		dct:dict = 	{ 'm2m:pch' : { 
+		dct = 	{ 'm2m:pch' : { 
 					'rn' : pchRN,
 				}}
 		_, rsc = CREATE(aeURL, TestPCH.originator, T.PCH, dct)
@@ -77,7 +78,7 @@ class TestPCH(unittest.TestCase):
 	def test_createSecondPCH(self) -> None:
 		"""	Create second <PCH> -> Fail"""
 		self.assertIsNotNone(TestPCH.ae)
-		dct:dict = 	{ 'm2m:pch' : { 
+		dct = 	{ 'm2m:pch' : { 
 					'rn' : f'{pchRN}2',
 				}}
 		_, rsc = CREATE(aeURL, TestPCH.originator, T.PCH, dct)
@@ -88,7 +89,7 @@ class TestPCH(unittest.TestCase):
 	def test_createPCHunderCSEBase(self) -> None:
 		"""	Create <PCH> under <CSEBase> -> Fail """
 		self.assertIsNotNone(TestPCH.ae)
-		dct:dict = 	{ 'm2m:pch' : { 
+		dct = 	{ 'm2m:pch' : { 
 					'rn' : pchRN,
 				}}
 		_, rsc = CREATE(cseURL, ORIGINATOR, T.PCH, dct)

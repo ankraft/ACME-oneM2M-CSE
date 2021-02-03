@@ -7,7 +7,7 @@
 #	Create Resources
 #
 
-from typing import Dict, Callable
+from typing import Dict, Callable, Any, Tuple
 from Types import ResourceTypes as T
 from Types import ResponseCode as RC
 from Types import Result
@@ -73,8 +73,10 @@ from resources.SWRAnnc import SWRAnnc
 from resources.Resource import Resource
 
 
+# type definition for Factory lambda
+FactoryT = Callable[[Dict[str, object], str, str, bool], object]
 
-resourceFactoryMap:Dict[T, Callable[[dict, str, str, bool], Resource]] = {
+resourceFactoryMap:Dict[T, FactoryT] = {
 	#	Regular resources
 	#	type -> factory
 	
@@ -147,7 +149,7 @@ resourceFactoryMap:Dict[T, Callable[[dict, str, str, bool], Resource]] = {
 
 
 
-def resourceFromDict(resDict:dict={}, pi:str=None, ty:T=None, create:bool=False, isImported:bool=False) -> Result:
+def resourceFromDict(resDict:Dict[str, Any]={}, pi:str=None, ty:T=None, create:bool=False, isImported:bool=False) -> Result:
 	""" Create a resource from a dictionary structure.
 		This will *not* call the activate method, therefore some attributes
 		may be set separately.
@@ -170,7 +172,7 @@ def resourceFromDict(resDict:dict={}, pi:str=None, ty:T=None, create:bool=False,
 		resDict[Resource._imported] = True	# Indicate that this is an imported resource
 
 	# Determine a factory and call it
-	factory:Callable[[dict, str, str, bool], Resource] = None
+	factory:FactoryT = None
 	if typ == T.MGMTOBJ:										# for <mgmtObj>
 		mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
 		factory = resourceFactoryMap.get(mgd)

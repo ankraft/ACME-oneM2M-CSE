@@ -13,7 +13,7 @@ from Logging import Logging
 from Configuration import Configuration
 import Statistics, CSE, Utils
 # The following line incorrectly throws an error with mypy
-from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN 	# type: ignore
+from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN
 import threading, time
 from Types import ResourceTypes as T
 

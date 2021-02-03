@@ -10,6 +10,7 @@
 import unittest, sys, time
 import requests
 sys.path.append('../acme')
+from typing import Tuple, Dict
 from Constants import Constants as C
 from Types import ResourceTypes as T, NotificationContentType, ResponseCode as RC, Operation, ResponseType, Permission
 from init import *
@@ -46,12 +47,12 @@ class TestREQ(unittest.TestCase):
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
-		dct:dict = 	{ 'm2m:ae' : {
+		dct =	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyAppId',
-				 	'rr'  : False,
-				 	'srv' : [ '3' ],
-				 	'poa' : [ NOTIFICATIONSERVER ]
+			 		'rr'  : False,
+			 		'srv' : [ '3' ],
+			 		'poa' : [ NOTIFICATIONSERVER ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -73,8 +74,7 @@ class TestREQ(unittest.TestCase):
 	def test_createREQFail(self) -> None:
 		"""	Manually create <REQ> -> Fail """
 		self.assertIsNotNone(TestREQ.ae)
-		dct:dict = 	{ 'm2m:req' : { 
-				}}
+		dct = 	{ 'm2m:req' : { }}	# type: ignore
 		r, rsc = CREATE(cseURL, TestREQ.originator, T.REQ, dct)
 		self.assertEqual(rsc, RC.operationNotAllowed)
 

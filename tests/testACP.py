@@ -9,6 +9,7 @@
 
 import unittest, sys
 sys.path.append('../acme')
+from typing import Tuple
 from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
@@ -161,10 +162,10 @@ class TestACP(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAEACPIWrong(self) -> None:
 		"""	Update <ACP> with ACPI together with second attribute -> Fail """
-		dct:dict =	{ 'm2m:ae': {
-						'lbl' : [ 'a' ],
-						'acpi': [ 'anID' ]
-					}}
+		dct =	{ 'm2m:ae': {
+					'lbl' : [ 'a' ],
+					'acpi': [ 'anID' ]
+				}}
 		r, rsc = UPDATE(aeURL, ORIGINATOR, dct)
 		self.assertNotEqual(rsc, RC.updated)
 
@@ -172,9 +173,9 @@ class TestACP(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateACPEmptyPVS(self) -> None:
 		"""	Update <ACP> with empty PVS -> Fail """
-		dct:dict = 	{ 'm2m:acp' : {
-						'pvs' : {}
-					}}
+		dct = 	{ 'm2m:acp' : {	# type: ignore
+					'pvs' : {}
+				}}
 		acp, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
@@ -182,9 +183,9 @@ class TestACP(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateACPNoPVS(self) -> None:
 		"""	Update <ACP> with None PVS -> Fail """
-		dct:dict = 	{ 'm2m:acp' : {
-						'pvs' : None
-					}}
+		dct = 	{ 'm2m:acp' : {
+					'pvs' : None
+				}}
 		_, rsc = UPDATE(acpURL, self.acpORIGINATOR, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
@@ -192,14 +193,14 @@ class TestACP(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createACPNoPVS(self) -> None:
 		"""	Create <ACP> with no PVS -> Fail """
-		dct:dict = 	{ "m2m:acp": {
-						"rn": f'{acpRN}2',
-						"pv": {
-							"acr": [ { 	"acor": [ ORIGINATOR ],
-										"acop": 63
-									} ]
-						}
-					}}
+		dct = 	{ "m2m:acp": {
+					"rn": f'{acpRN}2',
+					"pv": {
+						"acr": [ { 	"acor": [ ORIGINATOR ],
+									"acop": 63
+								} ]
+					}
+				}}
 		_, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
@@ -207,15 +208,15 @@ class TestACP(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createACPEmptyPVS(self) -> None:
 		"""	Create <ACP> with empty PVS -> Fail """
-		dct:dict = 	{ "m2m:acp": {
-						"rn": f'{acpRN}2',
-						"pv": {
-							"acr": [ { 	"acor": [ ORIGINATOR ],
-										"acop": 63
-									} ]
-						},
-						"pvs": {},
-					}}
+		dct = 	{ "m2m:acp": {
+					"rn": f'{acpRN}2',
+					"pv": {
+						"acr": [ { 	"acor": [ ORIGINATOR ],
+									"acop": 63
+								} ]
+					},
+					"pvs": {},
+				}}
 		_, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
 		self.assertEqual(rsc, RC.badRequest)
 	
@@ -299,9 +300,9 @@ class TestACP(unittest.TestCase):
 		self.assertIsNotNone(TestACP.ae)
 		acpi = findXPath(TestACP.ae, 'm2m:ae/acpi').copy()
 		acpi.remove(findXPath(TestACP.acp, 'm2m:acp/ri'))
-		dct:dict = 	{ 'm2m:ae' : {
-				 		'acpi': acpi
-					}}
+		dct = 	{ 'm2m:ae' : {
+			 		'acpi': acpi
+				}}
 		r, rsc = UPDATE(aeURL, findXPath(TestACP.ae, 'm2m:ae/aei'), dct)
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)	# missing self-privileges
 		_, rsc = UPDATE(aeURL, ORIGINATOR, dct)

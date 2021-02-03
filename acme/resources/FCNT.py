@@ -83,6 +83,7 @@ class FCNT(AnnounceableResource):
 
 
 	# This method is NOT called when adding FCIN!!
+	# Because FCInn is added by the FCNT itself.
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
 		if not (res := super().childWillBeAdded(childResource, originator)).status:

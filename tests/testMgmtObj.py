@@ -10,6 +10,7 @@
 import unittest, sys
 import requests
 sys.path.append('../acme')
+from typing import Tuple
 from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
