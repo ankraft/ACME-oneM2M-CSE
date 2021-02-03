@@ -174,23 +174,22 @@ class HttpServer(object):
 		"""
 		Logging.logDebug(f'==> {operation.name}: /{path}') 	# path = request.path  w/o the root
 		Logging.logDebug(f'Headers: \n{str(request.headers)}')
-		try:
-			httpRequestResult = Utils.dissectHttpRequest(request, operation, Utils.retrieveIDFromPath(path, CSE.cseRn, CSE.cseCsi))
-			if httpRequestResult.status:
-				if operation in [ Operation.CREATE, Operation.UPDATE ]:
-					if httpRequestResult.request.ct == ContentSerializationType.CBOR:
-						Logging.logDebug(f'Body: \n{Utils.toHex(httpRequestResult.request.data)}\n=>\n{httpRequestResult.request.dict}')
-					else:
-						Logging.logDebug(f'Body: \n{str(httpRequestResult.request.data)}')
-				
-				if self.isStopped:
-					responseResult = Result(rsc=RC.internalServerError, dbg='http server not running	', status=False)
-				else:
+		if self.isStopped:
+			responseResult = Result(rsc=RC.internalServerError, dbg='http server not running	', status=False)
+		else:
+			try:
+				httpRequestResult = Utils.dissectHttpRequest(request, operation, Utils.retrieveIDFromPath(path, CSE.cseRn, CSE.cseCsi))
+				if httpRequestResult.status:
+					if operation in [ Operation.CREATE, Operation.UPDATE ]:
+						if httpRequestResult.request.ct == ContentSerializationType.CBOR:
+							Logging.logDebug(f'Body: \n{Utils.toHex(httpRequestResult.request.data)}\n=>\n{httpRequestResult.request.dict}')
+						else:
+							Logging.logDebug(f'Body: \n{str(httpRequestResult.request.data)}')
 					responseResult = self._requestHandlers[operation](httpRequestResult.request)
-			else:
-				responseResult = httpRequestResult
-		except Exception as e:
-			responseResult = self._prepareException(e)
+				else:
+					responseResult = httpRequestResult
+			except Exception as e:
+				responseResult = self._prepareException(e)
 		responseResult.request = httpRequestResult.request
 		return self._prepareResponse(responseResult)
 

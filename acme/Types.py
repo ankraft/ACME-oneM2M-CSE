@@ -44,8 +44,8 @@ class ResourceTypes(IntEnum):
 
 	# Virtual resources (some are proprietary resource types)
 
-	CNT_OL		=  20001
-	CNT_LA		=  20002
+	CNT_OL		=  20001	# actually a memberType
+	CNT_LA		=  20002	# actually a memberType
 
 	GRP_FOPT	=  -20003
 	FCNT_OL		=  -20004
