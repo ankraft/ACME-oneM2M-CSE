@@ -53,7 +53,9 @@ class AEStatistics(AEBase):
 				'lgErr'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
 				'lgWrn'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
 				'cseUT'	: ( BT.string,			CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
-				'ctRes'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA )
+				'ctRes'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'exRes'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'notif'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
 			}
 		}
 
