@@ -8,7 +8,7 @@
 #
 
 from .MgmtObj import *
-from Types import ResourceTypes as T, Result, ResponseCode as RC
+from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 from Validator import constructPolicy, addPolicy
 import Utils
 
@@ -21,7 +21,7 @@ attributePolicies = addPolicy(mgmtObjAttributePolicies, dvcPolicies)
 
 class DVC(MgmtObj):
 
-	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		self.resourceAttributePolicies = dvcPolicies	# only the resource type's own policies
 		super().__init__(dct, pi, mgd=T.DVC, create=create, attributePolicies=attributePolicies)
 
@@ -38,7 +38,7 @@ class DVC(MgmtObj):
 	#	validate() and update()
 	#
 
-	def validate(self, originator:str=None, create:bool=False, dct:dict=None) -> Result:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		if not (res := super().validate(originator, create, dct)).status:
 			return res
 		self.setAttribute('ena', True, overwrite=True)	# always set (back) to True
@@ -46,7 +46,7 @@ class DVC(MgmtObj):
 		return Result(status=True)
 
 
-	def update(self, dct:dict=None, originator:str=None) -> Result:
+	def update(self, dct:JSON=None, originator:str=None) -> Result:
 		# Check for ena & dis updates 
 		if dct is not None and self.tpe in dct:
 			ena = Utils.findXPath(dct, 'm2m:dvc/ena')

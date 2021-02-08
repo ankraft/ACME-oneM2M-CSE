@@ -59,7 +59,7 @@ if __name__ == '__main__':
 	table.add_column('Errors', footer=f'[red]{totalErrors if totalErrors > 0 else "[spring_green3]0"}[/red]')
 	table.add_column('Exec Time', footer=f'{totalExecTime:.4f}')
 	table.add_column('Process Time', footer=f'{totalProcessTime:.4f}')
-	table.add_column('Time / Test', footer=f'{totalExecTime/totalRunTests:.4f}')
+	table.add_column('Time / Test', footer=f'{totalExecTime/totalRunTests:.4f}' if totalRunTests != 0 else '')
 	styleDisabled = Style(dim=True)
 	for k,v in results.items():
 		table.add_row(	k, 

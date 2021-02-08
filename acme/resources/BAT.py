@@ -8,15 +8,15 @@
 #
 
 from .MgmtObj import *
-from Types import ResourceTypes as T
-from Validator import constructPolicy
+from Types import ResourceTypes as T, JSON
+from Validator import constructPolicy, addPolicy
 import Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
 batPolicies = constructPolicy([
 	'btl', 'bts'
 ])
-attributePolicies =  addPolicy(mgmtObjAttributePolicies, batPolicies)
+attributePolicies = addPolicy(mgmtObjAttributePolicies, batPolicies)
 
 
 btsNORMAL			 = 1
@@ -33,7 +33,7 @@ defaultBatteryStatus = btsUNKNOWN
 
 class BAT(MgmtObj):
 
-	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		self.resourceAttributePolicies = batPolicies	# only the resource type's own policies
 		super().__init__(dct, pi, mgd=T.BAT, create=create, attributePolicies=attributePolicies)
 

@@ -8,7 +8,7 @@
 #
 
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ResponseCode as RC
+from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 from Validator import constructPolicy, addPolicy
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
@@ -26,7 +26,7 @@ attributePolicies = addPolicy(attributePolicies, cinPolicies)
 
 class CIN(AnnounceableResource):
 
-	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.CIN, dct, pi, create=create, inheritACP=True, readOnly = True, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = cinPolicies	# only the resource type's own policies
@@ -49,7 +49,7 @@ class CIN(AnnounceableResource):
 		return Result(status=True)
 
 
-	# Forbidd updating
-	def update(self, dct:dict=None, originator:str=None) -> Result:
+	# Forbid updating
+	def update(self, dct:JSON=None, originator:str=None) -> Result:
 		return Result(status=False, rsc=RC.operationNotAllowed, dbg='updating CIN is forbidden')
 

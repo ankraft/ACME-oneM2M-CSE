@@ -1,0 +1,74 @@
+<html>
+<head>
+	<link rel="icon" href="img/favicon.png" type="image/png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0-beta.23/dist/shoelace/shoelace.css">
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0-beta.23/dist/shoelace/shoelace.esm.js"></script>
+
+    <script src="js/tree.js"></script>
+	<script src="js/contextmenu.js"></script>
+	<script src="js/rest.js"></script>
+	<script src="js/resourceTree.js"></script>
+	<script src="js/menu.js"></script>
+	<script src="js/attributes.js"></script>
+	<script src="js/restui.js"></script>
+    <script src="js/main.js"></script>
+    <link rel="stylesheet" href="css/treejs.css" id="treejs_styles">
+	<link rel="stylesheet" href="css/contextmenu.css">
+	<link rel="stylesheet" type="text/css" href="css/style.css">
+</head>
+<body onload="setup()">
+    <div style="margin-top: var(--sl-spacing-x-large); margin-bottom: var(--sl-spacing-x-large); height: 60px;display: flex; justify-content: center;align-items: center; ">
+        <img src="img/acme.png" style="position: absolute; left: var(--sl-spacing-x-large); max-height: 60px; height:auto"/> 
+        <div style="max-height: 100%;  margin-left: var(--sl-spacing-x-large);position: absolute; right: var(--sl-spacing-x-large); display: flex; justify-content: center;align-items: center; ">
+            <div align="right" style="margin-right: 20px; display: flex;justify-content: center;align-items: center; ">
+                <div style="margin-right: var(--sl-spacing-x-small); font-size: var(--sl-font-size-large);">Resource-ID: </div>
+                <sl-input id="baseri" placeholder="ID" pill></sl-input>
+            </div>
+            <div align="right" style="display: flex;justify-content: center;align-items: center;margin-right: var(--sl-spacing-x-large); ">
+                <div style="margin-right: var(--sl-spacing-x-small); font-size: var(--sl-font-size-large);">Originator:</div>
+                <sl-form class="form-originator" style="margin:0px; padding: 0px; display:inline;">
+                    <sl-input name="originator" id="originator" placeholder="Originator" pill></sl-input>
+                </sl-form>
+        </div>
+            <sl-button type="danger" style="margin-right: var(--sl-spacing-x-small);" pill id="connectButton" href="javascript:connectToCSE()">Connect</sl-button>
+            <sl-button type="primary" pill id="refreshButton" href="javascript:toggleRefresh()">Auto Refresh</sl-button>
+        </div>
+    </div>
+    <hr/>
+    <div style="margin-top: var(--sl-spacing-x-large); margin-left: var(--sl-spacing-x-large); margin-right: var(--sl-spacing-x-large); display: flex">
+        <div style="width: 50%; margin-right: var(--sl-spacing-x-small);">
+            <div style="margin-top: 0px; height: 60px; left:0px; right: 0px; background-color: rgba(0, 0, 0, 0.1); display: flex; justify-content: left; align-items: center;">
+                <h2  style="padding:var(--sl-spacing-x-small); margin: 0px;  " id="rootResourceName">&nbsp;xxx</h2>
+            </div>
+            kjklj 
+            dkljfdsklkdj
+            kdsljf
+            <p>dsfkjdsifj</p>
+            <p>dsfkjdsifj</p>
+            <p>dsfkjdsifj</p>
+            <p>dsfkjdsifj</p>
+        </div>
+        <div style="background-color:green; width: 50%; margin-left: var(--sl-spacing-x-small);">
+            dkljfdsk    
+            dj
+            dlksjf 
+        </div>
+    </div>
+
+    <script>
+        const form = document.querySelector('.form-originator');
+      
+        // Watch for the slSubmit event
+        form.addEventListener('sl-submit', event => {
+          const formData = event.detail.formData;
+          let output = '';
+          for (const entry of formData.entries()) {
+            output += `${entry[0]}: ${entry[1]}\n`;
+            }
+         alert(output);
+         document.getElementById("originator").value = "button success"
+
+          console.log(formData);
+        });
+      </script>
+</body>

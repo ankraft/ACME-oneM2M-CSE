@@ -7,7 +7,7 @@
 #	ResourceType: FlexContainerInstance
 #
 
-from Types import ResourceTypes as T, Result, ResponseCode as RC
+from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
 from Validator import constructPolicy, addPolicy
@@ -23,7 +23,7 @@ attributePolicies =  addPolicy(attributePolicies, fcinPolicies)
 
 class FCI(AnnounceableResource):
 
-	def __init__(self, dct:dict=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
 		super().__init__(T.FCI, dct, pi, tpe=fcntType, create=create, inheritACP=True, readOnly=True, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = fcinPolicies	# only the resource type's own policies
@@ -34,6 +34,6 @@ class FCI(AnnounceableResource):
 		return super()._canHaveChild(resource, [])
 
 	# Forbidd updating
-	def update(self, dct:dict=None, originator:str=None) -> Result:
+	def update(self, dct:JSON=None, originator:str=None) -> Result:
 		return Result(status=False, rsc=RC.operationNotAllowed, dbg='updating FCIN is forbidden')
 

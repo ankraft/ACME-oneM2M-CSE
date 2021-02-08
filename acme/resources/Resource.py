@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Any, Tuple, Union, Dict, List
 from Logging import Logging
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC
+from Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC, CSERequest, JSON, AttributePolicies
 from Configuration import Configuration
 import Utils, CSE
 import datetime, random, traceback
@@ -38,7 +38,7 @@ class Resource(object):
 	# ATTN: There is a similar definition in FCNT! Don't Forget to add attributes there as well
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator, _announcedTo, _modified ]
 
-	def __init__(self, ty:Union[T, int], dct:dict=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str=None, attributePolicies:dict=None, isVirtual:bool=False) -> None:
+	def __init__(self, ty:T|int, dct:JSON=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str=None, attributePolicies:AttributePolicies=None, isVirtual:bool=False) -> None:
 		self.tpe = tpe
 		if isinstance(ty, T) and ty not in [ T.FCNT, T.FCI ]: 	# For some types the tpe/root is empty and will be set later in this method
 			self.tpe = ty.tpe() if tpe is None else tpe
@@ -111,7 +111,7 @@ class Resource(object):
 
 
 	# Default encoding implementation. Overwrite in subclasses
-	def asDict(self, embedded: bool = True, update: bool = False, noACP: bool = False) -> dict:
+	def asDict(self, embedded:bool=True, update:bool=False, noACP: bool=False) -> JSON:
 		# remove (from a copy) all internal attributes before printing
 		dct = deepcopy(self.dict)
 		for k in self.internalAttributes:
@@ -180,7 +180,7 @@ class Resource(object):
 
 	# Update this resource with (new) fields.
 	# Call validate() afterward to react on changes.
-	def update(self, dct:dict=None, originator:str=None) -> Result:
+	def update(self, dct:JSON=None, originator:str=None) -> Result:
 		dictOrg = deepcopy(self.dict)	# Save for later for notification
 
 		updatedAttributes = None
@@ -263,13 +263,13 @@ class Resource(object):
 		raise NotImplementedError('canHaveChild()')
 
 
-	def _canHaveChild(self, resource:Resource, allowedChildResourceTypes:list) -> bool:
+	def _canHaveChild(self, resource:Resource, allowedChildResourceTypes:list[T]) -> bool:
 		""" It checks whether a fresource may have a certain child resources. This is called from child class. """
 		from .Unknown import Unknown # Unknown imports this class, therefore import only here
 		return resource['ty'] in allowedChildResourceTypes or isinstance(resource, Unknown)
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:dict=None) -> Result:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		""" Validate a resource. Usually called within activate() or update() methods. """
 		Logging.logDebug(f'Validating resource: {self.ri}')
 		if (not Utils.isValidID(self.ri) or
@@ -295,7 +295,7 @@ class Resource(object):
 		return Result(status=True)
 
 
-	def createAnnouncedDict(self) -> Tuple[dict, int, str]:
+	def createAnnouncedDict(self) -> Tuple[JSON, int, str]:
 		"""	Create an announceable resource. This method is implemented by the
 			resource implementations that support announceable versions.
 		"""
@@ -305,18 +305,45 @@ class Resource(object):
 
 	def createdInternally(self) -> str:
 		""" Return the resource.ri for which this ACP was created, or None. """
-		return self[self._createdInternally]
+		return str(self[self._createdInternally])
 
 
 	def isCreatedInternally(self) -> bool:
 		""" Return the resource.ri for which this resource was created, or None. """
 		return self[self._createdInternally] is not None
 
+
 	def setCreatedInternally(self, value:str) -> None:
 		"""	Save the RI for which this resource was created for. This has some
 			impacts on internal handling and checks.
 		"""
 		self[self._createdInternally] = value
+
+
+	#########################################################################
+	#
+	#	request handler stubs for virtual resources
+	#
+
+	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:
+		""" MUST be implemented by virtual class."""
+		raise NotImplementedError('handleRetrieveRequest()')
+
+	
+	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+		""" MUST be implemented by virtual class."""
+		raise NotImplementedError('handleCreateRequest()')
+
+
+	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+		""" MUST be implemented by virtual class."""
+		raise NotImplementedError('handleUpdateRequest()')
+
+
+	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+		""" MUST be implemented by virtual class."""
+		raise NotImplementedError('handleDeleteRequest()')
+
 
 
 	#########################################################################
@@ -439,9 +466,9 @@ class Resource(object):
 
 
 	def isModifiedSince(self, otherResource: Resource) -> bool:
-		return self.lt > otherResource.lt
+		return str(self.lt) > str(otherResource.lt)
 
 
 	def retrieveParentResource(self) -> Resource:
-		return CSE.dispatcher.retrieveResource(self.pi).resource
+		return CSE.dispatcher.retrieveResource(self.pi).resource	#type:ignore[no-any-return]
 

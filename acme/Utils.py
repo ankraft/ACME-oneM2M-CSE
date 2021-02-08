@@ -13,12 +13,13 @@ import datetime, json, random, string, sys, re, threading, traceback, time
 import cbor2
 from copy import deepcopy
 import isodate
-from typing import Any, List, Tuple, Union, Dict, Callable
+from typing import Any, List, Tuple, Union, Dict, Callable, cast
 
 from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC
-from Types import Result,  RequestHeaders, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType, ResultContentType, ResponseType, FilterOperation
-from Types import CSERequest, ContentSerializationType
+from Types import Result,  RequestHeaders, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType
+from Types import ResultContentType, ResponseType, FilterOperation
+from Types import CSERequest, ContentSerializationType, JSON, Conditions
 from Configuration import Configuration
 from Logging import Logging
 from resources.Resource import Resource
@@ -99,9 +100,9 @@ def isStructured(uri:str) -> bool:
 
 
 def isVirtualResource(resource: Resource) -> bool:
-	result = resource[resource._isVirtual]
+	result:bool = resource[resource._isVirtual]
 	return result if result is not None else False
-	# ireturn (ty := r.ty) and ty in C.virtualResources
+	# return (ty := r.ty) and ty in C.virtualResources
 
 
 def isValidID(id: str) -> bool:
@@ -128,9 +129,9 @@ def fromISO8601Date(timestamp:str) -> float:
 		return 0.0
 
 
-def structuredPath(resource: Resource) -> str:
+def structuredPath(resource:Resource) -> str:
 	""" Determine the structured path of a resource. """
-	rn = resource.rn
+	rn:str = resource.rn
 	if resource.ty == T.CSEBase: # if CSE
 		return rn
 
@@ -140,23 +141,23 @@ def structuredPath(resource: Resource) -> str:
 		return rn
 	rpi = CSE.storage.identifier(pi) 
 	if len(rpi) == 1:
-		return rpi[0]['srn'] + '/' + rn
+		return cast(str, rpi[0]['srn'] + '/' + rn)
 	# Logging.logErr(traceback.format_stack())
 	Logging.logErr(f'Parent {pi} not found in DB')
 	return rn # fallback
 
 
-def structuredPathFromRI(ri: str) -> str:
+def structuredPathFromRI(ri:str) -> str:
 	""" Get the structured path of a resource by its ri. """
 	if len((identifiers := CSE.storage.identifier(ri))) == 1:
-		return identifiers[0]['srn']
+		return cast(str, identifiers[0]['srn'])
 	return None
 
 
 def riFromStructuredPath(srn: str) -> str:
 	""" Get the ri from a resource by its structured path. """
 	if len((paths := CSE.storage.structuredPath(srn))) == 1:
-		return paths[0]['ri']
+		return cast(str, paths[0]['ri'])
 	return None
 
 
@@ -175,14 +176,12 @@ def riFromCSI(csi: str) -> str:
 	""" Get the ri from an CSEBase resource by its csi. """
 	if (res := resourceFromCSI(csi)) is None:
 		return None
-	return res.ri
+	return cast(str, res.ri)
 
 
 def resourceFromCSI(csi: str) -> Resource:
 	""" Get the CSEBase resource by its csi. """
-	if (res := CSE.storage.retrieveResource(csi=csi)).resource is None:
-		return None
-	return res.resource
+	return cast(Resource, CSE.storage.retrieveResource(csi=csi).resource)
 
 
 def retrieveIDFromPath(id: str, csern: str, csecsi: str) -> Tuple[str, str, str]:
@@ -277,8 +276,8 @@ mgmtObjAnncTPEs = 	[	T.FWRAnnc.tpe(), T.SWRAnnc.tpe(), T.MEMAnnc.tpe(), T.ANIAnn
 
 
 excludeFromRoot = [ 'pi' ]
-def pureResource(dct:dict) -> Tuple[dict, str]:
-	""" Return the "pure" structure without the "m2m:xxx" or "<domain>:id" resource specifier."""
+def pureResource(dct:JSON) -> Tuple[JSON, str]:
+	""" Return the "pure" structure without the "m2m:xxx" or "<domain>:id" resource specifier, and the oneM2M type identifier. """
 	rootKeys = list(dct.keys())
 	# Try to determine the root identifier 
 	if len(rootKeys) == 1 and (rk := rootKeys[0]) not in excludeFromRoot and re.match('[\w]+:[\w]', rk):
@@ -328,7 +327,7 @@ def removeCommentsFromJSON(data:str) -> str:
 	return commentRegex.sub(_replacer, data)
 
 decimalMatch = re.compile(r'{(\d+)}')
-def findXPath(dct:dict, element:str, default:Any=None) -> Any:
+def findXPath(dct:JSON, element:str, default:Any=None) -> Any:
 	""" Find a structured element in dictionary.
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
 	"""
@@ -337,7 +336,7 @@ def findXPath(dct:dict, element:str, default:Any=None) -> Any:
 		return default
 
 	paths = element.split("/")
-	data = dct
+	data:Any = dct
 	for i in range(0,len(paths)):
 		if data is None:
 			return default
@@ -359,7 +358,7 @@ def findXPath(dct:dict, element:str, default:Any=None) -> Any:
 
 
 # set a structured element in dictionary. Create if necessary, and observe the overwrite option
-def setXPath(dct:Dict[str, Any], element:str, value:Any, overwrite:bool=True) -> bool:
+def setXPath(dct:JSON, element:str, value:Any, overwrite:bool=True) -> bool:
 	paths = element.split("/")
 	ln = len(paths)
 	data = dct
@@ -375,7 +374,7 @@ def setXPath(dct:Dict[str, Any], element:str, value:Any, overwrite:bool=True) ->
 	return True
 
 
-def deleteNoneValuesFromDict(dct:dict) -> dict:
+def deleteNoneValuesFromDict(dct:JSON) -> JSON:
 	if not isinstance(dct, dict):
 		return dct
 	return { key:value for key,value in ((key, deleteNoneValuesFromDict(value)) for key,value in dct.items()) if value is not None }
@@ -432,7 +431,7 @@ def isAllowedOriginator(originator: str, allowedOriginators: List[str]) -> bool:
 	return False
 
 
-def resourceDiff(old:Union[Resource, dict], new:Union[Resource, dict], modifiers:dict=None) -> dict:
+def resourceDiff(old:Resource|JSON, new:Resource|JSON, modifiers:JSON=None) -> JSON:
 	"""	Compare an old and a new resource. Keywords and values. Ignore internal __XYZ__ keys.
 		Return a dictionary.
 		If the modifier dict is given then it contains the changes that let from old to new.
@@ -487,7 +486,7 @@ def fanoutPointResource(id: str) -> Resource:
 		nid = head + '/fopt'
 	if nid is not None:
 		if (result := CSE.dispatcher.retrieveResource(nid)).resource is not None:
-			return result.resource
+			return cast(Resource, result.resource)
 	return None
 
 
@@ -548,7 +547,7 @@ def dissectHttpRequest(request:Request, operation:Operation, _id:Tuple[str, str,
 			return Result(rsc=RC.badRequest, request=cseRequest, dbg=msg, status=False)
 	except Exception as e:
 		return Result(rsc=RC.invalidArguments, request=cseRequest, dbg=f'invalid arguments ({str(e)})', status=False)
-	cseRequest.originalArgs	= deepcopy(request.args)	#type: ignore
+	cseRequest.originalArgs	= deepcopy(request.args)
 
 	if cseRequest.data is not None and len(cseRequest.data) > 0:
 		try:
@@ -578,7 +577,7 @@ def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE)
 	# copy arguments for greedy attributes checking
 	args = request.args.copy()	 	# type: ignore
 
-	def _extractMultipleArgs(argName:str, target:dict, validate:bool=True) -> Tuple[bool, str]:
+	def _extractMultipleArgs(argName:str, target:JSON, validate:bool=True) -> Tuple[bool, str]:
 		"""	Get multi-arguments. Always create at least an empty list. Remove
 			the found arguments from the original list.
 		"""
@@ -727,7 +726,7 @@ def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE)
 
 
 	# handling conditions
-	handling = { }
+	handling:Conditions = { }
 	for c in ['lim', 'lvl', 'ofst']:	# integer parameters
 		if c in args:
 			v = args[c]
@@ -745,7 +744,7 @@ def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE)
 	result.handling = handling
 
 	# conditions
-	conditions:dict = {}
+	conditions:Conditions = {}
 
 	# Extract and store other arguments
 	for c in ['crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr']:
@@ -821,16 +820,16 @@ def getRequestHeaders(request: Request) -> Result:
 	return Result(data=rh, rsc=RC.OK)
 
 
-def serializeData(data:dict, ct:ContentSerializationType) -> Union[str, bytes]:
+def serializeData(data:JSON, ct:ContentSerializationType) -> str|bytes:
 	"""	Serialize a dictionary, depending on the serialization type.
 	"""
 	encoder = json if ct == ContentSerializationType.JSON else cbor2 if ct == ContentSerializationType.CBOR else None
 	if encoder is None:
 		return None
-	return encoder.dumps(data)
+	return encoder.dumps(data)	# type:ignore[no-any-return]
 
 
-def deserializeData(data:bytes, ct:ContentSerializationType) -> dict:
+def deserializeData(data:bytes, ct:ContentSerializationType) -> JSON:
 	"""	Deserialize data into a dictionary, depending on the serialization type.
 		If the len of the data is 0 then an empty dictionary is returned. 
 	"""
@@ -838,9 +837,9 @@ def deserializeData(data:bytes, ct:ContentSerializationType) -> dict:
 		if len(data) == 0:
 			return {}
 		if ct == ContentSerializationType.JSON:
-			return json.loads(data.decode("utf-8"))
+			return cast(JSON, json.loads(data.decode("utf-8")))
 		elif ct == ContentSerializationType.CBOR:
-			return cbor2.loads(data)
+			return cast(JSON, cbor2.loads(data))
 	except Exception as e:
 		Logging.logErr(f'Deserialization error: {str(e)}')
 	return None

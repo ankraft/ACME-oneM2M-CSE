@@ -20,6 +20,7 @@ from Types import ResponseType
 from Types import Result
 from Types import CSERequest
 from Types import ContentSerializationType
+from Types import Parameters
 from resources.REQ import REQ
 from resources.Resource import Resource
 from helpers.BackgroundWorker import BackgroundWorkerPool
@@ -392,7 +393,7 @@ class RequestManager(object):
 
 
 
-	def sendRetrieveRequest(self, url:str, originator:str, parameters:dict=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
+	def sendRetrieveRequest(self, url:str, originator:str, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
 		"""	Send a RETRIEVE request via the appropriate channel or transport protocol.
 		"""
 		if Utils.isHttpUrl(url):
@@ -402,7 +403,7 @@ class RequestManager(object):
 		return Result(status=True, rsc=RC.badRequest, dbg=dbg)
 
 
-	def sendCreateRequest(self, url:str, originator:str, ty:T=None, data:Any=None, parameters:dict=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
+	def sendCreateRequest(self, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
 		"""	Send a CREATE request via the appropriate channel or transport protocol.
 		"""
 		if Utils.isHttpUrl(url):
@@ -412,7 +413,7 @@ class RequestManager(object):
 		return Result(status=True, rsc=RC.badRequest, dbg=dbg)
 
 
-	def sendUpdateRequest(self, url:str, originator:str, data:Any, parameters:dict=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
+	def sendUpdateRequest(self, url:str, originator:str, data:Any, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
 		"""	Send a UPDATE request via the appropriate channel or transport protocol.
 		"""
 		if Utils.isHttpUrl(url):
@@ -422,7 +423,7 @@ class RequestManager(object):
 		return Result(status=True, rsc=RC.badRequest, dbg=dbg)
 
 
-	def sendDeleteRequest(self, url:str, originator:str, parameters:dict=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
+	def sendDeleteRequest(self, url:str, originator:str, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
 		"""	Send a DELETE request via the appropriate channel or transport protocol.
 		"""
 		if Utils.isHttpUrl(url):

@@ -9,7 +9,7 @@
 
 from flask import Request
 from Constants import Constants as C
-from Types import ResourceTypes as T, ResponseCode as RC
+from Types import ResourceTypes as T, ResponseCode as RC, JSON
 import CSE, Utils
 from .Resource import *
 from Logging import Logging
@@ -17,7 +17,7 @@ from Logging import Logging
 
 class PCH_PCU(Resource):
 
-	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.PCH_PCU, dct, pi, create=create, inheritACP=True, readOnly=True, rn='pcu', isVirtual=True)
 
 

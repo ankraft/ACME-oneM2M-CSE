@@ -10,7 +10,7 @@
 from Logging import Logging
 from typing import Union, List
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseCode as RC, CSERequest
+from Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseCode as RC, CSERequest, JSON
 import CSE, Utils
 from resources import FCNT, MgmtObj
 from resources.Resource import Resource
@@ -62,7 +62,7 @@ class GroupManager(object):
 		# check for duplicates and remove them
 		midsList = []		# contains the real mi
 
-		remoteResource:dict = None
+		remoteResource:JSON = None
 		rsc 					= 0
 
 		for mid in group['mid']:

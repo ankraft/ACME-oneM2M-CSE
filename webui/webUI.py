@@ -7,6 +7,7 @@
 #	WebUI for the ACME CSE
 #
 
+from __future__ import annotations
 import flask, sys, argparse, logging, ssl
 from rich.console import Console
 import requests
@@ -14,6 +15,10 @@ from flask import Flask, Request, make_response, request
 from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
 from typing import Callable, List, Union, Any, Tuple
+
+
+FlaskHandler = 	Callable[[str], Response]
+""" Type definition for flask handler. """
 
 
 class WebUI(object):
@@ -45,28 +50,28 @@ class WebUI(object):
 		logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 
-	def addEndpoint(self, endpoint:str=None, endpoint_name:str=None, handler:Callable=None, methods:List[str]=None, strictSlashes:bool=True) -> None:
+	def addEndpoint(self, endpoint:str=None, endpoint_name:str=None, handler:FlaskHandler=None, methods:list[str]=None, strictSlashes:bool=True) -> None:
 		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods=methods, strict_slashes=strictSlashes)
 
 
-	def redirectRoot(self) -> Response:
+	def redirectRoot(self, path:str=None) -> Response:
 		"""	Redirect request to / to webui.
 		"""
 		return flask.redirect(self.webuiRoot, code=302)
 
 
-	def getVersion(self) -> str:
-		return self.version
+	def getVersion(self, path:str=None) -> Response:
+		return Response(self.version)
 
 
-	def handleWebUIGET(self, path:str=None) -> Union[Response, Any, Tuple[str, int]]:
+	def handleWebUIGET(self, path:str=None) -> Response:
 		""" Handle a GET request for the web GUI. 
 		"""
 
 		# security check whether the path will under the web root
 
 		if not f'{self.webuiRoot}/{request.path}'.startswith(self.webuiRoot):
-			return None, 404
+			return Response(status=404)
 
 		# Redirect to index file. Also include base / cse RI
 		if path == None or len(path) == 0 or (path.endswith('index.html') and len(request.args) != 2):

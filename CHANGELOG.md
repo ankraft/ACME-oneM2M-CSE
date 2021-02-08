@@ -34,8 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [TESTS] The behavior whether a failed test skips the remaining tests in a test suite can now be configured.
 - [TESTS] Improved documentation. Doc strings provide a bit more information about a currently running test.
 - [TESTS] Tests now pass mypy checks.
-- [MISC] Allow ```# single-line comments``` in JSON
+- [MISC] Added: Allow ```# single-line comments``` in JSON as well.
 - [MISC] Default configuration for file logging is now *False* (to better support Raspberry Pi and similar systems with flash card file systems).
+- [MISC] Now passes ```mypy --strict``` checks.
 - [DATABASE] Changed the postfix of data files to the CSE-ID.
 - [HTTP] Server runs now in background.
 

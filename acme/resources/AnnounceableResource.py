@@ -7,16 +7,19 @@
 #	Base class for all announceable resources
 #
 
-
+from __future__ import annotations
+from copy import deepcopy
 from .Resource import *
-import Utils
-from Types import ResourceTypes as T, Result
-from Types import Announced as AN 		# type: ignore
+from typing import Union
+import Utils, CSE
+from Types import ResourceTypes as T, Result, AttributePolicies, JSON, AttributePolicies
+from Types import Announced as AN 
 from Validator import addPolicy
+from Logging import Logging
 
 class AnnounceableResource(Resource):
 
-	def __init__(self, ty:Union[T, int], dct:dict=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str=None, attributePolicies:dict=None, isVirtual:bool=False) -> None:
+	def __init__(self, ty:T, dct:JSON=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str=None, attributePolicies:AttributePolicies=None, isVirtual:bool=False) -> None:
 		super().__init__(ty, dct, pi, tpe=tpe, create=create, inheritACP=inheritACP, readOnly=readOnly, rn=rn, attributePolicies=attributePolicies, isVirtual=isVirtual)
 		self._origAA = None	# hold original announceableAttributes when doing an update
 
@@ -28,7 +31,7 @@ class AnnounceableResource(Resource):
 
 		# Check announcements
 		if self.at is not None:
-			CSE.announce.announceResource(self)	# type: ignore
+			CSE.announce.announceResource(self)
 		return res
 
 
@@ -37,11 +40,11 @@ class AnnounceableResource(Resource):
 
 		# perform deannouncements
 		if self.at is not None:
-			CSE.announce.deAnnounceResource(self)	# type: ignore
+			CSE.announce.deAnnounceResource(self)
 		super().deactivate(originator)
 
 
-	def update(self, dct:dict=None, originator:str=None) -> Result:
+	def update(self, dct:JSON=None, originator:str=None) -> Result:
 		Logging.logDebug(f'Updating AnnounceableResource: {self.ri}')
 		self._origAA = self.aa
 		self._origAT = self.at
@@ -50,15 +53,15 @@ class AnnounceableResource(Resource):
 
 		# Check announcements
 		if self.at is not None:
-			CSE.announce.announceUpdatedResource(self)	# type: ignore
+			CSE.announce.announceUpdatedResource(self)
 		else:
 			if self._origAT is not None:	# at is removed in update, so remove self
-				CSE.announce.deAnnounceResource(self)	# type: ignore
+				CSE.announce.deAnnounceResource(self)
 		return res
 
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:dict=None) -> Result:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		Logging.logDebug(f'Validating AnnounceableResource: {self.ri}')
 		if (res := super().validate(originator, create, dct)).status == False:
 			return res
@@ -76,7 +79,7 @@ class AnnounceableResource(Resource):
 		return Result(status=True)
 
 
-	def createAnnouncedResourceDict(self, remoteCSR:Resource, isCreate:bool=False, csi:str=None) ->  dict:
+	def createAnnouncedResourceDict(self, remoteCSR:Resource, isCreate:bool=False, csi:str=None) -> JSON:
 		"""	Create the dict stub for the announced resource.
 		"""
 		# special case for FCNT, FCI
@@ -89,14 +92,14 @@ class AnnounceableResource(Resource):
 		return self.validateAnnouncedDict( self._createAnnouncedDict(self.attributePolicies, remoteCSR, isCreate=isCreate, remoteCsi=csi) )
 
 
-	def validateAnnouncedDict(self, dct:dict) -> dict:
+	def validateAnnouncedDict(self, dct:JSON) -> JSON:
 		""" Possibility to add or modify the announced Dict. This can be implemented
 			in the child classes.
 		"""
 		return dct
 
 
-	def _createAnnouncedDict(self, policies:Dict[str, List[Any]], remoteCSR:Resource, isCreate:bool=False, remoteCsi:str=None) -> dict:
+	def _createAnnouncedDict(self, policies:AttributePolicies, remoteCSR:Resource, isCreate:bool=False, remoteCsi:str=None) -> JSON:
 		"""	Actually create the resource dict.
 		"""
 		# Stub
@@ -109,7 +112,7 @@ class AnnounceableResource(Resource):
 		announcedAttributes = self._getAnnouncedAttributes(policies)
 
 		if isCreate:
-			dct:dict = { tpe : {  # with the announced variant of the tpe
+			dct:JSON = { tpe : {  # with the announced variant of the tpe
 							'et'	: self.et,
 							'lnk'	: f'{CSE.cseCsi}/{self.ri}',
 							# set by parent: ri, pi, ct, lt, et
@@ -212,7 +215,7 @@ class AnnounceableResource(Resource):
 	# 	self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
 
 	# 	return mandatory + optional
-	def _getAnnouncedAttributes(self, policies:Dict[str, List[Any]]) -> List[str]:
+	def _getAnnouncedAttributes(self, policies:AttributePolicies) -> list[str]:
 		"""	Return a list of mandatory and optional announced attributes. 
 			The function only returns those attributes that are also present in the resource!
 		"""

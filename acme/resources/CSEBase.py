@@ -8,10 +8,11 @@
 #
 
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result, JSON
 from Configuration import Configuration
 from Validator import constructPolicy
 from .Resource import *
+import CSE
 
 
 # Attribute policies for this resource are constructed during startup of the CSE
@@ -22,7 +23,7 @@ attributePolicies = constructPolicy([
 
 class CSEBase(Resource):
 
-	def __init__(self, dct:dict=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, create:bool=False) -> None:
 		super().__init__(T.CSEBase, dct, '', create=create, attributePolicies=attributePolicies)
 
 		if self.dict is not None:
@@ -53,7 +54,7 @@ class CSEBase(Resource):
 									 ])
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:dict=None) -> Result:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		if not (res := super().validate(originator, create, dct)).status:
 			return res
 		

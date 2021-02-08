@@ -9,15 +9,13 @@
 
 from typing import Dict, Any
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, RequestArguments, RequestHeaders, Operation, RequestStatus, CSERequest
+from Types import ResourceTypes as T, ResponseCode as RC, Result, RequestArguments, RequestHeaders, Operation, RequestStatus, CSERequest, JSON
 from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
 from Configuration import Configuration
 import resources.Factory as Factory
-
-
 
 
 # Attribute policies for this resource are constructed during startup of the CSE
@@ -30,10 +28,9 @@ reqPolicies = constructPolicy([
 attributePolicies = addPolicy(attributePolicies, reqPolicies)
 
 
-
 class REQ(Resource):
 
-	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.REQ, dct, pi, create=create, attributePolicies=attributePolicies)
 
 

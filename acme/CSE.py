@@ -39,25 +39,25 @@ from helpers.BackgroundWorker import BackgroundWorkerPool
 
 # singleton main components. These variables will hold all the various manager
 # components that are used throughout the CSE implementation.
-announce:AnnouncementManager		= None
-dispatcher:Dispatcher				= None
-request:RequestManager				= None
-event:EventManager					= None
-group:GroupManager					= None
-httpServer:HttpServer				= None
-notification:NotificationManager	= None
-registration:RegistrationManager 	= None
-remote:RemoteCSEManager				= None
-security:SecurityManager 			= None
-statistics:Statistics				= None
-storage:Storage						= None
-validator:Validator 				= None
+announce:AnnouncementManager					= None
+dispatcher:Dispatcher							= None
+request:RequestManager							= None
+event:EventManager								= None
+group:GroupManager								= None
+httpServer:HttpServer							= None
+notification:NotificationManager				= None
+registration:RegistrationManager 				= None
+remote:RemoteCSEManager							= None
+security:SecurityManager 						= None
+statistics:Statistics							= None
+storage:Storage									= None
+validator:Validator 							= None
 
-rootDirectory:str					= None
+rootDirectory:str								= None
 
-aeCSENode:CSENode				 	= None 
-aeStatistics:AEStatistics 		 	= None 
-appsStarted:bool 					= False
+aeCSENode:CSENode				 				= None 
+aeStatistics:AEStatistics 		 				= None 
+appsStarted:bool 								= False
 
 supportedReleaseVersions:list[str]				= None
 cseType:CSEType									= None

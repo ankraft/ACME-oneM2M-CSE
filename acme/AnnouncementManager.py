@@ -17,7 +17,7 @@ from resources.Resource import Resource
 from resources.AnnouncedResource import AnnouncedResource
 from resources.AnnounceableResource import AnnounceableResource
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ResponseCode as RC
+from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 from helpers.BackgroundWorker import BackgroundWorkerPool
 
 # TODO for anounceable resource:
@@ -377,7 +377,7 @@ class AnnouncementManager(object):
 		return csi, poas
 
 
-	def _addAnnouncementToResource(self, resource:Resource, dct:dict, csi:str) -> None:
+	def _addAnnouncementToResource(self, resource:Resource, dct:JSON, csi:str) -> None:
 		"""	Add anouncement information to the resource. These are a list of tuples of 
 			the csi to which the resource is registered as well as the ri of the 
 			resource on the remote CSE. Also, add the reference in the at attribute.

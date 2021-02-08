@@ -8,7 +8,10 @@
 #	It should run on *IX-alikes and Windows OS.
 #
 
+from __future__ import annotations
 import sys
+from typing import Callable, Dict
+
 try:
 	import tty, termios
 except ImportError:
@@ -44,7 +47,11 @@ else:
 		return ch
 
 
-def loop(commands:dict, quit:str=None, catchKeyboardInterrupt:bool=False) -> None:
+Commands = Dict[str, Callable[[str], None]]
+""" Mapping between characters and callback functions. """
+
+
+def loop(commands:Commands, quit:str=None, catchKeyboardInterrupt:bool=False) -> None:
 	"""	Endless loop that reads single chars from the keyboard and then executes
 		a handler function for that key (from the dictionary 'commands').
 		If a single 'key' value is set in 'quit' and this key is pressed, then

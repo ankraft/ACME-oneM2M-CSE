@@ -8,7 +8,7 @@
 #
 
 from .MgmtObj import *
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, JSON
 from Validator import constructPolicy, addPolicy
 import Utils
 
@@ -37,7 +37,7 @@ defaultLogStatus = lgstUnknown
 
 class EVL(MgmtObj):
 
-	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		self.resourceAttributePolicies = evlPolicies	# only the resource type's own policies
 		super().__init__(dct, pi, mgd=T.EVL, create=create, attributePolicies=attributePolicies)
 

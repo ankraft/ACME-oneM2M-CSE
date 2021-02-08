@@ -10,7 +10,7 @@
 from __future__ import annotations
 import json, cbor2
 from dataclasses import dataclass, field
-from typing import Any, List, Union
+from typing import Any, List, Dict, Tuple, Union, Callable
 from enum import IntEnum, Enum, auto
 from flask import Request
 
@@ -602,7 +602,7 @@ class ContentSerializationType(IntEnum):
 @dataclass
 class Result:
 	resource 			: Resource		= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
-	dict 				: dict 			= None		# Contains the result dictionary
+	dict 				: JSON 			= None		# Contains the result dictionary
 	data 				: Any 			= None 		# Anything
 	lst 				: List[Any]   	= None		# List of Anything
 	rsc 				: ResponseCode	= ResponseCode.OK	# OK
@@ -617,7 +617,7 @@ class Result:
 		"""
 		return Result(rsc=self.rsc, dbg=self.dbg)
 
-	def toData(self, ct:ContentSerializationType=None) -> Union[str, bytes]:
+	def toData(self, ct:ContentSerializationType=None) -> str|bytes:
 		from resources.Resource import Resource
 		from Utils import serializeData
 		from CSE import defaultSerialization
@@ -656,9 +656,9 @@ class RequestArguments:
 	rt 							: ResponseType					= ResponseType.blockingRequest 					# response type
 	rp 							: str 							= None 											# result persistence
 	rpts 						: str 							= None 											# ... as a timestamp
-	handling 					: dict 							= field(default_factory=dict)
-	conditions 					: dict 							= field(default_factory=dict)
-	attributes 					: dict 							= field(default_factory=dict)
+	handling 					: Conditions 					= field(default_factory=dict)
+	conditions 					: Conditions 					= field(default_factory=dict)
+	attributes 					: Parameters 					= field(default_factory=dict)
 	operation 					: Operation 					= None
 	#request 					: Request 						= None
 
@@ -668,13 +668,13 @@ class RequestHeaders:
 	originator 					: str 			= None 	# X-M2M-Origin
 	requestIdentifier			: str 			= None	# X-M2M-RI
 	contentType 				: str 			= None	# Content-Type
-	accept						: list			= None	# Accept
+	accept						: list[str]		= None	# Accept
 	resourceType 				: ResourceTypes	= None
 	requestExpirationTimestamp	: str 			= None 	# X-M2M-RET
 	responseExpirationTimestamp	: str 			= None 	# X-M2M-RST
 	operationExecutionTime		: str 			= None 	# X-M2M-OET
 	releaseVersionIndicator		: str 			= None 	# X-M2M-RVI
-	responseTypeNUs				: List[str]		= None	# X-M2M-RTU
+	responseTypeNUs				: list[str]		= None	# X-M2M-RTU
 
 
 @dataclass
@@ -684,9 +684,25 @@ class CSERequest:
 	ct 							: ContentSerializationType	= None
 	originalArgs 				: Any 						= None	# Actually a MultiDict
 	data 						: bytes 					= None 	# The request original data
-	dict 						: dict 						= None	# The request data as a dictionary
+	dict 						: JSON 						= None	# The request data as a dictionary
 	id 							: str 						= None 	# target ID
 	srn 						: str 						= None 	# target structured resource name
 	csi 						: str 						= None 	# target csi
 
+
+##############################################################################
+#
+#	Generic Types
+#
+
+AttributePolicies=Dict[str, Tuple[BasicType, Cardinality, RequestOptionality, RequestOptionality, RequestOptionality, Announced]]
+"""	Represent a dictionary of attribute policies used in validation. """
+
+Parameters=Dict[str,str]
+Conditions=Dict[str, Any]
+JSON=Dict[str, Any]
+JSONLIST=List[JSON]
+
+RequestHandler = Dict[Operation, Callable[[CSERequest], Result]]
+""" Handle an outgoing request operation. """
 

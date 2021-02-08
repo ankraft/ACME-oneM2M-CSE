@@ -8,9 +8,10 @@
 #
 
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, JSON
 from Validator import constructPolicy, addPolicy
-import Utils
+import Utils, CSE
+from Logging import Logging
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
 import resources.Factory as Factory
@@ -30,7 +31,7 @@ attributePolicies = addPolicy(attributePolicies, pchPolicies)
 
 class PCH(Resource):
 
-	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.PCH, dct, pi, create=create, attributePolicies=attributePolicies)
 		self.resourceAttributePolicies = pchPolicies	# only the resource type's own policies
 

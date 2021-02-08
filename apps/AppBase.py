@@ -14,7 +14,7 @@ from Configuration import Configuration
 from resources.Resource import Resource
 from Logging import Logging
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ResponseCode as RC
+from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 import CSE
 from helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
 import resources.Factory as Factory
@@ -50,7 +50,7 @@ class AppBase(object):
 		return CSE.request.sendCreateRequest(self._id(ri, srn), self.originator, ty, data)
 
 
-	def updateResource(self, ri:str=None, srn:str=None, data:dict=None) -> Result:
+	def updateResource(self, ri:str=None, srn:str=None, data:JSON=None) -> Result:
 		return CSE.request.sendUpdateRequest(self._id(ri, srn), self.originator, data)
 
 
@@ -66,7 +66,7 @@ class AppBase(object):
 		return None
 
 
-	def retrieveCreate(self, srn:str=None, data:dict=None, ty:T=T.MGMTOBJ) -> Resource:
+	def retrieveCreate(self, srn:str=None, data:JSON=None, ty:T=T.MGMTOBJ) -> Resource:
 		# First check whether node exists and create it if necessary
 		if (result := self.retrieveResource(srn=srn)).rsc != RC.OK:
 
@@ -74,18 +74,18 @@ class AppBase(object):
 			srn = os.path.split(srn)[0] if srn.count('/') >= 0 else ''
 			result = self.createResource(srn=srn, ty=ty, data=data)
 			if result.rsc == RC.created:
-				return Factory.resourceFromDict(result.dict).resource
+				return Factory.resourceFromDict(result.dict).resource	# type:ignore[no-any-return]
 			else:
 				#Logging.logErr(n)
 				pass
 		else: # just retrieve
-			return Factory.resourceFromDict(result.dict).resource
+			return Factory.resourceFromDict(result.dict).resource		# type:ignore[no-any-return]
 		return None
 
 
 	#########################################################################
 
-	def startWorker(self, updateInterval:float, worker:Callable, name:str=None) -> None:
+	def startWorker(self, updateInterval:float, worker:Callable, name:str=None) -> None:	# type:ignore[type-arg]
 		self.stopWorker()
 		self.worker = BackgroundWorkerPool.newWorker(updateInterval, worker, name).start()
 

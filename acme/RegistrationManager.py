@@ -12,7 +12,7 @@ from Logging import Logging
 from typing import List
 from Constants import Constants as C
 from Configuration import Configuration
-from Types import ResourceTypes as T, Result, Permission, ResponseCode as RC
+from Types import ResourceTypes as T, Result, Permission, ResponseCode as RC, JSON, CSEType
 from resources.Resource import Resource
 import CSE, Utils
 from resources import ACP
@@ -50,7 +50,7 @@ class RegistrationManager(object):
 			if not self.handleREQRegistration(resource, originator):
 				return Result(rsc=RC.badRequest, dbg='cannot register REQ')
 		if resource.ty == T.CSR:
-			if CSE.cseType == 'ASN':
+			if CSE.cseType == CSEType.ASN:
 				return Result(rsc=RC.operationNotAllowed, dbg='cannot register to ASN CSE')
 			if not self.handleCSRRegistration(resource, originator):
 				return Result(rsc=RC.badRequest, dbg='cannot register CSR')
@@ -88,7 +88,7 @@ class RegistrationManager(object):
 		return Result() # implicit OK
 
 
-	def checkResourceUpdate(self, resource:Resource, updateDict:dict) -> Result:
+	def checkResourceUpdate(self, resource:Resource, updateDict:JSON) -> Result:
 		if resource.ty == T.CSR:
 			if not self.handleCSRUpdate(resource, updateDict):
 				return Result(status=False, dbg='cannot update CSR')
@@ -258,7 +258,7 @@ class RegistrationManager(object):
 	#	Handle CSR Update
 	#
 
-	def handleCSRUpdate(self, csr:Resource, updateDict:dict) -> bool:
+	def handleCSRUpdate(self, csr:Resource, updateDict:JSON) -> bool:
 		Logging.logDebug(f'Updating CSR. csi: {csr.csi}')
 		# send event
 		CSE.event.remoteCSEUpdate(csr, updateDict)	# type: ignore

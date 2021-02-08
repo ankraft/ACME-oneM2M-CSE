@@ -8,9 +8,10 @@
 #
 
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ConsistencyStrategy
+from Types import ResourceTypes as T, Result, ConsistencyStrategy, JSON
 from Validator import constructPolicy, addPolicy
-import Utils
+from Logging import Logging
+import Utils, CSE
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
 import resources.Factory as Factory
@@ -28,7 +29,7 @@ attributePolicies = addPolicy(attributePolicies, grpPolicies)
 
 class GRP(AnnounceableResource):
 
-	def __init__(self, dct:dict=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
 		super().__init__(T.GRP, dct, pi, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = grpPolicies	# only the resource type's own policies
@@ -65,7 +66,7 @@ class GRP(AnnounceableResource):
 		return Result(status=True)
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:dict=None) -> Result:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		if not (res := super().validate(originator, create, dct)).status:
 			return res
 		return CSE.group.validateGroup(self, originator)

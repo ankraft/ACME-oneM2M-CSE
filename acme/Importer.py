@@ -8,12 +8,14 @@
 #	the CSE is actually started.
 #
 
+from __future__ import annotations
 import json, os, fnmatch, re, csv
 from Utils import findXPath, removeCommentsFromJSON
+from typing import cast
 from Configuration import Configuration
 from Constants import Constants as C
 from Types import ResourceTypes as T
-from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN 		# type: ignore
+from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, JSON, JSONLIST
 import CSE
 from Logging import Logging
 from resources import Resource
@@ -81,7 +83,7 @@ class Importer(object):
 			fn = path + '/' + rn
 			if os.path.exists(fn):
 				Logging.log(f'Importing resource: {fn}')
-				resource = Factory.resourceFromDict(self.readJSONFromFile(fn), create=True, isImported=True).resource
+				resource = Factory.resourceFromDict(cast(JSON, self.readJSONFromFile(fn)), create=True, isImported=True).resource
 
 			# Check resource creation
 			if not CSE.registration.checkResourceCreation(resource, CSE.cseOriginator):
@@ -115,7 +117,7 @@ class Importer(object):
 
 				# update an existing resource
 				if 'update' in fn:
-					dct = self.readJSONFromFile(filename)
+					dct = cast(JSON, self.readJSONFromFile(filename))
 					keys = list(dct.keys())
 					if len(keys) == 1 and (k := keys[0]) and 'ri' in dct[k] and (ri := dct[k]['ri']) is not None:
 						if (resource := CSE.dispatcher.retrieveResource(ri).resource) is not None:
@@ -126,7 +128,7 @@ class Importer(object):
 				# create a new cresource
 				else:
 					# Try to get parent resource
-					if (resource := Factory.resourceFromDict(self.readJSONFromFile(filename), create=True, isImported=True).resource) is not None:
+					if (resource := Factory.resourceFromDict(cast(JSON, self.readJSONFromFile(filename)), create=True, isImported=True).resource) is not None:
 						parentResource = None
 						if (pi := resource.pi) is not None:
 							parentResource = CSE.dispatcher.retrieveResource(pi).resource
@@ -212,9 +214,9 @@ class Importer(object):
 			fn = os.path.join(path, fn)
 			Logging.log(f'Importing attribute policies from file: {fn}')
 			if os.path.exists(fn):
-				if (dct := self.readJSONFromFile(fn)) is None:
+				if (lst := cast(JSONLIST, self.readJSONFromFile(fn))) is None:
 					continue
-				for ap in dct:
+				for ap in lst:
 					if (tpe := findXPath(ap, 'type')) is None or len(tpe) == 0:
 						Logging.logErr(f'Missing or empty resource type in file: {fn}')
 						return False
@@ -260,7 +262,7 @@ class Importer(object):
 
 						# Add the attribute to the additional policies structure
 						try:
-							if not CSE.validator.addAdditionalAttributePolicy(tpe, { sn : [ dty, car, oc, ou, od, annc] }):
+							if not CSE.validator.addAdditionalAttributePolicy(tpe, { sn : ( dty, car, oc, ou, od, annc) }):
 								Logging.logErr(f'Cannot add attribute policies for attribute: {sn} type: {tpe}')
 								return False
 							countAP += 1
@@ -349,10 +351,10 @@ class Importer(object):
 		if (value := Configuration.get(macro)) is None:
 			Logging.logErr(f'Unknown macro ${{{macro}}} in file {filename}')
 			return f'*** UNKNWON MACRO : {macro} ***'
-		return value
+		return str(value)
 
 
-	def readJSONFromFile(self, filename: str) -> dict:
+	def readJSONFromFile(self, filename: str) -> JSON|JSONLIST:
 		# read the file
 		with open(filename) as file:
 			content = file.read()
@@ -368,7 +370,7 @@ class Importer(object):
 			content = content.replace(item, self.replaceMacro(item, filename))
 		# Load JSON and return directly or as resource
 		try:
-			dct = json.loads(content)
+			dct:JSON = json.loads(content)
 		except json.decoder.JSONDecodeError as e:
 			Logging.logErr(str(e))
 			return None

@@ -12,7 +12,7 @@ import sys, traceback, re
 from copy import deepcopy
 import isodate
 from flask import Request
-from typing import Any, List, Tuple, Union, Dict, Callable
+from typing import Any, Tuple, Dict, Callable
 from Logging import Logging
 from Configuration import Configuration
 from Constants import Constants as C
@@ -30,6 +30,7 @@ from Types import RequestArguments
 from Types import RequestHeaders
 from Types import RequestStatus
 from Types import CSERequest
+from Types import JSON, Parameters, Conditions
 import CSE, Utils
 from resources.Resource import Resource
 import resources.Factory as Factory
@@ -132,7 +133,7 @@ class Dispatcher(object):
 			return Result(resource=childResourcesRef)
 
 		elif request.args.rcn == RCN.childResources:
-			childResources: dict = { resource.tpe : {} } #  Root resource as a dict with no attribute
+			childResources:JSON = { resource.tpe : {} } #  Root resource as a dict with no attribute
 			self._resourceTreeDict(allowedResources, childResources[resource.tpe]) # Adding just child resources
 			return Result(resource=childResources)
 
@@ -171,7 +172,7 @@ class Dispatcher(object):
 		if (resource := res.resource) is not None:
 			# Check for virtual resource
 			if resource.ty != T.GRP_FOPT and Utils.isVirtualResource(resource): # fopt is handled elsewhere
-				return resource.handleRetrieveRequest()
+				return resource.handleRetrieveRequest()	# type: ignore[no-any-return]
 			return Result(resource=resource)
 		if res.dbg is not None:
 			Logging.logDebug(f'{res.dbg}: {ri}')
@@ -183,7 +184,7 @@ class Dispatcher(object):
 	#	Discover Resources
 	#
 
-	def discoverResources(self, id:str, originator:str, handling:dict, fo:int=1, conditions:dict=None, attributes:dict=None, rootResource:Resource=None, permission:Permission=Permission.DISCOVERY) -> Result:
+	def discoverResources(self, id:str, originator:str, handling:Conditions, fo:int=1, conditions:Conditions=None, attributes:Parameters=None, rootResource:Resource=None, permission:Permission=Permission.DISCOVERY) -> Result:
 		Logging.logDebug('Discovering resources')
 
 		if rootResource is None:
@@ -240,7 +241,7 @@ class Dispatcher(object):
 		return Result(lst=discoveredResources)
 
 
-	def _discoverResources(self, rootResource:Resource, originator:str, level:int, fo:int, allLen:int, dcrs:list=None, conditions:dict=None, attributes:dict=None, permission:Permission=Permission.DISCOVERY) -> List[Resource]:
+	def _discoverResources(self, rootResource:Resource, originator:str, level:int, fo:int, allLen:int, dcrs:list[Resource]=None, conditions:Conditions=None, attributes:Parameters=None, permission:Permission=Permission.DISCOVERY) -> list[Resource]:
 		if rootResource is None or level == 0:		# no resource or level == 0
 			return []
 
@@ -268,7 +269,7 @@ class Dispatcher(object):
 		return discoveredResources
 
 
-	def _matchResource(self, r : Resource, conditions : dict, attributes : dict, fo : int, allLen : int) -> bool:	
+	def _matchResource(self, r:Resource, conditions:Conditions, attributes:Parameters, fo:int, allLen:int) -> bool:	
 		""" Match a filter to a resource. """
 
 		# TODO: Implement a couple of optimizations. Can we determine earlier that a match will fail?
@@ -414,7 +415,7 @@ class Dispatcher(object):
 
 		# Check for virtual resource
 		if Utils.isVirtualResource(parentResource):
-			return parentResource.handleCreateRequest(request, id, originator)
+			return parentResource.handleCreateRequest(request, id, originator)	# type: ignore[no-any-return]
 
 		# Add new resource
 		if (nres := Factory.resourceFromDict(deepcopy(request.dict), pi=parentResource.ri, ty=ty)).resource is None:	# something wrong, perhaps wrong type
@@ -547,7 +548,7 @@ class Dispatcher(object):
 
 		# Check for virtual resource
 		if Utils.isVirtualResource(resource):
-			return resource.handleUpdateRequest(request, id, originator)
+			return resource.handleUpdateRequest(request, id, originator)	# type: ignore[no-any-return]
 
 		dictOrg = deepcopy(resource.dict)	# Save for later
 
@@ -578,7 +579,7 @@ class Dispatcher(object):
 			return Result(rsc=RC.badRequest, dbg='wrong rcn for UPDATE')
 
 
-	def updateResource(self, resource:Resource, dct:dict=None, doUpdateCheck:bool=True, originator:str=None) -> Result:
+	def updateResource(self, resource:Resource, dct:JSON=None, doUpdateCheck:bool=True, originator:str=None) -> Result:
 		Logging.logDebug(f'Updating resource ri: {resource.ri}, type: {resource.ty:d}')
 		if doUpdateCheck:
 			if not (res := resource.update(dct, originator)).status:
@@ -623,7 +624,7 @@ class Dispatcher(object):
 
 		# Check for virtual resource
 		if Utils.isVirtualResource(resource):
-			return resource.handleDeleteRequest(request, id, originator)
+			return resource.handleDeleteRequest(request, id, originator)	# type: ignore[no-any-return]
 
 		#
 		# Handle RCN's first. Afterward the resource & children are no more
@@ -643,7 +644,7 @@ class Dispatcher(object):
 		# direct child resources, NOT the root resource
 		elif request.args.rcn == RCN.childResources:
 			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
-			childResources: dict = { resource.tpe : {} }			# Root resource as a dict with no attributes
+			childResources:JSON = { resource.tpe : {} }			# Root resource as a dict with no attributes
 			self._resourceTreeDict(children, childResources[resource.tpe])
 			result = childResources
 		elif request.args.rcn == RCN.attributesAndChildResourceReferences:
@@ -652,7 +653,7 @@ class Dispatcher(object):
 			result = resource
 		elif request.args.rcn == RCN.childResourceReferences: # child resource references
 			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
-			childResourcesRef: dict = { resource.tpe: {} }  # Root resource with no attribute
+			childResourcesRef:JSON = { resource.tpe: {} }  # Root resource with no attribute
 			self._resourceTreeReferences(children, childResourcesRef[resource.tpe], request.args.drt)
 			result = childResourcesRef
 		# TODO RCN.discoveryResultReferences
@@ -700,12 +701,12 @@ class Dispatcher(object):
 		return CSE.storage.directChildResources(pi, ty)
 
 
-	def countDirectChildResources(self, pi: str, ty: T = None) -> int:
+	def countDirectChildResources(self, pi:str, ty:T=None) -> int:
 		""" Return the number of all child resources of resource, optionally filtered by type. """
 		return CSE.storage.countDirectChildResources(pi, ty)
 
 
-	def discoverChildren(self, id:str, resource:Resource, originator:str, handling:dict, permission:Permission) -> List[Resource]:
+	def discoverChildren(self, id:str, resource:Resource, originator:str, handling:JSON, permission:Permission) -> list[Resource]:
 		if (resourceList := self.discoverResources(id, originator, handling, rootResource=resource, permission=permission).lst) is  None:
 			return None
 		# check and filter by ACP
@@ -721,7 +722,7 @@ class Dispatcher(object):
 		return CSE.storage.countResources()
 
 
-	def retrieveResourcesByType(self, ty:T) -> List[Resource]:
+	def retrieveResourcesByType(self, ty:T) -> list[Resource]:
 		""" Retrieve all resources of a type. """
 
 		result = []
@@ -737,7 +738,7 @@ class Dispatcher(object):
 	#
 
 	#	Create a m2m:uril structure from a list of resources
-	def _resourcesToURIList(self, resources:List[Resource], drt:int) -> dict:
+	def _resourcesToURIList(self, resources:list[Resource], drt:int) -> JSON:
 		cseid = f'{CSE.cseCsi}/'	# SP relative. csi already starts with a "/"
 		lst = []
 		for r in resources:
@@ -746,7 +747,7 @@ class Dispatcher(object):
 
 
 	# Recursively walk the results and build a sub-resource tree for each resource type
-	def _resourceTreeDict(self, resources:List[Resource], targetResource:Union[Resource, dict]) -> List[Resource]:
+	def _resourceTreeDict(self, resources:list[Resource], targetResource:Resource|JSON) -> list[Resource]:
 		rri = targetResource['ri'] if 'ri' in targetResource else None
 		while True:		# go multiple times per level through the resources until the list is empty
 			result = []
@@ -784,7 +785,7 @@ class Dispatcher(object):
 		return resources # Return the remaining list
 
 
-	def _resourceTreeReferences(self, resources:List[Resource], targetResource:Union[Resource, dict], drt: int) -> Union[Resource, dict]:
+	def _resourceTreeReferences(self, resources:list[Resource], targetResource:Resource|JSON, drt:int) -> Resource|JSON:
 		""" Retrieve child resource references of a resource and add them to
 			a new target resource as "children" """
 		tp = 'ch'
@@ -810,10 +811,10 @@ class Dispatcher(object):
 
 
 	# Retrieve full child resources of a resource and add them to a new target resource
-	def _childResourceTree(self, resources: List[Resource], targetResource: Union[Resource, dict]) -> None:
+	def _childResourceTree(self, resources:list[Resource], targetResource:Resource|JSON) -> None:
 		if len(resources) == 0:
 			return
-		result: dict = {}
+		result:JSON = {}
 		self._resourceTreeDict(resources, result)	# rootResource is filled with the result
 		for k,v in result.items():			# copy child resources to result resource
 			targetResource[k] = v

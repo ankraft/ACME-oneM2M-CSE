@@ -8,7 +8,7 @@
 #
 
 import threading, traceback
-from typing import Callable, Any
+from typing import Callable, Any, cast
 from Logging import Logging
 from Constants import Constants as C
 import Utils, CSE
@@ -29,7 +29,7 @@ _running:bool = False
 	#
 
 
-class Event(list):
+class Event(list):	# type:ignore[type-arg]
 	"""Event subscription.
 
 	A list of callable methods. Calling an instance of Event will cause a
@@ -129,7 +129,7 @@ class EventManager(object):
 	def addEvent(self, name:str, runInBackground:bool=True) -> Event:
 		if not hasattr(self, name):
 			setattr(self, name, Event(runInBackground=runInBackground))
-		return getattr(self, name)
+		return cast(Event, getattr(self, name))
 
 
 	def removeEvent(self, name:str) -> None:
@@ -141,11 +141,11 @@ class EventManager(object):
 		return name in self.__dict__
 
 
-	def addHandler(self, event:Event, func:Callable) -> None:
+	def addHandler(self, event:Event, func:Callable) -> None:		# type:ignore[type-arg]
 		event.append(func)
 
 
-	def removeHandler(self, event:Event, func:Callable) -> None:
+	def removeHandler(self, event:Event, func:Callable) -> None:	# type:ignore[type-arg]
 		try:
 			event.remove(func)
 		except Exception as e:

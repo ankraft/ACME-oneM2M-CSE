@@ -15,7 +15,8 @@ from Types import ResourceTypes as T, Result, NotificationContentType, Notificat
 import Utils, CSE
 from Validator import constructPolicy
 from .Resource import *
-from Types import ResponseCode as RC
+from Types import ResponseCode as RC, JSON
+from Logging import Logging
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([
@@ -28,7 +29,7 @@ attributePolicies = constructPolicy([
 
 class SUB(Resource):
 
-	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.SUB, dct, pi, create=create, attributePolicies=attributePolicies)
 
 		if self.dict is not None:
@@ -58,7 +59,7 @@ class SUB(Resource):
 		CSE.notification.removeSubscription(self)
 
 
-	def update(self, dct:dict=None, originator:str=None) -> Result:
+	def update(self, dct:JSON=None, originator:str=None) -> Result:
 		previousNus = deepcopy(self.nu)
 		newDict = deepcopy(dct)
 		if not (res := super().update(dct, originator)).status:
@@ -66,7 +67,7 @@ class SUB(Resource):
 		return CSE.notification.updateSubscription(self, newDict, previousNus, originator)
 
  
-	def validate(self, originator:str=None, create:bool=False, dct:dict=None) -> Result:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		if (res := super().validate(originator, create, dct)).status == False:
 			return res
 		Logging.logDebug(f'Validating subscription: {self.ri}')

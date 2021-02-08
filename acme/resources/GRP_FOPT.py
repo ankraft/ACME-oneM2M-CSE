@@ -11,7 +11,7 @@ from Constants import Constants as C
 import CSE
 from .Resource import *
 from Logging import Logging
-from Types import ResourceTypes as T, Result, Operation, CSERequest
+from Types import ResourceTypes as T, Result, Operation, CSERequest, JSON
 
 
 # TODO - Handle Group Request Target Members parameter
@@ -22,7 +22,7 @@ from Types import ResourceTypes as T, Result, Operation, CSERequest
 
 class GRP_FOPT(Resource):
 
-	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.GRP_FOPT, dct, pi, create=create, inheritACP=True, readOnly=True, rn='fopt', isVirtual=True)
 
 
@@ -31,7 +31,7 @@ class GRP_FOPT(Resource):
 		return super()._canHaveChild(resource, [])
 
 
-	def handleRetrieveRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:
 		Logging.logDebug('Retrieving resources from fopt')
 		return CSE.group.foptRequest(Operation.RETRIEVE, self, request, id, originator)	
 

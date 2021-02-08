@@ -12,9 +12,10 @@ from NodeBase import *
 from Logging import Logging
 from Configuration import Configuration
 from resources import BAT
+import CSE, Utils
 # import psutil 	# type: ignore
 import socket, platform, re, uuid, traceback
-from Types import ResponseCode as RC
+from Types import ResponseCode as RC, JSON
 
 
 
@@ -55,7 +56,7 @@ class CSENode(NodeBase):
 		if (result := self.retrieveResource(ri=CSE.cseCsi)).rsc != RC.OK:
 			Logging.logErr('CSENode: cannot retrieve CSEBase')
 			return
-		dct:dict = { 'm2m:cb' : {
+		dct:JSON = { 'm2m:cb' : {
 						'nl' : self.node.ri
 					}
 				}
@@ -105,7 +106,7 @@ class CSENode(NodeBase):
 
 
 	def _checkMemory(self) -> None:
-		import psutil 	# type: ignore
+		import psutil
 		if self.memory is not None:
 			mmt = psutil.virtual_memory().total
 			mma = psutil.virtual_memory().available

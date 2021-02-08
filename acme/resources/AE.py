@@ -8,10 +8,11 @@
 #
 
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ResponseCode as RC
+from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
+from Logging import Logging
 from .AnnounceableResource import AnnounceableResource
 import CSE
 
@@ -29,7 +30,7 @@ attributePolicies =  addPolicy(attributePolicies, aePolicies)
 
 class AE(AnnounceableResource):
 
-	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.AE, dct, pi, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = aePolicies	# only the resource type's own policies
@@ -69,7 +70,7 @@ class AE(AnnounceableResource):
 		return Result(status=True)
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:dict=None) -> Result:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		if not (res := super().validate(originator, create, dct)).status:
 			return res
 

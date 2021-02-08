@@ -11,7 +11,7 @@ from typing import List
 from Logging import Logging
 from Configuration import Configuration
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ResponseCode as RC
+from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 from Validator import constructPolicy, addPolicy
 import Utils, CSE
 from .Resource import *
@@ -34,7 +34,7 @@ attributePolicies =  addPolicy(attributePolicies, cntPolicies)
 class CNT(AnnounceableResource):
 
 
-	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.CNT, dct, pi, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = cntPolicies	# only the resource type's own policies
@@ -79,7 +79,7 @@ class CNT(AnnounceableResource):
 
 	# Get all content instances of a resource and return a sorted (by ct) list 
 	def contentInstances(self) -> List[Resource]:
-		return sorted(CSE.dispatcher.directChildResources(self.ri, T.CIN), key=lambda x: (x.ct))	# type: ignore
+		return sorted(CSE.dispatcher.directChildResources(self.ri, T.CIN), key=lambda x: (x.ct))	# type: ignore[no-any-return]
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
@@ -124,7 +124,7 @@ class CNT(AnnounceableResource):
 
 	# Validating the Container. This means recalculating cni, cbs as well as
 	# removing ContentInstances when the limits are met.
-	def validate(self, originator:str=None, create:bool=False, dct:dict=None) -> Result:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		if (res := super().validate(originator, create, dct)).status == False:
 			return res
 		return self._validateChildren()
@@ -144,7 +144,7 @@ class CNT(AnnounceableResource):
 		l = cni
 		while cni > mni and i < l:
 			# remove oldest
-			CSE.dispatcher.deleteResource(cs[i])	# type: ignore
+			CSE.dispatcher.deleteResource(cs[i])
 			cni -= 1
 			i += 1
 		self['cni'] = cni
@@ -160,7 +160,7 @@ class CNT(AnnounceableResource):
 		while cbs > mbs and i < l:
 			# remove oldest
 			cbs -= cs[i]['cs']
-			CSE.dispatcher.deleteResource(cs[i])	# type: ignore
+			CSE.dispatcher.deleteResource(cs[i])
 			i += 1
 		self['cbs'] = cbs
 

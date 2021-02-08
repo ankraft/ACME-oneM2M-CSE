@@ -38,22 +38,22 @@ class AEStatistics(AEBase):
 		# Attribute definitions for the statistics specialization
 		statisticAttributes =  {
 			self.fcntType : {
-				'rmRes'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'crRes'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'upRes'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'htRet'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'htCre'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'htUpd'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'htDel'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'htSRt'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'htSCr'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'htSUp'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'htSDl'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'cseSU'	: [ BT.timestamp,		CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'lgErr'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'lgWrn'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'cseUT'	: [ BT.string,			CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'ctRes'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ]
+				'rmRes'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'crRes'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'upRes'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'htRet'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'htCre'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'htUpd'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'htDel'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'htSRt'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'htSCr'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'htSUp'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'htSDl'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'cseSU'	: ( BT.timestamp,		CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'lgErr'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'lgWrn'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'cseUT'	: ( BT.string,			CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'ctRes'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA )
 			}
 		}
 

@@ -7,12 +7,16 @@
 #	Configuration & helper functions for unit tests
 #
 
+from __future__ import annotations
+import sys
+sys.path.append('../acme')
 import requests, random, sys, json, re, time, datetime, ssl, urllib3
 import cbor2
 from typing import Any, Callable, Union, Tuple, cast
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import cbor2
+from Types import Parameters, JSON
 
 PROTOCOL			= 'http'	# possible values: http, https
 # ENCODING 			= 
@@ -108,42 +112,41 @@ remoteCsrURL 	= f'{REMOTEcseURL}{CSEID}'
 #	HTTP Requests
 #
 
-def _RETRIEVE(url:str, originator:str, timeout:float=None, headers:dict=None) -> Tuple[Union[bytes, dict], int]:
+def _RETRIEVE(url:str, originator:str, timeout:float=None, headers:Parameters=None) -> Tuple[str|JSON, int]:
 	return sendRequest(requests.get, url, originator, timeout=timeout, headers=headers)
 
-def RETRIEVEBYTES(url:str, originator:str, timeout:float=None, headers:dict=None) -> Tuple[bytes, int]:
+def RETRIEVESTRING(url:str, originator:str, timeout:float=None, headers:Parameters=None) -> Tuple[str, int]:
 	x,rsc = _RETRIEVE(url=url, originator=originator, timeout=timeout, headers=headers)
-	return cast(bytes, x), rsc
+	return str(x, 'utf-8'), rsc		# type:ignore[call-overload]
 
-def RETRIEVE(url:str, originator:str, timeout:float=None, headers:dict=None) -> Tuple[dict, int]:
+def RETRIEVE(url:str, originator:str, timeout:float=None, headers:Parameters=None) -> Tuple[JSON, int]:
 	x,rsc = _RETRIEVE(url=url, originator=originator, timeout=timeout, headers=headers)
-	return cast(dict, x), rsc
-
-def _CREATE(url:str, originator:str, ty:int=None, data:Any=None, headers:dict=None) -> Tuple[Union[bytes, dict], int]:
-	return sendRequest(requests.post, url, originator, ty, data, headers=headers)
-
-def CREATE(url:str, originator:str, ty:int=None, data:Any=None, headers:dict=None) -> Tuple[dict, int]:
-	x,rsc = _CREATE(url=url, originator=originator, ty=ty, data=data, headers=headers)
-	return cast(dict, x), rsc
+	return cast(JSON, x), rsc
 
 
-def _UPDATE(url:str, originator:str, data:Any, headers:dict=None) -> Tuple[Union[bytes, dict], int]:
+def CREATE(url:str, originator:str, ty:int=None, data:JSON=None, headers:Parameters=None) -> Tuple[JSON, int]:
+	x,rsc = sendRequest(requests.post, url, originator, ty, data, headers=headers)
+	return cast(JSON, x), rsc
+
+
+def _UPDATE(url:str, originator:str, data:JSON|str, headers:Parameters=None) -> Tuple[str|JSON, int]:
 	return sendRequest(requests.put, url, originator, data=data, headers=headers)
 
-def UPDATEBYTES(url:str, originator:str, data:Any, headers:dict=None) -> Tuple[bytes, int]:
+def UPDATESTRING(url:str, originator:str, data:str, headers:Parameters=None) -> Tuple[str, int]:
 	x, rsc = _UPDATE(url=url, originator=originator, data=data, headers=headers)
-	return cast(bytes, x), rsc
+	return str(x, 'utf-8'), rsc		# type:ignore[call-overload]
 
-def UPDATE(url:str, originator:str, data:Any, headers:dict=None) -> Tuple[dict, int]:
+def UPDATE(url:str, originator:str, data:JSON, headers:Parameters=None) -> Tuple[JSON, int]:
 	x, rsc = _UPDATE(url=url, originator=originator, data=data, headers=headers)
-	return cast(dict, x), rsc
+	return cast(JSON, x), rsc
 
-def DELETE(url:str, originator:str, headers:dict=None) -> Tuple[dict, int]:
+
+def DELETE(url:str, originator:str, headers:Parameters=None) -> Tuple[JSON, int]:
 	x, rsc = sendRequest(requests.delete, url, originator, headers=headers)
-	return cast(dict, x), rsc
+	return cast(JSON, x), rsc
 
 
-def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any=None, ct:str=None, timeout:float=None, headers:dict=None) -> Tuple[Union[bytes, dict], int]:	# TODO Constants
+def sendRequest(method:Callable, url:str, originator:str, ty:int=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
 	tys = f';ty={ty}' if ty is not None else ''
 	ct = 'application/json'
 	hds = { 
@@ -158,10 +161,14 @@ def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any
 
 	setLastRequestID(rid)
 	try:
-		if isinstance(data, dict):
-			data = json.dumps(data)
-			# data = cbor2.dumps(data)
-		r = method(url, data=data, headers=hds, verify=verifyCertificate)
+		sendData:str = None
+		if data is not None:
+			if isinstance(data, dict):	# actually JSON, but isinstance() cannot be used with generics
+				sendData = json.dumps(data)
+			else:
+				sendData = data
+			# data = cbor2.dumps(data)	# TODO use CBOR as well
+		r = method(url, data=sendData, headers=hds, verify=verifyCertificate)
 	except Exception as e:
 		#print(f'Failed to send request: {str(e)}')
 		return None, 5103
@@ -170,12 +177,13 @@ def sendRequest(method:Callable , url:str, originator:str, ty:int=None, data:Any
 	# save last header for later
 	setLastHeaders(r.headers)
 
-	# response doesn't always contain JSON
-	try:
-		result = r.json() if len(r.content) > 0 else None, rc
-	except Exception as e:
-		result = r.content, rc
-	return result
+	# return plain text
+	if (ct := r.headers.get('Content-Type')) is not None and ct.startswith('text/plain'):
+		return r.content, rc
+	elif ct.startswith(('application/json', 'application/vnd.onem2m-res+json')):
+		return r.json() if len(r.content) > 0 else None, rc
+	# just return what's in there
+	return r.content.rc
 
 
 _lastRequstID = None
@@ -194,15 +202,16 @@ def connectionPossible(url:str) -> bool:
 		# tests whether a connection can be established at all.
 		return RETRIEVE(url, 'none', timeout=1.0)[0] is not None
 	except Exception as e:
+		print(e)
 		return False
 
-_lastHeaders = None
+_lastHeaders:Parameters = None
 
-def setLastHeaders(hds:dict) -> None:
+def setLastHeaders(hds:Parameters) -> None:
 	global _lastHeaders
 	_lastHeaders = hds
 
-def lastHeaders() -> dict:
+def lastHeaders() -> Parameters:
 	return _lastHeaders
 
 
@@ -214,21 +223,22 @@ def lastHeaders() -> dict:
 
 
 def setExpirationCheck(interval:int) -> int:
-	c, rc = RETRIEVEBYTES(CONFIGURL, '')
-	if rc == 200 and c.startswith(b'Configuration:'):
+	c, rc = RETRIEVESTRING(CONFIGURL, '')
+	if rc == 200 and c.startswith('Configuration:'):
 		# retrieve the old value
-		c, rc = RETRIEVEBYTES(f'{CONFIGURL}/cse.checkExpirationsInterval', '')
+		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.checkExpirationsInterval', '')
 		oldValue = int(c)
-		c, rc = UPDATEBYTES(f'{CONFIGURL}/cse.checkExpirationsInterval', '', str(interval))
-		return oldValue if c == b'ack' else -1
+		c, rc = UPDATESTRING(f'{CONFIGURL}/cse.checkExpirationsInterval', '', str(interval))
+		print(c)
+		return oldValue if c == 'ack' else -1
 	return -1
 
 
 def getMaxExpiration() -> int:
-	c, rc = RETRIEVEBYTES(CONFIGURL, '')
-	if rc == 200 and c.startswith(b'Configuration:'):
+	c, rc = RETRIEVESTRING(CONFIGURL, '')
+	if rc == 200 and c.startswith('Configuration:'):
 		# retrieve the old value
-		c, rc = RETRIEVEBYTES(f'{CONFIGURL}/cse.maxExpirationDelta', '')
+		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.maxExpirationDelta', '')
 		return int(c)
 	return -1
 
@@ -260,21 +270,21 @@ def tooLargeExpirationDelta() -> int:
 #	Request expirations
 
 def setRequestMinET(interval:int) -> int:
-	c, rc = RETRIEVEBYTES(CONFIGURL, '')
-	if rc == 200 and c.startswith(b'Configuration:'):
+	c, rc = RETRIEVESTRING(CONFIGURL, '')
+	if rc == 200 and c.startswith('Configuration:'):
 		# retrieve the old value
-		c, rc = RETRIEVEBYTES(f'{CONFIGURL}/cse.req.minet', '')
+		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.req.minet', '')
 		oldValue = int(c)
-		c, rc = UPDATEBYTES(f'{CONFIGURL}/cse.req.minet', '', str(interval))
-		return oldValue if c == b'ack' else -1
+		c, rc = UPDATESTRING(f'{CONFIGURL}/cse.req.minet', '', str(interval))
+		return oldValue if c == 'ack' else -1
 	return -1
 
 
 def getRequestMinET() -> int:
-	c, rc = RETRIEVEBYTES(CONFIGURL, '')
-	if rc == 200 and c.startswith(b'Configuration:'):
+	c, rc = RETRIEVESTRING(CONFIGURL, '')
+	if rc == 200 and c.startswith('Configuration:'):
 		# retrieve the old value
-		c, rc = RETRIEVEBYTES(f'{CONFIGURL}/cse.req.minet', '')
+		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.req.minet', '')
 		return int(c)
 	return -1
 	
@@ -361,25 +371,25 @@ def stopNotificationServer() -> None:
 	keepNotificationServerRunning = False
 	requests.post(NOTIFICATIONSERVER, verify=verifyCertificate)	# send empty/termination request 
 
-lastNotification:dict	= None
-lastNotificationHeaders = {}
+lastNotification:JSON				= None
+lastNotificationHeaders:Parameters 	= {}
 
-def setLastNotification(notification:dict) -> None:
+def setLastNotification(notification:JSON) -> None:
 	global lastNotification
 	lastNotification = notification
 
-def getLastNotification() -> dict:
+def getLastNotification() -> JSON:
 	return lastNotification
 
 def clearLastNotification() -> None:
 	global lastNotification
 	lastNotification = None
 
-def setLastNotificationHeaders(headers:dict) -> None:
+def setLastNotificationHeaders(headers:Parameters) -> None:
 	global lastNotificationHeaders
 	lastNotificationHeaders = headers
 
-def getLastNotificationHeaders() -> dict:
+def getLastNotificationHeaders() -> Parameters:
 	return lastNotificationHeaders
 
 
@@ -396,7 +406,7 @@ def uniqueID() -> str:
 
 # find a structured element in JSON
 decimalMatch = re.compile(r'{(\d+)}')
-def findXPath(dct:dict, element:str, default:Any=None) -> Any:
+def findXPath(dct:JSON, element:str, default:Any=None) -> Any:
 	if dct is None:
 		return default
 	paths = element.split("/")
@@ -416,7 +426,7 @@ def findXPath(dct:dict, element:str, default:Any=None) -> Any:
 	return data
 
 
-def setXPath(dct:dict, element:str, value:Any, overwrite:bool=True) -> None:
+def setXPath(dct:JSON, element:str, value:Any, overwrite:bool=True) -> None:
 	paths = element.split("/")
 	ln = len(paths)
 	data = dct

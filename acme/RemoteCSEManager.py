@@ -15,7 +15,7 @@ from typing import List, Tuple, Dict
 from Configuration import Configuration
 from Logging import Logging
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, CSEType, ResponseCode as RC, CSERequest, ContentSerializationType
+from Types import ResourceTypes as T, Result, CSEType, ResponseCode as RC, CSERequest, ContentSerializationType, JSON
 import Utils, CSE
 from resources import CSR, CSEBase
 from resources.Resource import Resource
@@ -235,7 +235,7 @@ class RemoteCSEManager(object):
 			self._updateCSRonRegistrarCSE()
 
 
-	def handleRemoteCSEUpdate(self, remoteCSR:Resource, updateDict:dict) -> None:
+	def handleRemoteCSEUpdate(self, remoteCSR:Resource, updateDict:JSON) -> None:
 		"""	Event handler for updates of the remote CSE.
 		"""
 		Logging.logDebug(f'Handle remote CSE update: {remoteCSR}\nupdate: {updateDict}')

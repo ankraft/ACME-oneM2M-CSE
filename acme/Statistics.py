@@ -7,6 +7,8 @@
 #	Statistics Module
 #
 
+from __future__ import annotations
+from typing import Dict, Union
 from Logging import Logging
 from Configuration import Configuration
 import CSE, Utils
@@ -42,6 +44,7 @@ resourceCount		= 'ctRes'
 
 # TODO  restartcount, 
 
+StatsT = Dict[str, Union[str, int, float]]
 
 class Statistics(object):
 
@@ -95,7 +98,7 @@ class Statistics(object):
 		return True
 
 
-	def setupStats(self) -> dict:
+	def setupStats(self) -> StatsT:
 		result = self.retrieveDBStatistics()
 		if result is not None:
 			return result
@@ -119,13 +122,13 @@ class Statistics(object):
 		}
 
 	# Return stats
-	def getStats(self) -> dict:			
+	def getStats(self) -> StatsT:			
 		s = deepcopy(self.stats)
 
 		# Calculate some stats
-		s[cseUpTime] = str(datetime.timedelta(seconds=int(datetime.datetime.utcnow().timestamp() - s[cseStartUpTime])))
-		s[cseStartUpTime] = Utils.toISO8601Date(s[cseStartUpTime])
-		s[resourceCount] = s[createdResources] - s[deletedResources]
+		s[cseUpTime] = str(datetime.timedelta(seconds=int(datetime.datetime.utcnow().timestamp() - int(s[cseStartUpTime]))))
+		s[cseStartUpTime] = Utils.toISO8601Date(float(s[cseStartUpTime]))
+		s[resourceCount] = int(s[createdResources]) - int(s[deletedResources])
 		return s
 
 
@@ -136,62 +139,62 @@ class Statistics(object):
 
 	def handleCreateEvent(self, resource:Resource) -> None:
 		with self.statLock:
-			self.stats[createdResources] += 1
+			self.stats[createdResources] += 1		# type: ignore
 	
 
 	def handleDeleteEvent(self, resource:Resource) -> None:
 		with self.statLock:
-			self.stats[deletedResources] += 1
+			self.stats[deletedResources] += 1		# type: ignore
 	
 
 	def handleUpdateEvent(self, resource:Resource) -> None:
 		with self.statLock:
-			self.stats[updatedResources] += 1
+			self.stats[updatedResources] += 1		# type: ignore
 
 
 	def handleExpireResource(self, resource:Resource) -> None:
 		with self.statLock:
-			self.stats[expiredResources] += 1
+			self.stats[expiredResources] += 1		# type: ignore
 
 
 	def handleHttpRetrieveEvent(self) -> None:
 		with self.statLock:
-			self.stats[httpRetrieves] += 1
+			self.stats[httpRetrieves] += 1		# type: ignore
 
 
 	def handleHttpCreateEvent(self) -> None:
 		with self.statLock:
-			self.stats[httpCreates] += 1
+			self.stats[httpCreates] += 1		# type: ignore
 
 
 	def handleHttpUpdateEvent(self) -> None:
 		with self.statLock:
-			self.stats[httpUpdates] += 1
+			self.stats[httpUpdates] += 1		# type: ignore
 
 
 	def handleHttpDeleteEvent(self) -> None:
 		with self.statLock:
-			self.stats[httpDeletes] += 1
+			self.stats[httpDeletes] += 1		# type: ignore
 
 
 	def handleHttpSendRetrieveEvent(self) -> None:
 		with self.statLock:
-			self.stats[httpSendRetrieves] += 1
+			self.stats[httpSendRetrieves] += 1	# type: ignore
 
 
 	def handleHttpSendCreateEvent(self) -> None:
 		with self.statLock:
-			self.stats[httpSendCreates] += 1
+			self.stats[httpSendCreates] += 1	# type: ignore
 
 
 	def handleHttpSendUpdateEvent(self) -> None:
 		with self.statLock:
-			self.stats[httpSendUpdates] += 1
+			self.stats[httpSendUpdates] += 1	# type: ignore
 
 
 	def handleHttpSendDeleteEvent(self) -> None:
 		with self.statLock:
-			self.stats[httpSendDeletes] += 1
+			self.stats[httpSendDeletes] += 1	# type: ignore
 
 
 	def handleCseStartup(self) -> None:
@@ -201,17 +204,17 @@ class Statistics(object):
 
 	def handleLogError(self) -> None:
 		with self.statLock:
-			self.stats[logErrors] += 1
+			self.stats[logErrors] += 1	# type: ignore
 
 
 	def handleLogWarning(self) -> None:
 		with self.statLock:
-			self.stats[logWarnings] += 1
+			self.stats[logWarnings] += 1		# type: ignore
 
 
 	def handleNotification(self) -> None:
 		with self.statLock:
-			self.stats[notifications] += 1
+			self.stats[notifications] += 1		# type: ignore
 
 
 	#########################################################################
@@ -229,7 +232,7 @@ class Statistics(object):
 		return True
 
 
-	def retrieveDBStatistics(self) -> dict:
+	def retrieveDBStatistics(self) -> StatsT:
 		with self.statLock:
 			return CSE.storage.getStatistics()
 
@@ -382,7 +385,7 @@ skinparam rectangle {
 			result += f'- **Registrar CSE**  \n{CSE.remote.registrarCSI[1:]} ({registrarType}) @ {CSE.remote.remoteAddress}\n'
 
 		if CSE.cseType != CSEType.ASN:
-			connections = {}
+			#connections = {}
 			if len(CSE.remote.descendantCSR) > 0:
 				result += f'- **Registree CSEs**\n'
 

@@ -12,7 +12,7 @@ from typing import Any
 from AppBase import AppBase
 from NodeBase import NodeBase
 from Configuration import Configuration
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, JSON
 
 import CSE, Utils
 
@@ -24,7 +24,7 @@ class AEBase(AppBase):
 		self.originator 	= originator
 		self.ae 			= None
 		self.aeNodeBase 	= None
-		self.appData: dict	= None
+		self.appData:JSON	= None
 
 		# Get or create the hosting node
 		if nodeRN is not None and nodeID is not None:
@@ -74,7 +74,7 @@ class AEBase(AppBase):
 
 
 	# retrieve application data. If not found, initialize and store a record
-	def retrieveAppData(self) -> dict:
+	def retrieveAppData(self) -> JSON:
 		if (result := CSE.storage.getAppData(self.rn)) is None:
 			self.appData = 	{ 'id': self.rn,
 							  '_originator': self.originator

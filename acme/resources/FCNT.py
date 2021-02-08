@@ -7,10 +7,12 @@
 #	ResourceType: FlexContainer
 #
 
+from __future__ import annotations
 import sys
-from typing import List
+from typing import List, cast
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ResponseCode as RC
+from Configuration import Configuration
+from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 from Validator import constructPolicy, addPolicy
 import Utils, CSE
 from Logging import Logging
@@ -18,8 +20,6 @@ from .Resource import *
 from .AnnounceableResource import AnnounceableResource
 import resources.Factory as Factory
 import functools 
-
-
 
 
 
@@ -35,7 +35,7 @@ attributePolicies = addPolicy(attributePolicies, fcntPolicies)
 
 class FCNT(AnnounceableResource):
 
-	def __init__(self, dct:dict=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
 		super().__init__(T.FCNT, dct, pi, tpe=fcntType, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = fcntPolicies	# only the resource type's own policies
@@ -104,7 +104,7 @@ class FCNT(AnnounceableResource):
 
 
 	# Checking the presence of cnd and calculating the size
-	def validate(self, originator:str=None, create:bool=False, dct:dict=None) -> Result:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		if not (res := super().validate(originator, create, dct)).status:
 			return res
 		return self._validateChildren(originator)
@@ -194,16 +194,17 @@ class FCNT(AnnounceableResource):
 		return Result(status=True)
 
 
-	# Get all flexContainerInstances of a resource and return a sorted (by ct) list 
-	def flexContainerInstances(self) -> List[Resource]:
-		return sorted(CSE.dispatcher.directChildResources(self.ri, T.FCI), key=lambda x: (x.ct))
+	def flexContainerInstances(self) -> list[Resource]:
+		"""	Get all flexContainerInstances of a resource and return a sorted (by ct) list
+		""" 
+		return sorted(CSE.dispatcher.directChildResources(self.ri, T.FCI), key=lambda x: x.ct) # type:ignore[no-any-return]
 
 
 	# Add a new FlexContainerInstance for this flexContainer
 	def addFlexContainerInstance(self, originator:str) -> None:
 
 		Logging.logDebug('Adding flexContainerInstance')
-		dct:Dict[str, Any] = {	'rn'  : f'{self.rn}_{self.st:d}', }
+		dct:JSON = { 'rn'  : f'{self.rn}_{self.st:d}', }
 		if self.lbl is not None:
 			dct['lbl'] = self.lbl
 

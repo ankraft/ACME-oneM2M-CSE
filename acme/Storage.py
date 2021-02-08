@@ -11,9 +11,9 @@
 
 from __future__ import annotations
 from tinydb import TinyDB, Query, where
-from tinydb.storages import MemoryStorage		# type: ignore
+from tinydb.storages import MemoryStorage
 from tinydb.table import Document
-from tinydb.operations import delete 			# type: ignore
+from tinydb.operations import delete 
 # TODO remove mypy type checking supressions above as soon as tinydb provides typing stubs
 
 import os, json, re, time
@@ -21,7 +21,7 @@ from typing import Callable, Any, cast
 from threading import Lock
 from Configuration import Configuration
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ResponseCode as RC, ContentSerializationType
+from Types import ResourceTypes as T, Result, ResponseCode as RC, ContentSerializationType, JSON
 from Logging import Logging
 from resources.Resource import Resource
 import resources.Factory as Factory
@@ -172,10 +172,10 @@ class Storage(object):
 		return self.db.countResources()
 
 
-	def identifier(self, ri:str) -> list[dict] | list[Document]:
+	def identifier(self, ri:str) -> list[JSON] | list[Document]:
 		return self.db.searchIdentifiers(ri=ri)
 
-	def structuredPath(self, srn:str) -> list[dict] | list[Document]:
+	def structuredPath(self, srn:str) -> list[JSON] | list[Document]:
 		return self.db.searchIdentifiers(srn=srn)
 
 
@@ -189,12 +189,12 @@ class Storage(object):
 		# 			return value in f
 		# 		return value == f
 		# 	return False
-		def filterFunc(r:dict) -> bool:
+		def filterFunc(r:JSON) -> bool:
 			if 'ty' in r and r['ty'] == ty and field in r:
 				f = r[field]
 				if isinstance(f, (list, dict)):
 					return value in f
-				return value == f
+				return value == f # type: ignore
 			return False
 
 
@@ -221,7 +221,7 @@ class Storage(object):
 		return result
 
 
-	def searchByFilter(self, filter:Callable) -> list[Resource]:
+	def searchByFilter(self, filter:Callable[[JSON], bool]) -> list[Resource]:
 		"""	Return a list of resouces that match the given filter, or an empty list.
 		"""
 		result = []
@@ -246,9 +246,9 @@ class Storage(object):
 					return True
 			return False
 
-		def _announcedFilter(r:dict) -> bool:
+		def _announcedFilter(r:JSON) -> bool:
 			# if (at := r.get('at')) is not None and csi in at:
-			if (at := r.get('at')) is not None and _hasCSI(at):
+			if (at := r.get('at')) is not None and _hasCSI(cast(list[str], at)):
 				if (isa := r.get(Resource._announcedTo)) is not None:
 					found = False
 					for i in isa:
@@ -271,7 +271,7 @@ class Storage(object):
 	##	Subscriptions
 	##
 
-	def getSubscription(self, ri: str) -> dict:
+	def getSubscription(self, ri:str) -> JSON:
 		# Logging.logDebug(f'Retrieving subscription: {ri}')
 		subs = self.db.searchSubscriptions(ri=ri)
 		if subs is None or len(subs) != 1:
@@ -279,22 +279,22 @@ class Storage(object):
 		return subs[0]
 
 
-	def getSubscriptionsForParent(self, pi: str) -> list[Document]:
+	def getSubscriptionsForParent(self, pi:str) -> list[Document]:
 		# Logging.logDebug(f'Retrieving subscriptions for parent: {pi}')
 		return self.db.searchSubscriptions(pi=pi)
 
 
-	def addSubscription(self, subscription: Resource) -> bool:
+	def addSubscription(self, subscription:Resource) -> bool:
 		# Logging.logDebug(f'Adding subscription: {ri}')
 		return self.db.upsertSubscription(subscription)
 
 
-	def removeSubscription(self, subscription: Resource) -> bool:
+	def removeSubscription(self, subscription:Resource) -> bool:
 		# Logging.logDebug(f'Removing subscription: {subscription.ri}')
 		return self.db.removeSubscription(subscription)
 
 
-	def updateSubscription(self, subscription : Resource) -> bool:
+	def updateSubscription(self, subscription:Resource) -> bool:
 		# Logging.logDebug(f'Updating subscription: {ri}')
 		return self.db.upsertSubscription(subscription)
 
@@ -306,7 +306,7 @@ class Storage(object):
 	##	BatchNotifications
 	##
 
-	def addBatchNotification(self, ri:str, nu:str, request:dict, serialization:ContentSerializationType) -> bool:
+	def addBatchNotification(self, ri:str, nu:str, request:JSON, serialization:ContentSerializationType) -> bool:
 		return self.db.addBatchNotification(ri, nu, request, serialization)
 
 
@@ -327,11 +327,11 @@ class Storage(object):
 	##	Statistics
 	##
 
-	def getStatistics(self) -> dict:
+	def getStatistics(self) -> JSON:
 		return self.db.searchStatistics()
 
 
-	def updateStatistics(self, stats: dict) -> bool:
+	def updateStatistics(self, stats:JSON) -> bool:
 		return self.db.upsertStatistics(stats)
 
 
@@ -341,15 +341,15 @@ class Storage(object):
 	##	App Support
 	##
 
-	def getAppData(self, id: str) -> dict:
+	def getAppData(self, id:str) -> JSON:
 		return self.db.searchAppData(id)
 
 
-	def updateAppData(self, data: dict) -> bool:
+	def updateAppData(self, data:JSON) -> bool:
 		return self.db.upsertAppData(data)
 
 
-	def removeAppData(self, data: dict) -> bool:
+	def removeAppData(self, data:JSON) -> bool:
 		return self.db.removeAppData(data)
 
 
@@ -480,7 +480,7 @@ class TinyDBBinding(object):
 			return []
 
 
-	def discoverResources(self, func:Callable) -> list[Document]:
+	def discoverResources(self, func:Callable[[JSON], bool]) -> list[Document]:
 		with self.lockResources:
 			return self.tabResources.search(func)	# type: ignore
 
@@ -565,7 +565,7 @@ class TinyDBBinding(object):
 			return None
 
 
-	def upsertSubscription(self, subscription : Resource) -> bool:
+	def upsertSubscription(self, subscription:Resource) -> bool:
 		with self.lockSubscriptions:
 			ri = subscription.ri
 			result = self.tabSubscriptions.upsert(
@@ -585,7 +585,7 @@ class TinyDBBinding(object):
 			return result is not None
 
 
-	def removeSubscription(self, subscription: Resource) -> bool:
+	def removeSubscription(self, subscription:Resource) -> bool:
 		with self.lockSubscriptions:
 			return len(self.tabSubscriptions.remove(Query().ri == subscription.ri)) > 0		# type: ignore
 
@@ -594,7 +594,7 @@ class TinyDBBinding(object):
 	#	BatchNotifications
 	#
 
-	def addBatchNotification(self, ri:str, nu:str, notificationRequest:dict, serialization:ContentSerializationType) -> bool:
+	def addBatchNotification(self, ri:str, nu:str, notificationRequest:JSON, serialization:ContentSerializationType) -> bool:
 		with self.lockBatchNotifications:
 			result = self.tabBatchNotifications.insert(
 									{	'ri' 		: ri,
@@ -627,13 +627,13 @@ class TinyDBBinding(object):
 	#	Statistics
 	#
 
-	def searchStatistics(self) -> dict:
+	def searchStatistics(self) -> JSON:
 		with self.lockStatistics:
 			stats = self.tabStatistics.get(doc_id=1)
 			return stats if stats is not None and len(stats) > 0 else None
 
 
-	def upsertStatistics(self, stats: dict) -> bool:
+	def upsertStatistics(self, stats:JSON) -> bool:
 		with self.lockStatistics:
 			if len(self.tabStatistics) > 0:
 				return self.tabStatistics.update(stats, doc_ids=[1]) is not None
@@ -645,13 +645,13 @@ class TinyDBBinding(object):
 	#	App Data
 	#
 
-	def searchAppData(self, id: str) -> dict:
+	def searchAppData(self, id:str) -> JSON:
 		with self.lockAppData:
 			data = self.tabAppData.get(Query().id == id)	# type: ignore
 			return data if data is not None and len(data) > 0 else None
 
 
-	def upsertAppData(self, data: dict) -> bool:
+	def upsertAppData(self, data:JSON) -> bool:
 		with self.lockAppData:
 			if 'id' not in data:
 				return None
@@ -661,7 +661,7 @@ class TinyDBBinding(object):
 				return self.tabAppData.insert(data) is not None
 
 
-	def removeAppData(self, data: dict) -> bool:
+	def removeAppData(self, data:JSON) -> bool:
 		with self.lockAppData:
 			if 'id' not in data:
 				return False	

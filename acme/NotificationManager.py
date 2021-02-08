@@ -15,7 +15,8 @@ from typing import List, Union, Callable
 from threading import Lock
 from Logging import Logging
 from Constants import Constants as C
-from Types import Result, NotificationContentType, NotificationEventType, Permission, ResponseCode as RC, ContentSerializationType
+from Types import Result, NotificationContentType, NotificationEventType, Permission, ResponseCode as RC
+from Types import ContentSerializationType, JSON, Parameters
 from Configuration import Configuration
 import Utils, CSE
 from helpers.BackgroundWorker import BackgroundWorkerPool
@@ -26,8 +27,13 @@ from resources.Resource import Resource
 # TODO: completly rework the batch handling. Store the notification, but only evaluate the TO when sending!
 
 
+SenderFunction = Callable[[str, ContentSerializationType, Resource], bool]	# type:ignore[misc] # bc cyclic definition 
+""" Type definition for sender callback function. """
+
+
 
 class NotificationManager(object):
+
 
 	def __init__(self) -> None:
 		self.lockBatchNotification = Lock()	# Lock for batchNotifications
@@ -94,7 +100,7 @@ class NotificationManager(object):
 		return Result(status=True) if CSE.storage.removeSubscription(subscription) else Result(status=False, rsc=RC.internalServerError, dbg='cannot remove subscription from database')
 
 
-	def updateSubscription(self, subscription:Resource, newDict:dict, previousNus:list[str], originator:str) -> Result:
+	def updateSubscription(self, subscription:Resource, newDict:JSON, previousNus:list[str], originator:str) -> Result:
 		Logging.logDebug('Updating subscription')
 		#previousSub = CSE.storage.getSubscription(subscription.ri)
 		if (res := self._checkNusInSubscription(subscription, newDict, previousNus, originator=originator)).lst is None:	# verification/delete requests happen here
@@ -102,7 +108,7 @@ class NotificationManager(object):
 		return Result(status=True) if CSE.storage.updateSubscription(subscription) else Result(status=False, rsc=RC.internalServerError, dbg='cannot update subscription in database')
 
 
-	def checkSubscriptions(self, resource:Resource, reason:NotificationEventType, childResource:Resource=None, modifiedAttributes:dict=None) -> None:
+	def checkSubscriptions(self, resource:Resource, reason:NotificationEventType, childResource:Resource=None, modifiedAttributes:JSON=None) -> None:
 		if not self.enableNotifications:
 			return
 
@@ -163,7 +169,7 @@ class NotificationManager(object):
 	#	Notifications in general
 	#
 
-	def sendNotificationWithDict(self, data:dict, nus:list[str] | str, originator:str=None) -> None:
+	def sendNotificationWithDict(self, data:JSON, nus:list[str]|str, originator:str=None) -> None:
 		if nus is not None and len(nus) > 0:
 			for nu in self._getNotificationURLs(nus):
 				self._sendRequest(nu, data, originator=originator)
@@ -173,7 +179,7 @@ class NotificationManager(object):
 	#########################################################################
 
 	# Return resolved notification URLs, so also POA from referenced AE's etc
-	def _getNotificationURLs(self, nus:list[str] | str, originator:str=None) -> list[str]:
+	def _getNotificationURLs(self, nus:list[str]|str, originator:str=None) -> list[str]:
 
 		if nus is None:
 			return []
@@ -208,7 +214,7 @@ class NotificationManager(object):
 		return result
 
 
-	def _checkNusInSubscription(self, subscription:Resource, newDict:dict=None, previousNus:list[str]=None, originator:str=None) -> Result:
+	def _checkNusInSubscription(self, subscription:Resource, newDict:JSON=None, previousNus:list[str]=None, originator:str=None) -> Result:
 		"""	Check all the notification URI's in a subscription. 
 			A verification request is sent to new URI's.
 		"""
@@ -276,7 +282,7 @@ class NotificationManager(object):
 		return self._sendNotification([ uri ], sender)
 
 
-	def _handleSubscriptionNotification(self, sub:dict, reason:NotificationEventType, resource:Resource, modifiedAttributes:dict=None) ->  bool:
+	def _handleSubscriptionNotification(self, sub:JSON, reason:NotificationEventType, resource:Resource, modifiedAttributes:JSON=None) ->  bool:
 		"""	Send a subscription notification.
 		"""
 		Logging.logDebug(f'Handling notification for reason: {reason}')
@@ -337,7 +343,7 @@ class NotificationManager(object):
 
 
 
-	def _sendNotification(self, uris:list, sendingFunction:Callable) -> bool:
+	def _sendNotification(self, uris:list[str], sendingFunction:SenderFunction) -> bool:
 		"""	Send a notification to multiple targets if necessary. Determine the content serialization from either the ct parameter
 			or the csz attribute of an AE/CSE, or the CSE's default.
 			Call a callback function to do the actual sending.
@@ -345,7 +351,7 @@ class NotificationManager(object):
 		#	Event when notification is happening, not sent
 		CSE.event.notification() # type: ignore
 
-		def _sendNotificationWithSerialization(url:str, sendingFunction:Callable, csz:list[str]=None, targetResource:Resource=None) -> bool:
+		def _sendNotificationWithSerialization(url:str, sendingFunction:SenderFunction, csz:list[str]=None, targetResource:Resource=None) -> bool:
 			""" Prepare to send a notification. Determine which content serialization to use first.
 				This is done either by looking at the 'ct' argument in a URL, the given csz list, or the CSE default.
 				The actual sending is done in a handler function.
@@ -425,7 +431,7 @@ class NotificationManager(object):
 		return True
 
 
-	def _sendRequest(self, url:str, notificationRequest:dict, parameters:dict=None, originator:str=None, serialization:ContentSerializationType=None, targetResource:Resource=None) -> bool:
+	def _sendRequest(self, url:str, notificationRequest:JSON, parameters:Parameters=None, originator:str=None, serialization:ContentSerializationType=None, targetResource:Resource=None) -> bool:
 		"""	Actually send a Notification request.
 		"""
 		originator = originator if originator is not None else CSE.cseCsi
@@ -448,7 +454,7 @@ class NotificationManager(object):
 				self._sendSubscriptionAggregatedBatchNotification(ri, nu, ln)	# Send all remaining notifications
 
 
-	def _storeBatchNotification(self, nu:str, sub:dict, notificationRequest:dict, serialization:ContentSerializationType) -> bool:
+	def _storeBatchNotification(self, nu:str, sub:JSON, notificationRequest:JSON, serialization:ContentSerializationType) -> bool:
 		"""	Store a subscription's notification for later sending. For a single nu.
 		"""
 		# Rename key name
@@ -484,7 +490,7 @@ class NotificationManager(object):
 			# Collect the stored notifications for the batch and aggregate them
 			notifications = []
 			serialization = None
-			for notification in sorted(CSE.storage.getBatchNotifications(ri, nu), key=lambda x: x['tstamp']):	# sort by timestamp added
+			for notification in sorted(CSE.storage.getBatchNotifications(ri, nu), key=lambda x: x['tstamp']):	# type: ignore[no-any-return] # sort by timestamp added
 				if (n := Utils.findXPath(notification['request'], 'sgn')) is not None:
 					notifications.append(n)
 				serialization = ContentSerializationType(notification['csz'])	# The last serialization type wins

@@ -7,13 +7,16 @@
 #	ResourceType: AccessControlPolicy
 #
 
+from __future__ import annotations
 from typing import List
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, Permission
+from Configuration import Configuration
+from Logging import Logging
+from Types import ResourceTypes as T, ResponseCode as RC, Result, Permission, JSON
 from Validator import constructPolicy, addPolicy
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
-import Utils
+import Utils, CSE
 
 
 # Attribute policies for this resource are constructed during startup of the CSE
@@ -28,7 +31,7 @@ attributePolicies =  addPolicy(attributePolicies, acpPolicies)
 
 class ACP(AnnounceableResource):
 
-	def __init__(self, dct:dict=None, pi:str=None, rn:str=None, create:bool=False, createdInternally:str=None) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, rn:str=None, create:bool=False, createdInternally:str=None) -> None:
 		super().__init__(T.ACP, dct, pi, create=create, inheritACP=True, rn=rn, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = acpPolicies	# only the resource type's own policies
@@ -50,12 +53,9 @@ class ACP(AnnounceableResource):
 
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:dict=None) -> Result:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		if not (res := super().validate(originator, create, dct)).status:
 			return res
-		
-
-
 		
 		if dct is not None and (pvs := Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs')) is not None:
 			if len(pvs) == 0:
@@ -70,7 +70,7 @@ class ACP(AnnounceableResource):
 		return Result(status=True)
 
 
-	def deactivate(self, originator: str) -> None:
+	def deactivate(self, originator:str) -> None:
 		super().deactivate(originator)
 
 		# Remove own resourceID from all acpi
@@ -83,7 +83,7 @@ class ACP(AnnounceableResource):
 				r.dbUpdate()
 
 
-	def validateAnnouncedDict(self, dct:dict) -> dict:
+	def validateAnnouncedDict(self, dct:JSON) -> JSON:
 		if (acr := Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs/acr')) is not None:
 			acr.append( { 'acor': [ CSE.cseCsi ], 'acop': Permission.ALL } )
 		return dct
@@ -95,7 +95,7 @@ class ACP(AnnounceableResource):
 	#	Permission handlings
 	#
 
-	def addPermission(self, originators:list, permission:int) -> None:
+	def addPermission(self, originators:list[str], permission:int) -> None:
 		o = list(set(originators))	# Remove duplicates from list of originators
 		if (p := self['pv/acr']) is not None:
 			p.append({'acop' : permission, 'acor': o})

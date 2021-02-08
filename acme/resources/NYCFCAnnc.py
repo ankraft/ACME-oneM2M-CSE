@@ -8,12 +8,12 @@
 #
 
 from .MgmtObjAnnc import *
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, JSON
 import Utils
 
 
 class NYCFCAnnc(MgmtObjAnnc):
 
-	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(dct, pi, mgd=T.NYCFC, create=create)
 

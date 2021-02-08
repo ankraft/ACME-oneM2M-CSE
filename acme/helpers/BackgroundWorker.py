@@ -11,12 +11,12 @@ from __future__ import annotations
 from Logging import Logging
 import time, random, sys
 from threading import Thread
-from typing import Callable, List, Dict, Any
+from typing import Callable, List, Dict, Any, Protocol
 
 
 class BackgroundWorker(object):
 
-	def __init__(self, updateIntervall:float, callback:Callable, name:str=None, startWithDelay:bool=False, count:int=None, dispose:bool=True, id:int=None) -> None:
+	def __init__(self, updateIntervall:float, callback:Callable, name:str=None, startWithDelay:bool=False, count:int=None, dispose:bool=True, id:int=None) -> None:		# type: ignore[type-arg]
 		self.updateIntervall = updateIntervall
 		self.callback = callback
 		self.running = False		# Indicator that a worker is running or will be stopped
@@ -116,7 +116,7 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def newWorker(cls, updateIntervall:float, workerCallback:Callable, name:str=None, startWithDelay:bool=False, count:int=None, dispose:bool=True) -> BackgroundWorker:
+	def newWorker(cls, updateIntervall:float, workerCallback:Callable, name:str=None, startWithDelay:bool=False, count:int=None, dispose:bool=True) -> BackgroundWorker:	# type:ignore[type-arg]
 		"""	Create a new background worker that periodically executes the callback.
 		"""
 		# Get a unique ID
@@ -129,7 +129,7 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def newActor(cls, delay:float, workerCallback:Callable, name:str=None, dispose:bool=True) -> BackgroundWorker:
+	def newActor(cls, delay:float, workerCallback:Callable, name:str=None, dispose:bool=True) -> BackgroundWorker:	#type:ignore[type-arg]
 		"""	Create a new background worker that runs only once after a delay (the 'delay' may be 0.0s, though).
 		"""
 		return cls.newWorker(delay, workerCallback, name=name, startWithDelay=delay>0.0, count=1, dispose=dispose)

@@ -10,13 +10,13 @@
 
 from .AnnouncedResource import AnnouncedResource
 from .Resource import *
-from Types import ResourceTypes as T, Permission
+from Types import ResourceTypes as T, Permission, JSON
 
 
 
 class ACPAnnc(AnnouncedResource):
 
-	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.ACPAnnc, dct, pi=pi, create=create)
 
 

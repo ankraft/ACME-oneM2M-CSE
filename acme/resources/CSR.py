@@ -8,7 +8,7 @@
 #
 
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, JSON
 from Configuration import Configuration
 from Validator import constructPolicy, addPolicy
 from .Resource import *
@@ -28,7 +28,7 @@ attributePolicies = addPolicy(attributePolicies, csrPolicies)
 
 class CSR(AnnounceableResource):
 
-	def __init__(self, dct:dict=None, pi:str=None, rn:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, rn:str=None, create:bool=False) -> None:
 		super().__init__(T.CSR, dct, pi, rn=rn, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = csrPolicies	# only the resource type's own policies
@@ -61,7 +61,7 @@ class CSR(AnnounceableResource):
 									 ])
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:dict=None) -> Result:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		if (res := super().validate(originator, create, dct)).status == False:
 			return res
 		self.normalizeURIAttribute('poa')

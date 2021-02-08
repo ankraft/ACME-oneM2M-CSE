@@ -9,7 +9,7 @@
 
 import random, string
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, JSON
 import Utils, CSE
 from Validator import constructPolicy, addPolicy
 from .Resource import *
@@ -30,7 +30,7 @@ attributePolicies = addPolicy(attributePolicies, nodPolicies)
 
 class NOD(AnnounceableResource):
 
-	def __init__(self, dct:dict=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.NOD, dct, pi, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = nodPolicies	# only the resource type's own policies

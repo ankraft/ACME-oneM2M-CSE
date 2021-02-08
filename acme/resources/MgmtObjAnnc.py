@@ -10,12 +10,12 @@
 
 from .AnnouncedResource import AnnouncedResource
 from .Resource import *
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, JSON
 
 
 class MgmtObjAnnc(AnnouncedResource):
 
-	def __init__(self, dct:dict, pi:str, mgd:T, create:bool=False) -> None:
+	def __init__(self, dct:JSON, pi:str, mgd:T, create:bool=False) -> None:
 		super().__init__(T.MGMTOBJAnnc, dct, pi, tpe=f'{mgd.tpe()}A', create=create)
 		
 		if self.dict is not None:
