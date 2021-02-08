@@ -437,7 +437,7 @@ skinparam rectangle {
 		result += f'    - FCNT          : {CSE.dispatcher.countResources(T.FCNT)}\n'
 		result += f'    - FCI           : {CSE.dispatcher.countResources(T.FCI)}\n'
 		result += f'    - GRP           : {CSE.dispatcher.countResources(T.GRP)}\n'
-		result += f'    - MgmtObj       : {CSE.dispatcher.countResources(T.MgmtObj)}\n'
+		result += f'    - MgmtObj       : {CSE.dispatcher.countResources(T.MGMTOBJ)}\n'
 		result += f'    - NOD           : {CSE.dispatcher.countResources(T.NOD)}\n'
 		result += f'    - PCH           : {CSE.dispatcher.countResources(T.PCH)}\n'
 		result += f'    - REQ           : {CSE.dispatcher.countResources(T.REQ)}\n'
