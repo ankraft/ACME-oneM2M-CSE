@@ -717,9 +717,25 @@ class Dispatcher(object):
 		return children
 
 
-	def countResources(self) -> int:
-		""" Get total number of resources. """
-		return CSE.storage.countResources()
+	def countResources(self, ty:T|Tuple(T)=None) -> int:
+		""" Return total number of resources.
+			Optional filter by type.
+		"""
+
+		# Count all resources
+		if ty is None:
+			return CSE.storage.countResources()
+		
+		# Count all resources of the given types
+		if isinstance(ty, tuple):
+			cnt = 0
+			for t in ty:
+				cnt += len(CSE.storage.retrieveResourcesByType(t))
+			return cnt
+
+		# Count all resources of a specific type
+		return len(CSE.storage.retrieveResourcesByType(ty))
+
 
 
 	def retrieveResourcesByType(self, ty:T) -> list[Resource]:
