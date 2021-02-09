@@ -55,9 +55,6 @@ class AEBase(AppBase):
 		# Store updated application data
 		self.setAppData('_originator', self.originator)
 
-		# assign as acpi to use the first assigned acpi
-		self.acpi = self.ae.acpi[0] if self.ae is not None else None
-
 
 	def shutdown(self) -> None:
 		super().shutdown()

@@ -229,7 +229,6 @@ def setExpirationCheck(interval:int) -> int:
 		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.checkExpirationsInterval', '')
 		oldValue = int(c)
 		c, rc = UPDATESTRING(f'{CONFIGURL}/cse.checkExpirationsInterval', '', str(interval))
-		print(c)
 		return oldValue if c == 'ack' else -1
 	return -1
 

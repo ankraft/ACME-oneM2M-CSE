@@ -118,9 +118,9 @@ class TestAE(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:ae/srv'), [ '3' ])
 		self.assertIsNone(findXPath(r, 'm2m:ae/st'))
 		self.assertEqual(findXPath(r, 'm2m:ae/pi'), findXPath(TestAE.cse,'m2m:cb/ri'))
-		self.assertIsNotNone(findXPath(r, 'm2m:ae/acpi'))
-		self.assertIsInstance(findXPath(r, 'm2m:ae/acpi'), list)
-		self.assertGreater(len(findXPath(r, 'm2m:ae/acpi')), 0)
+		#self.assertIsNotNone(findXPath(r, 'm2m:ae/acpi'))
+		#self.assertIsInstance(findXPath(r, 'm2m:ae/acpi'), list)
+		#self.assertGreater(len(findXPath(r, 'm2m:ae/acpi')), 0)
 		self.assertIsNone(findXPath(r, 'm2m:ae/st'))
 
 
@@ -168,24 +168,6 @@ class TestAE(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(aeURL, TestAE.originator, dct)
 		self.assertEqual(rsc, RC.badRequest)
-
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveAEACP(self) -> None:
-		""" Retrieve <AE>'s acp """
-		self.assertIsNotNone(TestAE.aeACPI)
-		self.assertIsInstance(TestAE.aeACPI, list)
-		self.assertGreater(len(TestAE.aeACPI), 0)
-		_, rsc = RETRIEVE(f'{URL}{TestAE.aeACPI[0]}', TestAE.originator)	# AE's own originator fails
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
-		acp, rsc = RETRIEVE(f'{URL}{TestAE.aeACPI[0]}', ORIGINATOR)	# but Admin should succeed
-		self.assertEqual(rsc, RC.OK)
-		self.assertEqual(findXPath(acp, 'm2m:acp/rn'), f'acp_{aeRN}')
-		for acr in findXPath(acp, 'm2m:acp/pv/acr'):
-			if TestAE.originator in acr['acor']:
-				break
-		else:
-			self.fail('Originator not in ACP:acr:acor')
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -309,7 +291,6 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestAE('test_updateAETy'))
 	suite.addTest(TestAE('test_updateAEPi'))
 	suite.addTest(TestAE('test_updateAEUnknownAttribute'))
-	suite.addTest(TestAE('test_retrieveAEACP'))
 	suite.addTest(TestAE('test_deleteAEByUnknownOriginator'))
 	suite.addTest(TestAE('test_deleteAEByAssignedOriginator'))
 	suite.addTest(TestAE('test_createAEWrongCSZ'))

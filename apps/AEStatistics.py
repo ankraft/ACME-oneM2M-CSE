@@ -67,7 +67,6 @@ class AEStatistics(AEBase):
 		dct = { self.fcntType : {
 				'rn'  : Configuration.get('app.statistics.fcntRN'),
 					'cnd' : Configuration.get('app.statistics.fcntCND'),
-					'acpi': [ self.acpi ],	# assignde by CSE,
 					'mni' : 2,
 					'aa' : ['rmRes', 'crRes', 'upRes', 'crRes', 'cseUT'],
 				Statistics.deletedResources : 0,

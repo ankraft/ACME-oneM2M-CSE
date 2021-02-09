@@ -23,7 +23,7 @@ csrPolicies = constructPolicy([
 ])
 attributePolicies = addPolicy(attributePolicies, csrPolicies)
 
-# TODO ^^^ Add Attribute EnableTimeCompensation
+# TODO ^^^ Add Attribute EnableTimeCompensation, also in CSRAnnc
 
 
 class CSR(AnnounceableResource):

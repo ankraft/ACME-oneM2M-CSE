@@ -66,14 +66,6 @@ enableACPChecks=true
 # Always grant the admin originator full access (bypass access checks). 
 # Default: True
 fullAccessAdmin=True
-# Admin ACP, resource identifier (e.g. from an imported ACP). 
-# Assigned by the CSE for admin access.
-# Default: acpAdmin
-adminACPI=acpAdmin
-# The ACP resource that will dynamically receive permissions to access the CSEBase.
-# They are assigned, for example, during AE or remoteCSE registration.
-# Default: acpCSEBaseAccess
-csebaseAccessACPI=acpCSEBaseAccess
 # Enable TLS for communications.
 # See oneM2M TS-0003 Clause 8.2.1 Overview on Security Association Establishment Frameworks
 # Default: False

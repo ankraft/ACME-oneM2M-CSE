@@ -9,7 +9,7 @@
 
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
-from typing import Any, Tuple, Union, Dict, List
+from typing import Any, Tuple, Union, Dict, List, cast
 from Logging import Logging
 from Constants import Constants as C
 from Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC, CSERequest, JSON, AttributePolicies
@@ -32,13 +32,14 @@ class Resource(object):
 	_isVirtual 			= '__isVirtual__'
 	_announcedTo 		= '__announcedTo__'			# List
 	_isInstantiated		= '__isInstantiated__'
+	_isAnnounced 		= '__isAnnounced__'	
 	_originator			= '__originator__'			# Or creator
 	_modified			= '__modified__'
 
 	# ATTN: There is a similar definition in FCNT! Don't Forget to add attributes there as well
-	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator, _announcedTo, _modified ]
+	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator, _announcedTo, _modified, _isAnnounced ]
 
-	def __init__(self, ty:T|int, dct:JSON=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str=None, attributePolicies:AttributePolicies=None, isVirtual:bool=False) -> None:
+	def __init__(self, ty:T|int, dct:JSON=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str=None, attributePolicies:AttributePolicies=None, isVirtual:bool=False, isAnnounced:bool=False) -> None:
 		self.tpe = tpe
 		if isinstance(ty, T) and ty not in [ T.FCNT, T.FCI ]: 	# For some types the tpe/root is empty and will be set later in this method
 			self.tpe = ty.tpe() if tpe is None else tpe
@@ -77,7 +78,10 @@ class Resource(object):
 			# Indicate whether this is a virtual resource
 			if isVirtual:
 				self.setAttribute(self._isVirtual, isVirtual)
-	
+			
+			# Indicate whether this is an announced resource
+			self.setAttribute(self._isAnnounced, isAnnounced)
+
 			# Create an RN if there is none
 			self.setAttribute('rn', Utils.uniqueRN(self.tpe), overwrite=False)
 			
@@ -140,7 +144,7 @@ class Resource(object):
 		# We assume that an instantiated resource is always correct
 		# Also don't validate virtual resources
 		if (self[self._isInstantiated] is None or not self[self._isInstantiated]) and not self[self._isVirtual] :
-			if not (res := CSE.validator.validateAttributes(self._originalDict, self.tpe, self.attributePolicies, isImported=self.isImported, createdInternally=self.isCreatedInternally())).status:
+			if not (res := CSE.validator.validateAttributes(self._originalDict, self.tpe, self.attributePolicies, isImported=self.isImported, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
 				return res
 
 		# validate the resource logic
@@ -191,7 +195,7 @@ class Resource(object):
 
 
 			# validate the attributes
-			if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.attributePolicies, create=False, createdInternally=self.isCreatedInternally())).status:
+			if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.attributePolicies, create=False, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
 				return res
 
 			if self.ty not in [T.FCNTAnnc, T.FCIAnnc]:
@@ -319,6 +323,10 @@ class Resource(object):
 		"""
 		self[self._createdInternally] = value
 
+
+	def isAnnounced(self) -> bool:
+		""" Return whether a resource is an announced resource. """
+		return cast(bool, self[self._isAnnounced])
 
 	#########################################################################
 	#

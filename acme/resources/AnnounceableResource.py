@@ -71,8 +71,14 @@ class AnnounceableResource(Resource):
 			announceableAttributes = deepcopy(self.aa)
 		for attr, v in self.attributePolicies.items():
 			# Removing non announceable attributes
-			if attr in announceableAttributes and v[5] == AN.NA:  # remove attributes which are not announceable
-				announceableAttributes.remove(attr)
+			if attr in announceableAttributes:
+				if v[5] == AN.NA:  # remove attributes which are not announceable
+					announceableAttributes.remove(attr)
+					continue
+				if not self.hasAttribute(attr):	# remove attributes that are in aa but not in the resource
+					announceableAttributes.remove(attr)
+					continue
+
 
 		# If announceableAttributes is now an empty list, set aa to None
 		self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
@@ -88,7 +94,6 @@ class AnnounceableResource(Resource):
 			policies = addPolicy(deepcopy(self.attributePolicies), additionalAttributes)
 			return self._createAnnouncedDict(policies, remoteCSR, isCreate=isCreate, remoteCsi=csi)
 		# Normal behaviour for other resources
-		# return self._createAnnouncedDict(self.resourceAttributePolicies, remoteCSR, isCreate=isCreate, remoteCsi=csi)
 		return self.validateAnnouncedDict( self._createAnnouncedDict(self.attributePolicies, remoteCSR, isCreate=isCreate, remoteCsi=csi) )
 
 
@@ -115,7 +120,6 @@ class AnnounceableResource(Resource):
 			dct:JSON = { tpe : {  # with the announced variant of the tpe
 							'et'	: self.et,
 							'lnk'	: f'{CSE.cseCsi}/{self.ri}',
-							# set by parent: ri, pi, ct, lt, et
 						}
 				}
 			# Add more  attributes
@@ -134,18 +138,23 @@ class AnnounceableResource(Resource):
 			#
 			#	overwrite (!) acpi
 			#
+			# if (acpi := self.acpi) is not None:
+			# 	acpi = [ f'{CSE.cseCsi}/{acpi}' for acpi in self.acpi ]	# set to local CSE.csi
+			# else:
+			# 	acpi = None
+			# add remote acpi so that we will have access
+			# if remoteCSR is not None and (regAcpi := remoteCSR.acpi) is not None:
+			# 	if remoteCsi is not None:
+			# 		# acpi.extend([f'{CSE.remote.cseCsi}/{a}' for a in regAcpi])
+			# 		acpi.extend([a for a in regAcpi])
+			# 	else:
+			# 		acpi.extend(regAcpi)
+			# Utils.setXPath(	dct, f'{tpe}/acpi', acpi)
 			if (acpi := self.acpi) is not None:
 				acpi = [ f'{CSE.cseCsi}/{acpi}' for acpi in self.acpi ]	# set to local CSE.csi
-			else:
-				acpi = []
-			# add remote acpi so that we will have access
-			if remoteCSR is not None and (regAcpi := remoteCSR.acpi) is not None:
-				if remoteCsi is not None:
-					# acpi.extend([f'{CSE.remote.cseCsi}/{a}' for a in regAcpi])
-					acpi.extend([a for a in regAcpi])
-				else:
-					acpi.extend(regAcpi)
-			Utils.setXPath(	dct, f'{tpe}/acpi', acpi)
+				body['acpi'] = acpi
+				# Utils.setXPath(	dct, f'{tpe}/acpi', acpi)
+
 
 		else: # update. Works a bit different
 

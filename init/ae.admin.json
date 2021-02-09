@@ -7,8 +7,6 @@
         "hld" : "${cse.originator}",
         "api": "N${cse.originator}",
         "aei": "${cse.originator}",
-        "acpi": ["${cse.security.adminACPI}"],
         "csz" : [ "application/json", "application/cbor" ]
-
     }
 }
