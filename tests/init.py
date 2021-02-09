@@ -183,7 +183,7 @@ def sendRequest(method:Callable, url:str, originator:str, ty:int=None, data:JSON
 	elif ct.startswith(('application/json', 'application/vnd.onem2m-res+json')):
 		return r.json() if len(r.content) > 0 else None, rc
 	# just return what's in there
-	return r.content.rc
+	return r.content, rc
 
 
 _lastRequstID = None
