@@ -19,7 +19,7 @@ from resources.Resource import Resource
 import Utils
 
 
-# TODO add wildcard, e.g. for custom attributes
+# TODO owner attribute, annnouncedSyncType
 
 # predefined policiespolicies
 # type, cardinality, optional.create, optional.update, optional.discovery, announcement
@@ -28,7 +28,7 @@ attributePolicies:AttributePolicies = {
 	'ri'	: ( BT.string, 			CAR.car1,   RO.NP, 	RO.NP, RO.O, AN.NA ),
 	'rn' 	: ( BT.string, 			CAR.car1,   RO.O,  	RO.NP, RO.O, AN.NA ),
 	'pi' 	: ( BT.string, 			CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ),
-	'acpi'	: ( BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.NA ),
+	'acpi'	: ( BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.MA ),
 	'ct'	: ( BT.timestamp, 		CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ),
 	'et'	: ( BT.timestamp, 		CAR.car1N,  RO.O,	RO.O,  RO.O, AN.MA ),
 	'lt'	: ( BT.timestamp, 		CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ),
@@ -114,6 +114,7 @@ attributePolicies:AttributePolicies = {
 	'li'	: ( BT.anyURI,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ),		# CNT
 	'ln'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
 	'lnh'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# ANDI
+	'lnk'	: ( BT.anyURI,			CAR.car1, 	RO.NP,	RO.NP, RO.O, AN.MA ),		# announcedResources
 	'loc'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'macp'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT
 	'man'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# DVI
@@ -276,7 +277,7 @@ class Validator(object):
 	#########################################################################
 
 
-	def	validateAttributes(self, dct:JSON, tpe:str, attributePolicies:AttributePolicies, create:bool=True , isImported:bool=False, createdInternally:bool=False) -> Result:
+	def	validateAttributes(self, dct:JSON, tpe:str, attributePolicies:AttributePolicies, create:bool=True , isImported:bool=False, createdInternally:bool=False, isAnnounced:bool=False) -> Result:
 		""" Validate a resources attributes for types etc."""
 		if not self.validationEnabled:	# just return if disabled
 			return Result(status=True)
@@ -293,7 +294,11 @@ class Validator(object):
 			return Result(status=True)
 
 		# determine the request column, depending on create or updates
-		reqp = 2 if create else 3
+		if isAnnounced:
+			reqp = 5
+		else:
+			reqp = 2 if create else 3
+
 		(pureResDict, _tpe) = Utils.pureResource(dct)
 		if pureResDict is None:
 			return Result(status=False, rsc=RC.badRequest, dbg='content is None')
@@ -312,13 +317,17 @@ class Validator(object):
 				Logging.logWarn(err := f'Unknown attribute: {r} in resource: {tpe}')
 				return Result(status=False, rsc=RC.badRequest, dbg=err)
 		for r, p in attributePolicies.items():
-			# print(r)
-			# print(p)
 			if p is None:
 				Logging.logWarn(f'No validation policy found for attribute: {r}')
 				continue
 			# Check whether the attribute is allowed or mandatory in the request
 			if (v := pureResDict.get(r)) is None:
+
+				# check the the announced cases first
+				if isAnnounced:
+					# MA are not checked bc they are only present if they are presennt in the original resource
+					continue
+					
 				if p[reqp] == RO.M:		# Not okay, this attribute is mandatory
 					Logging.logWarn(err := f'Cannot find mandatory attribute: {r}')
 					return Result(status=False, rsc=RC.badRequest, dbg=err)
@@ -332,6 +341,14 @@ class Validator(object):
 					if p[reqp] == RO.NP:
 						Logging.logWarn(err := f'Found non-provision attribute: {r}')
 						return Result(status=False, rsc=RC.badRequest, dbg=err)
+
+				# check the the announced cases
+				if isAnnounced:
+					if p[reqp] == AN.NA:	# Not okay, attribute is not announced
+						Logging.logWarn(err := f'Found non-announced attribute: {r}')
+						return Result(status=False, rsc=RC.badRequest, dbg=err)
+					continue
+
 				if r == 'pvs' and not (res := self.validatePvs(pureResDict)).status:
 					return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
 

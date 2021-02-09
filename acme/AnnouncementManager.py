@@ -143,6 +143,7 @@ class AnnouncementManager(object):
 	def announceResource(self, resource:AnnounceableResource) -> None:
 		"""	Announce a single resource to its announcement targets.
 		"""
+
 		if not self.announcementsEnabled:
 			return
 		Logging.logDebug(f'Announce resource: {resource.ri} to all connected csr')

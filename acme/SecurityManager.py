@@ -20,7 +20,6 @@ class SecurityManager(object):
 
 	def __init__(self) -> None:
 		self.enableACPChecks 		= Configuration.get('cse.security.enableACPChecks')
-		self.csebaseAccessACPI		= Configuration.get('cse.security.csebaseAccessACPI')
 		self.fullAccessAdmin		= Configuration.get('cse.security.fullAccessAdmin')
 
 		Logging.log('SecurityManager initialized')
@@ -72,6 +71,25 @@ class SecurityManager(object):
 				else:
 					Logging.logWarn('Originator for Announcement not found.')
 					return False
+	
+		# Allow some Originators to RETRIEVE the CSEBase
+		if resource.ty == T.CSEBase and requestedPermission & Permission.RETRIEVE:
+
+			# Allow registered AEs to RETRIEVE the CSEBase
+
+			if CSE.storage.retrieveResource(aei=originator).resource is not None:
+				Logging.logDebug(f'Allow registered AE Orignator {originator} to RETRIEVE CSEBase. OK.')
+				return True
+			
+			# Allow remote CSE to RETRIEVE the CSEBase
+
+			if originator == CSE.remote.registrarCSI:
+				Logging.logDebug(f'Allow registrar CSE Originnator {originator} to RETRIEVE CSEBase. OK.')
+				return True
+			if Utils.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators):
+				Logging.logDebug(f'Allow remote CSE Orignator {originator} to RETRIEVE CSEBase. OK.')
+				return True
+			
 
 		# Check parameters
 		if resource is None:
@@ -82,7 +100,6 @@ class SecurityManager(object):
 			return False
 
 		Logging.logDebug(f'Checking permission for originator: {originator}, ri: {resource.ri}, permission: {requestedPermission:d}, selfPrivileges: {checkSelf}')
-
 
 		if resource.ty == T.GRP: # target is a group resource
 			# Check membersAccessControlPolicyIDs if provided, otherwise accessControlPolicyIDs to be used
@@ -124,7 +141,7 @@ class SecurityManager(object):
 				Logging.logDebug('Handle with missing acpi in resource')
 
 				# if the resource *may* have an acpi
-				if 'acpi' in resource.attributePolicies:
+				if resource.attributePolicies is not None and 'acpi' in resource.attributePolicies:
 					# Check holder attribute
 					if (holder := resource.hld) is not None:
 						if holder == originator:	# resource.holder == originator -> all access

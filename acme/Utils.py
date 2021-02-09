@@ -100,10 +100,16 @@ def isStructured(uri:str) -> bool:
 
 
 def isVirtualResource(resource: Resource) -> bool:
+	"""	Check whether this resource is a virtual resource. """
 	result:bool = resource[resource._isVirtual]
 	return result if result is not None else False
 	# return (ty := r.ty) and ty in C.virtualResources
 
+
+def isAnnouncedResource(resource: Resource) -> bool:
+	"""	Check whether this resource is an announced resource. """
+	result:bool = resource[resource._isAnnounced]
+	return result if result is not None else False
 
 def isValidID(id: str) -> bool:
 	""" Check for valid ID. """

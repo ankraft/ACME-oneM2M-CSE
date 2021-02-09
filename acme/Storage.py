@@ -97,7 +97,7 @@ class Storage(object):
 		return self.db.hasResource(ri=ri) or self.db.hasResource(srn=srn)
 
 
-	def retrieveResource(self, ri:str=None, csi:str=None, srn:str=None) -> Result:
+	def retrieveResource(self, ri:str=None, csi:str=None, srn:str=None, aei:str=None) -> Result:
 		""" Return a resource via different addressing methods. """
 		resources = []
 
@@ -113,6 +113,9 @@ class Storage(object):
 		elif csi is not None:	# get the CSE by its csi
 			# Logging.logDebug(f'Retrieving resource csi: {csi}')
 			resources = self.db.searchResources(csi=csi)
+		
+		elif aei is not None:	# get an AE by its AE-ID
+			resources = self.db.searchResources(aei=aei)
 
 		# Logging.logDebug(resources)
 		# return CSE.dispatcher.resourceFromDict(resources[0]) if len(resources) == 1 else None,
@@ -248,7 +251,7 @@ class Storage(object):
 
 		def _announcedFilter(r:JSON) -> bool:
 			# if (at := r.get('at')) is not None and csi in at:
-			if (at := r.get('at')) is not None and _hasCSI(cast(list[str], at)):
+			if (at := r.get('at')) is not None and _hasCSI(at):
 				if (isa := r.get(Resource._announcedTo)) is not None:
 					found = False
 					for i in isa:
@@ -458,7 +461,7 @@ class TinyDBBinding(object):
 			self.tabResources.remove(Query().ri == resource.ri)		# type: ignore
 	
 
-	def searchResources(self, ri: str = None, csi: str = None, srn: str = None, pi: str = None, ty: int = None) -> list[Document]:
+	def searchResources(self, ri:str=None, csi:str=None, srn:str=None, pi:str=None, ty:int=None, aei:str=None) -> list[Document]:
 
 		# find the ri first and then try again recursively
 		if srn is not None:
@@ -477,6 +480,8 @@ class TinyDBBinding(object):
 				return self.tabResources.search(Query().pi == pi)	# type: ignore
 			elif ty is not None:
 				return self.tabResources.search(Query().ty == ty)	# type: ignore
+			elif aei is not None:
+				return self.tabResources.search(Query().aei == aei)	# type: ignore
 			return []
 
 

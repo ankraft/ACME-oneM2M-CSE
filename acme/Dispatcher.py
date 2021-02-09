@@ -717,7 +717,7 @@ class Dispatcher(object):
 		return children
 
 
-	def countResources(self, ty:T|Tuple(T)=None) -> int:
+	def countResources(self, ty:T|Tuple[T, ...]=None) -> int:
 		""" Return total number of resources.
 			Optional filter by type.
 		"""

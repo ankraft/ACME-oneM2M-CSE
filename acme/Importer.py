@@ -25,7 +25,7 @@ import resources.Factory as Factory
 class Importer(object):
 
 	# List of "priority" resources that must be imported first for correct CSE operation
-	_firstImporters = [ 'csebase.json', 'acp.admin.json', 'acp.csebaseAccess.json']
+	_firstImporters = [ 'csebase.json']
 
 	def __init__(self) -> None:
 		self.macroMatch = re.compile(r"\$\{[\w.]+\}")
@@ -78,7 +78,6 @@ class Importer(object):
 
 		# first import the priority resources, like CSE, Admin ACP, Default ACP
 		hasCSE = False
-		hasACP = False
 		for rn in self._firstImporters:
 			fn = path + '/' + rn
 			if os.path.exists(fn):
@@ -96,13 +95,11 @@ class Importer(object):
 				# Set some values in the configuration and the CSE instance
 				setCSEParameters(resource.csi, resource.ri, resource.rn)
 				hasCSE = True
-			elif ty == T.ACP:
-				hasACP = True
 			countImport += 1
 
 
 		# Check presence of CSE and at least one ACP
-		if not (hasCSE and hasACP):
+		if not (hasCSE):
 			Logging.logErr('CSE and/or default ACP missing during import')
 			self._finishImporting()
 			return False
