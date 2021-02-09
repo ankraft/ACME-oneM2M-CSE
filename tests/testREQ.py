@@ -115,34 +115,7 @@ class TestREQ(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:req/ors/rsc'), RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/pc'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/pc/m2m:cb'))
-		self.assertEqual(findXPath(r, 'm2m:req/ors/pc/m2m:cb/ty'), T.CSEBase)
-
-		# retrieve with ORIGINATOR and check ACP
-		self.assertIsNotNone(findXPath(r, 'm2m:req/acpi'))
-		self.assertEqual(len(findXPath(r, 'm2m:req/acpi')), 1)
-		acpi = findXPath(r, 'm2m:req/acpi/{0}')
-		r, rsc = RETRIEVE(f'{URL}/{acpi}', ORIGINATOR)
-		self.assertEqual(rsc, RC.OK)
-		self.assertIsNotNone(findXPath(r, 'm2m:acp'))
-
-		# Test PV
-		found = False
-		for a in findXPath(r, 'm2m:acp/pv/acr'):
-			if findXPath(a, 'acop') == (Permission.RETRIEVE + Permission.UPDATE + Permission.DELETE) and TestREQ.originator in findXPath(a, 'acor'):
-				found = True
-				break
-		self.assertTrue(found)
-		# test PVS
-		found = False
-		for a in findXPath(r, 'm2m:acp/pvs/acr'):
-			if findXPath(a, 'acop') == (Permission.UPDATE) and TestREQ.originator in findXPath(a, 'acor'):
-				found = True
-				break
-		self.assertTrue(found)
-
-		# retrieve with AE's originator. Should fail
-		r, rsc = RETRIEVE(f'{URL}/{acpi}', TestREQ.originator)
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		self.assertEqual(findXPath(r, 'm2m:req/ors/pc/m2m:cb/ty'), T.CSEBase)	# Is the content the CSEBase
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

@@ -158,7 +158,6 @@ class RegistrationManager(object):
 	def handleAEDeRegistration(self, resource: Resource) -> bool:
 		# remove the before created ACP, if it exist
 		Logging.logDebug(f'DeRegisterung AE. aei: {resource.aei}')
-
 		return True
 
 
@@ -207,29 +206,8 @@ class RegistrationManager(object):
 
 	def handleREQRegistration(self, req:Resource, originator:str) -> bool:
 		Logging.logDebug(f'Registering REQ: {req.ri}')
-
-		# Create an REQ specific ACP
-		Logging.logDebug('Adding ACP for REQ')
-		localCSE = Utils.getCSE().resource
-		acp = self._createACP(parentResource=localCSE,
-							  rn=f'{C.acpPrefix}{req.rn}',
-						 	  createdByResource=req.ri,
-							  originators=[ originator ],
-							  permission=Permission.RETRIEVE + Permission.UPDATE + Permission.DELETE,
-							  selfOriginators=[ CSE.cseOriginator ]
-						  ).resource
-		if acp is None:
-			return False
-
-		# add additional permissions for the originator
-		acp.addPermission([ CSE.cseOriginator ], Permission.ALL)
-		acp.addSelfPermission([ originator ], Permission.UPDATE)
-		acp.dbUpdate()
-
-
-		# add acpi to request resource
-		req['acpi'] =  [ acp.ri ]	
-
+		# Add originator as creator to allow access
+		req[req._originator] = originator
 		return True
 
 
@@ -238,13 +216,7 @@ class RegistrationManager(object):
 	#
 
 	def handleREQDeRegistration(self, resource: Resource) -> bool:
-		# remove the before created ACP, if it exist
 		Logging.logDebug(f'DeRegisterung REQ. ri: {resource.ri}')
-		Logging.logDebug('Removing ACP for REQ')
-
-		acpSrn = f'{CSE.cseRn}/{C.acpPrefix}{resource.rn}'
-		self._removeACP(srn=acpSrn, resource=resource)
-
 		return True
 
 
