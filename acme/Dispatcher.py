@@ -537,13 +537,7 @@ class Dispatcher(object):
 		if resource.readOnly:
 			return Result(rsc=RC.operationNotAllowed, dbg='resource is read-only')
 
-		# check permissions
-		acpi = Utils.findXPath(request.dict, list(request.dict.keys())[0] + '/acpi')
-		if acpi is not None:	# update of acpi attribute means check for self privileges!
-			updateOrDelete = Permission.DELETE if acpi is None else Permission.UPDATE
-			if CSE.security.hasAccess(originator, resource, updateOrDelete, checkSelf=True) == False:
-				return Result(rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
-		elif CSE.security.hasAccess(originator, resource, Permission.UPDATE) == False:
+		if CSE.security.hasAccess(originator, resource, Permission.UPDATE) == False:
 			return Result(rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
 
 		# Check for virtual resource
@@ -552,13 +546,14 @@ class Dispatcher(object):
 
 		dictOrg = deepcopy(resource.dict)	# Save for later
 
-		# Check resource update with registration
-		if (rres := CSE.registration.checkResourceUpdate(resource, deepcopy(request.dict))).rsc != RC.OK:
-			return rres.errorResult()
 
 		if (res := self.updateResource(resource, deepcopy(request.dict), originator=originator)).resource is None:
 			return res.errorResult()
 		resource = res.resource 	# re-assign resource (might have been changed during update)
+
+		# Check resource update with registration
+		if (rres := CSE.registration.checkResourceUpdate(resource, deepcopy(request.dict))).rsc != RC.OK:
+			return rres.errorResult()
 
 		#
 		# Handle RCN's
@@ -615,7 +610,7 @@ class Dispatcher(object):
 
 		# get resource to be removed and check permissions
 		if (res := self.retrieveResource(id)).resource is None:
-			Logging.logDebug(f'Resource not found: {res.dbg}')
+			Logging.logDebug(res.dbg)
 			return Result(rsc=RC.notFound, dbg=res.dbg)
 		resource = res.resource
 

@@ -178,7 +178,6 @@ The following macros are supported in addition to those defined in the sections 
 |:------------------|:------------------------------------------------------------------------------|:--------------------------|
 | permission        | Default permission when creating an ACP resource.<br />Default: 63            | cse.acp.pv.acop           |
 | selfPermission    | Default selfPermission when creating an ACP resource.<br/>Default: 51         | cse.acp.pvs.acop          |
-| addAdminOrignator | Always add the CSE's "admin" originator to an ACP resource.<br/>Default: true | cse.acp.addAdminOrignator |
 
 
 <a name="resource_cnt"></a>

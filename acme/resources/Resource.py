@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Any, Tuple, Union, Dict, List, cast
 from Logging import Logging
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC, CSERequest, JSON, AttributePolicies
+from Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC, CSERequest, JSON, AttributePolicies, Permission
 from Configuration import Configuration
 import Utils, CSE
 import datetime, random, traceback
@@ -100,7 +100,7 @@ class Resource(object):
 				self.setAttribute('ty', int(ty))
 
 			#
-			## Note: ACPI is set in activate()
+			## Note: ACPI is handled in activate() and update()
 			#
 
 			# Remove empty / null attributes from dict
@@ -132,12 +132,14 @@ class Resource(object):
 		return { self.tpe : dct } if embedded else dct
 
 
-	# This method is called to to activate a resource. This is not always the
-	# case, e.g. when a resource object is just used temporarly.
-	# NO notification on activation/creation!
-	# Implemented in sub-classes.
-	# Note: CR and ACPI are set in RegistrationManager
+
 	def activate(self, parentResource: Resource, originator: str) -> Result:
+		"""	This method is called to to activate a resource. 
+			This is not always the case, e.g. when a resource object is just used temporarly.
+			NO notification on activation/creation!
+			Implemented in sub-classes as well.
+			Note: CR is set in RegistrationManager	(TODO: Check this)
+		"""
 		Logging.logDebug(f'Activating resource: {self.ri}')
 
 		# validate the attributes but only when the resource is not instantiated.
@@ -157,6 +159,15 @@ class Resource(object):
 			parentResource['st'] = parentResource.st + 1
 			if (res := parentResource.dbUpdate()).resource is None:
 				return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+		
+		#
+		#	Various ACPI handling
+		# ACPI: Check <ACP> existence and convert <ACP> references to CSE relative unstructured
+		if self.acpi is not None:
+			if not (res := self._checkAndFixACPIreferences(self.acpi)).status:
+				return res
+			self.setAttribute('acpi', res.lst)
+
 
 		self.setAttribute(self._originator, originator, overwrite=False)
 		self.setAttribute(self._rtype, self.tpe, overwrite=False) 
@@ -203,9 +214,40 @@ class Resource(object):
 			else:
 				updatedAttributes = Utils.findXPath(dct, '{0}')
 
+			#
+			#	ACPI Checks
+			#
+
 			# Check that acpi, if present, is the only attribute
-			if 'acpi' in updatedAttributes and len(updatedAttributes) > 1:
-				return Result(status=False, rsc=RC.badRequest, dbg='"acpi" must be the only attribute in update')
+			if 'acpi' in updatedAttributes:
+				if len(updatedAttributes) > 1:
+					Logging.logDebug(dbg := '"acpi" must be the only attribute in update')
+					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+				
+				# Check whether the originator has UPDATE privileges for the acpi attribute (pvs!)
+				if self.acpi is None:
+					if originator != self[self._originator]:
+						Logging.logDebug(dbg := f'No access to update acpi for originator: {originator}')
+						return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+					else:
+						pass	# allowed for creating originator
+				else:
+					# test the current acpi whether the originator is allowed to update the acpi
+					for ri in self.acpi:
+						if (acp := CSE.dispatcher.retrieveResource(ri).resource) is None:
+							Logging.logWarn(f'Access Check for acpi: referenced <ACP> resource not found: {ri}')
+							continue
+						if acp.checkSelfPermission(originator, Permission.UPDATE):
+							break
+					else:
+						Logging.logDebug(dbg := f'Originator has no permission to update acpi:{ri}')
+						return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+
+					# Check whether referenced <ACP> exists. If yes, change ID also to CSE relative unstructured
+					if not (res := self._checkAndFixACPIreferences(updatedAttributes['acpi'])).status:
+						return res
+					updatedAttributes['acpi'] = res.lst
+
 
 			# Update attributes
 			for key in updatedAttributes:
@@ -425,6 +467,19 @@ class Resource(object):
 				self[attributeName] = result
 			else: 							# single uri
 				self[attributeName] = Utils.normalizeURL(attribute)
+
+
+	def _checkAndFixACPIreferences(self, acpi:list[str]) -> Result:
+		""" Check whether referenced <ACP> exists. If yes, change ID also to CSE relative unstructured.
+		"""
+		newACPIList =[]
+		for ri in acpi:
+			if (acp := CSE.dispatcher.retrieveResource(ri).resource) is None:
+				Logging.logDebug(dbg := f'Referenced <ACP> resource not found: {ri}')
+				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+			newACPIList.append(acp.ri)
+		return Result(status=True, lst=newACPIList)
+
 
 
 	#########################################################################

@@ -30,8 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Supported release version can now be configured via the config file.
 - [CSE] Added checks for remote CSE's *csi* (does it exist? Does it begin with a /?)
 - [CSE] Removed defaultACPI support. Now supporting correct behaviour for *holder* attribute resp resource creator.
+- [CSE] Correctly implemented acpi updates. Also: acpi references are converted to CSE relative unstructured During CREATE and UPDATE.
 - [CSE] Changed resourceType values for \<latest> and \<oldest> to the specified values.
-- [CSE] No more extra ACPs for admin access, CSRs, AEs, REQs etc. The CSE now makes use of *creator* and *holder* access.
+- [CSE] Access control clean-up. No more extra ACPs for admin access, CSRs, AEs, REQs etc. The CSE now makes use of *creator* and *holder* access.
 - [TESTS] The behavior whether a failed test skips the remaining tests in a test suite can now be configured.
 - [TESTS] Improved documentation. Doc strings provide a bit more information about a currently running test.
 - [TESTS] Tests now pass mypy checks.

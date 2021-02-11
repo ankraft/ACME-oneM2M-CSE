@@ -21,7 +21,9 @@ noCSE = not connectionPossible(cseURL)
 
 class TestACP(unittest.TestCase):
 
-	acpORIGINATOR = 'CtestOriginator'
+	acpORIGINATOR 	= 'CtestOriginator'
+	acpORIGINATOR2 	= 'CtestOriginator2'
+	acpORIGINATOR3 	= 'CtestOriginator3'
 
 	cse 			= None
 	ae 				= None
@@ -48,13 +50,13 @@ class TestACP(unittest.TestCase):
 		dct = 	{ "m2m:acp": {
 					"rn": acpRN,
 					"pv": {
-						"acr": [ { 	"acor": [ ORIGINATOR ],
+						"acr": [ { 	"acor": [ self.acpORIGINATOR, self.acpORIGINATOR2, self.acpORIGINATOR3 ],
 									"acop": 63
 								} ]
 					},
 					"pvs": { 
 						"acr": [ {
-							"acor": [ self.acpORIGINATOR ],
+							"acor": [ self.acpORIGINATOR, self.acpORIGINATOR2 ],
 							"acop": 63
 						} ]
 					},
@@ -98,7 +100,7 @@ class TestACP(unittest.TestCase):
 		self.assertIsInstance(findXPath(r, 'm2m:acp/pv/acr/{0}/acor'), list)
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acor/{0}'))
 		self.assertIsInstance(findXPath(r, 'm2m:acp/pv/acr/{0}/acor/{0}'), str)
-		self.assertEqual(findXPath(r, 'm2m:acp/pv/acr/{0}/acor/{0}'), ORIGINATOR)
+		self.assertEqual(findXPath(r, 'm2m:acp/pv/acr/{0}/acor'), [ self.acpORIGINATOR, self.acpORIGINATOR2, self.acpORIGINATOR3 ])
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acop'))
 		self.assertIsInstance(findXPath(r, 'm2m:acp/pv/acr/{0}/acop'), int)
 		self.assertEqual(findXPath(r, 'm2m:acp/pv/acr/{0}/acop'), 63)
@@ -161,13 +163,43 @@ class TestACP(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAEACPIWrong(self) -> None:
-		"""	Update <ACP> with ACPI together with second attribute -> Fail """
+		"""	Update <AE> ACPI together with second attribute -> Fail """
 		dct =	{ 'm2m:ae': {
 					'lbl' : [ 'a' ],
 					'acpi': [ 'anID' ]
 				}}
-		r, rsc = UPDATE(aeURL, ORIGINATOR, dct)
+		_, rsc = UPDATE(aeURL, self.acpORIGINATOR, dct)
 		self.assertNotEqual(rsc, RC.updated)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateAEACPIWrong2(self) -> None:
+		"""	Update <AE> ACPI with reference to non-existing <ACP> -> Fail """
+		dct =	{ 'm2m:ae': {
+					'acpi': [ 'anID' ]
+				}}
+		r, rsc = UPDATE(aeURL, self.acpORIGINATOR, dct)
+		self.assertNotEqual(rsc, RC.updated)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateAEACPIWrongOriginator(self) -> None:
+		"""	Update <AE> ACPI with third not allowed Originator -> Fail """
+		dct =	{ 'm2m:ae': {
+					'acpi': [ findXPath(TestACP.acp, 'm2m:acp/ri') ]
+				}}
+		r, rsc = UPDATE(aeURL, self.acpORIGINATOR3, dct)
+		self.assertNotEqual(rsc, RC.updated)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateAEACPIOtherOriginator(self) -> None:
+		"""	Update <AE> ACPI with second allowed originator"""
+		dct =	{ 'm2m:ae': {
+					'acpi': [ findXPath(TestACP.acp, 'm2m:acp/ri') ]
+				}}
+		r, rsc = UPDATE(aeURL, self.acpORIGINATOR2, dct)
+		self.assertEqual(rsc, RC.updated)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -305,7 +337,7 @@ class TestACP(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(aeURL, findXPath(TestACP.ae, 'm2m:ae/aei'), dct)
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)	# missing self-privileges
-		_, rsc = UPDATE(aeURL, ORIGINATOR, dct)
+		_, rsc = UPDATE(aeURL, self.acpORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
 
 
@@ -335,6 +367,9 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestACP('test_updateACPNoPVS'))
 	suite.addTest(TestACP('test_addACPtoAE'))
 	suite.addTest(TestACP('test_updateAEACPIWrong'))
+	suite.addTest(TestACP('test_updateAEACPIWrong2'))
+	suite.addTest(TestACP('test_updateAEACPIWrongOriginator'))
+	suite.addTest(TestACP('test_updateAEACPIOtherOriginator'))
 
 	suite.addTest(TestACP('test_createACPNoPVS'))
 	suite.addTest(TestACP('test_createACPEmptyPVS'))

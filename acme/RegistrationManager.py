@@ -60,21 +60,6 @@ class RegistrationManager(object):
 		if (res := self.handleCreator(resource, originator)).rsc != RC.OK:
 			return res
 
-		# ACPI assignments 
-
-		# if T(resource.ty).isAnnounced():	# For announced resourcess
-		# 	if (acpi := resource.acpi) is None:
-		# 		acpi = []
-		# 	if (parentAcpi := parentResource.acpi) is None:
-		# 		parentAcpi = []
-		# 	acpi = parentAcpi + acpi # local acpi at the beginning
-		# 	# acpi.extend(parentResource.acpi)
-		# 	resource['acpi'] = acpi
-		# elif resource.ty != T.AE:	# Don't handle AE's, this was already done already in the AE registration
-
-		if resource.ty != T.AE:	# Don't handle AE's, this was done already in the AE registration
-			if resource.inheritACP:
-				del resource['acpi']	# This should not happen bc resource rejected during validaten. But better remove acpi here
 		return Result(originator=originator) # return (possibly new) originator
 
 

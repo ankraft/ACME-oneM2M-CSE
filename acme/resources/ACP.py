@@ -63,10 +63,6 @@ class ACP(AnnounceableResource):
 		if self.pvs is None or len(self.pvs) == 0:
 			return Result(status=False, rsc=RC.badRequest, dbg='pvs must not be empty')
 
-		# add admin originator	
-		if Configuration.get('cse.acp.addAdminOrignator'):
-			self.addPermissionOriginator(CSE.cseOriginator)
-			self.addSelfPermissionOriginator(CSE.cseOriginator)
 		return Result(status=True)
 
 
