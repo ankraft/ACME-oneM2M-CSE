@@ -19,11 +19,10 @@ attributePolicies = constructPolicy([
 	'lnk'
 ])
 csrAPolicies = constructPolicy([
-	'cst', 'poa', 'cb', 'csi', 'mei', 'tri', 'rr', 'nl', 'csz', 'esi', 'trn', 'dcse', 'mtcc', 'egid', 'tren', 'ape', 'srv'
+	'cst', 'poa', 'cb', 'csi', 'rr', 'nl', 'csz', 'esi', 'dcse', 'mtcc', 'egid', 'tren', 'ape', 'srv'
 ])
 attributePolicies =  addPolicy(attributePolicies, csrAPolicies)
 # TODO announceSyncType
-
 
 
 

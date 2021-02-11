@@ -118,7 +118,7 @@ def isValidID(id: str) -> bool:
 
 
 def getResourceDate(delta: int = 0) -> str:
-	return toISO8601Date(datetime.datetime.utcnow() + datetime.timedelta(seconds=delta))
+	return toISO8601Date(datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=delta))
 
 
 def toISO8601Date(ts: Union[float, datetime.datetime]) -> str:

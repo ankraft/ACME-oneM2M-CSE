@@ -126,7 +126,7 @@ class Statistics(object):
 		s = deepcopy(self.stats)
 
 		# Calculate some stats
-		s[cseUpTime] = str(datetime.timedelta(seconds=int(datetime.datetime.utcnow().timestamp() - int(s[cseStartUpTime]))))
+		s[cseUpTime] = str(datetime.timedelta(seconds=int(datetime.datetime.now(datetime.timezone.utc).timestamp() - int(s[cseStartUpTime]))))
 		s[cseStartUpTime] = Utils.toISO8601Date(float(s[cseStartUpTime]))
 		s[resourceCount] = int(s[createdResources]) - int(s[deletedResources])
 		return s
@@ -199,7 +199,8 @@ class Statistics(object):
 
 	def handleCseStartup(self) -> None:
 		with self.statLock:
-			self.stats[cseStartUpTime] = datetime.datetime.utcnow().timestamp()
+			self.stats[cseStartUpTime] = datetime.datetime.now(datetime.timezone.utc).timestamp()
+			print(self.stats[cseStartUpTime])
 
 
 	def handleLogError(self) -> None:
@@ -459,7 +460,7 @@ skinparam rectangle {
 			result += f'    - Errors        : {stats[logErrors]}\n'
 			result += f'    - Warnings      : {stats[logWarnings]}\n'
 		result += '- **Misc**\n'
-		result += f'    - StartTime     : {stats[cseStartUpTime]}\n'
+		result += f'    - StartTime     : {datetime.datetime.fromtimestamp(Utils.fromISO8601Date(stats[cseStartUpTime]))} (UTC)\n'
 		result += f'    - Uptime        : {stats[cseUpTime]}\n'
 
 		if not self.statisticsEnabled:
