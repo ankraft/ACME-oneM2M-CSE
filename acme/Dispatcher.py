@@ -537,8 +537,15 @@ class Dispatcher(object):
 		if resource.readOnly:
 			return Result(rsc=RC.operationNotAllowed, dbg='resource is read-only')
 
-		if CSE.security.hasAccess(originator, resource, Permission.UPDATE) == False:
-			return Result(rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
+		#
+		#	Permission check
+		#	If this is an 'acpi' update?
+
+		if not (res := CSE.security.hasAcpiUpdatePermission(request, resource, originator)).status:
+			return res
+		if res.data is None:	# data == None indicates that this is NOT an ACPI update. In this case we need a normal permission check
+			if CSE.security.hasAccess(originator, resource, Permission.UPDATE) == False:
+				return Result(rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
 
 		# Check for virtual resource
 		if Utils.isVirtualResource(resource):

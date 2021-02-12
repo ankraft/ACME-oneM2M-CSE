@@ -10,7 +10,7 @@
 
 from Logging import Logging
 from Constants import Constants as C
-from Types import ResourceTypes as T, Permission, Operation
+from Types import ResourceTypes as T, Permission, Operation, Result, CSERequest, ResponseCode as RC
 import CSE, Utils
 from Configuration import Configuration
 from resources.Resource import Resource
@@ -184,3 +184,38 @@ class SecurityManager(object):
 		Logging.logDebug('Permission NOT granted')
 		return False
 
+
+	def hasAcpiUpdatePermission(self, request:CSERequest, targetResource:Resource, originator:str) -> Result:
+		"""	Check whether this is actually a correct update of the acpi attribute, and whether this is actually allowed.
+		"""
+		updatedAttributes = Utils.findXPath(request.dict, '{0}')
+
+		# Check that acpi, if present, is the only attribute
+		if 'acpi' in updatedAttributes:
+			if len(updatedAttributes) > 1:
+				Logging.logDebug(dbg := '"acpi" must be the only attribute in update')
+				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+			
+			# Check whether the originator has UPDATE privileges for the acpi attribute (pvs!)
+			if targetResource.acpi is None:
+				if originator != targetResource[targetResource._originator]:
+					Logging.logDebug(dbg := f'No access to update acpi for originator: {originator}')
+					return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
+				else:
+					pass	# allowed for creating originator
+			else:
+				# test the current acpi whether the originator is allowed to update the acpi
+				for ri in targetResource.acpi:
+					if (acp := CSE.dispatcher.retrieveResource(ri).resource) is None:
+						Logging.logWarn(f'Access Check for acpi: referenced <ACP> resource not found: {ri}')
+						continue
+					if acp.checkSelfPermission(originator, Permission.UPDATE):
+						break
+				else:
+					Logging.logDebug(dbg := f'Originator has no permission to update acpi: {ri}')
+					return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
+
+			return Result(status=True, data=True)	# hack: data=True indicates that this is an ACPI update after all
+
+		return Result(status=True)
+	

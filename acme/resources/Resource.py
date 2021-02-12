@@ -214,53 +214,29 @@ class Resource(object):
 			else:
 				updatedAttributes = Utils.findXPath(dct, '{0}')
 
-			#
-			#	ACPI Checks
-			#
-
 			# Check that acpi, if present, is the only attribute
-			if 'acpi' in updatedAttributes:
-				if len(updatedAttributes) > 1:
-					Logging.logDebug(dbg := '"acpi" must be the only attribute in update')
-					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+			if 'acpi' in updatedAttributes:	# No further checks here. This has been done before in the Dispatcher.processUpdateRequest()	
+
+				# Check whether referenced <ACP> exists. If yes, change ID also to CSE relative unstructured
+				if not (res := self._checkAndFixACPIreferences(updatedAttributes['acpi'])).status:
+					return res
 				
-				# Check whether the originator has UPDATE privileges for the acpi attribute (pvs!)
-				if self.acpi is None:
-					if originator != self[self._originator]:
-						Logging.logDebug(dbg := f'No access to update acpi for originator: {originator}')
-						return Result(status=False, rsc=RC.badRequest, dbg=dbg)
-					else:
-						pass	# allowed for creating originator
-				else:
-					# test the current acpi whether the originator is allowed to update the acpi
-					for ri in self.acpi:
-						if (acp := CSE.dispatcher.retrieveResource(ri).resource) is None:
-							Logging.logWarn(f'Access Check for acpi: referenced <ACP> resource not found: {ri}')
-							continue
-						if acp.checkSelfPermission(originator, Permission.UPDATE):
-							break
-					else:
-						Logging.logDebug(dbg := f'Originator has no permission to update acpi:{ri}')
-						return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+				self.setAttribute('acpi', res.lst, overwrite=True) # copy new value or add new attributes
 
-					# Check whether referenced <ACP> exists. If yes, change ID also to CSE relative unstructured
-					if not (res := self._checkAndFixACPIreferences(updatedAttributes['acpi'])).status:
-						return res
-					updatedAttributes['acpi'] = res.lst
+			else:
 
+				# Update other  attributes
+				for key in updatedAttributes:
+					# Leave out some attributes
+					if key in ['ct', 'lt', 'pi', 'ri', 'rn', 'st', 'ty']:
+						continue
+					value = updatedAttributes[key]
 
-			# Update attributes
-			for key in updatedAttributes:
-				# Leave out some attributes
-				if key in ['ct', 'lt', 'pi', 'ri', 'rn', 'st', 'ty']:
-					continue
-				value = updatedAttributes[key]
-
-				# Special handling for et when deleted/set to Null: set a new et
-				if key == 'et' and value is None:
-					self['et'] = Utils.getResourceDate(Configuration.get('cse.expirationDelta'))
-					continue
-				self.setAttribute(key, value, overwrite=True) # copy new value or add new attributes
+					# Special handling for et when deleted/set to Null: set a new et
+					if key == 'et' and value is None:
+						self['et'] = Utils.getResourceDate(Configuration.get('cse.expirationDelta'))
+						continue
+					self.setAttribute(key, value, overwrite=True) # copy new value or add new attributes
 			
 
 		# - state and lt
@@ -477,6 +453,14 @@ class Resource(object):
 			if (acp := CSE.dispatcher.retrieveResource(ri).resource) is None:
 				Logging.logDebug(dbg := f'Referenced <ACP> resource not found: {ri}')
 				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+
+
+
+				# TODO CHECK TYPE + TEST
+
+
+
+
 			newACPIList.append(acp.ri)
 		return Result(status=True, lst=newACPIList)
 

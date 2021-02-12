@@ -355,6 +355,10 @@ class TestACP(unittest.TestCase):
 		self.assertEqual(rsc, RC.deleted)
 
 
+# TODO reference a non-acp resource in acpi
+
+
+
 def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestACP('test_createACP'))
