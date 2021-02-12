@@ -559,11 +559,11 @@ def dissectHttpRequest(request:Request, operation:Operation, _id:Tuple[str, str,
 		try:
 			cseRequest.ct = ContentSerializationType.getType(cseRequest.headers.contentType, default=CSE.defaultSerialization)
 			if (_d := deserializeData(cseRequest.data, cseRequest.ct)) is None:
-				return Result(rsc=RC.unsupportedMediaType, request=cseRequest, dbg=f'Unsuppored media type for content-type: {cseRequest.headers.contentType}', status=False)
+				return Result(rsc=RC.unsupportedMediaType, request=cseRequest, dbg=f'Unsupported media type for content-type: {cseRequest.headers.contentType}', status=False)
 			cseRequest.dict = _d
 		except Exception as e:
 			Logging.logWarn('Bad request (malformed content?)')
-			return Result(rsc=RC.badRequest, request=cseRequest, dbg=str(e), status=False)
+			return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'Malformed content? {str(e)}', status=False)
 			
 	return Result(request=cseRequest, status=True)
 
@@ -839,15 +839,14 @@ def deserializeData(data:bytes, ct:ContentSerializationType) -> JSON:
 	"""	Deserialize data into a dictionary, depending on the serialization type.
 		If the len of the data is 0 then an empty dictionary is returned. 
 	"""
-	try:
-		if len(data) == 0:
-			return {}
-		if ct == ContentSerializationType.JSON:
-			return cast(JSON, json.loads(data.decode("utf-8")))
-		elif ct == ContentSerializationType.CBOR:
-			return cast(JSON, cbor2.loads(data))
-	except Exception as e:
-		Logging.logErr(f'Deserialization error: {str(e)}')
+	if len(data) == 0:
+		return {}
+	if ct == ContentSerializationType.JSON:
+		return cast(JSON, json.loads(data.decode("utf-8")))
+	elif ct == ContentSerializationType.CBOR:
+		return cast(JSON, cbor2.loads(data))
+	# except Exception as e:
+	# 	Logging.logErr(f'Deserialization error: {str(e)}')
 	return None
 
 #
