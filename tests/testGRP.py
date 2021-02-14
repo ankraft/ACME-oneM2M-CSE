@@ -121,7 +121,7 @@ class TestGRP(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/ct'))
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/lt'))
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/et'))
-		self.assertEqual(findXPath(r, 'm2m:grp/cr'), TestGRP.originator)
+		self.assertIsNone(findXPath(r, 'm2m:grp/cr'))
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/mt'))
 		self.assertEqual(findXPath(r, 'm2m:grp/mt'), T.MIXED)
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/mnm'))
@@ -358,7 +358,7 @@ class TestGRP(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/ct'))
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/lt'))
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/et'))
-		self.assertEqual(findXPath(r, 'm2m:grp/cr'), TestGRP.originator)
+		self.assertIsNone(findXPath(r, 'm2m:grp/cr'))
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/mt'))
 		self.assertEqual(findXPath(r, 'm2m:grp/mt'), T.MIXED)
 		self.assertIsNotNone(findXPath(r, 'm2m:grp/mnm'))
@@ -371,7 +371,37 @@ class TestGRP(unittest.TestCase):
 		self.assertIsNone(findXPath(r, 'm2m:grp/st'))
 
 
-		#TODO check GRP itself: members
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createGRPWithCreatorWrong(self) -> None:
+		""" Create <GRP> with creator attribute (wrong) -> Fail """
+		dct = 	{ 'm2m:grp' : { 
+					'mnm': 10,
+					'mid': [],
+					'cr' : 'wrong'
+				}}
+		r, rsc = CREATE(aeURL, TestGRP.originator, T.GRP, dct)				# Not allowed
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createGRPWithCreator(self) -> None:
+		""" Create <GRP> with creator attribute set to Null """
+		dct = 	{ 'm2m:grp' : { 
+					'mnm': 10,
+					'mid': [],
+					'cr' : None
+				}}
+		r, rsc = CREATE(aeURL, TestGRP.originator, T.GRP, dct)	
+		self.assertEqual(rsc, RC.created)
+		self.assertEqual(findXPath(r, 'm2m:grp/cr'), TestGRP.originator)	# Creator should now be set to originator
+
+		# Check whether creator is there in a RETRIEVE
+		r, rsc = RETRIEVE(f'{aeURL}/{findXPath(r, "m2m:grp/rn")}', TestGRP.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'm2m:grp/cr'), TestGRP.originator)
+
+
+#TODO check GRP itself: members
 
 
 def run() -> Tuple[int, int, int]:
@@ -394,6 +424,9 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestGRP('test_createGRP2'))	# create <GRP> again
 	suite.addTest(TestGRP('test_addTooManyCNTToGRP2'))
 	suite.addTest(TestGRP('test_attributesGRP2'))
+
+	suite.addTest(TestGRP('test_createGRPWithCreatorWrong'))
+	suite.addTest(TestGRP('test_createGRPWithCreator'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

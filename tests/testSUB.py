@@ -141,7 +141,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/ct'))
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/lt'))
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/et'))
-		self.assertEqual(findXPath(r, 'm2m:sub/cr'), TestSUB.originator)
+		self.assertIsNone(findXPath(r, 'm2m:sub/cr'))
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc/net'))
 		self.assertIsInstance(findXPath(r, 'm2m:sub/enc/net'), list)
 		self.assertEqual(len(findXPath(r, 'm2m:sub/enc/net')), 2)
@@ -856,6 +856,33 @@ class TestSUB(unittest.TestCase):
 		TestSUB.excSub, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)
 		self.assertEqual(rsc, RC.subscriptionVerificationInitiationFailed)
 		
+	
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSUBWithCreatorWrong(self) -> None:
+		""" Create <SUB> with creator attribute (wrong) -> Fail """
+		dct = 	{ 'm2m:sub' : { 
+					'nu': [NOTIFICATIONSERVER ],
+					'cr' : 'wrong',
+				}}
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)				# Not allowed
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSUBWithCreator(self) -> None:
+		""" Create <SUB> with creator attribute set to Null """
+		dct = 	{ 'm2m:sub' : { 
+					'nu': [NOTIFICATIONSERVER ],
+					'cr' : None,
+				}}
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)	
+		self.assertEqual(rsc, RC.created)
+		self.assertEqual(findXPath(r, 'm2m:sub/cr'), TestSUB.originator)	# Creator should now be set to originator
+
+		# Check whether creator is there in a RETRIEVE
+		r, rsc = RETRIEVE(f'{cntURL}/{findXPath(r, "m2m:sub/rn")}', TestSUB.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'm2m:sub/cr'), TestSUB.originator)
 
 
 # TODO check different NET's (ae->cnt->sub, add cnt to cnt)
@@ -925,6 +952,9 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestSUB('test_createCNTforEXC'))
 
 	suite.addTest(TestSUB('test_createSUBwithUnknownPoa'))
+	suite.addTest(TestSUB('test_createSUBWithCreatorWrong'))
+	suite.addTest(TestSUB('test_createSUBWithCreator'))
+
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

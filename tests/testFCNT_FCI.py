@@ -83,7 +83,7 @@ class TestFCNT_FCI(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'cod:tempe/lt'))
 		self.assertIsNotNone(findXPath(r, 'cod:tempe/et'))
 		self.assertIsNotNone(findXPath(r, 'cod:tempe/st'))
-		self.assertEqual(findXPath(r, 'cod:tempe/cr'), TestFCNT_FCI.originator)
+		self.assertIsNone(findXPath(r, 'cod:tempe/cr'))
 		self.assertEqual(findXPath(r, 'cod:tempe/cnd'), CND)
 		self.assertEqual(findXPath(r, 'cod:tempe/curT0'), 23.0)
 		self.assertIsNone(findXPath(r, 'cod:tempe/tarTe'))

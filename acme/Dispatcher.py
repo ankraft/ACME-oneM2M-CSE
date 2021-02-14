@@ -436,7 +436,7 @@ class Dispatcher(object):
 			return rres.errorResult()
 		originator = rres.originator 	# originator might have changed during this check
 
-		# Create the resource. If this fails we register everything
+		# Create the resource. If this fails we deregister everything
 		if (res := CSE.dispatcher.createResource(nresource, parentResource, originator)).resource is None:
 			CSE.registration.checkResourceDeletion(nresource) # deregister resource. Ignore result, we take this from the creation
 			return res

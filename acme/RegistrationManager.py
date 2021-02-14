@@ -56,22 +56,24 @@ class RegistrationManager(object):
 				return Result(rsc=RC.badRequest, dbg='cannot register CSR')
 
 		# Test and set creator attribute.
-		
 		if (res := self.handleCreator(resource, originator)).rsc != RC.OK:
 			return res
 
 		return Result(originator=originator) # return (possibly new) originator
 
 
-	# Check for (wrongly) set creator attribute as well as assign it to allowed resources.
 	def handleCreator(self, resource:Resource, originator:str) -> Result:
-		# Check whether cr is set. This is wrong
-		if resource.cr is not None:
-			Logging.logWarn('Setting "creator" attribute is not allowed.')
-			return Result(rsc=RC.badRequest, dbg='setting "creator" attribute is not allowed')
-		# Set cr for some of the resource types
-		if resource.ty in C.creatorAllowed:
-			resource['cr'] = CSE.cseOriginator if originator in ['C', 'S', '', None ] else originator
+		"""	Check for set creator attribute as well as assign it to allowed resources.
+		"""
+		if resource.hasAttribute('cr'):
+			if resource.ty not in C.creatorAllowed:
+				return Result(rsc=RC.badRequest, dbg=f'"creator" attribute is not allowed for resource type: {resource.ty}')
+			if resource.cr is not None:		# Check whether cr is set to a value. This is wrong
+				Logging.logWarn('Setting "creator" attribute is not allowed.')
+				return Result(rsc=RC.badRequest, dbg='setting "creator" attribute is not allowed')
+			else:
+				resource['cr'] = originator
+				# fall-through
 		return Result() # implicit OK
 
 

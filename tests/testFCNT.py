@@ -98,7 +98,7 @@ class TestFCNT(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'cod:tempe/ct'))
 		self.assertIsNotNone(findXPath(r, 'cod:tempe/lt'))
 		self.assertIsNotNone(findXPath(r, 'cod:tempe/et'))
-		self.assertEqual(findXPath(r, 'cod:tempe/cr'), TestFCNT.originator)
+		self.assertIsNone(findXPath(r, 'cod:tempe/cr'))
 		self.assertEqual(findXPath(r, 'cod:tempe/cnd'), CND)
 		self.assertEqual(findXPath(r, 'cod:tempe/curT0'), 23.0)
 		self.assertIsNone(findXPath(r, 'cod:tempe/tarTe'))
@@ -279,6 +279,37 @@ class TestFCNT(unittest.TestCase):
 		self.assertEqual(rsc, RC.deleted)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createFCNTWithCreatorWrong(self) -> None:
+		""" Create <FCNT> [GIS] with creator attribute (wrong) -> Fail """
+		dct = 	{ 'm2m:gis' : { 
+					'cnd' 	: GISCND,
+					'cr'	: 'content',
+					'gisn'	: 'abc'
+				}}
+		r, rsc = CREATE(aeURL, TestFCNT.originator, T.FCNT, dct)			# Not allowed
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createFCNTWithCreator(self) -> None:
+		""" Create <FCNT> [GIS] with creator attribute set to Null """
+		dct = 	{ 'm2m:gis' : { 
+					'cnd' 	: GISCND,
+					'cr'	: None,
+					'gisn'	: 'abc'
+				}}
+		r, rsc = CREATE(aeURL, TestFCNT.originator, T.FCNT, dct)	
+		self.assertEqual(rsc, RC.created)
+		self.assertEqual(findXPath(r, 'm2m:gis/cr'), TestFCNT.originator)	# Creator should now be set to originator
+
+		# Check whether creator is there in a RETRIEVE
+		r, rsc = RETRIEVE(f'{aeURL}/{findXPath(r, "m2m:gis/rn")}', TestFCNT.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'm2m:gis/cr'), TestFCNT.originator)
+
+
+
 def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestFCNT('test_createFCNT'))
@@ -301,6 +332,8 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestFCNT('test_createGenericInterworkingOperationInstance'))
 	suite.addTest(TestFCNT('test_createGenericInterworkingOperationInstance2'))
 	suite.addTest(TestFCNT('test_deleteGenericInterworking'))
+	suite.addTest(TestFCNT('test_createFCNTWithCreatorWrong'))
+	suite.addTest(TestFCNT('test_createFCNTWithCreator'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 

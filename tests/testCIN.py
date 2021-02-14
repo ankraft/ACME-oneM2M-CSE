@@ -90,7 +90,7 @@ class TestCIN(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:cin/lt'))
 		self.assertIsNotNone(findXPath(r, 'm2m:cin/et'))
 		self.assertIsNotNone(findXPath(r, 'm2m:cin/st'))
-		self.assertEqual(findXPath(r, 'm2m:cin/cr'), TestCIN.originator)
+		self.assertIsNone(findXPath(r, 'm2m:cin/cr'))
 		self.assertIsNotNone(findXPath(r, 'm2m:cin/cnf'))
 		self.assertEqual(findXPath(r, 'm2m:cin/cnf'), 'a')
 		self.assertIsNotNone(findXPath(r, 'm2m:cin/con'))
@@ -123,8 +123,38 @@ class TestCIN(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCIN(self) -> None:
 		""" Delete <CIN> resource """
-		_, rsc = DELETE(cntURL, TestCIN.originator)
+		_, rsc = DELETE(cinURL, TestCIN.originator)
 		self.assertEqual(rsc, RC.deleted)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINWithCreatorWrong(self) -> None:
+		""" Create <CIN> with creator attribute (wrong) -> Fail """
+		dct = 	{ 'm2m:cin' : { 
+					'cr' : 'wrong',
+					'con' : 'AnyValue'
+				}}
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)				# Not allowed
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINWithCreator(self) -> None:
+		""" Create <CIN> with creator attribute set to Null """
+		dct = 	{ 'm2m:cin' : { 
+					'con' : 'AnyValue',
+					'cr' : None
+				}}
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)	
+		self.assertEqual(rsc, RC.created)
+		self.assertEqual(findXPath(r, 'm2m:cin/cr'), TestCIN.originator)	# Creator should now be set to originator
+
+		# Check whether creator is there in a RETRIEVE
+		r, rsc = RETRIEVE(f'{cntURL}/{findXPath(r, "m2m:cin/rn")}', TestCIN.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'm2m:cin/cr'), TestCIN.originator)
+
+
 
 # More tests of la, ol etc in testCNT_CNI.py
 
@@ -136,6 +166,8 @@ def run() -> Tuple [int, int, int]:
 	suite.addTest(TestCIN('test_updateCIN'))
 	suite.addTest(TestCIN('test_createCINUnderAE'))
 	suite.addTest(TestCIN('test_deleteCIN'))
+	suite.addTest(TestCIN('test_createCINWithCreatorWrong'))
+	suite.addTest(TestCIN('test_createCINWithCreator'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 

@@ -380,10 +380,13 @@ def setXPath(dct:JSON, element:str, value:Any, overwrite:bool=True) -> bool:
 	return True
 
 
-def deleteNoneValuesFromDict(dct:JSON) -> JSON:
+def deleteNoneValuesFromDict(dct:JSON, allowedNull:list[str]=[]) -> JSON:
+	"""	Remove Null-values from a dictionary, but ignore the ones speciefed in 'allowedNull.
+		Return a new dictionary.
+	"""
 	if not isinstance(dct, dict):
 		return dct
-	return { key:value for key,value in ((key, deleteNoneValuesFromDict(value)) for key,value in dct.items()) if value is not None }
+	return { key:value for key,value in ((key, deleteNoneValuesFromDict(value)) for key,value in dct.items()) if value is not None or key in allowedNull }
 
 
 urlregex = re.compile(

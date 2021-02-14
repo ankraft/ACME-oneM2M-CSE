@@ -87,7 +87,7 @@ class TestCNT(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:cnt/lt'))
 		self.assertIsNotNone(findXPath(r, 'm2m:cnt/et'))
 		self.assertIsNotNone(findXPath(r, 'm2m:cnt/st'))
-		self.assertEqual(findXPath(r, 'm2m:cnt/cr'), TestCNT.originator)
+		self.assertIsNone(findXPath(r, 'm2m:cnt/cr'))
 		self.assertEqual(findXPath(r, 'm2m:cnt/cbs'), 0)
 		self.assertEqual(findXPath(r, 'm2m:cnt/cni'), 0)
 		self.assertGreater(findXPath(r, 'm2m:cnt/mbs'), 0)
@@ -165,7 +165,6 @@ class TestCNT(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTUnderCNT(self) -> None:
 		""" Create <CNT> under <CNT> """
-		self.assertIsNotNone(TestCNT.cse)
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN
 				}}
@@ -185,6 +184,32 @@ class TestCNT(unittest.TestCase):
 		"""	Delete <CNT> under <CNT> """
 		_, rsc = DELETE(f'{cntURL}/{cntRN}', TestCNT.originator)
 		self.assertEqual(rsc, RC.deleted)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTWithCreatorWrong(self) -> None:
+		""" Create <CNT> with creator attribute (wrong) -> Fail """
+		dct = 	{ 'm2m:cnt' : { 
+					'cr' : 'wrong'
+				}}
+		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, dct) 				# Not allowed
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTWithCreator(self) -> None:
+		""" Create <CNT> with creator attribute set to Null """
+		dct = 	{ 'm2m:cnt' : { 
+					'cr' : None
+				}}
+		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, dct) 
+		self.assertEqual(rsc, RC.created)
+		self.assertEqual(findXPath(r, 'm2m:cnt/cr'), TestCNT.originator)	# Creator should now be set to originator
+
+		# Check whether creator is there in a RETRIEVE
+		r, rsc = RETRIEVE(f'{aeURL}/{findXPath(r, "m2m:cnt/rn")}', TestCNT.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'm2m:cnt/cr'), TestCNT.originator)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -240,11 +265,15 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestCNT('test_createCNTUnderCNT'))
 	suite.addTest(TestCNT('test_retrieveCNTUnderCNT'))
 	suite.addTest(TestCNT('test_deleteCNTUnderCNT'))
+	suite.addTest(TestCNT('test_createCNTWithCreatorWrong'))
+	suite.addTest(TestCNT('test_createCNTWithCreator'))
+
 	suite.addTest(TestCNT('test_deleteCNTByUnknownOriginator'))
 	suite.addTest(TestCNT('test_deleteCNTByAssignedOriginator'))
 	suite.addTest(TestCNT('test_createCNTUnderCSE'))
 	suite.addTest(TestCNT('test_retrieveCNTUnderCSE'))
 	suite.addTest(TestCNT('test_deleteCNTUnderCSE'))
+
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 

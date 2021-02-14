@@ -106,7 +106,7 @@ class Resource(object):
 			# Remove empty / null attributes from dict
 			# But see also the comment in update() !!!
 			#self.dict = {k: v for (k, v) in self.dict.items() if v is not None }
-			self.dict = Utils.deleteNoneValuesFromDict(self.dict)
+			self.dict = Utils.deleteNoneValuesFromDict(self.dict, ['cr'])	# allow the ct attribute to stay in the dictionary. It will be handled with in the RegistrationManager
 			# determine and add the srn
 			self[self._srn] = Utils.structuredPath(self)
 			self[self._rtype] = self.tpe
