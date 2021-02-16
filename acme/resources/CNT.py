@@ -144,7 +144,7 @@ class CNT(AnnounceableResource):
 		l = cni
 		while cni > mni and i < l:
 			# remove oldest
-			CSE.dispatcher.deleteResource(cs[i])
+			CSE.dispatcher.deleteResource(cs[i], parentResource=self)
 			cni -= 1
 			i += 1
 		self['cni'] = cni
@@ -160,7 +160,7 @@ class CNT(AnnounceableResource):
 		while cbs > mbs and i < l:
 			# remove oldest
 			cbs -= cs[i]['cs']
-			CSE.dispatcher.deleteResource(cs[i])
+			CSE.dispatcher.deleteResource(cs[i], parentResource=self)
 			i += 1
 		self['cbs'] = cbs
 

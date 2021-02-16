@@ -151,7 +151,7 @@ class FCNT(AnnounceableResource):
 				l = fcii
 				while fcii > mni and i < l:
 					# remove oldest
-					CSE.dispatcher.deleteResource(fci[i])
+					CSE.dispatcher.deleteResource(fci[i], parentResource=self)
 					fcii -= 1
 					i += 1
 					changed = True
@@ -177,7 +177,7 @@ class FCNT(AnnounceableResource):
 				while cbs > mbs and i < fcii:
 					# remove oldest
 					cbs -= fci[i].cs			
-					CSE.dispatcher.deleteResource(fci[i])
+					CSE.dispatcher.deleteResource(fci[i], parentResource=self)
 					i += 1
 
 				# Add "current" atribute, if it is not there

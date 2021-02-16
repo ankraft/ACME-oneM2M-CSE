@@ -667,7 +667,7 @@ class Dispatcher(object):
 		return Result(resource=result, rsc=res.rsc, dbg=res.dbg)
 
 
-	def deleteResource(self, resource:Resource, originator:str=None, withDeregistration:bool=False) -> Result:
+	def deleteResource(self, resource:Resource, originator:str=None, withDeregistration:bool=False, parentResource:Resource=None) -> Result:
 		Logging.logDebug(f'Removing resource ri: {resource.ri}, type: {resource.ty:d}')
 
 		resource.deactivate(originator)	# deactivate it first
@@ -678,7 +678,8 @@ class Dispatcher(object):
 				return Result(rsc=RC.badRequest, dbg=res.dbg)
 
 		# Retrieve the parent resource now, because we need it later
-		parentResource = resource.retrieveParentResource()
+		if parentResource is None:
+			parentResource = resource.retrieveParentResource()
 
 		# delete the resource from the DB. Save the result to return later
 		res = resource.dbDelete()

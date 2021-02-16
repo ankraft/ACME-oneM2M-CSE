@@ -187,7 +187,7 @@ class Resource(object):
 		rs = CSE.dispatcher.directChildResources(self.ri)
 		for r in rs:
 			self.childRemoved(r, originator)
-			CSE.dispatcher.deleteResource(r, originator)
+			CSE.dispatcher.deleteResource(r, originator, parentResource=self)
 		
 		# Removal of a deleted resource from group(s) us done 
 		# asynchronous in GroupManager, triggered by an event.
@@ -499,23 +499,31 @@ class Resource(object):
 	#
 
 	def __str__(self) -> str:
-		""" String representation. """
+		""" String representation.
+		"""
 		return str(self.asDict())
 
 
 	def __repr__(self) -> str:
-		""" Object representation as string. """
+		""" Object representation as string.
+		"""
 		return f'{self.tpe}(ri={self.ri}, srn={self[self._srn]})'
 
 
 	def __eq__(self, other: object) -> bool:
+		"""	Test for equality.
+		"""
 		return isinstance(other, Resource) and self.ri == other.ri
 
 
 	def isModifiedSince(self, otherResource: Resource) -> bool:
+		"""	Test whether this resource has been modified after another resource.
+		"""
 		return str(self.lt) > str(otherResource.lt)
 
 
 	def retrieveParentResource(self) -> Resource:
+		"""	Retrieve the parent resource of this resouce.
+		"""
 		return CSE.dispatcher.retrieveResource(self.pi).resource	#type:ignore[no-any-return]
 
