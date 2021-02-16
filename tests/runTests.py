@@ -13,7 +13,6 @@ loadTests = [ 'testLoad' ]
 
 def isRunTest(name:str) -> bool:
 	if len(args.tests) > 0:				# run only specified tests
-		print(name)
 		return name in args.tests
 	
 	if args.includeLoadTests:			# include all load tests
