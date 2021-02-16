@@ -127,6 +127,15 @@ The Python script [runTests.py](../tests/runTests.py) can be used to run all tes
 	│ Totals          │ 350        │ 0       │ 0      │ 75.4322   │ 1.9680       │ 0.2155      │
 	└─────────────────┴────────────┴─────────┴────────┴───────────┴──────────────┴─────────────┘
 
+The ```runTest.py``` script by default will run all test cases, except scripts that runs load tests. To include those one need to specify the ```--load-include``` command line argument.
+
+One can also specify which test cases to run like this:
+
+	$ python3 runTests.py testACP testCin
+
+The ```--help``` command line argument provides a usage overview for the ```runTest.py``` script.
+
+
 ### Dependencies
 Each test suite may set-up resources in the CSE that are used during the tests. Usually, those resources should be removed from the CSE at the end of each test suite, but under certain circumstances (like a crash or forceful interruption of the test suite's run) those resources may still be present in the CSE and must be removed manually (or by a reset-restart of the CSE).
 

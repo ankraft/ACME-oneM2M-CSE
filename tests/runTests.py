@@ -11,6 +11,20 @@ from rich.style import Style
 
 loadTests = [ 'testLoad' ]
 
+def isRunTest(name:str) -> bool:
+	if len(args.tests) > 0:				# run only specified tests
+		print(name)
+		return name in args.tests
+	
+	if args.includeLoadTests:			# include all load tests
+		return True
+	
+	if args.loadTestsOnly: 
+		return name in loadTests		# only load tests
+	else:
+		return name not in loadTests	# only not load tests
+	
+
 if __name__ == '__main__':
 	console       = Console()
 	totalErrors   = 0
@@ -22,8 +36,9 @@ if __name__ == '__main__':
 
 	# Parse some command line arguments
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--load', action='store_true', dest='loadTests', default=False, help='include load tests in test runs')
+	parser.add_argument('--load-include', action='store_true', dest='includeLoadTests', default=False, help='include load tests in test runs')
 	parser.add_argument('--load-only', action='store_true', dest='loadTestsOnly', default=False, help='run only load tests in test runs')
+	parser.add_argument('tests', nargs='*', help='specify tests to run only')
 	args = parser.parse_args()
 
 
@@ -31,8 +46,6 @@ if __name__ == '__main__':
 	filenames = fnmatch.filter(os.listdir('.'), 'test*.py')
 	filenames.sort()
 	for name in filenames:
-		# if args.loadTests or (args.loadTestsOnly and name in loadTests) or (not args.loadTestsOnly and name not in loadTests):
-		# 	modules.append(importlib.import_module(name[:-3]))
 		modules.append(importlib.import_module(name[:-3]))
 
 	# Run the tests and get some measurements
@@ -43,7 +56,7 @@ if __name__ == '__main__':
 		if hasattr(module, 'run'):
 			totalSuites += 1
 			name = module.__name__
-			if args.loadTests or (args.loadTestsOnly and name in loadTests) or (not args.loadTestsOnly and name not in loadTests):	# exclude / include some tests
+			if isRunTest(name): 	# exclude / include some tests
 				console.print(f'[blue]Running tests from [bold]{name}')
 				startProcessTime = time.process_time()
 				startPerfTime = time.perf_counter()
