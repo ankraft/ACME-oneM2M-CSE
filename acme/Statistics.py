@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-from typing import Dict, Union
+from typing import Dict, Union, cast
 from Logging import Logging
 from Configuration import Configuration
 import CSE, Utils
@@ -460,7 +460,7 @@ skinparam rectangle {
 			result += f'    - Errors        : {stats[logErrors]}\n'
 			result += f'    - Warnings      : {stats[logWarnings]}\n'
 		result += '- **Misc**\n'
-		result += f'    - StartTime     : {datetime.datetime.fromtimestamp(Utils.fromISO8601Date(stats[cseStartUpTime]))} (UTC)\n'
+		result += f'    - StartTime     : {datetime.datetime.fromtimestamp(Utils.fromISO8601Date(cast(str, stats[cseStartUpTime])))} (UTC)\n'
 		result += f'    - Uptime        : {stats[cseUpTime]}\n'
 
 		if not self.statisticsEnabled:
