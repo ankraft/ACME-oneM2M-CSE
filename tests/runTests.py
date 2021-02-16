@@ -1,5 +1,5 @@
 
-import pkgutil, os, fnmatch, importlib, time
+import pkgutil, os, fnmatch, importlib, time, argparse
 from rich.console import Console
 from rich.table import Column, Table
 from rich.style import Style
@@ -8,6 +8,8 @@ from rich.style import Style
 # testRemoteCSE.py
 # testTransferRequests.py
 # testMgmt objs
+
+loadTests = [ 'testLoad' ]
 
 if __name__ == '__main__':
 	console       = Console()
@@ -18,11 +20,19 @@ if __name__ == '__main__':
 	modules       = []
 	results       = {}
 
+	# Parse some command line arguments
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--load', action='store_true', dest='loadTests', default=False, help='include load tests in test runs')
+	parser.add_argument('--load-only', action='store_true', dest='loadTestsOnly', default=False, help='run only load tests in test runs')
+	args = parser.parse_args()
+
 
 	# Get all filenames with tests and load them as modules
 	filenames = fnmatch.filter(os.listdir('.'), 'test*.py')
 	filenames.sort()
 	for name in filenames:
+		# if args.loadTests or (args.loadTestsOnly and name in loadTests) or (not args.loadTestsOnly and name not in loadTests):
+		# 	modules.append(importlib.import_module(name[:-3]))
 		modules.append(importlib.import_module(name[:-3]))
 
 	# Run the tests and get some measurements
@@ -33,20 +43,24 @@ if __name__ == '__main__':
 		if hasattr(module, 'run'):
 			totalSuites += 1
 			name = module.__name__
-			console.print(f'[blue]Running tests from [bold]{name}')
-			startProcessTime = time.process_time()
-			startPerfTime = time.perf_counter()
-			testExecuted, errors, skipped = module.run()	# type: ignore
-			durationProcess = time.process_time() - startProcessTime
-			duration = time.perf_counter() - startPerfTime
-			if testExecuted > 0:	# don't count none-run tests
-				totalErrors += errors
-				totalRunTests += testExecuted
-			totalSkipped += skipped
-			results[name] = ( testExecuted, errors, duration, durationProcess, skipped )
-			console.print(f'[spring_green3]Successfully executed tests: {testExecuted}')
-			if errors > 0:
-				console.print(f'[red]Errors: {errors}')
+			if args.loadTests or (args.loadTestsOnly and name in loadTests) or (not args.loadTestsOnly and name not in loadTests):	# exclude / include some tests
+				console.print(f'[blue]Running tests from [bold]{name}')
+				startProcessTime = time.process_time()
+				startPerfTime = time.perf_counter()
+				testExecuted, errors, skipped = module.run()	# type: ignore
+				durationProcess = time.process_time() - startProcessTime
+				duration = time.perf_counter() - startPerfTime
+				if testExecuted > 0:	# don't count none-run tests
+					totalErrors += errors
+					totalRunTests += testExecuted
+				totalSkipped += skipped
+				results[name] = ( testExecuted, errors, duration, durationProcess, skipped )
+				console.print(f'[spring_green3]Successfully executed tests: {testExecuted}')
+				if errors > 0:
+					console.print(f'[red]Errors: {errors}')
+			else:
+				results[name] = ( 0, 0, 0, 0, 1 )
+
 	totalProcessTime	= time.process_time() - totalProcessTimeStart
 	totalExecTime 		= time.perf_counter() - totalTimeStart
 
