@@ -18,27 +18,14 @@ from init import *
 
 CND = 'org.onem2m.home.moduleclass.temperature'
 
-
-# The following code must be executed before anything else because it influences
-# the collection of skipped tests.
-# It checks whether there actually is a CSE running.
-noCSE = not connectionPossible(cseURL)
-
-# Reconfigure the server to check faster for expirations.
-enableShortExpirations()
-
 class TestExpiration(unittest.TestCase):
 
-	cse 			= None
 	ae 				= None
 	originator 		= None
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
-
-		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
@@ -53,15 +40,13 @@ class TestExpiration(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
-		disableShortExpirations()
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
 	def test_expireCNT(self) -> None:
 		""" Create and expire <CNT> """
-		self.assertIsNotNone(TestExpiration.cse)
+		self.assertTrue(isTestExpirations())
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
@@ -76,10 +61,9 @@ class TestExpiration(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
 	def test_expireCNTAndCIN(self) -> None:
 		""" Create and expire <CNT> and <CIN> """
-		self.assertIsNotNone(TestExpiration.cse)
+		self.assertTrue(isTestExpirations())
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
 					'et' : getDate(expirationCheckDelay), # 2 seconds in the future
@@ -111,7 +95,6 @@ class TestExpiration(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTWithToLargeET(self) -> None:
 		"""	Create <CNT> and long ET -> Corrected ET """
-		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
@@ -127,7 +110,6 @@ class TestExpiration(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTExpirationInThePast(self) -> None:
 		"""	Create <CNT> and ET in the past -> Fail """
-		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
@@ -141,7 +123,6 @@ class TestExpiration(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTWithEtNull(self) -> None:
 		""" Update <CNT> and remove ET in another update """
-		self.assertIsNotNone(TestExpiration.cse)
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
@@ -161,10 +142,9 @@ class TestExpiration(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
 	def test_expireCNTViaMIA(self) -> None:
 		""" Expire <CNT> via MIA """
-		self.assertIsNotNone(TestExpiration.cse)
+		self.assertTrue(isTestExpirations())
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
@@ -194,10 +174,9 @@ class TestExpiration(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
 	def test_expireCNTViaMIALarge(self) -> None:
 		""" Expire <CNT> via too large MIA """
-		self.assertIsNotNone(TestExpiration.cse)
+		self.assertTrue(isTestExpirations())
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
@@ -228,10 +207,9 @@ class TestExpiration(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
 	def test_expireFCNTViaMIA(self) -> None:
 		""" Expire <FCNT> via MIA """
-		self.assertIsNotNone(TestExpiration.cse)
+		self.assertTrue(isTestExpirations())
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'cod:tempe' : { 
 					'rn'	: fcntRN,
@@ -265,6 +243,9 @@ class TestExpiration(unittest.TestCase):
 		self.assertEqual(rsc, RC.deleted)
 
 def run() -> Tuple[int, int, int]:
+	# Reconfigure the server to check faster for expirations.
+	enableShortExpirations()
+	
 	suite = unittest.TestSuite()
 	suite.addTest(TestExpiration('test_expireCNT'))
 	suite.addTest(TestExpiration('test_expireCNTAndCIN'))
@@ -276,6 +257,7 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestExpiration('test_expireFCNTViaMIA'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
+	disableShortExpirations()
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':

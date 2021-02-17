@@ -15,11 +15,6 @@ from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
 
-# The following code must be executed before anything else because it influences
-# the collection of skipped tests.
-# It checks whether there actually is a CSE running.
-noCSE = not connectionPossible(cseURL)
-
 nodeID  = 'urn:sn:1234'
 nod2RN 	= 'test2NOD'
 nod2URL = f'{cseURL}/{nod2RN}'
@@ -27,15 +22,11 @@ nod2URL = f'{cseURL}/{nod2RN}'
 
 class TestMgmtObj(unittest.TestCase):
 
-	cse 		= None
 	nod 		= None
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
-		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
-
 		dct = 	{ 'm2m:nod' : { 
 					'rn' 	: nodRN,
 					'ni'	: nodeID

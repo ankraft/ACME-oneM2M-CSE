@@ -14,10 +14,6 @@ from Constants import Constants as C
 from Types import ResponseCode as RC
 from init import *
 
-# The following code must be executed before anything else because it influences
-# the collection of skipped tests.
-# It checks whether there actually is a CSE running.
-noCSE = not connectionPossible(cseURL)
 
 class TestCSE(unittest.TestCase):
 

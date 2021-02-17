@@ -14,15 +14,11 @@ from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
 
-# The following code must be executed before anything else because it influences
-# the collection of skipped tests.
-# It checks whether there actually is a CSE running.
-noCSE = not connectionPossible(cseURL)
 
+maxBS = 30
 
 class TestCNT_CIN(unittest.TestCase):
 
-	cse 		= None
 	ae 			= None
 	originator 	= None
 	cnt 		= None
@@ -30,9 +26,6 @@ class TestCNT_CIN(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
-		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
-
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
@@ -56,11 +49,9 @@ class TestCNT_CIN(unittest.TestCase):
 	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 
-
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addCIN(self) -> None:
 		"""	Create <CIN> under <CNT> """
-		self.assertIsNotNone(TestCNT_CIN.cse)
 		self.assertIsNotNone(TestCNT_CIN.ae)
 		self.assertIsNotNone(TestCNT_CIN.cnt)
 		dct = 	{ 'm2m:cin' : {
@@ -111,7 +102,6 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:cnt/cni'))
 		self.assertIsInstance(findXPath(r, 'm2m:cnt/cni'), int)
 		self.assertEqual(findXPath(r, 'm2m:cnt/cni'), 3)
-
 
 		dct = 	{ 'm2m:cin' : {
 					'cnf' : 'a',
@@ -175,6 +165,87 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'dValue')
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteCNT(self) -> None:
+		"""	Delete <CNT> """
+		_, rsc = DELETE(cntURL, TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.deleted)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTwithMCS(self) -> None:
+		"""	Create <CNT> with mcs"""
+		dct = 	{ 'm2m:cnt' : { 
+					'rn'  : cntRN,
+					'mbs' : maxBS
+				}}
+		TestCNT_CIN.cnt, rsc = CREATE(aeURL, TestCNT_CIN.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(TestCNT_CIN.cnt, 'm2m:cnt/mbs'))
+		self.assertEqual(findXPath(TestCNT_CIN.cnt, 'm2m:cnt/mbs'), maxBS)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINexactSize(self) -> None:
+		"""	Add <CIN> to <CNT> with exact max size"""
+		dct = 	{ 'm2m:cin' : {
+					'con' : 'x' * maxBS
+				}}
+		_, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.created)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINtooBig(self) -> None:
+		"""	Add <CIN> to <CNT> with size > mbs -> Fail """
+		dct = 	{ 'm2m:cin' : {
+					'con' : 'x' * (maxBS + 1)
+				}}
+		_, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.notAcceptable)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINsForCNTwithSize(self) -> None:
+		"""	Add multiple <CIN>s to <CNT> with size restrictions """
+		# First fill up the container
+		for _ in range(int(maxBS / 3)):
+			dct = 	{ 'm2m:cin' : {
+						'con' : 'x' * int(maxBS / 3)
+					}}
+			_, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
+			self.assertEqual(rsc, RC.created)
+		
+		# Test latest CIN for x
+		r, rsc = RETRIEVE(f'{cntURL}/la', TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'm2m:cin/con'))
+		self.assertTrue(findXPath(r, 'm2m:cin/con').startswith('x'))
+		self.assertEqual(len(findXPath(r, 'm2m:cin/con')), int(maxBS / 3))
+
+		# Add another CIN
+		dct = 	{ 'm2m:cin' : {
+					'con' : 'y' * int(maxBS / 3)
+				}}
+		_, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.created)
+
+		# Test latest CIN for y
+		r, rsc = RETRIEVE(f'{cntURL}/la', TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'm2m:cin/con'))
+		self.assertTrue(findXPath(r, 'm2m:cin/con').startswith('y'))
+		self.assertEqual(len(findXPath(r, 'm2m:cin/con')), int(maxBS / 3))
+
+		# Test CNT
+		r, rsc = RETRIEVE(cntURL, TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/cni'))
+		self.assertEqual(findXPath(r, 'm2m:cnt/cni'), 3)
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/cbs'))
+		self.assertEqual(findXPath(r, 'm2m:cnt/cbs'), maxBS)
+
+
 def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestCNT_CIN('test_addCIN'))
@@ -182,6 +253,11 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestCNT_CIN('test_retrieveCNTLa'))
 	suite.addTest(TestCNT_CIN('test_retrieveCNTOl'))
 	suite.addTest(TestCNT_CIN('test_changeCNTMni'))
+	suite.addTest(TestCNT_CIN('test_deleteCNT'))
+	suite.addTest(TestCNT_CIN('test_createCNTwithMCS'))
+	suite.addTest(TestCNT_CIN('test_createCINexactSize'))
+	suite.addTest(TestCNT_CIN('test_createCINtooBig'))
+	suite.addTest(TestCNT_CIN('test_createCINsForCNTwithSize'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 

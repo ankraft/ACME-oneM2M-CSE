@@ -37,6 +37,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--load-include', action='store_true', dest='includeLoadTests', default=False, help='include load tests in test runs')
 	parser.add_argument('--load-only', action='store_true', dest='loadTestsOnly', default=False, help='run only load tests in test runs')
+	parser.add_argument('--show-skipped', action='store_true', dest='showSkipped', default=False, help='show skipped tests in summary')
 	parser.add_argument('tests', nargs='*', help='specify tests to run only')
 	args = parser.parse_args()
 
@@ -71,7 +72,8 @@ if __name__ == '__main__':
 				if errors > 0:
 					console.print(f'[red]Errors: {errors}')
 			else:
-				results[name] = ( 0, 0, 0, 0, 1 )
+				if args.showSkipped:
+					results[name] = ( 0, 0, 0, 0, 1 )
 
 	totalProcessTime	= time.process_time() - totalProcessTimeStart
 	totalExecTime 		= time.perf_counter() - totalTimeStart

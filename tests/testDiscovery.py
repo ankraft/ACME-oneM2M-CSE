@@ -18,10 +18,6 @@ from Types import ResourceTypes as T, ResponseCode as RC
 from Types import DesiredIdentifierResultType, FilterOperation
 from init import *
 
-# The following code must be executed before anything else because it influences
-# the collection of skipped tests.
-# It checks whether there actually is a CSE running.
-noCSE = not connectionPossible(cseURL)
 
 cnt2RN = f'{cntRN}2' 
 cnt3RN = f'{cntRN}3'
@@ -32,7 +28,6 @@ nodeID  = 'urn:sn:1234'
 
 class TestDiscovery(unittest.TestCase):
 
-	cse 			= None
 	ae 				= None
 	cnt 			= None
 	cnt2 			= None
@@ -44,9 +39,6 @@ class TestDiscovery(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
 		cls.crTimestamp1 = getDate(-timeDelta)	# first timestamp
-
-		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 

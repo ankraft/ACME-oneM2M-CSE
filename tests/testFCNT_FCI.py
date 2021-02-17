@@ -15,26 +15,17 @@ from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
 
-# The following code must be executed before anything else because it influences
-# the collection of skipped tests.
-# It checks whether there actually is a CSE running.
-noCSE = not connectionPossible(cseURL)
-
 
 CND = 'org.onem2m.home.moduleclass.temperature'
 
 class TestFCNT_FCI(unittest.TestCase):
 
-	cse 		= None
 	ae 			= None 
 	originator 	= None
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
-		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
-
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
@@ -55,7 +46,6 @@ class TestFCNT_FCI(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createFCNT(self) -> None:
 		"""	Create a <FCNT> """
-		self.assertIsNotNone(TestFCNT_FCI.cse)
 		self.assertIsNotNone(TestFCNT_FCI.ae)
 		dct = 	{ 'cod:tempe' : { 
 					'rn'	: fcntRN,
@@ -171,7 +161,7 @@ class TestFCNT_FCI(unittest.TestCase):
 
 
 # TODO other FCNT controlling attributes
-# TODO more tests
+# TODO Add similar tests from testCNT_CIN for mni, etc
 
 def run() -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()

@@ -104,8 +104,6 @@ localCsrURL 	= f'{cseURL}{REMOTECSEID}'
 remoteCsrURL 	= f'{REMOTEcseURL}{CSEID}'
 
 
-
-
 ###############################################################################
 
 #
@@ -447,3 +445,13 @@ def toISO8601Date(ts: Union[float, datetime.datetime]) -> str:
 		ts = datetime.datetime.utcfromtimestamp(ts)
 	return ts.strftime('%Y%m%dT%H%M%S,%f')
 	
+
+
+###############################################################################
+
+# The following code must be executed before anything else because it influences
+# the collection of skipped tests.
+# It checks whether there actually is a CSE running.
+noCSE = not connectionPossible(cseURL)
+noRemote = not connectionPossible(REMOTEcseURL)
+

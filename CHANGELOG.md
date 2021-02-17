@@ -14,14 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added configuration to exclude certain attributes in CSR creations and updates.
 - [CSE] Added support for CBOR serialization.
 - [CSE] Added attribute policies for TS-0023 R4 ModuleClasses, Devices etc.
-- [CSE] Added attribute policies for Generic Interworking and AllJoyn specialisations.
+- [CSE] Added attribute policies for Generic Interworking and AllJoyn specialization.
 - [CSE] Added diagram generation (in PlantUML format) of resource tree and deployment structure.
 - [CSE] Added better checks for content serialization in AE.
 - [CSE] Added command interface to the terminal console (for stopping the CSE, printing statistics, CSE registrations, the resource tree, etc).
-- [CSE] Added support for *holder* attribute. Added access control behaviour for *holder* and resource creator when a resource may have an *acpi* attribute, but doesn't.
+- [CSE] Added support for *holder* attribute. Added access control behavior for *holder* and resource creator when a resource may have an *acpi* attribute, but doesn't.
 - [CSE] Added support for Subscription's *expirationCounter*.
 - [NOTIFICATIONS] Added support for handling CBOR serialization and other binary formats to the notification server.
 - [WEB] Added dark mode (for supported browsers).
+- [TESTS] Added load tests that can be optionally executed. Also improved test runner: select on the command line which tests to run.
 
 ### Changed
 - [WEB] The web UI can now also be used as a stand-alone application to connect to third-party CSEs.
@@ -29,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Changed the importing of attribute policies to a JSON based format.
 - [CSE] Supported release version can now be configured via the config file.
 - [CSE] Added checks for remote CSE's *csi* (does it exist? Does it begin with a /?)
-- [CSE] Removed defaultACPI support. Now supporting correct behaviour for *holder* attribute resp resource creator.
+- [CSE] Removed defaultACPI support. Now supporting correct behavior for *holder* attribute resp. resource creator.
 - [CSE] Correctly implemented acpi updates. Also: acpi references are converted to CSE relative unstructured During CREATE and UPDATE.
 - [CSE] Changed resourceType values for \<latest> and \<oldest> to the specified values.
 - [CSE] Access control clean-up. No more extra ACPs for admin access, CSRs, AEs, REQs etc. The CSE now makes use of *creator* and *holder* access.
@@ -44,11 +45,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - [CSE] CSEBase.srt attribute now also returns the announced attributes.
-- [CSE] Improved shutdown behaviour. Waiting for internal threads to finish.
+- [CSE] Improved shutdown behavior. Waiting for internal threads to finish.
 - [CSE] When updating a subscription resource's *nu* attribute: Removed URI's don't cause a "deletion notification" anymore.
 - [CSE] Improved *creator* attribute handling during CREATE.
+- [CSE] Fixed wrong removal procedure when removing contentInstances from a container when either threshold was met.
 - [ACP] Added check that *pvs* is not empty during CREATE or UPDATE.
 - [ACP] Added check that 'acpi', if present, is the only attribute in an UPDATE request.
+- [TESTS] Fixed test framework checks for CSE connectivity and CSE reconfigurations for test runs.
 
 
 ## [0.6.0] - 2020-10-26
@@ -84,7 +87,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added support for *myCertFileCred* ManagementObject.
 - [SUB] Improved support for 'nct' in subscriptions.
 - [TESTS] Added unit tests.
-- [WEB] Added deletion of resources in the webb UI via right-click menu.
+- [WEB] Added deletion of resources in the web UI via right-click menu.
 - [HTTP] Added https support for the http server and for requests.
 - [MISC] Added Python type hints throughout the source code.
 
@@ -161,7 +164,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [WEB] Added LOGO & favicon.
 
 ### Fixed
-- [WEB] Browser request to "/"" will now redirect to the webui's URL.
+- [WEB] Browser request to "/"" will now redirect to the web-ui's URL.
 - [WEB] REST UI will not refresh anymore when automatic refresh is on.
 - [ALL] Various fixes and improvements.
 

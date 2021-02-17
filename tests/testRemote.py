@@ -16,24 +16,14 @@ from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
 
 
-# The following code must be executed before anything else because it influences
-# the collection of skipped tests.
-# It checks whether there actually is a CSE or remote CSE running.
-noCSE = not connectionPossible(cseURL)
-noRemote = not connectionPossible(REMOTEcseURL)
-
-
 class TestRemote(unittest.TestCase):
 
-	cse 		= None
 	remoteCse 	= None
 
 	@classmethod
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def setUpClass(cls) -> None:
 		# check connection to CSE's
-		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 		cls.remoteCse, rsc = RETRIEVE(REMOTEcseURL, REMOTEORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve remote CSEBase: {REMOTEcseURL}'
 

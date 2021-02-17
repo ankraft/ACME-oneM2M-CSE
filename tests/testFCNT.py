@@ -15,11 +15,6 @@ from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
 from typing import Tuple
 
-# The following code must be executed before anything else because it influences
-# the collection of skipped tests.
-# It checks whether there actually is a CSE running.
-noCSE = not connectionPossible(cseURL)
-
 
 CND = 'org.onem2m.home.moduleclass.temperature'
 GISCND = 'someCND'
@@ -28,16 +23,12 @@ gisURL = f'{aeURL}/{GISRN}'
 
 class TestFCNT(unittest.TestCase):
 	
-	cse 		= None
 	ae 			= None
 	originator 	= None
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
-		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, 'cannot retrieve CSEBase'
-
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
@@ -58,7 +49,6 @@ class TestFCNT(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createFCNT(self) -> None:
 		""" Create <FCNT> [cod:tempe] """
-		self.assertIsNotNone(TestFCNT.cse)
 		self.assertIsNotNone(TestFCNT.ae)
 		dct = 	{ 'cod:tempe' : { 
 					'rn'	: fcntRN,

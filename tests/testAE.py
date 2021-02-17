@@ -14,10 +14,6 @@ from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
 
-# The following code must be executed before anything else because it influences
-# the collection of skipped tests.
-# It checks whether there actually is a CSE running.
-noCSE = not connectionPossible(cseURL)
 
 class TestAE(unittest.TestCase):
 
@@ -30,9 +26,9 @@ class TestAE(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
-		TestAE.originator 	= None 	# actually the AE.aei
-		TestAE.aeACPI 		= None
-		TestAE.cse, rsc 	= RETRIEVE(cseURL, ORIGINATOR)
+		cls.originator 	= None 	# actually the AE.aei
+		cls.aeACPI 		= None
+		cls.cse, rsc 	= RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 
 

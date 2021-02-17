@@ -15,18 +15,12 @@ from Constants import Constants as C
 from Types import ResourceTypes as T, NotificationContentType, ResponseCode as RC
 from init import *
 
-# The following code must be executed before anything else because it influences
-# the collection of skipped tests.
-# It checks whether there actually is a CSE running.
-noCSE = not connectionPossible(cseURL)
-
 numberOfBatchNotifications = 5
 durationForBatchNotifications = 2
 durationForBatchNotificationsISO8601 = 'PT2S'
 
 class TestSUB(unittest.TestCase):
 
-	cse 			= None
 	ae 				= None
 	aeNoPoa 		= None
 	originator 		= None
@@ -53,9 +47,6 @@ class TestSUB(unittest.TestCase):
 			assert hasNotificationServer, 'Notification server cannot be reached'
 
 		# create other resources
-		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
-
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
@@ -98,7 +89,6 @@ class TestSUB(unittest.TestCase):
 	def test_createSUB(self) -> None:
 		"""	Create <SUB> under <CNT>. """
 		clearLastNotification()	# clear the notification first
-		self.assertIsNotNone(TestSUB.cse)
 		self.assertIsNotNone(TestSUB.ae)
 		self.assertIsNotNone(TestSUB.cnt)
 		dct = 	{ 'm2m:sub' : { 
@@ -355,7 +345,6 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBForBatchNotificationNumber(self) -> None:
 		""" Create <SUB> with batch notification set to number -> Send verification notification"""
-		self.assertIsNotNone(TestSUB.cse)
 		self.assertIsNotNone(TestSUB.ae)
 		self.assertIsNotNone(TestSUB.cnt)
 		dct = 	{ 'm2m:sub' : { 
@@ -420,7 +409,6 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBForBatchNotificationDuration(self) -> None:
 		""" Create <SUB> with batch notification set to delay -> Send verification notification"""
-		self.assertIsNotNone(TestSUB.cse)
 		self.assertIsNotNone(TestSUB.ae)
 		self.assertIsNotNone(TestSUB.cnt)
 		dct = 	{ 'm2m:sub' : { 
@@ -476,7 +464,6 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBWithEncAtr(self) -> None:
 		""" Create <SUB> to monitor resource update, only specific attribute -> Send verification notification"""
-		self.assertIsNotNone(TestSUB.cse)
 		self.assertIsNotNone(TestSUB.ae)
 		self.assertIsNotNone(TestSUB.cnt)
 		dct = 	{ 'm2m:sub' : { 
@@ -587,7 +574,6 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBWithEncChty(self) -> None:
 		""" Create <SUB> to monitor ceration of child resources with type=container -> Send verification notification"""
-		self.assertIsNotNone(TestSUB.cse)
 		self.assertIsNotNone(TestSUB.ae)
 		self.assertIsNotNone(TestSUB.cnt)
 		dct = 	{ 'm2m:sub' : { 

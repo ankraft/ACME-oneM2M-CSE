@@ -15,14 +15,6 @@ from Constants import Constants as C
 from Types import ResourceTypes as T, NotificationContentType, ResponseCode as RC, Operation, ResponseType, Permission
 from init import *
 
-# The following code must be executed before anything else because it influences
-# the collection of skipped tests.
-# It checks whether there actually is a CSE running.
-noCSE = not connectionPossible(cseURL)
-
-# Reconfigure the server to check faster for expirations.
-enableShortExpirations()
-
 # Headers for async requests
 headers = {
 	C.hfRTU	: NOTIFICATIONSERVER
@@ -33,7 +25,6 @@ headersEmpty = {
 
 class TestREQ(unittest.TestCase):
 
-	cse 		= None
 	ae 			= None
 	originator 	= None
 
@@ -44,9 +35,6 @@ class TestREQ(unittest.TestCase):
 		startNotificationServer()
 
 		# create other resources
-		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
-
 		dct =	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyAppId',
@@ -70,9 +58,9 @@ class TestREQ(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
 	def test_createREQFail(self) -> None:
 		"""	Manually create <REQ> -> Fail """
+		self.assertTrue(isTestExpirations())
 		self.assertIsNotNone(TestREQ.ae)
 		dct = 	{ 'm2m:req' : { }}	# type: ignore
 		r, rsc = CREATE(cseURL, TestREQ.originator, T.REQ, dct)
@@ -433,6 +421,9 @@ class TestREQ(unittest.TestCase):
 
 
 def run() -> Tuple[int, int, int]:
+	# Reconfigure the server to check faster for expirations.
+	enableShortExpirations()
+
 	suite = unittest.TestSuite()
 
 	suite.addTest(TestREQ('test_createREQFail'))
@@ -458,6 +449,7 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestREQ('test_deleteCNTNBASynch'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
+	disableShortExpirations()
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':
