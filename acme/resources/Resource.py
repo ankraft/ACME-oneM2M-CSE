@@ -178,7 +178,7 @@ class Resource(object):
 	# Deactivate an active resource.
 	# Send notification on deletion
 	def deactivate(self, originator:str) -> None:
-		Logging.logDebug(f'Deactivating and removing sub-resources: {self.ri}')
+		Logging.logDebug(f'Deactivating and removing sub-resources for: {self.ri}')
 		# First check notification because the subscription will be removed
 		# when the subresources are removed
 		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceDelete)

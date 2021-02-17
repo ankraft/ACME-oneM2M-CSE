@@ -45,6 +45,8 @@ class CNT(AnnounceableResource):
 			self.setAttribute('cni', 0, overwrite=False)
 			self.setAttribute('cbs', 0, overwrite=False)
 
+		self.__validating = False	# semaphore for validating
+
 
 	# Enable check for allowed sub-resources
 	def canHaveChild(self, resource: Resource) -> bool:
@@ -127,13 +129,21 @@ class CNT(AnnounceableResource):
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		if (res := super().validate(originator, create, dct)).status == False:
 			return res
-		return self._validateChildren()
+		self._validateChildren()
+		return Result(status=True)
 
 
-	def _validateChildren(self) -> Result:
+	# TODO Align this and FCNT implementations
+	
+	def _validateChildren(self) -> None:
 		""" Internal validation and checks. This called more often then just from
 			the validate() method.
 		"""
+		# Check whether we already are in validation the children (ie prevent unfortunate recursion by the Dispatcher)
+		if self.__validating:
+			return
+		self.__validating = True
+
 		# retrieve all children
 		cs = self.contentInstances()
 
@@ -143,11 +153,11 @@ class CNT(AnnounceableResource):
 		i = 0
 		l = cni
 		while cni > mni and i < l:
+			Logging.logDebug(f'cni > mni: Removing <cin>: {cs[i].ri}')
 			# remove oldest
 			CSE.dispatcher.deleteResource(cs[i], parentResource=self)
-			cni -= 1
+			cni -= 1	# decrement cni
 			i += 1
-		self['cni'] = cni
 
 		# check size
 		cs = self.contentInstances()	# get CINs again
@@ -158,13 +168,19 @@ class CNT(AnnounceableResource):
 		i = 0
 		l = len(cs)
 		while cbs > mbs and i < l:
+			Logging.logDebug(f'cbs > mbs: Removing <cin>: {cs[i].ri}')
+
 			# remove oldest
 			cbs -= cs[i]['cs']
 			CSE.dispatcher.deleteResource(cs[i], parentResource=self)
+			cni -= 1	# again, decrement cni when deleting a cni
 			i += 1
-		self['cbs'] = cbs
 
 		# Some CNT resource may have been updated, so store the resource 
+		self['cni'] = cni
+		self['cbs'] = cbs
 		self.dbUpdate()
+	
+		# End validating
+		self.__validating = False
 
-		return Result(status=True)

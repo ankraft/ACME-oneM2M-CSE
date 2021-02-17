@@ -49,6 +49,7 @@ class FCNT(AnnounceableResource):
 			# Might change during the lifetime of a resource. Used for optimization
 			self.hasInstances = False
 
+		self.__validating = False
 		self.ignoreAttributes = self.internalAttributes + [ 'acpi', 'cbs', 'cni', 'cnd', 'cs', 'cr', 'ct', 'et', 'lt', 'mbs', 'mia', 'mni', 'or', 'pi', 'ri', 'rn', 'st', 'ty', 'at' ]
 
 
@@ -107,17 +108,23 @@ class FCNT(AnnounceableResource):
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		if not (res := super().validate(originator, create, dct)).status:
 			return res
-		return self._validateChildren(originator)
+		self._validateChildren(originator)
+		return Result(status=True)
 
 		# No CND? -> Validator
 		# if (cnd := self.cnd) is None or len(cnd) == 0:
 		# 	return Result(status=False, rsc=RC.contentsUnacceptable, dbg='cnd attribute missing or empty')
 
 
-	def _validateChildren(self, originator:str, deletingFCI:bool=False) -> Result:
+	def _validateChildren(self, originator:str, deletingFCI:bool=False) -> None:
 		""" Internal validation and checks. This called more often then just from
 			the validate() method, for example when deleting a FCIN.
 		"""
+		# Check whether we already are in validation the children (ie prevent unfortunate recursion by the Dispatcher)
+		if self.__validating:
+			return
+		self.__validating = True
+
 		# Calculate contentSize
 		# This is not at all realistic since this is the in-memory representation
 		# TODO better implementation needed 
@@ -161,9 +168,6 @@ class FCNT(AnnounceableResource):
 				fci = self.flexContainerInstances()	# get FCIs again (bc may be different now)
 				fcii = len(fci)
 
-			# Always assign cni. Might have changed above
-			self['cni'] = fcii 
-			
 			# Calculate cbs
 			cbs = 0
 			for f in fci:					
@@ -178,21 +182,21 @@ class FCNT(AnnounceableResource):
 					# remove oldest
 					cbs -= fci[i].cs			
 					CSE.dispatcher.deleteResource(fci[i], parentResource=self)
+					fcii -= 1	# again, decrement fcii when deleting a cni
 					i += 1
 
 				# Add "current" atribute, if it is not there
 				self.setAttribute('cbs', 0, overwrite=False)
 			
-			# Always assign cbs. Might have changed above
-			self['cbs'] = cbs
-
 		# TODO Remove la, ol, existing FCI when mni etc are not present anymore.
 
-		
 		# May have been changed, so store the resource
+		self['cni'] = fcii
+		self['cbs'] = cbs
 		self.dbUpdate()
-		return Result(status=True)
-
+	
+		# End validating
+		self.__validating = False
 
 	def flexContainerInstances(self) -> list[Resource]:
 		"""	Get all flexContainerInstances of a resource and return a sorted (by ct) list

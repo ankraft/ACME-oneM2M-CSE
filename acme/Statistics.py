@@ -200,7 +200,6 @@ class Statistics(object):
 	def handleCseStartup(self) -> None:
 		with self.statLock:
 			self.stats[cseStartUpTime] = datetime.datetime.now(datetime.timezone.utc).timestamp()
-			print(self.stats[cseStartUpTime])
 
 
 	def handleLogError(self) -> None:
