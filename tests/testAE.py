@@ -275,7 +275,7 @@ class TestAE(unittest.TestCase):
 
 # TODO register multiple AEs
 
-def run() -> Tuple[int, int, int]:
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestAE('test_createAE'))
 	suite.addTest(TestAE('test_createAEUnderAE'))
@@ -297,8 +297,9 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestAE('test_createAEAPICorrectR'))	
 	suite.addTest(TestAE('test_createAEAPICorrectN'))	
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
+	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':
-	_, errors, _ = run()
+	_, errors, _ = run(2, True)
 	sys.exit(errors)

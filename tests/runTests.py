@@ -38,6 +38,12 @@ if __name__ == '__main__':
 	parser.add_argument('--load-include', action='store_true', dest='includeLoadTests', default=False, help='include load tests in test runs')
 	parser.add_argument('--load-only', action='store_true', dest='loadTestsOnly', default=False, help='run only load tests in test runs')
 	parser.add_argument('--show-skipped', action='store_true', dest='showSkipped', default=False, help='show skipped tests in summary')
+	parser.add_argument('--verbosity', action='store', dest='verbosity', type=int, choices=[0,1,2], default=2, help='set verbosity (default: 2)')
+
+	groupFail = parser.add_mutually_exclusive_group()
+	groupFail.add_argument('--failfast', action='store_true', dest='failFast', default=True, help='Stop tests after failure (default)')
+	groupFail.add_argument('--no-failfast', action='store_false', dest='failFast', default=True, help='Continue tests after failure')
+
 	parser.add_argument('tests', nargs='*', help='specify tests to run only')
 	args = parser.parse_args()
 
@@ -60,7 +66,7 @@ if __name__ == '__main__':
 				console.print(f'[blue]Running tests from [bold]{name}')
 				startProcessTime = time.process_time()
 				startPerfTime = time.perf_counter()
-				testExecuted, errors, skipped = module.run()	# type: ignore
+				testExecuted, errors, skipped = module.run(testVerbosity=args.verbosity, testFailFast=args.failFast)	# type: ignore
 				durationProcess = time.process_time() - startProcessTime
 				duration = time.perf_counter() - startPerfTime
 				if testExecuted > 0:	# don't count none-run tests

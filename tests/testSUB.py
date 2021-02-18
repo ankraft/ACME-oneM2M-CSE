@@ -163,7 +163,6 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(rsc, RC.notFound)
 
 
-
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateSUB(self) -> None:
 		"""	Update <SUB> with exc """
@@ -259,12 +258,28 @@ class TestSUB(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createSUBModifedAttributes(self) -> None:
-		""" Create <SUB> to monitor only modified attributes -> Send verification notification"""
+	def test_createSUBModifedAttributesWrong(self) -> None:
+		""" Create <SUB> to monitor only modified attributes and on CREATE of child resource -> Fail """
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
-			            'net': [ 1, 3 ]
+			            'net': [ 3 ]
+        			},
+        			'nu': [ NOTIFICATIONSERVER ],
+					'su': NOTIFICATIONSERVER,
+					'nct': NotificationContentType.modifiedAttributes
+				}}
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSUBModifedAttributes(self) -> None:
+		""" Create <SUB> to monitor only modified attributes and on UPDATE of child resource-> Send verification notification """
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'net': [ 1 ]
         			},
         			'nu': [ NOTIFICATIONSERVER ],
 					'su': NOTIFICATIONSERVER,
@@ -874,7 +889,7 @@ class TestSUB(unittest.TestCase):
 # TODO check different NET's (ae->cnt->sub, add cnt to cnt)
 
 
-def run() -> Tuple[int, int, int]:
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 
 	suite.addTest(TestSUB('test_createSUB'))
@@ -893,6 +908,7 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestSUB('test_deleteSUBByUnknownOriginator'))
 	suite.addTest(TestSUB('test_deleteSUBByAssignedOriginator'))
 
+	suite.addTest(TestSUB('test_createSUBModifedAttributesWrong'))
 	suite.addTest(TestSUB('test_createSUBModifedAttributes'))
 	suite.addTest(TestSUB('test_updateCNTModifiedAttributes'))
 	suite.addTest(TestSUB('test_updateCNTSameModifiedAttributes'))
@@ -941,12 +957,10 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestSUB('test_createSUBWithCreatorWrong'))
 	suite.addTest(TestSUB('test_createSUBWithCreator'))
 
-
-
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
+	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':
-	_, errors, _ = run()
+	_, errors, _ = run(2, True)
 	sys.exit(errors)
-

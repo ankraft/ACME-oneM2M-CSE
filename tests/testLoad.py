@@ -211,7 +211,7 @@ class TestLoad(unittest.TestCase):
 # TODO CNT + CIN
 # TODO CNT + CIN + SUB
 
-def run() -> Tuple[int, int, int]:
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestLoad('test_createAEs', 10))
 	suite.addTest(TestLoad('test_deleteAEs', 10))
@@ -232,11 +232,10 @@ def run() -> Tuple[int, int, int]:
 	suite.addTest(TestLoad('test_createCNTCINs', 100))
 	suite.addTest(TestLoad('test_deleteCNTCINs', 100))
 
-
-
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
+	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':
-	_, errors, _ = run()
+	_, errors, _ = run(2, True)
 	sys.exit(errors)

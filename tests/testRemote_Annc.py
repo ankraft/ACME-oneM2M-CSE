@@ -595,7 +595,7 @@ class TestRemote_Annc(unittest.TestCase):
 		TestRemote_Annc.remoteAcpRI = None
 
 
-def run() -> Tuple[int, int, int]:
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 
 	# create an announced AE, but no extra attributes
@@ -638,9 +638,10 @@ def run() -> Tuple[int, int, int]:
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
+	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 
 if __name__ == '__main__':
-	_, errors, _ = run()
+	_, errors, _ = run(2, True)
 	sys.exit(errors)

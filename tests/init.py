@@ -10,6 +10,8 @@
 from __future__ import annotations
 import sys
 sys.path.append('../acme')
+import unittest
+from rich.console import Console
 import requests, random, sys, json, re, time, datetime, ssl, urllib3
 import cbor2
 from typing import Any, Callable, Union, Tuple, cast
@@ -43,9 +45,6 @@ NOTIFICATIONSERVERW	= f'{PROTOCOL}://localhost:6666'
 
 CONFIGURL			= f'{SERVER}{ROOTPATH}__config__'
 
-
-testVerbosity:int	= 2		# 0, 1, 2
-testFailFast:bool	= True	# Fail a whole test suite immediately or continue
 
 verifyCertificate	= False	# verify the certificate when using https?
 
@@ -444,7 +443,17 @@ def toISO8601Date(ts: Union[float, datetime.datetime]) -> str:
 	if isinstance(ts, float):
 		ts = datetime.datetime.utcfromtimestamp(ts)
 	return ts.strftime('%Y%m%dT%H%M%S,%f')
-	
+
+
+def printResult(result:unittest.TestResult) -> None:
+	"""	Print the test results. """
+	console = Console()
+
+	# Failures
+	for f in result.failures:
+		console.print(f'\n[bold][red]{f[0]}')
+		console.print(f'[dim]{f[0].shortDescription()}')
+		console.print(f[1])
 
 
 ###############################################################################

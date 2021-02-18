@@ -242,7 +242,8 @@ class TestExpiration(unittest.TestCase):
 		r, rsc = DELETE(fcntURL, TestExpiration.originator)
 		self.assertEqual(rsc, RC.deleted)
 
-def run() -> Tuple[int, int, int]:
+
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	# Reconfigure the server to check faster for expirations.
 	enableShortExpirations()
 	
@@ -258,8 +259,9 @@ def run() -> Tuple[int, int, int]:
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	disableShortExpirations()
+	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':
-	_, errors, _ = run()
+	_, errors, _ = run(2, True)
 	sys.exit(errors)

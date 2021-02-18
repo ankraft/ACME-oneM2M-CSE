@@ -149,7 +149,7 @@ class TestCIN(unittest.TestCase):
 
 # More tests of la, ol etc in testCNT_CNI.py
 
-def run() -> Tuple [int, int, int]:
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestCIN('test_createCIN'))
 	suite.addTest(TestCIN('test_retrieveCIN'))
@@ -160,8 +160,9 @@ def run() -> Tuple [int, int, int]:
 	suite.addTest(TestCIN('test_createCINWithCreatorWrong'))
 	suite.addTest(TestCIN('test_createCINWithCreator'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
+	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':
-	_, errors, _ = run()
+	_, errors, _ = run(2, True)
 	sys.exit(errors)

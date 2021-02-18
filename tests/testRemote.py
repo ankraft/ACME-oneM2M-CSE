@@ -76,14 +76,15 @@ class TestRemote(unittest.TestCase):
 		self.assertGreater(len(findXPath(r, 'm2m:csr/poa')), 0)
 
 
-def run() -> Tuple[int, int, int]:
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestRemote('test_retrieveLocalCSR'))
 	suite.addTest(TestRemote('test_retrieveRemoteCSR'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
+	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 
 if __name__ == '__main__':
-	_, errors, _ = run()
+	_, errors, _ = run(2, True)
 	sys.exit(errors)
