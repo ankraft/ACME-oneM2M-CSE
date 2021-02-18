@@ -522,13 +522,25 @@ class NotificationContentType(IntEnum):
 
 class NotificationEventType(IntEnum):
 	""" eventNotificationCriteria/NotificationEventTypes """
-	resourceUpdate		= 1	# default
-	resourceDelete		= 2	
-	createDirectChild	= 3
-	deleteDirectChild	= 4	
-	retrieveCNTNoChild	= 5	# TODO not supported yet
-	triggerReceivedForAE= 6 # TODO not supported yet
-	blockingUpdate 		= 7 # TODO not supported yet
+	resourceUpdate		= 1	# A, default
+	resourceDelete		= 2	# B
+	createDirectChild	= 3 # C
+	deleteDirectChild	= 4 # D	
+	retrieveCNTNoChild	= 5	# E # TODO not supported yet
+	triggerReceivedForAE= 6 # F # TODO not supported yet
+	blockingUpdate 		= 7 # G # TODO not supported yet
+
+
+	def isAllowedNCT(self, nct:NotificationContentType) -> bool:
+		if nct == NotificationContentType.all:
+			return self.value in [ NotificationEventType.resourceUpdate, NotificationEventType.resourceDelete, NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]
+		elif nct == NotificationContentType.modifiedAttributes:
+			return self.value in [ NotificationEventType.resourceUpdate, NotificationEventType.blockingUpdate ]
+		elif nct == NotificationContentType.ri:
+			return self.value in [ NotificationEventType.resourceUpdate, NotificationEventType.resourceDelete, NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]
+		elif nct == NotificationContentType.triggerPayload:
+			return self.value in [ NotificationEventType.triggerReceivedForAE ]
+		return False
 
 
 ##############################################################################

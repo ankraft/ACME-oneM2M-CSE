@@ -74,8 +74,16 @@ class SUB(Resource):
 
 		# Check necessary attributes
 		if (nu := self.nu) is None or not isinstance(nu, list):
-			Logging.logDebug(f'"nu" attribute missing for subscription: {self.ri}')
-			return Result(status=False, rsc=RC.insufficientArguments, dbg='"nu" is missing or wrong type')
+			Logging.logDebug(dbg := f'"nu" attribute missing for subscription: {self.ri}')
+			return Result(status=False, rsc=RC.insufficientArguments, dbg=dbg)
+
+		# check nct and net combinations
+		if (nct := self.nct) is not None and (net := self['enc/net']) is not None:
+			for n in net:
+				if not NotificationEventType(n).isAllowedNCT(NotificationContentType(nct)):
+					Logging.logDebug(dbg := f'nct={nct} is not allowed for enc/net={net}')
+					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+				# fallthough
 
 		# check other attributes
 		self.normalizeURIAttribute('nfu')
