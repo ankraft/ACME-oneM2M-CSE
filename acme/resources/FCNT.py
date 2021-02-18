@@ -188,13 +188,14 @@ class FCNT(AnnounceableResource):
 				# Add "current" atribute, if it is not there
 				self.setAttribute('cbs', 0, overwrite=False)
 			
-		# TODO Remove la, ol, existing FCI when mni etc are not present anymore.
-
+			self['cni'] = fcii
+			self['cbs'] = cbs
+		
 		# May have been changed, so store the resource
-		self['cni'] = fcii
-		self['cbs'] = cbs
 		self.dbUpdate()
 	
+		# TODO Remove la, ol, existing FCI when mni etc are not present anymore.
+
 		# End validating
 		self.__validating = False
 
