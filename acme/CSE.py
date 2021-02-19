@@ -67,6 +67,8 @@ cseRn:str										= None
 cseOriginator:str								= None
 defaultSerialization:ContentSerializationType	= None
 
+_args:argparse.Namespace						= None	# Internal pointer to command line arguments
+
 
 # TODO move further configurable "constants" here
 
@@ -79,13 +81,14 @@ defaultSerialization:ContentSerializationType	= None
 
 
 #def startup(args=None, configfile=None, resetdb=None, loglevel=None):
-def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
+def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	global announce, dispatcher, group, httpServer, notification, validator
 	global registration, remote, request, security, statistics, storage, event
 	global rootDirectory
 	global aeStatistics
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseRi, cseRn
 	global cseOriginator
+	global _args
 
 	rootDirectory = os.getcwd()					# get the root directory
 	os.environ["FLASK_ENV"] = "development"		# get rid if the warning message from flask. 
@@ -98,8 +101,10 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 		args.configfile	= None
 		args.resetdb	= False
 		args.loglevel	= None
+		args.headless	= False
 		for key, value in kwargs.items():
 			args.__setattr__(key, value)
+	_args = args
 
 	if not Configuration.init(args):
 		return
@@ -116,7 +121,8 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 
 	# init Logging
 	Logging.init()
-	Logging.console('Press ? for help')
+	if not args.headless:
+		Logging.console('Press ? for help')
 	Logging.log('============')
 	Logging.log('Starting CSE')
 	Logging.log(f'CSE-Type: {cseType.name}')
@@ -200,7 +206,7 @@ def startup(args: argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 
 	#	Endless runtime loop. This handles key input & commands
 	#	The CSE's shutdown happens in one of the key handlers below
-	loop(commands, catchKeyboardInterrupt=True)
+	loop(commands, catchKeyboardInterrupt=True, headless=args.headless)
 
 
 
@@ -293,15 +299,16 @@ def _keyHelp(key:str) -> None:
 def _keyShutdownCSE(key:str) -> None:
 	"""	Shutdown the CSE.
 	"""
-	Logging.console('Shutdown CSE')
+	if not _args.headless:
+		Logging.console('Shutdown CSE')
 	exit()
 
 
 def _keyToggleLogging(key:str) -> None:
 	"""	Toggle through the log levels.
 	"""
-	Logging.loggingEnabled = not Logging.loggingEnabled
-	Logging.console(f'Logging enabled -> **{Logging.loggingEnabled}**')
+	Logging.enableScreenLogging = not Logging.enableScreenLogging
+	Logging.console(f'Logging enabled -> **{Logging.enableScreenLogging}**')
 
 
 def _keyWorkers(key:str) -> None:

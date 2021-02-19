@@ -21,9 +21,10 @@ In additions, you can provide additional command line arguments that will overri
 | --config \<filename>                              | Specify a configuration file that is used instead of the default (*acme.ini*) one.                                                                              |
 | --db-reset                                        | Reset and clear the database when starting the CSE.                                                                                                             |
 | --db-storage {memory,disk}                        | Specify the DB´s storage mode.<br />This overrides the [inMemory](Configuration.md#database) configuration setting.                                             |
-| --http-address \<server URL>                      | Specify the CSE\'s http server URL.<br />This overrides the [address](Configuration.md#http_server) configuration setting.                                         |
+| --headless                                        | Operate the CSE in headless mode. This disables almost all screen output and also the build-in console interface.                                               |
+| --http-address \<server URL>                      | Specify the CSE\'s http server URL.<br />This overrides the [address](Configuration.md#http_server) configuration setting.                                      |
 | --import-directory \<directory>                   | Specify the import directory.<br />This overrides the [resourcesPath](Configuration.md#general) configuration setting.                                          |
-| --network-interface \<ip address>                 | Specify the network interface/IP address to bind to.<br />This overrides the [listenIF](Configuration.md#server_http) configuration setting.                               |
+| --network-interface \<ip address>                 | Specify the network interface/IP address to bind to.<br />This overrides the [listenIF](Configuration.md#server_http) configuration setting.                    |
 | --log-level {info, error, warn, debug, off}       | Set the log level, or turn logging off.<br />This overrides the [level](Configuration.md#logging) configuration setting.                                        |
 | --remote-configuration, --no-remote-configuration | Enable or disable http remote configuration endpoint.<br />This overrides the [enableRemoteConfiguration](Configuration.md##server_http) configuration setting. |
 | --remote-cse, --no-remote-cse                     | Enable or disable remote CSE connections and checking.<br />This overrides the [enableRemoteCSE](Configuration.md#general) configuration setting.               |
@@ -63,6 +64,8 @@ The CSE has a simple command console interface to execute build-in commands. Cur
  - h, ?  - This help
  - Q, ^C - Shutdown CSE
  - c     - Show configuration
+ - D     - Delete resource
+ - i     - Inspect resource
  - l     - Toggle logging on/off
  - r     - Show CSE registrations
  - s     - Show statistics

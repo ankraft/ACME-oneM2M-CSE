@@ -9,7 +9,7 @@
 #
 
 from __future__ import annotations
-import sys
+import sys, time, signal
 from typing import Callable, Dict
 
 try:
@@ -25,6 +25,7 @@ except ImportError:
 	else:
 		getch = msvcrt.getch	# type: ignore
 else:
+	_errorInGetch:bool = False
 	def getch() -> str:
 		"""getch() -> key character
 
@@ -36,8 +37,17 @@ else:
 		it were a special function key, it may return the first character of
 		of an escape sequence, leaving additional characters in the buffer.
 		"""
+		global _errorInGetch
+		if _errorInGetch:		# getch() doesnt't fully work previously, so just return
+			return None
+
 		fd = sys.stdin.fileno()
-		old_settings = termios.tcgetattr(fd)
+		try:
+			old_settings = termios.tcgetattr(fd)
+		except:
+			_errorInGetch = True
+			return None
+
 		try:
 			#tty.setraw(fd)
 			tty.setcbreak(fd)	# Not extra lines in input
@@ -50,31 +60,63 @@ else:
 Commands = Dict[str, Callable[[str], None]]
 """ Mapping between characters and callback functions. """
 
+keyboardInterruptReceived = False
+def inputSignalHandler(sig, frame):
+	global keyboardInterruptReceived
+	keyboardInterruptReceived = True
 
-def loop(commands:Commands, quit:str=None, catchKeyboardInterrupt:bool=False) -> None:
+
+def loop(commands:Commands, quit:str=None, catchKeyboardInterrupt:bool=False, headless:bool=False) -> None:
 	"""	Endless loop that reads single chars from the keyboard and then executes
 		a handler function for that key (from the dictionary 'commands').
 		If a single 'key' value is set in 'quit' and this key is pressed, then
 		the loop terminates.
 		If 'catchKeyboardInterrupt' is True, then this key is handled as the ^C key,
 		otherweise a KeyboardInterrup event is raised.
+		If 'headless' is True, then operate differently. Ignore all key inputs, but handle
+		a keyboard interrupt. If the 'quit' key is set then the loop is just interrupted. Otherwise
+		tread the keyboard interrupt as ^C key. It must be hanled in the commands.
 	"""
+	
+	# Register interrupt handler for headless operation
+	if headless:
+		signal.signal(signal.SIGINT, inputSignalHandler)
+	
+	# main loop
+	ch:str = None
 	while True:	
-		# Get a key. Catch a ctrl-c keyboard interrup and handle it according to configuration
-		try:
-			ch = getch() # this also returns the key pressed, if you want to store it
-			if isinstance(ch, bytes):	# Windows getch() returns a byte-string
-				ch = ch.decode('utf-8') 
-		except KeyboardInterrupt as e:
-			if catchKeyboardInterrupt:
-				ch = '\x03'
-			else:
-				raise e 
-		
-		# handle "quit" key			
-		if quit is not None and ch == quit:
-			break
-		
+
+		# normal console operation: Get a key. Catch a ctrl-c keyboard interrup and handle it according to configuration
+		if not headless:
+			try:
+				ch = getch() # this also returns the key pressed, if you want to store it
+				if isinstance(ch, bytes):	# Windows getch() returns a byte-string
+					ch = ch.decode('utf-8') 
+			except KeyboardInterrupt as e:
+				if catchKeyboardInterrupt:
+					ch = '\x03'
+				else:
+					raise e 
+
+			# handle "quit" key			
+			if quit is not None and ch == quit:
+				break
+			
+		# When headless then look only for keyboard interrup
+		elif keyboardInterruptReceived:
+			if quit is not None or not '\x03' in commands:	# shortcut: if there is a quit key OR ^C is not in the commands, then just return from the loop
+				break
+			ch = '\x03'										# Assign ^C
+
+
+		# hande potential headless state: just sleep a moment, but only when not keyboad interrupt was received
+		if headless and not keyboardInterruptReceived:
+			try:
+				time.sleep(0.2)
+				continue
+			except KeyboardInterrupt:
+				break
+
 		# handle all other keys
 		if ch in commands:
 			commands[ch](ch)

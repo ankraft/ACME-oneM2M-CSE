@@ -19,4 +19,5 @@ COPY init/ acme-cse/init/
 COPY webui/ acme-cse/webui/
 WORKDIR acme-cse/
 
+#CMD ["python3", "acme.py", "--headless"]
 CMD ["python3", "acme.py"]

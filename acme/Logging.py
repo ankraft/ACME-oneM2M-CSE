@@ -62,6 +62,7 @@ class	Logging:
 	logLevel 			= logging.INFO
 	loggingEnabled		= True
 	enableFileLogging	= True
+	enableScreenLogging	= True
 	stackTraceOnError	= True
 	worker 				= None
 	queue 				= None
@@ -80,6 +81,7 @@ class	Logging:
 		if Logging.logger is not None:
 			return
 		Logging.enableFileLogging 	= Configuration.get('logging.enableFileLogging')
+		Logging.enableScreenLogging	= Configuration.get('logging.enableScreenLogging')
 		Logging.logLevel 			= Configuration.get('logging.level')
 		Logging.loggingEnabled		= Configuration.get('logging.enable')
 		Logging.stackTraceOnError	= Configuration.get('logging.stackTraceOnError')
@@ -261,7 +263,7 @@ class ACMERichLogHandler(RichHandler):
 		
 	def emit(self, record:LogRecord) -> None:
 		"""Invoked by logging."""
-		if not Logging.loggingEnabled or record.levelno < Logging.logLevel:
+		if not Logging.enableScreenLogging or not Logging.loggingEnabled or record.levelno < Logging.logLevel:
 			return
 		#path = Path(record.pathname).name
 		log_style = f"logging.level.{record.levelname.lower()}"

@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added command interface to the terminal console (for stopping the CSE, printing statistics, CSE registrations, the resource tree, etc).
 - [CSE] Added support for *holder* attribute. Added access control behavior for *holder* and resource creator when a resource may have an *acpi* attribute, but doesn't.
 - [CSE] Added support for Subscription's *expirationCounter*.
+- [CSE] Added headless mode to better support docker.
 - [NOTIFICATIONS] Added support for handling CBOR serialization and other binary formats to the notification server.
 - [WEB] Added dark mode (for supported browsers).
 - [TESTS] Added load tests that can be optionally executed. Also improved test runner: select on the command line which tests to run.

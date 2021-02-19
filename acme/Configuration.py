@@ -23,9 +23,7 @@ class Configuration(object):
 
 	@staticmethod
 	def init(args: argparse.Namespace = None) -> bool:
-		global _configuration
 		console = Console()
-
 
 		import Utils	# cannot import at the top because of circel import
 
@@ -43,6 +41,13 @@ class Configuration(object):
 		argsRemoteConfigEnabled	= args.remoteconfigenabled if args is not None and 'remoteconfigenabled' in args else None
 		argsListenIF			= args.listenif if args is not None and 'listenif' in args else None
 		argsHttpAddress			= args.httpaddress if args is not None and 'httpaddress' in args else None
+		argsHeadless			= args.headless if args is not None and 'headless' in args else False
+
+		# own print function that takes the headless setting into account
+		def _print(out:str) -> None:
+			if not argsHeadless:
+				console.print(out)
+
 
 		# Read and parse the configuration file
 		config = configparser.ConfigParser(	interpolation=configparser.ExtendedInterpolation(),
@@ -50,11 +55,11 @@ class Configuration(object):
 										  )
 		try:
 			if len(config.read(argsConfigfile)) == 0 and argsConfigfile != C.defaultConfigFile:		# Allow 
-				console.print(f'[red]Configuration file missing or not readable: {argsConfigfile}')
+				_print(f'[red]Configuration file missing or not readable: {argsConfigfile}')
 				return False
 		except configparser.Error as e:
-			console.print('[red]Error in configuration file')
-			console.print(e)
+			_print('[red]Error in configuration file')
+			_print(e)
 			return False
 
 		#
@@ -92,6 +97,7 @@ class Configuration(object):
 
 				'logging.enable'					: config.getboolean('logging', 'enable', 				fallback=True),
 				'logging.enableFileLogging'			: config.getboolean('logging', 'enableFileLogging', 	fallback=False),
+				'logging.enableScreenLogging'		: config.getboolean('logging', 'enableScreenLogging', 	fallback=True),
 				'logging.path'						: config.get('logging', 'path', 						fallback=C.defaultLogDirectory),
 				'logging.level'						: config.get('logging', 'level', 						fallback='debug'),
 				'logging.size'						: config.getint('logging', 'size', 						fallback=100000),
@@ -240,7 +246,7 @@ class Configuration(object):
 			}
 
 		except Exception as e:	# about when findings errors in configuration
-			console.print(f'[red]Error in configuration file: {argsConfigfile} - {str(e)}')
+			_print(f'[red]Error in configuration file: {argsConfigfile} - {str(e)}')
 			return False
 
 		# Read id-mappings
@@ -263,17 +269,17 @@ class Configuration(object):
 		ct = Configuration._configuration['cse.defaultSerialization']
 		Configuration._configuration['cse.defaultSerialization'] = ContentSerializationType.to(ct)
 		if Configuration._configuration['cse.defaultSerialization'] == ContentSerializationType.UNKNOWN:
-			console.print(f'[red]Configuration Error: Unsupported \[cse]:defaultSerialization: {ct}')
+			_print(f'[red]Configuration Error: Unsupported \[cse]:defaultSerialization: {ct}')
 			return False
 		
 		# Registrar Serialization
 		ct = Configuration._configuration['cse.registrar.serialization']
 		Configuration._configuration['cse.registrar.serialization'] = ContentSerializationType.to(ct)
 		if Configuration._configuration['cse.registrar.serialization'] == ContentSerializationType.UNKNOWN:
-			console.print(f'[red]Configuration Error: Unsupported \[cse.registrar]:serialization: {ct}')
+			_print(f'[red]Configuration Error: Unsupported \[cse.registrar]:serialization: {ct}')
 			return False
 
-		# Loglevel from command line
+		# Loglevel and various overrides from command line
 		logLevel = Configuration._configuration['logging.level'].lower()
 		logLevel = (argsLoglevel or logLevel) 	# command line args override config
 		if logLevel == 'off':
@@ -300,6 +306,9 @@ class Configuration(object):
 		if argsListenIF is not None:			Configuration._configuration['http.listenIF'] = argsListenIF								# Override binding network interface
 		if argsHttpAddress is not None:			Configuration._configuration['http.address'] = argsHttpAddress								# Override server http address
 
+		if argsHeadless is not None and argsHeadless:
+			Configuration._configuration['logging.enableScreenLogging'] = False
+
 		# Correct urls
 		Configuration._configuration['cse.registrar.address'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.address'])
 		Configuration._configuration['http.address'] = Utils.normalizeURL(Configuration._configuration['http.address'])
@@ -309,19 +318,19 @@ class Configuration(object):
 		# Just in case: check the URL's
 		if Configuration._configuration['cse.security.useTLS']:
 			if Configuration._configuration['http.address'].startswith('http:'):
-				console.print('[orange3]Configuration Warning: Changing "http" to "https" in \[server.http]:address')
+				_print('[orange3]Configuration Warning: Changing "http" to "https" in \[server.http]:address')
 				Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('http:', 'https:')
 			# registrar might still be accessible vi another protocol
 			# if Configuration._configuration['cse.registrar.address'].startswith('http:'):
-			# 	console.print('[orange3]Configuration Warning: Changing "http" to "https" in \[cse.registrar]:address')
+			# 	_print('[orange3]Configuration Warning: Changing "http" to "https" in \[cse.registrar]:address')
 			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('http:', 'https:')
 		else: 
 			if Configuration._configuration['http.address'].startswith('https:'):
-				console.print('[orange3]Configuration Warning: Changing "https" to "http" in \[server.http]:address')
+				_print('[orange3]Configuration Warning: Changing "https" to "http" in \[server.http]:address')
 				Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('https:', 'http:')
 			# registrar might still be accessible vi another protocol
 			# if Configuration._configuration['cse.registrar.address'].startswith('https:'):
-			# 	console.print('[orange3]Configuration Warning: Changing "https" to "http" in \[cse.registrar]:address')
+			# 	_print('[orange3]Configuration Warning: Changing "https" to "http" in \[cse.registrar]:address')
 			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('https:', 'http:')
 
 
@@ -337,67 +346,67 @@ class Configuration(object):
 			Configuration._configuration['cse.security.caPrivateKeyFile'] = None
 		else:
 			if not (val := Configuration._configuration['cse.security.tlsVersion']).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
-				console.print(f'[red]Configuration Error: Unknown value for \[cse.security]:tlsVersion: {val}')
+				_print(f'[red]Configuration Error: Unknown value for \[cse.security]:tlsVersion: {val}')
 				return False
 			if (val := Configuration._configuration['cse.security.caCertificateFile']) is None:
-				console.print('[red]Configuration Error: \[cse.security]:caCertificateFile must be set when TLS is enabled')
+				_print('[red]Configuration Error: \[cse.security]:caCertificateFile must be set when TLS is enabled')
 				return False
 			if not os.path.exists(val):
-				console.print(f'[red]Configuration Error: \[cse.security]:caCertificateFile does not exists or is not accessible: {val}')
+				_print(f'[red]Configuration Error: \[cse.security]:caCertificateFile does not exists or is not accessible: {val}')
 				return False
 			if (val := Configuration._configuration['cse.security.caPrivateKeyFile']) is None:
-				console.print('[red]Configuration Error: \[cse.security]:caPrivateKeyFile must be set when TLS is enabled')
+				_print('[red]Configuration Error: \[cse.security]:caPrivateKeyFile must be set when TLS is enabled')
 				return False
 			if not os.path.exists(val):
-				console.print(f'[red]Configuration Error: \[cse.security]:caPrivateKeyFile does not exists or is not accessible: {val}')
+				_print(f'[red]Configuration Error: \[cse.security]:caPrivateKeyFile does not exists or is not accessible: {val}')
 				return False
 
 		# check the csi format
 		rx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
 		if re.fullmatch(rx, (val:=Configuration._configuration['cse.csi'])) is None:
-			console.print(f'[red]Configuration Error: Wrong format for \[cse]:cseID: {val}')
+			_print(f'[red]Configuration Error: Wrong format for \[cse]:cseID: {val}')
 			return False
 
 		if Configuration._configuration['cse.registrar.address'] is not None and Configuration._configuration['cse.registrar.csi'] is not None:
 			if re.fullmatch(rx, (val:=Configuration._configuration['cse.registrar.csi'])) is None:
-				console.print(f'[red]Configuration Error: Wrong format for \[cse.registrar]:cseID: {val}')
+				_print(f'[red]Configuration Error: Wrong format for \[cse.registrar]:cseID: {val}')
 				return False
 			if len(Configuration._configuration['cse.registrar.csi']) > 0 and len(Configuration._configuration['cse.registrar.rn']) == 0:
-				console.print('[red]Configuration Error: Missing configuration \[cse.registrar]:resourceName')
+				_print('[red]Configuration Error: Missing configuration \[cse.registrar]:resourceName')
 				return False
 
 		# Check default subscription duration
 		if Configuration._configuration['cse.sub.dur'] < 1:
-			console.print('[red]Configuration Error: \[cse.resource.sub]:batchNotifyDuration must be > 0')
+			_print('[red]Configuration Error: \[cse.resource.sub]:batchNotifyDuration must be > 0')
 			return False
 
 		# Check flexBlocking value
 		Configuration._configuration['cse.flexBlockingPreference'] = Configuration._configuration['cse.flexBlockingPreference'].lower()
 		if Configuration._configuration['cse.flexBlockingPreference'] not in ['blocking', 'nonblocking']:
-			console.print('[red]Configuration Error: \[cse]:flexBlockingPreference must be "blocking" or "nonblocking"')
+			_print('[red]Configuration Error: \[cse]:flexBlockingPreference must be "blocking" or "nonblocking"')
 			return False
 
 		# Check release versions
 		if len(Configuration._configuration['cse.supportedReleaseVersions']) == 0:
-			console.print('[red]Configuration Error: \[cse]:supportedReleaseVersions must not be empty')
+			_print('[red]Configuration Error: \[cse]:supportedReleaseVersions must not be empty')
 			return False
 		for rv in Configuration._configuration['cse.supportedReleaseVersions']:
 			if rv not in C.supportedReleaseVersions:
-				console.print(f'[red]Configuration Error: \[cse]:supportedReleaseVersions: unsupported version: {rv}')
+				_print(f'[red]Configuration Error: \[cse]:supportedReleaseVersions: unsupported version: {rv}')
 				return False
 
 		if len(Configuration._configuration['cse.releaseVersion']) == 0:
-			console.print('[red]Configuration Error: \[cse]:releaseVersion must not be empty')
+			_print('[red]Configuration Error: \[cse]:releaseVersion must not be empty')
 			return False
 		for rv in Configuration._configuration['cse.releaseVersion']:
 			srv = Configuration._configuration['cse.supportedReleaseVersions']
 			if rv not in srv:
-				console.print(f'[red]Configuration Error: \[cse]:releaseVersion: {rv} not in \[cse].supportedReleaseVersions: {srv}')
+				_print(f'[red]Configuration Error: \[cse]:releaseVersion: {rv} not in \[cse].supportedReleaseVersions: {srv}')
 				return False
 		
 		# Check configured app api
 		if len(api := Configuration._configuration['app.statistics.aeAPI']) < 2 or api[0] not in ['R', 'N']:
-			console.print('[red]Configuration Error: \[app.statistics]:aeAPI must not be empty and must start with "N" or "R"')
+			_print('[red]Configuration Error: \[app.statistics]:aeAPI must not be empty and must start with "N" or "R"')
 			return False
 
 		# Everything is fine
