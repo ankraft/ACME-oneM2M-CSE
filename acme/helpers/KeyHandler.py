@@ -61,7 +61,7 @@ Commands = Dict[str, Callable[[str], None]]
 """ Mapping between characters and callback functions. """
 
 keyboardInterruptReceived = False
-def inputSignalHandler(sig, frame):
+def inputSignalHandler(sig, frame) -> None: 	# type: ignore [no-untyped-def]
 	global keyboardInterruptReceived
 	keyboardInterruptReceived = True
 
@@ -89,9 +89,11 @@ def loop(commands:Commands, quit:str=None, catchKeyboardInterrupt:bool=False, he
 		# normal console operation: Get a key. Catch a ctrl-c keyboard interrup and handle it according to configuration
 		if not headless:
 			try:
-				ch = getch() # this also returns the key pressed, if you want to store it
+				if (ch := getch()) is None: # this also returns the key pressed, if you want to store it
+					time.sleep(0.2)			# If there is an error just sleep a moment. Could happen, e.g., when run in a notebook
+					continue
 				if isinstance(ch, bytes):	# Windows getch() returns a byte-string
-					ch = ch.decode('utf-8') 
+					ch = ch.decode('utf-8') # type: ignore [attr-defined]
 			except KeyboardInterrupt as e:
 				if catchKeyboardInterrupt:
 					ch = '\x03'

@@ -16,7 +16,7 @@
 type=IN
 # The CSE's service provider ID. Default: acme
 serviceProviderID=acme
-# The CSE ID. Can be overwritten in imported CSE definition. Default: id-in
+# The CSE ID. Can be overwritten in imported CSE definition. Default: /id-in
 cseID=/id-in
 # The CSE's resource ID. Can be overwritten in imported CSE definition. Default: id-in
 resourceID=id-in

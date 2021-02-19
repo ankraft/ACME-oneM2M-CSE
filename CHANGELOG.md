@@ -45,13 +45,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [HTTP] Server runs now in background.
 
 ### Fixed
-- [CSE] CSEBase.srt attribute now also returns the announced attributes.
+- [CSE] *CSEBase.srt* attribute now also returns the announced attributes.
 - [CSE] Improved shutdown behavior. Waiting for internal threads to finish.
 - [CSE] When updating a subscription resource's *nu* attribute: Removed URI's don't cause a "deletion notification" anymore.
 - [CSE] Improved *creator* attribute handling during CREATE.
 - [CSE] Fixed wrong removal procedure when removing contentInstances from a container when either threshold was met.
+- [SUB] Added missing validation for *nct* / *enc/net* combinations.
 - [ACP] Added check that *pvs* is not empty during CREATE or UPDATE.
-- [ACP] Added check that 'acpi', if present, is the only attribute in an UPDATE request.
+- [ACP] Added check that *acpi*, if present, is the only attribute in an UPDATE request.
 - [TESTS] Fixed test framework checks for CSE connectivity and CSE reconfigurations for test runs.
 
 
