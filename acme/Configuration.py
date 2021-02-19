@@ -59,7 +59,7 @@ class Configuration(object):
 				return False
 		except configparser.Error as e:
 			_print('[red]Error in configuration file')
-			_print(e)
+			_print(str(e))
 			return False
 
 		#
