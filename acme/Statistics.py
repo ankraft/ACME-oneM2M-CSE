@@ -373,6 +373,34 @@ skinparam rectangle {
 		return tree
 
 
+	def getResourceTreeText(self, maxLevel:int=0) -> str:
+		"""	This function will generate a Text tree of a CSE's resource structure.
+		"""
+
+		def info(res:Resource) -> str:
+			if res.ty == T.FCNT:
+				return f'{res.rn} ~ {res.__rtype__} ({res.cnd}) | ri={res.ri}'
+			if res.ty == T.CSEBase:
+				return f'{res.rn} ~ {res.__rtype__} | ri={res.ri} csi={res.csi}'
+			if res.__isVirtual__:
+				return f'{res.rn}'
+			return f'{res.rn} ~ {res.__rtype__} | ri={res.ri}'
+
+		def getChildren(res:Resource, tree:str, level:int) -> str:
+			""" Find and print the children in the tree structure. """
+			if maxLevel > 0 and level == maxLevel:
+				return tree
+			chs = CSE.dispatcher.directChildResources(res.ri)
+			for ch in chs:
+				tree += ' ' * (4*level) + info(ch) + '\n'
+				tree = getChildren(ch, tree, level+1)
+			return tree
+
+		cse = Utils.getCSE().resource
+		tree = f'{info(cse)}\n'
+		tree = getChildren(cse, tree, 1)
+		return tree
+
 	def getCSERegistrationsRich(self) -> str:
 		"""	Return an overview in Rich format about the registrar, registrees, and
 			descendant CSE's.

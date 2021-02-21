@@ -9,7 +9,7 @@
 #
 
 from __future__ import annotations
-import sys, time, signal
+import sys, time, select
 from typing import Callable, Dict
 
 try:
@@ -44,6 +44,7 @@ else:
 		fd = sys.stdin.fileno()
 		try:
 			old_settings = termios.tcgetattr(fd)
+
 		except:
 			_errorInGetch = True
 			return None
@@ -51,7 +52,10 @@ else:
 		try:
 			#tty.setraw(fd)
 			tty.setcbreak(fd)	# Not extra lines in input
-			ch = sys.stdin.read(1)
+			if select.select([sys.stdin,],[],[],0.5)[0]:
+				ch = sys.stdin.read(1)
+			else:
+				ch = None
 		finally:
 			termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 		return ch
@@ -60,10 +64,8 @@ else:
 Commands = Dict[str, Callable[[str], None]]
 """ Mapping between characters and callback functions. """
 
-keyboardInterruptReceived = False
-def inputSignalHandler(sig, frame) -> None: 	# type: ignore [no-untyped-def]
-	global keyboardInterruptReceived
-	keyboardInterruptReceived = True
+_stopLoop = False
+""" Internal variable to indicate to stop the keyboard loop. """
 
 
 def loop(commands:Commands, quit:str=None, catchKeyboardInterrupt:bool=False, headless:bool=False) -> None:
@@ -72,15 +74,11 @@ def loop(commands:Commands, quit:str=None, catchKeyboardInterrupt:bool=False, he
 		If a single 'key' value is set in 'quit' and this key is pressed, then
 		the loop terminates.
 		If 'catchKeyboardInterrupt' is True, then this key is handled as the ^C key,
-		otherweise a KeyboardInterrup event is raised.
+		otherweise a KeyboardInterrupt event is raised.
 		If 'headless' is True, then operate differently. Ignore all key inputs, but handle
 		a keyboard interrupt. If the 'quit' key is set then the loop is just interrupted. Otherwise
 		tread the keyboard interrupt as ^C key. It must be hanled in the commands.
 	"""
-	
-	# Register interrupt handler for headless operation
-	if headless:
-		signal.signal(signal.SIGINT, inputSignalHandler)
 	
 	# main loop
 	ch:str = None
@@ -89,9 +87,7 @@ def loop(commands:Commands, quit:str=None, catchKeyboardInterrupt:bool=False, he
 		# normal console operation: Get a key. Catch a ctrl-c keyboard interrup and handle it according to configuration
 		if not headless:
 			try:
-				if (ch := getch()) is None: # this also returns the key pressed, if you want to store it
-					time.sleep(0.2)			# If there is an error just sleep a moment. Could happen, e.g., when run in a notebook
-					continue
+				ch = getch() # this also returns the key pressed, if you want to store it
 				if isinstance(ch, bytes):	# Windows getch() returns a byte-string
 					ch = ch.decode('utf-8') # type: ignore [attr-defined]
 			except KeyboardInterrupt as e:
@@ -105,14 +101,13 @@ def loop(commands:Commands, quit:str=None, catchKeyboardInterrupt:bool=False, he
 				break
 			
 		# When headless then look only for keyboard interrup
-		elif keyboardInterruptReceived:
+		if _stopLoop:
 			if quit is not None or not '\x03' in commands:	# shortcut: if there is a quit key OR ^C is not in the commands, then just return from the loop
 				break
 			ch = '\x03'										# Assign ^C
 
-
 		# hande potential headless state: just sleep a moment, but only when not keyboad interrupt was received
-		if headless and not keyboardInterruptReceived:
+		if headless and not _stopLoop:
 			try:
 				time.sleep(0.2)
 				continue
@@ -122,6 +117,13 @@ def loop(commands:Commands, quit:str=None, catchKeyboardInterrupt:bool=False, he
 		# handle all other keys
 		if ch in commands:
 			commands[ch](ch)
+
+
+def stopLoop() -> None:
+	"""	Stop the keyboard loop.
+	"""
+	global _stopLoop
+	_stopLoop = True
 
 
 def readline(prompt:str='>') -> str:

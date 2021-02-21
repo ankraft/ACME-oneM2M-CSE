@@ -54,5 +54,7 @@ This feature must be enabled in the configuration file under "\[server.http]->en
 
 When enabled the http server creates an additional endpoint */\_\_structure__*. A GET request to that endpoint returns a diagram description in [PlanUML](https://plantuml.com) format that can be transformed in images with various tools (for example, with the online editor on the PlantUML website). An optional argument *lvl=&lt;int>* can be provided to the URL to limit the size of the resource tree in the diagram.
 
+A text representation of the resource tree can be retrieved from the endpoint */\_\_structure__/text* .
+
 
 [← README](../README.md) 

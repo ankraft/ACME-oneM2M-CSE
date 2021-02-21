@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-import atexit, argparse, os, threading, time
+import atexit, argparse, os, threading, time, sys
 from typing import Dict, Optional, Any
 from Constants import Constants as C
 from AnnouncementManager import AnnouncementManager
@@ -32,7 +32,7 @@ from Types import CSEType, ContentSerializationType
 from AEStatistics import AEStatistics
 from CSENode import CSENode
 import Utils
-from helpers.KeyHandler import loop, readline
+from helpers.KeyHandler import loop, stopLoop, readline
 from helpers.BackgroundWorker import BackgroundWorkerPool
 
 
@@ -66,8 +66,8 @@ cseRi:str 										= None
 cseRn:str										= None
 cseOriginator:str								= None
 defaultSerialization:ContentSerializationType	= None
+isHeadless 										= False
 
-_args:argparse.Namespace						= None	# Internal pointer to command line arguments
 
 
 # TODO move further configurable "constants" here
@@ -88,7 +88,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	global aeStatistics
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseRi, cseRn
 	global cseOriginator
-	global _args
+	global isHeadless
 
 	rootDirectory = os.getcwd()					# get the root directory
 	os.environ["FLASK_ENV"] = "development"		# get rid if the warning message from flask. 
@@ -104,7 +104,8 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 		args.headless	= False
 		for key, value in kwargs.items():
 			args.__setattr__(key, value)
-	_args = args
+	isHeadless = args.headless
+
 
 	if not Configuration.init(args):
 		return
@@ -183,6 +184,8 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	httpServer.run() # This does return (!)
 	
 	Logging.log('CSE started')
+	if isHeadless:
+		Logging.console('CSE started')
 
 	#
 	#	Enter an endless loop.
@@ -209,9 +212,12 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	loop(commands, catchKeyboardInterrupt=True, headless=args.headless)
 
 
+def shutdown() -> None:
+	stopLoop()	# This will end the main run loop
+
 
 @atexit.register
-def shutdown() -> None:
+def _shutdown() -> None:
 	"""	Gracefully shutdown the CSE, e.g. when receiving a keyboard interrupt.
 	"""
 	Logging.log('CSE shutting down')
@@ -299,9 +305,9 @@ def _keyHelp(key:str) -> None:
 def _keyShutdownCSE(key:str) -> None:
 	"""	Shutdown the CSE.
 	"""
-	if not _args.headless:
+	if not isHeadless:
 		Logging.console('Shutdown CSE')
-	exit()
+	sys.exit()
 
 
 def _keyToggleLogging(key:str) -> None:

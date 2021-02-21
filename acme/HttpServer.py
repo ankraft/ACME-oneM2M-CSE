@@ -168,8 +168,11 @@ class HttpServer(object):
 								  ssl_context=context,
 								  debug=False)
 			except Exception as e:
+				# No logging for headless, nevertheless print the reason what happened
+				if CSE.isHeadless:
+					print(str(e))
 				Logging.logErr(str(e))
-
+				CSE.shutdown() # exit the CSE. Cleanup happens in the CSE atexit() handler
 
 
 	def addEndpoint(self, endpoint:str=None, endpoint_name:str=None, handler:FlaskHandler=None, methods:list[str]=None, strictSlashes:bool=True) -> None:
@@ -301,6 +304,8 @@ class HttpServer(object):
 		lvl = request.args.get('lvl', default=0, type=int)
 		if path == 'puml':
 			return Response(response=CSE.statistics.getStructurePuml(lvl))
+		if path == 'text':
+			return Response(response=CSE.statistics.getResourceTreeText(lvl))
 		return Response(response='unsupported', status=422)
 
 
