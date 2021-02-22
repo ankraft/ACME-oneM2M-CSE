@@ -151,7 +151,7 @@ def sendRequest(method:Callable, url:str, originator:str, ty:int=None, data:JSON
 		'Accept'			: ct,
 		'X-M2M-Origin'	 	: originator,
 		'X-M2M-RI' 			: (rid := uniqueID()),
-		'X-M2M-RVI'			: RVI,			# TODO this actually depends in the originator
+		'X-M2M-RVI'			: RVI,
 	}
 	if headers is not None:		# extend with other headers
 		hds.update(headers)

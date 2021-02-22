@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] When updating a subscription resource's *nu* attribute: Removed URI's don't cause a "deletion notification" anymore.
 - [CSE] Improved *creator* attribute handling during CREATE.
 - [CSE] Fixed wrong removal procedure when removing contentInstances from a container when either threshold was met.
+- [CSE] Added missing checks for mandatory request parameters *RVI* and *RI*
 - [SUB] Added missing validation for *nct* / *enc/net* combinations.
 - [ACP] Added check that *pvs* is not empty during CREATE or UPDATE.
 - [ACP] Added check that *acpi*, if present, is the only attribute in an UPDATE request.

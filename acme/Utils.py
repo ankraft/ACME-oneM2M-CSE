@@ -799,6 +799,12 @@ def getRequestHeaders(request: Request) -> Result:
 	rh.operationExecutionTime 		= requestHeaderField(request, C.hfOET)
 	rh.releaseVersionIndicator 		= requestHeaderField(request, C.hfRVI)
 
+	if rh.releaseVersionIndicator is None:
+		Logging.logDebug(dbg := 'Release Version Indicator is mandatory in request')
+		return Result(rsc=RC.badRequest,  dbg=dbg)
+	if rh.requestIdentifier is None:
+		Logging.logDebug(dbg := 'Request Identifier is mandatory in request')
+		return Result(rsc=RC.badRequest,  dbg=dbg)
 
 	if (rtu := requestHeaderField(request, C.hfRTU)) is not None:			# handle rtu list
 		rh.responseTypeNUs = rtu.split('&')
