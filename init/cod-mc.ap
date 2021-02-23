@@ -4254,18 +4254,18 @@
             { "sname" : "lTATd", "lname" : "lowTemperatureAlarmThreshold", "type" : "float", "car" : "1" }, 
             // DataPoint: lowTemperatureAlarm
             { "sname" : "loTAm", "lname" : "lowTemperatureAlarm", "type" : "boolean", "car" : "1" }, 
-            // DataPoint: highTemperatureInnerlAlarmThreshold
-            { "sname" : "hTIAT", "lname" : "highTemperatureInnerlAlarmThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: highTemperatureInnerAlarmThreshold
+            { "sname" : "hTIAT", "lname" : "highTemperatureInnerAlarmThreshold", "type" : "float", "car" : "01" }, 
             // DataPoint: innerHighInternalTemperatureAlarm
             { "sname" : "iHITA", "lname" : "innerHighInternalTemperatureAlarm", "type" : "boolean", "car" : "01" }, 
             // DataPoint: innerErrorAlarm
             { "sname" : "inEAm", "lname" : "innerErrorAlarm", "type" : "boolean", "car" : "01" }, 
-            // DataPoint: innerTempratureSensorFault
-            { "sname" : "iTSFt", "lname" : "innerTempratureSensorFault", "type" : "boolean", "car" : "01" }, 
+            // DataPoint: innerTemperatureSensorFault
+            { "sname" : "iTSFt", "lname" : "innerTemperatureSensorFault", "type" : "boolean", "car" : "01" }, 
             // DataPoint: tamperAlarm
             { "sname" : "tamAm", "lname" : "tamperAlarm", "type" : "boolean", "car" : "01" }, 
-            // DataPoint: waterTempratureSensorFault
-            { "sname" : "wTSFt", "lname" : "waterTempratureSensorFault", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: waterTemperatureSensorFault
+            { "sname" : "wTSFt", "lname" : "waterTemperatureSensorFault", "type" : "boolean", "car" : "1" }, 
             // DataPoint: pressureSensorFault
             { "sname" : "prSFt", "lname" : "pressureSensorFault", "type" : "boolean", "car" : "01" }, 
             // DataPoint: communicationAlarm
@@ -4329,18 +4329,18 @@
             { "sname" : "lTATd", "lname" : "lowTemperatureAlarmThreshold", "type" : "float", "car" : "1" }, 
             // DataPoint: lowTemperatureAlarm
             { "sname" : "loTAm", "lname" : "lowTemperatureAlarm", "type" : "boolean", "car" : "1" }, 
-            // DataPoint: highTemperatureInnerlAlarmThreshold
-            { "sname" : "hTIAT", "lname" : "highTemperatureInnerlAlarmThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: highTemperatureInnerAlarmThreshold
+            { "sname" : "hTIAT", "lname" : "highTemperatureInnerAlarmThreshold", "type" : "float", "car" : "01" }, 
             // DataPoint: innerHighInternalTemperatureAlarm
             { "sname" : "iHITA", "lname" : "innerHighInternalTemperatureAlarm", "type" : "boolean", "car" : "01" }, 
             // DataPoint: innerErrorAlarm
             { "sname" : "inEAm", "lname" : "innerErrorAlarm", "type" : "boolean", "car" : "01" }, 
-            // DataPoint: innerTempratureSensorFault
-            { "sname" : "iTSFt", "lname" : "innerTempratureSensorFault", "type" : "boolean", "car" : "01" }, 
+            // DataPoint: innerTemperatureSensorFault
+            { "sname" : "iTSFt", "lname" : "innerTemperatureSensorFault", "type" : "boolean", "car" : "01" }, 
             // DataPoint: tamperAlarm
             { "sname" : "tamAm", "lname" : "tamperAlarm", "type" : "boolean", "car" : "01" }, 
-            // DataPoint: waterTempratureSensorFault
-            { "sname" : "wTSFt", "lname" : "waterTempratureSensorFault", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: waterTemperatureSensorFault
+            { "sname" : "wTSFt", "lname" : "waterTemperatureSensorFault", "type" : "boolean", "car" : "1" }, 
             // DataPoint: pressureSensorFault
             { "sname" : "prSFt", "lname" : "pressureSensorFault", "type" : "boolean", "car" : "01" }, 
             // DataPoint: communicationAlarm
@@ -4458,12 +4458,12 @@
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: flowInterval
             { "sname" : "floIl", "lname" : "flowInterval", "type" : "integer", "car" : "1" }, 
-            // DataPoint: reverseFlowIntervral
-            { "sname" : "reFIl", "lname" : "reverseFlowIntervral", "type" : "integer", "car" : "1" }, 
+            // DataPoint: reverseFlowInterval
+            { "sname" : "reFIl", "lname" : "reverseFlowInterval", "type" : "integer", "car" : "1" }, 
             // DataPoint: waterTemperatureInterval
             { "sname" : "waTIl", "lname" : "waterTemperatureInterval", "type" : "integer", "car" : "01" }, 
-            // DataPoint: waterPressInteveral
-            { "sname" : "waPIl", "lname" : "waterPressInteveral", "type" : "integer", "car" : "01" }, 
+            // DataPoint: waterPressureInterval
+            { "sname" : "waPIl", "lname" : "waterPressureInterval", "type" : "integer", "car" : "01" }, 
             // DataPoint: intensiveSampleInterval
             { "sname" : "inSIl", "lname" : "intensiveSampleInterval", "type" : "integer", "car" : "01" }, 
             // DataPoint: intensiveReportInterval
@@ -4483,12 +4483,12 @@
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: flowInterval
             { "sname" : "floIl", "lname" : "flowInterval", "type" : "integer", "car" : "1" }, 
-            // DataPoint: reverseFlowIntervral
-            { "sname" : "reFIl", "lname" : "reverseFlowIntervral", "type" : "integer", "car" : "1" }, 
+            // DataPoint: reverseFlowInterval
+            { "sname" : "reFIl", "lname" : "reverseFlowInterval", "type" : "integer", "car" : "1" }, 
             // DataPoint: waterTemperatureInterval
             { "sname" : "waTIl", "lname" : "waterTemperatureInterval", "type" : "integer", "car" : "01" }, 
-            // DataPoint: waterPressInteveral
-            { "sname" : "waPIl", "lname" : "waterPressInteveral", "type" : "integer", "car" : "01" }, 
+            // DataPoint: waterPressureInterval
+            { "sname" : "waPIl", "lname" : "waterPressureInterval", "type" : "integer", "car" : "01" }, 
             // DataPoint: intensiveSampleInterval
             { "sname" : "inSIl", "lname" : "intensiveSampleInterval", "type" : "integer", "car" : "01" }, 
             // DataPoint: intensiveReportInterval

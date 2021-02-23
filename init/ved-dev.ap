@@ -8,6 +8,12 @@
         "type"      : "ved:dEVCr",
         "lname"     : "deviceElectricVehicleCharger",
         "cnd"       : "org.onem2m.vehicular.device.deviceElectricVehicleCharger",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
         "children"  : [
             "cod:fauDn", 
             "cod:binSh", 
@@ -15,13 +21,21 @@
             "cod:bat", 
             "cod:elVCr"
         ]
-    },
+    },        
+
+
 
     // DeviceClass Announced: deviceElectricVehicleChargerAnnc
     {
         "type"      : "ved:dEVCrAnnc",
         "lname"     : "deviceElectricVehicleChargerAnnc",
         "cnd"       : "org.onem2m.vehicular.device.deviceElectricVehicleChargerAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
         "children"  : [
             "cod:fauDn", 
             "cod:fauDnAnnc", 

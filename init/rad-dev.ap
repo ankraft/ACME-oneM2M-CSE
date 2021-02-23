@@ -8,6 +8,12 @@
         "type"      : "rad:dHPTT",
         "lname"     : "deviceHandheldPTTTerminal",
         "cnd"       : "org.onem2m.railway.device.deviceHandheldPTTTerminal",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
         "children"  : [
             "cod:binSh", 
             "cod:audVe", 
@@ -21,13 +27,21 @@
             "cod:runSe", 
             "cod:sigSh"
         ]
-    },
+    },        
+
+
 
     // DeviceClass Announced: deviceHandheldPTTTerminalAnnc
     {
         "type"      : "rad:dHPTTAnnc",
         "lname"     : "deviceHandheldPTTTerminalAnnc",
         "cnd"       : "org.onem2m.railway.device.deviceHandheldPTTTerminalAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
         "children"  : [
             "cod:binSh", 
             "cod:binShAnnc", 
@@ -59,6 +73,12 @@
         "type"      : "rad:deTTl",
         "lname"     : "deviceTrainborneTerminal",
         "cnd"       : "org.onem2m.railway.device.deviceTrainborneTerminal",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
         "children"  : [
             "cod:binSh", 
             "cod:audVe", 
@@ -73,13 +93,21 @@
             "rad:baTMe", 
             "cod:conny"
         ]
-    },
+    },        
+
+
 
     // DeviceClass Announced: deviceTrainborneTerminalAnnc
     {
         "type"      : "rad:deTTlAnnc",
         "lname"     : "deviceTrainborneTerminalAnnc",
         "cnd"       : "org.onem2m.railway.device.deviceTrainborneTerminalAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
         "children"  : [
             "cod:binSh", 
             "cod:binShAnnc", 

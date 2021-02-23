@@ -1,0 +1,1003 @@
+// Created by SDTTool
+// oneM2M Release: 4.5.0
+// Domain:         org.onem2m.management
+[
+    // ModuleClass: dmAgent (dmgAt)
+    {
+        "type"      : "mad:dmgAt",
+        "lname"     : "dmAgent",
+        "cnd"       : "org.onem2m.management.moduleclass.dmAgent",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: state
+            { "sname" : "state", "lname" : "state", "type" : "hd:enumDmAgentState", "car" : "1" }, 
+            // DataPoint: storageAvailable
+            { "sname" : "stoAe", "lname" : "storageAvailable", "type" : "integer", "car" : "01" }, 
+            // DataPoint: storageTotal
+            { "sname" : "stoTl", "lname" : "storageTotal", "type" : "integer", "car" : "01" }, 
+            // DataPoint: ramAvailable
+            { "sname" : "ramAe", "lname" : "ramAvailable", "type" : "integer", "car" : "01" }, 
+            // DataPoint: ramTotal
+            { "sname" : "ramTl", "lname" : "ramTotal", "type" : "integer", "car" : "01" }, 
+            // DataPoint: powerStatus
+            { "sname" : "powSs", "lname" : "powerStatus", "type" : "hd:enumPowerState", "car" : "01" }, 
+            // DataPoint: cpuUsage
+            { "sname" : "cpuUe", "lname" : "cpuUsage", "type" : "integer", "car" : "01" }, 
+            // DataPoint: systemTime
+            { "sname" : "syst", "lname" : "systemTime", "type" : "timestamp", "car" : "01" }
+        ], 
+        "children"  : [
+            "mad:rbo", 
+            "mad:depPe"
+        ]
+    },
+
+    // Action: reboot
+    {
+        "type"      : "mad:rbo",
+        "lname"     : "reboot",
+        "cnd"       : "org.onem2m.management.action.reboot",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: rebootType
+            { "sname" : "rebTe", "lname" : "rebootType", "type" : "hd:enumRebootType", "car" : "01" }
+        ]
+    },
+
+    // Action: deployPackage
+    {
+        "type"      : "mad:depPe",
+        "lname"     : "deployPackage",
+        "cnd"       : "org.onem2m.management.action.deployPackage",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: name
+            { "sname" : "nm", "lname" : "name", "type" : "string", "car" : "01" }, 
+            // DataPoint: version
+            { "sname" : "vr", "lname" : "version", "type" : "string", "car" : "01" }, 
+            // DataPoint: url
+            { "sname" : "ur0", "lname" : "url", "type" : "anyuri", "car" : "01" }, 
+            // DataPoint: result
+            { "sname" : "resut", "lname" : "result", "type" : "string", "car" : "1" }
+        ]
+    },
+
+    // ModuleClass Announced: dmAgentAnnc (dmgAtAnnc)
+    {
+        "type"      : "mad:dmgAtAnnc",
+        "lname"     : "dmAgentAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmAgentAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: state
+            { "sname" : "state", "lname" : "state", "type" : "hd:enumDmAgentState", "car" : "1" }, 
+            // DataPoint: storageAvailable
+            { "sname" : "stoAe", "lname" : "storageAvailable", "type" : "integer", "car" : "01" }, 
+            // DataPoint: storageTotal
+            { "sname" : "stoTl", "lname" : "storageTotal", "type" : "integer", "car" : "01" }, 
+            // DataPoint: ramAvailable
+            { "sname" : "ramAe", "lname" : "ramAvailable", "type" : "integer", "car" : "01" }, 
+            // DataPoint: ramTotal
+            { "sname" : "ramTl", "lname" : "ramTotal", "type" : "integer", "car" : "01" }, 
+            // DataPoint: powerStatus
+            { "sname" : "powSs", "lname" : "powerStatus", "type" : "hd:enumPowerState", "car" : "01" }, 
+            // DataPoint: cpuUsage
+            { "sname" : "cpuUe", "lname" : "cpuUsage", "type" : "integer", "car" : "01" }, 
+            // DataPoint: systemTime
+            { "sname" : "syst", "lname" : "systemTime", "type" : "timestamp", "car" : "01" }
+        ], 
+        "children"  : [
+            "mad:rbo",
+            "mad:rboAnnc", 
+            "mad:depPe",
+            "mad:depPeAnnc"
+        ]
+    }, 
+    // Action Announced: rebootAnnc
+    {
+        "type"      : "mad:rboAnnc",
+        "lname"     : "rebootAnnc",
+        "cnd"       : "org.onem2m.management.action.rebootAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: rebootType
+            { "sname" : "rebTe", "lname" : "rebootType", "type" : "hd:enumRebootType", "car" : "01" }
+        ]
+    }, 
+
+    // Action Announced: deployPackageAnnc
+    {
+        "type"      : "mad:depPeAnnc",
+        "lname"     : "deployPackageAnnc",
+        "cnd"       : "org.onem2m.management.action.deployPackageAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: name
+            { "sname" : "nm", "lname" : "name", "type" : "string", "car" : "01" }, 
+            // DataPoint: version
+            { "sname" : "vr", "lname" : "version", "type" : "string", "car" : "01" }, 
+            // DataPoint: url
+            { "sname" : "ur0", "lname" : "url", "type" : "anyuri", "car" : "01" }, 
+            // DataPoint: result
+            { "sname" : "resut", "lname" : "result", "type" : "string", "car" : "1" }
+        ]
+    }
+, 
+
+    // ModuleClass: dmDeviceInfo (dmDIo)
+    {
+        "type"      : "mad:dmDIo",
+        "lname"     : "dmDeviceInfo",
+        "cnd"       : "org.onem2m.management.moduleclass.dmDeviceInfo",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: serialNumber
+            { "sname" : "serNr", "lname" : "serialNumber", "type" : "string", "car" : "01" }, 
+            // DataPoint: manufacturer
+            { "sname" : "man", "lname" : "manufacturer", "type" : "string", "car" : "01" }, 
+            // DataPoint: manufacturerDetailsLink
+            { "sname" : "mfdl", "lname" : "manufacturerDetailsLink", "type" : "string", "car" : "01" }, 
+            // DataPoint: manufacturingDate
+            { "sname" : "mfd", "lname" : "manufacturingDate", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: model
+            { "sname" : "mod", "lname" : "model", "type" : "string", "car" : "01" }, 
+            // DataPoint: subModel
+            { "sname" : "smod", "lname" : "subModel", "type" : "string", "car" : "01" }, 
+            // DataPoint: hwVersion
+            { "sname" : "hwv", "lname" : "hwVersion", "type" : "string", "car" : "01" }, 
+            // DataPoint: osVersion
+            { "sname" : "osv", "lname" : "osVersion", "type" : "string", "car" : "01" }, 
+            // DataPoint: country
+            { "sname" : "cnty", "lname" : "country", "type" : "string", "car" : "01" }, 
+            // DataPoint: supportURL
+            { "sname" : "spur", "lname" : "supportURL", "type" : "anyuri", "car" : "01" }, 
+            // DataPoint: presentationURL
+            { "sname" : "purl", "lname" : "presentationURL", "type" : "anyuri", "car" : "01" }, 
+            // DataPoint: friendlyName
+            { "sname" : "friNe", "lname" : "friendlyName", "type" : "string", "car" : "01" }, 
+            // DataPoint: description
+            { "sname" : "dc", "lname" : "description", "type" : "string", "car" : "01" }
+        ]
+    },
+
+    // ModuleClass Announced: dmDeviceInfoAnnc (dmDIoAnnc)
+    {
+        "type"      : "mad:dmDIoAnnc",
+        "lname"     : "dmDeviceInfoAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmDeviceInfoAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: serialNumber
+            { "sname" : "serNr", "lname" : "serialNumber", "type" : "string", "car" : "01" }, 
+            // DataPoint: manufacturer
+            { "sname" : "man", "lname" : "manufacturer", "type" : "string", "car" : "01" }, 
+            // DataPoint: manufacturerDetailsLink
+            { "sname" : "mfdl", "lname" : "manufacturerDetailsLink", "type" : "string", "car" : "01" }, 
+            // DataPoint: manufacturingDate
+            { "sname" : "mfd", "lname" : "manufacturingDate", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: model
+            { "sname" : "mod", "lname" : "model", "type" : "string", "car" : "01" }, 
+            // DataPoint: subModel
+            { "sname" : "smod", "lname" : "subModel", "type" : "string", "car" : "01" }, 
+            // DataPoint: hwVersion
+            { "sname" : "hwv", "lname" : "hwVersion", "type" : "string", "car" : "01" }, 
+            // DataPoint: osVersion
+            { "sname" : "osv", "lname" : "osVersion", "type" : "string", "car" : "01" }, 
+            // DataPoint: country
+            { "sname" : "cnty", "lname" : "country", "type" : "string", "car" : "01" }, 
+            // DataPoint: supportURL
+            { "sname" : "spur", "lname" : "supportURL", "type" : "anyuri", "car" : "01" }, 
+            // DataPoint: presentationURL
+            { "sname" : "purl", "lname" : "presentationURL", "type" : "anyuri", "car" : "01" }, 
+            // DataPoint: friendlyName
+            { "sname" : "friNe", "lname" : "friendlyName", "type" : "string", "car" : "01" }, 
+            // DataPoint: description
+            { "sname" : "dc", "lname" : "description", "type" : "string", "car" : "01" }
+        ]
+    }, 
+
+    // ModuleClass: dmDataModelIO (dDMIO)
+    {
+        "type"      : "mad:dDMIO",
+        "lname"     : "dmDataModelIO",
+        "cnd"       : "org.onem2m.management.moduleclass.dmDataModelIO",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: dataModelType
+            { "sname" : "daMTe", "lname" : "dataModelType", "type" : "hd:enumDataModelType", "car" : "1" }
+        ], 
+        "children"  : [
+            "mad:reaIO", 
+            "mad:wriIO"
+        ]
+    },
+
+    // Action: readIO
+    {
+        "type"      : "mad:reaIO",
+        "lname"     : "readIO",
+        "cnd"       : "org.onem2m.management.action.readIO",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: address
+            { "sname" : "addrs", "lname" : "address", "type" : "string", "car" : "01" }, 
+            // DataPoint: result
+            { "sname" : "resut", "lname" : "result", "type" : "string", "car" : "1" }
+        ]
+    },
+
+    // Action: writeIO
+    {
+        "type"      : "mad:wriIO",
+        "lname"     : "writeIO",
+        "cnd"       : "org.onem2m.management.action.writeIO",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: address
+            { "sname" : "addrs", "lname" : "address", "type" : "string", "car" : "01" }, 
+            // DataPoint: payload
+            { "sname" : "payld", "lname" : "payload", "type" : "string", "car" : "01" }, 
+            // DataPoint: result
+            { "sname" : "resut", "lname" : "result", "type" : "string", "car" : "1" }
+        ]
+    },
+
+    // ModuleClass Announced: dmDataModelIOAnnc (dDMIOAnnc)
+    {
+        "type"      : "mad:dDMIOAnnc",
+        "lname"     : "dmDataModelIOAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmDataModelIOAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: dataModelType
+            { "sname" : "daMTe", "lname" : "dataModelType", "type" : "hd:enumDataModelType", "car" : "1" }
+        ], 
+        "children"  : [
+            "mad:reaIO",
+            "mad:reaIOAnnc", 
+            "mad:wriIO",
+            "mad:wriIOAnnc"
+        ]
+    }, 
+    // Action Announced: readIOAnnc
+    {
+        "type"      : "mad:reaIOAnnc",
+        "lname"     : "readIOAnnc",
+        "cnd"       : "org.onem2m.management.action.readIOAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: address
+            { "sname" : "addrs", "lname" : "address", "type" : "string", "car" : "01" }, 
+            // DataPoint: result
+            { "sname" : "resut", "lname" : "result", "type" : "string", "car" : "1" }
+        ]
+    }, 
+
+    // Action Announced: writeIOAnnc
+    {
+        "type"      : "mad:wriIOAnnc",
+        "lname"     : "writeIOAnnc",
+        "cnd"       : "org.onem2m.management.action.writeIOAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: address
+            { "sname" : "addrs", "lname" : "address", "type" : "string", "car" : "01" }, 
+            // DataPoint: payload
+            { "sname" : "payld", "lname" : "payload", "type" : "string", "car" : "01" }, 
+            // DataPoint: result
+            { "sname" : "resut", "lname" : "result", "type" : "string", "car" : "1" }
+        ]
+    }
+, 
+
+    // ModuleClass: dmFirmware (dmiFe)
+    {
+        "type"      : "mad:dmiFe",
+        "lname"     : "dmFirmware",
+        "cnd"       : "org.onem2m.management.moduleclass.dmFirmware",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: multiFirmware
+            { "sname" : "mulFe", "lname" : "multiFirmware", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: primaryState
+            { "sname" : "priSe", "lname" : "primaryState", "type" : "hd:enumFirmwareState", "car" : "1" }, 
+            // DataPoint: primaryName
+            { "sname" : "priNe", "lname" : "primaryName", "type" : "string", "car" : "1" }, 
+            // DataPoint: primaryVersion
+            { "sname" : "priVn", "lname" : "primaryVersion", "type" : "string", "car" : "1" }, 
+            // DataPoint: primaryUrl
+            { "sname" : "priUl", "lname" : "primaryUrl", "type" : "anyuri", "car" : "01" }, 
+            // DataPoint: secondaryState
+            { "sname" : "secSe", "lname" : "secondaryState", "type" : "hd:enumFirmwareState", "car" : "01" }, 
+            // DataPoint: secondaryName
+            { "sname" : "secNe", "lname" : "secondaryName", "type" : "string", "car" : "01" }, 
+            // DataPoint: secondaryVersion
+            { "sname" : "secVn", "lname" : "secondaryVersion", "type" : "string", "car" : "01" }, 
+            // DataPoint: secondaryUrl
+            { "sname" : "secUl", "lname" : "secondaryUrl", "type" : "anyuri", "car" : "01" }, 
+            // DataPoint: component
+            { "sname" : "compt", "lname" : "component", "type" : "string", "car" : "01" }
+        ], 
+        "children"  : [
+            "mad:updFe", 
+            "mad:togge"
+        ]
+    },
+
+    // Action: updateFirmware
+    {
+        "type"      : "mad:updFe",
+        "lname"     : "updateFirmware",
+        "cnd"       : "org.onem2m.management.action.updateFirmware",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: url
+            { "sname" : "ur0", "lname" : "url", "type" : "url", "car" : "01" }, 
+            // DataPoint: version
+            { "sname" : "vr", "lname" : "version", "type" : "string", "car" : "01" }, 
+            // DataPoint: result
+            { "sname" : "resut", "lname" : "result", "type" : "string", "car" : "1" }
+        ]
+    },
+
+    // Action: toggle
+    {
+        "type"      : "mad:togge",
+        "lname"     : "toggle",
+        "cnd"       : "org.onem2m.management.action.toggle",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    },
+
+    // ModuleClass Announced: dmFirmwareAnnc (dmiFeAnnc)
+    {
+        "type"      : "mad:dmiFeAnnc",
+        "lname"     : "dmFirmwareAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmFirmwareAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: multiFirmware
+            { "sname" : "mulFe", "lname" : "multiFirmware", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: primaryState
+            { "sname" : "priSe", "lname" : "primaryState", "type" : "hd:enumFirmwareState", "car" : "1" }, 
+            // DataPoint: primaryName
+            { "sname" : "priNe", "lname" : "primaryName", "type" : "string", "car" : "1" }, 
+            // DataPoint: primaryVersion
+            { "sname" : "priVn", "lname" : "primaryVersion", "type" : "string", "car" : "1" }, 
+            // DataPoint: primaryUrl
+            { "sname" : "priUl", "lname" : "primaryUrl", "type" : "anyuri", "car" : "01" }, 
+            // DataPoint: secondaryState
+            { "sname" : "secSe", "lname" : "secondaryState", "type" : "hd:enumFirmwareState", "car" : "01" }, 
+            // DataPoint: secondaryName
+            { "sname" : "secNe", "lname" : "secondaryName", "type" : "string", "car" : "01" }, 
+            // DataPoint: secondaryVersion
+            { "sname" : "secVn", "lname" : "secondaryVersion", "type" : "string", "car" : "01" }, 
+            // DataPoint: secondaryUrl
+            { "sname" : "secUl", "lname" : "secondaryUrl", "type" : "anyuri", "car" : "01" }, 
+            // DataPoint: component
+            { "sname" : "compt", "lname" : "component", "type" : "string", "car" : "01" }
+        ], 
+        "children"  : [
+            "mad:updFe",
+            "mad:updFeAnnc", 
+            "mad:togge",
+            "mad:toggeAnnc"
+        ]
+    }, 
+    // Action Announced: updateFirmwareAnnc
+    {
+        "type"      : "mad:updFeAnnc",
+        "lname"     : "updateFirmwareAnnc",
+        "cnd"       : "org.onem2m.management.action.updateFirmwareAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: url
+            { "sname" : "ur0", "lname" : "url", "type" : "url", "car" : "01" }, 
+            // DataPoint: version
+            { "sname" : "vr", "lname" : "version", "type" : "string", "car" : "01" }, 
+            // DataPoint: result
+            { "sname" : "resut", "lname" : "result", "type" : "string", "car" : "1" }
+        ]
+    }, 
+
+    // Action Announced: toggleAnnc
+    {
+        "type"      : "mad:toggeAnnc",
+        "lname"     : "toggleAnnc",
+        "cnd"       : "org.onem2m.management.action.toggleAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }
+, 
+
+    // ModuleClass: dmSoftware (dmoSe)
+    {
+        "type"      : "mad:dmoSe",
+        "lname"     : "dmSoftware",
+        "cnd"       : "org.onem2m.management.moduleclass.dmSoftware",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: state
+            { "sname" : "state", "lname" : "state", "type" : "hd:enumSoftwareState", "car" : "1" }, 
+            // DataPoint: name
+            { "sname" : "nm", "lname" : "name", "type" : "string", "car" : "01" }, 
+            // DataPoint: version
+            { "sname" : "vr", "lname" : "version", "type" : "string", "car" : "01" }
+        ], 
+        "children"  : [
+            "mad:act", 
+            "mad:dea"
+        ]
+    },
+
+    // Action: activate
+    {
+        "type"      : "mad:act",
+        "lname"     : "activate",
+        "cnd"       : "org.onem2m.management.action.activate",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    },
+
+    // Action: deactivate
+    {
+        "type"      : "mad:dea",
+        "lname"     : "deactivate",
+        "cnd"       : "org.onem2m.management.action.deactivate",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    },
+
+    // ModuleClass Announced: dmSoftwareAnnc (dmoSeAnnc)
+    {
+        "type"      : "mad:dmoSeAnnc",
+        "lname"     : "dmSoftwareAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmSoftwareAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: state
+            { "sname" : "state", "lname" : "state", "type" : "hd:enumSoftwareState", "car" : "1" }, 
+            // DataPoint: name
+            { "sname" : "nm", "lname" : "name", "type" : "string", "car" : "01" }, 
+            // DataPoint: version
+            { "sname" : "vr", "lname" : "version", "type" : "string", "car" : "01" }
+        ], 
+        "children"  : [
+            "mad:act",
+            "mad:actAnnc", 
+            "mad:dea",
+            "mad:deaAnnc"
+        ]
+    }, 
+    // Action Announced: activateAnnc
+    {
+        "type"      : "mad:actAnnc",
+        "lname"     : "activateAnnc",
+        "cnd"       : "org.onem2m.management.action.activateAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }, 
+
+    // Action Announced: deactivateAnnc
+    {
+        "type"      : "mad:deaAnnc",
+        "lname"     : "deactivateAnnc",
+        "cnd"       : "org.onem2m.management.action.deactivateAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }
+, 
+
+    // ModuleClass: dmEventLog (dmELg)
+    {
+        "type"      : "mad:dmELg",
+        "lname"     : "dmEventLog",
+        "cnd"       : "org.onem2m.management.moduleclass.dmEventLog",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: type
+            { "sname" : "typ", "lname" : "type", "type" : "integer", "car" : "1" }, 
+            // DataPoint: data
+            { "sname" : "data", "lname" : "data", "type" : "string", "car" : "1" }, 
+            // DataPoint: status
+            { "sname" : "sus", "lname" : "status", "type" : "integer", "car" : "1" }, 
+            // DataPoint: enabled
+            { "sname" : "enabd", "lname" : "enabled", "type" : "bool", "car" : "1" }
+        ], 
+        "children"  : [
+            "mad:retLg"
+        ]
+    },
+
+    // Action: retrieveLog
+    {
+        "type"      : "mad:retLg",
+        "lname"     : "retrieveLog",
+        "cnd"       : "org.onem2m.management.action.retrieveLog",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: start
+            { "sname" : "start", "lname" : "start", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: end
+            { "sname" : "end", "lname" : "end", "type" : "timestamp", "car" : "01" }
+        ]
+    },
+
+    // ModuleClass Announced: dmEventLogAnnc (dmELgAnnc)
+    {
+        "type"      : "mad:dmELgAnnc",
+        "lname"     : "dmEventLogAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmEventLogAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: type
+            { "sname" : "typ", "lname" : "type", "type" : "integer", "car" : "1" }, 
+            // DataPoint: data
+            { "sname" : "data", "lname" : "data", "type" : "string", "car" : "1" }, 
+            // DataPoint: status
+            { "sname" : "sus", "lname" : "status", "type" : "integer", "car" : "1" }, 
+            // DataPoint: enabled
+            { "sname" : "enabd", "lname" : "enabled", "type" : "bool", "car" : "1" }
+        ], 
+        "children"  : [
+            "mad:retLg",
+            "mad:retLgAnnc"
+        ]
+    }, 
+    // Action Announced: retrieveLogAnnc
+    {
+        "type"      : "mad:retLgAnnc",
+        "lname"     : "retrieveLogAnnc",
+        "cnd"       : "org.onem2m.management.action.retrieveLogAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: start
+            { "sname" : "start", "lname" : "start", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: end
+            { "sname" : "end", "lname" : "end", "type" : "timestamp", "car" : "01" }
+        ]
+    }
+, 
+
+    // ModuleClass: dmPackage (dmaPe)
+    {
+        "type"      : "mad:dmaPe",
+        "lname"     : "dmPackage",
+        "cnd"       : "org.onem2m.management.moduleclass.dmPackage",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: type
+            { "sname" : "typ", "lname" : "type", "type" : "hd:enumPackageType", "car" : "1" }, 
+            // DataPoint: state
+            { "sname" : "state", "lname" : "state", "type" : "hd:enumPackageState", "car" : "1" }, 
+            // DataPoint: name
+            { "sname" : "nm", "lname" : "name", "type" : "string", "car" : "01" }, 
+            // DataPoint: version
+            { "sname" : "vr", "lname" : "version", "type" : "string", "car" : "01" }, 
+            // DataPoint: url
+            { "sname" : "ur0", "lname" : "url", "type" : "anyuri", "car" : "01" }, 
+            // DataPoint: softwares
+            { "sname" : "softs", "lname" : "softwares", "type" : "list", "car" : "01" }
+        ], 
+        "children"  : [
+            "mad:in", 
+            "mad:un", 
+            "mad:ud"
+        ]
+    },
+
+    // Action: install
+    {
+        "type"      : "mad:in",
+        "lname"     : "install",
+        "cnd"       : "org.onem2m.management.action.install",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    },
+
+    // Action: uninstall
+    {
+        "type"      : "mad:un",
+        "lname"     : "uninstall",
+        "cnd"       : "org.onem2m.management.action.uninstall",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    },
+
+    // Action: update
+    {
+        "type"      : "mad:ud",
+        "lname"     : "update",
+        "cnd"       : "org.onem2m.management.action.update",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: version
+            { "sname" : "vr", "lname" : "version", "type" : "string", "car" : "01" }, 
+            // DataPoint: url
+            { "sname" : "ur0", "lname" : "url", "type" : "anyuri", "car" : "01" }
+        ]
+    },
+
+    // ModuleClass Announced: dmPackageAnnc (dmaPeAnnc)
+    {
+        "type"      : "mad:dmaPeAnnc",
+        "lname"     : "dmPackageAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmPackageAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: type
+            { "sname" : "typ", "lname" : "type", "type" : "hd:enumPackageType", "car" : "1" }, 
+            // DataPoint: state
+            { "sname" : "state", "lname" : "state", "type" : "hd:enumPackageState", "car" : "1" }, 
+            // DataPoint: name
+            { "sname" : "nm", "lname" : "name", "type" : "string", "car" : "01" }, 
+            // DataPoint: version
+            { "sname" : "vr", "lname" : "version", "type" : "string", "car" : "01" }, 
+            // DataPoint: url
+            { "sname" : "ur0", "lname" : "url", "type" : "anyuri", "car" : "01" }, 
+            // DataPoint: softwares
+            { "sname" : "softs", "lname" : "softwares", "type" : "list", "car" : "01" }
+        ], 
+        "children"  : [
+            "mad:in",
+            "mad:inAnnc", 
+            "mad:un",
+            "mad:unAnnc", 
+            "mad:ud",
+            "mad:udAnnc"
+        ]
+    }, 
+    // Action Announced: installAnnc
+    {
+        "type"      : "mad:inAnnc",
+        "lname"     : "installAnnc",
+        "cnd"       : "org.onem2m.management.action.installAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }, 
+
+    // Action Announced: uninstallAnnc
+    {
+        "type"      : "mad:unAnnc",
+        "lname"     : "uninstallAnnc",
+        "cnd"       : "org.onem2m.management.action.uninstallAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }, 
+
+    // Action Announced: updateAnnc
+    {
+        "type"      : "mad:udAnnc",
+        "lname"     : "updateAnnc",
+        "cnd"       : "org.onem2m.management.action.updateAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: version
+            { "sname" : "vr", "lname" : "version", "type" : "string", "car" : "01" }, 
+            // DataPoint: url
+            { "sname" : "ur0", "lname" : "url", "type" : "anyuri", "car" : "01" }
+        ]
+    }
+, 
+
+    // ModuleClass: dmAreaNwkDeviceInfo (dANDI)
+    {
+        "type"      : "mad:dANDI",
+        "lname"     : "dmAreaNwkDeviceInfo",
+        "cnd"       : "org.onem2m.management.moduleclass.dmAreaNwkDeviceInfo",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: devId
+            { "sname" : "devId", "lname" : "devId", "type" : "string", "car" : "1" }, 
+            // DataPoint: devType
+            { "sname" : "dvt", "lname" : "devType", "type" : "hd:enumPackageState", "car" : "1" }, 
+            // DataPoint: sleepInterval
+            { "sname" : "sli", "lname" : "sleepInterval", "type" : "integer", "car" : "01" }, 
+            // DataPoint: sleepDuration
+            { "sname" : "sld", "lname" : "sleepDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: status
+            { "sname" : "sus", "lname" : "status", "type" : "string", "car" : "01" }
+        ]
+    },
+
+    // ModuleClass Announced: dmAreaNwkDeviceInfoAnnc (dANDIAnnc)
+    {
+        "type"      : "mad:dANDIAnnc",
+        "lname"     : "dmAreaNwkDeviceInfoAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmAreaNwkDeviceInfoAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: devId
+            { "sname" : "devId", "lname" : "devId", "type" : "string", "car" : "1" }, 
+            // DataPoint: devType
+            { "sname" : "dvt", "lname" : "devType", "type" : "hd:enumPackageState", "car" : "1" }, 
+            // DataPoint: sleepInterval
+            { "sname" : "sli", "lname" : "sleepInterval", "type" : "integer", "car" : "01" }, 
+            // DataPoint: sleepDuration
+            { "sname" : "sld", "lname" : "sleepDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: status
+            { "sname" : "sus", "lname" : "status", "type" : "string", "car" : "01" }
+        ]
+    }, 
+
+    // ModuleClass: dmCapability (dmaCy)
+    {
+        "type"      : "mad:dmaCy",
+        "lname"     : "dmCapability",
+        "cnd"       : "org.onem2m.management.moduleclass.dmCapability",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: name
+            { "sname" : "nm", "lname" : "name", "type" : "string", "car" : "1" }, 
+            // DataPoint: attached
+            { "sname" : "att", "lname" : "attached", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: actionStatus
+            { "sname" : "actSs", "lname" : "actionStatus", "type" : "m2m:actionStatus", "car" : "1" }, 
+            // DataPoint: currentState
+            { "sname" : "cus", "lname" : "currentState", "type" : "bool", "car" : "1" }
+        ], 
+        "children"  : [
+            "mad:ena", 
+            "mad:dis"
+        ]
+    },
+
+    // Action: enable
+    {
+        "type"      : "mad:ena",
+        "lname"     : "enable",
+        "cnd"       : "org.onem2m.management.action.enable",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    },
+
+    // Action: disable
+    {
+        "type"      : "mad:dis",
+        "lname"     : "disable",
+        "cnd"       : "org.onem2m.management.action.disable",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    },
+
+    // ModuleClass Announced: dmCapabilityAnnc (dmaCyAnnc)
+    {
+        "type"      : "mad:dmaCyAnnc",
+        "lname"     : "dmCapabilityAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmCapabilityAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: name
+            { "sname" : "nm", "lname" : "name", "type" : "string", "car" : "1" }, 
+            // DataPoint: attached
+            { "sname" : "att", "lname" : "attached", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: actionStatus
+            { "sname" : "actSs", "lname" : "actionStatus", "type" : "m2m:actionStatus", "car" : "1" }, 
+            // DataPoint: currentState
+            { "sname" : "cus", "lname" : "currentState", "type" : "bool", "car" : "1" }
+        ], 
+        "children"  : [
+            "mad:ena",
+            "mad:enaAnnc", 
+            "mad:dis",
+            "mad:disAnnc"
+        ]
+    }, 
+    // Action Announced: enableAnnc
+    {
+        "type"      : "mad:enaAnnc",
+        "lname"     : "enableAnnc",
+        "cnd"       : "org.onem2m.management.action.enableAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }, 
+
+    // Action Announced: disableAnnc
+    {
+        "type"      : "mad:disAnnc",
+        "lname"     : "disableAnnc",
+        "cnd"       : "org.onem2m.management.action.disableAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }
+, 
+
+    // ModuleClass: dmStorage (dmtSe)
+    {
+        "type"      : "mad:dmtSe",
+        "lname"     : "dmStorage",
+        "cnd"       : "org.onem2m.management.moduleclass.dmStorage",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: UUID
+            { "sname" : "uuid", "lname" : "UUID", "type" : "string", "car" : "01" }, 
+            // DataPoint: type
+            { "sname" : "typ", "lname" : "type", "type" : "integer", "car" : "01" }, 
+            // DataPoint: name
+            { "sname" : "nm", "lname" : "name", "type" : "string", "car" : "01" }, 
+            // DataPoint: writeSpeed
+            { "sname" : "wriSd", "lname" : "writeSpeed", "type" : "integer", "car" : "01" }, 
+            // DataPoint: readSpeed
+            { "sname" : "reaSd", "lname" : "readSpeed", "type" : "integer", "car" : "01" }, 
+            // DataPoint: availStorage
+            { "sname" : "avaSe", "lname" : "availStorage", "type" : "integer", "car" : "1" }, 
+            // DataPoint: totalStorage
+            { "sname" : "totSe", "lname" : "totalStorage", "type" : "integer", "car" : "1" }, 
+            // DataPoint: presence
+            { "sname" : "prese", "lname" : "presence", "type" : "integer", "car" : "01" }, 
+            // DataPoint: status
+            { "sname" : "sus", "lname" : "status", "type" : "integer", "car" : "01" }, 
+            // DataPoint: mounts
+            { "sname" : "mouns", "lname" : "mounts", "type" : "integer", "car" : "01" }, 
+            // DataPoint: forcedUnmounts
+            { "sname" : "forUs", "lname" : "forcedUnmounts", "type" : "integer", "car" : "01" }, 
+            // DataPoint: fileSystem
+            { "sname" : "filSm", "lname" : "fileSystem", "type" : "string", "car" : "01" }, 
+            // DataPoint: mountingPoint
+            { "sname" : "mouPt", "lname" : "mountingPoint", "type" : "string", "car" : "01" }, 
+            // DataPoint: mountOptions
+            { "sname" : "mouOs", "lname" : "mountOptions", "type" : "string", "car" : "01" }, 
+            // DataPoint: writable
+            { "sname" : "write", "lname" : "writable", "type" : "bool", "car" : "1" }
+        ], 
+        "children"  : [
+            "mad:formt", 
+            "mad:unmot"
+        ]
+    },
+
+    // Action: format
+    {
+        "type"      : "mad:formt",
+        "lname"     : "format",
+        "cnd"       : "org.onem2m.management.action.format",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    },
+
+    // Action: unmount
+    {
+        "type"      : "mad:unmot",
+        "lname"     : "unmount",
+        "cnd"       : "org.onem2m.management.action.unmount",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    },
+
+    // ModuleClass Announced: dmStorageAnnc (dmtSeAnnc)
+    {
+        "type"      : "mad:dmtSeAnnc",
+        "lname"     : "dmStorageAnnc",
+        "cnd"       : "org.onem2m.management.moduleclass.dmStorageAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: UUID
+            { "sname" : "uuid", "lname" : "UUID", "type" : "string", "car" : "01" }, 
+            // DataPoint: type
+            { "sname" : "typ", "lname" : "type", "type" : "integer", "car" : "01" }, 
+            // DataPoint: name
+            { "sname" : "nm", "lname" : "name", "type" : "string", "car" : "01" }, 
+            // DataPoint: writeSpeed
+            { "sname" : "wriSd", "lname" : "writeSpeed", "type" : "integer", "car" : "01" }, 
+            // DataPoint: readSpeed
+            { "sname" : "reaSd", "lname" : "readSpeed", "type" : "integer", "car" : "01" }, 
+            // DataPoint: availStorage
+            { "sname" : "avaSe", "lname" : "availStorage", "type" : "integer", "car" : "1" }, 
+            // DataPoint: totalStorage
+            { "sname" : "totSe", "lname" : "totalStorage", "type" : "integer", "car" : "1" }, 
+            // DataPoint: presence
+            { "sname" : "prese", "lname" : "presence", "type" : "integer", "car" : "01" }, 
+            // DataPoint: status
+            { "sname" : "sus", "lname" : "status", "type" : "integer", "car" : "01" }, 
+            // DataPoint: mounts
+            { "sname" : "mouns", "lname" : "mounts", "type" : "integer", "car" : "01" }, 
+            // DataPoint: forcedUnmounts
+            { "sname" : "forUs", "lname" : "forcedUnmounts", "type" : "integer", "car" : "01" }, 
+            // DataPoint: fileSystem
+            { "sname" : "filSm", "lname" : "fileSystem", "type" : "string", "car" : "01" }, 
+            // DataPoint: mountingPoint
+            { "sname" : "mouPt", "lname" : "mountingPoint", "type" : "string", "car" : "01" }, 
+            // DataPoint: mountOptions
+            { "sname" : "mouOs", "lname" : "mountOptions", "type" : "string", "car" : "01" }, 
+            // DataPoint: writable
+            { "sname" : "write", "lname" : "writable", "type" : "bool", "car" : "1" }
+        ], 
+        "children"  : [
+            "mad:formt",
+            "mad:formtAnnc", 
+            "mad:unmot",
+            "mad:unmotAnnc"
+        ]
+    }, 
+    // Action Announced: formatAnnc
+    {
+        "type"      : "mad:formtAnnc",
+        "lname"     : "formatAnnc",
+        "cnd"       : "org.onem2m.management.action.formatAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }, 
+
+    // Action Announced: unmountAnnc
+    {
+        "type"      : "mad:unmotAnnc",
+        "lname"     : "unmountAnnc",
+        "cnd"       : "org.onem2m.management.action.unmountAnnc",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }
+
+
+
+
+]
