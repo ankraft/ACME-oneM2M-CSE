@@ -345,10 +345,11 @@ def findXPath(dct:JSON, element:str, default:Any=None) -> Any:
 	data:Any = dct
 	for i in range(0,len(paths)):
 		if data is None:
+		 	return default
+		pathElement = paths[i]
+		if len(pathElement) == 0:	# return if there is an empty path element
 			return default
-		if len(paths[i]) == 0:	# return if there is an empty path element
-			return default
-		elif (m := decimalMatch.search(paths[i])) is not None:	# Match array index {i}
+		elif (m := decimalMatch.search(pathElement)) is not None:	# Match array index {i}
 			idx = int(m.group(1))
 			if not isinstance(data, (list,dict)) or idx >= len(data):	# Check idx within range of list
 				return default
@@ -356,10 +357,10 @@ def findXPath(dct:JSON, element:str, default:Any=None) -> Any:
 				data = data[list(data)[i]]
 			else:
 				data = data[idx]
-		elif paths[i] not in data:	# if key not in dict
+		elif pathElement not in data:	# if key not in dict
 			return default
 		else:
-			data = data[paths[i]]	# found data for the next level down
+			data = data[pathElement]	# found data for the next level down
 	return data
 
 
