@@ -351,12 +351,12 @@ skinparam rectangle {
 
 		def info(res:Resource) -> str:
 			if res.ty == T.FCNT:
-				return f'{res.rn} [dim]{res.__rtype__} ({res.cnd}) | ri={res.ri}[/dim]'
+				return f'{res.rn} [dim]-> {res.__rtype__} ({res.cnd}) | ri={res.ri}[/dim]'
 			if res.ty == T.CSEBase:
-				return f'{res.rn} [dim]{res.__rtype__} | ri={res.ri} csi={res.csi}[/dim]'
+				return f'{res.rn} [dim]-> {res.__rtype__} | ri={res.ri} | csi={res.csi}[/dim]'
 			if res.__isVirtual__:
 				return f'{res.rn}'
-			return f'{res.rn} [dim]{res.__rtype__} | ri={res.ri}[/dim]'
+			return f'{res.rn} [dim]-> {res.__rtype__} | ri={res.ri}[/dim]'
 
 		def getChildren(res:Resource, tree:Tree, level:int) -> None:
 			""" Find and print the children in the tree structure. """
@@ -376,30 +376,38 @@ skinparam rectangle {
 	def getResourceTreeText(self, maxLevel:int=0) -> str:
 		"""	This function will generate a Text tree of a CSE's resource structure.
 		"""
+		from rich.console import Console
+		from io import StringIO
 
-		def info(res:Resource) -> str:
-			if res.ty == T.FCNT:
-				return f'{res.rn} ~ {res.__rtype__} ({res.cnd}) | ri={res.ri}'
-			if res.ty == T.CSEBase:
-				return f'{res.rn} ~ {res.__rtype__} | ri={res.ri} csi={res.csi}'
-			if res.__isVirtual__:
-				return f'{res.rn}'
-			return f'{res.rn} ~ {res.__rtype__} | ri={res.ri}'
+		buf = StringIO()
+		console = Console(file=buf)
+		console.print(self.getResourceTreeRich())
+		return buf.getvalue()
 
-		def getChildren(res:Resource, tree:str, level:int) -> str:
-			""" Find and print the children in the tree structure. """
-			if maxLevel > 0 and level == maxLevel:
-				return tree
-			chs = CSE.dispatcher.directChildResources(res.ri)
-			for ch in chs:
-				tree += ' ' * (4*level) + info(ch) + '\n'
-				tree = getChildren(ch, tree, level+1)
-			return tree
 
-		cse = Utils.getCSE().resource
-		tree = f'{info(cse)}\n'
-		tree = getChildren(cse, tree, 1)
-		return tree
+		# def info(res:Resource) -> str:
+		# 	if res.ty == T.FCNT:
+		# 		return f'{res.rn} ~ {res.__rtype__} ({res.cnd}) | ri={res.ri}'
+		# 	if res.ty == T.CSEBase:
+		# 		return f'{res.rn} ~ {res.__rtype__} | ri={res.ri} csi={res.csi}'
+		# 	if res.__isVirtual__:
+		# 		return f'{res.rn}'
+		# 	return f'{res.rn} ~ {res.__rtype__} | ri={res.ri}'
+
+		# def getChildren(res:Resource, tree:str, level:int) -> str:
+		# 	""" Find and print the children in the tree structure. """
+		# 	if maxLevel > 0 and level == maxLevel:
+		# 		return tree
+		# 	chs = CSE.dispatcher.directChildResources(res.ri)
+		# 	for ch in chs:
+		# 		tree += ' ' * (4*level) + info(ch) + '\n'
+		# 		tree = getChildren(ch, tree, level+1)	# tree is modified in getChildren, threfore assignment
+		# 	return tree
+
+		# cse = Utils.getCSE().resource
+		# tree = f'{info(cse)}\n'
+		# tree = getChildren(cse, tree, 1)
+		# return tree
 
 
 	def getCSERegistrationsRich(self) -> str:
