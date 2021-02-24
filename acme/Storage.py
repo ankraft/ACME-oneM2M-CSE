@@ -80,7 +80,6 @@ class Storage(object):
 			Logging.logDebug('Resource enforced overwrite')
 			self.db.upsertResource(resource)
 		else: 
-			# if not self.db.hasResource(ri=ri) and not self.db.hasResource(srn=srn):	# Only when not resource does not exist yet
 			if not self.hasResource(ri, srn):	# Only when not resource does not exist yet
 				self.db.insertResource(resource)
 			else:
@@ -94,7 +93,7 @@ class Storage(object):
 
 	# Check whether a resource with either the ri or the srn already exists
 	def hasResource(self, ri:str=None, srn:str=None) -> bool:
-		return self.db.hasResource(ri=ri) or self.db.hasResource(srn=srn)
+		return (ri is not None and self.db.hasResource(ri=ri)) or (srn is not None and self.db.hasResource(srn=srn))
 
 
 	def retrieveResource(self, ri:str=None, csi:str=None, srn:str=None, aei:str=None) -> Result:

@@ -426,10 +426,14 @@ class Dispatcher(object):
 		if not (res := parentResource.childWillBeAdded(nresource, originator)).status:
 			return res.errorResult()
 
-		# check whether the resource already exists
-		if CSE.storage.hasResource(nresource.ri, nresource.__srn__):
-			Logging.logWarn(msg := 'Resource already exists')
-			return Result(rsc=RC.conflict, dbg=msg)
+		# check whether the resource already exists, either via ri or srn
+		# hasResource() may actually perform the test in one call, but we want to give a distinguished debug message
+		if CSE.storage.hasResource(ri=nresource.ri):
+			Logging.logWarn(dbg := f'Resource with ri: {nresource.__srn__} already exists')
+			return Result(rsc=RC.conflict, dbg=dbg)
+		if CSE.storage.hasResource(srn=nresource.__srn__):
+			Logging.logWarn(dbg := f'Resource with structured id: {nresource.__srn__} already exists')
+			return Result(rsc=RC.conflict, dbg=dbg)
 
 		# Check resource creation
 		if (rres := CSE.registration.checkResourceCreation(nresource, originator, parentResource)).rsc != RC.OK:
