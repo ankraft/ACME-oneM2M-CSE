@@ -12,12 +12,12 @@ from rich.style import Style
 loadTests = [ 'testLoad' ]
 
 def isRunTest(name:str) -> bool:
+	if args.runAll:						# run all tests
+		return True
 	if len(args.tests) > 0:				# run only specified tests
 		return name in args.tests
-	
 	if args.includeLoadTests:			# include all load tests
 		return True
-	
 	if args.loadTestsOnly: 
 		return name in loadTests		# only load tests
 	else:
@@ -37,6 +37,7 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--load-include', action='store_true', dest='includeLoadTests', default=False, help='include load tests in test runs')
 	parser.add_argument('--load-only', action='store_true', dest='loadTestsOnly', default=False, help='run only load tests in test runs')
+	parser.add_argument('--all', action='store_true', dest='runAll', default=False, help='run all tests')
 	parser.add_argument('--show-skipped', action='store_true', dest='showSkipped', default=False, help='show skipped tests in summary')
 	parser.add_argument('--verbosity', action='store', dest='verbosity', type=int, choices=[0,1,2], default=2, help='set verbosity (default: 2)')
 
