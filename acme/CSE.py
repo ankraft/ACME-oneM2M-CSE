@@ -197,6 +197,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 		'\n'	: lambda c: print(),	# 1 empty line
 		'\x03'  : _keyShutdownCSE,		# See handler below
 		'c'		: _keyConfiguration,
+		'C'		: _keyClearScreen,
 		'D'		: _keyDeleteResource,
 		'i'		: _keyInspectResource,
 		'l'     : _keyToggleLogging,
@@ -291,6 +292,7 @@ def _keyHelp(key:str) -> None:
 - h, ?  - This help
 - Q, ^C - Shutdown CSE
 - c     - Show configuration
+- C     - Clear the console screen
 - D     - Delete resource
 - i     - Inspect resource
 - l     - Toggle logging on/off
@@ -338,6 +340,12 @@ def _keyConfiguration(key:str) -> None:
 		c = c.replace('*', '\\*')
 		result += f'- {c}\n'
 	Logging.console(result, extranl=True)
+
+
+def _keyClearScreen(key:str) -> None:
+	"""	Clear the console screen.
+	"""
+	Logging.consoleClear()
 
 
 def _keyResourceTree(key:str) -> None:

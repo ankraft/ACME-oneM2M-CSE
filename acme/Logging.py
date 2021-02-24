@@ -195,6 +195,13 @@ class	Logging:
 
 		if extranl:
 			Logging._console.print()
+	
+
+	@staticmethod
+	def consoleClear() -> None:
+		"""	Clear the console screen.
+		"""
+		Logging._console.clear()
 
 
 #
