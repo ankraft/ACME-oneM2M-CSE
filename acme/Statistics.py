@@ -401,6 +401,7 @@ skinparam rectangle {
 		tree = getChildren(cse, tree, 1)
 		return tree
 
+
 	def getCSERegistrationsRich(self) -> str:
 		"""	Return an overview in Rich format about the registrar, registrees, and
 			descendant CSE's.

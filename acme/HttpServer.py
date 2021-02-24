@@ -203,6 +203,7 @@ class HttpServer(object):
 			except Exception as e:
 				responseResult = self._prepareException(e)
 		responseResult.request = httpRequestResult.request
+
 		return self._prepareResponse(responseResult)
 
 

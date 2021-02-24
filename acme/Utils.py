@@ -800,19 +800,12 @@ def getRequestHeaders(request: Request) -> Result:
 	rh.operationExecutionTime 		= requestHeaderField(request, C.hfOET)
 	rh.releaseVersionIndicator 		= requestHeaderField(request, C.hfRVI)
 
-	if rh.releaseVersionIndicator is None:
-		Logging.logDebug(dbg := 'Release Version Indicator is mandatory in request')
-		return Result(rsc=RC.badRequest,  dbg=dbg)
-	if rh.requestIdentifier is None:
-		Logging.logDebug(dbg := 'Request Identifier is mandatory in request')
-		return Result(rsc=RC.badRequest,  dbg=dbg)
-
-	if (rtu := requestHeaderField(request, C.hfRTU)) is not None:			# handle rtu list
-		rh.responseTypeNUs = rtu.split('&')
-
 	# content-type and accept
 	rh.contentType 	= request.content_type
 	rh.accept		= [ mt for mt, _ in request.accept_mimetypes ]	# get (multiple) accept headers from MIMEType[(x,nr)]
+
+	if (rtu := requestHeaderField(request, C.hfRTU)) is not None:			# handle rtu list
+		rh.responseTypeNUs = rtu.split('&')
 
 	if rh.contentType is not None:
 		if not rh.contentType.startswith(tuple(C.supportedContentHeaderFormat)):
@@ -832,6 +825,15 @@ def getRequestHeaders(request: Request) -> Result:
 	rh.accept = [ a for a in rh.accept if a != '*/*' ]
 	# if ((l := len(rh.accept)) == 1 and '*/*' in rh.accept) or l == 0:
 	# 	rh.accept = [ CSE.defaultSerialization.toHeader() ]
+
+	# perform some validitions
+
+	if rh.releaseVersionIndicator is None:
+		Logging.logDebug(dbg := 'Release Version Indicator is mandatory in request')
+		return Result(data=rh, rsc=RC.badRequest, dbg=dbg)
+	if rh.requestIdentifier is None:
+		Logging.logDebug(dbg := 'Request Identifier is mandatory in request')
+		return Result(data=rh, rsc=RC.badRequest, dbg=dbg)
 
 	return Result(data=rh, rsc=RC.OK)
 
