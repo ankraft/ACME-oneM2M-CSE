@@ -186,11 +186,12 @@ class HttpServer(object):
 		"""
 		Logging.logDebug(f'==> {operation.name}: /{path}') 	# path = request.path  w/o the root
 		Logging.logDebug(f'Headers: \n{str(request.headers)}')
+		httpRequestResult = Utils.dissectHttpRequest(request, operation, Utils.retrieveIDFromPath(path, CSE.cseRn, CSE.cseCsi))
+
 		if self.isStopped:
 			responseResult = Result(rsc=RC.internalServerError, dbg='http server not running	', status=False)
 		else:
 			try:
-				httpRequestResult = Utils.dissectHttpRequest(request, operation, Utils.retrieveIDFromPath(path, CSE.cseRn, CSE.cseCsi))
 				if httpRequestResult.status:
 					if operation in [ Operation.CREATE, Operation.UPDATE ]:
 						if httpRequestResult.request.ct == ContentSerializationType.CBOR:
@@ -383,7 +384,7 @@ class HttpServer(object):
 		# Determine the accept type and encode the content accordinly
 		#
 		# Look whether there is a accept header in the original request
-		if len(result.request.headers.accept) > 0:
+		if result.request.headers.accept is not None and len(result.request.headers.accept) > 0:
 			ct = ContentSerializationType.getType(result.request.headers.accept[0])
 		
 		# No accept, check originator

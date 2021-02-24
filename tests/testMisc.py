@@ -67,6 +67,8 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest)
 
 
+# TODO test for creating a resource with missing type parameter
+
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestMisc('test_checkHTTPRVI'))

@@ -394,8 +394,8 @@ class Dispatcher(object):
 			Logging.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
 			return fanoutPointResource.handleCreateRequest(request, fopsrn, request.headers.originator)
 
-		ct 			= request.headers.contentType
-		ty 			= request.headers.resourceType
+		if (ty := request.headers.resourceType) is None:	# Check for type parameter in request
+			return Result(rsc=RC.badRequest, dbg='type parameter missing in CREATE request')
 
 		# Some Resources are not allowed to be created in a request, return immediately
 		if ty in [ T.CSEBase, T.REQ ]:
