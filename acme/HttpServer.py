@@ -66,7 +66,8 @@ class HttpServer(object):
 
 		self.backgroundActor:BackgroundWorker = None
 
-		self.serverID	= f'ACME {C.version}' 	# The server's ID for http response headers
+		self.serverID			= f'ACME {C.version}' 			# The server's ID for http response headers
+		self._responseHeaders	= {'Server' : self.serverID}	# Additional headers for other requests
 
 		Logging.log(f'Registering http server root at: {self.rootPath}')
 		if self.useTLS:
@@ -261,7 +262,7 @@ class HttpServer(object):
 	def getVersion(self) -> Response:
 		"""	Handle a GET request to return the CSE version.
 		"""
-		return Response(C.version)
+		return Response(C.version, headers=self._responseHeaders)
 
 
 	def handleConfig(self, path:str=None) -> Response:
@@ -269,33 +270,37 @@ class HttpServer(object):
 			configuration value, or a PUT request to set a new value to a configuration setting.
 			Note, that only a few of configuration settings are supported.
 		"""
+
+		def _r(r:str) -> Response:	# just construct a response. Trying to reduce the clutter here
+			return Response(r, headers=self._responseHeaders)
+
 		if request.method == 'GET':
 			if path == None or len(path) == 0:
-				return Response(Configuration.print())
+				return _r(Configuration.print())
 			if Configuration.has(path):
-				return Response(str(Configuration.get(path)))
-			return Response('')
+				return _r(str(Configuration.get(path)))
+			return _r('')
 		elif request.method =='PUT':
 			data = request.data.decode('utf-8').rstrip()
 			try:
 				Logging.logDebug(f'New remote configuration: {path} = {data}')
 				if path == 'cse.checkExpirationsInterval':
 					if (d := int(data)) < 1:
-						return Response('nak')
+						return _r('nak')
 					Configuration.set(path, d)
 					CSE.registration.stopExpirationWorker()
 					CSE.registration.startExpirationWorker()
-					return Response('ack')
+					return _r('ack')
 				elif path in [ 'cse.req.minet', 'cse.req.maxnet' ]:
 					if (d := int(data)) < 1:
-							return Response('nak')
+							return _r('nak')
 					Configuration.set(path, d)
-					return Response('ack')
+					return _r('ack')
 
 			except:
-				return Response('nak')
-			return Response('nak')
-		return Response('unsupported')
+				return _r('nak')
+			return _r('nak')
+		return _r('unsupported')
 
 
 	def handleStructure(self, path:str='puml') -> Response:
@@ -305,10 +310,10 @@ class HttpServer(object):
 		"""
 		lvl = request.args.get('lvl', default=0, type=int)
 		if path == 'puml':
-			return Response(response=CSE.statistics.getStructurePuml(lvl))
+			return Response(response=CSE.statistics.getStructurePuml(lvl), headers=self._responseHeaders)
 		if path == 'text':
-			return Response(response=CSE.statistics.getResourceTreeText(lvl))
-		return Response(response='unsupported', status=422)
+			return Response(response=CSE.statistics.getResourceTreeText(lvl), headers=self._responseHeaders)
+		return Response(response='unsupported', status=422, headers=self._responseHeaders)
 
 
 	#########################################################################
