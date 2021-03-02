@@ -36,7 +36,7 @@ The ACME CSE supports the following oneM2M resource types:
 | Management Objects            |  &check;  | See also the list of supported [management objects](#mgmtobjs).                                                                                                                                           |
 | FlexContainer Specializations |  &check;  | Any specialization is supported and validated. See [Importing Attribute Policies](Importing.md#attributes) for further details.<br />Supported spezialisations: TS-0023 R4, GenericInterworking, AllJoyn. |
 | FlexContainerInstance         |  &check;  | Experimental. This is an implementation of the draft FlexContainerInstance specification.                                                                                                                 |
-| Request (REQ)                 |  &check;  | To support non-blocking requests.                                                                                                                                                                         |
+| Request (REQ)                 |  &check;  | Support for non-blocking requests.                                                                                                                                                                        |
 | Polling Channel               |  &cross;  |                                                                                                                                                                                                           |
 
 <a name="mgmtobjs"></a>

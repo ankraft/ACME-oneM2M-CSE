@@ -4,7 +4,6 @@
         "ri": "${cse.originator}",
         "rn": "${cse.originator}",
         "pi": "${cse.ri}",
-        "hld" : "${cse.originator}",
         "api": "N${cse.originator}",
         "aei": "${cse.originator}",
         "csz" : [ "application/json", "application/cbor" ]
