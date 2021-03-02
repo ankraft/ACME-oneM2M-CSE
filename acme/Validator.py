@@ -70,7 +70,7 @@ attributePolicies:AttributePolicies = {
 	'cnm'	: ( BT.nonNegInteger,	CAR.car1, 	RO.NP,	RO.NP, RO.O, AN.NA ),		# GRP
 	'cnty'	: ( BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# DVI
 	'con'	: ( BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# CIN
-	'conr'	: ( BT.dict,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# m2m:contentRef - CIN
+	'conr'	: ( BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# m2m:contentRef - CIN
 	'cr'	: ( BT.list, 			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# CNT
 	'cs'	: ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# CIN, FCNT
 	'csi'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# CSE, CSR

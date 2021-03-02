@@ -19,7 +19,7 @@ attributePolicies = constructPolicy([
 	'rn', 'ty', 'ri', 'pi', 'et', 'ct', 'lt', 'st', 'lbl', 'at', 'aa', 'cr',
 ])
 cinPolicies = constructPolicy([
-	'cnf', 'cs', 'conr', 'con', 'or'
+	'cnf', 'cs', 'conr', 'con', 'or', 'conr'
 ])
 attributePolicies = addPolicy(attributePolicies, cinPolicies)
 
