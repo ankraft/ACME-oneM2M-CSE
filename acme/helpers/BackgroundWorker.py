@@ -11,15 +11,16 @@ from __future__ import annotations
 from Logging import Logging
 import time, random, sys
 from threading import Thread
-from typing import Callable, List, Dict, Any
+from typing import Callable, List, Dict, Any, Protocol
 
 
 class BackgroundWorker(object):
 
-	def __init__(self, updateIntervall:float, callback:Callable, name:str=None, startWithDelay:bool=False, count:int=None, dispose:bool=True, id:int=None) -> None:
+	def __init__(self, updateIntervall:float, callback:Callable, name:str=None, startWithDelay:bool=False, count:int=None, dispose:bool=True, id:int=None) -> None:		# type: ignore[type-arg]
 		self.updateIntervall = updateIntervall
 		self.callback = callback
-		self.running = False
+		self.running = False		# Indicator that a worker is running or will be stopped
+		self.isStopped = True		# Indicator that a worker has really stopped
 		self.workerThread: Thread = None
 		self.name = name
 		self.startWithDelay = startWithDelay
@@ -34,6 +35,7 @@ class BackgroundWorker(object):
 			self.stop()
 		Logging.logDebug(f'Starting worker thread: {self.name}')
 		self.running = True
+		self.isStopped = True
 		self.args = args
 		self.workerThread = Thread(target=self.work)
 		self.workerThread.setDaemon(True)	# Make the thread a daemon of the main thread
@@ -64,7 +66,7 @@ class BackgroundWorker(object):
 				self.numberOfRuns += 1
 				result = self.callback(**self.args)
 			except Exception as e:
-				Logging.logErr(str(e))
+				Logging.logErr(f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}')
 			finally:
 				if self.count is not None and self.numberOfRuns >= self.count:
 					self.running = False
@@ -96,6 +98,8 @@ class BackgroundWorker(object):
 		"""
 		if self.dispose:
 			BackgroundWorkerPool._removeBackgroundWorkerFromPool(self)
+		self.running = False
+		self.isStopped = True
 
 
 	def __repr__(self) -> str:
@@ -112,7 +116,7 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def newWorker(cls, updateIntervall:float, workerCallback:Callable, name:str=None, startWithDelay:bool=False, count:int=None, dispose:bool=True) -> BackgroundWorker:
+	def newWorker(cls, updateIntervall:float, workerCallback:Callable, name:str=None, startWithDelay:bool=False, count:int=None, dispose:bool=True) -> BackgroundWorker:	# type:ignore[type-arg]
 		"""	Create a new background worker that periodically executes the callback.
 		"""
 		# Get a unique ID
@@ -125,7 +129,7 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def newActor(cls, delay:float, workerCallback:Callable, name:str=None, dispose:bool=True) -> BackgroundWorker:
+	def newActor(cls, delay:float, workerCallback:Callable, name:str=None, dispose:bool=True) -> BackgroundWorker:	#type:ignore[type-arg]
 		"""	Create a new background worker that runs only once after a delay (the 'delay' may be 0.0s, though).
 		"""
 		return cls.newWorker(delay, workerCallback, name=name, startWithDelay=delay>0.0, count=1, dispose=dispose)
@@ -137,10 +141,13 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def stopWorkers(cls, name:str) -> List[BackgroundWorker]:
+	def stopWorkers(cls, name:str, wait:bool=True) -> List[BackgroundWorker]:
 		workers = cls.findWorkers(name=name)
 		for w in workers:
 			w.stop()
+			if wait:
+				while not w.isStopped:
+					time.sleep(0.01)
 		return workers
 
 

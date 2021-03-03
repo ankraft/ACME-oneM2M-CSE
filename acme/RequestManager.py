@@ -7,6 +7,7 @@
 #	Main request dispatcher. All external requests are routed through here.
 #
 
+import requests, urllib.parse
 from Logging import Logging
 from Configuration import Configuration
 from Types import Operation
@@ -18,6 +19,8 @@ from Types import ResponseCode as RC
 from Types import ResponseType
 from Types import Result
 from Types import CSERequest
+from Types import ContentSerializationType
+from Types import Parameters
 from resources.REQ import REQ
 from resources.Resource import Resource
 from helpers.BackgroundWorker import BackgroundWorkerPool
@@ -32,7 +35,6 @@ class RequestManager(object):
 
 	def __init__(self) -> None:
 		self.enableTransit 			= Configuration.get('cse.enableTransitRequests')
-		self.cseri 					= Configuration.get('cse.ri')
 		self.flexBlockingBlocking	= Configuration.get('cse.flexBlockingPreference') == 'blocking'
 
 		Logging.log('RequestManager initialized')
@@ -52,8 +54,8 @@ class RequestManager(object):
 		Logging.logDebug(f'RETRIEVE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
 
 		# handle transit requests
-		if CSE.remote.isTransitID(request.id):
-		 	return CSE.remote.handleTransitRetrieveRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
+		if self.isTransitID(request.id):
+			return self.handleTransitRetrieveRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
 
 		if request.args.rt == ResponseType.blockingRequest:
 			return CSE.dispatcher.processRetrieveRequest(request, request.headers.originator)
@@ -80,15 +82,16 @@ class RequestManager(object):
 		Logging.logDebug(f'CREATE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
 
 		# handle transit requests
-		if CSE.remote.isTransitID(request.id):
-			return CSE.remote.handleTransitCreateRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
+		if self.isTransitID(request.id):
+			return self.handleTransitCreateRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
 
 		# Check contentType and resourceType
 		if request.headers.contentType == None or request.headers.contentType == None:
 			return Result(rsc=RC.badRequest, dbg='missing or wrong contentType or resourceType in request')
 
 		if request.args.rt == ResponseType.blockingRequest:
-			return CSE.dispatcher.processCreateRequest(request, request.headers.originator)
+			res = CSE.dispatcher.processCreateRequest(request, request.headers.originator)
+			return res
 
 		elif request.args.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
 			return self._handleNonBlockingRequest(request)
@@ -111,12 +114,12 @@ class RequestManager(object):
 		Logging.logDebug(f'UPDATE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
 
 		# Don't update the CSEBase
-		if request.id == self.cseri:
+		if request.id == CSE.cseRi:
 			return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for CSEBase')
 
 		# handle transit requests
-		if CSE.remote.isTransitID(request.id):
-			return CSE.remote.handleTransitUpdateRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
+		if self.isTransitID(request.id):
+			return self.handleTransitUpdateRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
 
 		# Check contentType and resourceType
 		if request.headers.contentType == None:
@@ -147,12 +150,12 @@ class RequestManager(object):
 		Logging.logDebug(f'DELETE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
 
 		# Don't update the CSEBase
-		if request.id == self.cseri:
+		if request.id == CSE.cseRi:
 			return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for CSEBase')
 
 		# handle transit requests
-		if CSE.remote.isTransitID(request.id):
-			return CSE.remote.handleTransitDeleteRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
+		if self.isTransitID(request.id):
+			return self.handleTransitDeleteRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
 
 		if request.args.rt == ResponseType.blockingRequest or (request.args.rt == ResponseType.flexBlocking and self.flexBlockingBlocking):
 			return CSE.dispatcher.processDeleteRequest(request, request.headers.originator)
@@ -205,22 +208,19 @@ class RequestManager(object):
 		if (reqres := self._createRequestResource(request)).resource is None:
 			return reqres
 
-		jsn:Dict[str, Any] = None
 		# Synchronous handling
 		if request.args.rt == ResponseType.nonBlockingRequestSynch:
 			# Run operation in the background
 			BackgroundWorkerPool.newActor(0.0, self._runNonBlockingRequestSync, f'request_{request.headers.requestIdentifier}').start(request=request, reqRi=reqres.resource.ri)
 			# Create the response content with the <request> ri 
-			jsn = { 'm2m:uri' : reqres.resource.ri }
-			return Result(jsn=jsn, rsc=RC.acceptedNonBlockingRequestSynch)
+			return Result(dict={ 'm2m:uri' : reqres.resource.ri }, rsc=RC.acceptedNonBlockingRequestSynch)
 
 		# Asynchronous handling
 		if request.args.rt == ResponseType.nonBlockingRequestAsynch:
 			# Run operation in the background
 			BackgroundWorkerPool.newActor(0.0, self._runNonBlockingRequestAsync, f'request_{request.headers.requestIdentifier}').start(request=request, reqRi=reqres.resource.ri)
 			# Create the response content with the <request> ri 
-			jsn = { 'm2m:uri' : reqres.resource.ri }
-			return Result(jsn=jsn, rsc=RC.acceptedNonBlockingRequestAsynch)
+			return Result(dict={ 'm2m:uri' : reqres.resource.ri }, rsc=RC.acceptedNonBlockingRequestAsynch)
 
 		# Error
 		return Result(rsc=RC.badRequest, dbg=f'Unknown or unsupported ResponseType: {request.args.rt}')
@@ -269,7 +269,7 @@ class RequestManager(object):
 				nus = aes[0].poa
 
 		# send notifications.Ignore any errors here
-		CSE.notification.sendNotificationWithJSON(responseNotification, nus)
+		CSE.notification.sendNotificationWithDict(responseNotification, nus)
 
 		return True
 
@@ -301,7 +301,7 @@ class RequestManager(object):
 		if operationResult.rsc in [ RC.OK, RC.created, RC.updated, RC.deleted ] :			# OK, created, updated, deleted -> resource
 			reqres['rs'] = RequestStatus.COMPLETED
 			if operationResult.resource is not None:
-				reqres['ors/pc'] = operationResult.resource.asJSON()
+				reqres['ors/pc'] = operationResult.resource.asDict()
 		else:																				# Error
 			reqres['rs'] = RequestStatus.FAILED
 			if operationResult.dbg is not None:
@@ -311,3 +311,124 @@ class RequestManager(object):
 		reqres.dbUpdate()
 
 		return Result(resource=reqres, status=True)
+
+
+	###########################################################################
+
+	#
+	#	Handling of Transit requests. Forward requests to the resp. remote CSE's.
+	#
+
+	def handleTransitRetrieveRequest(self, request:CSERequest) -> Result:
+		""" Forward a RETRIEVE request to a remote CSE """
+		if (url := self._getForwardURL(request.id)) is None:
+			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
+		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
+			url += '?' + urllib.parse.urlencode(request.originalArgs)
+		Logging.log(f'Forwarding Retrieve/Discovery request to: {url}')
+		return self.sendRetrieveRequest(url, request.headers.originator)
+
+
+	def handleTransitCreateRequest(self, request:CSERequest) -> Result:
+		""" Forward a CREATE request to a remote CSE. """
+		if (url := self._getForwardURL(request.id)) is None:
+			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
+		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
+			url += '?' + urllib.parse.urlencode(request.originalArgs)
+		Logging.log(f'Forwarding Create request to: {url}')
+		return self.sendCreateRequest(url, request.headers.originator, data=request.data, ty=request.headers.resourceType)
+
+
+	def handleTransitUpdateRequest(self, request:CSERequest) -> Result:
+		""" Forward an UPDATE request to a remote CSE. """
+		if (url := self._getForwardURL(request.id)) is None:
+			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
+		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
+			url += '?' + urllib.parse.urlencode(request.originalArgs)
+		Logging.log(f'Forwarding Update request to: {url}')
+		return self.sendUpdateRequest(url, request.headers.originator, data=request.data)
+
+
+	def handleTransitDeleteRequest(self, request:CSERequest) -> Result:
+		""" Forward a DELETE request to a remote CSE. """
+		if (url := self._getForwardURL(request.id)) is None:
+			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
+		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
+			url += '?' + urllib.parse.urlencode(request.originalArgs)
+		Logging.log(f'Forwarding Delete request to: {url}')
+		return self.sendDeleteRequest(url, request.headers.originator)
+
+
+	def isTransitID(self, id:str) -> bool:
+		""" Check whether an ID is a targeting a remote CSE via a CSR. """
+		if Utils.isSPRelative(id):
+			ids = id.split('/')
+			return len(ids) > 0 and ids[0] != CSE.cseCsi[1:]
+		elif Utils.isAbsolute(id):
+			ids = id.split('/')
+			return len(ids) > 2 and ids[2] != CSE.cseCsi[1:]
+		return False
+
+
+	def _getForwardURL(self, path:str) -> str:
+		""" Get the new target URL when forwarding. """
+		Logging.logDebug(path)
+		r, pe = CSE.remote.getCSRFromPath(path)
+		Logging.logDebug(str(r))
+		if r is not None and (poas := r.poa) is not None and len(poas) > 0:
+			return f'{poas[0]}/~/{"/".join(pe[1:])}'	# TODO check all available poas.
+		return None
+
+
+	###########################################################################
+
+	#
+	#	Handling requests.
+	#
+	#
+	#	TODO	Is targetResource necessary?
+	#	TODO	check whether url is actually an ri, then target that reource
+	#	TODO	Add further transport protocols here
+	#	TODO	Add method for notifications
+
+
+
+	def sendRetrieveRequest(self, url:str, originator:str, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
+		"""	Send a RETRIEVE request via the appropriate channel or transport protocol.
+		"""
+		if Utils.isHttpUrl(url):
+			CSE.event.httpSendRetrieve() # type: ignore
+			return CSE.httpServer.sendHttpRequest(requests.get, url, originator, parameters=parameters, ct=ct, targetResource=targetResource)
+		Logging.logWarn(dbg := f'unsupported url scheme: {url}')
+		return Result(status=True, rsc=RC.badRequest, dbg=dbg)
+
+
+	def sendCreateRequest(self, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
+		"""	Send a CREATE request via the appropriate channel or transport protocol.
+		"""
+		if Utils.isHttpUrl(url):
+			CSE.event.httpSendCreate() # type: ignore
+			return CSE.httpServer.sendHttpRequest(requests.post, url, originator, ty, data, parameters=parameters, ct=ct, targetResource=targetResource)
+		Logging.logWarn(dbg := f'unsupported url scheme: {url}')
+		return Result(status=True, rsc=RC.badRequest, dbg=dbg)
+
+
+	def sendUpdateRequest(self, url:str, originator:str, data:Any, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
+		"""	Send a UPDATE request via the appropriate channel or transport protocol.
+		"""
+		if Utils.isHttpUrl(url):
+			CSE.event.httpSendUpdate() # type: ignore
+			return CSE.httpServer.sendHttpRequest(requests.put, url, originator, data=data, parameters=parameters, ct=ct, targetResource=targetResource)
+		Logging.logWarn(dbg := f'unsupported url scheme: {url}')
+		return Result(status=True, rsc=RC.badRequest, dbg=dbg)
+
+
+	def sendDeleteRequest(self, url:str, originator:str, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
+		"""	Send a DELETE request via the appropriate channel or transport protocol.
+		"""
+		if Utils.isHttpUrl(url):
+			CSE.event.httpSendDelete() # type: ignore
+			return CSE.httpServer.sendHttpRequest(requests.delete, url, originator, parameters=parameters, ct=ct, targetResource=targetResource)
+		Logging.logWarn(dbg := f'unsupported url scheme: {url}')
+		return Result(status=True, rsc=RC.badRequest, dbg=dbg)
+

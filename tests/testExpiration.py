@@ -8,8 +8,9 @@
 #	remote CSE
 #
 
-import unittest, sys
+import unittest, sys, time
 sys.path.append('../acme')
+from typing import Tuple
 from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
@@ -17,75 +18,65 @@ from init import *
 
 CND = 'org.onem2m.home.moduleclass.temperature'
 
-
-# The following code must be executed before anything else because it influences
-# the collection of skipped tests.
-# It checks whether there actually is a CSE running.
-noCSE = not connectionPossible(cseURL)
-
-# Reconfigure the server to check faster for expirations.
-enableShortExpirations()
-
 class TestExpiration(unittest.TestCase):
+
+	ae 				= None
+	originator 		= None
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def setUpClass(cls):
-
-		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
-		jsn = 	{ 'm2m:ae' : {
+	def setUpClass(cls) -> None:
+		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
 				 	'rr'  : False,
 				 	'srv' : [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls):
-		disableShortExpirations()
+	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
-	def test_expireCNT(self):
-		self.assertIsNotNone(TestExpiration.cse)
+	def test_expireCNT(self) -> None:
+		""" Create and expire <CNT> """
+		self.assertTrue(isTestExpirations())
 		self.assertIsNotNone(TestExpiration.ae)
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
 					'et' : getDate(expirationCheckDelay) # 2 seconds in the future
 				}}
-		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, jsn)
+		_, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
 		time.sleep(expirationSleep)	# give the server a moment to expire the resource
 		
-		r, rsc = RETRIEVE(cntURL, TestExpiration.originator)
+		_, rsc = RETRIEVE(cntURL, TestExpiration.originator)
 		self.assertEqual(rsc, RC.notFound)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
-	def test_expireCNTAndCIN(self):
-		self.assertIsNotNone(TestExpiration.cse)
+	def test_expireCNTAndCIN(self) -> None:
+		""" Create and expire <CNT> and <CIN> """
+		self.assertTrue(isTestExpirations())
 		self.assertIsNotNone(TestExpiration.ae)
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'et' : getDate(expirationCheckDelay), # 2 seconds in the future
 					'rn' : cntRN
 				}}
-		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, jsn)
+		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
-		jsn = 	{ 'm2m:cin' : {
+		dct = 	{ 'm2m:cin' : {
 					'cnf' : 'a',
 					'con' : 'AnyValue'
 				}}
 		for _ in range(0, 5):
-			r, rsc = CREATE(cntURL, TestExpiration.originator, T.CNT, jsn)
+			r, rsc = CREATE(cntURL, TestExpiration.originator, T.CIN, dct)
 			self.assertEqual(rsc, RC.created)
 			cinRn = findXPath(r, 'm2m:cin/rn')
 		self.assertIsNotNone(cinRn)
@@ -102,14 +93,14 @@ class TestExpiration(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createCNTWithToLargeET(self):
-		self.assertIsNotNone(TestExpiration.cse)
+	def test_createCNTWithToLargeET(self) -> None:
+		"""	Create <CNT> and long ET -> Corrected ET """
 		self.assertIsNotNone(TestExpiration.ae)
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
 					'et' : '99991231T235959'	# wrongly updated
 				}}
-		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, jsn)
+		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertLess(findXPath(r, 'm2m:cnt/et'), '99991231T235959')
 		r, rsc = DELETE(cntURL, TestExpiration.originator)
@@ -117,33 +108,33 @@ class TestExpiration(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createCNTExpirationInThePast(self):
-		self.assertIsNotNone(TestExpiration.cse)
+	def test_createCNTExpirationInThePast(self) -> None:
+		"""	Create <CNT> and ET in the past -> Fail """
 		self.assertIsNotNone(TestExpiration.ae)
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
 					'et' : getDate(-60) # 1 minute in the past
 				}}
-		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, jsn)
+		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.badRequest)
 		# should fail
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCNTWithEtNull(self):
-		self.assertIsNotNone(TestExpiration.cse)
+	def test_updateCNTWithEtNull(self) -> None:
+		""" Update <CNT> and remove ET in another update """
 		self.assertIsNotNone(TestExpiration.ae)
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
 					'et' : getDate(60) # 1 minute in the future
 				}}
-		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, jsn)
+		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone((origEt := findXPath(r, 'm2m:cnt/et')))
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'et' : None # 1 minute in the future
 				}}
-		r, rsc = UPDATE(cntURL, TestExpiration.originator, jsn)
+		r, rsc = UPDATE(cntURL, TestExpiration.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 	
 		r, rsc = DELETE(cntURL, TestExpiration.originator)
@@ -151,25 +142,25 @@ class TestExpiration(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
-	def test_expireCNTViaMIA(self):
-		self.assertIsNotNone(TestExpiration.cse)
+	def test_expireCNTViaMIA(self) -> None:
+		""" Expire <CNT> via MIA """
+		self.assertTrue(isTestExpirations())
 		self.assertIsNotNone(TestExpiration.ae)
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
 					'mia': expirationCheckDelay
 				}}
-		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, jsn)
+		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertEqual(findXPath(r, 'm2m:cnt/mia'), expirationCheckDelay)
 
-		jsn = 	{ 'm2m:cin' : {
+		dct = 	{ 'm2m:cin' : {
 					'cnf' : 'a',
 					'con' : 'AnyValue'
 				}}
 
 		for _ in range(0, 5):
-			r, rsc = CREATE(cntURL, TestExpiration.originator, T.CNT, jsn)
+			r, rsc = CREATE(cntURL, TestExpiration.originator, T.CIN, dct)
 			self.assertEqual(rsc, RC.created)
 
 		time.sleep(expirationSleep)	# give the server a moment to expire the CIN's
@@ -183,25 +174,25 @@ class TestExpiration(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
-	def test_expireCNTViaMIALarge(self):
-		self.assertIsNotNone(TestExpiration.cse)
+	def test_expireCNTViaMIALarge(self) -> None:
+		""" Expire <CNT> via too large MIA """
+		self.assertTrue(isTestExpirations())
 		self.assertIsNotNone(TestExpiration.ae)
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
 					'mia': tooLargeExpirationDelta()
 				}}
-		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, jsn)
+		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertEqual(findXPath(r, 'm2m:cnt/mia'), tooLargeExpirationDelta())
 
-		jsn = 	{ 'm2m:cin' : {
+		dct = 	{ 'm2m:cin' : {
 					'cnf' : 'a',
 					'con' : 'AnyValue'
 				}}
 		tooLargeET = getDate(tooLargeExpirationDelta())
 		for _ in range(0, 5):
-			r, rsc = CREATE(cntURL, TestExpiration.originator, T.CNT, jsn)
+			r, rsc = CREATE(cntURL, TestExpiration.originator, T.CIN, dct)
 			self.assertEqual(rsc, RC.created)
 			self.assertLess(findXPath(r, 'm2m:cin/et'), tooLargeET)
 
@@ -216,43 +207,46 @@ class TestExpiration(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipUnless(isTestExpirations(), 'Couldn\'t reconfigure expiration check')
-	def test_expireFCNTViaMIA(self):
-		self.assertIsNotNone(TestExpiration.cse)
+	def test_expireFCNTViaMIA(self) -> None:
+		""" Expire <FCNT> via MIA """
+		self.assertTrue(isTestExpirations())
 		self.assertIsNotNone(TestExpiration.ae)
-		jsn = 	{ 'hd:tempe' : { 
+		dct = 	{ 'cod:tempe' : { 
 					'rn'	: fcntRN,
 					'cnd' 	: CND,
 					'mia'	: expirationCheckDelay,
 					'curT0'	: 23.0
 				}}
-		r, rsc = CREATE(aeURL, TestExpiration.originator, T.FCNT, jsn)
+		r, rsc = CREATE(aeURL, TestExpiration.originator, T.FCNT, dct)
 		self.assertEqual(rsc, RC.created)
-		self.assertEqual(findXPath(r, 'hd:tempe/mia'), expirationCheckDelay)
-		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 1)
-		self.assertGreater(findXPath(r, 'hd:tempe/cbs'), 0)	
+		self.assertEqual(findXPath(r, 'cod:tempe/mia'), expirationCheckDelay)
+		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 1)
+		self.assertGreater(findXPath(r, 'cod:tempe/cbs'), 0)	
 
-		jsn = 	{ 'hd:tempe' : {
+		dct = 	{ 'cod:tempe' : {
 					'tarTe':	5.0
 				}}
 		for _ in range(0, 5):
-			r, rsc = UPDATE(fcntURL, TestExpiration.originator, jsn)
+			r, rsc = UPDATE(fcntURL, TestExpiration.originator, dct)
 			self.assertEqual(rsc, RC.updated)
-		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 6)
-		self.assertGreater(findXPath(r, 'hd:tempe/cbs'), 0)	
+		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 6)
+		self.assertGreater(findXPath(r, 'cod:tempe/cbs'), 0)	
 
 		time.sleep(expirationSleep)	# give the server a moment to expire the CIN's
 
 		r, rsc = RETRIEVE(fcntURL, TestExpiration.originator)
 		self.assertEqual(rsc, RC.OK)
-		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 0)	# no children anymore
-		self.assertEqual(findXPath(r, 'hd:tempe/cbs'), 0)	
+		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 0)	# no children anymore
+		self.assertEqual(findXPath(r, 'cod:tempe/cbs'), 0)	
 
 		r, rsc = DELETE(fcntURL, TestExpiration.originator)
 		self.assertEqual(rsc, RC.deleted)
-# TODO same with fcnt
 
-def run():
+
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
+	# Reconfigure the server to check faster for expirations.
+	enableShortExpirations()
+	
 	suite = unittest.TestSuite()
 	suite.addTest(TestExpiration('test_expireCNT'))
 	suite.addTest(TestExpiration('test_expireCNTAndCIN'))
@@ -263,9 +257,11 @@ def run():
 	suite.addTest(TestExpiration('test_expireCNTViaMIALarge'))
 	suite.addTest(TestExpiration('test_expireFCNTViaMIA'))
 
-	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
+	disableShortExpirations()
+	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':
-	_, errors, _ = run()
+	_, errors, _ = run(2, True)
 	sys.exit(errors)

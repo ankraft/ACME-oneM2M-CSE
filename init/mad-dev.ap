@@ -1,0 +1,93 @@
+// Created by SDTTool
+// oneM2M Release: 4.5.0
+// Domain:         org.onem2m.management
+[
+    // SubDevice: dmAreaNwkInfo
+    {
+        "type"      : "mad:dANI0",
+        "lname"     : "dANIo",
+        "cnd"       : "org.onem2m.management.subdevice.dmAreaNwkInfo",
+        "children"  : [
+            "mad:dANDI"
+        ]
+    },
+
+    // SubDevice Announced: dmAreaNwkInfoAnnc
+    {
+        "type"      : "mad:dANI0Annc",
+        "lname"     : "dANIoAnnc",
+        "cnd"       : "org.onem2m.management.subdevice.dmAreaNwkInfoAnnc",
+        "children"  : [
+            "mad:dANDI", 
+            "mad:dANDIAnnc"
+        ]
+    }
+
+,
+    // DeviceClass: flexNode
+    {
+        "type"      : "mad:fleNe",
+        "lname"     : "flexNode",
+        "cnd"       : "org.onem2m.management.device.flexNode",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "mad:dmgAt", 
+            "mad:dmDIo", 
+            "mad:dDMIO", 
+            "mad:dmiFe", 
+            "mad:dmoSe", 
+            "mad:dmELg", 
+            "mad:dmaPe", 
+            "cod:bat", 
+            "mad:dmaCy", 
+            "mad:dmtSe", 
+            "mad:dANIo"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: flexNodeAnnc
+    {
+        "type"      : "mad:fleNeAnnc",
+        "lname"     : "flexNodeAnnc",
+        "cnd"       : "org.onem2m.management.device.flexNodeAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "mad:dmgAt", 
+            "mad:dmgAtAnnc", 
+            "mad:dmDIo", 
+            "mad:dmDIoAnnc", 
+            "mad:dDMIO", 
+            "mad:dDMIOAnnc", 
+            "mad:dmiFe", 
+            "mad:dmiFeAnnc", 
+            "mad:dmoSe", 
+            "mad:dmoSeAnnc", 
+            "mad:dmELg", 
+            "mad:dmELgAnnc", 
+            "mad:dmaPe", 
+            "mad:dmaPeAnnc", 
+            "cod:bat", 
+            "cod:batAnnc", 
+            "mad:dmaCy", 
+            "mad:dmaCyAnnc", 
+            "mad:dmtSe", 
+            "mad:dmtSeAnnc", 
+            "mad:dANIo", 
+            "mad:dANIoAnnc"
+        ]
+    }
+
+
+]

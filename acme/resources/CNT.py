@@ -11,17 +11,19 @@ from typing import List
 from Logging import Logging
 from Configuration import Configuration
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ResponseCode as RC
+from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 from Validator import constructPolicy, addPolicy
 import Utils, CSE
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
+import resources.Factory as Factory
+
+
 
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'daci', 'loc',
-	'cr', 
+	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'daci', 'loc', 'hld', 'cr',
 ])
 cntPolicies = constructPolicy([
 	'mni', 'mbs', 'mia', 'cni', 'cbs', 'li', 'or', 'disr'
@@ -32,16 +34,18 @@ attributePolicies =  addPolicy(attributePolicies, cntPolicies)
 class CNT(AnnounceableResource):
 
 
-	def __init__(self, jsn:dict=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.CNT, jsn, pi, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.CNT, dct, pi, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = cntPolicies	# only the resource type's own policies
 
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite=False)
 			self.setAttribute('mbs', Configuration.get('cse.cnt.mbs'), overwrite=False)
 			self.setAttribute('cni', 0, overwrite=False)
 			self.setAttribute('cbs', 0, overwrite=False)
+
+		self.__validating = False	# semaphore for validating
 
 
 	# Enable check for allowed sub-resources
@@ -57,18 +61,18 @@ class CNT(AnnounceableResource):
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
+		
 
 		# register latest and oldest virtual resources
 		Logging.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		latestResource = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.CNT_LA).resource
+		latestResource = Factory.resourceFromDict({}, pi=self.ri, ty=T.CNT_LA).resource		# rn is assigned by resource itself
 		if (res := CSE.dispatcher.createResource(latestResource)).resource is None:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
 		# add oldest
-		oldestResource = Utils.resourceFromJSON({}, pi=self.ri, acpi=self.acpi, ty=T.CNT_OL).resource
-	
+		oldestResource = Factory.resourceFromDict({}, pi=self.ri, ty=T.CNT_OL).resource		# rn is assigned by resource itself
 		if (res := CSE.dispatcher.createResource(oldestResource)).resource is None:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
@@ -77,7 +81,7 @@ class CNT(AnnounceableResource):
 
 	# Get all content instances of a resource and return a sorted (by ct) list 
 	def contentInstances(self) -> List[Resource]:
-		return sorted(CSE.dispatcher.directChildResources(self.ri, T.CIN), key=lambda x: (x.ct))
+		return sorted(CSE.dispatcher.directChildResources(self.ri, T.CIN), key=lambda x: (x.ct))	# type: ignore[no-any-return]
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
@@ -122,16 +126,24 @@ class CNT(AnnounceableResource):
 
 	# Validating the Container. This means recalculating cni, cbs as well as
 	# removing ContentInstances when the limits are met.
-	def validate(self, originator:str=None, create:bool=False) -> Result:
-		if (res := super().validate(originator, create)).status == False:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
+		if (res := super().validate(originator, create, dct)).status == False:
 			return res
-		return self._validateChildren()
+		self._validateChildren()
+		return Result(status=True)
 
 
-	def _validateChildren(self) -> Result:
+	# TODO Align this and FCNT implementations
+	
+	def _validateChildren(self) -> None:
 		""" Internal validation and checks. This called more often then just from
 			the validate() method.
 		"""
+		# Check whether we already are in validation the children (ie prevent unfortunate recursion by the Dispatcher)
+		if self.__validating:
+			return
+		self.__validating = True
+
 		# retrieve all children
 		cs = self.contentInstances()
 
@@ -141,11 +153,11 @@ class CNT(AnnounceableResource):
 		i = 0
 		l = cni
 		while cni > mni and i < l:
+			Logging.logDebug(f'cni > mni: Removing <cin>: {cs[i].ri}')
 			# remove oldest
-			CSE.dispatcher.deleteResource(cs[i])
-			cni -= 1
+			CSE.dispatcher.deleteResource(cs[i], parentResource=self)
+			cni -= 1	# decrement cni
 			i += 1
-		self['cni'] = cni
 
 		# check size
 		cs = self.contentInstances()	# get CINs again
@@ -156,15 +168,19 @@ class CNT(AnnounceableResource):
 		i = 0
 		l = len(cs)
 		while cbs > mbs and i < l:
+			Logging.logDebug(f'cbs > mbs: Removing <cin>: {cs[i].ri}')
+
 			# remove oldest
 			cbs -= cs[i]['cs']
-			CSE.dispatcher.deleteResource(cs[i])
+			CSE.dispatcher.deleteResource(cs[i], parentResource=self)
+			cni -= 1	# again, decrement cni when deleting a cni
 			i += 1
-		self['cbs'] = cbs
-
-		# TODO: support maxInstanceAge
 
 		# Some CNT resource may have been updated, so store the resource 
+		self['cni'] = cni
+		self['cbs'] = cbs
 		self.dbUpdate()
+	
+		# End validating
+		self.__validating = False
 
-		return Result(status=True)

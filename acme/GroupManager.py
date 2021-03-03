@@ -10,10 +10,13 @@
 from Logging import Logging
 from typing import Union, List
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseCode as RC, CSERequest
+from Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseCode as RC, CSERequest, JSON
 import CSE, Utils
 from resources import FCNT, MgmtObj
 from resources.Resource import Resource
+from resources.GRP_FOPT import GRP_FOPT
+import resources.Factory as Factory
+
 
 class GroupManager(object):
 
@@ -59,7 +62,7 @@ class GroupManager(object):
 		# check for duplicates and remove them
 		midsList = []		# contains the real mi
 
-		remoteResource:dict = None
+		remoteResource:JSON = None
 		rsc 					= 0
 
 		for mid in group['mid']:
@@ -67,13 +70,13 @@ class GroupManager(object):
 			#Check whether it is a local resource or not
 			if Utils.isSPRelative(mid):
 				targetCSE = f'/{mid.split("/")[0]}'
-				if targetCSE != CSE.Configuration.get('cse.csi'):
+				if targetCSE != CSE.cseCsi:
 					""" RETRIEVE member from a remote CSE """
 					isLocalResource = False
-					if (url := CSE.remote._getForwardURL(mid)) is None:
+					if (url := CSE.request._getForwardURL(mid)) is None:
 						return Result(status=False, rsc=RC.notFound, dbg=f'forwarding URL not found for group member: {mid}')
 					Logging.log(f'Retrieve request to: {url}')
-					remoteResult = CSE.httpServer.sendRetrieveRequest(url, CSE.Configuration.get('cse.csi'))
+					remoteResult = CSE.request.sendRetrieveRequest(url, CSE.cseCsi)
 
 			# get the resource and check it
 			hasFopt = False
@@ -84,13 +87,13 @@ class GroupManager(object):
 					return Result(status=False, rsc=RC.notFound, dbg=res.dbg)
 				resource = res.resource
 			else:
-				if remoteResult.jsn is None:
+				if remoteResult.dict is None or len(remoteResult.dict) == 0:
 					if remoteResult.rsc == RC.originatorHasNoPrivilege:  # CSE has no privileges for retrieving the member
 						return Result(status=False, rsc=RC.receiverHasNoPrivileges, dbg='wrong privileges for CSE to retrieve remote resource')
 					else:  # Member not found
 						return Result(status=False, rsc=RC.notFound, dbg=f'remote resource not found: {mid}')
 				else:
-					resource = Utils.resourceFromJSON(remoteResult.jsn).resource
+					resource = Factory.resourceFromDict(remoteResult.dict).resource
 
 			# skip if ri is already in th
 			if isLocalResource:
@@ -148,7 +151,7 @@ class GroupManager(object):
 
 
 
-	def foptRequest(self, operation:Operation, fopt:Resource, request:CSERequest, id:str, originator:str) -> Result:
+	def foptRequest(self, operation:Operation, fopt:GRP_FOPT, request:CSERequest, id:str, originator:str) -> Result:
 		"""	Handle requests to a fanOutPoint. 
 		This method might be called recursivly, when there are groups in groups."""
 
@@ -169,7 +172,7 @@ class GroupManager(object):
 		Logging.logDebug(f'Adding additional path elements: {tail}')
 
 		# walk through all members
-		resultList:List[Result] = []
+		resultList:list[Result] = []
 
 		tail = '/' + tail if len(tail) > 0 else '' # add remaining path, if any
 		for mid in group.mid.copy():	# copy mi because it is changed in the loop
@@ -202,14 +205,14 @@ class GroupManager(object):
 				if result.resource is not None and isinstance(result.resource, Resource):
 					item = 	{ 'rsc' : result.rsc, 
 							  'rqi' : request.headers.requestIdentifier,
-							  'pc'  : result.resource.asJSON() if isinstance(result.resource, Resource) else result.resource, # in case 'resource' is a dict
+							  'pc'  : result.resource.asDict() if isinstance(result.resource, Resource) else result.resource, # in case 'resource' is a dict
 							  'to'  : result.resource[Resource._srn],
-							  'rvi'	: '3'	# TODO constant?
+							  'rvi'	: '3'	# TODO constant? from conifguration
 							}
 				else:	# e.g. when deleting
 					item = 	{ 'rsc' : result.rsc, 
 					  'rqi' : request.headers.requestIdentifier,
-					  'rvi'	: '3'	# TODO constant?
+					  'rvi'	: '3'	# TODO constant? from configuration
 					}
 				items.append(item)
 			rsp = { 'm2m:rsp' : items}

@@ -12,11 +12,11 @@
 #
 
 [cse]
-# CSE type. Possible values: IN, MN, ASN. Default: IN
+# CSE type. Allowed values: IN, MN, ASN. Default: IN
 type=IN
 # The CSE's service provider ID. Default: acme
 serviceProviderID=acme
-# The CSE ID. Can be overwritten in imported CSE definition. Default: id-in
+# The CSE ID. Can be overwritten in imported CSE definition. Default: /id-in
 cseID=/id-in
 # The CSE's resource ID. Can be overwritten in imported CSE definition. Default: id-in
 resourceID=id-in
@@ -24,14 +24,14 @@ resourceID=id-in
 resourceName=cse-in
 # Directory of default resources to import. Default: ./init
 resourcesPath=./init
-# ExpirationTime before resources are removed in seconds. Default: 60*60*24*365 = 1 year = 31536000
+# ExpirationTime before resources are removed in seconds. Default: 60*60*24*365 -> 1 year -> 31536000
 expirationDelta=31536000
-# Maximum expirationTime allowed for resources in seconds. Default: 5 years = 157680000 
+# Maximum expirationTime allowed for resources in seconds. Default: 5 years -> 157680000 
 maxExpirationDelta=157680000
 # Admin originator for the CSE. Default: CAdmin
 originator=CAdmin
 # Enable internal applications.
-# See also individual application configuratins in the [app. ...] sections.
+# See also individual application configurations in the [app. ...] sections.
 # Default: True
 enableApplications=true
 # Delay after the CSE startup to run internal applications in seconds. Default: 5 seconds
@@ -48,7 +48,14 @@ enableValidation=true
 sortDiscoveredResources=true
 # Interval to check for expired resources. 0 means "no checking". Default: 60 seconds
 checkExpirationsInterval=60
-
+# A comma-separated list of supported release versions. This list can contain a single or multiple values.
+# Default: 1,2,2a,3,4
+supportedReleaseVersions=1,2,2a,3,4
+# The release version indicator for requests. Allowed values: 1,2,3,3a,4. Default: 3
+releaseVersion=3
+# Indicate the serialization format if none was given in a request and cannot be determined otherwise.
+# Allowed values: json, cbor. Default: json
+defaultSerialization=json
 
 #
 #	Settings for CSE security
@@ -56,18 +63,9 @@ checkExpirationsInterval=60
 [cse.security]
 # Enable access control checks. Default: True
 enableACPChecks=true
-# Admin ACP, resource identifier (e.g. from an imported ACP). 
-# Assigned by the CSE for admin access.
-# Default: acpAdmin
-adminACPI=acpAdmin
-# Default ACP, resource identifier (e.g. from an imported ACP). 
-# Assigned by the CSE in case the 'acpi' attribute is missing in a resource.
-# Default: acpDefault
-defaultACPI=acpDefault
-# The ACP resource that will dynamically receive permissions to access the CSEBase.
-# They are assigned, for example, during AE or remoteCSE registration.
-# Default: acpCSEBaseAccess
-csebaseAccessACPI=acpCSEBaseAccess
+# Always grant the admin originator full access (bypass access checks). 
+# Default: True
+fullAccessAdmin=True
 # Enable TLS for communications.
 # See oneM2M TS-0003 Clause 8.2.1 Overview on Security Association Establishment Frameworks
 # Default: False
@@ -105,8 +103,12 @@ multiThread=true
 # ATTENTION: Enabling this feature exposes configuration values, IDs and
 # passwords, and is a security risk.
 # Default: False
-enableRemoteConfiguration=true
-
+enableRemoteConfiguration=false
+# Enable an endpoint for getting a structured overview about a CSE's resource
+# tree and deployment infrastructure (remote CSE's)
+# ATTENTION: Enabling this feature exposes various potentially sensitive information.
+# Default: False
+enableStructureEndpoint=false
 
 #
 #	Database settings
@@ -139,6 +141,31 @@ allowedAEOriginators=C.*,S.*
 # Note: No leading "/"
 # Default: empty list
 allowedCSROriginators=id-mn
+# Check the liveliness if the registrations to the registrar CSE and also from the registree CSEs. Default: True
+checkLiveliness=True
+
+
+#
+#	Settings for Registrar CSE access 
+#
+
+[cse.registrar]
+# URL of the Registrar CSE. Default: no default
+address=http://127.0.0.1:8081
+# Registrar CSE root path. Default: /
+root=/
+# CSE-ID of the Registrar CSE. Default: None
+cseID=/id-in
+# The Registrar CSE's resource name. Default: None
+resourceName=cse-in
+# Specify the serialization type that must be used for the registration to the registrar CSE.
+# Allowed values: json, cbor. Default: json
+serialization=json
+# Wait n seconds between tries to to connect to the Registrar CSE and to check validity of Registrar CSE connections in seconds.
+# Default: 30
+checkInterval=30
+# List of resources that are excluded when creating a registrar CSR. Default: empty list
+excludeCSRAttributes=
 
 
 #
@@ -148,34 +175,20 @@ allowedCSROriginators=id-mn
 [logging]
 # Enable logging. Default: True
 enable=true
-# Enable logging to file. Default: True
-enableFileLogging=true
+# Enable logging to file. Default: False
+enableFileLogging=False
+# Enable logging to the screen. Default: True
+enableScreenLogging=true
 # Path to the log files. Default: ./logs
 path=./logs
-# Loglevel. Possible values: debug, info, warning, error. Default debug
+# Loglevel. Allowed values: debug, info, warning, error. Default: debug
 level=debug
 # Number of files for log rotation. Default: 10
 count=10
 # Size per log file. Default: 100.000 bytes
 size=100000
-
-
-#
-#	Settings for remote CSE access 
-#
-
-[cse.registrar]
-# URL of the remote CSE. Default: no default
-address=http://127.0.0.1:8081
-# Remote CSE root path. Default: /
-root=/
-# CSE-ID of the remote CSE. Default: None
-cseID=/in-cse
-# The remote CSE's resource name. Default: None
-resourceName=cse-in
-# Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.
-# Default: 30
-checkInterval=30
+# Print a stack trace when logging an 'error' level message. Default: True
+stackTraceOnError=False
 
 
 #
@@ -210,8 +223,8 @@ writeIntervall=60
 permission=63
 # Default selfPermission when creating an ACP resource. Default: 51
 selfPermission=51
-# Always add the CSE's "admin" originator to an ACP. Default: true
-addAdminOrignator=true
+# Always add the CSE's "admin" originator to an ACP. Default: false
+addAdminOrignator=false
 
 
 #
@@ -285,8 +298,8 @@ root=/webui
 enable=true
 # Resource name of the statistics AE. Default: statistics
 aeRN=statistics
-# App-ID of the statistics AE. Default: ae-statistics
-aeAPI=ae-statistics
+# App-ID of the statistics AE. Must start with "N" or "R". Default: Nstatistics
+aeAPI=Nstatistics
 # Resource name of the statistics flexContainer. Default: statistics
 fcntRN=statistics
 # Content Definition of the AE's flexContainer. This is a proprietary CND. Default: acme.statistics

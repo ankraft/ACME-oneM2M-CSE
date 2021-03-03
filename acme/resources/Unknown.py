@@ -11,13 +11,13 @@
 #
 
 from .Resource import Resource
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, JSON
 
 
 class Unknown(Resource):
 
-	def __init__(self, jsn: dict, tpe: str, pi: str = None, create: bool = False) -> None:
-		super().__init__(T.UNKNOWN, jsn, pi, tpe=tpe, create=create)
+	def __init__(self, dct:JSON, tpe:str, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.UNKNOWN, dct, pi, tpe=tpe, create=create)
 
 	# Enable check for allowed sub-resources (ie. all)
 	def canHaveChild(self, resource: Resource) -> bool:

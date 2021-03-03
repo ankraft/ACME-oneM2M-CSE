@@ -12,9 +12,10 @@ from NodeBase import *
 from Logging import Logging
 from Configuration import Configuration
 from resources import BAT
+import CSE, Utils
 # import psutil 	# type: ignore
 import socket, platform, re, uuid, traceback
-from Types import ResponseCode as RC
+from Types import ResponseCode as RC, JSON
 
 
 
@@ -52,14 +53,14 @@ class CSENode(NodeBase):
 
 	# Set this node as the hosting node for the CSE Base
 	def updateCSEBase(self) -> None:
-		if (result := self.retrieveResource(ri=self.csi)).rsc != RC.OK:
+		if (result := self.retrieveResource(ri=CSE.cseCsi)).rsc != RC.OK:
 			Logging.logErr('CSENode: cannot retrieve CSEBase')
 			return
-		jsn =	{ 'm2m:cb' : {
-					'nl' : self.node.ri
+		dct:JSON = { 'm2m:cb' : {
+						'nl' : self.node.ri
 					}
 				}
-		self.updateResource(ri=self.csi, jsn=jsn) # ignore result
+		self.updateResource(ri=CSE.cseCsi, data=dct) # ignore result
 
 
 
@@ -105,7 +106,7 @@ class CSENode(NodeBase):
 
 
 	def _checkMemory(self) -> None:
-		import psutil 	# type: ignore
+		import psutil
 		if self.memory is not None:
 			mmt = psutil.virtual_memory().total
 			mma = psutil.virtual_memory().available
@@ -118,8 +119,11 @@ class CSENode(NodeBase):
 
 	def _checkDeviceInfo(self) -> None:
 		if self.deviceInfo is not None:
-			self.deviceInfo['dvnm'] = socket.gethostname()
-			self.deviceInfo['osv'] = f'{platform.system()} {platform.release()} {platform.machine()}'
-			self.deviceInfo['syst'] = Utils.getResourceDate()
-			self.deviceInfo['dlb'] = f'| IP:{socket.gethostbyname(socket.gethostname())} MAC:{":".join(re.findall("..", "%012x" % uuid.getnode()))}'
-			self.updateDeviceInfo()
+			try:
+				self.deviceInfo['dvnm'] = socket.gethostname()
+				self.deviceInfo['osv'] = f'{platform.system()} {platform.release()} {platform.machine()}'
+				self.deviceInfo['syst'] = Utils.getResourceDate()
+				self.deviceInfo['dlb'] = f'| IP:{socket.gethostbyname(socket.gethostname())} MAC:{":".join(re.findall("..", "%012x" % uuid.getnode()))}'
+				self.updateDeviceInfo()
+			except Exception as e:
+				Logging.logDebug(str(e))

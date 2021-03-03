@@ -7,20 +7,20 @@
 #	Base class for all announceable resources
 #
 
-
+from __future__ import annotations
+from copy import deepcopy
 from .Resource import *
-import Utils
-from Types import ResourceTypes as T, Result
-from Types import Announced as AN 		# type: ignore
+from typing import Union
+import Utils, CSE
+from Types import ResourceTypes as T, Result, AttributePolicies, JSON, AttributePolicies
+from Types import Announced as AN 
 from Validator import addPolicy
-
-# TODO Update
-# TODO Activate
+from Logging import Logging
 
 class AnnounceableResource(Resource):
 
-	def __init__(self, ty:Union[T, int], jsn:dict=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str=None, attributePolicies:dict=None, isVirtual:bool=False) -> None:
-		super().__init__(ty, jsn, pi, tpe=tpe, create=create, inheritACP=inheritACP, readOnly=readOnly, rn=rn, attributePolicies=attributePolicies, isVirtual=isVirtual)
+	def __init__(self, ty:T, dct:JSON=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str=None, attributePolicies:AttributePolicies=None, isVirtual:bool=False) -> None:
+		super().__init__(ty, dct, pi, tpe=tpe, create=create, inheritACP=inheritACP, readOnly=readOnly, rn=rn, attributePolicies=attributePolicies, isVirtual=isVirtual)
 		self._origAA = None	# hold original announceableAttributes when doing an update
 
 
@@ -44,11 +44,11 @@ class AnnounceableResource(Resource):
 		super().deactivate(originator)
 
 
-	def update(self, jsn:dict=None, originator:str=None) -> Result:
+	def update(self, dct:JSON=None, originator:str=None) -> Result:
 		Logging.logDebug(f'Updating AnnounceableResource: {self.ri}')
 		self._origAA = self.aa
 		self._origAT = self.at
-		if not (res := super().update(jsn=jsn, originator=originator)).status:
+		if not (res := super().update(dct=dct, originator=originator)).status:
 			return res
 
 		# Check announcements
@@ -61,74 +61,74 @@ class AnnounceableResource(Resource):
 
 
 
-	def validate(self, originator:str=None, create:bool=False) -> Result:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		Logging.logDebug(f'Validating AnnounceableResource: {self.ri}')
-		if (res := super().validate(originator, create)).status == False:
+		if (res := super().validate(originator, create, dct)).status == False:
 			return res
 
 		announceableAttributes = []
 		if self.aa is not None:
-			announceableAttributes = self.aa.copy()
+			announceableAttributes = deepcopy(self.aa)
 		for attr, v in self.attributePolicies.items():
 			# Removing non announceable attributes
-			if attr in announceableAttributes and v[5] == AN.NA:  # remove attributes which are not announceable
-				announceableAttributes.remove(attr)
+			if attr in announceableAttributes:
+				if v[5] == AN.NA:  # remove attributes which are not announceable
+					announceableAttributes.remove(attr)
+					continue
+				if not self.hasAttribute(attr):	# remove attributes that are in aa but not in the resource
+					announceableAttributes.remove(attr)
+					continue
+
 
 		# If announceableAttributes is now an empty list, set aa to None
 		self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
-		self.dbUpdate()
 		return Result(status=True)
 
 
-	# create the json stub for the announced resource
-	def createAnnouncedResourceJSON(self, remoteCSR:Resource, isCreate:bool=False, csi:str=None) ->  dict:
+	def createAnnouncedResourceDict(self, remoteCSR:Resource, isCreate:bool=False, csi:str=None) -> JSON:
+		"""	Create the dict stub for the announced resource.
+		"""
 		# special case for FCNT, FCI
 		if (additionalAttributes := CSE.validator.getAdditionalAttributesFor(self.tpe)) is not None:
-			# policies = addPolicy(self.resourceAttributePolicies.copy(), additionalAttributes)
-			policies = addPolicy(self.attributePolicies.copy(), additionalAttributes)
-			return self._createAnnouncedJSON(policies, remoteCSR, isCreate=isCreate, remoteCsi=csi)
+			# policies = addPolicy(deepcopy(self.resourceAttributePolicies), additionalAttributes)
+			policies = addPolicy(deepcopy(self.attributePolicies), additionalAttributes)
+			return self._createAnnouncedDict(policies, remoteCSR, isCreate=isCreate, remoteCsi=csi)
 		# Normal behaviour for other resources
-		# return self._createAnnouncedJSON(self.resourceAttributePolicies, remoteCSR, isCreate=isCreate, remoteCsi=csi)
-		jsn = self._createAnnouncedJSON(self.attributePolicies, remoteCSR, isCreate=isCreate, remoteCsi=csi)
-		return self.validateAnnouncedJSON(jsn)
+		return self.validateAnnouncedDict( self._createAnnouncedDict(self.attributePolicies, remoteCSR, isCreate=isCreate, remoteCsi=csi) )
 
 
-	def validateAnnouncedJSON(self, jsn:dict) -> dict:
-		""" Possibility to add or modify the announced JSON. This can be implemented
+	def validateAnnouncedDict(self, dct:JSON) -> JSON:
+		""" Possibility to add or modify the announced Dict. This can be implemented
 			in the child classes.
 		"""
-		return jsn
+		return dct
 
 
-	# Actually create the json
-	def _createAnnouncedJSON(self, policies:Dict[str, List[Any]], remoteCSR:Resource, isCreate:bool=False, remoteCsi:str=None) -> dict:
+	def _createAnnouncedDict(self, policies:AttributePolicies, remoteCSR:Resource, isCreate:bool=False, remoteCsi:str=None) -> JSON:
+		"""	Actually create the resource dict.
+		"""
 		# Stub
 		if self.ty != T.MGMTOBJ:
 			tpe = T(self.ty).announced().tpe()
 		else:
-			tpe = T(self.ty).announcedMgd(self.mgd).tpe()
+			tpe = T.announcedMgd(self.mgd).tpe()
 
 		# get  all resource specific policies and add the mandatory ones
 		announcedAttributes = self._getAnnouncedAttributes(policies)
 
-
 		if isCreate:
-
-			localCsi = Configuration.get('cse.csi')
-
-			jsn = { tpe : {  # with the announced variant of the tpe
-						'et'	: self.et,
-						'lnk'	: f'{localCsi}/{self.ri}',
-						# set by parent: ri, pi, ct, lt, et
+			dct:JSON = { tpe : {  # with the announced variant of the tpe
+							'et'	: self.et,
+							'lnk'	: f'{CSE.cseCsi}/{self.ri}',
+						}
 				}
-			}
 			# Add more  attributes
-			body = jsn[tpe]
+			body = dct[tpe]
 			if (st := self.st) is not None:
 				body['st'] = st
 
 			if (lbl := self.lbl) is not None:
-				body['lbl'] = lbl.copy()
+				body['lbl'] = deepcopy(lbl)
 
 
 			# copy mandatoy and optional attributes
@@ -138,26 +138,31 @@ class AnnounceableResource(Resource):
 			#
 			#	overwrite (!) acpi
 			#
-			if (acpi := self.acpi) is not None:
-				acpi = [ '{localCsi}/{acpi}' for acpi in self.acpi ]
-			else:
-				acpi = []
+			# if (acpi := self.acpi) is not None:
+			# 	acpi = [ f'{CSE.cseCsi}/{acpi}' for acpi in self.acpi ]	# set to local CSE.csi
+			# else:
+			# 	acpi = None
 			# add remote acpi so that we will have access
-			if remoteCSR is not None and (regAcpi := remoteCSR.acpi) is not None:
-				if remoteCsi is not None:
-					# acpi.extend([f'{CSE.remote.cseCsi}/{a}' for a in regAcpi])
-					acpi.extend([a for a in regAcpi])
-				else:
-					acpi.extend(regAcpi)
-			Utils.setXPath(	jsn, f'{tpe}/acpi', acpi)
+			# if remoteCSR is not None and (regAcpi := remoteCSR.acpi) is not None:
+			# 	if remoteCsi is not None:
+			# 		# acpi.extend([f'{CSE.remote.cseCsi}/{a}' for a in regAcpi])
+			# 		acpi.extend([a for a in regAcpi])
+			# 	else:
+			# 		acpi.extend(regAcpi)
+			# Utils.setXPath(	dct, f'{tpe}/acpi', acpi)
+			if (acpi := self.acpi) is not None:
+				acpi = [ f'{CSE.cseCsi}/{acpi}' for acpi in self.acpi ]	# set to local CSE.csi
+				body['acpi'] = acpi
+				# Utils.setXPath(	dct, f'{tpe}/acpi', acpi)
+
 
 		else: # update. Works a bit different
 
 			if (modifiedAttributes := self[self._modified]) is None:
 				return None
 
-			jsn = { tpe : { } } # with the announced variant of the tpe
-			body = jsn[tpe]
+			dct = { tpe : { } } # with the announced variant of the tpe
+			body = dct[tpe]
 
 
 			# copy only the updated attributes
@@ -188,7 +193,7 @@ class AnnounceableResource(Resource):
 					if attr not in announcedAttributes:
 						body[attr] = None
 
-		return jsn
+		return dct
 
 
 	#########################################################################
@@ -204,7 +209,7 @@ class AnnounceableResource(Resource):
 	# 	optional = []
 	# 	announceableAttributes = []
 	# 	if self.aa is not None:
-	# 		announceableAttributes = self.aa.copy()
+	# 		announceableAttributes = deepcopy(self.aa)
 	# 	for attr,v in policies.items():
 	# 		# Removing non announceable attributes
 	# 		if attr in announceableAttributes and v[5] == AN.NA:  # remove attributes which are not announceable
@@ -219,7 +224,7 @@ class AnnounceableResource(Resource):
 	# 	self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
 
 	# 	return mandatory + optional
-	def _getAnnouncedAttributes(self, policies:Dict[str, List[Any]]) -> List[str]:
+	def _getAnnouncedAttributes(self, policies:AttributePolicies) -> list[str]:
 		"""	Return a list of mandatory and optional announced attributes. 
 			The function only returns those attributes that are also present in the resource!
 		"""

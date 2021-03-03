@@ -9,54 +9,77 @@
 
 import unittest, sys
 sys.path.append('../acme')
+from typing import Tuple
 from Constants import Constants as C
-from Types import ResponseCode as RC
+from Types import ResponseCode as RC, ResourceTypes as T
 from init import *
-
-# The following code must be executed before anything else because it influences
-# the collection of skipped tests.
-# It checks whether there actually is a CSE running.
-noCSE = not connectionPossible(cseURL)
 
 class TestMisc(unittest.TestCase):
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def setUpClass(cls):
+	def setUpClass(cls) -> None:
 		pass
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		pass
 
+	# TODO move to http test
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_checkHTTPRVI(self) -> None:
+		"""	Check RVI parameter in response """
+		_, rsc = RETRIEVE(cseURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIn('X-M2M-RVI', lastHeaders())
+		self.assertEqual(lastHeaders()['X-M2M-RVI'], RVI)
+
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createUnknownResourceType(self):
-		jsn = 	{ 'foo:bar' : { 
+	def test_createUnknownResourceType(self) -> None:
+		"""	Create an unknown resource type -> Fail """
+		dct = 	{ 'foo:bar' : { 
 					'rn' : 'foo',
 				}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, 999, jsn)
+		r, rsc = CREATE(cseURL, ORIGINATOR, 999, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createAlphaResourceType(self):
-		jsn = 	{ 'foo:bar' : { 
+	def test_createAlphaResourceType(self) -> None:
+		""" Create a resource with alphanumerical type -> Fail """
+		dct = 	{ 'foo:bar' : { 
 					'rn' : 'foo',
 				}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, 'wrong', jsn)
+		r, rsc = CREATE(cseURL, ORIGINATOR, 'wrong', dct)	# type: ignore # Ignore type of type
 		self.assertEqual(rsc, RC.badRequest)
 
 
-def run():
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createWithWrongResourceType(self) -> None:
+		"""	Create resource w -> Fail """
+		dct = 	{ 'm2m:ae' : { 
+					'rn' : 'foo',
+				}}
+		_, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
+		self.assertEqual(rsc, RC.badRequest)
+
+
+# TODO test for creating a resource with missing type parameter
+
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
+	suite.addTest(TestMisc('test_checkHTTPRVI'))
 	suite.addTest(TestMisc('test_createUnknownResourceType'))
 	suite.addTest(TestMisc('test_createAlphaResourceType'))
-	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	suite.addTest(TestMisc('test_createWithWrongResourceType'))
+
+	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
+	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':
-	_, errors, _ = run()
+	_, errors, _ = run(2, True)
 	sys.exit(errors)

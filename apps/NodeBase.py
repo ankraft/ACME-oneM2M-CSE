@@ -34,9 +34,10 @@ class NodeBase(AppBase):
 
 		# First check whether node exists and create it if necessary
 		self.node = self.retrieveCreate(srn=self.srn,
-										jsn={ T.NOD.tpe() : {
-											'rn' : self.rn,
-											'ni' : nodeID
+										data={
+											T.NOD.tpe() : {
+												'rn' : self.rn,
+												'ni' : nodeID
 											}
 										},
 										ty=T.NOD)
@@ -53,12 +54,13 @@ class NodeBase(AppBase):
 
 	def createBattery(self) -> None:
 		self.battery = self.retrieveCreate( srn=self.batRn,
-											jsn={ 'm2m:bat' : {
-												'mgd' : T.BAT,
-												'dc'  : 'battery',
-												'rn'  : 'battery',
-												'btl' : 0,
-												'bts' : BAT.btsUNKNOWN
+											data={
+												'm2m:bat' : {
+													'mgd' : T.BAT,
+													'dc'  : 'battery',
+													'rn'  : 'battery',
+													'btl' : 0,
+													'bts' : BAT.btsUNKNOWN
 												}
 											}
 										  )
@@ -66,7 +68,7 @@ class NodeBase(AppBase):
 
 	def updateBattery(self) -> None:
 		if self.battery is not None:
-			self.updateResource(ri=self.battery.ri, jsn=self.battery.asJSON(update=True, noACP=True))
+			self.updateResource(ri=self.battery.ri, data=self.battery.asDict(update=True, noACP=True))
 
 
 	#########################################################################
@@ -76,12 +78,13 @@ class NodeBase(AppBase):
 
 	def createMemory(self) -> None:
 		self.memory = self.retrieveCreate(	srn=self.memRn,
-											jsn={ 'm2m:mem' : {
-												'mgd' : T.MEM,
-												'dc'  : 'memory',
-												'rn'  : 'memory',
-												'mma' : 0,
-												'mmt' : 0
+											data={
+												'm2m:mem' : {
+													'mgd' : T.MEM,
+													'dc'  : 'memory',
+													'rn'  : 'memory',
+													'mma' : 0,
+													'mmt' : 0
 												}
 											}
 										  )
@@ -89,7 +92,7 @@ class NodeBase(AppBase):
 
 	def updateMemory(self) -> None:
 		if self.memory is not None:
-			self.updateResource(ri=self.memory.ri, jsn=self.memory.asJSON(update=True, noACP=True))
+			self.updateResource(ri=self.memory.ri, data=self.memory.asDict(update=True, noACP=True))
 
 
 	#########################################################################
@@ -99,23 +102,24 @@ class NodeBase(AppBase):
 
 	def createDeviceInfo(self) -> None:
 		self.deviceInfo = self.retrieveCreate(	srn=self.dviRn, 
-												jsn={ 'm2m:dvi' : {
-													'mgd' : T.DVI,
-													'dc'  : 'deviceInfo',
-													'rn'  : 'deviceinfo',
-													'dlb' : '',
-													'dty' : '',
-													'dvnm': '',
-													'man' : '',
-													'mod' : '',
-													'osv' : '',
-													'syst': Utils.getResourceDate()
+												data={
+													'm2m:dvi' : {
+														'mgd' : T.DVI,
+														'dc'  : 'deviceInfo',
+														'rn'  : 'deviceinfo',
+														'dlb' : '',
+														'dty' : '',
+														'dvnm': '',
+														'man' : '',
+														'mod' : '',
+														'osv' : '',
+														'syst': Utils.getResourceDate()
 													}
 												}
 											 )
 
 	def updateDeviceInfo(self) -> None:
 		if self.memory is not None:
-			self.updateResource(ri=self.deviceInfo.ri, jsn=self.deviceInfo.asJSON(update=True, noACP=True))
+			self.updateResource(ri=self.deviceInfo.ri, data=self.deviceInfo.asDict(update=True, noACP=True))
 
 

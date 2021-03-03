@@ -12,11 +12,9 @@ from typing import Any
 from AppBase import AppBase
 from NodeBase import NodeBase
 from Configuration import Configuration
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, JSON
 
 import CSE, Utils
-import json
-
 
 class AEBase(AppBase):
 				
@@ -26,7 +24,7 @@ class AEBase(AppBase):
 		self.originator 	= originator
 		self.ae 			= None
 		self.aeNodeBase 	= None
-		self.appData: dict	= None
+		self.appData:JSON	= None
 
 		# Get or create the hosting node
 		if nodeRN is not None and nodeID is not None:
@@ -37,15 +35,16 @@ class AEBase(AppBase):
 
 		# Get or create the AE resource
 		self.ae = self.retrieveCreate(	srn=self.srn,
-										jsn={ T.AE.tpe() : {
-											'rn' : self.rn,
-											'api' : api,
-											'nl' : self.aeNode.node.ri if self.aeNode.node is not None else None,
-											'poa' : [ Configuration.get('http.address') ],
-											'rr' : True,
-											'srv' : [ "3", "4" ],
-											'at' : [ '/id-in']
-											}
+										data={
+												T.AE.tpe() : {
+													'rn' : self.rn,
+													'api' : api,
+													'nl' : self.aeNode.node.ri if self.aeNode.node is not None else None,
+													'poa' : [ CSE.httpServer.serverAddress ],
+													'rr' : True,
+													'srv' : [ "3", "4" ],
+													'at' : [ '/id-in']
+												}
 										},
 										ty=T.AE)
 
@@ -55,9 +54,6 @@ class AEBase(AppBase):
 
 		# Store updated application data
 		self.setAppData('_originator', self.originator)
-
-		# assign as acpi to use the first assigned acpi
-		self.acpi = self.ae.acpi[0] if self.ae is not None else None
 
 
 	def shutdown(self) -> None:
@@ -75,7 +71,7 @@ class AEBase(AppBase):
 
 
 	# retrieve application data. If not found, initialize and store a record
-	def retrieveAppData(self) -> dict:
+	def retrieveAppData(self) -> JSON:
 		if (result := CSE.storage.getAppData(self.rn)) is None:
 			self.appData = 	{ 'id': self.rn,
 							  '_originator': self.originator

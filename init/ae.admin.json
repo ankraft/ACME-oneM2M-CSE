@@ -1,0 +1,11 @@
+{
+    "m2m:ae": {
+        "ty": 2,
+        "ri": "${cse.originator}",
+        "rn": "${cse.originator}",
+        "pi": "${cse.ri}",
+        "api": "N${cse.originator}",
+        "aei": "${cse.originator}",
+        "csz" : [ "application/json", "application/cbor" ]
+    }
+}

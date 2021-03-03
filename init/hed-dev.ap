@@ -1,0 +1,236 @@
+// Created by SDTTool
+// oneM2M Release: 4.5.0
+// Domain:         org.onem2m.health
+[
+    // SubDevice: subDeviceCuff
+    {
+        "type"      : "hed:suDC0",
+        "lname"     : "suDCf",
+        "cnd"       : "org.onem2m.health.subdevice.subDeviceCuff",
+        "children"  : [
+            "hod:binSh", 
+            "hod:sphyr", 
+            "hod:pulsr"
+        ]
+    },
+
+    // SubDevice Announced: subDeviceCuffAnnc
+    {
+        "type"      : "hed:suDC0Annc",
+        "lname"     : "suDCfAnnc",
+        "cnd"       : "org.onem2m.health.subdevice.subDeviceCuffAnnc",
+        "children"  : [
+            "hod:binSh", 
+            "hod:binShAnnc", 
+            "hod:sphyr", 
+            "hod:sphyrAnnc", 
+            "hod:pulsr", 
+            "hod:pulsrAnnc"
+        ]
+    }
+
+,
+    // DeviceClass: deviceBloodPressureMonitor
+    {
+        "type"      : "hed:dBPMr",
+        "lname"     : "deviceBloodPressureMonitor",
+        "cnd"       : "org.onem2m.health.device.deviceBloodPressureMonitor",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:bat", 
+            "cod:binSh", 
+            "hed:suDCf"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceBloodPressureMonitorAnnc
+    {
+        "type"      : "hed:dBPMrAnnc",
+        "lname"     : "deviceBloodPressureMonitorAnnc",
+        "cnd"       : "org.onem2m.health.device.deviceBloodPressureMonitorAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:bat", 
+            "cod:batAnnc", 
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "hed:suDCf", 
+            "hed:suDCfAnnc"
+        ]
+    }, 
+
+    // DeviceClass: deviceGlucosemeter
+    {
+        "type"      : "hed:devGr",
+        "lname"     : "deviceGlucosemeter",
+        "cnd"       : "org.onem2m.health.device.deviceGlucosemeter",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:glucr", 
+            "cod:bat"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceGlucosemeterAnnc
+    {
+        "type"      : "hed:devGrAnnc",
+        "lname"     : "deviceGlucosemeterAnnc",
+        "cnd"       : "org.onem2m.health.device.deviceGlucosemeterAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:glucr", 
+            "cod:glucrAnnc", 
+            "cod:bat", 
+            "cod:batAnnc"
+        ]
+    }, 
+
+    // DeviceClass: deviceHeartRateMonitor
+    {
+        "type"      : "hed:dHRMr",
+        "lname"     : "deviceHeartRateMonitor",
+        "cnd"       : "org.onem2m.health.device.deviceHeartRateMonitor",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:pulsr", 
+            "cod:bat"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceHeartRateMonitorAnnc
+    {
+        "type"      : "hed:dHRMrAnnc",
+        "lname"     : "deviceHeartRateMonitorAnnc",
+        "cnd"       : "org.onem2m.health.device.deviceHeartRateMonitorAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:pulsr", 
+            "cod:pulsrAnnc", 
+            "cod:bat", 
+            "cod:batAnnc"
+        ]
+    }, 
+
+    // DeviceClass: devicePulseOximeter
+    {
+        "type"      : "hed:dePOr",
+        "lname"     : "devicePulseOximeter",
+        "cnd"       : "org.onem2m.health.device.devicePulseOximeter",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:pulsr", 
+            "cod:oximr", 
+            "cod:bat"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: devicePulseOximeterAnnc
+    {
+        "type"      : "hed:dePOrAnnc",
+        "lname"     : "devicePulseOximeterAnnc",
+        "cnd"       : "org.onem2m.health.device.devicePulseOximeterAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:pulsr", 
+            "cod:pulsrAnnc", 
+            "cod:oximr", 
+            "cod:oximrAnnc", 
+            "cod:bat", 
+            "cod:batAnnc"
+        ]
+    }, 
+
+    // DeviceClass: deviceWeightScaleAndBodyCompositionAnalyser
+    {
+        "type"      : "hed:dWSAB",
+        "lname"     : "deviceWeightScaleAndBodyCompositionAnalyser",
+        "cnd"       : "org.onem2m.health.device.deviceWeightScaleAndBodyCompositionAnalyser",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:weigt", 
+            "cod:boCAr", 
+            "cod:bEIAs", 
+            "cod:bat"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceWeightScaleAndBodyCompositionAnalyserAnnc
+    {
+        "type"      : "hed:dWSABAnnc",
+        "lname"     : "deviceWeightScaleAndBodyCompositionAnalyserAnnc",
+        "cnd"       : "org.onem2m.health.device.deviceWeightScaleAndBodyCompositionAnalyserAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:weigt", 
+            "cod:weigtAnnc", 
+            "cod:boCAr", 
+            "cod:boCArAnnc", 
+            "cod:bEIAs", 
+            "cod:bEIAsAnnc", 
+            "cod:bat", 
+            "cod:batAnnc"
+        ]
+    }
+
+
+]

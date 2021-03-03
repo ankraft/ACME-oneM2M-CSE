@@ -1,4 +1,4 @@
-# ![](webui/img/acme_sm.png) 
+# ![](webui/web/img/acme_sm.png) 
 
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
@@ -31,6 +31,7 @@ Please consult the following pages for further instructions.
 	- [Applications and Nodes](docs/ApplicationsNodes.md)
 - [Supported Resource Types and Functionalities](docs/Supported.md)
 	- [Limitations](docs/Supported.md#limitations)
+- [Roadmap](docs/Roadmap.md)
 - [Development](docs/Development.md)
 - [FAQ](docs/FAQ.md)
 
@@ -46,16 +47,6 @@ Thank you for contributed code, patches, testing, bug fixes, time, and more!
 ![YannGarcia](https://github.com/YannGarcia.png?size=24) [Yann Garcia](https://github.com/YannGarcia)  
 
 
-
-
 ## License
 BSD 3-Clause License for the CSE and its native components and modules. Please see the individual licenses of the used third-party components.
 
-
-## Roadmap & Backlog
-- CSE: Support the PollingChannel resource type
-- CSE: Timeseries
-- UI: Support for resource specific actions (e.g. latest, oldest)
-- UI: Graph for Container reosurces
-- Importer: Automatically import/update resources when the CSE is running
-- App development: support more TS-0023 specializations

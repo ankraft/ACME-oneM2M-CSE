@@ -12,17 +12,20 @@
 
 import traceback
 import logging, logging.handlers, os, inspect, re, sys, datetime, time, threading, queue
-from typing import List, Any
+from typing import List, Any, Union
 from logging import StreamHandler, LogRecord
 from pathlib import Path
 from Configuration import Configuration
+from Types import JSON
 from rich.logging import RichHandler
 from rich.highlighter import ReprHighlighter
 from rich.style import Style
 from rich.console import Console
+from rich.markdown import Markdown
 from rich.text import Text
 from rich.default_styles import DEFAULT_STYLES
 from rich.theme import Theme
+from rich.tree import Tree
 
 
 levelName = {
@@ -42,17 +45,33 @@ class	Logging:
 		methods for printing log, error and warning messages to a 
 		logfile and to the console.
 	"""
+	INFO 	= logging.INFO
+	DEBUG 	= logging.DEBUG
+	ERROR 	= logging.ERROR
+	WARNING = logging.WARNING
+
+	logLevelNames = {
+		INFO    : 'INFO',
+		DEBUG   : 'DEBUG',
+		ERROR   : 'ERROR',
+		WARNING : 'WARNING',
+	}
 
 	logger  			= None
 	loggerConsole		= None
 	logLevel 			= logging.INFO
 	loggingEnabled		= True
 	enableFileLogging	= True
+	enableScreenLogging	= True
+	stackTraceOnError	= True
 	worker 				= None
 	queue 				= None
 
 	checkInterval:float	= 0.2		# wait (in s) between checks of the logging queue
 	queueMaxsize:int	= 1000		# max number of items in the logging queue. Might otherwise grow forever on large load
+
+	_console			= None
+	_handlers:List[Any] = None
 
 	@staticmethod
 	def init() -> None:
@@ -62,41 +81,44 @@ class	Logging:
 		if Logging.logger is not None:
 			return
 		Logging.enableFileLogging 	= Configuration.get('logging.enableFileLogging')
+		Logging.enableScreenLogging	= Configuration.get('logging.enableScreenLogging')
 		Logging.logLevel 			= Configuration.get('logging.level')
 		Logging.loggingEnabled		= Configuration.get('logging.enable')
+		Logging.stackTraceOnError	= Configuration.get('logging.stackTraceOnError')
+
 		Logging.logger				= logging.getLogger('logging')			# general logger
 		Logging.loggerConsole		= logging.getLogger('rich')				# Rich Console logger
-		Logging.checkInterval
+		Logging._console			= Console()								# Console object
 
 		# Add logging queue
 		Logging.queue = queue.Queue(maxsize=Logging.queueMaxsize)
 
 		# List of log handlers
-		handlers: List[Any] = [ ACMERichLogHandler() ]
+		Logging._handlers = [ ACMERichLogHandler() ]
 
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
-			import Utils
+			import Utils, CSE
 
 			logpath = Configuration.get('logging.path')
 			os.makedirs(logpath, exist_ok=True)# create log directory if necessary
-			logfile = f'{logpath}/cse-{Utils.getCSETypeAsString()}.log'
+			logfile = f'{logpath}/cse-{CSE.cseType.name}.log'
 			logfp = logging.handlers.RotatingFileHandler(logfile,
 														 maxBytes=Configuration.get('logging.size'),
 														 backupCount=Configuration.get('logging.count'))
 			logfp.setLevel(Logging.logLevel)
 			logfp.setFormatter(logging.Formatter('%(levelname)s %(asctime)s %(message)s'))
 			Logging.logger.addHandler(logfp) 
-			handlers.append(logfp)
+			Logging._handlers.append(logfp)
 
 		# config the logging system
-		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=handlers)
+		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=Logging._handlers)
 
 		# Start worker to handle logs in the background
 		from helpers.BackgroundWorker import BackgroundWorkerPool
 		BackgroundWorkerPool.newWorker(Logging.checkInterval, Logging.loggingWorker, 'loggingWorker').start()
 	
-
+	
 	@staticmethod
 	def finit() -> None:
 		if Logging.queue is not None:
@@ -132,8 +154,11 @@ class	Logging:
 		import CSE
 		# raise logError event
 		(not CSE.event or CSE.event.logError())	# type: ignore
-		strace = ''.join(map(str, traceback.format_stack()[:-1]))
-		Logging._log(logging.ERROR, f'{msg}\n{strace}')
+		if Logging.stackTraceOnError:
+			strace = ''.join(map(str, traceback.format_stack()[:-1]))
+			Logging._log(logging.ERROR, f'{msg}\n\n{strace}')
+		else:
+			Logging._log(logging.ERROR, msg)
 
 
 	@staticmethod
@@ -154,6 +179,29 @@ class	Logging:
 			except Exception as e:
 				# sometimes this raises an exception. Just ignore it.
 				pass
+	
+
+	@staticmethod
+	def console(msg:Union[str, Tree, JSON]='&nbsp;', extranl:bool=False, end:str='\n', plain:bool=False, isError:bool=False) -> None:
+		style = Style(color='spring_green2') if not isError else Style(color='red')
+		if extranl:
+			Logging._console.print()
+		if isinstance(msg, Tree):
+			Logging._console.print(msg, style=style, end=end)
+		elif isinstance(msg, str):
+			Logging._console.print(msg if plain else Markdown(msg), style=style, end=end)
+		elif isinstance(msg, dict):
+			Logging._console.print(msg, style=style, end=end)
+
+		if extranl:
+			Logging._console.print()
+	
+
+	@staticmethod
+	def consoleClear() -> None:
+		"""	Clear the console screen.
+		"""
+		Logging._console.clear()
 
 
 #
@@ -174,7 +222,8 @@ class ACMERichLogHandler(RichHandler):
 			'repr.start'			: Style(color='orange1'),
 			'logging.level.debug'	: Style(color='grey50'),
 			'logging.level.warning'	: Style(color='orange3'),
-			'logging.level.error'	: Style(color='red', reverse=True)
+			'logging.level.error'	: Style(color='red', reverse=True),
+			'logging.console'		: Style(color='spring_green2'),
 		}
 		_styles = DEFAULT_STYLES.copy()
 		_styles.update(ACMEStyles)
@@ -187,12 +236,14 @@ class ACMERichLogHandler(RichHandler):
 			# r"(?P<brace>[\{\[\(\)\]\}])",
 			#r"(?P<tag_start>\<)(?P<tag_name>\w*)(?P<tag_contents>.*?)(?P<tag_end>\>)",
 			#r"(?P<attrib_name>\w+?)=(?P<attrib_value>\"?\w+\"?)",
-			r"(?P<bool_true>True)|(?P<bool_false>False)|(?P<none>None)",
-			r"(?P<id>(?<!\w)\-?[0-9]+\.?[0-9]*\b)",
-			r"(?P<number>0x[0-9a-f]*)",
+			#r"(?P<bool_true>True)|(?P<bool_false>False)|(?P<none>None)",
+			r"(?P<none>None)",
+			#r"(?P<id>(?<!\w)\-?[0-9]+\.?[0-9]*\b)",
+			# r"(?P<number>\-?[0-9a-f])",
+			r"(?P<number>\-?0x[0-9a-f]+)",
 			#r"(?P<filename>\/\w*\.\w{3,4})\s",
 			r"(?<!\\)(?P<str>b?\'\'\'.*?(?<!\\)\'\'\'|b?\'.*?(?<!\\)\'|b?\"\"\".*?(?<!\\)\"\"\"|b?\".*?(?<!\\)\")",
-			r"(?P<id>[\w\-_.]+[0-9]+\.?[0-9])",		# ID
+			#r"(?P<id>[\w\-_.]+[0-9]+\.?[0-9])",		# ID
 			r"(?P<url>https?:\/\/[0-9a-zA-Z\$\-\_\~\+\!`\(\)\,\.\?\/\;\:\&\=\%]*)",
 			#r"(?P<uuid>[a-fA-F0-9]{8}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{4}\-[a-fA-F0-9]{12})",
 
@@ -203,7 +254,11 @@ class ACMERichLogHandler(RichHandler):
 			r"(?P<response><== [^ :]+[ :]+)",				# outgoing response or request
 			r"(?P<response>Response <== [^ :]+[ :]+)",		# Incoming response or request
 			r"(?P<number>\(RSC: [0-9]+\.?[0-9]\))",			# Result code
-			r"(?P<id> [\w/\-_]*/[\w/\-_]+)",				# ID
+			#r"(?P<id> [\w/\-_]*/[\w/\-_]+)",				# ID
+			r"(?P<number>\nHeaders: )",
+			r"(?P<number> \- Headers: )",
+			r"(?P<number>\nBody: )",
+			r"(?P<number> \- Body: )",
 			# r"(?P<request>CSE started$)",					# CSE startup message
 			# r"(?P<request>CSE shutdown$)",					# CSE shutdown message
 			# r"(?P<start>CSE shutting down$)",				# CSE shutdown message
@@ -213,9 +268,10 @@ class ACMERichLogHandler(RichHandler):
 
 		]
 		
-
-	def emit(self, record: LogRecord) -> None:
+	def emit(self, record:LogRecord) -> None:
 		"""Invoked by logging."""
+		if not Logging.enableScreenLogging or not Logging.loggingEnabled or record.levelno < Logging.logLevel:
+			return
 		#path = Path(record.pathname).name
 		log_style = f"logging.level.{record.levelname.lower()}"
 		message = self.format(record)
@@ -231,7 +287,7 @@ class ACMERichLogHandler(RichHandler):
 		log_time = datetime.datetime.fromtimestamp(record.created)
 
 		level = Text()
-		level.append(record.levelname, log_style)
+		level.append(f'{record.levelname:<7}', log_style)	# add trainling spaces to level name for a bit nicer formatting
 		message_text = Text(f'{threadID} - {message}')
 		message_text = self.highlighter(message_text)
 
@@ -258,3 +314,5 @@ class ACMERichLogHandler(RichHandler):
 			# 	line_no=caller.lineno,
 			# )
 		)
+
+

@@ -8,17 +8,19 @@
 #
 
 import random, string
+from copy import deepcopy
 from Constants import Constants as C
 from Configuration import Configuration
 from Types import ResourceTypes as T, Result, NotificationContentType, NotificationEventType
 import Utils, CSE
 from Validator import constructPolicy
 from .Resource import *
-from Types import ResponseCode as RC
+from Types import ResponseCode as RC, JSON
+from Logging import Logging
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([
-	'rn', 'ty', 'ri', 'pi', 'et', 'lbl', 'ct', 'lt', 'acpi', 'daci', 'cr', 'enc',
+	'rn', 'ty', 'ri', 'pi', 'et', 'lbl', 'ct', 'lt', 'cr', 'hld', 'acpi', 'daci', 'enc',
 	'exc', 'nu', 'gpi', 'nfu', 'bn', 'rl', 'psn', 'pn', 'nsp', 'ln', 'nct', 'nec',
 	'su', 'acrs'		#	primitiveProfileID missing in TS-0004
 ])
@@ -27,10 +29,10 @@ attributePolicies = constructPolicy([
 
 class SUB(Resource):
 
-	def __init__(self, jsn:dict=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.SUB, jsn, pi, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.SUB, dct, pi, create=create, attributePolicies=attributePolicies)
 
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('nct', NotificationContentType.all, overwrite=False) # LIMIT TODO: only this notificationContentType is supported now
 			self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate ], overwrite=False)
 			if self.bn is not None:		# set batchNotify default attributes
@@ -57,23 +59,31 @@ class SUB(Resource):
 		CSE.notification.removeSubscription(self)
 
 
-	def update(self, jsn:dict=None, originator:str=None) -> Result:
-		previousNus = self.nu.copy()
-		newJson = jsn.copy()
-		if not (res := super().update(jsn, originator)).status:
+	def update(self, dct:JSON=None, originator:str=None) -> Result:
+		previousNus = deepcopy(self.nu)
+		newDict = deepcopy(dct)
+		if not (res := super().update(dct, originator)).status:
 			return res
-		return CSE.notification.updateSubscription(self, newJson, previousNus, originator)
+		return CSE.notification.updateSubscription(self, newDict, previousNus, originator)
 
  
-	def validate(self, originator:str=None, create:bool=False) -> Result:
-		if (res := super().validate(originator, create)).status == False:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
+		if (res := super().validate(originator, create, dct)).status == False:
 			return res
 		Logging.logDebug(f'Validating subscription: {self.ri}')
 
 		# Check necessary attributes
 		if (nu := self.nu) is None or not isinstance(nu, list):
-			Logging.logDebug(f'"nu" attribute missing for subscription: {self.ri}')
-			return Result(status=False, rsc=RC.insufficientArguments, dbg='"nu" is missing or wrong type')
+			Logging.logDebug(dbg := f'"nu" attribute missing for subscription: {self.ri}')
+			return Result(status=False, rsc=RC.insufficientArguments, dbg=dbg)
+
+		# check nct and net combinations
+		if (nct := self.nct) is not None and (net := self['enc/net']) is not None:
+			for n in net:
+				if not NotificationEventType(n).isAllowedNCT(NotificationContentType(nct)):
+					Logging.logDebug(dbg := f'nct={nct} is not allowed for enc/net={net}')
+					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+				# fallthough
 
 		# check other attributes
 		self.normalizeURIAttribute('nfu')

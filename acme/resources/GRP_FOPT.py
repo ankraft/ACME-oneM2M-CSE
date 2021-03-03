@@ -11,20 +11,19 @@ from Constants import Constants as C
 import CSE
 from .Resource import *
 from Logging import Logging
-from Types import ResourceTypes as T, Result, Operation, CSERequest
+from Types import ResourceTypes as T, Result, Operation, CSERequest, JSON
 
 
-# TODO:
-# - Handle Group Request Target Members parameter
-# - Handle Group Request Identifier parameter
+# TODO - Handle Group Request Target Members parameter
+# TODO - Handle Group Request Identifier parameter
 
 # LIMIT
 # Only blockingRequest is supported
 
 class GRP_FOPT(Resource):
 
-	def __init__(self, jsn:dict=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.GRP_FOPT, jsn, pi, create=create, inheritACP=True, readOnly=True, rn='fopt', isVirtual=True)
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.GRP_FOPT, dct, pi, create=create, inheritACP=True, readOnly=True, rn='fopt', isVirtual=True)
 
 
 	# Enable check for allowed sub-resources
@@ -32,9 +31,9 @@ class GRP_FOPT(Resource):
 		return super()._canHaveChild(resource, [])
 
 
-	def handleRetrieveRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:
 		Logging.logDebug('Retrieving resources from fopt')
-		return CSE.group.foptRequest(Operation.RETRIEVE, self, request, id, originator)
+		return CSE.group.foptRequest(Operation.RETRIEVE, self, request, id, originator)	
 
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:

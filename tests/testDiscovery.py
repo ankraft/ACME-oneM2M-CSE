@@ -11,16 +11,13 @@
 
 import unittest, sys
 sys.path.append('../acme')
+from typing import Tuple
 from Constants import Constants as C
 from Types import ResultContentType as RCN
 from Types import ResourceTypes as T, ResponseCode as RC
 from Types import DesiredIdentifierResultType, FilterOperation
 from init import *
 
-# The following code must be executed before anything else because it influences
-# the collection of skipped tests.
-# It checks whether there actually is a CSE running.
-noCSE = not connectionPossible(cseURL)
 
 cnt2RN = f'{cntRN}2' 
 cnt3RN = f'{cntRN}3'
@@ -31,88 +28,92 @@ nodeID  = 'urn:sn:1234'
 
 class TestDiscovery(unittest.TestCase):
 
+	ae 				= None
+	cnt 			= None
+	cnt2 			= None
+	originator 		= None
+	crTimestamp1	= None
+	crTimestamp2	= None
+
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
 		cls.crTimestamp1 = getDate(-timeDelta)	# first timestamp
 
-		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
-
-		jsn = 	{ 'm2m:ae' : {
+		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
 				 	'rr'  : False,
 				 	'srv' : [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
 		# create first container & CIN
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN,
 					'lbl' : [ 'cntLbl' ]
 				}}
-		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
+		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
 		assert rsc == RC.created, 'cannot create container'
 		# create 5 contentInstances with different labels
 		for i in range(0,5):
-			jsn = 	{ 'm2m:cin' : {
+			dct = 	{ 'm2m:cin' : {
 						'cnf' : 'a',
 						'con' : 'aValue',
 						'lbl' : [ 'tag:%d' %i ]
 					}}
-			r, rsc = CREATE(cntURL, TestDiscovery.originator, T.CIN, jsn)
+			_, rsc = CREATE(cntURL, TestDiscovery.originator, T.CIN, dct)
 
 		# create second container & CIN
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cnt2RN,
 				}}
-		cls.cnt2, rsc = CREATE(aeURL, cls.originator, T.CNT, jsn)
+		cls.cnt2, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
 		assert rsc == RC.created, 'cannot create container'
 		# create 5 contentInstances with different labels
 		for i in range(0,5):
-			jsn = 	{ 'm2m:cin' : {
+			dct = 	{ 'm2m:cin' : {
 						'cnf' : 'b',
 						'con' : 'bValue',
 						'lbl' : [ 'tag:%d' %i ]
 					}}
-			r, rsc = CREATE(f'{cntURL}2', TestDiscovery.originator, T.CIN, jsn)
+			_, rsc = CREATE(f'{cntURL}2', TestDiscovery.originator, T.CIN, dct)
 		
 		# create Node & MgmtObjs
-		jsn = 	{ 'm2m:nod' : { 
+		dct = 	{ 'm2m:nod' : { 
 			'rn' 	: nodRN,
 			'ni'	: nodeID
 		}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, jsn)
+		_, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
 		assert rsc == RC.created, 'cannot create Node'
-		jsn =  { 'm2m:mem' : {
+		dct =  { 'm2m:mem' : {
 			'mgd' : T.MEM,
 			'rn' : memRN,
 			'dc' : 'aMem',
 			'mma' : 1234,
 			'mmt' : 4321
 		}}
-		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, jsn)
+		_, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
 		assert rsc == RC.created, 'cannot create m2m:mem'
-		jsn =  { 'm2m:bat' : {
+		dct =  { 'm2m:bat' : {
 					'mgd' : T.BAT,
 					'rn'  : batRN,
 					'dc'  : 'aBat',
 					'btl' : 23,
 					'bts' : 5
 				}}
-		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, jsn)
+		_, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
 		assert rsc == RC.created, 'cannot create m2m:bat'
-		jsn =  { 'm2m:bat' : {
+		dct =  { 'm2m:bat' : {
 			'mgd' : T.BAT,
 			'rn'  : bat2RN,
 			'dc'  : 'aBat',
 			'btl' : 23,
 			'bts' : 5
 		}}
-		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, jsn)
+		_, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
 		assert rsc == RC.created, 'cannot create m2m:bat (2)'
 
 		cls.crTimestamp2 = getDate()	# Second timestamp
@@ -127,35 +128,40 @@ class TestDiscovery(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveUnknownResource(self) -> None:
+		""" Retrieve unknown resource -> Fail """
 		# Before first timestamp
-		r, rsc = RETRIEVE(f'{aeURL}_unknown', TestDiscovery.originator)
+		_, rsc = RETRIEVE(f'{aeURL}_unknown', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.notFound)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_discoverUnknownResource(self) -> None:
+		""" Discover unknown resource -> Not found"""
 		# Before first timestamp
-		r, rsc = RETRIEVE(f'{aeURL}_unknown?fu=1', TestDiscovery.originator)
+		_, rsc = RETRIEVE(f'{aeURL}_unknown?fu=1', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.notFound)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_discoverUnknownAttribute(self) -> None:
+		""" Discover with unknown attribute -> Fail"""
 		# Before first timestamp
-		r, rsc = RETRIEVE(f'{aeURL}?xxx=yyy', TestDiscovery.originator)
+		_, rsc = RETRIEVE(f'{aeURL}?xxx=yyy', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNIwithWrongSZB(self):
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&szb=-1', TestDiscovery.originator)
+	def test_retrieveCNIwithWrongSZB(self) -> None:
+		"""	Retrieve with wrong SZB -> Fail """
+		_, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&szb=-1', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	# childResourceReferences
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_discoverCNTunderAERCN6(self):
-		r, rsc = RETRIEVE(f'{aeURL}?fu=1&rcn={RCN.childResourceReferences:d}&ty={T.CNT:d}', TestDiscovery.originator)
+	def test_discoverCNTunderAERCN6(self) -> None:
+		"""	Discover <CNT> under <AE> & rcn=6 """
+		r, rsc = RETRIEVE(f'{aeURL}?fu=1&rcn={RCN.childResourceReferences:d}&ty={T.CNT}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
 		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 2)
@@ -171,8 +177,9 @@ class TestDiscovery(unittest.TestCase):
 
 	#discoveryResultReferences
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_discoveryCNTunderAERCN11(self):
-		r, rsc = RETRIEVE(f'{aeURL}?fu=1&rcn={RCN.discoveryResultReferences:d}&ty={T.CNT:d}', TestDiscovery.originator)
+	def test_discoveryCNTunderAERCN11(self) -> None:
+		""" Discover <CNT> under <AE> & rcn=11 """
+		r, rsc = RETRIEVE(f'{aeURL}?fu=1&rcn={RCN.discoveryResultReferences:d}&ty={T.CNT}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:uril'))
 		self.assertEqual(len(findXPath(r, 'm2m:uril')), 2)
@@ -185,43 +192,49 @@ class TestDiscovery(unittest.TestCase):
 
 	# attributes (fail fail for discovery)
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_discoverCNTunderAEWrongRCN1(self):
-		r, rsc = RETRIEVE(f'{aeURL}?fu=1&rcn={RCN.attributes:d}&ty={T.CNT:d}', TestDiscovery.originator)
+	def test_discoverCNTunderAEWrongRCN1(self) -> None:
+		""" Discover <CNT> under <AE> & wrong rcn=1 -> Fail """
+		_, rsc = RETRIEVE(f'{aeURL}?fu=1&rcn={RCN.attributes:d}&ty={T.CNT}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	# attributesAndChildResources (fail for discovery)
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_discoverCNTunderAEWrongRCN4(self):
-		r, rsc = RETRIEVE(f'{aeURL}?fu=1&rcn={RCN.attributesAndChildResources:d}&ty={T.CNT:d}', TestDiscovery.originator)
+	def test_discoverCNTunderAEWrongRCN4(self) -> None:
+		""" Discover <CNT> under <AE> & wrong rcn=4 -> Fail """
+		_, rsc = RETRIEVE(f'{aeURL}?fu=1&rcn={RCN.attributesAndChildResources:d}&ty={T.CNT}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	# attributesAndChildResourceReferences (fail for discovery)
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_discoverCNTunderAEWrongRCN5(self):
-		r, rsc = RETRIEVE(f'{aeURL}?fu=1&rcn={RCN.attributesAndChildResourceReferences:d}&ty={T.CNT:d}', TestDiscovery.originator)
+	def test_discoverCNTunderAEWrongRCN5(self) -> None:
+		""" Discover <CNT> under <AE> & wrong rcn=5 -> Fail """
+		_, rsc = RETRIEVE(f'{aeURL}?fu=1&rcn={RCN.attributesAndChildResourceReferences:d}&ty={T.CNT}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	# childResources
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_discoverCNTunderAEWrongRCN8(self):
-		r, rsc = RETRIEVE(f'{aeURL}?fu=1&rcn={RCN.childResources:d}&ty={T.CNT:d}', TestDiscovery.originator)
+	def test_discoverCNTunderAEWrongRCN8(self) -> None:
+		""" Discover <CNT> under <AE> & wrong rcn=8 -> Fail """
+		_, rsc = RETRIEVE(f'{aeURL}?fu=1&rcn={RCN.childResources:d}&ty={T.CNT}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	# modifiedAttributes (fail for retrieve)
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_discoverCNTunderAEWrongRCN9(self):
-		r, rsc = RETRIEVE(f'{aeURL}?u=1&rcn={RCN.modifiedAttributes:d}&ty={T.CNT:d}', TestDiscovery.originator)
+	def test_discoverCNTunderAEWrongRCN9(self) -> None:
+		""" Discover <CNT> under <AE> & wrong rcn=9 -> Fail """
+		_, rsc = RETRIEVE(f'{aeURL}?u=1&rcn={RCN.modifiedAttributes:d}&ty={T.CNT}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	# childResourceReferences
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTunderAERCN6(self):
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CNT:d}', TestDiscovery.originator)
+	def test_retrieveCNTunderAERCN6(self) -> None:
+		""" Retrive <CNT> under <AE> & rcn=6 """
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CNT}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
 		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 2)
@@ -237,8 +250,9 @@ class TestDiscovery(unittest.TestCase):
 
 	# attributes
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTunderAERCN1(self):
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributes:d}&ty={T.CNT:d}', TestDiscovery.originator)
+	def test_retrieveCNTunderAERCN1(self) -> None:
+		""" Retrieve <CNT> under <AE> & rcn=1 """
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributes:d}&ty={T.CNT}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae'))
 		self.assertEqual(findXPath(r, 'm2m:ae/rn'), aeRN)
@@ -246,8 +260,9 @@ class TestDiscovery(unittest.TestCase):
 
 	# attributesAndChildResources
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTunderAERCN4(self):
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributesAndChildResources:d}&ty={T.CNT:d}', TestDiscovery.originator)
+	def test_retrieveCNTunderAERCN4(self) -> None:
+		""" Retrieve <CNT> under <AE> & rcn=4 """
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributesAndChildResources:d}&ty={T.CNT}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae'))
 		self.assertEqual(findXPath(r, 'm2m:ae/rn'), aeRN)
@@ -262,8 +277,9 @@ class TestDiscovery(unittest.TestCase):
 
 	# attributesAndChildResourceReferences
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTunderAERCN5(self):
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributesAndChildResourceReferences:d}&ty={T.CNT:d}', TestDiscovery.originator)
+	def test_retrieveCNTunderAERCN5(self) -> None:
+		""" Retrieve <CNT> under <AE> & rcn=5 """
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributesAndChildResourceReferences:d}&ty={T.CNT}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae'))
 		self.assertEqual(findXPath(r, 'm2m:ae/rn'), aeRN)
@@ -282,7 +298,8 @@ class TestDiscovery(unittest.TestCase):
 	# childResources
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCNTunderAERCN8(self) -> None:
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResources:d}&ty={T.CNT:d}', TestDiscovery.originator)
+		""" Retrieve <CNT> under <AE> & rcn=8 """
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResources:d}&ty={T.CNT}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae'))
 		self.assertIsNone(findXPath(r, 'm2m:ae/rn'), aeRN) # don't find other AE attributes
@@ -298,20 +315,23 @@ class TestDiscovery(unittest.TestCase):
 	# modifiedAttributes (fail for retrieve)
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCNTunderAEWrongRCN9(self) -> None:
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.modifiedAttributes:d}&ty={T.CNT:d}', TestDiscovery.originator)
+		""" Retrieve <CNT> under <AE> & wrong rcn=9 """
+		_, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.modifiedAttributes:d}&ty={T.CNT}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	# discoveryResultReferences (fail for retrieve)
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTunderAEWrongRCN11(self):
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.discoveryResultReferences:d}&ty={T.CNT:d}', TestDiscovery.originator)
+	def test_retrieveCNTunderAEWrongRCN11(self) -> None:
+		""" Retrieve <CNT> under <AE> & wrong rcn=11 """
+		_, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.discoveryResultReferences:d}&ty={T.CNT}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTunderCSE(self):
-		r, rsc = RETRIEVE(f'{cseURL}?rcn={RCN.childResources:d}&ty={T.CNT:d}', TestDiscovery.originator)
+	def test_retrieveCNTunderCSE(self) -> None:
+		""" Retrieve <CNT> under <CSE> & rcn=8 """
+		r, rsc = RETRIEVE(f'{cseURL}?rcn={RCN.childResources:d}&ty={T.CNT}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:cb'))
 		self.assertIsNotNone(findXPath(r, 'm2m:cb/m2m:cnt'))
@@ -322,8 +342,9 @@ class TestDiscovery(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCINunderAE(self):
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResources:d}&ty={T.CIN:d}', TestDiscovery.originator)
+	def test_retrieveCINunderAE(self) -> None:
+		""" Retrieve <CIN> under <AE> & rcn=8 """
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResources:d}&ty={T.CIN}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae'))
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cin'))
@@ -331,7 +352,8 @@ class TestDiscovery(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCINbyLBLunderAE(self):
+	def test_retrieveCINbyLBLunderAE(self) -> None:
+		""" Retrieve <CIN> under <AE> by lbl & rcn=8 """
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResources:d}&lbl=tag:0', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae'))
@@ -343,7 +365,8 @@ class TestDiscovery(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTbyCNIunderAE(self):
+	def test_retrieveCNTbyCNIunderAE(self) -> None:
+		""" Retrieve <CNT> under <AE> by correct cni & rcn=8 """
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResources:d}&cni=5', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae'))
@@ -355,7 +378,8 @@ class TestDiscovery(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTbyCNIunderAEEmpty(self):
+	def test_retrieveCNTbyCNIunderAEEmpty(self) -> None:
+		""" Retrieve <CNT> under <AE> by false cni & rcn=8 """
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResources:d}&cni=10', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae'))
@@ -364,7 +388,8 @@ class TestDiscovery(unittest.TestCase):
 
 	# same as above but with references
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTbyCNIunderAEEmpty2(self):
+	def test_retrieveCNTbyCNIunderAEEmpty2(self) -> None:
+		""" Retrieve <CNT> under <AE> by false cni & rcn=6 """
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&cni=10', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
@@ -372,8 +397,9 @@ class TestDiscovery(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTorCINunderAE(self):
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CNT:d}+{T.CIN:d}', TestDiscovery.originator)
+	def test_retrieveCNTorCINunderAE(self) -> None:
+		""" Retrieve <CNT> or <CIN> under <AE> & rcn=6 & '+' operator """
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CNT}+{T.CIN}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
 		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 12)
@@ -383,8 +409,9 @@ class TestDiscovery(unittest.TestCase):
 
 	# This one tests a different argument handling (2 * ty)
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTorCINunderAE2(self):
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CNT:d}&ty={T.CIN:d}', TestDiscovery.originator)
+	def test_retrieveCNTorCINunderAE2(self) -> None:
+		"""	Retrieve <CNT> or <CIN> under <AE>2 & rcn=6 """
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CNT}&ty={T.CIN}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
 		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 12)
@@ -394,8 +421,9 @@ class TestDiscovery(unittest.TestCase):
 	
 	# Find both CIN with a tag:0 label
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCINandLBLunderAE(self):
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CIN:d}&lbl=tag:0', TestDiscovery.originator)
+	def test_retrieveCINandLBLunderAE(self) -> None:
+		""" Retrieve <CIN> under <AE> by lbl & rcn=6 """
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CIN}&lbl=tag:0', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
 		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 2)
@@ -405,8 +433,9 @@ class TestDiscovery(unittest.TestCase):
 
 	# Find four CIN with a tag:0 or tag:1 label. Use + encoding for the label
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCINandLBLunderAE2(self):
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CIN:d}&lbl=tag:0+tag:1', TestDiscovery.originator)
+	def test_retrieveCINandLBLunderAE2(self) -> None:
+		""" Retrieve <CIN> under <AE> by multiple lbl & rcn=6 """
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CIN}&lbl=tag:0+tag:1', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
 		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 4)
@@ -416,8 +445,9 @@ class TestDiscovery(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTorLBLunderAE(self):
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CNT:d}&lbl=tag:0&fo={FilterOperation.OR:d}', TestDiscovery.originator)
+	def test_retrieveCNTorLBLunderAE(self) -> None:
+		""" Retrieve <CNT> under <AE> by label or type & rcn=6 """
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CNT}&lbl=tag:0&fo={FilterOperation.OR:d}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
 		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 4)
@@ -426,7 +456,8 @@ class TestDiscovery(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveWithCRBunderAE(self):
+	def test_retrieveWithCRBunderAE(self) -> None:
+		""" Retrieve <CNT> under <AE> by crb & rcn=6 """
 		# Before first timestamp
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&crb={TestDiscovery.crTimestamp1}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
@@ -439,9 +470,10 @@ class TestDiscovery(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveWithCRAunderAE(self):
+	def test_retrieveWithCRAunderAE(self) -> None:
+		""" Retrieve <CNT> under <AE> by cra & rcn=6 """
 		# Before first timestamp
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&cty=a', TestDiscovery.originator)
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&cra={TestDiscovery.crTimestamp1}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertGreater(len(findXPath(r, 'm2m:rrl')), 0)
 
@@ -452,7 +484,8 @@ class TestDiscovery(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNIwithCTYunderAE(self):
+	def test_retrieveCNIwithCTYunderAE(self) -> None:
+		""" Retrieve <CNT> under <AE> with cty & rcn=6 """
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&cty=a', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
@@ -460,21 +493,24 @@ class TestDiscovery(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNIwithSZBunderAE(self):
+	def test_retrieveCNIwithSZBunderAE(self) -> None:
+		""" Retrieve <CNT> under <AE> with szb & rcn=6 """
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&szb=100', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 10)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNIwithSZAunderAE(self):
+	def test_retrieveCNIwithSZAunderAE(self) -> None:
+		""" Retrieve <CNT> under <AE> with sza & rcn=6 """
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&sza=3', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 10)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNIwithMSunderAE(self):
+	def test_retrieveCNIwithMSunderAE(self) -> None:
+		""" Retrieve <CNT> under <AE> with ms & rcn=6 """
 		# After first timestamp
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ms={TestDiscovery.crTimestamp1}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
@@ -482,7 +518,8 @@ class TestDiscovery(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNIwithUSunderAE(self):
+	def test_retrieveCNIwithUSunderAE(self) -> None:
+		""" Retrieve <CNT> under <AE> with us & rcn=6 """
 		# After first timestamp
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences}&us={TestDiscovery.crTimestamp1}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
@@ -495,7 +532,8 @@ class TestDiscovery(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNIwithEXBunderAE(self):
+	def test_retrieveCNIwithEXBunderAE(self) -> None:
+		""" Retrieve <CNT> under <AE> with exb & rcn=6 """
 		# Before first timestamp
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&exb={TestDiscovery.crTimestamp1}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
@@ -503,7 +541,8 @@ class TestDiscovery(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNIwithEXAunderAE(self):
+	def test_retrieveCNIwithEXAunderAE(self) -> None:
+		""" Retrieve <CNT> under <AE> with exa & rcn=6 """
 		# After first timestamp
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&exa={TestDiscovery.crTimestamp1}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
@@ -511,8 +550,9 @@ class TestDiscovery(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTunderAEStructured(self):
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CNT:d}&drt={DesiredIdentifierResultType.structured:d}', TestDiscovery.originator)
+	def test_retrieveCNTunderAEStructured(self) -> None:
+		""" Retrieve <CNT> under <AE> & rcn=6 & structured """
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CNT}&drt={DesiredIdentifierResultType.structured:d}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
 		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 2)
@@ -523,8 +563,9 @@ class TestDiscovery(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTunderAEUnstructured(self):
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CNT:d}&drt={DesiredIdentifierResultType.unstructured:d}', TestDiscovery.originator)
+	def test_retrieveCNTunderAEUnstructured(self) -> None:
+		""" Retrieve <CNT> under <AE> & rcn=6 & unstructured """
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&ty={T.CNT}&drt={DesiredIdentifierResultType.unstructured:d}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
 		self.assertEqual(len(findXPath(r, 'm2m:rrl')), 2)
@@ -536,7 +577,8 @@ class TestDiscovery(unittest.TestCase):
 
 	# rcnAttributesAndChildResources (fail for discovery)
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_rcn4WithDifferentFUs(self):
+	def test_rcn4WithDifferentFUs(self) -> None:
+		""" Retrieve all resources under <AE> & rcn=4 & various fu """
 		# No FU
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributesAndChildResources:d}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
@@ -568,14 +610,15 @@ class TestDiscovery(unittest.TestCase):
 
 	# Test adding arp
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_appendArp(self):
+	def test_appendArp(self) -> None:
+		""" Append arp to result """
 		# create container under cnt1
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntARPRN,
 				}}
-		arpCnt, rsc = CREATE(cntURL, TestDiscovery.originator, T.CNT, jsn)
+		_, rsc = CREATE(cntURL, TestDiscovery.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResources:d}&ty={T.CNT:d}&lbl=cntLbl&arp=arpCnt', TestDiscovery.originator)
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResources:d}&ty={T.CNT}&lbl=cntLbl&arp=arpCnt', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:ae/m2m:cnt/{0}/rn'), cntARPRN)
 		_, rsc = DELETE(f'{cntURL}/arpCnt', TestDiscovery.originator) # cleanup
@@ -584,14 +627,15 @@ class TestDiscovery(unittest.TestCase):
 
 	# Test CREATE and RCN=9 (modifiedAttributes)
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createCNTwithRCN9(self):
+	def test_createCNTwithRCN9(self) -> None:
+		""" Create <CNT> under <AE> & rcn=9 """
 		# create another container
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cnt3RN,
 					'mni' : 42,
 					'lbl' : [ 'test' ]
 				}}
-		r, rsc = CREATE(f'{aeURL}?rcn={RCN.modifiedAttributes:d}', TestDiscovery.originator, T.CNT, jsn)
+		r, rsc = CREATE(f'{aeURL}?rcn={RCN.modifiedAttributes:d}', TestDiscovery.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNone(findXPath(r, 'm2m:cnt/mni'))
 		self.assertIsNone(findXPath(r, 'm2m:cnt/lbl'))
@@ -599,13 +643,14 @@ class TestDiscovery(unittest.TestCase):
 
 	# Test UPDATE and RCN=9 (modifiedAttributes)
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCNTwithRCN9(self):
+	def test_updateCNTwithRCN9(self) -> None:
+		""" Update <CNT> & rcn=9 """
 		# create another container
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'mni' : 23,
 					'lbl' : [ 'test' ]
 				}}
-		r, rsc = UPDATE(f'{aeURL}/{cnt3RN}?rcn={RCN.modifiedAttributes:d}', TestDiscovery.originator, jsn)
+		r, rsc = UPDATE(f'{aeURL}/{cnt3RN}?rcn={RCN.modifiedAttributes:d}', TestDiscovery.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertIsNotNone(findXPath(r, 'm2m:cnt/mni'))
 		self.assertEqual(findXPath(r, 'm2m:cnt/mni'), 23)
@@ -617,42 +662,48 @@ class TestDiscovery(unittest.TestCase):
 
 	# Test UPDATE and RCN=9 (modifiedAttributes)
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCNTwithWrongRCN2(self):
+	def test_updateCNTwithWrongRCN2(self) -> None:
+		""" Update <CNT> & rcn=2 -> Fail """
 		# create another container
-		jsn = 	{ 'm2m:cnt' : { 
+		dct = 	{ 'm2m:cnt' : { 
 					'mni' : 23,
 					'lbl' : [ 'test2' ]
 				}}
-		r, rsc = UPDATE(f'{aeURL}/{cnt3RN}?rcn={RCN.hierarchicalAddress:d}', TestDiscovery.originator, jsn)
+		_, rsc = UPDATE(f'{aeURL}/{cnt3RN}?rcn={RCN.hierarchicalAddress:d}', TestDiscovery.originator, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveWithWrongArgument(self):
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributes:d}&wrong=wrong', TestDiscovery.originator)
+	def test_retrieveWithWrongArgument(self) -> None:
+		""" Retrieve <AE> with wrong argument & rcn=1 """
+		_, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributes:d}&wrong=wrong', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveWithWrongFU(self):
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributes:d}&fu=4223', TestDiscovery.originator)
+	def test_retrieveWithWrongFU(self) -> None:
+		""" Retrieve <AE> with wrong fu & rcn=1 """
+		_, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributes:d}&fu=4223', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveWithWrongDRT(self) -> None:
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributes:d}&drt=4223', TestDiscovery.originator)
+		""" Retrieve <AE> with wrong drt & rcn=1 """
+		_, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributes:d}&drt=4223', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveWithWrongFO(self) -> None:
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributes:d}&fo=4223', TestDiscovery.originator)
+		""" Retrieve <AE> with wrong fo & rcn=1 """
+		_, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributes:d}&fo=4223', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveMgmtObjsRCN8(self) -> None:
+		""" Retrieve <mgmtObj> under <NOD> & rcn=8 """
 		r, rsc = RETRIEVE(f'{nodURL}?rcn={RCN.childResources}&ty={T.MGMTOBJ}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		# Excpected: m2m:bat and m2m:mem are separate fields
@@ -664,7 +715,7 @@ class TestDiscovery(unittest.TestCase):
 
 
 
-def run():
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestDiscovery('test_retrieveUnknownResource'))
 	suite.addTest(TestDiscovery('test_discoverUnknownResource'))
@@ -717,10 +768,11 @@ def run():
 	suite.addTest(TestDiscovery('test_retrieveWithWrongFO'))
 	suite.addTest(TestDiscovery('test_retrieveMgmtObjsRCN8'))
 
-	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
+	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 
 if __name__ == '__main__':
-	_, errors, _ = run()
+	_, errors, _ = run(2, True)
 	sys.exit(errors)

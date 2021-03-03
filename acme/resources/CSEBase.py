@@ -8,24 +8,25 @@
 #
 
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, Result, JSON
 from Configuration import Configuration
 from Validator import constructPolicy
 from .Resource import *
+import CSE
 
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
-	'rn', 'ty', 'ri', 'pi',  'ct', 'lt', 'lbl', 'loc',
+	'rn', 'ty', 'ri', 'pi',  'ct', 'lt', 'lbl', 'loc', 'hld',
 	'acpi', 'poa', 'nl', 'daci', 'esi', 'srv', 'cst', 'csi', 'csz'
 ])
 
 class CSEBase(Resource):
 
-	def __init__(self, jsn:dict=None, create:bool=False) -> None:
-		super().__init__(T.CSEBase, jsn, '', create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:JSON=None, create:bool=False) -> None:
+		super().__init__(T.CSEBase, dct, '', create=create, attributePolicies=attributePolicies)
 
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('ri', 'cseid', overwrite=False)
 			self.setAttribute('rn', 'cse', overwrite=False)
 			self.setAttribute('csi', 'cse', overwrite=False)
@@ -33,9 +34,9 @@ class CSEBase(Resource):
 			self.setAttribute('rr', False, overwrite=False)
 			self.setAttribute('srt', C.supportedResourceTypes, overwrite=False)
 			self.setAttribute('csz', C.supportedContentSerializations, overwrite=False)
-			self.setAttribute('srv', C.supportedReleaseVersions, overwrite=False)
-			self.setAttribute('poa', [ Configuration.get('http.address') ], overwrite=False)
-			self.setAttribute('cst', Configuration.get('cse.type'), overwrite=False)
+			self.setAttribute('srv', CSE.supportedReleaseVersions, overwrite=False)	# This must be a list
+			self.setAttribute('poa', [ CSE.httpServer.serverAddress ], overwrite=False)		# TODO add more address schemes when available
+			self.setAttribute('cst', CSE.cseType, overwrite=False)
 
 
 	# Enable check for allowed sub-resources
@@ -53,8 +54,8 @@ class CSEBase(Resource):
 									 ])
 
 
-	def validate(self, originator:str=None, create:bool=False) -> Result:
-		if not (res := super().validate(originator, create)).status:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
+		if not (res := super().validate(originator, create, dct)).status:
 			return res
 		
 		self.normalizeURIAttribute('poa')

@@ -10,14 +10,25 @@
 
 from .AnnouncedResource import AnnouncedResource
 from .Resource import *
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, JSON
+from Validator import constructPolicy, addPolicy
 
+# Attribute policies for this resource are constructed during startup of the CSE
+attributePolicies = constructPolicy([ 
+	'et', 'acpi', 'lbl','daci', 'loc',
+	'lnk' 
+])
+grpAPolicies = constructPolicy([
+	'mt', 'spty', 'cnm', 'mnm', 'mid', 'macp', 'mtv', 'csy', 'gn', 'ssi', 'nar'
+])
+attributePolicies =  addPolicy(attributePolicies, grpAPolicies)
+# TODO announceSyncType, somecastEnable, somecastAlgorithm
 
 
 class GRPAnnc(AnnouncedResource):
 
-	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		super().__init__(T.GRPAnnc, jsn, pi=pi, create=create)
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.GRPAnnc, dct, pi=pi, create=create, attributePolicies=attributePolicies)
 
 
 	# Enable check for allowed sub-resources

@@ -10,64 +10,70 @@
 import unittest, sys
 import requests
 sys.path.append('../acme')
+from typing import Tuple
 from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
 
-# The following code must be executed before anything else because it influences
-# the collection of skipped tests.
-# It checks whether there actually is a CSE running.
-noCSE = not connectionPossible(cseURL)
-
-
+nodeID  = 'urn:sn:1234'
 nod2RN 	= 'test2NOD'
 nod2URL = f'{cseURL}/{nod2RN}'
 
 
 class TestNOD(unittest.TestCase):
 
+	cse  		= None
+	ae 			= None
+	nodeRI 		= None
+	aeRI 		= None
+	originator	= None
+
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def setUpClass(cls):
+	def setUpClass(cls) -> None:
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
 		
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
 		DELETE(nod2URL, ORIGINATOR)	# Just delete the Node 2 and everything below it. Ignore whether it exists or not
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createNOD(self):
+	def test_createNOD(self) -> None:
+		""" Create <NOD> """
 		self.assertIsNotNone(TestNOD.cse)
-		jsn = 	{ 'm2m:nod' : { 
+		dct = 	{ 'm2m:nod' : { 
 					'rn' 	: nodRN,
 					'ni'	: nodeID
 				}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, jsn)
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:nod/ri'))
 		TestNOD.nodeRI = findXPath(r, 'm2m:nod/ri')
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveNOD(self):
+	def test_retrieveNOD(self) -> None:
+		""" Retrieve <NOD> """
 		_, rsc = RETRIEVE(nodURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveNODWithWrongOriginator(self):
+	def test_retrieveNODWithWrongOriginator(self) -> None:
+		""" Retrieve <NOD> with wrong originator -> Fail """
 		_, rsc = RETRIEVE(nodURL, 'Cwrong')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesNOD(self):
+	def test_attributesNOD(self) -> None:
+		""" Retrieve <NOD> and test attributes """
 		r, rsc = RETRIEVE(nodURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:nod/ty'), T.NOD)
@@ -81,11 +87,12 @@ class TestNOD(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateNODLbl(self):
-		jsn = 	{ 'm2m:nod' : {
+	def test_updateNODLbl(self) -> None:
+		""" Update <NOD> lbl """
+		dct = 	{ 'm2m:nod' : {
 					'lbl' : [ 'aTag' ]
 				}}
-		r, rsc = UPDATE(nodURL, ORIGINATOR, jsn)
+		r, rsc = UPDATE(nodURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
 		r, rsc = RETRIEVE(nodURL, ORIGINATOR)		# retrieve updated ae again
 		self.assertEqual(rsc, RC.OK)
@@ -96,24 +103,26 @@ class TestNOD(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateNODUnknownAttribute(self):
-		jsn = 	{ 'm2m:nod' : {
+	def test_updateNODUnknownAttribute(self) -> None:
+		""" Update <NOD> with unknown attribute -> Fail """
+		dct = 	{ 'm2m:nod' : {
 					'unknown' : 'unknown'
 				}}
-		r, rsc = UPDATE(nodURL, ORIGINATOR, jsn)
+		_, rsc = UPDATE(nodURL, ORIGINATOR, dct)
 		self.assertEqual(rsc, RC.badRequest)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createAEForNOD(self):
-		jsn = 	{ 'm2m:ae' : {
+	def test_createAEForNOD(self) -> None:
+		""" Create <AE> for <NOD> & test link """
+		dct = 	{ 'm2m:ae' : {
 			'rn'	: aeRN, 
 			'api'	: 'NMyApp1Id',
 		 	'rr'	: False,
 		 	'srv'	: [ '3' ],
 		 	'nl' 	: TestNOD.nodeRI
 		}}
-		TestNOD.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)
+		TestNOD.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(TestNOD.ae, 'm2m:ae/nl'))
 		self.assertEqual(findXPath(TestNOD.ae, 'm2m:ae/nl'), TestNOD.nodeRI)
@@ -129,7 +138,8 @@ class TestNOD(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteAEForNOD(self):
+	def test_deleteAEForNOD(self) -> None:
+		""" Delete <AE> for <NOD> & test link """
 		_, rsc = DELETE(aeURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
@@ -139,26 +149,27 @@ class TestNOD(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_moveAEToNOD2(self):
+	def test_moveAEToNOD2(self) -> None:
+		""" Create second <NOD> and move <AE> """
 		# create AE again
 		self.test_createAEForNOD()
 
 		# create second node
-		jsn = 	{ 'm2m:nod' : { 
+		dct = 	{ 'm2m:nod' : { 
 			'rn' 	: nod2RN,
 			'ni'	: 'second'
 		}}
-		nod2, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, jsn)
+		nod2, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(nod2, 'm2m:nod/ri'))
 		self.assertEqual(findXPath(nod2, 'm2m:nod/rn'), nod2RN)
 		node2RI = findXPath(nod2, 'm2m:nod/ri')
 
 		# move AE to second NOD
-		jsn = 	{ 'm2m:ae' : { 
+		dct = 	{ 'm2m:ae' : { 
 			'nl' : node2RI
 		}}
-		r, rsc = UPDATE(aeURL, TestNOD.originator, jsn)
+		r, rsc = UPDATE(aeURL, TestNOD.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/nl'))
 		self.assertEqual(findXPath(r, 'm2m:ae/nl'), node2RI)
@@ -177,7 +188,8 @@ class TestNOD(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteNOD2(self):
+	def test_deleteNOD2(self) -> None:
+		""" Delete second <NOD> """
 		_, rsc = DELETE(nod2URL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
@@ -188,12 +200,13 @@ class TestNOD(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteNOD(self):
+	def test_deleteNOD(self) -> None:
+		""" Delete <NOD> """
 		_, rsc = DELETE(nodURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 
 
-def run():
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestNOD('test_createNOD'))
 	suite.addTest(TestNOD('test_retrieveNOD'))
@@ -206,10 +219,11 @@ def run():
 	suite.addTest(TestNOD('test_moveAEToNOD2'))
 	suite.addTest(TestNOD('test_deleteNOD2'))
 	suite.addTest(TestNOD('test_deleteNOD'))
-	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
+	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 
 if __name__ == '__main__':
-	_, errors, _ = run()
+	_, errors, _ = run(2, True)
 	sys.exit(errors)

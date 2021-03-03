@@ -1,0 +1,140 @@
+// Created by SDTTool
+// oneM2M Release: 4.5.0
+// Domain:         org.onem2m.railway
+[
+
+    // DeviceClass: deviceHandheldPTTTerminal
+    {
+        "type"      : "rad:dHPTT",
+        "lname"     : "deviceHandheldPTTTerminal",
+        "cnd"       : "org.onem2m.railway.device.deviceHandheldPTTTerminal",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:binSh", 
+            "cod:audVe", 
+            "cod:bat", 
+            "cod:clock", 
+            "cod:eneCn", 
+            "cod:keypd", 
+            "cod:opeMe", 
+            "cod:phoCl", 
+            "cod:pusBn", 
+            "cod:runSe", 
+            "cod:sigSh"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceHandheldPTTTerminalAnnc
+    {
+        "type"      : "rad:dHPTTAnnc",
+        "lname"     : "deviceHandheldPTTTerminalAnnc",
+        "cnd"       : "org.onem2m.railway.device.deviceHandheldPTTTerminalAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:audVe", 
+            "cod:audVeAnnc", 
+            "cod:bat", 
+            "cod:batAnnc", 
+            "cod:clock", 
+            "cod:clockAnnc", 
+            "cod:eneCn", 
+            "cod:eneCnAnnc", 
+            "cod:keypd", 
+            "cod:keypdAnnc", 
+            "cod:opeMe", 
+            "cod:opeMeAnnc", 
+            "cod:phoCl", 
+            "cod:phoClAnnc", 
+            "cod:pusBn", 
+            "cod:pusBnAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:sigSh", 
+            "cod:sigShAnnc"
+        ]
+    }, 
+
+    // DeviceClass: deviceTrainborneTerminal
+    {
+        "type"      : "rad:deTTl",
+        "lname"     : "deviceTrainborneTerminal",
+        "cnd"       : "org.onem2m.railway.device.deviceTrainborneTerminal",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:binSh", 
+            "cod:audVe", 
+            "cod:clock", 
+            "cod:eneCn", 
+            "cod:keypd", 
+            "cod:opeMe", 
+            "cod:phoCl", 
+            "cod:pusBn", 
+            "cod:runSe", 
+            "cod:sigSh", 
+            "rad:baTMe", 
+            "cod:conny"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceTrainborneTerminalAnnc
+    {
+        "type"      : "rad:deTTlAnnc",
+        "lname"     : "deviceTrainborneTerminalAnnc",
+        "cnd"       : "org.onem2m.railway.device.deviceTrainborneTerminalAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:audVe", 
+            "cod:audVeAnnc", 
+            "cod:clock", 
+            "cod:clockAnnc", 
+            "cod:eneCn", 
+            "cod:eneCnAnnc", 
+            "cod:keypd", 
+            "cod:keypdAnnc", 
+            "cod:opeMe", 
+            "cod:opeMeAnnc", 
+            "cod:phoCl", 
+            "cod:phoClAnnc", 
+            "cod:pusBn", 
+            "cod:pusBnAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:sigSh", 
+            "cod:sigShAnnc", 
+            "rad:baTMe", 
+            "rad:baTMeAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc"
+        ]
+    }
+
+
+]

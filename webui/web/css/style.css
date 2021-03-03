@@ -116,3 +116,20 @@ pre.inline {
    font-weight: medium;
    background-color: transparent;
 }
+
+
+#resource, #rest-headers, #rest-requestarea, #rest-result-headers, #rest-result-body {
+    font-family: 'DejaVu Sans Mono', monospace;
+}
+
+
+/* Support Dark mode */
+
+@media (prefers-color-scheme: dark) {
+  html, body > header, body > footer, .invert {
+    filter: invert(1) hue-rotate(180deg) contrast(90%);
+  }
+  img:not([src*=".svg"]), .dropimage {
+    filter: invert(1) hue-rotate(180deg) saturate(100%) contrast(100%);
+  }
+}
