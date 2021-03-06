@@ -213,7 +213,7 @@ class Storage(object):
 
 
 	def searchByValueInField(self, field:str, value:str) -> list[Resource]:
-		"""Search and return all resources of a specific value in a field,
+		"""Search and return all resources that have a specific value in a field,
 		and return them in an array."""
 		result = []
 		for j in self.db.searchByValueInField(field, value):
