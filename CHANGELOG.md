@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - xxxx-xx-xx
+## [0.7.0] - 2021-03-06
 
 ### Added
 - [CSE] Added *--http-address* and *--network-interface* command line arguments.
@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added diagram generation (in PlantUML format) of resource tree and deployment structure.
 - [CSE] Added better checks for content serialization in AE.
 - [CSE] Added command interface to the terminal console (for stopping the CSE, printing statistics, CSE registrations, the resource tree, etc).
-- [CSE] Added support for *holder* attribute. Added access control behavior for *holder* and resource creator when a resource may have an *acpi* attribute, but doesn't.
+- [CSE] Added support for *holder* attribute. Added access control behavior for *holder* and resource creator when an *acpi* attribute is specified for a resource, but doesn't have one.
 - [CSE] Added support for Subscription's *expirationCounter*.
 - [CSE] Added headless mode to better support docker.
 - [NOTIFICATIONS] Added support for handling CBOR serialization and other binary formats to the notification server.
