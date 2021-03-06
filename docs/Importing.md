@@ -2,6 +2,9 @@
 
 # Importing
 
+[Resources](#resources)  
+[Importing Attribute Policies for FlexContainers](#importing-attribute-policies-for-flexcontainers)
+
 ## Resources
 
 During startup it is necessary to import resources into to CSE. Each resource is read from a single file in the [init](../init) resource directory specified in the configuration file. Besides of a few mandatory resources additional resources can be imported to create a default resource structure for the CSE.
@@ -27,7 +30,7 @@ After importing the mandatory resources all other resources in the [init](../ini
 
 If the filename contains the substring *update*, then the resource specified by the resource's *ri* attribute is updated instead of created.
 
-### Including Configuration Settings
+### Referencing Configuration Settings
 
 By using macros the initial resources can be kept rather independent from individual settings. Most [configuration](Configuration.md) settings can be referenced and used by a simple macro mechanism. For this a given macro name is enclosed by  ```${...}```, e.g. ```${cse.csi}```.
 
@@ -50,42 +53,136 @@ A minimal set of resources is provided in the [init](../init) directory. Definit
 
 The directory [tools/resourceTemplates](../tools/resourceTemplates) contains templates for supported resource types. Please see the [README](../tools/resourceTemplates/README.md) there for further details.
 
-<a name="attributes"></a>
+
 ## Importing Attribute Policies for FlexContainers
 
-The CSE includes attribute policies for validating the attributes of all supported resource types (internal to the *m2m* namespace). But for all &lt;flexContainer> specializations, e.g. for oneM2M's TS-0023 ModuleClasses, those attribute policies must be provided. This can be done by providing attribute policy files for import. 
+The CSE uses attribute policies for validating the attributes of all supported resource types (internal to the *m2m* namespace). But for all &lt;flexContainer> specializations, e.g. for oneM2M's TS-0023 ModuleClasses, those attribute policies must be provided. This can be done by adding attribute policy files for import. 
 
-Those files are imported from the common import directory. More than one such file can be provided, for example one per domain. The files must have the extension ".ap". 
+Those files are imported from the common import / init directory. More than one such file can be provided, for example one per domain. The files must have the extension ".ap". 
 
 ### Format
 
-The format is basically a list of comma separated values with seven values per line and where the first line contains the header with the field names. 
+The format is a JSON structure that follows the structure described in the following code example.
+Some of the fields are not yet used, but will supported by a future version of the CSE.
 
-**Example**
+```
+// A file contains a list of Attribute Policies
+accessPolicies = [
+	
+	// Each Attribute Policy is an object
+	{
+		// The specialisation's namespace and short name. Mandatory.
+		"type"      : "namespace:shortname",
 
-```csv
-# resourceType, shortName, dataType, cardinality, optionalCreate, optionalUpdate, announced
+		// The specialisation's long name. Optional, and for future developments.
+		"lname"     : "attributePolicyLongname",
 
-# Additional attribute policies for <flexContainer> specializations
-# !!! Don't change the first line !!!
+		// The specialisation's containerDefinition. Optional, and for future developments.
+		"cnd"       : "containerDefinition",
 
-# ModuleClass: Colour
-hd:color,red,nonNegInteger,car1,O,O,OA
-hd:color,green,nonNegInteger,car1,O,O,OA
-hd:color,blue,nonNegInteger,car1,O,O,OA
+		// A list of attributes. Each entry specifies a single attribute of the specialization. Optional.
+        "attributes": [
+
+			// A single attribute is an object.
+            {
+				// The attribute's short name. Mandatory.
+				"sname" : "attributeShortName", 
+
+				// The attribute's long name. Optional, and for future developments.
+				"lname" : "attributeLongName", 
+
+				// The attribute's data type. Mandatory, and one from this list:
+				// 	- positiveInteger
+				// 	- nonNegInteger
+				//	- unsignedInt
+				//	- unsignedLong
+				//	- string
+				//	- timestamp
+				//	- list
+				//	- dict
+				//	- anyURI
+				// 	- boolean
+				//	- geoCoordinates
+				"type"	: "attributeType", 
+
+				// The "oc" field specifies the CREATE request optionality. Optional, and one from this list:
+				//	- O  : Optional provided (default)
+				// 	- M  : Mandatory provided
+				//	- NP : Not provided
+				"oc"	: "O|M|NP",
+
+				// The "ou" field specifies the UPDATE request optionality. Optional, and one from this list:
+				//	- O  : Optional provided (default)
+				// 	- M  : Mandatory provided
+				//	- NP : Not provided
+				"ou"	: "O|M|NP",
+
+				// The "od" field specifies the DISCOVERY request optionality. Optional, and one from this list:
+				//	- O  : Optional provided (default)
+				// 	- M  : Mandatory provided
+				//	- NP : Not provided
+				"od"	: "O|M|NP",
+
+				// The "annc" field specifies whether an announced optionality. Optional, and one from this list:
+				//	- OA : Optional announced (default)
+				//	- MA : Mandatory announced
+				//	- NA : Not announced
+				"annc": "OA|MA|NA",
+
+				// The attribute multiplicity. Optional, and one from this list:
+				//	- 01  : The attribute is optional (default)
+				//	- 01L : the attribute is an optional list
+				//	- 1   : The attribute is mandatory
+				// 	- 1L  : The attribute is a mandatory list
+				"car" : "01|01L|1|1L" 
+			}, 
+
+		],
+
+		// A list of child resource types. Optional.
+		"children"  : [
+			// This list consists of one or more strings, each of those is the name of an additional
+			// child resource specialisation. It is not necessary to specify here the already allowed
+			// child resource types of <flexContainer>.
+		]
+	}
+]
 ```
 
-**Field Format**
+**Examples**
 
-| # | Field | Description | Values |
-|:-:|-------|-|-|
-| 1 | specialization type | Shortname of the specialization, including the domain. This can occur multiple times, once for each attribute. | domain:name |
-| 2 | attribute shortname | Shortname of the attribute. This should only appear once per specialization. | string |
-| 3 | data type | This field specifies the attribute's data type. | 	<ul><li>positiveInteger</li></ul><ul><li>nonNegInteger</li></ul><ul><li>unsignedInt</li></ul><ul><li>unsignedLong</li></ul><ul><li>string</li></ul><ul><li>timestamp</li></ul><ul><li>list</li></ul><ul><li>dict</li></ul><ul><li>anyURI</li></ul><ul><li>boolean</li></ul><ul><li>geoCoordinates</li></ul> |
-| 4 | cardinality | The multiplicity of the attribute. This must be one of the following values. | <ul><li>**car1** : multiplicity of 1</li></ul><ul><li>**car1L** : multiplicity of 1 (list)</li></ul><ul><li>**car01** : multiplicity of 0 or 1</li></ul><ul><li>**car01L** : multiplicity of 0 or 1 (list)</li></ul> |
-| 5 | CREATE optionality | This field specifies whether this attribute must be provided etc during a CREATE request.  | <ul><li>**NP** : Not provided</li></ul><ul><li>**O** : Optional provided</li></ul><ul><li>**M** : Mandatory provided</li></ul> |
-| 6 | UPDATE optionality | This field specifies whether this attribute must be provided etc during an UPDATE request. | <ul><li>**NP** : Not provided</li></ul><ul><li>**O** : Optional provided</li></ul><ul><li>**M** : Mandatory provided</li></ul> | 
-| 7 | Announced optionallity | This field specifies whether an attribute is announced when the resource is announced. | <ul><li>**NA** : Not announced</li></ul><ul><li>**OA** : Optional announced</li></ul><ul><li>**MA** : Mandatory announced</li></ul> |
+The following examples show the attribute policies for the *binarySwitch* and *deviceLight* specialisations, both defined in oneM2M's TS-0023 specification.
 
+```JSON
+[
+    // ModuleClass: binarySwitch (binSh)
+    {
+        "type"      : "cod:binSh",
+        "lname"     : "binarySwitch",
+        "cnd"       : "org.onem2m.common.moduleclass.binarySwitch",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: powerState
+            { "sname" : "powSe", "lname" : "powerState", "type" : "boolean", "car" : "1" }
+        ]
+    }, 
+
+    // DeviceClass: deviceLight
+    {
+        "type"      : "cod:devLt",
+        "lname"     : "deviceLight",
+        "cnd"       : "org.onem2m.common.device.deviceLight",
+        "children"  : [
+            "cod:fauDn", 
+            "cod:binSh", 
+            "cod:runSe", 
+            "cod:color", 
+            "cod:colSn", 
+            "cod:brigs"
+        ]
+	}
+]
+```
 
 [← README](../README.md) 

@@ -53,7 +53,7 @@ The following macros are supported in addition to those defined in the sections 
 
 | Keyword                  | Description                                                                                                                                                                                    | Macro Name                   |
 |:-------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------|
-| type                     | The CSE type. Possible values: IN, MN, ASN.<br/>Default: IN                                                                                                                                    | cse.type                     |
+| type                     | The CSE type. Allowed values: IN, MN, ASN.<br/>Default: IN                                                                                                                                     | cse.type                     |
 | serviceProviderID        | The CSE's service provider ID.<br/>Default: acme                                                                                                                                               | cse.spid                     |
 | cseID                    | The CSE ID. Can be overwritten in imported CSE definition. A CSE-ID must start with a /.<br/>Default: id-in                                                                                    | cse.csi                      |
 | resourceID               | The CSE's resource ID. This should be the *cseid* without the leading "/". Can be overwritten in imported CSE definition.<br/>Default: id-in                                                   | cse.ri                       |
@@ -71,35 +71,37 @@ The following macros are supported in addition to those defined in the sections 
 | sortDiscoveredResources  | Enable alphabetical sorting of discovery results.<br/>Default: true                                                                                                                            | cse.sortDiscoveredResources  |
 | checkExpirationsInterval | Interval to check for expired resources. 0 means "no checking".<br/>Default: 60 seconds                                                                                                        | cse.checkExpirationsInterval |
 | flexBlockingPreference   | Indicate the preference for flexBlocking response types. Allowed values: "blocking", "nonblocking".<br />Default: blocking                                                                     | cse.flexBlockingPreference   |
-
+| supportedReleaseVersions | A comma-separated list of supported release versions. This list can contain a single or multiple values.<br />Default: 1,2,2a,3                                                                | cse.supportedReleaseVersions |
+| releaseVersion           | The release version indicator for requests. Allowed values: 1, 2, 3, 3a, 4.<br />Default: 3                                                                                                    | cse.releaseVersion           |
+| defaultSerialization     | Indicate the serialization format if none was given in a request and cannot be determined otherwise.<br/>Allowed values: json, cbor.<br/>Default: json                                         | cse.defaultSerialization     |
 
 
 <a name="security"></a>
 ### [cse.security] - General CSE Security Settings
 
-| Keyword           | Description                                                                                                                                                                                                                                     | Macro Name                     |
-|:------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|
-| enableACPChecks   | Enable access control checks.<br/> Default: true                                                                                                                                                                                                | cse.secuerity.enableACPChecks  |
-| adminACPI         | Admin ACP, resource identifier (e.g. from an imported ACP). Assigned by the CSE for admin access.<br /> Default: acpAdmin                                                                                                                       | cse.security.adminACPI         |
-| defaultACPI       | Default ACP, resource identifier (e.g. from an imported ACP). Assigned by the CSE in case the 'acpi' attribute is missing in a resource.<br/>Default: acpDefault                                                                                | cse.security.defaultACPI       |
-| csebaseAccessACPI | The ACP resource that will dynamically receive permissions to access the CSEBase. They are assigned, for example, during AE or remoteCSE registration.<br/>Default: acpCSEBaseAccess                                                            | cse.security.csebaseAccessACPI |
+| Keyword           | Description                                                                                                                                                                                                                                      | Macro Name                     |
+|:------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|
+| enableACPChecks   | Enable access control checks.<br/> Default: true                                                                                                                                                                                                 | cse.secuerity.enableACPChecks  |
+| fullAccessAdmin   | Always grant the admin originator full access (bypass access checks).<br /> Default: True                                                                                                                                                        | cse.security.fullAccessAdmin   |
 | useTLS            | Enable TLS for communications.<br />This can be overridden by the command line arguments [--http and --https](Running.md).<br />See oneM2M TS-0003 Clause 8.2.1 "Overview on Security Association Establishment Frameworks".<br />Default: False | cse.security.useTLS            |
-| tlsVersion        | TLS version to be used in connections. <br />Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate version negotiation.<br />Default: auto                                                                     | cse.security.tlsVersion        |
-| verifyCertificate | Verify certificates in requests. Set to *False* when using self-signed certificates.<br />Default: False                                                                                                                                        | cse.security.verifyCertificate |
-| caCertificateFile | Path and filename of the certificate file.<br />Default: None                                                                                                                                                                                   | cse.security.caCertificateFile |
-| caPrivateKeyFile  | Path and filename of the private key file.<br />Default: None                                                                                                                                                                                   | cse.security.caPrivateKeyFile  |
+| tlsVersion        | TLS version to be used in connections. <br />Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate version negotiation.<br />Default: auto                                                                      | cse.security.tlsVersion        |
+| verifyCertificate | Verify certificates in requests. Set to *False* when using self-signed certificates.<br />Default: False                                                                                                                                         | cse.security.verifyCertificate |
+| caCertificateFile | Path and filename of the certificate file.<br />Default: None                                                                                                                                                                                    | cse.security.caCertificateFile |
+| caPrivateKeyFile  | Path and filename of the private key file.<br />Default: None                                                                                                                                                                                    | cse.security.caPrivateKeyFile  |
 
 <a name="server_http"></a>
 ###	[server.http] - HTTP Server Settings
 
-| Keyword                   | Description                                                                                                                                                                                                                  | Macro Name                     |
-|:--------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|
-| port                      | Port to listen to.<br/>Default: 8080                                                                                                                                                                                         | http.port                      |
-| listenIF                  | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1                                                                                                                                              | http.listenIF                  |
-| address                   | Own address. Should be a local/public reachable address.<br/> Default: http://127.0.0.1:8080                                                                                                                                 | http.address                   |
-| root                      | CSE Server root. Never provide a trailing /.<br/>Default: empty string                                                                                                                                                       | http.root                      |
-| multiThread               | Run the http server in single- or multi-threaded mode.<br/> Default: true                                                                                                                                                    | http.multiThread               |
-| enableRemoteConfiguration | Enable an endpoint for get and set certain configuration values via a REST interface.<br />**ATTENTION: Enabling this feature exposes configuration values, IDs and passwords, and is a security risk.**<br/> Default: false | http.enableRemoteConfiguration |
+| Keyword                   | Description                                                                                                                                                                                                                                                | Macro Name                     |
+|:--------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|
+| port                      | Port to listen to.<br/>Default: 8080                                                                                                                                                                                                                       | http.port                      |
+| listenIF                  | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1                                                                                                                                                                            | http.listenIF                  |
+| address                   | Own address. Should be a local/public reachable address.<br/> Default: http://127.0.0.1:8080                                                                                                                                                               | http.address                   |
+| root                      | CSE Server root. Never provide a trailing /.<br/>Default: empty string                                                                                                                                                                                     | http.root                      |
+| multiThread               | Run the http server in single- or multi-threaded mode.<br/> Default: true                                                                                                                                                                                  | http.multiThread               |
+| enableRemoteConfiguration | Enable an endpoint for get and set certain configuration values via a REST interface.<br />**ATTENTION: Enabling this feature exposes configuration values, IDs and passwords, and is a security risk.**<br/> Default: false                               | http.enableRemoteConfiguration |
+| enableStructureEndpoint   | Enable an endpoint for getting a structured overview about a CSE's resource tree and deployment infrastructure (remote CSE's).<br />**ATTENTION: ATTENTION: Enabling this feature exposes various potentially sensitive information.**<br/> Default: false | http.enableStructureEndpoint   |
+
 
 <a name="database"></a>
 ###	[database] - Database Settings
@@ -115,14 +117,16 @@ The following macros are supported in addition to those defined in the sections 
 <a name="logging"></a>
 ###	[logging] - Logging Settings
 
-| Keyword           | Description                                                                                                                              | Macro Name                |
-|:------------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:--------------------------|
-| enable            | Enable logging.<br/>Default: true                                                                                                        | logging.enable            |
-| enableFileLogging | Enable logging to file.<br/>Default: true                                                                                                | logging.enableFileLogging |
-| path              | Pathname for log files.<br />Default: ./logs                                                                                             | logging.path              |
-| level             | Loglevel. Possible values: debug, info, warning, error.<br/>See also command line argument [–log-level](Running.md).<br/> Default: debug | logging.level             |
-| count             | Number of files for log rotation.<br/>Default: 10                                                                                        | logging.count             |
-| size              | Size per log file.<br/>Default: 100.000 bytes                                                                                            | logging.size              |
+| Keyword             | Description                                                                                                                             | Macro Name                  |
+|:--------------------|:----------------------------------------------------------------------------------------------------------------------------------------|:----------------------------|
+| enable              | Enable logging.<br/>Default: true                                                                                                       | logging.enable              |
+| enableFileLogging   | Enable logging to file.<br/>Default: false                                                                                              | logging.enableFileLogging   |
+| enableScreenLogging | Enable logging to the screen.<br/>Default: true                                                                                         | logging.enableScreenLogging |
+| path                | Pathname for log files.<br />Default: ./logs                                                                                            | logging.path                |
+| level               | Loglevel. Allowed values: debug, info, warning, error.<br/>See also command line argument [–log-level](Running.md).<br/> Default: debug | logging.level               |
+| count               | Number of files for log rotation.<br/>Default: 10                                                                                       | logging.count               |
+| size                | Size per log file.<br/>Default: 100.000 bytes                                                                                           | logging.size                |
+| stackTraceOnError   | Print a stack trace when logging an 'error' level message.<br />Default: True                                                           | logging.stackTraceOnError   |
 
 
 <a name="cse_registration"></a>
@@ -136,15 +140,18 @@ The following macros are supported in addition to those defined in the sections 
 
 
 <a name="registrar"></a>
-### [cse.registrar] - Settings for Remote Registrar CSE Access 
+### [cse.registrar] - Settings for Registrar Registrar CSE Access 
 
-| Keyword       | Description                                                                                                                              | Macro Name               |
-|:--------------|:-----------------------------------------------------------------------------------------------------------------------------------------|:-------------------------|
-| address       | URL of the remote CSE.<br/>Default: no default                                                                                           | cse.registrar.address       |
-| root          | Remote CSE root path. Never provide a trailing /.<br/>Default: empty string                                                              | cse.registrar.root          |
-| cseID         | CSE-ID of the remote CSE. A CSE-ID must start with a /.<br/>Default: no default                                                                                        | cse.registrar.csi           |
-| resourceName  | The remote CSE's resource name. <br>Default: no default                                                                                  | cse.registrar.rn                       |
-| checkInterval | Wait n seconds between tries to to connect to the remote CSE and to check validity of remote CSE connections in seconds.<br/>Default: 30 | cse.registrar.checkInterval |
+| Keyword              | Description                                                                                                                                          | Macro Name                         |
+|:---------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------|
+| address              | URL of the Registrar CSE.<br/>Default: no default                                                                                                    | cse.registrar.address              |
+| root                 | Registrar CSE root path. Never provide a trailing /.<br/>Default: empty string                                                                       | cse.registrar.root                 |
+| cseID                | CSE-ID of the Registrar CSE. A CSE-ID must start with a /.<br/>Default: no default                                                                   | cse.registrar.csi                  |
+| resourceName         | The Registrar CSE's resource name. <br>Default: no default                                                                                           | cse.registrar.rn                   |
+| serialization        | Specify the serialization type that must be used for the registration to the registrar CSE.<br />Allowed values: json, cbor<br />Default: json       | cse.registrar.serialization        |
+| checkInterval        | Wait n seconds between tries to to connect to the reRegistrarmote CSE and to check validity of Registrar CSE connections in seconds.<br/>Default: 30 | cse.registrar.checkInterval        |
+| excludeCSRAttributes | List of resources that are excluded when creating a registrar CSR.<br />Default: empty list                                                          | cse.registrar.excludeCSRAttributes |
+
 
 <a name="announcements"></a>
 ### [cse.announcements] - Settings for Resource Announcements 
@@ -172,7 +179,6 @@ The following macros are supported in addition to those defined in the sections 
 |:------------------|:------------------------------------------------------------------------------|:--------------------------|
 | permission        | Default permission when creating an ACP resource.<br />Default: 63            | cse.acp.pv.acop           |
 | selfPermission    | Default selfPermission when creating an ACP resource.<br/>Default: 51         | cse.acp.pvs.acop          |
-| addAdminOrignator | Always add the CSE's "admin" originator to an ACP resource.<br/>Default: true | cse.acp.addAdminOrignator |
 
 
 <a name="resource_cnt"></a>
@@ -241,7 +247,7 @@ The following snippet only presents some example for ID mappings.
 |:-----------|:------------------------------------------------------------------------------------------------------|:--------------------------|
 | enable     | Enable the statistics AE.<br/>Default: true                                                           | app.statistics.enable     |
 | aeRN       | Resource name of the statistics AE.<br/>Default: statistics                                           | app.statistics.aeRN       |
-| aeAPI      | App-ID of the statistics AE.<br/>Default: ae-statistics                                               | app.statistics.aeAPI      |
+| aeAPI      | App-ID of the statistics AE. Must start with "N" or "R".<br/>Default: Ntatistics                      | app.statistics.aeAPI      |
 | fcntRN     | Resource name of the statistics flexContainer.<br/> Default: statistics                               | app.statistics.fcntRN     |
 | fcntCND    | Content Definition of the AE's flexContainer. This is a proprietary CND.<br/>Default: acme.statistics | app.statistics.fcntCND    |
 | fcntType   | Element type of the AE's flexContainer. This is a proprietary type.<br/>Default: acme:csest           | app.statistics.fcntType   |

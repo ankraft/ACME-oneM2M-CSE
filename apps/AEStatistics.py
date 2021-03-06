@@ -13,7 +13,7 @@ from Logging import Logging
 from Configuration import Configuration
 import Statistics, CSE, Utils
 # The following line incorrectly throws an error with mypy
-from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN 	# type: ignore
+from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN
 import threading, time
 from Types import ResourceTypes as T
 
@@ -38,18 +38,24 @@ class AEStatistics(AEBase):
 		# Attribute definitions for the statistics specialization
 		statisticAttributes =  {
 			self.fcntType : {
-				'rmRes'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'crRes'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'upRes'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'htRet'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'htCre'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'htUpd'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'htDel'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'cseSU'	: [ BT.timestamp,		CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'lgErr'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'lgWrn'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'cseUT'	: [ BT.string,			CAR.car01, RO.O, RO.O, RO.O, AN.OA ],
-				'ctRes'	: [ BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ]
+				'rmRes'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'crRes'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'upRes'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'htRet'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'htCre'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'htUpd'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'htDel'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'htSRt'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'htSCr'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'htSUp'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'htSDl'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'cseSU'	: ( BT.timestamp,		CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'lgErr'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'lgWrn'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'cseUT'	: ( BT.string,			CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'ctRes'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'exRes'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
+				'notif'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
 			}
 		}
 
@@ -58,10 +64,9 @@ class AEStatistics(AEBase):
 
 
 		# Create structure beneath the AE resource
-		jsn = { self.fcntType : {
+		dct = { self.fcntType : {
 				'rn'  : Configuration.get('app.statistics.fcntRN'),
 					'cnd' : Configuration.get('app.statistics.fcntCND'),
-					'acpi': [ self.acpi ],	# assignde by CSE,
 					'mni' : 2,
 					'aa' : ['rmRes', 'crRes', 'upRes', 'crRes', 'cseUT'],
 				Statistics.deletedResources : 0,
@@ -80,11 +85,11 @@ class AEStatistics(AEBase):
 		}
 		# add announceTarget if target CSI is given
 		if (rcsi:= Configuration.get('cse.registrar.csi')) is not None:
-			Utils.setXPath(jsn, '%s/at' % self.fcntType, [rcsi])
-		#Utils.setXPath(jsn, '%s/at' % self.fcntType, ['/id-in'])
+			Utils.setXPath(dct, f'{self.fcntType}/at', [rcsi])
+		#Utils.setXPath(dct, f'{self.fcntType}/at', ['/id-in'])
 
 		self.fc = self.retrieveCreate(	srn=self.fcsrn,
-										jsn=jsn,
+										data=dct,
 										ty=T.FCNT)
 
 		# Update the statistic resource from time to time
@@ -107,7 +112,7 @@ class AEStatistics(AEBase):
 
 		# Update statistics
 		if (stats := CSE.statistics.getStats()) is not None:
-			self.updateResource(srn=self.fcsrn, jsn={ self.fcntType : stats })
+			self.updateResource(srn=self.fcsrn, data={ self.fcntType : stats })
 
 		return True
 

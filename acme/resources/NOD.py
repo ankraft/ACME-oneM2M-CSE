@@ -9,7 +9,7 @@
 
 import random, string
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, JSON
 import Utils, CSE
 from Validator import constructPolicy, addPolicy
 from .Resource import *
@@ -20,7 +20,7 @@ from .AnnounceableResource import AnnounceableResource
 # TODO Support storage
 
 attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci',
+	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 'hld',
 ])
 nodPolicies = constructPolicy([
 	'ni', 'hcl', 'hael', 'hsl', 'mgca', 'rms', 'nid', 'nty'
@@ -30,12 +30,12 @@ attributePolicies = addPolicy(attributePolicies, nodPolicies)
 
 class NOD(AnnounceableResource):
 
-	def __init__(self, jsn:dict=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.NOD, jsn, pi, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.NOD, dct, pi, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = nodPolicies	# only the resource type's own policies
 
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('ni', Utils.uniqueID(), overwrite=False)
 
 

@@ -18,11 +18,14 @@ In additions, you can provide additional command line arguments that will overri
 | -h, --help                                        | Show a help message and exit.                                                                                                                                   |
 | --http, --https                                   | Run the CSE with http or https server.<br />This overrides the [useTLS](Configuration.md#security) configuration setting.                                       |
 | --apps, --noapps                                  | Enable or disable the build-in applications.<br />This overrides the [enableApplications](Configuration.md#general) configuration setting.                      |
-| --config CONFIGFILE                               | Specify a configuration file that is used instead of the default (*acme.ini*) one.                                                                              |
+| --config \<filename>                              | Specify a configuration file that is used instead of the default (*acme.ini*) one.                                                                              |
 | --db-reset                                        | Reset and clear the database when starting the CSE.                                                                                                             |
 | --db-storage {memory,disk}                        | Specify the DB´s storage mode.<br />This overrides the [inMemory](Configuration.md#database) configuration setting.                                             |
+| --headless                                        | Operate the CSE in headless mode. This disables almost all screen output and also the build-in console interface.                                               |
+| --http-address \<server URL>                      | Specify the CSE\'s http server URL.<br />This overrides the [address](Configuration.md#http_server) configuration setting.                                      |
+| --import-directory \<directory>                   | Specify the import directory.<br />This overrides the [resourcesPath](Configuration.md#general) configuration setting.                                          |
+| --network-interface \<ip address>                 | Specify the network interface/IP address to bind to.<br />This overrides the [listenIF](Configuration.md#server_http) configuration setting.                    |
 | --log-level {info, error, warn, debug, off}       | Set the log level, or turn logging off.<br />This overrides the [level](Configuration.md#logging) configuration setting.                                        |
-| --import-directory IMPORTDIRECTORY                | Specify the import directory.<br />This overrides the [resourcesPath](Configuration.md#general) configuration setting.                                          |
 | --remote-configuration, --no-remote-configuration | Enable or disable http remote configuration endpoint.<br />This overrides the [enableRemoteConfiguration](Configuration.md##server_http) configuration setting. |
 | --remote-cse, --no-remote-cse                     | Enable or disable remote CSE connections and checking.<br />This overrides the [enableRemoteCSE](Configuration.md#general) configuration setting.               |
 | --statistics, --no-statistics                     | Enable or disable collecting CSE statics.<br />This overrides the [enable](Configuration.md#statistics) configuration setting.                                  |
@@ -47,11 +50,31 @@ After you generated these files you can move them to a separate directory (for e
 
 ## Stopping the CSE
 
-The CSE can be stopped by pressing *CTRL-C* **once** on the command line. 
+The CSE can be stopped by pressing pressing the uppercase *Q* key or *CTRL-C* **once** on the command line. 
 
 Please note, that the shutdown might take a moment (e.g. gracefully terminating background processes, writing database caches, sending notifications etc). 
 
 **Being impatient and hitting *CTRL-C* twice might lead to data corruption.**
+
+
+## Command Console
+
+The CSE has a simple command console interface to execute build-in commands. Currently these commands are available:
+
+ - h, ?  - This help
+ - Q, ^C - Shutdown CSE
+ - c     - Show configuration
+ - D     - Delete resource
+ - i     - Inspect resource
+ - l     - Toggle logging on/off
+ - r     - Show CSE registrations
+ - s     - Show statistics
+ - t     - Show resource tree
+ - w     - Show worker threads status
+
+ The following screenshot shows, for example, a CSE's resource tree:
+
+![](images/console_tree.png)
 
 
 ## Running a Notifications Server

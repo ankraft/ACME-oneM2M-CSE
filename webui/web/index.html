@@ -16,8 +16,8 @@
 </head>
 <body onload="setup()">
 
-<div style="overflow: hidden;height: 60px;">
-	<nav>
+<div style="overflow: hidden;height: 60px; ">
+	<nav style="margin-top: 10px;">
 		<img class="brand logo" src="img/acme.png" />
 
 		<div class="menu"><label for="info1" class="pseudo" style="margin-left: 10px">&#9432;</label></div>
@@ -87,7 +87,7 @@
 
 				<!-- JSON -->
 				<div>
-					<pre><textarea id="resource" rows="65" readonly></textarea></pre>
+					<textarea id="resource" rows="65" readonly></textarea>
 				</div>
 
 				<!-- REST UI -->
@@ -105,10 +105,10 @@
 									<span id="spanput"><input id="methodput" type='radio' name="rest-method" value="PUT"><label for="methodput" class="checkable">PUT</label></span>
 									<span id="spandelete"><input id="methoddelete" type='radio' name="rest-method" value="DELETE"><label for="methoddelete" class="checkable"><font color="#EC5242">DELETE</font></label></span>
 									<h5>Request Header</h5>
-									<pre><textarea id="rest-headers" placeholder="Header Fields" required="required" rows="4"></textarea></pre>
+									<textarea id="rest-headers" placeholder="Header Fields" required="required" rows="4"></textarea>
 									<div id="rest-requestbody" style="display: none;">
 										<h4>Request Body</h4>
-										<pre><textarea id="rest-requestarea" readonly placeholder="Request Body" rows="8"></textarea></pre>
+										<textarea id="rest-requestarea" readonly placeholder="Request Body" rows="8"></textarea>
 									</div>
 									<input type="text" style="display: none;" /> <!-- extra line to prevent submit on return -->
 									<a class="button success" id="sendButton" type="submit"  onclick="restSendForm()">Send</a>
@@ -132,9 +132,9 @@
 							<h5>Status Code</h5>
 							<input id="rest-status" required="required" readonly  value="" style="background-color: #f0f0f0;"/>
 							<h5>Response Header</h5>
-							<pre><textarea id="rest-result-headers" readonly style="background-color: #f0f0f0;" rows="6"></textarea></pre>
+							<textarea id="rest-result-headers" readonly style="background-color: #f0f0f0;" rows="6"></textarea>
 							<h5>Response Body</h5>
-							<pre><textarea id="rest-result-body" readonly style="background-color: #f0f0f0;" rows="30"></textarea></pre>
+							<textarea id="rest-result-body" readonly style="background-color: #f0f0f0;" rows="30"></textarea>
 							<a class="button" id="clearResultButton" type="submit" onclick="restClearResult()">Clear</a>
 
 						</fieldset>

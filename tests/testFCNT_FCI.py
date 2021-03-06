@@ -10,48 +10,44 @@
 import unittest, sys
 import requests
 sys.path.append('../acme')
+from typing import Tuple
 from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC
 from init import *
-
-# The following code must be executed before anything else because it influences
-# the collection of skipped tests.
-# It checks whether there actually is a CSE running.
-noCSE = not connectionPossible(cseURL)
 
 
 CND = 'org.onem2m.home.moduleclass.temperature'
 
 class TestFCNT_FCI(unittest.TestCase):
 
+	ae 			= None 
+	originator 	= None
+
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def setUpClass(cls):
-		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
-		assert rsc == RC.OK, 'Cannot retrieve CSEBase: %s' % cseURL
-
-		jsn = 	{ 'm2m:ae' : {
+	def setUpClass(cls) -> None:
+		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
 					'rr': False,
 					'srv': [ '3' ]
 				}}
-		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, jsn)	# AE to work under
+		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def tearDownClass(cls):
+	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createFCNT(self):
-		self.assertIsNotNone(TestFCNT_FCI.cse)
+	def test_createFCNT(self) -> None:
+		"""	Create a <FCNT> """
 		self.assertIsNotNone(TestFCNT_FCI.ae)
-		jsn = 	{ 'hd:tempe' : { 
+		dct = 	{ 'cod:tempe' : { 
 					'rn'	: fcntRN,
 					'cnd' 	: CND, 
 					'curT0'	: 23.0,
@@ -61,104 +57,113 @@ class TestFCNT_FCI(unittest.TestCase):
 					'steVe'	: 0.5,
 					'mni'	: 10
 				}}
-		r, rsc = CREATE(aeURL, TestFCNT_FCI.originator, T.FCNT, jsn)
+		r, rsc = CREATE(aeURL, TestFCNT_FCI.originator, T.FCNT, dct)
 		self.assertEqual(rsc, RC.created)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_attributesFCNT(self):
+	def test_attributesFCNT(self) -> None:
+		"""	Validate <FCNT> attributes """
 		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
-		self.assertEqual(findXPath(r, 'hd:tempe/ty'), T.FCNT)
-		self.assertEqual(findXPath(r, 'hd:tempe/pi'), findXPath(TestFCNT_FCI.ae,'m2m:ae/ri'))
-		self.assertEqual(findXPath(r, 'hd:tempe/rn'), fcntRN)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/ct'))
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/lt'))
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/et'))
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/st'))
-		self.assertEqual(findXPath(r, 'hd:tempe/cr'), TestFCNT_FCI.originator)
-		self.assertEqual(findXPath(r, 'hd:tempe/cnd'), CND)
-		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 23.0)
-		self.assertIsNone(findXPath(r, 'hd:tempe/tarTe'))
-		self.assertEqual(findXPath(r, 'hd:tempe/unit'), 1)
-		self.assertEqual(findXPath(r, 'hd:tempe/minVe'), -100.0)
-		self.assertEqual(findXPath(r, 'hd:tempe/maxVe'), 100.0)
-		self.assertEqual(findXPath(r, 'hd:tempe/steVe'), 0.5)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/st'))
-		self.assertEqual(findXPath(r, 'hd:tempe/st'), 0)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/mni'))
-		self.assertEqual(findXPath(r, 'hd:tempe/mni'), 10)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/cni'))
-		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 1)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/cbs'))
-		self.assertGreater(findXPath(r, 'hd:tempe/cbs'), 0)
+		self.assertEqual(findXPath(r, 'cod:tempe/ty'), T.FCNT)
+		self.assertEqual(findXPath(r, 'cod:tempe/pi'), findXPath(TestFCNT_FCI.ae,'m2m:ae/ri'))
+		self.assertEqual(findXPath(r, 'cod:tempe/rn'), fcntRN)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/ct'))
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/lt'))
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/et'))
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/st'))
+		self.assertIsNone(findXPath(r, 'cod:tempe/cr'))
+		self.assertEqual(findXPath(r, 'cod:tempe/cnd'), CND)
+		self.assertEqual(findXPath(r, 'cod:tempe/curT0'), 23.0)
+		self.assertIsNone(findXPath(r, 'cod:tempe/tarTe'))
+		self.assertEqual(findXPath(r, 'cod:tempe/unit'), 1)
+		self.assertEqual(findXPath(r, 'cod:tempe/minVe'), -100.0)
+		self.assertEqual(findXPath(r, 'cod:tempe/maxVe'), 100.0)
+		self.assertEqual(findXPath(r, 'cod:tempe/steVe'), 0.5)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/st'))
+		self.assertEqual(findXPath(r, 'cod:tempe/st'), 0)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/mni'))
+		self.assertEqual(findXPath(r, 'cod:tempe/mni'), 10)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/cni'))
+		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 1)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/cbs'))
+		self.assertGreater(findXPath(r, 'cod:tempe/cbs'), 0)
+
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateFCNT(self):
-		jsn = 	{ 'hd:tempe' : {
+	def test_updateFCNT(self) -> None:
+		"""	Update <FCNT> """
+		dct = 	{ 'cod:tempe' : {
 					'tarTe':   5.0,
 					'curT0'	: 17.0,
 				}}
-		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, jsn)
+		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)		# retrieve fcnt again
 		self.assertEqual(rsc, RC.OK)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/tarTe'))
-		self.assertIsInstance(findXPath(r, 'hd:tempe/tarTe'), float)
-		self.assertEqual(findXPath(r, 'hd:tempe/tarTe'), 5.0)
-		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 17.0)
-		self.assertEqual(findXPath(r, 'hd:tempe/st'), 1)
-		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 2)
-		self.assertGreater(findXPath(r, 'hd:tempe/cbs'), 0)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/tarTe'))
+		self.assertIsInstance(findXPath(r, 'cod:tempe/tarTe'), float)
+		self.assertEqual(findXPath(r, 'cod:tempe/tarTe'), 5.0)
+		self.assertEqual(findXPath(r, 'cod:tempe/curT0'), 17.0)
+		self.assertEqual(findXPath(r, 'cod:tempe/st'), 1)
+		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 2)
+		self.assertGreater(findXPath(r, 'cod:tempe/cbs'), 0)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveFCNTLaOl(self):
-		r, rsc = RETRIEVE('%s/la' % fcntURL, TestFCNT_FCI.originator)
+	def test_retrieveFCNTLaOl(self) -> None:
+		"""	Retrieve <FCI> via <FCNT>/la and <FCNT>/ol """
+		r, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/curT0'))
-		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 17.0)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/curT0'))
+		self.assertEqual(findXPath(r, 'cod:tempe/curT0'), 17.0)
 
-		r, rsc = RETRIEVE('%s/ol' % fcntURL, TestFCNT_FCI.originator)
+		r, rsc = RETRIEVE(f'{fcntURL}/ol', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
-		self.assertIsNotNone(findXPath(r, 'hd:tempe/curT0'))
-		self.assertEqual(findXPath(r, 'hd:tempe/curT0'), 23.0)
+		self.assertIsNotNone(findXPath(r, 'cod:tempe/curT0'))
+		self.assertEqual(findXPath(r, 'cod:tempe/curT0'), 23.0)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateFCNTMni(self):
-		jsn = 	{ 'hd:tempe' : {
+	def test_updateFCNTMni(self) -> None:
+		""" Update <FCNT> MNI """
+		dct = 	{ 'cod:tempe' : {
 					'mni':   1,
 				}}
-		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, jsn)
+		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, dct)
 		self.assertEqual(rsc, RC.updated)
 		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)		# retrieve fcnt again
 		self.assertEqual(rsc, RC.OK)
-		self.assertEqual(findXPath(r, 'hd:tempe/mni'), 1)
-		self.assertEqual(findXPath(r, 'hd:tempe/cni'), 1)
-		self.assertEqual(findXPath(r, 'hd:tempe/st'), 2)
+		self.assertEqual(findXPath(r, 'cod:tempe/mni'), 1)
+		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 1)
+		self.assertEqual(findXPath(r, 'cod:tempe/st'), 2)
 
-		rla, rsc = RETRIEVE('%s/la' % fcntURL, TestFCNT_FCI.originator)
+		rla, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
 
-		rol, rsc = RETRIEVE('%s/ol' % fcntURL, TestFCNT_FCI.originator)
+		rol, rsc = RETRIEVE(f'{fcntURL}/ol', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
 
 		# al == ol ?
-		self.assertEqual(findXPath(rla, 'hd:tempe/ri'), findXPath(rol, 'hd:tempe/ri'))
+		self.assertEqual(findXPath(rla, 'cod:tempe/ri'), findXPath(rol, 'cod:tempe/ri'))
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteFCNT(self):
-		_, rsc = DELETE(fcntURL, ORIGINATOR)
+	def test_deleteFCNT(self) -> None:
+		""" Delete <FCNT> """
+		_, rsc = DELETE(fcntURL, TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.deleted)
 
 
-def run():
+# TODO other FCNT controlling attributes
+# TODO Add similar tests from testCNT_CIN for mni, etc
+
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestFCNT_FCI('test_createFCNT'))
 	suite.addTest(TestFCNT_FCI('test_attributesFCNT'))
@@ -166,11 +171,12 @@ def run():
 	suite.addTest(TestFCNT_FCI('test_retrieveFCNTLaOl'))
 	suite.addTest(TestFCNT_FCI('test_updateFCNTMni'))
 	suite.addTest(TestFCNT_FCI('test_deleteFCNT'))
-	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=True).run(suite)
+	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
+	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 
 if __name__ == '__main__':
-	_, errors, _ = run()
+	_, errors, _ = run(2, True)
 	sys.exit(errors)
 

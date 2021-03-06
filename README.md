@@ -1,9 +1,9 @@
-# ![](webui/img/acme_sm.png) 
+# ![](webui/web/img/acme_sm.png) 
 
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
 
-Version 0.6.0
+Version 0.7.0
 
 [![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.8-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-green.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-green)](LICENSE) [![MyPy](https://img.shields.io/badge/MyPy-covered-green)](LICENSE)  
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/acmeCSE.svg?style=social&label=%40acmeCSE)](https://twitter.com/acmeCSE)
@@ -31,12 +31,24 @@ Please consult the following pages for further instructions.
 	- [Applications and Nodes](docs/ApplicationsNodes.md)
 - [Supported Resource Types and Functionalities](docs/Supported.md)
 	- [Limitations](docs/Supported.md#limitations)
+- [Roadmap](docs/Roadmap.md)
 - [Development](docs/Development.md)
 - [FAQ](docs/FAQ.md)
 
 ## Changes
 
 Please see the [Changelog](CHANGELOG.md) for the latest changes.
+
+### Hightlights in this release
+
+- Support for CBOR content serialization
+- Improved attribute policies of flexContainer specializations
+- Added many flexContainer specialization from oneM2M R4
+- New console command interface
+- Improved access control handling (e.g. support for creator and *holder* attribute)
+- WebUI can now be run as a stand-alone application
+- More unit tests and improved test runner
+- Many more improvements and conformance fixes
 
 ## Acknowledgements
 
@@ -46,16 +58,6 @@ Thank you for contributed code, patches, testing, bug fixes, time, and more!
 ![YannGarcia](https://github.com/YannGarcia.png?size=24) [Yann Garcia](https://github.com/YannGarcia)  
 
 
-
-
 ## License
 BSD 3-Clause License for the CSE and its native components and modules. Please see the individual licenses of the used third-party components.
 
-
-## Roadmap & Backlog
-- CSE: Support the PollingChannel resource type
-- CSE: Timeseries
-- UI: Support for resource specific actions (e.g. latest, oldest)
-- UI: Graph for Container reosurces
-- Importer: Automatically import/update resources when the CSE is running
-- App development: support more TS-0023 specializations

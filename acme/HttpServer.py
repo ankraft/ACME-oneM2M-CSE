@@ -8,19 +8,31 @@
 #	This manager is the main run-loop for the CSE (when using http).
 #
 
-import json, requests, logging, os, sys, traceback
-from typing import Any, Callable, List, Tuple, Union
+from __future__ import annotations
+import json, requests, logging, os, sys, traceback, urllib3
+from typing import Any, Callable, Tuple, Union, Protocol
 import flask
 from flask import Flask, Request, make_response, request
 from werkzeug.wrappers import Response
 from Configuration import Configuration
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ResponseCode as RC, Operation
+from Types import ResourceTypes as T, Result, ResponseCode as RC
+from Types import Operation, CSERequest, ContentSerializationType, RequestHandler, Parameters
 import CSE, Utils
 from Logging import Logging
 from resources.Resource import Resource
 from werkzeug.serving import WSGIRequestHandler
 import ssl
+from webUI import WebUI
+from helpers.BackgroundWorker import *
+
+
+#
+# Types definitions for the http server
+#
+
+FlaskHandler = 	Callable[[str], Response]
+""" Type definition for flask handler. """
 
 
 class HttpServer(object):
@@ -29,17 +41,35 @@ class HttpServer(object):
 
 		# Initialize the http server
 		# Meaning defaults are automatically provided.
-		self.flaskApp			= Flask(Configuration.get('cse.csi'))
+		self.flaskApp			= Flask(CSE.cseCsi)
 		self.rootPath			= Configuration.get('http.root')
+		self.serverAddress		= Configuration.get('http.address')
+		self.listenIF			= Configuration.get('http.listenIF')
+		self.port 				= Configuration.get('http.port')
 		self.useTLS 			= Configuration.get('cse.security.useTLS')
 		self.verifyCertificate	= Configuration.get('cse.security.verifyCertificate')
 		self.tlsVersion			= Configuration.get('cse.security.tlsVersion').lower()
 		self.caCertificateFile	= Configuration.get('cse.security.caCertificateFile')
 		self.caPrivateKeyFile	= Configuration.get('cse.security.caPrivateKeyFile')
+		self.webuiRoot 			= Configuration.get('cse.webui.root')
+		self.webuiDirectory 	= f'{CSE.rootDirectory}/webui'
+		self.hfvRVI				= Configuration.get('cse.releaseVersion')
+		self.isStopped			= False
 
-		self.serverID	= 'ACME %s' % C.version 	# The server's ID for http response headers
+		# request handlers for operations
+		self._requestHandlers:RequestHandler = {
+			Operation.RETRIEVE	: CSE.request.retrieveRequest,
+			Operation.CREATE	: CSE.request.createRequest,
+			Operation.UPDATE	: CSE.request.updateRequest,
+			Operation.DELETE	: CSE.request.deleteRequest
+		}
 
-		Logging.log('Registering http server root at: %s' % self.rootPath)
+		self.backgroundActor:BackgroundWorker = None
+
+		self.serverID			= f'ACME {C.version}' 			# The server's ID for http response headers
+		self._responseHeaders	= {'Server' : self.serverID}	# Additional headers for other requests
+
+		Logging.log(f'Registering http server root at: {self.rootPath}')
 		if self.useTLS:
 			Logging.log('TLS enabled. HTTP server serves via https.')
 
@@ -59,45 +89,59 @@ class HttpServer(object):
 		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handleDELETE, methods=['DELETE'])
 
 		# Register the endpoint for the web UI
-		if Configuration.get('cse.webui.enable'):
-			self.webuiRoot = Configuration.get('cse.webui.root')
-			self.webuiDirectory = '%s/webui' % CSE.rootDirectory
-			Logging.log('Registering web ui at: %s, serving from %s' % (self.webuiRoot, self.webuiDirectory))
-			self.addEndpoint(self.webuiRoot, handler=self.handleWebUIGET, methods=['GET'])
-			self.addEndpoint(self.webuiRoot + '/<path:path>', handler=self.handleWebUIGET, methods=['GET'])
-			self.addEndpoint('/', handler=self.redirectRoot, methods=['GET'])
-			self.addEndpoint('/__version__', handler=self.getVersion, methods=['GET'])
+		# This is done by instancing the otherwise "external" web UI
+		self.webui = WebUI(self.flaskApp, 
+						   defaultRI=CSE.cseRi, 
+						   defaultOriginator=CSE.cseOriginator, 
+						   root=self.webuiRoot,
+						   webuiDirectory=self.webuiDirectory,
+						   version=C.version)
 
 		# Enable the config endpoint
 		if Configuration.get('http.enableRemoteConfiguration'):
-			configEndpoint = '%s/__config__' % self.rootPath
-			Logging.log('Registering configuration endpoint at: %s' % configEndpoint)
+			configEndpoint = f'{self.rootPath}/__config__'
+			Logging.log(f'Registering configuration endpoint at: {configEndpoint}')
 			self.addEndpoint(configEndpoint, handler=self.handleConfig, methods=['GET'], strictSlashes=False)
-			self.addEndpoint('%s/<path:path>' % configEndpoint, handler=self.handleConfig, methods=['GET', 'PUT'])
+			self.addEndpoint(f'{configEndpoint}/<path:path>', handler=self.handleConfig, methods=['GET', 'PUT'])
 
+		# Enable the config endpoint
+		if Configuration.get('http.enableStructureEndpoint'):
+			structureEndpoint = f'{self.rootPath}/__structure__'
+			Logging.log(f'Registering structure endpoint at: {structureEndpoint}')
+			self.addEndpoint(structureEndpoint, handler=self.handleStructure, methods=['GET'], strictSlashes=False)
+			self.addEndpoint(f'{structureEndpoint}/<path:path>', handler=self.handleStructure, methods=['GET', 'PUT'])
 
 		# Add mapping / macro endpoints
 		self.mappings = {}
 		if (mappings := Configuration.get('server.http.mappings')) is not None:
 			# mappings is a list of tuples
 			for (k, v) in mappings:
-				Logging.log('Registering mapping: %s%s -> %s%s' % (self.rootPath, k, self.rootPath, v))
+				Logging.log(f'Registering mapping: {self.rootPath}{k} -> {self.rootPath}{v}')
 				self.addEndpoint(self.rootPath + k, handler=self.requestRedirect, methods=['GET', 'POST', 'PUT', 'DELETE'])
 			self.mappings = dict(mappings)
 
 
-		# Disable most logs from requests library 
+		# Disable most logs from requests and urllib3 library 
 		logging.getLogger("requests").setLevel(logging.WARNING)
 		logging.getLogger("urllib3").setLevel(logging.WARNING)
+		if not self.verifyCertificate:	# only when we also verify  certificates
+			urllib3.disable_warnings()
 
-		# Keep some values for optimization
-		self.csern	= Configuration.get('cse.rn') 
-		self.cseri	= Configuration.get('cse.ri')
 
 
 	def run(self) -> None:
-		WSGIRequestHandler.protocol_version = "HTTP/1.1"
+		self.httpActor = BackgroundWorkerPool.newActor(0.0, self._run, 'HTTP Server')
+		self.httpActor.start()
+	
 
+	def shutdown(self) -> bool:
+		Logging.log('HttpServer shut down')
+		self.isStopped = True
+		return True
+		
+	
+	def _run(self) -> None:
+		WSGIRequestHandler.protocol_version = "HTTP/1.1"
 
 		# Run the http server. This runs forever.
 		# The server can run single-threadedly since some of the underlying
@@ -110,7 +154,7 @@ class HttpServer(object):
 			try:
 				context = None
 				if self.useTLS:
-					Logging.logDebug('Setup SSL context. Certfile: %s, KeyFile:%s, TLS version: %s' % (self.caCertificateFile, self.caPrivateKeyFile, self.tlsVersion))
+					Logging.logDebug(f'Setup SSL context. Certfile: {self.caCertificateFile}, KeyFile:{self.caPrivateKeyFile}, TLS version: {self.tlsVersion}')
 					context = ssl.SSLContext(
 									{ 	'tls1.1' : ssl.PROTOCOL_TLSv1_1,
 										'tls1.2' : ssl.PROTOCOL_TLSv1_2,
@@ -118,92 +162,88 @@ class HttpServer(object):
 									}[self.tlsVersion.lower()]
 								)
 					context.load_cert_chain(self.caCertificateFile, self.caPrivateKeyFile)
-				self.flaskApp.run(host=Configuration.get('http.listenIF'), 
-								  port=Configuration.get('http.port'),
+				self.flaskApp.run(host=self.listenIF, 
+								  port=self.port,
 								  threaded=Configuration.get('http.multiThread'),
 								  request_handler=ACMERequestHandler,
 								  ssl_context=context,
 								  debug=False)
 			except Exception as e:
+				# No logging for headless, nevertheless print the reason what happened
+				if CSE.isHeadless:
+					print(str(e))
 				Logging.logErr(str(e))
+				CSE.shutdown() # exit the CSE. Cleanup happens in the CSE atexit() handler
 
 
-
-	def addEndpoint(self, endpoint:str=None, endpoint_name:str=None, handler:Callable=None, methods:List[str]=None, strictSlashes:bool=True) -> None:
+	def addEndpoint(self, endpoint:str=None, endpoint_name:str=None, handler:FlaskHandler=None, methods:list[str]=None, strictSlashes:bool=True) -> None:
 		self.flaskApp.add_url_rule(endpoint, endpoint_name, handler, methods=methods, strict_slashes=strictSlashes)
+
+
+	def _handleRequest(self, path:str, operation:Operation) -> Response:
+		"""	Get and check all the necessary information from the request and
+			build the internal strutures. Then, depending on the operation,
+			call the associated request handler.
+		"""
+		Logging.logDebug(f'==> {operation.name}: /{path}') 	# path = request.path  w/o the root
+		Logging.logDebug(f'Headers: \n{str(request.headers)}')
+		httpRequestResult = Utils.dissectHttpRequest(request, operation, Utils.retrieveIDFromPath(path, CSE.cseRn, CSE.cseCsi))
+
+		if self.isStopped:
+			responseResult = Result(rsc=RC.internalServerError, dbg='http server not running	', status=False)
+		else:
+			try:
+				if httpRequestResult.status:
+					if operation in [ Operation.CREATE, Operation.UPDATE ]:
+						if httpRequestResult.request.ct == ContentSerializationType.CBOR:
+							Logging.logDebug(f'Body: \n{Utils.toHex(httpRequestResult.request.data)}\n=>\n{httpRequestResult.request.dict}')
+						else:
+							Logging.logDebug(f'Body: \n{str(httpRequestResult.request.data)}')
+					responseResult = self._requestHandlers[operation](httpRequestResult.request)
+				else:
+					responseResult = httpRequestResult
+			except Exception as e:
+				responseResult = self._prepareException(e)
+		responseResult.request = httpRequestResult.request
+
+		return self._prepareResponse(responseResult)
 
 
 	def handleGET(self, path:str=None) -> Response:
 		Utils.renameCurrentThread()
-		Logging.logDebug('==> Retrieve: /%s' % path) # path = request.path  w/o the root
-		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpRetrieve() # type: ignore
-		try:
-			result = Utils.dissectHttpRequest(request, Operation.RETRIEVE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
-			if result.status:
-				result = CSE.request.retrieveRequest(result.request)
-		except Exception as e:
-			result = self._prepareException(e)
-		return self._prepareResponse(request, result)
+		return self._handleRequest(path, Operation.RETRIEVE)
 
 
 	def handlePOST(self, path:str=None) -> Response:
 		Utils.renameCurrentThread()
-		Logging.logDebug('==> Create: /%s' % path)	# path = request.path  w/o the root
-		Logging.logDebug('Headers: \n' + str(request.headers))
-		#Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpCreate()	# type: ignore
-		try:
-			result = Utils.dissectHttpRequest(request, Operation.CREATE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
-			if result.status:
-				Logging.logDebug('Body: \n' + result.request.data)
-				result = CSE.request.createRequest(result.request)
-		except Exception as e:
-			result = self._prepareException(e)
-		return self._prepareResponse(request, result)
+		return self._handleRequest(path, Operation.CREATE)
 
 
 	def handlePUT(self, path:str=None) -> Response:
 		Utils.renameCurrentThread()
-		Logging.logDebug('==> Update: /%s' % path)	# path = request.path  w/o the root
-		Logging.logDebug('Headers: \n' + str(request.headers))
-		#Logging.logDebug('Body: \n' + request.data.decode("utf-8"))
 		CSE.event.httpUpdate()	# type: ignore
-		try:
-			result = Utils.dissectHttpRequest(request, Operation.UPDATE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
-			if result.status:
-				Logging.logDebug('Body: \n' + result.request.data)
-				result = CSE.request.updateRequest(result.request)
-		except Exception as e:
-			result = self._prepareException(e)
-		return self._prepareResponse(request, result)
+		return self._handleRequest(path, Operation.UPDATE)
 
 
 	def handleDELETE(self, path:str=None) -> Response:
 		Utils.renameCurrentThread()
-		Logging.logDebug('==> Delete: /%s' % path)	# path = request.path  w/o the root
-		Logging.logDebug('Headers: \n' + str(request.headers))
 		CSE.event.httpDelete()	# type: ignore
-		try:
-			result = Utils.dissectHttpRequest(request, Operation.DELETE, Utils.retrieveIDFromPath(path, self.csern, self.cseri))
-			if result.status:
-				result = CSE.request.deleteRequest(result.request)
-		except Exception as e:
-			result = self._prepareException(e)
-		return self._prepareResponse(request, result)
+		return self._handleRequest(path, Operation.DELETE)
 
 
 	#########################################################################
 
 
 	# Handle requests to mapped paths
-	def requestRedirect(self) -> Union[Response, Tuple[str, int]]:
+	def requestRedirect(self, path:str=None) -> Response:
 		path = request.path[len(self.rootPath):] if request.path.startswith(self.rootPath) else request.path
 		if path in self.mappings:
-			Logging.logDebug('==> Redirecting to: /%s' % path)
+			Logging.logDebug(f'==> Redirecting to: /{path}')
 			CSE.event.httpRedirect()	# type: ignore
 			return flask.redirect(self.mappings[path], code=307)
-		return '', 404
+		return Response('', status=404)
 
 
 	#########################################################################
@@ -214,158 +254,169 @@ class HttpServer(object):
 
 	# Redirect request to / to webui
 	def redirectRoot(self) -> Response:
-		return flask.redirect(Configuration.get('cse.webui.root'), code=302)
+		"""	Redirect a request to the webroot to the web UI.
+		"""
+		return flask.redirect(self.webuiRoot, code=302)
 
 
-	def getVersion(self) -> str:
-		return C.version
+	def getVersion(self) -> Response:
+		"""	Handle a GET request to return the CSE version.
+		"""
+		return Response(C.version, headers=self._responseHeaders)
 
 
-	def handleConfig(self, path:str=None) -> str:
+	def handleConfig(self, path:str=None) -> Response:
+		"""	Handle a configuration request. This can either be e GET request to query a 
+			configuration value, or a PUT request to set a new value to a configuration setting.
+			Note, that only a few of configuration settings are supported.
+		"""
+
+		def _r(r:str) -> Response:	# just construct a response. Trying to reduce the clutter here
+			return Response(r, headers=self._responseHeaders)
+
 		if request.method == 'GET':
 			if path == None or len(path) == 0:
-				return Configuration.print()
+				return _r(Configuration.print())
 			if Configuration.has(path):
-				return str(Configuration.get(path))
-			return ''
+				return _r(str(Configuration.get(path)))
+			return _r('')
 		elif request.method =='PUT':
 			data = request.data.decode('utf-8').rstrip()
 			try:
-				Logging.logDebug('New remote configuration: %s = %s' % (path, data))
+				Logging.logDebug(f'New remote configuration: {path} = {data}')
 				if path == 'cse.checkExpirationsInterval':
 					if (d := int(data)) < 1:
-						return 'nak'
+						return _r('nak')
 					Configuration.set(path, d)
 					CSE.registration.stopExpirationWorker()
 					CSE.registration.startExpirationWorker()
-					return 'ack'
+					return _r('ack')
 				elif path in [ 'cse.req.minet', 'cse.req.maxnet' ]:
 					if (d := int(data)) < 1:
-							return 'nak'
+							return _r('nak')
 					Configuration.set(path, d)
-					return 'ack'
+					return _r('ack')
 
 			except:
-				return 'nak'
-			return 'nak'
-		return 'unsupported'
+				return _r('nak')
+			return _r('nak')
+		return _r('unsupported')
 
 
-
-
-	def handleWebUIGET(self, path:str=None) -> Union[Response, Any, Tuple[str, int]]:
-		""" Handle a GET request for the web GUI. """
-
-		# security check whether the path will under the web root
-		if not (CSE.rootDirectory + request.path).startswith(CSE.rootDirectory):
-			return None, 404
-
-		# Redirect to index file. Also include base / cse RI
-		if path == None or len(path) == 0 or (path.endswith('index.html') and len(request.args) != 2):
-			return flask.redirect('%s/index.html?ri=/%s&or=%s' % (self.webuiRoot, Configuration.get('cse.ri'), Configuration.get('cse.originator')), code=302)
-			# return flask.redirect('%s/index.html?ri=/%s' % (self.webuiRoot, Configuration.get('cse.ri')), code=302)
-		else:
-			filename = '%s/%s' % (self.webuiDirectory, path)	# return any file in the web directory
-		try:
-			return flask.send_file(filename)
-		except Exception as e:
-			Logging.logWarn(str(e))
-			return flask.abort(404)
+	def handleStructure(self, path:str='puml') -> Response:
+		"""	Handle a structure request. Return a description of the CSE's current resource
+			and registrar / registree deployment.
+			An optional parameter 'lvl=<int>' can limit the generated resource tree's depth.
+		"""
+		lvl = request.args.get('lvl', default=0, type=int)
+		if path == 'puml':
+			return Response(response=CSE.statistics.getStructurePuml(lvl), headers=self._responseHeaders)
+		if path == 'text':
+			return Response(response=CSE.statistics.getResourceTreeText(lvl), headers=self._responseHeaders)
+		return Response(response='unsupported', status=422, headers=self._responseHeaders)
 
 
 	#########################################################################
 
 	#
-	#	Send various types of HTTP requests
+	#	Send HTTP requests
 	#
 
-	def sendRetrieveRequest(self, url:str, originator:str) -> Result:
-		return self.sendRequest(requests.get, url, originator)
+	def _prepContent(self, content:bytes|str|Any, ct:ContentSerializationType) -> str:
+		if content is None:	return ''
+		if isinstance(content, str): return content
+		return content.decode('utf-8') if ct == ContentSerializationType.JSON else Utils.toHex(content)
 
 
-	def sendCreateRequest(self, url:str, originator:str, ty:T=None, data:Any=None, headers:dict=None) -> Result:
-		return self.sendRequest(requests.post, url, originator, ty, data, headers=headers)
-
-
-	def sendUpdateRequest(self, url:str, originator:str, data:Any) -> Result:
-		return self.sendRequest(requests.put, url, originator, data=data)
-
-
-	def sendDeleteRequest(self, url:str, originator:str) -> Result:
-		return self.sendRequest(requests.delete, url, originator)
-
-
-	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:str='application/json', headers:dict=None) -> Result:	# TODO Constants
+	def sendHttpRequest(self, method:Callable, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:	 # type: ignore[type-arg]
+		ct = CSE.defaultSerialization if ct is None else ct
 
 		# Set basic headers
+		hty = f';ty={int(ty):d}' if ty is not None else ''
 		hds = {	'User-Agent'	: self.serverID,
-				'Content-Type' 	: '%s%s' % (ct, ';ty=%d' % int(ty) if ty is not None else ''), 
+				'Content-Type' 	: f'{ct.toHeader()}{hty}',
+				'Accept'		: ct.toHeader(),
 				C.hfOrigin	 	: originator,
 				C.hfRI 			: Utils.uniqueRI(),
-				C.hfRVI			: C.hfvRVI,			# TODO this actually depends in the originator
+				C.hfRVI			: self.hfvRVI,			# TODO this actually depends in the originator
 			   }
 
 		# Add additional headers
-		if headers is not None:
-			if C.hfcEC in headers:				# Event Category
-				hds[C.hfEC] = headers[C.hfcEC]
+		if parameters is not None:
+			if C.hfcEC in parameters:				# Event Category
+				hds[C.hfEC] = parameters[C.hfcEC]
 
+		# serialize data (only if dictionary, pass on non-dict data)
+		content = Utils.serializeData(data, ct) if isinstance(data, dict) else data
+
+		# ! Don't forget: requests are done through the request library, not flask.
+		# ! The attribute names are different
 		try:
-			Logging.logDebug('Sending request: %s %s' % (method.__name__.upper(), url))
-			Logging.logDebug('Request ==>:\n%s\n' % (str(data) if data is not None else ''))
-			r = method(url, data=data, headers=hds, verify=self.verifyCertificate)
-			Logging.logDebug('Response <== (%s):\n%s' % (str(r.status_code), str(r.content.decode("utf-8"))))
+			Logging.logDebug(f'Sending request: {method.__name__.upper()} {url}')
+			if ct == ContentSerializationType.CBOR:
+				Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n=>\n{str(data) if data is not None else ""}\n')
+			else:
+				Logging.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n')
+			
+			# Actual sending the request
+			r = method(url, data=content, headers=hds, verify=self.verifyCertificate)
+
+			responseCt = ContentSerializationType.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
+			rc = RC(int(r.headers['X-M2M-RSC'])) if 'X-M2M-RSC' in r.headers else RC.internalServerError
+			Logging.logDebug(f'Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
 		except Exception as e:
-			Logging.logWarn('Failed to send request: %s' % str(e))
+			Logging.logWarn(f'Failed to send request: {str(e)}')
 			return Result(rsc=RC.targetNotReachable, dbg='target not reachable')
-		rc = RC(int(r.headers['X-M2M-RSC'])) if 'X-M2M-RSC' in r.headers else RC.internalServerError
-		return Result(jsn=r.json() if len(r.content) > 0 else None, rsc=rc)
+		return Result(dict=Utils.deserializeData(r.content, responseCt), rsc=rc)
+		
 
 	#########################################################################
 
-	def _prepareResponse(self, request:Request, result:Result) -> Response:
-		# if isinstance(result.resource, Resource):
-		# 	r = json.dumps(result.resource.asJSON())
-		# elif result.dbg is not None:
-		# 	r = '{ "m2m:dbg" : "%s" }' % result.dbg.replace('"', '\\"')
-		# elif isinstance(result.resource, dict):
-		# 	r = json.dumps(result.resource)
-		# elif isinstance(result.resource, str):
-		# 	r = result.resource
-		# elif isinstance(result.jsn, dict):		# explicit json
-		# 	r = json.dumps(result.jsn)
-		# elif result.resource is None and result.jsn is None:
-		# 	r = ''
-		# else:
-		# 	r = ''
-		# 	result.rsc = RC.notFound
+	def _prepareResponse(self, result:Result) -> Response:
+		content:str|bytes = ''
 
-		# Prepare the response content
-		content = result.toString()
-		
 		# Build the headers
 		headers = {}
 		headers['Server'] = self.serverID						# set server field
-		headers['X-M2M-RSC'] = '%d' % result.rsc				# set the response status code
-		if 'X-M2M-RI' in request.headers:						# set the request identifier
-			headers['X-M2M-RI'] = request.headers['X-M2M-RI']
-		if 'X-M2M-RVI' in request.headers:						# set the version
-			headers['X-M2M-RVI'] = request.headers['X-M2M-RVI']
+		headers['X-M2M-RSC'] = f'{result.rsc}'					# set the response status code
+		headers['X-M2M-RI'] = result.request.headers.requestIdentifier
+		headers['X-M2M-RVI'] = result.request.headers.releaseVersionIndicator
 
 		# HTTP status code
 		statusCode = result.rsc.httpStatusCode()
 
-		# HTTP Conten-type
-		contentType = C.hfvContentType
-
+		#
+		# Determine the accept type and encode the content accordinly
+		#
+		# Look whether there is a accept header in the original request
+		if result.request.headers.accept is not None and len(result.request.headers.accept) > 0:
+			ct = ContentSerializationType.getType(result.request.headers.accept[0])
+		
+		# No accept, check originator
+		elif len(csz := Utils.getSerializationFromOriginator(result.request.headers.originator)) > 0:
+			ct = csz[0]
+		
+		# Default: configured CSE's default
+		else:
+			ct = CSE.defaultSerialization
+		
+		# Assign and encode content accordingly
+		headers['Content-Type'] = (cts := ct.toHeader())
+		content = result.toData(ct)
+				
 		# Build and return the response
-		Logging.logDebug('<== Response (RSC: %d):\n%s\n' % (result.rsc, str(content)))
-		return Response(response=content, status=statusCode, content_type=contentType, headers=headers)
+		if isinstance(content, bytes):
+			Logging.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{Utils.toHex(content)}\n=>\n{str(result.toData())}')
+		else:
+			Logging.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
+		return Response(response=content, status=statusCode, content_type=cts, headers=headers)
 
 
-	def _prepareException(self, e: Exception) -> Result:
-		Logging.logErr(traceback.format_exc())
-		return Result(rsc=RC.internalServerError, dbg='encountered exception: %s' % traceback.format_exc().replace('"', '\\"').replace('\n', '\\n'))
+	def _prepareException(self, e:Exception) -> Result:
+		tb = traceback.format_exc()
+		Logging.logErr(tb)
+		tbs = tb.replace('"', '\\"').replace('\n', '\\n')
+		return Result(rsc=RC.internalServerError, dbg=f'encountered exception: {tbs}')
 
 
 
@@ -381,12 +432,11 @@ class ACMERequestHandler(WSGIRequestHandler):
 	def log(self, type, message, *args): # type: ignore
 		Logging.logDebug(message % args)
 		return
-		# Logging.log('%s %s\n' % (self.address_string(),
-		# 								 message % args))
+		# Logging.log(f'{self.address_string()} {message % args}\n')
 
 	# Just like WSGIRequestHandler, but without "code"
 	def log_request(self, code='-', size='-'): 	# type: ignore
-		Logging.logDebug('"%s" %s %d' % (self.requestline, size, code))
+		Logging.logDebug(f'"{self.requestline}" {size} {code}')
 		return
 
 	def log_message(self, format, *args): 	# type: ignore

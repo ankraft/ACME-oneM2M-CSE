@@ -8,7 +8,7 @@
 #
 
 from .MgmtObj import *
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, JSON
 from Validator import constructPolicy, addPolicy
 import Utils
 
@@ -23,11 +23,11 @@ defaultDeviceID = ''
 
 class ANDI(MgmtObj):
 
-	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		self.resourceAttributePolicies = andiPolicies	# only the resource type's own policies
-		super().__init__(jsn, pi, mgd=T.ANDI, create=create, attributePolicies=attributePolicies)
+		super().__init__(dct, pi, mgd=T.ANDI, create=create, attributePolicies=attributePolicies)
 
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('dvd', defaultDeviceID, overwrite=False)
 			self.setAttribute('dvt', '', overwrite=False)
 			self.setAttribute('awi', '', overwrite=False)

@@ -8,28 +8,27 @@
 #	modules and entities of the CSE.
 #
 
+from __future__ import annotations
 import datetime, json, random, string, sys, re, threading, traceback, time
+import cbor2
+from copy import deepcopy
 import isodate
-from typing import Any, List, Tuple, Union, Dict
-from resources import ACP, ACPAnnc, AE, AEAnnc, ANDI, ANDIAnnc, ANI, ANIAnnc, BAT, BATAnnc
-from resources import CIN, CINAnnc, CNT, CNTAnnc, CNT_LA, CNT_OL, CSEBase, CSR, CSRAnnc
-from resources import DVC, DVCAnnc,DVI, DVIAnnc, EVL, EVLAnnc, FCI, FCIAnnc, FCNT, FCNTAnnc, FCNT_LA, FCNT_OL
-from resources import FWR, FWRAnnc, GRP, GRPAnnc, GRP_FOPT, MEM, MEMAnnc, MgmtObj, MgmtObjAnnc, NOD, NODAnnc
-from resources import NYCFC, NYCFCAnnc, PCH, REQ, RBO, RBOAnnc, SUB
-from resources import SWR, SWRAnnc, Unknown, Resource
-
+from typing import Any, List, Tuple, Union, Dict, Callable, cast
 
 from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC
-from Types import Result,  RequestHeaders, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType, ResultContentType, ResponseType, FilterOperation
-from Types import CSERequest
+from Types import Result,  RequestHeaders, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType
+from Types import ResultContentType, ResponseType, FilterOperation
+from Types import CSERequest, ContentSerializationType, JSON, Conditions
 from Configuration import Configuration
 from Logging import Logging
+from resources.Resource import Resource
 import CSE
 from flask import Request
+import cbor2
 
 
-def uniqueRI(prefix: str = '') -> str:
+def uniqueRI(prefix:str='') -> str:
 	return noDomain(prefix) + uniqueID()
 
 
@@ -37,27 +36,25 @@ def uniqueID() -> str:
 	return str(random.randint(1,sys.maxsize))
 
 
-def isUniqueRI(ri: str) -> bool:
+def isUniqueRI(ri:str) -> bool:
 	return len(CSE.storage.identifier(ri)) == 0
 
 
-def uniqueRN(prefix: str = 'un') -> str:
-	# return "%s_%s" % (p, ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=C.maxIDLength)))
-	return "%s_%s" % (noDomain(prefix), _randomID())
+def uniqueRN(prefix:str='un') -> str:
+	return f'{noDomain(prefix)}_{_randomID()}'
 
-def announcedRN(resource:Resource.Resource) -> str:
+def announcedRN(resource:Resource) -> str:
 	""" Create the announced rn for a resource.
 	"""
-	return '%s_Annc' % resource.rn
+	return f'{resource.rn}_Annc'
 
 
 # create a unique aei, M2M-SP type
-def uniqueAEI(prefix : str = 'S') -> str:
-	# return prefix + ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=C.maxIDLength))
-	return prefix + _randomID()
+def uniqueAEI(prefix:str='S') -> str:
+	return f'{prefix}{_randomID()}'
 
 
-def noDomain(id : str) -> str:
+def noDomain(id:str) -> str:
 	p = id.split(':')
 	return p[1] if len(p) == 2 else p[0]
 
@@ -70,43 +67,49 @@ def _randomID() -> str:
 			return result
 
 
-def fullRI(ri : str) -> str:
-	return Configuration.get('cse.csi') + '/' + ri
+def fullRI(ri:str) -> str:
+	return f'{CSE.cseCsi}/{ri}'
 
 
-def isSPRelative(uri : str) -> bool:
+def isSPRelative(uri:str) -> bool:
 	""" Check whether a URI is SP-Relative. """
-	return uri is not None and len(uri) >= 2 and uri[0] == "/" and uri [1] != "/"
+	return uri is not None and len(uri) >= 2 and uri[0] == '/' and uri [1] != '/'
 
 
-def isAbsolute(uri : str) -> bool:
+def isAbsolute(uri:str) -> bool:
 	""" Check whether a URI is Absolute. """
 	return uri is not None and uri.startswith('//')
 
 
-def isCSERelative(uri : str) -> bool:
+def isCSERelative(uri:str) -> bool:
 	""" Check whether a URI is CSE-Relative. """
 	return uri is not None and uri[0] != '/'
 
 
-def isStructured(uri : str) -> bool:
+def isStructured(uri:str) -> bool:
 	if isCSERelative(uri):
-		if "/" in uri:
+		if '/' in uri:
 			return True
 	elif isSPRelative(uri):
-		if uri.count("/") > 2:
+		if uri.count('/') > 2:
 			return True
 	elif isAbsolute(uri):
-		if uri.count("/") > 4:
+		if uri.count('/') > 4:
 			return True
 	return False
 
 
-def isVirtualResource(resource: Resource.Resource) -> bool:
-	result = resource[resource._isVirtual]
+def isVirtualResource(resource: Resource) -> bool:
+	"""	Check whether this resource is a virtual resource. """
+	result:bool = resource[resource._isVirtual]
 	return result if result is not None else False
-	# ireturn (ty := r.ty) and ty in C.virtualResources
+	# return (ty := r.ty) and ty in C.virtualResources
 
+
+def isAnnouncedResource(resource: Resource) -> bool:
+	"""	Check whether this resource is an announced resource. """
+	result:bool = resource[resource._isAnnounced]
+	return result if result is not None else False
 
 def isValidID(id: str) -> bool:
 	""" Check for valid ID. """
@@ -115,7 +118,7 @@ def isValidID(id: str) -> bool:
 
 
 def getResourceDate(delta: int = 0) -> str:
-	return toISO8601Date(datetime.datetime.utcnow() + datetime.timedelta(seconds=delta))
+	return toISO8601Date(datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=delta))
 
 
 def toISO8601Date(ts: Union[float, datetime.datetime]) -> str:
@@ -128,14 +131,13 @@ def fromISO8601Date(timestamp:str) -> float:
 	try:
 		return datetime.datetime.strptime(timestamp, '%Y%m%dT%H%M%S,%f').timestamp()
 	except Exception as e:
-		Logging.logWarn('Wrong format for timestamp: %s' % timestamp)
+		Logging.logWarn(f'Wrong format for timestamp: {timestamp}')
 		return 0.0
 
 
-
-def structuredPath(resource: Resource.Resource) -> str:
+def structuredPath(resource:Resource) -> str:
 	""" Determine the structured path of a resource. """
-	rn = resource.rn
+	rn:str = resource.rn
 	if resource.ty == T.CSEBase: # if CSE
 		return rn
 
@@ -145,23 +147,23 @@ def structuredPath(resource: Resource.Resource) -> str:
 		return rn
 	rpi = CSE.storage.identifier(pi) 
 	if len(rpi) == 1:
-		return rpi[0]['srn'] + '/' + rn
+		return cast(str, rpi[0]['srn'] + '/' + rn)
 	# Logging.logErr(traceback.format_stack())
-	Logging.logErr('Parent %s not found in DB' % pi)
+	Logging.logErr(f'Parent {pi} not found in DB')
 	return rn # fallback
 
 
-def structuredPathFromRI(ri: str) -> str:
+def structuredPathFromRI(ri:str) -> str:
 	""" Get the structured path of a resource by its ri. """
 	if len((identifiers := CSE.storage.identifier(ri))) == 1:
-		return identifiers[0]['srn']
+		return cast(str, identifiers[0]['srn'])
 	return None
 
 
 def riFromStructuredPath(srn: str) -> str:
 	""" Get the ri from a resource by its structured path. """
 	if len((paths := CSE.storage.structuredPath(srn))) == 1:
-		return paths[0]['ri']
+		return cast(str, paths[0]['ri'])
 	return None
 
 
@@ -175,20 +177,20 @@ def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
 				id = riFromStructuredPath(srn) # id becomes the ri of the fopt
 	return srn, id
 
+
 def riFromCSI(csi: str) -> str:
 	""" Get the ri from an CSEBase resource by its csi. """
 	if (res := resourceFromCSI(csi)) is None:
 		return None
-	return res.ri
+	return cast(str, res.ri)
 
-def resourceFromCSI(csi: str) -> Resource.Resource:
+
+def resourceFromCSI(csi: str) -> Resource:
 	""" Get the CSEBase resource by its csi. """
-	if (res := CSE.storage.retrieveResource(csi=csi)).resource is None:
-		return None
-	return res.resource
+	return cast(Resource, CSE.storage.retrieveResource(csi=csi).resource)
 
 
-def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
+def retrieveIDFromPath(id: str, csern: str, csecsi: str) -> Tuple[str, str, str]:
 	""" Split a ful path e.g. from a http request into its component and return a local ri .
 		Also handle retargeting paths.
 		The return tupple is (RI, CSI, SRN).
@@ -203,6 +205,7 @@ def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 	if id[0] == '/':
 		id = id[1:]
 	ids = id.split('/')
+	csecsi = csecsi[1:]	# remove leading / from csi for our comparisons here
 
 	if (idsLen := len(ids)) == 0:	# There must be something!
 		return None, None, None
@@ -212,14 +215,13 @@ def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 		vrPresent = ids.pop()	# remove and return last path element
 		idsLen -= 1
 
-	# Logging.logDebug("ID split: %s" % ids)
 	if ids[0] == '~' and idsLen > 1:			# SP-Relative
 		# Logging.logDebug("SP-Relative")
 		csi = ids[1]							# extract the csi
-		if csi != cseri:						# Not for this CSE? retargeting
+		if csi != csecsi:						# Not for this CSE? retargeting
 			if vrPresent is not None:			# append last path element again
 				ids.append(vrPresent)
-			return '/%s' % '/'.join(ids[1:]), csi, srn		# Early return. ri is the remaining (un)structured path
+			return f'/{"/".join(ids[1:])}', csi, srn		# Early return. ri is the remaining (un)structured path
 		if idsLen > 2 and (ids[2] == csern or ids[2] == '-'):	# structured
 			ids[2] = csern if ids[2] == '-' else ids[2]
 			srn = '/'.join(ids[2:])
@@ -232,10 +234,10 @@ def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 		# Logging.logDebug("Absolute")
 		spi = ids[1] 	#TODO Check whether it is same SPID, otherwise forward it throw mcc'
 		csi = ids[2]
-		if csi != cseri:
+		if csi != csecsi:
 			if vrPresent is not None:						# append last path element again
 				ids.append(vrPresent)
-			return '/%s' % '/'.join(ids[2:]), csi, srn	# Not for this CSE? retargeting
+			return f'/{"/".join(ids[2:])}', csi, srn	# Not for this CSE? retargeting
 		if ids[3] == csern or ids[3] == '-':				# structured
 			ids[3] = csern if ids[3] == '-' else ids[3]
 			srn = '/'.join(ids[3:])
@@ -246,7 +248,7 @@ def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 
 	else:										# CSE-Relative
 		# Logging.logDebug("CSE-Relative")
-		if idsLen == 1 and ((ids[0] != csern and ids[0] != '-') or ids[0] == cseri):	# unstructured
+		if idsLen == 1 and ((ids[0] != csern and ids[0] != '-') or ids[0] == csecsi):	# unstructured
 			ri = ids[0]
 		else:									# structured
 			ids[0] = csern if ids[0] == '-' else ids[0]
@@ -255,16 +257,16 @@ def retrieveIDFromPath(id: str, csern: str, cseri: str) -> Tuple[str, str, str]:
 	# Now either csi, ri or structured is set
 	if ri is not None:
 		if vrPresent is not None:
-			ri = '%s/%s' % (ri, vrPresent)
+			ri = f'{ri}/{vrPresent}'
 		return ri, csi, srn
 	if srn is not None:
 		# if '/fopt' in ids:	# special handling for fanout points
 		# 	return srn, csi, srn
 		if vrPresent is not None:
-			srn = '%s/%s' % (srn, vrPresent)
+			srn = f'{srn}/{vrPresent}'
 		return riFromStructuredPath(srn), csi, srn
 	if csi is not None:
-		return riFromCSI('/'+csi), csi, srn
+		return riFromCSI(f'/{csi}'), csi, srn
 	# TODO do something with spi?
 	return None, None, None
 
@@ -278,178 +280,76 @@ mgmtObjAnncTPEs = 	[	T.FWRAnnc.tpe(), T.SWRAnnc.tpe(), T.MEMAnnc.tpe(), T.ANIAnn
 						T.RBOAnnc.tpe(), T.EVLAnnc.tpe(),
 			  		]
 
-def resourceFromJSON(jsn:dict, pi:str=None, acpi:str=None, ty:Union[T, int]=None, create:bool=False, isImported:bool=False) -> Result:
-	""" Create a resource from a JSON structure.
-		This will *not* call the activate method, therefore some attributes
-		may be set separately.
-	"""
-	jsn, root = pureResource(jsn)	# remove optional "m2m:xxx" level
-	typ = jsn['ty'] if 'ty' in jsn else ty
-	if typ != None and ty != None and typ != ty:
-		return Result(dbg='type and resource specifier mismatch')
-	mgd = jsn['mgd'] if 'mgd' in jsn else None		# for mgmtObj
-
-	# Add extra acpi
-	if acpi is not None:
-		jsn['acpi'] = acpi if type(acpi) is list else [ acpi ]
-
-	# store the import status in the original jsn
-	if isImported:
-		jsn[Resource.Resource._imported] = True	# Indicate that this is an imported resource
-
-
-	# sorted by assumed frequency (small optimization)
-	if typ == T.CIN or root == T.CIN.tpe():
-		return Result(resource=CIN.CIN(jsn, pi=pi, create=create))
-	elif typ == T.CNT or root == T.CNT.tpe():
-		return Result(resource=CNT.CNT(jsn, pi=pi, create=create))
-	elif typ == T.GRP or root == T.GRP.tpe():
-		return Result(GRP.GRP(jsn, pi=pi, create=create))
-	elif typ == T.GRP_FOPT or root == T.GRP_FOPT.tpe():
-		return Result(resource=GRP_FOPT.GRP_FOPT(jsn, pi=pi, create=create))
-	elif typ == T.ACP or root == T.ACP.tpe():
-		return Result(resource=ACP.ACP(jsn, pi=pi, create=create))
-	elif typ == T.FCNT:
-		return Result(resource=FCNT.FCNT(jsn, pi=pi, fcntType=root, create=create))
-	elif typ == T.FCI:
-		return Result(resource=FCI.FCI(jsn, pi=pi, fcntType=root, create=create))	
-	elif typ == T.AE or root == T.AE.tpe():
-		return Result(resource=AE.AE(jsn, pi=pi, create=create))
-	elif typ == T.SUB or root == T.SUB.tpe():
-		return Result(resource=SUB.SUB(jsn, pi=pi, create=create))
-	elif typ == T.CSR or root == T.CSR.tpe():
-		return Result(resource=CSR.CSR(jsn, pi=pi, create=create))
-	elif typ == T.NOD or root == T.NOD.tpe():
-		return Result(resource=NOD.NOD(jsn, pi=pi, create=create))
-	elif (typ == T.CNT_LA or root == T.CNT_LA.tpe()) and typ != T.FCNT_LA:
-		return Result(resource=CNT_LA.CNT_LA(jsn, pi=pi, create=create))
-	elif (typ == T.CNT_OL or root == T.CNT_OL.tpe()) and typ != T.FCNT_OL:
-		return Result(resource=CNT_OL.CNT_OL(jsn, pi=pi, create=create))
-	elif typ == T.FCNT_LA:
-		return Result(resource=FCNT_LA.FCNT_LA(jsn, pi=pi, create=create))
-	elif typ == T.FCNT_OL:
-		return Result(resource=FCNT_OL.FCNT_OL(jsn, pi=pi, create=create))
-	elif typ == T.REQ or root == T.REQ.tpe():
-		return Result(resource=REQ.REQ(jsn, pi=pi, create=create))
-	elif typ == T.PCH or root == T.PCH.tpe():
-		return Result(resource=PCH.PCH(jsn, pi=pi, create=create))
-	elif typ == T.CSEBase or root == T.CSEBase.tpe():
-		return Result(resource=CSEBase.CSEBase(jsn, create=create))
-
-	# Management Objects
-	elif typ == T.MGMTOBJ or root in mgmtObjTPEs:
-		if mgd == T.FWR or root == T.FWR.tpe():
-			return Result(resource=FWR.FWR(jsn, pi=pi, create=create))
-		elif mgd == T.SWR or root == T.SWR.tpe():
-			return Result(resource=SWR.SWR(jsn, pi=pi, create=create))
-		elif mgd == T.MEM or root == T.MEM.tpe():
-			return Result(resource=MEM.MEM(jsn, pi=pi, create=create))
-		elif mgd == T.ANI or root == T.ANI.tpe():
-			return Result(resource=ANI.ANI(jsn, pi=pi, create=create))
-		elif mgd == T.ANDI or root == T.ANDI.tpe():
-			return Result(resource=ANDI.ANDI(jsn, pi=pi, create=create))
-		elif mgd == T.BAT or root == T.BAT.tpe():
-			return Result(resource=BAT.BAT(jsn, pi=pi, create=create))
-		elif mgd == T.DVI or root == T.DVI.tpe():
-			return Result(resource=DVI.DVI(jsn, pi=pi, create=create))
-		elif mgd == T.DVC or root == T.DVC.tpe():
-			return Result(resource=DVC.DVC(jsn, pi=pi, create=create))
-		elif mgd == T.RBO or root == T.RBO.tpe():
-			return Result(resource=RBO.RBO(jsn, pi=pi, create=create))
-		elif  mgd == T.EVL or root == T.EVL.tpe():
-			return Result(resource=EVL.EVL(jsn, pi=pi, create=create))
-		elif  mgd == T.NYCFC or root == T.NYCFC.tpe():
-			return Result(resource=NYCFC.NYCFC(jsn, pi=pi, create=create))
-
-	# Announced Resources
-	elif typ == T.ACPAnnc:
-		return Result(resource=ACPAnnc.ACPAnnc(jsn, pi=pi, create=create))
-	elif typ == T.AEAnnc:
-		return Result(resource=AEAnnc.AEAnnc(jsn, pi=pi, create=create))
-	elif typ == T.CNTAnnc:
-		return Result(resource=CNTAnnc.CNTAnnc(jsn, pi=pi, create=create))
-	elif typ == T.CINAnnc:
-		return Result(resource=CINAnnc.CINAnnc(jsn, pi=pi, create=create))
-	elif typ == T.GRPAnnc:
-		return Result(resource=GRPAnnc.GRPAnnc(jsn, pi=pi, create=create))
-	elif typ == T.NODAnnc:
-		return Result(resource=NODAnnc.NODAnnc(jsn, pi=pi, create=create))
-	elif typ == T.CSRAnnc:
-		return Result(resource=CSRAnnc.CSRAnnc(jsn, pi=pi, create=create))
-	elif typ == T.FCIAnnc:
-		return Result(resource=FCIAnnc.FCIAnnc(jsn, pi=pi, create=create))
-	elif typ == T.FCNTAnnc:
-		return Result(resource=FCNTAnnc.FCNTAnnc(jsn, pi=pi, create=create))
-
-	# Announced Management Objects
-	elif typ == T.MGMTOBJAnnc or root in mgmtObjAnncTPEs:
-		if mgd == T.FWRAnnc or root == T.FWRAnnc.tpe():
-			return Result(resource=FWRAnnc.FWRAnnc(jsn, pi=pi, create=create))
-		elif mgd == T.SWRAnnc or root == T.SWRAnnc.tpe():
-			return Result(resource=SWRAnnc.SWRAnnc(jsn, pi=pi, create=create))
-		elif mgd == T.MEMAnnc or root == T.MEMAnnc.tpe():
-			return Result(resource=MEMAnnc.MEMAnnc(jsn, pi=pi, create=create))
-		elif mgd == T.ANIAnnc or root == T.ANIAnnc.tpe():
-			return Result(resource=ANIAnnc.ANIAnnc(jsn, pi=pi, create=create))
-		elif mgd == T.ANDIAnnc or root == T.ANDIAnnc.tpe():
-			return Result(resource=ANDIAnnc.ANDIAnnc(jsn, pi=pi, create=create))
-		elif mgd == T.BATAnnc or root == T.BATAnnc.tpe():
-			return Result(resource=BATAnnc.BATAnnc(jsn, pi=pi, create=create))
-		elif mgd == T.DVIAnnc or root == T.DVIAnnc.tpe():
-			return Result(resource=DVIAnnc.DVIAnnc(jsn, pi=pi, create=create))
-		elif mgd == T.DVCAnnc or root == T.DVCAnnc.tpe():
-			return Result(resource=DVCAnnc.DVCAnnc(jsn, pi=pi, create=create))
-		elif mgd == T.RBOAnnc or root == T.RBOAnnc.tpe():
-			return Result(resource=RBOAnnc.RBOAnnc(jsn, pi=pi, create=create))
-		elif  mgd == T.EVLAnnc or root == T.EVLAnnc.tpe():
-			return Result(resource=EVLAnnc.EVLAnnc(jsn, pi=pi, create=create))
-		elif  mgd == T.NYCFCAnnc or root == T.NYCFCAnnc.tpe():
-			return Result(resource=NYCFCAnnc.NYCFCAnnc(jsn, pi=pi, create=create))
-
-	return Result(resource=Unknown.Unknown(jsn, root, pi=pi, create=create))	# Capture-All resource
-
 
 excludeFromRoot = [ 'pi' ]
-def pureResource(jsn: dict) -> Tuple[dict, str]:
-	""" Return the "pure" json without the "m2m:xxx" or "<domain>:id" resource specifier."""
-	rootKeys = list(jsn.keys())
+def pureResource(dct:JSON) -> Tuple[JSON, str]:
+	""" Return the "pure" structure without the "m2m:xxx" or "<domain>:id" resource specifier, and the oneM2M type identifier. """
+	rootKeys = list(dct.keys())
 	# Try to determine the root identifier 
 	if len(rootKeys) == 1 and (rk := rootKeys[0]) not in excludeFromRoot and re.match('[\w]+:[\w]', rk):
-		return jsn[rootKeys[0]], rootKeys[0]
+		return dct[rootKeys[0]], rootKeys[0]
 	# Otherwise try to get the root identifier from the resource itself (stored as a private attribute)
 	root = None
-	if Resource.Resource._rtype in jsn:
-		root = jsn[Resource.Resource._rtype]
-	return jsn, root
+	if Resource._rtype in dct:
+		root = dct[Resource._rtype]
+	return dct, root
 
+
+# def removeCommentsFromJSON(data:str) -> str:
+# 	"""	Remove C-style comments from JSON.
+# 	"""
+# 	data = re.sub(r'^[\s]*//[^\n]*\n', '\n', data)		# Comment on first line
+# 	data = re.sub(r'\n[\s]*//[^\n]*\n', '\n', data)	# Comments on some line in the middle
+# 	data = re.sub(r'\n[\s]*//[^\n]*$', '\n', data)		# Comment on last line w/o newline at the end
+# 	data = re.sub(r'/\\*.*?\\*/', '', data)
+# 	return data
+
+
+#commentPattern = r'(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*$)'
+#commentPattern = r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$)'	# recognized escaped comments
+commentPattern = r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$)'	# recognized escaped comments
+# first group captures quoted strings (double or single)
+# second group captures comments (//single-line or /* multi-line */)
+commentRegex = re.compile(commentPattern, re.MULTILINE|re.DOTALL)
 
 def removeCommentsFromJSON(data:str) -> str:
-	"""	Remove C-style comments from JSON.
+	"""	This WILL remove:
+			/* multi-line comments */
+			// single-line comments
+			# single-line comments
+		
+		Will NOT remove:
+			String var1 = "this is /* not a comment. */";
+			char *var2 = "this is // not a comment, either.";
+			url = 'http://not.comment.com';
 	"""
-	data = re.sub('^\s+//.*\n', '\n', data)		# Comment on first line
-	data = re.sub('\n\s+//.*\n', '\n', data)	# Comments on some line in the middle
-	data = re.sub('/n\s+//.*$', '\n', data)		# Comment on last line w/o newline at the end
-	data = re.sub('/\\*.*?\\*/', '', data)
-	return data
+	def _replacer(match):	# type: ignore
+		# if the 2nd group (capturing comments) is not None,
+		# it means we have captured a non-quoted (real) comment string.
+		if match.group(2) is not None:
+			return "" # so we will return empty to remove the comment
+		else: # otherwise, we will return the 1st group
+			return match.group(1) # captured quoted-string
+	return commentRegex.sub(_replacer, data)
 
-
-decimalMatch = re.compile('{(\d+)}')
-def findXPath(jsn:dict, element:str, default:Any=None) -> Any:
-	""" Find a structured element in JSON.
+decimalMatch = re.compile(r'{(\d+)}')
+def findXPath(dct:JSON, element:str, default:Any=None) -> Any:
+	""" Find a structured element in dictionary.
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
 	"""
 
-	if element is None or jsn is None:
+	if element is None or dct is None:
 		return default
 
 	paths = element.split("/")
-	data = jsn
+	data:Any = dct
 	for i in range(0,len(paths)):
 		if data is None:
+		 	return default
+		pathElement = paths[i]
+		if len(pathElement) == 0:	# return if there is an empty path element
 			return default
-		if len(paths[i]) == 0:	# return if there is an empty path element
-			return default
-		elif (m := decimalMatch.search(paths[i])) is not None:	# Match array index {i}
+		elif (m := decimalMatch.search(pathElement)) is not None:	# Match array index {i}
 			idx = int(m.group(1))
 			if not isinstance(data, (list,dict)) or idx >= len(data):	# Check idx within range of list
 				return default
@@ -457,46 +357,57 @@ def findXPath(jsn:dict, element:str, default:Any=None) -> Any:
 				data = data[list(data)[i]]
 			else:
 				data = data[idx]
-		elif paths[i] not in data:	# if key not in dict
+		elif pathElement not in data:	# if key not in dict
 			return default
 		else:
-			data = data[paths[i]]	# found data for the next level down
+			data = data[pathElement]	# found data for the next level down
 	return data
 
 
-# set a structured element in JSON. Create if necessary, and observe the overwrite option
-def setXPath(jsn:Dict[str, Any], element:str, value:Any, overwrite:bool=True) -> bool:
+# set a structured element in dictionary. Create if necessary, and observe the overwrite option
+def setXPath(dct:JSON, element:str, value:Any, overwrite:bool=True) -> bool:
 	paths = element.split("/")
 	ln = len(paths)
-	data = jsn
+	data = dct
 	for i in range(0,ln-1):
 		if paths[i] not in data:
 			data[paths[i]] = {}
 		data = data[paths[i]]
 	if paths[ln-1] in data is not None and not overwrite:
-			return True # don't overwrite
+		return True # don't overwrite
+	if not isinstance(data, dict):
+		return False
 	data[paths[ln-1]] = value
 	return True
 
 
-def deleteNoneValuesFromJSON(jsn:Any) -> dict:
-    if not isinstance(jsn, dict):
-        return jsn
-    return { key:value for key,value in ((key, deleteNoneValuesFromJSON(value)) for key,value in jsn.items()) if value is not None }
+def deleteNoneValuesFromDict(dct:JSON, allowedNull:list[str]=[]) -> JSON:
+	"""	Remove Null-values from a dictionary, but ignore the ones speciefed in 'allowedNull.
+		Return a new dictionary.
+	"""
+	if not isinstance(dct, dict):
+		return dct
+	return { key:value for key,value in ((key, deleteNoneValuesFromDict(value)) for key,value in dct.items()) if value is not None or key in allowedNull }
 
 
 urlregex = re.compile(
-        r'^(?:http|ftp)s?://' 						# http://, https://, ftp://, ftps://
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain
-        r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9]))|' # localhost or single name w/o domain
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' 		# ipv4
-        r'(?::\d+)?' 								# optional port
-        r'(?:/?|[/?]\S+)$', re.IGNORECASE)			# optional path
-
+		r'^(?:http|ftp)s?://|^(?:coap|mqtt)://' 	# http://, https://, ftp://, ftps://, coap://, mqtt://
+		r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain
+		r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9]))|' # localhost or single name w/o domain
+		r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' 		# ipv4
+		r'(?::\d+)?' 								# optional port
+		r'(?:/?|[/?]\S+)$', re.IGNORECASE			# optional path
+		)
 
 def isURL(url: str) -> bool:
 	""" Check whether a given string is a URL. """
 	return url is not None and isinstance(url, str) and re.match(urlregex, url) is not None
+
+
+def isHttpUrl(url:str) -> bool:
+	"""	Check whether a URL is a http URL. 
+	"""
+	return url.startswith(('http', 'https'))
 
 
 def normalizeURL(url: str) -> str:
@@ -519,8 +430,8 @@ def isAllowedOriginator(originator: str, allowedOriginators: List[str]) -> bool:
 	""" Check whether an Originator is in the provided list of allowed 
 		originators. This list may contain regex.
 	"""
-	Logging.logDebug('Originator: %s' % originator)
-	Logging.logDebug('Allowed originators: %s' % allowedOriginators)
+	Logging.logDebug(f'Originator: {originator}')
+	Logging.logDebug(f'Allowed originators: {allowedOriginators}')
 
 	if originator is None or allowedOriginators is None:
 		return False
@@ -530,10 +441,11 @@ def isAllowedOriginator(originator: str, allowedOriginators: List[str]) -> bool:
 	return False
 
 
-#	Compare an old and a new resource. Keywords and values. Ignore internal __XYZ__ keys
-#	Return a dictionary.
-#	if the modifier dict is given then it contains the changes that let from old to new.
-def resourceDiff(old:Union[Resource.Resource, dict], new:Union[Resource.Resource, dict], modifiers:dict=None) -> dict:
+def resourceDiff(old:Resource|JSON, new:Resource|JSON, modifiers:JSON=None) -> JSON:
+	"""	Compare an old and a new resource. Keywords and values. Ignore internal __XYZ__ keys.
+		Return a dictionary.
+		If the modifier dict is given then it contains the changes that let from old to new.
+	"""
 	res = {}
 	for k, v in new.items():
 		if k.startswith('__'):	# ignore all internal attributes
@@ -561,15 +473,14 @@ def resourceDiff(old:Union[Resource.Resource, dict], new:Union[Resource.Resource
 
 
 def getCSE() -> Result:
-	return CSE.dispatcher.retrieveResource(Configuration.get('cse.ri'))
-
-
-def getCSETypeAsString() -> str:
-	return Configuration.get('cse.type').name
+	"""	Return the <CSEBase> resource.
+	"""
+	return CSE.dispatcher.retrieveResource(CSE.cseRi)
 
 	
-# Check whether the target contains a fanoutPoint in between or as the target
-def fanoutPointResource(id: str) -> Resource.Resource:
+def fanoutPointResource(id: str) -> Resource:
+	"""	Check whether the target contains a fanoutPoint in between or as the target.
+	"""
 	if id is None:
 		return None
 	# retrieve srn
@@ -585,10 +496,34 @@ def fanoutPointResource(id: str) -> Resource.Resource:
 		nid = head + '/fopt'
 	if nid is not None:
 		if (result := CSE.dispatcher.retrieveResource(nid)).resource is not None:
-			return result.resource
+			return cast(Resource, result.resource)
 	return None
 
 
+def getSerializationFromOriginator(originator:str) -> List[ContentSerializationType]:
+	"""	Look for the content serializations of a registered originator.
+		It is either an AE, a CSE or a CSR.
+		Return a list of types.
+	"""
+	if originator is None or len(originator):
+		return []
+	# First check whether there is an AE with that originator
+	if (l := len(aes := CSE.storage.searchByValueInField('aei', originator))) > 0:
+		if l > 1:
+			Logging.logErr(f'More then one AE with the same aei: {originator}')
+			return []
+		csz = aes[0].csz
+	# Else try whether there is a CSE or CSR
+	elif (l := len(cses := CSE.storage.searchByValueInField('csi', getIdFromOriginator(originator)))) > 0:
+		if l > 1:
+			Logging.logErr(f'More then one CSE with the same csi: {originator}')
+			return []
+		csz = cses[0].csz
+	# Else just an empty list
+	else:
+		return []
+	# Convert the poa to a list of ContentSerializationTypes
+	return [ ContentSerializationType.getType(c) for c in csz]
 
 #
 #	HTTP request helper functions
@@ -599,32 +534,41 @@ def dissectHttpRequest(request:Request, operation:Operation, _id:Tuple[str, str,
 	cseRequest = CSERequest()
 
 	# get the data first. This marks the request as consumed 
-	cseRequest.data = request.get_data(as_text=True)	# alternative: request.data.decode("utf-8")
-	
+	#cseRequest.data = request.get_data(as_text=True)	# alternative: request.data.decode("utf-8")
+	#cseRequest.data = request.data.decode("utf-8")		# alternative: request.get_data(as_text=True)
+	cseRequest.data = request.data
+
 	# handle ID's 
 	cseRequest.id, cseRequest.csi, cseRequest.srn = _id
 
+	# Copy the original request headers
+	res = getRequestHeaders(request)
+	cseRequest.headers = res.data	# copy the headers
+	if res.rsc != RC.OK:			# but still, something might be wrong
+		return Result(rsc=res.rsc, request=cseRequest, dbg=res.dbg, status=False)
+
 	# No ID, return immediately 
 	if cseRequest.id is None and cseRequest.srn is None:
-		return Result(rsc=RC.notFound, dbg='missing identifier', status=False)
-
-	if (res := getRequestHeaders(request)).data is None:
-		return Result(rsc=res.rsc, dbg=res.dbg, status=False)
-	cseRequest.headers = res.data
+		return Result(rsc=RC.notFound, request=cseRequest, dbg='missing identifier', status=False)
 	
 	try:
 		cseRequest.args, msg = getRequestArguments(request, operation)
 		if cseRequest.args is None:
-			return Result(rsc=RC.badRequest, dbg=msg, status=False)
+			return Result(rsc=RC.badRequest, request=cseRequest, dbg=msg, status=False)
 	except Exception as e:
-		return Result(rsc=RC.invalidArguments, dbg='invalid arguments (%s)' % str(e), status=False)
-	cseRequest.originalArgs	= request.args.copy()	#type: ignore
+		return Result(rsc=RC.invalidArguments, request=cseRequest, dbg=f'invalid arguments ({str(e)})', status=False)
+	cseRequest.originalArgs	= deepcopy(request.args)
+
 	if cseRequest.data is not None and len(cseRequest.data) > 0:
 		try:
-			cseRequest.json = json.loads(removeCommentsFromJSON(cseRequest.data))
+			cseRequest.ct = ContentSerializationType.getType(cseRequest.headers.contentType, default=CSE.defaultSerialization)
+			if (_d := deserializeData(cseRequest.data, cseRequest.ct)) is None:
+				return Result(rsc=RC.unsupportedMediaType, request=cseRequest, dbg=f'Unsupported media type for content-type: {cseRequest.headers.contentType}', status=False)
+			cseRequest.dict = _d
 		except Exception as e:
 			Logging.logWarn('Bad request (malformed content?)')
-			return Result(rsc=RC.badRequest, dbg=str(e), status=False)
+			return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'Malformed content? {str(e)}', status=False)
+			
 	return Result(request=cseRequest, status=True)
 
 
@@ -638,20 +582,39 @@ def requestHeaderField(request: Request, field : str) -> str:
 # Get the request arguments, or meaningful defaults.
 # Only a small subset is supported yet
 # Throws an exception when a wrong type is encountered. This is part of the validation
-def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, str]:
-	result = RequestArguments(operation=operation, request=request)
-
-	# copy for greedy attributes checking
+def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, str]:
+	
+	# copy arguments for greedy attributes checking
 	args = request.args.copy()	 	# type: ignore
+
+	def _extractMultipleArgs(argName:str, target:JSON, validate:bool=True) -> Tuple[bool, str]:
+		"""	Get multi-arguments. Always create at least an empty list. Remove
+			the found arguments from the original list.
+		"""
+		lst = []
+		for e in args.getlist(argName):
+			for es in (t := e.split()):	# check for number
+				if validate:
+					if not CSE.validator.validateRequestArgument(argName, es).status:
+						return False, f'error validating "{argName}" argument(s)'
+			lst.extend(t)
+		if len(lst) > 0:
+			target[argName] = lst
+		args.poplist(argName)
+		return True, None
+
+	# result = RequestArguments(operation=operation, request=request)
+	result = RequestArguments(operation=operation)
+
 
 	# FU - Filter Usage
 	if (fu := args.get('fu')) is not None:
 		if not CSE.validator.validateRequestArgument('fu', fu).status:
-			return None, 'error validating \'fu\' argument'
+			return None, 'error validating "fu" argument'
 		try:
 			fu = FilterUsage(int(fu))
 		except ValueError as exc:
-			return None, '\'%s\' is not a valid value for fu' % fu
+			return None, f'"{fu}" is not a valid value for fu'
 		del args['fu']
 	else:
 		fu = FilterUsage.conditionalRetrieval
@@ -663,11 +626,11 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 	# DRT - Desired Identifier Result Type
 	if (drt := args.get('drt')) is not None: # 1=strucured, 2=unstructured
 		if not CSE.validator.validateRequestArgument('drt', drt).status:
-			return None, 'error validating \'drt\' argument'
+			return None, 'error validating "drt" argument'
 		try:
 			drt = DesiredIdentifierResultType(int(drt))
 		except ValueError as exc:
-			return None, '\'%s\' is not a valid value for drt' % drt
+			return None, f'"{drt}" is not a valid value for drt'
 		del args['drt']
 	else:
 		drt = DesiredIdentifierResultType.structured
@@ -677,11 +640,11 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 	# FO - Filter Operation
 	if (fo := args.get('fo')) is not None: # 1=AND, 2=OR
 		if not CSE.validator.validateRequestArgument('fo', fo).status:
-			return None, 'error validating \'fo\' argument'
+			return None, 'error validating "fo" argument'
 		try:
 			fo = FilterOperation(int(fo))
 		except ValueError as exc:
-			return None, '\'%s\' is not a valid value for fo' % fo
+			return None, f'"{fo}" is not a valid value for fo'
 		del args['fo']
 	else:
 		fo = FilterOperation.AND # default
@@ -691,7 +654,7 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 	# RCN Result Content Type
 	if (rcn := args.get('rcn')) is not None: 
 		if not CSE.validator.validateRequestArgument('rcn', rcn).status:
-			return None, 'error validating \'rcn\' argument'
+			return None, 'error validating "rcn" argument'
 		rcn = int(rcn)
 		del args['rcn']
 	else:
@@ -712,27 +675,27 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 														ResultContentType.childResourceReferences,
 														ResultContentType.childResources,
 														ResultContentType.originalResource ]:
-		return None, 'rcn: %d not allowed in RETRIEVE operation' % rcn
+		return None, f'rcn: {rcn:d} not allowed in RETRIEVE operation'
 	elif operation == Operation.DISCOVERY and rcn not in [ ResultContentType.childResourceReferences,
 														   ResultContentType.discoveryResultReferences ]:
-		return None, 'rcn: %d not allowed in DISCOVERY operation' % rcn
+		return None, f'rcn: {rcn:d} not allowed in DISCOVERY operation'
 	elif operation == Operation.CREATE and rcn not in [ ResultContentType.attributes,
 														ResultContentType.modifiedAttributes,
 														ResultContentType.hierarchicalAddress,
 														ResultContentType.hierarchicalAddressAttributes,
 														ResultContentType.nothing ]:
-		return None, 'rcn: %d not allowed in CREATE operation' % rcn
+		return None, f'rcn: {rcn:d} not allowed in CREATE operation'
 	elif operation == Operation.UPDATE and rcn not in [ ResultContentType.attributes,
 														ResultContentType.modifiedAttributes,
 														ResultContentType.nothing ]:
-		return None, 'rcn: %d not allowed in UPDATE operation' % rcn
+		return None, f'rcn: {rcn:d} not allowed in UPDATE operation'
 	elif operation == Operation.DELETE and rcn not in [ ResultContentType.attributes,
 														ResultContentType.nothing,
 														ResultContentType.attributesAndChildResources,
 														ResultContentType.childResources,
 														ResultContentType.attributesAndChildResourceReferences,
 														ResultContentType.childResourceReferences ]:
-		return None, 'rcn: %d not allowed DELETE operation' % rcn
+		return None, f'rcn:  not allowed DELETE operation'
 
 	result.rcn = ResultContentType(rcn)
 
@@ -740,11 +703,11 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 	# RT - Response Type
 	if (rt := args.get('rt')) is not None: 
 		if not CSE.validator.validateRequestArgument('rt', rt).status:
-			return None, 'error validating \'rt\' argument'
+			return None, 'error validating "rt" argument'
 		try:
 			rt = ResponseType(int(rt))
 		except ValueError as exc:
-			return None, '\'%s\' is not a valid value for rt' % rt
+			return None, f'"{rt}" is not a valid value for rt'
 		del args['rt']
 	else:
 		rt = ResponseType.blockingRequest
@@ -754,7 +717,7 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 	# RP - Response Persistence
 	if (rp := args.get('rp')) is not None: 
 		if not CSE.validator.validateRequestArgument('rp', rp).status:
-			return None, 'error validating \'rp\' argument'
+			return None, 'error validating "rp" argument'
 		try:
 			if rp.startswith('P'):
 				rpts = getResourceDate(isodate.parse_duration(rp).total_seconds())
@@ -763,7 +726,7 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 			else:
 				raise ValueError
 		except ValueError as exc:
-			return None, '\'%s\' is not a valid value for rp' % rp
+			return None, f'"{rp}" is not a valid value for rp'
 		del args['rp']
 	else:
 		rp = None
@@ -773,75 +736,56 @@ def getRequestArguments( request:Request, operation:Operation=Operation.RETRIEVE
 
 
 	# handling conditions
-	handling = { }
+	handling:Conditions = { }
 	for c in ['lim', 'lvl', 'ofst']:	# integer parameters
 		if c in args:
 			v = args[c]
 			if not CSE.validator.validateRequestArgument(c, v).status:
-				return None, 'error validating "%s" argument' % c
+				return None, f'error validating "{c}" argument'
 			handling[c] = int(v)
 			del args[c]
 	for c in ['arp']:
 		if c in args:
 			v = args[c]
 			if not CSE.validator.validateRequestArgument(c, v).status:
-				return None, 'error validating "%s" argument' % c
+				return None, f'error validating "{c}" argument'
 			handling[c] = v # string
 			del args[c]
 	result.handling = handling
 
-
 	# conditions
-	conditions = {}
+	conditions:Conditions = {}
 
 	# Extract and store other arguments
 	for c in ['crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr']:
 		if (v := args.get(c)) is not None:
 			if not CSE.validator.validateRequestArgument(c, v).status:
-				return None, 'error validating "%s" argument' % c
+				return None, f'error validating "{c}" argument'
 			conditions[c] = v
 			del args[c]
 
-	# get types (multi). Always create at least an empty list
-	tyAr = []
-	for e in args.getlist('ty'):
-		for es in (t := e.split()):	# check for number
-			if not CSE.validator.validateRequestArgument('ty', es).status:
-				return None, 'error validating "ty" argument(s)'
-		tyAr.extend(t)
-	if len(tyAr) > 0:
-		conditions['ty'] = tyAr
-	args.poplist('ty')
-
-	# get contentTypes (multi). Always create at least an empty list
-	ctyAr = []
-	for e in args.getlist('cty'):
-		for es in (t := e.split()):	# check for number
-			if not CSE.validator.validateRequestArgument('cty', es).status:
-				return None, 'error validating "cty" argument(s)'
-		ctyAr.extend(t)
-	if len(ctyAr) > 0:
-		conditions['cty'] = ctyAr
-	args.poplist('cty')
-
-	# get types (multi). Always create at least an empty list
-	# NO validation of label. It is a list.
-	lblAr = []
-	for e in args.getlist('lbl'):
-		lblAr.append(e)
-	if len(lblAr) > 0:
-		conditions['lbl'] = lblAr
-	args.poplist('lbl')
+	if not (res := _extractMultipleArgs('ty', conditions))[0]:
+		return None, res[1]
+	if not (res := _extractMultipleArgs('cty', conditions))[0]:
+		return None, res[1]
+	if not (res := _extractMultipleArgs('lbl', conditions, validate=False))[0]:
+		return None, res[1]
 
 	result.conditions = conditions
 
 	# all remaining arguments are treated as matching attributes
 	for arg, val in args.items():
 		if not CSE.validator.validateRequestArgument(arg, val).status:
-			return None, 'error validating (unknown?) \'%s\' argument)' % arg
-
+			return None, f'error validating (unknown?) "{arg}" argument)'
 	# all arguments have passed, so add the remaining 
 	result.attributes = args
+
+	# Alternative: in case attributes are handled like ty, lbl, cty
+	# attributes:dict = {}
+	# for key in list(args.keys()):
+	# 	if not (res := _extractMultipleArgs(key, attributes))[0]:
+	# 		return None, res[1]
+	# result.attributes = attributes
 
 	# Finally return the collected arguments
 	return result, None
@@ -856,11 +800,13 @@ def getRequestHeaders(request: Request) -> Result:
 	rh.operationExecutionTime 		= requestHeaderField(request, C.hfOET)
 	rh.releaseVersionIndicator 		= requestHeaderField(request, C.hfRVI)
 
+	# content-type and accept
+	rh.contentType 	= request.content_type
+	rh.accept		= [ mt for mt, _ in request.accept_mimetypes ]	# get (multiple) accept headers from MIMEType[(x,nr)]
+
 	if (rtu := requestHeaderField(request, C.hfRTU)) is not None:			# handle rtu list
 		rh.responseTypeNUs = rtu.split('&')
 
-	# content-type
-	rh.contentType 	= request.content_type
 	if rh.contentType is not None:
 		if not rh.contentType.startswith(tuple(C.supportedContentHeaderFormat)):
 			rh.contentType 	= None
@@ -872,9 +818,48 @@ def getRequestHeaders(request: Request) -> Result:
 				if t.isdigit() and (_t := int(t)) and T.has(_t):
 					rh.resourceType = T(_t)
 				else:
-					return Result(rsc=RC.badRequest, dbg='Unknown resource type: %s' % t)
+					return Result(rsc=RC.badRequest, data=rh, dbg=f'Unknown resource type: {t}')
+	
+	# accept
+	rh.accept = request.headers.getlist('accept')
+	rh.accept = [ a for a in rh.accept if a != '*/*' ]
+	# if ((l := len(rh.accept)) == 1 and '*/*' in rh.accept) or l == 0:
+	# 	rh.accept = [ CSE.defaultSerialization.toHeader() ]
+
+	# perform some validitions
+
+	if rh.releaseVersionIndicator is None:
+		Logging.logDebug(dbg := 'Release Version Indicator is mandatory in request')
+		return Result(data=rh, rsc=RC.badRequest, dbg=dbg)
+	if rh.requestIdentifier is None:
+		Logging.logDebug(dbg := 'Request Identifier is mandatory in request')
+		return Result(data=rh, rsc=RC.badRequest, dbg=dbg)
+
 	return Result(data=rh, rsc=RC.OK)
 
+
+def serializeData(data:JSON, ct:ContentSerializationType) -> str|bytes:
+	"""	Serialize a dictionary, depending on the serialization type.
+	"""
+	encoder = json if ct == ContentSerializationType.JSON else cbor2 if ct == ContentSerializationType.CBOR else None
+	if encoder is None:
+		return None
+	return encoder.dumps(data)	# type:ignore[no-any-return]
+
+
+def deserializeData(data:bytes, ct:ContentSerializationType) -> JSON:
+	"""	Deserialize data into a dictionary, depending on the serialization type.
+		If the len of the data is 0 then an empty dictionary is returned. 
+	"""
+	if len(data) == 0:
+		return {}
+	if ct == ContentSerializationType.JSON:
+		return cast(JSON, json.loads(data.decode("utf-8")))
+	elif ct == ContentSerializationType.CBOR:
+		return cast(JSON, cbor2.loads(data))
+	# except Exception as e:
+	# 	Logging.logErr(f'Deserialization error: {str(e)}')
+	return None
 
 #
 #	Threads
@@ -884,3 +869,36 @@ def renameCurrentThread(name:str = None, thread:threading.Thread = None) -> None
 	thread = threading.current_thread() if thread is None else thread
 	thread.name = name if name is not None else str(thread.native_id)
 
+
+#
+#	Text formattings
+#
+
+def toHex(bts:bytes, toBinary:bool=False, withLength:bool=False) -> str:
+	"""	Print bts as hex output, similar to the 'od' command.
+	"""
+	if len(bts) == 0 and not withLength: return ''
+	result = ''
+	n = 0
+	b = bts[n:n+16]
+
+	while b and len(b) > 0:
+
+		if toBinary:
+			s1 = ' '.join([f'{i:08b}' for i in b])
+			s1 = f'{s1[0:71]} {s1[71:]}'
+			width = 144
+		else:
+			s1 = ' '.join([f'{i:02x}' for i in b])
+			s1 = f'{s1[0:23]} {s1[23:]}'
+			width = 48
+
+		s2 = ''.join([chr(i) if 32 <= i <= 127 else '.' for i in b])
+		s2 = f'{s2[0:8]} {s2[8:]}'
+		result += f'0x{n:08x}  {s1:<{width}}  | {s2}\n'
+
+		n += 16
+		b = bts[n:n+16]
+	result += f'0x{len(bts):08x}'
+
+	return result

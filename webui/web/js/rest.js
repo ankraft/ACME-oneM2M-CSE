@@ -53,6 +53,7 @@ function sendRequest(method, node, url, originator, callback, errorCallback) {
   request.setRequestHeader("X-M2M-Origin", originator);
   request.setRequestHeader("Accept", "application/json");
   request.setRequestHeader("X-M2M-RI", "123");       
+  request.setRequestHeader("X-M2M-RVI", "3");       
   request.send(null);
 }
 

@@ -8,7 +8,7 @@
 #
 
 from .MgmtObj import *
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, JSON
 from Validator import constructPolicy, addPolicy
 import Utils
 
@@ -26,11 +26,11 @@ defaultDeviceLabel = "unknown serial id"
 
 class DVI(MgmtObj):
 
-	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		self.resourceAttributePolicies = dviPolicies	# only the resource type's own policies
-		super().__init__(jsn, pi, mgd=T.DVI, create=create, attributePolicies=attributePolicies)
+		super().__init__(dct, pi, mgd=T.DVI, create=create, attributePolicies=attributePolicies)
 
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('dty', defaultDeviceType, overwrite=False)
 			self.setAttribute('mod', defaultModel, overwrite=False)
 			self.setAttribute('man', defaultManufacturer, overwrite=False)

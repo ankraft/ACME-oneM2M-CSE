@@ -8,7 +8,7 @@
 #
 
 from .MgmtObj import *
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, JSON
 from Validator import constructPolicy, addPolicy
 import Utils
 
@@ -32,11 +32,11 @@ defaultStatus = { 'acn' : '', 'sus' : statusUninitialized }
 
 class SWR(MgmtObj):
 
-	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		self.resourceAttributePolicies = swrPolicies	# only the resource type's own policies
-		super().__init__(jsn, pi, mgd=T.SWR, create=create, attributePolicies=attributePolicies)
+		super().__init__(dct, pi, mgd=T.SWR, create=create, attributePolicies=attributePolicies)
 
-		if self.json is not None:
+		if self.dict is not None:
 			self.setAttribute('vr', defaultVersion, overwrite=False)
 			self.setAttribute('swn', defaultSoftwareName, overwrite=False)
 			self.setAttribute('url', defaultURL, overwrite=False)

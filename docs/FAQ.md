@@ -20,4 +20,9 @@
    The log output provides useful information to analyse the flows of requests inside the CSE. However, it reduces the performance of the CSE a lot. So, reducing the log level to *info* or *warning* already helps. This can be done in the *[logging]* section of the configuration file.
    Another option is to change the database to *memory* mode. This means that all database access happens in memory and not on disk. But please be aware that this also means  that all  data will be lost when the CSE terminates!
 
+## Web UI
+
+1. **Can I use the web UI also with other CSE implementations?**
+    The web UI can also be run as an independent application.  Since it communicates with the CSE via the Mca interfave it should be possible to use it with other CSE implementations as well as long as those third party CSEs follow the oneM2M http binding specification. It only supports the resource types that the ACME CSE supports, but at least it will present all other resource types as *unknown*.
+
 [← README](../README.md) 

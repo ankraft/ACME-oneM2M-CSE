@@ -1,0 +1,416 @@
+// Created by SDTTool
+// oneM2M Release: 4.5.0
+// Domain:         org.onem2m.city
+[
+
+    // DeviceClass: deviceOutdoorLamp
+    {
+        "type"      : "cid:deOLp",
+        "lname"     : "deviceOutdoorLamp",
+        "cnd"       : "org.onem2m.city.device.deviceOutdoorLamp",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:binSh", 
+            "cod:brigs", 
+            "cod:motSr", 
+            "cod:aiQSr", 
+            "cod:uveSr", 
+            "cod:timer", 
+            "cod:fauDn"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceOutdoorLampAnnc
+    {
+        "type"      : "cid:deOLpAnnc",
+        "lname"     : "deviceOutdoorLampAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceOutdoorLampAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:brigs", 
+            "cod:brigsAnnc", 
+            "cod:motSr", 
+            "cod:motSrAnnc", 
+            "cod:aiQSr", 
+            "cod:aiQSrAnnc", 
+            "cod:uveSr", 
+            "cod:uveSrAnnc", 
+            "cod:timer", 
+            "cod:timerAnnc", 
+            "cod:fauDn", 
+            "cod:fauDnAnnc"
+        ]
+    }, 
+
+    // DeviceClass: deviceMagneticParkingMonitor
+    {
+        "type"      : "cid:dMPMr",
+        "lname"     : "deviceMagneticParkingMonitor",
+        "cnd"       : "org.onem2m.city.device.deviceMagneticParkingMonitor",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:bat", 
+            "cod:conny", 
+            "cod:peRCg", 
+            "cod:parSs", 
+            "cod:maSPs"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceMagneticParkingMonitorAnnc
+    {
+        "type"      : "cid:dMPMrAnnc",
+        "lname"     : "deviceMagneticParkingMonitorAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceMagneticParkingMonitorAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:bat", 
+            "cod:batAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:peRCg", 
+            "cod:peRCgAnnc", 
+            "cod:parSs", 
+            "cod:parSsAnnc", 
+            "cod:maSPs", 
+            "cod:maSPsAnnc"
+        ]
+    }, 
+
+    // DeviceClass: deviceSmartElectricMeter
+    {
+        "type"      : "cid:dSEMr",
+        "lname"     : "deviceSmartElectricMeter",
+        "cnd"       : "org.onem2m.city.device.deviceSmartElectricMeter",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:fauDn", 
+            "cod:binSh", 
+            "cod:runSe", 
+            "cod:clock", 
+            "cod:eneCn", 
+            "cod:eneGn"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceSmartElectricMeterAnnc
+    {
+        "type"      : "cid:dSEMrAnnc",
+        "lname"     : "deviceSmartElectricMeterAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceSmartElectricMeterAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:fauDn", 
+            "cod:fauDnAnnc", 
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:clock", 
+            "cod:clockAnnc", 
+            "cod:eneCn", 
+            "cod:eneCnAnnc", 
+            "cod:eneGn", 
+            "cod:eneGnAnnc"
+        ]
+    }, 
+
+    // DeviceClass: deviceSmartGasMeter
+    {
+        "type"      : "cid:dSGMr",
+        "lname"     : "deviceSmartGasMeter",
+        "cnd"       : "org.onem2m.city.device.deviceSmartGasMeter",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:bat", 
+            "cod:fauDn", 
+            "cod:conny", 
+            "cod:peRCg", 
+            "cod:gMRIo", 
+            "cod:binSh", 
+            "cod:gaMAm"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceSmartGasMeterAnnc
+    {
+        "type"      : "cid:dSGMrAnnc",
+        "lname"     : "deviceSmartGasMeterAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceSmartGasMeterAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:bat", 
+            "cod:batAnnc", 
+            "cod:fauDn", 
+            "cod:fauDnAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:peRCg", 
+            "cod:peRCgAnnc", 
+            "cod:gMRIo", 
+            "cod:gMRIoAnnc", 
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:gaMAm", 
+            "cod:gaMAmAnnc"
+        ]
+    }, 
+
+    // DeviceClass: deviceSmartWaterMeter
+    {
+        "type"      : "cid:dSWMr",
+        "lname"     : "deviceSmartWaterMeter",
+        "cnd"       : "org.onem2m.city.device.deviceSmartWaterMeter",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:bat", 
+            "cod:fauDn", 
+            "cod:conny", 
+            "cod:peRCg", 
+            "cod:waMSg", 
+            "cod:wMRIo", 
+            "cod:binSh", 
+            "cod:waMAm"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceSmartWaterMeterAnnc
+    {
+        "type"      : "cid:dSWMrAnnc",
+        "lname"     : "deviceSmartWaterMeterAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceSmartWaterMeterAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:bat", 
+            "cod:batAnnc", 
+            "cod:fauDn", 
+            "cod:fauDnAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:peRCg", 
+            "cod:peRCgAnnc", 
+            "cod:waMSg", 
+            "cod:waMSgAnnc", 
+            "cod:wMRIo", 
+            "cod:wMRIoAnnc", 
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:waMAm", 
+            "cod:waMAmAnnc"
+        ]
+    }, 
+
+    // DeviceClass: deviceStreetLightController
+    {
+        "type"      : "cid:dSLCr",
+        "lname"     : "deviceStreetLightController",
+        "cnd"       : "org.onem2m.city.device.deviceStreetLightController",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:geoLn", 
+            "cod:conny", 
+            "cod:peRCg", 
+            "cod:slRIo", 
+            "cod:slPSg", 
+            "cod:slcAm"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceStreetLightControllerAnnc
+    {
+        "type"      : "cid:dSLCrAnnc",
+        "lname"     : "deviceStreetLightControllerAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceStreetLightControllerAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:geoLn", 
+            "cod:geoLnAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:peRCg", 
+            "cod:peRCgAnnc", 
+            "cod:slRIo", 
+            "cod:slRIoAnnc", 
+            "cod:slPSg", 
+            "cod:slPSgAnnc", 
+            "cod:slcAm", 
+            "cod:slcAmAnnc"
+        ]
+    }, 
+
+    // DeviceClass: deviceWaterQualityMonitor
+    {
+        "type"      : "cid:dWQMr",
+        "lname"     : "deviceWaterQualityMonitor",
+        "cnd"       : "org.onem2m.city.device.deviceWaterQualityMonitor",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:bat", 
+            "cod:conny", 
+            "cod:peRCg", 
+            "cod:waQMr"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceWaterQualityMonitorAnnc
+    {
+        "type"      : "cid:dWQMrAnnc",
+        "lname"     : "deviceWaterQualityMonitorAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceWaterQualityMonitorAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:bat", 
+            "cod:batAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:peRCg", 
+            "cod:peRCgAnnc", 
+            "cod:waQMr", 
+            "cod:waQMrAnnc"
+        ]
+    }, 
+
+    // DeviceClass: deviceWeatherStation
+    {
+        "type"      : "cid:deWSn",
+        "lname"     : "deviceWeatherStation",
+        "cnd"       : "org.onem2m.city.device.deviceWeatherStation",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:tempe", 
+            "cod:tempe", 
+            "cod:aiQSr", 
+            "cod:anemr", 
+            "cod:baror", 
+            "cod:raiGe", 
+            "cod:acoSr", 
+            "cod:uveSr"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceWeatherStationAnnc
+    {
+        "type"      : "cid:deWSnAnnc",
+        "lname"     : "deviceWeatherStationAnnc",
+        "cnd"       : "org.onem2m.city.device.deviceWeatherStationAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:tempe", 
+            "cod:tempeAnnc", 
+            "cod:tempe", 
+            "cod:tempeAnnc", 
+            "cod:aiQSr", 
+            "cod:aiQSrAnnc", 
+            "cod:anemr", 
+            "cod:anemrAnnc", 
+            "cod:baror", 
+            "cod:barorAnnc", 
+            "cod:raiGe", 
+            "cod:raiGeAnnc", 
+            "cod:acoSr", 
+            "cod:acoSrAnnc", 
+            "cod:uveSr", 
+            "cod:uveSrAnnc"
+        ]
+    }
+
+
+]

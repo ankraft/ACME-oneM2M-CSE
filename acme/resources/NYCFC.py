@@ -8,22 +8,20 @@
 #
 
 from .MgmtObj import *
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, JSON
 from Validator import constructPolicy, addPolicy
 import Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
-fwrPolicies = constructPolicy([
+nycfcPolicies = constructPolicy([
 	'suids', 'mcff', 'mcfc'
 ])
-attributePolicies =  addPolicy(mgmtObjAttributePolicies, fwrPolicies)
-
-
+attributePolicies =  addPolicy(mgmtObjAttributePolicies, nycfcPolicies)
 
 
 class NYCFC(MgmtObj):
 
-	def __init__(self, jsn: dict = None, pi: str = None, create: bool = False) -> None:
-		self.resourceAttributePolicies = fwrPolicies	# only the resource type's own policies
-		super().__init__(jsn, pi, mgd=T.NYCFC, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+		self.resourceAttributePolicies = nycfcPolicies	# only the resource type's own policies
+		super().__init__(dct, pi, mgd=T.NYCFC, create=create, attributePolicies=attributePolicies)
 

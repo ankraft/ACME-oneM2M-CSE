@@ -8,9 +8,9 @@
 #
 
 from __future__ import annotations
-import json
+import json, cbor2
 from dataclasses import dataclass, field
-from typing import Any, List
+from typing import Any, List, Dict, Tuple, Union, Callable
 from enum import IntEnum, Enum, auto
 from flask import Request
 
@@ -42,10 +42,11 @@ class ResourceTypes(IntEnum):
 	FCI 		= 58
 
 
-	# Virtual resources (proprietary resource types)
+	# Virtual resources (some are proprietary resource types)
 
-	CNT_OL		=  -20001
-	CNT_LA		=  -20002
+	CNT_OL		=  20001	# actually a memberType
+	CNT_LA		=  20002	# actually a memberType
+
 	GRP_FOPT	=  -20003
 	FCNT_OL		=  -20004
 	FCNT_LA		=  -20005
@@ -92,23 +93,17 @@ class ResourceTypes(IntEnum):
 
 
 	def tpe(self) -> str:
-		return ResourceTypes._names[self.value] 				#  type: ignore
+		return ResourceTypes._names[self.value] 					#  type: ignore
 
 
 	def announced(self) -> ResourceTypes:
-		if self.value in ResourceTypes._announcedMappings:		#  type: ignore
+		if self.value in ResourceTypes._announcedMappings:			#  type: ignore
 			return ResourceTypes._announcedMappings[self.value] 	#  type: ignore
 		return ResourceTypes.UNKNOWN
 
 
-	def announcedMgd(self, mgd:int) -> ResourceTypes:
-		if mgd in ResourceTypes._announcedMappingsMGD:		#  type: ignore
-			return ResourceTypes._announcedMappingsMGD[mgd] 	#  type: ignore
-		return ResourceTypes.UNKNOWN
-
-
 	def isAnnounced(self) -> bool:
-		return self.value in ResourceTypes._announcedSet 		# type: ignore
+		return self.value in ResourceTypes._announcedSet 			# type: ignore
 
 
 	def __str__(self) -> str:
@@ -118,7 +113,21 @@ class ResourceTypes(IntEnum):
 	@classmethod
 	def has(cls, value:int) -> bool:
 		return value in cls.__members__.values()
+	
 
+	@classmethod
+	def fromTPE(cls, tpe:str) -> ResourceTypes:
+		try:
+			return next(key for key, value in ResourceTypes._names.items() if value == tpe)	# type: ignore
+		except StopIteration:
+			return None
+
+
+	@classmethod
+	def announcedMgd(cls, mgd:int) -> ResourceTypes:
+		if mgd in ResourceTypes._announcedMappingsMGD:				#  type: ignore
+			return ResourceTypes._announcedMappingsMGD[mgd] 		#  type: ignore
+		return ResourceTypes.UNKNOWN
 
 
 ResourceTypes._announcedMappings = {							#  type: ignore
@@ -159,6 +168,7 @@ ResourceTypes._announcedSet = [									#  type: ignore
 	ResourceTypes.RBOAnnc, ResourceTypes.EVLAnnc, ResourceTypes.NYCFCAnnc,
 ]
 
+# Mapping between oneM2M resource types to type identifies
 
 ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.UNKNOWN		: 'unknown',
@@ -225,6 +235,8 @@ ResourceTypes._names 	= {										# type: ignore
 
 	}
 
+	
+
 
 
 
@@ -242,6 +254,7 @@ class BasicType(IntEnum):
 	boolean			= auto()
 	float 			= auto()
 	geoCoordinates	= auto()
+	integer			= auto()
 
 
 class Cardinality(IntEnum):
@@ -285,6 +298,7 @@ class ResponseCode(IntEnum):
 	badRequest									= 4000
 	notFound 									= 4004
 	operationNotAllowed							= 4005
+	unsupportedMediaType						= 4015
 	subscriptionCreatorHasNoPrivilege			= 4101
 	contentsUnacceptable						= 4102
 	originatorHasNoPrivilege					= 4103
@@ -292,6 +306,7 @@ class ResponseCode(IntEnum):
 	securityAssociationRequired					= 4107
 	invalidChildResourceType					= 4108
 	groupMemberTypeInconsistent					= 4110
+	appRuleValidationFailed						= 4126
 	internalServerError							= 5000
 	notImplemented								= 5001
 	targetNotReachable 							= 5103
@@ -339,10 +354,12 @@ ResponseCode._httpStatusCodes = {											# type: ignore
 		ResponseCode.securityAssociationRequired				: 403,		# SECURITY ASSOCIATION REQUIRED
 		ResponseCode.subscriptionCreatorHasNoPrivilege			: 403,		# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
 		ResponseCode.subscriptionHostHasNoPrivilege				: 403,		# SUBSCRIPTION HOST HAS NO PRIVILEGE
+		ResponseCode.appRuleValidationFailed					: 403,		# APP RULE VALIDATION FAILED
 		ResponseCode.notFound									: 404,		# NOT FOUND
 		ResponseCode.operationNotAllowed						: 405,		# OPERATION NOT ALLOWED
 		ResponseCode.notAcceptable 								: 406,		# NOT ACCEPTABLE
 		ResponseCode.conflict									: 409,		# CONFLICT
+		ResponseCode.unsupportedMediaType						: 415,		# UNSUPPORTED_MEDIA_TYPE
 		ResponseCode.internalServerError 						: 500,		# INTERNAL SERVER ERROR
 		ResponseCode.subscriptionVerificationInitiationFailed	: 500,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
 		ResponseCode.notImplemented								: 501,		# NOT IMPLEMENTED
@@ -505,13 +522,87 @@ class NotificationContentType(IntEnum):
 
 class NotificationEventType(IntEnum):
 	""" eventNotificationCriteria/NotificationEventTypes """
-	resourceUpdate		= 1	# default
-	resourceDelete		= 2	
-	createDirectChild	= 3
-	deleteDirectChild	= 4	
-	retrieveCNTNoChild	= 5	# TODO not supported yet
-	triggerReceivedForAE= 6 # TODO not supported yet
-	blockingUpdate 		= 7 # TODO not supported yet
+	resourceUpdate		= 1	# A, default
+	resourceDelete		= 2	# B
+	createDirectChild	= 3 # C
+	deleteDirectChild	= 4 # D	
+	retrieveCNTNoChild	= 5	# E # TODO not supported yet
+	triggerReceivedForAE= 6 # F # TODO not supported yet
+	blockingUpdate 		= 7 # G # TODO not supported yet
+
+
+	def isAllowedNCT(self, nct:NotificationContentType) -> bool:
+		if nct == NotificationContentType.all:
+			return self.value in [ NotificationEventType.resourceUpdate, NotificationEventType.resourceDelete, NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]
+		elif nct == NotificationContentType.modifiedAttributes:
+			return self.value in [ NotificationEventType.resourceUpdate, NotificationEventType.blockingUpdate ]
+		elif nct == NotificationContentType.ri:
+			return self.value in [ NotificationEventType.resourceUpdate, NotificationEventType.resourceDelete, NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]
+		elif nct == NotificationContentType.triggerPayload:
+			return self.value in [ NotificationEventType.triggerReceivedForAE ]
+		return False
+
+
+##############################################################################
+#
+#	Content Serializations
+#
+
+class ContentSerializationType(IntEnum):
+	"""	Content Serialization Types """
+	XML					= auto()
+	JSON				= auto()
+	CBOR				= auto()
+	UNKNOWN				= auto()
+
+	def toHeader(self) -> str:
+		"""	Return the mime header for a enum value.
+		"""
+		if self.value == self.JSON:	return 'application/json'
+		if self.value == self.CBOR:	return 'application/cbor'
+		if self.value == self.XML:	return 'application/xml'
+		return None
+	
+	def toSimple(self) -> str:
+		"""	Return the simple string for a enum value.
+		"""
+		if self.value == self.JSON:	return 'json'
+		if self.value == self.CBOR:	return 'cbor'
+		if self.value == self.XML:	return 'xml'
+		return None
+
+	@classmethod
+	def to(cls, t:str) -> ContentSerializationType:
+		"""	Return the enum from a string.
+		"""
+		t = t.lower()
+		if t in [ 'cbor', 'application/cbor' ]:	return cls.CBOR
+		if t in [ 'json', 'application/json' ]:	return cls.JSON
+		if t in [ 'xml',  'application/xml'  ]:	return cls.XML
+		return cls.UNKNOWN
+
+	
+	@classmethod
+	def getType(cls, hdr:str, default:ContentSerializationType=None) -> ContentSerializationType:
+		"""	Return the enum from a header definition.
+		"""
+		default = cls.UNKNOWN if default is None else default
+		if hdr is None:													return default
+		if hdr.lower().startswith('application/json'):					return cls.JSON
+		if hdr.lower().startswith('application/vnd.onem2m-res+json'):	return cls.JSON
+		if hdr.lower().startswith('application/cbor'):					return cls.CBOR
+		if hdr.lower().startswith('application/vnd.onem2m-res+cbor'):	return cls.CBOR
+		if hdr.lower().startswith('application/xml'):					return cls.XML
+		if hdr.lower().startswith('application/vnd.onem2m-res+XML'):	return cls.XML
+		return cls.UNKNOWN
+	
+	def __eq__(self, other:object) -> bool:
+		if not isinstance(other, str):
+			return NotImplemented
+		return self.value == self.getType(str(other))
+	
+	def __repr__(self) -> str:
+		return self.name
 
 
 
@@ -523,7 +614,7 @@ class NotificationEventType(IntEnum):
 @dataclass
 class Result:
 	resource 			: Resource		= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
-	jsn 				: dict 			= None
+	dict 				: JSON 			= None		# Contains the result dictionary
 	data 				: Any 			= None 		# Anything
 	lst 				: List[Any]   	= None		# List of Anything
 	rsc 				: ResponseCode	= ResponseCode.OK	# OK
@@ -538,20 +629,25 @@ class Result:
 		"""
 		return Result(rsc=self.rsc, dbg=self.dbg)
 
-	def toString(self) -> str:
+	def toData(self, ct:ContentSerializationType=None) -> str|bytes:
 		from resources.Resource import Resource
+		from Utils import serializeData
+		from CSE import defaultSerialization
+
+		# determine the default serialization type if none was given
+		ct = defaultSerialization if ct is None else ct
 
 		if isinstance(self.resource, Resource):
-			r = json.dumps(self.resource.asJSON())
+			r = serializeData(self.resource.asDict(), ct)
 		elif self.dbg is not None:
-			r = json.dumps({ 'm2m:dbg' : self.dbg })
+			r = serializeData({ 'm2m:dbg' : self.dbg }, ct)
 		elif isinstance(self.resource, dict):
-			r = json.dumps(self.resource)
+			r = serializeData(self.resource, ct)
 		elif isinstance(self.resource, str):
 			r = self.resource
-		elif isinstance(self.jsn, dict):		# explicit json
-			r = json.dumps(self.jsn)
-		elif self.resource is None and self.jsn is None:
+		elif isinstance(self.dict, dict):		# explicit json or cbor
+			r = serializeData(self.dict, ct)
+		elif self.resource is None and self.dict is None:
 			r = ''
 		else:
 		 	r = ''
@@ -572,11 +668,11 @@ class RequestArguments:
 	rt 							: ResponseType					= ResponseType.blockingRequest 					# response type
 	rp 							: str 							= None 											# result persistence
 	rpts 						: str 							= None 											# ... as a timestamp
-	handling 					: dict 							= field(default_factory=dict)
-	conditions 					: dict 							= field(default_factory=dict)
-	attributes 					: dict 							= field(default_factory=dict)
+	handling 					: Conditions 					= field(default_factory=dict)
+	conditions 					: Conditions 					= field(default_factory=dict)
+	attributes 					: Parameters 					= field(default_factory=dict)
 	operation 					: Operation 					= None
-	request 					: Request 						= None
+	#request 					: Request 						= None
 
 
 @dataclass
@@ -584,22 +680,41 @@ class RequestHeaders:
 	originator 					: str 			= None 	# X-M2M-Origin
 	requestIdentifier			: str 			= None	# X-M2M-RI
 	contentType 				: str 			= None	# Content-Type
+	accept						: list[str]		= None	# Accept
 	resourceType 				: ResourceTypes	= None
 	requestExpirationTimestamp	: str 			= None 	# X-M2M-RET
 	responseExpirationTimestamp	: str 			= None 	# X-M2M-RST
 	operationExecutionTime		: str 			= None 	# X-M2M-OET
 	releaseVersionIndicator		: str 			= None 	# X-M2M-RVI
-	responseTypeNUs				: List[str]		= None	# X-M2M-RTU
+	responseTypeNUs				: list[str]		= None	# X-M2M-RTU
 
 
+@dataclass
 class CSERequest:
-	headers 					: RequestHeaders 	= None
-	args 						: RequestArguments 	= None
-	originalArgs 				: Any 				= None	# Actually a MultiDict
-	data 						: str 				= None 	# The request data
-	json 						: dict 				= None	# The request data as JSON
-	id 							: str 				= None 	# target ID
-	srn 						: str 				= None 	# target structured resource name
-	csi 						: str 				= None 	# target csi
+	headers 					: RequestHeaders 			= None
+	args 						: RequestArguments 			= None
+	ct 							: ContentSerializationType	= None
+	originalArgs 				: Any 						= None	# Actually a MultiDict
+	data 						: bytes 					= None 	# The request original data
+	dict 						: JSON 						= None	# The request data as a dictionary
+	id 							: str 						= None 	# target ID
+	srn 						: str 						= None 	# target structured resource name
+	csi 						: str 						= None 	# target csi
 
+
+##############################################################################
+#
+#	Generic Types
+#
+
+AttributePolicies=Dict[str, Tuple[BasicType, Cardinality, RequestOptionality, RequestOptionality, RequestOptionality, Announced]]
+"""	Represent a dictionary of attribute policies used in validation. """
+
+Parameters=Dict[str,str]
+Conditions=Dict[str, Any]
+JSON=Dict[str, Any]
+JSONLIST=List[JSON]
+
+RequestHandler = Dict[Operation, Callable[[CSERequest], Result]]
+""" Handle an outgoing request operation. """
 

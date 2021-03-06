@@ -7,11 +7,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2021-03-06
+
+### Added
+- [CSE] Added *--http-address* and *--network-interface* command line arguments.
+- [CSE] Added configuration to exclude certain attributes in CSR creations and updates.
+- [CSE] Added support for CBOR serialization.
+- [CSE] Added attribute policies for TS-0023 R4 ModuleClasses, Devices etc.
+- [CSE] Added attribute policies for Generic Interworking and AllJoyn specialization.
+- [CSE] Added diagram generation (in PlantUML format) of resource tree and deployment structure.
+- [CSE] Added better checks for content serialization in AE.
+- [CSE] Added command interface to the terminal console (for stopping the CSE, printing statistics, CSE registrations, the resource tree, etc).
+- [CSE] Added support for *holder* attribute. Added access control behavior for *holder* and resource creator when an *acpi* attribute is specified for a resource, but doesn't have one.
+- [CSE] Added support for Subscription's *expirationCounter*.
+- [CSE] Added headless mode to better support docker.
+- [NOTIFICATIONS] Added support for handling CBOR serialization and other binary formats to the notification server.
+- [WEB] Added dark mode (for supported browsers).
+- [TESTS] Added load tests that can be optionally executed. Also improved test runner: select on the command line which tests to run.
+
+### Changed
+- [WEB] The web UI can now also be used as a stand-alone application to connect to third-party CSEs.
+- [CSE] The filter query for *ty*, *cty*, and *lbl* can now be construct with + operator (e.g. ty=3+4) instead of specifying those filter elements twice.
+- [CSE] Changed the importing of attribute policies to a JSON based format.
+- [CSE] Supported release version can now be configured via the config file.
+- [CSE] Added checks for remote CSE's *csi* (does it exist? Does it begin with a /?)
+- [CSE] Removed defaultACPI support. Now supporting correct behavior for *holder* attribute resp. resource creator.
+- [CSE] Correctly implemented acpi updates. Also: acpi references are converted to CSE relative unstructured During CREATE and UPDATE.
+- [CSE] Changed resourceType values for \<latest> and \<oldest> to the specified values.
+- [CSE] Access control clean-up. No more extra ACPs for admin access, CSRs, AEs, REQs etc. The CSE now makes use of *creator* and *holder* access.
+- [TESTS] The behavior whether a failed test skips the remaining tests in a test suite can now be configured.
+- [TESTS] Improved documentation. Doc strings provide a bit more information about a currently running test.
+- [TESTS] Tests now pass mypy checks.
+- [MISC] Added: Allow ```# single-line comments``` in JSON as well.
+- [MISC] Default configuration for file logging is now *False* (to better support Raspberry Pi and similar systems with flash card file systems).
+- [MISC] Now passes ```mypy --strict``` checks.
+- [DATABASE] Changed the postfix of data files to the CSE-ID.
+- [HTTP] Server runs now in background.
+
+### Fixed
+- [CSE] *CSEBase.srt* attribute now also returns the announced attributes.
+- [CSE] Improved shutdown behavior. Waiting for internal threads to finish.
+- [CSE] When updating a subscription resource's *nu* attribute: Removed URI's don't cause a "deletion notification" anymore.
+- [CSE] Improved *creator* attribute handling during CREATE.
+- [CSE] Fixed wrong removal procedure when removing contentInstances from a container when either threshold was met.
+- [CSE] Added missing checks for mandatory request parameters *RVI* and *RI*
+- [SUB] Added missing validation for *nct* / *enc/net* combinations.
+- [ACP] Added check that *pvs* is not empty during CREATE or UPDATE.
+- [ACP] Added check that *acpi*, if present, is the only attribute in an UPDATE request.
+- [TESTS] Fixed test framework checks for CSE connectivity and CSE reconfigurations for test runs.
+
+
 ## [0.6.0] - 2020-10-26
 
 ### Added
 - [CSE] Improved resource expiration a lot.
-- [CSE] Added support for mia attribute in CNT and FCNT.
+- [CSE] Added support for *mia* attribute in CNT and FCNT.
 - [CSE] Added support for synchronous and asynchronous non-blocking requests (as well as flex-blocking).
 - [CSE] Added configuration to enable or disable regular liveliness checks of remote CSE connects (cse.registration.checkLiveliness).
 - [REQ] Added support for &lt;request> resource type.
@@ -40,7 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added support for *myCertFileCred* ManagementObject.
 - [SUB] Improved support for 'nct' in subscriptions.
 - [TESTS] Added unit tests.
-- [WEB] Added deletion of resources in the webb UI via right-click menu.
+- [WEB] Added deletion of resources in the web UI via right-click menu.
 - [HTTP] Added https support for the http server and for requests.
 - [MISC] Added Python type hints throughout the source code.
 
@@ -117,7 +167,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [WEB] Added LOGO & favicon.
 
 ### Fixed
-- [WEB] Browser request to "/"" will now redirect to the webui's URL.
+- [WEB] Browser request to "/"" will now redirect to the web-ui's URL.
 - [WEB] REST UI will not refresh anymore when automatic refresh is on.
 - [ALL] Various fixes and improvements.
 
