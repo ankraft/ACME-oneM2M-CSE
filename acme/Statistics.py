@@ -377,12 +377,12 @@ skinparam rectangle {
 		"""	This function will generate a Text tree of a CSE's resource structure.
 		"""
 		from rich.console import Console
-		from io import StringIO
 
-		buf = StringIO()
-		console = Console(file=buf)
+		console = Console(color_system=None)
+		console.begin_capture()
 		console.print(self.getResourceTreeRich())
-		return buf.getvalue()
+		return console.end_capture()
+
 
 
 		# def info(res:Resource) -> str:

@@ -559,6 +559,7 @@ def dissectHttpRequest(request:Request, operation:Operation, _id:Tuple[str, str,
 		return Result(rsc=RC.invalidArguments, request=cseRequest, dbg=f'invalid arguments ({str(e)})', status=False)
 	cseRequest.originalArgs	= deepcopy(request.args)
 
+	# De-Serialize the content
 	if cseRequest.data is not None and len(cseRequest.data) > 0:
 		try:
 			cseRequest.ct = ContentSerializationType.getType(cseRequest.headers.contentType, default=CSE.defaultSerialization)
@@ -568,6 +569,11 @@ def dissectHttpRequest(request:Request, operation:Operation, _id:Tuple[str, str,
 		except Exception as e:
 			Logging.logWarn('Bad request (malformed content?)')
 			return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'Malformed content? {str(e)}', status=False)
+	
+	# Check whether content is empty for UPDATE or CREATE -> Error
+	elif operation in [ Operation.CREATE, Operation.UPDATE ]:
+		Logging.logWarn(dbg := f'Missing content for operation: {operation.name}')
+		return Result(rsc=RC.badRequest, request=cseRequest, dbg=dbg, status=False)
 			
 	return Result(request=cseRequest, status=True)
 
