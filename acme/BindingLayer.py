@@ -39,6 +39,7 @@ class BindingLayer(IBindingLayer):
 			self.__binding = MqttBinding()
 		else:
 			raise ValueError('Unknown transport layer', 'transportLayer: %s' % (bindingLayer))
+		self.serverAddress = self.__binding.serverAddress
 
 	def __del__(self):
 		self.__binding = None
@@ -66,6 +67,10 @@ class BindingLayer(IBindingLayer):
 	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:str='application/json', headers:dict=None) -> Result:
 		Logging.log('>>> BindingLayer.sendRequest: %s - %s - %s' % (url, originator, ct))
 		return self.__binding.sendRequest(method , url, originator, ty, data, ct, headers)
+
+	def shutdown(self) -> bool:
+		Logging.log('>>> BindingLayer.shutdown')
+		return self.__binding.shutdown()
 
 	# End of class BindingLayer
 

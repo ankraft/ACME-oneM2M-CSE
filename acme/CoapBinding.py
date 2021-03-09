@@ -33,8 +33,10 @@ sync_ack		= dict()
 class CoapBinding(IBindingLayer):
 
 	def __init__(self) -> None:
+		Logging.log('>>> CoapBinding.__init__')
 		self.transport		= UdpServer.UdpServer(Configuration.get('coap.listenIF'), Configuration.get('coap.port'), self.process_incoming_data)
 		self.rootPath		= Configuration.get('coap.root')
+		self.serverAddress      = Configuration.get('coap.server.address')
 		self.useTLS 		= Configuration.get('cse.security.useTLS')
 
 		Logging.log('Registering CoAP server root at: {self.rootPath}}')
@@ -42,7 +44,7 @@ class CoapBinding(IBindingLayer):
 			Logging.log('TLS enabled. CoAP server serves via coaps.')
 
 		# Keep some values for optimization
-		self.csern = Configuration.get('cse.rn') 
+		self.csern = Configuration.get('cse.rn')
 		self.cseri = Configuration.get('cse.ri')
 
 		# Register the endpoint for the web UI
@@ -67,11 +69,11 @@ class CoapBinding(IBindingLayer):
 		if isinstance(coapMessage, CoapMessageRequest):
 			if coapMessage.code == CoapDissector.GET.number:
 				coapResponse = self.handleGET(coapMessage)
-			elif coapMessage.code == CoapDissector.POST.number: 		
+			elif coapMessage.code == CoapDissector.POST.number:
 				coapResponse = self.handlePOST(coapMessage, client_address)
-			elif coapMessage.code == CoapDissector.PUT.number: 		
+			elif coapMessage.code == CoapDissector.PUT.number:
 				coapResponse = self.handlePUT(coapMessage)
-			elif coapMessage.code == CoapDissector.DELETE.number: 		
+			elif coapMessage.code == CoapDissector.DELETE.number:
 				coapResponse = self.handleDELETE(coapMessage)
 			else:
 				raise Exception(f'CoapBinding.process_incoming_data: Unknown message type', f'{str(coapMessage)}')
@@ -248,6 +250,12 @@ class CoapBinding(IBindingLayer):
 		Logging.logDebug(f'CoapBinding.sendRequest: jsn={jsn}')
 		return Result(jsn=jsn, rsc=rc)
 	# End of method sendRequest
+
+	def shutdown(self) -> bool:
+		Logging.log('CoapBinding shut down')
+		self.transport.close()
+		return True
+	# End of method shutdown
 
 	def CoapMessage2Result(self, p_coapMessage:CoapMessageRequest, p_operation:Operation, _id:Tuple[str, str, str]) -> Result:
 		cseRequest = CSERequest()

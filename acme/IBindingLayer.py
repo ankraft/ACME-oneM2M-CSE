@@ -30,6 +30,10 @@ class IBindingLayer(ABC):
 	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:str='application/json', headers:dict=None) -> Result:
 		pass
 
-	# End of interface IBindingLayer
+	@abstractmethod
+	def shutdown(self) -> bool:
+		pass
+
+        # End of interface IBindingLayer
 
 # End of file

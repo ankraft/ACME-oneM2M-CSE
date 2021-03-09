@@ -22,10 +22,11 @@ from dtls.wrapper import wrap_server, wrap_client
 class UdpServer(object):
 
 	def __init__(self, p_server_address: str, p_port:str, p_received_data_callback: Callable) -> None:
+		Logging.logDebug('>>> UdpServer.__init__')
 		self.addr				= p_server_address
 		self.port				= p_port
 		self.socket				= None # Client socket
-		self.listen_socket		= None # Server socket
+		self.listen_socket			= None # Server socket
 		self.flag				= False
 		self.received_data_callback = p_received_data_callback
 		self.useTLS 			= Configuration.get('cse.security.useTLS')
@@ -148,7 +149,7 @@ class UdpServer(object):
 #		self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 #		self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		
-	def close(self):
+	def close(self) -> None:
 		self.flag = False
 		if not self.listen_socket is None:
 			if not self.ssl_ctx is None:
