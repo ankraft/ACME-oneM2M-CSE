@@ -156,6 +156,8 @@ class Importer(object):
 			'unsignedlong'		: BT.unsignedLong,
 			'string' 			: BT.string,
 			'timestamp' 		: BT.timestamp,
+			'time' 				: BT.timestamp,
+			'date'				: BT.timestamp,
 			'list'				: BT.list,
 			'dict' 				: BT.dict,
 			'anyuri'			: BT.anyURI,
@@ -163,6 +165,7 @@ class Importer(object):
 			'geocoordinates'	: BT.geoCoordinates,
 			'float'				: BT.float,
 			'integer'			: BT.integer,
+			'void'				: BT.void,
 	}
 
 
@@ -230,7 +233,9 @@ class Importer(object):
 						if (tmp := findXPath(attr, 'type').lower()) is None or not isinstance(tmp, str) or len(tmp) == 0:
 							Logging.logErr(f'Missing, empty, or wrong type name: {tmp} for attribute: {sn} type: {tpe} in file: {fn}')
 							return False
-						dty = self._nameDataTypeMappings.get(tmp)
+						
+						if (dty := self._nameDataTypeMappings.get(tmp)) is None:
+							Logging.logWarn(f'Unknown data type {tmp}')
 
 						if (tmp := findXPath(attr, 'car', 'car01').lower()) is None or not isinstance(tmp, str) or len(tmp) == 0 or tmp not in self._nameCardinalityMappings:	# default car01
 							Logging.logErr(f'Empty, or wrong cardinality: {tmp} for attribute: {sn} type: {tpe} in file: {fn}')
