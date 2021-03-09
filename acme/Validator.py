@@ -468,7 +468,7 @@ class Validator(object):
 						return Result(status=True)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
-			return Result(status=False, dbg='unknown type for value')
+			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: positive integer')
 
 		if tpe == BT.nonNegInteger:
 			if isinstance(value, int):
@@ -482,7 +482,7 @@ class Validator(object):
 						return Result(status=True)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
-			return Result(status=False, dbg='unknown type for value')
+			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: non-negative integer')
 
 		if tpe in [ BT.unsignedInt, BT.unsignedLong ]:
 			if isinstance(value, int):
@@ -494,7 +494,7 @@ class Validator(object):
 					return Result(status=True)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
-			return Result(status=False, dbg='unknown type for value')
+			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: unsigned integer')
 
 		if tpe in [ BT.string, BT.timestamp, BT.anyURI ] and isinstance(value, str):
 			return Result(status=True)
@@ -515,7 +515,7 @@ class Validator(object):
 					return Result(status=True)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
-			return Result(status=False, dbg='unknown type for value')
+			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: bool')
 
 		if tpe == BT.float:
 			if isinstance(value, float):
@@ -527,7 +527,7 @@ class Validator(object):
 					return Result(status=True)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
-			return Result(status=False, dbg='unknown type for value')
+			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: float')
 
 		if tpe == BT.integer:
 			if isinstance(value, int):
@@ -539,7 +539,7 @@ class Validator(object):
 					return Result(status=True)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
-			return Result(status=False, dbg='unknown type for value')
+			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: integer')
 
 		if tpe == BT.geoCoordinates and isinstance(value, dict):
 			return Result(status=True)
