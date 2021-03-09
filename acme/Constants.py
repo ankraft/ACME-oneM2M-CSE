@@ -12,7 +12,7 @@ from Types import ResourceTypes as T, ContentSerializationType as CST
 class Constants(object):
 
 	# ACME Version
-	version						= '0.8.0-dev'
+	version						= '0.7.1'
 
 	# Supported release vesions
 	supportedReleaseVersions = ['1', '2', '2a', '3', '4']
