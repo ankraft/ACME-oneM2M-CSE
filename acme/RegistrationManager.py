@@ -143,7 +143,7 @@ class RegistrationManager(object):
 	#
 
 	def handleAEDeRegistration(self, resource: Resource) -> bool:
-		# remove the before created ACP, if it exist
+		# More De-registration functions happen in the AE's deactivate() method
 		Logging.logDebug(f'DeRegisterung AE. aei: {resource.aei}')
 		return True
 

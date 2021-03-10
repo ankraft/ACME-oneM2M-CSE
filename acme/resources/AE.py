@@ -125,15 +125,14 @@ class AE(AnnounceableResource):
 
 	def deactivate(self, originator:str) -> None:
 		super().deactivate(originator)
-		if (nl := self['nl']) is None:
-			return
-		self._removeAEfromNOD(nl, self['ri'])
+
+		# Remove itself from the node link in a hosting <node>
+		if (nl := self.nl) is not None:
+			self._removeAEfromNOD(nl, self.ri)
 
 
-	def _removeAEfromNOD(self, nodeRi: str, ri: str) -> None:
+	def _removeAEfromNOD(self, nodeRi:str, ri:str) -> None:
 		""" Remove AE from hosting Node. """
-
-
 		if (node := CSE.dispatcher.retrieveResource(nodeRi).resource) is not None:
 			if (hael := node['hael']) is not None and isinstance(hael, list) and ri in hael:
 				hael.remove(ri)
@@ -142,4 +141,5 @@ class AE(AnnounceableResource):
 				else:
 					node['hael'] = hael
 				node.dbUpdate()
+
 

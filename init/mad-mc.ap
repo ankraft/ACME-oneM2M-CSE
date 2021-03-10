@@ -11,7 +11,7 @@
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: state
-            { "sname" : "state", "lname" : "state", "type" : "hd:enumDmAgentState", "car" : "1" }, 
+            { "sname" : "state", "lname" : "state", "type" : "nonNegInteger", "car" : "1" }, 
             // DataPoint: storageAvailable
             { "sname" : "stoAe", "lname" : "storageAvailable", "type" : "integer", "car" : "01" }, 
             // DataPoint: storageTotal
@@ -21,7 +21,7 @@
             // DataPoint: ramTotal
             { "sname" : "ramTl", "lname" : "ramTotal", "type" : "integer", "car" : "01" }, 
             // DataPoint: powerStatus
-            { "sname" : "powSs", "lname" : "powerStatus", "type" : "hd:enumPowerState", "car" : "01" }, 
+            { "sname" : "powSs", "lname" : "powerStatus", "type" : "nonNegInteger", "car" : "01" }, 
             // DataPoint: cpuUsage
             { "sname" : "cpuUe", "lname" : "cpuUsage", "type" : "integer", "car" : "01" }, 
             // DataPoint: systemTime
@@ -42,7 +42,7 @@
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: rebootType
-            { "sname" : "rebTe", "lname" : "rebootType", "type" : "hd:enumRebootType", "car" : "01" }
+            { "sname" : "rebTe", "lname" : "rebootType", "type" : "nonNegInteger", "car" : "01" }
         ]
     },
 
@@ -74,7 +74,7 @@
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: state
-            { "sname" : "state", "lname" : "state", "type" : "hd:enumDmAgentState", "car" : "1" }, 
+            { "sname" : "state", "lname" : "state", "type" : "nonNegInteger", "car" : "1" }, 
             // DataPoint: storageAvailable
             { "sname" : "stoAe", "lname" : "storageAvailable", "type" : "integer", "car" : "01" }, 
             // DataPoint: storageTotal
@@ -84,7 +84,7 @@
             // DataPoint: ramTotal
             { "sname" : "ramTl", "lname" : "ramTotal", "type" : "integer", "car" : "01" }, 
             // DataPoint: powerStatus
-            { "sname" : "powSs", "lname" : "powerStatus", "type" : "hd:enumPowerState", "car" : "01" }, 
+            { "sname" : "powSs", "lname" : "powerStatus", "type" : "nonNegInteger", "car" : "01" }, 
             // DataPoint: cpuUsage
             { "sname" : "cpuUe", "lname" : "cpuUsage", "type" : "integer", "car" : "01" }, 
             // DataPoint: systemTime
@@ -106,7 +106,7 @@
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: rebootType
-            { "sname" : "rebTe", "lname" : "rebootType", "type" : "hd:enumRebootType", "car" : "01" }
+            { "sname" : "rebTe", "lname" : "rebootType", "type" : "nonNegInteger", "car" : "01" }
         ]
     }, 
 
@@ -213,7 +213,7 @@
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: dataModelType
-            { "sname" : "daMTe", "lname" : "dataModelType", "type" : "hd:enumDataModelType", "car" : "1" }
+            { "sname" : "daMTe", "lname" : "dataModelType", "type" : "nonNegInteger", "car" : "1" }
         ], 
         "children"  : [
             "mad:reaIO", 
@@ -262,7 +262,7 @@
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: dataModelType
-            { "sname" : "daMTe", "lname" : "dataModelType", "type" : "hd:enumDataModelType", "car" : "1" }
+            { "sname" : "daMTe", "lname" : "dataModelType", "type" : "nonNegInteger", "car" : "1" }
         ], 
         "children"  : [
             "mad:reaIO",
@@ -315,7 +315,7 @@
             // DataPoint: multiFirmware
             { "sname" : "mulFe", "lname" : "multiFirmware", "type" : "boolean", "car" : "1" }, 
             // DataPoint: primaryState
-            { "sname" : "priSe", "lname" : "primaryState", "type" : "hd:enumFirmwareState", "car" : "1" }, 
+            { "sname" : "priSe", "lname" : "primaryState", "type" : "nonNegInteger", "car" : "1" }, 
             // DataPoint: primaryName
             { "sname" : "priNe", "lname" : "primaryName", "type" : "string", "car" : "1" }, 
             // DataPoint: primaryVersion
@@ -323,7 +323,7 @@
             // DataPoint: primaryUrl
             { "sname" : "priUl", "lname" : "primaryUrl", "type" : "anyuri", "car" : "01" }, 
             // DataPoint: secondaryState
-            { "sname" : "secSe", "lname" : "secondaryState", "type" : "hd:enumFirmwareState", "car" : "01" }, 
+            { "sname" : "secSe", "lname" : "secondaryState", "type" : "nonNegInteger", "car" : "01" }, 
             // DataPoint: secondaryName
             { "sname" : "secNe", "lname" : "secondaryName", "type" : "string", "car" : "01" }, 
             // DataPoint: secondaryVersion
@@ -348,7 +348,7 @@
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: url
-            { "sname" : "ur0", "lname" : "url", "type" : "url", "car" : "01" }, 
+            { "sname" : "ur0", "lname" : "url", "type" : "anyuri", "car" : "01" }, 
             // DataPoint: version
             { "sname" : "vr", "lname" : "version", "type" : "string", "car" : "01" }, 
             // DataPoint: result
@@ -378,7 +378,7 @@
             // DataPoint: multiFirmware
             { "sname" : "mulFe", "lname" : "multiFirmware", "type" : "boolean", "car" : "1" }, 
             // DataPoint: primaryState
-            { "sname" : "priSe", "lname" : "primaryState", "type" : "hd:enumFirmwareState", "car" : "1" }, 
+            { "sname" : "priSe", "lname" : "primaryState", "type" : "nonNegInteger", "car" : "1" }, 
             // DataPoint: primaryName
             { "sname" : "priNe", "lname" : "primaryName", "type" : "string", "car" : "1" }, 
             // DataPoint: primaryVersion
@@ -386,7 +386,7 @@
             // DataPoint: primaryUrl
             { "sname" : "priUl", "lname" : "primaryUrl", "type" : "anyuri", "car" : "01" }, 
             // DataPoint: secondaryState
-            { "sname" : "secSe", "lname" : "secondaryState", "type" : "hd:enumFirmwareState", "car" : "01" }, 
+            { "sname" : "secSe", "lname" : "secondaryState", "type" : "nonNegInteger", "car" : "01" }, 
             // DataPoint: secondaryName
             { "sname" : "secNe", "lname" : "secondaryName", "type" : "string", "car" : "01" }, 
             // DataPoint: secondaryVersion
@@ -412,7 +412,7 @@
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: url
-            { "sname" : "ur0", "lname" : "url", "type" : "url", "car" : "01" }, 
+            { "sname" : "ur0", "lname" : "url", "type" : "anyuri", "car" : "01" }, 
             // DataPoint: version
             { "sname" : "vr", "lname" : "version", "type" : "string", "car" : "01" }, 
             // DataPoint: result
@@ -441,7 +441,7 @@
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: state
-            { "sname" : "state", "lname" : "state", "type" : "hd:enumSoftwareState", "car" : "1" }, 
+            { "sname" : "state", "lname" : "state", "type" : "nonNegInteger", "car" : "1" }, 
             // DataPoint: name
             { "sname" : "nm", "lname" : "name", "type" : "string", "car" : "01" }, 
             // DataPoint: version
@@ -484,7 +484,7 @@
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: state
-            { "sname" : "state", "lname" : "state", "type" : "hd:enumSoftwareState", "car" : "1" }, 
+            { "sname" : "state", "lname" : "state", "type" : "nonNegInteger", "car" : "1" }, 
             // DataPoint: name
             { "sname" : "nm", "lname" : "name", "type" : "string", "car" : "01" }, 
             // DataPoint: version
@@ -535,7 +535,7 @@
             // DataPoint: status
             { "sname" : "sus", "lname" : "status", "type" : "integer", "car" : "1" }, 
             // DataPoint: enabled
-            { "sname" : "enabd", "lname" : "enabled", "type" : "bool", "car" : "1" }
+            { "sname" : "enabd", "lname" : "enabled", "type" : "boolean", "car" : "1" }
         ], 
         "children"  : [
             "mad:retLg"
@@ -572,7 +572,7 @@
             // DataPoint: status
             { "sname" : "sus", "lname" : "status", "type" : "integer", "car" : "1" }, 
             // DataPoint: enabled
-            { "sname" : "enabd", "lname" : "enabled", "type" : "bool", "car" : "1" }
+            { "sname" : "enabd", "lname" : "enabled", "type" : "boolean", "car" : "1" }
         ], 
         "children"  : [
             "mad:retLg",
@@ -604,9 +604,9 @@
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: type
-            { "sname" : "typ", "lname" : "type", "type" : "hd:enumPackageType", "car" : "1" }, 
+            { "sname" : "typ", "lname" : "type", "type" : "nonNegInteger", "car" : "1" }, 
             // DataPoint: state
-            { "sname" : "state", "lname" : "state", "type" : "hd:enumPackageState", "car" : "1" }, 
+            { "sname" : "state", "lname" : "state", "type" : "nonNegInteger", "car" : "1" }, 
             // DataPoint: name
             { "sname" : "nm", "lname" : "name", "type" : "string", "car" : "01" }, 
             // DataPoint: version
@@ -669,9 +669,9 @@
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: type
-            { "sname" : "typ", "lname" : "type", "type" : "hd:enumPackageType", "car" : "1" }, 
+            { "sname" : "typ", "lname" : "type", "type" : "nonNegInteger", "car" : "1" }, 
             // DataPoint: state
-            { "sname" : "state", "lname" : "state", "type" : "hd:enumPackageState", "car" : "1" }, 
+            { "sname" : "state", "lname" : "state", "type" : "nonNegInteger", "car" : "1" }, 
             // DataPoint: name
             { "sname" : "nm", "lname" : "name", "type" : "string", "car" : "01" }, 
             // DataPoint: version
@@ -739,7 +739,7 @@
             // DataPoint: devId
             { "sname" : "devId", "lname" : "devId", "type" : "string", "car" : "1" }, 
             // DataPoint: devType
-            { "sname" : "dvt", "lname" : "devType", "type" : "hd:enumPackageState", "car" : "1" }, 
+            { "sname" : "dvt", "lname" : "devType", "type" : "nonNegInteger", "car" : "1" }, 
             // DataPoint: sleepInterval
             { "sname" : "sli", "lname" : "sleepInterval", "type" : "integer", "car" : "01" }, 
             // DataPoint: sleepDuration
@@ -760,7 +760,7 @@
             // DataPoint: devId
             { "sname" : "devId", "lname" : "devId", "type" : "string", "car" : "1" }, 
             // DataPoint: devType
-            { "sname" : "dvt", "lname" : "devType", "type" : "hd:enumPackageState", "car" : "1" }, 
+            { "sname" : "dvt", "lname" : "devType", "type" : "nonNegInteger", "car" : "1" }, 
             // DataPoint: sleepInterval
             { "sname" : "sli", "lname" : "sleepInterval", "type" : "integer", "car" : "01" }, 
             // DataPoint: sleepDuration
@@ -783,9 +783,9 @@
             // DataPoint: attached
             { "sname" : "att", "lname" : "attached", "type" : "boolean", "car" : "1" }, 
             // DataPoint: actionStatus
-            { "sname" : "actSs", "lname" : "actionStatus", "type" : "m2m:actionStatus", "car" : "1" }, 
+            { "sname" : "actSs", "lname" : "actionStatus", "type" : "nonNegInteger", "car" : "1" }, 
             // DataPoint: currentState
-            { "sname" : "cus", "lname" : "currentState", "type" : "bool", "car" : "1" }
+            { "sname" : "cus", "lname" : "currentState", "type" : "boolean", "car" : "1" }
         ], 
         "children"  : [
             "mad:ena", 
@@ -828,9 +828,9 @@
             // DataPoint: attached
             { "sname" : "att", "lname" : "attached", "type" : "boolean", "car" : "1" }, 
             // DataPoint: actionStatus
-            { "sname" : "actSs", "lname" : "actionStatus", "type" : "m2m:actionStatus", "car" : "1" }, 
+            { "sname" : "actSs", "lname" : "actionStatus", "type" : "nonNegInteger", "car" : "1" }, 
             // DataPoint: currentState
-            { "sname" : "cus", "lname" : "currentState", "type" : "bool", "car" : "1" }
+            { "sname" : "cus", "lname" : "currentState", "type" : "boolean", "car" : "1" }
         ], 
         "children"  : [
             "mad:ena",
@@ -899,7 +899,7 @@
             // DataPoint: mountOptions
             { "sname" : "mouOs", "lname" : "mountOptions", "type" : "string", "car" : "01" }, 
             // DataPoint: writable
-            { "sname" : "write", "lname" : "writable", "type" : "bool", "car" : "1" }
+            { "sname" : "write", "lname" : "writable", "type" : "boolean", "car" : "1" }
         ], 
         "children"  : [
             "mad:formt", 
@@ -966,7 +966,7 @@
             // DataPoint: mountOptions
             { "sname" : "mouOs", "lname" : "mountOptions", "type" : "string", "car" : "01" }, 
             // DataPoint: writable
-            { "sname" : "write", "lname" : "writable", "type" : "bool", "car" : "1" }
+            { "sname" : "write", "lname" : "writable", "type" : "boolean", "car" : "1" }
         ], 
         "children"  : [
             "mad:formt",

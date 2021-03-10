@@ -48,6 +48,22 @@ class TestMisc(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createEmpty(self) -> None:
+		"""	Create with empty content -> Fail """
+		dct = 	None
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.AE, dct)
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateEmpty(self) -> None:
+		"""	Update with empty content -> Fail """
+		dct = 	None
+		r, rsc = UPDATE(cseURL, ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAlphaResourceType(self) -> None:
 		""" Create a resource with alphanumerical type -> Fail """
 		dct = 	{ 'foo:bar' : { 
@@ -73,6 +89,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestMisc('test_checkHTTPRVI'))
 	suite.addTest(TestMisc('test_createUnknownResourceType'))
+	suite.addTest(TestMisc('test_createEmpty'))
+	suite.addTest(TestMisc('test_updateEmpty'))
 	suite.addTest(TestMisc('test_createAlphaResourceType'))
 	suite.addTest(TestMisc('test_createWithWrongResourceType'))
 

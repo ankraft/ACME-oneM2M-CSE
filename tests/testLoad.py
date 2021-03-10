@@ -18,7 +18,8 @@ from init import *
 
 
 class TestLoad(unittest.TestCase):
-	aes = []
+	aes:list[Tuple[str, str]] 	= []
+	timeStart:float				= 0
 
 	def __init__(self, methodName:str='runTest', count:int=None, parallel:int=1):
 		"""	Pass a count to the test cases.
@@ -59,10 +60,10 @@ class TestLoad(unittest.TestCase):
 		return f'{total:.4f} ({total/(count*parallel):.5f})'
 
 
-	def _createAEs(self, count:int) -> list(str):
+	def _createAEs(self, count:int) -> list[Tuple[str, str]]:
 		"""	Create n AEs and return the list of (identifiers, resourceName).
 		"""
-		aes = []
+		aes:list[Tuple[str, str]] = []
 		for _ in range(count):
 			dct = 	{ 'm2m:ae' : {
 					'api': 'NMyApp1Id',
@@ -78,7 +79,7 @@ class TestLoad(unittest.TestCase):
 		return aes
 
 
-	def _deleteAEs(self, count:int, aes:list[str]=None) -> list[str]:
+	def _deleteAEs(self, count:int, aes:list[Tuple[str, str]]=None) -> None:
 		"""	Delete n AE's. Remove the AE's von the given list (only removed from the global list if no list was given).
 		"""
 		if aes is None:
@@ -91,10 +92,10 @@ class TestLoad(unittest.TestCase):
 		self.assertEqual(len(aes), 0)
 
 
-	def _createCNTs(self, aern:str, originator:str, count:int, mni:int) -> list(str):
+	def _createCNTs(self, aern:str, originator:str, count:int, mni:int) -> list[Tuple[str, str]]:
 		"""	Create n CNTs and return the list of (identifiers, resourceName).
 		"""
-		cnts = []
+		cnts:list[Tuple[str, str]] = []
 		for _ in range(count):
 			dct = 	{ 'm2m:cnt' : {
 					'mni': mni
@@ -108,10 +109,10 @@ class TestLoad(unittest.TestCase):
 		return cnts
 
 
-	def _createCINs(self, aern:str, cntrn:str, originator:str, count:int) -> list(str):
+	def _createCINs(self, aern:str, cntrn:str, originator:str, count:int) -> list[Tuple[str, str]]:
 		"""	Create n CINs and return the list of (identifiers, resourceName).
 		"""
-		cins = []
+		cins:list[Tuple[str, str]] = []
 		for _ in range(count):
 			dct = 	{ 'm2m:cin' : {
 					'con': 'Hello, world'
@@ -149,8 +150,8 @@ class TestLoad(unittest.TestCase):
 		print(f'{self.count} * {self.parallel} Threads ... ', end='', flush=True)
 		threads = [threading.Thread(target=lambda: TestLoad.aes.extend(self._createAEs(self.count))) for _ in range(self.parallel)]
 		TestLoad.startTimer()
-		[t.start() for t in threads]
-		[t.join() for t in threads]
+		[t.start() for t in threads] 	# type: ignore [func-returns-value]
+		[t.join() for t in threads]		# type: ignore [func-returns-value]
 		print(f'{TestLoad.stopTimer(self.count, self.parallel)} ... ', end='', flush=True)
 
 
@@ -162,8 +163,8 @@ class TestLoad(unittest.TestCase):
 		deleteLists = [TestLoad.aes[x:x+nrPerList] for x in range(0, len(TestLoad.aes), nrPerList)]
 		threads = [threading.Thread(target=lambda n: self._deleteAEs(self.count, aes=deleteLists[n]), args=(n,)) for n in range(self.parallel)]
 		TestLoad.startTimer()
-		[t.start() for t in threads]
-		[t.join() for t in threads]
+		[t.start() for t in threads]	# type: ignore [func-returns-value]
+		[t.join() for t in threads]		# type: ignore [func-returns-value]
 		print(f'{TestLoad.stopTimer(self.count, self.parallel)} ... ', end='', flush=True)
 		TestLoad.aes.clear()
 

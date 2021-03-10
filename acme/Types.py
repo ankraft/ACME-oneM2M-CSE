@@ -255,6 +255,7 @@ class BasicType(IntEnum):
 	float 			= auto()
 	geoCoordinates	= auto()
 	integer			= auto()
+	void 			= auto()
 
 
 class Cardinality(IntEnum):

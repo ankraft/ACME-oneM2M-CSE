@@ -48,10 +48,10 @@ def sendRequest(method:Callable, url:str, originator:str, ty:int=None, data:Any=
 def uniqueID() -> str:
 	return str(random.randint(1,sys.maxsize))
 
-def setXPath(jsn: dict, element: str, value: Any, overwrite: bool = True) -> bool:
+def setXPath(dct: dict, element: str, value: Any, overwrite: bool = True) -> bool:
 	paths = element.split("/")
 	ln = len(paths)
-	data = jsn
+	data = dct
 	for i in range(0,ln-1):
 		if paths[i] not in data:
 			data[paths[i]] = {}
@@ -77,22 +77,22 @@ def createResource(srn:str, originator:str, ty:str, rn:str, attributes:List[str]
 			}
 
 	# Fill in extra attributes
-	(tpe, jsn) = resources[ty]
+	(tpe, dct) = resources[ty]
 	for a in attributes:
 		k = a.split('=')
 		if len(k) == 2:
 			if k[1].endswith(':i'):
-				setXPath(jsn, k[0], int(k[1][:-2]))
+				setXPath(dct, k[0], int(k[1][:-2]))
 			elif k[1].endswith(':f'):
-				setXPath(jsn, k[0], float(k[1][:-2]))
+				setXPath(dct, k[0], float(k[1][:-2]))
 			elif k[1].endswith(':b'):
-				setXPath(jsn, k[0], True if k[1][:-2] == 'true' else False)
+				setXPath(dct, k[0], True if k[1][:-2] == 'true' else False)
 			elif k[1].endswith(':s'):
-				setXPath(jsn, k[0], '%s' % k[1][:-2])
+				setXPath(dct, k[0], '%s' % k[1][:-2])
 			else:
-				setXPath(jsn, k[0], '%s' % k[1])
+				setXPath(dct, k[0], '%s' % k[1])
 
-	return CREATE('%s/%s' % (url, srn), originator, types[ty], { tpe:jsn })
+	return CREATE('%s/%s' % (url, srn), originator, types[ty], { tpe:dct })
 
 
 def deleteResource(srn:str, originator:str, verbose) -> None:
