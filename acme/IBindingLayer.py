@@ -1,7 +1,7 @@
 
 from abc import ABC, abstractmethod
 from typing import Any, Callable
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, ContentSerializationType, Parameters
 from resources.Resource import Resource
 
 class IBindingLayer(ABC):
@@ -27,7 +27,7 @@ class IBindingLayer(ABC):
 		pass
 
 	@abstractmethod
-	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:str='application/json', headers:dict=None) -> Result:
+	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, headers:dict=None) -> Result: # TODO Check if headers is required
 		pass
 
 	@abstractmethod

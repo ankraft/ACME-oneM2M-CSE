@@ -12,7 +12,6 @@ from __future__ import annotations
 from IBindingLayer import IBindingLayer
 import json, requests, logging, os, sys, traceback, urllib3
 from typing import Any, Callable, List, Tuple, Union, Protocol
-
 import flask
 from flask import Flask, Request, make_response, request
 from werkzeug.wrappers import Response
@@ -322,6 +321,27 @@ class HttpServer(IBindingLayer):
 		return Response(response='unsupported', status=422, headers=self._responseHeaders)
 
 
+        #########################################################################
+
+	#
+	#       Send various types of HTTP requests
+	#
+
+	def sendRetrieveRequest(self, url:str, originator:str) -> Result:
+		return self.sendRequest(requests.get, url, originator)
+
+
+	def sendCreateRequest(self, url:str, originator:str, ty:T=None, data:Any=None, headers:dict=None) -> Result:
+		return self.sendRequest(requests.post, url, originator, ty, data, headers=headers)
+
+
+	def sendUpdateRequest(self, url:str, originator:str, data:Any) -> Result:
+		return self.sendRequest(requests.put, url, originator, data=data)
+
+
+	def sendDeleteRequest(self, url:str, originator:str) -> Result:
+		return self.sendRequest(requests.delete, url, originator)
+
 	#########################################################################
 
 	#
@@ -334,7 +354,7 @@ class HttpServer(IBindingLayer):
 		return content.decode('utf-8') if ct == ContentSerializationType.JSON else Utils.toHex(content)
 
 
-	def sendHttpRequest(self, method:Callable, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:	 # type: ignore[type-arg]
+	def sendRequest(self, method:Callable, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:	 # type: ignore[type-arg]
 		ct = CSE.defaultSerialization if ct is None else ct
 
 		# Set basic headers

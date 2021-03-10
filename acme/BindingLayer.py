@@ -14,7 +14,7 @@
 from IBindingLayer import IBindingLayer
 
 from typing import Any, Callable, List, Tuple, Union
-from Types import ResourceTypes as T, Result, ResponseCode as RC, Operation
+from Types import ResourceTypes as T, Result, ResponseCode as RC, Operation, Parameters, ContentSerializationType
 from resources.Resource import Resource
 
 from Logging import Logging
@@ -64,9 +64,9 @@ class BindingLayer(IBindingLayer):
 		Logging.log('>>> BindingLayer.sendRetrieveRequest: %s - %s' % (url, originator))
 		return self.__binding.sendDeleteRequest(url, originator)
 
-	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:str='application/json', headers:dict=None) -> Result:
+	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, headers:dict=None) -> Result: # TODO Check if headers is required
 		Logging.log('>>> BindingLayer.sendRequest: %s - %s - %s' % (url, originator, ct))
-		return self.__binding.sendRequest(method , url, originator, ty, data, ct, headers)
+		return self.__binding.sendRequest(method , url, originator, ty, data, parameters, ct, targetResource, headers)
 
 	def shutdown(self) -> bool:
 		Logging.log('>>> BindingLayer.shutdown')

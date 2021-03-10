@@ -14,7 +14,7 @@ import json, requests, logging, os, sys, traceback, threading
 from typing import Any, Callable, List, Tuple, Union
 from Configuration import Configuration
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result,  RequestHeaders, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType, ResultContentType, ResponseType, ResponseCode as RC, FilterOperation
+from Types import ResourceTypes as T, Result,  RequestHeaders, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType, ResultContentType, ResponseType, ResponseCode as RC, FilterOperation, Parameters, ContentSerializationType
 from Types import CSERequest
 import CSE, Utils
 from Logging import Logging
@@ -151,9 +151,11 @@ class CoapBinding(IBindingLayer):
 	def sendDeleteRequest(self, url:str, originator:str) -> Result:
 		return self.sendRequest(requests.delete, url, originator)
 
-	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, ct:str='application/json', headers:dict=None) -> Result:	# TODO Constants
+	def sendRequest(self, method:Callable , url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, headers:dict=None) -> Result: # TODO Check if headers is required
 		global sync_ack, sync_ack_lock
-		Logging.log(f'>>> CoapBinding.sendRequest: url:{url} - from:{originator} - ty:{ty} - headers:{headers}')
+		Logging.log(f'>>> CoapBinding.sendRequest: url:{url} - from:{originator} - ty:{ty} - ct:{ct} - headers:{headers}')
+		ct = CSE.defaultSerialization if ct is None else ct
+
 		request = CoapMessageRequest()
 		request.type = 0 # CON
 		request.token = None
@@ -171,12 +173,13 @@ class CoapBinding(IBindingLayer):
 		# Set basic headers
 		request.ty = int(ty) if ty is not None else ''
 		Logging.log(f'CoapBinding.sendRequest: ty:{request.ty}')
-		if ct == 'application/xml': # See TS-0008 Table 6.2.2.2-1: CoAP oneM2M Specific Content-Formats
+		if ct == ContentSerializationType.XML: # See TS-0008 Table 6.2.2.2-1: CoAP oneM2M Specific Content-Formats
 			request.content_type = 41
-		elif ct == 'application/json':
+		elif ct == ContentSerializationType.Json:
 			request.content_type = 10001
 		else:
-			request.content_type = None # FIXME: Think about serialization XML, CBOR & TEXT
+			request.content_type = None # FIXME: Think about serialization CBOR & TEXT as default
+			raise Exception('CoapBinding.sendRequest', 'To be implemented')
 		request.accept = request.content_type
 
 		request.originator = originator
