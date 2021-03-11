@@ -56,6 +56,9 @@ releaseVersion=3
 # Indicate the serialization format if none was given in a request and cannot be determined otherwise.
 # Allowed values: json, cbor. Default: json
 defaultSerialization=json
+# Transport layer. Default: http
+# Possible values are 1) coap (over UDP/DTLS) or 2) mqtt (over TCP/TLS) or 3) http
+transportLayer=http
 
 #
 #	Settings for CSE security
@@ -69,7 +72,7 @@ fullAccessAdmin=True
 # Enable TLS for communications.
 # See oneM2M TS-0003 Clause 8.2.1 Overview on Security Association Establishment Frameworks
 # Default: False
-useTLS=False
+useTLS=True
 # TLS version to be used in connections.
 # Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate
 # version negotiation.
@@ -77,11 +80,33 @@ useTLS=False
 tlsVersion=auto
 # Verify certificates in requests. Set to False when using self-signed certificates. Default: False
 verifyCertificate=False
-# Path and filename of the certificate file. Default: None
-caCertificateFile=./certs/acme_cert.pem
-# Path and filename of the private key file. Default: None
-caPrivateKeyFile=./certs/acme_key.pem
+# Path and filename of the CA certificate file. Default: None
+caCertificateFile=./certs/CA_Intermediate_rsa.cert.pem
+# Path and filename of the CA certificate private key file. Default: None
+caPrivateKeyFile=./certs/CA_Intermediate_rsa.key.pem
+# Path and filename of the server certificate private key file. Default: None
+privateKeyFile=./certs/mn_cse_rsa.key.pem
+# Path and filename of the server certificate file. Default: None
+certificateFile=./certs/mn_cse_rsa.cert.pem
 
+#
+# COAP Server settings
+#
+
+[server.coap]
+# Port to listen to. Default: 5683
+port=5683
+# Interface to listen to. Use 0.0.0.0 for "all" interfaces. Default:127.0.0.1
+listenIF=127.0.0.1
+# Own address. Should be a local/public reachable address. Default: coap://127.0.0.1:5683
+address=coap://127.0.0.1:5683
+# CSE Server root. Always provide a trailing /. Default: /
+root=/
+# Run the http server in single- or multi-threaded mode. Default: true
+multiThread=true
+initialTransactionId=10
+transferMode=synchronous
+blockSize=1024
 
 #
 #	HTTP Server settings
