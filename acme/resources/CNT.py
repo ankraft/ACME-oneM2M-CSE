@@ -40,8 +40,9 @@ class CNT(AnnounceableResource):
 		self.resourceAttributePolicies = cntPolicies	# only the resource type's own policies
 
 		if self.dict is not None:
-			self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite=False)
-			self.setAttribute('mbs', Configuration.get('cse.cnt.mbs'), overwrite=False)
+			if Configuration.get('cse.cnt.enableLimits'):	# Only when limits are enabled
+				self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite=False)
+				self.setAttribute('mbs', Configuration.get('cse.cnt.mbs'), overwrite=False)
 			self.setAttribute('cni', 0, overwrite=False)
 			self.setAttribute('cbs', 0, overwrite=False)
 
@@ -144,39 +145,40 @@ class CNT(AnnounceableResource):
 			return
 		self.__validating = True
 
-		# retrieve all children
-		cs = self.contentInstances()
-
+		cs = self.contentInstances()	# retrieve CIN child resources
+		cni = len(cs)			
+			
 		# Check number of instances
-		mni = self.mni
-		cni = len(cs)
-		i = 0
-		l = cni
-		while cni > mni and i < l:
-			Logging.logDebug(f'cni > mni: Removing <cin>: {cs[i].ri}')
-			# remove oldest
-			CSE.dispatcher.deleteResource(cs[i], parentResource=self)
-			cni -= 1	# decrement cni
-			i += 1
+		if (mni := self.mni) is not None:
+			i = 0
+			l = cni
+			while cni > mni and i < l:
+				Logging.logDebug(f'cni > mni: Removing <cin>: {cs[i].ri}')
+				# remove oldest
+				CSE.dispatcher.deleteResource(cs[i], parentResource=self)
+				cni -= 1	# decrement cni when deleting a <cin>
+				i += 1
+			cs = self.contentInstances()	# retrieve CIN child resources again
+			cni = len(cs)
+
+		# Calculate cbs
+		cbs = 0
+		for c in cs:
+			cbs += c.cs
 
 		# check size
-		cs = self.contentInstances()	# get CINs again
-		mbs = self.mbs
-		cbs = 0
-		for c in cs:					# Calculate cbs
-			cbs += c['cs']
-		i = 0
-		l = len(cs)
-		while cbs > mbs and i < l:
-			Logging.logDebug(f'cbs > mbs: Removing <cin>: {cs[i].ri}')
+		if (mbs := self.mbs) is not None:
+			i = 0
+			l = len(cs)
+			while cbs > mbs and i < l:
+				Logging.logDebug(f'cbs > mbs: Removing <cin>: {cs[i].ri}')
+				# remove oldest
+				cbs -= cs[i]['cs']
+				CSE.dispatcher.deleteResource(cs[i], parentResource=self)
+				cni -= 1	# decrement cni when deleting a <cin>
+				i += 1
 
-			# remove oldest
-			cbs -= cs[i]['cs']
-			CSE.dispatcher.deleteResource(cs[i], parentResource=self)
-			cni -= 1	# again, decrement cni when deleting a cni
-			i += 1
-
-		# Some CNT resource may have been updated, so store the resource 
+		# Some attributes may have been updated, so store the resource 
 		self['cni'] = cni
 		self['cbs'] = cbs
 		self.dbUpdate()

@@ -191,6 +191,7 @@ class Configuration(object):
 				#	Defaults for Container Resources
 				#
 
+				'cse.cnt.enableLimits'				: config.getboolean('cse.resource.cnt', 'enableLimits', fallback=False),
 				'cse.cnt.mni'						: config.getint('cse.resource.cnt', 'mni', 				fallback=10),
 				'cse.cnt.mbs'						: config.getint('cse.resource.cnt', 'mbs', 				fallback=10000),
 

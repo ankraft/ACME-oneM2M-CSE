@@ -140,7 +140,7 @@ class TestCNT_CIN(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_changeCNTMni(self) -> None:
-		"""	Change <CNT>.MNI to 1 -> OL == AL """
+		"""	Change <CNT>.MNI to 1 -> OL == LA """
 		dct = 	{ 'm2m:cnt' : {
 					'mni' : 1
  				}}
@@ -173,8 +173,8 @@ class TestCNT_CIN(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createCNTwithMCS(self) -> None:
-		"""	Create <CNT> with mcs"""
+	def test_createCNTwithMBS(self) -> None:
+		"""	Create <CNT> with mbs"""
 		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN,
 					'mbs' : maxBS
@@ -254,7 +254,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCNT_CIN('test_retrieveCNTOl'))
 	suite.addTest(TestCNT_CIN('test_changeCNTMni'))
 	suite.addTest(TestCNT_CIN('test_deleteCNT'))
-	suite.addTest(TestCNT_CIN('test_createCNTwithMCS'))
+	suite.addTest(TestCNT_CIN('test_createCNTwithMBS'))
 	suite.addTest(TestCNT_CIN('test_createCINexactSize'))
 	suite.addTest(TestCNT_CIN('test_createCINtooBig'))
 	suite.addTest(TestCNT_CIN('test_createCINsForCNTwithSize'))

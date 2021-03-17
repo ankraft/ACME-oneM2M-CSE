@@ -184,10 +184,11 @@ The following macros are supported in addition to those defined in the sections 
 <a name="resource_cnt"></a>
 ### [cse.resource.cnt] - Resource Defaults: Container
 
-| Keyword | Description                                        | Macro Name  |
-|:--------|:---------------------------------------------------|:------------|
-| mni     | Default for maxNrOfInstances.<br/> Default: 10     | cse.cnt.mni |
-| mbs     | Default for maxByteSize.<br/>Default: 10.000 bytes | cse.cnt.mbs |
+| Keyword      | Description                                            | Macro Name           |
+|:-------------|:-------------------------------------------------------|:---------------------|
+| enableLimits | Enable/disable the default limits.<br/> Default: False | cse.cnt.enableLimits |
+| mni          | Default for maxNrOfInstances.<br/> Default: 10         | cse.cnt.mni          |
+| mbs          | Default for maxByteSize.<br/>Default: 10.000 bytes     | cse.cnt.mbs          |
 
 
 <a name="resource_req"></a>

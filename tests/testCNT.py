@@ -82,8 +82,6 @@ class TestCNT(unittest.TestCase):
 		self.assertIsNone(findXPath(r, 'm2m:cnt/cr'))
 		self.assertEqual(findXPath(r, 'm2m:cnt/cbs'), 0)
 		self.assertEqual(findXPath(r, 'm2m:cnt/cni'), 0)
-		self.assertGreater(findXPath(r, 'm2m:cnt/mbs'), 0)
-		self.assertGreater(findXPath(r, 'm2m:cnt/mni'), 0)
 		self.assertIsNone(findXPath(r, 'm2m:cnt/lbl'))
 
 
