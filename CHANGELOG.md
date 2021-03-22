@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+
 ## [unreleased] - xxxx.xx.xx
 
 ### Added
@@ -18,12 +19,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+
+## [0.7.2] - 2021-03-22
+
+### Security
+- [MISC] Bumped referenced library urllib3 from 1.26.2 to 1.26.3
+- [MISC] Bumped referenced library jinja2 from 2.11.2 to 2.11.3
+
+
 ## [0.7.1] - 2021-03-09
 
 ### Fixed
 - [CSE] Fixed crash when receiving no content in CREATE or UPDATE request.
 - [CSE] Improved debug response when encountering a wrong type during validation.
 - [CSE] Improved statistics output when running inside a Jupyter Notebook.
+
 
 ## [0.7.0] - 2021-03-06
 
