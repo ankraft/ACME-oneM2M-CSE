@@ -26,6 +26,7 @@ from rich.text import Text
 from rich.default_styles import DEFAULT_STYLES
 from rich.theme import Theme
 from rich.tree import Tree
+from rich.table import Table
 
 
 levelName = {
@@ -186,11 +187,11 @@ class	Logging:
 		style = Style(color='spring_green2') if not isError else Style(color='red')
 		if extranl:
 			Logging._console.print()
-		if isinstance(msg, Tree):
-			Logging._console.print(msg, style=style, end=end)
-		elif isinstance(msg, str):
+		if isinstance(msg, str):
 			Logging._console.print(msg if plain else Markdown(msg), style=style, end=end)
 		elif isinstance(msg, dict):
+			Logging._console.print(msg, style=style, end=end)
+		elif isinstance(msg, (Tree, Table)):
 			Logging._console.print(msg, style=style, end=end)
 
 		if extranl:

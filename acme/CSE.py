@@ -37,6 +37,7 @@ from helpers.BackgroundWorker import BackgroundWorkerPool
 
 
 
+
 # singleton main components. These variables will hold all the various manager
 # components that are used throughout the CSE implementation.
 announce:AnnouncementManager					= None
@@ -289,6 +290,7 @@ def stopApps() -> None:
 def _keyHelp(key:str) -> None:
 	"""	Print help for keyboard commands.
 	"""
+	Logging.console(f'\n[white][dim][[/dim][red][i]ACME[/i][/red][dim]] {C.version}', plain=True)
 	Logging.console("""**Console Commands**  
 - h, ?  - This help
 - Q, ^C - Shutdown CSE
@@ -302,7 +304,6 @@ def _keyHelp(key:str) -> None:
 - t     - Show resource tree
 - T     - Show child resource tree
 - w     - Show worker threads status
--
 """, extranl=True)
 
 
@@ -324,24 +325,38 @@ def _keyToggleLogging(key:str) -> None:
 def _keyWorkers(key:str) -> None:
 	"""	Print the worker and actor threads.
 	"""
-	result = '**Worker & Actor Threads**\n'
+	from rich.table import Table
+
+	Logging.console('**Worker & Actor Threads**', extranl=True)
+	table = Table()
+	table.add_column('Name', no_wrap=True)
+	table.add_column('Type', no_wrap=True)
+	table.add_column('Interval', no_wrap=True)
+	table.add_column('Runs', no_wrap=True)
 	for w in BackgroundWorkerPool.backgroundWorkers.values():
-		a = 'A' if w.count == 1 else 'W'
-		result += f'- {w.name:20} ({a}) | interval : {w.updateIntervall:<8} | runs : {w.numberOfRuns:<8}\n'
-	Logging.console(result, extranl=True)
+		a = 'Actor' if w.count == 1 else 'Worker'
+		table.add_row(w.name, a, str(w.updateIntervall), str(w.numberOfRuns))
+	Logging.console(table, extranl=True)
 
 
 def _keyConfiguration(key:str) -> None:
 	"""	Print the configuration.
 	"""
-	result = '**Configuration**\n'
+	from rich.table import Table
+
+	Logging.console('**Configuration**', extranl=True)
 	conf = Configuration.print().split('\n')
+	conf.sort()
+	table = Table()
+	table.add_column('Key', no_wrap=True)
+	table.add_column('Value', no_wrap=False)
 	for c in conf:
 		if c.startswith('Configuration:'):
 			continue
-		c = c.replace('*', '\\*')
-		result += f'- {c}\n'
-	Logging.console(result, extranl=True)
+		kv = c.split(' = ', 1)
+		if len(kv) == 2:
+			table.add_row(kv[0].strip(), kv[1])
+	Logging.console(table, extranl=True)
 
 
 def _keyClearScreen(key:str) -> None:
