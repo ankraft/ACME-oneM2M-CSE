@@ -12,10 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased] - xxxx.xx.xx
 
 ### Added
-- Added *cse.resource.cnt.enableLimits* configuration. 
+- [CSE] Added *cse.resource.cnt.enableLimits* configuration. 
+- [CSE] Added "T" command to the console (display only sub-tree of the resource tree).
 
 ### Changed
-- Default limits for &lt;container> are now disabled by default.
+- [CSE] Default limits for &lt;container> are now disabled by default.
 
 ### Fixed
 

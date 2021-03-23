@@ -205,6 +205,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 		'r'		: _keyCSERegistrations,
 		's'		: _keyStatistics,
 		't'		: _keyResourceTree,
+		'T'		: _keyChildResourceTree,
 		'w'		: _keyWorkers,
 	}
 
@@ -299,6 +300,7 @@ def _keyHelp(key:str) -> None:
 - r     - Show CSE registrations
 - s     - Show statistics
 - t     - Show resource tree
+- T     - Show child resource tree
 - w     - Show worker threads status
 -
 """, extranl=True)
@@ -354,6 +356,24 @@ def _keyResourceTree(key:str) -> None:
 	Logging.console('**Resource Tree**', extranl=True)
 	Logging.console(statistics.getResourceTreeRich())
 	Logging.console()
+
+
+def _keyChildResourceTree(key:str) -> None:
+	"""	Render the CSE's resource tree, beginning with a child resource.
+	"""
+	Logging.console('**Child Resource Tree**', extranl=True)
+	loggingOld = Logging.loggingEnabled
+	Logging.loggingEnabled = False
+	
+	if (ri := readline('ri=')) is None:
+		Logging.console()
+	elif len(ri) > 0:
+		if (tree := statistics.getResourceTreeRich(parent=ri)) is not None:
+			Logging.console(tree)
+		else:
+			Logging.console('not found', isError=True)
+
+	Logging.loggingEnabled = loggingOld
 
 
 def _keyCSERegistrations(key:str) -> None:
