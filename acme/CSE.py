@@ -68,6 +68,7 @@ cseRn:str										= None
 cseOriginator:str								= None
 defaultSerialization:ContentSerializationType	= None
 isHeadless 										= False
+shuttingDown									= False
 
 
 
@@ -186,7 +187,8 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	
 	Logging.log('CSE started')
 	if isHeadless:
-		Logging.console('CSE started')
+		# when in headless mode give the CSE a moment (2s) to experience fatal errors before printing the start message
+		BackgroundWorkerPool.newActor(delay=2, workerCallback=lambda : Logging.console('CSE started') if not shuttingDown else None ).start()
 
 	#
 	#	Enter an endless loop.
@@ -213,16 +215,29 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	#	Endless runtime loop. This handles key input & commands
 	#	The CSE's shutdown happens in one of the key handlers below
 	loop(commands, catchKeyboardInterrupt=True, headless=args.headless)
+	shutdown()
 
 
 def shutdown() -> None:
-	stopLoop()	# This will end the main run loop
+	"""	Gracefully shutdown the CSE programmatically. This will end the mail console loop
+		to terminate.
+		The actual shutdown happens in the _shutdown() method.
+	"""
+	global shuttingDown
+	
+	# indicating the shutting down status. When running in another environment the
+	# atexit-handler might not be called. Therefore, we need to set it here
+	shuttingDown = True		
+	stopLoop()				# This will end the main run loop.
+	if isHeadless:
+		Logging.console('CSE shutting down')
 
 
 @atexit.register
 def _shutdown() -> None:
-	"""	Gracefully shutdown the CSE, e.g. when receiving a keyboard interrupt.
+	"""	shutdown the CSE, e.g. when receiving a keyboard interrupt or at the end of the programm run.
 	"""
+
 	Logging.log('CSE shutting down')
 	if event is not None:
 		event.cseShutdown() 	# type: ignore

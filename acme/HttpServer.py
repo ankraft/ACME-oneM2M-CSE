@@ -171,7 +171,8 @@ class HttpServer(object):
 			except Exception as e:
 				# No logging for headless, nevertheless print the reason what happened
 				if CSE.isHeadless:
-					print(str(e))
+					Logging.console(str(e), isError=True)
+					#print(str(e))
 				Logging.logErr(str(e))
 				CSE.shutdown() # exit the CSE. Cleanup happens in the CSE atexit() handler
 
