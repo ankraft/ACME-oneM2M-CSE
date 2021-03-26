@@ -41,7 +41,7 @@ class CSENode(NodeBase):
 		self.createDeviceInfo()
 
 		# Add a thread to read and update the content from time to time
-		self.startWorker(Configuration.get('app.csenode.intervall'), self.nodeWorker, 'nodeWorker')	
+		self.startWorker(Configuration.get('app.csenode.interval'), self.nodeWorker, 'nodeWorker')	
 		Logging.log('CSENode registered')
 
 

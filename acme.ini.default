@@ -223,8 +223,6 @@ writeInterval=60
 permission=63
 # Default selfPermission when creating an ACP resource. Default: 51
 selfPermission=51
-# Always add the CSE's "admin" originator to an ACP. Default: false
-addAdminOrignator=false
 
 
 #

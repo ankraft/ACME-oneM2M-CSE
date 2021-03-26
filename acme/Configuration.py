@@ -184,7 +184,6 @@ class Configuration(object):
 
 				'cse.acp.pv.acop'					: config.getint('cse.resource.acp', 'permission', 		fallback=63),
 				'cse.acp.pvs.acop'					: config.getint('cse.resource.acp', 'selfPermission', 	fallback=51),
-				# 'cse.acp.addAdminOrignator'			: config.getboolean('cse.resource.acp', 'addAdminOrignator',	fallback=True),
 
 
 				#
