@@ -8,8 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-
-## [unreleased] - xxxx.xx.xx
+## [0.7.3] - 2021-03-26
 
 ### Added
 - [CSE] Added *cse.resource.cnt.enableLimits* configuration. 
@@ -20,8 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Default limits for &lt;container> are now disabled by default.
 - [CSE] Limiting supported release versions to 2a, 3, and 4.
 - [CSE] Changed spelling of configuration values "cse.statistics.writeIntervall" to "cse.statistics.writeInterval" and "app.statistics.intervall" to "app.statistics.interval".
-
-### Fixed
 
 
 ## [0.7.2] - 2021-03-22
