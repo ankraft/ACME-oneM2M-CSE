@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - [CSE] Default limits for &lt;container> are now disabled by default.
+- [CSE] Limiting supported release versions to 2a, 3, and 4.
 
 ### Fixed
 

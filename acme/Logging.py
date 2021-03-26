@@ -183,7 +183,7 @@ class	Logging:
 	
 
 	@staticmethod
-	def console(msg:Union[str, Tree, JSON]='&nbsp;', extranl:bool=False, end:str='\n', plain:bool=False, isError:bool=False) -> None:
+	def console(msg:Union[str, Tree, Table, JSON]='&nbsp;', extranl:bool=False, end:str='\n', plain:bool=False, isError:bool=False) -> None:
 		style = Style(color='spring_green2') if not isError else Style(color='red')
 		if extranl:
 			Logging._console.print()
