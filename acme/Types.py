@@ -297,6 +297,7 @@ class ResponseCode(IntEnum):
 	deleted 									= 2002
 	updated										= 2004
 	badRequest									= 4000
+	releaseVersionNotSupported					= 4001
 	notFound 									= 4004
 	operationNotAllowed							= 4005
 	unsupportedMediaType						= 4015
@@ -363,6 +364,7 @@ ResponseCode._httpStatusCodes = {											# type: ignore
 		ResponseCode.unsupportedMediaType						: 415,		# UNSUPPORTED_MEDIA_TYPE
 		ResponseCode.internalServerError 						: 500,		# INTERNAL SERVER ERROR
 		ResponseCode.subscriptionVerificationInitiationFailed	: 500,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
+		ResponseCode.releaseVersionNotSupported					: 501,		# RELEASE_VERSION_NOT_SUPPORTED
 		ResponseCode.notImplemented								: 501,		# NOT IMPLEMENTED
 	}
 

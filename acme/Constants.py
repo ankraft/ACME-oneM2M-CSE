@@ -15,7 +15,7 @@ class Constants(object):
 	version						= '0.8.0-dev'
 
 	# Supported release vesions
-	supportedReleaseVersions = ['1', '2', '2a', '3', '4']
+	supportedReleaseVersions = ['2a', '3', '4']
 
 	
 	# List of virtual resources

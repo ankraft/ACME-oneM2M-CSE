@@ -4,8 +4,12 @@
 
 ## oneM2M Specification Conformance
 
-The CSE implementation successfully passes most of the oneM2M release 1 test cases (353 out of 361).
+The CSE implementation successfully passes most of the oneM2M release 1 test cases (353 out of 361), and all relevant release 2 test cases.
 
+
+## Release Versions
+
+The ACME CSE supports oneM2M release 2a, 3, and 4 for the resource types and functionalities listed below. 
 
 ## CSE Types
 

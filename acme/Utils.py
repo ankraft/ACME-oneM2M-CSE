@@ -806,6 +806,11 @@ def getRequestHeaders(request: Request) -> Result:
 	rh.operationExecutionTime 		= requestHeaderField(request, C.hfOET)
 	rh.releaseVersionIndicator 		= requestHeaderField(request, C.hfRVI)
 
+	# Check Release Version
+	if rh.releaseVersionIndicator not in C.supportedReleaseVersions:
+		return Result(rsc=RC.releaseVersionNotSupported, data=rh, dbg=f'Release version not supported: {rh.releaseVersionIndicator}')
+
+
 	# content-type and accept
 	rh.contentType 	= request.content_type
 	rh.accept		= [ mt for mt, _ in request.accept_mimetypes ]	# get (multiple) accept headers from MIMEType[(x,nr)]

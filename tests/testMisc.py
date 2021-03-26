@@ -37,6 +37,14 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(lastHeaders()['X-M2M-RVI'], RVI)
 
 
+	# TODO move to http test
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_checkHTTPRVIWrongInRequest(self) -> None:
+		"""	Check Wrong RVI version parameter in request -> Fail"""
+		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={'X-M2M-RVI' : '1'})
+		self.assertEqual(rsc, RC.releaseVersionNotSupported)
+
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createUnknownResourceType(self) -> None:
 		"""	Create an unknown resource type -> Fail """
@@ -88,6 +96,7 @@ class TestMisc(unittest.TestCase):
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestMisc('test_checkHTTPRVI'))
+	suite.addTest(TestMisc('test_checkHTTPRVIWrongInRequest'))
 	suite.addTest(TestMisc('test_createUnknownResourceType'))
 	suite.addTest(TestMisc('test_createEmpty'))
 	suite.addTest(TestMisc('test_updateEmpty'))
