@@ -169,7 +169,7 @@ The following macros are supported in addition to those defined in the sections 
 | Keyword        | Description                                                               | Macro Name                    |
 |:---------------|:--------------------------------------------------------------------------|:------------------------------|
 | enable         | Enable or disable collecting CSE statistics.<br />Default: True           | cse.statistics.enable         |
-| writeIntervall | Intervall for saving statistics data to disk in seconds.<br />Default: 60 | cse.statistics.writeIntervall |
+| writeInterval  | Interval for saving statistics data to disk in seconds.<br />Default: 60  | cse.statistics.writeInterval |
 
 
 <a name="resource_acp"></a>
@@ -227,7 +227,7 @@ specifies a new path and the value specified the mapping to a request
 (including optional arguments).
 
 The http server redirects a request to a path element that matches one of 
-specified keys to the repective request mapping (using the http status code 307).
+specified keys to the respective request mapping (using the http status code 307).
 
 Please note, that the "root" path in [server.http](#server_http) prefixes both the new
 path and the respecting mapping.
@@ -253,7 +253,7 @@ The following snippet only presents some example for ID mappings.
 | fcntCND    | Content Definition of the AE's flexContainer. This is a proprietary CND.<br/>Default: acme.statistics | app.statistics.fcntCND    |
 | fcntType   | Element type of the AE's flexContainer. This is a proprietary type.<br/>Default: acme:csest           | app.statistics.fcntType   |
 | originator | Originator for requests to the CSE.<br/>Default: C (client self-registration)                         | app.statistics.originator |
-| intervall  | Wait n seconds between updates of the AE in seconds.<br/>Default: 10                                  | app.statistics.intervall  |
+| interval   | Wait n seconds between updates of the AE in seconds.<br/>Default: 10                                  | app.statistics.interval   |
 
 
 <a name="cse_node"></a>
@@ -267,6 +267,6 @@ The following snippet only presents some example for ID mappings.
 | originator          | Originator for requests to the CSE.<br/>Default: CAdmin                                 | app.csenode.originator          |
 | batteryLowLevel     | Battery level indicates as "low" in percent.<br/>Default: 20                            | app.csenode.batteryLowLevel     |
 | batteryChargedLevel | Battery level indicates as "fully charged" in percent.<br/>Default: 100                 | app.csenode.batteryChargedLevel |
-| intervall           | Wait n seconds between updates of the node and sub-mgmtObjs in seconds.<br/>Default: 60 | app.csenode.intervall           |
+| interval            | Wait n seconds between updates of the node and sub-mgmtObjs in seconds.<br/>Default: 60 | app.csenode.interval            |
 
 [← README](../README.md) 

@@ -192,7 +192,7 @@ stackTraceOnError=False
 
 
 #
-#	Settings for resource anouncements 
+#	Settings for resource announcements 
 #
 
 [cse.announcements]
@@ -210,8 +210,8 @@ checkInterval=10
 [cse.statistics]
 # Enable or disable statistics. Default: True
 enable=true
-# Intervall for saving statistics data to disk in seconds. Default: 60
-writeIntervall=60
+# Interval for saving statistics data to disk in seconds. Default: 60
+writeInterval=60
 
 
 #
@@ -311,7 +311,7 @@ fcntType=acme:csest
 # Originator for requests to the CSE. Default: C
 originator=C
 # Wait n seconds between updates of the AE in seconds. Default: 10
-intervall=10
+interval=10
 
 
 #
@@ -332,5 +332,5 @@ batteryLowLevel=20
 # Battery level indicates as "fully charged" in percent. Default: 100
 batteryChargedLevel=100
 # Wait n seconds between updates of the node and sub-mgmtObjs in seconds. Default: 60
-intervall=60
+interval=60
 

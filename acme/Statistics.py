@@ -61,7 +61,7 @@ class Statistics(object):
 
 			# Start background worker to handle writing to DB
 			Logging.log('Starting statistics DB thread')
-			BackgroundWorkerPool.newWorker(Configuration.get('cse.statistics.writeIntervall'), self.statisticsDBWorker, 'statsDBWorker').start()
+			BackgroundWorkerPool.newWorker(Configuration.get('cse.statistics.writeInterval'), self.statisticsDBWorker, 'statsDBWorker').start()
 
 			# subscripe vto various events
 			# mypy cannot handle dynamically created attributes

@@ -175,7 +175,7 @@ class Configuration(object):
 				#
 
 				'cse.statistics.enable'				: config.getboolean('cse.statistics', 'enable', 		fallback=True),
-				'cse.statistics.writeIntervall'		: config.getint('cse.statistics', 'writeIntervall',		fallback=60),		# Seconds
+				'cse.statistics.writeInterval'		: config.getint('cse.statistics', 'writeInterval',		fallback=60),		# Seconds
 
 
 				#
@@ -230,7 +230,7 @@ class Configuration(object):
 				'app.statistics.fcntCND'			: config.get('app.statistics', 'fcntCND', 				fallback='acme.statistics'),
 				'app.statistics.fcntType'			: config.get('app.statistics', 'fcntType', 				fallback='acme:csest'),
 				'app.statistics.originator'			: config.get('app.statistics', 'originator',			fallback='C'),
-				'app.statistics.intervall'			: config.getint('app.statistics', 'intervall', 			fallback=10),		# seconds
+				'app.statistics.interval'			: config.getint('app.statistics', 'interval', 			fallback=10),		# seconds
 
 				#
 				#	App: CSE Node 
@@ -242,7 +242,7 @@ class Configuration(object):
 				'app.csenode.originator'			: config.get('app.csenode', 'originator',				fallback='CAdmin'),
 				'app.csenode.batteryLowLevel'		: config.getint('app.csenode', 'batteryLowLevel',		fallback=20),		# percent
 				'app.csenode.batteryChargedLevel'	: config.getint('app.csenode', 'batteryChargedLevel',	fallback=100),		# percent
-				'app.csenode.intervall'				: config.getint('app.csenode', 'updateIntervall', 		fallback=60),		# seconds
+				'app.csenode.interval'				: config.getint('app.csenode', 'updateInterval', 		fallback=60),		# seconds
 
 			}
 
