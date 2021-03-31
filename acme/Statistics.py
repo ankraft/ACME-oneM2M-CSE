@@ -372,6 +372,8 @@ skinparam rectangle {
 				return None
 		else:
 			res = Utils.getCSE().resource
+		if res is None:
+			return None
 		tree = Tree(info(res))
 		getChildren(res, tree, 0)
 		return tree
