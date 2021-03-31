@@ -113,7 +113,7 @@
         "lname" : "allJoynSvcObject",
         "attributes" : [
             { "sname" : "ajop", "lname" : "objectPath", "type" : "string", "car" : "1",  "oc" : "M", "ou" : "NP", "od" : "O", "annc"  : "OA" },
-            { "sname" : "ena",  "lname" : "enable",     "type" : "bool",   "car" : "1",  "oc" : "M", "ou" : "O", "od" : "O", "annc"  : "OA" }
+            { "sname" : "ena",  "lname" : "enable",     "type" : "boolean",   "car" : "1",  "oc" : "M", "ou" : "O", "od" : "O", "annc"  : "OA" }
         ],
         "children" : [
             "m2m:ajif"
@@ -124,7 +124,7 @@
         "lname" : "allJoynSvcObjectAnnc",
         "attributes" : [
             { "sname" : "ajop", "lname" : "objectPath", "type" : "string", "car" : "1",  "oc" : "M", "ou" : "NP", "od" : "O", "annc"  : "OA" },
-            { "sname" : "ena",  "lname" : "enable",     "type" : "bool",   "car" : "1",  "oc" : "M", "ou" : "O", "od" : "O", "annc"  : "OA" }
+            { "sname" : "ena",  "lname" : "enable",     "type" : "boolean",   "car" : "1",  "oc" : "M", "ou" : "O", "od" : "O", "annc"  : "OA" }
         ],
         "children" : [
             "m2m:ajif",
@@ -135,7 +135,7 @@
         "type"  : "m2m:ajif",
         "lname" : "allJoynInterface",
         "attributes" : [
-            { "sname" : "ajir",  "lname" : "interfaceIntrospectXmlRef", "type" : "uri", "car" : "1",  "oc" : "M", "ou" : "O", "od" : "O", "annc"  : "OA" }
+            { "sname" : "ajir",  "lname" : "interfaceIntrospectXmlRef", "type" : "anyuri", "car" : "1",  "oc" : "M", "ou" : "O", "od" : "O", "annc"  : "OA" }
         ],
         "children" : [
             "m2m:ajmd",
@@ -146,7 +146,7 @@
         "type"  : "m2m:ajifA",
         "lname" : "allJoynInterfaceAnnc",
         "attributes" : [
-            { "sname" : "ajir",  "lname" : "interfaceIntrospectXmlRef", "type" : "uri", "car" : "1",  "oc" : "M", "ou" : "O", "od" : "O", "annc"  : "OA" }
+            { "sname" : "ajir",  "lname" : "interfaceIntrospectXmlRef", "type" : "anyuri", "car" : "1",  "oc" : "M", "ou" : "O", "od" : "O", "annc"  : "OA" }
         ],
         "children" : [
             "m2m:ajmd",
