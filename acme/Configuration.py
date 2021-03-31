@@ -81,6 +81,7 @@ class Configuration(object):
 				'http.multiThread'					: config.getboolean('server.http', 'multiThread', 		fallback=True),
 				'http.enableRemoteConfiguration'	: config.getboolean('server.http', 'enableRemoteConfiguration', fallback=False),
 				'http.enableStructureEndpoint'		: config.getboolean('server.http', 'enableStructureEndpoint', fallback=False),
+				'http.enableResetEndpoint'			: config.getboolean('server.http', 'enableResetEndpoint', fallback=False),
 
 				#
 				#	Database

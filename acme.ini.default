@@ -103,12 +103,17 @@ multiThread=true
 # ATTENTION: Enabling this feature exposes configuration values, IDs and
 # passwords, and is a security risk.
 # Default: False
-enableRemoteConfiguration=false
+enableRemoteConfiguration=alse
 # Enable an endpoint for getting a structured overview about a CSE's resource
 # tree and deployment infrastructure (remote CSE's)
 # ATTENTION: Enabling this feature exposes various potentially sensitive information.
 # Default: False
 enableStructureEndpoint=false
+# Enable an endpoint for resetting the CSE (remove all resources and import
+# the init directory again)
+# ATTENTION: Enabling this feature may lead to a total loss of data.
+# Default: False
+enableResetEndpoint=false
 
 #
 #	Database settings

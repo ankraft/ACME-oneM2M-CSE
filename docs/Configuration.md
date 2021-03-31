@@ -101,6 +101,7 @@ The following macros are supported in addition to those defined in the sections 
 | multiThread               | Run the http server in single- or multi-threaded mode.<br/> Default: true                                                                                                                                                                                  | http.multiThread               |
 | enableRemoteConfiguration | Enable an endpoint for get and set certain configuration values via a REST interface.<br />**ATTENTION: Enabling this feature exposes configuration values, IDs and passwords, and is a security risk.**<br/> Default: false                               | http.enableRemoteConfiguration |
 | enableStructureEndpoint   | Enable an endpoint for getting a structured overview about a CSE's resource tree and deployment infrastructure (remote CSE's).<br />**ATTENTION: ATTENTION: Enabling this feature exposes various potentially sensitive information.**<br/> Default: false | http.enableStructureEndpoint   |
+| enableResetEndpoint       | Enable an endpoint for resetting the CSE (remove all resources and import the init directory again)<br />**ATTENTION: Enabling this feature may lead to a total loss of data**<br/>Default: false                                                          | http.enableResetEndpoint       |
 
 
 <a name="database"></a>

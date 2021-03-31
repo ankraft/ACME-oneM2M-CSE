@@ -111,6 +111,14 @@ class HttpServer(object):
 			self.addEndpoint(structureEndpoint, handler=self.handleStructure, methods=['GET'], strictSlashes=False)
 			self.addEndpoint(f'{structureEndpoint}/<path:path>', handler=self.handleStructure, methods=['GET', 'PUT'])
 
+		# Enable the reset endpoint
+		if Configuration.get('http.enableResetEndpoint'):
+			resetEndPoint = f'{self.rootPath}/__reset__'
+			Logging.log(f'Registering reset endpoint at: {resetEndPoint}')
+			self.addEndpoint(resetEndPoint, handler=self.handleReset, methods=['GET'], strictSlashes=False)
+
+
+
 		# Add mapping / macro endpoints
 		self.mappings = {}
 		if (mappings := Configuration.get('server.http.mappings')) is not None:
@@ -130,11 +138,15 @@ class HttpServer(object):
 
 
 	def run(self) -> None:
+		"""	Run the http server in a separate thread.
+		"""
 		self.httpActor = BackgroundWorkerPool.newActor(0.0, self._run, 'HTTP Server')
 		self.httpActor.start()
 	
 
 	def shutdown(self) -> bool:
+		"""	Shutting down the http server.
+		"""
 		Logging.log('HttpServer shut down')
 		self.isStopped = True
 		return True
@@ -317,6 +329,13 @@ class HttpServer(object):
 		return Response(response='unsupported', status=422, headers=self._responseHeaders)
 
 
+	def handleReset(self, path:str='puml') -> Response:
+		"""	Handle a CSE reset request.
+		"""
+		CSE.resetCSE()
+		return Response(response='', status=200)
+
+
 	#########################################################################
 
 	#
@@ -380,8 +399,10 @@ class HttpServer(object):
 		headers = {}
 		headers['Server'] = self.serverID						# set server field
 		headers['X-M2M-RSC'] = f'{result.rsc}'					# set the response status code
-		headers['X-M2M-RI'] = result.request.headers.requestIdentifier
-		headers['X-M2M-RVI'] = result.request.headers.releaseVersionIndicator
+		if result.request.headers.requestIdentifier is not None:
+			headers['X-M2M-RI'] = result.request.headers.requestIdentifier
+		if result.request.headers.releaseVersionIndicator is not None:
+			headers['X-M2M-RVI'] = result.request.headers.releaseVersionIndicator
 
 		# HTTP status code
 		statusCode = result.rsc.httpStatusCode()

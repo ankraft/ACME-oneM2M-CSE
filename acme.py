@@ -71,3 +71,4 @@ if __name__ == '__main__':
 	console = Console()
 	console.print('\n[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim] ' + C.version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight=False)
 	CSE.startup(parseArgs())
+	CSE.run()

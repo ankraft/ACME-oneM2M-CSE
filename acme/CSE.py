@@ -190,6 +190,9 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 		# when in headless mode give the CSE a moment (2s) to experience fatal errors before printing the start message
 		BackgroundWorkerPool.newActor(delay=2, workerCallback=lambda : Logging.console('CSE started') if not shuttingDown else None ).start()
 
+
+def run() -> None:
+
 	#
 	#	Enter an endless loop.
 	#	Execute keyboard commands in the keyboardHandler's loop() function.
@@ -210,11 +213,12 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 		't'		: _keyResourceTree,
 		'T'		: _keyChildResourceTree,
 		'w'		: _keyWorkers,
+		'Z'		: _keyResetCSE,
 	}
 
 	#	Endless runtime loop. This handles key input & commands
 	#	The CSE's shutdown happens in one of the key handlers below
-	loop(commands, catchKeyboardInterrupt=True, headless=args.headless)
+	loop(commands, catchKeyboardInterrupt=True, headless=isHeadless)
 	shutdown()
 
 
@@ -257,6 +261,23 @@ def _shutdown() -> None:
 	Logging.log('CSE shutdown')
 	Logging.finit()
 
+
+def resetCSE() -> None:
+	""" Reset the CSE: Clear databases and import the resources again.
+	"""
+	Logging.logWarn('Resetting CSE started')
+	storage.purge()
+	importer = Importer()
+	if not importer.importAttributePolicies() or not importer.importResources():
+		Logging.logErr('Error during import')
+		sys.exit()	# what else can we do?
+	Logging.logWarn('Resetting CSE finished')
+
+
+##############################################################################
+#
+#	Application handler
+#
 
 
 # Delay starting the AEs in the backround. This is needed because the CSE
@@ -319,6 +340,7 @@ def _keyHelp(key:str) -> None:
 - t     - Show resource tree
 - T     - Show child resource tree
 - w     - Show worker threads status
+- Z     - Reset the CSE
 """, extranl=True)
 
 
@@ -459,3 +481,9 @@ def _keyInspectResource(key:str) -> None:
 			Logging.console(res.resource.asDict())
 
 	Logging.loggingEnabled = loggingOld
+
+
+def _keyResetCSE(key:str) -> None:
+	"""	Reset the CSE. Remove all resources and do the importing again.
+	"""
+	resetCSE()

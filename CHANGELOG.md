@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased] - xxxx.xx.xx
 
 ### Added
+- [CSE] Added possibility to reset a running CSE (via the command console or http endpoint).
 
 ### Changed
 

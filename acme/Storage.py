@@ -61,7 +61,7 @@ class Storage(object):
 		return True
 
 
-	def purge(self) -> bool:
+	def purge(self) -> None:
 		self.db.purgeDB()
 		
 
