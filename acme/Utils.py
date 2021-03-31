@@ -807,6 +807,8 @@ def getRequestHeaders(request: Request) -> Result:
 	rh.releaseVersionIndicator 		= requestHeaderField(request, C.hfRVI)
 
 	# Check Release Version
+	if rh.releaseVersionIndicator is None:
+		return Result(rsc=RC.badRequest, data=rh, dbg=f'Release version is missing')
 	if rh.releaseVersionIndicator not in C.supportedReleaseVersions:
 		return Result(rsc=RC.releaseVersionNotSupported, data=rh, dbg=f'Release version not supported: {rh.releaseVersionIndicator}')
 
