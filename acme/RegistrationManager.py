@@ -44,8 +44,8 @@ class RegistrationManager(object):
 
 	def checkResourceCreation(self, resource:Resource, originator:str, parentResource:Resource=None) -> Result:
 		if resource.ty == T.AE:
-			if (originator := self.handleAERegistration(resource, originator, parentResource).originator) is None:	# assigns new originator
-				return Result(rsc=RC.badRequest, dbg='cannot register AE')
+			if (originator := (res := self.handleAERegistration(resource, originator, parentResource)).originator) is None:	# assigns new originator
+				return res
 		if resource.ty == T.REQ:
 			if not self.handleREQRegistration(resource, originator):
 				return Result(rsc=RC.badRequest, dbg='cannot register REQ')
@@ -114,8 +114,8 @@ class RegistrationManager(object):
 		# Check for allowed orginator
 		# TODO also allow when there is an ACP?
 		if not Utils.isAllowedOriginator(originator, self.allowedAEOriginators):
-			Logging.logDebug('Originator not allowed')
-			return Result(rsc=RC.appRuleValidationFailed)
+			Logging.logDebug(dbg := 'Originator not allowed')
+			return Result(rsc=RC.appRuleValidationFailed, dbg=dbg)
 
 		# Assign originator for the AE
 		if originator == 'C':
@@ -126,14 +126,20 @@ class RegistrationManager(object):
 			originator = Utils.getIdFromOriginator(originator)
 		# elif originator is None or len(originator) == 0:
 		# 	originator = Utils.uniqueAEI('S')
-		Logging.logDebug(f'Registering AE. aei: {originator}')
 
-		ae['aei'] = originator					# set the aei to the originator
+		# Check whether an originator has already registered with the same AE-ID
+		if len(aes := CSE.storage.searchByValueInField('aei', originator)) > 0:
+			Logging.logWarn(dbg := f'Originator has already registered: {originator}')
+			return Result(rsc=RC.originatorHasAlreadyRegistered, dbg=dbg)
+		
+		# Make some adjustments to set the originator in the <AE> resource
+		Logging.logDebug(f'Registering AE. aei: {originator}')
+		ae['aei'] = originator												# set the aei to the originator
 		ae['ri'] = Utils.getIdFromOriginator(originator, idOnly=True)		# set the ri of the ae to the aei (TS-0001, 10.2.2.2)
 
 		# Verify that parent is the CSEBase, else this is an error
 		if parentResource is None or parentResource.ty != T.CSEBase:
-			return Result(rsc=RC.notAcceptable)
+			return Result(rsc=RC.invalidChildResourceType, dbg='Parent must be the CSE')
 
 		return Result(originator=originator)
 

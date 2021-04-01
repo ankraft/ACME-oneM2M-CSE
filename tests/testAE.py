@@ -65,7 +65,7 @@ class TestAE(unittest.TestCase):
 				 	'srv': [ '3' ]
 				}}
 		r, rsc = CREATE(aeURL, 'C', T.AE, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.invalidChildResourceType)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -79,6 +79,18 @@ class TestAE(unittest.TestCase):
 				}}
 		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
 		self.assertEqual(rsc, RC.conflict)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAEWithExistingOriginator(self) -> None:
+		""" Create/register an <AE> with same originator again -> Fail """
+		dct = 	{ 'm2m:ae' : {
+					'api': 'NMyApp1Id',
+				 	'rr': False,
+				 	'srv': [ '3' ]
+				}}
+		r, rsc = CREATE(cseURL, TestAE.originator, T.AE, dct)
+		self.assertEqual(rsc, RC.originatorHasAlreadyRegistered)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -280,6 +292,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestAE('test_createAE'))
 	suite.addTest(TestAE('test_createAEUnderAE'))
 	suite.addTest(TestAE('test_createAEAgain'))
+	suite.addTest(TestAE('test_createAEWithExistingOriginator'))
 	suite.addTest(TestAE('test_retrieveAE'))
 	suite.addTest(TestAE('test_retrieveAEWithWrongOriginator'))
 	suite.addTest(TestAE('test_attributesAE'))
