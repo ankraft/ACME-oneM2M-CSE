@@ -587,7 +587,6 @@ class TinyDBBinding(object):
 										'ln'  : subscription.ln,
 										'nus' : subscription.nu,
 										'bn'  : subscription.bn,
-										'exc' : subscription.exc,
 									}, 
 									Query().ri == ri)	# type: ignore
 			return result is not None
