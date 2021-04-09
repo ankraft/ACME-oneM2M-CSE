@@ -149,11 +149,13 @@ def sendRequest(method:Callable, url:str, originator:str, ty:int=None, data:JSON
 	hds = { 
 		'Content-Type' 		: f'{ct}{tys}',
 		'Accept'			: ct,
-		'X-M2M-Origin'	 	: originator,
 		'X-M2M-RI' 			: (rid := uniqueID()),
 		'X-M2M-RVI'			: RVI,
 	}
-	if headers is not None:		# extend with other headers
+	if originator is not None:		# Set originator if it is not None
+		hds['X-M2M-Origin'] = originator
+
+	if headers is not None:			# extend with other headers
 		if 'X-M2M-RVI' in headers:	# overwrite X-M2M-RVI header
 			hds['X-M2M-RVI'] = headers['X-M2M-RVI']
 			del headers['X-M2M-RVI']

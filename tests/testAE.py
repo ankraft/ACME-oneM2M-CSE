@@ -220,6 +220,7 @@ class TestAE(unittest.TestCase):
 		self.assertEqual(rsc, RC.created)
 		TestAE.originator2 = findXPath(r, 'm2m:ae/aei')
 
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteAECSZ(self) -> None:
 		""" Delete <AE> with csr -> <AE> deleted """
@@ -229,9 +230,9 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAENoAPI(self) -> None:
-		""" Create <AE> with missing api attribute"""
+		""" Create <AE> with missing api attribute -> Fail"""
 		dct = 	{ 'm2m:ae' : {
-					'rn': aeRN, 
+					'rn': aeRN,
 				 	'rr': False,
 				 	'srv': [ '3' ]
 				}}
@@ -241,7 +242,7 @@ class TestAE(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEAPIWrongPrefix(self) -> None:
-		""" Create <AE> with unknown api prefix"""
+		""" Create <AE> with unknown api prefix -> Fail"""
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'Xwrong',
@@ -284,6 +285,21 @@ class TestAE(unittest.TestCase):
 		self.assertEqual(rsc, RC.deleted)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAENoOriginator(self) -> None:
+		""" Create <AE> without an Originator"""
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN,
+					'api': 'Nacme',
+				 	'rr': False,
+				 	'srv': [ '3' ]
+				}}
+		ae, rsc = CREATE(cseURL, None, T.AE, dct)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(ae, 'm2m:ae/aei'))
+		_, rsc = DELETE(aeURL, findXPath(ae, 'm2m:ae/aei'))
+		self.assertEqual(rsc, RC.deleted)
+
 
 # TODO register multiple AEs
 
@@ -309,6 +325,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestAE('test_createAEAPIWrongPrefix'))	
 	suite.addTest(TestAE('test_createAEAPICorrectR'))	
 	suite.addTest(TestAE('test_createAEAPICorrectN'))	
+	suite.addTest(TestAE('test_createAENoOriginator'))	
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)

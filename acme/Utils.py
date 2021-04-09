@@ -797,7 +797,7 @@ def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE)
 	return result, None
 
 		
-def getRequestHeaders(request: Request) -> Result:
+def getRequestHeaders(request:Request) -> Result:
 	rh 								= RequestHeaders()
 	rh.originator 					= requestHeaderField(request, C.hfOrigin)
 	rh.requestIdentifier			= requestHeaderField(request, C.hfRI)
@@ -808,7 +808,7 @@ def getRequestHeaders(request: Request) -> Result:
 
 	# Check Release Version
 	if rh.releaseVersionIndicator is None:
-		return Result(rsc=RC.badRequest, data=rh, dbg=f'Release version is missing')
+		return Result(rsc=RC.badRequest, data=rh, dbg=f'Release Version Indicator parameter is mandatory in request')
 	if rh.releaseVersionIndicator not in C.supportedReleaseVersions:
 		return Result(rsc=RC.releaseVersionNotSupported, data=rh, dbg=f'Release version not supported: {rh.releaseVersionIndicator}')
 
@@ -842,11 +842,17 @@ def getRequestHeaders(request: Request) -> Result:
 	# perform some validitions
 
 	if rh.releaseVersionIndicator is None:
-		Logging.logDebug(dbg := 'Release Version Indicator is mandatory in request')
+		Logging.logDebug(dbg := 'Release Version Indicator paraneter is mandatory in request')
 		return Result(data=rh, rsc=RC.badRequest, dbg=dbg)
+
 	if rh.requestIdentifier is None:
-		Logging.logDebug(dbg := 'Request Identifier is mandatory in request')
+		Logging.logDebug(dbg := 'Request Identifier parameter is mandatory in request')
 		return Result(data=rh, rsc=RC.badRequest, dbg=dbg)
+
+	# Test whether originator is present
+	if rh.originator is None and not (rh.resourceType == T.AE and request.method == 'POST'):
+		Logging.logDebug(dbg := 'From/Originator parameter is mandatory in request')
+		return Result(data=rh, rsc=RC.badRequest, dbg=dbg)		
 
 	return Result(data=rh, rsc=RC.OK)
 

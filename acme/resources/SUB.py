@@ -81,7 +81,7 @@ class SUB(Resource):
 		if (nct := self.nct) is not None and (net := self['enc/net']) is not None:
 			for n in net:
 				if not NotificationEventType(n).isAllowedNCT(NotificationContentType(nct)):
-					Logging.logDebug(dbg := f'nct={nct} is not allowed for enc/net={net}')
+					Logging.logDebug(dbg := f'nct={nct} is not allowed for one or more values in enc/net={net}')
 					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 				# fallthough
 
