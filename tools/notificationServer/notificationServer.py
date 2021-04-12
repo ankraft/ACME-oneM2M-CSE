@@ -132,7 +132,12 @@ if __name__ == '__main__':
 		context.load_cert_chain(args.certfile, args.keyfile)				# Load the certificate and private key
 		httpd.socket = context.wrap_socket(httpd.socket, server_side=True)	# wrap the original http server socket as an SSL/TLS socket
 	
-	console.print(f'[{messageColor}]starting server & listening for connections on port {args.port}')
-	httpd.serve_forever()
-
+	console.print(f'[{messageColor}]Notification server started.\nListening for connections on port {args.port}.')
+	try:
+		httpd.serve_forever()
+	except KeyboardInterrupt as e:
+		console.print(f'\n[{messageColor}]Notification server stopped.')
+	except Exception as e:
+		console.print()
+		console.print_exception()
 
