@@ -14,8 +14,8 @@
 [cse]
 # CSE type. Allowed values: IN, MN, ASN. Default: IN
 type=IN
-# The CSE's service provider ID. Default: acme
-serviceProviderID=acme
+# The CSE's service provider ID. Default: acme.example.com
+serviceProviderID=acme.example.com
 # The CSE ID. Can be overwritten in imported CSE definition. Default: /id-in
 cseID=/id-in
 # The CSE's resource ID. Can be overwritten in imported CSE definition. Default: id-in

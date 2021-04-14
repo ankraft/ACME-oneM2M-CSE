@@ -110,7 +110,7 @@ class Configuration(object):
 				#
 
 				'cse.type'							: config.get('cse', 'type',								fallback='IN'),		# IN, MN, ASN
-				'cse.spid'							: config.get('cse', 'serviceProviderID',				fallback='acme'),
+				'cse.spid'							: config.get('cse', 'serviceProviderID',				fallback='acme.example.com'),
 				'cse.csi'							: config.get('cse', 'cseID',							fallback='/id-in'),
 				'cse.ri'							: config.get('cse', 'resourceID',						fallback='id-in'),
 				'cse.rn'							: config.get('cse', 'resourceName',						fallback='cse-in'),
