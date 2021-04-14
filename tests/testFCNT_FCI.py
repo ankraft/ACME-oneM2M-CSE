@@ -143,14 +143,41 @@ class TestFCNT_FCI(unittest.TestCase):
 
 		rla, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
-		self.assertIsNotNone(r)
+		self.assertIsNotNone(rla)
 
 		rol, rsc = RETRIEVE(f'{fcntURL}/ol', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
-		self.assertIsNotNone(r)
+		self.assertIsNotNone(rol)
 
 		# al == ol ?
 		self.assertEqual(findXPath(rla, 'cod:tempe/ri'), findXPath(rol, 'cod:tempe/ri'))
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createFCI(self) -> None:
+		"""	Create a <FCI> -> Fail """
+		self.assertIsNotNone(TestFCNT_FCI.ae)
+		dct = 	{ 'cod:tempe' : { 
+					'curT0'	: 23.0,
+				}}
+		r, rsc = CREATE(fcntURL, TestFCNT_FCI.originator, T.FCI, dct)
+		self.assertEqual(rsc, RC.operationNotAllowed)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateFCI(self) -> None:
+		"""	Update a <FCI> -> Fail """
+		self.assertIsNotNone(TestFCNT_FCI.ae)
+		# Retrieve the latest FCI
+		rla, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(rla)
+		# Update the latest
+		dct = 	{ 'cod:tempe' : { 
+					'curT0'	: 5.0,
+				}}
+		r, rsc = UPDATE(f'{fcntURL}/{findXPath(rla, "cod:tempe/rn")}', TestFCNT_FCI.originator, dct)
+		self.assertEqual(rsc, RC.operationNotAllowed)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -170,6 +197,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestFCNT_FCI('test_updateFCNT'))
 	suite.addTest(TestFCNT_FCI('test_retrieveFCNTLaOl'))
 	suite.addTest(TestFCNT_FCI('test_updateFCNTMni'))
+	suite.addTest(TestFCNT_FCI('test_createFCI'))
+	suite.addTest(TestFCNT_FCI('test_updateFCI'))
 	suite.addTest(TestFCNT_FCI('test_deleteFCNT'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

@@ -43,13 +43,16 @@ class RegistrationManager(object):
 	#
 
 	def checkResourceCreation(self, resource:Resource, originator:str, parentResource:Resource=None) -> Result:
-		if resource.ty == T.AE:
+		# Some Resources are not allowed to be created in a request, return immediately
+		ty = resource.ty
+
+		if ty == T.AE:
 			if (originator := (res := self.handleAERegistration(resource, originator, parentResource)).originator) is None:	# assigns new originator
 				return res
-		if resource.ty == T.REQ:
+		if ty == T.REQ:
 			if not self.handleREQRegistration(resource, originator):
 				return Result(rsc=RC.badRequest, dbg='cannot register REQ')
-		if resource.ty == T.CSR:
+		if ty == T.CSR:
 			if CSE.cseType == CSEType.ASN:
 				return Result(rsc=RC.operationNotAllowed, dbg='cannot register to ASN CSE')
 			if not self.handleCSRRegistration(resource, originator):
@@ -85,16 +88,19 @@ class RegistrationManager(object):
 
 
 	def checkResourceDeletion(self, resource:Resource) -> Result:
-		if resource.ty == T.AE:
+		ty = resource.ty
+		if ty == T.AE:
 			if not self.handleAEDeRegistration(resource):
 				return Result(status=False, dbg='cannot deregister AE')
-		if resource.ty == T.REQ:
+		if ty == T.REQ:
 			if not self.handleREQDeRegistration(resource):
 				return Result(status=False, dbg='cannot deregister REQ')
-		if resource.ty == T.CSR:
+		if ty == T.CSR:
 			if not self.handleCSRDeRegistration(resource):
 				return Result(status=False, dbg='cannot deregister CSR')
 		return Result(status=True)
+
+
 
 
 

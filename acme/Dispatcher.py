@@ -398,7 +398,7 @@ class Dispatcher(object):
 			return Result(rsc=RC.badRequest, dbg='type parameter missing in CREATE request')
 
 		# Some Resources are not allowed to be created in a request, return immediately
-		if ty in [ T.CSEBase, T.REQ ]:
+		if ty in [ T.CSEBase, T.REQ, T.FCI ]:	# TODO: move to constants
 			return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
 
 		# Get parent resource and check permissions
@@ -540,6 +540,10 @@ class Dispatcher(object):
 		resource = res.resource
 		if resource.readOnly:
 			return Result(rsc=RC.operationNotAllowed, dbg='resource is read-only')
+
+		# Some Resources are not allowed to be updated in a request, return immediately
+		if resource.ty in [ T.CIN, T.FCI ]:		# TODO: move to constants
+			return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
 
 		#
 		#	Permission check

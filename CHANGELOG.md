@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - [CSE] Corrected response status codes for AE registration errors.
+- [CSE] Prevent CREATE and UPDATE requests for \<flexContainerInstance> resource type.
 
 
 ## [0.7.3] - 2021-03-26

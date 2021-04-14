@@ -210,7 +210,9 @@ class FCNT(AnnounceableResource):
 
 		Logging.logDebug('Adding flexContainerInstance')
 		dct:JSON = { 'rn'  : f'{self.rn}_{self.st:d}', }
-		if self.lbl is not None:
+
+		# Copy the label as well
+		if self.lbl is not None:	# TODO: this is currently (2021/04) not standard conform
 			dct['lbl'] = self.lbl
 
 		for attr in self.dict:
