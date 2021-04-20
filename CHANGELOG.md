@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - [CSE] Added possibility to reset a running CSE (via the command console or http endpoint).
+- [WEB] Added oauth2 authorization support for the proxied CSE (for the stand-alone web UI).
 
 ### Changed
 
