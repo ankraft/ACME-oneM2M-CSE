@@ -212,6 +212,15 @@ class Configuration(object):
 
 
 				#
+				#	Defaults for timeSeries Resources
+				#
+
+				'cse.ts.enableLimits'				: config.getboolean('cse.resource.ts', 'enableLimits',	fallback=False),
+				'cse.ts.mni'						: config.getint('cse.resource.ts', 'mni', 				fallback=10),
+				'cse.ts.mbs'						: config.getint('cse.resource.ts', 'mbs', 				fallback=10000),
+
+
+				#
 				#	Web UI
 				#
 

@@ -244,6 +244,19 @@ mbs=10000
 
 
 #
+#	Resource defaults: TimeSeries
+#
+
+[cse.resource.ts]
+# Enable/disable the default limits. Default: False
+enableLimits=False
+# Default for maxNrOfInstances. Default: 10
+mni=10
+# Default for maxByteSize. Default: 10.000 bytes
+mbs=10000
+
+
+#
 #	Resource defaults: Request
 #
 

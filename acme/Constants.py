@@ -29,7 +29,7 @@ class Constants(object):
 	# Supported resource types by this CSE
 	supportedResourceTypes 			= [	# Supported normal resource
 										T.ACP, T.AE, T.CNT, T.CIN, T.CSEBase, T.GRP, T.MGMTOBJ, T.NOD, T.CSR, 
-										T.REQ, T.SUB, T.FCNT, T.FCI
+										T.REQ, T.SUB, T.FCNT, T.FCI, T.TS
 									  ]
 	supportedResourceTypes			+= announcedResourceTypes	# add announced resource types as well
 
@@ -42,7 +42,7 @@ class Constants(object):
 	# List of resource types for which "creator" is allowed
 	# Also add later: eventConfig, pollingChannel, statsCollect, statsConfig, semanticDescriptor,
 	# notificationTargetPolicy, timeSeries, crossResourceSubscription, backgroundDataTransfer
-	creatorAllowed = [ T.CIN, T.CNT, T.GRP, T.SUB, T.FCNT ]
+	creatorAllowed = [ T.CIN, T.CNT, T.GRP, T.SUB, T.FCNT, T.TS ]
 
 
 	#

@@ -13,7 +13,7 @@ from Logging import Logging
 from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, ResponseCode as RC
 from Types import JSON, AttributePolicies
 from Constants import Constants as C
-from Types import Result, AttributePolicies
+from Types import Result, AttributePolicies, ResourceTypes as T
 from Configuration import Configuration
 from resources.Resource import Resource
 import Utils
@@ -21,8 +21,14 @@ import Utils
 
 # TODO owner attribute, annnouncedSyncType
 
-# predefined policiespolicies
-# type, cardinality, optional.create, optional.update, optional.discovery, announcement
+# Predefined policies for validation
+# This is a dictionary that maps the attribute shortname to either a tuple (s.b.) or 
+# a dictionary of "resourceType -> Tuple". The latter happens when there is more than
+# one definitions resp. use of the same attribute in different resource types, such as
+# "dgd".
+# The Tuple is defiend to have the following fields:
+# 	type, cardinality, optional.create, optional.update, optional.discovery, announcement
+#
 attributePolicies:AttributePolicies = {
 	'ty'	: ( BT.positiveInteger,	CAR.car1,   RO.NP, 	RO.NP, RO.O, AN.NA ),
 	'ri'	: ( BT.string, 			CAR.car1,   RO.NP, 	RO.NP, RO.O, AN.NA ),
@@ -37,7 +43,7 @@ attributePolicies:AttributePolicies = {
 	'at'	: ( BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.NA ),
 	'aa'	: ( BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.NA ),
 	'daci'	: ( BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.OA ),		# AE, CSE, CNT
-	'loc'	: ( BT.list, 			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSE, AE, CNT, FCNT
+	'loc'	: ( BT.list, 			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSE, AE, CNT, FCNT, TS
 	'hld' 	: ( BT.string, 			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),
 
 
@@ -69,10 +75,18 @@ attributePolicies:AttributePolicies = {
 	'cni'	: ( BT.nonNegInteger,	CAR.car1, 	RO.NP,	RO.NP, RO.O, AN.NA ),		# CNT, FCNT (CAR01)
 	'cnm'	: ( BT.nonNegInteger,	CAR.car1, 	RO.NP,	RO.NP, RO.O, AN.NA ),		# GRP
 	'cnty'	: ( BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# DVI
-	'con'	: ( BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# CIN
+	'con'	: {
+		T.CIN : ( BT.string,		CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# CIN
+		T.TSI : ( BT.string,		CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# TSI
+	},
 	'conr'	: ( BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# m2m:contentRef - CIN
 	'cr'	: ( BT.list, 			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# CNT
-	'cs'	: ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# CIN, FCNT
+	'cs'	: {
+		T.CIN  : ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# CIN
+		T.FCNT : ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# FCNT
+		T.FCI  : ( BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ),		# FCI
+		T.TSI  : ( BT.nonNegInteger,	CAR.car1 ,  RO.NP,	RO.NP, RO.O, AN.NA ),		# TSI
+	},
 	'csi'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# CSE, CSR
 	'cst'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# CSE, CSR
 	'csy'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# m2m:consistencyStrategy - GRP
@@ -81,7 +95,10 @@ attributePolicies:AttributePolicies = {
 	'dc'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# MGO
 	'dea'	: ( BT.boolean,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ),		# SWR
 	'dcse'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSR
-	'dgt'	: ( BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# FCNT
+	'dgt'	: {
+		T.FCNT : (  BT.timestamp,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# FCNT
+		T.TSI  : (  BT.timestamp,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# TSI
+	},
 	'dis'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# BAT
 	'disr'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT
 	'dlb'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# DVI
@@ -119,8 +136,8 @@ attributePolicies:AttributePolicies = {
 	'macp'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT
 	'man'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# DVI
 	'mbs'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT
-	'mcfc'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP,  RO.O, AN.OA),		# NYCFC
-	'mcff'	: ( BT.anyURI,			CAR.car1,   RO.M,	RO.NP,  RO.O, AN.OA),		# NYCFC
+	'mcfc'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA),		# NYCFC
+	'mcff'	: ( BT.anyURI,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA),		# NYCFC
 	'mei'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# m2m:externalID - AE, CSR
 	'mfd'	: ( BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'mfdl'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
@@ -131,6 +148,11 @@ attributePolicies:AttributePolicies = {
 	'mia'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT
 	'mid'	: ( BT.list,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# list of m2m:anyURI - GRP
 	'mma'	: ( BT.unsignedLong,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# MEM
+	'mdc'	: ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# TS
+	'mdd'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# TS
+	'mdlt'	: ( BT.list,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# TS
+	'mdn'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# TS
+	'mdt'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# TS
 	'mmt'	: ( BT.unsignedLong,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# MEM
 	'mni'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT
 	'mnm'	: ( BT.positiveInteger,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# GRP
@@ -156,6 +178,7 @@ attributePolicies:AttributePolicies = {
 	'ors'	: ( BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT, REQ
 	'osv'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'pc'	: ( BT.dict,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# REQ
+	'pei'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# TS
 	'pn'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
 	'poa'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# m2m:poaList - AE, CSE
 	'psn'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# SUB
@@ -174,6 +197,7 @@ attributePolicies:AttributePolicies = {
 	'sld'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# ANDI
 	'sli'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# ANDI
 	'smod'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
+	'snr'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# TSI
 	'spty'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# m2m:specializationType - GRP
 	'spur'	: ( BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'srt'	: ( BT.list, 			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# CSE
@@ -277,7 +301,7 @@ class Validator(object):
 	#########################################################################
 
 
-	def	validateAttributes(self, dct:JSON, tpe:str, attributePolicies:AttributePolicies, create:bool=True , isImported:bool=False, createdInternally:bool=False, isAnnounced:bool=False) -> Result:
+	def	validateAttributes(self, dct:JSON, tpe:str, ty:T, attributePolicies:AttributePolicies, create:bool=True , isImported:bool=False, createdInternally:bool=False, isAnnounced:bool=False) -> Result:
 		""" Validate a resources attributes for types etc."""
 		if not self.validationEnabled:	# just return if disabled
 			return Result(status=True)
@@ -312,6 +336,7 @@ class Validator(object):
 			return Result(status=False, rsc=RC.badRequest, dbg=err)
 
 		# Logging.logDebug(attributePolicies.items())
+		# Logging.logWarn(pureResDict)
 		for r in pureResDict.keys():
 			if r not in attributePolicies.keys():
 				Logging.logWarn(err := f'Unknown attribute: {r} in resource: {tpe}')
@@ -320,6 +345,15 @@ class Validator(object):
 			if p is None:
 				Logging.logWarn(f'No validation policy found for attribute: {r}')
 				continue
+
+			# Get the correct tuple for a resource when there are more
+			# definitions
+			if isinstance(p, dict):
+				if ty not in p:
+					Logging.logWarn(err := f'Attribute: {r} undefined for resource type: {ty}')
+					return Result(status=False, rsc=RC.badRequest, dbg=err)
+				p = p[ty]
+
 			# Check whether the attribute is allowed or mandatory in the request
 			if (v := pureResDict.get(r)) is None:
 

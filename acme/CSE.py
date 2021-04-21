@@ -26,6 +26,7 @@ from RemoteCSEManager import RemoteCSEManager
 from SecurityManager import SecurityManager
 from Statistics import Statistics
 from Storage import Storage
+from TimeSeriesManager import TimeSeriesManager
 from Validator import Validator
 from Types import CSEType, ContentSerializationType
 
@@ -52,6 +53,7 @@ remote:RemoteCSEManager							= None
 security:SecurityManager 						= None
 statistics:Statistics							= None
 storage:Storage									= None
+timeSeries:TimeSeriesManager					= None
 validator:Validator 							= None
 
 rootDirectory:str								= None
@@ -84,8 +86,8 @@ shuttingDown									= False
 
 #def startup(args=None, configfile=None, resetdb=None, loglevel=None):
 def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
-	global announce, dispatcher, group, httpServer, notification, validator
-	global registration, remote, request, security, statistics, storage, event
+	global announce, dispatcher, event, group, httpServer, notification, registration
+	global remote, request, security, statistics, storage, timeSeries, validator
 	global rootDirectory
 	global aeStatistics
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseRi, cseRn
@@ -132,57 +134,34 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	Logging.log('Configuration:')
 	Logging.log(Configuration.print())
 
-
-	# Initiatlize the resource storage
-	storage = Storage()
-
-	# Initialize the event manager
-	event = EventManager()
-
-	# Initialize the statistics system
-	statistics = Statistics()
-
-	# Initialize the registration manager
-	registration = RegistrationManager()
-
-	# Initialize the resource validator
-	validator = Validator()
-
-	# Initialize the resource dispatcher
-	dispatcher = Dispatcher()
-
-	# Initialize the request manager
-	request = RequestManager()
-
-	# Initialize the security manager
-	security = SecurityManager()
-
-	# Initialize the HTTP server
-	httpServer = HttpServer()
-
-	# Initialize the notification manager
-	notification = NotificationManager()
-
-	# Initialize the group manager
-	group = GroupManager()
+	storage = Storage()						# Initiatlize the resource storage
+	event = EventManager()					# Initialize the event manager
+	statistics = Statistics()				# Initialize the statistics system
+	registration = RegistrationManager()	# Initialize the registration manager
+	validator = Validator()					# Initialize the resource validator
+	dispatcher = Dispatcher()				# Initialize the resource dispatcher
+	request = RequestManager()				# Initialize the request manager
+	security = SecurityManager()			# Initialize the security manager
+	httpServer = HttpServer()				# Initialize the HTTP server
+	notification = NotificationManager()	# Initialize the notification manager
+	group = GroupManager()					# Initialize the group manager
+	timeSeries = TimeSeriesManager()		# Initialize the timeSeries manager
 	
 	# Import a default set of resources, e.g. the CSE, first ACP or resource structure
-	# Import extra attribute policies for specializations first 
+	# Import extra attribute policies for specializations first
+	# When this fails, we cannot continue with the CSE startup
 	importer = Importer()
 	if not importer.importAttributePolicies() or not importer.importResources():
 		return
 
-	# Initialize the remote CSE manager
-	remote = RemoteCSEManager()
+	remote = RemoteCSEManager()				# Initialize the remote CSE manager
+	announce = AnnouncementManager()		# Initialize the announcement manager
+	startAppsDelayed()						# Start the App. They are actually started after the CSE finished the startup
 
-	# Initialize the announcement manager
-	announce = AnnouncementManager()
-
-	# Start AEs
-	startAppsDelayed()	# the Apps are actually started after the CSE finished the startup
+	# Send an event that the CSE startup finished
+	event.cseStartup()	# type: ignore
 
 	# Start the HTTP server
-	event.cseStartup()	# type: ignore
 	httpServer.run() # This does return (!)
 	
 	Logging.log('CSE started')
@@ -248,6 +227,7 @@ def _shutdown() -> None:
 	httpServer is not None and httpServer.shutdown()
 	announce is not None and announce.shutdown()
 	remote is not None and remote.shutdown()
+	timeSeries is not None and timeSeries.shutdown()
 	group is not None and group.shutdown()
 	notification is not None and notification.shutdown()
 	request is not None and request.shutdown()

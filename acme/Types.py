@@ -19,6 +19,8 @@ from flask import Request
 #	Resource Types
 #
 
+# TODO : Optimize tpe -> ResourceType mapping
+
 class ResourceTypes(IntEnum):
 
 	UNKNOWN		= -1
@@ -39,6 +41,8 @@ class ResourceTypes(IntEnum):
 	REQ 		= 17
 	SUB			= 23
 	FCNT	 	= 28
+	TS			= 29
+	TSI   		= 30
 	FCI 		= 58
 
 
@@ -51,6 +55,8 @@ class ResourceTypes(IntEnum):
 	FCNT_OL		=  -20004
 	FCNT_LA		=  -20005
 	PCH_PCU		=  -20006
+	TS_OL		=  -20007
+	TS_LA		=  -20008
 
 	# <mgmtObj> Specializations
 
@@ -77,6 +83,8 @@ class ResourceTypes(IntEnum):
 	NODAnnc 	= 10014
 	CSRAnnc 	= 10016
 	FCNTAnnc 	= 10028
+	TSAnnc		= 10029
+	TSIAnnc		= 10030
 	FCIAnnc 	= 10058
 
 	FWRAnnc		= -30001
@@ -140,6 +148,8 @@ ResourceTypes._announcedMappings = {							#  type: ignore
 	ResourceTypes.NOD		: ResourceTypes.NODAnnc,
 	ResourceTypes.CSR		: ResourceTypes.CSRAnnc,
 	ResourceTypes.FCNT		: ResourceTypes.FCNTAnnc,
+	ResourceTypes.TS 		: ResourceTypes.TSAnnc,
+	ResourceTypes.TSI 		: ResourceTypes.TSIAnnc,
 	ResourceTypes.FCI		: ResourceTypes.FCIAnnc,
 }
 
@@ -161,7 +171,8 @@ ResourceTypes._announcedMappingsMGD = {							#  type: ignore
 ResourceTypes._announcedSet = [									#  type: ignore
 	ResourceTypes.ACPAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc, ResourceTypes.CINAnnc,
 	ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc, 
-	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.FCIAnnc,
+	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.TSAnnc, ResourceTypes.TSIAnnc,
+	ResourceTypes.FCIAnnc,
 
 	ResourceTypes.FWRAnnc, ResourceTypes.SWRAnnc, ResourceTypes.MEMAnnc, ResourceTypes.ANIAnnc,
 	ResourceTypes.ANDIAnnc, ResourceTypes.BATAnnc, ResourceTypes.DVIAnnc, ResourceTypes.DVCAnnc, 
@@ -187,6 +198,8 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.NOD			: 'm2m:nod',
 		ResourceTypes.PCH			: 'm2m:pch',
 		ResourceTypes.REQ			: 'm2m:req',
+		ResourceTypes.TS 			: 'm2m:ts',
+		ResourceTypes.TSI 			: 'm2m:tsi',
 		ResourceTypes.SUB			: 'm2m:sub',
 
 		ResourceTypes.ACPAnnc 		: 'm2m:acpA',
@@ -199,6 +212,8 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.CSRAnnc 		: 'm2m:csrA',
 		ResourceTypes.FCNTAnnc 		: 'm2m:fcntA',
 		ResourceTypes.FCIAnnc 		: 'm2m:fciA',
+		ResourceTypes.TSAnnc 		: 'm2m:tsA',
+		ResourceTypes.TSIAnnc 		: 'm2m:tsiA',
 
 		ResourceTypes.CNT_OL		: 'm2m:ol',
 		ResourceTypes.CNT_LA		: 'm2m:la',
@@ -206,6 +221,8 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.FCNT_OL		: 'm2m:ol',
 		ResourceTypes.FCNT_LA		: 'm2m:la',
 		ResourceTypes.PCH_PCU		: 'm2m:pcu',
+		ResourceTypes.TS_OL			: 'm2m:ol',
+		ResourceTypes.TS_LA			: 'm2m:la',
 
 		# MgmtObj Specializations
 

@@ -542,7 +542,7 @@ class Dispatcher(object):
 			return Result(rsc=RC.operationNotAllowed, dbg='resource is read-only')
 
 		# Some Resources are not allowed to be updated in a request, return immediately
-		if resource.ty in [ T.CIN, T.FCI ]:		# TODO: move to constants
+		if resource.ty in [ T.CIN, T.FCI, T.TSI ]:		# TODO: move to constants
 			return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
 
 		#

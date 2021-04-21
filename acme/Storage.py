@@ -17,6 +17,7 @@ from tinydb.operations import delete
 # TODO remove mypy type checking supressions above as soon as tinydb provides typing stubs
 
 import os, json, re, time
+from copy import deepcopy
 from typing import Callable, Any, cast
 from threading import Lock
 from Configuration import Configuration
@@ -214,6 +215,16 @@ class Storage(object):
 		# 	if res.resource is not None:
 		# 		result.append(res.resource)
 		# return result
+
+
+	def searchByDict(self, dct:dict) -> list[Resource]:
+		""" Search and return all resources that match the given dictionary/document. """
+		result = []
+		for j in self.db.searchByDict(dct):
+			res = Factory.resourceFromDict(j)
+			if res.resource is not None:
+				result.append(res.resource)
+		return result
 
 
 	def searchByValueInField(self, field:str, value:str) -> list[Resource]:
@@ -524,12 +535,18 @@ class TinyDBBinding(object):
 	# 		return self.tabResources.search(where[field].test(lambda s: value in s))
 
 
-	def  searchByValueInField(self, field: str, value: Any) -> list[Document]:
+	def  searchByValueInField(self, field:str, value:Any) -> list[Document]:
 		"""Search and return all resources of a value in a field,
 		and return them in an array."""
 		with self.lockResources:
 			#return self.tabResources.search(where(field).any(value))
 			return self.tabResources.search(where(field).test(lambda s: value in s))	# type: ignore
+
+
+	def searchByDict(self, dct:dict) -> list[Resource]:
+		""" Search and return all resources that match the given dictionary/document. """
+		with self.lockResources:
+			return self.tabResources.search(Query().fragment(dct))	
 
 
 	#
