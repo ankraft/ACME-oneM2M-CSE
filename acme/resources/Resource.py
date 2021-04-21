@@ -146,7 +146,7 @@ class Resource(object):
 		# We assume that an instantiated resource is always correct
 		# Also don't validate virtual resources
 		if (self[self._isInstantiated] is None or not self[self._isInstantiated]) and not self[self._isVirtual] :
-			if not (res := CSE.validator.validateAttributes(self._originalDict, self.tpe, self.attributePolicies, isImported=self.isImported, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
+			if not (res := CSE.validator.validateAttributes(self._originalDict, self.tpe, self.ty, self.attributePolicies, isImported=self.isImported, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
 				return res
 
 		# validate the resource logic
@@ -206,7 +206,7 @@ class Resource(object):
 
 
 			# validate the attributes
-			if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.attributePolicies, create=False, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
+			if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self.attributePolicies, create=False, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
 				return res
 
 			if self.ty not in [T.FCNTAnnc, T.FCIAnnc]:
