@@ -729,8 +729,10 @@ class CSERequest:
 #	Generic Types
 #
 
-AttributePolicies=Dict[str, Tuple[BasicType, Cardinality, RequestOptionality, RequestOptionality, RequestOptionality, Announced]]
+AttributePoliciesEntry = Tuple[BasicType, Cardinality, RequestOptionality, RequestOptionality, RequestOptionality, Announced]
+AttributePolicies=Dict[str, Union[AttributePoliciesEntry, Dict[ResourceTypes, AttributePoliciesEntry]]]
 """	Represent a dictionary of attribute policies used in validation. """
+AdditionalAttributes = Dict[str, AttributePolicies]
 
 Parameters=Dict[str,str]
 Conditions=Dict[str, Any]

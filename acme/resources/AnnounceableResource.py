@@ -14,7 +14,7 @@ from typing import Union
 import Utils, CSE
 from Types import ResourceTypes as T, Result, AttributePolicies, JSON, AttributePolicies
 from Types import Announced as AN 
-from Validator import addPolicy
+from Validator import addPolicy, getPolicy
 from Logging import Logging
 
 class AnnounceableResource(Resource):
@@ -69,9 +69,10 @@ class AnnounceableResource(Resource):
 		announceableAttributes = []
 		if self.aa is not None:
 			announceableAttributes = deepcopy(self.aa)
-		for attr, v in self.attributePolicies.items():
+		for attr in self.attributePolicies.keys():
 			# Removing non announceable attributes
 			if attr in announceableAttributes:
+				v = getPolicy(attr, self.attributePolicies)
 				if v[5] == AN.NA:  # remove attributes which are not announceable
 					announceableAttributes.remove(attr)
 					continue
@@ -167,7 +168,9 @@ class AnnounceableResource(Resource):
 
 			# copy only the updated attributes
 			for attr in modifiedAttributes:
-				if attr in announcedAttributes or (attr in policies and policies[attr][5] == AN.MA):	# either announced or an MA attribute
+				v = getPolicy(attr, policies)
+				if attr in announcedAttributes or (v is not None and v[5] == AN.MA):	# either announced or an MA attribute
+				# if attr in announcedAttributes or (attr in policies and policies[attr][5] == AN.MA):	# either announced or an MA attribute
 					body[attr] = self[attr]
 
 			# copy only the updated attributes
@@ -233,8 +236,10 @@ class AnnounceableResource(Resource):
 		announceableAttributes = []
 		if self.aa is not None:
 			announceableAttributes = self.aa
-		for attr,v in policies.items():
+		for attr in policies.keys():
 			if self.hasAttribute(attr):
+				if (v := getPolicy(attr, policies)) is None:
+					continue
 				if v[5] == AN.MA:
 					mandatory.append(attr)
 				elif v[5] == AN.OA and attr in announceableAttributes:	# only add optional attributes that are also in aa

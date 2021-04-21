@@ -120,7 +120,7 @@ class Dispatcher(object):
 		#
 
 		if request.args.rcn == RCN.attributesAndChildResources:
-			self._resourceTreeDict(allowedResources, resource)	# the function call add attributes to the target resource
+			self.resourceTreeDict(allowedResources, resource)	# the function call add attributes to the target resource
 			return Result(resource=resource)
 
 		elif request.args.rcn == RCN.attributesAndChildResourceReferences:
@@ -134,7 +134,7 @@ class Dispatcher(object):
 
 		elif request.args.rcn == RCN.childResources:
 			childResources:JSON = { resource.tpe : {} } #  Root resource as a dict with no attribute
-			self._resourceTreeDict(allowedResources, childResources[resource.tpe]) # Adding just child resources
+			self.resourceTreeDict(allowedResources, childResources[resource.tpe]) # Adding just child resources
 			return Result(resource=childResources)
 
 		elif request.args.rcn == RCN.discoveryResultReferences: # URIList
@@ -184,7 +184,7 @@ class Dispatcher(object):
 	#	Discover Resources
 	#
 
-	def discoverResources(self, id:str, originator:str, handling:Conditions, fo:int=1, conditions:Conditions=None, attributes:Parameters=None, rootResource:Resource=None, permission:Permission=Permission.DISCOVERY) -> Result:
+	def discoverResources(self, id:str, originator:str, handling:Conditions={}, fo:int=1, conditions:Conditions=None, attributes:Parameters=None, rootResource:Resource=None, permission:Permission=Permission.DISCOVERY) -> Result:
 		Logging.logDebug('Discovering resources')
 
 		if rootResource is None:
@@ -655,7 +655,7 @@ class Dispatcher(object):
 		elif request.args.rcn == RCN.childResources:
 			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
 			childResources:JSON = { resource.tpe : {} }			# Root resource as a dict with no attributes
-			self._resourceTreeDict(children, childResources[resource.tpe])
+			self.resourceTreeDict(children, childResources[resource.tpe])
 			result = childResources
 		elif request.args.rcn == RCN.attributesAndChildResourceReferences:
 			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
@@ -774,7 +774,7 @@ class Dispatcher(object):
 
 
 	# Recursively walk the results and build a sub-resource tree for each resource type
-	def _resourceTreeDict(self, resources:list[Resource], targetResource:Resource|JSON) -> list[Resource]:
+	def resourceTreeDict(self, resources:list[Resource], targetResource:Resource|JSON) -> list[Resource]:
 		rri = targetResource['ri'] if 'ri' in targetResource else None
 		while True:		# go multiple times per level through the resources until the list is empty
 			result = []
@@ -796,7 +796,7 @@ class Dispatcher(object):
 				if r.ty == handledTy and r.tpe == handledTPE:		# handle only resources of the currently handled type and TPE!
 					result.append(r)					# append the found resource 
 					resources.remove(r)						# remove resource from the original list (greedy), but don't increment the idx
-					resources = self._resourceTreeDict(resources, r)	# check recursively whether this resource has children
+					resources = self.resourceTreeDict(resources, r)	# check recursively whether this resource has children
 				else:
 					idx += 1							# next resource
 
@@ -812,7 +812,7 @@ class Dispatcher(object):
 		return resources # Return the remaining list
 
 
-	def _resourceTreeReferences(self, resources:list[Resource], targetResource:Resource|JSON, drt:int) -> Resource|JSON:
+	def _resourceTreeReferences(self, resources:list[Resource], targetResource:Resource|JSON, drt:DesiredIdentifierResultType=DesiredIdentifierResultType.structured) -> Resource|JSON:
 		""" Retrieve child resource references of a resource and add them to
 			a new target resource as "children" """
 		tp = 'ch'
@@ -834,6 +834,7 @@ class Dispatcher(object):
 				ref['spty'] = r.cnd		# TODO Is this correct? Actually specializationID in TS-0004 6.3.5.29, but this seems to be wrong
 			t.append(ref)
 		targetResource[tp] = t
+		# targetResource[tp] = { "rrf" : t }
 		return targetResource
 
 
@@ -842,7 +843,7 @@ class Dispatcher(object):
 		if len(resources) == 0:
 			return
 		result:JSON = {}
-		self._resourceTreeDict(resources, result)	# rootResource is filled with the result
+		self.resourceTreeDict(resources, result)	# rootResource is filled with the result
 		for k,v in result.items():			# copy child resources to result resource
 			targetResource[k] = v
 

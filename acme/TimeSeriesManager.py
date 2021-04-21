@@ -8,6 +8,7 @@
 #
 from __future__ import annotations
 from Logging import Logging
+from resources.Resource import Resource
 
 
 class TimeSeriesManager(object):
@@ -22,6 +23,6 @@ class TimeSeriesManager(object):
 
 
 	
-	def stopMonitoring(self, timeSeries:Resource):
+	def stopMonitoring(self, timeSeries:Resource) -> None:
 		pass
 		# TODO 

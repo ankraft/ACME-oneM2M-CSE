@@ -11,7 +11,7 @@ from copy import deepcopy
 from typing import Any, List, Dict
 from Logging import Logging
 from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, ResponseCode as RC
-from Types import JSON, AttributePolicies
+from Types import JSON, AttributePolicies, AttributePoliciesEntry, AdditionalAttributes
 from Constants import Constants as C
 from Types import Result, AttributePolicies, ResourceTypes as T
 from Configuration import Configuration
@@ -280,8 +280,17 @@ def addPolicy(policies:AttributePolicies, newPolicies:AttributePolicies) -> Attr
 	policies.update( newPolicies )
 	return policies
 
+def getPolicy(attr:str, policies:AttributePolicies=None) -> AttributePoliciesEntry:
+	if policies is None:
+		policies = attributePolicies
+	if (p := policies.get(attr)) is None:	# Use get() to receive None...
+		return None
+	if isinstance(p, tuple):
+		return p
+	if isinstance(p, dict):	# may happen, then just take the first definition
+		return p[list(p)[0]]
+	return None
 
-AdditionalAttributes = Dict[str, AttributePolicies]
 
 class Validator(object):
 
@@ -425,9 +434,9 @@ class Validator(object):
 
 	def validateRequestArgument(self, argument:str, value:Any) -> Result:
 		""" Validate a request argument. """
-		if (policy := attributePolicies.get(argument)) is not None:
+		if (policy := getPolicy(argument)) is not None:
 			return self._validateType(policy[0], value, True)
-		return Result(status=False, dbg='attribute not defined')
+		return Result(status=False, dbg=f'attribute/argument {argument} not defined')
 
 
 
@@ -484,7 +493,7 @@ class Validator(object):
 		return attributePolicies
 
 
-	def _validateType(self, tpe:int, value:Any, convert:bool = False) -> Result:
+	def _validateType(self, tpe:BT, value:Any, convert:bool = False) -> Result:
 		""" Check a value for its type. If the convert parameter is True then it
 			is assumed that the value could be a stringified value and the method
 			will attempt to convert the value to its target type; otherwise this

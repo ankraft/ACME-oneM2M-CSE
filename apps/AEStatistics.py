@@ -15,7 +15,7 @@ import Statistics, CSE, Utils
 # The following line incorrectly throws an error with mypy
 from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN
 import threading, time
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, AdditionalAttributes
 
 
 
@@ -36,7 +36,7 @@ class AEStatistics(AEBase):
 		self.fcntType = Configuration.get('app.statistics.fcntType')
 
 		# Attribute definitions for the statistics specialization
-		statisticAttributes =  {
+		statisticAttributes : AdditionalAttributes =  {
 			self.fcntType : {
 				'rmRes'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),
 				'crRes'	: ( BT.nonNegInteger,	CAR.car01, RO.O, RO.O, RO.O, AN.OA ),

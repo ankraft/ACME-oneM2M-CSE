@@ -185,6 +185,7 @@ def run() -> None:
 		'C'		: _keyClearScreen,
 		'D'		: _keyDeleteResource,
 		'i'		: _keyInspectResource,
+		'I'		: _keyInspectResourceChildren,
 		'l'     : _keyToggleLogging,
 		'Q'		: _keyShutdownCSE,		# See handler below
 		'r'		: _keyCSERegistrations,
@@ -314,6 +315,7 @@ def _keyHelp(key:str) -> None:
 - C     - Clear the console screen
 - D     - Delete resource
 - i     - Inspect resource
+- I     - Inspect resource and child resources
 - l     - Toggle logging on/off
 - r     - Show CSE registrations
 - s     - Show statistics
@@ -446,7 +448,7 @@ def _keyDeleteResource(key:str) -> None:
 
 
 def _keyInspectResource(key:str) -> None:
-	"""	Inspect a resource.
+	"""	Show a resource.
 	"""
 	Logging.console('**Inspect Resource**', extranl=True)
 	loggingOld = Logging.loggingEnabled
@@ -459,7 +461,26 @@ def _keyInspectResource(key:str) -> None:
 			Logging.console(res.dbg, isError=True)
 		else:
 			Logging.console(res.resource.asDict())
+	Logging.loggingEnabled = loggingOld
 
+def _keyInspectResourceChildren(key:str) -> None:
+	"""	Show a resource and its children.
+	"""
+	Logging.console('**Inspect Resource and Children**', extranl=True)
+	loggingOld = Logging.loggingEnabled
+	Logging.loggingEnabled = False
+	
+	if (ri := readline('ri=')) is None:
+		Logging.console()
+	elif len(ri) > 0:
+		if (res := dispatcher.retrieveResource(ri)).resource is None:
+			Logging.console(res.dbg, isError=True)
+		else: 
+			if (resdis := dispatcher.discoverResources(ri, originator=cseOriginator)).lst is None:
+				Logging.console(resdis.dbg, isError=True)
+			else:
+				dispatcher.resourceTreeDict(resdis.lst, res.resource)	# the function call add attributes to the target resource
+				Logging.console(res.resource.asDict())
 	Logging.loggingEnabled = loggingOld
 
 

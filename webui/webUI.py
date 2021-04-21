@@ -32,7 +32,7 @@ class WebUI(object):
 		self.webuiDirectory 	= f'{webuiDirectory}/web'
 		self.redirectURL 		= redirectURL
 		self.version 			= version
-		self.oauthToken 		= None
+		self.oauthToken:Token	= None
 
 		# Append / if necessary
 		if self.redirectURL is not None and self.redirectURL[-1] != '/':
@@ -95,10 +95,10 @@ class WebUI(object):
 			console.log(f'Forwarding {request.method.upper()} request to {url}')
 		
 		# Remove some headers.
-		headers = { key: value for (key, value) in request.headers if key not in [ 'Host', 'If-None-Match' ] }
+		requestHeaders = { key: value for (key, value) in request.headers if key not in [ 'Host', 'If-None-Match' ] }
 		if doLogging:
 			console.log(f'[dark_orange]Request')
-			console.log(headers)
+			console.log(requestHeaders)
 		
 		# Retrieve / refresh an oauth token (if configured)
 		if doOauth:
@@ -107,12 +107,12 @@ class WebUI(object):
 					console.log(f'Error retrieving oauth token')
 				return Response('', 500)
 			self.oauthToken = token
-			headers['Authorization'] = self.oauthToken.token
+			requestHeaders['Authorization'] = self.oauthToken.token
 
 		resp = requests.request(
 			method=request.method,
 			url=url,
-			headers=headers,
+			headers=requestHeaders,
 			data=request.get_data(),
 			cookies=request.cookies,
 			allow_redirects=False)
@@ -126,8 +126,8 @@ class WebUI(object):
 			# console.log(resp.content)
 
 		excluded_headers 	= ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
-		headers 			= [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
-		response 			= Response(resp.content, resp.status_code, headers)
+		responseHeaders 	= [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
+		response 			= Response(resp.content, resp.status_code, responseHeaders)
 
 		return response
 
@@ -197,7 +197,7 @@ _expirationLeeway	= 5.0		# 5 seconds leeway for token expiration
 
 
 
-def getOAuthToken(token=None, kind='keycloak'):
+def getOAuthToken(token:Token=None, kind:str='keycloak') -> Token|None:
 	"""	Retrieve and return a oauth2 token. If there is a provided token that is still valid, then that token
 		is returned.
 

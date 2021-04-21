@@ -453,26 +453,26 @@ class TinyDBBinding(object):
 		#Logging.logDebug(resource)
 		with self.lockResources:
 			# Update existing or insert new when overwriting
-			self.tabResources.upsert(resource.dict, Query().ri == resource.ri)		# type: ignore
+			self.tabResources.upsert(resource.dict, Query().ri == resource.ri)		# type: ignore [no-untyped-call]
 	
 
 	def updateResource(self, resource: Resource) -> Resource:
 		#Logging.logDebug(resource)
 		with self.lockResources:
 			ri = resource.ri
-			self.tabResources.update(resource.dict, Query().ri == ri)	# type: ignore
+			self.tabResources.update(resource.dict, Query().ri == ri)	# type: ignore [no-untyped-call]
 			# remove nullified fields from db and resource
 			# TODO remove Null values recursively
 			for k in list(resource.dict):
 				if resource.dict[k] is None:
-					self.tabResources.update(delete(k), Query().ri == ri)	# type: ignore
+					self.tabResources.update(delete(k), Query().ri == ri)	# type: ignore [no-untyped-call]
 					del resource.dict[k]
 			return resource
 
 
 	def deleteResource(self, resource: Resource) -> None:
 		with self.lockResources:
-			self.tabResources.remove(Query().ri == resource.ri)		# type: ignore
+			self.tabResources.remove(Query().ri == resource.ri)		# type: ignore [no-untyped-call]
 	
 
 	def searchResources(self, ri:str=None, csi:str=None, srn:str=None, pi:str=None, ty:int=None, aei:str=None) -> list[Document]:
@@ -485,17 +485,17 @@ class TinyDBBinding(object):
 
 		with self.lockResources:
 			if ri is not None:
-				return self.tabResources.search(Query().ri == ri)	# type: ignore
+				return self.tabResources.search(Query().ri == ri)	# type: ignore [no-untyped-call]
 			elif csi is not None:
-				return self.tabResources.search(Query().csi == csi)	# type: ignore
+				return self.tabResources.search(Query().csi == csi)	# type: ignore [no-untyped-call]
 			elif pi is not None and ty is not None:
 				return self.tabResources.search((Query().pi == pi) & (Query().ty == ty))	# type: ignore
 			elif pi is not None:
-				return self.tabResources.search(Query().pi == pi)	# type: ignore
+				return self.tabResources.search(Query().pi == pi)	# type: ignore [no-untyped-call]
 			elif ty is not None:
-				return self.tabResources.search(Query().ty == ty)	# type: ignore
+				return self.tabResources.search(Query().ty == ty)	# type: ignore [no-untyped-call]
 			elif aei is not None:
-				return self.tabResources.search(Query().aei == aei)	# type: ignore
+				return self.tabResources.search(Query().aei == aei)	# type: ignore [no-untyped-call]
 			return []
 
 
@@ -512,11 +512,11 @@ class TinyDBBinding(object):
 				return self.hasResource(ri=identifiers[0]['ri'])
 		with self.lockResources:
 			if ri is not None:
-				return self.tabResources.contains(Query().ri == ri)		# type: ignore
+				return self.tabResources.contains(Query().ri == ri)		# type: ignore [no-untyped-call]
 			elif csi is not None:
-				return self.tabResources.contains(Query().csi == csi)	# type: ignore
+				return self.tabResources.contains(Query().csi == csi)	# type: ignore [no-untyped-call]
 			elif ty is not None:
-				return self.tabResources.contains(Query().ty == ty)		# type: ignore
+				return self.tabResources.contains(Query().ty == ty)		# type: ignore [no-untyped-call]
 			else:
 				return False
 
@@ -540,13 +540,13 @@ class TinyDBBinding(object):
 		and return them in an array."""
 		with self.lockResources:
 			#return self.tabResources.search(where(field).any(value))
-			return self.tabResources.search(where(field).test(lambda s: value in s))	# type: ignore
+			return self.tabResources.search(where(field).test(lambda s: value in s))	# type: ignore [arg-type]
 
 
-	def searchByDict(self, dct:dict) -> list[Resource]:
+	def searchByDict(self, dct:dict) -> list[Document]:
 		""" Search and return all resources that match the given dictionary/document. """
 		with self.lockResources:
-			return self.tabResources.search(Query().fragment(dct))	
+			return self.tabResources.search(Query().fragment(dct))	# type: ignore [no-untyped-call]
 
 
 	#
@@ -559,7 +559,7 @@ class TinyDBBinding(object):
 			self.tabIdentifiers.upsert(
 				# ri, rn, srn 
 				{'ri' : ri, 'rn' : resource.rn, 'srn' : srn, 'ty' : resource.ty}, 
-				Query().ri == ri)	# type: ignore
+				Query().ri == ri)	# type: ignore [no-untyped-call]
 
 
 	def deleteIdentifier(self, resource: Resource) -> None:
@@ -570,9 +570,9 @@ class TinyDBBinding(object):
 	def searchIdentifiers(self, ri: str = None, srn: str = None) -> list[Document]:
 		with self.lockIdentifiers:
 			if srn is not None:
-				return self.tabIdentifiers.search(Query().srn == srn)		# type: ignore
+				return self.tabIdentifiers.search(Query().srn == srn)		# type: ignore [no-untyped-call]
 			elif ri is not None:
-				return self.tabIdentifiers.search(Query().ri == ri) 		# type: ignore
+				return self.tabIdentifiers.search(Query().ri == ri) 		# type: ignore [no-untyped-call]
 			return []
 
 
@@ -584,9 +584,9 @@ class TinyDBBinding(object):
 	def searchSubscriptions(self, ri : str = None, pi : str = None) -> list[Document]:
 		with self.lockSubscriptions:
 			if ri is not None:
-				return self.tabSubscriptions.search(Query().ri == ri)		# type: ignore
+				return self.tabSubscriptions.search(Query().ri == ri)		# type: ignore [no-untyped-call]
 			if pi is not None:
-				return self.tabSubscriptions.search(Query().pi == pi)		# type: ignore
+				return self.tabSubscriptions.search(Query().pi == pi)		# type: ignore [no-untyped-call]
 			return None
 
 
@@ -611,7 +611,7 @@ class TinyDBBinding(object):
 
 	def removeSubscription(self, subscription:Resource) -> bool:
 		with self.lockSubscriptions:
-			return len(self.tabSubscriptions.remove(Query().ri == subscription.ri)) > 0		# type: ignore
+			return len(self.tabSubscriptions.remove(Query().ri == subscription.ri)) > 0		# type: ignore [no-untyped-call]
 
 
 	#
@@ -671,7 +671,7 @@ class TinyDBBinding(object):
 
 	def searchAppData(self, id:str) -> JSON:
 		with self.lockAppData:
-			data = self.tabAppData.get(Query().id == id)	# type: ignore
+			data = self.tabAppData.get(Query().id == id)	# type: ignore [no-untyped-call]
 			return data if data is not None and len(data) > 0 else None
 
 
@@ -680,7 +680,7 @@ class TinyDBBinding(object):
 			if 'id' not in data:
 				return None
 			if len(self.tabAppData) > 0:
-				return self.tabAppData.update(data, Query().id == data['id']) is not None 	# type: ignore
+				return self.tabAppData.update(data, Query().id == data['id']) is not None 	# type: ignore [no-untyped-call]
 			else:
 				return self.tabAppData.insert(data) is not None
 
@@ -689,4 +689,4 @@ class TinyDBBinding(object):
 		with self.lockAppData:
 			if 'id' not in data:
 				return False	
-			return len(self.tabAppData.remove(Query().id == data['id'])) > 0 # type: ignore
+			return len(self.tabAppData.remove(Query().id == data['id'])) > 0 # type: ignore [no-untyped-call]
