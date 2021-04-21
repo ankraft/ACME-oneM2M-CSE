@@ -116,6 +116,9 @@ class ResourceTypes(IntEnum):
 
 	def __str__(self) -> str:
 		return str(self.value)
+	
+	def __repr__(self) -> str:
+		return self.__str__()
 
 
 	@classmethod
@@ -253,8 +256,6 @@ ResourceTypes._names 	= {										# type: ignore
 	}
 
 	
-
-
 
 
 class BasicType(IntEnum):
@@ -440,6 +441,12 @@ class CSEType(IntEnum):
 	IN					=  1
 	MN					=  2
 	ASN					=  3
+
+	def __str__(self) -> str:
+		return str(self.value)
+	
+	def __repr__(self) -> str:
+		return self.__str__()
 
 
 ##############################################################################
