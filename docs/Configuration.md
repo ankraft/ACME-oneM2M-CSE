@@ -35,10 +35,11 @@ The following macros are supported in addition to those defined in the sections 
 [\[cse.registrar\] - Settings for Remote CSE Access](#registrar)  
 [\[cse.announcements\] - Settings for Resource Announcements](#announcements)  
 [\[cse.statistics\] - Statistic Settings](#statistics)  
-[\[cse.resource.acp\] - Resource defaults: ACP](#resource_acp)  
-[\[cse.resource.cnt\] - Resource Defaults: CNT](#resource_cnt)  
-[\[cse.resource.req\] - Resource Defaults: REQ](#resource_req)  
-[\[cse.resource.sub\] - Resource Defaults: SUB](#resource_sub)  
+[\[cse.resource.acp\] - Resource defaults: Access Control Policies](#resource_acp)  
+[\[cse.resource.cnt\] - Resource Defaults: Container](#resource_cnt)  
+[\[cse.resource.req\] - Resource Defaults: Request](#resource_req)  
+[\[cse.resource.sub\] - Resource Defaults: Subscription](#resource_sub)  
+[\[cse.resource.ts\] - Resource Defaults: TimeSeries](#resource_ts)  
 [\[cse.webui\] - Web UI Settings](#webui)  
 
 
@@ -207,6 +208,16 @@ The following macros are supported in addition to those defined in the sections 
 | Keyword             | Description                                                                           | Macro Name  |
 |:--------------------|:--------------------------------------------------------------------------------------|:------------|
 | batchNotifyDuration | Default for the batchNotify/duration in seconds. Must be >0.<br />Default: 60 seconds | cse.sub.dur |
+
+
+<a name="resource_ts"></a>
+### [cse.resource.ts] - Resource Defaults: TimeSeries
+
+| Keyword      | Description                                            | Macro Name           |
+|:-------------|:-------------------------------------------------------|:---------------------|
+| enableLimits | Enable/disable the default limits.<br/> Default: False | cse.ts.enableLimits  |
+| mni          | Default for maxNrOfInstances.<br/> Default: 10         | cse.ts.mni           |
+| mbs          | Default for maxByteSize.<br/>Default: 10.000 bytes     | cse.ts.mbs           |
 
 
 <a name="webui"></a>

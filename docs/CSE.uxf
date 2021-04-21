@@ -5,8 +5,8 @@
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>740</x>
-      <y>490</y>
+      <x>650</x>
+      <y>400</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -24,8 +24,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>800</x>
-      <y>380</y>
+      <x>710</x>
+      <y>290</y>
       <w>30</w>
       <h>130</h>
     </coordinates>
@@ -36,8 +36,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>750</x>
-      <y>560</y>
+      <x>660</x>
+      <y>470</y>
       <w>70</w>
       <h>70</h>
     </coordinates>
@@ -50,8 +50,8 @@ requests</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>840</x>
-      <y>650</y>
+      <x>750</x>
+      <y>560</y>
       <w>90</w>
       <h>70</h>
     </coordinates>
@@ -65,8 +65,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>740</x>
-      <y>700</y>
+      <x>650</x>
+      <y>610</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -79,8 +79,8 @@ transparency=0</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>740</x>
-      <y>850</y>
+      <x>650</x>
+      <y>760</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -97,8 +97,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>810</x>
-      <y>810</y>
+      <x>720</x>
+      <y>720</y>
       <w>50</w>
       <h>60</h>
     </coordinates>
@@ -111,8 +111,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>800</x>
-      <y>770</y>
+      <x>710</x>
+      <y>680</y>
       <w>50</w>
       <h>60</h>
     </coordinates>
@@ -122,8 +122,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>940</x>
-      <y>850</y>
+      <x>850</x>
+      <y>760</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -137,8 +137,8 @@ transparency=0</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>540</x>
-      <y>850</y>
+      <x>450</x>
+      <y>760</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -151,8 +151,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>600</x>
-      <y>800</y>
+      <x>510</x>
+      <y>710</y>
       <w>80</w>
       <h>70</h>
     </coordinates>
@@ -166,8 +166,8 @@ fontsize=8
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>340</x>
-      <y>850</y>
+      <x>250</x>
+      <y>760</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -180,8 +180,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>410</x>
-      <y>810</y>
+      <x>320</x>
+      <y>720</y>
       <w>60</w>
       <h>60</h>
     </coordinates>
@@ -193,8 +193,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>710</x>
-      <y>530</y>
+      <x>620</x>
+      <y>440</y>
       <w>60</w>
       <h>30</h>
     </coordinates>
@@ -211,8 +211,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>860</x>
-      <y>910</y>
+      <x>770</x>
+      <y>820</y>
       <w>60</w>
       <h>30</h>
     </coordinates>
@@ -228,8 +228,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>140</x>
-      <y>850</y>
+      <x>50</x>
+      <y>760</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -242,8 +242,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>210</x>
-      <y>800</y>
+      <x>120</x>
+      <y>710</y>
       <w>80</w>
       <h>70</h>
     </coordinates>
@@ -256,8 +256,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>750</x>
-      <y>1000</y>
+      <x>660</x>
+      <y>910</y>
       <w>140</w>
       <h>30</h>
     </coordinates>
@@ -272,8 +272,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>750</x>
-      <y>1040</y>
+      <x>660</x>
+      <y>950</y>
       <w>140</w>
       <h>30</h>
     </coordinates>
@@ -288,8 +288,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>740</x>
-      <y>970</y>
+      <x>650</x>
+      <y>880</y>
       <w>160</w>
       <h>230</h>
     </coordinates>
@@ -300,8 +300,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>810</x>
-      <y>920</y>
+      <x>720</x>
+      <y>830</y>
       <w>30</w>
       <h>70</h>
     </coordinates>
@@ -312,8 +312,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>540</x>
-      <y>980</y>
+      <x>450</x>
+      <y>890</y>
       <w>160</w>
       <h>30</h>
     </coordinates>
@@ -328,8 +328,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>610</x>
-      <y>920</y>
+      <x>520</x>
+      <y>830</y>
       <w>30</w>
       <h>80</h>
     </coordinates>
@@ -340,8 +340,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>150</x>
-      <y>980</y>
+      <x>60</x>
+      <y>890</y>
       <w>140</w>
       <h>30</h>
     </coordinates>
@@ -356,8 +356,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>220</x>
-      <y>950</y>
+      <x>130</x>
+      <y>860</y>
       <w>20</w>
       <h>20</h>
     </coordinates>
@@ -369,8 +369,8 @@ fontsize=12
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>210</x>
-      <y>920</y>
+      <x>120</x>
+      <y>830</y>
       <w>30</w>
       <h>70</h>
     </coordinates>
@@ -381,8 +381,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>810</x>
-      <y>420</y>
+      <x>720</x>
+      <y>320</y>
       <w>50</w>
       <h>30</h>
     </coordinates>
@@ -396,8 +396,8 @@ via http</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>340</x>
-      <y>980</y>
+      <x>250</x>
+      <y>890</y>
       <w>160</w>
       <h>30</h>
     </coordinates>
@@ -412,8 +412,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>410</x>
-      <y>920</y>
+      <x>320</x>
+      <y>830</y>
       <w>30</w>
       <h>80</h>
     </coordinates>
@@ -424,8 +424,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1020</x>
-      <y>800</y>
+      <x>930</x>
+      <y>710</y>
       <w>100</w>
       <h>70</h>
     </coordinates>
@@ -438,9 +438,9 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLPackage</id>
     <coordinates>
-      <x>110</x>
-      <y>440</y>
-      <w>1620</w>
+      <x>20</x>
+      <y>350</y>
+      <w>1820</w>
       <h>790</h>
     </coordinates>
     <panel_attributes>ACME CSE
@@ -453,8 +453,8 @@ transparency=0</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>150</x>
-      <y>1020</y>
+      <x>60</x>
+      <y>930</y>
       <w>140</w>
       <h>30</h>
     </coordinates>
@@ -469,8 +469,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>140</x>
-      <y>970</y>
+      <x>50</x>
+      <y>880</y>
       <w>160</w>
       <h>90</h>
     </coordinates>
@@ -480,8 +480,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>540</x>
-      <y>700</y>
+      <x>450</x>
+      <y>610</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -494,8 +494,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>580</x>
-      <y>640</y>
+      <x>490</x>
+      <y>550</y>
       <w>80</w>
       <h>80</h>
     </coordinates>
@@ -508,8 +508,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1010</x>
-      <y>650</y>
+      <x>920</x>
+      <y>560</y>
       <w>70</w>
       <h>70</h>
     </coordinates>
@@ -525,8 +525,8 @@ fontsize=8
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>420</x>
-      <y>960</y>
+      <x>330</x>
+      <y>870</y>
       <w>20</w>
       <h>20</h>
     </coordinates>
@@ -538,8 +538,8 @@ fontsize=12
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>620</x>
-      <y>960</y>
+      <x>530</x>
+      <y>870</y>
       <w>20</w>
       <h>20</h>
     </coordinates>
@@ -551,8 +551,8 @@ fontsize=12
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>820</x>
-      <y>950</y>
+      <x>730</x>
+      <y>860</y>
       <w>20</w>
       <h>20</h>
     </coordinates>
@@ -564,8 +564,8 @@ fontsize=12
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>890</x>
-      <y>860</y>
+      <x>800</x>
+      <y>770</y>
       <w>70</w>
       <h>40</h>
     </coordinates>
@@ -578,8 +578,8 @@ fontsize=8
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>920</x>
-      <y>880</y>
+      <x>830</x>
+      <y>790</y>
       <w>20</w>
       <h>20</h>
     </coordinates>
@@ -591,8 +591,8 @@ fontsize=12
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>860</x>
-      <y>960</y>
+      <x>770</x>
+      <y>870</y>
       <w>80</w>
       <h>30</h>
     </coordinates>
@@ -609,8 +609,8 @@ layer=1</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>650</x>
-      <y>650</y>
+      <x>560</x>
+      <y>560</y>
       <w>80</w>
       <h>70</h>
     </coordinates>
@@ -623,8 +623,8 @@ resources</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>340</x>
-      <y>700</y>
+      <x>250</x>
+      <y>610</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -641,8 +641,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>850</x>
-      <y>400</y>
+      <x>770</x>
+      <y>310</y>
       <w>50</w>
       <h>110</h>
     </coordinates>
@@ -652,8 +652,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>870</x>
-      <y>420</y>
+      <x>790</x>
+      <y>330</y>
       <w>60</w>
       <h>30</h>
     </coordinates>
@@ -667,8 +667,8 @@ via http</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>420</x>
-      <y>640</y>
+      <x>330</x>
+      <y>550</y>
       <w>60</w>
       <h>80</h>
     </coordinates>
@@ -681,8 +681,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>470</x>
-      <y>650</y>
+      <x>380</x>
+      <y>560</y>
       <w>80</w>
       <h>70</h>
     </coordinates>
@@ -695,8 +695,8 @@ resources</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1140</x>
-      <y>700</y>
+      <x>1050</x>
+      <y>610</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -713,8 +713,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>750</x>
-      <y>1080</y>
+      <x>660</x>
+      <y>990</y>
       <w>140</w>
       <h>30</h>
     </coordinates>
@@ -729,8 +729,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>550</x>
-      <y>990</y>
+      <x>460</x>
+      <y>900</y>
       <w>160</w>
       <h>30</h>
     </coordinates>
@@ -742,8 +742,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>980</x>
-      <y>800</y>
+      <x>890</x>
+      <y>710</y>
       <w>60</w>
       <h>70</h>
     </coordinates>
@@ -757,8 +757,8 @@ set/get
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>950</x>
-      <y>800</y>
+      <x>860</x>
+      <y>710</y>
       <w>50</w>
       <h>30</h>
     </coordinates>
@@ -769,8 +769,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>730</x>
-      <y>380</y>
+      <x>640</x>
+      <y>290</y>
       <w>50</w>
       <h>130</h>
     </coordinates>
@@ -780,8 +780,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>750</x>
-      <y>410</y>
+      <x>660</x>
+      <y>320</y>
       <w>40</w>
       <h>30</h>
     </coordinates>
@@ -795,8 +795,8 @@ via http</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>860</x>
-      <y>560</y>
+      <x>770</x>
+      <y>470</y>
       <w>60</w>
       <h>70</h>
     </coordinates>
@@ -809,8 +809,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>350</x>
-      <y>650</y>
+      <x>260</x>
+      <y>560</y>
       <w>90</w>
       <h>70</h>
     </coordinates>
@@ -822,8 +822,8 @@ send NOTIFY</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>970</x>
-      <y>270</y>
+      <x>880</x>
+      <y>180</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -836,8 +836,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>880</x>
-      <y>290</y>
+      <x>790</x>
+      <y>200</y>
       <w>110</w>
       <h>50</h>
     </coordinates>
@@ -847,8 +847,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>890</x>
-      <y>340</y>
+      <x>800</x>
+      <y>250</y>
       <w>200</w>
       <h>210</h>
     </coordinates>
@@ -861,8 +861,8 @@ fontsize=8
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>890</x>
-      <y>270</y>
+      <x>800</x>
+      <y>180</y>
       <w>50</w>
       <h>30</h>
     </coordinates>
@@ -876,8 +876,8 @@ via http</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1540</x>
-      <y>700</y>
+      <x>1450</x>
+      <y>610</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -895,8 +895,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1140</x>
-      <y>490</y>
+      <x>1450</x>
+      <y>400</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -914,8 +914,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1160</x>
-      <y>560</y>
+      <x>1470</x>
+      <y>470</y>
       <w>70</w>
       <h>70</h>
     </coordinates>
@@ -927,8 +927,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1340</x>
-      <y>700</y>
+      <x>1250</x>
+      <y>610</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -942,8 +942,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1440</x>
-      <y>640</y>
+      <x>1350</x>
+      <y>550</y>
       <w>70</w>
       <h>80</h>
     </coordinates>
@@ -957,8 +957,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1360</x>
-      <y>650</y>
+      <x>1270</x>
+      <y>560</y>
       <w>80</w>
       <h>70</h>
     </coordinates>
@@ -971,8 +971,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1340</x>
-      <y>850</y>
+      <x>1250</x>
+      <y>760</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -985,8 +985,8 @@ transparency=0</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>750</x>
-      <y>1120</y>
+      <x>660</x>
+      <y>1030</y>
       <w>140</w>
       <h>30</h>
     </coordinates>
@@ -1001,8 +1001,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1400</x>
-      <y>790</y>
+      <x>1310</x>
+      <y>700</y>
       <w>60</w>
       <h>80</h>
     </coordinates>
@@ -1015,8 +1015,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1350</x>
-      <y>800</y>
+      <x>1260</x>
+      <y>710</y>
       <w>50</w>
       <h>70</h>
     </coordinates>
@@ -1029,8 +1029,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1140</x>
-      <y>850</y>
+      <x>1050</x>
+      <y>760</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -1047,8 +1047,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1220</x>
-      <y>800</y>
+      <x>1130</x>
+      <y>710</y>
       <w>50</w>
       <h>70</h>
     </coordinates>
@@ -1061,8 +1061,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1150</x>
-      <y>800</y>
+      <x>1060</x>
+      <y>710</y>
       <w>80</w>
       <h>70</h>
     </coordinates>
@@ -1076,8 +1076,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1250</x>
-      <y>800</y>
+      <x>1160</x>
+      <y>710</y>
       <w>60</w>
       <h>70</h>
     </coordinates>
@@ -1090,8 +1090,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1450</x>
-      <y>800</y>
+      <x>1360</x>
+      <y>710</y>
       <w>60</w>
       <h>70</h>
     </coordinates>
@@ -1103,8 +1103,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>520</x>
-      <y>910</y>
+      <x>430</x>
+      <y>820</y>
       <w>80</w>
       <h>50</h>
     </coordinates>
@@ -1127,8 +1127,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1200</x>
-      <y>380</y>
+      <x>1510</x>
+      <y>290</y>
       <w>50</w>
       <h>130</h>
     </coordinates>
@@ -1138,8 +1138,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1220</x>
-      <y>420</y>
+      <x>1530</x>
+      <y>330</y>
       <w>50</w>
       <h>30</h>
     </coordinates>
@@ -1153,8 +1153,8 @@ via http</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1240</x>
-      <y>560</y>
+      <x>1550</x>
+      <y>470</y>
       <w>70</w>
       <h>70</h>
     </coordinates>
@@ -1168,8 +1168,8 @@ fg=gray</panel_attributes>
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>1270</x>
-      <y>530</y>
+      <x>1580</x>
+      <y>440</y>
       <w>60</w>
       <h>30</h>
     </coordinates>
@@ -1185,8 +1185,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>140</x>
-      <y>700</y>
+      <x>50</x>
+      <y>610</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -1203,8 +1203,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>170</x>
-      <y>650</y>
+      <x>80</x>
+      <y>560</y>
       <w>60</w>
       <h>70</h>
     </coordinates>
@@ -1216,8 +1216,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>230</x>
-      <y>650</y>
+      <x>140</x>
+      <y>560</y>
       <w>80</w>
       <h>70</h>
     </coordinates>
@@ -1230,8 +1230,8 @@ resources</panel_attributes>
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>520</x>
-      <y>760</y>
+      <x>430</x>
+      <y>670</y>
       <w>90</w>
       <h>40</h>
     </coordinates>
@@ -1249,8 +1249,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>1540</x>
-      <y>850</y>
+      <x>1450</x>
+      <y>760</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -1264,8 +1264,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1610</x>
-      <y>800</y>
+      <x>1520</x>
+      <y>710</y>
       <w>70</w>
       <h>70</h>
     </coordinates>
@@ -1278,8 +1278,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>940</x>
-      <y>700</y>
+      <x>850</x>
+      <y>610</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -1293,8 +1293,8 @@ transparency=0</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>940</x>
-      <y>640</y>
+      <x>850</x>
+      <y>550</y>
       <w>90</w>
       <h>80</h>
     </coordinates>
@@ -1309,8 +1309,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1550</x>
-      <y>640</y>
+      <x>1460</x>
+      <y>550</y>
       <w>90</w>
       <h>80</h>
     </coordinates>
@@ -1324,8 +1324,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1170</x>
-      <y>640</y>
+      <x>1080</x>
+      <y>550</y>
       <w>90</w>
       <h>80</h>
     </coordinates>
@@ -1339,8 +1339,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1620</x>
-      <y>630</y>
+      <x>1530</x>
+      <y>540</y>
       <w>100</w>
       <h>90</h>
     </coordinates>
@@ -1354,8 +1354,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>740</x>
-      <y>650</y>
+      <x>650</x>
+      <y>560</y>
       <w>80</w>
       <h>70</h>
     </coordinates>
@@ -1369,8 +1369,8 @@ fontsize=8
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>140</x>
-      <y>760</y>
+      <x>50</x>
+      <y>670</y>
       <w>160</w>
       <h>20</h>
     </coordinates>
@@ -1386,8 +1386,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>UMLPackage</id>
     <coordinates>
-      <x>940</x>
-      <y>110</y>
+      <x>850</x>
+      <y>20</y>
       <w>220</w>
       <h>270</h>
     </coordinates>
@@ -1399,8 +1399,8 @@ layer=-2</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>970</x>
-      <y>160</y>
+      <x>880</x>
+      <y>70</y>
       <w>160</w>
       <h>80</h>
     </coordinates>
@@ -1418,8 +1418,8 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1000</x>
-      <y>230</y>
+      <x>910</x>
+      <y>140</y>
       <w>50</w>
       <h>60</h>
     </coordinates>
@@ -1431,8 +1431,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>880</x>
-      <y>180</y>
+      <x>790</x>
+      <y>90</y>
       <w>110</w>
       <h>50</h>
     </coordinates>
@@ -1442,8 +1442,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>890</x>
-      <y>160</y>
+      <x>800</x>
+      <y>70</y>
       <w>50</w>
       <h>30</h>
     </coordinates>
@@ -1457,8 +1457,8 @@ Mca</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1070</x>
-      <y>230</y>
+      <x>980</x>
+      <y>140</y>
       <w>80</w>
       <h>60</h>
     </coordinates>
@@ -1470,8 +1470,8 @@ fontsize=8</panel_attributes>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
-      <x>750</x>
-      <y>1160</y>
+      <x>660</x>
+      <y>1070</y>
       <w>140</w>
       <h>30</h>
     </coordinates>
@@ -1486,8 +1486,8 @@ fontsize=10</panel_attributes>
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1060</x>
-      <y>640</y>
+      <x>970</x>
+      <y>550</y>
       <w>80</w>
       <h>80</h>
     </coordinates>
@@ -1501,8 +1501,8 @@ fontsize=8
   <element>
     <id>Relation</id>
     <coordinates>
-      <x>1240</x>
-      <y>650</y>
+      <x>1150</x>
+      <y>560</y>
       <w>80</w>
       <h>70</h>
     </coordinates>
@@ -1515,9 +1515,9 @@ resources</panel_attributes>
   <element>
     <id>UMLClass</id>
     <coordinates>
-      <x>90</x>
-      <y>90</y>
-      <w>1660</w>
+      <x>0</x>
+      <y>0</y>
+      <w>1860</w>
       <h>1160</h>
     </coordinates>
     <panel_attributes>lw=0
@@ -1529,8 +1529,8 @@ layer=-2</panel_attributes>
   <element>
     <id>UMLNote</id>
     <coordinates>
-      <x>260</x>
-      <y>910</y>
+      <x>170</x>
+      <y>820</y>
       <w>60</w>
       <h>30</h>
     </coordinates>
@@ -1542,5 +1542,90 @@ halign=center
 layer=1
 fontsize=10</panel_attributes>
     <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLGeneric</id>
+    <coordinates>
+      <x>1650</x>
+      <y>610</y>
+      <w>160</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>TimeSeries
+Manager
+symbol=component
+valign=center
+transparency=0</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1660</x>
+      <y>550</y>
+      <w>70</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>lt=()-
+handle new
+timeSeries
+instances
+fontsize=8</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;60.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLGeneric</id>
+    <coordinates>
+      <x>1050</x>
+      <y>400</y>
+      <w>160</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>Console
+symbol=component
+valign=center
+transparency=0</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1120</x>
+      <y>300</y>
+      <w>70</w>
+      <h>120</h>
+    </coordinates>
+    <panel_attributes>lt=()-
+m1=handle\nuser input
+fontsize=8</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;100.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1140</x>
+      <y>470</y>
+      <w>70</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>lt=)-
+various
+fontsize=8</panel_attributes>
+    <additional_attributes>20.0;40.0;20.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1730</x>
+      <y>550</y>
+      <w>90</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>lt=)-
+send
+notifications
+fontsize=8
+</panel_attributes>
+    <additional_attributes>20.0;20.0;20.0;60.0</additional_attributes>
   </element>
 </diagram>
