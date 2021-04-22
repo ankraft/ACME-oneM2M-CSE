@@ -95,10 +95,10 @@ class WebUI(object):
 			console.log(f'Forwarding {request.method.upper()} request to {url}')
 		
 		# Remove some headers.
-		requestHeaders = { key: value for (key, value) in request.headers if key not in [ 'Host', 'If-None-Match' ] }
+		requestHeaders = { key: value for (key, value) in request.headers if key not in [ 'Host', 'If-None-Match', 'If-Match' ] }
 		if doLogging:
 			console.log(f'[dark_orange]Request')
-			console.log(requestHeaders)
+			console.log(requestHeaders)		# Don't include a possible authorization header in log
 		
 		# Retrieve / refresh an oauth token (if configured)
 		if doOauth:
@@ -107,7 +107,7 @@ class WebUI(object):
 					console.log(f'Error retrieving oauth token')
 				return Response('', 500)
 			self.oauthToken = token
-			requestHeaders['Authorization'] = self.oauthToken.token
+			requestHeaders['Authorization'] = f'Bearer {self.oauthToken.token}'	
 
 		resp = requests.request(
 			method=request.method,
