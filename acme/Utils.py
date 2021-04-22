@@ -873,7 +873,7 @@ def deserializeData(data:bytes, ct:ContentSerializationType) -> JSON:
 	if len(data) == 0:
 		return {}
 	if ct == ContentSerializationType.JSON:
-		return cast(JSON, json.loads(data.decode("utf-8")))
+		return cast(JSON, json.loads(removeCommentsFromJSON(data.decode("utf-8"))))
 	elif ct == ContentSerializationType.CBOR:
 		return cast(JSON, cbor2.loads(data))
 	# except Exception as e:
