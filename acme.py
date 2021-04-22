@@ -70,5 +70,5 @@ if __name__ == '__main__':
 	#	Note: Always pass at least 'None' as first and then the 'configfile' parameter.
 	console = Console()
 	console.print('\n[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim] ' + C.version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight=False)
-	CSE.startup(parseArgs())
-	CSE.run()
+	if CSE.startup(parseArgs()):
+		CSE.run()

@@ -85,7 +85,7 @@ shuttingDown									= False
 
 
 #def startup(args=None, configfile=None, resetdb=None, loglevel=None):
-def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
+def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	global announce, dispatcher, event, group, httpServer, notification, registration
 	global remote, request, security, statistics, storage, timeSeries, validator
 	global rootDirectory
@@ -112,7 +112,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 
 
 	if not Configuration.init(args):
-		return
+		return False
 
 	# Initialize configurable constants
 	supportedReleaseVersions = Configuration.get('cse.supportedReleaseVersions')
@@ -152,7 +152,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	# When this fails, we cannot continue with the CSE startup
 	importer = Importer()
 	if not importer.importAttributePolicies() or not importer.importResources():
-		return
+		return False
 
 	remote = RemoteCSEManager()				# Initialize the remote CSE manager
 	announce = AnnouncementManager()		# Initialize the announcement manager
@@ -168,6 +168,8 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	if isHeadless:
 		# when in headless mode give the CSE a moment (2s) to experience fatal errors before printing the start message
 		BackgroundWorkerPool.newActor(delay=2, workerCallback=lambda : Logging.console('CSE started') if not shuttingDown else None ).start()
+	
+	return True
 
 
 def run() -> None:
