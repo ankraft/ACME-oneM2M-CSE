@@ -24,7 +24,10 @@ function getChildren(node, errorCallback) {
     removeChildren(node)
 
     resource = JSON.parse(response)
-    chs = resource["m2m:rrl"]
+    chs = resource["m2m:rrl"]["rrf"]	// Normally, the rcn=6 response content is { "m2m:rrl": { "rrf": [ ... s] }}
+	if (chs == undefined) {
+		chs = resource["m2m:rrl"]		// support also the "wrong" rrl structure { "m2m:rrl": [ ... ] }}
+	}
     if (chs != undefined) {
       for (ch of chs) {
 
