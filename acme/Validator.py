@@ -561,7 +561,7 @@ class Validator(object):
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: bool')
 
 		if tpe == BT.float:
-			if isinstance(value, float):
+			if isinstance(value, (float, int)):
 				return Result(status=True)
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
