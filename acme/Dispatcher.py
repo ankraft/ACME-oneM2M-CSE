@@ -399,7 +399,7 @@ class Dispatcher(object):
 
 		# Some Resources are not allowed to be created in a request, return immediately
 		if ty in [ T.CSEBase, T.REQ, T.FCI ]:	# TODO: move to constants
-			return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
+			return Result(rsc=RC.operationNotAllowed, dbg=f'CREATE not allowed for type: {ty}')
 
 		# Get parent resource and check permissions
 		if (res := CSE.dispatcher.retrieveResource(id)).resource is None:
@@ -543,7 +543,7 @@ class Dispatcher(object):
 
 		# Some Resources are not allowed to be updated in a request, return immediately
 		if resource.ty in [ T.CIN, T.FCI, T.TSI ]:		# TODO: move to constants
-			return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
+			return Result(rsc=RC.operationNotAllowed, dbg=f'UPDATE not allowed for type: {resource.ty}')
 
 		#
 		#	Permission check
@@ -833,8 +833,8 @@ class Dispatcher(object):
 			if r.ty == T.FCNT:
 				ref['spty'] = r.cnd		# TODO Is this correct? Actually specializationID in TS-0004 6.3.5.29, but this seems to be wrong
 			t.append(ref)
-		targetResource[tp] = t
-		# targetResource[tp] = { "rrf" : t }
+		# targetResource[tp] = t
+		targetResource[tp] = { "rrf" : t }
 		return targetResource
 
 

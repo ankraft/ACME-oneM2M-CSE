@@ -57,21 +57,21 @@ class TestCIN(unittest.TestCase):
 					'con' : 'AnyValue'
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.created, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCIN(self) -> None:
 		""" Retrieve <CIN> resource """
-		_, rsc = RETRIEVE(cinURL, TestCIN.originator)
-		self.assertEqual(rsc, RC.OK)
+		r, rsc = RETRIEVE(cinURL, TestCIN.originator)
+		self.assertEqual(rsc, RC.OK, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesCIN(self) -> None:
 		""" Test <CIN> attributes """
 		r, rsc = RETRIEVE(cinURL, TestCIN.originator)
-		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(rsc, RC.OK, r)
 
 		# TEST attributess
 		self.assertEqual(findXPath(r, 'm2m:cin/ty'), T.CIN)
@@ -96,7 +96,7 @@ class TestCIN(unittest.TestCase):
 					'con' : 'NewValue'
 				}}
 		r, rsc = UPDATE(cinURL, TestCIN.originator, dct)
-		self.assertEqual(rsc, RC.operationNotAllowed)
+		self.assertEqual(rsc, RC.operationNotAllowed, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -108,7 +108,7 @@ class TestCIN(unittest.TestCase):
 					'con' : 'AnyValue'
 				}}
 		r, rsc = CREATE(aeURL, TestCIN.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.invalidChildResourceType)
+		self.assertEqual(rsc, RC.invalidChildResourceType, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -126,7 +126,7 @@ class TestCIN(unittest.TestCase):
 					'con' : 'AnyValue'
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)				# Not allowed
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.badRequest, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -137,7 +137,7 @@ class TestCIN(unittest.TestCase):
 					'cr' : None
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)	
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.created, r)
 		self.assertEqual(findXPath(r, 'm2m:cin/cr'), TestCIN.originator)	# Creator should now be set to originator
 
 		# Check whether creator is there in a RETRIEVE

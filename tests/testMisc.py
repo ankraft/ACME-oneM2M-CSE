@@ -92,6 +92,7 @@ class TestMisc(unittest.TestCase):
 
 
 # TODO test for creating a resource with missing type parameter
+# TODO test json with comments
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
