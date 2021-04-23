@@ -22,7 +22,7 @@ from Types import FilterUsage
 from Types import ResponseType
 from Types import Permission
 from Types import Operation
-from Types import DesiredIdentifierResultType
+from Types import DesiredIdentifierResultType as DRT
 from Types import ResultContentType as RCN
 from Types import ResponseCode as RC
 from Types import Result
@@ -124,12 +124,14 @@ class Dispatcher(object):
 			return Result(resource=resource)
 
 		elif request.args.rcn == RCN.attributesAndChildResourceReferences:
-			self._resourceTreeReferences(allowedResources, resource, request.args.drt)	# the function call add attributes to the target resource
+			self._resourceTreeReferences(allowedResources, resource, request.args.drt, 'ch')	# the function call add attributes to the target resource
 			return Result(resource=resource)
 
 		elif request.args.rcn == RCN.childResourceReferences: 
-			#childResourcesRef: dict  = { resource.tpe: {} }  # Root resource as a dict with no attribute
-			childResourcesRef = self._resourceTreeReferences(allowedResources,  None, request.args.drt)
+			#childResourcesRef:JSON = { resource.tpe: {} }  # Root resource with no attribute
+			#childResourcesRef = self._resourceTreeReferences(allowedResources,  None, request.args.drt, 'm2m:rrl')
+			# self._resourceTreeReferences(allowedResources, childResourcesRef[resource.tpe], request.args.drt, 'm2m:rrl')
+			childResourcesRef = self._resourceTreeReferences(allowedResources, None, request.args.drt, 'm2m:rrl')
 			return Result(resource=childResourcesRef)
 
 		elif request.args.rcn == RCN.childResources:
@@ -659,12 +661,12 @@ class Dispatcher(object):
 			result = childResources
 		elif request.args.rcn == RCN.attributesAndChildResourceReferences:
 			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
-			self._resourceTreeReferences(children, resource, request.args.drt)	# the function call add attributes to the result resource
+			self._resourceTreeReferences(children, resource, request.args.drt, 'ch')	# the function call add attributes to the result resource
 			result = resource
 		elif request.args.rcn == RCN.childResourceReferences: # child resource references
 			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
 			childResourcesRef:JSON = { resource.tpe: {} }  # Root resource with no attribute
-			self._resourceTreeReferences(children, childResourcesRef[resource.tpe], request.args.drt)
+			self._resourceTreeReferences(children, childResourcesRef[resource.tpe], request.args.drt, 'm2m:rrl')
 			result = childResourcesRef
 		# TODO RCN.discoveryResultReferences
 		else:
@@ -769,7 +771,7 @@ class Dispatcher(object):
 		cseid = f'{CSE.cseCsi}/'	# SP relative. csi already starts with a "/"
 		lst = []
 		for r in resources:
-			lst.append(Utils.structuredPath(r) if drt == DesiredIdentifierResultType.structured else cseid + r.ri)
+			lst.append(Utils.structuredPath(r) if drt == DRT.structured else cseid + r.ri)
 		return { 'm2m:uril' : lst }
 
 
@@ -812,13 +814,11 @@ class Dispatcher(object):
 		return resources # Return the remaining list
 
 
-	def _resourceTreeReferences(self, resources:list[Resource], targetResource:Resource|JSON, drt:DesiredIdentifierResultType=DesiredIdentifierResultType.structured) -> Resource|JSON:
+	def _resourceTreeReferences(self, resources:list[Resource], targetResource:Resource|JSON, drt:DRT=DRT.structured, tp:string='m2m:rrl') -> Resource|JSON:
 		""" Retrieve child resource references of a resource and add them to
 			a new target resource as "children" """
-		tp = 'ch'
 		if targetResource is None:
 			targetResource = { }
-			tp = 'm2m:rrl'	# top level in dict, so add qualifier.
 
 		t = []
 
@@ -829,12 +829,17 @@ class Dispatcher(object):
 		for r in resources:
 			if r.ty in [ T.CNT_OL, T.CNT_LA, T.FCNT_OL, T.FCNT_LA ]:	# Skip latest, oldest virtual resources
 				continue
-			ref = { 'nm' : r['rn'], 'typ' : r['ty'], 'val' :  Utils.structuredPath(r) if drt == DesiredIdentifierResultType.structured else r.ri}
+			ref = { 'nm' : r['rn'], 'typ' : r['ty'], 'val' :  Utils.structuredPath(r) if drt == DRT.structured else r.ri}
 			if r.ty == T.FCNT:
 				ref['spty'] = r.cnd		# TODO Is this correct? Actually specializationID in TS-0004 6.3.5.29, but this seems to be wrong
 			t.append(ref)
-		# targetResource[tp] = t
-		targetResource[tp] = { "rrf" : t }
+
+		# The following reflects a current inconsistency in the standard.
+		# If this list of childResourceReferences is for rcn=5 (attributesAndChildResourceReferences), then the structure
+		# is -> 'ch' : [ <listOfChildResourceRef> ]
+		# If this list of childResourceReferences is for rcn=6 (childResourceReferences), then the structure 
+		# is -> '{ 'rrl' : { 'rrf' : [ <listOfChildResourceRef> ]}}  ( an extra rrf struture )
+		targetResource[tp] = { "rrf" : t } if tp == 'm2m:rrl' else t
 		return targetResource
 
 
