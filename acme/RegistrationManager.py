@@ -26,12 +26,12 @@ class RegistrationManager(object):
 		self.allowedCSROriginators 	= Configuration.get('cse.registration.allowedCSROriginators')
 		self.allowedAEOriginators	= Configuration.get('cse.registration.allowedAEOriginators')
 
-		self.startExpirationWorker()
+		self.startExpirationMonitor()
 		Logging.log('RegistrationManager initialized')
 
 
 	def shutdown(self) -> bool:
-		self.stopExpirationWorker()
+		self.stopExpirationMonitor()
 		Logging.log('RegistrationManager shut down')
 		return True
 
@@ -224,20 +224,20 @@ class RegistrationManager(object):
 	##	Resource Expiration
 	##
 
-	def startExpirationWorker(self) -> None:
-		# Start background worker to handle expired resources
-		Logging.log('Starting expiration worker')
+	def startExpirationMonitor(self) -> None:
+		# Start background monitor to handle expired resources
+		Logging.log('Starting expiration monitor')
 		if (interval := Configuration.get('cse.checkExpirationsInterval')) > 0:
-			BackgroundWorkerPool.newWorker(interval, self.expirationDBWorker, 'expirationWorker', startWithDelay=True).start()
+			BackgroundWorkerPool.newWorker(interval, self.expirationDBMonitor, 'expirationMonitor', startWithDelay=True).start()
 
 
-	def stopExpirationWorker(self) -> None:
-		# Stop the expiration worker
-		Logging.log('Stopping expiration worker')
-		BackgroundWorkerPool.stopWorkers('expirationWorker')
+	def stopExpirationMonitor(self) -> None:
+		# Stop the expiration monitor
+		Logging.log('Stopping expiration monitor')
+		BackgroundWorkerPool.stopWorkers('expirationMonitor')
 
 
-	def expirationDBWorker(self) -> bool:
+	def expirationDBMonitor(self) -> bool:
 		Logging.logDebug('Looking for expired resources')
 		now = Utils.getResourceDate()
 		resources = CSE.storage.searchByFilter(lambda r: 'et' in r and (et := r['et']) is not None and et < now)
