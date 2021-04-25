@@ -58,7 +58,8 @@ class FCNT(AnnounceableResource):
 		return super()._canHaveChild(resource,	
 									 [ T.CNT,
 									   T.FCNT,
-									   T.SUB
+									   T.SUB,
+									   T.TS,
 									   # FlexContainerInstances are added by the flexContainer itself
 									 ])
 
@@ -137,10 +138,7 @@ class FCNT(AnnounceableResource):
 
 		#
 		#	Handle flexContainerInstances
-		#
-
-		# TODO When cni and cbs is set to 0, then delete mni, mbs, la, ol, and all children
-		
+		#		
 
 		if self.mni is not None or self.mbs is not None or self.mia is not None: # not when this method is called when already deleting a child resource
 			self.hasInstances = True	# Change the internal flag whether this FC has flexContainerInstances

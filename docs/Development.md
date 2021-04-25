@@ -163,20 +163,21 @@ When sending a GET request to the endpoint followed by the name of a configurati
 	Request: GET /__config__/cse.maxExpirationDelta
  
 ### PUT Configuration
-When sending a PUT request to the endpoint followed by the name of a configuration macro and with a new value in the body of the request then a new value is assigned to that configuation setting.  Example
+When sending a PUT request to the endpoint followed by the name of a configuration macro and with a new value in the body of the request then a new value is assigned to that configuration setting.  Example
 
 	Request: POST /__config__/cse.checkExpirationsInterval
 	Body: 2
 
-A successful operation is answeredd with an *ack* response, an error or failure to process is answered with a *nak* response.
+A successful operation is answered with an *ack* response, an error or failure to process is answered with a *nak* response.
 
-Only the following configration settings can updated by this method yet:
+Only the following configuration settings can updated by this method yet:
 
-| Macro name                   | Description                                                                                                   |
-|:-----------------------------|:--------------------------------------------------------------------------------------------------------------|
-| cse.checkExpirationsInterval | Assigning a new value to this configuration setting will also force a restart CSE's *Registration* component. |
-| cse.req.minet                | Minimum time for &lt;request> resource expiration.                                                            |
-| cse.req.maxnet               | Maximum time for &lt;request> resource expiration.                                                            |
+| Macro name                   | Description                                                                                                        |
+|:-----------------------------|:-------------------------------------------------------------------------------------------------------------------|
+| cse.checkExpirationsInterval | Assigning a new value to this configuration setting will also force a restart CSE's *RegistrationManager* module.  |
+| cse.req.minet                | Minimum time for &lt;request> resource expiration.                                                                 |
+| cse.req.maxnet               | Maximum time for &lt;request> resource expiration.                                                                 |
+| cse.checkTimeSeriesInterval  | Assigning a new value to this configuration setting will also force a restart CSE's *TimeSeriesManager* component. |
 
 
 <a name="mypy"></a>

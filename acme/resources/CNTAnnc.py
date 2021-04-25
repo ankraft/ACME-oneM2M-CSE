@@ -40,6 +40,8 @@ class CNTAnnc(AnnouncedResource):
 									   T.CINAnnc,
 									   T.FCNT,
 									   T.FCNTAnnc,
-									   T.SUB
+									   T.SUB,
+									   T.TS,
+									   T.TSAnnc
 									 ])
 

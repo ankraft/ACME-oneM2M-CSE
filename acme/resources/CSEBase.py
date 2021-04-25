@@ -50,7 +50,8 @@ class CSEBase(Resource):
 									   T.GRP,
 									   T.NOD,
 									   T.REQ,
-									   T.SUB
+									   T.SUB,
+									   T.TS
 									 ])
 
 

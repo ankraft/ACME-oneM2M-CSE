@@ -48,7 +48,8 @@ class AE(AnnounceableResource):
 									   T.FCNT,
 									   T.GRP,
 									   T.PCH,
-									   T.SUB
+									   T.SUB,
+									   T.TS
 									 ])
 
 

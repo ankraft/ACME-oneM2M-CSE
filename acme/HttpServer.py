@@ -301,8 +301,15 @@ class HttpServer(object):
 					if (d := int(data)) < 1:
 						return _r('nak')
 					Configuration.set(path, d)
-					CSE.registration.stopExpirationWorker()
-					CSE.registration.startExpirationWorker()
+					CSE.registration.stopExpirationMonitor()
+					CSE.registration.startExpirationMonitor()
+					return _r('ack')
+				elif path == 'cse.checkTimeSeriesInterval':
+					if (d := int(data)) < 1:
+						return _r('nak')
+					Configuration.set(path, d)
+					CSE.timeSeries.stopMonitoring()
+					CSE.timeSeries.startMonitoring()
 					return _r('ack')
 				elif path in [ 'cse.req.minet', 'cse.req.maxnet' ]:
 					if (d := int(data)) < 1:

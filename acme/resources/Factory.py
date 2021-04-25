@@ -45,6 +45,15 @@ from resources.PCH import PCH
 from resources.PCH_PCU import PCH_PCU
 from resources.REQ import REQ
 from resources.SUB import SUB
+from resources.TS import TS
+from resources.TSAnnc import TSAnnc
+from resources.TS_LA import TS_LA
+from resources.TS_OL import TS_OL
+from resources.TSI import TSI
+from resources.TSIAnnc import TSIAnnc
+
+#from resources.TSAnnc import TSAnnc
+
 
 from resources.Unknown import Unknown
 
@@ -100,6 +109,10 @@ resourceFactoryMap:Dict[T, FactoryT] = {
 	T.PCH_PCU	: lambda dct, tpe, pi, create : PCH_PCU(dct, pi=pi, create=create),
 	T.REQ		: lambda dct, tpe, pi, create : REQ(dct, pi=pi, create=create),
 	T.SUB		: lambda dct, tpe, pi, create : SUB(dct, pi=pi, create=create),
+	T.TS		: lambda dct, tpe, pi, create : TS(dct, pi=pi, create=create),
+	T.TS_LA		: lambda dct, tpe, pi, create : TS_LA(dct, pi=pi, create=create),
+	T.TS_OL		: lambda dct, tpe, pi, create : TS_OL(dct, pi=pi, create=create),
+	T.TSI		: lambda dct, tpe, pi, create : TSI(dct, pi=pi, create=create),
 
 
 	# 	Announced Resources
@@ -114,6 +127,8 @@ resourceFactoryMap:Dict[T, FactoryT] = {
 	T.FCIAnnc	: lambda dct, tpe, pi, create : FCIAnnc(dct, pi=pi, create=create),
 	T.GRPAnnc	: lambda dct, tpe, pi, create : GRPAnnc(dct, pi=pi, create=create),
 	T.NODAnnc	: lambda dct, tpe, pi, create : NODAnnc(dct, pi=pi, create=create),
+	T.TSAnnc	: lambda dct, tpe, pi, create : TSAnnc(dct, pi=pi, create=create),
+	T.TSIAnnc	: lambda dct, tpe, pi, create : TSIAnnc(dct, pi=pi, create=create),
 
 
 	#	Management specializations

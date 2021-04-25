@@ -126,6 +126,7 @@ class Configuration(object):
 				'cse.enableValidation'				: config.getboolean('cse', 'enableValidation', 			fallback=True),
 				'cse.sortDiscoveredResources'		: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
 				'cse.checkExpirationsInterval'		: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
+				'cse.checkTimeSeriesInterval'		: config.getint('cse', 'checkTimeSeriesInterval',		fallback=10),		# Seconds
 				'cse.flexBlockingPreference'		: config.get('cse', 'flexBlockingPreference',			fallback='blocking'),
 				'cse.supportedReleaseVersions'		: config.getlist('cse', 'supportedReleaseVersions',		fallback=C.supportedReleaseVersions), # type: ignore
 				'cse.releaseVersion'				: config.get('cse', 'releaseVersion',					fallback='3'),
@@ -218,6 +219,7 @@ class Configuration(object):
 				'cse.ts.enableLimits'				: config.getboolean('cse.resource.ts', 'enableLimits',	fallback=False),
 				'cse.ts.mni'						: config.getint('cse.resource.ts', 'mni', 				fallback=10),
 				'cse.ts.mbs'						: config.getint('cse.resource.ts', 'mbs', 				fallback=10000),
+				'cse.ts.mdn'						: config.getint('cse.resource.ts', 'mdn', 				fallback=10),
 
 
 				#
@@ -413,7 +415,14 @@ class Configuration(object):
 			if rv not in srv:
 				_print(f'[red]Configuration Error: \[cse]:releaseVersion: {rv} not in \[cse].supportedReleaseVersions: {srv}')
 				return False
-		
+			
+		# Check various intervals
+		if Configuration._configuration['cse.checkExpirationsInterval'] <= 0:
+			_print('[red]Configuration Error: \[cse]:checkExpirationsInterval must be greater than 0')
+			return False
+		if Configuration._configuration['cse.checkTimeSeriesInterval'] <= 0:
+			_print('[red]Configuration Error: \[cse]:checkTimeSeriesInterval must be greater than 0')
+			return False
 		# Check configured app api
 		if len(api := Configuration._configuration['app.statistics.aeAPI']) < 2 or api[0] not in ['R', 'N']:
 			_print('[red]Configuration Error: \[app.statistics]:aeAPI must not be empty and must start with "N" or "R"')

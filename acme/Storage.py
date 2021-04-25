@@ -14,7 +14,6 @@ from tinydb import TinyDB, Query, where
 from tinydb.storages import MemoryStorage
 from tinydb.table import Document
 from tinydb.operations import delete 
-# TODO remove mypy type checking supressions above as soon as tinydb provides typing stubs
 
 import os, json, re, time
 from copy import deepcopy
@@ -316,8 +315,6 @@ class Storage(object):
 		return self.db.upsertSubscription(subscription)
 
 
-
-
 	#########################################################################
 	##
 	##	BatchNotifications
@@ -337,6 +334,33 @@ class Storage(object):
 
 	def removeBatchNotifications(self, ri:str, nu:str) -> bool:
 		return self.db.removeBatchNotifications(ri, nu)
+
+
+
+	#########################################################################
+	##
+	##	TimeSeries
+	##
+
+	def addTimeSeries(self, ri:str, periodicInterval:int, periodTime:float, missingDataTime:float) -> bool:
+		#Logging.log(f'addTimeSeries: {ri}, {periodicInterval}, {nextExpected}')
+		return self.db.addTimeSeries(ri, periodicInterval, periodTime, missingDataTime)
+
+
+	def getTimeSeries(self, ri:str) -> list[Document]:
+		return self.db.getTimeSeries(ri)
+
+
+	def updateTimeSeries(self, timeSeriesInfo:JSON) -> bool:
+		return self.db.updateTimeSeries(timeSeriesInfo)
+
+
+	def removeTimeSeries(self, ri:str) -> bool:
+		return self.db.removeTimeSeries(ri)
+
+
+	def getPastPeriodTimeSeries(self) -> list[Document]:
+		return self.db.getPastPeriodTimeSeries()
 
 
 	#########################################################################
@@ -391,6 +415,7 @@ class TinyDBBinding(object):
 		self.lockBatchNotifications = Lock()
 		self.lockStatistics = Lock()
 		self.lockAppData = Lock()
+		self.lockTimeSeries = Lock()
 
 
 	def openDB(self, postfix: str) -> None:
@@ -401,6 +426,7 @@ class TinyDBBinding(object):
 			self.dbIdentifiers = TinyDB(storage=MemoryStorage)										# type: ignore
 			self.dbSubscriptions = TinyDB(storage=MemoryStorage)									# type: ignore
 			self.dbBatchNotifications = TinyDB(storage=MemoryStorage)								# type: ignore
+			self.dbTimeSeries = TinyDB(storage=MemoryStorage)										# type: ignore
 			self.dbStatistics = TinyDB(storage=MemoryStorage)										# type: ignore
 			self.dbAppData = TinyDB(storage=MemoryStorage)											# type: ignore
 		else:
@@ -409,12 +435,14 @@ class TinyDBBinding(object):
 			self.dbIdentifiers = TinyDB(f'{self.path}/identifiers{postfix}.json')					# type: ignore
 			self.dbSubscriptions = TinyDB(f'{self.path}/subscriptions{postfix}.json')				# type: ignore
 			self.dbBatchNotifications = TinyDB(f'{self.path}/batchNotifications{postfix}.json')		# type: ignore
+			self.dbTimeSeries = TinyDB(f'{self.path}/timeSeries{postfix}.json')						# type: ignore
 			self.dbStatistics = TinyDB(f'{self.path}/statistics{postfix}.json')						# type: ignore
 			self.dbAppData = TinyDB(f'{self.path}/appdata{postfix}.json')							# type: ignore
 		self.tabResources = self.dbResources.table('resources', cache_size=self.cacheSize)
 		self.tabIdentifiers = self.dbIdentifiers.table('identifiers', cache_size=self.cacheSize)
 		self.tabSubscriptions = self.dbSubscriptions.table('subsriptions', cache_size=self.cacheSize)
 		self.tabBatchNotifications = self.dbBatchNotifications.table('batchNotifications', cache_size=self.cacheSize)
+		self.tabTimeSeries = self.dbTimeSeries.table('timeSeries', cache_size=self.cacheSize)
 		self.tabStatistics = self.dbStatistics.table('statistics', cache_size=self.cacheSize)
 		self.tabAppData = self.dbAppData.table('appdata', cache_size=self.cacheSize)
 
@@ -425,6 +453,7 @@ class TinyDBBinding(object):
 		self.dbIdentifiers.close()
 		self.dbSubscriptions.close()
 		self.dbBatchNotifications.close()
+		self.dbTimeSeries.close()
 		self.dbStatistics.close()
 		self.dbAppData.close()
 
@@ -435,6 +464,7 @@ class TinyDBBinding(object):
 		self.tabIdentifiers.truncate()
 		self.tabSubscriptions.truncate()
 		self.tabBatchNotifications.truncate()
+		self.tabTimeSeries.truncate()
 		self.tabStatistics.truncate()
 		self.tabAppData.truncate()
 
@@ -462,7 +492,6 @@ class TinyDBBinding(object):
 			ri = resource.ri
 			self.tabResources.update(resource.dict, Query().ri == ri)	# type: ignore [no-untyped-call]
 			# remove nullified fields from db and resource
-			# TODO remove Null values recursively
 			for k in list(resource.dict):
 				if resource.dict[k] is None:
 					self.tabResources.update(delete(k), Query().ri == ri)	# type: ignore [no-untyped-call]
@@ -546,7 +575,7 @@ class TinyDBBinding(object):
 	def searchByDict(self, dct:dict) -> list[Document]:
 		""" Search and return all resources that match the given dictionary/document. """
 		with self.lockResources:
-			return self.tabResources.search(Query().fragment(dct))	# type: ignore [no-untyped-call]
+			return self.tabResources.search(Query().fragment(dct))	# type: ignore
 
 
 	#
@@ -632,20 +661,60 @@ class TinyDBBinding(object):
 
 	def countBatchNotifications(self, ri:str, nu:str) -> int:
 		with self.lockBatchNotifications:
-			q = Query()	# type: ignore
+			q = Query()	# type: ignore [no-untyped-call]
 			return self.tabBatchNotifications.count((q.ri == ri) & (q.nu == nu))
 
 
 	def getBatchNotifications(self, ri:str, nu:str) -> list[Document]:
 		with self.lockBatchNotifications:
-			q = Query()	# type: ignore
+			q = Query()	# type: ignore [no-untyped-call]
 			return self.tabBatchNotifications.search((q.ri == ri) & (q.nu == nu))
 
 
 	def removeBatchNotifications(self, ri:str, nu:str) -> bool:
 		with self.lockBatchNotifications:
-			q = Query()	# type: ignore
+			q = Query()	 # type: ignore [no-untyped-call]
 			return len(self.tabBatchNotifications.remove((q.ri == ri) & (q.nu == nu))) > 0
+
+
+	#
+	#	TimeSeries
+	#
+
+	def addTimeSeries(self, ri:str, periodicInterval:int, periodTime:float, missingDataTime:float) -> bool:
+		with self.lockTimeSeries:
+			result = self.tabTimeSeries.insert(
+									{	'ri' 	: ri,
+										'pei'	: periodicInterval,
+										'pt' 	: periodTime,		# timestamp for next period
+										'mdt' 	: missingDataTime,	# timestamp when TSI is regarded as expired 
+									})
+			return result is not None
+
+
+	def getTimeSeries(self, ri:str) -> list[Document]:
+		with self.lockTimeSeries:
+			return self.tabTimeSeries.search(Query().ri == ri)  # type: ignore [no-untyped-call]
+
+
+	def updateTimeSeries(self, timeSeriesInfo:JSON) -> bool:
+		with self.lockTimeSeries:
+			if len(self.tabTimeSeries) > 0:
+				return self.tabTimeSeries.update(timeSeriesInfo, Query().ri == timeSeriesInfo['ri']) is not None
+			return False
+
+
+	def removeTimeSeries(self, ri:str) -> bool:
+		with self.lockTimeSeries:
+			return len(self.tabTimeSeries.remove(Query().ri == ri)) > 0 # type: ignore [no-untyped-call]
+
+
+	def getPastPeriodTimeSeries(self) -> list[Document]:
+		"""	Return info structs for timeSeries of the just past period in a list. """
+		with self.lockTimeSeries:
+			now = time.time()
+			return self.tabTimeSeries.search(lambda r: r['pt'] < now )		# type: ignore
+			
 
 	#
 	#	Statistics

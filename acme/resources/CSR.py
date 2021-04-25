@@ -54,6 +54,8 @@ class CSR(AnnounceableResource):
 									   T.ACP,
 									   T.ACPAnnc,
 									   T.SUB,
+									   T.TS,
+									   T.TSAnnc,
 									   T.CSRAnnc,
 									   T.MGMTOBJAnnc,
 									   T.NODAnnc,

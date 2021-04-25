@@ -40,6 +40,8 @@ class FCNTAnnc(AnnouncedResource):
 									   T.FCNTAnnc,
 									   T.FCI,
 									   T.FCIAnnc,
+									   T.TS,
+									   T.TSAnnc,
 									   T.SUB
 									 ])
 

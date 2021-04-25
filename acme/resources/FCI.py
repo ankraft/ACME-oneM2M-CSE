@@ -17,7 +17,7 @@ import Utils
 attributePolicies = constructPolicy([ 
 	'ty', 'ri', 'rn', 'pi', 'ct', 'et', 'lbl', 'acpi', 'at', 'aa', 
 ])
-fcinPolicies = constructPolicy([ 'cs' ])
+fcinPolicies = constructPolicy([ 'cs', 'or' ])
 attributePolicies =  addPolicy(attributePolicies, fcinPolicies)
 
 
@@ -25,7 +25,6 @@ class FCI(AnnounceableResource):
 
 	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
 		super().__init__(T.FCI, dct, pi, tpe=fcntType, create=create, inheritACP=True, readOnly=True, attributePolicies=attributePolicies)
-
 		self.resourceAttributePolicies = fcinPolicies	# only the resource type's own policies
 
 

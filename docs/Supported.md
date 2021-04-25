@@ -26,22 +26,24 @@ The ACME CSE supports the following CSE types:
 
 The ACME CSE supports the following oneM2M resource types:
 
-| Resource Type                 | Supported | Limitations                                                                                                                                                                                               |
-|:------------------------------|:---------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| CSEBase (CB)                  |  &check;  |                                                                                                                                                                                                           |
-| Remote CSE (CSR)              |  &check;  | Announced resources are yet not supported. Transit request, though, to resources on the remote CSE are supported.                                                                                         |
-| Access Control Policy (ACP)   |  &check;  |                                                                                                                                                                                                           |
-| Application Entity (AE)       |  &check;  |                                                                                                                                                                                                           |
-| Container (CNT)               |  &check;  |                                                                                                                                                                                                           |
-| Content Instance (CIN)        |  &check;  |                                                                                                                                                                                                           |
-| Group (GRP)                   |  &check;  | The support includes requests via the *fopt* (fan-out-point) virtual resource.                                                                                                                            |
-| Subscription (SUB)            |  &check;  | Notifications via http(s) (direct url or an AE's Point-of-Access (POA)). BatchNotifications, attributes.                                                                                                  |
-| Node (NOD)                    |  &check;  |                                                                                                                                                                                                           |
-| Management Objects            |  &check;  | See also the list of supported [management objects](#mgmtobjs).                                                                                                                                           |
-| FlexContainer Specializations |  &check;  | Any specialization is supported and validated. See [Importing Attribute Policies](Importing.md#attributes) for further details.<br />Supported spezialisations: TS-0023 R4, GenericInterworking, AllJoyn. |
-| FlexContainerInstance         |  &check;  | Experimental. This is an implementation of the draft FlexContainerInstance specification.                                                                                                                 |
-| Request (REQ)                 |  &check;  | Support for non-blocking requests.                                                                                                                                                                        |
-| Polling Channel               |  &cross;  |                                                                                                                                                                                                           |
+| Resource Type                   | Supported | Limitations                                                                                                                                                                                                       |
+|:--------------------------------|:---------:|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Access Control Policy (ACP)     |  &check;  |                                                                                                                                                                                                                   |
+| Application Entity (AE)         |  &check;  |                                                                                                                                                                                                                   |
+| Container (CNT)                 |  &check;  |                                                                                                                                                                                                                   |
+| Content Instance (CIN)          |  &check;  |                                                                                                                                                                                                                   |
+| CSEBase (CB)                    |  &check;  |                                                                                                                                                                                                                   |
+| FlexContainer & Specializations |  &check;  | Any specialization is supported and validated. See [Importing Attribute Policies](Importing.md#attributes) for further details.<br />Supported spezialisations incldue: TS-0023 R4, GenericInterworking, AllJoyn. |
+| FlexContainerInstance           |  &check;  | Experimental. This is an implementation of the draft FlexContainerInstance specification.                                                                                                                         |
+| Group (GRP)                     |  &check;  | The support includes requests via the *fopt* (fan-out-point) virtual resource.                                                                                                                                    |
+| Management Objects              |  &check;  | See also the list of supported [management objects](#mgmtobjs).                                                                                                                                                   |
+| Node (NOD)                      |  &check;  |                                                                                                                                                                                                                   |
+| Polling Channel                 |  &cross;  | Not yet supported.                                                                                                                                                                                                |
+| Remote CSE (CSR)                |  &check;  | Announced resources are  supported. Transit request to resources on registered CSE's are supported.                                                                                                               |
+| Request (REQ)                   |  &check;  | Support for non-blocking requests.                                                                                                                                                                                |
+| Subscription (SUB)              |  &check;  | Notifications via http(s) (direct url or an AE's Point-of-Access (POA)). BatchNotifications, attributes.                                                                                                          |
+| TimeSeries (TS)                 |  &check;  |                                                                                                                                                                                                                   |
+| TimeSeriesInstance (TSI)        |  &check;  |                                                                                                                                                                                                                   |
 
 <a name="mgmtobjs"></a>
 
@@ -137,6 +139,5 @@ The following serialization types are supported:
 # Limitations
 - **This is by no means a fully compliant, secure, fast, or stable CSE! Don't use it in production.**
 - This CSE is intended for educational purposes. The underlying database system is not optimized in any way for high-volume, high-availability, or high-reliability.
-- Unsupported resource types are just stored, but no check or functionality is provided for those resources. The same is true for unknown resource attributes.
-
+- Unsupported resource types are just stored, but no check or functionality is provided for those resources. 
 [← README](../README.md) 

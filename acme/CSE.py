@@ -76,9 +76,6 @@ shuttingDown									= False
 
 # TODO move further configurable "constants" here
 
-# TODO make AE registering a bit more generic
-
-
 
 
 ##############################################################################

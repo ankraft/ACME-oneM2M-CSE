@@ -55,7 +55,8 @@ class CNT(AnnounceableResource):
 									 [ T.CNT,
 									   T.CIN,
 									   T.FCNT,
-									   T.SUB
+									   T.SUB,
+									   T.TS
 									 ])
 
 
@@ -96,7 +97,7 @@ class CNT(AnnounceableResource):
 		# Check whether the size of the CIN doesn't exceed the mbs
 		if childResource.ty == T.CIN and self.mbs is not None:
 			if childResource.cs is not None and childResource.cs > self.mbs:
-				return Result(status=False, rsc=RC.notAcceptable, dbg='children content sizes would exceed mbs')
+				return Result(status=False, rsc=RC.notAcceptable, dbg='child content sizes would exceed mbs')
 		return Result(status=True)
 
 
@@ -106,7 +107,7 @@ class CNT(AnnounceableResource):
 		super().childAdded(childResource, originator)
 		if childResource.ty == T.CIN:	# Validate if child is CIN
 
-			# Check for mia handling
+			# Check for mia handling. This sets the et attribute in the CIN
 			if self.mia is not None:
 				# Take either mia or the maxExpirationDelta, whatever is smaller
 				maxEt = Utils.getResourceDate(self.mia if self.mia <= (med := Configuration.get('cse.maxExpirationDelta')) else med)

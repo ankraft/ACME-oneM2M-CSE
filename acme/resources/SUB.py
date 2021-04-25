@@ -85,6 +85,9 @@ class SUB(Resource):
 					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 				# fallthough
 
+		# TODO: check missingData only if parent if TS. Add test for that
+
+		
 		# check other attributes
 		self.normalizeURIAttribute('nfu')
 		self.normalizeURIAttribute('nu')

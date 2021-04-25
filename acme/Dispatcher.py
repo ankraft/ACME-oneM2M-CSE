@@ -814,7 +814,7 @@ class Dispatcher(object):
 		return resources # Return the remaining list
 
 
-	def _resourceTreeReferences(self, resources:list[Resource], targetResource:Resource|JSON, drt:DRT=DRT.structured, tp:string='m2m:rrl') -> Resource|JSON:
+	def _resourceTreeReferences(self, resources:list[Resource], targetResource:Resource|JSON, drt:DRT=DRT.structured, tp:str='m2m:rrl') -> Resource|JSON:
 		""" Retrieve child resource references of a resource and add them to
 			a new target resource as "children" """
 		if targetResource is None:

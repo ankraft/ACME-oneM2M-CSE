@@ -59,6 +59,9 @@ expirationSleep			= expirationCheckDelay * 3
 requestETDuration 		= f'PT{expirationCheckDelay:d}S'
 requestCheckDelay		= 1	#seconds
 
+# TimeSeries Interval
+timeSeriesInterval 		= 2 # seconds
+
 # ReleaseVersionIndicator
 RVI						 ='3'
 
@@ -74,8 +77,10 @@ grpRN	= 'testGRP'
 fcntRN	= 'testFCNT'
 nodRN 	= 'testNOD'
 pchRN 	= 'testPCH'
-subRN	= 'testSUB'
 reqRN	= 'testREQ'
+subRN	= 'testSUB'
+tsRN	= 'testTS'
+tsiRN	= 'testTSI'
 memRN	= 'mem'
 batRN	= 'bat'
 
@@ -86,15 +91,16 @@ csiURL 	= f'{URL}~{CSEID}'
 aeURL 	= f'{cseURL}/{aeRN}'
 acpURL 	= f'{cseURL}/{acpRN}'
 cntURL 	= f'{aeURL}/{cntRN}'
-cinURL 	= f'{cntURL}/{cinRN}'
+cinURL 	= f'{cntURL}/{cinRN}'	# under the <cnt>
 fcntURL	= f'{aeURL}/{fcntRN}'
 grpURL 	= f'{aeURL}/{grpRN}'
-nodURL 	= f'{cseURL}/{nodRN}'
+nodURL 	= f'{cseURL}/{nodRN}'	# under the <ae>
 pchURL 	= f'{aeURL}/{pchRN}'
-subURL 	= f'{cntURL}/{subRN}'
-batURL 	= f'{nodURL}/{batRN}'
-memURL	= f'{nodURL}/{memRN}'
-batURL	= f'{nodURL}/{batRN}'
+subURL 	= f'{cntURL}/{subRN}'	# under the <cnt>
+tsURL 	= f'{aeURL}/{tsRN}'
+batURL 	= f'{nodURL}/{batRN}'	# under the <nod>
+memURL	= f'{nodURL}/{memRN}'	# under the <nod>
+batURL	= f'{nodURL}/{batRN}'	# under the <nod>
 
 
 REMOTEURL		= f'{REMOTESERVER}{REMOTEROOTPATH}'
@@ -218,11 +224,9 @@ def lastHeaders() -> Parameters:
 
 
 ###############################################################################
-
 #
 #	Expirations
 #
-
 
 def setExpirationCheck(interval:int) -> int:
 	c, rc = RETRIEVESTRING(CONFIGURL, '')
@@ -300,6 +304,38 @@ def enableShortExpirations() -> None:
 	# Retrieve the max expiration delta from the CSE
 	_maxExpiration = getMaxExpiration()
 	_tooLargeExpirationDelta = _maxExpiration * 2	# double of what is allowed
+
+
+###############################################################################
+#
+#	TimeSeries Monitor
+#
+
+def setTimeSeriesInterval(interval:int) -> int:
+	c, rc = RETRIEVESTRING(CONFIGURL, '')
+	if rc == 200 and c.startswith('Configuration:'):
+		# retrieve the old value
+		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.checkTimeSeriesInterval', '')
+		oldValue = int(c)
+		c, rc = UPDATESTRING(f'{CONFIGURL}/cse.checkTimeSeriesInterval', '', str(interval))
+		return oldValue if c == 'ack' else -1
+	return -1
+
+_orgTSInterval = -1
+
+
+# Reconfigure the server to check faster for timeSeries chesk. This is set to the
+# old value in the tearDowndClass() method.
+def enableShortTimeSeriesChecks() -> None:
+	global _orgTSInterval
+	_orgTSInterval = setTimeSeriesInterval(timeSeriesInterval)
+
+
+def disableShortTimeSeriesChecks() -> None:
+	global _orgTSInterval
+	if _orgTSInterval != -1:
+		setTimeSeriesInterval(_orgTSInterval)
+		_orgTSInterval = -1
 
 
 ###############################################################################

@@ -39,5 +39,7 @@ class AEAnnc(AnnouncedResource):
 									   T.FCNT,
 									   T.FCNTAnnc,
 									   T.GRP,
-									   T.GRPAnnc
+									   T.GRPAnnc,
+									   T.TS,
+									   T.TSAnnc
 									 ])

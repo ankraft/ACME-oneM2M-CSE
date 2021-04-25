@@ -29,7 +29,7 @@ class Constants(object):
 	# Supported resource types by this CSE
 	supportedResourceTypes 			= [	# Supported normal resource
 										T.ACP, T.AE, T.CNT, T.CIN, T.CSEBase, T.GRP, T.MGMTOBJ, T.NOD, T.CSR, 
-										T.REQ, T.SUB, T.FCNT, T.FCI, T.TS
+										T.REQ, T.SUB, T.FCNT, T.FCI, T.TS, T.TSI
 									  ]
 	supportedResourceTypes			+= announcedResourceTypes	# add announced resource types as well
 

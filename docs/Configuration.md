@@ -71,9 +71,10 @@ The following macros are supported in addition to those defined in the sections 
 | enableValidation         | Enable the validation of attributes and arguments.<br />Default: true                                                                                                                          | cse.enableValidation         |
 | sortDiscoveredResources  | Enable alphabetical sorting of discovery results.<br/>Default: true                                                                                                                            | cse.sortDiscoveredResources  |
 | checkExpirationsInterval | Interval to check for expired resources. 0 means "no checking".<br/>Default: 60 seconds                                                                                                        | cse.checkExpirationsInterval |
+| checkTimeSeriesInterval  | Interval to check for missing timeSeriesInstances.<br/>Default: 10 seconds                                                                                                                     | cse.checkTimeSeriesInterval  |
 | flexBlockingPreference   | Indicate the preference for flexBlocking response types. Allowed values: "blocking", "nonblocking".<br />Default: blocking                                                                     | cse.flexBlockingPreference   |
 | supportedReleaseVersions | A comma-separated list of supported release versions. This list can contain a single or multiple values.<br />Default: 2a,3,4                                                                  | cse.supportedReleaseVersions |
-| releaseVersion           | The release version indicator for requests. Allowed values: 2a, 3, 4.<br />Default: 3                                                                                                    | cse.releaseVersion           |
+| releaseVersion           | The release version indicator for requests. Allowed values: 2a, 3, 4.<br />Default: 3                                                                                                          | cse.releaseVersion           |
 | defaultSerialization     | Indicate the serialization format if none was given in a request and cannot be determined otherwise.<br/>Allowed values: json, cbor.<br/>Default: json                                         | cse.defaultSerialization     |
 
 
@@ -218,6 +219,7 @@ The following macros are supported in addition to those defined in the sections 
 | enableLimits | Enable/disable the default limits.<br/> Default: False | cse.ts.enableLimits  |
 | mni          | Default for maxNrOfInstances.<br/> Default: 10         | cse.ts.mni           |
 | mbs          | Default for maxByteSize.<br/>Default: 10.000 bytes     | cse.ts.mbs           |
+| mdn          | Default for missingDataMaxNr.<br />Default: 10         | cse.ts.mdn           |
 
 
 <a name="webui"></a>
