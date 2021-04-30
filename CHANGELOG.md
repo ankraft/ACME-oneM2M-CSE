@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [WEB] Added oauth2 authorization support for the proxied CSE (for the stand-alone web UI).
 - [CSE] Added support for TimeSeries/TimeSeriesInstance resource types.
 - [CSE] Added support for *ctm* (currentTime) attribute for &lt;CSEBase> resource type.
+- [CSE] Added wildcard (\*) support for &lt;ACP>'s *acr/acor* originators.
 
 ### Changed
 - [CSE] Relaxed validation for float in attributes and arguments. Integer are now accepted as well.

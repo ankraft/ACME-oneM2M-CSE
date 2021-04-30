@@ -121,22 +121,26 @@ class ACP(AnnounceableResource):
 				p['acor'].append(originator)
 
 
-	def checkPermission(self, origin:str, requestedPermission:int) -> bool:
-		# Logging.logDebug(f'origin: {origin} requestedPermission: {requestedPermission}')
+	def checkPermission(self, originator:str, requestedPermission:int) -> bool:
+		# Logging.logDebug(f'originator: {originator} requestedPermission: {requestedPermission}')
 		for p in self['pv/acr']:
 			# Logging.logDebug(f'p.acor: {p['acor']} requestedPermission: {p['acop']}')
 			if requestedPermission & p['acop'] == Permission.NONE:	# permission not fitting at all
 				continue
-			if 'all' in p['acor'] or origin in p['acor'] or requestedPermission == Permission.NOTIFY:
+			if 'all' in p['acor'] or originator in p['acor'] or requestedPermission == Permission.NOTIFY:
+				return True
+			if any([ Utils.simpleMatch(originator, a) for a in p['acor'] ]):	# check whether there is a wildcard match
 				return True
 		return False
 
 
-	def checkSelfPermission(self, origin:str, requestedPermission:int) -> bool:
+	def checkSelfPermission(self, originator:str, requestedPermission:int) -> bool:
 		for p in self['pvs/acr']:
 			if requestedPermission & p['acop'] == 0:	# permission not fitting at all
 				continue
-			if 'all' in p['acor'] or origin in p['acor']:
+			if 'all' in p['acor'] or originator in p['acor']:
+				return True
+			if any([ Utils.simpleMatch(originator, a) for a in p['acor'] ]):	# check whether there is a wildcard match
 				return True
 		return False
 

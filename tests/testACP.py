@@ -17,9 +17,16 @@ from init import *
 
 class TestACP(unittest.TestCase):
 
-	acpORIGINATOR 	= 'CtestOriginator'
-	acpORIGINATOR2 	= 'CtestOriginator2'
-	acpORIGINATOR3 	= 'CtestOriginator3'
+	acpORIGINATOR 			= 'CtestOriginator'
+	acpORIGINATOR2 			= 'CtestOriginator2'
+	acpORIGINATOR3 			= 'CtestOriginator3'
+	acpORIGINATORWC 		= 'Canother*'
+	acpORIGINATORWC2		= 'Cyet*Originator'
+	
+	# Originators for wildcard tests
+	acpORIGINATORWCTest 	= 'CanotherOriginator'
+	acpORIGINATORWC2Test 	= 'CyetAnotherOriginator'
+	acpORIGINATORWC3Test 	= 'CyetAnother'	
 
 	ae 				= None
 	originator 		= None
@@ -44,7 +51,7 @@ class TestACP(unittest.TestCase):
 		dct = 	{ "m2m:acp": {
 					"rn": acpRN,
 					"pv": {
-						"acr": [ { 	"acor": [ self.acpORIGINATOR, self.acpORIGINATOR2, self.acpORIGINATOR3 ],
+						"acr": [ { 	"acor": [ self.acpORIGINATOR, self.acpORIGINATOR2, self.acpORIGINATOR3, self.acpORIGINATORWC, self.acpORIGINATORWC2 ],
 									"acop": 63
 								} ]
 					},
@@ -94,7 +101,7 @@ class TestACP(unittest.TestCase):
 		self.assertIsInstance(findXPath(r, 'm2m:acp/pv/acr/{0}/acor'), list)
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acor/{0}'))
 		self.assertIsInstance(findXPath(r, 'm2m:acp/pv/acr/{0}/acor/{0}'), str)
-		self.assertEqual(findXPath(r, 'm2m:acp/pv/acr/{0}/acor'), [ self.acpORIGINATOR, self.acpORIGINATOR2, self.acpORIGINATOR3 ])
+		self.assertEqual(findXPath(r, 'm2m:acp/pv/acr/{0}/acor'), [ self.acpORIGINATOR, self.acpORIGINATOR2, self.acpORIGINATOR3, self.acpORIGINATORWC, self.acpORIGINATORWC2 ])
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acop'))
 		self.assertIsInstance(findXPath(r, 'm2m:acp/pv/acr/{0}/acop'), int)
 		self.assertEqual(findXPath(r, 'm2m:acp/pv/acr/{0}/acop'), 63)
@@ -176,6 +183,7 @@ class TestACP(unittest.TestCase):
 		self.assertNotEqual(rsc, RC.updated)
 
 
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateAEACPIWrongOriginator(self) -> None:
 		"""	Update <AE> ACPI with third not allowed Originator -> Fail """
@@ -194,6 +202,42 @@ class TestACP(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(aeURL, self.acpORIGINATOR2, dct)
 		self.assertEqual(rsc, RC.updated)
+
+	
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateAElblWithWildCardOriginator(self) -> None:
+		"""	Update <AE> LBL with wildcard Originator """
+		dct =	{ 'm2m:ae': {
+					'lbl': [ '1Label' ]
+				}}
+		r, rsc = UPDATE(aeURL, self.acpORIGINATORWCTest, dct)
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'), r)
+		self.assertEqual(len(findXPath(r, 'm2m:ae/lbl')), 1, r)
+		self.assertIn('1Label', findXPath(r, 'm2m:ae/lbl'), 4)
+
+	
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateAElblWithWildCardOriginator2(self) -> None:
+		"""	Update <AE> LBL with wildcard Originator 2"""
+		dct =	{ 'm2m:ae': {
+					'lbl': [ '2Label' ]
+				}}
+		r, rsc = UPDATE(aeURL, self.acpORIGINATORWC2Test, dct)
+		self.assertEqual(rsc, RC.updated)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/lbl'), r)
+		self.assertEqual(len(findXPath(r, 'm2m:ae/lbl')), 1, r)
+		self.assertIn('2Label', findXPath(r, 'm2m:ae/lbl'), 4)
+
+	
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateAElblWithWildCardOriginator3Wrong(self) -> None:
+		"""	Update <AE> LBL with wrong wildcard Originator 3 -> Fail"""
+		dct =	{ 'm2m:ae': {
+					'lbl': [ '3Label' ]
+				}}
+		r, rsc = UPDATE(aeURL, self.acpORIGINATORWC3Test, dct)
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -368,6 +412,11 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestACP('test_updateAEACPIWrong2'))
 	suite.addTest(TestACP('test_updateAEACPIWrongOriginator'))
 	suite.addTest(TestACP('test_updateAEACPIOtherOriginator'))
+
+	# wildcard tests
+	suite.addTest(TestACP('test_updateAElblWithWildCardOriginator'))
+	suite.addTest(TestACP('test_updateAElblWithWildCardOriginator2'))
+	suite.addTest(TestACP('test_updateAElblWithWildCardOriginator3Wrong'))
 
 	suite.addTest(TestACP('test_createACPNoPVS'))
 	suite.addTest(TestACP('test_createACPEmptyPVS'))

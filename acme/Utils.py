@@ -921,3 +921,85 @@ def toHex(bts:bytes, toBinary:bool=False, withLength:bool=False) -> str:
 	result += f'0x{len(bts):08x}'
 
 	return result
+
+
+def simpleMatch(st:str, pattern:str) -> bool:
+	"""	Simple string match function. 
+		This class supports the following expression operators:
+
+	
+		- '?' : any single character
+		- '*' _ zero or more characters
+		- '\\' - Escape an expression operator
+
+		Examples: 
+			"hello" - "h?llo" -> True
+	 		"hello" - "h?lo" -> False
+	 		"hello" - "h*lo" -> True
+			"hello" - "h*" -> True
+			"hello" - "*lo" -> True
+			"hello" - "*l?" -> True
+
+		Parameter:
+			- st : string to test
+			- pattern : the pattern string
+	"""
+
+	def simpleMatchStar(st:str, pattern:str) -> bool:
+		""" Recursively eat up a string when the pattern is a star in the beginning
+			or middle of a pattern.
+		"""
+		stLen	= len(st)
+		stIndex	= 0
+		while not simpleMatch(st[stIndex:], pattern):
+			stIndex += 1
+			if stIndex >= stLen:
+				return False
+		return True
+
+	last:int		= 0
+	matched:bool	= False
+	reverse:bool	= False
+	stLen			= len(st)
+	patternLen 		= len(pattern)
+
+	# We later increment these indexes first in the loop below, therefore they need to be initialized with -1
+	stIndex			= -1
+	patternIndex 	= -1
+
+	while patternIndex < patternLen-1:
+
+		stIndex 		+= 1
+		patternIndex 	+= 1
+		p 				= pattern[patternIndex]
+
+		if stIndex >= stLen:
+			return False
+
+		# Match exactly one character, if there is one left
+		if p == '?':
+			if stIndex >= stLen:
+				return False
+			continue
+		
+		# Match zero or more characters
+		if p == '*':
+			patternIndex += 1
+			if patternIndex == patternLen:	# * is the last char in the pattern: this is a match
+				return True
+			return simpleMatchStar(st[stIndex:], pattern[patternIndex:])	# Match recursively the remainder of the string
+		
+		# Literal match with the following character
+		if p == '\\':
+			patternIndex += 1
+			p = [patternIndex]
+			# Fall-through
+		
+		# Literall match 
+		if stIndex < stLen:
+			if p != st[stIndex]:
+				return False
+	
+	# End of matches
+	return stIndex == stLen-1
+
