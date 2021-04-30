@@ -80,3 +80,15 @@ class CSEBase(Resource):
 			self[Resource._node] = nl
 
 		return Result(status=True)
+
+
+	def willBeRetrieved(self) -> Result:
+		if not (res := super().willBeRetrieved()).status:
+			return res
+
+		# add the current time to this resource instance
+		self['ctm'] = Utils.getResourceDate()
+		return Result(status=True)
+
+
+		

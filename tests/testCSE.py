@@ -8,6 +8,7 @@
 #
 
 import unittest, sys
+import isodate
 sys.path.append('../acme')
 from typing import Tuple
 from Constants import Constants as C
@@ -63,6 +64,19 @@ class TestCSE(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_attributeCSEctm(self) -> None:
+		"""	Validate <CB> ctm attribute """
+		r, rsc = RETRIEVE(cseURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:cb/ctm'), r)
+		self.assertIsInstance(findXPath(r, 'm2m:cb/ctm'), str, r)
+		try:
+			isodate.parse_datetime(findXPath(r, 'm2m:cb/ctm'))
+		except e:
+			self.fail(str(e))
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_CSESupportedResourceTypes(self) -> None:
 		"""	Check <CB> SRT """
 		r, rsc = RETRIEVE(cseURL, ORIGINATOR)
@@ -94,6 +108,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCSE('test_retrieveCSE'))
 	suite.addTest(TestCSE('test_retrieveCSEWithWrongOriginator'))
 	suite.addTest(TestCSE('test_attributesCSE'))
+	suite.addTest(TestCSE('test_attributeCSEctm'))
 	suite.addTest(TestCSE('test_CSESupportedResourceTypes'))
 	suite.addTest(TestCSE('test_deleteCSE'))
 	suite.addTest(TestCSE('test_updateCSE'))

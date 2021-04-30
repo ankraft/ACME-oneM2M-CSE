@@ -264,6 +264,12 @@ class Resource(object):
 		return Result(status=True)
 
 
+	def willBeRetrieved(self) -> Result:
+		""" Called before a resource will be send back in a response.
+		"""
+		return Result(status=True)
+
+
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
 		""" Called before a child will be added to a resource.
 			This method return True, or False in kind the adding should be rejected, and an error code."""

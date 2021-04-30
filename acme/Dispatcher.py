@@ -113,7 +113,10 @@ class Dispatcher(object):
 		allowedResources = []
 		for r in res.lst:
 			if CSE.security.hasAccess(originator, r, permission):
+				if not r.willBeRetrieved().status:	# resource instance may be changed in this call
+					continue
 				allowedResources.append(r)
+
 
 		#
 		#	Handle more sophisticated RCN
@@ -171,10 +174,12 @@ class Dispatcher(object):
 		else:
 			return Result(rsc=RC.notFound, dbg='resource not found')
 
-		if (resource := res.resource) is not None:
+		if (resource := res.resource) is not None:	# Resource found
 			# Check for virtual resource
 			if resource.ty != T.GRP_FOPT and Utils.isVirtualResource(resource): # fopt is handled elsewhere
 				return resource.handleRetrieveRequest()	# type: ignore[no-any-return]
+			if not (res := resource.willBeRetrieved()).status:	# resource instance may be changed in this call
+				return res
 			return Result(resource=resource)
 		if res.dbg is not None:
 			Logging.logDebug(f'{res.dbg}: {ri}')
