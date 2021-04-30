@@ -140,11 +140,11 @@ resetOnStartup=false
 
 [cse.registration]
 # List of AE originators that can register. This is a comma-separated list of originators.
-# Regular expressions are supported.
-# Default: C.*,S.* 
-allowedAEOriginators=C.*,S.*
+# Wildcards (* and ?) are supported.
+# Default: C*,S* 
+allowedAEOriginators=C*,S*
 # List of CSR originators that can register. This is a comma-separated list of originators.
-# Regular expressions are supported.
+# Wildcards (* and ?) are supported.
 # Note: No leading "/"
 # Default: empty list
 allowedCSROriginators=id-mn

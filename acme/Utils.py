@@ -436,7 +436,8 @@ def isAllowedOriginator(originator: str, allowedOriginators: List[str]) -> bool:
 	if originator is None or allowedOriginators is None:
 		return False
 	for ao in allowedOriginators:
-		if re.fullmatch(re.compile(ao), getIdFromOriginator(originator)):
+		# if re.fullmatch(re.compile(ao), getIdFromOriginator(originator)):
+		if simpleMatch(getIdFromOriginator(originator), ao):
 			return True
 	return False
 
@@ -973,7 +974,7 @@ def simpleMatch(st:str, pattern:str) -> bool:
 		patternIndex 	+= 1
 		p 				= pattern[patternIndex]
 
-		if stIndex >= stLen:
+		if stIndex > stLen:
 			return False
 
 		# Match exactly one character, if there is one left

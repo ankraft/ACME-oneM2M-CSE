@@ -49,10 +49,10 @@ class TestAE(unittest.TestCase):
 				 	'srv': [ '3' ]
 				}}
 		r, rsc = CREATE(cseURL, 'C', T.AE, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.created, r)
 		TestAE.originator = findXPath(r, 'm2m:ae/aei')
 		TestAE.aeACPI = findXPath(r, 'm2m:ae/acpi')
-		self.assertIsNotNone(TestAE.originator)
+		self.assertIsNotNone(TestAE.originator, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -65,7 +65,7 @@ class TestAE(unittest.TestCase):
 				 	'srv': [ '3' ]
 				}}
 		r, rsc = CREATE(aeURL, 'C', T.AE, dct)
-		self.assertEqual(rsc, RC.invalidChildResourceType)
+		self.assertEqual(rsc, RC.invalidChildResourceType, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
