@@ -138,6 +138,11 @@ attributePolicies:AttributePolicies = {
 	'mbs'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT
 	'mcfc'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA),		# NYCFC
 	'mcff'	: ( BT.anyURI,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA),		# NYCFC
+	'mdc'	: ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# TS
+	'mdd'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# TS
+	'mdlt'	: ( BT.list,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# TS
+	'mdn'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# TS
+	'mdt'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# TS
 	'mei'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# m2m:externalID - AE, CSR
 	'mfd'	: ( BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'mfdl'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
@@ -148,11 +153,6 @@ attributePolicies:AttributePolicies = {
 	'mia'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT
 	'mid'	: ( BT.list,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# list of m2m:anyURI - GRP
 	'mma'	: ( BT.unsignedLong,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# MEM
-	'mdc'	: ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# TS
-	'mdd'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# TS
-	'mdlt'	: ( BT.list,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# TS
-	'mdn'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# TS
-	'mdt'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# TS
 	'mmt'	: ( BT.unsignedLong,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# MEM
 	'mni'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT
 	'mnm'	: ( BT.positiveInteger,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# GRP

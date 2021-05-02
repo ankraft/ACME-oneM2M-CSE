@@ -154,7 +154,7 @@ class TS(AnnounceableResource):
 		
 		# Add to monitoring if this is enabled for this TS (mdd & pei & mdt are not None, and mdd==True)
 		if (mdd := self.mdd) is not None and mdd == True and self.pei is not None and self.mdt is not None:
-			CSE.timeSeries.updateTimeSeries(self)
+			CSE.timeSeries.updateTimeSeries(self, childResource)
 
 
 	# Handle the removal of a CIN. 
@@ -219,10 +219,12 @@ class TS(AnnounceableResource):
 	def _validateDataDetect(self, dct:JSON=None) -> None:
 		Logging.log('Validating data detection')
 
-		# Check whether missing data detection is turned on 
-		if (mdd := self.mdd) is not None and mdd == True:
+		# Check whether missing data detection is turned on
+		mdn = self.mdn
+		mdd = self.mdd
+		if mdd is not None and mdd == True:
 			# When missingDataMaxNr is set
-			if (mdn := self.mdn) is not None:
+			if mdn is not None:
 				self.setAttribute('mdlt', [], overwrite=False)	# add missing data list
 				self.setAttribute('mdc', 0, overwrite=False)	# add missing data count
 				# Monitoring is not started here, but happens when the first TSI is added
@@ -230,10 +232,11 @@ class TS(AnnounceableResource):
 				# Remove the list and count when missing data number is not set
 				self.delAttribute('mdlt')	# remove list
 				self.delAttribute('mdc')	# remove counter
-				# Stop monitoring happens below
+				if CSE.timeSeries.isMonitored(self.ri):	# stop monitoring
+					CSE.timeSeries.stopMonitoringTimeSeries(self)
 
 		# If any of mdd, pei or mdt becomes None, or is mdd==False, then stop monitoring this TS
-		if (mdd := self.mdd) is None or mdd == False or self.pei is None or self.mdt is None:
+		if mdd is None or mdd == False or self.pei is None or self.mdt is None:
 			if CSE.timeSeries.isMonitored(self.ri):
 				CSE.timeSeries.stopMonitoringTimeSeries(self)
 		
@@ -251,8 +254,9 @@ class TS(AnnounceableResource):
 			isMonitored = CSE.timeSeries.isMonitored(self.ri)
 			if mdt is None and isMonitored:				# it is in the update, but set to None, meaning remove the mdt from the TS
 				CSE.timeSeries.stopMonitoringTimeSeries(self)
-			elif mdt is not None and isMonitored:		# it is in the update and has a value, so update the monitor
-				CSE.timeSeries.updateTimeSeries(self)	# This will implicitly start monitoring
+			# akr: not sure about the following. mdt is checked in the next period
+			# elif mdt is not None and isMonitored:		# it is in the update and has a value, so update the monitor
+			# 	CSE.timeSeries.updateTimeSeries(self)	# This will implicitly start monitoring
 
 
 		# Save changes

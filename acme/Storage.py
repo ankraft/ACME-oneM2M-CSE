@@ -15,7 +15,7 @@ from tinydb.storages import MemoryStorage
 from tinydb.table import Document
 from tinydb.operations import delete 
 
-import os, json, re, time
+import os, json, re, time, sys
 from copy import deepcopy
 from typing import Callable, Any, cast
 from threading import Lock
@@ -342,9 +342,9 @@ class Storage(object):
 	##	TimeSeries
 	##
 
-	def addTimeSeries(self, ri:str, periodicInterval:int, periodTime:float, missingDataTime:float) -> bool:
+	def addTimeSeries(self, ri:str, periodicInterval:float, missingDataTime:float, nextPeriodTime:float, nextMissingDataTime:float, nextDgt:float) -> bool:
 		#Logging.log(f'addTimeSeries: {ri}, {periodicInterval}, {nextExpected}')
-		return self.db.addTimeSeries(ri, periodicInterval, periodTime, missingDataTime)
+		return self.db.addTimeSeries(ri, periodicInterval, missingDataTime, nextPeriodTime, nextMissingDataTime, nextDgt)
 
 
 	def getTimeSeries(self, ri:str) -> list[Document]:
@@ -361,6 +361,10 @@ class Storage(object):
 
 	def getPastPeriodTimeSeries(self) -> list[Document]:
 		return self.db.getPastPeriodTimeSeries()
+
+
+	def getTimeSeriesInterval(self) -> float:
+		return self.db.getTimeSeriesInterval()
 
 
 	#########################################################################
@@ -681,13 +685,15 @@ class TinyDBBinding(object):
 	#	TimeSeries
 	#
 
-	def addTimeSeries(self, ri:str, periodicInterval:int, periodTime:float, missingDataTime:float) -> bool:
+	def addTimeSeries(self, ri:str, periodicInterval:float, missingDataTime:float, nextPeriodTime:float, nextMissingDataTime:float, nextDgt:float) -> bool:
 		with self.lockTimeSeries:
 			result = self.tabTimeSeries.insert(
 									{	'ri' 	: ri,
 										'pei'	: periodicInterval,
-										'pt' 	: periodTime,		# timestamp for next period
-										'mdt' 	: missingDataTime,	# timestamp when TSI is regarded as expired 
+										'mdt'	: missingDataTime,
+										'npei' 	: nextPeriodTime,		# timestamp for next period
+										'nmdt' 	: nextMissingDataTime,	# timestamp after which a TSI is regarded as expired 
+										'ndgt'	: nextDgt				# timestamp of the *next* dgt
 									})
 			return result is not None
 
@@ -712,9 +718,23 @@ class TinyDBBinding(object):
 	def getPastPeriodTimeSeries(self) -> list[Document]:
 		"""	Return info structs for timeSeries of the just past period in a list. """
 		with self.lockTimeSeries:
-			now = time.time()
-			return self.tabTimeSeries.search(lambda r: r['pt'] < now )		# type: ignore
-			
+			now = Utils.utcTime()
+			return self.tabTimeSeries.search(lambda r: r['nmdt'] < now )		# type: ignore
+
+
+	def getTimeSeriesInterval(self) -> float:
+		""" Return the shortest periodInterval + missingDataTime in any of the actively monitored timeSeries
+			resources. If none was found then 0.0 is returned.
+		"""
+		with self.lockTimeSeries:
+			if len(self.tabTimeSeries) == 0:
+				return 0.0
+			interval = sys.float_info.max
+			for d in self.tabTimeSeries:
+				if (p := d['pei'] + d['mdt']) < interval:
+					interval = p
+			return interval
+
 
 	#
 	#	Statistics
@@ -759,3 +779,5 @@ class TinyDBBinding(object):
 			if 'id' not in data:
 				return False	
 			return len(self.tabAppData.remove(Query().id == data['id'])) > 0 # type: ignore [no-untyped-call]
+
+

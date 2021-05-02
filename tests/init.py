@@ -60,7 +60,7 @@ requestETDuration 		= f'PT{expirationCheckDelay:d}S'
 requestCheckDelay		= 1	#seconds
 
 # TimeSeries Interval
-timeSeriesInterval 		= 2 # seconds
+timeSeriesInterval 		= 1.0 # seconds
 
 # ReleaseVersionIndicator
 RVI						 ='3'
@@ -311,24 +311,24 @@ def enableShortExpirations() -> None:
 #	TimeSeries Monitor
 #
 
-def setTimeSeriesInterval(interval:int) -> int:
+def setTimeSeriesInterval(interval:float) -> float:
 	c, rc = RETRIEVESTRING(CONFIGURL, '')
 	if rc == 200 and c.startswith('Configuration:'):
 		# retrieve the old value
 		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.checkTimeSeriesInterval', '')
-		oldValue = int(c)
+		oldValue = float(c)
 		c, rc = UPDATESTRING(f'{CONFIGURL}/cse.checkTimeSeriesInterval', '', str(interval))
 		return oldValue if c == 'ack' else -1
 	return -1
 
-_orgTSInterval = -1
+_orgTSInterval = -1.0
 
 
 # Reconfigure the server to check faster for timeSeries chesk. This is set to the
 # old value in the tearDowndClass() method.
 def enableShortTimeSeriesChecks() -> None:
 	global _orgTSInterval
-	_orgTSInterval = setTimeSeriesInterval(timeSeriesInterval)
+	_orgTSInterval = setTimeSeriesInterval(timeSeriesInterval / 2.0)
 
 
 def disableShortTimeSeriesChecks() -> None:

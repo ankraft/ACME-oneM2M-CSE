@@ -305,9 +305,9 @@ class HttpServer(object):
 					CSE.registration.startExpirationMonitor()
 					return _r('ack')
 				elif path == 'cse.checkTimeSeriesInterval':
-					if (d := int(data)) < 1:
+					if (f := float(data)) <= 0.0:
 						return _r('nak')
-					Configuration.set(path, d)
+					Configuration.set(path, f)
 					CSE.timeSeries.stopMonitoring()
 					CSE.timeSeries.startMonitoring()
 					return _r('ack')

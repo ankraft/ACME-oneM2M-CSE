@@ -48,8 +48,10 @@ enableValidation=true
 sortDiscoveredResources=true
 # Interval to check for expired resources. 0 means "no checking". Default: 60 seconds
 checkExpirationsInterval=60
-# Interval to check for missing timeSeriesInstances. Default: 10 seconds
-checkTimeSeriesInterval=10
+# Interval to check for missing timeSeriesInstances. 
+# This should be half as long as the shortest <timeSeries> interval. Float. 
+# Default: 1.0 seconds
+checkTimeSeriesInterval=1.0
 # A comma-separated list of supported release versions. This list can contain a single or multiple values.
 # Default: 2a,3,4
 supportedReleaseVersions=2a,3,4

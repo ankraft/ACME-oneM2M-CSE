@@ -100,14 +100,16 @@ def isStructured(uri:str) -> bool:
 
 
 def isVirtualResource(resource: Resource) -> bool:
-	"""	Check whether this resource is a virtual resource. """
+	"""	Check whether the `resource` is a virtual resource. 
+	"""
 	result:bool = resource[resource._isVirtual]
 	return result if result is not None else False
 	# return (ty := r.ty) and ty in C.virtualResources
 
 
 def isAnnouncedResource(resource: Resource) -> bool:
-	"""	Check whether this resource is an announced resource. """
+	"""	Check whether the `resource` is an announced resource. 
+	"""
 	result:bool = resource[resource._isAnnounced]
 	return result if result is not None else False
 
@@ -117,17 +119,25 @@ def isValidID(id: str) -> bool:
 	return id is not None and '/' not in id
 
 
-def getResourceDate(delta: int = 0) -> str:
+def getResourceDate(delta:int=0) -> str:
+	"""	Generate an UTC-relative ISO 8601 timestamp and return it.
+
+		`delta` adds or substracts n seconds to the generated timestamp.
+	"""
 	return toISO8601Date(datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=delta))
 
 
-def toISO8601Date(ts: Union[float, datetime.datetime]) -> str:
+def toISO8601Date(ts:Union[float, datetime.datetime]) -> str:
+	"""	Convert and return a UTC-relative float timestamp or datetime object to an ISO 8601 string.
+	"""
 	if isinstance(ts, float):
 		ts = datetime.datetime.utcfromtimestamp(ts)
 	return ts.strftime('%Y%m%dT%H%M%S,%f')
 
 
 def fromISO8601Date(timestamp:str) -> float:
+	"""	Parse a ISO 8601 string and return a UTC-relative timestamp as a float.
+	"""
 	try:
 		return datetime.datetime.strptime(timestamp, '%Y%m%dT%H%M%S,%f').timestamp()
 	except Exception as e:
@@ -135,8 +145,15 @@ def fromISO8601Date(timestamp:str) -> float:
 		return 0.0
 
 
+def utcTime() -> float:
+	"""	Return the current time's timestamp, but relative to UTC.
+	"""
+	return datetime.datetime.utcnow().timestamp()
+
+
 def structuredPath(resource:Resource) -> str:
-	""" Determine the structured path of a resource. """
+	""" Determine the structured path of a resource.
+	"""
 	rn:str = resource.rn
 	if resource.ty == T.CSEBase: # if CSE
 		return rn
@@ -333,15 +350,20 @@ def removeCommentsFromJSON(data:str) -> str:
 	return commentRegex.sub(_replacer, data)
 
 decimalMatch = re.compile(r'{(\d+)}')
-def findXPath(dct:JSON, element:str, default:Any=None) -> Any:
-	""" Find a structured element in dictionary.
+def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
+	""" Find a structured `key` in the dictionary `dct`. If `key` does not exists then
+		`default` is returned.
+
+		It is possible to address a specific element in an array. This is done be
+		specifying the element as `{n}`.
+
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
 	"""
 
-	if element is None or dct is None:
+	if key is None or dct is None:
 		return default
 
-	paths = element.split("/")
+	paths = key.split("/")
 	data:Any = dct
 	for i in range(0,len(paths)):
 		if data is None:
@@ -364,9 +386,12 @@ def findXPath(dct:JSON, element:str, default:Any=None) -> Any:
 	return data
 
 
-# set a structured element in dictionary. Create if necessary, and observe the overwrite option
-def setXPath(dct:JSON, element:str, value:Any, overwrite:bool=True) -> bool:
-	paths = element.split("/")
+def setXPath(dct:JSON, key:str, value:Any, overwrite:bool=True) -> bool:
+	"""	Set a structured `element` and `value` in thedictionary `dict`. 
+		Create if necessary, and observe the `overwrite` option (True overwrites an
+		existing key/value).
+	"""
+	paths = key.split("/")
 	ln = len(paths)
 	data = dct
 	for i in range(0,ln-1):
@@ -993,7 +1018,7 @@ def simpleMatch(st:str, pattern:str) -> bool:
 		# Literal match with the following character
 		if p == '\\':
 			patternIndex += 1
-			p = [patternIndex]
+			p = pattern[patternIndex]
 			# Fall-through
 		
 		# Literall match 

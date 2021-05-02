@@ -72,7 +72,7 @@ class TestCSE(unittest.TestCase):
 		self.assertIsInstance(findXPath(r, 'm2m:cb/ctm'), str, r)
 		try:
 			isodate.parse_datetime(findXPath(r, 'm2m:cb/ctm'))
-		except e:
+		except Exception as e:
 			self.fail(str(e))
 
 

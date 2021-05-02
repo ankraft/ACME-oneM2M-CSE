@@ -126,7 +126,7 @@ class Configuration(object):
 				'cse.enableValidation'				: config.getboolean('cse', 'enableValidation', 			fallback=True),
 				'cse.sortDiscoveredResources'		: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
 				'cse.checkExpirationsInterval'		: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
-				'cse.checkTimeSeriesInterval'		: config.getint('cse', 'checkTimeSeriesInterval',		fallback=10),		# Seconds
+				'cse.checkTimeSeriesInterval'		: config.getfloat('cse', 'checkTimeSeriesInterval',		fallback=1.0),		# Seconds
 				'cse.flexBlockingPreference'		: config.get('cse', 'flexBlockingPreference',			fallback='blocking'),
 				'cse.supportedReleaseVersions'		: config.getlist('cse', 'supportedReleaseVersions',		fallback=C.supportedReleaseVersions), # type: ignore
 				'cse.releaseVersion'				: config.get('cse', 'releaseVersion',					fallback='3'),
