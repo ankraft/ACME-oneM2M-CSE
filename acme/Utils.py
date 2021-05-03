@@ -139,7 +139,8 @@ def fromISO8601Date(timestamp:str) -> float:
 	"""	Parse a ISO 8601 string and return a UTC-relative timestamp as a float.
 	"""
 	try:
-		return datetime.datetime.strptime(timestamp, '%Y%m%dT%H%M%S,%f').timestamp()
+		return isodate.parse_datetime(timestamp).timestamp()
+		# return datetime.datetime.strptime(timestamp, '%Y%m%dT%H%M%S,%f').timestamp()
 	except Exception as e:
 		Logging.logWarn(f'Wrong format for timestamp: {timestamp}')
 		return 0.0
