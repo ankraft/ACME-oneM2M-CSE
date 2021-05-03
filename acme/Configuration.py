@@ -126,7 +126,6 @@ class Configuration(object):
 				'cse.enableValidation'				: config.getboolean('cse', 'enableValidation', 			fallback=True),
 				'cse.sortDiscoveredResources'		: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
 				'cse.checkExpirationsInterval'		: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
-				'cse.checkTimeSeriesInterval'		: config.getfloat('cse', 'checkTimeSeriesInterval',		fallback=1.0),		# Seconds
 				'cse.flexBlockingPreference'		: config.get('cse', 'flexBlockingPreference',			fallback='blocking'),
 				'cse.supportedReleaseVersions'		: config.getlist('cse', 'supportedReleaseVersions',		fallback=C.supportedReleaseVersions), # type: ignore
 				'cse.releaseVersion'				: config.get('cse', 'releaseVersion',					fallback='3'),
@@ -419,9 +418,6 @@ class Configuration(object):
 		# Check various intervals
 		if Configuration._configuration['cse.checkExpirationsInterval'] <= 0:
 			_print('[red]Configuration Error: \[cse]:checkExpirationsInterval must be greater than 0')
-			return False
-		if Configuration._configuration['cse.checkTimeSeriesInterval'] <= 0:
-			_print('[red]Configuration Error: \[cse]:checkTimeSeriesInterval must be greater than 0')
 			return False
 		# Check configured app api
 		if len(api := Configuration._configuration['app.statistics.aeAPI']) < 2 or api[0] not in ['R', 'N']:

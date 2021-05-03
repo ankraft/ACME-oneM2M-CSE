@@ -304,13 +304,6 @@ class HttpServer(object):
 					CSE.registration.stopExpirationMonitor()
 					CSE.registration.startExpirationMonitor()
 					return _r('ack')
-				elif path == 'cse.checkTimeSeriesInterval':
-					if (f := float(data)) <= 0.0:
-						return _r('nak')
-					Configuration.set(path, f)
-					CSE.timeSeries.stopMonitoring()
-					CSE.timeSeries.startMonitoring()
-					return _r('ack')
 				elif path in [ 'cse.req.minet', 'cse.req.maxnet' ]:
 					if (d := int(data)) < 1:
 							return _r('nak')

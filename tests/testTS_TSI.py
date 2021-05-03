@@ -499,8 +499,6 @@ class TestTS_TSI(unittest.TestCase):
 # TODO: Timing doesn't work
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
-	enableShortTimeSeriesChecks()
-
 	suite = unittest.TestSuite()
 	suite.addTest(TestTS_TSI('test_addTSI'))
 	suite.addTest(TestTS_TSI('test_addMoreTSI'))
@@ -532,7 +530,6 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	
-	disableShortTimeSeriesChecks()
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 

@@ -18,7 +18,12 @@ from helpers.BackgroundWorker import BackgroundWorkerPool
 class TimeSeriesManager(object):
 
 	def __init__(self) -> None:
-		self.startMonitoring()
+		self.workerName 				= 'timeSeriesMonitor'
+		self.currentMonitoringInterval 	= 0.0
+
+		# Check monitoring after a CSE restart
+		self.setMonitorInterval(CSE.storage.getTimeSeriesShortestMdt())
+
 		Logging.log('TimeSeriesManager initialized')
 
 
@@ -28,17 +33,39 @@ class TimeSeriesManager(object):
 		return True
 
 
-	def startMonitoring(self) -> None:
+	def startMonitoring(self, interval:float) -> None:
 		"""	Start a background worker to monitor the timeSeries ingress. 
 		"""
-		if (interval := Configuration.get('cse.checkTimeSeriesInterval')) > 0.0:
-			BackgroundWorkerPool.newWorker(interval, self.timeSeriesMonitor, 'timeSeriesMonitor').start()
+		if len(BackgroundWorkerPool.findWorkers(self.workerName)) > 0:	# Stop existing workers
+			self.stopMonitoring()
+		if interval > 0.0:
+			BackgroundWorkerPool.newWorker(interval, self.timeSeriesMonitor, self.workerName).start()
+			self.currentMonitoringInterval = interval
 
 
 	def stopMonitoring(self) -> None:
 		"""	Stop the background worker that monitores the timeSeries ingress. 
 		"""
-		BackgroundWorkerPool.stopWorkers('timeSeriesMonitor')
+		BackgroundWorkerPool.stopWorkers(self.workerName)
+		self.currentMonitoringInterval = 0.0
+	
+	
+	def setMonitorInterval(self, mdt:float) -> None:
+		"""	Set the monitoring interval according the given `mdt` (missingDataTime) value.
+
+			This value will be divided by 2 to follow the Nyquist–Shannon sampling theorem.
+
+			A value of 0.0 ends monitoring alltogether.
+		"""
+		interval = mdt / 2.0	# see Nyquist–Shannon sampling theorem...
+		if interval == self.currentMonitoringInterval:
+			return
+		if interval == 0.0:
+			Logging().logDebug('Stop TS monitoring')
+			self.stopMonitoring()
+			return
+		Logging().logDebug(f'(Re)Start TS monitoring with interval: {interval}s')
+		self.startMonitoring(interval)	# implicit stop
 
 
 	def timeSeriesMonitor(self) -> bool:
@@ -88,7 +115,8 @@ class TimeSeriesManager(object):
 		if (dgt := Utils.fromISO8601Date(instance.dgt)) == 0.0:	# error
 			Logging.logWarn(f'Error parsing TSI.dgt: {dgt}')
 			return
-		time_ = Utils.utcTime()
+		isNewTS = False
+		time_ 	= Utils.utcTime()
 		if ( l:= len(lst := CSE.storage.getTimeSeries(tsri := timeSeries.ri))) == 0:	# new timeSeries
 			Logging.logDebug(f'Start monitoring TSI: {timeSeries.ri}')
 			CSE.storage.addTimeSeries(	timeSeries.ri, 
@@ -97,6 +125,7 @@ class TimeSeriesManager(object):
 										nextPeriodTime=time_ + pei, 
 										nextMissingDataTime=time_ + pei + mdt,
 										nextDgt=dgt+pei)
+			isNewTS = True
 		elif l > 1:
 			Logging.logErr(f'Multiple DB entries for TSI: {tsri}')
 		else:
@@ -104,11 +133,11 @@ class TimeSeriesManager(object):
 			tse['npei'] = time_ + pei		# next period = now + TS.pei
 			tse['nmdt'] = time_ + pei + mdt	# next missingDataTime = now + TS.pei + TS.mdt
 			CSE.storage.updateTimeSeries(tse)
-		
-		# TODO: determine interval : shortest pei + mgt. Divide by 2, or 3. 
-		# Or is it only the mgt? The pei can be missed, but the mgt window not!
-		# Already shortest? No -> Restart Monitor!
-		Logging.logWarn(CSE.storage.getTimeSeriesInterval())
+
+		# Only need to recalculate and set a new monitoring interval when a TS starts to receive TSI
+		# Or when TS.mdt was changed, but then monitoring was stopped, so this is regarded as a new monitoring anyway
+		if isNewTS:
+			self.setMonitorInterval(CSE.storage.getTimeSeriesShortestMdt())
 
 
 
@@ -121,6 +150,9 @@ class TimeSeriesManager(object):
 		"""	Remove a timeSeries from monitoring.
 		"""
 		Logging.logDebug(f'Remove TS from monitoring: {timeSeries.ri}')
-		return CSE.storage.removeTimeSeries(timeSeries.ri)
-
+		result = CSE.storage.removeTimeSeries(timeSeries.ri)
+		# re-calculate and set the monitoring interval
+		if self.currentMonitoringInterval > 0.0:	# Only need to stop when monitoring
+			self.setMonitorInterval(CSE.storage.getTimeSeriesShortestMdt())
+		return result
 

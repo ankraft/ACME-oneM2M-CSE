@@ -362,9 +362,9 @@ class Storage(object):
 	def getPastPeriodTimeSeries(self) -> list[Document]:
 		return self.db.getPastPeriodTimeSeries()
 
-
-	def getTimeSeriesInterval(self) -> float:
-		return self.db.getTimeSeriesInterval()
+	
+	def getTimeSeriesShortestMdt(self) -> float:
+		return self.db.getTimeSeriesShortestMdt()
 
 
 	#########################################################################
@@ -722,8 +722,8 @@ class TinyDBBinding(object):
 			return self.tabTimeSeries.search(lambda r: r['nmdt'] < now )		# type: ignore
 
 
-	def getTimeSeriesInterval(self) -> float:
-		""" Return the shortest periodInterval + missingDataTime in any of the actively monitored timeSeries
+	def getTimeSeriesShortestMdt(self) -> float:
+		""" Return the shortest missingDataTime in any of the actively monitored timeSeries
 			resources. If none was found then 0.0 is returned.
 		"""
 		with self.lockTimeSeries:
@@ -731,10 +731,10 @@ class TinyDBBinding(object):
 				return 0.0
 			interval = sys.float_info.max
 			for d in self.tabTimeSeries:
-				if (p := d['pei'] + d['mdt']) < interval:
-					interval = p
+				if (mdt := d['mdt']) < interval:
+					interval = mdt
 			return interval
-
+	
 
 	#
 	#	Statistics
