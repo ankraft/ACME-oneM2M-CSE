@@ -299,11 +299,14 @@ def getRequestMinET() -> int:
 # old value in the tearDowndClass() method.
 def enableShortExpirations() -> None:
 	global _orgExpCheck, _orgREQExpCheck, _maxExpiration, _tooLargeExpirationDelta
-	_orgExpCheck = setExpirationCheck(expirationCheckDelay)
-	_orgREQExpCheck = setRequestMinET(expirationCheckDelay)
-	# Retrieve the max expiration delta from the CSE
-	_maxExpiration = getMaxExpiration()
-	_tooLargeExpirationDelta = _maxExpiration * 2	# double of what is allowed
+	try:
+		_orgExpCheck = setExpirationCheck(expirationCheckDelay)
+		_orgREQExpCheck = setRequestMinET(expirationCheckDelay)
+		# Retrieve the max expiration delta from the CSE
+		_maxExpiration = getMaxExpiration()
+		_tooLargeExpirationDelta = _maxExpiration * 2	# double of what is allowed
+	except:
+		pass
 
 
 ###############################################################################

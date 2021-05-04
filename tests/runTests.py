@@ -5,9 +5,7 @@ from rich.table import Column, Table
 from rich.style import Style
 
 
-# testRemoteCSE.py
-# testTransferRequests.py
-# testMgmt objs
+# TODO testTransferRequests.py
 
 loadTests = [ 'testLoad' ]
 

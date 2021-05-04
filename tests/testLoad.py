@@ -78,6 +78,16 @@ class TestLoad(unittest.TestCase):
 		self.assertEqual(len(aes), count)
 		return aes
 
+	
+	def _retrieveAEs(self, count:int, aes:list[Tuple[str, str]]=None) -> None:
+		if aes is None:
+			aes = TestLoad.aes
+		self.assertEqual(len(aes), count)
+		for ae in list(aes):
+			r, rsc = RETRIEVE(f'{cseURL}/{ae[1]}', ORIGINATOR)
+			self.assertEqual(rsc, RC.OK)
+			self.assertEqual(findXPath(r, 'm2m:ae/ri'), ae[0])
+
 
 	def _deleteAEs(self, count:int, aes:list[Tuple[str, str]]=None) -> None:
 		"""	Delete n AE's. Remove the AE's von the given list (only removed from the global list if no list was given).
@@ -127,20 +137,29 @@ class TestLoad(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteAEs(self) -> None:
-		"""	Delete n AEs. This might take a moment. """
-		TestLoad.startTimer()
-		print(f'{self.count} ... ', end='', flush=True)
-		self._deleteAEs(self.count)
-		print(f'{TestLoad.stopTimer(self.count)} ... ', end='', flush=True)
-
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEs(self) -> None:
 		"""	Create n AEs. This might take a moment. """
 		TestLoad.startTimer()
 		print(f'{self.count} ... ', end='', flush=True)
 		TestLoad.aes.extend(self._createAEs(self.count))
+		print(f'{TestLoad.stopTimer(self.count)} ... ', end='', flush=True)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveAEs(self) -> None:
+		"""	Retrieve n AEs. This might take a moment. """
+		TestLoad.startTimer()
+		print(f'{self.count} ... ', end='', flush=True)
+		self._retrieveAEs(self.count)
+		print(f'{TestLoad.stopTimer(self.count)} ... ', end='', flush=True)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteAEs(self) -> None:
+		"""	Delete n AEs. This might take a moment. """
+		TestLoad.startTimer()
+		print(f'{self.count} ... ', end='', flush=True)
+		self._deleteAEs(self.count)
 		print(f'{TestLoad.stopTimer(self.count)} ... ', end='', flush=True)
 
 
@@ -205,7 +224,6 @@ class TestLoad(unittest.TestCase):
 
 # TODO: RETRIEVE CNT+CIN+la n times
 
-# TODO: retrieve AEs
 # TODO Discover AEs
 # TODO discover CIN
 
@@ -215,12 +233,17 @@ class TestLoad(unittest.TestCase):
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestLoad('test_createAEs', 10))
+	suite.addTest(TestLoad('test_retrieveAEs', 10))
 	suite.addTest(TestLoad('test_deleteAEs', 10))
+
 	suite.addTest(TestLoad('test_createAEs', 100))
+	suite.addTest(TestLoad('test_retrieveAEs', 100))
 	suite.addTest(TestLoad('test_deleteAEs', 100))
+
 	suite.addTest(TestLoad('test_createAEsParallel', 10, 10))
 	suite.addTest(TestLoad('test_deleteAEsParallel', 10, 10))
 	suite.addTest(TestLoad('test_createAEs', 1000))
+	suite.addTest(TestLoad('test_retrieveAEs', 1000))
 	suite.addTest(TestLoad('test_deleteAEs', 1000))
 
 	suite.addTest(TestLoad('test_createAEsParallel', 100, 10))
