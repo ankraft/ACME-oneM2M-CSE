@@ -486,6 +486,7 @@ skinparam rectangle {
 		result += f'    - REQ           : {CSE.dispatcher.countResources(T.REQ)}\n'
 		result += f'    - SUB           : {CSE.dispatcher.countResources(T.SUB)}\n'
 		result += f'    - TS            : {CSE.dispatcher.countResources(T.TS)}\n'
+		result += f'    - TSI           : {CSE.dispatcher.countResources(T.TSI)}\n'
 		result += f'    - **Total**         : {int(stats[resourceCount]) - CSE.dispatcher.countResources((T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.GRP_FOPT, T.PCH_PCU))}\n'	# substract the virtual resources
 		if self.statisticsEnabled:
 			result += '- **HTTP Requests**\n'

@@ -486,4 +486,7 @@ def _keyInspectResourceChildren(key:str) -> None:
 def _keyResetCSE(key:str) -> None:
 	"""	Reset the CSE. Remove all resources and do the importing again.
 	"""
+	Logging.console('**Resetting CSE**', extranl=True)
+	Logging.enableScreenLogging = True
 	resetCSE()
+
