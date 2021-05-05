@@ -325,7 +325,7 @@ class HttpServer(object):
 		if path == 'puml':
 			return Response(response=CSE.statistics.getStructurePuml(lvl), headers=self._responseHeaders)
 		if path == 'text':
-			return Response(response=CSE.statistics.getResourceTreeText(lvl), headers=self._responseHeaders)
+			return Response(response=CSE.console.getResourceTreeText(lvl), headers=self._responseHeaders)
 		return Response(response='unsupported', status=422, headers=self._responseHeaders)
 
 

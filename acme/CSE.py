@@ -10,9 +10,9 @@
 from __future__ import annotations
 import atexit, argparse, os, threading, time, sys
 from typing import Dict, Optional, Any
-from Constants import Constants as C
 from AnnouncementManager import AnnouncementManager
 from Configuration import Configuration
+from Console import Console
 from Dispatcher import Dispatcher
 from RequestManager import RequestManager
 from EventManager import EventManager
@@ -30,10 +30,10 @@ from TimeSeriesManager import TimeSeriesManager
 from Validator import Validator
 from Types import CSEType, ContentSerializationType
 
+
 from AEStatistics import AEStatistics
 from CSENode import CSENode
 import Utils
-from helpers.KeyHandler import loop, stopLoop, readline
 from helpers.BackgroundWorker import BackgroundWorkerPool
 
 
@@ -42,14 +42,15 @@ from helpers.BackgroundWorker import BackgroundWorkerPool
 # singleton main components. These variables will hold all the various manager
 # components that are used throughout the CSE implementation.
 announce:AnnouncementManager					= None
+console:Console									= None
 dispatcher:Dispatcher							= None
-request:RequestManager							= None
 event:EventManager								= None
 group:GroupManager								= None
 httpServer:HttpServer							= None
 notification:NotificationManager				= None
 registration:RegistrationManager 				= None
 remote:RemoteCSEManager							= None
+request:RequestManager							= None
 security:SecurityManager 						= None
 statistics:Statistics							= None
 storage:Storage									= None
@@ -83,7 +84,7 @@ shuttingDown									= False
 
 #def startup(args=None, configfile=None, resetdb=None, loglevel=None):
 def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
-	global announce, dispatcher, event, group, httpServer, notification, registration
+	global announce, console, dispatcher, event, group, httpServer, notification, registration
 	global remote, request, security, statistics, storage, timeSeries, validator
 	global rootDirectory
 	global aeStatistics
@@ -155,6 +156,8 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	announce = AnnouncementManager()		# Initialize the announcement manager
 	startAppsDelayed()						# Start the App. They are actually started after the CSE finished the startup
 
+	console = Console()						# Start the console
+
 	# Send an event that the CSE startup finished
 	event.cseStartup()	# type: ignore
 
@@ -169,37 +172,6 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	return True
 
 
-def run() -> None:
-
-	#
-	#	Enter an endless loop.
-	#	Execute keyboard commands in the keyboardHandler's loop() function.
-	#
-	commands = {
-		'?'     : _keyHelp,
-		'h'		: _keyHelp,
-		'\n'	: lambda c: print(),	# 1 empty line
-		'\x03'  : _keyShutdownCSE,		# See handler below
-		'c'		: _keyConfiguration,
-		'C'		: _keyClearScreen,
-		'D'		: _keyDeleteResource,
-		'i'		: _keyInspectResource,
-		'I'		: _keyInspectResourceChildren,
-		'l'     : _keyToggleLogging,
-		'Q'		: _keyShutdownCSE,		# See handler below
-		'r'		: _keyCSERegistrations,
-		's'		: _keyStatistics,
-		't'		: _keyResourceTree,
-		'T'		: _keyChildResourceTree,
-		'w'		: _keyWorkers,
-		'Z'		: _keyResetCSE,
-	}
-
-	#	Endless runtime loop. This handles key input & commands
-	#	The CSE's shutdown happens in one of the key handlers below
-	loop(commands, catchKeyboardInterrupt=True, headless=isHeadless)
-	shutdown()
-
 
 def shutdown() -> None:
 	"""	Gracefully shutdown the CSE programmatically. This will end the mail console loop
@@ -211,7 +183,7 @@ def shutdown() -> None:
 	# indicating the shutting down status. When running in another environment the
 	# atexit-handler might not be called. Therefore, we need to set it here
 	shuttingDown = True		
-	stopLoop()				# This will end the main run loop.
+	console.stop()				# This will end the main run loop.
 	if isHeadless:
 		Logging.console('CSE shutting down')
 
@@ -224,6 +196,7 @@ def _shutdown() -> None:
 	Logging.log('CSE shutting down')
 	if event is not None:
 		event.cseShutdown() 	# type: ignore
+	console is not None and console.shutdown()
 	httpServer is not None and httpServer.shutdown()
 	announce is not None and announce.shutdown()
 	remote is not None and remote.shutdown()
@@ -253,6 +226,9 @@ def resetCSE() -> None:
 		sys.exit()	# what else can we do?
 	Logging.logWarn('Resetting CSE finished')
 
+
+def run() -> None:
+	console.run()
 
 ##############################################################################
 #
@@ -296,197 +272,4 @@ def stopApps() -> None:
 			aeStatistics.shutdown()
 		if aeCSENode is not None:
 			aeCSENode.shutdown()
-
-
-##############################################################################
-#
-#	Various keyboard command handlers
-#
-
-def _keyHelp(key:str) -> None:
-	"""	Print help for keyboard commands.
-	"""
-	Logging.console(f'\n[white][dim][[/dim][red][i]ACME[/i][/red][dim]] {C.version}', plain=True)
-	Logging.console("""**Console Commands**  
-- h, ?  - This help
-- Q, ^C - Shutdown CSE
-- c     - Show configuration
-- C     - Clear the console screen
-- D     - Delete resource
-- i     - Inspect resource
-- I     - Inspect resource and child resources
-- l     - Toggle logging on/off
-- r     - Show CSE registrations
-- s     - Show statistics
-- t     - Show resource tree
-- T     - Show child resource tree
-- w     - Show worker threads status
-- Z     - Reset the CSE
-""", extranl=True)
-
-
-def _keyShutdownCSE(key:str) -> None:
-	"""	Shutdown the CSE.
-	"""
-	if not isHeadless:
-		Logging.console('Shutdown CSE')
-	sys.exit()
-
-
-def _keyToggleLogging(key:str) -> None:
-	"""	Toggle through the log levels.
-	"""
-	Logging.enableScreenLogging = not Logging.enableScreenLogging
-	Logging.console(f'Logging enabled -> **{Logging.enableScreenLogging}**')
-
-
-def _keyWorkers(key:str) -> None:
-	"""	Print the worker and actor threads.
-	"""
-	from rich.table import Table
-
-	Logging.console('**Worker & Actor Threads**', extranl=True)
-	table = Table()
-	table.add_column('Name', no_wrap=True)
-	table.add_column('Type', no_wrap=True)
-	table.add_column('Interval', no_wrap=True)
-	table.add_column('Runs', no_wrap=True)
-	for w in BackgroundWorkerPool.backgroundWorkers.values():
-		a = 'Actor' if w.count == 1 else 'Worker'
-		table.add_row(w.name, a, str(w.interval), str(w.numberOfRuns))
-	Logging.console(table, extranl=True)
-
-
-def _keyConfiguration(key:str) -> None:
-	"""	Print the configuration.
-	"""
-	from rich.table import Table
-
-	Logging.console('**Configuration**', extranl=True)
-	conf = Configuration.print().split('\n')
-	conf.sort()
-	table = Table()
-	table.add_column('Key', no_wrap=True)
-	table.add_column('Value', no_wrap=False)
-	for c in conf:
-		if c.startswith('Configuration:'):
-			continue
-		kv = c.split(' = ', 1)
-		if len(kv) == 2:
-			table.add_row(kv[0].strip(), kv[1])
-	Logging.console(table, extranl=True)
-
-
-def _keyClearScreen(key:str) -> None:
-	"""	Clear the console screen.
-	"""
-	Logging.consoleClear()
-
-
-def _keyResourceTree(key:str) -> None:
-	"""	Render the CSE's resource tree.
-	"""
-	Logging.console('**Resource Tree**', extranl=True)
-	Logging.console(statistics.getResourceTreeRich())
-	Logging.console()
-
-
-def _keyChildResourceTree(key:str) -> None:
-	"""	Render the CSE's resource tree, beginning with a child resource.
-	"""
-	Logging.console('**Child Resource Tree**', extranl=True)
-	loggingOld = Logging.loggingEnabled
-	Logging.loggingEnabled = False
-	
-	if (ri := readline('ri=')) is None:
-		Logging.console()
-	elif len(ri) > 0:
-		if (tree := statistics.getResourceTreeRich(parent=ri)) is not None:
-			Logging.console(tree)
-		else:
-			Logging.console('not found', isError=True)
-
-	Logging.loggingEnabled = loggingOld
-
-
-def _keyCSERegistrations(key:str) -> None:
-	"""	Render CSE registrations.
-	"""
-	Logging.console('**CSE Registrations**', extranl=True)
-	Logging.console(statistics.getCSERegistrationsRich())
-	Logging.console()
-
-
-def _keyStatistics(key:str) -> None:
-	""" Render various statistics & counts.
-	"""
-	Logging.console('**Statistics**', extranl=True)
-	Logging.console(statistics.getStatisticsRich())
-	Logging.console()
-
-
-def _keyDeleteResource(key:str) -> None:
-	"""	Delete a resource from the CSE.
-	"""
-	Logging.console('**Delete Resource**', extranl=True)
-	loggingOld = Logging.loggingEnabled
-	Logging.loggingEnabled = False
-
-	if (ri := readline('ri=')) is None:
-		Logging.console()
-	elif len(ri) > 0:
-		if (res := dispatcher.retrieveResource(ri)).resource is None:
-			Logging.console(res.dbg, isError=True)
-		else:
-			if (res := dispatcher.deleteResource(res.resource, withDeregistration=True)).resource is None:
-				Logging.console(res.dbg, isError=True)
-			else:
-				Logging.console('ok')
-
-	Logging.loggingEnabled = loggingOld
-
-
-def _keyInspectResource(key:str) -> None:
-	"""	Show a resource.
-	"""
-	Logging.console('**Inspect Resource**', extranl=True)
-	loggingOld = Logging.loggingEnabled
-	Logging.loggingEnabled = False
-	
-	if (ri := readline('ri=')) is None:
-		Logging.console()
-	elif len(ri) > 0:
-		if (res := dispatcher.retrieveResource(ri)).resource is None:
-			Logging.console(res.dbg, isError=True)
-		else:
-			Logging.console(res.resource.asDict())
-	Logging.loggingEnabled = loggingOld
-
-def _keyInspectResourceChildren(key:str) -> None:
-	"""	Show a resource and its children.
-	"""
-	Logging.console('**Inspect Resource and Children**', extranl=True)
-	loggingOld = Logging.loggingEnabled
-	Logging.loggingEnabled = False
-	
-	if (ri := readline('ri=')) is None:
-		Logging.console()
-	elif len(ri) > 0:
-		if (res := dispatcher.retrieveResource(ri)).resource is None:
-			Logging.console(res.dbg, isError=True)
-		else: 
-			if (resdis := dispatcher.discoverResources(ri, originator=cseOriginator)).lst is None:
-				Logging.console(resdis.dbg, isError=True)
-			else:
-				dispatcher.resourceTreeDict(resdis.lst, res.resource)	# the function call add attributes to the target resource
-				Logging.console(res.resource.asDict())
-	Logging.loggingEnabled = loggingOld
-
-
-def _keyResetCSE(key:str) -> None:
-	"""	Reset the CSE. Remove all resources and do the importing again.
-	"""
-	Logging.console('**Resetting CSE**', extranl=True)
-	Logging.enableScreenLogging = True
-	resetCSE()
 
