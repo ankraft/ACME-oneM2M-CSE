@@ -85,9 +85,9 @@ class AppBase(object):
 
 	#########################################################################
 
-	def startWorker(self, updateInterval:float, worker:Callable, name:str=None) -> None:	# type:ignore[type-arg]
+	def startWorker(self, interval:float, worker:Callable, name:str=None) -> None:	# type:ignore[type-arg]
 		self.stopWorker()
-		self.worker = BackgroundWorkerPool.newWorker(updateInterval, worker, name).start()
+		self.worker = BackgroundWorkerPool.newWorker(interval, worker, name).start()
 
 
 	def stopWorker(self) -> None:

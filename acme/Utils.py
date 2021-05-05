@@ -127,7 +127,7 @@ def getResourceDate(delta:int=0) -> str:
 	return toISO8601Date(datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=delta))
 
 
-def toISO8601Date(ts:Union[float, datetime.datetime], isUTCtimestamp=True) -> str:
+def toISO8601Date(ts:Union[float, datetime.datetime], isUTCtimestamp:bool=True) -> str:
 	"""	Convert and return a UTC-relative float timestamp or datetime object to an ISO 8601 string.
 	"""
 	if isinstance(ts, float):

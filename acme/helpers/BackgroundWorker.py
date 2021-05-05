@@ -9,29 +9,32 @@
 
 from __future__ import annotations
 from Logging import Logging
+import Utils
 import time, random, sys
 from threading import Thread
 from typing import Callable, List, Dict, Any, Protocol
 
+# TODO what happens when interval is continuously to short? Error message?
 
 class BackgroundWorker(object):
 	"""	This class provides the functionality for background worker or a single actor instance.
 	"""
 
-	def __init__(self, updateInterval:float, callback:Callable, name:str=None, startWithDelay:bool=False, count:int=None, dispose:bool=True, id:int=None, compensateProcessTime:bool=False) -> None:		# type: ignore[type-arg]
-		self.updateInterval = updateInterval
-		self.updateIntervalCorrected = updateInterval	# this takes processing time into account. Default = updateInterval
-		self.compensateProcessTime = compensateProcessTime
-		self.callback = callback
-		self.running = False		# Indicator that a worker is running or will be stopped
-		self.isStopped = True		# Indicator that a worker has really stopped
-		self.workerThread: Thread = None
-		self.name = name
-		self.startWithDelay = startWithDelay
-		self.count = count
-		self.numberOfRuns = 0
-		self.dispose = dispose	# Only run once, then remove itself from the pool
-		self.id = id
+	def __init__(self, interval:float, callback:Callable, name:str=None, startWithDelay:bool=False, count:int=None, dispose:bool=True, id:int=None, compensateProcessTime:bool=False) -> None:		# type: ignore[type-arg]
+		self.interval 				= interval
+		self.realInterval 			= interval					# this takes processing time into account and may be calculated for every run. Default = interval
+		self.compensateProcessTime	= compensateProcessTime
+		self.nextRunTime:float		= None
+		self.callback 				= callback
+		self.running 				= False						# Indicator that a worker is running or will be stopped
+		self.isStopped 				= True						# Indicator that a worker has really stopped
+		self.workerThread: Thread 	= None
+		self.name 					= name
+		self.startWithDelay 		= startWithDelay
+		self.count 					= count
+		self.numberOfRuns 			= 0
+		self.dispose 				= dispose					# Only run once, then remove itself from the pool
+		self.id 					= id
 
 
 	def start(self, **args:Any) -> BackgroundWorker:
@@ -47,6 +50,7 @@ class BackgroundWorker(object):
 		self.workerThread = Thread(target=self.work)
 		self.workerThread.setDaemon(True)	# Make the thread a daemon of the main thread
 		self.workerThread.name = self.name
+		self.nextRunTime = Utils.utcTime()		# initialize
 		self.workerThread.start()
 		return self
 
@@ -57,8 +61,8 @@ class BackgroundWorker(object):
 		Logging.logDebug(f'Stopping worker thread: {self.name}')
 		# Stop the thread
 		self.running = False
-		if self.workerThread is not None and self.updateInterval is not None:
-			self.workerThread.join(self.updateInterval + 5) # wait a short time for the thread to terminate
+		if self.workerThread is not None and self.interval is not None:
+			self.workerThread.join(self.interval + 5) # wait a short time for the thread to terminate
 			self.workerThread = None
 		# Note: worker is removed in _postCall()
 		return self
@@ -73,11 +77,6 @@ class BackgroundWorker(object):
 		if self.startWithDelay:	# First execution of the worker after a sleep
 			self._sleep()
 		while self.running:
-
-			# If compensating for the runtime then remember the start time 
-			if self.compensateProcessTime:
-				startProcessTime = time.perf_counter()
-
 			result = True
 			try:
 				self.numberOfRuns += 1
@@ -87,13 +86,6 @@ class BackgroundWorker(object):
 			finally:
 				if self.count is not None and self.numberOfRuns >= self.count:
 					self.running = False
-
-				# If compensating for the runtime then re-calculate the next sleep time 
-				if self.compensateProcessTime:
-					self.updateIntervalCorrected = self.updateInterval - (time.perf_counter() - startProcessTime)
-					if self.updateIntervalCorrected < 0.0:	# Running the task might have taken longer than the interval. Then don't sleep.
-						self.updateIntervalCorrected = 0.0
-				
 				if result and self.running:
 					self._sleep()
 					continue
@@ -106,12 +98,21 @@ class BackgroundWorker(object):
 
 	# self-made sleep. Helps in speed-up shutdown etc
 	divider = 5.0
+	minSleep = 1.0 / divider
 	def _sleep(self) -> None:
-		if self.updateIntervalCorrected < 1.0:
-			time.sleep(self.updateIntervalCorrected)
+
+		# If compensating for the runtime then re-calculate the next real sleep time necessary to match the next runTime
+		if self.compensateProcessTime:
+			self.nextRunTime += self.interval						# next interval
+			self.realInterval = self.nextRunTime - Utils.utcTime()	# nextRunTime points already to the next run time
+			if self.realInterval <= 0.0:							# Running the task might have taken longer than the interval. Then don't sleep.
+				return												# no sleep
+
+		if self.realInterval < self.minSleep:
+			time.sleep(self.realInterval)
 		else:
-			for i in range(0, int(self.updateIntervalCorrected * self.divider)):
-				time.sleep(1.0 / self.divider)
+			for i in range(0, int(self.realInterval * self.divider)):
+				time.sleep(self.minSleep)
 				if not self.running:
 					break
 
@@ -126,7 +127,7 @@ class BackgroundWorker(object):
 
 
 	def __repr__(self) -> str:
-		return f'BackgroundWorker(name={self.name}, callback={str(self.callback)}, running={self.running}, updateInterval={self.updateInterval:f}, startWithDelay={self.startWithDelay}, numberOfRuns={self.numberOfRuns:d}, dispose={self.dispose}, id={self.id})'
+		return f'BackgroundWorker(name={self.name}, callback={str(self.callback)}, running={self.running}, interval={self.interval:f}, startWithDelay={self.startWithDelay}, numberOfRuns={self.numberOfRuns:d}, dispose={self.dispose}, id={self.id}, compensateProcessTime={self.compensateProcessTime})'
 
 
 
@@ -141,14 +142,14 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def newWorker(cls, updateInterval:float, workerCallback:Callable, name:str=None, startWithDelay:bool=False, count:int=None, dispose:bool=True, compensateProcessTime:bool=False) -> BackgroundWorker:	# type:ignore[type-arg]
+	def newWorker(cls, interval:float, workerCallback:Callable, name:str=None, startWithDelay:bool=False, count:int=None, dispose:bool=True, compensateProcessTime:bool=False) -> BackgroundWorker:	# type:ignore[type-arg]
 		"""	Create a new background worker that periodically executes the callback.
 		"""
 		# Get a unique ID
 		while True:
 			if (id := random.randint(1,sys.maxsize)) not in cls.backgroundWorkers:
 				break
-		worker = BackgroundWorker(updateInterval, workerCallback, name, startWithDelay, count=count, dispose=dispose, id=id, compensateProcessTime=compensateProcessTime)
+		worker = BackgroundWorker(interval, workerCallback, name, startWithDelay, count=count, dispose=dispose, id=id, compensateProcessTime=compensateProcessTime)
 		cls.backgroundWorkers[id] = worker
 		return worker
 

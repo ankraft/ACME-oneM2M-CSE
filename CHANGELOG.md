@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Corrected response status codes for AE registration errors.
 - [CSE] Prevent CREATE and UPDATE requests for \<flexContainerInstance> resource type.
 - [CSE] Re-added: remove comments from received JSON content.
+- [CSE] Improved the timely execution of background tasks. The actual task's execution time is not added on top to the interval anymore.
 
 
 ## [0.7.3] - 2021-03-26

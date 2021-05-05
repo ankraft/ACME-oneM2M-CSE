@@ -657,7 +657,7 @@ class TinyDBBinding(object):
 									{	'ri' 		: ri,
 										'nu' 		: nu,
 										'csz'		: serialization.value,
-										'tstamp'	: time.time(),
+										'tstamp'	: Utils.utcTime(),
 										'request'	: notificationRequest
 									})
 			return result is not None
