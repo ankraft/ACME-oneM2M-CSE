@@ -6,9 +6,9 @@
 #
 cbor2==5.2.0
     # via ACME-oneM2M-CSE (setup.py)
-certifi==2020.11.8
+certifi==2020.12.5
     # via requests
-chardet==3.0.4
+chardet==4.0.0
     # via requests
 click==7.1.2
     # via flask
@@ -28,21 +28,21 @@ jinja2==2.11.3
     # via flask
 markupsafe==1.1.1
     # via jinja2
-psutil==5.7.3
+psutil==5.8.0
     # via ACME-oneM2M-CSE (setup.py)
-pygments==2.7.2
+pygments==2.9.0
     # via rich
-requests==2.25.0
+requests==2.25.1
     # via ACME-oneM2M-CSE (setup.py)
-rich==9.8.1
+rich==10.1.0
     # via ACME-oneM2M-CSE (setup.py)
 six==1.15.0
     # via isodate
 tinydb==4.4.0
     # via ACME-oneM2M-CSE (setup.py)
-typing-extensions==3.7.4.3
+typing-extensions==3.10.0.0
     # via rich
-urllib3==1.26.3
+urllib3==1.26.4
     # via requests
 werkzeug==1.0.1
     # via flask
