@@ -388,6 +388,8 @@ class TestTS_TSI(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
 
+		_pei = findXPath(r, 'm2m:ts/pei') / 1000.0
+		_mdt = findXPath(r, 'm2m:ts/mdt') / 1000.0 
 		for i in range(expectedMdc):
 			tsidct = { 'm2m:tsi' : {
 						'dgt' : (date := getDate()),
@@ -396,7 +398,13 @@ class TestTS_TSI(unittest.TestCase):
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, tsidct)
 			self.assertEqual(rsc, RC.created, r)
-			time.sleep(timeSeriesInterval * 2)
+			# time.sleep(timeSeriesInterval * 2)
+			time.sleep(_pei + _mdt + _mdt/2.0)
+
+			r, rsc = RETRIEVE(tsURL, TestTS_TSI.originator)
+			self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
+			self.assertLessEqual(len(findXPath(r, 'm2m:ts/mdlt')), maxMdn, r)
+
 		
 		# Check TS for missing TSI
 		r, rsc = RETRIEVE(tsURL, TestTS_TSI.originator)
