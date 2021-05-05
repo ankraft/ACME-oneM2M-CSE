@@ -8,6 +8,7 @@
 #
 
 from __future__ import annotations
+import os, sys
 from typing import Dict, Union, cast
 from Logging import Logging
 from Configuration import Configuration
@@ -20,6 +21,8 @@ from helpers.BackgroundWorker import BackgroundWorkerPool
 from resources.Resource import Resource
 from Types import CSEType, ResourceTypes as T
 from rich.tree import Tree
+from rich.table import Table
+from rich.panel import Panel
 
 
 
@@ -457,57 +460,102 @@ skinparam rectangle {
 		
 
 # TODO events transit requests
-	def getStatisticsRich(self) -> str:
+	def getStatisticsRich(self) -> Table:
 		"""	Generate an overview about various resources and event counts.
 		"""
 
-		result = ''
 		stats = self.getStats()
-		if self.statisticsEnabled:
-			result += '- **Resource Operations**\n'
-			result += f'    - Created       : {stats[createdResources]}\n'
-			result += f'    - Updated       : {stats[updatedResources]}\n'
-			result += f'    - Deleted       : {stats[deletedResources]}\n'
-			result += f'    - Expired       : {stats[expiredResources]}\n'
-			result += f'    - Notifications : {stats[notifications]}\n'
-		result += '- **Resource Types**\n'
-		result += f'    - AE            : {CSE.dispatcher.countResources(T.AE)}\n'
-		result += f'    - ACP           : {CSE.dispatcher.countResources(T.ACP)}\n'
-		result += f'    - CIN           : {CSE.dispatcher.countResources(T.CIN)}\n'
-		result += f'    - CB            : {CSE.dispatcher.countResources(T.CSEBase)}\n'
-		result += f'    - CNT           : {CSE.dispatcher.countResources(T.CNT)}\n'
-		result += f'    - CSR           : {CSE.dispatcher.countResources(T.CSR)}\n'
-		result += f'    - FCNT          : {CSE.dispatcher.countResources(T.FCNT)}\n'
-		result += f'    - FCI           : {CSE.dispatcher.countResources(T.FCI)}\n'
-		result += f'    - GRP           : {CSE.dispatcher.countResources(T.GRP)}\n'
-		result += f'    - MgmtObj       : {CSE.dispatcher.countResources(T.MGMTOBJ)}\n'
-		result += f'    - NOD           : {CSE.dispatcher.countResources(T.NOD)}\n'
-		result += f'    - PCH           : {CSE.dispatcher.countResources(T.PCH)}\n'
-		result += f'    - REQ           : {CSE.dispatcher.countResources(T.REQ)}\n'
-		result += f'    - SUB           : {CSE.dispatcher.countResources(T.SUB)}\n'
-		result += f'    - TS            : {CSE.dispatcher.countResources(T.TS)}\n'
-		result += f'    - TSI           : {CSE.dispatcher.countResources(T.TSI)}\n'
-		result += f'    - **Total**         : {int(stats[resourceCount]) - CSE.dispatcher.countResources((T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.GRP_FOPT, T.PCH_PCU))}\n'	# substract the virtual resources
-		if self.statisticsEnabled:
-			result += '- **HTTP Requests**\n'
-			result += '    - **Received**\n'
-			result += f'        - RETRIEVE   : {stats[httpRetrieves]}\n'
-			result += f'        - CREATE     : {stats[httpCreates]}\n'
-			result += f'        - UPDATE     : {stats[httpUpdates]}\n'
-			result += f'        - DELETE     : {stats[httpDeletes]}\n'
-			result += '    - **Sent**\n'
-			result += f'        - RETRIEVE   : {stats[httpSendRetrieves]}\n'
-			result += f'        - CREATE     : {stats[httpSendCreates]}\n'
-			result += f'        - UPDATE     : {stats[httpSendUpdates]}\n'
-			result += f'        - DELETE     : {stats[httpSendDeletes]}\n'
-			result += '- **Logs**\n'
-			result += f'    - Errors        : {stats[logErrors]}\n'
-			result += f'    - Warnings      : {stats[logWarnings]}\n'
-		result += '- **Misc**\n'
-		result += f'    - StartTime     : {datetime.datetime.fromtimestamp(Utils.fromISO8601Date(cast(str, stats[cseStartUpTime])))} (UTC)\n'
-		result += f'    - Uptime        : {stats[cseUpTime]}\n'
 
-		if not self.statisticsEnabled:
-			result += f'\n(statistics are disabled)\n'
+		if self.statisticsEnabled:
+			resourceOps  =  '[bold]Resource Operations[/bold]\n'
+			resourceOps += 	'\n'
+			resourceOps +=  f'Created       : {stats[createdResources]}\n'
+			resourceOps +=  f'Updated       : {stats[updatedResources]}\n'
+			resourceOps +=  f'Deleted       : {stats[deletedResources]}\n'
+			resourceOps +=  f'Expired       : {stats[expiredResources]}\n'
+			resourceOps +=  f'Notifications : {stats[notifications]}\n'
+
+			httpReceived  = '[bold]HTTP Received[/bold]\n'
+			httpReceived += 	'\n'
+			httpReceived += f'RETRIEVE : {stats[httpRetrieves]}\n'
+			httpReceived += f'CREATE   : {stats[httpCreates]}\n'
+			httpReceived += f'UPDATE   : {stats[httpUpdates]}\n'
+			httpReceived += f'DELETE   : {stats[httpDeletes]}\n'
+
+			httpSent  = 	'[bold]HTTP Sent[/bold]\n'
+			httpSent += 	'\n'
+			httpSent += 	f'RETRIEVE : {stats[httpSendRetrieves]}\n'
+			httpSent += 	f'CREATE   : {stats[httpSendCreates]}\n'
+			httpSent += 	f'UPDATE   : {stats[httpSendUpdates]}\n'
+			httpSent += 	f'DELETE   : {stats[httpSendDeletes]}\n'
+
+			logs  = '[bold]Logs[/bold]\n'
+			logs += '\n'
+			logs += f'Errors   : {stats[logErrors]}\n'
+			logs += f'Warnings : {stats[logWarnings]}\n'
+
+		else:
+			resourceOps  = '\n[dim]statistics are disabled[/dim]\n'
+			httpReceived = '\n[dim]statistics are disabled[/dim]\n'
+			httpSent     = '\n[dim]statistics are disabled[/dim]\n'
+			logs         = '\n[dim]statistics are disabled[/dim]\n'
+
+		misc  = '[bold]Misc[/bold]\n'
+		misc += '\n'
+		misc += f'StartTime : {datetime.datetime.fromtimestamp(Utils.fromISO8601Date(cast(str, stats[cseStartUpTime])))} (UTC)\n'
+		misc += f'Uptime    : {stats[cseUpTime]}\n'
+		if hasattr(os, 'getloadavg'):
+			load = os.getloadavg()
+			misc += f'Load      : {load[0]:.2f} | {load[1]:.2f} | {load[2]:.2f}\n'
+		else:
+			misc += '\n'
+		misc += f'Platform  : {sys.platform}\n'
+		misc += f'Python    : {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}\n'
+
+		# Adapt the following line when adding resources to keep formatting. 
+		# It fills up the right columns to match the length of the left column.
+		misc += '\n' * ( 3 if self.statisticsEnabled else 8)
+
+		requestsGrid = Table.grid(expand=True)
+		requestsGrid.add_column(ratio=33)
+		requestsGrid.add_column(ratio=33)
+		requestsGrid.add_column(ratio=33)
+		requestsGrid.add_row(resourceOps, httpReceived, httpSent)
+
+		infoGrid = Table.grid(expand=True)
+		infoGrid.add_column(ratio=33)
+		infoGrid.add_column(ratio=67)
+		infoGrid.add_row(logs, misc)
+
+		rightGrid = Table.grid(expand=True)
+		rightGrid.add_column()
+		rightGrid.add_row(Panel(requestsGrid))
+		rightGrid.add_row(Panel(infoGrid))
+
+		resourceTypes = '[bold]Resource Types[/bold]\n'
+		resourceTypes += '\n'
+		resourceTypes += f'AE      : {CSE.dispatcher.countResources(T.AE)}\n'
+		resourceTypes += f'ACP     : {CSE.dispatcher.countResources(T.ACP)}\n'
+		resourceTypes += f'CB      : {CSE.dispatcher.countResources(T.CSEBase)}\n'
+		resourceTypes += f'CIN     : {CSE.dispatcher.countResources(T.CIN)}\n'
+		resourceTypes += f'CNT     : {CSE.dispatcher.countResources(T.CNT)}\n'
+		resourceTypes += f'CSR     : {CSE.dispatcher.countResources(T.CSR)}\n'
+		resourceTypes += f'FCNT    : {CSE.dispatcher.countResources(T.FCNT)}\n'
+		resourceTypes += f'FCI     : {CSE.dispatcher.countResources(T.FCI)}\n'
+		resourceTypes += f'GRP     : {CSE.dispatcher.countResources(T.GRP)}\n'
+		resourceTypes += f'MgmtObj : {CSE.dispatcher.countResources(T.MGMTOBJ)}\n'
+		resourceTypes += f'NOD     : {CSE.dispatcher.countResources(T.NOD)}\n'
+		resourceTypes += f'PCH     : {CSE.dispatcher.countResources(T.PCH)}\n'
+		resourceTypes += f'REQ     : {CSE.dispatcher.countResources(T.REQ)}\n'
+		resourceTypes += f'SUB     : {CSE.dispatcher.countResources(T.SUB)}\n'
+		resourceTypes += f'TS      : {CSE.dispatcher.countResources(T.TS)}\n'
+		resourceTypes += f'TSI     : {CSE.dispatcher.countResources(T.TSI)}\n'
+		resourceTypes += '\n'
+		resourceTypes += f'[bold]Total[/bold]   : {int(stats[resourceCount]) - CSE.dispatcher.countResources((T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.GRP_FOPT, T.PCH_PCU))}\n'	# substract the virtual resources
+		
+		result = Table.grid(expand=True)
+		result.add_column(width=12, min_width=12)
+		result.add_column()
+		result.add_row(Panel(resourceTypes), rightGrid )
 
 		return result
