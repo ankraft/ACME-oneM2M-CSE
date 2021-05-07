@@ -415,6 +415,8 @@ class Console(object):
 				return
 			chs = CSE.dispatcher.directChildResources(res.ri)
 			for ch in chs:
+				if ch.ty in C.virtualResources:
+					continue
 				branch = tree.add(info(ch))
 				getChildren(ch, branch, level+1)
 
