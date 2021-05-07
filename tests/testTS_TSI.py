@@ -399,7 +399,7 @@ class TestTS_TSI(unittest.TestCase):
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, tsidct)
 			self.assertEqual(rsc, RC.created, r)
 			# time.sleep(timeSeriesInterval * 2)
-			time.sleep(_pei + _mdt + _mdt/2.0)
+			time.sleep(_pei + (_mdt * 2.0))
 
 			r, rsc = RETRIEVE(tsURL, TestTS_TSI.originator)
 			self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
