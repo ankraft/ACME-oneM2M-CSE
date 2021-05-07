@@ -62,7 +62,7 @@ if __name__ == '__main__':
 			totalSuites += 1
 			name = module.__name__
 			if isRunTest(name): 	# exclude / include some tests
-				console.print(f'[blue]Running tests from [bold]{name}')
+				console.print(f'[bright_blue]Running tests from [bold]{name}')
 				startProcessTime = time.process_time()
 				startPerfTime = time.perf_counter()
 				testExecuted, errors, skipped = module.run(testVerbosity=args.verbosity, testFailFast=args.failFast)	# type: ignore
@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
 	# Print Summary
 	console.print()
-	table = Table(show_header=True, header_style='blue', show_footer=True, footer_style='', title='[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim] - Test Results')
+	table = Table(show_header=True, header_style='bright_blue', show_footer=True, footer_style='', title='[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim] - Test Results')
 	table.add_column('Test Suites', footer='Totals', no_wrap=True)
 	table.add_column('Test Count', footer=f'[spring_green3]{totalRunTests if totalErrors == 0 else str(totalRunTests)}[/spring_green3]')
 	table.add_column('Skipped', footer=f'[yellow]{totalSkipped if totalSkipped > 0 else "[spring_green3]0"}[/yellow]')

@@ -20,7 +20,8 @@ class Constants(object):
 	
 	# List of virtual resources
 
-	virtualResources 				= [ T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.GRP_FOPT, T.PCH_PCU ]
+	virtualResources 				= [ T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.TS_LA, T.TS_OL, 
+										T.GRP_FOPT, T.PCH_PCU ]
 	virtualResourcesNames 			= [ 'la', 'ol', 'fopt', 'pcu' ]
 
 	# List of announceable resource types

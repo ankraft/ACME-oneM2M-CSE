@@ -302,7 +302,7 @@ class Console(object):
 		stats = CSE.statistics.getStats()
 
 		if CSE.statistics.statisticsEnabled:
-			resourceOps  =  '[bold]Resource Operations[/bold]\n'
+			resourceOps  =  '[bold][underline]Resource Operations[/underline][/bold]\n'
 			resourceOps += 	'\n'
 			resourceOps +=  f'Created       : {stats[Statistics.createdResources]}\n'
 			resourceOps +=  f'Updated       : {stats[Statistics.updatedResources]}\n'
@@ -310,21 +310,21 @@ class Console(object):
 			resourceOps +=  f'Expired       : {stats[Statistics.expiredResources]}\n'
 			resourceOps +=  f'Notifications : {stats[Statistics.notifications]}\n'
 
-			httpReceived  = '[bold]HTTP Received[/bold]\n'
+			httpReceived  = '[bold][underline]HTTP Received[/underline][/bold]\n'
 			httpReceived += 	'\n'
 			httpReceived += f'RETRIEVE : {stats[Statistics.httpRetrieves]}\n'
 			httpReceived += f'CREATE   : {stats[Statistics.httpCreates]}\n'
 			httpReceived += f'UPDATE   : {stats[Statistics.httpUpdates]}\n'
 			httpReceived += f'DELETE   : {stats[Statistics.httpDeletes]}\n'
 
-			httpSent  = 	'[bold]HTTP Sent[/bold]\n'
+			httpSent  = 	'[bold][underline]HTTP Sent[/underline][/bold]\n'
 			httpSent += 	'\n'
 			httpSent += 	f'RETRIEVE : {stats[Statistics.httpSendRetrieves]}\n'
 			httpSent += 	f'CREATE   : {stats[Statistics.httpSendCreates]}\n'
 			httpSent += 	f'UPDATE   : {stats[Statistics.httpSendUpdates]}\n'
 			httpSent += 	f'DELETE   : {stats[Statistics.httpSendDeletes]}\n'
 
-			logs  = '[bold]Logs[/bold]\n'
+			logs  = '[bold][underline]Logs[/underline][/bold]\n'
 			logs += '\n'
 			logs += f'Errors   : {stats[Statistics.logErrors]}\n'
 			logs += f'Warnings : {stats[Statistics.logWarnings]}\n'
@@ -335,7 +335,7 @@ class Console(object):
 			httpSent     = '\n[dim]statistics are disabled[/dim]\n'
 			logs         = '\n[dim]statistics are disabled[/dim]\n'
 
-		misc  = '[bold]Misc[/bold]\n'
+		misc  = '[bold][underline]Misc[/underline][/bold]\n'
 		misc += '\n'
 		misc += f'StartTime : {datetime.datetime.fromtimestamp(Utils.fromISO8601Date(cast(str, stats[Statistics.cseStartUpTime])))} (UTC)\n'
 		misc += f'Uptime    : {stats[Statistics.cseUpTime]}\n'
@@ -386,7 +386,7 @@ class Console(object):
 		resourceTypes += f'TS      : {CSE.dispatcher.countResources(T.TS)}\n'
 		resourceTypes += f'TSI     : {CSE.dispatcher.countResources(T.TSI)}\n'
 		resourceTypes += '\n'
-		resourceTypes += f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - CSE.dispatcher.countResources((T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.GRP_FOPT, T.PCH_PCU))}\n'	# substract the virtual resources
+		resourceTypes += f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - CSE.dispatcher.countResources((T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.TS_LA, T.TS_OL, T.GRP_FOPT, T.PCH_PCU))}\n'	# substract the virtual resources
 		
 		result = Table.grid(expand=True)
 		result.add_column(width=12, min_width=12)
@@ -405,8 +405,8 @@ class Console(object):
 				return f'{res.rn} [dim]-> {res.__rtype__} ({res.cnd}) | ri={res.ri}[/dim]'
 			if res.ty == T.CSEBase:
 				return f'{res.rn} [dim]-> {res.__rtype__} | ri={res.ri} | csi={res.csi}[/dim]'
-			if res.__isVirtual__:
-				return f'{res.rn}'
+			# if res.__isVirtual__:
+			# 	return f'{res.rn}'
 			return f'{res.rn} [dim]-> {res.__rtype__} | ri={res.ri}[/dim]'
 
 		def getChildren(res:Resource, tree:Tree, level:int) -> None:
@@ -415,7 +415,7 @@ class Console(object):
 				return
 			chs = CSE.dispatcher.directChildResources(res.ri)
 			for ch in chs:
-				if ch.ty in C.virtualResources:
+				if ch.__isVirtual__:
 					continue
 				branch = tree.add(info(ch))
 				getChildren(ch, branch, level+1)
