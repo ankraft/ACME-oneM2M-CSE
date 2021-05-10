@@ -111,6 +111,17 @@ class TestCIN(unittest.TestCase):
 		self.assertEqual(rsc, RC.invalidChildResourceType, r)
 
 
+	def test_createCINwithNoneString(self) -> None:
+		""" Create a <CIN> resource with non-string value -> Fail """
+		self.assertIsNotNone(TestCIN.ae)
+		self.assertIsNotNone(TestCIN.cnt)
+		dct = 	{ 'm2m:cin' : {
+					'con' : 23
+				}}
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.created, r)
+
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCIN(self) -> None:
 		""" Delete <CIN> resource """
@@ -156,6 +167,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCIN('test_attributesCIN'))
 	suite.addTest(TestCIN('test_updateCIN'))
 	suite.addTest(TestCIN('test_createCINUnderAE'))
+	suite.addTest(TestCIN('test_createCINwithNoneString'))
 	suite.addTest(TestCIN('test_deleteCIN'))
 	suite.addTest(TestCIN('test_createCINWithCreatorWrong'))
 	suite.addTest(TestCIN('test_createCINWithCreator'))

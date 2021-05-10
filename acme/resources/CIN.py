@@ -33,7 +33,11 @@ class CIN(AnnounceableResource):
 
 		if self.dict is not None:
 			self.setAttribute('con', '', overwrite=False)
-			self.setAttribute('cs', len(self['con']))
+			if isinstance(self.con, str):
+				self.setAttribute('cs', len(self.con))
+			else:
+				self.setAttribute('cs', 0)
+
 
 
 	# Enable check for allowed sub-resources. No Child for CIN
