@@ -9,22 +9,20 @@
 #
 
 from __future__ import annotations
-import datetime, json, random, string, sys, re, threading, traceback, time
+import datetime, json, random, string, sys, re, threading
 import cbor2
 from copy import deepcopy
 import isodate
-from typing import Any, List, Tuple, Union, Dict, Callable, cast
+from typing import Any, List, Tuple, Union, Dict, cast
 
 from Constants import Constants as C
-from Types import ResourceTypes as T, ResponseCode as RC
-from Types import Result,  RequestHeaders, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType
+from Types import ResourceTypes as T
+from Types import Result, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType
 from Types import ResultContentType, ResponseType, FilterOperation
-from Types import CSERequest, ContentSerializationType, JSON, Conditions
-from Configuration import Configuration
+from Types import ContentSerializationType, JSON, Conditions
 from Logging import Logging
 from resources.Resource import Resource
 import CSE
-from flask import Request
 import cbor2
 
 
@@ -555,93 +553,14 @@ def getSerializationFromOriginator(originator:str) -> List[ContentSerializationT
 	# Convert the poa to a list of ContentSerializationTypes
 	return [ ContentSerializationType.getType(c) for c in csz]
 
-#
-#	HTTP request helper functions
-#
 
 
-def dissectHttpRequest(request:Request, operation:Operation, _id:Tuple[str, str, str]) -> Result:
-	cseRequest = CSERequest()
-
-	# get the data first. This marks the request as consumed 
-	#cseRequest.data = request.get_data(as_text=True)	# alternative: request.data.decode("utf-8")
-	#cseRequest.data = request.data.decode("utf-8")		# alternative: request.get_data(as_text=True)
-	cseRequest.data = request.data
-
-	# handle ID's 
-	cseRequest.id, cseRequest.csi, cseRequest.srn = _id
-
-	# Copy the original request headers
-	res = getRequestHeaders(request)
-	cseRequest.headers = res.data	# copy the headers
-	if res.rsc != RC.OK:			# but still, something might be wrong
-		return Result(rsc=res.rsc, request=cseRequest, dbg=res.dbg, status=False)
-
-	# No ID, return immediately 
-	if cseRequest.id is None and cseRequest.srn is None:
-		return Result(rsc=RC.notFound, request=cseRequest, dbg='missing identifier', status=False)
-	
-	try:
-		cseRequest.args, msg = getRequestArguments(request, operation)
-		if cseRequest.args is None:
-			return Result(rsc=RC.badRequest, request=cseRequest, dbg=msg, status=False)
-	except Exception as e:
-		return Result(rsc=RC.invalidArguments, request=cseRequest, dbg=f'invalid arguments ({str(e)})', status=False)
-	cseRequest.originalArgs	= deepcopy(request.args)
-
-	# De-Serialize the content
-	if cseRequest.data is not None and len(cseRequest.data) > 0:
-		try:
-			cseRequest.ct = ContentSerializationType.getType(cseRequest.headers.contentType, default=CSE.defaultSerialization)
-			if (_d := deserializeData(cseRequest.data, cseRequest.ct)) is None:
-				return Result(rsc=RC.unsupportedMediaType, request=cseRequest, dbg=f'Unsupported media type for content-type: {cseRequest.headers.contentType}', status=False)
-			cseRequest.dict = _d
-		except Exception as e:
-			Logging.logWarn('Bad request (malformed content?)')
-			return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'Malformed content? {str(e)}', status=False)
-	
-	# Check whether content is empty for UPDATE or CREATE -> Error
-	elif operation in [ Operation.CREATE, Operation.UPDATE ]:
-		Logging.logWarn(dbg := f'Missing content for operation: {operation.name}')
-		return Result(rsc=RC.badRequest, request=cseRequest, dbg=dbg, status=False)
-			
-	return Result(request=cseRequest, status=True)
-
-
-
-def requestHeaderField(request: Request, field : str) -> str:
-	if not request.headers.has_key(field):
-		return None
-	return request.headers.get(field)
-
-
-# Get the request arguments, or meaningful defaults.
-# Only a small subset is supported yet
-# Throws an exception when a wrong type is encountered. This is part of the validation
-def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, str]:
-	
-	# copy arguments for greedy attributes checking
-	args = request.args.copy()	 	# type: ignore
-
-	def _extractMultipleArgs(argName:str, target:JSON, validate:bool=True) -> Tuple[bool, str]:
-		"""	Get multi-arguments. Always create at least an empty list. Remove
-			the found arguments from the original list.
-		"""
-		lst = []
-		for e in args.getlist(argName):
-			for es in (t := e.split()):	# check for number
-				if validate:
-					if not CSE.validator.validateRequestArgument(argName, es).status:
-						return False, f'error validating "{argName}" argument(s)'
-			lst.extend(t)
-		if len(lst) > 0:
-			target[argName] = lst
-		args.poplist(argName)
-		return True, None
-
-	# result = RequestArguments(operation=operation, request=request)
+def getRequestArguments(args:dict, operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, str]:
+	"""	Get the request arguments, or meaningful defaults.
+		Only a subset is supported yet.
+		Throws an exception when a wrong type is encountered. This is part of the validation.
+	"""
 	result = RequestArguments(operation=operation)
-
 
 	# FU - Filter Usage
 	if (fu := args.get('fu')) is not None:
@@ -658,7 +577,6 @@ def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE)
 		operation = Operation.DISCOVERY
 	result.fu = fu
 
-
 	# DRT - Desired Identifier Result Type
 	if (drt := args.get('drt')) is not None: # 1=strucured, 2=unstructured
 		if not CSE.validator.validateRequestArgument('drt', drt).status:
@@ -672,7 +590,6 @@ def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE)
 		drt = DesiredIdentifierResultType.structured
 	result.drt = drt
 
-
 	# FO - Filter Operation
 	if (fo := args.get('fo')) is not None: # 1=AND, 2=OR
 		if not CSE.validator.validateRequestArgument('fo', fo).status:
@@ -685,7 +602,6 @@ def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE)
 	else:
 		fo = FilterOperation.AND # default
 	result.fo = fo
-
 
 	# RCN Result Content Type
 	if (rcn := args.get('rcn')) is not None: 
@@ -735,7 +651,6 @@ def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE)
 
 	result.rcn = ResultContentType(rcn)
 
-
 	# RT - Response Type
 	if (rt := args.get('rt')) is not None: 
 		if not CSE.validator.validateRequestArgument('rt', rt).status:
@@ -748,7 +663,6 @@ def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE)
 	else:
 		rt = ResponseType.blockingRequest
 	result.rt = rt
-
 
 	# RP - Response Persistence
 	if (rp := args.get('rp')) is not None: 
@@ -799,13 +713,20 @@ def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE)
 				return None, f'error validating "{c}" argument'
 			conditions[c] = v
 			del args[c]
+	
+	# Copy multipe arguments. They have been aggregated into single lists before.
+	for c in [ 'ty', 'cty', 'lbl' ]:
+		if (v := args.get(c)) is not None:
+			conditions[c] = v
+			del args[c]
 
-	if not (res := _extractMultipleArgs('ty', conditions))[0]:
-		return None, res[1]
-	if not (res := _extractMultipleArgs('cty', conditions))[0]:
-		return None, res[1]
-	if not (res := _extractMultipleArgs('lbl', conditions, validate=False))[0]:
-		return None, res[1]
+
+	# if not (res := _extractMultipleArgs('ty', conditions))[0]:
+	# 	return None, res[1]
+	# if not (res := _extractMultipleArgs('cty', conditions))[0]:
+	# 	return None, res[1]
+	# if not (res := _extractMultipleArgs('lbl', conditions, validate=False))[0]:
+	# 	return None, res[1]
 
 	result.conditions = conditions
 
@@ -825,66 +746,6 @@ def getRequestArguments(request:Request, operation:Operation=Operation.RETRIEVE)
 
 	# Finally return the collected arguments
 	return result, None
-
-		
-def getRequestHeaders(request:Request) -> Result:
-	rh 								= RequestHeaders()
-	rh.originator 					= requestHeaderField(request, C.hfOrigin)
-	rh.requestIdentifier			= requestHeaderField(request, C.hfRI)
-	rh.requestExpirationTimestamp 	= requestHeaderField(request, C.hfRET)
-	rh.responseExpirationTimestamp 	= requestHeaderField(request, C.hfRST)
-	rh.operationExecutionTime 		= requestHeaderField(request, C.hfOET)
-	rh.releaseVersionIndicator 		= requestHeaderField(request, C.hfRVI)
-
-	# Check Release Version
-	if rh.releaseVersionIndicator is None:
-		return Result(rsc=RC.badRequest, data=rh, dbg=f'Release Version Indicator parameter is mandatory in request')
-	if rh.releaseVersionIndicator not in C.supportedReleaseVersions:
-		return Result(rsc=RC.releaseVersionNotSupported, data=rh, dbg=f'Release version not supported: {rh.releaseVersionIndicator}')
-
-
-	# content-type and accept
-	rh.contentType 	= request.content_type
-	rh.accept		= [ mt for mt, _ in request.accept_mimetypes ]	# get (multiple) accept headers from MIMEType[(x,nr)]
-
-	if (rtu := requestHeaderField(request, C.hfRTU)) is not None:			# handle rtu list
-		rh.responseTypeNUs = rtu.split('&')
-
-	if rh.contentType is not None:
-		if not rh.contentType.startswith(tuple(C.supportedContentHeaderFormat)):
-			rh.contentType 	= None
-		else:
-			p 				= rh.contentType.partition(';')	# always returns a 3-tuple
-			rh.contentType 	= p[0] # content-type
-			t  				= p[2].partition('=')[2]
-			if len(t) > 0:	# check only if there is a resource type
-				if t.isdigit() and (_t := int(t)) and T.has(_t):
-					rh.resourceType = T(_t)
-				else:
-					return Result(rsc=RC.badRequest, data=rh, dbg=f'Unknown resource type: {t}')
-	
-	# accept
-	rh.accept = request.headers.getlist('accept')
-	rh.accept = [ a for a in rh.accept if a != '*/*' ]
-	# if ((l := len(rh.accept)) == 1 and '*/*' in rh.accept) or l == 0:
-	# 	rh.accept = [ CSE.defaultSerialization.toHeader() ]
-
-	# perform some validitions
-
-	if rh.releaseVersionIndicator is None:
-		Logging.logDebug(dbg := 'Release Version Indicator paraneter is mandatory in request')
-		return Result(data=rh, rsc=RC.badRequest, dbg=dbg)
-
-	if rh.requestIdentifier is None:
-		Logging.logDebug(dbg := 'Request Identifier parameter is mandatory in request')
-		return Result(data=rh, rsc=RC.badRequest, dbg=dbg)
-
-	# Test whether originator is present
-	if rh.originator is None and not (rh.resourceType == T.AE and request.method == 'POST'):
-		Logging.logDebug(dbg := 'From/Originator parameter is mandatory in request')
-		return Result(data=rh, rsc=RC.badRequest, dbg=dbg)		
-
-	return Result(data=rh, rsc=RC.OK)
 
 
 def serializeData(data:JSON, ct:ContentSerializationType) -> str|bytes:
