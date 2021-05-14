@@ -8,9 +8,9 @@
 #
 
 from typing import Dict, Union, cast
-import datetime, os, sys
+import datetime, os, sys, time
 from Logging import Logging
-from helpers.KeyHandler import loop, stopLoop, readline
+from helpers.KeyHandler import loop, stopLoop, readline, waitForKeypress
 from Constants import Constants as C
 from Configuration import Configuration
 from Types import CSEType, ResourceTypes as T
@@ -21,6 +21,11 @@ import Utils, CSE, Statistics
 from rich.table import Table
 from rich.panel import Panel
 from rich.tree import Tree
+
+
+
+_refreshTime = 2.0 # for continous display
+# TODO refreshTime configurable?
 
 
 class Console(object):
@@ -53,7 +58,9 @@ class Console(object):
 			'Q'		: self.shutdownCSE,		# See handler below
 			'r'		: self.cseRegistrations,
 			's'		: self.statistics,
+			'\x13'	: self.continuesStatistics,
 			't'		: self.resourceTree,
+			'\x14'	: self.continuesTree,
 			'T'		: self.childResourceTree,
 			'w'		: self.workers,
 			'Z'		: self.resetCSE,
@@ -88,8 +95,10 @@ class Console(object):
 - l     - Toggle logging on/off
 - r     - Show CSE registrations
 - s     - Show statistics
+- ^S    - Show statistics continuously
 - t     - Show resource tree
 - T     - Show child resource tree
+- ^T    - Show resource tree continuously
 - w     - Show worker threads status
 - Z     - Reset the CSE
 	""", extranl=True)
@@ -179,6 +188,19 @@ class Console(object):
 		Logging.loggingEnabled = loggingOld
 
 
+	def continuesTree(self, key:str) -> None:
+		loggingOld = Logging.loggingEnabled
+		Logging.loggingEnabled = False
+		while True:
+			self.clearScreen(key)
+			self.resourceTree(key)
+			Logging.console('**(Press any key to stop)**')
+			if waitForKeypress(_refreshTime) is not None:
+				break
+		self.clearScreen(key)
+		Logging.loggingEnabled = loggingOld
+
+
 	def cseRegistrations(self, key:str) -> None:
 		"""	Render CSE registrations.
 		"""
@@ -193,6 +215,20 @@ class Console(object):
 		Logging.console('**Statistics**', extranl=True)
 		Logging.console(self.getStatisticsRich())
 		Logging.console()
+
+	
+	def continuesStatistics(self, key:str) -> None:
+		loggingOld = Logging.loggingEnabled
+		Logging.loggingEnabled = False
+		while True:
+			self.clearScreen(key)
+			self.statistics(key)
+			# self.resourceTree(key)
+			Logging.console('**(Press any key to stop)**')
+			if waitForKeypress(_refreshTime) is not None:
+				break
+		self.clearScreen(key)
+		Logging.loggingEnabled = loggingOld
 
 
 	def deleteResource(self, key:str) -> None:

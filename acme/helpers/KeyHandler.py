@@ -12,6 +12,8 @@ from __future__ import annotations
 import sys, time, select
 from typing import Callable, Dict
 
+_timeout = 0.5
+
 try:
 	import tty, termios
 except ImportError:
@@ -52,7 +54,7 @@ else:
 		try:
 			#tty.setraw(fd)
 			tty.setcbreak(fd)	# Not extra lines in input
-			if select.select([sys.stdin,],[],[],0.5)[0]:
+			if select.select([sys.stdin,], [], [], _timeout)[0]:
 				ch = sys.stdin.read(1)
 			else:
 				ch = None
@@ -138,3 +140,13 @@ def readline(prompt:str='>') -> str:
 	except Exception:
 		pass
 	return result
+
+def waitForKeypress(s:float) -> str:
+	for i in range(0, int(s * 1.0 / _timeout)):
+		ch = None
+		try:
+			ch = getch()	# returns after _timeout s
+		except KeyboardInterrupt as e:
+			ch = '\x03'
+		if ch is not None:
+			return ch
