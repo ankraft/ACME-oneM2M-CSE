@@ -119,7 +119,7 @@ class TestCIN(unittest.TestCase):
 					'con' : 23
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)
-		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(rsc, RC.badRequest, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
