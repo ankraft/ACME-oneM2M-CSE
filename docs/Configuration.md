@@ -41,6 +41,7 @@ The following macros are supported in addition to those defined in the sections 
 [\[cse.resource.sub\] - Resource Defaults: Subscription](#resource_sub)  
 [\[cse.resource.ts\] - Resource Defaults: TimeSeries](#resource_ts)  
 [\[cse.webui\] - Web UI Settings](#webui)  
+[\[cse.console\] - Console Settings](#console)  
 
 
 ### Additional Settings
@@ -219,6 +220,14 @@ The following macros are supported in addition to those defined in the sections 
 | mni          | Default for maxNrOfInstances.<br/> Default: 10         | cse.ts.mni           |
 | mbs          | Default for maxByteSize.<br/>Default: 10.000 bytes     | cse.ts.mbs           |
 | mdn          | Default for missingDataMaxNr.<br />Default: 10         | cse.ts.mdn           |
+
+
+<a name="console"></a>
+###	[cse.console] - Console Settings
+
+| Keyword         | Description                                                                                        | Macro Name                  |
+|:----------------|:---------------------------------------------------------------------------------------------------|:----------------------------|
+| refreshInterval | Interval for continuously refreshing information displays. Must be > 0.0<br/>Default: 2.0 seconds. | cse.console.refreshInterval |
 
 
 <a name="webui"></a>

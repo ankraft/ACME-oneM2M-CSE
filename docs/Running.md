@@ -71,10 +71,10 @@ The CSE has a simple command console interface to execute build-in commands. Cur
  - l     - Toggle logging on/off
  - r     - Show CSE registrations
  - s     - Show statistics
- - ^S    - Show statistics continuously
+ - ^S    - Show & refresh statistics continuously
  - t     - Show resource tree
  - T     - Show child resource tree
- - ^T    - Show resource tree continuously
+ - ^T    - Show & refresh resource tree continuously
  - w     - Show worker threads status
  - Z     - Reset the CSE
 

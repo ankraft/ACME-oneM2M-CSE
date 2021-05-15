@@ -230,6 +230,12 @@ class Configuration(object):
 
 
 				#
+				#	Console
+				#
+
+				'cse.console.refreshInterval'		: config.getfloat('cse.console', 'refreshInterval', 	fallback=2.0),
+
+				#
 				#	App: Statistics AE
 				#
 	
@@ -418,6 +424,9 @@ class Configuration(object):
 		# Check various intervals
 		if Configuration._configuration['cse.checkExpirationsInterval'] <= 0:
 			_print('[red]Configuration Error: \[cse]:checkExpirationsInterval must be greater than 0')
+			return False
+		if Configuration._configuration['cse.console.refreshInterval'] <= 0.0:
+			_print('[red]Configuration Error: \[cse.console]:refreshInterval must be greater than 0.0')
 			return False
 		# Check configured app api
 		if len(api := Configuration._configuration['app.statistics.aeAPI']) < 2 or api[0] not in ['R', 'N']:

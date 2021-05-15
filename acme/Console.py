@@ -23,14 +23,10 @@ from rich.panel import Panel
 from rich.tree import Tree
 
 
-
-_refreshTime = 2.0 # for continous display
-# TODO refreshTime configurable?
-
-
 class Console(object):
 
 	def __init__(self) -> None:
+		self.refreshInterval = Configuration.get('cse.console.refreshInterval')
 		Logging.log('Console initialized')
 
 
@@ -95,10 +91,10 @@ class Console(object):
 - l     - Toggle logging on/off
 - r     - Show CSE registrations
 - s     - Show statistics
-- ^S    - Show statistics continuously
+- ^S    - Show & refresh statistics continuously
 - t     - Show resource tree
 - T     - Show child resource tree
-- ^T    - Show resource tree continuously
+- ^T    - Show & refresh resource tree continuously
 - w     - Show worker threads status
 - Z     - Reset the CSE
 	""", extranl=True)
@@ -195,7 +191,7 @@ class Console(object):
 			self.clearScreen(key)
 			self.resourceTree(key)
 			Logging.console('**(Press any key to stop)**')
-			if waitForKeypress(_refreshTime) is not None:
+			if waitForKeypress(self.refreshInterval) is not None:
 				break
 		self.clearScreen(key)
 		Logging.loggingEnabled = loggingOld
@@ -225,7 +221,7 @@ class Console(object):
 			self.statistics(key)
 			# self.resourceTree(key)
 			Logging.console('**(Press any key to stop)**')
-			if waitForKeypress(_refreshTime) is not None:
+			if waitForKeypress(self.refreshInterval) is not None:
 				break
 		self.clearScreen(key)
 		Logging.loggingEnabled = loggingOld
@@ -338,7 +334,7 @@ class Console(object):
 		stats = CSE.statistics.getStats()
 
 		if CSE.statistics.statisticsEnabled:
-			resourceOps  =  '[bold][underline]Resource Operations[/underline][/bold]\n'
+			resourceOps  =  '[underline]Resource Operations[/underline]\n'
 			resourceOps += 	'\n'
 			resourceOps +=  f'Created       : {stats[Statistics.createdResources]}\n'
 			resourceOps +=  f'Updated       : {stats[Statistics.updatedResources]}\n'
@@ -346,21 +342,21 @@ class Console(object):
 			resourceOps +=  f'Expired       : {stats[Statistics.expiredResources]}\n'
 			resourceOps +=  f'Notifications : {stats[Statistics.notifications]}\n'
 
-			httpReceived  = '[bold][underline]HTTP Received[/underline][/bold]\n'
+			httpReceived  = '[underline]HTTP Received[/underline]\n'
 			httpReceived += 	'\n'
 			httpReceived += f'RETRIEVE : {stats[Statistics.httpRetrieves]}\n'
 			httpReceived += f'CREATE   : {stats[Statistics.httpCreates]}\n'
 			httpReceived += f'UPDATE   : {stats[Statistics.httpUpdates]}\n'
 			httpReceived += f'DELETE   : {stats[Statistics.httpDeletes]}\n'
 
-			httpSent  = 	'[bold][underline]HTTP Sent[/underline][/bold]\n'
+			httpSent  = 	'[underline]HTTP Sent[/underline]\n'
 			httpSent += 	'\n'
 			httpSent += 	f'RETRIEVE : {stats[Statistics.httpSendRetrieves]}\n'
 			httpSent += 	f'CREATE   : {stats[Statistics.httpSendCreates]}\n'
 			httpSent += 	f'UPDATE   : {stats[Statistics.httpSendUpdates]}\n'
 			httpSent += 	f'DELETE   : {stats[Statistics.httpSendDeletes]}\n'
 
-			logs  = '[bold][underline]Logs[/underline][/bold]\n'
+			logs  = '[underline]Logs[/underline]\n'
 			logs += '\n'
 			logs += f'Errors   : {stats[Statistics.logErrors]}\n'
 			logs += f'Warnings : {stats[Statistics.logWarnings]}\n'
@@ -371,7 +367,7 @@ class Console(object):
 			httpSent     = '\n[dim]statistics are disabled[/dim]\n'
 			logs         = '\n[dim]statistics are disabled[/dim]\n'
 
-		misc  = '[bold][underline]Misc[/underline][/bold]\n'
+		misc  = '[underline]Misc[/underline]\n'
 		misc += '\n'
 		misc += f'StartTime : {datetime.datetime.fromtimestamp(Utils.fromISO8601Date(cast(str, stats[Statistics.cseStartUpTime])))} (UTC)\n'
 		misc += f'Uptime    : {stats[Statistics.cseUpTime]}\n'
@@ -403,7 +399,7 @@ class Console(object):
 		rightGrid.add_row(Panel(requestsGrid))
 		rightGrid.add_row(Panel(infoGrid))
 
-		resourceTypes = '[bold][underline]Resource Types[/underline][/bold]\n'
+		resourceTypes = '[underline]Resource Types[/underline]\n'
 		resourceTypes += '\n'
 		resourceTypes += f'AE      : {CSE.dispatcher.countResources(T.AE)}\n'
 		resourceTypes += f'ACP     : {CSE.dispatcher.countResources(T.ACP)}\n'

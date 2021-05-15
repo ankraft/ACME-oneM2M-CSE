@@ -290,6 +290,16 @@ root=/webui
 
 
 #
+#   Console settings
+#
+
+[cse.console]
+# Interval for continuously refreshing information displays. Must be > 0.0. 
+# Default: 2.0 seconds.
+refreshInterval=2.0
+
+
+#
 #	ID Mappings
 #	This section defines mappings for URI paths to IDs in the CSE. Mappings
 #	can be used to provide a more convenient way to access the CSE's resources.
