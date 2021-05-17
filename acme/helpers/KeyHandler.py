@@ -150,3 +150,4 @@ def waitForKeypress(s:float) -> str:
 			ch = '\x03'
 		if ch is not None:
 			return ch
+	return None
