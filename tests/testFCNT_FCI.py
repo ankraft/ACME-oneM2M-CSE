@@ -171,7 +171,7 @@ class TestFCNT_FCI(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createFCI(self) -> None:
+	def test_createFCIFail(self) -> None:
 		"""	Create a <FCI> -> Fail """
 		self.assertIsNotNone(TestFCNT_FCI.ae)
 		dct = 	{ 'cod:tempe' : { 
@@ -182,7 +182,7 @@ class TestFCNT_FCI(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateFCI(self) -> None:
+	def test_updateFCIFail(self) -> None:
 		"""	Update a <FCI> -> Fail """
 		self.assertIsNotNone(TestFCNT_FCI.ae)
 		# Retrieve the latest FCI
@@ -195,6 +195,26 @@ class TestFCNT_FCI(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(f'{fcntURL}/{findXPath(rla, "cod:tempe/rn")}', TestFCNT_FCI.originator, dct)
 		self.assertEqual(rsc, RC.operationNotAllowed)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateFCNTMniNull(self) -> None:
+		""" Update <FCNT> : set MNI to null"""
+		dct = 	{ 'cod:tempe' : {
+					'mni':   None,
+				}}
+		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, dct)
+		self.assertEqual(rsc, RC.updated)
+		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)		# retrieve fcnt again
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNone(findXPath(r, 'cod:tempe/mni'))
+		self.assertIsNone(findXPath(r, 'cod:tempe/cni'))
+
+		rla, rsc = RETRIEVE(f'{fcntURL}/la', TestFCNT_FCI.originator)
+		self.assertEqual(rsc, RC.notFound)
+
+		rol, rsc = RETRIEVE(f'{fcntURL}/ol', TestFCNT_FCI.originator)
+		self.assertEqual(rsc, RC.notFound)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -215,8 +235,9 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestFCNT_FCI('test_retrieveFCNTLaOl'))
 	suite.addTest(TestFCNT_FCI('test_updateFCNTMni'))
 	suite.addTest(TestFCNT_FCI('test_updateLBL'))
-	suite.addTest(TestFCNT_FCI('test_createFCI'))
-	suite.addTest(TestFCNT_FCI('test_updateFCI'))
+	suite.addTest(TestFCNT_FCI('test_createFCIFail'))
+	suite.addTest(TestFCNT_FCI('test_updateFCIFail'))
+	suite.addTest(TestFCNT_FCI('test_updateFCNTMniNull'))
 	suite.addTest(TestFCNT_FCI('test_deleteFCNT'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
