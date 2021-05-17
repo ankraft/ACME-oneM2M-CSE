@@ -75,9 +75,9 @@ class Dispatcher(object):
 
 		# check rcn & operation
 		if permission == Permission.DISCOVERY and request.args.rcn not in [ RCN.discoveryResultReferences, RCN.childResourceReferences ]:	# Only allow those two
-			return Result(rsc=RC.badRequest, dbg=f'invalid rcn: {request.args.rcn:d} for fu: {request.args.fu:d}')
+			return Result(status=False, rsc=RC.badRequest, dbg=f'invalid rcn: {request.args.rcn:d} for fu: {request.args.fu:d}')
 		if permission == Permission.RETRIEVE and request.args.rcn not in [ RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource, RCN.childResourceReferences]: # TODO
-			return Result(rsc=RC.badRequest, dbg=f'invalid rcn: {request.args.rcn:d} for fu: {request.args.fu:d}')
+			return Result(status=False, rsc=RC.badRequest, dbg=f'invalid rcn: {request.args.rcn:d} for fu: {request.args.fu:d}')
 
 		Logging.logDebug(f'Discover/Retrieve resources (fu: {request.args.fu:d}, drt: {request.args.drt}, handling: {request.args.handling}, conditions: {request.args.conditions}, resultContent: {request.args.rcn:d}, attributes: {str(request.args.attributes)})')
 
@@ -87,7 +87,7 @@ class Dispatcher(object):
 			if (res := self.retrieveResource(id)).resource is None:
 			 	return res
 			if not CSE.security.hasAccess(originator, res.resource, permission):
-				return Result(rsc=RC.originatorHasNoPrivilege, dbg=f'originator has no permission ({permission:d})')
+				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=f'originator has no permission ({permission:d})')
 
 			# if rcn == attributes then we can return here, whatever the result is
 			if request.args.rcn == RCN.attributes:
@@ -100,7 +100,7 @@ class Dispatcher(object):
 				if resource is None:	# continue only when there actually is a resource
 					return res
 				if (lnk := resource.lnk) is None:	# no link attribute?
-					return Result(rsc=RC.badRequest, dbg='missing lnk attribute in target resource')
+					return Result(status=False, rsc=RC.badRequest, dbg='missing lnk attribute in target resource')
 				return self.retrieveResource(lnk, originator, raw=True)
 
 
@@ -124,29 +124,29 @@ class Dispatcher(object):
 
 		if request.args.rcn == RCN.attributesAndChildResources:
 			self.resourceTreeDict(allowedResources, resource)	# the function call add attributes to the target resource
-			return Result(resource=resource)
+			return Result(status=True, resource=resource)
 
 		elif request.args.rcn == RCN.attributesAndChildResourceReferences:
 			self._resourceTreeReferences(allowedResources, resource, request.args.drt, 'ch')	# the function call add attributes to the target resource
-			return Result(resource=resource)
+			return Result(status=True, resource=resource)
 
 		elif request.args.rcn == RCN.childResourceReferences: 
 			#childResourcesRef:JSON = { resource.tpe: {} }  # Root resource with no attribute
 			#childResourcesRef = self._resourceTreeReferences(allowedResources,  None, request.args.drt, 'm2m:rrl')
 			# self._resourceTreeReferences(allowedResources, childResourcesRef[resource.tpe], request.args.drt, 'm2m:rrl')
 			childResourcesRef = self._resourceTreeReferences(allowedResources, None, request.args.drt, 'm2m:rrl')
-			return Result(resource=childResourcesRef)
+			return Result(status=True, resource=childResourcesRef)
 
 		elif request.args.rcn == RCN.childResources:
 			childResources:JSON = { resource.tpe : {} } #  Root resource as a dict with no attribute
 			self.resourceTreeDict(allowedResources, childResources[resource.tpe]) # Adding just child resources
-			return Result(resource=childResources)
+			return Result(status=True, resource=childResources)
 
 		elif request.args.rcn == RCN.discoveryResultReferences: # URIList
-			return Result(resource=self._resourcesToURIList(allowedResources, request.args.drt))
+			return Result(status=True, resource=self._resourcesToURIList(allowedResources, request.args.drt))
 
 		else:
-			return Result(rsc=RC.badRequest, dbg='wrong rcn for RETRIEVE')
+			return Result(status=False, rsc=RC.badRequest, dbg='wrong rcn for RETRIEVE')
 
 
 
@@ -172,7 +172,7 @@ class Dispatcher(object):
 		elif srn is not None:
 			res = CSE.storage.retrieveResource(srn=srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
 		else:
-			return Result(rsc=RC.notFound, dbg='resource not found')
+			return Result(status=False, rsc=RC.notFound, dbg='resource not found')
 
 		if (resource := res.resource) is not None:	# Resource found
 			# Check for virtual resource
@@ -180,10 +180,10 @@ class Dispatcher(object):
 				return resource.handleRetrieveRequest()	# type: ignore[no-any-return]
 			if not (res := resource.willBeRetrieved()).status:	# resource instance may be changed in this call
 				return res
-			return Result(resource=resource)
+			return Result(status=True, resource=resource)
 		if res.dbg is not None:
 			Logging.logDebug(f'{res.dbg}: {ri}')
-		return Result(rsc=res.rsc, dbg=res.dbg)
+		return Result(status=res.status, rsc=res.rsc, dbg=res.dbg)
 
 
 	#########################################################################
@@ -196,7 +196,7 @@ class Dispatcher(object):
 
 		if rootResource is None:
 			if (res := self.retrieveResource(id)).resource is None:
-				return Result(rsc=RC.notFound, dbg=res.dbg)
+				return Result(status=False, rsc=RC.notFound, dbg=res.dbg)
 			rootResource = res.resource
 
 		# get all direct children
@@ -245,7 +245,7 @@ class Dispatcher(object):
 						result.append(res.resource)
 			discoveredResources = result	# re-assign the new resources to discoveredResources
 
-		return Result(lst=discoveredResources)
+		return Result(status=True, lst=discoveredResources)
 
 
 	def _discoverResources(self, rootResource:Resource, originator:str, level:int, fo:int, allLen:int, dcrs:list[Resource]=None, conditions:Conditions=None, attributes:Parameters=None, permission:Permission=Permission.DISCOVERY) -> list[Resource]:
@@ -402,23 +402,23 @@ class Dispatcher(object):
 			return fanoutPointResource.handleCreateRequest(request, fopsrn, request.headers.originator)
 
 		if (ty := request.headers.resourceType) is None:	# Check for type parameter in request
-			return Result(rsc=RC.badRequest, dbg='type parameter missing in CREATE request')
+			return Result(status=False, rsc=RC.badRequest, dbg='type parameter missing in CREATE request')
 
 		# Some Resources are not allowed to be created in a request, return immediately
 		if ty in [ T.CSEBase, T.REQ, T.FCI ]:	# TODO: move to constants
-			return Result(rsc=RC.operationNotAllowed, dbg=f'CREATE not allowed for type: {ty}')
+			return Result(status=False, rsc=RC.operationNotAllowed, dbg=f'CREATE not allowed for type: {ty}')
 
 		# Get parent resource and check permissions
 		if (res := CSE.dispatcher.retrieveResource(id)).resource is None:
 			Logging.log('Parent resource not found')
-			return Result(rsc=RC.notFound, dbg='parent resource not found')
+			return Result(status=False, rsc=RC.notFound, dbg='parent resource not found')
 		parentResource = res.resource
 
 		if CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty=ty, isCreateRequest=True, parentResource=parentResource) == False:
 			if ty == T.AE:
-				return Result(rsc=RC.securityAssociationRequired, dbg='security association required')
+				return Result(status=False, rsc=RC.securityAssociationRequired, dbg='security association required')
 			else:
-				return Result(rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
+				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
 
 		# Check for virtual resource
 		if Utils.isVirtualResource(parentResource):
@@ -426,7 +426,7 @@ class Dispatcher(object):
 
 		# Add new resource
 		if (nres := Factory.resourceFromDict(deepcopy(request.dict), pi=parentResource.ri, ty=ty)).resource is None:	# something wrong, perhaps wrong type
-			return Result(rsc=RC.badRequest, dbg=nres.dbg)
+			return Result(status=False, rsc=RC.badRequest, dbg=nres.dbg)
 		nresource = nres.resource
 
 		# Check whether the parent allows the adding
@@ -437,10 +437,10 @@ class Dispatcher(object):
 		# hasResource() may actually perform the test in one call, but we want to give a distinguished debug message
 		if CSE.storage.hasResource(ri=nresource.ri):
 			Logging.logWarn(dbg := f'Resource with ri: {nresource.__srn__} already exists')
-			return Result(rsc=RC.conflict, dbg=dbg)
+			return Result(status=False, rsc=RC.conflict, dbg=dbg)
 		if CSE.storage.hasResource(srn=nresource.__srn__):
 			Logging.logWarn(dbg := f'Resource with structured id: {nresource.__srn__} already exists')
-			return Result(rsc=RC.conflict, dbg=dbg)
+			return Result(status=False, rsc=RC.conflict, dbg=dbg)
 
 		# Check resource creation
 		if (rres := CSE.registration.checkResourceCreation(nresource, originator, parentResource)).rsc != RC.OK:
@@ -462,15 +462,15 @@ class Dispatcher(object):
 		elif request.args.rcn == RCN.modifiedAttributes:
 			dictOrg = request.dict[tpe]
 			dictNew = res.resource.asDict()[tpe]
-			return Result(resource={ tpe : Utils.resourceDiff(dictOrg, dictNew) }, rsc=res.rsc, dbg=res.dbg)
+			return Result(status=res.status, resource={ tpe : Utils.resourceDiff(dictOrg, dictNew) }, rsc=res.rsc, dbg=res.dbg)
 		elif request.args.rcn == RCN.hierarchicalAddress:
-			return Result(resource={ 'm2m:uri' : Utils.structuredPath(res.resource) }, rsc=res.rsc, dbg=res.dbg)
+			return Result(status=res.status, resource={ 'm2m:uri' : Utils.structuredPath(res.resource) }, rsc=res.rsc, dbg=res.dbg)
 		elif request.args.rcn == RCN.hierarchicalAddressAttributes:
-			return Result(resource={ 'm2m:rce' : { Utils.noDomain(tpe) : res.resource.asDict()[tpe], 'uri' : Utils.structuredPath(res.resource) }}, rsc=res.rsc, dbg=res.dbg)
+			return Result(status=res.status, resource={ 'm2m:rce' : { Utils.noDomain(tpe) : res.resource.asDict()[tpe], 'uri' : Utils.structuredPath(res.resource) }}, rsc=res.rsc, dbg=res.dbg)
 		elif request.args.rcn == RCN.nothing:
-			return Result(rsc=res.rsc, dbg=res.dbg)
+			return Result(status=res.status, rsc=res.rsc, dbg=res.dbg)
 		else:
-			return Result(rsc=RC.badRequest, dbg='wrong rcn for CREATE')
+			return Result(status=False, rsc=RC.badRequest, dbg='wrong rcn for CREATE')
 		# TODO C.rcnDiscoveryResultReferences 
 
 
@@ -483,11 +483,11 @@ class Dispatcher(object):
 				if resource.ty == T.SUB:
 					err = 'Parent resource is not subscribable'
 					Logging.logWarn(err)
-					return Result(rsc=RC.targetNotSubscribable, dbg=err)
+					return Result(status=False, rsc=RC.targetNotSubscribable, dbg=err)
 				else:
 					err = f'Invalid child resource type: {T(resource.ty).value}' 
 					Logging.logWarn(err)
-					return Result(rsc=RC.invalidChildResourceType, dbg=err)
+					return Result(status=False, rsc=RC.invalidChildResourceType, dbg=err)
 
 		# if not already set: determine and add the srn
 		if resource.__srn__ is None:
@@ -516,7 +516,7 @@ class Dispatcher(object):
 		# send a create event
 		CSE.event.createResource(resource)	# type: ignore
 
-		return Result(resource=resource, rsc=RC.created) 	# everything is fine. resource created.
+		return Result(status=True, resource=resource, rsc=RC.created) 	# everything is fine. resource created.
 
 
 	#########################################################################
@@ -543,14 +543,14 @@ class Dispatcher(object):
 		# Get resource to update
 		if (res := self.retrieveResource(id)).resource is None:
 			Logging.log('Resource not found')
-			return Result(rsc=RC.notFound, dbg=res.dbg)
+			return Result(status=False, rsc=RC.notFound, dbg=res.dbg)
 		resource = res.resource
 		if resource.readOnly:
-			return Result(rsc=RC.operationNotAllowed, dbg='resource is read-only')
+			return Result(status=False, rsc=RC.operationNotAllowed, dbg='resource is read-only')
 
 		# Some Resources are not allowed to be updated in a request, return immediately
 		if resource.ty in [ T.CIN, T.FCI, T.TSI ]:		# TODO: move to constants
-			return Result(rsc=RC.operationNotAllowed, dbg=f'UPDATE not allowed for type: {resource.ty}')
+			return Result(status=False, rsc=RC.operationNotAllowed, dbg=f'UPDATE not allowed for type: {resource.ty}')
 
 		#
 		#	Permission check
@@ -560,7 +560,7 @@ class Dispatcher(object):
 			return res
 		if res.data is None:	# data == None indicates that this is NOT an ACPI update. In this case we need a normal permission check
 			if CSE.security.hasAccess(originator, resource, Permission.UPDATE) == False:
-				return Result(rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
+				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
 
 		# Check for virtual resource
 		if Utils.isVirtualResource(resource):
@@ -588,12 +588,12 @@ class Dispatcher(object):
 			dictNew = deepcopy(resource.dict)
 			# return only the diff. This includes those attributes that are updated with the same value. Luckily, 
 			# all key/values that are touched in the update request are in the resource's __modified__ variable.
-			return Result(resource={ tpe : Utils.resourceDiff(dictOrg, dictNew, modifiers=resource[Resource._modified]) }, rsc=res.rsc)
+			return Result(status=res.status, resource={ tpe : Utils.resourceDiff(dictOrg, dictNew, modifiers=resource[Resource._modified]) }, rsc=res.rsc)
 		elif request.args.rcn == RCN.nothing:
-			return Result(rsc=res.rsc)
+			return Result(status=res.status, rsc=res.rsc)
 		# TODO C.rcnDiscoveryResultReferences 
 		else:
-			return Result(rsc=RC.badRequest, dbg='wrong rcn for UPDATE')
+			return Result(status=False, rsc=RC.badRequest, dbg='wrong rcn for UPDATE')
 
 
 	def updateResource(self, resource:Resource, dct:JSON=None, doUpdateCheck:bool=True, originator:str=None) -> Result:
@@ -633,11 +633,11 @@ class Dispatcher(object):
 		# get resource to be removed and check permissions
 		if (res := self.retrieveResource(id)).resource is None:
 			Logging.logDebug(res.dbg)
-			return Result(rsc=RC.notFound, dbg=res.dbg)
+			return Result(status=False, rsc=RC.notFound, dbg=res.dbg)
 		resource = res.resource
 
 		if CSE.security.hasAccess(originator, resource, Permission.DELETE) == False:
-			return Result(rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
+			return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
 
 		# Check for virtual resource
 		if Utils.isVirtualResource(resource):
@@ -675,11 +675,11 @@ class Dispatcher(object):
 			result = childResourcesRef
 		# TODO RCN.discoveryResultReferences
 		else:
-			return Result(rsc=RC.badRequest, dbg='wrong rcn for DELETE')
+			return Result(status=False, rsc=RC.badRequest, dbg='wrong rcn for DELETE')
 
 		# remove resource
 		res = self.deleteResource(resource, originator, withDeregistration=True)
-		return Result(resource=result, rsc=res.rsc, dbg=res.dbg)
+		return Result(status=res.status, resource=result, rsc=res.rsc, dbg=res.dbg)
 
 
 	def deleteResource(self, resource:Resource, originator:str=None, withDeregistration:bool=False, parentResource:Resource=None) -> Result:
@@ -690,7 +690,7 @@ class Dispatcher(object):
 		# Check resource deletion
 		if withDeregistration:
 			if not (res := CSE.registration.checkResourceDeletion(resource)).status:
-				return Result(rsc=RC.badRequest, dbg=res.dbg)
+				return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
 
 		# Retrieve the parent resource now, because we need it later
 		if parentResource is None:
@@ -706,7 +706,7 @@ class Dispatcher(object):
 		if parentResource is not None:
 			parentResource.childRemoved(resource, originator)
 
-		return Result(resource=resource, rsc=res.rsc, dbg=res.dbg)
+		return Result(status=res.status, resource=resource, rsc=res.rsc, dbg=res.dbg)
 
 
 	#########################################################################
