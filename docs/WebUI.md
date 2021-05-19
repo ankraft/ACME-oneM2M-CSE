@@ -37,7 +37,7 @@ It starts with defaults, which can be set via command line arguments
 | --ip HOSTIP                       | Specify the web UI's local IP address to bind to. <br />Default: 127.0.0.1  (only localhost)                                                                       |
 | --port HOSTPORT                   | Specify the web UI's local port. <br />Default: 8000                                                                                                               |
 | --cseurl TARGETURL                | The target CSE's base URL. This is where the actual CSE can be reached.<br />Default: http://127.0.0.1:8080/                                                       |
-| --ri TARGETRI                     | The  target CSE's default base RI.<br />Default: id-in                                                                                                             |
+| --ri TARGETRI                     | The target CSE's default base RI.<br />Default: id-in                                                                                                              |
 | --originator TARGETORIGINATOR     | The target CSE's default originator.<br /> Default: CAdmin                                                                                                         |
 | **https/tls**                     |                                                                                                                                                                    |
 | --tls                             | Enable TLS (https) for the web UI.<br />It is disabled by default.                                                                                                 |
@@ -46,10 +46,11 @@ It starts with defaults, which can be set via command line arguments
 | **OAuth**                         |                                                                                                                                                                    |
 | --oauth                           | Enable OAuth2 authentication for CSE access.<br />Default: False.                                                                                                  |
 | --oauth-server-url OAUTHSERVERURL | The OAuth2 server URL from which to retrieve the authentication token.<br />Default: None.<br />Automatic token retrieval and renewal is supported for *keycloak*. |
-| --client-id CLIENTID              | The oAuth2 client ID.<br />Default: None.                                                                                                                          |
-| --client-secret CLIENTSECRET      | The oAuth2 client secret.<br />Default: None.                                                                                                                      |
+| --client-id CLIENTID              | The OAuth2 client ID.<br />Default: None.                                                                                                                          |
+| --client-secret CLIENTSECRET      | The OAuth2 client secret.<br />Default: None.                                                                                                                      |
 | **Misc**                          |                                                                                                                                                                    |
-| --logging                         | Enable logging to console.                                                                                                                                         |
+| --logging                         | Enable logging to console.<br />Default: False                                                                                                                     |
+| --no-open                         | Disable opening a web browser on startup.<br /> Default: False                                                                                                    |
 
 
 ### Example

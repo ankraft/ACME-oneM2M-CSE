@@ -8,13 +8,13 @@
 #
 
 from __future__ import annotations
-import flask, sys, argparse, logging, ssl, collections, time
+import flask, sys, argparse, logging, ssl, collections, time, webbrowser
 from rich.console import Console
 import requests
 from flask import Flask, Request, make_response, request
 from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
-from typing import Callable, List, Union, Any, Tuple
+from typing import Callable, List, Any
 
 
 FlaskHandler = 	Callable[[str], Response]
@@ -243,7 +243,8 @@ if __name__ == '__main__':
 	parser.add_argument('--cseurl', action='store', dest='targetURL', default='http://127.0.0.1:8080/', help='the target CSE\'s base URL (default: %(default)s)')	
 	parser.add_argument('--ri', action='store', dest='targetRI', default='id-in', help='the target CSE\'s default base RI (default: %(default)s)')	
 	parser.add_argument('--originator', action='store', dest='targetOriginator', default='CAdmin', help='the target CSE\'s default originator (default: %(default)s)')	
-	parser.add_argument('--logging', action='store_true', dest='logging', default=False, help='Enable logging')
+	parser.add_argument('--logging', action='store_true', dest='logging', default=False, help='enable logging')
+	parser.add_argument('--no-open', action='store_true', dest='noOpen', default=False, help='disable opening a web browser on startup (default: %(default)s)')
 
 	# https / tls arguments
 	parser.add_argument('--tls', action='store_true', dest='useTLS', default=False, help='enable TLS (https) for the web UI (default: %(default)s)')	
@@ -251,10 +252,10 @@ if __name__ == '__main__':
 	parser.add_argument('--keyfile', action='store', dest='keyFile', default=None, required='--tls' in sys.argv, help='path to private key file (default: %(default)s, required for --tls)')	
 
 	# oauth arguments
-	parser.add_argument('--oauth', action='store_true', dest='oauth', default=False, help='enable OAuth2 authentication for CSE access')
+	parser.add_argument('--oauth', action='store_true', dest='oauth', default=False, help='enable OAuth2 authentication for CSE access (default: %(default)s)')
 	parser.add_argument('--oauth-server-url', action='store', dest='oauthServerUrl', required='--oauth' in sys.argv, help='the OAuth2 server URL')
 	parser.add_argument('--client-id', action='store', dest='clientID', required='--oauth' in sys.argv, help='the OAuth2 client ID')
-	parser.add_argument('--client-secret', action='store', dest='clientSecret',  required='--oauth' in sys.argv, help='set the OAuth2 client secret')
+	parser.add_argument('--client-secret', action='store', dest='clientSecret',  required='--oauth' in sys.argv, help='the OAuth2 client secret')
 
 	# Assign some args for easier access later
 	args 				= parser.parse_args()
@@ -267,4 +268,6 @@ if __name__ == '__main__':
 	# Start Server
 	flaskApp = Flask('ACME WebUI')
 	webui = WebUI(flaskApp, defaultRI=args.targetRI, defaultOriginator=args.targetOriginator, redirectURL=args.targetURL)
+	if not args.noOpen:
+		webbrowser.open(f'http{"s" if args.useTLS else ""}://{args.hostIP}:{args.hostPort}')
 	runServer(flaskApp, args.hostIP, args.hostPort, args.useTLS, certFile=args.certFile, privateKey=args.keyFile)
