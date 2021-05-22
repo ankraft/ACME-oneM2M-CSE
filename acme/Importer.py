@@ -109,7 +109,7 @@ class Importer(object):
 		filenames = sorted(fnmatch.filter(os.listdir(path), '*.json'))
 		for fn in filenames:
 			if fn not in self._firstImporters:
-				Logging.log(f'Importing resource from file: {fn}')
+				Logging.log(f'Importing resource: {fn}')
 				filename = path + '/' + fn
 
 				# update an existing resource
@@ -212,7 +212,7 @@ class Importer(object):
 		filenames = fnmatch.filter(os.listdir(path), '*.ap')
 		for fn in filenames:
 			fn = os.path.join(path, fn)
-			Logging.log(f'Importing attribute policies from file: {fn}')
+			Logging.log(f'Importing attribute policies: {fn}')
 			if os.path.exists(fn):
 				if (lst := cast(JSONLIST, self.readJSONFromFile(fn))) is None:
 					continue
