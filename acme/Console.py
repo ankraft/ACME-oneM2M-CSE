@@ -421,7 +421,7 @@ class Console(object):
 		resourceTypes += f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - CSE.dispatcher.countResources((T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.TS_LA, T.TS_OL, T.GRP_FOPT, T.PCH_PCU))}\n'	# substract the virtual resources
 		
 		result = Table.grid(expand=True)
-		result.add_column(width=12, min_width=12)
+		result.add_column(width=15)
 		result.add_column()
 		result.add_row(Panel(resourceTypes), rightGrid )
 
