@@ -129,7 +129,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	Logging.log('============')
 	Logging.log('Starting CSE')
 	Logging.log(f'CSE-Type: {cseType.name}')
-	Logging.log('Configuration:')
+	#Logging.log('Configuration:')
 	Logging.log(Configuration.print())
 
 	storage = Storage()						# Initiatlize the resource storage
@@ -167,7 +167,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	Logging.log('CSE started')
 	if isHeadless:
 		# when in headless mode give the CSE a moment (2s) to experience fatal errors before printing the start message
-		BackgroundWorkerPool.newActor(delay=2, workerCallback=lambda : Logging.console('CSE started') if not shuttingDown else None ).start()
+		BackgroundWorkerPool.newActor(lambda : Logging.console('CSE started') if not shuttingDown else None, delay=2.0 ).start()
 	
 	return True
 

@@ -546,7 +546,7 @@ class NotificationManager(object):
 		# Check and start a notification worker to send notifications after some time
 		if len(BackgroundWorkerPool.findWorkers(self._workerID(ri, nu))) > 0:	# worker started, return
 			return True
-		BackgroundWorkerPool.newActor(dur, self._sendSubscriptionAggregatedBatchNotification, name=self._workerID(ri, nu)).start(ri=ri, nu=nu)
+		BackgroundWorkerPool.newActor(self._sendSubscriptionAggregatedBatchNotification, delay=dur, name=self._workerID(ri, nu)).start(ri=ri, nu=nu)
 		return True
 
 

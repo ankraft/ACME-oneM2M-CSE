@@ -211,14 +211,14 @@ class RequestManager(object):
 		# Synchronous handling
 		if request.args.rt == ResponseType.nonBlockingRequestSynch:
 			# Run operation in the background
-			BackgroundWorkerPool.newActor(0.0, self._runNonBlockingRequestSync, f'request_{request.headers.requestIdentifier}').start(request=request, reqRi=reqres.resource.ri)
+			BackgroundWorkerPool.newActor(self._runNonBlockingRequestSync, name=f'request_{request.headers.requestIdentifier}').start(request=request, reqRi=reqres.resource.ri)
 			# Create the response content with the <request> ri 
 			return Result(dict={ 'm2m:uri' : reqres.resource.ri }, rsc=RC.acceptedNonBlockingRequestSynch)
 
 		# Asynchronous handling
 		if request.args.rt == ResponseType.nonBlockingRequestAsynch:
 			# Run operation in the background
-			BackgroundWorkerPool.newActor(0.0, self._runNonBlockingRequestAsync, f'request_{request.headers.requestIdentifier}').start(request=request, reqRi=reqres.resource.ri)
+			BackgroundWorkerPool.newActor(self._runNonBlockingRequestAsync, name=f'request_{request.headers.requestIdentifier}').start(request=request, reqRi=reqres.resource.ri)
 			# Create the response content with the <request> ri 
 			return Result(dict={ 'm2m:uri' : reqres.resource.ri }, rsc=RC.acceptedNonBlockingRequestAsynch)
 

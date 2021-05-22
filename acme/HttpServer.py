@@ -142,7 +142,7 @@ class HttpServer(object):
 	def run(self) -> None:
 		"""	Run the http server in a separate thread.
 		"""
-		self.httpActor = BackgroundWorkerPool.newActor(0.0, self._run, 'HTTP Server')
+		self.httpActor = BackgroundWorkerPool.newActor(self._run, name='HTTP Server')
 		self.httpActor.start()
 	
 
