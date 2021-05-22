@@ -1,19 +1,20 @@
 
-import pkgutil, os, fnmatch, importlib, time, argparse
+import os, fnmatch, importlib, time, argparse
 from rich.console import Console
-from rich.table import Column, Table
+from rich.table import Table
 from rich.style import Style
 
 
 # TODO testTransferRequests.py
 
-loadTests = [ 'testLoad' ]
+loadTests 	= [ 'testLoad' ]
+singleTests = []
 
 def isRunTest(name:str) -> bool:
 	if args.runAll:						# run all tests
 		return True
-	if len(args.tests) > 0:				# run only specified tests
-		return name in args.tests
+	if len(singleTests) > 0:			# run only specified tests
+		return name in singleTests
 	if args.includeLoadTests:			# include all load tests
 		return True
 	if args.loadTestsOnly: 
@@ -31,7 +32,7 @@ if __name__ == '__main__':
 	modules       = []
 	results       = {}
 
-	# Parse some command line arguments
+	# Parse command line arguments
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--load-include', action='store_true', dest='includeLoadTests', default=False, help='include load tests in test runs')
 	parser.add_argument('--load-only', action='store_true', dest='loadTestsOnly', default=False, help='run only load tests in test runs')
@@ -43,8 +44,11 @@ if __name__ == '__main__':
 	groupFail.add_argument('--failfast', action='store_true', dest='failFast', default=True, help='Stop tests after failure (default)')
 	groupFail.add_argument('--no-failfast', action='store_false', dest='failFast', default=True, help='Continue tests after failure')
 
-	parser.add_argument('tests', nargs='*', help='specify tests to run only')
+	parser.add_argument('tests', nargs='*', help='specific tests to run')
 	args = parser.parse_args()
+
+	# Clean optional single tests
+	singleTests = [ test if not test.endswith('.py') else test[:-3] for test in args.tests ]
 
 
 	# Get all filenames with tests and load them as modules
