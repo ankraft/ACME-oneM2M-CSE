@@ -11,7 +11,8 @@
 """	Wrapper class for the logging subsystem. """
 
 import traceback
-import logging, logging.handlers, os, inspect, re, sys, datetime, time, threading, queue
+import logging, logging.handlers, os, inspect,  datetime, time, threading
+from queue import Queue
 from typing import List, Any, Union
 from logging import StreamHandler, LogRecord
 from pathlib import Path
@@ -66,10 +67,10 @@ class	Logging:
 	enableScreenLogging	= True
 	stackTraceOnError	= True
 	worker 				= None
-	queue 				= None
+	queue:Queue			= None
 
-	checkInterval:float	= 0.2		# wait (in s) between checks of the logging queue
-	queueMaxsize:int	= 1000		# max number of items in the logging queue. Might otherwise grow forever on large load
+	checkInterval:float	= 0.5		# wait (in s) between checks of the logging queue
+	queueMaxsize:int	= 2000		# max number of items in the logging queue. Might otherwise grow forever on large load
 
 	_console			= None
 	_handlers:List[Any] = None
@@ -92,7 +93,7 @@ class	Logging:
 		Logging._console			= Console()								# Console object
 
 		# Add logging queue
-		Logging.queue = queue.Queue(maxsize=Logging.queueMaxsize)
+		Logging.queue = Queue(maxsize=Logging.queueMaxsize)
 
 		# List of log handlers
 		Logging._handlers = [ ACMERichLogHandler() ]
@@ -117,7 +118,7 @@ class	Logging:
 
 		# Start worker to handle logs in the background
 		from helpers.BackgroundWorker import BackgroundWorkerPool
-		BackgroundWorkerPool.newWorker(Logging.checkInterval, Logging.loggingWorker, 'loggingWorker').start()
+		BackgroundWorkerPool.newWorker(Logging.checkInterval, Logging.loggingWorker, 'loggingWorker', processOnTime=False).start()
 	
 	
 	@staticmethod

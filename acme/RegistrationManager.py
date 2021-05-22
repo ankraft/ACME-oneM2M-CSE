@@ -228,7 +228,7 @@ class RegistrationManager(object):
 		# Start background monitor to handle expired resources
 		Logging.log('Starting expiration monitor')
 		if (interval := Configuration.get('cse.checkExpirationsInterval')) > 0:
-			BackgroundWorkerPool.newWorker(interval, self.expirationDBMonitor, 'expirationMonitor', startWithDelay=True).start()
+			BackgroundWorkerPool.newWorker(interval, self.expirationDBMonitor, 'expirationMonitor', processOnTime=False).start()
 
 
 	def stopExpirationMonitor(self) -> None:

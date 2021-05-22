@@ -39,7 +39,7 @@ class TimeSeriesManager(object):
 		if len(BackgroundWorkerPool.findWorkers(self.workerName)) > 0:	# Stop existing workers
 			self.stopMonitoring()
 		if interval > 0.0:
-			BackgroundWorkerPool.newWorker(interval, self.timeSeriesMonitor, self.workerName, compensateProcessTime=True).start()
+			BackgroundWorkerPool.newWorker(interval, self.timeSeriesMonitor, self.workerName).start()
 			self.currentMonitoringInterval = interval
 
 

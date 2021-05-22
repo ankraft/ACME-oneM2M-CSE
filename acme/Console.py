@@ -127,7 +127,7 @@ class Console(object):
 		table.add_column('Interval', no_wrap=True)
 		table.add_column('Runs', no_wrap=True)
 		for w in BackgroundWorkerPool.backgroundWorkers.values():
-			a = 'Actor' if w.count == 1 else 'Worker'
+			a = 'Actor' if w.maxCount == 1 else 'Worker'
 			table.add_row(w.name, a, str(w.interval), str(w.numberOfRuns))
 		Logging.console(table, extranl=True)
 
