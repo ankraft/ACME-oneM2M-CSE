@@ -136,15 +136,29 @@ def toISO8601Date(ts:Union[float, datetime.datetime], isUTCtimestamp:bool=True) 
 	return ts.strftime('%Y%m%dT%H%M%S,%f')
 
 
-def fromISO8601Date(timestamp:str) -> float:
+def fromAbsRelTimestamp(absRelTimestamp:str) -> float:
 	"""	Parse a ISO 8601 string and return a UTC-relative timestamp as a float.
+		If  `absRelTimestamp` in the string is a period (relatice) timestamp (e.g. PT2S), then this function
+		tries to convert it and return an absolute timestamp as a float, based on the current UTC time.
+		If the `absRelTimestamp` contains an integer then it is treated as a relative offset and a UTC-based
+		timestamp is generated for this offset and returned.
 	"""
 	try:
-		return isodate.parse_datetime(timestamp).timestamp()
+		return isodate.parse_datetime(absRelTimestamp).timestamp()
 		# return datetime.datetime.strptime(timestamp, '%Y%m%dT%H%M%S,%f').timestamp()
 	except Exception as e:
-		Logging.logWarn(f'Wrong format for timestamp: {timestamp}')
-		return 0.0
+		# It seems that the given absRelTimestamp is actual an ISO period. Try that one.
+		try:
+			return utcTime() + isodate.parse_duration(absRelTimestamp).total_seconds()
+		except Exception as e:
+			try:
+				# Last try: absRelTimestamp could be a relative offset in ms. Try to convert 
+				# the string and return an absolute UTC-based timestamp
+				rel = int(absRelTimestamp)
+				return utcTime() + float(rel)/1000.0	
+			except Exception as e:
+				Logging.logWarn(f'Wrong format for timestamp: {absRelTimestamp}')
+	return 0.0
 
 
 def utcTime() -> float:
@@ -653,8 +667,8 @@ def getRequestArguments(args:dict, operation:Operation=Operation.RETRIEVE) -> Tu
 
 	# RT - Response Type
 	if (rt := args.get('rt')) is not None: 
-		if not CSE.validator.validateRequestArgument('rt', rt).status:
-			return None, 'error validating "rt" argument'
+		if not (res := CSE.validator.validateRequestArgument('rt', rt)).status:
+			return None, f'error validating "rt" argument ({res.dbg})'
 		try:
 			rt = ResponseType(int(rt))
 		except ValueError as exc:
@@ -666,16 +680,9 @@ def getRequestArguments(args:dict, operation:Operation=Operation.RETRIEVE) -> Tu
 
 	# RP - Response Persistence
 	if (rp := args.get('rp')) is not None: 
-		if not CSE.validator.validateRequestArgument('rp', rp).status:
-			return None, 'error validating "rp" argument'
-		try:
-			if rp.startswith('P'):
-				rpts = getResourceDate(isodate.parse_duration(rp).total_seconds())
-			elif 'T' in rp:
-				rpts = rp
-			else:
-				raise ValueError
-		except ValueError as exc:
+		if not (res := CSE.validator.validateRequestArgument('rp', rp)).status:
+			return None, f'error validating "rp" argument ({res.dbg})'
+		if (rpts := toISO8601Date(fromAbsRelTimestamp(rp))) == 0.0:
 			return None, f'"{rp}" is not a valid value for rp'
 		del args['rp']
 	else:

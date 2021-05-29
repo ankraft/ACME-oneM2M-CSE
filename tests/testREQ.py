@@ -171,6 +171,24 @@ class TestREQ(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCNTNBFlexIntegerDuration(self) -> None:
+		""" Retrieve <CNT> non-blocking flex (duration as integer)"""
+		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.flexBlocking:d}&rp={requestETDurationInteger}', TestREQ.originator)
+		self.assertIn(rsc, [ RC.OK, RC.acceptedNonBlockingRequestSynch, RC.acceptedNonBlockingRequestAsynch ] )
+		# -> Ignore the result
+
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCNTNBFlexWrongDuration(self) -> None:
+		""" Retrieve <CNT> non-blocking flex (duration = xxx) -> Fail"""
+		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.flexBlocking:d}&rp=xxx', TestREQ.originator)
+		# r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.flexBlocking:d}&rp={requestETDurationInteger}', TestREQ.originator)
+		self.assertEqual(rsc, RC.badRequest )
+		# -> Ignore the result
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTNBSynch(self) -> None:
 		""" Create <CNT> non-blocking synchronous """
 		dct = 	{ 'm2m:cnt' : { 
@@ -434,7 +452,9 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestREQ('test_retrieveCSENBSynchWrongRT'))
 	suite.addTest(TestREQ('test_retrieveUnknownNBSynch'))
 	suite.addTest(TestREQ('test_retrieveCSENBSynchExpireRequest'))
-	suite.addTest(TestREQ('test_retrieveCNTNBFlex'))		# flex
+	suite.addTest(TestREQ('test_retrieveCNTNBFlex'))					# flex
+	suite.addTest(TestREQ('test_retrieveCNTNBFlexIntegerDuration'))		# flex
+	suite.addTest(TestREQ('test_retrieveCNTNBFlexWrongDuration'))		# flex
 	suite.addTest(TestREQ('test_createCNTNBSynch'))
 	suite.addTest(TestREQ('test_updateCNTNBSynch'))
 	suite.addTest(TestREQ('test_deleteCNTNBSynch'))

@@ -112,12 +112,12 @@ class TimeSeriesManager(object):
 
 	def updateTimeSeries(self, timeSeries:Resource, instance:Resource) -> None:
 		"""	Add or update to the internal monitor DB.
-			The monitoring is started only when a first TSI is added.
+			The monitoring is started only when a first TSI is added for a TS.
 		"""
 		Logging.logDebug(f'New TSI for TS: {timeSeries.ri}')
-		pei = timeSeries.pei / 1000.0 # ms
-		mdt = timeSeries.mdt / 1000.0 # ms
-		if (dgt := Utils.fromISO8601Date(instance.dgt)) == 0.0:	# error
+		pei = timeSeries.pei / 1000.0 # ms -> s
+		mdt = timeSeries.mdt / 1000.0 # ms -> s
+		if (dgt := Utils.fromAbsRelTimestamp(instance.dgt)) == 0.0:	# error
 			Logging.logWarn(f'Error parsing TSI.dgt: {dgt}')
 			return
 		isNewTS = False

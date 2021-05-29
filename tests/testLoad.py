@@ -66,12 +66,12 @@ class TestLoad(unittest.TestCase):
 		aes:list[Tuple[str, str]] = []
 		for _ in range(count):
 			dct = 	{ 'm2m:ae' : {
-					'api': 'NMyApp1Id',
-					'rr': False,
-					'srv': [ '3' ]
-				}}
+						'api': 'NMyApp1Id',
+						'rr': False,
+						'srv': [ '3' ]
+					}}
 			r, rsc = CREATE(cseURL, 'C', T.AE, dct)
-			self.assertEqual(rsc, RC.created)
+			self.assertEqual(rsc, RC.created, r)
 			ri = findXPath(r, 'm2m:ae/ri')
 			rn = findXPath(r, 'm2m:ae/rn')
 			aes.append((ri, rn))
@@ -85,8 +85,8 @@ class TestLoad(unittest.TestCase):
 		self.assertEqual(len(aes), count)
 		for ae in list(aes):
 			r, rsc = RETRIEVE(f'{cseURL}/{ae[1]}', ORIGINATOR)
-			self.assertEqual(rsc, RC.OK)
-			self.assertEqual(findXPath(r, 'm2m:ae/ri'), ae[0])
+			self.assertEqual(rsc, RC.OK, r)
+			self.assertEqual(findXPath(r, 'm2m:ae/ri'), ae[0], r)
 
 
 	def _deleteAEs(self, count:int, aes:list[Tuple[str, str]]=None) -> None:
@@ -96,8 +96,8 @@ class TestLoad(unittest.TestCase):
 			aes = TestLoad.aes
 		self.assertEqual(len(aes), count)
 		for ae in list(aes):
-			_, rsc = DELETE(f'{cseURL}/{ae[1]}', ORIGINATOR)
-			self.assertEqual(rsc, RC.deleted)
+			r, rsc = DELETE(f'{cseURL}/{ae[1]}', ORIGINATOR)
+			self.assertEqual(rsc, RC.deleted, r)
 			aes.remove(ae)
 		self.assertEqual(len(aes), 0)
 

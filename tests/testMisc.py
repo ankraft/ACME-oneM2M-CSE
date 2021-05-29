@@ -93,6 +93,7 @@ class TestMisc(unittest.TestCase):
 
 # TODO test for creating a resource with missing type parameter
 # TODO test json with comments
+# TODO test for ISO8601 format validation
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()

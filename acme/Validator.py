@@ -82,10 +82,10 @@ attributePolicies:AttributePolicies = {
 	'conr'	: ( BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# m2m:contentRef - CIN
 	'cr'	: ( BT.list, 			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# CNT
 	'cs'	: {
-		T.CIN  : ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# CIN
-		T.FCNT : ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# FCNT
-		T.FCI  : ( BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ),		# FCI
-		T.TSI  : ( BT.nonNegInteger,	CAR.car1 ,  RO.NP,	RO.NP, RO.O, AN.NA ),		# TSI
+		T.CIN  : ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),	# CIN
+		T.FCNT : ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),	# FCNT
+		T.FCI  : ( BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ),	# FCI
+		T.TSI  : ( BT.nonNegInteger,	CAR.car1 ,  RO.NP,	RO.NP, RO.O, AN.NA ),	# TSI
 	},
 	'csi'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# CSE, CSR
 	'cst'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# CSE, CSR
@@ -96,8 +96,8 @@ attributePolicies:AttributePolicies = {
 	'dea'	: ( BT.boolean,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ),		# SWR
 	'dcse'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSR
 	'dgt'	: {
-		T.FCNT : (  BT.timestamp,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# FCNT
-		T.TSI  : (  BT.timestamp,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# TSI
+		T.FCNT : (  BT.absRelTimestamp,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),	# FCNT
+		T.TSI  : (  BT.absRelTimestamp,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),	# TSI
 	},
 	'dis'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# BAT
 	'disr'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT
@@ -260,7 +260,7 @@ attributePolicies:AttributePolicies = {
 	'us'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'arp'	: ( BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'rt'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request
-	'rp'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
+	'rp'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
 
 	# TODO lbl, catr, patr
 
@@ -540,7 +540,25 @@ class Validator(object):
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: unsigned integer')
 
-		if tpe in [ BT.string, BT.timestamp, BT.anyURI ] and isinstance(value, str):
+		if tpe == BT.timestamp and isinstance(value, str):
+			if Utils.fromAbsRelTimestamp(value) == 0.0:
+				return Result(status=False, dbg=f'format error in timestamp: {value}')
+			return Result(status=True)
+
+		if tpe == BT.absRelTimestamp:
+			if isinstance(value, str):
+				try:
+					rel = int(value)
+					# fallthrough
+				except Exception as e:	# could happen if this is a string with an iso timestamp. Then try next test
+					if Utils.fromAbsRelTimestamp(value) == 0.0:
+						return Result(status=False, dbg=f'format error in absRelTimestamp: {value}')
+				# fallthrough
+			elif not isinstance(value, int):
+				return Result(status=False, dbg=f'unsupported data type for absRelTimestamp')
+			return Result(status=True)		# int/long is ok
+
+		if tpe in [ BT.string, BT.anyURI ] and isinstance(value, str):
 			return Result(status=True)
 
 		if tpe == BT.list and isinstance(value, list):

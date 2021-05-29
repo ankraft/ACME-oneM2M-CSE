@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Improved handling of \<flexContainerInstance> resources when versioning is disabled in the parent \<flexContainer>.
 - [CSE] Re-added: remove comments from received JSON content.
 - [CSE] Improved the timely execution of background tasks. The actual task's execution time is not added on top to the interval anymore, and intervals are constant.
+- [CSE] Improved support and validation for absRelTimestamps.
 
 
 ## [0.7.3] - 2021-03-26

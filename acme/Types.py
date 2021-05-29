@@ -266,6 +266,7 @@ class BasicType(IntEnum):
 	unsignedLong	= auto()
 	string 			= auto()
 	timestamp		= auto()
+	absRelTimestamp	= auto()
 	list 			= auto()
 	dict 			= auto()
 	anyURI			= auto()

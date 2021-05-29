@@ -98,11 +98,11 @@ class TestExpiration(unittest.TestCase):
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
-					'et' : '99991231T235959'	# wrongly updated
+					'et' : futureTimestamp	# wrongly updated
 				}}
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
-		self.assertLess(findXPath(r, 'm2m:cnt/et'), '99991231T235959')
+		self.assertLess(findXPath(r, 'm2m:cnt/et'), futureTimestamp)
 		r, rsc = DELETE(cntURL, TestExpiration.originator)
 		self.assertEqual(rsc, RC.deleted)
 

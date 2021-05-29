@@ -369,7 +369,7 @@ class Console(object):
 
 		misc  = '[underline]Misc[/underline]\n'
 		misc += '\n'
-		misc += f'StartTime : {datetime.datetime.fromtimestamp(Utils.fromISO8601Date(cast(str, stats[Statistics.cseStartUpTime])))} (UTC)\n'
+		misc += f'StartTime : {datetime.datetime.fromtimestamp(Utils.fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime])))} (UTC)\n'
 		misc += f'Uptime    : {stats[Statistics.cseUpTime]}\n'
 		if hasattr(os, 'getloadavg'):
 			load = os.getloadavg()
