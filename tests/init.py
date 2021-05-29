@@ -19,34 +19,15 @@ from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import cbor2
 from Types import Parameters, JSON
+import helpers.OAuth as OAuth
+from config import *
 
-PROTOCOL			= 'http'	# possible values: http, https
-# ENCODING 			= 
-
-
-SERVER				= f'{PROTOCOL}://localhost:8080'
-ROOTPATH			= '/'
-CSERN				= 'cse-in'
-CSEID				= '/id-in'
-SPID 				= 'sp-in'
-ORIGINATOR			= 'CAdmin'
-
-REMOTESERVER		= f'{PROTOCOL}://localhost:8081'
-REMOTEROOTPATH		= '/'
-REMOTECSERN			= 'cse-mn'
-REMOTECSEID			= '/id-mn'
-REMOTESPID 			= 'sp-mn'
-REMOTEORIGINATOR	= 'CAdmin'
-
-
-NOTIFICATIONPORT 	= 9990
-NOTIFICATIONSERVER	= f'{PROTOCOL}://localhost:{NOTIFICATIONPORT}' 
-NOTIFICATIONSERVERW	= f'{PROTOCOL}://localhost:6666'
 
 CONFIGURL			= f'{SERVER}{ROOTPATH}__config__'
 
 
 verifyCertificate	= False	# verify the certificate when using https?
+oauthToken			= None	# current OAuth Token
 
 # possible time delta between test system and CSE
 # This is not really important, but for discoveries and others
@@ -57,6 +38,7 @@ expirationCheckDelay 	= 2	# seconds
 expirationSleep			= expirationCheckDelay * 3
 
 requestETDuration 		= f'PT{expirationCheckDelay:d}S'
+requestETDurationInteger= expirationCheckDelay * 1000
 requestCheckDelay		= 1	#seconds
 
 # TimeSeries Interval
@@ -64,6 +46,12 @@ timeSeriesInterval 		= 1.0 # seconds
 
 # ReleaseVersionIndicator
 RVI						 ='3'
+
+# A timestamp far in the future
+# Why 888? Year 9999 may actually problematic, because this might be interpreteted
+# already as year 10000 (and this hits the limit of the isodata module implmenetation)
+futureTimestamp = '88881231T235959'
+
 
 
 ###############################################################################
@@ -150,6 +138,8 @@ def DELETE(url:str, originator:str, headers:Parameters=None) -> Tuple[JSON, int]
 
 
 def sendRequest(method:Callable, url:str, originator:str, ty:int=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
+	global oauthToken
+
 	tys = f';ty={ty}' if ty is not None else ''
 	ct = 'application/json'
 	hds = { 
@@ -166,7 +156,16 @@ def sendRequest(method:Callable, url:str, originator:str, ty:int=None, data:JSON
 			hds['X-M2M-RVI'] = headers['X-M2M-RVI']
 			del headers['X-M2M-RVI']
 		hds.update(headers)
+	
+	# authentication
+	if doOAuth:
+		if (token := OAuth.getOAuthToken(oauthServerUrl, oauthClientID, oauthClientSecret, oauthToken)) is None:
+			return 'error retrieving oauth token', 5103
+		oauthToken = token
+		hds['Authorization'] = f'Bearer {oauthToken.token}'
 
+	# print(url)
+	# print(hds)
 	setLastRequestID(rid)
 	try:
 		sendData:str = None
@@ -407,6 +406,12 @@ def getLastNotificationHeaders() -> Parameters:
 
 def uniqueID() -> str:
 	return str(random.randint(1,sys.maxsize))
+
+
+def uniqueRN(prefix:str='') -> str:
+	"""	Create a unique resource name.
+	"""
+	return f'{prefix}{round(time.time() * 1000)}'
 
 #
 #	Utilities
