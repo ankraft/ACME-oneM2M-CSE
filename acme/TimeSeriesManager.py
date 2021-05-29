@@ -68,6 +68,15 @@ class TimeSeriesManager(object):
 		self.startMonitoring(interval)	# implicit stop
 
 
+	def _addToMdlt(self, tsRes:Resource, dgt:str) -> None:
+		tsRes.mdlt.append(Utils.toISO8601Date(dgt))	# Add missing dataGenerationTime to TS.missingDataList
+		if (tsMdn := tsRes.mdn) is not None:		# mdn may not be set. Then this list grows forever
+			if len(tsRes.mdlt) > tsMdn:				# If missingDataList is bigger then missingDataMaxNr allows
+				tsRes['mdlt'] = tsRes.mdlt[1:]		# Reduce the missingDataList
+			tsRes['mdc'] = len(tsRes.mdlt)			# set the missingDataCurrentNr
+			tsRes.dbUpdate()						# Update in DB
+
+
 	def timeSeriesMonitor(self) -> bool:
 		"""	Callback for the monitor. Checking regularly whether there are timeSeries instances
 			after a period, and where the ingress period has expired.
@@ -86,14 +95,10 @@ class TimeSeriesManager(object):
 				continue
 			
 			dgt = ts['ndgt']	# expected dgt
-			#Logging.logDebug(f'Expected DGT: {dgt}')
+			# #Logging.logDebug(f'Expected DGT: {dgt}')
 			pei = ts['pei']		# periodic interval
-			tsRes.mdlt.append(Utils.toISO8601Date(dgt))	# Add missing dataGenerationTime to TS.missingDataList
-			if (tsMdn := tsRes.mdn) is not None:		# mdn may not be set. Then this list grows forever
-				if len(tsRes.mdlt) > tsMdn:				# If missingDataList is bigger then missingDataMaxNr allows
-					tsRes['mdlt'] = tsRes.mdlt[1:]		# Reduce the missingDataList
-				tsRes['mdc'] = len(tsRes.mdlt)			# set the missingDataCurrentNr
-				tsRes.dbUpdate()						# Update in DB
+
+			self._addToMdlt(tsRes, dgt)
 
 			# TODO handle subscription stuff
 
@@ -133,6 +138,12 @@ class TimeSeriesManager(object):
 			tse['npei'] = time_ + pei		# next period = now + TS.pei
 			tse['nmdt'] = time_ + pei + mdt	# next missingDataTime = now + TS.pei + TS.mdt
 			CSE.storage.updateTimeSeries(tse)
+
+			# TODO Check whether dgt is in periodic interval delta
+			# TODO Bob: but expected DGT or dgt from TSI in mdlt?
+			# TODO don't put DGT twince in mdlt
+
+
 
 		# Only need to recalculate and set a new monitoring interval when a TS starts to receive TSI
 		# Or when TS.mdt was changed, but then monitoring was stopped, so this is regarded as a new monitoring anyway

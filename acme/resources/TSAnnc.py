@@ -19,7 +19,7 @@ attributePolicies = constructPolicy([
 	'lnk' 
 ])
 tsAPolicies = constructPolicy([
-	'mni', 'mbs', 'mia', 'cni', 'cbs', 'pei', 'mdd', 'mdn', 'mdlt', 'mdc', 'mdt', 'cnf',
+	'mni', 'mbs', 'mia', 'cni', 'cbs', 'pei', 'peid', 'mdd', 'mdn', 'mdlt', 'mdc', 'mdt', 'cnf',
 	'or'
 ])
 

@@ -28,7 +28,7 @@ attributePolicies = constructPolicy([
 ])
 
 tsPolicies = constructPolicy([
-	'mni', 'mbs', 'mia', 'cni', 'cbs', 'pei', 'mdd', 'mdn', 'mdlt', 'mdc', 'mdt', 'cnf',
+	'mni', 'mbs', 'mia', 'cni', 'cbs', 'pei', 'peid', 'mdd', 'mdn', 'mdlt', 'mdc', 'mdt', 'cnf',
 	'or'
 ])
 attributePolicies =  addPolicy(attributePolicies, tsPolicies)
@@ -217,7 +217,7 @@ class TS(AnnounceableResource):
 
 
 	def _validateDataDetect(self, dct:JSON=None) -> None:
-		Logging.log('Validating data detection')
+		Logging.logDebug('Validating data detection')
 
 		# Check whether missing data detection is turned on
 		mdn = self.mdn
