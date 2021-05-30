@@ -15,7 +15,7 @@ Token = collections.namedtuple('Token', 'token expiration')
 _expirationLeeway:float	= 5.0		# 5 seconds leeway for token expiration
 
 
-def getOAuthToken(serverURL:str, clientID:str, clientSecret, token:Token=None, kind:str='keycloak') -> Token|None:
+def getOAuthToken(serverURL:str, clientID:str, clientSecret:str, token:Token=None, kind:str='keycloak') -> Token|None:
 	"""	Retrieve and return a oauth2 token. If there is a provided token that is still valid, then that token
 		is returned.
 
