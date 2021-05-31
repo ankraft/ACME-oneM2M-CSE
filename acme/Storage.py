@@ -342,9 +342,9 @@ class Storage(object):
 	##	TimeSeries
 	##
 
-	def addTimeSeries(self, ri:str, periodicInterval:float, missingDataTime:float, nextPeriodTime:float, nextMissingDataTime:float, nextDgt:float) -> bool:
+	def addTimeSeries(self, ri:str, periodicInterval:float, missingDataTime:float, nextPeriodTime:float, nextMissingDataTime:float) -> bool:
 		#Logging.log(f'addTimeSeries: {ri}, {periodicInterval}, {nextExpected}')
-		return self.db.addTimeSeries(ri, periodicInterval, missingDataTime, nextPeriodTime, nextMissingDataTime, nextDgt)
+		return self.db.addTimeSeries(ri, periodicInterval, missingDataTime, nextPeriodTime, nextMissingDataTime)
 
 
 	def getTimeSeries(self, ri:str) -> list[Document]:
@@ -685,15 +685,14 @@ class TinyDBBinding(object):
 	#	TimeSeries
 	#
 
-	def addTimeSeries(self, ri:str, periodicInterval:float, missingDataTime:float, nextPeriodTime:float, nextMissingDataTime:float, nextDgt:float) -> bool:
+	def addTimeSeries(self, ri:str, periodicInterval:float, missingDataTime:float, nextPeriodTime:float, nextMissingDataTime:float) -> bool:
 		with self.lockTimeSeries:
 			result = self.tabTimeSeries.insert(
 									{	'ri' 	: ri,
 										'pei'	: periodicInterval,
 										'mdt'	: missingDataTime,
-										'npei' 	: nextPeriodTime,		# timestamp for next period
+										'npei' 	: nextPeriodTime,		# timestamp for next period (dgt+pei)
 										'nmdt' 	: nextMissingDataTime,	# timestamp after which a TSI is regarded as expired 
-										'ndgt'	: nextDgt				# timestamp of the *next* dgt
 									})
 			return result is not None
 

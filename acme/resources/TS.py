@@ -93,7 +93,7 @@ class TS(AnnounceableResource):
 
 	def deactivate(self, originator:str) -> None:
 		super().deactivate(originator)
-		CSE.timeSeries.stopMonitoringTimeSeries(self)
+		CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 
 
 	def update(self, dct:JSON=None, originator:str=None) -> Result:
@@ -233,12 +233,12 @@ class TS(AnnounceableResource):
 				self.delAttribute('mdlt')	# remove list
 				self.delAttribute('mdc')	# remove counter
 				if CSE.timeSeries.isMonitored(self.ri):	# stop monitoring
-					CSE.timeSeries.stopMonitoringTimeSeries(self)
+					CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 
 		# If any of mdd, pei or mdt becomes None, or is mdd==False, then stop monitoring this TS
 		if mdd is None or mdd == False or self.pei is None or self.mdt is None:
 			if CSE.timeSeries.isMonitored(self.ri):
-				CSE.timeSeries.stopMonitoringTimeSeries(self)
+				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 		
 		# Check if mdn was changed and shorten mdlt accordingly, if exists
 		if self.mdlt is not None and (newMdn := Utils.findXPath(dct, 'm2m:ts/mdn')) is not None:	# Returns None if dct is None or not found in dct
@@ -253,7 +253,7 @@ class TS(AnnounceableResource):
 			mdt = Utils.findXPath(dct, 'm2m:ts/mdt')
 			isMonitored = CSE.timeSeries.isMonitored(self.ri)
 			if mdt is None and isMonitored:				# it is in the update, but set to None, meaning remove the mdt from the TS
-				CSE.timeSeries.stopMonitoringTimeSeries(self)
+				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 			# akr: not sure about the following. mdt is checked in the next period
 			# elif mdt is not None and isMonitored:		# it is in the update and has a value, so update the monitor
 			# 	CSE.timeSeries.updateTimeSeries(self)	# This will implicitly start monitoring
@@ -261,8 +261,6 @@ class TS(AnnounceableResource):
 
 		# Save changes
 		self.dbUpdate()
-
-
 
 
 

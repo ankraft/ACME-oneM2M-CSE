@@ -42,7 +42,7 @@ requestETDurationInteger= expirationCheckDelay * 1000
 requestCheckDelay		= 1	#seconds
 
 # TimeSeries Interval
-timeSeriesInterval 		= 1.0 # seconds
+timeSeriesInterval 		= 2.0 # seconds
 
 # ReleaseVersionIndicator
 RVI						 ='3'
@@ -458,7 +458,7 @@ def getDate(delta:int = 0) -> str:
 
 def toISO8601Date(ts: Union[float, datetime.datetime]) -> str:
 	if isinstance(ts, float):
-		ts = datetime.datetime.utcfromtimestamp(ts)
+		ts = datetime.datetime.fromtimestamp(ts)
 	return ts.strftime('%Y%m%dT%H%M%S,%f')
 
 
