@@ -143,10 +143,12 @@ class BackgroundWorkerPool(object):
 	def findWorkers(cls, name:str=None, running:bool=None) -> List[BackgroundWorker]:
 		"""	Find and return a list of worker(s) that match the search criteria:
 
-			- `name` - Name of the worker
+			- `name` - Name of the worker. The `name` may contain simple wildcards (* and ?)
 			- `running` - The running status of the worker
+
+
 		"""
-		return [ w for w in cls.backgroundWorkers.values() if (name is None or w.name == name) and (running is None or running == w.running) ]
+		return [ w for w in cls.backgroundWorkers.values() if (name is None or Utils.simpleMatch(w.name, name)) and (running is None or running == w.running) ]
 
 
 	@classmethod
