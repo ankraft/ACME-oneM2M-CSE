@@ -68,8 +68,8 @@ class BackgroundWorker(object):
 		"""
 		result = True
 		try:
-			result = self.callback(**self.args)
 			self.numberOfRuns += 1
+			result = self.callback(**self.args)
 		except Exception as e:
 			Logging.logErr(f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}')
 		finally:
