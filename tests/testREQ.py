@@ -270,6 +270,37 @@ class TestREQ(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCSENBSynchWithRET(self) -> None:
+		""" Retrieve <CB> non-blocking synchronous with Request Expiration Timestamp"""
+		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.nonBlockingRequestSynch:d}', TestREQ.originator, headers={'X-M2M-RET' : f'{requestETDuration}'})
+		rqi = lastRequestID()
+		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
+		requestURI = findXPath(r, 'm2m:uri')
+
+		# get and check resource
+		time.sleep(requestCheckDelay)
+		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
+		self.assertEqual(rsc, RC.OK)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCSENBSynchWithRETshort(self) -> None:
+		""" Retrieve <CB> non-blocking synchronous with short Request Expiration Timestamp -> FAIL """
+		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.nonBlockingRequestSynch:d}', TestREQ.originator, headers={'X-M2M-RET' : f'{expirationCheckDelay*1000/2}'})
+		rqi = lastRequestID()
+		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
+		requestURI = findXPath(r, 'm2m:uri')
+
+		# get and check resource. Should not be found anymore
+		time.sleep(expirationSleep)
+		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
+		self.assertEqual(rsc, RC.notFound, r)
+
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCSENBAsynch(self) -> None:
 		""" Retrieve <CB> non-blocking asynchronous """
 		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.nonBlockingRequestAsynch:d}&rp={requestETDuration}', TestREQ.originator, headers=headers)
@@ -458,6 +489,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestREQ('test_createCNTNBSynch'))
 	suite.addTest(TestREQ('test_updateCNTNBSynch'))
 	suite.addTest(TestREQ('test_deleteCNTNBSynch'))
+	suite.addTest(TestREQ('test_retrieveCSENBSynchWithRET'))
+	suite.addTest(TestREQ('test_retrieveCSENBSynchWithRETshort'))
 
 	# nonBlockingAsync
 	suite.addTest(TestREQ('test_retrieveCSENBAsynch'))

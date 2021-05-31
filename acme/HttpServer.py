@@ -530,6 +530,8 @@ class HttpServer(object):
 	def _getRequestHeaders(self, request:Request) -> Result:
 		"""	Extract the Request's header and put them into a CSERequest object.
 		"""
+		# TODO move a couple of check to general request check functions. Also for MQTT etc
+
 		rh 								= RequestHeaders()
 		rh.originator 					= self._requestHeaderField(request, C.hfOrigin)
 		rh.requestIdentifier			= self._requestHeaderField(request, C.hfRI)
@@ -585,6 +587,16 @@ class HttpServer(object):
 		if rh.originator is None and not (rh.resourceType == T.AE and request.method == 'POST'):
 			Logging.logDebug(dbg := 'From/Originator parameter is mandatory in request')
 			return Result(data=rh, rsc=RC.badRequest, dbg=dbg)		
+		
+		# Test for request expiration
+		if rh.requestExpirationTimestamp is not None:
+			if (ts := Utils.fromAbsRelTimestamp(rh.requestExpirationTimestamp)) == 0.0:
+				Logging.logDebug(dbg := 'Error in provided Request Expiration Timestamp')
+				return Result(data=rh, rsc=RC.badRequest, dbg=dbg)
+			if ts < Utils.utcTime():
+				Logging.logDebug(dbg := 'Request timeout')
+				return Result(data=rh, rsc=RC.requestTimeout, dbg=dbg)
+			rh.requestExpirationTimestamp = Utils.toISO8601Date(ts)	# Re-assign "real" ISO8601 timestamp
 
 		return Result(data=rh, rsc=RC.OK)
 

@@ -154,7 +154,7 @@ def fromAbsRelTimestamp(absRelTimestamp:str) -> float:
 			try:
 				# Last try: absRelTimestamp could be a relative offset in ms. Try to convert 
 				# the string and return an absolute UTC-based timestamp
-				rel = int(absRelTimestamp)
+				rel = float(absRelTimestamp)
 				return utcTime() + float(rel)/1000.0	
 			except Exception as e:
 				Logging.logWarn(f'Wrong format for timestamp: {absRelTimestamp}')
@@ -678,7 +678,7 @@ def getRequestArguments(args:dict, operation:Operation=Operation.RETRIEVE) -> Tu
 		rt = ResponseType.blockingRequest
 	result.rt = rt
 
-	# RP - Response Persistence
+	# RP - Result Persistence
 	if (rp := args.get('rp')) is not None: 
 		if not (res := CSE.validator.validateRequestArgument('rp', rp)).status:
 			return None, f'error validating "rp" argument ({res.dbg})'

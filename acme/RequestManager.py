@@ -184,7 +184,6 @@ class RequestManager(object):
 		if (nres := REQ.createRequestResource(request)).resource is None:
 			return Result(rsc=RC.badRequest, dbg=nres.dbg)
 
-
 		# Register <request>
 		if (cseres := Utils.getCSE()).resource is None:
 			return Result(rsc=RC.badRequest, dbg=cseres.dbg)

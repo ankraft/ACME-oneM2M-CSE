@@ -319,6 +319,7 @@ class ResponseCode(IntEnum):
 	releaseVersionNotSupported					= 4001
 	notFound 									= 4004
 	operationNotAllowed							= 4005
+	requestTimeout 								= 4008
 	unsupportedMediaType						= 4015
 	subscriptionCreatorHasNoPrivilege			= 4101
 	contentsUnacceptable						= 4102
@@ -378,6 +379,7 @@ ResponseCode._httpStatusCodes = {											# type: ignore
 		ResponseCode.subscriptionHostHasNoPrivilege				: 403,		# SUBSCRIPTION HOST HAS NO PRIVILEGE
 		ResponseCode.originatorHasAlreadyRegistered				: 403,		# ORIGINATOR HAS ALREADY REGISTERED
 		ResponseCode.appRuleValidationFailed					: 403,		# APP RULE VALIDATION FAILED
+		ResponseCode.requestTimeout								: 403,		# REQUEST TIMEOUT
 		ResponseCode.notFound									: 404,		# NOT FOUND
 		ResponseCode.operationNotAllowed						: 405,		# OPERATION NOT ALLOWED
 		ResponseCode.notAcceptable 								: 406,		# NOT ACCEPTABLE

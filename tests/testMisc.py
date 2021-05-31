@@ -14,6 +14,9 @@ from Constants import Constants as C
 from Types import ResponseCode as RC, ResourceTypes as T
 from init import *
 
+# TODO move a couple of tests to a http or general request test
+
+
 class TestMisc(unittest.TestCase):
 
 	@classmethod
@@ -27,7 +30,6 @@ class TestMisc(unittest.TestCase):
 	def tearDownClass(cls) -> None:
 		pass
 
-	# TODO move to http test
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_checkHTTPRVI(self) -> None:
 		"""	Check RVI parameter in response """
@@ -37,7 +39,32 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(lastHeaders()['X-M2M-RVI'], RVI)
 
 
-	# TODO move to http test
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_checkHTTPRET(self) -> None:
+		"""	Check Request Expiration Timeout in request"""
+		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={'X-M2M-RET' : getDate(10)}) # request expiration in 10 seconds
+		self.assertEqual(rsc, RC.OK)
+
+
+	def test_checkHTTPRETRelative(self) -> None:
+		"""	Check Request Expiration Timeout in request (relative)"""
+		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={'X-M2M-RET' : '10000'}) # request expiration in 10 seconds
+		self.assertEqual(rsc, RC.OK)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_checkHTTPRETWrong(self) -> None:
+		"""	Check Request Expiration Timeout in request (past date) -> Fail"""
+		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={'X-M2M-RET' : getDate(-10)}) # request expiration in 10 seconds
+		self.assertEqual(rsc, RC.requestTimeout)
+
+
+	def test_checkHTTPRETRelativeWrong(self) -> None:
+		"""	Check Request Expiration Timeout in request (relative, past date) -> Fail"""
+		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={'X-M2M-RET' : '-10000'}) # request expiration in 10 seconds
+		self.assertEqual(rsc, RC.requestTimeout)
+
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_checkHTTPRVIWrongInRequest(self) -> None:
 		"""	Check Wrong RVI version parameter in request -> Fail"""
@@ -98,6 +125,10 @@ class TestMisc(unittest.TestCase):
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestMisc('test_checkHTTPRVI'))
+	suite.addTest(TestMisc('test_checkHTTPRET'))
+	suite.addTest(TestMisc('test_checkHTTPRETRelative'))
+	suite.addTest(TestMisc('test_checkHTTPRETWrong'))
+	suite.addTest(TestMisc('test_checkHTTPRETRelativeWrong'))
 	suite.addTest(TestMisc('test_checkHTTPRVIWrongInRequest'))
 	suite.addTest(TestMisc('test_createUnknownResourceType'))
 	suite.addTest(TestMisc('test_createEmpty'))

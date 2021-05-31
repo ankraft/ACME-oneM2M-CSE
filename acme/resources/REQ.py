@@ -44,13 +44,23 @@ class REQ(Resource):
 		"""	Create an initialized <request> resource.
 		"""
 
-		# calculate request et
-		minEt = Utils.getResourceDate(Configuration.get('cse.req.minet'))
-		maxEt = Utils.getResourceDate(Configuration.get('cse.req.maxet'))
-		if request.args.rpts is not None:
-			et = request.args.rpts if request.args.rpts < maxEt else maxEt
-		else:
-			et = minEt
+		# Check if a an expiration ts has been set in the request
+		if request.headers.requestExpirationTimestamp is not None:
+			et = request.headers.requestExpirationTimestamp	# This is already an ISO8601 timestamp
+		
+		# Check the rp(ts) argument
+		elif request.args.rpts is not None:
+			et = request.args.rpts
+		
+		# otherwise calculate request et
+		else:	
+			minEt = Utils.getResourceDate(Configuration.get('cse.req.minet'))
+			maxEt = Utils.getResourceDate(Configuration.get('cse.req.maxet'))
+			if request.args.rpts is not None:
+				et = request.args.rpts if request.args.rpts < maxEt else maxEt
+			else:
+				et = minEt
+
 
 		dct:Dict[str, Any] = {
 			'm2m:req' : {

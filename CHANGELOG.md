@@ -11,13 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased] - xxxx.xx.xx
 
 ### Added
-- [CSE] Added possibility to reset a running CSE (via the command console or http endpoint).
+- [CSE] Added possibility to reset a running CSE (via the command console or http endpoint "/\_\_reset\_\_").
 - [CSE] Added "I" command to the console (inspect a resource and its children).
 - [CSE] Added support for TimeSeries/TimeSeriesInstance resource types.
 - [CSE] Added support for *ctm* (currentTime) attribute for &lt;CSEBase> resource type.
 - [CSE] Added wildcard (\*) support for &lt;ACP>'s *acr/acor* originators.
 - [WEB] Added OAuth2 authorization support for the proxied CSE (for the stand-alone web UI).
 - [WEB] Added opening the web UI in a browser on startup (for the stand-alone web UI).
+- [CSE] Added support for 'Request Expiration Timestamp' request parameter, also for &lt;request> resources.
 
 ### Changed
 - [CSE] Relaxed validation for float in attributes and arguments. Integer are now accepted as well.
@@ -31,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Re-added: remove comments from received JSON content.
 - [CSE] Improved the timely execution of background tasks. The actual task's execution time is not added on top to the interval anymore, and intervals are constant.
 - [CSE] Improved support and validation for absRelTimestamps.
+- [CSE] Improved handling of the &lt;request> resource's expiration time. It is now aligned with the 'Request Expiration Timestamp' request parameter.
 
 
 ## [0.7.3] - 2021-03-26
