@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Improved the timely execution of background tasks. The actual task's execution time is not added on top to the interval anymore, and intervals are constant.
 - [CSE] Improved support and validation for absRelTimestamps.
 - [CSE] Improved handling of the &lt;request> resource's expiration time. It is now aligned with the 'Request Expiration Timestamp' request parameter.
+- [CSE] Improved checking of empty *acpi* attribute lists. Empty lists are not allowed and the *acpi* must be removed from a resource instead.
 
 
 ## [0.7.3] - 2021-03-26

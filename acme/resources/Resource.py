@@ -164,6 +164,9 @@ class Resource(object):
 		#	Various ACPI handling
 		# ACPI: Check <ACP> existence and convert <ACP> references to CSE relative unstructured
 		if self.acpi is not None:
+			# Test wether an empty array is provided				
+			if len(self.acpi) == 0:
+				return Result(status=False, rsc=RC.badRequest, dbg='acpi must not be an empty list')
 			if not (res := self._checkAndFixACPIreferences(self.acpi)).status:
 				return res
 			self.setAttribute('acpi', res.lst)
@@ -215,10 +218,13 @@ class Resource(object):
 				updatedAttributes = Utils.findXPath(dct, '{0}')
 
 			# Check that acpi, if present, is the only attribute
-			if 'acpi' in updatedAttributes:	# No further checks here. This has been done before in the Dispatcher.processUpdateRequest()	
-
+			if 'acpi' in updatedAttributes and updatedAttributes['acpi'] is not None:	# No further checks for access here. This has been done before in the Dispatcher.processUpdateRequest()	
+																						# Removing acpi by setting it to None is handled in the else:
+				# Test wether an empty array is provided				
+				if len(ua := updatedAttributes['acpi']) == 0:
+					return Result(status=False, rsc=RC.badRequest, dbg='acpi must not be an empty list')
 				# Check whether referenced <ACP> exists. If yes, change ID also to CSE relative unstructured
-				if not (res := self._checkAndFixACPIreferences(updatedAttributes['acpi'])).status:
+				if not (res := self._checkAndFixACPIreferences(ua)).status:
 					return res
 				
 				self.setAttribute('acpi', res.lst, overwrite=True) # copy new value or add new attributes

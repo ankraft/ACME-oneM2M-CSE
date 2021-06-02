@@ -137,7 +137,6 @@ class SecurityManager(object):
 
 
 			# When no acpi is configured for the resource
-			# Logging.logWarn(resource)
 			if (acpi := resource.acpi) is None or len(acpi) == 0:
 				Logging.logDebug('Handle with missing acpi in resource')
 
@@ -213,7 +212,7 @@ class SecurityManager(object):
 					if acp.checkSelfPermission(originator, Permission.UPDATE):
 						break
 				else:
-					Logging.logDebug(dbg := f'Originator has no permission to update acpi: {ri}')
+					Logging.logDebug(dbg := f'Originator: {originator} has no permission to update acpi for: {targetResource.ri}')
 					return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
 
 			return Result(status=True, data=True)	# hack: data=True indicates that this is an ACPI update after all

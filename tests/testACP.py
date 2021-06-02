@@ -11,7 +11,7 @@ import unittest, sys
 sys.path.append('../acme')
 from typing import Tuple
 from Constants import Constants as C
-from Types import ResourceTypes as T, ResponseCode as RC
+from Types import Permission, ResourceTypes as T, ResponseCode as RC
 from init import *
 
 
@@ -52,13 +52,13 @@ class TestACP(unittest.TestCase):
 					"rn": acpRN,
 					"pv": {
 						"acr": [ { 	"acor": [ self.acpORIGINATOR, self.acpORIGINATOR2, self.acpORIGINATOR3, self.acpORIGINATORWC, self.acpORIGINATORWC2 ],
-									"acop": 63
+									"acop": Permission.ALL
 								} ]
 					},
 					"pvs": { 
 						"acr": [ {
 							"acor": [ self.acpORIGINATOR, self.acpORIGINATOR2 ],
-							"acop": 63
+							"acop": Permission.ALL
 						} ]
 					},
 				}}
@@ -104,7 +104,7 @@ class TestACP(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:acp/pv/acr/{0}/acor'), [ self.acpORIGINATOR, self.acpORIGINATOR2, self.acpORIGINATOR3, self.acpORIGINATORWC, self.acpORIGINATORWC2 ])
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acop'))
 		self.assertIsInstance(findXPath(r, 'm2m:acp/pv/acr/{0}/acop'), int)
-		self.assertEqual(findXPath(r, 'm2m:acp/pv/acr/{0}/acop'), 63)
+		self.assertEqual(findXPath(r, 'm2m:acp/pv/acr/{0}/acop'), Permission.ALL)
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/pvs'))
 		self.assertIsInstance(findXPath(r, 'm2m:acp/pvs'), dict)
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/pvs/acr'))
@@ -116,7 +116,7 @@ class TestACP(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:acp/pvs/acr/{0}/acor/{0}'), self.acpORIGINATOR)
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/pvs/acr/{0}/acop'))
 		self.assertIsInstance(findXPath(r, 'm2m:acp/pvs/acr/{0}/acop'), int)
-		self.assertEqual(findXPath(r, 'm2m:acp/pvs/acr/{0}/acop'), 63)
+		self.assertEqual(findXPath(r, 'm2m:acp/pvs/acr/{0}/acop'), Permission.ALL)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -181,7 +181,6 @@ class TestACP(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(aeURL, self.acpORIGINATOR, dct)
 		self.assertNotEqual(rsc, RC.updated)
-
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -267,7 +266,7 @@ class TestACP(unittest.TestCase):
 					"rn": f'{acpRN}2',
 					"pv": {
 						"acr": [ { 	"acor": [ ORIGINATOR ],
-									"acop": 63
+									"acop": Permission.ALL
 								} ]
 					}
 				}}
@@ -282,7 +281,7 @@ class TestACP(unittest.TestCase):
 					"rn": f'{acpRN}2',
 					"pv": {
 						"acr": [ { 	"acor": [ ORIGINATOR ],
-									"acop": 63
+									"acop": Permission.ALL
 								} ]
 					},
 					"pvs": {},
@@ -364,8 +363,8 @@ class TestACP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_removeACPfromAE(self) -> None:
-		""" Remove <ACP> reference from <AE> / ACPI only attribute in update """
+	def test_removeACPfromAEWrong(self) -> None:
+		""" Remove <ACP> reference from <AE> / ACPI only attribute in update / empty list -> Fail"""
 		self.assertIsNotNone(TestACP.acp)
 		self.assertIsNotNone(TestACP.ae)
 		acpi = findXPath(TestACP.ae, 'm2m:ae/acpi').copy()
@@ -373,8 +372,34 @@ class TestACP(unittest.TestCase):
 		dct = 	{ 'm2m:ae' : {
 			 		'acpi': acpi
 				}}
+		_, rsc = UPDATE(aeURL, self.acpORIGINATOR, dct)
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_removeACPfromAEWrong2(self) -> None:
+		""" Remove <ACP> reference from <AE> / ACPI only attribute in update / missing pvs -> Fail """
+		self.assertIsNotNone(TestACP.acp)
+		self.assertIsNotNone(TestACP.ae)
+		acpi = findXPath(TestACP.ae, 'm2m:ae/acpi').copy()
+		acpi.remove(findXPath(TestACP.acp, 'm2m:acp/ri'))
+		dct = 	{ 'm2m:ae' : {
+			 		'acpi': None
+				}}
 		r, rsc = UPDATE(aeURL, findXPath(TestACP.ae, 'm2m:ae/aei'), dct)
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)	# missing self-privileges
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_removeACPfromAE(self) -> None:
+		""" Remove <ACP> reference from <AE> / ACPI only attribute in update """
+		self.assertIsNotNone(TestACP.acp)
+		self.assertIsNotNone(TestACP.ae)
+		acpi = findXPath(TestACP.ae, 'm2m:ae/acpi').copy()
+		acpi.remove(findXPath(TestACP.acp, 'm2m:acp/ri'))
+		dct = 	{ 'm2m:ae' : {
+			 		'acpi': None
+				}}
 		_, rsc = UPDATE(aeURL, self.acpORIGINATOR, dct)
 		self.assertEqual(rsc, RC.updated)
 
@@ -393,7 +418,106 @@ class TestACP(unittest.TestCase):
 		self.assertEqual(rsc, RC.deleted)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPUnderCSEBaseWithOriginator(self) -> None:
+		"""	Create <ACP> under CSEBase with AE originator """
+		dct = 	{ "m2m:acp": {
+					"rn": acpRN,
+					"pv": {
+						"acr": []
+					},
+					"pvs": { 
+						"acr": [ {
+							"acor": [ TestACP.originator ],
+							"acop": Permission.ALL
+						} ]
+					},
+				}}
+		TestACP.acp, rsc = CREATE(cseURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.created)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteACPUnderCSEBaseWithOriginator(self) -> None:
+		""" Delete <ACP> under CSEBase with AE originator """
+		_, rsc = DELETE(acpURL, TestACP.originator)
+		self.assertEqual(rsc, RC.deleted)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACPUnderAEWithChty(self) -> None:
+		"""	Create <ACP> under AE with AE originator and chty """
+		dct = 	{ "m2m:acp": {
+					"rn": acpRN,
+					"pv": {
+						"acr": [ {
+							"acor": [ TestACP.originator ],
+							"acop": Permission.CREATE,
+							"acod": {
+								"chty": [ T.CNT ]	# Allow only a CNT to be created
+							}
+						}]
+					},
+					"pvs": { 
+						"acr": [ {
+							"acor": [ TestACP.originator ],
+							"acop": Permission.ALL
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acod'))
+		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acod/chty'))
+		self.assertIsInstance(findXPath(r, 'm2m:acp/pv/acr/{0}/acod/chty'), list)
+		self.assertTrue(T.CNT in findXPath(r, 'm2m:acp/pv/acr/{0}/acod/chty'))
+		TestACP.acp = r
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateAEACPIForChty(self) -> None:
+		"""	Update <AE> ACPI with ACP with chty """
+		dct =	{ 'm2m:ae': {
+					'acpi': [ findXPath(TestACP.acp, 'm2m:acp/ri') ]
+				}}
+		r, rsc = UPDATE(aeURL, TestACP.originator, dct)
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/acpi'), r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_testACPChty(self) -> None:
+		"""	Create resources under AE, allowed and not allowed by chty """
+
+		# Try CNT first -> OK
+		dct = 	{ 'm2m:cnt' : { 
+					'rn' : cntRN
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.created)
+
+		# Try FCNT next -> Fail
+		dct = 	{ 'cod:tempe' : { 
+					'rn'	: fcntRN,
+					'cnd' 	: 'org.onem2m.home.moduleclass.temperature', 
+					'curT0'	: 23.0,
+					'unit'	: 1,
+					'minVe'	: -100.0,
+					'maxVe' : 100.0,
+					'steVe'	: 0.5
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.FCNT, dct)
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteACPUnderAEWithChty(self) -> None:
+		""" Delete <ACP> under AE for chty  """
+		_, rsc = DELETE(f'{aeURL}/{acpRN}', TestACP.originator)
+		self.assertEqual(rsc, RC.deleted)
+
 # TODO reference a non-acp resource in acpi
+# TODO acod/specialization
 
 
 
@@ -432,9 +556,20 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestACP('test_retrieveCNTwithNoACPIAndHolderWrongOriginator'))
 	suite.addTest(TestACP('test_deleteCNTwithNoACPIAndHolder'))
 
+	suite.addTest(TestACP('test_removeACPfromAEWrong'))
+	suite.addTest(TestACP('test_removeACPfromAEWrong2'))
 	suite.addTest(TestACP('test_removeACPfromAE'))
 	suite.addTest(TestACP('test_deleteACPwrongOriginator'))
 	suite.addTest(TestACP('test_deleteACP'))
+
+	suite.addTest(TestACP('test_createACPUnderCSEBaseWithOriginator'))
+	suite.addTest(TestACP('test_deleteACPUnderCSEBaseWithOriginator'))
+
+	suite.addTest(TestACP('test_createACPUnderAEWithChty'))
+	suite.addTest(TestACP('test_updateAEACPIForChty'))
+	suite.addTest(TestACP('test_testACPChty'))
+	suite.addTest(TestACP('test_deleteACPUnderAEWithChty'))
+
 
 	#suite.addTest(TestACP('test_handleAE'))
 
