@@ -42,7 +42,7 @@ tinydb==4.3.0
     # via ACME-oneM2M-CSE (setup.py)
 typing-extensions==3.7.4.3
     # via rich
-urllib3==1.26.4
+urllib3==1.26.5
     # via requests
 werkzeug==1.0.1
     # via flask
