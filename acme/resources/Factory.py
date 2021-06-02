@@ -170,7 +170,18 @@ def resourceFromDict(resDict:Dict[str, Any]={}, pi:str=None, ty:T=None, create:b
 		may be set separately.
 	"""
 	resDict, tpe = Utils.pureResource(resDict)	# remove optional "m2m:xxx" level
+
+	# Determine type
 	typ = resDict['ty'] if 'ty' in resDict else ty
+	if typ is None and (typ := T.fromTPE(tpe)) is  None:
+		Logging.logWarn(dbg := f'Cannot determine type for resource: {tpe}')
+		return Result(status=False, dbg=dbg, rsc=RC.badRequest)
+	
+	# Check for Parent
+	if pi is None and typ != T.CSEBase and ((pi := resDict.get('pi')) is None or len(pi) == 0):
+		Logging.logWarn(dbg := f'pi missing in resource: {tpe}')
+		return Result(status=False, dbg=dbg, rsc=RC.badRequest)
+
 
 	# Check whether given type during CREATE matches the resource's ty attribute
 	if typ != None and ty != None and typ != ty:

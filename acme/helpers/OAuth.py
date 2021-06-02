@@ -39,11 +39,14 @@ def getOAuthToken(serverURL:str, clientID:str, clientSecret:str, token:Token=Non
 			'client_secret'	: clientSecret,
 			'client_id'		: clientID,
 		}
-		if (response := requests.post(serverURL, data=formData, headers=headers)).status_code == 200:
-			data = response.json()
-			if data is None or 'access_token' not in data or 'expires_in' not in data:
-				return None
-		return	Token(token	= data['access_token'],
-					expiration = time.time() + data['expires_in'] - _expirationLeeway
-				)
+		try:
+			if (response := requests.post(serverURL, data=formData, headers=headers)).status_code == 200:
+				data = response.json()
+				if data is None or 'access_token' not in data or 'expires_in' not in data:
+					return None
+			return	Token(token	= data['access_token'],
+						expiration = time.time() + data['expires_in'] - _expirationLeeway
+					)
+		except Exception as e:
+			pass
 	return None

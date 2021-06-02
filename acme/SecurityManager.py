@@ -93,6 +93,7 @@ class SecurityManager(object):
 
 		# Check parameters
 		if resource is None:
+			
 			Logging.logWarn('Resource must not be None')
 			return False
 		if requestedPermission is None or not (0 <= requestedPermission <= Permission.ALL):
@@ -114,7 +115,7 @@ class SecurityManager(object):
 						Logging.logDebug(f'ACP resource not found: {a}')
 						continue
 					else:
-						if acp.checkPermission(originator, requestedPermission):
+						if acp.checkPermission(originator, requestedPermission, ty):
 							Logging.logDebug('Permission granted')
 							return True
 				Logging.logDebug('Permission NOT granted')
@@ -136,7 +137,6 @@ class SecurityManager(object):
 
 
 			# When no acpi is configured for the resource
-			# Logging.logWarn(resource)
 			if (acpi := resource.acpi) is None or len(acpi) == 0:
 				Logging.logDebug('Handle with missing acpi in resource')
 
@@ -176,7 +176,7 @@ class SecurityManager(object):
 						return True				
 				else:
 					# Logging.logWarn(acp)
-					if acp.checkPermission(originator, requestedPermission):
+					if acp.checkPermission(originator, requestedPermission, ty):
 						Logging.logDebug('Permission granted')
 						return True
 
@@ -212,7 +212,7 @@ class SecurityManager(object):
 					if acp.checkSelfPermission(originator, Permission.UPDATE):
 						break
 				else:
-					Logging.logDebug(dbg := f'Originator has no permission to update acpi: {ri}')
+					Logging.logDebug(dbg := f'Originator: {originator} has no permission to update acpi for: {targetResource.ri}')
 					return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
 
 			return Result(status=True, data=True)	# hack: data=True indicates that this is an ACPI update after all
