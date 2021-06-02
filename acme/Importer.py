@@ -29,6 +29,7 @@ class Importer(object):
 
 	def __init__(self) -> None:
 		self.macroMatch = re.compile(r"\$\{[\w.]+\}")
+		self.isImporting = False
 		Logging.log('Importer initialized')
 
 
@@ -125,7 +126,10 @@ class Importer(object):
 				# create a new cresource
 				else:
 					# Try to get parent resource
-					if (resource := Factory.resourceFromDict(cast(JSON, self.readJSONFromFile(filename)), create=True, isImported=True).resource) is not None:
+					if (jsn := self.readJSONFromFile(filename)) is None:
+						Logging.logWarn(f'Error parsing file: {filename}')
+						continue
+					if (resource := Factory.resourceFromDict(cast(JSON, jsn), create=True, isImported=True).resource) is not None:
 						parentResource = None
 						if (pi := resource.pi) is not None:
 							parentResource = CSE.dispatcher.retrieveResource(pi).resource
@@ -136,7 +140,7 @@ class Importer(object):
 						CSE.dispatcher.createResource(resource, parentResource)
 						countImport += 1
 					else:
-						Logging.logWarn(f'Unknown resource in file: {fn}')
+						Logging.logWarn(f'Unknown or wrong resource in file: {fn}')
 
 		self._finishImporting()
 		Logging.logDebug(f'Imported {countImport} resources')
@@ -346,6 +350,7 @@ class Importer(object):
 		# temporarily disable access control
 		self._oldacp = Configuration.get('cse.security.enableACPChecks')
 		Configuration.set('cse.security.enableACPChecks', False)
+		self.isImporting = True
 
 
 	def replaceMacro(self, macro: str, filename: str) -> str:
@@ -357,6 +362,9 @@ class Importer(object):
 
 
 	def readJSONFromFile(self, filename: str) -> JSON|JSONLIST:
+		"""	Read and parse a JSON data structure from a file `filename`. 
+			Return the parsed structure, or `None` in case of an error.
+		"""
 		# read the file
 		with open(filename) as file:
 			content = file.read()
@@ -381,4 +389,5 @@ class Importer(object):
 
 	def _finishImporting(self) -> None:
 		Configuration.set('cse.security.enableACPChecks', self._oldacp)
+		self.isImporting = False
 

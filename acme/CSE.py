@@ -47,6 +47,7 @@ dispatcher:Dispatcher							= None
 event:EventManager								= None
 group:GroupManager								= None
 httpServer:HttpServer							= None
+importer:Importer								= None
 notification:NotificationManager				= None
 registration:RegistrationManager 				= None
 remote:RemoteCSEManager							= None
@@ -84,7 +85,7 @@ shuttingDown									= False
 
 #def startup(args=None, configfile=None, resetdb=None, loglevel=None):
 def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
-	global announce, console, dispatcher, event, group, httpServer, notification, registration
+	global announce, console, dispatcher, event, group, httpServer, importer, notification, registration
 	global remote, request, security, statistics, storage, timeSeries, validator
 	global rootDirectory
 	global aeStatistics
@@ -220,7 +221,6 @@ def resetCSE() -> None:
 	"""
 	Logging.logWarn('Resetting CSE started')
 	storage.purge()
-	importer = Importer()
 	if not importer.importAttributePolicies() or not importer.importResources():
 		Logging.logErr('Error during import')
 		sys.exit()	# what else can we do?

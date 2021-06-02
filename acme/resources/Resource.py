@@ -456,18 +456,22 @@ class Resource(object):
 		"""
 		newACPIList =[]
 		for ri in acpi:
-			if (acp := CSE.dispatcher.retrieveResource(ri).resource) is None:
-				Logging.logDebug(dbg := f'Referenced <ACP> resource not found: {ri}')
-				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+			if not CSE.importer.isImporting:
+
+				if (acp := CSE.dispatcher.retrieveResource(ri).resource) is None:
+					Logging.logDebug(dbg := f'Referenced <ACP> resource not found: {ri}')
+					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 
 
-				# TODO CHECK TYPE + TEST
+					# TODO CHECK TYPE + TEST
 
 
 
 
-			newACPIList.append(acp.ri)
+				newACPIList.append(acp.ri)
+			else:
+				newACPIList.append(ri)
 		return Result(status=True, lst=newACPIList)
 
 
