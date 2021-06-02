@@ -93,6 +93,7 @@ class SecurityManager(object):
 
 		# Check parameters
 		if resource is None:
+			
 			Logging.logWarn('Resource must not be None')
 			return False
 		if requestedPermission is None or not (0 <= requestedPermission <= Permission.ALL):
@@ -114,7 +115,7 @@ class SecurityManager(object):
 						Logging.logDebug(f'ACP resource not found: {a}')
 						continue
 					else:
-						if acp.checkPermission(originator, requestedPermission):
+						if acp.checkPermission(originator, requestedPermission, ty):
 							Logging.logDebug('Permission granted')
 							return True
 				Logging.logDebug('Permission NOT granted')
@@ -176,7 +177,7 @@ class SecurityManager(object):
 						return True				
 				else:
 					# Logging.logWarn(acp)
-					if acp.checkPermission(originator, requestedPermission):
+					if acp.checkPermission(originator, requestedPermission, ty):
 						Logging.logDebug('Permission granted')
 						return True
 
