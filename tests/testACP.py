@@ -497,7 +497,7 @@ class TestACP(unittest.TestCase):
 		self.assertEqual(rsc, RC.created)
 
 		# Try FCNT next -> Fail
-		dct = 	{ 'cod:tempe' : { 
+		dct2 = 	{ 'cod:tempe' : { 
 					'rn'	: fcntRN,
 					'cnd' 	: 'org.onem2m.home.moduleclass.temperature', 
 					'curT0'	: 23.0,
@@ -506,7 +506,7 @@ class TestACP(unittest.TestCase):
 					'maxVe' : 100.0,
 					'steVe'	: 0.5
 				}}
-		r, rsc = CREATE(aeURL, TestACP.originator, T.FCNT, dct)
+		r, rsc = CREATE(aeURL, TestACP.originator, T.FCNT, dct2)
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
 
 
