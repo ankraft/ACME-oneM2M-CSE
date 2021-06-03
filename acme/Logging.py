@@ -118,7 +118,7 @@ class	Logging:
 
 		# Start worker to handle logs in the background
 		from helpers.BackgroundWorker import BackgroundWorkerPool
-		BackgroundWorkerPool.newWorker(Logging.checkInterval, Logging.loggingWorker, 'loggingWorker', processOnTime=False).start()
+		BackgroundWorkerPool.newWorker(Logging.checkInterval, Logging.loggingWorker, 'loggingWorker', runOnTime=False).start()
 	
 	
 	@staticmethod

@@ -14,23 +14,23 @@ import time, datetime, random, sys, heapq
 from threading import Thread, Timer, Lock
 from typing import Callable, List, Dict, Any, Protocol
 
-# TODO what happens when interval is continuously to short? Error message?
 
 class BackgroundWorker(object):
 	"""	This class provides the functionality for background worker or a single actor instance.
 	"""
 
-	def __init__(self, interval:float, callback:Callable, name:str=None, startWithDelay:bool=False, maxCount:int=None, dispose:bool=True, id:int=None, processOnTime:bool=True) -> None:
+	def __init__(self, interval:float, callback:Callable, name:str=None, startWithDelay:bool=False, maxCount:int=None, dispose:bool=True, id:int=None, runOnTime:bool=True, runPastEvents:bool=False) -> None:
 		self.interval 				= interval
-		self.processOnTime			= processOnTime				# Compensate for processing time
-		self.nextRunTime:float		= None						# Timestamp
-		self.callback 				= callback					# Actual callback to process
-		self.running 				= False						# Indicator that a worker is running or will be stopped
+		self.runOnTime				= runOnTime			# Compensate for processing time
+		self.runPastEvents			= runPastEvents		# Run events that are in the past
+		self.nextRunTime:float		= None				# Timestamp
+		self.callback 				= callback			# Actual callback to process
+		self.running 				= False				# Indicator that a worker is running or will be stopped
 		self.name 					= name
 		self.startWithDelay 		= startWithDelay
-		self.maxCount 				= maxCount					# max runs
-		self.numberOfRuns 			= 0							# Actual runs
-		self.dispose 				= dispose					# Only run once, then remove itself from the pool
+		self.maxCount 				= maxCount			# max runs
+		self.numberOfRuns 			= 0					# Actual runs
+		self.dispose 				= dispose			# Only run once, then remove itself from the pool
 		self.id 					= id
 
 
@@ -78,11 +78,16 @@ class BackgroundWorker(object):
 				self.stop()
 				# Not queued anymore after this run, but the Timer is restarted in stop()
 			else:
-				if self.processOnTime:															# compensate for processing time?
-					self.nextRunTime += self.interval											# timestamp for next interval (fixed interval)
-				else:
-					self.nextRunTime =  Utils.utcTime() + self.interval							# timestamp for next interval (interval + time from end of processing)
-				BackgroundWorkerPool._queueWorker(self.nextRunTime, self)						# execute at nextRunTime
+				now = Utils.utcTime()
+				while True:
+					if self.runOnTime:									# compensate for processing time?
+						self.nextRunTime += self.interval				# timestamp for next interval (fixed interval)
+					else:
+						self.nextRunTime =  now + self.interval			# timestamp for next interval (interval + time from end of processing)
+					if now < self.nextRunTime or self.runPastEvents:	# check whether to increment nextRunTime again (and again...)
+						break
+
+				BackgroundWorkerPool._queueWorker(self.nextRunTime, self)		# execute at nextRunTime
 
 
 	def _postCall(self) -> None:
@@ -93,7 +98,7 @@ class BackgroundWorker(object):
 
 
 	def __repr__(self) -> str:
-		return f'BackgroundWorker(name={self.name}, callback={str(self.callback)}, running={self.running}, interval={self.interval:f}, startWithDelay={self.startWithDelay}, numberOfRuns={self.numberOfRuns:d}, dispose={self.dispose}, id={self.id}, processOnTime={self.processOnTime})'
+		return f'BackgroundWorker(name={self.name}, callback={str(self.callback)}, running={self.running}, interval={self.interval:f}, startWithDelay={self.startWithDelay}, numberOfRuns={self.numberOfRuns:d}, dispose={self.dispose}, id={self.id}, runOnTime={self.runOnTime})'
 
 
 class BackgroundWorkerPool(object):
@@ -111,14 +116,14 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def newWorker(cls, interval:float, workerCallback:Callable, name:str=None, startWithDelay:bool=False, maxCount:int=None, dispose:bool=True, processOnTime:bool=True) -> BackgroundWorker:	# typxe:ignore[type-arg]
+	def newWorker(cls, interval:float, workerCallback:Callable, name:str=None, startWithDelay:bool=False, maxCount:int=None, dispose:bool=True, runOnTime:bool=True, runPastEvents:bool=False) -> BackgroundWorker:	# typxe:ignore[type-arg]
 		"""	Create a new background worker that periodically executes the callback.
 		"""
 		# Get a unique worker ID
 		while True:
 			if (id := random.randint(1,sys.maxsize)) not in cls.backgroundWorkers:
 				break
-		worker = BackgroundWorker(interval, workerCallback, name, startWithDelay, maxCount=maxCount, dispose=dispose, id=id, processOnTime=processOnTime)
+		worker = BackgroundWorker(interval, workerCallback, name, startWithDelay, maxCount=maxCount, dispose=dispose, id=id, runOnTime=runOnTime, runPastEvents=runPastEvents)
 		cls.backgroundWorkers[id] = worker
 		return worker
 
