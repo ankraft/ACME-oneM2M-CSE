@@ -331,7 +331,7 @@ class HttpServer(object):
 		return Response(response='unsupported', status=422, headers=self._responseHeaders)
 
 
-	def handleReset(self, path:str='puml') -> Response:
+	def handleReset(self, path:str=None) -> Response:
 		"""	Handle a CSE reset request.
 		"""
 		CSE.resetCSE()
