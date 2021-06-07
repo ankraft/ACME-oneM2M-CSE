@@ -15,6 +15,8 @@ from Constants import Constants as C
 from Types import ResourceTypes as T, NotificationContentType, ResponseCode as RC, Operation, ResponseType, Permission
 from init import *
 
+# TODO set pei, no peid -> set by CSE
+# TODO set to big peid
 
 class TestTS(unittest.TestCase):
 
@@ -72,8 +74,7 @@ class TestTS(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:ts/pei'), 1000)
 		self.assertTrue(findXPath(r, 'm2m:ts/mdd'))
 		self.assertEqual(findXPath(r, 'm2m:ts/mdn'), 10)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'))
-		self.assertIsInstance(findXPath(r, 'm2m:ts/mdlt'), list)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'))		# empty mdlt is not created by default
 		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0)
 
 

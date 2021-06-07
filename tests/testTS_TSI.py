@@ -331,8 +331,7 @@ class TestTS_TSI(unittest.TestCase):
 		self.assertEqual(findXPath(TestTS_TSI.ts, 'm2m:ts/pei'), pei, TestTS_TSI.ts)
 		self.assertIsNotNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mdd'), TestTS_TSI.ts)
 		self.assertTrue(findXPath(TestTS_TSI.ts, 'm2m:ts/mdd'), TestTS_TSI.ts)
-		self.assertIsNotNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mdlt'), TestTS_TSI.ts)
-		self.assertEqual(len(findXPath(TestTS_TSI.ts, 'm2m:ts/mdlt')), 0, TestTS_TSI.ts)
+		self.assertIsNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mdlt'), TestTS_TSI.ts)	# empty mdlt is not created by default
 		self.assertIsNotNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mdc'), TestTS_TSI.ts)
 		self.assertEqual(findXPath(TestTS_TSI.ts, 'm2m:ts/mdc'), 0, TestTS_TSI.ts)
 		self.assertIsNotNone(findXPath(TestTS_TSI.ts, 'm2m:ts/mdt'), TestTS_TSI.ts)
@@ -384,8 +383,7 @@ class TestTS_TSI(unittest.TestCase):
 		self.assertEqual(rsc, RC.updated, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdt'), r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mdt'), mdt, r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
-		self.assertEqual(len(findXPath(r, 'm2m:ts/mdlt')), 0, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
 
@@ -462,11 +460,9 @@ class TestTS_TSI(unittest.TestCase):
 		self.assertEqual(rsc, RC.updated, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdn'), r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mdn'), maxMdn - 2, r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
-		self.assertEqual(len(findXPath(r, 'm2m:ts/mdlt')), 0, r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)
-
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

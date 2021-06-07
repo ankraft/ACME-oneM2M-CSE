@@ -69,12 +69,14 @@ class TimeSeriesManager(object):
 			Logging.logWarn(f'No TSI within time period or DGT outside peid. runTime: {runtime} onTime: {ontime} mdt: {mdt} nextExpectedDGT:{rts.nextExpectedDgt} lastSeenDGT: {rts.lastSeenDgt}')
 			if (tsRes := CSE.dispatcher.retrieveResource(tsRi).resource) is None:
 				Logging.logErr(f'Cannot retrieve original TS resource: {tsRi}')
+			tsRes.setAttribute('mdlt', [], overwrite=False)				# Add missingDataList, just in case it hasn't created before
 			tsRes.mdlt.append(Utils.toISO8601Date(rts.nextExpectedDgt))	# Add missing dataGenerationTime to TS.missingDataList
 			if (tsMdn := tsRes.mdn) is not None:						# mdn may not be set. Then this list grows forever
 				if len(tsRes.mdlt) > tsMdn:								# If missingDataList is bigger then missingDataMaxNr allows
 					tsRes['mdlt'] = tsRes.mdlt[1:]						# Reduce the missingDataList
 				tsRes['mdc'] = len(tsRes.mdlt)							# set the missingDataCurrentNr
-				tsRes.dbUpdate()										# Update in DB
+			tsRes.dbUpdate()											# Update in DB
+			Logging.logWarn(tsRes.mdlt)
 		rts.nextExpectedDgt = rts.lastSeenDgt + pei					# Set the next expected DGT. Will be overwritten when a real one arrives
 
 		# Schedule the next actor runtime

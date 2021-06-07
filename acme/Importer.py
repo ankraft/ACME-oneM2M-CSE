@@ -21,6 +21,7 @@ from Logging import Logging
 from resources import Resource
 import resources.Factory as Factory
 
+# TODO Support child specialization in attribute definitionsEv
 
 class Importer(object):
 

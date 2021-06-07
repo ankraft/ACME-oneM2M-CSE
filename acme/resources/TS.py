@@ -55,8 +55,6 @@ class TS(AnnounceableResource):
 				self.setAttribute('mbs', Configuration.get('cse.ts.mbs'), overwrite=False)
 				self.setAttribute('mdn', Configuration.get('cse.ts.mdn'), overwrite=False)
 
-		# TODO: periodicIntervalDelta : If the attribute is omitted the hosting CSE can use
-		#  a local policy to determine a default value.
 		self.__validating = False	# semaphore for validating
 
 
@@ -104,9 +102,18 @@ class TS(AnnounceableResource):
 
  
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
+		Logging.logDebug(f'Validating timeSeries: {self.ri}')
 		if (res := super().validate(originator, create, dct)).status == False:
 			return res
-		Logging.logDebug(f'Validating timeSeries: {self.ri}')
+		
+		# Check peid
+		if self.peid is not None and self.pei is not None:
+			if self.peid > self.pei/2:
+				Logging.logWarn(dbg := 'peid must be <= pei/2')
+				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+		elif self.pei is not None:
+			self.setAttribute('peid', self.pei/2, False)
+
 		self._validateChildren()
 		return Result(status=True)
 
@@ -225,7 +232,6 @@ class TS(AnnounceableResource):
 		if mdd is not None and mdd == True:
 			# When missingDataMaxNr is set
 			if mdn is not None:
-				self.setAttribute('mdlt', [], overwrite=False)	# add missing data list
 				self.setAttribute('mdc', 0, overwrite=False)	# add missing data count
 				# Monitoring is not started here, but happens when the first TSI is added
 			else:
