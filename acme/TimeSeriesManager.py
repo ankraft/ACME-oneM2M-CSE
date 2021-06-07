@@ -76,8 +76,8 @@ class TimeSeriesManager(object):
 					tsRes['mdlt'] = tsRes.mdlt[1:]						# Reduce the missingDataList
 				tsRes['mdc'] = len(tsRes.mdlt)							# set the missingDataCurrentNr
 			tsRes.dbUpdate()											# Update in DB
-			Logging.logWarn(tsRes.mdlt)
-		rts.nextExpectedDgt = rts.lastSeenDgt + pei					# Set the next expected DGT. Will be overwritten when a real one arrives
+			# Logging.logWarn(tsRes.mdlt)
+		rts.nextExpectedDgt += pei										# Set the next expected DGT. Will be overwritten when a real one arrives
 
 		# Schedule the next actor runtime
 		actor = BackgroundWorkerPool.newActor(self.timeSeriesMonitor, at=runtime+pei, name=f'tsMonitor_{tsRi}_{runtime+pei}')
