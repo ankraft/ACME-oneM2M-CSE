@@ -428,6 +428,7 @@ class TestTS_TSI(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipIf(maxMdn < 3, 'mdn is set to < 3')
 	def test_updateTSshortenMdlt(self) -> None:
 		"""	Update <TS> MDN and shorten MDLT """
 		dct = 	{ 'm2m:ts' : { 
@@ -450,6 +451,7 @@ class TestTS_TSI(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipIf(maxMdn < 3, 'mdn is set to < 3')
 	def test_updateTSaddMdn(self) -> None:
 		"""	Update <TS> set MDN again and enable monitoring """
 		# Set the detectTime to a short time
@@ -501,7 +503,6 @@ class TestTS_TSI(unittest.TestCase):
 
 
 # TODO: instead of mdt:9999 set the mdn to None etc.
-# TODO: Timing doesn't work
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
