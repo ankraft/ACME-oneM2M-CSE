@@ -204,6 +204,30 @@ class	Logging:
 		"""	Clear the console screen.
 		"""
 		Logging._console.clear()
+	
+
+	@staticmethod
+	@property
+	def isInfo() -> bool:
+		"""	Return True if logging is enabled and the logLevel <= INFO
+		"""
+		return Logging.loggingEnabled and Logging.logLevel <= Logging.INFO
+
+
+	@staticmethod
+	@property
+	def isDebug() -> bool:
+		"""	Return True if logging is enabled and the logLevel <= DEBUG
+		"""
+		return Logging.loggingEnabled and Logging.logLevel <= Logging.DEBUG
+
+
+	@staticmethod
+	@property
+	def isWarn() -> bool:
+		"""	Return True if logging is enabled and the logLevel <= WARNING
+		"""
+		return Logging.loggingEnabled and Logging.logLevel <= Logging.WARNING
 
 
 #
