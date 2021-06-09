@@ -387,7 +387,7 @@ class Validator(object):
 				# check the the announced cases
 				if isAnnounced:
 					if p[reqp] == AN.NA:	# Not okay, attribute is not announced
-						L.logWarn(err := f'Found non-announced attribute: {r}')
+						L.logWarn(dbg := f'Found non-announced attribute: {r}')
 						return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 					continue
 
