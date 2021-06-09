@@ -14,12 +14,10 @@ import traceback
 import logging, logging.handlers, os, inspect,  datetime, time, threading
 from queue import Queue
 from typing import List, Any, Union
-from logging import StreamHandler, LogRecord
-from pathlib import Path
+from logging import LogRecord
 from Configuration import Configuration
 from Types import JSON
 from rich.logging import RichHandler
-from rich.highlighter import ReprHighlighter
 from rich.style import Style
 from rich.console import Console
 from rich.markdown import Markdown

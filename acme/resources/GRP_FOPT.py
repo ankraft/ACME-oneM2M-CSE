@@ -7,10 +7,9 @@
 #	ResourceType: fanOutPoint (virtual resource)
 #
 
-from Constants import Constants as C
 import CSE
 from .Resource import *
-from Logging import Logging
+from Logging import Logging as L
 from Types import ResourceTypes as T, Result, Operation, CSERequest, JSON
 
 
@@ -32,22 +31,22 @@ class GRP_FOPT(Resource):
 
 
 	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:
-		Logging.logDebug('Retrieving resources from fopt')
+		if L.isDebug: L.logDebug('Retrieving resources from fopt')
 		return CSE.group.foptRequest(Operation.RETRIEVE, self, request, id, originator)	
 
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
-		Logging.logDebug('Creating resources at fopt')
+		if L.isDebug: L.logDebug('Creating resources at fopt')
 		return CSE.group.foptRequest(Operation.CREATE, self, request, id, originator)
 
 
 	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
-		Logging.logDebug('Updating resources at fopt')
+		if L.isDebug: L.logDebug('Updating resources at fopt')
 		return CSE.group.foptRequest(Operation.UPDATE, self, request, id, originator)
 
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
-		Logging.logDebug('Deleting resources at fopt')
+		if L.isDebug: L.logDebug('Deleting resources at fopt')
 		return CSE.group.foptRequest(Operation.DELETE, self, request, id, originator)
 
 

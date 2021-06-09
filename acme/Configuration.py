@@ -8,7 +8,7 @@
 #
 
 
-import logging, configparser, re, argparse, ssl, os.path
+import configparser, re, argparse, os.path
 from typing import Any, Dict
 from Constants import Constants as C
 from Types import CSEType, ContentSerializationType
@@ -297,19 +297,20 @@ class Configuration(object):
 			return False
 
 		# Loglevel and various overrides from command line
+		from Logging import Logging as L
 		logLevel = Configuration._configuration['logging.level'].lower()
 		logLevel = (argsLoglevel or logLevel) 	# command line args override config
 		if logLevel == 'off':
 			Configuration._configuration['logging.enable'] = False
-			Configuration._configuration['logging.level'] = logging.DEBUG
+			Configuration._configuration['logging.level'] = L.DEBUG
 		elif logLevel == 'info':
-			Configuration._configuration['logging.level'] = logging.INFO
+			Configuration._configuration['logging.level'] = L.INFO
 		elif logLevel == 'warn':
-			Configuration._configuration['logging.level'] = logging.WARNING
+			Configuration._configuration['logging.level'] = L.WARNING
 		elif logLevel == 'error':
-			Configuration._configuration['logging.level'] = logging.ERROR
+			Configuration._configuration['logging.level'] = L.ERROR
 		else:
-			Configuration._configuration['logging.level'] = logging.DEBUG
+			Configuration._configuration['logging.level'] = L.DEBUG
 
 		if argsDBReset is True:					Configuration._configuration['db.resetOnStartup'] = True									# Override DB reset from command line
 		if argsDBStorageMode is not None:		Configuration._configuration['db.inMemory'] = argsDBStorageMode == 'memory'					# Override DB storage mode from command line

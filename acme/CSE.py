@@ -8,8 +8,8 @@
 #
 
 from __future__ import annotations
-import atexit, argparse, os, threading, time, sys
-from typing import Dict, Optional, Any
+import atexit, argparse, os, time, sys
+from typing import Dict, Any
 from AnnouncementManager import AnnouncementManager
 from Configuration import Configuration
 from Console import Console
@@ -19,7 +19,7 @@ from EventManager import EventManager
 from GroupManager import GroupManager
 from HttpServer import HttpServer
 from Importer import Importer
-from Logging import Logging
+from Logging import Logging as L
 from NotificationManager import NotificationManager
 from RegistrationManager import RegistrationManager
 from RemoteCSEManager import RemoteCSEManager
@@ -124,14 +124,14 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	defaultSerialization	 = Configuration.get('cse.defaultSerialization')
 
 	# init Logging
-	Logging.init()
+	L.init()
 	if not args.headless:
-		Logging.console('Press ? for help')
-	Logging.log('============')
-	Logging.log('Starting CSE')
-	Logging.log(f'CSE-Type: {cseType.name}')
-	#Logging.log('Configuration:')
-	Logging.log(Configuration.print())
+		L.console('Press ? for help')
+	L.log('============')
+	L.log('Starting CSE')
+	L.log(f'CSE-Type: {cseType.name}')
+	#L.log('Configuration:')
+	L.log(Configuration.print())
 
 	storage = Storage()						# Initiatlize the resource storage
 	event = EventManager()					# Initialize the event manager
@@ -165,10 +165,10 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	# Start the HTTP server
 	httpServer.run() # This does return (!)
 	
-	Logging.log('CSE started')
+	if L.isInfo: L.log('CSE started')
 	if isHeadless:
 		# when in headless mode give the CSE a moment (2s) to experience fatal errors before printing the start message
-		BackgroundWorkerPool.newActor(lambda : Logging.console('CSE started') if not shuttingDown else None, delay=2.0 ).start()
+		BackgroundWorkerPool.newActor(lambda : L.console('CSE started') if not shuttingDown else None, delay=2.0 ).start()
 	
 	return True
 
@@ -186,7 +186,7 @@ def shutdown() -> None:
 	shuttingDown = True		
 	console.stop()				# This will end the main run loop.
 	if isHeadless:
-		Logging.console('CSE shutting down')
+		L.console('CSE shutting down')
 
 
 @atexit.register
@@ -194,7 +194,7 @@ def _shutdown() -> None:
 	"""	shutdown the CSE, e.g. when receiving a keyboard interrupt or at the end of the programm run.
 	"""
 
-	Logging.log('CSE shutting down')
+	if L.isInfo: L.log('CSE shutting down')
 	if event is not None:
 		event.cseShutdown() 	# type: ignore
 	console is not None and console.shutdown()
@@ -212,19 +212,19 @@ def _shutdown() -> None:
 	statistics is not None and statistics.shutdown()
 	event is not None and event.shutdown()
 	storage is not None and storage.shutdown()
-	Logging.log('CSE shutdown')
-	Logging.finit()
+	if L.isInfo: L.log('CSE shutdown')
+	L.finit()
 
 
 def resetCSE() -> None:
 	""" Reset the CSE: Clear databases and import the resources again.
 	"""
-	Logging.logWarn('Resetting CSE started')
+	if L.isWarn: L.logWarn('Resetting CSE started')
 	storage.purge()
 	if not importer.importAttributePolicies() or not importer.importResources():
-		Logging.logErr('Error during import')
+		if L.isWarn: L.logErr('Error during import')
 		sys.exit()	# what else can we do?
-	Logging.logWarn('Resetting CSE finished')
+	if L.isWarn: L.logWarn('Resetting CSE finished')
 
 
 def run() -> None:
@@ -250,7 +250,7 @@ def startApps() -> None:
 		return
 
 	time.sleep(Configuration.get('cse.applicationsStartupDelay'))
-	Logging.log('Starting Apps')
+	if L.isInfo: L.log('Starting Apps')
 	appsStarted = True
 
 	if Configuration.get('app.csenode.enable'):
@@ -267,7 +267,7 @@ def stopApps() -> None:
 	global appsStarted
 	if appsStarted:
 		appsStarted = False
-		Logging.log('Stopping Apps')
+		if L.isInfo: L.log('Stopping Apps')
 		if aeStatistics is not None:
 			aeStatistics.shutdown()
 		if aeCSENode is not None:

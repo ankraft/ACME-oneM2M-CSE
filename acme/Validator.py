@@ -9,13 +9,11 @@
 
 from copy import deepcopy
 from typing import Any, List, Dict
-from Logging import Logging
+from Logging import Logging as L
 from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, ResponseCode as RC
 from Types import JSON, AttributePolicies, AttributePoliciesEntry, AdditionalAttributes
-from Constants import Constants as C
 from Types import Result, AttributePolicies, ResourceTypes as T
 from Configuration import Configuration
-from resources.Resource import Resource
 import Utils
 
 
@@ -301,11 +299,11 @@ class Validator(object):
 
 	def __init__(self) -> None:
 		self.validationEnabled = Configuration.get('cse.enableValidation')
-		Logging.log('Validator initialized')
+		if L.isInfo: L.log('Validator initialized')
 
 
 	def shutdown(self) -> bool:
-		Logging.log('Validator shut down')
+		if L.isInfo: L.log('Validator shut down')
 		return True
 
 	#########################################################################
@@ -316,7 +314,7 @@ class Validator(object):
 		if not self.validationEnabled:	# just return if disabled
 			return Result(status=True)
 
-		Logging.logDebug('Validating attributes')
+		if L.isDebug: L.logDebug('Validating attributes')
 
 		# Just return in case the resource instance is imported
 		if isImported is not None and isImported:
@@ -324,7 +322,7 @@ class Validator(object):
 
 		# No policies?
 		if attributePolicies is None:
-			Logging.logWarn(f'No attribute policies: {dct}')
+			if L.isWarn: L.logWarn(f'No attribute policies: {dct}')
 			return Result(status=True)
 
 		# determine the request column, depending on create or updates
@@ -342,26 +340,26 @@ class Validator(object):
 		# if tpe is not None and not tpe.startswith("m2m:"):
 		# 	pureResDict = dct
 		if (attributePolicies := self._addAdditionalAttributes(tpe, attributePolicies)) is None:
-			Logging.logWarn(err := f'Unknown resource type: {tpe}')
-			return Result(status=False, rsc=RC.badRequest, dbg=err)
+			L.logWarn(dbg := f'Unknown resource type: {tpe}')
+			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 		# Logging.logDebug(attributePolicies.items())
 		# Logging.logWarn(pureResDict)
 		for r in pureResDict.keys():
 			if r not in attributePolicies.keys():
-				Logging.logWarn(err := f'Unknown attribute: {r} in resource: {tpe}')
-				return Result(status=False, rsc=RC.badRequest, dbg=err)
+				L.logWarn(dbg := f'Unknown attribute: {r} in resource: {tpe}')
+				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 		for r, p in attributePolicies.items():
 			if p is None:
-				Logging.logWarn(f'No validation policy found for attribute: {r}')
+				if L.isWarn: L.logWarn(f'No validation policy found for attribute: {r}')
 				continue
 
 			# Get the correct tuple for a resource when there are more
 			# definitions
 			if isinstance(p, dict):
 				if ty not in p:
-					Logging.logWarn(err := f'Attribute: {r} undefined for resource type: {ty}')
-					return Result(status=False, rsc=RC.badRequest, dbg=err)
+					L.logWarn(dbg := f'Attribute: {r} undefined for resource type: {ty}')
+					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 				p = p[ty]
 
 			# Check whether the attribute is allowed or mandatory in the request
@@ -373,24 +371,24 @@ class Validator(object):
 					continue
 					
 				if p[reqp] == RO.M:		# Not okay, this attribute is mandatory
-					Logging.logWarn(err := f'Cannot find mandatory attribute: {r}')
-					return Result(status=False, rsc=RC.badRequest, dbg=err)
+					L.logWarn(dbg := f'Cannot find mandatory attribute: {r}')
+					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 				if r in pureResDict and p[1] == CAR.car1: # but ignore CAR.car1N (which may be Null/None)
-					Logging.logWarn(err := f'Cannot delete a mandatory attribute: {r}')
-					return Result(status=False, rsc=RC.badRequest, dbg=err)
+					L.logWarn(dbg := f'Cannot delete a mandatory attribute: {r}')
+					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 				if p[reqp] in [ RO.NP, RO.O ]:	# Okay that the attribute is not in the dict, since it is provided or optional
 					continue
 			else:
 				if not createdInternally:
 					if p[reqp] == RO.NP:
-						Logging.logWarn(err := f'Found non-provision attribute: {r}')
-						return Result(status=False, rsc=RC.badRequest, dbg=err)
+						L.logWarn(dbg := f'Found non-provision attribute: {r}')
+						return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 				# check the the announced cases
 				if isAnnounced:
 					if p[reqp] == AN.NA:	# Not okay, attribute is not announced
-						Logging.logWarn(err := f'Found non-announced attribute: {r}')
-						return Result(status=False, rsc=RC.badRequest, dbg=err)
+						L.logWarn(err := f'Found non-announced attribute: {r}')
+						return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 					continue
 
 				if r == 'pvs' and not (res := self.validatePvs(pureResDict)).status:
@@ -401,8 +399,8 @@ class Validator(object):
 				continue
 
 			# fall-through means: not validated
-			Logging.logWarn(err := f'Attribute/value validation error: {r}={str(v)} ({res.dbg})')
-			return Result(status=False, rsc=RC.badRequest, dbg=err)
+			L.logWarn(dbg := f'Attribute/value validation error: {r}={str(v)} ({res.dbg})')
+			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 		return Result(status=True)
 
@@ -411,25 +409,20 @@ class Validator(object):
 		""" Validating special case for lists that are not allowed to be empty (pvs in ACP). """
 
 		if (l :=len(dct['pvs'])) == 0:
-			err = 'Attribute pvs must not be an empty list'
-			Logging.logWarn(err)
-			return Result(status=False, dbg=err)
+			L.logWarn(dbg := 'Attribute pvs must not be an empty list')
+			return Result(status=False, dbg=dbg)
 		elif l > 1:
-			err = 'Attribute pvs must contain only one item'
-			Logging.logWarn(err)
-			return Result(status=False, dbg=err)
+			L.logWarn(dbg := 'Attribute pvs must contain only one item')
+			return Result(status=False, dbg=dbg)
 		if (acr := Utils.findXPath(dct, 'pvs/acr')) is None:
-			err = 'Attribute pvs/acr not found'
-			Logging.logWarn(err)
-			return Result(status=False, dbg=err)
+			L.logWarn(dbg := 'Attribute pvs/acr not found')
+			return Result(status=False, dbg=dbg)
 		if not isinstance(acr, list):
-			err = 'Attribute pvs/acr must be a list'
-			Logging.logWarn(err)
-			return Result(status=False, dbg=err)
+			L.logWarn(dbg := 'Attribute pvs/acr must be a list')
+			return Result(status=False, dbg=dbg)
 		if len(acr) == 0:
-			err = 'Attribute pvs/acr must not be an empty list'
-			Logging.logWarn(err)
-			return Result(status=False, dbg=err)
+			L.logWarn(dbg := 'Attribute pvs/acr must not be an empty list')
+			return Result(status=False, dbg=dbg)
 		return Result(status=True)
 
 
@@ -452,17 +445,17 @@ class Validator(object):
 			of attribute definitions for that type. 
 		"""
 		if len(additionalAttributes.keys()) != 1:
-			Logging.logErr('Additional attributes must only contain 1 type')
+			L.logErr('Additional attributes must only contain 1 type')
 			return False
 		entries = additionalAttributes[next(iter(additionalAttributes))]	# get first and only entry
 		for k,v in entries.items():
 			if len(v) != 6:
-				Logging.logErr(f'Attribute description for {k} must contain 6 entries')
+				L.logErr(f'Attribute description for {k} must contain 6 entries')
 				return False
 		try:
 			self.additionalAttributes.update(additionalAttributes)
 		except Exception as e:
-			Logging.logErr(str(e))
+			L.logErr(str(e))
 			return False
 		return True
 

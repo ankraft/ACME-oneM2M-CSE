@@ -8,11 +8,10 @@
 #
 
 from typing import cast
-from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC, Result, JSON, CSERequest
-import CSE, Utils
+import CSE
 from .Resource import *
-from Logging import Logging
+from Logging import Logging as L
 
 
 class CNT_LA(Resource):
@@ -28,7 +27,7 @@ class CNT_LA(Resource):
 
 	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:
 		""" Handle a RETRIEVE request. Return resource """
-		Logging.logDebug('Retrieving latest CIN from CNT')
+		if L.isDebug: L.logDebug('Retrieving latest CIN from CNT')
 		if (r := self._getLatest()) is None:
 			return Result(rsc=RC.notFound, dbg='no instance for <latest>')
 		return Result(resource=r)
@@ -46,7 +45,7 @@ class CNT_LA(Resource):
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a DELETE request. Delete the latest resource. """
-		Logging.logDebug('Deleting latest CIN from CNT')
+		if L.isDebug: L.logDebug('Deleting latest CIN from CNT')
 		if (r := self._getLatest()) is None:
 			return Result(rsc=RC.notFound, dbg='no instance for <latest>')
 		return CSE.dispatcher.deleteResource(r, originator, withDeregistration=True)

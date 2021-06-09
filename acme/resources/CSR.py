@@ -7,9 +7,7 @@
 #	ResourceType: RemoteCSE
 #
 
-from Constants import Constants as C
 from Types import ResourceTypes as T, Result, JSON
-from Configuration import Configuration
 from Validator import constructPolicy, addPolicy
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource

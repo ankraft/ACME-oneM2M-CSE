@@ -9,7 +9,6 @@
 
 from Constants import Constants as C
 from Types import ResourceTypes as T, Result, JSON
-from Configuration import Configuration
 from Validator import constructPolicy
 from .Resource import *
 import CSE

@@ -7,9 +7,9 @@
 #	Console functions for ACME CSE
 #
 
-from typing import Dict, Union, cast
-import datetime, os, sys, time
-from Logging import Logging
+from typing import Dict, cast
+import datetime, os, sys
+from Logging import Logging as L
 from helpers.KeyHandler import loop, stopLoop, readline, waitForKeypress
 from Constants import Constants as C
 from Configuration import Configuration
@@ -27,11 +27,11 @@ class Console(object):
 
 	def __init__(self) -> None:
 		self.refreshInterval = Configuration.get('cse.console.refreshInterval')
-		Logging.log('Console initialized')
+		if L.isInfo: L.log('Console initialized')
 
 
 	def shutdown(self) -> bool:
-		Logging.log('Console shut down')
+		if L.isInfo: L.log('Console shut down')
 		return True
 
 
@@ -79,8 +79,8 @@ class Console(object):
 	def help(self, key:str) -> None:
 		"""	Print help for keyboard commands.
 		"""
-		Logging.console(f'\n[white][dim][[/dim][red][i]ACME[/i][/red][dim]] {C.version}', plain=True)
-		Logging.console("""**Console Commands**  
+		L.console(f'\n[white][dim][[/dim][red][i]ACME[/i][/red][dim]] {C.version}', plain=True)
+		L.console("""**Console Commands**  
 - h, ?  - This help
 - Q, ^C - Shutdown CSE
 - c     - Show configuration
@@ -104,15 +104,15 @@ class Console(object):
 		"""	Shutdown the CSE.
 		"""
 		if not CSE.isHeadless:
-			Logging.console('Shutdown CSE')
+			L.console('Shutdown CSE')
 		sys.exit()
 
 
 	def toggleLogging(self, key:str) -> None:
 		"""	Toggle through the log levels.
 		"""
-		Logging.enableScreenLogging = not Logging.enableScreenLogging
-		Logging.console(f'Logging enabled -> **{Logging.enableScreenLogging}**')
+		L.enableScreenLogging = not L.enableScreenLogging
+		L.console(f'Logging enabled -> **{L.enableScreenLogging}**')
 
 
 	def workers(self, key:str) -> None:
@@ -120,7 +120,7 @@ class Console(object):
 		"""
 		from rich.table import Table
 
-		Logging.console('**Worker & Actor Threads**', extranl=True)
+		L.console('**Worker & Actor Threads**', extranl=True)
 		table = Table()
 		table.add_column('Name', no_wrap=True)
 		table.add_column('Type', no_wrap=True)
@@ -129,7 +129,7 @@ class Console(object):
 		for w in BackgroundWorkerPool.backgroundWorkers.values():
 			a = 'Actor' if w.maxCount == 1 else 'Worker'
 			table.add_row(w.name, a, str(w.interval), str(w.numberOfRuns))
-		Logging.console(table, extranl=True)
+		L.console(table, extranl=True)
 
 
 	def configuration(self, key:str) -> None:
@@ -137,7 +137,7 @@ class Console(object):
 		"""
 		from rich.table import Table
 
-		Logging.console('**Configuration**', extranl=True)
+		L.console('**Configuration**', extranl=True)
 		conf = Configuration.print().split('\n')
 		conf.sort()
 		table = Table()
@@ -149,148 +149,148 @@ class Console(object):
 			kv = c.split(' = ', 1)
 			if len(kv) == 2:
 				table.add_row(kv[0].strip(), kv[1])
-		Logging.console(table, extranl=True)
+		L.console(table, extranl=True)
 
 
 	def clearScreen(self, key:str) -> None:
 		"""	Clear the console screen.
 		"""
-		Logging.consoleClear()
+		L.consoleClear()
 
 
 	def resourceTree(self, key:str) -> None:
 		"""	Render the CSE's resource tree.
 		"""
-		Logging.console('**Resource Tree**', extranl=True)
-		Logging.console(self.getResourceTreeRich())
-		Logging.console()
+		L.console('**Resource Tree**', extranl=True)
+		L.console(self.getResourceTreeRich())
+		L.console()
 
 
 	def childResourceTree(self, key:str) -> None:
 		"""	Render the CSE's resource tree, beginning with a child resource.
 		"""
-		Logging.console('**Child Resource Tree**', extranl=True)
-		loggingOld = Logging.loggingEnabled
-		Logging.loggingEnabled = False
+		L.console('**Child Resource Tree**', extranl=True)
+		loggingOld = L.loggingEnabled
+		L.loggingEnabled = False
 		
 		if (ri := readline('ri=')) is None:
-			Logging.console()
+			L.console()
 		elif len(ri) > 0:
 			if (tree := self.getResourceTreeRich(parent=ri)) is not None:
-				Logging.console(tree)
+				L.console(tree)
 			else:
-				Logging.console('not found', isError=True)
+				L.console('not found', isError=True)
 
-		Logging.loggingEnabled = loggingOld
+		L.loggingEnabled = loggingOld
 
 
 	def continuesTree(self, key:str) -> None:
-		loggingOld = Logging.loggingEnabled
-		Logging.loggingEnabled = False
+		loggingOld = L.loggingEnabled
+		L.loggingEnabled = False
 		while True:
 			self.clearScreen(key)
 			self.resourceTree(key)
-			Logging.console('**(Press any key to stop)**')
+			L.console('**(Press any key to stop)**')
 			if waitForKeypress(self.refreshInterval) is not None:
 				break
 		self.clearScreen(key)
-		Logging.loggingEnabled = loggingOld
+		L.loggingEnabled = loggingOld
 
 
 	def cseRegistrations(self, key:str) -> None:
 		"""	Render CSE registrations.
 		"""
-		Logging.console('**CSE Registrations**', extranl=True)
-		Logging.console(self.getCSERegistrationsRich())
-		Logging.console()
+		L.console('**CSE Registrations**', extranl=True)
+		L.console(self.getCSERegistrationsRich())
+		L.console()
 
 
 	def statistics(self, key:str) -> None:
 		""" Render various statistics & counts.
 		"""
-		Logging.console('**Statistics**', extranl=True)
-		Logging.console(self.getStatisticsRich())
-		Logging.console()
+		L.console('**Statistics**', extranl=True)
+		L.console(self.getStatisticsRich())
+		L.console()
 
 	
 	def continuesStatistics(self, key:str) -> None:
-		loggingOld = Logging.loggingEnabled
-		Logging.loggingEnabled = False
+		loggingOld = L.loggingEnabled
+		L.loggingEnabled = False
 		while True:
 			self.clearScreen(key)
 			self.statistics(key)
 			# self.resourceTree(key)
-			Logging.console('**(Press any key to stop)**')
+			L.console('**(Press any key to stop)**')
 			if waitForKeypress(self.refreshInterval) is not None:
 				break
 		self.clearScreen(key)
-		Logging.loggingEnabled = loggingOld
+		L.loggingEnabled = loggingOld
 
 
 	def deleteResource(self, key:str) -> None:
 		"""	Delete a resource from the CSE.
 		"""
-		Logging.console('**Delete Resource**', extranl=True)
-		loggingOld = Logging.loggingEnabled
-		Logging.loggingEnabled = False
+		L.console('**Delete Resource**', extranl=True)
+		loggingOld = L.loggingEnabled
+		L.loggingEnabled = False
 
 		if (ri := readline('ri=')) is None:
-			Logging.console()
+			L.console()
 		elif len(ri) > 0:
 			if (res := CSE.dispatcher.retrieveResource(ri)).resource is None:
-				Logging.console(res.dbg, isError=True)
+				L.console(res.dbg, isError=True)
 			else:
 				if (res := CSE.dispatcher.deleteResource(res.resource, withDeregistration=True)).resource is None:
-					Logging.console(res.dbg, isError=True)
+					L.console(res.dbg, isError=True)
 				else:
-					Logging.console('ok')
+					L.console('ok')
 
-		Logging.loggingEnabled = loggingOld
+		L.loggingEnabled = loggingOld
 
 
 	def inspectResource(self, key:str) -> None:
 		"""	Show a resource.
 		"""
-		Logging.console('**Inspect Resource**', extranl=True)
-		loggingOld = Logging.loggingEnabled
-		Logging.loggingEnabled = False
+		L.console('**Inspect Resource**', extranl=True)
+		loggingOld = L.loggingEnabled
+		L.loggingEnabled = False
 		
 		if (ri := readline('ri=')) is None:
-			Logging.console()
+			L.console()
 		elif len(ri) > 0:
 			if (res := CSE.dispatcher.retrieveResource(ri)).resource is None:
-				Logging.console(res.dbg, isError=True)
+				L.console(res.dbg, isError=True)
 			else:
-				Logging.console(res.resource.asDict())
-		Logging.loggingEnabled = loggingOld
+				L.console(res.resource.asDict())
+		L.loggingEnabled = loggingOld
 
 
 	def inspectResourceChildren(self, key:str) -> None:
 		"""	Show a resource and its children.
 		"""
-		Logging.console('**Inspect Resource and Children**', extranl=True)
-		loggingOld = Logging.loggingEnabled
-		Logging.loggingEnabled = False
+		L.console('**Inspect Resource and Children**', extranl=True)
+		loggingOld = L.loggingEnabled
+		L.loggingEnabled = False
 		
 		if (ri := readline('ri=')) is None:
-			Logging.console()
+			L.console()
 		elif len(ri) > 0:
 			if (res := CSE.dispatcher.retrieveResource(ri)).resource is None:
-				Logging.console(res.dbg, isError=True)
+				L.console(res.dbg, isError=True)
 			else: 
 				if (resdis := CSE.dispatcher.discoverResources(ri, originator=CSE.cseOriginator)).lst is None:
-					Logging.console(resdis.dbg, isError=True)
+					L.console(resdis.dbg, isError=True)
 				else:
 					CSE.dispatcher.resourceTreeDict(resdis.lst, res.resource)	# the function call add attributes to the target resource
-					Logging.console(res.resource.asDict())
-		Logging.loggingEnabled = loggingOld
+					L.console(res.resource.asDict())
+		L.loggingEnabled = loggingOld
 
 
 	def resetCSE(self, key:str) -> None:
 		"""	Reset the CSE. Remove all resources and do the importing again.
 		"""
-		Logging.console('**Resetting CSE**', extranl=True)
-		Logging.enableScreenLogging = True
+		L.console('**Resetting CSE**', extranl=True)
+		L.enableScreenLogging = True
 		CSE.resetCSE()
 
 

@@ -9,13 +9,12 @@
 
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
-from typing import Any, Tuple, Union, Dict, List, cast
-from Logging import Logging
+from typing import Any, Tuple, Dict, List, cast
+from Logging import Logging as L
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC, CSERequest, JSON, AttributePolicies, Permission
+from Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC, CSERequest, JSON, AttributePolicies
 from Configuration import Configuration
 import Utils, CSE
-import datetime, random, traceback
 from copy import deepcopy
 from .Resource import *
 
@@ -72,7 +71,7 @@ class Resource(object):
 			# Check uniqueness of ri. otherwise generate a new one. Only when creating
 			if create:
 				while Utils.isUniqueRI(ri := self.attribute('ri')) == False:
-					Logging.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
+					if L.isWarn: L.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
 					self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite=True)
 
 			# Indicate whether this is a virtual resource
@@ -140,7 +139,7 @@ class Resource(object):
 			Implemented in sub-classes as well.
 			Note: CR is set in RegistrationManager	(TODO: Check this)
 		"""
-		Logging.logDebug(f'Activating resource: {self.ri}')
+		if L.isDebug: L.logDebug(f'Activating resource: {self.ri}')
 
 		# validate the attributes but only when the resource is not instantiated.
 		# We assume that an instantiated resource is always correct
@@ -181,7 +180,7 @@ class Resource(object):
 	# Deactivate an active resource.
 	# Send notification on deletion
 	def deactivate(self, originator:str) -> None:
-		Logging.logDebug(f'Deactivating and removing sub-resources for: {self.ri}')
+		if L.isDebug: L.logDebug(f'Deactivating and removing sub-resources for: {self.ri}')
 		# First check notification because the subscription will be removed
 		# when the subresources are removed
 		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceDelete)
@@ -204,7 +203,7 @@ class Resource(object):
 		updatedAttributes = None
 		if dct is not None:
 			if self.tpe not in dct and self.ty not in [T.FCNTAnnc, T.FCIAnnc]:	# Don't check announced versions of announced FCNT
-				Logging.logWarn("Update type doesn't match target")
+				if L.isWarn: L.logWarn("Update type doesn't match target")
 				return Result(status=False, rsc=RC.contentsUnacceptable, dbg='resource types mismatch')
 
 
@@ -305,26 +304,23 @@ class Resource(object):
 
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		""" Validate a resource. Usually called within activate() or update() methods. """
-		Logging.logDebug(f'Validating resource: {self.ri}')
+		if L.isDebug: L.logDebug(f'Validating resource: {self.ri}')
 		if (not Utils.isValidID(self.ri) or
 			not Utils.isValidID(self.pi) or
 			not Utils.isValidID(self.rn)):
-			err = f'Invalid ID ri: {self.ri}, pi: {self.pi}, rn: {self.rn})'
-			Logging.logDebug(err)
-			return Result(status=False, rsc=RC.contentsUnacceptable, dbg=err)
+			L.logDebug(dbg := f'Invalid ID ri: {self.ri}, pi: {self.pi}, rn: {self.rn})')
+			return Result(status=False, rsc=RC.contentsUnacceptable, dbg=dbg)
 
 		# expirationTime handling
 		if (et := self.et) is not None:
 			if self.ty == T.CSEBase:
-				err = 'expirationTime is not allowed in CSEBase'
-				Logging.logWarn(err)
-				return Result(status=False, rsc=RC.badRequest, dbg=err)
+				L.logWarn(dbg := 'expirationTime is not allowed in CSEBase')
+				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 			if len(et) > 0 and et < (etNow := Utils.getResourceDate()):
-				err = f'expirationTime is in the past: {et} < {etNow}'
-				Logging.logWarn(err)
-				return Result(status=False, rsc=RC.badRequest, dbg=err)
+				L.logWarn(dbg := f'expirationTime is in the past: {et} < {etNow}')
+				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 			if et > (etMax := Utils.getResourceDate(Configuration.get('cse.maxExpirationDelta'))):
-				Logging.logDebug(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
+				if L.isDebug: L.logDebug(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
 				self['et'] = etMax
 		return Result(status=True)
 
@@ -465,7 +461,7 @@ class Resource(object):
 			if not CSE.importer.isImporting:
 
 				if (acp := CSE.dispatcher.retrieveResource(ri).resource) is None:
-					Logging.logDebug(dbg := f'Referenced <ACP> resource not found: {ri}')
+					L.logDebug(dbg := f'Referenced <ACP> resource not found: {ri}')
 					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 

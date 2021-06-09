@@ -9,9 +9,8 @@
 
 import threading, traceback
 from typing import Callable, Any, cast
-from Logging import Logging
-from Constants import Constants as C
-import Utils, CSE
+from Logging import Logging as L
+import Utils
 
 _running:bool = False
 
@@ -67,7 +66,7 @@ class Event(list):	# type:ignore[type-arg]
 			try:
 				function(*args, **kwargs)
 			except Exception as e:
-				Logging.logErr(f'{function} - {traceback.format_exc()}')
+				L.logErr(f'{function} - {traceback.format_exc()}')
 
 
 	def __repr__(self) -> str:
@@ -104,14 +103,14 @@ class EventManager(object):
 		self.addEvent('remoteCSEHasDeregistered')
 		self.addEvent('notification')
 		_running = True
-		Logging.log('EventManager initialized')
+		if L.isInfo: L.log('EventManager initialized')
 
 
 	def shutdown(self) -> bool:
 		global _running
 		
 		_running = False
-		Logging.log('EventManager shut down')
+		if L.isInfo: L.log('EventManager shut down')
 		return True
 
 

@@ -10,7 +10,6 @@
 from .MgmtObj import *
 from Types import ResourceTypes as T, JSON
 from Validator import constructPolicy, addPolicy
-import Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
 dviPolicies = constructPolicy([

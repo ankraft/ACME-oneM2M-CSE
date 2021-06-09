@@ -7,9 +7,8 @@
 #	Managing entity for resource groups
 #
 
-from Logging import Logging
+from Logging import Logging as L
 from typing import Union, List
-from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseCode as RC, CSERequest, JSON
 import CSE, Utils
 from resources import FCNT, MgmtObj
@@ -23,11 +22,11 @@ class GroupManager(object):
 	def __init__(self) -> None:
 		# Add delete event handler because we like to monitor the resources in mid
 		CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent) 		# type: ignore
-		Logging.log('GroupManager initialized')
+		if L.isInfo: L.log('GroupManager initialized')
 
 
 	def shutdown(self) -> bool:
-		Logging.log('GroupManager shut down')
+		if L.isInfo: L.log('GroupManager shut down')
 		return True
 
 
@@ -75,7 +74,7 @@ class GroupManager(object):
 					isLocalResource = False
 					if (url := CSE.request._getForwardURL(mid)) is None:
 						return Result(status=False, rsc=RC.notFound, dbg=f'forwarding URL not found for group member: {mid}')
-					Logging.log(f'Retrieve request to: {url}')
+					if L.isDebug: L.logDebug(f'Retrieve request to: {url}')
 					remoteResult = CSE.request.sendRetrieveRequest(url, CSE.cseCsi)
 
 			# get the resource and check it
@@ -169,7 +168,7 @@ class GroupManager(object):
 
 		# check whether there is something after the /fopt ...
 		_, _, tail = id.partition('/fopt/') if '/fopt/' in id else (None, None, '')
-		Logging.logDebug(f'Adding additional path elements: {tail}')
+		if L.isDebug: L.logDebug(f'Adding additional path elements: {tail}')
 
 		# walk through all members
 		resultList:list[Result] = []

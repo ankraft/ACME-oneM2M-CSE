@@ -15,14 +15,13 @@ from tinydb.storages import MemoryStorage
 from tinydb.table import Document
 from tinydb.operations import delete 
 
-import os, json, re, time, sys
+import os, sys
 from copy import deepcopy
 from typing import Callable, Any, cast
 from threading import Lock
 from Configuration import Configuration
-from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC, ContentSerializationType, JSON
-from Logging import Logging
+from Logging import Logging as L
 from resources.Resource import Resource
 import resources.Factory as Factory
 from resources.AnnounceableResource import AnnounceableResource
@@ -38,10 +37,10 @@ class Storage(object):
 		if not Configuration.get('db.inMemory'):
 			if Configuration.has('db.path'):
 				path = Configuration.get('db.path')
-				Logging.log('Using data directory: ' + path)
+				if L.isInfo: L.log('Using data directory: ' + path)
 				os.makedirs(path, exist_ok=True)
 			else:
-				Logging.logErr('db.path not set')
+				L.logErr('db.path not set')
 				raise RuntimeError('db.path not set')
 
 		
@@ -52,12 +51,12 @@ class Storage(object):
 		if Configuration.get('db.resetOnStartup') is True:
 			self.db.purgeDB()
 
-		Logging.log('Storage initialized')
+		if L.isInfo: L.log('Storage initialized')
 
 
 	def shutdown(self) -> bool:
 		self.db.closeDB()
-		Logging.log('Storage shut down')
+		if L.isInfo: L.log('Storage shut down')
 		return True
 
 
@@ -73,21 +72,21 @@ class Storage(object):
 
 	def createResource(self, resource:Resource, overwrite:bool=True) -> Result:
 		if resource is None:
-			Logging.logErr('resource is None')
+			L.logErr('resource is None')
 			raise RuntimeError('resource is None')
 
 		ri = resource.ri
 
-		# Logging.logDebug(f'Adding resource (ty: {resource.ty:d}, ri: {resource.ri}, rn: {resource.rn})'
+		# L.logDebug(f'Adding resource (ty: {resource.ty:d}, ri: {resource.ri}, rn: {resource.rn})'
 		srn = resource.__srn__
 		if overwrite:
-			Logging.logDebug('Resource enforced overwrite')
+			if L.isDebug: L.logDebug('Resource enforced overwrite')
 			self.db.upsertResource(resource)
 		else: 
 			if not self.hasResource(ri, srn):	# Only when not resource does not exist yet
 				self.db.insertResource(resource)
 			else:
-				Logging.logWarn(f'Resource already exists (Skipping): {resource}')
+				if L.isWarn: L.logWarn(f'Resource already exists (Skipping): {resource}')
 				return Result(status=False, rsc=RC.alreadyExists, dbg='resource already exists')
 
 		# Add path to identifiers db
@@ -105,22 +104,22 @@ class Storage(object):
 		resources = []
 
 		if ri is not None:		# get a resource by its ri
-			# Logging.logDebug(f'Retrieving resource ri: {ri}')
+			# L.logDebug(f'Retrieving resource ri: {ri}')
 			resources = self.db.searchResources(ri=ri)
 
 		elif srn is not None:	# get a resource by its structured rn
-			# Logging.logDebug(f'Retrieving resource srn: {srn}')
+			# L.logDebug(f'Retrieving resource srn: {srn}')
 			# get the ri via the srn from the identifers table
 			resources = self.db.searchResources(srn=srn)
 
 		elif csi is not None:	# get the CSE by its csi
-			# Logging.logDebug(f'Retrieving resource csi: {csi}')
+			# L.logDebug(f'Retrieving resource csi: {csi}')
 			resources = self.db.searchResources(csi=csi)
 		
 		elif aei is not None:	# get an AE by its AE-ID
 			resources = self.db.searchResources(aei=aei)
 
-		# Logging.logDebug(resources)
+		# L.logDebug(resources)
 		# return CSE.dispatcher.resourceFromDict(resources[0]) if len(resources) == 1 else None,
 		if (l := len(resources)) == 1:
 			return Factory.resourceFromDict(resources[0])
@@ -132,24 +131,24 @@ class Storage(object):
 
 	def retrieveResourcesByType(self, ty: T) -> list[Document]:
 		""" Return all resources of a certain type. """
-		# Logging.logDebug(f'Retrieving all resources ty: {ty:d}')
+		# L.logDebug(f'Retrieving all resources ty: {ty:d}')
 		return self.db.searchResources(ty=int(ty))
 
 
 	def updateResource(self, resource: Resource) -> Result:
 		if resource is None:
-			Logging.logErr('resource is None')
+			L.logErr('resource is None')
 			raise RuntimeError('resource is None')
 		ri = resource.ri
-		# Logging.logDebug(f'Updating resource (ty: {resource.ty:d}, ri: {ri}, rn: {resource.rn})')
+		# L.logDebug(f'Updating resource (ty: {resource.ty:d}, ri: {ri}, rn: {resource.rn})')
 		return Result(resource=self.db.updateResource(resource), rsc=RC.updated)
 
 
 	def deleteResource(self, resource: Resource) -> Result:
 		if resource is None:
-			Logging.logErr('resource is None')
+			L.logErr('resource is None')
 			raise RuntimeError('resource is None')
-		# Logging.logDebug(f'Removing resource (ty: {resource.ty:d}, ri: {ri}, rn: {resource.rn})'
+		# L.logDebug(f'Removing resource (ty: {resource.ty:d}, ri: {ri}, rn: {resource.rn})'
 		self.db.deleteResource(resource)
 		self.db.deleteIdentifier(resource)
 		return Result(status=True, rsc=RC.deleted)
@@ -288,7 +287,7 @@ class Storage(object):
 	##
 
 	def getSubscription(self, ri:str) -> JSON:
-		# Logging.logDebug(f'Retrieving subscription: {ri}')
+		# L.logDebug(f'Retrieving subscription: {ri}')
 		subs = self.db.searchSubscriptions(ri=ri)
 		if subs is None or len(subs) != 1:
 			return None
@@ -296,22 +295,22 @@ class Storage(object):
 
 
 	def getSubscriptionsForParent(self, pi:str) -> list[Document]:
-		# Logging.logDebug(f'Retrieving subscriptions for parent: {pi}')
+		# L.logDebug(f'Retrieving subscriptions for parent: {pi}')
 		return self.db.searchSubscriptions(pi=pi)
 
 
 	def addSubscription(self, subscription:Resource) -> bool:
-		# Logging.logDebug(f'Adding subscription: {ri}')
+		# L.logDebug(f'Adding subscription: {ri}')
 		return self.db.upsertSubscription(subscription)
 
 
 	def removeSubscription(self, subscription:Resource) -> bool:
-		# Logging.logDebug(f'Removing subscription: {subscription.ri}')
+		# L.logDebug(f'Removing subscription: {subscription.ri}')
 		return self.db.removeSubscription(subscription)
 
 
 	def updateSubscription(self, subscription:Resource) -> bool:
-		# Logging.logDebug(f'Updating subscription: {ri}')
+		# L.logDebug(f'Updating subscription: {ri}')
 		return self.db.upsertSubscription(subscription)
 
 
@@ -343,7 +342,7 @@ class Storage(object):
 	##
 
 	def addTimeSeries(self, ri:str, periodicInterval:float, missingDataTime:float, nextPeriodTime:float, nextMissingDataTime:float) -> bool:
-		#Logging.log(f'addTimeSeries: {ri}, {periodicInterval}, {nextExpected}')
+		#L.log(f'addTimeSeries: {ri}, {periodicInterval}, {nextExpected}')
 		return self.db.addTimeSeries(ri, periodicInterval, missingDataTime, nextPeriodTime, nextMissingDataTime)
 
 
@@ -410,7 +409,7 @@ class TinyDBBinding(object):
 	def __init__(self, path: str = None) -> None:
 		self.path = path
 		self.cacheSize = Configuration.get('db.cacheSize')
-		Logging.log(f'Cache Size: {self.cacheSize:d}')
+		if L.isInfo: L.log(f'Cache Size: {self.cacheSize:d}')
 
 		# create transaction locks
 		self.lockResources = Lock()
@@ -425,7 +424,7 @@ class TinyDBBinding(object):
 	def openDB(self, postfix: str) -> None:
 		# All databases/tables will use the smart query cache
 		if Configuration.get('db.inMemory'):
-			Logging.log('DB in memory')
+			if L.isInfo: L.log('DB in memory')
 			self.dbResources = TinyDB(storage=MemoryStorage)										# type: ignore
 			self.dbIdentifiers = TinyDB(storage=MemoryStorage)										# type: ignore
 			self.dbSubscriptions = TinyDB(storage=MemoryStorage)									# type: ignore
@@ -434,7 +433,7 @@ class TinyDBBinding(object):
 			self.dbStatistics = TinyDB(storage=MemoryStorage)										# type: ignore
 			self.dbAppData = TinyDB(storage=MemoryStorage)											# type: ignore
 		else:
-			Logging.log('DB in file system')
+			if L.isInfo: L.log('DB in file system')
 			self.dbResources = TinyDB(f'{self.path}/resources{postfix}.json')						# type: ignore
 			self.dbIdentifiers = TinyDB(f'{self.path}/identifiers{postfix}.json')					# type: ignore
 			self.dbSubscriptions = TinyDB(f'{self.path}/subscriptions{postfix}.json')				# type: ignore
@@ -452,7 +451,7 @@ class TinyDBBinding(object):
 
 
 	def closeDB(self) -> None:
-		Logging.log('Closing DBs')
+		if L.isInfo: L.log('Closing DBs')
 		self.dbResources.close()
 		self.dbIdentifiers.close()
 		self.dbSubscriptions.close()
@@ -463,7 +462,7 @@ class TinyDBBinding(object):
 
 
 	def purgeDB(self) -> None:
-		Logging.log('Purging DBs')
+		if L.isInfo: L.log('Purging DBs')
 		self.tabResources.truncate()
 		self.tabIdentifiers.truncate()
 		self.tabSubscriptions.truncate()
@@ -484,14 +483,14 @@ class TinyDBBinding(object):
 	
 
 	def upsertResource(self, resource: Resource) -> None:
-		#Logging.logDebug(resource)
+		#L.logDebug(resource)
 		with self.lockResources:
 			# Update existing or insert new when overwriting
 			self.tabResources.upsert(resource.dict, Query().ri == resource.ri)		# type: ignore [no-untyped-call]
 	
 
 	def updateResource(self, resource: Resource) -> Resource:
-		#Logging.logDebug(resource)
+		#L.logDebug(resource)
 		with self.lockResources:
 			ri = resource.ri
 			self.tabResources.update(resource.dict, Query().ri == ri)	# type: ignore [no-untyped-call]

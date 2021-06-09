@@ -8,7 +8,7 @@
 #
 from __future__ import annotations
 import time
-from Logging import Logging
+from Logging import Logging as L
 import CSE, Utils
 from Configuration import Configuration
 from resources.Resource import Resource
@@ -18,25 +18,31 @@ from dataclasses import dataclass
 
 @dataclass
 class LastTSInstance:
-	"""	Defines a data class for a single TS's latest and next expected TSI/dgt. """
+	"""	Defines a data class for a single TS's latest and next expected TSI/dgt, and other information """
 	lastSeenDgt:float
-	arrivedAt:float
+	tsiArrivedAt:float
 	nextExpectedDgt:float
 
+	# <TS> attribues
+	pei:float
+	mdt:float
+	peid:float
 
 runningTimeserieses:dict[str, LastTSInstance] = {}	# Holds and maps the active TS and their LastTSInstance objects
+
+# TODO What shoul happen when first DGT is already in the past, so that dgt-peid < now?
 
 class TimeSeriesManager(object):
 
 	def __init__(self) -> None:
-		Logging.log('TimeSeriesManager initialized')
+		L.log('TimeSeriesManager initialized')
 
 
 	def shutdown(self) -> bool:
 		"""	Shutdown the TimeSeriesManager. Stop all the active workers.
 		"""
 		self.stopMonitoring()
-		Logging.log('TimeSeriesManager shut down')
+		L.log('TimeSeriesManager shut down')
 		return True
 
 
@@ -47,28 +53,30 @@ class TimeSeriesManager(object):
 			self.stopMonitoringTimeSeries(tsRi)
 	
 	
-	def timeSeriesMonitor(self, tsRi:str, pei:float, mdt:float, runtime:float) -> bool:
+	def timeSeriesMonitor(self, tsRi:str, runtime:float) -> bool:
 		"""	This method is called when the period + mdt has passed. It checks whether a TSI is missing by
 			looking at the latest arrived dgt.
-		"""
-		# TODO Bob: put expected DGT or dgt from TSI in mdlt?
-		# TODO Same in Monitor. What happens if dgt is suddenly in the past. what happens to nextExpected? This currently leads to creating lots of actors that are executed immedieately. Try to catch up with next expected?
 
+			`tsRi` - resourceID of the respective <TS> resource. Can be used to retrieve infos from 'runningTimeserieses' dict.
+			`runtime` - The timestamp of the runtime of this function for tsRI 
+		"""
 
 		# Check TSI arrival for this TS
 		if (rts := runningTimeserieses.get(tsRi)) is None:
-			Logging.logErr(f'No LastTSInstance for TimeSeries: {tsRi}')
+			if L.isWarn: L.logWarn(f'No last TSInstance for TimeSeries: {tsRi}')
 			return False
-		peid = 200/1000 # TODO
-		ontime = runtime-mdt
+		
+		ontime = runtime-rts.mdt	# Expected timestamp of the last <TSI>.
 
-		# Check if there is a dgt in the expected time frame
-		if not ( (ontime < rts.arrivedAt < runtime) and (ontime-peid < rts.lastSeenDgt < ontime+peid) ):
+		# Check if there was a <TSI> in the expected time frame (between ontime and now)
+		# Also check if the <TSI>'s dgt is between ontime-delta and onetime+delta
+		if L.isDebug: L.logDebug(f'TSI Monitor runTime: {runtime} onTime: {ontime} mdt: {rts.mdt} nextExpectedDGT:{rts.nextExpectedDgt} lastSeenDGT: {rts.lastSeenDgt}')
+		if not ( (ontime <= rts.tsiArrivedAt <= runtime) and (ontime-rts.peid <= rts.lastSeenDgt <= ontime+rts.peid) ):
+
 			# If not, then add the expected arrival time as the dgt to the parent's mdlt list.
-			# Logging.logWarn(f'No TSI within time period or DGT outside peid. onTime:{ontime} < arrivedAt:{rts.arrivedAt} < runtime:{runtime} or ontime-peid:{ontime-peid} < lastSeenDGT:{rts.lastSeenDgt} < ontime+peid:{ontime+peid}')
-			Logging.logWarn(f'No TSI within time period or DGT outside peid. runTime: {runtime} onTime: {ontime} mdt: {mdt} nextExpectedDGT:{rts.nextExpectedDgt} lastSeenDGT: {rts.lastSeenDgt}')
+			if L.isWarn: L.logWarn(f'No TSI within time period or DGT outside peid')
 			if (tsRes := CSE.dispatcher.retrieveResource(tsRi).resource) is None:
-				Logging.logErr(f'Cannot retrieve original TS resource: {tsRi}')
+				L.logErr(f'Cannot retrieve original TS resource: {tsRi}')
 			tsRes.setAttribute('mdlt', [], overwrite=False)				# Add missingDataList, just in case it hasn't created before
 			tsRes.mdlt.append(Utils.toISO8601Date(rts.nextExpectedDgt))	# Add missing dataGenerationTime to TS.missingDataList
 			if (tsMdn := tsRes.mdn) is not None:						# mdn may not be set. Then this list grows forever
@@ -76,13 +84,13 @@ class TimeSeriesManager(object):
 					tsRes['mdlt'] = tsRes.mdlt[1:]						# Reduce the missingDataList
 				tsRes['mdc'] = len(tsRes.mdlt)							# set the missingDataCurrentNr
 			tsRes.dbUpdate()											# Update in DB
-			# Logging.logWarn(tsRes.mdlt)
-		rts.nextExpectedDgt += pei										# Set the next expected DGT. Will be overwritten when a real one arrives
+			# if L.isWarn: L.logWarn(tsRes.mdlt)
+		rts.nextExpectedDgt += rts.pei									# Set the next expected DGT. Will be overwritten when a real one arrives
 
 		# Schedule the next actor runtime
-		actor = BackgroundWorkerPool.newActor(self.timeSeriesMonitor, at=runtime+pei, name=f'tsMonitor_{tsRi}_{runtime+pei}')
-		Logging.logDebug(f'tsRi={tsRi}, pei={pei}, mdt={mdt}, runtime={runtime+pei}')
-		actor.start(tsRi=tsRi, pei=pei, mdt=mdt, runtime=runtime+pei)		
+		actor = BackgroundWorkerPool.newActor(self.timeSeriesMonitor, at=runtime+rts.pei, name=f'tsMonitor_{tsRi}_{runtime+rts.pei}')
+		if L.isDebug: L.logDebug(f'tsRi={tsRi}, pei={rts.pei}, mdt={rts.mdt}, runtime={runtime+rts.pei}')
+		actor.start(tsRi=tsRi, runtime=runtime+rts.pei) 				# Next running is in now+interval
 
 		return True
 
@@ -95,26 +103,30 @@ class TimeSeriesManager(object):
 		# TODO check whether dgt is way in the past (gdt < now - peid?) Then what? Ignore?
 
 		now_ 	= Utils.utcTime()
-		Logging.logDebug(f'New TSI for TS: {timeSeries.ri}')
-		pei = timeSeries.pei / 1000.0 # ms -> s
-		mdt = timeSeries.mdt / 1000.0 # ms -> s
+		if L.isDebug: L.logDebug(f'New TSI for TS: {timeSeries.ri}')
+		pei  = timeSeries.pei / 1000.0  # ms -> s
+		peid = timeSeries.peid / 1000.0 # ms -> s
+		mdt  = timeSeries.mdt / 1000.0  # ms -> s
 		if (dgt := Utils.fromAbsRelTimestamp(instance.dgt)) == 0.0:	# error
-			Logging.logWarn(f'Error parsing TSI.dgt: {dgt}')
+			if L.isWarn: L.logWarn(f'Error parsing TSI.dgt: {dgt}')
 			return
 		if dgt > now_:
-			Logging.logWarn(f'TDI.get is in the future: {dgt}')
+			if L.isWarn: L.logWarn(f'TDI.get is in the future: {dgt}')	# TODO
 			return
 		tsRi = timeSeries.ri
-		Logging.logDebug(f'New TSI at: {now_} dgt: {dgt}')
+		if L.isDebug: L.logDebug(f'New TSI at: {now_} dgt: {dgt}')
 
 		if runningTimeserieses.get(tsRi) is None:		# is new timeSeries
-			Logging.logDebug(f'Start monitoring TSI: {tsRi}')
+			if L.isDebug: L.logDebug(f'Start monitoring TSI: {tsRi}')
 			runtime = dgt+pei+mdt
 			actor = BackgroundWorkerPool.newActor(self.timeSeriesMonitor, at=runtime, name=f'tsMonitor_{tsRi}_{runtime}')
-			actor.start(tsRi=tsRi, pei=pei, mdt=mdt, runtime=dgt+pei+mdt)		
+			actor.start(tsRi=tsRi, runtime=dgt+pei+mdt)		
+
+			# TODO check whether a first TSI's DGT is also with the limits!!!!
+
 
 		# Add/Update runningTimeserieses map
-		runningTimeserieses[tsRi] = LastTSInstance(lastSeenDgt=dgt, arrivedAt=now_, nextExpectedDgt=dgt+pei)
+		runningTimeserieses[tsRi] = LastTSInstance(lastSeenDgt=dgt, tsiArrivedAt=now_, nextExpectedDgt=dgt+pei, pei=pei, mdt=mdt, peid=peid)
 
 
 	def isMonitored(self, ri:str) -> bool:
@@ -125,7 +137,7 @@ class TimeSeriesManager(object):
 	def stopMonitoringTimeSeries(self, tsRi:str) -> bool:
 		"""	Remove a timeSeries from monitoring.
 		"""
-		Logging.logDebug(f'Remove TS from monitoring: {tsRi}')
+		if L.isDebug: L.logDebug(f'Remove TS from monitoring: {tsRi}')
 		BackgroundWorkerPool.stopWorkers(name=f'tsMonitor_{tsRi}_*')
 		if tsRi in runningTimeserieses:
 			del runningTimeserieses[tsRi]

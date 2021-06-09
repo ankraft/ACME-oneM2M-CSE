@@ -9,8 +9,7 @@
 
 
 from Logging import Logging as L
-from Constants import Constants as C
-from Types import ResourceTypes as T, Permission, Operation, Result, CSERequest, ResponseCode as RC
+from Types import ResourceTypes as T, Permission, Result, CSERequest, ResponseCode as RC
 import CSE, Utils
 from Configuration import Configuration
 from resources.Resource import Resource

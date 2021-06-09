@@ -8,12 +8,10 @@
 #
 
 from typing import Dict, Any
-from Constants import Constants as C
-from Types import ResourceTypes as T, ResponseCode as RC, Result, RequestArguments, RequestHeaders, Operation, RequestStatus, CSERequest, JSON
+from Types import ResourceTypes as T, ResponseCode as RC, Result, RequestStatus, CSERequest, JSON
 from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
-from .AnnounceableResource import AnnounceableResource
 from Configuration import Configuration
 import resources.Factory as Factory
 

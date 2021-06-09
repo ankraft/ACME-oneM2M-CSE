@@ -7,11 +7,10 @@
 #	ResourceType: Group
 #
 
-from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ConsistencyStrategy, JSON
 from Validator import constructPolicy, addPolicy
-from Logging import Logging
-import Utils, CSE
+from Logging import Logging as L
+import CSE
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
 import resources.Factory as Factory
@@ -59,7 +58,7 @@ class GRP(AnnounceableResource):
 		
 		# add fanOutPoint
 		ri = self['ri']
-		Logging.logDebug(f'Registering fanOutPoint resource for: {ri}')
+		if L.isDebug: L.logDebug(f'Registering fanOutPoint resource for: {ri}')
 		fanOutPointResource = Factory.resourceFromDict({ 'pi' : ri }, ty=T.GRP_FOPT).resource
 		if (res := CSE.dispatcher.createResource(fanOutPointResource, self, originator)).resource is None:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)

@@ -20,7 +20,7 @@ from Types import ResourceTypes as T
 from Types import Result, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType
 from Types import ResultContentType, ResponseType, FilterOperation
 from Types import ContentSerializationType, JSON, Conditions
-from Logging import Logging
+from Logging import Logging as L
 from resources.Resource import Resource
 import CSE
 import cbor2
@@ -157,7 +157,7 @@ def fromAbsRelTimestamp(absRelTimestamp:str) -> float:
 				rel = float(absRelTimestamp)
 				return utcTime() + float(rel)/1000.0	
 			except Exception as e:
-				Logging.logWarn(f'Wrong format for timestamp: {absRelTimestamp}')
+				if L.isWarn: L.logWarn(f'Wrong format for timestamp: {absRelTimestamp}')
 	return 0.0
 
 
@@ -176,13 +176,13 @@ def structuredPath(resource:Resource) -> str:
 
 	# retrieve identifier record of the parent
 	if (pi := resource.pi) is None or len(pi) == 0:
-		# Logging.logErr('PI is None')
+		# L.logErr('PI is None')
 		return rn
 	rpi = CSE.storage.identifier(pi) 
 	if len(rpi) == 1:
 		return cast(str, rpi[0]['srn'] + '/' + rn)
-	# Logging.logErr(traceback.format_stack())
-	Logging.logErr(f'Parent {pi} not found in DB')
+	# L.logErr(traceback.format_stack())
+	L.logErr(f'Parent {pi} not found in DB')
 	return rn # fallback
 
 
@@ -249,7 +249,7 @@ def retrieveIDFromPath(id: str, csern: str, csecsi: str) -> Tuple[str, str, str]
 		idsLen -= 1
 
 	if ids[0] == '~' and idsLen > 1:			# SP-Relative
-		# Logging.logDebug("SP-Relative")
+		# L.logDebug("SP-Relative")
 		csi = ids[1]							# extract the csi
 		if csi != csecsi:						# Not for this CSE? retargeting
 			if vrPresent is not None:			# append last path element again
@@ -264,7 +264,7 @@ def retrieveIDFromPath(id: str, csern: str, csecsi: str) -> Tuple[str, str, str]
 			return None, None, None
 
 	elif ids[0] == '_' and idsLen >= 4:			# Absolute
-		# Logging.logDebug("Absolute")
+		# L.logDebug("Absolute")
 		spi = ids[1] 	#TODO Check whether it is same SPID, otherwise forward it throw mcc'
 		csi = ids[2]
 		if csi != csecsi:
@@ -280,7 +280,7 @@ def retrieveIDFromPath(id: str, csern: str, csecsi: str) -> Tuple[str, str, str]
 			return None, None, None
 
 	else:										# CSE-Relative
-		# Logging.logDebug("CSE-Relative")
+		# L.logDebug("CSE-Relative")
 		if idsLen == 1 and ((ids[0] != csern and ids[0] != '-') or ids[0] == csecsi):	# unstructured
 			ri = ids[0]
 		else:									# structured
@@ -471,8 +471,8 @@ def isAllowedOriginator(originator: str, allowedOriginators: List[str]) -> bool:
 	""" Check whether an Originator is in the provided list of allowed 
 		originators. This list may contain regex.
 	"""
-	Logging.logDebug(f'Originator: {originator}')
-	Logging.logDebug(f'Allowed originators: {allowedOriginators}')
+	# if L.isDebug: L.logDebug(f'Originator: {originator}')
+	# if L.isDebug: L.logDebug(f'Allowed originators: {allowedOriginators}')
 
 	if originator is None or allowedOriginators is None:
 		return False
@@ -552,13 +552,13 @@ def getSerializationFromOriginator(originator:str) -> List[ContentSerializationT
 	# First check whether there is an AE with that originator
 	if (l := len(aes := CSE.storage.searchByValueInField('aei', originator))) > 0:
 		if l > 1:
-			Logging.logErr(f'More then one AE with the same aei: {originator}')
+			L.logErr(f'More then one AE with the same aei: {originator}')
 			return []
 		csz = aes[0].csz
 	# Else try whether there is a CSE or CSR
 	elif (l := len(cses := CSE.storage.searchByValueInField('csi', getIdFromOriginator(originator)))) > 0:
 		if l > 1:
-			Logging.logErr(f'More then one CSE with the same csi: {originator}')
+			L.logErr(f'More then one CSE with the same csi: {originator}')
 			return []
 		csz = cses[0].csz
 	# Else just an empty list
@@ -775,7 +775,7 @@ def deserializeData(data:bytes, ct:ContentSerializationType) -> JSON:
 	elif ct == ContentSerializationType.CBOR:
 		return cast(JSON, cbor2.loads(data))
 	# except Exception as e:
-	# 	Logging.logErr(f'Deserialization error: {str(e)}')
+	# 	L.logErr(f'Deserialization error: {str(e)}')
 	return None
 
 #

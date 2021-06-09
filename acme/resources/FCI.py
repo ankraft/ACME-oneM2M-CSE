@@ -11,7 +11,6 @@ from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
 from Validator import constructPolicy, addPolicy
-import Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 

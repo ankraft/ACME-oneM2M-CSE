@@ -1,5 +1,5 @@
 
-import os, fnmatch, importlib, time, argparse
+import os, fnmatch, sys, importlib, time, argparse
 from rich.console import Console
 from rich.table import Table
 from rich.style import Style
@@ -17,10 +17,8 @@ def isRunTest(name:str) -> bool:
 		return name in singleTests
 	if args.includeLoadTests:			# include all load tests
 		return True
-	if args.loadTestsOnly: 
-		return name in loadTests		# only load tests
-	else:
-		return name not in loadTests	# only not load tests
+	return (len([ n for n in loadTests if name.startswith(n) ]) > 0) == args.loadTestsOnly
+
 	
 
 if __name__ == '__main__':

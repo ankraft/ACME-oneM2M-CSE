@@ -7,11 +7,11 @@
 #	Create Resources
 #
 
-from typing import Dict, Callable, Any, Tuple
+from typing import Dict, Callable, Any
 from Types import ResourceTypes as T
 from Types import ResponseCode as RC
 from Types import Result
-from Logging import Logging
+from Logging import Logging as L
 import Utils
 
 
@@ -37,8 +37,6 @@ from resources.FCNT_OL import FCNT_OL
 from resources.GRP import GRP
 from resources.GRPAnnc import GRPAnnc
 from resources.GRP_FOPT import GRP_FOPT
-from resources.MgmtObj import MgmtObj
-from resources.MgmtObjAnnc import MgmtObjAnnc
 from resources.NOD import NOD
 from resources.NODAnnc import NODAnnc
 from resources.PCH import PCH
@@ -174,23 +172,23 @@ def resourceFromDict(resDict:Dict[str, Any]={}, pi:str=None, ty:T=None, create:b
 	# Determine type
 	typ = resDict['ty'] if 'ty' in resDict else ty
 	if typ is None and (typ := T.fromTPE(tpe)) is  None:
-		Logging.logWarn(dbg := f'Cannot determine type for resource: {tpe}')
+		L.logWarn(dbg := f'cannot determine type for resource: {tpe}')
 		return Result(status=False, dbg=dbg, rsc=RC.badRequest)
 	
 	# Check for Parent
 	if pi is None and typ != T.CSEBase and ((pi := resDict.get('pi')) is None or len(pi) == 0):
-		Logging.logWarn(dbg := f'pi missing in resource: {tpe}')
+		L.logWarn(dbg := f'pi missing in resource: {tpe}')
 		return Result(status=False, dbg=dbg, rsc=RC.badRequest)
 
 
 	# Check whether given type during CREATE matches the resource's ty attribute
 	if typ != None and ty != None and typ != ty:
-		Logging.logWarn(dbg := f'parameter type ({ty}) and resource type ({typ}) mismatch')
+		L.logWarn(dbg := f'parameter type ({ty}) and resource type ({typ}) mismatch')
 		return Result(dbg=dbg, rsc=RC.badRequest)
 	
 	# Check whether given type during CREATE matches the resource type specifier
 	if ty != None and tpe != None and ty not in [ T.FCNT, T.FCNTAnnc, T.FCI, T.FCIAnnc, T.MGMTOBJ, T.MGMTOBJAnnc ]  and ty.tpe() != tpe:
-		Logging.logWarn(dbg := f'parameter type ({ty}) and resource type specifier ({tpe}) mismatch')
+		L.logWarn(dbg := f'parameter type ({ty}) and resource type specifier ({tpe}) mismatch')
 		return Result(dbg=dbg, rsc=RC.badRequest)
 	
 	# store the import status in the original resDict

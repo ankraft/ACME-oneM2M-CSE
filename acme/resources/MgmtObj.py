@@ -10,7 +10,6 @@
 from copy import deepcopy
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
-import Utils
 from Types import ResourceTypes as T, JSON, AttributePolicies
 from Validator import constructPolicy, addPolicy
 

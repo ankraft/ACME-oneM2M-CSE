@@ -7,16 +7,14 @@
 #	ResourceType: Subscription
 #
 
-import random, string
 from copy import deepcopy
-from Constants import Constants as C
 from Configuration import Configuration
 from Types import ResourceTypes as T, Result, NotificationContentType, NotificationEventType
-import Utils, CSE
+import CSE
 from Validator import constructPolicy
 from .Resource import *
 from Types import ResponseCode as RC, JSON
-from Logging import Logging
+from Logging import Logging as L
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([
@@ -70,18 +68,18 @@ class SUB(Resource):
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		if (res := super().validate(originator, create, dct)).status == False:
 			return res
-		Logging.logDebug(f'Validating subscription: {self.ri}')
+		if L.isDebug: L.logDebug(f'Validating subscription: {self.ri}')
 
 		# Check necessary attributes
 		if (nu := self.nu) is None or not isinstance(nu, list):
-			Logging.logDebug(dbg := f'"nu" attribute missing for subscription: {self.ri}')
+			L.logDebug(dbg := f'"nu" attribute missing for subscription: {self.ri}')
 			return Result(status=False, rsc=RC.insufficientArguments, dbg=dbg)
 
 		# check nct and net combinations
 		if (nct := self.nct) is not None and (net := self['enc/net']) is not None:
 			for n in net:
 				if not NotificationEventType(n).isAllowedNCT(NotificationContentType(nct)):
-					Logging.logDebug(dbg := f'nct={nct} is not allowed for one or more values in enc/net={net}')
+					L.logDebug(dbg := f'nct={nct} is not allowed for one or more values in enc/net={net}')
 					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 				# fallthough
 

@@ -12,7 +12,7 @@ from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
-from Logging import Logging
+from Logging import Logging as L
 from .AnnounceableResource import AnnounceableResource
 import CSE
 
@@ -61,7 +61,7 @@ class AE(AnnounceableResource):
 		if childResource.ty == T.PCH:
 			# Check correct originator. Even the ADMIN is not allowed that		
 			if self.aei != originator:
-				Logging.logDebug(dbg := f'Originator must be the parent <AE>')
+				if L.isDebug: L.logDebug(dbg := f'Originator must be the parent <AE>')
 				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
 
 			# check that there will only by one PCH as a child
@@ -117,9 +117,8 @@ class AE(AnnounceableResource):
 			if len((apiElements := api.split('.'))) < 3:
 				return Result(status=False, rsc=RC.badRequest, dbg=f'wrong format for registered ID in attribute "api": to few elements')
 		else:
-			Logging.logDebug('wrong format for ID in attribute "api": must start with "R" or "N"')
-			return Result(status=False, rsc=RC.badRequest, dbg=f'wrong format for ID in attribute "api": must start with "R" or "N"')
-
+			L.logWarn(dbg := f'wrong format for ID in attribute "api": {api} (must start with "R" or "N")')
+			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 		return Result(status=True)
 

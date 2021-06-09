@@ -7,7 +7,6 @@
 #	ResourceType: mgmtObj:Node
 #
 
-import random, string
 from Constants import Constants as C
 from Types import ResourceTypes as T, JSON
 import Utils, CSE

@@ -15,8 +15,6 @@ from Constants import Constants as C
 from Types import ResourceTypes as T, NotificationContentType, ResponseCode as RC, Operation, ResponseType, Permission
 from init import *
 
-# TODO set pei, no peid -> set by CSE
-# TODO set to big peid
 
 class TestTS(unittest.TestCase):
 
@@ -72,6 +70,7 @@ class TestTS(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/cnf'))
 		self.assertEqual(findXPath(r, 'm2m:ts/cnf'), 'application/test')
 		self.assertEqual(findXPath(r, 'm2m:ts/pei'), 1000)
+		self.assertEqual(findXPath(r, 'm2m:ts/peid'), 500)
 		self.assertTrue(findXPath(r, 'm2m:ts/mdd'))
 		self.assertEqual(findXPath(r, 'm2m:ts/mdn'), 10)
 		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'))		# empty mdlt is not created by default
@@ -121,6 +120,17 @@ class TestTS(unittest.TestCase):
 		self.assertIsNotNone(TestTS.ae)
 		dct = 	{ 'm2m:ts' : { 
 					'pei'	: 1000
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSpeid(self) -> None:
+		""" Update <TS> peid -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'peid'	: 1000
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
 		self.assertEqual(rsc, RC.badRequest, r)
@@ -229,6 +239,29 @@ class TestTS(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createTSwithPeid(self) -> None:
+		""" Create <TS> with peid == pei/2"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'pei'	: 1000,
+					'peid'	: 500,
+				}}
+		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
+		self.assertEqual(rsc, RC.created, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createTSwithPeidWrong(self) -> None:
+		""" Create <TS> with peid > pei/2 -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'pei'	: 1000,
+					'peid'	: 501,
+				}}
+		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
@@ -239,6 +272,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestTS('test_updateTSmni'))
 	suite.addTest(TestTS('test_updateTSmbs'))
 	suite.addTest(TestTS('test_updateTSpei'))
+	suite.addTest(TestTS('test_updateTSpeid'))
 	suite.addTest(TestTS('test_updateTSmdd'))
 	suite.addTest(TestTS('test_updateTSmdn'))
 	suite.addTest(TestTS('test_updateTSmdc'))
@@ -248,6 +282,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestTS('test_deleteTS'))
 	suite.addTest(TestTS('test_createTSnoMdd'))
 	suite.addTest(TestTS('test_updateTSMddwrong'))
+	suite.addTest(TestTS('test_createTSwithPeid'))
+	suite.addTest(TestTS('test_createTSwithPeidWrong'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

@@ -7,10 +7,7 @@
 #	ResourceType: PollingChannelURI for PollingChannel
 #
 
-from flask import Request
-from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC, JSON
-import CSE, Utils
 from .Resource import *
 from Logging import Logging
 

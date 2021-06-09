@@ -8,18 +8,16 @@
 #
 
 from __future__ import annotations
-import random, string
 from copy import deepcopy
-from Constants import Constants as C
 from Configuration import Configuration
-from Types import ResourceTypes as T, Result, NotificationContentType, NotificationEventType
+from Types import ResourceTypes as T, Result
 import Utils, CSE
 from Validator import constructPolicy, addPolicy
 from .Resource import *
 import resources.Factory as Factory
 from .AnnounceableResource import AnnounceableResource
 from Types import ResponseCode as RC, JSON
-from Logging import Logging
+from Logging import Logging as L
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([
@@ -73,7 +71,7 @@ class TS(AnnounceableResource):
 			return res
 
 		# register latest and oldest virtual resources
-		Logging.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
+		if L.isDebug: L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
 		resource = Factory.resourceFromDict({}, pi=self.ri, ty=T.TS_LA).resource	# rn is assigned by resource itself
@@ -102,17 +100,17 @@ class TS(AnnounceableResource):
 
  
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
-		Logging.logDebug(f'Validating timeSeries: {self.ri}')
+		if L.isDebug: L.logDebug(f'Validating timeSeries: {self.ri}')
 		if (res := super().validate(originator, create, dct)).status == False:
 			return res
 		
 		# Check peid
 		if self.peid is not None and self.pei is not None:
 			if self.peid > self.pei/2:
-				Logging.logWarn(dbg := 'peid must be <= pei/2')
+				L.logWarn(dbg := 'peid must be <= pei/2')
 				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 		elif self.pei is not None:
-			self.setAttribute('peid', self.pei/2, False)
+			self.setAttribute('peid', int(self.pei/2), False)
 
 		self._validateChildren()
 		return Result(status=True)
@@ -144,7 +142,7 @@ class TS(AnnounceableResource):
 
 	# Handle the addition of new TSI. Basically, get rid of old ones.
 	def childAdded(self, childResource:Resource, originator:str) -> None:
-		Logging.logDebug(f'Child resource added: {childResource.ri}')
+		if L.isDebug: L.logDebug(f'Child resource added: {childResource.ri}')
 		super().childAdded(childResource, originator)
 		if childResource.ty == T.TSI:	# Validate if child is TSI
 
@@ -166,7 +164,7 @@ class TS(AnnounceableResource):
 
 	# Handle the removal of a CIN. 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
-		Logging.logDebug(f'Child resource removed: {childResource.ri}')
+		if L.isDebug: L.logDebug(f'Child resource removed: {childResource.ri}')
 		super().childRemoved(childResource, originator)
 		if childResource.ty == T.TSI:	# Validate if child was TSI
 			self._validateChildren()
@@ -189,7 +187,7 @@ class TS(AnnounceableResource):
 			i = 0
 			l = cni
 			while cni > mni and i < l:
-				Logging.logDebug(f'cni > mni: Removing <tsi>: {cs[i].ri}')
+				if L.isDebug: L.logDebug(f'cni > mni: Removing <tsi>: {cs[i].ri}')
 				# remove oldest
 				CSE.dispatcher.deleteResource(cs[i], parentResource=self)
 				cni -= 1	# decrement cni when deleting a <cin>
@@ -207,7 +205,7 @@ class TS(AnnounceableResource):
 			i = 0
 			l = len(cs)
 			while cbs > mbs and i < l:
-				Logging.logDebug(f'cbs > mbs: Removing <tsi>: {cs[i].ri}')
+				if L.isDebug: L.logDebug(f'cbs > mbs: Removing <tsi>: {cs[i].ri}')
 				# remove oldest
 				cbs -= cs[i]['cs']
 				CSE.dispatcher.deleteResource(cs[i], parentResource=self)
@@ -224,7 +222,7 @@ class TS(AnnounceableResource):
 
 
 	def _validateDataDetect(self, dct:JSON=None) -> None:
-		Logging.logDebug('Validating data detection')
+		if L.isDebug: L.logDebug('Validating data detection')
 
 		# Check whether missing data detection is turned on
 		mdn = self.mdn

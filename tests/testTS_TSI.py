@@ -217,7 +217,7 @@ class TestTS_TSI(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createTSItooBig(self) -> None:
+	def test_createTSItooLarge(self) -> None:
 		"""	Add <TSI> to <TS> with size > mbs -> Fail """
 		dct = 	{ 'm2m:tsi' : {
 					'dgt' : getDate(),
@@ -341,6 +341,12 @@ class TestTS_TSI(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSIinPeriod(self) -> None:
 		"""	Add 3 <TSI> within the time period"""
+		dctTs = 	{ 'm2m:ts' : { 
+			'mdn' : maxMdn
+		}}
+		r, rsc = UPDATE(tsURL, TestTS_TSI.originator, dctTs)
+		self.assertEqual(rsc, RC.updated, r)
+
 		date = datetime.datetime.utcnow().timestamp()
 		for i in range(3):
 			dct = 	{ 'm2m:tsi' : {
@@ -358,6 +364,66 @@ class TestTS_TSI(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0, r)	# MissingDataCount == 0
+
+		self._stopMonitoring()
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createTSIinPeriodDgtTooSmall(self) -> None:
+		"""	Add 1+3 <TSI> within the time period, but dgt is too small -> Fail"""
+		dctTs = 	{ 'm2m:ts' : { 
+			'mdn' : maxMdn
+		}}
+		r, rsc = UPDATE(tsURL, TestTS_TSI.originator, dctTs)
+		self.assertEqual(rsc, RC.updated, r)
+
+		date = datetime.datetime.utcnow().timestamp()
+		for i in range(4):
+			dct = 	{ 'm2m:tsi' : {
+						'dgt' : toISO8601Date(date),
+						'con' : 'aValue',
+						'snr' : i
+					}}
+			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
+			self.assertEqual(rsc, RC.created, r)
+			time.sleep(timeSeriesInterval) # == pei
+			date = datetime.datetime.utcnow().timestamp() + timeSeriesInterval - (timeSeriesInterval/2) - 0.1
+
+		# Check TS for missing TSI
+		r, rsc = RETRIEVE(tsURL, TestTS_TSI.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 3, r)	# MissingDataCount == 3
+
+		self._stopMonitoring()
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createTSIinPeriodDgtTooLarge(self) -> None:
+		"""	Add 1+3 <TSI> within the time period, but dgt is too large -> Fail"""
+		dctTs = 	{ 'm2m:ts' : { 
+			'mdn' : maxMdn
+		}}
+		r, rsc = UPDATE(tsURL, TestTS_TSI.originator, dctTs)
+		self.assertEqual(rsc, RC.updated, r)
+
+		date = datetime.datetime.utcnow().timestamp()
+		for i in range(4):
+			dct = 	{ 'm2m:tsi' : {
+						'dgt' : toISO8601Date(date),
+						'con' : 'aValue',
+						'snr' : i
+					}}
+			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
+			self.assertEqual(rsc, RC.created, r)
+			date = datetime.datetime.utcnow().timestamp() + timeSeriesInterval + (timeSeriesInterval/2) + 0.1
+			time.sleep(timeSeriesInterval) # == pei
+
+		# Check TS for missing TSI
+		r, rsc = RETRIEVE(tsURL, TestTS_TSI.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 3, r)	# MissingDataCount == 3
 
 		self._stopMonitoring()
 
@@ -397,7 +463,6 @@ class TestTS_TSI(unittest.TestCase):
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, tsidct)
 			self.assertEqual(rsc, RC.created, r)
-			# time.sleep(timeSeriesInterval * 2)
 			time.sleep(_pei + (_mdt * 2.0))
 
 			# r, rsc = RETRIEVE(tsURL, TestTS_TSI.originator)
@@ -421,7 +486,7 @@ class TestTS_TSI(unittest.TestCase):
 		self._createTSInotInPeriod(3)
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createTSInotInPeriodBigger(self) -> None:
+	def test_createTSInotInPeriodLarger(self) -> None:
 		"""	Add more <TSI> not within the time period """
 		self._createTSInotInPeriod(maxMdn + 1)	# one more to check list size, 
 		# dont remove list for next tests
@@ -504,6 +569,10 @@ class TestTS_TSI(unittest.TestCase):
 
 # TODO: instead of mdt:9999 set the mdn to None etc.
 
+# peid: Test with everything ok, but dgt < peid, and another test with dgt > peid
+# TODO Test: first TSI with dgt < now - peid
+
+
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestTS_TSI('test_addTSI'))
@@ -515,7 +584,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	
 	suite.addTest(TestTS_TSI('test_createTSwithMBS'))
 	suite.addTest(TestTS_TSI('test_createTSIexactSize'))
-	suite.addTest(TestTS_TSI('test_createTSItooBig'))
+	suite.addTest(TestTS_TSI('test_createTSItooLarge'))
 	suite.addTest(TestTS_TSI('test_createTSIsForTSwithSize'))
 	suite.addTest(TestTS_TSI('test_createTSIwithoutDGT'))
 	suite.addTest(TestTS_TSI('test_createTSIwithSameDGT'))
@@ -523,12 +592,15 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestTS_TSI('test_deleteTS'))
 
 	suite.addTest(TestTS_TSI('test_createTSwithMonitoring'))
-	suite.addTest(TestTS_TSI('test_createTSIinPeriod'))				# Start monitoring
-	suite.addTest(TestTS_TSI('test_createTSInotInPeriod'))			# Start monitoring
-	suite.addTest(TestTS_TSI('test_updateTSremoveMdn'))				# effectively stop monitoring
-	suite.addTest(TestTS_TSI('test_createTSInotInPeriodBigger'))	# run the test again to overflow mdlt
+	suite.addTest(TestTS_TSI('test_createTSIinPeriod'))					# Start monitoring
+	suite.addTest(TestTS_TSI('test_createTSInotInPeriod'))				# Start monitoring
+	suite.addTest(TestTS_TSI('test_updateTSremoveMdn'))					# effectively stop monitoring
+	suite.addTest(TestTS_TSI('test_createTSIinPeriodDgtTooSmall'))		# dgt too small
+	suite.addTest(TestTS_TSI('test_createTSIinPeriodDgtTooLarge'))		# dgt too large
+	suite.addTest(TestTS_TSI('test_createTSInotInPeriodLarger'))		# run the test again to overflow mdlt
+
 	suite.addTest(TestTS_TSI('test_updateTSshortenMdlt'))
-	suite.addTest(TestTS_TSI('test_updateTSremoveMdn'))				# effectively stop monitoring
+	suite.addTest(TestTS_TSI('test_updateTSremoveMdn'))					# effectively stop monitoring
 	suite.addTest(TestTS_TSI('test_updateTSaddMdn'))
 	suite.addTest(TestTS_TSI('test_createTSInotInPeriod'))
 	suite.addTest(TestTS_TSI('test_updateTSaddMdt'))

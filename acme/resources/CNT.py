@@ -8,9 +8,8 @@
 #
 
 from typing import List
-from Logging import Logging
+from Logging import Logging as L
 from Configuration import Configuration
-from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 from Validator import constructPolicy, addPolicy
 import Utils, CSE
@@ -66,7 +65,7 @@ class CNT(AnnounceableResource):
 		
 
 		# register latest and oldest virtual resources
-		Logging.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
+		if L.isDebug: L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
 		latestResource = Factory.resourceFromDict({}, pi=self.ri, ty=T.CNT_LA).resource		# rn is assigned by resource itself
@@ -103,7 +102,7 @@ class CNT(AnnounceableResource):
 
 	# Handle the addition of new CIN. Basically, get rid of old ones.
 	def childAdded(self, childResource:Resource, originator:str) -> None:
-		Logging.logDebug(f'Child resource added: {childResource.ri}')
+		if L.isDebug: L.logDebug(f'Child resource added: {childResource.ri}')
 		super().childAdded(childResource, originator)
 		if childResource.ty == T.CIN:	# Validate if child is CIN
 
@@ -120,7 +119,7 @@ class CNT(AnnounceableResource):
 
 	# Handle the removal of a CIN. 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
-		Logging.logDebug(f'Child resource removed: {childResource.ri}')
+		if L.isDebug: L.logDebug(f'Child resource removed: {childResource.ri}')
 		super().childRemoved(childResource, originator)
 		if childResource.ty == T.CIN:	# Validate if child was CIN
 			self._validateChildren()
@@ -154,7 +153,7 @@ class CNT(AnnounceableResource):
 			i = 0
 			l = cni
 			while cni > mni and i < l:
-				Logging.logDebug(f'cni > mni: Removing <cin>: {cs[i].ri}')
+				if L.isDebug: L.logDebug(f'cni > mni: Removing <cin>: {cs[i].ri}')
 				# remove oldest
 				CSE.dispatcher.deleteResource(cs[i], parentResource=self)
 				cni -= 1	# decrement cni when deleting a <cin>
@@ -172,7 +171,7 @@ class CNT(AnnounceableResource):
 			i = 0
 			l = len(cs)
 			while cbs > mbs and i < l:
-				Logging.logDebug(f'cbs > mbs: Removing <cin>: {cs[i].ri}')
+				if L.isDebug: L.logDebug(f'cbs > mbs: Removing <cin>: {cs[i].ri}')
 				# remove oldest
 				cbs -= cs[i]['cs']
 				CSE.dispatcher.deleteResource(cs[i], parentResource=self)

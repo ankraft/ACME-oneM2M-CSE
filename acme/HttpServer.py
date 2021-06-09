@@ -71,7 +71,7 @@ class HttpServer(object):
 		self.serverID			= f'ACME {C.version}' 			# The server's ID for http response headers
 		self._responseHeaders	= {'Server' : self.serverID}	# Additional headers for other requests
 
-		if L.isInfo: Logging.log(f'Registering http server root at: {self.rootPath}')
+		if L.isInfo: L.log(f'Registering http server root at: {self.rootPath}')
 		if self.useTLS:
 			if L.isInfo: L.log('TLS enabled. HTTP server serves via https.')
 

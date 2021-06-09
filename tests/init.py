@@ -411,7 +411,7 @@ def uniqueID() -> str:
 def uniqueRN(prefix:str='') -> str:
 	"""	Create a unique resource name.
 	"""
-	return f'{prefix}{round(time.time() * 1000)}'
+	return f'{prefix}{round(time.time() * 1000)}-{uniqueID()}'
 
 #
 #	Utilities

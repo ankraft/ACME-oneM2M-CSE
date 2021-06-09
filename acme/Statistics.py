@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from typing import Dict, Union, cast
-from Logging import Logging
+from Logging import Logging as L
 from Configuration import Configuration
 import CSE, Utils
 import datetime
@@ -58,7 +58,7 @@ class Statistics(object):
 		if self.statisticsEnabled:
 
 			# Start background worker to handle writing to DB
-			Logging.log('Starting statistics DB thread')
+			if L.isInfo: L.log('Starting statistics DB thread')
 			BackgroundWorkerPool.newWorker(Configuration.get('cse.statistics.writeInterval'), self.statisticsDBWorker, 'statsDBWorker').start()
 
 			# subscripe vto various events
@@ -80,19 +80,19 @@ class Statistics(object):
 			CSE.event.addHandler(CSE.event.logError, self.handleLogError)						# type: ignore
 			CSE.event.addHandler(CSE.event.logWarning, self.handleLogWarning)					# type: ignore
 
-		Logging.log('Statistics initialized')
+		if L.isInfo: L.log('Statistics initialized')
 
 
 	def shutdown(self) -> bool:
 		if self.statisticsEnabled:
 			# Stop the worker
-			Logging.log('Stopping statistics DB thread')
+			if L.isInfo: L.log('Stopping statistics DB thread')
 			BackgroundWorkerPool.stopWorkers('statsDBWorker')
 
 			# One final write
 			self.storeDBStatistics()
 
-		Logging.log('Statistics shut down')
+		if L.isInfo: L.log('Statistics shut down')
 		return True
 
 
@@ -221,11 +221,11 @@ class Statistics(object):
 
 	# Called by the background worker
 	def statisticsDBWorker(self) -> bool:
-		Logging.logDebug('Writing statistics DB')
+		if L.isDebug: L.logDebug('Writing statistics DB')
 		try:
 			self.storeDBStatistics()
 		except Exception as e:
-			Logging.logErr(f'Exception: {str(e)}')
+			if L.isDebug: L.logErr(f'Exception: {str(e)}')
 			return False
 		return True
 

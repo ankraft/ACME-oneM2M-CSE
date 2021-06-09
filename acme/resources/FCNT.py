@@ -10,16 +10,14 @@
 from __future__ import annotations
 import sys
 from typing import List, cast
-from Constants import Constants as C
 from Configuration import Configuration
 from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 from Validator import constructPolicy, addPolicy
 import Utils, CSE
-from Logging import Logging
+from Logging import Logging as L
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
 import resources.Factory as Factory
-import functools 
 
 
 
@@ -225,7 +223,7 @@ class FCNT(AnnounceableResource):
 	# Add a new FlexContainerInstance for this flexContainer
 	def addFlexContainerInstance(self, originator:str) -> None:
 
-		Logging.logDebug('Adding flexContainerInstance')
+		if L.isDebug: L.logDebug('Adding flexContainerInstance')
 		dct:JSON = { 'rn'  : f'{self.rn}_{self.st:d}', }
 
 		# Copy the label as well
@@ -259,7 +257,7 @@ class FCNT(AnnounceableResource):
 	def _addLaOl(self) -> Result:
 		"""	Add <latest> and <oldest> virtual child resources.
 		"""
-		Logging.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
+		if L.isDebug: L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
 		resource = Factory.resourceFromDict({}, pi=self.ri, ty=T.FCNT_LA).resource	# rn is assigned by resource itself
@@ -278,7 +276,7 @@ class FCNT(AnnounceableResource):
 	def _removeLaOl(self) -> Result:
 		"""	Remove <latest> and <oldest> virtual child resources.
 		"""
-		Logging.logDebug(f'De-registering latest and oldest virtual resources for: {self.ri}')
+		if L.isDebug: L.logDebug(f'De-registering latest and oldest virtual resources for: {self.ri}')
 
 		# remove latest
 		if len(res := CSE.dispatcher.directChildResources(self.ri, T.FCNT_LA)) == 1: # type:ignore[no-any-return]
@@ -294,7 +292,7 @@ class FCNT(AnnounceableResource):
 	def _removeFCIs(self) -> Result:
 		"""	Remove the FCI childResources.
 		"""
-		Logging.logDebug(f'Removing FCI child resources for: {self.ri}')
+		if L.isDebug: L.logDebug(f'Removing FCI child resources for: {self.ri}')
 		rs = CSE.dispatcher.directChildResources(self.ri, ty=T.FCI)
 		for r in rs:
 			# self.childRemoved(r, originator) # It should not be necessary to notify self at this point.
