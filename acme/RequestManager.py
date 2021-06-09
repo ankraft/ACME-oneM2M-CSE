@@ -22,11 +22,9 @@ from Types import Parameters
 from resources.REQ import REQ
 from resources.Resource import Resource
 from helpers.BackgroundWorker import BackgroundWorkerPool
-
-
 import CSE, Utils
 from flask import Request
-from typing import Any, List, Tuple, Union, Dict
+from typing import Any
 
 
 class RequestManager(object):
