@@ -642,18 +642,18 @@ drawLine(21.8,11.4,20,15)</panel_attributes>
     <id>Relation</id>
     <coordinates>
       <x>770</x>
-      <y>310</y>
+      <y>290</y>
       <w>50</w>
-      <h>110</h>
+      <h>130</h>
     </coordinates>
     <panel_attributes>lt=)-</panel_attributes>
-    <additional_attributes>20.0;20.0;20.0;90.0</additional_attributes>
+    <additional_attributes>20.0;20.0;20.0;110.0</additional_attributes>
   </element>
   <element>
     <id>UMLGeneric</id>
     <coordinates>
       <x>790</x>
-      <y>330</y>
+      <y>320</y>
       <w>60</w>
       <h>30</h>
     </coordinates>
@@ -1627,5 +1627,165 @@ notifications
 fontsize=8
 </panel_attributes>
     <additional_attributes>20.0;20.0;20.0;60.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLGeneric</id>
+    <coordinates>
+      <x>450</x>
+      <y>400</y>
+      <w>160</w>
+      <h>80</h>
+    </coordinates>
+    <panel_attributes>MQTT Client
+REST
+symbol=component
+valign=center
+transparency=0
+customelement=
+drawArc(10,10,10,10,0,270,true) transparency=100
+drawLine(16.5,14,20,15)
+drawLine(21.8,11.4,20,15)</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>510</x>
+      <y>290</y>
+      <w>30</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes>lt=()-
+</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;110.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>460</x>
+      <y>470</y>
+      <w>70</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>lt=)-
+fontsize=8
+forward
+requests</panel_attributes>
+    <additional_attributes>20.0;40.0;20.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>420</x>
+      <y>440</y>
+      <w>60</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>Paho
+transparency=0
+bg=light_gray
+valign=center
+halign=center
+layer=1
+fontsize=10</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLGeneric</id>
+    <coordinates>
+      <x>520</x>
+      <y>320</y>
+      <w>50</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lw=0
+fontsize=8
+halign=left
+Mca / Mcc
+via MQTT</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>570</x>
+      <y>290</y>
+      <w>50</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes>lt=)-</panel_attributes>
+    <additional_attributes>20.0;20.0;20.0;110.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLGeneric</id>
+    <coordinates>
+      <x>590</x>
+      <y>320</y>
+      <w>60</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lw=0
+fontsize=8
+halign=left
+Notifications
+via MQTT</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>440</x>
+      <y>290</y>
+      <w>50</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes>lt=)-</panel_attributes>
+    <additional_attributes>20.0;20.0;20.0;110.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLGeneric</id>
+    <coordinates>
+      <x>460</x>
+      <y>320</y>
+      <w>50</w>
+      <h>30</h>
+    </coordinates>
+    <panel_attributes>lw=0
+fontsize=8
+halign=left
+Mcc
+via MQTT</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>570</x>
+      <y>470</y>
+      <w>60</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>lt=()-
+send
+requests
+fontsize=8</panel_attributes>
+    <additional_attributes>10.0;50.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>380</x>
+      <y>380</y>
+      <w>90</w>
+      <h>40</h>
+    </coordinates>
+    <panel_attributes>*TODO*
+transparency=0
+bg=yellow
+valign=center
+halign=center
+fontsize=8
+layer=2</panel_attributes>
+    <additional_attributes/>
   </element>
 </diagram>
