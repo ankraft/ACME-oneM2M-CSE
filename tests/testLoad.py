@@ -139,7 +139,7 @@ class TestLoad(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEs(self) -> None:
-		"""	Create n AEs. This might take a moment. """
+		"""	Create n AEs """
 		TestLoad.startTimer()
 		print(f'{self.count} ... ', end='', flush=True)
 		TestLoad.aes.extend(self._createAEs(self.count))
@@ -148,7 +148,7 @@ class TestLoad(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveAEs(self) -> None:
-		"""	Retrieve n AEs. This might take a moment. """
+		"""	Retrieve n AEs """
 		TestLoad.startTimer()
 		print(f'{self.count} ... ', end='', flush=True)
 		self._retrieveAEs(self.count)
@@ -157,7 +157,7 @@ class TestLoad(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteAEs(self) -> None:
-		"""	Delete n AEs. This might take a moment. """
+		"""	Delete n AEs """
 		TestLoad.startTimer()
 		print(f'{self.count} ... ', end='', flush=True)
 		self._deleteAEs(self.count)
@@ -166,7 +166,7 @@ class TestLoad(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEsParallel(self) -> None:
-		"""	Create n AEs in m threads in parallel. This might take a moment. """
+		"""	Create n AEs in m threads in parallel"""
 		print(f'{self.count} * {self.parallel} Threads ... ', end='', flush=True)
 		threads = [threading.Thread(target=lambda: TestLoad.aes.extend(self._createAEs(self.count))) for _ in range(self.parallel)]
 		TestLoad.startTimer()
@@ -177,7 +177,7 @@ class TestLoad(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteAEsParallel(self) -> None:
-		"""	Delete n AEs in m threads in parallel. This might take a moment. """
+		"""	Delete n AEs in m threads in parallel """
 		print(f'{self.count} * {self.parallel} Threads ... ', end='', flush=True)
 		nrPerList = int(len(TestLoad.aes)/self.parallel)
 		deleteLists = [TestLoad.aes[x:x+nrPerList] for x in range(0, len(TestLoad.aes), nrPerList)]
@@ -191,7 +191,7 @@ class TestLoad(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTCINs(self) -> None:
-		"""	Create 1 AE + n CNTs * 20 CINs. This might take a moment. """
+		"""	Create 1 AE + n CNTs * 20 CINs"""
 		self.assertEqual(len(TestLoad.aes), 0)
 		print(f'{self.count} ... ', end='', flush=True)
 		TestLoad.startTimer()
@@ -208,12 +208,12 @@ class TestLoad(unittest.TestCase):
 		for cnt in cnts:
 			self._createCINs(ae[1], cnt[1], ae[0], 20)
 
-		print(f'{TestLoad.stopTimer(self.count, len(cnts), divider=20)} ... ', end='', flush=True)
+		print(f'{TestLoad.stopTimer(self.count, 1, divider=20)} ... ', end='', flush=True)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTCINsParallel(self) -> None:
-		"""	Create 1 AE + n CNTs * 20 CINs in n threads. This might take a moment. """
+		"""	Create 1 AE + n CNTs * 20 CINs in n threads"""
 		self.assertEqual(len(TestLoad.aes), 0)
 		print(f'{self.count} ... ', end='', flush=True)
 		TestLoad.startTimer()
@@ -231,12 +231,12 @@ class TestLoad(unittest.TestCase):
 			threads.append(t := threading.Thread(target=lambda: self._createCINs(ae[1], cnt[1], ae[0], 20)))
 			t.start()
 		[t.join() for t in threads]		# type: ignore [func-returns-value]
-		print(f'{TestLoad.stopTimer(self.count, len(cnts), divider=20)} ... ', end='', flush=True)
+		print(f'{TestLoad.stopTimer(self.count, 1, divider=20)} ... ', end='', flush=True)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTCINs(self) -> None:
-		"""	Delete 1 AE  + n CNTs + 20 CINs. This might take a moment. """
+		"""	Delete 1 AE  + n CNTs + 20 CINs"""
 		self.assertEqual(len(TestLoad.aes), 1)
 		print(f'{self.count} ... ', end='', flush=True)
 		TestLoad.startTimer()
