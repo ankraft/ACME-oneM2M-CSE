@@ -72,15 +72,6 @@ class	Logging:
 		logfile and to the console.
 	"""
 
-
-	# logLevelNames = {
-	# 	INFO    : 'INFO',
-	# 	DEBUG   : 'DEBUG',
-	# 	ERROR   : 'ERROR',
-	# 	WARNING : 'WARNING',
-	# 	NOTSET  : 'OFF',
-	# }
-
 	logger  				= None
 	loggerConsole			= None
 	logLevel:LogLevel		= LogLevel.INFO

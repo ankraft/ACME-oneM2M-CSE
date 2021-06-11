@@ -359,6 +359,7 @@ class Console(object):
 
 			logs  = '[underline]Logs[/underline]\n'
 			logs += '\n'
+			logs += f'LogLevel : {str(L.logLevel)}\n'
 			logs += f'Errors   : {stats[Statistics.logErrors]}\n'
 			logs += f'Warnings : {stats[Statistics.logWarnings]}\n'
 
