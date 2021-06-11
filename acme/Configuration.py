@@ -96,7 +96,6 @@ class Configuration(object):
 				#	Logging
 				#
 
-				'logging.enable'					: config.getboolean('logging', 'enable', 				fallback=True),
 				'logging.enableFileLogging'			: config.getboolean('logging', 'enableFileLogging', 	fallback=False),
 				'logging.enableScreenLogging'		: config.getboolean('logging', 'enableScreenLogging', 	fallback=True),
 				'logging.path'						: config.get('logging', 'path', 						fallback=C.defaultLogDirectory),
@@ -297,20 +296,19 @@ class Configuration(object):
 			return False
 
 		# Loglevel and various overrides from command line
-		from Logging import Logging as L
+		from Logging import LogLevel
 		logLevel = Configuration._configuration['logging.level'].lower()
 		logLevel = (argsLoglevel or logLevel) 	# command line args override config
 		if logLevel == 'off':
-			Configuration._configuration['logging.enable'] = False
-			Configuration._configuration['logging.level'] = L.DEBUG
+			Configuration._configuration['logging.level'] = LogLevel.OFF
 		elif logLevel == 'info':
-			Configuration._configuration['logging.level'] = L.INFO
+			Configuration._configuration['logging.level'] = LogLevel.INFO
 		elif logLevel == 'warn':
-			Configuration._configuration['logging.level'] = L.WARNING
+			Configuration._configuration['logging.level'] = LogLevel.WARNING
 		elif logLevel == 'error':
-			Configuration._configuration['logging.level'] = L.ERROR
+			Configuration._configuration['logging.level'] = LogLevel.ERROR
 		else:
-			Configuration._configuration['logging.level'] = L.DEBUG
+			Configuration._configuration['logging.level'] = LogLevel.DEBUG
 
 		if argsDBReset is True:					Configuration._configuration['db.resetOnStartup'] = True									# Override DB reset from command line
 		if argsDBStorageMode is not None:		Configuration._configuration['db.inMemory'] = argsDBStorageMode == 'memory'					# Override DB storage mode from command line

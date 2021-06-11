@@ -19,7 +19,7 @@ from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON, Conditions
 from Types import Operation, CSERequest, RequestHeaders, ContentSerializationType, RequestHandler, Parameters
 import CSE, Utils
-from Logging import Logging as L
+from Logging import Logging as L, LogLevel
 from resources.Resource import Resource
 from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
@@ -132,8 +132,8 @@ class HttpServer(object):
 
 
 		# Disable most logs from requests and urllib3 library 
-		logging.getLogger("requests").setLevel(L.WARNING)
-		logging.getLogger("urllib3").setLevel(L.WARNING)
+		logging.getLogger("requests").setLevel(LogLevel.WARNING)
+		logging.getLogger("urllib3").setLevel(LogLevel.WARNING)
 		if not self.verifyCertificate:	# only when we also verify  certificates
 			urllib3.disable_warnings()
 

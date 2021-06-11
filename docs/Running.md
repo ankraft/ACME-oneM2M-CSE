@@ -61,22 +61,23 @@ Please note, that the shutdown might take a moment (e.g. gracefully terminating 
 
 The CSE has a simple command console interface to execute build-in commands. Currently these commands are available:
 
- - h, ?  - This help
- - Q, ^C - Shutdown CSE
- - c     - Show configuration
- - C     - Clear the console screen
- - D     - Delete resource
- - i     - Inspect resource
- - I     - Inspect resource and child resources
- - l     - Toggle logging on/off
- - r     - Show CSE registrations
- - s     - Show statistics
- - ^S    - Show & refresh statistics continuously
- - t     - Show resource tree
- - T     - Show child resource tree
- - ^T    - Show & refresh resource tree continuously
- - w     - Show worker threads status
- - Z     - Reset the CSE
+- h, ?  - This help
+- Q, ^C - Shutdown CSE
+- c     - Show configuration
+- C     - Clear the console screen
+- D     - Delete resource
+- i     - Inspect resource
+- I     - Inspect resource and child resources
+- l     - Toggle screen logging on/off
+- L     - Toggle through log levels
+- r     - Show CSE registrations
+- s     - Show statistics
+- ^S    - Show & refresh statistics continuously
+- t     - Show resource tree
+- T     - Show child resource tree
+- ^T    - Show & refresh resource tree continuously
+- w     - Show worker threads status
+- Z     - Reset the CSE
 
  The following screenshot shows, for example, a CSE's resource tree:
 

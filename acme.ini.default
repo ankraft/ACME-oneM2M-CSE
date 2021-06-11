@@ -178,15 +178,13 @@ excludeCSRAttributes=
 #
 
 [logging]
-# Enable logging. Default: True
-enable=true
 # Enable logging to file. Default: False
 enableFileLogging=False
 # Enable logging to the screen. Default: True
 enableScreenLogging=true
 # Path to the log files. Default: ./logs
 path=./logs
-# Loglevel. Allowed values: debug, info, warning, error. Default: debug
+# Loglevel. Allowed values: debug, info, warning, error, off. Default: debug
 level=debug
 # Number of files for log rotation. Default: 10
 count=10

@@ -8,11 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [unreleased] - xxxx.xx.xx
+## \[unreleased] - xxxx.xx.xx
 
 ### Added
 - [CSE] Added possibility to reset a running CSE (via the command console or http endpoint "/\_\_reset\_\_").
 - [CSE] Added "I" command to the console (inspect a resource and its children).
+- [CSE] Added "L" command to the console (toggle through the various log levels, including *off*)
 - [CSE] Added support for TimeSeries/TimeSeriesInstance resource types.
 - [CSE] Added support for *ctm* (currentTime) attribute for &lt;CSEBase> resource type.
 - [CSE] Added wildcard (\*) support for &lt;ACP>'s *acr/acor* originators.
@@ -24,7 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - [CSE] Relaxed validation for float in attributes and arguments. Integer are now accepted as well.
 - [CSE] Changed format of configuration values "cse.registration.allowedAEOriginators" and "cse.registration.allowedCSROriginators" from regex to a simple wildcard (\* and ?) format.
-- [CSE] Changed the internal timed and regular processes to a single timer queue.
+- [CSE] Changed the internal timed and regular processes to a single priority timer queue.
+- [CSE] Removed "logging.enable" configuration setting and added *off* as a possible value to *logging.level".
 
 ### Fixed
 - [CSE] Corrected response status codes for AE registration errors.

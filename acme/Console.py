@@ -9,7 +9,7 @@
 
 from typing import Dict, cast
 import datetime, os, sys
-from Logging import Logging as L
+from Logging import LogLevel, Logging as L
 from helpers.KeyHandler import loop, stopLoop, readline, waitForKeypress
 from Constants import Constants as C
 from Configuration import Configuration
@@ -50,7 +50,8 @@ class Console(object):
 			'D'		: self.deleteResource,
 			'i'		: self.inspectResource,
 			'I'		: self.inspectResourceChildren,
-			'l'     : self.toggleLogging,
+			'l'     : self.toggleScreenLogging,
+			'L'     : self.toggleLogging,
 			'Q'		: self.shutdownCSE,		# See handler below
 			'r'		: self.cseRegistrations,
 			's'		: self.statistics,
@@ -88,7 +89,8 @@ class Console(object):
 - D     - Delete resource
 - i     - Inspect resource
 - I     - Inspect resource and child resources
-- l     - Toggle logging on/off
+- l     - Toggle screen logging on/off
+- L     - Toggle through log levels
 - r     - Show CSE registrations
 - s     - Show statistics
 - ^S    - Show & refresh statistics continuously
@@ -108,11 +110,18 @@ class Console(object):
 		sys.exit()
 
 
+	def toggleScreenLogging(self, key:str) -> None:
+		"""	Toggle screen logging.
+		"""
+		L.enableScreenLogging = not L.enableScreenLogging
+		L.console(f'Screen logging enabled -> **{L.enableScreenLogging}**')
+
+
 	def toggleLogging(self, key:str) -> None:
 		"""	Toggle through the log levels.
 		"""
-		L.enableScreenLogging = not L.enableScreenLogging
-		L.console(f'Logging enabled -> **{L.enableScreenLogging}**')
+		L.logLevel = L.logLevel.next()
+		L.console(f'New log level -> **{str(L.logLevel)}**')
 
 
 	def workers(self, key:str) -> None:
@@ -170,8 +179,7 @@ class Console(object):
 		"""	Render the CSE's resource tree, beginning with a child resource.
 		"""
 		L.console('**Child Resource Tree**', extranl=True)
-		loggingOld = L.loggingEnabled
-		L.loggingEnabled = False
+		L.off()
 		
 		if (ri := readline('ri=')) is None:
 			L.console()
@@ -181,12 +189,11 @@ class Console(object):
 			else:
 				L.console('not found', isError=True)
 
-		L.loggingEnabled = loggingOld
+		L.on()
 
 
 	def continuesTree(self, key:str) -> None:
-		loggingOld = L.loggingEnabled
-		L.loggingEnabled = False
+		L.off()
 		while True:
 			self.clearScreen(key)
 			self.resourceTree(key)
@@ -194,7 +201,7 @@ class Console(object):
 			if waitForKeypress(self.refreshInterval) is not None:
 				break
 		self.clearScreen(key)
-		L.loggingEnabled = loggingOld
+		L.on()
 
 
 	def cseRegistrations(self, key:str) -> None:
@@ -214,8 +221,7 @@ class Console(object):
 
 	
 	def continuesStatistics(self, key:str) -> None:
-		loggingOld = L.loggingEnabled
-		L.loggingEnabled = False
+		L.off()
 		while True:
 			self.clearScreen(key)
 			self.statistics(key)
@@ -224,16 +230,14 @@ class Console(object):
 			if waitForKeypress(self.refreshInterval) is not None:
 				break
 		self.clearScreen(key)
-		L.loggingEnabled = loggingOld
+		L.on()
 
 
 	def deleteResource(self, key:str) -> None:
 		"""	Delete a resource from the CSE.
 		"""
 		L.console('**Delete Resource**', extranl=True)
-		loggingOld = L.loggingEnabled
-		L.loggingEnabled = False
-
+		L.off()
 		if (ri := readline('ri=')) is None:
 			L.console()
 		elif len(ri) > 0:
@@ -244,17 +248,15 @@ class Console(object):
 					L.console(res.dbg, isError=True)
 				else:
 					L.console('ok')
-
-		L.loggingEnabled = loggingOld
+		L.on()
 
 
 	def inspectResource(self, key:str) -> None:
 		"""	Show a resource.
 		"""
 		L.console('**Inspect Resource**', extranl=True)
-		loggingOld = L.loggingEnabled
-		L.loggingEnabled = False
-		
+		L.off()
+
 		if (ri := readline('ri=')) is None:
 			L.console()
 		elif len(ri) > 0:
@@ -262,16 +264,14 @@ class Console(object):
 				L.console(res.dbg, isError=True)
 			else:
 				L.console(res.resource.asDict())
-		L.loggingEnabled = loggingOld
+		L.on()		
 
 
 	def inspectResourceChildren(self, key:str) -> None:
 		"""	Show a resource and its children.
 		"""
 		L.console('**Inspect Resource and Children**', extranl=True)
-		loggingOld = L.loggingEnabled
-		L.loggingEnabled = False
-		
+		L.off()		
 		if (ri := readline('ri=')) is None:
 			L.console()
 		elif len(ri) > 0:
@@ -283,7 +283,7 @@ class Console(object):
 				else:
 					CSE.dispatcher.resourceTreeDict(resdis.lst, res.resource)	# the function call add attributes to the target resource
 					L.console(res.resource.asDict())
-		L.loggingEnabled = loggingOld
+		L.on()
 
 
 	def resetCSE(self, key:str) -> None:
@@ -291,6 +291,7 @@ class Console(object):
 		"""
 		L.console('**Resetting CSE**', extranl=True)
 		L.enableScreenLogging = True
+		L.logLevel = Configuration.get('logging.level')
 		CSE.resetCSE()
 
 

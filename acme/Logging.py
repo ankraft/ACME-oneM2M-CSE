@@ -10,8 +10,10 @@
 
 """	Wrapper class for the logging subsystem. """
 
+from __future__ import annotations
+from enum import IntEnum
 import traceback
-import logging, logging.handlers, os, inspect,  datetime, time, threading
+import logging, logging.handlers, os, inspect, sys, datetime, time, threading
 from queue import Queue
 from typing import List, Any, Union
 from logging import LogRecord
@@ -39,39 +41,61 @@ levelName = {
 	# logging.WARNING : 'WARNING'
 }
 
+
+class LogLevel(IntEnum):
+	INFO 	= logging.INFO
+	DEBUG 	= logging.DEBUG
+	ERROR 	= logging.ERROR
+	WARNING = logging.WARNING
+	OFF		= sys.maxsize
+
+	def __str__(self) -> str:
+		return self.name
+	
+
+	def next(self) -> LogLevel:
+		"""	Return next log level. This cycles through the levels.
+		"""
+		return {
+			LogLevel.DEBUG:		LogLevel.INFO,
+			LogLevel.INFO:		LogLevel.WARNING,
+			LogLevel.WARNING:	LogLevel.ERROR,
+			LogLevel.ERROR:		LogLevel.OFF,
+			LogLevel.OFF:		LogLevel.DEBUG,
+		}[self]
+
+
 class	Logging:
 	""" Wrapper class for the logging subsystem. This class wraps the 
 		initialization of the logging subsystem and provides convenience 
 		methods for printing log, error and warning messages to a 
 		logfile and to the console.
 	"""
-	INFO 	= logging.INFO
-	DEBUG 	= logging.DEBUG
-	ERROR 	= logging.ERROR
-	WARNING = logging.WARNING
 
-	logLevelNames = {
-		INFO    : 'INFO',
-		DEBUG   : 'DEBUG',
-		ERROR   : 'ERROR',
-		WARNING : 'WARNING',
-	}
 
-	logger  			= None
-	loggerConsole		= None
-	logLevel 			= logging.INFO
-	loggingEnabled		= True
-	enableFileLogging	= True
-	enableScreenLogging	= True
-	stackTraceOnError	= True
-	worker 				= None
-	queue:Queue			= None
+	# logLevelNames = {
+	# 	INFO    : 'INFO',
+	# 	DEBUG   : 'DEBUG',
+	# 	ERROR   : 'ERROR',
+	# 	WARNING : 'WARNING',
+	# 	NOTSET  : 'OFF',
+	# }
 
-	checkInterval:float	= 0.5		# wait (in s) between checks of the logging queue
-	queueMaxsize:int	= 2000		# max number of items in the logging queue. Might otherwise grow forever on large load
+	logger  				= None
+	loggerConsole			= None
+	logLevel:LogLevel		= LogLevel.INFO
+	lastLogLevel:LogLevel	= None
+	enableFileLogging		= True
+	enableScreenLogging		= True
+	stackTraceOnError		= True
+	worker 					= None
+	queue:Queue				= None
 
-	_console			= None
-	_handlers:List[Any] = None
+	checkInterval:float		= 0.5		# wait (in s) between checks of the logging queue
+	queueMaxsize:int		= 2000		# max number of items in the logging queue. Might otherwise grow forever on large load
+
+	_console				= None
+	_handlers:List[Any] 	= None
 
 	@staticmethod
 	def init() -> None:
@@ -83,7 +107,6 @@ class	Logging:
 		Logging.enableFileLogging 	= Configuration.get('logging.enableFileLogging')
 		Logging.enableScreenLogging	= Configuration.get('logging.enableScreenLogging')
 		Logging.logLevel 			= Configuration.get('logging.level')
-		Logging.loggingEnabled		= Configuration.get('logging.enable')
 		Logging.stackTraceOnError	= Configuration.get('logging.stackTraceOnError')
 
 		Logging.logger				= logging.getLogger('logging')			# general logger
@@ -172,7 +195,7 @@ class	Logging:
 
 	@staticmethod
 	def _log(level:int, msg:str) -> None:
-		if Logging.loggingEnabled and Logging.logLevel <= level and Logging.queue is not None:
+		if Logging.logLevel <= level and Logging.queue is not None:
 			# Queue a log message : (level, message, caller from stackframe, current thread)
 			try:
 				Logging.queue.put((level, str(msg), inspect.getframeinfo(inspect.stack()[2][0]), threading.current_thread()))
@@ -209,7 +232,7 @@ class	Logging:
 	def isInfo() -> bool:
 		"""	Return True if logging is enabled and the logLevel <= INFO
 		"""
-		return Logging.loggingEnabled and Logging.logLevel <= Logging.INFO
+		return Logging.logLevel <= LogLevel.INFO
 
 
 	@staticmethod
@@ -217,7 +240,7 @@ class	Logging:
 	def isDebug() -> bool:
 		"""	Return True if logging is enabled and the logLevel <= DEBUG
 		"""
-		return Logging.loggingEnabled and Logging.logLevel <= Logging.DEBUG
+		return Logging.logLevel <= LogLevel.DEBUG
 
 
 	@staticmethod
@@ -225,7 +248,24 @@ class	Logging:
 	def isWarn() -> bool:
 		"""	Return True if logging is enabled and the logLevel <= WARNING
 		"""
-		return Logging.loggingEnabled and Logging.logLevel <= Logging.WARNING
+		return Logging.logLevel <= LogLevel.WARNING
+	
+
+	@staticmethod
+	def off() -> None:
+		"""	Switch logging off. Remember the last logLevel
+		"""
+		if Logging.logLevel != LogLevel.OFF:
+			Logging.lastLogLevel = Logging.logLevel
+			Logging.logLevel = LogLevel.OFF
+
+	@staticmethod
+	def on() -> None:
+		"""	Switch logging on. Enable the last logLevel.
+		"""
+		if Logging.logLevel == LogLevel.OFF and Logging.lastLogLevel is not None:
+			Logging.logLevel = Logging.lastLogLevel
+			Logging.lastLogLevel = None
 
 
 #
@@ -294,7 +334,7 @@ class ACMERichLogHandler(RichHandler):
 		
 	def emit(self, record:LogRecord) -> None:
 		"""Invoked by logging."""
-		if not Logging.enableScreenLogging or not Logging.loggingEnabled or record.levelno < Logging.logLevel:
+		if not Logging.enableScreenLogging or record.levelno < Logging.logLevel:
 			return
 		#path = Path(record.pathname).name
 		log_style = f"logging.level.{record.levelname.lower()}"
