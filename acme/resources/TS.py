@@ -272,3 +272,16 @@ class TS(AnnounceableResource):
 		"""	Get all timeSeriesInstances of a timeSeries and return a sorted (by ct) list
 		""" 
 		return sorted(CSE.dispatcher.directChildResources(self.ri, T.TSI), key=lambda x: x.ct) # type:ignore[no-any-return]
+
+
+	def addDgtToMdlt(self, dgtToAdd:float) -> None:
+		"""	Add the dataGenerationTime `dgtToAdd` to the mdlt of this resource.
+		"""
+		self.setAttribute('mdlt', [], overwrite=False)						# Add to mdlt, just in case it hasn't created before
+		self.mdlt.append(Utils.toISO8601Date(dgtToAdd))						# Add missing dgt to TS.mdlt
+		if (mdn := self.mdn) is not None:									# mdn may not be set. Then this list grows forever
+			if len(self.mdlt) > mdn:										# If mdlt is bigger then mdn allows
+				self.setAttribute('mdlt', self.mdlt[1:], overwrite=True)	# Shorten the mdlt
+			self.setAttribute('mdc', len(self.mdlt), overwrite=True)		# Set the mdc
+			self.dbUpdate()													# Update in DB
+

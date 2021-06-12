@@ -369,25 +369,57 @@ class TestTS_TSI(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createTSIinPeriodDgtTooSmall(self) -> None:
-		"""	Add 1+3 <TSI> within the time period, but dgt is too small -> Fail"""
+	def test_createTSIinPeriodDgtTooEarly(self) -> None:
+		"""	Add 1+3 <TSI> within the time period, but dgt is too early -> Fail"""
 		dctTs = 	{ 'm2m:ts' : { 
 			'mdn' : maxMdn
 		}}
 		r, rsc = UPDATE(tsURL, TestTS_TSI.originator, dctTs)
 		self.assertEqual(rsc, RC.updated, r)
 
-		date = datetime.datetime.utcnow().timestamp()
+		dgt = datetime.datetime.utcnow().timestamp() - (timeSeriesInterval/2) - 0.1
 		for i in range(4):
 			dct = 	{ 'm2m:tsi' : {
-						'dgt' : toISO8601Date(date),
+						'dgt' : toISO8601Date(dgt),
 						'con' : 'aValue',
 						'snr' : i
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
 			self.assertEqual(rsc, RC.created, r)
 			time.sleep(timeSeriesInterval) # == pei
-			date = datetime.datetime.utcnow().timestamp() + timeSeriesInterval - (timeSeriesInterval/2) - 0.1
+			dgt += timeSeriesInterval
+
+		# Check TS for missing TSI
+		r, rsc = RETRIEVE(tsURL, TestTS_TSI.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+		# The next test 4 instead of 3 bc we sleeped in the above loop, and in the meantime
+		# the CSE detected another missing TSI, which is correct.
+		self.assertGreaterEqual(findXPath(r, 'm2m:ts/mdc'), 3, r)	# MissingDataCount >= 3
+
+		self._stopMonitoring()
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createTSIinPeriodDgtTooLate(self) -> None:
+		"""	Add 1+3 <TSI> within the time period, but dgt is too late -> Fail"""
+		dctTs = 	{ 'm2m:ts' : { 
+			'mdn' : maxMdn
+		}}
+		r, rsc = UPDATE(tsURL, TestTS_TSI.originator, dctTs)
+		self.assertEqual(rsc, RC.updated, r)
+
+		dgt = datetime.datetime.utcnow().timestamp() + (timeSeriesInterval/2) + 0.1
+		for i in range(4):
+			dct = 	{ 'm2m:tsi' : {
+						'dgt' : toISO8601Date(dgt),
+						'con' : 'aValue',
+						'snr' : i
+					}}
+			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
+			self.assertEqual(rsc, RC.created, r)
+			time.sleep(timeSeriesInterval) # == pei
+			dgt += timeSeriesInterval
 
 		# Check TS for missing TSI
 		r, rsc = RETRIEVE(tsURL, TestTS_TSI.originator)
@@ -399,33 +431,35 @@ class TestTS_TSI(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createTSIinPeriodDgtTooLarge(self) -> None:
-		"""	Add 1+3 <TSI> within the time period, but dgt is too large -> Fail"""
-		dctTs = 	{ 'm2m:ts' : { 
+	def test_createTSIinPeriodDgtWayTooEarly(self) -> None:
+		"""	Add 1+3 <TSI> within the time period, but dgt is way too early -> Fail"""
+		dctTs = { 'm2m:ts' : { 
 			'mdn' : maxMdn
 		}}
 		r, rsc = UPDATE(tsURL, TestTS_TSI.originator, dctTs)
 		self.assertEqual(rsc, RC.updated, r)
 
-		date = datetime.datetime.utcnow().timestamp()
+		dgt = datetime.datetime.utcnow().timestamp() - (timeSeriesInterval * 3)
 		for i in range(4):
 			dct = 	{ 'm2m:tsi' : {
-						'dgt' : toISO8601Date(date),
+						'dgt' : toISO8601Date(dgt),
 						'con' : 'aValue',
 						'snr' : i
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
 			self.assertEqual(rsc, RC.created, r)
-			date = datetime.datetime.utcnow().timestamp() + timeSeriesInterval + (timeSeriesInterval/2) + 0.1
 			time.sleep(timeSeriesInterval) # == pei
+			dgt += timeSeriesInterval
 
 		# Check TS for missing TSI
 		r, rsc = RETRIEVE(tsURL, TestTS_TSI.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
-		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 3, r)	# MissingDataCount == 3
+		# The next test 4 instead of 3 bc we sleeped in the above loop, and in the meantime
+		# the CSE detected another missing TSI, which is correct.
+		self.assertGreaterEqual(findXPath(r, 'm2m:ts/mdc'), 3, r)	# MissingDataCount >= 3
 
-		self._stopMonitoring()
+		# self._stopMonitoring()	# Add this again when this is not the last test that uses the mdlt
 
 
 	def _stopMonitoring(self) -> None:
@@ -503,10 +537,10 @@ class TestTS_TSI(unittest.TestCase):
 		self.assertEqual(rsc, RC.updated, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdn'), r)
 		self.assertEqual(findXPath(r, 'm2m:ts/mdn'), maxMdn - 2, r)
+		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), maxMdn - 2, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self.assertEqual(len(findXPath(r, 'm2m:ts/mdlt')), maxMdn - 2, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
-		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), maxMdn - 2, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -595,10 +629,12 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestTS_TSI('test_createTSIinPeriod'))					# Start monitoring
 	suite.addTest(TestTS_TSI('test_createTSInotInPeriod'))				# Start monitoring
 	suite.addTest(TestTS_TSI('test_updateTSremoveMdn'))					# effectively stop monitoring
-	suite.addTest(TestTS_TSI('test_createTSIinPeriodDgtTooSmall'))		# dgt too small
-	suite.addTest(TestTS_TSI('test_createTSIinPeriodDgtTooLarge'))		# dgt too large
+	suite.addTest(TestTS_TSI('test_createTSIinPeriodDgtTooEarly'))		# dgt too early
+	suite.addTest(TestTS_TSI('test_createTSIinPeriodDgtTooLate'))		# dgt too late
 	suite.addTest(TestTS_TSI('test_createTSInotInPeriodLarger'))		# run the test again to overflow mdlt
+	suite.addTest(TestTS_TSI('test_createTSIinPeriodDgtWayTooEarly'))	# dgt way to early
 
+	# Don't forget: the last test above must not stop the monitoring! The following tests need a filled mdlt
 	suite.addTest(TestTS_TSI('test_updateTSshortenMdlt'))
 	suite.addTest(TestTS_TSI('test_updateTSremoveMdn'))					# effectively stop monitoring
 	suite.addTest(TestTS_TSI('test_updateTSaddMdn'))
