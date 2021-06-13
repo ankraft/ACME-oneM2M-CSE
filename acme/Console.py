@@ -8,8 +8,8 @@
 #
 
 from typing import Dict, cast
-import datetime, os, sys
-from Logging import LogLevel, Logging as L
+import datetime, os, sys, webbrowser
+from Logging import Logging as L
 from helpers.KeyHandler import loop, stopLoop, readline, waitForKeypress
 from Constants import Constants as C
 from Configuration import Configuration
@@ -59,6 +59,7 @@ class Console(object):
 			't'		: self.resourceTree,
 			'\x14'	: self.continuesTree,
 			'T'		: self.childResourceTree,
+			'u'		: self.openWebUI,
 			'w'		: self.workers,
 			'Z'		: self.resetCSE,
 		}
@@ -98,6 +99,7 @@ class Console(object):
 - T     - Show child resource tree
 - ^T    - Show & refresh resource tree continuously
 - w     - Show worker threads status
+- u     - Open web UI
 - Z     - Reset the CSE
 	""", extranl=True)
 
@@ -295,6 +297,14 @@ class Console(object):
 		CSE.resetCSE()
 
 
+	def openWebUI(self, key:str) -> None:
+		"""	Open the web UI in the default web browser.
+		"""
+		webbrowser.open(CSE.httpServer.serverAddress)
+
+
+
+
 	#########################################################################
 	#
 	#	Generators for rich output
@@ -475,4 +485,3 @@ class Console(object):
 		console.begin_capture()
 		console.print(self.getResourceTreeRich())
 		return console.end_capture()
-

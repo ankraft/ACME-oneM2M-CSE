@@ -76,6 +76,7 @@ The CSE has a simple command console interface to execute build-in commands. Cur
 - t     - Show resource tree
 - T     - Show child resource tree
 - ^T    - Show & refresh resource tree continuously
+- u     - Open web UI
 - w     - Show worker threads status
 - Z     - Reset the CSE
 
