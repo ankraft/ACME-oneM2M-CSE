@@ -37,7 +37,7 @@ class Storage(object):
 		if not Configuration.get('db.inMemory'):
 			if Configuration.has('db.path'):
 				path = Configuration.get('db.path')
-				if L.isInfo: L.log('Using data directory: ' + path)
+				L.isInfo and L.log('Using data directory: ' + path)
 				os.makedirs(path, exist_ok=True)
 			else:
 				L.logErr('db.path not set')
@@ -51,12 +51,12 @@ class Storage(object):
 		if Configuration.get('db.resetOnStartup') is True:
 			self.db.purgeDB()
 
-		if L.isInfo: L.log('Storage initialized')
+		L.isInfo and L.log('Storage initialized')
 
 
 	def shutdown(self) -> bool:
 		self.db.closeDB()
-		if L.isInfo: L.log('Storage shut down')
+		L.isInfo and L.log('Storage shut down')
 		return True
 
 
@@ -80,13 +80,13 @@ class Storage(object):
 		# L.logDebug(f'Adding resource (ty: {resource.ty:d}, ri: {resource.ri}, rn: {resource.rn})'
 		srn = resource.__srn__
 		if overwrite:
-			if L.isDebug: L.logDebug('Resource enforced overwrite')
+			L.isDebug and L.logDebug('Resource enforced overwrite')
 			self.db.upsertResource(resource)
 		else: 
 			if not self.hasResource(ri, srn):	# Only when not resource does not exist yet
 				self.db.insertResource(resource)
 			else:
-				if L.isWarn: L.logWarn(f'Resource already exists (Skipping): {resource}')
+				L.isWarn and L.logWarn(f'Resource already exists (Skipping): {resource}')
 				return Result(status=False, rsc=RC.alreadyExists, dbg='resource already exists')
 
 		# Add path to identifiers db
@@ -409,7 +409,7 @@ class TinyDBBinding(object):
 	def __init__(self, path: str = None) -> None:
 		self.path = path
 		self.cacheSize = Configuration.get('db.cacheSize')
-		if L.isInfo: L.log(f'Cache Size: {self.cacheSize:d}')
+		L.isInfo and L.log(f'Cache Size: {self.cacheSize:d}')
 
 		# create transaction locks
 		self.lockResources = Lock()
@@ -424,7 +424,7 @@ class TinyDBBinding(object):
 	def openDB(self, postfix: str) -> None:
 		# All databases/tables will use the smart query cache
 		if Configuration.get('db.inMemory'):
-			if L.isInfo: L.log('DB in memory')
+			L.isInfo and L.log('DB in memory')
 			self.dbResources = TinyDB(storage=MemoryStorage)										# type: ignore
 			self.dbIdentifiers = TinyDB(storage=MemoryStorage)										# type: ignore
 			self.dbSubscriptions = TinyDB(storage=MemoryStorage)									# type: ignore
@@ -433,7 +433,7 @@ class TinyDBBinding(object):
 			self.dbStatistics = TinyDB(storage=MemoryStorage)										# type: ignore
 			self.dbAppData = TinyDB(storage=MemoryStorage)											# type: ignore
 		else:
-			if L.isInfo: L.log('DB in file system')
+			L.isInfo and L.log('DB in file system')
 			self.dbResources = TinyDB(f'{self.path}/resources{postfix}.json')						# type: ignore
 			self.dbIdentifiers = TinyDB(f'{self.path}/identifiers{postfix}.json')					# type: ignore
 			self.dbSubscriptions = TinyDB(f'{self.path}/subscriptions{postfix}.json')				# type: ignore
@@ -451,7 +451,7 @@ class TinyDBBinding(object):
 
 
 	def closeDB(self) -> None:
-		if L.isInfo: L.log('Closing DBs')
+		L.isInfo and L.log('Closing DBs')
 		self.dbResources.close()
 		self.dbIdentifiers.close()
 		self.dbSubscriptions.close()
@@ -462,7 +462,7 @@ class TinyDBBinding(object):
 
 
 	def purgeDB(self) -> None:
-		if L.isInfo: L.log('Purging DBs')
+		L.isInfo and L.log('Purging DBs')
 		self.tabResources.truncate()
 		self.tabIdentifiers.truncate()
 		self.tabSubscriptions.truncate()

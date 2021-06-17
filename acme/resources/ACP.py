@@ -9,8 +9,6 @@
 
 from __future__ import annotations
 from typing import List
-from Constants import Constants as C
-from Configuration import Configuration
 from Logging import Logging as L
 from Types import ResourceTypes as T, ResponseCode as RC, Result, Permission, JSON
 from Validator import constructPolicy, addPolicy
@@ -83,7 +81,7 @@ class ACP(AnnounceableResource):
 		super().deactivate(originator)
 
 		# Remove own resourceID from all acpi
-		if L.isDebug: L.logDebug(f'Removing acp.ri: {self.ri} from assigned resource acpi')
+		L.isDebug and L.logDebug(f'Removing acp.ri: {self.ri} from assigned resource acpi')
 		for r in CSE.storage.searchByValueInField('acpi', self.ri):
 			acpi = r.acpi
 			if self.ri in acpi:
@@ -138,9 +136,9 @@ class ACP(AnnounceableResource):
 
 
 	def checkPermission(self, originator:str, requestedPermission:int, ty:T) -> bool:
-		# if L.isDebug: L.logDebug(f'originator: {originator} requestedPermission: {requestedPermission}')
+		# L.isDebug and L.logDebug(f'originator: {originator} requestedPermission: {requestedPermission}')
 		for p in self['pv/acr']:
-			# if L.isDebug: L.logDebug(f'p.acor: {p['acor']} requestedPermission: {p['acop']}')
+			# L.isDebug and L.logDebug(f'p.acor: {p['acor']} requestedPermission: {p['acop']}')
 
 			# Check Permission-to-check first
 			if requestedPermission & p['acop'] == Permission.NONE:	# permission not fitting at all

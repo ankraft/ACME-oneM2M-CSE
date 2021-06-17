@@ -22,11 +22,11 @@ class GroupManager(object):
 	def __init__(self) -> None:
 		# Add delete event handler because we like to monitor the resources in mid
 		CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent) 		# type: ignore
-		if L.isInfo: L.log('GroupManager initialized')
+		L.isInfo and L.log('GroupManager initialized')
 
 
 	def shutdown(self) -> bool:
-		if L.isInfo: L.log('GroupManager shut down')
+		L.isInfo and L.log('GroupManager shut down')
 		return True
 
 
@@ -74,7 +74,7 @@ class GroupManager(object):
 					isLocalResource = False
 					if (url := CSE.request._getForwardURL(mid)) is None:
 						return Result(status=False, rsc=RC.notFound, dbg=f'forwarding URL not found for group member: {mid}')
-					if L.isDebug: L.logDebug(f'Retrieve request to: {url}')
+					L.isDebug and L.logDebug(f'Retrieve request to: {url}')
 					remoteResult = CSE.request.sendRetrieveRequest(url, CSE.cseCsi)
 
 			# get the resource and check it
@@ -168,7 +168,7 @@ class GroupManager(object):
 
 		# check whether there is something after the /fopt ...
 		_, _, tail = id.partition('/fopt/') if '/fopt/' in id else (None, None, '')
-		if L.isDebug: L.logDebug(f'Adding additional path elements: {tail}')
+		L.isDebug and L.logDebug(f'Adding additional path elements: {tail}')
 
 		# walk through all members
 		resultList:list[Result] = []

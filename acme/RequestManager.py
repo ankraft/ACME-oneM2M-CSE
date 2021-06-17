@@ -46,7 +46,7 @@ class RequestManager(object):
 	#
 
 	def retrieveRequest(self, request:CSERequest) ->  Result:
-		if L.logDebug: L.logDebug(f'RETRIEVE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
+		L.logDebug and L.logDebug(f'RETRIEVE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
 
 		# handle transit requests
 		if self.isTransitID(request.id):
@@ -74,7 +74,7 @@ class RequestManager(object):
 	#
 
 	def createRequest(self, request:CSERequest) -> Result:
-		if L.isDebug: L.logDebug(f'CREATE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
+		L.isDebug and L.logDebug(f'CREATE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
 
 		# handle transit requests
 		if self.isTransitID(request.id):
@@ -106,7 +106,7 @@ class RequestManager(object):
 	#
 
 	def updateRequest(self, request:CSERequest) -> Result:
-		if L.isDebug: L.logDebug(f'UPDATE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
+		L.isDebug and L.logDebug(f'UPDATE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
 
 		# Don't update the CSEBase
 		if request.id == CSE.cseRi:
@@ -142,7 +142,7 @@ class RequestManager(object):
 
 
 	def deleteRequest(self, request:CSERequest,) -> Result:
-		if L.isDebug: L.logDebug(f'DELETE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
+		L.isDebug and L.logDebug(f'DELETE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
 
 		# Don't update the CSEBase
 		if request.id == CSE.cseRi:
@@ -223,7 +223,7 @@ class RequestManager(object):
 	def _runNonBlockingRequestSync(self, request:CSERequest, reqRi:str) -> bool:
 		""" Execute the actual request and store the result in the respective <request> resource.
 		"""
-		if L.isDebug: L.logDebug('Executing nonBlockingRequestSync')
+		L.isDebug and L.logDebug('Executing nonBlockingRequestSync')
 		return self._executeOperation(request, reqRi).status
 
 
@@ -231,11 +231,11 @@ class RequestManager(object):
 		""" Execute the actual request and store the result in the respective <request> resource.
 			In addition notify the notification targets.
 		"""
-		if L.isDebug: L.logDebug('Executing nonBlockingRequestAsync')
+		L.isDebug and L.logDebug('Executing nonBlockingRequestAsync')
 		if not (result := self._executeOperation(request, reqRi)).status:
 			return False
 
-		if L.isDebug: L.logDebug('Sending result notifications for nonBlockingRequestAsynch')
+		L.isDebug and L.logDebug('Sending result notifications for nonBlockingRequestAsynch')
 		# TODO move the notification to the notificationManager
 
 		# The result contains the request resource  (the one from the actual operation).
@@ -256,10 +256,10 @@ class RequestManager(object):
 			# RTU is not set, get POA's from the resp. AE.poa
 			aes = CSE.storage.searchByTypeFieldValue(ty=T.AE, field='aei', value=originator)
 			if len(aes) != 1:
-				if L.isWarn: L.logWarn(f'Wrong number of AEs with aei: {originator} ({len(aes):d}): {str(aes)}')
+				L.isWarn and L.logWarn(f'Wrong number of AEs with aei: {originator} ({len(aes):d}): {str(aes)}')
 				nus = aes[0].poa
 			else:
-				if L.isDebug: L.logDebug(f'No RTU. Get NUS from originator ae: {aes[0].ri}')
+				L.isDebug and L.logDebug(f'No RTU. Get NUS from originator ae: {aes[0].ri}')
 				nus = aes[0].poa
 
 		# send notifications.Ignore any errors here
@@ -319,7 +319,7 @@ class RequestManager(object):
 			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
 		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 			url += '?' + urllib.parse.urlencode(request.originalArgs)
-		if L.isInfo: L.log(f'Forwarding Retrieve/Discovery request to: {url}')
+		L.isInfo and L.log(f'Forwarding Retrieve/Discovery request to: {url}')
 		return self.sendRetrieveRequest(url, request.headers.originator)
 
 
@@ -329,7 +329,7 @@ class RequestManager(object):
 			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
 		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 			url += '?' + urllib.parse.urlencode(request.originalArgs)
-		if L.isInfo: L.log(f'Forwarding Create request to: {url}')
+		L.isInfo and L.log(f'Forwarding Create request to: {url}')
 		return self.sendCreateRequest(url, request.headers.originator, data=request.data, ty=request.headers.resourceType)
 
 
@@ -339,7 +339,7 @@ class RequestManager(object):
 			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
 		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 			url += '?' + urllib.parse.urlencode(request.originalArgs)
-		if L.isInfo: L.log(f'Forwarding Update request to: {url}')
+		L.isInfo and L.log(f'Forwarding Update request to: {url}')
 		return self.sendUpdateRequest(url, request.headers.originator, data=request.data)
 
 
@@ -349,7 +349,7 @@ class RequestManager(object):
 			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
 		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 			url += '?' + urllib.parse.urlencode(request.originalArgs)
-		if L.isInfo: L.log(f'Forwarding Delete request to: {url}')
+		L.isInfo and L.log(f'Forwarding Delete request to: {url}')
 		return self.sendDeleteRequest(url, request.headers.originator)
 
 
@@ -366,9 +366,9 @@ class RequestManager(object):
 
 	def _getForwardURL(self, path:str) -> str:
 		""" Get the new target URL when forwarding. """
-		if L.isDebug: L.logDebug(path)
+		L.isDebug and L.logDebug(path)
 		r, pe = CSE.remote.getCSRFromPath(path)
-		if L.isDebug: L.logDebug(str(r))
+		L.isDebug and L.logDebug(str(r))
 		if r is not None and (poas := r.poa) is not None and len(poas) > 0:
 			return f'{poas[0]}/~/{"/".join(pe[1:])}'	# TODO check all available poas.
 		return None

@@ -8,11 +8,12 @@
 #
 
 from __future__ import annotations
-from Logging import Logging
 import Utils
-import time, datetime, random, sys, heapq
+import random, sys, heapq
 from threading import Thread, Timer, Lock
-from typing import Callable, List, Dict, Any, Protocol
+from typing import Callable, List, Dict, Any
+# from Logging import Logging
+from Logging import Logging as L
 
 
 class BackgroundWorker(object):
@@ -38,9 +39,10 @@ class BackgroundWorker(object):
 		"""	Start the background worker in a thread. If the background worker is already
 			running then it is stopped and started again.
 		"""
+
 		if self.running:
 			self.stop()
-		Logging.logDebug(f'Starting worker: {self.name}')
+		L.isDebug and L.logDebug(f'Starting worker: {self.name}')
 		self.numberOfRuns	= 0
 		self.args 			= args
 		self.running 		= True
@@ -53,7 +55,7 @@ class BackgroundWorker(object):
 	def stop(self) -> BackgroundWorker:
 		"""	Stop the background worker.
 		"""
-		Logging.logDebug(f'Stopping worker: {self.name}')
+		L.isDebug and L.logDebug(f'Stopping worker: {self.name}')
 		self.running = False
 		BackgroundWorkerPool._unqueueWorker(self.id)		# Stop the timer and remove from queue
 		self._postCall()									# Note: worker is removed in _postCall()
@@ -71,7 +73,7 @@ class BackgroundWorker(object):
 			self.numberOfRuns += 1
 			result = self.callback(**self.args)
 		except Exception as e:
-			Logging.logErr(f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}')
+			L.logErr(f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}')
 		finally:
 			if not result or (self.maxCount is not None and self.numberOfRuns >= self.maxCount):
 				# False returned, or the numberOfRuns has reached the maxCount

@@ -36,7 +36,7 @@ class AnnouncementManager(object):
 		self.announcementsEnabled 	= Configuration.get('cse.announcements.enable')
 
 		self.start()
-		if L.isInfo: L.log('AnnouncementManager initialized')
+		L.isInfo and L.log('AnnouncementManager initialized')
 
 
 	def shutdown(self) -> bool:
@@ -45,7 +45,7 @@ class AnnouncementManager(object):
 			for csr in CSE.remote.getAllLocalCSRs():
 				if csr is not None:
 					self.checkResourcesForUnAnnouncement(csr)
-		if L.isInfo: L.log('AnnouncementManager shut down')
+		L.isInfo and L.log('AnnouncementManager shut down')
 		return True
 
 	#
@@ -56,7 +56,7 @@ class AnnouncementManager(object):
 	def start(self) -> None:
 		if not self.announcementsEnabled:
 			return
-		if L.isInfo: L.log('Starting Announcements monitor')
+		L.isInfo and L.log('Starting Announcements monitor')
 		BackgroundWorkerPool.newWorker(self.checkInterval, self.announcementMonitorWorker, 'anncMonitor').start()
 
 
@@ -64,13 +64,13 @@ class AnnouncementManager(object):
 	def stop(self) -> None:
 		if not self.announcementsEnabled:
 			return
-		if L.isInfo: L.log('Stopping Announcements monitor')
+		L.isInfo and L.log('Stopping Announcements monitor')
 		# Stop the thread
 		BackgroundWorkerPool.stopWorkers('anncMonitor')
 
 
 	def announcementMonitorWorker(self) -> bool:
-		if L.isDebug: L.logDebug('Checking announcements to remote CSEs')
+		L.isDebug and L.logDebug('Checking announcements to remote CSEs')
 
 		# check all CSR
 		for csr in CSE.remote.getAllLocalCSRs():
@@ -144,14 +144,14 @@ class AnnouncementManager(object):
 
 		if not self.announcementsEnabled:
 			return
-		if L.isDebug: L.logDebug(f'Announce resource: {resource.ri} to all connected csr')
+		L.isDebug and L.logDebug(f'Announce resource: {resource.ri} to all connected csr')
 		for csi in resource.at:
 			if csi == CSE.cseCsi or csi.startswith(f'{CSE.cseCsi}/'):
-				if L.isWarn: L.logWarn('Targeting own CSE. Ignored.')
+				L.isWarn and L.logWarn('Targeting own CSE. Ignored.')
 				self._removeAnnouncementFromResource(resource, csi)
 				continue
 			if (csr := Utils.resourceFromCSI(csi)) is None:
-				if L.isWarn: L.logWarn('Announcement Target CSE not found. Ignored.')
+				L.isWarn and L.logWarn('Announcement Target CSE not found. Ignored.')
 				self._removeAnnouncementFromResource(resource, csi)
 				continue
 			# if (remoteCSR := CSE.remote.getCSRForRemoteCSE(csr)) is None:	# not yet registered
@@ -169,13 +169,13 @@ class AnnouncementManager(object):
 
 		# TODO: multi-hop announcement
 
-		if L.isDebug: L.logDebug(f'Announce resource: {resource.ri} to: {csi}')
+		L.isDebug and L.logDebug(f'Announce resource: {resource.ri} to: {csi}')
 
 		if (at := resource.at) is None or len(at) == 0:
-			if L.isWarn: L.logWarn('at attribute is empty')
+			L.isWarn and L.logWarn('at attribute is empty')
 			return
 		if csi not in at:
-			if L.isWarn: L.logWarn(f'CSI: {csi} not found for at: {at}')
+			L.isWarn and L.logWarn(f'CSI: {csi} not found for at: {at}')
 			return
 
 		# Create announced resource & type
@@ -187,25 +187,22 @@ class AnnouncementManager(object):
 			poa = poas[0]						# Only first POA
 			url = f'{poa}{CSE.cseCsi}'			# remote CSR is always own csi
 		else:
-			if L.isWarn: L.logWarn('Cannot get URL')
+			L.isWarn and L.logWarn('Cannot get URL')
 			return
 
 		# Create the announed resource on the remote CSE
-		if L.isDebug: L.logDebug(f'Creating announced resource at: {csi} url: {url}')	
+		L.isDebug and L.logDebug(f'Creating announced resource at: {csi} url: {url}')	
 		res = CSE.request.sendCreateRequest(url, CSE.cseCsi, ty=tyAnnc, data=data)
 		if res.rsc not in [ RC.created, RC.OK ]:
 			if res.rsc != RC.alreadyExists:	# assume that it is ok if the remote resource already exists 
-				if L.isDebug: L.logDebug(f'Error creating remote announced resource: {res.rsc:d}')
+				L.isDebug and L.logDebug(f'Error creating remote announced resource: {res.rsc:d}')
 				if (at := resource.at) is not None and len(at) > 0 and csi in at:
 					at.remove(csi)
-					if len(at) == 0:
-						resource.setAttribute('at', None)
-					else:
-						resource.setAttribute('at', at)
+					resource.setAttribute('at', None if len(at) == 0 else at)
 				return
 		else:
 			self._addAnnouncementToResource(resource, res.dict, csi)
-		if L.isDebug: L.logDebug('Announced resource created')
+		L.isDebug and L.logDebug('Announced resource created')
 		resource.dbUpdate()
 
 
@@ -220,7 +217,7 @@ class AnnouncementManager(object):
 		if not self.announcementsEnabled:
 			return
 		csi = remoteCSR.csi
-		if L.isDebug: L.logDebug(f'Checking resources for Unannouncement to: {csi}')
+		L.isDebug and L.logDebug(f'Checking resources for Unannouncement to: {csi}')
 		# get all reources for this specific CSI that are NOT announced to it yet
 		resources = CSE.storage.searchAnnounceableResourcesForCSI(csi, True)
 		# try to announce all not-announced resources to this csr
@@ -236,7 +233,7 @@ class AnnouncementManager(object):
 		"""
 		if not self.announcementsEnabled:
 			return
-		if L.isDebug: L.logDebug(f'De-Announce resource: {resource.ri} from all connected csr')
+		L.isDebug and L.logDebug(f'De-Announce resource: {resource.ri} from all connected csr')
 
 		for (csi, remoteRI) in resource[Resource._announcedTo]:
 			if (csr := Utils.resourceFromCSI(csi)) is None:
@@ -256,24 +253,24 @@ class AnnouncementManager(object):
 
 		# TODO: multi-hop announcement
 
-		if L.isDebug: L.logDebug(f'De-Announce remote resource: {resource.ri} from: {csi}')
+		L.isDebug and L.logDebug(f'De-Announce remote resource: {resource.ri} from: {csi}')
 
 		# Get target URL for request
 		if poas is not None and len(poas) > 0:
 			url = f'{poas[0]}/{resourceRI}'	# TODO check all available poas. remote CSR is always own csi
 		else:
-			if L.isWarn: L.logWarn('Cannot get URL')
+			L.isWarn and L.logWarn('Cannot get URL')
 			return
 
 		# Delete the announed resource from the remote CSE
-		if L.isDebug: L.logDebug(f'Delete announced resource from: %{csi} url: {url}')	
+		L.isDebug and L.logDebug(f'Delete announced resource from: %{csi} url: {url}')	
 		res = CSE.request.sendDeleteRequest(url, CSE.cseCsi)
 		if res.rsc not in [ RC.deleted, RC.OK ]:
-			if L.isDebug: L.logDebug(f'Error deleting remote announced resource: {res.rsc}')
+			L.isDebug and L.logDebug(f'Error deleting remote announced resource: {res.rsc}')
 			# ignore the fact that we cannot delete the announced resource.
 			# fall-through for some house-keeping
 		self._removeAnnouncementFromResource(resource, csi)
-		if L.isDebug: L.logDebug('Announced resource deleted')
+		L.isDebug and L.logDebug('Announced resource deleted')
 		resource.dbUpdate()
 
 
@@ -285,7 +282,7 @@ class AnnouncementManager(object):
 	def announceUpdatedResource(self, resource:AnnounceableResource) -> None:
 		if not self.announcementsEnabled:
 			return
-		if L.isDebug: L.logDebug(f'Updating announced resource: {resource.ri}')
+		L.isDebug and L.logDebug(f'Updating announced resource: {resource.ri}')
 
 		# Check for removed AT
 		# Logging.logErr(set(self._origAT))
@@ -340,7 +337,7 @@ class AnnouncementManager(object):
 
 		# TODO: multi-hop announcement
 
-		if L.logDebug: L.logDebug(f'Update announced resource: {resource.ri} to: {csi}')
+		L.logDebug and L.logDebug(f'Update announced resource: {resource.ri} to: {csi}')
 
 		data = resource.createAnnouncedResourceDict(remoteCSR, isCreate=False, csi=csi)
 
@@ -348,16 +345,16 @@ class AnnouncementManager(object):
 		if poas is not None and len(poas) > 0:
 			url = f'{poas[0]}/{remoteRI}'	# TODO check all available poas.
 		else:
-			if L.isWarn: L.logWarn('Cannot get URL')
+			L.isWarn and L.logWarn('Cannot get URL')
 			return
 
 		# Create the announed resource on the remote CSE
-		if L.isDebug: L.logDebug(f'Updating announced resource at: {csi} url: {url}')	
+		L.isDebug and L.logDebug(f'Updating announced resource at: {csi} url: {url}')	
 		res = CSE.request.sendUpdateRequest(url, CSE.cseCsi, data=data)
 		if res.rsc not in [ RC.updated, RC.OK ]:
-			if L.isDebug: L.logDebug(f'Error updating remote announced resource: {res.rsc:d}')
+			L.isDebug and L.logDebug(f'Error updating remote announced resource: {res.rsc:d}')
 			# Ignore and fallthrough
-		if L.isDebug: L.logDebug('Announced resource updated')
+		L.isDebug and L.logDebug('Announced resource updated')
 
 
 	def _getCsiPoaForRemoteCSR(self, remoteCSR:Resource) -> Tuple[str,List[str]]:

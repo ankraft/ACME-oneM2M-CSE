@@ -71,9 +71,9 @@ class HttpServer(object):
 		self.serverID			= f'ACME {C.version}' 			# The server's ID for http response headers
 		self._responseHeaders	= {'Server' : self.serverID}	# Additional headers for other requests
 
-		if L.isInfo: L.log(f'Registering http server root at: {self.rootPath}')
+		L.isInfo and L.log(f'Registering http server root at: {self.rootPath}')
 		if self.useTLS:
-			if L.isInfo: L.log('TLS enabled. HTTP server serves via https.')
+			L.isInfo and L.log('TLS enabled. HTTP server serves via https.')
 
 
 		# Add endpoints
@@ -102,21 +102,21 @@ class HttpServer(object):
 		# Enable the config endpoint
 		if Configuration.get('http.enableRemoteConfiguration'):
 			configEndpoint = f'{self.rootPath}/__config__'
-			if L.isInfo: L.log(f'Registering configuration endpoint at: {configEndpoint}')
+			L.isInfo and L.log(f'Registering configuration endpoint at: {configEndpoint}')
 			self.addEndpoint(configEndpoint, handler=self.handleConfig, methods=['GET'], strictSlashes=False)
 			self.addEndpoint(f'{configEndpoint}/<path:path>', handler=self.handleConfig, methods=['GET', 'PUT'])
 
 		# Enable the config endpoint
 		if Configuration.get('http.enableStructureEndpoint'):
 			structureEndpoint = f'{self.rootPath}/__structure__'
-			if L.isInfo: L.log(f'Registering structure endpoint at: {structureEndpoint}')
+			L.isInfo and L.log(f'Registering structure endpoint at: {structureEndpoint}')
 			self.addEndpoint(structureEndpoint, handler=self.handleStructure, methods=['GET'], strictSlashes=False)
 			self.addEndpoint(f'{structureEndpoint}/<path:path>', handler=self.handleStructure, methods=['GET', 'PUT'])
 
 		# Enable the reset endpoint
 		if Configuration.get('http.enableResetEndpoint'):
 			resetEndPoint = f'{self.rootPath}/__reset__'
-			if L.isInfo: L.log(f'Registering reset endpoint at: {resetEndPoint}')
+			L.isInfo and L.log(f'Registering reset endpoint at: {resetEndPoint}')
 			self.addEndpoint(resetEndPoint, handler=self.handleReset, methods=['GET'], strictSlashes=False)
 
 
@@ -126,7 +126,7 @@ class HttpServer(object):
 		if (mappings := Configuration.get('server.http.mappings')) is not None:
 			# mappings is a list of tuples
 			for (k, v) in mappings:
-				if L.isInfo: L.log(f'Registering mapping: {self.rootPath}{k} -> {self.rootPath}{v}')
+				L.isInfo and L.log(f'Registering mapping: {self.rootPath}{k} -> {self.rootPath}{v}')
 				self.addEndpoint(self.rootPath + k, handler=self.requestRedirect, methods=['GET', 'POST', 'PUT', 'DELETE'])
 			self.mappings = dict(mappings)
 
@@ -149,7 +149,7 @@ class HttpServer(object):
 	def shutdown(self) -> bool:
 		"""	Shutting down the http server.
 		"""
-		if L.isInfo: L.log('HttpServer shut down')
+		L.isInfo and L.log('HttpServer shut down')
 		self.isStopped = True
 		return True
 		
@@ -168,7 +168,7 @@ class HttpServer(object):
 			try:
 				context = None
 				if self.useTLS:
-					if L.isInfo: L.logDebug(f'Setup SSL context. Certfile: {self.caCertificateFile}, KeyFile:{self.caPrivateKeyFile}, TLS version: {self.tlsVersion}')
+					L.isInfo and L.logDebug(f'Setup SSL context. Certfile: {self.caCertificateFile}, KeyFile:{self.caPrivateKeyFile}, TLS version: {self.tlsVersion}')
 					context = ssl.SSLContext(
 									{ 	'tls1.1' : ssl.PROTOCOL_TLSv1_1,
 										'tls1.2' : ssl.PROTOCOL_TLSv1_2,
@@ -200,8 +200,8 @@ class HttpServer(object):
 			build the internal strutures. Then, depending on the operation,
 			call the associated request handler.
 		"""
-		if L.isDebug: L.logDebug(f'==> {operation.name}: /{path}') 	# path = request.path  w/o the root
-		if L.isDebug: L.logDebug(f'Headers: \n{str(request.headers)}')
+		L.isDebug and L.logDebug(f'==> {operation.name}: /{path}') 	# path = request.path  w/o the root
+		L.isDebug and L.logDebug(f'Headers: \n{str(request.headers)}')
 		httpRequestResult = self._dissectHttpRequest(request, operation, Utils.retrieveIDFromPath(path, CSE.cseRn, CSE.cseCsi))
 
 		if self.isStopped:
@@ -211,9 +211,9 @@ class HttpServer(object):
 				if httpRequestResult.status:
 					if operation in [ Operation.CREATE, Operation.UPDATE ]:
 						if httpRequestResult.request.ct == ContentSerializationType.CBOR:
-							if L.isDebug: L.logDebug(f'Body: \n{Utils.toHex(httpRequestResult.request.data)}\n=>\n{httpRequestResult.request.dict}')
+							L.isDebug and L.logDebug(f'Body: \n{Utils.toHex(httpRequestResult.request.data)}\n=>\n{httpRequestResult.request.dict}')
 						else:
-							if L.isDebug: L.logDebug(f'Body: \n{str(httpRequestResult.request.data)}')
+							L.isDebug and L.logDebug(f'Body: \n{str(httpRequestResult.request.data)}')
 					responseResult = self._requestHandlers[operation](httpRequestResult.request)
 				else:
 					responseResult = httpRequestResult
@@ -255,7 +255,7 @@ class HttpServer(object):
 	def requestRedirect(self, path:str=None) -> Response:
 		path = request.path[len(self.rootPath):] if request.path.startswith(self.rootPath) else request.path
 		if path in self.mappings:
-			if L.isDebug: L.logDebug(f'==> Redirecting to: /{path}')
+			L.isDebug and L.logDebug(f'==> Redirecting to: /{path}')
 			CSE.event.httpRedirect()	# type: ignore
 			return flask.redirect(self.mappings[path], code=307)
 		return Response('', status=404)
@@ -298,7 +298,7 @@ class HttpServer(object):
 		elif request.method =='PUT':
 			data = request.data.decode('utf-8').rstrip()
 			try:
-				if L.isDebug: L.logDebug(f'New remote configuration: {path} = {data}')
+				L.isDebug and L.logDebug(f'New remote configuration: {path} = {data}')
 				if path == 'cse.checkExpirationsInterval':
 					if (d := int(data)) < 1:
 						return _r('nak')
@@ -374,20 +374,20 @@ class HttpServer(object):
 		# ! Don't forget: requests are done through the request library, not flask.
 		# ! The attribute names are different
 		try:
-			if L.isDebug: L.logDebug(f'Sending request: {method.__name__.upper()} {url}')
+			L.isDebug and L.logDebug(f'Sending request: {method.__name__.upper()} {url}')
 			if ct == ContentSerializationType.CBOR:
-				if L.isDebug: L.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n=>\n{str(data) if data is not None else ""}\n')
+				L.isDebug and L.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n=>\n{str(data) if data is not None else ""}\n')
 			else:
-				if L.isDebug: L.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n')
+				L.isDebug and L.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n')
 			
 			# Actual sending the request
 			r = method(url, data=content, headers=hds, verify=self.verifyCertificate)
 
 			responseCt = ContentSerializationType.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
 			rc = RC(int(r.headers['X-M2M-RSC'])) if 'X-M2M-RSC' in r.headers else RC.internalServerError
-			if L.isDebug: L.logDebug(f'Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
+			L.isDebug and L.logDebug(f'Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
 		except Exception as e:
-			if L.isDebug: L.logWarn(f'Failed to send request: {str(e)}')
+			L.isDebug and L.logWarn(f'Failed to send request: {str(e)}')
 			return Result(rsc=RC.targetNotReachable, dbg='target not reachable')
 		return Result(dict=Utils.deserializeData(r.content, responseCt), rsc=rc)
 		
@@ -430,9 +430,9 @@ class HttpServer(object):
 				
 		# Build and return the response
 		if isinstance(content, bytes):
-			if L.isDebug: L.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{Utils.toHex(content)}\n=>\n{str(result.toData())}')
+			L.isDebug and L.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{Utils.toHex(content)}\n=>\n{str(result.toData())}')
 		else:
-			if L.isDebug: L.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
+			L.isDebug and L.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
 		return Response(response=content, status=statusCode, content_type=cts, headers=headers)
 
 
@@ -500,7 +500,7 @@ class HttpServer(object):
 					return Result(rsc=RC.unsupportedMediaType, request=cseRequest, dbg=f'Unsupported media type for content-type: {cseRequest.headers.contentType}', status=False)
 				cseRequest.dict = _d
 			except Exception as e:
-				if L.isWarn: L.logWarn('Bad request (malformed content?)')
+				L.isWarn and L.logWarn('Bad request (malformed content?)')
 				return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'Malformed content? {str(e)}', status=False)
 		
 		# Check whether content is empty for UPDATE or CREATE -> Error
@@ -618,17 +618,17 @@ class HttpServer(object):
 class ACMERequestHandler(WSGIRequestHandler):
 	# Just like WSGIRequestHandler, but without "- -"
 	def log(self, type, message, *args): # type: ignore
-		if L.isDebug: L.logDebug(message % args)
+		L.isDebug and L.logDebug(message % args)
 		return
-		# if L.isDebug: L.log(f'{self.address_string()} {message % args}\n')
+		# L.isDebug and L.log(f'{self.address_string()} {message % args}\n')
 
 	# Just like WSGIRequestHandler, but without "code"
 	def log_request(self, code='-', size='-'): 	# type: ignore
-		if L.isDebug: L.logDebug(f'"{self.requestline}" {size} {code}')
+		L.isDebug and L.logDebug(f'"{self.requestline}" {size} {code}')
 		return
 
 	def log_message(self, format, *args): 	# type: ignore
-		if L.isDebug: L.logDebug(format % args)
+		L.isDebug and L.logDebug(format % args)
 		return
 	
 

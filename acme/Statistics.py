@@ -58,7 +58,7 @@ class Statistics(object):
 		if self.statisticsEnabled:
 
 			# Start background worker to handle writing to DB
-			if L.isInfo: L.log('Starting statistics DB thread')
+			L.isInfo and L.log('Starting statistics DB thread')
 			BackgroundWorkerPool.newWorker(Configuration.get('cse.statistics.writeInterval'), self.statisticsDBWorker, 'statsDBWorker').start()
 
 			# subscripe vto various events
@@ -80,19 +80,19 @@ class Statistics(object):
 			CSE.event.addHandler(CSE.event.logError, self.handleLogError)						# type: ignore
 			CSE.event.addHandler(CSE.event.logWarning, self.handleLogWarning)					# type: ignore
 
-		if L.isInfo: L.log('Statistics initialized')
+		L.isInfo and L.log('Statistics initialized')
 
 
 	def shutdown(self) -> bool:
 		if self.statisticsEnabled:
 			# Stop the worker
-			if L.isInfo: L.log('Stopping statistics DB thread')
+			L.isInfo and L.log('Stopping statistics DB thread')
 			BackgroundWorkerPool.stopWorkers('statsDBWorker')
 
 			# One final write
 			self.storeDBStatistics()
 
-		if L.isInfo: L.log('Statistics shut down')
+		L.isInfo and L.log('Statistics shut down')
 		return True
 
 
@@ -221,11 +221,11 @@ class Statistics(object):
 
 	# Called by the background worker
 	def statisticsDBWorker(self) -> bool:
-		if L.isDebug: L.logDebug('Writing statistics DB')
+		L.isDebug and L.logDebug('Writing statistics DB')
 		try:
 			self.storeDBStatistics()
 		except Exception as e:
-			if L.isDebug: L.logErr(f'Exception: {str(e)}')
+			L.isDebug and L.logErr(f'Exception: {str(e)}')
 			return False
 		return True
 

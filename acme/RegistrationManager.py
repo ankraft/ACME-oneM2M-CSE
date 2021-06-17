@@ -8,7 +8,7 @@
 #
 
 from copy import deepcopy
-from Logging import Logging
+from Logging import Logging as L
 from typing import List
 from Constants import Constants as C
 from Configuration import Configuration
@@ -27,12 +27,12 @@ class RegistrationManager(object):
 		self.allowedAEOriginators	= Configuration.get('cse.registration.allowedAEOriginators')
 
 		self.startExpirationMonitor()
-		Logging.log('RegistrationManager initialized')
+		L.isInfo and L.log('RegistrationManager initialized')
 
 
 	def shutdown(self) -> bool:
 		self.stopExpirationMonitor()
-		Logging.log('RegistrationManager shut down')
+		L.isInfo and L.log('RegistrationManager shut down')
 		return True
 
 
@@ -72,7 +72,7 @@ class RegistrationManager(object):
 			if resource.ty not in C.creatorAllowed:
 				return Result(rsc=RC.badRequest, dbg=f'"creator" attribute is not allowed for resource type: {resource.ty}')
 			if resource.cr is not None:		# Check whether cr is set to a value. This is wrong
-				Logging.logWarn('Setting "creator" attribute is not allowed.')
+				L.isWarn and L.logWarn('Setting "creator" attribute is not allowed.')
 				return Result(rsc=RC.badRequest, dbg='setting "creator" attribute is not allowed')
 			else:
 				resource['cr'] = originator
@@ -120,7 +120,7 @@ class RegistrationManager(object):
 		# Check for allowed orginator
 		# TODO also allow when there is an ACP?
 		if not Utils.isAllowedOriginator(originator, self.allowedAEOriginators):
-			Logging.logDebug(dbg := 'Originator not allowed')
+			L.isDebug and L.logDebug(dbg := 'Originator not allowed')
 			return Result(rsc=RC.appRuleValidationFailed, dbg=dbg)
 
 		# Assign originator for the AE
@@ -135,11 +135,11 @@ class RegistrationManager(object):
 
 		# Check whether an originator has already registered with the same AE-ID
 		if len(aes := CSE.storage.searchByValueInField('aei', originator)) > 0:
-			Logging.logWarn(dbg := f'Originator has already registered: {originator}')
+			L.isWarn and L.logWarn(dbg := f'Originator has already registered: {originator}')
 			return Result(rsc=RC.originatorHasAlreadyRegistered, dbg=dbg)
 		
 		# Make some adjustments to set the originator in the <AE> resource
-		Logging.logDebug(f'Registering AE. aei: {originator}')
+		L.isDebug and L.logDebug(f'Registering AE. aei: {originator}')
 		ae['aei'] = originator												# set the aei to the originator
 		ae['ri'] = Utils.getIdFromOriginator(originator, idOnly=True)		# set the ri of the ae to the aei (TS-0001, 10.2.2.2)
 
@@ -156,7 +156,7 @@ class RegistrationManager(object):
 
 	def handleAEDeRegistration(self, resource: Resource) -> bool:
 		# More De-registration functions happen in the AE's deactivate() method
-		Logging.logDebug(f'DeRegisterung AE. aei: {resource.aei}')
+		L.isDebug and L.logDebug(f'DeRegisterung AE. aei: {resource.aei}')
 		return True
 
 
@@ -168,7 +168,7 @@ class RegistrationManager(object):
 	#
 
 	def handleCSRRegistration(self, csr:Resource, originator:str) -> bool:
-		Logging.logDebug(f'Registering CSR. csi: {csr.csi}')
+		L.isDebug and L.logDebug(f'Registering CSR. csi: {csr.csi}')
 		# send event
 		CSE.event.remoteCSEHasRegistered(csr)	# type: ignore
 		return True
@@ -179,7 +179,7 @@ class RegistrationManager(object):
 	#
 
 	def handleCSRDeRegistration(self, csr:Resource) ->  bool:
-		Logging.logDebug(f'DeRegistering CSR. csi: {csr.csi}')
+		L.isDebug and L.logDebug(f'DeRegistering CSR. csi: {csr.csi}')
 		# send event
 		CSE.event.remoteCSEHasDeregistered(csr)	# type: ignore
 		return True
@@ -190,7 +190,7 @@ class RegistrationManager(object):
 	#
 
 	def handleCSRUpdate(self, csr:Resource, updateDict:JSON) -> bool:
-		Logging.logDebug(f'Updating CSR. csi: {csr.csi}')
+		L.isDebug and L.logDebug(f'Updating CSR. csi: {csr.csi}')
 		# send event
 		CSE.event.remoteCSEUpdate(csr, updateDict)	# type: ignore
 		return True
@@ -204,7 +204,7 @@ class RegistrationManager(object):
 	#
 
 	def handleREQRegistration(self, req:Resource, originator:str) -> bool:
-		Logging.logDebug(f'Registering REQ: {req.ri}')
+		L.isDebug and L.logDebug(f'Registering REQ: {req.ri}')
 		# Add originator as creator to allow access
 		req[req._originator] = originator
 		return True
@@ -215,7 +215,7 @@ class RegistrationManager(object):
 	#
 
 	def handleREQDeRegistration(self, resource: Resource) -> bool:
-		Logging.logDebug(f'DeRegisterung REQ. ri: {resource.ri}')
+		L.isDebug and L.logDebug(f'DeRegisterung REQ. ri: {resource.ri}')
 		return True
 
 
@@ -226,19 +226,19 @@ class RegistrationManager(object):
 
 	def startExpirationMonitor(self) -> None:
 		# Start background monitor to handle expired resources
-		Logging.logDebug('Starting expiration monitor')
+		L.isDebug and L.logDebug('Starting expiration monitor')
 		if (interval := Configuration.get('cse.checkExpirationsInterval')) > 0:
 			BackgroundWorkerPool.newWorker(interval, self.expirationDBMonitor, 'expirationMonitor', runOnTime=False).start()
 
 
 	def stopExpirationMonitor(self) -> None:
 		# Stop the expiration monitor
-		Logging.logDebug('Stopping expiration monitor')
+		L.isDebug and L.logDebug('Stopping expiration monitor')
 		BackgroundWorkerPool.stopWorkers('expirationMonitor')
 
 
 	def expirationDBMonitor(self) -> bool:
-		Logging.logDebug('Looking for expired resources')
+		L.isDebug and L.logDebug('Looking for expired resources')
 		now = Utils.getResourceDate()
 		resources = CSE.storage.searchByFilter(lambda r: 'et' in r and (et := r['et']) is not None and et < now)
 		for resource in resources:
@@ -246,7 +246,7 @@ class RegistrationManager(object):
 			# of an expired resource
 			if not CSE.storage.hasResource(ri=resource.ri):
 				continue
-			Logging.logDebug(f'Expiring resource (and child resouces): {resource.ri}')
+			L.isDebug and L.logDebug(f'Expiring resource (and child resouces): {resource.ri}')
 			CSE.dispatcher.deleteResource(resource, withDeregistration=True)	# ignore result
 			CSE.event.expireResource(resource) # type: ignore
 				
@@ -291,7 +291,7 @@ class RegistrationManager(object):
 	def _removeACP(self, srn:str, resource:Resource) -> Result:
 		""" Remove an ACP created during registration before. """
 		if (acpRes := CSE.dispatcher.retrieveResource(id=srn)).rsc != RC.OK:
-			Logging.logWarn(f'Could not find ACP: {srn}')	# ACP not found, either not created or already deleted
+			L.isWarn and L.logWarn(f'Could not find ACP: {srn}')	# ACP not found, either not created or already deleted
 		else:
 			# only delete the ACP when it was created in the course of AE registration internally
 			if  (ri := acpRes.resource.createdInternally()) is not None and resource.ri == ri:

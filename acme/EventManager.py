@@ -103,14 +103,14 @@ class EventManager(object):
 		self.addEvent('remoteCSEHasDeregistered')
 		self.addEvent('notification')
 		_running = True
-		if L.isInfo: L.log('EventManager initialized')
+		L.isInfo and L.log('EventManager initialized')
 
 
 	def shutdown(self) -> bool:
 		global _running
 		
 		_running = False
-		if L.isInfo: L.log('EventManager shut down')
+		L.isInfo and L.log('EventManager shut down')
 		return True
 
 

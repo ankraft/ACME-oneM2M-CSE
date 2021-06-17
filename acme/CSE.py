@@ -165,7 +165,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	# Start the HTTP server
 	httpServer.run() # This does return (!)
 	
-	if L.isInfo: L.log('CSE started')
+	L.isInfo and L.log('CSE started')
 	if isHeadless:
 		# when in headless mode give the CSE a moment (2s) to experience fatal errors before printing the start message
 		BackgroundWorkerPool.newActor(lambda : L.console('CSE started') if not shuttingDown else None, delay=2.0 ).start()
@@ -194,7 +194,7 @@ def _shutdown() -> None:
 	"""	shutdown the CSE, e.g. when receiving a keyboard interrupt or at the end of the programm run.
 	"""
 
-	if L.isInfo: L.log('CSE shutting down')
+	L.isInfo and L.log('CSE shutting down')
 	if event is not None:
 		event.cseShutdown() 	# type: ignore
 	console is not None and console.shutdown()
@@ -212,19 +212,19 @@ def _shutdown() -> None:
 	statistics is not None and statistics.shutdown()
 	event is not None and event.shutdown()
 	storage is not None and storage.shutdown()
-	if L.isInfo: L.log('CSE shutdown')
+	L.isInfo and L.log('CSE shutdown')
 	L.finit()
 
 
 def resetCSE() -> None:
 	""" Reset the CSE: Clear databases and import the resources again.
 	"""
-	if L.isWarn: L.logWarn('Resetting CSE started')
+	L.isWarn and L.logWarn('Resetting CSE started')
 	storage.purge()
 	if not importer.importAttributePolicies() or not importer.importResources():
-		if L.isWarn: L.logErr('Error during import')
+		L.isWarn and L.logErr('Error during import')
 		sys.exit()	# what else can we do?
-	if L.isWarn: L.logWarn('Resetting CSE finished')
+	L.isWarn and L.logWarn('Resetting CSE finished')
 
 
 def run() -> None:
@@ -250,7 +250,7 @@ def startApps() -> None:
 		return
 
 	time.sleep(Configuration.get('cse.applicationsStartupDelay'))
-	if L.isInfo: L.log('Starting Apps')
+	L.isInfo and L.log('Starting Apps')
 	appsStarted = True
 
 	if Configuration.get('app.csenode.enable'):
@@ -267,7 +267,7 @@ def stopApps() -> None:
 	global appsStarted
 	if appsStarted:
 		appsStarted = False
-		if L.isInfo: L.log('Stopping Apps')
+		L.isInfo and L.log('Stopping Apps')
 		if aeStatistics is not None:
 			aeStatistics.shutdown()
 		if aeCSENode is not None:

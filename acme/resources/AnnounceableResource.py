@@ -24,7 +24,7 @@ class AnnounceableResource(Resource):
 
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
-		if L.isDebug: L.logDebug(f'Activating AnnounceableResource resource: {self.ri}')
+		L.isDebug and L.logDebug(f'Activating AnnounceableResource resource: {self.ri}')
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
 
@@ -35,7 +35,7 @@ class AnnounceableResource(Resource):
 
 
 	def deactivate(self, originator:str) -> None:
-		if L.isDebug: L.logDebug(f'Deactivating AnnounceableResource and removing sub-resources: {self.ri}')
+		L.isDebug and L.logDebug(f'Deactivating AnnounceableResource and removing sub-resources: {self.ri}')
 
 		# perform deannouncements
 		if self.at is not None:
@@ -44,7 +44,7 @@ class AnnounceableResource(Resource):
 
 
 	def update(self, dct:JSON=None, originator:str=None) -> Result:
-		if L.isDebug: L.logDebug(f'Updating AnnounceableResource: {self.ri}')
+		L.isDebug and L.logDebug(f'Updating AnnounceableResource: {self.ri}')
 		self._origAA = self.aa
 		self._origAT = self.at
 		if not (res := super().update(dct=dct, originator=originator)).status:
@@ -61,7 +61,7 @@ class AnnounceableResource(Resource):
 
 
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
-		if L.isDebug: L.logDebug(f'Validating AnnounceableResource: {self.ri}')
+		L.isDebug and L.logDebug(f'Validating AnnounceableResource: {self.ri}')
 		if (res := super().validate(originator, create, dct)).status == False:
 			return res
 

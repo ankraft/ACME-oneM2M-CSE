@@ -29,7 +29,7 @@ class Importer(object):
 	def __init__(self) -> None:
 		self.macroMatch = re.compile(r"\$\{[\w.]+\}")
 		self.isImporting = False
-		if L. isInfo: L.log('Importer initialized')
+		L.isInfo and L.log('Importer initialized')
 
 
 	def importResources(self, path:str=None) -> bool:
@@ -50,7 +50,7 @@ class Importer(object):
 
 		# Only when the DB is empty else don't imports
 		if CSE.dispatcher.countResources() > 0:
-			if L.isInfo: L.log('Resources already imported, skipping importing')
+			L.isInfo and L.log('Resources already imported, skipping importing')
 			# But we still need the CSI etc of the CSE
 			rss = CSE.dispatcher.retrieveResourcesByType(T.CSEBase)
 			if rss is not None:
@@ -68,10 +68,10 @@ class Importer(object):
 				L.logErr('cse.resourcesPath not set')
 				raise RuntimeError('cse.resourcesPath not set')
 		if not os.path.exists(path):
-			if L.isWarn: L.logWarn(f'Import directory does not exist: {path}')
+			L.isWarn and L.logWarn(f'Import directory does not exist: {path}')
 			return False
 
-		if L.isInfo: L.log(f'Importing resources from directory: {path}')
+		L.isInfo and L.log(f'Importing resources from directory: {path}')
 
 		self._prepareImporting()
 
@@ -81,14 +81,14 @@ class Importer(object):
 		for rn in self._firstImporters:
 			fn = path + '/' + rn
 			if os.path.exists(fn):
-				if L.isInfo: L.log(f'Importing resource: {fn}')
+				L.isInfo and L.log(f'Importing resource: {fn}')
 				resource = Factory.resourceFromDict(cast(JSON, self.readJSONFromFile(fn)), create=True, isImported=True).resource
 
 			# Check resource creation
 			if not CSE.registration.checkResourceCreation(resource, CSE.cseOriginator):
 				continue
 			if (res := CSE.dispatcher.createResource(resource)).resource is None:
-				if L.isInfo: L.logErr(f'Error during import: {res.dbg}')
+				L.isInfo and L.logErr(f'Error during import: {res.dbg}')
 				return False
 			ty = resource.ty
 			if ty == T.CSEBase:
@@ -109,7 +109,7 @@ class Importer(object):
 		filenames = sorted(fnmatch.filter(os.listdir(path), '*.json'))
 		for fn in filenames:
 			if fn not in self._firstImporters:
-				if L.isInfo: L.log(f'Importing resource: {fn}')
+				L.isInfo and L.log(f'Importing resource: {fn}')
 				filename = path + '/' + fn
 
 				# update an existing resource
@@ -126,7 +126,7 @@ class Importer(object):
 				else:
 					# Try to get parent resource
 					if (jsn := self.readJSONFromFile(filename)) is None:
-						if L.isWarn: L.logWarn(f'Error parsing file: {filename}')
+						L.isWarn and L.logWarn(f'Error parsing file: {filename}')
 						continue
 					if (resource := Factory.resourceFromDict(cast(JSON, jsn), create=True, isImported=True).resource) is not None:
 						parentResource = None
@@ -139,11 +139,11 @@ class Importer(object):
 						CSE.dispatcher.createResource(resource, parentResource)
 						countImport += 1
 					else:
-						if L.isWarn: L.logWarn(f'Unknown or wrong resource in file: {fn}')
+						L.isWarn and L.logWarn(f'Unknown or wrong resource in file: {fn}')
 
 		self._finishImporting()
-		if L.isDebug: L.logDebug(f'Imported {countImport} resources')
-		if L.isDebug: L.logDebug(f'Updated  {countUpdate} resources')
+		L.isDebug and L.logDebug(f'Imported {countImport} resources')
+		L.isDebug and L.logDebug(f'Updated  {countUpdate} resources')
 		return True
 
 
@@ -209,13 +209,13 @@ class Importer(object):
 				raise RuntimeError('cse.resourcesPath not set')
 
 		if not os.path.exists(path):
-			if L.isWarn: L.logWarn(f'Import directory for attribute policies does not exist: {path}')
+			L.isWarn: L.logWarn(f'Import directory for attribute policies does not exist: {path}')
 			return False
 
 		filenames = fnmatch.filter(os.listdir(path), '*.ap')
 		for fn in filenames:
 			fn = os.path.join(path, fn)
-			if L.isInfo: L.log(f'Importing attribute policies: {fn}')
+			L.isInfo and L.log(f'Importing attribute policies: {fn}')
 			if os.path.exists(fn):
 				if (lst := cast(JSONLIST, self.readJSONFromFile(fn))) is None:
 					continue
@@ -238,7 +238,7 @@ class Importer(object):
 							return False
 						
 						if (dty := self._nameDataTypeMappings.get(tmp)) is None:
-							if L.isWarn: L.logWarn(f'Unknown data type {tmp}')
+							L.isWarn and L.logWarn(f'Unknown data type {tmp}')
 
 						if (tmp := findXPath(attr, 'car', 'car01').lower()) is None or not isinstance(tmp, str) or len(tmp) == 0 or tmp not in self._nameCardinalityMappings:	# default car01
 							L.logErr(f'Empty, or wrong cardinality: {tmp} for attribute: {sn} type: {tpe} in file: {fn}')
@@ -275,7 +275,7 @@ class Importer(object):
 							L.logErr(str(e))
 							return False
 		
-		if L.isDebug: L.logDebug(f'Imported {countAP} attribute policies')
+		L.isDebug and L.logDebug(f'Imported {countAP} attribute policies')
 		return True
 
 
@@ -370,7 +370,7 @@ class Importer(object):
 		# remove comments
 		content = removeCommentsFromJSON(content).strip()
 		if len(content) == 0:
-			if L.isWarn: L.logWarn(f'Empty file: {filename}')
+			L.isWarn and L.logWarn(f'Empty file: {filename}')
 			return None
 
 		# replace macros
