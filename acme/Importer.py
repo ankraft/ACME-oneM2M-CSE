@@ -209,7 +209,7 @@ class Importer(object):
 				raise RuntimeError('cse.resourcesPath not set')
 
 		if not os.path.exists(path):
-			L.isWarn: L.logWarn(f'Import directory for attribute policies does not exist: {path}')
+			L.isWarn and L.logWarn(f'Import directory for attribute policies does not exist: {path}')
 			return False
 
 		filenames = fnmatch.filter(os.listdir(path), '*.ap')

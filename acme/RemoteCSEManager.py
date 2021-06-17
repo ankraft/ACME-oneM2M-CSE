@@ -420,7 +420,7 @@ class RemoteCSEManager(object):
 
 
 	def _deleteLocalCSR(self, localCSR: Resource) -> Result:
-		L.isDebug andL.logDebug(f'Deleting local CSR: {localCSR.ri}')
+		L.isDebug and L.logDebug(f'Deleting local CSR: {localCSR.ri}')
 
 		if not CSE.registration.handleCSRDeRegistration(localCSR):
 			return Result(rsc=RC.badRequest, dbg='cannot deregister CSR')
@@ -474,7 +474,7 @@ class RemoteCSEManager(object):
 		res = CSE.request.sendUpdateRequest(self.registrarCSRURL, CSE.cseCsi, data=csr.asDict(), ct=self.registrarSerialization) 	# own CSE.csi is the originator
 		if res.rsc not in [ RC.updated, RC.OK ]:
 			if res.rsc != RC.alreadyExists:
-				L.isDebug and .logDebug(f'Error updating registrar CSR in CSE: {res.rsc:d}')
+				L.isDebug and L.logDebug(f'Error updating registrar CSR in CSE: {res.rsc:d}')
 			return Result(rsc=res.rsc, dbg='cannot update remote CSR')
 		L.isDebug and L.logDebug(f'Registrar CSR updated in CSE: {self.registrarCSI}')
 		return Result(resource=CSR.CSR(res.dict, pi=''), rsc=RC.updated)
