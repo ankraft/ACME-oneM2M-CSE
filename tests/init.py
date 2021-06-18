@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-import sys
+import sys, io
 sys.path.append('../acme')
 import unittest
 from rich.console import Console
@@ -48,9 +48,17 @@ timeSeriesInterval 		= 2.0 # seconds
 RVI						 ='3'
 
 # A timestamp far in the future
-# Why 888? Year 9999 may actually problematic, because this might be interpreteted
+# Why 8888? Year 9999 may actually problematic, because this might be interpreteted
 # already as year 10000 (and this hits the limit of the isodata module implmenetation)
-futureTimestamp = '88881231T235959'
+
+def isRaspberrypi():
+	try:
+		with io.open('/sys/firmware/devicetree/base/model', 'r') as m:
+			if 'raspberry pi' in m.read().lower(): return True
+	except Exception: pass
+	return False
+
+futureTimestamp = '20371231T235959' if isRaspberrypi() else '88881231T235959'
 
 
 

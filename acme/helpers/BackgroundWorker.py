@@ -68,6 +68,8 @@ class BackgroundWorker(object):
 			This wrapper and the callback are executed in a separate Thread.
 			At the end, depending on return value and whether the maxCount has been reached, the worker is added to the queue again.
 		"""
+		if not self.running:
+			return
 		result = True
 		try:
 			self.numberOfRuns += 1

@@ -562,7 +562,7 @@ class TestTS_TSI(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateTSremoveMdn(self) -> None:
 		"""	UPDATE <TS> MDN with null and disable monitoring """
-		self._stopMonitoring()
+		self._stopMonitoring()	# implictly happens here
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
