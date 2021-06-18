@@ -385,8 +385,11 @@ def setLastNotification(notification:JSON) -> None:
 	global lastNotification
 	lastNotification = notification
 
-def getLastNotification() -> JSON:
-	return lastNotification
+def getLastNotification(clear:bool=False) -> JSON:
+	r = lastNotification
+	if clear:
+		clearLastNotification()
+	return r
 
 def clearLastNotification() -> None:
 	global lastNotification

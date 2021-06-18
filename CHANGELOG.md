@@ -12,15 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - [CSE] Added possibility to reset a running CSE (via the command console or http endpoint "/\_\_reset\_\_").
-- [CSE] Added "I" command to the console (inspect a resource and its children).
+- [CSE] Added "I" command to the console (inspect a resource and its child resources).
 - [CSE] Added "L" command to the console (toggle through the various log levels, including *off*)
-- [CSE] Added support for TimeSeries/TimeSeriesInstance resource types.
-- [CSE] Added support for *ctm* (currentTime) attribute for &lt;CSEBase> resource type.
-- [CSE] Added wildcard (\*) support for &lt;ACP>'s *acr/acor* originators.
-- [CSE] Added support for &lt;ACP>'s *acr/acod* attribute (not for specializations yet, though).
+- [CSE] Added support for \<TimeSeries>/\<TimeSeriesInstance> resource types.
+- [CSE] Added support for missing data monitoring in \<Subscription> resource type and notifications.
+- [CSE] Added support for *ctm* (currentTime) attribute for \<CSEBase> resource type.
+- [CSE] Added wildcard (\*) support for \<ACP>'s *acr/acor* originators.
+- [CSE] Added support for \<ACP>'s *acr/acod* attribute (not for specializations yet, though).
 - [WEB] Added OAuth2 authorization support for the proxied CSE (for the stand-alone web UI).
 - [WEB] Added opening the web UI in a browser on startup (for the stand-alone web UI).
-- [CSE] Added support for 'Request Expiration Timestamp' request parameter, also for &lt;request> resources.
+- [CSE] Added support for 'Request Expiration Timestamp' request parameter, also for \<request> resources.
 
 ### Changed
 - [CSE] Relaxed validation for float in attributes and arguments. Integer are now accepted as well.
@@ -34,8 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Improved handling of \<flexContainerInstance> resources when versioning is disabled in the parent \<flexContainer>.
 - [CSE] Re-added: remove comments from received JSON content.
 - [CSE] Improved the timely execution of background tasks. The actual task's execution time is not added on top to the interval anymore, and intervals are constant.
-- [CSE] Improved support and validation for absRelTimestamps.
-- [CSE] Improved handling of the &lt;request> resource's expiration time. It is now aligned with the 'Request Expiration Timestamp' request parameter.
+- [CSE] Improved support and validation for absRelTimestamp type.
+- [CSE] Improved handling of the \<request> resource's expiration time. It is now aligned with the 'Request Expiration Timestamp' request parameter.
 - [CSE] Improved checking of empty *acpi* attribute lists. Empty lists are not allowed and the *acpi* must be removed from a resource instead.
 - [CSE] Optimized log messages. Messages for irrelevant log levels are not even created anymore.
 

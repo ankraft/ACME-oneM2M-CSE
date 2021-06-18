@@ -99,7 +99,10 @@ def isStructured(uri:str) -> bool:
 
 def isVirtualResource(resource: Resource) -> bool:
 	"""	Check whether the `resource` is a virtual resource. 
+		The function returns `False` when the resource is not a virtual resource, or when it is `None`.
 	"""
+	if resource is None:
+		return False
 	result:bool = resource[resource._isVirtual]
 	return result if result is not None else False
 	# return (ty := r.ty) and ty in C.virtualResources
@@ -147,17 +150,27 @@ def fromAbsRelTimestamp(absRelTimestamp:str) -> float:
 		return isodate.parse_datetime(absRelTimestamp).timestamp()
 		# return datetime.datetime.strptime(timestamp, '%Y%m%dT%H%M%S,%f').timestamp()
 	except Exception as e:
-		# It seems that the given absRelTimestamp is actual an ISO period. Try that one.
 		try:
-			return utcTime() + isodate.parse_duration(absRelTimestamp).total_seconds()
+			return utcTime() + fromDuration(absRelTimestamp)
+		except:
+			return 0.0
+	return 0.0
+
+
+def fromDuration(duration:str) -> float:
+	"""	Convert a duration to a number of seconds (float). Input could be either an ISO period 
+		or a number of ms.
+	"""
+	try:
+		return isodate.parse_duration(duration).total_seconds()
+	except Exception as e:
+		try:
+			# Last try: absRelTimestamp could be a relative offset in ms. Try to convert 
+			# the string and return an absolute UTC-based duration
+			return float(duration) / 1000.0
 		except Exception as e:
-			try:
-				# Last try: absRelTimestamp could be a relative offset in ms. Try to convert 
-				# the string and return an absolute UTC-based timestamp
-				rel = float(absRelTimestamp)
-				return utcTime() + float(rel)/1000.0	
-			except Exception as e:
-				if L.isWarn: L.logWarn(f'Wrong format for timestamp: {absRelTimestamp}')
+			if L.isWarn: L.logWarn(f'Wrong format for duration: {duration}')
+			raise e
 	return 0.0
 
 

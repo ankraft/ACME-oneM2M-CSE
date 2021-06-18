@@ -102,7 +102,7 @@ class Configuration(object):
 				'logging.level'						: config.get('logging', 'level', 						fallback='debug'),
 				'logging.size'						: config.getint('logging', 'size', 						fallback=100000),
 				'logging.count'						: config.getint('logging', 'count', 					fallback=10),		# Number of log files
-				'logging.stackTraceOnError'			: config.getboolean('logging', 'stackTraceOnError',			fallback=True),
+				'logging.stackTraceOnError'			: config.getboolean('logging', 'stackTraceOnError',		fallback=True),
 
 				#
 				#	CSE

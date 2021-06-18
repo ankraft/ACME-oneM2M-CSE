@@ -26,7 +26,7 @@ The ACME CSE supports the following CSE types:
 
 The ACME CSE supports the following oneM2M resource types:
 
-| Resource Type                   | Supported | Limitations                                                                                                                                                                                                       |
+| Resource Type                   | Supported | Remarks & Limitations                                                                                                                                                                                             |
 |:--------------------------------|:---------:|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Access Control Policy (ACP)     |  &check;  |                                                                                                                                                                                                                   |
 | Application Entity (AE)         |  &check;  |                                                                                                                                                                                                                   |
@@ -42,7 +42,7 @@ The ACME CSE supports the following oneM2M resource types:
 | Remote CSE (CSR)                |  &check;  | Announced resources are  supported. Transit request to resources on registered CSE's are supported.                                                                                                               |
 | Request (REQ)                   |  &check;  | Support for non-blocking requests.                                                                                                                                                                                |
 | Subscription (SUB)              |  &check;  | Notifications via http(s) (direct url or an AE's Point-of-Access (POA)). BatchNotifications, attributes.                                                                                                          |
-| TimeSeries (TS)                 |  &check;  |                                                                                                                                                                                                                   |
+| TimeSeries (TS)                 |  &check;  | Including missing data notifications.                                                                                                                                                                             |
 | TimeSeriesInstance (TSI)        |  &check;  |                                                                                                                                                                                                                   |
 
 <a name="mgmtobjs"></a>
@@ -72,7 +72,7 @@ The following table presents the supported management object specifications.
 | Resource addressing           |  &check;  | *CSE-Relative*, *SP-Relative* and *Absolute* as well as hybrid addressing are supported. |
 | Standard oneM2M requests      |  &check;  | CREATE, RETRIEVE, UPDATE, DELETE                                                         |
 | Discovery                     |  &check;  |                                                                                          |
-| Subscriptions                 |  &check;  | incl. batch notification, and resource type and attribute filtering.                      |
+| Subscriptions                 |  &check;  | incl. batch notification, and resource type and attribute filtering.                     |
 | Notifications                 |  &check;  | E.g. for subscriptions and non-blocking requests.                                        |
 | AE registration               |  &check;  |                                                                                          |
 | Remote CSE registration       |  &check;  |                                                                                          |
@@ -83,6 +83,8 @@ The following table presents the supported management object specifications.
 | Transit requests              |  &check;  | Forwarding requests from one CSE to another.                                             |
 | Blocking requests             |  &check;  |                                                                                          |
 | Non-blocking requests         |  &check;  | Non-blocking synchronous and asynchronous, and flex-blocking are supported.              |
+| Timeseries data handling      |  &check;  | incl. missing data detection, monitoring and notifications                               |
+| Response Polling              |  &cross;  |                                                                                          |
 
 
 ## Result Content Types
@@ -114,6 +116,7 @@ The following result contents are implemented for standard oneM2M requests & dis
 | retrieveCNTNoChild       |  &cross;  |
 | triggerReceivedForAE     |  &cross;  |
 | blockingUpdate           |  &cross;  |
+| missingData              |  &check;  |
 
 
 ## Protocols Bindings
@@ -139,5 +142,6 @@ The following serialization types are supported:
 # Limitations
 - **This is by no means a fully compliant, secure, fast, or stable CSE! Don't use it in production.**
 - This CSE is intended for educational purposes. The underlying database system is not optimized in any way for high-volume, high-availability, or high-reliability.
-- Unsupported resource types are just stored, but no check or functionality is provided for those resources. 
+- Unsupported resource types are just stored, but no validations or functionality are provided for those resources. 
+
 [← README](../README.md) 

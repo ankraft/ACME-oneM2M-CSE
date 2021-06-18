@@ -15,6 +15,7 @@ from Types import JSON, AttributePolicies, AttributePoliciesEntry, AdditionalAtt
 from Types import Result, AttributePolicies, ResourceTypes as T
 from Configuration import Configuration
 import Utils
+import isodate
 
 
 # TODO owner attribute, annnouncedSyncType
@@ -101,6 +102,7 @@ attributePolicies:AttributePolicies = {
 	'disr'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT
 	'dlb'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# DVI
 	'dty'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# DVI
+	'dur'	: ( BT.duration,		CAR.car01,	RO.O,	RO.O,  RO.O, AN.OA ),		# attribute duration
 	'dvd'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# ANDI
 	'dvnm'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'dvt'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# ANDI
@@ -168,6 +170,7 @@ attributePolicies:AttributePolicies = {
 	'nsp'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
 	'nty'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# NOD
 	'nu'	: (	BT.list, 			CAR.car1, 	RO.M, 	RO.O,  RO.O, AN.NA ),  		# SUB
+	'num'	: (	BT.positiveInteger,	CAR.car01, 	RO.O, 	RO.O,  RO.O, AN.NA ),  		# attribute number
 	'obis'	: ( BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# MGO
 	'obps'	: ( BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# MGO
 	'op'	: ( BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.NA ),		# REQ
@@ -279,9 +282,9 @@ def addPolicy(policies:AttributePolicies, newPolicies:AttributePolicies) -> Attr
 	policies.update( newPolicies )
 	return policies
 
-def getPolicy(attr:str, policies:AttributePolicies=None) -> AttributePoliciesEntry:
-	if policies is None:
-		policies = attributePolicies
+def getPolicy(attr:str, policies:AttributePolicies=attributePolicies) -> AttributePoliciesEntry:
+	# if policies is None:
+	# 	policies = attributePolicies
 	if (p := policies.get(attr)) is None:	# Use get() to receive None...
 		return None
 	if isinstance(p, tuple):
@@ -432,6 +435,12 @@ class Validator(object):
 			return self._validateType(policy[0], value, True)
 		return Result(status=False, dbg=f'attribute/argument {argument} not defined')
 
+
+	def validateAttribute(self, attribute:str, value:Any) -> Result:
+		""" Validate a single attribute. """
+		if (policy := getPolicy(attribute)) is not None:
+			return self._validateType(policy[0], value, True)
+		return Result(status=False, dbg=f'attribute {attribute} not defined')
 
 
 	#
@@ -597,6 +606,13 @@ class Validator(object):
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: integer')
 
 		if tpe == BT.geoCoordinates and isinstance(value, dict):
+			return Result(status=True)
+		
+		if tpe == BT.duration:
+			try:
+				isodate.parse_duration(value)
+			except Exception as e:
+				return Result(status=False, dbg=str(e))
 			return Result(status=True)
 
 		return Result(status=False, dbg='unknown type')

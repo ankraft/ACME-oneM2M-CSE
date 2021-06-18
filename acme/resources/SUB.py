@@ -9,7 +9,7 @@
 
 from copy import deepcopy
 from Configuration import Configuration
-from Types import ResourceTypes as T, Result, NotificationContentType, NotificationEventType
+from Types import ResourceTypes as T, Result, NotificationContentType, NotificationEventType as NET
 import CSE
 from Validator import constructPolicy
 from .Resource import *
@@ -31,8 +31,20 @@ class SUB(Resource):
 		super().__init__(T.SUB, dct, pi, create=create, attributePolicies=attributePolicies)
 
 		if self.dict is not None:
-			self.setAttribute('nct', NotificationContentType.all, overwrite=False) # LIMIT TODO: only this notificationContentType is supported now
 			self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate ], overwrite=False)
+
+			# Apply the nct only on the first element of net. Do the combination checks later in validate()
+			net = self['enc/net']
+			if len(net) > 0:
+				if net[0] in [ NET.resourceUpdate, NET.resourceDelete, NET.createDirectChild, NET.deleteDirectChild, NET.retrieveCNTNoChild ]:
+					self.setAttribute('nct', NotificationContentType.all, overwrite=False)
+				elif net[0] in [ NET.triggerReceivedForAE ]:
+					self.setAttribute('nct', NotificationContentType.triggerPayload, overwrite=False)
+				elif net[0] in [ NET.blockingUpdate ]:
+					self.setAttribute('nct', NotificationContentType.modifiedAttributes, overwrite=False)
+				elif net[0] in [ NET.reportOnGeneratedMissingDataPoints ]:
+					self.setAttribute('nct', NotificationContentType.timeSeriesNotification, overwrite=False)
+
 			if self.bn is not None:		# set batchNotify default attributes
 				self.setAttribute('bn/dur', Configuration.get('cse.sub.dur'), overwrite=False)
 
@@ -68,21 +80,42 @@ class SUB(Resource):
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		if (res := super().validate(originator, create, dct)).status == False:
 			return res
-		if L.isDebug: L.logDebug(f'Validating subscription: {self.ri}')
+		L.isDebug and L.logDebug(f'Validating subscription: {self.ri}')
 
 		# Check necessary attributes
 		if (nu := self.nu) is None or not isinstance(nu, list):
-			L.logDebug(dbg := f'"nu" attribute missing for subscription: {self.ri}')
+			L.isDebug and L.logDebug(dbg := f'"nu" attribute missing for subscription: {self.ri}')
 			return Result(status=False, rsc=RC.insufficientArguments, dbg=dbg)
 
 		# check nct and net combinations
 		if (nct := self.nct) is not None and (net := self['enc/net']) is not None:
 			for n in net:
 				if not NotificationEventType(n).isAllowedNCT(NotificationContentType(nct)):
-					L.logDebug(dbg := f'nct={nct} is not allowed for one or more values in enc/net={net}')
+					L.isDebug and L.logDebug(dbg := f'nct={nct} is not allowed for one or more values in enc/net={net}')
 					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 				# fallthough
+			if n == NotificationEventType.reportOnGeneratedMissingDataPoints:
+				# Check that parent is a TimeSeries
+				if (parent := self.retrieveParentResource()) is None:
+					L.logErr(dbg := f'cannot retrieve parent resource')
+					return Result(status=False, rsc=RC.internalServerError, dbg=dbg)
+				if parent.ty != T.TS:
+					L.isDebug and L.logDebug(dbg := f'parent must be a <TS> resource for net==reportOnGeneratedMissingDataPoints')
+					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
+				# Check missing data structure
+				if (md := self['enc/md']) is None:
+					L.isDebug and L.logDebug(dbg := f'net==reportOnGeneratedMissingDataPoints is set, but enc/md is missing')
+					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+				if not (res := CSE.validator.validateAttribute('num', md.get('num'))).status:
+					L.isDebug and L.logDebug(res.dbg)
+					return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
+				if not (res := CSE.validator.validateAttribute('dur', md.get('dur'))).status:
+					L.isDebug and L.logDebug(res.dbg)
+					return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
+
+
+		# TODO: Validate enc/missing/data
 		# TODO: check missingData only if parent if TS. Add test for that
 
 		

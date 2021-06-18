@@ -30,6 +30,20 @@ class TestTS_TSI(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
+
+		# Start notification server
+		startNotificationServer()
+
+		# look for notification server
+		hasNotificationServer = False
+		try:
+			_ = requests.post(NOTIFICATIONSERVER, data='{"test": "test"}', verify=verifyCertificate)
+			hasNotificationServer = True
+		except Exception:
+			pass
+		finally:	
+			assert hasNotificationServer, 'Notification server cannot be reached'
+
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
@@ -52,10 +66,12 @@ class TestTS_TSI(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		stopNotificationServer()
+
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addTSI(self) -> None:
-		"""	Create <TSI> under <TS> """
+		"""	CREATE <TSI> under <TS> """
 		self.assertIsNotNone(TestTS_TSI.ae)
 		self.assertIsNotNone(TestTS_TSI.ts)
 		dct = 	{ 'm2m:tsi' : {
@@ -83,7 +99,7 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addMoreTSI(self) -> None:
-		"""	Create more <TSI>s under <TS> """
+		"""	CREATE more <TSI>s under <TS> """
 		dct = 	{ 'm2m:tsi' : {
 					'dgt' : (date := getDate()),
 					'con' : 'bValue'
@@ -138,7 +154,7 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveTSLa(self) -> None:
-		"""	Retrieve <TS>.LA """
+		"""	RETRIEVE <TS>.LA """
 		r, rsc = RETRIEVE(f'{tsURL}/la', TestTS_TSI.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(r, r)
@@ -148,7 +164,7 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveTSOl(self) -> None:
-		""" Retrieve <TS>.OL """
+		""" RETRIEVE <TS>.OL """
 		r, rsc = RETRIEVE(f'{tsURL}/ol', TestTS_TSI.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(r, r)
@@ -158,7 +174,7 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_changeTSMni(self) -> None:
-		"""	Change <TS>.MNI to 1 -> OL == LA """
+		"""	UPDATE <TS>.MNI to 1 -> OL == LA """
 		dct = 	{ 'm2m:ts' : {
 					'mni' : 1
  				}}
@@ -186,14 +202,14 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteTS(self) -> None:
-		"""	Delete <TS> """
+		"""	DELETE <TS> """
 		r, rsc = DELETE(tsURL, TestTS_TSI.originator)
 		self.assertEqual(rsc, RC.deleted, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSwithMBS(self) -> None:
-		"""	Create <TS> with mbs"""
+		"""	CREATE <TS> with mbs"""
 		dct = 	{ 'm2m:ts' : { 
 					'rn'  : tsRN,
 					'mbs' : maxBS
@@ -206,7 +222,7 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSIexactSize(self) -> None:
-		"""	Add <TSI> to <TS> with exact max size"""
+		"""	CREATE <TSI> to <TS> with exact max size"""
 		dct = 	{ 'm2m:tsi' : {
 					'dgt' : getDate(),
 					'con' : 'x' * maxBS
@@ -218,7 +234,7 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSItooLarge(self) -> None:
-		"""	Add <TSI> to <TS> with size > mbs -> Fail """
+		"""	CREATE <TSI> to <TS> with size > mbs -> Fail """
 		dct = 	{ 'm2m:tsi' : {
 					'dgt' : getDate(),
 					'con' : 'x' * (maxBS + 1)
@@ -229,7 +245,7 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSIsForTSwithSize(self) -> None:
-		"""	Add multiple <TSI>s to <TS> with size restrictions """
+		"""	CREATE multiple <TSI>s to <TS> with size restrictions """
 		# First fill up the container
 		for _ in range(int(maxBS / 3)):
 			dct = 	{ 'm2m:tsi' : {
@@ -272,7 +288,7 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSIwithoutDGT(self) -> None:
-		"""	Add <TSI> without DGT attribute -> Fail """
+		"""	CREATE <TSI> without DGT attribute -> Fail """
 		dct = 	{ 'm2m:tsi' : {
 					'con' : 'wrong'
 				}}
@@ -282,7 +298,7 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSIwithSameDGT(self) -> None:
-		"""	Add <TSI>s with same DGT attribute -> Fail """
+		"""	CREATE <TSI>s with same DGT attribute -> Fail """
 		dct = 	{ 'm2m:tsi' : {
 					'dgt' : (date := getDate()),
 					'con' : 'first'
@@ -299,7 +315,7 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSIwithSNR(self) -> None:
-		"""	Add <TSI> with SNR"""
+		"""	CREATE <TSI> with SNR"""
 		dct = 	{ 'm2m:tsi' : {
 					'dgt' : (date := getDate()),
 					'con' : 'aValue',
@@ -316,7 +332,7 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSwithMonitoring(self) -> None:
-		"""	Create <TS> with monitoring enabled"""
+		"""	CREATE <TS> with monitoring enabled"""
 		dct = 	{ 'm2m:ts' : { 
 					'rn'  : tsRN,
 					'pei' : pei,
@@ -340,7 +356,7 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSIinPeriod(self) -> None:
-		"""	Add 3 <TSI> within the time period"""
+		"""	CREATE 3 <TSI> within the time period"""
 		dctTs = 	{ 'm2m:ts' : { 
 			'mdn' : maxMdn
 		}}
@@ -370,7 +386,7 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSIinPeriodDgtTooEarly(self) -> None:
-		"""	Add 1+3 <TSI> within the time period, but dgt is too early -> Fail"""
+		"""	CREATE 1+3 <TSI> within the time period, but dgt is too early -> Fail"""
 		dctTs = 	{ 'm2m:ts' : { 
 			'mdn' : maxMdn
 		}}
@@ -402,7 +418,7 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSIinPeriodDgtTooLate(self) -> None:
-		"""	Add 1+3 <TSI> within the time period, but dgt is too late -> Fail"""
+		"""	CREATE 1+3 <TSI> within the time period, but dgt is too late -> Fail"""
 		dctTs = 	{ 'm2m:ts' : { 
 			'mdn' : maxMdn
 		}}
@@ -432,7 +448,7 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSIinPeriodDgtWayTooEarly(self) -> None:
-		"""	Add 1+3 <TSI> within the time period, but dgt is way too early -> Fail"""
+		"""	CREATE 1+3 <TSI> within the time period, but dgt is way too early -> Fail"""
 		dctTs = { 'm2m:ts' : { 
 			'mdn' : maxMdn
 		}}
@@ -475,7 +491,7 @@ class TestTS_TSI(unittest.TestCase):
 
 
 	def _createTSInotInPeriod(self, expectedMdc:int) -> None:
-		"""	Add n <TSI> not within the time period """
+		"""	CREATE n <TSI> not within the time period """
 		dct = 	{ 'm2m:ts' : { 
 			'mdn' : maxMdn
 		}}
@@ -516,12 +532,12 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSInotInPeriod(self) -> None:
-		"""	Add <TSI> not within the time period """
+		"""	CREATE <TSI> not within the time period """
 		self._createTSInotInPeriod(3)
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSInotInPeriodLarger(self) -> None:
-		"""	Add more <TSI> not within the time period """
+		"""	CREATE more <TSI> not within the time period """
 		self._createTSInotInPeriod(maxMdn + 1)	# one more to check list size, 
 		# dont remove list for next tests
 
@@ -529,7 +545,7 @@ class TestTS_TSI(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	@unittest.skipIf(maxMdn < 3, 'mdn is set to < 3')
 	def test_updateTSshortenMdlt(self) -> None:
-		"""	Update <TS> MDN and shorten MDLT """
+		"""	UPDATE <TS> MDN and shorten MDLT """
 		dct = 	{ 'm2m:ts' : { 
 			'mdn' : maxMdn - 2
 		}}
@@ -545,14 +561,14 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateTSremoveMdn(self) -> None:
-		"""	Update <TS> MDN with null and disable monitoring """
+		"""	UPDATE <TS> MDN with null and disable monitoring """
 		self._stopMonitoring()
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	@unittest.skipIf(maxMdn < 3, 'mdn is set to < 3')
 	def test_updateTSaddMdn(self) -> None:
-		"""	Update <TS> set MDN again and enable monitoring """
+		"""	UPDATE <TS> set MDN again and enable monitoring """
 		# Set the detectTime to a short time
 		dct = 	{ 'm2m:ts' : { 
 			'mdn' : maxMdn - 2
@@ -568,7 +584,7 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateTSaddMdt(self) -> None:
-		"""	Update <TS> MDT with non-null and enable monitoring """
+		"""	UPDATE <TS> MDT with non-null and enable monitoring """
 		# Set the detectTime to a short time
 		dct = 	{ 'm2m:ts' : { 
 			'mdt' : mdt
@@ -584,8 +600,8 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateTSremoveMdt(self) -> None:
-		"""	Update <TS> MDt with null and disable monitoring """
-		# Set the detectTime to a short time
+		"""	UPDATE <TS> MDT with null and disable monitoring """
+		# Set the detectTime to None
 		dct = 	{ 'm2m:ts' : { 
 			'mdt' : None
 		}}
@@ -599,12 +615,81 @@ class TestTS_TSI(unittest.TestCase):
 		r, rsc = RETRIEVE(tsURL, TestTS_TSI.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertEqual(mdlt, findXPath(r, 'm2m:ts/mdlt'), r)
+	
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createMissingDataSubUnderTS(self) -> None:
+		"""	CREATE <sub> for missing data monitoring """
+		clearLastNotification()
+		dct = 	{ 'm2m:sub' : { 
+			'rn' : subRN,
+			'enc': {
+				'net': [ 8 ],
+				'md' : {
+					'dur': f'PT{pei*maxMdn/1000}S',
+					'num': maxMdn - 2,
+				}
+			},
+			'nu': [ NOTIFICATIONSERVER ]
+		}}
+		TestTS_TSI.sub, rsc = CREATE(tsURL, TestTS_TSI.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.created)
+		lastNotification = getLastNotification()
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(TestTS_TSI.sub, 'm2m:sub/ri')))
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createMissingDataForSub(self) -> None:
+		"""	CREATE missing data for <sub> monitoring """
+		clearLastNotification()
+
+		# Start the timeSeries monitoring
+		dgt = datetime.datetime.utcnow().timestamp() + (timeSeriesInterval/2) + 0.1
+		dct = 	{ 'm2m:tsi' : {
+					'dgt' : toISO8601Date(dgt),
+					'con' : 'aValue',
+					'snr' : 0
+				}}
+		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
+		self.assertEqual(rsc, RC.created, r)
+		time.sleep(timeSeriesInterval) # == pei
+		dgt += timeSeriesInterval
+
+		# Add further TSI
+		for i in range(0, maxMdn * 2):
+			dct = 	{ 'm2m:tsi' : {
+						'dgt' : toISO8601Date(dgt),
+						'con' : 'aValue',
+						'snr' : i
+					}}
+			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
+			self.assertEqual(rsc, RC.created, r)
+			time.sleep(timeSeriesInterval) # == pei
+			dgt += timeSeriesInterval
+
+			# Check notifications
+			lastNotification = getLastNotification(True)
+			if i % maxMdn == (maxMdn-2-1):
+				self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:tsn'), lastNotification)
+				self.assertEqual(len(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:tsn/mdlt')), maxMdn-2, lastNotification)
+				self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:tsn/mdc'), maxMdn-2, lastNotification)
+			elif i % maxMdn >= maxMdn-2:
+				self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:tsn'), lastNotification)
+				self.assertEqual(len(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:tsn/mdlt')), 1, lastNotification)
+				self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:tsn/mdc'), (i%maxMdn)+1, lastNotification)
+			else:
+				self.assertIsNone(lastNotification, lastNotification)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteMissingDataSubUnderTS(self) -> None:
+		"""	DELETE <sub> for missing data monitoring """
+		r, rsc = DELETE(f'{tsURL}/{subRN}', TestTS_TSI.originator)
+		self.assertEqual(rsc, RC.deleted, r)
 
 
 # TODO: instead of mdt:9999 set the mdn to None etc.
-
-# peid: Test with everything ok, but dgt < peid, and another test with dgt > peid
-# TODO Test: first TSI with dgt < now - peid
 
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
@@ -641,6 +726,13 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestTS_TSI('test_createTSInotInPeriod'))
 	suite.addTest(TestTS_TSI('test_updateTSaddMdt'))
 	suite.addTest(TestTS_TSI('test_updateTSremoveMdt'))
+
+	# MissingData subscriptions
+	suite.addTest(TestTS_TSI('test_deleteTS'))
+	suite.addTest(TestTS_TSI('test_createTSwithMonitoring'))
+	suite.addTest(TestTS_TSI('test_createMissingDataSubUnderTS'))
+	suite.addTest(TestTS_TSI('test_createMissingDataForSub'))
+	suite.addTest(TestTS_TSI('test_deleteMissingDataSubUnderTS'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	

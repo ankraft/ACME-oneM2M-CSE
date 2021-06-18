@@ -35,11 +35,11 @@ class Dispatcher(object):
 		self.csiSlash 					= f'{CSE.cseCsi}/' 
 		self.csiSlashLen 				= len(self.csiSlash)
 		self.sortDiscoveryResources 	= Configuration.get('cse.sortDiscoveredResources')
-		if L.isInfo: L.log('Dispatcher initialized')
+		L.isInfo and L.log('Dispatcher initialized')
 
 
 	def shutdown(self) -> bool:
-		if L.isInfo: L.log('Dispatcher shut down')
+		L.isInfo and L.log('Dispatcher shut down')
 		return True
 
 
@@ -60,7 +60,7 @@ class Dispatcher(object):
 
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
-			if L.isDebug: L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
+			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
 			return fanoutPointResource.handleRetrieveRequest(request, fopsrn, request.headers.originator)
 
 		permission = Permission.DISCOVERY if request.args.fu == 1 else Permission.RETRIEVE
@@ -71,7 +71,7 @@ class Dispatcher(object):
 		if permission == Permission.RETRIEVE and request.args.rcn not in [ RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource, RCN.childResourceReferences]: # TODO
 			return Result(status=False, rsc=RC.badRequest, dbg=f'invalid rcn: {request.args.rcn:d} for fu: {request.args.fu:d}')
 
-		if L.isDebug: L.logDebug(f'Discover/Retrieve resources (fu: {request.args.fu:d}, drt: {request.args.drt}, handling: {request.args.handling}, conditions: {request.args.conditions}, resultContent: {request.args.rcn:d}, attributes: {str(request.args.attributes)})')
+		L.isDebug and L.logDebug(f'Discover/Retrieve resources (fu: {request.args.fu:d}, drt: {request.args.drt}, handling: {request.args.handling}, conditions: {request.args.conditions}, resultContent: {request.args.rcn:d}, attributes: {str(request.args.attributes)})')
 
 
 		# Retrieve the target resource, because it is needed for some rcn (and the default)
@@ -157,7 +157,7 @@ class Dispatcher(object):
 
 
 	def retrieveLocalResource(self, ri:str=None, srn:str=None) -> Result:
-		if L.isDebug: L.logDebug(f'Retrieve resource: {ri if srn is None else srn}')
+		L.isDebug and L.logDebug(f'Retrieve resource: {ri if srn is None else srn}')
 
 		if ri is not None:
 			res = CSE.storage.retrieveResource(ri=ri)		# retrieve via normal ID
@@ -174,7 +174,7 @@ class Dispatcher(object):
 				return res
 			return Result(status=True, resource=resource)
 		if res.dbg is not None:
-			if L.isDebug: L.logDebug(f'{res.dbg}: {ri}')
+			L.isDebug and L.logDebug(f'{res.dbg}: {ri}')
 		return Result(status=res.status, rsc=res.rsc, dbg=res.dbg)
 
 
@@ -184,7 +184,7 @@ class Dispatcher(object):
 	#
 
 	def discoverResources(self, id:str, originator:str, handling:Conditions={}, fo:int=1, conditions:Conditions=None, attributes:Parameters=None, rootResource:Resource=None, permission:Permission=Permission.DISCOVERY) -> Result:
-		if L.isDebug: L.logDebug('Discovering resources')
+		L.isDebug and L.logDebug('Discovering resources')
 
 		if rootResource is None:
 			if (res := self.retrieveResource(id)).resource is None:
@@ -390,7 +390,7 @@ class Dispatcher(object):
 
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
-			if L.isDebug: L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
+			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
 			return fanoutPointResource.handleCreateRequest(request, fopsrn, request.headers.originator)
 
 		if (ty := request.headers.resourceType) is None:	# Check for type parameter in request
@@ -402,7 +402,7 @@ class Dispatcher(object):
 
 		# Get parent resource and check permissions
 		if (res := CSE.dispatcher.retrieveResource(id)).resource is None:
-			L.logErr(dbg := 'Parent resource: {id} not found')
+			L.logErr(dbg := f'Parent resource: {id} not found')
 			return Result(status=False, rsc=RC.notFound, dbg=dbg)
 		parentResource = res.resource
 
@@ -467,10 +467,10 @@ class Dispatcher(object):
 
 
 	def createResource(self, resource:Resource, parentResource:Resource=None, originator:str=None) -> Result:
-		if L.isDebug: L.logDebug(f'Adding resource ri: {resource.ri}, type: {resource.ty:d}')
+		L.isDebug and L.logDebug(f'Adding resource ri: {resource.ri}, type: {resource.ty:d}')
 
 		if parentResource is not None:
-			if L.isDebug: L.logDebug(f'Parent ri: {parentResource.ri}')
+			L.isDebug and L.logDebug(f'Parent ri: {parentResource.ri}')
 			if not parentResource.canHaveChild(resource):
 				if resource.ty == T.SUB:
 					L.logWarn(dbg := 'Parent resource is not subscribable')
@@ -527,12 +527,12 @@ class Dispatcher(object):
 
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
-			if L.isDebug: L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
+			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
 			return fanoutPointResource.handleUpdateRequest(request, fopsrn, request.headers.originator)
 
 		# Get resource to update
 		if (res := self.retrieveResource(id)).resource is None:
-			if L.isWarn: L.logWarn(f'Resource not found: {res.dbg}')
+			L.isWarn and L.logWarn(f'Resource not found: {res.dbg}')
 			return Result(status=False, rsc=RC.notFound, dbg=res.dbg)
 		resource = res.resource
 		if resource.readOnly:
@@ -587,12 +587,12 @@ class Dispatcher(object):
 
 
 	def updateResource(self, resource:Resource, dct:JSON=None, doUpdateCheck:bool=True, originator:str=None) -> Result:
-		if L.isDebug: L.logDebug(f'Updating resource ri: {resource.ri}, type: {resource.ty:d}')
+		L.isDebug and L.logDebug(f'Updating resource ri: {resource.ri}, type: {resource.ty:d}')
 		if doUpdateCheck:
 			if not (res := resource.update(dct, originator)).status:
 				return res.errorResult()
 		else:
-			if L.isDebug: L.logDebug('No check, skipping resource update')
+			L.isDebug and L.logDebug('No check, skipping resource update')
 
 		# send a create event
 		CSE.event.updateResource(resource)		# type: ignore
@@ -616,12 +616,12 @@ class Dispatcher(object):
 
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
-			if L.isDebug: L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
+			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
 			return fanoutPointResource.handleDeleteRequest(request, fopsrn, request.headers.originator)
 
 		# get resource to be removed and check permissions
 		if (res := self.retrieveResource(id)).resource is None:
-			if L.isDebug: L.logDebug(res.dbg)
+			L.isDebug and L.logDebug(res.dbg)
 			return Result(status=False, rsc=RC.notFound, dbg=res.dbg)
 		resource = res.resource
 
@@ -672,7 +672,7 @@ class Dispatcher(object):
 
 
 	def deleteResource(self, resource:Resource, originator:str=None, withDeregistration:bool=False, parentResource:Resource=None) -> Result:
-		if L.isDebug: L.logDebug(f'Removing resource ri: {resource.ri}, type: {resource.ty:d}')
+		L.isDebug and L.logDebug(f'Removing resource ri: {resource.ri}, type: {resource.ty:d}')
 
 		resource.deactivate(originator)	# deactivate it first
 

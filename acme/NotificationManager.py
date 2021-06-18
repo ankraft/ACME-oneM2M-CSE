@@ -12,9 +12,11 @@ import isodate
 from urllib.parse import urlparse, urlencode, parse_qs, urlunparse
 from typing import List, Callable
 from threading import Lock
+
+from tinydb.utils import V
 from Logging import Logging as L
 from Constants import Constants as C
-from Types import Result, NotificationContentType, NotificationEventType, Permission, ResponseCode as RC
+from Types import MissingData, Result, NotificationContentType, NotificationEventType, Permission, ResponseCode as RC
 from Types import ContentSerializationType, JSON, Parameters
 from Configuration import Configuration
 import Utils, CSE
@@ -54,22 +56,14 @@ class NotificationManager(object):
 	#	Subscriptions
 	#
 
-	# def addSubscription(self, subscription:Resource, originator:str) -> Result:
-	# 	if not self.enableNotifications:
-	# 		return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg='notifications are disabled')
-	# 	Logging.logDebug('Adding subscription')
-	# 	if (res := self._checkNusInSubscription(subscription, originator=originator)).lst is None:	# verification requests happen here
-	# 		return Result(status=False, rsc=res.rsc, dbg=res.dbg)
-	# 	return Result(status=True) if CSE.storage.addSubscription(subscription) else Result(status=False, rsc=RC.internalServerError, dbg='cannot add subscription to database')
-
 	def addSubscription(self, subscription:Resource, originator:str) -> Result:
+		"""	Add a new subscription. Check each receipient with verification requests. """
 		if not self.enableNotifications:
 			return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg='notifications are disabled')
 		if L.isDebug: L.logDebug('Adding subscription')
 		if (res := self._checkNusInSubscription(subscription, originator=originator)).lst is None:	# verification requests happen here
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 		return Result(status=True) if CSE.storage.addSubscription(subscription) else Result(status=False, rsc=RC.internalServerError, dbg='cannot add subscription to database')
-
 
 
 	def removeSubscription(self, subscription: Resource) -> Result:
@@ -107,15 +101,14 @@ class NotificationManager(object):
 		return Result(status=True) if CSE.storage.updateSubscription(subscription) else Result(status=False, rsc=RC.internalServerError, dbg='cannot update subscription in database')
 
 
-	def checkSubscriptions(self, resource:Resource, reason:NotificationEventType, childResource:Resource=None, modifiedAttributes:JSON=None) -> None:
+	def checkSubscriptions(self, resource:Resource, reason:NotificationEventType, childResource:Resource=None, modifiedAttributes:JSON=None, ri:str=None, missingData:dict[str, MissingData]=None, now:float=None) -> None:
 		if not self.enableNotifications:
 			return
 
 		if Utils.isVirtualResource(resource):
 			return 
-
 		if L.isDebug: L.logDebug('Checking subscriptions for notifications')
-		ri = resource.ri
+		ri = resource.ri if ri is None else ri
 
 		# ATTN: The "subscription" returned here are NOT the <sub> resources,
 		# but an internal representation from the 'subscription' DB !!!
@@ -137,7 +130,8 @@ class NotificationManager(object):
 				chty = sub['chty']
 				if chty is not None and not childResource.ty in chty:	# skip if chty is set and child.type is not in the list
 					continue
-				self._handleSubscriptionNotification(sub, reason, childResource, modifiedAttributes=modifiedAttributes)
+				self._handleSubscriptionNotification(sub, reason, resource=childResource, modifiedAttributes=modifiedAttributes)
+			
 			# Check Update and enc/atr vs the modified attribuets 
 			elif reason == NotificationEventType.resourceUpdate and (atr := sub['atr']) is not None and modifiedAttributes is not None:
 				found = False
@@ -145,9 +139,16 @@ class NotificationManager(object):
 					if k in modifiedAttributes:
 						found = True
 				if found:
-					self._handleSubscriptionNotification(sub, reason, resource, modifiedAttributes=modifiedAttributes)
+					self._handleSubscriptionNotification(sub, reason, resource=resource, modifiedAttributes=modifiedAttributes)
 				else:
 					if L.isDebug: L.logDebug('Skipping notification: No matching attributes found')
+			
+			# Check for missing data points (only for <TS>)
+			elif reason == NotificationEventType.reportOnGeneratedMissingDataPoints and missingData is not None and len(missingData) > 0:
+				md = missingData[sub['ri']]
+				if md.missingDataCurrentNr >= md.missingDataNumber:	# Always send missing data if the count is greater then the minimum number
+					self._handleSubscriptionNotification(sub, NotificationEventType.reportOnGeneratedMissingDataPoints, missingData=md)
+					md.missingDataList = []	# delete only the sent missing data points
 
 			else: # all other reasons that target the resource
 				self._handleSubscriptionNotification(sub, reason, resource, modifiedAttributes=modifiedAttributes)
@@ -281,7 +282,7 @@ class NotificationManager(object):
 		return self._sendNotification([ uri ], sender)
 
 
-	def _handleSubscriptionNotification(self, sub:JSON, reason:NotificationEventType, resource:Resource, modifiedAttributes:JSON=None) ->  bool:
+	def _handleSubscriptionNotification(self, sub:JSON, reason:NotificationEventType, resource:Resource=None, modifiedAttributes:JSON=None, missingData:MissingData=None) ->  bool:
 		"""	Send a subscription notification.
 		"""
 		if L.isDebug: L.logDebug(f'Handling notification for reason: {reason}')
@@ -300,9 +301,10 @@ class NotificationManager(object):
 			}
 			data = None
 			nct = sub['nct']
-			nct == NotificationContentType.all					and (data := resource.asDict())
-			nct == NotificationContentType.ri 					and (data := { 'm2m:uri' : resource.ri })
-			nct == NotificationContentType.modifiedAttributes	and (data := { resource.tpe : modifiedAttributes })
+			nct == NotificationContentType.all						and (data := resource.asDict())
+			nct == NotificationContentType.ri 						and (data := { 'm2m:uri' : resource.ri })
+			nct == NotificationContentType.modifiedAttributes		and (data := { resource.tpe : modifiedAttributes })
+			nct == NotificationContentType.timeSeriesNotification	and (data := { 'm2m:tsn' : missingData.asDict() })
 			# TODO nct == NotificationContentType.triggerPayload
 
 			# Add some values to the notification
@@ -444,13 +446,12 @@ class NotificationManager(object):
 
 	def _flushBatchNotifications(self, subscription:Resource) -> None:
 		ri = subscription.ri
-		sub = CSE.storage.getSubscription(ri)
-
-		if (nus := self._getNotificationURLs(sub['nus'])) is not None: # TODO
-			ln = sub['ln'] if 'ln' in sub else False
-			for nu in nus:
-				self._stopNotificationBatchWorker(ri, nu)						# Stop a potential worker for that particular batch
-				self._sendSubscriptionAggregatedBatchNotification(ri, nu, ln)	# Send all remaining notifications
+		if (sub := CSE.storage.getSubscription(ri)) is not None:
+			if (nus := self._getNotificationURLs(sub['nus'])) is not None: # TODO
+				ln = sub['ln'] if 'ln' in sub else False
+				for nu in nus:
+					self._stopNotificationBatchWorker(ri, nu)						# Stop a potential worker for that particular batch
+					self._sendSubscriptionAggregatedBatchNotification(ri, nu, ln)	# Send all remaining notifications
 
 
 	def _storeBatchNotification(self, nu:str, sub:JSON, notificationRequest:JSON, serialization:ContentSerializationType) -> bool:

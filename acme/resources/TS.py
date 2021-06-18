@@ -10,7 +10,7 @@
 from __future__ import annotations
 from copy import deepcopy
 from Configuration import Configuration
-from Types import ResourceTypes as T, Result
+from Types import ResourceTypes as T, Result, NotificationEventType as NET
 import Utils, CSE
 from Validator import constructPolicy, addPolicy
 from .Resource import *
@@ -71,7 +71,7 @@ class TS(AnnounceableResource):
 			return res
 
 		# register latest and oldest virtual resources
-		if L.isDebug: L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
+		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
 		resource = Factory.resourceFromDict({}, pi=self.ri, ty=T.TS_LA).resource	# rn is assigned by resource itself
@@ -100,14 +100,14 @@ class TS(AnnounceableResource):
 
  
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
-		if L.isDebug: L.logDebug(f'Validating timeSeries: {self.ri}')
+		L.isDebug and L.logDebug(f'Validating timeSeries: {self.ri}')
 		if (res := super().validate(originator, create, dct)).status == False:
 			return res
 		
 		# Check peid
 		if self.peid is not None and self.pei is not None:
 			if self.peid > self.pei/2:
-				L.logWarn(dbg := 'peid must be <= pei/2')
+				L.isWarn and L.logWarn(dbg := 'peid must be <= pei/2')
 				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 		elif self.pei is not None:
 			self.setAttribute('peid', int(self.pei/2), False)
@@ -142,7 +142,7 @@ class TS(AnnounceableResource):
 
 	# Handle the addition of new TSI. Basically, get rid of old ones.
 	def childAdded(self, childResource:Resource, originator:str) -> None:
-		if L.isDebug: L.logDebug(f'Child resource added: {childResource.ri}')
+		L.isDebug and L.logDebug(f'Child resource added: {childResource.ri}')
 		super().childAdded(childResource, originator)
 		if childResource.ty == T.TSI:	# Validate if child is TSI
 
@@ -157,17 +157,31 @@ class TS(AnnounceableResource):
 
 			self.validate(originator)
 		
-		# Add to monitoring if this is enabled for this TS (mdd & pei & mdt are not None, and mdd==True)
-		if (mdd := self.mdd) is not None and mdd == True and self.pei is not None and self.mdt is not None:
-			CSE.timeSeries.updateTimeSeries(self, childResource)
+			# Add to monitoring if this is enabled for this TS (mdd & pei & mdt are not None, and mdd==True)
+			if (mdd := self.mdd) is not None and mdd == True and self.pei is not None and self.mdt is not None:
+				CSE.timeSeries.updateTimeSeries(self, childResource)
+		
+		elif childResource.ty == T.SUB:		# start monitoring
+			if childResource['enc/md'] is not None:
+				CSE.timeSeries.addSubscription(self, childResource)
 
 
 	# Handle the removal of a CIN. 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
-		if L.isDebug: L.logDebug(f'Child resource removed: {childResource.ri}')
+		L.isDebug and L.logDebug(f'Child resource removed: {childResource.ri}')
 		super().childRemoved(childResource, originator)
 		if childResource.ty == T.TSI:	# Validate if child was TSI
 			self._validateChildren()
+		elif childResource.ty == T.SUB:
+			if childResource['enc/md'] is not None:
+				CSE.timeSeries.removeSubscription(self, childResource)
+
+
+	# handle eventuel updates of subscriptions
+	def childUpdated(self, childResource: Resource, updatedAttributes: JSON, originator: str) -> None:
+		super().childUpdated(childResource, updatedAttributes, originator)
+		if childResource.ty == T.SUB and childResource['enc/md'] is not None:
+			CSE.timeSeries.updateSubscription(self, childResource)		
 
 
 	def _validateChildren(self) -> None:
@@ -187,7 +201,7 @@ class TS(AnnounceableResource):
 			i = 0
 			l = cni
 			while cni > mni and i < l:
-				if L.isDebug: L.logDebug(f'cni > mni: Removing <tsi>: {cs[i].ri}')
+				L.isDebug and L.logDebug(f'cni > mni: Removing <tsi>: {cs[i].ri}')
 				# remove oldest
 				CSE.dispatcher.deleteResource(cs[i], parentResource=self)
 				cni -= 1	# decrement cni when deleting a <cin>
@@ -205,7 +219,7 @@ class TS(AnnounceableResource):
 			i = 0
 			l = len(cs)
 			while cbs > mbs and i < l:
-				if L.isDebug: L.logDebug(f'cbs > mbs: Removing <tsi>: {cs[i].ri}')
+				L.isDebug and L.logDebug(f'cbs > mbs: Removing <tsi>: {cs[i].ri}')
 				# remove oldest
 				cbs -= cs[i]['cs']
 				CSE.dispatcher.deleteResource(cs[i], parentResource=self)
@@ -222,7 +236,7 @@ class TS(AnnounceableResource):
 
 
 	def _validateDataDetect(self, dct:JSON=None) -> None:
-		if L.isDebug: L.logDebug('Validating data detection')
+		L.isDebug and L.logDebug('Validating data detection')
 
 		# Check whether missing data detection is turned on
 		mdn = self.mdn

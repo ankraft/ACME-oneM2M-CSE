@@ -70,8 +70,8 @@ class Resource(object):
 	
 			# Check uniqueness of ri. otherwise generate a new one. Only when creating
 			if create:
-				while Utils.isUniqueRI(ri := self.attribute('ri')) == False:
-					if L.isWarn: L.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
+				while Utils.isUniqueRI(ri := self.ri) == False:
+					L.isWarn and L.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
 					self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite=True)
 
 			# Indicate whether this is a virtual resource
@@ -139,7 +139,7 @@ class Resource(object):
 			Implemented in sub-classes as well.
 			Note: CR is set in RegistrationManager	(TODO: Check this)
 		"""
-		if L.isDebug: L.logDebug(f'Activating resource: {self.ri}')
+		L.isDebug and L.logDebug(f'Activating resource: {self.ri}')
 
 		# validate the attributes but only when the resource is not instantiated.
 		# We assume that an instantiated resource is always correct
@@ -180,7 +180,7 @@ class Resource(object):
 	# Deactivate an active resource.
 	# Send notification on deletion
 	def deactivate(self, originator:str) -> None:
-		if L.isDebug: L.logDebug(f'Deactivating and removing sub-resources for: {self.ri}')
+		L.isDebug and L.logDebug(f'Deactivating and removing sub-resources for: {self.ri}')
 		# First check notification because the subscription will be removed
 		# when the subresources are removed
 		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceDelete)
@@ -203,9 +203,8 @@ class Resource(object):
 		updatedAttributes = None
 		if dct is not None:
 			if self.tpe not in dct and self.ty not in [T.FCNTAnnc, T.FCIAnnc]:	# Don't check announced versions of announced FCNT
-				if L.isWarn: L.logWarn("Update type doesn't match target")
+				L.isWarn and L.logWarn("Update type doesn't match target")
 				return Result(status=False, rsc=RC.contentsUnacceptable, dbg='resource types mismatch')
-
 
 			# validate the attributes
 			if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self.attributePolicies, create=False, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
@@ -266,6 +265,13 @@ class Resource(object):
 		# Check subscriptions
 		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceUpdate, modifiedAttributes=self[self._modified])
 		self.dbUpdate()
+
+		# Notify parent that a child has been updated
+		if (parent := self.retrieveParentResource()) is None:
+			L.logErr(dbg := f'cannot retrieve parent resource')
+			return Result(status=False, rsc=RC.internalServerError, dbg=dbg)
+		parent.childUpdated(self, updatedAttributes, originator)
+
 		return Result(status=True)
 
 
@@ -286,6 +292,11 @@ class Resource(object):
 		CSE.notification.checkSubscriptions(self, NotificationEventType.createDirectChild, childResource)
 
 
+	def childUpdated(self, childResource:Resource, updatedAttributes:JSON, originator:str) -> None:
+		"""	Called when a child resource was updated. """
+		pass
+
+
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
 		""" Call when child resource was removed from the resource. """
 		CSE.notification.checkSubscriptions(self, NotificationEventType.deleteDirectChild, childResource)
@@ -304,23 +315,23 @@ class Resource(object):
 
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
 		""" Validate a resource. Usually called within activate() or update() methods. """
-		if L.isDebug: L.logDebug(f'Validating resource: {self.ri}')
+		L.isDebug and L.logDebug(f'Validating resource: {self.ri}')
 		if (not Utils.isValidID(self.ri) or
 			not Utils.isValidID(self.pi) or
 			not Utils.isValidID(self.rn)):
-			L.logDebug(dbg := f'Invalid ID ri: {self.ri}, pi: {self.pi}, rn: {self.rn})')
+			L.isDebug and L.logDebug(dbg := f'Invalid ID ri: {self.ri}, pi: {self.pi}, rn: {self.rn})')
 			return Result(status=False, rsc=RC.contentsUnacceptable, dbg=dbg)
 
 		# expirationTime handling
 		if (et := self.et) is not None:
 			if self.ty == T.CSEBase:
-				L.logWarn(dbg := 'expirationTime is not allowed in CSEBase')
+				L.isWarn and L.logWarn(dbg := 'expirationTime is not allowed in CSEBase')
 				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 			if len(et) > 0 and et < (etNow := Utils.getResourceDate()):
-				L.logWarn(dbg := f'expirationTime is in the past: {et} < {etNow}')
+				L.isWarn and L.logWarn(dbg := f'expirationTime is in the past: {et} < {etNow}')
 				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 			if et > (etMax := Utils.getResourceDate(Configuration.get('cse.maxExpirationDelta'))):
-				if L.isDebug: L.logDebug(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
+				L.isDebug and L.logDebug(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
 				self['et'] = etMax
 		return Result(status=True)
 
@@ -461,7 +472,7 @@ class Resource(object):
 			if not CSE.importer.isImporting:
 
 				if (acp := CSE.dispatcher.retrieveResource(ri).resource) is None:
-					L.logDebug(dbg := f'Referenced <ACP> resource not found: {ri}')
+					L.isDebug and L.logDebug(dbg := f'Referenced <ACP> resource not found: {ri}')
 					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 

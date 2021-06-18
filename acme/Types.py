@@ -13,6 +13,7 @@ from typing import Any, List, Dict, Tuple, Union, Callable
 from enum import IntEnum,  auto
 
 
+
 #
 #	Resource Types
 #
@@ -273,6 +274,7 @@ class BasicType(IntEnum):
 	geoCoordinates	= auto()
 	integer			= auto()
 	void 			= auto()
+	duration 		= auto()
 
 
 class Cardinality(IntEnum):
@@ -544,21 +546,23 @@ class ConsistencyStrategy(IntEnum):
 
 class NotificationContentType(IntEnum):
 	"""	Notification Content Types """
-	all					= 1
-	modifiedAttributes	= 2
-	ri 					= 3
-	triggerPayload		= 4
+	all						= 1
+	modifiedAttributes		= 2
+	ri 						= 3
+	triggerPayload			= 4
+	timeSeriesNotification	= 5
 	
 
 class NotificationEventType(IntEnum):
 	""" eventNotificationCriteria/NotificationEventTypes """
-	resourceUpdate		= 1	# A, default
-	resourceDelete		= 2	# B
-	createDirectChild	= 3 # C
-	deleteDirectChild	= 4 # D	
-	retrieveCNTNoChild	= 5	# E # TODO not supported yet
-	triggerReceivedForAE= 6 # F # TODO not supported yet
-	blockingUpdate 		= 7 # G # TODO not supported yet
+	resourceUpdate						= 1	# A, default
+	resourceDelete						= 2	# B
+	createDirectChild					= 3 # C
+	deleteDirectChild					= 4 # D	
+	retrieveCNTNoChild					= 5	# E # TODO not supported yet
+	triggerReceivedForAE				= 6 # F # TODO not supported yet
+	blockingUpdate 						= 7 # G # TODO not supported yet
+	reportOnGeneratedMissingDataPoints	= 8 # H
 
 
 	def isAllowedNCT(self, nct:NotificationContentType) -> bool:
@@ -570,7 +574,61 @@ class NotificationEventType(IntEnum):
 			return self.value in [ NotificationEventType.resourceUpdate, NotificationEventType.resourceDelete, NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]
 		elif nct == NotificationContentType.triggerPayload:
 			return self.value in [ NotificationEventType.triggerReceivedForAE ]
+		elif nct == NotificationContentType.timeSeriesNotification:
+			return self.value in [ NotificationEventType.reportOnGeneratedMissingDataPoints ]
 		return False
+
+##############################################################################
+#
+#	TimeSeries related.
+#
+
+@dataclass
+class MissingData:
+	"""	Data class for collecting the missing data states. """ 
+	subscriptionRi:str
+	missingDataDuration:float
+	missingDataNumber:int
+	timeWindowEndTimestamp:float	= None
+	missingDataList:list[str]		= field(default_factory=list)
+	missingDataCurrentNr:int 		= 0
+
+	def clear(self) -> None:
+		self.missingDataList		= []
+		self.timeWindowEndTimestamp	= None
+		self.missingDataCurrentNr	= 0
+	
+	def asDict(self) -> JSON:
+		return {
+			'mdlt': self.missingDataList,
+			'mdc' : self.missingDataCurrentNr
+		}
+
+
+
+
+@dataclass
+class LastTSInstance:
+	"""	Data class for a single TS's latest and next expected TSI/dgt, and other information """
+
+	# runtime attributes
+	lastSeenDgt:float					= 0.0
+	tsiArrivedAt:float					= 0.0
+	nextExpectedDgt:float				= 0.0
+	nextRuntime:float					= 0.0
+
+	# <TS> attributes
+	pei:float							= 0.0
+	mdt:float							= 0.0
+	peid:float							= 0.0
+
+	# Subscriptions
+	missingData:dict[str, MissingData]	= field(default_factory=dict)
+
+	# Internal
+	actor:BackgroundWorker				= None	#type:ignore[name-defined] # actor for this TS 
+	running:bool 						= False # for late activation of this 
+
 
 
 ##############################################################################
@@ -643,15 +701,15 @@ class ContentSerializationType(IntEnum):
 
 @dataclass
 class Result:
-	resource 			: Resource		= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
-	dict 				: JSON 			= None		# Contains the result dictionary
-	data 				: Any 			= None 		# Anything
-	lst 				: List[Any]   	= None		# List of Anything
-	rsc 				: ResponseCode	= ResponseCode.OK	# OK
-	dbg 				: str 			= None
-	request 			: CSERequest	= None  	# may contain the processed http request object
-	status 				: bool 			= None
-	originator 			: str 			= None
+	resource:Resource	= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
+	dict:JSON 			= None		# Contains the result dictionary
+	data:Any 			= None 		# Anything
+	lst:List[Any]   	= None		# List of Anything
+	rsc:ResponseCode	= ResponseCode.OK	# OK
+	dbg:str 			= None
+	request:CSERequest	= None  	# may contain the processed http request object
+	status:bool 		= None
+	originator:str		= None
 
 
 	def errorResult(self) -> Result:
@@ -691,45 +749,44 @@ class Result:
 
 @dataclass
 class RequestArguments:
-	fu 							: FilterUsage 					= FilterUsage.conditionalRetrieval
-	drt 						: DesiredIdentifierResultType	= DesiredIdentifierResultType.structured
-	fo 							: FilterOperation 				= FilterOperation.AND
-	rcn 						: ResultContentType 			= ResultContentType.discoveryResultReferences
-	rt 							: ResponseType					= ResponseType.blockingRequest 					# response type
-	rp 							: str 							= None 											# result persistence
-	rpts 						: str 							= None 											# ... as a timestamp
-	handling 					: Conditions 					= field(default_factory=dict)
-	conditions 					: Conditions 					= field(default_factory=dict)
-	attributes 					: Parameters 					= field(default_factory=dict)
-	operation 					: Operation 					= None
-	#request 					: Request 						= None
-
+	fu:FilterUsage 					= FilterUsage.conditionalRetrieval
+	drt:DesiredIdentifierResultType	= DesiredIdentifierResultType.structured
+	fo:FilterOperation 				= FilterOperation.AND
+	rcn:ResultContentType 			= ResultContentType.discoveryResultReferences
+	rt:ResponseType					= ResponseType.blockingRequest 					# response type
+	rp:str 							= None 											# result persistence
+	rpts: str 						= None 											# ... as a timestamp
+	handling:Conditions 			= field(default_factory=dict)
+	conditions:Conditions 			= field(default_factory=dict)
+	attributes:Parameters 			= field(default_factory=dict)
+	operation:Operation 			= None
+	#request:Request 				= None
 
 @dataclass
 class RequestHeaders:
-	originator 					: str 			= None 	# X-M2M-Origin
-	requestIdentifier			: str 			= None	# X-M2M-RI
-	contentType 				: str 			= None	# Content-Type
-	accept						: list[str]		= None	# Accept
-	resourceType 				: ResourceTypes	= None
-	requestExpirationTimestamp	: str 			= None 	# X-M2M-RET
-	responseExpirationTimestamp	: str 			= None 	# X-M2M-RST
-	operationExecutionTime		: str 			= None 	# X-M2M-OET
-	releaseVersionIndicator		: str 			= None 	# X-M2M-RVI
-	responseTypeNUs				: list[str]		= None	# X-M2M-RTU
+	originator:str 					= None 	# X-M2M-Origin
+	requestIdentifier:str 			= None	# X-M2M-RI
+	contentType:str 				= None	# Content-Type
+	accept:list[str]				= None	# Accept
+	resourceType: ResourceTypes		= None
+	requestExpirationTimestamp:str 	= None 	# X-M2M-RET
+	responseExpirationTimestamp:str	= None 	# X-M2M-RST
+	operationExecutionTime:str 		= None 	# X-M2M-OET
+	releaseVersionIndicator:str 	= None 	# X-M2M-RVI
+	responseTypeNUs:list[str]		= None	# X-M2M-RTU
 
 
 @dataclass
 class CSERequest:
-	headers 					: RequestHeaders 			= None
-	args 						: RequestArguments 			= None
-	ct 							: ContentSerializationType	= None
-	originalArgs 				: Any 						= None	# Actually a MultiDict
-	data 						: bytes 					= None 	# The request original data
-	dict 						: JSON 						= None	# The request data as a dictionary
-	id 							: str 						= None 	# target ID
-	srn 						: str 						= None 	# target structured resource name
-	csi 						: str 						= None 	# target csi
+	headers:RequestHeaders 			= None
+	args:RequestArguments 			= None
+	ct:ContentSerializationType		= None
+	originalArgs:Any 				= None	# Actually a MultiDict
+	data:bytes 						= None 	# The request original data
+	dict:JSON 						= None	# The request data as a dictionary
+	id:str 							= None 	# target ID
+	srn:str 						= None 	# target structured resource name
+	csi:str 						= None 	# target csi
 
 
 ##############################################################################
