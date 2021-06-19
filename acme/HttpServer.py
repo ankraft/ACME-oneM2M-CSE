@@ -5,7 +5,6 @@
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
 #	Server to implement the http part of the oneM2M Mcx communication interface.
-#	This manager is the main run-loop for the CSE (when using http).
 #
 
 from __future__ import annotations
@@ -48,11 +47,6 @@ class HttpServer(object):
 		self.serverAddress		= Configuration.get('http.address')
 		self.listenIF			= Configuration.get('http.listenIF')
 		self.port 				= Configuration.get('http.port')
-		self.useTLS 			= Configuration.get('cse.security.useTLS')
-		self.verifyCertificate	= Configuration.get('cse.security.verifyCertificate')
-		self.tlsVersion			= Configuration.get('cse.security.tlsVersion').lower()
-		self.caCertificateFile	= Configuration.get('cse.security.caCertificateFile')
-		self.caPrivateKeyFile	= Configuration.get('cse.security.caPrivateKeyFile')
 		self.webuiRoot 			= Configuration.get('cse.webui.root')
 		self.webuiDirectory 	= f'{CSE.rootDirectory}/webui'
 		self.hfvRVI				= Configuration.get('cse.releaseVersion')
@@ -72,7 +66,7 @@ class HttpServer(object):
 		self._responseHeaders	= {'Server' : self.serverID}	# Additional headers for other requests
 
 		L.isInfo and L.log(f'Registering http server root at: {self.rootPath}')
-		if self.useTLS:
+		if CSE.security.useTLS:
 			L.isInfo and L.log('TLS enabled. HTTP server serves via https.')
 
 
@@ -134,8 +128,9 @@ class HttpServer(object):
 		# Disable most logs from requests and urllib3 library 
 		logging.getLogger("requests").setLevel(LogLevel.WARNING)
 		logging.getLogger("urllib3").setLevel(LogLevel.WARNING)
-		if not self.verifyCertificate:	# only when we also verify  certificates
+		if not CSE.security.verifyCertificate:	# only when we also verify  certificates
 			urllib3.disable_warnings()
+		if L.isInfo: L.log('HTTP Server initialized')
 
 
 
@@ -166,21 +161,11 @@ class HttpServer(object):
 			cli.show_server_banner = lambda *x: None 	# type: ignore
 			# Start the server
 			try:
-				context = None
-				if self.useTLS:
-					L.isInfo and L.logDebug(f'Setup SSL context. Certfile: {self.caCertificateFile}, KeyFile:{self.caPrivateKeyFile}, TLS version: {self.tlsVersion}')
-					context = ssl.SSLContext(
-									{ 	'tls1.1' : ssl.PROTOCOL_TLSv1_1,
-										'tls1.2' : ssl.PROTOCOL_TLSv1_2,
-										'auto'   : ssl.PROTOCOL_TLS,			# since Python 3.6. Automatically choose the highest protocol version between client & server
-									}[self.tlsVersion.lower()]
-								)
-					context.load_cert_chain(self.caCertificateFile, self.caPrivateKeyFile)
 				self.flaskApp.run(host=self.listenIF, 
 								  port=self.port,
 								  threaded=Configuration.get('http.multiThread'),
 								  request_handler=ACMERequestHandler,
-								  ssl_context=context,
+								  ssl_context=CSE.security.getSSLContext(),
 								  debug=False)
 			except Exception as e:
 				# No logging for headless, nevertheless print the reason what happened
@@ -381,7 +366,7 @@ class HttpServer(object):
 				L.isDebug and L.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n')
 			
 			# Actual sending the request
-			r = method(url, data=content, headers=hds, verify=self.verifyCertificate)
+			r = method(url, data=content, headers=hds, verify=CSE.security.verifyCertificate)
 
 			responseCt = ContentSerializationType.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
 			rc = RC(int(r.headers['X-M2M-RSC'])) if 'X-M2M-RSC' in r.headers else RC.internalServerError
