@@ -34,9 +34,6 @@ class MQTTClient(object):
 	def run(self) -> None:
 		"""	Run the MQTT client in a separate thread.
 		"""
-
-		# TODO put into an actor worker, even when this is not necessary. But it then shows in the list of workers
-
 		if not self.enable:
 			L.isInfo and L.log('MQTT: client NOT enabled')
 			return
@@ -56,11 +53,14 @@ class MQTTClient(object):
 		except Exception as e:
 			L.logErr(f'MQTT: cannot connect to broker: {e}', showStackTrace=False)
 			CSE.shutdown()
+			return
+
+
+		# TODO put into an actor worker, even when this is not necessary. But it then shows in the list of workers
 
 		self.mqttClient.loop_start()
 		self.isStopped = False	
 		if L.isInfo: L.log('MQTT: client started')
-
 
 
 	def shutdown(self) -> bool:
@@ -97,9 +97,13 @@ class MQTTClient(object):
 
 
 	def _onLog(self, client, userdata, level, buf):
-		"""	Mapping of the paho MQTT client's log to the CSE's log.
+		"""	Mapping of the paho MQTT client's log to the CSE's logging system.
 		"""
-		level == mqtt.MQTT_LOG_DEBUG and L.isDebug and L.logDebug(f'MQTT: {buf}')
-		(level == mqtt.MQTT_LOG_INFO or level == mqtt.mqtt.MQTT_LOG_NOTICE) and L.isInfo and L.log(f'MQTT: {buf}')
-		level == mqtt.MQTT_LOG_WARNING and L.isWarn and L.logWarn(f'MQTT: {buf}')
-		level == mqtt.MQTT_LOG_ERR and L.logErr(f'MQTT: {buf}', showStackTrace=False)
+		if level == mqtt.MQTT_LOG_DEBUG and L.isDebug:
+			L.logDebug(f'MQTT: {buf}')
+		elif (level == mqtt.MQTT_LOG_INFO or level == mqtt.mqtt.MQTT_LOG_NOTICE) and L.isInfo:
+			L.log(f'MQTT: {buf}')
+		elif level == mqtt.MQTT_LOG_WARNING and L.isWarn:
+			L.logWarn(f'MQTT: {buf}')
+		elif level == mqtt.MQTT_LOG_ERR:
+			L.logErr(f'MQTT: {buf}', showStackTrace=False)

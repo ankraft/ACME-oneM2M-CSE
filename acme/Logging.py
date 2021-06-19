@@ -164,7 +164,10 @@ class	Logging:
 
 	@staticmethod
 	def logErr(msg:str, showStackTrace:bool=True) -> None:
-		"""Print a log message with level ERROR. """
+		"""	Print a log message with level ERROR. 
+			`showStackTrace` indicates whether a stacktrace shall be logged together with the error
+			as well.
+		"""
 		import CSE
 		# raise logError event
 		(not CSE.event or CSE.event.logError())	# type: ignore

@@ -171,10 +171,11 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	# Start the MQTT client
 	mqttClient.run() # This does return
 	
-	L.isInfo and L.log('CSE started')
-	if isHeadless:
-		# when in headless mode give the CSE a moment (2s) to experience fatal errors before printing the start message
-		BackgroundWorkerPool.newActor(lambda : L.console('CSE started') if not shuttingDown else None, delay=2.0 ).start()
+	if not shuttingDown:
+		L.isInfo and L.log('CSE started')
+		if isHeadless:
+			# when in headless mode give the CSE a moment (2s) to experience fatal errors before printing the start message
+			BackgroundWorkerPool.newActor(lambda : L.console('CSE started') if not shuttingDown else None, delay=2.0 ).start()
 	
 	return True
 
