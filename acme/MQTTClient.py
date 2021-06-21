@@ -19,15 +19,16 @@ import paho.mqtt.client as mqtt
 
 @dataclass
 class MQTTTopic:
+	"""	Structure that represents a subscribed-to topic.
+	"""
 	topic:str			= None
 	mid:int				= None
 	isSubscribed:bool	= False
 
-
 class MQTTClient(object):
 
 	def __init__(self) -> None:
-		self.mqttClient 						= None
+		self.mqttClient:mqtt.Client 			= None
 		self.actor:BackgroundWorker 			= None
 		self.enable								= Configuration.get('mqtt.enable')
 		self.brokerAddress						= Configuration.get('mqtt.address')
@@ -68,7 +69,7 @@ class MQTTClient(object):
 			CSE.shutdown()
 			return
 
-		
+		# Actually start the actor to sun the MQTT client as a thread
 		self.actor = BackgroundWorkerPool.newActor(self._mqttActor, name='MQTTClient')
 		self.actor.start()
 
@@ -89,7 +90,7 @@ class MQTTClient(object):
 			if self.isConnected:
 				# Unsubscribe from all topics
 				for t in self.subscribedTopics:
-					self.removeTopic(t)
+					self.unsubscribeTopic(t)
 				# wait a moment for all unsubscribe ACKs to arrive
 				while len(self.subscribedTopics) > 0:
 					time.sleep(0.1)
@@ -102,50 +103,56 @@ class MQTTClient(object):
 		return True
 	
 
-	def addTopic(self, topic:str) -> None:
-		"""	Add a MQTT topic to subscribe to.
+	def subscribeTopic(self, topic:str) -> None:
+		"""	Add a MQTT topic to subscribe to. Add this topic afterwards
+			to the list of subscribed to topics.
 		"""
-		if self.mqttClient is None:
-			# TODO ERROR message
+		if self.mqttClient is None or not self.isConnected:
+			L.logErr('MQTT: Client missing or not initialized')
 			return
 		if (r := self.mqttClient.subscribe(topic))[0] == 0:
 			t = MQTTTopic(topic = topic, mid=r[1])
 			self.subscribedTopics.append(t)
 		else:
-			# TODO error message
+			L.logErr(f'MQTT: cannot subscribe: {r[0]}')
 			pass
 	
 
-	def removeTopic(self, topic:str|MQTTTopic) -> None:
-		# TODO
+	def unsubscribeTopic(self, topic:str|MQTTTopic) -> None:
+		"""	Unsubscribe from a topic. `topic` is either an MQTTTopic structure with
+			a previously subscribed to topic, or a topic name, in which case
+			it is searched for in the list of MQTTTopics.
+		"""
 		if isinstance(topic, MQTTTopic):
 			if (r := self.mqttClient.unsubscribe(topic.topic))[0] == 0:
 				topic.mid = r[1]
 			else:
-				pass # TODO error message
+				L.logErr(f'MQTT: cannot unsubscribe: {r[0]}')
+				return
 
-		else:	# if topic is just the name
+		else:	# if topic is just the name we need to se
 			for t in self.subscribedTopics:
 				if t.topic == topic and t.isSubscribed:
 					if (r := self.mqttClient.unsubscribe(t.topic))[0] == 0:
 						t.mid = r[1]
 					else:
-						pass # TODO error message
+						L.logErr(f'MQTT: cannot unsubscribe: {r[0]}')
+						return
 		# topic is removed in _onUnsubscribe() callback
 
 
 	#
 	#	MQTT callbacks
 	#
-	
+
 	def _onConnect(self, client, userdata, flags, rc):
 		"""	Callback when the MQTT client connected to the broker.
 		"""
 		L.isDebug and L.logDebug(f'MQTT: Connected with result code: {rc}')
 		if rc == 0:
 			self.isConnected = True
-			self.addTopic('test')
-			self.addTopic('test2')
+			self.subscribeTopic('test')
+			self.subscribeTopic('test2')
 		else:
 			CSE.shutdown()
 
