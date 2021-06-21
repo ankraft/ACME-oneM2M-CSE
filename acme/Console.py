@@ -139,7 +139,7 @@ class Console(object):
 		table.add_column('Runs', no_wrap=True)
 		for w in BackgroundWorkerPool.backgroundWorkers.values():
 			a = 'Actor' if w.maxCount == 1 else 'Worker'
-			table.add_row(w.name, a, str(w.interval), str(w.numberOfRuns))
+			table.add_row(w.name, a, str(float(w.interval)) if w.interval > 0.0 else '', str(w.numberOfRuns))
 		L.console(table, extranl=True)
 
 
