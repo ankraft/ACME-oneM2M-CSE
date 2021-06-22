@@ -841,6 +841,7 @@ def simpleMatch(st:str, pattern:str) -> bool:
 	
 		- '?' : any single character
 		- '*' _ zero or more characters
+		- '+' _ one or more characters
 		- '\\' - Escape an expression operator
 
 		Examples: 
@@ -857,11 +858,26 @@ def simpleMatch(st:str, pattern:str) -> bool:
 	"""
 
 	def simpleMatchStar(st:str, pattern:str) -> bool:
-		""" Recursively eat up a string when the pattern is a star in the beginning
+		""" Recursively eat up a string when the pattern is a star at the beginning
 			or middle of a pattern.
 		"""
 		stLen	= len(st)
 		stIndex	= 0
+		while not simpleMatch(st[stIndex:], pattern):
+			stIndex += 1
+			if stIndex >= stLen:
+				return False
+		return True
+	
+
+	def simpleMatchPlus(st:str, pattern:str) -> bool:
+		""" Recursively eat up a string when the pattern is a plus at the beginning
+			or middle of a pattern.
+		"""
+		stLen	= len(st)
+		stIndex	= 1
+		if len(st) == 0:
+			return False
 		while not simpleMatch(st[stIndex:], pattern):
 			stIndex += 1
 			if stIndex >= stLen:
@@ -899,7 +915,13 @@ def simpleMatch(st:str, pattern:str) -> bool:
 			if patternIndex == patternLen:	# * is the last char in the pattern: this is a match
 				return True
 			return simpleMatchStar(st[stIndex:], pattern[patternIndex:])	# Match recursively the remainder of the string
-		
+
+		if p == '+':
+			patternIndex += 1
+			if patternIndex == patternLen and len(st[stIndex:]) > 0:	# + is the last char in the pattern and there is enough string remaining: this is a match
+				return True
+			return simpleMatchPlus(st[stIndex:], pattern[patternIndex:])	# Match recursively the remainder of the string
+
 		# Literal match with the following character
 		if p == '\\':
 			patternIndex += 1
@@ -913,4 +935,3 @@ def simpleMatch(st:str, pattern:str) -> bool:
 	
 	# End of matches
 	return stIndex == stLen-1
-
