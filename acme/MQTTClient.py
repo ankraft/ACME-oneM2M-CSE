@@ -8,275 +8,220 @@
 #
 
 from __future__ import annotations
-import time
 from dataclasses import dataclass
-from typing import Callable
+from copy import deepcopy
 from Logging import Logging as L
 from Configuration import Configuration
-from Types import ContentSerializationType
-from helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
+from Constants import Constants as C
+from helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, mqttToId
+from Types import Operation, RequestHeaders, CSERequest, ContentSerializationType, Result, ResponseCode as RC, RequestHandler
 import CSE, Utils
 
-import paho.mqtt.client as mqtt
 
-@dataclass
-class MQTTTopic:
-	"""	Structure that represents a subscribed-to topic.
-	"""
-	topic:str			= None
-	mid:int				= None
-	isSubscribed:bool	= False
-	callback:Callable	= None
-	callbackArgs:dict 	= None
+# TODO events
+
+class MQTTClientHandler(MQTTHandler):
+
+	def __init__(self, mqttClient:MQTTClient) -> None:
+		super().__init__()
+		self.mqttClient = mqttClient
+		self.topicPrefix = mqttClient.topicPrefix
+		self.topicPrefixCount = len(self.topicPrefix.split('/'))	# Count the elements for the prefix
+
+		# TODO optimize - same table is in httpserver
+		self._requestHandlers:RequestHandler = {
+			Operation.RETRIEVE	: CSE.request.retrieveRequest,
+			Operation.CREATE	: CSE.request.createRequest,
+			Operation.UPDATE	: CSE.request.updateRequest,
+			Operation.DELETE	: CSE.request.deleteRequest
+		}
 
 
-# TODO split MQTThandler stuff. Only two callbacks for connected and disconnected to handle subscriptions.
-
-class MQTTHandler(object):
-
-	def onConnect(self, mqttClient:MQTTClient):
+	def onConnect(self, connection:MQTTConnection) -> None:
+		"""	When connected to a broker then register the topics the CSE listens to.
+		"""
 		# Subscribe to general requests
-		mqttClient.subscribeTopic(f'{mqttClient.topicPrefix}/oneM2M/req/+/{mqttClient.clientName}/cbor', self._requestCallback, serialization=ContentSerializationType.CBOR)
-		mqttClient.subscribeTopic(f'{mqttClient.topicPrefix}/oneM2M/req/+/{mqttClient.clientName}/json', self._requestCallback, serialization=ContentSerializationType.JSON)
+		connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/req/+/{connection.clientName}/#', self._requestCB)
 
-		# TODO Subscribe to register requests
+		# Subscribe to responses
+		connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/resp/+/{connection.clientName}/#', self._responseCB)
 
-		# TODO Subscribe to responses
+		# Subscribe to registration requests
+		connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/reg_req/+/{connection.clientName}/#', self._registrationRequestCB)
 
-	def onDisconnect(self, mqttClient:MQTTClient):
+
+	def onDisconnect(self, connection:MQTTConnection) -> None:
 		pass
 
-	#
-	#	Various request, register and response callbacks
-	#
 
-	def _requestCallback(self, mqttClient:MQTTClient, topic:str, data:str, args):
-		L.logDebug(f'REQUEST {topic}, {data}, {args}')
-		mqttClient.publish('test', f'{topic}, {data}, {args}')
+
+
+	# #
+	# #	Various request, register and response callbacks
+	# #
+
+
+
+	def _requestCB(self, connection:MQTTConnection, topic:str, data:str) -> None:
+		L.isDebug and L.logDebug(f'==> REQUEST {topic}, {data}')
+		ts = topic.split('/')
+		originator, _ = mqttToId(ts[self.topicPrefixCount + 2])
+		receiver, _   = mqttToId(ts[self.topicPrefixCount + 3])
+		contentType   = ts[self.topicPrefixCount + 4]
+
+		if not (result := self.dissectMQTTRequest(data, contentType)).status:
+			L.logWarn(result)
+
+			return # TODO error
+
+		responseResult = self._requestHandlers[result.request.op](result.request)
+		# TODO real response
+		L.logWarn(responseResult)
+		L.logDebug(f'REQUEST originator:{originator}, receiver:{receiver}, type:{contentType}')
+		connection.publish('test', f'{topic}, {responseResult}')
+
+
+
+
+	def _responseCB(self, connection:MQTTConnection, topic:str, data:str) -> None:
+		L.logDebug(f'RESPONSE {topic}, {data}, {ts[-1]}')
+		connection.publish('test', f'{topic}, {data}, {ts[-1]}'.encode())
+
+
+
+	def _registrationRequestCB(self, connection:MQTTConnection, topic:str, data:str) -> None:
+		L.logDebug(f'REGISTRATION {topic}, {data}, {ts[-1]}')
+		connection.publish('test', f'{topic}, {data}, {ts[-1]}'.encode())
+	
+
+	def dissectMQTTRequest(self, data:str, contenType:str) -> Result:
+		cseRequest = CSERequest()
+		cseRequest.data = data
+		cseRequest.headers = RequestHeaders()
+		cseRequest.headers.contentType = contenType
+		if contenType not in C.supportedContentSerializationsSimple:
+			return Result(rsc=RC.unsupportedMediaType, request=cseRequest, dbg=f'Unsupported media type for content-type: {cseRequest.headers.contentType}', status=False)
+		cseRequest.ct = ContentSerializationType.to(cseRequest.headers.contentType)
+
+		# De-Serialize the content
+		if cseRequest.data is not None and len(cseRequest.data) > 0:
+			try:
+				if (_d := Utils.deserializeData(cseRequest.data, cseRequest.ct)) is None:
+					return Result(rsc=RC.unsupportedMediaType, request=cseRequest, dbg=f'Unsupported media type for content-type: {cseRequest.headers.contentType}', status=False)
+			except Exception as e:
+				L.isWarn and L.logWarn('Bad request (malformed content?)')
+				return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'Malformed content? {str(e)}', status=False)
+			
+			# get request content
+			if (pc := _d.get('pc')) is not None:
+				cseRequest.dict = pc
+
+			# get operation			
+			if (op := _d.get('op')) is None:
+				return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'operation is missing', status=False)
+			if not (res := CSE.validator.validateAttribute('op', op)).status:
+				return Result(rsc=res.rsc, request=cseRequest, dbg=res.dbg, status=False)
+			if not Operation.isvalid(op):
+				return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'operation has invalid value:{op}', status=False)
+			cseRequest.op = Operation(op)
+
+			# get originator / fr
+			if (fr := _d.get('fr')) is None:
+				return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'fr is missing', status=False)
+			if not (res := CSE.validator.validateAttribute('fr', fr)).status:
+				return Result(rsc=res.rsc, request=cseRequest, dbg=res.dbg, status=False)
+			cseRequest.headers.originator = fr
+			
+			# get target / to
+			if (to := _d.get('to')) is None:
+				return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'to is missing', status=False)
+			if not (res := CSE.validator.validateAttribute('to', to)).status:
+				return Result(rsc=res.rsc, request=cseRequest, dbg=res.dbg, status=False)
+			cseRequest.id, cseRequest.csi, cseRequest.srn = Utils.retrieveIDFromPath(to, CSE.cseRn, CSE.cseCsi)
+
+			# get request ID
+			if (rqi := _d.get('rqi')) is None:
+				return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'rqi is missing', status=False)
+			if not (res := CSE.validator.validateAttribute('rqi', rqi)).status:
+				return Result(rsc=res.rsc, request=cseRequest, dbg=res.dbg, status=False)
+			cseRequest.headers.requestIdentifier = rqi
+
+			# get resource type (optional)
+			if (ty := _d.get('ty')) is not None and not isinstance(ty, list):	# do not here if this is a list , eg. for discovery
+				if not (res := CSE.validator.validateAttribute('ty', ty)).status:
+					return Result(rsc=res.rsc, request=cseRequest, dbg=res.dbg, status=False)
+				cseRequest.headers.resourceType = ty
+
+			# get originating timestamp (optional)
+			if (ot := _d.get('ot')) is not None:
+				if not (res := CSE.validator.validateAttribute('ot', ot)).status:
+					return Result(rsc=res.rsc, request=cseRequest, dbg=res.dbg, status=False)
+				cseRequest.headers.originatingTimestamp = ot
+
+		 	# Extract request arguments
+			try:
+				# copy request arguments for greedy attributes checking
+				args = deepcopy(_d) 	# type: ignore [no-untyped-call]
+				for a in list(args.keys()):
+					if a in ['op', 'fr', 'to', 'ot', 'rqi' ]:	# TODO make an ignoreArgsList
+						del args[a]
+				
+				cseRequest.args, dbg = Utils.getRequestArguments(args, op)
+				if cseRequest.args is None:
+					return Result(rsc=RC.badRequest, request=cseRequest, dbg=dbg, status=False)
+			except Exception as e:
+				 return Result(rsc=RC.invalidArguments, request=cseRequest, dbg=f'invalid arguments ({str(e)})', status=False)
+			
+		return Result(request=cseRequest, status=True)
+		
+
+
+		# rh.originator 					= self._requestHeaderField(request, C.hfOrigin)
+		# rh.requestIdentifier			= self._requestHeaderField(request, C.hfRI)
+		# rh.requestExpirationTimestamp 	= self._requestHeaderField(request, C.hfRET)
+		# rh.responseExpirationTimestamp 	= self._requestHeaderField(request, C.hfRST)
+		# rh.operationExecutionTime 		= self._requestHeaderField(request, C.hfOET)
+		# rh.releaseVersionIndicator 		= self._requestHeaderField(request, C.hfRVI)
+		# 	httpRequestResult = self._dissectHttpRequest(request, operation, Utils.retrieveIDFromPath(path, CSE.cseRn, CSE.cseCsi))
+
+
 
 
 
 ##############################################################################
 
-
 class MQTTClient(object):
 
-	def __init__(self, mqttHandler:MQTTHandler=MQTTHandler()) -> None:
-		self.mqttHandler:MQTTHandler				= mqttHandler
-		self.mqttClient:mqtt.Client 				= None
-		self.actor:BackgroundWorker 				= None
-		self.enable									= Configuration.get('mqtt.enable')
-		self.brokerAddress							= Configuration.get('mqtt.address')
-		self.brokerPort								= Configuration.get('mqtt.port')
-		self.keepalive								= Configuration.get('mqtt.keepalive')
-		self.bindIF									= Configuration.get('mqtt.bindIF')
-		self.username:str							= None  # TODO config
-		self.password:str 							= None  # TODO config
-		self.isStopped								= True
-		self.isConnected							= False
-		self.clientName								= idToMQTT(CSE.cseCsi)
-		self.topicPrefix:str						= ''	# TODO config value
-		self.subscribedTopics:dict[str, MQTTTopic]	= {}
-		L.isInfo and  L.log('MQTT client initialized')
-
-	
-	def shutdown(self) -> bool:
-		"""	Shutting down the MQTT client.
-		"""
-		self.isStopped = True
-		if self.enable and self.mqttClient is not None:
-			if self.isConnected:
-				# Unsubscribe from all topics
-				for t in self.subscribedTopics.values():
-					self.unsubscribeTopic(t)
-				# wait a moment for all unsubscribe ACKs to arrive
-				while len(self.subscribedTopics) > 0:
-					time.sleep(0.1)
-				# Then disconnect. The actor is stoped implicitly
-				self.mqttClient.disconnect()
-				self.actor = None
-
-		L.isInfo and L.log('MQTT client shut down')
-		return True
-
+	def __init__(self) -> None:
+		self.enable	= Configuration.get('mqtt.enable')
+		if self.enable:
+			self.topicPrefix 	= ''	# TODO
+			self.mqttConnection = MQTTConnection(address			= Configuration.get('mqtt.address'),
+												 port				= Configuration.get('mqtt.port'),
+												 keepalive			= Configuration.get('mqtt.keepalive'),
+												 interface			= Configuration.get('mqtt.bindIF'),
+												 clientName			= idToMQTT(CSE.cseCsi),
+												 useTLS				= CSE.security.useTLS,
+												 sslContext			= CSE.security.getSSLContext(),
+												 messageHandler 	= MQTTClientHandler	(self)
+												 # username =	# TODO
+												 # password=		# TODO
+			)
+										
 
 	def run(self) -> None:
 		"""	Initialize and run the MQTT client as a BackgroundWorker/Actor.
 		"""
-		if not self.enable:
+		if not self.enable or self.mqttConnection is None:
 			L.isInfo and L.log('MQTT: client NOT enabled')
 			return
-		L.isDebug and L.logDebug(f'MQTT: client name: {self.clientName}')
-		self.mqttClient = mqtt.Client(client_id=self.clientName, clean_session=False)	# clean_session is defined by TS-0010
-		if CSE.security.useTLS:
-			self.mqttClient.tls_set_context(CSE.security.getSSLContext())
-		
-		self.mqttClient.on_connect 		= self._onConnect
-		self.mqttClient.on_disconnect	= self._onDisconnect
-		self.mqttClient.on_log			= self._onLog
-		self.mqttClient.on_subscribe	= self._onSubscribe
-		self.mqttClient.on_unsubscribe	= self._onUnsubscribe
-		self.mqttClient.on_message		= self._onMessage
+		self.mqttConnection.run()
+	
 
-		# TODO optional username/password, also in config. self.mqttClient.username_pw_set()
-
-		try:
-			self.mqttClient.connect(host=self.brokerAddress, port=self.brokerPort, keepalive=self.keepalive, bind_address=self.bindIF)
-		except Exception as e:
-			L.logErr(f'MQTT: cannot connect to broker: {e}', showStackTrace=False)
-			CSE.shutdown()
-			return
-
-		# Actually start the actor to run the MQTT client as a thread
-		self.actor = BackgroundWorkerPool.newActor(self._mqttActor, name='MQTTClient').start()
-
-
-	def _mqttActor(self) -> bool:
-		"""	Backgroundworker callback to run the actuall MQTT loop.
+	def shutdown(self) -> bool:
+		"""	Shutdown the MQTTClient.
 		"""
-		self.isStopped = False	
-		if L.isInfo: L.log('MQTT: client started')
-		while not self.isStopped:
-			self.mqttClient.loop_forever()	# Will return when disconnect() is called
+		if self.mqttConnection is not None:
+			return self.mqttConnection.shutdown()
 		return True
-	
-
-	def subscribeTopic(self, topic:str, callback:Callable=None, **kwargs) -> None:
-		"""	Add a MQTT topic to subscribe to. Add this topic afterwards
-			to the list of subscribed to topics.
-		"""
-		if self.mqttClient is None or not self.isConnected:
-			L.logErr('MQTT: Client missing or not initialized')
-			return
-		if topic in self.subscribedTopics:
-			L.isWarn and L.logWarn(f'MQTT: topic already subscribed: {topic}')
-			return
-
-		if (r := self.mqttClient.subscribe(topic))[0] == 0:
-			t = MQTTTopic(topic = topic, mid=r[1], callback=callback, callbackArgs=kwargs)
-			self.subscribedTopics[topic] = t
-		else:
-			L.logErr(f'MQTT: cannot subscribe: {r[0]}')
-			pass
-	
-
-	def unsubscribeTopic(self, topic:str|MQTTTopic) -> None:
-		"""	Unsubscribe from a topic. `topic` is either an MQTTTopic structure with
-			a previously subscribed to topic, or a topic name, in which case
-			it is searched for in the list of MQTTTopics.
-		"""
-		if isinstance(topic, MQTTTopic):
-			if topic.topic not in self.subscribedTopics:
-				L.isWarn and L.logWarn(f'MQTT: unknown topic: {topic.topic}')
-				return
-			if (r := self.mqttClient.unsubscribe(topic.topic))[0] == 0:
-				topic.mid = r[1]
-			else:
-				L.logErr(f'MQTT: cannot unsubscribe: {r[0]}')
-				return
-
-		else:	# if topic is just the name we need to subscribe to
-			if topic not in self.subscribedTopics:
-				L.isWarn and L.logWarn(f'MQTT: unknown topic: {topic}')
-				return
-			t = self.subscribedTopics[topic]
-			if t.isSubscribed:
-				if (r := self.mqttClient.unsubscribe(t.topic))[0] == 0:
-					t.mid = r[1]
-				else:
-					L.logErr(f'MQTT: cannot unsubscribe: {r[0]}')
-					return
-			else:
-				L.isWarn and L.logWarn(f'MQTT: topic not subscribed: {topic}')
-
-		# topic is removed in _onUnsubscribe() callback
-	
-
-
-	def publish(self, topic:str, data:bytes):
-		# TODO doc
-		self.mqttClient.publish(topic, data)
-
-
-	#
-	#	MQTT/paho callbacks
-	#
-
-	def _onConnect(self, client, userdata, flags, rc):
-		"""	Callback when the MQTT client connected to the broker.
-		"""
-		L.isDebug and L.logDebug(f'MQTT: Connected with result code: {rc}')
-		if rc == 0:
-			self.isConnected = True
-			if self.mqttHandler is not None:
-				self.mqttHandler.onConnect(self)
-		else:
-			CSE.shutdown()
-
-
-	def _onDisconnect(self, client, userdata, rc):
-		"""	Callback when the MQTT client disconnected from the broker.
-		"""
-		L.isDebug and L.logDebug(f'MQTT: Disconnected with result code: {rc}')
-		if rc == 0:
-			self.isConnected = False
-			self.subscribedTopics.clear()
-			if self.mqttHandler is not None:
-				self.mqttHandler.onDisconnect(self)
-
-
-	def _onLog(self, client, userdata, level, buf):
-		"""	Mapping of the paho MQTT client's log to the CSE's logging system.
-		"""
-		if level == mqtt.MQTT_LOG_DEBUG and L.isDebug:
-			L.logDebug(f'MQTT: {buf}')
-		elif (level == mqtt.MQTT_LOG_INFO or level == mqtt.mqtt.MQTT_LOG_NOTICE) and L.isInfo:
-			L.log(f'MQTT: {buf}')
-		elif level == mqtt.MQTT_LOG_WARNING and L.isWarn:
-			L.logWarn(f'MQTT: {buf}')
-		elif level == mqtt.MQTT_LOG_ERR:
-			L.logErr(f'MQTT: {buf}', showStackTrace=False)
-	
-
-	def _onSubscribe(self, client, userdata, mid, granted_qos):
-		# TODO doc, error check when not connected, not subscribed
-		for t in self.subscribedTopics.values():
-			if t.mid == mid:
-				t.isSubscribed = True
-				break
-	
-
-	def _onUnsubscribe(self, client, userdata, mid):
-		# TODO doc, error check when not connected, not subscribed
-		for t in self.subscribedTopics.values():
-			if t.mid == mid:
-				del self.subscribedTopics[t.topic]
-				break
-
-
-	def _onMessage(self, client, userdata, message:mqtt.MQTTMessage):
-		"""	Handle a received message. Forward it to the apropriate handler callback (in a Thread)
-		"""
-		L.isDebug and L.logDebug(f'MQTT: received topic:{message.topic}, payload:{message.payload}')
-		for t in self.subscribedTopics.keys():
-			if Utils.simpleMatch(message.topic, t):
-				topic = self.subscribedTopics[t]
-				if topic.callback is not None:
-					# Run actual request handling in a thread
-					BackgroundWorkerPool.newActor(topic.callback, name=f'mid_{message.mid}').start(	mqttClient=self,
-																									topic=message.topic,
-																									data=message.payload, 
-																									args=topic.callbackArgs)
-				break
-
-
-
-
-##############################################################################
-#
-#	Utility functions
-#
-
-def idToMQTT(id:str, isCSE:bool=True) -> id:
-	return f'{"C:" if isCSE else "A:"}{id.replace("/", ":")}'
 
