@@ -155,7 +155,7 @@ class TestAE(unittest.TestCase):
 					'ty' : int(T.CSEBase)
 				}}
 		r, rsc = UPDATE(aeURL, TestAE.originator, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.badRequest, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
