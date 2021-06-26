@@ -487,6 +487,10 @@ class Operation(IntEnum):
 	def permission(self) -> Permission:
 		""" Return the corresponding permission for an operation """
 		return Operation._permissionsMapping[self.value]	#  type: ignore
+	
+	@classmethod
+	def isvalid(cls, op:int):
+		return cls.CREATE <= op <= cls.DISCOVERY
 
 
 # Mapping between request operations and permissions
@@ -741,6 +745,10 @@ class Result:
 		 	r = ''
 		return r
 
+	def __str__(self) -> str:
+		return self.toData()
+	def __repr__(self) -> str:
+		return self.__str__()
 
 ##############################################################################
 #
@@ -764,7 +772,7 @@ class RequestArguments:
 
 @dataclass
 class RequestHeaders:
-	originator:str 					= None 	# X-M2M-Origin
+	originator:str 					= None 	# X-M2M-Origin, from
 	requestIdentifier:str 			= None	# X-M2M-RI
 	contentType:str 				= None	# Content-Type
 	accept:list[str]				= None	# Accept
@@ -774,6 +782,7 @@ class RequestHeaders:
 	operationExecutionTime:str 		= None 	# X-M2M-OET
 	releaseVersionIndicator:str 	= None 	# X-M2M-RVI
 	responseTypeNUs:list[str]		= None	# X-M2M-RTU
+	originatingTimestamp:str		= None  # ot in request
 
 
 @dataclass
@@ -784,9 +793,10 @@ class CSERequest:
 	originalArgs:Any 				= None	# Actually a MultiDict
 	data:bytes 						= None 	# The request original data
 	dict:JSON 						= None	# The request data as a dictionary
-	id:str 							= None 	# target ID
+	id:str 							= None 	# target ID / to
 	srn:str 						= None 	# target structured resource name
 	csi:str 						= None 	# target csi
+	op:Operation					= None	# request operation
 
 
 ##############################################################################
