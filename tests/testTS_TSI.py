@@ -25,6 +25,7 @@ class TestTS_TSI(unittest.TestCase):
 
 	ae 			= None
 	originator 	= None
+	sub			= None
 	ts 			= None
 
 	@classmethod
