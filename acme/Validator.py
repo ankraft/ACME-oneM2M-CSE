@@ -112,6 +112,7 @@ attributePolicies:AttributePolicies = {
 	'esi'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.MA ),		# m2m:e2eSecInfo - AE, CSE, CSR
 	'exc'	: (	BT.positiveInteger, CAR.car01, 	RO.O, 	RO.O,  RO.O, AN.NA ),  		# SUB
 	'far'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# RBO
+	'fr'	: ( BT.anyURI,			CAR.car01,  RO.M,	RO.NP, RO.O, AN.NA ),		# request, response
 	'fwn'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# FWR
 	'fwv'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'gn'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# GRP
@@ -175,6 +176,7 @@ attributePolicies:AttributePolicies = {
 	'obps'	: ( BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# MGO
 	'op'	: ( BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.NA ),		# REQ
 	'or'	: ( BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT
+	'ot'	: ( BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# request, response
 	'org'	: ( BT.string,			CAR.car1,   RO.NP,	RO.NP, RO.NP,AN.NA ),		# REQ
 	'ors'	: ( BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT, REQ
 	'osv'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
@@ -193,6 +195,7 @@ attributePolicies:AttributePolicies = {
 	'rid'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# REQ
 	'rl'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
 	'rms'	: ( BT.boolean,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ),		# NOD
+	'rqi'	: ( BT.string,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ),		# request
 	'rr'	: ( BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# AE
 	'rs'	: ( BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# REQ
 	'scp'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# m2m:sessionCapabilities - AE
@@ -212,6 +215,8 @@ attributePolicies:AttributePolicies = {
 	'swv'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'syst'	: ( BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'tg'	: ( BT.anyURI,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.NA ),		# REQ
+	'to'	: ( BT.anyURI,			CAR.car01,  RO.M,	RO.NP, RO.O, AN.NA ),		# request
+	'ty'	: ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# request
 	'tren'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# AE, CSR
 	'tri'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSR
 	'trn'	: ( BT.unsignedInt,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSR
@@ -257,7 +262,6 @@ attributePolicies:AttributePolicies = {
 	'sts'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'sza'	: ( BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'szb'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery	
-	#'ty'	: ( BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'us'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'arp'	: ( BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'rt'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request
