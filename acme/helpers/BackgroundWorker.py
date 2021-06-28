@@ -75,7 +75,7 @@ class BackgroundWorker(object):
 			self.numberOfRuns += 1
 			result = self.callback(**self.args)
 		except Exception as e:
-			L.logErr(f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}')
+			L.logErr(f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}', exc=e)
 		finally:
 			if not result or (self.maxCount is not None and self.numberOfRuns >= self.maxCount):
 				# False returned, or the numberOfRuns has reached the maxCount

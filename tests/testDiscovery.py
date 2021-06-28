@@ -370,7 +370,7 @@ class TestDiscovery(unittest.TestCase):
 	def test_retrieveCNTbyCNIunderAE(self) -> None:
 		""" Retrieve <CNT> under <AE> by correct cni & rcn=8 """
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResources:d}&cni=5', TestDiscovery.originator)
-		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae'))
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cnt'))
 		self.assertEqual(len(findXPath(r, 'm2m:ae/m2m:cnt')), 2)

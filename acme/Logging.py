@@ -163,7 +163,7 @@ class	Logging:
 
 
 	@staticmethod
-	def logErr(msg:str, showStackTrace:bool=True) -> None:
+	def logErr(msg:str, showStackTrace:bool=True, exc:Exception=None) -> None:
 		"""	Print a log message with level ERROR. 
 			`showStackTrace` indicates whether a stacktrace shall be logged together with the error
 			as well.
@@ -171,7 +171,10 @@ class	Logging:
 		import CSE
 		# raise logError event
 		(not CSE.event or CSE.event.logError())	# type: ignore
-		if showStackTrace and Logging.stackTraceOnError:
+		if exc is not None:
+			fmtexc = ''.join(traceback.TracebackException.from_exception(exc).format())
+			Logging._log(logging.ERROR, f'{msg}\n\n{fmtexc}')
+		elif showStackTrace and Logging.stackTraceOnError:
 			strace = ''.join(map(str, traceback.format_stack()[:-1]))
 			Logging._log(logging.ERROR, f'{msg}\n\n{strace}')
 		else:
