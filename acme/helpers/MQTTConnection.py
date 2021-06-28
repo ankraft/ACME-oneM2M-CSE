@@ -11,7 +11,7 @@ from __future__ import annotations
 from abc import abstractmethod, ABC
 import ssl, time
 from dataclasses import dataclass
-from typing import Callable, Any
+from typing import Callable, Any, Tuple
 from functools import wraps
 
 

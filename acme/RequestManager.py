@@ -10,8 +10,11 @@
 import requests, urllib.parse
 from Logging import Logging as L
 from Configuration import Configuration
-from Types import Operation
+from Types import DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, RequestArguments, ResultContentType
 from Types import RequestStatus
+from Types import CSERequest
+from Types import RequestHandler
+from Types import JSON
 from Types import ResourceTypes as T
 from Types import ResponseCode as RC
 from Types import ResponseType
@@ -19,19 +22,27 @@ from Types import Result
 from Types import CSERequest
 from Types import ContentSerializationType
 from Types import Parameters
+from Constants import Constants as C
 from resources.REQ import REQ
 from resources.Resource import Resource
 from helpers.BackgroundWorker import BackgroundWorkerPool
 import CSE, Utils
-from flask import Request
 from typing import Any
+from copy import deepcopy
 
 
 class RequestManager(object):
 
 	def __init__(self) -> None:
-		self.enableTransit 			= Configuration.get('cse.enableTransitRequests')
-		self.flexBlockingBlocking	= Configuration.get('cse.flexBlockingPreference') == 'blocking'
+		self.enableTransit 					 = Configuration.get('cse.enableTransitRequests')
+		self.flexBlockingBlocking			 = Configuration.get('cse.flexBlockingPreference') == 'blocking'
+		self.requestHandlers:RequestHandler = { 		# Map request handlers for operations
+			Operation.RETRIEVE	: self.retrieveRequest,
+			Operation.CREATE	: self.createRequest,
+			Operation.UPDATE	: self.updateRequest,
+			Operation.DELETE	: self.deleteRequest
+		}
+
 		L.log('RequestManager initialized')
 
 
@@ -273,10 +284,10 @@ class RequestManager(object):
 			accordingly.
 		"""
 		# Execute the actual operation
-		request.args.operation == Operation.RETRIEVE and (operationResult := CSE.dispatcher.processRetrieveRequest(request, request.headers.originator)) is not None
-		request.args.operation == Operation.CREATE   and (operationResult := CSE.dispatcher.processCreateRequest(request, request.headers.originator)) is not None
-		request.args.operation == Operation.UPDATE   and (operationResult := CSE.dispatcher.processUpdateRequest(request, request.headers.originator)) is not None
-		request.args.operation == Operation.DELETE   and (operationResult := CSE.dispatcher.processDeleteRequest(request, request.headers.originator)) is not None
+		request.op == Operation.RETRIEVE and (operationResult := CSE.dispatcher.processRetrieveRequest(request, request.headers.originator)) is not None
+		request.op == Operation.CREATE   and (operationResult := CSE.dispatcher.processCreateRequest(request, request.headers.originator)) is not None
+		request.op == Operation.UPDATE   and (operationResult := CSE.dispatcher.processUpdateRequest(request, request.headers.originator)) is not None
+		request.op == Operation.DELETE   and (operationResult := CSE.dispatcher.processDeleteRequest(request, request.headers.originator)) is not None
 
 		# Retrieve the <request> resource
 		if (res := CSE.dispatcher.retrieveResource(reqRi)).resource is None:	
@@ -425,4 +436,258 @@ class RequestManager(object):
 			return CSE.httpServer.sendHttpRequest(requests.delete, url, originator, parameters=parameters, ct=ct, targetResource=targetResource)
 		L.logWarn(dbg := f'unsupported url scheme: {url}')
 		return Result(status=True, rsc=RC.badRequest, dbg=dbg)
+
+	###########################################################################
+	#
+	#	Various support methods
+	#
+
+	def handleRequest(self, operation:Operation, request:CSERequest) -> Result:
+		"""	Calls the fitting request handler for an operation and executes it.
+		"""
+		return self.requestHandlers[operation](request)
+
+
+	def deserializeContent(self, data:bytes, mediaType:str, operation:Operation) -> Result:
+		"""	Deserialize a data structure.
+			Supported media serialization types are JSON and cbor.
+
+			If successful then the Result.data contains a tuple (dict, contentType)
+		"""
+		dct = None
+		ct = ContentSerializationType.NA
+		if data is not None and len(data) > 0:
+			try:
+				ct = ContentSerializationType.getType(mediaType, default=CSE.defaultSerialization)
+				if (dct := Utils.deserializeData(data, ct)) is None:
+					return Result(rsc=RC.unsupportedMediaType, dbg=f'Unsupported media type for content-type: {ct}', status=False)
+			except Exception as e:
+				L.isWarn and L.logWarn('Bad request (malformed content?)')
+				return Result(rsc=RC.badRequest, dbg=f'Malformed content? {str(e)}', status=False)
+		
+		# Check whether content is empty and operation is UPDATE or CREATE -> Error
+		elif operation in [ Operation.CREATE, Operation.UPDATE ]:
+			L.logWarn(dbg := f'Missing content for operation: {operation.name}')
+			return Result(rsc=RC.badRequest, dbg=dbg, status=False)
+		
+		return Result(status=True, data=(dct, ct))
+
+
+
+	def fillAndValidateCSERequest(self, cseRequest:CSERequest) -> Result:
+		"""	Fill a `cseRequest` object according to its request structure in the *req* attribute.
+		"""
+
+		def gget(dct:dict, key:str, default:Any=None) -> Any:	# TODO Move function to Utils?
+			"""	Local helper to greedy check and return a key/value from a dictionary.
+
+				This methiod might raise a `ValueError` exception if validation of attribute/value fails.
+			"""
+			if (v := dct.get(key)) is not None:
+				del dct[key]
+				if not (res := CSE.validator.validateAttribute(key, v)).status:
+					raise ValueError(res.dbg)
+				return v
+			return default
+
+
+		# Check identifiers
+		if cseRequest.id is None and cseRequest.srn is None:
+			return Result(rsc=RC.notFound, request=cseRequest, dbg='missing identifier', status=False)
+
+		# Transfer resource type
+		req = cseRequest.req
+		_t = req.get('ty')
+		if _t is not None:
+			_tt = int(_t) if _t.isdigit() else ''
+			if not T.has(_tt):
+				return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'Unknown/unsupported resource type: {_t}', status=False)
+			if not (res := CSE.validator.validateAttribute('ty', _tt)).status:
+				return Result(request=cseRequest, rsc=res.rsc, dbg=res.dbg, status=False)
+			cseRequest.headers.resourceType = T(_tt)
+
+		# transfer operation
+		cseRequest.op = req.get('op')
+		if cseRequest.op is None:
+			L.logDebug(dbg := 'operation parameter is mandatory in request')
+			return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg)		
+		if not (res := CSE.validator.validateAttribute('op', cseRequest.op)).status:
+			return Result(request=cseRequest, rsc=res.rsc, dbg=res.dbg, status=False)
+
+		# Transfer and check originator 
+		cseRequest.headers.originator = req.get('fr')	# default empty originator
+		# Test whether originator is present except when registering an AE
+		if cseRequest.headers.originator is None and not (cseRequest.headers.resourceType == T.AE and cseRequest.op == Operation.CREATE):
+			L.logDebug(dbg := 'From/Originator parameter is mandatory in request')
+			return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)		
+		if cseRequest.headers.originator is not None and not (res := CSE.validator.validateAttribute('fr', cseRequest.headers.originator)).status:
+			return Result(request=cseRequest, rsc=res.rsc, dbg=res.dbg, status=False)
+		
+		# Transfer and check requestIdentifier
+		cseRequest.headers.requestIdentifier = req.get('rqi')
+		if cseRequest.headers.requestIdentifier is None:
+			L.logDebug(dbg := 'Request Identifier is mandatory in request')
+			return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg)
+		if not (res := CSE.validator.validateAttribute('rqi', cseRequest.headers.requestIdentifier)).status:
+			return Result(request=cseRequest, rsc=res.rsc, dbg=res.dbg, status=False)
+		
+		# Transfer and check requestExpirationTimestamp
+		cseRequest.headers.requestExpirationTimestamp = req.get('rqet')
+		if cseRequest.headers.requestExpirationTimestamp is not None:
+			if not (res := CSE.validator.validateAttribute('rqet', cseRequest.headers.requestExpirationTimestamp)).status:
+				return Result(request=cseRequest, rsc=res.rsc, dbg=res.dbg, status=False)
+			if (ts := Utils.fromAbsRelTimestamp(cseRequest.headers.requestExpirationTimestamp)) == 0.0:
+				L.logDebug(dbg := 'Error in provided Request Expiration Timestamp')
+				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
+			if ts < Utils.utcTime():
+				L.logDebug(dbg := 'Request timeout')
+				return Result(request=cseRequest, rsc=RC.requestTimeout, dbg=dbg)
+			cseRequest.headers.requestExpirationTimestamp = Utils.toISO8601Date(ts)	# Re-assign "real" ISO8601 timestamp
+		
+		# Transfer and check resultExpirationTimestamp
+		cseRequest.headers.resultExpirationTimestamp = req.get('rset')
+		if cseRequest.headers.resultExpirationTimestamp is not None:
+			if not (res := CSE.validator.validateAttribute('rset', cseRequest.headers.resultExpirationTimestamp)).status:
+				return Result(request=cseRequest, rsc=res.rsc, dbg=res.dbg, status=False)
+			if (ts := Utils.fromAbsRelTimestamp(cseRequest.headers.resultExpirationTimestamp)) == 0.0:
+				L.logDebug(dbg := 'Error in provided Result Expiration Timestamp')
+				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
+			if ts < Utils.utcTime():
+				L.logDebug(dbg := 'Result timeout')
+				return Result(request=cseRequest, rsc=RC.requestTimeout, dbg=dbg)
+			cseRequest.headers.resultExpirationTimestamp = Utils.toISO8601Date(ts)	# Re-assign "real" ISO8601 timestamp
+
+		# Transfer and check operationExecutionTime
+		cseRequest.headers.operationExecutionTime = req.get('oet')	# TODO check when supported
+		if cseRequest.headers.operationExecutionTime is not None:
+			if not (res := CSE.validator.validateAttribute('oet', cseRequest.headers.operationExecutionTime)).status:
+				return Result(request=cseRequest, rsc=res.rsc, dbg=res.dbg, status=False)
+			if (ts := Utils.fromAbsRelTimestamp(cseRequest.headers.operationExecutionTime)) == 0.0:
+				L.logDebug(dbg := 'Error in provided Operation Execution Time')
+				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
+			cseRequest.headers.operationExecutionTime = Utils.toISO8601Date(ts)	# Re-assign "real" ISO8601 timestamp
+
+		# Transfer and check releaseVersionIndicator
+		cseRequest.headers.releaseVersionIndicator = req.get('rvi')	
+		if cseRequest.headers.releaseVersionIndicator is None:
+			L.logDebug(dbg := 'Release Version Indicator paraneter is mandatory in request')
+			return Result(rsc=RC.badRequest, request=cseRequest, dbg=dbg, status=False)
+		if not (res := CSE.validator.validateAttribute('rvi', cseRequest.headers.releaseVersionIndicator)).status:
+			return Result(request=cseRequest, rsc=res.rsc, dbg=res.dbg, status=False)
+		if cseRequest.headers.releaseVersionIndicator not in C.supportedReleaseVersions:
+			return Result(rsc=RC.releaseVersionNotSupported, request=cseRequest, dbg=f'Release version not supported: {cseRequest.headers.releaseVersionIndicator}')
+
+		# Transfer responseTypeNUs
+		cseRequest.headers.responseTypeNUs = req.get('rtu')	#  TODO validate for url?
+		if cseRequest.headers.responseTypeNUs is not None:
+			if not (res := CSE.validator.validateAttribute('rtu', cseRequest.headers.responseTypeNUs)).status:
+				return Result(request=cseRequest, rsc=res.rsc, dbg=res.dbg, status=False)
+
+		#
+		# Transfer filterCriteria: handling, conditions and attributes
+		#
+
+		cseRequest.args = RequestArguments()
+		fc = deepcopy(req.get('fc'))	# copy because we will greedy consume attributes here
+
+		# FU - Filter Usage
+		try:
+			if (fu := gget(fc, 'fu', FilterUsage.conditionalRetrieval)) is not None:
+				cseRequest.args.fu = FilterUsage(int(fu))
+				if cseRequest.args.fu == FilterUsage.discoveryCriteria and cseRequest.op == Operation.RETRIEVE:	# correct operation if necessary
+					cseRequest.op = Operation.DISCOVERY
+		except ValueError as e:
+			return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=str(e))
+	
+		# DRT - Desired Identifier Result Type
+		try:
+			if (drt := gget(fc, 'drt', DesiredIdentifierResultType.structured)) is not None: # 1=strucured, 2=unstructured
+				cseRequest.args.drt = DesiredIdentifierResultType(int(drt))
+		except ValueError as e:
+			return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=str(e))
+
+		# FO - Filter Operation
+		try:
+			if (fo := gget(fc, 'fo', FilterOperation.AND)) is not None: 
+				cseRequest.args.fo = FilterOperation(int(fo))
+		except ValueError as e:
+			return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=str(e))
+
+
+		# RCN Result Content Type
+		try:
+			if (rcn := gget(fc, 'rcn')) is not None: 
+				rcn = ResultContentType(int(rcn))
+			else:
+				# assign defaults when not provided
+				if cseRequest.args.fu != FilterUsage.discoveryCriteria:	
+					# Different defaults for each operation
+					if cseRequest.op in [ Operation.RETRIEVE, Operation.CREATE, Operation.UPDATE ]:
+						rcn = ResultContentType.attributes
+					elif cseRequest.op == Operation.DELETE:
+						rcn = ResultContentType.nothing
+				else:
+					# discovery-result-references as default for Discovery operation
+					rcn = ResultContentType.discoveryResultReferences
+
+			# Validate rcn depending on operation
+			if cseRequest.op == Operation.RETRIEVE and rcn not in [ ResultContentType.attributes,
+																	ResultContentType.attributesAndChildResources,
+																	ResultContentType.attributesAndChildResourceReferences,
+																	ResultContentType.childResourceReferences,
+																	ResultContentType.childResources,
+																	ResultContentType.originalResource ]:
+				return None, Operation.NA, f'rcn: {rcn:d} not allowed in RETRIEVE operation'
+			elif cseRequest.op == Operation.DISCOVERY and rcn not in [ ResultContentType.childResourceReferences,
+																	ResultContentType.discoveryResultReferences ]:
+				return None, Operation.NA, f'rcn: {rcn:d} not allowed in DISCOVERY operation'
+			elif cseRequest.op == Operation.CREATE and rcn not in [ ResultContentType.attributes,
+																	ResultContentType.modifiedAttributes,
+																	ResultContentType.hierarchicalAddress,
+																	ResultContentType.hierarchicalAddressAttributes,
+																	ResultContentType.nothing ]:
+				return None, Operation.NA, f'rcn: {rcn:d} not allowed in CREATE operation'
+			elif cseRequest.op == Operation.UPDATE and rcn not in [ ResultContentType.attributes,
+																	ResultContentType.modifiedAttributes,
+																	ResultContentType.nothing ]:
+				return None, Operation.NA, f'rcn: {rcn:d} not allowed in UPDATE operation'
+			elif cseRequest.op == Operation.DELETE and rcn not in [ ResultContentType.attributes,
+																	ResultContentType.nothing,
+																	ResultContentType.attributesAndChildResources,
+																	ResultContentType.childResources,
+																	ResultContentType.attributesAndChildResourceReferences,
+																	ResultContentType.childResourceReferences ]:
+				return None, Operation.NA, f'rcn:  not allowed DELETE operation'
+
+			cseRequest.args.rcn = rcn
+		except ValueError as e:
+			return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=str(e))
+
+
+
+
+
+
+		# continue here
+
+
+		cseRequest.args.rt 		= gget(fc, 'rt', cseRequest.args.rt)
+		cseRequest.args.rp 		= gget(fc, 'rp', cseRequest.args.rp)
+		cseRequest.args.rpts 	= gget(fc, 'rpts', cseRequest.args.rpts)
+
+		for h in [ 'lim', 'lvl', 'ofst', 'arp' ]:
+			if (v := gget(fc, h)) is not None:
+				cseRequest.args.handling[h] = v
+		for h in [ 'crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr', 'ty', 'cty', 'lbl' ]:
+			if (v := gget(fc, h)) is not None:
+				cseRequest.args.conditions[h] = v
+		for h in list(fc.keys()):
+			cseRequest.args.attributes[h] = gget(fc, h)
+		
+		# Transfer primitive content
+		cseRequest.dict = req.get('pc')
+
+		return Result(status=True, request=cseRequest)
+
+
 

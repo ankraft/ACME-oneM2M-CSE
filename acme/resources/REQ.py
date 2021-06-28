@@ -64,7 +64,7 @@ class REQ(Resource):
 			'm2m:req' : {
 				'et'	: et,
 				'lbl'	: [ request.headers.originator ],
-				'op'	: request.args.operation,
+				'op'	: request.op,
 				'tg'	: request.id,
 				'org'	: request.headers.originator,
 				'rid'	: request.headers.requestIdentifier,
@@ -72,7 +72,7 @@ class REQ(Resource):
 					'ty'	: request.headers.resourceType,
 					'ot'	: Utils.getResourceDate(),
 					'rqet'	: request.headers.requestExpirationTimestamp,
-					'rset'	: request.headers.responseExpirationTimestamp,
+					'rset'	: request.headers.resultExpirationTimestamp,
 					'rt'	: { 
 						'rtv' : request.args.rt
 					},

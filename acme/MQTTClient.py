@@ -62,39 +62,41 @@ class MQTTClientHandler(MQTTHandler):
 
 
 
-	def _requestCB(self, connection:MQTTConnection, topic:str, data:str) -> None:
-		L.isDebug and L.logDebug(f'==> REQUEST {topic}, {data}')
+	def _requestCB(self, connection:MQTTConnection, topic:str, data:bytes) -> None:
+		L.isDebug and L.logDebug(f'==> REQUEST {topic}, {str(data)}')# TODO hex output for cbor
 		ts = topic.split('/')
 		originator, _ = mqttToId(ts[self.topicPrefixCount + 2])
 		receiver, _   = mqttToId(ts[self.topicPrefixCount + 3])
 		contentType   = ts[self.topicPrefixCount + 4]
 
 		if not (result := self.dissectMQTTRequest(data, contentType)).status:
-			L.logWarn(result)
+			L.logWarn(str(result))
 
 			return # TODO error
 
 		responseResult = self._requestHandlers[result.request.op](result.request)
 		# TODO real response
-		L.logWarn(responseResult)
+		L.logWarn(str(responseResult))
 		L.logDebug(f'REQUEST originator:{originator}, receiver:{receiver}, type:{contentType}')
-		connection.publish('test', f'{topic}, {responseResult}')
+		connection.publish('test', f'{topic}, {str(responseResult)}'.encode())
 
 
 
 
 	def _responseCB(self, connection:MQTTConnection, topic:str, data:str) -> None:
+		ts = topic.split('/')
 		L.logDebug(f'RESPONSE {topic}, {data}, {ts[-1]}')
 		connection.publish('test', f'{topic}, {data}, {ts[-1]}'.encode())
 
 
 
 	def _registrationRequestCB(self, connection:MQTTConnection, topic:str, data:str) -> None:
+		ts = topic.split('/')
 		L.logDebug(f'REGISTRATION {topic}, {data}, {ts[-1]}')
 		connection.publish('test', f'{topic}, {data}, {ts[-1]}'.encode())
 	
 
-	def dissectMQTTRequest(self, data:str, contenType:str) -> Result:
+	def dissectMQTTRequest(self, data:bytes, contenType:str) -> Result:
 		cseRequest = CSERequest()
 		cseRequest.data = data
 		cseRequest.headers = RequestHeaders()
@@ -166,9 +168,9 @@ class MQTTClientHandler(MQTTHandler):
 					if a in ['op', 'fr', 'to', 'ot', 'rqi' ]:	# TODO make an ignoreArgsList
 						del args[a]
 				
-				cseRequest.args, dbg = Utils.getRequestArguments(args, op)
+				# TODO cseRequest.args, dbg = Utils.getRequestArguments(args, op)
 				if cseRequest.args is None:
-					return Result(rsc=RC.badRequest, request=cseRequest, dbg=dbg, status=False)
+					return Result(rsc=RC.badRequest, request=cseRequest, dbg='#TODO', status=False)
 			except Exception as e:
 				 return Result(rsc=RC.invalidArguments, request=cseRequest, dbg=f'invalid arguments ({str(e)})', status=False)
 			
@@ -185,6 +187,7 @@ class MQTTClientHandler(MQTTHandler):
 		# 	httpRequestResult = self._dissectHttpRequest(request, operation, Utils.retrieveIDFromPath(path, CSE.cseRn, CSE.cseCsi))
 
 
+# TODO Similar function like getRequestArguments. Not muuch to do here, but add meaningful defaults.
 
 
 
@@ -194,8 +197,10 @@ class MQTTClient(object):
 
 	def __init__(self) -> None:
 		self.enable	= Configuration.get('mqtt.enable')
+		self.mqttConnection	= None
+		self.topicPrefix 	= ''	# TODO
+
 		if self.enable:
-			self.topicPrefix 	= ''	# TODO
 			self.mqttConnection = MQTTConnection(address			= Configuration.get('mqtt.address'),
 												 port				= Configuration.get('mqtt.port'),
 												 keepalive			= Configuration.get('mqtt.keepalive'),
@@ -204,7 +209,7 @@ class MQTTClient(object):
 												 useTLS				= CSE.security.useTLS,
 												 sslContext			= CSE.security.getSSLContext(),
 												 messageHandler 	= MQTTClientHandler	(self)
-												 # username =	# TODO
+												 # username =		# TODO
 												 # password=		# TODO
 			)
 										

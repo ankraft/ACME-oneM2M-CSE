@@ -482,14 +482,18 @@ class Operation(IntEnum):
 	DELETE				= 4
 	NOTIFY 				= 6
 	DISCOVERY			= 5
+	NA 					= -1
 
 
 	def permission(self) -> Permission:
-		""" Return the corresponding permission for an operation """
+		""" Return the corresponding permission for an operation.
+		"""
 		return Operation._permissionsMapping[self.value]	#  type: ignore
 	
 	@classmethod
-	def isvalid(cls, op:int):
+	def isvalid(cls, op:int) -> bool:
+		"""	Check whether an operation is valid.
+		"""
 		return cls.CREATE <= op <= cls.DISCOVERY
 
 
@@ -645,6 +649,7 @@ class ContentSerializationType(IntEnum):
 	XML					= auto()
 	JSON				= auto()
 	CBOR				= auto()
+	NA	 				= auto()
 	UNKNOWN				= auto()
 
 	def toHeader(self) -> str:
@@ -746,7 +751,7 @@ class Result:
 		return r
 
 	def __str__(self) -> str:
-		return self.toData()
+		return str(self.toData())
 	def __repr__(self) -> str:
 		return self.__str__()
 
@@ -763,11 +768,10 @@ class RequestArguments:
 	rcn:ResultContentType 			= ResultContentType.discoveryResultReferences
 	rt:ResponseType					= ResponseType.blockingRequest 					# response type
 	rp:str 							= None 											# result persistence
-	rpts: str 						= None 											# ... as a timestamp
+	rpts:str 						= None 											# ... as a timestamp
 	handling:Conditions 			= field(default_factory=dict)
 	conditions:Conditions 			= field(default_factory=dict)
 	attributes:Parameters 			= field(default_factory=dict)
-	operation:Operation 			= None
 	#request:Request 				= None
 
 @dataclass
@@ -776,9 +780,9 @@ class RequestHeaders:
 	requestIdentifier:str 			= None	# X-M2M-RI
 	contentType:str 				= None	# Content-Type
 	accept:list[str]				= None	# Accept
-	resourceType: ResourceTypes		= None
+	resourceType:ResourceTypes		= None
 	requestExpirationTimestamp:str 	= None 	# X-M2M-RET
-	responseExpirationTimestamp:str	= None 	# X-M2M-RST
+	resultExpirationTimestamp:str	= None 	# X-M2M-RST
 	operationExecutionTime:str 		= None 	# X-M2M-OET
 	releaseVersionIndicator:str 	= None 	# X-M2M-RVI
 	responseTypeNUs:list[str]		= None	# X-M2M-RTU
@@ -792,6 +796,7 @@ class CSERequest:
 	ct:ContentSerializationType		= None
 	originalArgs:Any 				= None	# Actually a MultiDict
 	data:bytes 						= None 	# The request original data
+	req:JSON						= None	# The dissected request as a dictionary
 	dict:JSON 						= None	# The request data as a dictionary
 	id:str 							= None 	# target ID / to
 	srn:str 						= None 	# target structured resource name
@@ -813,6 +818,7 @@ Parameters=Dict[str,str]
 Conditions=Dict[str, Any]
 JSON=Dict[str, Any]
 JSONLIST=List[JSON]
+ReqResp=Dict[str, Union[int, str, List[str], JSON]]
 
 RequestHandler = Dict[Operation, Callable[[CSERequest], Result]]
 """ Handle an outgoing request operation. """
