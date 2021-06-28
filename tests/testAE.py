@@ -295,7 +295,7 @@ class TestAE(unittest.TestCase):
 				 	'srv': [ '3' ]
 				}}
 		ae, rsc = CREATE(cseURL, None, T.AE, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.created, ae)
 		self.assertIsNotNone(findXPath(ae, 'm2m:ae/aei'))
 		_, rsc = DELETE(aeURL, findXPath(ae, 'm2m:ae/aei'))
 		self.assertEqual(rsc, RC.deleted)

@@ -194,7 +194,7 @@ class TestCNT(unittest.TestCase):
 				}}
 		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, dct) 
 		self.assertEqual(rsc, RC.created)
-		self.assertEqual(findXPath(r, 'm2m:cnt/cr'), TestCNT.originator)	# Creator should now be set to originator
+		self.assertEqual(findXPath(r, 'm2m:cnt/cr'), TestCNT.originator, r)	# Creator should now be set to originator
 
 		# Check whether creator is there in a RETRIEVE
 		r, rsc = RETRIEVE(f'{aeURL}/{findXPath(r, "m2m:cnt/rn")}', TestCNT.originator)
