@@ -266,6 +266,11 @@ attributePolicies:AttributePolicies = {
 	'arp'	: ( BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'rt'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request
 	'rp'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
+	'rqet'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
+	'rqet'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
+	'oet'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
+	'rvi'	: ( BT.string,			CAR.car1,    RO.O,	RO.O,  RO.O, AN.NA ),		# request 
+	'rtu'	: ( BT.list,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request  (actually the same as 'nu' s)
 
 	# TODO lbl, catr, patr
 
@@ -437,14 +442,14 @@ class Validator(object):
 		""" Validate a request argument. """
 		if (policy := getPolicy(argument)) is not None:
 			return self._validateType(policy[0], value, True)
-		return Result(status=False, dbg=f'attribute/argument {argument} not defined')
+		return Result(status=False, dbg=f'validation for attribute/argument {argument} not defined')
 
 
 	def validateAttribute(self, attribute:str, value:Any) -> Result:
 		""" Validate a single attribute. """
 		if (policy := getPolicy(attribute)) is not None:
 			return self._validateType(policy[0], value, True)
-		return Result(status=False, dbg=f'attribute {attribute} not defined')
+		return Result(status=False, dbg=f'validation for attribute {attribute} not defined')
 
 
 	#
@@ -619,6 +624,6 @@ class Validator(object):
 				return Result(status=False, dbg=str(e))
 			return Result(status=True)
 
-		return Result(status=False, dbg='unknown type')
+		return Result(status=False, dbg=f'unknown type: {str(tpe)}, value type:{type(value)}')
 
 
