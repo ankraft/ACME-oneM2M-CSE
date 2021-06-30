@@ -278,11 +278,16 @@ class MQTTConnection(object):
 #	Utility functions
 #
 
-def idToMQTT(id:str, isCSE:bool=True) -> str:
+def idToMQTT(id:str) -> str:
 	"""	Convert a oneM2M ID to an MQTT compatible path element.
 	"""
-	return f'{"C:" if isCSE else "A:"}{id.replace("/", ":")}'
+	return f'{id.lstrip("/").replace("/", ":")}'
 
+
+def idToMQTTClientID(id:str, isCSE:bool=True) -> str:
+	"""	Convert a oneM2M ID to an MQTT client ID.
+	"""
+	return f'{"C::" if isCSE else "A::"}{id.lstrip("/")}'
 
 def mqttToId(mqttId:str, isCSE:bool=True) -> Tuple[str, bool]:
 	"""	Convert an MQTT compatible path element to an ID.

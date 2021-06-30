@@ -178,26 +178,26 @@ class HttpServer(object):
 			build the internal strutures. Then, depending on the operation,
 			call the associated request handler.
 		"""
-		L.isDebug and L.logDebug(f'==> {operation.name}: /{path}') 	# path = request.path  w/o the root
+		L.isDebug and L.logDebug(f'==> HTTP-{operation.name}: /{path}') 	# path = request.path  w/o the root
 		L.isDebug and L.logDebug(f'Headers: \n{str(request.headers)}')
-		httpRequestResult = self._dissectHttpRequest(request, operation, Utils.retrieveIDFromPath(path, CSE.cseRn, CSE.cseCsi))
+		dissectResult = self._dissectHttpRequest(request, operation, path)
 
 		if self.isStopped:
 			responseResult = Result(rsc=RC.internalServerError, dbg='http server not running', status=False)
 		else:
 			try:
-				if httpRequestResult.status:
+				if dissectResult.status:
 					if operation in [ Operation.CREATE, Operation.UPDATE ]:
-						if httpRequestResult.request.ct == ContentSerializationType.CBOR:
-							L.isDebug and L.logDebug(f'Body: \n{Utils.toHex(cast(bytes, httpRequestResult.request.data))}\n=>\n{httpRequestResult.request.dict}')
+						if dissectResult.request.ct == ContentSerializationType.CBOR:
+							L.isDebug and L.logDebug(f'Body: \n{Utils.toHex(cast(bytes, dissectResult.request.data))}\n=>\n{dissectResult.request.dict}')
 						else:
-							L.isDebug and L.logDebug(f'Body: \n{str(httpRequestResult.request.data)}')
-					responseResult = CSE.request.handleRequest(operation, httpRequestResult.request)
+							L.isDebug and L.logDebug(f'Body: \n{str(dissectResult.request.data)}')
+					responseResult = CSE.request.handleRequest(dissectResult.request)
 				else:
-					responseResult = httpRequestResult
+					responseResult = dissectResult
 			except Exception as e:
-				responseResult = self._prepareException(e)
-		responseResult.request = httpRequestResult.request
+				responseResult = Utils.exceptionToResult(e)
+		responseResult.request = dissectResult.request
 
 		return self._prepareResponse(responseResult)
 
@@ -354,16 +354,16 @@ class HttpServer(object):
 		try:
 			L.isDebug and L.logDebug(f'Sending request: {method.__name__.upper()} {url}')
 			if ct == ContentSerializationType.CBOR:
-				L.isDebug and L.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n=>\n{str(data) if data is not None else ""}\n')
+				L.isDebug and L.logDebug(f'HTTP-Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n=>\n{str(data) if data is not None else ""}\n')
 			else:
-				L.isDebug and L.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n')
+				L.isDebug and L.logDebug(f'HTTP-Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n')
 			
 			# Actual sending the request
 			r = method(url, data=content, headers=hds, verify=CSE.security.verifyCertificate)
 
 			responseCt = ContentSerializationType.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
 			rc = RC(int(r.headers['X-M2M-RSC'])) if 'X-M2M-RSC' in r.headers else RC.internalServerError
-			L.isDebug and L.logDebug(f'Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
+			L.isDebug and L.logDebug(f'HTTP-Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
 		except Exception as e:
 			L.isDebug and L.logWarn(f'Failed to send request: {str(e)}')
 			return Result(rsc=RC.targetNotReachable, dbg='target not reachable')
@@ -408,17 +408,17 @@ class HttpServer(object):
 				
 		# Build and return the response
 		if isinstance(content, bytes):
-			L.isDebug and L.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{Utils.toHex(content)}\n=>\n{str(result.toData())}')
+			L.isDebug and L.logDebug(f'<== HTTP-Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{Utils.toHex(content)}\n=>\n{str(result.toData())}')
 		else:
-			L.isDebug and L.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
+			L.isDebug and L.logDebug(f'<== HTTP-Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
 		return Response(response=content, status=statusCode, content_type=cts, headers=headers)
 
 
-	def _prepareException(self, e:Exception) -> Result:
-		tb = traceback.format_exc()
-		L.logErr(tb, exc=e)
-		tbs = tb.replace('"', '\\"').replace('\n', '\\n')
-		return Result(rsc=RC.internalServerError, dbg=f'encountered exception: {tbs}')
+	# def _prepareException(self, e:Exception) -> Result:
+	# 	tb = traceback.format_exc()
+	# 	L.logErr(tb, exc=e)
+	# 	tbs = tb.replace('"', '\\"').replace('\n', '\\n')
+	# 	return Result(rsc=RC.internalServerError, dbg=f'encountered exception: {tbs}')
 
 
 	#########################################################################
@@ -426,7 +426,8 @@ class HttpServer(object):
 	#	HTTP request helper functions
 	#
 
-	def _dissectHttpRequest(self, request:Request, operation:Operation, _id:Tuple[str, str, str]) -> Result:
+	#def _dissectHttpRequest(self, request:Request, operation:Operation, _id:Tuple[str, str, str]) -> Result:
+	def _dissectHttpRequest(self, request:Request, operation:Operation, to:str) -> Result:
 		"""	Dissect an HTTP request. Combine headers and contents into a single structure. Result is returned in Result.request.
 		"""
 
@@ -462,20 +463,12 @@ class HttpServer(object):
 			return request.headers.get(field)
 
 
-		cseRequest = CSERequest()
-		cseRequest.headers = RequestHeaders()
-		req:ReqResp = {}
-
-
-		# get the data first. This marks the request as consumed, just in case that we have to return early
-		cseRequest.data = request.data
-
-		# handle ID's 
-		cseRequest.id, cseRequest.csi, cseRequest.srn = _id
-
-		# operator and target
-		req['op']   = operation.value
-		req['to']   = cseRequest.id
+		cseRequest 			= CSERequest()
+		req:ReqResp 		= {}
+		cseRequest.data 	= request.data			# get the data first. This marks the request as consumed, just in case that we have to return early
+		cseRequest.op 		= operation
+		req['op']   		= operation.value		# Needed later for validation
+		req['to'] 		 	= to
 
 		# Copy and parse the original request headers
 		if (f := requestHeaderField(request, C.hfOrigin)) is not None:
@@ -492,30 +485,24 @@ class HttpServer(object):
 			req['rvi'] = f
 		if (rtu := requestHeaderField(request, C.hfRTU)) is not None:			# handle rtu as a list
 			req['rtu'] = rtu.split('&')
-		
-		# parse and extract content-type header
-		cseRequest.headers.contentType	= request.content_type
-		L.isDebug and L.logDebug(str(cseRequest.headers))
-		if cseRequest.headers.contentType is not None:
-			if not cseRequest.headers.contentType.startswith(tuple(C.supportedContentHeaderFormat)):
-				cseRequest.headers.contentType 	= None
-			else:
-				p = cseRequest.headers.contentType.partition(';')	# always returns a 3-tuple
-				cseRequest.headers.contentType = p[0] 				# content-type
-				t = p[2].partition('=')[2]
-				if len(t) > 0:
-					req['ty'] = t
 
-				# if len(t) > 0:										# check only if there is a resource type
-				# 	if t.isdigit() and (_t := int(t)):
-				# 		req['ty'] = _t
-		
+		# parse and extract content-type header
+		# cseRequest.headers.contentType	= request.content_type
+		if (ct := request.content_type) is not None:
+			if not ct.startswith(tuple(C.supportedContentHeaderFormat)):
+				ct = None
+			else:
+				p  = ct.partition(';')		# always returns a 3-tuple
+				ct = p[0] 					# only the content-type without the resource type
+				t  = p[2].partition('=')[2]
+				if len(t) > 0:
+					req['ty'] = t			# Here we found the type for CREATE requests
+		cseRequest.headers.contentType = ct
+
 		# parse accept header
 		cseRequest.headers.accept = request.headers.getlist('accept')
 		cseRequest.headers.accept = [ a for a in cseRequest.headers.accept if a != '*/*' ]
-
-		# Extract further request arguments from the http request
-		filterCriteria:ReqResp = {}
+		cseRequest.originalArgs	  = deepcopy(request.args)	# Keep the original args
 
 		# copy request arguments for greedy attributes checking
 		args = request.args.copy() 	# type: ignore [no-untyped-call]
@@ -523,336 +510,40 @@ class HttpServer(object):
 		# Do some special handling for those arguments that could occur multiple
 		# times in the args MultiDict. They are collected together in a single list
 		# and added again to args.
-
-		# TODO validation!!!
-		extractMultipleArgs(args, 'ty')
-		if 'ty' in args:	# make ints out of the strings
-			args['ty'] = [ int(t) for t in args['ty'] ]	# This should work since the validation already happened in the extract method
+		extractMultipleArgs(args, 'ty')	# conversation to int happens later in fillAndValidateCSERequest()
 		extractMultipleArgs(args, 'cty')
 		extractMultipleArgs(args, 'lbl')
-		
-		# Now, handle the rest of the arguments
-		cseRequest.args, cseRequest.op, dbg = self.getRequestArguments(args, operation)
-		if cseRequest.args is None:
-			return Result(rsc=RC.badRequest, request=cseRequest, dbg=dbg, status=False)
-		
-		cseRequest.originalArgs	= deepcopy(request.args)
-		# add all the args to the request
-		filterCriteria['fu']    = cseRequest.args.fu
-		filterCriteria['drt']   = cseRequest.args.drt
-		filterCriteria['fo']    = cseRequest.args.fo
-		filterCriteria['rcn']   = cseRequest.args.rcn
-		filterCriteria['rt']    = cseRequest.args.rt
-		filterCriteria['rp']    = cseRequest.args.rp
-		filterCriteria['rpts']  = cseRequest.args.rpts
-		filterCriteria['rp']    = cseRequest.args.rp
 
-		for k,v in cseRequest.args.handling.items():
-			filterCriteria[k]   = v
-		for k,v in cseRequest.args.conditions.items():
-			filterCriteria[k]   = v
-		for k,v in cseRequest.args.attributes.items():
-			filterCriteria[k]   = v
-		
-		if len(filterCriteria) > 0:
-			req['fc'] = filterCriteria
+		# Extract further request arguments from the http request
+		# add all the args to the filterCriteria
+		filterCriteria:ReqResp = {}
+		for k,v in args.items():
+			filterCriteria[k] = v
+		req['fc'] = filterCriteria
 
 		# De-Serialize the content
-		if not (res := CSE.request.deserializeContent(cseRequest.data, cseRequest.headers.contentType, operation)).status:
-			return Result(rsc=res.rsc, request=cseRequest, dbg=res.dbg, status=False)
+		if not (contentResult := CSE.request.deserializeContent(cseRequest.data, cseRequest.headers.contentType)).status:
+			return Result(rsc=contentResult.rsc, request=cseRequest, dbg=contentResult.dbg, status=False)
 		
 		# Remove 'None' fields *before* adding the pc, because the pc may contain 'None' fields that need to be preserved
 		req = Utils.removeNoneValuesFromDict(req)
 
-		# Add the primitive contant
-		req['pc'] = res.data[0]
-		cseRequest.ct = res.data[1]
-
-		# finally store the oneM2M request object to the cseRequest
-		cseRequest.req = req
-				
-		L.logWarn(str(cseRequest))
+		# Add the primitive content and 
+		req['pc'] 	 	= contentResult.data[0]	# The actual content
+		cseRequest.ct	= contentResult.data[1]	# The conten serialization type
+		cseRequest.req	= req					# finally store the oneM2M request object in the cseRequest
+		
+		# do validation and copying of attributes of the whole request
 		try:
+			# L.logWarn(str(cseRequest))
 			if not (res := CSE.request.fillAndValidateCSERequest(cseRequest)).status:
 				return res
 		except Exception as e:
-			return Result(rsc=RC.invalidArguments, request=cseRequest, dbg=f'invalid arguments ({str(e)})', status=False)
-		L.logWarn(str(cseRequest))
+			return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'invalid arguments/attributes ({str(e)})', status=False)
 
+		# Here, if everything went okay so far, we have a request to the CSE
 		return Result(request=cseRequest, status=True)
 
-
-
-	def getRequestArguments(self, args:dict, operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, Operation, str]:
-		"""	Get the request arguments, or meaningful defaults.
-			Only a subset is supported yet.
-
-			The `operation` might have been updated and is therefore returned as well.
-		"""
-		result = RequestArguments()
-
-		# FU - Filter Usage
-		result.fu  = args.get('fu')
-		result.drt = args.get('drt')
-		result.fo  = args.get('fo')
-		result.rcn = args.get('rcn')
-
-
-
-
-
-
-		# RT - Response Type
-		if (rt := args.get('rt')) is not None: 
-			if not (res := CSE.validator.validateRequestArgument('rt', rt)).status:
-				return None, Operation.NA, f'error validating "rt" argument ({res.dbg})'
-			try:
-				rt = ResponseType(int(rt))
-			except ValueError as exc:
-				return None, Operation.NA, f'"{rt}" is not a valid value for rt'
-			del args['rt']
-		else:
-			rt = ResponseType.blockingRequest
-		result.rt = rt
-
-		# RP - Result Persistence
-		if (rp := args.get('rp')) is not None: 
-			if not (res := CSE.validator.validateRequestArgument('rp', rp)).status:
-				return None, Operation.NA, f'error validating "rp" argument ({res.dbg})'
-			if (rpts := Utils.toISO8601Date(Utils.fromAbsRelTimestamp(rp))) == 0.0:
-				return None, Operation.NA, f'"{rp}" is not a valid value for rp'
-			del args['rp']
-		else:
-			rp = None
-			rpts = None
-		result.rp = rp
-		result.rpts = rpts
-
-		# handling conditions
-		handling:Conditions = { }
-		for c in ['lim', 'lvl', 'ofst']:	# integer parameters
-			if c in args:
-				v = args[c]
-				if not CSE.validator.validateRequestArgument(c, v).status:
-					return None, Operation.NA, f'error validating "{c}" argument'
-				handling[c] = int(v)
-				del args[c]
-		for c in ['arp']:					# string parameters
-			if c in args:
-				v = args[c]
-				if not CSE.validator.validateRequestArgument(c, v).status:
-					return None, Operation.NA, f'error validating "{c}" argument'
-				handling[c] = v # string
-				del args[c]
-		result.handling = handling
-
-		# conditions
-		conditions:Conditions = {}
-
-		# Extract and store other arguments
-		for c in ['crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr']:
-			if (v := args.get(c)) is not None:
-				if not CSE.validator.validateRequestArgument(c, v).status:
-					return None, Operation.NA, f'error validating "{c}" argument'
-				conditions[c] = v
-				del args[c]
-		
-		# Copy multipe arguments. They have been aggregated into single lists before.
-		for c in [ 'ty', 'cty', 'lbl' ]:
-			if (v := args.get(c)) is not None:
-				conditions[c] = v if isinstance(v, list) else [v]	#hack to add a single value as a list
-				del args[c]
-
-		result.conditions = conditions
-
-		# all remaining arguments are treated as matching attributes
-		for arg, val in args.items():
-			if not CSE.validator.validateRequestArgument(arg, val).status:
-				return None, Operation.NA, f'error validating (unknown?) "{arg}" argument)'
-		
-		# all arguments have passed, so add the remaining 
-		# TODO exclude a couple of them
-		for k,v in args.items():
-			result.attributes[k] = v
-
-		# Finally return the collected arguments
-		return result, operation, None
-	
-
-
-	# def getRequestArguments(self, args:dict, operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, Operation, str]:
-	# 	"""	Get the request arguments, or meaningful defaults.
-	# 		Only a subset is supported yet.
-
-	# 		The `operation` might have been updated and is therefore returned as well.
-	# 	"""
-	# 	result = RequestArguments()
-
-	# 	# FU - Filter Usage
-	# 	if (fu := args.get('fu')) is not None:
-	# 		if not CSE.validator.validateRequestArgument('fu', fu).status:
-	# 			return None, Operation.NA, 'error validating "fu" argument'
-	# 		try:
-	# 			fu = FilterUsage(int(fu))
-	# 		except ValueError as exc:
-	# 			return None, Operation.NA, f'"{fu}" is not a valid value for fu'
-	# 		del args['fu']
-	# 	else:
-	# 		fu = FilterUsage.conditionalRetrieval
-	# 	if fu == FilterUsage.discoveryCriteria and operation == Operation.RETRIEVE:
-	# 		operation = Operation.DISCOVERY
-	# 	result.fu = fu
-
-	# 	# DRT - Desired Identifier Result Type
-	# 	if (drt := args.get('drt')) is not None: # 1=strucured, 2=unstructured
-	# 		if not CSE.validator.validateRequestArgument('drt', drt).status:
-	# 			return None, Operation.NA, 'error validating "drt" argument'
-	# 		try:
-	# 			drt = DesiredIdentifierResultType(int(drt))
-	# 		except ValueError as exc:
-	# 			return None, Operation.NA, f'"{drt}" is not a valid value for drt'
-	# 		del args['drt']
-	# 	else:
-	# 		drt = DesiredIdentifierResultType.structured
-	# 	result.drt = drt
-
-	# 	# FO - Filter Operation
-	# 	if (fo := args.get('fo')) is not None: # 1=AND, 2=OR
-	# 		if not CSE.validator.validateRequestArgument('fo', fo).status:
-	# 			return None, Operation.NA, 'error validating "fo" argument'
-	# 		try:
-	# 			fo = FilterOperation(int(fo))
-	# 		except ValueError as exc:
-	# 			return None, Operation.NA, f'"{fo}" is not a valid value for fo'
-	# 		del args['fo']
-	# 	else:
-	# 		fo = FilterOperation.AND # default
-	# 	result.fo = fo
-
-	# 	# RCN Result Content Type
-	# 	if (rcn := args.get('rcn')) is not None: 
-	# 		if not CSE.validator.validateRequestArgument('rcn', rcn).status:
-	# 			return None, Operation.NA, 'error validating "rcn" argument'
-	# 		rcn = int(rcn)
-	# 		del args['rcn']
-	# 	else:
-	# 		if fu != FilterUsage.discoveryCriteria:
-	# 			# Different defaults for each operation
-	# 			if operation in [ Operation.RETRIEVE, Operation.CREATE, Operation.UPDATE ]:
-	# 				rcn = ResultContentType.attributes
-	# 			elif operation == Operation.DELETE:
-	# 				rcn = ResultContentType.nothing
-	# 		else:
-	# 			# discovery-result-references as default for Discovery operation
-	# 			rcn = ResultContentType.discoveryResultReferences
-
-	# 	# Check value of rcn depending on operation
-	# 	if operation == Operation.RETRIEVE and rcn not in [ ResultContentType.attributes,
-	# 														ResultContentType.attributesAndChildResources,
-	# 														ResultContentType.attributesAndChildResourceReferences,
-	# 														ResultContentType.childResourceReferences,
-	# 														ResultContentType.childResources,
-	# 														ResultContentType.originalResource ]:
-	# 		return None, Operation.NA, f'rcn: {rcn:d} not allowed in RETRIEVE operation'
-	# 	elif operation == Operation.DISCOVERY and rcn not in [ ResultContentType.childResourceReferences,
-	# 														ResultContentType.discoveryResultReferences ]:
-	# 		return None, Operation.NA, f'rcn: {rcn:d} not allowed in DISCOVERY operation'
-	# 	elif operation == Operation.CREATE and rcn not in [ ResultContentType.attributes,
-	# 														ResultContentType.modifiedAttributes,
-	# 														ResultContentType.hierarchicalAddress,
-	# 														ResultContentType.hierarchicalAddressAttributes,
-	# 														ResultContentType.nothing ]:
-	# 		return None, Operation.NA, f'rcn: {rcn:d} not allowed in CREATE operation'
-	# 	elif operation == Operation.UPDATE and rcn not in [ ResultContentType.attributes,
-	# 														ResultContentType.modifiedAttributes,
-	# 														ResultContentType.nothing ]:
-	# 		return None, Operation.NA, f'rcn: {rcn:d} not allowed in UPDATE operation'
-	# 	elif operation == Operation.DELETE and rcn not in [ ResultContentType.attributes,
-	# 														ResultContentType.nothing,
-	# 														ResultContentType.attributesAndChildResources,
-	# 														ResultContentType.childResources,
-	# 														ResultContentType.attributesAndChildResourceReferences,
-	# 														ResultContentType.childResourceReferences ]:
-	# 		return None, Operation.NA, f'rcn:  not allowed DELETE operation'
-
-	# 	result.rcn = ResultContentType(rcn)
-
-	# 	# RT - Response Type
-	# 	if (rt := args.get('rt')) is not None: 
-	# 		if not (res := CSE.validator.validateRequestArgument('rt', rt)).status:
-	# 			return None, Operation.NA, f'error validating "rt" argument ({res.dbg})'
-	# 		try:
-	# 			rt = ResponseType(int(rt))
-	# 		except ValueError as exc:
-	# 			return None, Operation.NA, f'"{rt}" is not a valid value for rt'
-	# 		del args['rt']
-	# 	else:
-	# 		rt = ResponseType.blockingRequest
-	# 	result.rt = rt
-
-	# 	# RP - Result Persistence
-	# 	if (rp := args.get('rp')) is not None: 
-	# 		if not (res := CSE.validator.validateRequestArgument('rp', rp)).status:
-	# 			return None, Operation.NA, f'error validating "rp" argument ({res.dbg})'
-	# 		if (rpts := Utils.toISO8601Date(Utils.fromAbsRelTimestamp(rp))) == 0.0:
-	# 			return None, Operation.NA, f'"{rp}" is not a valid value for rp'
-	# 		del args['rp']
-	# 	else:
-	# 		rp = None
-	# 		rpts = None
-	# 	result.rp = rp
-	# 	result.rpts = rpts
-
-	# 	# handling conditions
-	# 	handling:Conditions = { }
-	# 	for c in ['lim', 'lvl', 'ofst']:	# integer parameters
-	# 		if c in args:
-	# 			v = args[c]
-	# 			if not CSE.validator.validateRequestArgument(c, v).status:
-	# 				return None, Operation.NA, f'error validating "{c}" argument'
-	# 			handling[c] = int(v)
-	# 			del args[c]
-	# 	for c in ['arp']:					# string parameters
-	# 		if c in args:
-	# 			v = args[c]
-	# 			if not CSE.validator.validateRequestArgument(c, v).status:
-	# 				return None, Operation.NA, f'error validating "{c}" argument'
-	# 			handling[c] = v # string
-	# 			del args[c]
-	# 	result.handling = handling
-
-	# 	# conditions
-	# 	conditions:Conditions = {}
-
-	# 	# Extract and store other arguments
-	# 	for c in ['crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr']:
-	# 		if (v := args.get(c)) is not None:
-	# 			if not CSE.validator.validateRequestArgument(c, v).status:
-	# 				return None, Operation.NA, f'error validating "{c}" argument'
-	# 			conditions[c] = v
-	# 			del args[c]
-		
-	# 	# Copy multipe arguments. They have been aggregated into single lists before.
-	# 	for c in [ 'ty', 'cty', 'lbl' ]:
-	# 		if (v := args.get(c)) is not None:
-	# 			conditions[c] = v if isinstance(v, list) else [v]	#hack to add a single value as a list
-	# 			del args[c]
-
-	# 	result.conditions = conditions
-
-	# 	# all remaining arguments are treated as matching attributes
-	# 	for arg, val in args.items():
-	# 		if not CSE.validator.validateRequestArgument(arg, val).status:
-	# 			return None, Operation.NA, f'error validating (unknown?) "{arg}" argument)'
-		
-	# 	# all arguments have passed, so add the remaining 
-	# 	# TODO exclude a couple of them
-	# 	for k,v in args.items():
-	# 		result.attributes[k] = v
-
-	# 	# Finally return the collected arguments
-	# 	return result, operation, None
-	
 
 
 ##########################################################################
