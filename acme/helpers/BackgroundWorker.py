@@ -42,7 +42,7 @@ class BackgroundWorker(object):
 
 		if self.running:
 			self.stop()
-		L.isDebug and L.logDebug(f'Starting worker: {self.name}')
+		L.isDebug and L.logDebug(f'Starting {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
 		self.numberOfRuns	= 0
 		self.args 			= args
 		self.running 		= True
@@ -55,7 +55,7 @@ class BackgroundWorker(object):
 	def stop(self) -> BackgroundWorker:
 		"""	Stop the background worker.
 		"""
-		L.isDebug and L.logDebug(f'Stopping worker: {self.name}')
+		L.isDebug and L.logDebug(f'Stopping {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
 		self.running = False
 		BackgroundWorkerPool._unqueueWorker(self.id)		# Stop the timer and remove from queue
 		self._postCall()									# Note: worker is removed in _postCall()
@@ -75,7 +75,7 @@ class BackgroundWorker(object):
 			self.numberOfRuns += 1
 			result = self.callback(**self.args)
 		except Exception as e:
-			L.logErr(f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}')
+			L.logErr(f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}', exc=e)
 		finally:
 			if not result or (self.maxCount is not None and self.numberOfRuns >= self.maxCount):
 				# False returned, or the numberOfRuns has reached the maxCount

@@ -10,13 +10,14 @@
 
 from __future__ import annotations
 import datetime, json, random, string, sys, re, threading
+import traceback
 import cbor2
 from copy import deepcopy
 import isodate
 from typing import Any, List, Tuple, Union, Dict, cast
 
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, ResponseCode
 from Types import Result, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType
 from Types import ResultContentType, ResponseType, FilterOperation
 from Types import ContentSerializationType, JSON, Conditions
@@ -737,16 +738,8 @@ def getRequestArguments(args:dict, operation:Operation=Operation.RETRIEVE) -> Tu
 	# Copy multipe arguments. They have been aggregated into single lists before.
 	for c in [ 'ty', 'cty', 'lbl' ]:
 		if (v := args.get(c)) is not None:
-			conditions[c] = v
+			conditions[c] = v if isinstance(v, list) else [v]	#hack to add a single value as a list
 			del args[c]
-
-
-	# if not (res := _extractMultipleArgs('ty', conditions))[0]:
-	# 	return None, res[1]
-	# if not (res := _extractMultipleArgs('cty', conditions))[0]:
-	# 	return None, res[1]
-	# if not (res := _extractMultipleArgs('lbl', conditions, validate=False))[0]:
-	# 	return None, res[1]
 
 	result.conditions = conditions
 
@@ -834,13 +827,14 @@ def toHex(bts:bytes, toBinary:bool=False, withLength:bool=False) -> str:
 	return result
 
 
-def simpleMatch(st:str, pattern:str) -> bool:
+def simpleMatch(st:str, pattern:str, star='*') -> bool:
 	"""	Simple string match function. 
 		This class supports the following expression operators:
 
 	
 		- '?' : any single character
 		- '*' _ zero or more characters
+		- '+' _ one or more characters
 		- '\\' - Escape an expression operator
 
 		Examples: 
@@ -854,63 +848,95 @@ def simpleMatch(st:str, pattern:str) -> bool:
 		Parameter:
 			- st : string to test
 			- pattern : the pattern string
+			- star : optionally specify a different character as the star character
 	"""
 
-	def simpleMatchStar(st:str, pattern:str) -> bool:
-		""" Recursively eat up a string when the pattern is a star in the beginning
+	def _simpleMatchStar(st:str, pattern:str) -> bool:
+		""" Recursively eat up a string when the pattern is a star at the beginning
 			or middle of a pattern.
 		"""
 		stLen	= len(st)
 		stIndex	= 0
-		while not simpleMatch(st[stIndex:], pattern):
+		while not _simpleMatch(st[stIndex:], pattern):
+			stIndex += 1
+			if stIndex >= stLen:
+				return False
+		return True
+	
+
+	def _simpleMatchPlus(st:str, pattern:str) -> bool:
+		""" Recursively eat up a string when the pattern is a plus at the beginning
+			or middle of a pattern.
+		"""
+		stLen	= len(st)
+		stIndex	= 1
+		if len(st) == 0:
+			return False
+		while not _simpleMatch(st[stIndex:], pattern):
 			stIndex += 1
 			if stIndex >= stLen:
 				return False
 		return True
 
-	last:int		= 0
-	matched:bool	= False
-	reverse:bool	= False
-	stLen			= len(st)
-	patternLen 		= len(pattern)
+	def _simpleMatch(st:str, pattern:str) -> bool:
+		last:int		= 0
+		matched:bool	= False
+		reverse:bool	= False
+		stLen			= len(st)
+		patternLen 		= len(pattern)
 
-	# We later increment these indexes first in the loop below, therefore they need to be initialized with -1
-	stIndex			= -1
-	patternIndex 	= -1
+		# We later increment these indexes first in the loop below, therefore they need to be initialized with -1
+		stIndex			= -1
+		patternIndex 	= -1
 
-	while patternIndex < patternLen-1:
+		while patternIndex < patternLen-1:
 
-		stIndex 		+= 1
-		patternIndex 	+= 1
-		p 				= pattern[patternIndex]
+			stIndex 		+= 1
+			patternIndex 	+= 1
+			p 				= pattern[patternIndex]
 
-		if stIndex > stLen:
-			return False
-
-		# Match exactly one character, if there is one left
-		if p == '?':
-			if stIndex >= stLen:
+			if stIndex > stLen:
 				return False
-			continue
+
+			# Match exactly one character, if there is one left
+			if p == '?':
+				if stIndex >= stLen:
+					return False
+				continue
+			
+			# Match zero or more characters
+			if p == star:
+				patternIndex += 1
+				if patternIndex == patternLen:	# * is the last char in the pattern: this is a match
+					return True
+				return _simpleMatchStar(st[stIndex:], pattern[patternIndex:])	# Match recursively the remainder of the string
+
+			if p == '+':
+				patternIndex += 1
+				if patternIndex == patternLen and len(st[stIndex:]) > 0:	# + is the last char in the pattern and there is enough string remaining: this is a match
+					return True
+				return _simpleMatchPlus(st[stIndex:], pattern[patternIndex:])	# Match recursively the remainder of the string
+
+			# Literal match with the following character
+			if p == '\\':
+				patternIndex += 1
+				p = pattern[patternIndex]
+				# Fall-through
+			
+			# Literall match 
+			if stIndex < stLen:
+				if p != st[stIndex]:
+					return False
 		
-		# Match zero or more characters
-		if p == '*':
-			patternIndex += 1
-			if patternIndex == patternLen:	# * is the last char in the pattern: this is a match
-				return True
-			return simpleMatchStar(st[stIndex:], pattern[patternIndex:])	# Match recursively the remainder of the string
-		
-		# Literal match with the following character
-		if p == '\\':
-			patternIndex += 1
-			p = pattern[patternIndex]
-			# Fall-through
-		
-		# Literall match 
-		if stIndex < stLen:
-			if p != st[stIndex]:
-				return False
+		# End of matches
+		return stIndex == stLen-1
 	
-	# End of matches
-	return stIndex == stLen-1
+	return _simpleMatch(st, pattern)
+
+
+def exceptionToResult(e:Exception) -> Result:
+	tb = traceback.format_exc()
+	L.logErr(tb, exc=e)
+	tbs = tb.replace('"', '\\"').replace('\n', '\\n')
+	return Result(rsc=ResponseCode.internalServerError, dbg=f'encountered exception: {tbs}')
 

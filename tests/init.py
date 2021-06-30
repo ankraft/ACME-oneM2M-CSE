@@ -47,17 +47,21 @@ timeSeriesInterval 		= 2.0 # seconds
 # ReleaseVersionIndicator
 RVI						 ='3'
 
+
 # A timestamp far in the future
 # Why 8888? Year 9999 may actually problematic, because this might be interpreteted
 # already as year 10000 (and this hits the limit of the isodata module implmenetation)
 
-def isRaspberrypi():
+def isRaspberrypi() -> bool:
+	"""	Check whether we run on a Raspberry Pi. 
+	"""
 	try:
 		with io.open('/sys/firmware/devicetree/base/model', 'r') as m:
 			if 'raspberry pi' in m.read().lower(): return True
 	except Exception: pass
 	return False
 
+# Raspbian is still a 32-bit OS and doesn't	support really long timestamps.
 futureTimestamp = '20371231T235959' if isRaspberrypi() else '88881231T235959'
 
 

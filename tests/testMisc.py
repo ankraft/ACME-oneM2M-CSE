@@ -110,11 +110,18 @@ class TestMisc(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createWithWrongResourceType(self) -> None:
-		"""	Create resource w -> Fail """
+		"""	Create resource with not matching name and type -> Fail """
 		dct = 	{ 'm2m:ae' : { 
 					'rn' : 'foo',
 				}}
 		_, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_checkHTTPmissingOriginator(self) -> None:
+		"""	Check missing originator in request"""
+		_, rsc = RETRIEVE(cseURL, None, headers={'X-M2M-RET' : getDate(10)}) # request expiration in 10 seconds
 		self.assertEqual(rsc, RC.badRequest)
 
 
@@ -135,6 +142,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestMisc('test_updateEmpty'))
 	suite.addTest(TestMisc('test_createAlphaResourceType'))
 	suite.addTest(TestMisc('test_createWithWrongResourceType'))
+	suite.addTest(TestMisc('test_checkHTTPmissingOriginator'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

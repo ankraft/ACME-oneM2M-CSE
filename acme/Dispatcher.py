@@ -295,7 +295,7 @@ class Dispatcher(object):
 			# Multiple occurences of ty is always OR'ed. Therefore we add the count of
 			# ty's to found (to indicate that the whole set matches)
 			if (tys := conditions.get('ty')) is not None:
-				found += len(tys) if str(ty) in tys else 0
+				found += len(tys) if ty in tys or str(ty) in tys else 0	# TODO simplify after refactoring requests. ty should only be an int
 			if (ct := r.ct) is not None:
 				found += 1 if (c_crb := conditions.get('crb')) is not None and (ct < c_crb) else 0
 				found += 1 if (c_cra := conditions.get('cra')) is not None and (ct > c_cra) else 0
@@ -348,11 +348,12 @@ class Dispatcher(object):
 			# TODO parentResourceType
 
 
+			# TODO replace with Simplematch
 			# Attributes:
 			if attributes is not None:
 				for name in attributes:
 					val = attributes[name]
-					if '*' in val:
+					if isinstance(val, str) and '*' in val:
 						val = val.replace('*', '.*')
 						found += 1 if (rval := r[name]) is not None and re.match(val, str(rval)) else 0
 					else:

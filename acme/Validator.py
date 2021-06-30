@@ -112,6 +112,7 @@ attributePolicies:AttributePolicies = {
 	'esi'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.MA ),		# m2m:e2eSecInfo - AE, CSE, CSR
 	'exc'	: (	BT.positiveInteger, CAR.car01, 	RO.O, 	RO.O,  RO.O, AN.NA ),  		# SUB
 	'far'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# RBO
+	'fr'	: ( BT.anyURI,			CAR.car01,  RO.M,	RO.NP, RO.O, AN.NA ),		# request, response
 	'fwn'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# FWR
 	'fwv'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'gn'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# GRP
@@ -175,6 +176,7 @@ attributePolicies:AttributePolicies = {
 	'obps'	: ( BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# MGO
 	'op'	: ( BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.NA ),		# REQ
 	'or'	: ( BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT
+	'ot'	: ( BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# request, response
 	'org'	: ( BT.string,			CAR.car1,   RO.NP,	RO.NP, RO.NP,AN.NA ),		# REQ
 	'ors'	: ( BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT, REQ
 	'osv'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
@@ -193,6 +195,7 @@ attributePolicies:AttributePolicies = {
 	'rid'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# REQ
 	'rl'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
 	'rms'	: ( BT.boolean,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ),		# NOD
+	'rqi'	: ( BT.string,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ),		# request
 	'rr'	: ( BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# AE
 	'rs'	: ( BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# REQ
 	'scp'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# m2m:sessionCapabilities - AE
@@ -212,6 +215,8 @@ attributePolicies:AttributePolicies = {
 	'swv'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'syst'	: ( BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'tg'	: ( BT.anyURI,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.NA ),		# REQ
+	'to'	: ( BT.anyURI,			CAR.car01,  RO.M,	RO.NP, RO.O, AN.NA ),		# request
+	'ty'	: ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# request
 	'tren'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# AE, CSR
 	'tri'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSR
 	'trn'	: ( BT.unsignedInt,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSR
@@ -241,7 +246,7 @@ attributePolicies:AttributePolicies = {
 
 	'cra'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'crb'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'cty'	: ( BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
+	'cty'	: ( BT.list,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'drt'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'exa'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'exb'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
@@ -257,11 +262,15 @@ attributePolicies:AttributePolicies = {
 	'sts'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'sza'	: ( BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'szb'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery	
-	#'ty'	: ( BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'us'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'arp'	: ( BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'rt'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request
 	'rp'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
+	'rqet'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
+	'rqet'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
+	'oet'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
+	'rvi'	: ( BT.string,			CAR.car1,    RO.O,	RO.O,  RO.O, AN.NA ),		# request 
+	'rtu'	: ( BT.list,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request  (actually the same as 'nu' s)
 
 	# TODO lbl, catr, patr
 
@@ -433,14 +442,19 @@ class Validator(object):
 		""" Validate a request argument. """
 		if (policy := getPolicy(argument)) is not None:
 			return self._validateType(policy[0], value, True)
-		return Result(status=False, dbg=f'attribute/argument {argument} not defined')
+		return Result(status=False, dbg=f'validation for attribute/argument {argument} not defined')
 
 
-	def validateAttribute(self, attribute:str, value:Any) -> Result:
-		""" Validate a single attribute. """
+	def validateAttribute(self, attribute:str, value:Any, attributeType:BT=None) -> Result:
+		""" Validate a single attribute. 
+			If `attributeType` is set then that type is taken to perform the check, otherwise the attribute
+			type is determined.
+		"""
+		if attributeType is not None:	# use the given attribute type instead of determining it
+			return self._validateType(attributeType, value, True)
 		if (policy := getPolicy(attribute)) is not None:
 			return self._validateType(policy[0], value, True)
-		return Result(status=False, dbg=f'attribute {attribute} not defined')
+		return Result(status=False, dbg=f'validation for attribute {attribute} not defined')
 
 
 	#
@@ -500,18 +514,22 @@ class Validator(object):
 		""" Check a value for its type. If the convert parameter is True then it
 			is assumed that the value could be a stringified value and the method
 			will attempt to convert the value to its target type; otherwise this
-			is an error. """
+			is an error. 
+
+			If the check is positive (Result.status==True) then Result.data is set
+			to the determined data type.
+		"""
 
 		if tpe == BT.positiveInteger:
 			if isinstance(value, int):
 				if value > 0:
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				return Result(status=False, dbg='value must be > 0')
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
 					if int(value) > 0:
-						return Result(status=True)
+						return Result(status=True, data=tpe)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: positive integer')
@@ -519,25 +537,25 @@ class Validator(object):
 		if tpe == BT.nonNegInteger:
 			if isinstance(value, int):
 				if value >= 0:
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				return Result(status=False, dbg='value must be >= 0')
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
 					if int(value) >= 0:
-						return Result(status=True)
+						return Result(status=True, data=BT.nonNegInteger)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: non-negative integer')
 
 		if tpe in [ BT.unsignedInt, BT.unsignedLong ]:
 			if isinstance(value, int):
-				return Result(status=True)
+				return Result(status=True, data=tpe)
 			# try to convert string to number 
 			if convert and isinstance(value, str):
 				try:
 					int(value)
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: unsigned integer')
@@ -545,7 +563,7 @@ class Validator(object):
 		if tpe == BT.timestamp and isinstance(value, str):
 			if Utils.fromAbsRelTimestamp(value) == 0.0:
 				return Result(status=False, dbg=f'format error in timestamp: {value}')
-			return Result(status=True)
+			return Result(status=True, data=tpe)
 
 		if tpe == BT.absRelTimestamp:
 			if isinstance(value, str):
@@ -558,63 +576,63 @@ class Validator(object):
 				# fallthrough
 			elif not isinstance(value, int):
 				return Result(status=False, dbg=f'unsupported data type for absRelTimestamp')
-			return Result(status=True)		# int/long is ok
+			return Result(status=True, data=tpe)		# int/long is ok
 
 		if tpe in [ BT.string, BT.anyURI ] and isinstance(value, str):
-			return Result(status=True)
+			return Result(status=True, data=tpe)
 
 		if tpe == BT.list and isinstance(value, list):
-			return Result(status=True)
+			return Result(status=True, data=tpe)
 		
 		if tpe == BT.dict and isinstance(value, dict):
-			return Result(status=True)
+			return Result(status=True, data=tpe)
 		
 		if tpe == BT.boolean:
 			if isinstance(value, bool):
-				return Result(status=True)
+				return Result(status=True, data=tpe)
 			# try to convert string to bool
 			if convert and isinstance(value, str):	# "true"/"false"
 				try:
 					bool(value)
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: bool')
 
 		if tpe == BT.float:
 			if isinstance(value, (float, int)):
-				return Result(status=True)
+				return Result(status=True, data=tpe)
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
 					float(value)
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: float')
 
 		if tpe == BT.integer:
 			if isinstance(value, int):
-				return Result(status=True)
+				return Result(status=True, data=tpe)
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
 					int(value)
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: integer')
 
 		if tpe == BT.geoCoordinates and isinstance(value, dict):
-			return Result(status=True)
+			return Result(status=True, data=tpe)
 		
 		if tpe == BT.duration:
 			try:
 				isodate.parse_duration(value)
 			except Exception as e:
 				return Result(status=False, dbg=str(e))
-			return Result(status=True)
+			return Result(status=True, data=tpe)
 
-		return Result(status=False, dbg='unknown type')
+		return Result(status=False, dbg=f'unknown type: {str(tpe)}, value type:{type(value)}')
 
 

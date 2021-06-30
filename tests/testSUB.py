@@ -29,6 +29,8 @@ class TestSUB(unittest.TestCase):
 	ae2URL 			= None
 	ae2Originator	= None
 	excSub 			= None
+	sub 			= None
+	ts 				= None
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
