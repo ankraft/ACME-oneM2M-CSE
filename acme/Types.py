@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, List, Dict, Tuple, Union, Callable
 from enum import IntEnum,  auto
+from http import HTTPStatus
 
 
 
@@ -354,41 +355,41 @@ class ResponseCode(IntEnum):
 #	Mapping of oneM2M return codes to http status codes
 #
 
-ResponseCode._httpStatusCodes = {											# type: ignore
-		ResponseCode.OK 										: 200,		# OK
-		ResponseCode.deleted 									: 200,		# DELETED
-		ResponseCode.updated 									: 200,		# UPDATED
-		ResponseCode.created									: 201,		# CREATED
-		ResponseCode.accepted 									: 202, 		# ACCEPTED
-		ResponseCode.acceptedNonBlockingRequestSynch 			: 202,		# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
-		ResponseCode.acceptedNonBlockingRequestAsynch			: 202,		# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
-		ResponseCode.badRequest									: 400,		# BAD REQUEST
-		ResponseCode.contentsUnacceptable						: 400,		# NOT ACCEPTABLE
-		ResponseCode.insufficientArguments 						: 400,		# INSUFFICIENT ARGUMENTS
-		ResponseCode.invalidArguments							: 400,		# INVALID ARGUMENTS
-		ResponseCode.maxNumberOfMemberExceeded					: 400, 		# MAX NUMBER OF MEMBER EXCEEDED
-		ResponseCode.groupMemberTypeInconsistent				: 400,		# GROUP MEMBER TYPE INCONSISTENT
-		ResponseCode.originatorHasNoPrivilege					: 403,		# ORIGINATOR HAS NO PRIVILEGE
-		ResponseCode.invalidChildResourceType					: 403,		# INVALID CHILD RESOURCE TYPE
-		ResponseCode.targetNotReachable							: 403,		# TARGET NOT REACHABLE
-		ResponseCode.alreadyExists								: 403,		# ALREAD EXISTS
-		ResponseCode.targetNotSubscribable						: 403,		# TARGET NOT SUBSCRIBABLE
-		ResponseCode.receiverHasNoPrivileges					: 403,		# RECEIVER HAS NO PRIVILEGE
-		ResponseCode.securityAssociationRequired				: 403,		# SECURITY ASSOCIATION REQUIRED
-		ResponseCode.subscriptionCreatorHasNoPrivilege			: 403,		# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
-		ResponseCode.subscriptionHostHasNoPrivilege				: 403,		# SUBSCRIPTION HOST HAS NO PRIVILEGE
-		ResponseCode.originatorHasAlreadyRegistered				: 403,		# ORIGINATOR HAS ALREADY REGISTERED
-		ResponseCode.appRuleValidationFailed					: 403,		# APP RULE VALIDATION FAILED
-		ResponseCode.requestTimeout								: 403,		# REQUEST TIMEOUT
-		ResponseCode.notFound									: 404,		# NOT FOUND
-		ResponseCode.operationNotAllowed						: 405,		# OPERATION NOT ALLOWED
-		ResponseCode.notAcceptable 								: 406,		# NOT ACCEPTABLE
-		ResponseCode.conflict									: 409,		# CONFLICT
-		ResponseCode.unsupportedMediaType						: 415,		# UNSUPPORTED_MEDIA_TYPE
-		ResponseCode.internalServerError 						: 500,		# INTERNAL SERVER ERROR
-		ResponseCode.subscriptionVerificationInitiationFailed	: 500,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
-		ResponseCode.releaseVersionNotSupported					: 501,		# RELEASE_VERSION_NOT_SUPPORTED
-		ResponseCode.notImplemented								: 501,		# NOT IMPLEMENTED
+ResponseCode._httpStatusCodes = {																		# type: ignore
+		ResponseCode.OK 										: HTTPStatus.OK,						# OK
+		ResponseCode.deleted 									: HTTPStatus.OK,						# DELETED
+		ResponseCode.updated 									: HTTPStatus.OK,						# UPDATED
+		ResponseCode.created									: HTTPStatus.CREATED,					# CREATED
+		ResponseCode.accepted 									: HTTPStatus.ACCEPTED, 					# ACCEPTED
+		ResponseCode.acceptedNonBlockingRequestSynch 			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
+		ResponseCode.acceptedNonBlockingRequestAsynch			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
+		ResponseCode.badRequest									: HTTPStatus.BAD_REQUEST,				# BAD REQUEST
+		ResponseCode.contentsUnacceptable						: HTTPStatus.BAD_REQUEST,				# NOT ACCEPTABLE
+		ResponseCode.insufficientArguments 						: HTTPStatus.BAD_REQUEST,				# INSUFFICIENT ARGUMENTS
+		ResponseCode.invalidArguments							: HTTPStatus.BAD_REQUEST,				# INVALID ARGUMENTS
+		ResponseCode.maxNumberOfMemberExceeded					: HTTPStatus.BAD_REQUEST, 				# MAX NUMBER OF MEMBER EXCEEDED
+		ResponseCode.groupMemberTypeInconsistent				: HTTPStatus.BAD_REQUEST,				# GROUP MEMBER TYPE INCONSISTENT
+		ResponseCode.originatorHasNoPrivilege					: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS NO PRIVILEGE
+		ResponseCode.invalidChildResourceType					: HTTPStatus.FORBIDDEN,					# INVALID CHILD RESOURCE TYPE
+		ResponseCode.targetNotReachable							: HTTPStatus.FORBIDDEN,					# TARGET NOT REACHABLE
+		ResponseCode.alreadyExists								: HTTPStatus.FORBIDDEN,					# ALREAD EXISTS
+		ResponseCode.targetNotSubscribable						: HTTPStatus.FORBIDDEN,					# TARGET NOT SUBSCRIBABLE
+		ResponseCode.receiverHasNoPrivileges					: HTTPStatus.FORBIDDEN,					# RECEIVER HAS NO PRIVILEGE
+		ResponseCode.securityAssociationRequired				: HTTPStatus.FORBIDDEN,					# SECURITY ASSOCIATION REQUIRED
+		ResponseCode.subscriptionCreatorHasNoPrivilege			: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
+		ResponseCode.subscriptionHostHasNoPrivilege				: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION HOST HAS NO PRIVILEGE
+		ResponseCode.originatorHasAlreadyRegistered				: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS ALREADY REGISTERED
+		ResponseCode.appRuleValidationFailed					: HTTPStatus.FORBIDDEN,					# APP RULE VALIDATION FAILED
+		ResponseCode.requestTimeout								: HTTPStatus.FORBIDDEN,					# REQUEST TIMEOUT
+		ResponseCode.notFound									: HTTPStatus.NOT_FOUND,					# NOT FOUND
+		ResponseCode.operationNotAllowed						: HTTPStatus.METHOD_NOT_ALLOWED,		# OPERATION NOT ALLOWED
+		ResponseCode.notAcceptable 								: HTTPStatus.NOT_ACCEPTABLE,			# NOT ACCEPTABLE
+		ResponseCode.conflict									: HTTPStatus.CONFLICT,					# CONFLICT
+		ResponseCode.unsupportedMediaType						: HTTPStatus.UNSUPPORTED_MEDIA_TYPE,	# UNSUPPORTED_MEDIA_TYPE
+		ResponseCode.internalServerError 						: HTTPStatus.INTERNAL_SERVER_ERROR,		# INTERNAL SERVER ERROR
+		ResponseCode.subscriptionVerificationInitiationFailed	: HTTPStatus.INTERNAL_SERVER_ERROR,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
+		ResponseCode.releaseVersionNotSupported					: HTTPStatus.NOT_IMPLEMENTED,			# RELEASE_VERSION_NOT_SUPPORTED
+		ResponseCode.notImplemented								: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
 	}
 
 

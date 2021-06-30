@@ -27,6 +27,7 @@ class TestTS_TSI(unittest.TestCase):
 	originator 	= None
 	sub			= None
 	ts 			= None
+	sub 		= None
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -654,7 +655,9 @@ class TestTS_TSI(unittest.TestCase):
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
 		self.assertEqual(rsc, RC.created, r)
-		time.sleep(timeSeriesInterval) # == pei
+		# time.sleep(timeSeriesInterval) # == pei
+		time.sleep(timeSeriesInterval + 0.1) # == pei + a short offset
+		start = time.time()
 		dgt += timeSeriesInterval
 
 		# Add further TSI
@@ -666,7 +669,8 @@ class TestTS_TSI(unittest.TestCase):
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
 			self.assertEqual(rsc, RC.created, r)
-			time.sleep(timeSeriesInterval) # == pei
+			time.sleep(timeSeriesInterval - (time.time() - start) ) # == pei - processing time
+			start = time.time()
 			dgt += timeSeriesInterval
 
 			# Check notifications
@@ -728,7 +732,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestTS_TSI('test_updateTSaddMdt'))
 	suite.addTest(TestTS_TSI('test_updateTSremoveMdt'))
 
-	# MissingData subscriptions
+	# # MissingData subscriptions
 	suite.addTest(TestTS_TSI('test_deleteTS'))
 	suite.addTest(TestTS_TSI('test_createTSwithMonitoring'))
 	suite.addTest(TestTS_TSI('test_createMissingDataSubUnderTS'))
