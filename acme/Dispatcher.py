@@ -348,11 +348,12 @@ class Dispatcher(object):
 			# TODO parentResourceType
 
 
+			# TODO replace with Simplematch
 			# Attributes:
 			if attributes is not None:
 				for name in attributes:
 					val = attributes[name]
-					if '*' in val:
+					if isinstance(val, str) and '*' in val:
 						val = val.replace('*', '.*')
 						found += 1 if (rval := r[name]) is not None and re.match(val, str(rval)) else 0
 					else:

@@ -13,7 +13,7 @@ import unittest, sys
 sys.path.append('../acme')
 from typing import Tuple
 from Constants import Constants as C
-from Types import ResultContentType as RCN
+from Types import ResourceTypes, ResultContentType as RCN
 from Types import ResourceTypes as T, ResponseCode as RC
 from Types import DesiredIdentifierResultType, FilterOperation
 from init import *
@@ -162,7 +162,7 @@ class TestDiscovery(unittest.TestCase):
 	def test_discoverCNTunderAERCN6(self) -> None:
 		"""	Discover <CNT> under <AE> & rcn=6 """
 		r, rsc = RETRIEVE(f'{aeURL}?fu=1&rcn={RCN.childResourceReferences:d}&ty={T.CNT}', TestDiscovery.originator)
-		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl/rrf'))
 		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 2)
@@ -493,11 +493,11 @@ class TestDiscovery(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCNIwithCTYunderAE(self) -> None:
-		""" Retrieve <CNT> under <AE> with cty & rcn=6 """
+		""" Retrieve <CNT> under <AE> with cty=a & rcn=6 """
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&cty=a', TestDiscovery.originator)
-		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl/rrf'))
-		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 5)
+		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 5, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

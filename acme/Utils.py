@@ -10,13 +10,14 @@
 
 from __future__ import annotations
 import datetime, json, random, string, sys, re, threading
+import traceback
 import cbor2
 from copy import deepcopy
 import isodate
 from typing import Any, List, Tuple, Union, Dict, cast
 
 from Constants import Constants as C
-from Types import ResourceTypes as T
+from Types import ResourceTypes as T, ResponseCode
 from Types import Result, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType
 from Types import ResultContentType, ResponseType, FilterOperation
 from Types import ContentSerializationType, JSON, Conditions
@@ -757,3 +758,11 @@ def simpleMatch(st:str, pattern:str, star:str='*') -> bool:
 		return stIndex == stLen-1
 	
 	return _simpleMatch(st, pattern)
+
+
+def exceptionToResult(e:Exception) -> Result:
+	tb = traceback.format_exc()
+	L.logErr(tb, exc=e)
+	tbs = tb.replace('"', '\\"').replace('\n', '\\n')
+	return Result(rsc=ResponseCode.internalServerError, dbg=f'encountered exception: {tbs}')
+

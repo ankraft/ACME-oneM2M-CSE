@@ -107,7 +107,7 @@ class NotificationManager(object):
 
 		if Utils.isVirtualResource(resource):
 			return 
-		if L.isDebug: L.logDebug('Checking subscriptions for notifications')
+		if L.isDebug: L.logDebug(f'Checking subscriptions for notifications. Reason: {reason}')
 		ri = resource.ri if ri is None else ri
 
 		# ATTN: The "subscription" returned here are NOT the <sub> resources,
