@@ -246,7 +246,7 @@ attributePolicies:AttributePolicies = {
 
 	'cra'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'crb'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'cty'	: ( BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
+	'cty'	: ( BT.list,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'drt'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'exa'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'exb'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
@@ -445,8 +445,13 @@ class Validator(object):
 		return Result(status=False, dbg=f'validation for attribute/argument {argument} not defined')
 
 
-	def validateAttribute(self, attribute:str, value:Any) -> Result:
-		""" Validate a single attribute. """
+	def validateAttribute(self, attribute:str, value:Any, attributeType:BT=None) -> Result:
+		""" Validate a single attribute. 
+			If `attributeType` is set then that type is taken to perform the check, otherwise the attribute
+			type is determined.
+		"""
+		if attributeType is not None:	# use the given attribute type instead of determining it
+			return self._validateType(attributeType, value, True)
 		if (policy := getPolicy(attribute)) is not None:
 			return self._validateType(policy[0], value, True)
 		return Result(status=False, dbg=f'validation for attribute {attribute} not defined')
@@ -509,18 +514,22 @@ class Validator(object):
 		""" Check a value for its type. If the convert parameter is True then it
 			is assumed that the value could be a stringified value and the method
 			will attempt to convert the value to its target type; otherwise this
-			is an error. """
+			is an error. 
+
+			If the check is positive (Result.status==True) then Result.data is set
+			to the determined data type.
+		"""
 
 		if tpe == BT.positiveInteger:
 			if isinstance(value, int):
 				if value > 0:
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				return Result(status=False, dbg='value must be > 0')
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
 					if int(value) > 0:
-						return Result(status=True)
+						return Result(status=True, data=tpe)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: positive integer')
@@ -528,25 +537,25 @@ class Validator(object):
 		if tpe == BT.nonNegInteger:
 			if isinstance(value, int):
 				if value >= 0:
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				return Result(status=False, dbg='value must be >= 0')
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
 					if int(value) >= 0:
-						return Result(status=True)
+						return Result(status=True, data=BT.nonNegInteger)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: non-negative integer')
 
 		if tpe in [ BT.unsignedInt, BT.unsignedLong ]:
 			if isinstance(value, int):
-				return Result(status=True)
+				return Result(status=True, data=tpe)
 			# try to convert string to number 
 			if convert and isinstance(value, str):
 				try:
 					int(value)
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: unsigned integer')
@@ -554,7 +563,7 @@ class Validator(object):
 		if tpe == BT.timestamp and isinstance(value, str):
 			if Utils.fromAbsRelTimestamp(value) == 0.0:
 				return Result(status=False, dbg=f'format error in timestamp: {value}')
-			return Result(status=True)
+			return Result(status=True, data=tpe)
 
 		if tpe == BT.absRelTimestamp:
 			if isinstance(value, str):
@@ -567,62 +576,62 @@ class Validator(object):
 				# fallthrough
 			elif not isinstance(value, int):
 				return Result(status=False, dbg=f'unsupported data type for absRelTimestamp')
-			return Result(status=True)		# int/long is ok
+			return Result(status=True, data=tpe)		# int/long is ok
 
 		if tpe in [ BT.string, BT.anyURI ] and isinstance(value, str):
-			return Result(status=True)
+			return Result(status=True, data=tpe)
 
 		if tpe == BT.list and isinstance(value, list):
-			return Result(status=True)
+			return Result(status=True, data=tpe)
 		
 		if tpe == BT.dict and isinstance(value, dict):
-			return Result(status=True)
+			return Result(status=True, data=tpe)
 		
 		if tpe == BT.boolean:
 			if isinstance(value, bool):
-				return Result(status=True)
+				return Result(status=True, data=tpe)
 			# try to convert string to bool
 			if convert and isinstance(value, str):	# "true"/"false"
 				try:
 					bool(value)
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: bool')
 
 		if tpe == BT.float:
 			if isinstance(value, (float, int)):
-				return Result(status=True)
+				return Result(status=True, data=tpe)
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
 					float(value)
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: float')
 
 		if tpe == BT.integer:
 			if isinstance(value, int):
-				return Result(status=True)
+				return Result(status=True, data=tpe)
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
 					int(value)
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: integer')
 
 		if tpe == BT.geoCoordinates and isinstance(value, dict):
-			return Result(status=True)
+			return Result(status=True, data=tpe)
 		
 		if tpe == BT.duration:
 			try:
 				isodate.parse_duration(value)
 			except Exception as e:
 				return Result(status=False, dbg=str(e))
-			return Result(status=True)
+			return Result(status=True, data=tpe)
 
 		return Result(status=False, dbg=f'unknown type: {str(tpe)}, value type:{type(value)}')
 

@@ -582,6 +582,13 @@ class NotificationEventType(IntEnum):
 			return self.value in [ NotificationEventType.reportOnGeneratedMissingDataPoints ]
 		return False
 
+
+	def __str__(self) -> str:
+		return self.name
+
+	def __repr__(self) -> str:
+		return self.__str__()
+
 ##############################################################################
 #
 #	TimeSeries related.
@@ -680,19 +687,24 @@ class ContentSerializationType(IntEnum):
 		"""
 		default = cls.UNKNOWN if default is None else default
 		if hdr is None:													return default
+		if hdr.lower() == 'json':										return cls.JSON
 		if hdr.lower().startswith('application/json'):					return cls.JSON
 		if hdr.lower().startswith('application/vnd.onem2m-res+json'):	return cls.JSON
+		if hdr.lower() == 'cbor':										return cls.CBOR
 		if hdr.lower().startswith('application/cbor'):					return cls.CBOR
 		if hdr.lower().startswith('application/vnd.onem2m-res+cbor'):	return cls.CBOR
+		if hdr.lower() == 'xml':										return cls.XML
 		if hdr.lower().startswith('application/xml'):					return cls.XML
 		if hdr.lower().startswith('application/vnd.onem2m-res+XML'):	return cls.XML
 		return cls.UNKNOWN
 	
+
 	def __eq__(self, other:object) -> bool:
 		if not isinstance(other, str):
 			return NotImplemented
 		return self.value == self.getType(str(other))
 	
+
 	def __repr__(self) -> str:
 		return self.name
 
@@ -763,7 +775,7 @@ class RequestArguments:
 	rcn:ResultContentType 			= ResultContentType.discoveryResultReferences
 	rt:ResponseType					= ResponseType.blockingRequest 					# response type
 	rp:str 							= None 											# result persistence
-	rpts: str 						= None 											# ... as a timestamp
+	rpts:str 						= None 											# ... as a timestamp (internal)
 	handling:Conditions 			= field(default_factory=dict)
 	conditions:Conditions 			= field(default_factory=dict)
 	attributes:Parameters 			= field(default_factory=dict)
@@ -787,7 +799,7 @@ class RequestHeaders:
 
 @dataclass
 class CSERequest:
-	headers:RequestHeaders 			= None
+	headers:RequestHeaders 			= RequestHeaders()
 	args:RequestArguments 			= None
 	ct:ContentSerializationType		= None
 	originalArgs:Any 				= None	# Actually a MultiDict
