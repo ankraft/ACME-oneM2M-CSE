@@ -129,6 +129,8 @@ class Configuration(object):
 				'mqtt.port' 						: config.getint('client.mqtt', 'port', 					fallback=None),	# Default will be determined later (s.b.)
 				'mqtt.keepalive' 					: config.getint('client.mqtt', 'keepalive',				fallback=60),
 				'mqtt.bindIF' 						: config.get('client.mqtt', 'bindIF',					fallback='127.0.0.1'),
+				'mqtt.username' 					: config.get('client.mqtt', 'username',					fallback=None),
+				'mqtt.password' 					: config.get('client.mqtt', 'password',					fallback=None),
 
 				#
 				#	Database
@@ -393,7 +395,9 @@ class Configuration(object):
 		#
 		if (mqttPort := Configuration._configuration['mqtt.port']) is None:	# set the default port depending on whether to use TLS
 			Configuration._configuration['mqtt.port'] = 8883 if Configuration._configuration['cse.security.useTLS'] else 1883
-
+		if (Configuration._configuration['mqtt.username'] is None) != (Configuration._configuration['mqtt.password'] is None):
+			_print(f'[red]Configuration Error: Username or password missing for \[client.mqtt]')
+			return False
 
 		# check the csi format
 		rx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space

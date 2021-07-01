@@ -9,13 +9,12 @@
 
 from __future__ import annotations
 from abc import abstractmethod, ABC
+from enum import IntEnum
 import ssl, time
 from dataclasses import dataclass
 from typing import Callable, Any, Tuple
 from functools import wraps
 
-
-from paho.mqtt.subscribeoptions import SubscribeOptions
 from Logging import Logging as L
 from helpers.BackgroundWorker import BackgroundWorkerPool, BackgroundWorker
 import Utils
@@ -43,6 +42,9 @@ class MQTTHandler(ABC):
 	def onDisconnect(self, connection:MQTTConnection) -> None:
 		pass
 
+	@abstractmethod
+	def onError(self, connection:MQTTConnection, rc:int) -> None:
+		pass
 
 ##############################################################################
 
@@ -103,6 +105,8 @@ class MQTTConnection(object):
 		self.mqttClient = mqtt.Client(client_id=self.clientName, clean_session=False)	# clean_session is defined by TS-0010
 		if self.useTLS:
 			self.mqttClient.tls_set_context(self.sslContext)
+		if self.username is not None and self.password is not None:
+			self.mqttClient.username_pw_set(self.username, self.password)
 		
 		self.mqttClient.on_connect 		= self._onConnect
 		self.mqttClient.on_disconnect	= self._onDisconnect
@@ -110,8 +114,6 @@ class MQTTConnection(object):
 		self.mqttClient.on_subscribe	= self._onSubscribe
 		self.mqttClient.on_unsubscribe	= self._onUnsubscribe
 		self.mqttClient.on_message		= self._onMessage
-
-		# TODO optional username/password, also in config. self.mqttClient.username_pw_set()
 
 		try:
 			self.mqttClient.connect(host=self.brokerAddress, port=self.brokerPort, keepalive=self.keepalive, bind_address=self.bindIF)
@@ -147,8 +149,9 @@ class MQTTConnection(object):
 				self.messageHandler.onConnect(self)
 		else:
 			self.isConnected = False
-			L.logErr(f'MQTT: Cannot connect to broker. Result code: {rc}')
-			# TODO anything else? Exception?
+			L.logErr(f'MQTT: Cannot connect to broker. Result code: {rc} ({mqtt.error_string(rc)})', showStackTrace=False)
+			if self.messageHandler is not None:
+				self.messageHandler.onError(self, rc)
 
 
 	def _onDisconnect(self, client:mqtt.Client, userdata:Any, rc:int) -> None:
@@ -160,6 +163,11 @@ class MQTTConnection(object):
 			self.subscribedTopics.clear()
 			if self.messageHandler is not None:
 				self.messageHandler.onDisconnect(self)
+		else:
+			self.isConnected = False
+			L.logErr(f'MQTT: Cannot diconnect to broker. Result code: {rc} ({mqtt.error_string(rc)})', showStackTrace=False)
+			if self.messageHandler is not None:
+				self.messageHandler.onError(self, rc)
 
 
 	def _onLog(self, client:mqtt.Client, userdata:Any, level:int, buf:str) -> None:

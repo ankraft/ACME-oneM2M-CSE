@@ -41,16 +41,18 @@ class MQTTClientHandler(MQTTHandler):
 	def onConnect(self, connection:MQTTConnection) -> None:
 		"""	When connected to a broker then register the topics the CSE listens to.
 		"""
-		# connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/req/+/{connection.clientName}/#', self._requestCB)					# Subscribe to general requests
-		# connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/resp/+/{connection.clientName}/#', self._responseCB)					# Subscribe to responses
-		# connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/reg_req/+/{connection.clientName}/#', self._registrationRequestCB)	# Subscribe to registration requests
 		connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/req/+/{idToMQTT(CSE.cseCsi)}/#', self._requestCB)					# Subscribe to general requests
-		connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/resp/{idToMQTT(CSE.cseCsi)}/+/#', self._responseCB)					# Subscribe to responses
+		connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/resp/{idToMQTT(CSE.cseCsi)}/+/#', self._responseCB)				# Subscribe to responses
 		connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/reg_req/+/{idToMQTT(CSE.cseCsi)}/#', self._registrationRequestCB)	# Subscribe to registration requests
 
 
-	def onDisconnect(self, connection:MQTTConnection) -> None:
+	def onDisconnect(self, _:MQTTConnection) -> None:
 		pass
+
+	
+	def onError(self, _:MQTTConnection, rc:int) -> None:
+		if rc == 5:		# authentication error
+			CSE.shutdown()
 
 
 	#
@@ -59,7 +61,6 @@ class MQTTClientHandler(MQTTHandler):
 
 	def _requestCB(self, connection:MQTTConnection, topic:str, data:bytes) -> None:
 
-		# TODO construct response topic
 		# SP relative of fr : /cseid/aei
 		# TODO reg_resp diferent
 
@@ -178,10 +179,11 @@ class MQTTClientHandler(MQTTHandler):
 class MQTTClient(object):
 
 	def __init__(self) -> None:
-		self.enable	= Configuration.get('mqtt.enable')
+		self.enable			= Configuration.get('mqtt.enable')
+		self.username		= Configuration.get('mqtt.username')
+		self.password		= Configuration.get('mqtt.password')
 		self.mqttConnection	= None
 		self.topicPrefix 	= ''	# TODO
-									# TODO username / PW
 
 		if self.enable:
 			self.mqttConnection = MQTTConnection(address			= Configuration.get('mqtt.address'),
@@ -191,10 +193,9 @@ class MQTTClient(object):
 												 clientName			= idToMQTTClientID(CSE.cseCsi),
 												 useTLS				= CSE.security.useTLS,
 												 sslContext			= CSE.security.getSSLContext(),
-												 messageHandler 	= MQTTClientHandler	(self)
-												 # username =		# TODO
-												 # password=		# TODO
-			)
+												 messageHandler 	= MQTTClientHandler	(self),
+												 username 			= self.username,
+												 password			= self.password)
 		self.isStopped = False
 										
 
