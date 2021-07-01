@@ -20,6 +20,7 @@ import CSE, Utils
 
 
 # TODO internal events
+# TODO Docs
 
 class MQTTClientHandler(MQTTHandler):
 
@@ -50,8 +51,10 @@ class MQTTClientHandler(MQTTHandler):
 		pass
 
 	
-	def onError(self, _:MQTTConnection, rc:int) -> None:
+	def onError(self, _:MQTTConnection, rc:int=-1) -> None:
 		if rc == 5:		# authentication error
+			CSE.shutdown()
+		if rc == -1: 	# unknown. probably connection error?
 			CSE.shutdown()
 
 
@@ -117,6 +120,7 @@ class MQTTClientHandler(MQTTHandler):
 	def _registrationRequestCB(self, connection:MQTTConnection, topic:str, data:str) -> None:
 		ts = topic.split('/')
 		L.logDebug(f'REGISTRATION {topic}, {data}, {ts[-1]}')
+		# TODO 
 		connection.publish('test', f'{topic}, {data}, {ts[-1]}'.encode())
 	
 

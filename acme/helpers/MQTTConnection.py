@@ -119,7 +119,8 @@ class MQTTConnection(object):
 			self.mqttClient.connect(host=self.brokerAddress, port=self.brokerPort, keepalive=self.keepalive, bind_address=self.bindIF)
 		except Exception as e:
 			L.logErr(f'MQTT: cannot connect to broker: {e}', showStackTrace=False)
-			raise e
+			if self.messageHandler is not None:
+				self.messageHandler.onError(self)
 
 		# Actually start the actor to run the MQTT client as a thread
 		self.actor = BackgroundWorkerPool.newActor(self._mqttActor, name='MQTTClient').start()
@@ -165,7 +166,7 @@ class MQTTConnection(object):
 				self.messageHandler.onDisconnect(self)
 		else:
 			self.isConnected = False
-			L.logErr(f'MQTT: Cannot diconnect to broker. Result code: {rc} ({mqtt.error_string(rc)})', showStackTrace=False)
+			L.logErr(f'MQTT: Cannot disconnect from broker. Result code: {rc} ({mqtt.error_string(rc)})', showStackTrace=False)
 			if self.messageHandler is not None:
 				self.messageHandler.onError(self, rc)
 
