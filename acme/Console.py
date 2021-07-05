@@ -78,10 +78,14 @@ class Console(object):
 	#	Various keyboard command handlers
 	#
 
+	def _about(self) -> None:
+		L.console(f'\n[white][dim][[/dim][red][i]ACME[/i][/red][dim]] CSE {C.version}', plain=True)
+
+
 	def help(self, key:str) -> None:
 		"""	Print help for keyboard commands.
 		"""
-		L.console(f'\n[white][dim][[/dim][red][i]ACME[/i][/red][dim]] {C.version}', plain=True)
+		self._about()
 		L.console("""**Console Commands**  
 - h, ?  - This help
 - Q, ^C - Shutdown CSE
@@ -105,10 +109,18 @@ class Console(object):
 
 
 	def shutdownCSE(self, key:str) -> None:
-		"""	Shutdown the CSE.
+		"""	Shutdown the CSE. Confirm shutdown before actually doing that.
 		"""
 		if not CSE.isHeadless:
+			L.off()
+			L.console('Press quit-key again to confirm -> ', plain=True, end='')
+			if waitForKeypress(5) not in ['Q', '\x03']:
+				L.console('canceled')
+				L.on()
+				return
+			L.console('confirmed')
 			L.console('Shutdown CSE')
+			L.on()
 		sys.exit()
 
 
@@ -198,8 +210,9 @@ class Console(object):
 		L.off()
 		while True:
 			self.clearScreen(key)
+			self._about()
 			self.resourceTree(key)
-			L.console('**(Press any key to stop)**')
+			L.console('(Press any key to return)', plain=True, end='')
 			if waitForKeypress(self.refreshInterval) is not None:
 				break
 		self.clearScreen(key)
@@ -226,9 +239,9 @@ class Console(object):
 		L.off()
 		while True:
 			self.clearScreen(key)
+			self._about()
 			self.statistics(key)
-			# self.resourceTree(key)
-			L.console('**(Press any key to stop)**')
+			L.console('(Press any key to return)', plain=True, end='')
 			if waitForKeypress(self.refreshInterval) is not None:
 				break
 		self.clearScreen(key)

@@ -765,6 +765,7 @@ class Result:
 
 	def __str__(self) -> str:
 		return str(self.toData())
+		
 	def __repr__(self) -> str:
 		return self.__str__()
 
