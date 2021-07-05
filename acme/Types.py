@@ -490,7 +490,7 @@ class Operation(IntEnum):
 		return Operation._permissionsMapping[self.value]	#  type: ignore
 	
 	@classmethod
-	def isvalid(cls, op:int):
+	def isvalid(cls, op:int) -> bool:
 		return cls.CREATE <= op <= cls.DISCOVERY
 
 
@@ -759,7 +759,8 @@ class Result:
 		return r
 
 	def __str__(self) -> str:
-		return self.toData()
+		return str(self.toData())
+		
 	def __repr__(self) -> str:
 		return self.__str__()
 

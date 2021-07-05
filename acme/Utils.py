@@ -827,7 +827,7 @@ def toHex(bts:bytes, toBinary:bool=False, withLength:bool=False) -> str:
 	return result
 
 
-def simpleMatch(st:str, pattern:str, star='*') -> bool:
+def simpleMatch(st:str, pattern:str, star:str='*') -> bool:
 	"""	Simple string match function. 
 		This class supports the following expression operators:
 
