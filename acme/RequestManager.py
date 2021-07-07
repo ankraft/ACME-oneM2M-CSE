@@ -536,11 +536,10 @@ class RequestManager(object):
 
 
 			# RQI - requestIdentifier
-			if (rqi := gget(cseRequest.req, 'rqi', greedy=False)) is not None:
-				if rqi is None:
-					L.logDebug(dbg := 'Request Identifier parameter is mandatory in request')
-					return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)		
-				cseRequest.headers.requestIdentifier = rqi
+			if (rqi := gget(cseRequest.req, 'rqi', greedy=False)) is None:
+				L.logDebug(dbg := 'Request Identifier parameter is mandatory in request')
+				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)		
+			cseRequest.headers.requestIdentifier = rqi
 		
 
 			# RQET - requestExpirationTimestamp
@@ -608,7 +607,7 @@ class RequestManager(object):
 
 
 			# RCN Result Content Type
-			if (rcn := gget(fc, 'rcn')) is not None: 
+			if (rcn := gget(cseRequest.req, 'rcn', greedy=False)) is not None: 
 				try:
 					rcn = ResultContentType(rcn)
 				except ValueError as e:
@@ -693,7 +692,7 @@ class RequestManager(object):
 			# Check whether content is empty and operation is UPDATE or CREATE -> Error
 			if (pc := cseRequest.req.get('pc')) is None or len(pc) < 1:
 				if cseRequest.op in [ Operation.CREATE, Operation.UPDATE ]:
-					return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=dbg)
+					return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'Missing primitive content or body in request for operation: {cseRequest.op}')
 			cseRequest.dict = cseRequest.req.get('pc')
 
 		# end of try..except

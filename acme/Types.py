@@ -490,7 +490,12 @@ class Operation(IntEnum):
 		""" Return the corresponding permission for an operation.
 		"""
 		return Operation._permissionsMapping[self.value]	#  type: ignore
+
+
+	def __str__(self) -> str:
+		return self.name
 	
+
 	@classmethod
 	def isvalid(cls, op:int) -> bool:
 		"""	Check whether an operation is valid.
