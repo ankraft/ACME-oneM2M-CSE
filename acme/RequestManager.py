@@ -10,7 +10,7 @@
 import requests, urllib.parse
 from Logging import Logging as L
 from Configuration import Configuration
-from Types import BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, RequestArguments, ResultContentType
+from Types import BasicType, Conditions, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, RequestArguments, ResultContentType
 from Types import RequestStatus
 from Types import CSERequest
 from Types import RequestHandler
@@ -27,7 +27,7 @@ from resources.REQ import REQ
 from resources.Resource import Resource
 from helpers.BackgroundWorker import BackgroundWorkerPool
 import CSE, Utils
-from typing import Any
+from typing import Any, List, Tuple
 from copy import deepcopy
 
 
@@ -703,5 +703,34 @@ class RequestManager(object):
 		# L.logWarn(str(cseRequest))
 		return Result(status=True, request=cseRequest)
 
+	###########################################################################
 
+	#
+	#	Utilities.
+	#
+
+	def getSerializationFromOriginator(self, originator:str) -> List[ContentSerializationType]:
+		"""	Look for the content serializations of a registered originator.
+			It is either an AE, a CSE or a CSR.
+			Return a list of types.
+		"""
+		if originator is None or len(originator):
+			return []
+		# First check whether there is an AE with that originator
+		if (l := len(aes := CSE.storage.searchByValueInField('aei', originator))) > 0:
+			if l > 1:
+				L.logErr(f'More then one AE with the same aei: {originator}')
+				return []
+			csz = aes[0].csz
+		# Else try whether there is a CSE or CSR
+		elif (l := len(cses := CSE.storage.searchByValueInField('csi', Utils.getIdFromOriginator(originator)))) > 0:
+			if l > 1:
+				L.logErr(f'More then one CSE with the same csi: {originator}')
+				return []
+			csz = cses[0].csz
+		# Else just an empty list
+		else:
+			return []
+		# Convert the poa to a list of ContentSerializationTypes
+		return [ ContentSerializationType.getType(c) for c in csz]
 

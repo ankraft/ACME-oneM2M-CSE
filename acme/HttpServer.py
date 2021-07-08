@@ -395,7 +395,7 @@ class HttpServer(object):
 			ct = ContentSerializationType.getType(result.request.headers.accept[0])
 		
 		# No accept, check originator
-		elif len(csz := Utils.getSerializationFromOriginator(result.request.headers.originator)) > 0:
+		elif len(csz := CSE.request.getSerializationFromOriginator(result.request.headers.originator)) > 0:
 			ct = csz[0]
 		
 		# Default: configured CSE's default

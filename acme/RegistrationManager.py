@@ -119,7 +119,7 @@ class RegistrationManager(object):
 
 		# Check for allowed orginator
 		# TODO also allow when there is an ACP?
-		if not Utils.isAllowedOriginator(originator, self.allowedAEOriginators):
+		if not CSE.security.isAllowedOriginator(originator, self.allowedAEOriginators):
 			L.isDebug and L.logDebug(dbg := 'Originator not allowed')
 			return Result(rsc=RC.appRuleValidationFailed, dbg=dbg)
 

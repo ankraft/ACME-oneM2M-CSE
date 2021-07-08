@@ -28,7 +28,7 @@ class TSI(AnnounceableResource):
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.TSI, dct, pi, create=create, inheritACP=True, readOnly = True, attributePolicies=attributePolicies)
 		self.resourceAttributePolicies = tsiPolicies	# only the resource type's own policies
-		self.setAttribute('cs', len(self['con']))       # Set contentSize
+		self.setAttribute('cs', Utils.getAttributeSize(self['con']))       # Set contentSize
 
 
 	# Enable check for allowed sub-resources. No Child for CIN

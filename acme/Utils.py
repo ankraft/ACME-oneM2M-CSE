@@ -27,8 +27,13 @@ import CSE
 import cbor2
 
 
+##############################################################################
+#
+#	Identifier and path related
+#
+
 def uniqueRI(prefix:str='') -> str:
-	return noDomain(prefix) + uniqueID()
+	return noNamespace(prefix) + uniqueID()
 
 
 def uniqueID() -> str:
@@ -40,7 +45,7 @@ def isUniqueRI(ri:str) -> bool:
 
 
 def uniqueRN(prefix:str='un') -> str:
-	return f'{noDomain(prefix)}_{_randomID()}'
+	return f'{noNamespace(prefix)}_{_randomID()}'
 
 def announcedRN(resource:Resource) -> str:
 	""" Create the announced rn for a resource.
@@ -53,7 +58,11 @@ def uniqueAEI(prefix:str='S') -> str:
 	return f'{prefix}{_randomID()}'
 
 
-def noDomain(id:str) -> str:
+def noNamespace(id:str) -> str:
+	"""	Remove the namespace part of an identifier and return the remainder.
+
+		Example: 'm2m:cnt' -> 'cnt'
+	"""
 	p = id.split(':')
 	return p[1] if len(p) == 2 else p[0]
 
@@ -121,66 +130,6 @@ def isValidID(id: str) -> bool:
 	return id is not None and '/' not in id
 
 
-def getResourceDate(delta:int=0) -> str:
-	"""	Generate an UTC-relative ISO 8601 timestamp and return it.
-
-		`delta` adds or substracts n seconds to the generated timestamp.
-	"""
-	return toISO8601Date(datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=delta))
-
-
-def toISO8601Date(ts:Union[float, datetime.datetime], isUTCtimestamp:bool=True) -> str:
-	"""	Convert and return a UTC-relative float timestamp or datetime object to an ISO 8601 string.
-	"""
-	if isinstance(ts, float):
-		if isUTCtimestamp:
-			ts = datetime.datetime.fromtimestamp(ts)
-		else:
-			ts = datetime.datetime.utcfromtimestamp(ts)
-	return ts.strftime('%Y%m%dT%H%M%S,%f')
-
-
-def fromAbsRelTimestamp(absRelTimestamp:str) -> float:
-	"""	Parse a ISO 8601 string and return a UTC-relative timestamp as a float.
-		If  `absRelTimestamp` in the string is a period (relatice) timestamp (e.g. PT2S), then this function
-		tries to convert it and return an absolute timestamp as a float, based on the current UTC time.
-		If the `absRelTimestamp` contains an integer then it is treated as a relative offset and a UTC-based
-		timestamp is generated for this offset and returned.
-	"""
-	try:
-		return isodate.parse_datetime(absRelTimestamp).timestamp()
-		# return datetime.datetime.strptime(timestamp, '%Y%m%dT%H%M%S,%f').timestamp()
-	except Exception as e:
-		try:
-			return utcTime() + fromDuration(absRelTimestamp)
-		except:
-			return 0.0
-	return 0.0
-
-
-def fromDuration(duration:str) -> float:
-	"""	Convert a duration to a number of seconds (float). Input could be either an ISO period 
-		or a number of ms.
-	"""
-	try:
-		return isodate.parse_duration(duration).total_seconds()
-	except Exception as e:
-		try:
-			# Last try: absRelTimestamp could be a relative offset in ms. Try to convert 
-			# the string and return an absolute UTC-based duration
-			return float(duration) / 1000.0
-		except Exception as e:
-			if L.isWarn: L.logWarn(f'Wrong format for duration: {duration}')
-			raise e
-	return 0.0
-
-
-def utcTime() -> float:
-	"""	Return the current time's timestamp, but relative to UTC.
-	"""
-	return datetime.datetime.utcnow().timestamp()
-
-
 def structuredPath(resource:Resource) -> str:
 	""" Determine the structured path of a resource.
 	"""
@@ -223,18 +172,6 @@ def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
 				srn = '/'.join([srn, ids[-1]])
 				id = riFromStructuredPath(srn) # id becomes the ri of the fopt
 	return srn, id
-
-
-def riFromCSI(csi: str) -> str:
-	""" Get the ri from an CSEBase resource by its csi. """
-	if (res := resourceFromCSI(csi)) is None:
-		return None
-	return cast(str, res.ri)
-
-
-def resourceFromCSI(csi: str) -> Resource:
-	""" Get the CSEBase resource by its csi. """
-	return cast(Resource, CSE.storage.retrieveResource(csi=csi).resource)
 
 
 def retrieveIDFromPath(id: str, csern: str, csecsi: str) -> Tuple[str, str, str]:
@@ -318,6 +255,122 @@ def retrieveIDFromPath(id: str, csern: str, csecsi: str) -> Tuple[str, str, str]
 	return None, None, None
 
 
+def riFromCSI(csi: str) -> str:
+	""" Get the ri from an CSEBase resource by its csi. """
+	if (res := resourceFromCSI(csi)) is None:
+		return None
+	return cast(str, res.ri)
+
+
+def getIdFromOriginator(originator: str, idOnly: bool = False) -> str:
+	""" Get AE-ID-Stem or CSE-ID from the originator (in case SP-relative or Absolute was used)
+	"""
+	if idOnly:
+		return originator.split("/")[-1] if originator is not None  else originator
+	else:
+		return originator.split("/")[-1] if originator is not None and originator.startswith('/') else originator
+
+
+##############################################################################
+#
+#	URL and Addressung related
+#
+
+def isURL(url: str) -> bool:
+	""" Check whether a given string is a URL. """
+	return url is not None and isinstance(url, str) and re.match(urlregex, url) is not None
+
+
+def isHttpUrl(url:str) -> bool:
+	"""	Check whether a URL is a http URL. 
+	"""
+	return url.startswith(('http', 'https'))
+
+
+def normalizeURL(url: str) -> str:
+	""" Remove trailing / from the url. """
+	if url is not None:
+		while len(url) > 0 and url[-1] == '/':
+			url = url[:-1]
+	return url
+
+
+##############################################################################
+#
+#	Time, Date, Timestamp related
+#
+
+def getResourceDate(delta:int=0) -> str:
+	"""	Generate an UTC-relative ISO 8601 timestamp and return it.
+
+		`delta` adds or substracts n seconds to the generated timestamp.
+	"""
+	return toISO8601Date(datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=delta))
+
+
+def toISO8601Date(ts:Union[float, datetime.datetime], isUTCtimestamp:bool=True) -> str:
+	"""	Convert and return a UTC-relative float timestamp or datetime object to an ISO 8601 string.
+	"""
+	if isinstance(ts, float):
+		if isUTCtimestamp:
+			ts = datetime.datetime.fromtimestamp(ts)
+		else:
+			ts = datetime.datetime.utcfromtimestamp(ts)
+	return ts.strftime('%Y%m%dT%H%M%S,%f')
+
+
+def fromAbsRelTimestamp(absRelTimestamp:str) -> float:
+	"""	Parse a ISO 8601 string and return a UTC-relative timestamp as a float.
+		If  `absRelTimestamp` in the string is a period (relatice) timestamp (e.g. PT2S), then this function
+		tries to convert it and return an absolute timestamp as a float, based on the current UTC time.
+		If the `absRelTimestamp` contains an integer then it is treated as a relative offset and a UTC-based
+		timestamp is generated for this offset and returned.
+	"""
+	try:
+		return isodate.parse_datetime(absRelTimestamp).timestamp()
+		# return datetime.datetime.strptime(timestamp, '%Y%m%dT%H%M%S,%f').timestamp()
+	except Exception as e:
+		try:
+			return utcTime() + fromDuration(absRelTimestamp)
+		except:
+			return 0.0
+	return 0.0
+
+
+def fromDuration(duration:str) -> float:
+	"""	Convert a duration to a number of seconds (float). Input could be either an ISO period 
+		or a number of ms.
+	"""
+	try:
+		return isodate.parse_duration(duration).total_seconds()
+	except Exception as e:
+		try:
+			# Last try: absRelTimestamp could be a relative offset in ms. Try to convert 
+			# the string and return an absolute UTC-based duration
+			return float(duration) / 1000.0
+		except Exception as e:
+			if L.isWarn: L.logWarn(f'Wrong format for duration: {duration}')
+			raise e
+	return 0.0
+
+
+def utcTime() -> float:
+	"""	Return the current time's timestamp, but relative to UTC.
+	"""
+	return datetime.datetime.utcnow().timestamp()
+
+
+##############################################################################
+#
+#	Resource and content related
+#
+
+def resourceFromCSI(csi: str) -> Resource:
+	""" Get the CSEBase resource by its csi. """
+	return cast(Resource, CSE.storage.retrieveResource(csi=csi).resource)
+
+
+
 mgmtObjTPEs = 		[	T.FWR.tpe(), T.SWR.tpe(), T.MEM.tpe(), T.ANI.tpe(), T.ANDI.tpe(),
 						T.BAT.tpe(), T.DVI.tpe(), T.DVC.tpe(), T.RBO.tpe(), T.EVL.tpe(),
 			  		]
@@ -379,6 +432,16 @@ def removeCommentsFromJSON(data:str) -> str:
 		else: # otherwise, we will return the 1st group
 			return match.group(1) # captured quoted-string
 	return commentRegex.sub(_replacer, data)
+
+
+def deleteNoneValuesFromDict(dct:JSON, allowedNull:list[str]=[]) -> JSON:
+	"""	Remove Null-values from a dictionary, but ignore the ones speciefed in 'allowedNull.
+		Return a new dictionary.
+	"""
+	if not isinstance(dct, dict):
+		return dct
+	return { key:value for key,value in ((key, deleteNoneValuesFromDict(value)) for key,value in dct.items()) if value is not None or key in allowedNull }
+
 
 decimalMatch = re.compile(r'{(\d+)}')
 def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
@@ -455,49 +518,6 @@ urlregex = re.compile(
 		r'(?:/?|[/?]\S+)$', re.IGNORECASE			# optional path
 		)
 
-def isURL(url: str) -> bool:
-	""" Check whether a given string is a URL. """
-	return url is not None and isinstance(url, str) and re.match(urlregex, url) is not None
-
-
-def isHttpUrl(url:str) -> bool:
-	"""	Check whether a URL is a http URL. 
-	"""
-	return url.startswith(('http', 'https'))
-
-
-def normalizeURL(url: str) -> str:
-	""" Remove trailing / from the url. """
-	if url is not None:
-		while len(url) > 0 and url[-1] == '/':
-			url = url[:-1]
-	return url
-
-
-def getIdFromOriginator(originator: str, idOnly: bool = False) -> str:
-	""" Get AE-ID-Stem or CSE-ID from the originator (in case SP-relative or Absolute was used) """
-	if idOnly:
-		return originator.split("/")[-1] if originator is not None  else originator
-	else:
-		return originator.split("/")[-1] if originator is not None and originator.startswith('/') else originator
-
-
-def isAllowedOriginator(originator: str, allowedOriginators: List[str]) -> bool:
-	""" Check whether an Originator is in the provided list of allowed 
-		originators. This list may contain regex.
-	"""
-	# if L.isDebug: L.logDebug(f'Originator: {originator}')
-	# if L.isDebug: L.logDebug(f'Allowed originators: {allowedOriginators}')
-
-	if originator is None or allowedOriginators is None:
-		return False
-	for ao in allowedOriginators:
-		# if re.fullmatch(re.compile(ao), getIdFromOriginator(originator)):
-		if simpleMatch(getIdFromOriginator(originator), ao):
-			return True
-	return False
-
-
 def resourceDiff(old:Resource|JSON, new:Resource|JSON, modifiers:JSON=None) -> JSON:
 	"""	Compare an old and a new resource. Keywords and values. Ignore internal __XYZ__ keys.
 		Return a dictionary.
@@ -537,6 +557,8 @@ def getCSE() -> Result:
 	
 def fanoutPointResource(id: str) -> Resource:
 	"""	Check whether the target contains a fanoutPoint in between or as the target.
+
+		Return either the virtual fanoutPoint resource or None.
 	"""
 	if id is None:
 		return None
@@ -557,59 +579,32 @@ def fanoutPointResource(id: str) -> Resource:
 	return None
 
 
-def getSerializationFromOriginator(originator:str) -> List[ContentSerializationType]:
-	"""	Look for the content serializations of a registered originator.
-		It is either an AE, a CSE or a CSR.
-		Return a list of types.
+def getAttributeSize(attribute:Any) -> int:
+	"""	Return a realistic size for the content of an attribute.
+		Python does not really return good sizes for some of the data types.
 	"""
-	if originator is None or len(originator):
-		return []
-	# First check whether there is an AE with that originator
-	if (l := len(aes := CSE.storage.searchByValueInField('aei', originator))) > 0:
-		if l > 1:
-			L.logErr(f'More then one AE with the same aei: {originator}')
-			return []
-		csz = aes[0].csz
-	# Else try whether there is a CSE or CSR
-	elif (l := len(cses := CSE.storage.searchByValueInField('csi', getIdFromOriginator(originator)))) > 0:
-		if l > 1:
-			L.logErr(f'More then one CSE with the same csi: {originator}')
-			return []
-		csz = cses[0].csz
-	# Else just an empty list
+	size = 0
+	if isinstance(attribute, str):
+		size = len(attribute)
+	elif isinstance(attribute, int):
+		size = 4
+	elif isinstance(attribute, float):
+		size = 8
+	elif isinstance(attribute, bool):
+		size = 1
+	elif isinstance(attribute, list):	# recurse a list
+		for e in attribute:
+			size += getAttributeSize(e)
+	elif isinstance(attribute, dict):	# recurse a dictionary
+		for _,v in attribute:
+			size += getAttributeSize(v)
 	else:
-		return []
-	# Convert the poa to a list of ContentSerializationTypes
-	return [ ContentSerializationType.getType(c) for c in csz]
+		size = sys.getsizeof(attribute)	# fallback for not handled types
+	return size
+	
+	
 
-
-
-
-
-
-def serializeData(data:JSON, ct:ContentSerializationType) -> str|bytes:
-	"""	Serialize a dictionary, depending on the serialization type.
-	"""
-	encoder = json if ct == ContentSerializationType.JSON else cbor2 if ct == ContentSerializationType.CBOR else None
-	if encoder is None:
-		return None
-	return encoder.dumps(data)	# type:ignore[no-any-return]
-
-
-def deserializeData(data:bytes, ct:ContentSerializationType) -> JSON:
-	"""	Deserialize data into a dictionary, depending on the serialization type.
-		If the len of the data is 0 then an empty dictionary is returned. 
-	"""
-	if len(data) == 0:
-		return {}
-	if ct == ContentSerializationType.JSON:
-		return cast(JSON, json.loads(removeCommentsFromJSON(data.decode("utf-8"))))
-	elif ct == ContentSerializationType.CBOR:
-		return cast(JSON, cbor2.loads(data))
-	# except Exception as e:
-	# 	L.logErr(f'Deserialization error: {str(e)}')
-	return None
-
+##############################################################################
 #
 #	Threads
 #
@@ -619,8 +614,9 @@ def renameCurrentThread(name:str = None, thread:threading.Thread = None) -> None
 	thread.name = name if name is not None else str(thread.native_id)
 
 
+##############################################################################
 #
-#	Text formattings
+#	Text formattings and search
 #
 
 def toHex(bts:bytes, toBinary:bool=False, withLength:bool=False) -> str:
@@ -760,9 +756,36 @@ def simpleMatch(st:str, pattern:str, star:str='*') -> bool:
 	return _simpleMatch(st, pattern)
 
 
+def serializeData(data:JSON, ct:ContentSerializationType) -> str|bytes:
+	"""	Serialize a dictionary, depending on the serialization type.
+	"""
+	encoder = json if ct == ContentSerializationType.JSON else cbor2 if ct == ContentSerializationType.CBOR else None
+	if encoder is None:
+		return None
+	return encoder.dumps(data)	# type:ignore[no-any-return]
+
+
+def deserializeData(data:bytes, ct:ContentSerializationType) -> JSON:
+	"""	Deserialize data into a dictionary, depending on the serialization type.
+		If the len of the data is 0 then an empty dictionary is returned. 
+	"""
+	if len(data) == 0:
+		return {}
+	if ct == ContentSerializationType.JSON:
+		return cast(JSON, json.loads(removeCommentsFromJSON(data.decode("utf-8"))))
+	elif ct == ContentSerializationType.CBOR:
+		return cast(JSON, cbor2.loads(data))
+	# except Exception as e:
+	# 	L.logErr(f'Deserialization error: {str(e)}')
+	return None
+
+
+##############################################################################
+#
+#	Various
+
 def exceptionToResult(e:Exception) -> Result:
 	tb = traceback.format_exc()
 	L.logErr(tb, exc=e)
 	tbs = tb.replace('"', '\\"').replace('\n', '\\n')
 	return Result(rsc=ResponseCode.internalServerError, dbg=f'encountered exception: {tbs}')
-

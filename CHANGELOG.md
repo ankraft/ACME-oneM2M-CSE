@@ -14,8 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added possibility to reset a running CSE (via the command console or http endpoint "/\_\_reset\_\_").
 - [CSE] Added "I" command to the console (inspect a resource and its child resources).
 - [CSE] Added "L" command to the console (toggle through the various log levels, including *off*)
-- [CSE] Added support for \<TimeSeries>/\<TimeSeriesInstance> resource types.
-- [CSE] Added support for missing data monitoring in \<Subscription> resource type and notifications.
+- [CSE] Added support for \<timeSeries>/\<timeSeriesInstance> resource types.
+- [CSE] Added support for missing data monitoring in \<subscription> resource type and notifications.
 - [CSE] Added support for *ctm* (currentTime) attribute for \<CSEBase> resource type.
 - [CSE] Added wildcard (\*) support for \<ACP>'s *acr/acor* originators.
 - [CSE] Added support for \<ACP>'s *acr/acod* attribute (not for specializations yet, though).
@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Changed format of configuration values "cse.registration.allowedAEOriginators" and "cse.registration.allowedCSROriginators" from regex to a simple wildcard (\* and ?) format.
 - [CSE] Changed the internal timed and regular processes to a single priority timer queue.
 - [CSE] Removed "logging.enable" configuration setting and added *off* as a possible value to *logging.level".
+- [CSE] Improved the size calculation of \<contentInstance>, \<flexContainer>, and \<timeSeriesInstance> to realistic sizes (not the Python-internal type sizes anymore).
 
 ### Fixed
 - [CSE] Corrected response status codes for AE registration errors.
