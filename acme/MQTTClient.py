@@ -83,7 +83,7 @@ class MQTTClientHandler(MQTTHandler):
 
 		# log request
 		if contentType == ContentSerializationType.JSON:
-			L.isDebug and L.logDebug(f'Body: \n{data}')
+			L.isDebug and L.logDebug(f'Body: \n{cast(str, data)}')
 		else:
 			L.isDebug and L.logDebug(f'Body: \n{Utils.toHex(cast(bytes, data))}\n=>\n{dissectResult.request.dict}')
 

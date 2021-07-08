@@ -120,7 +120,7 @@ class MQTTConnection(object):
 		except Exception as e:
 			L.logErr(f'MQTT: cannot connect to broker: {e}', showStackTrace=False)
 			if self.messageHandler is not None:
-				self.messageHandler.onError(self)
+				self.messageHandler.onError(self, -1)
 
 		# Actually start the actor to run the MQTT client as a thread
 		self.actor = BackgroundWorkerPool.newActor(self._mqttActor, name='MQTTClient').start()
