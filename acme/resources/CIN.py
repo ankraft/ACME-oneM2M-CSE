@@ -32,10 +32,11 @@ class CIN(AnnounceableResource):
 
 		if self.dict is not None:
 			self.setAttribute('con', '', overwrite=False)
-			if isinstance(self.con, str):
-				self.setAttribute('cs', len(self.con))
-			else:
-				self.setAttribute('cs', 0)
+			self.setAttribute('cs', Utils.getAttributeSize(self.con))
+			# if isinstance(self.con, str):
+			# 	self.setAttribute('cs', Utils.getAttributeSize(self.con))
+			# else:
+			# 	self.setAttribute('cs', 0)
 
 
 

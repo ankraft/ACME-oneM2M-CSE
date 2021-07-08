@@ -144,13 +144,11 @@ class FCNT(AnnounceableResource):
 		self.__validating = True
 
 		# Calculate contentSize
-		# This is not at all realistic since this is the in-memory representation
-		# TODO better implementation needed 
 		cs = 0
 		for attr in self.dict:
 			if attr in self.ignoreAttributes:
 				continue
-			cs += sys.getsizeof(self[attr])
+			cs += Utils.getAttributeSize(self[attr])
 		self['cs'] = cs
 
 		#

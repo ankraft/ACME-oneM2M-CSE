@@ -107,8 +107,8 @@ class NotificationManager(object):
 
 		if Utils.isVirtualResource(resource):
 			return 
-		if L.isDebug: L.logDebug(f'Checking subscriptions for notifications. Reason: {reason}')
 		ri = resource.ri if ri is None else ri
+		if L.isDebug: L.logDebug(f'Checking subscriptions for notifications. ri: {ri}, reason: {reason}')
 
 		# ATTN: The "subscription" returned here are NOT the <sub> resources,
 		# but an internal representation from the 'subscription' DB !!!
@@ -117,7 +117,6 @@ class NotificationManager(object):
 		if subs is None or len(subs) == 0:
 			return
 
-		if L.isDebug: L.logDebug(f'Checking subscription for: {ri}, reason: {reason:d}')
 		for sub in subs:
 			# Prevent own notifications for subscriptions 
 			if childResource is not None and \

@@ -569,6 +569,31 @@ def fanoutPointResource(id: str) -> Resource:
 	return None
 
 
+def getAttributeSize(attribute:Any) -> int:
+	"""	Return a realistic size for the content of an attribute.
+		Python does not really return good sizes for some of the data types.
+	"""
+	size = 0
+	if isinstance(attribute, str):
+		size = len(attribute)
+	elif isinstance(attribute, int):
+		size = 4
+	elif isinstance(attribute, float):
+		size = 8
+	elif isinstance(attribute, bool):
+		size = 1
+	elif isinstance(attribute, list):	# recurse a list
+		for e in attribute:
+			size += getAttributeSize(e)
+	elif isinstance(attribute, dict):	# recurse a dictionary
+		for _,v in attribute:
+			size += getAttributeSize(v)
+	else:
+		size = sys.getsizeof(attribute)	# fallback for not handled types
+	return size
+	
+	
+
 ##############################################################################
 #
 #	Threads
