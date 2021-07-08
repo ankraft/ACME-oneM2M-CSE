@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Any, List, Dict, Tuple, Union, Callable
 from enum import IntEnum,  auto
 from http import HTTPStatus
+from collections import namedtuple
 
 
 
@@ -810,7 +811,7 @@ class RequestHeaders:
 
 @dataclass
 class CSERequest:
-	headers:RequestHeaders 			= RequestHeaders()
+	headers:RequestHeaders 			= field(default_factory=RequestHeaders)	# always initialize with a new(!) RequestHeaders object	
 	args:RequestArguments 			= None
 	ct:ContentSerializationType		= None
 	originalArgs:Any 				= None	# Actually a MultiDict
@@ -839,6 +840,7 @@ JSON=Dict[str, Any]
 JSONLIST=List[JSON]
 ReqResp=Dict[str, Union[int, str, List[str], JSON]]
 
-RequestHandler = Dict[Operation, Callable[[CSERequest], Result]]
+RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest')
+RequestHandler = Dict[Operation, RequestCallback]
 """ Handle an outgoing request operation. """
 

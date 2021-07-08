@@ -163,7 +163,7 @@ class TestDiscovery(unittest.TestCase):
 		"""	Discover <CNT> under <AE> & rcn=6 """
 		r, rsc = RETRIEVE(f'{aeURL}?fu=1&rcn={RCN.childResourceReferences:d}&ty={T.CNT}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK, r)
-		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
+		self.assertIsNotNone(findXPath(r, 'm2m:rrl'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl/rrf'))
 		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 2)
 		self.assertNotEqual(findXPath(r, 'm2m:rrl/rrf/{0}/nm'), findXPath(r, 'm2m:rrl/rrf/{1}/nm'))

@@ -514,6 +514,12 @@ class HttpServer(object):
 		extractMultipleArgs(args, 'cty')
 		extractMultipleArgs(args, 'lbl')
 
+		# Handle rcn differently.
+		# rcn is not a filter criteria like all the other attributes, but an own request attribute
+		if (rcn := args.get('rcn')) is not None:
+			req['rcn'] = rcn
+			del args['rcn']
+
 		# Extract further request arguments from the http request
 		# add all the args to the filterCriteria
 		filterCriteria:ReqResp = {}

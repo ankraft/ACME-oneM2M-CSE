@@ -30,15 +30,6 @@ class MQTTClientHandler(MQTTHandler):
 		self.topicPrefix = mqttClient.topicPrefix
 		self.topicPrefixCount = len(self.topicPrefix.split('/'))	# Count the elements for the prefix
 
-		# TODO optimize - same table is in httpserver
-		self._requestHandlers:RequestHandler = {
-			Operation.RETRIEVE	: CSE.request.retrieveRequest,
-			Operation.CREATE	: CSE.request.createRequest,
-			Operation.UPDATE	: CSE.request.updateRequest,
-			Operation.DELETE	: CSE.request.deleteRequest
-		}
-
-
 	def onConnect(self, connection:MQTTConnection) -> None:
 		"""	When connected to a broker then register the topics the CSE listens to.
 		"""

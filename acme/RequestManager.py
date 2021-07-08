@@ -8,9 +8,10 @@
 #
 
 import requests, urllib.parse
+
 from Logging import Logging as L
 from Configuration import Configuration
-from Types import BasicType, Conditions, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, RequestArguments, ResultContentType
+from Types import BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, RequestArguments, RequestCallback, ResultContentType
 from Types import RequestStatus
 from Types import CSERequest
 from Types import RequestHandler
@@ -30,17 +31,18 @@ import CSE, Utils
 from typing import Any, List, Tuple
 from copy import deepcopy
 
-
 class RequestManager(object):
 
 	def __init__(self) -> None:
 		self.enableTransit 					 = Configuration.get('cse.enableTransitRequests')
 		self.flexBlockingBlocking			 = Configuration.get('cse.flexBlockingPreference') == 'blocking'
-		self.requestHandlers:RequestHandler = { 		# Map request handlers for operations
-			Operation.RETRIEVE	: self.retrieveRequest,
-			Operation.CREATE	: self.createRequest,
-			Operation.UPDATE	: self.updateRequest,
-			Operation.DELETE	: self.deleteRequest
+
+		self.requestHandlers:RequestHandler  = { 		# Map request handlers for operations in the RequestManager and the dispatcher
+			Operation.RETRIEVE	: RequestCallback(self.retrieveRequest, CSE.dispatcher.processRetrieveRequest),
+			Operation.DISCOVERY	: RequestCallback(self.retrieveRequest, CSE.dispatcher.processRetrieveRequest),
+			Operation.CREATE	: RequestCallback(self.createRequest,   CSE.dispatcher.processCreateRequest),
+			Operation.UPDATE	: RequestCallback(self.updateRequest,   CSE.dispatcher.processUpdateRequest),
+			Operation.DELETE	: RequestCallback(self.deleteRequest,   CSE.dispatcher.processDeleteRequest),
 		}
 
 		L.log('RequestManager initialized')
@@ -283,11 +285,8 @@ class RequestManager(object):
 		"""	Execute a request operation and fill the respective request resource
 			accordingly.
 		"""
-		# Execute the actual operation
-		request.op == Operation.RETRIEVE and (operationResult := CSE.dispatcher.processRetrieveRequest(request, request.headers.originator)) is not None
-		request.op == Operation.CREATE   and (operationResult := CSE.dispatcher.processCreateRequest(request, request.headers.originator)) is not None
-		request.op == Operation.UPDATE   and (operationResult := CSE.dispatcher.processUpdateRequest(request, request.headers.originator)) is not None
-		request.op == Operation.DELETE   and (operationResult := CSE.dispatcher.processDeleteRequest(request, request.headers.originator)) is not None
+		# Execute the actual operation in the dispatcher
+		operationResult = self.requestHandlers[request.op].dispatcherRequest(request, request.headers.originator)
 
 		# Retrieve the <request> resource
 		if (res := CSE.dispatcher.retrieveResource(reqRi)).resource is None:	
@@ -445,7 +444,7 @@ class RequestManager(object):
 	def handleRequest(self, request:CSERequest) -> Result:
 		"""	Calls the fitting request handler for an operation and executes it.
 		"""
-		return self.requestHandlers[request.op](request)
+		return self.requestHandlers[request.op].ownRequest(request)
 
 
 	def deserializeContent(self, data:bytes, mediaType:str) -> Result:
@@ -684,7 +683,7 @@ class RequestManager(object):
 				if 'ty' in fc:	# Special handling for ty since this will be an array here
 					if (v := gget(fc, 'ty', attributeType=BasicType.list)) is not None:
 						cseRequest.args.conditions['ty'] = v
-				if h in list(fc.keys()):
+				for h in list(fc.keys()):
 					cseRequest.args.attributes[h] = gget(fc, h)
 
 
