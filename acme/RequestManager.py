@@ -10,7 +10,7 @@
 import requests, urllib.parse
 from Logging import Logging as L
 from Configuration import Configuration
-from Types import Operation
+from Types import Conditions, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, RequestArguments, ResultContentType
 from Types import RequestStatus
 from Types import ResourceTypes as T
 from Types import ResponseCode as RC
@@ -24,7 +24,7 @@ from resources.Resource import Resource
 from helpers.BackgroundWorker import BackgroundWorkerPool
 import CSE, Utils
 from flask import Request
-from typing import Any
+from typing import Any, List, Tuple
 
 
 class RequestManager(object):
@@ -426,3 +426,214 @@ class RequestManager(object):
 		L.logWarn(dbg := f'unsupported url scheme: {url}')
 		return Result(status=True, rsc=RC.badRequest, dbg=dbg)
 
+
+
+	###########################################################################
+
+	#
+	#	Utilities.
+	#
+
+	def getSerializationFromOriginator(self, originator:str) -> List[ContentSerializationType]:
+		"""	Look for the content serializations of a registered originator.
+			It is either an AE, a CSE or a CSR.
+			Return a list of types.
+		"""
+		if originator is None or len(originator):
+			return []
+		# First check whether there is an AE with that originator
+		if (l := len(aes := CSE.storage.searchByValueInField('aei', originator))) > 0:
+			if l > 1:
+				L.logErr(f'More then one AE with the same aei: {originator}')
+				return []
+			csz = aes[0].csz
+		# Else try whether there is a CSE or CSR
+		elif (l := len(cses := CSE.storage.searchByValueInField('csi', Utils.getIdFromOriginator(originator)))) > 0:
+			if l > 1:
+				L.logErr(f'More then one CSE with the same csi: {originator}')
+				return []
+			csz = cses[0].csz
+		# Else just an empty list
+		else:
+			return []
+		# Convert the poa to a list of ContentSerializationTypes
+		return [ ContentSerializationType.getType(c) for c in csz]
+
+
+
+	def getRequestArguments(self, args:dict, operation:Operation=Operation.RETRIEVE) -> Tuple[RequestArguments, str]:
+		"""	Get the request arguments, or meaningful defaults.
+			Only a subset is supported yet.
+			Throws an exception when a wrong type is encountered. This is part of the validation.
+		"""
+		result = RequestArguments(operation=operation)
+
+		# FU - Filter Usage
+		if (fu := args.get('fu')) is not None:
+			if not CSE.validator.validateRequestArgument('fu', fu).status:
+				return None, 'error validating "fu" argument'
+			try:
+				fu = FilterUsage(int(fu))
+			except ValueError as exc:
+				return None, f'"{fu}" is not a valid value for fu'
+			del args['fu']
+		else:
+			fu = FilterUsage.conditionalRetrieval
+		if fu == FilterUsage.discoveryCriteria and operation == Operation.RETRIEVE:
+			operation = Operation.DISCOVERY
+		result.fu = fu
+
+		# DRT - Desired Identifier Result Type
+		if (drt := args.get('drt')) is not None: # 1=strucured, 2=unstructured
+			if not CSE.validator.validateRequestArgument('drt', drt).status:
+				return None, 'error validating "drt" argument'
+			try:
+				drt = DesiredIdentifierResultType(int(drt))
+			except ValueError as exc:
+				return None, f'"{drt}" is not a valid value for drt'
+			del args['drt']
+		else:
+			drt = DesiredIdentifierResultType.structured
+		result.drt = drt
+
+		# FO - Filter Operation
+		if (fo := args.get('fo')) is not None: # 1=AND, 2=OR
+			if not CSE.validator.validateRequestArgument('fo', fo).status:
+				return None, 'error validating "fo" argument'
+			try:
+				fo = FilterOperation(int(fo))
+			except ValueError as exc:
+				return None, f'"{fo}" is not a valid value for fo'
+			del args['fo']
+		else:
+			fo = FilterOperation.AND # default
+		result.fo = fo
+
+		# RCN Result Content Type
+		if (rcn := args.get('rcn')) is not None: 
+			if not CSE.validator.validateRequestArgument('rcn', rcn).status:
+				return None, 'error validating "rcn" argument'
+			rcn = int(rcn)
+			del args['rcn']
+		else:
+			if fu != FilterUsage.discoveryCriteria:
+				# Different defaults for each operation
+				if operation in [ Operation.RETRIEVE, Operation.CREATE, Operation.UPDATE ]:
+					rcn = ResultContentType.attributes
+				elif operation == Operation.DELETE:
+					rcn = ResultContentType.nothing
+			else:
+				# discovery-result-references as default for Discovery operation
+				rcn = ResultContentType.discoveryResultReferences
+
+		# Check value of rcn depending on operation
+		if operation == Operation.RETRIEVE and rcn not in [ ResultContentType.attributes,
+															ResultContentType.attributesAndChildResources,
+															ResultContentType.attributesAndChildResourceReferences,
+															ResultContentType.childResourceReferences,
+															ResultContentType.childResources,
+															ResultContentType.originalResource ]:
+			return None, f'rcn: {rcn:d} not allowed in RETRIEVE operation'
+		elif operation == Operation.DISCOVERY and rcn not in [ ResultContentType.childResourceReferences,
+															ResultContentType.discoveryResultReferences ]:
+			return None, f'rcn: {rcn:d} not allowed in DISCOVERY operation'
+		elif operation == Operation.CREATE and rcn not in [ ResultContentType.attributes,
+															ResultContentType.modifiedAttributes,
+															ResultContentType.hierarchicalAddress,
+															ResultContentType.hierarchicalAddressAttributes,
+															ResultContentType.nothing ]:
+			return None, f'rcn: {rcn:d} not allowed in CREATE operation'
+		elif operation == Operation.UPDATE and rcn not in [ ResultContentType.attributes,
+															ResultContentType.modifiedAttributes,
+															ResultContentType.nothing ]:
+			return None, f'rcn: {rcn:d} not allowed in UPDATE operation'
+		elif operation == Operation.DELETE and rcn not in [ ResultContentType.attributes,
+															ResultContentType.nothing,
+															ResultContentType.attributesAndChildResources,
+															ResultContentType.childResources,
+															ResultContentType.attributesAndChildResourceReferences,
+															ResultContentType.childResourceReferences ]:
+			return None, f'rcn:  not allowed DELETE operation'
+
+		result.rcn = ResultContentType(rcn)
+
+		# RT - Response Type
+		if (rt := args.get('rt')) is not None: 
+			if not (res := CSE.validator.validateRequestArgument('rt', rt)).status:
+				return None, f'error validating "rt" argument ({res.dbg})'
+			try:
+				rt = ResponseType(int(rt))
+			except ValueError as exc:
+				return None, f'"{rt}" is not a valid value for rt'
+			del args['rt']
+		else:
+			rt = ResponseType.blockingRequest
+		result.rt = rt
+
+		# RP - Result Persistence
+		if (rp := args.get('rp')) is not None: 
+			if not (res := CSE.validator.validateRequestArgument('rp', rp)).status:
+				return None, f'error validating "rp" argument ({res.dbg})'
+			if (rpts := Utils.toISO8601Date(Utils.fromAbsRelTimestamp(rp))) == 0.0:
+				return None, f'"{rp}" is not a valid value for rp'
+			del args['rp']
+		else:
+			rp = None
+			rpts = None
+		result.rp = rp
+		result.rpts = rpts
+
+
+		# handling conditions
+		handling:Conditions = { }
+		for c in ['lim', 'lvl', 'ofst']:	# integer parameters
+			if c in args:
+				v = args[c]
+				if not CSE.validator.validateRequestArgument(c, v).status:
+					return None, f'error validating "{c}" argument'
+				handling[c] = int(v)
+				del args[c]
+		for c in ['arp']:
+			if c in args:
+				v = args[c]
+				if not CSE.validator.validateRequestArgument(c, v).status:
+					return None, f'error validating "{c}" argument'
+				handling[c] = v # string
+				del args[c]
+		result.handling = handling
+
+		# conditions
+		conditions:Conditions = {}
+
+		# Extract and store other arguments
+		for c in ['crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr']:
+			if (v := args.get(c)) is not None:
+				if not CSE.validator.validateRequestArgument(c, v).status:
+					return None, f'error validating "{c}" argument'
+				conditions[c] = v
+				del args[c]
+		
+		# Copy multipe arguments. They have been aggregated into single lists before.
+		for c in [ 'ty', 'cty', 'lbl' ]:
+			if (v := args.get(c)) is not None:
+				conditions[c] = v if isinstance(v, list) else [v]	#hack to add a single value as a list
+				del args[c]
+
+		result.conditions = conditions
+
+		# all remaining arguments are treated as matching attributes
+		for arg, val in args.items():
+			if not CSE.validator.validateRequestArgument(arg, val).status:
+				return None, f'error validating (unknown?) "{arg}" argument)'
+		# all arguments have passed, so add the remaining 
+		result.attributes = args
+
+		# Alternative: in case attributes are handled like ty, lbl, cty
+		# attributes:dict = {}
+		# for key in list(args.keys()):
+		# 	if not (res := _extractMultipleArgs(key, attributes))[0]:
+		# 		return None, res[1]
+		# result.attributes = attributes
+
+		# Finally return the collected arguments
+		return result, None

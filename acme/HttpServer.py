@@ -417,7 +417,7 @@ class HttpServer(object):
 			ct = ContentSerializationType.getType(result.request.headers.accept[0])
 		
 		# No accept, check originator
-		elif len(csz := Utils.getSerializationFromOriginator(result.request.headers.originator)) > 0:
+		elif len(csz := CSE.request.getSerializationFromOriginator(result.request.headers.originator)) > 0:
 			ct = csz[0]
 		
 		# Default: configured CSE's default
@@ -485,7 +485,7 @@ class HttpServer(object):
 			if not (resm := self._extractMultipleArgs(args, 'lbl', validate=False))[0]:
 				Result(rsc=RC.badRequest, request=cseRequest, dbg=resm[1], status=False)
 			
-			cseRequest.args, msg = Utils.getRequestArguments(args, operation)
+			cseRequest.args, msg = CSE.request.getRequestArguments(args, operation)
 			if cseRequest.args is None:
 				return Result(rsc=RC.badRequest, request=cseRequest, dbg=msg, status=False)
 		except Exception as e:

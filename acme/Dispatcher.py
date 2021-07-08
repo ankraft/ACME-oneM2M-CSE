@@ -459,7 +459,7 @@ class Dispatcher(object):
 		elif request.args.rcn == RCN.hierarchicalAddress:
 			return Result(status=res.status, resource={ 'm2m:uri' : Utils.structuredPath(res.resource) }, rsc=res.rsc, dbg=res.dbg)
 		elif request.args.rcn == RCN.hierarchicalAddressAttributes:
-			return Result(status=res.status, resource={ 'm2m:rce' : { Utils.noDomain(tpe) : res.resource.asDict()[tpe], 'uri' : Utils.structuredPath(res.resource) }}, rsc=res.rsc, dbg=res.dbg)
+			return Result(status=res.status, resource={ 'm2m:rce' : { Utils.noNamespace(tpe) : res.resource.asDict()[tpe], 'uri' : Utils.structuredPath(res.resource) }}, rsc=res.rsc, dbg=res.dbg)
 		elif request.args.rcn == RCN.nothing:
 			return Result(status=res.status, rsc=res.rsc, dbg=res.dbg)
 		else:

@@ -13,6 +13,7 @@ from Types import ResourceTypes as T, Permission, Result, CSERequest, ResponseCo
 import CSE, Utils
 from Configuration import Configuration
 from resources.Resource import Resource
+from typing import List
 
 
 class SecurityManager(object):
@@ -50,13 +51,13 @@ class SecurityManager(object):
 			if ty == T.AE and isCreateRequest:
 				# originator may be None or empty or C or S. 
 				# That is okay if type is AE and this is a create request
-				if originator is None or len(originator) == 0 or Utils.isAllowedOriginator(originator, CSE.registration.allowedAEOriginators):
+				if originator is None or len(originator) == 0 or self.isAllowedOriginator(originator, CSE.registration.allowedAEOriginators):
 					L.isDebug and L.logDebug('Originator for AE CREATE. OK.')
 					return True
 
 			# Checking for remoteCSE
 			if ty == T.CSR and isCreateRequest:
-				if Utils.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators):
+				if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators):
 					L.isDebug and L.logDebug('Originator for CSR CREATE. OK.')
 					return True
 				else:
@@ -64,7 +65,7 @@ class SecurityManager(object):
 					return False
 
 			if T(ty).isAnnounced():
-				if Utils.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators) or originator[1:] == parentResource.ri:
+				if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators) or originator[1:] == parentResource.ri:
 					L.isDebug and L.logDebug('Originator for Announcement. OK.')
 					return True
 				else:
@@ -85,7 +86,7 @@ class SecurityManager(object):
 			if originator == CSE.remote.registrarCSI:
 				L.isDebug and L.logDebug(f'Allow registrar CSE Originnator {originator} to RETRIEVE CSEBase. OK.')
 				return True
-			if Utils.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators):
+			if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators):
 				L.isDebug and L.logDebug(f'Allow remote CSE Orignator {originator} to RETRIEVE CSEBase. OK.')
 				return True
 			
@@ -217,4 +218,21 @@ class SecurityManager(object):
 			return Result(status=True, data=True)	# hack: data=True indicates that this is an ACPI update after all
 
 		return Result(status=True)
-	
+
+
+	def isAllowedOriginator(self, originator: str, allowedOriginators: List[str]) -> bool:
+		""" Check whether an Originator is in the provided list of allowed 
+			originators. This list may contain regex.
+		"""
+		# if L.isDebug: L.logDebug(f'Originator: {originator}')
+		# if L.isDebug: L.logDebug(f'Allowed originators: {allowedOriginators}')
+
+		if originator is None or allowedOriginators is None:
+			return False
+		for ao in allowedOriginators:
+			# if re.fullmatch(re.compile(ao), getIdFromOriginator(originator)):
+			if Utils.simpleMatch(Utils.getIdFromOriginator(originator), ao):
+				return True
+		return False
+
+
