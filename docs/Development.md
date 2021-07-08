@@ -65,9 +65,11 @@ Various aspects of the ACME implementation are covered by unit tests based on th
 
 
 ### Configuration & Running
-Each test suite imports the file [init.py](../tests/init.py) that contains various configuration values used by the test suites. You may change these for your individual set-up.
+Each test suite imports the file [init.py](../tests/init.py) that contains various helper functions used by the test suites. 
 
-In the file [init.py](../tests/init.py) there is also a configuration setting for the request protocol that should be used. Currently, *http* and *https* are supported. Please note, that all CSE's involved in the test runs must use the same protocol type.
+The actual configuration of the test suite is done in the file [config.py](../tests/config.py). You may change these for your individual set-up. In this file there is also a configuration setting for the request protocol that should be used. Currently, *http* and *https* are supported. Please note, that all CSE's involved in the test runs must use the same protocol type.
+
+One can also provide OAuth2 settings in case the CSE under test is behind an OAuth2 gateway.
 
 The CSE under test should be started with the remote configuration interface enabled. During test runs the test suite will temporarily change some of the CSE's delays (e.g. the check for resource expirations) in order to speed up the test. You can either do this by changing the configuation [enableRemoteConfiguration](Configuration.md#server_http) in the [configuration file](../acme.ini.default), or by providing the [--remote-configuration](Running.md) command line argument during startup.
 

@@ -19,9 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added support for *ctm* (currentTime) attribute for \<CSEBase> resource type.
 - [CSE] Added wildcard (\*) support for \<ACP>'s *acr/acor* originators.
 - [CSE] Added support for \<ACP>'s *acr/acod* attribute (not for specializations yet, though).
+- [CSE] Added support for 'Request Expiration Timestamp' request parameter, also for \<request> resources.
 - [WEB] Added OAuth2 authorization support for the proxied CSE (for the stand-alone web UI).
 - [WEB] Added opening the web UI in a browser on startup (for the stand-alone web UI).
-- [CSE] Added support for 'Request Expiration Timestamp' request parameter, also for \<request> resources.
+- [TESTS] Added OAuth2 authorization support for the tests.
 
 ### Changed
 - [CSE] Relaxed validation for float in attributes and arguments. Integer are now accepted as well.
