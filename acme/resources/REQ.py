@@ -84,6 +84,7 @@ class REQ(Resource):
 					},
 					'drt'	: request.args.drt,
 					'rvi'	: request.headers.releaseVersionIndicator if request.headers.releaseVersionIndicator is not None else Configuration.get('cse.releaseVersion'),
+					'vsi'	: request.headers.vendorInformation,
 				},
 				'rs'	: RequestStatus.PENDING,
 				'ors'	: {

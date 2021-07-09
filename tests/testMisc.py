@@ -46,6 +46,15 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_checkHTTPVSI(self) -> None:
+		"""	Check Vendor Information in request"""
+		vsi = 'some vendor information'
+		r, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={'X-M2M-VSI' : vsi})
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(lastHeaders()['X-M2M-VSI'], vsi)
+
+
 	def test_checkHTTPRETRelative(self) -> None:
 		"""	Check Request Expiration Timeout in request (relative)"""
 		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={'X-M2M-RET' : '10000'}) # request expiration in 10 seconds
@@ -133,6 +142,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestMisc('test_checkHTTPRVI'))
 	suite.addTest(TestMisc('test_checkHTTPRET'))
+	suite.addTest(TestMisc('test_checkHTTPVSI'))
 	suite.addTest(TestMisc('test_checkHTTPRETRelative'))
 	suite.addTest(TestMisc('test_checkHTTPRETWrong'))
 	suite.addTest(TestMisc('test_checkHTTPRETRelativeWrong'))

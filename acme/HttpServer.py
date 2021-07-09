@@ -383,6 +383,8 @@ class HttpServer(object):
 			headers['X-M2M-RI'] = result.request.headers.requestIdentifier
 		if result.request.headers.releaseVersionIndicator is not None:
 			headers['X-M2M-RVI'] = result.request.headers.releaseVersionIndicator
+		if result.request.headers.vendorInformation is not None:
+			headers['X-M2M-VSI'] = result.request.headers.vendorInformation
 
 		# HTTP status code
 		statusCode = result.rsc.httpStatusCode()
@@ -485,6 +487,8 @@ class HttpServer(object):
 			req['rvi'] = f
 		if (rtu := requestHeaderField(request, C.hfRTU)) is not None:			# handle rtu as a list
 			req['rtu'] = rtu.split('&')
+		if (vsi := requestHeaderField(request, C.hfVSI)) is not None:
+			req['vsi'] = f
 
 		# parse and extract content-type header
 		# cseRequest.headers.contentType	= request.content_type

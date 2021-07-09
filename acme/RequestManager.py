@@ -580,6 +580,11 @@ class RequestManager(object):
 			cseRequest.headers.releaseVersionIndicator = rvi	
 
 
+			# VSI - vendorInformation
+			if (vsi := gget(cseRequest.req, 'vsi', greedy=False)) is not None:
+				cseRequest.headers.vendorInformation = vsi	
+
+
 			# RTU - responseTypeNUs
 			if (rtu := gget(cseRequest.req, 'rtu', greedy=False)) is not None:
 				cseRequest.headers.responseTypeNUs = rtu	#  TODO validate for url?

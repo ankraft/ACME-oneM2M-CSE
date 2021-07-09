@@ -47,7 +47,7 @@ class Constants(object):
 
 
 	#
-	#	Message Header Fields
+	#	HTTP Header Fields
 	#
 
 	hfOrigin						= 'X-M2M-Origin'
@@ -61,6 +61,7 @@ class Constants(object):
 	hfRST 							= 'X-M2M-RST'
 	hfOET 							= 'X-M2M-OET'
 	hfRTU 							= 'X-M2M-RTU'
+	hfVSI 							= 'X-M2M-VSI'
 	hfAccept						= 'Accept'
 			
 
