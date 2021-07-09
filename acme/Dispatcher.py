@@ -93,6 +93,9 @@ class Dispatcher(object):
 					return res
 				if (lnk := resource.lnk) is None:	# no link attribute?
 					return Result(status=False, rsc=RC.badRequest, dbg='missing lnk attribute in target resource')
+				if not (res := resource.willBeRetrieved()).status:	# resource instance may be changed in this call
+					return res
+
 				return self.retrieveResource(lnk, originator, raw=True)
 
 
@@ -745,15 +748,26 @@ class Dispatcher(object):
 		return len(CSE.storage.retrieveResourcesByType(ty))
 
 
-
 	def retrieveResourcesByType(self, ty:T) -> list[Resource]:
-		""" Retrieve all resources of a type. """
-
+		""" Retrieve all resources of a type. 
+		"""
 		result = []
 		rss = CSE.storage.retrieveResourcesByType(ty)
 		for rs in (rss or []):
 			result.append(Factory.resourceFromDict(rs).resource)
 		return result
+	
+
+	def deleteChildResources(self, parentResource:Resource, originator:str, ty:T=None) -> None:
+		"""	Remove all child resources of a parent recursively. 
+			If `ty` is set only the resources of this type are removed.
+		"""
+		# Remove directChildResources
+		rs = self.directChildResources(parentResource.ri)
+		for r in rs:
+			if ty is None or r.ty == ty:
+				parentResource.childRemoved(r, originator)	# recursion here
+				self.deleteResource(r, originator, parentResource=parentResource)
 
 
 	#########################################################################

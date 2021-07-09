@@ -57,3 +57,15 @@ class CIN(AnnounceableResource):
 	def update(self, dct:JSON=None, originator:str=None) -> Result:
 		return Result(status=False, rsc=RC.operationNotAllowed, dbg='updating CIN is forbidden')
 
+
+	def willBeRetrieved(self) -> Result:
+		if not (res := super().willBeRetrieved()).status:
+			return res
+
+		# Check whether the parent container's *disableRetrieval* attribute is set to True.
+		if (cnt := self.retrieveParentResource()) is not None and (disr := cnt.disr) is not None and disr:	# False means "not disabled retrieval"
+			L.isDebug and L.logDebug(dbg := f'Retrieval is disabled for the parent <container>')
+			return Result(status=False, rsc=RC.operationNotAllowed, dbg=dbg)	
+
+		return Result(status=True)
+

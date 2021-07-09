@@ -11,7 +11,7 @@ import unittest, sys
 sys.path.append('../acme')
 from typing import Tuple
 from Constants import Constants as C
-from Types import ResourceTypes as T, ResponseCode as RC
+from Types import ResourceTypes as T, ResponseCode as RC, ResultContentType
 from init import *
 
 
@@ -246,6 +246,117 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:cnt/cbs'), maxBS)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTwithDISR(self) -> None:
+		"""	Create <CNT> with disr = True and add <CIN>"""
+		dct = 	{ 'm2m:cnt' : { 
+					'rn'  : cntRN,
+					'disr' : True
+				}}
+		TestCNT_CIN.cnt, rsc = CREATE(aeURL, TestCNT_CIN.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(TestCNT_CIN.cnt, 'm2m:cnt/disr'))
+		self.assertEqual(findXPath(TestCNT_CIN.cnt, 'm2m:cnt/disr'), True)
+
+		# Add CINs
+		for i in range(5):
+			dct = 	{ 'm2m:cin' : {
+						'rn'  : f'{i}',
+						'con' : f'{i}',
+					}}
+			_, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
+			self.assertEqual(rsc, RC.created)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCINwithDISR(self) -> None:
+		"""	Retrieve <CIN> with disr = True -> FAIL """
+		r, rsc = RETRIEVE(f'{cntURL}/3', TestCNT_CIN.originator)	# Retrieve some <cin>
+		self.assertEqual(rsc, RC.operationNotAllowed)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveLAwithDISR(self) -> None:
+		"""	Retrieve <CNT>.LA with disr = True -> FAIL """
+		r, rsc = RETRIEVE(f'{cntURL}/la', TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.operationNotAllowed)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveOLwithDISR(self) -> None:
+		"""	Retrieve <CNT>.OL with disr = True -> FAIL """
+		r, rsc = RETRIEVE(f'{cntURL}/ol', TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.operationNotAllowed)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_discoverCINwithDISR(self) -> None:
+		"""	Discover <CIN> with disr = True -> FAIL """
+		r, rsc = RETRIEVE(f'{cntURL}?rcn={ResultContentType.childResourceReferences:d}', TestCNT_CIN.originator)	# Discover
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
+		self.assertIsNotNone(findXPath(r, 'm2m:rrl/rrf'))
+		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 0)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCNTwithDISRFalse(self) -> None:
+		"""	Update <CNT> with disr = False. Delete all <CIN>"""
+		dct = 	{ 'm2m:cnt' : {
+					'disr' : False,
+				}}
+		TestCNT_CIN.cnt, rsc = UPDATE(cntURL, TestCNT_CIN.originator, dct)
+		self.assertEqual(rsc, RC.updated, TestCNT_CIN.cnt)
+		self.assertEqual(findXPath(TestCNT_CIN.cnt, 'm2m:cnt/disr'), False)
+		self.assertEqual(findXPath(TestCNT_CIN.cnt, 'm2m:cnt/cni'), 0)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCNTwithDISRNullFalse(self) -> None:
+		"""	Update <CNT> with disr = Null/False and add <CIN>"""
+		dct = 	{ 'm2m:cnt' : {
+					'disr' : None,
+				}}
+		TestCNT_CIN.cnt, rsc = UPDATE(cntURL, TestCNT_CIN.originator, dct)
+		self.assertEqual(rsc, RC.updated, TestCNT_CIN.cnt)
+		self.assertIsNone(findXPath(TestCNT_CIN.cnt, 'm2m:cnt/disr'))
+
+		# Add CINs
+		for i in range(0,5):
+			dct = 	{ 'm2m:cin' : {
+						'rn'  : f'{i}',
+						'con' : f'{i}',
+					}}
+			r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
+			self.assertEqual(rsc, RC.created, r)
+
+		# Update now with False
+		dct = 	{ 'm2m:cnt' : {
+					'disr' : False,
+				}}
+		TestCNT_CIN.cnt, rsc = UPDATE(cntURL, TestCNT_CIN.originator, dct)
+		self.assertEqual(rsc, RC.updated, TestCNT_CIN.cnt)
+		self.assertIsNotNone(findXPath(TestCNT_CIN.cnt, 'm2m:cnt/disr'))
+		self.assertEqual(findXPath(TestCNT_CIN.cnt, 'm2m:cnt/disr'), False)
+
+		# Add CINs
+		for i in range(5,10):
+			dct = 	{ 'm2m:cin' : {
+						'rn'  : f'{i}',
+						'con' : f'{i}',
+					}}
+			r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
+			self.assertEqual(rsc, RC.created, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCINwithDISRAllowed(self) -> None:
+		"""	Retrieve <CIN> with disr = False"""
+		r, rsc = RETRIEVE(f'{cntURL}/3', TestCNT_CIN.originator)	# Retrieve some <cin>
+		self.assertEqual(rsc, RC.OK)
+
+
+
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestCNT_CIN('test_addCIN'))
@@ -254,10 +365,23 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCNT_CIN('test_retrieveCNTOl'))
 	suite.addTest(TestCNT_CIN('test_changeCNTMni'))
 	suite.addTest(TestCNT_CIN('test_deleteCNT'))
+
 	suite.addTest(TestCNT_CIN('test_createCNTwithMBS'))
 	suite.addTest(TestCNT_CIN('test_createCINexactSize'))
 	suite.addTest(TestCNT_CIN('test_createCINtooBig'))
 	suite.addTest(TestCNT_CIN('test_createCINsForCNTwithSize'))
+	suite.addTest(TestCNT_CIN('test_deleteCNT'))
+
+	suite.addTest(TestCNT_CIN('test_createCNTwithDISR'))
+	suite.addTest(TestCNT_CIN('test_retrieveCINwithDISR'))
+	suite.addTest(TestCNT_CIN('test_retrieveLAwithDISR'))
+	suite.addTest(TestCNT_CIN('test_retrieveOLwithDISR'))
+	suite.addTest(TestCNT_CIN('test_discoverCINwithDISR'))
+	suite.addTest(TestCNT_CIN('test_updateCNTwithDISRFalse'))
+	suite.addTest(TestCNT_CIN('test_updateCNTwithDISRNullFalse'))
+	suite.addTest(TestCNT_CIN('test_retrieveCINwithDISRAllowed'))
+
+
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)

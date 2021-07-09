@@ -186,13 +186,10 @@ class Resource(object):
 		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceDelete)
 		
 		# Remove directChildResources
-		rs = CSE.dispatcher.directChildResources(self.ri)
-		for r in rs:
-			self.childRemoved(r, originator)
-			CSE.dispatcher.deleteResource(r, originator, parentResource=self)
+		CSE.dispatcher.deleteChildResources(self, originator)
 		
-		# Removal of a deleted resource from group(s) us done 
-		# asynchronous in GroupManager, triggered by an event.
+		# Removal of a deleted resource from group(s) is done 
+		# asynchronously in GroupManager, triggered by an event.
 
 
 	# Update this resource with (new) fields.
