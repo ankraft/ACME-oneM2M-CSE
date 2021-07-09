@@ -796,6 +796,7 @@ class RequestHeaders:
 	operationExecutionTime:str 		= None 	# X-M2M-OET
 	releaseVersionIndicator:str 	= None 	# X-M2M-RVI
 	responseTypeNUs:list[str]		= None	# X-M2M-RTU
+	vendorInformation:str			= None	# X-M2M-VSI
 	originatingTimestamp:str		= None  # ot in request
 
 

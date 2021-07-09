@@ -405,6 +405,8 @@ class HttpServer(object):
 			headers['X-M2M-RI'] = result.request.headers.requestIdentifier
 		if result.request.headers.releaseVersionIndicator is not None:
 			headers['X-M2M-RVI'] = result.request.headers.releaseVersionIndicator
+		if result.request.headers.vendorInformation is not None:
+			headers['X-M2M-VSI'] = result.request.headers.vendorInformation
 
 		# HTTP status code
 		statusCode = result.rsc.httpStatusCode()
@@ -539,6 +541,7 @@ class HttpServer(object):
 		rh.responseExpirationTimestamp 	= self._requestHeaderField(request, C.hfRST)
 		rh.operationExecutionTime 		= self._requestHeaderField(request, C.hfOET)
 		rh.releaseVersionIndicator 		= self._requestHeaderField(request, C.hfRVI)
+		rh.vendorInformation	 		= self._requestHeaderField(request, C.hfVSI)
 
 		if (rtu := self._requestHeaderField(request, C.hfRTU)) is not None:			# handle rtu list
 			rh.responseTypeNUs = rtu.split('&')
