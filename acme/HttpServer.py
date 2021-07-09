@@ -487,7 +487,7 @@ class HttpServer(object):
 			req['rvi'] = f
 		if (rtu := requestHeaderField(request, C.hfRTU)) is not None:			# handle rtu as a list
 			req['rtu'] = rtu.split('&')
-		if (vsi := requestHeaderField(request, C.hfVSI)) is not None:
+		if (f := requestHeaderField(request, C.hfVSI)) is not None:
 			req['vsi'] = f
 
 		# parse and extract content-type header

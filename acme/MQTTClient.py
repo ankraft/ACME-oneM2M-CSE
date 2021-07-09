@@ -153,6 +153,8 @@ class MQTTClientHandler(MQTTHandler):
 			resp['ri'] = result.request.headers.requestIdentifier
 		if result.request.headers.releaseVersionIndicator is not None:
 			resp['rvi'] = result.request.headers.releaseVersionIndicator
+		if result.request.headers.vendorInformation is not None:
+			resp['vsi'] = result.request.headers.vendorInformation
 		resp['pc'] = result.toData(ContentSerializationType.JSON)	# First, serialize the data as JSON/dictionary
 
 		# serialize and log response
