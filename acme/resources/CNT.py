@@ -80,6 +80,23 @@ class CNT(AnnounceableResource):
 		return Result(status=True)
 
 
+	def update(self, dct:JSON=None, originator:str=None) -> Result:
+
+		# remember disr update first, handle later after the update
+		disrOrg = self.disr
+		disrNew = Utils.findXPath(dct, f'{self.tpe}/disr')
+
+		# Generic update
+		if not (res := super().update(dct, originator)).status:
+			return res
+		
+		# handle disr: delete all <cin> when disr was set to TRUE and is now FALSE.
+		if disrOrg is not None and disrOrg == True and disrNew is not None and disrNew == False:
+			CSE.dispatcher.deleteChildResources(self, originator, ty=T.CIN)
+
+		return Result(status=True)
+
+
 	# Get all content instances of a resource and return a sorted (by ct) list 
 	def contentInstances(self) -> List[Resource]:
 		return sorted(CSE.dispatcher.directChildResources(self.ri, T.CIN), key=lambda x: (x.ct))	# type: ignore[no-any-return]
