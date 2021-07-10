@@ -267,7 +267,7 @@ class RequestManager(object):
 
 		if (nus := request.headers.responseTypeNUs) is None:
 			# RTU is not set, get POA's from the resp. AE.poa
-			aes = CSE.storage.searchByTypeFieldValue(ty=T.AE, field='aei', value=originator)
+			aes = CSE.storage.searchByFragment({ 'ty' : T.AE, 'aei' : originator })	# search all <AE>s for aei=originator
 			if len(aes) != 1:
 				L.isWarn and L.logWarn(f'Wrong number of AEs with aei: {originator} ({len(aes):d}): {str(aes)}')
 				nus = aes[0].poa
@@ -721,13 +721,13 @@ class RequestManager(object):
 		if originator is None or len(originator):
 			return []
 		# First check whether there is an AE with that originator
-		if (l := len(aes := CSE.storage.searchByValueInField('aei', originator))) > 0:
+		if (l := len(aes := CSE.storage.searchByFragment({ 'aei' : originator }))) > 0:
 			if l > 1:
 				L.logErr(f'More then one AE with the same aei: {originator}')
 				return []
 			csz = aes[0].csz
 		# Else try whether there is a CSE or CSR
-		elif (l := len(cses := CSE.storage.searchByValueInField('csi', Utils.getIdFromOriginator(originator)))) > 0:
+		elif (l := len(cses := CSE.storage.searchByFragment({ 'csi' : Utils.getIdFromOriginator(originator) }))) > 0:
 			if l > 1:
 				L.logErr(f'More then one CSE with the same csi: {originator}')
 				return []

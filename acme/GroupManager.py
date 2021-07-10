@@ -232,7 +232,9 @@ class GroupManager(object):
 		of group. If yes, remove the member. This method is called by the event manager. """
 
 		ri = deletedResource.ri
-		groups = CSE.storage.searchByTypeFieldValue(T.GRP, 'mid', ri)
+		groups = CSE.storage.searchByFragment(	{ 'ty' : T.GRP }, 
+												lambda r: (mid := r.get('mid')) is not None and ri in mid)	# Filter all <grp> where mid contains ri
+		groups = [ group for group in groups if ri in group.mid]
 		for group in groups:
 			group['mid'].remove(ri)
 			group['cnm'] = group.cnm - 1

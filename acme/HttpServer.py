@@ -164,7 +164,6 @@ class HttpServer(object):
 				# No logging for headless, nevertheless print the reason what happened
 				if CSE.isHeadless:
 					L.console(str(e), isError=True)
-					#print(str(e))
 				L.logErr(str(e))
 				CSE.shutdown() # exit the CSE. Cleanup happens in the CSE atexit() handler
 

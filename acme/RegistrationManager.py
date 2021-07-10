@@ -134,7 +134,7 @@ class RegistrationManager(object):
 		# 	originator = Utils.uniqueAEI('S')
 
 		# Check whether an originator has already registered with the same AE-ID
-		if len(aes := CSE.storage.searchByValueInField('aei', originator)) > 0:
+		if len(aes := CSE.storage.searchByFragment({'aei' : originator})) > 0:
 			L.isWarn and L.logWarn(dbg := f'Originator has already registered: {originator}')
 			return Result(rsc=RC.originatorHasAlreadyRegistered, dbg=dbg)
 		

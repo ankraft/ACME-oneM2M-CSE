@@ -7,9 +7,10 @@
 #	Managing entity for resource announcements
 #
 
+from __future__ import annotations
 import time
 from copy import deepcopy
-from typing import Tuple, List
+from typing import Tuple, List, cast
 from Logging import Logging as L
 import Utils, CSE
 from Configuration import Configuration
@@ -111,8 +112,6 @@ class AnnouncementManager(object):
 
 
 
-
-
 	#########################################################################
 	#
 	#	Access Methods to check, announce, unanounce etc
@@ -132,7 +131,7 @@ class AnnouncementManager(object):
 		csi = remoteCSR.csi
 
 		# get all reources for this specific CSI that are NOT announced to it yet
-		resources = CSE.storage.searchAnnounceableResourcesForCSI(csi, False) # only return the resources that are *not* announced to this csi yet
+		resources = self.searchAnnounceableResourcesForCSI(csi, False) # only return the resources that are *not* announced to this csi yet
 		# try to announce all not-announced resources to this csr
 		for resource in resources:
 			self.announceResource(resource)
@@ -219,13 +218,12 @@ class AnnouncementManager(object):
 		csi = remoteCSR.csi
 		L.isDebug and L.logDebug(f'Checking resources for Unannouncement to: {csi}')
 		# get all reources for this specific CSI that are NOT announced to it yet
-		resources = CSE.storage.searchAnnounceableResourcesForCSI(csi, True)
+		resources = self.searchAnnounceableResourcesForCSI(csi, True)
 		# try to announce all not-announced resources to this csr
 		for resource in resources:
 			self.deAnnounceResource(resource)
 			self._removeAnnouncementFromResource(resource, csi)
 			resource.dbUpdate()
-
 
 
 	def deAnnounceResource(self, resource:AnnounceableResource) -> None:
@@ -416,3 +414,25 @@ class AnnouncementManager(object):
 		L.logErr('TODO Direct Announcement')
 		return False
 
+
+	#########################################################################
+	#
+	#	Utilities
+	#
+
+	def searchAnnounceableResourcesForCSI(self, csi:str, isAnnounced:bool) -> list[AnnounceableResource]:
+		""" Search and retrieve all resources that have the provided CSI in their 
+			'at' attribute. Also, distinguish between announced and not announced resources in the filter.
+		"""
+
+		mcsi = f'{csi}/'
+		def _announcedFilter(r:JSON) -> bool:
+			if (at := r.get('at')) is not None and len(list(filter(lambda x: x.startswith(mcsi), at))) > 0:	# check whether any entry in 'at' startswith mcsi
+				if (ato := r.get(Resource._announcedTo)) is not None:
+					for i in ato:
+						if csi == i[0]:	# 0=remote csi,
+							return isAnnounced
+					return not isAnnounced
+			return False
+
+		return cast(List[AnnounceableResource], CSE.storage.searchByFilter(_announcedFilter))

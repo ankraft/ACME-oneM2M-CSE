@@ -130,11 +130,11 @@ class TS(AnnounceableResource):
 				return Result(status=False, rsc=RC.notAcceptable, dbg='child content sizes would exceed mbs')
 
 		# Check whether another TSI has the same dgt value set
-		tsis = CSE.storage.searchByDict({ 	'ty'	: T.TSI,
-											'pi'	: self.ri,
-											'dgt'	: childResource.dgt
+		tsis = CSE.storage.searchByFragment({ 	'ty'	: T.TSI,
+												'pi'	: self.ri,
+												'dgt'	: childResource.dgt
 		})
-		if len(tsis) > 0:
+		if len(tsis) > 0:	# Error if yes
 			return Result(status=False, rsc=RC.conflict, dbg=f'timeSeriesInstance with the same dgt: {childResource.dgt} already exists')
 
 		return Result(status=True)

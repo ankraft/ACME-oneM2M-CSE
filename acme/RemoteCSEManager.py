@@ -550,7 +550,7 @@ class RemoteCSEManager(object):
 			return Result(rsc=RC.notFound, dbg=f'URL not found for id: {id}')
 		if originator is None:
 			originator = CSE.cseCsi
-		L.isInfo and L.log('Retrieve remote resource from: {url}')
+		L.isDebug and L.logDebug(f'Retrieve remote resource from: {url}')
 		res = CSE.request.sendRetrieveRequest(url, originator)	## todo
 		if res.rsc != RC.OK:
 			return res.errorResult()
