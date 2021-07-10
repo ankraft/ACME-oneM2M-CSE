@@ -314,7 +314,7 @@ class TestCNT_CIN(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTwithDISRNullFalse(self) -> None:
 		"""	Update <CNT> with disr = Null/False and add <CIN>"""
-		dct = 	{ 'm2m:cnt' : {
+		dct:JSON = 	{ 'm2m:cnt' : {
 					'disr' : None,
 				}}
 		TestCNT_CIN.cnt, rsc = UPDATE(cntURL, TestCNT_CIN.originator, dct)
