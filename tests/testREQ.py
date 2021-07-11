@@ -34,6 +34,9 @@ class TestREQ(unittest.TestCase):
 		# Start notification server
 		startNotificationServer()
 
+		# look for notification server
+		assert isNotificationServerRunning(), 'Notification server cannot be reached'
+
 		# create other resources
 		dct =	{ 'm2m:ae' : {
 					'rn'  : aeRN, 

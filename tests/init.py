@@ -388,7 +388,18 @@ def startNotificationServer() -> None:
 def stopNotificationServer() -> None:
 	global keepNotificationServerRunning
 	keepNotificationServerRunning = False
-	requests.post(NOTIFICATIONSERVER, verify=verifyCertificate)	# send empty/termination request 
+	try:
+		requests.post(NOTIFICATIONSERVER, verify=verifyCertificate)	# send empty/termination request
+	except Exception:
+		pass
+
+
+def isNotificationServerRunning() -> bool:
+	try:
+		_ = requests.post(NOTIFICATIONSERVER, data='{"test": "test"}', verify=verifyCertificate)
+		return True
+	except Exception:
+		return False
 
 lastNotification:JSON				= None
 lastNotificationHeaders:Parameters 	= {}

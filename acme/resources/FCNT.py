@@ -171,7 +171,9 @@ class FCNT(AnnounceableResource):
 				l = fcii
 				while fcii > mni and i < l:
 					# remove oldest
-					CSE.dispatcher.deleteResource(fci[i], parentResource=self)
+					# Deleting a child must not cause a notification for 'deleteDirectChild'.
+					# Don't do a delete check means that FCNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
+					CSE.dispatcher.deleteResource(fci[i], parentResource=self, doDeleteCheck=False)
 					fcii -= 1
 					i += 1
 					changed = True
@@ -194,7 +196,9 @@ class FCNT(AnnounceableResource):
 				while cbs > mbs and i < fcii:
 					# remove oldest
 					cbs -= fci[i].cs			
-					CSE.dispatcher.deleteResource(fci[i], parentResource=self)
+					# Deleting a child must not cause a notification for 'deleteDirectChild'.
+					# Don't do a delete check means that FCNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
+					CSE.dispatcher.deleteResource(fci[i], parentResource=self, doDeleteCheck=False)
 					fcii -= 1	# again, decrement fcii when deleting a cni
 					i += 1
 

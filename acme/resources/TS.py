@@ -203,7 +203,9 @@ class TS(AnnounceableResource):
 			while cni > mni and i < l:
 				L.isDebug and L.logDebug(f'cni > mni: Removing <tsi>: {cs[i].ri}')
 				# remove oldest
-				CSE.dispatcher.deleteResource(cs[i], parentResource=self)
+				# Deleting a child must not cause a notification for 'deleteDirectChild'.
+				# Don't do a delete check means that TS.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
+				CSE.dispatcher.deleteResource(cs[i], parentResource=self, doDeleteCheck=False)
 				cni -= 1	# decrement cni when deleting a <cin>
 				i += 1
 			cs = self.timeSeriesInstances()	# retrieve TSI child resources again
@@ -222,7 +224,9 @@ class TS(AnnounceableResource):
 				L.isDebug and L.logDebug(f'cbs > mbs: Removing <tsi>: {cs[i].ri}')
 				# remove oldest
 				cbs -= cs[i]['cs']
-				CSE.dispatcher.deleteResource(cs[i], parentResource=self)
+				# Deleting a child must not cause a notification for 'deleteDirectChild'.
+				# Don't do a delete check means that TS.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
+				CSE.dispatcher.deleteResource(cs[i], parentResource=self, doDeleteCheck=False)
 				cni -= 1	# decrement cni when deleting a <tsi>
 				i += 1
 

@@ -11,7 +11,7 @@ import unittest, sys
 sys.path.append('../acme')
 from typing import Tuple
 from Constants import Constants as C
-from Types import ResourceTypes as T, ResponseCode as RC, ResultContentType
+from Types import NotificationEventType, ResourceTypes as T, ResponseCode as RC, ResultContentType
 from init import *
 
 
@@ -48,6 +48,8 @@ class TestCNT_CIN(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		stopNotificationServer()
+
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_addCIN(self) -> None:
@@ -356,6 +358,46 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_autoDeleteCINnoNotifiction(self) -> None:
+		"""	Automatic delete of <CIN> must not generate a notification for deleteDirectChild """
+		# Start notification server
+		startNotificationServer()
+		# look for notification server
+		assert isNotificationServerRunning(), 'Notification server cannot be reached'
+
+		# Create <CNT>
+		dct = 	{ 'm2m:cnt' : { 
+					'rn'  : cntRN,
+					'mni' : 3
+				}}
+		TestCNT_CIN.cnt, rsc = CREATE(aeURL, TestCNT_CIN.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(TestCNT_CIN.cnt, 'm2m:cnt/mni'))
+		self.assertEqual(findXPath(TestCNT_CIN.cnt, 'm2m:cnt/mni'), 3)
+
+		# CREATE <SUB>
+		dct = 	{ 'm2m:sub' : { 
+			        'enc': {
+			            'net': [ NotificationEventType.deleteDirectChild ]
+        			},
+        			'nu': [ NOTIFICATIONSERVER ]
+				}}
+		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.created, r)
+
+		# Add more <CIN> than the capacity allows, so that some <CIN> will be deleted by the CSE
+		clearLastNotification()
+		for i in range(5):
+			dct = 	{ 'm2m:cin' : {
+						'con' : f'{i}',	
+					}}
+			_, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
+			self.assertEqual(rsc, RC.created)
+		
+		self.assertIsNone(getLastNotification())	# No notifications
+		stopNotificationServer()
+
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
@@ -380,6 +422,9 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCNT_CIN('test_updateCNTwithDISRFalse'))
 	suite.addTest(TestCNT_CIN('test_updateCNTwithDISRNullFalse'))
 	suite.addTest(TestCNT_CIN('test_retrieveCINwithDISRAllowed'))
+	suite.addTest(TestCNT_CIN('test_deleteCNT'))
+
+	suite.addTest(TestCNT_CIN('test_autoDeleteCINnoNotifiction'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

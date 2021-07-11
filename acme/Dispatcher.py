@@ -675,7 +675,7 @@ class Dispatcher(object):
 		return Result(status=res.status, resource=result, rsc=res.rsc, dbg=res.dbg)
 
 
-	def deleteResource(self, resource:Resource, originator:str=None, withDeregistration:bool=False, parentResource:Resource=None) -> Result:
+	def deleteResource(self, resource:Resource, originator:str=None, withDeregistration:bool=False, parentResource:Resource=None, doDeleteCheck:bool=True) -> Result:
 		L.isDebug and L.logDebug(f'Removing resource ri: {resource.ri}, type: {resource.ty:d}')
 
 		resource.deactivate(originator)	# deactivate it first
@@ -696,7 +696,7 @@ class Dispatcher(object):
 		CSE.event.deleteResource(resource) 	# type: ignore
 
 		# Now notify the parent resource
-		if parentResource is not None:
+		if doDeleteCheck and parentResource is not None:
 			parentResource.childRemoved(resource, originator)
 
 		return Result(status=res.status, resource=resource, rsc=res.rsc, dbg=res.dbg)

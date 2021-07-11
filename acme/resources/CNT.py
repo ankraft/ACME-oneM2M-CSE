@@ -172,7 +172,9 @@ class CNT(AnnounceableResource):
 			while cni > mni and i < l:
 				if L.isDebug: L.logDebug(f'cni > mni: Removing <cin>: {cs[i].ri}')
 				# remove oldest
-				CSE.dispatcher.deleteResource(cs[i], parentResource=self)
+				# Deleting a child must not cause a notification for 'deleteDirectChild'.
+				# Don't do a delete check means that CNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
+				CSE.dispatcher.deleteResource(cs[i], parentResource=self, doDeleteCheck=False)
 				cni -= 1	# decrement cni when deleting a <cin>
 				i += 1
 			cs = self.contentInstances()	# retrieve CIN child resources again
@@ -191,7 +193,9 @@ class CNT(AnnounceableResource):
 				if L.isDebug: L.logDebug(f'cbs > mbs: Removing <cin>: {cs[i].ri}')
 				# remove oldest
 				cbs -= cs[i]['cs']
-				CSE.dispatcher.deleteResource(cs[i], parentResource=self)
+				# Deleting a child must not cause a notification for 'deleteDirectChild'.
+				# Don't do a delete check means that CNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
+				CSE.dispatcher.deleteResource(cs[i], parentResource=self, doDeleteCheck=False)
 				cni -= 1	# decrement cni when deleting a <cin>
 				i += 1
 

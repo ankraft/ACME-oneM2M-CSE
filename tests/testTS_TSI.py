@@ -37,14 +37,7 @@ class TestTS_TSI(unittest.TestCase):
 		startNotificationServer()
 
 		# look for notification server
-		hasNotificationServer = False
-		try:
-			_ = requests.post(NOTIFICATIONSERVER, data='{"test": "test"}', verify=verifyCertificate)
-			hasNotificationServer = True
-		except Exception:
-			pass
-		finally:	
-			assert hasNotificationServer, 'Notification server cannot be reached'
+		assert isNotificationServerRunning(), 'Notification server cannot be reached'
 
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 

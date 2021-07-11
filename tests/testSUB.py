@@ -12,7 +12,7 @@ import requests
 sys.path.append('../acme')
 from typing import Tuple
 from Constants import Constants as C
-from Types import ResourceTypes as T, NotificationContentType, ResponseCode as RC
+from Types import NotificationEventType, ResourceTypes as T, NotificationContentType, ResponseCode as RC
 from init import *
 
 numberOfBatchNotifications = 5
@@ -39,14 +39,7 @@ class TestSUB(unittest.TestCase):
 		startNotificationServer()
 
 		# look for notification server
-		hasNotificationServer = False
-		try:
-			_ = requests.post(NOTIFICATIONSERVER, data='{"test": "test"}', verify=verifyCertificate)
-			hasNotificationServer = True
-		except Exception:
-			pass
-		finally:	
-			assert hasNotificationServer, 'Notification server cannot be reached'
+		assert isNotificationServerRunning(), 'Notification server cannot be reached'
 
 		# create other resources
 		dct = 	{ 'm2m:ae' : {
@@ -265,7 +258,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
-			            'net': [ 3 ]
+			            'net': [ NotificationEventType.createDirectChild ]
         			},
         			'nu': [ NOTIFICATIONSERVER ],
 					'su': NOTIFICATIONSERVER,
