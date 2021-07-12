@@ -132,7 +132,7 @@ class Resource(object):
 
 
 
-	def activate(self, parentResource: Resource, originator: str) -> Result:
+	def activate(self, parentResource:Resource, originator:str) -> Result:
 		"""	This method is called to to activate a resource. 
 			This is not always the case, e.g. when a resource object is just used temporarly.
 			NO notification on activation/creation!
@@ -149,7 +149,7 @@ class Resource(object):
 				return res
 
 		# validate the resource logic
-		if not (res := self.validate(originator, create=True)).status:
+		if not (res := self.validate(originator, create=True, parentResource=parentResource)).status:
 			return res
 		self.dbUpdate()
 		# increment parent resource's state tag
@@ -310,7 +310,7 @@ class Resource(object):
 		return resource['ty'] in allowedChildResourceTypes or isinstance(resource, Unknown)
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
 		""" Validate a resource. Usually called within activate() or update() methods. """
 		L.isDebug and L.logDebug(f'Validating resource: {self.ri}')
 		if (not Utils.isValidID(self.ri) or

@@ -72,7 +72,7 @@ class TestExpiration(unittest.TestCase):
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
 		dct = 	{ 'm2m:cin' : {
-					'cnf' : 'a',
+					'cnf' : 'text/plain:0',
 					'con' : 'AnyValue'
 				}}
 		for _ in range(0, 5):
@@ -155,7 +155,7 @@ class TestExpiration(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:cnt/mia'), expirationCheckDelay)
 
 		dct = 	{ 'm2m:cin' : {
-					'cnf' : 'a',
+					'cnf' : 'text/plain:0',
 					'con' : 'AnyValue'
 				}}
 
@@ -187,7 +187,7 @@ class TestExpiration(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:cnt/mia'), tooLargeExpirationDelta())
 
 		dct = 	{ 'm2m:cin' : {
-					'cnf' : 'a',
+					'cnf' : 'text/plain:0',
 					'con' : 'AnyValue'
 				}}
 		tooLargeET = getDate(tooLargeExpirationDelta())

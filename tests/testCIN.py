@@ -53,7 +53,7 @@ class TestCIN(unittest.TestCase):
 		self.assertIsNotNone(TestCIN.cnt)
 		dct = 	{ 'm2m:cin' : {
 					'rn'  : cinRN,
-					'cnf' : 'a',
+					'cnf' : 'text/plain:0',
 					'con' : 'AnyValue'
 				}}
 		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)
@@ -83,7 +83,7 @@ class TestCIN(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:cin/st'))
 		self.assertIsNone(findXPath(r, 'm2m:cin/cr'))
 		self.assertIsNotNone(findXPath(r, 'm2m:cin/cnf'))
-		self.assertEqual(findXPath(r, 'm2m:cin/cnf'), 'a')
+		self.assertEqual(findXPath(r, 'm2m:cin/cnf'), 'text/plain:0')
 		self.assertIsNotNone(findXPath(r, 'm2m:cin/con'))
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'AnyValue')
 		self.assertGreater(findXPath(r, 'm2m:cin/cs'), 0)
@@ -104,7 +104,7 @@ class TestCIN(unittest.TestCase):
 		""" Create <CIN> resource under <AE> -> Fail """
 		dct = 	{ 'm2m:cin' : {
 					'rn'  : cinRN,
-					'cnf' : 'a',
+					'cnf' : 'text/plain:0',
 					'con' : 'AnyValue'
 				}}
 		r, rsc = CREATE(aeURL, TestCIN.originator, T.CIN, dct)
@@ -141,6 +141,61 @@ class TestCIN(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINWithCnfWrong1(self) -> None:
+		""" Create <CIN> with cnf attribute (wrong 1) -> Fail """
+		dct = 	{ 'm2m:cin' : { 
+					'cnf' : 'text',
+					'con' : 'AnyValue'
+				}}
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)				# Not allowed
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINWithCnfWrong2(self) -> None:
+		""" Create <CIN> with cnf attribute (wrong 2) -> Fail """
+		dct = 	{ 'm2m:cin' : { 
+					'cnf' : 'text:0',
+					'con' : 'AnyValue'
+				}}
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)				# Not allowed
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINWithCnfWrong3(self) -> None:
+		""" Create <CIN> with cnf attribute (wrong 4) -> Fail """
+		dct = 	{ 'm2m:cin' : { 
+					'cnf' : 'text/plain',
+					'con' : 'AnyValue'
+				}}
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)				# Not allowed
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINWithCnfWrong4(self) -> None:
+		""" Create <CIN> with cnf attribute (wrong 5) -> Fail """
+		dct = 	{ 'm2m:cin' : { 
+					'cnf' : 'text/plain:0:0:0',
+					'con' : 'AnyValue'
+				}}
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)				# Not allowed
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINWithCnfWrong5(self) -> None:
+		""" Create <CIN> with cnf attribute (wrong 6) -> Fail """
+		dct = 	{ 'm2m:cin' : { 
+					'cnf' : 'text/plain:9',
+					'con' : 'AnyValue'
+				}}
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)				# Not allowed
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCINWithCreator(self) -> None:
 		""" Create <CIN> with creator attribute set to Null """
 		dct = 	{ 'm2m:cin' : { 
@@ -170,6 +225,11 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCIN('test_createCINwithNoneString'))
 	suite.addTest(TestCIN('test_deleteCIN'))
 	suite.addTest(TestCIN('test_createCINWithCreatorWrong'))
+	suite.addTest(TestCIN('test_createCINWithCnfWrong1'))
+	suite.addTest(TestCIN('test_createCINWithCnfWrong2'))
+	suite.addTest(TestCIN('test_createCINWithCnfWrong3'))
+	suite.addTest(TestCIN('test_createCINWithCnfWrong4'))
+	suite.addTest(TestCIN('test_createCINWithCnfWrong5'))
 	suite.addTest(TestCIN('test_createCINWithCreator'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

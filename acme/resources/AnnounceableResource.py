@@ -60,9 +60,9 @@ class AnnounceableResource(Resource):
 
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
 		L.isDebug and L.logDebug(f'Validating AnnounceableResource: {self.ri}')
-		if (res := super().validate(originator, create, dct)).status == False:
+		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 
 		announceableAttributes = []

@@ -52,7 +52,7 @@ class TestTS(unittest.TestCase):
 					'pei'	: 1000,
 					'mdd'	: True,
 					'mdn'	: 10,
-					'cnf'	: 'application/test'
+					'cnf'	: 'text/plain:0'
 				}}
 		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
 		self.assertEqual(rsc, RC.created, r)
@@ -68,7 +68,7 @@ class TestTS(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:ts/cni'), 0)
 		self.assertEqual(findXPath(r, 'm2m:ts/cbs'), 0)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/cnf'))
-		self.assertEqual(findXPath(r, 'm2m:ts/cnf'), 'application/test')
+		self.assertEqual(findXPath(r, 'm2m:ts/cnf'), 'text/plain:0')
 		self.assertEqual(findXPath(r, 'm2m:ts/pei'), 1000)
 		self.assertEqual(findXPath(r, 'm2m:ts/peid'), 500)
 		self.assertTrue(findXPath(r, 'm2m:ts/mdd'))
@@ -263,6 +263,17 @@ class TestTS(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createTSwithCnfWrong(self) -> None:
+		""" Create <TS> with wrong cnf -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'cnf'	: 'wrong',
+				}}
+		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 
@@ -284,6 +295,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestTS('test_updateTSMddwrong'))
 	suite.addTest(TestTS('test_createTSwithPeid'))
 	suite.addTest(TestTS('test_createTSwithPeidWrong'))
+	suite.addTest(TestTS('test_createTSwithCnfWrong'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

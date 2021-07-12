@@ -60,7 +60,7 @@ class TestDiscovery(unittest.TestCase):
 		# create 5 contentInstances with different labels
 		for i in range(0,5):
 			dct = 	{ 'm2m:cin' : {
-						'cnf' : 'a',
+						'cnf' : 'text/plain:0',
 						'con' : 'aValue',
 						'lbl' : [ 'tag:%d' %i ]
 					}}
@@ -75,7 +75,7 @@ class TestDiscovery(unittest.TestCase):
 		# create 5 contentInstances with different labels
 		for i in range(0,5):
 			dct = 	{ 'm2m:cin' : {
-						'cnf' : 'b',
+						'cnf' : 'text/x-plain:0',
 						'con' : 'bValue',
 						'lbl' : [ 'tag:%d' %i ]
 					}}
@@ -349,7 +349,7 @@ class TestDiscovery(unittest.TestCase):
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResources:d}&ty={T.CIN}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae'))
-		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cin'))
+		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cin'), r)
 		self.assertEqual(len(findXPath(r, 'm2m:ae/m2m:cin')), 10)
 
 
@@ -493,8 +493,8 @@ class TestDiscovery(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCNIwithCTYunderAE(self) -> None:
-		""" Retrieve <CNT> under <AE> with cty=a & rcn=6 """
-		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&cty=a', TestDiscovery.originator)
+		""" Retrieve <CNT> under <AE> with cty=text/plain:0 & rcn=6 """
+		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResourceReferences:d}&cty=text/plain:0', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl/rrf'))
 		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 5, r)

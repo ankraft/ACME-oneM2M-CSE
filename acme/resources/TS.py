@@ -99,11 +99,16 @@ class TS(AnnounceableResource):
 		return res
 
  
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
 		L.isDebug and L.logDebug(f'Validating timeSeries: {self.ri}')
-		if (res := super().validate(originator, create, dct)).status == False:
+		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 		
+		# Check the format of the CNF attribute
+		if (cnf := self.cnf) is not None:
+			if not (res := CSE.validator.validateCNF(cnf)).status:
+				return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
+
 		# Check peid
 		if self.peid is not None and self.pei is not None:
 			if self.peid > self.pei/2:
@@ -178,7 +183,7 @@ class TS(AnnounceableResource):
 
 
 	# handle eventuel updates of subscriptions
-	def childUpdated(self, childResource: Resource, updatedAttributes: JSON, originator: str) -> None:
+	def childUpdated(self, childResource:Resource, updatedAttributes:JSON, originator:str) -> None:
 		super().childUpdated(childResource, updatedAttributes, originator)
 		if childResource.ty == T.SUB and childResource['enc/md'] is not None:
 			CSE.timeSeries.updateSubscription(self, childResource)		
