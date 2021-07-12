@@ -11,7 +11,8 @@ setup(
 	install_requires=[
 		'cbor2',
 		'flask',
-		'isodate', 
+		'isodate',
+		'paho-mqtt',
 		'psutil',  
 		'requests', 
 		'rich', 
