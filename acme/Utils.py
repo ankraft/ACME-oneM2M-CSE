@@ -275,7 +275,14 @@ def getIdFromOriginator(originator: str, idOnly: bool = False) -> str:
 #
 #	URL and Addressung related
 #
-
+urlregex = re.compile(
+		r'^(?:http|ftp)s?://|^(?:coap|mqtt)://' 	# http://, https://, ftp://, ftps://, coap://, mqtt://
+		r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain
+		r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9]))|' # localhost or single name w/o domain
+		r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' 		# ipv4
+		r'(?::\d+)?' 								# optional port
+		r'(?:/?|[/?]\S+)$', re.IGNORECASE			# optional path
+		)
 def isURL(url: str) -> bool:
 	""" Check whether a given string is a URL. """
 	return url is not None and isinstance(url, str) and re.match(urlregex, url) is not None
@@ -452,6 +459,12 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 		specifying the element as `{n}`.
 
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
+
+		If an element if specified as '{}' then all elements in that array are returned in
+		an array.
+
+		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{}') or findXPath(input, 'm2m:cnt/m2m:cin/{}/rn')
+
 	"""
 
 	if key is None or dct is None:
@@ -473,12 +486,19 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 				data = data[list(data)[i]]
 			else:
 				data = data[idx]
+
+		elif pathElement == '{}':	# Match an array in general
+			if not isinstance(data, (list,dict)):	# not a list, return the default
+				return default
+			if i == len(paths)-1:	# if this is the last element and it is a list then return the data
+				return data
+			return [ findXPath(d, '/'.join(paths[i+1:]), default) for d in data  ]	# recursively build an array with remnainder of the selector
+
 		elif pathElement not in data:	# if key not in dict
 			return default
 		else:
 			data = data[pathElement]	# found data for the next level down
 	return data
-
 
 def setXPath(dct:JSON, key:str, value:Any, overwrite:bool=True) -> bool:
 	"""	Set a structured `element` and `value` in thedictionary `dict`. 
@@ -508,15 +528,6 @@ def removeNoneValuesFromDict(dct:JSON, allowedNull:list[str]=[]) -> JSON:
 		return dct
 	return { key:value for key,value in ((key, removeNoneValuesFromDict(value)) for key,value in dct.items()) if value is not None or key in allowedNull }
 
-
-urlregex = re.compile(
-		r'^(?:http|ftp)s?://|^(?:coap|mqtt)://' 	# http://, https://, ftp://, ftps://, coap://, mqtt://
-		r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain
-		r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9]))|' # localhost or single name w/o domain
-		r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' 		# ipv4
-		r'(?::\d+)?' 								# optional port
-		r'(?:/?|[/?]\S+)$', re.IGNORECASE			# optional path
-		)
 
 def resourceDiff(old:Resource|JSON, new:Resource|JSON, modifiers:JSON=None) -> JSON:
 	"""	Compare an old and a new resource. Keywords and values. Ignore internal __XYZ__ keys.
