@@ -156,7 +156,7 @@ class RegistrationManager(object):
 
 	def handleAEDeRegistration(self, resource: Resource) -> bool:
 		# More De-registration functions happen in the AE's deactivate() method
-		L.isDebug and L.logDebug(f'DeRegisterung AE. aei: {resource.aei}')
+		L.isDebug and L.logDebug(f'DeRegistering AE. aei: {resource.aei}')
 		return True
 
 

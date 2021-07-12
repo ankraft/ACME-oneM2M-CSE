@@ -45,14 +45,6 @@ class CIN(AnnounceableResource):
 		return super()._canHaveChild(resource, [])
 
 
-	def activate(self, parentResource:Resource, originator:str) -> Result:
-		if not (res := super().activate(parentResource, originator)).status:
-			return res
-		if (parentResource := parentResource.dbReload().resource) is not None:		# Read the resource again in case it was updated in the DB
-			self.setAttribute('st', parentResource.st)
-		return Result(status=True)
-
-
 	# Forbid updating
 	def update(self, dct:JSON=None, originator:str=None) -> Result:
 		return Result(status=False, rsc=RC.operationNotAllowed, dbg='updating CIN is forbidden')
@@ -67,5 +59,21 @@ class CIN(AnnounceableResource):
 			L.isDebug and L.logDebug(dbg := f'Retrieval is disabled for the parent <container>')
 			return Result(status=False, rsc=RC.operationNotAllowed, dbg=dbg)	
 
+		return Result(status=True)
+
+
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+		if (res := super().validate(originator, create, dct, parentResource)).status == False:
+			return res
+
+		# Check the format of the CNF attribute
+		if (cnf := self.cnf) is not None:
+			if not (res := CSE.validator.validateCNF(cnf)).status:
+				return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
+
+		# Add ST attribute
+		if (parentResource := parentResource.dbReload().resource) is not None:		# Read the resource again in case it was updated in the DB
+			self.setAttribute('st', parentResource.st)
+		
 		return Result(status=True)
 

@@ -77,8 +77,8 @@ class SUB(Resource):
 		return CSE.notification.updateSubscription(self, newDict, previousNus, originator)
 
  
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
-		if (res := super().validate(originator, create, dct)).status == False:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 		L.isDebug and L.logDebug(f'Validating subscription: {self.ri}')
 

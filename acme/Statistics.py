@@ -285,7 +285,7 @@ skinparam rectangle {
 		result += f'node CSE as "<color:green>{CSE.cseCsi[1:]}</color> ({CSE.cseType.name})\\n{ip}" #white\n'
 
 		# Own http interface
-		http = 'https' if CSE.httpServer.useTLS else 'http'
+		http = 'https' if CSE.security.useTLS else 'http'
 		result += f'interface "{http}\\n{CSE.httpServer.port}" as http_own #white\n'
 
 		# Build Resource Tree

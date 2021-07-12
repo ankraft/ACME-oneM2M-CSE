@@ -49,8 +49,8 @@ class ACP(AnnounceableResource):
 
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
-		if not (res := super().validate(originator, create, dct)).status:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		
 		if dct is not None and (pvs := Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs')) is not None:

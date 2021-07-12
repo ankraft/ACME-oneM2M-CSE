@@ -202,7 +202,7 @@ class TestSUB(unittest.TestCase):
 	def test_addCIN2CNT(self) -> None:
 		""" CREATE <CNI> to <CNT> -> Send notification withfull <CNI> resource"""
 		dct = 	{ 'm2m:cin' : {
-					'cnf' : 'a',
+					'cnf' : 'text/plain:0',
 					'con' : 'aValue'
 				}}
 		r, rsc = CREATE(cntURL, TestSUB.originator, T.CIN, dct)
@@ -609,7 +609,7 @@ class TestSUB(unittest.TestCase):
 		""" CREATE <CNI> -> Send NO notification"""
 		clearLastNotification()	# clear the notification first
 		dct = 	{ 'm2m:cin' : {
-					'cnf' : 'a',
+					'cnf' : 'text/plain:0',
 					'con' : 'aValue'
 				}}
 		r, rsc = CREATE(cntURL, TestSUB.originator, T.CIN, dct)

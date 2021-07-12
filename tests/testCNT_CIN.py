@@ -57,7 +57,7 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertIsNotNone(TestCNT_CIN.ae)
 		self.assertIsNotNone(TestCNT_CIN.cnt)
 		dct = 	{ 'm2m:cin' : {
-					'cnf' : 'a',
+					'cnf' : 'text/plain:0',
 					'con' : 'aValue'
 				}}
 		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
@@ -65,6 +65,7 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertIsNotNone(r)
 		self.assertIsNotNone(findXPath(r, 'm2m:cin/ri'))
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'aValue')
+		self.assertEqual(findXPath(r, 'm2m:cin/cnf'), 'text/plain:0')
 		self.cinARi = findXPath(r, 'm2m:cin/ri')			# store ri
 
 		r, rsc = RETRIEVE(cntURL, TestCNT_CIN.originator)
@@ -78,7 +79,7 @@ class TestCNT_CIN(unittest.TestCase):
 	def test_addMoreCIN(self) -> None:
 		"""	Create more <CIN>s under <CNT> """
 		dct = 	{ 'm2m:cin' : {
-					'cnf' : 'a',
+					'cnf' : 'text/plain:0',
 					'con' : 'bValue'
 				}}
 		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
@@ -92,7 +93,7 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:cnt/cni'), 2)
 
 		dct = 	{ 'm2m:cin' : {
-					'cnf' : 'a',
+					'cnf' : 'text/plain:0',
 					'con' : 'cValue'
 				}}
 		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
@@ -106,7 +107,7 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:cnt/cni'), 3)
 
 		dct = 	{ 'm2m:cin' : {
-					'cnf' : 'a',
+					'cnf' : 'text/plain:0',
 					'con' : 'dValue'
 				}}
 		r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)

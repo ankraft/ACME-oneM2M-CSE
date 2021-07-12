@@ -123,8 +123,8 @@ class FCNT(AnnounceableResource):
 
 
 	# Checking the presence of cnd and calculating the size
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
-		if not (res := super().validate(originator, create, dct)).status:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		self._validateChildren(originator)
 		return Result(status=True)
@@ -215,6 +215,7 @@ class FCNT(AnnounceableResource):
 	
 		# End validating
 		self.__validating = False
+
 
 	def flexContainerInstances(self) -> list[Resource]:
 		"""	Get all flexContainerInstances of a resource and return a sorted (by ct) list

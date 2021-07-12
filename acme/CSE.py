@@ -20,6 +20,7 @@ from GroupManager import GroupManager
 from HttpServer import HttpServer
 from Importer import Importer
 from Logging import Logging as L
+from MQTTClient import MQTTClient
 from NotificationManager import NotificationManager
 from RegistrationManager import RegistrationManager
 from RemoteCSEManager import RemoteCSEManager
@@ -48,6 +49,7 @@ event:EventManager								= None
 group:GroupManager								= None
 httpServer:HttpServer							= None
 importer:Importer								= None
+mqttClient:MQTTClient							= None
 notification:NotificationManager				= None
 registration:RegistrationManager 				= None
 remote:RemoteCSEManager							= None
@@ -85,7 +87,7 @@ shuttingDown									= False
 
 #def startup(args=None, configfile=None, resetdb=None, loglevel=None):
 def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
-	global announce, console, dispatcher, event, group, httpServer, importer, notification, registration
+	global announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
 	global remote, request, security, statistics, storage, timeSeries, validator
 	global rootDirectory
 	global aeStatistics
@@ -142,6 +144,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	request = RequestManager()				# Initialize the request manager
 	security = SecurityManager()			# Initialize the security manager
 	httpServer = HttpServer()				# Initialize the HTTP server
+	mqttClient = MQTTClient()				# Initialize the MQTT client
 	notification = NotificationManager()	# Initialize the notification manager
 	group = GroupManager()					# Initialize the group manager
 	timeSeries = TimeSeriesManager()		# Initialize the timeSeries manager
@@ -164,11 +167,15 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 
 	# Start the HTTP server
 	httpServer.run() # This does return (!)
+
+	# Start the MQTT client
+	mqttClient.run() # This does return
 	
-	L.isInfo and L.log('CSE started')
-	if isHeadless:
-		# when in headless mode give the CSE a moment (2s) to experience fatal errors before printing the start message
-		BackgroundWorkerPool.newActor(lambda : L.console('CSE started') if not shuttingDown else None, delay=2.0 ).start()
+	if not shuttingDown:
+		L.isInfo and L.log('CSE started')
+		if isHeadless:
+			# when in headless mode give the CSE a moment (2s) to experience fatal errors before printing the start message
+			BackgroundWorkerPool.newActor(lambda : L.console('CSE started') if not shuttingDown else None, delay=2.0 ).start()
 	
 	return True
 
@@ -198,6 +205,7 @@ def _shutdown() -> None:
 	if event is not None:
 		event.cseShutdown() 	# type: ignore
 	console is not None and console.shutdown()
+	mqttClient is not None and mqttClient.shutdown()
 	httpServer is not None and httpServer.shutdown()
 	announce is not None and announce.shutdown()
 	remote is not None and remote.shutdown()

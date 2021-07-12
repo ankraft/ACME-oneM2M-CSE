@@ -8,6 +8,7 @@
 #
 
 
+import ssl
 from Logging import Logging as L
 from Types import ResourceTypes as T, Permission, Result, CSERequest, ResponseCode as RC
 import CSE, Utils
@@ -27,6 +28,13 @@ class SecurityManager(object):
 			L.isInfo and L.log('ACP checking ENABLED')
 		else:
 			L.isInfo and L.log('ACP checking DISABLED')
+		
+		# TLS configurations
+		self.useTLS 			= Configuration.get('cse.security.useTLS')
+		self.verifyCertificate	= Configuration.get('cse.security.verifyCertificate')
+		self.tlsVersion			= Configuration.get('cse.security.tlsVersion').lower()
+		self.caCertificateFile	= Configuration.get('cse.security.caCertificateFile')
+		self.caPrivateKeyFile	= Configuration.get('cse.security.caPrivateKeyFile')
 
 
 	def shutdown(self) -> bool:
@@ -236,3 +244,24 @@ class SecurityManager(object):
 		return False
 
 
+
+	##########################################################################
+	#
+	#	Certificate handling
+	#
+
+	def getSSLContext(self) -> ssl.SSLContext:
+		"""	Depending on the configuration whether to use TLS, this method creates a new `SSLContext`
+			from the configured certificates and returns it. If TLS is disabled then `None` is returned.
+		"""
+		context = None
+		if self.useTLS:
+			L.isDebug and L.logDebug(f'Setup SSL context. Certfile: {self.caCertificateFile}, KeyFile:{self.caPrivateKeyFile}, TLS version: {self.tlsVersion}')
+			context = ssl.SSLContext(
+							{ 	'tls1.1' : ssl.PROTOCOL_TLSv1_1,
+								'tls1.2' : ssl.PROTOCOL_TLSv1_2,
+								'auto'   : ssl.PROTOCOL_TLS,			# since Python 3.6. Automatically choose the highest protocol version between client & server
+							}[self.tlsVersion.lower()]
+						)
+			context.load_cert_chain(self.caCertificateFile, self.caPrivateKeyFile)
+		return context

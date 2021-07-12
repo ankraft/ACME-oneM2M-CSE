@@ -54,8 +54,8 @@ class CSEBase(Resource):
 									 ])
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
-		if not (res := super().validate(originator, create, dct)).status:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		
 		self.normalizeURIAttribute('poa')

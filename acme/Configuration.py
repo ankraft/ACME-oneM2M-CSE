@@ -71,40 +71,6 @@ class Configuration(object):
 				'configfile'					: argsConfigfile,
 
 				#
-				#	HTTP Server
-				#
-
-				'http.listenIF'						: config.get('server.http', 'listenIF', 				fallback='127.0.0.1'),
-				'http.port' 						: config.getint('server.http', 'port', 					fallback=8080),
-				'http.root'							: config.get('server.http', 'root', 					fallback=''),
-				'http.address'						: config.get('server.http', 'address', 					fallback='http://127.0.0.1:8080'),
-				'http.multiThread'					: config.getboolean('server.http', 'multiThread', 		fallback=True),
-				'http.enableRemoteConfiguration'	: config.getboolean('server.http', 'enableRemoteConfiguration', fallback=False),
-				'http.enableStructureEndpoint'		: config.getboolean('server.http', 'enableStructureEndpoint', fallback=False),
-				'http.enableResetEndpoint'			: config.getboolean('server.http', 'enableResetEndpoint', fallback=False),
-
-				#
-				#	Database
-				#
-
-				'db.path'							: config.get('database', 'path', 						fallback=C.defaultDataDirectory),
-				'db.inMemory'						: config.getboolean('database', 'inMemory', 			fallback=False),
-				'db.cacheSize'						: config.getint('database', 'cacheSize', 				fallback=0),		# Default: no caching
-				'db.resetOnStartup' 				: config.getboolean('database', 'resetOnStartup',		fallback=False),
-
-				#
-				#	Logging
-				#
-
-				'logging.enableFileLogging'			: config.getboolean('logging', 'enableFileLogging', 	fallback=False),
-				'logging.enableScreenLogging'		: config.getboolean('logging', 'enableScreenLogging', 	fallback=True),
-				'logging.path'						: config.get('logging', 'path', 						fallback=C.defaultLogDirectory),
-				'logging.level'						: config.get('logging', 'level', 						fallback='debug'),
-				'logging.size'						: config.getint('logging', 'size', 						fallback=100000),
-				'logging.count'						: config.getint('logging', 'count', 					fallback=10),		# Number of log files
-				'logging.stackTraceOnError'			: config.getboolean('logging', 'stackTraceOnError',		fallback=True),
-
-				#
 				#	CSE
 				#
 
@@ -140,6 +106,53 @@ class Configuration(object):
 				'cse.security.verifyCertificate'	: config.getboolean('cse.security', 'verifyCertificate',fallback=False),
 				'cse.security.caCertificateFile'	: config.get('cse.security', 'caCertificateFile', 		fallback=None),
 				'cse.security.caPrivateKeyFile'		: config.get('cse.security', 'caPrivateKeyFile', 		fallback=None),
+
+				#
+				#	HTTP Server
+				#
+
+				'http.listenIF'						: config.get('server.http', 'listenIF', 				fallback='127.0.0.1'),
+				'http.port' 						: config.getint('server.http', 'port', 					fallback=8080),
+				'http.root'							: config.get('server.http', 'root', 					fallback=''),
+				'http.address'						: config.get('server.http', 'address', 					fallback='http://127.0.0.1:8080'),
+				'http.multiThread'					: config.getboolean('server.http', 'multiThread', 		fallback=True),
+				'http.enableRemoteConfiguration'	: config.getboolean('server.http', 'enableRemoteConfiguration', fallback=False),
+				'http.enableStructureEndpoint'		: config.getboolean('server.http', 'enableStructureEndpoint', fallback=False),
+				'http.enableResetEndpoint'			: config.getboolean('server.http', 'enableResetEndpoint', fallback=False),
+
+				#
+				#	MQTT Client
+				#
+
+				'mqtt.enable'						: config.getboolean('client.mqtt', 'enable', 			fallback=False),
+				'mqtt.address'						: config.get('client.mqtt', 'address', 					fallback='127.0.0.1'),
+				'mqtt.port' 						: config.getint('client.mqtt', 'port', 					fallback=None),	# Default will be determined later (s.b.)
+				'mqtt.keepalive' 					: config.getint('client.mqtt', 'keepalive',				fallback=60),
+				'mqtt.bindIF' 						: config.get('client.mqtt', 'bindIF',					fallback='127.0.0.1'),
+				'mqtt.username' 					: config.get('client.mqtt', 'username',					fallback=None),
+				'mqtt.password' 					: config.get('client.mqtt', 'password',					fallback=None),
+
+				#
+				#	Database
+				#
+
+				'db.path'							: config.get('database', 'path', 						fallback=C.defaultDataDirectory),
+				'db.inMemory'						: config.getboolean('database', 'inMemory', 			fallback=False),
+				'db.cacheSize'						: config.getint('database', 'cacheSize', 				fallback=0),		# Default: no caching
+				'db.resetOnStartup' 				: config.getboolean('database', 'resetOnStartup',		fallback=False),
+
+				#
+				#	Logging
+				#
+
+				'logging.enableFileLogging'			: config.getboolean('logging', 'enableFileLogging', 	fallback=False),
+				'logging.enableScreenLogging'		: config.getboolean('logging', 'enableScreenLogging', 	fallback=True),
+				'logging.path'						: config.get('logging', 'path', 						fallback=C.defaultLogDirectory),
+				'logging.level'						: config.get('logging', 'level', 						fallback='debug'),
+				'logging.size'						: config.getint('logging', 'size', 						fallback=100000),
+				'logging.count'						: config.getint('logging', 'count', 					fallback=10),		# Number of log files
+				'logging.stackTraceOnError'			: config.getboolean('logging', 'stackTraceOnError',		fallback=True),
+
 
 				#
 				#	Registrar CSE
@@ -233,6 +246,8 @@ class Configuration(object):
 				#
 
 				'cse.console.refreshInterval'		: config.getfloat('cse.console', 'refreshInterval', 	fallback=2.0),
+				'cse.console.hideResources'		: config.getlist('cse.console', 'hideResources', 		fallback=[]),
+
 
 				#
 				#	App: Statistics AE
@@ -376,6 +391,15 @@ class Configuration(object):
 			if not os.path.exists(val):
 				_print(f'[red]Configuration Error: \[cse.security]:caPrivateKeyFile does not exists or is not accessible: {val}')
 				return False
+		
+		#
+		#	MQTT client
+		#
+		if (mqttPort := Configuration._configuration['mqtt.port']) is None:	# set the default port depending on whether to use TLS
+			Configuration._configuration['mqtt.port'] = 8883 if Configuration._configuration['cse.security.useTLS'] else 1883
+		if (Configuration._configuration['mqtt.username'] is None) != (Configuration._configuration['mqtt.password'] is None):
+			_print(f'[red]Configuration Error: Username or password missing for \[client.mqtt]')
+			return False
 
 		# check the csi format
 		rx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space

@@ -8,6 +8,7 @@
 #
 
 from copy import deepcopy
+import re
 from typing import Any, List, Dict
 from Logging import Logging as L
 from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, ResponseCode as RC
@@ -267,10 +268,10 @@ attributePolicies:AttributePolicies = {
 	'rt'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request
 	'rp'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
 	'rqet'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
-	'rqet'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
 	'oet'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
 	'rvi'	: ( BT.string,			CAR.car1,    RO.O,	RO.O,  RO.O, AN.NA ),		# request 
 	'rtu'	: ( BT.list,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request  (actually the same as 'nu' s)
+	'vsi'	: ( BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
 
 	# TODO lbl, catr, patr
 
@@ -457,6 +458,24 @@ class Validator(object):
 		return Result(status=False, dbg=f'validation for attribute {attribute} not defined')
 
 
+
+	#
+	#	Additional validations.
+	#
+
+	# TODO allowed media type chars
+	cnfRegex = re.compile(
+		r'^[^:/]+/[^:/]+:[0-2]$'
+		r'|^[^:/]+/[^:/]+:[0-2]$'
+		r'|^[^:/]+/[^:/]+:[0-2]:[0-5]$'
+	)
+	def validateCNF(self, value:str) -> Result:
+		"""	Validate the contents of the `contentInfo` attribute. """
+		if isinstance(value, str) and re.match(self.cnfRegex, value) is not None:
+			return Result(status=True)
+		return Result(status=False, dbg=f'validation of cnf attribute failed: {value}')
+
+
 	#
 	#	Additional attribute definitions, e.g. for <flexContainer> specialisations.
 	#
@@ -496,6 +515,11 @@ class Validator(object):
 	def getAdditionalAttributesFor(self, tpe:str) -> AttributePolicies:
 		""" Return the dictionary of additional attributes for a type or None. """
 		return self.additionalAttributes.get(tpe)
+
+
+	#
+	#	Internals.
+	#
 
 
 	def _addAdditionalAttributes(self, tpe: str, attributePolicies:AttributePolicies) -> AttributePolicies:

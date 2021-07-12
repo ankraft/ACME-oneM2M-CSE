@@ -75,7 +75,7 @@ class TestREQ(unittest.TestCase):
 		""" Retrieve <CB> non-blocking synchronous """
 		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.nonBlockingRequestSynch:d}&rp={requestETDuration}', TestREQ.originator)
 		rqi = lastRequestID()
-		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch)
+		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')
 
@@ -321,7 +321,7 @@ class TestREQ(unittest.TestCase):
 		""" Retrieve <CB> non-blocking asynchronous """
 		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.nonBlockingRequestAsynch:d}&rp={requestETDuration}', TestREQ.originator, headers=headers)
 		rqi = lastRequestID()
-		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
+		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 
 		# Wait and then check notification

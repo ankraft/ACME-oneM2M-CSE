@@ -175,7 +175,7 @@ class TestGRP(unittest.TestCase):
 		"""	Add <CIN> to <CNT>s in <GRP> """
 		# add CIN via fopt
 		dct = 	{ 'm2m:cin' : {
-					'cnf' : 'a',
+					'cnf' : 'text/plain:0',
 					'con' : 'aValue'
 				}}
 		r, rsc = CREATE(f'{grpURL}/fopt', TestGRP.originator, T.CIN, dct)

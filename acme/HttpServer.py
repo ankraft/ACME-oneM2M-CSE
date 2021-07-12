@@ -5,26 +5,25 @@
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
 #	Server to implement the http part of the oneM2M Mcx communication interface.
-#	This manager is the main run-loop for the CSE (when using http).
 #
 
 from __future__ import annotations
 import logging, sys, traceback, urllib3
 from copy import deepcopy
-from typing import Any, Callable, Tuple
+from typing import Any, Callable, Tuple, cast
 import flask
 from flask import Flask, Request, make_response, request
+from urllib3.exceptions import RequestError
 from Configuration import Configuration
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON, Conditions
-from Types import Operation, CSERequest, RequestHeaders, ContentSerializationType, RequestHandler, Parameters
+from Types import ReqResp, ResourceTypes as T, Result, ResponseCode as RC, JSON, Conditions
+from Types import Operation, CSERequest, RequestHeaders, ContentSerializationType, RequestHandler, Parameters, RequestArguments, FilterUsage, FilterOperation, DesiredIdentifierResultType, ResultContentType, ResponseType
 import CSE, Utils
 from Logging import Logging as L, LogLevel
 from resources.Resource import Resource
 from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
 from werkzeug.datastructures import MultiDict
-import ssl
 from webUI import WebUI
 from helpers.BackgroundWorker import *
 
@@ -48,23 +47,11 @@ class HttpServer(object):
 		self.serverAddress		= Configuration.get('http.address')
 		self.listenIF			= Configuration.get('http.listenIF')
 		self.port 				= Configuration.get('http.port')
-		self.useTLS 			= Configuration.get('cse.security.useTLS')
-		self.verifyCertificate	= Configuration.get('cse.security.verifyCertificate')
-		self.tlsVersion			= Configuration.get('cse.security.tlsVersion').lower()
-		self.caCertificateFile	= Configuration.get('cse.security.caCertificateFile')
-		self.caPrivateKeyFile	= Configuration.get('cse.security.caPrivateKeyFile')
 		self.webuiRoot 			= Configuration.get('cse.webui.root')
 		self.webuiDirectory 	= f'{CSE.rootDirectory}/webui'
 		self.hfvRVI				= Configuration.get('cse.releaseVersion')
 		self.isStopped			= False
 
-		# request handlers for operations
-		self._requestHandlers:RequestHandler = {
-			Operation.RETRIEVE	: CSE.request.retrieveRequest,
-			Operation.CREATE	: CSE.request.createRequest,
-			Operation.UPDATE	: CSE.request.updateRequest,
-			Operation.DELETE	: CSE.request.deleteRequest
-		}
 
 		self.backgroundActor:BackgroundWorker = None
 
@@ -72,7 +59,7 @@ class HttpServer(object):
 		self._responseHeaders	= {'Server' : self.serverID}	# Additional headers for other requests
 
 		L.isInfo and L.log(f'Registering http server root at: {self.rootPath}')
-		if self.useTLS:
+		if CSE.security.useTLS:
 			L.isInfo and L.log('TLS enabled. HTTP server serves via https.')
 
 
@@ -134,15 +121,16 @@ class HttpServer(object):
 		# Disable most logs from requests and urllib3 library 
 		logging.getLogger("requests").setLevel(LogLevel.WARNING)
 		logging.getLogger("urllib3").setLevel(LogLevel.WARNING)
-		if not self.verifyCertificate:	# only when we also verify  certificates
+		if not CSE.security.verifyCertificate:	# only when we also verify  certificates
 			urllib3.disable_warnings()
+		if L.isInfo: L.log('HTTP Server initialized')
 
 
 
 	def run(self) -> None:
 		"""	Run the http server in a separate thread.
 		"""
-		self.httpActor = BackgroundWorkerPool.newActor(self._run, name='HTTP Server')
+		self.httpActor = BackgroundWorkerPool.newActor(self._run, name='HTTPServer')
 		self.httpActor.start()
 	
 
@@ -166,21 +154,11 @@ class HttpServer(object):
 			cli.show_server_banner = lambda *x: None 	# type: ignore
 			# Start the server
 			try:
-				context = None
-				if self.useTLS:
-					L.isInfo and L.logDebug(f'Setup SSL context. Certfile: {self.caCertificateFile}, KeyFile:{self.caPrivateKeyFile}, TLS version: {self.tlsVersion}')
-					context = ssl.SSLContext(
-									{ 	'tls1.1' : ssl.PROTOCOL_TLSv1_1,
-										'tls1.2' : ssl.PROTOCOL_TLSv1_2,
-										'auto'   : ssl.PROTOCOL_TLS,			# since Python 3.6. Automatically choose the highest protocol version between client & server
-									}[self.tlsVersion.lower()]
-								)
-					context.load_cert_chain(self.caCertificateFile, self.caPrivateKeyFile)
 				self.flaskApp.run(host=self.listenIF, 
 								  port=self.port,
 								  threaded=Configuration.get('http.multiThread'),
 								  request_handler=ACMERequestHandler,
-								  ssl_context=context,
+								  ssl_context=CSE.security.getSSLContext(),
 								  debug=False)
 			except Exception as e:
 				# No logging for headless, nevertheless print the reason what happened
@@ -199,26 +177,26 @@ class HttpServer(object):
 			build the internal strutures. Then, depending on the operation,
 			call the associated request handler.
 		"""
-		L.isDebug and L.logDebug(f'==> {operation.name}: /{path}') 	# path = request.path  w/o the root
+		L.isDebug and L.logDebug(f'==> HTTP-{operation.name}: /{path}') 	# path = request.path  w/o the root
 		L.isDebug and L.logDebug(f'Headers: \n{str(request.headers)}')
-		httpRequestResult = self._dissectHttpRequest(request, operation, Utils.retrieveIDFromPath(path, CSE.cseRn, CSE.cseCsi))
+		dissectResult = self._dissectHttpRequest(request, operation, path)
 
 		if self.isStopped:
 			responseResult = Result(rsc=RC.internalServerError, dbg='http server not running', status=False)
 		else:
 			try:
-				if httpRequestResult.status:
+				if dissectResult.status:
 					if operation in [ Operation.CREATE, Operation.UPDATE ]:
-						if httpRequestResult.request.ct == ContentSerializationType.CBOR:
-							L.isDebug and L.logDebug(f'Body: \n{Utils.toHex(httpRequestResult.request.data)}\n=>\n{httpRequestResult.request.dict}')
+						if dissectResult.request.ct == ContentSerializationType.CBOR:
+							L.isDebug and L.logDebug(f'Body: \n{Utils.toHex(cast(bytes, dissectResult.request.data))}\n=>\n{dissectResult.request.dict}')
 						else:
-							L.isDebug and L.logDebug(f'Body: \n{str(httpRequestResult.request.data)}')
-					responseResult = self._requestHandlers[operation](httpRequestResult.request)
+							L.isDebug and L.logDebug(f'Body: \n{str(dissectResult.request.data)}')
+					responseResult = CSE.request.handleRequest(dissectResult.request)
 				else:
-					responseResult = httpRequestResult
+					responseResult = dissectResult
 			except Exception as e:
-				responseResult = self._prepareException(e)
-		responseResult.request = httpRequestResult.request
+				responseResult = Utils.exceptionToResult(e)
+		responseResult.request = dissectResult.request
 
 		return self._prepareResponse(responseResult)
 
@@ -375,16 +353,16 @@ class HttpServer(object):
 		try:
 			L.isDebug and L.logDebug(f'Sending request: {method.__name__.upper()} {url}')
 			if ct == ContentSerializationType.CBOR:
-				L.isDebug and L.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n=>\n{str(data) if data is not None else ""}\n')
+				L.isDebug and L.logDebug(f'HTTP-Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n=>\n{str(data) if data is not None else ""}\n')
 			else:
-				L.isDebug and L.logDebug(f'Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n')
+				L.isDebug and L.logDebug(f'HTTP-Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n')
 			
 			# Actual sending the request
-			r = method(url, data=content, headers=hds, verify=self.verifyCertificate)
+			r = method(url, data=content, headers=hds, verify=CSE.security.verifyCertificate)
 
 			responseCt = ContentSerializationType.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
 			rc = RC(int(r.headers['X-M2M-RSC'])) if 'X-M2M-RSC' in r.headers else RC.internalServerError
-			L.isDebug and L.logDebug(f'Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
+			L.isDebug and L.logDebug(f'HTTP-Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
 		except Exception as e:
 			L.isDebug and L.logWarn(f'Failed to send request: {str(e)}')
 			return Result(rsc=RC.targetNotReachable, dbg='target not reachable')
@@ -431,17 +409,17 @@ class HttpServer(object):
 				
 		# Build and return the response
 		if isinstance(content, bytes):
-			L.isDebug and L.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{Utils.toHex(content)}\n=>\n{str(result.toData())}')
+			L.isDebug and L.logDebug(f'<== HTTP-Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{Utils.toHex(content)}\n=>\n{str(result.toData())}')
 		else:
-			L.isDebug and L.logDebug(f'<== Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
+			L.isDebug and L.logDebug(f'<== HTTP-Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
 		return Response(response=content, status=statusCode, content_type=cts, headers=headers)
 
 
-	def _prepareException(self, e:Exception) -> Result:
-		tb = traceback.format_exc()
-		L.logErr(tb)
-		tbs = tb.replace('"', '\\"').replace('\n', '\\n')
-		return Result(rsc=RC.internalServerError, dbg=f'encountered exception: {tbs}')
+	# def _prepareException(self, e:Exception) -> Result:
+	# 	tb = traceback.format_exc()
+	# 	L.logErr(tb, exc=e)
+	# 	tbs = tb.replace('"', '\\"').replace('\n', '\\n')
+	# 	return Result(rsc=RC.internalServerError, dbg=f'encountered exception: {tbs}')
 
 
 	#########################################################################
@@ -449,166 +427,133 @@ class HttpServer(object):
 	#	HTTP request helper functions
 	#
 
+	#def _dissectHttpRequest(self, request:Request, operation:Operation, _id:Tuple[str, str, str]) -> Result:
+	def _dissectHttpRequest(self, request:Request, operation:Operation, to:str) -> Result:
+		"""	Dissect an HTTP request. Combine headers and contents into a single structure. Result is returned in Result.request.
+		"""
 
-	def _dissectHttpRequest(self, request:Request, operation:Operation, _id:Tuple[str, str, str]) -> Result:
-		cseRequest = CSERequest()
+		# def extractMultipleArgs(args:MultiDict, argName:str, validate:bool=True) -> Tuple[bool, str]:
+		# 	"""	Get multi-arguments. Remove the found arguments from the original list, but add the new list again with the argument name.
+		# 	"""
+		# 	lst = []
+		# 	for e in args.getlist(argName):
+		# 		for es in (t := e.split()):	# check for number
+		# 			if validate:
+		# 				if not CSE.validator.validateRequestArgument(argName, es).status:
+		# 					return False, f'error validating "{argName}" argument(s)'
+		# 		lst.extend(t)
+		# 	args.poplist(argName)	# type: ignore [no-untyped-call] # perhaps even multiple times
+		# 	if len(lst) > 0:
+		# 		args[argName] = lst
+		# 	return True, None
 
-		# get the data first. This marks the request as consumed 
-		#cseRequest.data = request.get_data(as_text=True)	# alternative: request.data.decode("utf-8")
-		#cseRequest.data = request.data.decode("utf-8")		# alternative: request.get_data(as_text=True)
-		cseRequest.data = request.data
+		def extractMultipleArgs(args:MultiDict, argName:str) -> None:
+			"""	Get multi-arguments. Remove the found arguments from the original list, but add the new list again with the argument name.
+			"""
+			lst = [ t for sublist in args.getlist(argName) for t in sublist.split() ]
+			args.poplist(argName)	# type: ignore [no-untyped-call] # perhaps even multiple times
+			if len(lst) > 0:
+				args[argName] = lst
 
-		# handle ID's 
-		cseRequest.id, cseRequest.csi, cseRequest.srn = _id
 
-		# Copy the original request headers
-		res = self._getRequestHeaders(request)
-		cseRequest.headers = res.data	# copy the headers
-		if res.rsc != RC.OK:			# but still, something might be wrong
-			return Result(rsc=res.rsc, request=cseRequest, dbg=res.dbg, status=False)
+		def requestHeaderField(request:Request, field:str) -> str:
+			"""	Return the value of a specific Request header, or `None` if not found.
+			""" 
+			if not request.headers.has_key(field):
+				return None
+			return request.headers.get(field)
 
-		# No ID, return immediately 
-		if cseRequest.id is None and cseRequest.srn is None:
-			return Result(rsc=RC.notFound, request=cseRequest, dbg='missing identifier', status=False)
+
+		cseRequest 			= CSERequest()
+		req:ReqResp 		= {}
+		cseRequest.data 	= request.data			# get the data first. This marks the request as consumed, just in case that we have to return early
+		cseRequest.op 		= operation
+		req['op']   		= operation.value		# Needed later for validation
+		req['to'] 		 	= to
+
+		# Copy and parse the original request headers
+		if (f := requestHeaderField(request, C.hfOrigin)) is not None:
+			req['fr'] = f
+		if (f := requestHeaderField(request, C.hfRI)) is not None:
+			req['rqi'] = f
+		if (f := requestHeaderField(request, C.hfRET)) is not None:
+			req['rqet'] = f
+		if (f := requestHeaderField(request, C.hfRST)) is not None:
+			req['rset'] = f
+		if (f := requestHeaderField(request, C.hfOET)) is not None:
+			req['oet'] = f
+		if (f := requestHeaderField(request, C.hfRVI)) is not None:
+			req['rvi'] = f
+		if (rtu := requestHeaderField(request, C.hfRTU)) is not None:			# handle rtu as a list
+			req['rtu'] = rtu.split('&')
+		if (f := requestHeaderField(request, C.hfVSI)) is not None:
+			req['vsi'] = f
+
+		# parse and extract content-type header
+		# cseRequest.headers.contentType	= request.content_type
+		if (ct := request.content_type) is not None:
+			if not ct.startswith(tuple(C.supportedContentHeaderFormat)):
+				ct = None
+			else:
+				p  = ct.partition(';')		# always returns a 3-tuple
+				ct = p[0] 					# only the content-type without the resource type
+				t  = p[2].partition('=')[2]
+				if len(t) > 0:
+					req['ty'] = t			# Here we found the type for CREATE requests
+		cseRequest.headers.contentType = ct
+
+		# parse accept header
+		cseRequest.headers.accept = request.headers.getlist('accept')
+		cseRequest.headers.accept = [ a for a in cseRequest.headers.accept if a != '*/*' ]
+		cseRequest.originalArgs	  = deepcopy(request.args)	# Keep the original args
+
+		# copy request arguments for greedy attributes checking
+		args = request.args.copy() 	# type: ignore [no-untyped-call]
 		
-		# Extract request arguments
-		try:
-			# copy request arguments for greedy attributes checking
-			args = request.args.copy() 	# type: ignore [no-untyped-call]
-			
-			# Do some special handling for those arguments that could occur multiple
-			# times in the args MultiDict. They are collected together in a single list
-			# and added again to args.
-			if not (resm := self._extractMultipleArgs(args, 'ty'))[0]:
-				Result(rsc=RC.badRequest, request=cseRequest, dbg=resm[1], status=False)
-			if not (resm := self._extractMultipleArgs(args, 'cty'))[0]:
-				Result(rsc=RC.badRequest, request=cseRequest, dbg=resm[1], status=False)
-			if not (resm := self._extractMultipleArgs(args, 'lbl', validate=False))[0]:
-				Result(rsc=RC.badRequest, request=cseRequest, dbg=resm[1], status=False)
-			
-			cseRequest.args, msg = CSE.request.getRequestArguments(args, operation)
-			if cseRequest.args is None:
-				return Result(rsc=RC.badRequest, request=cseRequest, dbg=msg, status=False)
-		except Exception as e:
-			return Result(rsc=RC.invalidArguments, request=cseRequest, dbg=f'invalid arguments ({str(e)})', status=False)
-		cseRequest.originalArgs	= deepcopy(request.args)
+		# Do some special handling for those arguments that could occur multiple
+		# times in the args MultiDict. They are collected together in a single list
+		# and added again to args.
+		extractMultipleArgs(args, 'ty')	# conversation to int happens later in fillAndValidateCSERequest()
+		extractMultipleArgs(args, 'cty')
+		extractMultipleArgs(args, 'lbl')
+
+		# Handle rcn differently.
+		# rcn is not a filter criteria like all the other attributes, but an own request attribute
+		if (rcn := args.get('rcn')) is not None:
+			req['rcn'] = rcn
+			del args['rcn']
+
+		# Extract further request arguments from the http request
+		# add all the args to the filterCriteria
+		filterCriteria:ReqResp = {}
+		for k,v in args.items():
+			filterCriteria[k] = v
+		req['fc'] = filterCriteria
 
 		# De-Serialize the content
-		if cseRequest.data is not None and len(cseRequest.data) > 0:
-			try:
-				cseRequest.ct = ContentSerializationType.getType(cseRequest.headers.contentType, default=CSE.defaultSerialization)
-				if (_d := Utils.deserializeData(cseRequest.data, cseRequest.ct)) is None:
-					return Result(rsc=RC.unsupportedMediaType, request=cseRequest, dbg=f'Unsupported media type for content-type: {cseRequest.headers.contentType}', status=False)
-				cseRequest.dict = _d
-			except Exception as e:
-				L.isWarn and L.logWarn('Bad request (malformed content?)')
-				return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'Malformed content? {str(e)}', status=False)
+		if not (contentResult := CSE.request.deserializeContent(cseRequest.data, cseRequest.headers.contentType)).status:
+			return Result(rsc=contentResult.rsc, request=cseRequest, dbg=contentResult.dbg, status=False)
 		
-		# Check whether content is empty for UPDATE or CREATE -> Error
-		elif operation in [ Operation.CREATE, Operation.UPDATE ]:
-			L.logWarn(dbg := f'Missing content for operation: {operation.name}')
-			return Result(rsc=RC.badRequest, request=cseRequest, dbg=dbg, status=False)
-				
+		# Remove 'None' fields *before* adding the pc, because the pc may contain 'None' fields that need to be preserved
+		req = Utils.removeNoneValuesFromDict(req)
+
+		# Add the primitive content and 
+		req['pc'] 	 	= contentResult.data[0]	# The actual content
+		cseRequest.ct	= contentResult.data[1]	# The conten serialization type
+		cseRequest.req	= req					# finally store the oneM2M request object in the cseRequest
+		
+		# do validation and copying of attributes of the whole request
+		try:
+			# L.logWarn(str(cseRequest))
+			if not (res := CSE.request.fillAndValidateCSERequest(cseRequest)).status:
+				return res
+		except Exception as e:
+			return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'invalid arguments/attributes ({str(e)})', status=False)
+
+		# Here, if everything went okay so far, we have a request to the CSE
 		return Result(request=cseRequest, status=True)
 
 
-	def _extractMultipleArgs(self, args:MultiDict, argName:str, validate:bool=True) -> Tuple[bool, str]:
-		"""	Get multi-arguments. Remove the found arguments from the original list, but add the new list again with the argument name.
-		"""
-		lst = []
-		for e in args.getlist(argName):
-			for es in (t := e.split()):	# check for number
-				if validate:
-					if not CSE.validator.validateRequestArgument(argName, es).status:
-						return False, f'error validating "{argName}" argument(s)'
-			lst.extend(t)
-		args.poplist(argName)	# type: ignore [no-untyped-call] # perhaps even multiple times
-		if len(lst) > 0:
-			args[argName] = lst
-		return True, None
-
-		
-	def _getRequestHeaders(self, request:Request) -> Result:
-		"""	Extract the Request's header and put them into a CSERequest object.
-		"""
-		# TODO move a couple of check to general request check functions. Also for MQTT etc
-
-		rh 								= RequestHeaders()
-		rh.originator 					= self._requestHeaderField(request, C.hfOrigin)
-		rh.requestIdentifier			= self._requestHeaderField(request, C.hfRI)
-		rh.requestExpirationTimestamp 	= self._requestHeaderField(request, C.hfRET)
-		rh.responseExpirationTimestamp 	= self._requestHeaderField(request, C.hfRST)
-		rh.operationExecutionTime 		= self._requestHeaderField(request, C.hfOET)
-		rh.releaseVersionIndicator 		= self._requestHeaderField(request, C.hfRVI)
-		rh.vendorInformation	 		= self._requestHeaderField(request, C.hfVSI)
-
-		if (rtu := self._requestHeaderField(request, C.hfRTU)) is not None:			# handle rtu list
-			rh.responseTypeNUs = rtu.split('&')
-
-		# Check Release Version
-		if rh.releaseVersionIndicator is None:
-			return Result(rsc=RC.badRequest, data=rh, dbg=f'Release Version Indicator parameter is mandatory in request')
-		if rh.releaseVersionIndicator not in C.supportedReleaseVersions:
-			return Result(rsc=RC.releaseVersionNotSupported, data=rh, dbg=f'Release version not supported: {rh.releaseVersionIndicator}')
-
-
-		# content-type and accept
-		rh.contentType 	= request.content_type
-		rh.accept		= [ mt for mt, _ in request.accept_mimetypes ]	# get (multiple) accept headers from MIMEType[(x,nr)]
-
-		if rh.contentType is not None:
-			if not rh.contentType.startswith(tuple(C.supportedContentHeaderFormat)):
-				rh.contentType 	= None
-			else:
-				p 				= rh.contentType.partition(';')	# always returns a 3-tuple
-				rh.contentType 	= p[0] # content-type
-				t  				= p[2].partition('=')[2]
-				if len(t) > 0:	# check only if there is a resource type
-					if t.isdigit() and (_t := int(t)) and T.has(_t):
-						rh.resourceType = T(_t)
-					else:
-						return Result(rsc=RC.badRequest, data=rh, dbg=f'Unknown resource type: {t}')
-		
-		# accept
-		rh.accept = request.headers.getlist('accept')
-		rh.accept = [ a for a in rh.accept if a != '*/*' ]
-		# if ((l := len(rh.accept)) == 1 and '*/*' in rh.accept) or l == 0:
-		# 	rh.accept = [ CSE.defaultSerialization.toHeader() ]
-
-		# perform some validitions
-
-		if rh.releaseVersionIndicator is None:
-			L.logDebug(dbg := 'Release Version Indicator paraneter is mandatory in request')
-			return Result(data=rh, rsc=RC.badRequest, dbg=dbg)
-
-		if rh.requestIdentifier is None:
-			L.logDebug(dbg := 'Request Identifier parameter is mandatory in request')
-			return Result(data=rh, rsc=RC.badRequest, dbg=dbg)
-
-		# Test whether originator is present
-		if rh.originator is None and not (rh.resourceType == T.AE and request.method == 'POST'):
-			L.logDebug(dbg := 'From/Originator parameter is mandatory in request')
-			return Result(data=rh, rsc=RC.badRequest, dbg=dbg)		
-		
-		# Test for request expiration
-		if rh.requestExpirationTimestamp is not None:
-			if (ts := Utils.fromAbsRelTimestamp(rh.requestExpirationTimestamp)) == 0.0:
-				L.logDebug(dbg := 'Error in provided Request Expiration Timestamp')
-				return Result(data=rh, rsc=RC.badRequest, dbg=dbg)
-			if ts < Utils.utcTime():
-				L.logDebug(dbg := 'Request timeout')
-				return Result(data=rh, rsc=RC.requestTimeout, dbg=dbg)
-			rh.requestExpirationTimestamp = Utils.toISO8601Date(ts)	# Re-assign "real" ISO8601 timestamp
-
-		return Result(data=rh, rsc=RC.OK)
-
-
-	def _requestHeaderField(self, request:Request, field:str) -> str:
-		"""	Return the value of a specific Request header, or `None` if not found.
-		""" 
-		if not request.headers.has_key(field):
-			return None
-		return request.headers.get(field)
 
 ##########################################################################
 #

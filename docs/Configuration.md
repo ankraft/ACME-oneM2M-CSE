@@ -40,9 +40,9 @@ The following macros are supported in addition to those defined in the sections 
 [\[cse.resource.req\] - Resource Defaults: Request](#resource_req)  
 [\[cse.resource.sub\] - Resource Defaults: Subscription](#resource_sub)  
 [\[cse.resource.ts\] - Resource Defaults: TimeSeries](#resource_ts)  
-[\[cse.webui\] - Web UI Settings](#webui)  
 [\[cse.console\] - Console Settings](#console)  
-
+[\[cse.webui\] - Web UI Settings](#webui)  
+	
 
 ### Additional Settings
 [\[server.http.mappings\] - ID Mappings](#id_mappings)  
@@ -224,9 +224,10 @@ The following macros are supported in addition to those defined in the sections 
 <a name="console"></a>
 ###	[cse.console] - Console Settings
 
-| Keyword         | Description                                                                                        | Macro Name                  |
-|:----------------|:---------------------------------------------------------------------------------------------------|:----------------------------|
-| refreshInterval | Interval for continuously refreshing information displays. Must be > 0.0<br/>Default: 2.0 seconds. | cse.console.refreshInterval |
+| Keyword         | Description                                                                                                                                 | Macro Name                  |
+|:----------------|:--------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------|
+| refreshInterval | Interval for continuously refreshing information displays. Must be > 0.0<br/>Default: 2.0 seconds.                                          | cse.console.refreshInterval |
+| hideResources   | Hide certain resources from display in the console. This is a list of resource identifiers. Wildcards are allowed.<br/>Default: Empty list. | cse.console.hideResources   |
 
 
 <a name="webui"></a>

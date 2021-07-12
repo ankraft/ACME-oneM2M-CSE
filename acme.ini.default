@@ -295,7 +295,10 @@ root=/webui
 # Interval for continuously refreshing information displays. Must be > 0.0. 
 # Default: 2.0 seconds.
 refreshInterval=2.0
-
+# Hide certain resources from display in the console. This is a list of resource identifiers.
+# Wildcards are allowed.
+# Default: Empty list
+hideResources=
 
 #
 #	ID Mappings
