@@ -83,7 +83,7 @@ class	Logging:
 	queue:Queue				= None
 
 	checkInterval:float		= 0.2		# wait (in s) between checks of the logging queue # TODO configurable
-	queueMaxsize:int		= 2000		# max number of items in the logging queue. Might otherwise grow forever on large load
+	queueMaxsize:int		= 5000		# max number of items in the logging queue. Might otherwise grow forever on large load
 
 	_console:Console		= None
 	_handlers:List[Any] 	= None

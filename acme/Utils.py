@@ -501,22 +501,23 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 	return data
 
 def setXPath(dct:JSON, key:str, value:Any, overwrite:bool=True) -> bool:
-	"""	Set a structured `element` and `value` in thedictionary `dict`. 
+	"""	Set a structured `key` and `value` in the dictionary `dict`. 
 		Create if necessary, and observe the `overwrite` option (True overwrites an
 		existing key/value).
 	"""
 	paths = key.split("/")
-	ln = len(paths)
+	ln1 = len(paths)-1
 	data = dct
-	for i in range(0,ln-1):
-		if paths[i] not in data:
-			data[paths[i]] = {}
-		data = data[paths[i]]
-	if paths[ln-1] in data is not None and not overwrite:
+	if ln1 > 0:	# Small optimization. don't check if there is no extended path
+		for i in range(0,ln1):
+			if paths[i] not in data:
+				data[paths[i]] = {}
+			data = data[paths[i]]
+	if paths[ln1] in data is not None and not overwrite:
 		return True # don't overwrite
 	if not isinstance(data, dict):
 		return False
-	data[paths[ln-1]] = value
+	data[paths[ln1]] = value
 	return True
 
 

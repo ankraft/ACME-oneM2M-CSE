@@ -43,6 +43,11 @@ class TestCNT_CIN(unittest.TestCase):
 		assert rsc == RC.created, 'cannot create container'
 		assert findXPath(cls.cnt, 'm2m:cnt/mni') == 3, 'mni is not correct'
 
+		# Start notification server
+		startNotificationServer()
+		# look for notification server
+		assert isNotificationServerRunning(), 'Notification server cannot be reached'
+
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -362,10 +367,7 @@ class TestCNT_CIN(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_autoDeleteCINnoNotifiction(self) -> None:
 		"""	Automatic delete of <CIN> must not generate a notification for deleteDirectChild """
-		# Start notification server
-		startNotificationServer()
-		# look for notification server
-		assert isNotificationServerRunning(), 'Notification server cannot be reached'
+
 
 		# Create <CNT>
 		dct = 	{ 'm2m:cnt' : { 
@@ -397,7 +399,7 @@ class TestCNT_CIN(unittest.TestCase):
 			self.assertEqual(rsc, RC.created)
 		
 		self.assertIsNone(getLastNotification())	# No notifications
-		stopNotificationServer()
+
 
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:

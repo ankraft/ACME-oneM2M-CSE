@@ -401,10 +401,8 @@ class Resource(object):
 
 	def attribute(self, key:str, default:Any=None) -> Any:
 		if '/' in key:	# search in path
-			return Utils.findXPath(self.dict, key, default)
-		if self.hasAttribute(key):
-			return self.dict[key]
-		return default
+			return Utils.findXPath(self.dict, key, default)		
+		return self.dict.get(key, default)
 
 
 	def hasAttribute(self, key: str) -> bool:
