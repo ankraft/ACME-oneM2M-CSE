@@ -27,6 +27,7 @@ class Console(object):
 
 	def __init__(self) -> None:
 		self.refreshInterval = Configuration.get('cse.console.refreshInterval')
+		self.hideResources   = Configuration.get('cse.console.hideResources')
 		if L.isInfo: L.log('Console initialized')
 
 
@@ -472,7 +473,11 @@ class Console(object):
 				return
 			chs = CSE.dispatcher.directChildResources(res.ri)
 			for ch in chs:
-				if ch.__isVirtual__:
+				if ch.__isVirtual__:	# Ignore virual resources
+					continue
+				# Ignore resources/resource patterns 
+				ri = ch.ri
+				if len([ p for p in self.hideResources if 	Utils.simpleMatch(p, ri) ]) > 0:
 					continue
 				branch = tree.add(info(ch))
 				getChildren(ch, branch, level+1)

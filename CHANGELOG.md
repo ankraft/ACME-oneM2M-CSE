@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added possibility to reset a running CSE (via the command console or http endpoint "/\_\_reset\_\_").
 - [CSE] Added "I" command to the console (inspect a resource and its child resources).
 - [CSE] Added "L" command to the console (toggle through the various log levels, including *off*)
+- [CSE] Added configuration *cse.console.hideResources* to hide certain resources from showing in the the resource tree.
 - [CSE] Added support for \<timeSeries>/\<timeSeriesInstance> resource types.
 - [CSE] Added support for missing data monitoring in \<subscription> resource type and notifications.
 - [CSE] Added support for *ctm* (currentTime) attribute for \<CSEBase> resource type.

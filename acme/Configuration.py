@@ -246,6 +246,8 @@ class Configuration(object):
 				#
 
 				'cse.console.refreshInterval'		: config.getfloat('cse.console', 'refreshInterval', 	fallback=2.0),
+				'cse.console.hideResources'		: config.getlist('cse.console', 'hideResources', 		fallback=[]),
+
 
 				#
 				#	App: Statistics AE
