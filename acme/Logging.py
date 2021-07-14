@@ -16,7 +16,7 @@ import traceback
 import logging, logging.handlers, os, inspect, sys, datetime, time, threading
 from queue import Queue
 from typing import List, Any, Union
-from logging import LogRecord
+from logging import LogRecord, Logger
 from Configuration import Configuration
 from Types import JSON
 from rich.logging import RichHandler
@@ -203,6 +203,8 @@ class	Logging:
 
 	@staticmethod
 	def console(msg:Union[str, Tree, Table, JSON]='&nbsp;', extranl:bool=False, end:str='\n', plain:bool=False, isError:bool=False) -> None:
+		"""	Print a message or object on the console.
+		"""
 		style = Style(color='spring_green2') if not isError else Style(color='red')
 		if extranl:
 			Logging._console.print()
@@ -263,6 +265,15 @@ class	Logging:
 		if Logging.logLevel == LogLevel.OFF and Logging.lastLogLevel is not None:
 			Logging.logLevel = Logging.lastLogLevel
 			Logging.lastLogLevel = None
+	
+
+	@staticmethod
+	def setLogLevel(logLevel:LogLevel) -> None:
+		"""	Set a new log level to the logging system.
+		"""
+		Logging.logLevel = logLevel
+		Logging.loggerConsole.setLevel(logLevel)
+
 
 
 #

@@ -136,7 +136,7 @@ class Console(object):
 	def toggleLogging(self, key:str) -> None:
 		"""	Toggle through the log levels.
 		"""
-		L.logLevel = L.logLevel.next()
+		L.setLogLevel(L.logLevel.next())
 		L.console(f'New log level -> **{str(L.logLevel)}**')
 
 
