@@ -320,7 +320,7 @@ refreshInterval=2.0
 # Default: Empty list
 hideResources=
 # Show either resource infos or content' in tree view. 
-# Allowed values: normal, content
+# Allowed values: normal, compact, content, contentOnly
 # Default: normal
 treeMode=normal
 
