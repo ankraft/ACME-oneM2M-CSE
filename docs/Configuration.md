@@ -224,10 +224,11 @@ The following macros are supported in addition to those defined in the sections 
 <a name="console"></a>
 ###	[cse.console] - Console Settings
 
-| Keyword         | Description                                                                                                                                 | Macro Name                  |
-|:----------------|:--------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------|
-| refreshInterval | Interval for continuously refreshing information displays. Must be > 0.0<br/>Default: 2.0 seconds.                                          | cse.console.refreshInterval |
-| hideResources   | Hide certain resources from display in the console. This is a list of resource identifiers. Wildcards are allowed.<br/>Default: Empty list. | cse.console.hideResources   |
+| Keyword         | Description                                                                                                                                                          | Macro Name                  |
+|:----------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------|
+| refreshInterval | Interval for continuously refreshing information displays. Must be > 0.0<br/>Default: 2.0 seconds.                                                                   | cse.console.refreshInterval |
+| hideResources   | Hide certain resources from display in the console. This is a list of resource identifiers. Wildcards are allowed.<br/>Default: Empty list.                          | cse.console.hideResources   |
+| treeMode        | Set the mode how resources and their content are presented in the console's tree view.<br/>Allowed values: normal, compact, content, contentOnly<br/>Default: normal | cse.console.treeMode        |
 
 
 <a name="webui"></a>

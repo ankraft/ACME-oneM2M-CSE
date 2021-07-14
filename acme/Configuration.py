@@ -246,8 +246,8 @@ class Configuration(object):
 				#
 
 				'cse.console.refreshInterval'		: config.getfloat('cse.console', 'refreshInterval', 	fallback=2.0),
-				'cse.console.hideResources'		: config.getlist('cse.console', 'hideResources', 		fallback=[]),
-
+				'cse.console.hideResources'			: config.getlist('cse.console', 'hideResources', 		fallback=[]),
+				'cse.console.treeMode'				: config.get('cse.console', 'treeMode', 				fallback='normal'),
 
 				#
 				#	App: Statistics AE
@@ -450,6 +450,11 @@ class Configuration(object):
 		if Configuration._configuration['cse.console.refreshInterval'] <= 0.0:
 			_print('[red]Configuration Error: \[cse.console]:refreshInterval must be greater than 0.0')
 			return False
+		Configuration._configuration['cse.console.treeMode'] = Configuration._configuration['cse.console.treeMode'].lower()
+		if Configuration._configuration['cse.console.treeMode'] not in [ 'normal', 'content', 'compact', 'contentonly' ]:
+			_print('[red]Configuration Error: \[cse.console]:treeMoed must be "normal" or "content"')
+			return False
+		
 		# Check configured app api
 		if len(api := Configuration._configuration['app.statistics.aeAPI']) < 2 or api[0] not in ['R', 'N']:
 			_print('[red]Configuration Error: \[app.statistics]:aeAPI must not be empty and must start with "N" or "R"')

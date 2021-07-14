@@ -26,7 +26,7 @@ attributePolicies = constructPolicy([
 	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'cr', 'hld', 'daci', 'loc',
 ])
 fcntPolicies = constructPolicy([
-	'cnd', 'or', 'cs', 'nl', 'mni', 'mia', 'mbs', 'cni', 'dgt'
+	'cnd', 'or', 'cs', 'nl', 'mni', 'mia', 'mbs', 'cbs', 'cni', 'dgt'
 ])
 attributePolicies = addPolicy(attributePolicies, fcntPolicies)
 
@@ -53,7 +53,7 @@ class FCNT(AnnounceableResource):
 			self.setAttribute(self._hasFCI, False, False)	# stored in DB
 
 		self.__validating = False
-		self.ignoreAttributes = self.internalAttributes + [ 'acpi', 'cbs', 'cni', 'cnd', 'cs', 'cr', 'ct', 'et', 'lt', 'mbs', 'mia', 'mni', 'or', 'pi', 'ri', 'rn', 'st', 'ty', 'at' ]
+		self.ignoreAttributes = self.internalAttributes + [ 'acpi', 'cbs', 'cni', 'cnd', 'cs', 'cr', 'ct', 'et', 'lt', 'mbs', 'mia', 'mni', 'or', 'pi', 'ri', 'rn', 'st', 'ty', 'at', 'aa' ]
 
 
 	# Enable check for allowed sub-resources

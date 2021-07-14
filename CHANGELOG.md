@@ -12,9 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - [CSE] Added possibility to reset a running CSE (via the command console or http endpoint "/\_\_reset\_\_").
-- [CSE] Added "I" command to the console (inspect a resource and its child resources).
-- [CSE] Added "L" command to the console (toggle through the various log levels, including *off*)
-- [CSE] Added configuration *cse.console.hideResources* to hide certain resources from showing in the the resource tree.
 - [CSE] Added support for \<timeSeries>/\<timeSeriesInstance> resource types.
 - [CSE] Added support for missing data monitoring in \<subscription> resource type and notifications.
 - [CSE] Added support for *ctm* (currentTime) attribute for \<CSEBase> resource type.
@@ -27,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [WEB] Added OAuth2 authorization support for the proxied CSE (for the stand-alone web UI).
 - [WEB] Added opening the web UI in a browser on startup (for the stand-alone web UI).
 - [TESTS] Added OAuth2 authorization support for the tests.
+- [CONSOLE] Added "I" command to the console (inspect a resource and its child resources).
+- [CONSOLE] Added "L" command to the console (toggle through the various log levels, including *off*)
+- [CONSOLE] Added configuration *cse.console.hideResources* to hide certain resources from showing in the the resource tree.
+- [CONSOLE] Added various view modes when showing the resource tree (normal, compact, content, contentOnly).
 
 ### Changed
 - [CSE] Relaxed validation for float in attributes and arguments. Integer are now accepted as well.
@@ -56,8 +57,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - [CSE] Added *cse.resource.cnt.enableLimits* configuration. 
-- [CSE] Added "T" command to the console (display only sub-tree of the resource tree).
 - [CSE] Improved startup error messages when running in headless mode.
+- [CONSOLE] Added "T" command to the console (display only sub-tree of the resource tree).
 
 ### Changed
 - [CSE] Default limits for &lt;container> are now disabled by default.
@@ -90,10 +91,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added attribute policies for Generic Interworking and AllJoyn specialization.
 - [CSE] Added diagram generation (in PlantUML format) of resource tree and deployment structure.
 - [CSE] Added better checks for content serialization in AE.
-- [CSE] Added command interface to the terminal console (for stopping the CSE, printing statistics, CSE registrations, the resource tree, etc).
 - [CSE] Added support for *holder* attribute. Added access control behavior for *holder* and resource creator when an *acpi* attribute is specified for a resource, but doesn't have one.
 - [CSE] Added support for Subscription's *expirationCounter*.
 - [CSE] Added headless mode to better support docker.
+- [CONSOLE] Added command interface to the terminal console (for stopping the CSE, printing statistics, CSE registrations, the resource tree, etc).
 - [NOTIFICATIONS] Added support for handling CBOR serialization and other binary formats to the notification server.
 - [WEB] Added dark mode (for supported browsers).
 - [TESTS] Added load tests that can be optionally executed. Also improved test runner: select on the command line which tests to run.

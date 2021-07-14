@@ -28,6 +28,7 @@ class Console(object):
 	def __init__(self) -> None:
 		self.refreshInterval = Configuration.get('cse.console.refreshInterval')
 		self.hideResources   = Configuration.get('cse.console.hideResources')
+		self.treeMode	   = Configuration.get('cse.console.treeMode')
 		if L.isInfo: L.log('Console initialized')
 
 
@@ -458,14 +459,45 @@ class Console(object):
 		"""	This function will generate a Rich tree of a CSE's resource structure.
 		"""
 
+		#import resources.FCNT
+
 		def info(res:Resource) -> str:
-			if res.ty == T.FCNT:
-				return f'{res.rn} [dim]-> {res.__rtype__} ({res.cnd}) | ri={res.ri}[/dim]'
-			if res.ty == T.CSEBase:
-				return f'{res.rn} [dim]-> {res.__rtype__} | ri={res.ri} | csi={res.csi}[/dim]'
-			# if res.__isVirtual__:
-			# 	return f'{res.rn}'
-			return f'{res.rn} [dim]-> {res.__rtype__} | ri={res.ri}[/dim]'
+
+			# Determine extra infos
+			extraInfo = ''
+			if self.treeMode not in [ 'compact', 'contentonly' ]: 
+				if res.ty == T.FCNT:
+					extraInfo = f' ({res.cnd})'
+				if res.ty in [ T.CIN, T.TS ]:
+					extraInfo = f' ({res.cnf})' if res.cnf is not None else ''
+				elif res.ty == T.CSEBase:
+					extraInfo = f' (csi={res.csi})'
+			
+			# Determine content
+			contentInfo = ''
+			if self.treeMode in [ 'content', 'contentonly' ]:
+				if res.ty in [ T.CIN, T.TSI ]:
+					contentInfo = f'{res.con}' if res.con is not None else ''
+				elif res.ty in [ T.FCNT, T.FCI ]:	# All the custom attributes
+					contentInfo = ', '.join([ f'{attr}={str(res[attr])}' for attr in res.dict if CSE.validator.isExtraResourceAttribute(attr, res) ])
+
+			# construct the info
+			info = ''
+			if self.treeMode == 'compact':
+				info = f'-> {res.__rtype__}'
+			elif self.treeMode == 'content':
+				if len(contentInfo) > 0:
+					info = f'-> {res.__rtype__}{extraInfo} | {contentInfo}'
+				else:
+					info = f'-> {res.__rtype__}{extraInfo}'
+			elif self.treeMode == 'contentonly':
+				if len(contentInfo) > 0:
+					info = f'-> {contentInfo}'
+			else: # self.treeMode == 'normal'
+				info = f'-> {res.__rtype__}{extraInfo} | ri={res.ri}'
+
+			return f'{res.rn} [dim]{info}[/dim]'
+
 
 		def getChildren(res:Resource, tree:Tree, level:int) -> None:
 			""" Find and print the children in the tree structure. """

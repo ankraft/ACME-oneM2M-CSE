@@ -115,6 +115,26 @@ enableStructureEndpoint=false
 # Default: False
 enableResetEndpoint=false
 
+
+#
+#	MQTT client settings
+#
+
+; [client.mqtt]
+; # default: False
+; enable=False
+; address=test.mosquitto.org
+; # 8883 for TLS
+; port=1883
+; # s
+; keepalive=60
+; bindIF=0.0.0.0
+; #username=test
+; #password=mqtt
+; credentialID=something to define
+
+
+
 #
 #	Database settings
 #
@@ -299,6 +319,10 @@ refreshInterval=2.0
 # Wildcards are allowed.
 # Default: Empty list
 hideResources=
+# Show either resource infos or content' in tree view. 
+# Allowed values: normal, content
+# Default: normal
+treeMode=normal
 
 #
 #	ID Mappings
@@ -307,7 +331,7 @@ hideResources=
 #	Each line specifies a mapping, where the key specifies a new path,
 #	and the value represents the mapping to a request (including optional arguments).
 #	The http server redirects (307) a request to one of the new paths to the
-#	repective request mapping.
+#	respective request mapping.
 #	Please note, that the "root" path in [server.http] prefixes both the new
 #	path and the mapping.
 #

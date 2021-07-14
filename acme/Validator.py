@@ -16,6 +16,7 @@ from Types import JSON, AttributePolicies, AttributePoliciesEntry, AdditionalAtt
 from Types import Result, AttributePolicies, ResourceTypes as T
 from Configuration import Configuration
 import Utils
+from resources.Resource import Resource
 import isodate
 
 
@@ -474,6 +475,15 @@ class Validator(object):
 		if isinstance(value, str) and re.match(self.cnfRegex, value) is not None:
 			return Result(status=True)
 		return Result(status=False, dbg=f'validation of cnf attribute failed: {value}')
+
+
+	def isExtraResourceAttribute(self, attr:str, resource:Resource) -> bool:
+		"""	Check whether the attribute `attr` is neither a universal, common, or resource attribute,
+			nor an internal attribute. Basically, this method returns `True` when the attribute
+			is a custom attribute.
+		
+		"""
+		return attr not in resource.attributePolicies and not attr.startswith('__')
 
 
 	#

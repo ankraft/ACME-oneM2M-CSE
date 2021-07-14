@@ -14,7 +14,7 @@ from Validator import constructPolicy, addPolicy
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'ct', 'et', 'lbl', 'acpi', 'at', 'aa', 
+	'ty', 'ri', 'rn', 'pi', 'ct', 'et', 'lt', 'st', 'lbl', 'acpi', 'at', 'aa', 
 ])
 fcinPolicies = constructPolicy([ 'cs', 'or' ])
 attributePolicies =  addPolicy(attributePolicies, fcinPolicies)
