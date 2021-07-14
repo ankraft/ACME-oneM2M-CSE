@@ -28,7 +28,7 @@ class CSEBase(Resource):
 		if self.dict is not None:
 			self.setAttribute('ri', 'cseid', overwrite=False)
 			self.setAttribute('rn', 'cse', overwrite=False)
-			self.setAttribute('csi', 'cse', overwrite=False)
+			self.setAttribute('csi', '/cse', overwrite=False)
 
 			self.setAttribute('rr', False, overwrite=False)
 			self.setAttribute('srt', C.supportedResourceTypes, overwrite=False)
@@ -52,6 +52,18 @@ class CSEBase(Resource):
 									   T.SUB,
 									   T.TS
 									 ])
+
+
+	def activate(self, parentResource:Resource, originator:str) -> Result:
+		if not (res := super().activate(parentResource, originator)).status:
+			return res
+		
+		if not Utils.isValidCSI(self.csi):
+			L.logWarn(dbg := f'Wrong format for CSEBase.csi: {self.csi}')
+			return Result(status=False, dbg=dbg)
+
+		return Result(status=True)
+
 
 
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:

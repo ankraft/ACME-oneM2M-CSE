@@ -5,16 +5,19 @@
 ## Near Future
 
 - [CSE] Add support for the PollingChannel resource type
-- [CSE] Add support for the TimeSeries resource type
+- [CSE] Add support for MQTT, CoAP, and WebSocket bindings
+- [CSE] Improve ACP resources
+- [CSE] Improve notifications (like pendingNotifications etc)
 
 ## Far Future
-- [WEB] Add Support for resource specific actions and virtual resource types (e.g. latest, oldest)
+- [WEB] Add Support for actions
+- [CSE] Support more resource types when necessary
 
 
 ## Sometimes
 
 - [CSE] Automatically import/update resources from the *init* directory when the CSE is running
-- [WEB] Create graph for Container resources
+- [WEB] Create graph and other visual support for Container resources
 
 
 [← README](../README.md) 

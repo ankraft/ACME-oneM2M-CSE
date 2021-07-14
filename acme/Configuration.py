@@ -402,13 +402,12 @@ class Configuration(object):
 			return False
 
 		# check the csi format
-		rx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
-		if re.fullmatch(rx, (val:=Configuration._configuration['cse.csi'])) is None:
+		if not Utils.isValidCSI(val:=Configuration._configuration['cse.csi']):
 			_print(f'[red]Configuration Error: Wrong format for \[cse]:cseID: {val}')
 			return False
 
 		if Configuration._configuration['cse.registrar.address'] is not None and Configuration._configuration['cse.registrar.csi'] is not None:
-			if re.fullmatch(rx, (val:=Configuration._configuration['cse.registrar.csi'])) is None:
+			if not Utils.isValidCSI(val:=Configuration._configuration['cse.registrar.csi']):
 				_print(f'[red]Configuration Error: Wrong format for \[cse.registrar]:cseID: {val}')
 				return False
 			if len(Configuration._configuration['cse.registrar.csi']) > 0 and len(Configuration._configuration['cse.registrar.rn']) == 0:

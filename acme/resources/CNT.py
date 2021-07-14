@@ -63,7 +63,6 @@ class CNT(AnnounceableResource):
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
 		
-
 		# register latest and oldest virtual resources
 		if L.isDebug: L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 

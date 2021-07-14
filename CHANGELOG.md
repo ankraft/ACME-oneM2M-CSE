@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Changed the internal timed and regular processes to a single priority timer queue.
 - [CSE] Removed "logging.enable" configuration setting and added *off* as a possible value to *logging.level".
 - [CSE] Improved the size calculation of \<contentInstance>, \<flexContainer>, and \<timeSeriesInstance> to realistic sizes (not the Python-internal type sizes anymore).
+- [CSE] Refactored internal request handling to support future protocol binding developments other than http.
 
 ### Fixed
 - [CSE] Corrected response status codes for AE registration errors.
@@ -46,6 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Improved checking of empty *acpi* attribute lists. Empty lists are not allowed and the *acpi* must be removed from a resource instead.
 - [CSE] Optimized log messages. Messages for irrelevant log levels are not even created anymore.
 - [CSE] Corrected behavior when oldest \<contentInstance>, \<flexContainerInstance> and \<timeSeriesInstance> resource are deleted. Now NO notification is sent in case a \<subscription> monitors for *Delete_of_direct_child_resource*.
+- [CSE] Added warnings when an imported \<CSEBase> overwrites any of the *csi*, *ri*, *rn* attributes.
+- [CSE] Better error handling for ill-formed CSE-ID.
 - [DATABASE] Optimized and unified database searches for fragments in resources.
 
 

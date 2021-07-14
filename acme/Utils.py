@@ -118,16 +118,23 @@ def isVirtualResource(resource: Resource) -> bool:
 	# return (ty := r.ty) and ty in C.virtualResources
 
 
-def isAnnouncedResource(resource: Resource) -> bool:
+def isAnnouncedResource(resource:Resource) -> bool:
 	"""	Check whether the `resource` is an announced resource. 
 	"""
 	result:bool = resource[resource._isAnnounced]
 	return result if result is not None else False
 
-def isValidID(id: str) -> bool:
+
+def isValidID(id:str) -> bool:
 	""" Check for valid ID. """
 	#return len(id) > 0 and '/' not in id 	# pi might be ""
 	return id is not None and '/' not in id
+
+
+csiRx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
+def isValidCSI(csi:str) -> bool:
+	"""	Check for valid CSE-ID format. """
+	return re.fullmatch(csiRx, csi) is not None
 
 
 def structuredPath(resource:Resource) -> str:
