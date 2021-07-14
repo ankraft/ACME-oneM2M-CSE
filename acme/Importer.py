@@ -37,12 +37,20 @@ class Importer(object):
 		def setCSEParameters(csi:str, ri:str, rn:str) -> None:
 			""" Set some values in the configuration and the CSE instance.
 			"""
-			CSE.cseCsi = csi
-			Configuration.set('cse.csi', csi)
-			CSE.cseRi  = ri
-			Configuration.set('cse.ri', ri)
-			CSE.cseRn  = rn
-			Configuration.set('cse.rn', rn)
+			if CSE.cseCsi != csi:
+				L.logWarn(f'Imported CSEBase overwrites configuration. csi: {CSE.cseCsi} -> {csi}')
+				CSE.cseCsi = csi
+				Configuration.set('cse.csi', csi)
+
+			if CSE.cseRi != ri:
+				L.logWarn(f'Imported CSEBase overwrites configuration. ri: {CSE.cseRi} -> {ri}')
+				CSE.cseRi  = ri
+				Configuration.set('cse.ri', ri)
+
+			if CSE.cseRn != rn:
+				L.logWarn(f'Imported CSEBase overwrites configuration. rn: {CSE.cseRn} -> {rn}')
+				CSE.cseRn  = rn
+				Configuration.set('cse.rn', rn)
 
 
 		countImport = 0
@@ -88,7 +96,7 @@ class Importer(object):
 			if not CSE.registration.checkResourceCreation(resource, CSE.cseOriginator):
 				continue
 			if (res := CSE.dispatcher.createResource(resource)).resource is None:
-				L.isInfo and L.logErr(f'Error during import: {res.dbg}')
+				L.isInfo and L.logErr(f'Error during import: {res.dbg}', showStackTrace=False)
 				return False
 			ty = resource.ty
 			if ty == T.CSEBase:
