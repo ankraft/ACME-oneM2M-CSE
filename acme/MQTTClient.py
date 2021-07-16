@@ -21,6 +21,14 @@ import CSE, Utils
 
 # TODO internal events
 # TODO Docs
+# TODO .ini / configuration docs
+# TODO TLS connection to broker
+# TODO registration request handling
+# TODO send request support
+# TODO mqtt support for NotificationServer
+# TODO notifications
+# TODO select correct binding for requests (support mqtt / mqtts schemes)
+
 
 class MQTTClientHandler(MQTTHandler):
 
@@ -43,7 +51,7 @@ class MQTTClientHandler(MQTTHandler):
 
 	
 	def onError(self, _:MQTTConnection, rc:int=-1) -> None:
-		if rc == 5:		# authentication error
+		if rc == [1, 5]:		# authentication error, out-of-memory
 			CSE.shutdown()
 		if rc == -1: 	# unknown. probably connection error?
 			CSE.shutdown()
@@ -155,16 +163,15 @@ class MQTTClientHandler(MQTTHandler):
 			resp['rvi'] = result.request.headers.releaseVersionIndicator
 		if result.request.headers.vendorInformation is not None:
 			resp['vsi'] = result.request.headers.vendorInformation
-		resp['pc'] = result.toData(ContentSerializationType.JSON)	# First, serialize the data as JSON/dictionary
+		resp['pc'] = result.toData(ContentSerializationType.PLAIN)	# First, construct and serialize the data as JSON/dictionary. Encoding to JSON or CBOR is done later
 
 		# serialize and log response
 		response = Result(data=resp, status=True)
 		if result.request.ct == ContentSerializationType.CBOR:		# Always us the ct from the request
 			response.data = cast(bytes, Utils.serializeData(response.data, ContentSerializationType.CBOR))
 			L.isDebug and L.logDebug(f'<== MQTT-Response (RSC: {result.rsc:d}):\nBody: \n{Utils.toHex(response.data)}\n=>\n{resp}')
-			#response.data = bytearray(response.data)
 		else:
-			response.data = str(response.data)
+			response.data = cast(bytes, Utils.serializeData(response.data, ContentSerializationType.JSON))
 			L.isDebug and L.logDebug(f'<== MQTT-Response (RSC: {result.rsc:d}):\nBody: {resp}')
 		
 		return response
