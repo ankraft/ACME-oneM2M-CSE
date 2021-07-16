@@ -722,6 +722,15 @@ class TestDiscovery(unittest.TestCase):
 		self.assertEqual(len(findXPath(r, 'm2m:nod/m2m:mem')), 1)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCINmatchLabel(self) -> None:
+		""" Retrieve <CIN> under <AE> by CON (match wildcard) """
+		r, rsc = RETRIEVE(f'{cntURL}?rcn={RCN.childResources:d}&con=a*', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/m2m:cin'))
+		self.assertEqual(len(findXPath(r, 'm2m:cnt/m2m:cin')), 5)
+
+
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
@@ -775,6 +784,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestDiscovery('test_retrieveWithWrongDRT'))
 	suite.addTest(TestDiscovery('test_retrieveWithWrongFO'))
 	suite.addTest(TestDiscovery('test_retrieveMgmtObjsRCN8'))
+	suite.addTest(TestDiscovery('test_retrieveCINmatchLabel'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

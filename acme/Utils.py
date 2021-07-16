@@ -283,7 +283,7 @@ def getIdFromOriginator(originator: str, idOnly: bool = False) -> str:
 #	URL and Addressung related
 #
 urlregex = re.compile(
-		r'^(?:http|ftp)s?://|^(?:coap|mqtt)://' 	# http://, https://, ftp://, ftps://, coap://, mqtt://
+		r'^(?:http|ftp|mqtt)s?://|^(?:coap)://' 	# http://, https://, ftp://, ftps://, coap://, mqtt://, mqtts://
 		r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain
 		r'(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9]))|' # localhost or single name w/o domain
 		r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' 		# ipv4
@@ -396,12 +396,13 @@ mgmtObjAnncTPEs = 	[	T.FWRAnnc.tpe(), T.SWRAnnc.tpe(), T.MEMAnnc.tpe(), T.ANIAnn
 
 
 excludeFromRoot = [ 'pi' ]
+pureResourceRegex = re.compile('[\w]+:[\w]')
 def pureResource(dct:JSON) -> Tuple[JSON, str]:
 	"""	Return the "pure" structure without the "m2m:xxx" or "<domain>:id" resource specifier, and the oneM2M type identifier. 
 	"""
 	rootKeys = list(dct.keys())
 	# Try to determine the root identifier 
-	if len(rootKeys) == 1 and (rk := rootKeys[0]) not in excludeFromRoot and re.match('[\w]+:[\w]', rk):
+	if len(rootKeys) == 1 and (rk := rootKeys[0]) not in excludeFromRoot and re.match(pureResourceRegex, rk):
 		return dct[rootKeys[0]], rootKeys[0]
 	# Otherwise try to get the root identifier from the resource itself (stored as a private attribute)
 	root = None
@@ -775,9 +776,11 @@ def simpleMatch(st:str, pattern:str, star:str='*') -> bool:
 	return _simpleMatch(st, pattern)
 
 
-def serializeData(data:JSON, ct:ContentSerializationType) -> str|bytes:
+def serializeData(data:JSON, ct:ContentSerializationType) -> str|bytes|JSON:
 	"""	Serialize a dictionary, depending on the serialization type.
 	"""
+	if ct == ContentSerializationType.PLAIN:
+		return data
 	encoder = json if ct == ContentSerializationType.JSON else cbor2 if ct == ContentSerializationType.CBOR else None
 	if encoder is None:
 		return None

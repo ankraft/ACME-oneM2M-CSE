@@ -663,6 +663,7 @@ class ContentSerializationType(IntEnum):
 	XML					= auto()
 	JSON				= auto()
 	CBOR				= auto()
+	PLAIN				= auto()
 	NA	 				= auto()
 	UNKNOWN				= auto()
 
@@ -745,7 +746,7 @@ class Result:
 		"""
 		return Result(rsc=self.rsc, dbg=self.dbg)
 
-	def toData(self, ct:ContentSerializationType=None) -> str|bytes:
+	def toData(self, ct:ContentSerializationType=None) -> str|bytes|JSON:
 		from resources.Resource import Resource
 		from Utils import serializeData
 		from CSE import defaultSerialization

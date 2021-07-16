@@ -357,8 +357,7 @@ class Dispatcher(object):
 				for name in attributes:
 					val = attributes[name]
 					if isinstance(val, str) and '*' in val:
-						val = val.replace('*', '.*')
-						found += 1 if (rval := r[name]) is not None and re.match(val, str(rval)) else 0
+						found += 1 if (rval := r[name]) is not None and Utils.simpleMatch(str(rval), val) else 0
 					else:
 						found += 1 if (rval := r[name]) is not None and str(val) == str(rval) else 0
 
