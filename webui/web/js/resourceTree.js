@@ -35,6 +35,8 @@ const types = {
     17 : "Request",
     23 : "Subscription",
     28 : "FlexContainer",
+	29 : "TimeSeries",
+	30 : "TimeSeriesInstance",
     58 : "FlexContainerInstance",
 
     10001 : "ACPAnnc",
@@ -47,6 +49,8 @@ const types = {
     10014 : "NodeAnnc",
     10016 : "RemoteCSEAnnc",
     10028 : "FlexContainerAnnc",
+	10029 : "TimeSeriesAnnc",
+	10030 : "TimeSeriesInstanceAnnc",
     10058 : "FlexContainerInstanceAnnc" 
 
 }
@@ -63,6 +67,8 @@ const shortTypes = {
     17 : "REQ",
     23 : "SUB",
     28 : "FCNT",
+	29 : "TS",
+	30 : "TSI",
     58 : "FCI",
 
     10001 : "ACPAnnc",
@@ -75,6 +81,8 @@ const shortTypes = {
     10014 : "NODAnnc",
     10016 : "CSRAnnc",
     10028 : "FCNTAnnc",
+	10029 : "TSAnnc",
+	10030 : "TSIAnnc",
     10058 : "FCIAnnc" 
 }
 
