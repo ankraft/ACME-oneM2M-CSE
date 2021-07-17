@@ -372,7 +372,7 @@ class HttpServer(object):
 	#########################################################################
 
 	def _prepareResponse(self, result:Result) -> Response:
-		content:str|bytes = ''
+		content:str|bytes|JSON = ''
 
 		# Build the headers
 		headers = {}

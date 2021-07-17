@@ -92,7 +92,7 @@ class Configuration(object):
 				'cse.sortDiscoveredResources'		: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
 				'cse.checkExpirationsInterval'		: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
 				'cse.flexBlockingPreference'		: config.get('cse', 'flexBlockingPreference',			fallback='blocking'),
-				'cse.supportedReleaseVersions'		: config.getlist('cse', 'supportedReleaseVersions',		fallback=C.supportedReleaseVersions), # type: ignore
+				'cse.supportedReleaseVersions'		: config.getlist('cse', 'supportedReleaseVersions',		fallback=C.supportedReleaseVersions), # type: ignore [attr-defined]
 				'cse.releaseVersion'				: config.get('cse', 'releaseVersion',					fallback='3'),
 				'cse.defaultSerialization'			: config.get('cse', 'defaultSerialization',				fallback='json'),
 
@@ -163,15 +163,15 @@ class Configuration(object):
 				'cse.registrar.csi'					: config.get('cse.registrar', 'cseID', 					fallback=None),
 				'cse.registrar.rn'					: config.get('cse.registrar', 'resourceName', 			fallback=None),
 				'cse.registrar.checkInterval'		: config.getint('cse.registrar', 'checkInterval', 		fallback=30),		# Seconds
-				'cse.registrar.excludeCSRAttributes': config.getlist('cse.registrar', 'excludeCSRAttributes',fallback=[]),		# type: ignore
+				'cse.registrar.excludeCSRAttributes': config.getlist('cse.registrar', 'excludeCSRAttributes',fallback=[]),		# type: ignore [attr-defined]
 				'cse.registrar.serialization'		: config.get('cse.registrar', 'serialization',			fallback='json'),
 
 				#
 				#	Registrations
 				#
 
-				'cse.registration.allowedAEOriginators'	: config.getlist('cse.registration', 'allowedAEOriginators',	fallback=['C*','S*']),		# type: ignore
-				'cse.registration.allowedCSROriginators': config.getlist('cse.registration', 'allowedCSROriginators',	fallback=[]),				# type: ignore
+				'cse.registration.allowedAEOriginators'	: config.getlist('cse.registration', 'allowedAEOriginators',	fallback=['C*','S*']),		# type: ignore [attr-defined]
+				'cse.registration.allowedCSROriginators': config.getlist('cse.registration', 'allowedCSROriginators',	fallback=[]),				# type: ignore [attr-defined]
 				'cse.registration.checkLiveliness'		: config.getboolean('cse.registration', 'checkLiveliness',		fallback=True),
 
 
@@ -246,7 +246,7 @@ class Configuration(object):
 				#
 
 				'cse.console.refreshInterval'		: config.getfloat('cse.console', 'refreshInterval', 	fallback=2.0),
-				'cse.console.hideResources'			: config.getlist('cse.console', 'hideResources', 		fallback=[]),
+				'cse.console.hideResources'			: config.getlist('cse.console', 'hideResources', 		fallback=[]),		# type: ignore[attr-defined]
 				'cse.console.treeMode'				: config.get('cse.console', 'treeMode', 				fallback='normal'),
 
 				#
