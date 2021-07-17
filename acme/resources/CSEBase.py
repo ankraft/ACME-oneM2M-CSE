@@ -22,6 +22,10 @@ attributePolicies = constructPolicy([
 
 class CSEBase(Resource):
 
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.ACP, T.AE, T.CSR, T.CNT, T.FCNT, T.GRP, T.NOD, T.REQ, T.SUB, T.TS ]
+
+
 	def __init__(self, dct:JSON=None, create:bool=False) -> None:
 		super().__init__(T.CSEBase, dct, '', create=create, attributePolicies=attributePolicies)
 
@@ -38,22 +42,6 @@ class CSEBase(Resource):
 			self.setAttribute('cst', CSE.cseType, overwrite=False)
 
 
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource,	
-									 [ T.ACP,
-									   T.AE,
-									   T.CSR, 
-									   T.CNT,
-									   T.FCNT,
-									   T.GRP,
-									   T.NOD,
-									   T.REQ,
-									   T.SUB,
-									   T.TS
-									 ])
-
-
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
@@ -63,7 +51,6 @@ class CSEBase(Resource):
 			return Result(status=False, dbg=dbg)
 
 		return Result(status=True)
-
 
 
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:

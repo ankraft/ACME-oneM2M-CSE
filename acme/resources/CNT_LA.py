@@ -7,6 +7,7 @@
 #	ResourceType: latest (virtual resource)
 #
 
+from __future__ import annotations
 from typing import cast
 from Types import ResourceTypes as T, ResponseCode as RC, Result, JSON, CSERequest
 import CSE
@@ -16,13 +17,12 @@ from Logging import Logging as L
 
 class CNT_LA(Resource):
 
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes:list[T] = [ ]
+
+
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.CNT_LA, dct, pi, create=create, inheritACP=True, readOnly=True, rn='la', isVirtual=True)
-
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource, [])
 
 
 	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:

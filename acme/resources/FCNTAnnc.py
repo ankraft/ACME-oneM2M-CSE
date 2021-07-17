@@ -23,27 +23,14 @@ fcntAPolicies = constructPolicy([
 attributePolicies =  addPolicy(attributePolicies, fcntAPolicies)
 # TODO announceSyncType
 
+
 class FCNTAnnc(AnnouncedResource):
+
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.CNT, T.CNTAnnc, T.CIN, T.CINAnnc, T.FCNT, T.FCNTAnnc, T.FCI, T.FCIAnnc,
+								T.TS, T.TSAnnc, T.SUB ]
+
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.FCNTAnnc, dct, pi=pi, create=create, attributePolicies=attributePolicies)
-
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource,	
-									 [ T.CNT,
-									   T.CNTAnnc,
-									   T.CIN,
-									   T.CINAnnc,
-									   T.FCNT,
-									   T.FCNTAnnc,
-									   T.FCI,
-									   T.FCIAnnc,
-									   T.TS,
-									   T.TSAnnc,
-									   T.SUB
-									 ])
-
-		 
 

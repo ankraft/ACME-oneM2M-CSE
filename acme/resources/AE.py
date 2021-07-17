@@ -27,8 +27,11 @@ aePolicies = constructPolicy([
 attributePolicies =  addPolicy(attributePolicies, aePolicies)
 
 
-
 class AE(AnnounceableResource):
+
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.ACP, T.CNT, T.FCNT, T.GRP, T.PCH, T.SUB, T.TS ]
+
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.AE, dct, pi, create=create, attributePolicies=attributePolicies)
@@ -38,19 +41,6 @@ class AE(AnnounceableResource):
 		if self.dict is not None:
 			self.setAttribute('aei', Utils.uniqueAEI(), overwrite=False)
 			self.setAttribute('rr', False, overwrite=False)
-
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource,	
-									 [ T.ACP,
-									   T.CNT,
-									   T.FCNT,
-									   T.GRP,
-									   T.PCH,
-									   T.SUB,
-									   T.TS
-									 ])
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:

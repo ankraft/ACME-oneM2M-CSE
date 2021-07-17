@@ -7,6 +7,7 @@
 #	ResourceType: FlexContainerInstance
 #
 
+from __future__ import annotations
 from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
@@ -22,14 +23,14 @@ attributePolicies =  addPolicy(attributePolicies, fcinPolicies)
 
 class FCI(AnnounceableResource):
 
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes:list[T] = [ ]
+
+
 	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
 		super().__init__(T.FCI, dct, pi, tpe=fcntType, create=create, inheritACP=True, readOnly=True, attributePolicies=attributePolicies)
 		self.resourceAttributePolicies = fcinPolicies	# only the resource type's own policies
 
-
-	# Enable check for allowed sub-resources. No Child for CIN
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource, [])
 
 	# Forbidd updating
 	def update(self, dct:JSON=None, originator:str=None) -> Result:

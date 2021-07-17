@@ -18,8 +18,6 @@ from .AnnounceableResource import AnnounceableResource
 import resources.Factory as Factory
 
 
-
-
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 
 	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'daci', 'loc', 'hld', 'cr',
@@ -31,6 +29,8 @@ attributePolicies =  addPolicy(attributePolicies, cntPolicies)
 
 
 class CNT(AnnounceableResource):
+
+	allowedChildResourceTypes =  [ T.CNT, T.CIN, T.FCNT, T.SUB, T.TS ]
 
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
@@ -46,17 +46,6 @@ class CNT(AnnounceableResource):
 			self.setAttribute('cbs', 0, overwrite=False)
 
 		self.__validating = False	# semaphore for validating
-
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource: Resource) -> bool:
-		return super()._canHaveChild(resource,	
-									 [ T.CNT,
-									   T.CIN,
-									   T.FCNT,
-									   T.SUB,
-									   T.TS
-									 ])
 
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:

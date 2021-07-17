@@ -21,7 +21,6 @@ from .Resource import *
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)
 
 
-
 class Resource(object):
 	_rtype 				= '__rtype__'
 	_srn				= '__srn__'
@@ -295,19 +294,16 @@ class Resource(object):
 
 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
-		""" Call when child resource was removed from the resource. """
+		""" Call when child resource was removed from the resource. 
+		"""
 		CSE.notification.checkSubscriptions(self, NotificationEventType.deleteDirectChild, childResource)
 
 
 	def canHaveChild(self, resource:Resource) -> bool:
-		""" MUST be implemented by each class."""
-		raise NotImplementedError('canHaveChild()')
-
-
-	def _canHaveChild(self, resource:Resource, allowedChildResourceTypes:list[T]) -> bool:
-		""" It checks whether a fresource may have a certain child resources. This is called from child class. """
+		""" Check whether a fresource may have `resource` as a child resources. 
+		"""
 		from .Unknown import Unknown # Unknown imports this class, therefore import only here
-		return resource['ty'] in allowedChildResourceTypes or isinstance(resource, Unknown)
+		return resource.ty in self.allowedChildResourceTypes or isinstance(resource, Unknown)
 
 
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:

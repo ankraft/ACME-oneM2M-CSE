@@ -28,13 +28,12 @@ attributePolicies = addPolicy(attributePolicies, reqPolicies)
 
 class REQ(Resource):
 
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.SUB ]
+
+
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.REQ, dct, pi, create=create, attributePolicies=attributePolicies)
-
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource, [ T.SUB ])
 
 
 	@staticmethod

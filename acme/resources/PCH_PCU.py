@@ -7,6 +7,7 @@
 #	ResourceType: PollingChannelURI for PollingChannel
 #
 
+from __future__ import annotations
 from Types import ResourceTypes as T, ResponseCode as RC, JSON
 from .Resource import *
 from Logging import Logging
@@ -14,16 +15,11 @@ from Logging import Logging
 
 class PCH_PCU(Resource):
 
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes:list[T] = [ ]
+
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.PCH_PCU, dct, pi, create=create, inheritACP=True, readOnly=True, rn='pcu', isVirtual=True)
-
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource, [])
-
-
-
 
 
 

@@ -31,7 +31,6 @@ tsPolicies = constructPolicy([
 ])
 attributePolicies =  addPolicy(attributePolicies, tsPolicies)
 
-
 # TODO periodicIntervalDelta missing in TS-0004? Shortname for validation
 # TODO periodicIntervalDelta default
 
@@ -39,6 +38,10 @@ attributePolicies =  addPolicy(attributePolicies, tsPolicies)
 
 
 class TS(AnnounceableResource):
+
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.TSI, T.SUB ]
+
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.TS, dct, pi, create=create, attributePolicies=attributePolicies)
@@ -54,16 +57,6 @@ class TS(AnnounceableResource):
 				self.setAttribute('mdn', Configuration.get('cse.ts.mdn'), overwrite=False)
 
 		self.__validating = False	# semaphore for validating
-
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource: Resource) -> bool:
-		return super()._canHaveChild(resource, 
-									[ T.TSI,
-									  T.SUB,
-									  # <latest>
-									  # <oldest>
-									])
 
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:

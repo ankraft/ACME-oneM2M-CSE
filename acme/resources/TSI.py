@@ -7,6 +7,7 @@
 #	ResourceType: timeSeriesInstance
 #
 
+from __future__ import annotations
 from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 from Validator import constructPolicy, addPolicy
 from .Resource import *
@@ -25,15 +26,14 @@ attributePolicies = addPolicy(attributePolicies, tsiPolicies)
 
 class TSI(AnnounceableResource):
 
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes:list[T] = [ ]
+
+
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.TSI, dct, pi, create=create, inheritACP=True, readOnly = True, attributePolicies=attributePolicies)
 		self.resourceAttributePolicies = tsiPolicies	# only the resource type's own policies
 		self.setAttribute('cs', Utils.getAttributeSize(self['con']))       # Set contentSize
-
-
-	# Enable check for allowed sub-resources. No Child for CIN
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource, [])
 
 
 	# Forbid updating

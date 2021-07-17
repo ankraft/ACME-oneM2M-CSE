@@ -23,23 +23,13 @@ aeAPolicies = constructPolicy([
 attributePolicies =  addPolicy(attributePolicies, aeAPolicies)
 # TODO announceSyncType
 
+
 class AEAnnc(AnnouncedResource):
+
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.ACP, T.ACPAnnc, T.CNT, T.CNTAnnc, T.FCNT, T.FCNTAnnc, T.GRP, T.GRPAnnc, T.TS, T.TSAnnc ]
+
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.AEAnnc, dct, pi=pi, create=create, attributePolicies=attributePolicies)
 
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource: Resource) -> bool:
-		return super()._canHaveChild(resource,	
-									 [ T.ACP,
-									   T.ACPAnnc,
-									   T.CNT,
-									   T.CNTAnnc,
-									   T.FCNT,
-									   T.FCNTAnnc,
-									   T.GRP,
-									   T.GRPAnnc,
-									   T.TS,
-									   T.TSAnnc
-									 ])

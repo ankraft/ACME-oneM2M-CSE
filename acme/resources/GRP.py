@@ -28,6 +28,10 @@ attributePolicies = addPolicy(attributePolicies, grpPolicies)
 
 class GRP(AnnounceableResource):
 
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.SUB, T.GRP_FOPT ]
+
+
 	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
 		super().__init__(T.GRP, dct, pi, create=create, attributePolicies=attributePolicies)
 
@@ -44,13 +48,6 @@ class GRP(AnnounceableResource):
 			# These attributes are not provided by default: mnm (no default), macp (no default)
 			# optional set: spty, gn, nar
 
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource,	
-									 [ T.SUB, 
-									   T.GRP_FOPT
-									 ])
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (res := super().activate(parentResource, originator)).status:

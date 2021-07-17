@@ -7,6 +7,7 @@
 #	ResourceType: Subscription
 #
 
+from __future__ import annotations
 from copy import deepcopy
 from Configuration import Configuration
 from Types import ResourceTypes as T, Result, NotificationContentType, NotificationEventType as NET
@@ -26,6 +27,10 @@ attributePolicies = constructPolicy([
 # LIMIT: Only http(s) requests in nu or POA is supported yet
 
 class SUB(Resource):
+
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes:list[T] = [ ]
+
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.SUB, dct, pi, create=create, attributePolicies=attributePolicies)
@@ -52,11 +57,6 @@ class SUB(Resource):
 
 # TODO expirationCounter
 # TODO notificationForwardingURI
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource: Resource) -> bool:
-		return super()._canHaveChild(resource, [])
-
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (result := super().activate(parentResource, originator)).status:

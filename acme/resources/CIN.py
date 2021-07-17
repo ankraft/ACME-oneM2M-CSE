@@ -7,6 +7,7 @@
 #	ResourceType: ContentInstance
 #
 
+from __future__ import annotations
 from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 from Validator import constructPolicy, addPolicy
@@ -25,6 +26,10 @@ attributePolicies = addPolicy(attributePolicies, cinPolicies)
 
 class CIN(AnnounceableResource):
 
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes:list[T] = [ ]
+
+
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.CIN, dct, pi, create=create, inheritACP=True, readOnly = True, attributePolicies=attributePolicies)
 
@@ -33,16 +38,6 @@ class CIN(AnnounceableResource):
 		if self.dict is not None:
 			self.setAttribute('con', '', overwrite=False)
 			self.setAttribute('cs', Utils.getAttributeSize(self.con))
-			# if isinstance(self.con, str):
-			# 	self.setAttribute('cs', Utils.getAttributeSize(self.con))
-			# else:
-			# 	self.setAttribute('cs', 0)
-
-
-
-	# Enable check for allowed sub-resources. No Child for CIN
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource, [])
 
 
 	# Forbid updating

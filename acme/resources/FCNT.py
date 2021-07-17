@@ -33,6 +33,10 @@ attributePolicies = addPolicy(attributePolicies, fcntPolicies)
 
 class FCNT(AnnounceableResource):
 
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.CNT, T.FCNT, T.SUB, T.TS, T.FCI ]
+
+
 	_hasFCI	= '__hasFCI__'
 	"""	Internal attribute to indicate whether this FCNT has la/ol installed. """
 
@@ -54,17 +58,6 @@ class FCNT(AnnounceableResource):
 
 		self.__validating = False
 		self.ignoreAttributes = self.internalAttributes + [ 'acpi', 'cbs', 'cni', 'cnd', 'cs', 'cr', 'ct', 'et', 'lt', 'mbs', 'mia', 'mni', 'or', 'pi', 'ri', 'rn', 'st', 'ty', 'at', 'aa' ]
-
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource,	
-									 [ T.CNT,
-									   T.FCNT,
-									   T.SUB,
-									   T.TS,
-									   # FlexContainerInstances are added by the flexContainer itself
-									 ])
 
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:

@@ -28,14 +28,13 @@ attributePolicies = addPolicy(attributePolicies, pchPolicies)
 
 class PCH(Resource):
 
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.PCH_PCU ]
+
+
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.PCH, dct, pi, create=create, attributePolicies=attributePolicies)
 		self.resourceAttributePolicies = pchPolicies	# only the resource type's own policies
-
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource, [ T.PCH_PCU ])
 
 
 # TODO test Retrieve by AE only! Add new willBeRetrieved() function
