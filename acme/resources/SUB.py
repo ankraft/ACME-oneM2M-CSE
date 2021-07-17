@@ -61,6 +61,12 @@ class SUB(Resource):
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (result := super().activate(parentResource, originator)).status:
 			return result
+
+		# check whether an observed child resource type is actually allowed by the parent
+		if (chty := self['enc/chty']) is not None:
+			if  not (res := self._checkAllowedCHTY(parentResource, chty)).status:
+				return res
+
 		return CSE.notification.addSubscription(self, originator)
 
 
@@ -74,6 +80,15 @@ class SUB(Resource):
 		newDict = deepcopy(dct)
 		if not (res := super().update(dct, originator)).status:
 			return res
+
+		# check whether an observed child resource type is actually allowed by the parent
+		if (chty := self['enc/chty']) is not None:
+			if (parentResource := self.retrieveParentResource()) is None:
+				L.logErr(dbg := f'cannot retrieve parent resource')
+				return Result(status=False, rsc=RC.internalServerError, dbg=dbg)
+			if  not (res := self._checkAllowedCHTY(parentResource, chty)).status:
+				return res
+
 		return CSE.notification.updateSubscription(self, newDict, previousNus, originator)
 
  
@@ -125,3 +140,12 @@ class SUB(Resource):
 		self.normalizeURIAttribute('su')
 
 		return Result(status=True)
+
+	def _checkAllowedCHTY(self, parentResource:Resource, chty:list[T]) -> Result:
+		""" Check whether an observed child resource type is actually allowed by the parent. """
+		for ty in self['enc/chty']:
+			if ty not in parentResource.allowedChildResourceTypes:
+				L.logDebug(dbg := f'ChildResourceType {T(ty).name} is not an allowed child resource of {T(parentResource.ty).name}')
+				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+		return Result(status=True)
+

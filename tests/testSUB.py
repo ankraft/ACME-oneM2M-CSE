@@ -12,7 +12,7 @@ import requests
 sys.path.append('../acme')
 from typing import Tuple
 from Constants import Constants as C
-from Types import NotificationEventType, ResourceTypes as T, NotificationContentType, ResponseCode as RC
+from Types import NotificationEventType as NET, ResourceTypes as T, NotificationContentType, ResponseCode as RC
 from init import *
 
 numberOfBatchNotifications = 5
@@ -89,7 +89,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
-			            'net': [ 1, 3 ]
+			            'net': [ NET.resourceUpdate, NET.createDirectChild ]
 					},
 					'nu': [ NOTIFICATIONSERVER ],
 					'su': NOTIFICATIONSERVER
@@ -145,7 +145,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : f'{subRN}Wrong',
 			        'enc': {
-			            'net': [ 1, 2, 3, 4 ]
+			            'net': [ NET.resourceUpdate, NET.resourceDelete, NET.createDirectChild, NET.deleteDirectChild ]
         			},
         			'nu': [ NOTIFICATIONSERVERW ]
 				}}
@@ -258,7 +258,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
-			            'net': [ NotificationEventType.createDirectChild ]
+			            'net': [ NET.createDirectChild ]
         			},
         			'nu': [ NOTIFICATIONSERVER ],
 					'su': NOTIFICATIONSERVER,
@@ -274,7 +274,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
-			            'net': [ 1 ]
+			            'net': [ NET.resourceUpdate ]
         			},
         			'nu': [ NOTIFICATIONSERVER ],
 					'su': NOTIFICATIONSERVER,
@@ -324,7 +324,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
-			            'net': [ 1, 3 ]
+			            'net': [ NET.resourceUpdate, NET.createDirectChild ]
         			},
         			'nu': [ NOTIFICATIONSERVER ],
 					'su': NOTIFICATIONSERVER,
@@ -360,7 +360,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
-			            'net': [ 1 ]
+			            'net': [ NET.resourceUpdate ]
 					},
 					'nu': [ NOTIFICATIONSERVER ],
 					# No su! bc we want receive the last notification of a batch
@@ -424,7 +424,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
-			            'net': [ 1 ]
+			            'net': [ NET.resourceUpdate ]
 					},
 					'nu': [ NOTIFICATIONSERVER ],
 					# No su! bc we want receive the last notification of a batch
@@ -479,7 +479,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
-			            'net': [ 1 ],
+			            'net': [ NET.resourceUpdate ],
 			            'atr': ['lbl' ]
 					},
 					'nu': [ NOTIFICATIONSERVER ]
@@ -537,7 +537,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
-			            'net': [ 1 ],	# update resource
+			            'net': [ NET.resourceUpdate ],	# update resource
 					},
 					'ln': True,
 					'nu': [ NOTIFICATIONSERVER ],
@@ -589,8 +589,8 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
-			            'net': [ 3 ],	# create direct child resource
-						'chty': [ 3 ] 	# only cnt
+			            'net': [ NET.createDirectChild ],	# create direct child resource
+						'chty': [ T.CNT ] 	# only cnt
 					},
 					'ln': True,
 					'nu': [ NOTIFICATIONSERVER ]
@@ -598,7 +598,7 @@ class TestSUB(unittest.TestCase):
 		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc/chty'))
-		self.assertEqual(findXPath(r, 'm2m:sub/enc/chty'), [ 3 ])
+		self.assertEqual(findXPath(r, 'm2m:sub/enc/chty'), [ T.CNT ])
 		lastNotification = getLastNotification()
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
@@ -661,7 +661,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN+'POA',
 			        'enc': {
-			            'net': [ 1, 3 ]
+			            'net': [ NET.resourceUpdate, NET.createDirectChild ]
 					},
 					'nu': [ TestSUB.ae2Originator ],
 					'su': NOTIFICATIONSERVER
@@ -745,7 +745,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN+'POA',
 			        'enc': {
-			            'net': [ 1, 3 ]
+			            'net': [ NET.resourceUpdate, NET.createDirectChild ]
 					},
 					'nu': [ f'{NOTIFICATIONSERVER}?ct=cbor' ],
 					'su': NOTIFICATIONSERVER
@@ -789,7 +789,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN+'EXC',
 			        'enc': {
-			            'net': [ 1, 3 ]
+			            'net': [ NET.resourceUpdate, NET.createDirectChild ]
 					},
 					'nu': [NOTIFICATIONSERVER ],
 					'su': NOTIFICATIONSERVER,
@@ -845,7 +845,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN+'NOPOA',
 			        'enc': {
-			            'net': [ 1, 3 ]
+			            'net': [ NET.resourceUpdate, NET.createDirectChild ]
 					},
 					'nu': [ findXPath(TestSUB.aeNoPoa, 'm2m:ae/ri') ]	# this ae has no poa
 				}}
@@ -887,7 +887,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'nu': [NOTIFICATIONSERVER ],
 			        'enc': {
-			            'net': [ 8 ]
+			            'net': [ NET.reportOnGeneratedMissingDataPoints ]
 					},				
 				}}
 		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)	
@@ -906,7 +906,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'nu': [NOTIFICATIONSERVER ],
 			        'enc': {
-			            'net': [ 8 ]
+			            'net': [ NET.reportOnGeneratedMissingDataPoints ]
 					},				
 				}}
 		r, rsc = CREATE(f'{aeURL}/{findXPath(ts, "m2m:ts/rn")}', TestSUB.originator, T.SUB, dct)	
@@ -925,7 +925,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'nu': [NOTIFICATIONSERVER ],
 			        'enc': {
-			            'net': [ 8 ],
+			            'net': [ NET.reportOnGeneratedMissingDataPoints ],
 						'md' : {
 							'num' : 5,
 							'dur' : 'PT10S'
@@ -944,7 +944,7 @@ class TestSUB(unittest.TestCase):
 		""" UPDATE <SUB> for Missing Data unter <TS>"""
 		dct = 	{ 'm2m:sub' : { 
 			        'enc': {
-			            'net': [ 8 ],
+			            'net': [ NET.reportOnGeneratedMissingDataPoints ],
 						'md' : {
 							'num' : 10,
 							'dur' : 'PT20S'
@@ -981,7 +981,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'nu': [NOTIFICATIONSERVER ],
 			        'enc': {
-			            'net': [ 8 ],
+			            'net': [ NET.reportOnGeneratedMissingDataPoints ],
 						'md' : {
 							'num' : -5,
 							'dur' : 'PT10S'
@@ -994,7 +994,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'nu': [NOTIFICATIONSERVER ],
 			        'enc': {
-			            'net': [ 8 ],
+			            'net': [ NET.reportOnGeneratedMissingDataPoints ],
 						'md' : {
 							'num' : 5,
 						},
@@ -1006,7 +1006,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'nu': [NOTIFICATIONSERVER ],
 			        'enc': {
-			            'net': [ 8 ],
+			            'net': [ NET.reportOnGeneratedMissingDataPoints ],
 						'md' : {
 							'dur' : 'PT10S',
 						},
@@ -1018,7 +1018,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'nu': [NOTIFICATIONSERVER ],
 			        'enc': {
-			            'net': [ 8 ],
+			            'net': [ NET.reportOnGeneratedMissingDataPoints ],
 						'md' : {
 							'num' : 5,
 							'dur' : '10'
@@ -1031,7 +1031,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:sub' : { 
 					'nu': [NOTIFICATIONSERVER ],
 			        'enc': {
-			            'net': [ 8 ],
+			            'net': [ NET.reportOnGeneratedMissingDataPoints ],
 						'md' : {
 							'num' : 5,
 							'dur' : 10
@@ -1040,6 +1040,49 @@ class TestSUB(unittest.TestCase):
 				}}
 		r, rsc = CREATE(f'{aeURL}/{findXPath(ts, "m2m:ts/rn")}', TestSUB.originator, T.SUB, dct)	
 		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSUBWithWrongCHTYFail(self) -> None:
+		""" CREATE <SUB> with wrong CHTY -> Fail"""
+
+		dct = 	{ 'm2m:sub' : { 
+					'nu': [NOTIFICATIONSERVER ],
+			        'enc': {
+			            'net':  [ NET.deleteDirectChild ],
+						'chty': [ T.AE ]
+					},
+				}}
+		TestSUB.sub, rsc = CREATE(f'{aeURL}', TestSUB.originator, T.SUB, dct)	
+		self.assertEqual(rsc, RC.badRequest, TestSUB.sub)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateSUBWithWrongCHTYFail(self) -> None:
+		""" UPDATE <SUB> with wrong CHTY -> Fail"""
+
+		# create a valid SUB
+		dct = 	{ 'm2m:sub' : { 
+					'rn': 'sub_chty_test',
+					'nu': [NOTIFICATIONSERVER ],
+			        'enc': {
+			            'net':  [ NET.deleteDirectChild ],
+						'chty': [ T.CNT ]
+					},
+				}}
+		TestSUB.sub, rsc = CREATE(f'{aeURL}', TestSUB.originator, T.SUB, dct)	
+		self.assertEqual(rsc, RC.created, TestSUB.sub)
+
+		# update it with wrong chty
+		dct =	{ 'm2m:sub' : {
+					'enc': {
+						'chty': [ T.AE ]
+					},	
+				}}
+		TestSUB.sub, rsc = UPDATE(f'{aeURL}/sub_chty_test', TestSUB.originator, dct)	
+		self.assertEqual(rsc, RC.badRequest, TestSUB.sub)
+
+
 
 # TODO check different NET's (ae->cnt->sub, add cnt to cnt)
 
@@ -1118,6 +1161,9 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestSUB('test_updateSUBForMissingData'))
 	suite.addTest(TestSUB('test_deleteSUBForMissingData'))
 	suite.addTest(TestSUB('test_createSUBForMissingDataWrongData'))
+
+	suite.addTest(TestSUB('test_createSUBWithWrongCHTYFail'))
+	suite.addTest(TestSUB('test_updateSUBWithWrongCHTYFail'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

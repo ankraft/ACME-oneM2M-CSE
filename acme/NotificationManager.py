@@ -120,19 +120,19 @@ class NotificationManager(object):
 		for sub in subs:
 			# Prevent own notifications for subscriptions 
 			if childResource is not None and \
-				sub.ri == childResource.ri and \
+				sub['ri'] == childResource.ri and \
 				reason in [ NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]:
 					continue
-			if reason not in sub.net:	# check whether reason is actually included in the subscription
+			if reason not in sub['net']:	# check whether reason is actually included in the subscription
 				continue
 			if reason in [ NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]:	# reasons for child resources
-				chty = sub.chty
+				chty = sub['chty']
 				if chty is not None and not childResource.ty in chty:	# skip if chty is set and child.type is not in the list
 					continue
 				self._handleSubscriptionNotification(sub, reason, resource=childResource, modifiedAttributes=modifiedAttributes)
 			
 			# Check Update and enc/atr vs the modified attribuets 
-			elif reason == NotificationEventType.resourceUpdate and (atr := sub.atr) is not None and modifiedAttributes is not None:
+			elif reason == NotificationEventType.resourceUpdate and (atr := sub['atr']) is not None and modifiedAttributes is not None:
 				found = False
 				for k in atr:
 					if k in modifiedAttributes:
@@ -144,7 +144,7 @@ class NotificationManager(object):
 			
 			# Check for missing data points (only for <TS>)
 			elif reason == NotificationEventType.reportOnGeneratedMissingDataPoints and missingData is not None and len(missingData) > 0:
-				md = missingData[sub.ri]
+				md = missingData[sub['ri']]
 				if md.missingDataCurrentNr >= md.missingDataNumber:	# Always send missing data if the count is greater then the minimum number
 					self._handleSubscriptionNotification(sub, NotificationEventType.reportOnGeneratedMissingDataPoints, missingData=md)
 					md.missingDataList = []	# delete only the sent missing data points

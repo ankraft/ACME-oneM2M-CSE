@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [CSE] Added possibility to reset a running CSE (via the command console or http endpoint "/\_\_reset\_\_").
 - [CSE] Added support for \<timeSeries>/\<timeSeriesInstance> resource types.
-- [CSE] Added support for missing data monitoring in \<subscription> resource type and notifications.
+- [CSE] Added support for \<timeSeires>'s missing data monitoring in \<subscription> resource type and notifications.
 - [CSE] Added support for *ctm* (currentTime) attribute for \<CSEBase> resource type.
 - [CSE] Added wildcard (\*) support for \<ACP>'s *acr/acor* originators.
 - [CSE] Added support for \<ACP>'s *acr/acod* attribute (not for specializations yet, though).
@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Corrected behavior when oldest \<contentInstance>, \<flexContainerInstance> and \<timeSeriesInstance> resource are deleted. Now NO notification is sent in case a \<subscription> monitors for *Delete_of_direct_child_resource*.
 - [CSE] Added warnings when an imported \<CSEBase> overwrites any of the *csi*, *ri*, *rn* attributes.
 - [CSE] Better error handling for ill-formed CSE-ID.
+- [CSE] Fixed missing check for \<subscription>'s *chty* attribute. The listed resource types therein must be allowed child resource types of the \<subscription>'s parent resource.
 - [DATABASE] Optimized and unified database searches for fragments in resources.
 
 
