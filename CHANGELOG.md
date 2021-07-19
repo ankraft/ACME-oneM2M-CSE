@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Removed "logging.enable" configuration setting and added *off* as a possible value to *logging.level".
 - [CSE] Improved the size calculation of \<contentInstance>, \<flexContainer>, and \<timeSeriesInstance> to realistic sizes (not the Python-internal type sizes anymore).
 - [CSE] Refactored internal request handling to support future protocol binding developments other than http.
+- [CSE] Changed the sorting of request result lists to type and creation time for \<contentInstance>, \<flexContainerInstance> and \<timeSeriesInstance>.
 
 ### Fixed
 - [CSE] Corrected response status codes for AE registration errors.

@@ -351,7 +351,6 @@ class Dispatcher(object):
 			# TODO parentResourceType
 
 
-			# TODO replace with Simplematch
 			# Attributes:
 			if attributes is not None:
 				for name in attributes:
@@ -814,7 +813,8 @@ class Dispatcher(object):
 			if len(result) > 0:
 				# sort resources by type and then by lowercase rn
 				if self.sortDiscoveryResources:
-					result.sort(key=lambda x:(x.ty, x.rn.lower()))
+					# result.sort(key=lambda x:(x.ty, x.rn.lower()))
+					result.sort(key=lambda x: (x.ty, -x.ct) if x.ty in [ T.CIN, T.FCI, T.TSI ] else (x.ty, x.rn.lower()))
 				targetResource[result[0].tpe] = [r.asDict(embedded=False) for r in result]
 				# TODO not all child resources are lists [...] Handle just to-1 relations
 			else:
