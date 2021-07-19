@@ -71,7 +71,9 @@ The actual configuration of the test suite is done in the file [config.py](../te
 
 One can also provide OAuth2 settings in case the CSE under test is behind an OAuth2 gateway.
 
-The CSE under test should be started with the remote configuration interface enabled. During test runs the test suite will temporarily change some of the CSE's delays (e.g. the check for resource expirations) in order to speed up the test. You can either do this by changing the configuation [enableRemoteConfiguration](Configuration.md#server_http) in the [configuration file](../acme.ini.default), or by providing the [--remote-configuration](Running.md) command line argument during startup.
+#### Enable Remote Configuration
+
+The CSE under test must be started with the remote configuration interface enabled. During test runs the test suite will temporarily change some of the CSE's delays (e.g. the check for resource expirations) in order to speed up the test. You can either do this by changing the configuation [enableRemoteConfiguration](Configuration.md#server_http) in the [configuration file](../acme.ini.default), or by providing the [--remote-configuration](Running.md) command line argument during startup.
 
 ### Test Suites
 
