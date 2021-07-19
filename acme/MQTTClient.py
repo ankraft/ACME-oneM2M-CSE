@@ -201,7 +201,8 @@ class MQTTClient(object):
 												 username 			= self.username,
 												 password			= self.password)
 		self.isStopped = False
-										
+		L.isInfo and L.log('MQTT Client initialized')
+	
 
 	def run(self) -> None:
 		"""	Initialize and run the MQTT client as a BackgroundWorker/Actor.

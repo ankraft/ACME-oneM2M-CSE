@@ -123,7 +123,7 @@ class HttpServer(object):
 		logging.getLogger("urllib3").setLevel(LogLevel.WARNING)
 		if not CSE.security.verifyCertificate:	# only when we also verify  certificates
 			urllib3.disable_warnings()
-		if L.isInfo: L.log('HTTP Server initialized')
+		L.isInfo and L.log('HTTP Server initialized')
 
 
 
