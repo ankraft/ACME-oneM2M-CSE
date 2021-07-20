@@ -18,6 +18,7 @@ rboPolicies = constructPolicy([
 ])
 attributePolicies =  addPolicy(mgmtObjAttributePolicies, rboPolicies)
 
+# TODO Shouldn't those attributes actually be always be True? According to TS-0004 D.10.1-2
 
 class RBO(MgmtObj):
 
@@ -38,8 +39,8 @@ class RBO(MgmtObj):
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
-		self.setAttribute('rbo', False, overwrite=True)	# always set (back) to True
-		self.setAttribute('far', False, overwrite=True)	# always set (back) to True
+		self.setAttribute('rbo', False, overwrite=True)	# always set (back) to False
+		self.setAttribute('far', False, overwrite=True)	# always set (back) to False
 		return Result(status=True)
 
 
