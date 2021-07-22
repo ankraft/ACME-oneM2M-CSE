@@ -80,8 +80,8 @@ class CSEBase(Resource):
 		return Result(status=True)
 
 
-	def willBeRetrieved(self) -> Result:
-		if not (res := super().willBeRetrieved()).status:
+	def willBeRetrieved(self, originator:str) -> Result:
+		if not (res := super().willBeRetrieved(originator)).status:
 			return res
 
 		# add the current time to this resource instance

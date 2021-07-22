@@ -71,8 +71,9 @@ futureTimestamp = '20371231T235959' if isRaspberrypi() else '88881231T235959'
 aeRN	= 'testAE'
 acpRN	= 'testACP'
 batRN	= 'testBAT'
-cntRN	= 'testCNT'
 cinRN	= 'testCIN'
+cntRN	= 'testCNT'
+csrRN	= 'testCSR'
 grpRN	= 'testGRP'
 fcntRN	= 'testFCNT'
 nodRN 	= 'testNOD'
@@ -92,6 +93,7 @@ aeURL 	= f'{cseURL}/{aeRN}'
 acpURL 	= f'{cseURL}/{acpRN}'
 cntURL 	= f'{aeURL}/{cntRN}'
 cinURL 	= f'{cntURL}/{cinRN}'	# under the <cnt>
+csrURL	= f'{cseURL}/{csrRN}'
 fcntURL	= f'{aeURL}/{fcntRN}'
 grpURL 	= f'{aeURL}/{grpRN}'
 nodURL 	= f'{cseURL}/{nodRN}'	# under the <ae>
@@ -100,7 +102,6 @@ subURL 	= f'{cntURL}/{subRN}'	# under the <cnt>
 tsURL 	= f'{aeURL}/{tsRN}'
 batURL 	= f'{nodURL}/{batRN}'	# under the <nod>
 memURL	= f'{nodURL}/{memRN}'	# under the <nod>
-batURL	= f'{nodURL}/{batRN}'	# under the <nod>
 
 
 REMOTEURL		= f'{REMOTESERVER}{REMOTEROOTPATH}'

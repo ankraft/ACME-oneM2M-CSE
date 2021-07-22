@@ -212,6 +212,29 @@ class TestCIN(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:cin/cr'), TestCIN.originator)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createRetrieveCINWithDcnt(self) -> None:
+		""" Create and Retrieve <CIN> with deletionCnt attribute set """
+		dct = 	{ 'm2m:cin' : { 
+					'rn' : 'dcntTest',
+					'con' : 'AnyValue',
+					'dcnt' : 5
+				}}
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)	
+		self.assertEqual(rsc, RC.created, r)
+		self.assertEqual(findXPath(r, 'm2m:cin/dcnt'), 5)					# dcnt should be set to 5
+
+		# Check dcnt in a RETRIEVE
+		for i in range(5, 0, -1):
+			r, rsc = RETRIEVE(f'{cntURL}/dcntTest', TestCIN.originator)
+			self.assertEqual(rsc, RC.OK)
+			self.assertEqual(findXPath(r, 'm2m:cin/dcnt'), i, r)				# dcnt should decrease
+
+		# The next RETRIEVE should fail since it should been deleted with last RETRIEVE
+		r, rsc = RETRIEVE(f'{cntURL}/dcntTest', TestCIN.originator)
+		self.assertEqual(rsc, RC.notFound)
+
+
 
 # More tests of la, ol etc in testCNT_CNI.py
 
@@ -231,6 +254,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCIN('test_createCINWithCnfWrong4'))
 	suite.addTest(TestCIN('test_createCINWithCnfWrong5'))
 	suite.addTest(TestCIN('test_createCINWithCreator'))
+	suite.addTest(TestCIN('test_createRetrieveCINWithDcnt'))
+
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)

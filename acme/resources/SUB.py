@@ -55,7 +55,6 @@ class SUB(Resource):
 
 
 
-# TODO expirationCounter
 # TODO notificationForwardingURI
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:

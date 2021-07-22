@@ -30,7 +30,7 @@ class CNT_OL(Resource):
 		if L.isDebug: L.logDebug('Retrieving oldest CIN from CNT')
 		if (r := self._getOldest()) is None:
 			return Result(rsc=RC.notFound, dbg='no instance for <oldest>')
-		if not (res := r.willBeRetrieved()).status:
+		if not (res := r.willBeRetrieved(originator)).status:
 			return res
 		return Result(resource=r)
 

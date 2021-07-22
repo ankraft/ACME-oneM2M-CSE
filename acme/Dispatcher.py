@@ -77,12 +77,14 @@ class Dispatcher(object):
 		# Retrieve the target resource, because it is needed for some rcn (and the default)
 		if request.args.rcn in [RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource]:
 			if (res := self.retrieveResource(id)).resource is None:
-			 	return res
+			 	return res # error
 			if not CSE.security.hasAccess(originator, res.resource, permission):
 				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=f'originator has no permission ({permission:d})')
 
 			# if rcn == attributes then we can return here, whatever the result is
 			if request.args.rcn == RCN.attributes:
+				if not (resCheck := res.resource.willBeRetrieved(originator)).status:	# resource instance may be changed in this call
+					return resCheck
 				return res
 
 			resource = res.resource	# root resource for the retrieval/discovery
@@ -93,10 +95,12 @@ class Dispatcher(object):
 					return res
 				if (lnk := resource.lnk) is None:	# no link attribute?
 					return Result(status=False, rsc=RC.badRequest, dbg='missing lnk attribute in target resource')
-				if not (res := resource.willBeRetrieved()).status:	# resource instance may be changed in this call
-					return res
 
-				return self.retrieveResource(lnk, originator, raw=True)
+				# Retrieve and check the linked-to request
+				if (res := self.retrieveResource(lnk, originator)).resource is not None:
+					if not (resCheck := res.resource.willBeRetrieved(originator)).status:	# resource instance may be changed in this call
+						return resCheck
+				return res
 
 
 		# do discovery
@@ -108,7 +112,7 @@ class Dispatcher(object):
 		allowedResources = []
 		for r in res.lst:
 			if CSE.security.hasAccess(originator, r, permission):
-				if not r.willBeRetrieved().status:	# resource instance may be changed in this call
+				if not r.willBeRetrieved(originator).status:	# resource instance may be changed in this call
 					continue
 				allowedResources.append(r)
 
@@ -173,8 +177,6 @@ class Dispatcher(object):
 			# Check for virtual resource
 			if resource.ty != T.GRP_FOPT and Utils.isVirtualResource(resource): # fopt is handled elsewhere
 				return resource.handleRetrieveRequest()	# type: ignore[no-any-return]
-			if not (res := resource.willBeRetrieved()).status:	# resource instance may be changed in this call
-				return res
 			return Result(status=True, resource=resource)
 		if res.dbg is not None:
 			L.isDebug and L.logDebug(f'{res.dbg}: {ri}')

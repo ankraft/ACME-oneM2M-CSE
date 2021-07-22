@@ -30,7 +30,7 @@ class CNT_LA(Resource):
 		if L.isDebug: L.logDebug('Retrieving latest CIN from CNT')
 		if (r := self._getLatest()) is None:
 			return Result(rsc=RC.notFound, dbg='no instance for <latest>')
-		if not (res := r.willBeRetrieved()).status:
+		if not (res := r.willBeRetrieved(originator)).status:
 			return res
 		return Result(resource=r)
 

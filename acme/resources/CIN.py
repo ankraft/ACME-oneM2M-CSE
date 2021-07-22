@@ -19,7 +19,7 @@ attributePolicies = constructPolicy([
 	'rn', 'ty', 'ri', 'pi', 'et', 'ct', 'lt', 'st', 'lbl', 'at', 'aa', 'cr',
 ])
 cinPolicies = constructPolicy([
-	'cnf', 'cs', 'conr', 'con', 'or', 'conr'
+	'cnf', 'cs', 'conr', 'con', 'or', 'conr', 'dcnt'
 ])
 attributePolicies = addPolicy(attributePolicies, cinPolicies)
 
@@ -45,14 +45,28 @@ class CIN(AnnounceableResource):
 		return Result(status=False, rsc=RC.operationNotAllowed, dbg='updating CIN is forbidden')
 
 
-	def willBeRetrieved(self) -> Result:
-		if not (res := super().willBeRetrieved()).status:
+	def willBeRetrieved(self, originator:str) -> Result:
+		if not (res := super().willBeRetrieved(originator)).status:
 			return res
 
 		# Check whether the parent container's *disableRetrieval* attribute is set to True.
 		if (cnt := self.retrieveParentResource()) is not None and (disr := cnt.disr) is not None and disr:	# False means "not disabled retrieval"
 			L.isDebug and L.logDebug(dbg := f'Retrieval is disabled for the parent <container>')
-			return Result(status=False, rsc=RC.operationNotAllowed, dbg=dbg)	
+			return Result(status=False, rsc=RC.operationNotAllowed, dbg=dbg)
+		
+		# Check deletion Count
+		if (dcnt := self.dcnt) is not None:
+			L.isDebug and L.logDebug(f'Decreasing dcnt for <cin>, ri: {self.ri}, ({dcnt} -> {dcnt-1})')
+			dcnt -= 1
+			if dcnt > 0:	# still > 0 -> CIN is not deleted
+				self.setAttribute('dcnt', dcnt)
+				self.dbUpdate()
+				# Since this is handled as a post decrement we need to set-back the value of dcnt.
+				# Attn: After this this value in the hold instance and in the DB are different !
+				self.setAttribute('dcnt', dcnt+1)
+			else:
+				L.isDebug and L.logDebug(f'Deleting <cin>, ri: {self.ri} because dcnt reached 0')
+				CSE.dispatcher.deleteResource(self, originator=originator)
 
 		return Result(status=True)
 

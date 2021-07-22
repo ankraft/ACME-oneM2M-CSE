@@ -271,7 +271,7 @@ class Resource(object):
 		return Result(status=True)
 
 
-	def willBeRetrieved(self) -> Result:
+	def willBeRetrieved(self, originator:str) -> Result:
 		""" Called before a resource will be send back in a response.
 		"""
 		return Result(status=True)

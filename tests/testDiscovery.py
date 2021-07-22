@@ -256,7 +256,7 @@ class TestDiscovery(unittest.TestCase):
 		""" Retrieve <CNT> under <AE> & rcn=1 """
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.attributes:d}&ty={T.CNT}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
-		self.assertIsNotNone(findXPath(r, 'm2m:ae'))
+		self.assertIsNotNone(findXPath(r, 'm2m:ae'), r)
 		self.assertEqual(findXPath(r, 'm2m:ae/rn'), aeRN)
 
 

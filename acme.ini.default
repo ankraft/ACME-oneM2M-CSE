@@ -319,7 +319,7 @@ refreshInterval=2.0
 # Wildcards are allowed.
 # Default: Empty list
 hideResources=
-# Show either resource infos or content' in tree view. 
+# Set the mode how resources and their content are presented in the console's tree view. 
 # Allowed values: normal, compact, content, contentOnly
 # Default: normal
 treeMode=normal

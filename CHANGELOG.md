@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added support for *Vendor Information* request/response header.
 - [CSE] Added support for \<container> *disableRetrieval* attribute.
 - [CSE] Added validation of *cnf* (contentInfo) attribute.
+- [CSE] Added support for *dcnt* (deletionCnt) attribute for \<contentInstance> resource type.
 - [WEB] Added OAuth2 authorization support for the proxied CSE (for the stand-alone web UI).
 - [WEB] Added opening the web UI in a browser on startup (for the stand-alone web UI).
 - [TESTS] Added OAuth2 authorization support for the tests.
@@ -37,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Improved the size calculation of \<contentInstance>, \<flexContainer>, and \<timeSeriesInstance> to realistic sizes (not the Python-internal type sizes anymore).
 - [CSE] Refactored internal request handling to support future protocol binding developments other than http.
 - [CSE] Changed the sorting of request result lists to type and creation time for \<contentInstance>, \<flexContainerInstance> and \<timeSeriesInstance>.
+- [CSE] Improved the validation of registering \<remoteCSE> resources for *csi* and *cb* attributes.
 
 ### Fixed
 - [CSE] Corrected response status codes for AE registration errors.
