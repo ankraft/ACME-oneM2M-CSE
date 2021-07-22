@@ -22,9 +22,9 @@ defaultDeviceID = ''
 
 class ANDI(MgmtObj):
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
 		self.resourceAttributePolicies = andiPolicies	# only the resource type's own policies
-		super().__init__(dct, pi, mgd=T.ANDI, create=create, attributePolicies=attributePolicies)
+		super().__init__(dct, pi, mgd=T.ANDI, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
 
 		if self.dict is not None:
 			self.setAttribute('dvd', defaultDeviceID, overwrite=False)

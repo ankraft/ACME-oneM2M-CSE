@@ -32,8 +32,8 @@ class SUB(Resource):
 	allowedChildResourceTypes:list[T] = [ ]
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.SUB, dct, pi, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
+		super().__init__(T.SUB, dct, pi, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
 
 		if self.dict is not None:
 			self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate ], overwrite=False)

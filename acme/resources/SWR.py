@@ -31,9 +31,9 @@ defaultStatus = { 'acn' : '', 'sus' : statusUninitialized }
 
 class SWR(MgmtObj):
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
 		self.resourceAttributePolicies = swrPolicies	# only the resource type's own policies
-		super().__init__(dct, pi, mgd=T.SWR, create=create, attributePolicies=attributePolicies)
+		super().__init__(dct, pi, mgd=T.SWR, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
 
 		if self.dict is not None:
 			self.setAttribute('vr', defaultVersion, overwrite=False)

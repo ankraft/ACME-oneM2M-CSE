@@ -338,7 +338,7 @@ class TestRemote_Annc(unittest.TestCase):
 	def test_retrieveRCNOriginalResource(self) -> None:
 		""" Retrieve original resource from remote CSE """
 		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteBatRI}?rcn={RCN.originalResource:d}', ORIGINATOR)
-		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:bat'))
 		self.assertIsNotNone(findXPath(r, 'm2m:bat/ty'))
 		self.assertEqual(findXPath(r, 'm2m:bat/ty'), T.MGMTOBJ)
@@ -583,7 +583,7 @@ class TestRemote_Annc(unittest.TestCase):
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_deleteAnnounceACP(self) -> None:
-		""" Delete remote <ACPA> directly. Should fail """
+		""" Delete remote <ACPA> directly -> FAIL """
 		if TestRemote_Annc.acp is None:
 			self.skipTest('acp not found')
 		_, rsc = DELETE(acpURL, ORIGINATOR)

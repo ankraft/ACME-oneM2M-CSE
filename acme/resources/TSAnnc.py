@@ -32,6 +32,6 @@ class TSAnnc(AnnouncedResource):
 	allowedChildResourceTypes = [ T.SUB, T.TSI,	T.TSIAnnc ]
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.TSAnnc, dct, pi=pi, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
+		super().__init__(T.TSAnnc, dct, pi=pi, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
 

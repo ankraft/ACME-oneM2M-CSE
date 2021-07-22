@@ -406,8 +406,8 @@ class RemoteCSEManager(object):
 		# add local CSR and ACP's
 		if (result := CSE.dispatcher.createResource(csr, localCSE)).resource is None:
 			return result # Problem
-		if not CSE.registration.handleCSRRegistration(csr, remoteCSE.csi):
-			return Result(rsc=RC.badRequest, dbg='cannot register CSR')
+		if not (res := CSE.registration.handleCSRRegistration(csr, remoteCSE.csi)).status:
+			return Result(rsc=RC.badRequest, dbg=f'cannot register CSR: {res.dbg}')
 		return CSE.dispatcher.updateResource(csr, doUpdateCheck=False)		# TODO dbupdate() instead?
 
 
@@ -510,7 +510,7 @@ class RemoteCSEManager(object):
 			L.logErr(err := 'csi not found in remote CSE resource')
 			return Result(rsc=RC.badRequest, dbg=err)
 		if not csi.startswith('/'):
-			L.isDebug and L.logWarn('Remote CSE.csi doesn\'t start with /. Correcting.')
+			L.isDebug and L.logWarn('Remote CSE.csi doesn\'t start with /. Correcting.')	# TODO Decide whether correcting this is actually correct. Also in validator.validateCSICB()
 			Utils.setXPath(res.dict, 'm2m:cb/csi', f'/{csi}')
 
 		return Result(resource=CSEBase.CSEBase(res.dict), rsc=RC.OK)
@@ -554,7 +554,7 @@ class RemoteCSEManager(object):
 		res = CSE.request.sendRetrieveRequest(url, originator)	## todo
 		if res.rsc != RC.OK:
 			return res.errorResult()
-		return Factory.resourceFromDict(res.dict) if not raw else Result(resource=res.dict)
+		return Factory.resourceFromDict(res.dict, isRemote=True) if not raw else Result(resource=res.dict)
 
 
 	def getCSRFromPath(self, id:str) -> Tuple[Resource, List[str]]:

@@ -30,8 +30,8 @@ class TSI(AnnounceableResource):
 	allowedChildResourceTypes:list[T] = [ ]
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.TSI, dct, pi, create=create, inheritACP=True, readOnly = True, attributePolicies=attributePolicies)
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
+		super().__init__(T.TSI, dct, pi, create=create, inheritACP=True, readOnly = True, attributePolicies=attributePolicies, isRemote=isRemote)
 		self.resourceAttributePolicies = tsiPolicies	# only the resource type's own policies
 		self.setAttribute('cs', Utils.getAttributeSize(self['con']))       # Set contentSize
 

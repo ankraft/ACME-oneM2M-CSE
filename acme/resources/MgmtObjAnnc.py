@@ -31,8 +31,8 @@ class MgmtObjAnnc(AnnouncedResource):
 	allowedChildResourceTypes = [ T.SUB ]
 
 
-	def __init__(self, dct:JSON, pi:str, mgd:T, create:bool=False, attributePolicies:AttributePolicies=None) -> None:
-		super().__init__(T.MGMTOBJAnnc, dct, pi, tpe=f'{mgd.tpe()}A', create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:JSON, pi:str, mgd:T, create:bool=False, attributePolicies:AttributePolicies=None, isRemote:bool=False) -> None:
+		super().__init__(T.MGMTOBJAnnc, dct, pi, tpe=f'{mgd.tpe()}A', create=create, attributePolicies=attributePolicies, isRemote=isRemote)
 		
 		self.resourceAttributePolicies:AttributePolicies = deepcopy(self.resourceAttributePolicies)	# We dont want to change the original policy list
 		self.resourceAttributePolicies.update(mgmtObjAAttributePolicies)							# add mgmtobjA policies

@@ -33,8 +33,8 @@ class NOD(AnnounceableResource):
 	allowedChildResourceTypes = [ T.MGMTOBJ, T.SUB ]
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.NOD, dct, pi, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
+		super().__init__(T.NOD, dct, pi, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
 
 		self.resourceAttributePolicies = nodPolicies	# only the resource type's own policies
 

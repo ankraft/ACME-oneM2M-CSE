@@ -37,7 +37,8 @@ class Resource(object):
 	# ATTN: There is a similar definition in FCNT! Don't Forget to add attributes there as well
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator, _announcedTo, _modified, _isAnnounced ]
 
-	def __init__(self, ty:T|int, dct:JSON=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str=None, attributePolicies:AttributePolicies=None, isVirtual:bool=False, isAnnounced:bool=False) -> None:
+	def __init__(self, ty:T|int, dct:JSON=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, 
+				 readOnly:bool=False, rn:str=None, attributePolicies:AttributePolicies=None, isVirtual:bool=False, isAnnounced:bool=False, isRemote:bool=False) -> None:
 		self.tpe = tpe
 		if isinstance(ty, T) and ty not in [ T.FCNT, T.FCI ]: 	# For some types the tpe/root is empty and will be set later in this method
 			self.tpe = ty.tpe() if tpe is None else tpe
@@ -105,8 +106,10 @@ class Resource(object):
 			# But see also the comment in update() !!!
 			#self.dict = {k: v for (k, v) in self.dict.items() if v is not None }
 			self.dict = Utils.removeNoneValuesFromDict(self.dict, ['cr'])	# allow the ct attribute to stay in the dictionary. It will be handled with in the RegistrationManager
-			# determine and add the srn
-			self[self._srn] = Utils.structuredPath(self)
+
+			# determine and add the srn, only when this is a local resource, otherwise we don't need this information
+			if not isRemote:
+				self[self._srn] = Utils.structuredPath(self)
 			self[self._rtype] = self.tpe
 			self.setAttribute(self._announcedTo, [], overwrite=False)
 

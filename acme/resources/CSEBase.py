@@ -26,8 +26,8 @@ class CSEBase(Resource):
 	allowedChildResourceTypes = [ T.ACP, T.AE, T.CSR, T.CNT, T.FCNT, T.GRP, T.NOD, T.REQ, T.SUB, T.TS ]
 
 
-	def __init__(self, dct:JSON=None, create:bool=False) -> None:
-		super().__init__(T.CSEBase, dct, '', create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:JSON=None, create:bool=False, isRemote:bool=False) -> None:
+		super().__init__(T.CSEBase, dct, '', create=create, attributePolicies=attributePolicies, isRemote=isRemote)
 
 		if self.dict is not None:
 			self.setAttribute('ri', 'cseid', overwrite=False)

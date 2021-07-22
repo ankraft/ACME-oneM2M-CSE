@@ -81,88 +81,88 @@ from resources.Resource import Resource
 
 
 # type definition for Factory lambda
-FactoryT = Callable[[Dict[str, object], str, str, bool], object]
+FactoryT = Callable[[Dict[str, object], str, str, bool, bool], object]
 
 resourceFactoryMap:Dict[T, FactoryT] = {
 	#	Regular resources
 	#	type -> factory
 	
-	T.ACP		: lambda dct, tpe, pi, create : ACP(dct, pi=pi, create=create),
-	T.AE		: lambda dct, tpe, pi, create : AE(dct, pi=pi, create=create),
-	T.CIN		: lambda dct, tpe, pi, create : CIN(dct, pi=pi, create=create),
-	T.CNT		: lambda dct, tpe, pi, create : CNT(dct, pi=pi, create=create),
-	T.CNT_LA	: lambda dct, tpe, pi, create : CNT_LA(dct, pi=pi, create=create),
-	T.CNT_OL	: lambda dct, tpe, pi, create : CNT_OL(dct, pi=pi, create=create),
-	T.CNT		: lambda dct, tpe, pi, create : CNT(dct, pi=pi, create=create),
-	T.CSEBase	: lambda dct, tpe, pi, create : CSEBase(dct, create=create),
-	T.CSR		: lambda dct, tpe, pi, create : CSR(dct, pi=pi, create=create),
-	T.FCNT		: lambda dct, tpe, pi, create : FCNT(dct, pi=pi, fcntType=tpe, create=create),
-	T.FCNT_LA	: lambda dct, tpe, pi, create : FCNT_LA(dct, pi=pi, create=create),
-	T.FCNT_OL	: lambda dct, tpe, pi, create : FCNT_OL(dct, pi=pi, create=create),
-	T.FCI		: lambda dct, tpe, pi, create : FCI(dct, pi=pi, fcntType=tpe, create=create),
-	T.GRP		: lambda dct, tpe, pi, create : GRP(dct, pi=pi, create=create),
-	T.GRP_FOPT	: lambda dct, tpe, pi, create : GRP_FOPT(dct, pi=pi, create=create),
-	T.NOD		: lambda dct, tpe, pi, create : NOD(dct, pi=pi, create=create),
-	T.PCH		: lambda dct, tpe, pi, create : PCH(dct, pi=pi, create=create),
-	T.PCH_PCU	: lambda dct, tpe, pi, create : PCH_PCU(dct, pi=pi, create=create),
-	T.REQ		: lambda dct, tpe, pi, create : REQ(dct, pi=pi, create=create),
-	T.SUB		: lambda dct, tpe, pi, create : SUB(dct, pi=pi, create=create),
-	T.TS		: lambda dct, tpe, pi, create : TS(dct, pi=pi, create=create),
-	T.TS_LA		: lambda dct, tpe, pi, create : TS_LA(dct, pi=pi, create=create),
-	T.TS_OL		: lambda dct, tpe, pi, create : TS_OL(dct, pi=pi, create=create),
-	T.TSI		: lambda dct, tpe, pi, create : TSI(dct, pi=pi, create=create),
+	T.ACP		: lambda dct, tpe, pi, create, isRemote : ACP(dct, pi=pi, create=create, isRemote=isRemote),
+	T.AE		: lambda dct, tpe, pi, create, isRemote : AE(dct, pi=pi, create=create, isRemote=isRemote),
+	T.CIN		: lambda dct, tpe, pi, create, isRemote : CIN(dct, pi=pi, create=create, isRemote=isRemote),
+	T.CNT		: lambda dct, tpe, pi, create, isRemote : CNT(dct, pi=pi, create=create, isRemote=isRemote),
+	T.CNT_LA	: lambda dct, tpe, pi, create, isRemote : CNT_LA(dct, pi=pi, create=create, isRemote=isRemote),
+	T.CNT_OL	: lambda dct, tpe, pi, create, isRemote : CNT_OL(dct, pi=pi, create=create, isRemote=isRemote),
+	T.CNT		: lambda dct, tpe, pi, create, isRemote : CNT(dct, pi=pi, create=create, isRemote=isRemote),
+	T.CSEBase	: lambda dct, tpe, pi, create, isRemote : CSEBase(dct, create=create, isRemote=isRemote),
+	T.CSR		: lambda dct, tpe, pi, create, isRemote : CSR(dct, pi=pi, create=create, isRemote=isRemote),
+	T.FCNT		: lambda dct, tpe, pi, create, isRemote : FCNT(dct, pi=pi, fcntType=tpe, create=create, isRemote=isRemote),
+	T.FCNT_LA	: lambda dct, tpe, pi, create, isRemote : FCNT_LA(dct, pi=pi, create=create, isRemote=isRemote),
+	T.FCNT_OL	: lambda dct, tpe, pi, create, isRemote : FCNT_OL(dct, pi=pi, create=create, isRemote=isRemote),
+	T.FCI		: lambda dct, tpe, pi, create, isRemote : FCI(dct, pi=pi, fcntType=tpe, create=create),
+	T.GRP		: lambda dct, tpe, pi, create, isRemote : GRP(dct, pi=pi, create=create, isRemote=isRemote),
+	T.GRP_FOPT	: lambda dct, tpe, pi, create, isRemote : GRP_FOPT(dct, pi=pi, create=create, isRemote=isRemote),
+	T.NOD		: lambda dct, tpe, pi, create, isRemote : NOD(dct, pi=pi, create=create, isRemote=isRemote),
+	T.PCH		: lambda dct, tpe, pi, create, isRemote : PCH(dct, pi=pi, create=create, isRemote=isRemote),
+	T.PCH_PCU	: lambda dct, tpe, pi, create, isRemote : PCH_PCU(dct, pi=pi, create=create, isRemote=isRemote),
+	T.REQ		: lambda dct, tpe, pi, create, isRemote : REQ(dct, pi=pi, create=create, isRemote=isRemote),
+	T.SUB		: lambda dct, tpe, pi, create, isRemote : SUB(dct, pi=pi, create=create, isRemote=isRemote),
+	T.TS		: lambda dct, tpe, pi, create, isRemote : TS(dct, pi=pi, create=create, isRemote=isRemote),
+	T.TS_LA		: lambda dct, tpe, pi, create, isRemote : TS_LA(dct, pi=pi, create=create, isRemote=isRemote),
+	T.TS_OL		: lambda dct, tpe, pi, create, isRemote : TS_OL(dct, pi=pi, create=create, isRemote=isRemote),
+	T.TSI		: lambda dct, tpe, pi, create, isRemote : TSI(dct, pi=pi, create=create, isRemote=isRemote),
 
 
 	# 	Announced Resources
 	#	type -> factory
 
-	T.ACPAnnc	: lambda dct, tpe, pi, create : ACPAnnc(dct, pi=pi, create=create),
-	T.AEAnnc	: lambda dct, tpe, pi, create : AEAnnc(dct, pi=pi, create=create),
-	T.CINAnnc	: lambda dct, tpe, pi, create : CINAnnc(dct, pi=pi, create=create),
-	T.CNTAnnc	: lambda dct, tpe, pi, create : CNTAnnc(dct, pi=pi, create=create),
-	T.CSRAnnc	: lambda dct, tpe, pi, create : CSRAnnc(dct, pi=pi, create=create),
-	T.FCNTAnnc	: lambda dct, tpe, pi, create : FCNTAnnc(dct, pi=pi, create=create),
-	T.FCIAnnc	: lambda dct, tpe, pi, create : FCIAnnc(dct, pi=pi, create=create),
-	T.GRPAnnc	: lambda dct, tpe, pi, create : GRPAnnc(dct, pi=pi, create=create),
-	T.NODAnnc	: lambda dct, tpe, pi, create : NODAnnc(dct, pi=pi, create=create),
-	T.TSAnnc	: lambda dct, tpe, pi, create : TSAnnc(dct, pi=pi, create=create),
-	T.TSIAnnc	: lambda dct, tpe, pi, create : TSIAnnc(dct, pi=pi, create=create),
+	T.ACPAnnc	: lambda dct, tpe, pi, create, isRemote : ACPAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.AEAnnc	: lambda dct, tpe, pi, create, isRemote : AEAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.CINAnnc	: lambda dct, tpe, pi, create, isRemote : CINAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.CNTAnnc	: lambda dct, tpe, pi, create, isRemote : CNTAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.CSRAnnc	: lambda dct, tpe, pi, create, isRemote : CSRAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.FCNTAnnc	: lambda dct, tpe, pi, create, isRemote : FCNTAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.FCIAnnc	: lambda dct, tpe, pi, create, isRemote : FCIAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.GRPAnnc	: lambda dct, tpe, pi, create, isRemote : GRPAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.NODAnnc	: lambda dct, tpe, pi, create, isRemote : NODAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.TSAnnc	: lambda dct, tpe, pi, create, isRemote : TSAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.TSIAnnc	: lambda dct, tpe, pi, create, isRemote : TSIAnnc(dct, pi=pi, create=create, isRemote=isRemote),
 
 
 	#	Management specializations
 	#	mgd -> factory
 
-	T.ANDI		: lambda dct, tpe, pi, create : ANDI(dct, pi=pi, create=create),
-	T.ANI		: lambda dct, tpe, pi, create : ANI(dct, pi=pi, create=create),
-	T.BAT		: lambda dct, tpe, pi, create : BAT(dct, pi=pi, create=create),
-	T.DVC		: lambda dct, tpe, pi, create : DVC(dct, pi=pi, create=create),
-	T.DVI		: lambda dct, tpe, pi, create : DVI(dct, pi=pi, create=create),
-	T.EVL		: lambda dct, tpe, pi, create : EVL(dct, pi=pi, create=create),
-	T.FWR		: lambda dct, tpe, pi, create : FWR(dct, pi=pi, create=create),
-	T.MEM		: lambda dct, tpe, pi, create : MEM(dct, pi=pi, create=create),
-	T.NYCFC		: lambda dct, tpe, pi, create : NYCFC(dct, pi=pi, create=create),
-	T.RBO		: lambda dct, tpe, pi, create : RBO(dct, pi=pi, create=create),
-	T.SWR		: lambda dct, tpe, pi, create : SWR(dct, pi=pi, create=create),
+	T.ANDI		: lambda dct, tpe, pi, create, isRemote : ANDI(dct, pi=pi, create=create, isRemote=isRemote),
+	T.ANI		: lambda dct, tpe, pi, create, isRemote : ANI(dct, pi=pi, create=create, isRemote=isRemote),
+	T.BAT		: lambda dct, tpe, pi, create, isRemote : BAT(dct, pi=pi, create=create, isRemote=isRemote),
+	T.DVC		: lambda dct, tpe, pi, create, isRemote : DVC(dct, pi=pi, create=create, isRemote=isRemote),
+	T.DVI		: lambda dct, tpe, pi, create, isRemote : DVI(dct, pi=pi, create=create, isRemote=isRemote),
+	T.EVL		: lambda dct, tpe, pi, create, isRemote : EVL(dct, pi=pi, create=create, isRemote=isRemote),
+	T.FWR		: lambda dct, tpe, pi, create, isRemote : FWR(dct, pi=pi, create=create, isRemote=isRemote),
+	T.MEM		: lambda dct, tpe, pi, create, isRemote : MEM(dct, pi=pi, create=create, isRemote=isRemote),
+	T.NYCFC		: lambda dct, tpe, pi, create, isRemote : NYCFC(dct, pi=pi, create=create, isRemote=isRemote),
+	T.RBO		: lambda dct, tpe, pi, create, isRemote : RBO(dct, pi=pi, create=create, isRemote=isRemote),
+	T.SWR		: lambda dct, tpe, pi, create, isRemote : SWR(dct, pi=pi, create=create, isRemote=isRemote),
 
 	#	Announced Management specializations
 	#	mgd -> factory
 
-	T.ANDIAnnc	: lambda dct, tpe, pi, create : ANDIAnnc(dct, pi=pi, create=create),
-	T.ANIAnnc	: lambda dct, tpe, pi, create : ANIAnnc(dct, pi=pi, create=create),
-	T.BATAnnc	: lambda dct, tpe, pi, create : BATAnnc(dct, pi=pi, create=create),
-	T.DVCAnnc	: lambda dct, tpe, pi, create : DVCAnnc(dct, pi=pi, create=create),
-	T.DVIAnnc	: lambda dct, tpe, pi, create : DVIAnnc(dct, pi=pi, create=create),
-	T.EVLAnnc	: lambda dct, tpe, pi, create : EVLAnnc(dct, pi=pi, create=create),
-	T.FWRAnnc	: lambda dct, tpe, pi, create : FWRAnnc(dct, pi=pi, create=create),
-	T.MEMAnnc	: lambda dct, tpe, pi, create : MEMAnnc(dct, pi=pi, create=create),
-	T.NYCFCAnnc	: lambda dct, tpe, pi, create : NYCFCAnnc(dct, pi=pi, create=create),
-	T.SWRAnnc	: lambda dct, tpe, pi, create : SWRAnnc(dct, pi=pi, create=create),
-	T.RBOAnnc	: lambda dct, tpe, pi, create : RBOAnnc(dct, pi=pi, create=create),
+	T.ANDIAnnc	: lambda dct, tpe, pi, create, isRemote : ANDIAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.ANIAnnc	: lambda dct, tpe, pi, create, isRemote : ANIAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.BATAnnc	: lambda dct, tpe, pi, create, isRemote : BATAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.DVCAnnc	: lambda dct, tpe, pi, create, isRemote : DVCAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.DVIAnnc	: lambda dct, tpe, pi, create, isRemote : DVIAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.EVLAnnc	: lambda dct, tpe, pi, create, isRemote : EVLAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.FWRAnnc	: lambda dct, tpe, pi, create, isRemote : FWRAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.MEMAnnc	: lambda dct, tpe, pi, create, isRemote : MEMAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.NYCFCAnnc	: lambda dct, tpe, pi, create, isRemote : NYCFCAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.SWRAnnc	: lambda dct, tpe, pi, create, isRemote : SWRAnnc(dct, pi=pi, create=create, isRemote=isRemote),
+	T.RBOAnnc	: lambda dct, tpe, pi, create, isRemote : RBOAnnc(dct, pi=pi, create=create, isRemote=isRemote),
 }
 
 
 
-def resourceFromDict(resDict:Dict[str, Any]={}, pi:str=None, ty:T=None, create:bool=False, isImported:bool=False) -> Result:
+def resourceFromDict(resDict:Dict[str, Any]={}, pi:str=None, ty:T=None, create:bool=False, isImported:bool=False, isRemote:bool=False) -> Result:
 	""" Create a resource from a dictionary structure.
 		This will *not* call the activate method, therefore some attributes
 		may be set separately.
@@ -206,8 +206,8 @@ def resourceFromDict(resDict:Dict[str, Any]={}, pi:str=None, ty:T=None, create:b
 	else:
 		factory = resourceFactoryMap.get(typ)
 	if factory is not None:
-		return Result(resource=factory(resDict, tpe, pi, create))
+		return Result(resource=factory(resDict, tpe, pi, create, isRemote))
 
-	return Result(resource=Unknown(resDict, tpe, pi=pi, create=create))	# Capture-All resource
+	return Result(resource=Unknown(resDict, tpe, pi=pi, create=create, isRemote=isRemote))	# Capture-All resource
 
 

@@ -25,8 +25,8 @@ class GRP_FOPT(Resource):
 	allowedChildResourceTypes:list[T] = [ ]
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.GRP_FOPT, dct, pi, create=create, inheritACP=True, readOnly=True, rn='fopt', isVirtual=True)
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
+		super().__init__(T.GRP_FOPT, dct, pi, create=create, inheritACP=True, readOnly=True, rn='fopt', isVirtual=True, isRemote=isRemote)
 
 
 	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:

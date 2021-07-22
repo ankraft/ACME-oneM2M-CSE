@@ -40,8 +40,8 @@ class FCNT(AnnounceableResource):
 	_hasFCI	= '__hasFCI__'
 	"""	Internal attribute to indicate whether this FCNT has la/ol installed. """
 
-	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
-		super().__init__(T.FCNT, dct, pi, tpe=fcntType, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False, isRemote:bool=False) -> None:
+		super().__init__(T.FCNT, dct, pi, tpe=fcntType, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
 		self.internalAttributes.append(self._hasFCI)	# Add to internal attributes to ignore in validation etc
 
 		self.resourceAttributePolicies = fcntPolicies	# only the resource type's own policies

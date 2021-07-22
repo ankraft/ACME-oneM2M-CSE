@@ -55,8 +55,8 @@ class RegistrationManager(object):
 		if ty == T.CSR:
 			if CSE.cseType == CSEType.ASN:
 				return Result(rsc=RC.operationNotAllowed, dbg='cannot register to ASN CSE')
-			if not self.handleCSRRegistration(resource, originator):
-				return Result(rsc=RC.badRequest, dbg='cannot register CSR')
+			if not (res := self.handleCSRRegistration(resource, originator)).status:
+				return Result(rsc=RC.badRequest, dbg=f'cannot register CSR: {res.dbg}')
 
 		# Test and set creator attribute.
 		if (res := self.handleCreator(resource, originator)).rsc != RC.OK:
@@ -167,11 +167,19 @@ class RegistrationManager(object):
 	#	Handle CSR registration
 	#
 
-	def handleCSRRegistration(self, csr:Resource, originator:str) -> bool:
+	def handleCSRRegistration(self, csr:Resource, originator:str) -> Result:
 		L.isDebug and L.logDebug(f'Registering CSR. csi: {csr.csi}')
+
+		# Validate csi in csr
+		if not (res := CSE.validator.validateCSICB(csr.csi, 'csi')).status:
+			return res
+		# Validate cb in csr
+		if not (res := CSE.validator.validateCSICB(csr.cb, 'cb')).status:
+			return res
+
 		# send event
 		CSE.event.remoteCSEHasRegistered(csr)	# type: ignore
-		return True
+		return Result(status=True)
 
 
 	#

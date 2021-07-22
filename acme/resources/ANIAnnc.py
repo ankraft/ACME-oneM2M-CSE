@@ -20,6 +20,6 @@ attributePolicies =  addPolicy(mgmtObjAAttributePolicies, aniAPolicies)
 
 class ANIAnnc(MgmtObjAnnc):
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(dct, pi, mgd=T.ANI, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
+		super().__init__(dct, pi, mgd=T.ANI, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
 

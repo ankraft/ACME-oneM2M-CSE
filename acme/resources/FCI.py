@@ -27,8 +27,8 @@ class FCI(AnnounceableResource):
 	allowedChildResourceTypes:list[T] = [ ]
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
-		super().__init__(T.FCI, dct, pi, tpe=fcntType, create=create, inheritACP=True, readOnly=True, attributePolicies=attributePolicies)
+	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False, isRemote:bool=False) -> None:
+		super().__init__(T.FCI, dct, pi, tpe=fcntType, create=create, inheritACP=True, readOnly=True, attributePolicies=attributePolicies, isRemote=isRemote)
 		self.resourceAttributePolicies = fcinPolicies	# only the resource type's own policies
 
 

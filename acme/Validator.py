@@ -95,6 +95,7 @@ attributePolicies:AttributePolicies = {
 	'cus'	: ( BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# BAT
 	'dc'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# MGO
 	'dea'	: ( BT.boolean,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ),		# SWR
+	'dcnt'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# CIN
 	'dcse'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSR
 	'dgt'	: {
 		T.FCNT : (  BT.absRelTimestamp,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),	# FCNT
@@ -475,6 +476,19 @@ class Validator(object):
 		if isinstance(value, str) and re.match(self.cnfRegex, value) is not None:
 			return Result(status=True)
 		return Result(status=False, dbg=f'validation of cnf attribute failed: {value}')
+
+
+	def validateCSICB(self, val:str, name:str) -> Result:
+		"""	Validate the format of a CSE-ID in csi or cb attributes.
+		"""
+		# TODO Decide whether to correct this automatically, like in RemoteCSEManager._retrieveRemoteCSE()
+		if val is None:
+			L.logDebug(dbg := f"{name} is missing")
+			return Result(status=False, dbg=dbg)
+		if not val.startswith('/'):
+			L.logDebug(dbg := f"{name} must start with '/': {val}")
+			return Result(status=False, dbg=dbg)
+		return Result(status=True)
 
 
 	def isExtraResourceAttribute(self, attr:str, resource:Resource) -> bool:

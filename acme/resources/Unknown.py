@@ -16,6 +16,6 @@ from Types import ResourceTypes as T, JSON
 
 class Unknown(Resource):
 
-	def __init__(self, dct:JSON, tpe:str, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.UNKNOWN, dct, pi, tpe=tpe, create=create)
+	def __init__(self, dct:JSON, tpe:str, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
+		super().__init__(T.UNKNOWN, dct, pi, tpe=tpe, create=create, isRemote=isRemote)
 

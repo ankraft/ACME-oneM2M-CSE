@@ -20,7 +20,7 @@ attributePolicies =  addPolicy(mgmtObjAAttributePolicies, nycfcAPolicies)
 
 class NYCFCAnnc(MgmtObjAnnc):
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
 		self.resourceAttributePolicies = nycfcAPolicies	# only the resource type's own policies
-		super().__init__(dct, pi, mgd=T.NYCFC, create=create, attributePolicies=attributePolicies)
+		super().__init__(dct, pi, mgd=T.NYCFC, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
 

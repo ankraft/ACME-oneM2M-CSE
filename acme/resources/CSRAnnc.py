@@ -32,7 +32,7 @@ class CSRAnnc(AnnouncedResource):
 								T.SUB, T.TS, T.TSAnnc, T.CSRAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.AEAnnc ]
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.CSRAnnc, dct, pi=pi, create=create, attributePolicies=attributePolicies)
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
+		super().__init__(T.CSRAnnc, dct, pi=pi, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
 
 

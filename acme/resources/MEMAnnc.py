@@ -20,7 +20,7 @@ attributePolicies =  addPolicy(mgmtObjAAttributePolicies, memAPolicies)
 
 class MEMAnnc(MgmtObjAnnc):
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
 		self.resourceAttributePolicies = memAPolicies	# only the resource type's own policies
-		super().__init__(dct, pi, mgd=T.MEM, create=create, attributePolicies=attributePolicies)
+		super().__init__(dct, pi, mgd=T.MEM, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
 
