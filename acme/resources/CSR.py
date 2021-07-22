@@ -32,8 +32,8 @@ class CSR(AnnounceableResource):
 								T.ACP, T.ACPAnnc, T.SUB, T.TS, T.TSAnnc, T.CSRAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.AEAnnc ]
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, rn:str=None, create:bool=False, isRemote:bool=False) -> None:
-		super().__init__(T.CSR, dct, pi, rn=rn, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
+	def __init__(self, dct:JSON=None, pi:str=None, rn:str=None, create:bool=False) -> None:
+		super().__init__(T.CSR, dct, pi, rn=rn, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = csrPolicies	# only the resource type's own policies
 

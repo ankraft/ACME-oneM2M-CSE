@@ -22,7 +22,7 @@ attributePolicies =  addPolicy(mgmtObjAAttributePolicies, dviAPolicies)
 
 class DVIAnnc(MgmtObjAnnc):
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		self.resourceAttributePolicies = dviAPolicies	# only the resource type's own policies
-		super().__init__(dct, pi, mgd=T.DVI, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
+		super().__init__(dct, pi, mgd=T.DVI, create=create, attributePolicies=attributePolicies)
 

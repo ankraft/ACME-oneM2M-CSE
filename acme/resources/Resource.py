@@ -33,12 +33,13 @@ class Resource(object):
 	_isAnnounced 		= '__isAnnounced__'	
 	_originator			= '__originator__'			# Or creator
 	_modified			= '__modified__'
+	_remoteID			= '__remoteID__'			# When this is a resource from another CSE
 
 	# ATTN: There is a similar definition in FCNT! Don't Forget to add attributes there as well
-	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator, _announcedTo, _modified, _isAnnounced ]
+	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator, _announcedTo, _modified, _isAnnounced, _remoteID ]
 
 	def __init__(self, ty:T|int, dct:JSON=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, 
-				 readOnly:bool=False, rn:str=None, attributePolicies:AttributePolicies=None, isVirtual:bool=False, isAnnounced:bool=False, isRemote:bool=False) -> None:
+				 readOnly:bool=False, rn:str=None, attributePolicies:AttributePolicies=None, isVirtual:bool=False, isAnnounced:bool=False) -> None:
 		self.tpe = tpe
 		if isinstance(ty, T) and ty not in [ T.FCNT, T.FCI ]: 	# For some types the tpe/root is empty and will be set later in this method
 			self.tpe = ty.tpe() if tpe is None else tpe
@@ -108,7 +109,8 @@ class Resource(object):
 			self.dict = Utils.removeNoneValuesFromDict(self.dict, ['cr'])	# allow the ct attribute to stay in the dictionary. It will be handled with in the RegistrationManager
 
 			# determine and add the srn, only when this is a local resource, otherwise we don't need this information
-			if not isRemote:
+			# It is *not* a remote resource when the __remoteID__ is set
+			if self[self._remoteID] is None:
 				self[self._srn] = Utils.structuredPath(self)
 			self[self._rtype] = self.tpe
 			self.setAttribute(self._announcedTo, [], overwrite=False)

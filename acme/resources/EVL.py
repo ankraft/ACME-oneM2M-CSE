@@ -36,9 +36,9 @@ defaultLogStatus = lgstUnknown
 
 class EVL(MgmtObj):
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		self.resourceAttributePolicies = evlPolicies	# only the resource type's own policies
-		super().__init__(dct, pi, mgd=T.EVL, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
+		super().__init__(dct, pi, mgd=T.EVL, create=create, attributePolicies=attributePolicies)
 
 		if self.dict is not None:
 			self.setAttribute('lgt', defaultLogTypeId, overwrite=False)

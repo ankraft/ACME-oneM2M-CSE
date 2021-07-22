@@ -542,9 +542,8 @@ class RemoteCSEManager(object):
 
 
 
-	def retrieveRemoteResource(self, id:str, originator:str=None, raw:bool=False) -> Result:
-		"""	Retrieve a resource from a remote CSE. If 'raw' is True then no resource
-			object is created, but the raw content from the retrieval is returned.
+	def retrieveRemoteResource(self, id:str, originator:str=None) -> Result:
+		"""	Retrieve a resource from a remote CSE.
 		"""
 		if (url := CSE.request._getForwardURL(id)) is None:
 			return Result(rsc=RC.notFound, dbg=f'URL not found for id: {id}')
@@ -554,7 +553,14 @@ class RemoteCSEManager(object):
 		res = CSE.request.sendRetrieveRequest(url, originator)	## todo
 		if res.rsc != RC.OK:
 			return res.errorResult()
-		return Factory.resourceFromDict(res.dict, isRemote=True) if not raw else Result(resource=res.dict)
+		
+		# assign the remote ID to the resource's dictionary
+		_, tpe = Utils.pureResource(res.dict)
+		Utils.setXPath(res.dict, f'{tpe}/{Resource._remoteID}', id)
+
+		# Instantiate
+		# return Factory.resourceFromDict(res.dict, isRemote=True) if not raw else Result(resource=res.dict)
+		return Factory.resourceFromDict(res.dict)
 
 
 	def getCSRFromPath(self, id:str) -> Tuple[Resource, List[str]]:

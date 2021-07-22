@@ -31,6 +31,6 @@ class CNTAnnc(AnnouncedResource):
 	allowedChildResourceTypes = [ T.CNT, T.CNTAnnc, T.CIN, T.CINAnnc, T.FCNT, T.FCNTAnnc, T.SUB, T.TS, T.TSAnnc ]
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
-		super().__init__(T.CNTAnnc, dct, pi=pi, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.CNTAnnc, dct, pi=pi, create=create, attributePolicies=attributePolicies)
 

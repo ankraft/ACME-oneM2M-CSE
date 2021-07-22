@@ -33,8 +33,8 @@ class AE(AnnounceableResource):
 	allowedChildResourceTypes = [ T.ACP, T.CNT, T.FCNT, T.GRP, T.PCH, T.SUB, T.TS ]
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
-		super().__init__(T.AE, dct, pi, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.AE, dct, pi, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = aePolicies	# only the resource type's own policies
 

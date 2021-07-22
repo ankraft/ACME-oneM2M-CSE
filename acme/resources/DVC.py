@@ -21,9 +21,9 @@ attributePolicies = addPolicy(mgmtObjAttributePolicies, dvcPolicies)
 
 class DVC(MgmtObj):
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		self.resourceAttributePolicies = dvcPolicies	# only the resource type's own policies
-		super().__init__(dct, pi, mgd=T.DVC, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
+		super().__init__(dct, pi, mgd=T.DVC, create=create, attributePolicies=attributePolicies)
 
 		if self.dict is not None:
 			self.setAttribute('can', 'unknown', overwrite=False)

@@ -149,7 +149,7 @@ class Dispatcher(object):
 
 
 
-	def retrieveResource(self, id:str=None, originator:str=None, raw:bool=False) -> Result:
+	def retrieveResource(self, id:str=None, originator:str=None) -> Result:
 		# If the ID is in SP-relative format then first check whether this is for the
 		# local CSE. 
 		# If yes, then adjust the ID and try to retrieve it. 
@@ -159,7 +159,7 @@ class Dispatcher(object):
 				id = id[self.csiSlashLen:]
 			else:
 				if Utils.isSPRelative(id):
-					return CSE.remote.retrieveRemoteResource(id, originator, raw)
+					return CSE.remote.retrieveRemoteResource(id, originator)
 		return self.retrieveLocalResource(srn=id) if Utils.isStructured(id) else self.retrieveLocalResource(ri=id)
 
 

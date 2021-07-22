@@ -32,8 +32,8 @@ class GRP(AnnounceableResource):
 	allowedChildResourceTypes = [ T.SUB, T.GRP_FOPT ]
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False, isRemote:bool=False) -> None:
-		super().__init__(T.GRP, dct, pi, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
+	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
+		super().__init__(T.GRP, dct, pi, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = grpPolicies	# only the resource type's own policies
 

@@ -30,6 +30,6 @@ class AEAnnc(AnnouncedResource):
 	allowedChildResourceTypes = [ T.ACP, T.ACPAnnc, T.CNT, T.CNTAnnc, T.FCNT, T.FCNTAnnc, T.GRP, T.GRPAnnc, T.TS, T.TSAnnc ]
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
-		super().__init__(T.AEAnnc, dct, pi=pi, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.AEAnnc, dct, pi=pi, create=create, attributePolicies=attributePolicies)
 

@@ -43,8 +43,8 @@ class TS(AnnounceableResource):
 	allowedChildResourceTypes = [ T.TSI, T.SUB ]
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False, isRemote:bool=False) -> None:
-		super().__init__(T.TS, dct, pi, create=create, attributePolicies=attributePolicies, isRemote=isRemote)
+	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+		super().__init__(T.TS, dct, pi, create=create, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = tsPolicies	# only the resource type's own policies
 

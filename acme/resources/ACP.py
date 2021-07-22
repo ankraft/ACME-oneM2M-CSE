@@ -33,8 +33,8 @@ class ACP(AnnounceableResource):
 	allowedChildResourceTypes = [ T.SUB ] # TODO Transaction to be added
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, rn:str=None, create:bool=False, createdInternally:str=None, isRemote:bool=False) -> None:
-		super().__init__(T.ACP, dct, pi, create=create, inheritACP=True, rn=rn, attributePolicies=attributePolicies, isRemote=isRemote)
+	def __init__(self, dct:JSON=None, pi:str=None, rn:str=None, create:bool=False, createdInternally:str=None) -> None:
+		super().__init__(T.ACP, dct, pi, create=create, inheritACP=True, rn=rn, attributePolicies=attributePolicies)
 
 		self.resourceAttributePolicies = acpPolicies	# only the resource type's own policies
 		
