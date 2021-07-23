@@ -11,7 +11,7 @@
 import configparser, re, argparse, os.path
 from typing import Any, Dict
 from Constants import Constants as C
-from Types import CSEType, ContentSerializationType
+from Types import CSEType, ContentSerializationType, Permission
 from rich.console import Console
 
 
@@ -195,8 +195,8 @@ class Configuration(object):
 				#	Defaults for Access Control Policies
 				#
 
-				'cse.acp.pv.acop'					: config.getint('cse.resource.acp', 'permission', 		fallback=63),
-				'cse.acp.pvs.acop'					: config.getint('cse.resource.acp', 'selfPermission', 	fallback=51),
+				'cse.acp.pv.acop'					: config.getint('cse.resource.acp', 'permission', 		fallback=Permission.ALL),
+				'cse.acp.pvs.acop'					: config.getint('cse.resource.acp', 'selfPermission', 	fallback=Permission.DISCOVERY+Permission.NOTIFY+Permission.CREATE+Permission.RETRIEVE),
 
 
 				#
