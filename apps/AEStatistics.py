@@ -14,7 +14,6 @@ from Configuration import Configuration
 import Statistics, CSE, Utils
 # The following line incorrectly throws an error with mypy
 from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN
-import threading, time
 from Types import ResourceTypes as T, AdditionalAttributes
 
 
@@ -78,7 +77,7 @@ class AEStatistics(AEBase):
 				Statistics.httpDeletes : 0,
 				Statistics.logErrors : 0,
 				Statistics.logWarnings : 0,
-				Statistics.cseStartUpTime : '',
+				Statistics.cseStartUpTime : Utils.getResourceDate(),
 				Statistics.cseUpTime : '',
 				Statistics.resourceCount: 0
 			}
