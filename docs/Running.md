@@ -7,9 +7,9 @@
 
 You can start the CSE by simply running it from a command line:
 
-	python3 acme.py
+	python3 acme
 
-In this case the configuration file *acme.ini* must be in the same directory.
+In this case the [configuration file](Configuration.md) *acme.ini*, if it should be used, must be in the same directory.
 
 In additions, you can provide additional command line arguments that will override the respective settings from the configuration file:
 

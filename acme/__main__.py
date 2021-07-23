@@ -9,7 +9,6 @@
 
 import argparse, sys
 from rich.console import Console
-sys.path.append('acme')
 sys.path.append('apps')
 sys.path.append('webui')
 from Constants import Constants as C
@@ -68,7 +67,6 @@ if __name__ == '__main__':
 	#		CSE.startup(None, configfile=defaultConfigFile, loglevel='error', resetdb=None)
 	#
 	#	Note: Always pass at least 'None' as first and then the 'configfile' parameter.
-	console = Console()
-	console.print('\n[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim] ' + C.version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight=False)
+	Console().print('\n[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim] ' + C.version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight=False)
 	if CSE.startup(parseArgs()):
 		CSE.run()

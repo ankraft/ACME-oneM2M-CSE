@@ -39,10 +39,21 @@ Please consult the following pages for further instructions.
 
 Please see the [Changelog](CHANGELOG.md) for the latest changes.
 
+### Important: Changed startup
+
+From this release (0.8.x) on the CSE is started by running the *acme* module:
+
+	python3 acme
+
+and not a starter script like in the past (was: ~~python3 acme.py~~).
+
+Command line arguments can be passed as usual.
+
 ### Hightlights in this release
 
 - Support for \<timeSeries> and \<timeSeriesInstances>
-- Improved support for access control and \<container>
+- Improved support for request expiration, access control and \<container> & \<contentInstances>
+- Improved console interface
 - Lot's of small improvements, bug fixes, and optimizations
 
 ## Acknowledgements

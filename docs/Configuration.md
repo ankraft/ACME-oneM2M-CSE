@@ -2,9 +2,11 @@
 
 # Configuration
 
-The Configuration file contains all configuratble and customizable settings for the CSE.
+Configuration of CSE parameters is done through a configuration file. This file contains all configurable and customizable settings for the CSE. It is optional, and settings in this file overwrite the CSE's default values. 
 
 It follows the Windows INI file format with sections, keywords and values. A configuration file may include comments, prefixed with the characters "#"" or ";"" .
+
+Also, some settings can be applied via the command line when starting the CSE. These command line arguments overwrite the settings in the configuration file.
 
 ## General Usage
 

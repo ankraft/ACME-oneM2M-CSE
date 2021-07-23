@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [CSE] Added possibility to reset a running CSE (via the command console or http endpoint "/\_\_reset\_\_").
 - [CSE] Added support for \<timeSeries>/\<timeSeriesInstance> resource types.
-- [CSE] Added support for \<timeSeires>'s missing data monitoring in \<subscription> resource type and notifications.
+- [CSE] Added support for \<timeSeries>'s missing data monitoring in \<subscription> resource type and notifications.
 - [CSE] Added support for *ctm* (currentTime) attribute for \<CSEBase> resource type.
 - [CSE] Added wildcard (\*) support for \<ACP>'s *acr/acor* originators.
 - [CSE] Added support for \<ACP>'s *acr/acod* attribute (not for specializations yet, though).
@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Refactored internal request handling to support future protocol binding developments other than http.
 - [CSE] Changed the sorting of request result lists to type and creation time for \<contentInstance>, \<flexContainerInstance> and \<timeSeriesInstance>.
 - [CSE] Improved the validation when registering \<remoteCSE> resources for *csi* and *cb* attributes.
+- [RUNTIME] The CSE is now started by running the *acme* module (```python3 acme```)
 
 ### Fixed
 - [CSE] Corrected response status codes for AE registration errors.

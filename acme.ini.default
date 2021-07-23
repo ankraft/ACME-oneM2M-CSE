@@ -242,7 +242,7 @@ writeInterval=60
 #
 
 [cse.resource.acp]
-# Default permission when creating an ACP resource. Default: 62
+# Default permission when creating an ACP resource. Default: 63
 permission=63
 # Default selfPermission when creating an ACP resource. Default: 51
 selfPermission=51
