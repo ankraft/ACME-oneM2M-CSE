@@ -120,18 +120,32 @@ enableResetEndpoint=false
 #	MQTT client settings
 #
 
-; [client.mqtt]
-; # default: False
-; enable=False
-; address=test.mosquitto.org
-; # 8883 for TLS
-; port=1883
-; # s
-; keepalive=60
-; bindIF=0.0.0.0
-; #username=test
-; #password=mqtt
-; credentialID=something to define
+[client.mqtt]
+# Enable the MQTT binding.
+# Default: False
+enable=False
+# The hostname of the MQTT brocker.
+# Default; 127.0.0.1
+address=127.0.0.1
+# Set the port for the MQTT broker. 
+# Default: 1883, or 8883 for TLS
+port=1883
+# Value for the MQTT connection's keep-alive parameter in seconds.
+# Default: 60 seconds
+keepalive=60
+# Interface to listen to. Use 0.0.0.0 for "all" interfaces. 
+# Default: 127.0.0.1
+bindIF=127.0.0.1
+# The username for MQTT broker authentication.
+# Default: None
+# username=
+# The password  for MQTT broker authentication.
+# Default: None
+# password=
+
+# TODO credentialID=
+# TODO TLS authentication
+
 
 
 
