@@ -83,10 +83,7 @@ class ACP(AnnounceableResource):
 			acpi = r.acpi
 			if self.ri in acpi:
 				acpi.remove(self.ri)
-				if len(acpi) > 0:
-					r['acpi'] = acpi
-				else:
-					r['acpi'] = None	# Remove acpi from resource if empty
+				r['acpi'] = acpi if len(acpi) > 0 else None	# Remove acpi from resource if empty
 				r.dbUpdate()
 
 

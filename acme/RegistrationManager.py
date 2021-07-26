@@ -248,7 +248,7 @@ class RegistrationManager(object):
 	def expirationDBMonitor(self) -> bool:
 		L.isDebug and L.logDebug('Looking for expired resources')
 		now = Utils.getResourceDate()
-		resources = CSE.storage.searchByFilter(lambda r: 'et' in r and (et := r['et']) is not None and et < now)
+		resources = CSE.storage.searchByFilter(lambda r: (et := r.get('et')) is not None and et < now)
 		for resource in resources:
 			# try to retrieve the resource first bc it might have been deleted as a child resource
 			# of an expired resource
