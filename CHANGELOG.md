@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## \[unreleased] - xxxx.xx.xx
+## \[0.8.0] - xxxx.xx.xx
 
 ### Added
 - [CSE] Added possibility to reset a running CSE (via the command console or http endpoint "/\_\_reset\_\_").

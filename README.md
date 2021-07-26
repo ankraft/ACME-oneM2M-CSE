@@ -52,7 +52,7 @@ Command line arguments can be passed as usual.
 ### Hightlights in this release
 
 - Support for \<timeSeries> and \<timeSeriesInstances>
-- Improved support for request expiration, access control and \<container> & \<contentInstances>
+- Improved support for request expiration, access control, and \<container> & \<contentInstances>
 - Improved console interface
 - Lot's of small improvements, bug fixes, and optimizations
 
