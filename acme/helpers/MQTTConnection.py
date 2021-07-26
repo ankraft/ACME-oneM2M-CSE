@@ -21,6 +21,7 @@ import Utils
 
 import paho.mqtt.client as mqtt
 
+# TODO Write fAQ error "out of memory" is wrong, more like "connection refused"
 @dataclass
 class MQTTTopic:
 	"""	Structure that represents a subscribed-to topic.
@@ -159,9 +160,9 @@ class MQTTConnection(object):
 		"""	Callback when the MQTT client disconnected from the broker.
 		"""
 		L.isDebug and L.logDebug(f'MQTT: Disconnected with result code: {rc}')
+		self.subscribedTopics.clear()
 		if rc == 0:
 			self.isConnected = False
-			self.subscribedTopics.clear()
 			if self.messageHandler is not None:
 				self.messageHandler.onDisconnect(self)
 		else:

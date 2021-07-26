@@ -47,14 +47,16 @@ class MQTTClientHandler(MQTTHandler):
 
 
 	def onDisconnect(self, _:MQTTConnection) -> None:
+		L.isWarn and L.logWarn('Disconnect from MQTT broker')
 		pass
 
 	
 	def onError(self, _:MQTTConnection, rc:int=-1) -> None:
-		if rc == [1, 5]:		# authentication error, out-of-memory
+		if rc in [5]:		# authorization error
 			CSE.shutdown()
 		if rc == -1: 	# unknown. probably connection error?
 			CSE.shutdown()
+		# ignore all others
 
 
 	#

@@ -104,6 +104,8 @@ def loop(commands:Commands, quit:str=None, catchKeyboardInterrupt:bool=False, he
 			
 		# When headless then look only for keyboard interrup
 		if _stopLoop:
+			break
+			# Just break?
 			if quit is not None or not '\x03' in commands:	# shortcut: if there is a quit key OR ^C is not in the commands, then just return from the loop
 				break
 			ch = '\x03'										# Assign ^C
