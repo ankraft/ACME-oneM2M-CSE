@@ -43,7 +43,7 @@ The ACME CSE supports the following oneM2M resource types:
 | Request (REQ)                   |  &check;  | Support for non-blocking requests.                                                                                                                                                                                |
 | Subscription (SUB)              |  &check;  | Notifications via http(s) (direct url or an AE's Point-of-Access (POA)). BatchNotifications, attributes.                                                                                                          |
 | TimeSeries (TS)                 |  &check;  | Including missing data notifications.                                                                                                                                                                             |
-| TimeSeriesInstance (TSI)        |  &check;  |                                                                                                                                                                                                                   |
+| TimeSeriesInstance (TSI)        |  &check;  | *dataGenerationTime* attribute only supports absolute timestamps.                                                                                                                                                 |
 
 <a name="mgmtobjs"></a>
 
