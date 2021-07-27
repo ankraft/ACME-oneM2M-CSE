@@ -47,7 +47,7 @@ class MQTTClientHandler(MQTTHandler):
 
 
 	def onDisconnect(self, _:MQTTConnection) -> None:
-		L.isWarn and L.logWarn('Disconnect from MQTT broker')
+		L.isDebug and L.logDebug('Disconnect from MQTT broker')
 		pass
 
 	
