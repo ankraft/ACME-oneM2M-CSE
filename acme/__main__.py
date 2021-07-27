@@ -7,10 +7,14 @@
 #	Starter for the ACME CSE
 #
 
-import argparse, sys
+import argparse, sys, os, pathlib
 from rich.console import Console
 sys.path.append('apps')
 sys.path.append('webui')
+# parent = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent
+# sys.path.append(f'{parent}/apps')
+# sys.path.append(f'{parent}/webui')
+# # sys.path.append(f'{parent}/acme')
 from Constants import Constants as C
 import CSE
 
@@ -57,8 +61,7 @@ def parseArgs() -> argparse.Namespace:
 	# TODO init directory
 
 
-if __name__ == '__main__':
-
+def main() -> None:
 	#	Start the CSE with command line arguments.
 	#	In case the CSE should be started without command line parsing, the values
 	#	can be passed instead. Unknown arguments are ignored.
@@ -70,3 +73,7 @@ if __name__ == '__main__':
 	Console().print('\n[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim] ' + C.version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight=False)
 	if CSE.startup(parseArgs()):
 		CSE.run()
+
+
+if __name__ == '__main__':
+	main()
