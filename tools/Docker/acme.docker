@@ -1,0 +1,120 @@
+#
+#	General CSE settings
+#
+
+[cse]
+type=IN
+serviceProviderID=acme
+cseID=/id-in
+resourceID=id-in
+resourceName=cse-in
+originator=CAdmin
+enableApplications=False
+checkExpirationsInterval=30
+
+
+
+[cse.announcements]
+# Enable announcement to remote CSE and allow announced resource registrations. Default: True
+enable=false
+
+
+[cse.statistics]
+# Enable or disable statistics. Default: True
+enable=true
+# Interval for saving statistics data to disk in seconds. Default: 60
+writeInterval=60
+
+
+[server.http]
+listenIF=0.0.0.0
+
+
+[client.mqtt]
+enable=False
+
+
+#
+#	Database settings
+#
+
+[database]
+# Directory for the database files. Default: ./data
+path=./data
+# Operate the database in in-memory mode. Attention: No data is stored persistently.
+# See also command line argument --db-storage. Default: false
+inMemory=false
+# Cache size in bytes, or 0 to disable caching. Default: 0
+cacheSize=0
+# Reset the databases at startup. See also command line argument --db-reset
+# Default: False
+resetAtStartup=false
+
+
+
+#
+#	Logging settings
+#
+
+[logging]
+# Enable logging to file. Default: True
+enableFileLogging=false
+# Enable logging to the screen. Default: True
+enableScreenLogging=true
+# Basename of the log file. Default: ./logs/cse.log
+file=./logs/cse.log
+# Loglevel. Possible values: debug, info, warning, error, off. Default debug
+level=debug
+# Number of files for log rotation. Default: 10
+count=10
+# Size per log file. Default: 100.000 bytes
+size=100000
+# Print a stack trace when logging an 'error' level message. Default: True
+stackTraceOnError=True
+
+
+###############################################################################
+
+#
+#	Configurations for the statistics AE
+#
+
+[app.statistics]
+# Enable the statistics AE. Default: True
+enable=true
+# Resource name of the statistics AE. Default: statistics
+aeRN=statistics
+# App-ID of the statistics AE. Default: ae-statistics
+aeAPI=Nstatistics
+# Resource name of the statistics flexContainer. Default: statistics
+fcntRN=statistics
+# Content Definition of the AE's flexContainer. This is a proprietary CND. Default: acme.statistics
+fcntCND=acme.statistics
+# Element type of the AE's flexContainer. This is a proprietary type. Default: acme:csest
+fcntType=acme:csest
+# Originator for requests to the CSE. Default: C
+originator=C
+# Wait n seconds between updates of the AE in seconds. Default: 10
+interval=10
+
+
+#
+#	Configurations for the CSE Node app
+#
+
+[app.csenode]
+# Enable the CSE Node. Default: True
+enable=true
+# Resource name of the CSE Node. Default: cse-node
+nodeRN=cse-node
+# Node-ID of the CSE Node. Default: cse-node
+nodeID=cse-node
+# Originator for requests to the CSE. Default: CAdmin
+originator=CAdmin
+# Battery level indicates as "low" in percent. Default: 20
+batteryLowLevel=20
+# Batters level indicates as "fully charged" in percent. Default: 100
+batteryChargedLevel=100
+# Wait n seconds between updates of the node and sub-mgmtObjs in seconds. Default: 60
+interval=60
+
