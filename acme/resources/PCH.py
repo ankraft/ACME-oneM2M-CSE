@@ -7,15 +7,12 @@
 #	ResourceType: PollingChannel
 #
 
-from Constants import Constants as C
 from Types import ResourceTypes as T, Result, JSON
 from Validator import constructPolicy, addPolicy
-import Utils, CSE
-from Logging import Logging
+import CSE
+from Logging import Logging as L
 from .Resource import *
-from .AnnounceableResource import AnnounceableResource
 import resources.Factory as Factory
-
 
 
 
@@ -31,14 +28,13 @@ attributePolicies = addPolicy(attributePolicies, pchPolicies)
 
 class PCH(Resource):
 
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.PCH_PCU ]
+
+
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.PCH, dct, pi, create=create, attributePolicies=attributePolicies)
 		self.resourceAttributePolicies = pchPolicies	# only the resource type's own policies
-
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource, [ T.PCH_PCU ])
 
 
 # TODO test Retrieve by AE only! Add new willBeRetrieved() function
@@ -53,7 +49,7 @@ class PCH(Resource):
 			
 		
 		# register pollingChannelURI virtual resource
-		Logging.logDebug(f'Registering <PCU> for: {self.ri}')
+		if L.isDebug: L.logDebug(f'Registering <PCU> for: {self.ri}')
 		pcu = Factory.resourceFromDict(pi=self.ri, ty=T.PCH_PCU).resource	# rn is assigned by resource itself
 		if (res := CSE.dispatcher.createResource(pcu)).resource is None:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)

@@ -1,0 +1,7 @@
+recursive-include init *
+recursive-include webui *
+recursive-include docs *
+include acme.ini.default
+include CHANGELOG.md
+include LICENSE
+include README.md

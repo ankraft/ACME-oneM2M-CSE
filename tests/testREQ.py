@@ -34,6 +34,9 @@ class TestREQ(unittest.TestCase):
 		# Start notification server
 		startNotificationServer()
 
+		# look for notification server
+		assert isNotificationServerRunning(), 'Notification server cannot be reached'
+
 		# create other resources
 		dct =	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
@@ -72,7 +75,7 @@ class TestREQ(unittest.TestCase):
 		""" Retrieve <CB> non-blocking synchronous """
 		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.nonBlockingRequestSynch:d}&rp={requestETDuration}', TestREQ.originator)
 		rqi = lastRequestID()
-		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch)
+		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')
 
@@ -171,6 +174,24 @@ class TestREQ(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCNTNBFlexIntegerDuration(self) -> None:
+		""" Retrieve <CNT> non-blocking flex (duration as integer)"""
+		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.flexBlocking:d}&rp={requestETDurationInteger}', TestREQ.originator)
+		self.assertIn(rsc, [ RC.OK, RC.acceptedNonBlockingRequestSynch, RC.acceptedNonBlockingRequestAsynch ] )
+		# -> Ignore the result
+
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCNTNBFlexWrongDuration(self) -> None:
+		""" Retrieve <CNT> non-blocking flex (duration = xxx) -> Fail"""
+		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.flexBlocking:d}&rp=xxx', TestREQ.originator)
+		# r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.flexBlocking:d}&rp={requestETDurationInteger}', TestREQ.originator)
+		self.assertEqual(rsc, RC.badRequest )
+		# -> Ignore the result
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTNBSynch(self) -> None:
 		""" Create <CNT> non-blocking synchronous """
 		dct = 	{ 'm2m:cnt' : { 
@@ -252,11 +273,55 @@ class TestREQ(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCSENBSynchWithRET(self) -> None:
+		""" Retrieve <CB> non-blocking synchronous with Request Expiration Timestamp"""
+		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.nonBlockingRequestSynch:d}', TestREQ.originator, headers={'X-M2M-RET' : f'{requestETDuration}'})
+		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
+		requestURI = findXPath(r, 'm2m:uri')
+
+		# get and check resource
+		time.sleep(requestCheckDelay)
+		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
+		self.assertEqual(rsc, RC.OK)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCSENBSynchWithRETshort(self) -> None:
+		""" Retrieve <CB> non-blocking synchronous with short Request Expiration Timestamp -> FAIL """
+		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.nonBlockingRequestSynch:d}', TestREQ.originator, headers={'X-M2M-RET' : f'{expirationCheckDelay*1000/2}'})
+		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
+		requestURI = findXPath(r, 'm2m:uri')
+
+		# get and check resource. Should not be found anymore
+		time.sleep(expirationSleep)
+		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
+		self.assertEqual(rsc, RC.notFound, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCSENBSynchWithVSI(self) -> None:
+		""" Retrieve <CB> non-blocking synchronous with Vendor Information"""
+		vsi = 'some vendor information'
+		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.nonBlockingRequestSynch:d}', TestREQ.originator, headers={'X-M2M-VSI' : vsi})
+		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
+		requestURI = findXPath(r, 'm2m:uri')
+
+		# get and check resource
+		time.sleep(requestCheckDelay)
+		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertEqual(findXPath(r, 'm2m:req/mi/vsi'), vsi, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCSENBAsynch(self) -> None:
 		""" Retrieve <CB> non-blocking asynchronous """
 		r, rsc = RETRIEVE(f'{cseURL}?rt={ResponseType.nonBlockingRequestAsynch:d}&rp={requestETDuration}', TestREQ.originator, headers=headers)
 		rqi = lastRequestID()
-		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch)
+		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 
 		# Wait and then check notification
@@ -434,10 +499,15 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestREQ('test_retrieveCSENBSynchWrongRT'))
 	suite.addTest(TestREQ('test_retrieveUnknownNBSynch'))
 	suite.addTest(TestREQ('test_retrieveCSENBSynchExpireRequest'))
-	suite.addTest(TestREQ('test_retrieveCNTNBFlex'))		# flex
+	suite.addTest(TestREQ('test_retrieveCNTNBFlex'))					# flex
+	suite.addTest(TestREQ('test_retrieveCNTNBFlexIntegerDuration'))		# flex
+	suite.addTest(TestREQ('test_retrieveCNTNBFlexWrongDuration'))		# flex
 	suite.addTest(TestREQ('test_createCNTNBSynch'))
 	suite.addTest(TestREQ('test_updateCNTNBSynch'))
 	suite.addTest(TestREQ('test_deleteCNTNBSynch'))
+	suite.addTest(TestREQ('test_retrieveCSENBSynchWithRET'))
+	suite.addTest(TestREQ('test_retrieveCSENBSynchWithRETshort'))
+	suite.addTest(TestREQ('test_retrieveCSENBSynchWithVSI'))
 
 	# nonBlockingAsync
 	suite.addTest(TestREQ('test_retrieveCSENBAsynch'))

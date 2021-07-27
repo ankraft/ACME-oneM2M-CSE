@@ -184,7 +184,9 @@ function fillHeaderArea(ty) {
 	}
 	text += "Accept: application/json\n"
 	text += "X-M2M-Origin: " + document.getElementById("originator").value + "\n"
-	text += "X-M2M-RI: " + Math.random().toString(36).slice(2)
+	text += "X-M2M-RI: " + Math.random().toString(36).slice(2) + "\n"
+	text += "X-M2M-RVI: 3"       
+
 	document.getElementById("rest-headers").value = text;
 }
 

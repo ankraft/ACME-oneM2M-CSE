@@ -7,9 +7,8 @@
 #	Managing entity for resource groups
 #
 
-from Logging import Logging
+from Logging import Logging as L
 from typing import Union, List
-from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseCode as RC, CSERequest, JSON
 import CSE, Utils
 from resources import FCNT, MgmtObj
@@ -23,11 +22,11 @@ class GroupManager(object):
 	def __init__(self) -> None:
 		# Add delete event handler because we like to monitor the resources in mid
 		CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent) 		# type: ignore
-		Logging.log('GroupManager initialized')
+		L.isInfo and L.log('GroupManager initialized')
 
 
 	def shutdown(self) -> bool:
-		Logging.log('GroupManager shut down')
+		L.isInfo and L.log('GroupManager shut down')
 		return True
 
 
@@ -75,7 +74,7 @@ class GroupManager(object):
 					isLocalResource = False
 					if (url := CSE.request._getForwardURL(mid)) is None:
 						return Result(status=False, rsc=RC.notFound, dbg=f'forwarding URL not found for group member: {mid}')
-					Logging.log(f'Retrieve request to: {url}')
+					L.isDebug and L.logDebug(f'Retrieve request to: {url}')
 					remoteResult = CSE.request.sendRetrieveRequest(url, CSE.cseCsi)
 
 			# get the resource and check it
@@ -169,7 +168,7 @@ class GroupManager(object):
 
 		# check whether there is something after the /fopt ...
 		_, _, tail = id.partition('/fopt/') if '/fopt/' in id else (None, None, '')
-		Logging.logDebug(f'Adding additional path elements: {tail}')
+		L.isDebug and L.logDebug(f'Adding additional path elements: {tail}')
 
 		# walk through all members
 		resultList:list[Result] = []
@@ -233,7 +232,9 @@ class GroupManager(object):
 		of group. If yes, remove the member. This method is called by the event manager. """
 
 		ri = deletedResource.ri
-		groups = CSE.storage.searchByTypeFieldValue(T.GRP, 'mid', ri)
+		groups = CSE.storage.searchByFragment(	{ 'ty' : T.GRP }, 
+												lambda r: (mid := r.get('mid')) is not None and ri in mid)	# Filter all <grp> where mid contains ri
+		groups = [ group for group in groups if ri in group.mid]
 		for group in groups:
 			group['mid'].remove(ri)
 			group['cnm'] = group.cnm - 1

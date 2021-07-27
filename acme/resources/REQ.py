@@ -8,12 +8,10 @@
 #
 
 from typing import Dict, Any
-from Constants import Constants as C
-from Types import ResourceTypes as T, ResponseCode as RC, Result, RequestArguments, RequestHeaders, Operation, RequestStatus, CSERequest, JSON
+from Types import ResourceTypes as T, ResponseCode as RC, Result, RequestStatus, CSERequest, JSON
 from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
-from .AnnounceableResource import AnnounceableResource
 from Configuration import Configuration
 import resources.Factory as Factory
 
@@ -30,13 +28,12 @@ attributePolicies = addPolicy(attributePolicies, reqPolicies)
 
 class REQ(Resource):
 
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.SUB ]
+
+
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.REQ, dct, pi, create=create, attributePolicies=attributePolicies)
-
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource, [ T.SUB ])
 
 
 	@staticmethod
@@ -44,19 +41,29 @@ class REQ(Resource):
 		"""	Create an initialized <request> resource.
 		"""
 
-		# calculate request et
-		minEt = Utils.getResourceDate(Configuration.get('cse.req.minet'))
-		maxEt = Utils.getResourceDate(Configuration.get('cse.req.maxet'))
-		if request.args.rpts is not None:
-			et = request.args.rpts if request.args.rpts < maxEt else maxEt
-		else:
-			et = minEt
+		# Check if a an expiration ts has been set in the request
+		if request.headers.requestExpirationTimestamp is not None:
+			et = request.headers.requestExpirationTimestamp	# This is already an ISO8601 timestamp
+		
+		# Check the rp(ts) argument
+		elif request.args.rpts is not None:
+			et = request.args.rpts
+		
+		# otherwise calculate request et
+		else:	
+			minEt = Utils.getResourceDate(Configuration.get('cse.req.minet'))
+			maxEt = Utils.getResourceDate(Configuration.get('cse.req.maxet'))
+			if request.args.rpts is not None:
+				et = request.args.rpts if request.args.rpts < maxEt else maxEt
+			else:
+				et = minEt
+
 
 		dct:Dict[str, Any] = {
 			'm2m:req' : {
 				'et'	: et,
 				'lbl'	: [ request.headers.originator ],
-				'op'	: request.args.operation,
+				'op'	: request.op,
 				'tg'	: request.id,
 				'org'	: request.headers.originator,
 				'rid'	: request.headers.requestIdentifier,
@@ -64,7 +71,7 @@ class REQ(Resource):
 					'ty'	: request.headers.resourceType,
 					'ot'	: Utils.getResourceDate(),
 					'rqet'	: request.headers.requestExpirationTimestamp,
-					'rset'	: request.headers.responseExpirationTimestamp,
+					'rset'	: request.headers.resultExpirationTimestamp,
 					'rt'	: { 
 						'rtv' : request.args.rt
 					},
@@ -76,6 +83,7 @@ class REQ(Resource):
 					},
 					'drt'	: request.args.drt,
 					'rvi'	: request.headers.releaseVersionIndicator if request.headers.releaseVersionIndicator is not None else Configuration.get('cse.releaseVersion'),
+					'vsi'	: request.headers.vendorInformation,
 				},
 				'rs'	: RequestStatus.PENDING,
 				'ors'	: {

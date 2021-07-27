@@ -8,12 +8,62 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## \[0.8.0] - xxxx.xx.xx
+
+### Added
+- [CSE] Added possibility to reset a running CSE (via the command console or http endpoint "/\_\_reset\_\_").
+- [CSE] Added support for \<timeSeries>/\<timeSeriesInstance> resource types.
+- [CSE] Added support for \<timeSeries>'s missing data monitoring in \<subscription> resource type and notifications.
+- [CSE] Added support for *ctm* (currentTime) attribute for \<CSEBase> resource type.
+- [CSE] Added wildcard (\*) support for \<ACP>'s *acr/acor* originators.
+- [CSE] Added support for \<ACP>'s *acr/acod* attribute (not for specializations yet, though).
+- [CSE] Added support for 'Request Expiration Timestamp' request parameter, also for \<request> resources.
+- [CSE] Added support for *Vendor Information* request/response header.
+- [CSE] Added support for \<container> *disableRetrieval* attribute.
+- [CSE] Added validation of *cnf* (contentInfo) attribute.
+- [CSE] Added support for *dcnt* (deletionCnt) attribute for \<contentInstance> resource type.
+- [WEB] Added OAuth2 authorization support for the proxied CSE (for the stand-alone web UI).
+- [WEB] Added opening the web UI in a browser on startup (for the stand-alone web UI).
+- [TESTS] Added OAuth2 authorization support for the tests.
+- [CONSOLE] Added "I" command to the console (inspect a resource and its child resources).
+- [CONSOLE] Added "L" command to the console (toggle through the various log levels, including *off*)
+- [CONSOLE] Added configuration *cse.console.hideResources* to hide certain resources from showing in the the resource tree.
+- [CONSOLE] Added various view modes when showing the resource tree (normal, compact, content, contentOnly).
+
+### Changed
+- [CSE] Relaxed validation for float in attributes and arguments. Integer are now accepted as well.
+- [CSE] Changed format of configuration values "cse.registration.allowedAEOriginators" and "cse.registration.allowedCSROriginators" from regex to a simple wildcard (\* and ?) format.
+- [CSE] Changed the internal timed and regular processes to a single priority timer queue.
+- [CSE] Removed "logging.enable" configuration setting and added *off* as a possible value to *logging.level".
+- [CSE] Improved the size calculation of \<contentInstance>, \<flexContainer>, and \<timeSeriesInstance> to realistic sizes (not the Python-internal type sizes anymore).
+- [CSE] Refactored internal request handling to support future protocol binding developments other than http.
+- [CSE] Changed the sorting of request result lists to type and creation time for \<contentInstance>, \<flexContainerInstance> and \<timeSeriesInstance>.
+- [CSE] Improved the validation when registering \<remoteCSE> resources for *csi* and *cb* attributes.
+- [RUNTIME] The CSE is now started by running the *acme* module (```python3 acme```)
+
+### Fixed
+- [CSE] Corrected response status codes for AE registration errors.
+- [CSE] Prevent CREATE and UPDATE requests for \<flexContainerInstance> resource type.
+- [CSE] Improved handling of \<flexContainerInstance> resources when versioning is disabled in the parent \<flexContainer>.
+- [CSE] Re-added: remove comments from received JSON content.
+- [CSE] Improved the timely execution of background tasks. The actual task's execution time is not added on top to the interval anymore, and intervals are constant.
+- [CSE] Improved support and validation for absRelTimestamp type.
+- [CSE] Improved handling of the \<request> resource's expiration time. It is now aligned with the 'Request Expiration Timestamp' request parameter.
+- [CSE] Improved checking of empty *acpi* attribute lists. Empty lists are not allowed and the *acpi* must be removed from a resource instead.
+- [CSE] Optimized log messages. Messages for irrelevant log levels are not even created anymore.
+- [CSE] Corrected behavior when oldest \<contentInstance>, \<flexContainerInstance> and \<timeSeriesInstance> resource are deleted. Now NO notification is sent in case a \<subscription> monitors for *Delete_of_direct_child_resource*.
+- [CSE] Added warnings when an imported \<CSEBase> overwrites any of the *csi*, *ri*, *rn* attributes.
+- [CSE] Better error handling for ill-formed CSE-ID.
+- [CSE] Fixed missing check for \<subscription>'s *chty* attribute. The listed resource types therein must be allowed child resource types of the \<subscription>'s parent resource.
+- [DATABASE] Optimized and unified database searches for fragments in resources.
+
+
 ## [0.7.3] - 2021-03-26
 
 ### Added
 - [CSE] Added *cse.resource.cnt.enableLimits* configuration. 
-- [CSE] Added "T" command to the console (display only sub-tree of the resource tree).
 - [CSE] Improved startup error messages when running in headless mode.
+- [CONSOLE] Added "T" command to the console (display only sub-tree of the resource tree).
 
 ### Changed
 - [CSE] Default limits for &lt;container> are now disabled by default.
@@ -46,10 +96,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added attribute policies for Generic Interworking and AllJoyn specialization.
 - [CSE] Added diagram generation (in PlantUML format) of resource tree and deployment structure.
 - [CSE] Added better checks for content serialization in AE.
-- [CSE] Added command interface to the terminal console (for stopping the CSE, printing statistics, CSE registrations, the resource tree, etc).
 - [CSE] Added support for *holder* attribute. Added access control behavior for *holder* and resource creator when an *acpi* attribute is specified for a resource, but doesn't have one.
 - [CSE] Added support for Subscription's *expirationCounter*.
 - [CSE] Added headless mode to better support docker.
+- [CONSOLE] Added command interface to the terminal console (for stopping the CSE, printing statistics, CSE registrations, the resource tree, etc).
 - [NOTIFICATIONS] Added support for handling CBOR serialization and other binary formats to the notification server.
 - [WEB] Added dark mode (for supported browsers).
 - [TESTS] Added load tests that can be optionally executed. Also improved test runner: select on the command line which tests to run.

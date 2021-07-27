@@ -24,17 +24,13 @@ nodAPolicies = constructPolicy([
 attributePolicies =  addPolicy(attributePolicies, nodAPolicies)
 # TODO announceSyncType
 
+
 class NODAnnc(AnnouncedResource):
+
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.MGMTOBJAnnc, T.SUB ]
+
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.NODAnnc, dct, pi=pi, create=create, attributePolicies=attributePolicies)
-
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource: Resource) -> bool:
-		return super()._canHaveChild(resource, 
-									[ T.MGMTOBJAnnc,
-									  T.SUB
-									])
-
 

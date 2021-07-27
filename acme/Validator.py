@@ -8,21 +8,28 @@
 #
 
 from copy import deepcopy
+import re
 from typing import Any, List, Dict
-from Logging import Logging
+from Logging import Logging as L
 from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, ResponseCode as RC
-from Types import JSON, AttributePolicies
-from Constants import Constants as C
-from Types import Result, AttributePolicies
+from Types import JSON, AttributePolicies, AttributePoliciesEntry, AdditionalAttributes
+from Types import Result, AttributePolicies, ResourceTypes as T
 from Configuration import Configuration
-from resources.Resource import Resource
 import Utils
+from resources.Resource import Resource
+import isodate
 
 
 # TODO owner attribute, annnouncedSyncType
 
-# predefined policiespolicies
-# type, cardinality, optional.create, optional.update, optional.discovery, announcement
+# Predefined policies for validation
+# This is a dictionary that maps the attribute shortname to either a tuple (s.b.) or 
+# a dictionary of "resourceType -> Tuple". The latter happens when there is more than
+# one definitions resp. use of the same attribute in different resource types, such as
+# "dgd".
+# The Tuple is defiend to have the following fields:
+# 	type, cardinality, optional.create, optional.update, optional.discovery, announcement
+#
 attributePolicies:AttributePolicies = {
 	'ty'	: ( BT.positiveInteger,	CAR.car1,   RO.NP, 	RO.NP, RO.O, AN.NA ),
 	'ri'	: ( BT.string, 			CAR.car1,   RO.NP, 	RO.NP, RO.O, AN.NA ),
@@ -37,7 +44,7 @@ attributePolicies:AttributePolicies = {
 	'at'	: ( BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.NA ),
 	'aa'	: ( BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.NA ),
 	'daci'	: ( BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.OA ),		# AE, CSE, CNT
-	'loc'	: ( BT.list, 			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSE, AE, CNT, FCNT
+	'loc'	: ( BT.list, 			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSE, AE, CNT, FCNT, TS
 	'hld' 	: ( BT.string, 			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),
 
 
@@ -69,10 +76,18 @@ attributePolicies:AttributePolicies = {
 	'cni'	: ( BT.nonNegInteger,	CAR.car1, 	RO.NP,	RO.NP, RO.O, AN.NA ),		# CNT, FCNT (CAR01)
 	'cnm'	: ( BT.nonNegInteger,	CAR.car1, 	RO.NP,	RO.NP, RO.O, AN.NA ),		# GRP
 	'cnty'	: ( BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# DVI
-	'con'	: ( BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# CIN
+	'con'	: {
+		T.CIN : ( BT.string,		CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# CIN
+		T.TSI : ( BT.string,		CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# TSI
+	},
 	'conr'	: ( BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# m2m:contentRef - CIN
 	'cr'	: ( BT.list, 			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# CNT
-	'cs'	: ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# CIN, FCNT
+	'cs'	: {
+		T.CIN  : ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),	# CIN
+		T.FCNT : ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),	# FCNT
+		T.FCI  : ( BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ),	# FCI
+		T.TSI  : ( BT.nonNegInteger,	CAR.car1 ,  RO.NP,	RO.NP, RO.O, AN.NA ),	# TSI
+	},
 	'csi'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# CSE, CSR
 	'cst'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# CSE, CSR
 	'csy'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# m2m:consistencyStrategy - GRP
@@ -80,12 +95,17 @@ attributePolicies:AttributePolicies = {
 	'cus'	: ( BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# BAT
 	'dc'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# MGO
 	'dea'	: ( BT.boolean,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ),		# SWR
+	'dcnt'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# CIN
 	'dcse'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSR
-	'dgt'	: ( BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# FCNT
+	'dgt'	: {
+		T.FCNT : (  BT.absRelTimestamp,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),	# FCNT
+		T.TSI  : (  BT.absRelTimestamp,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),	# TSI
+	},
 	'dis'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# BAT
 	'disr'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT
 	'dlb'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# DVI
 	'dty'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# DVI
+	'dur'	: ( BT.duration,		CAR.car01,	RO.O,	RO.O,  RO.O, AN.OA ),		# attribute duration
 	'dvd'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# ANDI
 	'dvnm'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'dvt'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# ANDI
@@ -95,6 +115,7 @@ attributePolicies:AttributePolicies = {
 	'esi'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.MA ),		# m2m:e2eSecInfo - AE, CSE, CSR
 	'exc'	: (	BT.positiveInteger, CAR.car01, 	RO.O, 	RO.O,  RO.O, AN.NA ),  		# SUB
 	'far'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# RBO
+	'fr'	: ( BT.anyURI,			CAR.car01,  RO.M,	RO.NP, RO.O, AN.NA ),		# request, response
 	'fwn'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# FWR
 	'fwv'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'gn'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# GRP
@@ -119,8 +140,13 @@ attributePolicies:AttributePolicies = {
 	'macp'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT
 	'man'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# DVI
 	'mbs'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT
-	'mcfc'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP,  RO.O, AN.OA),		# NYCFC
-	'mcff'	: ( BT.anyURI,			CAR.car1,   RO.M,	RO.NP,  RO.O, AN.OA),		# NYCFC
+	'mcfc'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA),		# NYCFC
+	'mcff'	: ( BT.anyURI,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA),		# NYCFC
+	'mdc'	: ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# TS
+	'mdd'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# TS
+	'mdlt'	: ( BT.list,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# TS
+	'mdn'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# TS
+	'mdt'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# TS
 	'mei'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# m2m:externalID - AE, CSR
 	'mfd'	: ( BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'mfdl'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
@@ -148,14 +174,18 @@ attributePolicies:AttributePolicies = {
 	'nsp'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
 	'nty'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# NOD
 	'nu'	: (	BT.list, 			CAR.car1, 	RO.M, 	RO.O,  RO.O, AN.NA ),  		# SUB
+	'num'	: (	BT.positiveInteger,	CAR.car01, 	RO.O, 	RO.O,  RO.O, AN.NA ),  		# attribute number
 	'obis'	: ( BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# MGO
 	'obps'	: ( BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# MGO
 	'op'	: ( BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.NA ),		# REQ
 	'or'	: ( BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT
+	'ot'	: ( BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# request, response
 	'org'	: ( BT.string,			CAR.car1,   RO.NP,	RO.NP, RO.NP,AN.NA ),		# REQ
 	'ors'	: ( BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT, REQ
 	'osv'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'pc'	: ( BT.dict,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# REQ
+	'pei'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# TS
+	'peid'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# TS
 	'pn'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
 	'poa'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# m2m:poaList - AE, CSE
 	'psn'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# SUB
@@ -168,12 +198,14 @@ attributePolicies:AttributePolicies = {
 	'rid'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# REQ
 	'rl'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
 	'rms'	: ( BT.boolean,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ),		# NOD
+	'rqi'	: ( BT.string,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ),		# request
 	'rr'	: ( BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# AE
 	'rs'	: ( BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# REQ
 	'scp'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# m2m:sessionCapabilities - AE
 	'sld'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# ANDI
 	'sli'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# ANDI
 	'smod'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
+	'snr'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# TSI
 	'spty'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# m2m:specializationType - GRP
 	'spur'	: ( BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'srt'	: ( BT.list, 			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# CSE
@@ -186,6 +218,8 @@ attributePolicies:AttributePolicies = {
 	'swv'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'syst'	: ( BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'tg'	: ( BT.anyURI,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.NA ),		# REQ
+	'to'	: ( BT.anyURI,			CAR.car01,  RO.M,	RO.NP, RO.O, AN.NA ),		# request
+	'ty'	: ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# request
 	'tren'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# AE, CSR
 	'tri'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSR
 	'trn'	: ( BT.unsignedInt,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSR
@@ -215,7 +249,7 @@ attributePolicies:AttributePolicies = {
 
 	'cra'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'crb'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'cty'	: ( BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
+	'cty'	: ( BT.list,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'drt'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'exa'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'exb'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
@@ -231,11 +265,15 @@ attributePolicies:AttributePolicies = {
 	'sts'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'sza'	: ( BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'szb'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery	
-	#'ty'	: ( BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'us'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'arp'	: ( BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'rt'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request
-	'rp'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
+	'rp'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
+	'rqet'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
+	'oet'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
+	'rvi'	: ( BT.string,			CAR.car1,    RO.O,	RO.O,  RO.O, AN.NA ),		# request 
+	'rtu'	: ( BT.list,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request  (actually the same as 'nu' s)
+	'vsi'	: ( BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
 
 	# TODO lbl, catr, patr
 
@@ -256,8 +294,17 @@ def addPolicy(policies:AttributePolicies, newPolicies:AttributePolicies) -> Attr
 	policies.update( newPolicies )
 	return policies
 
+def getPolicy(attr:str, policies:AttributePolicies=attributePolicies) -> AttributePoliciesEntry:
+	# if policies is None:
+	# 	policies = attributePolicies
+	if (p := policies.get(attr)) is None:	# Use get() to receive None...
+		return None
+	if isinstance(p, tuple):
+		return p
+	if isinstance(p, dict):	# may happen, then just take the first definition
+		return p[list(p)[0]]
+	return None
 
-AdditionalAttributes = Dict[str, AttributePolicies]
 
 class Validator(object):
 
@@ -267,22 +314,22 @@ class Validator(object):
 
 	def __init__(self) -> None:
 		self.validationEnabled = Configuration.get('cse.enableValidation')
-		Logging.log('Validator initialized')
+		if L.isInfo: L.log('Validator initialized')
 
 
 	def shutdown(self) -> bool:
-		Logging.log('Validator shut down')
+		if L.isInfo: L.log('Validator shut down')
 		return True
 
 	#########################################################################
 
 
-	def	validateAttributes(self, dct:JSON, tpe:str, attributePolicies:AttributePolicies, create:bool=True , isImported:bool=False, createdInternally:bool=False, isAnnounced:bool=False) -> Result:
+	def	validateAttributes(self, dct:JSON, tpe:str, ty:T, attributePolicies:AttributePolicies, create:bool=True , isImported:bool=False, createdInternally:bool=False, isAnnounced:bool=False) -> Result:
 		""" Validate a resources attributes for types etc."""
 		if not self.validationEnabled:	# just return if disabled
 			return Result(status=True)
 
-		Logging.logDebug('Validating attributes')
+		if L.isDebug: L.logDebug('Validating attributes')
 
 		# Just return in case the resource instance is imported
 		if isImported is not None and isImported:
@@ -290,7 +337,7 @@ class Validator(object):
 
 		# No policies?
 		if attributePolicies is None:
-			Logging.logWarn(f'No attribute policies: {dct}')
+			if L.isWarn: L.logWarn(f'No attribute policies: {dct}')
 			return Result(status=True)
 
 		# determine the request column, depending on create or updates
@@ -308,18 +355,28 @@ class Validator(object):
 		# if tpe is not None and not tpe.startswith("m2m:"):
 		# 	pureResDict = dct
 		if (attributePolicies := self._addAdditionalAttributes(tpe, attributePolicies)) is None:
-			Logging.logWarn(err := f'Unknown resource type: {tpe}')
-			return Result(status=False, rsc=RC.badRequest, dbg=err)
+			L.logWarn(dbg := f'Unknown resource type: {tpe}')
+			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 		# Logging.logDebug(attributePolicies.items())
+		# Logging.logWarn(pureResDict)
 		for r in pureResDict.keys():
 			if r not in attributePolicies.keys():
-				Logging.logWarn(err := f'Unknown attribute: {r} in resource: {tpe}')
-				return Result(status=False, rsc=RC.badRequest, dbg=err)
+				L.logWarn(dbg := f'Unknown attribute: {r} in resource: {tpe}')
+				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 		for r, p in attributePolicies.items():
 			if p is None:
-				Logging.logWarn(f'No validation policy found for attribute: {r}')
+				if L.isWarn: L.logWarn(f'No validation policy found for attribute: {r}')
 				continue
+
+			# Get the correct tuple for a resource when there are more
+			# definitions
+			if isinstance(p, dict):
+				if ty not in p:
+					L.logWarn(dbg := f'Attribute: {r} undefined for resource type: {ty}')
+					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+				p = p[ty]
+
 			# Check whether the attribute is allowed or mandatory in the request
 			if (v := pureResDict.get(r)) is None:
 
@@ -329,24 +386,24 @@ class Validator(object):
 					continue
 					
 				if p[reqp] == RO.M:		# Not okay, this attribute is mandatory
-					Logging.logWarn(err := f'Cannot find mandatory attribute: {r}')
-					return Result(status=False, rsc=RC.badRequest, dbg=err)
+					L.logWarn(dbg := f'Cannot find mandatory attribute: {r}')
+					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 				if r in pureResDict and p[1] == CAR.car1: # but ignore CAR.car1N (which may be Null/None)
-					Logging.logWarn(err := f'Cannot delete a mandatory attribute: {r}')
-					return Result(status=False, rsc=RC.badRequest, dbg=err)
+					L.logWarn(dbg := f'Cannot delete a mandatory attribute: {r}')
+					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 				if p[reqp] in [ RO.NP, RO.O ]:	# Okay that the attribute is not in the dict, since it is provided or optional
 					continue
 			else:
 				if not createdInternally:
 					if p[reqp] == RO.NP:
-						Logging.logWarn(err := f'Found non-provision attribute: {r}')
-						return Result(status=False, rsc=RC.badRequest, dbg=err)
+						L.logWarn(dbg := f'Found non-provision attribute: {r}')
+						return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 				# check the the announced cases
 				if isAnnounced:
 					if p[reqp] == AN.NA:	# Not okay, attribute is not announced
-						Logging.logWarn(err := f'Found non-announced attribute: {r}')
-						return Result(status=False, rsc=RC.badRequest, dbg=err)
+						L.logWarn(dbg := f'Found non-announced attribute: {r}')
+						return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 					continue
 
 				if r == 'pvs' and not (res := self.validatePvs(pureResDict)).status:
@@ -357,8 +414,8 @@ class Validator(object):
 				continue
 
 			# fall-through means: not validated
-			Logging.logWarn(err := f'Attribute/value validation error: {r}={str(v)} ({res.dbg})')
-			return Result(status=False, rsc=RC.badRequest, dbg=err)
+			L.logWarn(dbg := f'Attribute/value validation error: {r}={str(v)} ({res.dbg})')
+			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 		return Result(status=True)
 
@@ -367,34 +424,80 @@ class Validator(object):
 		""" Validating special case for lists that are not allowed to be empty (pvs in ACP). """
 
 		if (l :=len(dct['pvs'])) == 0:
-			err = 'Attribute pvs must not be an empty list'
-			Logging.logWarn(err)
-			return Result(status=False, dbg=err)
+			L.logWarn(dbg := 'Attribute pvs must not be an empty list')
+			return Result(status=False, dbg=dbg)
 		elif l > 1:
-			err = 'Attribute pvs must contain only one item'
-			Logging.logWarn(err)
-			return Result(status=False, dbg=err)
+			L.logWarn(dbg := 'Attribute pvs must contain only one item')
+			return Result(status=False, dbg=dbg)
 		if (acr := Utils.findXPath(dct, 'pvs/acr')) is None:
-			err = 'Attribute pvs/acr not found'
-			Logging.logWarn(err)
-			return Result(status=False, dbg=err)
+			L.logWarn(dbg := 'Attribute pvs/acr not found')
+			return Result(status=False, dbg=dbg)
 		if not isinstance(acr, list):
-			err = 'Attribute pvs/acr must be a list'
-			Logging.logWarn(err)
-			return Result(status=False, dbg=err)
+			L.logWarn(dbg := 'Attribute pvs/acr must be a list')
+			return Result(status=False, dbg=dbg)
 		if len(acr) == 0:
-			err = 'Attribute pvs/acr must not be an empty list'
-			Logging.logWarn(err)
-			return Result(status=False, dbg=err)
+			L.logWarn(dbg := 'Attribute pvs/acr must not be an empty list')
+			return Result(status=False, dbg=dbg)
 		return Result(status=True)
 
 
 	def validateRequestArgument(self, argument:str, value:Any) -> Result:
 		""" Validate a request argument. """
-		if (policy := attributePolicies.get(argument)) is not None:
+		if (policy := getPolicy(argument)) is not None:
 			return self._validateType(policy[0], value, True)
-		return Result(status=False, dbg='attribute not defined')
+		return Result(status=False, dbg=f'validation for attribute/argument {argument} not defined')
 
+
+	def validateAttribute(self, attribute:str, value:Any, attributeType:BT=None) -> Result:
+		""" Validate a single attribute. 
+			If `attributeType` is set then that type is taken to perform the check, otherwise the attribute
+			type is determined.
+		"""
+		if attributeType is not None:	# use the given attribute type instead of determining it
+			return self._validateType(attributeType, value, True)
+		if (policy := getPolicy(attribute)) is not None:
+			return self._validateType(policy[0], value, True)
+		return Result(status=False, dbg=f'validation for attribute {attribute} not defined')
+
+
+
+	#
+	#	Additional validations.
+	#
+
+	# TODO allowed media type chars
+	cnfRegex = re.compile(
+		r'^[^:/]+/[^:/]+:[0-2]$'
+		r'|^[^:/]+/[^:/]+:[0-2]$'
+		r'|^[^:/]+/[^:/]+:[0-2]:[0-5]$'
+	)
+	def validateCNF(self, value:str) -> Result:
+		"""	Validate the contents of the `contentInfo` attribute. """
+		if isinstance(value, str) and re.match(self.cnfRegex, value) is not None:
+			return Result(status=True)
+		return Result(status=False, dbg=f'validation of cnf attribute failed: {value}')
+
+
+	def validateCSICB(self, val:str, name:str) -> Result:
+		"""	Validate the format of a CSE-ID in csi or cb attributes.
+		"""
+		# TODO Decide whether to correct this automatically, like in RemoteCSEManager._retrieveRemoteCSE()
+		if val is None:
+			L.logDebug(dbg := f"{name} is missing")
+			return Result(status=False, dbg=dbg)
+		if not val.startswith('/'):
+			L.logDebug(dbg := f"{name} must start with '/': {val}")
+			return Result(status=False, dbg=dbg)
+		return Result(status=True)
+
+
+	def isExtraResourceAttribute(self, attr:str, resource:Resource) -> bool:
+		"""	Check whether the attribute `attr` is neither a universal, common, or resource attribute,
+			nor an internal attribute. Basically, this method returns `True` when the attribute
+			is a custom attribute.
+		
+		"""
+		return attr not in resource.attributePolicies and not attr.startswith('__')
 
 
 	#
@@ -408,17 +511,17 @@ class Validator(object):
 			of attribute definitions for that type. 
 		"""
 		if len(additionalAttributes.keys()) != 1:
-			Logging.logErr('Additional attributes must only contain 1 type')
+			L.logErr('Additional attributes must only contain 1 type')
 			return False
 		entries = additionalAttributes[next(iter(additionalAttributes))]	# get first and only entry
 		for k,v in entries.items():
 			if len(v) != 6:
-				Logging.logErr(f'Attribute description for {k} must contain 6 entries')
+				L.logErr(f'Attribute description for {k} must contain 6 entries')
 				return False
 		try:
 			self.additionalAttributes.update(additionalAttributes)
 		except Exception as e:
-			Logging.logErr(str(e))
+			L.logErr(str(e))
 			return False
 		return True
 
@@ -438,6 +541,11 @@ class Validator(object):
 		return self.additionalAttributes.get(tpe)
 
 
+	#
+	#	Internals.
+	#
+
+
 	def _addAdditionalAttributes(self, tpe: str, attributePolicies:AttributePolicies) -> AttributePolicies:
 		#if tpe is not None and not tpe.startswith('m2m:'):
 		if tpe is not None and tpe in self.additionalAttributes:
@@ -450,22 +558,26 @@ class Validator(object):
 		return attributePolicies
 
 
-	def _validateType(self, tpe:int, value:Any, convert:bool = False) -> Result:
+	def _validateType(self, tpe:BT, value:Any, convert:bool = False) -> Result:
 		""" Check a value for its type. If the convert parameter is True then it
 			is assumed that the value could be a stringified value and the method
 			will attempt to convert the value to its target type; otherwise this
-			is an error. """
+			is an error. 
+
+			If the check is positive (Result.status==True) then Result.data is set
+			to the determined data type.
+		"""
 
 		if tpe == BT.positiveInteger:
 			if isinstance(value, int):
 				if value > 0:
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				return Result(status=False, dbg='value must be > 0')
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
 					if int(value) > 0:
-						return Result(status=True)
+						return Result(status=True, data=tpe)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: positive integer')
@@ -473,77 +585,102 @@ class Validator(object):
 		if tpe == BT.nonNegInteger:
 			if isinstance(value, int):
 				if value >= 0:
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				return Result(status=False, dbg='value must be >= 0')
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
 					if int(value) >= 0:
-						return Result(status=True)
+						return Result(status=True, data=BT.nonNegInteger)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: non-negative integer')
 
 		if tpe in [ BT.unsignedInt, BT.unsignedLong ]:
 			if isinstance(value, int):
-				return Result(status=True)
+				return Result(status=True, data=tpe)
 			# try to convert string to number 
 			if convert and isinstance(value, str):
 				try:
 					int(value)
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: unsigned integer')
 
-		if tpe in [ BT.string, BT.timestamp, BT.anyURI ] and isinstance(value, str):
-			return Result(status=True)
+		if tpe == BT.timestamp and isinstance(value, str):
+			if Utils.fromAbsRelTimestamp(value) == 0.0:
+				return Result(status=False, dbg=f'format error in timestamp: {value}')
+			return Result(status=True, data=tpe)
+
+		if tpe == BT.absRelTimestamp:
+			if isinstance(value, str):
+				try:
+					rel = int(value)
+					# fallthrough
+				except Exception as e:	# could happen if this is a string with an iso timestamp. Then try next test
+					if Utils.fromAbsRelTimestamp(value) == 0.0:
+						return Result(status=False, dbg=f'format error in absRelTimestamp: {value}')
+				# fallthrough
+			elif not isinstance(value, int):
+				return Result(status=False, dbg=f'unsupported data type for absRelTimestamp')
+			return Result(status=True, data=tpe)		# int/long is ok
+
+		if tpe in [ BT.string, BT.anyURI ] and isinstance(value, str):
+			return Result(status=True, data=tpe)
 
 		if tpe == BT.list and isinstance(value, list):
-			return Result(status=True)
+			return Result(status=True, data=tpe)
 		
 		if tpe == BT.dict and isinstance(value, dict):
-			return Result(status=True)
+			return Result(status=True, data=tpe)
 		
 		if tpe == BT.boolean:
 			if isinstance(value, bool):
-				return Result(status=True)
+				return Result(status=True, data=tpe)
 			# try to convert string to bool
 			if convert and isinstance(value, str):	# "true"/"false"
 				try:
 					bool(value)
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: bool')
 
 		if tpe == BT.float:
-			if isinstance(value, float):
-				return Result(status=True)
+			if isinstance(value, (float, int)):
+				return Result(status=True, data=tpe)
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
 					float(value)
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: float')
 
 		if tpe == BT.integer:
 			if isinstance(value, int):
-				return Result(status=True)
+				return Result(status=True, data=tpe)
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
 					int(value)
-					return Result(status=True)
+					return Result(status=True, data=tpe)
 				except Exception as e:
 					return Result(status=False, dbg=str(e))
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: integer')
 
 		if tpe == BT.geoCoordinates and isinstance(value, dict):
-			return Result(status=True)
+			return Result(status=True, data=tpe)
+		
+		if tpe == BT.duration:
+			try:
+				isodate.parse_duration(value)
+			except Exception as e:
+				return Result(status=False, dbg=str(e))
+			return Result(status=True, data=tpe)
 
-		return Result(status=False, dbg='unknown type')
+		return Result(status=False, dbg=f'unknown type: {str(tpe)}, value type:{type(value)}')
 
 

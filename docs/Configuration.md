@@ -2,9 +2,11 @@
 
 # Configuration
 
-The Configuration file contains all configuratble and customizable settings for the CSE.
+Configuration of CSE parameters is done through a configuration file. This file contains all configurable and customizable settings for the CSE. It is optional, and settings in this file overwrite the CSE's default values. 
 
 It follows the Windows INI file format with sections, keywords and values. A configuration file may include comments, prefixed with the characters "#"" or ";"" .
+
+Also, some settings can be applied via the command line when starting the CSE. These command line arguments overwrite the settings in the configuration file.
 
 ## General Usage
 
@@ -35,12 +37,14 @@ The following macros are supported in addition to those defined in the sections 
 [\[cse.registrar\] - Settings for Remote CSE Access](#registrar)  
 [\[cse.announcements\] - Settings for Resource Announcements](#announcements)  
 [\[cse.statistics\] - Statistic Settings](#statistics)  
-[\[cse.resource.acp\] - Resource defaults: ACP](#resource_acp)  
-[\[cse.resource.cnt\] - Resource Defaults: CNT](#resource_cnt)  
-[\[cse.resource.req\] - Resource Defaults: REQ](#resource_req)  
-[\[cse.resource.sub\] - Resource Defaults: SUB](#resource_sub)  
+[\[cse.resource.acp\] - Resource defaults: Access Control Policies](#resource_acp)  
+[\[cse.resource.cnt\] - Resource Defaults: Container](#resource_cnt)  
+[\[cse.resource.req\] - Resource Defaults: Request](#resource_req)  
+[\[cse.resource.sub\] - Resource Defaults: Subscription](#resource_sub)  
+[\[cse.resource.ts\] - Resource Defaults: TimeSeries](#resource_ts)  
+[\[cse.console\] - Console Settings](#console)  
 [\[cse.webui\] - Web UI Settings](#webui)  
-
+	
 
 ### Additional Settings
 [\[server.http.mappings\] - ID Mappings](#id_mappings)  
@@ -72,7 +76,7 @@ The following macros are supported in addition to those defined in the sections 
 | checkExpirationsInterval | Interval to check for expired resources. 0 means "no checking".<br/>Default: 60 seconds                                                                                                        | cse.checkExpirationsInterval |
 | flexBlockingPreference   | Indicate the preference for flexBlocking response types. Allowed values: "blocking", "nonblocking".<br />Default: blocking                                                                     | cse.flexBlockingPreference   |
 | supportedReleaseVersions | A comma-separated list of supported release versions. This list can contain a single or multiple values.<br />Default: 2a,3,4                                                                  | cse.supportedReleaseVersions |
-| releaseVersion           | The release version indicator for requests. Allowed values: 2a, 3, 4.<br />Default: 3                                                                                                    | cse.releaseVersion           |
+| releaseVersion           | The release version indicator for requests. Allowed values: 2a, 3, 4.<br />Default: 3                                                                                                          | cse.releaseVersion           |
 | defaultSerialization     | Indicate the serialization format if none was given in a request and cannot be determined otherwise.<br/>Allowed values: json, cbor.<br/>Default: json                                         | cse.defaultSerialization     |
 
 
@@ -100,7 +104,8 @@ The following macros are supported in addition to those defined in the sections 
 | root                      | CSE Server root. Never provide a trailing /.<br/>Default: empty string                                                                                                                                                                                     | http.root                      |
 | multiThread               | Run the http server in single- or multi-threaded mode.<br/> Default: true                                                                                                                                                                                  | http.multiThread               |
 | enableRemoteConfiguration | Enable an endpoint for get and set certain configuration values via a REST interface.<br />**ATTENTION: Enabling this feature exposes configuration values, IDs and passwords, and is a security risk.**<br/> Default: false                               | http.enableRemoteConfiguration |
-| enableStructureEndpoint   | Enable an endpoint for getting a structured overview about a CSE's resource tree and deployment infrastructure (remote CSE's).<br />**ATTENTION: ATTENTION: Enabling this feature exposes various potentially sensitive information.**<br/> Default: false | http.enableStructureEndpoint   |
+| enableStructureEndpoint   | Enable an endpoint for getting a structured overview about a CSE's resource tree and deployment infrastructure (remote CSE's).<br />**ATTENTION: Enabling this feature exposes various potentially sensitive information.**<br/> Default: false | http.enableStructureEndpoint   |
+| enableResetEndpoint       | Enable an endpoint for resetting the CSE (remove all resources and import the init directory again)<br />**ATTENTION: Enabling this feature may lead to a total loss of data**<br/>Default: false                                                          | http.enableResetEndpoint       |
 
 
 <a name="database"></a>
@@ -117,16 +122,15 @@ The following macros are supported in addition to those defined in the sections 
 <a name="logging"></a>
 ###	[logging] - Logging Settings
 
-| Keyword             | Description                                                                                                                             | Macro Name                  |
-|:--------------------|:----------------------------------------------------------------------------------------------------------------------------------------|:----------------------------|
-| enable              | Enable logging.<br/>Default: true                                                                                                       | logging.enable              |
-| enableFileLogging   | Enable logging to file.<br/>Default: false                                                                                              | logging.enableFileLogging   |
-| enableScreenLogging | Enable logging to the screen.<br/>Default: true                                                                                         | logging.enableScreenLogging |
-| path                | Pathname for log files.<br />Default: ./logs                                                                                            | logging.path                |
-| level               | Loglevel. Allowed values: debug, info, warning, error.<br/>See also command line argument [–log-level](Running.md).<br/> Default: debug | logging.level               |
-| count               | Number of files for log rotation.<br/>Default: 10                                                                                       | logging.count               |
-| size                | Size per log file.<br/>Default: 100.000 bytes                                                                                           | logging.size                |
-| stackTraceOnError   | Print a stack trace when logging an 'error' level message.<br />Default: True                                                           | logging.stackTraceOnError   |
+| Keyword             | Description                                                                                                                                  | Macro Name                  |
+|:--------------------|:---------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------|
+| enableFileLogging   | Enable logging to file.<br/>Default: false                                                                                                   | logging.enableFileLogging   |
+| enableScreenLogging | Enable logging to the screen.<br/>Default: true                                                                                              | logging.enableScreenLogging |
+| path                | Pathname for log files.<br />Default: ./logs                                                                                                 | logging.path                |
+| level               | Loglevel. Allowed values: debug, info, warning, error, off.<br/>See also command line argument [–log-level](Running.md).<br/> Default: debug | logging.level               |
+| count               | Number of files for log rotation.<br/>Default: 10                                                                                            | logging.count               |
+| size                | Size per log file.<br/>Default: 100.000 bytes                                                                                                | logging.size                |
+| stackTraceOnError   | Print a stack trace when logging an 'error' level message.<br />Default: True                                                                | logging.stackTraceOnError   |
 
 
 <a name="cse_registration"></a>
@@ -134,8 +138,8 @@ The following macros are supported in addition to those defined in the sections 
 
 | Keyword               | Description                                                                                                                                                                     | Macro Name                             |
 |:----------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------|
-| allowedAEOriginators  | List of AE originators that can register. This is a comma-separated list of originators. Regular expressions are supported.<br />Default: C.\*, S.\*                            | cse.registration.allowedAEOriginators  |
-| allowedCSROriginators | List of CSR originators that can register. This is a comma-separated list of originators. Regular expressions are supported.<br />Note: No leading "/"<br />Default: empty list | cse.registration.allowedCSROriginators |
+| allowedAEOriginators  | List of AE originators that can register. This is a comma-separated list of originators. Wildcards (* and ?) are supported.<br />Default: C\*, S\*                              | cse.registration.allowedAEOriginators  |
+| allowedCSROriginators | List of CSR originators that can register. This is a comma-separated list of originators. Wildcards (* and ?) are supported.<br />Note: No leading "/"<br />Default: empty list | cse.registration.allowedCSROriginators |
 | checkLiveliness       | Check the liveliness if the registrations to the registrar CSE and also from the registree CSEs.<br /> Default: True                                                            | cse.registration.checkLiveliness       |
 
 
@@ -206,6 +210,27 @@ The following macros are supported in addition to those defined in the sections 
 | Keyword             | Description                                                                           | Macro Name  |
 |:--------------------|:--------------------------------------------------------------------------------------|:------------|
 | batchNotifyDuration | Default for the batchNotify/duration in seconds. Must be >0.<br />Default: 60 seconds | cse.sub.dur |
+
+
+<a name="resource_ts"></a>
+### [cse.resource.ts] - Resource Defaults: TimeSeries
+
+| Keyword      | Description                                            | Macro Name           |
+|:-------------|:-------------------------------------------------------|:---------------------|
+| enableLimits | Enable/disable the default limits.<br/> Default: False | cse.ts.enableLimits  |
+| mni          | Default for maxNrOfInstances.<br/> Default: 10         | cse.ts.mni           |
+| mbs          | Default for maxByteSize.<br/>Default: 10.000 bytes     | cse.ts.mbs           |
+| mdn          | Default for missingDataMaxNr.<br />Default: 10         | cse.ts.mdn           |
+
+
+<a name="console"></a>
+###	[cse.console] - Console Settings
+
+| Keyword         | Description                                                                                                                                                          | Macro Name                  |
+|:----------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------|
+| refreshInterval | Interval for continuously refreshing information displays. Must be > 0.0<br/>Default: 2.0 seconds.                                                                   | cse.console.refreshInterval |
+| hideResources   | Hide certain resources from display in the console. This is a list of resource identifiers. Wildcards are allowed.<br/>Default: Empty list.                          | cse.console.hideResources   |
+| treeMode        | Set the mode how resources and their content are presented in the console's tree view.<br/>Allowed values: normal, compact, content, contentOnly<br/>Default: normal | cse.console.treeMode        |
 
 
 <a name="webui"></a>

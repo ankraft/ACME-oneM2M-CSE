@@ -28,7 +28,7 @@ Install these packages by running the following command:
 
 or install all of them manually:  
 
-	python3 -m pip install cbor2 flask isodate psutil requests rich tinydb
+	python3 -m pip install cbor2 flask isodate paho-mqtt psutil requests rich tinydb
 
 
 ## Installation and Configuration

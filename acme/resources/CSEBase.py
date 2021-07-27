@@ -9,7 +9,6 @@
 
 from Constants import Constants as C
 from Types import ResourceTypes as T, Result, JSON
-from Configuration import Configuration
 from Validator import constructPolicy
 from .Resource import *
 import CSE
@@ -23,13 +22,17 @@ attributePolicies = constructPolicy([
 
 class CSEBase(Resource):
 
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.ACP, T.AE, T.CSR, T.CNT, T.FCNT, T.GRP, T.NOD, T.REQ, T.SUB, T.TS ]
+
+
 	def __init__(self, dct:JSON=None, create:bool=False) -> None:
 		super().__init__(T.CSEBase, dct, '', create=create, attributePolicies=attributePolicies)
 
 		if self.dict is not None:
 			self.setAttribute('ri', 'cseid', overwrite=False)
 			self.setAttribute('rn', 'cse', overwrite=False)
-			self.setAttribute('csi', 'cse', overwrite=False)
+			self.setAttribute('csi', '/cse', overwrite=False)
 
 			self.setAttribute('rr', False, overwrite=False)
 			self.setAttribute('srt', C.supportedResourceTypes, overwrite=False)
@@ -39,23 +42,19 @@ class CSEBase(Resource):
 			self.setAttribute('cst', CSE.cseType, overwrite=False)
 
 
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource,	
-									 [ T.ACP,
-									   T.AE,
-									   T.CSR, 
-									   T.CNT,
-									   T.FCNT,
-									   T.GRP,
-									   T.NOD,
-									   T.REQ,
-									   T.SUB
-									 ])
+	def activate(self, parentResource:Resource, originator:str) -> Result:
+		if not (res := super().activate(parentResource, originator)).status:
+			return res
+		
+		if not Utils.isValidCSI(self.csi):
+			L.logWarn(dbg := f'Wrong format for CSEBase.csi: {self.csi}')
+			return Result(status=False, dbg=dbg)
+
+		return Result(status=True)
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
-		if not (res := super().validate(originator, create, dct)).status:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		
 		self.normalizeURIAttribute('poa')
@@ -79,3 +78,15 @@ class CSEBase(Resource):
 			self[Resource._node] = nl
 
 		return Result(status=True)
+
+
+	def willBeRetrieved(self, originator:str) -> Result:
+		if not (res := super().willBeRetrieved(originator)).status:
+			return res
+
+		# add the current time to this resource instance
+		self['ctm'] = Utils.getResourceDate()
+		return Result(status=True)
+
+
+		

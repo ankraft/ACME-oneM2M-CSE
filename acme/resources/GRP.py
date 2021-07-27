@@ -7,11 +7,10 @@
 #	ResourceType: Group
 #
 
-from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ConsistencyStrategy, JSON
 from Validator import constructPolicy, addPolicy
-from Logging import Logging
-import Utils, CSE
+from Logging import Logging as L
+import CSE
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
 import resources.Factory as Factory
@@ -28,6 +27,10 @@ attributePolicies = addPolicy(attributePolicies, grpPolicies)
 
 
 class GRP(AnnounceableResource):
+
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.SUB, T.GRP_FOPT ]
+
 
 	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
 		super().__init__(T.GRP, dct, pi, create=create, attributePolicies=attributePolicies)
@@ -46,28 +49,21 @@ class GRP(AnnounceableResource):
 			# optional set: spty, gn, nar
 
 
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource,	
-									 [ T.SUB, 
-									   T.GRP_FOPT
-									 ])
-
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
 		
 		# add fanOutPoint
 		ri = self['ri']
-		Logging.logDebug(f'Registering fanOutPoint resource for: {ri}')
+		if L.isDebug: L.logDebug(f'Registering fanOutPoint resource for: {ri}')
 		fanOutPointResource = Factory.resourceFromDict({ 'pi' : ri }, ty=T.GRP_FOPT).resource
 		if (res := CSE.dispatcher.createResource(fanOutPointResource, self, originator)).resource is None:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 		return Result(status=True)
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
-		if not (res := super().validate(originator, create, dct)).status:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		return CSE.group.validateGroup(self, originator)
 

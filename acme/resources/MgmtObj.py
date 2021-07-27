@@ -10,7 +10,6 @@
 from copy import deepcopy
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
-import Utils
 from Types import ResourceTypes as T, JSON, AttributePolicies
 from Validator import constructPolicy, addPolicy
 
@@ -19,7 +18,12 @@ mgmtObjAttributePolicies = constructPolicy([
 	'mgd', 'obis', 'obps', 'dc', 'mgs', 'cmlk',
 ])
 
+
 class MgmtObj(AnnounceableResource):
+
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.SUB ]
+
 
 	def __init__(self, dct:JSON, pi:str, mgd:T, create:bool=False, attributePolicies:AttributePolicies=None) -> None:
 		super().__init__(T.MGMTOBJ, dct, pi, tpe=mgd.tpe(), create=create, attributePolicies=attributePolicies)
@@ -30,7 +34,3 @@ class MgmtObj(AnnounceableResource):
 		if self.dict is not None:
 			self.setAttribute('mgd', int(mgd), overwrite=True)
 
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource, [ T.SUB ])

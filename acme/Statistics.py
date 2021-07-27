@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from typing import Dict, Union, cast
-from Logging import Logging
+from Logging import Logging as L
 from Configuration import Configuration
 import CSE, Utils
 import datetime
@@ -19,8 +19,6 @@ from threading import Lock
 from helpers.BackgroundWorker import BackgroundWorkerPool
 from resources.Resource import Resource
 from Types import CSEType, ResourceTypes as T
-from rich.tree import Tree
-
 
 
 deletedResources	= 'rmRes'
@@ -60,7 +58,7 @@ class Statistics(object):
 		if self.statisticsEnabled:
 
 			# Start background worker to handle writing to DB
-			Logging.log('Starting statistics DB thread')
+			L.isInfo and L.log('Starting statistics DB thread')
 			BackgroundWorkerPool.newWorker(Configuration.get('cse.statistics.writeInterval'), self.statisticsDBWorker, 'statsDBWorker').start()
 
 			# subscripe vto various events
@@ -82,19 +80,19 @@ class Statistics(object):
 			CSE.event.addHandler(CSE.event.logError, self.handleLogError)						# type: ignore
 			CSE.event.addHandler(CSE.event.logWarning, self.handleLogWarning)					# type: ignore
 
-		Logging.log('Statistics initialized')
+		L.isInfo and L.log('Statistics initialized')
 
 
 	def shutdown(self) -> bool:
 		if self.statisticsEnabled:
 			# Stop the worker
-			Logging.log('Stopping statistics DB thread')
+			L.isInfo and L.log('Stopping statistics DB thread')
 			BackgroundWorkerPool.stopWorkers('statsDBWorker')
 
 			# One final write
 			self.storeDBStatistics()
 
-		Logging.log('Statistics shut down')
+		L.isInfo and L.log('Statistics shut down')
 		return True
 
 
@@ -223,11 +221,11 @@ class Statistics(object):
 
 	# Called by the background worker
 	def statisticsDBWorker(self) -> bool:
-		Logging.logDebug('Writing statistics DB')
+		L.isDebug and L.logDebug('Writing statistics DB')
 		try:
 			self.storeDBStatistics()
 		except Exception as e:
-			Logging.logErr(f'Exception: {str(e)}')
+			L.isDebug and L.logErr(f'Exception: {str(e)}')
 			return False
 		return True
 
@@ -287,7 +285,7 @@ skinparam rectangle {
 		result += f'node CSE as "<color:green>{CSE.cseCsi[1:]}</color> ({CSE.cseType.name})\\n{ip}" #white\n'
 
 		# Own http interface
-		http = 'https' if CSE.httpServer.useTLS else 'http'
+		http = 'https' if CSE.security.useTLS else 'http'
 		result += f'interface "{http}\\n{CSE.httpServer.port}" as http_own #white\n'
 
 		# Build Resource Tree
@@ -341,169 +339,4 @@ skinparam rectangle {
 
 		# end
 		result += '@enduml'
-		return result
-
-
-
-	def getResourceTreeRich(self, maxLevel:int=0, parent:str=None) -> Tree:
-		"""	This function will generate a Rich tree of a CSE's resource structure.
-		"""
-
-		def info(res:Resource) -> str:
-			if res.ty == T.FCNT:
-				return f'{res.rn} [dim]-> {res.__rtype__} ({res.cnd}) | ri={res.ri}[/dim]'
-			if res.ty == T.CSEBase:
-				return f'{res.rn} [dim]-> {res.__rtype__} | ri={res.ri} | csi={res.csi}[/dim]'
-			if res.__isVirtual__:
-				return f'{res.rn}'
-			return f'{res.rn} [dim]-> {res.__rtype__} | ri={res.ri}[/dim]'
-
-		def getChildren(res:Resource, tree:Tree, level:int) -> None:
-			""" Find and print the children in the tree structure. """
-			if maxLevel > 0 and level == maxLevel:
-				return
-			chs = CSE.dispatcher.directChildResources(res.ri)
-			for ch in chs:
-				branch = tree.add(info(ch))
-				getChildren(ch, branch, level+1)
-
-		if parent is not None:
-			if (res := CSE.dispatcher.retrieveResource(parent).resource) is None:
-				return None
-		else:
-			res = Utils.getCSE().resource
-		tree = Tree(info(res))
-		getChildren(res, tree, 0)
-		return tree
-
-
-	def getResourceTreeText(self, maxLevel:int=0) -> str:
-		"""	This function will generate a Text tree of a CSE's resource structure.
-		"""
-		from rich.console import Console
-
-		console = Console(color_system=None)
-		console.begin_capture()
-		console.print(self.getResourceTreeRich())
-		return console.end_capture()
-
-
-
-		# def info(res:Resource) -> str:
-		# 	if res.ty == T.FCNT:
-		# 		return f'{res.rn} ~ {res.__rtype__} ({res.cnd}) | ri={res.ri}'
-		# 	if res.ty == T.CSEBase:
-		# 		return f'{res.rn} ~ {res.__rtype__} | ri={res.ri} csi={res.csi}'
-		# 	if res.__isVirtual__:
-		# 		return f'{res.rn}'
-		# 	return f'{res.rn} ~ {res.__rtype__} | ri={res.ri}'
-
-		# def getChildren(res:Resource, tree:str, level:int) -> str:
-		# 	""" Find and print the children in the tree structure. """
-		# 	if maxLevel > 0 and level == maxLevel:
-		# 		return tree
-		# 	chs = CSE.dispatcher.directChildResources(res.ri)
-		# 	for ch in chs:
-		# 		tree += ' ' * (4*level) + info(ch) + '\n'
-		# 		tree = getChildren(ch, tree, level+1)	# tree is modified in getChildren, threfore assignment
-		# 	return tree
-
-		# cse = Utils.getCSE().resource
-		# tree = f'{info(cse)}\n'
-		# tree = getChildren(cse, tree, 1)
-		# return tree
-
-
-	def getCSERegistrationsRich(self) -> str:
-		"""	Return an overview in Rich format about the registrar, registrees, and
-			descendant CSE's.
-		"""
-
-		result = ''
-		if CSE.cseType != CSEType.IN and CSE.remote.remoteAddress is not None:
-			registrarCSE = CSE.remote.registrarCSE
-			registrarType = CSEType(registrarCSE.cst).name if registrarCSE is not None else '???'
-			result += f'- **Registrar CSE**  \n{CSE.remote.registrarCSI[1:]} ({registrarType}) @ {CSE.remote.remoteAddress}\n'
-
-		if CSE.cseType != CSEType.ASN:
-			#connections = {}
-			if len(CSE.remote.descendantCSR) > 0:
-				result += f'- **Registree CSEs**\n'
-
-				# for desc in CSE.remote.descendantCSR.keys():
-				# 	(csr, atCsi) = CSE.remote.descendantCSR[desc]
-				# 	if csr is not None:
-				# 		result += f'  - {desc[1:]} ({CSEType(csr.cst).name}) @ {csr.poa}\n'
-				# 	else:	 	
-				# 		result += f'  - {desc[1:]}\n'
-				# 	connections[desc] = atCsi
-				
-				# for key in connections.keys():
-				# 	atCsi = connections[key]
-				# 	if atCsi != CSE.cseCsi:
-				# 		result += f'    - {key}\n'
-				for desc in CSE.remote.descendantCSR.keys():
-					(csr, atCsi) = CSE.remote.descendantCSR[desc]
-					if csr is not None:
-						result += f'  - {desc[1:]} ({CSEType(csr.cst).name}) @ {csr.poa}\n'
-						for desc2 in CSE.remote.descendantCSR.keys():
-							(csr2, atCsi2) = CSE.remote.descendantCSR[desc2]
-							if csr2 is None and atCsi2 == desc:
-								result += f'    - {desc2[1:]}\n'
-		
-		return result if len(result) else 'None'
-		
-
-# TODO events transit requests
-	def getStatisticsRich(self) -> str:
-		"""	Generate an overview about various resources and event counts.
-		"""
-
-		result = ''
-		stats = self.getStats()
-		if self.statisticsEnabled:
-			result += '- **Resource Operations**\n'
-			result += f'    - Created       : {stats[createdResources]}\n'
-			result += f'    - Updated       : {stats[updatedResources]}\n'
-			result += f'    - Deleted       : {stats[deletedResources]}\n'
-			result += f'    - Expired       : {stats[expiredResources]}\n'
-			result += f'    - Notifications : {stats[notifications]}\n'
-		result += '- **Resource Types**\n'
-		result += f'    - AE            : {CSE.dispatcher.countResources(T.AE)}\n'
-		result += f'    - ACP           : {CSE.dispatcher.countResources(T.ACP)}\n'
-		result += f'    - CIN           : {CSE.dispatcher.countResources(T.CIN)}\n'
-		result += f'    - CB            : {CSE.dispatcher.countResources(T.CSEBase)}\n'
-		result += f'    - CNT           : {CSE.dispatcher.countResources(T.CNT)}\n'
-		result += f'    - CSR           : {CSE.dispatcher.countResources(T.CSR)}\n'
-		result += f'    - FCNT          : {CSE.dispatcher.countResources(T.FCNT)}\n'
-		result += f'    - FCI           : {CSE.dispatcher.countResources(T.FCI)}\n'
-		result += f'    - GRP           : {CSE.dispatcher.countResources(T.GRP)}\n'
-		result += f'    - MgmtObj       : {CSE.dispatcher.countResources(T.MGMTOBJ)}\n'
-		result += f'    - NOD           : {CSE.dispatcher.countResources(T.NOD)}\n'
-		result += f'    - PCH           : {CSE.dispatcher.countResources(T.PCH)}\n'
-		result += f'    - REQ           : {CSE.dispatcher.countResources(T.REQ)}\n'
-		result += f'    - SUB           : {CSE.dispatcher.countResources(T.SUB)}\n'
-		result += f'    - **Total**         : {int(stats[resourceCount]) - CSE.dispatcher.countResources((T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.GRP_FOPT, T.PCH_PCU))}\n'	# substract the virtual resources
-		if self.statisticsEnabled:
-			result += '- **HTTP Requests**\n'
-			result += '    - **Received**\n'
-			result += f'        - RETRIEVE   : {stats[httpRetrieves]}\n'
-			result += f'        - CREATE     : {stats[httpCreates]}\n'
-			result += f'        - UPDATE     : {stats[httpUpdates]}\n'
-			result += f'        - DELETE     : {stats[httpDeletes]}\n'
-			result += '    - **Sent**\n'
-			result += f'        - RETRIEVE   : {stats[httpSendRetrieves]}\n'
-			result += f'        - CREATE     : {stats[httpSendCreates]}\n'
-			result += f'        - UPDATE     : {stats[httpSendUpdates]}\n'
-			result += f'        - DELETE     : {stats[httpSendDeletes]}\n'
-			result += '- **Logs**\n'
-			result += f'    - Errors        : {stats[logErrors]}\n'
-			result += f'    - Warnings      : {stats[logWarnings]}\n'
-		result += '- **Misc**\n'
-		result += f'    - StartTime     : {datetime.datetime.fromtimestamp(Utils.fromISO8601Date(cast(str, stats[cseStartUpTime])))} (UTC)\n'
-		result += f'    - Uptime        : {stats[cseUpTime]}\n'
-
-		if not self.statisticsEnabled:
-			result += f'\n(statistics are disabled)\n'
-
 		return result

@@ -7,7 +7,6 @@
 #	ResourceType: mgmtObj:Node
 #
 
-import random, string
 from Constants import Constants as C
 from Types import ResourceTypes as T, JSON
 import Utils, CSE
@@ -30,6 +29,10 @@ attributePolicies = addPolicy(attributePolicies, nodPolicies)
 
 class NOD(AnnounceableResource):
 
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.MGMTOBJ, T.SUB ]
+
+
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.NOD, dct, pi, create=create, attributePolicies=attributePolicies)
 
@@ -37,14 +40,6 @@ class NOD(AnnounceableResource):
 
 		if self.dict is not None:
 			self.setAttribute('ni', Utils.uniqueID(), overwrite=False)
-
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource, 
-									[ T.MGMTOBJ,
-									  T.SUB
-									])
 
 
 	def deactivate(self, originator:str) -> None:

@@ -8,7 +8,6 @@
 #
 
 from .Resource import *
-import Utils
 from Types import ResourceTypes as T, JSON, AttributePolicies
 
 

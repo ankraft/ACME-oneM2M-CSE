@@ -7,30 +7,31 @@
 #	ResourceType: oldest (virtual resource)
 #
 
+from __future__ import annotations
 from typing import cast
-from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC, Result, JSON, CSERequest
-import Utils, CSE
+import CSE
 from .Resource import *
-from Logging import Logging
+from Logging import Logging as L
 
 
 class CNT_OL(Resource):
+
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes:list[T] = [ ]
+
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.CNT_OL, dct, pi, create=create, inheritACP=True, readOnly=True, rn='ol', isVirtual=True)
 
 
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource, [])
-
-
 	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:
 		""" Handle a RETRIEVE request. Return resource """
-		Logging.logDebug('Retrieving oldest CIN from CNT')
+		if L.isDebug: L.logDebug('Retrieving oldest CIN from CNT')
 		if (r := self._getOldest()) is None:
 			return Result(rsc=RC.notFound, dbg='no instance for <oldest>')
+		if not (res := r.willBeRetrieved(originator)).status:
+			return res
 		return Result(resource=r)
 
 
@@ -46,7 +47,7 @@ class CNT_OL(Resource):
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a DELETE request. Delete the oldest resource. """
-		Logging.logDebug('Deleting oldest CIN from CNT')
+		if L.isDebug: L.logDebug('Deleting oldest CIN from CNT')
 		if (r := self._getOldest()) is None:
 			return Result(rsc=RC.notFound, dbg='no instance for <oldest>')
 		return CSE.dispatcher.deleteResource(r, originator, withDeregistration=True)

@@ -9,7 +9,6 @@
 
 from .MgmtObjAnnc import *
 from Types import ResourceTypes as T, JSON
-import Utils
 from Validator import constructPolicy, addPolicy
 
 # Attribute policies for this resource are constructed during startup of the CSE

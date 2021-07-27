@@ -9,9 +9,7 @@
 
 from __future__ import annotations
 from typing import List
-from Constants import Constants as C
-from Configuration import Configuration
-from Logging import Logging
+from Logging import Logging as L
 from Types import ResourceTypes as T, ResponseCode as RC, Result, Permission, JSON
 from Validator import constructPolicy, addPolicy
 from .Resource import *
@@ -31,6 +29,10 @@ attributePolicies =  addPolicy(attributePolicies, acpPolicies)
 
 class ACP(AnnounceableResource):
 
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.SUB ] # TODO Transaction to be added
+
+
 	def __init__(self, dct:JSON=None, pi:str=None, rn:str=None, create:bool=False, createdInternally:str=None) -> None:
 		super().__init__(T.ACP, dct, pi, create=create, inheritACP=True, rn=rn, attributePolicies=attributePolicies)
 
@@ -43,18 +45,9 @@ class ACP(AnnounceableResource):
 				self.setCreatedInternally(createdInternally)
 
 
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource,	
-									 [ T.SUB # TODO Transaction to be added
-									 ])
 
-
-
-
-
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
-		if not (res := super().validate(originator, create, dct)).status:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		
 		if dct is not None and (pvs := Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs')) is not None:
@@ -63,6 +56,21 @@ class ACP(AnnounceableResource):
 		if self.pvs is None or len(self.pvs) == 0:
 			return Result(status=False, rsc=RC.badRequest, dbg='pvs must not be empty')
 
+		# Check acod
+		def _checkAcod(acrs:list) -> Result:
+			if acrs is None:
+				return Result(status=True)
+			for acr in acrs:
+				if (acod := acr.get('acod')) is not None:
+					if (acod := acod.get('chty')) is None or not isinstance(acod, list):
+						return Result(status=False, rsc=RC.badRequest, dbg='chty is mandatory in acod')
+			return Result(status=True)
+
+		if not (res := _checkAcod(Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pv/acr'))).status:
+			return res
+		if not (res := _checkAcod(Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs/acr'))).status:
+			return res
+
 		return Result(status=True)
 
 
@@ -70,12 +78,12 @@ class ACP(AnnounceableResource):
 		super().deactivate(originator)
 
 		# Remove own resourceID from all acpi
-		Logging.logDebug(f'Removing acp.ri: {self.ri} from assigned resource acpi')
-		for r in CSE.storage.searchByValueInField('acpi', self.ri):
+		L.isDebug and L.logDebug(f'Removing acp.ri: {self.ri} from assigned resource acpi')
+		for r in CSE.storage.searchByFilter(lambda r: (acpi := r.get('acpi')) is not None and self.ri in acpi):	# search for presence in acpi, not perfect match
 			acpi = r.acpi
 			if self.ri in acpi:
 				acpi.remove(self.ri)
-				r['acpi'] = acpi
+				r['acpi'] = acpi if len(acpi) > 0 else None	# Remove acpi from resource if empty
 				r.dbUpdate()
 
 
@@ -121,22 +129,41 @@ class ACP(AnnounceableResource):
 				p['acor'].append(originator)
 
 
-	def checkPermission(self, origin:str, requestedPermission:int) -> bool:
-		# Logging.logDebug(f'origin: {origin} requestedPermission: {requestedPermission}')
+	def checkPermission(self, originator:str, requestedPermission:int, ty:T) -> bool:
+		# L.isDebug and L.logDebug(f'originator: {originator} requestedPermission: {requestedPermission}')
 		for p in self['pv/acr']:
-			# Logging.logDebug(f'p.acor: {p['acor']} requestedPermission: {p['acop']}')
+			# L.isDebug and L.logDebug(f'p.acor: {p['acor']} requestedPermission: {p['acop']}')
+
+			# Check Permission-to-check first
 			if requestedPermission & p['acop'] == Permission.NONE:	# permission not fitting at all
 				continue
-			if 'all' in p['acor'] or origin in p['acor'] or requestedPermission == Permission.NOTIFY:
+
+			# Check acod : chty
+			if (acod := p.get('acod')) is not None:
+				if requestedPermission == Permission.CREATE:
+					if ty is None or ty not in acod.get('chty'):
+						continue								# for CREATE: type not in chty
+				else:
+					if ty not in acod.get('ty'):
+						continue								# any other Permission type: ty not in chty
+				# TODO support acod/specialization
+
+			# Check originator
+			if 'all' in p['acor'] or originator in p['acor'] or requestedPermission == Permission.NOTIFY:
+				return True
+			if any([ Utils.simpleMatch(originator, a) for a in p['acor'] ]):	# check whether there is a wildcard match
 				return True
 		return False
 
 
-	def checkSelfPermission(self, origin:str, requestedPermission:int) -> bool:
+	def checkSelfPermission(self, originator:str, requestedPermission:int) -> bool:
 		for p in self['pvs/acr']:
 			if requestedPermission & p['acop'] == 0:	# permission not fitting at all
 				continue
-			if 'all' in p['acor'] or origin in p['acor']:
+			# TODO check acod in pvs
+			if 'all' in p['acor'] or originator in p['acor']:
+				return True
+			if any([ Utils.simpleMatch(originator, a) for a in p['acor'] ]):	# check whether there is a wildcard match
 				return True
 		return False
 

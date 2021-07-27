@@ -65,11 +65,15 @@ Various aspects of the ACME implementation are covered by unit tests based on th
 
 
 ### Configuration & Running
-Each test suite imports the file [init.py](../tests/init.py) that contains various configuration values used by the test suites. You may change these for your individual set-up.
+Each test suite imports the file [init.py](../tests/init.py) that contains various helper functions used by the test suites. 
 
-In the file [init.py](../tests/init.py) there is also a configuration setting for the request protocol that should be used. Currently, *http* and *https* are supported. Please note, that all CSE's involved in the test runs must use the same protocol type.
+The actual configuration of the test suite is done in the file [config.py](../tests/config.py). You may change these for your individual set-up. In this file there is also a configuration setting for the request protocol that should be used. Currently, *http* and *https* are supported. Please note, that all CSE's involved in the test runs must use the same protocol type.
 
-The CSE under test should be started with the remote configuration interface enabled. During test runs the test suite will temporarily change some of the CSE's delays (e.g. the check for resource expirations) in order to speed up the test. You can either do this by changing the configuation [enableRemoteConfiguration](Configuration.md#server_http) in the [configuration file](../acme.ini.default), or by providing the [--remote-configuration](Running.md) command line argument during startup.
+One can also provide OAuth2 settings in case the CSE under test is behind an OAuth2 gateway.
+
+#### Enable Remote Configuration
+
+The CSE under test must be started with the remote configuration interface enabled. During test runs the test suite will temporarily change some of the CSE's delays (e.g. the check for resource expirations) in order to speed up the test. You can either do this by changing the configuation [enableRemoteConfiguration](Configuration.md#server_http) in the [configuration file](../acme.ini.default), or by providing the [--remote-configuration](Running.md) command line argument during startup.
 
 ### Test Suites
 
@@ -100,32 +104,35 @@ The Python script [runTests.py](../tests/runTests.py) can be used to run all tes
 
 	...
 
-									[ACME] - Test Results
-	┏━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
-	┃ Test Suites     ┃ Test Count ┃ Skipped ┃ Errors ┃ Exec Time ┃ Process Time ┃ Time / Test ┃
-	┡━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
-	│ testACP         │ 24         │ 0       │ 0      │ 0.254555  │ 0.0883       │ 0.0106      │
-	│ testAE          │ 20         │ 0       │ 0      │ 0.264547  │ 0.0795       │ 0.0132      │
-	│ testAddressing  │ 6          │ 0       │ 0      │ 0.109203  │ 0.0385       │ 0.0182      │
-	│ testCIN         │ 6          │ 0       │ 0      │ 0.112126  │ 0.0310       │ 0.0187      │
-	│ testCNT         │ 17         │ 0       │ 0      │ 0.285828  │ 0.0714       │ 0.0168      │
-	│ testCNT_CIN     │ 5          │ 0       │ 0      │ 0.207681  │ 0.0530       │ 0.0415      │
-	│ testCSE         │ 6          │ 0       │ 0      │ 0.034428  │ 0.0180       │ 0.0057      │
-	│ testDiscovery   │ 50         │ 0       │ 0      │ 2.394407  │ 0.2640       │ 0.0479      │
-	│ testExpiration  │ 8          │ 0       │ 0      │ 30.936923 │ 0.1602       │ 3.8671      │
-	│ testFCNT        │ 20         │ 0       │ 0      │ 0.265955  │ 0.0801       │ 0.0133      │
-	│ testFCNT_FCI    │ 6          │ 0       │ 0      │ 0.188589  │ 0.0463       │ 0.0314      │
-	│ testGRP         │ 17         │ 0       │ 0      │ 0.653116  │ 0.1336       │ 0.0384      │
-	│ testMgmtObj     │ 56         │ 0       │ 0      │ 0.521094  │ 0.1958       │ 0.0093      │
-	│ testMisc        │ 3          │ 0       │ 0      │ 0.016969  │ 0.0094       │ 0.0057      │
-	│ testNOD         │ 11         │ 0       │ 0      │ 0.287916  │ 0.0766       │ 0.0262      │
-	│ testREQ         │ 17         │ 0       │ 0      │ 26.000516 │ 0.1090       │ 1.5294      │
-	│ testRemote      │ 2          │ 0       │ 0      │ 0.040013  │ 0.0121       │ 0.0200      │
-	│ testRemote_Annc │ 28         │ 0       │ 0      │ 2.969211  │ 0.1714       │ 0.1060      │
-	│ testSUB         │ 48         │ 0       │ 0      │ 9.867077  │ 0.3084       │ 0.2056      │
-	├─────────────────┼────────────┼─────────┼────────┼───────────┼──────────────┼─────────────┤
-	│ Totals          │ 350        │ 0       │ 0      │ 75.4322   │ 1.9680       │ 0.2155      │
-	└─────────────────┴────────────┴─────────┴────────┴───────────┴──────────────┴─────────────┘
+										[ACME] - Test Results
+	┏━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
+	┃ Test Suites     ┃ Test Count ┃ Skipped ┃ Errors ┃ Exec Time  ┃ Process Time ┃ Time / Test ┃
+	┡━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
+	│ testACP         │ 38         │ 0       │ 0      │ 2.038394   │ 0.1328       │ 0.0536      │
+	│ testAE          │ 22         │ 0       │ 0      │ 1.485972   │ 0.0831       │ 0.0675      │
+	│ testAddressing  │ 6          │ 0       │ 0      │ 0.513926   │ 0.0334       │ 0.0857      │
+	│ testCIN         │ 15         │ 0       │ 0      │ 1.474164   │ 0.0683       │ 0.0983      │
+	│ testCNT         │ 20         │ 0       │ 0      │ 1.260655   │ 0.0725       │ 0.0630      │
+	│ testCNT_CIN     │ 21         │ 0       │ 0      │ 7.242389   │ 0.2142       │ 0.3449      │
+	│ testCSE         │ 7          │ 0       │ 0      │ 0.261999   │ 0.0271       │ 0.0374      │
+	│ testDiscovery   │ 51         │ 0       │ 0      │ 11.553983  │ 0.2574       │ 0.2265      │
+	│ testExpiration  │ 8          │ 0       │ 0      │ 33.305452  │ 0.1756       │ 4.1632      │
+	│ testFCNT        │ 22         │ 0       │ 0      │ 1.703758   │ 0.0873       │ 0.0774      │
+	│ testFCNT_FCI    │ 10         │ 0       │ 0      │ 1.440845   │ 0.0692       │ 0.1441      │
+	│ testGRP         │ 19         │ 0       │ 0      │ 3.354424   │ 0.1156       │ 0.1765      │
+	│ testMgmtObj     │ 56         │ 0       │ 0      │ 2.426752   │ 0.1805       │ 0.0433      │
+	│ testMisc        │ 13         │ 0       │ 0      │ 0.333524   │ 0.0430       │ 0.0257      │
+	│ testNOD         │ 11         │ 0       │ 0      │ 0.885265   │ 0.0680       │ 0.0805      │
+	│ testPCH         │ 9          │ 0       │ 0      │ 0.559523   │ 0.0355       │ 0.0622      │
+	│ testREQ         │ 22         │ 0       │ 0      │ 34.600313  │ 0.2010       │ 1.5727      │
+	│ testRemote      │ 5          │ 0       │ 0      │ 0.155780   │ 0.0214       │ 0.0312      │
+	│ testRemote_Annc │ 28         │ 0       │ 0      │ 3.529524   │ 0.1642       │ 0.1261      │
+	│ testSUB         │ 59         │ 0       │ 0      │ 17.055104  │ 0.3334       │ 0.2891      │
+	│ testTS          │ 19         │ 0       │ 0      │ 1.546678   │ 0.0602       │ 0.0814      │
+	│ testTS_TSI      │ 33         │ 0       │ 0      │ 110.092743 │ 0.4238       │ 3.3361      │
+	├─────────────────┼────────────┼─────────┼────────┼────────────┼──────────────┼─────────────┤
+	│ Totals          │ 494        │ 0       │ 0      │ 236.8454   │ 2.8916       │ 0.4794      │
+	└─────────────────┴────────────┴─────────┴────────┴────────────┴──────────────┴─────────────┘
 
 The ```runTest.py``` script by default will run all test cases, except scripts that runs load tests. To include those one need to specify the ```--load-include``` command line argument.
 
@@ -163,20 +170,21 @@ When sending a GET request to the endpoint followed by the name of a configurati
 	Request: GET /__config__/cse.maxExpirationDelta
  
 ### PUT Configuration
-When sending a PUT request to the endpoint followed by the name of a configuration macro and with a new value in the body of the request then a new value is assigned to that configuation setting.  Example
+When sending a PUT request to the endpoint followed by the name of a configuration macro and with a new value in the body of the request then a new value is assigned to that configuration setting.  Example
 
 	Request: POST /__config__/cse.checkExpirationsInterval
 	Body: 2
 
-A successful operation is answeredd with an *ack* response, an error or failure to process is answered with a *nak* response.
+A successful operation is answered with an *ack* response, an error or failure to process is answered with a *nak* response.
 
-Only the following configration settings can updated by this method yet:
+Only the following configuration settings can updated by this method yet:
 
-| Macro name                   | Description                                                                                                   |
-|:-----------------------------|:--------------------------------------------------------------------------------------------------------------|
-| cse.checkExpirationsInterval | Assigning a new value to this configuration setting will also force a restart CSE's *Registration* component. |
-| cse.req.minet                | Minimum time for &lt;request> resource expiration.                                                            |
-| cse.req.maxnet               | Maximum time for &lt;request> resource expiration.                                                            |
+| Macro name                   | Description                                                                                                        |
+|:-----------------------------|:-------------------------------------------------------------------------------------------------------------------|
+| cse.checkExpirationsInterval | Assigning a new value to this configuration setting will also force a restart CSE's *RegistrationManager* module.  |
+| cse.req.minet                | Minimum time for &lt;request> resource expiration.                                                                 |
+| cse.req.maxnet               | Maximum time for &lt;request> resource expiration.                                                                 |
+| cse.checkTimeSeriesInterval  | Assigning a new value to this configuration setting will also force a restart CSE's *TimeSeriesManager* component. |
 
 
 <a name="mypy"></a>

@@ -1,27 +1,24 @@
 
-import pkgutil, os, fnmatch, importlib, time, argparse
+import os, fnmatch, sys, importlib, time, argparse
 from rich.console import Console
-from rich.table import Column, Table
+from rich.table import Table
 from rich.style import Style
 
 
-# testRemoteCSE.py
-# testTransferRequests.py
-# testMgmt objs
+# TODO testTransferRequests.py
 
-loadTests = [ 'testLoad' ]
+loadTests 	= [ 'testLoad' ]
+singleTests = []
 
 def isRunTest(name:str) -> bool:
 	if args.runAll:						# run all tests
 		return True
-	if len(args.tests) > 0:				# run only specified tests
-		return name in args.tests
+	if len(singleTests) > 0:			# run only specified tests
+		return name in singleTests
 	if args.includeLoadTests:			# include all load tests
 		return True
-	if args.loadTestsOnly: 
-		return name in loadTests		# only load tests
-	else:
-		return name not in loadTests	# only not load tests
+	return (len([ n for n in loadTests if name.startswith(n) ]) > 0) == args.loadTestsOnly
+
 	
 
 if __name__ == '__main__':
@@ -33,7 +30,7 @@ if __name__ == '__main__':
 	modules       = []
 	results       = {}
 
-	# Parse some command line arguments
+	# Parse command line arguments
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--load-include', action='store_true', dest='includeLoadTests', default=False, help='include load tests in test runs')
 	parser.add_argument('--load-only', action='store_true', dest='loadTestsOnly', default=False, help='run only load tests in test runs')
@@ -45,8 +42,11 @@ if __name__ == '__main__':
 	groupFail.add_argument('--failfast', action='store_true', dest='failFast', default=True, help='Stop tests after failure (default)')
 	groupFail.add_argument('--no-failfast', action='store_false', dest='failFast', default=True, help='Continue tests after failure')
 
-	parser.add_argument('tests', nargs='*', help='specify tests to run only')
+	parser.add_argument('tests', nargs='*', help='specific tests to run')
 	args = parser.parse_args()
+
+	# Clean optional single tests
+	singleTests = [ test if not test.endswith('.py') else test[:-3] for test in args.tests ]
 
 
 	# Get all filenames with tests and load them as modules
@@ -64,7 +64,7 @@ if __name__ == '__main__':
 			totalSuites += 1
 			name = module.__name__
 			if isRunTest(name): 	# exclude / include some tests
-				console.print(f'[blue]Running tests from [bold]{name}')
+				console.print(f'[bright_blue]Running tests from [bold]{name}')
 				startProcessTime = time.process_time()
 				startPerfTime = time.perf_counter()
 				testExecuted, errors, skipped = module.run(testVerbosity=args.verbosity, testFailFast=args.failFast)	# type: ignore
@@ -87,7 +87,7 @@ if __name__ == '__main__':
 
 	# Print Summary
 	console.print()
-	table = Table(show_header=True, header_style='blue', show_footer=True, footer_style='', title='[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim] - Test Results')
+	table = Table(show_header=True, header_style='bright_blue', show_footer=True, footer_style='', title='[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim] - Test Results')
 	table.add_column('Test Suites', footer='Totals', no_wrap=True)
 	table.add_column('Test Count', footer=f'[spring_green3]{totalRunTests if totalErrors == 0 else str(totalRunTests)}[/spring_green3]')
 	table.add_column('Skipped', footer=f'[yellow]{totalSkipped if totalSkipped > 0 else "[spring_green3]0"}[/yellow]')

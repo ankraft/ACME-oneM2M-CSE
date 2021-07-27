@@ -7,28 +7,27 @@
 #	ResourceType: oldest (virtual resource) for flexContainer
 #
 
+from __future__ import annotations
 from typing import cast, Optional
-from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode as RC, Result, JSON, CSERequest
-import CSE, Utils
+import CSE
 from .Resource import *
-from Logging import Logging
+from Logging import Logging as L
 
 
 class FCNT_OL(Resource):
+
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes:list[T] = [ ]
+
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.FCNT_OL, dct, pi, create=create, inheritACP=True, readOnly=True, rn='ol', isVirtual=True)
 
 
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource, [])
-
-
 	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:
 		""" Handle a RETRIEVE request. Return resource """
-		Logging.logDebug('Retrieving oldest FCI from FCNT')
+		if L.isDebug: L.logDebug('Retrieving oldest FCI from FCNT')
 		if (r := self._getOldest()) is None:
 			return Result(rsc=RC.notFound, dbg='no instance for <oldest>')
 		return Result(resource=r)
@@ -46,7 +45,7 @@ class FCNT_OL(Resource):
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a DELETE request. Delete the latest resource. """
-		Logging.logDebug('Deleting oldest FCI from FCNT')
+		if L.isDebug: L.logDebug('Deleting oldest FCI from FCNT')
 		if (r := self._getOldest()) is None:
 			return Result(rsc=RC.notFound, dbg='no instance for <oldest>')
 		return CSE.dispatcher.deleteResource(r, originator, withDeregistration=True)

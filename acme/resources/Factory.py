@@ -7,11 +7,11 @@
 #	Create Resources
 #
 
-from typing import Dict, Callable, Any, Tuple
+from typing import Dict, Callable, Any
 from Types import ResourceTypes as T
 from Types import ResponseCode as RC
 from Types import Result
-from Logging import Logging
+from Logging import Logging as L
 import Utils
 
 
@@ -37,14 +37,21 @@ from resources.FCNT_OL import FCNT_OL
 from resources.GRP import GRP
 from resources.GRPAnnc import GRPAnnc
 from resources.GRP_FOPT import GRP_FOPT
-from resources.MgmtObj import MgmtObj
-from resources.MgmtObjAnnc import MgmtObjAnnc
 from resources.NOD import NOD
 from resources.NODAnnc import NODAnnc
 from resources.PCH import PCH
 from resources.PCH_PCU import PCH_PCU
 from resources.REQ import REQ
 from resources.SUB import SUB
+from resources.TS import TS
+from resources.TSAnnc import TSAnnc
+from resources.TS_LA import TS_LA
+from resources.TS_OL import TS_OL
+from resources.TSI import TSI
+from resources.TSIAnnc import TSIAnnc
+
+#from resources.TSAnnc import TSAnnc
+
 
 from resources.Unknown import Unknown
 
@@ -100,6 +107,10 @@ resourceFactoryMap:Dict[T, FactoryT] = {
 	T.PCH_PCU	: lambda dct, tpe, pi, create : PCH_PCU(dct, pi=pi, create=create),
 	T.REQ		: lambda dct, tpe, pi, create : REQ(dct, pi=pi, create=create),
 	T.SUB		: lambda dct, tpe, pi, create : SUB(dct, pi=pi, create=create),
+	T.TS		: lambda dct, tpe, pi, create : TS(dct, pi=pi, create=create),
+	T.TS_LA		: lambda dct, tpe, pi, create : TS_LA(dct, pi=pi, create=create),
+	T.TS_OL		: lambda dct, tpe, pi, create : TS_OL(dct, pi=pi, create=create),
+	T.TSI		: lambda dct, tpe, pi, create : TSI(dct, pi=pi, create=create),
 
 
 	# 	Announced Resources
@@ -114,6 +125,8 @@ resourceFactoryMap:Dict[T, FactoryT] = {
 	T.FCIAnnc	: lambda dct, tpe, pi, create : FCIAnnc(dct, pi=pi, create=create),
 	T.GRPAnnc	: lambda dct, tpe, pi, create : GRPAnnc(dct, pi=pi, create=create),
 	T.NODAnnc	: lambda dct, tpe, pi, create : NODAnnc(dct, pi=pi, create=create),
+	T.TSAnnc	: lambda dct, tpe, pi, create : TSAnnc(dct, pi=pi, create=create),
+	T.TSIAnnc	: lambda dct, tpe, pi, create : TSIAnnc(dct, pi=pi, create=create),
 
 
 	#	Management specializations
@@ -155,16 +168,27 @@ def resourceFromDict(resDict:Dict[str, Any]={}, pi:str=None, ty:T=None, create:b
 		may be set separately.
 	"""
 	resDict, tpe = Utils.pureResource(resDict)	# remove optional "m2m:xxx" level
+
+	# Determine type
 	typ = resDict['ty'] if 'ty' in resDict else ty
+	if typ is None and (typ := T.fromTPE(tpe)) is  None:
+		L.logWarn(dbg := f'cannot determine type for resource: {tpe}')
+		return Result(status=False, dbg=dbg, rsc=RC.badRequest)
+	
+	# Check for Parent
+	if pi is None and typ != T.CSEBase and ((pi := resDict.get('pi')) is None or len(pi) == 0):
+		L.logWarn(dbg := f'pi missing in resource: {tpe}')
+		return Result(status=False, dbg=dbg, rsc=RC.badRequest)
+
 
 	# Check whether given type during CREATE matches the resource's ty attribute
 	if typ != None and ty != None and typ != ty:
-		Logging.logWarn(dbg := f'parameter type ({ty}) and resource type ({typ}) mismatch')
+		L.logWarn(dbg := f'parameter type ({ty}) and resource type ({typ}) mismatch')
 		return Result(dbg=dbg, rsc=RC.badRequest)
 	
 	# Check whether given type during CREATE matches the resource type specifier
 	if ty != None and tpe != None and ty not in [ T.FCNT, T.FCNTAnnc, T.FCI, T.FCIAnnc, T.MGMTOBJ, T.MGMTOBJAnnc ]  and ty.tpe() != tpe:
-		Logging.logWarn(dbg := f'parameter type ({ty}) and resource type specifier ({tpe}) mismatch')
+		L.logWarn(dbg := f'parameter type ({ty}) and resource type specifier ({tpe}) mismatch')
 		return Result(dbg=dbg, rsc=RC.badRequest)
 	
 	# store the import status in the original resDict

@@ -3,7 +3,7 @@
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
 
-Version 0.7.3
+Version 0.8.0
 
 [![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.8-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-green.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-green)](LICENSE) [![MyPy](https://img.shields.io/badge/MyPy-covered-green)](LICENSE)  
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/acmeCSE.svg?style=social&label=%40acmeCSE)](https://twitter.com/acmeCSE)
@@ -39,9 +39,22 @@ Please consult the following pages for further instructions.
 
 Please see the [Changelog](CHANGELOG.md) for the latest changes.
 
+### Important: Changed startup
+
+From this release (0.8.x) on the CSE is started by running the *acme* module:
+
+	python3 acme
+
+and not a starter script like in the past (was: ~~python3 acme.py~~).
+
+Command line arguments can be passed as usual.
+
 ### Hightlights in this release
 
-- TODO
+- Support for \<timeSeries> and \<timeSeriesInstances>
+- Improved support for request expiration, access control, and \<container> & \<contentInstances>
+- Improved console interface
+- Lot's of small improvements, bug fixes, and optimizations
 
 ## Acknowledgements
 

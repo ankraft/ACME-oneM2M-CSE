@@ -7,9 +7,9 @@
 
 You can start the CSE by simply running it from a command line:
 
-	python3 acme.py
+	python3 acme
 
-In this case the configuration file *acme.ini* must be in the same directory.
+In this case the [configuration file](Configuration.md) *acme.ini*, if it should be used, must be in the same directory.
 
 In additions, you can provide additional command line arguments that will override the respective settings from the configuration file:
 
@@ -61,16 +61,24 @@ Please note, that the shutdown might take a moment (e.g. gracefully terminating 
 
 The CSE has a simple command console interface to execute build-in commands. Currently these commands are available:
 
- - h, ?  - This help
- - Q, ^C - Shutdown CSE
- - c     - Show configuration
- - D     - Delete resource
- - i     - Inspect resource
- - l     - Toggle logging on/off
- - r     - Show CSE registrations
- - s     - Show statistics
- - t     - Show resource tree
- - w     - Show worker threads status
+- h, ?  - This help
+- Q, ^C - Shutdown CSE
+- c     - Show configuration
+- C     - Clear the console screen
+- D     - Delete resource
+- i     - Inspect resource
+- I     - Inspect resource and child resources
+- l     - Toggle screen logging on/off
+- L     - Toggle through log levels
+- r     - Show CSE registrations
+- s     - Show statistics
+- ^S    - Show & refresh statistics continuously
+- t     - Show resource tree
+- T     - Show child resource tree
+- ^T    - Show & refresh resource tree continuously
+- u     - Open web UI
+- w     - Show worker threads status
+- Z     - Reset the CSE
 
  The following screenshot shows, for example, a CSE's resource tree:
 

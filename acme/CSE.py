@@ -8,31 +8,33 @@
 #
 
 from __future__ import annotations
-import atexit, argparse, os, threading, time, sys
-from typing import Dict, Optional, Any
-from Constants import Constants as C
+import atexit, argparse, os, time, sys
+from typing import Dict, Any
 from AnnouncementManager import AnnouncementManager
 from Configuration import Configuration
+from Console import Console
 from Dispatcher import Dispatcher
 from RequestManager import RequestManager
 from EventManager import EventManager
 from GroupManager import GroupManager
 from HttpServer import HttpServer
 from Importer import Importer
-from Logging import Logging
+from Logging import Logging as L
+from MQTTClient import MQTTClient
 from NotificationManager import NotificationManager
 from RegistrationManager import RegistrationManager
 from RemoteCSEManager import RemoteCSEManager
 from SecurityManager import SecurityManager
 from Statistics import Statistics
 from Storage import Storage
+from TimeSeriesManager import TimeSeriesManager
 from Validator import Validator
 from Types import CSEType, ContentSerializationType
+
 
 from AEStatistics import AEStatistics
 from CSENode import CSENode
 import Utils
-from helpers.KeyHandler import loop, stopLoop, readline
 from helpers.BackgroundWorker import BackgroundWorkerPool
 
 
@@ -41,17 +43,21 @@ from helpers.BackgroundWorker import BackgroundWorkerPool
 # singleton main components. These variables will hold all the various manager
 # components that are used throughout the CSE implementation.
 announce:AnnouncementManager					= None
+console:Console									= None
 dispatcher:Dispatcher							= None
-request:RequestManager							= None
 event:EventManager								= None
 group:GroupManager								= None
 httpServer:HttpServer							= None
+importer:Importer								= None
+mqttClient:MQTTClient							= None
 notification:NotificationManager				= None
 registration:RegistrationManager 				= None
 remote:RemoteCSEManager							= None
+request:RequestManager							= None
 security:SecurityManager 						= None
 statistics:Statistics							= None
 storage:Storage									= None
+timeSeries:TimeSeriesManager					= None
 validator:Validator 							= None
 
 rootDirectory:str								= None
@@ -74,18 +80,15 @@ shuttingDown									= False
 
 # TODO move further configurable "constants" here
 
-# TODO make AE registering a bit more generic
-
-
 
 
 ##############################################################################
 
 
 #def startup(args=None, configfile=None, resetdb=None, loglevel=None):
-def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
-	global announce, dispatcher, group, httpServer, notification, validator
-	global registration, remote, request, security, statistics, storage, event
+def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
+	global announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
+	global remote, request, security, statistics, storage, timeSeries, validator
 	global rootDirectory
 	global aeStatistics
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseRi, cseRn
@@ -110,7 +113,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 
 
 	if not Configuration.init(args):
-		return
+		return False
 
 	# Initialize configurable constants
 	supportedReleaseVersions = Configuration.get('cse.supportedReleaseVersions')
@@ -123,99 +126,59 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> None:
 	defaultSerialization	 = Configuration.get('cse.defaultSerialization')
 
 	# init Logging
-	Logging.init()
+	L.init()
 	if not args.headless:
-		Logging.console('Press ? for help')
-	Logging.log('============')
-	Logging.log('Starting CSE')
-	Logging.log(f'CSE-Type: {cseType.name}')
-	Logging.log('Configuration:')
-	Logging.log(Configuration.print())
+		L.console('Press ? for help')
+	L.log('============')
+	L.log('Starting CSE')
+	L.log(f'CSE-Type: {cseType.name}')
+	#L.log('Configuration:')
+	L.log(Configuration.print())
 
-
-	# Initiatlize the resource storage
-	storage = Storage()
-
-	# Initialize the event manager
-	event = EventManager()
-
-	# Initialize the statistics system
-	statistics = Statistics()
-
-	# Initialize the registration manager
-	registration = RegistrationManager()
-
-	# Initialize the resource validator
-	validator = Validator()
-
-	# Initialize the resource dispatcher
-	dispatcher = Dispatcher()
-
-	# Initialize the request manager
-	request = RequestManager()
-
-	# Initialize the security manager
-	security = SecurityManager()
-
-	# Initialize the HTTP server
-	httpServer = HttpServer()
-
-	# Initialize the notification manager
-	notification = NotificationManager()
-
-	# Initialize the group manager
-	group = GroupManager()
+	storage = Storage()						# Initiatlize the resource storage
+	event = EventManager()					# Initialize the event manager
+	statistics = Statistics()				# Initialize the statistics system
+	registration = RegistrationManager()	# Initialize the registration manager
+	validator = Validator()					# Initialize the resource validator
+	dispatcher = Dispatcher()				# Initialize the resource dispatcher
+	request = RequestManager()				# Initialize the request manager
+	security = SecurityManager()			# Initialize the security manager
+	httpServer = HttpServer()				# Initialize the HTTP server
+	mqttClient = MQTTClient()				# Initialize the MQTT client
+	notification = NotificationManager()	# Initialize the notification manager
+	group = GroupManager()					# Initialize the group manager
+	timeSeries = TimeSeriesManager()		# Initialize the timeSeries manager
 	
 	# Import a default set of resources, e.g. the CSE, first ACP or resource structure
-	# Import extra attribute policies for specializations first 
+	# Import extra attribute policies for specializations first
+	# When this fails, we cannot continue with the CSE startup
 	importer = Importer()
 	if not importer.importAttributePolicies() or not importer.importResources():
-		return
+		return False
 
-	# Initialize the remote CSE manager
-	remote = RemoteCSEManager()
+	remote = RemoteCSEManager()				# Initialize the remote CSE manager
+	announce = AnnouncementManager()		# Initialize the announcement manager
+	startAppsDelayed()						# Start the App. They are actually started after the CSE finished the startup
 
-	# Initialize the announcement manager
-	announce = AnnouncementManager()
+	console = Console()						# Start the console
 
-	# Start AEs
-	startAppsDelayed()	# the Apps are actually started after the CSE finished the startup
+	# Send an event that the CSE startup finished
+	event.cseStartup()	# type: ignore
 
 	# Start the HTTP server
-	event.cseStartup()	# type: ignore
 	httpServer.run() # This does return (!)
+
+	# Start the MQTT client
+	mqttClient.run() # This does return
 	
-	Logging.log('CSE started')
-	if isHeadless:
-		# when in headless mode give the CSE a moment (2s) to experience fatal errors before printing the start message
-		BackgroundWorkerPool.newActor(delay=2, workerCallback=lambda : Logging.console('CSE started') if not shuttingDown else None ).start()
+	if not shuttingDown:
+		L.isInfo and L.log('CSE started')
+		if isHeadless:
+			# when in headless mode give the CSE a moment (2s) to experience fatal errors before printing the start message
+			BackgroundWorkerPool.newActor(lambda : L.console('CSE started') if not shuttingDown else None, delay=2.0 ).start()
+	
+	return True
 
-	#
-	#	Enter an endless loop.
-	#	Execute keyboard commands in the keyboardHandler's loop() function.
-	#
-	commands = {
-		'?'     : _keyHelp,
-		'h'		: _keyHelp,
-		'\n'	: lambda c: print(),	# 1 empty line
-		'\x03'  : _keyShutdownCSE,		# See handler below
-		'c'		: _keyConfiguration,
-		'C'		: _keyClearScreen,
-		'D'		: _keyDeleteResource,
-		'i'		: _keyInspectResource,
-		'l'     : _keyToggleLogging,
-		'Q'		: _keyShutdownCSE,		# See handler below
-		'r'		: _keyCSERegistrations,
-		's'		: _keyStatistics,
-		't'		: _keyResourceTree,
-		'T'		: _keyChildResourceTree,
-		'w'		: _keyWorkers,
-	}
-
-	#	Endless runtime loop. This handles key input & commands
-	#	The CSE's shutdown happens in one of the key handlers below
-	loop(commands, catchKeyboardInterrupt=True, headless=args.headless)
-	shutdown()
 
 
 def shutdown() -> None:
@@ -228,9 +191,9 @@ def shutdown() -> None:
 	# indicating the shutting down status. When running in another environment the
 	# atexit-handler might not be called. Therefore, we need to set it here
 	shuttingDown = True		
-	stopLoop()				# This will end the main run loop.
+	console.stop()				# This will end the main run loop.
 	if isHeadless:
-		Logging.console('CSE shutting down')
+		L.console('CSE shutting down')
 
 
 @atexit.register
@@ -238,12 +201,15 @@ def _shutdown() -> None:
 	"""	shutdown the CSE, e.g. when receiving a keyboard interrupt or at the end of the programm run.
 	"""
 
-	Logging.log('CSE shutting down')
+	L.isInfo and L.log('CSE shutting down')
 	if event is not None:
 		event.cseShutdown() 	# type: ignore
+	console is not None and console.shutdown()
+	mqttClient is not None and mqttClient.shutdown()
 	httpServer is not None and httpServer.shutdown()
 	announce is not None and announce.shutdown()
 	remote is not None and remote.shutdown()
+	timeSeries is not None and timeSeries.shutdown()
 	group is not None and group.shutdown()
 	notification is not None and notification.shutdown()
 	request is not None and request.shutdown()
@@ -254,9 +220,28 @@ def _shutdown() -> None:
 	statistics is not None and statistics.shutdown()
 	event is not None and event.shutdown()
 	storage is not None and storage.shutdown()
-	Logging.log('CSE shutdown')
-	Logging.finit()
+	L.isInfo and L.log('CSE shutdown')
+	L.finit()
 
+
+def resetCSE() -> None:
+	""" Reset the CSE: Clear databases and import the resources again.
+	"""
+	L.isWarn and L.logWarn('Resetting CSE started')
+	storage.purge()
+	if not importer.importAttributePolicies() or not importer.importResources():
+		L.isWarn and L.logErr('Error during import')
+		sys.exit()	# what else can we do?
+	L.isWarn and L.logWarn('Resetting CSE finished')
+
+
+def run() -> None:
+	console.run()
+
+##############################################################################
+#
+#	Application handler
+#
 
 
 # Delay starting the AEs in the backround. This is needed because the CSE
@@ -273,7 +258,7 @@ def startApps() -> None:
 		return
 
 	time.sleep(Configuration.get('cse.applicationsStartupDelay'))
-	Logging.log('Starting Apps')
+	L.isInfo and L.log('Starting Apps')
 	appsStarted = True
 
 	if Configuration.get('app.csenode.enable'):
@@ -290,172 +275,9 @@ def stopApps() -> None:
 	global appsStarted
 	if appsStarted:
 		appsStarted = False
-		Logging.log('Stopping Apps')
+		L.isInfo and L.log('Stopping Apps')
 		if aeStatistics is not None:
 			aeStatistics.shutdown()
 		if aeCSENode is not None:
 			aeCSENode.shutdown()
 
-
-##############################################################################
-#
-#	Various keyboard command handlers
-#
-
-def _keyHelp(key:str) -> None:
-	"""	Print help for keyboard commands.
-	"""
-	Logging.console(f'\n[white][dim][[/dim][red][i]ACME[/i][/red][dim]] {C.version}', plain=True)
-	Logging.console("""**Console Commands**  
-- h, ?  - This help
-- Q, ^C - Shutdown CSE
-- c     - Show configuration
-- C     - Clear the console screen
-- D     - Delete resource
-- i     - Inspect resource
-- l     - Toggle logging on/off
-- r     - Show CSE registrations
-- s     - Show statistics
-- t     - Show resource tree
-- T     - Show child resource tree
-- w     - Show worker threads status
-""", extranl=True)
-
-
-def _keyShutdownCSE(key:str) -> None:
-	"""	Shutdown the CSE.
-	"""
-	if not isHeadless:
-		Logging.console('Shutdown CSE')
-	sys.exit()
-
-
-def _keyToggleLogging(key:str) -> None:
-	"""	Toggle through the log levels.
-	"""
-	Logging.enableScreenLogging = not Logging.enableScreenLogging
-	Logging.console(f'Logging enabled -> **{Logging.enableScreenLogging}**')
-
-
-def _keyWorkers(key:str) -> None:
-	"""	Print the worker and actor threads.
-	"""
-	from rich.table import Table
-
-	Logging.console('**Worker & Actor Threads**', extranl=True)
-	table = Table()
-	table.add_column('Name', no_wrap=True)
-	table.add_column('Type', no_wrap=True)
-	table.add_column('Interval', no_wrap=True)
-	table.add_column('Runs', no_wrap=True)
-	for w in BackgroundWorkerPool.backgroundWorkers.values():
-		a = 'Actor' if w.count == 1 else 'Worker'
-		table.add_row(w.name, a, str(w.updateInterval), str(w.numberOfRuns))
-	Logging.console(table, extranl=True)
-
-
-def _keyConfiguration(key:str) -> None:
-	"""	Print the configuration.
-	"""
-	from rich.table import Table
-
-	Logging.console('**Configuration**', extranl=True)
-	conf = Configuration.print().split('\n')
-	conf.sort()
-	table = Table()
-	table.add_column('Key', no_wrap=True)
-	table.add_column('Value', no_wrap=False)
-	for c in conf:
-		if c.startswith('Configuration:'):
-			continue
-		kv = c.split(' = ', 1)
-		if len(kv) == 2:
-			table.add_row(kv[0].strip(), kv[1])
-	Logging.console(table, extranl=True)
-
-
-def _keyClearScreen(key:str) -> None:
-	"""	Clear the console screen.
-	"""
-	Logging.consoleClear()
-
-
-def _keyResourceTree(key:str) -> None:
-	"""	Render the CSE's resource tree.
-	"""
-	Logging.console('**Resource Tree**', extranl=True)
-	Logging.console(statistics.getResourceTreeRich())
-	Logging.console()
-
-
-def _keyChildResourceTree(key:str) -> None:
-	"""	Render the CSE's resource tree, beginning with a child resource.
-	"""
-	Logging.console('**Child Resource Tree**', extranl=True)
-	loggingOld = Logging.loggingEnabled
-	Logging.loggingEnabled = False
-	
-	if (ri := readline('ri=')) is None:
-		Logging.console()
-	elif len(ri) > 0:
-		if (tree := statistics.getResourceTreeRich(parent=ri)) is not None:
-			Logging.console(tree)
-		else:
-			Logging.console('not found', isError=True)
-
-	Logging.loggingEnabled = loggingOld
-
-
-def _keyCSERegistrations(key:str) -> None:
-	"""	Render CSE registrations.
-	"""
-	Logging.console('**CSE Registrations**', extranl=True)
-	Logging.console(statistics.getCSERegistrationsRich())
-	Logging.console()
-
-
-def _keyStatistics(key:str) -> None:
-	""" Render various statistics & counts.
-	"""
-	Logging.console('**Statistics**', extranl=True)
-	Logging.console(statistics.getStatisticsRich())
-	Logging.console()
-
-
-def _keyDeleteResource(key:str) -> None:
-	"""	Delete a resource from the CSE.
-	"""
-	Logging.console('**Delete Resource**', extranl=True)
-	loggingOld = Logging.loggingEnabled
-	Logging.loggingEnabled = False
-
-	if (ri := readline('ri=')) is None:
-		Logging.console()
-	elif len(ri) > 0:
-		if (res := dispatcher.retrieveResource(ri)).resource is None:
-			Logging.console(res.dbg, isError=True)
-		else:
-			if (res := dispatcher.deleteResource(res.resource, withDeregistration=True)).resource is None:
-				Logging.console(res.dbg, isError=True)
-			else:
-				Logging.console('ok')
-
-	Logging.loggingEnabled = loggingOld
-
-
-def _keyInspectResource(key:str) -> None:
-	"""	Inspect a resource.
-	"""
-	Logging.console('**Inspect Resource**', extranl=True)
-	loggingOld = Logging.loggingEnabled
-	Logging.loggingEnabled = False
-	
-	if (ri := readline('ri=')) is None:
-		Logging.console()
-	elif len(ri) > 0:
-		if (res := dispatcher.retrieveResource(ri)).resource is None:
-			Logging.console(res.dbg, isError=True)
-		else:
-			Logging.console(res.resource.asDict())
-
-	Logging.loggingEnabled = loggingOld

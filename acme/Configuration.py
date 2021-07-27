@@ -8,10 +8,10 @@
 #
 
 
-import logging, configparser, re, argparse, ssl, os.path
+import configparser, re, argparse, os.path
 from typing import Any, Dict
 from Constants import Constants as C
-from Types import CSEType, ContentSerializationType
+from Types import CSEType, ContentSerializationType, Permission
 from rich.console import Console
 
 
@@ -71,45 +71,11 @@ class Configuration(object):
 				'configfile'					: argsConfigfile,
 
 				#
-				#	HTTP Server
-				#
-
-				'http.listenIF'						: config.get('server.http', 'listenIF', 				fallback='127.0.0.1'),
-				'http.port' 						: config.getint('server.http', 'port', 					fallback=8080),
-				'http.root'							: config.get('server.http', 'root', 					fallback=''),
-				'http.address'						: config.get('server.http', 'address', 					fallback='http://127.0.0.1:8080'),
-				'http.multiThread'					: config.getboolean('server.http', 'multiThread', 		fallback=True),
-				'http.enableRemoteConfiguration'	: config.getboolean('server.http', 'enableRemoteConfiguration', fallback=False),
-				'http.enableStructureEndpoint'		: config.getboolean('server.http', 'enableStructureEndpoint', fallback=False),
-
-				#
-				#	Database
-				#
-
-				'db.path'							: config.get('database', 'path', 						fallback=C.defaultDataDirectory),
-				'db.inMemory'						: config.getboolean('database', 'inMemory', 			fallback=False),
-				'db.cacheSize'						: config.getint('database', 'cacheSize', 				fallback=0),		# Default: no caching
-				'db.resetOnStartup' 				: config.getboolean('database', 'resetOnStartup',		fallback=False),
-
-				#
-				#	Logging
-				#
-
-				'logging.enable'					: config.getboolean('logging', 'enable', 				fallback=True),
-				'logging.enableFileLogging'			: config.getboolean('logging', 'enableFileLogging', 	fallback=False),
-				'logging.enableScreenLogging'		: config.getboolean('logging', 'enableScreenLogging', 	fallback=True),
-				'logging.path'						: config.get('logging', 'path', 						fallback=C.defaultLogDirectory),
-				'logging.level'						: config.get('logging', 'level', 						fallback='debug'),
-				'logging.size'						: config.getint('logging', 'size', 						fallback=100000),
-				'logging.count'						: config.getint('logging', 'count', 					fallback=10),		# Number of log files
-				'logging.stackTraceOnError'			: config.getboolean('logging', 'stackTraceOnError',			fallback=True),
-
-				#
 				#	CSE
 				#
 
 				'cse.type'							: config.get('cse', 'type',								fallback='IN'),		# IN, MN, ASN
-				'cse.spid'							: config.get('cse', 'serviceProviderID',				fallback='acme'),
+				'cse.spid'							: config.get('cse', 'serviceProviderID',				fallback='acme.example.com'),
 				'cse.csi'							: config.get('cse', 'cseID',							fallback='/id-in'),
 				'cse.ri'							: config.get('cse', 'resourceID',						fallback='id-in'),
 				'cse.rn'							: config.get('cse', 'resourceName',						fallback='cse-in'),
@@ -126,7 +92,7 @@ class Configuration(object):
 				'cse.sortDiscoveredResources'		: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
 				'cse.checkExpirationsInterval'		: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
 				'cse.flexBlockingPreference'		: config.get('cse', 'flexBlockingPreference',			fallback='blocking'),
-				'cse.supportedReleaseVersions'		: config.getlist('cse', 'supportedReleaseVersions',		fallback=C.supportedReleaseVersions), # type: ignore
+				'cse.supportedReleaseVersions'		: config.getlist('cse', 'supportedReleaseVersions',		fallback=C.supportedReleaseVersions), # type: ignore [attr-defined]
 				'cse.releaseVersion'				: config.get('cse', 'releaseVersion',					fallback='3'),
 				'cse.defaultSerialization'			: config.get('cse', 'defaultSerialization',				fallback='json'),
 
@@ -142,6 +108,53 @@ class Configuration(object):
 				'cse.security.caPrivateKeyFile'		: config.get('cse.security', 'caPrivateKeyFile', 		fallback=None),
 
 				#
+				#	HTTP Server
+				#
+
+				'http.listenIF'						: config.get('server.http', 'listenIF', 				fallback='127.0.0.1'),
+				'http.port' 						: config.getint('server.http', 'port', 					fallback=8080),
+				'http.root'							: config.get('server.http', 'root', 					fallback=''),
+				'http.address'						: config.get('server.http', 'address', 					fallback='http://127.0.0.1:8080'),
+				'http.multiThread'					: config.getboolean('server.http', 'multiThread', 		fallback=True),
+				'http.enableRemoteConfiguration'	: config.getboolean('server.http', 'enableRemoteConfiguration', fallback=False),
+				'http.enableStructureEndpoint'		: config.getboolean('server.http', 'enableStructureEndpoint', fallback=False),
+				'http.enableResetEndpoint'			: config.getboolean('server.http', 'enableResetEndpoint', fallback=False),
+
+				#
+				#	MQTT Client
+				#
+
+				'mqtt.enable'						: config.getboolean('client.mqtt', 'enable', 			fallback=False),
+				'mqtt.address'						: config.get('client.mqtt', 'address', 					fallback='127.0.0.1'),
+				'mqtt.port' 						: config.getint('client.mqtt', 'port', 					fallback=None),	# Default will be determined later (s.b.)
+				'mqtt.keepalive' 					: config.getint('client.mqtt', 'keepalive',				fallback=60),
+				'mqtt.bindIF' 						: config.get('client.mqtt', 'bindIF',					fallback='127.0.0.1'),
+				'mqtt.username' 					: config.get('client.mqtt', 'username',					fallback=None),
+				'mqtt.password' 					: config.get('client.mqtt', 'password',					fallback=None),
+
+				#
+				#	Database
+				#
+
+				'db.path'							: config.get('database', 'path', 						fallback=C.defaultDataDirectory),
+				'db.inMemory'						: config.getboolean('database', 'inMemory', 			fallback=False),
+				'db.cacheSize'						: config.getint('database', 'cacheSize', 				fallback=0),		# Default: no caching
+				'db.resetOnStartup' 				: config.getboolean('database', 'resetOnStartup',		fallback=False),
+
+				#
+				#	Logging
+				#
+
+				'logging.enableFileLogging'			: config.getboolean('logging', 'enableFileLogging', 	fallback=False),
+				'logging.enableScreenLogging'		: config.getboolean('logging', 'enableScreenLogging', 	fallback=True),
+				'logging.path'						: config.get('logging', 'path', 						fallback=C.defaultLogDirectory),
+				'logging.level'						: config.get('logging', 'level', 						fallback='debug'),
+				'logging.size'						: config.getint('logging', 'size', 						fallback=100000),
+				'logging.count'						: config.getint('logging', 'count', 					fallback=10),		# Number of log files
+				'logging.stackTraceOnError'			: config.getboolean('logging', 'stackTraceOnError',		fallback=True),
+
+
+				#
 				#	Registrar CSE
 				#
 
@@ -150,15 +163,15 @@ class Configuration(object):
 				'cse.registrar.csi'					: config.get('cse.registrar', 'cseID', 					fallback=None),
 				'cse.registrar.rn'					: config.get('cse.registrar', 'resourceName', 			fallback=None),
 				'cse.registrar.checkInterval'		: config.getint('cse.registrar', 'checkInterval', 		fallback=30),		# Seconds
-				'cse.registrar.excludeCSRAttributes': config.getlist('cse.registrar', 'excludeCSRAttributes',fallback=[]),		# type: ignore
+				'cse.registrar.excludeCSRAttributes': config.getlist('cse.registrar', 'excludeCSRAttributes',fallback=[]),		# type: ignore [attr-defined]
 				'cse.registrar.serialization'		: config.get('cse.registrar', 'serialization',			fallback='json'),
 
 				#
 				#	Registrations
 				#
 
-				'cse.registration.allowedAEOriginators'	: config.getlist('cse.registration', 'allowedAEOriginators',	fallback=['C*','S*']),		# type: ignore
-				'cse.registration.allowedCSROriginators': config.getlist('cse.registration', 'allowedCSROriginators',	fallback=[]),				# type: ignore
+				'cse.registration.allowedAEOriginators'	: config.getlist('cse.registration', 'allowedAEOriginators',	fallback=['C*','S*']),		# type: ignore [attr-defined]
+				'cse.registration.allowedCSROriginators': config.getlist('cse.registration', 'allowedCSROriginators',	fallback=[]),				# type: ignore [attr-defined]
 				'cse.registration.checkLiveliness'		: config.getboolean('cse.registration', 'checkLiveliness',		fallback=True),
 
 
@@ -182,8 +195,8 @@ class Configuration(object):
 				#	Defaults for Access Control Policies
 				#
 
-				'cse.acp.pv.acop'					: config.getint('cse.resource.acp', 'permission', 		fallback=63),
-				'cse.acp.pvs.acop'					: config.getint('cse.resource.acp', 'selfPermission', 	fallback=51),
+				'cse.acp.pv.acop'					: config.getint('cse.resource.acp', 'permission', 		fallback=Permission.ALL),
+				'cse.acp.pvs.acop'					: config.getint('cse.resource.acp', 'selfPermission', 	fallback=Permission.DISCOVERY+Permission.NOTIFY+Permission.CREATE+Permission.RETRIEVE),
 
 
 				#
@@ -211,12 +224,30 @@ class Configuration(object):
 
 
 				#
+				#	Defaults for timeSeries Resources
+				#
+
+				'cse.ts.enableLimits'				: config.getboolean('cse.resource.ts', 'enableLimits',	fallback=False),
+				'cse.ts.mni'						: config.getint('cse.resource.ts', 'mni', 				fallback=10),
+				'cse.ts.mbs'						: config.getint('cse.resource.ts', 'mbs', 				fallback=10000),
+				'cse.ts.mdn'						: config.getint('cse.resource.ts', 'mdn', 				fallback=10),
+
+
+				#
 				#	Web UI
 				#
 
 				'cse.webui.enable'					: config.getboolean('cse.webui', 'enable', 				fallback=True),
 				'cse.webui.root'					: config.get('cse.webui', 'root', 						fallback='/webui'),
 
+
+				#
+				#	Console
+				#
+
+				'cse.console.refreshInterval'		: config.getfloat('cse.console', 'refreshInterval', 	fallback=2.0),
+				'cse.console.hideResources'			: config.getlist('cse.console', 'hideResources', 		fallback=[]),		# type: ignore[attr-defined]
+				'cse.console.treeMode'				: config.get('cse.console', 'treeMode', 				fallback='normal'),
 
 				#
 				#	App: Statistics AE
@@ -280,19 +311,19 @@ class Configuration(object):
 			return False
 
 		# Loglevel and various overrides from command line
+		from Logging import LogLevel
 		logLevel = Configuration._configuration['logging.level'].lower()
 		logLevel = (argsLoglevel or logLevel) 	# command line args override config
 		if logLevel == 'off':
-			Configuration._configuration['logging.enable'] = False
-			Configuration._configuration['logging.level'] = logging.DEBUG
+			Configuration._configuration['logging.level'] = LogLevel.OFF
 		elif logLevel == 'info':
-			Configuration._configuration['logging.level'] = logging.INFO
+			Configuration._configuration['logging.level'] = LogLevel.INFO
 		elif logLevel == 'warn':
-			Configuration._configuration['logging.level'] = logging.WARNING
+			Configuration._configuration['logging.level'] = LogLevel.WARNING
 		elif logLevel == 'error':
-			Configuration._configuration['logging.level'] = logging.ERROR
+			Configuration._configuration['logging.level'] = LogLevel.ERROR
 		else:
-			Configuration._configuration['logging.level'] = logging.DEBUG
+			Configuration._configuration['logging.level'] = LogLevel.DEBUG
 
 		if argsDBReset is True:					Configuration._configuration['db.resetOnStartup'] = True									# Override DB reset from command line
 		if argsDBStorageMode is not None:		Configuration._configuration['db.inMemory'] = argsDBStorageMode == 'memory'					# Override DB storage mode from command line
@@ -360,15 +391,23 @@ class Configuration(object):
 			if not os.path.exists(val):
 				_print(f'[red]Configuration Error: \[cse.security]:caPrivateKeyFile does not exists or is not accessible: {val}')
 				return False
+		
+		#
+		#	MQTT client
+		#
+		if (mqttPort := Configuration._configuration['mqtt.port']) is None:	# set the default port depending on whether to use TLS
+			Configuration._configuration['mqtt.port'] = 8883 if Configuration._configuration['cse.security.useTLS'] else 1883
+		if (Configuration._configuration['mqtt.username'] is None) != (Configuration._configuration['mqtt.password'] is None):
+			_print(f'[red]Configuration Error: Username or password missing for \[client.mqtt]')
+			return False
 
 		# check the csi format
-		rx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
-		if re.fullmatch(rx, (val:=Configuration._configuration['cse.csi'])) is None:
+		if not Utils.isValidCSI(val:=Configuration._configuration['cse.csi']):
 			_print(f'[red]Configuration Error: Wrong format for \[cse]:cseID: {val}')
 			return False
 
 		if Configuration._configuration['cse.registrar.address'] is not None and Configuration._configuration['cse.registrar.csi'] is not None:
-			if re.fullmatch(rx, (val:=Configuration._configuration['cse.registrar.csi'])) is None:
+			if not Utils.isValidCSI(val:=Configuration._configuration['cse.registrar.csi']):
 				_print(f'[red]Configuration Error: Wrong format for \[cse.registrar]:cseID: {val}')
 				return False
 			if len(Configuration._configuration['cse.registrar.csi']) > 0 and len(Configuration._configuration['cse.registrar.rn']) == 0:
@@ -403,6 +442,18 @@ class Configuration(object):
 			if rv not in srv:
 				_print(f'[red]Configuration Error: \[cse]:releaseVersion: {rv} not in \[cse].supportedReleaseVersions: {srv}')
 				return False
+			
+		# Check various intervals
+		if Configuration._configuration['cse.checkExpirationsInterval'] <= 0:
+			_print('[red]Configuration Error: \[cse]:checkExpirationsInterval must be greater than 0')
+			return False
+		if Configuration._configuration['cse.console.refreshInterval'] <= 0.0:
+			_print('[red]Configuration Error: \[cse.console]:refreshInterval must be greater than 0.0')
+			return False
+		Configuration._configuration['cse.console.treeMode'] = Configuration._configuration['cse.console.treeMode'].lower()
+		if Configuration._configuration['cse.console.treeMode'] not in [ 'normal', 'content', 'compact', 'contentonly' ]:
+			_print('[red]Configuration Error: \[cse.console]:treeMoed must be "normal" or "content"')
+			return False
 		
 		# Check configured app api
 		if len(api := Configuration._configuration['app.statistics.aeAPI']) < 2 or api[0] not in ['R', 'N']:

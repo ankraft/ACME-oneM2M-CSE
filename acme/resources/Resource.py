@@ -9,18 +9,16 @@
 
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
-from typing import Any, Tuple, Union, Dict, List, cast
-from Logging import Logging
+from typing import Any, Tuple, Dict, List, cast
+from Logging import Logging as L
 from Constants import Constants as C
-from Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC, CSERequest, JSON, AttributePolicies, Permission
+from Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC, CSERequest, JSON, AttributePolicies
 from Configuration import Configuration
 import Utils, CSE
-import datetime, random, traceback
 from copy import deepcopy
 from .Resource import *
 
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)
-
 
 
 class Resource(object):
@@ -35,11 +33,13 @@ class Resource(object):
 	_isAnnounced 		= '__isAnnounced__'	
 	_originator			= '__originator__'			# Or creator
 	_modified			= '__modified__'
+	_remoteID			= '__remoteID__'			# When this is a resource from another CSE
 
 	# ATTN: There is a similar definition in FCNT! Don't Forget to add attributes there as well
-	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator, _announcedTo, _modified, _isAnnounced ]
+	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator, _announcedTo, _modified, _isAnnounced, _remoteID ]
 
-	def __init__(self, ty:T|int, dct:JSON=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str=None, attributePolicies:AttributePolicies=None, isVirtual:bool=False, isAnnounced:bool=False) -> None:
+	def __init__(self, ty:T|int, dct:JSON=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, 
+				 readOnly:bool=False, rn:str=None, attributePolicies:AttributePolicies=None, isVirtual:bool=False, isAnnounced:bool=False) -> None:
 		self.tpe = tpe
 		if isinstance(ty, T) and ty not in [ T.FCNT, T.FCI ]: 	# For some types the tpe/root is empty and will be set later in this method
 			self.tpe = ty.tpe() if tpe is None else tpe
@@ -71,8 +71,8 @@ class Resource(object):
 	
 			# Check uniqueness of ri. otherwise generate a new one. Only when creating
 			if create:
-				while Utils.isUniqueRI(ri := self.attribute('ri')) == False:
-					Logging.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
+				while Utils.isUniqueRI(ri := self.ri) == False:
+					L.isWarn and L.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
 					self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite=True)
 
 			# Indicate whether this is a virtual resource
@@ -106,9 +106,12 @@ class Resource(object):
 			# Remove empty / null attributes from dict
 			# But see also the comment in update() !!!
 			#self.dict = {k: v for (k, v) in self.dict.items() if v is not None }
-			self.dict = Utils.deleteNoneValuesFromDict(self.dict, ['cr'])	# allow the ct attribute to stay in the dictionary. It will be handled with in the RegistrationManager
-			# determine and add the srn
-			self[self._srn] = Utils.structuredPath(self)
+			self.dict = Utils.removeNoneValuesFromDict(self.dict, ['cr'])	# allow the ct attribute to stay in the dictionary. It will be handled with in the RegistrationManager
+
+			# determine and add the srn, only when this is a local resource, otherwise we don't need this information
+			# It is *not* a remote resource when the __remoteID__ is set
+			if self[self._remoteID] is None:
+				self[self._srn] = Utils.structuredPath(self)
 			self[self._rtype] = self.tpe
 			self.setAttribute(self._announcedTo, [], overwrite=False)
 
@@ -133,24 +136,24 @@ class Resource(object):
 
 
 
-	def activate(self, parentResource: Resource, originator: str) -> Result:
+	def activate(self, parentResource:Resource, originator:str) -> Result:
 		"""	This method is called to to activate a resource. 
 			This is not always the case, e.g. when a resource object is just used temporarly.
 			NO notification on activation/creation!
 			Implemented in sub-classes as well.
 			Note: CR is set in RegistrationManager	(TODO: Check this)
 		"""
-		Logging.logDebug(f'Activating resource: {self.ri}')
+		L.isDebug and L.logDebug(f'Activating resource: {self.ri}')
 
 		# validate the attributes but only when the resource is not instantiated.
 		# We assume that an instantiated resource is always correct
 		# Also don't validate virtual resources
 		if (self[self._isInstantiated] is None or not self[self._isInstantiated]) and not self[self._isVirtual] :
-			if not (res := CSE.validator.validateAttributes(self._originalDict, self.tpe, self.attributePolicies, isImported=self.isImported, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
+			if not (res := CSE.validator.validateAttributes(self._originalDict, self.tpe, self.ty, self.attributePolicies, isImported=self.isImported, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
 				return res
 
 		# validate the resource logic
-		if not (res := self.validate(originator, create=True)).status:
+		if not (res := self.validate(originator, create=True, parentResource=parentResource)).status:
 			return res
 		self.dbUpdate()
 		# increment parent resource's state tag
@@ -164,6 +167,9 @@ class Resource(object):
 		#	Various ACPI handling
 		# ACPI: Check <ACP> existence and convert <ACP> references to CSE relative unstructured
 		if self.acpi is not None:
+			# Test wether an empty array is provided				
+			if len(self.acpi) == 0:
+				return Result(status=False, rsc=RC.badRequest, dbg='acpi must not be an empty list')
 			if not (res := self._checkAndFixACPIreferences(self.acpi)).status:
 				return res
 			self.setAttribute('acpi', res.lst)
@@ -178,19 +184,16 @@ class Resource(object):
 	# Deactivate an active resource.
 	# Send notification on deletion
 	def deactivate(self, originator:str) -> None:
-		Logging.logDebug(f'Deactivating and removing sub-resources for: {self.ri}')
+		L.isDebug and L.logDebug(f'Deactivating and removing sub-resources for: {self.ri}')
 		# First check notification because the subscription will be removed
 		# when the subresources are removed
 		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceDelete)
 		
 		# Remove directChildResources
-		rs = CSE.dispatcher.directChildResources(self.ri)
-		for r in rs:
-			self.childRemoved(r, originator)
-			CSE.dispatcher.deleteResource(r, originator, parentResource=self)
+		CSE.dispatcher.deleteChildResources(self, originator)
 		
-		# Removal of a deleted resource from group(s) us done 
-		# asynchronous in GroupManager, triggered by an event.
+		# Removal of a deleted resource from group(s) is done 
+		# asynchronously in GroupManager, triggered by an event.
 
 
 	# Update this resource with (new) fields.
@@ -201,12 +204,11 @@ class Resource(object):
 		updatedAttributes = None
 		if dct is not None:
 			if self.tpe not in dct and self.ty not in [T.FCNTAnnc, T.FCIAnnc]:	# Don't check announced versions of announced FCNT
-				Logging.logWarn("Update type doesn't match target")
+				L.isWarn and L.logWarn("Update type doesn't match target")
 				return Result(status=False, rsc=RC.contentsUnacceptable, dbg='resource types mismatch')
 
-
 			# validate the attributes
-			if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.attributePolicies, create=False, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
+			if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self.attributePolicies, create=False, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
 				return res
 
 			if self.ty not in [T.FCNTAnnc, T.FCIAnnc]:
@@ -215,10 +217,13 @@ class Resource(object):
 				updatedAttributes = Utils.findXPath(dct, '{0}')
 
 			# Check that acpi, if present, is the only attribute
-			if 'acpi' in updatedAttributes:	# No further checks here. This has been done before in the Dispatcher.processUpdateRequest()	
-
+			if 'acpi' in updatedAttributes and updatedAttributes['acpi'] is not None:	# No further checks for access here. This has been done before in the Dispatcher.processUpdateRequest()	
+																						# Removing acpi by setting it to None is handled in the else:
+				# Test wether an empty array is provided				
+				if len(ua := updatedAttributes['acpi']) == 0:
+					return Result(status=False, rsc=RC.badRequest, dbg='acpi must not be an empty list')
 				# Check whether referenced <ACP> exists. If yes, change ID also to CSE relative unstructured
-				if not (res := self._checkAndFixACPIreferences(updatedAttributes['acpi'])).status:
+				if not (res := self._checkAndFixACPIreferences(ua)).status:
 					return res
 				
 				self.setAttribute('acpi', res.lst, overwrite=True) # copy new value or add new attributes
@@ -261,6 +266,19 @@ class Resource(object):
 		# Check subscriptions
 		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceUpdate, modifiedAttributes=self[self._modified])
 		self.dbUpdate()
+
+		# Notify parent that a child has been updated
+		if (parent := self.retrieveParentResource()) is None:
+			L.logErr(dbg := f'cannot retrieve parent resource')
+			return Result(status=False, rsc=RC.internalServerError, dbg=dbg)
+		parent.childUpdated(self, updatedAttributes, originator)
+
+		return Result(status=True)
+
+
+	def willBeRetrieved(self, originator:str) -> Result:
+		""" Called before a resource will be send back in a response.
+		"""
 		return Result(status=True)
 
 
@@ -275,44 +293,43 @@ class Resource(object):
 		CSE.notification.checkSubscriptions(self, NotificationEventType.createDirectChild, childResource)
 
 
+	def childUpdated(self, childResource:Resource, updatedAttributes:JSON, originator:str) -> None:
+		"""	Called when a child resource was updated. """
+		pass
+
+
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
-		""" Call when child resource was removed from the resource. """
+		""" Call when child resource was removed from the resource. 
+		"""
 		CSE.notification.checkSubscriptions(self, NotificationEventType.deleteDirectChild, childResource)
 
 
 	def canHaveChild(self, resource:Resource) -> bool:
-		""" MUST be implemented by each class."""
-		raise NotImplementedError('canHaveChild()')
-
-
-	def _canHaveChild(self, resource:Resource, allowedChildResourceTypes:list[T]) -> bool:
-		""" It checks whether a fresource may have a certain child resources. This is called from child class. """
+		""" Check whether a fresource may have `resource` as a child resources. 
+		"""
 		from .Unknown import Unknown # Unknown imports this class, therefore import only here
-		return resource['ty'] in allowedChildResourceTypes or isinstance(resource, Unknown)
+		return resource.ty in self.allowedChildResourceTypes or isinstance(resource, Unknown)
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
 		""" Validate a resource. Usually called within activate() or update() methods. """
-		Logging.logDebug(f'Validating resource: {self.ri}')
+		L.isDebug and L.logDebug(f'Validating resource: {self.ri}')
 		if (not Utils.isValidID(self.ri) or
 			not Utils.isValidID(self.pi) or
 			not Utils.isValidID(self.rn)):
-			err = f'Invalid ID ri: {self.ri}, pi: {self.pi}, rn: {self.rn})'
-			Logging.logDebug(err)
-			return Result(status=False, rsc=RC.contentsUnacceptable, dbg=err)
+			L.isDebug and L.logDebug(dbg := f'Invalid ID ri: {self.ri}, pi: {self.pi}, rn: {self.rn})')
+			return Result(status=False, rsc=RC.contentsUnacceptable, dbg=dbg)
 
 		# expirationTime handling
 		if (et := self.et) is not None:
 			if self.ty == T.CSEBase:
-				err = 'expirationTime is not allowed in CSEBase'
-				Logging.logWarn(err)
-				return Result(status=False, rsc=RC.badRequest, dbg=err)
+				L.isWarn and L.logWarn(dbg := 'expirationTime is not allowed in CSEBase')
+				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 			if len(et) > 0 and et < (etNow := Utils.getResourceDate()):
-				err = f'expirationTime is in the past: {et} < {etNow}'
-				Logging.logWarn(err)
-				return Result(status=False, rsc=RC.badRequest, dbg=err)
+				L.isWarn and L.logWarn(dbg := f'expirationTime is in the past: {et} < {etNow}')
+				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 			if et > (etMax := Utils.getResourceDate(Configuration.get('cse.maxExpirationDelta'))):
-				Logging.logDebug(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
+				L.isDebug and L.logDebug(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
 				self['et'] = etMax
 		return Result(status=True)
 
@@ -385,10 +402,8 @@ class Resource(object):
 
 	def attribute(self, key:str, default:Any=None) -> Any:
 		if '/' in key:	# search in path
-			return Utils.findXPath(self.dict, key, default)
-		if self.hasAttribute(key):
-			return self.dict[key]
-		return default
+			return Utils.findXPath(self.dict, key, default)		
+		return self.dict.get(key, default)
 
 
 	def hasAttribute(self, key: str) -> bool:
@@ -450,18 +465,22 @@ class Resource(object):
 		"""
 		newACPIList =[]
 		for ri in acpi:
-			if (acp := CSE.dispatcher.retrieveResource(ri).resource) is None:
-				Logging.logDebug(dbg := f'Referenced <ACP> resource not found: {ri}')
-				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+			if not CSE.importer.isImporting:
+
+				if (acp := CSE.dispatcher.retrieveResource(ri).resource) is None:
+					L.isDebug and L.logDebug(dbg := f'Referenced <ACP> resource not found: {ri}')
+					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 
 
-				# TODO CHECK TYPE + TEST
+					# TODO CHECK TYPE + TEST
 
 
 
 
-			newACPIList.append(acp.ri)
+				newACPIList.append(acp.ri)
+			else:
+				newACPIList.append(ri)
 		return Result(status=True, lst=newACPIList)
 
 

@@ -60,21 +60,21 @@ class TestFCNT(unittest.TestCase):
 					'steVe'	: 0.5
 				}}
 		r, rsc = CREATE(aeURL, TestFCNT.originator, T.FCNT, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.created, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveFCNT(self) -> None:
 		""" Retrieve <FCNT> """
-		_, rsc = RETRIEVE(fcntURL, TestFCNT.originator)
-		self.assertEqual(rsc, RC.OK)
+		r, rsc = RETRIEVE(fcntURL, TestFCNT.originator)
+		self.assertEqual(rsc, RC.OK, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveFCNTWithWrongOriginator(self) -> None:
 		"""	Retrieve <FCNT> """
-		_, rsc = RETRIEVE(fcntURL, 'Cwrong')
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		r, rsc = RETRIEVE(fcntURL, 'Cwrong')
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

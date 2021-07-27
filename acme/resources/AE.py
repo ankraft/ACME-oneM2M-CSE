@@ -12,7 +12,7 @@ from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 from Validator import constructPolicy, addPolicy
 import Utils
 from .Resource import *
-from Logging import Logging
+from Logging import Logging as L
 from .AnnounceableResource import AnnounceableResource
 import CSE
 
@@ -27,8 +27,11 @@ aePolicies = constructPolicy([
 attributePolicies =  addPolicy(attributePolicies, aePolicies)
 
 
-
 class AE(AnnounceableResource):
+
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.ACP, T.CNT, T.FCNT, T.GRP, T.PCH, T.SUB, T.TS ]
+
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.AE, dct, pi, create=create, attributePolicies=attributePolicies)
@@ -40,18 +43,6 @@ class AE(AnnounceableResource):
 			self.setAttribute('rr', False, overwrite=False)
 
 
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource:Resource) -> bool:
-		return super()._canHaveChild(resource,	
-									 [ T.ACP,
-									   T.CNT,
-									   T.FCNT,
-									   T.GRP,
-									   T.PCH,
-									   T.SUB
-									 ])
-
-
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
 		if not (res := super().childWillBeAdded(childResource, originator)).status:
 			return res
@@ -60,7 +51,7 @@ class AE(AnnounceableResource):
 		if childResource.ty == T.PCH:
 			# Check correct originator. Even the ADMIN is not allowed that		
 			if self.aei != originator:
-				Logging.logDebug(dbg := f'Originator must be the parent <AE>')
+				if L.isDebug: L.logDebug(dbg := f'Originator must be the parent <AE>')
 				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
 
 			# check that there will only by one PCH as a child
@@ -70,8 +61,8 @@ class AE(AnnounceableResource):
 		return Result(status=True)
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
-		if not (res := super().validate(originator, create, dct)).status:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 
 		self.normalizeURIAttribute('poa')
@@ -116,9 +107,8 @@ class AE(AnnounceableResource):
 			if len((apiElements := api.split('.'))) < 3:
 				return Result(status=False, rsc=RC.badRequest, dbg=f'wrong format for registered ID in attribute "api": to few elements')
 		else:
-			Logging.logDebug('wrong format for ID in attribute "api": must start with "R" or "N"')
-			return Result(status=False, rsc=RC.badRequest, dbg=f'wrong format for ID in attribute "api": must start with "R" or "N"')
-
+			L.logWarn(dbg := f'wrong format for ID in attribute "api": {api} (must start with "R" or "N")')
+			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 		return Result(status=True)
 

@@ -8,17 +8,14 @@
 #
 
 from typing import List
-from Logging import Logging
+from Logging import Logging as L
 from Configuration import Configuration
-from Constants import Constants as C
 from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
 from Validator import constructPolicy, addPolicy
 import Utils, CSE
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
 import resources.Factory as Factory
-
-
 
 
 # Attribute policies for this resource are constructed during startup of the CSE
@@ -32,6 +29,8 @@ attributePolicies =  addPolicy(attributePolicies, cntPolicies)
 
 
 class CNT(AnnounceableResource):
+
+	allowedChildResourceTypes =  [ T.CNT, T.CIN, T.FCNT, T.SUB, T.TS ]
 
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
@@ -49,23 +48,12 @@ class CNT(AnnounceableResource):
 		self.__validating = False	# semaphore for validating
 
 
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource: Resource) -> bool:
-		return super()._canHaveChild(resource,	
-									 [ T.CNT,
-									   T.CIN,
-									   T.FCNT,
-									   T.SUB
-									 ])
-
-
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
 		
-
 		# register latest and oldest virtual resources
-		Logging.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
+		if L.isDebug: L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
 		latestResource = Factory.resourceFromDict({}, pi=self.ri, ty=T.CNT_LA).resource		# rn is assigned by resource itself
@@ -76,6 +64,23 @@ class CNT(AnnounceableResource):
 		oldestResource = Factory.resourceFromDict({}, pi=self.ri, ty=T.CNT_OL).resource		# rn is assigned by resource itself
 		if (res := CSE.dispatcher.createResource(oldestResource)).resource is None:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+
+		return Result(status=True)
+
+
+	def update(self, dct:JSON=None, originator:str=None) -> Result:
+
+		# remember disr update first, handle later after the update
+		disrOrg = self.disr
+		disrNew = Utils.findXPath(dct, f'{self.tpe}/disr')
+
+		# Generic update
+		if not (res := super().update(dct, originator)).status:
+			return res
+		
+		# handle disr: delete all <cin> when disr was set to TRUE and is now FALSE.
+		if disrOrg is not None and disrOrg == True and disrNew is not None and disrNew == False:
+			CSE.dispatcher.deleteChildResources(self, originator, ty=T.CIN)
 
 		return Result(status=True)
 
@@ -96,17 +101,17 @@ class CNT(AnnounceableResource):
 		# Check whether the size of the CIN doesn't exceed the mbs
 		if childResource.ty == T.CIN and self.mbs is not None:
 			if childResource.cs is not None and childResource.cs > self.mbs:
-				return Result(status=False, rsc=RC.notAcceptable, dbg='children content sizes would exceed mbs')
+				return Result(status=False, rsc=RC.notAcceptable, dbg='child content sizes would exceed mbs')
 		return Result(status=True)
 
 
 	# Handle the addition of new CIN. Basically, get rid of old ones.
 	def childAdded(self, childResource:Resource, originator:str) -> None:
-		Logging.logDebug(f'Child resource added: {childResource.ri}')
+		if L.isDebug: L.logDebug(f'Child resource added: {childResource.ri}')
 		super().childAdded(childResource, originator)
 		if childResource.ty == T.CIN:	# Validate if child is CIN
 
-			# Check for mia handling
+			# Check for mia handling. This sets the et attribute in the CIN
 			if self.mia is not None:
 				# Take either mia or the maxExpirationDelta, whatever is smaller
 				maxEt = Utils.getResourceDate(self.mia if self.mia <= (med := Configuration.get('cse.maxExpirationDelta')) else med)
@@ -119,7 +124,7 @@ class CNT(AnnounceableResource):
 
 	# Handle the removal of a CIN. 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
-		Logging.logDebug(f'Child resource removed: {childResource.ri}')
+		if L.isDebug: L.logDebug(f'Child resource removed: {childResource.ri}')
 		super().childRemoved(childResource, originator)
 		if childResource.ty == T.CIN:	# Validate if child was CIN
 			self._validateChildren()
@@ -127,8 +132,8 @@ class CNT(AnnounceableResource):
 
 	# Validating the Container. This means recalculating cni, cbs as well as
 	# removing ContentInstances when the limits are met.
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
-		if (res := super().validate(originator, create, dct)).status == False:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 		self._validateChildren()
 		return Result(status=True)
@@ -153,9 +158,11 @@ class CNT(AnnounceableResource):
 			i = 0
 			l = cni
 			while cni > mni and i < l:
-				Logging.logDebug(f'cni > mni: Removing <cin>: {cs[i].ri}')
+				if L.isDebug: L.logDebug(f'cni > mni: Removing <cin>: {cs[i].ri}')
 				# remove oldest
-				CSE.dispatcher.deleteResource(cs[i], parentResource=self)
+				# Deleting a child must not cause a notification for 'deleteDirectChild'.
+				# Don't do a delete check means that CNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
+				CSE.dispatcher.deleteResource(cs[i], parentResource=self, doDeleteCheck=False)
 				cni -= 1	# decrement cni when deleting a <cin>
 				i += 1
 			cs = self.contentInstances()	# retrieve CIN child resources again
@@ -171,10 +178,12 @@ class CNT(AnnounceableResource):
 			i = 0
 			l = len(cs)
 			while cbs > mbs and i < l:
-				Logging.logDebug(f'cbs > mbs: Removing <cin>: {cs[i].ri}')
+				if L.isDebug: L.logDebug(f'cbs > mbs: Removing <cin>: {cs[i].ri}')
 				# remove oldest
 				cbs -= cs[i]['cs']
-				CSE.dispatcher.deleteResource(cs[i], parentResource=self)
+				# Deleting a child must not cause a notification for 'deleteDirectChild'.
+				# Don't do a delete check means that CNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
+				CSE.dispatcher.deleteResource(cs[i], parentResource=self, doDeleteCheck=False)
 				cni -= 1	# decrement cni when deleting a <cin>
 				i += 1
 

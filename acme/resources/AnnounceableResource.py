@@ -10,12 +10,11 @@
 from __future__ import annotations
 from copy import deepcopy
 from .Resource import *
-from typing import Union
-import Utils, CSE
+import CSE
 from Types import ResourceTypes as T, Result, AttributePolicies, JSON, AttributePolicies
 from Types import Announced as AN 
-from Validator import addPolicy
-from Logging import Logging
+from Validator import addPolicy, getPolicy
+from Logging import Logging as L
 
 class AnnounceableResource(Resource):
 
@@ -25,7 +24,7 @@ class AnnounceableResource(Resource):
 
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
-		Logging.logDebug(f'Activating AnnounceableResource resource: {self.ri}')
+		L.isDebug and L.logDebug(f'Activating AnnounceableResource resource: {self.ri}')
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
 
@@ -36,7 +35,7 @@ class AnnounceableResource(Resource):
 
 
 	def deactivate(self, originator:str) -> None:
-		Logging.logDebug(f'Deactivating AnnounceableResource and removing sub-resources: {self.ri}')
+		L.isDebug and L.logDebug(f'Deactivating AnnounceableResource and removing sub-resources: {self.ri}')
 
 		# perform deannouncements
 		if self.at is not None:
@@ -45,7 +44,7 @@ class AnnounceableResource(Resource):
 
 
 	def update(self, dct:JSON=None, originator:str=None) -> Result:
-		Logging.logDebug(f'Updating AnnounceableResource: {self.ri}')
+		L.isDebug and L.logDebug(f'Updating AnnounceableResource: {self.ri}')
 		self._origAA = self.aa
 		self._origAT = self.at
 		if not (res := super().update(dct=dct, originator=originator)).status:
@@ -61,17 +60,18 @@ class AnnounceableResource(Resource):
 
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None) -> Result:
-		Logging.logDebug(f'Validating AnnounceableResource: {self.ri}')
-		if (res := super().validate(originator, create, dct)).status == False:
+	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+		L.isDebug and L.logDebug(f'Validating AnnounceableResource: {self.ri}')
+		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 
 		announceableAttributes = []
 		if self.aa is not None:
 			announceableAttributes = deepcopy(self.aa)
-		for attr, v in self.attributePolicies.items():
+		for attr in self.attributePolicies.keys():
 			# Removing non announceable attributes
 			if attr in announceableAttributes:
+				v = getPolicy(attr, self.attributePolicies)
 				if v[5] == AN.NA:  # remove attributes which are not announceable
 					announceableAttributes.remove(attr)
 					continue
@@ -167,7 +167,9 @@ class AnnounceableResource(Resource):
 
 			# copy only the updated attributes
 			for attr in modifiedAttributes:
-				if attr in announcedAttributes or (attr in policies and policies[attr][5] == AN.MA):	# either announced or an MA attribute
+				v = getPolicy(attr, policies)
+				if attr in announcedAttributes or (v is not None and v[5] == AN.MA):	# either announced or an MA attribute
+				# if attr in announcedAttributes or (attr in policies and policies[attr][5] == AN.MA):	# either announced or an MA attribute
 					body[attr] = self[attr]
 
 			# copy only the updated attributes
@@ -233,8 +235,10 @@ class AnnounceableResource(Resource):
 		announceableAttributes = []
 		if self.aa is not None:
 			announceableAttributes = self.aa
-		for attr,v in policies.items():
+		for attr in policies.keys():
 			if self.hasAttribute(attr):
+				if (v := getPolicy(attr, policies)) is None:
+					continue
 				if v[5] == AN.MA:
 					mandatory.append(attr)
 				elif v[5] == AN.OA and attr in announceableAttributes:	# only add optional attributes that are also in aa

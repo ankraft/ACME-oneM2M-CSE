@@ -12,7 +12,7 @@ from Types import ResourceTypes as T, ContentSerializationType as CST
 class Constants(object):
 
 	# ACME Version
-	version						= '0.7.3'
+	version						= '0.8.0'
 
 	# Supported release vesions
 	supportedReleaseVersions = ['2a', '3', '4']
@@ -20,7 +20,8 @@ class Constants(object):
 	
 	# List of virtual resources
 
-	virtualResources 				= [ T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.GRP_FOPT, T.PCH_PCU ]
+	virtualResources 				= [ T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.TS_LA, T.TS_OL, 
+										T.GRP_FOPT, T.PCH_PCU ]
 	virtualResourcesNames 			= [ 'la', 'ol', 'fopt', 'pcu' ]
 
 	# List of announceable resource types
@@ -29,7 +30,7 @@ class Constants(object):
 	# Supported resource types by this CSE
 	supportedResourceTypes 			= [	# Supported normal resource
 										T.ACP, T.AE, T.CNT, T.CIN, T.CSEBase, T.GRP, T.MGMTOBJ, T.NOD, T.CSR, 
-										T.REQ, T.SUB, T.FCNT, T.FCI
+										T.REQ, T.SUB, T.FCNT, T.FCI, T.TS, T.TSI
 									  ]
 	supportedResourceTypes			+= announcedResourceTypes	# add announced resource types as well
 
@@ -42,11 +43,11 @@ class Constants(object):
 	# List of resource types for which "creator" is allowed
 	# Also add later: eventConfig, pollingChannel, statsCollect, statsConfig, semanticDescriptor,
 	# notificationTargetPolicy, timeSeries, crossResourceSubscription, backgroundDataTransfer
-	creatorAllowed = [ T.CIN, T.CNT, T.GRP, T.SUB, T.FCNT ]
+	creatorAllowed = [ T.CIN, T.CNT, T.GRP, T.SUB, T.FCNT, T.TS ]
 
 
 	#
-	#	Message Header Fields
+	#	HTTP Header Fields
 	#
 
 	hfOrigin						= 'X-M2M-Origin'
@@ -60,6 +61,7 @@ class Constants(object):
 	hfRST 							= 'X-M2M-RST'
 	hfOET 							= 'X-M2M-OET'
 	hfRTU 							= 'X-M2M-RTU'
+	hfVSI 							= 'X-M2M-VSI'
 	hfAccept						= 'Accept'
 			
 

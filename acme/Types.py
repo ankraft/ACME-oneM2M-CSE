@@ -8,16 +8,19 @@
 #
 
 from __future__ import annotations
-import json, cbor2
 from dataclasses import dataclass, field
 from typing import Any, List, Dict, Tuple, Union, Callable
-from enum import IntEnum, Enum, auto
-from flask import Request
+from enum import IntEnum,  auto
+from http import HTTPStatus
+from collections import namedtuple
+
 
 
 #
 #	Resource Types
 #
+
+# TODO : Optimize tpe -> ResourceType mapping
 
 class ResourceTypes(IntEnum):
 
@@ -39,6 +42,8 @@ class ResourceTypes(IntEnum):
 	REQ 		= 17
 	SUB			= 23
 	FCNT	 	= 28
+	TS			= 29
+	TSI   		= 30
 	FCI 		= 58
 
 
@@ -51,6 +56,8 @@ class ResourceTypes(IntEnum):
 	FCNT_OL		=  -20004
 	FCNT_LA		=  -20005
 	PCH_PCU		=  -20006
+	TS_OL		=  -20007
+	TS_LA		=  -20008
 
 	# <mgmtObj> Specializations
 
@@ -77,6 +84,8 @@ class ResourceTypes(IntEnum):
 	NODAnnc 	= 10014
 	CSRAnnc 	= 10016
 	FCNTAnnc 	= 10028
+	TSAnnc		= 10029
+	TSIAnnc		= 10030
 	FCIAnnc 	= 10058
 
 	FWRAnnc		= -30001
@@ -108,6 +117,9 @@ class ResourceTypes(IntEnum):
 
 	def __str__(self) -> str:
 		return str(self.value)
+	
+	def __repr__(self) -> str:
+		return self.__str__()
 
 
 	@classmethod
@@ -140,6 +152,8 @@ ResourceTypes._announcedMappings = {							#  type: ignore
 	ResourceTypes.NOD		: ResourceTypes.NODAnnc,
 	ResourceTypes.CSR		: ResourceTypes.CSRAnnc,
 	ResourceTypes.FCNT		: ResourceTypes.FCNTAnnc,
+	ResourceTypes.TS 		: ResourceTypes.TSAnnc,
+	ResourceTypes.TSI 		: ResourceTypes.TSIAnnc,
 	ResourceTypes.FCI		: ResourceTypes.FCIAnnc,
 }
 
@@ -161,7 +175,8 @@ ResourceTypes._announcedMappingsMGD = {							#  type: ignore
 ResourceTypes._announcedSet = [									#  type: ignore
 	ResourceTypes.ACPAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc, ResourceTypes.CINAnnc,
 	ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc, 
-	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.FCIAnnc,
+	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.TSAnnc, ResourceTypes.TSIAnnc,
+	ResourceTypes.FCIAnnc,
 
 	ResourceTypes.FWRAnnc, ResourceTypes.SWRAnnc, ResourceTypes.MEMAnnc, ResourceTypes.ANIAnnc,
 	ResourceTypes.ANDIAnnc, ResourceTypes.BATAnnc, ResourceTypes.DVIAnnc, ResourceTypes.DVCAnnc, 
@@ -187,6 +202,8 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.NOD			: 'm2m:nod',
 		ResourceTypes.PCH			: 'm2m:pch',
 		ResourceTypes.REQ			: 'm2m:req',
+		ResourceTypes.TS 			: 'm2m:ts',
+		ResourceTypes.TSI 			: 'm2m:tsi',
 		ResourceTypes.SUB			: 'm2m:sub',
 
 		ResourceTypes.ACPAnnc 		: 'm2m:acpA',
@@ -199,6 +216,8 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.CSRAnnc 		: 'm2m:csrA',
 		ResourceTypes.FCNTAnnc 		: 'm2m:fcntA',
 		ResourceTypes.FCIAnnc 		: 'm2m:fciA',
+		ResourceTypes.TSAnnc 		: 'm2m:tsA',
+		ResourceTypes.TSIAnnc 		: 'm2m:tsiA',
 
 		ResourceTypes.CNT_OL		: 'm2m:ol',
 		ResourceTypes.CNT_LA		: 'm2m:la',
@@ -206,6 +225,8 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.FCNT_OL		: 'm2m:ol',
 		ResourceTypes.FCNT_LA		: 'm2m:la',
 		ResourceTypes.PCH_PCU		: 'm2m:pcu',
+		ResourceTypes.TS_OL			: 'm2m:ol',
+		ResourceTypes.TS_LA			: 'm2m:la',
 
 		# MgmtObj Specializations
 
@@ -238,8 +259,6 @@ ResourceTypes._names 	= {										# type: ignore
 	
 
 
-
-
 class BasicType(IntEnum):
 	""" Basic resource types """
 	positiveInteger	= auto()
@@ -248,6 +267,7 @@ class BasicType(IntEnum):
 	unsignedLong	= auto()
 	string 			= auto()
 	timestamp		= auto()
+	absRelTimestamp	= auto()
 	list 			= auto()
 	dict 			= auto()
 	anyURI			= auto()
@@ -256,6 +276,7 @@ class BasicType(IntEnum):
 	geoCoordinates	= auto()
 	integer			= auto()
 	void 			= auto()
+	duration 		= auto()
 
 
 class Cardinality(IntEnum):
@@ -300,6 +321,7 @@ class ResponseCode(IntEnum):
 	releaseVersionNotSupported					= 4001
 	notFound 									= 4004
 	operationNotAllowed							= 4005
+	requestTimeout 								= 4008
 	unsupportedMediaType						= 4015
 	subscriptionCreatorHasNoPrivilege			= 4101
 	contentsUnacceptable						= 4102
@@ -308,6 +330,7 @@ class ResponseCode(IntEnum):
 	securityAssociationRequired					= 4107
 	invalidChildResourceType					= 4108
 	groupMemberTypeInconsistent					= 4110
+	originatorHasAlreadyRegistered				= 4117
 	appRuleValidationFailed						= 4126
 	internalServerError							= 5000
 	notImplemented								= 5001
@@ -333,39 +356,41 @@ class ResponseCode(IntEnum):
 #	Mapping of oneM2M return codes to http status codes
 #
 
-ResponseCode._httpStatusCodes = {											# type: ignore
-		ResponseCode.OK 										: 200,		# OK
-		ResponseCode.deleted 									: 200,		# DELETED
-		ResponseCode.updated 									: 200,		# UPDATED
-		ResponseCode.created									: 201,		# CREATED
-		ResponseCode.accepted 									: 202, 		# ACCEPTED
-		ResponseCode.acceptedNonBlockingRequestSynch 			: 202,		# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
-		ResponseCode.acceptedNonBlockingRequestAsynch			: 202,		# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
-		ResponseCode.badRequest									: 400,		# BAD REQUEST
-		ResponseCode.contentsUnacceptable						: 400,		# NOT ACCEPTABLE
-		ResponseCode.insufficientArguments 						: 400,		# INSUFFICIENT ARGUMENTS
-		ResponseCode.invalidArguments							: 400,		# INVALID ARGUMENTS
-		ResponseCode.maxNumberOfMemberExceeded					: 400, 		# MAX NUMBER OF MEMBER EXCEEDED
-		ResponseCode.groupMemberTypeInconsistent				: 400,		# GROUP MEMBER TYPE INCONSISTENT
-		ResponseCode.originatorHasNoPrivilege					: 403,		# ORIGINATOR HAS NO PRIVILEGE
-		ResponseCode.invalidChildResourceType					: 403,		# INVALID CHILD RESOURCE TYPE
-		ResponseCode.targetNotReachable							: 403,		# TARGET NOT REACHABLE
-		ResponseCode.alreadyExists								: 403,		# ALREAD EXISTS
-		ResponseCode.targetNotSubscribable						: 403,		# TARGET NOT SUBSCRIBABLE
-		ResponseCode.receiverHasNoPrivileges					: 403,		# RECEIVER HAS NO PRIVILEGE
-		ResponseCode.securityAssociationRequired				: 403,		# SECURITY ASSOCIATION REQUIRED
-		ResponseCode.subscriptionCreatorHasNoPrivilege			: 403,		# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
-		ResponseCode.subscriptionHostHasNoPrivilege				: 403,		# SUBSCRIPTION HOST HAS NO PRIVILEGE
-		ResponseCode.appRuleValidationFailed					: 403,		# APP RULE VALIDATION FAILED
-		ResponseCode.notFound									: 404,		# NOT FOUND
-		ResponseCode.operationNotAllowed						: 405,		# OPERATION NOT ALLOWED
-		ResponseCode.notAcceptable 								: 406,		# NOT ACCEPTABLE
-		ResponseCode.conflict									: 409,		# CONFLICT
-		ResponseCode.unsupportedMediaType						: 415,		# UNSUPPORTED_MEDIA_TYPE
-		ResponseCode.internalServerError 						: 500,		# INTERNAL SERVER ERROR
-		ResponseCode.subscriptionVerificationInitiationFailed	: 500,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
-		ResponseCode.releaseVersionNotSupported					: 501,		# RELEASE_VERSION_NOT_SUPPORTED
-		ResponseCode.notImplemented								: 501,		# NOT IMPLEMENTED
+ResponseCode._httpStatusCodes = {																		# type: ignore
+		ResponseCode.OK 										: HTTPStatus.OK,						# OK
+		ResponseCode.deleted 									: HTTPStatus.OK,						# DELETED
+		ResponseCode.updated 									: HTTPStatus.OK,						# UPDATED
+		ResponseCode.created									: HTTPStatus.CREATED,					# CREATED
+		ResponseCode.accepted 									: HTTPStatus.ACCEPTED, 					# ACCEPTED
+		ResponseCode.acceptedNonBlockingRequestSynch 			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
+		ResponseCode.acceptedNonBlockingRequestAsynch			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
+		ResponseCode.badRequest									: HTTPStatus.BAD_REQUEST,				# BAD REQUEST
+		ResponseCode.contentsUnacceptable						: HTTPStatus.BAD_REQUEST,				# NOT ACCEPTABLE
+		ResponseCode.insufficientArguments 						: HTTPStatus.BAD_REQUEST,				# INSUFFICIENT ARGUMENTS
+		ResponseCode.invalidArguments							: HTTPStatus.BAD_REQUEST,				# INVALID ARGUMENTS
+		ResponseCode.maxNumberOfMemberExceeded					: HTTPStatus.BAD_REQUEST, 				# MAX NUMBER OF MEMBER EXCEEDED
+		ResponseCode.groupMemberTypeInconsistent				: HTTPStatus.BAD_REQUEST,				# GROUP MEMBER TYPE INCONSISTENT
+		ResponseCode.originatorHasNoPrivilege					: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS NO PRIVILEGE
+		ResponseCode.invalidChildResourceType					: HTTPStatus.FORBIDDEN,					# INVALID CHILD RESOURCE TYPE
+		ResponseCode.targetNotReachable							: HTTPStatus.FORBIDDEN,					# TARGET NOT REACHABLE
+		ResponseCode.alreadyExists								: HTTPStatus.FORBIDDEN,					# ALREAD EXISTS
+		ResponseCode.targetNotSubscribable						: HTTPStatus.FORBIDDEN,					# TARGET NOT SUBSCRIBABLE
+		ResponseCode.receiverHasNoPrivileges					: HTTPStatus.FORBIDDEN,					# RECEIVER HAS NO PRIVILEGE
+		ResponseCode.securityAssociationRequired				: HTTPStatus.FORBIDDEN,					# SECURITY ASSOCIATION REQUIRED
+		ResponseCode.subscriptionCreatorHasNoPrivilege			: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
+		ResponseCode.subscriptionHostHasNoPrivilege				: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION HOST HAS NO PRIVILEGE
+		ResponseCode.originatorHasAlreadyRegistered				: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS ALREADY REGISTERED
+		ResponseCode.appRuleValidationFailed					: HTTPStatus.FORBIDDEN,					# APP RULE VALIDATION FAILED
+		ResponseCode.requestTimeout								: HTTPStatus.FORBIDDEN,					# REQUEST TIMEOUT
+		ResponseCode.notFound									: HTTPStatus.NOT_FOUND,					# NOT FOUND
+		ResponseCode.operationNotAllowed						: HTTPStatus.METHOD_NOT_ALLOWED,		# OPERATION NOT ALLOWED
+		ResponseCode.notAcceptable 								: HTTPStatus.NOT_ACCEPTABLE,			# NOT ACCEPTABLE
+		ResponseCode.conflict									: HTTPStatus.CONFLICT,					# CONFLICT
+		ResponseCode.unsupportedMediaType						: HTTPStatus.UNSUPPORTED_MEDIA_TYPE,	# UNSUPPORTED_MEDIA_TYPE
+		ResponseCode.internalServerError 						: HTTPStatus.INTERNAL_SERVER_ERROR,		# INTERNAL SERVER ERROR
+		ResponseCode.subscriptionVerificationInitiationFailed	: HTTPStatus.INTERNAL_SERVER_ERROR,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
+		ResponseCode.releaseVersionNotSupported					: HTTPStatus.NOT_IMPLEMENTED,			# RELEASE_VERSION_NOT_SUPPORTED
+		ResponseCode.notImplemented								: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
 	}
 
 
@@ -422,6 +447,12 @@ class CSEType(IntEnum):
 	MN					=  2
 	ASN					=  3
 
+	def __str__(self) -> str:
+		return str(self.value)
+	
+	def __repr__(self) -> str:
+		return self.__str__()
+
 
 ##############################################################################
 #
@@ -453,11 +484,24 @@ class Operation(IntEnum):
 	DELETE				= 4
 	NOTIFY 				= 6
 	DISCOVERY			= 5
+	NA 					= -1
 
 
 	def permission(self) -> Permission:
-		""" Return the corresponding permission for an operation """
+		""" Return the corresponding permission for an operation.
+		"""
 		return Operation._permissionsMapping[self.value]	#  type: ignore
+
+
+	def __str__(self) -> str:
+		return self.name
+	
+
+	@classmethod
+	def isvalid(cls, op:int) -> bool:
+		"""	Check whether an operation is valid.
+		"""
+		return cls.CREATE <= op <= cls.DISCOVERY
 
 
 # Mapping between request operations and permissions
@@ -517,21 +561,23 @@ class ConsistencyStrategy(IntEnum):
 
 class NotificationContentType(IntEnum):
 	"""	Notification Content Types """
-	all					= 1
-	modifiedAttributes	= 2
-	ri 					= 3
-	triggerPayload		= 4
+	all						= 1
+	modifiedAttributes		= 2
+	ri 						= 3
+	triggerPayload			= 4
+	timeSeriesNotification	= 5
 	
 
 class NotificationEventType(IntEnum):
 	""" eventNotificationCriteria/NotificationEventTypes """
-	resourceUpdate		= 1	# A, default
-	resourceDelete		= 2	# B
-	createDirectChild	= 3 # C
-	deleteDirectChild	= 4 # D	
-	retrieveCNTNoChild	= 5	# E # TODO not supported yet
-	triggerReceivedForAE= 6 # F # TODO not supported yet
-	blockingUpdate 		= 7 # G # TODO not supported yet
+	resourceUpdate						= 1	# A, default
+	resourceDelete						= 2	# B
+	createDirectChild					= 3 # C
+	deleteDirectChild					= 4 # D	
+	retrieveCNTNoChild					= 5	# E # TODO not supported yet
+	triggerReceivedForAE				= 6 # F # TODO not supported yet
+	blockingUpdate 						= 7 # G # TODO not supported yet
+	reportOnGeneratedMissingDataPoints	= 8 # H
 
 
 	def isAllowedNCT(self, nct:NotificationContentType) -> bool:
@@ -543,7 +589,68 @@ class NotificationEventType(IntEnum):
 			return self.value in [ NotificationEventType.resourceUpdate, NotificationEventType.resourceDelete, NotificationEventType.createDirectChild, NotificationEventType.deleteDirectChild ]
 		elif nct == NotificationContentType.triggerPayload:
 			return self.value in [ NotificationEventType.triggerReceivedForAE ]
+		elif nct == NotificationContentType.timeSeriesNotification:
+			return self.value in [ NotificationEventType.reportOnGeneratedMissingDataPoints ]
 		return False
+
+
+	def __str__(self) -> str:
+		return self.name
+
+	def __repr__(self) -> str:
+		return self.__str__()
+
+##############################################################################
+#
+#	TimeSeries related.
+#
+
+@dataclass
+class MissingData:
+	"""	Data class for collecting the missing data states. """ 
+	subscriptionRi:str
+	missingDataDuration:float
+	missingDataNumber:int
+	timeWindowEndTimestamp:float	= None
+	missingDataList:list[str]		= field(default_factory=list)
+	missingDataCurrentNr:int 		= 0
+
+	def clear(self) -> None:
+		self.missingDataList		= []
+		self.timeWindowEndTimestamp	= None
+		self.missingDataCurrentNr	= 0
+	
+	def asDict(self) -> JSON:
+		return {
+			'mdlt': self.missingDataList,
+			'mdc' : self.missingDataCurrentNr
+		}
+
+
+
+
+@dataclass
+class LastTSInstance:
+	"""	Data class for a single TS's latest and next expected TSI/dgt, and other information """
+
+	# runtime attributes
+	lastSeenDgt:float					= 0.0
+	tsiArrivedAt:float					= 0.0
+	nextExpectedDgt:float				= 0.0
+	nextRuntime:float					= 0.0
+
+	# <TS> attributes
+	pei:float							= 0.0
+	mdt:float							= 0.0
+	peid:float							= 0.0
+
+	# Subscriptions
+	missingData:dict[str, MissingData]	= field(default_factory=dict)
+
+	# Internal
+	actor:BackgroundWorker				= None	#type:ignore[name-defined] # actor for this TS 
+	running:bool 						= False # for late activation of this 
+
 
 
 ##############################################################################
@@ -556,6 +663,8 @@ class ContentSerializationType(IntEnum):
 	XML					= auto()
 	JSON				= auto()
 	CBOR				= auto()
+	PLAIN				= auto()
+	NA	 				= auto()
 	UNKNOWN				= auto()
 
 	def toHeader(self) -> str:
@@ -591,19 +700,24 @@ class ContentSerializationType(IntEnum):
 		"""
 		default = cls.UNKNOWN if default is None else default
 		if hdr is None:													return default
+		if hdr.lower() == 'json':										return cls.JSON
 		if hdr.lower().startswith('application/json'):					return cls.JSON
 		if hdr.lower().startswith('application/vnd.onem2m-res+json'):	return cls.JSON
+		if hdr.lower() == 'cbor':										return cls.CBOR
 		if hdr.lower().startswith('application/cbor'):					return cls.CBOR
 		if hdr.lower().startswith('application/vnd.onem2m-res+cbor'):	return cls.CBOR
+		if hdr.lower() == 'xml':										return cls.XML
 		if hdr.lower().startswith('application/xml'):					return cls.XML
 		if hdr.lower().startswith('application/vnd.onem2m-res+XML'):	return cls.XML
 		return cls.UNKNOWN
 	
+
 	def __eq__(self, other:object) -> bool:
 		if not isinstance(other, str):
 			return NotImplemented
 		return self.value == self.getType(str(other))
 	
+
 	def __repr__(self) -> str:
 		return self.name
 
@@ -616,15 +730,15 @@ class ContentSerializationType(IntEnum):
 
 @dataclass
 class Result:
-	resource 			: Resource		= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
-	dict 				: JSON 			= None		# Contains the result dictionary
-	data 				: Any 			= None 		# Anything
-	lst 				: List[Any]   	= None		# List of Anything
-	rsc 				: ResponseCode	= ResponseCode.OK	# OK
-	dbg 				: str 			= None
-	request 			: CSERequest	= None  	# may contain the processed http request object
-	status 				: bool 			= None
-	originator 			: str 			= None
+	resource:Resource	= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
+	dict:JSON 			= None		# Contains the result dictionary
+	data:Any 			= None 		# Anything
+	lst:List[Any]   	= None		# List of Anything
+	rsc:ResponseCode	= ResponseCode.OK	# OK
+	dbg:str 			= None
+	request:CSERequest	= None  	# may contain the processed http request object
+	status:bool 		= None
+	originator:str		= None
 
 
 	def errorResult(self) -> Result:
@@ -632,7 +746,7 @@ class Result:
 		"""
 		return Result(rsc=self.rsc, dbg=self.dbg)
 
-	def toData(self, ct:ContentSerializationType=None) -> str|bytes:
+	def toData(self, ct:ContentSerializationType=None) -> str|bytes|JSON:
 		from resources.Resource import Resource
 		from Utils import serializeData
 		from CSE import defaultSerialization
@@ -656,6 +770,11 @@ class Result:
 		 	r = ''
 		return r
 
+	def __str__(self) -> str:
+		return str(self.toData())
+		
+	def __repr__(self) -> str:
+		return self.__str__()
 
 ##############################################################################
 #
@@ -664,45 +783,47 @@ class Result:
 
 @dataclass
 class RequestArguments:
-	fu 							: FilterUsage 					= FilterUsage.conditionalRetrieval
-	drt 						: DesiredIdentifierResultType	= DesiredIdentifierResultType.structured
-	fo 							: FilterOperation 				= FilterOperation.AND
-	rcn 						: ResultContentType 			= ResultContentType.discoveryResultReferences
-	rt 							: ResponseType					= ResponseType.blockingRequest 					# response type
-	rp 							: str 							= None 											# result persistence
-	rpts 						: str 							= None 											# ... as a timestamp
-	handling 					: Conditions 					= field(default_factory=dict)
-	conditions 					: Conditions 					= field(default_factory=dict)
-	attributes 					: Parameters 					= field(default_factory=dict)
-	operation 					: Operation 					= None
-	#request 					: Request 						= None
-
+	fu:FilterUsage 					= FilterUsage.conditionalRetrieval
+	drt:DesiredIdentifierResultType	= DesiredIdentifierResultType.structured
+	fo:FilterOperation 				= FilterOperation.AND
+	rcn:ResultContentType 			= ResultContentType.discoveryResultReferences
+	rt:ResponseType					= ResponseType.blockingRequest 					# response type
+	rp:str 							= None 											# result persistence
+	rpts:str 						= None 											# ... as a timestamp (internal)
+	handling:Conditions 			= field(default_factory=dict)
+	conditions:Conditions 			= field(default_factory=dict)
+	attributes:Parameters 			= field(default_factory=dict)
+	#request:Request 				= None
 
 @dataclass
 class RequestHeaders:
-	originator 					: str 			= None 	# X-M2M-Origin
-	requestIdentifier			: str 			= None	# X-M2M-RI
-	contentType 				: str 			= None	# Content-Type
-	accept						: list[str]		= None	# Accept
-	resourceType 				: ResourceTypes	= None
-	requestExpirationTimestamp	: str 			= None 	# X-M2M-RET
-	responseExpirationTimestamp	: str 			= None 	# X-M2M-RST
-	operationExecutionTime		: str 			= None 	# X-M2M-OET
-	releaseVersionIndicator		: str 			= None 	# X-M2M-RVI
-	responseTypeNUs				: list[str]		= None	# X-M2M-RTU
+	originator:str 					= None 	# X-M2M-Origin, from
+	requestIdentifier:str 			= None	# X-M2M-RI
+	contentType:str 				= None	# Content-Type
+	accept:list[str]				= None	# Accept
+	resourceType:ResourceTypes		= None
+	requestExpirationTimestamp:str 	= None 	# X-M2M-RET
+	resultExpirationTimestamp:str	= None 	# X-M2M-RST
+	operationExecutionTime:str 		= None 	# X-M2M-OET
+	releaseVersionIndicator:str 	= None 	# X-M2M-RVI
+	responseTypeNUs:list[str]		= None	# X-M2M-RTU
+	vendorInformation:str			= None	# X-M2M-VSI
+	originatingTimestamp:str		= None  # ot in request
 
 
 @dataclass
 class CSERequest:
-	headers 					: RequestHeaders 			= None
-	args 						: RequestArguments 			= None
-	ct 							: ContentSerializationType	= None
-	originalArgs 				: Any 						= None	# Actually a MultiDict
-	data 						: bytes 					= None 	# The request original data
-	dict 						: JSON 						= None	# The request data as a dictionary
-	id 							: str 						= None 	# target ID
-	srn 						: str 						= None 	# target structured resource name
-	csi 						: str 						= None 	# target csi
+	headers:RequestHeaders 			= field(default_factory=RequestHeaders)	# always initialize with a new(!) RequestHeaders object	
+	args:RequestArguments 			= None
+	ct:ContentSerializationType		= None
+	originalArgs:Any 				= None	# Actually a MultiDict
+	data:bytes 						= None 	# The request original data
+	req:JSON						= None	# The dissected request as a dictionary
+	dict:JSON 						= None	# The request data as a dictionary
+	id:str 							= None 	# target ID / to
+	srn:str 						= None 	# target structured resource name
+	csi:str 						= None 	# target csi
+	op:Operation					= None	# request operation
 
 
 ##############################################################################
@@ -710,14 +831,18 @@ class CSERequest:
 #	Generic Types
 #
 
-AttributePolicies=Dict[str, Tuple[BasicType, Cardinality, RequestOptionality, RequestOptionality, RequestOptionality, Announced]]
+AttributePoliciesEntry = Tuple[BasicType, Cardinality, RequestOptionality, RequestOptionality, RequestOptionality, Announced]
+AttributePolicies=Dict[str, Union[AttributePoliciesEntry, Dict[ResourceTypes, AttributePoliciesEntry]]]
 """	Represent a dictionary of attribute policies used in validation. """
+AdditionalAttributes = Dict[str, AttributePolicies]
 
 Parameters=Dict[str,str]
 Conditions=Dict[str, Any]
 JSON=Dict[str, Any]
 JSONLIST=List[JSON]
+ReqResp=Dict[str, Union[int, str, List[str], JSON]]
 
-RequestHandler = Dict[Operation, Callable[[CSERequest], Result]]
+RequestCallback = namedtuple('RequestCallback', 'ownRequest dispatcherRequest')
+RequestHandler = Dict[Operation, RequestCallback]
 """ Handle an outgoing request operation. """
 

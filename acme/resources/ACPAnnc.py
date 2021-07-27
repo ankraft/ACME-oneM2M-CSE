@@ -26,13 +26,12 @@ attributePolicies =  addPolicy(attributePolicies, acpAPolicies)
 
 class ACPAnnc(AnnouncedResource):
 
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.SUB ]
+
+
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.ACPAnnc, dct, pi=pi, create=create, attributePolicies=attributePolicies)
-
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource: Resource) -> bool:
-		return super()._canHaveChild(resource, [ T.SUB ])
 
 
 	def checkSelfPermission(self, origin:str, requestedPermission:int) -> bool:

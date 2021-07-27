@@ -62,12 +62,12 @@ Those files are imported from the common import / init directory. More than one 
 
 ### Format
 
-The format is a JSON structure that follows the structure described in the following code example.
+The format is a JSON structure that follows the structure described in the following code.  
 Some of the fields are not yet used, but will supported by a future version of the CSE.
 
 ```
 // A file contains a list of Attribute Policies
-accessPolicies = [
+attributePolicies = [
 	
 	// Each Attribute Policy is an object
 	{

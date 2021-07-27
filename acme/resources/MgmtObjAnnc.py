@@ -24,7 +24,12 @@ mgmtObjAPolicies = constructPolicy([
 mgmtObjAAttributePolicies =  addPolicy(attributePolicies, mgmtObjAPolicies)
 # TODO resourceMappingRules, announceSyncType
 
+
 class MgmtObjAnnc(AnnouncedResource):
+
+	# Specify the allowed child-resource types
+	allowedChildResourceTypes = [ T.SUB ]
+
 
 	def __init__(self, dct:JSON, pi:str, mgd:T, create:bool=False, attributePolicies:AttributePolicies=None) -> None:
 		super().__init__(T.MGMTOBJAnnc, dct, pi, tpe=f'{mgd.tpe()}A', create=create, attributePolicies=attributePolicies)
@@ -34,13 +39,4 @@ class MgmtObjAnnc(AnnouncedResource):
 
 		if self.dict is not None:
 			self.setAttribute('mgd', int(mgd), overwrite=True)
-
-
-	# Enable check for allowed sub-resources
-	def canHaveChild(self, resource: Resource) -> bool:
-		return super()._canHaveChild(resource,	
-									 [ T.SUB
-									 ])
-
-		 
 

@@ -14,8 +14,8 @@
 [cse]
 # CSE type. Allowed values: IN, MN, ASN. Default: IN
 type=IN
-# The CSE's service provider ID. Default: acme
-serviceProviderID=acme
+# The CSE's service provider ID. Default: acme.example.com
+serviceProviderID=acme.example.com
 # The CSE ID. Can be overwritten in imported CSE definition. Default: /id-in
 cseID=/id-in
 # The CSE's resource ID. Can be overwritten in imported CSE definition. Default: id-in
@@ -103,12 +103,51 @@ multiThread=true
 # ATTENTION: Enabling this feature exposes configuration values, IDs and
 # passwords, and is a security risk.
 # Default: False
-enableRemoteConfiguration=false
+enableRemoteConfiguration=alse
 # Enable an endpoint for getting a structured overview about a CSE's resource
 # tree and deployment infrastructure (remote CSE's)
 # ATTENTION: Enabling this feature exposes various potentially sensitive information.
 # Default: False
 enableStructureEndpoint=false
+# Enable an endpoint for resetting the CSE (remove all resources and import
+# the init directory again)
+# ATTENTION: Enabling this feature may lead to a total loss of data.
+# Default: False
+enableResetEndpoint=false
+
+
+#
+#	MQTT client settings
+#
+
+[client.mqtt]
+# Enable the MQTT binding.
+# Default: False
+enable=False
+# The hostname of the MQTT brocker.
+# Default; 127.0.0.1
+address=127.0.0.1
+# Set the port for the MQTT broker. 
+# Default: 1883, or 8883 for TLS
+port=1883
+# Value for the MQTT connection's keep-alive parameter in seconds.
+# Default: 60 seconds
+keepalive=60
+# Interface to listen to. Use 0.0.0.0 for "all" interfaces. 
+# Default: 127.0.0.1
+bindIF=127.0.0.1
+# The username for MQTT broker authentication.
+# Default: None
+# username=
+# The password  for MQTT broker authentication.
+# Default: None
+# password=
+
+# TODO credentialID=
+# TODO TLS authentication
+
+
+
 
 #
 #	Database settings
@@ -133,11 +172,11 @@ resetOnStartup=false
 
 [cse.registration]
 # List of AE originators that can register. This is a comma-separated list of originators.
-# Regular expressions are supported.
-# Default: C.*,S.* 
-allowedAEOriginators=C.*,S.*
+# Wildcards (* and ?) are supported.
+# Default: C*,S* 
+allowedAEOriginators=C*,S*
 # List of CSR originators that can register. This is a comma-separated list of originators.
-# Regular expressions are supported.
+# Wildcards (* and ?) are supported.
 # Note: No leading "/"
 # Default: empty list
 allowedCSROriginators=id-mn
@@ -173,15 +212,13 @@ excludeCSRAttributes=
 #
 
 [logging]
-# Enable logging. Default: True
-enable=true
 # Enable logging to file. Default: False
 enableFileLogging=False
 # Enable logging to the screen. Default: True
 enableScreenLogging=true
 # Path to the log files. Default: ./logs
 path=./logs
-# Loglevel. Allowed values: debug, info, warning, error. Default: debug
+# Loglevel. Allowed values: debug, info, warning, error, off. Default: debug
 level=debug
 # Number of files for log rotation. Default: 10
 count=10
@@ -219,7 +256,7 @@ writeInterval=60
 #
 
 [cse.resource.acp]
-# Default permission when creating an ACP resource. Default: 62
+# Default permission when creating an ACP resource. Default: 63
 permission=63
 # Default selfPermission when creating an ACP resource. Default: 51
 selfPermission=51
@@ -236,6 +273,21 @@ enableLimits=False
 mni=10
 # Default for maxByteSize. Default: 10.000 bytes
 mbs=10000
+
+
+#
+#	Resource defaults: TimeSeries
+#
+
+[cse.resource.ts]
+# Enable/disable the default limits. Default: False
+enableLimits=False
+# Default for maxNrOfInstances. Default: 10
+mni=10
+# Default for maxByteSize. Default: 10.000 bytes
+mbs=10000
+# Default for missingDataMaxNr. Default: 10
+mdn=10
 
 
 #
@@ -270,13 +322,30 @@ root=/webui
 
 
 #
+#   Console settings
+#
+
+[cse.console]
+# Interval for continuously refreshing information displays. Must be > 0.0. 
+# Default: 2.0 seconds.
+refreshInterval=2.0
+# Hide certain resources from display in the console. This is a list of resource identifiers.
+# Wildcards are allowed.
+# Default: Empty list
+hideResources=
+# Set the mode how resources and their content are presented in the console's tree view. 
+# Allowed values: normal, compact, content, contentOnly
+# Default: normal
+treeMode=normal
+
+#
 #	ID Mappings
 #	This section defines mappings for URI paths to IDs in the CSE. Mappings
 #	can be used to provide a more convenient way to access the CSE's resources.
 #	Each line specifies a mapping, where the key specifies a new path,
 #	and the value represents the mapping to a request (including optional arguments).
 #	The http server redirects (307) a request to one of the new paths to the
-#	repective request mapping.
+#	respective request mapping.
 #	Please note, that the "root" path in [server.http] prefixes both the new
 #	path and the mapping.
 #

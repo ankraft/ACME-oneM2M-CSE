@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-import sys
+import sys, io
 sys.path.append('../acme')
 import unittest
 from rich.console import Console
@@ -19,34 +19,15 @@ from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import cbor2
 from Types import Parameters, JSON
+import helpers.OAuth as OAuth
+from config import *
 
-PROTOCOL			= 'http'	# possible values: http, https
-# ENCODING 			= 
-
-
-SERVER				= f'{PROTOCOL}://localhost:8080'
-ROOTPATH			= '/'
-CSERN				= 'cse-in'
-CSEID				= '/id-in'
-SPID 				= 'sp-in'
-ORIGINATOR			= 'CAdmin'
-
-REMOTESERVER		= f'{PROTOCOL}://localhost:8081'
-REMOTEROOTPATH		= '/'
-REMOTECSERN			= 'cse-mn'
-REMOTECSEID			= '/id-mn'
-REMOTESPID 			= 'sp-mn'
-REMOTEORIGINATOR	= 'CAdmin'
-
-
-NOTIFICATIONPORT 	= 9990
-NOTIFICATIONSERVER	= f'{PROTOCOL}://localhost:{NOTIFICATIONPORT}' 
-NOTIFICATIONSERVERW	= f'{PROTOCOL}://localhost:6666'
 
 CONFIGURL			= f'{SERVER}{ROOTPATH}__config__'
 
 
 verifyCertificate	= False	# verify the certificate when using https?
+oauthToken			= None	# current OAuth Token
 
 # possible time delta between test system and CSE
 # This is not really important, but for discoveries and others
@@ -57,10 +38,32 @@ expirationCheckDelay 	= 2	# seconds
 expirationSleep			= expirationCheckDelay * 3
 
 requestETDuration 		= f'PT{expirationCheckDelay:d}S'
+requestETDurationInteger= expirationCheckDelay * 1000
 requestCheckDelay		= 1	#seconds
+
+# TimeSeries Interval
+timeSeriesInterval 		= 2.0 # seconds
 
 # ReleaseVersionIndicator
 RVI						 ='3'
+
+
+# A timestamp far in the future
+# Why 8888? Year 9999 may actually problematic, because this might be interpreteted
+# already as year 10000 (and this hits the limit of the isodata module implmenetation)
+
+def isRaspberrypi() -> bool:
+	"""	Check whether we run on a Raspberry Pi. 
+	"""
+	try:
+		with io.open('/sys/firmware/devicetree/base/model', 'r') as m:
+			if 'raspberry pi' in m.read().lower(): return True
+	except Exception: pass
+	return False
+
+# Raspbian is still a 32-bit OS and doesn't	support really long timestamps.
+futureTimestamp = '20371231T235959' if isRaspberrypi() else '88881231T235959'
+
 
 
 ###############################################################################
@@ -68,14 +71,17 @@ RVI						 ='3'
 aeRN	= 'testAE'
 acpRN	= 'testACP'
 batRN	= 'testBAT'
-cntRN	= 'testCNT'
 cinRN	= 'testCIN'
+cntRN	= 'testCNT'
+csrRN	= 'testCSR'
 grpRN	= 'testGRP'
 fcntRN	= 'testFCNT'
 nodRN 	= 'testNOD'
 pchRN 	= 'testPCH'
-subRN	= 'testSUB'
 reqRN	= 'testREQ'
+subRN	= 'testSUB'
+tsRN	= 'testTS'
+tsiRN	= 'testTSI'
 memRN	= 'mem'
 batRN	= 'bat'
 
@@ -86,15 +92,16 @@ csiURL 	= f'{URL}~{CSEID}'
 aeURL 	= f'{cseURL}/{aeRN}'
 acpURL 	= f'{cseURL}/{acpRN}'
 cntURL 	= f'{aeURL}/{cntRN}'
-cinURL 	= f'{cntURL}/{cinRN}'
+cinURL 	= f'{cntURL}/{cinRN}'	# under the <cnt>
+csrURL	= f'{cseURL}/{csrRN}'
 fcntURL	= f'{aeURL}/{fcntRN}'
 grpURL 	= f'{aeURL}/{grpRN}'
-nodURL 	= f'{cseURL}/{nodRN}'
+nodURL 	= f'{cseURL}/{nodRN}'	# under the <ae>
 pchURL 	= f'{aeURL}/{pchRN}'
-subURL 	= f'{cntURL}/{subRN}'
-batURL 	= f'{nodURL}/{batRN}'
-memURL	= f'{nodURL}/{memRN}'
-batURL	= f'{nodURL}/{batRN}'
+subURL 	= f'{cntURL}/{subRN}'	# under the <cnt>
+tsURL 	= f'{aeURL}/{tsRN}'
+batURL 	= f'{nodURL}/{batRN}'	# under the <nod>
+memURL	= f'{nodURL}/{memRN}'	# under the <nod>
 
 
 REMOTEURL		= f'{REMOTESERVER}{REMOTEROOTPATH}'
@@ -144,21 +151,34 @@ def DELETE(url:str, originator:str, headers:Parameters=None) -> Tuple[JSON, int]
 
 
 def sendRequest(method:Callable, url:str, originator:str, ty:int=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
+	global oauthToken
+
 	tys = f';ty={ty}' if ty is not None else ''
 	ct = 'application/json'
 	hds = { 
 		'Content-Type' 		: f'{ct}{tys}',
 		'Accept'			: ct,
-		'X-M2M-Origin'	 	: originator,
 		'X-M2M-RI' 			: (rid := uniqueID()),
 		'X-M2M-RVI'			: RVI,
 	}
-	if headers is not None:		# extend with other headers
+	if originator is not None:		# Set originator if it is not None
+		hds['X-M2M-Origin'] = originator
+
+	if headers is not None:			# extend with other headers
 		if 'X-M2M-RVI' in headers:	# overwrite X-M2M-RVI header
 			hds['X-M2M-RVI'] = headers['X-M2M-RVI']
 			del headers['X-M2M-RVI']
 		hds.update(headers)
+	
+	# authentication
+	if doOAuth:
+		if (token := OAuth.getOAuthToken(oauthServerUrl, oauthClientID, oauthClientSecret, oauthToken)) is None:
+			return 'error retrieving oauth token', 5103
+		oauthToken = token
+		hds['Authorization'] = f'Bearer {oauthToken.token}'
 
+	# print(url)
+	# print(hds)
 	setLastRequestID(rid)
 	try:
 		sendData:str = None
@@ -216,11 +236,9 @@ def lastHeaders() -> Parameters:
 
 
 ###############################################################################
-
 #
 #	Expirations
 #
-
 
 def setExpirationCheck(interval:int) -> int:
 	c, rc = RETRIEVESTRING(CONFIGURL, '')
@@ -293,11 +311,14 @@ def getRequestMinET() -> int:
 # old value in the tearDowndClass() method.
 def enableShortExpirations() -> None:
 	global _orgExpCheck, _orgREQExpCheck, _maxExpiration, _tooLargeExpirationDelta
-	_orgExpCheck = setExpirationCheck(expirationCheckDelay)
-	_orgREQExpCheck = setRequestMinET(expirationCheckDelay)
-	# Retrieve the max expiration delta from the CSE
-	_maxExpiration = getMaxExpiration()
-	_tooLargeExpirationDelta = _maxExpiration * 2	# double of what is allowed
+	try:
+		_orgExpCheck = setExpirationCheck(expirationCheckDelay)
+		_orgREQExpCheck = setRequestMinET(expirationCheckDelay)
+		# Retrieve the max expiration delta from the CSE
+		_maxExpiration = getMaxExpiration()
+		_tooLargeExpirationDelta = _maxExpiration * 2	# double of what is allowed
+	except:
+		pass
 
 
 ###############################################################################
@@ -368,7 +389,18 @@ def startNotificationServer() -> None:
 def stopNotificationServer() -> None:
 	global keepNotificationServerRunning
 	keepNotificationServerRunning = False
-	requests.post(NOTIFICATIONSERVER, verify=verifyCertificate)	# send empty/termination request 
+	try:
+		requests.post(NOTIFICATIONSERVER, verify=verifyCertificate)	# send empty/termination request
+	except Exception:
+		pass
+
+
+def isNotificationServerRunning() -> bool:
+	try:
+		_ = requests.post(NOTIFICATIONSERVER, data='{"test": "test"}', verify=verifyCertificate)
+		return True
+	except Exception:
+		return False
 
 lastNotification:JSON				= None
 lastNotificationHeaders:Parameters 	= {}
@@ -377,8 +409,11 @@ def setLastNotification(notification:JSON) -> None:
 	global lastNotification
 	lastNotification = notification
 
-def getLastNotification() -> JSON:
-	return lastNotification
+def getLastNotification(clear:bool=False) -> JSON:
+	r = lastNotification
+	if clear:
+		clearLastNotification()
+	return r
 
 def clearLastNotification() -> None:
 	global lastNotification
@@ -398,6 +433,12 @@ def getLastNotificationHeaders() -> Parameters:
 
 def uniqueID() -> str:
 	return str(random.randint(1,sys.maxsize))
+
+
+def uniqueRN(prefix:str='') -> str:
+	"""	Create a unique resource name.
+	"""
+	return f'{prefix}{round(time.time() * 1000)}-{uniqueID()}'
 
 #
 #	Utilities
@@ -444,7 +485,7 @@ def getDate(delta:int = 0) -> str:
 
 def toISO8601Date(ts: Union[float, datetime.datetime]) -> str:
 	if isinstance(ts, float):
-		ts = datetime.datetime.utcfromtimestamp(ts)
+		ts = datetime.datetime.fromtimestamp(ts)
 	return ts.strftime('%Y%m%dT%H%M%S,%f')
 
 

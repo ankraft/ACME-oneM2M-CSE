@@ -194,7 +194,7 @@ class TestCNT(unittest.TestCase):
 				}}
 		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, dct) 
 		self.assertEqual(rsc, RC.created)
-		self.assertEqual(findXPath(r, 'm2m:cnt/cr'), TestCNT.originator)	# Creator should now be set to originator
+		self.assertEqual(findXPath(r, 'm2m:cnt/cr'), TestCNT.originator, r)	# Creator should now be set to originator
 
 		# Check whether creator is there in a RETRIEVE
 		r, rsc = RETRIEVE(f'{aeURL}/{findXPath(r, "m2m:cnt/rn")}', TestCNT.originator)
@@ -235,9 +235,19 @@ class TestCNT(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTUnderCSE(self) -> None:
-		"""	Delete <CNT> under <CB> with admin Originator """
+		"""	Delete <CNT> under <CB> with admin Originator"""
 		_, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTWithoutOriginator(self) -> None:
+		"""	Create <CNT> under <CB> without an Originator -> Fail"""
+		dct = 	{ 'm2m:cnt' : { 
+					'rn' : cntRN
+				}}
+		r, rsc = CREATE(cseURL, None, T.CNT, dct) # Without originator !!
+		self.assertNotEqual(rsc, RC.created)
 
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
@@ -262,6 +272,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCNT('test_createCNTUnderCSE'))
 	suite.addTest(TestCNT('test_retrieveCNTUnderCSE'))
 	suite.addTest(TestCNT('test_deleteCNTUnderCSE'))
+
+	suite.addTest(TestCNT('test_createCNTWithoutOriginator'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
