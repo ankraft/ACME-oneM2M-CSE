@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased] - xxxx-xx-xx
 
 ### Added
+- [CONSOLE] Added the possibility to toggle through the display modes with "^T" when displaying the resource tree continuously.
 
 
 ### Changed

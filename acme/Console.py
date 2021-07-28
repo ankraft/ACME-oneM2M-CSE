@@ -7,6 +7,7 @@
 #	Console functions for ACME CSE
 #
 
+from __future__ import annotations
 from typing import Dict, cast
 import datetime, os, sys, webbrowser
 from Logging import Logging as L
@@ -15,6 +16,8 @@ from Constants import Constants as C
 from Configuration import Configuration
 from Types import CSEType, ResourceTypes as T
 from resources.Resource import Resource
+from enum import IntEnum,  auto
+
 
 from helpers.BackgroundWorker import BackgroundWorkerPool
 import Utils, CSE, Statistics
@@ -23,12 +26,48 @@ from rich.panel import Panel
 from rich.tree import Tree
 
 
+
+class TreeMode(IntEnum):
+	""" Available modes do display the resource tree
+	"""
+	NORMAL				= auto()
+	CONTENT				= auto()
+	COMPACT				= auto()
+	CONTENTONLY			= auto()
+
+	def __str__(self) -> str:
+		return self.name
+
+	def succ(self) -> TreeMode:
+		"""	Return the next enum value, and cycle at the end.
+		"""
+		members:list[TreeMode] = list(self.__class__)
+		index = members.index(self) + 1
+		return members[index] if index < len(members) else members[0]
+	
+
+	@classmethod
+	def to(cls, t:str) -> TreeMode:
+		"""	Return the enum from a string.
+		"""
+		return dict(cls.__members__.items()).get(t.upper())
+
+
+	@classmethod
+	def names(cls) -> list[str]:
+		"""	Return all the enum names.
+		"""
+		return list(cls.__members__.keys())
+
+##############################################################################
+
+
 class Console(object):
 
 	def __init__(self) -> None:
 		self.refreshInterval = Configuration.get('cse.console.refreshInterval')
 		self.hideResources   = Configuration.get('cse.console.hideResources')
-		self.treeMode	   = Configuration.get('cse.console.treeMode')
+		self.treeMode	     = Configuration.get('cse.console.treeMode')
 		if L.isInfo: L.log('Console initialized')
 
 
@@ -215,8 +254,11 @@ class Console(object):
 			self._about()
 			self.resourceTree(key)
 			L.console('(Press any key to return)', plain=True, end='')
-			if waitForKeypress(self.refreshInterval) is not None:
-				break
+			if (ch := waitForKeypress(self.refreshInterval)) is not None:
+				if ch == '\x14':	# Toggle through tree modes
+					self.treeMode = self.treeMode.succ()
+				else:
+					break
 		self.clearScreen(key)
 		L.on()
 
@@ -465,7 +507,7 @@ class Console(object):
 
 			# Determine extra infos
 			extraInfo = ''
-			if self.treeMode not in [ 'compact', 'contentonly' ]: 
+			if self.treeMode not in [ TreeMode.COMPACT, TreeMode.CONTENTONLY ]: 
 				if res.ty == T.FCNT:
 					extraInfo = f' ({res.cnd})'
 				if res.ty in [ T.CIN, T.TS ]:
@@ -475,7 +517,7 @@ class Console(object):
 			
 			# Determine content
 			contentInfo = ''
-			if self.treeMode in [ 'content', 'contentonly' ]:
+			if self.treeMode in [ TreeMode.CONTENT, TreeMode.CONTENTONLY ]:
 				if res.ty in [ T.CIN, T.TSI ]:
 					contentInfo = f'{res.con}' if res.con is not None else ''
 				elif res.ty in [ T.FCNT, T.FCI ]:	# All the custom attributes
@@ -483,17 +525,17 @@ class Console(object):
 
 			# construct the info
 			info = ''
-			if self.treeMode == 'compact':
+			if self.treeMode == TreeMode.COMPACT:
 				info = f'-> {res.__rtype__}'
-			elif self.treeMode == 'content':
+			elif self.treeMode == TreeMode.CONTENT:
 				if len(contentInfo) > 0:
 					info = f'-> {res.__rtype__}{extraInfo} | {contentInfo}'
 				else:
 					info = f'-> {res.__rtype__}{extraInfo}'
-			elif self.treeMode == 'contentonly':
+			elif self.treeMode == TreeMode.CONTENTONLY:
 				if len(contentInfo) > 0:
 					info = f'-> {contentInfo}'
-			else: # self.treeMode == 'normal'
+			else: # self.treeMode == NORMAL
 				info = f'-> {res.__rtype__}{extraInfo} | ri={res.ri}'
 
 			return f'{res.rn} [dim]{info}[/dim]'
