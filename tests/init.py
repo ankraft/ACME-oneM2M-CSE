@@ -18,7 +18,7 @@ from typing import Any, Callable, Union, Tuple, cast
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import cbor2
-from Types import Parameters, JSON
+from etc.Types import Parameters, JSON
 import helpers.OAuth as OAuth
 from config import *
 

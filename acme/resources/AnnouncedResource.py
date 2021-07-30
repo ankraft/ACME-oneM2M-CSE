@@ -7,8 +7,8 @@
 #	Base class for all announced resources
 #
 
-from .Resource import *
-from Types import ResourceTypes as T, JSON, AttributePolicies
+from resources.Resource import *
+from etc.Types import ResourceTypes as T, JSON, AttributePolicies
 
 
 class AnnouncedResource(Resource):

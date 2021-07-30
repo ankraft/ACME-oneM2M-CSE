@@ -10,8 +10,8 @@
 import unittest, sys
 sys.path.append('../acme')
 from typing import Tuple
-from Constants import Constants as C
-from Types import NotificationEventType, ResourceTypes as T, ResponseCode as RC, ResultContentType
+from etc.Constants import Constants as C
+from etc.Types import NotificationEventType, ResourceTypes as T, ResponseCode as RC, ResultContentType
 from init import *
 
 

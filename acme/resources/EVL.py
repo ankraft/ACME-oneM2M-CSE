@@ -7,9 +7,9 @@
 #	ResourceType: mgmtObj:EventLog
 #
 
-from .MgmtObj import *
-from Types import ResourceTypes as T, JSON
-from Validator import constructPolicy, addPolicy
+from resources.MgmtObj import *
+from etc.Types import ResourceTypes as T, JSON
+from services.Validator import constructPolicy, addPolicy
 
 # Attribute policies for this resource are constructed during startup of the CSE
 evlPolicies = constructPolicy([

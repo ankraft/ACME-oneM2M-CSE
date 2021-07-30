@@ -11,19 +11,22 @@ from __future__ import annotations
 import logging, sys, urllib3
 from copy import deepcopy
 from typing import Any, Callable, cast
+
 import flask
 from flask import Flask, Request, make_response, request
-from Configuration import Configuration
-from Constants import Constants as C
-from Types import ReqResp, ResourceTypes as T, Result, ResponseCode as RC, JSON
-from Types import Operation, CSERequest, ContentSerializationType, Parameters
-import CSE, Utils, helpers.TextTools
-from Logging import Logging as L, LogLevel
-from resources.Resource import Resource
 from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
 from werkzeug.datastructures import MultiDict
+
+from etc.Constants import Constants as C
+from etc.Types import ReqResp, ResourceTypes as T, Result, ResponseCode as RC, JSON
+from etc.Types import Operation, CSERequest, ContentSerializationType, Parameters
+from services.Configuration import Configuration
+from resources.Resource import Resource
+import services.CSE as CSE, etc.Utils as Utils
+from services.Logging import Logging as L, LogLevel
 from webui.webUI import WebUI
+import helpers.TextTools
 from helpers.BackgroundWorker import *
 
 

@@ -16,9 +16,8 @@ import traceback
 import logging, logging.handlers, os, inspect, sys, datetime, time, threading
 from queue import Queue
 from typing import List, Any, Union
-from logging import LogRecord, Logger
-from Configuration import Configuration
-from Types import JSON
+from logging import LogRecord
+
 from rich.logging import RichHandler
 from rich.style import Style
 from rich.console import Console
@@ -28,6 +27,9 @@ from rich.default_styles import DEFAULT_STYLES
 from rich.theme import Theme
 from rich.tree import Tree
 from rich.table import Table
+
+from services.Configuration import Configuration
+from etc.Types import JSON
 
 
 levelName = {
@@ -112,7 +114,7 @@ class	Logging:
 
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
-			import CSE
+			import services.CSE as CSE
 
 			logpath = Configuration.get('logging.path')
 			os.makedirs(logpath, exist_ok=True)# create log directory if necessary
@@ -170,7 +172,7 @@ class	Logging:
 			`showStackTrace` indicates whether a stacktrace shall be logged together with the error
 			as well.
 		"""
-		import CSE
+		import services.CSE as CSE
 		# raise logError event
 		(not CSE.event or CSE.event.logError())	# type: ignore
 		if exc is not None:
@@ -187,7 +189,7 @@ class	Logging:
 	def logWarn(msg:str, stackOffset:int=None) -> None:
 		"""Print a log message with level WARNING. 
 		"""
-		import CSE
+		import services.CSE as CSE
 		# raise logWarning event
 		(not CSE.event or CSE.event.logWarning()) 	# type: ignore
 		Logging._log(logging.WARNING, msg, stackOffset=stackOffset)

@@ -9,10 +9,10 @@
 
 from __future__ import annotations
 from typing import cast, Optional
-from Types import ResourceTypes as T, ResponseCode as RC, Result, JSON, CSERequest
-import CSE
-from .Resource import *
-from Logging import Logging as L
+from etc.Types import ResourceTypes as T, ResponseCode as RC, Result, JSON, CSERequest
+from resources.Resource import *
+import services.CSE as CSE
+from services.Logging import Logging as L
 
 
 class TS_LA(Resource):

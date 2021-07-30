@@ -9,8 +9,8 @@
 
 import threading, traceback
 from typing import Callable, Any, cast
-from Logging import Logging as L
-import Utils
+from services.Logging import Logging as L
+import etc.Utils as Utils
 
 _running:bool = False
 

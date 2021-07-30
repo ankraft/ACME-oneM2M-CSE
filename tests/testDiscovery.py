@@ -12,10 +12,10 @@
 import unittest, sys
 sys.path.append('../acme')
 from typing import Tuple
-from Constants import Constants as C
-from Types import ResourceTypes, ResultContentType as RCN
-from Types import ResourceTypes as T, ResponseCode as RC
-from Types import DesiredIdentifierResultType, FilterOperation
+from etc.Constants import Constants as C
+from etc.Types import ResourceTypes, ResultContentType as RCN
+from etc.Types import ResourceTypes as T, ResponseCode as RC
+from etc.Types import DesiredIdentifierResultType, FilterOperation
 from init import *
 
 

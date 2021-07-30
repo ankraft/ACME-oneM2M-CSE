@@ -10,14 +10,14 @@
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
 from typing import Any, Tuple, Dict, List, cast
-from Logging import Logging as L
-from Constants import Constants as C
-from Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC, CSERequest, JSON, AttributePolicies
-from Configuration import Configuration
-import Utils, CSE
 from copy import deepcopy
-from .Resource import *
 
+from services.Logging import Logging as L
+from etc.Constants import Constants as C
+from etc.Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC, CSERequest, JSON, AttributePolicies
+from services.Configuration import Configuration
+import etc.Utils as Utils, services.CSE as CSE
+from .Resource import *
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)
 
 

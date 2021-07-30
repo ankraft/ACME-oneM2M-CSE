@@ -16,14 +16,14 @@ from copy import deepcopy
 import isodate
 from typing import Any, List, Tuple, Union, Dict, cast
 
-from Constants import Constants as C
-from Types import ResourceTypes as T, ResponseCode
-from Types import Result
-from Types import ContentSerializationType, JSON, Conditions
-from Logging import Logging as L
+from .Constants import Constants as C
+from .Types import ResourceTypes as T, ResponseCode
+from .Types import Result
+from .Types import ContentSerializationType, JSON, Conditions
+from services.Logging import Logging as L
 from resources.Resource import Resource
 import helpers.TextTools
-import CSE
+import services.CSE as CSE
 import cbor2
 
 

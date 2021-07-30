@@ -9,16 +9,17 @@
 
 from __future__ import annotations
 from typing import Dict, Union, cast
-from Logging import Logging as L
-from Configuration import Configuration
-import CSE, Utils
 import datetime
 from urllib.parse import urlparse
 from copy import deepcopy
 from threading import Lock
+
 from helpers.BackgroundWorker import BackgroundWorkerPool
+from etc.Types import CSEType, ResourceTypes as T
 from resources.Resource import Resource
-from Types import CSEType, ResourceTypes as T
+import services.CSE as CSE, etc.Utils as Utils
+from services.Configuration import Configuration
+from services.Logging import Logging as L
 
 
 deletedResources	= 'rmRes'

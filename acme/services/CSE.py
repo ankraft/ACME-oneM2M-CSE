@@ -11,29 +11,27 @@ from __future__ import annotations
 import atexit, argparse, os, time, sys
 from typing import Dict, Any
 
-from AnnouncementManager import AnnouncementManager
-from Configuration import Configuration
-from Console import Console
-from Dispatcher import Dispatcher
-from RequestManager import RequestManager
-from EventManager import EventManager
-from GroupManager import GroupManager
-from HttpServer import HttpServer
-from Importer import Importer
-from Logging import Logging as L
-from MQTTClient import MQTTClient
-from NotificationManager import NotificationManager
-from RegistrationManager import RegistrationManager
-from RemoteCSEManager import RemoteCSEManager
-from SecurityManager import SecurityManager
-from Statistics import Statistics
-from Storage import Storage
-from TimeSeriesManager import TimeSeriesManager
-from Validator import Validator
-from Types import CSEType, ContentSerializationType
-
 from helpers.BackgroundWorker import BackgroundWorkerPool
-
+from etc.Types import CSEType, ContentSerializationType
+from services.AnnouncementManager import AnnouncementManager
+from services.Configuration import Configuration
+from services.Console import Console
+from services.Dispatcher import Dispatcher
+from services.RequestManager import RequestManager
+from services.EventManager import EventManager
+from services.GroupManager import GroupManager
+from services.HttpServer import HttpServer
+from services.Importer import Importer
+from services.Logging import Logging as L
+from services.MQTTClient import MQTTClient
+from services.NotificationManager import NotificationManager
+from services.RegistrationManager import RegistrationManager
+from services.RemoteCSEManager import RemoteCSEManager
+from services.SecurityManager import SecurityManager
+from services.Statistics import Statistics
+from services.Storage import Storage
+from services.TimeSeriesManager import TimeSeriesManager
+from services.Validator import Validator
 
 
 

@@ -9,12 +9,12 @@
 
 from __future__ import annotations
 from typing import List
-from Logging import Logging as L
-from Types import ResourceTypes as T, ResponseCode as RC, Result, Permission, JSON
-from Validator import constructPolicy, addPolicy
-from .Resource import *
-from .AnnounceableResource import AnnounceableResource
-import Utils, CSE
+import etc.Utils as Utils, services.CSE as CSE
+from etc.Types import ResourceTypes as T, ResponseCode as RC, Result, Permission, JSON
+from resources.Resource import *
+from resources.AnnounceableResource import AnnounceableResource
+from services.Logging import Logging as L
+from services.Validator import constructPolicy, addPolicy
 from helpers.TextTools import simpleMatch
 
 

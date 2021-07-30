@@ -7,10 +7,10 @@
 #	ResourceType: mgmtObj:DeviceCapability
 #
 
-from .MgmtObj import *
-from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
-from Validator import constructPolicy, addPolicy
-import Utils
+from etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
+import etc.Utils as Utils
+from resources.MgmtObj import *
+from services.Validator import constructPolicy, addPolicy
 
 # Attribute policies for this resource are constructed during startup of the CSE
 dvcPolicies = constructPolicy([

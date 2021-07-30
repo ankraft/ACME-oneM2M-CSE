@@ -14,14 +14,14 @@ from typing import List, Callable
 from threading import Lock
 
 from tinydb.utils import V
-from Logging import Logging as L
-from Constants import Constants as C
-from Types import MissingData, Result, NotificationContentType, NotificationEventType, Permission, ResponseCode as RC
-from Types import ContentSerializationType, JSON, Parameters
-from Configuration import Configuration
-import Utils, CSE
-from helpers.BackgroundWorker import BackgroundWorkerPool
+from etc.Constants import Constants as C
+from etc.Types import MissingData, Result, NotificationContentType, NotificationEventType, Permission, ResponseCode as RC
+from etc.Types import ContentSerializationType, JSON, Parameters
 from resources.Resource import Resource
+from services.Logging import Logging as L
+from services.Configuration import Configuration
+import etc.Utils as Utils, services.CSE as CSE
+from helpers.BackgroundWorker import BackgroundWorkerPool
 
 # TODO: removal policy (e.g. unsuccessful tries)
 

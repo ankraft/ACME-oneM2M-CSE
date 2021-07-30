@@ -10,11 +10,11 @@
 from __future__ import annotations
 from copy import deepcopy
 from .Resource import *
-import CSE
-from Types import ResourceTypes as T, Result, AttributePolicies, JSON, AttributePolicies
-from Types import Announced as AN 
-from Validator import addPolicy, getPolicy
-from Logging import Logging as L
+import services.CSE as CSE
+from etc.Types import ResourceTypes as T, Result, AttributePolicies, JSON, AttributePolicies
+from etc.Types import Announced as AN 
+from services.Validator import addPolicy, getPolicy
+from services.Logging import Logging as L
 
 class AnnounceableResource(Resource):
 

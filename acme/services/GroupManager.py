@@ -7,14 +7,15 @@
 #	Managing entity for resource groups
 #
 
-from Logging import Logging as L
 from typing import Union, List
-from Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseCode as RC, CSERequest, JSON
-import CSE, Utils
-from resources import FCNT, MgmtObj
+from etc.Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseCode as RC, CSERequest, JSON
+from resources.FCNT import FCNT
+from resources.MgmtObj import MgmtObj
 from resources.Resource import Resource
 from resources.GRP_FOPT import GRP_FOPT
 import resources.Factory as Factory
+from services.Logging import Logging as L
+import services.CSE as CSE, etc.Utils as Utils
 
 
 class GroupManager(object):
@@ -117,10 +118,10 @@ class GroupManager(object):
 			# check specializationType spty
 			if spty is not None:
 				if isinstance(spty, int):				# mgmtobj type
-					if isinstance(resource, MgmtObj.MgmtObj) and ty != spty:
+					if isinstance(resource, MgmtObj) and ty != spty:
 						return Result(status=False, rsc=RC.groupMemberTypeInconsistent, dbg=f'resource and group member types mismatch: {ty:d} != {spty:d} for: {mid}')
 				elif isinstance(spty, str):				# fcnt specialization
-					if isinstance(resource, FCNT.FCNT) and resource.cnd != spty:
+					if isinstance(resource, FCNT) and resource.cnd != spty:
 						return Result(status=False, rsc=RC.groupMemberTypeInconsistent, dbg=f'resource and group member specialization types mismatch: {resource.cnd} != {spty} for: {mid}')
 
 			# check type of resource and member type of group

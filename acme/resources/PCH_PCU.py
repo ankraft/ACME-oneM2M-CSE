@@ -8,9 +8,9 @@
 #
 
 from __future__ import annotations
-from Types import ResourceTypes as T, ResponseCode as RC, JSON
-from .Resource import *
-from Logging import Logging
+from etc.Types import ResourceTypes as T, ResponseCode as RC, JSON
+from resources.Resource import *
+from services.Logging import Logging
 
 
 class PCH_PCU(Resource):

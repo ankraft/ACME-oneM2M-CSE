@@ -8,11 +8,11 @@
 #
 
 from __future__ import annotations
-from Constants import Constants as C
-from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
-from Validator import constructPolicy, addPolicy
-from .Resource import *
-from .AnnounceableResource import AnnounceableResource
+from etc.Constants import Constants as C
+from etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
+from services.Validator import constructPolicy, addPolicy
+from resources.Resource import *
+from resources.AnnounceableResource import AnnounceableResource
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 

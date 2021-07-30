@@ -8,10 +8,10 @@
 #
 
 from __future__ import annotations
-import CSE
-from .Resource import *
-from Logging import Logging as L
-from Types import ResourceTypes as T, Result, Operation, CSERequest, JSON
+from etc.Types import ResourceTypes as T, Result, Operation, CSERequest, JSON
+from resources.Resource import *
+from services.Logging import Logging as L
+import services.CSE as CSE
 
 # TODO - Handle Group Request Target Members parameter
 # TODO - Handle Group Request Identifier parameter

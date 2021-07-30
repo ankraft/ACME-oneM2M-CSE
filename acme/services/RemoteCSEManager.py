@@ -11,14 +11,15 @@
 
 
 from typing import List, Tuple, Dict
-from Configuration import Configuration
-from Logging import Logging as L
-from Constants import Constants as C
-from Types import ResourceTypes as T, Result, CSEType, ResponseCode as RC, ContentSerializationType, JSON
-import Utils, CSE
+from etc.Constants import Constants as C
+from etc.Types import ResourceTypes as T, Result, CSEType, ResponseCode as RC, ContentSerializationType, JSON
+import etc.Utils as Utils
 from resources import CSR, CSEBase
 from resources.Resource import Resource
 import resources.Factory as Factory
+from services.Configuration import Configuration
+from services.Logging import Logging as L
+import services.CSE as CSE
 from helpers.BackgroundWorker import BackgroundWorkerPool
 
 

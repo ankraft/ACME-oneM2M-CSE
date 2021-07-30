@@ -8,14 +8,14 @@
 #
 
 from copy import deepcopy
-from Logging import Logging as L
 from typing import List
-from Constants import Constants as C
-from Configuration import Configuration
-from Types import ResourceTypes as T, Result, Permission, ResponseCode as RC, JSON, CSEType
+from etc.Constants import Constants as C
+from etc.Types import ResourceTypes as T, Result, Permission, ResponseCode as RC, JSON, CSEType
+from services.Logging import Logging as L
+from services.Configuration import Configuration
 from resources.Resource import Resource
-import CSE, Utils
-from resources import ACP
+import services.CSE as CSE, etc.Utils as Utils
+from resources.ACP import ACP
 from helpers.BackgroundWorker import BackgroundWorkerPool
 
 
@@ -287,7 +287,7 @@ class RegistrationManager(object):
 			selfOrigs.extend(selfOriginators)
 
 
-		acp = ACP.ACP(pi=parentResource.ri, rn=rn, createdInternally=createdByResource)
+		acp = ACP(pi=parentResource.ri, rn=rn, createdInternally=createdByResource)
 		acp.addPermission(origs, permission)
 		acp.addSelfPermission(selfOrigs, selfPermission)
 

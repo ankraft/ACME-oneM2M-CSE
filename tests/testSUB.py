@@ -11,8 +11,8 @@ import unittest, sys, time
 import requests
 sys.path.append('../acme')
 from typing import Tuple
-from Constants import Constants as C
-from Types import NotificationEventType as NET, ResourceTypes as T, NotificationContentType, ResponseCode as RC
+from etc.Constants import Constants as C
+from etc.Types import NotificationEventType as NET, ResourceTypes as T, NotificationContentType, ResponseCode as RC
 from init import *
 
 numberOfBatchNotifications = 5

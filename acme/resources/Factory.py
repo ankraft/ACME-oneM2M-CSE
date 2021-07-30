@@ -8,11 +8,11 @@
 #
 
 from typing import Dict, Callable, Any
-from Types import ResourceTypes as T
-from Types import ResponseCode as RC
-from Types import Result
-from Logging import Logging as L
-import Utils
+from etc.Types import ResourceTypes as T
+from etc.Types import ResponseCode as RC
+from etc.Types import Result
+import etc.Utils as Utils
+from services.Logging import Logging as L
 
 
 from resources.ACP import ACP

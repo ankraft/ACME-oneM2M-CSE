@@ -8,24 +8,24 @@
 #
 
 from __future__ import annotations
-import sys, re
+import sys
 from copy import deepcopy
 from typing import Any, Tuple, Dict
-from Logging import Logging as L
-from Configuration import Configuration
-from Constants import Constants as C
-from Types import ResourceTypes as T
-from Types import FilterOperation
-from Types import Permission
-from Types import DesiredIdentifierResultType as DRT
-from Types import ResultContentType as RCN
-from Types import ResponseCode as RC
-from Types import Result
-from Types import CSERequest
-from Types import JSON, Parameters, Conditions
-import CSE, Utils, helpers.TextTools
-from resources.Resource import Resource
+from etc.Constants import Constants as C
+from etc.Types import ResourceTypes as T
+from etc.Types import FilterOperation
+from etc.Types import Permission
+from etc.Types import DesiredIdentifierResultType as DRT
+from etc.Types import ResultContentType as RCN
+from etc.Types import ResponseCode as RC
+from etc.Types import Result
+from etc.Types import CSERequest
+from etc.Types import JSON, Parameters, Conditions
 import resources.Factory as Factory
+from resources.Resource import Resource
+import services.CSE as CSE, etc.Utils as Utils, helpers.TextTools
+from services.Configuration import Configuration
+from services.Logging import Logging as L
 
 
 

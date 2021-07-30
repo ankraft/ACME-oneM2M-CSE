@@ -10,8 +10,8 @@
 #	This is only for storing the resource, no further processing is done.
 #
 
-from .Resource import Resource
-from Types import ResourceTypes as T, JSON
+from etc.Types import ResourceTypes as T, JSON
+from resources.Resource import Resource
 
 
 class Unknown(Resource):

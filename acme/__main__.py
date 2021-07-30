@@ -7,15 +7,12 @@
 #	Starter for the ACME CSE
 #
 
-import argparse, sys
+import argparse
 from rich.console import Console
-sys.path.append('apps')
 # parent = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent
-# sys.path.append(f'{parent}/apps')
-# sys.path.append(f'{parent}/webui')
 # # sys.path.append(f'{parent}/acme')
-from Constants import Constants as C
-import CSE
+from etc.Constants import Constants as C
+import services.CSE as CSE
 
 # Handle command line arguments
 def parseArgs() -> argparse.Namespace:

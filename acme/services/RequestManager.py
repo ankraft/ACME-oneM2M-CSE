@@ -8,28 +8,29 @@
 #
 
 import requests, urllib.parse
-
-from Logging import Logging as L
-from Configuration import Configuration
-from Types import BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, RequestArguments, RequestCallback, ResultContentType
-from Types import RequestStatus
-from Types import CSERequest
-from Types import RequestHandler
-from Types import JSON
-from Types import ResourceTypes as T
-from Types import ResponseCode as RC
-from Types import ResponseType
-from Types import Result
-from Types import CSERequest
-from Types import ContentSerializationType
-from Types import Parameters
-from Constants import Constants as C
-from resources.REQ import REQ
-from resources.Resource import Resource
-from helpers.BackgroundWorker import BackgroundWorkerPool
-import CSE, Utils
 from typing import Any, List, Tuple
 from copy import deepcopy
+
+from etc.Types import BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, RequestArguments, RequestCallback, ResultContentType
+from etc.Types import RequestStatus
+from etc.Types import CSERequest
+from etc.Types import RequestHandler
+from etc.Types import JSON
+from etc.Types import ResourceTypes as T
+from etc.Types import ResponseCode as RC
+from etc.Types import ResponseType
+from etc.Types import Result
+from etc.Types import CSERequest
+from etc.Types import ContentSerializationType
+from etc.Types import Parameters
+from etc.Constants import Constants as C
+from resources.REQ import REQ
+from resources.Resource import Resource
+from services.Logging import Logging as L
+from services.Configuration import Configuration
+import services.CSE as CSE, etc.Utils as Utils
+from helpers.BackgroundWorker import BackgroundWorkerPool
+
 
 class RequestManager(object):
 

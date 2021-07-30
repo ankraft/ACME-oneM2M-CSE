@@ -7,12 +7,12 @@
 #	ResourceType: Group
 #
 
-from Types import ResourceTypes as T, Result, ConsistencyStrategy, JSON
-from Validator import constructPolicy, addPolicy
-from Logging import Logging as L
-import CSE
-from .Resource import *
-from .AnnounceableResource import AnnounceableResource
+from etc.Types import ResourceTypes as T, Result, ConsistencyStrategy, JSON
+from resources.Resource import *
+from resources.AnnounceableResource import AnnounceableResource
+from services.Validator import constructPolicy, addPolicy
+from services.Logging import Logging as L
+import services.CSE as CSE
 import resources.Factory as Factory
 
 

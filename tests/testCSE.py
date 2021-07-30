@@ -11,8 +11,8 @@ import unittest, sys
 import isodate
 sys.path.append('../acme')
 from typing import Tuple
-from Constants import Constants as C
-from Types import ResponseCode as RC
+from etc.Constants import Constants as C
+from etc.Types import ResponseCode as RC
 from init import *
 
 

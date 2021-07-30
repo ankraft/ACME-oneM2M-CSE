@@ -10,14 +10,14 @@
 from copy import deepcopy
 import re
 from typing import Any, List, Dict
-from Logging import Logging as L
-from Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, ResponseCode as RC
-from Types import JSON, AttributePolicies, AttributePoliciesEntry, AdditionalAttributes
-from Types import Result, AttributePolicies, ResourceTypes as T
-from Configuration import Configuration
-import Utils
-from resources.Resource import Resource
 import isodate
+from etc.Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, ResponseCode as RC
+from etc.Types import JSON, AttributePolicies, AttributePoliciesEntry, AdditionalAttributes
+from etc.Types import Result, AttributePolicies, ResourceTypes as T
+import etc.Utils as Utils
+from services.Configuration import Configuration
+from resources.Resource import Resource
+from services.Logging import Logging as L
 
 
 # TODO owner attribute, annnouncedSyncType

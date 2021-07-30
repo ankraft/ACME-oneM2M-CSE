@@ -10,22 +10,24 @@
 #
 
 from __future__ import annotations
+
+
+import os, sys
+from threading import Lock
+from copy import deepcopy
+from typing import Callable, cast
 from tinydb import TinyDB, Query, where
 from tinydb.storages import MemoryStorage
 from tinydb.table import Document
 from tinydb.operations import delete 
 
-import os, sys
-from copy import deepcopy
-from typing import Callable, cast
-from threading import Lock
-from Configuration import Configuration
-from Types import ResourceTypes as T, Result, ResponseCode as RC, ContentSerializationType, JSON
-from Logging import Logging as L
+from etc.Types import ResourceTypes as T, Result, ResponseCode as RC, ContentSerializationType, JSON
 from resources.Resource import Resource
-import resources.Factory as Factory
 from resources.AnnounceableResource import AnnounceableResource
-import CSE, Utils
+import resources.Factory as Factory
+from services.Configuration import Configuration
+from services.Logging import Logging as L
+import services.CSE as CSE, etc.Utils as Utils
 
 
 class Storage(object):

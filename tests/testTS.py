@@ -11,8 +11,8 @@ import unittest, sys, time
 import requests
 sys.path.append('../acme')
 from typing import Tuple, Dict
-from Constants import Constants as C
-from Types import ResourceTypes as T, NotificationContentType, ResponseCode as RC, Operation, ResponseType, Permission
+from etc.Constants import Constants as C
+from etc.Types import ResourceTypes as T, NotificationContentType, ResponseCode as RC, Operation, ResponseType, Permission
 from init import *
 
 

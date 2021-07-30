@@ -10,14 +10,14 @@
 from __future__ import annotations
 import sys
 from typing import List, cast
-from Configuration import Configuration
-from Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
-from Validator import constructPolicy, addPolicy
-import Utils, CSE
-from Logging import Logging as L
-from .Resource import *
-from .AnnounceableResource import AnnounceableResource
+from etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
+import etc.Utils as Utils, services.CSE as CSE
 import resources.Factory as Factory
+from resources.Resource import *
+from resources.AnnounceableResource import AnnounceableResource
+from services.Logging import Logging as L
+from services.Configuration import Configuration
+from services.Validator import constructPolicy, addPolicy
 
 
 

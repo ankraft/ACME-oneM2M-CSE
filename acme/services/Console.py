@@ -10,22 +10,20 @@
 from __future__ import annotations
 from typing import Dict, cast
 import datetime, os, sys, webbrowser
-from Logging import Logging as L
-from helpers.KeyHandler import loop, stopLoop, readline, waitForKeypress
-import helpers.TextTools
-from Constants import Constants as C
-from Configuration import Configuration
-from Types import CSEType, ResourceTypes as T
-from resources.Resource import Resource
 from enum import IntEnum, auto
-
-
-from helpers.BackgroundWorker import BackgroundWorkerPool
-import Utils, CSE, Statistics
 from rich.table import Table
 from rich.panel import Panel
 from rich.tree import Tree
 
+from helpers.KeyHandler import loop, stopLoop, readline, waitForKeypress
+import helpers.TextTools
+from helpers.BackgroundWorker import BackgroundWorkerPool
+from etc.Constants import Constants as C
+from etc.Types import CSEType, ResourceTypes as T
+from services.Logging import Logging as L
+from services.Configuration import Configuration
+from resources.Resource import Resource
+import etc.Utils as Utils, services.CSE as CSE, services.Statistics as Statistics
 
 
 class TreeMode(IntEnum):

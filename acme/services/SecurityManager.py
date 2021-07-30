@@ -9,12 +9,14 @@
 
 
 import ssl
-from Logging import Logging as L
-from Types import ResourceTypes as T, Permission, Result, CSERequest, ResponseCode as RC
-import CSE, Utils, helpers.TextTools
-from Configuration import Configuration
-from resources.Resource import Resource
 from typing import List
+
+from services.Logging import Logging as L
+from etc.Types import ResourceTypes as T, Permission, Result, CSERequest, ResponseCode as RC
+from resources.Resource import Resource
+import services.CSE as CSE, etc.Utils as Utils
+from services.Configuration import Configuration
+import helpers.TextTools
 
 
 class SecurityManager(object):

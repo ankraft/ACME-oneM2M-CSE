@@ -8,10 +8,10 @@
 #
 
 from copy import deepcopy
-from .AnnouncedResource import AnnouncedResource
-from .Resource import *
-from Types import ResourceTypes as T, JSON, AttributePolicies
-from Validator import constructPolicy, addPolicy
+from resources.AnnouncedResource import AnnouncedResource
+from resources.Resource import *
+from etc.Types import ResourceTypes as T, JSON, AttributePolicies
+from services.Validator import constructPolicy, addPolicy
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([ 

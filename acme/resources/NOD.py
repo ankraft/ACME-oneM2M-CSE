@@ -7,12 +7,12 @@
 #	ResourceType: mgmtObj:Node
 #
 
-from Constants import Constants as C
-from Types import ResourceTypes as T, JSON
-import Utils, CSE
-from Validator import constructPolicy, addPolicy
-from .Resource import *
-from .AnnounceableResource import AnnounceableResource
+from etc.Constants import Constants as C
+from etc.Types import ResourceTypes as T, JSON
+from resources.Resource import *
+from resources.AnnounceableResource import AnnounceableResource
+import etc.Utils as Utils, services.CSE as CSE
+from services.Validator import constructPolicy, addPolicy
 
 
 # TODO Support cmdhPolicy

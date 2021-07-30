@@ -11,13 +11,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from copy import deepcopy
 from inspect import stack
-from typing import Tuple, cast
-from Logging import Logging as L
-from Configuration import Configuration
-from Constants import Constants as C
+from typing import cast
+
+from etc.Constants import Constants as C
+from etc.Types import JSON, Operation, CSERequest, ContentSerializationType, Result, ResponseCode as RC, RequestHandler
+from services.Logging import Logging as L
+from services.Configuration import Configuration
+import services.CSE as CSE, etc.Utils as Utils
 from helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID, mqttToId
-from Types import JSON, Operation, CSERequest, ContentSerializationType, Result, ResponseCode as RC, RequestHandler
-import CSE, Utils, helpers.TextTools
+import helpers.TextTools
 
 
 # TODO internal events
