@@ -30,8 +30,6 @@ markupsafe==2.0.1
     # via jinja2
 paho-mqtt==1.5.1
     # via ACME-oneM2M-CSE (setup.py)
-psutil==5.8.0
-    # via ACME-oneM2M-CSE (setup.py)
 pygments==2.9.0
     # via rich
 requests==2.26.0

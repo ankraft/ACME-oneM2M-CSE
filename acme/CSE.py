@@ -32,10 +32,6 @@ from TimeSeriesManager import TimeSeriesManager
 from Validator import Validator
 from Types import CSEType, ContentSerializationType
 
-
-from AEStatistics import AEStatistics
-from CSENode import CSENode
-import Utils
 from helpers.BackgroundWorker import BackgroundWorkerPool
 
 
@@ -62,10 +58,6 @@ timeSeries:TimeSeriesManager					= None
 validator:Validator 							= None
 
 rootDirectory:str								= None
-
-aeCSENode:CSENode				 				= None 
-aeStatistics:AEStatistics 		 				= None 
-appsStarted:bool 								= False
 
 supportedReleaseVersions:list[str]				= None
 cseType:CSEType									= None
@@ -166,8 +158,6 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 
 	remote = RemoteCSEManager()				# Initialize the remote CSE manager
 	announce = AnnouncementManager()		# Initialize the announcement manager
-	startAppsDelayed()						# Start the App. They are actually started after the CSE finished the startup
-
 	console = Console()						# Start the console
 
 	# Send an event that the CSE startup finished
@@ -245,47 +235,4 @@ def resetCSE() -> None:
 
 def run() -> None:
 	console.run()
-
-##############################################################################
-#
-#	Application handler
-#
-
-
-# Delay starting the AEs in the backround. This is needed because the CSE
-# has not yet started. This will be called when the cseStartup event is raised.
-def startAppsDelayed() -> None:
-	event.addHandler(event.cseStartup, startApps) 	# type: ignore
-	event.addHandler(event.cseShutdown, stopApps)	# type: ignore
-
-
-def startApps() -> None:
-	global appsStarted, aeStatistics, aeCSENode
-
-	if not Configuration.get('cse.enableApplications'):
-		return
-
-	time.sleep(Configuration.get('cse.applicationsStartupDelay'))
-	L.isInfo and L.log('Starting Apps')
-	appsStarted = True
-
-	if Configuration.get('app.csenode.enable'):
-		aeCSENode = CSENode()
-	if not appsStarted:	# shutdown?
-		return
-	if Configuration.get('app.statistics.enable'):
-		aeStatistics = AEStatistics()
-
-	# Add more apps here
-
-
-def stopApps() -> None:
-	global appsStarted
-	if appsStarted:
-		appsStarted = False
-		L.isInfo and L.log('Stopping Apps')
-		if aeStatistics is not None:
-			aeStatistics.shutdown()
-		if aeCSENode is not None:
-			aeCSENode.shutdown()
 

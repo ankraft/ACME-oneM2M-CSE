@@ -33,7 +33,6 @@ class Configuration(object):
 		argsDBReset				= args.dbreset if args is not None and 'dbreset' in args else False
 		argsDBStorageMode		= args.dbstoragemode if args is not None and 'dbstoragemode' in args else None
 		argsImportDirectory		= args.importdirectory if args is not None and 'importdirectory' in args else None
-		argsAppsEnabled			= args.appsenabled if args is not None and 'appsenabled' in args else None
 		argsRemoteCSEEnabled	= args.remotecseenabled if args is not None and 'remotecseenabled' in args else None
 		argsValidationEnabled	= args.validationenabled if args is not None and 'validationenabled' in args else None
 		argsStatisticsEnabled	= args.statisticsenabled if args is not None and 'statisticsenabled' in args else None
@@ -83,8 +82,6 @@ class Configuration(object):
 				'cse.expirationDelta'					: config.getint('cse', 'expirationDelta', 				fallback=60*60*24*365),	# 1 year, in seconds
 				'cse.maxExpirationDelta'				: config.getint('cse', 'maxExpirationDelta',			fallback=60*60*24*365*5),	# 5 years, in seconds
 				'cse.originator'						: config.get('cse', 'originator',						fallback='CAdmin'),
-				'cse.enableApplications'				: config.getboolean('cse', 'enableApplications', 		fallback=True),
-				'cse.applicationsStartupDelay'			: config.getint('cse', 'applicationsStartupDelay',		fallback=5),		# Seconds
 				'cse.enableNotifications'				: config.getboolean('cse', 'enableNotifications', 		fallback=True),
 				'cse.enableRemoteCSE'					: config.getboolean('cse', 'enableRemoteCSE', 			fallback=True),
 				'cse.enableTransitRequests'				: config.getboolean('cse', 'enableTransitRequests',		fallback=True),
@@ -267,31 +264,6 @@ class Configuration(object):
 				'cse.console.hideResources'				: config.getlist('cse.console', 'hideResources', 		fallback=[]),		# type: ignore[attr-defined]
 				'cse.console.treeMode'					: config.get('cse.console', 'treeMode', 				fallback='normal'),
 
-				#
-				#	App: Statistics AE
-				#
-	
-				'app.statistics.enable'					: config.getboolean('app.statistics', 'enable', 		fallback=True),
-				'app.statistics.aeRN'					: config.get('app.statistics', 'aeRN', 					fallback='statistics'),
-				'app.statistics.aeAPI'					: config.get('app.statistics', 'aeAPI', 				fallback='Nstatistics'),
-				'app.statistics.fcntRN'					: config.get('app.statistics', 'fcntRN', 				fallback='statistics'),
-				'app.statistics.fcntCND'				: config.get('app.statistics', 'fcntCND', 				fallback='acme.statistics'),
-				'app.statistics.fcntType'				: config.get('app.statistics', 'fcntType', 				fallback='acme:csest'),
-				'app.statistics.originator'				: config.get('app.statistics', 'originator',			fallback='C'),
-				'app.statistics.interval'				: config.getint('app.statistics', 'interval', 			fallback=10),		# seconds
-
-				#
-				#	App: CSE Node 
-				#
-
-				'app.csenode.enable'					: config.getboolean('app.csenode', 'enable', 			fallback=True),
-				'app.csenode.nodeRN'					: config.get('app.csenode', 'nodeRN', 					fallback='cse-node'),
-				'app.csenode.nodeID'					: config.get('app.csenode', 'nodeID', 					fallback='cse-node'),
-				'app.csenode.originator'				: config.get('app.csenode', 'originator',				fallback='CAdmin'),
-				'app.csenode.batteryLowLevel'			: config.getint('app.csenode', 'batteryLowLevel',		fallback=20),		# percent
-				'app.csenode.batteryChargedLevel'		: config.getint('app.csenode', 'batteryChargedLevel',	fallback=100),		# percent
-				'app.csenode.interval'					: config.getint('app.csenode', 'updateInterval', 		fallback=60),		# seconds
-
 			}
 
 		except Exception as e:	# about when findings errors in configuration
@@ -346,7 +318,6 @@ class Configuration(object):
 		if argsDBReset is True:					Configuration._configuration['db.resetOnStartup'] = True									# Override DB reset from command line
 		if argsDBStorageMode is not None:		Configuration._configuration['db.inMemory'] = argsDBStorageMode == 'memory'					# Override DB storage mode from command line
 		if argsImportDirectory is not None:		Configuration._configuration['cse.resourcesPath'] = argsImportDirectory						# Override import directory from command line
-		if argsAppsEnabled is not None:			Configuration._configuration['cse.enableApplications'] = argsAppsEnabled					# Override app enablement
 		if argsRemoteCSEEnabled is not None:	Configuration._configuration['cse.enableRemoteCSE'] = argsRemoteCSEEnabled					# Override remote CSE enablement
 		if argsValidationEnabled is not None:	Configuration._configuration['cse.enableValidation'] = argsValidationEnabled				# Override validation enablement
 		if argsStatisticsEnabled is not None:	Configuration._configuration['cse.statistics.enable'] = argsStatisticsEnabled				# Override statistics enablement
@@ -474,11 +445,6 @@ class Configuration(object):
 			_print(f'[red]Configuration Error: \[cse.console]:treeMode must be one of {TreeMode.names()}')
 			return False
 		Configuration._configuration['cse.console.treeMode'] = v
-
-		# Check configured app api
-		if len(api := Configuration._configuration['app.statistics.aeAPI']) < 2 or api[0] not in ['R', 'N']:
-			_print('[red]Configuration Error: \[app.statistics]:aeAPI must not be empty and must start with "N" or "R"')
-			return False
 
 		# Everything is fine
 		return True

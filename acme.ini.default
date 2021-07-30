@@ -30,12 +30,6 @@ expirationDelta=31536000
 maxExpirationDelta=157680000
 # Admin originator for the CSE. Default: CAdmin
 originator=CAdmin
-# Enable internal applications.
-# See also individual application configurations in the [app. ...] sections.
-# Default: True
-enableApplications=true
-# Delay after the CSE startup to run internal applications in seconds. Default: 5 seconds
-applicationsStartupDelay=5
 # Enable notifications. Default: True
 enableNotifications=true
 # Enable remote CSE registration and checking. Default: True
@@ -380,48 +374,4 @@ treeMode=normal
 /access/v1/devices/battery=/id-mn?ty=14&mgd=1006&fu=1&fo=2&rcn=8
 
 
-###############################################################################
-
-#
-#	Configurations for the statistics AE
-#
-
-[app.statistics]
-# Enable the statistics AE. Default: True
-enable=true
-# Resource name of the statistics AE. Default: statistics
-aeRN=statistics
-# App-ID of the statistics AE. Must start with "N" or "R". Default: Nstatistics
-aeAPI=Nstatistics
-# Resource name of the statistics flexContainer. Default: statistics
-fcntRN=statistics
-# Content Definition of the AE's flexContainer. This is a proprietary CND. Default: acme.statistics
-fcntCND=acme.statistics
-# Element type of the AE's flexContainer. This is a proprietary type. Default: acme:csest
-fcntType=acme:csest
-# Originator for requests to the CSE. Default: C
-originator=C
-# Wait n seconds between updates of the AE in seconds. Default: 10
-interval=10
-
-
-#
-#	Configurations for the CSE Node App
-#
-
-[app.csenode]
-# Enable the CSE Node. Default: True
-enable=true
-# Resource name of the CSE Node. Default: cse-node
-nodeRN=cse-node
-# Node-ID of the CSE Node. Default: cse-node
-nodeID=cse-node
-# Originator for requests to the CSE. Default: CAdmin
-originator=CAdmin
-# Battery level indicates as "low" in percent. Default: 20
-batteryLowLevel=20
-# Battery level indicates as "fully charged" in percent. Default: 100
-batteryChargedLevel=100
-# Wait n seconds between updates of the node and sub-mgmtObjs in seconds. Default: 60
-interval=60
 

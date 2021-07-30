@@ -1,4 +1,4 @@
-# ![](webui/web/img/acme_sm.png) 
+# ![](acme/webui/web/img/acme_sm.png) 
 
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
@@ -28,7 +28,6 @@ Please consult the following pages for further instructions.
 - [Web & Rest UI](docs/WebUI.md)
 - [Importing Resources](docs/Importing.md)
 - [Operation](docs/Operation.md)
-	- [Applications and Nodes](docs/ApplicationsNodes.md)
 - [Supported Resource Types and Functionalities](docs/Supported.md)
 	- [Limitations](docs/Supported.md#limitations)
 - [Roadmap](docs/Roadmap.md)
@@ -39,21 +38,12 @@ Please consult the following pages for further instructions.
 
 Please see the [Changelog](CHANGELOG.md) for the latest changes.
 
-### Important: Changed startup
-
-From this release (0.8.x) on the CSE is started by running the *acme* module:
-
-	python3 acme
-
-and not a starter script like in the past (was: ~~python3 acme.py~~).
-
-Command line arguments can be passed as usual.
+### Important: Example AEs removed
+This release removes the example  AEs from the project. They will become available in another project in the future. This make the distribution a bit smaller and removes the problematic dependency to the *psutil* package, which is not available on all platforms.
 
 ### Hightlights in this release
 
-- Support for \<timeSeries> and \<timeSeriesInstances>
-- Improved support for request expiration, access control, and \<container> & \<contentInstances>
-- Improved console interface
+- Long-necessary refactoring of the source structure.
 - Lot's of small improvements, bug fixes, and optimizations
 
 ## Acknowledgements

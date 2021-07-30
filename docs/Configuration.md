@@ -51,8 +51,6 @@ The following macros are supported in addition to those defined in the sections 
 
 ### Additional Settings
 [\[server.http.mappings\] - ID Mappings](#id_mappings)  
-[\[app.statistics\] - Configurations for the Statistics AE](#ae_statistics)  
-[\[app.csenode\] - Configurations for the CSE Node App](#cse_node)
 
 
 <a name="general"></a>
@@ -69,8 +67,6 @@ The following macros are supported in addition to those defined in the sections 
 | expirationDelta          | Expiration time before resources are removed in seconds.<br/> Default: 60*60*24*365 = 31536000 = 1 year                                                                                        | cse.expirationDelta          |
 | maxExpirationDelta       | Maximum expirationTime allowed for resources in seconds.<br/>Default: 5 years = 157680000                                                                                                      | cse.maxExpirationDelta       |
 | originator               | Admin originator for the CSE.<br/>Default: CAdmin                                                                                                                                              | cse.originator               |
-| enableApplications       | Enable internal applications. See also individual application configuratins in the [app. ...] sections.<br/>See also command line arguments [–apps and –noapps](Running.md).<br/>Default: true | cse.enableApplications       |
-| applicationsStartupDelay | Delay after the CSE startup to run internal applications in seconds.<br/>Default: 5                                                                                                            | cse.applicationsStartupDelay |
 | enableNotifications      | Enable notifications.<br/>Default: true                                                                                                                                                        | cse.enableNotifications      |
 | enableRemoteCSE          | Enable remote CSE registration and checking.<br/>See also command line arguments [–remote-cse and –no-remote-cse](Running.md).<br/>Default: true                                               | cse.enableRemoteCSE          |
 | enableTransitRequests    | Enable forwarding of requests to a remote CSE.<br/>Default: true                                                                                                                               | cse.enableTransitRequests    |
@@ -301,33 +297,5 @@ The following snippet only presents some example for ID mappings.
 /access/v1/apps=/id-mn?ty=2&fu=1&fo=2&rcn=8
 /access/v1/devices/battery=/id-mn?ty=14&mgd=1006&fu=1&fo=2&rcn=8
 ```
-
-<a name="ae_statistics"></a>
-### [app.statistics] - Configurations for the Statistics AE
-
-| Keyword    | Description                                                                                           | Macro Name                |
-|:-----------|:------------------------------------------------------------------------------------------------------|:--------------------------|
-| enable     | Enable the statistics AE.<br/>Default: true                                                           | app.statistics.enable     |
-| aeRN       | Resource name of the statistics AE.<br/>Default: statistics                                           | app.statistics.aeRN       |
-| aeAPI      | App-ID of the statistics AE. Must start with "N" or "R".<br/>Default: Ntatistics                      | app.statistics.aeAPI      |
-| fcntRN     | Resource name of the statistics flexContainer.<br/> Default: statistics                               | app.statistics.fcntRN     |
-| fcntCND    | Content Definition of the AE's flexContainer. This is a proprietary CND.<br/>Default: acme.statistics | app.statistics.fcntCND    |
-| fcntType   | Element type of the AE's flexContainer. This is a proprietary type.<br/>Default: acme:csest           | app.statistics.fcntType   |
-| originator | Originator for requests to the CSE.<br/>Default: C (client self-registration)                         | app.statistics.originator |
-| interval   | Wait n seconds between updates of the AE in seconds.<br/>Default: 10                                  | app.statistics.interval   |
-
-
-<a name="cse_node"></a>
-###	[app.csenode] - Configurations for the CSE Node App
-
-| Keyword             | Description                                                                             | Macro Name                      |
-|:--------------------|:----------------------------------------------------------------------------------------|:--------------------------------|
-| enable              | Enable the CSE Node.<br/>Default: true                                                  | app.csenode.enable              |
-| nodeRN              | Resource name of the CSE Node.<br/>Default: cse-node                                    | app.csenode.nodeRN              |
-| nodeID              | Node-ID of the CSE Node.<br/>Default: cse-node                                          | app.csenode.nodeID              |
-| originator          | Originator for requests to the CSE.<br/>Default: CAdmin                                 | app.csenode.originator          |
-| batteryLowLevel     | Battery level indicates as "low" in percent.<br/>Default: 20                            | app.csenode.batteryLowLevel     |
-| batteryChargedLevel | Battery level indicates as "fully charged" in percent.<br/>Default: 100                 | app.csenode.batteryChargedLevel |
-| interval            | Wait n seconds between updates of the node and sub-mgmtObjs in seconds.<br/>Default: 60 | app.csenode.interval            |
 
 [← README](../README.md) 
