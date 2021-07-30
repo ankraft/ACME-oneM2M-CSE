@@ -15,6 +15,7 @@ from Validator import constructPolicy, addPolicy
 from .Resource import *
 from .AnnounceableResource import AnnounceableResource
 import Utils, CSE
+from helpers.TextTools import simpleMatch
 
 
 # Attribute policies for this resource are constructed during startup of the CSE
@@ -151,7 +152,7 @@ class ACP(AnnounceableResource):
 			# Check originator
 			if 'all' in p['acor'] or originator in p['acor'] or requestedPermission == Permission.NOTIFY:
 				return True
-			if any([ Utils.simpleMatch(originator, a) for a in p['acor'] ]):	# check whether there is a wildcard match
+			if any([ simpleMatch(originator, a) for a in p['acor'] ]):	# check whether there is a wildcard match
 				return True
 		return False
 
@@ -163,7 +164,7 @@ class ACP(AnnounceableResource):
 			# TODO check acod in pvs
 			if 'all' in p['acor'] or originator in p['acor']:
 				return True
-			if any([ Utils.simpleMatch(originator, a) for a in p['acor'] ]):	# check whether there is a wildcard match
+			if any([ simpleMatch(originator, a) for a in p['acor'] ]):	# check whether there is a wildcard match
 				return True
 		return False
 

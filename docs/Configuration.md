@@ -29,8 +29,11 @@ The following macros are supported in addition to those defined in the sections 
 ## Configuration Sections
 
 [\[cse\] - General CSE Settings](#general)  
-[\[server.security\] - ACP & TLS Settings](#security)  
+[\[cse.security\] - General Security Settings](#security)  
 [\[server.http\] - HTTP Server Settings](#server_http)  
+[\[server.http.security\] - HTTP Security Settings](#security_http)  
+[\[client.mqtt\] - MQTT Client Settings](#client_mqtt)  
+[\[client.mqtt.security\] - MQTT Security Settings](#security_mqtt)  
 [\[database\] - Database Settings](#database)  
 [\[logging\] - Logging Settings](#logging)  
 [\[cse.registration\] - Settings for Self-Registrations](#cse_registration)  
@@ -81,17 +84,13 @@ The following macros are supported in addition to those defined in the sections 
 
 
 <a name="security"></a>
-### [cse.security] - General CSE Security Settings
+### [cse.security] - General Security Settings
 
 | Keyword           | Description                                                                                                                                                                                                                                      | Macro Name                     |
 |:------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|
 | enableACPChecks   | Enable access control checks.<br/> Default: true                                                                                                                                                                                                 | cse.secuerity.enableACPChecks  |
 | fullAccessAdmin   | Always grant the admin originator full access (bypass access checks).<br /> Default: True                                                                                                                                                        | cse.security.fullAccessAdmin   |
-| useTLS            | Enable TLS for communications.<br />This can be overridden by the command line arguments [--http and --https](Running.md).<br />See oneM2M TS-0003 Clause 8.2.1 "Overview on Security Association Establishment Frameworks".<br />Default: False | cse.security.useTLS            |
-| tlsVersion        | TLS version to be used in connections. <br />Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate version negotiation.<br />Default: auto                                                                      | cse.security.tlsVersion        |
-| verifyCertificate | Verify certificates in requests. Set to *False* when using self-signed certificates.<br />Default: False                                                                                                                                         | cse.security.verifyCertificate |
-| caCertificateFile | Path and filename of the certificate file.<br />Default: None                                                                                                                                                                                    | cse.security.caCertificateFile |
-| caPrivateKeyFile  | Path and filename of the private key file.<br />Default: None                                                                                                                                                                                    | cse.security.caPrivateKeyFile  |
+
 
 <a name="server_http"></a>
 ###	[server.http] - HTTP Server Settings
@@ -106,6 +105,43 @@ The following macros are supported in addition to those defined in the sections 
 | enableRemoteConfiguration | Enable an endpoint for get and set certain configuration values via a REST interface.<br />**ATTENTION: Enabling this feature exposes configuration values, IDs and passwords, and is a security risk.**<br/> Default: false                               | http.enableRemoteConfiguration |
 | enableStructureEndpoint   | Enable an endpoint for getting a structured overview about a CSE's resource tree and deployment infrastructure (remote CSE's).<br />**ATTENTION: Enabling this feature exposes various potentially sensitive information.**<br/> Default: false | http.enableStructureEndpoint   |
 | enableResetEndpoint       | Enable an endpoint for resetting the CSE (remove all resources and import the init directory again)<br />**ATTENTION: Enabling this feature may lead to a total loss of data**<br/>Default: false                                                          | http.enableResetEndpoint       |
+
+
+<a name="security_http"></a>
+### [server.http.security] - HTTP Security Settings
+
+| Keyword           | Description                                                                                                                                                                                                                                      | Macro Name                      |
+|:------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------|
+| useTLS            | Enable TLS for communications.<br />This can be overridden by the command line arguments [--http and --https](Running.md).<br />See oneM2M TS-0003 Clause 8.2.1 "Overview on Security Association Establishment Frameworks".<br />Default: False | http.security.useTLS            |
+| tlsVersion        | TLS version to be used in connections. <br />Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate version negotiation.<br />Default: auto                                                                      | http.security.tlsVersion        |
+| verifyCertificate | Verify certificates in requests. Set to *False* when using self-signed certificates.<br />Default: False                                                                                                                                         | http.security.verifyCertificate |
+| caCertificateFile | Path and filename of the certificate file.<br />Default: None                                                                                                                                                                                    | http.security.caCertificateFile |
+| caPrivateKeyFile  | Path and filename of the private key file.<br />Default: None                                                                                                                                                                                    | http.security.caPrivateKeyFile  |
+
+
+<a name="client_mqtt"></a>
+###	[client.mqtt] - MQTT Client Settings
+
+| Keyword     | Description                                                                               | Macro Name       |
+|:------------|:------------------------------------------------------------------------------------------|:-----------------|
+| enable      | Enable the MQTT binding.<br />Default: False                                              | mqtt.enable      |
+| address     | he hostname of the MQTT broker.<br />Default; 127.0.0.1                                   | mqtt.address     |
+| port        | Set the port for the MQTT broker.<br />Default: 1883, or 8883 for TLS                     | mqtt.port        |
+| listenIF    | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1           | mqtt.listenIF    |
+| keepalive   | Value for the MQTT connection's keep-alive parameter in seconds.<br />Default: 60 seconds | mqtt.keepalive   |
+| topicPrefix | Optional prefix for topics.<br />Default: empty string                                    | mqtt.topicPrefix |
+
+
+<a name="security_mqtt"></a>
+### [client.mqtt.security] - MQTT Security Settings
+
+| Keyword           | Description                                                                                             | Macro Name                      |
+|:------------------|:--------------------------------------------------------------------------------------------------------|:--------------------------------|
+| username          | The username for MQTT broker authentication if required by the broker.<br/>Default: None                | mqtt.security.username          |
+| password          | The password for MQTT broker authentication.<br/>Default: None                                          | mqtt.security.password          |
+| useTLS            | Enable TLS for communications with the MQTT broker.<br />Default: False                                 | mqtt.security.useTLS            |
+| verifyCertificate | Verify certificates in requests. Set to False when using self-signed certificates..<br />Default: False | mqtt.security.verifyCertificate |
+| caCertificateFile | Path and filename of the certificate file.<br />Default: None                                           | mqtt.security.caCertificateFile |
 
 
 <a name="database"></a>

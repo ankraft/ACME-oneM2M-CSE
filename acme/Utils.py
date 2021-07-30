@@ -18,11 +18,11 @@ from typing import Any, List, Tuple, Union, Dict, cast
 
 from Constants import Constants as C
 from Types import ResourceTypes as T, ResponseCode
-from Types import Result, Operation, RequestArguments, FilterUsage, DesiredIdentifierResultType
-from Types import ResultContentType, ResponseType, FilterOperation
+from Types import Result
 from Types import ContentSerializationType, JSON, Conditions
 from Logging import Logging as L
 from resources.Resource import Resource
+import helpers.TextTools
 import CSE
 import cbor2
 
@@ -411,44 +411,6 @@ def pureResource(dct:JSON) -> Tuple[JSON, str]:
 	return dct, root
 
 
-# def removeCommentsFromJSON(data:str) -> str:
-# 	"""	Remove C-style comments from JSON.
-# 	"""
-# 	data = re.sub(r'^[\s]*//[^\n]*\n', '\n', data)		# Comment on first line
-# 	data = re.sub(r'\n[\s]*//[^\n]*\n', '\n', data)	# Comments on some line in the middle
-# 	data = re.sub(r'\n[\s]*//[^\n]*$', '\n', data)		# Comment on last line w/o newline at the end
-# 	data = re.sub(r'/\\*.*?\\*/', '', data)
-# 	return data
-
-
-#commentPattern = r'(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*$)'
-#commentPattern = r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$)'	# recognized escaped comments
-commentPattern = r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$)'	# recognized escaped comments
-# first group captures quoted strings (double or single)
-# second group captures comments (//single-line or /* multi-line */)
-commentRegex = re.compile(commentPattern, re.MULTILINE|re.DOTALL)
-
-def removeCommentsFromJSON(data:str) -> str:
-	"""	This WILL remove:
-			/* multi-line comments */
-			// single-line comments
-			# single-line comments
-		
-		Will NOT remove:
-			String var1 = "this is /* not a comment. */";
-			char *var2 = "this is // not a comment, either.";
-			url = 'http://not.comment.com';
-	"""
-	def _replacer(match):	# type: ignore
-		# if the 2nd group (capturing comments) is not None,
-		# it means we have captured a non-quoted (real) comment string.
-		if match.group(2) is not None:
-			return "" # so we will return empty to remove the comment
-		else: # otherwise, we will return the 1st group
-			return match.group(1) # captured quoted-string
-	return commentRegex.sub(_replacer, data)
-
-
 def deleteNoneValuesFromDict(dct:JSON, allowedNull:list[str]=[]) -> JSON:
 	"""	Remove Null-values from a dictionary, but ignore the ones speciefed in 'allowedNull.
 		Return a new dictionary.
@@ -639,142 +601,6 @@ def renameCurrentThread(name:str = None, thread:threading.Thread = None) -> None
 #	Text formattings and search
 #
 
-def toHex(bts:bytes, toBinary:bool=False, withLength:bool=False) -> str:
-	"""	Print bts as hex output, similar to the 'od' command.
-	"""
-	if len(bts) == 0 and not withLength: return ''
-	result = ''
-	n = 0
-	b = bts[n:n+16]
-
-	while b and len(b) > 0:
-
-		if toBinary:
-			s1 = ' '.join([f'{i:08b}' for i in b])
-			s1 = f'{s1[0:71]} {s1[71:]}'
-			width = 144
-		else:
-			s1 = ' '.join([f'{i:02x}' for i in b])
-			s1 = f'{s1[0:23]} {s1[23:]}'
-			width = 48
-
-		s2 = ''.join([chr(i) if 32 <= i <= 127 else '.' for i in b])
-		s2 = f'{s2[0:8]} {s2[8:]}'
-		result += f'0x{n:08x}  {s1:<{width}}  | {s2}\n'
-
-		n += 16
-		b = bts[n:n+16]
-	result += f'0x{len(bts):08x}'
-
-	return result
-
-
-def simpleMatch(st:str, pattern:str, star:str='*') -> bool:
-	"""	Simple string match function. 
-		This class supports the following expression operators:
-
-	
-		- '?' : any single character
-		- '*' _ zero or more characters
-		- '+' _ one or more characters
-		- '\\' - Escape an expression operator
-
-		Examples: 
-			"hello" - "h?llo" -> True
-	 		"hello" - "h?lo" -> False
-	 		"hello" - "h*lo" -> True
-			"hello" - "h*" -> True
-			"hello" - "*lo" -> True
-			"hello" - "*l?" -> True
-
-		Parameter:
-			- st : string to test
-			- pattern : the pattern string
-			- star : optionally specify a different character as the star character
-	"""
-
-	def _simpleMatchStar(st:str, pattern:str) -> bool:
-		""" Recursively eat up a string when the pattern is a star at the beginning
-			or middle of a pattern.
-		"""
-		stLen	= len(st)
-		stIndex	= 0
-		while not _simpleMatch(st[stIndex:], pattern):
-			stIndex += 1
-			if stIndex >= stLen:
-				return False
-		return True
-	
-
-	def _simpleMatchPlus(st:str, pattern:str) -> bool:
-		""" Recursively eat up a string when the pattern is a plus at the beginning
-			or middle of a pattern.
-		"""
-		stLen	= len(st)
-		stIndex	= 1
-		if len(st) == 0:
-			return False
-		while not _simpleMatch(st[stIndex:], pattern):
-			stIndex += 1
-			if stIndex >= stLen:
-				return False
-		return True
-
-	def _simpleMatch(st:str, pattern:str) -> bool:
-		last:int		= 0
-		matched:bool	= False
-		reverse:bool	= False
-		stLen			= len(st)
-		patternLen 		= len(pattern)
-
-		# We later increment these indexes first in the loop below, therefore they need to be initialized with -1
-		stIndex			= -1
-		patternIndex 	= -1
-
-		while patternIndex < patternLen-1:
-
-			stIndex 		+= 1
-			patternIndex 	+= 1
-			p 				= pattern[patternIndex]
-
-			if stIndex > stLen:
-				return False
-
-			# Match exactly one character, if there is one left
-			if p == '?':
-				if stIndex >= stLen:
-					return False
-				continue
-			
-			# Match zero or more characters
-			if p == star:
-				patternIndex += 1
-				if patternIndex == patternLen:	# * is the last char in the pattern: this is a match
-					return True
-				return _simpleMatchStar(st[stIndex:], pattern[patternIndex:])	# Match recursively the remainder of the string
-
-			if p == '+':
-				patternIndex += 1
-				if patternIndex == patternLen and len(st[stIndex:]) > 0:	# + is the last char in the pattern and there is enough string remaining: this is a match
-					return True
-				return _simpleMatchPlus(st[stIndex:], pattern[patternIndex:])	# Match recursively the remainder of the string
-
-			# Literal match with the following character
-			if p == '\\':
-				patternIndex += 1
-				p = pattern[patternIndex]
-				# Fall-through
-			
-			# Literall match 
-			if stIndex < stLen:
-				if p != st[stIndex]:
-					return False
-		
-		# End of matches
-		return stIndex == stLen-1
-	
-	return _simpleMatch(st, pattern)
-
 
 def serializeData(data:JSON, ct:ContentSerializationType) -> str|bytes|JSON:
 	"""	Serialize a dictionary, depending on the serialization type.
@@ -794,7 +620,7 @@ def deserializeData(data:bytes, ct:ContentSerializationType) -> JSON:
 	if len(data) == 0:
 		return {}
 	if ct == ContentSerializationType.JSON:
-		return cast(JSON, json.loads(removeCommentsFromJSON(data.decode("utf-8"))))
+		return cast(JSON, json.loads(helpers.TextTools.removeCommentsFromJSON(data.decode("utf-8"))))
 	elif ct == ContentSerializationType.CBOR:
 		return cast(JSON, cbor2.loads(data))
 	# except Exception as e:

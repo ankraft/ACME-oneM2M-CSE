@@ -5,8 +5,15 @@
 ## Network
 
 1. **How can I access the CSE from remote/another computer on my network?**  
-   By default the CSE binds to the *localhost* interface. To make it accessible from a remote machine you need to bind the CSE's http server to another network interface, or address. This can be done in the *[server.http]* section of the configuration file. 
-   Setting the listen  interface to "0.0.0.0" binds the http server to all available interfaces.
+   By default the CSE binds to the *localhost* interface. To make it accessible from a remote machine you need to bind the CSE's http server to another network interface, or address. This can be done in the *[server.http]* and *[client.mqtt]* sections of the configuration file. 
+   Setting the listen interface to "0.0.0.0" binds the http server to all available interfaces.
+
+## MQTT
+
+1. **What does this error message "Out of memory" mean that appears sometimes?**  
+   This error message should actually read "connection refused" or "general error" that is returned by the underlying MQTT library. The error code "1" indicates this error but the human readable error message seems to be wrongly assigned here.
+1. **What does "cannot connect to broker: [Errno 49] Can't assign requested address" mean?**  
+   You most likely want to connect to an MQTT broker that does not run on your local machine and you configured the listen interface to "127.0.0.1", which means that only local running services can be reached. Try to set the configuration *[client.mqtt].listenIF* to "0.0.0.0".
 
 ## Resources
 

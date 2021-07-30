@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ### Changed
+- [HTTP] Moved the security setting for http to a separate section [server.http.security].
 
 
 ### Fixed

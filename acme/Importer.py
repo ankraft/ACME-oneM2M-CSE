@@ -10,7 +10,8 @@
 
 from __future__ import annotations
 import json, os, fnmatch, re
-from Utils import findXPath, removeCommentsFromJSON
+from Utils import findXPath
+from helpers.TextTools import removeCommentsFromJSON
 from typing import cast
 from Configuration import Configuration
 from Types import ResourceTypes as T

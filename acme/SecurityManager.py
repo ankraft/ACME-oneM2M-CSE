@@ -11,7 +11,7 @@
 import ssl
 from Logging import Logging as L
 from Types import ResourceTypes as T, Permission, Result, CSERequest, ResponseCode as RC
-import CSE, Utils
+import CSE, Utils, helpers.TextTools
 from Configuration import Configuration
 from resources.Resource import Resource
 from typing import List
@@ -29,12 +29,21 @@ class SecurityManager(object):
 		else:
 			L.isInfo and L.log('ACP checking DISABLED')
 		
-		# TLS configurations
-		self.useTLS 			= Configuration.get('cse.security.useTLS')
-		self.verifyCertificate	= Configuration.get('cse.security.verifyCertificate')
-		self.tlsVersion			= Configuration.get('cse.security.tlsVersion').lower()
-		self.caCertificateFile	= Configuration.get('cse.security.caCertificateFile')
-		self.caPrivateKeyFile	= Configuration.get('cse.security.caPrivateKeyFile')
+		# TLS configurations (http)
+		self.useTLSHttp 			= Configuration.get('http.security.useTLS')
+		self.verifyCertificateHttp	= Configuration.get('http.security.verifyCertificate')
+		self.tlsVersionHttp			= Configuration.get('http.security.tlsVersion').lower()
+		self.caCertificateFileHttp	= Configuration.get('http.security.caCertificateFile')
+		self.caPrivateKeyFileHttp	= Configuration.get('http.security.caPrivateKeyFile')
+
+		# TLS configuration (mqtt)
+		self.useTlsMqtt 			= Configuration.get('mqtt.security.useTLS')
+		self.verifyCertificateMqtt	= Configuration.get('mqtt.security.verifyCertificate')
+		self.caCertificateFileMqtt	= Configuration.get('mqtt.security.caCertificateFile')
+		self.usernameMqtt			= Configuration.get('mqtt.security.username')
+		self.passwordMqtt			= Configuration.get('mqtt.security.password')
+
+		
 
 
 	def shutdown(self) -> bool:
@@ -239,7 +248,7 @@ class SecurityManager(object):
 			return False
 		for ao in allowedOriginators:
 			# if re.fullmatch(re.compile(ao), getIdFromOriginator(originator)):
-			if Utils.simpleMatch(Utils.getIdFromOriginator(originator), ao):
+			if helpers.TextTools.simpleMatch(Utils.getIdFromOriginator(originator), ao):
 				return True
 		return False
 
@@ -255,13 +264,35 @@ class SecurityManager(object):
 			from the configured certificates and returns it. If TLS is disabled then `None` is returned.
 		"""
 		context = None
-		if self.useTLS:
-			L.isDebug and L.logDebug(f'Setup SSL context. Certfile: {self.caCertificateFile}, KeyFile:{self.caPrivateKeyFile}, TLS version: {self.tlsVersion}')
+		if self.useTLSHttp:
+			L.isDebug and L.logDebug(f'Setup SSL context. Certfile: {self.caCertificateFileHttp}, KeyFile:{self.caPrivateKeyFileHttp}, TLS version: {self.tlsVersionHttp}')
 			context = ssl.SSLContext(
 							{ 	'tls1.1' : ssl.PROTOCOL_TLSv1_1,
 								'tls1.2' : ssl.PROTOCOL_TLSv1_2,
 								'auto'   : ssl.PROTOCOL_TLS,			# since Python 3.6. Automatically choose the highest protocol version between client & server
-							}[self.tlsVersion.lower()]
+							}[self.tlsVersionHttp.lower()]
 						)
-			context.load_cert_chain(self.caCertificateFile, self.caPrivateKeyFile)
+			context.load_cert_chain(self.caCertificateFileHttp, self.caPrivateKeyFileHttp)
 		return context
+
+
+	# def getSSLContextMqtt(self) -> ssl.SSLContext:
+	# 	"""	Depending on the configuration whether to use TLS for MQTT, this method creates a new `SSLContext`
+	# 		from the configured certificates and returns it. If TLS for MQTT is disabled then `None` is returned.
+	# 	"""
+	# 	context = None
+	# 	if self.useMqttTLS:
+	# 		L.isDebug and L.logDebug(f'Setup SSL context for MQTT. Certfile: {self.caCertificateFile}, KeyFile:{self.caPrivateKeyFile}, TLS version: {self.tlsVersion}')
+	# 		context = ssl.SSLContext(
+	# 						{ 	'tls1.1' : ssl.PROTOCOL_TLSv1_1,
+	# 							'tls1.2' : ssl.PROTOCOL_TLSv1_2,
+	# 							'auto'   : ssl.PROTOCOL_TLS,			# since Python 3.6. Automatically choose the highest protocol version between client & server
+	# 						}[self.tlsVersionMqtt.lower()]
+	# 					)
+	# 		if self.caCertificateFileMqtt:
+	# 			#context.load_cert_chain(self.caCertificateFileMqtt, self.caPrivateKeyFileMqtt)
+	# 			#print(self.caCertificateFileMqtt)
+	# 			context.load_verify_locations(cafile=self.caCertificateFileMqtt)
+	# 			#context.load_cert_chain(certfile=self.caCertificateFileMqtt)
+	# 		context.verify_mode = ssl.CERT_REQUIRED if self.verifyCertificateMqtt else ssl.CERT_NONE
+	# 	return context

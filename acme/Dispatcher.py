@@ -23,7 +23,7 @@ from Types import ResponseCode as RC
 from Types import Result
 from Types import CSERequest
 from Types import JSON, Parameters, Conditions
-import CSE, Utils
+import CSE, Utils, helpers.TextTools
 from resources.Resource import Resource
 import resources.Factory as Factory
 
@@ -358,7 +358,7 @@ class Dispatcher(object):
 				for name in attributes:
 					val = attributes[name]
 					if isinstance(val, str) and '*' in val:
-						found += 1 if (rval := r[name]) is not None and Utils.simpleMatch(str(rval), val) else 0
+						found += 1 if (rval := r[name]) is not None and helpers.TextTools.simpleMatch(str(rval), val) else 0
 					else:
 						found += 1 if (rval := r[name]) is not None and str(val) == str(rval) else 0
 

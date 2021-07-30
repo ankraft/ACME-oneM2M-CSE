@@ -8,13 +8,20 @@
 #
 
 from __future__ import annotations
-import Utils
-import random, sys, heapq
+from .TextTools import simpleMatch
+import random, sys, heapq, datetime
 from threading import Thread, Timer, Lock
 from typing import Callable, List, Dict, Any
-# from Logging import Logging
-from Logging import Logging as L
+import logging
 
+
+_loggerCB:Callable[[int, str], None] = logging.log
+
+
+def _utcTime() -> float:
+	"""	Return the current time's timestamp, but relative to UTC.
+	"""
+	return datetime.datetime.utcnow().timestamp()
 
 class BackgroundWorker(object):
 	"""	This class provides the functionality for background worker or a single actor instance.
@@ -42,12 +49,14 @@ class BackgroundWorker(object):
 
 		if self.running:
 			self.stop()
-		L.isDebug and L.logDebug(f'Starting {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
+		if _loggerCB:
+				_loggerCB(logging.DEBUG, f'Starting {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
+		# L.isDebug and L.logDebug(f'Starting {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
 		self.numberOfRuns	= 0
 		self.args 			= args
 		self.running 		= True
 		realInterval 		= self.interval if self.startWithDelay else 0	# first interval
-		self.nextRunTime 	= Utils.utcTime() + realInterval			# now + interval (or 0)
+		self.nextRunTime 	= _utcTime() + realInterval			# now + interval (or 0)
 		BackgroundWorkerPool._queueWorker(self.nextRunTime, self)
 		return self
 
@@ -55,7 +64,9 @@ class BackgroundWorker(object):
 	def stop(self) -> BackgroundWorker:
 		"""	Stop the background worker.
 		"""
-		L.isDebug and L.logDebug(f'Stopping {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
+		if _loggerCB:
+				_loggerCB(logging.DEBUG, f'Stopping {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
+		# L.isDebug and L.logDebug(f'Stopping {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
 		self.running = False
 		BackgroundWorkerPool._unqueueWorker(self.id)		# Stop the timer and remove from queue
 		self._postCall()									# Note: worker is removed in _postCall()
@@ -75,14 +86,15 @@ class BackgroundWorker(object):
 			self.numberOfRuns += 1
 			result = self.callback(**self.args)
 		except Exception as e:
-			L.logErr(f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}', exc=e)
+			if _loggerCB:
+				_loggerCB(logging.ERROR, f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}')
 		finally:
 			if not result or (self.maxCount is not None and self.numberOfRuns >= self.maxCount):
 				# False returned, or the numberOfRuns has reached the maxCount
 				self.stop()
 				# Not queued anymore after this run, but the Timer is restarted in stop()
 			else:
-				now = Utils.utcTime()
+				now = _utcTime()
 				while True:
 					if self.runOnTime:									# compensate for processing time?
 						self.nextRunTime += self.interval				# timestamp for next interval (fixed interval)
@@ -117,6 +129,14 @@ class BackgroundWorkerPool(object):
 
 	def __new__(cls, *args:str, **kwargs:str) -> BackgroundWorkerPool:
 		raise TypeError(f'{BackgroundWorkerPool.__name__} must not be instantiated')
+	
+
+	@classmethod
+	def setLogger(cls, loggerCB:Callable) -> None:
+		"""	Assign a callback for logging
+		"""
+		global _loggerCB
+		_loggerCB = loggerCB
 
 
 	@classmethod
@@ -144,7 +164,7 @@ class BackgroundWorkerPool(object):
 		if at is not None:
 			if delay != 0.0:
 				raise ValueError('Cannot set both "delay" and "at" arguments')
-			delay = at - Utils.utcTime()
+			delay = at - _utcTime()
 		return cls.newWorker(delay, workerCallback, name=name, startWithDelay=delay>0.0, maxCount=1, dispose=dispose)
 
 
@@ -157,7 +177,7 @@ class BackgroundWorkerPool(object):
 
 
 		"""
-		return [ w for w in cls.backgroundWorkers.values() if (name is None or Utils.simpleMatch(w.name, name)) and (running is None or running == w.running) ]
+		return [ w for w in cls.backgroundWorkers.values() if (name is None or simpleMatch(w.name, name)) and (running is None or running == w.running) ]
 
 
 	@classmethod
@@ -195,7 +215,6 @@ class BackgroundWorkerPool(object):
 		"""
 		top = cls.workerQueue[0] if cls.workerQueue else None
 		with cls.queueLock:
-			# heapq.heappush(cls.workerQueue, (Utils.utcTime() + delay, worker.id, worker.name))
 			heapq.heappush(cls.workerQueue, (delay, worker.id, worker.name	))
 			cls._stopTimer()
 		cls._startTimer()
@@ -220,7 +239,7 @@ class BackgroundWorkerPool(object):
 		""" Start the workers queue timer.
 		"""
 		if cls.workerQueue:
-			cls.workerTimer = Timer(cls.workerQueue[0][0] - Utils.utcTime(), cls._execQueue)
+			cls.workerTimer = Timer(cls.workerQueue[0][0] - _utcTime(), cls._execQueue)
 			cls.workerTimer.setDaemon(True)	# Make the Timer thread a daemon of the main thread
 			cls.workerTimer.start()
 	

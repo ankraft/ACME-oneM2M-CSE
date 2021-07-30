@@ -74,205 +74,223 @@ class Configuration(object):
 				#	CSE
 				#
 
-				'cse.type'							: config.get('cse', 'type',								fallback='IN'),		# IN, MN, ASN
-				'cse.spid'							: config.get('cse', 'serviceProviderID',				fallback='acme.example.com'),
-				'cse.csi'							: config.get('cse', 'cseID',							fallback='/id-in'),
-				'cse.ri'							: config.get('cse', 'resourceID',						fallback='id-in'),
-				'cse.rn'							: config.get('cse', 'resourceName',						fallback='cse-in'),
-				'cse.resourcesPath'					: config.get('cse', 'resourcesPath', 					fallback=C.defaultImportDirectory),
-				'cse.expirationDelta'				: config.getint('cse', 'expirationDelta', 				fallback=60*60*24*365),	# 1 year, in seconds
-				'cse.maxExpirationDelta'			: config.getint('cse', 'maxExpirationDelta',			fallback=60*60*24*365*5),	# 5 years, in seconds
-				'cse.originator'					: config.get('cse', 'originator',						fallback='CAdmin'),
-				'cse.enableApplications'			: config.getboolean('cse', 'enableApplications', 		fallback=True),
-				'cse.applicationsStartupDelay'		: config.getint('cse', 'applicationsStartupDelay',		fallback=5),		# Seconds
-				'cse.enableNotifications'			: config.getboolean('cse', 'enableNotifications', 		fallback=True),
-				'cse.enableRemoteCSE'				: config.getboolean('cse', 'enableRemoteCSE', 			fallback=True),
-				'cse.enableTransitRequests'			: config.getboolean('cse', 'enableTransitRequests',		fallback=True),
-				'cse.enableValidation'				: config.getboolean('cse', 'enableValidation', 			fallback=True),
-				'cse.sortDiscoveredResources'		: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
-				'cse.checkExpirationsInterval'		: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
-				'cse.flexBlockingPreference'		: config.get('cse', 'flexBlockingPreference',			fallback='blocking'),
-				'cse.supportedReleaseVersions'		: config.getlist('cse', 'supportedReleaseVersions',		fallback=C.supportedReleaseVersions), # type: ignore [attr-defined]
-				'cse.releaseVersion'				: config.get('cse', 'releaseVersion',					fallback='3'),
-				'cse.defaultSerialization'			: config.get('cse', 'defaultSerialization',				fallback='json'),
+				'cse.type'								: config.get('cse', 'type',								fallback='IN'),		# IN, MN, ASN
+				'cse.spid'								: config.get('cse', 'serviceProviderID',				fallback='acme.example.com'),
+				'cse.csi'								: config.get('cse', 'cseID',							fallback='/id-in'),
+				'cse.ri'								: config.get('cse', 'resourceID',						fallback='id-in'),
+				'cse.rn'								: config.get('cse', 'resourceName',						fallback='cse-in'),
+				'cse.resourcesPath'						: config.get('cse', 'resourcesPath', 					fallback=C.defaultImportDirectory),
+				'cse.expirationDelta'					: config.getint('cse', 'expirationDelta', 				fallback=60*60*24*365),	# 1 year, in seconds
+				'cse.maxExpirationDelta'				: config.getint('cse', 'maxExpirationDelta',			fallback=60*60*24*365*5),	# 5 years, in seconds
+				'cse.originator'						: config.get('cse', 'originator',						fallback='CAdmin'),
+				'cse.enableApplications'				: config.getboolean('cse', 'enableApplications', 		fallback=True),
+				'cse.applicationsStartupDelay'			: config.getint('cse', 'applicationsStartupDelay',		fallback=5),		# Seconds
+				'cse.enableNotifications'				: config.getboolean('cse', 'enableNotifications', 		fallback=True),
+				'cse.enableRemoteCSE'					: config.getboolean('cse', 'enableRemoteCSE', 			fallback=True),
+				'cse.enableTransitRequests'				: config.getboolean('cse', 'enableTransitRequests',		fallback=True),
+				'cse.enableValidation'					: config.getboolean('cse', 'enableValidation', 			fallback=True),
+				'cse.sortDiscoveredResources'			: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
+				'cse.checkExpirationsInterval'			: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
+				'cse.flexBlockingPreference'			: config.get('cse', 'flexBlockingPreference',			fallback='blocking'),
+				'cse.supportedReleaseVersions'			: config.getlist('cse', 'supportedReleaseVersions',		fallback=C.supportedReleaseVersions), # type: ignore [attr-defined]
+				'cse.releaseVersion'					: config.get('cse', 'releaseVersion',					fallback='3'),
+				'cse.defaultSerialization'				: config.get('cse', 'defaultSerialization',				fallback='json'),
 
 				#
 				#	CSE Security
 				#
-				'cse.security.enableACPChecks'		: config.getboolean('cse.security', 'enableACPChecks', 	fallback=True),
-				'cse.security.fullAccessAdmin'		: config.getboolean('cse.security', 'fullAccessAdmin', 	fallback=True),
-				'cse.security.useTLS'				: config.getboolean('cse.security', 'useTLS', 			fallback=False),
-				'cse.security.tlsVersion'			: config.get('cse.security', 'tlsVersion', 				fallback='auto'),
-				'cse.security.verifyCertificate'	: config.getboolean('cse.security', 'verifyCertificate',fallback=False),
-				'cse.security.caCertificateFile'	: config.get('cse.security', 'caCertificateFile', 		fallback=None),
-				'cse.security.caPrivateKeyFile'		: config.get('cse.security', 'caPrivateKeyFile', 		fallback=None),
+				'cse.security.enableACPChecks'			: config.getboolean('cse.security', 'enableACPChecks', 	fallback=True),
+				'cse.security.fullAccessAdmin'			: config.getboolean('cse.security', 'fullAccessAdmin', 	fallback=True),
 
 				#
 				#	HTTP Server
 				#
 
-				'http.listenIF'						: config.get('server.http', 'listenIF', 				fallback='127.0.0.1'),
-				'http.port' 						: config.getint('server.http', 'port', 					fallback=8080),
-				'http.root'							: config.get('server.http', 'root', 					fallback=''),
-				'http.address'						: config.get('server.http', 'address', 					fallback='http://127.0.0.1:8080'),
-				'http.multiThread'					: config.getboolean('server.http', 'multiThread', 		fallback=True),
-				'http.enableRemoteConfiguration'	: config.getboolean('server.http', 'enableRemoteConfiguration', fallback=False),
-				'http.enableStructureEndpoint'		: config.getboolean('server.http', 'enableStructureEndpoint', fallback=False),
-				'http.enableResetEndpoint'			: config.getboolean('server.http', 'enableResetEndpoint', fallback=False),
+				'http.listenIF'							: config.get('server.http', 'listenIF', 				fallback='127.0.0.1'),
+				'http.port' 							: config.getint('server.http', 'port', 					fallback=8080),
+				'http.root'								: config.get('server.http', 'root', 					fallback=''),
+				'http.address'							: config.get('server.http', 'address', 					fallback='http://127.0.0.1:8080'),
+				'http.multiThread'						: config.getboolean('server.http', 'multiThread', 		fallback=True),
+				'http.enableRemoteConfiguration'		: config.getboolean('server.http', 'enableRemoteConfiguration', fallback=False),
+				'http.enableStructureEndpoint'			: config.getboolean('server.http', 'enableStructureEndpoint', fallback=False),
+				'http.enableResetEndpoint'				: config.getboolean('server.http', 'enableResetEndpoint', fallback=False),
+
+				#
+				#	HTTP Server Security
+				#
+
+				'http.security.useTLS'					: config.getboolean('server.http.security', 'useTLS', 			fallback=False),
+				'http.security.tlsVersion'				: config.get('server.http.security', 'tlsVersion', 				fallback='auto'),
+				'http.security.verifyCertificate'		: config.getboolean('server.http.security', 'verifyCertificate',fallback=False),
+				'http.security.caCertificateFile'		: config.get('server.http.security', 'caCertificateFile', 		fallback=None),
+				'http.security.caPrivateKeyFile'		: config.get('server.http.security', 'caPrivateKeyFile', 		fallback=None),
+
 
 				#
 				#	MQTT Client
 				#
 
-				'mqtt.enable'						: config.getboolean('client.mqtt', 'enable', 			fallback=False),
-				'mqtt.address'						: config.get('client.mqtt', 'address', 					fallback='127.0.0.1'),
-				'mqtt.port' 						: config.getint('client.mqtt', 'port', 					fallback=None),	# Default will be determined later (s.b.)
-				'mqtt.keepalive' 					: config.getint('client.mqtt', 'keepalive',				fallback=60),
-				'mqtt.bindIF' 						: config.get('client.mqtt', 'bindIF',					fallback='127.0.0.1'),
-				'mqtt.username' 					: config.get('client.mqtt', 'username',					fallback=None),
-				'mqtt.password' 					: config.get('client.mqtt', 'password',					fallback=None),
+				'mqtt.enable'							: config.getboolean('client.mqtt', 'enable', 			fallback=False),
+				'mqtt.address'							: config.get('client.mqtt', 'address', 					fallback='127.0.0.1'),
+				'mqtt.port' 							: config.getint('client.mqtt', 'port', 					fallback=None),	# Default will be determined later (s.b.)
+				'mqtt.keepalive' 						: config.getint('client.mqtt', 'keepalive',				fallback=60),
+				'mqtt.listenIF' 						: config.get('client.mqtt', 'listenIF',					fallback='127.0.0.1'),
+				'mqtt.topicPrefix' 						: config.get('client.mqtt', 'topicPrefix',				fallback=''),
+
+				# TODO check values of mqtt later
+
+				#
+				#	MQTT Client Security
+				#
+
+				'mqtt.security.useTLS'					: config.getboolean('client.mqtt.security', 'useTLS', 	fallback=False),
+				'mqtt.security.verifyCertificate'		: config.getboolean('client.mqtt.security', 'verifyCertificate',fallback=False),
+				'mqtt.security.caCertificateFile'		: config.get('client.mqtt.security', 'caCertificateFile',fallback=None),
+				'mqtt.security.username'				: config.get('client.mqtt.security', 'username',		fallback=None),
+				'mqtt.security.password' 				: config.get('client.mqtt.security', 'password',		fallback=None),
+
 
 				#
 				#	Database
 				#
 
-				'db.path'							: config.get('database', 'path', 						fallback=C.defaultDataDirectory),
-				'db.inMemory'						: config.getboolean('database', 'inMemory', 			fallback=False),
-				'db.cacheSize'						: config.getint('database', 'cacheSize', 				fallback=0),		# Default: no caching
-				'db.resetOnStartup' 				: config.getboolean('database', 'resetOnStartup',		fallback=False),
+				'db.path'								: config.get('database', 'path', 						fallback=C.defaultDataDirectory),
+				'db.inMemory'							: config.getboolean('database', 'inMemory', 			fallback=False),
+				'db.cacheSize'							: config.getint('database', 'cacheSize', 				fallback=0),		# Default: no caching
+				'db.resetOnStartup' 					: config.getboolean('database', 'resetOnStartup',		fallback=False),
 
 				#
 				#	Logging
 				#
 
-				'logging.enableFileLogging'			: config.getboolean('logging', 'enableFileLogging', 	fallback=False),
-				'logging.enableScreenLogging'		: config.getboolean('logging', 'enableScreenLogging', 	fallback=True),
-				'logging.path'						: config.get('logging', 'path', 						fallback=C.defaultLogDirectory),
-				'logging.level'						: config.get('logging', 'level', 						fallback='debug'),
-				'logging.size'						: config.getint('logging', 'size', 						fallback=100000),
-				'logging.count'						: config.getint('logging', 'count', 					fallback=10),		# Number of log files
-				'logging.stackTraceOnError'			: config.getboolean('logging', 'stackTraceOnError',		fallback=True),
+				'logging.enableFileLogging'				: config.getboolean('logging', 'enableFileLogging', 	fallback=False),
+				'logging.enableScreenLogging'			: config.getboolean('logging', 'enableScreenLogging', 	fallback=True),
+				'logging.path'							: config.get('logging', 'path', 						fallback=C.defaultLogDirectory),
+				'logging.level'							: config.get('logging', 'level', 						fallback='debug'),
+				'logging.size'							: config.getint('logging', 'size', 						fallback=100000),
+				'logging.count'							: config.getint('logging', 'count', 					fallback=10),		# Number of log files
+				'logging.stackTraceOnError'				: config.getboolean('logging', 'stackTraceOnError',		fallback=True),
 
 
 				#
 				#	Registrar CSE
 				#
 
-				'cse.registrar.address'				: config.get('cse.registrar', 'address', 				fallback=None),
-				'cse.registrar.root'				: config.get('cse.registrar', 'root', 					fallback=None),
-				'cse.registrar.csi'					: config.get('cse.registrar', 'cseID', 					fallback=None),
-				'cse.registrar.rn'					: config.get('cse.registrar', 'resourceName', 			fallback=None),
-				'cse.registrar.checkInterval'		: config.getint('cse.registrar', 'checkInterval', 		fallback=30),		# Seconds
-				'cse.registrar.excludeCSRAttributes': config.getlist('cse.registrar', 'excludeCSRAttributes',fallback=[]),		# type: ignore [attr-defined]
-				'cse.registrar.serialization'		: config.get('cse.registrar', 'serialization',			fallback='json'),
+				'cse.registrar.address'					: config.get('cse.registrar', 'address', 				fallback=None),
+				'cse.registrar.root'					: config.get('cse.registrar', 'root', 					fallback=None),
+				'cse.registrar.csi'						: config.get('cse.registrar', 'cseID', 					fallback=None),
+				'cse.registrar.rn'						: config.get('cse.registrar', 'resourceName', 			fallback=None),
+				'cse.registrar.checkInterval'			: config.getint('cse.registrar', 'checkInterval', 		fallback=30),		# Seconds
+				'cse.registrar.excludeCSRAttributes'	: config.getlist('cse.registrar', 'excludeCSRAttributes',fallback=[]),		# type: ignore [attr-defined]
+				'cse.registrar.serialization'			: config.get('cse.registrar', 'serialization',			fallback='json'),
 
 				#
 				#	Registrations
 				#
 
-				'cse.registration.allowedAEOriginators'	: config.getlist('cse.registration', 'allowedAEOriginators',	fallback=['C*','S*']),		# type: ignore [attr-defined]
-				'cse.registration.allowedCSROriginators': config.getlist('cse.registration', 'allowedCSROriginators',	fallback=[]),				# type: ignore [attr-defined]
-				'cse.registration.checkLiveliness'		: config.getboolean('cse.registration', 'checkLiveliness',		fallback=True),
+				'cse.registration.allowedAEOriginators'		: config.getlist('cse.registration', 'allowedAEOriginators',	fallback=['C*','S*']),		# type: ignore [attr-defined]
+				'cse.registration.allowedCSROriginators'	: config.getlist('cse.registration', 'allowedCSROriginators',	fallback=[]),				# type: ignore [attr-defined]
+				'cse.registration.checkLiveliness'			: config.getboolean('cse.registration', 'checkLiveliness',		fallback=True),
 
 
 				#
 				#	Announcements
 				#
 
-				'cse.announcements.enable'			: config.getboolean('cse.announcements', 'enable',		fallback=True),
-				'cse.announcements.checkInterval'	: config.getint('cse.announcements', 'checkInterval',	fallback=10),
+				'cse.announcements.enable'				: config.getboolean('cse.announcements', 'enable',		fallback=True),
+				'cse.announcements.checkInterval'		: config.getint('cse.announcements', 'checkInterval',	fallback=10),
 
 
 				#
 				#	Statistics
 				#
 
-				'cse.statistics.enable'				: config.getboolean('cse.statistics', 'enable', 		fallback=True),
-				'cse.statistics.writeInterval'		: config.getint('cse.statistics', 'writeInterval',		fallback=60),		# Seconds
+				'cse.statistics.enable'					: config.getboolean('cse.statistics', 'enable', 		fallback=True),
+				'cse.statistics.writeInterval'			: config.getint('cse.statistics', 'writeInterval',		fallback=60),		# Seconds
 
 
 				#
 				#	Defaults for Access Control Policies
 				#
 
-				'cse.acp.pv.acop'					: config.getint('cse.resource.acp', 'permission', 		fallback=Permission.ALL),
-				'cse.acp.pvs.acop'					: config.getint('cse.resource.acp', 'selfPermission', 	fallback=Permission.DISCOVERY+Permission.NOTIFY+Permission.CREATE+Permission.RETRIEVE),
+				'cse.acp.pv.acop'						: config.getint('cse.resource.acp', 'permission', 		fallback=Permission.ALL),
+				'cse.acp.pvs.acop'						: config.getint('cse.resource.acp', 'selfPermission', 	fallback=Permission.DISCOVERY+Permission.NOTIFY+Permission.CREATE+Permission.RETRIEVE),
 
 
 				#
 				#	Defaults for Container Resources
 				#
 
-				'cse.cnt.enableLimits'				: config.getboolean('cse.resource.cnt', 'enableLimits', fallback=False),
-				'cse.cnt.mni'						: config.getint('cse.resource.cnt', 'mni', 				fallback=10),
-				'cse.cnt.mbs'						: config.getint('cse.resource.cnt', 'mbs', 				fallback=10000),
+				'cse.cnt.enableLimits'					: config.getboolean('cse.resource.cnt', 'enableLimits', fallback=False),
+				'cse.cnt.mni'							: config.getint('cse.resource.cnt', 'mni', 				fallback=10),
+				'cse.cnt.mbs'							: config.getint('cse.resource.cnt', 'mbs', 				fallback=10000),
 
 
 				#
 				#	Defaults for Request Resources
 				#
 
-				'cse.req.minet'						: config.getint('cse.resource.req', 'minimumExpirationTime', fallback=60),
-				'cse.req.maxet'						: config.getint('cse.resource.req', 'maximumExpirationTime', fallback=180),
+				'cse.req.minet'							: config.getint('cse.resource.req', 'minimumExpirationTime', fallback=60),
+				'cse.req.maxet'							: config.getint('cse.resource.req', 'maximumExpirationTime', fallback=180),
 
 
 				#
 				#	Defaults for Subscription Resources
 				#
 
-				'cse.sub.dur'						: config.getint('cse.resource.sub', 'batchNotifyDuration', 	fallback=60),	# seconds
+				'cse.sub.dur'							: config.getint('cse.resource.sub', 'batchNotifyDuration', 	fallback=60),	# seconds
 
 
 				#
 				#	Defaults for timeSeries Resources
 				#
 
-				'cse.ts.enableLimits'				: config.getboolean('cse.resource.ts', 'enableLimits',	fallback=False),
-				'cse.ts.mni'						: config.getint('cse.resource.ts', 'mni', 				fallback=10),
-				'cse.ts.mbs'						: config.getint('cse.resource.ts', 'mbs', 				fallback=10000),
-				'cse.ts.mdn'						: config.getint('cse.resource.ts', 'mdn', 				fallback=10),
+				'cse.ts.enableLimits'					: config.getboolean('cse.resource.ts', 'enableLimits',	fallback=False),
+				'cse.ts.mni'							: config.getint('cse.resource.ts', 'mni', 				fallback=10),
+				'cse.ts.mbs'							: config.getint('cse.resource.ts', 'mbs', 				fallback=10000),
+				'cse.ts.mdn'							: config.getint('cse.resource.ts', 'mdn', 				fallback=10),
 
 
 				#
 				#	Web UI
 				#
 
-				'cse.webui.enable'					: config.getboolean('cse.webui', 'enable', 				fallback=True),
-				'cse.webui.root'					: config.get('cse.webui', 'root', 						fallback='/webui'),
+				'cse.webui.enable'						: config.getboolean('cse.webui', 'enable', 				fallback=True),
+				'cse.webui.root'						: config.get('cse.webui', 'root', 						fallback='/webui'),
 
 
 				#
 				#	Console
 				#
 
-				'cse.console.refreshInterval'		: config.getfloat('cse.console', 'refreshInterval', 	fallback=2.0),
-				'cse.console.hideResources'			: config.getlist('cse.console', 'hideResources', 		fallback=[]),		# type: ignore[attr-defined]
-				'cse.console.treeMode'				: config.get('cse.console', 'treeMode', 				fallback='normal'),
+				'cse.console.refreshInterval'			: config.getfloat('cse.console', 'refreshInterval', 	fallback=2.0),
+				'cse.console.hideResources'				: config.getlist('cse.console', 'hideResources', 		fallback=[]),		# type: ignore[attr-defined]
+				'cse.console.treeMode'					: config.get('cse.console', 'treeMode', 				fallback='normal'),
 
 				#
 				#	App: Statistics AE
 				#
 	
-				'app.statistics.enable'				: config.getboolean('app.statistics', 'enable', 		fallback=True),
-				'app.statistics.aeRN'				: config.get('app.statistics', 'aeRN', 					fallback='statistics'),
-				'app.statistics.aeAPI'				: config.get('app.statistics', 'aeAPI', 				fallback='Nstatistics'),
-				'app.statistics.fcntRN'				: config.get('app.statistics', 'fcntRN', 				fallback='statistics'),
-				'app.statistics.fcntCND'			: config.get('app.statistics', 'fcntCND', 				fallback='acme.statistics'),
-				'app.statistics.fcntType'			: config.get('app.statistics', 'fcntType', 				fallback='acme:csest'),
-				'app.statistics.originator'			: config.get('app.statistics', 'originator',			fallback='C'),
-				'app.statistics.interval'			: config.getint('app.statistics', 'interval', 			fallback=10),		# seconds
+				'app.statistics.enable'					: config.getboolean('app.statistics', 'enable', 		fallback=True),
+				'app.statistics.aeRN'					: config.get('app.statistics', 'aeRN', 					fallback='statistics'),
+				'app.statistics.aeAPI'					: config.get('app.statistics', 'aeAPI', 				fallback='Nstatistics'),
+				'app.statistics.fcntRN'					: config.get('app.statistics', 'fcntRN', 				fallback='statistics'),
+				'app.statistics.fcntCND'				: config.get('app.statistics', 'fcntCND', 				fallback='acme.statistics'),
+				'app.statistics.fcntType'				: config.get('app.statistics', 'fcntType', 				fallback='acme:csest'),
+				'app.statistics.originator'				: config.get('app.statistics', 'originator',			fallback='C'),
+				'app.statistics.interval'				: config.getint('app.statistics', 'interval', 			fallback=10),		# seconds
 
 				#
 				#	App: CSE Node 
 				#
 
-				'app.csenode.enable'				: config.getboolean('app.csenode', 'enable', 			fallback=True),
-				'app.csenode.nodeRN'				: config.get('app.csenode', 'nodeRN', 					fallback='cse-node'),
-				'app.csenode.nodeID'				: config.get('app.csenode', 'nodeID', 					fallback='cse-node'),
-				'app.csenode.originator'			: config.get('app.csenode', 'originator',				fallback='CAdmin'),
-				'app.csenode.batteryLowLevel'		: config.getint('app.csenode', 'batteryLowLevel',		fallback=20),		# percent
-				'app.csenode.batteryChargedLevel'	: config.getint('app.csenode', 'batteryChargedLevel',	fallback=100),		# percent
-				'app.csenode.interval'				: config.getint('app.csenode', 'updateInterval', 		fallback=60),		# seconds
+				'app.csenode.enable'					: config.getboolean('app.csenode', 'enable', 			fallback=True),
+				'app.csenode.nodeRN'					: config.get('app.csenode', 'nodeRN', 					fallback='cse-node'),
+				'app.csenode.nodeID'					: config.get('app.csenode', 'nodeID', 					fallback='cse-node'),
+				'app.csenode.originator'				: config.get('app.csenode', 'originator',				fallback='CAdmin'),
+				'app.csenode.batteryLowLevel'			: config.getint('app.csenode', 'batteryLowLevel',		fallback=20),		# percent
+				'app.csenode.batteryChargedLevel'		: config.getint('app.csenode', 'batteryChargedLevel',	fallback=100),		# percent
+				'app.csenode.interval'					: config.getint('app.csenode', 'updateInterval', 		fallback=60),		# seconds
 
 			}
 
@@ -332,7 +350,7 @@ class Configuration(object):
 		if argsRemoteCSEEnabled is not None:	Configuration._configuration['cse.enableRemoteCSE'] = argsRemoteCSEEnabled					# Override remote CSE enablement
 		if argsValidationEnabled is not None:	Configuration._configuration['cse.enableValidation'] = argsValidationEnabled				# Override validation enablement
 		if argsStatisticsEnabled is not None:	Configuration._configuration['cse.statistics.enable'] = argsStatisticsEnabled				# Override statistics enablement
-		if argsRunAsHttps is not None:			Configuration._configuration['cse.security.useTLS'] = argsRunAsHttps						# Override useTLS
+		if argsRunAsHttps is not None:			Configuration._configuration['http.security.useTLS'] = argsRunAsHttps						# Override useTLS
 		if argsRemoteConfigEnabled is not None:	Configuration._configuration['http.enableRemoteConfiguration'] = argsRemoteConfigEnabled	# Override remote/httpConfiguration
 		if argsListenIF is not None:			Configuration._configuration['http.listenIF'] = argsListenIF								# Override binding network interface
 		if argsHttpAddress is not None:			Configuration._configuration['http.address'] = argsHttpAddress								# Override server http address
@@ -347,7 +365,7 @@ class Configuration(object):
 		Configuration._configuration['cse.registrar.root'] = Utils.normalizeURL(Configuration._configuration['cse.registrar.root'])
 
 		# Just in case: check the URL's
-		if Configuration._configuration['cse.security.useTLS']:
+		if Configuration._configuration['http.security.useTLS']:
 			if Configuration._configuration['http.address'].startswith('http:'):
 				_print('[orange3]Configuration Warning: Changing "http" to "https" in \[server.http]:address')
 				Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('http:', 'https:')
@@ -370,35 +388,35 @@ class Configuration(object):
 		#
 
 		# TLS & certificates
-		if not Configuration._configuration['cse.security.useTLS']:	# clear certificates configuration if not in use
-			Configuration._configuration['cse.security.verifyCertificate'] = False
-			Configuration._configuration['cse.security.tlsVersion'] = 'auto'
-			Configuration._configuration['cse.security.caCertificateFile'] = None
-			Configuration._configuration['cse.security.caPrivateKeyFile'] = None
+		if not Configuration._configuration['http.security.useTLS']:	# clear certificates configuration if not in use
+			Configuration._configuration['http.security.verifyCertificate'] = False
+			Configuration._configuration['http.security.tlsVersion'] = 'auto'
+			Configuration._configuration['http.security.caCertificateFile'] = None
+			Configuration._configuration['http.security.caPrivateKeyFile'] = None
 		else:
-			if not (val := Configuration._configuration['cse.security.tlsVersion']).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
-				_print(f'[red]Configuration Error: Unknown value for \[cse.security]:tlsVersion: {val}')
+			if not (val := Configuration._configuration['http.security.tlsVersion']).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
+				_print(f'[red]Configuration Error: Unknown value for \[http.security]:tlsVersion: {val}')
 				return False
-			if (val := Configuration._configuration['cse.security.caCertificateFile']) is None:
-				_print('[red]Configuration Error: \[cse.security]:caCertificateFile must be set when TLS is enabled')
-				return False
-			if not os.path.exists(val):
-				_print(f'[red]Configuration Error: \[cse.security]:caCertificateFile does not exists or is not accessible: {val}')
-				return False
-			if (val := Configuration._configuration['cse.security.caPrivateKeyFile']) is None:
-				_print('[red]Configuration Error: \[cse.security]:caPrivateKeyFile must be set when TLS is enabled')
+			if (val := Configuration._configuration['http.security.caCertificateFile']) is None:
+				_print('[red]Configuration Error: \[http.security]:caCertificateFile must be set when TLS is enabled')
 				return False
 			if not os.path.exists(val):
-				_print(f'[red]Configuration Error: \[cse.security]:caPrivateKeyFile does not exists or is not accessible: {val}')
+				_print(f'[red]Configuration Error: \[http.security]:caCertificateFile does not exists or is not accessible: {val}')
+				return False
+			if (val := Configuration._configuration['http.security.caPrivateKeyFile']) is None:
+				_print('[red]Configuration Error: \[http.security]:caPrivateKeyFile must be set when TLS is enabled')
+				return False
+			if not os.path.exists(val):
+				_print(f'[red]Configuration Error: \[http.security]:caPrivateKeyFile does not exists or is not accessible: {val}')
 				return False
 		
 		#
 		#	MQTT client
 		#
 		if (mqttPort := Configuration._configuration['mqtt.port']) is None:	# set the default port depending on whether to use TLS
-			Configuration._configuration['mqtt.port'] = 8883 if Configuration._configuration['cse.security.useTLS'] else 1883
-		if (Configuration._configuration['mqtt.username'] is None) != (Configuration._configuration['mqtt.password'] is None):
-			_print(f'[red]Configuration Error: Username or password missing for \[client.mqtt]')
+			Configuration._configuration['mqtt.port'] = 8883 if Configuration._configuration['mqtt.security.useTLS'] else 1883
+		if (Configuration._configuration['mqtt.security.username'] is None) != (Configuration._configuration['mqtt.security.password'] is None):
+			_print(f'[red]Configuration Error: Username or password missing for \[mqtt.security]]')
 			return False
 
 		# check the csi format
@@ -450,11 +468,13 @@ class Configuration(object):
 		if Configuration._configuration['cse.console.refreshInterval'] <= 0.0:
 			_print('[red]Configuration Error: \[cse.console]:refreshInterval must be greater than 0.0')
 			return False
-		Configuration._configuration['cse.console.treeMode'] = Configuration._configuration['cse.console.treeMode'].lower()
-		if Configuration._configuration['cse.console.treeMode'] not in [ 'normal', 'content', 'compact', 'contentonly' ]:
-			_print('[red]Configuration Error: \[cse.console]:treeMoed must be "normal" or "content"')
+
+		from Console import TreeMode
+		if (v := TreeMode.to(Configuration._configuration['cse.console.treeMode'])) is None:
+			_print(f'[red]Configuration Error: \[cse.console]:treeMode must be one of {TreeMode.names()}')
 			return False
-		
+		Configuration._configuration['cse.console.treeMode'] = v
+
 		# Check configured app api
 		if len(api := Configuration._configuration['app.statistics.aeAPI']) < 2 or api[0] not in ['R', 'N']:
 			_print('[red]Configuration Error: \[app.statistics]:aeAPI must not be empty and must start with "N" or "R"')

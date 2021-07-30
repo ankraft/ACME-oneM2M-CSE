@@ -18,7 +18,7 @@ from Configuration import Configuration
 from Constants import Constants as C
 from Types import ReqResp, ResourceTypes as T, Result, ResponseCode as RC, JSON, Conditions
 from Types import Operation, CSERequest, RequestHeaders, ContentSerializationType, RequestHandler, Parameters, RequestArguments, FilterUsage, FilterOperation, DesiredIdentifierResultType, ResultContentType, ResponseType
-import CSE, Utils
+import CSE, Utils, helpers.TextTools
 from Logging import Logging as L, LogLevel
 from resources.Resource import Resource
 from werkzeug.wrappers import Response
@@ -59,7 +59,7 @@ class HttpServer(object):
 		self._responseHeaders	= {'Server' : self.serverID}	# Additional headers for other requests
 
 		L.isInfo and L.log(f'Registering http server root at: {self.rootPath}')
-		if CSE.security.useTLS:
+		if CSE.security.useTLSHttp:
 			L.isInfo and L.log('TLS enabled. HTTP server serves via https.')
 
 
@@ -121,7 +121,7 @@ class HttpServer(object):
 		# Disable most logs from requests and urllib3 library 
 		logging.getLogger("requests").setLevel(LogLevel.WARNING)
 		logging.getLogger("urllib3").setLevel(LogLevel.WARNING)
-		if not CSE.security.verifyCertificate:	# only when we also verify  certificates
+		if not CSE.security.verifyCertificateHttp:	# only when we also verify  certificates
 			urllib3.disable_warnings()
 		L.isInfo and L.log('HTTP Server initialized')
 
@@ -188,7 +188,7 @@ class HttpServer(object):
 				if dissectResult.status:
 					if operation in [ Operation.CREATE, Operation.UPDATE ]:
 						if dissectResult.request.ct == ContentSerializationType.CBOR:
-							L.isDebug and L.logDebug(f'Body: \n{Utils.toHex(cast(bytes, dissectResult.request.data))}\n=>\n{dissectResult.request.dict}')
+							L.isDebug and L.logDebug(f'Body: \n{helpers.TextTools.toHex(cast(bytes, dissectResult.request.data))}\n=>\n{dissectResult.request.dict}')
 						else:
 							L.isDebug and L.logDebug(f'Body: \n{str(dissectResult.request.data)}')
 					responseResult = CSE.request.handleRequest(dissectResult.request)
@@ -324,7 +324,7 @@ class HttpServer(object):
 	def _prepContent(self, content:bytes|str|Any, ct:ContentSerializationType) -> str:
 		if content is None:	return ''
 		if isinstance(content, str): return content
-		return content.decode('utf-8') if ct == ContentSerializationType.JSON else Utils.toHex(content)
+		return content.decode('utf-8') if ct == ContentSerializationType.JSON else helpers.TextTools.toHex(content)
 
 
 	def sendHttpRequest(self, method:Callable, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:	 # type: ignore[type-arg]
@@ -358,7 +358,7 @@ class HttpServer(object):
 				L.isDebug and L.logDebug(f'HTTP-Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n')
 			
 			# Actual sending the request
-			r = method(url, data=content, headers=hds, verify=CSE.security.verifyCertificate)
+			r = method(url, data=content, headers=hds, verify=CSE.security.verifyCertificateHttp)
 
 			responseCt = ContentSerializationType.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
 			rc = RC(int(r.headers['X-M2M-RSC'])) if 'X-M2M-RSC' in r.headers else RC.internalServerError
@@ -409,7 +409,7 @@ class HttpServer(object):
 				
 		# Build and return the response
 		if isinstance(content, bytes):
-			L.isDebug and L.logDebug(f'<== HTTP-Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{Utils.toHex(content)}\n=>\n{str(result.toData())}')
+			L.isDebug and L.logDebug(f'<== HTTP-Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{helpers.TextTools.toHex(content)}\n=>\n{str(result.toData())}')
 		else:
 			L.isDebug and L.logDebug(f'<== HTTP-Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
 		return Response(response=content, status=statusCode, content_type=cts, headers=headers)

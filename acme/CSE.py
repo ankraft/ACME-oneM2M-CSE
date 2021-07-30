@@ -10,6 +10,7 @@
 from __future__ import annotations
 import atexit, argparse, os, time, sys
 from typing import Dict, Any
+
 from AnnouncementManager import AnnouncementManager
 from Configuration import Configuration
 from Console import Console
@@ -125,15 +126,22 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 
 	defaultSerialization	 = Configuration.get('cse.defaultSerialization')
 
+	#
 	# init Logging
+	#
 	L.init()
 	if not args.headless:
 		L.console('Press ? for help')
 	L.log('============')
 	L.log('Starting CSE')
 	L.log(f'CSE-Type: {cseType.name}')
-	#L.log('Configuration:')
 	L.log(Configuration.print())
+	
+	# set the logger for the backgroundWorkers. Add an offset to compensate for
+	# this and other redirect functions to determine the correct file / linenumber
+	# in the log output
+	BackgroundWorkerPool.setLogger(lambda l,m: L.logWithLevel(l,m, stackOffset=2))	
+
 
 	storage = Storage()						# Initiatlize the resource storage
 	event = EventManager()					# Initialize the event manager

@@ -12,11 +12,12 @@ from typing import Dict, cast
 import datetime, os, sys, webbrowser
 from Logging import Logging as L
 from helpers.KeyHandler import loop, stopLoop, readline, waitForKeypress
+import helpers.TextTools
 from Constants import Constants as C
 from Configuration import Configuration
 from Types import CSEType, ResourceTypes as T
 from resources.Resource import Resource
-from enum import IntEnum,  auto
+from enum import IntEnum, auto
 
 
 from helpers.BackgroundWorker import BackgroundWorkerPool
@@ -551,7 +552,7 @@ class Console(object):
 					continue
 				# Ignore resources/resource patterns 
 				ri = ch.ri
-				if len([ p for p in self.hideResources if 	Utils.simpleMatch(p, ri) ]) > 0:
+				if len([ p for p in self.hideResources if helpers.TextTools.simpleMatch(p, ri) ]) > 0:
 					continue
 				branch = tree.add(info(ch))
 				getChildren(ch, branch, level+1)

@@ -112,7 +112,7 @@ class	Logging:
 
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
-			import Utils, CSE
+			import CSE
 
 			logpath = Configuration.get('logging.path')
 			os.makedirs(logpath, exist_ok=True)# create log directory if necessary
@@ -146,24 +146,26 @@ class	Logging:
 	def loggingWorker() -> bool:
 		while Logging.queue is not None and not Logging.queue.empty():
 			level, msg, caller, thread = Logging.queue.get()
-			Logging.loggerConsole.log(level, '%s*%d*%-10.10s*%s', os.path.basename(caller.filename), caller.lineno, thread.name, msg)
+			Logging.loggerConsole.log(level, f'{os.path.basename(caller.filename)}*{caller.lineno}*{thread.name:<10.10}*{msg}')
 		return True
 
 
 	@staticmethod
-	def log(msg:str) -> None:
-		"""Print a log message with level INFO. """
-		Logging._log(logging.INFO, msg)
+	def log(msg:str, stackOffset:int=None) -> None:
+		"""Print a log message with level INFO. 
+		"""
+		Logging._log(logging.INFO, msg, stackOffset=stackOffset)
 
 
 	@staticmethod
-	def logDebug(msg:str) -> None:
-		"""Print a log message with level DEBUG. """
-		Logging._log(logging.DEBUG, msg)
+	def logDebug(msg:str, stackOffset:int=None) -> None:
+		"""Print a log message with level DEBUG. 
+		"""
+		Logging._log(logging.DEBUG, msg, stackOffset=stackOffset)
 
 
 	@staticmethod
-	def logErr(msg:str, showStackTrace:bool=True, exc:Exception=None) -> None:
+	def logErr(msg:str, showStackTrace:bool=True, exc:Exception=None, stackOffset:int=None) -> None:
 		"""	Print a log message with level ERROR. 
 			`showStackTrace` indicates whether a stacktrace shall be logged together with the error
 			as well.
@@ -173,29 +175,45 @@ class	Logging:
 		(not CSE.event or CSE.event.logError())	# type: ignore
 		if exc is not None:
 			fmtexc = ''.join(traceback.TracebackException.from_exception(exc).format())
-			Logging._log(logging.ERROR, f'{msg}\n\n{fmtexc}')
+			Logging._log(logging.ERROR, f'{msg}\n\n{fmtexc}', stackOffset=stackOffset)
 		elif showStackTrace and Logging.stackTraceOnError:
 			strace = ''.join(map(str, traceback.format_stack()[:-1]))
-			Logging._log(logging.ERROR, f'{msg}\n\n{strace}')
+			Logging._log(logging.ERROR, f'{msg}\n\n{strace}', stackOffset=stackOffset)
 		else:
-			Logging._log(logging.ERROR, msg)
+			Logging._log(logging.ERROR, msg, stackOffset=stackOffset)
 
 
 	@staticmethod
-	def logWarn(msg:str) -> None:
-		"""Print a log message with level WARNING. """
+	def logWarn(msg:str, stackOffset:int=None) -> None:
+		"""Print a log message with level WARNING. 
+		"""
 		import CSE
 		# raise logWarning event
 		(not CSE.event or CSE.event.logWarning()) 	# type: ignore
-		Logging._log(logging.WARNING, msg)
+		Logging._log(logging.WARNING, msg, stackOffset=stackOffset)
 
 
 	@staticmethod
-	def _log(level:int, msg:str) -> None:
+	def logWithLevel(level:int, message:str, showStackTrace:bool=False, stackOffset:int=None) -> None:
+		"""	Fallback log method when the `level` is a separate argument.
+		"""
+		# TODO add a parameter frame substractor to correct the line number, here and in In _log()
+		# TODO change to match in Python10
+		level == logging.DEBUG and Logging.logDebug(message, stackOffset=stackOffset)
+		level == logging.INFO and Logging.log(message, stackOffset=stackOffset)
+		level == logging.WARNING and Logging.logWarn(message, stackOffset=stackOffset)
+		level == logging.ERROR and Logging.logErr(message, showStackTrace=showStackTrace, stackOffset=stackOffset)
+
+
+	@staticmethod
+	def _log(level:int, msg:str, stackOffset:int=None) -> None:
+		"""	Internally adding various information to the log output. The `stackOffset` is used to determine 
+			the correct caller. It is set by a calling method in case the log information are re-routed.
+		"""
 		if Logging.logLevel <= level and Logging.queue is not None:
 			# Queue a log message : (level, message, caller from stackframe, current thread)
 			try:
-				Logging.queue.put((level, str(msg), inspect.getframeinfo(inspect.stack()[2][0]), threading.current_thread()))
+				Logging.queue.put((level, str(msg), inspect.getframeinfo(inspect.stack()[2 if stackOffset is None else 2+stackOffset][0]), threading.current_thread()))
 			except Exception as e:
 				# sometimes this raises an exception. Just ignore it.
 				pass
@@ -386,5 +404,3 @@ class ACMERichLogHandler(RichHandler):
 			# 	line_no=caller.lineno,
 			# )
 		)
-
-

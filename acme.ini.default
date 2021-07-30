@@ -57,30 +57,17 @@ releaseVersion=3
 # Allowed values: json, cbor. Default: json
 defaultSerialization=json
 
+
 #
 #	Settings for CSE security
 #
+
 [cse.security]
 # Enable access control checks. Default: True
 enableACPChecks=true
 # Always grant the admin originator full access (bypass access checks). 
 # Default: True
 fullAccessAdmin=True
-# Enable TLS for communications.
-# See oneM2M TS-0003 Clause 8.2.1 Overview on Security Association Establishment Frameworks
-# Default: False
-useTLS=False
-# TLS version to be used in connections.
-# Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate
-# version negotiation.
-# Default: auto
-tlsVersion=auto
-# Verify certificates in requests. Set to False when using self-signed certificates. Default: False
-verifyCertificate=False
-# Path and filename of the certificate file. Default: None
-caCertificateFile=./certs/acme_cert.pem
-# Path and filename of the private key file. Default: None
-caPrivateKeyFile=./certs/acme_key.pem
 
 
 #
@@ -117,6 +104,28 @@ enableResetEndpoint=false
 
 
 #
+#	HTTP security settings
+#
+
+[server.http.security]
+# Enable TLS for communications.
+# See oneM2M TS-0003 Clause 8.2.1 Overview on Security Association Establishment Frameworks
+# Default: False
+useTLS=False
+# TLS version to be used in connections.
+# Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate
+# version negotiation.
+# Default: auto
+tlsVersion=auto
+# Verify certificates in requests. Set to False when using self-signed certificates. Default: False
+verifyCertificate=False
+# Path and filename of the certificate file. Default: None
+caCertificateFile=./certs/acme_cert.pem
+# Path and filename of the private key file. Default: None
+caPrivateKeyFile=./certs/acme_key.pem
+
+
+#
 #	MQTT client settings
 #
 
@@ -135,17 +144,32 @@ port=1883
 keepalive=60
 # Interface to listen to. Use 0.0.0.0 for "all" interfaces. 
 # Default: 127.0.0.1
-bindIF=127.0.0.1
-# The username for MQTT broker authentication.
-# Default: None
-# username=
-# The password  for MQTT broker authentication.
-# Default: None
-# password=
+listenIF=127.0.0.1
+# Optional prefix for topics.
+# Default: empty string
+topicPrefix=prefix
 
-# TODO credentialID=
-# TODO TLS authentication
 
+#
+#	MQTT security settings
+#
+
+[client.mqtt.security]
+# The username for MQTT broker authentication if required by the broker.
+# Default: None
+username=username
+# The password for MQTT broker authentication if required by the broker.
+# Default: None
+password=password
+# Enable TLS for communications with the MQTT broker.
+# Default: False
+useTLS=False
+# Verify certificates in requests. Set to False when using self-signed certificates. 
+# Default: False
+verifyCertificate=False
+# Path and filename of the certificate file. 
+# Default: None
+caCertificateFile=filename
 
 
 
