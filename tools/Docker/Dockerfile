@@ -12,13 +12,10 @@ RUN pip3 install rich
 RUN pip3 install tinydb
 
 RUN mkdir acme-cse
-#COPY acme.py acme-cse/
 COPY tools/Docker/acme.docker acme-cse/acme.ini
 COPY acme/ acme-cse/acme/
 COPY apps/ acme-cse/apps/
 COPY init/ acme-cse/init/
-COPY webui/ acme-cse/webui/
 WORKDIR acme-cse/
 
-#CMD ["python3", "acme.py", "--headless"]
 CMD ["python3", "acme"]

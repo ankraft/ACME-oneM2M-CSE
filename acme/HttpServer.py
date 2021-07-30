@@ -8,23 +8,22 @@
 #
 
 from __future__ import annotations
-import logging, sys, traceback, urllib3
+import logging, sys, urllib3
 from copy import deepcopy
-from typing import Any, Callable, Tuple, cast
+from typing import Any, Callable, cast
 import flask
 from flask import Flask, Request, make_response, request
-from urllib3.exceptions import RequestError
 from Configuration import Configuration
 from Constants import Constants as C
-from Types import ReqResp, ResourceTypes as T, Result, ResponseCode as RC, JSON, Conditions
-from Types import Operation, CSERequest, RequestHeaders, ContentSerializationType, RequestHandler, Parameters, RequestArguments, FilterUsage, FilterOperation, DesiredIdentifierResultType, ResultContentType, ResponseType
+from Types import ReqResp, ResourceTypes as T, Result, ResponseCode as RC, JSON
+from Types import Operation, CSERequest, ContentSerializationType, Parameters
 import CSE, Utils, helpers.TextTools
 from Logging import Logging as L, LogLevel
 from resources.Resource import Resource
 from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
 from werkzeug.datastructures import MultiDict
-from webUI import WebUI
+from webui.webUI import WebUI
 from helpers.BackgroundWorker import *
 
 
@@ -48,7 +47,7 @@ class HttpServer(object):
 		self.listenIF			= Configuration.get('http.listenIF')
 		self.port 				= Configuration.get('http.port')
 		self.webuiRoot 			= Configuration.get('cse.webui.root')
-		self.webuiDirectory 	= f'{CSE.rootDirectory}/webui'
+		self.webuiDirectory 	= f'{CSE.rootDirectory}/acme/webui'
 		self.hfvRVI				= Configuration.get('cse.releaseVersion')
 		self.isStopped			= False
 
