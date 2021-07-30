@@ -95,8 +95,18 @@ if __name__ == '__main__':
 	table.add_column('Exec Time', footer=f'{totalExecTime:.4f}')
 	table.add_column('Process Time', footer=f'{totalProcessTime:.4f}')
 	table.add_column('Time / Test', footer=f'{totalExecTime/totalRunTests:.4f}' if totalRunTests != 0 else '')
+	# Styles
 	styleDisabled = Style(dim=True)
+	styleDisabled2 = Style(dim=True, bgcolor='grey15')
+	styleEnabled = Style()
+	styleEnabled2 = Style(bgcolor='grey15')
+	cnt = 0
 	for k,v in results.items():
+		cnt += 1
+		if cnt%2 == 0:
+			style = styleEnabled2 if v[0] > 0 else styleDisabled2
+		else:
+			style = styleEnabled if v[0] > 0 else styleDisabled
 		table.add_row(	k, 
 						str(v[0]), 
 						f'[yellow]{v[4]}[/yellow]' if v[4] > 0 and v[0] > 0 else str(v[4]),
@@ -104,6 +114,6 @@ if __name__ == '__main__':
 						f'{v[2]:4f}' if v[0] > 0 else '', 
 						f'{v[3]:.4f}' if v[0] > 0 else '',
 						f'{(v[2]/v[0]):.4f}' if v[0] > 0 else '',
-						style=None if v[0] > 0 else styleDisabled)
+						style=style)
 	console.print(table)
 
