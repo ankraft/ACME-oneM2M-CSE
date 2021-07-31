@@ -75,7 +75,7 @@ class TimeSeriesManager(object):
 			
 			# If not, then add the expected arrival time as the dgt to the parent's mdlt list.
 			if (tsRes := CSE.dispatcher.retrieveResource(tsRi).resource) is None:
-				L.logErr(f'Cannot retrieve original <ts> resource: {tsRi}')			# might (very rarely) happen when this monitor runs while the <ts> was deleted in another request
+				L.logErr(f'Cannot retrieve original <ts> resource: {tsRi}', showStackTrace=False)			# might (very rarely) happen when this monitor runs while the <ts> was deleted in another request
 				return False	# stop monitoring (actor not restarted)
 			tsRes.addDgtToMdlt(rts.nextExpectedDgt)
 
