@@ -16,7 +16,7 @@ import traceback
 import logging, logging.handlers, os, inspect, sys, datetime, time, threading
 from queue import Queue
 from typing import List, Any, Union
-from logging import LogRecord
+from logging import LogRecord, Logger
 
 from rich.logging import RichHandler
 from rich.style import Style
@@ -89,6 +89,11 @@ class	Logging:
 
 	_console:Console		= None
 	_handlers:List[Any] 	= None
+
+	terminalColor			= 'spring_green2'
+	terminalStyle:Style		= Style(color=terminalColor)
+	terminalStyleError:Style= Style(color='red')
+
 
 	@staticmethod
 	def init() -> None:
@@ -222,11 +227,16 @@ class	Logging:
 	
 
 	@staticmethod
-	def console(msg:Union[str, Tree, Table, JSON]='&nbsp;', extranl:bool=False, end:str='\n', plain:bool=False, isError:bool=False) -> None:
+	def console(msg:Union[str, Tree, Table, JSON]='&nbsp;', nl:bool=False, nlb:bool=False, end:str='\n', plain:bool=False, isError:bool=False, isHeader:bool=False) -> None:
 		"""	Print a message or object on the console.
 		"""
-		style = Style(color='spring_green2') if not isError else Style(color='red')
-		if extranl:
+		# if this is a header then call the method again with different parameters
+		if isHeader:
+			Logging.console(f'**{msg}**', nlb=True, nl=True)
+			return
+
+		style = Logging.terminalStyle if not isError else Logging.terminalStyleError
+		if nlb:	# Empty line before
 			Logging._console.print()
 		if isinstance(msg, str):
 			Logging._console.print(msg if plain else Markdown(msg), style=style, end=end)
@@ -234,8 +244,7 @@ class	Logging:
 			Logging._console.print(msg, style=style, end=end)
 		elif isinstance(msg, (Tree, Table)):
 			Logging._console.print(msg, style=style, end=end)
-
-		if extranl:
+		if nl:	# Empty line after
 			Logging._console.print()
 	
 

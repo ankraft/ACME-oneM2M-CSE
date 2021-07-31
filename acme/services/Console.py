@@ -11,9 +11,12 @@ from __future__ import annotations
 from typing import Dict, cast
 import datetime, os, sys, webbrowser
 from enum import IntEnum, auto
+from rich.style import Style
 from rich.table import Table
 from rich.panel import Panel
 from rich.tree import Tree
+from rich.live import Live
+
 
 from helpers.KeyHandler import loop, stopLoop, readline, waitForKeypress
 import helpers.TextTools
@@ -118,16 +121,17 @@ class Console(object):
 	#	Various keyboard command handlers
 	#
 
-	def _about(self) -> None:
-		L.console(f'\n[white][dim][[/dim][red][i]ACME[/i][/red][dim]] CSE {C.version}', plain=True)
+	def _about(self, header:str=None) -> None:
+		L.console(f'\n[white][dim][[/dim][red][i]ACME[/i][/red][dim]] CSE {C.version}', plain=True, nl=True)
+		if header:
+			L.console(f'**{header}**',nl=True)
 
 
 	def help(self, key:str) -> None:
 		"""	Print help for keyboard commands.
 		"""
-		self._about()
-		L.console("""**Console Commands**  
-- h, ?  - This help
+		self._about('Console Commands')
+		L.console("""- h, ?  - This help
 - Q, ^C - Shutdown CSE
 - c     - Show configuration
 - C     - Clear the console screen
@@ -145,7 +149,7 @@ class Console(object):
 - w     - Show worker threads status
 - u     - Open web UI
 - Z     - Reset the CSE
-	""", extranl=True)
+""", nl=True)
 
 
 	def shutdownCSE(self, key:str) -> None:
@@ -183,7 +187,7 @@ class Console(object):
 		"""
 		from rich.table import Table
 
-		L.console('**Worker & Actor Threads**', extranl=True)
+		L.console('Worker & Actor Threads', isHeader=True)
 		table = Table()
 		table.add_column('Name', no_wrap=True)
 		table.add_column('Type', no_wrap=True)
@@ -192,7 +196,7 @@ class Console(object):
 		for w in BackgroundWorkerPool.backgroundWorkers.values():
 			a = 'Actor' if w.maxCount == 1 else 'Worker'
 			table.add_row(w.name, a, str(float(w.interval)) if w.interval > 0.0 else '', str(w.numberOfRuns) if w.interval > 0.0 else '')
-		L.console(table, extranl=True)
+		L.console(table, nl=True)
 
 
 	def configuration(self, key:str) -> None:
@@ -200,7 +204,7 @@ class Console(object):
 		"""
 		from rich.table import Table
 
-		L.console('**Configuration**', extranl=True)
+		L.console('Configuration', isHeader=True)
 		conf = Configuration.print().split('\n')
 		conf.sort()
 		table = Table()
@@ -212,27 +216,27 @@ class Console(object):
 			kv = c.split(' = ', 1)
 			if len(kv) == 2:
 				table.add_row(kv[0].strip(), kv[1])
-		L.console(table, extranl=True)
+		L.console(table, nl=True)
 
 
-	def clearScreen(self, key:str) -> None:
+	def clearScreen(self, _:str) -> None:
 		"""	Clear the console screen.
 		"""
 		L.consoleClear()
 
 
-	def resourceTree(self, key:str) -> None:
+	def resourceTree(self, _:str) -> None:
 		"""	Render the CSE's resource tree.
 		"""
-		L.console('**Resource Tree**', extranl=True)
+		L.console('Resource Tree', isHeader=True)
 		L.console(self.getResourceTreeRich())
 		L.console()
 
 
-	def childResourceTree(self, key:str) -> None:
+	def childResourceTree(self, _:str) -> None:
 		"""	Render the CSE's resource tree, beginning with a child resource.
 		"""
-		L.console('**Child Resource Tree**', extranl=True)
+		L.console('Child Resource Tree', isHeader=True)
 		L.off()
 		
 		if (ri := readline('ri=')) is None:
@@ -248,53 +252,67 @@ class Console(object):
 
 	def continuesTree(self, key:str) -> None:
 		L.off()
-		while True:
-			self.clearScreen(key)
-			self._about()
-			self.resourceTree(key)
-			L.console('(Press any key to return)', plain=True, end='')
-			if (ch := waitForKeypress(self.refreshInterval)) is not None:
-				if ch == '\x14':	# Toggle through tree modes
-					self.treeMode = self.treeMode.succ()
-				else:
-					break
+		self.clearScreen(key)
+		self._about('Resource Tree')
+		with Live(self.getResourceTreeRich(style=L.terminalStyle), auto_refresh=False) as live:
+			while True:
+				if (ch := waitForKeypress(self.refreshInterval)) is not None:
+					if ch == '\x14':	# Toggle through tree modes
+						self.treeMode = self.treeMode.succ()
+					else:
+						break
+				live.update(self.getResourceTreeRich(style=L.terminalStyle), refresh=True)
 		self.clearScreen(key)
 		L.on()
 
 
-	def cseRegistrations(self, key:str) -> None:
+	def cseRegistrations(self, _:str) -> None:
 		"""	Render CSE registrations.
 		"""
-		L.console('**CSE Registrations**', extranl=True)
+		L.console('CSE Registrations', isHeader=True)
 		L.console(self.getCSERegistrationsRich())
 		L.console()
 
 
-	def statistics(self, key:str) -> None:
+	def statistics(self, _:str) -> None:
 		""" Render various statistics & counts.
 		"""
-		L.console('**Statistics**', extranl=True)
+		L.console('Statistics', isHeader=True)
 		L.console(self.getStatisticsRich())
 		L.console()
 
 	
+	# def continuesStatistics(self, key:str) -> None:
+	# 	L.off()
+	# 	while True:
+	# 		self.clearScreen(key)
+	# 		self._about()
+	# 		self.statistics(key)
+	# 		L.console('(Press any key to return)', plain=True, end='')
+	# 		if waitForKeypress(self.refreshInterval) is not None:
+	# 			break
+	# 	self.clearScreen(key)
+	# 	L.on()
+
+
 	def continuesStatistics(self, key:str) -> None:
 		L.off()
-		while True:
-			self.clearScreen(key)
-			self._about()
-			self.statistics(key)
-			L.console('(Press any key to return)', plain=True, end='')
-			if waitForKeypress(self.refreshInterval) is not None:
-				break
+		self.clearScreen(key)
+		self._about('Statistics')
+		with Live(self.getStatisticsRich(style=L.terminalStyle), auto_refresh=False) as live:
+			while True:
+				if waitForKeypress(self.refreshInterval) is not None:
+					break
+				live.update(self.getStatisticsRich(style=L.terminalStyle), refresh=True)
 		self.clearScreen(key)
 		L.on()
 
 
-	def deleteResource(self, key:str) -> None:
+
+	def deleteResource(self, _:str) -> None:
 		"""	Delete a resource from the CSE.
 		"""
-		L.console('**Delete Resource**', extranl=True)
+		L.console('Delete Resource', isHeader=True)
 		L.off()
 		if (ri := readline('ri=')) is None:
 			L.console()
@@ -309,10 +327,10 @@ class Console(object):
 		L.on()
 
 
-	def inspectResource(self, key:str) -> None:
+	def inspectResource(self, _:str) -> None:
 		"""	Show a resource.
 		"""
-		L.console('**Inspect Resource**', extranl=True)
+		L.console('Inspect Resource', isHeader=True)
 		L.off()
 
 		if (ri := readline('ri=')) is None:
@@ -325,10 +343,10 @@ class Console(object):
 		L.on()		
 
 
-	def inspectResourceChildren(self, key:str) -> None:
+	def inspectResourceChildren(self, _:str) -> None:
 		"""	Show a resource and its children.
 		"""
-		L.console('**Inspect Resource and Children**', extranl=True)
+		L.console('Inspect Resource and Children', isHeader=True)
 		L.off()		
 		if (ri := readline('ri=')) is None:
 			L.console()
@@ -347,7 +365,7 @@ class Console(object):
 	def resetCSE(self, key:str) -> None:
 		"""	Reset the CSE. Remove all resources and do the importing again.
 		"""
-		L.console('**Resetting CSE**', extranl=True)
+		L.console('Resetting CSE', isHeader=True)
 		L.enableScreenLogging = True
 		L.logLevel = Configuration.get('logging.level')
 		CSE.resetCSE()
@@ -394,7 +412,7 @@ class Console(object):
 		
 
 # TODO events transit requests
-	def getStatisticsRich(self) -> Table:
+	def getStatisticsRich(self, style:Style=Style()) -> Table:
 		"""	Generate an overview about various resources and event counts.
 		"""
 
@@ -489,6 +507,7 @@ class Console(object):
 		resourceTypes += f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - CSE.dispatcher.countResources((T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.TS_LA, T.TS_OL, T.GRP_FOPT, T.PCH_PCU))}\n'	# substract the virtual resources
 		
 		result = Table.grid(expand=True)
+		result.style = style
 		result.add_column(width=15)
 		result.add_column()
 		result.add_row(Panel(resourceTypes), rightGrid )
@@ -496,7 +515,7 @@ class Console(object):
 		return result
 
 
-	def getResourceTreeRich(self, maxLevel:int=0, parent:str=None) -> Tree:
+	def getResourceTreeRich(self, maxLevel:int=0, parent:str=None, style:Style=Style()) -> Tree:
 		"""	This function will generate a Rich tree of a CSE's resource structure.
 		"""
 
@@ -562,7 +581,7 @@ class Console(object):
 			res = Utils.getCSE().resource
 		if res is None:
 			return None
-		tree = Tree(info(res))
+		tree = Tree(info(res), style=style, guide_style=style)
 		getChildren(res, tree, 0)
 		return tree
 
