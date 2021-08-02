@@ -54,6 +54,19 @@ class MQTTHandler(ABC):
 		pass
 
 	@abstractmethod
+	def onSubscribed(self, connection:MQTTConnection, topic:str) -> None:
+		"""	This method is called after the MQTT client successfully subsribed to a topic. 
+		"""
+		pass
+
+	@abstractmethod
+	def onUnsubscribed(self, connection:MQTTConnection, topic:str) -> None:
+		"""	This method is called after the MQTT client successfully unsubsribed from a topic. 
+		"""
+		pass
+	
+
+	@abstractmethod
 	def onError(self, connection:MQTTConnection, rc:int) -> None:
 		"""	This method is called when receiving an error when communicating with the MQTT broker. 
 		"""
@@ -76,7 +89,7 @@ class MQTTConnection(object):
 	#
 
 	def __init__(self, address:str, port:int=None, keepalive:int=60, interface:str='0.0.0.0', 
-					clientName:str=None, username:str=None, password:str=None,
+					clientID:str=None, username:str=None, password:str=None,
 					useTLS:bool=False, caFile:str=None, verifyCertificate:bool=False,
 					messageHandler:MQTTHandler=None
 				) -> None:
@@ -91,7 +104,7 @@ class MQTTConnection(object):
 		self.caFile									= caFile
 		self.isStopped								= True
 		self.isConnected							= False
-		self.clientName								= clientName
+		self.clientID								= clientID
 
 		self.mqttClient:mqtt.Client 				= None
 		self.messageHandler:MQTTHandler				= messageHandler
@@ -121,8 +134,8 @@ class MQTTConnection(object):
 	def run(self) -> None:
 		"""	Initialize and run the MQTT client as a BackgroundWorker/Actor.
 		"""
-		self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: client name: {self.clientName}')
-		self.mqttClient = mqtt.Client(client_id=self.clientName, clean_session=False)	# clean_session is defined by TS-0010
+		self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: client name: {self.clientID}')
+		self.mqttClient = mqtt.Client(client_id=self.clientID, clean_session=False)	# clean_session is defined by TS-0010
 
 		# Enable SSL
 		if self.useTLS:
@@ -205,6 +218,7 @@ class MQTTConnection(object):
 		for t in self.subscribedTopics.values():
 			if t.mid == mid:
 				t.isSubscribed = True
+				self.messageHandler and self.messageHandler.onSubscribed(self.mqttClient, t.topic)
 				break
 	
 
@@ -216,6 +230,7 @@ class MQTTConnection(object):
 		for t in self.subscribedTopics.values():
 			if t.mid == mid:
 				del self.subscribedTopics[t.topic]
+				self.messageHandler and self.messageHandler.onUnsubscribed(self.mqttClient, t.topic)
 				break
 
 

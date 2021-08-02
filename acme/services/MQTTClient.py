@@ -9,16 +9,14 @@
 
 from __future__ import annotations
 from dataclasses import dataclass
-from copy import deepcopy
-from inspect import stack
 from typing import cast
 
 from etc.Constants import Constants as C
-from etc.Types import JSON, Operation, CSERequest, ContentSerializationType, Result, ResponseCode as RC, RequestHandler
+from etc.Types import JSON, Operation, CSERequest, ContentSerializationType, Result, ResponseCode as RC
 from services.Logging import Logging as L
 from services.Configuration import Configuration
-import services.CSE as CSE, etc.Utils as Utils
-from helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID, mqttToId
+import services.CSE as CSE, etc.Utils as Utils, etc.DateUtils as DateUtils, etc.RequestUtils as RequestUtils
+from helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
 import helpers.TextTools
 
 
@@ -51,7 +49,17 @@ class MQTTClientHandler(MQTTHandler):
 		L.isDebug and L.logDebug('Disconnect from MQTT broker')
 		pass
 
-	
+
+	def onSubscribed(self, _: MQTTConnection, topic: str) -> None:
+		L.isDebug and L.logDebug(f'Topic successfully subscribed: {topic}')
+		pass
+
+
+	def onUnsubscribed(self, _: MQTTConnection, topic: str) -> None:
+		L.isDebug and L.logDebug(f'Topic unsubscribed: {topic}')
+		pass
+
+
 	def onError(self, _:MQTTConnection, rc:int=-1) -> None:
 		if rc in [5]:		# authorization error
 			CSE.shutdown()
@@ -61,7 +69,7 @@ class MQTTClientHandler(MQTTHandler):
 	
 
 	def logging(self, _:MQTTConnection, level:int, message:str) -> None:
-		L.logWithLevel(level, message, stackOffset=2)	# Log the message, compensate to let the logger determine the correct file/linenumber
+		L.logWithLevel(level, message, stackOffset=3)	# Log the message, compensate to let the logger determine the correct file/linenumber
 
 
 	#
@@ -164,7 +172,7 @@ class MQTTClientHandler(MQTTHandler):
 		resp['fr'] = CSE.cseCsi
 		resp['to'] 	= result.request.headers.originator
 		resp['rsc'] = int(result.rsc)
-		resp['ot'] = Utils.getResourceDate()
+		resp['ot'] = DateUtils.getResourceDate()
 		if result.request.headers.requestIdentifier is not None:
 			resp['ri'] = result.request.headers.requestIdentifier
 		if result.request.headers.releaseVersionIndicator is not None:
@@ -176,10 +184,10 @@ class MQTTClientHandler(MQTTHandler):
 		# serialize and log response
 		response = Result(data=resp, status=True)
 		if result.request.ct == ContentSerializationType.CBOR:		# Always us the ct from the request
-			response.data = cast(bytes, Utils.serializeData(response.data, ContentSerializationType.CBOR))
+			response.data = cast(bytes, RequestUtils.serializeData(response.data, ContentSerializationType.CBOR))
 			L.isDebug and L.logDebug(f'<== MQTT-Response (RSC: {result.rsc:d}):\nBody: \n{helpers.TextTools.toHex(response.data)}\n=>\n{resp}')
 		else:
-			response.data = cast(bytes, Utils.serializeData(response.data, ContentSerializationType.JSON))
+			response.data = cast(bytes, RequestUtils.serializeData(response.data, ContentSerializationType.JSON))
 			L.isDebug and L.logDebug(f'<== MQTT-Response (RSC: {result.rsc:d}):\nBody: {resp}')
 		
 		return response
@@ -201,7 +209,7 @@ class MQTTClient(object):
 												 port				= Configuration.get('mqtt.port'),
 												 keepalive			= Configuration.get('mqtt.keepalive'),
 												 interface			= Configuration.get('mqtt.listenIF'),
-												 clientName			= idToMQTTClientID(CSE.cseCsi),
+												 clientID			= idToMQTTClientID(CSE.cseCsi),
 												 useTLS				= CSE.security.useTlsMqtt,
 												 caFile				= CSE.security.caCertificateFileMqtt,
 												 verifyCertificate	= CSE.security.verifyCertificateMqtt,
