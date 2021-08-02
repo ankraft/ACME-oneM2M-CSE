@@ -23,7 +23,7 @@ from etc.Types import ReqResp, ResourceTypes as T, Result, ResponseCode as RC, J
 from etc.Types import Operation, CSERequest, ContentSerializationType, Parameters
 from services.Configuration import Configuration
 from resources.Resource import Resource
-import services.CSE as CSE, etc.Utils as Utils
+import services.CSE as CSE, etc.Utils as Utils, etc.RequestUtils as RequestUtils
 from services.Logging import Logging as L, LogLevel
 from webui.webUI import WebUI
 import helpers.TextTools
@@ -348,7 +348,7 @@ class HttpServer(object):
 				hds[C.hfEC] = parameters[C.hfcEC]
 
 		# serialize data (only if dictionary, pass on non-dict data)
-		content = Utils.serializeData(data, ct) if isinstance(data, dict) else data
+		content = RequestUtils.serializeData(data, ct) if isinstance(data, dict) else data
 
 		# ! Don't forget: requests are done through the request library, not flask.
 		# ! The attribute names are different
@@ -368,7 +368,7 @@ class HttpServer(object):
 		except Exception as e:
 			L.isDebug and L.logWarn(f'Failed to send request: {str(e)}')
 			return Result(rsc=RC.targetNotReachable, dbg='target not reachable')
-		return Result(dict=Utils.deserializeData(r.content, responseCt), rsc=rc)
+		return Result(dict=RequestUtils.deserializeData(r.content, responseCt), rsc=rc)
 		
 
 	#########################################################################
@@ -487,7 +487,9 @@ class HttpServer(object):
 		if (f := requestHeaderField(request, C.hfRVI)) is not None:
 			req['rvi'] = f
 		if (rtu := requestHeaderField(request, C.hfRTU)) is not None:			# handle rtu as a list
-			req['rtu'] = rtu.split('&')
+			rt = dict()
+			rt['nu'] = rtu.split('&')		
+			req['rt'] = rt					# req.rt.rtu
 		if (f := requestHeaderField(request, C.hfVSI)) is not None:
 			req['vsi'] = f
 
@@ -519,11 +521,19 @@ class HttpServer(object):
 		extractMultipleArgs(args, 'cty')
 		extractMultipleArgs(args, 'lbl')
 
-		# Handle rcn differently.
-		# rcn is not a filter criteria like all the other attributes, but an own request attribute
-		if (rcn := args.get('rcn')) is not None:
-			req['rcn'] = rcn
-			del args['rcn']
+		# Handle some parameters differently.
+		# They are not filter cirteria, but request attributes
+		for param in ['rcn', 'rp']:
+			if (p := args.get(param)) is not None:
+				req[param] = p
+				del args[param]
+		if (rtv := args.get('rt')) is not None:
+			if (rt := req.get('rt')) is None:
+				rt = dict()
+			rt['rtv'] = rtv		# req.rt.rtv
+			req['rt'] = rt
+			del args['rt']
+
 
 		# Extract further request arguments from the http request
 		# add all the args to the filterCriteria

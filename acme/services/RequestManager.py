@@ -8,7 +8,7 @@
 #
 
 import requests, urllib.parse
-from typing import Any, List, Tuple
+from typing import Any, List
 from copy import deepcopy
 
 from etc.Types import BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, RequestArguments, RequestCallback, ResultContentType
@@ -28,7 +28,7 @@ from resources.REQ import REQ
 from resources.Resource import Resource
 from services.Logging import Logging as L
 from services.Configuration import Configuration
-import services.CSE as CSE, etc.Utils as Utils
+import services.CSE as CSE, etc.Utils as Utils, etc.DateUtils as DateUtils, etc.RequestUtils as RequestUtils
 from helpers.BackgroundWorker import BackgroundWorkerPool
 
 
@@ -458,7 +458,7 @@ class RequestManager(object):
 		ct = ContentSerializationType.getType(mediaType, default=CSE.defaultSerialization)
 		if data is not None and len(data) > 0:
 			try:
-				if (dct := Utils.deserializeData(data, ct)) is None:
+				if (dct := RequestUtils.deserializeData(data, ct)) is None:
 					return Result(rsc=RC.unsupportedMediaType, dbg=f'Unsupported media type for content-type: {ct}', status=False)
 			except Exception as e:
 				L.isWarn and L.logWarn('Bad request (malformed content?)')
@@ -529,7 +529,7 @@ class RequestManager(object):
 
 			# OT - originating timestamp
 			if (ot := gget(cseRequest.req, 'ot', greedy=False)) is not None:
-				if (_ts := Utils.fromAbsRelTimestamp(ot)) == 0.0:
+				if (_ts := DateUtils.fromAbsRelTimestamp(ot)) == 0.0:
 					L.logDebug(dbg := 'Error in provided Originating Timestamp')
 					return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
 				cseRequest.headers.originatingTimestamp = ot
@@ -544,32 +544,32 @@ class RequestManager(object):
 
 			# RQET - requestExpirationTimestamp
 			if (rqet := gget(cseRequest.req, 'rqet', greedy=False)) is not None:
-				if (_ts := Utils.fromAbsRelTimestamp(rqet)) == 0.0:
+				if (_ts := DateUtils.fromAbsRelTimestamp(rqet)) == 0.0:
 					L.logDebug(dbg := 'Error in provided Request Expiration Timestamp')
 					return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
-				if _ts < Utils.utcTime():
+				if _ts < DateUtils.utcTime():
 					L.logDebug(dbg := 'Request timeout')
 					return Result(request=cseRequest, rsc=RC.requestTimeout, dbg=dbg)
-				cseRequest.headers.requestExpirationTimestamp = Utils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
+				cseRequest.headers.requestExpirationTimestamp = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
 
 
 			# RSET - resultExpirationTimestamp
 			if (rset := gget(cseRequest.req, 'rset', greedy=False)) is not None:
-				if (_ts := Utils.fromAbsRelTimestamp(rset)) == 0.0:
+				if (_ts := DateUtils.fromAbsRelTimestamp(rset)) == 0.0:
 					L.logDebug(dbg := 'Error in provided Result Expiration Timestamp')
 					return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
-				if _ts < Utils.utcTime():
+				if _ts < DateUtils.utcTime():
 					L.logDebug(dbg := 'Result timeout')
 					return Result(request=cseRequest, rsc=RC.requestTimeout, dbg=dbg)
-				cseRequest.headers.resultExpirationTimestamp = Utils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
+				cseRequest.headers.resultExpirationTimestamp = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
 
 
 			# OET - operationExecutionTime
 			if (oet := gget(cseRequest.req, 'oet', greedy=False)) is not None:
-				if (_ts := Utils.fromAbsRelTimestamp(oet)) == 0.0:
+				if (_ts := DateUtils.fromAbsRelTimestamp(oet)) == 0.0:
 					L.logDebug(dbg := 'Error in provided Operation Execution Time')
 					return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
-				cseRequest.headers.operationExecutionTime = Utils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
+				cseRequest.headers.operationExecutionTime = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
 
 
 			# RVI - releaseVersionIndicator
@@ -584,11 +584,6 @@ class RequestManager(object):
 			# VSI - vendorInformation
 			if (vsi := gget(cseRequest.req, 'vsi', greedy=False)) is not None:
 				cseRequest.headers.vendorInformation = vsi	
-
-
-			# RTU - responseTypeNUs
-			if (rtu := gget(cseRequest.req, 'rtu', greedy=False)) is not None:
-				cseRequest.headers.responseTypeNUs = rtu	#  TODO validate for url?
 
 			#
 			# Transfer filterCriteria: handling, conditions and attributes
@@ -661,14 +656,17 @@ class RequestManager(object):
 			cseRequest.args.rcn = rcn
 
 
-			# RT - responseType
-			cseRequest.args.rt = ResponseType(gget(fc, 'rt', ResponseType.blockingRequest))
+			# RT - responseType: RTV responseTypeValue, RTU/NU responseTypeNUs
+			if (rt := gget(cseRequest.req, 'rt', greedy=False)) is not None:
+				cseRequest.args.rt = ResponseType(gget(rt, 'rtv', ResponseType.blockingRequest, greedy=False))
+				if (nu := gget(rt, 'nu', greedy=False)) is not None:
+					cseRequest.headers.responseTypeNUs = nu	#  TODO validate for url?
 
 
 			# RP - resultPersistence (also as timestamp)
-			if (rp := gget(fc, 'rp')) is not None: 
+			if (rp := gget(cseRequest.req, 'rp', greedy=False)) is not None: 
 				cseRequest.args.rp = rp
-				if (rpts := Utils.toISO8601Date(Utils.fromAbsRelTimestamp(rp))) == 0.0:
+				if (rpts := DateUtils.toISO8601Date(DateUtils.fromAbsRelTimestamp(rp))) == 0.0:
 					return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'"{rp}" is not a valid value for rp')
 				cseRequest.args.rpts = rpts
 			else:
