@@ -130,16 +130,16 @@ class TestDiscovery(unittest.TestCase):
 	def test_retrieveUnknownResource(self) -> None:
 		""" Retrieve unknown resource -> Fail """
 		# Before first timestamp
-		_, rsc = RETRIEVE(f'{aeURL}_unknown', TestDiscovery.originator)
-		self.assertEqual(rsc, RC.notFound)
+		r, rsc = RETRIEVE(f'{aeURL}_unknown', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.notFound, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_discoverUnknownResource(self) -> None:
 		""" Discover unknown resource -> Not found"""
 		# Before first timestamp
-		_, rsc = RETRIEVE(f'{aeURL}_unknown?fu=1', TestDiscovery.originator)
-		self.assertEqual(rsc, RC.notFound)
+		r, rsc = RETRIEVE(f'{aeURL}_unknown?fu=1', TestDiscovery.originator)
+		self.assertEqual(rsc, RC.notFound, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -357,7 +357,7 @@ class TestDiscovery(unittest.TestCase):
 	def test_retrieveCINbyLBLunderAE(self) -> None:
 		""" Retrieve <CIN> under <AE> by lbl & rcn=8 """
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResources:d}&lbl=tag:0', TestDiscovery.originator)
-		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae'))
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/m2m:cin'))
 		self.assertEqual(len(findXPath(r, 'm2m:ae/m2m:cin')), 2)
@@ -419,7 +419,7 @@ class TestDiscovery(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl/rrf'))
-		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 12)
+		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 12, r)
 		self.assertEqual(sum(x['typ'] == T.CNT for x in findXPath(r, 'm2m:rrl/rrf')), 2)
 		self.assertEqual(sum(x['typ'] == T.CIN for x in findXPath(r, 'm2m:rrl/rrf')), 10)
 

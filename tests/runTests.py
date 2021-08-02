@@ -1,8 +1,9 @@
 
-import os, fnmatch, sys, importlib, time, argparse
+import os, fnmatch, importlib, time, argparse, atexit
 from rich.console import Console
 from rich.table import Table
 from rich.style import Style
+import init
 
 
 # TODO testTransferRequests.py
@@ -19,7 +20,6 @@ def isRunTest(name:str) -> bool:
 		return True
 	return (len([ n for n in loadTests if name.startswith(n) ]) > 0) == args.loadTestsOnly
 
-	
 
 if __name__ == '__main__':
 	console       = Console()

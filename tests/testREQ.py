@@ -12,7 +12,7 @@ import requests
 sys.path.append('../acme')
 from typing import Tuple, Dict
 from etc.Constants import Constants as C
-from etc.Types import ResourceTypes as T, NotificationContentType, ResponseCode as RC, Operation, ResponseType, Permission
+from etc.Types import ResourceTypes as T, ResponseCode as RC, Operation, ResponseType
 from init import *
 
 # Headers for async requests
@@ -93,7 +93,7 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:req/org'))
 		self.assertEqual(findXPath(r, 'm2m:req/org'), TestREQ.originator)
 		self.assertIsNotNone(findXPath(r, 'm2m:req/rid'))
-		self.assertEqual(findXPath(r, 'm2m:req/rid'), rqi)	# test the request ID from the original request
+		self.assertEqual(findXPath(r, 'm2m:req/rid'), rqi, r)	# test the request ID from the original request
 		self.assertIsNotNone(findXPath(r, 'm2m:req/mi'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/mi/rt'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/mi/rt/rtv'))
