@@ -9,22 +9,16 @@
 #
 
 from __future__ import annotations
-import datetime, json, random, string, sys, re, threading
+import random, string, sys, re, threading
 import traceback
-import cbor2
-from copy import deepcopy
-import isodate
-from typing import Any, List, Tuple, Union, Dict, cast
+from typing import Any, Tuple, cast
 
 from .Constants import Constants as C
 from .Types import ResourceTypes as T, ResponseCode
-from .Types import Result
-from .Types import ContentSerializationType, JSON, Conditions
+from .Types import Result, JSON
 from services.Logging import Logging as L
 from resources.Resource import Resource
-import helpers.TextTools
 import services.CSE as CSE
-import cbor2
 
 
 ##############################################################################
@@ -311,71 +305,6 @@ def normalizeURL(url: str) -> str:
 
 ##############################################################################
 #
-#	Time, Date, Timestamp related
-#
-
-def getResourceDate(delta:int=0) -> str:
-	"""	Generate an UTC-relative ISO 8601 timestamp and return it.
-
-		`delta` adds or substracts n seconds to the generated timestamp.
-	"""
-	return toISO8601Date(datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=delta))
-
-
-def toISO8601Date(ts:Union[float, datetime.datetime], isUTCtimestamp:bool=True) -> str:
-	"""	Convert and return a UTC-relative float timestamp or datetime object to an ISO 8601 string.
-	"""
-	if isinstance(ts, float):
-		if isUTCtimestamp:
-			ts = datetime.datetime.fromtimestamp(ts)
-		else:
-			ts = datetime.datetime.utcfromtimestamp(ts)
-	return ts.strftime('%Y%m%dT%H%M%S,%f')
-
-
-def fromAbsRelTimestamp(absRelTimestamp:str) -> float:
-	"""	Parse a ISO 8601 string and return a UTC-relative timestamp as a float.
-		If  `absRelTimestamp` in the string is a period (relatice) timestamp (e.g. PT2S), then this function
-		tries to convert it and return an absolute timestamp as a float, based on the current UTC time.
-		If the `absRelTimestamp` contains an integer then it is treated as a relative offset and a UTC-based
-		timestamp is generated for this offset and returned.
-	"""
-	try:
-		return isodate.parse_datetime(absRelTimestamp).timestamp()
-		# return datetime.datetime.strptime(timestamp, '%Y%m%dT%H%M%S,%f').timestamp()
-	except Exception as e:
-		try:
-			return utcTime() + fromDuration(absRelTimestamp)
-		except:
-			return 0.0
-	return 0.0
-
-
-def fromDuration(duration:str) -> float:
-	"""	Convert a duration to a number of seconds (float). Input could be either an ISO period 
-		or a number of ms.
-	"""
-	try:
-		return isodate.parse_duration(duration).total_seconds()
-	except Exception as e:
-		try:
-			# Last try: absRelTimestamp could be a relative offset in ms. Try to convert 
-			# the string and return an absolute UTC-based duration
-			return float(duration) / 1000.0
-		except Exception as e:
-			if L.isWarn: L.logWarn(f'Wrong format for duration: {duration}')
-			raise e
-	return 0.0
-
-
-def utcTime() -> float:
-	"""	Return the current time's timestamp, but relative to UTC.
-	"""
-	return datetime.datetime.utcnow().timestamp()
-
-
-##############################################################################
-#
 #	Resource and content related
 #
 
@@ -594,38 +523,6 @@ def getAttributeSize(attribute:Any) -> int:
 def renameCurrentThread(name:str = None, thread:threading.Thread = None) -> None:
 	thread = threading.current_thread() if thread is None else thread
 	thread.name = name if name is not None else str(thread.native_id)
-
-
-##############################################################################
-#
-#	Text formattings and search
-#
-
-
-def serializeData(data:JSON, ct:ContentSerializationType) -> str|bytes|JSON:
-	"""	Serialize a dictionary, depending on the serialization type.
-	"""
-	if ct == ContentSerializationType.PLAIN:
-		return data
-	encoder = json if ct == ContentSerializationType.JSON else cbor2 if ct == ContentSerializationType.CBOR else None
-	if encoder is None:
-		return None
-	return encoder.dumps(data)	# type:ignore[no-any-return]
-
-
-def deserializeData(data:bytes, ct:ContentSerializationType) -> JSON:
-	"""	Deserialize data into a dictionary, depending on the serialization type.
-		If the len of the data is 0 then an empty dictionary is returned. 
-	"""
-	if len(data) == 0:
-		return {}
-	if ct == ContentSerializationType.JSON:
-		return cast(JSON, json.loads(helpers.TextTools.removeCommentsFromJSON(data.decode("utf-8"))))
-	elif ct == ContentSerializationType.CBOR:
-		return cast(JSON, cbor2.loads(data))
-	# except Exception as e:
-	# 	L.logErr(f'Deserialization error: {str(e)}')
-	return None
 
 
 ##############################################################################

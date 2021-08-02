@@ -16,7 +16,7 @@ from services.Logging import Logging as L
 from etc.Constants import Constants as C
 from etc.Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC, CSERequest, JSON, AttributePolicies
 from services.Configuration import Configuration
-import etc.Utils as Utils, services.CSE as CSE
+import etc.Utils as Utils, services.CSE as CSE, etc.DateUtils as DateUtils
 from .Resource import *
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)
 
@@ -86,11 +86,11 @@ class Resource(object):
 			self.setAttribute('rn', Utils.uniqueRN(self.tpe), overwrite=False)
 			
 			# Set some more attributes
-			ts = Utils.getResourceDate()
+			ts = DateUtils.getResourceDate()
 			self.setAttribute('ct', ts, overwrite=False)
 			self.setAttribute('lt', ts, overwrite=False)
 			if self.ty not in [ T.CSEBase ]:
-				self.setAttribute('et', Utils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite=False) 
+				self.setAttribute('et', DateUtils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite=False) 
 			if pi is not None:
 				# self.setAttribute('pi', pi, overwrite=False)
 				self.setAttribute('pi', pi, overwrite=True)
@@ -239,7 +239,7 @@ class Resource(object):
 
 					# Special handling for et when deleted/set to Null: set a new et
 					if key == 'et' and value is None:
-						self['et'] = Utils.getResourceDate(Configuration.get('cse.expirationDelta'))
+						self['et'] = DateUtils.getResourceDate(Configuration.get('cse.expirationDelta'))
 						continue
 					self.setAttribute(key, value, overwrite=True) # copy new value or add new attributes
 			
@@ -248,7 +248,7 @@ class Resource(object):
 		if 'st' in self.dict:	# Update the state
 			self['st'] += 1
 		if 'lt' in self.dict:	# Update the lastModifiedTime
-			self['lt'] = Utils.getResourceDate()
+			self['lt'] = DateUtils.getResourceDate()
 
 		# Remove empty / null attributes from dict
 		# 2020-08-10 : 	TinyDB doesn't overwrite the whole document but makes an attribute-by-attribute 
@@ -325,10 +325,10 @@ class Resource(object):
 			if self.ty == T.CSEBase:
 				L.isWarn and L.logWarn(dbg := 'expirationTime is not allowed in CSEBase')
 				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
-			if len(et) > 0 and et < (etNow := Utils.getResourceDate()):
+			if len(et) > 0 and et < (etNow := DateUtils.getResourceDate()):
 				L.isWarn and L.logWarn(dbg := f'expirationTime is in the past: {et} < {etNow}')
 				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
-			if et > (etMax := Utils.getResourceDate(Configuration.get('cse.maxExpirationDelta'))):
+			if et > (etMax := DateUtils.getResourceDate(Configuration.get('cse.maxExpirationDelta'))):
 				L.isDebug and L.logDebug(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
 				self['et'] = etMax
 		return Result(status=True)

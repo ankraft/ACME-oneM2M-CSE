@@ -10,11 +10,11 @@
 from copy import deepcopy
 from typing import List
 from etc.Constants import Constants as C
-from etc.Types import ResourceTypes as T, Result, Permission, ResponseCode as RC, JSON, CSEType
+from etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON, CSEType
 from services.Logging import Logging as L
 from services.Configuration import Configuration
 from resources.Resource import Resource
-import services.CSE as CSE, etc.Utils as Utils
+import services.CSE as CSE, etc.Utils as Utils, etc.DateUtils as DateUtils
 from resources.ACP import ACP
 from helpers.BackgroundWorker import BackgroundWorkerPool
 
@@ -247,7 +247,7 @@ class RegistrationManager(object):
 
 	def expirationDBMonitor(self) -> bool:
 		L.isDebug and L.logDebug('Looking for expired resources')
-		now = Utils.getResourceDate()
+		now = DateUtils.getResourceDate()
 		resources = CSE.storage.searchByFilter(lambda r: (et := r.get('et')) is not None and et < now)
 		for resource in resources:
 			# try to retrieve the resource first bc it might have been deleted as a child resource

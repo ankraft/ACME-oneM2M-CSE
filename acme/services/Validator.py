@@ -14,7 +14,7 @@ import isodate
 from etc.Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, ResponseCode as RC
 from etc.Types import JSON, AttributePolicies, AttributePoliciesEntry, AdditionalAttributes
 from etc.Types import Result, AttributePolicies, ResourceTypes as T
-import etc.Utils as Utils
+import etc.Utils as Utils, etc.DateUtils as DateUtils
 from services.Configuration import Configuration
 from resources.Resource import Resource
 from services.Logging import Logging as L
@@ -115,6 +115,7 @@ attributePolicies:AttributePolicies = {
 	'esi'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.MA ),		# m2m:e2eSecInfo - AE, CSE, CSR
 	'exc'	: (	BT.positiveInteger, CAR.car01, 	RO.O, 	RO.O,  RO.O, AN.NA ),  		# SUB
 	'far'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# RBO
+	'fc'	: ( BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# request
 	'fr'	: ( BT.anyURI,			CAR.car01,  RO.M,	RO.NP, RO.O, AN.NA ),		# request, response
 	'fwn'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# FWR
 	'fwv'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
@@ -267,12 +268,13 @@ attributePolicies:AttributePolicies = {
 	'szb'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery	
 	'us'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
 	'arp'	: ( BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'rt'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request
+	'rt'	: ( BT.dict,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request
 	'rp'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
 	'rqet'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
 	'oet'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
 	'rvi'	: ( BT.string,			CAR.car1,    RO.O,	RO.O,  RO.O, AN.NA ),		# request 
 	'rtu'	: ( BT.list,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request  (actually the same as 'nu' s)
+	'rtv'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request
 	'vsi'	: ( BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
 
 	# TODO lbl, catr, patr
@@ -609,7 +611,7 @@ class Validator(object):
 			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: unsigned integer')
 
 		if tpe == BT.timestamp and isinstance(value, str):
-			if Utils.fromAbsRelTimestamp(value) == 0.0:
+			if DateUtils.fromAbsRelTimestamp(value) == 0.0:
 				return Result(status=False, dbg=f'format error in timestamp: {value}')
 			return Result(status=True, data=tpe)
 
@@ -619,7 +621,7 @@ class Validator(object):
 					rel = int(value)
 					# fallthrough
 				except Exception as e:	# could happen if this is a string with an iso timestamp. Then try next test
-					if Utils.fromAbsRelTimestamp(value) == 0.0:
+					if DateUtils.fromAbsRelTimestamp(value) == 0.0:
 						return Result(status=False, dbg=f'format error in absRelTimestamp: {value}')
 				# fallthrough
 			elif not isinstance(value, int):

@@ -9,7 +9,7 @@
 
 from typing import Dict, Any
 from etc.Types import ResourceTypes as T, ResponseCode as RC, Result, RequestStatus, CSERequest, JSON
-import etc.Utils as Utils
+import etc.Utils as Utils, etc.DateUtils as DateUtils
 from resources.Resource import *
 import resources.Factory as Factory
 from services.Configuration import Configuration
@@ -51,8 +51,8 @@ class REQ(Resource):
 		
 		# otherwise calculate request et
 		else:	
-			minEt = Utils.getResourceDate(Configuration.get('cse.req.minet'))
-			maxEt = Utils.getResourceDate(Configuration.get('cse.req.maxet'))
+			minEt = DateUtils.getResourceDate(Configuration.get('cse.req.minet'))
+			maxEt = DateUtils.getResourceDate(Configuration.get('cse.req.maxet'))
 			if request.args.rpts is not None:
 				et = request.args.rpts if request.args.rpts < maxEt else maxEt
 			else:
@@ -69,7 +69,7 @@ class REQ(Resource):
 				'rid'	: request.headers.requestIdentifier,
 				'mi'	: {
 					'ty'	: request.headers.resourceType,
-					'ot'	: Utils.getResourceDate(),
+					'ot'	: DateUtils.getResourceDate(),
 					'rqet'	: request.headers.requestExpirationTimestamp,
 					'rset'	: request.headers.resultExpirationTimestamp,
 					'rt'	: { 

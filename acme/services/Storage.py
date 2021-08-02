@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 
-import os, sys
+import os
 from threading import Lock
 from copy import deepcopy
 from typing import Callable, cast
@@ -23,11 +23,10 @@ from tinydb.operations import delete
 
 from etc.Types import ResourceTypes as T, Result, ResponseCode as RC, ContentSerializationType, JSON
 from resources.Resource import Resource
-from resources.AnnounceableResource import AnnounceableResource
 import resources.Factory as Factory
 from services.Configuration import Configuration
 from services.Logging import Logging as L
-import services.CSE as CSE, etc.Utils as Utils
+import services.CSE as CSE, etc.DateUtils as DateUtils
 
 
 class Storage(object):
@@ -528,7 +527,7 @@ class TinyDBBinding(object):
 									{	'ri' 		: ri,
 										'nu' 		: nu,
 										'csz'		: serialization.value,
-										'tstamp'	: Utils.utcTime(),
+										'tstamp'	: DateUtils.utcTime(),
 										'request'	: notificationRequest
 									})
 			return result is not None

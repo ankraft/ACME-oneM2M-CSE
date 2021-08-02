@@ -26,7 +26,7 @@ from etc.Types import CSEType, ResourceTypes as T
 from services.Logging import Logging as L
 from services.Configuration import Configuration
 from resources.Resource import Resource
-import etc.Utils as Utils, services.CSE as CSE, services.Statistics as Statistics
+import etc.Utils as Utils, etc.DateUtils as DateUtils, services.CSE as CSE, services.Statistics as Statistics
 
 
 class TreeMode(IntEnum):
@@ -455,7 +455,7 @@ class Console(object):
 
 		misc  = '[underline]Misc[/underline]\n'
 		misc += '\n'
-		misc += f'StartTime : {datetime.datetime.fromtimestamp(Utils.fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime])))} (UTC)\n'
+		misc += f'StartTime : {datetime.datetime.fromtimestamp(DateUtils.fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime])))} (UTC)\n'
 		misc += f'Uptime    : {stats[Statistics.cseUpTime]}\n'
 		if hasattr(os, 'getloadavg'):
 			load = os.getloadavg()

@@ -11,7 +11,7 @@ from etc.Constants import Constants as C
 from etc.Types import ResourceTypes as T, Result, JSON
 from resources.Resource import *
 from services.Validator import constructPolicy
-import services.CSE as CSE
+import services.CSE as CSE, etc.DateUtils as DateUtils
 
 
 # Attribute policies for this resource are constructed during startup of the CSE
@@ -85,7 +85,7 @@ class CSEBase(Resource):
 			return res
 
 		# add the current time to this resource instance
-		self['ctm'] = Utils.getResourceDate()
+		self['ctm'] = DateUtils.getResourceDate()
 		return Result(status=True)
 
 

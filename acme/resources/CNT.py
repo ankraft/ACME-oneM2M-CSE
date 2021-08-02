@@ -9,7 +9,7 @@
 
 from typing import List
 from etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
-import etc.Utils as Utils, services.CSE as CSE
+import etc.Utils as Utils, etc.DateUtils as DateUtils, services.CSE as CSE
 from services.Logging import Logging as L
 from services.Configuration import Configuration
 from services.Validator import constructPolicy, addPolicy
@@ -114,7 +114,7 @@ class CNT(AnnounceableResource):
 			# Check for mia handling. This sets the et attribute in the CIN
 			if self.mia is not None:
 				# Take either mia or the maxExpirationDelta, whatever is smaller
-				maxEt = Utils.getResourceDate(self.mia if self.mia <= (med := Configuration.get('cse.maxExpirationDelta')) else med)
+				maxEt = DateUtils.getResourceDate(self.mia if self.mia <= (med := Configuration.get('cse.maxExpirationDelta')) else med)
 				# Only replace the childresource's et if it is greater than the calculated maxEt
 				if childResource.et > maxEt:
 					childResource.setAttribute('et', maxEt)

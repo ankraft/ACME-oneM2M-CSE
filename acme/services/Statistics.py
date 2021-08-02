@@ -17,7 +17,7 @@ from threading import Lock
 from helpers.BackgroundWorker import BackgroundWorkerPool
 from etc.Types import CSEType, ResourceTypes as T
 from resources.Resource import Resource
-import services.CSE as CSE, etc.Utils as Utils
+import services.CSE as CSE, etc.Utils as Utils, etc.DateUtils as DateUtils
 from services.Configuration import Configuration
 from services.Logging import Logging as L
 
@@ -126,7 +126,7 @@ class Statistics(object):
 
 		# Calculate some stats
 		s[cseUpTime] = str(datetime.timedelta(seconds=int(datetime.datetime.now(datetime.timezone.utc).timestamp() - int(s[cseStartUpTime]))))
-		s[cseStartUpTime] = Utils.toISO8601Date(float(s[cseStartUpTime]))
+		s[cseStartUpTime] = DateUtils.toISO8601Date(float(s[cseStartUpTime]))
 		s[resourceCount] = int(s[createdResources]) - int(s[deletedResources])
 		return s
 

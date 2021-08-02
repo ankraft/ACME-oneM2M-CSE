@@ -14,7 +14,7 @@ from resources.Resource import *
 from resources.AnnounceableResource import AnnounceableResource
 import resources.Factory as Factory
 from services.Configuration import Configuration
-import etc.Utils as Utils, services.CSE as CSE
+import etc.Utils as Utils, etc.DateUtils as DateUtils, services.CSE as CSE
 from services.Validator import constructPolicy, addPolicy
 from services.Logging import Logging as L
 
@@ -146,7 +146,7 @@ class TS(AnnounceableResource):
 			# Check for mia handling. This sets the et attribute in the TSI
 			if self.mia is not None:
 				# Take either mia or the maxExpirationDelta, whatever is smaller
-				maxEt = Utils.getResourceDate(self.mia if self.mia <= (med := Configuration.get('cse.maxExpirationDelta')) else med)
+				maxEt = DateUtils.getResourceDate(self.mia if self.mia <= (med := Configuration.get('cse.maxExpirationDelta')) else med)
 				# Only replace the childresource's et if it is greater than the calculated maxEt
 				if childResource.et > maxEt:
 					childResource.setAttribute('et', maxEt)
@@ -293,7 +293,7 @@ class TS(AnnounceableResource):
 		"""	Add the dataGenerationTime `dgtToAdd` to the mdlt of this resource.
 		"""
 		self.setAttribute('mdlt', [], overwrite=False)						# Add to mdlt, just in case it hasn't created before
-		self.mdlt.append(Utils.toISO8601Date(dgtToAdd))						# Add missing dgt to TS.mdlt
+		self.mdlt.append(DateUtils.toISO8601Date(dgtToAdd))						# Add missing dgt to TS.mdlt
 		if (mdn := self.mdn) is not None:									# mdn may not be set. Then this list grows forever
 			if len(self.mdlt) > mdn:										# If mdlt is bigger then mdn allows
 				self.setAttribute('mdlt', self.mdlt[1:], overwrite=True)	# Shorten the mdlt

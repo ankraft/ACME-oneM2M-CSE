@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from etc.Types import NotificationEventType as NET, MissingData, LastTSInstance
 from services.Logging import Logging as L
 from resources.Resource import Resource
-import services.CSE as CSE, etc.Utils as Utils
+import services.CSE as CSE, etc.Utils as Utils, etc.DateUtils as DateUtils
 from helpers.BackgroundWorker import BackgroundWorkerPool
 
 
@@ -81,7 +81,7 @@ class TimeSeriesManager(object):
 
 			# Add the dgt to the missing data of the subscriptions
 			for (subRi, md) in rts.missingData.items():
-				md.missingDataList.append(Utils.toISO8601Date(rts.nextExpectedDgt))
+				md.missingDataList.append(DateUtils.toISO8601Date(rts.nextExpectedDgt))
 				md.missingDataCurrentNr += 1
 				if md.missingDataCurrentNr == 1:	# If it is the first missing data point in this run, then start an actor to react on the end of specified time window
 					md.timeWindowEndTimestamp = rts.nextRuntime + md.missingDataDuration
@@ -111,12 +111,12 @@ class TimeSeriesManager(object):
 			The monitoring is started only when a first TSI is added for a <TS>.
 		"""
 
-		now  = Utils.utcTime()
+		now  = DateUtils.utcTime()
 		pei  = timeSeries.pei / 1000.0  # ms -> s
 		peid = timeSeries.peid / 1000.0 # ms -> s
 		mdt  = timeSeries.mdt / 1000.0  # ms -> s
 		tsRi = timeSeries.ri
-		if (dgt := Utils.fromAbsRelTimestamp(instance.dgt)) == 0.0:	# error
+		if (dgt := DateUtils.fromAbsRelTimestamp(instance.dgt)) == 0.0:	# error
 			L.isWarn and L.logWarn(f'Error parsing <tsi>.dgt: {dgt}')
 			return
 		L.isDebug and L.logDebug(f'New <tsi> for <ts>:{timeSeries.ri} dgt:{dgt}')
@@ -188,7 +188,7 @@ class TimeSeriesManager(object):
 			if (rts := runningTimeserieses.get(timeSeries.ri)) is None:
 				runningTimeserieses[tsRi] = (rts := LastTSInstance())
 			rts.missingData[subscription.ri] = MissingData(	subscriptionRi=subscription.ri, 
-															missingDataDuration=Utils.fromDuration(subscription['enc/md/dur']),
+															missingDataDuration=DateUtils.fromDuration(subscription['enc/md/dur']),
 															missingDataNumber=subscription['enc/md/num'])
 
 
@@ -198,7 +198,7 @@ class TimeSeriesManager(object):
 		if NET.reportOnGeneratedMissingDataPoints in subscription['enc/net']:
 			L.isDebug and L.logDebug(f'Updating missing data <sub>: {subscription.ri}')
 			if (rts := runningTimeserieses.get(timeSeries.ri)) is not None and (md := rts.missingData.get(subscription.ri)):
-				md.missingDataDuration = Utils.fromDuration(subscription['enc/md/dur'])
+				md.missingDataDuration = DateUtils.fromDuration(subscription['enc/md/dur'])
 				md.missingDataNumber = subscription['enc/md/num']
 
 
