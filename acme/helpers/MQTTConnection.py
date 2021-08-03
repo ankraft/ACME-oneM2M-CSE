@@ -8,7 +8,6 @@
 #
 
 from __future__ import annotations
-from abc import abstractmethod, ABC
 import ssl, time
 from dataclasses import dataclass
 from typing import Callable, Any, Tuple
@@ -30,8 +29,8 @@ class MQTTTopic:
 	callbackArgs:dict 		= None
 
 
-class MQTTHandler(ABC):
-	"""	This abstract base class defines the interface for an MQTT handler class. 
+class MQTTHandler(object):
+	"""	This base class defines the interface for an MQTT handler class. 
 		The abstract methods defined here must be implemented by the implementing class.
 
 		The implementing class acts as a handler for various callbacks when dealing with
@@ -39,7 +38,6 @@ class MQTTHandler(ABC):
 		and the callbacks for them in the `onConnect()` method.
 	"""
 
-	@abstractmethod
 	def onConnect(self, connection:MQTTConnection) -> None:
 		"""	This method is called after the MQTT client connected to the MQTT broker. 
 			Usually, an MQTT client should subscribe to topics and register the callback
@@ -47,32 +45,26 @@ class MQTTHandler(ABC):
 		"""
 		pass
 
-	@abstractmethod
 	def onDisconnect(self, connection:MQTTConnection) -> None:
 		"""	This method is called after the MQTT client disconnected from the MQTT broker. 
 		"""
 		pass
 
-	@abstractmethod
 	def onSubscribed(self, connection:MQTTConnection, topic:str) -> None:
 		"""	This method is called after the MQTT client successfully subsribed to a topic. 
 		"""
 		pass
 
-	@abstractmethod
 	def onUnsubscribed(self, connection:MQTTConnection, topic:str) -> None:
 		"""	This method is called after the MQTT client successfully unsubsribed from a topic. 
 		"""
 		pass
-	
 
-	@abstractmethod
 	def onError(self, connection:MQTTConnection, rc:int) -> None:
 		"""	This method is called when receiving an error when communicating with the MQTT broker. 
 		"""
 		pass
 
-	@abstractmethod
 	def logging(self, connection:MQTTConnection, level:int, message:str) -> None:
 		"""	This method is called when a log message should be handled. 
 		"""
@@ -91,6 +83,7 @@ class MQTTConnection(object):
 	def __init__(self, address:str, port:int=None, keepalive:int=60, interface:str='0.0.0.0', 
 					clientID:str=None, username:str=None, password:str=None,
 					useTLS:bool=False, caFile:str=None, verifyCertificate:bool=False,
+					logEnabled:bool=True,
 					messageHandler:MQTTHandler=None
 				) -> None:
 		self.brokerAddress							= address
@@ -102,9 +95,11 @@ class MQTTConnection(object):
 		self.useTLS:bool							= useTLS
 		self.verifyCertificate						= verifyCertificate
 		self.caFile									= caFile
+		self.clientID								= clientID
+		self.logEnabled								= logEnabled
+
 		self.isStopped								= True
 		self.isConnected							= False
-		self.clientID								= clientID
 
 		self.mqttClient:mqtt.Client 				= None
 		self.messageHandler:MQTTHandler				= messageHandler
@@ -210,7 +205,8 @@ class MQTTConnection(object):
 	def _onLog(self, client:mqtt.Client, userdata:Any, level:int, buf:str) -> None:
 		"""	Mapping of the paho MQTT client's log to the logging system. Also handles different log-level scheme.
 		"""
-		self.messageHandler and self.messageHandler.logging(self.mqttClient, mqtt.LOGGING_LEVEL[level], f'MQTT: {buf}')
+		if self.logEnabled:
+			self.messageHandler and self.messageHandler.logging(self.mqttClient, mqtt.LOGGING_LEVEL[level], f'MQTT: {buf}')
 	
 
 	def _onSubscribe(self, client:mqtt.Client, userdata:Any, mid:int, granted_qos:int) -> None:

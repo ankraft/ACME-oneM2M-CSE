@@ -27,6 +27,7 @@ import helpers.TextTools
 # TODO mqtt support for NotificationServer
 # TODO notifications
 # TODO select correct binding for requests (support mqtt / mqtts schemes)
+# TODO Check allowed client id for registrations
 
 
 class MQTTClientHandler(MQTTHandler):
@@ -76,52 +77,22 @@ class MQTTClientHandler(MQTTHandler):
 	#	Various request, register and response callbacks
 	#
 
+
 	def _requestCB(self, connection:MQTTConnection, topic:str, data:bytes) -> None:
-
-		# SP relative of fr : /cseid/aei
-		# TODO reg_resp diferent
-
-		ts = topic.split('/')
-		requestTopicType	= ts[self.topicPrefixCount + 1]
-		responseTopicType	= 'resp' if requestTopicType == 'req' else 'reg_resp'
-		requestOriginator 	= ts[self.topicPrefixCount + 2]
-		requestReceiver   	= ts[self.topicPrefixCount + 3]
-		contentType   		= ts[self.topicPrefixCount + 4]
-		L.isDebug and L.logDebug(f'==> MQTT-REQUEST {topic} originator:{requestOriginator}, receiver:{requestReceiver}, type:{contentType}')
-
-		# dissect and validate request
-		if not (dissectResult := self._dissectMQTTRequest(data, contentType)).status:
-			if (response := self._prepareResponse(dissectResult)).status:
-				connection.publish(f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}', response.data.encode())
-			return
-
-		# log request
-		if contentType == ContentSerializationType.JSON:
-			L.isDebug and L.logDebug(f'Body: \n{cast(str, data)}')
-		else:
-			L.isDebug and L.logDebug(f'Body: \n{helpers.TextTools.toHex(cast(bytes, data))}\n=>\n{dissectResult.request.dict}')
-
-		# handle request
-		if self.mqttClient.isStopped:
-			responseResult = Result(rsc=RC.internalServerError, dbg='mqtt server not running', status=False)
-		else:
-			try:
-				if dissectResult.status:
-					if dissectResult.request.op in [ Operation.CREATE, Operation.UPDATE ]:
-						if dissectResult.request.ct == ContentSerializationType.CBOR:
-							L.isDebug and L.logDebug(f'Data: \n{helpers.TextTools.toHex(cast(bytes, dissectResult.request.data))}\n=>\n{dissectResult.request.dict}')
-						else:
-							L.isDebug and L.logDebug(f'Data: \n{str(dissectResult.request.data)}')
-					responseResult = CSE.request.handleRequest(dissectResult.request)
-				else:
-					responseResult = dissectResult
-			except Exception as e:
-				responseResult = Utils.exceptionToResult(e)
-		responseResult.request = dissectResult.request
-		if (response := self._prepareResponse(responseResult)).status:
-			connection.publish(f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}', response.data.encode())
+		"""	Handle a normal MQTT request.
+		"""
+		self._handleIncommingRequest(connection, topic, data, 'resp')
 
 
+	def _registrationRequestCB(self, connection:MQTTConnection, topic:str, data:bytes) -> None:
+		"""	handle a registration request.
+		"""
+		# TODO check originator whether it is allowed to register
+		self._handleIncommingRequest(connection, topic, data, 'reg_resp')
+
+
+
+	# TODO
 	def _responseCB(self, connection:MQTTConnection, topic:str, data:bytes) -> None:
 		"""	Receive and handle a 'resp' message.
 		"""
@@ -132,15 +103,62 @@ class MQTTClientHandler(MQTTHandler):
 
 
 
-	def _registrationRequestCB(self, connection:MQTTConnection, topic:str, data:bytes) -> None:
-		ts = topic.split('/')
-		L.isDebug and L.logDebug(f'REGISTRATION {topic}, {data.decode()}, {ts[-1]}')
-		# TODO 
-		connection.publish('test', f'{topic}, {data}, {ts[-1]}'.encode())		# type: ignore [str-bytes-safe]
-	
+	def _handleIncommingRequest(self, connection:MQTTConnection, topic:str, data:bytes, responseTopicType:str) -> None:
+		"""	Handling incoming requests is rather generic, since the special handling of some requests, like
+			registration is done later anyway.
+		
+		"""
+		def _sendResponse(result:Result) -> None:
+			if (response := self._prepareResponse(result)).status:
+				connection.publish(f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}', response.data.encode())
+
+		L.isDebug and L.logDebug(f'==> MQTT-REQUEST {topic}:')
+
+		# SP relative of fr : /cseid/aei
+
+		# Check correct topic length
+		if len(ts := topic.split('/')) != self.topicPrefixCount + 5:
+			_sendResponse(Result(rsc=RC.badRequest, dbg=f'Topic incorrect length: {topic}'))
+			return
+
+		# Dissect topic
+		requestOriginator 	= ts[self.topicPrefixCount + 2]
+		requestReceiver   	= ts[self.topicPrefixCount + 3]
+		contentType   		= ts[self.topicPrefixCount + 4]
+
+		# Check supported contentTypes
+		if contentType not in C.supportedContentSerializationsSimple:
+			_sendResponse(Result(rsc=RC.badRequest, dbg=f'Unsupported content serialization type: {contentType}'))
+			return
+
+		# dissect and validate request
+		if not (dissectResult := self._dissectMQTTRequest(data, contentType)).status:
+			if (response := self._prepareResponse(dissectResult)).status:
+				connection.publish(f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}', response.data.encode())
+			return
+
+		# log valid request
+		if contentType == ContentSerializationType.JSON:
+			L.isDebug and L.logDebug(f'Body: \n{cast(str, data)}')
+		else:
+			L.isDebug and L.logDebug(f'Body: \n{helpers.TextTools.toHex(cast(bytes, data))}\n=>\n{dissectResult.request.dict}')
+
+		# handle request
+		if self.mqttClient.isStopped:
+			responseResult = Result(rsc=RC.internalServerError, dbg='mqtt server not running', status=False)
+		else:
+			try:
+				responseResult = CSE.request.handleRequest(dissectResult.request) if dissectResult.status else dissectResult
+			except Exception as e:
+				responseResult = Utils.exceptionToResult(e)
+		responseResult.request = dissectResult.request
+
+		# Send response
+		_sendResponse(responseResult)
 
 	def _dissectMQTTRequest(self, data:bytes, contenType:str) -> Result:
-		# TODO doc
+		"""	Dissect an MQTT request. Return it in `Result.request` .
+		"""
 		cseRequest = CSERequest()
 		cseRequest.data = data
 		cseRequest.headers.contentType = contenType.lower()
@@ -215,6 +233,7 @@ class MQTTClient(object):
 												 verifyCertificate	= CSE.security.verifyCertificateMqtt,
 												 username 			= CSE.security.usernameMqtt,
 												 password			= CSE.security.passwordMqtt,
+												 logEnabled			= False,	# TODO configurable		
 												 messageHandler 	= MQTTClientHandler	(self))
 		L.isInfo and L.log('MQTT Client initialized')
 	
