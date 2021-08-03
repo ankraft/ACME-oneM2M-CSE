@@ -134,7 +134,7 @@ class MQTTClientHandler(MQTTHandler):
 		while True:		# TODO Timeout
 			if self.topics[originator].respTopic:
 				break
-			time.sleep(0.5)
+			time.sleep(0.01)
 
 		return topics
 	

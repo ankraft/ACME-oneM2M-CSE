@@ -64,10 +64,10 @@ class BackgroundWorker(object):
 	def stop(self) -> BackgroundWorker:
 		"""	Stop the background worker.
 		"""
+		self.running = False
 		if _loggerCB:
 				_loggerCB(logging.DEBUG, f'Stopping {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
 		# L.isDebug and L.logDebug(f'Stopping {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
-		self.running = False
 		BackgroundWorkerPool._unqueueWorker(self.id)		# Stop the timer and remove from queue
 		self._postCall()									# Note: worker is removed in _postCall()
 		return self

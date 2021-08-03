@@ -55,7 +55,8 @@ class TimeSeriesManager(object):
 
 		# Check TSI arrival for this TS
 		if (rts := runningTimeserieses.get(tsRi)) is None:
-			L.logErr(f'No last <tsi> for <ts>: {tsRi}')
+			# This might happen when the monitoring has been stopped in between.
+			L.logWarn(f'No last <tsi> for <ts>: {tsRi}')
 			return False # stop monitoring
 
 		# First handle every possible time window for missingData subscriptions that might have expired
@@ -167,11 +168,13 @@ class TimeSeriesManager(object):
 		"""	Remove a timeSeries from monitoring.
 		"""
 		L.isDebug and L.logDebug(f'Remove <ts> from monitoring: {tsRi}')
-		# BackgroundWorkerPool.stopWorkers(name=f'tsMonitor_{tsRi}_*')
 		if tsRi in runningTimeserieses:
-			if (actor := runningTimeserieses[tsRi].actor) is not None:
-				actor.stop()
-			del runningTimeserieses[tsRi]
+			lastTsi = runningTimeserieses.pop(tsRi)	# removes it also from the dict
+			if lastTsi.actor:
+				lastTsi.actor.stop()
+			#del runningTimeserieses[tsRi]
+			# if (actor := runningTimeserieses[tsRi].actor) is not None:
+			# 	actor.stop()
 		return True
 
 
