@@ -83,6 +83,14 @@ The CSE has a simple command console interface to execute build-in commands. Cur
 
 ![](images/console_tree.png)
 
+### Hiding Resources in the Console's Tree
+
+Sometimes it would be useful if one could hide resources from the console's resource tree. That can be accomplished by listing these resources in the setting *[cse.console].hideResources*. Simple wildcards are allowed in this setting.
+
+Example to hide all resources with resource identifiers starting with 'acp':
+
+	[cse.console]
+	hideResources=acp*
 
 ## Running a Notifications Server
 
