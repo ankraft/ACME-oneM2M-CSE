@@ -7,20 +7,64 @@
 #	Configurations for unit tests
 #
 
-PROTOCOL			= 'http'	# possible values: http, https
+BINDING						= 'mqtt'
+
+if BINDING == 'mqtt':
+
+	PROTOCOL				= 'mqtt'	# possible values: http, https, mqtt
+	CONFIGPROTOCOL			= 'http'	# possible values: http, https, mqtt
+	NOTIFICATIONPROTOCOL	= 'http'	# possible values: http, https, mqtt
+	REMOTEPROTOCOL			= 'http'	# possible values: http, https, mqtt
+
+elif BINDING == 'http':
+
+	PROTOCOL				= 'http'	# possible values: http, https, mqtt
+	CONFIGPROTOCOL			= 'http'	# possible values: http, https, mqtt
+	NOTIFICATIONPROTOCOL	= 'http'	# possible values: http, https, mqtt
+	REMOTEPROTOCOL			= 'http'	# possible values: http, https, mqtt
+
+elif BINDING == 'https':
+
+	PROTOCOL				= 'https'	# possible values: http, https, mqtt
+	CONFIGPROTOCOL			= 'https'	# possible values: http, https, mqtt
+	NOTIFICATIONPROTOCOL	= 'http'	# possible values: http, https, mqtt
+	REMOTEPROTOCOL			= 'http'	# possible values: http, https, mqtt
+
+else:
+	assert False, 'Supported values for BINDING are "mqtt", "http", and "https"'
+
 # TODO ENCODING 			= 
 
 
-# 
+#
 #	CSE SuT
 #
 
 SERVER				= f'{PROTOCOL}://localhost:8080'	# Remember: no trailing '/' 
+CONFIGSERVER		= f'{CONFIGPROTOCOL}://localhost:8080'
 ROOTPATH			= '/'
 CSERN				= 'cse-in'
 CSEID				= '/id-in'
 SPID 				= 'sp-in'
 ORIGINATOR			= 'CAdmin'
+
+
+#
+#	MQTT (if configured)
+#
+
+mqttAddress			= 'mqtt'
+mqttPort			= 1883
+mqttClientID		= 'CacmeTest'
+mqttUsername		= 'test'
+mqttPassword		= 'mqtt'
+
+
+MQTTREQUESTTOPIC	= f'/oneM2M/req/$ORIGINATOR${CSEID}/json'
+MQTTRESPONSETOPIC	= f'/oneM2M/resp/$ORIGINATOR${CSEID}/json'
+MQTTREGREQUESTTOPIC	= f'/oneM2M/reg_req/{mqttClientID}{CSEID}/json'
+MQTTREGRESPONSETOPIC= f'/oneM2M/reg_resp/{mqttClientID}{CSEID}/json'
+
 
 
 #
@@ -37,7 +81,7 @@ oauthClientSecret 	= ''
 #	Remote CSE
 #
 
-REMOTESERVER		= f'{PROTOCOL}://localhost:8081'
+REMOTESERVER		= f'{REMOTEPROTOCOL}://localhost:8081'
 REMOTEROOTPATH		= '/'
 REMOTECSERN			= 'cse-mn'
 REMOTECSEID			= '/id-mn'
@@ -50,6 +94,6 @@ REMOTEORIGINATOR	= 'CAdmin'
 #
 
 NOTIFICATIONPORT 	= 9990
-NOTIFICATIONSERVER	= f'{PROTOCOL}://localhost:{NOTIFICATIONPORT}' 
-NOTIFICATIONSERVERW	= f'{PROTOCOL}://localhost:6666'
+NOTIFICATIONSERVER	= f'{NOTIFICATIONPROTOCOL}://localhost:{NOTIFICATIONPORT}' 
+NOTIFICATIONSERVERW	= f'{NOTIFICATIONPROTOCOL}://localhost:6666'
 

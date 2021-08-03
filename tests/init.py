@@ -8,9 +8,12 @@
 #
 
 from __future__ import annotations
-import sys, io
-sys.path.append('../acme')
+from argparse import OPTIONAL
+from urllib.parse import ParseResult, urlparse, parse_qs
+import sys, io, atexit
+from queue import Queue
 import unittest
+
 from rich.console import Console
 import requests, random, sys, json, re, time, datetime, ssl, urllib3
 import cbor2
@@ -18,12 +21,17 @@ from typing import Any, Callable, Union, Tuple, cast
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import cbor2
-from etc.Types import Parameters, JSON
+
+sys.path.append('../acme')
+from etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes
+import etc.RequestUtils as RequestUtils, etc.DateUtils as DateUtils
 import helpers.OAuth as OAuth
+from helpers.MQTTConnection import MQTTConnection, MQTTHandler
+from etc.Constants import Constants as C
 from config import *
 
 
-CONFIGURL			= f'{SERVER}{ROOTPATH}__config__'
+CONFIGURL			= f'{CONFIGSERVER}{ROOTPATH}__config__'
 
 
 verifyCertificate	= False	# verify the certificate when using https?
@@ -47,6 +55,103 @@ timeSeriesInterval 		= 2.0 # seconds
 # ReleaseVersionIndicator
 RVI						 ='3'
 
+from dataclasses import dataclass, field
+
+@dataclass
+class MQTTTopics:
+	reqTopic:str
+	respTopic:str
+	subscribed:bool					= False
+
+
+# TODO think about to move this?
+class MQTTClientHandler(MQTTHandler):
+	"""	Class for handling receiced MQTT requests.
+	"""
+
+	def	__init__(self) -> None:
+		super().__init__()
+		self.messages:Queue 				= Queue()
+		self.topics:dict[str, MQTTTopics]	= dict()
+		self.connection:MQTTConnection		= None
+		# self.respTopic 					= f'/oneM2M/resp/+{CSEID}/json'
+		# self.ready 						= False
+
+	def onConnect(self, connection:MQTTConnection) -> None:
+		# always subscribe to register response 
+		connection.subscribeTopic(MQTTREGRESPONSETOPIC, callback=self._callback)
+		self.connection = connection
+	
+	def onDisconnect(self, _: MQTTConnection) -> None:
+		self.unregisterAllOriginators()
+		self.connection = None
+
+	def onSubscribed(self, _:MQTTConnection, topic:str) -> None:
+		if topic == MQTTREGRESPONSETOPIC:
+			return
+		for o,t in self.topics.items():
+			if t.respTopic == topic:
+				t.subscribed = True
+				self.topics[o] = t
+				#print(f'Subscribed to: {o} / {topic}')
+				return
+		print(f'unknown topic: {topic}')
+		# self.ready = topic in [ self.respTopic ]
+
+
+	def onUnsubscribed(self, _:MQTTConnection, topic:str) -> None:
+		# self.ready = not topic in [ self.respTopic ]
+		pass
+
+	def onError(self, _:MQTTConnection, rc:int) -> None:
+		print(f'mqtt error: {rc}')
+		# TODO
+	
+	# def logging(self, _:MQTTConnection, level:int, message:str) -> None:
+	# 	print(message)
+	# 	pass
+	
+	def _callback(self, connection:MQTTConnection, topic:str, data:bytes) -> None:
+		#print(f'<== {topic} / {data}')
+		self.messages.put((topic, data))
+
+
+	def publish(self, topic:str, data:bytes):
+		self.connection.publish(topic, data)
+
+	
+	def registerOriginator(self, originator:str) -> MQTTTopics:
+		"""	Register and subscribe to a topic for that originator, only once. 
+		"""
+		if originator in self.topics:
+			return self.topics[originator]
+		topics = MQTTTopics(MQTTREQUESTTOPIC.replace('$ORIGINATOR$', originator),
+							MQTTRESPONSETOPIC.replace('$ORIGINATOR$', originator))
+		self.topics[originator] = topics
+		self.connection.subscribeTopic(topics.respTopic, callback=self._callback)
+		
+		#  Wait for subscription
+		while True:		# TODO Timeout
+			if self.topics[originator].respTopic:
+				break
+			time.sleep(0.5)
+
+		return topics
+	
+
+	def unregisterAllOriginators(self) -> None:
+		"""	Unsubscribe from all topics for originators.
+		"""
+		for t in self.topics.values():
+			if t.subscribed:
+				self.connection.unsubscribeTopic(t.respTopic)
+		self.topics.clear()
+	
+
+
+# MQTT Connection
+mqttClient:MQTTConnection = None
+mqttHandler:MQTTClientHandler = None
 
 # A timestamp far in the future
 # Why 8888? Year 9999 may actually problematic, because this might be interpreteted
@@ -109,15 +214,23 @@ REMOTEcseURL 	= f'{REMOTEURL}{REMOTECSERN}'
 localCsrURL 	= f'{cseURL}{REMOTECSEID}'
 remoteCsrURL 	= f'{REMOTEcseURL}{CSEID}'
 
+###############################################################################
+
+
+@atexit.register
+def shutdown() -> None:
+	if mqttClient:
+		mqttClient.shutdown()
+
 
 ###############################################################################
 
 #
-#	HTTP Requests
+#	Requests
 #
 
 def _RETRIEVE(url:str, originator:str, timeout:float=None, headers:Parameters=None) -> Tuple[str|JSON, int]:
-	return sendRequest(requests.get, url, originator, timeout=timeout, headers=headers)
+	return sendRequest(Operation.RETRIEVE, url, originator, timeout=timeout, headers=headers)
 
 def RETRIEVESTRING(url:str, originator:str, timeout:float=None, headers:Parameters=None) -> Tuple[str, int]:
 	x,rsc = _RETRIEVE(url=url, originator=originator, timeout=timeout, headers=headers)
@@ -127,14 +240,12 @@ def RETRIEVE(url:str, originator:str, timeout:float=None, headers:Parameters=Non
 	x,rsc = _RETRIEVE(url=url, originator=originator, timeout=timeout, headers=headers)
 	return cast(JSON, x), rsc
 
-
 def CREATE(url:str, originator:str, ty:int=None, data:JSON=None, headers:Parameters=None) -> Tuple[JSON, int]:
-	x,rsc = sendRequest(requests.post, url, originator, ty, data, headers=headers)
+	x,rsc = sendRequest(Operation.CREATE, url, originator, ty, data, headers=headers)
 	return cast(JSON, x), rsc
 
-
 def _UPDATE(url:str, originator:str, data:JSON|str, headers:Parameters=None) -> Tuple[str|JSON, int]:
-	return sendRequest(requests.put, url, originator, data=data, headers=headers)
+	return sendRequest(Operation.UPDATE, url, originator, data=data, headers=headers)
 
 def UPDATESTRING(url:str, originator:str, data:str, headers:Parameters=None) -> Tuple[str, int]:
 	x, rsc = _UPDATE(url=url, originator=originator, data=data, headers=headers)
@@ -144,13 +255,38 @@ def UPDATE(url:str, originator:str, data:JSON, headers:Parameters=None) -> Tuple
 	x, rsc = _UPDATE(url=url, originator=originator, data=data, headers=headers)
 	return cast(JSON, x), rsc
 
-
 def DELETE(url:str, originator:str, headers:Parameters=None) -> Tuple[JSON, int]:
-	x, rsc = sendRequest(requests.delete, url, originator, headers=headers)
+	x, rsc = sendRequest(Operation.DELETE, url, originator, headers=headers)
 	return cast(JSON, x), rsc
 
 
-def sendRequest(method:Callable, url:str, originator:str, ty:int=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
+def sendRequest(operation:Operation, url:str, originator:str, ty:int=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
+	"""	Send a request. Call the appropriate framework, depending on the protocol.
+	"""
+	if url.startswith(('http', 'https')):
+		if operation == Operation.CREATE:
+			return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		elif operation == Operation.RETRIEVE:
+			return sendHttpRequest(requests.get, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		elif operation == Operation.UPDATE:
+			return sendHttpRequest(requests.put, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		elif operation == Operation.DELETE:
+			return sendHttpRequest(requests.delete, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+	elif url.startswith('mqtt'):
+		if operation == Operation.CREATE:
+			return sendMqttRequest(Operation.CREATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		elif operation == Operation.RETRIEVE:
+			return sendMqttRequest(Operation.RETRIEVE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		elif operation == Operation.UPDATE:
+			return sendMqttRequest(Operation.UPDATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		elif operation == Operation.DELETE:
+			return sendMqttRequest(Operation.DELETE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+	else:
+		print('ERROR')
+		return None, 5103
+
+
+def sendHttpRequest(method:Callable, url:str, originator:str, ty:int=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
 	global oauthToken
 
 	tys = f';ty={ty}' if ty is not None else ''
@@ -188,7 +324,7 @@ def sendRequest(method:Callable, url:str, originator:str, ty:int=None, data:JSON
 			else:
 				sendData = data
 			# data = cbor2.dumps(data)	# TODO use CBOR as well
-		r = method(url, data=sendData, headers=hds, verify=verifyCertificate)
+		r = method(url, data=sendData, headers=hds, verify=verifyCertificate, timeout=timeout)
 	except Exception as e:
 		#print(f'Failed to send request: {str(e)}')
 		return None, 5103
@@ -206,6 +342,115 @@ def sendRequest(method:Callable, url:str, originator:str, ty:int=None, data:JSON
 	return r.content, rc
 
 
+def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
+
+	urlComponents:ParseResult = urlparse(url)
+	urlquery = parse_qs(urlComponents.query)
+	# print(urlquery)
+
+	req:dict	= dict()
+	fc:dict		= dict()
+	req['fr'] 	= originator
+	req['to'] 	= urlComponents.path
+	req['op'] 	= operation.value
+	req['ot'] 	= DateUtils.getResourceDate()
+	req['rqi'] 	= (rid := uniqueID())
+	req['rvi'] 	= RVI
+
+	# Various request parameters
+	if ty:	
+		req['ty'] = ty
+	if (rcn := urlquery.get('rcn')):
+		req['rcn'] = int(rcn[0])	# only first rcn
+		del urlquery['rcn']
+	if (rt := urlquery.get('rt')):
+		rt2 = dict()
+		rt2['rtv'] = int(rt[0])	# only first rt
+		req['rt'] = rt2
+		del urlquery['rt']
+	if (rp := urlquery.get('rp')):
+		req['rp'] = rp[0]	# only first rp
+		del urlquery['rp']
+	
+	# FilterCriteria
+	if (fu := urlquery.get('fu')):
+		fc['fu'] = int(fu[0])
+		del urlquery['fu']
+	if (fcty := urlquery.get('ty')):
+		fc['ty'] = [ int(tt) for t in fcty for tt in t.split(' ') ]	# input may be: [ '1 2' , '3' ]
+		del urlquery['ty']
+	if (lbl := urlquery.get('lbl')):
+		fc['lbl'] = [ tt for t in lbl for tt in t.split(' ') ]	# s.a.
+		del urlquery['lbl']
+	if (cty := urlquery.get('cty')):
+		fc['cty'] = [ tt for t in cty for tt in t.split(' ') ]	# s.a.
+		del urlquery['cty']
+
+	# add remaining arguments as attributes to filterCriteria
+	for k in urlquery.keys():	
+		fc[k] = urlquery.get(k)[0]
+
+	# Add filterCriteria to request
+	if len(fc):
+		req['fc'] = fc
+
+	if headers:			# extend with other headers
+		for hdr,attr in [ (C.hfRVI, 'rvi'), (C.hfVSI, 'vsi'), (C.hfRET, 'rqet') ]:
+			if (h := headers.get(hdr)) is not None:	# overwrite X-M2M-RVI header
+				req[attr] = h
+				del headers[hdr]
+		# Special handling for rtu/nu, which is a sub-structure for rt
+		if (h := headers.get(C.hfRTU)) is not None:
+			if (rt := req.get('rt')) is None:
+				rt = dict()
+			rt['nu'] = h.split('&')	# -> list
+			req['rt'] = rt
+			del headers[C.hfRTU]
+	if data:
+		req['pc'] = data	
+
+	setLastRequestID(rid)
+
+
+	# Which topic to use for request and response?
+	if ty == ResourceTypes.AE and operation == Operation.CREATE:
+	# if originator in [ 'C', 'S', '', None ]:
+		reqTopic  = MQTTREGREQUESTTOPIC
+		respTopic = MQTTREGRESPONSETOPIC
+	else:
+		# Also if normale originator: Register originator with the MQTTClient
+		topics 	  = mqttHandler.registerOriginator(originator)
+
+		reqTopic  = topics.reqTopic
+		respTopic = topics.respTopic
+		
+	#print(f'==> {reqTopic} / {req}')
+
+	# send the data
+	mqttHandler.publish(reqTopic, cast(bytes, RequestUtils.serializeData(req, ContentSerializationType.JSON)))  # TODO support cbor
+
+	# Wait for response
+	while True: 	# Timeout?
+		try:
+			message = mqttHandler.messages.get(block=True, timeout=5.0)	# TODO timeout configurable
+		except:
+			return None, 5103
+
+		if message[0] == respTopic:
+			resp = RequestUtils.deserializeData(message[1], ContentSerializationType.JSON)
+
+			# Since the tests usually work with http binding headers, some response attributes are converted
+			hds = dict()
+			if (rvi := resp.get('rvi')):
+				hds['X-M2M-RVI'] = rvi
+			if (vsi := resp.get('vsi')):
+				hds['X-M2M-VSI'] = vsi
+			setLastHeaders(hds)
+
+			return resp['pc'], resp['rsc']
+
+
+
 _lastRequstID = None
 
 def setLastRequestID(rid:str) -> None:
@@ -220,7 +465,7 @@ def connectionPossible(url:str) -> bool:
 	try:
 		# The following request is not supposed to return a resource, it just
 		# tests whether a connection can be established at all.
-		return RETRIEVE(url, 'none', timeout=1.0)[0] is not None
+		return RETRIEVE(url, ORIGINATOR, timeout=1.0)[0] is not None
 	except Exception as e:
 		print(e)
 		return False
@@ -479,6 +724,8 @@ def setXPath(dct:JSON, element:str, value:Any, overwrite:bool=True) -> None:
 	data[paths[ln-1]] = value
 
 
+# TODO check whether these functions can be replaced by the etc.DateUtils
+
 def getDate(delta:int = 0) -> str:
 	return toISO8601Date(datetime.datetime.utcnow() + datetime.timedelta(seconds=delta))
 
@@ -498,6 +745,22 @@ def printResult(result:unittest.TestResult) -> None:
 		console.print(f'\n[bold][red]{f[0]}')
 		console.print(f'[dim]{f[0].shortDescription()}')
 		console.print(f[1])
+
+
+
+
+###############################################################################
+
+
+
+
+# Start MQTT Client if test protocol is mqtt
+if PROTOCOL == 'mqtt':
+	mqttHandler = MQTTClientHandler()
+	mqttClient = MQTTConnection(mqttAddress, mqttPort, clientID=mqttClientID, username=mqttUsername, password=mqttPassword, messageHandler=mqttHandler)
+	mqttClient.run()
+	while not mqttHandler.connection:
+		time.sleep(1)
 
 
 ###############################################################################
