@@ -106,39 +106,39 @@ class MQTTClientHandler(MQTTHandler):
 	def _handleIncommingRequest(self, connection:MQTTConnection, topic:str, data:bytes, responseTopicType:str) -> None:
 		"""	Handling incoming requests is rather generic, since the special handling of some requests, like
 			registration is done later anyway.
-		
 		"""
-		def _sendResponse(result:Result) -> None:
+
+		def _sendResponse(result:Result, request:CSERequest=None) -> None:
+			"""	Actually send a response for a request. If `request` is given then
+				set it for the response.
+			"""
+			if request:
+				result.request = request
 			if (response := self._prepareResponse(result)).status:
 				connection.publish(f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}', response.data.encode())
 
-		# SP relative of fr : /cseid/aei
+		# SP relative of for : /cseid/aei
 		L.isDebug and L.logDebug(f'==> MQTT-REQUEST: {topic}')
 
+		# Check correct topic length and dissect it into components
+		topics 					= topic.split('/')
+		requestOriginator:str 	= topics[self.topicPrefixCount + 2]
+		requestReceiver:str   	= topics[self.topicPrefixCount + 3]
+		contentType:str   		= topics[self.topicPrefixCount + 4]
 
-		# Check correct topic length
-		if len(ts := topic.split('/')) != self.topicPrefixCount + 5:
-			_sendResponse(Result(rsc=RC.badRequest, dbg=f'Topic incorrect length: {topic}'))
-			return
-
-		# Dissect topic
-		requestOriginator:str 	= ts[self.topicPrefixCount + 2]
-		requestReceiver:str   	= ts[self.topicPrefixCount + 3]
-		contentType:str   		= ts[self.topicPrefixCount + 4]
-
-		# Check supported contentTypes
+		# Check supported contentTypes, and send an error message if not supported
 		if contentType not in C.supportedContentSerializationsSimple:
 			_sendResponse(Result(rsc=RC.badRequest, dbg=f'Unsupported content serialization type: {contentType}'))
 			return
 
 		# dissect and validate request
 		if not (dissectResult := self._dissectMQTTRequest(data, contentType)).status:
-			if (response := self._prepareResponse(dissectResult)).status:
-				connection.publish(f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}', response.data.encode())
+			# something went wrong during dissection
+			_sendResponse(dissectResult)
 			return
 
-		# log valid request
-		L.isDebug and L.logDebug(f'Operation: {dissectResult.request.op}')
+		# log request
+		L.isDebug and L.logDebug(f'Operation: {dissectResult.request.op.name}')
 		if contentType == ContentSerializationType.JSON:
 			L.isDebug and L.logDebug(f'Body: \n{cast(str, data)}')
 		else:
@@ -146,18 +146,16 @@ class MQTTClientHandler(MQTTHandler):
 
 		# handle request
 		if self.mqttClient.isStopped:
-			responseResult = Result(rsc=RC.internalServerError, dbg='mqtt server not running', status=False)
-		else:
-			try:
-				responseResult = CSE.request.handleRequest(dissectResult.request) if dissectResult.status else dissectResult
-			except Exception as e:
-				responseResult = Utils.exceptionToResult(e)
-		responseResult.request = dissectResult.request
+			_sendResponse(Result(rsc=RC.internalServerError, request=dissectResult.request, dbg='mqtt server not running', status=False))
+			return
 
-		# TODO the above is the same for http server. Optimize?
-
+		try:
+			responseResult = CSE.request.handleRequest(dissectResult.request)
+		except Exception as e:
+			responseResult = Utils.exceptionToResult(e)
 		# Send response
-		_sendResponse(responseResult)
+		_sendResponse(responseResult, dissectResult.request)
+
 
 	def _dissectMQTTRequest(self, data:bytes, contenType:str) -> Result:
 		"""	Dissect an MQTT request. Return it in `Result.request` .
@@ -174,6 +172,7 @@ class MQTTClientHandler(MQTTHandler):
 		# Validate the request
 		try:
 			if not (res := CSE.request.fillAndValidateCSERequest(cseRequest)).status:
+				#return Result(rsc=res.rsc, request=cseRequest, dbg=res.dbg, status=res.status)
 				return res
 		except Exception as e:
 			return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'invalid arguments/attributes ({str(e)})', status=False)
@@ -203,7 +202,7 @@ class MQTTClientHandler(MQTTHandler):
 		resp['pc'] = result.toData(ContentSerializationType.PLAIN)	# First, construct and serialize the data as JSON/dictionary. Encoding to JSON or CBOR is done later
 
 		# serialize and log response
-		response = Result(data=resp, status=True)
+		response = Result(data=resp, request=result.request, status=True)
 		if result.request.ct == ContentSerializationType.CBOR:		# Always us the ct from the request
 			response.data = cast(bytes, RequestUtils.serializeData(response.data, ContentSerializationType.CBOR))
 			L.isDebug and L.logDebug(f'<== MQTT-Response (RSC: {result.rsc:d}):\nBody: \n{helpers.TextTools.toHex(response.data)}\n=>\n{resp}')

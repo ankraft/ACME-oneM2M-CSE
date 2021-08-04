@@ -179,12 +179,12 @@ class HttpServer(object):
 			build the internal strutures. Then, depending on the operation,
 			call the associated request handler.
 		"""
-		# L.isDebug and L.logDebug(f'==> HTTP-{operation.name}: /{path}') 	# path = request.path  w/o the root
 		L.isDebug and L.logDebug(f'==> HTTP-REQUEST: /{path}') 	# path = request.path  w/o the root
-		L.isDebug and L.logDebug(f'Operation: {operation}')
+		L.isDebug and L.logDebug(f'Operation: {operation.name}')
 		L.isDebug and L.logDebug(f'Headers: \n{str(request.headers).rstrip()}')
 		dissectResult = self._dissectHttpRequest(request, operation, path)
 
+		# log Body, if there is one
 		if operation in [ Operation.CREATE, Operation.UPDATE ]:
 			if dissectResult.request.ct == ContentSerializationType.JSON:
 				L.isDebug and L.logDebug(f'Body: \n{str(dissectResult.request.data)}')
@@ -192,15 +192,17 @@ class HttpServer(object):
 				L.isDebug and L.logDebug(f'Body: \n{helpers.TextTools.toHex(cast(bytes, dissectResult.request.data))}\n=>\n{dissectResult.request.dict}')
 
 		if self.isStopped:
-			responseResult = Result(rsc=RC.internalServerError, dbg='http server not running', status=False)
-		else:
-			try:
-				responseResult = CSE.request.handleRequest(dissectResult.request) if dissectResult.status else dissectResult
-			except Exception as e:
-				responseResult = Utils.exceptionToResult(e)
-		responseResult.request = dissectResult.request
+			# Return an error if the server is stopped
+			return self._prepareResponse(Result(rsc=RC.internalServerError, request=dissectResult.request, dbg='http server not running', status=False))
+		if not dissectResult.status:
+			# Something went wrong during dissection
+			return self._prepareResponse(dissectResult)
 
-		return self._prepareResponse(responseResult)
+		try:
+			responseResult = CSE.request.handleRequest(dissectResult.request)
+		except Exception as e:
+			responseResult = Utils.exceptionToResult(e)
+		return self._prepareResponse(responseResult, dissectResult.request)
 
 
 	def handleGET(self, path:str=None) -> Response:
@@ -373,8 +375,14 @@ class HttpServer(object):
 
 	#########################################################################
 
-	def _prepareResponse(self, result:Result) -> Response:
+	def _prepareResponse(self, result:Result, request:CSERequest=None) -> Response:
+		"""	Prepare the response for a request. If `request` is given then
+			set it for the response.
+		"""
 		content:str|bytes|JSON = ''
+
+		if request:
+			result.request = request
 
 		# Build the headers
 		headers = {}
@@ -417,13 +425,6 @@ class HttpServer(object):
 		return Response(response=content, status=statusCode, content_type=cts, headers=headers)
 
 
-	# def _prepareException(self, e:Exception) -> Result:
-	# 	tb = traceback.format_exc()
-	# 	L.logErr(tb, exc=e)
-	# 	tbs = tb.replace('"', '\\"').replace('\n', '\\n')
-	# 	return Result(rsc=RC.internalServerError, dbg=f'encountered exception: {tbs}')
-
-
 	#########################################################################
 	#
 	#	HTTP request helper functions
@@ -433,21 +434,6 @@ class HttpServer(object):
 	def _dissectHttpRequest(self, request:Request, operation:Operation, to:str) -> Result:
 		"""	Dissect an HTTP request. Combine headers and contents into a single structure. Result is returned in Result.request.
 		"""
-
-		# def extractMultipleArgs(args:MultiDict, argName:str, validate:bool=True) -> Tuple[bool, str]:
-		# 	"""	Get multi-arguments. Remove the found arguments from the original list, but add the new list again with the argument name.
-		# 	"""
-		# 	lst = []
-		# 	for e in args.getlist(argName):
-		# 		for es in (t := e.split()):	# check for number
-		# 			if validate:
-		# 				if not CSE.validator.validateRequestArgument(argName, es).status:
-		# 					return False, f'error validating "{argName}" argument(s)'
-		# 		lst.extend(t)
-		# 	args.poplist(argName)	# type: ignore [no-untyped-call] # perhaps even multiple times
-		# 	if len(lst) > 0:
-		# 		args[argName] = lst
-		# 	return True, None
 
 		def extractMultipleArgs(args:MultiDict, argName:str) -> None:
 			"""	Get multi-arguments. Remove the found arguments from the original list, but add the new list again with the argument name.

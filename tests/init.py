@@ -402,7 +402,7 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 		# Special handling for rtu/nu, which is a sub-structure for rt.
 		# Either get it (if exist), or create it. Then add nu, and add it again
 		if (h := headers.get(C.hfRTU)) is not None:
-			if (rtu := cast(JSON, req.get('rt'))) is None:
+			if (rtu := req.get('rt')) is None:
 				rtu = dict()
 			rtu['nu'] = h.split('&')	# -> list
 			req['rt'] = rtu
