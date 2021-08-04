@@ -529,7 +529,7 @@ class HttpServer(object):
 				req[param] = p
 				del args[param]
 		if (rtv := args.get('rt')) is not None:
-			if (rt := req.get('rt')) is None:
+			if (rt := cast(JSON, req.get('rt'))) is None:
 				rt = dict()
 			rt['rtv'] = rtv		# req.rt.rtv
 			req['rt'] = rt

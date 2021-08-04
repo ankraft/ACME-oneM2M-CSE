@@ -38,37 +38,37 @@ class MQTTHandler(object):
 		and the callbacks for them in the `onConnect()` method.
 	"""
 
-	def onConnect(self, connection:MQTTConnection) -> None:
+	def onConnect(self, connection:MQTTConnection) -> bool:
 		"""	This method is called after the MQTT client connected to the MQTT broker. 
 			Usually, an MQTT client should subscribe to topics and register the callback
 			methods here.
 		"""
-		pass
+		return True
 
-	def onDisconnect(self, connection:MQTTConnection) -> None:
+	def onDisconnect(self, connection:MQTTConnection) -> bool:
 		"""	This method is called after the MQTT client disconnected from the MQTT broker. 
 		"""
-		pass
+		return True
 
-	def onSubscribed(self, connection:MQTTConnection, topic:str) -> None:
+	def onSubscribed(self, connection:MQTTConnection, topic:str) -> bool:
 		"""	This method is called after the MQTT client successfully subsribed to a topic. 
 		"""
-		pass
+		return True
 
-	def onUnsubscribed(self, connection:MQTTConnection, topic:str) -> None:
+	def onUnsubscribed(self, connection:MQTTConnection, topic:str) -> bool:
 		"""	This method is called after the MQTT client successfully unsubsribed from a topic. 
 		"""
-		pass
+		return True
 
-	def onError(self, connection:MQTTConnection, rc:int) -> None:
+	def onError(self, connection:MQTTConnection, rc:int) -> bool:
 		"""	This method is called when receiving an error when communicating with the MQTT broker. 
 		"""
-		pass
+		return True
 
-	def logging(self, connection:MQTTConnection, level:int, message:str) -> None:
+	def logging(self, connection:MQTTConnection, level:int, message:str) -> bool:
 		"""	This method is called when a log message should be handled. 
 		"""
-		pass
+		return True
 
 
 ##############################################################################

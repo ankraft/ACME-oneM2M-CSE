@@ -38,40 +38,39 @@ class MQTTClientHandler(MQTTHandler):
 		self.topicPrefix = mqttClient.topicPrefix
 		self.topicPrefixCount = len(self.topicPrefix.split('/'))	# Count the elements for the prefix
 
-	def onConnect(self, connection:MQTTConnection) -> None:
+	def onConnect(self, connection:MQTTConnection) -> bool:
 		"""	When connected to a broker then register the topics the CSE listens to.
 		"""
 		L.isDebug and L.logDebug('Connected to MQTT broker')
 		connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/req/+/{idToMQTT(CSE.cseCsi)}/#', self._requestCB)					# Subscribe to general requests
 		connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/resp/{idToMQTT(CSE.cseCsi)}/+/#', self._responseCB)				# Subscribe to responses
 		connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/reg_req/+/{idToMQTT(CSE.cseCsi)}/#', self._registrationRequestCB)	# Subscribe to registration requests
+		return True
 
 
-	def onDisconnect(self, _:MQTTConnection) -> None:
-		L.isDebug and L.logDebug('Disconnected from MQTT broker')
-		pass
+	def onDisconnect(self, _:MQTTConnection) -> bool:
+		return L.isDebug and L.logDebug('Disconnected from MQTT broker')
 
 
-	def onSubscribed(self, _: MQTTConnection, topic: str) -> None:
-		L.isDebug and L.logDebug(f'Topic successfully subscribed: {topic}')
-		pass
+	def onSubscribed(self, _: MQTTConnection, topic: str) -> bool:
+		return L.isDebug and L.logDebug(f'Topic successfully subscribed: {topic}')
 
 
-	def onUnsubscribed(self, _: MQTTConnection, topic: str) -> None:
-		L.isDebug and L.logDebug(f'Topic unsubscribed: {topic}')
-		pass
+	def onUnsubscribed(self, _: MQTTConnection, topic: str) -> bool:
+		return L.isDebug and L.logDebug(f'Topic unsubscribed: {topic}')
 
 
-	def onError(self, _:MQTTConnection, rc:int=-1) -> None:
+	def onError(self, _:MQTTConnection, rc:int=-1) -> bool:
 		if rc in [5]:		# authorization error
 			CSE.shutdown()
 		if rc == -1: 	# unknown. probably connection error?
 			CSE.shutdown()
 		# ignore all others
+		return True
 	
 
-	def logging(self, connection:MQTTConnection, level:int, message:str) -> None:
-		self.mqttClient.enableLogging and L.logWithLevel(level, message, stackOffset=4)	# Log the message, compensate to let the logger determine the correct file/linenumber
+	def logging(self, connection:MQTTConnection, level:int, message:str) -> bool:
+		return self.mqttClient.enableLogging and L.logWithLevel(level, message, stackOffset=4)	# Log the message, compensate to let the logger determine the correct file/linenumber
 
 	#
 	#	Various request, register and response callbacks
@@ -122,9 +121,9 @@ class MQTTClientHandler(MQTTHandler):
 			return
 
 		# Dissect topic
-		requestOriginator 	= ts[self.topicPrefixCount + 2]
-		requestReceiver   	= ts[self.topicPrefixCount + 3]
-		contentType   		= ts[self.topicPrefixCount + 4]
+		requestOriginator:str 	= ts[self.topicPrefixCount + 2]
+		requestReceiver:str   	= ts[self.topicPrefixCount + 3]
+		contentType:str   		= ts[self.topicPrefixCount + 4]
 
 		# Check supported contentTypes
 		if contentType not in C.supportedContentSerializationsSimple:
@@ -155,7 +154,7 @@ class MQTTClientHandler(MQTTHandler):
 		responseResult.request = dissectResult.request
 
 		# TODO the above is the same for http server. Optimize?
-		
+
 		# Send response
 		_sendResponse(responseResult)
 

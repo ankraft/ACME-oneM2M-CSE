@@ -88,7 +88,7 @@ class	Logging:
 	queueMaxsize:int				= 5000		# max number of items in the logging queue. Might otherwise grow forever on large load
 
 	_console:Console				= None
-	_richHander:ACMERichLogHandler	= None
+	_richHandler:ACMERichLogHandler	= None
 	_handlers:List[Any] 			= None
 
 	terminalColor					= 'spring_green2'

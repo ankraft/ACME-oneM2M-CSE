@@ -116,7 +116,7 @@ class MQTTClientHandler(MQTTHandler):
 		self.messages.put((topic, data))
 
 
-	def publish(self, topic:str, data:bytes):
+	def publish(self, topic:str, data:bytes) -> None:
 		self.connection.publish(topic, data)
 
 	
@@ -399,12 +399,13 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 			if (h := headers.get(hdr)) is not None:	# overwrite X-M2M-RVI header
 				req[attr] = h
 				del headers[hdr]
-		# Special handling for rtu/nu, which is a sub-structure for rt
+		# Special handling for rtu/nu, which is a sub-structure for rt.
+		# Either get it (if exist), or create it. Then add nu, and add it again
 		if (h := headers.get(C.hfRTU)) is not None:
-			if (rt := req.get('rt')) is None:
-				rt = dict()
-			rt['nu'] = h.split('&')	# -> list
-			req['rt'] = rt
+			if (rtu := cast(JSON, req.get('rt'))) is None:
+				rtu = dict()
+			rtu['nu'] = h.split('&')	# -> list
+			req['rt'] = rtu
 			del headers[C.hfRTU]
 	if data:
 		req['pc'] = data	
