@@ -70,7 +70,8 @@ class MQTTClientHandler(MQTTHandler):
 	
 
 	def logging(self, connection:MQTTConnection, level:int, message:str) -> bool:
-		return self.mqttClient.enableLogging and L.logWithLevel(level, message, stackOffset=4)	# Log the message, compensate to let the logger determine the correct file/linenumber
+		L.logWithLevel(level, message, stackOffset=4)	# Log the message, compensate to let the logger determine the correct file/linenumber
+		return True
 
 	#
 	#	Various request, register and response callbacks
@@ -221,7 +222,6 @@ class MQTTClient(object):
 	def __init__(self) -> None:
 		self.enable			= Configuration.get('mqtt.enable')
 		self.topicPrefix 	= Configuration.get('mqtt.topicPrefix')
-		self.enableLogging 	= Configuration.get('mqtt.enableLogging')
 		self.mqttConnection	= None
 		self.isStopped		= False
 

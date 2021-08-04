@@ -111,7 +111,6 @@ class Configuration(object):
 				'http.enableRemoteConfiguration'		: config.getboolean('server.http', 'enableRemoteConfiguration', fallback=False),
 				'http.enableStructureEndpoint'			: config.getboolean('server.http', 'enableStructureEndpoint', fallback=False),
 				'http.enableResetEndpoint'				: config.getboolean('server.http', 'enableResetEndpoint', fallback=False),
-				'http.enableLogging' 					: config.getboolean('server.http', 'enableLogging',		fallback=True),
 
 				#
 				#	HTTP Server Security
@@ -134,7 +133,6 @@ class Configuration(object):
 				'mqtt.keepalive' 						: config.getint('client.mqtt', 'keepalive',				fallback=60),
 				'mqtt.listenIF' 						: config.get('client.mqtt', 'listenIF',					fallback='127.0.0.1'),
 				'mqtt.topicPrefix' 						: config.get('client.mqtt', 'topicPrefix',				fallback=''),
-				'mqtt.enableLogging' 					: config.getboolean('client.mqtt', 'enableLogging',		fallback=True),
 
 				# TODO check values of mqtt later
 

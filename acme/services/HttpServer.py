@@ -49,7 +49,6 @@ class HttpServer(object):
 		self.serverAddress		= Configuration.get('http.address')
 		self.listenIF			= Configuration.get('http.listenIF')
 		self.port 				= Configuration.get('http.port')
-		self.enableLogging		= Configuration.get('http.enableLogging')
 		self.webuiRoot 			= Configuration.get('cse.webui.root')
 		self.webuiDirectory 	= f'{CSE.rootDirectory}/acme/webui'
 		self.hfvRVI				= Configuration.get('cse.releaseVersion')
@@ -525,13 +524,13 @@ class HttpServer(object):
 		# Handle some parameters differently.
 		# They are not filter cirteria, but request attributes
 		for param in ['rcn', 'rp']:
-			if (p := args.get(param)) is not None:
+			if (p := args.get(param)) is not None:	# type: ignore [assignment]
 				req[param] = p
 				del args[param]
 		if (rtv := args.get('rt')) is not None:
 			if (rt := cast(JSON, req.get('rt'))) is None:
 				rt = dict()
-			rt['rtv'] = rtv		# req.rt.rtv
+			rt['rtv'] = rtv		# type: ignore [assignment] # req.rt.rtv
 			req['rt'] = rt
 			del args['rt']
 
@@ -578,13 +577,13 @@ class HttpServer(object):
 class ACMERequestHandler(WSGIRequestHandler):
 	# Just like WSGIRequestHandler, but without "- -"
 	def log(self, type, message, *args): # type: ignore
-		CSE.httpServer.enableLogging and L.isDebug and L.logDebug(f'HTTP: {message % args}')
+		L.isDebug and L.logDebug(f'HTTP: {message % args}')
 
 	# Just like WSGIRequestHandler, but without "code"
 	def log_request(self, code='-', size='-'): 	# type: ignore
-		CSE.httpServer.enableLogging and L.isDebug and L.logDebug(f'HTTP: "{self.requestline}" {size} {code}')
+		L.isDebug and L.logDebug(f'HTTP: "{self.requestline}" {size} {code}')
 
 	def log_message(self, format, *args): 	# type: ignore
-		CSE.httpServer.enableLogging and L.isDebug and L.logDebug(f'HTTP: {format % args}')
+		L.isDebug and L.logDebug(f'HTTP: {format % args}')
 	
 

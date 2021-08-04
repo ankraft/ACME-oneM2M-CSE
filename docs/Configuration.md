@@ -101,7 +101,6 @@ The following macros are supported in addition to those defined in the sections 
 | enableRemoteConfiguration | Enable an endpoint for get and set certain configuration values via a REST interface.<br />**ATTENTION: Enabling this feature exposes configuration values, IDs and passwords, and is a security risk.**<br/> Default: false                    | http.enableRemoteConfiguration |
 | enableStructureEndpoint   | Enable an endpoint for getting a structured overview about a CSE's resource tree and deployment infrastructure (remote CSE's).<br />**ATTENTION: Enabling this feature exposes various potentially sensitive information.**<br/> Default: false | http.enableStructureEndpoint   |
 | enableResetEndpoint       | Enable an endpoint for resetting the CSE (remove all resources and import the init directory again)<br />**ATTENTION: Enabling this feature may lead to a total loss of data**<br/>Default: false                                               | http.enableResetEndpoint       |
-| enableLogging             | Enable logging of low-level HTTO server events.<br />Default: True                                                                                                                                                                              | http.enableLogging             |
 
 
 <a name="security_http"></a>
@@ -127,7 +126,6 @@ The following macros are supported in addition to those defined in the sections 
 | listenIF      | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1           | mqtt.listenIF      |
 | keepalive     | Value for the MQTT connection's keep-alive parameter in seconds.<br />Default: 60 seconds | mqtt.keepalive     |
 | topicPrefix   | Optional prefix for topics.<br />Default: empty string                                    | mqtt.topicPrefix   |
-| enableLogging | Enable logging of low-level MQTT client events.<br />Default: True                        | mqtt.enableLogging |
 
 
 <a name="security_mqtt"></a>
