@@ -283,6 +283,10 @@ urlregex = re.compile(
 		r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' 		# ipv4
 		r'(?::\d+)?' 								# optional port
 		r'(?:/?|[/?]\S+)$', re.IGNORECASE			# optional path
+
+		# Alternative version of the last line: match everything for the path and also remove the IGNORECASE
+		# r'\S+' # re.IGNORECASE		 			# optional path
+
 		)
 def isURL(url: str) -> bool:
 	""" Check whether a given string is a URL. """
