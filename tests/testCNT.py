@@ -241,6 +241,7 @@ class TestCNT(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	@unittest.skipUnless(BINDING in [ 'http', 'https' ], 'Only when testing with http(s) binding')
 	def test_createCNTWithoutOriginator(self) -> None:
 		"""	Create <CNT> under <CB> without an Originator -> Fail"""
 		dct = 	{ 'm2m:cnt' : { 

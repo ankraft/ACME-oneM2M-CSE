@@ -128,7 +128,7 @@ class TestMisc(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipUnless(BINDING in [ 'http', 'https' ], 'Only for http(s)')
+	@unittest.skipUnless(BINDING in [ 'http', 'https' ], 'Only when testing with http(s) binding')
 	def test_checkHTTPmissingOriginator(self) -> None:
 		"""	Check missing originator in request"""
 		_, rsc = RETRIEVE(cseURL, None, headers={'X-M2M-RET' : getDate(10)}) # request expiration in 10 seconds

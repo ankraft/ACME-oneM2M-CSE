@@ -7,7 +7,7 @@
 #	Configurations for unit tests
 #
 
-BINDING						= 'mqtt'
+BINDING						= 'http'
 
 if BINDING == 'mqtt':
 
