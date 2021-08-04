@@ -95,9 +95,7 @@ enableStructureEndpoint=false
 # ATTENTION: Enabling this feature may lead to a total loss of data.
 # Default: False
 enableResetEndpoint=false
-# Enable logging of low-level HTTP events.
-# Default: True
-enableLogging=True
+
 
 #
 #	HTTP security settings
@@ -144,9 +142,8 @@ listenIF=127.0.0.1
 # Optional prefix for topics.
 # Default: empty string
 topicPrefix=
-# Enable logging of low-level MQTT client events.
-# Default: True
-enableLogging=true
+
+
 
 #
 #	MQTT security settings
