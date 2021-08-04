@@ -49,6 +49,7 @@ class HttpServer(object):
 		self.serverAddress		= Configuration.get('http.address')
 		self.listenIF			= Configuration.get('http.listenIF')
 		self.port 				= Configuration.get('http.port')
+		self.enableLogging		= Configuration.get('http.enableLogging')
 		self.webuiRoot 			= Configuration.get('cse.webui.root')
 		self.webuiDirectory 	= f'{CSE.rootDirectory}/acme/webui'
 		self.hfvRVI				= Configuration.get('cse.releaseVersion')
@@ -179,23 +180,23 @@ class HttpServer(object):
 			build the internal strutures. Then, depending on the operation,
 			call the associated request handler.
 		"""
-		L.isDebug and L.logDebug(f'==> HTTP-{operation.name}: /{path}') 	# path = request.path  w/o the root
-		L.isDebug and L.logDebug(f'Headers: \n{str(request.headers)}')
+		# L.isDebug and L.logDebug(f'==> HTTP-{operation.name}: /{path}') 	# path = request.path  w/o the root
+		L.isDebug and L.logDebug(f'==> HTTP-REQUEST: /{path}') 	# path = request.path  w/o the root
+		L.isDebug and L.logDebug(f'Operation: {operation}')
+		L.isDebug and L.logDebug(f'Headers: \n{str(request.headers).rstrip()}')
 		dissectResult = self._dissectHttpRequest(request, operation, path)
+
+		if operation in [ Operation.CREATE, Operation.UPDATE ]:
+			if dissectResult.request.ct == ContentSerializationType.JSON:
+				L.isDebug and L.logDebug(f'Body: \n{str(dissectResult.request.data)}')
+			else:
+				L.isDebug and L.logDebug(f'Body: \n{helpers.TextTools.toHex(cast(bytes, dissectResult.request.data))}\n=>\n{dissectResult.request.dict}')
 
 		if self.isStopped:
 			responseResult = Result(rsc=RC.internalServerError, dbg='http server not running', status=False)
 		else:
 			try:
-				if dissectResult.status:
-					if operation in [ Operation.CREATE, Operation.UPDATE ]:
-						if dissectResult.request.ct == ContentSerializationType.CBOR:
-							L.isDebug and L.logDebug(f'Body: \n{helpers.TextTools.toHex(cast(bytes, dissectResult.request.data))}\n=>\n{dissectResult.request.dict}')
-						else:
-							L.isDebug and L.logDebug(f'Body: \n{str(dissectResult.request.data)}')
-					responseResult = CSE.request.handleRequest(dissectResult.request)
-				else:
-					responseResult = dissectResult
+				responseResult = CSE.request.handleRequest(dissectResult.request) if dissectResult.status else dissectResult
 			except Exception as e:
 				responseResult = Utils.exceptionToResult(e)
 		responseResult.request = dissectResult.request
@@ -577,17 +578,13 @@ class HttpServer(object):
 class ACMERequestHandler(WSGIRequestHandler):
 	# Just like WSGIRequestHandler, but without "- -"
 	def log(self, type, message, *args): # type: ignore
-		L.isDebug and L.logDebug(message % args)
-		return
-		# L.isDebug and L.log(f'{self.address_string()} {message % args}\n')
+		CSE.httpServer.enableLogging and L.isDebug and L.logDebug(f'HTTP: {message % args}')
 
 	# Just like WSGIRequestHandler, but without "code"
 	def log_request(self, code='-', size='-'): 	# type: ignore
-		L.isDebug and L.logDebug(f'"{self.requestline}" {size} {code}')
-		return
+		CSE.httpServer.enableLogging and L.isDebug and L.logDebug(f'HTTP: "{self.requestline}" {size} {code}')
 
 	def log_message(self, format, *args): 	# type: ignore
-		L.isDebug and L.logDebug(format % args)
-		return
+		CSE.httpServer.enableLogging and L.isDebug and L.logDebug(f'HTTP: {format % args}')
 	
 

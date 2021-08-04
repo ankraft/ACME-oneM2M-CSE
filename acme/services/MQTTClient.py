@@ -112,9 +112,9 @@ class MQTTClientHandler(MQTTHandler):
 			if (response := self._prepareResponse(result)).status:
 				connection.publish(f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}', response.data.encode())
 
-		L.isDebug and L.logDebug(f'==> MQTT-REQUEST {topic}:')
-
 		# SP relative of fr : /cseid/aei
+		L.isDebug and L.logDebug(f'==> MQTT-REQUEST: {topic}')
+
 
 		# Check correct topic length
 		if len(ts := topic.split('/')) != self.topicPrefixCount + 5:
@@ -138,6 +138,7 @@ class MQTTClientHandler(MQTTHandler):
 			return
 
 		# log valid request
+		L.isDebug and L.logDebug(f'Operation: {dissectResult.request.op}')
 		if contentType == ContentSerializationType.JSON:
 			L.isDebug and L.logDebug(f'Body: \n{cast(str, data)}')
 		else:
@@ -153,6 +154,8 @@ class MQTTClientHandler(MQTTHandler):
 				responseResult = Utils.exceptionToResult(e)
 		responseResult.request = dissectResult.request
 
+		# TODO the above is the same for http server. Optimize?
+		
 		# Send response
 		_sendResponse(responseResult)
 

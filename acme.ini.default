@@ -95,7 +95,9 @@ enableStructureEndpoint=false
 # ATTENTION: Enabling this feature may lead to a total loss of data.
 # Default: False
 enableResetEndpoint=false
-
+# Enable logging of low-level HTTP events.
+# Default: True
+enableLogging=True
 
 #
 #	HTTP security settings
