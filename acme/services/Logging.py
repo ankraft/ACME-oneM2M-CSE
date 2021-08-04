@@ -74,25 +74,26 @@ class	Logging:
 		logfile and to the console.
 	"""
 
-	logger  				= None
-	loggerConsole			= None
-	logLevel:LogLevel		= LogLevel.INFO
-	lastLogLevel:LogLevel	= None
-	enableFileLogging		= True
-	enableScreenLogging		= True
-	stackTraceOnError		= True
-	worker 					= None
-	queue:Queue				= None
+	logger  						= None
+	loggerConsole					= None
+	logLevel:LogLevel				= LogLevel.INFO
+	lastLogLevel:LogLevel			= None
+	enableFileLogging				= True
+	enableScreenLogging				= True
+	stackTraceOnError				= True
+	worker 							= None
+	queue:Queue						= None
 
-	checkInterval:float		= 0.3		# wait (in s) between checks of the logging queue # TODO configurable
-	queueMaxsize:int		= 5000		# max number of items in the logging queue. Might otherwise grow forever on large load
+	checkInterval:float				= 0.3		# wait (in s) between checks of the logging queue # TODO configurable
+	queueMaxsize:int				= 5000		# max number of items in the logging queue. Might otherwise grow forever on large load
 
-	_console:Console		= None
-	_handlers:List[Any] 	= None
+	_console:Console				= None
+	_richHander:ACMERichLogHandler	= None
+	_handlers:List[Any] 			= None
 
-	terminalColor			= 'spring_green2'
-	terminalStyle:Style		= Style(color=terminalColor)
-	terminalStyleError:Style= Style(color='red')
+	terminalColor					= 'spring_green2'
+	terminalStyle:Style				= Style(color=terminalColor)
+	terminalStyleError:Style		= Style(color='red')
 
 
 	@staticmethod
@@ -110,12 +111,13 @@ class	Logging:
 		Logging.logger				= logging.getLogger('logging')			# general logger
 		Logging.loggerConsole		= logging.getLogger('rich')				# Rich Console logger
 		Logging._console			= Console()								# Console object
+		Logging._richHandler		= ACMERichLogHandler()
 
 		# Add logging queue
 		Logging.queue = Queue(maxsize=Logging.queueMaxsize)
 
 		# List of log handlers
-		Logging._handlers = [ ACMERichLogHandler() ]
+		Logging._handlers = [ Logging._richHandler ]
 
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
@@ -328,6 +330,7 @@ class ACMERichLogHandler(RichHandler):
 		}
 		_styles = DEFAULT_STYLES.copy()
 		_styles.update(ACMEStyles)
+		self.rich_tracebacks = True
 
 		super().__init__(level=level, console=Console(theme=Theme(_styles)))
 

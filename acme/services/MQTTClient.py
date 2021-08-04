@@ -41,13 +41,14 @@ class MQTTClientHandler(MQTTHandler):
 	def onConnect(self, connection:MQTTConnection) -> None:
 		"""	When connected to a broker then register the topics the CSE listens to.
 		"""
+		L.isDebug and L.logDebug('Connected to MQTT broker')
 		connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/req/+/{idToMQTT(CSE.cseCsi)}/#', self._requestCB)					# Subscribe to general requests
 		connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/resp/{idToMQTT(CSE.cseCsi)}/+/#', self._responseCB)				# Subscribe to responses
 		connection.subscribeTopic(f'{self.topicPrefix}/oneM2M/reg_req/+/{idToMQTT(CSE.cseCsi)}/#', self._registrationRequestCB)	# Subscribe to registration requests
 
 
 	def onDisconnect(self, _:MQTTConnection) -> None:
-		L.isDebug and L.logDebug('Disconnect from MQTT broker')
+		L.isDebug and L.logDebug('Disconnected from MQTT broker')
 		pass
 
 
@@ -69,9 +70,8 @@ class MQTTClientHandler(MQTTHandler):
 		# ignore all others
 	
 
-	def logging(self, _:MQTTConnection, level:int, message:str) -> None:
-		L.logWithLevel(level, message, stackOffset=3)	# Log the message, compensate to let the logger determine the correct file/linenumber
-
+	def logging(self, connection:MQTTConnection, level:int, message:str) -> None:
+		self.mqttClient.enableLogging and L.logWithLevel(level, message, stackOffset=4)	# Log the message, compensate to let the logger determine the correct file/linenumber
 
 	#
 	#	Various request, register and response callbacks
@@ -219,6 +219,7 @@ class MQTTClient(object):
 	def __init__(self) -> None:
 		self.enable			= Configuration.get('mqtt.enable')
 		self.topicPrefix 	= Configuration.get('mqtt.topicPrefix')
+		self.enableLogging 	= Configuration.get('mqtt.enableLogging')
 		self.mqttConnection	= None
 		self.isStopped		= False
 
@@ -233,7 +234,6 @@ class MQTTClient(object):
 												 verifyCertificate	= CSE.security.verifyCertificateMqtt,
 												 username 			= CSE.security.usernameMqtt,
 												 password			= CSE.security.passwordMqtt,
-												 logEnabled			= False,	# TODO configurable		
 												 messageHandler 	= MQTTClientHandler	(self))
 		L.isInfo and L.log('MQTT Client initialized')
 	

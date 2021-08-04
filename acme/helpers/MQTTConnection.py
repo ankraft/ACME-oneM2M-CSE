@@ -83,7 +83,6 @@ class MQTTConnection(object):
 	def __init__(self, address:str, port:int=None, keepalive:int=60, interface:str='0.0.0.0', 
 					clientID:str=None, username:str=None, password:str=None,
 					useTLS:bool=False, caFile:str=None, verifyCertificate:bool=False,
-					logEnabled:bool=True,
 					messageHandler:MQTTHandler=None
 				) -> None:
 		self.brokerAddress							= address
@@ -96,7 +95,6 @@ class MQTTConnection(object):
 		self.verifyCertificate						= verifyCertificate
 		self.caFile									= caFile
 		self.clientID								= clientID
-		self.logEnabled								= logEnabled
 
 		self.isStopped								= True
 		self.isConnected							= False
@@ -176,7 +174,7 @@ class MQTTConnection(object):
 	def _onConnect(self, client:mqtt.Client, userdata:Any, flags:dict, rc:int) -> None:
 		"""	Callback when the MQTT client connected to the broker.
 		"""
-		self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: Connected with result code: {rc}')
+		self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: Connected with result code: {rc} ({mqtt.error_string(rc)})')
 		if rc == 0:
 			self.isConnected = True
 			self.messageHandler and self.messageHandler.onConnect(self)
@@ -190,7 +188,7 @@ class MQTTConnection(object):
 	def _onDisconnect(self, client:mqtt.Client, userdata:Any, rc:int) -> None:
 		"""	Callback when the MQTT client disconnected from the broker.
 		"""
-		self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: Disconnected with result code: {rc}')
+		self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: Disconnected with result code: {rc} ({mqtt.error_string(rc)})')
 		self.subscribedTopics.clear()
 		if rc == 0:
 			self.isConnected = False
@@ -205,8 +203,7 @@ class MQTTConnection(object):
 	def _onLog(self, client:mqtt.Client, userdata:Any, level:int, buf:str) -> None:
 		"""	Mapping of the paho MQTT client's log to the logging system. Also handles different log-level scheme.
 		"""
-		if self.logEnabled:
-			self.messageHandler and self.messageHandler.logging(self.mqttClient, mqtt.LOGGING_LEVEL[level], f'MQTT: {buf}')
+		self.messageHandler and self.messageHandler.logging(self.mqttClient, mqtt.LOGGING_LEVEL[level], f'MQTT: {buf}')
 	
 
 	def _onSubscribe(self, client:mqtt.Client, userdata:Any, mid:int, granted_qos:int) -> None:

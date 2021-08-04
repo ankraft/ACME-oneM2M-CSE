@@ -118,14 +118,15 @@ The following macros are supported in addition to those defined in the sections 
 <a name="client_mqtt"></a>
 ###	[client.mqtt] - MQTT Client Settings
 
-| Keyword     | Description                                                                               | Macro Name       |
-|:------------|:------------------------------------------------------------------------------------------|:-----------------|
-| enable      | Enable the MQTT binding.<br />Default: False                                              | mqtt.enable      |
-| address     | he hostname of the MQTT broker.<br />Default; 127.0.0.1                                   | mqtt.address     |
-| port        | Set the port for the MQTT broker.<br />Default: 1883, or 8883 for TLS                     | mqtt.port        |
-| listenIF    | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1           | mqtt.listenIF    |
-| keepalive   | Value for the MQTT connection's keep-alive parameter in seconds.<br />Default: 60 seconds | mqtt.keepalive   |
-| topicPrefix | Optional prefix for topics.<br />Default: empty string                                    | mqtt.topicPrefix |
+| Keyword       | Description                                                                               | Macro Name         |
+|:--------------|:------------------------------------------------------------------------------------------|:-------------------|
+| enable        | Enable the MQTT binding.<br />Default: False                                              | mqtt.enable        |
+| address       | he hostname of the MQTT broker.<br />Default; 127.0.0.1                                   | mqtt.address       |
+| port          | Set the port for the MQTT broker.<br />Default: 1883, or 8883 for TLS                     | mqtt.port          |
+| listenIF      | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1           | mqtt.listenIF      |
+| keepalive     | Value for the MQTT connection's keep-alive parameter in seconds.<br />Default: 60 seconds | mqtt.keepalive     |
+| topicPrefix   | Optional prefix for topics.<br />Default: empty string                                    | mqtt.topicPrefix   |
+| enableLogging | Enable logging of low-level MQTT client events.<br />Default: True                        | mqtt.enableLogging |
 
 
 <a name="security_mqtt"></a>
