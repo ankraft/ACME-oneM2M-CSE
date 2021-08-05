@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - [CONSOLE] Added the possibility to toggle through the display modes with "^T" when displaying the resource tree continuously.
-
+- [CONSOLE] Added [cse.console].confirmQuit configuration option. It is switched off by default.
 
 ### Changed
 - [HTTP] Moved the security setting for http to the separate section [server.http.security].

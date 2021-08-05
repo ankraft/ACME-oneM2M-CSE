@@ -22,8 +22,8 @@ import helpers.TextTools
 class SecurityManager(object):
 
 	def __init__(self) -> None:
-		self.enableACPChecks 		= Configuration.get('cse.security.enableACPChecks')
-		self.fullAccessAdmin		= Configuration.get('cse.security.fullAccessAdmin')
+		self.enableACPChecks 			= Configuration.get('cse.security.enableACPChecks')
+		self.fullAccessAdmin			= Configuration.get('cse.security.fullAccessAdmin')
 
 		L.isInfo and L.log('SecurityManager initialized')
 		if self.enableACPChecks:
@@ -32,19 +32,19 @@ class SecurityManager(object):
 			L.isInfo and L.log('ACP checking DISABLED')
 		
 		# TLS configurations (http)
-		self.useTLSHttp 			= Configuration.get('http.security.useTLS')
-		self.verifyCertificateHttp	= Configuration.get('http.security.verifyCertificate')
-		self.tlsVersionHttp			= Configuration.get('http.security.tlsVersion').lower()
-		self.caCertificateFileHttp	= Configuration.get('http.security.caCertificateFile')
-		self.caPrivateKeyFileHttp	= Configuration.get('http.security.caPrivateKeyFile')
+		self.useTLSHttp 				= Configuration.get('http.security.useTLS')
+		self.verifyCertificateHttp		= Configuration.get('http.security.verifyCertificate')
+		self.tlsVersionHttp				= Configuration.get('http.security.tlsVersion').lower()
+		self.caCertificateFileHttp		= Configuration.get('http.security.caCertificateFile')
+		self.caPrivateKeyFileHttp		= Configuration.get('http.security.caPrivateKeyFile')
 
-		# TLS configuration (mqtt)
-		self.useTlsMqtt 			= Configuration.get('mqtt.security.useTLS')
-		self.verifyCertificateMqtt	= Configuration.get('mqtt.security.verifyCertificate')
-		self.caCertificateFileMqtt	= Configuration.get('mqtt.security.caCertificateFile')
-		self.usernameMqtt			= Configuration.get('mqtt.security.username')
-		self.passwordMqtt			= Configuration.get('mqtt.security.password')
-
+		# TLS and other configuration (mqtt)
+		self.useTlsMqtt 				= Configuration.get('mqtt.security.useTLS')
+		self.verifyCertificateMqtt		= Configuration.get('mqtt.security.verifyCertificate')
+		self.caCertificateFileMqtt		= Configuration.get('mqtt.security.caCertificateFile')
+		self.usernameMqtt				= Configuration.get('mqtt.security.username')
+		self.passwordMqtt				= Configuration.get('mqtt.security.password')
+		self.allowedCredentialIDsMqtt	= Configuration.get('mqtt.security.allowedCredentialIDs')
 		
 
 
@@ -239,17 +239,16 @@ class SecurityManager(object):
 		return Result(status=True)
 
 
-	def isAllowedOriginator(self, originator: str, allowedOriginators: List[str]) -> bool:
+	def isAllowedOriginator(self, originator:str, allowedOriginators:List[str]) -> bool:
 		""" Check whether an Originator is in the provided list of allowed 
 			originators. This list may contain regex.
 		"""
 		# if L.isDebug: L.logDebug(f'Originator: {originator}')
 		# if L.isDebug: L.logDebug(f'Allowed originators: {allowedOriginators}')
 
-		if originator is None or allowedOriginators is None:
+		if not originator or not allowedOriginators:
 			return False
 		for ao in allowedOriginators:
-			# if re.fullmatch(re.compile(ao), getIdFromOriginator(originator)):
 			if helpers.TextTools.simpleMatch(Utils.getIdFromOriginator(originator), ao):
 				return True
 		return False

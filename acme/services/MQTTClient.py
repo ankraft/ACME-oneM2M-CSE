@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import cast
 
 from etc.Constants import Constants as C
-from etc.Types import JSON, Operation, CSERequest, ContentSerializationType, Result, ResponseCode as RC
+from etc.Types import JSON, Operation, CSERequest, ContentSerializationType, ResourceTypes, Result, ResponseCode as RC
 from services.Logging import Logging as L
 from services.Configuration import Configuration
 import services.CSE as CSE, etc.Utils as Utils, etc.DateUtils as DateUtils, etc.RequestUtils as RequestUtils
@@ -85,10 +85,9 @@ class MQTTClientHandler(MQTTHandler):
 
 
 	def _registrationRequestCB(self, connection:MQTTConnection, topic:str, data:bytes) -> None:
-		"""	handle a registration request.
+		"""	handle an MQTT registration request.
 		"""
-		# TODO check originator whether it is allowed to register
-		self._handleIncommingRequest(connection, topic, data, 'reg_resp')
+		self._handleIncommingRequest(connection, topic, data, 'reg_resp', isRegistration=True)
 
 
 
@@ -102,8 +101,7 @@ class MQTTClientHandler(MQTTHandler):
 		connection.publish('test', f'{topic}, {data:b}, {ts[-1]}'.encode())		# type: ignore [str-bytes-safe]
 
 
-
-	def _handleIncommingRequest(self, connection:MQTTConnection, topic:str, data:bytes, responseTopicType:str) -> None:
+	def _handleIncommingRequest(self, connection:MQTTConnection, topic:str, data:bytes, responseTopicType:str, isRegistration:bool=False) -> None:
 		"""	Handling incoming requests is rather generic, since the special handling of some requests, like
 			registration is done later anyway.
 		"""
@@ -120,15 +118,23 @@ class MQTTClientHandler(MQTTHandler):
 		# SP relative of for : /cseid/aei
 		L.isDebug and L.logDebug(f'==> MQTT-REQUEST: {topic}')
 
-		# Check correct topic length and dissect it into components
-		topics 					= topic.split('/')
-		requestOriginator:str 	= topics[self.topicPrefixCount + 2]
-		requestReceiver:str   	= topics[self.topicPrefixCount + 3]
-		contentType:str   		= topics[self.topicPrefixCount + 4]
+		# Check correct topic length
+		if len(ts := topic.split('/')) != self.topicPrefixCount + 5:
+			L.logErr(f'Received topic with incorrect length: {topic}', showStackTrace=False)
+			# We can't do anything about a wrong topic. Actually, we should never have received this
+			return
+
+		# Dissect topic
+		requestOriginator:str 	= ts[self.topicPrefixCount + 2]
+		requestReceiver:str   	= ts[self.topicPrefixCount + 3]
+		contentType:str   		= ts[self.topicPrefixCount + 4]
+
 
 		# Check supported contentTypes, and send an error message if not supported
 		if contentType not in C.supportedContentSerializationsSimple:
-			_sendResponse(Result(rsc=RC.badRequest, dbg=f'Unsupported content serialization type: {contentType}'))
+			L.logErr(f'Unsupported content serialization type: {contentType}, topic: {topic}', showStackTrace=False)
+			# We cannot do much about an unsupported content serialization type since we cannot parse the request
+			# sendResponse(Result(rsc=RC.badRequest, dbg=f'Unsupported content serialization type: {contentType}'))
 			return
 
 		# dissect and validate request
@@ -136,6 +142,30 @@ class MQTTClientHandler(MQTTHandler):
 			# something went wrong during dissection
 			_sendResponse(dissectResult)
 			return
+
+		if isRegistration:
+			# Check access in case of a registration
+			if CSE.security.allowedCredentialIDsMqtt:
+				L.logWarn(CSE.security.allowedCredentialIDsMqtt)
+				# The requestOriginator is actually a Credential ID. Check whether it is allowed
+				if not CSE.security.isAllowedOriginator(requestOriginator, CSE.security.allowedCredentialIDsMqtt):
+					_sendResponse(Result(rsc=RC.originatorHasNoPrivilege, request=dissectResult.request, dbg=f'Invalid credential ID: {requestOriginator}'))
+					return
+			
+			if dissectResult.request.op != Operation.CREATE:
+				# Registration must be a CREATE operation
+				L.logWarn(dbg=f'Invalid operation for registration: {dissectResult.request.op.name}')
+				_sendResponse(Result(rsc=RC.badRequest, request=dissectResult.request, dbg=dbg))
+				return
+
+			if dissectResult.request.headers.resourceType != ResourceTypes.AE:
+				# Registration type must be AE
+				L.logWarn(dbg=f'Invalid resource type for registration: {dissectResult.request.headers.resourceType.name}')
+				_sendResponse(Result(rsc=RC.badRequest, request=dissectResult.request, dbg=f'Invalid resource type for registration: {dissectResult.request.headers.resourceType.name}'))
+				return
+			
+			# TODO Is it necessary to check here the originator for None, empty, C, S?
+
 
 		# log request
 		L.isDebug and L.logDebug(f'Operation: {dissectResult.request.op.name}')
@@ -148,7 +178,6 @@ class MQTTClientHandler(MQTTHandler):
 		if self.mqttClient.isStopped:
 			_sendResponse(Result(rsc=RC.internalServerError, request=dissectResult.request, dbg='mqtt server not running', status=False))
 			return
-
 		try:
 			responseResult = CSE.request.handleRequest(dissectResult.request)
 		except Exception as e:
@@ -194,7 +223,7 @@ class MQTTClientHandler(MQTTHandler):
 		resp['rsc'] = int(result.rsc)
 		resp['ot'] = DateUtils.getResourceDate()
 		if result.request.headers.requestIdentifier is not None:
-			resp['ri'] = result.request.headers.requestIdentifier
+			resp['rqi'] = result.request.headers.requestIdentifier
 		if result.request.headers.releaseVersionIndicator is not None:
 			resp['rvi'] = result.request.headers.releaseVersionIndicator
 		if result.request.headers.vendorInformation is not None:
@@ -221,6 +250,7 @@ class MQTTClient(object):
 	def __init__(self) -> None:
 		self.enable			= Configuration.get('mqtt.enable')
 		self.topicPrefix 	= Configuration.get('mqtt.topicPrefix')
+		self.enableLogging 	= Configuration.get('mqtt.enableLogging')
 		self.mqttConnection	= None
 		self.isStopped		= False
 

@@ -267,7 +267,7 @@ def getIdFromOriginator(originator: str, idOnly: bool = False) -> str:
 	""" Get AE-ID-Stem or CSE-ID from the originator (in case SP-relative or Absolute was used)
 	"""
 	if idOnly:
-		return originator.split("/")[-1] if originator is not None  else originator
+		return originator.split("/")[-1] if originator is not None else originator
 	else:
 		return originator.split("/")[-1] if originator is not None and originator.startswith('/') else originator
 
