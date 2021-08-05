@@ -248,6 +248,8 @@ class Configuration(object):
 				'cse.console.refreshInterval'		: config.getfloat('cse.console', 'refreshInterval', 	fallback=2.0),
 				'cse.console.hideResources'			: config.getlist('cse.console', 'hideResources', 		fallback=[]),		# type: ignore[attr-defined]
 				'cse.console.treeMode'				: config.get('cse.console', 'treeMode', 				fallback='normal'),
+				'cse.console.confirmQuit'			: config.getboolean('cse.console', 'confirmQuit', 		fallback=False),
+
 
 				#
 				#	App: Statistics AE

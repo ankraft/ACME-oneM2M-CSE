@@ -337,6 +337,11 @@ hideResources=
 # Allowed values: normal, compact, content, contentOnly
 # Default: normal
 treeMode=normal
+# Quitting the console needs to be confirmed.
+# This may not work under Windows, so it should be switched off.
+# Default: False
+confirmQuit=False
+
 
 #
 #	ID Mappings
