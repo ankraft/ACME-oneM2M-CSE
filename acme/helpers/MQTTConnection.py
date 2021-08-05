@@ -83,6 +83,7 @@ class MQTTConnection(object):
 	def __init__(self, address:str, port:int=None, keepalive:int=60, interface:str='0.0.0.0', 
 					clientID:str=None, username:str=None, password:str=None,
 					useTLS:bool=False, caFile:str=None, verifyCertificate:bool=False,
+					lowLevelLogging:bool=True,
 					messageHandler:MQTTHandler=None
 				) -> None:
 		self.brokerAddress							= address
@@ -95,6 +96,7 @@ class MQTTConnection(object):
 		self.verifyCertificate						= verifyCertificate
 		self.caFile									= caFile
 		self.clientID								= clientID
+		self.lowLevelLogging						= lowLevelLogging
 
 		self.isStopped								= True
 		self.isConnected							= False
@@ -203,7 +205,7 @@ class MQTTConnection(object):
 	def _onLog(self, client:mqtt.Client, userdata:Any, level:int, buf:str) -> None:
 		"""	Mapping of the paho MQTT client's log to the logging system. Also handles different log-level scheme.
 		"""
-		self.messageHandler and self.messageHandler.logging(self.mqttClient, mqtt.LOGGING_LEVEL[level], f'MQTT: {buf}')
+		self.lowLevelLogging and self.messageHandler and self.messageHandler.logging(self.mqttClient, mqtt.LOGGING_LEVEL[level], f'MQTT: {buf}')
 	
 
 	def _onSubscribe(self, client:mqtt.Client, userdata:Any, mid:int, granted_qos:int) -> None:
@@ -230,7 +232,7 @@ class MQTTConnection(object):
 	def _onMessage(self, client:mqtt.Client, userdata:Any, message:mqtt.MQTTMessage) -> None:
 		"""	Handle a received message. Forward it to the apropriate handler callback (in a Thread)
 		"""
-		self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: received topic:{message.topic}, payload:{message.payload}')
+		self.lowLevelLogging and self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: received topic:{message.topic}, payload:{message.payload}')
 		for t in self.subscribedTopics.keys():
 			if simpleMatch(message.topic, t, star='#'):
 				if (topic := self.subscribedTopics[t]).callback:

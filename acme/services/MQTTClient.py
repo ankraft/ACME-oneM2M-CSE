@@ -265,6 +265,7 @@ class MQTTClient(object):
 												 verifyCertificate	= CSE.security.verifyCertificateMqtt,
 												 username 			= CSE.security.usernameMqtt,
 												 password			= CSE.security.passwordMqtt,
+												 lowLevelLogging 	= L.enableBindingsLogging,
 												 messageHandler 	= MQTTClientHandler	(self))
 		L.isInfo and L.log('MQTT Client initialized')
 	

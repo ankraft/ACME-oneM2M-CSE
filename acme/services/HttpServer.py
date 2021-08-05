@@ -563,13 +563,13 @@ class HttpServer(object):
 class ACMERequestHandler(WSGIRequestHandler):
 	# Just like WSGIRequestHandler, but without "- -"
 	def log(self, type, message, *args): # type: ignore
-		L.isDebug and L.logDebug(f'HTTP: {message % args}')
+		L.enableBindingsLogging and L.isDebug and L.logDebug(f'HTTP: {message % args}')
 
 	# Just like WSGIRequestHandler, but without "code"
 	def log_request(self, code='-', size='-'): 	# type: ignore
-		L.isDebug and L.logDebug(f'HTTP: "{self.requestline}" {size} {code}')
+		L.enableBindingsLogging and L.isDebug and L.logDebug(f'HTTP: "{self.requestline}" {size} {code}')
 
 	def log_message(self, format, *args): 	# type: ignore
-		L.isDebug and L.logDebug(f'HTTP: {format % args}')
+		L.enableBindingsLogging and L.isDebug and L.logDebug(f'HTTP: {format % args}')
 	
 

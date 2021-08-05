@@ -81,6 +81,7 @@ class	Logging:
 	enableFileLogging				= True
 	enableScreenLogging				= True
 	stackTraceOnError				= True
+	enableBindingsLogging			= True
 	worker 							= None
 	queue:Queue						= None
 
@@ -103,15 +104,16 @@ class	Logging:
 
 		if Logging.logger is not None:
 			return
-		Logging.enableFileLogging 	= Configuration.get('logging.enableFileLogging')
-		Logging.enableScreenLogging	= Configuration.get('logging.enableScreenLogging')
-		Logging.logLevel 			= Configuration.get('logging.level')
-		Logging.stackTraceOnError	= Configuration.get('logging.stackTraceOnError')
+		Logging.enableFileLogging 		= Configuration.get('logging.enableFileLogging')
+		Logging.enableScreenLogging		= Configuration.get('logging.enableScreenLogging')
+		Logging.logLevel 				= Configuration.get('logging.level')
+		Logging.stackTraceOnError		= Configuration.get('logging.stackTraceOnError')
+		Logging.enableBindingsLogging	= Configuration.get('logging.enableBindingsLogging')
 
-		Logging.logger				= logging.getLogger('logging')			# general logger
-		Logging.loggerConsole		= logging.getLogger('rich')				# Rich Console logger
-		Logging._console			= Console()								# Console object
-		Logging._richHandler		= ACMERichLogHandler()
+		Logging.logger					= logging.getLogger('logging')			# general logger
+		Logging.loggerConsole			= logging.getLogger('rich')				# Rich Console logger
+		Logging._console				= Console()								# Console object
+		Logging._richHandler			= ACMERichLogHandler()
 
 		# Add logging queue
 		Logging.queue = Queue(maxsize=Logging.queueMaxsize)

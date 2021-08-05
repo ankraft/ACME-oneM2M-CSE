@@ -251,6 +251,9 @@ count=10
 size=100000
 # Print a stack trace when logging an 'error' level message. Default: True
 stackTraceOnError=False
+# Enable logging of low-level HTTP & MQTT client events.
+# Default: False
+enableBindingsLogging=False
 
 
 #
