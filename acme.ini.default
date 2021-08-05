@@ -165,6 +165,12 @@ verifyCertificate=False
 # Path and filename of the certificate file. 
 # Default: None
 caCertificateFile=filename
+# List of credential-IDs that can be used to register an AE via MQTT. 
+# If this list is empty then all credential IDs are allowed.
+# This is a comma-separated list. Wildcards (* and ?) are supported.
+# Default: empty list
+allowedCredentialIDs=
+
 
 
 
@@ -356,6 +362,11 @@ hideResources=
 # Allowed values: normal, compact, content, contentOnly
 # Default: normal
 treeMode=normal
+# Quitting the console needs to be confirmed.
+# This may not work under Windows, so it should be switched off.
+# Default: False
+confirmQuit=True
+
 
 #
 #	ID Mappings

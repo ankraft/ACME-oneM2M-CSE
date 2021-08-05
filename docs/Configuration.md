@@ -129,15 +129,16 @@ The following macros are supported in addition to those defined in the sections 
 
 
 <a name="security_mqtt"></a>
-### [client.mqtt.security] - MQTT Security Settings
+### [client.mqtt.security] - MQTT Security Settings		
 
-| Keyword           | Description                                                                                             | Macro Name                      |
-|:------------------|:--------------------------------------------------------------------------------------------------------|:--------------------------------|
-| username          | The username for MQTT broker authentication if required by the broker.<br/>Default: None                | mqtt.security.username          |
-| password          | The password for MQTT broker authentication.<br/>Default: None                                          | mqtt.security.password          |
-| useTLS            | Enable TLS for communications with the MQTT broker.<br />Default: False                                 | mqtt.security.useTLS            |
-| verifyCertificate | Verify certificates in requests. Set to False when using self-signed certificates..<br />Default: False | mqtt.security.verifyCertificate |
-| caCertificateFile | Path and filename of the certificate file.<br />Default: None                                           | mqtt.security.caCertificateFile |
+| Keyword              | Description                                                                                                                                                                                                                     | Macro Name                         |
+|:---------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------|
+| username             | The username for MQTT broker authentication if required by the broker.<br/>Default: None                                                                                                                                        | mqtt.security.username             |
+| password             | The password for MQTT broker authentication.<br/>Default: None                                                                                                                                                                  | mqtt.security.password             |
+| useTLS               | Enable TLS for communications with the MQTT broker.<br />Default: False                                                                                                                                                         | mqtt.security.useTLS               |
+| verifyCertificate    | Verify certificates in requests. Set to False when using self-signed certificates..<br />Default: False                                                                                                                         | mqtt.security.verifyCertificate    |
+| caCertificateFile    | Path and filename of the certificate file.<br />Default: None                                                                                                                                                                   | mqtt.security.caCertificateFile    |
+| allowedCredentialIDs | List of credential-IDs that can be used to register an AE via MQTT. If this list is empty then all credential IDs are allowed.<br />This is a comma-separated list. Wildcards (* and ?) are supported.<br />Default: empty list | mqtt.security.allowedCredentialIDs |
 
 
 <a name="database"></a>
@@ -263,7 +264,7 @@ The following macros are supported in addition to those defined in the sections 
 | refreshInterval | Interval for continuously refreshing information displays. Must be > 0.0<br/>Default: 2.0 seconds.                                                                   | cse.console.refreshInterval |
 | hideResources   | Hide certain resources from display in the console. This is a list of resource identifiers. Wildcards are allowed.<br/>Default: Empty list.                          | cse.console.hideResources   |
 | treeMode        | Set the mode how resources and their content are presented in the console's tree view.<br/>Allowed values: normal, compact, content, contentOnly<br/>Default: normal | cse.console.treeMode        |
-
+| confirmQuit     | Quitting the console needs to be confirmed.<br />This may not work under Windows, so it should be switched off.<br />Default: False                                  | cse.console.confirmQuit     |
 
 <a name="webui"></a>
 ###	[cse.webui] - Web UI Settings

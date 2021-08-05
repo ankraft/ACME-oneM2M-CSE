@@ -141,10 +141,11 @@ class Configuration(object):
 				#
 
 				'mqtt.security.useTLS'					: config.getboolean('client.mqtt.security', 'useTLS', 	fallback=False),
-				'mqtt.security.verifyCertificate'		: config.getboolean('client.mqtt.security', 'verifyCertificate',fallback=False),
+				'mqtt.security.verifyCertificate'		: config.getboolean('client.mqtt.security', 'verifyCertificate', fallback=False),
 				'mqtt.security.caCertificateFile'		: config.get('client.mqtt.security', 'caCertificateFile',fallback=None),
 				'mqtt.security.username'				: config.get('client.mqtt.security', 'username',		fallback=None),
 				'mqtt.security.password' 				: config.get('client.mqtt.security', 'password',		fallback=None),
+				'mqtt.security.allowedCredentialIDs'	: config.getlist('client.mqtt.security', 'allowedCredentialIDs', fallback=[]),
 
 
 				#
@@ -263,6 +264,7 @@ class Configuration(object):
 				'cse.console.refreshInterval'			: config.getfloat('cse.console', 'refreshInterval', 	fallback=2.0),
 				'cse.console.hideResources'				: config.getlist('cse.console', 'hideResources', 		fallback=[]),		# type: ignore[attr-defined]
 				'cse.console.treeMode'					: config.get('cse.console', 'treeMode', 				fallback='normal'),
+				'cse.console.confirmQuit'				: config.getboolean('cse.console', 'confirmQuit', 		fallback=False),
 
 			}
 
@@ -389,6 +391,9 @@ class Configuration(object):
 		if (Configuration._configuration['mqtt.security.username'] is None) != (Configuration._configuration['mqtt.security.password'] is None):
 			_print(f'[red]Configuration Error: Username or password missing for \[mqtt.security]]')
 			return False
+		# remove empty cid from the list
+		Configuration._configuration['mqtt.security.allowedCredentialIDs'] = [ cid for cid in Configuration._configuration['mqtt.security.allowedCredentialIDs'] if len(cid) ]
+		
 
 		# check the csi format
 		if not Utils.isValidCSI(val:=Configuration._configuration['cse.csi']):

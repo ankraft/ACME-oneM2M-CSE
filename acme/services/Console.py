@@ -70,6 +70,7 @@ class Console(object):
 		self.refreshInterval = Configuration.get('cse.console.refreshInterval')
 		self.hideResources   = Configuration.get('cse.console.hideResources')
 		self.treeMode	     = Configuration.get('cse.console.treeMode')
+		self.confirmQuit     = Configuration.get('cse.console.confirmQuit')
 		if L.isInfo: L.log('Console initialized')
 
 
@@ -156,15 +157,18 @@ class Console(object):
 		"""	Shutdown the CSE. Confirm shutdown before actually doing that.
 		"""
 		if not CSE.isHeadless:
-			L.off()
-			L.console('Press quit-key again to confirm -> ', plain=True, end='')
-			if waitForKeypress(5) not in ['Q', '\x03']:
-				L.console('canceled')
+			if self.confirmQuit:
+				L.off()
+				L.console('Press quit-key again to confirm -> ', plain=True, end='')
+				if waitForKeypress(5) not in ['Q', '\x03']:
+					L.console('canceled')
+					L.on()
+					return
+				L.console('confirmed')
+				L.console('Shutdown CSE')
 				L.on()
-				return
-			L.console('confirmed')
-			L.console('Shutdown CSE')
-			L.on()
+			else:
+				L.console('Shutdown CSE')
 		sys.exit()
 
 
