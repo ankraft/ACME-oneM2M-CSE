@@ -145,7 +145,7 @@ class Configuration(object):
 				'mqtt.security.caCertificateFile'		: config.get('client.mqtt.security', 'caCertificateFile',fallback=None),
 				'mqtt.security.username'				: config.get('client.mqtt.security', 'username',		fallback=None),
 				'mqtt.security.password' 				: config.get('client.mqtt.security', 'password',		fallback=None),
-				'mqtt.security.allowedCredentialIDs'	: config.getlist('client.mqtt.security', 'allowedCredentialIDs', fallback=[]),
+				'mqtt.security.allowedCredentialIDs'	: config.getlist('client.mqtt.security', 'allowedCredentialIDs', fallback=[]),	# type: ignore [attr-defined]
 
 
 				#

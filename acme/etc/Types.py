@@ -495,7 +495,11 @@ class Operation(IntEnum):
 
 	def __str__(self) -> str:
 		return self.name
-	
+
+
+	def __repr__(self) -> str:
+		return self.__str__()
+
 
 	@classmethod
 	def isvalid(cls, op:int) -> bool:
@@ -756,16 +760,16 @@ class Result:
 
 		if isinstance(self.resource, Resource):
 			r = serializeData(self.resource.asDict(), ct)
-		elif self.dbg is not None:
+		elif self.dbg:
 			r = serializeData({ 'm2m:dbg' : self.dbg }, ct)
+		# elif isinstance(self.resource, str):
+		# 	r = self.resource
 		elif isinstance(self.resource, dict):
 			r = serializeData(self.resource, ct)
-		elif isinstance(self.resource, str):
-			r = self.resource
 		elif isinstance(self.dict, dict):		# explicit json or cbor
 			r = serializeData(self.dict, ct)
-		elif self.resource is None and self.dict is None:
-			r = ''
+		# elif not self.resource and not self.dict:
+		# 	r = ''
 		else:
 		 	r = ''
 		return r

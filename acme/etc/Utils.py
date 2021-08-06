@@ -105,18 +105,22 @@ def isVirtualResource(resource: Resource) -> bool:
 	"""	Check whether the `resource` is a virtual resource. 
 		The function returns `False` when the resource is not a virtual resource, or when it is `None`.
 	"""
-	if resource is None:
+	if not resource:
 		return False
-	result:bool = resource[resource._isVirtual]
-	return result if result is not None else False
+	return resource[resource._isVirtual]
+	# result:bool = resource[resource._isVirtual]
+	# return result if result else False
 	# return (ty := r.ty) and ty in C.virtualResources
 
 
 def isAnnouncedResource(resource:Resource) -> bool:
 	"""	Check whether the `resource` is an announced resource. 
 	"""
-	result:bool = resource[resource._isAnnounced]
-	return result if result is not None else False
+	if not resource:
+		return False
+	return resource[resource._isAnnounced]
+	# result:bool = resource[resource._isAnnounced]
+	# return result if result is not None else False
 
 
 def isValidID(id:str) -> bool:
@@ -166,10 +170,10 @@ def riFromStructuredPath(srn: str) -> str:
 
 def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
 	""" Handle Hybrid ID. """
-	if id is not None:
+	if id:
 		ids = id.split('/')
-		if srn is None and len(ids) > 1  and ids[-1] in C.virtualResourcesNames: # Hybrid
-			if (srn := structuredPathFromRI('/'.join(ids[:-1]))) is not None:
+		if not srn and len(ids) > 1  and ids[-1] in C.virtualResourcesNames: # Hybrid
+			if (srn := structuredPathFromRI('/'.join(ids[:-1]))):
 				srn = '/'.join([srn, ids[-1]])
 				id = riFromStructuredPath(srn) # id becomes the ri of the fopt
 	return srn, id
@@ -204,7 +208,7 @@ def retrieveIDFromPath(id: str, csern: str, csecsi: str) -> Tuple[str, str, str]
 		# L.logDebug("SP-Relative")
 		csi = ids[1]							# extract the csi
 		if csi != csecsi:						# Not for this CSE? retargeting
-			if vrPresent is not None:			# append last path element again
+			if vrPresent:			# append last path element again
 				ids.append(vrPresent)
 			return f'/{"/".join(ids[1:])}', csi, srn		# Early return. ri is the remaining (un)structured path
 		if idsLen > 2 and (ids[2] == csern or ids[2] == '-'):	# structured
@@ -220,7 +224,7 @@ def retrieveIDFromPath(id: str, csern: str, csecsi: str) -> Tuple[str, str, str]
 		spi = ids[1] 	#TODO Check whether it is same SPID, otherwise forward it throw mcc'
 		csi = ids[2]
 		if csi != csecsi:
-			if vrPresent is not None:						# append last path element again
+			if vrPresent:						# append last path element again
 				ids.append(vrPresent)
 			return f'/{"/".join(ids[2:])}', csi, srn	# Not for this CSE? retargeting
 		if ids[3] == csern or ids[3] == '-':				# structured
@@ -240,17 +244,17 @@ def retrieveIDFromPath(id: str, csern: str, csecsi: str) -> Tuple[str, str, str]
 			srn = '/'.join(ids)
 
 	# Now either csi, ri or structured is set
-	if ri is not None:
-		if vrPresent is not None:
+	if ri:
+		if vrPresent:
 			ri = f'{ri}/{vrPresent}'
 		return ri, csi, srn
-	if srn is not None:
+	if srn:
 		# if '/fopt' in ids:	# special handling for fanout points
 		# 	return srn, csi, srn
-		if vrPresent is not None:
+		if vrPresent:
 			srn = f'{srn}/{vrPresent}'
 		return riFromStructuredPath(srn), csi, srn
-	if csi is not None:
+	if csi:
 		return riFromCSI(f'/{csi}'), csi, srn
 	# TODO do something with spi?
 	return None, None, None
@@ -301,7 +305,7 @@ def isHttpUrl(url:str) -> bool:
 
 def normalizeURL(url: str) -> str:
 	""" Remove trailing / from the url. """
-	if url is not None:
+	if url:
 		while len(url) > 0 and url[-1] == '/':
 			url = url[:-1]
 	return url

@@ -39,10 +39,10 @@ class ACP(AnnounceableResource):
 
 		self.resourceAttributePolicies = acpPolicies	# only the resource type's own policies
 		
-		if self.dict is not None:
+		if self.dict:
 			self.setAttribute('pv/acr', [], overwrite=False)
 			self.setAttribute('pvs/acr', [], overwrite=False)
-			if createdInternally is not None:
+			if createdInternally:
 				self.setCreatedInternally(createdInternally)
 
 
@@ -51,7 +51,7 @@ class ACP(AnnounceableResource):
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		
-		if dct is not None and (pvs := Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs')) is not None:
+		if dct and (pvs := Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs')):
 			if len(pvs) == 0:
 				return Result(status=False, rsc=RC.badRequest, dbg='pvs must not be empty')
 		if self.pvs is None or len(self.pvs) == 0:
@@ -62,7 +62,7 @@ class ACP(AnnounceableResource):
 			if acrs is None:
 				return Result(status=True)
 			for acr in acrs:
-				if (acod := acr.get('acod')) is not None:
+				if (acod := acr.get('acod')):
 					if (acod := acod.get('chty')) is None or not isinstance(acod, list):
 						return Result(status=False, rsc=RC.badRequest, dbg='chty is mandatory in acod')
 			return Result(status=True)

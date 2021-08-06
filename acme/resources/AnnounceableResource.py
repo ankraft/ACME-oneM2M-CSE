@@ -29,7 +29,7 @@ class AnnounceableResource(Resource):
 			return res
 
 		# Check announcements
-		if self.at is not None:
+		if self.at:
 			CSE.announce.announceResource(self)
 		return res
 
@@ -38,7 +38,7 @@ class AnnounceableResource(Resource):
 		L.isDebug and L.logDebug(f'Deactivating AnnounceableResource and removing sub-resources: {self.ri}')
 
 		# perform deannouncements
-		if self.at is not None:
+		if self.at:
 			CSE.announce.deAnnounceResource(self)
 		super().deactivate(originator)
 
@@ -51,10 +51,10 @@ class AnnounceableResource(Resource):
 			return res
 
 		# Check announcements
-		if self.at is not None:
+		if self.at:
 			CSE.announce.announceUpdatedResource(self)
 		else:
-			if self._origAT is not None:	# at is removed in update, so remove self
+			if self._origAT:	# at is removed in update, so remove self
 				CSE.announce.deAnnounceResource(self)
 		return res
 
@@ -184,13 +184,13 @@ class AnnounceableResource(Resource):
 			# 		body[attr] = self[attr]
 
 			# if aa was modified check also those attributes even when they are not modified
-			if 'aa' in modifiedAttributes and modifiedAttributes['aa'] is not None:
+			if 'aa' in modifiedAttributes and modifiedAttributes['aa']:
 				for attr in modifiedAttributes['aa']:
 					if attr not in body:
 						body[attr] = self[attr]
 
 			# now add the to-be-removed attributes with null in case they are removed from the aa or aa is None
-			if self._origAA is not None:
+			if self._origAA:
 				for attr in self._origAA:
 					if attr not in announcedAttributes:
 						body[attr] = None

@@ -89,7 +89,7 @@ class BackgroundWorker(object):
 			if _loggerCB:
 				_loggerCB(logging.ERROR, f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}')
 		finally:
-			if not result or (self.maxCount is not None and self.numberOfRuns >= self.maxCount):
+			if not result or (self.maxCount and self.numberOfRuns >= self.maxCount):
 				# False returned, or the numberOfRuns has reached the maxCount
 				self.stop()
 				# Not queued anymore after this run, but the Timer is restarted in stop()
@@ -161,7 +161,7 @@ class BackgroundWorkerPool(object):
 			The "actor" is only a BackgroundWorker object and needs to be started manually
 			with the `start()` method.
 		"""
-		if at is not None:
+		if at:
 			if delay != 0.0:
 				raise ValueError('Cannot set both "delay" and "at" arguments')
 			delay = at - _utcTime()

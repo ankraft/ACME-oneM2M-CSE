@@ -56,6 +56,6 @@ class CNT_LA(Resource):
 	def _getLatest(self) -> Resource:
 		pi = self['pi']
 		rs = []
-		if (parentResource := CSE.dispatcher.retrieveResource(pi).resource) is not None:
+		if (parentResource := CSE.dispatcher.retrieveResource(pi).resource):
 			rs = parentResource.contentInstances()		# ask parent for all CIN
 		return cast(Resource, rs[-1]) if len(rs) > 0 else None			
