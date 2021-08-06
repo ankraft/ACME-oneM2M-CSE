@@ -154,13 +154,13 @@ class MQTTClientHandler(MQTTHandler):
 			
 			if dissectResult.request.op != Operation.CREATE:
 				# Registration must be a CREATE operation
-				L.logWarn(dbg=f'Invalid operation for registration: {dissectResult.request.op.name}')
+				L.logWarn(dbg := f'Invalid operation for registration: {dissectResult.request.op}')
 				_sendResponse(Result(rsc=RC.badRequest, request=dissectResult.request, dbg=dbg))
 				return
 
 			if dissectResult.request.headers.resourceType != ResourceTypes.AE:
 				# Registration type must be AE
-				L.logWarn(dbg=f'Invalid resource type for registration: {dissectResult.request.headers.resourceType.name}')
+				L.logWarn(dbg := f'Invalid resource type for registration: {dissectResult.request.headers.resourceType}')
 				_sendResponse(Result(rsc=RC.badRequest, request=dissectResult.request, dbg=f'Invalid resource type for registration: {dissectResult.request.headers.resourceType.name}'))
 				return
 			
@@ -168,7 +168,7 @@ class MQTTClientHandler(MQTTHandler):
 
 
 		# log request
-		L.isDebug and L.logDebug(f'Operation: {dissectResult.request.op.name}')
+		L.isDebug and L.logDebug(f'Operation: {dissectResult.request.op}')
 		if contentType == ContentSerializationType.JSON:
 			L.isDebug and L.logDebug(f'Body: \n{cast(str, data)}')
 		else:
