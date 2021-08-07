@@ -85,7 +85,7 @@ class	Logging:
 	worker 							= None
 	queue:Queue						= None
 
-	checkInterval:float				= 0.3		# wait (in s) between checks of the logging queue # TODO configurable
+	checkInterval:float				= 0.2		# wait (in s) between checks of the logging queue # TODO configurable
 	queueMaxsize:int				= 5000		# max number of items in the logging queue. Might otherwise grow forever on large load
 
 	_console:Console				= None
@@ -102,7 +102,7 @@ class	Logging:
 		"""Init the logging system.
 		"""
 
-		if Logging.logger is not None:
+		if Logging.logger:
 			return
 		Logging.enableFileLogging 		= Configuration.get('logging.enableFileLogging')
 		Logging.enableScreenLogging		= Configuration.get('logging.enableScreenLogging')
@@ -120,6 +120,7 @@ class	Logging:
 
 		# List of log handlers
 		Logging._handlers = [ Logging._richHandler ]
+		#Logging._handlers = [ ACMERichLogHandler() ]
 
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
@@ -146,16 +147,15 @@ class	Logging:
 	
 	@staticmethod
 	def finit() -> None:
-		if Logging.queue is not None:
-			while not Logging.queue.empty():
-				time.sleep(0.5)
+		while not Logging.queue.empty():
+			time.sleep(0.5)
 		from helpers.BackgroundWorker import BackgroundWorkerPool
 		BackgroundWorkerPool.stopWorkers('loggingWorker')
 
 
 	@staticmethod
 	def loggingWorker() -> bool:
-		while Logging.queue is not None and not Logging.queue.empty():
+		while not Logging.queue.empty():
 			level, msg, caller, thread = Logging.queue.get()
 			Logging.loggerConsole.log(level, f'{os.path.basename(caller.filename)}*{caller.lineno}*{thread.name:<10.10}*{msg}')
 		return True
@@ -184,7 +184,7 @@ class	Logging:
 		import services.CSE as CSE
 		# raise logError event
 		(not CSE.event or CSE.event.logError())	# type: ignore
-		if exc is not None:
+		if exc:
 			fmtexc = ''.join(traceback.TracebackException.from_exception(exc).format())
 			Logging._log(logging.ERROR, f'{msg}\n\n{fmtexc}', stackOffset=stackOffset)
 		elif showStackTrace and Logging.stackTraceOnError:
@@ -221,7 +221,7 @@ class	Logging:
 		"""	Internally adding various information to the log output. The `stackOffset` is used to determine 
 			the correct caller. It is set by a calling method in case the log information are re-routed.
 		"""
-		if Logging.logLevel <= level and Logging.queue is not None:
+		if Logging.logLevel <= level:
 			# Queue a log message : (level, message, caller from stackframe, current thread)
 			try:
 				Logging.queue.put((level, str(msg), inspect.getframeinfo(inspect.stack()[2 if stackOffset is None else 2+stackOffset][0]), threading.current_thread()))
@@ -332,7 +332,6 @@ class ACMERichLogHandler(RichHandler):
 		}
 		_styles = DEFAULT_STYLES.copy()
 		_styles.update(ACMEStyles)
-		self.rich_tracebacks = True
 
 		super().__init__(level=level, console=Console(theme=Theme(_styles)))
 
@@ -376,48 +375,33 @@ class ACMERichLogHandler(RichHandler):
 		]
 		
 	def emit(self, record:LogRecord) -> None:
-		"""Invoked by logging."""
+		"""	Invoked by logging. """
 		if not Logging.enableScreenLogging or record.levelno < Logging.logLevel:
 			return
+		if record.name == 'werkzeug':	# filter out werkzeug's loggings
+			return
 		#path = Path(record.pathname).name
-		log_style = f"logging.level.{record.levelname.lower()}"
-		message = self.format(record)
-		path  = ''
-		lineno = 0
-		threadID = ''
+		
+		message	= self.format(record)
 		if len(messageElements := message.split('*', 3)) == 4:
-			path = messageElements[0]
-			lineno = int(messageElements[1])
-			threadID = messageElements[2]
+			path 	= messageElements[0]
+			lineno 	= int(messageElements[1])
+			threadID= messageElements[2]
 			message = messageElements[3]
-		time_format = None if self.formatter is None else self.formatter.datefmt
-		log_time = datetime.datetime.fromtimestamp(record.created)
-
-		level = Text()
-		level.append(f'{record.levelname:<7}', log_style)	# add trainling spaces to level name for a bit nicer formatting
-		message_text = Text(f'{threadID} - {message}')
-		message_text = self.highlighter(message_text)
-
-		# # find caller on the stack
-		# caller = inspect.getframeinfo(inspect.stack()[8][0])
+		else:
+			path	= ''
+			lineno	= 0
+			threadID= ''
 
 		self.console.print(
 			self._log_render(
 				self.console,
-				[message_text],
-				log_time=log_time,
-				time_format=time_format,
-				level=level,
-				path=path,
-				line_no=lineno,
+				[ self.highlighter(Text(f'{threadID} - {message}')) ],
+				log_time	= datetime.datetime.fromtimestamp(record.created),
+				# time_format	= None if self.formatter is None else self.formatter.datefmt,
+				time_format	= self.formatter.datefmt,
+				level		= Text(f'{record.levelname:<7}', style=f'logging.level.{record.levelname.lower()}'),
+				path		= path,
+				line_no		= lineno,
 			)
-			# self._log_render(
-			# 	self.console,
-			# 	[message_text],
-			# 	log_time=log_time,
-			# 	time_format=time_format,
-			# 	level=level,
-			# 	path=os.path.basename(caller.filename),
-			# 	line_no=caller.lineno,
-			# )
 		)

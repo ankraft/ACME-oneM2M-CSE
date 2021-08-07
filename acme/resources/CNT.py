@@ -38,12 +38,11 @@ class CNT(AnnounceableResource):
 
 		self.resourceAttributePolicies = cntPolicies	# only the resource type's own policies
 
-		if self.dict is not None:
-			if Configuration.get('cse.cnt.enableLimits'):	# Only when limits are enabled
-				self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite=False)
-				self.setAttribute('mbs', Configuration.get('cse.cnt.mbs'), overwrite=False)
-			self.setAttribute('cni', 0, overwrite=False)
-			self.setAttribute('cbs', 0, overwrite=False)
+		if Configuration.get('cse.cnt.enableLimits'):	# Only when limits are enabled
+			self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite=False)
+			self.setAttribute('mbs', Configuration.get('cse.cnt.mbs'), overwrite=False)
+		self.setAttribute('cni', 0, overwrite=False)
+		self.setAttribute('cbs', 0, overwrite=False)
 
 		self.__validating = False	# semaphore for validating
 
@@ -79,7 +78,8 @@ class CNT(AnnounceableResource):
 			return res
 		
 		# handle disr: delete all <cin> when disr was set to TRUE and is now FALSE.
-		if disrOrg is not None and disrOrg == True and disrNew is not None and disrNew == False:
+		#if disrOrg is not None and disrOrg == True and disrNew is not None and disrNew == False:
+		if disrOrg and disrNew == False:
 			CSE.dispatcher.deleteChildResources(self, originator, ty=T.CIN)
 
 		return Result(status=True)
@@ -95,7 +95,7 @@ class CNT(AnnounceableResource):
 			return res
 		
 		# Check whether the child's rn is "ol" or "la".
-		if (rn := childResource['rn']) is not None and rn in ['ol', 'la']:
+		if (rn := childResource.rn) is not None and rn in ['ol', 'la']:
 			return Result(status=False, rsc=RC.operationNotAllowed, dbg='resource types "latest" or "oldest" cannot be added')
 	
 		# Check whether the size of the CIN doesn't exceed the mbs

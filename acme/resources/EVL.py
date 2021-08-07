@@ -40,10 +40,9 @@ class EVL(MgmtObj):
 		self.resourceAttributePolicies = evlPolicies	# only the resource type's own policies
 		super().__init__(dct, pi, mgd=T.EVL, create=create, attributePolicies=attributePolicies)
 
-		if self.dict is not None:
-			self.setAttribute('lgt', defaultLogTypeId, overwrite=False)
-			self.setAttribute('lgd', '', overwrite=False)
-			self.setAttribute('lgst', defaultLogStatus, overwrite=False)
-			self.setAttribute('lga', False, overwrite=False)
-			self.setAttribute('lgo', False, overwrite=False)
+		self.setAttribute('lgt', defaultLogTypeId, overwrite=False)
+		self.setAttribute('lgd', '', overwrite=False)
+		self.setAttribute('lgst', defaultLogStatus, overwrite=False)
+		self.setAttribute('lga', False, overwrite=False)
+		self.setAttribute('lgo', False, overwrite=False)
 

@@ -59,7 +59,7 @@ class Dispatcher(object):
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == T.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
 			return fanoutPointResource.handleRetrieveRequest(request, fopsrn, request.headers.originator)
 
@@ -71,12 +71,12 @@ class Dispatcher(object):
 		if permission == Permission.RETRIEVE and request.args.rcn not in [ RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource, RCN.childResourceReferences]: # TODO
 			return Result(status=False, rsc=RC.badRequest, dbg=f'invalid rcn: {request.args.rcn:d} for fu: {request.args.fu:d}')
 
-		L.isDebug and L.logDebug(f'Discover/Retrieve resources (fu: {request.args.fu:d}, drt: {request.args.drt}, handling: {request.args.handling}, conditions: {request.args.conditions}, resultContent: {request.args.rcn:d}, attributes: {str(request.args.attributes)})')
+		L.isDebug and L.logDebug(f'Discover/Retrieve resources (fu: {request.args.fu.name}, drt: {request.args.drt.name}, handling: {request.args.handling}, conditions: {request.args.conditions}, resultContent: {request.args.rcn.name}, attributes: {str(request.args.attributes)})')
 
 
 		# Retrieve the target resource, because it is needed for some rcn (and the default)
 		if request.args.rcn in [RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource]:
-			if (res := self.retrieveResource(id)).resource is None:
+			if not (res := self.retrieveResource(id)).resource:
 			 	return res # error
 			if not CSE.security.hasAccess(originator, res.resource, permission):
 				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=f'originator has no permission ({permission:d})')
@@ -97,7 +97,7 @@ class Dispatcher(object):
 					return Result(status=False, rsc=RC.badRequest, dbg='missing lnk attribute in target resource')
 
 				# Retrieve and check the linked-to request
-				if (res := self.retrieveResource(lnk, originator)).resource is not None:
+				if (res := self.retrieveResource(lnk, originator)).resource:
 					if not (resCheck := res.resource.willBeRetrieved(originator)).status:	# resource instance may be changed in this call
 						return resCheck
 				return res
@@ -148,13 +148,13 @@ class Dispatcher(object):
 			return Result(status=False, rsc=RC.badRequest, dbg='wrong rcn for RETRIEVE')
 
 
-
-	def retrieveResource(self, id:str=None, originator:str=None) -> Result:
-		# If the ID is in SP-relative format then first check whether this is for the
-		# local CSE. 
-		# If yes, then adjust the ID and try to retrieve it. 
-		# If no, then try to retrieve the resource from a connected (!) remote CSE.
-		if id is not None:
+	def retrieveResource(self, id:str, originator:str=None) -> Result:
+		"""	If the ID is in SP-relative format then first check whether this is for the
+			local CSE. 
+			If yes, then adjust the ID and try to retrieve it. 
+			If no, then try to retrieve the resource from a connected (!) remote CSE.
+		"""
+		if id:
 			if id.startswith(self.csiSlash) and len(id) > self.csiSlashLen:		# TODO for all operations?
 				id = id[self.csiSlashLen:]
 			else:
@@ -166,21 +166,21 @@ class Dispatcher(object):
 	def retrieveLocalResource(self, ri:str=None, srn:str=None) -> Result:
 		L.isDebug and L.logDebug(f'Retrieve resource: {ri if srn is None else srn}')
 
-		if ri is not None:
-			res = CSE.storage.retrieveResource(ri=ri)		# retrieve via normal ID
-		elif srn is not None:
-			res = CSE.storage.retrieveResource(srn=srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
+		if ri:
+			result = CSE.storage.retrieveResource(ri=ri)		# retrieve via normal ID
+		elif srn:
+			result = CSE.storage.retrieveResource(srn=srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
 		else:
 			return Result(status=False, rsc=RC.notFound, dbg='resource not found')
 
-		if (resource := res.resource) is not None:	# Resource found
+		if resource := result.resource:	# Resource found
 			# Check for virtual resource
 			if resource.ty != T.GRP_FOPT and Utils.isVirtualResource(resource): # fopt is handled elsewhere
 				return resource.handleRetrieveRequest()	# type: ignore[no-any-return]
 			return Result(status=True, resource=resource)
-		if res.dbg is not None:
-			L.isDebug and L.logDebug(f'{res.dbg}: {ri}')
-		return Result(status=res.status, rsc=res.rsc, dbg=res.dbg)
+		# error
+		L.isDebug and L.logDebug(f'{result.dbg}: {ri}/{srn}')
+		return result
 
 
 	#########################################################################
@@ -191,8 +191,8 @@ class Dispatcher(object):
 	def discoverResources(self, id:str, originator:str, handling:Conditions={}, fo:int=1, conditions:Conditions=None, attributes:Parameters=None, rootResource:Resource=None, permission:Permission=Permission.DISCOVERY) -> Result:
 		L.isDebug and L.logDebug('Discovering resources')
 
-		if rootResource is None:
-			if (res := self.retrieveResource(id)).resource is None:
+		if not rootResource:
+			if not (res := self.retrieveResource(id)).resource:
 				return Result(status=False, rsc=RC.notFound, dbg=res.dbg)
 			rootResource = res.resource
 
@@ -209,7 +209,7 @@ class Dispatcher(object):
 
 		# a bit of optimization. This length stays the same.
 		allLen = len(attributes) if attributes is not None else 0
-		if conditions is not None:
+		if conditions:
 			allLen += ( len(conditions) +
 			  (len(conditions.get('ty'))-1 if 'ty' in conditions else 0) +		# -1 : compensate for len(conditions) in line 1
 			  (len(conditions.get('cty'))-1 if 'cty' in conditions else 0) +		# -1 : compensate for len(conditions) in line 1 
@@ -246,11 +246,11 @@ class Dispatcher(object):
 
 
 	def _discoverResources(self, rootResource:Resource, originator:str, level:int, fo:int, allLen:int, dcrs:list[Resource]=None, conditions:Conditions=None, attributes:Parameters=None, permission:Permission=Permission.DISCOVERY) -> list[Resource]:
-		if rootResource is None or level == 0:		# no resource or level == 0
+		if not rootResource or level == 0:		# no resource or level == 0
 			return []
 
 		# get all direct children, if not provided
-		if dcrs is None:
+		if not dcrs:
 			if len(dcrs := self.directChildResources(rootResource.ri)) == 0:
 				return []
 
@@ -294,18 +294,18 @@ class Dispatcher(object):
 		found = 0
 
 		# check conditions
-		if conditions is not None:
+		if conditions:
 
 			# Types
 			# Multiple occurences of ty is always OR'ed. Therefore we add the count of
 			# ty's to found (to indicate that the whole set matches)
-			if (tys := conditions.get('ty')) is not None:
+			if tys := conditions.get('ty'):
 				found += len(tys) if ty in tys or str(ty) in tys else 0	# TODO simplify after refactoring requests. ty should only be an int
-			if (ct := r.ct) is not None:
+			if ct := r.ct:
 				found += 1 if (c_crb := conditions.get('crb')) is not None and (ct < c_crb) else 0
 				found += 1 if (c_cra := conditions.get('cra')) is not None and (ct > c_cra) else 0
 
-			if (lt := r.lt) is not None:
+			if lt := r.lt:
 				found += 1 if (c_ms := conditions.get('ms')) is not None and (lt > c_ms) else 0
 				found += 1 if (c_us := conditions.get('us')) is not None and (lt < c_us) else 0
 
@@ -313,7 +313,7 @@ class Dispatcher(object):
 				found += 1 if (c_sts := conditions.get('sts')) is not None and (str(st) > c_sts) else 0
 				found += 1 if (c_stb := conditions.get('stb')) is not None and (str(st) < c_stb) else 0
 
-			if (et := r.et) is not None:
+			if et := r.et:
 				found += 1 if (c_exb := conditions.get('exb')) is not None and (et < c_exb) else 0
 				found += 1 if (c_exa := conditions.get('exa')) is not None and (et > c_exa) else 0
 
@@ -324,15 +324,6 @@ class Dispatcher(object):
 					if l in rlbl:
 						found += len(lbls)
 						break
-			# special handling of label-list
-			# if (lbl := r.lbl) is not None and (c_lbl := conditions.get('lbl')) is not None:
-			# 	lbla = c_lbl.split()
-			# 	fnd = 0
-			# 	for l in lbla:
-			# 		fnd += 1 if l in lbl else 0
-			# 	found += 1 if (fo == 1 and fnd == len(lbl)) or (fo == 2 and fnd > 0) else 0	# fo==or -> find any label
-				#	# TODO labelsQuery
-
 
 			if ty in [ T.CIN, T.FCNT ]:	# special handling for CIN, FCNT
 				if (cs := r.cs) is not None:
@@ -873,7 +864,7 @@ class Dispatcher(object):
 			srn might be None. 
 			Returns: (srn, id)
 		"""
-		if id is not None:
+		if id:
 			return Utils.srnFromHybrid(None, id) # Hybrid
 		return Utils.srnFromHybrid(request.srn, request.id) # Hybrid
 

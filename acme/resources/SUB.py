@@ -34,23 +34,22 @@ class SUB(Resource):
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.SUB, dct, pi, create=create, attributePolicies=attributePolicies)
 
-		if self.dict is not None:
-			self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate ], overwrite=False)
+		self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate ], overwrite=False)
 
-			# Apply the nct only on the first element of net. Do the combination checks later in validate()
-			net = self['enc/net']
-			if len(net) > 0:
-				if net[0] in [ NET.resourceUpdate, NET.resourceDelete, NET.createDirectChild, NET.deleteDirectChild, NET.retrieveCNTNoChild ]:
-					self.setAttribute('nct', NotificationContentType.all, overwrite=False)
-				elif net[0] in [ NET.triggerReceivedForAE ]:
-					self.setAttribute('nct', NotificationContentType.triggerPayload, overwrite=False)
-				elif net[0] in [ NET.blockingUpdate ]:
-					self.setAttribute('nct', NotificationContentType.modifiedAttributes, overwrite=False)
-				elif net[0] in [ NET.reportOnGeneratedMissingDataPoints ]:
-					self.setAttribute('nct', NotificationContentType.timeSeriesNotification, overwrite=False)
+		# Apply the nct only on the first element of net. Do the combination checks later in validate()
+		net = self['enc/net']
+		if len(net) > 0:
+			if net[0] in [ NET.resourceUpdate, NET.resourceDelete, NET.createDirectChild, NET.deleteDirectChild, NET.retrieveCNTNoChild ]:
+				self.setAttribute('nct', NotificationContentType.all, overwrite=False)
+			elif net[0] in [ NET.triggerReceivedForAE ]:
+				self.setAttribute('nct', NotificationContentType.triggerPayload, overwrite=False)
+			elif net[0] in [ NET.blockingUpdate ]:
+				self.setAttribute('nct', NotificationContentType.modifiedAttributes, overwrite=False)
+			elif net[0] in [ NET.reportOnGeneratedMissingDataPoints ]:
+				self.setAttribute('nct', NotificationContentType.timeSeriesNotification, overwrite=False)
 
-			if self.bn is not None:		# set batchNotify default attributes
-				self.setAttribute('bn/dur', Configuration.get('cse.sub.dur'), overwrite=False)
+		if self.bn is not None:		# set batchNotify default attributes
+			self.setAttribute('bn/dur', Configuration.get('cse.sub.dur'), overwrite=False)
 
 
 
@@ -141,7 +140,7 @@ class SUB(Resource):
 
 	def _checkAllowedCHTY(self, parentResource:Resource, chty:list[T]) -> Result:
 		""" Check whether an observed child resource type is actually allowed by the parent. """
-		for ty in self['enc/chty']:
+		for ty in chty:
 			if ty not in parentResource.allowedChildResourceTypes:
 				L.logDebug(dbg := f'ChildResourceType {T(ty).name} is not an allowed child resource of {T(parentResource.ty).name}')
 				return Result(status=False, rsc=RC.badRequest, dbg=dbg)

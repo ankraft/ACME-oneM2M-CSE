@@ -35,14 +35,13 @@ class SWR(MgmtObj):
 		self.resourceAttributePolicies = swrPolicies	# only the resource type's own policies
 		super().__init__(dct, pi, mgd=T.SWR, create=create, attributePolicies=attributePolicies)
 
-		if self.dict is not None:
-			self.setAttribute('vr', defaultVersion, overwrite=False)
-			self.setAttribute('swn', defaultSoftwareName, overwrite=False)
-			self.setAttribute('url', defaultURL, overwrite=False)
-			self.setAttribute('ins', defaultStatus, overwrite=False)
-			self.setAttribute('acts', defaultStatus, overwrite=False)
-			self.setAttribute('in', False, overwrite=False)
-			self.setAttribute('un', False, overwrite=False)
-			self.setAttribute('act', False, overwrite=False)
-			self.setAttribute('dea', False, overwrite=False)
+		self.setAttribute('vr', defaultVersion, overwrite=False)
+		self.setAttribute('swn', defaultSoftwareName, overwrite=False)
+		self.setAttribute('url', defaultURL, overwrite=False)
+		self.setAttribute('ins', defaultStatus, overwrite=False)
+		self.setAttribute('acts', defaultStatus, overwrite=False)
+		self.setAttribute('in', False, overwrite=False)
+		self.setAttribute('un', False, overwrite=False)
+		self.setAttribute('act', False, overwrite=False)
+		self.setAttribute('dea', False, overwrite=False)
 

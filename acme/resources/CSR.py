@@ -37,11 +37,10 @@ class CSR(AnnounceableResource):
 
 		self.resourceAttributePolicies = csrPolicies	# only the resource type's own policies
 
-		if self.dict is not None:
-			#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
-			if self.csi is not None:
-				self.setAttribute('ri', self.csi.split('/')[-1])				# overwrite ri (only after /'s')
-			self.setAttribute('rr', False, overwrite=False)
+		#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
+		if self.csi:
+			self.setAttribute('ri', self.csi.split('/')[-1])				# overwrite ri (only after /'s')
+		self.setAttribute('rr', False, overwrite=False)
 
 
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:

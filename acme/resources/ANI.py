@@ -26,5 +26,4 @@ class ANI(MgmtObj):
 		self.resourceAttributePolicies = aniPolicies	# only the resource type's own policies
 		super().__init__(dct, pi, mgd=T.ANI, create=create, attributePolicies=attributePolicies)
 
-		if self.dict:
-			self.setAttribute('ant', defaultAreaNwkType, overwrite=False)
+		self.setAttribute('ant', defaultAreaNwkType, overwrite=False)

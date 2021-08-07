@@ -205,7 +205,7 @@ def resourceFromDict(resDict:Dict[str, Any]={}, pi:str=None, ty:T=None, create:b
 		factory = resourceFactoryMap.get(T.announcedMgd(mgd))	# Get the announced version
 	else:
 		factory = resourceFactoryMap.get(typ)
-	if factory is not None:
+	if factory:
 		return Result(resource=factory(resDict, tpe, pi, create))
 
 	return Result(resource=Unknown(resDict, tpe, pi=pi, create=create))	# Capture-All resource

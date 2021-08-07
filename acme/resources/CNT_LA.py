@@ -28,7 +28,7 @@ class CNT_LA(Resource):
 	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:
 		""" Handle a RETRIEVE request. Return resource """
 		if L.isDebug: L.logDebug('Retrieving latest CIN from CNT')
-		if (r := self._getLatest()) is None:
+		if not (r := self._getLatest()):
 			return Result(rsc=RC.notFound, dbg='no instance for <latest>')
 		if not (res := r.willBeRetrieved(originator)).status:
 			return res
@@ -48,14 +48,11 @@ class CNT_LA(Resource):
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a DELETE request. Delete the latest resource. """
 		if L.isDebug: L.logDebug('Deleting latest CIN from CNT')
-		if (r := self._getLatest()) is None:
+		if not (r := self._getLatest()):
 			return Result(rsc=RC.notFound, dbg='no instance for <latest>')
 		return CSE.dispatcher.deleteResource(r, originator, withDeregistration=True)
 
 
 	def _getLatest(self) -> Resource:
-		pi = self['pi']
-		rs = []
-		if (parentResource := CSE.dispatcher.retrieveResource(pi).resource):
-			rs = parentResource.contentInstances()		# ask parent for all CIN
-		return cast(Resource, rs[-1]) if len(rs) > 0 else None			
+		rs = self.retrieveParentResource().contentInstances()		# ask parent for all CIN
+		return cast(Resource, rs[-1]) if len(rs) > 0 else None	

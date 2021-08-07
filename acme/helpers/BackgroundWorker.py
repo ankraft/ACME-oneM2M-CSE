@@ -205,7 +205,7 @@ class BackgroundWorkerPool(object):
 
 	@classmethod
 	def _removeBackgroundWorkerFromPool(cls, worker:BackgroundWorker) -> None:
-		if worker is not None and worker.id in cls.backgroundWorkers:
+		if worker and worker.id in cls.backgroundWorkers:
 			del cls.backgroundWorkers[worker.id]
 
 
@@ -248,7 +248,7 @@ class BackgroundWorkerPool(object):
 	def _stopTimer(cls) -> None:
 		"""	Cancel/interrupt the workers queue timer.
 		"""
-		if cls.workerTimer is not None:
+		if cls.workerTimer:
 			cls.workerTimer.cancel()
 
 
@@ -259,7 +259,7 @@ class BackgroundWorkerPool(object):
 		with cls.queueLock:
 			if cls.workerQueue:
 				_, workerID, name = heapq.heappop(cls.workerQueue)
-				if (worker := cls.backgroundWorkers.get(workerID)) is not None:
+				if worker := cls.backgroundWorkers.get(workerID):
 					thread = Thread(target=worker._work)
 					thread.setDaemon(True)
 					thread.setName(name)

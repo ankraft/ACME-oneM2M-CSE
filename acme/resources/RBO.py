@@ -26,9 +26,8 @@ class RBO(MgmtObj):
 		self.resourceAttributePolicies = rboPolicies	# only the resource type's own policies
 		super().__init__(dct, pi, mgd=T.RBO, create=create, attributePolicies=attributePolicies)
 
-		if self.dict is not None:
-			self.setAttribute('rbo', False, overwrite=True)	# always False
-			self.setAttribute('far', False, overwrite=True)	# always False
+		self.setAttribute('rbo', False, overwrite=True)	# always False
+		self.setAttribute('far', False, overwrite=True)	# always False
 
 
 	#
@@ -46,7 +45,7 @@ class RBO(MgmtObj):
 
 	def update(self, dct:JSON=None, originator:str=None) -> Result:
 		# Check for rbo & far updates 
-		if dct is not None and self.tpe in dct:
+		if dct and self.tpe in dct:
 			rbo = Utils.findXPath(dct, 'm2m:rbo/rbo')
 			far = Utils.findXPath(dct, 'm2m:rbo/far')
 			if rbo is not None and far is not None and rbo and far:

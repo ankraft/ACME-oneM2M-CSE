@@ -42,21 +42,22 @@ class REQ(Resource):
 		"""
 
 		# Check if a an expiration ts has been set in the request
-		if request.headers.requestExpirationTimestamp is not None:
+		if request.headers.requestExpirationTimestamp:
 			et = request.headers.requestExpirationTimestamp	# This is already an ISO8601 timestamp
 		
 		# Check the rp(ts) argument
-		elif request.args.rpts is not None:
+		elif request.args.rpts:
 			et = request.args.rpts
 		
 		# otherwise calculate request et
 		else:	
-			minEt = DateUtils.getResourceDate(Configuration.get('cse.req.minet'))
-			maxEt = DateUtils.getResourceDate(Configuration.get('cse.req.maxet'))
-			if request.args.rpts is not None:
-				et = request.args.rpts if request.args.rpts < maxEt else maxEt
-			else:
-				et = minEt
+			et = DateUtils.getResourceDate(Configuration.get('cse.req.minet'))
+			# minEt = DateUtils.getResourceDate(Configuration.get('cse.req.minet'))
+			# maxEt = DateUtils.getResourceDate(Configuration.get('cse.req.maxet'))
+			# if request.args.rpts:
+			# 	et = request.args.rpts if request.args.rpts < maxEt else maxEt
+			# else:
+			# 	et = minEt
 
 
 		dct:Dict[str, Any] = {
@@ -95,14 +96,14 @@ class REQ(Resource):
 			Utils.setXPath(dct, f'm2m:req/mi/fc/{k}', v, True)
 
 		# add content
-		if request.dict is not None and len(request.dict) > 0:
+		if request.dict and len(request.dict) > 0:
 			Utils.setXPath(dct, 'm2m:req/pc', request.dict, True)
 
 		# calculate and assign rtu for rt
-		if (rtu := request.headers.responseTypeNUs) is not None and len(rtu) > 0:
+		if (rtu := request.headers.responseTypeNUs) and len(rtu) > 0:
 			Utils.setXPath(dct, 'm2m:req/mi/rt/nu', [ u for u in rtu if len(u) > 0] )
 
-		if (cseres := Utils.getCSE()).resource is None:
+		if not (cseres := Utils.getCSE()).resource:
 			return Result(rsc=RC.badRequest, dbg=cseres.dbg)
 
 		return Factory.resourceFromDict(dct, pi=cseres.resource.ri, ty=T.REQ)

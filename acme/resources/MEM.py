@@ -28,7 +28,6 @@ class MEM(MgmtObj):
 		self.resourceAttributePolicies = memPolicies	# only the resource type's own policies
 		super().__init__(dct, pi, mgd=T.MEM, create=create, attributePolicies=attributePolicies)
 
-		if self.dict is not None:
-			self.setAttribute('mma', defaultMemoryAvailable, overwrite=False)
-			self.setAttribute('mmt', defaultMemTotal, overwrite=False)
+		self.setAttribute('mma', defaultMemoryAvailable, overwrite=False)
+		self.setAttribute('mmt', defaultMemTotal, overwrite=False)
 

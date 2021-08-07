@@ -28,7 +28,7 @@ class TS_LA(Resource):
 	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:
 		""" Handle a RETRIEVE request. Return resource """
 		if L.isDebug: L.logDebug('Retrieving latest TSI from TS')
-		if (r := self._getLatest()) is None:
+		if not (r := self._getLatest()):
 			return Result(rsc=RC.notFound, dbg='no instance for <latest>')
 		return Result(resource=r)
 
@@ -46,14 +46,11 @@ class TS_LA(Resource):
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a DELETE request. Delete the latest resource. """
 		if L.isDebug: L.logDebug('Deleting latest TSI from TS')
-		if (r := self._getLatest()) is None:
+		if not (r := self._getLatest()):
 			return Result(rsc=RC.notFound, dbg='no instance for <latest>')
 		return CSE.dispatcher.deleteResource(r, originator, withDeregistration=True)
 
 
 	def _getLatest(self) -> Optional[Resource]:
-		pi = self['pi']
-		rs = []
-		if (parentResource := CSE.dispatcher.retrieveResource(pi).resource) is not None:
-			rs = parentResource.timeSeriesInstances()						# ask parent for all FCI
+		rs = self.retrieveParentResource().timeSeriesInstances()						# ask parent for all FCI
 		return cast(Resource, rs[-1]) if len(rs) > 0 else None

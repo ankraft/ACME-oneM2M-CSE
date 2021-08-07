@@ -420,10 +420,10 @@ def setXPath(dct:JSON, key:str, value:Any, overwrite:bool=True) -> bool:
 			if paths[i] not in data:
 				data[paths[i]] = {}
 			data = data[paths[i]]
-	if paths[ln1] in data is not None and not overwrite:
+	# if not isinstance(data, dict):
+	# 	return False
+	if not overwrite and paths[ln1] in data: # test overwrite first, it's faster
 		return True # don't overwrite
-	if not isinstance(data, dict):
-		return False
 	data[paths[ln1]] = value
 	return True
 

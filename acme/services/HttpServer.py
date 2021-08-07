@@ -460,23 +460,23 @@ class HttpServer(object):
 		req['to'] 		 	= to
 
 		# Copy and parse the original request headers
-		if (f := requestHeaderField(request, C.hfOrigin)) is not None:
+		if f := requestHeaderField(request, C.hfOrigin):
 			req['fr'] = f
-		if (f := requestHeaderField(request, C.hfRI)) is not None:
+		if f := requestHeaderField(request, C.hfRI):
 			req['rqi'] = f
-		if (f := requestHeaderField(request, C.hfRET)) is not None:
+		if f := requestHeaderField(request, C.hfRET):
 			req['rqet'] = f
-		if (f := requestHeaderField(request, C.hfRST)) is not None:
+		if f := requestHeaderField(request, C.hfRST):
 			req['rset'] = f
-		if (f := requestHeaderField(request, C.hfOET)) is not None:
+		if f := requestHeaderField(request, C.hfOET):
 			req['oet'] = f
-		if (f := requestHeaderField(request, C.hfRVI)) is not None:
+		if f := requestHeaderField(request, C.hfRVI):
 			req['rvi'] = f
-		if (rtu := requestHeaderField(request, C.hfRTU)) is not None:			# handle rtu as a list
+		if rtu := requestHeaderField(request, C.hfRTU):			# handle rtu as a list
 			rt = dict()
 			rt['nu'] = rtu.split('&')		
 			req['rt'] = rt					# req.rt.rtu
-		if (f := requestHeaderField(request, C.hfVSI)) is not None:
+		if f := requestHeaderField(request, C.hfVSI):
 			req['vsi'] = f
 
 		# parse and extract content-type header
@@ -510,12 +510,12 @@ class HttpServer(object):
 		# Handle some parameters differently.
 		# They are not filter cirteria, but request attributes
 		for param in ['rcn', 'rp']:
-			if (p := args.get(param)) is not None:	# type: ignore [assignment]
+			if p := args.get(param):	# type: ignore [assignment]
 				req[param] = p
 				del args[param]
-		if (rtv := args.get('rt')) is not None:
-			if (rt := cast(JSON, req.get('rt'))) is None:
-				rt = dict()
+		if rtv := args.get('rt'):
+			if rt := cast(JSON, req.get('rt')):
+				rt = {}
 			rt['rtv'] = rtv		# type: ignore [assignment] # req.rt.rtv
 			req['rt'] = rt
 			del args['rt']

@@ -37,16 +37,15 @@ class GRP(AnnounceableResource):
 
 		self.resourceAttributePolicies = grpPolicies	# only the resource type's own policies
 
-		if self.dict is not None:
-			self.setAttribute('mt', int(T.MIXED), overwrite=False)
-			self.setAttribute('ssi', False, overwrite=True)
-			self.setAttribute('cnm', 0, overwrite=False)	# calculated later
-			self.setAttribute('mid', [], overwrite=False)			
-			self.setAttribute('mtv', False, overwrite=False)
-			self.setAttribute('csy', ConsistencyStrategy.abandonMember, overwrite=False)
+		self.setAttribute('mt', int(T.MIXED), overwrite=False)
+		self.setAttribute('ssi', False, overwrite=True)
+		self.setAttribute('cnm', 0, overwrite=False)	# calculated later
+		self.setAttribute('mid', [], overwrite=False)			
+		self.setAttribute('mtv', False, overwrite=False)
+		self.setAttribute('csy', ConsistencyStrategy.abandonMember, overwrite=False)
 
-			# These attributes are not provided by default: mnm (no default), macp (no default)
-			# optional set: spty, gn, nar
+		# These attributes are not provided by default: mnm (no default), macp (no default)
+		# optional set: spty, gn, nar
 
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
@@ -54,7 +53,7 @@ class GRP(AnnounceableResource):
 			return res
 		
 		# add fanOutPoint
-		ri = self['ri']
+		ri = self.ri
 		if L.isDebug: L.logDebug(f'Registering fanOutPoint resource for: {ri}')
 		fanOutPointResource = Factory.resourceFromDict({ 'pi' : ri }, ty=T.GRP_FOPT).resource
 		if (res := CSE.dispatcher.createResource(fanOutPointResource, self, originator)).resource is None:

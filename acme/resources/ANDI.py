@@ -26,7 +26,6 @@ class ANDI(MgmtObj):
 		self.resourceAttributePolicies = andiPolicies	# only the resource type's own policies
 		super().__init__(dct, pi, mgd=T.ANDI, create=create, attributePolicies=attributePolicies)
 
-		if self.dict:
-			self.setAttribute('dvd', defaultDeviceID, overwrite=False)
-			self.setAttribute('dvt', '', overwrite=False)
-			self.setAttribute('awi', '', overwrite=False)
+		self.setAttribute('dvd', defaultDeviceID, overwrite=False)
+		self.setAttribute('dvt', '', overwrite=False)
+		self.setAttribute('awi', '', overwrite=False)

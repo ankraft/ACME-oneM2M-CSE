@@ -29,17 +29,16 @@ class CSEBase(Resource):
 	def __init__(self, dct:JSON=None, create:bool=False) -> None:
 		super().__init__(T.CSEBase, dct, '', create=create, attributePolicies=attributePolicies)
 
-		if self.dict is not None:
-			self.setAttribute('ri', 'cseid', overwrite=False)
-			self.setAttribute('rn', 'cse', overwrite=False)
-			self.setAttribute('csi', '/cse', overwrite=False)
+		self.setAttribute('ri', 'cseid', overwrite=False)
+		self.setAttribute('rn', 'cse', overwrite=False)
+		self.setAttribute('csi', '/cse', overwrite=False)
 
-			self.setAttribute('rr', False, overwrite=False)
-			self.setAttribute('srt', C.supportedResourceTypes, overwrite=False)
-			self.setAttribute('csz', C.supportedContentSerializations, overwrite=False)
-			self.setAttribute('srv', CSE.supportedReleaseVersions, overwrite=False)	# This must be a list
-			self.setAttribute('poa', [ CSE.httpServer.serverAddress ], overwrite=False)		# TODO add more address schemes when available
-			self.setAttribute('cst', CSE.cseType, overwrite=False)
+		self.setAttribute('rr', False, overwrite=False)
+		self.setAttribute('srt', C.supportedResourceTypes, overwrite=False)
+		self.setAttribute('csz', C.supportedContentSerializations, overwrite=False)
+		self.setAttribute('srv', CSE.supportedReleaseVersions, overwrite=False)	# This must be a list
+		self.setAttribute('poa', [ CSE.httpServer.serverAddress ], overwrite=False)		# TODO add more address schemes when available
+		self.setAttribute('cst', CSE.cseType, overwrite=False)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
@@ -66,13 +65,11 @@ class CSEBase(Resource):
 		if nl is not None or _nl_ is not None:
 			if nl != _nl_:
 				if _nl_ is not None:
-					nresource = CSE.dispatcher.retrieveResource(_nl_).resource
-					if nresource is not None:
+					if nresource := CSE.dispatcher.retrieveResource(_nl_).resource:
 						nresource['hcl'] = None # remove old link
 						CSE.dispatcher.updateResource(nresource)
 				self[Resource._node] = nl
-				nresource = CSE.dispatcher.retrieveResource(nl)
-				if nresource is not None:
+				if nresource := CSE.dispatcher.retrieveResource(nl).resource:
 					nresource['hcl'] = self['ri']
 					CSE.dispatcher.updateResource(nresource)
 			self[Resource._node] = nl

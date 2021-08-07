@@ -48,32 +48,38 @@ class Resource(object):
 		self.dict = {}
 		self.attributePolicies = attributePolicies
 
-		if dct is not None: 
-			self.isImported = dct.get(C.isImported)
-			if self.tpe in dct:
-				self.dict = deepcopy(dct[self.tpe])
-			else:
+		if dct: 
+			self.isImported = dct.get(C.isImported)	# might be None, or boolean
+			self.dict = deepcopy(dct.get(self.tpe))
+			if not self.dict:
 				self.dict = deepcopy(dct)
-			self._originalDict = deepcopy(dct)	# keep for validation later
+			# if self.tpe in dct:
+			# 	self.dict = deepcopy(dct[self.tpe])
+			# else:
+			# 	self.dict = deepcopy(dct)
+			self._originalDict = deepcopy(dct)	# keep for validation in activate() later
 		else:
 			# no Dict, so the resource is instantiated programmatically
 			self.setAttribute(self._isInstantiated, True)
 
 
-		if self.dict is not None:
-			if self.tpe is None: # and _rtype in self:
+		if self.dict:
+			if not self.tpe: # and _rtype in self:
 				self.tpe = self.__rtype__
 			self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite=False)
 
 			# override rn if given
-			if rn is not None:
-				self.setAttribute('rn', rn, overwrite=True)
-	
+			if rn:
+				self['rn'] = rn
+
+			# Create an RN if there is none
+			self.setAttribute('rn', Utils.uniqueRN(self.tpe), overwrite=False)
+
 			# Check uniqueness of ri. otherwise generate a new one. Only when creating
 			if create:
 				while Utils.isUniqueRI(ri := self.ri) == False:
 					L.isWarn and L.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
-					self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite=True)
+					self['ri'] = Utils.uniqueRI(self.tpe)
 
 			# Indicate whether this is a virtual resource
 			if isVirtual:
@@ -81,9 +87,6 @@ class Resource(object):
 			
 			# Indicate whether this is an announced resource
 			self.setAttribute(self._isAnnounced, isAnnounced)
-
-			# Create an RN if there is none
-			self.setAttribute('rn', Utils.uniqueRN(self.tpe), overwrite=False)
 			
 			# Set some more attributes
 			ts = DateUtils.getResourceDate()
@@ -91,13 +94,12 @@ class Resource(object):
 			self.setAttribute('lt', ts, overwrite=False)
 			if self.ty not in [ T.CSEBase ]:
 				self.setAttribute('et', DateUtils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite=False) 
-			if pi is not None:
-				# self.setAttribute('pi', pi, overwrite=False)
-				self.setAttribute('pi', pi, overwrite=True)
+			if pi is not None: # test for None bc pi might be '' (for cse)
+				self['pi'] = pi
 			if ty is not None:
 				if ty in C.stateTagResourceTypes:	# Only for allowed resources
 					self.setAttribute('st', 0, overwrite=False)
-				self.setAttribute('ty', int(ty))
+				self['ty'] = int(ty)
 
 			#
 			## Note: ACPI is handled in activate() and update()
@@ -110,7 +112,7 @@ class Resource(object):
 
 			# determine and add the srn, only when this is a local resource, otherwise we don't need this information
 			# It is *not* a remote resource when the __remoteID__ is set
-			if self[self._remoteID] is None:
+			if not self[self._remoteID]:
 				self[self._srn] = Utils.structuredPath(self)
 			self[self._rtype] = self.tpe
 			self.setAttribute(self._announcedTo, [], overwrite=False)
@@ -148,7 +150,8 @@ class Resource(object):
 		# validate the attributes but only when the resource is not instantiated.
 		# We assume that an instantiated resource is always correct
 		# Also don't validate virtual resources
-		if (self[self._isInstantiated] is None or not self[self._isInstantiated]) and not self[self._isVirtual] :
+		# if (self[self._isInstantiated] is None or not self[self._isInstantiated]) and not self[self._isVirtual] :
+		if not self[self._isInstantiated] and not self[self._isVirtual] :
 			if not (res := CSE.validator.validateAttributes(self._originalDict, self.tpe, self.ty, self.attributePolicies, isImported=self.isImported, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
 				return res
 
@@ -157,10 +160,10 @@ class Resource(object):
 			return res
 		self.dbUpdate()
 		# increment parent resource's state tag
-		if parentResource is not None and parentResource.st is not None:
+		if parentResource and parentResource.st is not None:
 			parentResource = parentResource.dbReload().resource	# Read the resource again in case it was updated in the DB
 			parentResource['st'] = parentResource.st + 1
-			if (res := parentResource.dbUpdate()).resource is None:
+			if not (res := parentResource.dbUpdate()).resource:
 				return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 		
 		#
@@ -202,7 +205,7 @@ class Resource(object):
 		dictOrg = deepcopy(self.dict)	# Save for later for notification
 
 		updatedAttributes = None
-		if dct is not None:
+		if dct:
 			if self.tpe not in dct and self.ty not in [T.FCNTAnnc, T.FCIAnnc]:	# Don't check announced versions of announced FCNT
 				L.isWarn and L.logWarn("Update type doesn't match target")
 				return Result(status=False, rsc=RC.contentsUnacceptable, dbg='resource types mismatch')
@@ -219,6 +222,7 @@ class Resource(object):
 			# Check that acpi, if present, is the only attribute
 			if 'acpi' in updatedAttributes and updatedAttributes['acpi'] is not None:	# No further checks for access here. This has been done before in the Dispatcher.processUpdateRequest()	
 																						# Removing acpi by setting it to None is handled in the else:
+																						# acpi can be None! Therefore the complicated test
 				# Test wether an empty array is provided				
 				if len(ua := updatedAttributes['acpi']) == 0:
 					return Result(status=False, rsc=RC.badRequest, dbg='acpi must not be an empty list')

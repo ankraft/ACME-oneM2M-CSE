@@ -38,9 +38,8 @@ class AE(AnnounceableResource):
 
 		self.resourceAttributePolicies = aePolicies	# only the resource type's own policies
 
-		if self.dict is not None:
-			self.setAttribute('aei', Utils.uniqueAEI(), overwrite=False)
-			self.setAttribute('rr', False, overwrite=False)
+		self.setAttribute('aei', Utils.uniqueAEI(), overwrite=False)
+		self.setAttribute('rr', False, overwrite=False)
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
@@ -82,8 +81,8 @@ class AE(AnnounceableResource):
 				self[Resource._node] = nl
 
 				# Add to new node
-				if (node := CSE.dispatcher.retrieveResource(nl).resource) is not None:	# new node
-					if (hael := node['hael']) is None:
+				if node := CSE.dispatcher.retrieveResource(nl).resource:	# new node
+					if (hael := node.hael) is None:
 						node['hael'] = [ ri ]
 					else:
 						if isinstance(hael, list):
@@ -93,7 +92,7 @@ class AE(AnnounceableResource):
 			self[Resource._node] = nl
 		
 		# check csz attribute
-		if (csz := self['csz']) is not None:
+		if (csz := self.csz) is not None:
 			for c in csz:
 				if c not in C.supportedContentSerializations:
 					return Result(status=False, rsc=RC.badRequest, dbg=f'unsupported content serialization: {c}')
@@ -123,8 +122,8 @@ class AE(AnnounceableResource):
 
 	def _removeAEfromNOD(self, nodeRi:str, ri:str) -> None:
 		""" Remove AE from hosting Node. """
-		if (node := CSE.dispatcher.retrieveResource(nodeRi).resource) is not None:
-			if (hael := node['hael']) is not None and isinstance(hael, list) and ri in hael:
+		if node := CSE.dispatcher.retrieveResource(nodeRi).resource:
+			if (hael := node.hael) is not None and isinstance(hael, list) and ri in hael:
 				hael.remove(ri)
 				if len(hael) == 0:
 					node.delAttribute('hael')

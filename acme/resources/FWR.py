@@ -35,10 +35,9 @@ class FWR(MgmtObj):
 		self.resourceAttributePolicies = fwrPolicies	# only the resource type's own policies
 		super().__init__(dct, pi, mgd=T.FWR, create=create, attributePolicies=attributePolicies)
 
-		if self.dict is not None:
-			self.setAttribute('vr', defaultVersion, overwrite=False)
-			self.setAttribute('fwn', defaultFirmwareName, overwrite=False)
-			self.setAttribute('url', defaultURL, overwrite=False)
-			self.setAttribute('uds', defaultUDS, overwrite=False)
-			self.setAttribute('ud', False, overwrite=False)
+		self.setAttribute('vr', defaultVersion, overwrite=False)
+		self.setAttribute('fwn', defaultFirmwareName, overwrite=False)
+		self.setAttribute('url', defaultURL, overwrite=False)
+		self.setAttribute('uds', defaultUDS, overwrite=False)
+		self.setAttribute('ud', False, overwrite=False)
 

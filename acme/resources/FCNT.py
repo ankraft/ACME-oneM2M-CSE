@@ -46,15 +46,14 @@ class FCNT(AnnounceableResource):
 
 		self.resourceAttributePolicies = fcntPolicies	# only the resource type's own policies
 
-		if self.dict is not None:
-			self.setAttribute('cs', 0, overwrite=False)
+		self.setAttribute('cs', 0, overwrite=False)
 
-			# "current" attributes are added when necessary in the validate() method
+		# "current" attributes are added when necessary in the validate() method
 
-			# Indicates whether this FC has flexContainerInstances. 
-			# Might change during the lifetime of a resource. Used for optimization
-			self._hasInstances 	= False		# not stored in DB
-			self.setAttribute(self._hasFCI, False, False)	# stored in DB
+		# Indicates whether this FC has flexContainerInstances. 
+		# Might change during the lifetime of a resource. Used for optimization
+		self._hasInstances 	= False		# not stored in DB
+		self.setAttribute(self._hasFCI, False, False)	# stored in DB
 
 		self.__validating = False
 		self.ignoreAttributes = self.internalAttributes + [ 'acpi', 'cbs', 'cni', 'cnd', 'cs', 'cr', 'ct', 'et', 'lt', 'mbs', 'mia', 'mni', 'or', 'pi', 'ri', 'rn', 'st', 'ty', 'at', 'aa' ]
@@ -102,9 +101,8 @@ class FCNT(AnnounceableResource):
 			return res
 
 		# Check whether the child's rn is "ol" or "la".
-		if (rn := childResource['rn']) is not None and rn in ['ol', 'la']:
+		if (rn := childResource['rn']) and rn in ['ol', 'la']:
 			return Result(status=False, rsc=RC.operationNotAllowed, dbg='resource types "latest" or "oldest" cannot be added')
-	
 		return Result(status=True)
 
 
@@ -223,7 +221,7 @@ class FCNT(AnnounceableResource):
 		dct:JSON = { 'rn'  : f'{self.rn}_{self.st:d}', }
 
 		# Copy the label as well
-		if self.lbl is not None:	# TODO: this is currently (2021/04) not standard conform
+		if self.lbl:	# TODO: this is currently (2021/04) not standard conform
 			dct['lbl'] = self.lbl
 
 		for attr in self.dict:

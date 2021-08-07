@@ -198,24 +198,27 @@ def _shutdown() -> None:
 	"""
 
 	L.isInfo and L.log('CSE shutting down')
-	if event is not None:
+	if event:	# send shutdown event
 		event.cseShutdown() 	# type: ignore
-	console is not None and console.shutdown()
-	mqttClient is not None and mqttClient.shutdown()
-	httpServer is not None and httpServer.shutdown()
-	announce is not None and announce.shutdown()
-	remote is not None and remote.shutdown()
-	timeSeries is not None and timeSeries.shutdown()
-	group is not None and group.shutdown()
-	notification is not None and notification.shutdown()
-	request is not None and request.shutdown()
-	dispatcher is not None and dispatcher.shutdown()
-	security is not None and security.shutdown()
-	validator is not None and validator.shutdown()
-	registration is not None and registration.shutdown()
-	statistics is not None and statistics.shutdown()
-	event is not None and event.shutdown()
-	storage is not None and storage.shutdown()
+	
+	# shutdown the services
+	console and console.shutdown()
+	mqttClient and mqttClient.shutdown()
+	httpServer and httpServer.shutdown()
+	announce and announce.shutdown()
+	remote and remote.shutdown()
+	timeSeries and timeSeries.shutdown()
+	group  and group.shutdown()
+	notification  and notification.shutdown()
+	request and request.shutdown()
+	dispatcher and dispatcher.shutdown()
+	security and security.shutdown()
+	validator and validator.shutdown()
+	registration and registration.shutdown()
+	statistics and statistics.shutdown()
+	event and event.shutdown()
+	storage  and storage.shutdown()
+	
 	L.isInfo and L.log('CSE shutdown')
 	L.finit()
 

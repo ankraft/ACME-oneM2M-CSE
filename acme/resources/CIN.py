@@ -35,9 +35,8 @@ class CIN(AnnounceableResource):
 
 		self.resourceAttributePolicies = cinPolicies	# only the resource type's own policies
 
-		if self.dict is not None:
-			self.setAttribute('con', '', overwrite=False)
-			self.setAttribute('cs', Utils.getAttributeSize(self.con))
+		self.setAttribute('con', '', overwrite=False)
+		self.setAttribute('cs', Utils.getAttributeSize(self.con))
 
 
 	# Forbid updating
@@ -50,7 +49,7 @@ class CIN(AnnounceableResource):
 			return res
 
 		# Check whether the parent container's *disableRetrieval* attribute is set to True.
-		if (cnt := self.retrieveParentResource()) is not None and (disr := cnt.disr) is not None and disr:	# False means "not disabled retrieval"
+		if (cnt := self.retrieveParentResource()) and (disr := cnt.disr) is not None and disr:	# False means "not disabled retrieval"
 			L.isDebug and L.logDebug(dbg := f'Retrieval is disabled for the parent <container>')
 			return Result(status=False, rsc=RC.operationNotAllowed, dbg=dbg)
 		
@@ -81,7 +80,7 @@ class CIN(AnnounceableResource):
 				return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
 
 		# Add ST attribute
-		if (parentResource := parentResource.dbReload().resource) is not None:		# Read the resource again in case it was updated in the DB
+		if parentResource := parentResource.dbReload().resource:		# Read the resource again in case it was updated in the DB
 			self.setAttribute('st', parentResource.st)
 		
 		return Result(status=True)

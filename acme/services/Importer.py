@@ -11,7 +11,7 @@
 from __future__ import annotations
 import json, os, fnmatch, re
 from typing import cast
-from etc.Utils import findXPath
+from etc.Utils import findXPath, getCSE
 from etc.Types import ResourceTypes as T
 from etc.Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, JSON, JSONLIST
 import resources.Factory as Factory
@@ -61,10 +61,9 @@ class Importer(object):
 		if CSE.dispatcher.countResources() > 0:
 			L.isInfo and L.log('Resources already imported, skipping importing')
 			# But we still need the CSI etc of the CSE
-			rss = CSE.dispatcher.retrieveResourcesByType(T.CSEBase)
-			if rss is not None:
+			if cse := getCSE().resource:
 				# Set some values in the configuration and the CSE instance
-				setCSEParameters(rss[0].csi, rss[0].ri, rss[0].rn)
+				setCSEParameters(cse.csi, cse.ri, cse.rn)
 				return True
 			L.logErr('CSE not found')
 			return False
@@ -81,7 +80,6 @@ class Importer(object):
 			return False
 
 		L.isInfo and L.log(f'Importing resources from directory: {path}')
-
 		self._prepareImporting()
 
 

@@ -116,7 +116,7 @@ class GroupManager(object):
 				ty = resource.mt	# set the member type to the group's member type
 
 			# check specializationType spty
-			if spty is not None:
+			if spty:
 				if isinstance(spty, int):				# mgmtobj type
 					if isinstance(resource, MgmtObj) and ty != spty:
 						return Result(status=False, rsc=RC.groupMemberTypeInconsistent, dbg=f'resource and group member types mismatch: {ty:d} != {spty:d} for: {mid}')
@@ -202,7 +202,7 @@ class GroupManager(object):
 		if len(resultList) > 0:
 			items = []
 			for result in resultList:
-				if result.resource is not None and isinstance(result.resource, Resource):
+				if result.resource and isinstance(result.resource, Resource):
 					item = 	{ 'rsc' : result.rsc, 
 							  'rqi' : request.headers.requestIdentifier,
 							  'pc'  : result.resource.asDict() if isinstance(result.resource, Resource) else result.resource, # in case 'resource' is a dict
@@ -234,7 +234,7 @@ class GroupManager(object):
 
 		ri = deletedResource.ri
 		groups = CSE.storage.searchByFragment(	{ 'ty' : T.GRP }, 
-												lambda r: (mid := r.get('mid')) is not None and ri in mid)	# Filter all <grp> where mid contains ri
+												lambda r: (mid := r.get('mid')) and ri in mid)	# Filter all <grp> where mid contains ri
 		groups = [ group for group in groups if ri in group.mid]
 		for group in groups:
 			group['mid'].remove(ri)

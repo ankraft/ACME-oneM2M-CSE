@@ -29,9 +29,8 @@ class DVI(MgmtObj):
 		self.resourceAttributePolicies = dviPolicies	# only the resource type's own policies
 		super().__init__(dct, pi, mgd=T.DVI, create=create, attributePolicies=attributePolicies)
 
-		if self.dict is not None:
-			self.setAttribute('dty', defaultDeviceType, overwrite=False)
-			self.setAttribute('mod', defaultModel, overwrite=False)
-			self.setAttribute('man', defaultManufacturer, overwrite=False)
-			self.setAttribute('dlb', defaultDeviceLabel, overwrite=False)
+		self.setAttribute('dty', defaultDeviceType, overwrite=False)
+		self.setAttribute('mod', defaultModel, overwrite=False)
+		self.setAttribute('man', defaultManufacturer, overwrite=False)
+		self.setAttribute('dlb', defaultDeviceLabel, overwrite=False)
 

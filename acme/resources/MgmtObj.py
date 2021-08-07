@@ -31,6 +31,5 @@ class MgmtObj(AnnounceableResource):
 		self.resourceAttributePolicies:AttributePolicies = deepcopy(self.resourceAttributePolicies)	# We dont want to change the original policy list
 		self.resourceAttributePolicies.update(mgmtObjAttributePolicies)			# add mgmtobj policies
 
-		if self.dict is not None:
-			self.setAttribute('mgd', int(mgd), overwrite=True)
+		self.setAttribute('mgd', int(mgd), overwrite=True)
 

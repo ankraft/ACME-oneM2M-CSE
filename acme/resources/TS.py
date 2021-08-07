@@ -33,8 +33,6 @@ attributePolicies =  addPolicy(attributePolicies, tsPolicies)
 # TODO periodicIntervalDelta missing in TS-0004? Shortname for validation
 # TODO periodicIntervalDelta default
 
-# TODO Implement SUB missing data
-
 
 class TS(AnnounceableResource):
 
@@ -47,13 +45,12 @@ class TS(AnnounceableResource):
 
 		self.resourceAttributePolicies = tsPolicies	# only the resource type's own policies
 
-		if self.dict is not None:
-			self.setAttribute('cni', 0, overwrite=False)
-			self.setAttribute('cbs', 0, overwrite=False)
-			if Configuration.get('cse.ts.enableLimits'):	# Only when limits are enabled
-				self.setAttribute('mni', Configuration.get('cse.ts.mni'), overwrite=False)
-				self.setAttribute('mbs', Configuration.get('cse.ts.mbs'), overwrite=False)
-				self.setAttribute('mdn', Configuration.get('cse.ts.mdn'), overwrite=False)
+		self.setAttribute('cni', 0, overwrite=False)
+		self.setAttribute('cbs', 0, overwrite=False)
+		if Configuration.get('cse.ts.enableLimits'):	# Only when limits are enabled
+			self.setAttribute('mni', Configuration.get('cse.ts.mni'), overwrite=False)
+			self.setAttribute('mbs', Configuration.get('cse.ts.mbs'), overwrite=False)
+			self.setAttribute('mdn', Configuration.get('cse.ts.mdn'), overwrite=False)
 
 		self.__validating = False	# semaphore for validating
 
@@ -242,7 +239,7 @@ class TS(AnnounceableResource):
 		# Check whether missing data detection is turned on
 		mdn = self.mdn
 		mdd = self.mdd
-		if mdd is not None and mdd == True:
+		if mdd:
 			# When missingDataMaxNr is set
 			if mdn is not None:
 				self.setAttribute('mdc', 0, overwrite=False)	# add missing data count
@@ -255,12 +252,12 @@ class TS(AnnounceableResource):
 					CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 
 		# If any of mdd, pei or mdt becomes None, or is mdd==False, then stop monitoring this TS
-		if mdd is None or mdd == False or self.pei is None or self.mdt is None:
+		if not mdd or not self.pei or not self.mdt:
 			if CSE.timeSeries.isMonitored(self.ri):
 				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 		
 		# Check if mdn was changed and shorten mdlt accordingly, if exists
-		if self.mdlt is not None and (newMdn := Utils.findXPath(dct, 'm2m:ts/mdn')) is not None:	# Returns None if dct is None or not found in dct
+		if self.mdlt and (newMdn := Utils.findXPath(dct, 'm2m:ts/mdn')) is not None:	# Returns None if dct is None or not found in dct
 			mdlt = self.mdlt
 			if (l := len(mdlt)) > newMdn:
 				mdlt = mdlt[l-newMdn:]
@@ -268,7 +265,7 @@ class TS(AnnounceableResource):
 				self['mdc'] = newMdn
 		
 		# Check if mdt was changed in an update
-		if dct is not None and 'mdt' in dct['m2m:ts']:	# mdt is in the update
+		if dct and 'mdt' in dct['m2m:ts']:	# mdt is in the update
 			mdt = Utils.findXPath(dct, 'm2m:ts/mdt')
 			isMonitored = CSE.timeSeries.isMonitored(self.ri)
 			if mdt is None and isMonitored:				# it is in the update, but set to None, meaning remove the mdt from the TS

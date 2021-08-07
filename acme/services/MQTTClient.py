@@ -154,7 +154,7 @@ class MQTTClientHandler(MQTTHandler):
 			
 			if dissectResult.request.op != Operation.CREATE:
 				# Registration must be a CREATE operation
-				L.logWarn(dbg := f'Invalid operation for registration: {dissectResult.request.op}')
+				L.logWarn(dbg := f'Invalid operation for registration: {dissectResult.request.op.name}')
 				_sendResponse(Result(rsc=RC.badRequest, request=dissectResult.request, dbg=dbg))
 				return
 
@@ -168,7 +168,7 @@ class MQTTClientHandler(MQTTHandler):
 
 
 		# log request
-		L.isDebug and L.logDebug(f'Operation: {dissectResult.request.op}')
+		L.isDebug and L.logDebug(f'Operation: {dissectResult.request.op.name}')
 		if contentType == ContentSerializationType.JSON:
 			L.isDebug and L.logDebug(f'Body: \n{cast(str, data)}')
 		else:

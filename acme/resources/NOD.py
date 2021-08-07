@@ -38,8 +38,7 @@ class NOD(AnnounceableResource):
 
 		self.resourceAttributePolicies = nodPolicies	# only the resource type's own policies
 
-		if self.dict is not None:
-			self.setAttribute('ni', Utils.uniqueID(), overwrite=False)
+		self.setAttribute('ni', Utils.uniqueID(), overwrite=False)
 
 
 	def deactivate(self, originator:str) -> None:
@@ -55,9 +54,8 @@ class NOD(AnnounceableResource):
 
 	def _removeNODfromAE(self, aeRI:str, ri:str) -> None:
 		""" Remove NOD.ri from AE node link. """
-		if (aeResource := CSE.dispatcher.retrieveResource(aeRI).resource) is not None:
-			nl = aeResource['nl']
-			if nl is not None and isinstance(nl, str) and ri == nl:
+		if aeResource := CSE.dispatcher.retrieveResource(aeRI).resource:
+			if (nl := aeResource.nl) is not None and isinstance(nl, str) and ri == nl:
 				aeResource.delAttribute('nl')
 				aeResource.dbUpdate()
 

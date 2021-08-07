@@ -25,13 +25,12 @@ class DVC(MgmtObj):
 		self.resourceAttributePolicies = dvcPolicies	# only the resource type's own policies
 		super().__init__(dct, pi, mgd=T.DVC, create=create, attributePolicies=attributePolicies)
 
-		if self.dict is not None:
-			self.setAttribute('can', 'unknown', overwrite=False)
-			self.setAttribute('att', False, overwrite=False)
-			self.setAttribute('cas', {	"acn" : "unknown", "sus" : 0 }, overwrite=False)
-			self.setAttribute('cus', False, overwrite=False)
-			self.setAttribute('ena', True, overwrite=True)	# always True
-			self.setAttribute('dis', True, overwrite=True)	# always True
+		self.setAttribute('can', 'unknown', overwrite=False)
+		self.setAttribute('att', False, overwrite=False)
+		self.setAttribute('cas', {	"acn" : "unknown", "sus" : 0 }, overwrite=False)
+		self.setAttribute('cus', False, overwrite=False)
+		self.setAttribute('ena', True, overwrite=True)	# always True
+		self.setAttribute('dis', True, overwrite=True)	# always True
 
 	#
 	#	Handling the special behaviour for ena and dis attributes in 
@@ -48,7 +47,7 @@ class DVC(MgmtObj):
 
 	def update(self, dct:JSON=None, originator:str=None) -> Result:
 		# Check for ena & dis updates 
-		if dct is not None and self.tpe in dct:
+		if dct and self.tpe in dct:
 			ena = Utils.findXPath(dct, 'm2m:dvc/ena')
 			dis = Utils.findXPath(dct, 'm2m:dvc/dis')
 			if ena is not None and dis is not None and ena and dis:

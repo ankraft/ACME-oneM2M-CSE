@@ -28,19 +28,19 @@ class Configuration(object):
 		import etc.Utils as Utils	# cannot import at the top because of circel import
 
 		# resolve the args, of any
-		argsConfigfile			= args.configfile if args is not None and 'configfile' in args else C.defaultConfigFile
-		argsLoglevel			= args.loglevel if args is not None and 'loglevel' in args else None
-		argsDBReset				= args.dbreset if args is not None and 'dbreset' in args else False
-		argsDBStorageMode		= args.dbstoragemode if args is not None and 'dbstoragemode' in args else None
-		argsImportDirectory		= args.importdirectory if args is not None and 'importdirectory' in args else None
-		argsRemoteCSEEnabled	= args.remotecseenabled if args is not None and 'remotecseenabled' in args else None
-		argsValidationEnabled	= args.validationenabled if args is not None and 'validationenabled' in args else None
-		argsStatisticsEnabled	= args.statisticsenabled if args is not None and 'statisticsenabled' in args else None
-		argsRunAsHttps			= args.https if args is not None and 'https' in args else None
-		argsRemoteConfigEnabled	= args.remoteconfigenabled if args is not None and 'remoteconfigenabled' in args else None
-		argsListenIF			= args.listenif if args is not None and 'listenif' in args else None
-		argsHttpAddress			= args.httpaddress if args is not None and 'httpaddress' in args else None
-		argsHeadless			= args.headless if args is not None and 'headless' in args else False
+		argsConfigfile			= args.configfile if args and 'configfile' in args else C.defaultConfigFile
+		argsLoglevel			= args.loglevel if args and 'loglevel' in args else None
+		argsDBReset				= args.dbreset if args and 'dbreset' in args else False
+		argsDBStorageMode		= args.dbstoragemode if args and 'dbstoragemode' in args else None
+		argsImportDirectory		= args.importdirectory if args and 'importdirectory' in args else None
+		argsRemoteCSEEnabled	= args.remotecseenabled if args and 'remotecseenabled' in args else None
+		argsValidationEnabled	= args.validationenabled if args and 'validationenabled' in args else None
+		argsStatisticsEnabled	= args.statisticsenabled if args and 'statisticsenabled' in args else None
+		argsRunAsHttps			= args.https if args and 'https' in args else None
+		argsRemoteConfigEnabled	= args.remoteconfigenabled if args and 'remoteconfigenabled' in args else None
+		argsListenIF			= args.listenif if args and 'listenif' in args else None
+		argsHttpAddress			= args.httpaddress if args and 'httpaddress' in args else None
+		argsHeadless			= args.headless if args and 'headless' in args else False
 
 		# own print function that takes the headless setting into account
 		def _print(out:str) -> None:
@@ -318,18 +318,18 @@ class Configuration(object):
 		else:
 			Configuration._configuration['logging.level'] = LogLevel.DEBUG
 
-		if argsDBReset is True:					Configuration._configuration['db.resetOnStartup'] = True									# Override DB reset from command line
-		if argsDBStorageMode is not None:		Configuration._configuration['db.inMemory'] = argsDBStorageMode == 'memory'					# Override DB storage mode from command line
-		if argsImportDirectory is not None:		Configuration._configuration['cse.resourcesPath'] = argsImportDirectory						# Override import directory from command line
-		if argsRemoteCSEEnabled is not None:	Configuration._configuration['cse.enableRemoteCSE'] = argsRemoteCSEEnabled					# Override remote CSE enablement
-		if argsValidationEnabled is not None:	Configuration._configuration['cse.enableValidation'] = argsValidationEnabled				# Override validation enablement
-		if argsStatisticsEnabled is not None:	Configuration._configuration['cse.statistics.enable'] = argsStatisticsEnabled				# Override statistics enablement
-		if argsRunAsHttps is not None:			Configuration._configuration['http.security.useTLS'] = argsRunAsHttps						# Override useTLS
-		if argsRemoteConfigEnabled is not None:	Configuration._configuration['http.enableRemoteConfiguration'] = argsRemoteConfigEnabled	# Override remote/httpConfiguration
-		if argsListenIF is not None:			Configuration._configuration['http.listenIF'] = argsListenIF								# Override binding network interface
-		if argsHttpAddress is not None:			Configuration._configuration['http.address'] = argsHttpAddress								# Override server http address
+		if argsDBReset is True:		Configuration._configuration['db.resetOnStartup'] = True									# Override DB reset from command line
+		if argsDBStorageMode:		Configuration._configuration['db.inMemory'] = argsDBStorageMode == 'memory'					# Override DB storage mode from command line
+		if argsImportDirectory:		Configuration._configuration['cse.resourcesPath'] = argsImportDirectory						# Override import directory from command line
+		if argsRemoteCSEEnabled:	Configuration._configuration['cse.enableRemoteCSE'] = argsRemoteCSEEnabled					# Override remote CSE enablement
+		if argsValidationEnabled:	Configuration._configuration['cse.enableValidation'] = argsValidationEnabled				# Override validation enablement
+		if argsStatisticsEnabled:	Configuration._configuration['cse.statistics.enable'] = argsStatisticsEnabled				# Override statistics enablement
+		if argsRunAsHttps:			Configuration._configuration['http.security.useTLS'] = argsRunAsHttps						# Override useTLS
+		if argsRemoteConfigEnabled:	Configuration._configuration['http.enableRemoteConfiguration'] = argsRemoteConfigEnabled	# Override remote/httpConfiguration
+		if argsListenIF:			Configuration._configuration['http.listenIF'] = argsListenIF								# Override binding network interface
+		if argsHttpAddress:			Configuration._configuration['http.address'] = argsHttpAddress								# Override server http address
 
-		if argsHeadless is not None and argsHeadless:
+		if argsHeadless:
 			Configuration._configuration['logging.enableScreenLogging'] = False
 
 		# Correct urls
@@ -401,7 +401,7 @@ class Configuration(object):
 			_print(f'[red]Configuration Error: Wrong format for \[cse]:cseID: {val}')
 			return False
 
-		if Configuration._configuration['cse.registrar.address'] is not None and Configuration._configuration['cse.registrar.csi'] is not None:
+		if Configuration._configuration['cse.registrar.address'] and Configuration._configuration['cse.registrar.csi']:
 			if not Utils.isValidCSI(val:=Configuration._configuration['cse.registrar.csi']):
 				_print(f'[red]Configuration Error: Wrong format for \[cse.registrar]:cseID: {val}')
 				return False

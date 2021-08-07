@@ -39,11 +39,10 @@ class ACP(AnnounceableResource):
 
 		self.resourceAttributePolicies = acpPolicies	# only the resource type's own policies
 		
-		if self.dict:
-			self.setAttribute('pv/acr', [], overwrite=False)
-			self.setAttribute('pvs/acr', [], overwrite=False)
-			if createdInternally:
-				self.setCreatedInternally(createdInternally)
+		self.setAttribute('pv/acr', [], overwrite=False)
+		self.setAttribute('pvs/acr', [], overwrite=False)
+		if createdInternally:
+			self.setCreatedInternally(createdInternally)
 
 
 

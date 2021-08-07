@@ -36,7 +36,6 @@ class BAT(MgmtObj):
 		self.resourceAttributePolicies = batPolicies	# only the resource type's own policies
 		super().__init__(dct, pi, mgd=T.BAT, create=create, attributePolicies=attributePolicies)
 
-		if self.dict:
-			self.setAttribute('btl', defaultBatteryLevel, overwrite=False)
-			self.setAttribute('bts', defaultBatteryStatus, overwrite=False)
+		self.setAttribute('btl', defaultBatteryLevel, overwrite=False)
+		self.setAttribute('bts', defaultBatteryStatus, overwrite=False)
 
