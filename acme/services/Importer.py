@@ -69,7 +69,7 @@ class Importer(object):
 			return False
 
 		# Import
-		if path is None:
+		if not path:
 			if Configuration.has('cse.resourcesPath'):
 				path = Configuration.get('cse.resourcesPath')
 			else:
@@ -94,7 +94,7 @@ class Importer(object):
 			# Check resource creation
 			if not CSE.registration.checkResourceCreation(resource, CSE.cseOriginator):
 				continue
-			if (res := CSE.dispatcher.createResource(resource)).resource is None:
+			if not (res := CSE.dispatcher.createResource(resource)).resource:
 				L.isInfo and L.logErr(f'Error during import: {res.dbg}', showStackTrace=False)
 				return False
 			ty = resource.ty
@@ -123,8 +123,8 @@ class Importer(object):
 				if 'update' in fn:
 					dct = cast(JSON, self.readJSONFromFile(filename))
 					keys = list(dct.keys())
-					if len(keys) == 1 and (k := keys[0]) and 'ri' in dct[k] and (ri := dct[k]['ri']) is not None:
-						if (resource := CSE.dispatcher.retrieveResource(ri).resource) is not None:
+					if len(keys) == 1 and (k := keys[0]) and 'ri' in dct[k] and (ri := dct[k]['ri']):
+						if resource := CSE.dispatcher.retrieveResource(ri).resource:
 							CSE.dispatcher.updateResource(resource, dct)
 							countUpdate += 1
 						# TODO handle error
@@ -132,12 +132,12 @@ class Importer(object):
 				# create a new cresource
 				else:
 					# Try to get parent resource
-					if (jsn := self.readJSONFromFile(filename)) is None:
+					if not (jsn := self.readJSONFromFile(filename)):
 						L.isWarn and L.logWarn(f'Error parsing file: {filename}')
 						continue
-					if (resource := Factory.resourceFromDict(cast(JSON, jsn), create=True, isImported=True).resource) is not None:
+					if resource := Factory.resourceFromDict(cast(JSON, jsn), create=True, isImported=True).resource:
 						parentResource = None
-						if (pi := resource.pi) is not None:
+						if pi := resource.pi:
 							parentResource = CSE.dispatcher.retrieveResource(pi).resource
 						# Check resource creation
 						if not CSE.registration.checkResourceCreation(resource, CSE.cseOriginator):
@@ -208,7 +208,7 @@ class Importer(object):
 		countAP = 0
 
 		# Get import path
-		if path is None:
+		if not path:
 			if Configuration.has('cse.resourcesPath'):
 				path = Configuration.get('cse.resourcesPath')
 			else:
@@ -224,50 +224,50 @@ class Importer(object):
 			fn = os.path.join(path, fn)
 			L.isInfo and L.log(f'Importing attribute policies: {fn}')
 			if os.path.exists(fn):
-				if (lst := cast(JSONLIST, self.readJSONFromFile(fn))) is None:
+				if not (lst := cast(JSONLIST, self.readJSONFromFile(fn))):
 					continue
 				for ap in lst:
-					if (tpe := findXPath(ap, 'type')) is None or len(tpe) == 0:
+					if not (tpe := findXPath(ap, 'type')):
 						L.logErr(f'Missing or empty resource type in file: {fn}')
 						return False
 					
 					# Attributes are optional. However, add a dummy entry
-					if (attrs := findXPath(ap, 'attributes')) is None:
+					if not (attrs := findXPath(ap, 'attributes')):
 						attrs = [ { "sname" : "__none__", "lname" : "__none__", "type" : "void", "car" : "01" } ]
 						
 					for attr in attrs:
-						if (sn := findXPath(attr, 'sname')) is None or not isinstance(sn, str) or len(sn) == 0:
+						if not (sn := findXPath(attr, 'sname')) or not isinstance(sn, str) or len(sn) == 0:
 							L.logErr(f'Missing, empty, or wrong short name for type: {tpe} in file: {fn}')
 							return False
 
-						if (tmp := findXPath(attr, 'type').lower()) is None or not isinstance(tmp, str) or len(tmp) == 0:
+						if not (tmp := findXPath(attr, 'type').lower()) or not isinstance(tmp, str) or len(tmp) == 0:
 							L.logErr(f'Missing, empty, or wrong type name: {tmp} for attribute: {sn} type: {tpe} in file: {fn}')
 							return False
 						
-						if (dty := self._nameDataTypeMappings.get(tmp)) is None:
+						if not (dty := self._nameDataTypeMappings.get(tmp)):
 							L.isWarn and L.logWarn(f'Unknown data type {tmp}')
 
-						if (tmp := findXPath(attr, 'car', 'car01').lower()) is None or not isinstance(tmp, str) or len(tmp) == 0 or tmp not in self._nameCardinalityMappings:	# default car01
+						if not (tmp := findXPath(attr, 'car', 'car01').lower()) or not isinstance(tmp, str) or len(tmp) == 0 or tmp not in self._nameCardinalityMappings:	# default car01
 							L.logErr(f'Empty, or wrong cardinality: {tmp} for attribute: {sn} type: {tpe} in file: {fn}')
 							return False
 						car = self._nameCardinalityMappings.get(tmp)
 
-						if (tmp := findXPath(attr, 'oc', 'o').lower()) is None or not isinstance(tmp, str) or len(tmp) == 0 or tmp not in self._nameOptionalityMappings:	# default O
+						if not (tmp := findXPath(attr, 'oc', 'o').lower()) or not isinstance(tmp, str) or len(tmp) == 0 or tmp not in self._nameOptionalityMappings:	# default O
 							L.logErr(f'Empty, or wrong optionalCreate: {tmp} for attribute: {sn} type: {tpe} in file: {fn}')
 							return False
 						oc = self._nameOptionalityMappings.get(tmp)
 
-						if (tmp := findXPath(attr, 'ou', 'o').lower()) is None or not isinstance(tmp, str) or len(tmp) == 0 or tmp not in self._nameOptionalityMappings:	# default O
+						if not (tmp := findXPath(attr, 'ou', 'o').lower()) or not isinstance(tmp, str) or len(tmp) == 0 or tmp not in self._nameOptionalityMappings:	# default O
 							L.logErr(f'Empty, or wrong optionalUpdate: {tmp} for attribute: {sn} type: {tpe} in file: {fn}')
 							return False
 						ou = self._nameOptionalityMappings.get(tmp)
 
-						if (tmp := findXPath(attr, 'od', 'o').lower()) is None or not isinstance(tmp, str) or len(tmp) == 0 or tmp not in self._nameOptionalityMappings:	# default O
+						if not (tmp := findXPath(attr, 'od', 'o').lower()) or not isinstance(tmp, str) or len(tmp) == 0 or tmp not in self._nameOptionalityMappings:	# default O
 							L.logErr(f'Empty, or wrong optionalDiscovery: {tmp} for attribute: {sn} type: {tpe} in file: {fn}')
 							return False
 						od = self._nameOptionalityMappings.get(tmp)
 
-						if (tmp := findXPath(attr, 'annc', 'oa').lower()) is None or not isinstance(tmp, str) or len(tmp) == 0 or tmp not in self._nameAnnouncementMappings:	# default OA
+						if not (tmp := findXPath(attr, 'annc', 'oa').lower()) or not isinstance(tmp, str) or len(tmp) == 0 or tmp not in self._nameAnnouncementMappings:	# default OA
 							L.logErr(f'Empty, or wrong announcement: {tmp} for attribute: {sn} type: {tpe} in file: {fn}')
 							return False
 						annc = self._nameAnnouncementMappings.get(tmp)
@@ -286,72 +286,6 @@ class Importer(object):
 		return True
 
 
-	# def importAttributePolicies(self, path: str = None) -> bool:
-	# 	fieldNames = ['resourceType', 'shortName', 'dataType', 'cardinality' , 'optionalCreate', 'optionalUpdate', 'optionalDiscovery', 'announced' ]
-
-	# 	# Get import path
-	# 	if path is None:
-	# 		if Configuration.has('cse.resourcesPath'):
-	# 			path = Configuration.get('cse.resourcesPath')
-	# 		else:
-	# 			Logging.logErr('cse.resourcesPath not set')
-	# 			raise RuntimeError('cse.resourcesPath not set')
-
-	# 	if not os.path.exists(path):
-	# 		Logging.logWarn(f'Import directory for attribute policies does not exist: {path}')
-	# 		return False
-
-	# 	filenames = fnmatch.filter(os.listdir(path), '*.ap')
-	# 	for fn in filenames:
-	# 		fn = os.path.join(path, fn)
-	# 		Logging.log(f'Importing attribute policies from file: {fn}')
-	# 		if os.path.exists(fn):
-	# 			with open(fn, newline='') as fp:
-	# 				reader = csv.DictReader(filter(lambda row: not row.startswith('#') and len(row.strip()) > 0, fp), fieldnames=fieldNames)
-	# 				for row in reader:
-	# 					if len(row) != len(fieldNames):
-	# 						Logging.logErr(f'Wrong number elements ({len(row)}) for row: {row} in file: {fn}. Must be {len(fieldNames)}.')
-	# 						return False
-	# 					if (tpe := row.get('resourceType')) is None or len(tpe) == 0:
-	# 						Logging.logErr(f'Missing or empty resource type for row: {row} in file: {fn}')
-	# 						return False
-	# 					# if tpe.startswith('m2m:'):
-	# 					# 	Logging.logErr(f'Adding attribute policies for "m2m" namspace is not allowed: {row}')
-	# 					# 	return False
-	# 					if (sn := row.get('shortName')) is None or len(sn) == 0:
-	# 						Logging.logErr(f'Missing or empty shortname for row: {row} in file: {fn}')
-	# 						return False
-	# 					if (tmp := row.get('dataType')) is None or len(tmp) == 0:
-	# 						Logging.logErr(f'Missing or empty data type for row: {row} in file: {fn}')
-	# 						return False
-	# 					dtpe = self._nameDataTypeMappings.get(tmp.lower())
-	# 					if (tmp := row.get('cardinality')) is None or len(tmp) == 0:
-	# 						Logging.logErr(f'Missing or empty cardinality for row: {row} in file: {fn}')
-	# 						return False
-	# 					car = self._nameCardinalityMappings.get(tmp.lower())
-	# 					if (tmp := row.get('optionalCreate')) is None or len(tmp) == 0:
-	# 						Logging.logErr(f'Missing or empty optional create for row: {row} in file: {fn}')
-	# 						return False
-	# 					opcr = self._nameOptionalityMappings.get(tmp.lower())
-	# 					if (tmp := row.get('optionalUpdate')) is None or len(tmp) == 0:
-	# 						Logging.logErr(f'Missing or empty optional create for row: {row} in file: {fn}')
-	# 						return False
-	# 					opup = self._nameOptionalityMappings.get(tmp.lower())
-	# 					if (tmp := row.get('optionalDiscovery')) is None or len(tmp) == 0:
-	# 						Logging.logErr(f'Missing or empty optional discovery for row: {row} in file: {fn}')
-	# 						return False
-	# 					opdi = self._nameOptionalityMappings.get(tmp.lower())
-	# 					if (tmp := row.get('announced')) is None or len(tmp) == 0:
-	# 						Logging.logErr(f'Missing or empty announced for row: {row} in file: {fn}')
-	# 						return False
-	# 					annc = self._nameAnnouncementMappings.get(tmp.lower())
-
-	# 					# get possible existing definitions for that type, or create one
-	# 					CSE.validator.addAdditionalAttributePolicy(tpe, { sn : [ dtpe, car, opcr, opup, opdi, annc] })
-
-	# 	return True
-
-
 	def _prepareImporting(self) -> None:
 		# temporarily disable access control
 		self._oldacp = Configuration.get('cse.security.enableACPChecks')
@@ -361,7 +295,7 @@ class Importer(object):
 
 	def replaceMacro(self, macro: str, filename: str) -> str:
 		macro = macro[2:-1]
-		if (value := Configuration.get(macro)) is None:
+		if (value := Configuration.get(macro)) is None:	# could be int or len == 0
 			L.logErr(f'Unknown macro ${{{macro}}} in file {filename}')
 			return f'*** UNKNWON MACRO : {macro} ***'
 		return str(value)

@@ -42,9 +42,9 @@ class AnnouncementManager(object):
 
 	def shutdown(self) -> bool:
 		self.stop()
-		if CSE.remote is not None:
+		if CSE.remote:
 			for csr in CSE.remote.getAllLocalCSRs():
-				if csr is not None:
+				if csr:
 					self.checkResourcesForUnAnnouncement(csr)
 		L.isInfo and L.log('AnnouncementManager shut down')
 		return True
@@ -124,14 +124,11 @@ class AnnouncementManager(object):
 	def checkResourcesForAnnouncement(self, remoteCSR:Resource) -> None:
 		"""	Check all resources and announce them if necessary.
 		"""
-		if not self.announcementsEnabled:
+		if not self.announcementsEnabled or not remoteCSR:
 			return
-		if remoteCSR is None:
-			return
-		csi = remoteCSR.csi
 
 		# get all reources for this specific CSI that are NOT announced to it yet
-		resources = self.searchAnnounceableResourcesForCSI(csi, False) # only return the resources that are *not* announced to this csi yet
+		resources = self.searchAnnounceableResourcesForCSI(remoteCSR.csi, False) # only return the resources that are *not* announced to this csi yet
 		# try to announce all not-announced resources to this csr
 		for resource in resources:
 			self.announceResource(resource)
@@ -144,17 +141,16 @@ class AnnouncementManager(object):
 		if not self.announcementsEnabled:
 			return
 		L.isDebug and L.logDebug(f'Announce resource: {resource.ri} to all connected csr')
-		for csi in resource.at:
-			if csi == CSE.cseCsi or csi.startswith(f'{CSE.cseCsi}/'):
+		csi = CSE.cseCsi
+		for at in resource.at:
+			if at == csi or at.startswith(CSE.cseCsiSlash):
 				L.isWarn and L.logWarn('Targeting own CSE. Ignored.')
-				self._removeAnnouncementFromResource(resource, csi)
+				self._removeAnnouncementFromResource(resource, at)
 				continue
-			if (csr := Utils.resourceFromCSI(csi)) is None:
+			if not (csr := self.resourceFromCSI(at)):
 				L.isWarn and L.logWarn('Announcement Target CSE not found. Ignored.')
-				self._removeAnnouncementFromResource(resource, csi)
+				self._removeAnnouncementFromResource(resource, at)
 				continue
-			# if (remoteCSR := CSE.remote.getCSRForRemoteCSE(csr)) is None:	# not yet registered
-			# 	continue
 			self.announceResourceToCSR(resource, csr)
 
 
@@ -170,7 +166,7 @@ class AnnouncementManager(object):
 
 		L.isDebug and L.logDebug(f'Announce resource: {resource.ri} to: {csi}')
 
-		if (at := resource.at) is None or len(at) == 0:
+		if not (at := resource.at):
 			L.isWarn and L.logWarn('at attribute is empty')
 			return
 		if csi not in at:
@@ -182,7 +178,7 @@ class AnnouncementManager(object):
 		tyAnnc = T(resource.ty).announced()
 
 		# Get target URL for request
-		if poas is not None and len(poas) > 0:
+		if poas:
 			poa = poas[0]						# Only first POA
 			url = f'{poa}{CSE.cseCsi}'			# remote CSR is always own csi
 		else:
@@ -195,7 +191,7 @@ class AnnouncementManager(object):
 		if res.rsc not in [ RC.created, RC.OK ]:
 			if res.rsc != RC.alreadyExists:	# assume that it is ok if the remote resource already exists 
 				L.isDebug and L.logDebug(f'Error creating remote announced resource: {res.rsc:d}')
-				if (at := resource.at) is not None and len(at) > 0 and csi in at:
+				if (at := resource.at) and csi in at:
 					at.remove(csi)
 					resource.setAttribute('at', None if len(at) == 0 else at)
 				return
@@ -234,11 +230,9 @@ class AnnouncementManager(object):
 		L.isDebug and L.logDebug(f'De-Announce resource: {resource.ri} from all connected csr')
 
 		for (csi, remoteRI) in resource[Resource._announcedTo]:
-			if (csr := Utils.resourceFromCSI(csi)) is None:
+			if not (csr := self.resourceFromCSI(csi)):
 				self._removeAnnouncementFromResource(resource, csi)
 				continue
-			# if (remoteCSR := CSE.remote.getCSRForRemoteCSE(csr)) is None:	# not yet registered
-			# 	continue
 			self.deAnnounceResourceFromCSR(resource, csr, remoteRI)
 
 
@@ -254,7 +248,7 @@ class AnnouncementManager(object):
 		L.isDebug and L.logDebug(f'De-Announce remote resource: {resource.ri} from: {csi}')
 
 		# Get target URL for request
-		if poas is not None and len(poas) > 0:
+		if poas:
 			url = f'{poas[0]}/{resourceRI}'	# TODO check all available poas. remote CSR is always own csi
 		else:
 			L.isWarn and L.logWarn('Cannot get URL')
@@ -304,7 +298,7 @@ class AnnouncementManager(object):
 			remoteRIs.append(csi) # build a list of remote RIs
 
 			# CSR still connected?
-			if (csr := Utils.resourceFromCSI(csi)) is None:
+			if not (csr := self.resourceFromCSI(csi)):
 				self._removeAnnouncementFromResource(resource, csi)
 				continue
 			
@@ -313,14 +307,12 @@ class AnnouncementManager(object):
 				self.deAnnounceResourceFromCSR(resource, csr, remoteRI)
 				continue
 
-			# if (remoteCSR := CSE.remote.getCSRForRemoteCSE(csr)) is None:	# not yet registered
-			# 	continue
 			self.updateResourceOnCSR(resource, csr, remoteRI)
 
 		# Check for any non-announced csi in at, and possibly announce them 
 		for csi in CSIsFromAnnounceTo:
 			if csi not in announcedCSIs and csi not in remoteRIs:
-				if (csr := Utils.resourceFromCSI(csi)) is None:
+				if not (csr := self.resourceFromCSI(csi)):
 					continue
 				self.announceResourceToCSR(resource, csr)
 
@@ -340,7 +332,7 @@ class AnnouncementManager(object):
 		data = resource.createAnnouncedResourceDict(remoteCSR, isCreate=False, csi=csi)
 
 		# Get target URL for request
-		if poas is not None and len(poas) > 0:
+		if poas:
 			url = f'{poas[0]}/{remoteRI}'	# TODO check all available poas.
 		else:
 			L.isWarn and L.logWarn('Cannot get URL')
@@ -365,7 +357,7 @@ class AnnouncementManager(object):
 		csi  = remoteCSR.csi
 		poas = remoteCSR.poa
 		if csi == CSE.cseCsi:	# own registrar
-			if CSE.remote.registrarCSE is not None:
+			if CSE.remote.registrarCSE:
 				csi = CSE.remote.registrarCSE.csi
 				poas = CSE.remote.registrarCSE.poa
 		return csi, poas
@@ -401,9 +393,9 @@ class AnnouncementManager(object):
 				resource.setAttribute(Resource._announcedTo, ats)
 
 		# # Modify the at attribute
-		if remoteRI is not None:
+		if remoteRI:
 			atCsi = f'{csi}/{remoteRI}'
-			if (at := resource.at) is not None and len(at) > 0 and atCsi in at:
+			if (at := resource.at) and atCsi in at:
 				at.remove(atCsi)
 				resource.setAttribute('at', at)
 
@@ -427,8 +419,8 @@ class AnnouncementManager(object):
 
 		mcsi = f'{csi}/'
 		def _announcedFilter(r:JSON) -> bool:
-			if (at := r.get('at')) is not None and len(list(filter(lambda x: x.startswith(mcsi), at))) > 0:	# check whether any entry in 'at' startswith mcsi
-				if (ato := r.get(Resource._announcedTo)) is not None:
+			if (at := r.get('at')) and len(list(filter(lambda x: x.startswith(mcsi), at))) > 0:	# check whether any entry in 'at' startswith mcsi
+				if ato := r.get(Resource._announcedTo):
 					for i in ato:
 						if csi == i[0]:	# 0=remote csi,
 							return isAnnounced
@@ -436,3 +428,8 @@ class AnnouncementManager(object):
 			return False
 
 		return cast(List[AnnounceableResource], CSE.storage.searchByFilter(_announcedFilter))
+
+
+	def resourceFromCSI(self, csi:str) -> Resource:
+		""" Get the CSEBase resource by its csi. """
+		return cast(Resource, CSE.storage.retrieveResource(csi=csi).resource)

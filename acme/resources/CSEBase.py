@@ -62,9 +62,9 @@ class CSEBase(Resource):
 		nl = self['nl']
 		_nl_ = self.__node__
 
-		if nl is not None or _nl_ is not None:
+		if nl or _nl_:
 			if nl != _nl_:
-				if _nl_ is not None:
+				if _nl_:
 					if nresource := CSE.dispatcher.retrieveResource(_nl_).resource:
 						nresource['hcl'] = None # remove old link
 						CSE.dispatcher.updateResource(nresource)

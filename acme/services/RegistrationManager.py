@@ -47,7 +47,7 @@ class RegistrationManager(object):
 		ty = resource.ty
 
 		if ty == T.AE:
-			if (originator := (res := self.handleAERegistration(resource, originator, parentResource)).originator) is None:	# assigns new originator
+			if not (originator := (res := self.handleAERegistration(resource, originator, parentResource)).originator):	# assigns new originator
 				return res
 		if ty == T.REQ:
 			if not self.handleREQRegistration(resource, originator):
@@ -59,7 +59,7 @@ class RegistrationManager(object):
 				return Result(rsc=RC.badRequest, dbg=f'cannot register CSR: {res.dbg}')
 
 		# Test and set creator attribute.
-		if (res := self.handleCreator(resource, originator)).rsc != RC.OK:
+		if not (res := self.handleCreator(resource, originator)).status:
 			return res
 
 		return Result(originator=originator) # return (possibly new) originator
@@ -70,14 +70,14 @@ class RegistrationManager(object):
 		"""
 		if resource.hasAttribute('cr'):
 			if resource.ty not in C.creatorAllowed:
-				return Result(rsc=RC.badRequest, dbg=f'"creator" attribute is not allowed for resource type: {resource.ty}')
-			if resource.cr is not None:		# Check whether cr is set to a value. This is wrong
+				return Result(status=False, rsc=RC.badRequest, dbg=f'"creator" attribute is not allowed for resource type: {resource.ty}')
+			if resource.cr:		# Check whether cr is set to a value in the request. This is wrong
 				L.isWarn and L.logWarn('Setting "creator" attribute is not allowed.')
-				return Result(rsc=RC.badRequest, dbg='setting "creator" attribute is not allowed')
+				return Result(status=False, rsc=RC.badRequest, dbg='setting "creator" attribute is not allowed')
 			else:
 				resource['cr'] = originator
 				# fall-through
-		return Result() # implicit OK
+		return Result(status=True) # implicit OK
 
 
 	def checkResourceUpdate(self, resource:Resource, updateDict:JSON) -> Result:
@@ -114,7 +114,7 @@ class RegistrationManager(object):
 		""" This method creates a new originator for the AE registration, depending on the method choosen."""
 
 		# check for empty originator and assign something
-		if originator is None or len(originator) == 0:
+		if not originator:
 			originator = 'C'
 
 		# Check for allowed orginator
@@ -128,7 +128,7 @@ class RegistrationManager(object):
 			originator = Utils.uniqueAEI('C')
 		elif originator == 'S':
 			originator = Utils.uniqueAEI('S')
-		elif originator is not None:
+		elif originator is not None:	# Allow empty originators
 			originator = Utils.getIdFromOriginator(originator)
 		# elif originator is None or len(originator) == 0:
 		# 	originator = Utils.uniqueAEI('S')
@@ -144,7 +144,7 @@ class RegistrationManager(object):
 		ae['ri'] = Utils.getIdFromOriginator(originator, idOnly=True)		# set the ri of the ae to the aei (TS-0001, 10.2.2.2)
 
 		# Verify that parent is the CSEBase, else this is an error
-		if parentResource is None or parentResource.ty != T.CSEBase:
+		if not parentResource or parentResource.ty != T.CSEBase:
 			return Result(rsc=RC.invalidChildResourceType, dbg='Parent must be the CSE')
 
 		return Result(originator=originator)
@@ -248,7 +248,7 @@ class RegistrationManager(object):
 	def expirationDBMonitor(self) -> bool:
 		L.isDebug and L.logDebug('Looking for expired resources')
 		now = DateUtils.getResourceDate()
-		resources = CSE.storage.searchByFilter(lambda r: (et := r.get('et')) is not None and et < now)
+		resources = CSE.storage.searchByFilter(lambda r: (et := r.get('et'))  and et < now)
 		for resource in resources:
 			# try to retrieve the resource first bc it might have been deleted as a child resource
 			# of an expired resource
@@ -268,7 +268,7 @@ class RegistrationManager(object):
 
 	def _createACP(self, parentResource:Resource=None, rn:str=None, createdByResource:str=None, originators:List[str]=None, permission:int=None, selfOriginators:List[str]=None, selfPermission:int=None) -> Result:
 		""" Create an ACP with some given defaults. """
-		if parentResource is None or rn is None or originators is None or permission is None:
+		if not parentResource or not rn or not originators or permission is None:	# permission is an int
 			return Result(rsc=RC.badRequest, dbg='missing attribute(s)')
 
 		# Remove existing ACP with that name first
@@ -283,7 +283,7 @@ class RegistrationManager(object):
 		origs.append(CSE.cseOriginator)	# always append cse originator
 
 		selfOrigs = [ CSE.cseOriginator ]
-		if selfOriginators is not None:
+		if selfOriginators:
 			selfOrigs.extend(selfOriginators)
 
 
@@ -298,11 +298,11 @@ class RegistrationManager(object):
 
 	def _removeACP(self, srn:str, resource:Resource) -> Result:
 		""" Remove an ACP created during registration before. """
-		if (acpRes := CSE.dispatcher.retrieveResource(id=srn)).rsc != RC.OK:
+		if not (acpRes := CSE.dispatcher.retrieveResource(id=srn)).resource:
 			L.isWarn and L.logWarn(f'Could not find ACP: {srn}')	# ACP not found, either not created or already deleted
 		else:
 			# only delete the ACP when it was created in the course of AE registration internally
-			if  (ri := acpRes.resource.createdInternally()) is not None and resource.ri == ri:
+			if  (createdWithRi := acpRes.resource.createdInternally()) and resource.ri == createdWithRi:
 				return CSE.dispatcher.deleteResource(acpRes.resource)
 		return Result(rsc=RC.deleted)
 

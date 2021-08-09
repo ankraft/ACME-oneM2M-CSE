@@ -21,7 +21,7 @@ def serializeData(data:JSON, ct:ContentSerializationType) -> str|bytes|JSON:
 	if ct == ContentSerializationType.PLAIN:
 		return data
 	encoder = json if ct == ContentSerializationType.JSON else cbor2 if ct == ContentSerializationType.CBOR else None
-	if encoder is None:
+	if not encoder:
 		return None
 	return encoder.dumps(data)	# type:ignore[no-any-return]
 

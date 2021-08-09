@@ -73,7 +73,7 @@ class GroupManager(object):
 				if targetCSE != CSE.cseCsi:
 					""" RETRIEVE member from a remote CSE """
 					isLocalResource = False
-					if (url := CSE.request._getForwardURL(mid)) is None:
+					if not (url := CSE.request._getForwardURL(mid)):
 						return Result(status=False, rsc=RC.notFound, dbg=f'forwarding URL not found for group member: {mid}')
 					L.isDebug and L.logDebug(f'Retrieve request to: {url}')
 					remoteResult = CSE.request.sendRetrieveRequest(url, CSE.cseCsi)
@@ -83,11 +83,11 @@ class GroupManager(object):
 			if isLocalResource:
 				hasFopt = mid.endswith('/fopt')
 				id = mid[:-5] if len(mid) > 5 and hasFopt else mid 	# remove /fopt to retrieve the resource
-				if (res := CSE.dispatcher.retrieveResource(id)).resource is None:
+				if not (res := CSE.dispatcher.retrieveResource(id)).resource:
 					return Result(status=False, rsc=RC.notFound, dbg=res.dbg)
 				resource = res.resource
 			else:
-				if remoteResult.dict is None or len(remoteResult.dict) == 0:
+				if not remoteResult.dict or len(remoteResult.dict) == 0:
 					if remoteResult.rsc == RC.originatorHasNoPrivilege:  # CSE has no privileges for retrieving the member
 						return Result(status=False, rsc=RC.receiverHasNoPrivileges, dbg='wrong privileges for CSE to retrieve remote resource')
 					else:  # Member not found
@@ -156,8 +156,7 @@ class GroupManager(object):
 		This method might be called recursivly, when there are groups in groups."""
 
 		# get parent / group and check permissions
-		group = fopt.retrieveParentResource()
-		if group is None:
+		if not (group := fopt.retrieveParentResource()):
 			return Result(rsc=RC.notFound, dbg='group resource not found')
 
 		# get the permission flags for the request operation
@@ -177,19 +176,19 @@ class GroupManager(object):
 		tail = '/' + tail if len(tail) > 0 else '' # add remaining path, if any
 		for mid in group.mid.copy():	# copy mi because it is changed in the loop
 			# Try to get the SRN and add the tail
-			if (srn := Utils.structuredPathFromRI(mid)) is not None:
+			if srn := Utils.structuredPathFromRI(mid):
 				mid = srn + tail
 			else:
 				mid = mid + tail
 			# Invoke the request
 			if operation == Operation.RETRIEVE:
-				if (res := CSE.dispatcher.processRetrieveRequest(request, originator, mid)).resource is None:
+				if not (res := CSE.dispatcher.processRetrieveRequest(request, originator, mid)).resource:
 					return res
 			elif operation == Operation.CREATE:
-				if (res := CSE.dispatcher.processCreateRequest(request, originator, mid)).resource is None:
+				if not (res := CSE.dispatcher.processCreateRequest(request, originator, mid)).resource:
 					return res
 			elif operation == Operation.UPDATE:
-				if (res := CSE.dispatcher.processUpdateRequest(request, originator, mid)).resource is None:
+				if not (res := CSE.dispatcher.processUpdateRequest(request, originator, mid)).resource:
 					return res 
 			elif operation == Operation.DELETE:
 				if (res := CSE.dispatcher.processDeleteRequest(request, originator, mid)).rsc != RC.deleted:

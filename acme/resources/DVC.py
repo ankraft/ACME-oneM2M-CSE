@@ -50,7 +50,7 @@ class DVC(MgmtObj):
 		if dct and self.tpe in dct:
 			ena = Utils.findXPath(dct, 'm2m:dvc/ena')
 			dis = Utils.findXPath(dct, 'm2m:dvc/dis')
-			if ena is not None and dis is not None and ena and dis:
+			if ena and dis:
 				return Result(status=False, rsc=RC.badRequest, dbg='both ena and dis updated to True is not allowed')
 
 		return super().update(dct, originator)

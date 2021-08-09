@@ -165,7 +165,7 @@ class TestSUB(unittest.TestCase):
 					'exc': 5
 				}}
 		r, rsc = UPDATE(subURL, TestSUB.originator, dct)
-		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(rsc, RC.updated, r)
 		self.assertIsInstance(findXPath(r, 'm2m:sub/exc'), int)
 		self.assertEqual(findXPath(r, 'm2m:sub/exc'), 5)
 
@@ -666,8 +666,8 @@ class TestSUB(unittest.TestCase):
 					'nu': [ TestSUB.ae2Originator ],
 					'su': NOTIFICATIONSERVER
 				}}
-		_, rsc = CREATE(TestSUB.ae2URL, TestSUB.ae2Originator, T.SUB, dct)
-		self.assertEqual(rsc, RC.created)
+		r, rsc = CREATE(TestSUB.ae2URL, TestSUB.ae2Originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.created, r)
 		lastNotification = getLastNotification()
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/vrq'))
 

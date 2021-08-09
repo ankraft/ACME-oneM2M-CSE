@@ -171,12 +171,12 @@ def resourceFromDict(resDict:Dict[str, Any]={}, pi:str=None, ty:T=None, create:b
 
 	# Determine type
 	typ = resDict['ty'] if 'ty' in resDict else ty
-	if typ is None and (typ := T.fromTPE(tpe)) is  None:
+	if not typ and (typ := T.fromTPE(tpe)) is  None:
 		L.logWarn(dbg := f'cannot determine type for resource: {tpe}')
 		return Result(status=False, dbg=dbg, rsc=RC.badRequest)
 	
 	# Check for Parent
-	if pi is None and typ != T.CSEBase and ((pi := resDict.get('pi')) is None or len(pi) == 0):
+	if not pi and typ != T.CSEBase and (not (pi := resDict.get('pi')) or len(pi) == 0):
 		L.logWarn(dbg := f'pi missing in resource: {tpe}')
 		return Result(status=False, dbg=dbg, rsc=RC.badRequest)
 

@@ -297,9 +297,7 @@ def addPolicy(policies:AttributePolicies, newPolicies:AttributePolicies) -> Attr
 	return policies
 
 def getPolicy(attr:str, policies:AttributePolicies=attributePolicies) -> AttributePoliciesEntry:
-	# if policies is None:
-	# 	policies = attributePolicies
-	if (p := policies.get(attr)) is None:	# Use get() to receive None...
+	if not (p := policies.get(attr)):	# Use get() to receive None...
 		return None
 	if isinstance(p, tuple):
 		return p
@@ -334,11 +332,11 @@ class Validator(object):
 		if L.isDebug: L.logDebug('Validating attributes')
 
 		# Just return in case the resource instance is imported
-		if isImported is not None and isImported:
+		if isImported:
 			return Result(status=True)
 
 		# No policies?
-		if attributePolicies is None:
+		if not attributePolicies:
 			if L.isWarn: L.logWarn(f'No attribute policies: {dct}')
 			return Result(status=True)
 
@@ -349,14 +347,14 @@ class Validator(object):
 			reqp = 2 if create else 3
 
 		(pureResDict, _tpe) = Utils.pureResource(dct)
-		if pureResDict is None:
+		if not pureResDict:
 			return Result(status=False, rsc=RC.badRequest, dbg='content is None')
 
-		tpe = _tpe if _tpe is not None and _tpe != tpe else tpe 				# determine the real tpe
+		tpe = _tpe if _tpe and _tpe != tpe else tpe 				# determine the real tpe
 
 		# if tpe is not None and not tpe.startswith("m2m:"):
 		# 	pureResDict = dct
-		if (attributePolicies := self._addAdditionalAttributes(tpe, attributePolicies)) is None:
+		if not (attributePolicies := self._addAdditionalAttributes(tpe, attributePolicies)):
 			L.logWarn(dbg := f'Unknown resource type: {tpe}')
 			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
@@ -367,7 +365,7 @@ class Validator(object):
 				L.logWarn(dbg := f'Unknown attribute: {r} in resource: {tpe}')
 				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 		for r, p in attributePolicies.items():
-			if p is None:
+			if not p:
 				if L.isWarn: L.logWarn(f'No validation policy found for attribute: {r}')
 				continue
 
@@ -380,7 +378,7 @@ class Validator(object):
 				p = p[ty]
 
 			# Check whether the attribute is allowed or mandatory in the request
-			if (v := pureResDict.get(r)) is None:
+			if (v := pureResDict.get(r)) is None:	# ! might be an int, bool
 
 				# check the the announced cases first
 				if isAnnounced:
@@ -431,7 +429,7 @@ class Validator(object):
 		elif l > 1:
 			L.logWarn(dbg := 'Attribute pvs must contain only one item')
 			return Result(status=False, dbg=dbg)
-		if (acr := Utils.findXPath(dct, 'pvs/acr')) is None:
+		if not (acr := Utils.findXPath(dct, 'pvs/acr')):
 			L.logWarn(dbg := 'Attribute pvs/acr not found')
 			return Result(status=False, dbg=dbg)
 		if not isinstance(acr, list):
@@ -445,7 +443,7 @@ class Validator(object):
 
 	def validateRequestArgument(self, argument:str, value:Any) -> Result:
 		""" Validate a request argument. """
-		if (policy := getPolicy(argument)) is not None:
+		if policy := getPolicy(argument):
 			return self._validateType(policy[0], value, True)
 		return Result(status=False, dbg=f'validation for attribute/argument {argument} not defined')
 
@@ -457,7 +455,7 @@ class Validator(object):
 		"""
 		if attributeType is not None:	# use the given attribute type instead of determining it
 			return self._validateType(attributeType, value, True)
-		if (policy := getPolicy(attribute)) is not None:
+		if policy := getPolicy(attribute):
 			return self._validateType(policy[0], value, True)
 		return Result(status=False, dbg=f'validation for attribute {attribute} not defined')
 
@@ -484,7 +482,7 @@ class Validator(object):
 		"""	Validate the format of a CSE-ID in csi or cb attributes.
 		"""
 		# TODO Decide whether to correct this automatically, like in RemoteCSEManager._retrieveRemoteCSE()
-		if val is None:
+		if not val:
 			L.logDebug(dbg := f"{name} is missing")
 			return Result(status=False, dbg=dbg)
 		if not val.startswith('/'):
@@ -530,7 +528,7 @@ class Validator(object):
 
 	def addAdditionalAttributePolicy(self, tpe:str, attributePolicies:AttributePolicies) -> bool:
 		""" Add a new policy dictionary for a type's attributes. """
-		if (attrs := self.additionalAttributes.get(tpe)) is None:
+		if not (attrs := self.additionalAttributes.get(tpe)):
 			defs = { tpe : attributePolicies }
 		else:
 			attrs.update(attributePolicies)
@@ -548,9 +546,9 @@ class Validator(object):
 	#
 
 
-	def _addAdditionalAttributes(self, tpe: str, attributePolicies:AttributePolicies) -> AttributePolicies:
+	def _addAdditionalAttributes(self, tpe:str, attributePolicies:AttributePolicies) -> AttributePolicies:
 		#if tpe is not None and not tpe.startswith('m2m:'):
-		if tpe is not None and tpe in self.additionalAttributes:
+		if tpe and tpe in self.additionalAttributes:
 			if tpe in self.additionalAttributes:
 				newap = deepcopy(attributePolicies)
 				newap.update(self.additionalAttributes.get(tpe))

@@ -66,7 +66,7 @@ class AnnounceableResource(Resource):
 			return res
 
 		announceableAttributes = []
-		if self.aa is not None:
+		if self.aa:
 			announceableAttributes = deepcopy(self.aa)
 		for attr in self.attributePolicies.keys():
 			# Removing non announceable attributes
@@ -89,7 +89,7 @@ class AnnounceableResource(Resource):
 		"""	Create the dict stub for the announced resource.
 		"""
 		# special case for FCNT, FCI
-		if (additionalAttributes := CSE.validator.getAdditionalAttributesFor(self.tpe)) is not None:
+		if (additionalAttributes := CSE.validator.getAdditionalAttributesFor(self.tpe)):
 			# policies = addPolicy(deepcopy(self.resourceAttributePolicies), additionalAttributes)
 			policies = addPolicy(deepcopy(self.attributePolicies), additionalAttributes)
 			return self._createAnnouncedDict(policies, remoteCSR, isCreate=isCreate, remoteCsi=csi)
@@ -124,10 +124,10 @@ class AnnounceableResource(Resource):
 				}
 			# Add more  attributes
 			body = dct[tpe]
-			if (st := self.st) is not None:
+			if (st := self.st) is not None:	# st is an int
 				body['st'] = st
 
-			if (lbl := self.lbl) is not None:
+			if lbl := self.lbl:
 				body['lbl'] = deepcopy(lbl)
 
 
@@ -150,7 +150,7 @@ class AnnounceableResource(Resource):
 			# 	else:
 			# 		acpi.extend(regAcpi)
 			# Utils.setXPath(	dct, f'{tpe}/acpi', acpi)
-			if (acpi := self.acpi) is not None:
+			if (acpi := self.acpi) is not None:	# acpi might be an empty list
 				acpi = [ f'{CSE.cseCsi}/{acpi}' for acpi in self.acpi ]	# set to local CSE.csi
 				body['acpi'] = acpi
 				# Utils.setXPath(	dct, f'{tpe}/acpi', acpi)
@@ -158,7 +158,7 @@ class AnnounceableResource(Resource):
 
 		else: # update. Works a bit different
 
-			if (modifiedAttributes := self[self._modified]) is None:
+			if not (modifiedAttributes := self[self._modified]):
 				return None
 
 			dct = { tpe : { } } # with the announced variant of the tpe
@@ -237,7 +237,7 @@ class AnnounceableResource(Resource):
 			announceableAttributes = self.aa
 		for attr in policies.keys():
 			if self.hasAttribute(attr):
-				if (v := getPolicy(attr, policies)) is None:
+				if not (v := getPolicy(attr, policies)):
 					continue
 				if v[5] == AN.MA:
 					mandatory.append(attr)

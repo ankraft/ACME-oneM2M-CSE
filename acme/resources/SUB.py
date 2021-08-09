@@ -48,7 +48,7 @@ class SUB(Resource):
 			elif net[0] in [ NET.reportOnGeneratedMissingDataPoints ]:
 				self.setAttribute('nct', NotificationContentType.timeSeriesNotification, overwrite=False)
 
-		if self.bn is not None:		# set batchNotify default attributes
+		if self.bn:		# set batchNotify default attributes
 			self.setAttribute('bn/dur', Configuration.get('cse.sub.dur'), overwrite=False)
 
 
@@ -60,7 +60,7 @@ class SUB(Resource):
 			return result
 
 		# check whether an observed child resource type is actually allowed by the parent
-		if (chty := self['enc/chty']) is not None:
+		if chty := self['enc/chty']:
 			if  not (res := self._checkAllowedCHTY(parentResource, chty)).status:
 				return res
 
@@ -79,8 +79,8 @@ class SUB(Resource):
 			return res
 
 		# check whether an observed child resource type is actually allowed by the parent
-		if (chty := self['enc/chty']) is not None:
-			if (parentResource := self.retrieveParentResource()) is None:
+		if chty := self['enc/chty']:
+			if not (parentResource := self.retrieveParentResource()):
 				L.logErr(dbg := f'cannot retrieve parent resource')
 				return Result(status=False, rsc=RC.internalServerError, dbg=dbg)
 			if  not (res := self._checkAllowedCHTY(parentResource, chty)).status:
@@ -95,7 +95,7 @@ class SUB(Resource):
 		L.isDebug and L.logDebug(f'Validating subscription: {self.ri}')
 
 		# Check necessary attributes
-		if (nu := self.nu) is None or not isinstance(nu, list):
+		if not (nu := self.nu) or not isinstance(nu, list):
 			L.isDebug and L.logDebug(dbg := f'"nu" attribute missing for subscription: {self.ri}')
 			return Result(status=False, rsc=RC.insufficientArguments, dbg=dbg)
 
@@ -108,7 +108,7 @@ class SUB(Resource):
 				# fallthough
 			if n == NotificationEventType.reportOnGeneratedMissingDataPoints:
 				# Check that parent is a TimeSeries
-				if (parent := self.retrieveParentResource()) is None:
+				if not (parent := self.retrieveParentResource()):
 					L.logErr(dbg := f'cannot retrieve parent resource')
 					return Result(status=False, rsc=RC.internalServerError, dbg=dbg)
 				if parent.ty != T.TS:
@@ -116,7 +116,7 @@ class SUB(Resource):
 					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 				# Check missing data structure
-				if (md := self['enc/md']) is None:
+				if (md := self['enc/md']) is None:	# enc/md is a boolean
 					L.isDebug and L.logDebug(dbg := f'net==reportOnGeneratedMissingDataPoints is set, but enc/md is missing')
 					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 				if not (res := CSE.validator.validateAttribute('num', md.get('num'))).status:

@@ -177,7 +177,7 @@ class BackgroundWorkerPool(object):
 
 
 		"""
-		return [ w for w in cls.backgroundWorkers.values() if (name is None or simpleMatch(w.name, name)) and (running is None or running == w.running) ]
+		return [ w for w in cls.backgroundWorkers.values() if (not name or simpleMatch(w.name, name)) and (not running or running == w.running) ]
 
 
 	@classmethod

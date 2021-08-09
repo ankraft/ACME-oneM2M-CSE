@@ -156,7 +156,7 @@ class FCNT(AnnounceableResource):
 			fcii = len(fci)	# number of instances
 
 			# check mni
-			if self.mni is not None:
+			if self.mni is not None:	# is an int
 				mni = self.mni
 				i = 0
 				l = fcii
@@ -238,7 +238,7 @@ class FCNT(AnnounceableResource):
 		resource['cs'] = self.cs
 
 		# Check for mia handling
-		if self.mia is not None:
+		if self.mia is not None:	# mia is an int
 			# Take either mia or the maxExpirationDelta, whatever is smaller
 			maxEt = DateUtils.getResourceDate(self.mia if self.mia <= (med := Configuration.get('cse.maxExpirationDelta')) else med)
 			# Only replace the childresource's et if it is greater than the calculated maxEt
@@ -255,12 +255,12 @@ class FCNT(AnnounceableResource):
 
 		# add latest
 		resource = Factory.resourceFromDict({}, pi=self.ri, ty=T.FCNT_LA).resource	# rn is assigned by resource itself
-		if (res := CSE.dispatcher.createResource(resource)).resource is None:
+		if not (res := CSE.dispatcher.createResource(resource)).resource:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
 		# add oldest
 		resource = Factory.resourceFromDict({}, pi=self.ri, ty=T.FCNT_OL).resource	# rn is assigned by resource itself
-		if (res := CSE.dispatcher.createResource(resource)).resource is None:
+		if not (res := CSE.dispatcher.createResource(resource)).resource:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 		
 		self.setAttribute(self._hasFCI, True)

@@ -54,7 +54,7 @@ class TimeSeriesManager(object):
 		"""
 
 		# Check TSI arrival for this TS
-		if (rts := runningTimeserieses.get(tsRi)) is None:
+		if not (rts := runningTimeserieses.get(tsRi)):
 			# This might happen when the monitoring has been stopped in between.
 			L.logWarn(f'No last <tsi> for <ts>: {tsRi}')
 			return False # stop monitoring
@@ -62,7 +62,7 @@ class TimeSeriesManager(object):
 		# First handle every possible time window for missingData subscriptions that might have expired
 		# during the previous period.
 		for (subRi, md) in rts.missingData.items():
-			if md.timeWindowEndTimestamp is not None and md.timeWindowEndTimestamp <= rts.nextRuntime:	# nextRuntime is the time when this monitor is executed
+			if md.timeWindowEndTimestamp and md.timeWindowEndTimestamp <= rts.nextRuntime:	# nextRuntime is the time when this monitor is executed
 				# Just clear the data structures. The timeWindow might be set again further below
 				md.clear()
 		
@@ -75,7 +75,7 @@ class TimeSeriesManager(object):
 			L.isWarn and L.logWarn(f'No <tsi> within time period or DGT outside peid: ontime:{ontime} <= rts.tsiArrivedAt:{rts.tsiArrivedAt} <= rts.nextRuntime:{rts.nextRuntime} and ontime-rts.peid:{ontime-rts.peid} <= rts.lastSeenDgt:{rts.lastSeenDgt} <= ontime+rts.peid:{ontime+rts.peid}')
 			
 			# If not, then add the expected arrival time as the dgt to the parent's mdlt list.
-			if (tsRes := CSE.dispatcher.retrieveResource(tsRi).resource) is None:
+			if not (tsRes := CSE.dispatcher.retrieveResource(tsRi).resource):
 				L.logErr(f'Cannot retrieve original <ts> resource: {tsRi}', showStackTrace=False)			# might (very rarely) happen when this monitor runs while the <ts> was deleted in another request
 				return False	# stop monitoring (actor not restarted)
 			tsRes.addDgtToMdlt(rts.nextExpectedDgt)
@@ -123,7 +123,7 @@ class TimeSeriesManager(object):
 		L.isDebug and L.logDebug(f'New <tsi> for <ts>:{timeSeries.ri} dgt:{dgt}')
 		runtime = dgt+pei+mdt
 
-		if (rts := runningTimeserieses.get(tsRi)) is None or not rts.running:		# is new timeSeries
+		if not (rts := runningTimeserieses.get(tsRi)) or not rts.running:		# is new timeSeries
 			if runtime < now:
 				# Don't start a monitor if the next runtime for that monitor would be in the past anyway.
 				L.isDebug and L.logDebug(f'First <tsi> for this <ts>: {tsRi} but way back in the past. NO monitoring.')
@@ -135,7 +135,7 @@ class TimeSeriesManager(object):
 			
 			#	rts could have been created earlier (or not), eg. by adding a subscription earlier, but is not running yet
 			#	It still needs to be filled
-			if rts is None:
+			if not rts:
 				runningTimeserieses[tsRi] = (rts := LastTSInstance())
 			rts.lastSeenDgt		= dgt
 			rts.tsiArrivedAt	= now
@@ -161,7 +161,7 @@ class TimeSeriesManager(object):
 
 	def isMonitored(self, ri:str) -> bool:
 		"""	Check whether a resource is been monitored. """
-		return runningTimeserieses.get(ri) is not None
+		return runningTimeserieses.get(ri) is not None  # if any
 
 
 	def stopMonitoringTimeSeries(self, tsRi:str) -> bool:
@@ -172,9 +172,6 @@ class TimeSeriesManager(object):
 			lastTsi = runningTimeserieses.pop(tsRi)	# removes it also from the dict
 			if lastTsi.actor:
 				lastTsi.actor.stop()
-			#del runningTimeserieses[tsRi]
-			# if (actor := runningTimeserieses[tsRi].actor) is not None:
-			# 	actor.stop()
 		return True
 
 
@@ -188,7 +185,7 @@ class TimeSeriesManager(object):
 		if NET.reportOnGeneratedMissingDataPoints in subscription['enc/net']:
 			L.isDebug and L.logDebug(f'Adding missing data <sub>: {subscription.ri}')
 			tsRi = timeSeries.ri
-			if (rts := runningTimeserieses.get(timeSeries.ri)) is None:
+			if not (rts := runningTimeserieses.get(timeSeries.ri)):
 				runningTimeserieses[tsRi] = (rts := LastTSInstance())
 			rts.missingData[subscription.ri] = MissingData(	subscriptionRi=subscription.ri, 
 															missingDataDuration=DateUtils.fromDuration(subscription['enc/md/dur']),
@@ -200,7 +197,7 @@ class TimeSeriesManager(object):
 		"""
 		if NET.reportOnGeneratedMissingDataPoints in subscription['enc/net']:
 			L.isDebug and L.logDebug(f'Updating missing data <sub>: {subscription.ri}')
-			if (rts := runningTimeserieses.get(timeSeries.ri)) is not None and (md := rts.missingData.get(subscription.ri)):
+			if (rts := runningTimeserieses.get(timeSeries.ri)) and (md := rts.missingData.get(subscription.ri)):
 				md.missingDataDuration = DateUtils.fromDuration(subscription['enc/md/dur'])
 				md.missingDataNumber = subscription['enc/md/num']
 
@@ -210,5 +207,5 @@ class TimeSeriesManager(object):
 		"""
 		if NET.reportOnGeneratedMissingDataPoints in subscription['enc/net']:
 			L.isDebug and L.logDebug(f'Removing missing data <sub>: {subscription.ri}')
-			if (rts := runningTimeserieses.get(timeSeries.ri)) is not None and subscription.ri in rts.missingData:
+			if (rts := runningTimeserieses.get(timeSeries.ri)) and subscription.ri in rts.missingData:
 				del rts.missingData[subscription.ri]

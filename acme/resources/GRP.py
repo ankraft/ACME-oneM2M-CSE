@@ -56,7 +56,7 @@ class GRP(AnnounceableResource):
 		ri = self.ri
 		if L.isDebug: L.logDebug(f'Registering fanOutPoint resource for: {ri}')
 		fanOutPointResource = Factory.resourceFromDict({ 'pi' : ri }, ty=T.GRP_FOPT).resource
-		if (res := CSE.dispatcher.createResource(fanOutPointResource, self, originator)).resource is None:
+		if not (res := CSE.dispatcher.createResource(fanOutPointResource, self, originator)).resource:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 		return Result(status=True)
 

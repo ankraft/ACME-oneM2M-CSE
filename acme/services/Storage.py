@@ -72,9 +72,9 @@ class Storage(object):
 
 
 	def createResource(self, resource:Resource, overwrite:bool=True) -> Result:
-		if resource is None:
-			L.logErr('resource is None')
-			raise RuntimeError('resource is None')
+		if not resource:
+			L.logErr(dbg := 'resource is None')
+			raise RuntimeError(dbg)
 
 		ri = resource.ri
 
@@ -104,20 +104,20 @@ class Storage(object):
 		""" Return a resource via different addressing methods. """
 		resources = []
 
-		if ri is not None:		# get a resource by its ri
+		if ri:		# get a resource by its ri
 			# L.logDebug(f'Retrieving resource ri: {ri}')
 			resources = self.db.searchResources(ri=ri)
 
-		elif srn is not None:	# get a resource by its structured rn
+		elif srn:	# get a resource by its structured rn
 			# L.logDebug(f'Retrieving resource srn: {srn}')
 			# get the ri via the srn from the identifers table
 			resources = self.db.searchResources(srn=srn)
 
-		elif csi is not None:	# get the CSE by its csi
+		elif csi:	# get the CSE by its csi
 			# L.logDebug(f'Retrieving resource csi: {csi}')
 			resources = self.db.searchResources(csi=csi)
 		
-		elif aei is not None:	# get an AE by its AE-ID
+		elif aei:	# get an AE by its AE-ID
 			resources = self.db.searchResources(aei=aei)
 
 		# L.logDebug(resources)
@@ -137,18 +137,18 @@ class Storage(object):
 
 
 	def updateResource(self, resource:Resource) -> Result:
-		if resource is None:
-			L.logErr('resource is None')
-			raise RuntimeError('resource is None')
+		if not resource:
+			L.logErr(dbg := 'resource is None')
+			raise RuntimeError(dbg)
 		ri = resource.ri
 		# L.logDebug(f'Updating resource (ty: {resource.ty:d}, ri: {ri}, rn: {resource.rn})')
 		return Result(resource=self.db.updateResource(resource), rsc=RC.updated)
 
 
 	def deleteResource(self, resource:Resource) -> Result:
-		if resource is None:
-			L.logErr('resource is None')
-			raise RuntimeError('resource is None')
+		if not resource:
+			L.logErr(dbg := 'resource is None')
+			raise RuntimeError(dbg)
 		# L.logDebug(f'Removing resource (ty: {resource.ty:d}, ri: {ri}, rn: {resource.rn})'
 		self.db.deleteResource(resource)
 		self.db.deleteIdentifier(resource)
@@ -162,7 +162,7 @@ class Storage(object):
 		result = []
 		for r in rs:
 			res = Factory.resourceFromDict(r)
-			if res.resource is not None:
+			if res.resource:
 				result.append(res.resource)
 		return result
 
@@ -189,9 +189,9 @@ class Storage(object):
 		""" Search and return all resources that match the given fragment dictionary/document. """
 		result = []
 		for j in self.db.searchByFragment(dct):
-			if filter is None or filter(j):				# either there is no filter or the filter is called to test the resource
+			if not filter or filter(j):				# either there is no filter or the filter is called to test the resource
 				res = Factory.resourceFromDict(j)
-				if res.resource is not None:
+				if res.resource:
 					result.append(res.resource)
 		return result
 
@@ -202,7 +202,7 @@ class Storage(object):
 		result = []
 		for j in self.db.discoverResourcesByFilter(filter):
 			res = Factory.resourceFromDict(j)
-			if res.resource is not None:
+			if res.resource:
 				result.append(res.resource)
 		return result
 
@@ -215,7 +215,7 @@ class Storage(object):
 	def getSubscription(self, ri:str) -> JSON:
 		# L.logDebug(f'Retrieving subscription: {ri}')
 		subs = self.db.searchSubscriptions(ri=ri)
-		if subs is None or len(subs) != 1:
+		if not subs or len(subs) != 1:
 			return None
 		return subs[0]
 
@@ -386,7 +386,7 @@ class TinyDBBinding(object):
 			self.tabResources.update(resource.dict, Query().ri == ri)
 			# remove nullified fields from db and resource
 			for k in list(resource.dict):
-				if resource.dict[k] is None:
+				if resource.dict[k] is None:	# only remove the real None attributes, not those with 0
 					self.tabResources.update(delete(k), Query().ri == ri)	# type: ignore [no-untyped-call]
 					del resource.dict[k]
 			return resource
@@ -398,19 +398,19 @@ class TinyDBBinding(object):
 	
 
 	def searchResources(self, ri:str=None, csi:str=None, srn:str=None, pi:str=None, ty:int=None, aei:str=None) -> list[Document]:
-		if srn is None:
+		if not srn:
 			with self.lockResources:
-				if ri is not None:
+				if ri:
 					return self.tabResources.search(Query().ri == ri)	
-				elif csi is not None:
+				elif csi:
 					return self.tabResources.search(Query().csi == csi)	
-				elif pi is not None:
-					if ty is not None:
+				elif pi:
+					if ty is not None:	# ty is an int
 						return self.tabResources.search((Query().pi == pi) & (Query().ty == ty))
 					return self.tabResources.search(Query().pi == pi)
-				elif ty is not None:
+				elif ty is not None:	# ty is an int
 					return self.tabResources.search(Query().ty == ty)	
-				elif aei is not None:
+				elif aei:
 					return self.tabResources.search(Query().aei == aei)	
 		
 		else:
@@ -427,13 +427,13 @@ class TinyDBBinding(object):
 
 
 	def hasResource(self, ri: str = None, csi: str = None, srn: str = None, ty: int = None) -> bool:
-		if srn is None:
+		if not srn:
 			with self.lockResources:
-				if ri is not None:
+				if ri:
 					return self.tabResources.contains(Query().ri == ri)	
-				elif csi is not None:
+				elif csi :
 					return self.tabResources.contains(Query().csi == csi)
-				elif ty is not None:
+				elif ty is not None:	# ty is an int
 					return self.tabResources.contains(Query().ty == ty)
 		else:
 			# find the ri first and then try again recursively
@@ -472,9 +472,9 @@ class TinyDBBinding(object):
 
 	def searchIdentifiers(self, ri:str=None, srn:str=None) -> list[Document]:
 		with self.lockIdentifiers:
-			if srn is not None:
+			if srn:
 				return self.tabIdentifiers.search(Query().srn == srn)
-			elif ri is not None:
+			elif ri:
 				return self.tabIdentifiers.search(Query().ri == ri)
 			return []
 
@@ -486,9 +486,9 @@ class TinyDBBinding(object):
 
 	def searchSubscriptions(self, ri:str=None, pi:str=None) -> list[Document]:
 		with self.lockSubscriptions:
-			if ri is not None:
+			if ri:
 				return self.tabSubscriptions.search(Query().ri == ri)
-			if pi is not None:
+			if pi:
 				return self.tabSubscriptions.search(Query().pi == pi)
 			return None
 
@@ -558,7 +558,8 @@ class TinyDBBinding(object):
 	def searchStatistics(self) -> JSON:
 		with self.lockStatistics:
 			stats = self.tabStatistics.get(doc_id=1)
-			return stats if stats is not None and len(stats) > 0 else None
+			# return stats if stats is not None and len(stats) > 0 else None
+			return stats if stats else None
 
 
 	def upsertStatistics(self, stats:JSON) -> bool:
@@ -576,7 +577,8 @@ class TinyDBBinding(object):
 	def searchAppData(self, id:str) -> JSON:
 		with self.lockAppData:
 			data = self.tabAppData.get(Query().id == id)
-			return data if data is not None and len(data) > 0 else None
+			#return data if data is not None and len(data) > 0 else None
+			return data if data else None
 
 
 	def upsertAppData(self, data:JSON) -> bool:

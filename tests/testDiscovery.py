@@ -384,7 +384,7 @@ class TestDiscovery(unittest.TestCase):
 		""" Retrieve <CNT> under <AE> by false cni & rcn=8 """
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={RCN.childResources:d}&cni=10', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
-		self.assertIsNotNone(findXPath(r, 'm2m:ae'))
+		self.assertIsNotNone(findXPath(r, 'm2m:ae'), r)
 		self.assertIsNone(findXPath(r, 'm2m:ae/m2m:cnt'))
 
 

@@ -56,12 +56,12 @@ class CNT(AnnounceableResource):
 
 		# add latest
 		latestResource = Factory.resourceFromDict({}, pi=self.ri, ty=T.CNT_LA).resource		# rn is assigned by resource itself
-		if (res := CSE.dispatcher.createResource(latestResource)).resource is None:
+		if not (res := CSE.dispatcher.createResource(latestResource)).resource:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
 		# add oldest
 		oldestResource = Factory.resourceFromDict({}, pi=self.ri, ty=T.CNT_OL).resource		# rn is assigned by resource itself
-		if (res := CSE.dispatcher.createResource(oldestResource)).resource is None:
+		if not (res := CSE.dispatcher.createResource(oldestResource)).resource:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
 		return Result(status=True)

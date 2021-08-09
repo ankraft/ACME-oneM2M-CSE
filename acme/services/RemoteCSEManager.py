@@ -141,7 +141,7 @@ class RemoteCSEManager(object):
 
 				# when validateRegistrations == False then only check when there is no connection
 				if not self.checkLiveliness:
-					if (r := self._retrieveLocalCSRs(onlyOwn=True)).lst is not None and len(r.lst) == 1:
+					if (r := self._retrieveLocalCSRs(onlyOwn=True)).lst and len(r.lst) == 1:
 						return True
 			
 				# Check the connection to the registrar CSE and establish one if necessary
@@ -189,17 +189,17 @@ class RemoteCSEManager(object):
 		"""	Event handler for adding a remote CSE's CSR CSI to the
 			list of registered CSI. 
 		"""
-		if (csi := remoteCSR.csi) is None:
+		if not (csi := remoteCSR.csi):
 			return
 		if csi in self.descendantCSR:	# already registered
 			return
 		# don't register registrar CSE here
-		if (rcse := self.registrarCSE) is not None and (rcsi := rcse.csi) is not None and rcsi == csi:
+		if (rcse := self.registrarCSE) and (rcsi := rcse.csi) and rcsi == csi:
 			return
 
 		# Add the descendants
 		self.descendantCSR[csi] = (remoteCSR, CSE.cseCsi)
-		if remoteCSR.dcse is not None:			# add also this csi from the dcse attribute
+		if remoteCSR.dcse:			# add also this csi from the dcse attribute
 			for dcsecsi in remoteCSR.dcse:
 				if dcsecsi in self.descendantCSR:	# don't overwrite existing ones
 					continue
@@ -223,7 +223,7 @@ class RemoteCSEManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Handling de-registration of remote CSE: {remoteCSR.csi}')
 		# Remove the deregistering CSE from the descendant list
-		if (csi := remoteCSR.csi) is not None and csi in self.descendantCSR:
+		if (csi := remoteCSR.csi) and csi in self.descendantCSR:
 			del self.descendantCSR[csi]
 		# Also remove all descendants that are refer to that remote CSE
 		for key in list(self.descendantCSR):	# List might change in the loop
@@ -257,7 +257,7 @@ class RemoteCSEManager(object):
 		# 		if dcsecsi in self.descendantCSR:	# don't overwrite existing ones
 		# 			continue
 		# 		self.descendantCSR[dcsecsi] = (None, csi)
-		if (dcse := Utils.findXPath(updateDict, 'm2m:csr/dcse')) is not None:		# TODO same as above. Function?
+		if dcse := Utils.findXPath(updateDict, 'm2m:csr/dcse'):		# TODO same as above. Function?
 			for dcsecsi in dcse:
 				if dcsecsi in self.descendantCSR:	# don't overwrite existing ones
 					continue
@@ -366,7 +366,7 @@ class RemoteCSEManager(object):
 						found = True
 						break
 			if not found:
-				L.isWarn and L.logWarn(f'Remote CSE unreachable. Removing CSR: {localCsr.rn if localCsr is not None else ""}')
+				L.isWarn and L.logWarn(f'Remote CSE unreachable. Removing CSR: {localCsr.rn if localCsr else ""}')
 				self._deleteLocalCSR(localCsr)
 
 
@@ -378,18 +378,18 @@ class RemoteCSEManager(object):
 
 	def _retrieveLocalCSRs(self, csi:str=None, onlyOwn:bool=True) -> Result:
 		localCsrs = CSE.dispatcher.directChildResources(pi=CSE.cseRi, ty=T.CSR)
-		if csi is None:
+		if not csi:
 			csi = self.registrarCSI
 		# Logging.logDebug(f'Retrieving local CSR: {csi}')
 		if onlyOwn:
 			for localCsr in localCsrs:
-				if (c := localCsr.csi) is not None and c == csi:
+				if (c := localCsr.csi) and c == csi:
 					return Result(lst=[ localCsr ])
 			return Result(rsc=RC.badRequest, dbg='local CSR not found')
 		else:
 			result = []
 			for localCsr in localCsrs:
-				if (c := localCsr.csi) is not None and c == csi:	# skip own
+				if (c := localCsr.csi) and c == csi:	# skip own
 					continue
 				result.append(localCsr)
 			return Result(lst=result)
@@ -405,7 +405,7 @@ class RemoteCSEManager(object):
 		#csr['ri'] = remoteCSE.ri 						# set the ri to the remote CSE's ri
 		csr['ri'] = remoteCSE.csi[1:] 						# set the ri to the remote CSE's ri
 		# add local CSR and ACP's
-		if (result := CSE.dispatcher.createResource(csr, localCSE)).resource is None:
+		if not (result := CSE.dispatcher.createResource(csr, localCSE)).resource:
 			return result # Problem
 		if not (res := CSE.registration.handleCSRRegistration(csr, remoteCSE.csi)).status:
 			return Result(rsc=RC.badRequest, dbg=f'cannot register CSR: {res.dbg}')
@@ -466,7 +466,7 @@ class RemoteCSEManager(object):
 
 	def _updateCSRonRegistrarCSE(self, localCSE:Resource=None) -> Result:
 		L.isDebug and L.logDebug(f'Updating registrar CSR in CSE: {self.registrarCSI}')
-		if localCSE is None:
+		if not localCSE:
 			localCSE = Utils.getCSE().resource
 		csr = CSR.CSR()
 		self._copyCSE2CSR(csr, localCSE, isUpdate=True)
@@ -499,7 +499,7 @@ class RemoteCSEManager(object):
 	def _retrieveRemoteCSE(self, url:str=None, ct:ContentSerializationType=None) -> Result:
 
 		# Determine URL and content serialization for registrar CSE
-		if url is None:
+		if not url:
 			url = self.registrarCSEURL
 			ct  = self.registrarSerialization	# overwrite ct (???)
 
@@ -518,7 +518,7 @@ class RemoteCSEManager(object):
 
 
 	def getCSRForRemoteCSE(self, remoteCSE:Resource) -> Resource:
-		if self.registrarCSE is not None and self.registrarCSE.csi == remoteCSE.csi:
+		if self.registrarCSE and self.registrarCSE.csi == remoteCSE.csi:
 			return self.ownRegistrarCSR
 
 		# if self.registrarCSE is not None and self.registrarCSE.csi == remoteCSE.csi:
@@ -534,7 +534,7 @@ class RemoteCSEManager(object):
 		"""	Return all local CSR's. This includes the CSR of the registrar CSE.
 			This function builds the list from a temporary internal list, but not from the database.
 		"""
-		result = [ csr for (csr, _) in self.descendantCSR.values() if csr is not None ]
+		result = [ csr for (csr, _) in self.descendantCSR.values() if csr ]
 		result.append(self.ownRegistrarCSR)
 		return result
 
@@ -546,9 +546,9 @@ class RemoteCSEManager(object):
 	def retrieveRemoteResource(self, id:str, originator:str=None) -> Result:
 		"""	Retrieve a resource from a remote CSE.
 		"""
-		if (url := CSE.request._getForwardURL(id)) is None:
+		if not (url := CSE.request._getForwardURL(id)):
 			return Result(rsc=RC.notFound, dbg=f'URL not found for id: {id}')
-		if originator is None:
+		if not originator:
 			originator = CSE.cseCsi
 		L.isDebug and L.logDebug(f'Retrieve remote resource from: {url}')
 		res = CSE.request.sendRetrieveRequest(url, originator)	## todo
@@ -566,7 +566,7 @@ class RemoteCSEManager(object):
 
 	def getCSRFromPath(self, id:str) -> Tuple[Resource, List[str]]:
 		""" Try to get a CSR even from a longer path (only the first 2 path elements are relevant). """
-		if id is None:
+		if not id:
 			return None, None
 		ids = id.split('/')
 		L.isDebug and L.logDebug(f'CSR ids: {ids}')

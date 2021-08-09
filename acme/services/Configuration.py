@@ -371,13 +371,13 @@ class Configuration(object):
 			if not (val := Configuration._configuration['http.security.tlsVersion']).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
 				_print(f'[red]Configuration Error: Unknown value for \[http.security]:tlsVersion: {val}')
 				return False
-			if (val := Configuration._configuration['http.security.caCertificateFile']) is None:
+			if not (val := Configuration._configuration['http.security.caCertificateFile']):
 				_print('[red]Configuration Error: \[http.security]:caCertificateFile must be set when TLS is enabled')
 				return False
 			if not os.path.exists(val):
 				_print(f'[red]Configuration Error: \[http.security]:caCertificateFile does not exists or is not accessible: {val}')
 				return False
-			if (val := Configuration._configuration['http.security.caPrivateKeyFile']) is None:
+			if not (val := Configuration._configuration['http.security.caPrivateKeyFile']):
 				_print('[red]Configuration Error: \[http.security]:caPrivateKeyFile must be set when TLS is enabled')
 				return False
 			if not os.path.exists(val):
@@ -387,9 +387,9 @@ class Configuration(object):
 		#
 		#	MQTT client
 		#
-		if (mqttPort := Configuration._configuration['mqtt.port']) is None:	# set the default port depending on whether to use TLS
+		if not Configuration._configuration['mqtt.port']:	# set the default port depending on whether to use TLS
 			Configuration._configuration['mqtt.port'] = 8883 if Configuration._configuration['mqtt.security.useTLS'] else 1883
-		if (Configuration._configuration['mqtt.security.username'] is None) != (Configuration._configuration['mqtt.security.password'] is None):
+		if not (Configuration._configuration['mqtt.security.username']) != (not Configuration._configuration['mqtt.security.password']):
 			_print(f'[red]Configuration Error: Username or password missing for \[mqtt.security]]')
 			return False
 		# remove empty cid from the list
@@ -447,10 +447,10 @@ class Configuration(object):
 			return False
 
 		from services.Console import TreeMode
-		if (v := TreeMode.to(Configuration._configuration['cse.console.treeMode'])) is None:
+		if not (treeMode := TreeMode.to(Configuration._configuration['cse.console.treeMode'])):
 			_print(f'[red]Configuration Error: \[cse.console]:treeMode must be one of {TreeMode.names()}')
 			return False
-		Configuration._configuration['cse.console.treeMode'] = v
+		Configuration._configuration['cse.console.treeMode'] = treeMode
 
 		# Everything is fine
 		return True

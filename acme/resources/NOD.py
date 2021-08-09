@@ -45,7 +45,7 @@ class NOD(AnnounceableResource):
 		super().deactivate(originator)
 
 		# Remove self from all hosted AE's (their node links)
-		if (hael := self['hael']) is None:
+		if not (hael := self['hael']):
 			return
 		ri = self['ri']
 		for ae in self['hael']:
@@ -55,7 +55,7 @@ class NOD(AnnounceableResource):
 	def _removeNODfromAE(self, aeRI:str, ri:str) -> None:
 		""" Remove NOD.ri from AE node link. """
 		if aeResource := CSE.dispatcher.retrieveResource(aeRI).resource:
-			if (nl := aeResource.nl) is not None and isinstance(nl, str) and ri == nl:
+			if (nl := aeResource.nl) and isinstance(nl, str) and ri == nl:
 				aeResource.delAttribute('nl')
 				aeResource.dbUpdate()
 

@@ -32,8 +32,7 @@ from services.Logging import Logging as L
 class Dispatcher(object):
 
 	def __init__(self) -> None:
-		self.csiSlash 					= f'{CSE.cseCsi}/' 
-		self.csiSlashLen 				= len(self.csiSlash)
+		self.csiSlashLen 				= len(CSE.cseCsiSlash)
 		self.sortDiscoveryResources 	= Configuration.get('cse.sortDiscoveredResources')
 		L.isInfo and L.log('Dispatcher initialized')
 
@@ -91,9 +90,9 @@ class Dispatcher(object):
 
 			# if rcn == original-resource we retrieve the linked resource
 			if request.args.rcn == RCN.originalResource:
-				if resource is None:	# continue only when there actually is a resource
+				if not resource:	# continue only when there actually is a resource
 					return res
-				if (lnk := resource.lnk) is None:	# no link attribute?
+				if not (lnk := resource.lnk):	# no link attribute?
 					return Result(status=False, rsc=RC.badRequest, dbg='missing lnk attribute in target resource')
 
 				# Retrieve and check the linked-to request
@@ -105,8 +104,8 @@ class Dispatcher(object):
 
 		# do discovery
 		# TODO simplify arguments
-		if (res := self.discoverResources(id, originator, request.args.handling, request.args.fo, request.args.conditions, request.args.attributes, permission=permission)).lst is None:	# not found?
-			return res.errorResult()
+		if not (res := self.discoverResources(id, originator, request.args.handling, request.args.fo, request.args.conditions, request.args.attributes, permission=permission)).status:	# not found?
+			return res.errorResult()				
 
 		# check and filter by ACP. After this allowedResources only contains the resources that are allowed
 		allowedResources = []
@@ -155,7 +154,7 @@ class Dispatcher(object):
 			If no, then try to retrieve the resource from a connected (!) remote CSE.
 		"""
 		if id:
-			if id.startswith(self.csiSlash) and len(id) > self.csiSlashLen:		# TODO for all operations?
+			if id.startswith(CSE.cseCsiSlash) and len(id) > self.csiSlashLen:		# TODO for all operations?
 				id = id[self.csiSlashLen:]
 			else:
 				if Utils.isSPRelative(id):
@@ -164,7 +163,7 @@ class Dispatcher(object):
 
 
 	def retrieveLocalResource(self, ri:str=None, srn:str=None) -> Result:
-		L.isDebug and L.logDebug(f'Retrieve resource: {ri if srn is None else srn}')
+		L.isDebug and L.logDebug(f'Retrieve resource: {ri if not srn else srn}')
 
 		if ri:
 			result = CSE.storage.retrieveResource(ri=ri)		# retrieve via normal ID
@@ -208,20 +207,13 @@ class Dispatcher(object):
 		level = handling['lvl'] if 'lvl' in handling else sys.maxsize	# default: system max size or "maxint"
 
 		# a bit of optimization. This length stays the same.
-		allLen = len(attributes) if attributes is not None else 0
+		allLen = len(attributes) if attributes else 0
 		if conditions:
 			allLen += ( len(conditions) +
 			  (len(conditions.get('ty'))-1 if 'ty' in conditions else 0) +		# -1 : compensate for len(conditions) in line 1
 			  (len(conditions.get('cty'))-1 if 'cty' in conditions else 0) +		# -1 : compensate for len(conditions) in line 1 
 			  (len(conditions.get('lbl'))-1 if 'lbl' in conditions else 0) 		# -1 : compensate for len(conditions) in line 1 
 			)
-
-		# allLen = ((len(conditions) if conditions is not None else 0) +
-		#   (len(attributes) if attributes is not None else 0) +
-		#   (len(conditions.get('ty'))-1 if conditions is not None and 'ty' in conditions else 0) +		# -1 : compensate for len(conditions) in line 1
-		#   (len(conditions.get('cty'))-1 if conditions is not None else 0) +		# -1 : compensate for len(conditions) in line 1 
-		#   (len(conditions.get('lbl'))-1 if conditions is not None else 0) 		# -1 : compensate for len(conditions) in line 1 
-		# )
 
 		# Discover the resources
 		discoveredResources = self._discoverResources(rootResource, originator, level, fo, allLen, dcrs=dcrs, conditions=conditions, attributes=attributes, permission=permission)
@@ -236,10 +228,10 @@ class Dispatcher(object):
 			arp = handling['arp']
 			result = []
 			for resource in discoveredResources:
+				# Check existence and permissions for the .../{arp} resource
 				srn = f'{resource[Resource._srn]}/{arp}'
-				if (res := self.retrieveResource(srn)).resource is not None:
-					if CSE.security.hasAccess(originator, res.resource, permission):
-						result.append(res.resource)
+				if (res := self.retrieveResource(srn)).resource and CSE.security.hasAccess(originator, res.resource, permission):
+					result.append(res.resource)
 			discoveredResources = result	# re-assign the new resources to discoveredResources
 
 		return Result(status=True, lst=discoveredResources)
@@ -302,32 +294,32 @@ class Dispatcher(object):
 			if tys := conditions.get('ty'):
 				found += len(tys) if ty in tys or str(ty) in tys else 0	# TODO simplify after refactoring requests. ty should only be an int
 			if ct := r.ct:
-				found += 1 if (c_crb := conditions.get('crb')) is not None and (ct < c_crb) else 0
-				found += 1 if (c_cra := conditions.get('cra')) is not None and (ct > c_cra) else 0
+				found += 1 if (c_crb := conditions.get('crb')) and (ct < c_crb) else 0
+				found += 1 if (c_cra := conditions.get('cra')) and (ct > c_cra) else 0
 
 			if lt := r.lt:
-				found += 1 if (c_ms := conditions.get('ms')) is not None and (lt > c_ms) else 0
-				found += 1 if (c_us := conditions.get('us')) is not None and (lt < c_us) else 0
+				found += 1 if (c_ms := conditions.get('ms')) and (lt > c_ms) else 0
+				found += 1 if (c_us := conditions.get('us')) and (lt < c_us) else 0
 
-			if (st := r.st) is not None:
-				found += 1 if (c_sts := conditions.get('sts')) is not None and (str(st) > c_sts) else 0
+			if (st := r.st) is not None:	# st is an int
+				found += 1 if (c_sts := conditions.get('sts')) is not None and (str(st) > c_sts) else 0	# st is an int
 				found += 1 if (c_stb := conditions.get('stb')) is not None and (str(st) < c_stb) else 0
 
 			if et := r.et:
-				found += 1 if (c_exb := conditions.get('exb')) is not None and (et < c_exb) else 0
-				found += 1 if (c_exa := conditions.get('exa')) is not None and (et > c_exa) else 0
+				found += 1 if (c_exb := conditions.get('exb')) and (et < c_exb) else 0
+				found += 1 if (c_exa := conditions.get('exa')) and (et > c_exa) else 0
 
 			# Check labels similar to types
 			rlbl = r.lbl
-			if rlbl is not None and (lbls := conditions.get('lbl')) is not None:
+			if rlbl and (lbls := conditions.get('lbl')):
 				for l in lbls:
 					if l in rlbl:
 						found += len(lbls)
 						break
 
 			if ty in [ T.CIN, T.FCNT ]:	# special handling for CIN, FCNT
-				if (cs := r.cs) is not None:
-					found += 1 if (sza := conditions.get('sza')) is not None and (int(cs) >= int(sza)) else 0
+				if (cs := r.cs) is not None:	# cs is an int
+					found += 1 if (sza := conditions.get('sza')) is not None and (int(cs) >= int(sza)) else 0	# sizes ares ints
 					found += 1 if (szb := conditions.get('szb')) is not None and (int(cs) < int(szb)) else 0
 
 			# ContentFormats
@@ -335,26 +327,26 @@ class Dispatcher(object):
 			# cnf's to found (to indicate that the whole set matches)
 			# Similar to types.
 			if ty in [ T.CIN ]:	# special handling for CIN
-				if (cnfs := conditions.get('cty')) is not None:
+				if cnfs := conditions.get('cty'):
 					found += len(cnfs) if r.cnf in cnfs else 0
 
-			# TODO childLabels
-			# TODO parentLabels
-			# TODO childResourceType
-			# TODO parentResourceType
+		# TODO childLabels
+		# TODO parentLabels
+		# TODO childResourceType
+		# TODO parentResourceType
 
 
-			# Attributes:
-			if attributes is not None:
-				for name in attributes:
-					val = attributes[name]
-					if isinstance(val, str) and '*' in val:
-						found += 1 if (rval := r[name]) is not None and helpers.TextTools.simpleMatch(str(rval), val) else 0
-					else:
-						found += 1 if (rval := r[name]) is not None and str(val) == str(rval) else 0
+		# Attributes:
+		if attributes:
+			for name in attributes:
+				val = attributes[name]
+				if isinstance(val, str) and '*' in val:
+					found += 1 if (rval := r[name]) is not None and helpers.TextTools.simpleMatch(str(rval), val) else 0
+				else:
+					found += 1 if (rval := r[name]) is not None and str(val) == str(rval) else 0
 
-			# TODO childAttribute
-			# TODO parentAttribute
+		# TODO childAttribute
+		# TODO parentAttribute
 
 
 		# Test whether the OR or AND criteria is fullfilled
@@ -374,21 +366,12 @@ class Dispatcher(object):
 	def processCreateRequest(self, request:CSERequest, originator:str, id:str=None) -> Result:
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
-		# # overwrite id if another is given
-		# if id is not None:
-		# 	id = id
-		# 	srn = None
-		# else:
-		# 	id = request.id
-		# 	srn = request.srn
-		# fopsrn, id = Utils.srnFromHybrid(srn, id) # Hybrid
-
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == T.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
 			return fanoutPointResource.handleCreateRequest(request, fopsrn, request.headers.originator)
 
-		if (ty := request.headers.resourceType) is None:	# Check for type parameter in request
+		if (ty := request.headers.resourceType) is None:	# Check for type parameter in request, integer
 			return Result(status=False, rsc=RC.badRequest, dbg='type parameter missing in CREATE request')
 
 		# Some Resources are not allowed to be created in a request, return immediately
@@ -396,8 +379,8 @@ class Dispatcher(object):
 			return Result(status=False, rsc=RC.operationNotAllowed, dbg=f'CREATE not allowed for type: {ty}')
 
 		# Get parent resource and check permissions
-		if (res := CSE.dispatcher.retrieveResource(id)).resource is None:
-			L.logErr(dbg := f'Parent resource: {id} not found')
+		if not (res := CSE.dispatcher.retrieveResource(id)).resource:
+			L.logErr(dbg := f'Parent/target resource: {id} not found')
 			return Result(status=False, rsc=RC.notFound, dbg=dbg)
 		parentResource = res.resource
 
@@ -412,7 +395,7 @@ class Dispatcher(object):
 			return parentResource.handleCreateRequest(request, id, originator)	# type: ignore[no-any-return]
 
 		# Add new resource
-		if (nres := Factory.resourceFromDict(deepcopy(request.dict), pi=parentResource.ri, ty=ty)).resource is None:	# something wrong, perhaps wrong type
+		if not (nres := Factory.resourceFromDict(deepcopy(request.dict), pi=parentResource.ri, ty=ty)).resource:	# something wrong, perhaps wrong type
 			return Result(status=False, rsc=RC.badRequest, dbg=nres.dbg)
 		nresource = nres.resource
 
@@ -435,7 +418,7 @@ class Dispatcher(object):
 		originator = rres.originator 	# originator might have changed during this check
 
 		# Create the resource. If this fails we deregister everything
-		if (res := CSE.dispatcher.createResource(nresource, parentResource, originator)).resource is None:
+		if not (res := CSE.dispatcher.createResource(nresource, parentResource, originator)).resource:
 			CSE.registration.checkResourceDeletion(nresource) # deregister resource. Ignore result, we take this from the creation
 			return res
 
@@ -444,7 +427,7 @@ class Dispatcher(object):
 		#
 
 		tpe = res.resource.tpe
-		if request.args.rcn is None or request.args.rcn == RCN.attributes:	# Just the resource & attributes
+		if request.args.rcn is None or request.args.rcn == RCN.attributes:	# Just the resource & attributes, integer
 			return res
 		elif request.args.rcn == RCN.modifiedAttributes:
 			dictOrg = request.dict[tpe]
@@ -464,7 +447,7 @@ class Dispatcher(object):
 	def createResource(self, resource:Resource, parentResource:Resource=None, originator:str=None) -> Result:
 		L.isDebug and L.logDebug(f'Adding resource ri: {resource.ri}, type: {resource.ty:d}')
 
-		if parentResource is not None:
+		if parentResource:
 			L.isDebug and L.logDebug(f'Parent ri: {parentResource.ri}')
 			if not parentResource.canHaveChild(resource):
 				if resource.ty == T.SUB:
@@ -475,7 +458,7 @@ class Dispatcher(object):
 					return Result(status=False, rsc=RC.invalidChildResourceType, dbg=dbg)
 
 		# if not already set: determine and add the srn
-		if resource.__srn__ is None:
+		if not resource.__srn__:
 			resource[resource._srn] = Utils.structuredPath(resource)
 
 		# add the resource to storage
@@ -490,11 +473,11 @@ class Dispatcher(object):
 			return res.errorResult()
 
 		# Could be that we changed the resource in the activate, therefore write it again
-		if (res := resource.dbUpdate()).resource is None:
+		if not (res := resource.dbUpdate()).resource:
 			resource.dbDelete()
 			return res
 
-		if parentResource is not None:
+		if parentResource:
 			parentResource = parentResource.dbReload().resource		# Read the resource again in case it was updated in the DB
 			parentResource.childAdded(resource, originator)			# notify the parent resource
 
@@ -511,22 +494,14 @@ class Dispatcher(object):
 
 	def processUpdateRequest(self, request:CSERequest, originator:str, id:str=None) -> Result: 
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
-		# # overwrite id if another is given
-		# if id is not None:
-		# 	id = id
-		# 	srn = None
-		# else:
-		# 	id = request.id
-		# 	srn = request.srn
-		# fopsrn, id = Utils.srnFromHybrid(srn, id) # Hybrid
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == T.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
 			return fanoutPointResource.handleUpdateRequest(request, fopsrn, request.headers.originator)
 
 		# Get resource to update
-		if (res := self.retrieveResource(id)).resource is None:
+		if not (res := self.retrieveResource(id)).resource:
 			L.isWarn and L.logWarn(f'Resource not found: {res.dbg}')
 			return Result(status=False, rsc=RC.notFound, dbg=res.dbg)
 		resource = res.resource
@@ -543,7 +518,7 @@ class Dispatcher(object):
 
 		if not (res := CSE.security.hasAcpiUpdatePermission(request, resource, originator)).status:
 			return res
-		if res.data is None:	# data == None indicates that this is NOT an ACPI update. In this case we need a normal permission check
+		if not res.data:	# data == None or False indicates that this is NOT an ACPI update. In this case we need a normal permission check
 			if CSE.security.hasAccess(originator, resource, Permission.UPDATE) == False:
 				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
 
@@ -554,7 +529,7 @@ class Dispatcher(object):
 		dictOrg = deepcopy(resource.dict)	# Save for later
 
 
-		if (res := self.updateResource(resource, deepcopy(request.dict), originator=originator)).resource is None:
+		if not (res := self.updateResource(resource, deepcopy(request.dict), originator=originator)).resource:
 			return res.errorResult()
 		resource = res.resource 	# re-assign resource (might have been changed during update)
 
@@ -567,7 +542,7 @@ class Dispatcher(object):
 		#
 
 		tpe = resource.tpe
-		if request.args.rcn is None or request.args.rcn == RCN.attributes:
+		if request.args.rcn is None or request.args.rcn == RCN.attributes:	# rcn is an int
 			return res
 		elif request.args.rcn == RCN.modifiedAttributes:
 			dictNew = deepcopy(resource.dict)
@@ -601,21 +576,14 @@ class Dispatcher(object):
 
 	def processDeleteRequest(self, request:CSERequest, originator:str, id:str=None) -> Result:
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
-		# if id is not None:
-		# 	id = id
-		# 	srn = None
-		# else:
-		# 	id = request.id
-		# 	srn = request.srn
-		# fopsrn, id = Utils.srnFromHybrid(srn, id) # Hybrid
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) is not None and fanoutPointResource.ty == T.GRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == T.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
 			return fanoutPointResource.handleDeleteRequest(request, fopsrn, request.headers.originator)
 
 		# get resource to be removed and check permissions
-		if (res := self.retrieveResource(id)).resource is None:
+		if not (res := self.retrieveResource(id)).resource:
 			L.isDebug and L.logDebug(res.dbg)
 			return Result(status=False, rsc=RC.notFound, dbg=res.dbg)
 		resource = res.resource
@@ -633,7 +601,7 @@ class Dispatcher(object):
 
 		tpe = resource.tpe
 		result: Any = None
-		if request.args.rcn is None or request.args.rcn == RCN.nothing:
+		if request.args.rcn is None or request.args.rcn == RCN.nothing:	# rcn is an int
 			result = None
 		elif request.args.rcn == RCN.attributes:
 			result = resource
@@ -677,7 +645,7 @@ class Dispatcher(object):
 				return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
 
 		# Retrieve the parent resource now, because we need it later
-		if parentResource is None:
+		if not parentResource:
 			parentResource = resource.retrieveParentResource()
 
 		# delete the resource from the DB. Save the result to return later
@@ -687,7 +655,7 @@ class Dispatcher(object):
 		CSE.event.deleteResource(resource) 	# type: ignore
 
 		# Now notify the parent resource
-		if doDeleteCheck and parentResource is not None:
+		if doDeleteCheck and parentResource:
 			parentResource.childRemoved(resource, originator)
 
 		return Result(status=res.status, resource=resource, rsc=res.rsc, dbg=res.dbg)
@@ -709,11 +677,11 @@ class Dispatcher(object):
 
 
 	def discoverChildren(self, id:str, resource:Resource, originator:str, handling:JSON, permission:Permission) -> list[Resource]:
-		if (resourceList := self.discoverResources(id, originator, handling, rootResource=resource, permission=permission).lst) is  None:
+		if not (res := self.discoverResources(id, originator, handling, rootResource=resource, permission=permission)).status:
 			return None
 		# check and filter by ACP
 		children = []
-		for r in resourceList:
+		for r in res.lst:
 			if CSE.security.hasAccess(originator, r, permission):
 				children.append(r)
 		return children
@@ -725,7 +693,7 @@ class Dispatcher(object):
 		"""
 
 		# Count all resources
-		if ty is None:
+		if ty is None:	# ty is an int
 			return CSE.storage.countResources()
 		
 		# Count all resources of the given types
@@ -756,7 +724,7 @@ class Dispatcher(object):
 		# Remove directChildResources
 		rs = self.directChildResources(parentResource.ri)
 		for r in rs:
-			if ty is None or r.ty == ty:
+			if ty is None or r.ty == ty:	# ty is an int
 				parentResource.childRemoved(r, originator)	# recursion here
 				self.deleteResource(r, originator, parentResource=parentResource)
 
@@ -786,13 +754,13 @@ class Dispatcher(object):
 			while idx < len(resources):
 				r = resources[idx]
 
-				if rri is not None and r.pi != rri:	# only direct children
+				if rri and r.pi != rri:	# only direct children
 					idx += 1
 					continue
 				if r.ty in C.virtualResources:	# Skip latest, oldest etc virtual resources
 					idx += 1
 					continue
-				if handledTy is None:
+				if handledTy is None:					# ty is an int
 					handledTy = r.ty					# this round we check this type
 					handledTPE = r.tpe					# ... and this TPE (important to distinguish specializations in mgmtObj and fcnt )
 				if r.ty == handledTy and r.tpe == handledTPE:		# handle only resources of the currently handled type and TPE!
@@ -818,7 +786,7 @@ class Dispatcher(object):
 	def _resourceTreeReferences(self, resources:list[Resource], targetResource:Resource|JSON, drt:DRT=DRT.structured, tp:str='m2m:rrl') -> Resource|JSON:
 		""" Retrieve child resource references of a resource and add them to
 			a new target resource as "children" """
-		if targetResource is None:
+		if not targetResource:
 			targetResource = { }
 
 		t = []

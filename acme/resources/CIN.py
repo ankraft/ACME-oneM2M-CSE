@@ -49,12 +49,12 @@ class CIN(AnnounceableResource):
 			return res
 
 		# Check whether the parent container's *disableRetrieval* attribute is set to True.
-		if (cnt := self.retrieveParentResource()) and (disr := cnt.disr) is not None and disr:	# False means "not disabled retrieval"
+		if (cnt := self.retrieveParentResource()) and cnt.disr:	# disr is either None, True or False. False means "not disabled retrieval"
 			L.isDebug and L.logDebug(dbg := f'Retrieval is disabled for the parent <container>')
 			return Result(status=False, rsc=RC.operationNotAllowed, dbg=dbg)
 		
 		# Check deletion Count
-		if (dcnt := self.dcnt) is not None:
+		if (dcnt := self.dcnt) is not None:	# dcnt is an innt
 			L.isDebug and L.logDebug(f'Decreasing dcnt for <cin>, ri: {self.ri}, ({dcnt} -> {dcnt-1})')
 			dcnt -= 1
 			if dcnt > 0:	# still > 0 -> CIN is not deleted
@@ -75,9 +75,8 @@ class CIN(AnnounceableResource):
 			return res
 
 		# Check the format of the CNF attribute
-		if (cnf := self.cnf) is not None:
-			if not (res := CSE.validator.validateCNF(cnf)).status:
-				return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
+		if (cnf := self.cnf) and not (res := CSE.validator.validateCNF(cnf)).status:
+			return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
 
 		# Add ST attribute
 		if parentResource := parentResource.dbReload().resource:		# Read the resource again in case it was updated in the DB

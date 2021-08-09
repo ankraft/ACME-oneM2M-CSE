@@ -367,7 +367,7 @@ class TestTS_TSI(unittest.TestCase):
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
 			self.assertEqual(rsc, RC.created, r)
-			time.sleep(timeSeriesInterval) # == pei
+			time.sleep(timeSeriesInterval - (datetime.datetime.utcnow().timestamp() - date)) # == pei
 			date += timeSeriesInterval
 
 		# Check TS for missing TSI

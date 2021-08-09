@@ -71,18 +71,18 @@ class AE(AnnounceableResource):
 		# but technically it is allowed.
 		nl = self['nl']
 		_nl_ = self.__node__
-		if nl is not None or _nl_ is not None:
+		if nl or _nl_:
 			if nl != _nl_:	# if different node
 				ri = self['ri']
 
 				# Remove from old node first
-				if _nl_ is not None:
+				if _nl_:
 					self._removeAEfromNOD(_nl_, ri)
 				self[Resource._node] = nl
 
 				# Add to new node
 				if node := CSE.dispatcher.retrieveResource(nl).resource:	# new node
-					if (hael := node.hael) is None:
+					if not (hael := node.hael):
 						node['hael'] = [ ri ]
 					else:
 						if isinstance(hael, list):
@@ -92,13 +92,13 @@ class AE(AnnounceableResource):
 			self[Resource._node] = nl
 		
 		# check csz attribute
-		if (csz := self.csz) is not None:
+		if csz := self.csz:
 			for c in csz:
 				if c not in C.supportedContentSerializations:
 					return Result(status=False, rsc=RC.badRequest, dbg=f'unsupported content serialization: {c}')
 		
 		# check api attribute
-		if (api := self['api']) is None or len(api) < 2:	# at least R|N + another char
+		if not (api := self['api']) or len(api) < 2:	# at least R|N + another char
 			return Result(status=False, rsc=RC.badRequest, dbg=f'missing or empty attribute: "api"')
 		if api.startswith('N'):
 			pass # simple format
@@ -116,14 +116,14 @@ class AE(AnnounceableResource):
 		super().deactivate(originator)
 
 		# Remove itself from the node link in a hosting <node>
-		if (nl := self.nl) is not None:
+		if nl := self.nl:
 			self._removeAEfromNOD(nl, self.ri)
 
 
 	def _removeAEfromNOD(self, nodeRi:str, ri:str) -> None:
 		""" Remove AE from hosting Node. """
 		if node := CSE.dispatcher.retrieveResource(nodeRi).resource:
-			if (hael := node.hael) is not None and isinstance(hael, list) and ri in hael:
+			if (hael := node.hael) and isinstance(hael, list) and ri in hael:
 				hael.remove(ri)
 				if len(hael) == 0:
 					node.delAttribute('hael')

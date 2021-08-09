@@ -53,16 +53,16 @@ class ACP(AnnounceableResource):
 		if dct and (pvs := Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs')):
 			if len(pvs) == 0:
 				return Result(status=False, rsc=RC.badRequest, dbg='pvs must not be empty')
-		if self.pvs is None or len(self.pvs) == 0:
+		if not self.pvs:
 			return Result(status=False, rsc=RC.badRequest, dbg='pvs must not be empty')
 
 		# Check acod
 		def _checkAcod(acrs:list) -> Result:
-			if acrs is None:
+			if not acrs:
 				return Result(status=True)
 			for acr in acrs:
 				if (acod := acr.get('acod')):
-					if (acod := acod.get('chty')) is None or not isinstance(acod, list):
+					if not (acod := acod.get('chty')) or not isinstance(acod, list):
 						return Result(status=False, rsc=RC.badRequest, dbg='chty is mandatory in acod')
 			return Result(status=True)
 
@@ -88,7 +88,7 @@ class ACP(AnnounceableResource):
 
 
 	def validateAnnouncedDict(self, dct:JSON) -> JSON:
-		if (acr := Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs/acr')) is not None:
+		if acr := Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs/acr'):
 			acr.append( { 'acor': [ CSE.cseCsi ], 'acop': Permission.ALL } )
 		return dct
 
@@ -101,21 +101,20 @@ class ACP(AnnounceableResource):
 
 	def addPermission(self, originators:list[str], permission:int) -> None:
 		o = list(set(originators))	# Remove duplicates from list of originators
-		if (p := self['pv/acr']) is not None:
+		if p := self['pv/acr']:
 			p.append({'acop' : permission, 'acor': o})
 
 
 	def removePermissionForOriginator(self, originator:str) -> None:
-		if (p := self['pv/acr']) is not None:
+		if p := self['pv/acr']:
 			for acr in p:
 				if originator in acr['acor']:
 					p.remove(acr)
 					
 
 	def addSelfPermission(self, originators:List[str], permission:int) -> None:
-		o = list(set(originators))	 # Remove duplicates from list of originators
-		if (p := self['pvs/acr']) is not None:
-			p.append({'acop' : permission, 'acor': o})
+		if p := self['pvs/acr']:
+			p.append({'acop' : permission, 'acor': list(set(originators))}) 	# list(set()) : Remove duplicates from list of originators
 
 
 	def addPermissionOriginator(self, originator:str) -> None:
@@ -139,9 +138,9 @@ class ACP(AnnounceableResource):
 				continue
 
 			# Check acod : chty
-			if (acod := p.get('acod')) is not None:
+			if acod := p.get('acod'):
 				if requestedPermission == Permission.CREATE:
-					if ty is None or ty not in acod.get('chty'):
+					if ty is None or ty not in acod.get('chty'):	# ty is an int
 						continue								# for CREATE: type not in chty
 				else:
 					if ty not in acod.get('ty'):

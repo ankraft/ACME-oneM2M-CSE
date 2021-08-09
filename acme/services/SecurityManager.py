@@ -64,13 +64,13 @@ class SecurityManager(object):
 			return True
 		
 
-		if ty is not None:
+		if ty is not None:	# ty is an int
 
 			# Checking for AE	
 			if ty == T.AE and isCreateRequest:
 				# originator may be None or empty or C or S. 
 				# That is okay if type is AE and this is a create request
-				if originator is None or len(originator) == 0 or self.isAllowedOriginator(originator, CSE.registration.allowedAEOriginators):
+				if not originator or len(originator) == 0 or self.isAllowedOriginator(originator, CSE.registration.allowedAEOriginators):
 					L.isDebug and L.logDebug('Originator for AE CREATE. OK.')
 					return True
 
@@ -96,7 +96,7 @@ class SecurityManager(object):
 
 			# Allow registered AEs to RETRIEVE the CSEBase
 
-			if CSE.storage.retrieveResource(aei=originator).resource is not None:
+			if CSE.storage.retrieveResource(aei=originator).resource:
 				L.isDebug and L.logDebug(f'Allow registered AE Orignator {originator} to RETRIEVE CSEBase. OK.')
 				return True
 			
@@ -111,11 +111,10 @@ class SecurityManager(object):
 			
 
 		# Check parameters
-		if resource is None:
-			
+		if not resource:
 			L.isWarn and L.logWarn('Resource must not be None')
 			return False
-		if requestedPermission is None or not (0 <= requestedPermission <= Permission.ALL):
+		if not requestedPermission or not (0 <= requestedPermission <= Permission.ALL):
 			L.isWarn and L.logWarn('RequestedPermission must not be None, and between 0 and 63')
 			return False
 
@@ -124,13 +123,13 @@ class SecurityManager(object):
 		if resource.ty == T.GRP: # target is a group resource
 			# Check membersAccessControlPolicyIDs if provided, otherwise accessControlPolicyIDs to be used
 			
-			if (macp := resource.macp) is None or len(macp) == 0:
+			if not (macp := resource.macp):
 				L.isDebug and L.logDebug("MembersAccessControlPolicyIDs not provided, using AccessControlPolicyIDs")
 				# FALLTHROUGH to the permission checks below
 			
 			else: # handle the permission checks here
 				for a in macp:
-					if (acp := CSE.dispatcher.retrieveResource(a).resource) is None:
+					if not (acp := CSE.dispatcher.retrieveResource(a).resource):
 						L.isDebug and L.logDebug(f'ACP resource not found: {a}')
 						continue
 					else:
@@ -150,26 +149,26 @@ class SecurityManager(object):
 		else:		# target is any other resource type
 			
 			# If subscription, check whether originator has retrieve permissions on the subscribed-to resource (parent)	
-			if ty == T.SUB and parentResource is not None:
+			if ty == T.SUB and parentResource:
 				if self.hasAccess(originator, parentResource, Permission.RETRIEVE) == False:
 					return False
 
 
 			# When no acpi is configured for the resource
-			if (acpi := resource.acpi) is None or len(acpi) == 0:
+			if not (acpi := resource.acpi):
 				L.isDebug and L.logDebug('Handle with missing acpi in resource')
 
 				# if the resource *may* have an acpi
-				if resource.attributePolicies is not None and 'acpi' in resource.attributePolicies:
+				if resource.attributePolicies and 'acpi' in resource.attributePolicies:
 					# Check holder attribute
-					if (holder := resource.hld) is not None:
+					if holder := resource.hld:
 						if holder == originator:	# resource.holder == originator -> all access
 							L.isDebug and L.logDebug('Allow access for holder')
 							return True
 						# When holder is set, but doesn't match the originator then fall-through to fail
 						
 					# Check resource creator
-					elif (creator := resource[resource._originator]) is not None and creator == originator:
+					elif (creator := resource[resource._originator]) and creator == originator:
 						L.isDebug and L.logDebug('Allow access for creator')
 						return True
 					
@@ -186,7 +185,7 @@ class SecurityManager(object):
 				return False
 
 			for a in acpi:
-				if (acp := CSE.dispatcher.retrieveResource(a).resource) is None:
+				if not (acp := CSE.dispatcher.retrieveResource(a).resource):
 					L.isDebug and L.logDebug(f'ACP resource not found: {a}')
 					continue
 				if checkSelf:	# forced check for self permissions
@@ -216,7 +215,7 @@ class SecurityManager(object):
 				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 			
 			# Check whether the originator has UPDATE privileges for the acpi attribute (pvs!)
-			if targetResource.acpi is None:
+			if not targetResource.acpi:
 				if originator != targetResource[targetResource._originator]:
 					L.isDebug and L.logDebug(dbg := f'No access to update acpi for originator: {originator}')
 					return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
@@ -225,7 +224,7 @@ class SecurityManager(object):
 			else:
 				# test the current acpi whether the originator is allowed to update the acpi
 				for ri in targetResource.acpi:
-					if (acp := CSE.dispatcher.retrieveResource(ri).resource) is None:
+					if not (acp := CSE.dispatcher.retrieveResource(ri).resource):
 						L.isWarn and L.logWarn(f'Access Check for acpi: referenced <ACP> resource not found: {ri}')
 						continue
 					if acp.checkSelfPermission(originator, Permission.UPDATE):

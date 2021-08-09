@@ -7,6 +7,7 @@
 #	Main request dispatcher. All external requests are routed through here.
 #
 
+import re
 import requests, urllib.parse
 from typing import Any, List
 from copy import deepcopy
@@ -60,7 +61,7 @@ class RequestManager(object):
 	#
 
 	def retrieveRequest(self, request:CSERequest) ->  Result:
-		L.logDebug and L.logDebug(f'RETRIEVE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
+		L.logDebug and L.logDebug(f'RETRIEVE ID: {request.id if request.id else request.srn}, originator: {request.headers.originator}')
 
 		# handle transit requests
 		if self.isTransitID(request.id):
@@ -88,7 +89,7 @@ class RequestManager(object):
 	#
 
 	def createRequest(self, request:CSERequest) -> Result:
-		L.isDebug and L.logDebug(f'CREATE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
+		L.isDebug and L.logDebug(f'CREATE ID: {request.id if request.id else request.srn}, originator: {request.headers.originator}')
 
 		# handle transit requests
 		if self.isTransitID(request.id):
@@ -120,7 +121,7 @@ class RequestManager(object):
 	#
 
 	def updateRequest(self, request:CSERequest) -> Result:
-		L.isDebug and L.logDebug(f'UPDATE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
+		L.isDebug and L.logDebug(f'UPDATE ID: {request.id if request.id else request.srn}, originator: {request.headers.originator}')
 
 		# Don't update the CSEBase
 		if request.id == CSE.cseRi:
@@ -156,7 +157,7 @@ class RequestManager(object):
 
 
 	def deleteRequest(self, request:CSERequest,) -> Result:
-		L.isDebug and L.logDebug(f'DELETE ID: {request.id if request.id is not None else request.srn}, originator: {request.headers.originator}')
+		L.isDebug and L.logDebug(f'DELETE ID: {request.id if request.id else request.srn}, originator: {request.headers.originator}')
 
 		# Don't update the CSEBase
 		if request.id == CSE.cseRi:
@@ -190,11 +191,11 @@ class RequestManager(object):
 	def _createRequestResource(self, request:CSERequest) -> Result:
 
 		# Get initialized resource
-		if (nres := REQ.createRequestResource(request)).resource is None:
+		if not (nres := REQ.createRequestResource(request)).resource:
 			return Result(rsc=RC.badRequest, dbg=nres.dbg)
 
 		# Register <request>
-		if (cseres := Utils.getCSE()).resource is None:
+		if not (cseres := Utils.getCSE()).resource:
 			return Result(rsc=RC.badRequest, dbg=cseres.dbg)
 		if (rres := CSE.registration.checkResourceCreation(nres.resource, request.headers.originator, cseres.resource)).rsc != RC.OK:
 			return rres.errorResult()
@@ -213,7 +214,7 @@ class RequestManager(object):
 		"""
 
 		# Create the <request> resource first
-		if (reqres := self._createRequestResource(request)).resource is None:
+		if not (reqres := self._createRequestResource(request)).resource:
 			return reqres
 
 		# Synchronous handling
@@ -266,7 +267,7 @@ class RequestManager(object):
 			}
 		}
 
-		if (nus := request.headers.responseTypeNUs) is None:
+		if (nus := request.headers.responseTypeNUs) is None:	# might be an empty list
 			# RTU is not set, get POA's from the resp. AE.poa
 			aes = CSE.storage.searchByFragment({ 'ty' : T.AE, 'aei' : originator })	# search all <AE>s for aei=originator
 			if len(aes) != 1:
@@ -290,7 +291,7 @@ class RequestManager(object):
 		operationResult = self.requestHandlers[request.op].dispatcherRequest(request, request.headers.originator)
 
 		# Retrieve the <request> resource
-		if (res := CSE.dispatcher.retrieveResource(reqRi)).resource is None:	
+		if not (res := CSE.dispatcher.retrieveResource(reqRi)).resource:
 			return Result(status=False) 														# No idea what we should do if this fails
 		reqres = res.resource
 
@@ -305,11 +306,11 @@ class RequestManager(object):
 		}
 		if operationResult.rsc in [ RC.OK, RC.created, RC.updated, RC.deleted ] :			# OK, created, updated, deleted -> resource
 			reqres['rs'] = RequestStatus.COMPLETED
-			if operationResult.resource is not None:
+			if operationResult.resource:
 				reqres['ors/pc'] = operationResult.resource.asDict()
 		else:																				# Error
 			reqres['rs'] = RequestStatus.FAILED
-			if operationResult.dbg is not None:
+			if operationResult.dbg:
 				reqres['ors/pc'] = { 'm2m:dbg' : operationResult.dbg }
 
 		# Update in DB
@@ -324,44 +325,54 @@ class RequestManager(object):
 	#	Handling of Transit requests. Forward requests to the resp. remote CSE's.
 	#
 
+	# TODO Change for generic forward to also support MQTT etc
+
 	def handleTransitRetrieveRequest(self, request:CSERequest) -> Result:
 		""" Forward a RETRIEVE request to a remote CSE """
-		if (url := self._getForwardURL(request.id)) is None:
-			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
-		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
-			url += '?' + urllib.parse.urlencode(request.originalArgs)
-		L.isInfo and L.log(f'Forwarding Retrieve/Discovery request to: {url}')
-		return self.sendRetrieveRequest(url, request.headers.originator)
+		if not (res := self._constructForwardURL(request)).status:
+			return res
+		# if not (url := self._getForwardURL(request.id)):
+		# 	return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
+		# if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
+		# 	url += '?' + urllib.parse.urlencode(request.originalArgs)
+		L.isInfo and L.log(f'Forwarding Retrieve/Discovery request to: {res.data}')
+		return self.sendRetrieveRequest(res.data, request.headers.originator)
 
 
 	def handleTransitCreateRequest(self, request:CSERequest) -> Result:
 		""" Forward a CREATE request to a remote CSE. """
-		if (url := self._getForwardURL(request.id)) is None:
-			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
-		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
-			url += '?' + urllib.parse.urlencode(request.originalArgs)
-		L.isInfo and L.log(f'Forwarding Create request to: {url}')
-		return self.sendCreateRequest(url, request.headers.originator, data=request.data, ty=request.headers.resourceType)
+		if not (res := self._constructForwardURL(request)).status:
+			return res
+		# if not (url := self._getForwardURL(request.id)):
+		# 	return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
+		# if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
+		# 	url += '?' + urllib.parse.urlencode(request.originalArgs)
+		L.isInfo and L.log(f'Forwarding Create request to: {res.data}')
+		return self.sendCreateRequest(res.data, request.headers.originator, data=request.data, ty=request.headers.resourceType)
 
 
 	def handleTransitUpdateRequest(self, request:CSERequest) -> Result:
 		""" Forward an UPDATE request to a remote CSE. """
-		if (url := self._getForwardURL(request.id)) is None:
-			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
-		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
-			url += '?' + urllib.parse.urlencode(request.originalArgs)
-		L.isInfo and L.log(f'Forwarding Update request to: {url}')
-		return self.sendUpdateRequest(url, request.headers.originator, data=request.data)
+		if not (res := self._constructForwardURL(request)).status:
+			return res
+		# if not (url := self._getForwardURL(request.id)):
+		# 	return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
+		# if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
+		# 	url += '?' + urllib.parse.urlencode(request.originalArgs)
+		L.isInfo and L.log(f'Forwarding Update request to: {res.data}')
+		return self.sendUpdateRequest(res.data, request.headers.originator, data=request.data)
 
 
 	def handleTransitDeleteRequest(self, request:CSERequest) -> Result:
 		""" Forward a DELETE request to a remote CSE. """
-		if (url := self._getForwardURL(request.id)) is None:
-			return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
-		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
-			url += '?' + urllib.parse.urlencode(request.originalArgs)
-		L.isInfo and L.log(f'Forwarding Delete request to: {url}')
-		return self.sendDeleteRequest(url, request.headers.originator)
+		if not (res := self._constructForwardURL(request)).status:
+			return res
+		# if not (url := self._getForwardURL(request.id)):
+		# 	return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
+		# if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
+		# 	url += '?' + urllib.parse.urlencode(request.originalArgs)
+		L.isInfo and L.log(f'Forwarding Delete request to: {res.data}')
+		return self.sendDeleteRequest(res.data, request.headers.originator)
 
 
 	def isTransitID(self, id:str) -> bool:
@@ -377,12 +388,23 @@ class RequestManager(object):
 
 	def _getForwardURL(self, path:str) -> str:
 		""" Get the new target URL when forwarding. """
-		L.isDebug and L.logDebug(path)
-		r, pe = CSE.remote.getCSRFromPath(path)
-		L.isDebug and L.logDebug(str(r))
-		if r is not None and (poas := r.poa) is not None and len(poas) > 0:
+		# L.isDebug and L.logDebug(path)
+		csr, pe = CSE.remote.getCSRFromPath(path)
+		# L.isDebug and L.logDebug(str(csr))
+		if csr and (poas := csr.poa) and len(poas) > 0:
 			return f'{poas[0]}/~/{"/".join(pe[1:])}'	# TODO check all available poas.
 		return None
+
+
+	def _constructForwardURL(self, request:CSERequest) -> Result:
+		"""	Construct the target URL for the forward request. Add the original
+			arguments.
+		"""
+		if not (url := self._getForwardURL(request.id)):
+			return Result(status=False, rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
+		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
+			url += '?' + urllib.parse.urlencode(request.originalArgs)
+		return Result(status=True, data=url)
 
 
 	###########################################################################
@@ -456,9 +478,9 @@ class RequestManager(object):
 		"""
 		dct = None
 		ct = ContentSerializationType.getType(mediaType, default=CSE.defaultSerialization)
-		if data is not None and len(data) > 0:
+		if data:
 			try:
-				if (dct := RequestUtils.deserializeData(data, ct)) is None:
+				if not (dct := RequestUtils.deserializeData(data, ct)):
 					return Result(rsc=RC.unsupportedMediaType, dbg=f'Unsupported media type for content-type: {ct}', status=False)
 			except Exception as e:
 				L.isWarn and L.logWarn('Bad request (malformed content?)')
@@ -480,7 +502,7 @@ class RequestManager(object):
 				This method might raise a *ValueError* exception if validation or conversion of the
 				attribute/value fails.
 			"""
-			if dct is not None and (v := dct.get(key)) is not None:
+			if dct and (v := dct.get(key)) is not None:	# v may be int
 				if greedy:
 					del dct[key]
 				if not (res := CSE.validator.validateAttribute(key, v, attributeType)).status:
@@ -493,14 +515,14 @@ class RequestManager(object):
 
 		try:
 			# TY - resource type
-			if (ty := gget(cseRequest.req, 'ty', greedy=False)) is not None:
+			if (ty := gget(cseRequest.req, 'ty', greedy=False)) is not None:	# ty is an int
 				if not T.has(ty):
 					return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'Unknown/unsupported resource type: {ty}', status=False)
 				cseRequest.headers.resourceType = T(ty)
 
 
 			# OP - operation
-			if (op := gget(cseRequest.req, 'op', greedy=False)) is not None:
+			if (op := gget(cseRequest.req, 'op', greedy=False)) is not None:	# op is an int
 				if not Operation.isvalid(op):
 					return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'Unknown/unsupported operation: {op}', status=False)
 				cseRequest.op = Operation(op)
@@ -510,25 +532,25 @@ class RequestManager(object):
 
 
 			# FR - originator 
-			if (fr := gget(cseRequest.req, 'fr', greedy=False)) is None and not (cseRequest.headers.resourceType == T.AE and cseRequest.op == Operation.CREATE):
+			if not (fr := gget(cseRequest.req, 'fr', greedy=False)) and not (cseRequest.headers.resourceType == T.AE and cseRequest.op == Operation.CREATE):
 				L.logDebug(dbg := 'From/Originator parameter is mandatory in request')
 				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
 			cseRequest.headers.originator = fr
 
 
 			# TO - target
-			if (to := gget(cseRequest.req, 'to', greedy=False)) is None:
+			if not (to := gget(cseRequest.req, 'to', greedy=False)):
 				L.logDebug(dbg := 'To/Target parameter is mandatory in request')
 				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
 			cseRequest.id, cseRequest.csi, cseRequest.srn =  Utils.retrieveIDFromPath(to, CSE.cseRn, CSE.cseCsi)
 
 
 			# Check identifiers
-			if cseRequest.id is None and cseRequest.srn is None:
+			if not cseRequest.id and not cseRequest.srn:
 				return Result(rsc=RC.notFound, request=cseRequest, dbg='missing identifier', status=False)
 
 			# OT - originating timestamp
-			if (ot := gget(cseRequest.req, 'ot', greedy=False)) is not None:
+			if ot := gget(cseRequest.req, 'ot', greedy=False):
 				if (_ts := DateUtils.fromAbsRelTimestamp(ot)) == 0.0:
 					L.logDebug(dbg := 'Error in provided Originating Timestamp')
 					return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
@@ -536,14 +558,14 @@ class RequestManager(object):
 
 
 			# RQI - requestIdentifier
-			if (rqi := gget(cseRequest.req, 'rqi', greedy=False)) is None:
+			if not (rqi := gget(cseRequest.req, 'rqi', greedy=False)):
 				L.logDebug(dbg := 'Request Identifier parameter is mandatory in request')
 				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)		
 			cseRequest.headers.requestIdentifier = rqi
 		
 
 			# RQET - requestExpirationTimestamp
-			if (rqet := gget(cseRequest.req, 'rqet', greedy=False)) is not None:
+			if rqet := gget(cseRequest.req, 'rqet', greedy=False):
 				if (_ts := DateUtils.fromAbsRelTimestamp(rqet)) == 0.0:
 					L.logDebug(dbg := 'Error in provided Request Expiration Timestamp')
 					return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
@@ -554,7 +576,7 @@ class RequestManager(object):
 
 
 			# RSET - resultExpirationTimestamp
-			if (rset := gget(cseRequest.req, 'rset', greedy=False)) is not None:
+			if (rset := gget(cseRequest.req, 'rset', greedy=False)):
 				if (_ts := DateUtils.fromAbsRelTimestamp(rset)) == 0.0:
 					L.logDebug(dbg := 'Error in provided Result Expiration Timestamp')
 					return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
@@ -565,7 +587,7 @@ class RequestManager(object):
 
 
 			# OET - operationExecutionTime
-			if (oet := gget(cseRequest.req, 'oet', greedy=False)) is not None:
+			if (oet := gget(cseRequest.req, 'oet', greedy=False)):
 				if (_ts := DateUtils.fromAbsRelTimestamp(oet)) == 0.0:
 					L.logDebug(dbg := 'Error in provided Operation Execution Time')
 					return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
@@ -573,7 +595,7 @@ class RequestManager(object):
 
 
 			# RVI - releaseVersionIndicator
-			if (rvi := gget(cseRequest.req, 'rvi', greedy=False)) is None:
+			if not (rvi := gget(cseRequest.req, 'rvi', greedy=False)):
 				L.logDebug(dbg := 'Release Version Indicator paraneter is mandatory in request')
 				return Result(rsc=RC.badRequest, request=cseRequest, dbg=dbg, status=False)
 			if rvi not in C.supportedReleaseVersions:
@@ -582,7 +604,7 @@ class RequestManager(object):
 
 
 			# VSI - vendorInformation
-			if (vsi := gget(cseRequest.req, 'vsi', greedy=False)) is not None:
+			if (vsi := gget(cseRequest.req, 'vsi', greedy=False)):
 				cseRequest.headers.vendorInformation = vsi	
 
 			#
@@ -607,7 +629,7 @@ class RequestManager(object):
 
 
 			# RCN Result Content Type
-			if (rcn := gget(cseRequest.req, 'rcn', greedy=False)) is not None: 
+			if (rcn := gget(cseRequest.req, 'rcn', greedy=False)) is not None: 	# rcn is an int
 				try:
 					rcn = ResultContentType(rcn)
 				except ValueError as e:
@@ -657,14 +679,14 @@ class RequestManager(object):
 
 
 			# RT - responseType: RTV responseTypeValue, RTU/NU responseTypeNUs
-			if (rt := gget(cseRequest.req, 'rt', greedy=False)) is not None:
+			if (rt := gget(cseRequest.req, 'rt', greedy=False)) is not None: # rt is an int
 				cseRequest.args.rt = ResponseType(gget(rt, 'rtv', ResponseType.blockingRequest, greedy=False))
-				if (nu := gget(rt, 'nu', greedy=False)) is not None:
+				if nu := gget(rt, 'nu', greedy=False):
 					cseRequest.headers.responseTypeNUs = nu	#  TODO validate for url?
 
 
 			# RP - resultPersistence (also as timestamp)
-			if (rp := gget(cseRequest.req, 'rp', greedy=False)) is not None: 
+			if (rp := gget(cseRequest.req, 'rp', greedy=False)): 
 				cseRequest.args.rp = rp
 				if (rpts := DateUtils.toISO8601Date(DateUtils.fromAbsRelTimestamp(rp))) == 0.0:
 					return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'"{rp}" is not a valid value for rp')
@@ -677,15 +699,15 @@ class RequestManager(object):
 			#
 			#	Discovery and FilterCriteria
 			#
-			if fc is not None:	# only when there is a filterCriteria
+			if fc:	# only when there is a filterCriteria
 				for h in [ 'lim', 'lvl', 'ofst', 'arp' ]:
-					if (v := gget(fc, h)) is not None:
+					if (v := gget(fc, h)) is not None:	# may be int
 						cseRequest.args.handling[h] = v
 				for h in [ 'crb', 'cra', 'ms', 'us', 'sts', 'stb', 'exb', 'exa', 'lbq', 'sza', 'szb', 'catr', 'patr', 'cty', 'lbl' ]:
-					if (v := gget(fc, h)) is not None:
+					if (v := gget(fc, h)) is not None:	# may be int
 						cseRequest.args.conditions[h] = v
 				if 'ty' in fc:	# Special handling for ty since this will be an array here
-					if (v := gget(fc, 'ty', attributeType=BasicType.list)) is not None:
+					if (v := gget(fc, 'ty', attributeType=BasicType.list)) is not None:	# may be int
 						cseRequest.args.conditions['ty'] = v
 				for h in list(fc.keys()):
 					cseRequest.args.attributes[h] = gget(fc, h)
@@ -693,7 +715,7 @@ class RequestManager(object):
 
 			# Copy primitive content
 			# Check whether content is empty and operation is UPDATE or CREATE -> Error
-			if (pc := cseRequest.req.get('pc')) is None or len(pc) < 1:
+			if not (pc := cseRequest.req.get('pc')):
 				if cseRequest.op in [ Operation.CREATE, Operation.UPDATE ]:
 					return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'Missing primitive content or body in request for operation: {cseRequest.op}')
 			cseRequest.dict = cseRequest.req.get('pc')
@@ -717,7 +739,7 @@ class RequestManager(object):
 			It is either an AE, a CSE or a CSR.
 			Return a list of types.
 		"""
-		if originator is None or len(originator):
+		if not originator:
 			return []
 		# First check whether there is an AE with that originator
 		if (l := len(aes := CSE.storage.searchByFragment({ 'aei' : originator }))) > 0:

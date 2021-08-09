@@ -243,10 +243,10 @@ class Console(object):
 		L.console('Child Resource Tree', isHeader=True)
 		L.off()
 		
-		if (ri := readline('ri=')) is None:
+		if not (ri := readline('ri=')):
 			L.console()
 		elif len(ri) > 0:
-			if (tree := self.getResourceTreeRich(parent=ri)) is not None:
+			if tree := self.getResourceTreeRich(parent=ri):
 				L.console(tree)
 			else:
 				L.console('not found', isError=True)
@@ -259,12 +259,9 @@ class Console(object):
 		self.clearScreen(key)
 		self._about('Resource Tree')
 		with Live(self.getResourceTreeRich(style=L.terminalStyle), auto_refresh=False) as live:
-			while True:
-				if (ch := waitForKeypress(self.refreshInterval)) is not None:
-					if ch == '\x14':	# Toggle through tree modes
-						self.treeMode = self.treeMode.succ()
-					else:
-						break
+			while (ch := waitForKeypress(self.refreshInterval)) in [None, '\x14']:
+				if ch == '\x14':	# Toggle through tree modes
+					self.treeMode = self.treeMode.succ()
 				live.update(self.getResourceTreeRich(style=L.terminalStyle), refresh=True)
 		self.clearScreen(key)
 		L.on()
@@ -304,13 +301,10 @@ class Console(object):
 		self.clearScreen(key)
 		self._about('Statistics')
 		with Live(self.getStatisticsRich(style=L.terminalStyle), auto_refresh=False) as live:
-			while True:
-				if waitForKeypress(self.refreshInterval) is not None:
-					break
+			while not waitForKeypress(self.refreshInterval):
 				live.update(self.getStatisticsRich(style=L.terminalStyle), refresh=True)
 		self.clearScreen(key)
 		L.on()
-
 
 
 	def deleteResource(self, _:str) -> None:
@@ -318,13 +312,13 @@ class Console(object):
 		"""
 		L.console('Delete Resource', isHeader=True)
 		L.off()
-		if (ri := readline('ri=')) is None:
+		if not (ri := readline('ri=')):
 			L.console()
 		elif len(ri) > 0:
-			if (res := CSE.dispatcher.retrieveResource(ri)).resource is None:
+			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
 				L.console(res.dbg, isError=True)
 			else:
-				if (res := CSE.dispatcher.deleteResource(res.resource, withDeregistration=True)).resource is None:
+				if not (res := CSE.dispatcher.deleteResource(res.resource, withDeregistration=True)).resource:
 					L.console(res.dbg, isError=True)
 				else:
 					L.console('ok')
@@ -337,10 +331,10 @@ class Console(object):
 		L.console('Inspect Resource', isHeader=True)
 		L.off()
 
-		if (ri := readline('ri=')) is None:
+		if not (ri := readline('ri=')):
 			L.console()
 		elif len(ri) > 0:
-			if (res := CSE.dispatcher.retrieveResource(ri)).resource is None:
+			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
 				L.console(res.dbg, isError=True)
 			else:
 				L.console(res.resource.asDict())
@@ -352,13 +346,13 @@ class Console(object):
 		"""
 		L.console('Inspect Resource and Children', isHeader=True)
 		L.off()		
-		if (ri := readline('ri=')) is None:
+		if not (ri := readline('ri=')):
 			L.console()
 		elif len(ri) > 0:
-			if (res := CSE.dispatcher.retrieveResource(ri)).resource is None:
+			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
 				L.console(res.dbg, isError=True)
 			else: 
-				if (resdis := CSE.dispatcher.discoverResources(ri, originator=CSE.cseOriginator)).lst is None:
+				if not (resdis := CSE.dispatcher.discoverResources(ri, originator=CSE.cseOriginator)).status:
 					L.console(resdis.dbg, isError=True)
 				else:
 					CSE.dispatcher.resourceTreeDict(resdis.lst, res.resource)	# the function call add attributes to the target resource
@@ -394,22 +388,21 @@ class Console(object):
 		"""
 
 		result = ''
-		if CSE.cseType != CSEType.IN and CSE.remote.remoteAddress is not None:
+		if CSE.cseType != CSEType.IN and CSE.remote.remoteAddress:
 			registrarCSE = CSE.remote.registrarCSE
-			registrarType = CSEType(registrarCSE.cst).name if registrarCSE is not None else '???'
+			registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
 			result += f'- **Registrar CSE**  \n{CSE.remote.registrarCSI[1:]} ({registrarType}) @ {CSE.remote.remoteAddress}\n'
 
 		if CSE.cseType != CSEType.ASN:
-			#connections = {}
 			if len(CSE.remote.descendantCSR) > 0:
 				result += f'- **Registree CSEs**\n'
 				for desc in CSE.remote.descendantCSR.keys():
-					(csr, atCsi) = CSE.remote.descendantCSR[desc]
-					if csr is not None:
+					(csr, _) = CSE.remote.descendantCSR[desc]
+					if csr:
 						result += f'  - {desc[1:]} ({CSEType(csr.cst).name}) @ {csr.poa}\n'
 						for desc2 in CSE.remote.descendantCSR.keys():
 							(csr2, atCsi2) = CSE.remote.descendantCSR[desc2]
-							if csr2 is None and atCsi2 == desc:
+							if not csr2 and atCsi2 == desc:
 								result += f'    - {desc2[1:]}\n'
 		
 		return result if len(result) else 'None'
@@ -533,7 +526,7 @@ class Console(object):
 				if res.ty == T.FCNT:
 					extraInfo = f' ({res.cnd})'
 				if res.ty in [ T.CIN, T.TS ]:
-					extraInfo = f' ({res.cnf})' if res.cnf is not None else ''
+					extraInfo = f' ({res.cnf})' if res.cnf else ''
 				elif res.ty == T.CSEBase:
 					extraInfo = f' (csi={res.csi})'
 			
@@ -541,7 +534,7 @@ class Console(object):
 			contentInfo = ''
 			if self.treeMode in [ TreeMode.CONTENT, TreeMode.CONTENTONLY ]:
 				if res.ty in [ T.CIN, T.TSI ]:
-					contentInfo = f'{res.con}' if res.con is not None else ''
+					contentInfo = f'{res.con}' if res.con else ''
 				elif res.ty in [ T.FCNT, T.FCI ]:	# All the custom attributes
 					contentInfo = ', '.join([ f'{attr}={str(res[attr])}' for attr in res.dict if CSE.validator.isExtraResourceAttribute(attr, res) ])
 
@@ -578,12 +571,12 @@ class Console(object):
 				branch = tree.add(info(ch))
 				getChildren(ch, branch, level+1)
 
-		if parent is not None:
-			if (res := CSE.dispatcher.retrieveResource(parent).resource) is None:
+		if parent:
+			if not (res := CSE.dispatcher.retrieveResource(parent).resource):
 				return None
 		else:
 			res = Utils.getCSE().resource
-		if res is None:
+		if not res:
 			return None
 		tree = Tree(info(res), style=style, guide_style=style)
 		getChildren(res, tree, 0)

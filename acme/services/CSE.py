@@ -60,6 +60,7 @@ rootDirectory:str								= None
 supportedReleaseVersions:list[str]				= None
 cseType:CSEType									= None
 cseCsi:str										= None
+cseCsiSlash:str  								= None
 cseRi:str 										= None
 cseRn:str										= None
 cseOriginator:str								= None
@@ -82,7 +83,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	global remote, request, security, statistics, storage, timeSeries, validator
 	global rootDirectory
 	global aeStatistics
-	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseRi, cseRn
+	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseRi, cseRn
 	global cseOriginator
 	global isHeadless
 
@@ -92,7 +93,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 
 
 	# Handle command line arguments and load the configuration
-	if args is None:
+	if not args:
 		args = argparse.Namespace()		# In case args is None create a new args object and populate it
 		args.configfile	= None
 		args.resetdb	= False
@@ -110,6 +111,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	supportedReleaseVersions = Configuration.get('cse.supportedReleaseVersions')
 	cseType					 = Configuration.get('cse.type')
 	cseCsi					 = Configuration.get('cse.csi')
+	cseCsiSlash				 = f'{cseCsi}/'
 	cseRi					 = Configuration.get('cse.ri')
 	cseRn					 = Configuration.get('cse.rn')
 	cseOriginator			 = Configuration.get('cse.originator')

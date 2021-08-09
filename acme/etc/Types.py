@@ -702,8 +702,8 @@ class ContentSerializationType(IntEnum):
 	def getType(cls, hdr:str, default:ContentSerializationType=None) -> ContentSerializationType:
 		"""	Return the enum from a header definition.
 		"""
-		default = cls.UNKNOWN if default is None else default
-		if hdr is None:													return default
+		default = cls.UNKNOWN if not default else default
+		if not hdr:														return default
 		if hdr.lower() == 'json':										return cls.JSON
 		if hdr.lower().startswith('application/json'):					return cls.JSON
 		if hdr.lower().startswith('application/vnd.onem2m-res+json'):	return cls.JSON
@@ -756,7 +756,7 @@ class Result:
 		from services.CSE import defaultSerialization
 
 		# determine the default serialization type if none was given
-		ct = defaultSerialization if ct is None else ct
+		ct = defaultSerialization if not ct else ct
 
 		if isinstance(self.resource, Resource):
 			r = serializeData(self.resource.asDict(), ct)

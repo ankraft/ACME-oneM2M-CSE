@@ -109,10 +109,9 @@ class HttpServer(object):
 			self.addEndpoint(resetEndPoint, handler=self.handleReset, methods=['GET'], strictSlashes=False)
 
 
-
 		# Add mapping / macro endpoints
 		self.mappings = {}
-		if (mappings := Configuration.get('server.http.mappings')) is not None:
+		if mappings := Configuration.get('server.http.mappings'):
 			# mappings is a list of tuples
 			for (k, v) in mappings:
 				L.isInfo and L.log(f'Registering mapping: {self.rootPath}{k} -> {self.rootPath}{v}')
@@ -150,7 +149,7 @@ class HttpServer(object):
 		# Run the http server. This runs forever.
 		# The server can run single-threadedly since some of the underlying
 		# components (e.g. TinyDB) may run into problems otherwise.
-		if self.flaskApp is not None:
+		if self.flaskApp:
 			# Disable the flask banner messages
 			cli = sys.modules['flask.cli']
 			cli.show_server_banner = lambda *x: None 	# type: ignore
@@ -326,16 +325,16 @@ class HttpServer(object):
 	#
 
 	def _prepContent(self, content:bytes|str|Any, ct:ContentSerializationType) -> str:
-		if content is None:	return ''
+		if not content:	return ''
 		if isinstance(content, str): return content
 		return content.decode('utf-8') if ct == ContentSerializationType.JSON else helpers.TextTools.toHex(content)
 
 
 	def sendHttpRequest(self, method:Callable, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:	 # type: ignore[type-arg]
-		ct = CSE.defaultSerialization if ct is None else ct
+		ct = CSE.defaultSerialization if not ct else ct
 
 		# Set basic headers
-		hty = f';ty={int(ty):d}' if ty is not None else ''
+		hty = f';ty={int(ty):d}' if ty else ''
 		hds = {	'User-Agent'	: self.serverID,
 				'Content-Type' 	: f'{ct.toHeader()}{hty}',
 				'Accept'		: ct.toHeader(),
@@ -345,7 +344,7 @@ class HttpServer(object):
 			   }
 
 		# Add additional headers
-		if parameters is not None:
+		if parameters:
 			if C.hfcEC in parameters:				# Event Category
 				hds[C.hfEC] = parameters[C.hfcEC]
 
@@ -357,7 +356,7 @@ class HttpServer(object):
 		try:
 			L.isDebug and L.logDebug(f'Sending request: {method.__name__.upper()} {url}')
 			if ct == ContentSerializationType.CBOR:
-				L.isDebug and L.logDebug(f'HTTP-Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n=>\n{str(data) if data is not None else ""}\n')
+				L.isDebug and L.logDebug(f'HTTP-Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n=>\n{str(data) if data else ""}\n')
 			else:
 				L.isDebug and L.logDebug(f'HTTP-Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n')
 			
@@ -388,11 +387,11 @@ class HttpServer(object):
 		headers = {}
 		headers['Server'] = self.serverID						# set server field
 		headers['X-M2M-RSC'] = f'{result.rsc}'					# set the response status code
-		if result.request.headers.requestIdentifier is not None:
+		if result.request.headers.requestIdentifier:
 			headers['X-M2M-RI'] = result.request.headers.requestIdentifier
-		if result.request.headers.releaseVersionIndicator is not None:
+		if result.request.headers.releaseVersionIndicator:
 			headers['X-M2M-RVI'] = result.request.headers.releaseVersionIndicator
-		if result.request.headers.vendorInformation is not None:
+		if result.request.headers.vendorInformation:
 			headers['X-M2M-VSI'] = result.request.headers.vendorInformation
 
 		# HTTP status code
@@ -402,13 +401,13 @@ class HttpServer(object):
 		# Determine the accept type and encode the content accordinly
 		#
 		# Look whether there is a accept header in the original request
-		if result.request.headers.accept is not None and len(result.request.headers.accept) > 0:
+		if result.request.headers.accept:
 			ct = ContentSerializationType.getType(result.request.headers.accept[0])
 		
 		# No accept, check originator
 		elif len(csz := CSE.request.getSerializationFromOriginator(result.request.headers.originator)) > 0:
 			ct = csz[0]
-		
+
 		# Default: configured CSE's default
 		else:
 			ct = CSE.defaultSerialization
@@ -416,7 +415,7 @@ class HttpServer(object):
 		# Assign and encode content accordingly
 		headers['Content-Type'] = (cts := ct.toHeader())
 		content = result.toData(ct)
-				
+		
 		# Build and return the response
 		if isinstance(content, bytes):
 			L.isDebug and L.logDebug(f'<== HTTP-Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{helpers.TextTools.toHex(content)}\n=>\n{str(result.toData())}')
@@ -472,7 +471,7 @@ class HttpServer(object):
 			req['oet'] = f
 		if f := requestHeaderField(request, C.hfRVI):
 			req['rvi'] = f
-		if rtu := requestHeaderField(request, C.hfRTU):			# handle rtu as a list
+		if (rtu := requestHeaderField(request, C.hfRTU)) is not None:	# handle rtu as a list AND it may be an empty list!
 			rt = dict()
 			rt['nu'] = rtu.split('&')		
 			req['rt'] = rt					# req.rt.rtu
@@ -481,7 +480,7 @@ class HttpServer(object):
 
 		# parse and extract content-type header
 		# cseRequest.headers.contentType	= request.content_type
-		if (ct := request.content_type) is not None:
+		if ct := request.content_type:
 			if not ct.startswith(tuple(C.supportedContentHeaderFormat)):
 				ct = None
 			else:
@@ -514,7 +513,7 @@ class HttpServer(object):
 				req[param] = p
 				del args[param]
 		if rtv := args.get('rt'):
-			if rt := cast(JSON, req.get('rt')):
+			if not (rt := cast(JSON, req.get('rt'))):
 				rt = {}
 			rt['rtv'] = rtv		# type: ignore [assignment] # req.rt.rtv
 			req['rt'] = rt

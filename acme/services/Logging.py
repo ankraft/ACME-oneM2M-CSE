@@ -224,7 +224,7 @@ class	Logging:
 		if Logging.logLevel <= level:
 			# Queue a log message : (level, message, caller from stackframe, current thread)
 			try:
-				Logging.queue.put((level, str(msg), inspect.getframeinfo(inspect.stack()[2 if stackOffset is None else 2+stackOffset][0]), threading.current_thread()))
+				Logging.queue.put((level, str(msg), inspect.getframeinfo(inspect.stack()[2 if not stackOffset else 2+stackOffset][0]), threading.current_thread()))
 			except Exception as e:
 				# sometimes this raises an exception. Just ignore it.
 				pass
@@ -295,7 +295,7 @@ class	Logging:
 	def on() -> None:
 		"""	Switch logging on. Enable the last logLevel.
 		"""
-		if Logging.logLevel == LogLevel.OFF and Logging.lastLogLevel is not None:
+		if Logging.logLevel == LogLevel.OFF and Logging.lastLogLevel:
 			Logging.logLevel = Logging.lastLogLevel
 			Logging.lastLogLevel = None
 	

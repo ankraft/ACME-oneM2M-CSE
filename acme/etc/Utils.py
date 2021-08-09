@@ -126,7 +126,7 @@ def isAnnouncedResource(resource:Resource) -> bool:
 def isValidID(id:str) -> bool:
 	""" Check for valid ID. """
 	#return len(id) > 0 and '/' not in id 	# pi might be ""
-	return id is not None and '/' not in id
+	return id is not None and '/' not in id	# pi might be ""
 
 
 csiRx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
@@ -143,7 +143,7 @@ def structuredPath(resource:Resource) -> str:
 		return rn
 
 	# retrieve identifier record of the parent
-	if (pi := resource.pi) is None or len(pi) == 0:
+	if not (pi := resource.pi):
 		# L.logErr('PI is None')
 		return rn
 	rpi = CSE.storage.identifier(pi) 
@@ -262,7 +262,7 @@ def retrieveIDFromPath(id: str, csern: str, csecsi: str) -> Tuple[str, str, str]
 
 def riFromCSI(csi: str) -> str:
 	""" Get the ri from an CSEBase resource by its csi. """
-	if (res := resourceFromCSI(csi)) is None:
+	if not (res := resourceFromCSI(csi)):
 		return None
 	return cast(str, res.ri)
 
@@ -271,9 +271,9 @@ def getIdFromOriginator(originator: str, idOnly: bool = False) -> str:
 	""" Get AE-ID-Stem or CSE-ID from the originator (in case SP-relative or Absolute was used)
 	"""
 	if idOnly:
-		return originator.split("/")[-1] if originator is not None else originator
+		return originator.split("/")[-1] if originator else originator
 	else:
-		return originator.split("/")[-1] if originator is not None and originator.startswith('/') else originator
+		return originator.split("/")[-1] if originator and originator.startswith('/') else originator
 
 
 ##############################################################################
@@ -315,12 +315,6 @@ def normalizeURL(url: str) -> str:
 #
 #	Resource and content related
 #
-
-def resourceFromCSI(csi: str) -> Resource:
-	""" Get the CSEBase resource by its csi. """
-	return cast(Resource, CSE.storage.retrieveResource(csi=csi).resource)
-
-
 
 mgmtObjTPEs = 		[	T.FWR.tpe(), T.SWR.tpe(), T.MEM.tpe(), T.ANI.tpe(), T.ANDI.tpe(),
 						T.BAT.tpe(), T.DVI.tpe(), T.DVC.tpe(), T.RBO.tpe(), T.EVL.tpe(),
@@ -374,13 +368,13 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 
 	"""
 
-	if key is None or dct is None:
+	if not key or not dct:
 		return default
 
 	paths = key.split("/")
 	data:Any = dct
 	for i in range(0,len(paths)):
-		if data is None:
+		if not data:
 		 	return default
 		pathElement = paths[i]
 		if len(pathElement) == 0:	# return if there is an empty path element
@@ -450,7 +444,7 @@ def resourceDiff(old:Resource|JSON, new:Resource|JSON, modifiers:JSON=None) -> J
 			res[k] = v
 		elif v != old[k]:		# Value different
 			res[k] = v
-		elif modifiers is not None and k in modifiers:	# this means the attribute is overwritten by the same value. But still modified
+		elif modifiers and k in modifiers:	# this means the attribute is overwritten by the same value. But still modified
 			res[k] = v
 
 	# Process deleted attributes. This is necessary since attributes can be
@@ -479,12 +473,12 @@ def fanoutPointResource(id: str) -> Resource:
 
 		Return either the virtual fanoutPoint resource or None.
 	"""
-	if id is None:
+	if not id:
 		return None
 	# retrieve srn
 	if not isStructured(id):
 		id = structuredPathFromRI(id)
-	if id is None:
+	if not id:
 		return None
 	nid = None
 	if id.endswith('/fopt'):
@@ -492,9 +486,8 @@ def fanoutPointResource(id: str) -> Resource:
 	elif '/fopt/' in id:
 		(head, sep, tail) = id.partition('/fopt/')
 		nid = head + '/fopt'
-	if nid is not None:
-		if (result := CSE.dispatcher.retrieveResource(nid)).resource is not None:
-			return cast(Resource, result.resource)
+	if nid and (result := CSE.dispatcher.retrieveResource(nid)).resource:
+		return cast(Resource, result.resource)
 	return None
 
 
@@ -529,8 +522,8 @@ def getAttributeSize(attribute:Any) -> int:
 #
 
 def renameCurrentThread(name:str = None, thread:threading.Thread = None) -> None:
-	thread = threading.current_thread() if thread is None else thread
-	thread.name = name if name is not None else str(thread.native_id)
+	thread = threading.current_thread() if not thread else thread
+	thread.name = name if name else str(thread.native_id)
 
 
 ##############################################################################

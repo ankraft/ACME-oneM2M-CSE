@@ -42,7 +42,7 @@ class Resource(object):
 				 readOnly:bool=False, rn:str=None, attributePolicies:AttributePolicies=None, isVirtual:bool=False, isAnnounced:bool=False) -> None:
 		self.tpe = tpe
 		if isinstance(ty, T) and ty not in [ T.FCNT, T.FCI ]: 	# For some types the tpe/root is empty and will be set later in this method
-			self.tpe = ty.tpe() if tpe is None else tpe
+			self.tpe = ty.tpe() if not tpe else tpe
 		self.readOnly = readOnly
 		self.inheritACP = inheritACP
 		self.dict = {}
@@ -96,7 +96,7 @@ class Resource(object):
 				self.setAttribute('et', DateUtils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite=False) 
 			if pi is not None: # test for None bc pi might be '' (for cse)
 				self['pi'] = pi
-			if ty is not None:
+			if ty is not None:	# ty is an int
 				if ty in C.stateTagResourceTypes:	# Only for allowed resources
 					self.setAttribute('st', 0, overwrite=False)
 				self['ty'] = int(ty)
@@ -160,7 +160,7 @@ class Resource(object):
 			return res
 		self.dbUpdate()
 		# increment parent resource's state tag
-		if parentResource and parentResource.st is not None:
+		if parentResource and parentResource.st is not None:	# st is an int
 			parentResource = parentResource.dbReload().resource	# Read the resource again in case it was updated in the DB
 			parentResource['st'] = parentResource.st + 1
 			if not (res := parentResource.dbUpdate()).resource:
@@ -242,7 +242,7 @@ class Resource(object):
 					value = updatedAttributes[key]
 
 					# Special handling for et when deleted/set to Null: set a new et
-					if key == 'et' and value is None:
+					if key == 'et' and not value:
 						self['et'] = DateUtils.getResourceDate(Configuration.get('cse.expirationDelta'))
 						continue
 					self.setAttribute(key, value, overwrite=True) # copy new value or add new attributes
@@ -272,7 +272,7 @@ class Resource(object):
 		self.dbUpdate()
 
 		# Notify parent that a child has been updated
-		if (parent := self.retrieveParentResource()) is None:
+		if not (parent := self.retrieveParentResource()):
 			L.logErr(dbg := f'cannot retrieve parent resource')
 			return Result(status=False, rsc=RC.internalServerError, dbg=dbg)
 		parent.childUpdated(self, updatedAttributes, originator)
@@ -325,7 +325,7 @@ class Resource(object):
 			return Result(status=False, rsc=RC.contentsUnacceptable, dbg=dbg)
 
 		# expirationTime handling
-		if (et := self.et) is not None:
+		if et := self.et:
 			if self.ty == T.CSEBase:
 				L.isWarn and L.logWarn(dbg := 'expirationTime is not allowed in CSEBase')
 				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
@@ -453,15 +453,15 @@ class Resource(object):
 	#
 
 	def normalizeURIAttribute(self, attributeName: str) -> None:
-		""" Normalie the URLs in the poa, nu etc. """
-		if (attribute := self[attributeName]) is not None:
-			if isinstance(attribute, list):	# list of uris
+		""" Normalize the URLs in the poa, nu etc. """
+		if uris := self[attributeName]:
+			if isinstance(uris, list):	# list of uris
 				result = []
-				for uri in attribute:
+				for uri in uris:
 					result.append(Utils.normalizeURL(uri))
 				self[attributeName] = result
 			else: 							# single uri
-				self[attributeName] = Utils.normalizeURL(attribute)
+				self[attributeName] = Utils.normalizeURL(uris)
 
 
 	def _checkAndFixACPIreferences(self, acpi:list[str]) -> Result:
@@ -471,7 +471,7 @@ class Resource(object):
 		for ri in acpi:
 			if not CSE.importer.isImporting:
 
-				if (acp := CSE.dispatcher.retrieveResource(ri).resource) is None:
+				if not (acp := CSE.dispatcher.retrieveResource(ri).resource):
 					L.isDebug and L.logDebug(dbg := f'Referenced <ACP> resource not found: {ri}')
 					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 

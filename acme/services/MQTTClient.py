@@ -222,11 +222,11 @@ class MQTTClientHandler(MQTTHandler):
 		resp['to'] 	= result.request.headers.originator
 		resp['rsc'] = int(result.rsc)
 		resp['ot'] = DateUtils.getResourceDate()
-		if result.request.headers.requestIdentifier is not None:
+		if result.request.headers.requestIdentifier:
 			resp['rqi'] = result.request.headers.requestIdentifier
-		if result.request.headers.releaseVersionIndicator is not None:
+		if result.request.headers.releaseVersionIndicator:
 			resp['rvi'] = result.request.headers.releaseVersionIndicator
-		if result.request.headers.vendorInformation is not None:
+		if result.request.headers.vendorInformation:
 			resp['vsi'] = result.request.headers.vendorInformation
 		resp['pc'] = result.toData(ContentSerializationType.PLAIN)	# First, construct and serialize the data as JSON/dictionary. Encoding to JSON or CBOR is done later
 
@@ -273,7 +273,7 @@ class MQTTClient(object):
 	def run(self) -> None:
 		"""	Initialize and run the MQTT client as a BackgroundWorker/Actor.
 		"""
-		if not self.enable or self.mqttConnection is None:
+		if not self.enable or not self.mqttConnection:
 			L.isInfo and L.log('MQTT: client NOT enabled')
 			return
 		self.mqttConnection.run()
@@ -283,7 +283,7 @@ class MQTTClient(object):
 		"""	Shutdown the MQTTClient.
 		"""
 		self.isStopped = True
-		if self.mqttConnection is not None:
+		if self.mqttConnection:
 			return self.mqttConnection.shutdown()
 		return True
 

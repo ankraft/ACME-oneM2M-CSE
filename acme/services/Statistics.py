@@ -98,9 +98,8 @@ class Statistics(object):
 
 
 	def setupStats(self) -> StatsT:
-		result = self.retrieveDBStatistics()
-		if result is not None:
-			return result
+		if (stats := self.retrieveDBStatistics()):
+			return stats
 		return {
 			deletedResources	: 0,
 			createdResources	: 0,
@@ -302,13 +301,13 @@ skinparam rectangle {
 		result += '}\n' # rectangle
 
 		# Has parent Registrar CSE?
-		if CSE.cseType != CSEType.IN and CSE.remote.remoteAddress is not None:
+		if CSE.cseType != CSEType.IN and CSE.remote.remoteAddress:
 			registrarCSE = CSE.remote.registrarCSE
-			bg = 'white' if registrarCSE is not None else 'lightgrey'
-			color = 'green' if registrarCSE is not None else 'black'
+			bg = 'white' if registrarCSE else 'lightgrey'
+			color = 'green' if registrarCSE else 'black'
 			address = urlparse(CSE.remote.remoteAddress)
 			(ip, port) = tuple(address.netloc.split(':'))
-			registrarType = CSEType(registrarCSE.cst).name if registrarCSE is not None else '???'
+			registrarType = CSEType(registrarCSE.cst).name if registrarCSE else '???'
 			result += f'cloud PARENT as "<color:{color}>{CSE.remote.registrarCSI[1:]}</color> ({registrarType})\\n{CSE.remote.remoteAddress}" #{bg}\n'
 			result += 'CSE -UP- PARENT\n'
 
@@ -320,8 +319,8 @@ skinparam rectangle {
 			for desc in CSE.remote.descendantCSR.keys():
 				csi = desc[1:]
 				(csr, atCsi) = CSE.remote.descendantCSR[desc]
-				address = f'\\n{csr.poa}' if csr is not None else ''
-				tpe = f' ({CSEType(csr.cst).name})' if csr is not None else ''
+				address = f'\\n{csr.poa}' if csr else ''
+				tpe = f' ({CSEType(csr.cst).name})' if csr else ''
 				shape = 'node' if csr else 'rectangle'
 				result += f'{shape} d{cnt} as "<color:green>{csi}</color>{tpe}{address}" #white\n'
 				connections[desc] = (cnt, atCsi)

@@ -48,7 +48,7 @@ class RBO(MgmtObj):
 		if dct and self.tpe in dct:
 			rbo = Utils.findXPath(dct, 'm2m:rbo/rbo')
 			far = Utils.findXPath(dct, 'm2m:rbo/far')
-			if rbo is not None and far is not None and rbo and far:
+			if rbo and far:
 				return Result(status=False, rsc=RC.badRequest, dbg='update both rbo and far to True is not allowed')
 
 		return super().update(dct, originator)

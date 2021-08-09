@@ -64,12 +64,12 @@ class TS(AnnounceableResource):
 
 		# add latest
 		resource = Factory.resourceFromDict({}, pi=self.ri, ty=T.TS_LA).resource	# rn is assigned by resource itself
-		if (res := CSE.dispatcher.createResource(resource)).resource is None:
+		if not (res := CSE.dispatcher.createResource(resource)).resource:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
 		# add oldest
 		resource = Factory.resourceFromDict({}, pi=self.ri, ty=T.TS_OL).resource	# rn is assigned by resource itself
-		if (res := CSE.dispatcher.createResource(resource)).resource is None:
+		if not (res := CSE.dispatcher.createResource(resource)).resource:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 		
 		self._validateDataDetect()
@@ -94,16 +94,16 @@ class TS(AnnounceableResource):
 			return res
 		
 		# Check the format of the CNF attribute
-		if (cnf := self.cnf) is not None:
+		if cnf := self.cnf:
 			if not (res := CSE.validator.validateCNF(cnf)).status:
 				return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
 
 		# Check peid
-		if self.peid is not None and self.pei is not None:
+		if self.peid is not None and self.pei is not None:	# pei(d) is an int
 			if self.peid > self.pei/2:
 				L.isWarn and L.logWarn(dbg := 'peid must be <= pei/2')
 				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
-		elif self.pei is not None:
+		elif self.pei is not None:	# pei is an int
 			self.setAttribute('peid', int(self.pei/2), False)
 
 		self._validateChildren()
@@ -115,12 +115,12 @@ class TS(AnnounceableResource):
 			return res
 		
 		# Check whether the child's rn is "ol" or "la".
-		if (rn := childResource['rn']) is not None and rn in ['ol', 'la']:
+		if (rn := childResource['rn']) and rn in ['ol', 'la']:
 			return Result(status=False, rsc=RC.operationNotAllowed, dbg='resource types "latest" or "oldest" cannot be added')
 	
 		# Check whether the size of the TSI doesn't exceed the mbs
-		if childResource.ty == T.TSI and self.mbs is not None:
-			if childResource.cs is not None and childResource.cs > self.mbs:
+		if childResource.ty == T.TSI and self.mbs is not None:					# mbs is an int
+			if childResource.cs is not None and childResource.cs > self.mbs:	# cs is an int
 				return Result(status=False, rsc=RC.notAcceptable, dbg='child content sizes would exceed mbs')
 
 		# Check whether another TSI has the same dgt value set
@@ -152,11 +152,11 @@ class TS(AnnounceableResource):
 			self.validate(originator)
 		
 			# Add to monitoring if this is enabled for this TS (mdd & pei & mdt are not None, and mdd==True)
-			if (mdd := self.mdd) is not None and mdd == True and self.pei is not None and self.mdt is not None:
+			if (mdd := self.mdd) and self.pei is not None and self.mdt is not None:
 				CSE.timeSeries.updateTimeSeries(self, childResource)
 		
 		elif childResource.ty == T.SUB:		# start monitoring
-			if childResource['enc/md'] is not None:
+			if childResource['enc/md']:
 				CSE.timeSeries.addSubscription(self, childResource)
 
 
@@ -167,14 +167,14 @@ class TS(AnnounceableResource):
 		if childResource.ty == T.TSI:	# Validate if child was TSI
 			self._validateChildren()
 		elif childResource.ty == T.SUB:
-			if childResource['enc/md'] is not None:
+			if childResource['enc/md']:
 				CSE.timeSeries.removeSubscription(self, childResource)
 
 
 	# handle eventuel updates of subscriptions
 	def childUpdated(self, childResource:Resource, updatedAttributes:JSON, originator:str) -> None:
 		super().childUpdated(childResource, updatedAttributes, originator)
-		if childResource.ty == T.SUB and childResource['enc/md'] is not None:
+		if childResource.ty == T.SUB and childResource['enc/md']:
 			CSE.timeSeries.updateSubscription(self, childResource)		
 
 
@@ -191,7 +191,7 @@ class TS(AnnounceableResource):
 		cni = len(cs)			
 			
 		# Check number of instances
-		if (mni := self.mni) is not None:
+		if (mni := self.mni) is not None:	# mni is an int
 			i = 0
 			l = cni
 			while cni > mni and i < l:
@@ -241,7 +241,7 @@ class TS(AnnounceableResource):
 		mdd = self.mdd
 		if mdd:
 			# When missingDataMaxNr is set
-			if mdn is not None:
+			if mdn is not None:	# mdn is an int
 				self.setAttribute('mdc', 0, overwrite=False)	# add missing data count
 				# Monitoring is not started here, but happens when the first TSI is added
 			else:
@@ -263,7 +263,7 @@ class TS(AnnounceableResource):
 				mdlt = mdlt[l-newMdn:]
 				self['mdlt'] = mdlt
 				self['mdc'] = newMdn
-		
+
 		# Check if mdt was changed in an update
 		if dct and 'mdt' in dct['m2m:ts']:	# mdt is in the update
 			mdt = Utils.findXPath(dct, 'm2m:ts/mdt')
