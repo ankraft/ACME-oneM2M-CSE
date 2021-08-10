@@ -147,8 +147,9 @@ class	Logging:
 	
 	@staticmethod
 	def finit() -> None:
-		while not Logging.queue.empty():
-			time.sleep(0.5)
+		if Logging.queue:
+			while not Logging.queue.empty():
+				time.sleep(0.5)
 		from helpers.BackgroundWorker import BackgroundWorkerPool
 		BackgroundWorkerPool.stopWorkers('loggingWorker')
 
