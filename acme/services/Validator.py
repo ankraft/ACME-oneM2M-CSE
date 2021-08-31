@@ -121,7 +121,7 @@ attributePolicies:AttributePolicies = {
 	'fwv'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
 	'gn'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# GRP
 	'gpi'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
-	'hael'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# NOD
+	'hael'	: ( BT.listNE,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# NOD
 	'hcl'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# NOD
 	'hsl'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# NOD
 	'hwv'	: ( BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# DVI
@@ -630,6 +630,11 @@ class Validator(object):
 			return Result(status=True, data=tpe)
 
 		if tpe == BT.list and isinstance(value, list):
+			return Result(status=True, data=tpe)
+
+		if tpe == BT.listNE and isinstance(value, list):
+			if len(value) == 0:
+				return Result(status=False, dbg='empty list is not allowed')
 			return Result(status=True, data=tpe)
 		
 		if tpe == BT.dict and isinstance(value, dict):

@@ -206,6 +206,19 @@ class TestNOD(unittest.TestCase):
 		self.assertEqual(rsc, RC.deleted)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createNODEmptyHael(self) -> None:
+		""" Create <NOD> with empty hael list -> Fail"""
+		self.assertIsNotNone(TestNOD.cse)
+		dct = 	{ 'm2m:nod' : { 
+					'rn' 	: nodRN,
+					'ni'	: nodeID,
+					'hael'	: []
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
+		self.assertEqual(rsc, RC.badRequest)
+
+
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestNOD('test_createNOD'))
@@ -219,6 +232,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestNOD('test_moveAEToNOD2'))
 	suite.addTest(TestNOD('test_deleteNOD2'))
 	suite.addTest(TestNOD('test_deleteNOD'))
+	suite.addTest(TestNOD('test_createNODEmptyHael'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)

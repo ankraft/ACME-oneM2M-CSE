@@ -269,6 +269,7 @@ class BasicType(IntEnum):
 	timestamp		= auto()
 	absRelTimestamp	= auto()
 	list 			= auto()
+	listNE 			= auto()	# Not empty list
 	dict 			= auto()
 	anyURI			= auto()
 	boolean			= auto()
