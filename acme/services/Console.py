@@ -259,10 +259,26 @@ class Console(object):
 		self.clearScreen(key)
 		self._about('Resource Tree')
 		with Live(self.getResourceTreeRich(style=L.terminalStyle), auto_refresh=False) as live:
+
+			def _updateTree(_:Resource=None):
+				"""	Callback to update the tree on an event.
+				"""
+				live.update(self.getResourceTreeRich(style=L.terminalStyle), refresh=True)
+			
+			# Register events for which the tree is refreshed
+			CSE.event.addHandler(CSE.event.createResource, _updateTree)
+			CSE.event.addHandler(CSE.event.deleteResource, _updateTree)
+			CSE.event.addHandler(CSE.event.updateResource, _updateTree)
+
 			while (ch := waitForKeypress(self.refreshInterval)) in [None, '\x14']:
 				if ch == '\x14':	# Toggle through tree modes
 					self.treeMode = self.treeMode.succ()
-				live.update(self.getResourceTreeRich(style=L.terminalStyle), refresh=True)
+					_updateTree()
+
+		# Remove the event callback for the events and clean up the screen
+		CSE.event.removeHandler(CSE.event.createResource, _updateTree)
+		CSE.event.removeHandler(CSE.event.deleteResource, _updateTree)
+		CSE.event.removeHandler(CSE.event.updateResource, _updateTree)
 		self.clearScreen(key)
 		L.on()
 

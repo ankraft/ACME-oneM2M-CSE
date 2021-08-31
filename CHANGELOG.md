@@ -12,12 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [CSE] Added [logging].enableBindingsLogging configuration to enable/disable low-level transport bindings logging.
 - [CONSOLE] Added the possibility to toggle through the display modes with "^T" when displaying the resource tree continuously.
+- [CONSOLE] Real-time update for the continuous tree (when creating, deleting, updating resources).
 - [CONSOLE] Added [cse.console].confirmQuit configuration option. It is switched off by default.
 
 ### Changed
 - [HTTP] Moved the security setting for http to the separate section [server.http.security].
 - [WEB] Moved the webUI to the acme module.
-- [CSE] Improved validation: checking empty lists.
+- [CSE] Improved attribute validation: checking empty lists.
 
 ### Removed
 - [APPS] Removed the example AEs from the CSE. This makes the CSE a bit smaller and also removes a big dependency to the non-portable psutils package. They will be available in  separate project in the future.
