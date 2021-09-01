@@ -7,6 +7,7 @@
 #	Managing event handlers and events
 #
 
+from __future__ import annotations
 import threading, traceback
 from typing import Callable, Any, cast
 from services.Logging import Logging as L
@@ -140,12 +141,20 @@ class EventManager(object):
 		return name in self.__dict__
 
 
-	def addHandler(self, event:Event, func:Callable) -> None:		# type:ignore[type-arg]
-		event.append(func)
+	def addHandler(self, event:Event|list[Event], func:Callable) -> None:		# type:ignore[type-arg]
+		if isinstance(event, list):
+			for e in event:
+				e.append(func)
+		else:
+			event.append(func)													# type:ignore[attr-defined]
 
 
-	def removeHandler(self, event:Event, func:Callable) -> None:	# type:ignore[type-arg]
+	def removeHandler(self, event:Event|list[Event], func:Callable) -> None:	# type:ignore[type-arg]
 		try:
-			event.remove(func)
+			if isinstance(event, list):
+				for e in event:
+					e.remove(func)
+			else:
+				event.remove(func)												# type:ignore[attr-defined]
 		except Exception as e:
 			pass

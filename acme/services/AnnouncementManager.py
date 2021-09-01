@@ -147,7 +147,7 @@ class AnnouncementManager(object):
 				L.isWarn and L.logWarn('Targeting own CSE. Ignored.')
 				self._removeAnnouncementFromResource(resource, at)
 				continue
-			if not (csr := self.resourceFromCSI(at)):
+			if not (csr := Utils.resourceFromCSI(at).resource):
 				L.isWarn and L.logWarn('Announcement Target CSE not found. Ignored.')
 				self._removeAnnouncementFromResource(resource, at)
 				continue
@@ -230,7 +230,7 @@ class AnnouncementManager(object):
 		L.isDebug and L.logDebug(f'De-Announce resource: {resource.ri} from all connected csr')
 
 		for (csi, remoteRI) in resource[Resource._announcedTo]:
-			if not (csr := self.resourceFromCSI(csi)):
+			if not (csr := Utils.resourceFromCSI(csi).resource):
 				self._removeAnnouncementFromResource(resource, csi)
 				continue
 			self.deAnnounceResourceFromCSR(resource, csr, remoteRI)
@@ -298,7 +298,7 @@ class AnnouncementManager(object):
 			remoteRIs.append(csi) # build a list of remote RIs
 
 			# CSR still connected?
-			if not (csr := self.resourceFromCSI(csi)):
+			if not (csr := Utils.resourceFromCSI(csi).resource):
 				self._removeAnnouncementFromResource(resource, csi)
 				continue
 			
@@ -312,7 +312,7 @@ class AnnouncementManager(object):
 		# Check for any non-announced csi in at, and possibly announce them 
 		for csi in CSIsFromAnnounceTo:
 			if csi not in announcedCSIs and csi not in remoteRIs:
-				if not (csr := self.resourceFromCSI(csi)):
+				if not (csr := Utils.resourceFromCSI(csi).resource):
 					continue
 				self.announceResourceToCSR(resource, csr)
 
@@ -430,6 +430,3 @@ class AnnouncementManager(object):
 		return cast(List[AnnounceableResource], CSE.storage.searchByFilter(_announcedFilter))
 
 
-	def resourceFromCSI(self, csi:str) -> Resource:
-		""" Get the CSEBase resource by its csi. """
-		return cast(Resource, CSE.storage.retrieveResource(csi=csi).resource)

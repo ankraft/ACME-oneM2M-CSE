@@ -262,7 +262,7 @@ def retrieveIDFromPath(id: str, csern: str, csecsi: str) -> Tuple[str, str, str]
 
 def riFromCSI(csi: str) -> str:
 	""" Get the ri from an CSEBase resource by its csi. """
-	if not (res := resourceFromCSI(csi)):
+	if not (res := resourceFromCSI(csi).resource):
 		return None
 	return cast(str, res.ri)
 
@@ -465,7 +465,13 @@ def resourceDiff(old:Resource|JSON, new:Resource|JSON, modifiers:JSON=None) -> J
 def getCSE() -> Result:
 	"""	Return the <CSEBase> resource.
 	"""
-	return CSE.dispatcher.retrieveResource(CSE.cseRi)
+	#return CSE.dispatcher.retrieveResource(CSE.cseRi)
+	return resourceFromCSI(CSE.cseCsi)
+
+
+def resourceFromCSI(csi:str) -> Result:
+	""" Get the CSEBase resource by its csi. """
+	return CSE.storage.retrieveResource(csi=csi)
 
 	
 def fanoutPointResource(id: str) -> Resource:
