@@ -1,5 +1,5 @@
 
-import os, fnmatch, importlib, time, argparse, atexit
+import os, fnmatch, importlib, time, argparse
 from rich.console import Console
 from rich.table import Table
 from rich.style import Style
