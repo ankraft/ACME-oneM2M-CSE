@@ -69,6 +69,10 @@ class MQTTHandler(object):
 		"""	This method is called when a log message should be handled. 
 		"""
 		return True
+	
+	def onShutdown(self, connection:MQTTConnection) -> None:
+		"""	This method is called after the ```connection``` was shut down.
+		"""
 
 
 ##############################################################################
@@ -110,8 +114,10 @@ class MQTTConnection(object):
 	def shutdown(self) -> bool:
 		"""	Shutting down the MQTT client.
 		"""
+
 		self.isStopped = True
-		if self.mqttClient and self.isConnected:
+		if self.mqttClient:
+		# if self.mqttClient and self.isConnected:
 			# Unsubscribe from all topics
 			for t in self.subscribedTopics.values():
 				self.unsubscribeTopic(t)
@@ -130,7 +136,7 @@ class MQTTConnection(object):
 		"""	Initialize and run the MQTT client as a BackgroundWorker/Actor.
 		"""
 		self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: client name: {self.clientID}')
-		self.mqttClient = mqtt.Client(client_id=self.clientID, clean_session=False)	# clean_session is defined by TS-0010
+		self.mqttClient = mqtt.Client(client_id=self.clientID, clean_session=False if self.clientID else True)	# clean_session=False is defined by TS-0010
 
 		# Enable SSL
 		if self.useTLS:
@@ -166,6 +172,8 @@ class MQTTConnection(object):
 		self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.INFO, 'MQTT: client started')
 		while not self.isStopped:
 			self.mqttClient.loop_forever()	# Will return when disconnect() is called
+		if self.messageHandler:
+			self.messageHandler.onShutdown(self)
 		return True
 	
 	
@@ -249,22 +257,29 @@ class MQTTConnection(object):
 	#	MQTT messaging methods
 	#
 
-	def subscribeTopic(self, topic:str, callback:MQTTCallback=None, **kwargs:Any) -> None:
-		"""	Add a MQTT topic to subscribe to. Add this topic afterwards
+	def subscribeTopic(self, topic:str|list[str], callback:MQTTCallback=None, **kwargs:Any) -> None:
+		"""	Add one or more MQTT topics to subscribe to. Add the topic(s) afterwards
 			to the list of subscribed-to topics.
 		"""
+		def _subscribe(topic:str) -> None:
+			"""	Handle subscription of a single topic.
+			"""
+			if topic in self.subscribedTopics:
+				self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.WARNING, f'MQTT: topic already subscribed: {topic}')
+				return
+			if (r := self.mqttClient.subscribe(topic))[0] == 0:
+				t = MQTTTopic(topic = topic, mid=r[1], callback=callback, callbackArgs=kwargs)
+				self.subscribedTopics[topic] = t
+			else:
+				self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.ERROR, f'MQTT: cannot subscribe: {r[0]}')
+
 		if not self.mqttClient or not self.isConnected:
 			self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.ERROR, 'MQTT: Client missing or not initialized')
 			return
-		if topic in self.subscribedTopics:
-			self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.WARNING, f'MQTT: topic already subscribed: {topic}')
-			return
 
-		if (r := self.mqttClient.subscribe(topic))[0] == 0:
-			t = MQTTTopic(topic = topic, mid=r[1], callback=callback, callbackArgs=kwargs)
-			self.subscribedTopics[topic] = t
-		else:
-			self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.ERROR, f'MQTT: cannot subscribe: {r[0]}')
+		# either subscribe a list of topics or a single topic
+		list(map(_subscribe, topic if isinstance(topic, list) else [topic]))
+
 
 	def unsubscribeTopic(self, topic:str|MQTTTopic) -> None:
 		"""	Unsubscribe from a topic. `topic` is either an MQTTTopic structure with
