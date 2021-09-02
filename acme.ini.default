@@ -103,7 +103,7 @@ multiThread=true
 # ATTENTION: Enabling this feature exposes configuration values, IDs and
 # passwords, and is a security risk.
 # Default: False
-enableRemoteConfiguration=alse
+enableRemoteConfiguration=False
 # Enable an endpoint for getting a structured overview about a CSE's resource
 # tree and deployment infrastructure (remote CSE's)
 # ATTENTION: Enabling this feature exposes various potentially sensitive information.
