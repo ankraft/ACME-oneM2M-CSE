@@ -156,6 +156,9 @@ class MQTTClientHandler(MQTTHandler):
 		console.print(f'[{messageColor}]### Notification (MQTT)')
 		console.print(f'Topic: {topic}')
 		topicArray	= topic.split('/')
+		if len(topicArray) < 5:
+			console.print(f'[{errorColor}]MQTT topic insufficient length {len(topicArray)}')
+			return
 		frm			= topicArray[-3]
 		to			= topicArray[-2]
 		encoding	= topicArray[-1]
