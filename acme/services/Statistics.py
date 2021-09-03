@@ -16,6 +16,7 @@ from threading import Lock
 
 from helpers.BackgroundWorker import BackgroundWorkerPool
 from etc.Types import CSEType, ResourceTypes as T
+from helpers.EventManager import Event
 from resources.Resource import Resource
 import services.CSE as CSE, etc.Utils as Utils, etc.DateUtils as DateUtils
 from services.Configuration import Configuration
@@ -34,6 +35,14 @@ httpSendRetrieves	= 'htSRt'
 httpSendCreates		= 'htSCr'
 httpSendUpdates		= 'htSUp'
 httpSendDeletes		= 'htSDl'
+mqttRetrieves		= 'mqRet'
+mqttCreates			= 'mqCre'
+mqttUpdates			= 'mqUpd'
+mqttDeletes			= 'mqDel'
+mqttSendRetrieves	= 'mqSRt'
+mqttSendCreates		= 'mqSCr'
+mqttSendUpdates		= 'mqSUp'
+mqttSendDeletes		= 'mqSDl'
 notifications		= 'notif'
 logErrors			= 'lgErr'
 logWarnings			= 'lgWrn'
@@ -64,22 +73,30 @@ class Statistics(object):
 
 			# subscripe vto various events
 			# mypy cannot handle dynamically created attributes
-			CSE.event.addHandler(CSE.event.createResource, self.handleCreateEvent) 				# type: ignore
-			CSE.event.addHandler(CSE.event.updateResource, self.handleUpdateEvent)				# type: ignore
-			CSE.event.addHandler(CSE.event.deleteResource, self.handleDeleteEvent)				# type: ignore
-			CSE.event.addHandler(CSE.event.expireResource, self.handleExpireResource)			# type: ignore
-			CSE.event.addHandler(CSE.event.httpRetrieve, self.handleHttpRetrieveEvent)			# type: ignore
-			CSE.event.addHandler(CSE.event.httpCreate, self.handleHttpCreateEvent)				# type: ignore
-			CSE.event.addHandler(CSE.event.httpUpdate, self.handleHttpUpdateEvent)				# type: ignore
-			CSE.event.addHandler(CSE.event.httpDelete, self.handleHttpDeleteEvent)				# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendRetrieve, self.handleHttpSendRetrieveEvent)	# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendCreate, self.handleHttpSendCreateEvent)		# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendUpdate, self.handleHttpSendUpdateEvent)		# type: ignore
-			CSE.event.addHandler(CSE.event.httpSendDelete, self.handleHttpSendDeleteEvent)		# type: ignore
-			CSE.event.addHandler(CSE.event.notification, self.handleNotification)				# type: ignore
-			CSE.event.addHandler(CSE.event.cseStartup, self.handleCseStartup)					# type: ignore
-			CSE.event.addHandler(CSE.event.logError, self.handleLogError)						# type: ignore
-			CSE.event.addHandler(CSE.event.logWarning, self.handleLogWarning)					# type: ignore
+			CSE.event.addHandler(CSE.event.createResource, lambda _: self._handleStatsEvent(createdResources)) 	# type: ignore
+			CSE.event.addHandler(CSE.event.updateResource, lambda _: self._handleStatsEvent(updatedResources))	# type: ignore
+			CSE.event.addHandler(CSE.event.deleteResource, lambda _: self._handleStatsEvent(deletedResources))	# type: ignore
+			CSE.event.addHandler(CSE.event.expireResource, lambda _: self._handleStatsEvent(expiredResources))	# type: ignore
+			CSE.event.addHandler(CSE.event.httpRetrieve, lambda: self._handleStatsEvent(httpRetrieves))			# type: ignore
+			CSE.event.addHandler(CSE.event.httpCreate, lambda: self._handleStatsEvent(httpCreates))				# type: ignore
+			CSE.event.addHandler(CSE.event.httpUpdate, lambda: self._handleStatsEvent(httpUpdates))				# type: ignore
+			CSE.event.addHandler(CSE.event.httpDelete, lambda: self._handleStatsEvent(httpDeletes))				# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendRetrieve, lambda: self._handleStatsEvent(httpSendRetrieves))	# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendCreate, lambda: self._handleStatsEvent(httpSendCreates))		# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendUpdate, lambda: self._handleStatsEvent(httpSendUpdates))		# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendDelete, lambda: self._handleStatsEvent(httpSendDeletes))		# type: ignore
+			CSE.event.addHandler(CSE.event.mqttRetrieve, lambda: self._handleStatsEvent(mqttRetrieves))			# type: ignore
+			CSE.event.addHandler(CSE.event.mqttCreate, lambda: self._handleStatsEvent(mqttCreates))				# type: ignore
+			CSE.event.addHandler(CSE.event.mqttUpdate, lambda: self._handleStatsEvent(mqttUpdates))				# type: ignore
+			CSE.event.addHandler(CSE.event.mqttDelete, lambda: self._handleStatsEvent(mqttDeletes))				# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendRetrieve, lambda: self._handleStatsEvent(mqttSendRetrieves))	# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendCreate, lambda: self._handleStatsEvent(mqttSendCreates))		# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendUpdate, lambda: self._handleStatsEvent(mqttSendUpdates))		# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendDelete, lambda: self._handleStatsEvent(mqttSendDeletes))		# type: ignore
+			CSE.event.addHandler(CSE.event.notification, lambda: self._handleStatsEvent(notifications))			# type: ignore
+			CSE.event.addHandler(CSE.event.cseStartup, self.handleCseStartup)									# type: ignore
+			CSE.event.addHandler(CSE.event.logError, lambda: self._handleStatsEvent(logErrors))					# type: ignore
+			CSE.event.addHandler(CSE.event.logWarning, lambda: self._handleStatsEvent(logWarnings))				# type: ignore
 
 		L.isInfo and L.log('Statistics initialized')
 
@@ -114,6 +131,15 @@ class Statistics(object):
 			httpSendCreates		: 0,
 			httpSendUpdates 	: 0,
 			httpSendDeletes 	: 0,
+			mqttRetrieves		: 0,
+			mqttCreates			: 0,
+			mqttUpdates 		: 0,
+			mqttDeletes 		: 0,
+			mqttSendRetrieves	: 0,
+			mqttSendCreates		: 0,
+			mqttSendUpdates 	: 0,
+			mqttSendDeletes 	: 0,
+
 			cseStartUpTime		: 0.0,
 			logErrors 			: 0,
 			logWarnings 		: 0
@@ -124,7 +150,8 @@ class Statistics(object):
 		s = deepcopy(self.stats)
 
 		# Calculate some stats
-		s[cseUpTime] = str(datetime.timedelta(seconds=int(datetime.datetime.now(datetime.timezone.utc).timestamp() - int(s[cseStartUpTime]))))
+		# s[cseUpTime] = str(datetime.timedelta(seconds=int(datetime.datetime.now(datetime.timezone.utc).timestamp() - int(s[cseStartUpTime]))))
+		s[cseUpTime] = str(datetime.timedelta(seconds=int(DateUtils.utcTime() - int(s[cseStartUpTime]))))
 		s[cseStartUpTime] = DateUtils.toISO8601Date(float(s[cseStartUpTime]))
 		s[resourceCount] = int(s[createdResources]) - int(s[deletedResources])
 		return s
@@ -135,84 +162,19 @@ class Statistics(object):
 	#	Event handlers
 	#
 
-	def handleCreateEvent(self, resource:Resource) -> None:
+	def _handleStatsEvent(self, eventType:str):
+		"""	Generic handling of statist events.
+		"""
 		with self.statLock:
-			self.stats[createdResources] += 1		# type: ignore
-	
-
-	def handleDeleteEvent(self, resource:Resource) -> None:
-		with self.statLock:
-			self.stats[deletedResources] += 1		# type: ignore
-	
-
-	def handleUpdateEvent(self, resource:Resource) -> None:
-		with self.statLock:
-			self.stats[updatedResources] += 1		# type: ignore
-
-
-	def handleExpireResource(self, resource:Resource) -> None:
-		with self.statLock:
-			self.stats[expiredResources] += 1		# type: ignore
-
-
-	def handleHttpRetrieveEvent(self) -> None:
-		with self.statLock:
-			self.stats[httpRetrieves] += 1		# type: ignore
-
-
-	def handleHttpCreateEvent(self) -> None:
-		with self.statLock:
-			self.stats[httpCreates] += 1		# type: ignore
-
-
-	def handleHttpUpdateEvent(self) -> None:
-		with self.statLock:
-			self.stats[httpUpdates] += 1		# type: ignore
-
-
-	def handleHttpDeleteEvent(self) -> None:
-		with self.statLock:
-			self.stats[httpDeletes] += 1		# type: ignore
-
-
-	def handleHttpSendRetrieveEvent(self) -> None:
-		with self.statLock:
-			self.stats[httpSendRetrieves] += 1	# type: ignore
-
-
-	def handleHttpSendCreateEvent(self) -> None:
-		with self.statLock:
-			self.stats[httpSendCreates] += 1	# type: ignore
-
-
-	def handleHttpSendUpdateEvent(self) -> None:
-		with self.statLock:
-			self.stats[httpSendUpdates] += 1	# type: ignore
-
-
-	def handleHttpSendDeleteEvent(self) -> None:
-		with self.statLock:
-			self.stats[httpSendDeletes] += 1	# type: ignore
+			self.stats[eventType] += 1		# type: ignore
 
 
 	def handleCseStartup(self) -> None:
+		"""	Assign the CSE's startup time.
+		"""
 		with self.statLock:
-			self.stats[cseStartUpTime] = datetime.datetime.now(datetime.timezone.utc).timestamp()
-
-
-	def handleLogError(self) -> None:
-		with self.statLock:
-			self.stats[logErrors] += 1	# type: ignore
-
-
-	def handleLogWarning(self) -> None:
-		with self.statLock:
-			self.stats[logWarnings] += 1		# type: ignore
-
-
-	def handleNotification(self) -> None:
-		with self.statLock:
-			self.stats[notifications] += 1		# type: ignore
+			# self.stats[cseStartUpTime] = datetime.datetime.now(datetime.timezone.utc).timestamp()
+			self.stats[cseStartUpTime] = DateUtils.utcTime()
 
 
 	#########################################################################

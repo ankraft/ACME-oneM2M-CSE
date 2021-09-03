@@ -42,6 +42,8 @@ class Event(list):	# type:ignore[type-arg]
 	The function will be called in a separate thread in order to prevent waiting
 	for the returns. This might lead to some race conditions, so the synchronizations
 	must be done inside the functions.
+
+	Attention: Since the parent class is *list* `isInstance(obj, list)` will yield True.
 	"""
 
 	def __init__(self, runInBackground:bool=True, manager:EventManager=None):
@@ -63,11 +65,10 @@ class Event(list):	# type:ignore[type-arg]
 
 
 	def _callThread(self, *args:Any, **kwargs:Any) -> None:
+		"""	Call all attached function for this event object.
+		"""
 		for function in self:
-			try:
-				function(*args, **kwargs)
-			except Exception as e:
-				L.logErr(f'{function} - {traceback.format_exc()}')
+			function(*args, **kwargs)
 
 
 	def __repr__(self) -> str:
@@ -124,10 +125,10 @@ class EventManager(object):
 	def addHandler(self, event:Event|list[Event], func:Callable) -> None:		# type:ignore[type-arg]
 		"""	Add a new event handler for an `event` or a list of events.
 		"""
-		list(map(lambda e: e.append(func), event if isinstance(event, list) else [event]))
+		list(map(lambda e: e.append(func), [event] if isinstance(event, Event) else event))
 
 
 	def removeHandler(self, event:Event|list[Event], func:Callable) -> None:	# type:ignore[type-arg]
 		"""	Remove an event handler from an `event` or a list of events.
 		"""
-		list(map(lambda e: e.remove(func), event if isinstance(event, list) else [event]))
+		list(map(lambda e: e.remove(func), [event] if isinstance(event, Event) else event))

@@ -430,7 +430,7 @@ class Console(object):
 		stats = CSE.statistics.getStats()
 
 		if CSE.statistics.statisticsEnabled:
-			resourceOps  =  '[underline]Resource Operations[/underline]\n'
+			resourceOps  =  '[underline]Operations[/underline]\n'
 			resourceOps += 	'\n'
 			resourceOps +=  f'Created       : {stats[Statistics.createdResources]}\n'
 			resourceOps +=  f'Updated       : {stats[Statistics.updatedResources]}\n'
@@ -438,19 +438,34 @@ class Console(object):
 			resourceOps +=  f'Expired       : {stats[Statistics.expiredResources]}\n'
 			resourceOps +=  f'Notifications : {stats[Statistics.notifications]}\n'
 
-			httpReceived  = '[underline]HTTP Received[/underline]\n'
+			httpReceived  = '[underline]HTTP:R[/underline]\n'
 			httpReceived += 	'\n'
-			httpReceived += f'RETRIEVE : {stats[Statistics.httpRetrieves]}\n'
-			httpReceived += f'CREATE   : {stats[Statistics.httpCreates]}\n'
-			httpReceived += f'UPDATE   : {stats[Statistics.httpUpdates]}\n'
-			httpReceived += f'DELETE   : {stats[Statistics.httpDeletes]}\n'
+			httpReceived += f'C : {stats[Statistics.httpCreates]}\n'
+			httpReceived += f'R : {stats[Statistics.httpRetrieves]}\n'
+			httpReceived += f'U : {stats[Statistics.httpUpdates]}\n'
+			httpReceived += f'D : {stats[Statistics.httpDeletes]}\n'
 
-			httpSent  = 	'[underline]HTTP Sent[/underline]\n'
+			httpSent  = 	'[underline]HTTP:S[/underline]\n'
 			httpSent += 	'\n'
-			httpSent += 	f'RETRIEVE : {stats[Statistics.httpSendRetrieves]}\n'
-			httpSent += 	f'CREATE   : {stats[Statistics.httpSendCreates]}\n'
-			httpSent += 	f'UPDATE   : {stats[Statistics.httpSendUpdates]}\n'
-			httpSent += 	f'DELETE   : {stats[Statistics.httpSendDeletes]}\n'
+			httpSent += 	f'C : {stats[Statistics.httpSendCreates]}\n'
+			httpSent += 	f'R : {stats[Statistics.httpSendRetrieves]}\n'
+			httpSent += 	f'U : {stats[Statistics.httpSendUpdates]}\n'
+			httpSent += 	f'D : {stats[Statistics.httpSendDeletes]}\n'
+
+			mqttReceived  = '[underline]MQTT:R[/underline]\n'
+			mqttReceived += 	'\n'
+			mqttReceived += f'C : {stats[Statistics.mqttCreates]}\n'
+			mqttReceived += f'R : {stats[Statistics.mqttRetrieves]}\n'
+			mqttReceived += f'U : {stats[Statistics.mqttUpdates]}\n'
+			mqttReceived += f'D : {stats[Statistics.mqttDeletes]}\n'
+
+			mqttSent  = 	'[underline]MQTT:S[/underline]\n'
+			mqttSent += 	'\n'
+			mqttSent += 	f'C : {stats[Statistics.mqttSendCreates]}\n'
+			mqttSent += 	f'R : {stats[Statistics.mqttSendRetrieves]}\n'
+			mqttSent += 	f'U : {stats[Statistics.mqttSendUpdates]}\n'
+			mqttSent += 	f'D : {stats[Statistics.mqttSendDeletes]}\n'
+
 
 			logs  = '[underline]Logs[/underline]\n'
 			logs += '\n'
@@ -463,6 +478,10 @@ class Console(object):
 			httpReceived = '\n[dim]statistics are disabled[/dim]\n'
 			httpSent     = '\n[dim]statistics are disabled[/dim]\n'
 			logs         = '\n[dim]statistics are disabled[/dim]\n'
+
+
+
+
 
 		misc  = '[underline]Misc[/underline]\n'
 		misc += '\n'
@@ -481,10 +500,12 @@ class Console(object):
 		misc += '\n' * ( 3 if CSE.statistics.statisticsEnabled else 8)
 
 		requestsGrid = Table.grid(expand=True)
-		requestsGrid.add_column(ratio=33)
-		requestsGrid.add_column(ratio=33)
-		requestsGrid.add_column(ratio=33)
-		requestsGrid.add_row(resourceOps, httpReceived, httpSent)
+		requestsGrid.add_column(ratio=28)
+		requestsGrid.add_column(ratio=18)
+		requestsGrid.add_column(ratio=18)
+		requestsGrid.add_column(ratio=18)
+		requestsGrid.add_column(ratio=18)
+		requestsGrid.add_row(resourceOps, httpReceived, httpSent, mqttReceived, mqttSent)
 
 		infoGrid = Table.grid(expand=True)
 		infoGrid.add_column(ratio=33)

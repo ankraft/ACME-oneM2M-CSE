@@ -178,6 +178,17 @@ class MQTTClientHandler(MQTTHandler):
 		if self.mqttClient.isStopped:
 			_sendResponse(Result(rsc=RC.internalServerError, request=dissectResult.request, dbg='mqtt server not running', status=False))
 			return
+		
+		# send events for the MQTT operations
+		if dissectResult.request.op == Operation.CREATE:
+			CSE.event.mqttCreate()
+		elif dissectResult.request.op == Operation.RETRIEVE:
+			CSE.event.mqttRetrieve()
+		elif dissectResult.request.op == Operation.UPDATE:
+			CSE.event.mqttUpdate()
+		elif dissectResult.request.op == Operation.DELETE:
+			CSE.event.mqttDelete()
+		
 		try:
 			responseResult = CSE.request.handleRequest(dissectResult.request)
 		except Exception as e:
