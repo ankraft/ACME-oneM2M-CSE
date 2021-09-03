@@ -93,7 +93,6 @@ resourceFactoryMap:Dict[T, FactoryT] = {
 	T.CNT		: lambda dct, tpe, pi, create : CNT(dct, pi=pi, create=create),
 	T.CNT_LA	: lambda dct, tpe, pi, create : CNT_LA(dct, pi=pi, create=create),
 	T.CNT_OL	: lambda dct, tpe, pi, create : CNT_OL(dct, pi=pi, create=create),
-	T.CNT		: lambda dct, tpe, pi, create : CNT(dct, pi=pi, create=create),
 	T.CSEBase	: lambda dct, tpe, pi, create : CSEBase(dct, create=create),
 	T.CSR		: lambda dct, tpe, pi, create : CSR(dct, pi=pi, create=create),
 	T.FCNT		: lambda dct, tpe, pi, create : FCNT(dct, pi=pi, fcntType=tpe, create=create),
