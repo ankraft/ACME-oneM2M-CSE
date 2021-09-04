@@ -11,8 +11,8 @@
 from __future__ import annotations
 import cbor2, json
 from typing import cast
-from etc.Types import ContentSerializationType, JSON
-import helpers.TextTools
+from .Types import ContentSerializationType, JSON
+from ..helpers import TextTools
 
 
 def serializeData(data:JSON, ct:ContentSerializationType) -> str|bytes|JSON:
@@ -33,7 +33,7 @@ def deserializeData(data:bytes, ct:ContentSerializationType) -> JSON:
 	if len(data) == 0:
 		return {}
 	if ct == ContentSerializationType.JSON:
-		return cast(JSON, json.loads(helpers.TextTools.removeCommentsFromJSON(data.decode('utf-8'))))
+		return cast(JSON, json.loads(TextTools.removeCommentsFromJSON(data.decode('utf-8'))))
 	elif ct == ContentSerializationType.CBOR:
 		return cast(JSON, cbor2.loads(data))
 	return None

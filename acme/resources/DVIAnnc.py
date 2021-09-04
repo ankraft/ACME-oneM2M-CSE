@@ -7,10 +7,10 @@
 #	DVI : Announceable variant
 #
 
-from resources.MgmtObjAnnc import *
-from etc.Types import ResourceTypes as T, JSON
-import etc.Utils as Utils
-from services.Validator import constructPolicy, addPolicy
+from ..etc.Types import ResourceTypes as T, JSON
+from ..etc import Utils as Utils
+from ..services.Validator import constructPolicy, addPolicy
+from ..resources.MgmtObjAnnc import *
 
 # Attribute policies for this resource are constructed during startup of the CSE
 dviAPolicies = constructPolicy([

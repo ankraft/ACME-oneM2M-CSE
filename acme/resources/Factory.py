@@ -8,76 +8,76 @@
 #
 
 from typing import Dict, Callable, Any
-from etc.Types import ResourceTypes as T
-from etc.Types import ResponseCode as RC
-from etc.Types import Result
-import etc.Utils as Utils
-from services.Logging import Logging as L
+from ..etc.Types import ResourceTypes as T
+from ..etc.Types import ResponseCode as RC
+from ..etc.Types import Result
+from ..etc import Utils as Utils
+from ..services.Logging import Logging as L
 
 
-from resources.ACP import ACP
-from resources.ACPAnnc import ACPAnnc
-from resources.AE import AE
-from resources.AEAnnc import AEAnnc
-from resources.CIN import CIN
-from resources.CINAnnc import CINAnnc
-from resources.CNT import CNT
-from resources.CNTAnnc import CNTAnnc
-from resources.CNT_LA import CNT_LA
-from resources.CNT_OL import CNT_OL
-from resources.CSEBase import CSEBase
-from resources.CSR import CSR
-from resources.CSRAnnc import CSRAnnc
-from resources.FCI import FCI
-from resources.FCIAnnc import FCIAnnc
-from resources.FCNT import FCNT
-from resources.FCNTAnnc import FCNTAnnc
-from resources.FCNT_LA import FCNT_LA
-from resources.FCNT_OL import FCNT_OL
-from resources.GRP import GRP
-from resources.GRPAnnc import GRPAnnc
-from resources.GRP_FOPT import GRP_FOPT
-from resources.NOD import NOD
-from resources.NODAnnc import NODAnnc
-from resources.PCH import PCH
-from resources.PCH_PCU import PCH_PCU
-from resources.REQ import REQ
-from resources.SUB import SUB
-from resources.TS import TS
-from resources.TSAnnc import TSAnnc
-from resources.TS_LA import TS_LA
-from resources.TS_OL import TS_OL
-from resources.TSI import TSI
-from resources.TSIAnnc import TSIAnnc
+from ..resources.ACP import ACP
+from ..resources.ACPAnnc import ACPAnnc
+from ..resources.AE import AE
+from ..resources.AEAnnc import AEAnnc
+from ..resources.CIN import CIN
+from ..resources.CINAnnc import CINAnnc
+from ..resources.CNT import CNT
+from ..resources.CNTAnnc import CNTAnnc
+from ..resources.CNT_LA import CNT_LA
+from ..resources.CNT_OL import CNT_OL
+from ..resources.CSEBase import CSEBase
+from ..resources.CSR import CSR
+from ..resources.CSRAnnc import CSRAnnc
+from ..resources.FCI import FCI
+from ..resources.FCIAnnc import FCIAnnc
+from ..resources.FCNT import FCNT
+from ..resources.FCNTAnnc import FCNTAnnc
+from ..resources.FCNT_LA import FCNT_LA
+from ..resources.FCNT_OL import FCNT_OL
+from ..resources.GRP import GRP
+from ..resources.GRPAnnc import GRPAnnc
+from ..resources.GRP_FOPT import GRP_FOPT
+from ..resources.NOD import NOD
+from ..resources.NODAnnc import NODAnnc
+from ..resources.PCH import PCH
+from ..resources.PCH_PCU import PCH_PCU
+from ..resources.REQ import REQ
+from ..resources.SUB import SUB
+from ..resources.TS import TS
+from ..resources.TSAnnc import TSAnnc
+from ..resources.TS_LA import TS_LA
+from ..resources.TS_OL import TS_OL
+from ..resources.TSI import TSI
+from ..resources.TSIAnnc import TSIAnnc
 
-#from resources.TSAnnc import TSAnnc
+#from ..resources.TSAnnc import TSAnnc
 
 
-from resources.Unknown import Unknown
+from ..resources.Unknown import Unknown
 
-from resources.ANDI import ANDI
-from resources.ANDIAnnc import ANDIAnnc
-from resources.ANI import ANI
-from resources.ANIAnnc import ANIAnnc
-from resources.BAT import BAT
-from resources.BATAnnc import BATAnnc
-from resources.DVC import DVC
-from resources.DVCAnnc import DVCAnnc
-from resources.DVI import DVI
-from resources.DVIAnnc import DVIAnnc
-from resources.EVL import EVL
-from resources.EVLAnnc import EVLAnnc
-from resources.FWR import FWR
-from resources.FWRAnnc import FWRAnnc
-from resources.MEM import MEM
-from resources.MEMAnnc import MEMAnnc
-from resources.NYCFC import NYCFC
-from resources.NYCFCAnnc import NYCFCAnnc
-from resources.RBO import RBO
-from resources.RBOAnnc import RBOAnnc
-from resources.SWR import SWR
-from resources.SWRAnnc import SWRAnnc
-from resources.Resource import Resource
+from ..resources.ANDI import ANDI
+from ..resources.ANDIAnnc import ANDIAnnc
+from ..resources.ANI import ANI
+from ..resources.ANIAnnc import ANIAnnc
+from ..resources.BAT import BAT
+from ..resources.BATAnnc import BATAnnc
+from ..resources.DVC import DVC
+from ..resources.DVCAnnc import DVCAnnc
+from ..resources.DVI import DVI
+from ..resources.DVIAnnc import DVIAnnc
+from ..resources.EVL import EVL
+from ..resources.EVLAnnc import EVLAnnc
+from ..resources.FWR import FWR
+from ..resources.FWRAnnc import FWRAnnc
+from ..resources.MEM import MEM
+from ..resources.MEMAnnc import MEMAnnc
+from ..resources.NYCFC import NYCFC
+from ..resources.NYCFCAnnc import NYCFCAnnc
+from ..resources.RBO import RBO
+from ..resources.RBOAnnc import RBOAnnc
+from ..resources.SWR import SWR
+from ..resources.SWRAnnc import SWRAnnc
+from ..resources.Resource import Resource
 
 
 # type definition for Factory lambda

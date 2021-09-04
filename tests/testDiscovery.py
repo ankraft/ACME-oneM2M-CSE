@@ -10,12 +10,12 @@
 #
 
 import unittest, sys
-sys.path.append('../acme')
+if '..' not in sys.path:
+	sys.path.append('..')
 from typing import Tuple
-from etc.Constants import Constants as C
-from etc.Types import ResourceTypes, ResultContentType as RCN
-from etc.Types import ResourceTypes as T, ResponseCode as RC
-from etc.Types import DesiredIdentifierResultType, FilterOperation
+from acme.etc.Types import ResultContentType as RCN
+from acme.etc.Types import ResourceTypes as T, ResponseCode as RC
+from acme.etc.Types import DesiredIdentifierResultType, FilterOperation
 from init import *
 
 

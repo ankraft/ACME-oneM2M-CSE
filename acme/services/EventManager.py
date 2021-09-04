@@ -8,15 +8,15 @@
 #
 
 from __future__ import annotations
-from services.Logging import Logging as L
-import helpers.EventManager
+from ..helpers import EventManager as HelpersEventManager
+from ..services.Logging import Logging as L
 
 # TODO: create/delete each resource to count! resourceCreate(ty)
 
 # TODO move event creations from here to the resp modules.
 
 
-class EventManager(helpers.EventManager.EventManager):
+class EventManager(HelpersEventManager.EventManager):
 
 	def __init__(self) -> None:
 		super().__init__()

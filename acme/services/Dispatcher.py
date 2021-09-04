@@ -11,22 +11,24 @@ from __future__ import annotations
 import sys
 from copy import deepcopy
 from typing import Any, Tuple, Dict
-from etc.Constants import Constants as C
-from etc.Types import ResourceTypes as T
-from etc.Types import FilterOperation
-from etc.Types import Permission
-from etc.Types import DesiredIdentifierResultType as DRT
-from etc.Types import ResultContentType as RCN
-from etc.Types import ResponseCode as RC
-from etc.Types import Result
-from etc.Types import CSERequest
-from etc.Types import JSON, Parameters, Conditions
-import resources.Factory as Factory
-from resources.Resource import Resource
-import services.CSE as CSE, etc.Utils as Utils, helpers.TextTools
-from services.Configuration import Configuration
-from services.Logging import Logging as L
 
+from ..helpers import TextTools as TextTools
+from ..etc.Constants import Constants as C
+from ..etc.Types import ResourceTypes as T
+from ..etc.Types import FilterOperation
+from ..etc.Types import Permission
+from ..etc.Types import DesiredIdentifierResultType as DRT
+from ..etc.Types import ResultContentType as RCN
+from ..etc.Types import ResponseCode as RC
+from ..etc.Types import Result
+from ..etc.Types import CSERequest
+from ..etc.Types import JSON, Parameters, Conditions
+from ..etc import Utils as Utils
+from ..services import CSE as CSE
+from ..services.Configuration import Configuration
+from ..services.Logging import Logging as L
+from ..resources import Factory as Factory
+from ..resources.Resource import Resource
 
 
 class Dispatcher(object):
@@ -341,7 +343,7 @@ class Dispatcher(object):
 			for name in attributes:
 				val = attributes[name]
 				if isinstance(val, str) and '*' in val:
-					found += 1 if (rval := r[name]) is not None and helpers.TextTools.simpleMatch(str(rval), val) else 0
+					found += 1 if (rval := r[name]) is not None and TextTools.simpleMatch(str(rval), val) else 0
 				else:
 					found += 1 if (rval := r[name]) is not None and str(val) == str(rval) else 0
 

@@ -9,13 +9,14 @@
 
 from __future__ import annotations
 from typing import List
-import etc.Utils as Utils, services.CSE as CSE
-from etc.Types import ResourceTypes as T, ResponseCode as RC, Result, Permission, JSON
-from resources.Resource import *
-from resources.AnnounceableResource import AnnounceableResource
-from services.Logging import Logging as L
-from services.Validator import constructPolicy, addPolicy
-from helpers.TextTools import simpleMatch
+from ..helpers.TextTools import simpleMatch
+from ..etc import Utils as Utils
+from ..etc.Types import ResourceTypes as T, ResponseCode as RC, Result, Permission, JSON
+from ..services import CSE as CSE
+from ..services.Logging import Logging as L
+from ..services.Validator import constructPolicy, addPolicy
+from ..resources.Resource import *
+from ..resources.AnnounceableResource import AnnounceableResource
 
 
 # Attribute policies for this resource are constructed during startup of the CSE

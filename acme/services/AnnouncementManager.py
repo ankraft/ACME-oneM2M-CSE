@@ -11,13 +11,14 @@ from __future__ import annotations
 import time
 from copy import deepcopy
 from typing import Tuple, List, cast
-import etc.Utils as Utils, services.CSE as CSE
-from etc.Types import ResourceTypes as T, ResponseCode as RC, JSON
-from resources.Resource import Resource
-from resources.AnnounceableResource import AnnounceableResource
-from services.Logging import Logging as L
-from services.Configuration import Configuration
-from helpers.BackgroundWorker import BackgroundWorkerPool
+from ..etc import Utils as Utils
+from ..etc.Types import ResourceTypes as T, ResponseCode as RC, JSON
+from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..resources.Resource import Resource
+from ..resources.AnnounceableResource import AnnounceableResource
+from . import CSE as CSE
+from .Logging import Logging as L
+from .Configuration import Configuration
 
 # TODO for anounceable resource:
 # - update: update resource here

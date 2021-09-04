@@ -16,9 +16,9 @@ from typing import Any, Tuple, cast
 from .Constants import Constants as C
 from .Types import ResourceTypes as T, ResponseCode
 from .Types import Result, JSON
-from services.Logging import Logging as L
-from resources.Resource import Resource
-import services.CSE as CSE
+from ..services.Logging import Logging as L
+from ..resources.Resource import Resource
+from ..services import CSE as CSE
 
 
 ##############################################################################
@@ -301,6 +301,12 @@ def isHttpUrl(url:str) -> bool:
 	"""	Check whether a URL is a http URL. 
 	"""
 	return url.startswith(('http', 'https'))
+
+
+def isMQTTUrl(url:str) -> bool:
+	"""	Check whether a URL is a mqtt URL. 
+	"""
+	return url.startswith(('mqtt', 'mqtts'))
 
 
 def normalizeURL(url: str) -> str:

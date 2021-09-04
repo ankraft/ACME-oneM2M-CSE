@@ -17,16 +17,17 @@ from rich.panel import Panel
 from rich.tree import Tree
 from rich.live import Live
 
-
-from helpers.KeyHandler import loop, stopLoop, readline, waitForKeypress
-import helpers.TextTools
-from helpers.BackgroundWorker import BackgroundWorkerPool
-from etc.Constants import Constants as C
-from etc.Types import CSEType, ResourceTypes as T
-from services.Logging import Logging as L
-from services.Configuration import Configuration
-from resources.Resource import Resource
-import etc.Utils as Utils, etc.DateUtils as DateUtils, services.CSE as CSE, services.Statistics as Statistics
+from ..helpers.KeyHandler import loop, stopLoop, readline, waitForKeypress
+from ..helpers import TextTools
+from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..helpers import TextTools as TextTools
+from ..etc.Constants import Constants as C
+from ..etc.Types import CSEType, ResourceTypes as T
+from ..etc import Utils as Utils, DateUtils as DateUtils
+from ..resources.Resource import Resource
+from ..services import CSE as CSE, Statistics as Statistics
+from ..services.Configuration import Configuration
+from ..services.Logging import Logging as L
 
 
 class TreeMode(IntEnum):
@@ -601,7 +602,7 @@ class Console(object):
 					continue
 				# Ignore resources/resource patterns 
 				ri = ch.ri
-				if len([ p for p in self.hideResources if helpers.TextTools.simpleMatch(p, ri) ]) > 0:
+				if len([ p for p in self.hideResources if TextTools.simpleMatch(p, ri) ]) > 0:
 					continue
 				branch = tree.add(info(ch))
 				getChildren(ch, branch, level+1)

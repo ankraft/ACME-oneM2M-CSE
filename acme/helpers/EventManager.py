@@ -8,9 +8,9 @@
 #
 
 from __future__ import annotations
-import threading, traceback
+import threading
 from typing import Callable, Any, cast
-import etc.Utils as Utils
+from ..etc import Utils as Utils
 
 _running:bool = False
 
@@ -21,11 +21,10 @@ _running:bool = False
 
 
 
-	#########################################################################
-
-	#
-	#	Event class.
-	#
+#########################################################################
+#
+#	Event class.
+#
 
 
 class Event(list):	# type:ignore[type-arg]
@@ -52,23 +51,24 @@ class Event(list):	# type:ignore[type-arg]
 
 
 	def __call__(self, *args:Any, **kwargs:Any) -> None:
+
+		def _callThread(*args:Any, **kwargs:Any) -> None:
+			"""	Call all attached function for this event object.
+			"""
+			for function in self:
+				function(*args, **kwargs)
+
+
 		if not self.manager._running:
 			return
 		if self.runInBackground:
 			# Call the handlers in a thread so that we don't block everything
-			thread = threading.Thread(target=self._callThread, args=args, kwargs=kwargs)
+			thread = threading.Thread(target=_callThread, args=args, kwargs=kwargs)
 			thread.setDaemon(True)		# Make the thread a daemon of the main thread
 			thread.start()
 			Utils.renameCurrentThread(thread=thread)
 		else:
-			self._callThread(*args, **kwargs)
-
-
-	def _callThread(self, *args:Any, **kwargs:Any) -> None:
-		"""	Call all attached function for this event object.
-		"""
-		for function in self:
-			function(*args, **kwargs)
+			_callThread(*args, **kwargs)
 
 
 	def __repr__(self) -> str:
@@ -82,14 +82,15 @@ class EventManager(object):
 		- manager.addEvent("someName") : add new event topic
 		- manager.addHandler(manager.someName, handlerFunction) : add an event handler
 		- handler.someName() : raises the event
-"""
+	"""
 
 	def __init__(self) -> None:
 		self._running = True
 
-	def shutdown(self) -> None:
+	def shutdown(self) -> bool:
 		self._running = False
 		self.removeAllEvents()
+		return True
 
 	#########################################################################
 

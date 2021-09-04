@@ -8,14 +8,15 @@
 #
 
 from typing import Union, List
-from etc.Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseCode as RC, CSERequest, JSON
-from resources.FCNT import FCNT
-from resources.MgmtObj import MgmtObj
-from resources.Resource import Resource
-from resources.GRP_FOPT import GRP_FOPT
-import resources.Factory as Factory
-from services.Logging import Logging as L
-import services.CSE as CSE, etc.Utils as Utils
+from ..etc.Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseCode as RC, CSERequest, JSON
+from ..etc import Utils as Utils
+from ..resources.FCNT import FCNT
+from ..resources.MgmtObj import MgmtObj
+from ..resources.Resource import Resource
+from ..resources.GRP_FOPT import GRP_FOPT
+from ..resources import Factory as Factory
+from ..services.Logging import Logging as L
+from ..services import CSE as CSE
 
 
 class GroupManager(object):

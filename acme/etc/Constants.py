@@ -7,7 +7,7 @@
 #	Various CSE and oneM2M constants
 #
 
-from etc.Types import ResourceTypes as T, ContentSerializationType as CST
+from .Types import ResourceTypes as T, ContentSerializationType as CST
 
 class Constants(object):
 

@@ -7,12 +7,12 @@
 #	ResourceType: PollingChannel
 #
 
-from etc.Types import ResourceTypes as T, Result, JSON
-from resources.Resource import *
-import resources.Factory as Factory
-from services.Validator import constructPolicy, addPolicy
-import services.CSE as CSE
-from services.Logging import Logging as L
+from ..etc.Types import ResourceTypes as T, Result, JSON
+from ..resources.Resource import *
+from ..resources import Factory as Factory
+from ..services.Validator import constructPolicy, addPolicy
+from ..services import CSE as CSE
+from ..services.Logging import Logging as L
 
 
 

@@ -7,13 +7,12 @@
 #	Unit tests for TS functionality
 #
 
-import unittest, sys, time
-import requests
-sys.path.append('../acme')
-from typing import Tuple, Dict
-from etc.Constants import Constants as C
-from etc.Types import ResourceTypes as T, NotificationContentType, ResponseCode as RC, Operation, ResponseType, Permission
+import unittest, sys
+if '..' not in sys.path:
+	sys.path.append('..')
 from init import *
+from acme.etc.Types import ResourceTypes as T, ResponseCode as RC
+from typing import Tuple
 
 
 class TestTS(unittest.TestCase):

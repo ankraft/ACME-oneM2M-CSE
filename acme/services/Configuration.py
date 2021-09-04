@@ -11,8 +11,8 @@
 import configparser, re, argparse, os.path
 from typing import Any, Dict
 from rich.console import Console
-from etc.Constants import Constants as C
-from etc.Types import CSEType, ContentSerializationType, Permission
+from ..etc.Constants import Constants as C
+from ..etc.Types import CSEType, ContentSerializationType, Permission
 
 
 class Configuration(object):
@@ -25,7 +25,7 @@ class Configuration(object):
 	def init(args: argparse.Namespace = None) -> bool:
 		console = Console()
 
-		import etc.Utils as Utils	# cannot import at the top because of circel import
+		from ..etc import Utils as Utils	# cannot import at the top because of circel import
 
 		# resolve the args, of any
 		argsConfigfile			= args.configfile if args and 'configfile' in args else C.defaultConfigFile
@@ -304,7 +304,7 @@ class Configuration(object):
 			return False
 
 		# Loglevel and various overrides from command line
-		from services.Logging import LogLevel
+		from ..services.Logging import LogLevel
 		logLevel = Configuration._configuration['logging.level'].lower()
 		logLevel = (argsLoglevel or logLevel) 	# command line args override config
 		if logLevel == 'off':
@@ -446,7 +446,7 @@ class Configuration(object):
 			_print('[red]Configuration Error: \[cse.console]:refreshInterval must be greater than 0.0')
 			return False
 
-		from services.Console import TreeMode
+		from ..services.Console import TreeMode
 		if not (treeMode := TreeMode.to(Configuration._configuration['cse.console.treeMode'])):
 			_print(f'[red]Configuration Error: \[cse.console]:treeMode must be one of {TreeMode.names()}')
 			return False

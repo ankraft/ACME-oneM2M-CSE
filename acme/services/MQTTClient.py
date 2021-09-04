@@ -11,13 +11,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import cast
 
-from etc.Constants import Constants as C
-from etc.Types import JSON, Operation, CSERequest, ContentSerializationType, ResourceTypes, Result, ResponseCode as RC
-from services.Logging import Logging as L
-from services.Configuration import Configuration
-import services.CSE as CSE, etc.Utils as Utils, etc.DateUtils as DateUtils, etc.RequestUtils as RequestUtils
-from helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
-import helpers.TextTools
+from ..etc.Constants import Constants as C
+from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType, ResourceTypes, Result, ResponseCode as RC
+from ..etc import Utils as Utils, DateUtils as DateUtils, RequestUtils as RequestUtils
+from ..services.Logging import Logging as L
+from ..services.Configuration import Configuration
+from ..services import CSE as CSE
+from ..helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
+from ..helpers import TextTools
 
 
 # TODO internal events
@@ -172,7 +173,7 @@ class MQTTClientHandler(MQTTHandler):
 		if contentType == ContentSerializationType.JSON:
 			L.isDebug and L.logDebug(f'Body: \n{cast(str, data)}')
 		else:
-			L.isDebug and L.logDebug(f'Body: \n{helpers.TextTools.toHex(cast(bytes, data))}\n=>\n{dissectResult.request.dict}')
+			L.isDebug and L.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, data))}\n=>\n{dissectResult.request.dict}')
 
 		# handle request
 		if self.mqttClient.isStopped:
@@ -181,13 +182,13 @@ class MQTTClientHandler(MQTTHandler):
 		
 		# send events for the MQTT operations
 		if dissectResult.request.op == Operation.CREATE:
-			CSE.event.mqttCreate()
+			CSE.event.mqttCreate()		# type: ignore [attr-defined]
 		elif dissectResult.request.op == Operation.RETRIEVE:
-			CSE.event.mqttRetrieve()
+			CSE.event.mqttRetrieve()	# type: ignore [attr-defined]
 		elif dissectResult.request.op == Operation.UPDATE:
-			CSE.event.mqttUpdate()
+			CSE.event.mqttUpdate()		# type: ignore [attr-defined]
 		elif dissectResult.request.op == Operation.DELETE:
-			CSE.event.mqttDelete()
+			CSE.event.mqttDelete()		# type: ignore [attr-defined]
 		
 		try:
 			responseResult = CSE.request.handleRequest(dissectResult.request)
@@ -245,7 +246,7 @@ class MQTTClientHandler(MQTTHandler):
 		response = Result(data=resp, request=result.request, status=True)
 		if result.request.ct == ContentSerializationType.CBOR:		# Always us the ct from the request
 			response.data = cast(bytes, RequestUtils.serializeData(response.data, ContentSerializationType.CBOR))
-			L.isDebug and L.logDebug(f'<== MQTT-Response (RSC: {result.rsc:d}):\nBody: \n{helpers.TextTools.toHex(response.data)}\n=>\n{resp}')
+			L.isDebug and L.logDebug(f'<== MQTT-Response (RSC: {result.rsc:d}):\nBody: \n{TextTools.toHex(response.data)}\n=>\n{resp}')
 		else:
 			response.data = cast(bytes, RequestUtils.serializeData(response.data, ContentSerializationType.JSON))
 			L.isDebug and L.logDebug(f'<== MQTT-Response (RSC: {result.rsc:d}):\nBody: {resp}')

@@ -8,10 +8,10 @@
 #
 
 from copy import deepcopy
-from resources.Resource import *
-from resources.AnnounceableResource import AnnounceableResource
-from etc.Types import ResourceTypes as T, JSON, AttributePolicies
-from services.Validator import constructPolicy, addPolicy
+from ..etc.Types import ResourceTypes as T, JSON, AttributePolicies
+from ..services.Validator import constructPolicy, addPolicy
+from ..resources.Resource import *
+from ..resources.AnnounceableResource import AnnounceableResource
 
 mgmtObjAttributePolicies = constructPolicy([ 
 	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 'hld', 

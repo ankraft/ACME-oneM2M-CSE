@@ -9,14 +9,16 @@
 
 from copy import deepcopy
 from typing import List
-from etc.Constants import Constants as C
-from etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON, CSEType
-from services.Logging import Logging as L
-from services.Configuration import Configuration
-from resources.Resource import Resource
-import services.CSE as CSE, etc.Utils as Utils, etc.DateUtils as DateUtils
-from resources.ACP import ACP
-from helpers.BackgroundWorker import BackgroundWorkerPool
+
+from ..etc.Constants import Constants as C
+from ..etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON, CSEType
+from ..etc import Utils as Utils, DateUtils as DateUtils
+from ..services.Logging import Logging as L
+from ..services.Configuration import Configuration
+from ..services import CSE as CSE
+from ..resources.Resource import Resource
+from ..resources.ACP import ACP
+from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
 
 

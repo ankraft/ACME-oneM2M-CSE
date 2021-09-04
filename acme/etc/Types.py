@@ -752,9 +752,9 @@ class Result:
 		return Result(rsc=self.rsc, dbg=self.dbg)
 
 	def toData(self, ct:ContentSerializationType=None) -> str|bytes|JSON:
-		from resources.Resource import Resource
-		from etc.RequestUtils import serializeData
-		from services.CSE import defaultSerialization
+		from ..resources.Resource import Resource
+		from ..etc.RequestUtils import serializeData
+		from ..services.CSE import defaultSerialization
 
 		# determine the default serialization type if none was given
 		ct = defaultSerialization if not ct else ct

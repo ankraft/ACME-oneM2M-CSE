@@ -9,12 +9,12 @@
 
 from __future__ import annotations
 from copy import deepcopy
-from etc.Types import ResourceTypes as T, Result, NotificationContentType, NotificationEventType as NET, ResponseCode as RC, JSON
-from resources.Resource import *
-from services.Configuration import Configuration
-import services.CSE as CSE
-from services.Validator import constructPolicy
-from services.Logging import Logging as L
+from ..etc.Types import ResourceTypes as T, Result, NotificationContentType, NotificationEventType as NET, ResponseCode as RC, JSON
+from ..services.Configuration import Configuration
+from ..services import CSE as CSE
+from ..services.Validator import constructPolicy
+from ..services.Logging import Logging as L
+from ..resources.Resource import *
 
 # Attribute policies for this resource are constructed during startup of the CSE
 attributePolicies = constructPolicy([

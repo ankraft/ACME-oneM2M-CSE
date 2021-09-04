@@ -12,11 +12,13 @@ from __future__ import annotations
 from typing import Any, Tuple, Dict, List, cast
 from copy import deepcopy
 
-from services.Logging import Logging as L
-from etc.Constants import Constants as C
-from etc.Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC, CSERequest, JSON, AttributePolicies
-from services.Configuration import Configuration
-import etc.Utils as Utils, services.CSE as CSE, etc.DateUtils as DateUtils
+from ..etc.Constants import Constants as C
+from ..etc.Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC, CSERequest, JSON, AttributePolicies
+from ..etc import Utils as Utils
+from ..etc import DateUtils as DateUtils
+from ..services.Logging import Logging as L
+from ..services.Configuration import Configuration
+from ..services import CSE as CSE
 from .Resource import *
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)
 

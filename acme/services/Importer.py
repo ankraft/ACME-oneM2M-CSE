@@ -11,14 +11,14 @@
 from __future__ import annotations
 import json, os, fnmatch, re
 from typing import cast
-from etc.Utils import findXPath, getCSE
-from etc.Types import ResourceTypes as T
-from etc.Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, JSON, JSONLIST
-import resources.Factory as Factory
-from services.Configuration import Configuration
-import services.CSE as CSE
-from services.Logging import Logging as L
-from helpers.TextTools import removeCommentsFromJSON
+from ..etc.Utils import findXPath, getCSE
+from ..etc.Types import ResourceTypes as T
+from ..etc.Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, JSON, JSONLIST
+from ..services.Configuration import Configuration
+from ..services import CSE as CSE
+from ..services.Logging import Logging as L
+from ..resources import Factory as Factory
+from ..helpers.TextTools import removeCommentsFromJSON
 
 # TODO Support child specialization in attribute definitionsEv
 

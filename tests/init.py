@@ -22,12 +22,14 @@ from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import cbor2
 
-sys.path.append('../acme')
-from etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes
-import etc.RequestUtils as RequestUtils, etc.DateUtils as DateUtils
-import helpers.OAuth as OAuth
-from helpers.MQTTConnection import MQTTConnection, MQTTHandler
-from etc.Constants import Constants as C
+# sys.path.append('../acme')
+if '..' not in sys.path:
+	sys.path.append('..')
+from acme.etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes
+import acme.etc.RequestUtils as RequestUtils, acme.etc.DateUtils as DateUtils
+import acme.helpers.OAuth as OAuth
+from acme.helpers.MQTTConnection import MQTTConnection, MQTTHandler
+from acme.etc.Constants import Constants as C
 from config import *
 
 
@@ -221,7 +223,6 @@ remoteCsrURL 	= f'{REMOTEcseURL}{CSEID}'
 def shutdown() -> None:
 	if mqttClient:
 		mqttClient.shutdown()
-
 
 ###############################################################################
 

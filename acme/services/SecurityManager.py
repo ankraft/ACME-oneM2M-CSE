@@ -11,12 +11,13 @@
 import ssl
 from typing import List
 
-from services.Logging import Logging as L
-from etc.Types import ResourceTypes as T, Permission, Result, CSERequest, ResponseCode as RC
-from resources.Resource import Resource
-import services.CSE as CSE, etc.Utils as Utils
-from services.Configuration import Configuration
-import helpers.TextTools
+from ..etc.Types import ResourceTypes as T, Permission, Result, CSERequest, ResponseCode as RC
+from ..etc import Utils as Utils
+from ..services import CSE as CSE
+from ..services.Logging import Logging as L
+from ..services.Configuration import Configuration
+from ..resources.Resource import Resource
+from ..helpers import TextTools
 
 
 class SecurityManager(object):
@@ -248,7 +249,7 @@ class SecurityManager(object):
 		if not originator or not allowedOriginators:
 			return False
 		for ao in allowedOriginators:
-			if helpers.TextTools.simpleMatch(Utils.getIdFromOriginator(originator), ao):
+			if TextTools.simpleMatch(Utils.getIdFromOriginator(originator), ao):
 				return True
 		return False
 

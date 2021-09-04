@@ -28,9 +28,9 @@ from rich.theme import Theme
 from rich.tree import Tree
 from rich.table import Table
 
-from services.Configuration import Configuration
-from etc.Types import JSON
-
+from ..etc.Types import JSON
+from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..services.Configuration import Configuration
 
 levelName = {
 	logging.INFO :    'ℹ️  I',
@@ -124,7 +124,7 @@ class	Logging:
 
 		# Log to file only when file logging is enabled
 		if Logging.enableFileLogging:
-			import services.CSE as CSE
+			from ..services import CSE as CSE
 
 			logpath = Configuration.get('logging.path')
 			os.makedirs(logpath, exist_ok=True)# create log directory if necessary
@@ -141,7 +141,7 @@ class	Logging:
 		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=Logging._handlers)
 
 		# Start worker to handle logs in the background
-		from helpers.BackgroundWorker import BackgroundWorkerPool
+		from ..helpers.BackgroundWorker import BackgroundWorkerPool
 		BackgroundWorkerPool.newWorker(Logging.checkInterval, Logging.loggingWorker, 'loggingWorker', runOnTime=False).start()
 	
 	
@@ -150,7 +150,7 @@ class	Logging:
 		if Logging.queue:
 			while not Logging.queue.empty():
 				time.sleep(0.5)
-		from helpers.BackgroundWorker import BackgroundWorkerPool
+		from ..helpers.BackgroundWorker import BackgroundWorkerPool
 		BackgroundWorkerPool.stopWorkers('loggingWorker')
 
 
@@ -182,7 +182,7 @@ class	Logging:
 			`showStackTrace` indicates whether a stacktrace shall be logged together with the error
 			as well.
 		"""
-		import services.CSE as CSE
+		from ..services import CSE
 		# raise logError event
 		(not CSE.event or CSE.event.logError())	# type: ignore
 		if exc:
@@ -199,7 +199,7 @@ class	Logging:
 	def logWarn(msg:str, stackOffset:int=None) -> None:
 		"""Print a log message with level WARNING. 
 		"""
-		import services.CSE as CSE
+		from ..services import CSE as CSE
 		# raise logWarning event
 		(not CSE.event or CSE.event.logWarning()) 	# type: ignore
 		Logging._log(logging.WARNING, msg, stackOffset=stackOffset)

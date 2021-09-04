@@ -7,9 +7,9 @@
 #	FWR : Announceable variant
 #
 
-from etc.Types import ResourceTypes as T, JSON
-from resources.MgmtObjAnnc import *
-from services.Validator import constructPolicy, addPolicy
+from ..etc.Types import ResourceTypes as T, JSON
+from ..services.Validator import constructPolicy, addPolicy
+from ..resources.MgmtObjAnnc import *
 
 # Attribute policies for this resource are constructed during startup of the CSE
 fwrAPolicies = constructPolicy([

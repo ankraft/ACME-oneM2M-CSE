@@ -9,11 +9,11 @@
 
 from __future__ import annotations
 import unittest, sys, time
-sys.path.append('../acme')
+if '..' not in sys.path:
+	sys.path.append('..')
 from typing import Tuple
 import threading
-from etc.Constants import Constants as C
-from etc.Types import ResponseCode as RC, ResourceTypes as T
+from acme.etc.Types import ResponseCode as RC, ResourceTypes as T
 from init import *
 
 

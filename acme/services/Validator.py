@@ -11,13 +11,13 @@ from copy import deepcopy
 import re
 from typing import Any, List, Dict
 import isodate
-from etc.Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, ResponseCode as RC
-from etc.Types import JSON, AttributePolicies, AttributePoliciesEntry, AdditionalAttributes
-from etc.Types import Result, AttributePolicies, ResourceTypes as T
-import etc.Utils as Utils, etc.DateUtils as DateUtils
-from services.Configuration import Configuration
-from resources.Resource import Resource
-from services.Logging import Logging as L
+from ..etc.Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, ResponseCode as RC
+from ..etc.Types import JSON, AttributePolicies, AttributePoliciesEntry, AdditionalAttributes
+from ..etc.Types import Result, AttributePolicies, ResourceTypes as T
+from ..etc import Utils as Utils, DateUtils as DateUtils
+from ..services.Configuration import Configuration
+from ..services.Logging import Logging as L
+from ..resources.Resource import Resource
 
 
 # TODO owner attribute, annnouncedSyncType

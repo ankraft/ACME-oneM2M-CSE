@@ -8,10 +8,10 @@
 #
 
 import unittest, sys
-sys.path.append('../acme')
+if '..' not in sys.path:
+	sys.path.append('..')
 from typing import Tuple
-from etc.Constants import Constants as C
-from etc.Types import Permission, ResourceTypes as T, ResponseCode as RC
+from acme.etc.Types import Permission, ResourceTypes as T, ResponseCode as RC
 from init import *
 
 

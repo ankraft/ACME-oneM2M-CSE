@@ -7,11 +7,12 @@
 #	ResourceType: CSEBase
 #
 
-from etc.Constants import Constants as C
-from etc.Types import ResourceTypes as T, Result, JSON
-from resources.Resource import *
-from services.Validator import constructPolicy
-import services.CSE as CSE, etc.DateUtils as DateUtils
+from ..etc.Constants import Constants as C
+from ..etc.Types import ResourceTypes as T, Result, JSON
+from ..etc import DateUtils as DateUtils
+from ..resources.Resource import *
+from ..services.Validator import constructPolicy
+from ..services import CSE as CSE
 
 
 # Attribute policies for this resource are constructed during startup of the CSE

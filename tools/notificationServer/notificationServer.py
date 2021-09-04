@@ -9,6 +9,7 @@
 #
 
 from __future__ import annotations
+from typing import cast
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json, argparse, sys, ssl
 from copy import deepcopy
@@ -18,10 +19,12 @@ from rich.syntax import Syntax
 
 import pathlib, os, signal
 parent = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent.parent
-sys.path.append(f'{parent}/acme')
-from helpers.MQTTConnection import MQTTConnection, MQTTHandler
-from helpers.TextTools import toHex
-from etc.DateUtils import getResourceDate
+sys.path.append(f'{parent}')
+from acme.helpers.MQTTConnection import MQTTConnection, MQTTHandler
+from acme.helpers.TextTools import toHex
+from acme.etc.RequestUtils import serializeData
+from acme.etc.DateUtils import getResourceDate
+from acme.etc.Types import ContentSerializationType
 
 ##############################################################################
 #
@@ -110,6 +113,7 @@ class MQTTClientHandler(MQTTHandler):
 			connection.subscribeTopic(self.topic, self._requestCB)					# Subscribe to general requests
 		except Exception as e:
 			self.onError(connection, -1, f'MQTT {str(e)}')
+		return True
 
 
 	def onError(self, connection:MQTTConnection, rc:int=-1, msg:str=None) -> bool:
@@ -164,12 +168,15 @@ class MQTTClientHandler(MQTTHandler):
 		encoding	= topicArray[-1]
 
 		# Print JSON
+		responseData = None
 		if encoding.upper() == 'JSON':
 			console.print(Syntax(json.dumps((jsn := json.loads(data)), indent=4),
 							 'json', 
 							 theme='monokai',
 							 line_numbers=False))
-			responseData = json.dumps(_constructResponse(frm, to, jsn))
+			# responseData = json.dumps(_constructResponse(frm, to, jsn))
+			responseData = cast(bytes, serializeData(_constructResponse(frm, to, jsn), ContentSerializationType.JSON))
+
 
 
 		# Print CBOR
@@ -181,13 +188,13 @@ class MQTTClientHandler(MQTTHandler):
 							 'json', 
 							 theme='monokai',
 							 line_numbers=False))		
-			responseData = cbor2.dumps(json.dump(_constructResponse(frm, to, jsn)))
+			# responseData = cbor2.dumps(json.dumps(_constructResponse(frm, to, jsn)))
+			responseData = cast(bytes, serializeData(_constructResponse(frm, to, jsn), ContentSerializationType.CBOR))
 
 		# Print other binary content
 		else:
 			console.print('[dim]Content as Hexdump:\n')
 			console.print(toHex(data), highlight=False)
-			responseData = None
 		# TODO send a response
 
 		if responseData:
@@ -216,7 +223,7 @@ class MQTTClient(object):
 	
 
 	def shutdown(self) -> None:
-		self.mqttConnection.messageHandler.isShutdown = True
+		self.mqttConnection.messageHandler.isShutdown = True	# type:ignore [attr-defined]
 		if self.mqttConnection:
 			self.mqttConnection.shutdown()
 			console.print(f'[{messageColor}]MQTT client stopped.')
@@ -229,7 +236,7 @@ class MQTTClient(object):
 class ExitCommand(Exception):
 	pass
 
-def exitSignalHandler(signal, frame) -> None:
+def exitSignalHandler(signal, frame) -> None:	# type: ignore [no-untyped-def]
 	raise ExitCommand()
 
 def exitAll() -> None:

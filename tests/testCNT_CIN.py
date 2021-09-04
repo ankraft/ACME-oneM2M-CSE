@@ -8,10 +8,10 @@
 #
 
 import unittest, sys
-sys.path.append('../acme')
+if '..' not in sys.path:
+	sys.path.append('..')
 from typing import Tuple
-from etc.Constants import Constants as C
-from etc.Types import NotificationEventType, ResourceTypes as T, ResponseCode as RC, ResultContentType
+from acme.etc.Types import NotificationEventType, ResourceTypes as T, ResponseCode as RC, ResultContentType
 from init import *
 
 

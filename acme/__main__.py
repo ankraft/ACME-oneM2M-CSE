@@ -11,12 +11,12 @@ import argparse
 from rich.console import Console
 # parent = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent
 # # sys.path.append(f'{parent}/acme')
-from etc.Constants import Constants as C
-import services.CSE as CSE
+from .etc.Constants import Constants as C
+from .services import CSE as CSE
 
 # Handle command line arguments
 def parseArgs() -> argparse.Namespace:
-	parser = argparse.ArgumentParser()
+	parser = argparse.ArgumentParser(prog='acme')
 	parser.add_argument('--config', action='store', dest='configfile', default=C.defaultConfigFile, metavar='<filename>', help='specify the configuration file')
 
 	# two mutual exlcusive arguments

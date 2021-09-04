@@ -11,27 +11,27 @@ from __future__ import annotations
 import atexit, argparse, os, time, sys
 from typing import Dict, Any
 
-from helpers.BackgroundWorker import BackgroundWorkerPool
-from etc.Types import CSEType, ContentSerializationType
-from services.AnnouncementManager import AnnouncementManager
-from services.Configuration import Configuration
-from services.Console import Console
-from services.Dispatcher import Dispatcher
-from services.RequestManager import RequestManager
-from services.EventManager import EventManager
-from services.GroupManager import GroupManager
-from services.HttpServer import HttpServer
-from services.Importer import Importer
-from services.Logging import Logging as L
-from services.MQTTClient import MQTTClient
-from services.NotificationManager import NotificationManager
-from services.RegistrationManager import RegistrationManager
-from services.RemoteCSEManager import RemoteCSEManager
-from services.SecurityManager import SecurityManager
-from services.Statistics import Statistics
-from services.Storage import Storage
-from services.TimeSeriesManager import TimeSeriesManager
-from services.Validator import Validator
+from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..etc.Types import CSEType, ContentSerializationType
+from ..services.Configuration import Configuration
+from ..services.Console import Console
+from ..services.Dispatcher import Dispatcher
+from ..services.RequestManager import RequestManager
+from ..services.EventManager import EventManager
+from ..services.GroupManager import GroupManager
+from ..services.HttpServer import HttpServer
+from ..services.Importer import Importer
+from ..services.Logging import Logging as L
+from ..services.MQTTClient import MQTTClient
+from ..services.NotificationManager import NotificationManager
+from ..services.RegistrationManager import RegistrationManager
+from ..services.RemoteCSEManager import RemoteCSEManager
+from ..services.SecurityManager import SecurityManager
+from ..services.Statistics import Statistics
+from ..services.Storage import Storage
+from ..services.TimeSeriesManager import TimeSeriesManager
+from ..services.Validator import Validator
+from .AnnouncementManager import AnnouncementManager
 
 
 

@@ -7,9 +7,9 @@
 #	RBO : Announceable variant
 #
 
-from etc.Types import ResourceTypes as T, JSON
-from resources.MgmtObjAnnc import *
-from services.Validator import constructPolicy, addPolicy
+from ..etc.Types import ResourceTypes as T, JSON
+from ..resources.MgmtObjAnnc import *
+from ..services.Validator import constructPolicy, addPolicy
 
 # Attribute policies for this resource are constructed during startup of the CSE
 rboAPolicies = constructPolicy([

@@ -9,10 +9,11 @@
 #
 
 import unittest, sys, time
-sys.path.append('../acme')
+if '..' not in sys.path:
+	sys.path.append('..')
 from typing import Tuple
-from etc.Constants import Constants as C
-from etc.Types import ResourceTypes as T, ResponseCode as RC
+from acme.etc.Constants import Constants as C
+from acme.etc.Types import ResourceTypes as T, ResponseCode as RC
 from init import *
 
 

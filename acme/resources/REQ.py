@@ -8,12 +8,12 @@
 #
 
 from typing import Dict, Any
-from etc.Types import ResourceTypes as T, ResponseCode as RC, Result, RequestStatus, CSERequest, JSON
-import etc.Utils as Utils, etc.DateUtils as DateUtils
-from resources.Resource import *
-import resources.Factory as Factory
-from services.Configuration import Configuration
-from services.Validator import constructPolicy, addPolicy
+from ..etc.Types import ResourceTypes as T, ResponseCode as RC, Result, RequestStatus, CSERequest, JSON
+from ..etc import Utils as Utils, DateUtils as DateUtils
+from ..services.Configuration import Configuration
+from ..services.Validator import constructPolicy, addPolicy
+from ..resources.Resource import *
+from ..resources import Factory as Factory
 
 
 # Attribute policies for this resource are constructed during startup of the CSE

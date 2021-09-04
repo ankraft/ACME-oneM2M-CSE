@@ -8,14 +8,15 @@
 #
 
 from typing import List
-from etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
-import etc.Utils as Utils, etc.DateUtils as DateUtils, services.CSE as CSE
-from services.Logging import Logging as L
-from services.Configuration import Configuration
-from services.Validator import constructPolicy, addPolicy
-from resources.Resource import *
-from resources.AnnounceableResource import AnnounceableResource
-import resources.Factory as Factory
+from ..etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
+from ..etc import Utils as Utils, DateUtils as DateUtils
+from ..services import CSE as CSE
+from ..services.Logging import Logging as L
+from ..services.Configuration import Configuration
+from ..services.Validator import constructPolicy, addPolicy
+from ..resources.Resource import *
+from ..resources.AnnounceableResource import AnnounceableResource
+from ..resources import Factory as Factory
 
 
 # Attribute policies for this resource are constructed during startup of the CSE

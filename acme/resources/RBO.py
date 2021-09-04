@@ -7,10 +7,10 @@
 #	ResourceType: mgmtObj:Reboot
 #
 
-from resources.MgmtObj import *
-from etc.Types import ResourceTypes as T, ResponseCode as RC, Result, JSON
-from services.Validator import constructPolicy, addPolicy
-import etc.Utils as Utils
+from ..resources.MgmtObj import *
+from ..etc.Types import ResourceTypes as T, ResponseCode as RC, Result, JSON
+from ..services.Validator import constructPolicy, addPolicy
+from ..etc import Utils as Utils
 
 # Attribute policies for this resource are constructed during startup of the CSE
 rboPolicies = constructPolicy([

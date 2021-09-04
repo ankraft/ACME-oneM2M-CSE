@@ -21,12 +21,13 @@ from tinydb.storages import MemoryStorage
 from tinydb.table import Document
 from tinydb.operations import delete 
 
-from etc.Types import ResourceTypes as T, Result, ResponseCode as RC, ContentSerializationType, JSON
-from resources.Resource import Resource
-import resources.Factory as Factory
-from services.Configuration import Configuration
-from services.Logging import Logging as L
-import services.CSE as CSE, etc.DateUtils as DateUtils
+from ..etc.Types import ResourceTypes as T, Result, ResponseCode as RC, ContentSerializationType, JSON
+from ..etc import DateUtils as DateUtils
+from ..services.Configuration import Configuration
+from ..services.Logging import Logging as L
+from ..services import CSE as CSE
+from ..resources.Resource import Resource
+from ..resources import Factory as Factory
 
 
 class Storage(object):

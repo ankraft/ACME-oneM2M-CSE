@@ -8,11 +8,10 @@
 #
 
 import unittest, sys, time
-import requests
-sys.path.append('../acme')
+if '..' not in sys.path:
+	sys.path.append('..')
 from typing import Tuple
-from etc.Constants import Constants as C
-from etc.Types import NotificationEventType as NET, ResourceTypes as T, NotificationContentType, ResponseCode as RC
+from acme.etc.Types import NotificationEventType as NET, ResourceTypes as T, NotificationContentType, ResponseCode as RC
 from init import *
 
 numberOfBatchNotifications = 5

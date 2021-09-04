@@ -7,14 +7,14 @@
 #	ResourceType: Application Entity
 #
 
-from etc.Constants import Constants as C
-from etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
-import etc.Utils as Utils
-from resources.Resource import *
-from resources.AnnounceableResource import AnnounceableResource
-from services.Validator import constructPolicy, addPolicy
-from services.Logging import Logging as L
-import services.CSE as CSE
+from ..etc.Constants import Constants as C
+from ..etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
+from ..etc import Utils as Utils
+from ..services.Validator import constructPolicy, addPolicy
+from ..services.Logging import Logging as L
+from ..services import CSE as CSE
+from ..resources.Resource import *
+from ..resources.AnnounceableResource import AnnounceableResource
 
 
 # Attribute policies for this resource are constructed during startup of the CSE

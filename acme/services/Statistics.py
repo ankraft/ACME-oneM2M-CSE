@@ -14,13 +14,13 @@ from urllib.parse import urlparse
 from copy import deepcopy
 from threading import Lock
 
-from helpers.BackgroundWorker import BackgroundWorkerPool
-from etc.Types import CSEType, ResourceTypes as T
-from helpers.EventManager import Event
-from resources.Resource import Resource
-import services.CSE as CSE, etc.Utils as Utils, etc.DateUtils as DateUtils
-from services.Configuration import Configuration
-from services.Logging import Logging as L
+from ..etc.Types import CSEType, ResourceTypes as T
+from ..etc import Utils as Utils, DateUtils as DateUtils
+from ..services import CSE as CSE
+from ..services.Configuration import Configuration
+from ..services.Logging import Logging as L
+from ..resources.Resource import Resource
+from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
 
 deletedResources	= 'rmRes'
@@ -162,7 +162,7 @@ class Statistics(object):
 	#	Event handlers
 	#
 
-	def _handleStatsEvent(self, eventType:str):
+	def _handleStatsEvent(self, eventType:str) -> None:
 		"""	Generic handling of statist events.
 		"""
 		with self.statLock:

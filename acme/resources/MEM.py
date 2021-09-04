@@ -7,9 +7,9 @@
 #	ResourceType: mgmtObj:Memory
 #
 
-from etc.Types import ResourceTypes as T, JSON
-from resources.MgmtObj import *
-from services.Validator import constructPolicy, addPolicy
+from ..etc.Types import ResourceTypes as T, JSON
+from ..services.Validator import constructPolicy, addPolicy
+from ..resources.MgmtObj import *
 
 # Attribute policies for this resource are constructed during startup of the CSE
 memPolicies = constructPolicy([

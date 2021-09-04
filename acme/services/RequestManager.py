@@ -7,30 +7,30 @@
 #	Main request dispatcher. All external requests are routed through here.
 #
 
-import re
 import requests, urllib.parse
 from typing import Any, List
 from copy import deepcopy
 
-from etc.Types import BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, RequestArguments, RequestCallback, ResultContentType
-from etc.Types import RequestStatus
-from etc.Types import CSERequest
-from etc.Types import RequestHandler
-from etc.Types import JSON
-from etc.Types import ResourceTypes as T
-from etc.Types import ResponseCode as RC
-from etc.Types import ResponseType
-from etc.Types import Result
-from etc.Types import CSERequest
-from etc.Types import ContentSerializationType
-from etc.Types import Parameters
-from etc.Constants import Constants as C
-from resources.REQ import REQ
-from resources.Resource import Resource
-from services.Logging import Logging as L
-from services.Configuration import Configuration
-import services.CSE as CSE, etc.Utils as Utils, etc.DateUtils as DateUtils, etc.RequestUtils as RequestUtils
-from helpers.BackgroundWorker import BackgroundWorkerPool
+from ..etc.Types import BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, RequestArguments, RequestCallback, ResultContentType
+from ..etc.Types import RequestStatus
+from ..etc.Types import CSERequest
+from ..etc.Types import RequestHandler
+from ..etc.Types import JSON
+from ..etc.Types import ResourceTypes as T
+from ..etc.Types import ResponseCode as RC
+from ..etc.Types import ResponseType
+from ..etc.Types import Result
+from ..etc.Types import CSERequest
+from ..etc.Types import ContentSerializationType
+from ..etc.Types import Parameters
+from ..etc.Constants import Constants as C
+from ..etc import Utils as Utils, DateUtils as DateUtils, RequestUtils as RequestUtils
+from ..services.Logging import Logging as L
+from ..services.Configuration import Configuration
+from ..services import CSE as CSE
+from ..resources.REQ import REQ
+from ..resources.Resource import Resource
+from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
 
 class RequestManager(object):
@@ -419,6 +419,8 @@ class RequestManager(object):
 	#	TODO	Add method for notifications
 
 
+# TODO change requests to operations and map the opration in the http method
+
 
 	def sendRetrieveRequest(self, url:str, originator:str, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
 		"""	Send a RETRIEVE request via the appropriate channel or transport protocol.
@@ -436,6 +438,12 @@ class RequestManager(object):
 		if Utils.isHttpUrl(url):
 			CSE.event.httpSendCreate() # type: ignore
 			return CSE.httpServer.sendHttpRequest(requests.post, url, originator, ty, data, parameters=parameters, ct=ct, targetResource=targetResource)
+		if Utils.isMQTTUrl(url):
+			CSE.event.mttqSendCreate()	# type: ignore [attr-defined]
+			# TODO continue implementation here
+			#return CSE.mqttClient.sendMqttRequest(Operation.)
+			pass
+
 		L.logWarn(dbg := f'unsupported url scheme: {url}')
 		return Result(status=True, rsc=RC.badRequest, dbg=dbg)
 

@@ -18,16 +18,17 @@ from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
 from werkzeug.datastructures import MultiDict
 
-from etc.Constants import Constants as C
-from etc.Types import ReqResp, ResourceTypes as T, Result, ResponseCode as RC, JSON
-from etc.Types import Operation, CSERequest, ContentSerializationType, Parameters
-from services.Configuration import Configuration
-from resources.Resource import Resource
-import services.CSE as CSE, etc.Utils as Utils, etc.RequestUtils as RequestUtils
-from services.Logging import Logging as L, LogLevel
-from webui.webUI import WebUI
-import helpers.TextTools
-from helpers.BackgroundWorker import *
+from ..etc.Constants import Constants as C
+from ..etc.Types import ReqResp, ResourceTypes as T, Result, ResponseCode as RC, JSON
+from ..etc.Types import Operation, CSERequest, ContentSerializationType, Parameters
+from ..etc import Utils as Utils, RequestUtils as RequestUtils
+from ..services.Configuration import Configuration
+from ..services import CSE as CSE
+from ..services.Logging import Logging as L, LogLevel
+from ..webui.webUI import WebUI
+from ..resources.Resource import Resource
+from ..helpers import TextTools as TextTools
+from ..helpers.BackgroundWorker import *
 
 
 #
@@ -188,7 +189,7 @@ class HttpServer(object):
 			if dissectResult.request.ct == ContentSerializationType.JSON:
 				L.isDebug and L.logDebug(f'Body: \n{str(dissectResult.request.data)}')
 			else:
-				L.isDebug and L.logDebug(f'Body: \n{helpers.TextTools.toHex(cast(bytes, dissectResult.request.data))}\n=>\n{dissectResult.request.dict}')
+				L.isDebug and L.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, dissectResult.request.data))}\n=>\n{dissectResult.request.dict}')
 
 		if self.isStopped:
 			# Return an error if the server is stopped
@@ -206,25 +207,25 @@ class HttpServer(object):
 
 	def handleGET(self, path:str=None) -> Response:
 		Utils.renameCurrentThread()
-		CSE.event.httpRetrieve() # type: ignore
+		CSE.event.httpRetrieve() # type: ignore [attr-defined]
 		return self._handleRequest(path, Operation.RETRIEVE)
 
 
 	def handlePOST(self, path:str=None) -> Response:
 		Utils.renameCurrentThread()
-		CSE.event.httpCreate()	# type: ignore
+		CSE.event.httpCreate()	# type: ignore [attr-defined]
 		return self._handleRequest(path, Operation.CREATE)
 
 
 	def handlePUT(self, path:str=None) -> Response:
 		Utils.renameCurrentThread()
-		CSE.event.httpUpdate()	# type: ignore
+		CSE.event.httpUpdate()	# type: ignore [attr-defined]
 		return self._handleRequest(path, Operation.UPDATE)
 
 
 	def handleDELETE(self, path:str=None) -> Response:
 		Utils.renameCurrentThread()
-		CSE.event.httpDelete()	# type: ignore
+		CSE.event.httpDelete()	# type: ignore [attr-defined]
 		return self._handleRequest(path, Operation.DELETE)
 
 
@@ -327,7 +328,7 @@ class HttpServer(object):
 	def _prepContent(self, content:bytes|str|Any, ct:ContentSerializationType) -> str:
 		if not content:	return ''
 		if isinstance(content, str): return content
-		return content.decode('utf-8') if ct == ContentSerializationType.JSON else helpers.TextTools.toHex(content)
+		return content.decode('utf-8') if ct == ContentSerializationType.JSON else TextTools.toHex(content)
 
 
 	def sendHttpRequest(self, method:Callable, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:	 # type: ignore[type-arg]
@@ -418,7 +419,7 @@ class HttpServer(object):
 		
 		# Build and return the response
 		if isinstance(content, bytes):
-			L.isDebug and L.logDebug(f'<== HTTP-Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{helpers.TextTools.toHex(content)}\n=>\n{str(result.toData())}')
+			L.isDebug and L.logDebug(f'<== HTTP-Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{TextTools.toHex(content)}\n=>\n{str(result.toData())}')
 		else:
 			L.isDebug and L.logDebug(f'<== HTTP-Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
 		return Response(response=content, status=statusCode, content_type=cts, headers=headers)

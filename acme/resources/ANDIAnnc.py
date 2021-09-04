@@ -7,9 +7,9 @@
 #	ANDI : Announceable variant
 #
 
-from resources.MgmtObjAnnc import *
-from etc.Types import ResourceTypes as T, JSON
-from services.Validator import constructPolicy, addPolicy
+from ..etc.Types import ResourceTypes as T, JSON
+from ..services.Validator import constructPolicy, addPolicy
+from ..resources.MgmtObjAnnc import *
 
 # Attribute policies for this resource are constructed during startup of the CSE
 andiAPolicies = constructPolicy([

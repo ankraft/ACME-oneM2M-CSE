@@ -8,10 +8,9 @@
 #
 
 import unittest, sys
-import requests
-sys.path.append('../acme')
-from etc.Constants import Constants as C
-from etc.Types import ResourceTypes as T, ResponseCode as RC
+if '..' not in sys.path:
+	sys.path.append('..')
+from acme.etc.Types import ResourceTypes as T, ResponseCode as RC
 from init import *
 from typing import Tuple
 
