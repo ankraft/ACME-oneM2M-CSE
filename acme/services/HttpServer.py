@@ -51,7 +51,7 @@ class HttpServer(object):
 		self.listenIF			= Configuration.get('http.listenIF')
 		self.port 				= Configuration.get('http.port')
 		self.webuiRoot 			= Configuration.get('cse.webui.root')
-		self.webuiDirectory 	= f'{CSE.rootDirectory}/acme/webui'
+		self.webuiDirectory 	= f'{Configuration.get("basedirectory")}/webui'
 		self.hfvRVI				= Configuration.get('cse.releaseVersion')
 		self.isStopped			= False
 

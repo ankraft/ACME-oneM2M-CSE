@@ -55,8 +55,6 @@ storage:Storage									= None
 timeSeries:TimeSeriesManager					= None
 validator:Validator 							= None
 
-rootDirectory:str								= None
-
 supportedReleaseVersions:list[str]				= None
 cseType:CSEType									= None
 cseCsi:str										= None
@@ -81,13 +79,11 @@ shuttingDown									= False
 def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	global announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
 	global remote, request, security, statistics, storage, timeSeries, validator
-	global rootDirectory
 	global aeStatistics
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseRi, cseRn
 	global cseOriginator
 	global isHeadless
 
-	rootDirectory = os.getcwd()					# get the root directory
 	os.environ["FLASK_ENV"] = "development"		# get rid if the warning message from flask. 
 												# Hopefully it is clear at this point that this is not a production CSE
 

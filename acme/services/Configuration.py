@@ -8,7 +8,7 @@
 #
 
 
-import configparser, re, argparse, os.path
+import configparser, re, argparse, os.path, pathlib
 from typing import Any, Dict
 from rich.console import Console
 from ..etc.Constants import Constants as C
@@ -67,11 +67,14 @@ class Configuration(object):
 
 		try:
 			Configuration._configuration = {
-				'configfile'					: argsConfigfile,
+				'configfile'							: argsConfigfile,
+				'basedirectory'							: pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent,
+
 
 				#
 				#	CSE
 				#
+
 
 				'cse.type'								: config.get('cse', 'type',								fallback='IN'),		# IN, MN, ASN
 				'cse.spid'								: config.get('cse', 'serviceProviderID',				fallback='acme.example.com'),
