@@ -262,7 +262,6 @@ class MQTTClient(object):
 	def __init__(self) -> None:
 		self.enable			= Configuration.get('mqtt.enable')
 		self.topicPrefix 	= Configuration.get('mqtt.topicPrefix')
-		self.enableLogging 	= Configuration.get('mqtt.enableLogging')
 		self.mqttConnection	= None
 		self.isStopped		= False
 
