@@ -7,12 +7,16 @@
 #	Starter for the ACME CSE
 #
 
-import argparse
+import argparse, sys
 from rich.console import Console
 # parent = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent
 # # sys.path.append(f'{parent}/acme')
-from .etc.Constants import Constants as C
-from .services import CSE as CSE
+try:
+	from .etc.Constants import Constants as C
+	from .services import CSE as CSE
+except ImportError:
+	Console().print(f'\n[red]Please run acme as a package, e.g. [red bold]python -m {sys.argv[0]}\n')
+	quit()
 
 # Handle command line arguments
 def parseArgs() -> argparse.Namespace:
