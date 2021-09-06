@@ -1,387 +1,490 @@
-##############################################################################
-#                                                                            #
-# PLEASE DON'T MAKE CHANGES TO THIS FILE.                                    #
-#                                                                            #
-# COPY THIS FILE TO A NEW FILE NAMED "acme.ini", WHICH IS THE DEFAULT NAME   #
-# FOR THE CSE'S CONFIGURATION FILE.                                          #
-#                                                                            #
-##############################################################################
+;
+;	acme.ini - Configuration file the ACME CSE
+;
 
-#
-#	General CSE settings
-#
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;                                                                            ;
+; PLEASE DON'T MAKE CHANGES TO THIS FILE.                                    ;
+;                                                                            ;
+; COPY IT TO A NEW FILE NAMED "acme.ini", WHICH IS THE DEFAULT NAME FOR THE  ;
+; CSE'S CONFIGURATION FILE.                                                  ;
+;                                                                            ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;
+;	Basic Configuration
+;
+;
+;	This part sets the necessary parameters for running the CSE.
+;
+;	Uncomment one of the following sections for a basic IN, MN, or ASN configuration, and make the necessary changes to the
+;	following configuration settings:
+;
+;		cseType          : The CSE type. Allowed values are: IN, MN, ASN .
+;		cseID            : The CSE ID. This is just the ID, without a leading "/" character.
+;		cseName          : The name of the CSE. This is also the CSEBase's resource name.
+;		adminID          : The name of the admin originator for the CSE.
+;		dataDirectory    : The root directory for the data, init, log and cert directories. The macro "${baseDirectory}" 
+;		                   provides the path to the installation directory of the acme package itself.
+;		networkInterface : The network interface to listen to. Use 0.0.0.0 for all interfaces.
+;       cseHost          : The IP address or hostname under which the CSE is reachable.
+;		httpPort         : The port for the CSE's HTTP server to listen for incoming requests.
+;		logLevel         : The level for log messages. Allowed values are: debug, info, warning, error, off .
+;		databaseInMemory : Specify whether the CSE's database is stored in memory. Be aware that setting this configuration 
+;		                   to "true" means that the database content is removed when the CSE terminates.
+;
+;	The following additional configuration values are only needed for MN and ASN CSE installations, and when the CSE should
+;	register to another CSE. They provide the necessary information about the registrar CSE (ie. the CSE that 
+;	the CSE will register itself).
+;
+; 		registrarCseHost : The IP address of the registrar CSE
+;		registrarCsePort : The TCP port of the registrar CSE
+;		registrarCseID   : The CSE-ID of the registrar CSE
+;		registrarCseName : The resource name of the registrar CSE's CSEBase
+;
+
+
+;
+; IN Configuration
+;
+
+[basic.config]
+cseType=IN
+cseID=id-in
+cseName=cse-in
+adminID=CAdmin
+dataDirectory=${baseDirectory}
+networkInterface=0.0.0.0
+cseHost=127.0.0.1
+httpPort=8080
+logLevel=debug
+databaseInMemory=False
+
+;
+; MN Configuration
+;
+
+; [basic.config]
+; cseType=MN
+; cseID=id-mn
+; cseName=cse-mn
+; adminID=CAdmin
+; dataDirectory=${baseDirectory}
+; networkInterface=0.0.0.0
+; cseHost=127.0.0.1
+; httpPort=8081
+; logLevel=debug
+; databaseInMemory=False
+
+; registrarCseHost=127.0.0.1
+; registrarCsePort=8080
+; registrarCseID=id-in
+; registrarCseName=cse-in
+
+
+;
+; ASN Configuration
+;
+
+; [basic.config]
+; cseType=ASN
+; cseID=id-asn
+; cseName=cse-asn
+; adminID=CAdmin
+; dataDirectory=${baseDirectory}
+; networkInterface=0.0.0.0
+; cseHost=127.0.0.1
+; httpPort=8082
+; logLevel=debug
+; databaseInMemory=False
+
+; registrarCseHost=127.0.0.1
+; registrarCsePort=8080
+; registrarCseID=id-in
+; registrarCseName=cse-in
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;	Advanced Configuration
+;
+
+;
+;	General CSE settings
+;
 
 [cse]
-# CSE type. Allowed values: IN, MN, ASN. Default: IN
-type=IN
-# The CSE's service provider ID. Default: acme.example.com
+; CSE type. Allowed values: IN, MN, ASN. Default: IN
+type=${basic.config:cseType}
+; The CSE's service provider ID. Default: acme.example.com
 serviceProviderID=acme.example.com
-# The CSE ID. Can be overwritten in imported CSE definition. Default: /id-in
-cseID=/id-in
-# The CSE's resource ID. Can be overwritten in imported CSE definition. Default: id-in
-resourceID=id-in
-# The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition. Default: cse-in
-resourceName=cse-in
-# Directory of default resources to import. Default: ./init
-resourcesPath=./init
-# ExpirationTime before resources are removed in seconds. Default: 60*60*24*365 -> 1 year -> 31536000
+; The CSE ID. Can be overwritten in imported CSE definition. Default: /id-in
+cseID=/${basic.config:cseID}
+; The CSE's resource ID. Can be overwritten in imported CSE definition. Default: id-in
+resourceID=${basic.config:cseID}
+; The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition. Default: cse-in
+resourceName=${basic.config:cseName}
+; Directory of default resources to import. Default: ./init
+resourcesPath=${basic.config:dataDirectory}/init
+; ExpirationTime before resources are removed in seconds. Default: 60*60*24*365 -> 1 year -> 31536000
 expirationDelta=31536000
-# Maximum expirationTime allowed for resources in seconds. Default: 5 years -> 157680000 
+; Maximum expirationTime allowed for resources in seconds. Default: 5 years -> 157680000 
 maxExpirationDelta=157680000
-# Admin originator for the CSE. Default: CAdmin
-originator=CAdmin
-# Enable notifications. Default: True
+; Admin originator for the CSE. Default: CAdmin
+originator=${basic.config:adminID}
+; Enable notifications. Default: True
 enableNotifications=true
-# Enable remote CSE registration and checking. Default: True
+; Enable remote CSE registration and checking. Default: True
 enableRemoteCSE=true
-# Enable forwarding of requests to a remote CSE. Default: True
+; Enable forwarding of requests to a remote CSE. Default: True
 enableTransitRequests=true
-# Enable the validation of attributes and arguments. Default: true
+; Enable the validation of attributes and arguments. Default: true
 enableValidation=true
-# Enable alphabetical sorting of discovery results. Default: True
+; Enable alphabetical sorting of discovery results. Default: True
 sortDiscoveredResources=true
-# Interval to check for expired resources. 0 means "no checking". Default: 60 seconds
+; Interval to check for expired resources. 0 means "no checking". Default: 60 seconds
 checkExpirationsInterval=60
-# A comma-separated list of supported release versions. This list can contain a single or multiple values.
-# Default: 2a,3,4
+; A comma-separated list of supported release versions. This list can contain a single or multiple values.
+; Default: 2a,3,4
 supportedReleaseVersions=2a,3,4
-# The release version indicator for requests. Allowed values: 1,2,3,3a,4. Default: 3
+; The release version indicator for requests. Allowed values: 1,2,3,3a,4. Default: 3
 releaseVersion=3
-# Indicate the serialization format if none was given in a request and cannot be determined otherwise.
-# Allowed values: json, cbor. Default: json
+; Indicate the serialization format if none was given in a request and cannot be determined otherwise.
+; Allowed values: json, cbor. Default: json
 defaultSerialization=json
 
 
-#
-#	Settings for CSE security
-#
+;
+;	Settings for CSE security
+;
 
 [cse.security]
-# Enable access control checks. Default: True
+; Enable access control checks. Default: True
 enableACPChecks=true
-# Always grant the admin originator full access (bypass access checks). 
-# Default: True
+; Always grant the admin originator full access (bypass access checks). 
+; Default: True
 fullAccessAdmin=True
 
 
-#
-#	HTTP Server settings
-#
+;
+;	HTTP Server settings
+;
 
 [server.http]
-# Port to listen to. Default: 8080
-port=8080
-# Interface to listen to. Use 0.0.0.0 for "all" interfaces. Default:127.0.0.1
-listenIF=127.0.0.1
-# Own address. Should be a local/public reachable address. Default: http://127.0.0.1:8080
-address=http://127.0.0.1:8080
-# CSE Server root. Always provide a trailing /. Default: /
+; Port to listen to. Default: 8080
+port=${basic.config:httpPort}
+; Interface to listen to. Use 0.0.0.0 for "all" interfaces. Default:127.0.0.1
+listenIF=${basic.config:networkInterface}
+; Own address. Should be a local/public reachable address. Default: http://127.0.0.1:8080
+address=http://${basic.config:cseHost}:${basic.config:httpPort}
+; CSE Server root. Always provide a trailing /. Default: /
 root=/
-# Run the http server in single- or multi-threaded mode. Default: true
+; Run the http server in single- or multi-threaded mode. Default: true
 multiThread=true
-# Enable an endpoint for get and set certain configuration values via a 
-# REST interface.
-# ATTENTION: Enabling this feature exposes configuration values, IDs and
-# passwords, and is a security risk.
-# Default: False
+; Enable an endpoint for get and set certain configuration values via a 
+; REST interface.
+; ATTENTION: Enabling this feature exposes configuration values, IDs and
+; passwords, and is a security risk.
+; Default: False
 enableRemoteConfiguration=false
-# Enable an endpoint for getting a structured overview about a CSE's resource
-# tree and deployment infrastructure (remote CSE's)
-# ATTENTION: Enabling this feature exposes various potentially sensitive information.
-# Default: False
+; Enable an endpoint for getting a structured overview about a CSE's resource
+; tree and deployment infrastructure (remote CSE's)
+; ATTENTION: Enabling this feature exposes various potentially sensitive information.
+; Default: False
 enableStructureEndpoint=false
-# Enable an endpoint for resetting the CSE (remove all resources and import
-# the init directory again)
-# ATTENTION: Enabling this feature may lead to a total loss of data.
-# Default: False
+; Enable an endpoint for resetting the CSE (remove all resources and import
+; the init directory again)
+; ATTENTION: Enabling this feature may lead to a total loss of data.
+; Default: False
 enableResetEndpoint=false
 
 
-#
-#	HTTP security settings
-#
+;
+;	HTTP security settings
+;
 
 [server.http.security]
-# Enable TLS for communications.
-# See oneM2M TS-0003 Clause 8.2.1 Overview on Security Association Establishment Frameworks
-# Default: False
+; Enable TLS for communications.
+; See oneM2M TS-0003 Clause 8.2.1 Overview on Security Association Establishment Frameworks
+; Default: False
 useTLS=False
-# TLS version to be used in connections.
-# Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate
-# version negotiation.
-# Default: auto
+; TLS version to be used in connections.
+; Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate
+; version negotiation.
+; Default: auto
 tlsVersion=auto
-# Verify certificates in requests. Set to False when using self-signed certificates. Default: False
+; Verify certificates in requests. Set to False when using self-signed certificates. Default: False
 verifyCertificate=False
-# Path and filename of the certificate file. Default: None
-caCertificateFile=./certs/acme_cert.pem
-# Path and filename of the private key file. Default: None
-caPrivateKeyFile=./certs/acme_key.pem
+; Path and filename of the certificate file. Default: None
+caCertificateFile=${basic.config:dataDirectory}/certs/acme_cert.pem
+; Path and filename of the private key file. Default: None
+caPrivateKeyFile=${basic.config:dataDirectory}/certs/acme_key.pem
 
 
-#
-#	MQTT client settings
-#
+;
+;	MQTT client settings
+;
 
 [client.mqtt]
-# Enable the MQTT binding.
-# Default: False
+; Enable the MQTT binding.
+; Default: False
 enable=False
-# The hostname of the MQTT broker.
-# Default; 127.0.0.1
+; The hostname of the MQTT broker.
+; Default; 127.0.0.1
 address=127.0.0.1
-# Set the port for the MQTT broker. 
-# Default: 1883, or 8883 for TLS
+; Set the port for the MQTT broker. 
+; Default: 1883, or 8883 for TLS
 port=1883
-# Value for the MQTT connection's keep-alive parameter in seconds.
-# Default: 60 seconds
+; Value for the MQTT connection's keep-alive parameter in seconds.
+; Default: 60 seconds
 keepalive=60
-# Interface to listen to. Use 0.0.0.0 for "all" interfaces. 
-# Default: 127.0.0.1
-listenIF=127.0.0.1
-# Optional prefix for topics.
-# Default: empty string
+; Interface to listen to. Use 0.0.0.0 for "all" interfaces. 
+; Default: 127.0.0.1
+listenIF=${basic.config:networkInterface}
+; Optional prefix for topics.
+; Default: empty string
 topicPrefix=
 
 
 
-#
-#	MQTT security settings
-#
+;
+;	MQTT security settings
+;
 
 [client.mqtt.security]
-# The username for MQTT broker authentication if required by the broker.
-# Default: None
+; The username for MQTT broker authentication if required by the broker.
+; Default: None
 username=username
-# The password for MQTT broker authentication if required by the broker.
-# Default: None
+; The password for MQTT broker authentication if required by the broker.
+; Default: None
 password=password
-# Enable TLS for communications with the MQTT broker.
-# Default: False
+; Enable TLS for communications with the MQTT broker.
+; Default: False
 useTLS=False
-# Verify certificates in requests. Set to False when using self-signed certificates. 
-# Default: False
+; Verify certificates in requests. Set to False when using self-signed certificates. 
+; Default: False
 verifyCertificate=False
-# Path and filename of the certificate file. 
-# Default: None
-caCertificateFile=filename
-# List of credential-IDs that can be used to register an AE via MQTT. 
-# If this list is empty then all credential IDs are allowed.
-# This is a comma-separated list. Wildcards (* and ?) are supported.
-# Default: empty list
+; Path and filename of the certificate file. 
+; Default: None
+caCertificateFile=${basic.config:dataDirectory}/certs/m2mqtt_ca.crt
+; List of credential-IDs that can be used to register an AE via MQTT. 
+; If this list is empty then all credential IDs are allowed.
+; This is a comma-separated list. Wildcards (* and ?) are supported.
+; Default: empty list
 allowedCredentialIDs=
 
 
 
 
-#
-#	Database settings
-#
+;
+;	Database settings
+;
 
 [database]
-# Directory for the database files. Default: ./data
-path=./data
-# Operate the database in in-memory mode. Attention: No data is stored persistently.
-# See also command line argument --db-storage. Default: false
-inMemory=false
-# Cache size in bytes, or 0 to disable caching. Default: 0
+; Directory for the database files. Default: ./data
+path=${basic.config:dataDirectory}/data
+; Operate the database in in-memory mode. Attention: No data is stored persistently.
+; See also command line argument --db-storage. Default: false
+inMemory=${basic.config:databaseInMemory}
+; Cache size in bytes, or 0 to disable caching. Default: 0
 cacheSize=0
-# Reset the databases on startup. See also command line argument --db-reset
-# Default: False
+; Reset the databases on startup. See also command line argument --db-reset
+; Default: False
 resetOnStartup=false
 
 
-#
-#	Settings for self-registrations of some resources
-#
+;
+;	Settings for self-registrations of some resources
+;
 
 [cse.registration]
-# List of AE originators that can register. This is a comma-separated list of originators.
-# Wildcards (* and ?) are supported.
-# Default: C*,S* 
+; List of AE originators that can register. This is a comma-separated list of originators.
+; Wildcards (* and ?) are supported.
+; Default: C*,S* 
 allowedAEOriginators=C*,S*
-# List of CSR originators that can register. This is a comma-separated list of originators.
-# Wildcards (* and ?) are supported.
-# Note: No leading "/"
-# Default: empty list
-allowedCSROriginators=id-mn
-# Check the liveliness if the registrations to the registrar CSE and also from the registree CSEs. Default: True
+; List of CSR originators that can register. This is a comma-separated list of originators.
+; Wildcards (* and ?) are supported.
+; Note: No leading "/"
+; Default: empty list
+allowedCSROriginators=id-mn,id-asn
+; Check the liveliness if the registrations to the registrar CSE and also from the registree CSEs. Default: True
 checkLiveliness=True
 
 
-#
-#	Settings for Registrar CSE access 
-#
+;
+;	Settings for Registrar CSE access 
+;
 
 [cse.registrar]
-# URL of the Registrar CSE. Default: no default
-address=http://127.0.0.1:8081
-# Registrar CSE root path. Default: /
+; URL of the Registrar CSE. Default: no default
+address=http://${basic.config:registrarCseHost}:${basic.config:registrarCsePort}
+; Registrar CSE root path. Default: /
 root=/
-# CSE-ID of the Registrar CSE. Default: None
-cseID=/id-in
-# The Registrar CSE's resource name. Default: None
-resourceName=cse-in
-# Specify the serialization type that must be used for the registration to the registrar CSE.
-# Allowed values: json, cbor. Default: json
+; CSE-ID of the Registrar CSE. Default: None
+cseID=/${basic.config:registrarCseID}
+; The Registrar CSE's resource name. Default: None
+resourceName=${basic.config:registrarCseName}
+; Specify the serialization type that must be used for the registration to the registrar CSE.
+; Allowed values: json, cbor. Default: json
 serialization=json
-# Wait n seconds between tries to to connect to the Registrar CSE and to check validity of Registrar CSE connections in seconds.
-# Default: 30
+; Wait n seconds between tries to to connect to the Registrar CSE and to check validity of Registrar CSE connections in seconds.
+; Default: 30
 checkInterval=30
-# List of resources that are excluded when creating a registrar CSR. Default: empty list
+; List of resources that are excluded when creating a registrar CSR. Default: empty list
 excludeCSRAttributes=
 
 
-#
-#	Logging settings
-#
+;
+;	Logging settings
+;
 
 [logging]
-# Enable logging to file. Default: False
+; Enable logging to file. Default: False
 enableFileLogging=False
-# Enable logging to the screen. Default: True
+; Enable logging to the screen. Default: True
 enableScreenLogging=true
-# Path to the log files. Default: ./logs
-path=./logs
-# Loglevel. Allowed values: debug, info, warning, error, off. Default: debug
-level=debug
-# Number of files for log rotation. Default: 10
+; Path to the log files. Default: ./logs
+path=${basic.config:dataDirectory}/logs
+; Loglevel. Allowed values: debug, info, warning, error, off. Default: debug
+level=${basic.config:logLevel}
+; Number of files for log rotation. Default: 10
 count=10
-# Size per log file. Default: 100.000 bytes
+; Size per log file. Default: 100.000 bytes
 size=100000
-# Print a stack trace when logging an 'error' level message. Default: True
+; Print a stack trace when logging an 'error' level message. Default: True
 stackTraceOnError=False
-# Enable logging of low-level HTTP & MQTT client events.
-# Default: False
+; Enable logging of low-level HTTP & MQTT client events.
+; Default: False
 enableBindingsLogging=False
 
 
-#
-#	Settings for resource announcements 
-#
+;
+;	Settings for resource announcements 
+;
 
 [cse.announcements]
-# Enable announcement to remote CSE and allow announced resource registrations. Default: True
+; Enable announcement to remote CSE and allow announced resource registrations. Default: True
 enable=true
-# Wait n seconds between tries to to announce resources to registered remote CSE.
-# Default: 10
+; Wait n seconds between tries to to announce resources to registered remote CSE.
+; Default: 10
 checkInterval=10
 
 
-#
-#	Statistic settings 
-#
+;
+;	Statistic settings 
+;
 
 [cse.statistics]
-# Enable or disable statistics. Default: True
+; Enable or disable statistics. Default: True
 enable=true
-# Interval for saving statistics data to disk in seconds. Default: 60
+; Interval for saving statistics data to disk in seconds. Default: 60
 writeInterval=60
 
 
-#
-#	Resource defaults: ACP
-#
+;
+;	Resource defaults: ACP
+;
 
 [cse.resource.acp]
-# Default permission when creating an ACP resource. Default: 63
+; Default permission when creating an ACP resource. Default: 63
 permission=63
-# Default selfPermission when creating an ACP resource. Default: 51
+; Default selfPermission when creating an ACP resource. Default: 51
 selfPermission=51
 
 
-#
-#	Resource defaults: Container
-#
+;
+;	Resource defaults: Container
+;
 
 [cse.resource.cnt]
-# Enable/disable the default limits. Default: False
+; Enable/disable the default limits. Default: False
 enableLimits=False
-# Default for maxNrOfInstances. Default: 10
+; Default for maxNrOfInstances. Default: 10
 mni=10
-# Default for maxByteSize. Default: 10.000 bytes
+; Default for maxByteSize. Default: 10.000 bytes
 mbs=10000
 
 
-#
-#	Resource defaults: TimeSeries
-#
+;
+;	Resource defaults: TimeSeries
+;
 
 [cse.resource.ts]
-# Enable/disable the default limits. Default: False
+; Enable/disable the default limits. Default: False
 enableLimits=False
-# Default for maxNrOfInstances. Default: 10
+; Default for maxNrOfInstances. Default: 10
 mni=10
-# Default for maxByteSize. Default: 10.000 bytes
+; Default for maxByteSize. Default: 10.000 bytes
 mbs=10000
-# Default for missingDataMaxNr. Default: 10
+; Default for missingDataMaxNr. Default: 10
 mdn=10
 
 
-#
-#	Resource defaults: Request
-#
+;
+;	Resource defaults: Request
+;
 
 [cse.resource.req]
-# A <request> resource's minimum expiration time in seconds. Must be >0. Default: 60 
+; A <request> resource's minimum expiration time in seconds. Must be >0. Default: 60 
 minimumExpirationTime=60
-# A <request> resource's maximum expiration time in seconds. Must be >0. Default: 180
+; A <request> resource's maximum expiration time in seconds. Must be >0. Default: 180
 maximumExpirationTime=180
 
 
-#
-#	Resource defaults: Subscription
-#
+;
+;	Resource defaults: Subscription
+;
 
 [cse.resource.sub]
-# Default for batchNotify/duration in seconds. Must be >0. Default: 60 
+; Default for batchNotify/duration in seconds. Must be >0. Default: 60 
 batchNotifyDuration=60
 
 
-#
-#	Web UI settings
-#
+;
+;	Web UI settings
+;
 
 [cse.webui]
-# Enable the web UI. Default: True
+; Enable the web UI. Default: True
 enable=true
-# Root path of the web UI. Default: /webui
+; Root path of the web UI. Default: /webui
 root=/webui
 
 
-#
-#   Console settings
-#
+;
+;   Console settings
+;
 
 [cse.console]
-# Interval for continuously refreshing information displays. Must be > 0.0. 
-# Default: 2.0 seconds.
+; Interval for continuously refreshing information displays. Must be > 0.0. 
+; Default: 2.0 seconds.
 refreshInterval=2.0
-# Hide certain resources from display in the console. This is a list of resource identifiers.
-# Wildcards are allowed.
-# Default: Empty list
+; Hide certain resources from display in the console. This is a list of resource identifiers.
+; Wildcards are allowed.
+; Default: Empty list
 hideResources=
-# Set the mode how resources and their content are presented in the console's tree view. 
-# Allowed values: normal, compact, content, contentOnly
-# Default: normal
+; Set the mode how resources and their content are presented in the console's tree view. 
+; Allowed values: normal, compact, content, contentOnly
+; Default: normal
 treeMode=normal
-# Quitting the console needs to be confirmed.
-# This may not work under Windows, so it should be switched off.
-# Default: False
-confirmQuit=True
+; Quitting the console needs to be confirmed.
+; This may not work under Windows, so it should be switched off.
+; Default: False
+confirmQuit=False
 
 
-#
-#	ID Mappings
-#	This section defines mappings for URI paths to IDs in the CSE. Mappings
-#	can be used to provide a more convenient way to access the CSE's resources.
-#	Each line specifies a mapping, where the key specifies a new path,
-#	and the value represents the mapping to a request (including optional arguments).
-#	The http server redirects (307) a request to one of the new paths to the
-#	respective request mapping.
-#	Please note, that the "root" path in [server.http] prefixes both the new
-#	path and the mapping.
-#
+;
+;	ID Mappings
+;	This section defines mappings for URI paths to IDs in the CSE. Mappings
+;	can be used to provide a more convenient way to access the CSE's resources.
+;	Each line specifies a mapping, where the key specifies a new path,
+;	and the value represents the mapping to a request (including optional arguments).
+;	The http server redirects (307) a request to one of the new paths to the
+;	respective request mapping.
+;	Please note, that the "root" path in [server.http] prefixes both the new
+;	path and the mapping.
+;
 
 [server.http.mappings]
 /access/v1/devices=/cse-mn?ty=14&fu=1&fo=2&rcn=8

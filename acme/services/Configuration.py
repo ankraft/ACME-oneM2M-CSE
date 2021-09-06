@@ -50,8 +50,16 @@ class Configuration(object):
 
 		# Read and parse the configuration file
 		config = configparser.ConfigParser(	interpolation=configparser.ExtendedInterpolation(),
-											converters={'list': lambda x: [i.strip() for i in x.split(',')]}	# Convert csv to list
+											converters={'list': lambda x: [i.strip() for i in x.split(',')]},	# Convert csv to list
 										  )
+		config.read_dict({ 'basic.config': {
+								'baseDirectory' 	: pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent.parent,	# points to the acme module's parent directory
+								'registrarCseHost'	: '127.0.0.1',																# The IP address of the registrar CSE
+								'registrarCsePort'	: 8080,																		# The TCP port of the registrar CSE
+								'registrarCseID'	: 'id-in',																	# The CSE-ID of the registrar CSE
+								'registrarCseName'	: 'cse-in',																	# The resource name of the registrar CSE's CSEBase
+						 }
+					})
 		try:
 			if len(config.read(argsConfigfile)) == 0 and argsConfigfile != C.defaultConfigFile:		# Allow 
 				_print(f'[red]Configuration file missing or not readable: {argsConfigfile}')
@@ -68,7 +76,7 @@ class Configuration(object):
 		try:
 			Configuration._configuration = {
 				'configfile'							: argsConfigfile,
-				'basedirectory'							: pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent,
+				'packageDirectory'						: pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent,	# points to the acme package directory
 
 
 				#
@@ -272,14 +280,19 @@ class Configuration(object):
 
 			}
 
+		except configparser.InterpolationMissingOptionError as e:
+			_print(f'[red]Error in configuration file: {argsConfigfile}\n{str(e)}')
+			_print('\n[red]Please check the section [bold]\[basic.config][/bold] in the configuration file.\n')
+			return False
+
 		except Exception as e:	# about when findings errors in configuration
-			_print(f'[red]Error in configuration file: {argsConfigfile} - {str(e)}')
+			_print(f'[red]Error in configuration file: {argsConfigfile}\n{str(e)}')
 			return False
 
 		# Read id-mappings
 		if  config.has_section('server.http.mappings'):
 			Configuration._configuration['server.http.mappings'] = config.items('server.http.mappings')
-			#print(config.items('server.http.mappings'))
+			# print(config.items('server.http.mappings'))
 
 		# Some clean-ups and overrides
 

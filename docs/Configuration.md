@@ -2,31 +2,107 @@
 
 # Configuration
 
+[Simple Configuration](#simple)  
+[Configuration Sections](#sections)  
+[Advanced Usage](#advanced)  
+
+
 Configuration of CSE parameters is done through a configuration file. This file contains all configurable and customizable settings for the CSE. It is optional, and settings in this file overwrite the CSE's default values. 
 
 It follows the Windows INI file format with sections, keywords and values. A configuration file may include comments, prefixed with the characters "#"" or ";"" .
 
 Also, some settings can be applied via the command line when starting the CSE. These command line arguments overwrite the settings in the configuration file.
 
-## General Usage
+
+## The Configuration File
+
+**Changes should only be done to a copy of the default configuration file.**
 
 A default configuration file is provided with the file [acme.ini.default](../acme.ini.default). Don't make changes to this file, but rather copy it to a new file named *acme.ini*, which is the default configuration file name. You can use another filename, but must then specify it with the *--config* command line argument when running the the (see [Running the CSE](Running.md#running-the-cse)).
 
-### Configuration References
 
-The CSE's configuration module uses the [Python Extended Interpolation Parser](https://docs.python.org/3/library/configparser.html#interpolation-of-values) that implements a more advanced syntax in order to support settings references across the configuration file. That means that you can reference settings in the same or in other configuration sections. See the the [Python documentation](https://docs.python.org/3/library/configparser.html#interpolation-of-values) for a detailed description.
+<a name="simple"></a>
+## Simple Configuration
 
-### Using Settings During Imports
+At the top of the configuration file three *\[basic.config]* sections are provided, one for each CSE type. Each section has meaningful values for the most 
+necessary settings. Choose and uncomment one section for either running the CSE as an IN, MN, or ASN CSE (IN-CSE might be the most common choice to start with).
 
-Configuration values can be referenced by their respective macro name and used when [importing resources](Importing.md#accessing-configuration-settings).
+The settings here are:
 
-The following macros are supported in addition to those defined in the sections below:
+- **cseType**  
+The CSE type. Allowed values are: IN, MN, ASN .
+- **cseID**  
+The CSE ID. This is just the ID, without a leading "/" character.
+- **cseName**  
+The name of the CSE. This is also the CSEBase's resource name.
+- **adminID**  
+The name of the admin originator for the CSE.
+- **dataDirectory**  
+The root directory for the data, init, log and cert directories. The build-in macro ``${baseDirectory}`` provides the path to the installation directory of the acme package itself.
+- **networkInterface**  
+The network interface to listen to. Use 0.0.0.0 for all interfaces.
+- **cseHost**  
+The IP address or hostname under which the CSE is reachable.
+- **httpPort**  
+The port for the CSE's HTTP server to listen for incoming requests.
+- **logLevel**  
+The level for log messages. Allowed values are: debug, info, warning, error, off .
+- **databaseInMemory**  
+Specify whether the CSE's database is stored in memory. Be aware that setting this configuration to "True" means that the database content is removed when the CSE terminates.
 
-| Macro name | Description                              |
-|:-----------|:-----------------------------------------|
-| configfile | Path and name of the configuration file. |
+The following additional configuration values are only needed for MN and ASN CSE installations, and when the CSE should
+register to another CSE. They provide the necessary information about the registrar CSE (ie. the CSE that 
+the CSE will register itself).
 
-## Configuration Sections
+- **registrarCseHost**  
+The IP address of the registrar CSE
+- **registrarCsePort**  
+The TCP port of the registrar CSE
+- **registrarCseID**  
+The CSE-ID of the registrar CSE
+- *+registrarCseName**  
+The resource name of the registrar CSE's CSEBase
+
+
+### Examples
+
+The following is an example for basic configuration for a IN-CSE.
+
+	[basic.config]
+	cseType=IN
+	cseID=id-in
+	cseName=cse-in
+	adminID=CAdmin
+	dataDirectory=${baseDirectory}
+	networkInterface=0.0.0.0
+	cseHost=127.0.0.1
+	httpPort=8080
+	logLevel=debug
+	databaseInMemory=False
+
+The following is an example for an MN-CSE. It will register to an IN-CSE that runs on the same host (ie. the address for the registrar CSE's is *127.0.0.1*).
+
+	[basic.config]
+	cseType=MN
+	cseID=id-mn
+	cseName=cse-mn
+	adminID=CAdmin
+	dataDirectory=${baseDirectory}
+	networkInterface=0.0.0.0
+	cseHost=127.0.0.1
+	httpPort=8081
+	logLevel=debug
+	databaseInMemory=False
+
+	registrarCseHost=127.0.0.1
+	registrarCsePort=8080
+	registrarCseID=id-in
+	registrarCseName=cse-in
+
+<a name="sections"></a>
+## Detailed Configuration Sections
+
+The following tables provide detailed descriptions of all the possible CSE configuration settings.
 
 [\[cse\] - General CSE Settings](#general)  
 [\[cse.security\] - General Security Settings](#security)  
@@ -299,5 +375,24 @@ The following snippet only presents some example for ID mappings.
 /access/v1/apps=/id-mn?ty=2&fu=1&fo=2&rcn=8
 /access/v1/devices/battery=/id-mn?ty=14&mgd=1006&fu=1&fo=2&rcn=8
 ```
+
+<a name="advanced"></a>
+## Advanced Usage
+
+### Configuration References
+
+The CSE's configuration module uses the [Python Extended Interpolation Parser](https://docs.python.org/3/library/configparser.html#interpolation-of-values) that implements a more advanced syntax in order to support settings references across the configuration file. That means that you can reference settings in the same or in other configuration sections. See the the [Python documentation](https://docs.python.org/3/library/configparser.html#interpolation-of-values) for a detailed description.
+
+### Using Settings During Imports
+
+Configuration values can be referenced by their respective macro name and used when [importing resources](Importing.md#accessing-configuration-settings).
+
+The following macros are supported in addition to those defined in the sections below. They are set by the CSE at runtime.
+
+| Macro name       | Description                              |
+|:-----------------|:-----------------------------------------|
+| configfile       | Path and name of the configuration file. |
+| packageDirectory | Path to the acme package directory.      |
+
 
 [← README](../README.md) 
