@@ -9,8 +9,8 @@
 
 
 from __future__ import annotations
-from typing import Union
-import datetime
+from typing import Callable, Union
+import datetime, time
 import isodate
 
 
@@ -76,3 +76,15 @@ def utcTime() -> float:
 	"""	Return the current time's timestamp, but relative to UTC.
 	"""
 	return datetime.datetime.utcnow().timestamp()
+
+
+def waitFor(timeout:float, condition:Callable[[], bool]) -> bool:
+	"""	Busy waiting for `timeout` seconds, or until the `condition`
+		callback function returns *True*.
+
+		Return *True* if the condition was met before the timeout, and *False* otherwise.
+	"""
+	toTs = time.time() + timeout
+	while not (res := condition()) and toTs > time.time():
+		time.sleep(0.01)
+	return res
