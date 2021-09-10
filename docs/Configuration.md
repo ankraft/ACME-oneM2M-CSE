@@ -202,6 +202,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | listenIF      | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1           | mqtt.listenIF      |
 | keepalive     | Value for the MQTT connection's keep-alive parameter in seconds.<br />Default: 60 seconds | mqtt.keepalive     |
 | topicPrefix   | Optional prefix for topics.<br />Default: empty string                                    | mqtt.topicPrefix   |
+| timeout       | Timeout when sending MQTT requests and waiting for responses.<br />Default: 5.0 seconds   | mqtt.timeout       |
 
 
 <a name="security_mqtt"></a>

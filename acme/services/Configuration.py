@@ -144,6 +144,7 @@ class Configuration(object):
 				'mqtt.keepalive' 						: config.getint('client.mqtt', 'keepalive',				fallback=60),
 				'mqtt.listenIF' 						: config.get('client.mqtt', 'listenIF',					fallback='127.0.0.1'),
 				'mqtt.topicPrefix' 						: config.get('client.mqtt', 'topicPrefix',				fallback=''),
+				'mqtt.timeout' 							: config.getfloat('client.mqtt', 'timeout',				fallback=5.0),
 
 				# TODO check values of mqtt later
 
