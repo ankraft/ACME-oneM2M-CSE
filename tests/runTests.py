@@ -88,18 +88,18 @@ if __name__ == '__main__':
 	# Print Summary
 	console.print()
 	table = Table(show_header=True, header_style='bright_blue', show_footer=True, footer_style='', title='[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim] - Test Results')
-	table.add_column('Test Suites', footer='Totals', no_wrap=True)
-	table.add_column('Test Count', footer=f'[spring_green3]{totalRunTests if totalErrors == 0 else str(totalRunTests)}[/spring_green3]')
-	table.add_column('Skipped', footer=f'[yellow]{totalSkipped}[/yellow]' if totalSkipped > 0 else '[spring_green3]0[spring_green3]')
-	table.add_column('Errors', footer=f'[red]{totalErrors}[/red]' if totalErrors > 0 else '[spring_green3]0[spring_green3]')
-	table.add_column('Exec Time', footer=f'{totalExecTime:.4f}')
-	table.add_column('Process Time', footer=f'{totalProcessTime:.4f}')
-	table.add_column('Time / Test', footer=f'{totalExecTime/totalRunTests:.4f}' if totalRunTests != 0 else '')
+	table.add_column('Test Suite', footer='Totals', no_wrap=True)
+	table.add_column('Count', footer=f'[spring_green3]{totalRunTests if totalErrors == 0 else str(totalRunTests)}[/spring_green3]', justify='right')
+	table.add_column('Skipped', footer=f'[yellow]{totalSkipped}[/yellow]' if totalSkipped > 0 else '[spring_green3]0[spring_green3]', justify='right')
+	table.add_column('Errors', footer=f'[red]{totalErrors}[/red]' if totalErrors > 0 else '[spring_green3]0[spring_green3]', justify='right')
+	table.add_column('Exec Time', footer=f'{totalExecTime:.4f}', justify='right')
+	table.add_column('Process Time', footer=f'{totalProcessTime:.4f}', justify='right')
+	table.add_column('Time / Test', footer=f'{totalExecTime/totalRunTests:.4f}' if totalRunTests != 0 else '', justify='right')
 	# Styles
 	styleDisabled = Style(dim=True)
-	styleDisabled2 = Style(dim=True, bgcolor='grey15')
+	styleDisabled2 = Style(dim=True, bgcolor='grey11')
 	styleEnabled = Style()
-	styleEnabled2 = Style(bgcolor='grey15')
+	styleEnabled2 = Style(bgcolor='grey11')
 	cnt = 0
 	for k,v in results.items():
 		cnt += 1
@@ -111,7 +111,7 @@ if __name__ == '__main__':
 						str(v[0]), 
 						f'[yellow]{v[4]}[/yellow]' if v[4] > 0 and v[0] > 0 else str(v[4]),
 						f'[red]{v[1]}[/red]' if v[1] > 0 and v[0] > 0 else str(v[1]),
-						f'{v[2]:4f}' if v[0] > 0 else '', 
+						f'{v[2]:.4f}' if v[0] > 0 else '', 
 						f'{v[3]:.4f}' if v[0] > 0 else '',
 						f'{(v[2]/v[0]):.4f}' if v[0] > 0 else '',
 						style=style)
