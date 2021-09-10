@@ -246,8 +246,8 @@ class Storage(object):
 	##	BatchNotifications
 	##
 
-	def addBatchNotification(self, ri:str, nu:str, request:JSON, serialization:ContentSerializationType) -> bool:
-		return self.db.addBatchNotification(ri, nu, request, serialization)
+	def addBatchNotification(self, ri:str, nu:str, request:JSON) -> bool:
+		return self.db.addBatchNotification(ri, nu, request)
 
 
 	def countBatchNotifications(self, ri:str, nu:str) -> int:
@@ -522,12 +522,11 @@ class TinyDBBinding(object):
 	#	BatchNotifications
 	#
 
-	def addBatchNotification(self, ri:str, nu:str, notificationRequest:JSON, serialization:ContentSerializationType) -> bool:
+	def addBatchNotification(self, ri:str, nu:str, notificationRequest:JSON) -> bool:
 		with self.lockBatchNotifications:
 			result = self.tabBatchNotifications.insert(
 									{	'ri' 		: ri,
 										'nu' 		: nu,
-										'csz'		: serialization.value,
 										'tstamp'	: DateUtils.utcTime(),
 										'request'	: notificationRequest
 									})
