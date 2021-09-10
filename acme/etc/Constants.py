@@ -68,7 +68,7 @@ class Constants(object):
 	#
 	#	Supported URL schemes
 	#
-	supportedSchemes = ['http', 'https']	# Supported by the CSE
+	supportedSchemes = ['http', 'https', 'mqtt', 'mqtts']	# Supported by the CSE
 	# TODO add Coap here later
 
 	#
