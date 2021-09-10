@@ -346,6 +346,8 @@ class ResponseCode(IntEnum):
 	invalidArguments							= 6023
 	insufficientArguments						= 6024
 
+	UNKNOWN										= -1
+
 
 	def httpStatusCode(self) -> int:
 		""" Map the oneM2M RSC to an http status code. """
@@ -392,6 +394,9 @@ ResponseCode._httpStatusCodes = {																		# type: ignore
 		ResponseCode.subscriptionVerificationInitiationFailed	: HTTPStatus.INTERNAL_SERVER_ERROR,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
 		ResponseCode.releaseVersionNotSupported					: HTTPStatus.NOT_IMPLEMENTED,			# RELEASE_VERSION_NOT_SUPPORTED
 		ResponseCode.notImplemented								: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
+		
+		ResponseCode.UNKNOWN									: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
+
 	}
 
 
@@ -829,7 +834,7 @@ class CSERequest:
 	srn:str 						= None 	# target structured resource name
 	csi:str 						= None 	# target csi
 	op:Operation					= None	# request operation
-
+	parameters:Parameters			= None	# Any additional parameters
 
 ##############################################################################
 #
