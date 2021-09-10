@@ -163,21 +163,21 @@ class	Logging:
 
 
 	@staticmethod
-	def log(msg:str, stackOffset:int=None) -> None:
+	def log(msg:Any, stackOffset:int=None) -> None:
 		"""Print a log message with level INFO. 
 		"""
 		Logging._log(logging.INFO, msg, stackOffset=stackOffset)
 
 
 	@staticmethod
-	def logDebug(msg:str, stackOffset:int=None) -> None:
+	def logDebug(msg:Any, stackOffset:int=None) -> None:
 		"""Print a log message with level DEBUG. 
 		"""
 		Logging._log(logging.DEBUG, msg, stackOffset=stackOffset)
 
 
 	@staticmethod
-	def logErr(msg:str, showStackTrace:bool=True, exc:Exception=None, stackOffset:int=None) -> None:
+	def logErr(msg:Any, showStackTrace:bool=True, exc:Exception=None, stackOffset:int=None) -> None:
 		"""	Print a log message with level ERROR. 
 			`showStackTrace` indicates whether a stacktrace shall be logged together with the error
 			as well.
@@ -196,7 +196,7 @@ class	Logging:
 
 
 	@staticmethod
-	def logWarn(msg:str, stackOffset:int=None) -> None:
+	def logWarn(msg:Any, stackOffset:int=None) -> None:
 		"""Print a log message with level WARNING. 
 		"""
 		from ..services import CSE as CSE
@@ -206,7 +206,7 @@ class	Logging:
 
 
 	@staticmethod
-	def logWithLevel(level:int, message:str, showStackTrace:bool=False, stackOffset:int=None) -> None:
+	def logWithLevel(level:int, message:Any, showStackTrace:bool=False, stackOffset:int=None) -> None:
 		"""	Fallback log method when the `level` is a separate argument.
 		"""
 		# TODO add a parameter frame substractor to correct the line number, here and in In _log()
@@ -218,7 +218,7 @@ class	Logging:
 
 
 	@staticmethod
-	def _log(level:int, msg:str, stackOffset:int=None) -> None:
+	def _log(level:int, msg:Any, stackOffset:int=None) -> None:
 		"""	Internally adding various information to the log output. The `stackOffset` is used to determine 
 			the correct caller. It is set by a calling method in case the log information are re-routed.
 		"""
