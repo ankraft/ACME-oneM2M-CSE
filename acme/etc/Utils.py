@@ -162,7 +162,9 @@ def structuredPathFromRI(ri:str) -> str:
 
 
 def riFromStructuredPath(srn: str) -> str:
-	""" Get the ri from a resource by its structured path. """
+	""" Get the ri from a resource by its structured path. 
+		Makes a lookup to a table in the DB.
+	"""
 	if len((paths := CSE.storage.structuredPath(srn))) == 1:
 		return cast(str, paths[0]['ri'])
 	return None
@@ -177,88 +179,6 @@ def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
 				srn = '/'.join([srn, ids[-1]])
 				id = riFromStructuredPath(srn) # id becomes the ri of the fopt
 	return srn, id
-
-
-# def retrieveIDFromPath(id: str, csern: str, csecsi: str) -> Tuple[str, str, str]:
-# 	""" Split a ful path e.g. from a http request into its component and return a local ri .
-# 		Also handle retargeting paths.
-# 		The return tupple is (RI, CSI, SRN).
-# 	"""
-# 	csi 		= None
-# 	spi 		= None
-# 	srn 		= None
-# 	ri 			= None
-# 	vrPresent	= None
-
-# 	# Prepare. Remove leading / and split
-# 	if id[0] == '/':
-# 		id = id[1:]
-# 	ids = id.split('/')
-# 	csecsi = csecsi[1:]	# remove leading / from csi for our comparisons here
-
-# 	if (idsLen := len(ids)) == 0:	# There must be something!
-# 		return None, None, None
-
-# 	# Remove virtual resource shortname if it is present
-# 	if ids[-1] in C.virtualResourcesNames:
-# 		vrPresent = ids.pop()	# remove and return last path element
-# 		idsLen -= 1
-
-# 	if ids[0] == '~' and idsLen > 1:			# SP-Relative
-# 		# L.logDebug("SP-Relative")
-# 		csi = ids[1]							# extract the csi
-# 		if csi != csecsi:						# Not for this CSE? retargeting
-# 			if vrPresent:			# append last path element again
-# 				ids.append(vrPresent)
-# 			return f'/{"/".join(ids[1:])}', csi, srn		# Early return. ri is the remaining (un)structured path
-# 		if idsLen > 2 and (ids[2] == csern or ids[2] == '-'):	# structured
-# 			ids[2] = csern if ids[2] == '-' else ids[2]
-# 			srn = '/'.join(ids[2:])
-# 		elif idsLen == 3:						# unstructured
-# 			ri = ids[2]
-# 		else:
-# 			return None, None, None
-
-# 	elif ids[0] == '_' and idsLen >= 4:			# Absolute
-# 		# L.logDebug("Absolute")
-# 		spi = ids[1] 	#TODO Check whether it is same SPID, otherwise forward it throw mcc'
-# 		csi = ids[2]
-# 		if csi != csecsi:
-# 			if vrPresent:						# append last path element again
-# 				ids.append(vrPresent)
-# 			return f'/{"/".join(ids[2:])}', csi, srn	# Not for this CSE? retargeting
-# 		if ids[3] == csern or ids[3] == '-':				# structured
-# 			ids[3] = csern if ids[3] == '-' else ids[3]
-# 			srn = '/'.join(ids[3:])
-# 		elif idsLen == 4:						# unstructured
-# 			ri = ids[3]
-# 		else:
-# 			return None, None, None
-
-# 	else:										# CSE-Relative
-# 		# L.logDebug("CSE-Relative")
-# 		if idsLen == 1 and ((ids[0] != csern and ids[0] != '-') or ids[0] == csecsi):	# unstructured
-# 			ri = ids[0]
-# 		else:									# structured
-# 			ids[0] = csern if ids[0] == '-' else ids[0]
-# 			srn = '/'.join(ids)
-
-# 	# Now either csi, ri or structured is set
-# 	if ri:
-# 		if vrPresent:
-# 			ri = f'{ri}/{vrPresent}'
-# 		return ri, csi, srn
-# 	if srn:
-# 		# if '/fopt' in ids:	# special handling for fanout points
-# 		# 	return srn, csi, srn
-# 		if vrPresent:
-# 			srn = f'{srn}/{vrPresent}'
-# 		return riFromStructuredPath(srn), csi, srn
-# 	if csi:
-# 		return riFromCSI(f'/{csi}'), csi, srn
-# 	# TODO do something with spi?
-# 	return None, None, None
-
 
 
 def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
@@ -276,7 +196,18 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
 	ids = id.split('/')
 	csecsi = csecsi[1:]	# remove leading / from csi for our comparisons here
 
+	# Test for empty ID
 	if (idsLen := len(ids)) == 0:	# There must be something!
+		return None, None, None
+
+	# Remove the empty elements in the beginnig of the list
+	# and calculate from that the "level", which indicates CSE relative,
+	# SP relative or absolute
+	while not ids[0]:
+		ids.pop(0)
+	lvl = idsLen - len(ids)
+	idsLen -= lvl
+	if lvl > 2:						# not more than 2 * / in front
 		return None, None, None
 
 	# Remove virtual resource shortname if it is present
@@ -284,53 +215,57 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
 		vrPresent = ids.pop()	# remove and return last path element
 		idsLen -= 1
 	
-	if len(ids[0]) > 0:											# CSE-Relative (first element is not /)
+	# CSE-Relative (first element is not /)
+	if lvl == 0:								
 		# L.logDebug("CSE-Relative")
 		if idsLen == 1 and ((ids[0] != csern and ids[0] != '-') or ids[0] == csecsi):	# unstructured
 			ri = ids[0]
 		else:									# structured
-			ids[0] = csern if ids[0] == '-' else ids[0]
+			if ids[0] == '-':						# replace placeholder "-"
+				ids[0] = csern
 			srn = '/'.join(ids)
 	
-	elif idsLen > 2 and len(ids[0]) == 0 and len(ids[1]) > 0:	# SP-Relative (first and second element is not /)
+	# SP-Relative (first element is  /)
+	elif lvl == 1:								
 		# L.logDebug("SP-Relative")
-		csi = ids[1]							# extract the csi
+		csi = ids[0]							# extract the csi
 		if csi != csecsi:						# Not for this CSE? retargeting
-			if vrPresent:			# append last path element again
+			if vrPresent:						# append last path element again
 				ids.append(vrPresent)
-			return id, csi, srn		# Early return. ri is the (un)structured path
-		if ids[2] == csern or ids[2] == '-':	# structured
-			ids[2] = csern if ids[2] == '-' else ids[2]
-			srn = '/'.join(ids[2:])				# remove the csi part
+			return id, csi, srn					# Early return. ri is the (un)structured path
+		if ids[1] == '-':						# replace placeholder "-"
+			ids[1] = csern
+		if ids[1] == csern:						# structured
+			srn = '/'.join(ids[1:])				# remove the csi part
+		elif idsLen == 2:						# unstructured
+			ri = ids[1]
+		else:
+			return None, None, None
+
+	# Absolute
+	elif lvl == 2: 								
+		# L.logDebug("Absolute")
+		spi = ids[0] 							#TODO Check whether it is same SPID, otherwise forward it throw mcc'	see cse.sp configuration
+		csi = ids[1]
+		if csi != csecsi:
+			if vrPresent:						# append virtual last path element again
+				ids.append(vrPresent)
+			return id, csi, srn	# Not for this CSE? retargeting
+		if ids[2] == '-':						# replace placeholder "-"
+			ids[2] = csern
+		if ids[2] == csern:						# structured
+			srn = '/'.join(ids[2:])
 		elif idsLen == 3:						# unstructured
 			ri = ids[2]
 		else:
 			return None, None, None
 
-	elif idsLen > 4 and len(ids[0]) == 0 and len(ids[1]) == 0: 	# Absolute
-		# L.logDebug("Absolute")
-		spi = ids[2] 	#TODO Check whether it is same SPID, otherwise forward it throw mcc'	see cse.sp configuration
-		csi = ids[3]
-		if csi != csecsi:
-			if vrPresent:						# append last path element again
-				ids.append(vrPresent)
-			return id, csi, srn	# Not for this CSE? retargeting
-		if ids[4] == csern or ids[4] == '-':				# structured
-			ids[4] = csern if ids[4] == '-' else ids[4]
-			srn = '/'.join(ids[4:])
-		elif idsLen == 5:						# unstructured
-			ri = ids[4]
-		else:
-			return None, None, None
-
-	# Now either csi, ri or structured is set
+	# Now either csi, ri or structured srn is set
 	if ri:
 		if vrPresent:
 			ri = f'{ri}/{vrPresent}'
 		return ri, csi, srn
 	if srn:
-		# if '/fopt' in ids:	# special handling for fanout points
-		# 	return srn, csi, srn
 		if vrPresent:
 			srn = f'{srn}/{vrPresent}'
 		return riFromStructuredPath(srn), csi, srn
