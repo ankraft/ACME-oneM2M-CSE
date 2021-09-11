@@ -147,7 +147,7 @@ class MQTTClientHandler(MQTTHandler):
 		def _constructResponse(frm:str, to:str, jsn:dict) -> dict:
 			responseData = 	{ 	'fr':	frm,
 								'to':	to, 
-								'rsc':	2000, 
+								'rsc':	2000,
 								'ot':	getResourceDate()
 							}
 			if (rqi := jsn.get('rqi')):
@@ -160,12 +160,14 @@ class MQTTClientHandler(MQTTHandler):
 		console.print(f'[{messageColor}]### Notification (MQTT)')
 		console.print(f'Topic: {topic}')
 		topicArray	= topic.split('/')
-		if len(topicArray) < 5:
-			console.print(f'[{errorColor}]MQTT topic insufficient length {len(topicArray)}')
-			return
-		frm			= topicArray[-3]
-		to			= topicArray[-2]
-		encoding	= topicArray[-1]
+		if len(topicArray) > 4 and topicArray[-4] == 'req' and topicArray[-5] == 'oneM2M':
+			frm			= topicArray[-3]
+			to			= topicArray[-2]
+			encoding	= topicArray[-1]
+		else:
+			frm 		= 'non-onem2m-entity'	
+			to 			= 'unknown'
+			encoding	= 'json'
 
 		# Print JSON
 		responseData = None
@@ -174,8 +176,10 @@ class MQTTClientHandler(MQTTHandler):
 							 'json', 
 							 theme='monokai',
 							 line_numbers=False))
-			# responseData = json.dumps(_constructResponse(frm, to, jsn))
-			responseData = cast(bytes, serializeData(_constructResponse(frm, to, jsn), ContentSerializationType.JSON))
+			to 	= jsn['to'] if 'to' in jsn else to
+			frm = jsn['fr'] if 'fr' in jsn else frm
+			responseData = cast(bytes, serializeData(_constructResponse(to, frm, jsn), ContentSerializationType.JSON))
+			console.print(responseData)
 
 
 
@@ -188,8 +192,9 @@ class MQTTClientHandler(MQTTHandler):
 							 'json', 
 							 theme='monokai',
 							 line_numbers=False))		
-			# responseData = cbor2.dumps(json.dumps(_constructResponse(frm, to, jsn)))
-			responseData = cast(bytes, serializeData(_constructResponse(frm, to, jsn), ContentSerializationType.CBOR))
+			to 	= jsn['to'] if 'to' in jsn else to
+			frm = jsn['fr'] if 'fr' in jsn else frm
+			responseData = cast(bytes, serializeData(_constructResponse(to, frm, jsn), ContentSerializationType.CBOR))
 
 		# Print other binary content
 		else:
@@ -198,10 +203,7 @@ class MQTTClientHandler(MQTTHandler):
 		# TODO send a response
 
 		if responseData:
-			responseTopicArray = deepcopy(topicArray)
-			responseTopicArray[-4] = 'resp'
-			connection.publish('/'.join(responseTopicArray), responseData)
-
+			connection.publish(f'/oneM2M/resp{frm}/{to.lstrip("/").replace("/", ":")}/{encoding}', responseData)
 
 
 class MQTTClient(object):
