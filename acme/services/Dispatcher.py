@@ -382,7 +382,7 @@ class Dispatcher(object):
 
 		# Get parent resource and check permissions
 		if not (res := CSE.dispatcher.retrieveResource(id)).resource:
-			L.logErr(dbg := f'Parent/target resource: {id} not found')
+			L.isWarn and L.logWarn(dbg := f'Parent/target resource: {id} not found')
 			return Result(status=False, rsc=RC.notFound, dbg=dbg)
 		parentResource = res.resource
 

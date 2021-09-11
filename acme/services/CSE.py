@@ -12,6 +12,7 @@ import atexit, argparse, os, time, sys
 from typing import Dict, Any
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..etc import DateUtils
 from ..etc.Types import CSEType, ContentSerializationType
 from ..services.Configuration import Configuration
 from ..services.Console import Console
@@ -63,6 +64,7 @@ cseRi:str 										= None
 cseRn:str										= None
 cseOriginator:str								= None
 defaultSerialization:ContentSerializationType	= None
+releaseVersion:str								= None
 isHeadless 										= False
 shuttingDown									= False
 
@@ -80,7 +82,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	global announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
 	global remote, request, security, statistics, storage, timeSeries, validator
 	global aeStatistics
-	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseRi, cseRn
+	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseRi, cseRn, releaseVersion
 	global cseOriginator
 	global isHeadless
 
@@ -113,6 +115,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	cseOriginator			 = Configuration.get('cse.originator')
 
 	defaultSerialization	 = Configuration.get('cse.defaultSerialization')
+	releaseVersion 			 = Configuration.get('cse.releaseVersion')
 
 	#
 	# init Logging
@@ -151,6 +154,14 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	importer = Importer()
 	if not importer.importAttributePolicies() or not importer.importResources():
 		return False
+	
+	# Start the HTTP server
+	httpServer.run() 						# This does return (!)
+
+	# Start the MQTT client
+	mqttClient.run() 						# This does return
+	if not mqttClient.isFullySubscribed():	# This waits until the MQTT Client connects and fully subscribes (until a timeout)
+		return False
 
 	remote = RemoteCSEManager()				# Initialize the remote CSE manager
 	announce = AnnouncementManager()		# Initialize the announcement manager
@@ -159,11 +170,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	# Send an event that the CSE startup finished
 	event.cseStartup()	# type: ignore
 
-	# Start the HTTP server
-	httpServer.run() # This does return (!)
 
-	# Start the MQTT client
-	mqttClient.run() # This does return
 	
 	if not shuttingDown:
 		L.isInfo and L.log('CSE started')
@@ -201,10 +208,10 @@ def _shutdown() -> None:
 	
 	# shutdown the services
 	console and console.shutdown()
+	remote and remote.shutdown()
 	mqttClient and mqttClient.shutdown()
 	httpServer and httpServer.shutdown()
 	announce and announce.shutdown()
-	remote and remote.shutdown()
 	timeSeries and timeSeries.shutdown()
 	group  and group.shutdown()
 	notification  and notification.shutdown()
