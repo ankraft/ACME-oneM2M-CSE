@@ -195,7 +195,7 @@ batRN	= 'bat'
 
 URL		= f'{SERVER}{ROOTPATH}'
 cseURL 	= f'{URL}{CSERN}'
-csiURL 	= f'{URL}~{CSEID}'
+csiURL 	= f'{URL}{CSEID}'
 aeURL 	= f'{cseURL}/{aeRN}'
 acpURL 	= f'{cseURL}/{acpRN}'
 cntURL 	= f'{aeURL}/{cntRN}'
@@ -290,6 +290,11 @@ def sendRequest(operation:Operation, url:str, originator:str, ty:int=None, data:
 def sendHttpRequest(method:Callable, url:str, originator:str, ty:int=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
 	global oauthToken
 
+	# correct url
+	url = RequestUtils.toHttpUrl(url)
+	urlComponents:ParseResult = urlparse(url)
+
+
 	tys = f';ty={ty}' if ty is not None else ''
 	ct = 'application/json'
 	hds = { 
@@ -352,7 +357,7 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 	req:dict	= dict()
 	fc:dict		= dict()
 	req['fr'] 	= originator
-	req['to'] 	= urlComponents.path
+	req['to'] 	= urlComponents.path[1:]	# remove the leading / of an url ( usually the root path)
 	req['op'] 	= operation.value
 	req['ot'] 	= DateUtils.getResourceDate()
 	req['rqi'] 	= (rid := uniqueID())

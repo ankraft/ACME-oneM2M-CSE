@@ -75,11 +75,11 @@ class TestAddressing(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_spRelativeStructured(self) -> None:
 		""" Test SP-relative structured """
-		url = f'{URL}~{CSEID}/{CSERN}/{aeRN}/{cntRN}'
+		url = f'{URL}{CSEID}/{CSERN}/{aeRN}/{cntRN}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
-		url = f'{URL}~{CSEID}/-/{aeRN}/{cntRN}'
+		url = f'{URL}{CSEID}/-/{aeRN}/{cntRN}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
@@ -88,7 +88,7 @@ class TestAddressing(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_spRelativeUnstructured(self) -> None:
 		""" Test SP-relative unstructured """
-		url = f'{URL}~{CSEID}/{TestAddressing.cntRI}'
+		url = f'{URL}{CSEID}/{TestAddressing.cntRI}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
@@ -97,11 +97,11 @@ class TestAddressing(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_absoluteStructured(self) -> None:
 		""" Test absolute structured """
-		url = f'{URL}_/{SPID}{CSEID}/{CSERN}/{aeRN}/{cntRN}'
+		url = f'{URL}//{SPID}{CSEID}/{CSERN}/{aeRN}/{cntRN}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
-		url = f'{URL}_/{SPID}{CSEID}/-/{aeRN}/{cntRN}'
+		url = f'{URL}//{SPID}{CSEID}/-/{aeRN}/{cntRN}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
@@ -110,7 +110,7 @@ class TestAddressing(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_absoluteUnstructured(self) -> None:
 		""" Test absolute unstructured """
-		url = f'{URL}_/{SPID}{CSEID}/{TestAddressing.cntRI}'
+		url = f'{URL}//{SPID}{CSEID}/{TestAddressing.cntRI}'
 		r, rsc = RETRIEVE(url, TestAddressing.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)

@@ -57,8 +57,6 @@ class TestREQ(unittest.TestCase):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		stopNotificationServer()
 
-
-
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createREQFail(self) -> None:
 		"""	Manually create <REQ> -> Fail """
@@ -81,7 +79,7 @@ class TestREQ(unittest.TestCase):
 		# get and check resource
 		time.sleep(requestCheckDelay)
 		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
-		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:req'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/lbl'))
 		self.assertIn(TestREQ.originator, findXPath(r, 'm2m:req/lbl'))
