@@ -7,15 +7,15 @@
 #	Main request dispatcher. All external requests are routed through here.
 #
 
-import requests, urllib.parse
-from typing import Any, List
+from __future__ import annotations
+import urllib.parse
+from typing import Any, List, Tuple
 from copy import deepcopy
 
-from ..etc.Types import BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, RequestArguments, RequestCallback, ResultContentType
+from ..etc.Types import BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, Permission, RequestArguments, RequestCallback, ResultContentType
 from ..etc.Types import RequestStatus
 from ..etc.Types import CSERequest
 from ..etc.Types import RequestHandler
-from ..etc.Types import JSON
 from ..etc.Types import ResourceTypes as T
 from ..etc.Types import ResponseCode as RC
 from ..etc.Types import ResponseType
@@ -390,9 +390,9 @@ class RequestManager(object):
 		""" Get the new target URL when forwarding. """
 		# L.isDebug and L.logDebug(path)
 		csr, pe = CSE.remote.getCSRFromPath(path)
-		# L.isDebug and L.logDebug(str(csr))
+		# L.isDebug and L.logDebug(csr)
 		if csr and (poas := csr.poa) and len(poas) > 0:
-			return f'{poas[0]}/~/{"/".join(pe[1:])}'	# TODO check all available poas.
+			return f'{poas[0]}//{"/".join(pe[1:])}'	# TODO check all available poas.
 		return None
 
 
@@ -419,53 +419,58 @@ class RequestManager(object):
 	#	TODO	Add method for notifications
 
 
-# TODO change requests to operations and map the opration in the http method
 
-
-	def sendRetrieveRequest(self, url:str, originator:str, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
+	def sendRetrieveRequest(self, url:str, originator:str, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
 		"""	Send a RETRIEVE request via the appropriate channel or transport protocol.
 		"""
 		if Utils.isHttpUrl(url):
-			CSE.event.httpSendRetrieve() # type: ignore
-			return CSE.httpServer.sendHttpRequest(requests.get, url, originator, parameters=parameters, ct=ct, targetResource=targetResource)
-		L.logWarn(dbg := f'unsupported url scheme: {url}')
-		return Result(status=True, rsc=RC.badRequest, dbg=dbg)
+			CSE.event.httpSendRetrieve() # type: ignore [attr-defined]
+			return CSE.httpServer.sendHttpRequest(Operation.RETRIEVE, url, originator, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+		elif Utils.isMQTTUrl(url):
+			CSE.event.mqttSendRetrieve()	# type: ignore [attr-defined]
+			return CSE.mqttClient.sendMqttRequest(Operation.RETRIEVE, url, originator, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+		L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
+		return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 
-	def sendCreateRequest(self, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
+	def sendCreateRequest(self, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
 		"""	Send a CREATE request via the appropriate channel or transport protocol.
 		"""
 		if Utils.isHttpUrl(url):
-			CSE.event.httpSendCreate() # type: ignore
-			return CSE.httpServer.sendHttpRequest(requests.post, url, originator, ty, data, parameters=parameters, ct=ct, targetResource=targetResource)
-		if Utils.isMQTTUrl(url):
-			CSE.event.mttqSendCreate()	# type: ignore [attr-defined]
-			# TODO continue implementation here
-			#return CSE.mqttClient.sendMqttRequest(Operation.)
-			pass
-
-		L.logWarn(dbg := f'unsupported url scheme: {url}')
-		return Result(status=True, rsc=RC.badRequest, dbg=dbg)
+			CSE.event.httpSendCreate() # type: ignore [attr-defined]
+			return CSE.httpServer.sendHttpRequest(Operation.CREATE, url, originator, ty, data, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+		elif Utils.isMQTTUrl(url):
+			CSE.event.mqttSendCreate()	# type: ignore [attr-defined]
+			return CSE.mqttClient.sendMqttRequest(Operation.CREATE, url, originator, ty, data, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+		L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
+		return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 
-	def sendUpdateRequest(self, url:str, originator:str, data:Any, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
-		"""	Send a UPDATE request via the appropriate channel or transport protocol.
+	def sendUpdateRequest(self, url:str, originator:str, data:Any, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
+		"""	Send an UPDATE request via the appropriate channel or transport protocol.
 		"""
 		if Utils.isHttpUrl(url):
-			CSE.event.httpSendUpdate() # type: ignore
-			return CSE.httpServer.sendHttpRequest(requests.put, url, originator, data=data, parameters=parameters, ct=ct, targetResource=targetResource)
-		L.logWarn(dbg := f'unsupported url scheme: {url}')
-		return Result(status=True, rsc=RC.badRequest, dbg=dbg)
+			CSE.event.httpSendUpdate() # type: ignore [attr-defined]
+			return CSE.httpServer.sendHttpRequest(Operation.UPDATE, url, originator, data=data, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+		elif Utils.isMQTTUrl(url):
+			CSE.event.mqttSendUpdate()	# type: ignore [attr-defined]
+			return CSE.mqttClient.sendMqttRequest(Operation.UPDATE, url, originator, data=data, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+		L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
+		return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 
-	def sendDeleteRequest(self, url:str, originator:str, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:
+	def sendDeleteRequest(self, url:str, originator:str, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
 		"""	Send a DELETE request via the appropriate channel or transport protocol.
 		"""
+		print(url)
 		if Utils.isHttpUrl(url):
-			CSE.event.httpSendDelete() # type: ignore
-			return CSE.httpServer.sendHttpRequest(requests.delete, url, originator, parameters=parameters, ct=ct, targetResource=targetResource)
-		L.logWarn(dbg := f'unsupported url scheme: {url}')
-		return Result(status=True, rsc=RC.badRequest, dbg=dbg)
+			CSE.event.httpSendDelete() # type: ignore [attr-defined]
+			return CSE.httpServer.sendHttpRequest(Operation.DELETE, url, originator, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+		elif Utils.isMQTTUrl(url):
+			CSE.event.mqttSendDelete()	# type: ignore [attr-defined]
+			return CSE.mqttClient.sendMqttRequest(Operation.DELETE, url, originator, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+		L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
+		return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 	###########################################################################
 	#
@@ -498,7 +503,7 @@ class RequestManager(object):
 
 
 
-	def fillAndValidateCSERequest(self, cseRequest:CSERequest) -> Result:
+	def fillAndValidateCSERequest(self, cseRequest:CSERequest, isResponse:bool=False) -> Result:
 		"""	Fill a `cseRequest` object according to its request structure in the *req* attribute.
 		"""
 
@@ -534,7 +539,7 @@ class RequestManager(object):
 				if not Operation.isvalid(op):
 					return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'Unknown/unsupported operation: {op}', status=False)
 				cseRequest.op = Operation(op)
-			else:
+			elif not isResponse:
 				L.logDebug(dbg := 'operation parameter is mandatory in request')
 				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg)
 
@@ -552,10 +557,9 @@ class RequestManager(object):
 				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
 			cseRequest.id, cseRequest.csi, cseRequest.srn =  Utils.retrieveIDFromPath(to, CSE.cseRn, CSE.cseCsi)
 
-
 			# Check identifiers
-			if not cseRequest.id and not cseRequest.srn:
-				return Result(rsc=RC.notFound, request=cseRequest, dbg='missing identifier', status=False)
+			if not isResponse and not cseRequest.id and not cseRequest.srn:
+				return Result(rsc=RC.notFound, request=cseRequest, dbg='missing identifier (no id nor srn)', status=False)
 
 			# OT - originating timestamp
 			if ot := gget(cseRequest.req, 'ot', greedy=False):
@@ -733,8 +737,7 @@ class RequestManager(object):
 			return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'Error validating attribute/parameter: {str(e)}')
 
 
-		# L.logWarn(str(cseRequest))
-		return Result(status=True, request=cseRequest)
+		return Result(status=True, request=cseRequest, dict=cseRequest.dict)
 
 	###########################################################################
 
@@ -767,3 +770,93 @@ class RequestManager(object):
 		# Convert the poa to a list of ContentSerializationTypes
 		return [ ContentSerializationType.getType(c) for c in csz]
 
+
+	#
+	#	Notifications.
+	#
+	def resolveURIs(self, uris:list[str]|str, originator:str=None) -> list[str]:
+		"""	Return resolved (notification) URLs, so also POA from referenced AE's and CSE's etc.
+
+			If the `originator` is specified then all notification to that originator are excluded.
+
+			The returned result is a list of direct URLs.
+		"""
+
+		if not uris:
+			return []
+		uris = uris if isinstance(uris, list) else [ uris ]	# make a list out of it even when it is a single value
+		result = []
+		for url in uris:
+			if not url:
+				continue
+			# check if it is a direct URL
+			if L.isDebug: L.logDebug(f'Checking next URL: {url}')
+			if Utils.isURL(url):	# a direct url, so append it directly
+				result.append(url)
+			else:					# else we assume that this is a resource ID
+				if not (resource := CSE.dispatcher.retrieveResource(url).resource):
+					L.isWarn and L.logWarn(f'Resource not found to get URL: {url}')
+					return None
+
+				# For notifications:
+				# If the given originator is the target then exclude it from the list of targets.
+				# Test for AE and CSE (CSE starts with a /)
+				if originator and (resource.ri == originator or resource.ri == f'/{originator}'):
+					L.isDebug and L.logDebug(f'Notification target is the originator: {originator}, ignoring: {url}')
+					continue
+				if not CSE.security.hasAccess(originator, resource, Permission.NOTIFY):	# check whether AE/CSE may receive Notifications
+					L.isWarn and L.logWarn(f'Originator: {originator} as no access to resource: {url}')
+					return None
+				if (poa := resource.poa) and isinstance(poa, list):	
+					result += poa
+				else:
+					L.isWarn and L.logWarn(f'Resource has no poa: {resource.ri}')
+					return None
+		return result
+
+
+
+	def resolveSingleUriCszTo(self, uri:str) -> list[ Tuple[str, list[str], str] ]:
+		"""	Resolve the real URL, contentSerialization, and the targetOriginator from a (notification) URI.
+			The result is a list of tuples of (url, list of contentSerializations, target originator).
+
+			Return a list of (url, None, None) (containing only one element) when the URI is already a URL. 
+			We cannot determine the preferred serializations and we don't know the target entity.
+
+			Otherwise, return a list of the mentioned tuples.
+
+			In case of an error, an empty list is returned.
+		"""
+
+		# TODO docu
+
+		if Utils.isURL(uri):	# The uri is a direct URL
+			return [ (uri, None, None) ]
+
+		result = []
+		# The uri is an indirect resource with poa, retrieve one or more URIs from it
+		if not (resource := CSE.dispatcher.retrieveResource(uri).resource):
+			L.isWarn and L.logWarn(f'Resource not found to get URL: {uri}')
+			return []
+		# if not CSE.security.hasAccess('', resource, Permission.NOTIFY):	# check whether AE/CSE may receive Notifications
+		# 	Logging.logWarn(f'No access to resource: {nu}')
+		# 	return None
+
+		# Use the poa of a target resource
+		if not resource.poa:	# check that the resource has a poa
+			L.isWarn and L.logWarn(f'Resource {uri} has no "poa" attribute')
+			return []
+		
+		# Determine the originator (aei or csi) of that resource
+		targetOriginator = None
+		if resource:
+			if resource.ty == T.AE:
+				targetOriginator = resource.aei
+			elif resource.ty == T.CSEBase:
+				targetOriginator = resource.csi
+		for p in resource.poa:
+			result.append( (p, resource.csz, targetOriginator) )
+		return result
+
+
+		

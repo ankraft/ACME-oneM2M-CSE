@@ -11,6 +11,7 @@
 from __future__ import annotations
 import cbor2, json
 from typing import cast
+from urllib.parse import urlparse, urlunparse
 from .Types import ContentSerializationType, JSON
 from ..helpers import TextTools
 
@@ -37,3 +38,17 @@ def deserializeData(data:bytes, ct:ContentSerializationType) -> JSON:
 	elif ct == ContentSerializationType.CBOR:
 		return cast(JSON, cbor2.loads(data))
 	return None
+
+
+def toHttpUrl(url:str) -> str:
+	"""	Make the `url` a valid http URL (escape // and ///)
+		and return it.
+	"""
+	u = list(urlparse(url))
+	if u[2].startswith('///'):
+		u[2] = f'/_{u[2][2:]}'
+		url = urlunparse(u)
+	elif u[2].startswith('//'):
+		u[2] = f'/~{u[2][1:]}'
+		url = urlunparse(u)
+	return url
