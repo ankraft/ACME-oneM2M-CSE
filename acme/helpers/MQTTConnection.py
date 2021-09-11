@@ -53,11 +53,13 @@ class MQTTHandler(object):
 	def onSubscribed(self, connection:MQTTConnection, topic:str) -> bool:
 		"""	This method is called after the MQTT client successfully subsribed to a topic. 
 		"""
+		connection.subscribedCount += 1
 		return True
 
 	def onUnsubscribed(self, connection:MQTTConnection, topic:str) -> bool:
 		"""	This method is called after the MQTT client successfully unsubsribed from a topic. 
 		"""
+		connection.subscribedCount -= 1
 		return True
 
 	def onError(self, connection:MQTTConnection, rc:int) -> bool:
@@ -90,8 +92,8 @@ class MQTTConnection(object):
 					lowLevelLogging:bool=True,
 					messageHandler:MQTTHandler=None
 				) -> None:
-		self.brokerAddress							= address
-		self.brokerPort								= port if port else 4883 if useTLS else 1883
+		self.address								= address
+		self.port									= port if port else 4883 if useTLS else 1883
 		self.keepalive								= keepalive
 		self.bindIF									= interface
 		self.username:str							= username
@@ -104,6 +106,8 @@ class MQTTConnection(object):
 
 		self.isStopped								= True
 		self.isConnected							= False
+		self.subscribedCount 						= 0
+
 
 		self.mqttClient:mqtt.Client 				= None
 		self.messageHandler:MQTTHandler				= messageHandler
@@ -154,8 +158,8 @@ class MQTTConnection(object):
 		self.mqttClient.on_message		= self._onMessage
 
 		try:
-			self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: connecting to host:{self.brokerAddress}, port:{self.brokerPort}, keepalive: {self.keepalive}, bind: {self.bindIF}')
-			self.mqttClient.connect(host=self.brokerAddress, port=self.brokerPort, keepalive=self.keepalive, bind_address=self.bindIF)
+			self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: connecting to host:{self.address}, port:{self.port}, keepalive: {self.keepalive}, bind: {self.bindIF}')
+			self.mqttClient.connect(host=self.address, port=self.port, keepalive=self.keepalive, bind_address=self.bindIF)
 		except Exception as e:
 			if self.messageHandler:
 				self.messageHandler.logging(self.mqttClient, logging.ERROR, f'MQTT: cannot connect to broker: {e}')
@@ -184,21 +188,21 @@ class MQTTConnection(object):
 	def _onConnect(self, client:mqtt.Client, userdata:Any, flags:dict, rc:int) -> None:
 		"""	Callback when the MQTT client connected to the broker.
 		"""
-		self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: Connected with result code: {rc} ({mqtt.error_string(rc)})')
+		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: Connected with result code: {rc} ({mqtt.error_string(rc)})')
 		if rc == 0:
 			self.isConnected = True
 			self.messageHandler and self.messageHandler.onConnect(self)
 		else:
 			self.isConnected = False
 			if self.messageHandler:
-				self.messageHandler.logging(self.mqttClient, logging.ERROR, f'MQTT: Cannot connect to broker. Result code: {rc} ({mqtt.error_string(rc)})')
+				self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot connect to broker. Result code: {rc} ({mqtt.error_string(rc)})')
 				self.messageHandler.onError(self, rc)
 
 
 	def _onDisconnect(self, client:mqtt.Client, userdata:Any, rc:int) -> None:
 		"""	Callback when the MQTT client disconnected from the broker.
 		"""
-		self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: Disconnected with result code: {rc} ({mqtt.error_string(rc)})')
+		self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: Disconnected with result code: {rc} ({mqtt.error_string(rc)})')
 		self.subscribedTopics.clear()
 		if rc == 0:
 			self.isConnected = False
@@ -206,14 +210,14 @@ class MQTTConnection(object):
 		else:
 			self.isConnected = False
 			if self.messageHandler:
-				self.messageHandler.logging(self.mqttClient, logging.ERROR, f'MQTT: Cannot disconnect from broker. Result code: {rc} ({mqtt.error_string(rc)})')
+				self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot disconnect from broker. Result code: {rc} ({mqtt.error_string(rc)})')
 				self.messageHandler.onError(self, rc)
 
 
 	def _onLog(self, client:mqtt.Client, userdata:Any, level:int, buf:str) -> None:
 		"""	Mapping of the paho MQTT client's log to the logging system. Also handles different log-level scheme.
 		"""
-		self.lowLevelLogging and self.messageHandler and self.messageHandler.logging(self.mqttClient, mqtt.LOGGING_LEVEL[level], f'MQTT: {buf}')
+		self.lowLevelLogging and self.messageHandler and self.messageHandler.logging(self, mqtt.LOGGING_LEVEL[level], f'MQTT: {buf}')
 	
 
 	def _onSubscribe(self, client:mqtt.Client, userdata:Any, mid:int, granted_qos:int) -> None:
@@ -221,7 +225,7 @@ class MQTTConnection(object):
 		for t in self.subscribedTopics.values():
 			if t.mid == mid:
 				t.isSubscribed = True
-				self.messageHandler and self.messageHandler.onSubscribed(self.mqttClient, t.topic)
+				self.messageHandler and self.messageHandler.onSubscribed(self, t.topic)
 				break
 	
 
@@ -233,14 +237,14 @@ class MQTTConnection(object):
 		for t in self.subscribedTopics.values():
 			if t.mid == mid:
 				del self.subscribedTopics[t.topic]
-				self.messageHandler and self.messageHandler.onUnsubscribed(self.mqttClient, t.topic)
+				self.messageHandler and self.messageHandler.onUnsubscribed(self, t.topic)
 				break
 
 
 	def _onMessage(self, client:mqtt.Client, userdata:Any, message:mqtt.MQTTMessage) -> None:
 		"""	Handle a received message. Forward it to the apropriate handler callback (in a Thread)
 		"""
-		self.lowLevelLogging and self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.DEBUG, f'MQTT: received topic:{message.topic}, payload:{message.payload}')
+		self.lowLevelLogging and self.messageHandler and self.messageHandler.logging(self, logging.DEBUG, f'MQTT: received topic:{message.topic}, payload:{message.payload}')
 		for t in self.subscribedTopics.keys():
 			if simpleMatch(message.topic, t, star='#'):
 				if (topic := self.subscribedTopics[t]).callback:
@@ -311,7 +315,14 @@ class MQTTConnection(object):
 				self.messageHandler and self.messageHandler.logging(self.mqttClient, logging.WARNING, f'MQTT: topic not subscribed: {topic}')
 
 		# topic is removed in _onUnsubscribe() callback
-	
+
+
+	def isFullySubscribed(self) -> bool:
+		"""	Check whether the number managed subscriptions matches the number of
+			currently subscribed-to topics.
+		"""
+		return self.subscribedCount == len(self.subscribedTopics)
+
 
 
 	def publish(self, topic:str, data:bytes) -> None:
