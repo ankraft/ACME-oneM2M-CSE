@@ -33,7 +33,7 @@ class RemoteCSEManager(object):
 		self.checkLiveliness					= Configuration.get('cse.registration.checkLiveliness')
 		self.registrarCSI						= Configuration.get('cse.registrar.csi')
 		self.registrarCseRN						= Configuration.get('cse.registrar.rn')
-		self.registrarCSEURL					= f'{self.remoteAddress}{self.remoteRoot}/~{self.registrarCSI}/{self.registrarCseRN}'
+		self.registrarCSEURL					= f'{self.remoteAddress}{self.remoteRoot}/{self.registrarCSI}/{self.registrarCseRN}'
 		self.registrarCSRURL					= f'{self.registrarCSEURL}{CSE.cseCsi}'
 		self.excludeCSRAttributes				= Configuration.get('cse.registrar.excludeCSRAttributes')
 		self.ownRegistrarCSR:Resource			= None 	# The own CSR at the registrar if there is one
@@ -485,6 +485,7 @@ class RemoteCSEManager(object):
 	def _deleteCSRonRegistrarCSE(self) -> Result:
 		L.isDebug and L.logDebug(f'Deleting registrar CSR: {self.registrarCSI} url: {self.registrarCSRURL}')
 		res = CSE.request.sendDeleteRequest(self.registrarCSRURL, CSE.cseCsi, ct=self.registrarSerialization)	# own CSE.csi is the originator
+		L.logWarn(res.dbg)
 		if res.rsc not in [ RC.deleted, RC.OK ]:
 			return Result(rsc=res.rsc, dbg='cannot delete registrar CSR')
 		L.isInfo and L.log(f'Registrar CSR deleted: {self.registrarCSI}')
@@ -505,10 +506,11 @@ class RemoteCSEManager(object):
 
 		L.isDebug and L.logDebug(f'Retrieving remote CSE from: {self.registrarCSI} url: {url}')	
 		res = CSE.request.sendRetrieveRequest(url, CSE.cseCsi, ct=ct)	# own CSE.csi is the originator
+		L.logWarn(res.dict)
 		if res.rsc not in [ RC.OK ]:
 			return res.errorResult()
 		if (csi := Utils.findXPath(res.dict, 'm2m:cb/csi')) == None:
-			L.logErr(err := 'csi not found in remote CSE resource')
+			L.logErr(err := 'csi not found in remote CSE resource', showStackTrace=False)
 			return Result(rsc=RC.badRequest, dbg=err)
 		if not csi.startswith('/'):
 			L.isDebug and L.logWarn('Remote CSE.csi doesn\'t start with /. Correcting.')	# TODO Decide whether correcting this is actually correct. Also in validator.validateCSICB()

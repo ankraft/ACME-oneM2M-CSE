@@ -9,14 +9,17 @@
 
 from __future__ import annotations
 import logging, sys, urllib3
+from ssl import OP_ALL
 from copy import deepcopy
 from typing import Any, Callable, cast
+
 
 import flask
 from flask import Flask, Request, make_response, request
 from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
 from werkzeug.datastructures import MultiDict
+import requests
 
 from ..etc.Constants import Constants as C
 from ..etc.Types import ReqResp, ResourceTypes as T, Result, ResponseCode as RC, JSON
@@ -52,7 +55,6 @@ class HttpServer(object):
 		self.port 				= Configuration.get('http.port')
 		self.webuiRoot 			= Configuration.get('cse.webui.root')
 		self.webuiDirectory 	= f'{Configuration.get("packageDirectory")}/webui'
-		self.hfvRVI				= Configuration.get('cse.releaseVersion')
 		self.isStopped			= False
 
 
@@ -109,7 +111,6 @@ class HttpServer(object):
 			L.isInfo and L.log(f'Registering reset endpoint at: {resetEndPoint}')
 			self.addEndpoint(resetEndPoint, handler=self.handleReset, methods=['GET'], strictSlashes=False)
 
-
 		# Add mapping / macro endpoints
 		self.mappings = {}
 		if mappings := Configuration.get('server.http.mappings'):
@@ -118,7 +119,6 @@ class HttpServer(object):
 				L.isInfo and L.log(f'Registering mapping: {self.rootPath}{k} -> {self.rootPath}{v}')
 				self.addEndpoint(self.rootPath + k, handler=self.requestRedirect, methods=['GET', 'POST', 'PUT', 'DELETE'])
 			self.mappings = dict(mappings)
-
 
 		# Disable most logs from requests and urllib3 library 
 		logging.getLogger("requests").setLevel(LogLevel.WARNING)
@@ -179,7 +179,7 @@ class HttpServer(object):
 			build the internal strutures. Then, depending on the operation,
 			call the associated request handler.
 		"""
-		L.isDebug and L.logDebug(f'==> HTTP-REQUEST: /{path}') 	# path = request.path  w/o the root
+		L.isDebug and L.logDebug(f'==> HTTP Request: {path}') 	# path = request.path  w/o the root
 		L.isDebug and L.logDebug(f'Operation: {operation.name}')
 		L.isDebug and L.logDebug(f'Headers: \n{str(request.headers).rstrip()}')
 		dissectResult = self._dissectHttpRequest(request, operation, path)
@@ -325,13 +325,28 @@ class HttpServer(object):
 	#	Send HTTP requests
 	#
 
+	operation2method = {
+		Operation.CREATE	: requests.post,
+		Operation.RETRIEVE	: requests.get,
+		Operation.UPDATE 	: requests.put,
+		Operation.DELETE 	: requests.delete
+	}
+
 	def _prepContent(self, content:bytes|str|Any, ct:ContentSerializationType) -> str:
 		if not content:	return ''
 		if isinstance(content, str): return content
 		return content.decode('utf-8') if ct == ContentSerializationType.JSON else TextTools.toHex(content)
 
 
-	def sendHttpRequest(self, method:Callable, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None) -> Result:	 # type: ignore[type-arg]
+	def sendHttpRequest(self, operation:Operation, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:	 # type: ignore[type-arg]
+
+		# Set the request method
+		method:Callable = self.operation2method[operation]
+
+		# Make the URL a valid http URL (escpe // and ///)
+		url = RequestUtils.toHttpUrl(url)
+
+		# get the serialization
 		ct = CSE.defaultSerialization if not ct else ct
 
 		# Set basic headers
@@ -341,7 +356,7 @@ class HttpServer(object):
 				'Accept'		: ct.toHeader(),
 				C.hfOrigin	 	: originator,
 				C.hfRI 			: Utils.uniqueRI(),
-				C.hfRVI			: self.hfvRVI,			# TODO this actually depends in the originator
+				C.hfRVI			: CSE.releaseVersion,			# TODO this actually depends in the originator
 			   }
 
 		# Add additional headers
@@ -357,16 +372,16 @@ class HttpServer(object):
 		try:
 			L.isDebug and L.logDebug(f'Sending request: {method.__name__.upper()} {url}')
 			if ct == ContentSerializationType.CBOR:
-				L.isDebug and L.logDebug(f'HTTP-Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n=>\n{str(data) if data else ""}\n')
+				L.isDebug and L.logDebug(f'HTTP Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n=>\n{str(data) if data else ""}\n')
 			else:
-				L.isDebug and L.logDebug(f'HTTP-Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n')
+				L.isDebug and L.logDebug(f'HTTP Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n')
 			
 			# Actual sending the request
 			r = method(url, data=content, headers=hds, verify=CSE.security.verifyCertificateHttp)
 
 			responseCt = ContentSerializationType.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
 			rc = RC(int(r.headers['X-M2M-RSC'])) if 'X-M2M-RSC' in r.headers else RC.internalServerError
-			L.isDebug and L.logDebug(f'HTTP-Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
+			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
 		except Exception as e:
 			L.isDebug and L.logWarn(f'Failed to send request: {str(e)}')
 			return Result(rsc=RC.targetNotReachable, dbg='target not reachable')
@@ -419,9 +434,9 @@ class HttpServer(object):
 		
 		# Build and return the response
 		if isinstance(content, bytes):
-			L.isDebug and L.logDebug(f'<== HTTP-Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{TextTools.toHex(content)}\n=>\n{str(result.toData())}')
+			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{TextTools.toHex(content)}\n=>\n{str(result.toData())}')
 		else:
-			L.isDebug and L.logDebug(f'<== HTTP-Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
+			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
 		return Response(response=content, status=statusCode, content_type=cts, headers=headers)
 
 
@@ -431,7 +446,7 @@ class HttpServer(object):
 	#
 
 	#def _dissectHttpRequest(self, request:Request, operation:Operation, _id:Tuple[str, str, str]) -> Result:
-	def _dissectHttpRequest(self, request:Request, operation:Operation, to:str) -> Result:
+	def _dissectHttpRequest(self, request:Request, operation:Operation, path:str) -> Result:
 		"""	Dissect an HTTP request. Combine headers and contents into a single structure. Result is returned in Result.request.
 		"""
 
@@ -451,13 +466,18 @@ class HttpServer(object):
 				return None
 			return request.headers.get(field)
 
+		# resolve http's /~ and /_ special prefixs
+		if path[0] == '~':
+			path = path[1:]			# ~/xxx -> /xxx
+		elif path[0] == '_':
+			path = f'/{path[1:]}'	# _/xxx -> //xxx
 
 		cseRequest 			= CSERequest()
 		req:ReqResp 		= {}
 		cseRequest.data 	= request.data			# get the data first. This marks the request as consumed, just in case that we have to return early
 		cseRequest.op 		= operation
 		req['op']   		= operation.value		# Needed later for validation
-		req['to'] 		 	= to
+		req['to'] 		 	= path
 
 		# Copy and parse the original request headers
 		if f := requestHeaderField(request, C.hfOrigin):
