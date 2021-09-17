@@ -98,10 +98,15 @@ class Statistics(object):
 			CSE.event.addHandler(CSE.event.logError, lambda: self._handleStatsEvent(logErrors))					# type: ignore
 			CSE.event.addHandler(CSE.event.logWarning, lambda: self._handleStatsEvent(logWarnings))				# type: ignore
 
+			# Also do some internal handling
+			CSE.event.addHandler(CSE.event.cseReset, self.restart)												# type: ignore
+
 		L.isInfo and L.log('Statistics initialized')
 
 
 	def shutdown(self) -> bool:
+		"""	Shutdown the statistics service.
+		"""
 		if self.statisticsEnabled:
 			# Stop the worker
 			L.isInfo and L.log('Stopping statistics DB thread')
@@ -112,6 +117,15 @@ class Statistics(object):
 
 		L.isInfo and L.log('Statistics shut down')
 		return True
+	
+	
+	def restart(self) -> None:
+		"""	Restart the statistics service.
+		"""
+		self.purgeDBStatistics()
+		self.stats = self.setupStats()
+		self.handleCseStartup()
+		L.isDebug and L.logDebug('Statistics restarted')
 
 
 	def setupStats(self) -> StatsT:
@@ -198,8 +212,15 @@ class Statistics(object):
 
 
 	def storeDBStatistics(self) -> bool:
+		"""	Store statistics data"""
 		with self.statLock:
 			return CSE.storage.updateStatistics(self.stats)
+	
+
+	def purgeDBStatistics(self) -> None:
+		with self.statLock:
+			CSE.storage.purgeStatistics()
+
 	
 	#########################################################################
 	#

@@ -269,11 +269,21 @@ class Storage(object):
 	##
 
 	def getStatistics(self) -> JSON:
+		"""	Retrieve the statistics data from the DB.
+		"""
 		return self.db.searchStatistics()
 
 
 	def updateStatistics(self, stats:JSON) -> bool:
+		"""	Update the statistics DB with new data.
+		"""
 		return self.db.upsertStatistics(stats)
+
+
+	def purgeStatistics(self) -> None:
+		"""	Purge the statistics DB.
+		"""
+		self.db.purgeStatistics()
 
 
 
@@ -568,6 +578,13 @@ class TinyDBBinding(object):
 				return self.tabStatistics.update(stats, doc_ids=[1]) is not None
 			else:
 				return self.tabStatistics.insert(stats) is not None
+
+
+	def purgeStatistics(self) -> None:
+		"""	Purge the statistics DB.
+		"""
+		with self.lockStatistics:
+			self.tabStatistics.truncate()
 
 
 	#

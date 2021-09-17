@@ -45,6 +45,7 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('mqttSendDelete')
 		self.addEvent('cseStartup')
 		self.addEvent('cseShutdown', runInBackground=False)
+		self.addEvent('cseReset', runInBackground=False)
 		self.addEvent('logError')
 		self.addEvent('logWarning')
 		self.addEvent('registeredToRemoteCSE')

@@ -233,6 +233,9 @@ def resetCSE() -> None:
 	"""
 	L.isWarn and L.logWarn('Resetting CSE started')
 	storage.purge()
+
+	# The following event is executed synchronously
+	event.cseReset()	# type: ignore [attr-defined]   
 	if not importer.importAttributePolicies() or not importer.importResources():
 		L.isWarn and L.logErr('Error during import')
 		sys.exit()	# what else can we do?
