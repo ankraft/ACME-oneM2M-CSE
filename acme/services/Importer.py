@@ -204,8 +204,10 @@ class Importer(object):
 	}
 
 
-	def importAttributePolicies(self, path:str=None) -> bool:
-		countAP = 0
+	def importFlexContainerPolicies(self, path:str=None) -> bool:
+		"""	Import the attribute and hierarchy policies for flexContainer specializations.
+		"""
+		countFCP = 0
 
 		# Get import path
 		if not path:
@@ -219,7 +221,7 @@ class Importer(object):
 			L.isWarn and L.logWarn(f'Import directory for attribute policies does not exist: {path}')
 			return False
 
-		filenames = fnmatch.filter(os.listdir(path), '*.ap')
+		filenames = fnmatch.filter(os.listdir(path), '*.fcp')
 		for fn in filenames:
 			fn = os.path.join(path, fn)
 			L.isInfo and L.log(f'Importing attribute policies: {fn}')
@@ -277,12 +279,12 @@ class Importer(object):
 							if not CSE.validator.addAdditionalAttributePolicy(tpe, { sn : ( dty, car, oc, ou, od, annc) }):
 								L.logErr(f'Cannot add attribute policies for attribute: {sn} type: {tpe}')
 								return False
-							countAP += 1
+							countFCP += 1
 						except Exception as e:
 							L.logErr(str(e))
 							return False
 		
-		L.isDebug and L.logDebug(f'Imported {countAP} attribute policies')
+		L.isDebug and L.logDebug(f'Imported {countFCP} flexContainer policies')
 		return True
 
 

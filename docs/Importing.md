@@ -54,11 +54,12 @@ A minimal set of resources is provided in the [init](../init) directory. Definit
 The directory [tools/resourceTemplates](../tools/resourceTemplates) contains templates for supported resource types. Please see the [README](../tools/resourceTemplates/README.md) there for further details.
 
 
-## Importing Attribute Policies for FlexContainers
+## Importing Attribute and Hierarchy Policies for FlexContainers
 
-The CSE uses attribute policies for validating the attributes of all supported resource types (internal to the *m2m* namespace). But for all &lt;flexContainer> specializations, e.g. for oneM2M's TS-0023 ModuleClasses, those attribute policies must be provided. This can be done by adding attribute policy files for import. 
+The CSE uses attribute policies for validating the attributes of all supported resource types (internal to the *m2m* namespace). 
+But for all &lt;flexContainer> specializations, e.g. for oneM2M's TS-0023 ModuleClasses, those attribute policies and the allowed &lt;flexContainer> hierarchy must be provided. This can be done by adding attribute policy files for import. 
 
-Those files are imported from the common import / init directory. More than one such file can be provided, for example one per domain. The files must have the extension ".ap". 
+Those files are imported from the common import / init directory. More than one such file can be provided, for example one per domain. The files must have the extension ".fcp". 
 
 ### Format
 

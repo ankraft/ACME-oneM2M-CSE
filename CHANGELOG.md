@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [WEB] Moved the webUI to the acme module.
 - [CSE] Improved attribute validation: checking empty lists.
 - [CSE] Simplified initial configuration. First time users can now choose between three deployment configurations (IN, MN, ASN) to quickly set-up a CSE.
+- [IMPORTING] Changed the file extension for \<flexContainer> attribute policies from ".ap" to ".fcp".
 
 ### Removed
 - [APPS] Removed the example AEs from the CSE. This makes the CSE a bit smaller and also removes a big dependency to the non-portable psutils package. They will be available in  separate project in the future.
