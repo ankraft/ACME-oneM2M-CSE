@@ -477,7 +477,7 @@ def prepareMqttRequest(result:Result, originator:str=None, ty:T=None, op:Operati
 	if op:
 		req['op'] = op.value
 	if ty:
-		req['ty'] = ty
+		req['ty'] = int(ty)
 	if result.request.headers.requestIdentifier:
 		req['rqi'] = result.request.headers.requestIdentifier
 	if result.request.headers.releaseVersionIndicator:

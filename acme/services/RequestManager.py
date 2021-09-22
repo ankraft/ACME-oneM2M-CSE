@@ -608,10 +608,11 @@ class RequestManager(object):
 
 			# RVI - releaseVersionIndicator
 			if not (rvi := gget(cseRequest.req, 'rvi', greedy=False)):
-				L.logDebug(dbg := 'Release Version Indicator paraneter is mandatory in request')
-				return Result(rsc=RC.badRequest, request=cseRequest, dbg=dbg, status=False)
+				L.logDebug(dbg := f'Release Version Indicator is missing in request, falling back to RVI=\'1\'. But Release Version \'1\' is not supported. Use RVI with one of {C.supportedReleaseVersions}.')
+				# L.logDebug(dbg := 'Release Version Indicator paraneter is mandatory in request')
+				return Result(rsc=RC.releaseVersionNotSupported, request=cseRequest, dbg=dbg, status=False)
 			if rvi not in C.supportedReleaseVersions:
-				return Result(rsc=RC.releaseVersionNotSupported, request=cseRequest, dbg=f'Release version unsupported: {cseRequest.headers.releaseVersionIndicator}')
+				return Result(rsc=RC.releaseVersionNotSupported, request=cseRequest, dbg=f'Release version unsupported: {rvi}')
 			cseRequest.headers.releaseVersionIndicator = rvi	
 
 
