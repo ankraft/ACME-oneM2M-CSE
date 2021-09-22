@@ -127,19 +127,20 @@ function restSendData(method, url, headers, data) {
 			}
 			document.getElementById("rest-status").value = s;
 
+			if (this.responseText.length > 0) {
+				document.getElementById("rest-result-body").value = JSON.stringify(JSON.parse(this.responseText), null, 4);                  
+			}
 			if (this.status == 200 || this.status == 201 || this.status == 204) {
-				if (this.responseText.length > 0) {
-					document.getElementById("rest-result-body").value = JSON.stringify(JSON.parse(this.responseText), null, 4);                  
-				}
 				if (method == "DELETE") {
 					document.getElementById("rest-result-body").value = "";
 					connectToCSE();
 				} else {
 					refreshNode()
 				}
-			} else {
-				document.getElementById("rest-result-body").value = "";
-			}
+			} 
+			// else {
+			// 	document.getElementById("rest-result-body").value = "";
+			// }
 			document.getElementById("rest-result-headers").value = this.getAllResponseHeaders()
 		}
 	};
@@ -195,10 +196,11 @@ function fillHeaderArea(ty) {
 tplAE = {
     "m2m:ae": {
 		"acpi": [ "==> fill or remove <==" ],
-        "api": "==> fill <==",
-        "nl": "==> fill <==",
+        "api": "==> fill (must start with N or R) <==",
+        "nl": "==> fill or remove <==",
         "poa": [ "==> fill or remove <==" ],
-        "rn": "==> fill <==",
+        "rn": "==> fill or remove <==",
+        "srv": [ "3" ],
         "rr": false
     }
 }
