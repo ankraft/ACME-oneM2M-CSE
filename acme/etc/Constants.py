@@ -25,7 +25,7 @@ class Constants(object):
 	virtualResourcesNames 			= [ 'la', 'ol', 'fopt', 'pcu' ]
 
 	# List of announceable resource types
-	announcedResourceTypes 			= [ T.ACPAnnc, T.AEAnnc, T.CNTAnnc, T.CINAnnc, T.GRPAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.CSRAnnc, T.FCNTAnnc, T.FCIAnnc ]
+	announcedResourceTypes 			= [ T.ACPAnnc, T.AEAnnc, T.CNTAnnc, T.CINAnnc, T.GRPAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.CSRAnnc, T.FCNTAnnc ]
 
 	# Supported resource types by this CSE
 	supportedResourceTypes 			= [	# Supported normal resource
