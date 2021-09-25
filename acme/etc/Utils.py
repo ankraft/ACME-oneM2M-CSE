@@ -221,44 +221,54 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
 		if idsLen == 1 and ((ids[0] != csern and ids[0] != '-') or ids[0] == csecsi):	# unstructured
 			ri = ids[0]
 		else:									# structured
-			if ids[0] == '-':						# replace placeholder "-"
+			if ids[0] == '-':					# replace placeholder "-"
 				ids[0] = csern
 			srn = '/'.join(ids)
 	
 	# SP-Relative (first element is  /)
 	elif lvl == 1:								
 		# L.logDebug("SP-Relative")
+		if idsLen < 1:
+			return None, None, None
 		csi = ids[0]							# extract the csi
 		if csi != csecsi:						# Not for this CSE? retargeting
 			if vrPresent:						# append last path element again
 				ids.append(vrPresent)
 			return id, csi, srn					# Early return. ri is the (un)structured path
-		if ids[1] == '-':						# replace placeholder "-"
-			ids[1] = csern
-		if ids[1] == csern:						# structured
-			srn = '/'.join(ids[1:])				# remove the csi part
-		elif idsLen == 2:						# unstructured
-			ri = ids[1]
-		else:
-			return None, None, None
+		if idsLen == 1:
+			ri = ids[0]
+		elif idsLen > 1:
+			if ids[1] == '-':						# replace placeholder "-"
+				ids[1] = csern
+			if ids[1] == csern:						# structured
+				srn = '/'.join(ids[1:])				# remove the csi part
+			elif idsLen == 2:						# unstructured
+				ri = ids[1]
+			else:
+				return None, None, None
 
 	# Absolute
 	elif lvl == 2: 								
 		# L.logDebug("Absolute")
+		if idsLen < 2:
+			return None, None, None
 		spi = ids[0] 							#TODO Check whether it is same SPID, otherwise forward it throw mcc'	see cse.sp configuration
 		csi = ids[1]
 		if csi != csecsi:
 			if vrPresent:						# append virtual last path element again
 				ids.append(vrPresent)
 			return id, csi, srn	# Not for this CSE? retargeting
-		if ids[2] == '-':						# replace placeholder "-"
-			ids[2] = csern
-		if ids[2] == csern:						# structured
-			srn = '/'.join(ids[2:])
-		elif idsLen == 3:						# unstructured
-			ri = ids[2]
-		else:
-			return None, None, None
+		if idsLen == 2:
+			ri = ids[1]
+		elif idsLen > 2:
+			if ids[2] == '-':						# replace placeholder "-"
+				ids[2] = csern
+			if ids[2] == csern:						# structured
+				srn = '/'.join(ids[2:])
+			elif idsLen == 3:						# unstructured
+				ri = ids[2]
+			else:
+				return None, None, None
 
 	# Now either csi, ri or structured srn is set
 	if ri:
