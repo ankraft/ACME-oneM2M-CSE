@@ -7,31 +7,44 @@
 #	Acp : Announceable variant
 #
 
-from ..etc.Types import ResourceTypes as T, Permission, JSON
-from ..services.Validator import constructPolicy, addPolicy
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Permission, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
 from ..resources.Resource import *
-
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'et', 'acpi', 'lbl','daci', 'loc',
-	'lnk'
-])
-acpAPolicies = constructPolicy([
-	'pv', 'pvs', 'adri', 'apri', 'airi',
-])
-attributePolicies =  addPolicy(attributePolicies, acpAPolicies)
-# TODO announceSyncType
 
 
 class ACPAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes = [ T.SUB ]
+	_allowedChildResourceTypes = [ T.SUB ]
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {	
+			# Common and universal attributes for announced resources
+			'rn': None,
+		 	'ty': None,
+			'ri': None,
+			'pi': None,
+			'ct': None,
+			'lt': None,
+			'et': None,
+			'lbl': None,
+			'acpi':None,
+			'daci': None,
+			'lnk': None,
+			'ast': None,
+
+			# Resource attributes
+			'pv': None,
+			'pvs': None,
+			'adri': None,
+			'apri': None,
+			'airi': None
+	}
 
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.ACPAnnc, dct, pi=pi, create=create, attributePolicies=attributePolicies)
+		super().__init__(T.ACPAnnc, dct, pi=pi, create=create)
 
 
 	def checkSelfPermission(self, origin:str, requestedPermission:int) -> bool:

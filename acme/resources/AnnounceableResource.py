@@ -9,17 +9,16 @@
 
 from __future__ import annotations
 from copy import deepcopy
-from ..etc.Types import ResourceTypes as T, Result, AttributePolicies, JSON, AttributePolicies
-from ..etc.Types import Announced as AN
+from ..etc.Types import ResourceTypes as T, Result, JSON, AttributePolicyDict
+from ..etc.Types import Announced as AN, ResponseCode as RC
 from ..services import CSE as CSE
-from ..services.Validator import addPolicy, getPolicy
 from ..services.Logging import Logging as L
 from .Resource import *
 
 class AnnounceableResource(Resource):
 
-	def __init__(self, ty:T, dct:JSON=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str=None, attributePolicies:AttributePolicies=None, isVirtual:bool=False) -> None:
-		super().__init__(ty, dct, pi, tpe=tpe, create=create, inheritACP=inheritACP, readOnly=readOnly, rn=rn, attributePolicies=attributePolicies, isVirtual=isVirtual)
+	def __init__(self, ty:T, dct:JSON=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, readOnly:bool=False, rn:str=None, isVirtual:bool=False) -> None:
+		super().__init__(ty, dct, pi, tpe=tpe, create=create, inheritACP=inheritACP, readOnly=readOnly, rn=rn, isVirtual=isVirtual)
 		self._origAA = None	# hold original announceableAttributes when doing an update
 
 
@@ -67,18 +66,24 @@ class AnnounceableResource(Resource):
 
 		announceableAttributes = []
 		if self.aa:
+			# Check whether all the attributes in announcedAttributes are actually resource attributes
+			for aa in self.aa:
+				if not aa in self._attributes:
+					L.logDebug(dbg := f'Non-resource attribute in aa: {aa}')
+					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+
+			# deep-copy the announcedAttributes
 			announceableAttributes = deepcopy(self.aa)
-		for attr in self.attributePolicies.keys():
+
+		for attr, policy in self._attributes.items():
 			# Removing non announceable attributes
 			if attr in announceableAttributes:
-				v = getPolicy(attr, self.attributePolicies)
-				if v[5] == AN.NA:  # remove attributes which are not announceable
+				if policy.announcement == AN.NA:  # remove attributes which are not announceable
 					announceableAttributes.remove(attr)
 					continue
 				if not self.hasAttribute(attr):	# remove attributes that are in aa but not in the resource
 					announceableAttributes.remove(attr)
-					continue
-
+					continue	
 
 		# If announceableAttributes is now an empty list, set aa to None
 		self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
@@ -89,12 +94,12 @@ class AnnounceableResource(Resource):
 		"""	Create the dict stub for the announced resource.
 		"""
 		# special case for FCNT, FCI
-		if (additionalAttributes := CSE.validator.getAdditionalAttributesFor(self.tpe)):
-			# policies = addPolicy(deepcopy(self.resourceAttributePolicies), additionalAttributes)
-			policies = addPolicy(deepcopy(self.attributePolicies), additionalAttributes)
-			return self._createAnnouncedDict(policies, remoteCSR, isCreate=isCreate, remoteCsi=csi)
+		if (additionalAttributes := CSE.validator.getFlexContainerAttributesFor(self.tpe)):
+			attributes:AttributePolicyDict = deepcopy(self._attributes)
+			attributes.update(additionalAttributes)
+			return self._createAnnouncedDict(attributes, remoteCSR, isCreate=isCreate, remoteCsi=csi)
 		# Normal behaviour for other resources
-		return self.validateAnnouncedDict( self._createAnnouncedDict(self.attributePolicies, remoteCSR, isCreate=isCreate, remoteCsi=csi) )
+		return self.validateAnnouncedDict( self._createAnnouncedDict(self._attributes, remoteCSR, isCreate=isCreate, remoteCsi=csi) )
 
 
 	def validateAnnouncedDict(self, dct:JSON) -> JSON:
@@ -104,7 +109,7 @@ class AnnounceableResource(Resource):
 		return dct
 
 
-	def _createAnnouncedDict(self, policies:AttributePolicies, remoteCSR:Resource, isCreate:bool=False, remoteCsi:str=None) -> JSON:
+	def _createAnnouncedDict(self, attributes:AttributePolicyDict, remoteCSR:Resource, isCreate:bool=False, remoteCsi:str=None) -> JSON:
 		"""	Actually create the resource dict.
 		"""
 		# Stub
@@ -114,7 +119,7 @@ class AnnounceableResource(Resource):
 			tpe = T.announcedMgd(self.mgd).tpe()
 
 		# get  all resource specific policies and add the mandatory ones
-		announcedAttributes = self._getAnnouncedAttributes(policies)
+		announcedAttributes = self._getAnnouncedAttributes(attributes)
 
 		if isCreate:
 			dct:JSON = { tpe : {  # with the announced variant of the tpe
@@ -167,8 +172,8 @@ class AnnounceableResource(Resource):
 
 			# copy only the updated attributes
 			for attr in modifiedAttributes:
-				v = getPolicy(attr, policies)
-				if attr in announcedAttributes or (v is not None and v[5] == AN.MA):	# either announced or an MA attribute
+				attributePolicy = attributes.get(attr)
+				if attr in announcedAttributes or (attributePolicy is not None and attributePolicy.announcement == AN.MA):	# either announced or an MA attribute
 				# if attr in announcedAttributes or (attr in policies and policies[attr][5] == AN.MA):	# either announced or an MA attribute
 					body[attr] = self[attr]
 
@@ -202,31 +207,7 @@ class AnnounceableResource(Resource):
 	#
 	#	Policy support
 	#
-
-	# def _getAnnouncedAttributes(self, policies:Dict[str, List[Any]]) -> List[str]:
-	# 	"""	Return a list of mandatory and optional announced attributes. 
-	# 		The function only returns those attributes that are also present in the resource!
-	# 	"""
-	# 	mandatory = []
-	# 	optional = []
-	# 	announceableAttributes = []
-	# 	if self.aa is not None:
-	# 		announceableAttributes = deepcopy(self.aa)
-	# 	for attr,v in policies.items():
-	# 		# Removing non announceable attributes
-	# 		if attr in announceableAttributes and v[5] == AN.NA:  # remove attributes which are not announceable
-	# 			announceableAttributes.remove(attr)
-	# 		if self.hasAttribute(attr):
-	# 			if v[5] == AN.MA:
-	# 				mandatory.append(attr)
-	# 			elif v[5] == AN.OA and attr in announceableAttributes:	# only add optional attributes that are also in aa
-	# 				optional.append(attr)
-
-	# 	# If announceableAttributes is now an empty list, set aa to None
-	# 	self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
-
-	# 	return mandatory + optional
-	def _getAnnouncedAttributes(self, policies:AttributePolicies) -> list[str]:
+	def _getAnnouncedAttributes(self, attributes:AttributePolicyDict) -> list[str]:
 		"""	Return a list of mandatory and optional announced attributes. 
 			The function only returns those attributes that are also present in the resource!
 		"""
@@ -235,13 +216,14 @@ class AnnounceableResource(Resource):
 		announceableAttributes = []
 		if self.aa is not None:
 			announceableAttributes = self.aa
-		for attr in policies.keys():
+		for attr in attributes.keys():
 			if self.hasAttribute(attr):
-				if not (v := getPolicy(attr, policies)):
+				if not (policy := attributes.get(attr)):
 					continue
-				if v[5] == AN.MA:
+				
+				if policy.announcement == AN.MA:
 					mandatory.append(attr)
-				elif v[5] == AN.OA and attr in announceableAttributes:	# only add optional attributes that are also in aa
+				elif policy.announcement == AN.OA and attr in announceableAttributes:	# only add optional attributes that are also in aa
 					optional.append(attr)
 				# else: just ignore AN.NA
 

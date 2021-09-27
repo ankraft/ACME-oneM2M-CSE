@@ -96,8 +96,8 @@ class TestAE(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveAE(self) -> None:
 		""" Retrieve <AE> """
-		_, rsc = RETRIEVE(aeURL, TestAE.originator)
-		self.assertEqual(rsc, RC.OK)
+		r, rsc = RETRIEVE(aeURL, TestAE.originator)
+		self.assertEqual(rsc, RC.OK, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

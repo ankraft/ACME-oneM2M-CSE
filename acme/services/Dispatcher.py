@@ -68,9 +68,9 @@ class Dispatcher(object):
 
 		# check rcn & operation
 		if permission == Permission.DISCOVERY and request.args.rcn not in [ RCN.discoveryResultReferences, RCN.childResourceReferences ]:	# Only allow those two
-			return Result(status=False, rsc=RC.badRequest, dbg=f'invalid rcn: {request.args.rcn:d} for fu: {request.args.fu:d}')
+			return Result(status=False, rsc=RC.badRequest, dbg=f'invalid rcn: {int(request.args.rcn)} for fu: {int(request.args.fu)}')
 		if permission == Permission.RETRIEVE and request.args.rcn not in [ RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource, RCN.childResourceReferences]: # TODO
-			return Result(status=False, rsc=RC.badRequest, dbg=f'invalid rcn: {request.args.rcn:d} for fu: {request.args.fu:d}')
+			return Result(status=False, rsc=RC.badRequest, dbg=f'invalid rcn: {int(request.args.rcn)} for fu: {int(request.args.fu)}')
 
 		L.isDebug and L.logDebug(f'Discover/Retrieve resources (fu: {request.args.fu.name}, drt: {request.args.drt.name}, handling: {request.args.handling}, conditions: {request.args.conditions}, resultContent: {request.args.rcn.name}, attributes: {str(request.args.attributes)})')
 
@@ -80,7 +80,7 @@ class Dispatcher(object):
 			if not (res := self.retrieveResource(id)).resource:
 			 	return res # error
 			if not CSE.security.hasAccess(originator, res.resource, permission):
-				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=f'originator has no permission ({permission:d})')
+				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=f'originator has no permission ({permission})')
 
 			# if rcn == attributes then we can return here, whatever the result is
 			if request.args.rcn == RCN.attributes:
@@ -447,7 +447,7 @@ class Dispatcher(object):
 
 
 	def createResource(self, resource:Resource, parentResource:Resource=None, originator:str=None) -> Result:
-		L.isDebug and L.logDebug(f'Adding resource ri: {resource.ri}, type: {resource.ty:d}')
+		L.isDebug and L.logDebug(f'Adding resource ri: {resource.ri}, type: {resource.ty}')
 
 		if parentResource:
 			L.isDebug and L.logDebug(f'Parent ri: {parentResource.ri}')
@@ -559,7 +559,7 @@ class Dispatcher(object):
 
 
 	def updateResource(self, resource:Resource, dct:JSON=None, doUpdateCheck:bool=True, originator:str=None) -> Result:
-		L.isDebug and L.logDebug(f'Updating resource ri: {resource.ri}, type: {resource.ty:d}')
+		L.isDebug and L.logDebug(f'Updating resource ri: {resource.ri}, type: {resource.ty}')
 		if doUpdateCheck:
 			if not (res := resource.update(dct, originator)).status:
 				return res.errorResult()
@@ -637,7 +637,7 @@ class Dispatcher(object):
 
 
 	def deleteResource(self, resource:Resource, originator:str=None, withDeregistration:bool=False, parentResource:Resource=None, doDeleteCheck:bool=True) -> Result:
-		L.isDebug and L.logDebug(f'Removing resource ri: {resource.ri}, type: {resource.ty:d}')
+		L.isDebug and L.logDebug(f'Removing resource ri: {resource.ri}, type: {resource.ty}')
 
 		resource.deactivate(originator)	# deactivate it first
 

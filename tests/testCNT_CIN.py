@@ -300,7 +300,7 @@ class TestCNT_CIN(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_discoverCINwithDISR(self) -> None:
 		"""	Discover <CIN> with disr = True -> FAIL """
-		r, rsc = RETRIEVE(f'{cntURL}?rcn={ResultContentType.childResourceReferences:d}', TestCNT_CIN.originator)	# Discover
+		r, rsc = RETRIEVE(f'{cntURL}?rcn={int(ResultContentType.childResourceReferences)}', TestCNT_CIN.originator)	# Discover
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl/rrf'))

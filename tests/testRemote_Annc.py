@@ -76,8 +76,8 @@ class TestRemote_Annc(unittest.TestCase):
 		""" Retrieve announced <AE> from remote (AT, no AA) """
 		if TestRemote_Annc.remoteAeRI is None:
 			self.skipTest('remote AE.ri not found')
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteAeRI}', CSEID)
-		self.assertEqual(rsc, RC.OK)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteAeRI}', CSEID)
+		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:aeA'))
 		self.assertIsNotNone(findXPath(r, 'm2m:aeA/ty'))
 		self.assertEqual(findXPath(r, 'm2m:aeA/ty'), T.AEAnnc)
@@ -101,7 +101,7 @@ class TestRemote_Annc(unittest.TestCase):
 		_, rsc = DELETE(aeURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 		# try to retrieve the announced AE. Should not be found
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteAeRI}', CSEID)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteAeRI}', CSEID)
 		self.assertEqual(rsc, RC.notFound)
 		TestRemote_Annc.ae = None
 
@@ -142,7 +142,7 @@ class TestRemote_Annc(unittest.TestCase):
 		"""	Retrieve announced <AE> from remote (AT, AA) """
 		if TestRemote_Annc.remoteAeRI is None:
 			self.skipTest('remote AE.ri not found')
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteAeRI}', CSEID)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteAeRI}', CSEID)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:aeA'))
 		self.assertIsNotNone(findXPath(r, 'm2m:aeA/ty'))
@@ -186,9 +186,9 @@ class TestRemote_Annc(unittest.TestCase):
 				 	'rr': 	False,
 				 	'srv': 	[ '3' ],
 				 	'at': 	[ REMOTECSEID ],
-				 	'aa': 	[ 'rn', 'ri', 'pi', 'ct','lt','st','acpi' ]
+				 	'aa': 	[ 'rn', 'ri', 'pi', 'ct','lt','acpi' ]
 				}}
-		r, rsc = CREATE(f'{cseURL}?rcn={RCN.modifiedAttributes:d}', 'C', T.AE, dct)
+		r, rsc = CREATE(f'{cseURL}?rcn={int(RCN.modifiedAttributes)}', 'C', T.AE, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/at'))
 		self.assertIsInstance(findXPath(r, 'm2m:ae/at'), list)
@@ -199,8 +199,25 @@ class TestRemote_Annc(unittest.TestCase):
 
 		# aa should be in the resource, but null
 		self.assertIn('aa', findXPath(r, 'm2m:ae')) 
-		self.assertIsNone(findXPath(r, 'm2m:ae/aa'))	# This must be None/Null!
+		self.assertIsNone(findXPath(r, 'm2m:ae/aa'), r)	# This must be None/Null!
 		TestRemote_Annc.ae = r
+
+
+	# Create an AE with non-resource attributes
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_createAnnounceAEwithNonResourceAttributes(self) -> None:
+		""" Create <AE> with AA with unknown resource attributes -> Fail"""
+		dct = 	{ 'm2m:ae' : {
+					'rn': 	aeRN, 
+					'api': 	'NMyApp1Id',
+				 	'rr': 	False,
+				 	'srv': 	[ '3' ],
+				 	'at': 	[ REMOTECSEID ],
+				 	'aa': 	[ 'rn', 'ri', 'pi', 'ct', 'lt', 'acpi', 'st' ]
+				}}
+		r, rsc = CREATE(f'{cseURL}?rcn={int(RCN.modifiedAttributes)}', 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
 
 
 	# Update an non-AA AE with AA
@@ -216,7 +233,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:ae/lbl'), [ 'aLabel' ])
 
 		# retrieve the announced AE
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteAeRI}', ORIGINATOR)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteAeRI}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:aeA/lbl'))
 		self.assertEqual(findXPath(r, 'm2m:aeA/lbl'), [ 'aLabel' ])
@@ -234,7 +251,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsNone(findXPath(r, 'm2m:ae/lbl'))
 
 		# retrieve the announced AE
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteAeRI}', ORIGINATOR)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteAeRI}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNone(findXPath(r, 'm2m:aeA/lbl'))
 
@@ -266,7 +283,7 @@ class TestRemote_Annc(unittest.TestCase):
 		""" Retrieve announced <node> """
 		if TestRemote_Annc.remoteNodRI is None:
 			self.skipTest('remote Node.ri not found')
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteNodRI}', CSEID)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteNodRI}', CSEID)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:nodA'))
 		self.assertIsNotNone(findXPath(r, 'm2m:nodA/ty'))
@@ -315,7 +332,7 @@ class TestRemote_Annc(unittest.TestCase):
 		""" Retrieve announced [Battery] and test attributes """
 		if TestRemote_Annc.remoteBatRI is None:
 			self.skipTest('remote bat.ri not found')
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:batA'))
 		self.assertIsNotNone(findXPath(r, 'm2m:batA/ty'))
@@ -337,7 +354,7 @@ class TestRemote_Annc(unittest.TestCase):
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_retrieveRCNOriginalResource(self) -> None:
 		""" Retrieve original resource from remote CSE """
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteBatRI}?rcn={RCN.originalResource:d}', ORIGINATOR)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteBatRI}?rcn={int(RCN.originalResource)}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:bat'))
 		self.assertIsNotNone(findXPath(r, 'm2m:bat/ty'))
@@ -359,7 +376,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(rsc, RC.updated)
 		self.assertEqual(findXPath(r, 'm2m:bat/btl'), 42)
 		self.assertEqual(findXPath(r, 'm2m:bat/bts'), 2)
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:batA/btl'))
 		self.assertEqual(findXPath(r, 'm2m:batA/btl'), 42)
@@ -381,7 +398,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIn('btl', findXPath(r, 'm2m:bat/aa'))
 		self.assertIn('bts', findXPath(r, 'm2m:bat/aa'))
 
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:batA/btl'))
 		self.assertEqual(findXPath(r, 'm2m:batA/btl'), 42)
@@ -404,7 +421,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertNotIn('btl', findXPath(r, 'm2m:bat/aa'))
 		self.assertIn('bts', findXPath(r, 'm2m:bat/aa'))
 
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNone(findXPath(r, 'm2m:batA/btl'))
 		self.assertIsNotNone(findXPath(r, 'm2m:batA/bts'))
@@ -423,7 +440,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:bat/bts'), 2)
 		self.assertIsNone(findXPath(r, 'm2m:bat/aa'))
 
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNone(findXPath(r, 'm2m:batA/btl'))
 		self.assertIsNone(findXPath(r, 'm2m:batA/bts'))
@@ -441,7 +458,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(rsc, RC.updated)
 		self.assertEqual(len(findXPath(r, 'm2m:bat/at')), 0)
 
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
 		self.assertEqual(rsc, RC.notFound)
 
 
@@ -464,7 +481,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsNotNone(self.remoteBatRI)
 		TestRemote_Annc.bat = r
 
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 
 
@@ -478,7 +495,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(rsc, RC.updated)
 		self.assertIsNone(findXPath(r, 'm2m:bat/at'))
 
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
 		self.assertEqual(rsc, RC.notFound)
 		TestRemote_Annc.bat = None
 		TestRemote_Annc.remoteBatRI = None
@@ -492,12 +509,12 @@ class TestRemote_Annc(unittest.TestCase):
 		_, rsc = DELETE(nodURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 		# try to retrieve the announced Node. Should not be found
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteNodRI}', CSEID)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteNodRI}', CSEID)
 		self.assertEqual(rsc, RC.notFound)
 		TestRemote_Annc.node = None
 		TestRemote_Annc.remoteNodRI = None
 		# Actually, the mgmtobj should been deleted by now in another test case
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
 		self.assertEqual(rsc, RC.notFound)
 		TestRemote_Annc.bat = None
 		TestRemote_Annc.remoteBatRI = None
@@ -541,9 +558,9 @@ class TestRemote_Annc(unittest.TestCase):
 		""" Retrieve remote <ACPA> """
 		if TestRemote_Annc.remoteAcpRI is None:
 			self.skipTest('remote ACP.ri not found')
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteAcpRI}', 'other')
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteAcpRI}', 'other')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteAcpRI}', self.acpORIGINATOR)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteAcpRI}', self.acpORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:acpA'))
 		self.assertIsNotNone(findXPath(r, 'm2m:acpA/ty'))
@@ -567,7 +584,7 @@ class TestRemote_Annc(unittest.TestCase):
 		""" Retrieve remote <ACPA> with wrong originator """
 		if TestRemote_Annc.remoteAcpRI is None:
 			self.skipTest('remote ACP.ri not found')
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteAcpRI}', 'wrong')
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteAcpRI}', 'wrong')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
@@ -577,7 +594,7 @@ class TestRemote_Annc(unittest.TestCase):
 		""" Retrieve remote <ACPA> with remote CSE's CSI """
 		if TestRemote_Annc.remoteAcpRI is None:
 			self.skipTest('remote ACP.ri not found')
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteAcpRI}', CSEID)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteAcpRI}', CSEID)
 		self.assertEqual(rsc, RC.OK)
 
 
@@ -589,11 +606,13 @@ class TestRemote_Annc(unittest.TestCase):
 		_, rsc = DELETE(acpURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.deleted)
 		# try to retrieve the announced Node. Should not be found
-		r, rsc = RETRIEVE(f'{REMOTEURL}/~{TestRemote_Annc.remoteAcpRI}', CSEID)
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteAcpRI}', CSEID)
 		self.assertEqual(rsc, RC.notFound)
 		TestRemote_Annc.acp = None
 		TestRemote_Annc.remoteAcpRI = None
 
+
+# TODO Test: non-resource attribute in "aa" attribute
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
@@ -613,6 +632,9 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestRemote_Annc('test_addLBLtoAnnouncedAE'))
 	suite.addTest(TestRemote_Annc('test_removeLBLfromAnnouncedAE'))
 	suite.addTest(TestRemote_Annc('test_deleteAnnounceAE'))
+
+	# create an announced AE, with non-resource announcedAttributes
+	suite.addTest(TestRemote_Annc('test_createAnnounceAEwithNonResourceAttributes'))
 
 	# create an announced Node & MgmtObj [bat]
 	suite.addTest(TestRemote_Annc('test_createAnnounceNode'))

@@ -9,11 +9,11 @@
 
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
-from typing import Any, Tuple, Dict, List, cast
+from typing import Any, Tuple, cast
 from copy import deepcopy
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC, CSERequest, JSON, AttributePolicies
+from ..etc.Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC, CSERequest, JSON
 from ..etc import Utils as Utils
 from ..etc import DateUtils as DateUtils
 from ..services.Logging import Logging as L
@@ -41,14 +41,13 @@ class Resource(object):
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator, _announcedTo, _modified, _isAnnounced, _remoteID ]
 
 	def __init__(self, ty:T|int, dct:JSON=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, 
-				 readOnly:bool=False, rn:str=None, attributePolicies:AttributePolicies=None, isVirtual:bool=False, isAnnounced:bool=False) -> None:
+				 readOnly:bool=False, rn:str=None, isVirtual:bool=False, isAnnounced:bool=False) -> None:
 		self.tpe = tpe
 		if isinstance(ty, T) and ty not in [ T.FCNT, T.FCI ]: 	# For some types the tpe/root is empty and will be set later in this method
 			self.tpe = ty.tpe() if not tpe else tpe
 		self.readOnly = readOnly
 		self.inheritACP = inheritACP
 		self.dict = {}
-		self.attributePolicies = attributePolicies
 
 		if dct: 
 			self.isImported = dct.get(C.isImported)	# might be None, or boolean
@@ -154,7 +153,7 @@ class Resource(object):
 		# Also don't validate virtual resources
 		# if (self[self._isInstantiated] is None or not self[self._isInstantiated]) and not self[self._isVirtual] :
 		if not self[self._isInstantiated] and not self[self._isVirtual] :
-			if not (res := CSE.validator.validateAttributes(self._originalDict, self.tpe, self.ty, self.attributePolicies, isImported=self.isImported, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
+			if not (res := CSE.validator.validateAttributes(self._originalDict, self.tpe, self.ty, self._attributes, isImported=self.isImported, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
 				return res
 
 		# validate the resource logic
@@ -208,15 +207,15 @@ class Resource(object):
 
 		updatedAttributes = None
 		if dct:
-			if self.tpe not in dct and self.ty not in [T.FCNTAnnc, T.FCIAnnc]:	# Don't check announced versions of announced FCNT
+			if self.tpe not in dct and self.ty not in [T.FCNTAnnc]:	# Don't check announced versions of announced FCNT
 				L.isWarn and L.logWarn("Update type doesn't match target")
 				return Result(status=False, rsc=RC.contentsUnacceptable, dbg='resource types mismatch')
 
 			# validate the attributes
-			if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self.attributePolicies, create=False, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
+			if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self._attributes, create=False, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
 				return res
 
-			if self.ty not in [T.FCNTAnnc, T.FCIAnnc]:
+			if self.ty not in [T.FCNTAnnc]:
 				updatedAttributes = dct[self.tpe] # get structure under the resource type specifier
 			else:
 				updatedAttributes = Utils.findXPath(dct, '{0}')
@@ -314,7 +313,7 @@ class Resource(object):
 		""" Check whether a fresource may have `resource` as a child resources. 
 		"""
 		from .Unknown import Unknown # Unknown imports this class, therefore import only here
-		return resource.ty in self.allowedChildResourceTypes or isinstance(resource, Unknown)
+		return resource.ty in self._allowedChildResourceTypes or isinstance(resource, Unknown)
 
 
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
@@ -437,12 +436,14 @@ class Resource(object):
 	def __getitem__(self, key: str) -> Any:
 		return self.attribute(key)
 
+
 	def __delitem__(self, key: str) -> None:
 		self.delAttribute(key)
 
 
 	def __contains__(self, key: str) -> bool:
 		return self.hasAttribute(key)
+
 
 	def __getattr__(self, key: str) -> Any:
 		return self.attribute(key)

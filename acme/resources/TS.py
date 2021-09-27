@@ -8,28 +8,15 @@
 #
 
 from __future__ import annotations
-from copy import deepcopy
-from ..etc.Types import ResourceTypes as T, Result, NotificationEventType as NET, ResponseCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseCode as RC, JSON
 from ..etc import Utils as Utils, DateUtils as DateUtils
 from ..services.Configuration import Configuration
 from ..services import CSE as CSE
-from ..services.Validator import constructPolicy, addPolicy
 from ..services.Logging import Logging as L
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources import Factory as Factory
 
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([
-	'rn', 'ty', 'ri', 'pi', 'et', 'lbl', 'ct', 'lt', 'cr', 'hld', 'acpi', 'daci', 
-	'at', 'aa', 'loc'
-])
-
-tsPolicies = constructPolicy([
-	'mni', 'mbs', 'mia', 'cni', 'cbs', 'pei', 'peid', 'mdd', 'mdn', 'mdlt', 'mdc', 'mdt', 'cnf',
-	'or'
-])
-attributePolicies =  addPolicy(attributePolicies, tsPolicies)
 
 # TODO periodicIntervalDelta missing in TS-0004? Shortname for validation
 # TODO periodicIntervalDelta default
@@ -38,13 +25,49 @@ attributePolicies =  addPolicy(attributePolicies, tsPolicies)
 class TS(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes = [ T.TSI, T.SUB ]
+	_allowedChildResourceTypes = [ T.TSI, T.SUB ]
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# Common and universal attributes
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'hld': None,
+		'acpi':None,
+		'at': None,
+		'aa': None,
+		'ast': None,
+		'daci': None,
+		'cr': None,
+		'loc': None,
+
+		# Resource attributes
+		'mni': None,
+		'mbs': None,
+		'mia': None,
+		'cni': None,
+		'cbs': None,
+		'pei': None,
+		'peid': None,
+		'mdd': None,
+		'mdn': None,
+		'mdlt': None,
+		'mdc': None,
+		'mdt': None,
+		'cnf': None,
+		'or': None
+	}
 
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.TS, dct, pi, create=create, attributePolicies=attributePolicies)
-
-		self.resourceAttributePolicies = tsPolicies	# only the resource type's own policies
+		super().__init__(T.TS, dct, pi, create=create)
 
 		self.setAttribute('cni', 0, overwrite=False)
 		self.setAttribute('cbs', 0, overwrite=False)

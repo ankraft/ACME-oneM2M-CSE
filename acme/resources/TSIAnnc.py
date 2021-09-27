@@ -8,28 +8,41 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import ResourceTypes as T, JSON
-from ..services.Validator import constructPolicy, addPolicy
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
 from ..resources.Resource import *
 from ..resources.AnnouncedResource import AnnouncedResource
-
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'et', 'acpi', 'lbl','daci', 'loc',
-	'lnk' 
-])
-tsiAPolicies = constructPolicy([
-    'dgt', 'con', 'cs', 'snr'
-])
-
-attributePolicies =  addPolicy(attributePolicies, tsiAPolicies)
 
 class TSIAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes:list[T] = [ ]
+	_allowedChildResourceTypes:list[T] = [ ]
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# Common and universal attributes for announced resources
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'acpi':None,
+		'daci': None,
+		'ast': None,
+		'loc': None,
+		'lnk': None,
+
+		# Resource attributes
+    	'dgt': None,
+		'con': None,
+		'cs': None,
+		'snr': None
+	}
 
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.TSIAnnc, dct, pi=pi, create=create, attributePolicies=attributePolicies)
+		super().__init__(T.TSIAnnc, dct, pi=pi, create=create)
 		 

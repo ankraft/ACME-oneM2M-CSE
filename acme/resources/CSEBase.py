@@ -7,28 +7,49 @@
 #	ResourceType: CSEBase
 #
 
+from __future__ import annotations
 from ..etc.Constants import Constants as C
-from ..etc.Types import ResourceTypes as T, Result, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, JSON
 from ..etc import DateUtils as DateUtils
 from ..resources.Resource import *
-from ..services.Validator import constructPolicy
 from ..services import CSE as CSE
 
-
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'rn', 'ty', 'ri', 'pi',  'ct', 'lt', 'lbl', 'loc', 'hld',
-	'acpi', 'poa', 'nl', 'daci', 'esi', 'srv', 'cst', 'csi', 'csz'
-])
+# TODO notificationCongestionPolicy
 
 class CSEBase(Resource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes = [ T.ACP, T.AE, T.CSR, T.CNT, T.FCNT, T.GRP, T.NOD, T.REQ, T.SUB, T.TS ]
+	_allowedChildResourceTypes = [ T.ACP, T.AE, T.CSR, T.CNT, T.FCNT, T.GRP, T.NOD, T.REQ, T.SUB, T.TS ]
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+			# Common and universal attributes
+			'rn': None,
+		 	'ty': None,
+			'ri': None,
+			'pi': None,
+			'ct': None,
+			'lt': None,
+			'lbl': None,
+			'loc': None,	
+			'hld': None,
+			'acpi': None,
+
+			# Resource attributes
+			'poa': None,
+			'nl': None,
+			'daci': None,
+			'esi': None,
+			'srv': None,
+			'cst': None,
+			'csi': None,
+			'csz': None
+	}
 
 
 	def __init__(self, dct:JSON=None, create:bool=False) -> None:
-		super().__init__(T.CSEBase, dct, '', create=create, attributePolicies=attributePolicies)
+		super().__init__(T.CSEBase, dct, '', create=create)
 
 		self.setAttribute('ri', 'cseid', overwrite=False)
 		self.setAttribute('rn', 'cse', overwrite=False)

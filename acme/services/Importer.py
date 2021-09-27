@@ -10,8 +10,10 @@
 
 from __future__ import annotations
 import json, os, fnmatch, re
-from typing import cast
+from typing import cast, List
+from copy import deepcopy
 from ..etc.Utils import findXPath, getCSE
+from ..etc.Types import Announced, AttributePolicy, AttributePolicyDict, BasicType, Cardinality, RequestOptionality
 from ..etc.Types import ResourceTypes as T
 from ..etc.Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, JSON, JSONLIST
 from ..services.Configuration import Configuration
@@ -31,6 +33,13 @@ class Importer(object):
 		self.macroMatch = re.compile(r"\$\{[\w.]+\}")
 		self.isImporting = False
 		L.isInfo and L.log('Importer initialized')
+
+
+	def doImport(self) -> bool:
+		"""	Perform all the imports.
+		"""	
+		return self.importAttributePolicies() and self.importFlexContainerPolicies() and self.importResources() and self.assignAttributePolicies()
+		# return self.importAttributePolicies() and self.importFlexContainerPolicies() and self.importResources() 
 
 
 	def importResources(self, path:str=None) -> bool:
@@ -159,50 +168,6 @@ class Importer(object):
 	#	Attribute Policies
 	#
 
-	_nameDataTypeMappings = {
-			'positiveinteger'	: BT.positiveInteger,
-			'nonneginteger'		: BT.nonNegInteger,
-			'unsignedint'		: BT.unsignedInt,
-			'unsignedlong'		: BT.unsignedLong,
-			'string' 			: BT.string,
-			'timestamp' 		: BT.timestamp,
-			'time' 				: BT.timestamp,
-			'date'				: BT.timestamp,
-			'list'				: BT.list,
-			'dict' 				: BT.dict,
-			'anyuri'			: BT.anyURI,
-			'boolean'			: BT.boolean,
-			'geocoordinates'	: BT.geoCoordinates,
-			'float'				: BT.float,
-			'integer'			: BT.integer,
-			'void'				: BT.void,
-	}
-
-
-	_nameCardinalityMappings = {
-		'car1'					: CAR.car1,
-		'1'						: CAR.car1,
-		'car1l'					: CAR.car1L,
-		'1l'					: CAR.car1L,
-		'car01'					: CAR.car01,
-		'01'					: CAR.car01,
-		'car01l'				: CAR.car01L,
-		'01l'					: CAR.car01L,
-	}
-
-
-	_nameOptionalityMappings = {
-		'np'					: RO.NP,
-		'o'						: RO.O,
-		'm'						: RO.M,
-	}
-
-	_nameAnnouncementMappings = {
-		'na'					: AN.NA,
-		'ma'					: AN.MA,
-		'oa'					: AN.OA,
-	}
-
 
 	def importFlexContainerPolicies(self, path:str=None) -> bool:
 		"""	Import the attribute and hierarchy policies for flexContainer specializations.
@@ -218,13 +183,13 @@ class Importer(object):
 				raise RuntimeError('cse.resourcesPath not set')
 
 		if not os.path.exists(path):
-			L.isWarn and L.logWarn(f'Import directory for attribute policies does not exist: {path}')
+			L.isWarn and L.logWarn(f'Import directory for flexContainer policies does not exist: {path}')
 			return False
 
 		filenames = fnmatch.filter(os.listdir(path), '*.fcp')
 		for fn in filenames:
 			fn = os.path.join(path, fn)
-			L.isInfo and L.log(f'Importing attribute policies: {fn}')
+			L.isInfo and L.log(f'Importing flexContainer attribute policies: {fn}')
 			if os.path.exists(fn):
 				if not (lst := cast(JSONLIST, self.readJSONFromFile(fn))):
 					continue
@@ -238,54 +203,167 @@ class Importer(object):
 						attrs = [ { "sname" : "__none__", "lname" : "__none__", "type" : "void", "car" : "01" } ]
 						
 					for attr in attrs:
-						if not (sn := findXPath(attr, 'sname')) or not isinstance(sn, str) or len(sn) == 0:
-							L.logErr(f'Missing, empty, or wrong short name for type: {tpe} in file: {fn}')
+						if not (attributePolicy := self._parseAttribute(attr, fn, tpe)):
 							return False
-
-						if not (tmp := findXPath(attr, 'type').lower()) or not isinstance(tmp, str) or len(tmp) == 0:
-							L.logErr(f'Missing, empty, or wrong type name: {tmp} for attribute: {sn} type: {tpe} in file: {fn}')
-							return False
-						
-						if not (dty := self._nameDataTypeMappings.get(tmp)):
-							L.isWarn and L.logWarn(f'Unknown data type {tmp}')
-
-						if not (tmp := findXPath(attr, 'car', 'car01').lower()) or not isinstance(tmp, str) or len(tmp) == 0 or tmp not in self._nameCardinalityMappings:	# default car01
-							L.logErr(f'Empty, or wrong cardinality: {tmp} for attribute: {sn} type: {tpe} in file: {fn}')
-							return False
-						car = self._nameCardinalityMappings.get(tmp)
-
-						if not (tmp := findXPath(attr, 'oc', 'o').lower()) or not isinstance(tmp, str) or len(tmp) == 0 or tmp not in self._nameOptionalityMappings:	# default O
-							L.logErr(f'Empty, or wrong optionalCreate: {tmp} for attribute: {sn} type: {tpe} in file: {fn}')
-							return False
-						oc = self._nameOptionalityMappings.get(tmp)
-
-						if not (tmp := findXPath(attr, 'ou', 'o').lower()) or not isinstance(tmp, str) or len(tmp) == 0 or tmp not in self._nameOptionalityMappings:	# default O
-							L.logErr(f'Empty, or wrong optionalUpdate: {tmp} for attribute: {sn} type: {tpe} in file: {fn}')
-							return False
-						ou = self._nameOptionalityMappings.get(tmp)
-
-						if not (tmp := findXPath(attr, 'od', 'o').lower()) or not isinstance(tmp, str) or len(tmp) == 0 or tmp not in self._nameOptionalityMappings:	# default O
-							L.logErr(f'Empty, or wrong optionalDiscovery: {tmp} for attribute: {sn} type: {tpe} in file: {fn}')
-							return False
-						od = self._nameOptionalityMappings.get(tmp)
-
-						if not (tmp := findXPath(attr, 'annc', 'oa').lower()) or not isinstance(tmp, str) or len(tmp) == 0 or tmp not in self._nameAnnouncementMappings:	# default OA
-							L.logErr(f'Empty, or wrong announcement: {tmp} for attribute: {sn} type: {tpe} in file: {fn}')
-							return False
-						annc = self._nameAnnouncementMappings.get(tmp)
-
 						# Add the attribute to the additional policies structure
 						try:
-							if not CSE.validator.addAdditionalAttributePolicy(tpe, { sn : ( dty, car, oc, ou, od, annc) }):
-								L.logErr(f'Cannot add attribute policies for attribute: {sn} type: {tpe}')
+							if not CSE.validator.addFlexContainerAttributePolicy(attributePolicy):
+								L.logErr(f'Cannot add attribute policies for attribute: {attributePolicy.sname} type: {tpe}')
 								return False
 							countFCP += 1
 						except Exception as e:
 							L.logErr(str(e))
 							return False
+
 		
 		L.isDebug and L.logDebug(f'Imported {countFCP} flexContainer policies')
 		return True
+
+
+	def importAttributePolicies(self, path:str=None) -> bool:
+		"""	Import the resource attribute policies.
+		"""
+		countAP = 0
+
+		# Get import path
+		if not path:
+			if Configuration.has('cse.resourcesPath'):
+				path = Configuration.get('cse.resourcesPath')
+			else:
+				L.logErr('cse.resourcesPath not set')
+				raise RuntimeError('cse.resourcesPath not set')
+
+		if not os.path.exists(path):
+			L.isWarn and L.logWarn(f'Import directory for attribute policies does not exist: {path}')
+			return False
+
+		filenames = fnmatch.filter(os.listdir(path), '*.ap')
+		for fn in filenames:
+			fn = os.path.join(path, fn)
+			L.isInfo and L.log(f'Importing attribute policies: {fn}')
+			if os.path.exists(fn):
+				
+				# Read the JSON file
+				if not (attributeList := cast(JSON, self.readJSONFromFile(fn))):
+					return False
+				
+				# go through all the attributes in that attribute definition file
+				for sname in attributeList:
+					AttributeDefs = attributeList[sname]
+					if not AttributeDefs or not isinstance(AttributeDefs, list):
+						L.logErr(f'Attribute definition must be a non-empty list for attribute: {sname} in file: {fn}', showStackTrace=False)
+						return False
+
+					# for each definition for this attribute parse it and add one or more attribute Policies
+					for entry in AttributeDefs:
+						if not (attributePolicy := self._parseAttribute(entry, fn, sname=sname)):
+							return False
+						# L.isDebug and L.logDebug(attributePolicy)
+						for rtype in attributePolicy.rtypes:
+							ap = deepcopy(attributePolicy)
+							CSE.validator.addAttributePolicy(rtype, sname, ap)
+
+					countAP += 1
+		
+		L.isDebug and L.logDebug(f'Imported {countAP} attribute policies')
+		return True
+
+
+	def assignAttributePolicies(self) -> bool:
+		"""	Assign the imported attribute policies to each of the resources.
+			This injects the imported attribute policies into all the Python Resource classes.
+		"""
+		L.isInfo and L.log(f'Assigning attribute policies to resource types')
+
+		noErrors = True
+		for ty in T:
+			if (rc := Factory.resourceClassByType(ty)):								# Get the Python class for each Resource (only real resources)
+				if hasattr(rc, '_attributes'):										# If it has attributes defined
+					for sn in rc._attributes.keys():								# Then add the policies for those attributes
+						if not (ap := CSE.validator.getAttributePolicy(ty, sn)):
+							L.logErr(f'No attribute policy for: {str(ty)}.{sn}', showStackTrace=False)
+							noErrors = False
+							continue
+						rc._attributes[sn] = ap
+				else:
+					L.logErr(f'Cannot assign attribute policies for resource class: {str(ty)}', showStackTrace=False)
+					noErrors = False
+					continue
+				# Check for presence of _allowedChildResourceTypes attribute
+				# TODO Move this to a general health check test function
+				if not hasattr(rc, '_allowedChildResourceTypes'):
+					L.logErr(f'Attribute "_allowedChildResourceTypes" missing for: {str(ty)}', showStackTrace=False)
+					noErrors = False
+					continue
+
+		return noErrors
+
+
+	def _parseAttribute(self, attr:JSON, fn:str, tpe:str=None, sname:str=None) -> AttributePolicy:
+		"""	Parse a singel attribute definitions for normal as well as for flexContainer attributes.
+		"""
+		if not sname:
+			if not (sname := findXPath(attr, 'sname')) or not isinstance(sname, str) or len(sname) == 0:
+				L.logErr(f'Missing, empty, or wrong short name (sname) for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+				return None
+
+		if not (ns := findXPath(attr, 'ns')):
+			ns = 'm2m'	# default
+		if not isinstance(ns, str) or not ns:
+			L.logErr(f'"ns" must be a non-empty string for attribute: {sname} in file: {fn}', showStackTrace=False)
+			return None
+		if not tpe:
+			tpe = f'{ns}:{sname}'
+
+		if not (lname := findXPath(attr, 'lname')) or not isinstance(lname, str) or len(lname) == 0:
+			L.logErr(f'Missing, empty, or wrong long name (lname) for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+			return None
+
+		if not (tmp := findXPath(attr, 'type')) or not isinstance(tmp, str) or len(tmp) == 0 or not (typ := BT.to(tmp)):	# no default
+			L.logErr(f'Missing, empty, or wrong type name (type): {tmp} for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+			return None
+
+		if not (tmp := findXPath(attr, 'car', '01')) or not isinstance(tmp, str) or len(tmp) == 0 or not (car := CAR.to(tmp, insensitive=True)):	# default car01
+			L.logErr(f'Empty, or wrong cardinality (car): {tmp} for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+			return None
+
+		if not (tmp := findXPath(attr, 'oc', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (oc := RO.to(tmp, insensitive=True)):	# default O
+			L.logErr(f'Empty, or wrong optionalCreate (oc): {tmp} for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+			return None
+
+		if not (tmp := findXPath(attr, 'ou', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (ou := RO.to(tmp, insensitive=True)):	# default O
+			L.logErr(f'Empty, or wrong optionalUpdate (ou): {tmp} for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+			return None
+
+		if not (tmp := findXPath(attr, 'od', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (od := RO.to(tmp, insensitive=True)):	# default O
+			L.logErr(f'Empty, or wrong optionalDiscovery (od): {tmp} for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+			return None
+
+		if not (tmp := findXPath(attr, 'annc', 'oa')) or not isinstance(tmp, str) or len(tmp) == 0 or not (annc := AN.to(tmp, insensitive=True)):	# default OA
+			L.logErr(f'Empty, or wrong announcement (annc): {tmp} for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+			return None
+
+		if (rtypes := findXPath(attr, 'rtypes')):
+			if not isinstance(rtypes, list):
+				L.logErr(f'Empty, or wrong resourceTyoes (rtypes): {rtypes} for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+				return None
+			if not T.has(tuple(rtypes)):	# type: ignore[arg-type]
+				L.logErr(f'"rtype" containes unknown resource type(s): {rtypes} for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+				return None
+
+		ap = AttributePolicy(	type=typ,
+								optionalCreate=oc,
+								optionalUpdate=ou,
+								optionalDiscovery=od,
+								cardinality=car,
+								announcement=annc,
+								namespace=ns,
+								lname=lname,
+								sname=sname,
+								tpe=tpe,
+								rtypes=T.to(tuple(rtypes)) if rtypes else None 	# type:ignore[arg-type]
+							)
+		return ap
 
 
 	def _prepareImporting(self) -> None:
@@ -295,7 +373,7 @@ class Importer(object):
 		self.isImporting = True
 
 
-	def replaceMacro(self, macro: str, filename: str) -> str:
+	def replaceMacro(self, macro: str, filename: str) -> str:	# TODO move to helper
 		macro = macro[2:-1]
 		if (value := Configuration.get(macro)) is None:	# could be int or len == 0
 			L.logErr(f'Unknown macro ${{{macro}}} in file {filename}')
@@ -303,7 +381,7 @@ class Importer(object):
 		return str(value)
 
 
-	def readJSONFromFile(self, filename: str) -> JSON|JSONLIST:
+	def readJSONFromFile(self, filename: str) -> JSON|JSONLIST:		# TODO move to helper
 		"""	Read and parse a JSON data structure from a file `filename`. 
 			Return the parsed structure, or `None` in case of an error.
 		"""
@@ -324,7 +402,7 @@ class Importer(object):
 		try:
 			dct:JSON = json.loads(content)
 		except json.decoder.JSONDecodeError as e:
-			L.logErr(str(e))
+			L.logErr(f'Error in file: {filename} - {str(e)}', showStackTrace=False)
 			return None
 		return dct
 

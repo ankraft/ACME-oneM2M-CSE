@@ -191,7 +191,7 @@ class AnnouncementManager(object):
 		res = CSE.request.sendCreateRequest(url, CSE.cseCsi, ty=tyAnnc, data=data)
 		if res.rsc not in [ RC.created, RC.OK ]:
 			if res.rsc != RC.alreadyExists:	# assume that it is ok if the remote resource already exists 
-				L.isDebug and L.logDebug(f'Error creating remote announced resource: {res.rsc:d}')
+				L.isDebug and L.logDebug(f'Error creating remote announced resource: {int(res.rsc)}')
 				if (at := resource.at) and csi in at:
 					at.remove(csi)
 					resource.setAttribute('at', None if len(at) == 0 else at)
@@ -343,7 +343,7 @@ class AnnouncementManager(object):
 		L.isDebug and L.logDebug(f'Updating announced resource at: {csi} url: {url}')	
 		res = CSE.request.sendUpdateRequest(url, CSE.cseCsi, data=data)
 		if res.rsc not in [ RC.updated, RC.OK ]:
-			L.isDebug and L.logDebug(f'Error updating remote announced resource: {res.rsc:d}')
+			L.isDebug and L.logDebug(f'Error updating remote announced resource: {int(res.rsc)}')
 			# Ignore and fallthrough
 		L.isDebug and L.logDebug('Announced resource updated')
 

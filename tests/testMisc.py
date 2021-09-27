@@ -87,7 +87,7 @@ class TestMisc(unittest.TestCase):
 		dct = 	{ 'foo:bar' : { 
 					'rn' : 'foo',
 				}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, 999, dct)
+		r, rsc = CREATE(cseURL, ORIGINATOR, 999, dct)	# type: ignore [arg-type]
 		self.assertEqual(rsc, RC.badRequest)
 
 

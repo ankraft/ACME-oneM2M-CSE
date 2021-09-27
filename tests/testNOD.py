@@ -216,7 +216,7 @@ class TestNOD(unittest.TestCase):
 					'hael'	: []
 				}}
 		r, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.badRequest, r)
 
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:

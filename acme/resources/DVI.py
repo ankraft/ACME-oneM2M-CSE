@@ -7,16 +7,9 @@
 #	ResourceType: mgmtObj:DeviceInfo
 #
 
-from ..etc.Types import ResourceTypes as T, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
 from ..resources.MgmtObj import *
-from ..services.Validator import constructPolicy, addPolicy
 
-# Attribute policies for this resource are constructed during startup of the CSE
-dviPolicies = constructPolicy([
-	'dlb', 'man', 'mfdl', 'mfd', 'mod', 'smod', 'dty', 'dvnm', 'fwv', 'swv', 
-	'hwv', 'osv', 'cnty', 'loc', 'syst', 'spur', 'purl', 'ptl'
-])
-attributePolicies =  addPolicy(mgmtObjAttributePolicies, dviPolicies)
 
 defaultDeviceType = 'unknown'
 defaultModel = "unknown"
@@ -25,9 +18,57 @@ defaultDeviceLabel = "unknown serial id"
 
 class DVI(MgmtObj):
 
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+			# Common and universal attributes
+			'rn': None,
+		 	'ty': None,
+			'ri': None,
+			'pi': None,
+			'ct': None,
+			'lt': None,
+			'et': None,
+			'lbl': None,
+			'hld': None,
+			'acpi':None,
+			'at': None,
+			'aa': None,
+			'ast': None,
+			'daci': None,
+			
+			# MgmtObj attributes
+			'mgd': None,
+			'obis': None,
+			'obps': None,
+			'dc': None,
+			'mgs': None,
+			'cmlk': None,
+
+			# Resource attributes
+			'dlb': None,
+			'man': None,
+			'mfdl': None,
+			'mfd': None,
+			'mod': None,
+			'smod': None,
+			'dty': None,
+			'dvnm': None,
+			'fwv': None,
+			'swv': None,
+			'hwv': None,
+			'osv': None,
+			'cnty': None,
+			'loc': None,
+			'syst': None,
+			'spur': None,
+			'purl': None,
+			'ptl': None
+	}
+
+
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		self.resourceAttributePolicies = dviPolicies	# only the resource type's own policies
-		super().__init__(dct, pi, mgd=T.DVI, create=create, attributePolicies=attributePolicies)
+		super().__init__(dct, pi, mgd=T.DVI, create=create)
 
 		self.setAttribute('dty', defaultDeviceType, overwrite=False)
 		self.setAttribute('mod', defaultModel, overwrite=False)

@@ -402,7 +402,7 @@ class HttpServer(object):
 		# Build the headers
 		headers = {}
 		headers['Server'] = self.serverID						# set server field
-		headers['X-M2M-RSC'] = f'{result.rsc}'					# set the response status code
+		headers['X-M2M-RSC'] = f'{int(result.rsc)}'					# set the response status code
 		if result.request.headers.requestIdentifier:
 			headers['X-M2M-RI'] = result.request.headers.requestIdentifier
 		if result.request.headers.releaseVersionIndicator:
@@ -434,9 +434,9 @@ class HttpServer(object):
 		
 		# Build and return the response
 		if isinstance(content, bytes):
-			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: \n{TextTools.toHex(content)}\n=>\n{str(result.toData())}')
+			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: \n{TextTools.toHex(content)}\n=>\n{str(result.toData())}')
 		else:
-			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {result.rsc:d}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
+			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
 		return Response(response=content, status=statusCode, content_type=cts, headers=headers)
 
 

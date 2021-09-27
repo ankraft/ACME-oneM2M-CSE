@@ -59,8 +59,8 @@ class TestPCH(unittest.TestCase):
 		dct = 	{ 'm2m:pch' : { 
 					'rn' : pchRN,
 				}}
-		_, rsc = CREATE(aeURL, TestPCH.originator, T.PCH, dct)
-		self.assertEqual(rsc, RC.created)
+		r, rsc = CREATE(aeURL, TestPCH.originator, T.PCH, dct)
+		self.assertEqual(rsc, RC.created, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -88,8 +88,8 @@ class TestPCH(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrievePCH(self) -> None:
 		""" Retrieve <PCH> """
-		_, rsc = RETRIEVE(pchURL, TestPCH.originator)
-		self.assertEqual(rsc, RC.OK)
+		r, rsc = RETRIEVE(pchURL, TestPCH.originator)
+		self.assertEqual(rsc, RC.OK, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

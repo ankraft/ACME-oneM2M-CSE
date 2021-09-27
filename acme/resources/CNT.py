@@ -8,36 +8,56 @@
 #
 
 from typing import List
-from ..etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseCode as RC, JSON
 from ..etc import Utils as Utils, DateUtils as DateUtils
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
-from ..services.Validator import constructPolicy, addPolicy
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources import Factory as Factory
 
 
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'daci', 'loc', 'hld', 'cr',
-])
-cntPolicies = constructPolicy([
-	'mni', 'mbs', 'mia', 'cni', 'cbs', 'li', 'or', 'disr'
-])
-attributePolicies =  addPolicy(attributePolicies, cntPolicies)
-
-
 class CNT(AnnounceableResource):
 
-	allowedChildResourceTypes =  [ T.CNT, T.CIN, T.FCNT, T.SUB, T.TS ]
+	_allowedChildResourceTypes =  [ T.CNT, T.CIN, T.FCNT, T.SUB, T.TS ]
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+			# Common and universal attributes
+			'rn': None,
+		 	'ty': None,
+			'ri': None,
+			'pi': None,
+			'ct': None,
+			'lt': None,
+			'et': None,
+			'lbl': None,
+			'hld': None,
+			'acpi':None,
+			'at': None,
+			'aa': None,
+			'ast': None,
+			'daci': None,
+			'st': None,
+			'cr': None,
+			'loc': None,
+
+			# Resource attributes
+			'mni': None,
+			'mbs': None,
+			'mia': None,
+			'cni': None,
+			'cbs': None,
+			'li': None,
+			'or': None,
+			'disr': None
+	}
 
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.CNT, dct, pi, create=create, attributePolicies=attributePolicies)
-
-		self.resourceAttributePolicies = cntPolicies	# only the resource type's own policies
+		super().__init__(T.CNT, dct, pi, create=create)
 
 		if Configuration.get('cse.cnt.enableLimits'):	# Only when limits are enabled
 			self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite=False)

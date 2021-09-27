@@ -8,34 +8,18 @@
 #
 
 from copy import deepcopy
-from ..etc.Types import ResourceTypes as T, JSON, AttributePolicies
-from ..services.Validator import constructPolicy, addPolicy
+from ..etc.Types import ResourceTypes as T, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
 from ..resources.Resource import *
-
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'et', 'acpi', 'lbl','daci', 'loc',
-	'lnk'
-])
-mgmtObjAPolicies = constructPolicy([
-	'mgd', 'obis', 'obps', 'dc', 'mgs', 'cmlk',
-])
-mgmtObjAAttributePolicies =  addPolicy(attributePolicies, mgmtObjAPolicies)
-# TODO resourceMappingRules, announceSyncType
 
 
 class MgmtObjAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes = [ T.SUB ]
+	_allowedChildResourceTypes = [ T.SUB ]
 
 
-	def __init__(self, dct:JSON, pi:str, mgd:T, create:bool=False, attributePolicies:AttributePolicies=None) -> None:
-		super().__init__(T.MGMTOBJAnnc, dct, pi, tpe=f'{mgd.tpe()}A', create=create, attributePolicies=attributePolicies)
-		
-		self.resourceAttributePolicies:AttributePolicies = deepcopy(self.resourceAttributePolicies)	# We dont want to change the original policy list
-		self.resourceAttributePolicies.update(mgmtObjAAttributePolicies)							# add mgmtobjA policies
-
+	def __init__(self, dct:JSON, pi:str, mgd:T, create:bool=False) -> None:
+		super().__init__(T.MGMTOBJAnnc, dct, pi, tpe=f'{mgd.tpe()}A', create=create)
 		self.setAttribute('mgd', int(mgd), overwrite=True)
 

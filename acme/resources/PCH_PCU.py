@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import ResourceTypes as T, ResponseCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseCode as RC, JSON
 from ..resources.Resource import *
 from ..services.Logging import Logging
 
@@ -16,7 +16,13 @@ from ..services.Logging import Logging
 class PCH_PCU(Resource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes:list[T] = [ ]
+	_allowedChildResourceTypes:list[T] = [ ]
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# None for virtual resources
+	}
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.PCH_PCU, dct, pi, create=create, inheritACP=True, readOnly=True, rn='pcu', isVirtual=True)

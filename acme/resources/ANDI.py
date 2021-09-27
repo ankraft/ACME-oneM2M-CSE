@@ -7,24 +7,53 @@
 #	ResourceType: mgmtObj:areaNwkDeviceInfo
 #
 
-from ..etc.Types import ResourceTypes as T, JSON
-from ..services.Validator import constructPolicy, addPolicy
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
 from ..resources.MgmtObj import *
-
-# Attribute policies for this resource are constructed during startup of the CSE
-andiPolicies = constructPolicy([
-	'dvd', 'dvt', 'awi', 'sli', 'sld', 'ss', 'lnh'
-])
-attributePolicies =  addPolicy(mgmtObjAttributePolicies, andiPolicies)
 
 defaultDeviceID = ''
 
-
 class ANDI(MgmtObj):
 
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+			# Common and universal attributes
+			'rn': None,
+		 	'ty': None,
+			'ri': None,
+			'pi': None,
+			'ct': None,
+			'lt': None,
+			'et': None,
+			'lbl': None,
+			'hld': None,
+			'acpi':None,
+			'at': None,
+			'aa': None,
+			'ast': None,
+			'daci': None,
+			
+			# MgmtObj attributes
+			'mgd': None,
+			'obis': None,
+			'obps': None,
+			'dc': None,
+			'mgs': None,
+			'cmlk': None,
+
+			# Resource attributes
+			'dvd': None,
+			'dvt': None,
+			'awi': None,
+			'sli': None,
+			'sld': None,
+			'ss': None,
+			'lnh': None
+	}
+
+
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		self.resourceAttributePolicies = andiPolicies	# only the resource type's own policies
-		super().__init__(dct, pi, mgd=T.ANDI, create=create, attributePolicies=attributePolicies)
+		super().__init__(dct, pi, mgd=T.ANDI, create=create)
 
 		self.setAttribute('dvd', defaultDeviceID, overwrite=False)
 		self.setAttribute('dvt', '', overwrite=False)

@@ -462,7 +462,6 @@ class RequestManager(object):
 	def sendDeleteRequest(self, url:str, originator:str, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
 		"""	Send a DELETE request via the appropriate channel or transport protocol.
 		"""
-		print(url)
 		if Utils.isHttpUrl(url):
 			CSE.event.httpSendDelete() # type: ignore [attr-defined]
 			return CSE.httpServer.sendHttpRequest(Operation.DELETE, url, originator, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
@@ -507,23 +506,23 @@ class RequestManager(object):
 		"""	Fill a `cseRequest` object according to its request structure in the *req* attribute.
 		"""
 
-		def gget(dct:dict, key:str, default:Any=None, attributeType:BasicType=None, greedy:bool=True) -> Any:
+		def gget(dct:dict, attribute:str, default:Any=None, attributeType:BasicType=None, greedy:bool=True) -> Any:
 			"""	Local helper to greedy check and return a key/value from a dictionary.
 
-				If `dct` is None or `key` couldn't be found then the `default` is returned.
+				If `dct` is None or `attribute` couldn't be found then the `default` is returned.
 
 				This method might raise a *ValueError* exception if validation or conversion of the
 				attribute/value fails.
 			"""
-			if dct and (v := dct.get(key)) is not None:	# v may be int
+			if dct and (value := dct.get(attribute)) is not None:	# v may be int
 				if greedy:
-					del dct[key]
-				if not (res := CSE.validator.validateAttribute(key, v, attributeType)).status:
-					raise ValueError(f'attribute: {key}, value: {v} : {res.dbg}')
+					del dct[attribute]
+				if not (res := CSE.validator.validateAttribute(attribute, value, attributeType, rtype=T.REQRESP)).status:
+					raise ValueError(f'attribute: {attribute}, value: {value} : {res.dbg}')
 				if res.data in [ BasicType.nonNegInteger, BasicType.positiveInteger, BasicType.integer]:
-					return int(v)
+					return int(value)
 				# TODO further automatic conversions?
-				return v
+				return value
 			return default
 
 		try:
@@ -667,27 +666,27 @@ class RequestManager(object):
 																	ResultContentType.childResourceReferences,
 																	ResultContentType.childResources,
 																	ResultContentType.originalResource ]:
-				return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'rcn: {rcn:d} not allowed in RETRIEVE operation')
+				return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'rcn: {rcn} not allowed in RETRIEVE operation')
 			elif cseRequest.op == Operation.DISCOVERY and rcn not in [ ResultContentType.childResourceReferences,
 																	ResultContentType.discoveryResultReferences ]:
-				return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'rcn: {rcn:d} not allowed in DISCOVERY operation')
+				return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'rcn: {rcn} not allowed in DISCOVERY operation')
 			elif cseRequest.op == Operation.CREATE and rcn not in [ ResultContentType.attributes,
 																	ResultContentType.modifiedAttributes,
 																	ResultContentType.hierarchicalAddress,
 																	ResultContentType.hierarchicalAddressAttributes,
 																	ResultContentType.nothing ]:
-				return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'rcn: {rcn:d} not allowed in CREATE operation')
+				return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'rcn: {rcn} not allowed in CREATE operation')
 			elif cseRequest.op == Operation.UPDATE and rcn not in [ ResultContentType.attributes,
 																	ResultContentType.modifiedAttributes,
 																	ResultContentType.nothing ]:
-				return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'rcn: {rcn:d} not allowed in UPDATE operation')
+				return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'rcn: {rcn} not allowed in UPDATE operation')
 			elif cseRequest.op == Operation.DELETE and rcn not in [ ResultContentType.attributes,
 																	ResultContentType.nothing,
 																	ResultContentType.attributesAndChildResources,
 																	ResultContentType.childResources,
 																	ResultContentType.attributesAndChildResourceReferences,
 																	ResultContentType.childResourceReferences ]:
-				return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'rcn: {rcn:d} not allowed in DELETE operation')
+				return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'rcn: {rcn} not allowed in DELETE operation')
 			cseRequest.args.rcn = rcn
 
 
@@ -735,7 +734,8 @@ class RequestManager(object):
 
 		# end of try..except
 		except ValueError as e:
-			return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'Error validating attribute/parameter: {str(e)}')
+			L.logWarn(dbg := f'Error validating attribute/parameter: {str(e)}')
+			return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=dbg)
 
 
 		return Result(status=True, request=cseRequest, dict=cseRequest.dict)

@@ -8,29 +8,42 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import ResourceTypes as T, JSON
-from ..services.Validator import constructPolicy, addPolicy
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
 from ..resources.Resource import *
-
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'et', 'acpi', 'lbl','daci', 'loc',
-	'lnk'
-])
-cinAPolicies = constructPolicy([
-	'cnf', 'conr', 'con', 'or'
-])
-attributePolicies =  addPolicy(attributePolicies, cinAPolicies)
-# TODO announceSyncType
 
 
 class CINAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes:list[T] = [ ]
+	_allowedChildResourceTypes:list[T] = [ ]
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# Common and universal attributes for announced resources
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'acpi':None,
+		'daci': None,
+		'ast': None,
+		'lnk': None,
+
+		# Resource attributes
+		'cnf': None,
+		'conr': None,
+		'con': None,
+		'or': None,
+		'conr': None
+	}
 
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.CINAnnc, dct, pi=pi, create=create, attributePolicies=attributePolicies)
+		super().__init__(T.CINAnnc, dct, pi=pi, create=create)
 

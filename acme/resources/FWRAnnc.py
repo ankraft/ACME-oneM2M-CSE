@@ -7,20 +7,38 @@
 #	FWR : Announceable variant
 #
 
-from ..etc.Types import ResourceTypes as T, JSON
-from ..services.Validator import constructPolicy, addPolicy
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
 from ..resources.MgmtObjAnnc import *
 
-# Attribute policies for this resource are constructed during startup of the CSE
-fwrAPolicies = constructPolicy([
-	'vr', 'fwn', 'url', 'uds', 'ud'
-])
-attributePolicies =  addPolicy(mgmtObjAAttributePolicies, fwrAPolicies)
-# TODO resourceMappingRules, announceSyncType, owner
 
 class FWRAnnc(MgmtObjAnnc):
 
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# Common and universal attributes for announced resources
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'acpi':None,
+		'daci': None,
+		'ast': None,
+		'lnk': None,
+
+		# Resource attributes
+		'vr': None,
+		'fwn': None,
+		'url': None,
+		'uds': None,
+		'ud': None
+	}
+
+	
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		self.resourceAttributePolicies = fwrAPolicies	# only the resource type's own policies
-		super().__init__(dct, pi, mgd=T.FWR, create=create, attributePolicies=attributePolicies)
+		super().__init__(dct, pi, mgd=T.FWR, create=create)
 

@@ -8,28 +8,36 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
-from ..services.Validator import constructPolicy, addPolicy
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseCode as RC, JSON
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
 
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'ct', 'et', 'lt', 'st', 'lbl', 'acpi', 'at', 'aa', 
-])
-fcinPolicies = constructPolicy([ 'cs', 'or' ])
-attributePolicies =  addPolicy(attributePolicies, fcinPolicies)
 
-
-class FCI(AnnounceableResource):
+class FCI(Resource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes:list[T] = [ ]
+	_allowedChildResourceTypes:list[T] = [ ]
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# Common and universal attributes
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'et': None,
+		'lbl': None,
+
+		# Resource attributes
+		'cs': None,
+		'or': None
+	}
 
 
 	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
-		super().__init__(T.FCI, dct, pi, tpe=fcntType, create=create, inheritACP=True, readOnly=True, attributePolicies=attributePolicies)
-		self.resourceAttributePolicies = fcinPolicies	# only the resource type's own policies
+		super().__init__(T.FCI, dct, pi, tpe=fcntType, create=create, inheritACP=True, readOnly=True)
 
 
 	# Forbidd updating

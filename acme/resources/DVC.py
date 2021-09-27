@@ -7,23 +7,52 @@
 #	ResourceType: mgmtObj:DeviceCapability
 #
 
-from ..etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseCode as RC, JSON
 from ..etc import Utils as Utils
 from ..resources.MgmtObj import *
-from ..services.Validator import constructPolicy, addPolicy
-
-# Attribute policies for this resource are constructed during startup of the CSE
-dvcPolicies = constructPolicy([
-	'can', 'att', 'cas', 'ena', 'dis', 'cus'
-])
-attributePolicies = addPolicy(mgmtObjAttributePolicies, dvcPolicies)
 
 
 class DVC(MgmtObj):
 
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+			# Common and universal attributes
+			'rn': None,
+		 	'ty': None,
+			'ri': None,
+			'pi': None,
+			'ct': None,
+			'lt': None,
+			'et': None,
+			'lbl': None,
+			'hld': None,
+			'acpi':None,
+			'at': None,
+			'aa': None,
+			'ast': None,
+			'daci': None,
+			
+			# MgmtObj attributes
+			'mgd': None,
+			'obis': None,
+			'obps': None,
+			'dc': None,
+			'mgs': None,
+			'cmlk': None,
+
+			# Resource attributes
+			'can': None,
+			'att': None,
+			'cas': None,
+			'ena': None,
+			'dis': None,
+			'cus': None
+	}
+
+
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		self.resourceAttributePolicies = dvcPolicies	# only the resource type's own policies
-		super().__init__(dct, pi, mgd=T.DVC, create=create, attributePolicies=attributePolicies)
+		super().__init__(dct, pi, mgd=T.DVC, create=create)
 
 		self.setAttribute('can', 'unknown', overwrite=False)
 		self.setAttribute('att', False, overwrite=False)

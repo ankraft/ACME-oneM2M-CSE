@@ -8,10 +8,9 @@
 #
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import ResourceTypes as T, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
 from ..etc import Utils as Utils
 from ..services import CSE as CSE
-from ..services.Validator import constructPolicy, addPolicy
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
 
@@ -19,26 +18,46 @@ from ..resources.AnnounceableResource import AnnounceableResource
 # TODO Support cmdhPolicy
 # TODO Support storage
 
-attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 'hld',
-])
-nodPolicies = constructPolicy([
-	'ni', 'hcl', 'hael', 'hsl', 'mgca', 'rms', 'nid', 'nty'
-])
-attributePolicies = addPolicy(attributePolicies, nodPolicies)
-
 
 class NOD(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes = [ T.MGMTOBJ, T.SUB ]
+	_allowedChildResourceTypes = [ T.MGMTOBJ, T.SUB ]
+
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# Common and universal attributes
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'hld': None,
+		'acpi':None,
+		'at': None,
+		'aa': None,
+		'ast': None,
+		'daci': None,
+
+		# Resource attributes
+		'ni': None,
+		'hcl': None,
+		'hael': None,
+		'hsl': None,
+		'mgca': None,
+		'rms': None,
+		'nid': None,
+		'nty': None
+	}
 
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.NOD, dct, pi, create=create, attributePolicies=attributePolicies)
-
-		self.resourceAttributePolicies = nodPolicies	# only the resource type's own policies
-
+		super().__init__(T.NOD, dct, pi, create=create)
 		self.setAttribute('ni', Utils.uniqueID(), overwrite=False)
 
 

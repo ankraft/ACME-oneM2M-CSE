@@ -8,31 +8,44 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseCode as RC, JSON
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..services.Validator import constructPolicy, addPolicy
-
-
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'rn', 'ty', 'ri', 'pi', 'et', 'ct', 'lt', 'lbl', 'at', 'aa', 
-])
-tsiPolicies = constructPolicy([
-    'dgt', 'con', 'cs', 'snr'
-])
-attributePolicies = addPolicy(attributePolicies, tsiPolicies)
 
 
 class TSI(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes:list[T] = [ ]
+	_allowedChildResourceTypes:list[T] = [ ]
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# Common and universal attributes
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'at': None,
+		'aa': None,
+		'ast': None,
+		'cr': None,
+		'loc': None,
+
+		# Resource attributes
+   		'dgt': None,
+		'con': None,
+		'cs': None,
+		'snr': None
+	}
 
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.TSI, dct, pi, create=create, inheritACP=True, readOnly = True, attributePolicies=attributePolicies)
-		self.resourceAttributePolicies = tsiPolicies	# only the resource type's own policies
+		super().__init__(T.TSI, dct, pi, create=create, inheritACP=True, readOnly=True)
 		self.setAttribute('cs', Utils.getAttributeSize(self['con']))       # Set contentSize
 
 

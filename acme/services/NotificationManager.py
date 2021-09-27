@@ -125,7 +125,7 @@ class NotificationManager(object):
 					continue
 				self._handleSubscriptionNotification(sub, reason, resource=childResource, modifiedAttributes=modifiedAttributes)
 			
-			# Check Update and enc/atr vs the modified attribuets 
+			# Check Update and enc/atr vs the modified attributes 
 			elif reason == NotificationEventType.resourceUpdate and (atr := sub['atr']) and modifiedAttributes:
 				found = False
 				for k in atr:

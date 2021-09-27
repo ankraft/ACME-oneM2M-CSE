@@ -7,16 +7,8 @@
 #	ResourceType: mgmtObj:EventLog
 #
 
-from ..etc.Types import ResourceTypes as T, JSON
-from ..services.Validator import constructPolicy, addPolicy
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
 from ..resources.MgmtObj import *
-
-# Attribute policies for this resource are constructed during startup of the CSE
-evlPolicies = constructPolicy([
-	'lgt', 'lgd', 'lgst', 'lga', 'lgo'
-])
-attributePolicies = addPolicy(mgmtObjAttributePolicies, evlPolicies)
-
 
 lgtSystem = 1
 lgtSecurity	= 2
@@ -36,9 +28,44 @@ defaultLogStatus = lgstUnknown
 
 class EVL(MgmtObj):
 
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# Common and universal attributes
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'hld': None,
+		'acpi':None,
+		'at': None,
+		'aa': None,
+		'ast': None,
+		'daci': None,
+		
+		# MgmtObj attributes
+		'mgd': None,
+		'obis': None,
+		'obps': None,
+		'dc': None,
+		'mgs': None,
+		'cmlk': None,
+
+		# Resource attributes
+		'lgt': None,
+		'lgd': None,
+		'lgst': None,
+		'lga': None,
+		'lgo': None
+	}
+	
+
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		self.resourceAttributePolicies = evlPolicies	# only the resource type's own policies
-		super().__init__(dct, pi, mgd=T.EVL, create=create, attributePolicies=attributePolicies)
+		super().__init__(dct, pi, mgd=T.EVL, create=create)
 
 		self.setAttribute('lgt', defaultLogTypeId, overwrite=False)
 		self.setAttribute('lgd', '', overwrite=False)

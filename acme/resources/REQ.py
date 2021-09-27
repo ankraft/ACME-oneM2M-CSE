@@ -8,32 +8,48 @@
 #
 
 from typing import Dict, Any
-from ..etc.Types import ResourceTypes as T, ResponseCode as RC, Result, RequestStatus, CSERequest, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseCode as RC, Result, RequestStatus, CSERequest, JSON
 from ..etc import Utils as Utils, DateUtils as DateUtils
 from ..services.Configuration import Configuration
-from ..services.Validator import constructPolicy, addPolicy
 from ..resources.Resource import *
 from ..resources import Factory as Factory
-
-
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'daci', 'hld',
-])
-reqPolicies = constructPolicy([
-	'op', 'tg', 'org', 'rid', 'mi', 'pc', 'rs', 'ors'
-])
-attributePolicies = addPolicy(attributePolicies, reqPolicies)
 
 
 class REQ(Resource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes = [ T.SUB ]
+	_allowedChildResourceTypes = [ T.SUB ]
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# Common and universal attributes
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'hld': None,
+		'acpi':None,
+		'daci': None,
+
+		# Resource attributes
+		'op': None,
+		'tg': None,
+		'org': None,
+		'rid': None,
+		'mi': None,
+		'pc': None,
+		'rs': None,
+		'ors': None
+	}
 
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.REQ, dct, pi, create=create, attributePolicies=attributePolicies)
+		super().__init__(T.REQ, dct, pi, create=create)
 
 
 	@staticmethod

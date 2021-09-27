@@ -7,8 +7,7 @@
 #	ResourceType: Group
 #
 
-from ..etc.Types import ResourceTypes as T, Result, ConsistencyStrategy, JSON
-from ..services.Validator import constructPolicy, addPolicy
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ConsistencyStrategy, JSON
 from ..services.Logging import Logging as L
 from ..services import CSE as CSE
 from ..resources import Factory as Factory
@@ -16,26 +15,49 @@ from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
 
 
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 'cr', 'hld', 
-])
-grpPolicies = constructPolicy([
-	'mt', 'spty', 'cnm', 'mnm', 'mid', 'macp', 'mtv', 'csy', 'gn', 'ssi', 'nar'
-])
-attributePolicies = addPolicy(attributePolicies, grpPolicies)
-
-
 class GRP(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes = [ T.SUB, T.GRP_FOPT ]
+	_allowedChildResourceTypes = [ T.SUB, T.GRP_FOPT ]
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# Common and universal attributes
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'hld': None,
+		'acpi':None,
+		'at': None,
+		'aa': None,
+		'ast': None,
+		'daci': None,
+		'st': None,
+		'cr': None,
+
+		# Resource attributes
+		'mt': None,
+		'spty': None,
+		'cnm': None,
+		'mnm': None,
+		'mid': None,
+		'macp': None,
+		'mtv': None,
+		'csy': None,
+		'gn': None,
+		'ssi': None,
+		'nar': None
+	}
 
 
 	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
-		super().__init__(T.GRP, dct, pi, create=create, attributePolicies=attributePolicies)
-
-		self.resourceAttributePolicies = grpPolicies	# only the resource type's own policies
+		super().__init__(T.GRP, dct, pi, create=create)
 
 		self.setAttribute('mt', int(T.MIXED), overwrite=False)
 		self.setAttribute('ssi', False, overwrite=True)

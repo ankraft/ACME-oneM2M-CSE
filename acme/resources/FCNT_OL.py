@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from typing import cast, Optional
-from ..etc.Types import ResourceTypes as T, ResponseCode as RC, Result, JSON, CSERequest
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseCode as RC, Result, JSON, CSERequest
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
 from ..resources.Resource import *
@@ -18,8 +18,13 @@ from ..resources.Resource import *
 class FCNT_OL(Resource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes:list[T] = [ ]
+	_allowedChildResourceTypes:list[T] = [ ]
 
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# None for virtual resources
+	}
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.FCNT_OL, dct, pi, create=create, inheritACP=True, readOnly=True, rn='ol', isVirtual=True)

@@ -10,46 +10,64 @@
 from __future__ import annotations
 import sys
 from typing import List, cast
-from ..etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseCode as RC, JSON
 from ..etc import Utils as Utils, DateUtils as DateUtils
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
-from ..services.Validator import constructPolicy, addPolicy
 from ..resources import Factory as Factory
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
 
 
-
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'st', 'lbl', 'at', 'aa', 'cr', 'hld', 'daci', 'loc',
-])
-fcntPolicies = constructPolicy([
-	'cnd', 'or', 'cs', 'nl', 'mni', 'mia', 'mbs', 'cbs', 'cni', 'dgt'
-])
-attributePolicies = addPolicy(attributePolicies, fcntPolicies)
-
-
 class FCNT(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes = [ T.CNT, T.FCNT, T.SUB, T.TS, T.FCI ]
+	_allowedChildResourceTypes = [ T.CNT, T.FCNT, T.SUB, T.TS, T.FCI ]
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# Common and universal attributes
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'hld': None,
+		'acpi':None,
+		'at': None,
+		'aa': None,
+		'ast': None,
+		'daci': None,
+		'st': None,
+		'cr': None,
+		'loc': None,
+
+		# Resource attributes
+		'cnd': None,
+		'or': None,
+		'cs': None,
+		'nl': None,
+		'mni': None,
+		'mia': None,
+		'mbs': None,
+		'cbs': None,
+		'cni': None
+	}
 
 
 	_hasFCI	= '__hasFCI__'
 	"""	Internal attribute to indicate whether this FCNT has la/ol installed. """
 
 	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
-		super().__init__(T.FCNT, dct, pi, tpe=fcntType, create=create, attributePolicies=attributePolicies)
+		super().__init__(T.FCNT, dct, pi, tpe=fcntType, create=create)
 		self.internalAttributes.append(self._hasFCI)	# Add to internal attributes to ignore in validation etc
 
-		self.resourceAttributePolicies = fcntPolicies	# only the resource type's own policies
-
 		self.setAttribute('cs', 0, overwrite=False)
-
-		# "current" attributes are added when necessary in the validate() method
 
 		# Indicates whether this FC has flexContainerInstances. 
 		# Might change during the lifetime of a resource. Used for optimization
@@ -57,7 +75,8 @@ class FCNT(AnnounceableResource):
 		self.setAttribute(self._hasFCI, False, False)	# stored in DB
 
 		self.__validating = False
-		self.ignoreAttributes = self.internalAttributes + [ 'acpi', 'cbs', 'cni', 'cnd', 'cs', 'cr', 'ct', 'et', 'lt', 'mbs', 'mia', 'mni', 'or', 'pi', 'ri', 'rn', 'st', 'ty', 'at', 'aa' ]
+		# self.ignoreAttributes = self.internalAttributes + [ 'acpi', 'cbs', 'cni', 'cnd', 'cs', 'cr', 'ct', 'et', 'lt', 'mbs', 'mia', 'mni', 'or', 'pi', 'ri', 'rn', 'st', 'ty', 'at', 'aa' ]
+		self.ignoreAttributes = self.internalAttributes + [ a for a in self._attributes.keys() ]
 
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
@@ -135,7 +154,7 @@ class FCNT(AnnounceableResource):
 			return
 		self.__validating = True
 
-		# Calculate contentSize
+		# Calculate contentSize. Only the custom attribute
 		cs = 0
 		for attr in self.dict:
 			if attr in self.ignoreAttributes:

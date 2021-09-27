@@ -152,7 +152,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	# Import extra attribute policies for specializations first
 	# When this fails, we cannot continue with the CSE startup
 	importer = Importer()
-	if not importer.importFlexContainerPolicies() or not importer.importResources():
+	if not importer.doImport():
 		return False
 	
 	# Start the HTTP server
@@ -236,7 +236,7 @@ def resetCSE() -> None:
 
 	# The following event is executed synchronously
 	event.cseReset()	# type: ignore [attr-defined]   
-	if not importer.importFlexContainerPolicies() or not importer.importResources():
+	if not importer.doImport():
 		L.isWarn and L.logErr('Error during import')
 		sys.exit()	# what else can we do?
 	L.isWarn and L.logWarn('Resetting CSE finished')

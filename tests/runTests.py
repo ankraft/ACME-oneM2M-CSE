@@ -58,7 +58,8 @@ if __name__ == '__main__':
 	# Run the tests and get some measurements
 	totalTimeStart		  = time.perf_counter()
 	totalProcessTimeStart = time.process_time()
-
+	init.requestCount	  = 0
+	
 	for module in modules:
 		if hasattr(module, 'run'):
 			totalSuites += 1
@@ -67,6 +68,7 @@ if __name__ == '__main__':
 				console.print(f'[bright_blue]Running tests from [bold]{name}')
 				startProcessTime = time.process_time()
 				startPerfTime = time.perf_counter()
+				startRequestCount = init.requestCount
 				testExecuted, errors, skipped = module.run(testVerbosity=args.verbosity, testFailFast=args.failFast)	# type: ignore
 				durationProcess = time.process_time() - startProcessTime
 				duration = time.perf_counter() - startPerfTime
@@ -74,13 +76,13 @@ if __name__ == '__main__':
 					totalErrors += errors
 					totalRunTests += testExecuted
 				totalSkipped += skipped
-				results[name] = ( testExecuted, errors, duration, durationProcess, skipped )
+				results[name] = ( testExecuted, errors, duration, durationProcess, skipped, init.requestCount - startRequestCount )
 				console.print(f'[spring_green3]Successfully executed tests: {testExecuted}')
 				if errors > 0:
 					console.print(f'[red]Errors: {errors}')
 			else:
 				if args.showSkipped:
-					results[name] = ( 0, 0, 0, 0, 1 )
+					results[name] = ( 0, 0, 0, 0, 1, init.requestCount - startRequestCount )
 
 	totalProcessTime	= time.process_time() - totalProcessTimeStart
 	totalExecTime 		= time.perf_counter() - totalTimeStart
@@ -95,6 +97,7 @@ if __name__ == '__main__':
 	table.add_column('Exec Time', footer=f'{totalExecTime:.4f}', justify='right')
 	table.add_column('Process Time', footer=f'{totalProcessTime:.4f}', justify='right')
 	table.add_column('Time / Test', footer=f'{totalExecTime/totalRunTests:.4f}' if totalRunTests != 0 else '', justify='right')
+	table.add_column('Requests', footer=f'{init.requestCount}', justify='right')
 	# Styles
 	styleDisabled = Style(dim=True)
 	styleDisabled2 = Style(dim=True, bgcolor='grey11')
@@ -114,6 +117,7 @@ if __name__ == '__main__':
 						f'{v[2]:.4f}' if v[0] > 0 else '', 
 						f'{v[3]:.4f}' if v[0] > 0 else '',
 						f'{(v[2]/v[0]):.4f}' if v[0] > 0 else '',
+						f'{v[5]}',
 						style=style)
 	console.print(table)
 

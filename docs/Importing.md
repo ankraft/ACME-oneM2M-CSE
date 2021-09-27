@@ -3,24 +3,25 @@
 # Importing
 
 [Resources](#resources)  
-[Importing Attribute Policies for FlexContainers](#importing-attribute-policies-for-flexcontainers)
+[Importing Attribute Policies for FlexContainers](#importing-attribute-policies-for-flexcontainers)  
+[Importing Attribute Policies for Common Resources](#importing-attribute-policies-for-common-resources)
+
 
 ## Resources
 
-During startup it is necessary to import resources into to CSE. Each resource is read from a single file in the [init](../init) resource directory specified in the configuration file. Besides of a few mandatory resources additional resources can be imported to create a default resource structure for the CSE.
+During startup it is necessary to import resources into to CSE. Each resource is read from a file in the [init](../init) resource directory specified in the configuration file. Besides of a few mandatory resources additional resources can be imported to create a default resource structure for the CSE.
 
 Not much validation, access control, or registration procedures are performed for imported resources.
 
 ### Importing Mandatory Resources
 
-**Please note** that importing is required for creating the CSEBase resource and at least three (admin) ACP resources. Those are imported before all other resources, so that the CSEBase resource can act as the root for the resource tree. The *admin* ACP is used to access resources with the administrator originator. The *default* ACP resource is the one that is assigned for resources that don't specify an ACP on their own.
+**Please note** that importing is required for creating the CSEBase, the admin AE, and a general-access ACP resources. Those are imported before all other resources, so that the CSEBase resource can act as the root for the resource tree.
 
 The filenames for these resources must be:
 
 - [csebase.json](../init/csebase.json) for the CSEBase.
-- [acp.admin.json](../init/acp.admin.json) for the admin ACP.
-- [acp.default.json](../init/acp.default.json) for the default ACP.
-- [acp.csebaseAccess.json](../init/acp.csebaseAccess.json) for granting AE's and remote CSE's access to the CSEBase. This ACP is dynamically filled with permissions when an AE or remote CSE registers.
+- [ae.admin.json](../init/ae.admin.json) for the Admin AE
+- [acp.createACP.json](../init/acp.createACP.json) for granting AE's and remote CSE's access to the CSEBase.
 
 ### Importing Other Resources
 
@@ -135,7 +136,14 @@ attributePolicies = [
 				//	- 01L : the attribute is an optional list
 				//	- 1   : The attribute is mandatory
 				// 	- 1L  : The attribute is a mandatory list
-				"car" : "01|01L|1|1L" 
+				"car" : "01|01L|1|1L",
+
+				// A list of oneM2M resource types that use this attribute.
+				// The folling special attribute types are also allowed:
+				//	- ALL     : This attribute definition is suitable for all resource types for which it is a member
+				//	- REQRESP : This attribute definition is suitable for request and response type resources.
+				// This attribute is optional and used for the general attributePolicies, but not for flexContainers.
+				"rtypes" : [ <ResourceType> ]
 			}, 
 
 		],
@@ -185,5 +193,38 @@ The following examples show the attribute policies for the *binarySwitch* and *d
 	}
 ]
 ```
+
+## Importing Attribute Policies for Common Resources
+
+During startup the CSE reads the attribute policies for normal/common resources from the file [attributePolicies.ap](../init/attributePolicies.ap) in the import / init directory.
+
+### Format
+
+The format is a JSON structure that follows the structure described in the following code.  
+
+
+```
+// The attributePolicy.ap file contains a dictionary of AttributePolicies
+attributePolicies = {
+
+	// Each Attribute Policy is identified by an attribute's short name
+	"attribute shortname": [
+
+		// A list of attribute policies is defined for each short name
+
+		// See the attributes definition for flexContainer attribute policies above.
+			
+		{
+			// The rtypes definition is mandatory here. It defines a list of oneM2M
+			// resource types for which this definition is valid. This way slight
+			// differences in attributes in some resource can be distinguished.
+			"rtype" : [ '<resource types>' ]
+
+			...
+		}
+	],
+
+
+
 
 [← README](../README.md) 

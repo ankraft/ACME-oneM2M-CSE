@@ -9,30 +9,56 @@
 
 from __future__ import annotations
 from copy import deepcopy
-from ..etc.Types import ResourceTypes as T, Result, NotificationContentType, NotificationEventType as NET, ResponseCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, NotificationContentType, NotificationEventType as NET, ResponseCode as RC, JSON
 from ..services.Configuration import Configuration
 from ..services import CSE as CSE
-from ..services.Validator import constructPolicy
 from ..services.Logging import Logging as L
 from ..resources.Resource import *
 
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([
-	'rn', 'ty', 'ri', 'pi', 'et', 'lbl', 'ct', 'lt', 'cr', 'hld', 'acpi', 'daci', 'enc',
-	'exc', 'nu', 'gpi', 'nfu', 'bn', 'rl', 'psn', 'pn', 'nsp', 'ln', 'nct', 'nec',
-	'su', 'acrs'		#	primitiveProfileID missing in TS-0004
-])
-
-# LIMIT: Only http(s) requests in nu or POA is supported yet
 
 class SUB(Resource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes:list[T] = [ ]
+	_allowedChildResourceTypes:list[T] = [ ]
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# Common and universal attributes
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'hld': None,
+		'acpi':None,
+		'daci': None,
+		'cr': None,
+
+		# Resource attributes
+		'enc': None,
+		'exc': None,
+		'nu': None,
+		'gpi': None,
+		'nfu': None,
+		'bn': None,
+		'rl': None,
+		'psn': None,
+		'pn': None,
+		'nsp': None,
+		'ln': None,
+		'nct': None,
+		'nec': None,
+		'su': None,
+		'acrs': None
+	}
 
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.SUB, dct, pi, create=create, attributePolicies=attributePolicies)
+		super().__init__(T.SUB, dct, pi, create=create)
 
 		self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate ], overwrite=False)
 
@@ -141,7 +167,7 @@ class SUB(Resource):
 	def _checkAllowedCHTY(self, parentResource:Resource, chty:list[T]) -> Result:
 		""" Check whether an observed child resource type is actually allowed by the parent. """
 		for ty in chty:
-			if ty not in parentResource.allowedChildResourceTypes:
+			if ty not in parentResource._allowedChildResourceTypes:
 				L.logDebug(dbg := f'ChildResourceType {T(ty).name} is not an allowed child resource of {T(parentResource.ty).name}')
 				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 		return Result(status=True)

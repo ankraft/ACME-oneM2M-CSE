@@ -8,32 +8,50 @@
 #
 
 from __future__ import annotations
-from ..etc.Constants import Constants as C
-from ..etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
-from ..services.Validator import constructPolicy, addPolicy
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseCode as RC, JSON
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
-
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'rn', 'ty', 'ri', 'pi', 'et', 'ct', 'lt', 'st', 'lbl', 'at', 'aa', 'cr',
-])
-cinPolicies = constructPolicy([
-	'cnf', 'cs', 'conr', 'con', 'or', 'conr', 'dcnt'
-])
-attributePolicies = addPolicy(attributePolicies, cinPolicies)
-
 
 class CIN(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes:list[T] = [ ]
+	_allowedChildResourceTypes:list[T] = [ ]
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+			# Common and universal attributes
+			'rn': None,
+		 	'ty': None,
+			'ri': None,
+			'pi': None,
+			'ct': None,
+			'lt': None,
+			'et': None,
+			'lbl': None,
+			'hld': None,
+			'acpi':None,
+			'at': None,
+			'aa': None,
+			'ast': None,
+			'ast': None,
+			'daci': None,
+			'st': None,
+			'cr': None,
+
+			# Resource attributes
+			'cnf': None,
+			'cs': None,
+			'conr': None,
+			'con': None,
+			'or': None,
+			'conr': None,
+			'dcnt': None
+	}
 
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.CIN, dct, pi, create=create, inheritACP=True, readOnly = True, attributePolicies=attributePolicies)
-
-		self.resourceAttributePolicies = cinPolicies	# only the resource type's own policies
+		super().__init__(T.CIN, dct, pi, create=create, inheritACP=True, readOnly = True)
 
 		self.setAttribute('con', '', overwrite=False)
 		self.setAttribute('cs', Utils.getAttributeSize(self.con))

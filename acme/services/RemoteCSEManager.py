@@ -458,7 +458,7 @@ class RemoteCSEManager(object):
 		res = CSE.request.sendCreateRequest(self.registrarCSEURL, CSE.cseCsi, ty=T.CSR, data=csr.asDict(), ct=self.registrarSerialization) # own CSE.csi is the originator
 		if res.rsc not in [ RC.created, RC.OK ]:
 			if res.rsc != RC.alreadyExists:
-				L.isDebug and L.logDebug(f'Error creating registrar CSR: {res.rsc:d}')
+				L.isDebug and L.logDebug(f'Error creating registrar CSR: {int(res.rsc)}')
 			return Result(rsc=res.rsc, dbg='cannot create remote CSR')
 		L.isDebug and L.logDebug(f'Registrar CSR created: {self.registrarCSI}')
 		return Result(resource=CSR.CSR(res.dict, pi=''), rsc=RC.created)
@@ -475,7 +475,7 @@ class RemoteCSEManager(object):
 		res = CSE.request.sendUpdateRequest(self.registrarCSRURL, CSE.cseCsi, data=csr.asDict(), ct=self.registrarSerialization) 	# own CSE.csi is the originator
 		if res.rsc not in [ RC.updated, RC.OK ]:
 			if res.rsc != RC.alreadyExists:
-				L.isDebug and L.logDebug(f'Error updating registrar CSR in CSE: {res.rsc:d}')
+				L.isDebug and L.logDebug(f'Error updating registrar CSR in CSE: {int(res.rsc)}')
 			return Result(rsc=res.rsc, dbg='cannot update remote CSR')
 		L.isDebug and L.logDebug(f'Registrar CSR updated in CSE: {self.registrarCSI}')
 		return Result(resource=CSR.CSR(res.dict, pi=''), rsc=RC.updated)
@@ -506,7 +506,7 @@ class RemoteCSEManager(object):
 
 		L.isDebug and L.logDebug(f'Retrieving remote CSE from: {self.registrarCSI} url: {url}')	
 		res = CSE.request.sendRetrieveRequest(url, CSE.cseCsi, ct=ct)	# own CSE.csi is the originator
-		L.logWarn(res.dict)
+		# L.logWarn(res.dict)
 		if res.rsc not in [ RC.OK ]:
 			return res.errorResult()
 		if (csi := Utils.findXPath(res.dict, 'm2m:cb/csi')) == None:

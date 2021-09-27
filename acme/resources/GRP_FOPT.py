@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import ResourceTypes as T, Result, Operation, CSERequest, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, Operation, CSERequest, JSON
 from ..services.Logging import Logging as L
 from ..services import CSE as CSE
 from ..resources.Resource import *
@@ -22,8 +22,13 @@ from ..resources.Resource import *
 class GRP_FOPT(Resource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes:list[T] = [ ]
+	_allowedChildResourceTypes:list[T] = [ ]
 
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# None for virtual resources
+	}
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
 		super().__init__(T.GRP_FOPT, dct, pi, create=create, inheritACP=True, readOnly=True, rn='fopt', isVirtual=True)

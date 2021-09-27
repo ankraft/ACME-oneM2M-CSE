@@ -230,6 +230,8 @@ def shutdown() -> None:
 #	Requests
 #
 
+requestCount:int = 0
+
 def _RETRIEVE(url:str, originator:str, timeout:float=None, headers:Parameters=None) -> Tuple[str|JSON, int]:
 	return sendRequest(Operation.RETRIEVE, url, originator, timeout=timeout, headers=headers)
 
@@ -241,7 +243,7 @@ def RETRIEVE(url:str, originator:str, timeout:float=None, headers:Parameters=Non
 	x,rsc = _RETRIEVE(url=url, originator=originator, timeout=timeout, headers=headers)
 	return cast(JSON, x), rsc
 
-def CREATE(url:str, originator:str, ty:int=None, data:JSON=None, headers:Parameters=None) -> Tuple[JSON, int]:
+def CREATE(url:str, originator:str, ty:ResourceTypes=None, data:JSON=None, headers:Parameters=None) -> Tuple[JSON, int]:
 	x,rsc = sendRequest(Operation.CREATE, url, originator, ty, data, headers=headers)
 	return cast(JSON, x), rsc
 
@@ -261,9 +263,11 @@ def DELETE(url:str, originator:str, headers:Parameters=None) -> Tuple[JSON, int]
 	return cast(JSON, x), rsc
 
 
-def sendRequest(operation:Operation, url:str, originator:str, ty:int=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
+def sendRequest(operation:Operation, url:str, originator:str, ty:ResourceTypes=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
 	"""	Send a request. Call the appropriate framework, depending on the protocol.
 	"""
+	global requestCount
+	requestCount += 1
 	if url.startswith(('http', 'https')):
 		if operation == Operation.CREATE:
 			return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
@@ -287,15 +291,20 @@ def sendRequest(operation:Operation, url:str, originator:str, ty:int=None, data:
 		return None, 5103
 
 
-def sendHttpRequest(method:Callable, url:str, originator:str, ty:int=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
+def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=None, data:JSON|str=None, ct:str=None, timeout:float=None, headers:Parameters=None) -> Tuple[STRING|JSON, int]:	# type: ignore # TODO Constants
 	global oauthToken
 
 	# correct url
 	url = RequestUtils.toHttpUrl(url)
 	urlComponents:ParseResult = urlparse(url)
 
+	if isinstance(ty, (ResourceTypes, int)):
+		tys = f';ty={int(ty)}'
+	elif ty is not None:	# e.g. for string
+		tys = f';ty={ty}'
+	else:
+		tys = ''
 
-	tys = f';ty={ty}' if ty is not None else ''
 	ct = 'application/json'
 	hds = { 
 		'Content-Type' 		: f'{ct}{tys}',

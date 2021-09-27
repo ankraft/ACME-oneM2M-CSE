@@ -7,35 +7,64 @@
 #	ResourceType: RemoteCSE
 #
 
-from ..etc.Types import ResourceTypes as T, Result, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, JSON
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
-from ..services.Validator import constructPolicy, addPolicy
-
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'cr', 'daci', 'loc', 'hld'
-])
-csrPolicies = constructPolicy([
-	'cst', 'poa', 'cb', 'csi', 'mei', 'tri', 'rr', 'nl', 'csz', 'esi', 'trn', 'dcse', 'mtcc', 'egid', 'tren', 'ape', 'srv'
-])
-attributePolicies = addPolicy(attributePolicies, csrPolicies)
-
-
-# TODO ^^^ Add Attribute EnableTimeCompensation, also in CSRAnnc
 
 
 class CSR(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes = [ T.CNT, T.CNTAnnc, T.CINAnnc, T.FCNT, T.FCNTAnnc, T.FCI, T.FCIAnnc, T.GRP, T.GRPAnnc,
-								T.ACP, T.ACPAnnc, T.SUB, T.TS, T.TSAnnc, T.CSRAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.AEAnnc ]
+	_allowedChildResourceTypes = [	T.CNT, T.CNTAnnc, T.CINAnnc, T.FCNT, T.FCNTAnnc, T.FCI, T.GRP, T.GRPAnnc,
+									T.ACP, T.ACPAnnc, T.SUB, T.TS, T.TSAnnc, T.CSRAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.AEAnnc ]
 
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+			# Common and universal attributes
+			'rn': None,
+		 	'ty': None,
+			'ri': None,
+			'pi': None,
+			'ct': None,
+			'lt': None,
+			'et': None,
+			'lbl': None,
+			'hld': None,
+			'acpi':None,
+			'daci': None,
+			'at': None,
+			'aa': None,
+			'ast': None,
+			'cr': None,
+			'loc': None,
+
+			# Resource attributes
+			'cst': None,
+			'poa': None,
+			'cb': None,
+			'csi': None,
+			'mei': None,
+			'tri': None,
+			'rr': None,
+			'nl': None,
+			'csz': None,
+			'esi': None,
+			'trn': None,
+			'dcse': None,
+			'mtcc': None,
+			'egid': None,
+			'tren': None,
+			'ape': None,
+			'srv': None
+	}
+
+	# TODO ^^^ Add Attribute EnableTimeCompensation, also in CSRAnnc
+	
 
 	def __init__(self, dct:JSON=None, pi:str=None, rn:str=None, create:bool=False) -> None:
-		super().__init__(T.CSR, dct, pi, rn=rn, create=create, attributePolicies=attributePolicies)
-
-		self.resourceAttributePolicies = csrPolicies	# only the resource type's own policies
+		super().__init__(T.CSR, dct, pi, rn=rn, create=create)
 
 		#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
 		if self.csi:

@@ -8,13 +8,69 @@
 #
 
 from __future__ import annotations
-from dataclasses import dataclass, field
-from typing import Any, List, Dict, Tuple, Union, Callable
+from dataclasses import dataclass, field, astuple
+from typing import Tuple, cast, Dict, Any, List, Union
 from enum import IntEnum,  auto
 from http import HTTPStatus
 from collections import namedtuple
 
 
+class ACMEIntEnum(IntEnum):
+
+	@classmethod
+	def has(cls, value:int|str|Tuple[int|str]) -> bool:
+		"""	Check whether the enum type has an entry with
+			either the given int value or string name. 
+
+			`value` can also be a tuple of values to test. In this
+			case, all the values in the tuple must exist
+		"""
+
+		def _check(value:int|str) -> bool:
+			if isinstance(value, int):
+				return value in cls.__members__.values()
+			else:
+				return value in cls.__members__
+
+		if isinstance(value, tuple):	# Checks if tuple
+			for v in cast(tuple, value):
+				if not _check(v):
+					return False
+			return True
+
+		return _check(value)
+
+
+	@classmethod
+	def to(cls, name:str|Tuple[str], insensitive:bool=False) -> Any:
+		# TODO docu
+		
+		def _to(name:str) -> Any:
+			try:
+				if insensitive:
+					_n = name.lower()
+					return next(v for n,v in cls.__members__.items() if n.lower() == _n)	# type: ignore
+				return next(v for n,v in cls.__members__.items() if n == name)	# type: ignore
+			except StopIteration:
+				return None
+
+		if isinstance(name, tuple):
+			result = []
+			for n in name:
+				if not (t := _to(n)):
+					return None			# Early return
+				result.append(t)
+			return result
+			
+		return _to(cast(str, name))
+
+
+	def __str__(self) -> str:
+		return str(self.name)
+
+
+	def __repr__(self) -> str:
+		return self.__str__()
 
 #
 #	Resource Types
@@ -22,83 +78,84 @@ from collections import namedtuple
 
 # TODO : Optimize tpe -> ResourceType mapping
 
-class ResourceTypes(IntEnum):
+class ResourceTypes(ACMEIntEnum):
 
-	UNKNOWN		= -1
+	UNKNOWN			= -1
+	ALL 			= -2	# used to indicate that something applies to all resources
+	REQRESP			= -3
 
 	# Resource Types
 
-	MIXED		=  0
-	ACP 		=  1
-	AE			=  2
-	CNT			=  3
-	CIN 		=  4
-	CSEBase 	=  5
-	GRP 		=  9
-	MGMTOBJ		= 13
-	NOD			= 14
-	PCH 		= 15
-	CSR			= 16
-	REQ 		= 17
-	SUB			= 23
-	FCNT	 	= 28
-	TS			= 29
-	TSI   		= 30
-	FCI 		= 58
+	MIXED			=  0
+	ACP 			=  1
+	AE				=  2
+	CNT				=  3
+	CIN 			=  4
+	CSEBase 		=  5
+	GRP 			=  9
+	MGMTOBJ			= 13
+	NOD				= 14
+	PCH 			= 15
+	CSR				= 16
+	REQ 			= 17
+	SUB				= 23
+	FCNT	 		= 28
+	TS				= 29
+	TSI   			= 30
+	FCI 			= 58
 
 
 	# Virtual resources (some are proprietary resource types)
 
-	CNT_OL		=  20001	# actually a memberType
-	CNT_LA		=  20002	# actually a memberType
+	CNT_OL			=  20001	# actually a memberType
+	CNT_LA			=  20002	# actually a memberType
 
-	GRP_FOPT	=  -20003
-	FCNT_OL		=  -20004
-	FCNT_LA		=  -20005
-	PCH_PCU		=  -20006
-	TS_OL		=  -20007
-	TS_LA		=  -20008
+	GRP_FOPT		=  -20003
+	FCNT_OL			=  -20004
+	FCNT_LA			=  -20005
+	PCH_PCU			=  -20006
+	TS_OL			=  -20007
+	TS_LA			=  -20008
 
 	# <mgmtObj> Specializations
 
-	FWR			= 1001
-	SWR			= 1002
-	MEM			= 1003
-	ANI			= 1004
-	ANDI		= 1005
-	BAT			= 1006
-	DVI 		= 1007
-	DVC 		= 1008
-	RBO 		= 1009
-	EVL 		= 1010
-	NYCFC		= 1023	# myCertFileCred
+	FWR				= 1001
+	SWR				= 1002
+	MEM				= 1003
+	ANI				= 1004
+	ANDI			= 1005
+	BAT				= 1006
+	DVI 			= 1007
+	DVC 			= 1008
+	RBO 			= 1009
+	EVL 			= 1010
+	NYCFC			= 1023	# myCertFileCred
 
 	# Announced Resources
 
-	ACPAnnc 	= 10001
-	AEAnnc 		= 10002	
-	CNTAnnc 	= 10003
-	CINAnnc 	= 10004
-	GRPAnnc 	= 10009
-	MGMTOBJAnnc = 10013
-	NODAnnc 	= 10014
-	CSRAnnc 	= 10016
-	FCNTAnnc 	= 10028
-	TSAnnc		= 10029
-	TSIAnnc		= 10030
-	FCIAnnc 	= 10058
+	ACPAnnc 		= 10001
+	AEAnnc 			= 10002	
+	CNTAnnc 		= 10003
+	CINAnnc 		= 10004
+	GRPAnnc 		= 10009
+	MGMTOBJAnnc 	= 10013
+	NODAnnc 		= 10014
+	CSRAnnc 		= 10016
+	FCNTAnnc 		= 10028
+	TSAnnc			= 10029
+	TSIAnnc			= 10030
 
-	FWRAnnc		= -30001
-	SWRAnnc		= -30002
-	MEMAnnc		= -30003
-	ANIAnnc		= -30004
-	ANDIAnnc	= -30005
-	BATAnnc		= -30006
-	DVIAnnc		= -30007
-	DVCAnnc		= -30008
-	RBOAnnc		= -30009
-	EVLAnnc		= -30010
-	NYCFCAnnc	= -30023
+	FWRAnnc			= -30001
+	SWRAnnc			= -30002
+	MEMAnnc			= -30003
+	ANIAnnc			= -30004
+	ANDIAnnc		= -30005
+	BATAnnc			= -30006
+	DVIAnnc			= -30007
+	DVCAnnc			= -30008
+	RBOAnnc			= -30009
+	EVLAnnc			= -30010
+	NYCFCAnnc		= -30023
 
 
 	def tpe(self) -> str:
@@ -115,17 +172,11 @@ class ResourceTypes(IntEnum):
 		return self.value in ResourceTypes._announcedSet 			# type: ignore
 
 
-	def __str__(self) -> str:
-		return str(self.value)
+	# def __str__(self) -> str:
+	# 	return str(self.value)
 	
-	def __repr__(self) -> str:
-		return self.__str__()
-
-
-	@classmethod
-	def has(cls, value:int) -> bool:
-		return value in cls.__members__.values()
-	
+	# def __repr__(self) -> str:
+	# 	return self.__str__()
 
 	@classmethod
 	def fromTPE(cls, tpe:str) -> ResourceTypes:
@@ -154,7 +205,6 @@ ResourceTypes._announcedMappings = {							#  type: ignore
 	ResourceTypes.FCNT		: ResourceTypes.FCNTAnnc,
 	ResourceTypes.TS 		: ResourceTypes.TSAnnc,
 	ResourceTypes.TSI 		: ResourceTypes.TSIAnnc,
-	ResourceTypes.FCI		: ResourceTypes.FCIAnnc,
 }
 
 
@@ -176,7 +226,6 @@ ResourceTypes._announcedSet = [									#  type: ignore
 	ResourceTypes.ACPAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc, ResourceTypes.CINAnnc,
 	ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc, 
 	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.TSAnnc, ResourceTypes.TSIAnnc,
-	ResourceTypes.FCIAnnc,
 
 	ResourceTypes.FWRAnnc, ResourceTypes.SWRAnnc, ResourceTypes.MEMAnnc, ResourceTypes.ANIAnnc,
 	ResourceTypes.ANDIAnnc, ResourceTypes.BATAnnc, ResourceTypes.DVIAnnc, ResourceTypes.DVCAnnc, 
@@ -187,6 +236,7 @@ ResourceTypes._announcedSet = [									#  type: ignore
 
 ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.UNKNOWN		: 'unknown',
+		ResourceTypes.ALL 			: 'all',
 
 		ResourceTypes.MIXED			: 'mixed',
 		ResourceTypes.ACP 			: 'm2m:acp',
@@ -215,7 +265,6 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.NODAnnc 		: 'm2m:nodA',
 		ResourceTypes.CSRAnnc 		: 'm2m:csrA',
 		ResourceTypes.FCNTAnnc 		: 'm2m:fcntA',
-		ResourceTypes.FCIAnnc 		: 'm2m:fciA',
 		ResourceTypes.TSAnnc 		: 'm2m:tsA',
 		ResourceTypes.TSIAnnc 		: 'm2m:tsiA',
 
@@ -259,7 +308,7 @@ ResourceTypes._names 	= {										# type: ignore
 	
 
 
-class BasicType(IntEnum):
+class BasicType(ACMEIntEnum):
 	""" Basic resource types """
 	positiveInteger	= auto()
 	nonNegInteger	= auto()
@@ -278,25 +327,54 @@ class BasicType(IntEnum):
 	integer			= auto()
 	void 			= auto()
 	duration 		= auto()
+	time			= timestamp	# alias type for time
+	date			= timestamp	# alias type for date
+
+	@classmethod
+	def to(cls, name:str|Tuple[str], insensitive:bool=True) -> BasicType:
+		return super().to(name, insensitive=insensitive)
 
 
-class Cardinality(IntEnum):
+class Cardinality(ACMEIntEnum):
 	""" Resource attribute cardinalities """
-	car1			= auto()
-	car1L			= auto()
-	car01			= auto()
-	car01L			= auto()
-	car1N			= auto() # mandatory, but may be Null/None
+	CAR1			= auto()
+	CAR1L			= auto()
+	CAR01			= auto()
+	CAR01L			= auto()
+	CAR1N			= auto() # mandatory, but may be Null/None
 
 
-class RequestOptionality(IntEnum):
+	@classmethod
+	def hasCar(cls, name:str) -> bool:
+		"""	Check whether an Cardinality without the 'car'
+			prefix exists. 
+			
+			Example: `hasCar('01')`
+		"""
+		return cls.has(f'CAR{name}')
+	
+	@classmethod
+	def to(cls, name:str|Tuple[str], insensitive:bool=True) -> Cardinality:
+
+		def _prepare(name:str) -> str:
+			return name if name.lower().startswith('car') else f'CAR{name}'
+		
+		if isinstance(name, str):
+			# handle and prepare as string
+			return super().to(_prepare(name), insensitive=insensitive)
+		else:
+			# handle and prepare as tuple of strings
+			return super().to(cast(Tuple[str], tuple([ _prepare(n) for n in name ])), insensitive=insensitive)
+
+
+class RequestOptionality(ACMEIntEnum):
 	""" request optionalities """
 	NP				= auto()
 	O 				= auto()
 	M 				= auto()
 
 
-class Announced(IntEnum):
+class Announced(ACMEIntEnum):
 	""" anouncent attribute indications """
 	NA				= auto()
 	OA				= auto()
@@ -309,7 +387,7 @@ class Announced(IntEnum):
 #
 
 
-class ResponseCode(IntEnum):
+class ResponseCode(ACMEIntEnum):
 	""" Response codes """
 	accepted									= 1000
 	acceptedNonBlockingRequestSynch				= 1001
@@ -406,7 +484,7 @@ ResponseCode._httpStatusCodes = {																		# type: ignore
 #	Discovery & Filter
 #
 
-class ResultContentType(IntEnum):
+class ResultContentType(ACMEIntEnum):
 	"""	Result Content Types """
 	nothing									= 0
 	attributes 								= 1
@@ -421,21 +499,21 @@ class ResultContentType(IntEnum):
 	discoveryResultReferences				= 11
 
 
-class FilterOperation(IntEnum):
+class FilterOperation(ACMEIntEnum):
 	"""	Filter Operation """
 	AND 			= 1 # default
 	OR 				= 2
 	XOR 			= 3
 
 
-class FilterUsage(IntEnum):
+class FilterUsage(ACMEIntEnum):
 	"""	Filter Usage """
 	discoveryCriteria		= 1
 	conditionalRetrieval	= 2 # default
 	ipeOnDemandDiscovery	= 3
 
 
-class DesiredIdentifierResultType(IntEnum):
+class DesiredIdentifierResultType(ACMEIntEnum):
 	""" Desired Identifier Result Type """
 	structured		= 1 # default
 	unstructured	= 2
@@ -447,17 +525,12 @@ class DesiredIdentifierResultType(IntEnum):
 #	CSE related
 #
 
-class CSEType(IntEnum):
+class CSEType(ACMEIntEnum):
 	""" CSE Types """
 	IN					=  1
 	MN					=  2
 	ASN					=  3
 
-	def __str__(self) -> str:
-		return str(self.value)
-	
-	def __repr__(self) -> str:
-		return self.__str__()
 
 
 ##############################################################################
@@ -465,7 +538,7 @@ class CSEType(IntEnum):
 #	Permission related
 #
 
-class Permission(IntEnum):
+class Permission(ACMEIntEnum):
 	""" Permissions """
 	NONE				=  0
 	CREATE				=  1
@@ -482,7 +555,7 @@ class Permission(IntEnum):
 #	Operation related
 #
 
-class Operation(IntEnum):
+class Operation(ACMEIntEnum):
 	# Operations
 	CREATE 				= 1
 	RETRIEVE			= 2
@@ -530,7 +603,7 @@ Operation._permissionsMapping =	{				# type: ignore
 #	ResponseType 
 #
 
-class ResponseType(IntEnum):
+class ResponseType(ACMEIntEnum):
 	"""	Reponse Types """
 	nonBlockingRequestSynch		= 1
 	nonBlockingRequestAsynch	= 2
@@ -544,7 +617,7 @@ class ResponseType(IntEnum):
 #	Request Status 
 #
 
-class RequestStatus(IntEnum):
+class RequestStatus(ACMEIntEnum):
 	"""	Reponse Types """
 	COMPLETED			= 1
 	FAILED				= 2
@@ -558,7 +631,7 @@ class RequestStatus(IntEnum):
 #	Group related
 #
 
-class ConsistencyStrategy(IntEnum):
+class ConsistencyStrategy(ACMEIntEnum):
 	"""	Consistency Strategy """
 	abandonMember		= 1	# default
 	abandonGroup		= 2
@@ -569,7 +642,7 @@ class ConsistencyStrategy(IntEnum):
 #	Subscription related
 #
 
-class NotificationContentType(IntEnum):
+class NotificationContentType(ACMEIntEnum):
 	"""	Notification Content Types """
 	all						= 1
 	modifiedAttributes		= 2
@@ -578,7 +651,7 @@ class NotificationContentType(IntEnum):
 	timeSeriesNotification	= 5
 	
 
-class NotificationEventType(IntEnum):
+class NotificationEventType(ACMEIntEnum):
 	""" eventNotificationCriteria/NotificationEventTypes """
 	resourceUpdate						= 1	# A, default
 	resourceDelete						= 2	# B
@@ -603,12 +676,6 @@ class NotificationEventType(IntEnum):
 			return self.value in [ NotificationEventType.reportOnGeneratedMissingDataPoints ]
 		return False
 
-
-	def __str__(self) -> str:
-		return self.name
-
-	def __repr__(self) -> str:
-		return self.__str__()
 
 ##############################################################################
 #
@@ -668,6 +735,7 @@ class LastTSInstance:
 #	Content Serializations
 #
 
+# TODO ACMEIntEnum ?
 class ContentSerializationType(IntEnum):
 	"""	Content Serialization Types """
 	XML					= auto()
@@ -838,13 +906,44 @@ class CSERequest:
 
 ##############################################################################
 #
+#	Validation Types
+#
+
+@dataclass
+class AttributePolicy:
+	type:BasicType
+	cardinality:Cardinality
+	optionalCreate:RequestOptionality
+	optionalUpdate:RequestOptionality
+	optionalDiscovery:RequestOptionality
+	announcement:Announced
+	sname:str 					= None 	# short name
+	lname:str 					= None	# longname
+	namespace:str				= None	# namespace
+	tpe:str   					= None	# namespace:type name
+	rtypes:List[ResourceTypes]	= None	# Optional list of multiple resourceTypes
+
+	# TODO support annnouncedSyncType
+
+	def select(self, index:int) -> Any:
+		"""	Return the n-th attributes in the dataclass.
+		"""
+		try:
+			return astuple(self)[index]
+		except IndexError:
+			return None
+
+
+"""	Represent a dictionary of attribute policies used in validation. """
+AttributePolicyDict = Dict[str, AttributePolicy]
+FlexContainerAttributes = Dict[str, Dict[str, AttributePolicy]]
+
+
+##############################################################################
+#
 #	Generic Types
 #
 
-AttributePoliciesEntry = Tuple[BasicType, Cardinality, RequestOptionality, RequestOptionality, RequestOptionality, Announced]
-AttributePolicies=Dict[str, Union[AttributePoliciesEntry, Dict[ResourceTypes, AttributePoliciesEntry]]]
-"""	Represent a dictionary of attribute policies used in validation. """
-AdditionalAttributes = Dict[str, AttributePolicies]
 
 Parameters=Dict[str,str]
 Conditions=Dict[str, Any]

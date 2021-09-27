@@ -79,7 +79,7 @@ class Storage(object):
 
 		ri = resource.ri
 
-		# L.logDebug(f'Adding resource (ty: {resource.ty:d}, ri: {resource.ri}, rn: {resource.rn})'
+		# L.logDebug(f'Adding resource (ty: {resource.ty}, ri: {resource.ri}, rn: {resource.rn})'
 		srn = resource.__srn__
 		if overwrite:
 			L.isDebug and L.logDebug('Resource enforced overwrite')
@@ -133,7 +133,7 @@ class Storage(object):
 
 	def retrieveResourcesByType(self, ty:T) -> list[Document]:
 		""" Return all resources of a certain type. """
-		# L.logDebug(f'Retrieving all resources ty: {ty:d}')
+		# L.logDebug(f'Retrieving all resources ty: {ty}')
 		return self.db.searchResources(ty=int(ty))
 
 
@@ -142,7 +142,7 @@ class Storage(object):
 			L.logErr(dbg := 'resource is None')
 			raise RuntimeError(dbg)
 		ri = resource.ri
-		# L.logDebug(f'Updating resource (ty: {resource.ty:d}, ri: {ri}, rn: {resource.rn})')
+		# L.logDebug(f'Updating resource (ty: {resource.ty}, ri: {ri}, rn: {resource.rn})')
 		return Result(resource=self.db.updateResource(resource), rsc=RC.updated)
 
 
@@ -150,7 +150,7 @@ class Storage(object):
 		if not resource:
 			L.logErr(dbg := 'resource is None')
 			raise RuntimeError(dbg)
-		# L.logDebug(f'Removing resource (ty: {resource.ty:d}, ri: {ri}, rn: {resource.rn})'
+		# L.logDebug(f'Removing resource (ty: {resource.ty}, ri: {ri}, rn: {resource.rn})'
 		self.db.deleteResource(resource)
 		self.db.deleteIdentifier(resource)
 		return Result(status=True, rsc=RC.deleted)

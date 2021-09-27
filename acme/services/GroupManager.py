@@ -120,7 +120,7 @@ class GroupManager(object):
 			if spty:
 				if isinstance(spty, int):				# mgmtobj type
 					if isinstance(resource, MgmtObj) and ty != spty:
-						return Result(status=False, rsc=RC.groupMemberTypeInconsistent, dbg=f'resource and group member types mismatch: {ty:d} != {spty:d} for: {mid}')
+						return Result(status=False, rsc=RC.groupMemberTypeInconsistent, dbg=f'resource and group member types mismatch: {ty} != {spty} for: {mid}')
 				elif isinstance(spty, str):				# fcnt specialization
 					if isinstance(resource, FCNT) and resource.cnd != spty:
 						return Result(status=False, rsc=RC.groupMemberTypeInconsistent, dbg=f'resource and group member specialization types mismatch: {resource.cnd} != {spty} for: {mid}')

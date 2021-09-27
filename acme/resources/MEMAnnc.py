@@ -7,20 +7,43 @@
 #	MEM : Announceable variant
 #
 
-from ..etc.Types import ResourceTypes as T, JSON
-from ..services.Validator import constructPolicy, addPolicy
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
 from ..resources.MgmtObjAnnc import *
 
-# Attribute policies for this resource are constructed during startup of the CSE
-memAPolicies = constructPolicy([
-	'mma', 'mmt'
-])
-attributePolicies =  addPolicy(mgmtObjAAttributePolicies, memAPolicies)
-# TODO resourceMappingRules, announceSyncType, owner
 
 class MEMAnnc(MgmtObjAnnc):
 
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# Common and universal attributes for announced resources
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'acpi':None,
+		'daci': None,
+		'ast': None,
+		'lnk': None,
+
+		# MgmtObj attributes
+		'mgd': None,
+		'obis': None,
+		'obps': None,
+		'dc': None,
+		'mgs': None,
+		'cmlk': None,
+
+		# Resource attributes
+		'mma': None,
+		'mmt': None
+	}
+
+
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		self.resourceAttributePolicies = memAPolicies	# only the resource type's own policies
-		super().__init__(dct, pi, mgd=T.MEM, create=create, attributePolicies=attributePolicies)
+		super().__init__(dct, pi, mgd=T.MEM, create=create)
 

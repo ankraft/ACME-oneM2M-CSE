@@ -11,35 +11,46 @@ from __future__ import annotations
 from typing import List
 from ..helpers.TextTools import simpleMatch
 from ..etc import Utils as Utils
-from ..etc.Types import ResourceTypes as T, ResponseCode as RC, Result, Permission, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseCode as RC, Result, Permission, JSON
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
-from ..services.Validator import constructPolicy, addPolicy
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
-
-
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'rn', 'ty', 'ri', 'pi', 'et', 'lbl', 'ct', 'lt', 'at', 'aa'
-])
-acpPolicies = constructPolicy([
-	'pv', 'pvs', 'adri', 'apri', 'airi'
-])
-attributePolicies =  addPolicy(attributePolicies, acpPolicies)
 
 
 class ACP(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes = [ T.SUB ] # TODO Transaction to be added
+	_allowedChildResourceTypes = [ T.SUB ] # TODO Transaction to be added
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {	
+			# Common and universal attributes
+			'rn': None,
+			'ty': None,
+			'ri': None,
+			'pi': None,
+			'ct': None,
+			'lt': None,
+			'et': None,
+			'lbl': None,
+			'at': None,
+			'aa': None,
+			'ast': None,
+
+			# Resource attributes
+			'pv': None,
+			'pvs': None,
+			'adri': None,
+			'apri': None,
+			'airi': None
+	}
 
 
 	def __init__(self, dct:JSON=None, pi:str=None, rn:str=None, create:bool=False, createdInternally:str=None) -> None:
-		super().__init__(T.ACP, dct, pi, create=create, inheritACP=True, rn=rn, attributePolicies=attributePolicies)
+		super().__init__(T.ACP, dct, pi, create=create, inheritACP=True, rn=rn)
 
-		self.resourceAttributePolicies = acpPolicies	# only the resource type's own policies
-		
 		self.setAttribute('pv/acr', [], overwrite=False)
 		self.setAttribute('pvs/acr', [], overwrite=False)
 		if createdInternally:

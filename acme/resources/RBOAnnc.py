@@ -7,20 +7,43 @@
 #	RBO : Announceable variant
 #
 
-from ..etc.Types import ResourceTypes as T, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
 from ..resources.MgmtObjAnnc import *
-from ..services.Validator import constructPolicy, addPolicy
 
-# Attribute policies for this resource are constructed during startup of the CSE
-rboAPolicies = constructPolicy([
-	'rbo', 'far'
-])
-attributePolicies =  addPolicy(mgmtObjAAttributePolicies, rboAPolicies)
-# TODO resourceMappingRules, announceSyncType, owner
 
 class RBOAnnc(MgmtObjAnnc):
 
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# Common and universal attributes for announced resources
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+		'acpi':None,
+		'daci': None,
+		'ast': None,
+		'lnk': None,
+
+		# MgmtObj attributes
+		'mgd': None,
+		'obis': None,
+		'obps': None,
+		'dc': None,
+		'mgs': None,
+		'cmlk': None,
+
+		# Resource attributes
+		'rbo': None,
+		'far': None
+	}
+
+
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		self.resourceAttributePolicies = rboAPolicies	# only the resource type's own policies
-		super().__init__(dct, pi, mgd=T.RBO, create=create, attributePolicies=attributePolicies)
+		super().__init__(dct, pi, mgd=T.RBO, create=create)
 

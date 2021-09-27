@@ -8,35 +8,61 @@
 #
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseCode as RC, JSON
 from ..etc import Utils as Utils
-from ..services.Validator import constructPolicy, addPolicy
 from ..services.Logging import Logging as L
 from ..services import CSE as CSE
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
 
 
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'at', 'aa', 'daci', 'loc', 'st', 'hld',
-])
-aePolicies = constructPolicy([
-	'apn', 'api', 'aei', 'poa', 'nl', 'rr', 'csz', 'esi', 'mei', 'srv', 'regs', 'trps', 'scp', 'tren', 'ape','or'
-])
-attributePolicies =  addPolicy(attributePolicies, aePolicies)
-
-
 class AE(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes = [ T.ACP, T.CNT, T.FCNT, T.GRP, T.PCH, T.SUB, T.TS ]
+	_allowedChildResourceTypes = [ T.ACP, T.CNT, T.FCNT, T.GRP, T.PCH, T.SUB, T.TS ]
 
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+			# Common and universal attributes
+			'rn': None,
+		 	'ty': None,
+			'ri': None,
+			'pi': None,
+			'ct': None,
+			'lt': None,
+			'et': None,
+			'lbl': None,
+			'hld': None,
+			'acpi':None,
+			'at': None,
+			'aa': None,
+			'daci': None,
+			'ast': None,
+			'loc': None,	
+
+			# Resource attributes
+			'apn': None,
+			'api': None,
+			'aei': None,
+			'poa': None,
+			'nl': None,
+			'rr': None,
+			'csz': None,
+			'esi': None,
+			'mei': None,
+			'srv': None,
+			'regs': None,
+			'trps': None,
+			'scp': None,
+			'tren': None,
+			'ape': None,
+			'or': None,
+	}
+	
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.AE, dct, pi, create=create, attributePolicies=attributePolicies)
-
-		self.resourceAttributePolicies = aePolicies	# only the resource type's own policies
+		super().__init__(T.AE, dct, pi, create=create)
 
 		self.setAttribute('aei', Utils.uniqueAEI(), overwrite=False)
 		self.setAttribute('rr', False, overwrite=False)

@@ -7,11 +7,11 @@
 #	Base class for all announced resources
 #
 
-from ..etc.Types import ResourceTypes as T, JSON, AttributePolicies
+from ..etc.Types import ResourceTypes as T, JSON
 from ..resources.Resource import *
 
 
 class AnnouncedResource(Resource):
 
-	def __init__(self, ty:T, dct:JSON, pi:str=None, tpe:str=None, create:bool=False, attributePolicies:AttributePolicies=None) -> None:
-		super().__init__(ty, dct, pi, tpe=tpe, create=create, attributePolicies=attributePolicies, isAnnounced=True)
+	def __init__(self, ty:T, dct:JSON, pi:str=None, tpe:str=None, create:bool=False,) -> None:
+		super().__init__(ty, dct, pi, tpe=tpe, create=create, isAnnounced=True)

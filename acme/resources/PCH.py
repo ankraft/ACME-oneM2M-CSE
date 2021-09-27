@@ -7,34 +7,41 @@
 #	ResourceType: PollingChannel
 #
 
-from ..etc.Types import ResourceTypes as T, Result, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, JSON
 from ..resources.Resource import *
 from ..resources import Factory as Factory
-from ..services.Validator import constructPolicy, addPolicy
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
-
-
-
-# Attribute policies for this resource are constructed during startup of the CSE
-attributePolicies = constructPolicy([ 
-	'ty', 'ri', 'rn', 'pi', 'acpi', 'ct', 'lt', 'et', 'lbl', 'daci', 
-])
-pchPolicies = constructPolicy([
-	# No own attributes
-])
-attributePolicies = addPolicy(attributePolicies, pchPolicies)
 
 
 class PCH(Resource):
 
 	# Specify the allowed child-resource types
-	allowedChildResourceTypes = [ T.PCH_PCU ]
+	_allowedChildResourceTypes = [ T.PCH_PCU ]
+
+	# Attributes and Attribute policies for this Resource Class
+	# Assigned during startup in the Importer
+	_attributes:AttributePolicyDict = {		
+		# Common and universal attributes
+		'rn': None,
+		'ty': None,
+		'ri': None,
+		'pi': None,
+		'ct': None,
+		'lt': None,
+		'et': None,
+		'lbl': None,
+
+		# Resource attributes
+
+		# TODO requestAggregation attribute as soon as it has been specified in TS-0004
+
+	}
 
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.PCH, dct, pi, create=create, attributePolicies=attributePolicies)
-		self.resourceAttributePolicies = pchPolicies	# only the resource type's own policies
+		# PCH inherits from its parent, the <AE>
+		super().__init__(T.PCH, dct, pi, create=create, inheritACP=True)
 
 
 # TODO test Retrieve by AE only! Add new willBeRetrieved() function

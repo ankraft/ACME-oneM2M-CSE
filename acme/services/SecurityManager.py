@@ -62,6 +62,7 @@ class SecurityManager(object):
 		
 		# grant full access to the CSE originator
 		if originator == CSE.cseOriginator and self.fullAccessAdmin:
+			L.isDebug and L.logDebug('Request from CSE Originator. OK.')
 			return True
 		
 
@@ -119,7 +120,7 @@ class SecurityManager(object):
 			L.isWarn and L.logWarn('RequestedPermission must not be None, and between 0 and 63')
 			return False
 
-		L.isDebug and L.logDebug(f'Checking permission for originator: {originator}, ri: {resource.ri}, permission: {requestedPermission:d}, selfPrivileges: {checkSelf}')
+		L.isDebug and L.logDebug(f'Checking permission for originator: {originator}, ri: {resource.ri}, permission: {requestedPermission}, selfPrivileges: {checkSelf}')
 
 		if resource.ty == T.GRP: # target is a group resource
 			# Check membersAccessControlPolicyIDs if provided, otherwise accessControlPolicyIDs to be used
@@ -160,7 +161,8 @@ class SecurityManager(object):
 				L.isDebug and L.logDebug('Handle with missing acpi in resource')
 
 				# if the resource *may* have an acpi
-				if resource.attributePolicies and 'acpi' in resource.attributePolicies:
+				if resource._attributes and 'acpi' in resource._attributes:
+
 					# Check holder attribute
 					if holder := resource.hld:
 						if holder == originator:	# resource.holder == originator -> all access

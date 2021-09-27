@@ -7,310 +7,41 @@
 #	Validation service and functions
 #
 
+from __future__ import annotations
 from copy import deepcopy
 import re
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Tuple
 import isodate
-from ..etc.Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, ResponseCode as RC
-from ..etc.Types import JSON, AttributePolicies, AttributePoliciesEntry, AdditionalAttributes
-from ..etc.Types import Result, AttributePolicies, ResourceTypes as T
+from ..etc.Types import AttributePolicy, AttributePolicyDict, BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, ResponseCode as RC
+from ..etc.Types import JSON, FlexContainerAttributes
+from ..etc.Types import Result, ResourceTypes as T
 from ..etc import Utils as Utils, DateUtils as DateUtils
 from ..services.Configuration import Configuration
 from ..services.Logging import Logging as L
 from ..resources.Resource import Resource
 
 
-# TODO owner attribute, annnouncedSyncType
-
-# Predefined policies for validation
-# This is a dictionary that maps the attribute shortname to either a tuple (s.b.) or 
-# a dictionary of "resourceType -> Tuple". The latter happens when there is more than
-# one definitions resp. use of the same attribute in different resource types, such as
-# "dgd".
-# The Tuple is defiend to have the following fields:
-# 	type, cardinality, optional.create, optional.update, optional.discovery, announcement
-#
-attributePolicies:AttributePolicies = {
-	'ty'	: ( BT.positiveInteger,	CAR.car1,   RO.NP, 	RO.NP, RO.O, AN.NA ),
-	'ri'	: ( BT.string, 			CAR.car1,   RO.NP, 	RO.NP, RO.O, AN.NA ),
-	'rn' 	: ( BT.string, 			CAR.car1,   RO.O,  	RO.NP, RO.O, AN.NA ),
-	'pi' 	: ( BT.string, 			CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ),
-	'acpi'	: ( BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.MA ),
-	'ct'	: ( BT.timestamp, 		CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ),
-	'et'	: ( BT.timestamp, 		CAR.car1N,  RO.O,	RO.O,  RO.O, AN.MA ),
-	'lt'	: ( BT.timestamp, 		CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ),
-	'st'	: ( BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ),
-	'lbl'	: ( BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.MA ),
-	'at'	: ( BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.NA ),
-	'aa'	: ( BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.NA ),
-	'daci'	: ( BT.list, 			CAR.car01L, RO.O,	RO.O,  RO.O, AN.OA ),		# AE, CSE, CNT
-	'loc'	: ( BT.list, 			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSE, AE, CNT, FCNT, TS
-	'hld' 	: ( BT.string, 			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),
+# TODO AE Not defined yet: ExternalGroupID?
+# TODO AE CSE Not defined yet: enableTimeCompensation
+# TODO GRP: somecastEnable, somecastAlgorithm not defined yet (shortname)
 
 
+attributePolicies:Dict[Tuple[T, str], AttributePolicy] 			= {}
+""" General attribute Policies.
 
+	{ ResourceType : AttributePolicy }
+"""
 
-	'acrs'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# m2m:listOfURIs - SUB
-	'act'	: ( BT.boolean,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ),		# SWR
-	'acts'	: ( BT.dict,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# SWR
-	'adri'	: ( BT.list,			CAR.car1,	RO.O,	RO.O,  RO.O, AN.MA ),		# m2m:listOfURIs - ACP
-	'aei'	: ( BT.string,			CAR.car1,   RO.NP,	RO.NP, RO.O, AN.OA ),		# AE
-	'airi'	: ( BT.list,			CAR.car1,	RO.O,	RO.O,  RO.O, AN.MA ),		# m2m:listOfURIs - ACP
-	'ant'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# ANI
-	'ape'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# m2m:activityPatternElements - AE, CSR
-	'api'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# AE
-	'apn'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# AE
-	'apri'	: ( BT.list,			CAR.car1,	RO.O,	RO.O,  RO.O, AN.MA ),		# m2m:listOfURIs - ACP
-	'att'	: ( BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# BAT
-	'awi'	: ( BT.anyURI,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# ANDI
-	'bn'	: ( BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
-	'btl'	: ( BT.unsignedInt,		CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# BAT
-	'bts'	: ( BT.positiveInteger,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# BAT
-	'can'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# BAT
-	'cas'	: ( BT.dict,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# BAT
-	'cb'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# CSR
-	'cbs'	: ( BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ),		# CNT
-	'cmlk'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# MGO
-	'cnd'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.MA ),		# CND
-	'cnf'	: ( BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# m2m_contentInfo - CIN
-	'cni'	: ( BT.nonNegInteger,	CAR.car1, 	RO.NP,	RO.NP, RO.O, AN.NA ),		# CNT, FCNT (CAR01)
-	'cnm'	: ( BT.nonNegInteger,	CAR.car1, 	RO.NP,	RO.NP, RO.O, AN.NA ),		# GRP
-	'cnty'	: ( BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# DVI
-	'con'	: {
-		T.CIN : ( BT.string,		CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# CIN
-		T.TSI : ( BT.string,		CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# TSI
-	},
-	'conr'	: ( BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# m2m:contentRef - CIN
-	'cr'	: ( BT.list, 			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# CNT
-	'cs'	: {
-		T.CIN  : ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),	# CIN
-		T.FCNT : ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),	# FCNT
-		T.FCI  : ( BT.nonNegInteger,	CAR.car1,   RO.NP,	RO.NP, RO.O, AN.NA ),	# FCI
-		T.TSI  : ( BT.nonNegInteger,	CAR.car1 ,  RO.NP,	RO.NP, RO.O, AN.NA ),	# TSI
-	},
-	'csi'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# CSE, CSR
-	'cst'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# CSE, CSR
-	'csy'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# m2m:consistencyStrategy - GRP
-	'csz'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# m2m:serializations - AE, CSE (RO!), CSR
-	'cus'	: ( BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# BAT
-	'dc'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# MGO
-	'dea'	: ( BT.boolean,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ),		# SWR
-	'dcnt'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# CIN
-	'dcse'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSR
-	'dgt'	: {
-		T.FCNT : (  BT.absRelTimestamp,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),	# FCNT
-		T.TSI  : (  BT.absRelTimestamp,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),	# TSI
-	},
-	'dis'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# BAT
-	'disr'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT
-	'dlb'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# DVI
-	'dty'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# DVI
-	'dur'	: ( BT.duration,		CAR.car01,	RO.O,	RO.O,  RO.O, AN.OA ),		# attribute duration
-	'dvd'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# ANDI
-	'dvnm'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
-	'dvt'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# ANDI
-	'egid'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSR
-	'ena'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# BAT
-	'enc'	: ( BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
-	'esi'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.MA ),		# m2m:e2eSecInfo - AE, CSE, CSR
-	'exc'	: (	BT.positiveInteger, CAR.car01, 	RO.O, 	RO.O,  RO.O, AN.NA ),  		# SUB
-	'far'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# RBO
-	'fc'	: ( BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# request
-	'fr'	: ( BT.anyURI,			CAR.car01,  RO.M,	RO.NP, RO.O, AN.NA ),		# request, response
-	'fwn'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# FWR
-	'fwv'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
-	'gn'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# GRP
-	'gpi'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
-	'hael'	: ( BT.listNE,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# NOD
-	'hcl'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# NOD
-	'hsl'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# NOD
-	'hwv'	: ( BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# DVI
-	'in'	: ( BT.boolean,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ),		# SWR
-	'ins'	: ( BT.dict,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# SWR
-	'ldv'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# ANI
-	'lga'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# ELV
-	'lgd'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# ELV
-	'lgo'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# ELV
-	'lgst'	: ( BT.nonNegInteger,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# ELV
-	'lgt'	: ( BT.nonNegInteger,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# ELV
-	'li'	: ( BT.anyURI,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ),		# CNT
-	'ln'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
-	'lnh'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# ANDI
-	'lnk'	: ( BT.anyURI,			CAR.car1, 	RO.NP,	RO.NP, RO.O, AN.MA ),		# announcedResources
-	'loc'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
-	'macp'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT
-	'man'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# DVI
-	'mbs'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT
-	'mcfc'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA),		# NYCFC
-	'mcff'	: ( BT.anyURI,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA),		# NYCFC
-	'mdc'	: ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# TS
-	'mdd'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# TS
-	'mdlt'	: ( BT.list,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# TS
-	'mdn'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# TS
-	'mdt'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# TS
-	'mei'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# m2m:externalID - AE, CSR
-	'mfd'	: ( BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
-	'mfdl'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
-	'mgca'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# NOD
-	'mgd'	: ( BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.MA ),		# MGO
-	'mgs'	: ( BT.anyURI,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.MA ),		# MGO
-	'mi'	: ( BT.dict,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# REQ
-	'mia'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT
-	'mid'	: ( BT.list,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# list of m2m:anyURI - GRP
-	'mma'	: ( BT.unsignedLong,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# MEM
-	'mmt'	: ( BT.unsignedLong,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# MEM
-	'mni'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT
-	'mnm'	: ( BT.positiveInteger,	CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# GRP
-	'mod'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# DVI
-	'mt'	: ( BT.nonNegInteger,	CAR.car1,   RO.O,	RO.NP, RO.O, AN.OA ),		# m2m:memberType - GRP
-	'mtcc'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSR
-	'mtv'	: ( BT.boolean,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ),		# GRP
-	'nar'	: ( BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# GRP
-	'nec'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
-	'nct'	: ( BT.nonNegInteger,	CAR.car1,  	RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
-	'nfu'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
-	'ni'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.MA ),		# NOD
-	'nid'	: ( BT.string,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ),		# NOD
-	'nl'	: ( BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# AE, CSE, FCNT
-	'nsp'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
-	'nty'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# NOD
-	'nu'	: (	BT.list, 			CAR.car1, 	RO.M, 	RO.O,  RO.O, AN.NA ),  		# SUB
-	'num'	: (	BT.positiveInteger,	CAR.car01, 	RO.O, 	RO.O,  RO.O, AN.NA ),  		# attribute number
-	'obis'	: ( BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# MGO
-	'obps'	: ( BT.list,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# MGO
-	'op'	: ( BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.NA ),		# REQ
-	'or'	: ( BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT
-	'ot'	: ( BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# request, response
-	'org'	: ( BT.string,			CAR.car1,   RO.NP,	RO.NP, RO.NP,AN.NA ),		# REQ
-	'ors'	: ( BT.dict,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CNT, FCNT, REQ
-	'osv'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
-	'pc'	: ( BT.dict,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# REQ
-	'pei'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# TS
-	'peid'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# TS
-	'pn'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
-	'poa'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# m2m:poaList - AE, CSE
-	'psn'	: ( BT.positiveInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# SUB
-	'ptl'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
-	'purl'	: ( BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
-	'pv'	: ( BT.dict,			CAR.car1,	RO.M,	RO.O,  RO.O, AN.MA ),		# m2m:setOfArcs - ACP
-	'pvs'	: ( BT.dict,			CAR.car1,	RO.M,	RO.O,  RO.O, AN.MA ),		# m2m:setOfArcs - ACP
-	'rbo'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# RBO
-	'regs'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# m2m:AERegistrationStatus - AE
-	'rid'	: ( BT.string,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# REQ
-	'rl'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.NA ),		# SUB
-	'rms'	: ( BT.boolean,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ),		# NOD
-	'rqi'	: ( BT.string,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ),		# request
-	'rr'	: ( BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# AE
-	'rs'	: ( BT.nonNegInteger,	CAR.car1,   RO.M,	RO.NP, RO.O, AN.OA ),		# REQ
-	'scp'	: ( BT.list,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# m2m:sessionCapabilities - AE
-	'sld'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# ANDI
-	'sli'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# ANDI
-	'smod'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
-	'snr'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# TSI
-	'spty'	: ( BT.nonNegInteger,	CAR.car01,  RO.O,	RO.NP, RO.O, AN.OA ),		# m2m:specializationType - GRP
-	'spur'	: ( BT.anyURI,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
-	'srt'	: ( BT.list, 			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# CSE
-	'srv'	: ( BT.list,			CAR.car01,  RO.M,	RO.O,  RO.O, AN.MA ),		# m2m:supportedReleaseVersions - AE, CSE, CSR
-	'ss'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# ANDI
-	'ssi'	: ( BT.boolean,			CAR.car01,  RO.NP,	RO.NP, RO.O, AN.OA ),		# GRP
-	'su'	: ( BT.string,			CAR.car01,  RO.O,	RO.NP, RO.O, AN.NA ),		# SUB
-	'suids'	: ( BT.list,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# NYCFC
-	'swn'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# SWR
-	'swv'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
-	'syst'	: ( BT.timestamp,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# DVI
-	'tg'	: ( BT.anyURI,			CAR.car1,   RO.M,	RO.NP, RO.O, AN.NA ),		# REQ
-	'to'	: ( BT.anyURI,			CAR.car01,  RO.M,	RO.NP, RO.O, AN.NA ),		# request
-	'ty'	: ( BT.nonNegInteger,	CAR.car01,  RO.NP,	RO.NP, RO.O, AN.NA ),		# request
-	'tren'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# AE, CSR
-	'tri'	: ( BT.string,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSR
-	'trn'	: ( BT.unsignedInt,		CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# CSR
-	'trps'	: ( BT.boolean,			CAR.car01,  RO.O,	RO.O,  RO.O, AN.OA ),		# AE
-	'ud'	: ( BT.boolean,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# FWR
-	'uds'	: ( BT.dict,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ),		# FWR
-	'un'	: ( BT.boolean,			CAR.car01,  RO.NP,	RO.O,  RO.O, AN.OA ),		# SWR
-	'url'	: ( BT.anyURI,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# FWR, SWR
-	'vr'	: ( BT.string,			CAR.car1,   RO.M,	RO.O,  RO.O, AN.OA ),		# FWR, SWR
-	
+# Will be filled by further specialization definitions.
+flexContainerAttributes:FlexContainerAttributes = { }
+"""	FlexContainer specializations. 
 
-	
-
-	# TODO Lookup in TS-0004, 0001
-
-	# CSE notificationCongestionPolicy 'ncp'	: [ BT.boolean,			CAR.car01,  RO.NP,	RO.NP,  AN.OA ],		# CSE
-
-	# AE Not defined yet: ExternalGroupID?
-	# AE CSE Not defined yet: enableTimeCompensation
-	# CSE currentTime
-	# CIN deletionCnt
-	# GRP: somecastEnable, somecastAlgorithm not defined yet (shortname)
-
-	#
-	#	Request arguments
-	#
-
-	'cra'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'crb'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'cty'	: ( BT.list,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'drt'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'exa'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'exb'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'fo'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'fu'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'lbq'	: ( BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'lim'	: ( BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'lvl'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'ms'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'ofst'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'rcn'	: ( BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'stb'	: ( BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'sts'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'sza'	: ( BT.nonNegInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'szb'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery	
-	'us'	: ( BT.timestamp,		CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'arp'	: ( BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# discovery
-	'rt'	: ( BT.dict,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request
-	'rp'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
-	'rqet'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
-	'oet'	: ( BT.absRelTimestamp,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
-	'rvi'	: ( BT.string,			CAR.car1,    RO.O,	RO.O,  RO.O, AN.NA ),		# request 
-	'rtu'	: ( BT.list,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request  (actually the same as 'nu' s)
-	'rtv'	: ( BT.positiveInteger,	CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request
-	'vsi'	: ( BT.string,			CAR.car01,   RO.O,	RO.O,  RO.O, AN.NA ),		# request 
-
-	# TODO lbl, catr, patr
-
-
-
-}
-
-
-
-def constructPolicy(attributes: List[str]) -> AttributePolicies:
-	""" Help to construct a dict of policies for the given list of shortnames. """
-	return { k:attributePolicies.get(k) for k in attributes }
-
-
-def addPolicy(policies:AttributePolicies, newPolicies:AttributePolicies) -> AttributePolicies:
-	"""	Add further policies to a policy dictionary. """
-	policies = deepcopy(policies)
-	policies.update( newPolicies )
-	return policies
-
-def getPolicy(attr:str, policies:AttributePolicies=attributePolicies) -> AttributePoliciesEntry:
-	if not (p := policies.get(attr)):	# Use get() to receive None...
-		return None
-	if isinstance(p, tuple):
-		return p
-	if isinstance(p, dict):	# may happen, then just take the first definition
-		return p[list(p)[0]]
-	return None
-
+	{ tpe : { sn : AttributePolicy } }
+"""
 
 class Validator(object):
 
 
-	# Will be filled by further specialization definitions.
-	additionalAttributes:AdditionalAttributes = { }
 
 	def __init__(self) -> None:
 		self.validationEnabled = Configuration.get('cse.enableValidation')
@@ -324,7 +55,9 @@ class Validator(object):
 	#########################################################################
 
 
-	def	validateAttributes(self, dct:JSON, tpe:str, ty:T, attributePolicies:AttributePolicies, create:bool=True , isImported:bool=False, createdInternally:bool=False, isAnnounced:bool=False) -> Result:
+# TODO ty necessary?
+
+	def	validateAttributes(self, resource:JSON, tpe:str, ty:T, attributes:AttributePolicyDict, create:bool=True , isImported:bool=False, createdInternally:bool=False, isAnnounced:bool=False) -> Result:
 		""" Validate a resources attributes for types etc."""
 		if not self.validationEnabled:	# just return if disabled
 			return Result(status=True)
@@ -336,17 +69,25 @@ class Validator(object):
 			return Result(status=True)
 
 		# No policies?
-		if not attributePolicies:
-			if L.isWarn: L.logWarn(f'No attribute policies: {dct}')
+		if not attributes:
+			if L.isWarn: L.logWarn(f'No attribute policies: {resource}')
 			return Result(status=True)
 
 		# determine the request column, depending on create or updates
-		if isAnnounced:
-			reqp = 5
-		else:
-			reqp = 2 if create else 3
 
-		(pureResDict, _tpe) = Utils.pureResource(dct)
+
+		# TBC The following might become problematic in a data class!
+
+
+		# Set an index into the policy dataclass, depending on the
+		# validation type
+		if isAnnounced:
+			optionalIndex = 5	# index to announced
+		else:
+			optionalIndex = 2 if create else 3	# index to create or update
+
+		# Get the pure resource and the resource's tpe
+		(pureResDict, _tpe) = Utils.pureResource(resource)
 		if not pureResDict:
 			return Result(status=False, rsc=RC.badRequest, dbg='content is None')
 
@@ -354,67 +95,76 @@ class Validator(object):
 
 		# if tpe is not None and not tpe.startswith("m2m:"):
 		# 	pureResDict = dct
-		if not (attributePolicies := self._addAdditionalAttributes(tpe, attributePolicies)):
-			L.logWarn(dbg := f'Unknown resource type: {tpe}')
-			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
-		# Logging.logDebug(attributePolicies.items())
-		# Logging.logWarn(pureResDict)
-		for r in pureResDict.keys():
-			if r not in attributePolicies.keys():
-				L.logWarn(dbg := f'Unknown attribute: {r} in resource: {tpe}')
+		attributePolicies = attributes
+		# If this is a flexContainer then add the additional attributePolicies.
+		# We don't want to change the original attributes, so copy it before (only if we add new attributePolicies)
+
+		if ty in [ T.FCNT, T.FCI ] and tpe:
+			if tpe in flexContainerAttributes:
+				attributePolicies = deepcopy(attributePolicies)
+				attributePolicies.update(flexContainerAttributes.get(tpe))
+			else:
+				L.logWarn(dbg := f'Unknown resource type: {tpe}')
 				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
-		for r, p in attributePolicies.items():
-			if not p:
-				if L.isWarn: L.logWarn(f'No validation policy found for attribute: {r}')
+
+		# L.logDebug(attributePolicies.items())
+		# L.logWarn(pureResDict)
+		
+		for attributeName in pureResDict.keys():
+			if attributeName not in attributePolicies.keys():
+				L.logWarn(dbg := f'Unknown attribute: {attributeName} in resource: {tpe}')
+				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+		for attributeName, policy in attributePolicies.items():
+			if not policy:
+				if L.isWarn: L.logWarn(f'No attribute policy found for attribute: {attributeName}')
 				continue
 
 			# Get the correct tuple for a resource when there are more
 			# definitions
-			if isinstance(p, dict):
-				if ty not in p:
-					L.logWarn(dbg := f'Attribute: {r} undefined for resource type: {ty}')
-					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
-				p = p[ty]
 
 			# Check whether the attribute is allowed or mandatory in the request
-			if (v := pureResDict.get(r)) is None:	# ! might be an int, bool
+			if (attributeValue := pureResDict.get(attributeName)) is None:	# ! might be an int, bool, so we need to check for None
 
 				# check the the announced cases first
 				if isAnnounced:
-					# MA are not checked bc they are only present if they are presennt in the original resource
+					# MA are not checked bc they are only present if they are present in the original resource
 					continue
 					
-				if p[reqp] == RO.M:		# Not okay, this attribute is mandatory
-					L.logWarn(dbg := f'Cannot find mandatory attribute: {r}')
+				if policy.select(optionalIndex) == RO.M:		# Not okay, this attribute is mandatory but absent
+					L.logWarn(dbg := f'Cannot find mandatory attribute: {attributeName}')
 					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
-				if r in pureResDict and p[1] == CAR.car1: # but ignore CAR.car1N (which may be Null/None)
-					L.logWarn(dbg := f'Cannot delete a mandatory attribute: {r}')
+
+				# TODO Is the following actually executed??? Should it be somewhere else? Write a test
+				if attributeName in pureResDict and policy.cardinality == CAR.CAR1: 	# but ignore CAR.car1N (which may be Null/None)
+					L.logWarn(dbg := f'Cannot delete a mandatory attribute: {attributeName}')
 					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
-				if p[reqp] in [ RO.NP, RO.O ]:	# Okay that the attribute is not in the dict, since it is provided or optional
+
+				if policy.select(optionalIndex) in [ RO.NP, RO.O ]:		# Okay that the attribute is not in the dict, since it is provided or optional
 					continue
 			else:
 				if not createdInternally:
-					if p[reqp] == RO.NP:
-						L.logWarn(dbg := f'Found non-provision attribute: {r}')
+					if policy.select(optionalIndex) == RO.NP:
+						L.logWarn(dbg := f'Found non-provision attribute: {attributeName}')
 						return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 				# check the the announced cases
 				if isAnnounced:
-					if p[reqp] == AN.NA:	# Not okay, attribute is not announced
-						L.logWarn(dbg := f'Found non-announced attribute: {r}')
+					if policy.announcement == AN.NA:	# Not okay, attribute is not announced
+						L.logWarn(dbg := f'Found non-announced attribute: {attributeName}')
 						return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 					continue
 
-				if r == 'pvs' and not (res := self.validatePvs(pureResDict)).status:
+				# Special handling for the ACP's pvs attribute
+				if attributeName == 'pvs' and not (res := self.validatePvs(pureResDict)).status:
 					return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
 
 			# Check whether the value is of the correct type
-			if (res := self._validateType(p[0], v)).status:
+			if (res := self._validateType(policy.type, attributeValue)).status:
 				continue
 
 			# fall-through means: not validated
-			L.logWarn(dbg := f'Attribute/value validation error: {r}={str(v)} ({res.dbg})')
+			L.logWarn(dbg := f'Attribute/value validation error: {attributeName}={str(attributeValue)} ({res.dbg})')
 			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 		return Result(status=True)
@@ -441,22 +191,22 @@ class Validator(object):
 		return Result(status=True)
 
 
-	def validateRequestArgument(self, argument:str, value:Any) -> Result:
-		""" Validate a request argument. """
-		if policy := getPolicy(argument):
-			return self._validateType(policy[0], value, True)
-		return Result(status=False, dbg=f'validation for attribute/argument {argument} not defined')
+	# def validateRequestAttribute(self, attribute:str, value:Any) -> Result:
+	# 	""" Validate a request argument. """
+	# 	if policy := self.getAttributePolicy(T.REQRESP, attribute):
+	# 		return self._validateType(policy.type, value, True)
+	# 	return Result(status=False, dbg=f'validation for attribute/argument {attribute} not defined')
 
 
-	def validateAttribute(self, attribute:str, value:Any, attributeType:BT=None) -> Result:
+	def validateAttribute(self, attribute:str, value:Any, attributeType:BT=None, rtype:T=T.ALL) -> Result:
 		""" Validate a single attribute. 
 			If `attributeType` is set then that type is taken to perform the check, otherwise the attribute
 			type is determined.
 		"""
 		if attributeType is not None:	# use the given attribute type instead of determining it
 			return self._validateType(attributeType, value, True)
-		if policy := getPolicy(attribute):
-			return self._validateType(policy[0], value, True)
+		if policy := self.getAttributePolicy(rtype, attribute):
+			return self._validateType(policy.type, value, True)
 		return Result(status=False, dbg=f'validation for attribute {attribute} not defined')
 
 
@@ -500,45 +250,74 @@ class Validator(object):
 		return attr not in resource.attributePolicies and not attr.startswith('__')
 
 
+
+	##########################################################################
 	#
 	#	Additional attribute definitions, e.g. for <flexContainer> specialisations.
 	#
 
 
-	def updateAdditionalAttributes(self, additionalAttributes:AdditionalAttributes) -> bool:
+	def updateFlexContainerAttributes(self, additionalPolicies:FlexContainerAttributes) -> bool:
 		""" Add or update new specialization attribute definitions to the validator.
 			The dict has a single entry (the type) that contains another dict 
-			of attribute definitions for that type. 
+			of attribute policies for that type. 
 		"""
-		if len(additionalAttributes.keys()) != 1:
+		if len(additionalPolicies.keys()) != 1:
 			L.logErr('Additional attributes must only contain 1 type')
 			return False
-		entries = additionalAttributes[next(iter(additionalAttributes))]	# get first and only entry
-		for k,v in entries.items():
-			if len(v) != 6:
-				L.logErr(f'Attribute description for {k} must contain 6 entries')
-				return False
 		try:
-			self.additionalAttributes.update(additionalAttributes)
+			flexContainerAttributes.update(additionalPolicies)
 		except Exception as e:
 			L.logErr(str(e))
 			return False
 		return True
 
 
-	def addAdditionalAttributePolicy(self, tpe:str, attributePolicies:AttributePolicies) -> bool:
-		""" Add a new policy dictionary for a type's attributes. """
-		if not (attrs := self.additionalAttributes.get(tpe)):
-			defs = { tpe : attributePolicies }
+	def addFlexContainerAttributePolicy(self, policy:AttributePolicy) -> bool:
+		""" Add a single new policy dictionary for a type's attributes. 
+			
+			This is done by either creating a new entry, or adding the new policy
+			to the existing policies and then updating the old entry in the
+			global dictionary.
+		"""
+		if not (policiesForTPE := flexContainerAttributes.get(policy.tpe)):
+			defsForTPE = { policy.tpe : { policy.sname : policy } }					# No policy for TPE yes, so create it
 		else:
-			attrs.update(attributePolicies)
-			defs = { tpe : attrs }
-		return self.updateAdditionalAttributes(defs)
+			policiesForTPE[policy.sname] = policy									# Add/replace the policy for sname
+			defsForTPE = { policy.tpe : policiesForTPE }				
+		return self.updateFlexContainerAttributes(defsForTPE)
 
 
-	def getAdditionalAttributesFor(self, tpe:str) -> AttributePolicies:
-		""" Return the dictionary of additional attributes for a type or None. """
-		return self.additionalAttributes.get(tpe)
+	def getFlexContainerAttributesFor(self, tpe:str) -> AttributePolicyDict:
+		""" Return the dictionary of additional attributes for a flexCOntainer type or None. """
+		return flexContainerAttributes.get(tpe)
+
+
+
+	def addAttributePolicy(self, rtype:T, attr:str, attrPolicy:AttributePolicy) -> None:
+		"""	Add a new attribute policy for normal resources. 
+		"""
+		attributePolicies[(rtype, attr)] = attrPolicy
+
+
+	def getAttributePolicy(self, rtype:T, attr:str) -> AttributePolicy:
+		"""	Return the attributePolicy for a resource type.
+		"""
+		# Search for the specific type first
+		if (ap := attributePolicies.get((rtype, attr))):
+			return ap
+
+		# If it couldn't be found, look whether it has been defined for ALL
+		if (ap := attributePolicies.get((T.ALL, attr))):
+			return ap
+		
+		# TODO look for other types, requests, filter...
+		return None
+
+
+
+
+
 
 
 	#
@@ -546,16 +325,17 @@ class Validator(object):
 	#
 
 
-	def _addAdditionalAttributes(self, tpe:str, attributePolicies:AttributePolicies) -> AttributePolicies:
-		#if tpe is not None and not tpe.startswith('m2m:'):
-		if tpe and tpe in self.additionalAttributes:
-			if tpe in self.additionalAttributes:
-				newap = deepcopy(attributePolicies)
-				newap.update(self.additionalAttributes.get(tpe))
-				return newap
-			else:
-				return None # tpe not defined
-		return attributePolicies
+# TODO remove the following method
+	# def _addFlexContainerAttributes(self, tpe:str, attributePolicies:AttributePolicies) -> AttributePolicies:
+	# 	#if tpe is not None and not tpe.startswith('m2m:'):
+	# 	if tpe and tpe in self.flexContainerAttributes:
+	# 		if tpe in self.flexContainerAttributes:
+	# 			newap = deepcopy(attributePolicies)
+	# 			newap.update(self.flexContainerAttributes.get(tpe))
+	# 			return newap
+	# 		else:
+	# 			return None # tpe not defined
+	# 	return attributePolicies
 
 
 	def _validateType(self, tpe:BT, value:Any, convert:bool = False) -> Result:
