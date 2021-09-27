@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Simplified initial configuration. First time users can now choose between three deployment configurations (IN, MN, ASN) to quickly set-up a CSE.
 - [CSE] Improved fallback and debug message of missing Release Version Indicator attribute in requests.
 - [CSE] New implementation to improve attribute policies and validation. Policies are now defined by a definition file and assigned to each resource type.
-- [IMPORTING] Changed the file extension for \<flexContainer> attribute policies from ".ap" to ".fcp".
+- [IMPORTING] Changed the file extension for &lt;flexContainer> attribute policies from ".ap" to ".fcp".
 
 ### Removed
 - [APPS] Removed the example AEs from the CSE. This makes the CSE a bit smaller and also removes a big dependency to the non-portable psutils package. They will be available in  separate project in the future.
@@ -36,16 +36,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - [CSE] Added possibility to reset a running CSE (via the command console or http endpoint "/\_\_reset\_\_").
-- [CSE] Added support for \<timeSeries>/\<timeSeriesInstance> resource types.
-- [CSE] Added support for \<timeSeries>'s missing data monitoring in \<subscription> resource type and notifications.
-- [CSE] Added support for *ctm* (currentTime) attribute for \<CSEBase> resource type.
-- [CSE] Added wildcard (\*) support for \<ACP>'s *acr/acor* originators.
-- [CSE] Added support for \<ACP>'s *acr/acod* attribute (not for specializations yet, though).
-- [CSE] Added support for 'Request Expiration Timestamp' request parameter, also for \<request> resources.
+- [CSE] Added support for &lt;timeSeries>/&lt;timeSeriesInstance> resource types.
+- [CSE] Added support for &lt;timeSeries>'s missing data monitoring in &lt;subscription> resource type and notifications.
+- [CSE] Added support for *ctm* (currentTime) attribute for &lt;CSEBase> resource type.
+- [CSE] Added wildcard (\*) support for &lt;ACP>'s *acr/acor* originators.
+- [CSE] Added support for &lt;ACP>'s *acr/acod* attribute (not for specializations yet, though).
+- [CSE] Added support for 'Request Expiration Timestamp' request parameter, also for &lt;request> resources.
 - [CSE] Added support for *Vendor Information* request/response header.
-- [CSE] Added support for \<container> *disableRetrieval* attribute.
+- [CSE] Added support for &lt;container> *disableRetrieval* attribute.
 - [CSE] Added validation of *cnf* (contentInfo) attribute.
-- [CSE] Added support for *dcnt* (deletionCnt) attribute for \<contentInstance> resource type.
+- [CSE] Added support for *dcnt* (deletionCnt) attribute for &lt;contentInstance> resource type.
 - [WEB] Added OAuth2 authorization support for the proxied CSE (for the stand-alone web UI).
 - [WEB] Added opening the web UI in a browser on startup (for the stand-alone web UI).
 - [TESTS] Added OAuth2 authorization support for the tests.
@@ -59,26 +59,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Changed format of configuration values "cse.registration.allowedAEOriginators" and "cse.registration.allowedCSROriginators" from regex to a simple wildcard (\* and ?) format.
 - [CSE] Changed the internal timed and regular processes to a single priority timer queue.
 - [CSE] Removed "logging.enable" configuration setting and added *off* as a possible value to *logging.level".
-- [CSE] Improved the size calculation of \<contentInstance>, \<flexContainer>, and \<timeSeriesInstance> to realistic sizes (not the Python-internal type sizes anymore).
+- [CSE] Improved the size calculation of &lt;contentInstance>, &lt;flexContainer>, and &lt;timeSeriesInstance> to realistic sizes (not the Python-internal type sizes anymore).
 - [CSE] Refactored internal request handling to support future protocol binding developments other than http.
-- [CSE] Changed the sorting of request result lists to type and creation time for \<contentInstance>, \<flexContainerInstance> and \<timeSeriesInstance>.
-- [CSE] Improved the validation when registering \<remoteCSE> resources for *csi* and *cb* attributes.
+- [CSE] Changed the sorting of request result lists to type and creation time for &lt;contentInstance>, &lt;flexContainerInstance> and &lt;timeSeriesInstance>.
+- [CSE] Improved the validation when registering &lt;remoteCSE> resources for *csi* and *cb* attributes.
 - [RUNTIME] The CSE is now started by running the *acme* module (```python3 acme```)
 
 ### Fixed
 - [CSE] Corrected response status codes for AE registration errors.
-- [CSE] Prevent CREATE and UPDATE requests for \<flexContainerInstance> resource type.
-- [CSE] Improved handling of \<flexContainerInstance> resources when versioning is disabled in the parent \<flexContainer>.
+- [CSE] Prevent CREATE and UPDATE requests for &lt;flexContainerInstance> resource type.
+- [CSE] Improved handling of &lt;flexContainerInstance> resources when versioning is disabled in the parent &lt;flexContainer>.
 - [CSE] Re-added: remove comments from received JSON content.
 - [CSE] Improved the timely execution of background tasks. The actual task's execution time is not added on top to the interval anymore, and intervals are constant.
 - [CSE] Improved support and validation for absRelTimestamp type.
-- [CSE] Improved handling of the \<request> resource's expiration time. It is now aligned with the 'Request Expiration Timestamp' request parameter.
+- [CSE] Improved handling of the &lt;request> resource's expiration time. It is now aligned with the 'Request Expiration Timestamp' request parameter.
 - [CSE] Improved checking of empty *acpi* attribute lists. Empty lists are not allowed and the *acpi* must be removed from a resource instead.
 - [CSE] Optimized log messages. Messages for irrelevant log levels are not even created anymore.
-- [CSE] Corrected behavior when oldest \<contentInstance>, \<flexContainerInstance> and \<timeSeriesInstance> resource are deleted. Now NO notification is sent in case a \<subscription> monitors for *Delete_of_direct_child_resource*.
-- [CSE] Added warnings when an imported \<CSEBase> overwrites any of the *csi*, *ri*, *rn* attributes.
+- [CSE] Corrected behavior when oldest &lt;contentInstance>, &lt;flexContainerInstance> and &lt;timeSeriesInstance> resource are deleted. Now NO notification is sent in case a &lt;subscription> monitors for *Delete_of_direct_child_resource*.
+- [CSE] Added warnings when an imported &lt;CSEBase> overwrites any of the *csi*, *ri*, *rn* attributes.
 - [CSE] Better error handling for ill-formed CSE-ID.
-- [CSE] Fixed missing check for \<subscription>'s *chty* attribute. The listed resource types therein must be allowed child resource types of the \<subscription>'s parent resource.
+- [CSE] Fixed missing check for &lt;subscription>'s *chty* attribute. The listed resource types therein must be allowed child resource types of the &lt;subscription>'s parent resource.
 - [DATABASE] Optimized and unified database searches for fragments in resources.
 
 
@@ -136,7 +136,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added checks for remote CSE's *csi* (does it exist? Does it begin with a /?)
 - [CSE] Removed defaultACPI support. Now supporting correct behavior for *holder* attribute resp. resource creator.
 - [CSE] Correctly implemented acpi updates. Also: acpi references are converted to CSE relative unstructured During CREATE and UPDATE.
-- [CSE] Changed resourceType values for \<latest> and \<oldest> to the specified values.
+- [CSE] Changed resourceType values for &lt;latest> and &lt;oldest> to the specified values.
 - [CSE] Access control clean-up. No more extra ACPs for admin access, CSRs, AEs, REQs etc. The CSE now makes use of *creator* and *holder* access.
 - [TESTS] The behavior whether a failed test skips the remaining tests in a test suite can now be configured.
 - [TESTS] Improved documentation. Doc strings provide a bit more information about a currently running test.
