@@ -157,8 +157,8 @@ class BackgroundWorkerPool(object):
 		"""	Create a new background worker that runs only once after a `delay`
 			(the 'delay' may be 0.0s, though), or `at` a sepcific time (UTC timestamp).
 			The `at` argument provide convenience to calculate the delay to wait before the
-			worker runs.
-			The "actor" is only a BackgroundWorker object and needs to be started manually
+			actor runs.
+			The "actor" is only a BackgroundWorker object and needs to be started manuall
 			with the `start()` method.
 		"""
 		if at:

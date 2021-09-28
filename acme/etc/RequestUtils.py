@@ -9,10 +9,13 @@
 
 
 from __future__ import annotations
+import threading
 import cbor2, json
-from typing import cast
+from typing import cast, Dict
 from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode
-from .Types import ContentSerializationType, JSON
+from ..etc.DateUtils import waitFor
+
+from .Types import CSERequest, ContentSerializationType, JSON
 from .Constants import Constants as C
 from ..services.Logging import Logging as L
 from ..helpers import TextTools
@@ -98,3 +101,50 @@ def determineSerialization(url:str, csz:list[str]=None,) -> ContentSerialization
 	
 	# Just use default serialization.
 	return CSE.defaultSerialization
+
+##############################################################################
+#
+#	Request/Response async sequence helpers
+#
+
+from threading import Lock
+_requestLock = Lock()
+_requests:Dict[str, CSERequest] = {}
+
+def hasResponse(requestID:str) -> bool:
+	"""	Callback for periodic check whether a response has arrived
+	"""
+	with _requestLock:
+		return requestID in _requests and _requests[requestID] != None
+
+
+def waitForResponse(requestID:str, timeout:float) -> CSERequest:
+	# TODO doc + return
+
+	with _requestLock:
+		if requestID in _requests:						# Skip if it is already in the map
+			return None
+		_requests[requestID] = None						# Add the record to the map
+	waitFor(timeout, lambda:hasResponse(requestID))		# Wait until timeout, or the response was set
+	with _requestLock:
+		return _requests.pop(requestID)					# Return whatever there is. 
+
+
+def addResponse(response:CSERequest) -> bool:
+	# TODO doc
+	with _requestLock:
+		if not (requestID := response.headers.requestIdentifier) in _requests:	# Check whether there is an entry
+			return False														# This could also be None! Therefore the "in" test
+		_requests[requestID] = response
+		return True
+
+
+
+threading.Thread(target=lambda:print(waitForResponse('12', 5.0))).start()
+
+
+print("HUHUHUHU")
+waitFor(2)
+(resp := CSERequest()).headers.requestIdentifier = '132'
+addResponse(resp)
+

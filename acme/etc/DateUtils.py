@@ -78,13 +78,21 @@ def utcTime() -> float:
 	return datetime.datetime.utcnow().timestamp()
 
 
-def waitFor(timeout:float, condition:Callable[[], bool]) -> bool:
+def waitFor(timeout:float, condition:Callable[[], bool]=None) -> bool:
 	"""	Busy waiting for `timeout` seconds, or until the `condition`
 		callback function returns *True*.
 
-		Return *True* if the condition was met before the timeout, and *False* otherwise.
+		The functionn returns *True* if the `condition` returns *True* 
+		before the timeout is reached, and *False* otherwise.
+
+		If `condition` is None, then only the `timeout` is used, and *False*
+		is always returned.
 	"""
-	toTs = time.time() + timeout
-	while not (res := condition()) and toTs > time.time():
-		time.sleep(0.01)
-	return res
+	if not condition:
+		time.sleep(timeout)
+		return False
+	else:
+		toTs = time.time() + timeout
+		while not (res := condition()) and toTs > time.time():
+			time.sleep(0.01)
+		return res
