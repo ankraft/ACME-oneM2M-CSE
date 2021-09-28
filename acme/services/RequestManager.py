@@ -24,7 +24,7 @@ from ..etc.Types import CSERequest
 from ..etc.Types import ContentSerializationType
 from ..etc.Types import Parameters
 from ..etc.Constants import Constants as C
-from ..etc import Utils as Utils, DateUtils as DateUtils, RequestUtils as RequestUtils
+from ..etc import Utils, DateUtils, RequestUtils
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
 from ..services import CSE as CSE
@@ -420,56 +420,84 @@ class RequestManager(object):
 
 
 
-	def sendRetrieveRequest(self, url:str, originator:str, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
+	def sendRetrieveRequest(self, uri:str, originator:str, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
 		"""	Send a RETRIEVE request via the appropriate channel or transport protocol.
 		"""
-		if Utils.isHttpUrl(url):
-			CSE.event.httpSendRetrieve() # type: ignore [attr-defined]
-			return CSE.httpServer.sendHttpRequest(Operation.RETRIEVE, url, originator, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
-		elif Utils.isMQTTUrl(url):
-			CSE.event.mqttSendRetrieve()	# type: ignore [attr-defined]
-			return CSE.mqttClient.sendMqttRequest(Operation.RETRIEVE, url, originator, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
-		L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
-		return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+		for url, csz, tor in self.resolveSingleUriCszTo(uri):
+			if not ct and not (ct := RequestUtils.determineSerialization(url, csz)):
+				continue
+			targetOriginator = tor if not targetOriginator else targetOriginator
+
+			if Utils.isHttpUrl(url):
+				CSE.event.httpSendRetrieve() # type: ignore [attr-defined]
+				return CSE.httpServer.sendHttpRequest(Operation.RETRIEVE, url, originator, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+			elif Utils.isMQTTUrl(url):
+				CSE.event.mqttSendRetrieve()	# type: ignore [attr-defined]
+				return CSE.mqttClient.sendMqttRequest(Operation.RETRIEVE, url, originator, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
+			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+
+		return Result(status=False, rsc=RC.internalServerError, dbg=f'No target found for uri: {uri}')
 
 
-	def sendCreateRequest(self, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
+	def sendCreateRequest(self, uri:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
 		"""	Send a CREATE request via the appropriate channel or transport protocol.
 		"""
-		if Utils.isHttpUrl(url):
-			CSE.event.httpSendCreate() # type: ignore [attr-defined]
-			return CSE.httpServer.sendHttpRequest(Operation.CREATE, url, originator, ty, data, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
-		elif Utils.isMQTTUrl(url):
-			CSE.event.mqttSendCreate()	# type: ignore [attr-defined]
-			return CSE.mqttClient.sendMqttRequest(Operation.CREATE, url, originator, ty, data, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
-		L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
-		return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+		for url, csz, tor in self.resolveSingleUriCszTo(uri):
+			if not ct and not (ct := RequestUtils.determineSerialization(url, csz)):
+				continue
+			targetOriginator = tor if not targetOriginator else targetOriginator
+
+			if Utils.isHttpUrl(url):
+				CSE.event.httpSendCreate() # type: ignore [attr-defined]
+				return CSE.httpServer.sendHttpRequest(Operation.CREATE, url, originator, ty, data, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+			elif Utils.isMQTTUrl(url):
+				CSE.event.mqttSendCreate()	# type: ignore [attr-defined]
+				return CSE.mqttClient.sendMqttRequest(Operation.CREATE, url, originator, ty, data, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
+			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+		
+		return Result(status=False, rsc=RC.internalServerError, dbg=f'No target found for uri: {uri}')
 
 
-	def sendUpdateRequest(self, url:str, originator:str, data:Any, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
+	def sendUpdateRequest(self, uri:str, originator:str, data:Any, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
 		"""	Send an UPDATE request via the appropriate channel or transport protocol.
 		"""
-		if Utils.isHttpUrl(url):
-			CSE.event.httpSendUpdate() # type: ignore [attr-defined]
-			return CSE.httpServer.sendHttpRequest(Operation.UPDATE, url, originator, data=data, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
-		elif Utils.isMQTTUrl(url):
-			CSE.event.mqttSendUpdate()	# type: ignore [attr-defined]
-			return CSE.mqttClient.sendMqttRequest(Operation.UPDATE, url, originator, data=data, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
-		L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
-		return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+		for url, csz, tor in self.resolveSingleUriCszTo(uri):
+			if not ct and not (ct := RequestUtils.determineSerialization(url, csz)):
+				continue
+			targetOriginator = tor if not targetOriginator else targetOriginator
+
+			if Utils.isHttpUrl(url):
+				CSE.event.httpSendUpdate() # type: ignore [attr-defined]
+				return CSE.httpServer.sendHttpRequest(Operation.UPDATE, url, originator, data=data, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+			elif Utils.isMQTTUrl(url):
+				CSE.event.mqttSendUpdate()	# type: ignore [attr-defined]
+				return CSE.mqttClient.sendMqttRequest(Operation.UPDATE, url, originator, data=data, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
+			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+		
+		return Result(status=False, rsc=RC.internalServerError, dbg=f'No target found for uri: {uri}')
 
 
-	def sendDeleteRequest(self, url:str, originator:str, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
+	def sendDeleteRequest(self, uri:str, originator:str, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
 		"""	Send a DELETE request via the appropriate channel or transport protocol.
 		"""
-		if Utils.isHttpUrl(url):
-			CSE.event.httpSendDelete() # type: ignore [attr-defined]
-			return CSE.httpServer.sendHttpRequest(Operation.DELETE, url, originator, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
-		elif Utils.isMQTTUrl(url):
-			CSE.event.mqttSendDelete()	# type: ignore [attr-defined]
-			return CSE.mqttClient.sendMqttRequest(Operation.DELETE, url, originator, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
-		L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
-		return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+		for url, csz, tor in self.resolveSingleUriCszTo(uri):
+			if not ct and not (ct := RequestUtils.determineSerialization(url, csz)):
+				continue
+			targetOriginator = tor if not targetOriginator else targetOriginator
+
+			if Utils.isHttpUrl(url):
+				CSE.event.httpSendDelete() # type: ignore [attr-defined]
+				return CSE.httpServer.sendHttpRequest(Operation.DELETE, url, originator, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+			elif Utils.isMQTTUrl(url):
+				CSE.event.mqttSendDelete()	# type: ignore [attr-defined]
+				return CSE.mqttClient.sendMqttRequest(Operation.DELETE, url, originator, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
+			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+
+		return Result(status=False, rsc=RC.internalServerError, dbg=f'No target found for uri: {uri}')
 
 	###########################################################################
 	#

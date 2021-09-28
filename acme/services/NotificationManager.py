@@ -9,14 +9,13 @@
 
 from __future__ import annotations
 import isodate
-from urllib.parse import urlparse, urlencode, parse_qs, urlunparse
-from typing import Optional, Callable, TypeVar
+from typing import Optional, Callable
 from threading import Lock
 from tinydb.utils import V
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import MissingData, Result, NotificationContentType, NotificationEventType, Permission, ResponseCode as RC
-from ..etc.Types import ContentSerializationType, JSON, Parameters
+from ..etc.Types import MissingData, Result, NotificationContentType, NotificationEventType, ResponseCode as RC
+from ..etc.Types import JSON, Parameters
 from ..etc import Utils as Utils
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
@@ -329,64 +328,13 @@ class NotificationManager(object):
 	def _sendRequest(self, uri:str, notificationRequest:JSON, parameters:Parameters=None, originator:str=None, targetResource:Resource=None) -> bool:
 		"""	Actually send a Notification request.
 		"""
-		originator = originator if originator else CSE.cseCsi
-
-		# TODO Perhaps move determining the csz etc to the actual sender functions in request
-
-
-		# Determine real URI (from direct or indirect uri).
-		# Even when this would result in multiple urls, send the request successfully to only one.
-		for url, csz, targetOriginator in CSE.request.resolveSingleUriCszTo(uri):
-			if not (ct := self._determineSerialization(url, csz)):
-				continue
-			if CSE.request.sendCreateRequest(url, originator, data=notificationRequest, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator).rsc == RC.OK:
-				return True
-		return False
+		return CSE.request.sendCreateRequest(	uri, 
+												originator if originator else CSE.cseCsi,
+												data=notificationRequest,
+												parameters=parameters,
+												targetResource=targetResource).rsc == RC.OK
 
 
-	def _determineSerialization(self, url:str, csz:list[str]=None,) -> ContentSerializationType:
-		"""	Determine the type of serialization for a notification from either the `url`'s `ct` query parameter,
-			or the given list of `csz`(contentSerializations, attribute of a target AE/CSE), or the CSE's default serialization.
-		"""
-		ct = None
-		scheme = None
-
-		# Dissect url and check whether ct is an argumemnt. If yes, then remove it
-		# and keep it to check later
-		uu = list(urlparse(url))
-		qs = parse_qs(uu[4], keep_blank_values=True)
-		if ('ct' in qs):
-			ct = qs.pop('ct')[0]	# remove the ct=
-			uu[4] = urlencode(qs, doseq=True)
-			url = urlunparse(uu)	# reconstruct url w/o ct
-		scheme = uu[0]
-
-		# Check scheme first
-		# TODO should this really be in this function?
-		if scheme not in C.supportedSchemes:
-			L.isWarn and L.logWarn(f'URL scheme {scheme} not supported')
-			return None	# Scheme not supported
-
-		if ct:
-			# if ct is given then check whether it is supported, 
-			# otherwise ignore this url
-			if ct not in C.supportedContentSerializationsSimple:
-				return None	# Requested serialization not supported
-			return ContentSerializationType.to(ct)
-
-		elif csz:
-			# if csz is given then build an intersection between the given list and
-			# the list of supported serializations. Then take the first one
-			# as the one to use.
-			common = [x for x in csz if x in C.supportedContentSerializations]	# build intersection, keep the old sort order
-			if len(common) == 0:
-				return None
-			return ContentSerializationType.to(common[0]) # take the first
-		
-		# Just use default serialization.
-		return CSE.defaultSerialization
-
-		
 	##########################################################################
 	#
 	#	Batch Notifications
