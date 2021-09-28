@@ -132,7 +132,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	# this and other redirect functions to determine the correct file / linenumber
 	# in the log output
 	BackgroundWorkerPool.setLogger(lambda l,m: L.logWithLevel(l,m, stackOffset=2))	
-
+	console = Console()						# Start the console
 
 	storage = Storage()						# Initiatlize the resource storage
 	event = EventManager()					# Initialize the event manager
@@ -165,7 +165,6 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 
 	remote = RemoteCSEManager()				# Initialize the remote CSE manager
 	announce = AnnouncementManager()		# Initialize the announcement manager
-	console = Console()						# Start the console
 
 	# Send an event that the CSE startup finished
 	event.cseStartup()	# type: ignore
@@ -191,8 +190,9 @@ def shutdown() -> None:
 	
 	# indicating the shutting down status. When running in another environment the
 	# atexit-handler might not be called. Therefore, we need to set it here
-	shuttingDown = True		
-	console.stop()				# This will end the main run loop.
+	shuttingDown = True
+	if console:
+		console.stop()				# This will end the main run loop.
 	if isHeadless:
 		L.console('CSE shutting down')
 
