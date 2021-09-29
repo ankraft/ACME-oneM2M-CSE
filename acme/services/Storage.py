@@ -157,7 +157,7 @@ class Storage(object):
 
 
 	def directChildResources(self, pi:str, ty:T=None) -> list[Resource]:
-		"""	Return a list of direct child resources.
+		"""	Return a list of direct child resources, or an empty list
 		"""
 		rs = self.db.searchResources(pi=pi, ty=int(ty) if ty is not None else None)
 		result = []
