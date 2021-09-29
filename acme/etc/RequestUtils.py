@@ -118,18 +118,6 @@ def hasResponse(requestID:str) -> bool:
 		return requestID in _requests and _requests[requestID] != None
 
 
-def waitForResponse(requestID:str, timeout:float) -> CSERequest:
-	# TODO doc + return
-
-	with _requestLock:
-		if requestID in _requests:						# Skip if it is already in the map
-			return None
-		_requests[requestID] = None						# Add the record to the map
-	waitFor(timeout, lambda:hasResponse(requestID))		# Wait until timeout, or the response was set
-	with _requestLock:
-		return _requests.pop(requestID)					# Return whatever there is. 
-
-
 def addResponse(response:CSERequest) -> bool:
 	# TODO doc
 	with _requestLock:
@@ -139,12 +127,24 @@ def addResponse(response:CSERequest) -> bool:
 		return True
 
 
+def waitForResponse(requestID:str, timeout:float) -> CSERequest:
+	# TODO doc + return
 
-threading.Thread(target=lambda:print(waitForResponse('12', 5.0))).start()
+	with _requestLock:
+		if requestID in _requests:						# Skip if it is already in the map
+			return None
+		_requests[requestID] = None						# Add the record to the map
+	waitFor(timeout, lambda:hasResponse(requestID))		# Wait until timeout, or the response was set
+	with _requestLock:
+		return _requests.pop(requestID)					# Remove request from the map and return whatever there is
 
 
-print("HUHUHUHU")
-waitFor(2)
-(resp := CSERequest()).headers.requestIdentifier = '132'
-addResponse(resp)
+
+# threading.Thread(target=lambda:print(waitForResponse('12', 5.0))).start()
+
+
+# print("HUHUHUHU")
+# waitFor(2)
+# (resp := CSERequest()).headers.requestIdentifier = '132'
+# addResponse(resp)
 
