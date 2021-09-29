@@ -15,8 +15,8 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class CSR(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [	T.CNT, T.CNTAnnc, T.CINAnnc, T.FCNT, T.FCNTAnnc, T.FCI, T.GRP, T.GRPAnnc,
-									T.ACP, T.ACPAnnc, T.SUB, T.TS, T.TSAnnc, T.CSRAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.AEAnnc ]
+	_allowedChildResourceTypes = [	T.ACP, T.ACPAnnc, T.AEAnnc, T.CNT, T.CNTAnnc, T.CINAnnc, T.CSRAnnc, T.FCNT, T.FCNTAnnc,
+									T.FCI, T.GRP, T.GRPAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.PCH, T.SUB, T.TS, T.TSAnnc ]
 
 
 	# Attributes and Attribute policies for this Resource Class
@@ -70,6 +70,24 @@ class CSR(AnnounceableResource):
 		if self.csi:
 			self.setAttribute('ri', self.csi.split('/')[-1])				# overwrite ri (only after /'s')
 		self.setAttribute('rr', False, overwrite=False)
+
+
+	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
+		if not (res := super().childWillBeAdded(childResource, originator)).status:
+			return res
+
+		# Perform checks for <PCH>	
+		if childResource.ty == T.PCH:
+			# Check correct originator. Even the ADMIN is not allowed that		
+			if self.csi != originator:
+				if L.isDebug: L.logDebug(dbg := f'Originator must be the parent <CSR>')
+				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
+
+			# check that there will only by one PCH as a child
+			if CSE.dispatcher.countDirectChildResources(self.ri, ty=T.PCH) > 0:
+				return Result(status=False, rsc=RC.badRequest, dbg='Only one <PCH> per <CSR> is allowed')
+
+		return Result(status=True)
 
 
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
