@@ -92,6 +92,7 @@ class Configuration(object):
 				'cse.resourcesPath'						: config.get('cse', 'resourcesPath', 					fallback=C.defaultImportDirectory),
 				'cse.expirationDelta'					: config.getint('cse', 'expirationDelta', 				fallback=60*60*24*365),	# 1 year, in seconds
 				'cse.maxExpirationDelta'				: config.getint('cse', 'maxExpirationDelta',			fallback=60*60*24*365*5),	# 5 years, in seconds
+				'cse.requestExpirationDelta'			: config.getfloat('cse', 'requestExpirationDelta',		fallback=10.0),	# 10 seconds
 				'cse.originator'						: config.get('cse', 'originator',						fallback='CAdmin'),
 				'cse.enableNotifications'				: config.getboolean('cse', 'enableNotifications', 		fallback=True),
 				'cse.enableRemoteCSE'					: config.getboolean('cse', 'enableRemoteCSE', 			fallback=True),

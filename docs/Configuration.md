@@ -2,7 +2,7 @@
 
 # Configuration
 
-[Simple Configuration](#simple)  
+[Quick Configuration](#quick)  
 [Configuration Sections](#sections)  
 [Advanced Usage](#advanced)  
 
@@ -21,8 +21,8 @@ Also, some settings can be applied via the command line when starting the CSE. T
 A default configuration file is provided with the file [acme.ini.default](../acme.ini.default). Don't make changes to this file, but rather copy it to a new file named *acme.ini*, which is the default configuration file name. You can use another filename, but must then specify it with the *--config* command line argument when running the the (see [Running the CSE](Running.md#running-the-cse)).
 
 
-<a name="simple"></a>
-## Simple Configuration
+<a name="quick"></a>
+## Quick Configuration
 
 At the top of the configuration file three *\[basic.config]* sections are provided, one for each CSE type. Each section has meaningful values for the most 
 necessary settings. Choose and uncomment one section for either running the CSE as an IN, MN, or ASN CSE (IN-CSE might be the most common choice to start with).
@@ -140,8 +140,9 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | resourceID               | The CSE's resource ID. This should be the *cseid* without the leading "/". Can be overwritten in imported CSE definition.<br/>Default: id-in                                                   | cse.ri                       |
 | resourceName             | The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition.<br>Default: cse-in                                                                                         | cse.rn                       |
 | resourcesPath            | Directory of default resources to import.<br/>See also command line argument [–import-directory](Running.md).<br/>Default: ./init                                                              | cse.resourcesPath            |
-| expirationDelta          | Expiration time before resources are removed in seconds.<br/> Default: 60*60*24*365 = 31536000 = 1 year                                                                                        | cse.expirationDelta          |
-| maxExpirationDelta       | Maximum expirationTime allowed for resources in seconds.<br/>Default: 5 years = 157680000                                                                                                      | cse.maxExpirationDelta       |
+| expirationDelta          | Expiration time before resources are removed in seconds.<br/> Default: 60*60*24*365 = 31536000 seconds = 1 year                                                                                | cse.expirationDelta          |
+| maxExpirationDelta       | Maximum expirationTime allowed for resources in seconds.<br/>Default: 5 years = 157680000 seconds                                                                                              | cse.maxExpirationDelta       |
+| requestExpirationDelta   | Expiration time for requests sent by the CSE in seconds<br/>Default: 10.0 seconds                                                                                                              | cse.requestExpirationDelta   |
 | originator               | Admin originator for the CSE.<br/>Default: CAdmin                                                                                                                                              | cse.originator               |
 | enableNotifications      | Enable notifications.<br/>Default: true                                                                                                                                                        | cse.enableNotifications      |
 | enableRemoteCSE          | Enable remote CSE registration and checking.<br/>See also command line arguments [–remote-cse and –no-remote-cse](Running.md).<br/>Default: true                                               | cse.enableRemoteCSE          |

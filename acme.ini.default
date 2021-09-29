@@ -131,6 +131,8 @@ resourcesPath=${basic.config:dataDirectory}/init
 expirationDelta=31536000
 ; Maximum expirationTime allowed for resources in seconds. Default: 5 years -> 157680000 
 maxExpirationDelta=157680000
+; Expiration time for requests sent by the CSE in seconds Default: 10.0 seconds
+requestExpirationDelta=10.0
 ; Admin originator for the CSE. Default: CAdmin
 originator=${basic.config:adminID}
 ; Enable notifications. Default: True
