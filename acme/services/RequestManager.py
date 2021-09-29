@@ -806,7 +806,10 @@ class RequestManager(object):
 	def resolveURIs(self, uris:list[str]|str, originator:str=None) -> list[str]:
 		"""	Return resolved (notification) URLs, so also POA from referenced AE's and CSE's etc.
 
-			If the `originator` is specified then all notification to that originator are excluded.
+			If the `originator` is specified then the URls contain in the *poa* of that target/originator are excluded.
+			
+			If the target is not request reachable then the resource ID of that target is included in the
+			list, and it is handled later, e.g. for a pollingChannel.
 
 			The returned result is a list of direct URLs.
 		"""

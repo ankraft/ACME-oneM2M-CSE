@@ -178,6 +178,7 @@ class NotificationManager(object):
 	def _checkNusInSubscription(self, subscription:Resource, newDict:JSON=None, previousNus:list[str]=None, originator:str=None) -> Result:
 		"""	Check all the notification URI's in a subscription. 
 			A verification request is sent to new URI's.
+			Notifications to the same originator are not sent.
 		"""
 		newNus = []
 		if not newDict:	# If there is no new resource structure, get the one from the subscription to work with
@@ -185,6 +186,7 @@ class NotificationManager(object):
 
 		# Resolve the URI's in the previousNus.
 		if previousNus:
+			# Get all the URIs/notification targets. Filter out the originator itself.
 			if (previousNus := CSE.request.resolveURIs(previousNus, originator)) is None:	# ! could be an empty list
 				# Fail if any of the NU's cannot be retrieved or accessed
 				return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg='cannot retrieve all previous nu\'s')
@@ -193,6 +195,7 @@ class NotificationManager(object):
 		if nuAttribute := Utils.findXPath(newDict, 'm2m:sub/nu'):
 
 			# Resolve the URI's for the new NU's
+			# Get all the URIs/notification targets. Filter out the originator itself.
 			if (newNus := CSE.request.resolveURIs(nuAttribute, originator)) is None:	# ! newNus can be an empty list 
 				# Fail if any of the NU's cannot be retrieved
 				return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg='cannot retrieve or find all (new) nu\'s')
@@ -345,6 +348,9 @@ class NotificationManager(object):
 		"""	Send and remove any outstanding batch notifications for a subscription.
 		"""
 		ri = subscription.ri
+		# Get the subscription information (not the <sub> resource itself!).
+		# Then get all the URIs/notification targets from that subscription. They might already
+		# be filtered.
 		if (sub := CSE.storage.getSubscription(ri)) and (nus := CSE.request.resolveURIs(sub['nus'])):
 			ln = sub['ln'] if 'ln' in sub else False
 			for nu in nus:
