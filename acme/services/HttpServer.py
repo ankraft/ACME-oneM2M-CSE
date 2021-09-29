@@ -158,7 +158,7 @@ class HttpServer(object):
 			try:
 				self.flaskApp.run(host=self.listenIF, 
 								  port=self.port,
-								  threaded=Configuration.get('http.multiThread'),
+								  threaded=True,
 								  request_handler=ACMERequestHandler,
 								  ssl_context=CSE.security.getSSLContext(),
 								  debug=False)

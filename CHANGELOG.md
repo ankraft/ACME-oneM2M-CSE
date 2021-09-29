@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CONSOLE] Added [cse.console].confirmQuit configuration option. It is switched off by default.
 
 ### Changed
-- [HTTP] Moved the security setting for http to the separate section [server.http.security].
+- [HTTP] Moved the security setting for http to the separate section *server.http.security*.
 - [WEB] Moved the webUI to the acme module.
 - [CSE] Improved attribute validation: checking empty lists.
 - [CSE] Simplified initial configuration. First time users can now choose between three deployment configurations (IN, MN, ASN) to quickly set-up a CSE.
@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - [APPS] Removed the example AEs from the CSE. This makes the CSE a bit smaller and also removes a big dependency to the non-portable psutils package. They will be available in  separate project in the future.
+- [HTTP] Removed the *server.http.multithreaded* configuration option. The http server now always runs in multithread mode.
 
 ### Fixed
 - [CSE] When the CSE is reset then the statistics are now reset as well.

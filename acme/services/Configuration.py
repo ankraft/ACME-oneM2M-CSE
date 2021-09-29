@@ -118,7 +118,6 @@ class Configuration(object):
 				'http.port' 							: config.getint('server.http', 'port', 					fallback=8080),
 				'http.root'								: config.get('server.http', 'root', 					fallback=''),
 				'http.address'							: config.get('server.http', 'address', 					fallback='http://127.0.0.1:8080'),
-				'http.multiThread'						: config.getboolean('server.http', 'multiThread', 		fallback=True),
 				'http.enableRemoteConfiguration'		: config.getboolean('server.http', 'enableRemoteConfiguration', fallback=False),
 				'http.enableStructureEndpoint'			: config.getboolean('server.http', 'enableStructureEndpoint', fallback=False),
 				'http.enableResetEndpoint'				: config.getboolean('server.http', 'enableResetEndpoint', fallback=False),

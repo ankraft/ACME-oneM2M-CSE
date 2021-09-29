@@ -180,8 +180,6 @@ listenIF=${basic.config:networkInterface}
 address=http://${basic.config:cseHost}:${basic.config:httpPort}
 ; CSE Server root. Always provide a trailing /. Default: /
 root=/
-; Run the http server in single- or multi-threaded mode. Default: true
-multiThread=true
 ; Enable an endpoint for get and set certain configuration values via a 
 ; REST interface.
 ; ATTENTION: Enabling this feature exposes configuration values, IDs and
