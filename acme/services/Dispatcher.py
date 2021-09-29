@@ -396,7 +396,7 @@ class Dispatcher(object):
 		if Utils.isVirtualResource(parentResource):
 			return parentResource.handleCreateRequest(request, id, originator)	# type: ignore[no-any-return]
 
-		# Add new resource
+		# Create resource from teh dictionary
 		if not (nres := Factory.resourceFromDict(deepcopy(request.dict), pi=parentResource.ri, ty=ty)).resource:	# something wrong, perhaps wrong type
 			return Result(status=False, rsc=RC.badRequest, dbg=nres.dbg)
 		nresource = nres.resource
@@ -669,16 +669,20 @@ class Dispatcher(object):
 	#
 
 	def directChildResources(self, pi:str, ty:T=None) -> list[Resource]:
-		""" Return all child resources of a resource, optionally filtered by type. """
+		"""	Return all child resources of a resource, optionally filtered by type.
+			An empty list is returned if no child resource could be found.
+		"""
 		return CSE.storage.directChildResources(pi, ty)
 
 
 	def countDirectChildResources(self, pi:str, ty:T=None) -> int:
-		""" Return the number of all child resources of resource, optionally filtered by type. """
+		"""	Return the number of all child resources of resource, optionally filtered by type. 
+		"""
 		return CSE.storage.countDirectChildResources(pi, ty)
 
 
 	def discoverChildren(self, id:str, resource:Resource, originator:str, handling:JSON, permission:Permission) -> list[Resource]:
+		# TODO documentation
 		if not (res := self.discoverResources(id, originator, handling, rootResource=resource, permission=permission)).status:
 			return None
 		# check and filter by ACP
