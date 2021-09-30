@@ -27,7 +27,7 @@ class TestPCH(unittest.TestCase):
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyAppId',
-				 	'rr'  : False,
+				 	'rr'  : True,
 				 	'srv' : [ '3' ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
@@ -65,7 +65,7 @@ class TestPCH(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSecondPCH(self) -> None:
-		"""	Create second <PCH> -> Fail"""
+		"""	Create second <PCH> (but only one is allowed) -> Fail"""
 		self.assertIsNotNone(TestPCH.ae)
 		dct = 	{ 'm2m:pch' : { 
 					'rn' : f'{pchRN}2',

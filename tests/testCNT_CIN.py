@@ -29,7 +29,7 @@ class TestCNT_CIN(unittest.TestCase):
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
-				 	'rr'  : False,
+				 	'rr'  : True,
 				 	'srv' : [ '3' ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under

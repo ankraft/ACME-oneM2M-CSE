@@ -40,7 +40,7 @@ class TestREQ(unittest.TestCase):
 		dct =	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyAppId',
-			 		'rr'  : False,
+			 		'rr'  : True,
 			 		'srv' : [ '3' ],
 			 		'poa' : [ NOTIFICATIONSERVER ]
 				}}

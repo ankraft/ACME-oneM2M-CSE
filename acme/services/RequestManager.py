@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 import urllib.parse
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, cast
 from copy import deepcopy
 
 from ..etc.Types import BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, Permission, RequestArguments, RequestCallback, ResultContentType
@@ -29,6 +29,7 @@ from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
 from ..services import CSE as CSE
 from ..resources.REQ import REQ
+from ..resources.PCH import PCH
 from ..resources.Resource import Resource
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
@@ -423,9 +424,12 @@ class RequestManager(object):
 	def sendRetrieveRequest(self, uri:str, originator:str, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
 		"""	Send a RETRIEVE request via the appropriate channel or transport protocol.
 		"""
-		for url, csz, tor in self.resolveSingleUriCszTo(uri):
+		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri):
 			if not ct and not (ct := RequestUtils.determineSerialization(url, csz)):
 				continue
+
+			# TODO
+
 			targetOriginator = tor if not targetOriginator else targetOriginator
 
 			if Utils.isHttpUrl(url):
@@ -443,9 +447,14 @@ class RequestManager(object):
 	def sendCreateRequest(self, uri:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
 		"""	Send a CREATE request via the appropriate channel or transport protocol.
 		"""
-		for url, csz, tor in self.resolveSingleUriCszTo(uri):
+		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri):
 			if not ct and not (ct := RequestUtils.determineSerialization(url, csz)):
 				continue
+
+			# Send the request via a PCH, if present
+			if pch:
+				pch.storeRequest(Operation.CREATE, originator=originator, ty=ty, data=data, ct=ct, parameters=parameters)
+
 			targetOriginator = tor if not targetOriginator else targetOriginator
 
 			if Utils.isHttpUrl(url):
@@ -463,7 +472,7 @@ class RequestManager(object):
 	def sendUpdateRequest(self, uri:str, originator:str, data:Any, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
 		"""	Send an UPDATE request via the appropriate channel or transport protocol.
 		"""
-		for url, csz, tor in self.resolveSingleUriCszTo(uri):
+		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri):
 			if not ct and not (ct := RequestUtils.determineSerialization(url, csz)):
 				continue
 			targetOriginator = tor if not targetOriginator else targetOriginator
@@ -483,7 +492,7 @@ class RequestManager(object):
 	def sendDeleteRequest(self, uri:str, originator:str, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
 		"""	Send a DELETE request via the appropriate channel or transport protocol.
 		"""
-		for url, csz, tor in self.resolveSingleUriCszTo(uri):
+		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri):
 			if not ct and not (ct := RequestUtils.determineSerialization(url, csz)):
 				continue
 			targetOriginator = tor if not targetOriginator else targetOriginator
@@ -806,7 +815,7 @@ class RequestManager(object):
 	def resolveURIs(self, uris:list[str]|str, originator:str=None) -> list[str]:
 		"""	Return resolved (notification) URLs, so also POA from referenced AE's and CSE's etc.
 
-			If the `originator` is specified then the URls contain in the *poa* of that target/originator are excluded.
+			If the `originator` is specified then the URLs contain in the *poa* of that target/originator are excluded.
 			
 			If the target is not request reachable then the resource ID of that target is included in the
 			list, and it is handled later, e.g. for a pollingChannel.
@@ -823,71 +832,104 @@ class RequestManager(object):
 				continue
 			# check if it is a direct URL
 			if L.isDebug: L.logDebug(f'Checking next URL: {url}')
-			if Utils.isURL(url):	# a direct url, so append it directly
+
+			# A direct url already, append it directly
+			if Utils.isURL(url):	
 				result.append(url)
-			else:					# else we assume that this is a resource ID
+			else:					
+				
+				# Assume that this is a resource ID
 				if not (resource := CSE.dispatcher.retrieveResource(url).resource):
 					L.isWarn and L.logWarn(f'Resource not found to get URL: {url}')
 					return None
 
 				# For notifications:
 				# If the given originator is the target then exclude it from the list of targets.
-				# Test for AE and CSE (CSE starts with a /)
+				# Test for AE and CSE (CSI starts with a /)
 				if originator and (resource.ri == originator or resource.ri == f'/{originator}'):
 					L.isDebug and L.logDebug(f'Notification target is the originator: {originator}, ignoring: {url}')
 					continue
-				if not CSE.security.hasAccess(originator, resource, Permission.NOTIFY):	# check whether AE/CSE may receive Notifications
-					L.isWarn and L.logWarn(f'Originator: {originator} as no access to resource: {url}')
+				
+				# Check for NOTIFY access to the target
+				if not CSE.security.hasAccess(originator, resource, Permission.NOTIFY):
+					L.isWarn and L.logWarn(f'Originator: {originator} has no NOTIFY permission for target resource: {url}')
 					return None
-				if (poa := resource.poa) and isinstance(poa, list):	
-					result += poa
-				else:
-					L.isWarn and L.logWarn(f'Resource has no poa: {resource.ri}')
-					return None
+				
+				# Is the target request reachable?
+				if resource.rr:
+					# Add the poa list if present
+					if (poa := resource.poa) and isinstance(poa, list):	
+						result += poa
+					else:
+						L.isWarn and L.logWarn(f'Target resource: {resource.ri} has no poa: {resource.ri}')
+						return None
+				
+				# If the resource is not request reachable then just add its resource ID to the list
+				# It will be handled later when checking for polling channel
+				else:	
+					L.isDebug and L.logDebug(f'Resource: {resource.ri} with no request reachability')
+					result.append(resource.ri)
+					
 		return result
 
 
-
-	def resolveSingleUriCszTo(self, uri:str) -> list[ Tuple[str, list[str], str] ]:
+	def resolveSingleUriCszTo(self, uri:str) -> list[ Tuple[str, list[str], str, PCH ] ]:
 		"""	Resolve the real URL, contentSerialization, and the targetOriginator from a (notification) URI.
-			The result is a list of tuples of (url, list of contentSerializations, target originator).
+			The result is a list of tuples of (url, list of contentSerializations, target originator, PollingChannel resource).
 
-			Return a list of (url, None, None) (containing only one element) when the URI is already a URL. 
+			Return a list of (url, None, None, None) (containing only one element) if the URI is already a URL. 
 			We cannot determine the preferred serializations and we don't know the target entity.
+
+			Return a list of (None, list of contentSerializations, None, PollingChannel resource) (containing only one element) if
+			the target resourec is not request reachable and has a PollingChannel as a child resource.
 
 			Otherwise, return a list of the mentioned tuples.
 
 			In case of an error, an empty list is returned.
 		"""
 
-		# TODO docu
+		# TODO docu for pch return
 
 		if Utils.isURL(uri):	# The uri is a direct URL
-			return [ (uri, None, None) ]
+			return [ (uri, None, None, None) ]
 
-		result = []
 		# The uri is an indirect resource with poa, retrieve one or more URIs from it
-		if not (resource := CSE.dispatcher.retrieveResource(uri).resource):
+		if not (targetResource := CSE.dispatcher.retrieveResource(uri).resource):
 			L.isWarn and L.logWarn(f'Resource not found to get URL: {uri}')
 			return []
+		
+		# Check requestReachability
+		# If the target is NOT reachable then try to retrieve a potential
+		pollingChannelResources = []
+		if targetResource.rr == False:
+			L.isDebug and L.logDebug(f'Target: {uri} is not requestReachable')
+			if not len(pollingChannelResources := CSE.dispatcher.directChildResources(targetResource.ri, T.PCH)):
+				L.isWarn and L.logWarn(f'Target: {uri} is not requestReachable and does not have a <PCH>.')
+				return []
+			# Take the first resource and return it. There should hopefully only be one, but we don't check this here
+			return [ (None, targetResource.csz, None, cast(PCH, pollingChannelResources[0])) ]
+
+
+		# TODO Access control NOTIFY
 		# if not CSE.security.hasAccess('', resource, Permission.NOTIFY):	# check whether AE/CSE may receive Notifications
 		# 	Logging.logWarn(f'No access to resource: {nu}')
 		# 	return None
 
 		# Use the poa of a target resource
-		if not resource.poa:	# check that the resource has a poa
+		if not targetResource.poa:	# check that the resource has a poa
 			L.isWarn and L.logWarn(f'Resource {uri} has no "poa" attribute')
 			return []
 		
 		# Determine the originator (aei or csi) of that resource
 		targetOriginator = None
-		if resource:
-			if resource.ty == T.AE:
-				targetOriginator = resource.aei
-			elif resource.ty == T.CSEBase:
-				targetOriginator = resource.csi
-		for p in resource.poa:
-			result.append( (p, resource.csz, targetOriginator) )
+		result:List[Tuple[str, List[str], str, PCH]] = []
+		if targetResource:
+			if targetResource.ty == T.AE:
+				targetOriginator = targetResource.aei
+			elif targetResource.ty == T.CSEBase:
+				targetOriginator = targetResource.csi
+		for p in targetResource.poa:
+			result.append( (p, targetResource.csz, targetOriginator, None) )
 		return result
 
 

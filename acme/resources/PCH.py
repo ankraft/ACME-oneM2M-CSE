@@ -7,7 +7,10 @@
 #	ResourceType: PollingChannel
 #
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, JSON
+from __future__ import annotations
+from typing import Any
+from ..etc.Types import AttributePolicyDict, ContentSerializationType, Operation, ResourceTypes as T, Result, JSON, Parameters
+from ..etc import RequestUtils as RU
 from ..resources.Resource import *
 from ..resources import Factory as Factory
 from ..services import CSE as CSE
@@ -52,8 +55,6 @@ class PCH(Resource):
 			return res
 
 		# NOTE Check for uniqueness is done in <AE>.childWillBeAdded()
-		# TODO the same for CSR
-			
 		
 		# register pollingChannelURI virtual resource
 		if L.isDebug: L.logDebug(f'Registering <PCU> for: {self.ri}')
@@ -62,4 +63,25 @@ class PCH(Resource):
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
 
 		return Result(status=True)
+
+
+	def storeRequest(self, operation:Operation, originator:str, ty:T, data:Any, ct:ContentSerializationType, parameters:Parameters=None):
+
+		# Fill various request attributes
+		request 								= CSERequest()
+		request.op 								= operation
+		request.headers.originator				= originator
+		request.headers.resourceType 			= ty
+		request.headers.originatingTimestamp	= DateUtils.getResourceDate()
+		request.headers.requestIdentifier		= Utils.uniqueRI()
+		request.headers.releaseVersionIndicator	= CSE.releaseVersion
+		if parameters:
+			if C.hfcEC in parameters:				# Event Category
+				request.parameters[C.hfEC] 		= parameters[C.hfcEC]
+
+		# Add the request and the data
+		result									= Result(dict=data, request=request)
+
+		L.logErr(result)
+	
 

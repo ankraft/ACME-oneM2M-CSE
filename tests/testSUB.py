@@ -44,7 +44,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
-				 	'rr'  : False,
+				 	'rr'  : True,
 				 	'srv' : [ '3' ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
@@ -52,7 +52,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : f'{aeRN}NoPOA', 
 					'api' : 'NMyApp1Id',
-					'rr'  : False,
+					'rr'  : True,
 					'srv' : [ '3' ]
 				}}
 		cls.aeNoPoa, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
@@ -647,6 +647,37 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:ae' : {
 			'rn'  : aeRN+'2', 
 			'api' : 'NMyApp1Id',
+			'rr'  : True,
+			'srv' : [ '3' ],
+			'poa' : [ NOTIFICATIONSERVER ]
+		}}
+		ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
+		self.assertEqual(rsc, RC.created)
+		TestSUB.ae2Originator = findXPath(ae, 'm2m:ae/aei')
+
+		# Create the sub
+		clearLastNotification()	# clear the notification first
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN+'POA',
+			        'enc': {
+			            'net': [ NET.resourceUpdate, NET.createDirectChild ]
+					},
+					'nu': [ TestSUB.ae2Originator ],
+					'su': NOTIFICATIONSERVER
+				}}
+		r, rsc = CREATE(TestSUB.ae2URL, TestSUB.ae2Originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.created, r)
+		lastNotification = getLastNotification()
+		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/vrq'))
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAESUBwithOriginatorPOANotReachable(self) -> None:
+		""" CREATE new <AE>, <SUB>, <CNT>. Not request reachable, no notification request"""
+		# create a second AE
+		dct = 	{ 'm2m:ae' : {
+			'rn'  : aeRN+'2', 
+			'api' : 'NMyApp1Id',
 			'rr'  : False,
 			'srv' : [ '3' ],
 			'poa' : [ NOTIFICATIONSERVER ]
@@ -669,6 +700,16 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(rsc, RC.created, r)
 		lastNotification = getLastNotification()
 		self.assertIsNone(findXPath(lastNotification, 'm2m:sgn/vrq'))
+
+		# Create the CNT
+		clearLastNotification()	# clear the notification first
+		dct = 	{ 'm2m:cnt' : { 
+					'rn'  : f'{cntRN}'
+				}}
+		TestSUB.cnt, rsc = CREATE(TestSUB.ae2URL, TestSUB.ae2Originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.created)
+		lastNotification = getLastNotification()
+		self.assertIsNone(lastNotification)		# this must have NOT caused a notification via the poa (because not request reachable)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -731,7 +772,7 @@ class TestSUB(unittest.TestCase):
 		dct = 	{ 'm2m:ae' : {
 			'rn'  : aeRN+'2', 
 			'api' : 'NMyApp1Id',
-			'rr'  : False,
+			'rr'  : True,
 			'srv' : [ '3' ]
 		}}
 		ae, rsc = CREATE(cseURL, 'C', T.AE, dct)
@@ -1141,6 +1182,10 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestSUB('test_createCNTwithOriginatorPOA'))
 	suite.addTest(TestSUB('test_updateAECSZwithOriginatorPOA'))
 	suite.addTest(TestSUB('test_createCNTwithOriginatorPOACBOR'))
+	suite.addTest(TestSUB('test_deleteAEwithOriginatorPOA'))
+
+	# With non-reqzesr reachable 
+	suite.addTest(TestSUB('test_createAESUBwithOriginatorPOANotReachable'))
 	suite.addTest(TestSUB('test_deleteAEwithOriginatorPOA'))
 
 	suite.addTest(TestSUB('test_createAESUBwithURIctCBOR'))
