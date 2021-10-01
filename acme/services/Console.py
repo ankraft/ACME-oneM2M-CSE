@@ -17,7 +17,7 @@ from rich.panel import Panel
 from rich.tree import Tree
 from rich.live import Live
 
-from ..helpers.KeyHandler import loop, stopLoop, readline, waitForKeypress
+from ..helpers.KeyHandler import loop, stopLoop, waitForKeypress
 from ..helpers import TextTools
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..helpers import TextTools as TextTools
@@ -127,7 +127,7 @@ class Console(object):
 		L.console(f'\n[white][dim][[/dim][red][i]ACME[/i][/red][dim]] CSE {C.version}', plain=True, nl=True)
 		if header:
 			L.console(f'**{header}**',nl=True)
-
+	
 
 	def help(self, key:str) -> None:
 		"""	Print help for keyboard commands.
@@ -148,7 +148,7 @@ class Console(object):
 - t     - Show resource tree
 - T     - Show child resource tree
 - ^T    - Show & refresh resource tree continuously
-- w     - Show worker threads status
+- w     - Show worker ts status
 - u     - Open web UI
 - Z     - Reset the CSE
 """, nl=True)
@@ -188,7 +188,7 @@ class Console(object):
 
 
 	def workers(self, key:str) -> None:
-		"""	Print the worker and actor threads.
+		"""	Print the worker and actor ts.
 		"""
 		from rich.table import Table
 
@@ -244,7 +244,7 @@ class Console(object):
 		L.console('Child Resource Tree', isHeader=True)
 		L.off()
 		
-		if not (ri := readline('ri=')):
+		if not (ri := L.consolePrompt('ri')):
 			L.console()
 		elif len(ri) > 0:
 			if tree := self.getResourceTreeRich(parent=ri):
@@ -327,9 +327,7 @@ class Console(object):
 		"""
 		L.console('Delete Resource', isHeader=True)
 		L.off()
-		if not (ri := readline('ri=')):
-			L.console()
-		elif len(ri) > 0:
+		if (ri := L.consolePrompt('ri')):
 			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
 				L.console(res.dbg, isError=True)
 			else:
@@ -346,9 +344,7 @@ class Console(object):
 		L.console('Inspect Resource', isHeader=True)
 		L.off()
 
-		if not (ri := readline('ri=')):
-			L.console()
-		elif len(ri) > 0:
+		if (ri := L.consolePrompt('ri')):
 			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
 				L.console(res.dbg, isError=True)
 			else:
@@ -361,9 +357,7 @@ class Console(object):
 		"""
 		L.console('Inspect Resource and Children', isHeader=True)
 		L.off()		
-		if not (ri := readline('ri=')):
-			L.console()
-		elif len(ri) > 0:
+		if (ri := L.consolePrompt('ri')):
 			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
 				L.console(res.dbg, isError=True)
 			else: 

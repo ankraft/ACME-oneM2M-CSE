@@ -27,6 +27,7 @@ from rich.default_styles import DEFAULT_STYLES
 from rich.theme import Theme
 from rich.tree import Tree
 from rich.table import Table
+from rich.prompt import Prompt
 
 from ..etc.Types import JSON
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
@@ -67,7 +68,7 @@ class LogLevel(IntEnum):
 		}[self]
 
 
-class	Logging:
+class Logging:
 	""" Wrapper class for the logging subsystem. This class wraps the 
 		initialization of the logging subsystem and provides convenience 
 		methods for printing log, error and warning messages to a 
@@ -258,6 +259,25 @@ class	Logging:
 		"""	Clear the console screen.
 		"""
 		Logging._console.clear()
+	
+
+	@staticmethod
+	def consolePrompt(prompt:str, nl:bool=True) -> str:
+		"""	Read a line from the console. 
+			Catch EOF (^D) and Keyboard Interrup (^C). In that case None is returned.
+		"""
+		answer = None
+		try:
+			answer = Prompt.ask(prompt, console=Logging._console)
+			if nl:
+				Logging.console()
+		except KeyboardInterrupt as e:
+			pass
+		except Exception:
+			pass
+		return answer
+
+
 	
 
 	@staticmethod

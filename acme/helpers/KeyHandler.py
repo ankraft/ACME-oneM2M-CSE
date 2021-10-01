@@ -134,14 +134,14 @@ def readline(prompt:str='>') -> str:
 	"""	Read a line from the console. 
 		Catch EOF (^D) and Keyboard Interrup (^C). I that case None is returned.
 	"""
-	result = None
+	answer = None
 	try:
 		result = input(prompt)
 	except KeyboardInterrupt as e:
 		pass
 	except Exception:
 		pass
-	return result
+	return answer
 
 def waitForKeypress(s:float) -> str:
 	for i in range(0, int(s * 1.0 / _timeout)):
