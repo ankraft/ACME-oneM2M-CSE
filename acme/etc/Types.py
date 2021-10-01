@@ -817,6 +817,7 @@ class Result:
 	request:CSERequest	= None  	# may contain the processed http request object
 	status:bool 		= None
 	originator:str		= None
+	uri:str				= None
 
 
 	def errorResult(self) -> Result:
