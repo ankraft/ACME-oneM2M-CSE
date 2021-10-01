@@ -42,12 +42,12 @@ class CNT_OL(Resource):
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a CREATE request. Fail with error code. """
-		return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for <oldest> resource type')
+		return Result(rsc=RC.operationNotAllowed, dbg='CREATE operation not allowed for <oldest> resource type')
 
 
 	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a UPDATE request. Fail with error code. """
-		return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for <oldest> resource type')
+		return Result(rsc=RC.operationNotAllowed, dbg='UPDATE operation not allowed for <oldest> resource type')
 
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
