@@ -418,6 +418,7 @@ class Console(object):
 		
 
 # TODO events transit requests
+# TODO notifications
 	def getStatisticsRich(self, style:Style=Style()) -> Table:
 		"""	Generate an overview about various resources and event counts.
 		"""

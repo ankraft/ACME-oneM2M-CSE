@@ -31,18 +31,22 @@ httpRetrieves		= 'htRet'
 httpCreates			= 'htCre'
 httpUpdates			= 'htUpd'
 httpDeletes			= 'htDel'
+httpNotifies		= 'htNot'
 httpSendRetrieves	= 'htSRt'
 httpSendCreates		= 'htSCr'
 httpSendUpdates		= 'htSUp'
 httpSendDeletes		= 'htSDl'
+httpSendNotifies	= 'htSNo'
 mqttRetrieves		= 'mqRet'
 mqttCreates			= 'mqCre'
 mqttUpdates			= 'mqUpd'
 mqttDeletes			= 'mqDel'
+mqttNotifies		= 'mqNot'
 mqttSendRetrieves	= 'mqSRt'
 mqttSendCreates		= 'mqSCr'
 mqttSendUpdates		= 'mqSUp'
 mqttSendDeletes		= 'mqSDl'
+mqttSendNotifies	= 'mqSNo'
 notifications		= 'notif'
 logErrors			= 'lgErr'
 logWarnings			= 'lgWrn'
@@ -81,18 +85,22 @@ class Statistics(object):
 			CSE.event.addHandler(CSE.event.httpCreate, lambda: self._handleStatsEvent(httpCreates))				# type: ignore
 			CSE.event.addHandler(CSE.event.httpUpdate, lambda: self._handleStatsEvent(httpUpdates))				# type: ignore
 			CSE.event.addHandler(CSE.event.httpDelete, lambda: self._handleStatsEvent(httpDeletes))				# type: ignore
+			CSE.event.addHandler(CSE.event.httpNotify, lambda: self._handleStatsEvent(httpNotifies))			# type: ignore
 			CSE.event.addHandler(CSE.event.httpSendRetrieve, lambda: self._handleStatsEvent(httpSendRetrieves))	# type: ignore
 			CSE.event.addHandler(CSE.event.httpSendCreate, lambda: self._handleStatsEvent(httpSendCreates))		# type: ignore
 			CSE.event.addHandler(CSE.event.httpSendUpdate, lambda: self._handleStatsEvent(httpSendUpdates))		# type: ignore
 			CSE.event.addHandler(CSE.event.httpSendDelete, lambda: self._handleStatsEvent(httpSendDeletes))		# type: ignore
+			CSE.event.addHandler(CSE.event.httpSendNotify, lambda: self._handleStatsEvent(httpSendNotifies))	# type: ignore
 			CSE.event.addHandler(CSE.event.mqttRetrieve, lambda: self._handleStatsEvent(mqttRetrieves))			# type: ignore
 			CSE.event.addHandler(CSE.event.mqttCreate, lambda: self._handleStatsEvent(mqttCreates))				# type: ignore
 			CSE.event.addHandler(CSE.event.mqttUpdate, lambda: self._handleStatsEvent(mqttUpdates))				# type: ignore
 			CSE.event.addHandler(CSE.event.mqttDelete, lambda: self._handleStatsEvent(mqttDeletes))				# type: ignore
+			CSE.event.addHandler(CSE.event.mqttNotify, lambda: self._handleStatsEvent(mqttNotifies))			# type: ignore
 			CSE.event.addHandler(CSE.event.mqttSendRetrieve, lambda: self._handleStatsEvent(mqttSendRetrieves))	# type: ignore
 			CSE.event.addHandler(CSE.event.mqttSendCreate, lambda: self._handleStatsEvent(mqttSendCreates))		# type: ignore
 			CSE.event.addHandler(CSE.event.mqttSendUpdate, lambda: self._handleStatsEvent(mqttSendUpdates))		# type: ignore
 			CSE.event.addHandler(CSE.event.mqttSendDelete, lambda: self._handleStatsEvent(mqttSendDeletes))		# type: ignore
+			CSE.event.addHandler(CSE.event.mqttSendNotify, lambda: self._handleStatsEvent(mqttSendNotifies))	# type: ignore
 			CSE.event.addHandler(CSE.event.notification, lambda: self._handleStatsEvent(notifications))			# type: ignore
 			CSE.event.addHandler(CSE.event.cseStartup, self.handleCseStartup)									# type: ignore
 			CSE.event.addHandler(CSE.event.logError, lambda: self._handleStatsEvent(logErrors))					# type: ignore
@@ -141,18 +149,22 @@ class Statistics(object):
 			httpCreates			: 0,
 			httpUpdates 		: 0,
 			httpDeletes 		: 0,
+			httpNotifies 		: 0,
 			httpSendRetrieves	: 0,
 			httpSendCreates		: 0,
 			httpSendUpdates 	: 0,
 			httpSendDeletes 	: 0,
+			httpSendNotifies 	: 0,
 			mqttRetrieves		: 0,
 			mqttCreates			: 0,
 			mqttUpdates 		: 0,
 			mqttDeletes 		: 0,
+			mqttNotifies 		: 0,
 			mqttSendRetrieves	: 0,
 			mqttSendCreates		: 0,
 			mqttSendUpdates 	: 0,
 			mqttSendDeletes 	: 0,
+			mqttSendNotifies 	: 0,
 
 			cseStartUpTime		: 0.0,
 			logErrors 			: 0,
