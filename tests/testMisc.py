@@ -35,14 +35,14 @@ class TestMisc(unittest.TestCase):
 		"""	Check RVI parameter in response """
 		_, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
-		self.assertIn('X-M2M-RVI', lastHeaders())
-		self.assertEqual(lastHeaders()['X-M2M-RVI'], RVI)
+		self.assertIn(C.hfRVI, lastHeaders())
+		self.assertEqual(lastHeaders()[C.hfRVI], RVI)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_checkHTTPRET(self) -> None:
 		"""	Check Request Expiration Timeout in request"""
-		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={'X-M2M-RET' : getDate(10)}) # request expiration in 10 seconds
+		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={C.hfRET : getDate(10)}) # request expiration in 10 seconds
 		self.assertEqual(rsc, RC.OK)
 
 
@@ -50,34 +50,34 @@ class TestMisc(unittest.TestCase):
 	def test_checkHTTPVSI(self) -> None:
 		"""	Check Vendor Information in request"""
 		vsi = 'some vendor information'
-		r, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={'X-M2M-VSI' : vsi})
+		r, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={C.hfVSI : vsi})
 		self.assertEqual(rsc, RC.OK)
-		self.assertEqual(lastHeaders()['X-M2M-VSI'], vsi)
+		self.assertEqual(lastHeaders()[C.hfVSI], vsi)
 
 
 	def test_checkHTTPRETRelative(self) -> None:
 		"""	Check Request Expiration Timeout in request (relative)"""
-		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={'X-M2M-RET' : '10000'}) # request expiration in 10 seconds
+		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={C.hfRET : '10000'}) # request expiration in 10 seconds
 		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_checkHTTPRETWrong(self) -> None:
 		"""	Check Request Expiration Timeout in request (past date) -> Fail"""
-		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={'X-M2M-RET' : getDate(-10)}) # request expiration in 10 seconds
+		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={C.hfRET : getDate(-10)}) # request expiration in 10 seconds
 		self.assertEqual(rsc, RC.requestTimeout)
 
 
 	def test_checkHTTPRETRelativeWrong(self) -> None:
 		"""	Check Request Expiration Timeout in request (relative, past date) -> Fail"""
-		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={'X-M2M-RET' : '-10000'}) # request expiration in 10 seconds
+		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={C.hfRET : '-10000'}) # request expiration in 10 seconds
 		self.assertEqual(rsc, RC.requestTimeout)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_checkHTTPRVIWrongInRequest(self) -> None:
 		"""	Check Wrong RVI version parameter in request -> Fail"""
-		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={'X-M2M-RVI' : '1'})
+		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={C.hfRVI : '1'})
 		self.assertEqual(rsc, RC.releaseVersionNotSupported)
 
 
@@ -131,7 +131,7 @@ class TestMisc(unittest.TestCase):
 	@unittest.skipUnless(BINDING in [ 'http', 'https' ], 'Only when testing with http(s) binding')
 	def test_checkHTTPmissingOriginator(self) -> None:
 		"""	Check missing originator in request"""
-		_, rsc = RETRIEVE(cseURL, None, headers={'X-M2M-RET' : getDate(10)}) # request expiration in 10 seconds
+		_, rsc = RETRIEVE(cseURL, None, headers={C.hfRET : getDate(10)}) # request expiration in 10 seconds
 		self.assertEqual(rsc, RC.badRequest)
 
 

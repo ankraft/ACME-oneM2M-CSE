@@ -272,7 +272,7 @@ class TestREQ(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCSENBSynchWithRET(self) -> None:
 		""" Retrieve <CB> non-blocking synchronous with Request Expiration Timestamp"""
-		r, rsc = RETRIEVE(f'{cseURL}?rt={int(ResponseType.nonBlockingRequestSynch)}', TestREQ.originator, headers={'X-M2M-RET' : f'{requestETDuration}'})
+		r, rsc = RETRIEVE(f'{cseURL}?rt={int(ResponseType.nonBlockingRequestSynch)}', TestREQ.originator, headers={C.hfRET : f'{requestETDuration}'})
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')
@@ -286,7 +286,7 @@ class TestREQ(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCSENBSynchWithRETshort(self) -> None:
 		""" Retrieve <CB> non-blocking synchronous with short Request Expiration Timestamp -> FAIL """
-		r, rsc = RETRIEVE(f'{cseURL}?rt={int(ResponseType.nonBlockingRequestSynch)}', TestREQ.originator, headers={'X-M2M-RET' : f'{expirationCheckDelay*1000/2}'})
+		r, rsc = RETRIEVE(f'{cseURL}?rt={int(ResponseType.nonBlockingRequestSynch)}', TestREQ.originator, headers={C.hfRET : f'{expirationCheckDelay*1000/2}'})
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')
@@ -301,7 +301,7 @@ class TestREQ(unittest.TestCase):
 	def test_retrieveCSENBSynchWithVSI(self) -> None:
 		""" Retrieve <CB> non-blocking synchronous with Vendor Information"""
 		vsi = 'some vendor information'
-		r, rsc = RETRIEVE(f'{cseURL}?rt={int(ResponseType.nonBlockingRequestSynch)}', TestREQ.originator, headers={'X-M2M-VSI' : vsi})
+		r, rsc = RETRIEVE(f'{cseURL}?rt={int(ResponseType.nonBlockingRequestSynch)}', TestREQ.originator, headers={C.hfVSI : vsi})
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 		requestURI = findXPath(r, 'm2m:uri')

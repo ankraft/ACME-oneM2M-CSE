@@ -25,7 +25,7 @@ import cbor2
 # sys.path.append('../acme')
 if '..' not in sys.path:
 	sys.path.append('..')
-from acme.etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes
+from acme.etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes, ResponseCode
 import acme.etc.RequestUtils as RequestUtils, acme.etc.DateUtils as DateUtils
 import acme.helpers.OAuth as OAuth
 from acme.helpers.MQTTConnection import MQTTConnection, MQTTHandler
@@ -205,6 +205,7 @@ fcntURL	= f'{aeURL}/{fcntRN}'
 grpURL 	= f'{aeURL}/{grpRN}'
 nodURL 	= f'{cseURL}/{nodRN}'	# under the <ae>
 pchURL 	= f'{aeURL}/{pchRN}'
+pcuURL 	= f'{pchURL}/pcu'
 subURL 	= f'{cntURL}/{subRN}'	# under the <cnt>
 tsURL 	= f'{aeURL}/{tsRN}'
 batURL 	= f'{nodURL}/{batRN}'	# under the <nod>
@@ -247,6 +248,10 @@ def CREATE(url:str, originator:str, ty:ResourceTypes=None, data:JSON=None, heade
 	x,rsc = sendRequest(Operation.CREATE, url, originator, ty, data, headers=headers)
 	return cast(JSON, x), rsc
 
+def NOTIFY(url:str, originator:str, data:JSON=None, headers:Parameters=None) -> Tuple[JSON, int]:
+	x,rsc = sendRequest(Operation.NOTIFY, url, originator, data, headers=headers)
+	return cast(JSON, x), rsc
+
 def _UPDATE(url:str, originator:str, data:JSON|str, headers:Parameters=None) -> Tuple[str|JSON, int]:
 	return sendRequest(Operation.UPDATE, url, originator, data=data, headers=headers)
 
@@ -277,6 +282,8 @@ def sendRequest(operation:Operation, url:str, originator:str, ty:ResourceTypes=N
 			return sendHttpRequest(requests.put, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 		elif operation == Operation.DELETE:
 			return sendHttpRequest(requests.delete, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		elif operation == Operation.NOTIFY:
+			return sendHttpRequest(requests.post, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 	elif url.startswith('mqtt'):
 		if operation == Operation.CREATE:
 			return sendMqttRequest(Operation.CREATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
@@ -286,6 +293,8 @@ def sendRequest(operation:Operation, url:str, originator:str, ty:ResourceTypes=N
 			return sendMqttRequest(Operation.UPDATE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 		elif operation == Operation.DELETE:
 			return sendMqttRequest(Operation.DELETE, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
+		elif operation == Operation.NOTIFY:
+			return sendMqttRequest(Operation.NOTIFY, url=url, originator=originator, ty=ty, data=data, ct=ct, timeout=timeout, headers=headers)
 	else:
 		print('ERROR')
 		return None, 5103
@@ -309,16 +318,19 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 	hds = { 
 		'Content-Type' 		: f'{ct}{tys}',
 		'Accept'			: ct,
-		'X-M2M-RI' 			: (rid := uniqueID()),
-		'X-M2M-RVI'			: RVI,
+		C.hfRI 				: (rid := uniqueID()),
+		C.hfRVI				: RVI,
 	}
 	if originator is not None:		# Set originator if it is not None
-		hds['X-M2M-Origin'] = originator
+		hds[C.hfOrigin] = originator
 
 	if headers is not None:			# extend with other headers
-		if 'X-M2M-RVI' in headers:	# overwrite X-M2M-RVI header
-			hds['X-M2M-RVI'] = headers['X-M2M-RVI']
-			del headers['X-M2M-RVI']
+		if C.hfRVI in headers:	# overwrite X-M2M-RVI header
+			hds[C.hfRVI] = headers[C.hfRVI]
+			del headers[C.hfRVI]
+		if C.hfRSC in headers:	# set RSC in header
+			hds[C.hfRSC] = str(headers[C.hfRSC])
+			del headers[C.hfRSC]
 		hds.update(headers)
 	
 	# authentication
@@ -343,7 +355,7 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 	except Exception as e:
 		#print(f'Failed to send request: {str(e)}')
 		return None, 5103
-	rc = int(r.headers['X-M2M-RSC']) if 'X-M2M-RSC' in r.headers else r.status_code
+	rc = int(r.headers[C.hfRSC]) if C.hfRSC in r.headers else r.status_code
 
 	# save last header for later
 	setLastHeaders(r.headers)
@@ -458,9 +470,9 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 			# Since the tests usually work with http binding headers, some response attributes are converted
 			hds = dict()
 			if (rvi := resp.get('rvi')):
-				hds['X-M2M-RVI'] = rvi
+				hds[C.hfRVI] = rvi
 			if (vsi := resp.get('vsi')):
-				hds['X-M2M-VSI'] = vsi
+				hds[C.hfVSI] = vsi
 			setLastHeaders(hds)
 
 			return resp['pc'], resp['rsc']
@@ -601,7 +613,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		# Construct return header
 		# Always acknowledge the verification requests
 		self.send_response(200)
-		self.send_header('X-M2M-RSC', '2000')
+		self.send_header(C.hfRSC, int(ResponseCode.OK))
 		self.end_headers()
 
 		# Get headers and content data
