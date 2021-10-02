@@ -11,6 +11,7 @@ import unittest, sys, time
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
+from rich import print
 from acme.etc.Types import ResourceTypes as T, ResponseCode as RC, Operation, ResponseType
 from init import *
 
@@ -485,6 +486,10 @@ class TestREQ(unittest.TestCase):
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	# Reconfigure the server to check faster for expirations.
 	enableShortExpirations()
+	if not isTestExpirations():
+		print('\n[red reverse] Error configuring the CSE\'s test settings ')
+		print('Did you enable [i]remote configuration[/i] for the CSE?\n')
+		return 0,0,1	
 
 	suite = unittest.TestSuite()
 

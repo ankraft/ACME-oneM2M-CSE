@@ -12,7 +12,6 @@ import unittest, sys, time
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
-from rich.console import Console
 from rich import print
 from acme.etc.Constants import Constants as C
 from acme.etc.Types import ResourceTypes as T, ResponseCode as RC
