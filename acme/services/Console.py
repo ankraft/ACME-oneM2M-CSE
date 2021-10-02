@@ -148,7 +148,7 @@ class Console(object):
 - t     - Show resource tree
 - T     - Show child resource tree
 - ^T    - Show & refresh resource tree continuously
-- w     - Show worker ts status
+- w     - Show workers status
 - u     - Open web UI
 - Z     - Reset the CSE
 """, nl=True)
