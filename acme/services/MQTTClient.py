@@ -217,7 +217,8 @@ class MQTTClientHandler(MQTTHandler):
 			CSE.event.mqttUpdate()		# type: ignore [attr-defined]
 		elif dissectResult.request.op == Operation.DELETE:
 			CSE.event.mqttDelete()		# type: ignore [attr-defined]
-		
+		elif dissectResult.request.op == Operation.NOTIFY:
+			CSE.event.mqttNotify()		# type: ignore [attr-defined]
 		try:
 			responseResult = CSE.request.handleRequest(dissectResult.request)
 		except Exception as e:

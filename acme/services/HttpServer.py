@@ -185,12 +185,13 @@ class HttpServer(object):
 		dissectResult = self._dissectHttpRequest(request, operation, path)
 
 		# log Body, if there is one
-		if operation in [ Operation.CREATE, Operation.UPDATE ]:
+		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ]:
 			if dissectResult.request.ct == ContentSerializationType.JSON:
 				L.isDebug and L.logDebug(f'Body: \n{str(dissectResult.request.data)}')
 			else:
 				L.isDebug and L.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, dissectResult.request.data))}\n=>\n{dissectResult.request.dict}')
 
+		# Send and error message when the CSE is shutting down, or the http server is stopped
 		if self.isStopped:
 			# Return an error if the server is stopped
 			return self._prepareResponse(Result(rsc=RC.internalServerError, request=dissectResult.request, dbg='http server not running', status=False))
@@ -213,8 +214,12 @@ class HttpServer(object):
 
 	def handlePOST(self, path:str=None) -> Response:
 		Utils.renameCurrentThread()
-		CSE.event.httpCreate()	# type: ignore [attr-defined]
-		return self._handleRequest(path, Operation.CREATE)
+		if self._hasContentType():
+			CSE.event.httpCreate()		# type: ignore [attr-defined]
+			return self._handleRequest(path, Operation.CREATE)
+		else:
+			CSE.event.httpNotify()	# type: ignore [attr-defined]
+			return self._handleRequest(path, Operation.NOTIFY)
 
 
 	def handlePUT(self, path:str=None) -> Response:
@@ -329,7 +334,8 @@ class HttpServer(object):
 		Operation.CREATE	: requests.post,
 		Operation.RETRIEVE	: requests.get,
 		Operation.UPDATE 	: requests.put,
-		Operation.DELETE 	: requests.delete
+		Operation.DELETE 	: requests.delete,
+		Operation.NOTIFY 	: requests.post
 	}
 
 	def _prepContent(self, content:bytes|str|Any, ct:ContentSerializationType) -> str:
@@ -380,7 +386,7 @@ class HttpServer(object):
 			r = method(url, data=content, headers=hds, verify=CSE.security.verifyCertificateHttp)
 
 			responseCt = ContentSerializationType.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
-			rc = RC(int(r.headers['X-M2M-RSC'])) if 'X-M2M-RSC' in r.headers else RC.internalServerError
+			rc = RC(int(r.headers[C.hfRSC])) if C.hfRSC in r.headers else RC.internalServerError
 			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
 		except Exception as e:
 			L.isDebug and L.logWarn(f'Failed to send request: {str(e)}')
@@ -402,13 +408,13 @@ class HttpServer(object):
 		# Build the headers
 		headers = {}
 		headers['Server'] = self.serverID						# set server field
-		headers['X-M2M-RSC'] = f'{int(result.rsc)}'					# set the response status code
+		headers[C.hfRSC] = f'{int(result.rsc)}'					# set the response status code
 		if result.request.headers.requestIdentifier:
-			headers['X-M2M-RI'] = result.request.headers.requestIdentifier
+			headers[C.hfRI] = result.request.headers.requestIdentifier
 		if result.request.headers.releaseVersionIndicator:
-			headers['X-M2M-RVI'] = result.request.headers.releaseVersionIndicator
+			headers[C.hfRVI] = result.request.headers.releaseVersionIndicator
 		if result.request.headers.vendorInformation:
-			headers['X-M2M-VSI'] = result.request.headers.vendorInformation
+			headers[C.hfVSI] = result.request.headers.vendorInformation
 
 		# HTTP status code
 		statusCode = result.rsc.httpStatusCode()
@@ -571,6 +577,9 @@ class HttpServer(object):
 		# Here, if everything went okay so far, we have a request to the CSE
 		return Result(request=cseRequest, status=True)
 
+
+	def _hasContentType(self) -> bool:
+		return (ct := request.content_type) is not None and any(s.startswith('ty=') for s in ct.split(';'))
 
 
 ##########################################################################
