@@ -90,7 +90,7 @@ def isCSERelative(uri:str) -> bool:
 
 def isStructured(uri:str) -> bool:
 	if isCSERelative(uri):
-		if '/' in uri:
+		if '/' in uri or uri == CSE.cseRn:
 			return True
 	elif isSPRelative(uri):
 		if uri.count('/') > 2:
