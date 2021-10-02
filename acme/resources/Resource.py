@@ -553,3 +553,17 @@ class Resource(object):
 		"""
 		return CSE.dispatcher.retrieveResource(self.pi).resource	#type:ignore[no-any-return]
 
+
+	def getOriginator(self) -> str:
+		"""	This is a conveniance method to return the creating originator 
+			of this resource. This method doesn't seem to add much functionality,
+			but the author still struggled in the past to do it right many times.
+		"""
+		return self[self._originator]
+	
+
+	def setOriginator(self, originator:str) -> None:
+		"""	Set a resource's originator.
+		"""
+		self.setAttribute(self._originator, originator, overwrite=True)
+
