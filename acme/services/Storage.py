@@ -77,10 +77,9 @@ class Storage(object):
 			L.logErr(dbg := 'resource is None')
 			raise RuntimeError(dbg)
 
-		ri = resource.ri
-
-		# L.logDebug(f'Adding resource (ty: {resource.ty}, ri: {resource.ri}, rn: {resource.rn})'
+		ri  = resource.ri
 		srn = resource.__srn__
+		# L.logDebug(f'Adding resource (ty: {resource.ty}, ri: {resource.ri}, rn: {resource.rn}, srn: {srn}')
 		if overwrite:
 			L.isDebug and L.logDebug('Resource enforced overwrite')
 			self.db.upsertResource(resource)
