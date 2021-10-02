@@ -561,8 +561,8 @@ class Operation(ACMEIntEnum):
 	RETRIEVE			= 2
 	UPDATE				= 3
 	DELETE				= 4
-	NOTIFY 				= 6
 	DISCOVERY			= 5
+	NOTIFY 				= 6
 	NA 					= -1
 
 
@@ -584,7 +584,7 @@ class Operation(ACMEIntEnum):
 	def isvalid(cls, op:int) -> bool:
 		"""	Check whether an operation is valid.
 		"""
-		return cls.CREATE <= op <= cls.DISCOVERY
+		return cls.CREATE <= op <= cls.NOTIFY
 
 
 # Mapping between request operations and permissions
@@ -904,6 +904,12 @@ class CSERequest:
 	csi:str 						= None 	# target csi
 	op:Operation					= None	# request operation
 	parameters:Parameters			= None	# Any additional parameters
+
+
+class RequestType(ACMEIntEnum):
+	REQUEST							= auto()
+	RESPONSE 						= auto()
+
 
 ##############################################################################
 #
