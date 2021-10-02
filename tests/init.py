@@ -249,7 +249,7 @@ def CREATE(url:str, originator:str, ty:ResourceTypes=None, data:JSON=None, heade
 	return cast(JSON, x), rsc
 
 def NOTIFY(url:str, originator:str, data:JSON=None, headers:Parameters=None) -> Tuple[JSON, int]:
-	x,rsc = sendRequest(Operation.NOTIFY, url, originator, data, headers=headers)
+	x,rsc = sendRequest(Operation.NOTIFY, url, originator, data=data, headers=headers)
 	return cast(JSON, x), rsc
 
 def _UPDATE(url:str, originator:str, data:JSON|str, headers:Parameters=None) -> Tuple[str|JSON, int]:
@@ -613,7 +613,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		# Construct return header
 		# Always acknowledge the verification requests
 		self.send_response(200)
-		self.send_header(C.hfRSC, int(ResponseCode.OK))
+		self.send_header(C.hfRSC, str(int(ResponseCode.OK)))
 		self.end_headers()
 
 		# Get headers and content data
