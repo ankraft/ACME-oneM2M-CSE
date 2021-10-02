@@ -15,7 +15,6 @@ from typing import Callable, List, Dict, Any
 import logging
 
 
-_loggerCB:Callable[[int, str], None] = logging.log
 
 
 def _utcTime() -> float:
@@ -26,6 +25,11 @@ def _utcTime() -> float:
 class BackgroundWorker(object):
 	"""	This class provides the functionality for background worker or a single actor instance.
 	"""
+
+	# Holds a reference to an specific logging function.
+	# This must have the same signature as the `logging.log` method.
+	_logger:Callable[[int, str], None] = logging.log
+
 
 	def __init__(self, interval:float, callback:Callable, name:str=None, startWithDelay:bool=False, maxCount:int=None, dispose:bool=True, id:int=None, runOnTime:bool=True, runPastEvents:bool=False) -> None:
 		self.interval 				= interval
@@ -49,8 +53,8 @@ class BackgroundWorker(object):
 
 		if self.running:
 			self.stop()
-		if _loggerCB:
-				_loggerCB(logging.DEBUG, f'Starting {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
+		if BackgroundWorker._logger:
+				BackgroundWorker._logger(logging.DEBUG, f'Starting {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
 		# L.isDebug and L.logDebug(f'Starting {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
 		self.numberOfRuns	= 0
 		self.args 			= args
@@ -65,8 +69,8 @@ class BackgroundWorker(object):
 		"""	Stop the background worker.
 		"""
 		self.running = False
-		if _loggerCB:
-				_loggerCB(logging.DEBUG, f'Stopping {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
+		if BackgroundWorker._logger:
+				BackgroundWorker._logger(logging.DEBUG, f'Stopping {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
 		# L.isDebug and L.logDebug(f'Stopping {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
 		BackgroundWorkerPool._unqueueWorker(self.id)		# Stop the timer and remove from queue
 		self._postCall()									# Note: worker is removed in _postCall()
@@ -86,8 +90,8 @@ class BackgroundWorker(object):
 			self.numberOfRuns += 1
 			result = self.callback(**self.args)
 		except Exception as e:
-			if _loggerCB:
-				_loggerCB(logging.ERROR, f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}')
+			if BackgroundWorker._logger:
+				BackgroundWorker._logger(logging.ERROR, f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}')
 		finally:
 			if not result or (self.maxCount and self.numberOfRuns >= self.maxCount):
 				# False returned, or the numberOfRuns has reached the maxCount
@@ -132,11 +136,10 @@ class BackgroundWorkerPool(object):
 	
 
 	@classmethod
-	def setLogger(cls, loggerCB:Callable) -> None:
+	def setLogger(cls, logger:Callable) -> None:
 		"""	Assign a callback for logging
 		"""
-		global _loggerCB
-		_loggerCB = loggerCB
+		BackgroundWorker._logger = logger
 
 
 	@classmethod
