@@ -808,16 +808,17 @@ class ContentSerializationType(IntEnum):
 
 @dataclass
 class Result:
-	resource:Resource	= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
-	dict:JSON 			= None		# Contains the result dictionary
-	data:Any 			= None 		# Anything
-	lst:List[Any]   	= None		# List of Anything
-	rsc:ResponseCode	= ResponseCode.OK	# OK
-	dbg:str 			= None
-	request:CSERequest	= None  	# may contain the processed http request object
-	status:bool 		= None
-	originator:str		= None
-	uri:str				= None
+	resource:Resource			= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
+	dict:JSON 					= None		# Contains the result dictionary
+	data:Any 					= None 		# Anything
+	lst:List[Any]   			= None		# List of Anything
+	rsc:ResponseCode			= ResponseCode.OK	# OK
+	dbg:str 					= None
+	request:CSERequest			= None  	# may contain the processed http request object
+	responseRequest:CSERequest 	= None		# May contain a request as a response, e.g. when polling
+	status:bool 				= None
+	originator:str				= None
+	uri:str						= None
 
 
 	def errorResult(self) -> Result:
@@ -837,14 +838,12 @@ class Result:
 			r = serializeData(self.resource.asDict(), ct)
 		elif self.dbg:
 			r = serializeData({ 'm2m:dbg' : self.dbg }, ct)
-		# elif isinstance(self.resource, str):
-		# 	r = self.resource
 		elif isinstance(self.resource, dict):
 			r = serializeData(self.resource, ct)
-		elif isinstance(self.dict, dict):		# explicit json or cbor
+		elif self.dict:									# explicit json or cbor from the dict
 			r = serializeData(self.dict, ct)
-		# elif not self.resource and not self.dict:
-		# 	r = ''
+		elif self.request and self.request.dict:		# Return the dict if the request is set and has a dict
+			r = self.request.dict
 		else:
 		 	r = ''
 		return r
@@ -897,8 +896,8 @@ class CSERequest:
 	ct:ContentSerializationType		= None
 	originalArgs:Any 				= None	# Actually a MultiDict
 	data:bytes 						= None 	# The request original data
-	req:JSON						= None	# The dissected request as a dictionary
-	dict:JSON 						= None	# The request data as a dictionary
+	req:JSON						= None	# The original request after dissection as a dictionary
+	dict:JSON 						= None	# The request's primitive content as a dictionary
 	id:str 							= None 	# target ID / to
 	srn:str 						= None 	# target structured resource name
 	csi:str 						= None 	# target csi
