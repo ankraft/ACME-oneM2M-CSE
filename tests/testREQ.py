@@ -108,6 +108,26 @@ class TestREQ(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_testResultPersistence(self) -> None:
+		""" Retrieve <CB> non-blocking synchronous. Test Result Persistent and expiration -> Fail"""
+		r, rsc = RETRIEVE(f'{cseURL}?rt={int(ResponseType.nonBlockingRequestSynch)}&rp={requestETDuration}', TestREQ.originator)
+		rqi = lastRequestID()
+		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
+		requestURI = findXPath(r, 'm2m:uri')
+
+		# get and check resource
+		time.sleep(requestCheckDelay)
+		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
+		self.assertEqual(rsc, RC.OK, r)
+
+		# Wait a bit longer. The <req> should have been deleted.
+		time.sleep(expirationCheckDelay)
+		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
+		self.assertEqual(rsc, RC.notFound, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCSENBSynchMissingRP(self) -> None:
 		""" Retrieve <CB> non-blocking synchronous, missing rp """
 		r, rsc = RETRIEVE(f'{cseURL}?rt={int(ResponseType.nonBlockingRequestSynch)}', TestREQ.originator)
@@ -198,7 +218,7 @@ class TestREQ(unittest.TestCase):
 		r, rsc = CREATE(f'{aeURL}?rt={int(ResponseType.nonBlockingRequestSynch)}&rp={requestETDuration}', TestREQ.originator, T.CNT, dct)
 		rqi = lastRequestID()
 		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch)
-		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
+		self.assertIsNotNone(findXPath(r, 'm2m:uri'), r)
 		requestURI = findXPath(r, 'm2m:uri')
 
 		# get and check resource
@@ -501,6 +521,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestREQ('test_retrieveCSENBSynchWrongRT'))
 	suite.addTest(TestREQ('test_retrieveUnknownNBSynch'))
 	suite.addTest(TestREQ('test_retrieveCSENBSynchExpireRequest'))
+	suite.addTest(TestREQ('test_testResultPersistence'))
 	suite.addTest(TestREQ('test_retrieveCNTNBFlex'))					# flex
 	suite.addTest(TestREQ('test_retrieveCNTNBFlexIntegerDuration'))		# flex
 	suite.addTest(TestREQ('test_retrieveCNTNBFlexWrongDuration'))		# flex
