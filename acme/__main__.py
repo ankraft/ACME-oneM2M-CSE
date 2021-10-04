@@ -14,7 +14,7 @@ from rich.console import Console
 try:
 	from .etc.Constants import Constants as C
 	from .services import CSE as CSE
-except ImportError:
+except ImportError as e:
 	Console().print(f'\n[red]Please run acme as a package, e.g. [red bold]python -m {sys.argv[0]}\n')
 	quit()
 
