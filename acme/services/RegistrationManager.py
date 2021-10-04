@@ -216,7 +216,7 @@ class RegistrationManager(object):
 	def handleREQRegistration(self, req:Resource, originator:str) -> bool:
 		L.isDebug and L.logDebug(f'Registering REQ: {req.ri}')
 		# Add originator as creator to allow access
-		req[req._originator] = originator
+		req.setOriginator(originator)
 		return True
 
 
