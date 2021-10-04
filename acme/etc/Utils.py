@@ -18,6 +18,7 @@ from .Types import ResourceTypes as T, ResponseCode
 from .Types import Result, JSON
 from ..services.Logging import Logging as L
 from ..resources.Resource import Resource
+from ..resources.PCH_PCU import PCH_PCU
 from ..services import CSE as CSE
 
 
@@ -512,7 +513,7 @@ def fanoutPointResource(id: str) -> Resource:
 	"""
 	if not id:
 		return None
-	# retrieve srn
+	# Convert to srn
 	if not isStructured(id):
 		id = structuredPathFromRI(id)
 	if not id:
@@ -525,6 +526,24 @@ def fanoutPointResource(id: str) -> Resource:
 		nid = head + '/fopt'
 	if nid and (result := CSE.dispatcher.retrieveResource(nid)).resource:
 		return cast(Resource, result.resource)
+	return None
+
+
+def pollingChannelURIResource(id: str) -> PCH_PCU:
+	"""	Check whether the target is a PollingChannelURI resource and return it.
+
+		Return either the virtual PollingChannelURI resource or None.
+	"""
+	if not id:
+		return None
+	if id.endswith('pcu'):
+		# Convert to srn
+		if not isStructured(id):
+			id = structuredPathFromRI(id)
+		if not id:
+			return None
+		if (result := CSE.dispatcher.retrieveResource(id)).resource and result.resource.ty == T.PCH_PCU:
+			return cast(PCH_PCU, result.resource)
 	return None
 
 
