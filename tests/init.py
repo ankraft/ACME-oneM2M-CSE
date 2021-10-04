@@ -172,6 +172,9 @@ def isRaspberrypi() -> bool:
 futureTimestamp = '20371231T235959' if isRaspberrypi() else '88881231T235959'
 
 
+# Rich console
+console = Console()
+
 
 ###############################################################################
 
@@ -766,7 +769,6 @@ def toISO8601Date(ts: Union[float, datetime.datetime]) -> str:
 
 def printResult(result:unittest.TestResult) -> None:
 	"""	Print the test results. """
-	console = Console()
 
 	# Failures
 	for f in result.failures:
