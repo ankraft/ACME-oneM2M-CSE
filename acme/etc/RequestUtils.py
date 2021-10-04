@@ -9,17 +9,16 @@
 
 
 from __future__ import annotations
-import threading
 import cbor2, json
-from typing import cast, Dict
+from typing import Any, cast, Dict
 from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode
 from ..etc.DateUtils import waitFor
 
-from .Types import CSERequest, ContentSerializationType, JSON
+from .Types import CSERequest, ContentSerializationType, JSON, ResponseCode as RC, Result, ResourceTypes as T, Operation
+from ..etc import DateUtils
 from .Constants import Constants as C
 from ..services.Logging import Logging as L
 from ..helpers import TextTools
-from ..services import CSE
 
 
 def serializeData(data:JSON, ct:ContentSerializationType) -> str|bytes|JSON:
@@ -60,7 +59,7 @@ def toHttpUrl(url:str) -> str:
 	return url
 
 
-def determineSerialization(url:str, csz:list[str]=None,) -> ContentSerializationType:
+def determineSerialization(url:str, csz:list[str]=None, defaultSerialization:ContentSerializationType=None) -> ContentSerializationType:
 	"""	Determine the type of serialization for a notification from either the `url`'s `ct` query parameter,
 		or the given list of `csz`(contentSerializations, attribute of a target AE/CSE), or the CSE's default serialization.
 	"""
@@ -100,51 +99,51 @@ def determineSerialization(url:str, csz:list[str]=None,) -> ContentSerialization
 		return ContentSerializationType.to(common[0]) # take the first
 	
 	# Just use default serialization.
-	return CSE.defaultSerialization
+	return defaultSerialization
 
-##############################################################################
-#
-#	Request/Response async sequence helpers
-#
 
-from threading import Lock
-_requestLock = Lock()
-_requests:Dict[str, CSERequest] = {}
-
-def hasResponse(requestID:str) -> bool:
-	"""	Callback for periodic check whether a response has arrived
+def requestFromResult(inResult:Result, originator:str=None, ty:T=None, op:Operation=None) -> Result:
+	"""	Convert a response request to a new *Result* object and create a nw dictionary in *Result.dict*
+		with the full Response structure. Recursively do this if the *Primitive Content* is also
+		a full Request or Response.
 	"""
-	with _requestLock:
-		return requestID in _requests and _requests[requestID] != None
+	from ..services import CSE
 
+	req:JSON = {}
 
-def addResponse(response:CSERequest) -> bool:
-	# TODO doc
-	with _requestLock:
-		if not (requestID := response.headers.requestIdentifier) in _requests:	# Check whether there is an entry
-			return False														# This could also be None! Therefore the "in" test
-		_requests[requestID] = response
-		return True
+	if originator:
+		req['fr'] = originator
+	elif inResult.request.headers.originator:
+		req['fr'] = inResult.request.headers.originator
+	else:
+		req['fr'] = CSE.cseCsi
 
+	req['to'] = inResult.request.headers.originator if inResult.request.headers.originator else 'non-onem2m-entity'
+	req['ot'] = DateUtils.getResourceDate()
+	if inResult.rsc and inResult.rsc != RC.UNKNOWN:
+		req['rsc'] = int(inResult.rsc)
+	if op:
+		req['op'] = op.value
+	if ty:
+		req['ty'] = int(ty)
+	if inResult.request.headers.requestIdentifier:
+		req['rqi'] = inResult.request.headers.requestIdentifier
+	if inResult.request.headers.releaseVersionIndicator:
+		req['rvi'] = inResult.request.headers.releaseVersionIndicator
+	if inResult.request.headers.vendorInformation:
+		req['vsi'] = inResult.request.headers.vendorInformation
+	
+	# Add additional parameters
+	if inResult.request.parameters:
+		if (ec := inResult.request.parameters.get(C.hfEC)):				# Event Category
+			req['ec'] = ec
+	
+	# If the response contains a request (ie. for polling), then recursively add that request to the pc
+	if inResult.responseRequest:
+		req['pc'] = requestFromResult(Result(request=inResult.responseRequest, rsc=None)).dict
+	else:
+		req['pc'] = inResult.toData(ContentSerializationType.PLAIN)	# construct and serialize the data as JSON/dictionary. Encoding to JSON or CBOR is done later
 
-def waitForResponse(requestID:str, timeout:float) -> CSERequest:
-	# TODO doc + return
+	return Result(dict=req, request=inResult.request, status=True)
 
-	with _requestLock:
-		if requestID in _requests:						# Skip if it is already in the map
-			return None
-		_requests[requestID] = None						# Add the record to the map
-	waitFor(timeout, lambda:hasResponse(requestID))		# Wait until timeout, or the response was set
-	with _requestLock:
-		return _requests.pop(requestID)					# Remove request from the map and return whatever there is
-
-
-
-# threading.Thread(target=lambda:print(waitForResponse('12', 5.0))).start()
-
-
-# print("HUHUHUHU")
-# waitFor(2)
-# (resp := CSERequest()).headers.requestIdentifier = '132'
-# addResponse(resp)
 
