@@ -38,7 +38,7 @@ def toISO8601Date(ts:Union[float, datetime.datetime], isUTCtimestamp:bool=True) 
 	return ts.strftime('%Y%m%dT%H%M%S,%f')
 
 
-def fromAbsRelTimestamp(absRelTimestamp:str) -> float:
+def fromAbsRelTimestamp(absRelTimestamp:str, default:float=0.0) -> float:
 	"""	Parse a ISO 8601 string and return a UTC-relative timestamp as a float.
 		If  `absRelTimestamp` in the string is a period (relatice) timestamp (e.g. PT2S), then this function
 		tries to convert it and return an absolute timestamp as a float, based on the current UTC time.
@@ -52,7 +52,7 @@ def fromAbsRelTimestamp(absRelTimestamp:str) -> float:
 		try:
 			return utcTime() + fromDuration(absRelTimestamp)
 		except:
-			return 0.0
+			return default
 
 
 def fromDuration(duration:str) -> float:
