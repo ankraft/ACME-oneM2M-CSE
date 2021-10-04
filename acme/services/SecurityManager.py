@@ -17,6 +17,7 @@ from ..services import CSE as CSE
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
 from ..resources.Resource import Resource
+from ..resources.PCH_PCU import PCH_PCU
 from ..helpers import TextTools
 
 
@@ -171,7 +172,7 @@ class SecurityManager(object):
 						# When holder is set, but doesn't match the originator then fall-through to fail
 						
 					# Check resource creator
-					elif (creator := resource[resource._originator]) and creator == originator:
+					elif (creator := resource.getOriginator()) and creator == originator:
 						L.isDebug and L.logDebug('Allow access for creator')
 						return True
 					
@@ -219,7 +220,7 @@ class SecurityManager(object):
 			
 			# Check whether the originator has UPDATE privileges for the acpi attribute (pvs!)
 			if not targetResource.acpi:
-				if originator != targetResource[targetResource._originator]:
+				if originator != targetResource.getOriginator():
 					L.isDebug and L.logDebug(dbg := f'No access to update acpi for originator: {originator}')
 					return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
 				else:
@@ -254,6 +255,12 @@ class SecurityManager(object):
 			if TextTools.simpleMatch(Utils.getIdFromOriginator(originator), ao):
 				return True
 		return False
+
+
+	def hasAccessToPCU(self, originator:str, resource:PCH_PCU) -> bool:
+		"""	Check whether the originator has access to the PCU resource.
+		"""
+		return originator == resource.getOriginator()
 
 
 
