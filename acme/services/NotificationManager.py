@@ -331,7 +331,7 @@ class NotificationManager(object):
 	def _sendRequest(self, uri:str, notificationRequest:JSON, parameters:Parameters=None, originator:str=None, targetResource:Resource=None) -> bool:
 		"""	Actually send a Notification request.
 		"""
-		return CSE.request.sendCreateRequest(	uri, 
+		return CSE.request.sendNotifyRequest(	uri, 
 												originator if originator else CSE.cseCsi,
 												data=notificationRequest,
 												parameters=parameters,
