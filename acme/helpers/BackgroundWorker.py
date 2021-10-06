@@ -54,7 +54,7 @@ class BackgroundWorker(object):
 		if self.running:
 			self.stop()
 		if BackgroundWorker._logger:
-				BackgroundWorker._logger(logging.DEBUG, f'Starting {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
+				BackgroundWorker._logger(logging.DEBUG, f'Starting {"actor" if self.maxCount and self.maxCount > 0 else "worker"}: {self.name}')
 		# L.isDebug and L.logDebug(f'Starting {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
 		self.numberOfRuns	= 0
 		self.args 			= args
@@ -68,10 +68,11 @@ class BackgroundWorker(object):
 	def stop(self) -> BackgroundWorker:
 		"""	Stop the background worker.
 		"""
+		if not self.running:
+			return self
 		self.running = False
 		if BackgroundWorker._logger:
-				BackgroundWorker._logger(logging.DEBUG, f'Stopping {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
-		# L.isDebug and L.logDebug(f'Stopping {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
+				BackgroundWorker._logger(logging.DEBUG, f'Stopping {"actor" if self.maxCount and self.maxCount > 0 else "worker"}: {self.name}')
 		BackgroundWorkerPool._unqueueWorker(self.id)		# Stop the timer and remove from queue
 		self._postCall()									# Note: worker is removed in _postCall()
 		return self
@@ -177,8 +178,6 @@ class BackgroundWorkerPool(object):
 
 			- `name` - Name of the worker. The `name` may contain simple wildcards (* and ?)
 			- `running` - The running status of the worker
-
-
 		"""
 		return [ w for w in cls.backgroundWorkers.values() if (not name or simpleMatch(w.name, name)) and (not running or running == w.running) ]
 
