@@ -41,7 +41,7 @@ Please see the [Changelog](CHANGELOG.md) for the latest changes.
 ### Important: Example AEs removed
 This release removes the example  AEs from the project. They will become available in another project in the future. This make the distribution a bit smaller and removes the problematic dependency to the *psutil* package, which is not available on all platforms.
 
-### Hightlights in this release
+### Highlights in this release
 
 - Long-necessary refactoring of the source structure.
 - Lot's of small improvements, bug fixes, and optimizations
