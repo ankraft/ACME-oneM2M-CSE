@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from typing import Any
-from ..etc.Types import AttributePolicyDict, ContentSerializationType, Operation, ResourceTypes as T, Result, JSON, Parameters
+from ..etc.Types import AttributePolicyDict, ContentSerializationType, Operation, RequestType, ResourceTypes as T, Result, JSON, Parameters
 from ..etc import RequestUtils as RU
 from ..resources.Resource import *
 from ..resources import Factory as Factory
@@ -47,8 +47,9 @@ class PCH(Resource):
 		super().__init__(T.PCH, dct, pi, create=create, inheritACP=True)
 
 
-# TODO test Retrieve by AE only! Add new willBeRetrieved() function
+# TODO test Retrieve by originator AE only! Add new willBeRetrieved() function
 # TODO continue with 10.2.5.14 Retrieve <pollingChannel>
+
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (res := super().activate(parentResource, originator)).status:
@@ -58,30 +59,16 @@ class PCH(Resource):
 		
 		# register pollingChannelURI virtual resource
 		if L.isDebug: L.logDebug(f'Registering <PCU> for: {self.ri}')
-		pcu = Factory.resourceFromDict(pi=self.ri, ty=T.PCH_PCU).resource	# rn is assigned by resource itself
-		if not (res := CSE.dispatcher.createResource(pcu)).resource:
+		dct = {
+			'm2m:pcu' : {
+				'rn' : 'pcu'
+			}
+		}
+		pcu = Factory.resourceFromDict(dct, pi=self.ri, ty=T.PCH_PCU).resource	# rn is assigned by resource itself
+		if not (res := CSE.dispatcher.createResource(pcu, originator=originator)).resource:
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+		
 
 		return Result(status=True)
 
-
-	def storeRequest(self, operation:Operation, originator:str, ty:T, data:Any, ct:ContentSerializationType, parameters:Parameters=None):
-
-		# Fill various request attributes
-		request 								= CSERequest()
-		request.op 								= operation
-		request.headers.originator				= originator
-		request.headers.resourceType 			= ty
-		request.headers.originatingTimestamp	= DateUtils.getResourceDate()
-		request.headers.requestIdentifier		= Utils.uniqueRI()
-		request.headers.releaseVersionIndicator	= CSE.releaseVersion
-		if parameters:
-			if C.hfcEC in parameters:				# Event Category
-				request.parameters[C.hfEC] 		= parameters[C.hfcEC]
-
-		# Add the request and the data
-		result									= Result(dict=data, request=request)
-
-		L.logErr(result)
-	
 

@@ -8,9 +8,12 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseCode as RC, JSON
-from ..resources.Resource import *
-from ..services.Logging import Logging
+from typing import cast
+from ..etc.Types import AttributePolicyDict, RequestType, ResourceTypes as T, ResponseCode as RC, JSON, CSERequest, Result
+from ..resources.Resource import Resource
+from ..services.Logging import Logging as L
+from ..services import CSE
+from ..etc import DateUtils
 
 
 class PCH_PCU(Resource):
@@ -25,38 +28,59 @@ class PCH_PCU(Resource):
 	}
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.PCH_PCU, dct, pi, create=create, inheritACP=True, readOnly=True, rn='pcu', isVirtual=True)
+		super().__init__(T.PCH_PCU, dct, pi=pi, create=create, inheritACP=True, readOnly=True, rn='pcu', isVirtual=True)
+		
+
+	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:
+		""" Handle a RETRIEVE request. Return resource or block until available. 
+		"""
+		L.logDebug(f'Retrieving request from polling channel. Originator: {originator}')
+
+		# Determine the request's timeout
+		ret = DateUtils.fromAbsRelTimestamp(request.headers.requestExpirationTimestamp, CSE.request.requestExpirationDelta)	# with default
+
+		# Return the response or time out
+		if not (r := CSE.request.waitForPollingRequest(originator, None, ret)):
+			L.logWarn(dbg := f'Request Expiration Timestamp reached. No request queued for originator: {self.getOriginator()}')
+			return Result(status=False, rsc=RC.requestTimeout, dbg=dbg)
+		# normal response
+		return Result(status=True, responseRequest=r)
 
 
+	def handleNotifyRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+		"""	Handle a NOTIFY request to a PCU resource.
+		"""
 
-# TODO
+		# Check whether the request is allowed by this originator was done in the dispatcher
 
-
-
-
-
-	# def handleRetrieveRequest(self, request:Request=None, id:str=None, originator:str=None) -> Result:
-	# 	""" Handle a RETRIEVE request. Return resource """
-	# 	Logging.logDebug('Retrieving oldest FCI from FCNT')
-	# 	if (r := self._getOldest()) is None:
-	# 		return Result(rsc=RC.notFound, dbg='no instance for <oldest>')
-	# 	return Result(resource=r)
+		from ..resources.PCH import PCH
 
 
-	# def handleCreateRequest(self, request:Request, id:str, originator:str, ct:str, ty:int) -> Result:
-	# 	""" Handle a CREATE request. Fail with error code. """
-	# 	return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for <oldest> resource type')
+		# Get parent PCH and add the request to the PCU's queue.
+		if pch := self.retrieveParentResource():
+
+			# TODO Not this request, but the request inside of PC!
+			# if request.pc -> extract
 
 
-	# def handleUpdateRequest(self, request:Request, id:str, originator:str, ct:str) -> Result:
-	# 	""" Handle a UPDATE request. Fail with error code. """
-	# 	return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for <oldest> resource type')
+			CSE.request.queueRequestForPCH(cast(PCH, pch), request=request, reqType=RequestType.RESPONSE)	# A Notification to PCU always contains a response to a previous request
+		return Result(status=True, rsc=RC.OK)
 
 
-	# def handleDeleteRequest(self, request:Request, id:str, originator:str) -> Result:
-	# 	""" Handle a DELETE request. Delete the latest resource. """
-	# 	Logging.logDebug('Deleting oldest FCI from FCNT')
-	# 	if (r := self._getOldest()) is None:
-	# 		return Result(rsc=RC.notFound, dbg='no instance for <oldest>')
-	# 	return CSE.dispatcher.deleteResource(r, originator, withDeregistration=True)
+	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+		""" Handle a CREATE request. Fail with error code. 
+		"""
+		return Result(rsc=RC.operationNotAllowed, dbg='CREATE operation not allowed for <pollingChanelURI> resource type')
+
+
+	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+		""" Handle an UPDATE request. Fail with error code. 
+		"""
+		return Result(rsc=RC.operationNotAllowed, dbg='UPDATE operation not allowed for <pollingChanelURI> resource type')
+
+
+	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+		""" Handle a DELETE request. Delete the latest resource. 
+		"""
+		return Result(rsc=RC.operationNotAllowed, dbg='DELETE operation not allowed for <pollingChanelURI> resource type')
 

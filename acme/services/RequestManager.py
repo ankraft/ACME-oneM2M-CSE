@@ -9,10 +9,12 @@
 
 from __future__ import annotations
 import urllib.parse
-from typing import Any, List, Tuple, cast
+from typing import Any, List, Tuple, cast, Dict
 from copy import deepcopy
+from threading import Lock
 
-from ..etc.Types import BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, Permission, RequestArguments, RequestCallback, ResultContentType
+
+from ..etc.Types import JSON, BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, Permission, RequestArguments, RequestCallback, RequestType, ResultContentType
 from ..etc.Types import RequestStatus
 from ..etc.Types import CSERequest
 from ..etc.Types import RequestHandler
@@ -39,14 +41,19 @@ class RequestManager(object):
 	def __init__(self) -> None:
 		self.enableTransit 					 = Configuration.get('cse.enableTransitRequests')
 		self.flexBlockingBlocking			 = Configuration.get('cse.flexBlockingPreference') == 'blocking'
+		self.requestExpirationDelta			 = Configuration.get('cse.requestExpirationDelta')
 
 		self.requestHandlers:RequestHandler  = { 		# Map request handlers for operations in the RequestManager and the dispatcher
 			Operation.RETRIEVE	: RequestCallback(self.retrieveRequest, CSE.dispatcher.processRetrieveRequest),
 			Operation.DISCOVERY	: RequestCallback(self.retrieveRequest, CSE.dispatcher.processRetrieveRequest),
 			Operation.CREATE	: RequestCallback(self.createRequest,   CSE.dispatcher.processCreateRequest),
+			Operation.NOTIFY	: RequestCallback(self.notifyRequest,   CSE.dispatcher.processNotifyRequest),
 			Operation.UPDATE	: RequestCallback(self.updateRequest,   CSE.dispatcher.processUpdateRequest),
 			Operation.DELETE	: RequestCallback(self.deleteRequest,   CSE.dispatcher.processDeleteRequest),
 		}
+
+		self._requestLock = Lock()
+		self._requests:Dict[str, List[ Tuple[CSERequest, RequestType] ] ] = {}
 
 		L.log('RequestManager initialized')
 
@@ -56,6 +63,9 @@ class RequestManager(object):
 		return True
 
 
+# TODO Worker to cleanup the requests
+# TODO Reset queue during CSE reset
+
 	#########################################################################
 	#
 	#	RETRIEVE Request
@@ -63,7 +73,7 @@ class RequestManager(object):
 
 	def retrieveRequest(self, request:CSERequest) ->  Result:
 		L.logDebug and L.logDebug(f'RETRIEVE ID: {request.id if request.id else request.srn}, originator: {request.headers.originator}')
-
+		
 		# handle transit requests
 		if self.isTransitID(request.id):
 			return self.handleTransitRetrieveRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
@@ -182,6 +192,37 @@ class RequestManager(object):
 
 		return Result(rsc=RC.badRequest, dbg=f'Unknown or unsupported ResponseType: {request.args.rt}')
 
+
+	#########################################################################
+	#
+	#	Notify resources
+	#
+
+	def notifyRequest(self, request:CSERequest) -> Result:
+		L.isDebug and L.logDebug(f'NOTIFY ID: {request.id if request.id else request.srn}, originator: {request.headers.originator}')
+
+		# handle transit requests
+		if self.isTransitID(request.id):
+			return self.handleTransitNotifyRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
+
+		# Check contentType and resourceType
+		if request.headers.contentType == None or request.headers.contentType == None:
+			return Result(rsc=RC.badRequest, dbg='missing or wrong contentType or resourceType in request')
+
+		if request.args.rt == ResponseType.blockingRequest:
+			res = CSE.dispatcher.processNotifyRequest(request, request.headers.originator)
+			return res
+
+		elif request.args.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
+			return self._handleNonBlockingRequest(request)
+
+		elif request.args.rt == ResponseType.flexBlocking:
+			if self.flexBlockingBlocking:			# flexBlocking as blocking
+				return CSE.dispatcher.processNotifyRequest(request, request.headers.originator)
+			else:									# flexBlocking as non-blocking
+				return self._handleNonBlockingRequest(request)
+
+		return Result(rsc=RC.badRequest, dbg=f'Unknown or unsupported ResponseType: {request.args.rt}')
 
 
 	#########################################################################
@@ -336,8 +377,8 @@ class RequestManager(object):
 		# 	return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
 		# if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 		# 	url += '?' + urllib.parse.urlencode(request.originalArgs)
-		L.isInfo and L.log(f'Forwarding Retrieve/Discovery request to: {res.data}')
-		return self.sendRetrieveRequest(res.data, request.headers.originator)
+		L.isInfo and L.log(f'Forwarding RETRIEVE/DISCOVERY request to: {res.data}')
+		return self.sendRetrieveRequest(res.uri, request.headers.originator)
 
 
 	def handleTransitCreateRequest(self, request:CSERequest) -> Result:
@@ -348,8 +389,8 @@ class RequestManager(object):
 		# 	return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
 		# if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 		# 	url += '?' + urllib.parse.urlencode(request.originalArgs)
-		L.isInfo and L.log(f'Forwarding Create request to: {res.data}')
-		return self.sendCreateRequest(res.data, request.headers.originator, data=request.data, ty=request.headers.resourceType)
+		L.isInfo and L.log(f'Forwarding CREATE request to: {res.data}')
+		return self.sendCreateRequest(res.uri, request.headers.originator, data=request.data, ty=request.headers.resourceType)
 
 
 	def handleTransitUpdateRequest(self, request:CSERequest) -> Result:
@@ -360,8 +401,8 @@ class RequestManager(object):
 		# 	return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
 		# if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 		# 	url += '?' + urllib.parse.urlencode(request.originalArgs)
-		L.isInfo and L.log(f'Forwarding Update request to: {res.data}')
-		return self.sendUpdateRequest(res.data, request.headers.originator, data=request.data)
+		L.isInfo and L.log(f'Forwarding UPDATE request to: {res.data}')
+		return self.sendUpdateRequest(res.uri, request.headers.originator, data=request.data)
 
 
 	def handleTransitDeleteRequest(self, request:CSERequest) -> Result:
@@ -372,12 +413,21 @@ class RequestManager(object):
 		# 	return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
 		# if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 		# 	url += '?' + urllib.parse.urlencode(request.originalArgs)
-		L.isInfo and L.log(f'Forwarding Delete request to: {res.data}')
-		return self.sendDeleteRequest(res.data, request.headers.originator)
+		L.isInfo and L.log(f'Forwarding DELETE request to: {res.data}')
+		return self.sendDeleteRequest(res.uri, request.headers.originator)
+
+
+	def handleTransitNotifyRequest(self, request:CSERequest) -> Result:
+		""" Forward a NOTIFY request to a remote CSE. """
+		if not (res := self._constructForwardURL(request)).status:
+			return res
+		L.isInfo and L.log(f'Forwarding NOTIFY request to: {res.data}')
+		return self.sendNotifyRequest(res.uri, request.headers.originator, data=request.data)
 
 
 	def isTransitID(self, id:str) -> bool:
-		""" Check whether an ID is a targeting a remote CSE via a CSR. """
+		""" Check whether an ID is a targeting a remote CSE via a CSR.
+		"""
 		if Utils.isSPRelative(id):
 			ids = id.split('/')
 			return len(ids) > 0 and ids[0] != CSE.cseCsi[1:]
@@ -388,7 +438,8 @@ class RequestManager(object):
 
 
 	def _getForwardURL(self, path:str) -> str:
-		""" Get the new target URL when forwarding. """
+		""" Get the new target URL when forwarding. 
+		"""
 		# L.isDebug and L.logDebug(path)
 		csr, pe = CSE.remote.getCSRFromPath(path)
 		# L.isDebug and L.logDebug(csr)
@@ -405,13 +456,175 @@ class RequestManager(object):
 			return Result(status=False, rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
 		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 			url += '?' + urllib.parse.urlencode(request.originalArgs)
-		return Result(status=True, data=url)
+		return Result(status=True, uri=url)
 
+
+	##############################################################################
+	#
+	#	Request/Response async sequence helpers for Polling
+	#
+	#	All the requests for all PCU are stored in a single dictionary:
+	#		originator : [ request* ]
+	#
+	# TODO Worker for cleanup
+
+
+	def hasPollingRequest(self, originator:str, requestID:str=None, reqType:RequestType=RequestType.REQUEST) -> bool:
+		"""	Check whether there is a pending request or response pending for the tuple (`originator`, `requestID`).
+			This method is also used as a callback for periodic check whether a request or response is queued.
+			If `requestID` is not None then the check is for a request with that ID. 
+			Otherwise, `True` will be returned if there is any request for the `originator`.
+		"""
+		with self._requestLock:
+			return (lst := self._requests.get(originator)) is not None and any(	 (r, t) for r,t in lst if (requestID is None or r.headers.requestIdentifier == requestID) and (t == reqType) )
+
+	
+	def queuePollingRequest(self, request:CSERequest, reqType:RequestType=RequestType.REQUEST) -> None:
+		"""	Add a new `request` to the polling request queue. The `reqType` specifies whether this request is 
+			a oneM2M Request or Response.
+		"""
+		L.isDebug and L.logDebug(f'Add request to queue, reqestType: {reqType}')
+
+		# Some checks
+		if not request.headers.requestExpirationTimestamp:		
+			# Adding a default expiration if none is set in the request
+			ret = DateUtils.getResourceDate(self.requestExpirationDelta)
+			L.isWarn and L.logWarn(f'Request must have a "requestExpirationTimestamp". Adding a default one: {ret}')
+			request.headers.requestExpirationTimestamp = ret
+		if not request.headers.requestIdentifier:
+			L.logErr(f'Request must have a "requestIdentifier". Ignored. {request}', showStackTrace=False)
+			return
+		if not request.headers.originator:
+			L.logErr(f'Request must have an "originator". Ignored. {request}', showStackTrace=False)
+			return
+		
+		# Add to queue
+		with self._requestLock:
+			if not (originator := request.headers.originator) in self._requests:
+				self._requests[originator] = [ (request, reqType) ]
+			else:
+				self._requests[originator].append( (request, reqType) )
+		
+		# Start an actor to remove the request after the timeout		
+		BackgroundWorkerPool.newActor(	lambda: self.unqueuePollingRequest(originator, request.headers.requestIdentifier, reqType), 
+										delay=DateUtils.fromAbsRelTimestamp(request.headers.requestExpirationTimestamp) - DateUtils.utcTime() + 1.0,	# +1 second delay 
+										name=f'unqueuePolling_{request.headers.requestIdentifier}-{reqType}').start()
+	
+
+	def unqueuePollingRequest(self, originator:str, requestID:str, reqType:RequestType) -> CSERequest:
+		"""	Remove a request for the `originator` and with the `requestID` from the polling request queue. 
+		"""
+		L.isDebug and L.logDebug(f'Unqueuing polling request, originator: {originator}, requestID: {requestID}')
+		with self._requestLock:
+			resultRequest = None
+			if lst := self._requests.get(originator):
+				requests = []
+				
+				# extract the queried request, and build a new list for the remaining
+				# Building a new list is faster than extracting and removing elements in place
+				for r,t in lst:	
+					if (requestID is None or requestID == r.headers.requestIdentifier) and t == reqType:	# Either get an uspecified reuqest, or a specific one
+						resultRequest = r
+					else:
+						requests.append( (r, t) )
+				if requests:
+					self._requests[originator] = requests
+				else:
+					del self._requests[originator]
+				
+			if resultRequest:
+				BackgroundWorkerPool.stopWorkers(f'unqueuePolling_{resultRequest.headers.requestIdentifier}-{reqType}')
+					
+			return resultRequest
+
+
+
+	def waitForPollingRequest(self, originator:str, requestID:str, timeout:float, reqType:RequestType=RequestType.REQUEST) -> CSERequest:
+		"""	Busy waiting for a polling request for the `originator`, `requestID` and `reqType`. 
+			The function returns when there is a new or pending matching request in the queue, or when the `timeout` (in seconds)
+			is met. The function returns either a *CSERequest* object, or None (when the timeout was reached).
+		"""
+		L.isDebug and L.logDebug(f'Waiting for: {reqType} for originator: {originator}, requestID: {requestID}')
+
+		if DateUtils.waitFor(timeout, lambda:self.hasPollingRequest(originator, requestID, reqType)):	# Wait until timeout, or the request of the correct type was found
+			L.isDebug and L.logDebug(f'Received request for: {reqType} for originator: {originator}, requestID: {requestID}')
+			return self.unqueuePollingRequest(originator, requestID, reqType)
+		L.isWarn and L.logWarn(f'Timeout while waiting for: {reqType} for originator: {originator}, requestID: {requestID}')
+		return None
+		# with self._requestLock:
+		# 	resultRequest = None
+		# 	if (lst := self._requests.get(originator)):
+		# 		requests = []
+				
+		# 		# extract the queried request, and build a new list for the remaining
+		# 		# Building a new list is faster than extracting and removing elements in place
+		# 		for r,t in lst:	
+		# 			if (requestID is None or requestID == r.headers.requestIdentifier) and t == reqType:
+		# 				resultRequest = r
+		# 			else:
+		# 				requests.append( (r, t) )
+		# 		if requests:
+		# 			self._requests[originator] = requests
+		# 		else:
+		# 			del self._requests[originator]
+
+		# return resultRequest
+
+
+	def queueRequestForPCH(self, pch:PCH, operation:Operation=Operation.NOTIFY, parameters:Parameters=None, data:JSON=None, ty:T=None, request:CSERequest=None, reqType:RequestType=RequestType.REQUEST) -> CSERequest:
+		"""	Queue a request for a <PCH>. It can be retrieved via its <PCU> child resource.
+
+			If a `request` is passed then this object is queued.
+		"""
+
+		if not request:
+			# Fill various request attributes
+			request 									= CSERequest()
+			request.op 									= operation
+			request.headers.originator					= pch.getOriginator()
+			request.headers.resourceType 				= ty
+			request.headers.originatingTimestamp		= DateUtils.getResourceDate()
+			request.headers.requestIdentifier			= Utils.uniqueRI()
+			request.headers.releaseVersionIndicator		= CSE.releaseVersion
+			if parameters:
+				if C.hfcEC in parameters:			
+					request.parameters[C.hfEC] 		= parameters[C.hfcEC]	# Event Category
+			request.dict 							= data
+
+		L.isDebug and L.logDebug(f'Storing REQUEST for: {request.headers.originator} with ID: {request.headers.requestIdentifier} for polling')
+		self.queuePollingRequest(request, reqType)
+		return request
+	
+
+	def waitForResponseToPCH(self, request:CSERequest) -> Result:
+		"""	Wait for a RESPOONSE to a request.
+		"""
+		L.isDebug and L.logDebug(f'Waiting for RESPONSE with request ID: {request.headers.requestIdentifier}')
+
+		if (response := self.waitForPollingRequest(request.headers.originator, request.headers.requestIdentifier, timeout=CSE.request.requestExpirationDelta, reqType=RequestType.RESPONSE)):
+			L.isDebug and L.logDebug(f'RESPONSE received ID: {response.headers.requestIdentifier}')
+			return Result(status=True, request=response)
+		
+		L.logWarn(dbg := f'Timeout for response ID: {request.headers.requestIdentifier}')
+		return Result(status=False, rsc=RC.requestTimeout, dbg=dbg)
+
+
+	# def _cleanupRequests(self) -> None:
+	# 	with self._requestLock:
+	# 		now = DateUtils.getResourceDate()
+	# 		for originator in list(self._requests.keys()):
+	# 			requests = [ (r,t) for r,t in self._requests[originator] if r.headers.requestExpirationTimestamp > now ]
+	# 			if requests:
+	# 				self._requests[originator] = requests
+	# 			else:
+	# 				del self._requests[originator]
+
+		
 
 	###########################################################################
 
 	#
-	#	Handling requests.
+	#	Handling sending requests.
 	#
 	#
 	#	TODO	Is targetResource necessary?
@@ -425,7 +638,7 @@ class RequestManager(object):
 		"""	Send a RETRIEVE request via the appropriate channel or transport protocol.
 		"""
 		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri):
-			if not ct and not (ct := RequestUtils.determineSerialization(url, csz)):
+			if not ct and not (ct := RequestUtils.determineSerialization(url, csz), CSE.defaultSerialization):
 				continue
 
 			# TODO
@@ -448,12 +661,8 @@ class RequestManager(object):
 		"""	Send a CREATE request via the appropriate channel or transport protocol.
 		"""
 		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri):
-			if not ct and not (ct := RequestUtils.determineSerialization(url, csz)):
+			if not ct and not (ct := RequestUtils.determineSerialization(url, csz, CSE.defaultSerialization)):
 				continue
-
-			# Send the request via a PCH, if present
-			if pch:
-				pch.storeRequest(Operation.CREATE, originator=originator, ty=ty, data=data, ct=ct, parameters=parameters)
 
 			targetOriginator = tor if not targetOriginator else targetOriginator
 
@@ -473,7 +682,7 @@ class RequestManager(object):
 		"""	Send an UPDATE request via the appropriate channel or transport protocol.
 		"""
 		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri):
-			if not ct and not (ct := RequestUtils.determineSerialization(url, csz)):
+			if not ct and not (ct := RequestUtils.determineSerialization(url, csz, CSE.defaultSerialization)):
 				continue
 			targetOriginator = tor if not targetOriginator else targetOriginator
 
@@ -493,7 +702,7 @@ class RequestManager(object):
 		"""	Send a DELETE request via the appropriate channel or transport protocol.
 		"""
 		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri):
-			if not ct and not (ct := RequestUtils.determineSerialization(url, csz)):
+			if not ct and not (ct := RequestUtils.determineSerialization(url, csz, CSE.defaultSerialization)):
 				continue
 			targetOriginator = tor if not targetOriginator else targetOriginator
 
@@ -507,6 +716,35 @@ class RequestManager(object):
 			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 		return Result(status=False, rsc=RC.internalServerError, dbg=f'No target found for uri: {uri}')
+
+
+	def sendNotifyRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:
+		"""	Send a NOTIFY request via the appropriate channel or transport protocol.
+		"""
+		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri):
+
+			# Send the request via a PCH, if present
+			if pch:
+				request = self.queueRequestForPCH(pch, Operation.NOTIFY, parameters=parameters, data=data)
+				return self.waitForResponseToPCH(request)
+
+			# Otherwise send it via one of the bindings
+			if not ct and not (ct := RequestUtils.determineSerialization(url, csz, CSE.defaultSerialization)):
+				continue
+
+			targetOriginator = tor if not targetOriginator else targetOriginator
+
+			if Utils.isHttpUrl(url):
+				CSE.event.httpSendNotify() # type: ignore [attr-defined]
+				return CSE.httpServer.sendHttpRequest(Operation.NOTIFY, url, originator, data=data, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+			elif Utils.isMQTTUrl(url):
+				CSE.event.mqttSendNotify()	# type: ignore [attr-defined]
+				return CSE.mqttClient.sendMqttRequest(Operation.NOTIFY, url, originator, data=data, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
+			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+		
+		return Result(status=False, rsc=RC.internalServerError, dbg=f'No target found for uri: {uri}')
+
 
 	###########################################################################
 	#
@@ -869,13 +1107,15 @@ class RequestManager(object):
 				else:	
 					L.isDebug and L.logDebug(f'Resource: {resource.ri} with no request reachability')
 					result.append(resource.ri)
-					
+
 		return result
 
 
 	def resolveSingleUriCszTo(self, uri:str) -> list[ Tuple[str, list[str], str, PCH ] ]:
 		"""	Resolve the real URL, contentSerialization, and the targetOriginator from a (notification) URI.
 			The result is a list of tuples of (url, list of contentSerializations, target originator, PollingChannel resource).
+
+			No access control check is done in this function. This must have been done prior to calling it.
 
 			Return a list of (url, None, None, None) (containing only one element) if the URI is already a URL. 
 			We cannot determine the preferred serializations and we don't know the target entity.
@@ -888,7 +1128,7 @@ class RequestManager(object):
 			In case of an error, an empty list is returned.
 		"""
 
-		# TODO docu for pch return
+		# TODO Doesn't do this method do to much?
 
 		if Utils.isURL(uri):	# The uri is a direct URL
 			return [ (uri, None, None, None) ]
@@ -902,18 +1142,12 @@ class RequestManager(object):
 		# If the target is NOT reachable then try to retrieve a potential
 		pollingChannelResources = []
 		if targetResource.rr == False:
-			L.isDebug and L.logDebug(f'Target: {uri} is not requestReachable')
+			L.isDebug and L.logDebug(f'Target: {uri} is not requestReachable. Trying <PCH>.')
 			if not len(pollingChannelResources := CSE.dispatcher.directChildResources(targetResource.ri, T.PCH)):
 				L.isWarn and L.logWarn(f'Target: {uri} is not requestReachable and does not have a <PCH>.')
 				return []
 			# Take the first resource and return it. There should hopefully only be one, but we don't check this here
 			return [ (None, targetResource.csz, None, cast(PCH, pollingChannelResources[0])) ]
-
-
-		# TODO Access control NOTIFY
-		# if not CSE.security.hasAccess('', resource, Permission.NOTIFY):	# check whether AE/CSE may receive Notifications
-		# 	Logging.logWarn(f'No access to resource: {nu}')
-		# 	return None
 
 		# Use the poa of a target resource
 		if not targetResource.poa:	# check that the resource has a poa

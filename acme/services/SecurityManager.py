@@ -259,6 +259,8 @@ class SecurityManager(object):
 
 	def hasAccessToPCU(self, originator:str, resource:PCH_PCU) -> bool:
 		"""	Check whether the originator has access to the PCU resource.
+			This should be done to check the parent PCH, but the originator
+			would be the same as the PCU, so we can optimize this a bit.
 		"""
 		return originator == resource.getOriginator()
 

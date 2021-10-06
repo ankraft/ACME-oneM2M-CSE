@@ -16,6 +16,12 @@ from acme.etc.Types import ResourceTypes as T, NotificationEventType as NET, Res
 from init import *
 
 aeRN2 = f'{aeRN}2'
+ae2URL = f'{aeURL}2'
+pch2URL = f'{ae2URL}/{pchRN}'
+pcu2URL = f'{pch2URL}/pcu'
+
+wait = 2 # seconds
+requestTimeout = 10   # TODO make this configurable in the CSE, like expiration
 
 class TestPCH_PCU(unittest.TestCase):
 
@@ -33,6 +39,15 @@ class TestPCH_PCU(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
+		"""	Setup the starting resource structure
+		```
+		CSEBase                             
+		    ├─testAE                       
+		    │    └─testCNT                 
+		    └─testAE2                      
+		         └─testACP2   Allows NOTIFY for testAE
+		``` 
+		"""
 
 		# Add first AE
 		dct = 	{ 'm2m:ae' : {
@@ -60,12 +75,17 @@ class TestPCH_PCU(unittest.TestCase):
 
 		# Add permissions for second AE
 		dct = 	{ "m2m:acp": {
-			"rn": acpRN,
+			"rn": f'{acpRN}2',
 			"pv": {
 				"acr": [ { 	
 					"acor": [ cls.originator ],
+					"acop": Permission.NOTIFY
+				},
+				{ 	
+					"acor": [ cls.originator2 ],
 					"acop": Permission.ALL
-				} ]
+				} 
+				]
 			},
 			"pvs": { 
 				"acr": [ {
@@ -100,23 +120,116 @@ class TestPCH_PCU(unittest.TestCase):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(f'{aeURL}2', ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 
+		with console.status('[blue]Waiting for polling requests to timeout...') as status:
+			time.sleep(requestTimeout)
+
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createSUB(self) -> None:
+	def test_createSUBunderCNTFail(self) -> None:
 		"""	CREATE <SUB> under <CNT>. No <PCH> yet -> FAIL"""
 		clearLastNotification()	# clear the notification first
-		self.assertIsNotNone(TestPCH_PCU.ae)
-		self.assertIsNotNone(TestPCH_PCU.cnt)
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
-			            'net': [ NET.resourceUpdate, NET.createDirectChild ]
+			            'net': [ NET.createDirectChild ]
+					},
+					'nu': [ TestPCH_PCU.aeRI2 ],
+					# 'su': TestPCH_PCU.aeRI2
+				}}
+		r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.subscriptionVerificationInitiationFailed, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createPCHunderAE2(self) -> None:
+		"""	Create <PCH> under <AE> """
+		self.assertIsNotNone(TestPCH_PCU.ae)
+		dct = 	{ 'm2m:pch' : { 
+					'rn' : pchRN,
+				}}
+		r, rsc = CREATE(ae2URL, TestPCH_PCU.originator2, T.PCH, dct)
+		self.assertEqual(rsc, RC.created, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrievePCUunderAE2Fail(self) -> None:
+		"""	Retrieve <PCU>'s with implicite request timeout (nothing to retrieve) -> FAIL """
+		r, rsc = RETRIEVE(pcu2URL, TestPCH_PCU.originator2)
+		self.assertEqual(rsc, RC.requestTimeout, r)
+
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSUBunderCNT(self) -> None:
+		"""	CREATE <SUB> under <CNT> with <PCH>"""
+
+		def confirmation() -> None:
+			r, rsc = RETRIEVE(pcu2URL, TestPCH_PCU.originator2)
+			self.assertEqual(rsc, RC.OK, r)
+			# response is a oneM2M request			
+			self.assertIsNotNone(findXPath(r, 'pc'), r)
+			self.assertIsNotNone(findXPath(r, 'pc/m2m:sgn'), r)
+			self.assertIsNotNone(findXPath(r, 'pc/m2m:sgn/vrq'))
+			self.assertTrue(findXPath(r, 'pc/m2m:sgn/vrq'))
+			self.assertIsNotNone(findXPath(r, 'pc/m2m:sgn/sur'))
+			self.assertIsNotNone(findXPath(r, 'pc/m2m:sgn/cr'))
+			self.assertIsNotNone(findXPath(r, 'rqi'))
+			rqi = findXPath(r, 'rqi')
+			print(rqi)
+			
+			# TODO Data = response to the tunneled request above.
+			r, rsc = NOTIFY(pcu2URL, TestPCH_PCU.originator2, data=None, headers={C.hfRSC : str(int(RC.OK)), C.hfRI : rqi})
+			print(rsc)
+
+		# 	dct = {
+		# 		'm2m:sgn' : {
+		# 			'nev' : {
+		# 				'rep' : {},
+		# 				'net' : NotificationEventType.resourceUpdate
+		# 			},
+		# 			'sur' : Utils.fullRI(sub['ri'])
+		# 		}
+		# 	}
+
+		# responseNotification = {
+		# 	'm2m:rsp' : {
+		# 		'rsc'	:	RC.ok,
+		# 		'rqi'	:	result.resource['ors/rqi'],
+		# 		'pc'	:	result.resource['ors/pc'],
+		# 		'to' 	:	result.resource['ors/to'],
+		# 		'fr' 	: 	originator,
+		# 		'rvi'	: 	request.headers.releaseVersionIndicator
+		# 	}
+		# }
+			
+			# TODO send OK
+
+		Thread(target=confirmation).start()
+
+		time.sleep(wait)
+
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'net': [ NET.createDirectChild ]
 					},
 					'nu': [ TestPCH_PCU.aeRI2 ],
 					'su': TestPCH_PCU.aeRI2
 				}}
 		r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.SUB, dct)
-		self.assertEqual(rsc, RC.subscriptionVerificationInitiationFailed, r)
+		self.assertEqual(rsc, RC.created, r)
+
+		
+
+
+
+	def test_createNotificationDoPolling(self) -> None:
+		""" Create a <CIN> to create a notification and poll <PCU> """
+		dct = 	{ 'm2m:cin' : {
+					'con' : 'test'
+				}}
+		r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.created, r)
 
 
 
@@ -125,11 +238,21 @@ class TestPCH_PCU(unittest.TestCase):
 
 # TODO retrieve via PCU *after* delete
 
+# TODO retrieve PCU with expirationTimestamp
+
+# TODO reply with notify but different originator -> Fail
+
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 
 	# basic tests
-	suite.addTest(TestPCH_PCU('test_createSUB'))
+	suite.addTest(TestPCH_PCU('test_createSUBunderCNTFail'))
+	suite.addTest(TestPCH_PCU('test_createPCHunderAE2'))
+	#suite.addTest(TestPCH_PCU('test_retrievePCUunderAE2Fail'))
+	suite.addTest(TestPCH_PCU('test_createSUBunderCNT'))
+
+	# suite.addTest(TestPCH_PCU('test_createNotificationDoPolling'))
+
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

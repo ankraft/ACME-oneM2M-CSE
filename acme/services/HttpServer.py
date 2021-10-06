@@ -185,7 +185,7 @@ class HttpServer(object):
 		dissectResult = self._dissectHttpRequest(request, operation, path)
 
 		# log Body, if there is one
-		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ]:
+		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ] and dissectResult.request.data:
 			if dissectResult.request.ct == ContentSerializationType.JSON:
 				L.isDebug and L.logDebug(f'Body: \n{str(dissectResult.request.data)}')
 			else:
@@ -405,44 +405,46 @@ class HttpServer(object):
 		if request:
 			result.request = request
 
-		# Build the headers
-		headers = {}
-		headers['Server'] = self.serverID						# set server field
-		headers[C.hfRSC] = f'{int(result.rsc)}'					# set the response status code
-		if result.request.headers.requestIdentifier:
-			headers[C.hfRI] = result.request.headers.requestIdentifier
-		if result.request.headers.releaseVersionIndicator:
-			headers[C.hfRVI] = result.request.headers.releaseVersionIndicator
-		if result.request.headers.vendorInformation:
-			headers[C.hfVSI] = result.request.headers.vendorInformation
-
-		# HTTP status code
-		statusCode = result.rsc.httpStatusCode()
-
 		#
 		# Determine the accept type and encode the content accordinly
 		#
 		# Look whether there is a accept header in the original request
 		if result.request.headers.accept:
-			ct = ContentSerializationType.getType(result.request.headers.accept[0])
-		
+			result.request.ct = ContentSerializationType.getType(result.request.headers.accept[0])
 		# No accept, check originator
 		elif len(csz := CSE.request.getSerializationFromOriginator(result.request.headers.originator)) > 0:
-			ct = csz[0]
-
+			result.request.ct = csz[0]
 		# Default: configured CSE's default
 		else:
-			ct = CSE.defaultSerialization
+			result.request.ct = CSE.defaultSerialization
+
+		outResult = RequestUtils.requestFromResult(result)
+
+		# Build the headers
+		headers = {}
+		headers['Server'] = self.serverID						# set server field
+		if result.rsc:
+			headers[C.hfRSC] = f'{int(result.rsc)}'				# set the response status code
+		if rqi := Utils.findXPath(outResult.dict, 'rqi'):
+			headers[C.hfRI] = rqi
+		if rvi := Utils.findXPath(outResult.dict, 'rvi'):
+			headers[C.hfRVI] = rvi
+		if vsi := Utils.findXPath(outResult.dict, 'vsi'):
+			headers[C.hfVSI] = vsi
+
+		# HTTP status code
+		statusCode = result.rsc.httpStatusCode()
 		
 		# Assign and encode content accordingly
-		headers['Content-Type'] = (cts := ct.toHeader())
-		content = result.toData(ct)
+		headers['Content-Type'] = (cts := result.request.ct.toHeader())
+		content = RequestUtils.serializeData(outResult.dict['pc'], result.request.ct)
 		
 		# Build and return the response
 		if isinstance(content, bytes):
 			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: \n{TextTools.toHex(content)}\n=>\n{str(result.toData())}')
 		else:
-			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
+			# L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
+			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: {outResult.dict["pc"]}\n')
 		return Response(response=content, status=statusCode, content_type=cts, headers=headers)
 
 

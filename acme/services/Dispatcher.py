@@ -57,12 +57,20 @@ class Dispatcher(object):
 	#
 
 	def processRetrieveRequest(self, request:CSERequest, originator:str, id:str=None) -> Result:
-		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
+		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
 		# handle fanout point requests
-		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == T.GRP_FOPT:
+		if (fanoutPointResource := Utils.fanoutPointResource(srn)) and fanoutPointResource.ty == T.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
-			return fanoutPointResource.handleRetrieveRequest(request, fopsrn, request.headers.originator)
+			return fanoutPointResource.handleRetrieveRequest(request, srn, request.headers.originator)
+
+		# Handle PollingChannelURI RETRIEVE
+		if (pollingChannelURIResource := Utils.pollingChannelURIResource(srn)):		# We need to check the srn here
+			if not CSE.security.hasAccessToPCU(originator, pollingChannelURIResource):
+				L.logDebug(dbg:=f'Originator: {originator} has not access to <pollingChannelURI>: {id}')
+				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
+			L.isDebug and L.logDebug(f'Redirecting request <PCU>: {pollingChannelURIResource.__srn__}')
+			return pollingChannelURIResource.handleRetrieveRequest(request, id, originator)
 
 		permission = Permission.DISCOVERY if request.args.fu == 1 else Permission.RETRIEVE
 
@@ -72,12 +80,11 @@ class Dispatcher(object):
 		if permission == Permission.RETRIEVE and request.args.rcn not in [ RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource, RCN.childResourceReferences]: # TODO
 			return Result(status=False, rsc=RC.badRequest, dbg=f'invalid rcn: {int(request.args.rcn)} for fu: {int(request.args.fu)}')
 
-		L.isDebug and L.logDebug(f'Discover/Retrieve resources (fu: {request.args.fu.name}, drt: {request.args.drt.name}, handling: {request.args.handling}, conditions: {request.args.conditions}, resultContent: {request.args.rcn.name}, attributes: {str(request.args.attributes)})')
-
+		L.isDebug and L.logDebug(f'Discover/Retrieve resources (rcn: {request.args.rcn}, fu: {request.args.fu.name}, drt: {request.args.drt.name}, handling: {request.args.handling}, conditions: {request.args.conditions}, resultContent: {request.args.rcn.name}, attributes: {str(request.args.attributes)})')
 
 		# Retrieve the target resource, because it is needed for some rcn (and the default)
 		if request.args.rcn in [RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource]:
-			if not (res := self.retrieveResource(id)).resource:
+			if not (res := self.retrieveResource(id, originator, request)).resource:
 			 	return res # error
 			if not CSE.security.hasAccess(originator, res.resource, permission):
 				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=f'originator has no permission ({permission})')
@@ -98,7 +105,7 @@ class Dispatcher(object):
 					return Result(status=False, rsc=RC.badRequest, dbg='missing lnk attribute in target resource')
 
 				# Retrieve and check the linked-to request
-				if (res := self.retrieveResource(lnk, originator)).resource:
+				if (res := self.retrieveResource(lnk, originator, request)).resource:
 					if not (resCheck := res.resource.willBeRetrieved(originator)).status:	# resource instance may be changed in this call
 						return resCheck
 				return res
@@ -149,7 +156,7 @@ class Dispatcher(object):
 			return Result(status=False, rsc=RC.badRequest, dbg='wrong rcn for RETRIEVE')
 
 
-	def retrieveResource(self, id:str, originator:str=None) -> Result:
+	def retrieveResource(self, id:str, originator:str=None, request:CSERequest=None) -> Result:
 		"""	If the ID is in SP-relative format then first check whether this is for the
 			local CSE. 
 			If yes, then adjust the ID and try to retrieve it. 
@@ -161,11 +168,11 @@ class Dispatcher(object):
 			else:
 				if Utils.isSPRelative(id):
 					return CSE.remote.retrieveRemoteResource(id, originator)
-		return self.retrieveLocalResource(srn=id) if Utils.isStructured(id) else self.retrieveLocalResource(ri=id)
+		return self.retrieveLocalResource(srn=id, originator=originator, request=request) if Utils.isStructured(id) else self.retrieveLocalResource(ri=id, originator=originator, request=request)
 
 
-	def retrieveLocalResource(self, ri:str=None, srn:str=None) -> Result:
-		L.isDebug and L.logDebug(f'Retrieve resource: {ri if not srn else srn}')
+	def retrieveLocalResource(self, ri:str=None, srn:str=None, originator:str=None, request:CSERequest=None) -> Result:
+		L.isDebug and L.logDebug(f'Retrieve resource: {ri if not srn else srn} for originator: {originator}')
 
 		if ri:
 			result = CSE.storage.retrieveResource(ri=ri)		# retrieve via normal ID
@@ -176,8 +183,8 @@ class Dispatcher(object):
 
 		if resource := result.resource:	# Resource found
 			# Check for virtual resource
-			if resource.ty != T.GRP_FOPT and Utils.isVirtualResource(resource): # fopt is handled elsewhere
-				return resource.handleRetrieveRequest()	# type: ignore[no-any-return]
+			if resource.ty not in [T.GRP_FOPT, T.PCH_PCU] and Utils.isVirtualResource(resource): # fopt, PCU are handled elsewhere
+				return resource.handleRetrieveRequest(request=request, originator=originator)	# type: ignore[no-any-return]
 			return Result(status=True, resource=resource)
 		# error
 		L.isDebug and L.logDebug(f'{result.dbg}: {ri}/{srn}')
@@ -473,7 +480,7 @@ class Dispatcher(object):
 		if not (res := resource.activate(parentResource, originator)).status: 	# activate the new resource
 			resource.dbDelete()
 			return res.errorResult()
-
+		
 		# Could be that we changed the resource in the activate, therefore write it again
 		if not (res := resource.dbUpdate()).resource:
 			resource.dbDelete()
@@ -661,6 +668,38 @@ class Dispatcher(object):
 			parentResource.childRemoved(resource, originator)
 
 		return Result(status=res.status, resource=resource, rsc=res.rsc, dbg=res.dbg)
+
+
+	#########################################################################
+	#
+	#	Notify
+	#
+
+	def processNotifyRequest(self, request:CSERequest, originator:str, id:str=None) -> Result:
+		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
+
+		# get resource to be notified and check permissions
+		if not (res := self.retrieveResource(id)).resource:
+			L.isDebug and L.logDebug(res.dbg)
+			return Result(status=False, rsc=RC.notFound, dbg=res.dbg)
+		resource = res.resource
+
+		# Security checks below
+		# if CSE.security.hasAccess(originator, resource, Permission.NOTIFY) == False:
+		# 	return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
+		
+		# Check for <pollingChannelURI> resource
+		# This is also the only resource type supported that can receive notifications, yet
+		if resource.ty == T.PCH_PCU :
+			if not CSE.security.hasAccessToPCU(originator, resource):
+				L.logDebug(dbg:=f'Originator: {originator} has not access to <pollingChannelURI>: {id}')
+				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
+			return resource.handleNotifyRequest(request=request, id=id, originator=originator)	# type: ignore[no-any-return]
+
+		# error
+		L.logDebug(dbg := f'Unsupported resource type: {resource.ty} for notifications. Supported: <PCU>.')
+		return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+
 
 
 	#########################################################################
