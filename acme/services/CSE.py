@@ -159,10 +159,8 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	httpServer.run() 						# This does return (!)
 
 	# Start the MQTT client
-	mqttClient.run() 						# This does return
-	if not mqttClient.isFullySubscribed():	# This waits until the MQTT Client connects and fully subscribes (until a timeout)
-		return False
-
+	if not mqttClient.run():				# This does return
+		return False 					
 	remote = RemoteCSEManager()				# Initialize the remote CSE manager
 	announce = AnnouncementManager()		# Initialize the announcement manager
 

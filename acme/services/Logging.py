@@ -278,8 +278,6 @@ class Logging:
 		return answer
 
 
-	
-
 	@staticmethod
 	@property
 	def isInfo() -> bool:

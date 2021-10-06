@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import field
 from typing import Tuple, cast, Dict
 from urllib.parse import urlparse
+from copy import deepcopy
 from threading import Lock
 
 from ..etc.Constants import Constants as C
@@ -119,13 +120,13 @@ class MQTTClientHandler(MQTTHandler):
 			# We can't do anything about a wrong topic. Actually, we should never have received this
 			return
 		
-		# Dissect topic
+		# Dissect Body
 		contentType:str = ts[-1]
 		if not (dissectResult := self._dissectMQTTRequest(data, contentType, isResponse=True)).status:
 			return
 		
 		# Add it to a response queue in the manager
-		self.mqttClient.addResponse(dissectResult)
+		self.mqttClient.addResponse(dissectResult, topic)
 	
 
 	def _handleIncommingRequest(self, connection:MQTTConnection, topic:str, data:bytes, responseTopicType:str, isRegistration:bool=False) -> None:
@@ -142,7 +143,10 @@ class MQTTClientHandler(MQTTHandler):
 			if (response := prepareMqttRequest(result)).status:
 				topic = f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}'
 				logRequest(response, topic, isResponse=True)
-				connection.publish(topic, response.data.encode())
+				if isinstance(response.data, bytes):
+					connection.publish(topic, response.data)
+				else:
+					connection.publish(topic, response.data.encode())
 
 		# SP relative of for : /cseid/aei
 		L.isDebug and L.logDebug(f'==> MQTT Request: {topic}')
@@ -201,8 +205,8 @@ class MQTTClientHandler(MQTTHandler):
 		if contentType == ContentSerializationType.JSON:
 			L.isDebug and L.logDebug(f'Body: \n{cast(str, data)}')
 		else:
-			L.isDebug and L.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, data))}\n=>\n{dissectResult.request.dict}')
-
+			L.isDebug and L.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, data))}\n=>\n{dissectResult.request.req}')
+		
 		# handle request
 		if self.mqttClient.isStopped:
 			_sendResponse(Result(rsc=RC.internalServerError, request=dissectResult.request, dbg='mqtt server not running', status=False))
@@ -267,7 +271,7 @@ class MQTTClient(object):
 		self.isStopped												= False
 		self.topicsCount											= 0
 		self.mqttConnections:Dict[Tuple[str, int], MQTTConnection]	= {}
-		self.receivedResponses:Dict[str, Result]					= {}
+		self.receivedResponses:Dict[str, Tuple[Result, str]]		= {}
 		self.receivedResponsesLock									= Lock()
 
 
@@ -279,13 +283,17 @@ class MQTTClient(object):
 		L.isInfo and L.log('MQTT Client initialized')
 	
 
-	def run(self) -> None:
+	def run(self) -> bool:
 		"""	Initialize and run the MQTT client as a BackgroundWorker/Actor.
 		"""
 		if not self.enable or not self.mqttConnection:
 			L.isInfo and L.log('MQTT: client NOT enabled')
-			return
+			return True
 		self.mqttConnection.run()
+		if not self.isFullySubscribed():	# This waits until the MQTT Client connects and fully subscribes (until a timeout)
+			return False
+		return True
+
 	
 
 	def shutdown(self) -> bool:
@@ -427,35 +435,37 @@ class MQTTClient(object):
 		# Then return the response as result
 		logRequest(preq, topic, isResponse=False)
 		mqttConnection.publish(topic, preq.data)
-		return self.waitForResponse(req.request.headers.requestIdentifier, self.requestTimeout)
+		response, responseTopic = self.waitForResponse(req.request.headers.requestIdentifier, self.requestTimeout)
+		logRequest(response, responseTopic, isResponse=True)
+		return response
 
 
-	def addResponse(self, response:Result) -> None:
-		"""	Add a response to a response dictionary. The key is the `rqi` (requestIdentifier) of
+	def addResponse(self, response:Result, topic:str) -> None:
+		"""	Add a response and topic to the response dictionary. The key is the `rqi` (requestIdentifier) of
 			the response. 
 		"""
 		if (rqi := response.request.headers.requestIdentifier):
 			with self.receivedResponsesLock:
-				self.receivedResponses[rqi] = response
+				self.receivedResponses[rqi] = (response, topic)
 
 
-	def waitForResponse(self, rqi:str, timeOut:float) -> Result:
+	def waitForResponse(self, rqi:str, timeOut:float) -> Tuple[ Result, str ]:
 		"""	Wait for a response with a specific requestIdentifier `rqi`.
 		"""
 		resp = None
+		topic = None
 
 		def _receivedResponse() -> bool:
-			nonlocal resp
+			nonlocal resp, topic
 			with self.receivedResponsesLock:
 				if rqi in self.receivedResponses:
-					resp = self.receivedResponses.pop(rqi)	# return the response (in a Result object), and remove it from the dict.
+					resp, topic = self.receivedResponses.pop(rqi)	# return the response (in a Result object), and remove it from the dict.
 					return True
 			return False
 			
 		if not DateUtils.waitFor(timeOut, _receivedResponse):
-			return Result(status=False, rsc=RC.targetNotReachable)
-		return resp
-
+			return Result(status=False, rsc=RC.targetNotReachable), None
+		return resp, topic
 
 
 ##############################################################################
@@ -466,40 +476,10 @@ def prepareMqttRequest(result:Result, originator:str=None, ty:T=None, op:Operati
 	
 		The constructed and serialized content is returned in `Result.data`.
 	"""
-	content:str|bytes = ''
-	req:JSON = {}
 
-	# Build request attributes
-	req['fr'] = originator if originator else CSE.cseCsi
-	req['to'] = result.request.headers.originator if result.request.headers.originator else 'non-onem2m-entity'
-	req['ot'] = DateUtils.getResourceDate()
-	if result.rsc != RC.UNKNOWN:
-		req['rsc'] = int(result.rsc)
-	if op:
-		req['op'] = op.value
-	if ty:
-		req['ty'] = int(ty)
-	if result.request.headers.requestIdentifier:
-		req['rqi'] = result.request.headers.requestIdentifier
-	if result.request.headers.releaseVersionIndicator:
-		req['rvi'] = result.request.headers.releaseVersionIndicator
-	if result.request.headers.vendorInformation:
-		req['vsi'] = result.request.headers.vendorInformation
-	req['pc'] = result.toData(ContentSerializationType.PLAIN)	# First, construct and serialize the data as JSON/dictionary. Encoding to JSON or CBOR is done later
-
-	# Add additional parameters
-	if result.request.parameters:
-		if (ec := result.request.parameters.get(C.hfEC)):				# Event Category
-			req['ec'] = ec
-
-	# serialize and log request
-	request = Result(data=req, request=result.request, status=True)
-	if result.request.ct == ContentSerializationType.CBOR:		# Always us the ct from the request
-		request.data = cast(bytes, RequestUtils.serializeData(request.data, ContentSerializationType.CBOR))
-	else:
-		request.data = cast(bytes, RequestUtils.serializeData(request.data, ContentSerializationType.JSON))
-	
-	return request
+	result = RequestUtils.requestFromResult(result, originator, ty, op)
+	result.data = cast(bytes, RequestUtils.serializeData(result.dict, result.request.ct))
+	return result
 
 
 def logRequest(req:Result, topic:str, isResponse:bool=False) -> None:
@@ -507,8 +487,8 @@ def logRequest(req:Result, topic:str, isResponse:bool=False) -> None:
 	"""
 	prefix = f'<== MQTT Response (RSC: {req.rsc})' if isResponse else f'MQTT Request ==>'
 	body   = ''
-	if req.request.headers.contentType == ContentSerializationType.CBOR:
-		body = f'\nBody: \n{TextTools.toHex(req.data)}\n=>\n{req.request}'
-	elif req.request.headers.contentType == ContentSerializationType.JSON:
-		body = f'\nBody: {str(req.data)}'
+	if req.request.headers.contentType == ContentSerializationType.CBOR or req.request.ct == ContentSerializationType.CBOR:
+		body = f'\nBody: \n{TextTools.toHex(req.data if not isResponse else req.request.data)}\n=>\n{req.dict if not isResponse else str(req.request.req)}'
+	elif req.request.headers.contentType == ContentSerializationType.JSON or req.request.ct == ContentSerializationType.JSON:
+		body = f'\nBody: {str(req.data) if not isResponse else str(req.request.req)}' 
 	L.isDebug and L.logDebug(f'{prefix}: {topic}{body}')
