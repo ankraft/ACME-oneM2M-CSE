@@ -11,7 +11,7 @@ from copy import deepcopy
 from typing import List
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import ResourceTypes as T, Result, ResponseCode as RC, JSON, CSEType
+from ..etc.Types import ResourceTypes as T, Result, ResponseStatusCode as RC, JSON, CSEType
 from ..etc import Utils as Utils, DateUtils as DateUtils
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration

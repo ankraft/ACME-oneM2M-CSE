@@ -14,7 +14,7 @@ import traceback
 from typing import Any, Tuple, cast
 
 from .Constants import Constants as C
-from .Types import ResourceTypes as T, ResponseCode
+from .Types import ResourceTypes as T, ResponseStatusCode
 from .Types import Result, JSON
 from ..services.Logging import Logging as L
 from ..resources.Resource import Resource
@@ -590,4 +590,4 @@ def exceptionToResult(e:Exception) -> Result:
 	tb = traceback.format_exc()
 	L.logErr(tb, exc=e)
 	tbs = tb.replace('"', '\\"').replace('\n', '\\n')
-	return Result(rsc=ResponseCode.internalServerError, dbg=f'encountered exception: {tbs}')
+	return Result(rsc=ResponseStatusCode.internalServerError, dbg=f'encountered exception: {tbs}')

@@ -12,7 +12,7 @@ import time
 from copy import deepcopy
 from typing import Tuple, List, cast
 from ..etc import Utils as Utils
-from ..etc.Types import ResourceTypes as T, ResponseCode as RC, JSON
+from ..etc.Types import ResourceTypes as T, ResponseStatusCode as RC, JSON
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource

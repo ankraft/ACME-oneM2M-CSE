@@ -12,7 +12,7 @@ if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
 from rich import print
-from acme.etc.Types import ResourceTypes as T, ResponseCode as RC, Operation, ResponseType
+from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, Operation, ResponseType
 from init import *
 
 # Headers for async requests

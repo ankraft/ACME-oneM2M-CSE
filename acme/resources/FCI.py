@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
 from ..resources.Resource import *
 from ..resources.AnnounceableResource import AnnounceableResource
 

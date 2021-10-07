@@ -15,7 +15,7 @@ from copy import deepcopy
 from threading import Lock
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType, ResourceTypes, Result, Parameters, ResponseCode as RC, ResourceTypes as T
+from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType, ResourceTypes, Result, Parameters, ResponseStatusCode as RC, ResourceTypes as T
 from ..etc import Utils as Utils, DateUtils as DateUtils, RequestUtils as RequestUtils
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
@@ -134,12 +134,9 @@ class MQTTClientHandler(MQTTHandler):
 			registration is done later anyway.
 		"""
 
-		def _sendResponse(result:Result, request:CSERequest=None) -> None:
-			"""	Actually send a response for a request. If `request` is given then
-				set it for the response.
+		def _sendResponse(result:Result) -> None:
+			"""	Send a response for a request.
 			"""
-			if request:
-				result.request = request
 			if (response := prepareMqttRequest(result)).status:
 				topic = f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}'
 				logRequest(response, topic, isResponse=True)
@@ -147,6 +144,7 @@ class MQTTClientHandler(MQTTHandler):
 					connection.publish(topic, response.data)
 				else:
 					connection.publish(topic, response.data.encode())
+					
 
 		# SP relative of for : /cseid/aei
 		L.isDebug and L.logDebug(f'==> MQTT Request: {topic}')
@@ -228,7 +226,10 @@ class MQTTClientHandler(MQTTHandler):
 		except Exception as e:
 			responseResult = Utils.exceptionToResult(e)
 		# Send response
-		_sendResponse(responseResult, dissectResult.request)
+
+		# TODO Also change in http
+		responseResult.prepareResultFromRequest(dissectResult.request)	# Add some fields from the original request
+		_sendResponse(responseResult)
 
 
 	def _dissectMQTTRequest(self, data:bytes, contenType:str, isResponse:bool=False) -> Result:
@@ -477,7 +478,7 @@ def prepareMqttRequest(result:Result, originator:str=None, ty:T=None, op:Operati
 		The constructed and serialized content is returned in `Result.data`.
 	"""
 
-	result = RequestUtils.requestFromResult(result, originator, ty, op)
+	result = RequestUtils.requestFromResult(result, originator, ty)
 	result.data = cast(bytes, RequestUtils.serializeData(result.dict, result.request.ct))
 	return result
 

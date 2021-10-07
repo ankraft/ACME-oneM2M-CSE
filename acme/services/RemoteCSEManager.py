@@ -12,7 +12,7 @@
 
 from typing import List, Tuple, Dict
 from ..etc.Constants import Constants as C
-from ..etc.Types import ResourceTypes as T, Result, CSEType, ResponseCode as RC, ContentSerializationType, JSON
+from ..etc.Types import ResourceTypes as T, Result, CSEType, ResponseStatusCode as RC, ContentSerializationType, JSON
 from ..etc import Utils as Utils
 from ..resources import CSR, CSEBase
 from ..resources.Resource import Resource

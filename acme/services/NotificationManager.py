@@ -14,7 +14,7 @@ from threading import Lock
 from tinydb.utils import V
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import MissingData, Result, NotificationContentType, NotificationEventType, ResponseCode as RC
+from ..etc.Types import MissingData, Result, NotificationContentType, NotificationEventType, ResponseStatusCode as RC
 from ..etc.Types import JSON, Parameters
 from ..etc import Utils as Utils
 from ..services.Logging import Logging as L

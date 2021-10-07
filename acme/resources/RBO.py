@@ -8,7 +8,7 @@
 #
 
 from ..resources.MgmtObj import *
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseCode as RC, Result, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseStatusCode as RC, Result, JSON
 from ..etc import Utils as Utils
 
 # TODO Shouldn't those attributes actually be always be True? According to TS-0004 D.10.1-2

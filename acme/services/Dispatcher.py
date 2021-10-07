@@ -19,7 +19,7 @@ from ..etc.Types import FilterOperation
 from ..etc.Types import Permission
 from ..etc.Types import DesiredIdentifierResultType as DRT
 from ..etc.Types import ResultContentType as RCN
-from ..etc.Types import ResponseCode as RC
+from ..etc.Types import ResponseStatusCode as RC
 from ..etc.Types import Result
 from ..etc.Types import CSERequest
 from ..etc.Types import JSON, Parameters, Conditions
@@ -187,7 +187,7 @@ class Dispatcher(object):
 				return resource.handleRetrieveRequest(request=request, originator=originator)	# type: ignore[no-any-return]
 			return Result(status=True, resource=resource)
 		# error
-		L.isDebug and L.logDebug(f'{result.dbg}: {ri}/{srn}')
+		L.isDebug and L.logDebug(f'{result.dbg}: ri:{ri} srn:{srn}')
 		return result
 
 
@@ -321,7 +321,7 @@ class Dispatcher(object):
 			# Check labels similar to types
 			rlbl = r.lbl
 			if rlbl and (lbls := conditions.get('lbl')):
-				for l in lbls:
+				for l in lbls:	# TODO list comprehension
 					if l in rlbl:
 						found += len(lbls)
 						break
@@ -404,7 +404,7 @@ class Dispatcher(object):
 			return parentResource.handleCreateRequest(request, id, originator)	# type: ignore[no-any-return]
 
 		# Create resource from teh dictionary
-		if not (nres := Factory.resourceFromDict(deepcopy(request.dict), pi=parentResource.ri, ty=ty)).resource:	# something wrong, perhaps wrong type
+		if not (nres := Factory.resourceFromDict(deepcopy(request.pc), pi=parentResource.ri, ty=ty)).resource:	# something wrong, perhaps wrong type
 			return Result(status=False, rsc=RC.badRequest, dbg=nres.dbg)
 		nresource = nres.resource
 
@@ -439,7 +439,7 @@ class Dispatcher(object):
 		if request.args.rcn is None or request.args.rcn == RCN.attributes:	# Just the resource & attributes, integer
 			return res
 		elif request.args.rcn == RCN.modifiedAttributes:
-			dictOrg = request.dict[tpe]
+			dictOrg = request.pc[tpe]
 			dictNew = res.resource.asDict()[tpe]
 			return Result(status=res.status, resource={ tpe : Utils.resourceDiff(dictOrg, dictNew) }, rsc=res.rsc, dbg=res.dbg)
 		elif request.args.rcn == RCN.hierarchicalAddress:
@@ -538,12 +538,12 @@ class Dispatcher(object):
 		dictOrg = deepcopy(resource.dict)	# Save for later
 
 
-		if not (res := self.updateResource(resource, deepcopy(request.dict), originator=originator)).resource:
+		if not (res := self.updateResource(resource, deepcopy(request.pc), originator=originator)).resource:
 			return res.errorResult()
 		resource = res.resource 	# re-assign resource (might have been changed during update)
 
 		# Check resource update with registration
-		if (rres := CSE.registration.checkResourceUpdate(resource, deepcopy(request.dict))).rsc != RC.OK:
+		if (rres := CSE.registration.checkResourceUpdate(resource, deepcopy(request.pc))).rsc != RC.OK:
 			return rres.errorResult()
 
 		#

@@ -157,6 +157,9 @@ class ResourceTypes(ACMEIntEnum):
 	EVLAnnc			= -30010
 	NYCFCAnnc		= -30023
 
+	# Complex Types
+	RESPONSE		= -40000
+
 
 	def tpe(self) -> str:
 		return ResourceTypes._names[self.value] 					#  type: ignore
@@ -303,6 +306,8 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.EVLAnnc		: 'm2m:evlA',
 		ResourceTypes.NYCFCAnnc		: 'm2m:nycfcA',
 
+		ResourceTypes.RESPONSE		: 'rsp'
+
 	}
 
 	
@@ -387,7 +392,7 @@ class Announced(ACMEIntEnum):
 #
 
 
-class ResponseCode(ACMEIntEnum):
+class ResponseStatusCode(ACMEIntEnum):
 	""" Response codes """
 	accepted									= 1000
 	acceptedNonBlockingRequestSynch				= 1001
@@ -429,7 +434,7 @@ class ResponseCode(ACMEIntEnum):
 
 	def httpStatusCode(self) -> int:
 		""" Map the oneM2M RSC to an http status code. """
-		return ResponseCode._httpStatusCodes[self.value]					# type: ignore
+		return ResponseStatusCode._httpStatusCodes[self.value]					# type: ignore
 
 
 
@@ -437,43 +442,43 @@ class ResponseCode(ACMEIntEnum):
 #	Mapping of oneM2M return codes to http status codes
 #
 
-ResponseCode._httpStatusCodes = {																		# type: ignore
-		ResponseCode.OK 										: HTTPStatus.OK,						# OK
-		ResponseCode.deleted 									: HTTPStatus.OK,						# DELETED
-		ResponseCode.updated 									: HTTPStatus.OK,						# UPDATED
-		ResponseCode.created									: HTTPStatus.CREATED,					# CREATED
-		ResponseCode.accepted 									: HTTPStatus.ACCEPTED, 					# ACCEPTED
-		ResponseCode.acceptedNonBlockingRequestSynch 			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
-		ResponseCode.acceptedNonBlockingRequestAsynch			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
-		ResponseCode.badRequest									: HTTPStatus.BAD_REQUEST,				# BAD REQUEST
-		ResponseCode.contentsUnacceptable						: HTTPStatus.BAD_REQUEST,				# NOT ACCEPTABLE
-		ResponseCode.insufficientArguments 						: HTTPStatus.BAD_REQUEST,				# INSUFFICIENT ARGUMENTS
-		ResponseCode.invalidArguments							: HTTPStatus.BAD_REQUEST,				# INVALID ARGUMENTS
-		ResponseCode.maxNumberOfMemberExceeded					: HTTPStatus.BAD_REQUEST, 				# MAX NUMBER OF MEMBER EXCEEDED
-		ResponseCode.groupMemberTypeInconsistent				: HTTPStatus.BAD_REQUEST,				# GROUP MEMBER TYPE INCONSISTENT
-		ResponseCode.originatorHasNoPrivilege					: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS NO PRIVILEGE
-		ResponseCode.invalidChildResourceType					: HTTPStatus.FORBIDDEN,					# INVALID CHILD RESOURCE TYPE
-		ResponseCode.targetNotReachable							: HTTPStatus.FORBIDDEN,					# TARGET NOT REACHABLE
-		ResponseCode.alreadyExists								: HTTPStatus.FORBIDDEN,					# ALREAD EXISTS
-		ResponseCode.targetNotSubscribable						: HTTPStatus.FORBIDDEN,					# TARGET NOT SUBSCRIBABLE
-		ResponseCode.receiverHasNoPrivileges					: HTTPStatus.FORBIDDEN,					# RECEIVER HAS NO PRIVILEGE
-		ResponseCode.securityAssociationRequired				: HTTPStatus.FORBIDDEN,					# SECURITY ASSOCIATION REQUIRED
-		ResponseCode.subscriptionCreatorHasNoPrivilege			: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
-		ResponseCode.subscriptionHostHasNoPrivilege				: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION HOST HAS NO PRIVILEGE
-		ResponseCode.originatorHasAlreadyRegistered				: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS ALREADY REGISTERED
-		ResponseCode.appRuleValidationFailed					: HTTPStatus.FORBIDDEN,					# APP RULE VALIDATION FAILED
-		ResponseCode.requestTimeout								: HTTPStatus.FORBIDDEN,					# REQUEST TIMEOUT
-		ResponseCode.notFound									: HTTPStatus.NOT_FOUND,					# NOT FOUND
-		ResponseCode.operationNotAllowed						: HTTPStatus.METHOD_NOT_ALLOWED,		# OPERATION NOT ALLOWED
-		ResponseCode.notAcceptable 								: HTTPStatus.NOT_ACCEPTABLE,			# NOT ACCEPTABLE
-		ResponseCode.conflict									: HTTPStatus.CONFLICT,					# CONFLICT
-		ResponseCode.unsupportedMediaType						: HTTPStatus.UNSUPPORTED_MEDIA_TYPE,	# UNSUPPORTED_MEDIA_TYPE
-		ResponseCode.internalServerError 						: HTTPStatus.INTERNAL_SERVER_ERROR,		# INTERNAL SERVER ERROR
-		ResponseCode.subscriptionVerificationInitiationFailed	: HTTPStatus.INTERNAL_SERVER_ERROR,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
-		ResponseCode.releaseVersionNotSupported					: HTTPStatus.NOT_IMPLEMENTED,			# RELEASE_VERSION_NOT_SUPPORTED
-		ResponseCode.notImplemented								: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
+ResponseStatusCode._httpStatusCodes = {																		# type: ignore
+		ResponseStatusCode.OK 										: HTTPStatus.OK,						# OK
+		ResponseStatusCode.deleted 									: HTTPStatus.OK,						# DELETED
+		ResponseStatusCode.updated 									: HTTPStatus.OK,						# UPDATED
+		ResponseStatusCode.created									: HTTPStatus.CREATED,					# CREATED
+		ResponseStatusCode.accepted 									: HTTPStatus.ACCEPTED, 					# ACCEPTED
+		ResponseStatusCode.acceptedNonBlockingRequestSynch 			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
+		ResponseStatusCode.acceptedNonBlockingRequestAsynch			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
+		ResponseStatusCode.badRequest									: HTTPStatus.BAD_REQUEST,				# BAD REQUEST
+		ResponseStatusCode.contentsUnacceptable						: HTTPStatus.BAD_REQUEST,				# NOT ACCEPTABLE
+		ResponseStatusCode.insufficientArguments 						: HTTPStatus.BAD_REQUEST,				# INSUFFICIENT ARGUMENTS
+		ResponseStatusCode.invalidArguments							: HTTPStatus.BAD_REQUEST,				# INVALID ARGUMENTS
+		ResponseStatusCode.maxNumberOfMemberExceeded					: HTTPStatus.BAD_REQUEST, 				# MAX NUMBER OF MEMBER EXCEEDED
+		ResponseStatusCode.groupMemberTypeInconsistent				: HTTPStatus.BAD_REQUEST,				# GROUP MEMBER TYPE INCONSISTENT
+		ResponseStatusCode.originatorHasNoPrivilege					: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS NO PRIVILEGE
+		ResponseStatusCode.invalidChildResourceType					: HTTPStatus.FORBIDDEN,					# INVALID CHILD RESOURCE TYPE
+		ResponseStatusCode.targetNotReachable							: HTTPStatus.FORBIDDEN,					# TARGET NOT REACHABLE
+		ResponseStatusCode.alreadyExists								: HTTPStatus.FORBIDDEN,					# ALREAD EXISTS
+		ResponseStatusCode.targetNotSubscribable						: HTTPStatus.FORBIDDEN,					# TARGET NOT SUBSCRIBABLE
+		ResponseStatusCode.receiverHasNoPrivileges					: HTTPStatus.FORBIDDEN,					# RECEIVER HAS NO PRIVILEGE
+		ResponseStatusCode.securityAssociationRequired				: HTTPStatus.FORBIDDEN,					# SECURITY ASSOCIATION REQUIRED
+		ResponseStatusCode.subscriptionCreatorHasNoPrivilege			: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
+		ResponseStatusCode.subscriptionHostHasNoPrivilege				: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION HOST HAS NO PRIVILEGE
+		ResponseStatusCode.originatorHasAlreadyRegistered				: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS ALREADY REGISTERED
+		ResponseStatusCode.appRuleValidationFailed					: HTTPStatus.FORBIDDEN,					# APP RULE VALIDATION FAILED
+		ResponseStatusCode.requestTimeout								: HTTPStatus.FORBIDDEN,					# REQUEST TIMEOUT
+		ResponseStatusCode.notFound									: HTTPStatus.NOT_FOUND,					# NOT FOUND
+		ResponseStatusCode.operationNotAllowed						: HTTPStatus.METHOD_NOT_ALLOWED,		# OPERATION NOT ALLOWED
+		ResponseStatusCode.notAcceptable 								: HTTPStatus.NOT_ACCEPTABLE,			# NOT ACCEPTABLE
+		ResponseStatusCode.conflict									: HTTPStatus.CONFLICT,					# CONFLICT
+		ResponseStatusCode.unsupportedMediaType						: HTTPStatus.UNSUPPORTED_MEDIA_TYPE,	# UNSUPPORTED_MEDIA_TYPE
+		ResponseStatusCode.internalServerError 						: HTTPStatus.INTERNAL_SERVER_ERROR,		# INTERNAL SERVER ERROR
+		ResponseStatusCode.subscriptionVerificationInitiationFailed	: HTTPStatus.INTERNAL_SERVER_ERROR,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
+		ResponseStatusCode.releaseVersionNotSupported					: HTTPStatus.NOT_IMPLEMENTED,			# RELEASE_VERSION_NOT_SUPPORTED
+		ResponseStatusCode.notImplemented								: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
 		
-		ResponseCode.UNKNOWN									: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
+		ResponseStatusCode.UNKNOWN									: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
 
 	}
 
@@ -585,6 +590,12 @@ class Operation(ACMEIntEnum):
 		"""	Check whether an operation is valid.
 		"""
 		return cls.CREATE <= op <= cls.NOTIFY
+	
+	@classmethod
+	def toOperation(cls, v:int|None) -> Operation|None:
+		"""	Convert an integer or None to an Operation. Returns an Operation or None.
+		"""
+		return Operation(v) if v is not None else None
 
 
 # Mapping between request operations and permissions
@@ -812,10 +823,10 @@ class Result:
 	dict:JSON 					= None		# Contains the result dictionary
 	data:Any 					= None 		# Anything
 	lst:List[Any]   			= None		# List of Anything
-	rsc:ResponseCode			= ResponseCode.OK	# OK
+	rsc:ResponseStatusCode			= ResponseStatusCode.OK	# OK
 	dbg:str 					= None
 	request:CSERequest			= None  	# may contain the processed http request object
-	responseRequest:CSERequest 	= None		# May contain a request as a response, e.g. when polling
+	embeddedRequest:CSERequest 	= None		# May contain a request as a response, e.g. when polling
 	status:bool 				= None
 	originator:str				= None
 	uri:str						= None
@@ -842,17 +853,48 @@ class Result:
 			r = serializeData(self.resource, ct)
 		elif self.dict:									# explicit json or cbor from the dict
 			r = serializeData(self.dict, ct)
-		elif self.request and self.request.dict:		# Return the dict if the request is set and has a dict
-			r = self.request.dict
+		elif self.request and self.request.pc:		# Return the dict if the request is set and has a dict
+			r = self.request.pc
 		else:
 		 	r = ''
 		return r
+	
 
-	def __str__(self) -> str:
-		return str(self.toData())
+	def prepareResultFromRequest(self, originalRequest:CSERequest) -> None:
+		"""	Copy the necessary fields from an original request. Existing
+			fields will not be overwritten.
+		"""
+		if not self.request:
+			self.request = CSERequest()
+		if originalRequest:
+			if not self.request.ct:
+				self.request.ct = originalRequest.ct
+			if originalRequest.headers:
+				if not self.request.headers.requestIdentifier:
+					self.request.headers.requestIdentifier = originalRequest.headers.requestIdentifier
+				if not self.request.headers.releaseVersionIndicator:
+					self.request.headers.releaseVersionIndicator = originalRequest.headers.releaseVersionIndicator
+				if not self.request.headers.vendorInformation:
+					self.request.headers.vendorInformation = originalRequest.headers.vendorInformation
+				if not self.request.headers.accept:
+					self.request.headers.accept = originalRequest.headers.accept
+				if not self.request.headers.contentType:
+					self.request.headers.contentType = originalRequest.headers.contentType
+				if not self.request.headers.originator:
+					self.request.headers.originator = originalRequest.headers.originator
+				
+				# TODO more headers?
+			if originalRequest.parameters:
+				for k,v in originalRequest.parameters.items():	# don't overwrite existing parameters
+					if k not in self.request.parameters:
+						self.request.parameters[k] = v
+
+
+	# def __str__(self) -> str:
+	# 	return str(self.toData())
 		
-	def __repr__(self) -> str:
-		return self.__str__()
+	# def __repr__(self) -> str:
+	# 	return self.__str__()
 
 ##############################################################################
 #
@@ -871,7 +913,6 @@ class RequestArguments:
 	handling:Conditions 			= field(default_factory=dict)
 	conditions:Conditions 			= field(default_factory=dict)
 	attributes:Parameters 			= field(default_factory=dict)
-	#request:Request 				= None
 
 @dataclass
 class RequestHeaders:
@@ -892,17 +933,18 @@ class RequestHeaders:
 @dataclass
 class CSERequest:
 	headers:RequestHeaders 			= field(default_factory=RequestHeaders)	# always initialize with a new(!) RequestHeaders object	
-	args:RequestArguments 			= None
+	args:RequestArguments 			= field(default_factory=RequestArguments)
 	ct:ContentSerializationType		= None
 	originalArgs:Any 				= None	# Actually a MultiDict
 	data:bytes 						= None 	# The request original data
 	req:JSON						= None	# The original request after dissection as a dictionary
-	dict:JSON 						= None	# The request's primitive content as a dictionary
+	pc:JSON 						= None	# The request's primitive content as a dictionary
 	id:str 							= None 	# target ID / to
 	srn:str 						= None 	# target structured resource name
 	csi:str 						= None 	# target csi
 	op:Operation					= None	# request operation
-	parameters:Parameters			= None	# Any additional parameters
+	rsc:ResponseStatusCode			= None	# Response Status Code
+	parameters:Parameters			= field(default_factory=dict)	# Any additional parameters
 
 
 class RequestType(ACMEIntEnum):

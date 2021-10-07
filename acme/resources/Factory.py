@@ -9,7 +9,7 @@
 
 from typing import Dict, Callable, Any, Tuple, cast
 from ..etc.Types import ResourceTypes as T
-from ..etc.Types import ResponseCode as RC
+from ..etc.Types import ResponseStatusCode as RC
 from ..etc.Types import Result
 from ..etc import Utils as Utils
 from ..services.Logging import Logging as L

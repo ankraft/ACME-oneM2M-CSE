@@ -12,7 +12,7 @@ import requests
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
-from acme.etc.Types import ResourceTypes as T, NotificationContentType, ResponseCode as RC, Operation, ResponseType, Permission
+from acme.etc.Types import ResourceTypes as T, NotificationContentType, ResponseStatusCode as RC, Operation, ResponseType, Permission
 from init import *
 
 

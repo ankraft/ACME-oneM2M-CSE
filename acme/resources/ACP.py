@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import List
 from ..helpers.TextTools import simpleMatch
 from ..etc import Utils as Utils
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseCode as RC, Result, Permission, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseStatusCode as RC, Result, Permission, JSON
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
 from ..resources.Resource import *

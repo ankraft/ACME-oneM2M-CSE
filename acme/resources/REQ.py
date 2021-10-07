@@ -8,7 +8,7 @@
 #
 
 from typing import Dict, Any
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseCode as RC, Result, RequestStatus, CSERequest, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseStatusCode as RC, Result, RequestStatus, CSERequest, JSON
 from ..etc import Utils as Utils, DateUtils as DateUtils
 from ..services.Configuration import Configuration
 from ..resources.Resource import *
@@ -112,8 +112,8 @@ class REQ(Resource):
 			Utils.setXPath(dct, f'm2m:req/mi/fc/{k}', v, True)
 
 		# add content
-		if request.dict and len(request.dict) > 0:
-			Utils.setXPath(dct, 'm2m:req/pc', request.dict, True)
+		if request.pc and len(request.pc) > 0:
+			Utils.setXPath(dct, 'm2m:req/pc', request.pc, True)
 
 		# calculate and assign rtu for rt
 		if (rtu := request.headers.responseTypeNUs) and len(rtu) > 0:

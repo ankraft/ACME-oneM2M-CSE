@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from typing import cast
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseCode as RC, Result, JSON, CSERequest
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseStatusCode as RC, Result, JSON, CSERequest
 from ..resources.Resource import *
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L

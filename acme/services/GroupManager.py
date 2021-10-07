@@ -8,7 +8,7 @@
 #
 
 from typing import Union, List
-from ..etc.Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseCode as RC, CSERequest, JSON
+from ..etc.Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseStatusCode as RC, CSERequest, JSON
 from ..etc import Utils as Utils
 from ..resources.FCNT import FCNT
 from ..resources.MgmtObj import MgmtObj

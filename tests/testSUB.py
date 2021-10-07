@@ -11,7 +11,7 @@ import unittest, sys, time
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
-from acme.etc.Types import NotificationEventType as NET, ResourceTypes as T, NotificationContentType, ResponseCode as RC
+from acme.etc.Types import NotificationEventType as NET, ResourceTypes as T, NotificationContentType, ResponseStatusCode as RC
 from init import *
 
 numberOfBatchNotifications = 5

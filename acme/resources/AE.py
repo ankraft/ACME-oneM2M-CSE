@@ -8,7 +8,7 @@
 #
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
 from ..etc import Utils as Utils
 from ..services.Logging import Logging as L
 from ..services import CSE as CSE

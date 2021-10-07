@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
 from ..etc import Utils as Utils, DateUtils as DateUtils
 from ..services.Configuration import Configuration
 from ..services import CSE as CSE

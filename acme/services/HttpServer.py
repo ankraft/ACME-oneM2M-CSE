@@ -22,7 +22,7 @@ from werkzeug.datastructures import MultiDict
 import requests
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import ReqResp, ResourceTypes as T, Result, ResponseCode as RC, JSON
+from ..etc.Types import ReqResp, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
 from ..etc.Types import Operation, CSERequest, ContentSerializationType, Parameters
 from ..etc import Utils as Utils, RequestUtils as RequestUtils
 from ..services.Configuration import Configuration
@@ -189,7 +189,7 @@ class HttpServer(object):
 			if dissectResult.request.ct == ContentSerializationType.JSON:
 				L.isDebug and L.logDebug(f'Body: \n{str(dissectResult.request.data)}')
 			else:
-				L.isDebug and L.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, dissectResult.request.data))}\n=>\n{dissectResult.request.dict}')
+				L.isDebug and L.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, dissectResult.request.data))}\n=>\n{dissectResult.request.pc}')
 
 		# Send and error message when the CSE is shutting down, or the http server is stopped
 		if self.isStopped:
@@ -437,14 +437,17 @@ class HttpServer(object):
 		
 		# Assign and encode content accordingly
 		headers['Content-Type'] = (cts := result.request.ct.toHeader())
-		content = RequestUtils.serializeData(outResult.dict['pc'], result.request.ct)
+		# (re-)add an empty pc if it is missing
+		content = RequestUtils.serializeData(outResult.dict['pc'], result.request.ct) if 'pc' in outResult.dict else ''
 		
 		# Build and return the response
 		if isinstance(content, bytes):
 			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: \n{TextTools.toHex(content)}\n=>\n{str(result.toData())}')
-		else:
+		elif 'pc' in outResult.dict:
 			# L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
 			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: {outResult.dict["pc"]}\n')
+		else:
+			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\n')
 		return Response(response=content, status=statusCode, content_type=cts, headers=headers)
 
 

@@ -11,7 +11,7 @@ import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
-from acme.etc.Types import ResourceTypes as T, ResponseCode as RC
+from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
 nodeID  = 'urn:sn:1234'

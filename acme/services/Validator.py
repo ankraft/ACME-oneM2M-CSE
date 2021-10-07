@@ -12,7 +12,8 @@ from copy import deepcopy
 import re
 from typing import Any, List, Dict, Tuple
 import isodate
-from ..etc.Types import AttributePolicy, AttributePolicyDict, BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, ResponseCode as RC
+
+from ..etc.Types import AttributePolicy, AttributePolicyDict, BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, ResponseStatusCode as RC, AttributePolicy
 from ..etc.Types import JSON, FlexContainerAttributes
 from ..etc.Types import Result, ResourceTypes as T
 from ..etc import Utils as Utils, DateUtils as DateUtils
@@ -57,7 +58,7 @@ class Validator(object):
 
 # TODO ty necessary?
 
-	def	validateAttributes(self, resource:JSON, tpe:str, ty:T, attributes:AttributePolicyDict, create:bool=True , isImported:bool=False, createdInternally:bool=False, isAnnounced:bool=False) -> Result:
+	def	validateAttributes(self, resource:JSON, tpe:str, ty:T=T.UNKNOWN, attributes:AttributePolicyDict=None, create:bool=True , isImported:bool=False, createdInternally:bool=False, isAnnounced:bool=False) -> Result:
 		""" Validate a resources attributes for types etc."""
 		if not self.validationEnabled:	# just return if disabled
 			return Result(status=True)
@@ -170,6 +171,72 @@ class Validator(object):
 		return Result(status=True)
 
 
+
+	def validateAttribute(self, attribute:str, value:Any, attributeType:BT=None, rtype:T=T.ALL) -> Result:
+		""" Validate a single attribute. 
+			If `attributeType` is set then that type is taken to perform the check, otherwise the attribute
+			type is determined.
+		"""
+		if attributeType is not None:	# use the given attribute type instead of determining it
+			return self._validateType(attributeType, value, True)
+		if policy := self.getAttributePolicy(rtype, attribute):
+			return self._validateType(policy.type, value, True)
+		return Result(status=False, dbg=f'validation for attribute {attribute} not defined')
+
+
+	#
+	#	Validate complex types
+	#
+
+	# TODO move this later to the attributePolicies file in init/ directory. Perhaps something along
+	# 		"name" : [ "attribute1", "attribute", ...]
+
+
+	complexAttributePolicies:Dict[str, AttributePolicyDict] = {
+		# Response
+		'rsp' :	{
+			'rsc' : AttributePolicy(type=BT.integer,          cardinality=CAR.CAR1,  optionalCreate=RO.M, optionalUpdate=RO.M, optionalDiscovery=RO.O, announcement=AN.NA, sname='rsp', lname='responseStatusCode', namespace='m2m', tpe='m2m:rsp'),
+			'rqi' : AttributePolicy(type=BT.string,           cardinality=CAR.CAR1,  optionalCreate=RO.M, optionalUpdate=RO.M, optionalDiscovery=RO.O, announcement=AN.NA, sname='rqi', lname='requestIdentifier', namespace='m2m', tpe='m2m:rqi'),
+			'pc' : AttributePolicy(type=BT.dict,              cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='pc', lname='primitiveContent', namespace='m2m', tpe='m2m:pc'),
+			'to' : AttributePolicy(type=BT.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='to', lname='to', namespace='m2m', tpe='m2m:to'),
+			'fr' : AttributePolicy(type=BT.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='fr', lname='from', namespace='m2m', tpe='m2m:fr'),
+			'or' : AttributePolicy(type=BT.timestamp,         cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='or', lname='originatingTimestamp', namespace='m2m', tpe='m2m:or'),
+			'rset' : AttributePolicy(type=BT.absRelTimestamp, cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='rset', lname='resultExpirationTimestamp', namespace='m2m', tpe='m2m:rset'),
+			'ec' : AttributePolicy(type=BT.positiveInteger,   cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='ec', lname='eventCategory', namespace='m2m', tpe='m2m:ec'),
+			'cnst' : AttributePolicy(type=BT.positiveInteger, cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='cnst', lname='contentStatus', namespace='m2m', tpe='m2m:cnst'),
+			'cnot' : AttributePolicy(type=BT.positiveInteger, cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='cnot', lname='contentOffset', namespace='m2m', tpe='m2m:cnot'),
+			'ati' : AttributePolicy(type=BT.dict,             cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='ati', lname='assignedTokenIdentifiers', namespace='m2m', tpe='m2m:ati'),
+			'tqf' : AttributePolicy(type=BT.dict,             cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='tqf', lname='tokenRequestInformation', namespace='m2m', tpe='m2m:tqf'),
+			'asri' : AttributePolicy(type=BT.boolean,         cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='asri', lname='authorSignReqInfo', namespace='m2m', tpe='m2m:asri'),
+			'rvi' : AttributePolicy(type=BT.string,           cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='rvi', lname='releaseVersionIndicator', namespace='m2m', tpe='m2m:rvi'),
+			'vsi' : AttributePolicy(type=BT.string,           cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='vsi', lname='vendorInformation', namespace='m2m', tpe='m2m:vsi'),
+		}
+	}
+
+
+
+
+	def validatePrimitiveContent(self, pc:JSON) -> Result:
+		
+		# None - pc is ok
+		if pc is None:
+			return Result(status=True)
+		
+		# Check number of elements == 1
+		if len(pc.keys()) != 1:	# TODO is this correct?
+			return Result(status=False, rsc=RC.badRequest, dbg=f'primitive content shall only contain one element')
+		
+		name,obj = list(pc.items())[0]
+		if ap := self.complexAttributePolicies.get(name):
+			return self.validateAttributes(obj, tpe=name, attributes=ap)
+		
+		return Result(status=True)
+
+
+	#
+	#	Additional validations.
+	#
+
 	def validatePvs(self, dct:JSON) -> Result:
 		""" Validating special case for lists that are not allowed to be empty (pvs in ACP). """
 
@@ -190,30 +257,6 @@ class Validator(object):
 			return Result(status=False, dbg=dbg)
 		return Result(status=True)
 
-
-	# def validateRequestAttribute(self, attribute:str, value:Any) -> Result:
-	# 	""" Validate a request argument. """
-	# 	if policy := self.getAttributePolicy(T.REQRESP, attribute):
-	# 		return self._validateType(policy.type, value, True)
-	# 	return Result(status=False, dbg=f'validation for attribute/argument {attribute} not defined')
-
-
-	def validateAttribute(self, attribute:str, value:Any, attributeType:BT=None, rtype:T=T.ALL) -> Result:
-		""" Validate a single attribute. 
-			If `attributeType` is set then that type is taken to perform the check, otherwise the attribute
-			type is determined.
-		"""
-		if attributeType is not None:	# use the given attribute type instead of determining it
-			return self._validateType(attributeType, value, True)
-		if policy := self.getAttributePolicy(rtype, attribute):
-			return self._validateType(policy.type, value, True)
-		return Result(status=False, dbg=f'validation for attribute {attribute} not defined')
-
-
-
-	#
-	#	Additional validations.
-	#
 
 	# TODO allowed media type chars
 	cnfRegex = re.compile(

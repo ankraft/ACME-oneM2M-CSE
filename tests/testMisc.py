@@ -11,7 +11,7 @@ import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
-from acme.etc.Types import ResponseCode as RC, ResourceTypes as T
+from acme.etc.Types import ResponseStatusCode as RC, ResourceTypes as T
 from init import *
 
 # TODO move a couple of tests to a http or general request test

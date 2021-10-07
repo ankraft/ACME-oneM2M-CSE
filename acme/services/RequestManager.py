@@ -19,7 +19,7 @@ from ..etc.Types import RequestStatus
 from ..etc.Types import CSERequest
 from ..etc.Types import RequestHandler
 from ..etc.Types import ResourceTypes as T
-from ..etc.Types import ResponseCode as RC
+from ..etc.Types import ResponseStatusCode as RC
 from ..etc.Types import ResponseType
 from ..etc.Types import Result
 from ..etc.Types import CSERequest
@@ -489,7 +489,7 @@ class RequestManager(object):
 		if not request.headers.requestExpirationTimestamp:		
 			# Adding a default expiration if none is set in the request
 			ret = DateUtils.getResourceDate(self.requestExpirationDelta)
-			L.isWarn and L.logWarn(f'Request must have a "requestExpirationTimestamp". Adding a default one: {ret}')
+			L.isDebug and L.logDebug(f'Request must have a "requestExpirationTimestamp". Adding a default one: {ret}')
 			request.headers.requestExpirationTimestamp = ret
 		if not request.headers.requestIdentifier:
 			L.logErr(f'Request must have a "requestIdentifier". Ignored. {request}', showStackTrace=False)
@@ -588,8 +588,8 @@ class RequestManager(object):
 			request.headers.releaseVersionIndicator		= CSE.releaseVersion
 			if parameters:
 				if C.hfcEC in parameters:			
-					request.parameters[C.hfEC] 		= parameters[C.hfcEC]	# Event Category
-			request.dict 							= data
+					request.parameters[C.hfEC] 			= parameters[C.hfcEC]	# Event Category
+			request.pc 									= data
 
 		L.isDebug and L.logDebug(f'Storing REQUEST for: {request.headers.originator} with ID: {request.headers.requestIdentifier} for polling')
 		self.queuePollingRequest(request, reqType)
@@ -800,13 +800,23 @@ class RequestManager(object):
 				return value
 			return default
 
+
 		try:
+
+			cseRequest.req
+
+			# RQI - requestIdentifier
+			# Check as early as possible
+			if not (rqi := gget(cseRequest.req, 'rqi', greedy=False)):
+				L.logDebug(dbg := 'Request Identifier parameter is mandatory in request')
+				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)		
+			cseRequest.headers.requestIdentifier = rqi
+		
 			# TY - resource type
 			if (ty := gget(cseRequest.req, 'ty', greedy=False)) is not None:	# ty is an int
 				if not T.has(ty):
 					return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'Unknown/unsupported resource type: {ty}', status=False)
 				cseRequest.headers.resourceType = T(ty)
-
 
 			# OP - operation
 			if (op := gget(cseRequest.req, 'op', greedy=False)) is not None:	# op is an int
@@ -817,13 +827,11 @@ class RequestManager(object):
 				L.logDebug(dbg := 'operation parameter is mandatory in request')
 				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg)
 
-
 			# FR - originator 
 			if not (fr := gget(cseRequest.req, 'fr', greedy=False)) and not (cseRequest.headers.resourceType == T.AE and cseRequest.op == Operation.CREATE):
 				L.logDebug(dbg := 'From/Originator parameter is mandatory in request')
 				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
 			cseRequest.headers.originator = fr
-
 
 			# TO - target
 			if not (to := gget(cseRequest.req, 'to', greedy=False)):
@@ -842,14 +850,6 @@ class RequestManager(object):
 					return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
 				cseRequest.headers.originatingTimestamp = ot
 
-
-			# RQI - requestIdentifier
-			if not (rqi := gget(cseRequest.req, 'rqi', greedy=False)):
-				L.logDebug(dbg := 'Request Identifier parameter is mandatory in request')
-				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)		
-			cseRequest.headers.requestIdentifier = rqi
-		
-
 			# RQET - requestExpirationTimestamp
 			if rqet := gget(cseRequest.req, 'rqet', greedy=False):
 				if (_ts := DateUtils.fromAbsRelTimestamp(rqet)) == 0.0:
@@ -859,7 +859,6 @@ class RequestManager(object):
 					L.logDebug(dbg := 'Request timeout')
 					return Result(request=cseRequest, rsc=RC.requestTimeout, dbg=dbg)
 				cseRequest.headers.requestExpirationTimestamp = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
-
 
 			# RSET - resultExpirationTimestamp
 			if (rset := gget(cseRequest.req, 'rset', greedy=False)):
@@ -871,14 +870,12 @@ class RequestManager(object):
 					return Result(request=cseRequest, rsc=RC.requestTimeout, dbg=dbg)
 				cseRequest.headers.resultExpirationTimestamp = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
 
-
 			# OET - operationExecutionTime
 			if (oet := gget(cseRequest.req, 'oet', greedy=False)):
 				if (_ts := DateUtils.fromAbsRelTimestamp(oet)) == 0.0:
 					L.logDebug(dbg := 'Error in provided Operation Execution Time')
 					return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
 				cseRequest.headers.operationExecutionTime = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
-
 
 			# RVI - releaseVersionIndicator
 			if not (rvi := gget(cseRequest.req, 'rvi', greedy=False)):
@@ -888,7 +885,6 @@ class RequestManager(object):
 			if rvi not in C.supportedReleaseVersions:
 				return Result(rsc=RC.releaseVersionNotSupported, request=cseRequest, dbg=f'Release version unsupported: {rvi}')
 			cseRequest.headers.releaseVersionIndicator = rvi	
-
 
 			# VSI - vendorInformation
 			if (vsi := gget(cseRequest.req, 'vsi', greedy=False)):
@@ -900,7 +896,6 @@ class RequestManager(object):
 
 			cseRequest.args = RequestArguments()
 			fc = deepcopy(cseRequest.req.get('fc'))	# copy because we will greedy consume attributes here
-
 
 			# FU - Filter Usage
 			cseRequest.args.fu = FilterUsage(gget(fc, 'fu', FilterUsage.conditionalRetrieval))
@@ -1005,7 +1000,13 @@ class RequestManager(object):
 			if not (pc := cseRequest.req.get('pc')):
 				if cseRequest.op in [ Operation.CREATE, Operation.UPDATE ]:
 					return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'Missing primitive content or body in request for operation: {cseRequest.op}')
-			cseRequest.dict = cseRequest.req.get('pc')
+			cseRequest.pc = cseRequest.req.get('pc')	# The reqeust.pc contains the primitive content
+			if not (res := CSE.validator.validatePrimitiveContent(cseRequest.pc)).status:
+				L.isDebug and L.logDebug(res.dbg)
+				return res
+
+
+
 
 		# end of try..except
 		except ValueError as e:
@@ -1013,7 +1014,7 @@ class RequestManager(object):
 			return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=dbg)
 
 
-		return Result(status=True, request=cseRequest, dict=cseRequest.dict)
+		return Result(status=True, request=cseRequest, dict=cseRequest.pc)
 
 	###########################################################################
 

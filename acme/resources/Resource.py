@@ -13,7 +13,7 @@ from typing import Any, Tuple, cast
 from copy import deepcopy
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import ResourceTypes as T, Result, NotificationEventType, ResponseCode as RC, CSERequest, JSON
+from ..etc.Types import ResourceTypes as T, Result, NotificationEventType, ResponseStatusCode as RC, CSERequest, JSON
 from ..etc import Utils as Utils
 from ..etc import DateUtils as DateUtils
 from ..services.Logging import Logging as L

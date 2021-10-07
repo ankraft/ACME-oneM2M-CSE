@@ -10,7 +10,7 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
-from acme.etc.Types import ResourceTypes as T, ResponseCode as RC
+from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 from typing import Tuple
 

@@ -25,7 +25,7 @@ import cbor2
 # sys.path.append('../acme')
 if '..' not in sys.path:
 	sys.path.append('..')
-from acme.etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes, ResponseCode
+from acme.etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes, ResponseStatusCode
 import acme.etc.RequestUtils as RequestUtils, acme.etc.DateUtils as DateUtils
 import acme.helpers.OAuth as OAuth
 from acme.helpers.MQTTConnection import MQTTConnection, MQTTHandler
@@ -73,7 +73,7 @@ class MQTTClientHandler(MQTTHandler):
 
 	def	__init__(self) -> None:
 		super().__init__()
-		self.messages:Queue 				= Queue()
+		self.responses:dict[str, bytes] 	= dict()
 		self.topics:dict[str, MQTTTopics]	= dict()
 		self.connection:MQTTConnection		= None
 		# self.respTopic 					= f'/oneM2M/resp/+{CSEID}/json'
@@ -115,7 +115,11 @@ class MQTTClientHandler(MQTTHandler):
 	
 	def _callback(self, connection:MQTTConnection, topic:str, data:bytes) -> None:
 		#print(f'<== {topic} / {data}')
-		self.messages.put((topic, data))
+		resp = RequestUtils.deserializeData(data, ContentSerializationType.JSON)
+		if 'rqi' in resp:
+			self.responses[resp['rqi']] = (topic, resp)
+		else:
+			print(f'no rqi in message: {resp}')
 
 
 	def publish(self, topic:str, data:bytes) -> None:
@@ -384,7 +388,7 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 	req['to'] 	= urlComponents.path[1:]	# remove the leading / of an url ( usually the root path)
 	req['op'] 	= operation.value
 	req['ot'] 	= DateUtils.getResourceDate()
-	req['rqi'] 	= (rid := uniqueID())
+	req['rqi'] 	= (rqi := uniqueID())
 	req['rvi'] 	= RVI
 
 	# Various request parameters
@@ -440,7 +444,7 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 	if data:
 		req['pc'] = data	
 
-	setLastRequestID(rid)
+	setLastRequestID(rqi)
 
 
 	# Which topic to use for request and response?
@@ -455,7 +459,7 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 		reqTopic  = topics.reqTopic
 		respTopic = topics.respTopic
 		
-	#print(f'==> {reqTopic} / {req}')
+	# print(f'==> {reqTopic} / {req}')
 
 	# send the data
 	mqttHandler.publish(reqTopic, cast(bytes, RequestUtils.serializeData(req, ContentSerializationType.JSON)))  # TODO support cbor
@@ -463,12 +467,16 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 	# Wait for response
 	while True: 	# Timeout?
 		try:
-			message = mqttHandler.messages.get(block=True, timeout=5.0)	# TODO timeout configurable
+			if not DateUtils.waitFor(timeout=60.0, condition=lambda:rqi in mqttHandler.responses):
+				print('MQTT Timeout')
+				return None, 5103
+			message = mqttHandler.responses.pop(rqi)
 		except:
 			return None, 5103
 
 		if message[0] == respTopic:
-			resp = RequestUtils.deserializeData(message[1], ContentSerializationType.JSON)
+			resp = message[1]
+			# resp = RequestUtils.deserializeData(message[1], ContentSerializationType.JSON)
 
 			# Since the tests usually work with http binding headers, some response attributes are converted
 			hds = dict()
@@ -478,7 +486,7 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 				hds[C.hfVSI] = vsi
 			setLastHeaders(hds)
 
-			return resp['pc'], resp['rsc']
+			return resp['pc'] if 'pc' in resp else None, resp['rsc']
 
 
 
@@ -616,7 +624,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		# Construct return header
 		# Always acknowledge the verification requests
 		self.send_response(200)
-		self.send_header(C.hfRSC, str(int(ResponseCode.OK)))
+		self.send_header(C.hfRSC, str(int(ResponseStatusCode.OK)))
 		self.end_headers()
 
 		# Get headers and content data

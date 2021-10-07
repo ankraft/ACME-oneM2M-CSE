@@ -8,7 +8,7 @@
 #
 
 from typing import List
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
 from ..etc import Utils as Utils, DateUtils as DateUtils
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L

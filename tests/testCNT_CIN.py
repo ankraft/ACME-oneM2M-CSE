@@ -11,7 +11,7 @@ import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
-from acme.etc.Types import NotificationEventType, ResourceTypes as T, ResponseCode as RC, ResultContentType
+from acme.etc.Types import NotificationEventType, ResourceTypes as T, ResponseStatusCode as RC, ResultContentType
 from init import *
 
 

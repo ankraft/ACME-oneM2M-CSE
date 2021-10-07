@@ -21,7 +21,7 @@ from tinydb.storages import MemoryStorage
 from tinydb.table import Document
 from tinydb.operations import delete 
 
-from ..etc.Types import ResourceTypes as T, Result, ResponseCode as RC, ContentSerializationType, JSON
+from ..etc.Types import ResourceTypes as T, Result, ResponseStatusCode as RC, ContentSerializationType, JSON
 from ..etc import DateUtils as DateUtils
 from ..services.Configuration import Configuration
 from ..services.Logging import Logging as L

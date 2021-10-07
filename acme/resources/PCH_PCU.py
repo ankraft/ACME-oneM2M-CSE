@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from typing import cast
-from ..etc.Types import AttributePolicyDict, RequestType, ResourceTypes as T, ResponseCode as RC, JSON, CSERequest, Result
+from ..etc.Types import AttributePolicyDict, Operation, RequestType, ResourceTypes as T, ResponseStatusCode as RC, JSON, CSERequest, Result
 from ..resources.Resource import Resource
 from ..services.Logging import Logging as L
 from ..services import CSE
@@ -34,7 +34,7 @@ class PCH_PCU(Resource):
 	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:
 		""" Handle a RETRIEVE request. Return resource or block until available. 
 		"""
-		L.logDebug(f'Retrieving request from polling channel. Originator: {originator}')
+		L.isDebug and L.logDebug(f'RETRIEVE request for polling channel. Originator: {originator}')
 
 		# Determine the request's timeout
 		ret = DateUtils.fromAbsRelTimestamp(request.headers.requestExpirationTimestamp, CSE.request.requestExpirationDelta)	# with default
@@ -44,26 +44,38 @@ class PCH_PCU(Resource):
 			L.logWarn(dbg := f'Request Expiration Timestamp reached. No request queued for originator: {self.getOriginator()}')
 			return Result(status=False, rsc=RC.requestTimeout, dbg=dbg)
 		# normal response
-		return Result(status=True, responseRequest=r)
+		return Result(status=True, embeddedRequest=r)
 
 
 	def handleNotifyRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		"""	Handle a NOTIFY request to a PCU resource.
 		"""
+		L.isDebug and L.logDebug(f'NOTIFY request for polling channel. Originator: {originator}')
 
 		# Check whether the request is allowed by this originator was done in the dispatcher
 
-		from ..resources.PCH import PCH
+		# Check content
+		if request.pc is None:
+			L.logDebug(dbg := f'Missing content/request in notification')
+			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
+		from ..resources.PCH import PCH
 
 		# Get parent PCH and add the request to the PCU's queue.
 		if pch := self.retrieveParentResource():
 
-			# TODO Not this request, but the request inside of PC!
-			# if request.pc -> extract
+			# Fill various request attributes
+			nrequest 									= CSERequest()
+			if resp := request.pc.get('rsp'):
+				nrequest.headers.originator					= resp.get('fr')
+				nrequest.headers.resourceType 				= T.RESPONSE
+				nrequest.headers.originatingTimestamp		= resp.get('or')
+				nrequest.headers.requestIdentifier			= resp.get('rqi')
+				nrequest.headers.releaseVersionIndicator	= resp.get('rvi')
+				nrequest.rsc								= resp.get('rsc')
+				nrequest.pc 								= resp.get('pc')
 
-
-			CSE.request.queueRequestForPCH(cast(PCH, pch), request=request, reqType=RequestType.RESPONSE)	# A Notification to PCU always contains a response to a previous request
+			CSE.request.queueRequestForPCH(cast(PCH, pch), request=nrequest, reqType=RequestType.RESPONSE)	# A Notification to PCU always contains a response to a previous request
 		return Result(status=True, rsc=RC.OK)
 
 

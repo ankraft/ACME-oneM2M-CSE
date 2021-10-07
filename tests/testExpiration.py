@@ -14,7 +14,7 @@ if '..' not in sys.path:
 from typing import Tuple
 from rich import print
 from acme.etc.Constants import Constants as C
-from acme.etc.Types import ResourceTypes as T, ResponseCode as RC
+from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
 

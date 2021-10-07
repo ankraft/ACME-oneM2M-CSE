@@ -12,7 +12,7 @@ import requests
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
-from acme.etc.Types import ResourceTypes as T, NotificationEventType as NET, ResourceTypes as T, NotificationContentType, ResponseCode as RC, Permission
+from acme.etc.Types import ResourceTypes as T, NotificationEventType as NET, ResourceTypes as T, NotificationContentType, ResponseStatusCode as RC, Permission
 from init import *
 
 aeRN2 = f'{aeRN}2'
@@ -20,7 +20,7 @@ ae2URL = f'{aeURL}2'
 pch2URL = f'{ae2URL}/{pchRN}'
 pcu2URL = f'{pch2URL}/pcu'
 
-wait = 2 # seconds
+waitBetweenPollingRequests = 2 # seconds
 requestTimeout = 10   # TODO make this configurable in the CSE, like expiration
 
 class TestPCH_PCU(unittest.TestCase):
@@ -163,8 +163,8 @@ class TestPCH_PCU(unittest.TestCase):
 	def test_createSUBunderCNT(self) -> None:
 		"""	CREATE <SUB> under <CNT> with <PCH>"""
 
-		def confirmation() -> None:
-			r, rsc = RETRIEVE(pcu2URL, TestPCH_PCU.originator2)
+		def pollForRequest() -> None:
+			r, rsc = RETRIEVE(pcu2URL, TestPCH_PCU.originator2)	# polling request
 			self.assertEqual(rsc, RC.OK, r)
 			# response is a oneM2M request			
 			self.assertIsNotNone(findXPath(r, 'pc'), r)
@@ -175,38 +175,21 @@ class TestPCH_PCU(unittest.TestCase):
 			self.assertIsNotNone(findXPath(r, 'pc/m2m:sgn/cr'))
 			self.assertIsNotNone(findXPath(r, 'rqi'))
 			rqi = findXPath(r, 'rqi')
-			print(rqi)
-			
-			# TODO Data = response to the tunneled request above.
-			r, rsc = NOTIFY(pcu2URL, TestPCH_PCU.originator2, data=None, headers={C.hfRSC : str(int(RC.OK)), C.hfRI : rqi})
-			print(rsc)
 
-		# 	dct = {
-		# 		'm2m:sgn' : {
-		# 			'nev' : {
-		# 				'rep' : {},
-		# 				'net' : NotificationEventType.resourceUpdate
-		# 			},
-		# 			'sur' : Utils.fullRI(sub['ri'])
-		# 		}
-		# 	}
+			# Build and send OK response
+			dct = {
+				'rsp' : {
+					'fr'  : TestPCH_PCU.originator2,
+					'rqi' : rqi,
+					'rvi' : RVI,
+					'rsc' : int(RC.OK)
+				}
+			}
+			r, rsc = NOTIFY(pcu2URL, TestPCH_PCU.originator2, data=dct)
 
-		# responseNotification = {
-		# 	'm2m:rsp' : {
-		# 		'rsc'	:	RC.ok,
-		# 		'rqi'	:	result.resource['ors/rqi'],
-		# 		'pc'	:	result.resource['ors/pc'],
-		# 		'to' 	:	result.resource['ors/to'],
-		# 		'fr' 	: 	originator,
-		# 		'rvi'	: 	request.headers.releaseVersionIndicator
-		# 	}
-		# }
-			
-			# TODO send OK
-
-		Thread(target=confirmation).start()
-
-		time.sleep(wait)
+		# Start polling thread and wait moment before sending next request
+		Thread(target=pollForRequest).start()
+		time.sleep(waitBetweenPollingRequests)
 
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
@@ -233,6 +216,28 @@ class TestPCH_PCU(unittest.TestCase):
 
 
 
+
+		# 	dct = {
+		# 		'm2m:sgn' : {
+		# 			'nev' : {
+		# 				'rep' : {},
+		# 				'net' : NotificationEventType.resourceUpdate
+		# 			},
+		# 			'sur' : Utils.fullRI(sub['ri'])
+		# 		}
+		# 	}
+
+		# responseNotification = {
+		# 	'm2m:rsp' : {
+		# 		'rsc'	:	RC.ok,
+		# 		'rqi'	:	result.resource['ors/rqi'],
+		# 		'pc'	:	result.resource['ors/pc'],
+		# 		'to' 	:	result.resource['ors/to'],
+		# 		'fr' 	: 	originator,
+		# 		'rvi'	: 	request.headers.releaseVersionIndicator
+		# 	}
+		# }
+
 # TODO Non-Blocking async request, then retrieve notification via pcu
 # TODO multiple non-blocking async requests, then retrieve notification via pcu
 
@@ -242,16 +247,19 @@ class TestPCH_PCU(unittest.TestCase):
 
 # TODO reply with notify but different originator -> Fail
 
+# TODO return a wrong response
+# TODO return a empty response
+
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 
 	# basic tests
 	suite.addTest(TestPCH_PCU('test_createSUBunderCNTFail'))
 	suite.addTest(TestPCH_PCU('test_createPCHunderAE2'))
-	#suite.addTest(TestPCH_PCU('test_retrievePCUunderAE2Fail'))
+	suite.addTest(TestPCH_PCU('test_retrievePCUunderAE2Fail'))
 	suite.addTest(TestPCH_PCU('test_createSUBunderCNT'))
 
-	# suite.addTest(TestPCH_PCU('test_createNotificationDoPolling'))
+	# TODO suite.addTest(TestPCH_PCU('test_createNotificationDoPolling'))
 
 
 

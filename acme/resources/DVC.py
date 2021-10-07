@@ -7,7 +7,7 @@
 #	ResourceType: mgmtObj:DeviceCapability
 #
 
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
 from ..etc import Utils as Utils
 from ..resources.MgmtObj import *
 

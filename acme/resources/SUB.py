@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from copy import deepcopy
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, NotificationContentType, NotificationEventType as NET, ResponseCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, NotificationContentType, NotificationEventType as NET, ResponseStatusCode as RC, JSON
 from ..services.Configuration import Configuration
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
