@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from .TextTools import simpleMatch
-import random, sys, heapq, datetime
+import random, sys, heapq, datetime, traceback
 from threading import Thread, Timer, Lock
 from typing import Callable, List, Dict, Any
 import logging
@@ -92,7 +92,7 @@ class BackgroundWorker(object):
 			result = self.callback(**self.args)
 		except Exception as e:
 			if BackgroundWorker._logger:
-				BackgroundWorker._logger(logging.ERROR, f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}')
+				BackgroundWorker._logger(logging.ERROR, f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}\n{"".join(traceback.format_exception(value=e))}')
 		finally:
 			if not result or (self.maxCount and self.numberOfRuns >= self.maxCount):
 				# False returned, or the numberOfRuns has reached the maxCount
