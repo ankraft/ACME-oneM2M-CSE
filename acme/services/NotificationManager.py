@@ -166,8 +166,8 @@ class NotificationManager(object):
 			the *poa* of that resource is taken. Also, the serialization is determined when 
 			actually sending the notification.
 		"""
-		if nus:
-			for nu in CSE.request.resolveURIs(nus):
+		if nus and (resolvedNus := CSE.request.resolveURIs(nus)):
+			for nu in resolvedNus:
 				self._sendRequest(nu, data, originator=originator)
 
 
