@@ -1059,7 +1059,7 @@ class RequestManager(object):
 			If the target is not request reachable then the resource ID of that target is included in the
 			list, and it is handled later, e.g. for a pollingChannel.
 
-			The returned result is a list of direct URLs.
+			The returned result is a list of direct URLs. This could be an empty list, so None is returned in case of an error.
 		"""
 
 		if not uris:

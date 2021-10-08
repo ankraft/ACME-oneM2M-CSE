@@ -187,7 +187,7 @@ class NotificationManager(object):
 		# Resolve the URI's in the previousNus.
 		if previousNus:
 			# Get all the URIs/notification targets. Filter out the originator itself.
-			if (previousNus := CSE.request.resolveURIs(previousNus, originator)) is None:	# ! could be an empty list
+			if (previousNus := CSE.request.resolveURIs(previousNus, originator)) is None:	# ! could be an empty list, but None is an error
 				# Fail if any of the NU's cannot be retrieved or accessed
 				return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg='cannot retrieve all previous nu\'s')
 
@@ -196,7 +196,7 @@ class NotificationManager(object):
 
 			# Resolve the URI's for the new NU's
 			# Get all the URIs/notification targets. Filter out the originator itself.
-			if (newNus := CSE.request.resolveURIs(nuAttribute, originator)) is None:	# ! newNus can be an empty list 
+			if (newNus := CSE.request.resolveURIs(nuAttribute, originator)) is None:	# ! newNus can be an empty list
 				# Fail if any of the NU's cannot be retrieved
 				return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg='cannot retrieve or find all (new) nu\'s')
 
