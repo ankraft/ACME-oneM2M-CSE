@@ -25,9 +25,6 @@ from ..helpers import TextTools
 from ..resources.Resource import Resource
 
 
-# TODO Docs
-
-
 class MQTTClientHandler(MQTTHandler):
 	"""	Handler registering oneM2M topics and handling resceived requests.
 	"""
