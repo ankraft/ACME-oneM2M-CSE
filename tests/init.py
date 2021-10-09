@@ -33,23 +33,24 @@ from acme.etc.Constants import Constants as C
 from config import *
 
 
-CONFIGURL			= f'{CONFIGSERVER}{ROOTPATH}__config__'
+CONFIGURL					= f'{CONFIGSERVER}{ROOTPATH}__config__'
 
 
-verifyCertificate	= False	# verify the certificate when using https?
-oauthToken			= None	# current OAuth Token
+verifyCertificate			= False	# verify the certificate when using https?
+oauthToken					= None	# current OAuth Token
 
 # possible time delta between test system and CSE
 # This is not really important, but for discoveries and others
-timeDelta 				= 0 # seconds
+timeDelta 					= 0 # seconds
 
 # Expirations
-expirationCheckDelay 	= 2	# seconds
-expirationSleep			= expirationCheckDelay * 3
+expirationCheckDelay 		= 2	# seconds
+expirationSleep				= expirationCheckDelay * 3
 
-requestETDuration 		= f'PT{expirationCheckDelay:d}S'
-requestETDurationInteger= expirationCheckDelay * 1000
-requestCheckDelay		= 1	#seconds
+requestETDuration 			= f'PT{expirationCheckDelay:d}S'
+requestETDurationInteger	= expirationCheckDelay * 1000
+requestCheckDelay			= 1	#seconds
+sentRequestExpirationDelay	= 3.0
 
 # TimeSeries Interval
 timeSeriesInterval 		= 2.0 # seconds
@@ -73,11 +74,11 @@ class MQTTClientHandler(MQTTHandler):
 
 	def	__init__(self) -> None:
 		super().__init__()
-		self.responses:dict[str, bytes] 	= dict()
-		self.topics:dict[str, MQTTTopics]	= dict()
-		self.connection:MQTTConnection		= None
-		# self.respTopic 					= f'/oneM2M/resp/+{CSEID}/json'
-		# self.ready 						= False
+		self.responses:dict[str, Tuple[str, JSON]] 	= dict()
+		self.topics:dict[str, MQTTTopics]			= dict()
+		self.connection:MQTTConnection				= None
+		# self.respTopic 							= f'/oneM2M/resp/+{CSEID}/json'
+		# self.ready 								= False
 
 	def onConnect(self, connection:MQTTConnection) -> None:
 		# always subscribe to register response 
@@ -548,25 +549,7 @@ _orgExpCheck = -1
 _orgREQExpCheck = -1
 _maxExpiration = -1
 _tooLargeExpirationDelta = -1
-
-
-
-def disableShortExpirations() -> None:
-	global _orgExpCheck, _orgREQExpCheck
-	if _orgExpCheck != -1:
-		setExpirationCheck(_orgExpCheck)
-		_orgExpCheck = -1
-	if _orgREQExpCheck != -1:
-		setRequestMinET(_orgREQExpCheck)
-		_orgREQExpCheck = -1
-
-def isTestExpirations() -> bool:
-	return _orgExpCheck != -1
-
-
-def tooLargeExpirationDelta() -> int:
-	return _tooLargeExpirationDelta
-
+_orgSentRequestExpirationDelta = -1.0
 
 #	Request expirations
 
@@ -588,6 +571,26 @@ def getRequestMinET() -> int:
 		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.req.minet', '')
 		return int(c)
 	return -1
+
+
+def setSentRequestExpirationDelta(interval:float) -> float:
+	c, rc = RETRIEVESTRING(CONFIGURL, '')
+	if rc == 200 and c.startswith('Configuration:'):
+		# retrieve the old value
+		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.requestExpirationDelta', '')
+		oldValue = float(c)
+		c, rc = UPDATESTRING(f'{CONFIGURL}/cse.requestExpirationDelta', '', str(interval))
+		return oldValue if c == 'ack' else -1
+	return -1
+
+
+def getSentRequestExpirationDelta() -> float:
+	c, rc = RETRIEVESTRING(CONFIGURL, '')
+	if rc == 200 and c.startswith('Configuration:'):
+		# retrieve the old value
+		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.requestExpirationDelta', '')
+		return float(c)
+	return -1
 	
 
 
@@ -604,6 +607,40 @@ def enableShortExpirations() -> None:
 	except:
 		pass
 
+def disableShortExpirations() -> None:
+	global _orgExpCheck, _orgREQExpCheck
+	if _orgExpCheck != -1:
+		setExpirationCheck(_orgExpCheck)
+		_orgExpCheck = -1
+	if _orgREQExpCheck != -1:
+		setRequestMinET(_orgREQExpCheck)
+		_orgREQExpCheck = -1
+
+def isTestExpirations() -> bool:
+	return _orgExpCheck != -1
+
+
+def tooLargeExpirationDelta() -> int:
+	return _tooLargeExpirationDelta
+
+
+# Reconfigure the server to check faster for sent request expirations. This is set to the
+# old value in the tearDowndClass() method.
+def enableShortSentRequestExpirations() -> None:
+	global _orgSentRequestExpirationDelta
+	try:
+		_orgSentRequestExpirationDelta = setSentRequestExpirationDelta(sentRequestExpirationDelay)
+	except Exception as e:
+		pass
+
+def disableShortSentRequestExpirations() -> None:
+	global _orgSentRequestExpirationDelta
+	setSentRequestExpirationDelta(_orgSentRequestExpirationDelta)
+	_orgSentRequestExpirationDelta = -1
+	
+
+def isShortSentRequestExpirations() -> bool:
+	return _orgSentRequestExpirationDelta != -1.0
 
 ###############################################################################
 

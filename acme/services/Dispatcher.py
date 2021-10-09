@@ -66,7 +66,7 @@ class Dispatcher(object):
 
 		# Handle PollingChannelURI RETRIEVE
 		if (pollingChannelURIResource := Utils.pollingChannelURIResource(srn)):		# We need to check the srn here
-			if not CSE.security.hasAccessToPCU(originator, pollingChannelURIResource):
+			if not CSE.security.hasAccessToPollingChannel(originator, pollingChannelURIResource):
 				L.logDebug(dbg:=f'Originator: {originator} has not access to <pollingChannelURI>: {id}')
 				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
 			L.isDebug and L.logDebug(f'Redirecting request <PCU>: {pollingChannelURIResource.__srn__}')
@@ -172,7 +172,7 @@ class Dispatcher(object):
 
 
 	def retrieveLocalResource(self, ri:str=None, srn:str=None, originator:str=None, request:CSERequest=None) -> Result:
-		L.isDebug and L.logDebug(f'Retrieve resource: {ri if not srn else srn} for originator: {originator}')
+		L.isDebug and L.logDebug(f'Retrieve resource: {ri}|{srn} for originator: {originator}')
 
 		if ri:
 			result = CSE.storage.retrieveResource(ri=ri)		# retrieve via normal ID
@@ -682,22 +682,24 @@ class Dispatcher(object):
 		if not (res := self.retrieveResource(id)).resource:
 			L.isDebug and L.logDebug(res.dbg)
 			return Result(status=False, rsc=RC.notFound, dbg=res.dbg)
-		resource = res.resource
+		targetResource = res.resource
 
 		# Security checks below
-		# if CSE.security.hasAccess(originator, resource, Permission.NOTIFY) == False:
-		# 	return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
+
 		
 		# Check for <pollingChannelURI> resource
 		# This is also the only resource type supported that can receive notifications, yet
-		if resource.ty == T.PCH_PCU :
-			if not CSE.security.hasAccessToPCU(originator, resource):
-				L.logDebug(dbg:=f'Originator: {originator} has not access to <pollingChannelURI>: {id}')
-				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
-			return resource.handleNotifyRequest(request=request, id=id, originator=originator)	# type: ignore[no-any-return]
+		# if resource.ty == T.PCH_PCU :
+		# 	if not CSE.security.hasAccessToPCU(originator, resource):
+		# 		L.logDebug(dbg:=f'Originator: {originator} has not access to <pollingChannelURI>: {id}')
+		# 		return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
+		# 	return resource.handleNotifyRequest(request=request, id=id, originator=originator)	# type: ignore[no-any-return]
+
+		if targetResource.ty in [ T.AE, T.CSR, T.CSEBase ]:
+			return CSE.request.handleReceivedNotifyRequest(targetResource, request=request, id=id, originator=originator)
 
 		# error
-		L.logDebug(dbg := f'Unsupported resource type: {resource.ty} for notifications. Supported: <PCU>.')
+		L.logDebug(dbg := f'Unsupported resource type: {targetResource.ty} for notifications. Supported: <PCU>.')
 		return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 

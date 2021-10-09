@@ -166,9 +166,11 @@ class NotificationManager(object):
 			the *poa* of that resource is taken. Also, the serialization is determined when 
 			actually sending the notification.
 		"""
-		if nus and (resolvedNus := CSE.request.resolveURIs(nus)):
-			for nu in resolvedNus:
-				self._sendRequest(nu, data, originator=originator)
+		# if nus and (resolvedNus := CSE.request.resolveURIs(nus)):
+		# 	for nu in resolvedNus:
+		# 		self._sendRequest(nu, data, originator=originator)
+		for nu in nus:
+			self._sendRequest(nu, data, originator=originator)
 
 
 
@@ -187,7 +189,7 @@ class NotificationManager(object):
 		# Resolve the URI's in the previousNus.
 		if previousNus:
 			# Get all the URIs/notification targets. Filter out the originator itself.
-			if (previousNus := CSE.request.resolveURIs(previousNus, originator)) is None:	# ! could be an empty list, but None is an error
+			if (previousNus := CSE.request.resolveURIs(previousNus, originator, noAccessIsError=True)) is None:	# ! could be an empty list, but None is an error
 				# Fail if any of the NU's cannot be retrieved or accessed
 				return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg='cannot retrieve all previous nu\'s')
 
@@ -196,7 +198,7 @@ class NotificationManager(object):
 
 			# Resolve the URI's for the new NU's
 			# Get all the URIs/notification targets. Filter out the originator itself.
-			if (newNus := CSE.request.resolveURIs(nuAttribute, originator)) is None:	# ! newNus can be an empty list
+			if (newNus := CSE.request.resolveURIs(nuAttribute, originator, noAccessIsError=True)) is None:	# ! newNus can be an empty list
 				# Fail if any of the NU's cannot be retrieved
 				return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg='cannot retrieve or find all (new) nu\'s')
 
@@ -227,7 +229,7 @@ class NotificationManager(object):
 				}
 			}
 			originator and Utils.setXPath(verificationRequest, 'm2m:sgn/cr', originator)
-			return self._sendRequest(url, verificationRequest, targetResource=targetResource)
+			return self._sendRequest(url, verificationRequest, targetResource=targetResource, noAccessIsError=True)
 
 		return self._sendNotification([ uri ], sender)
 
@@ -328,14 +330,15 @@ class NotificationManager(object):
 		return True
 
 
-	def _sendRequest(self, uri:str, notificationRequest:JSON, parameters:Parameters=None, originator:str=None, targetResource:Resource=None) -> bool:
+	def _sendRequest(self, uri:str, notificationRequest:JSON, parameters:Parameters=None, originator:str=None, targetResource:Resource=None, noAccessIsError:bool=False) -> bool:
 		"""	Actually send a Notification request.
 		"""
 		return CSE.request.sendNotifyRequest(	uri, 
 												originator if originator else CSE.cseCsi,
 												data=notificationRequest,
 												parameters=parameters,
-												targetResource=targetResource).rsc == RC.OK
+												targetResource=targetResource,
+												noAccessIsError=noAccessIsError).status
 
 
 	##########################################################################
@@ -351,9 +354,14 @@ class NotificationManager(object):
 		# Get the subscription information (not the <sub> resource itself!).
 		# Then get all the URIs/notification targets from that subscription. They might already
 		# be filtered.
-		if (sub := CSE.storage.getSubscription(ri)) and (nus := CSE.request.resolveURIs(sub['nus'])):
+		# if (sub := CSE.storage.getSubscription(ri)) and (nus := CSE.request.resolveURIs(sub['nus'])):
+		# 	ln = sub['ln'] if 'ln' in sub else False
+		# 	for nu in nus:
+		# 		self._stopNotificationBatchWorker(ri, nu)						# Stop a potential worker for that particular batch
+		# 		self._sendSubscriptionAggregatedBatchNotification(ri, nu, ln)	# Send all remaining notifications
+		if sub := CSE.storage.getSubscription(ri):
 			ln = sub['ln'] if 'ln' in sub else False
-			for nu in nus:
+			for nu in sub['nus']:
 				self._stopNotificationBatchWorker(ri, nu)						# Stop a potential worker for that particular batch
 				self._sendSubscriptionAggregatedBatchNotification(ri, nu, ln)	# Send all remaining notifications
 

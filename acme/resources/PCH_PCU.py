@@ -37,17 +37,22 @@ class PCH_PCU(Resource):
 		L.isDebug and L.logDebug(f'RETRIEVE request for polling channel. Originator: {originator}')
 
 		# Determine the request's timeout
-		ret = DateUtils.fromAbsRelTimestamp(request.headers.requestExpirationTimestamp, CSE.request.requestExpirationDelta)	# with default
+		if request.headers.requestExpirationTimestamp:
+			ret = DateUtils.timeUntilAbsRelTimestamp(request.headers.requestExpirationTimestamp)
+			L.isDebug and L.logDebug(f'Polling timeout: {ret} seconds')
+		else:
+			ret = CSE.request.requestExpirationDelta
+			L.isDebug and L.logDebug(f'Polling timeout: indefinite')
 
 		# Return the response or time out
-		if not (r := CSE.request.waitForPollingRequest(originator, None, ret)):
+		if not (r := CSE.request.waitForPollingRequest(originator, None, timeout=ret)).status:
 			L.logWarn(dbg := f'Request Expiration Timestamp reached. No request queued for originator: {self.getOriginator()}')
 			return Result(status=False, rsc=RC.requestTimeout, dbg=dbg)
 		# normal response
-		return Result(status=True, embeddedRequest=r)
+		return Result(status=True, embeddedRequest=r.request)
 
 
-	def handleNotifyRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+	def handleReceivedNotifyRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		"""	Handle a NOTIFY request to a PCU resource.
 		"""
 		L.isDebug and L.logDebug(f'NOTIFY request for polling channel. Originator: {originator}')

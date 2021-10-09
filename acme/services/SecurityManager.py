@@ -8,6 +8,7 @@
 #
 
 
+from __future__ import annotations
 import ssl
 from typing import List
 
@@ -17,6 +18,7 @@ from ..services import CSE as CSE
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
 from ..resources.Resource import Resource
+from ..resources.PCH import PCH
 from ..resources.PCH_PCU import PCH_PCU
 from ..helpers import TextTools
 
@@ -62,7 +64,7 @@ class SecurityManager(object):
 			return True
 		
 		# grant full access to the CSE originator
-		if originator == CSE.cseOriginator and self.fullAccessAdmin:
+		if not originator or originator == CSE.cseOriginator and self.fullAccessAdmin:
 			L.isDebug and L.logDebug('Request from CSE Originator. OK.')
 			return True
 		
@@ -257,7 +259,7 @@ class SecurityManager(object):
 		return False
 
 
-	def hasAccessToPCU(self, originator:str, resource:PCH_PCU) -> bool:
+	def hasAccessToPollingChannel(self, originator:str, resource:PCH|PCH_PCU) -> bool:
 		"""	Check whether the originator has access to the PCU resource.
 			This should be done to check the parent PCH, but the originator
 			would be the same as the PCU, so we can optimize this a bit.

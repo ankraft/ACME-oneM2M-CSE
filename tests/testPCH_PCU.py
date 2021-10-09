@@ -8,6 +8,7 @@
 #
 
 import unittest, sys, time
+from unittest.loader import findTestCases
 import requests
 if '..' not in sys.path:
 	sys.path.append('..')
@@ -20,8 +21,7 @@ ae2URL = f'{aeURL}2'
 pch2URL = f'{ae2URL}/{pchRN}'
 pcu2URL = f'{pch2URL}/pcu'
 
-waitBetweenPollingRequests = 2 # seconds
-requestTimeout = 10   # TODO make this configurable in the CSE, like expiration
+waitBetweenPollingRequests = sentRequestExpirationDelay/2.0 # seconds
 
 class TestPCH_PCU(unittest.TestCase):
 
@@ -48,6 +48,7 @@ class TestPCH_PCU(unittest.TestCase):
 		         └─testACP2   Allows NOTIFY for testAE
 		``` 
 		"""
+
 
 		# Add first AE
 		dct = 	{ 'm2m:ae' : {
@@ -120,8 +121,58 @@ class TestPCH_PCU(unittest.TestCase):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(f'{aeURL}2', ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 
-		with console.status('[blue]Waiting for polling requests to timeout...') as status:
-			time.sleep(requestTimeout)
+		with console.status('[bright_blue]Waiting for polling requests to timeout...') as status:
+			time.sleep(sentRequestExpirationDelay)
+
+
+	def _pollForRequest(self, originator:str, rcs:RC, isCreate:bool=False, isDelete:bool=False) -> None:
+		r, rsc = RETRIEVE(pcu2URL, originator)	# polling request
+		self.assertEqual(rsc, rcs, r)
+		if rcs in [ RC.originatorHasNoPrivilege, RC.requestTimeout ]:
+			return
+
+		# response is a oneM2M request			
+		self.assertIsNotNone(findXPath(r, 'pc'), r)
+		self.assertIsNotNone(findXPath(r, 'pc/m2m:sgn'), r)
+		if isCreate: self.assertIsNotNone(findXPath(r, 'pc/m2m:sgn/vrq'), r)
+		if isCreate: self.assertTrue(findXPath(r, 'pc/m2m:sgn/vrq'))
+		if isDelete: self.assertIsNotNone(findTestCases(r, 'pc/m2m:sgn/sud'))
+		if isDelete: self.assertTrue(findXPath(r, 'pc/m2m:sgn/sud'))
+		self.assertIsNotNone(findXPath(r, 'pc/m2m:sgn/sur'))
+		if isCreate: self.assertIsNotNone(findXPath(r, 'pc/m2m:sgn/cr'))
+		self.assertIsNotNone(findXPath(r, 'rqi'))
+		rqi = findXPath(r, 'rqi')
+
+		# Build and send OK response as a Notification
+		dct = {
+			'rsp' : {
+				'fr'  : originator,
+				'rqi' : rqi,
+				'rvi' : RVI,
+				'rsc' : int(RC.OK)
+			}
+		}
+		r, rsc = NOTIFY(pcu2URL, originator, data=dct)
+	
+
+	def _pollWhenCreating(self, originator:str, rcs:RC=RC.OK) -> Thread:
+		# Start polling thread and wait moment before sending next request
+		thread = Thread(target=self._pollForRequest, kwargs={'originator':originator, 'rcs':rcs, 'isCreate':True})
+		thread.start()
+		time.sleep(waitBetweenPollingRequests)	# Wait for delete notification
+		return thread
+
+
+	def _pollWhenDeleting(self,originator:str, rcs:RC=RC.OK) -> Thread:
+		# Start polling thread and wait moment before sending next request
+		thread = Thread(target=self._pollForRequest, kwargs={'originator':originator, 'rcs':rcs, 'isDelete':True})
+		thread.start()
+		time.sleep(waitBetweenPollingRequests)	# Wait for delete notification
+		return thread
+
+
+	def _waitForPolling(self, thread:Thread) -> None:
+		thread.join()
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -163,46 +214,63 @@ class TestPCH_PCU(unittest.TestCase):
 	def test_createSUBunderCNT(self) -> None:
 		"""	CREATE <SUB> under <CNT> with <PCH>"""
 
-		def pollForRequest() -> None:
-			r, rsc = RETRIEVE(pcu2URL, TestPCH_PCU.originator2)	# polling request
-			self.assertEqual(rsc, RC.OK, r)
-			# response is a oneM2M request			
-			self.assertIsNotNone(findXPath(r, 'pc'), r)
-			self.assertIsNotNone(findXPath(r, 'pc/m2m:sgn'), r)
-			self.assertIsNotNone(findXPath(r, 'pc/m2m:sgn/vrq'))
-			self.assertTrue(findXPath(r, 'pc/m2m:sgn/vrq'))
-			self.assertIsNotNone(findXPath(r, 'pc/m2m:sgn/sur'))
-			self.assertIsNotNone(findXPath(r, 'pc/m2m:sgn/cr'))
-			self.assertIsNotNone(findXPath(r, 'rqi'))
-			rqi = findXPath(r, 'rqi')
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'net': [ NET.createDirectChild ]
+					},
+					'nu': [ TestPCH_PCU.originator2 ],
+					'su': TestPCH_PCU.originator2
+				}}
 
-			# Build and send OK response
-			dct = {
-				'rsp' : {
-					'fr'  : TestPCH_PCU.originator2,
-					'rqi' : rqi,
-					'rvi' : RVI,
-					'rsc' : int(RC.OK)
-				}
-			}
-			r, rsc = NOTIFY(pcu2URL, TestPCH_PCU.originator2, data=dct)
+		thread = self._pollWhenCreating(TestPCH_PCU.originator2)
+		r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.created, r)
+		self._waitForPolling(thread)
 
-		# Start polling thread and wait moment before sending next request
-		Thread(target=pollForRequest).start()
-		time.sleep(waitBetweenPollingRequests)
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_DeleteSUBunderCNT(self) -> None:
+		"""	DELETE <SUB> under <CNT> with <PCH>"""
+
+		thread = self._pollWhenDeleting(TestPCH_PCU.originator2)
+		r, rsc = DELETE(f'{cntURL}/{subRN}', TestPCH_PCU.originator)
+		self.assertEqual(rsc, RC.deleted, r)
+		self._waitForPolling(thread)
+	
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSUB2underCNTAnswerWithWrongTarget(self) -> None:
+		"""	CREATE <SUB> under <CNT> with <PCH> (wrong target) -> Fail"""
 
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
 			        'enc': {
 			            'net': [ NET.createDirectChild ]
 					},
-					'nu': [ TestPCH_PCU.aeRI2 ],
-					'su': TestPCH_PCU.aeRI2
+					'nu': [ TestPCH_PCU.originator ],
+					'su': TestPCH_PCU.originator
 				}}
-		r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.SUB, dct)
-		self.assertEqual(rsc, RC.created, r)
+		thread = self._pollWhenCreating(TestPCH_PCU.originator2, rcs=RC.requestTimeout)
+		r, rsc = CREATE(cntURL, TestPCH_PCU.originator2, T.SUB, dct)
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
+		self._waitForPolling(thread)
+		# No <sub> created
 
-		
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_accesPCUwithWrongOriginator(self) -> None:
+		"""	RETRIEVE <PCU> with wrong originator -> Fail"""
+		thread = self._pollWhenCreating(TestPCH_PCU.originator, rcs=RC.originatorHasNoPrivilege)
+		thread.join()
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_accessPCUwithshortExpiration(self) -> None:
+		"""	RETRIEVE <PCU> with short expiration -> Fail"""
+		r, rsc = RETRIEVE(pcu2URL, TestPCH_PCU.originator2, headers={C.hfRET : str(sentRequestExpirationDelay/2.0*1000)})	# polling request
+		self.assertEqual(rsc, RC.requestTimeout, r)
 
 
 
@@ -241,29 +309,38 @@ class TestPCH_PCU(unittest.TestCase):
 # TODO Non-Blocking async request, then retrieve notification via pcu
 # TODO multiple non-blocking async requests, then retrieve notification via pcu
 
-# TODO retrieve via PCU *after* delete
-
 # TODO retrieve PCU with expirationTimestamp
 
 # TODO reply with notify but different originator -> Fail
 
 # TODO return a wrong response
 # TODO return a empty response
+# TODO add multiple PCH
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
+	enableShortSentRequestExpirations()
+	if not isShortSentRequestExpirations():
+		console.print('\n[red reverse] Error configuring the CSE\'s test settings ')
+		console.print('Did you enable [i]remote configuration[/i] for the CSE?\n')
+		return 0,0,1	
 
 	# basic tests
 	suite.addTest(TestPCH_PCU('test_createSUBunderCNTFail'))
 	suite.addTest(TestPCH_PCU('test_createPCHunderAE2'))
+	suite.addTest(TestPCH_PCU('test_accessPCUwithshortExpiration'))
 	suite.addTest(TestPCH_PCU('test_retrievePCUunderAE2Fail'))
 	suite.addTest(TestPCH_PCU('test_createSUBunderCNT'))
+	suite.addTest(TestPCH_PCU('test_DeleteSUBunderCNT'))
+	suite.addTest(TestPCH_PCU('test_accesPCUwithWrongOriginator'))
+	suite.addTest(TestPCH_PCU('test_createSUB2underCNTAnswerWithWrongTarget'))
 
 	# TODO suite.addTest(TestPCH_PCU('test_createNotificationDoPolling'))
 
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
+	disableShortSentRequestExpirations()
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
