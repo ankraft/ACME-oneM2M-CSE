@@ -292,12 +292,17 @@ class HttpServer(object):
 					CSE.registration.stopExpirationMonitor()
 					CSE.registration.startExpirationMonitor()
 					return _r('ack')
-				elif path in [ 'cse.req.minet', 'cse.req.maxnet' ]:
+				elif path in [ 'cse.req.minet', 'cse.req.maxnet' ]:	# int configs
 					if (d := int(data)) < 1:
 							return _r('nak')
 					Configuration.set(path, d)
 					return _r('ack')
-
+				elif path == 'cse.requestExpirationDelta':	# float configs
+					if (f := float(data)) <= 0.0:
+							return _r('nak')
+					Configuration.set(path, f)
+					CSE.request.requestExpirationDelta = f
+					return _r('ack')
 			except:
 				return _r('nak')
 			return _r('nak')
@@ -390,8 +395,8 @@ class HttpServer(object):
 			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
 		except Exception as e:
 			L.isDebug and L.logWarn(f'Failed to send request: {str(e)}')
-			return Result(rsc=RC.targetNotReachable, dbg='target not reachable')
-		return Result(dict=RequestUtils.deserializeData(r.content, responseCt), rsc=rc)
+			return Result(status=False, rsc=RC.targetNotReachable, dbg='target not reachable')
+		return Result(status=True, dict=RequestUtils.deserializeData(r.content, responseCt), rsc=rc)
 		
 
 	#########################################################################
