@@ -17,7 +17,11 @@ from init import *
 
 # Headers for async requests
 headers = {
+	#C.hfRTU	: NOTIFICATIONSERVER+'&'+NOTIFICATIONSERVER
 	C.hfRTU	: NOTIFICATIONSERVER
+}
+headers2 = {
+	C.hfRTU	: NOTIFICATIONSERVER+'&'+NOTIFICATIONSERVER
 }
 headersEmpty = {
 	C.hfRTU	: ''
@@ -360,6 +364,33 @@ class TestREQ(unittest.TestCase):
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rqi'), rqi)
 
 
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCSENBAsynch2(self) -> None:
+		""" Retrieve <CB> non-blocking asynchronous w/ two RTU URLs"""
+		r, rsc = RETRIEVE(f'{cseURL}?rt={int(ResponseType.nonBlockingRequestAsynch)}&rp={requestETDuration}', TestREQ.originator, headers=headers2)
+		rqi = lastRequestID()
+		self.assertEqual(rsc, RC.acceptedNonBlockingRequestAsynch, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
+
+		# Wait and then check notification
+		time.sleep(requestCheckDelay)
+		lastNotification = getLastNotification()
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rsc'), RC.OK)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/to'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/to'), CSEID[1:])
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/fr'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/fr'), TestREQ.originator)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc'))
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb'))
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb/ty'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/pc/m2m:cb/ty'), T.CSEBase)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rqi'))
+		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rqi'), rqi)
+
+
 	# no notification is sent
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveCSENBAsynchEmptyRTU(self) -> None:
@@ -534,6 +565,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 
 	# nonBlockingAsync
 	suite.addTest(TestREQ('test_retrieveCSENBAsynch'))
+	suite.addTest(TestREQ('test_retrieveCSENBAsynch2'))
 	suite.addTest(TestREQ('test_retrieveCSENBAsynchEmptyRTU'))
 	suite.addTest(TestREQ('test_retrieveCSENBAsynchNoRTU'))
 	suite.addTest(TestREQ('test_retrieveUnknownNBAsynch'))
