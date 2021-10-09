@@ -123,7 +123,7 @@ class MQTTConnection(object):
 		if self.mqttClient:
 		# if self.mqttClient and self.isConnected:
 			# Unsubscribe from all topics
-			for t in self.subscribedTopics.values():
+			for t in list(self.subscribedTopics.values()):
 				self.unsubscribeTopic(t)
 			# wait a moment for all unsubscribe ACKs to arrive
 			while len(self.subscribedTopics) > 0:
