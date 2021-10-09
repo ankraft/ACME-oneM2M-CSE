@@ -92,7 +92,7 @@ class BackgroundWorker(object):
 			result = self.callback(**self.args)
 		except Exception as e:
 			if BackgroundWorker._logger:
-				BackgroundWorker._logger(logging.ERROR, f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}\n{"".join(traceback.format_exception(value=e))}')
+				BackgroundWorker._logger(logging.ERROR, f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}\n{"".join(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))}')
 		finally:
 			if not result or (self.maxCount and self.numberOfRuns >= self.maxCount):
 				# False returned, or the numberOfRuns has reached the maxCount
