@@ -388,6 +388,7 @@ class MQTTClient(object):
 		# Pack everything that is needed in a Result object as if this is a normal "response" (for MQTT this doesn't matter)
 		# This seems to be a bit complicated, but we fill in the necessary values as if this is a normal "response"
 		req 										= Result(request=CSERequest())
+		req.request.op								= operation
 		req.resource								= data
 		req.request.headers.originator				= targetOriginator if targetOriginator else u.path[1:]
 		req.request.headers.requestIdentifier		= Utils.uniqueRI()
@@ -475,7 +476,7 @@ def prepareMqttRequest(result:Result, originator:str=None, ty:T=None, op:Operati
 		The constructed and serialized content is returned in `Result.data`.
 	"""
 
-	result = RequestUtils.requestFromResult(result, originator, ty)
+	result = RequestUtils.requestFromResult(result, originator, ty, op=op)
 	result.data = cast(bytes, RequestUtils.serializeData(result.dict, result.request.ct))
 	return result
 
@@ -485,8 +486,12 @@ def logRequest(req:Result, topic:str, isResponse:bool=False) -> None:
 	"""
 	prefix = f'<== MQTT Response (RSC: {req.rsc})' if isResponse else f'MQTT Request ==>'
 	body   = ''
-	if req.request.headers.contentType == ContentSerializationType.CBOR or req.request.ct == ContentSerializationType.CBOR:
-		body = f'\nBody: \n{TextTools.toHex(req.data if not isResponse else req.request.data)}\n=>\n{req.dict if not isResponse else str(req.request.req)}'
-	elif req.request.headers.contentType == ContentSerializationType.JSON or req.request.ct == ContentSerializationType.JSON:
-		body = f'\nBody: {str(req.data) if not isResponse else str(req.request.req)}' 
+	if req.request and req.request.headers:
+		if req.request.headers.contentType == ContentSerializationType.CBOR or req.request.ct == ContentSerializationType.CBOR:
+			if isResponse and req.request.data:
+				body = f'\nBody: \n{TextTools.toHex(req.request.data)}\n=>\n{str(req.request.req)}'
+			else:
+				body = f'\nBody: \n{TextTools.toHex(req.data)}\n=>\n{req.dict}'
+		elif req.request.headers.contentType == ContentSerializationType.JSON or req.request.ct == ContentSerializationType.JSON:
+			body = f'\nBody: {str(req.data) if not isResponse else str(req.request.req)}' 
 	L.isDebug and L.logDebug(f'{prefix}: {topic}{body}')
