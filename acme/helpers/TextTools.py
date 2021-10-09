@@ -35,7 +35,7 @@ def removeCommentsFromJSON(data:str) -> str:
 def toHex(bts:bytes, toBinary:bool=False, withLength:bool=False) -> str:
 	"""	Print bts as hex output, similar to the 'od' command.
 	"""
-	if len(bts) == 0 and not withLength: return ''
+	if not bts or (len(bts) == 0 and not withLength): return ''
 	result = ''
 	n = 0
 	b = bts[n:n+16]
