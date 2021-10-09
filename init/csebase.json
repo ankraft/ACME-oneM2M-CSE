@@ -3,6 +3,7 @@
 		"ri" : "${cse.ri}",
 		"rn" : "${cse.rn}",
 		"csi" : "${cse.csi}",
+		"rr"  : true,
 		"csz" : [ "application/json", "application/cbor" ],
 		"acpi": [ "${cse.rn}/acpCreateACPs" ]
 	}
