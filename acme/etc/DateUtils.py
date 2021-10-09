@@ -78,6 +78,19 @@ def utcTime() -> float:
 	return datetime.datetime.utcnow().timestamp()
 
 
+def timeUntilAbsRelTimestamp(absRelTimestamp:str) -> float:
+	"""	Return the time in s until the UTC-based `absRelTimestamp` is reaced.
+
+		Negative values mean that the timestamp lies is the past.
+		
+		0.0 is returned in case of an error.
+	"""
+	if (ts := fromAbsRelTimestamp(absRelTimestamp)) == 0.0:
+		return 0.0
+	return ts - utcTime()
+
+
+
 def waitFor(timeout:float, condition:Callable[[], bool]=None) -> bool:
 	"""	Busy waiting for `timeout` seconds, or until the `condition`
 		callback function returns *True*.
