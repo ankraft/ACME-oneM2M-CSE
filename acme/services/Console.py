@@ -16,6 +16,8 @@ from rich.table import Table
 from rich.panel import Panel
 from rich.tree import Tree
 from rich.live import Live
+from rich.text import Text
+
 
 from ..helpers.KeyHandler import loop, stopLoop, waitForKeypress
 from ..helpers import TextTools
@@ -88,6 +90,7 @@ class Console(object):
 		commands = {
 			'?'     : self.help,
 			'h'		: self.help,
+			'A'		: self.about,
 			'\n'	: lambda c: print(),		# 1 empty line
 			'\x03'  : self.shutdownCSE,			# See handler below
 			'c'		: self.configuration,
@@ -126,7 +129,7 @@ class Console(object):
 	def _about(self, header:str=None) -> None:
 		L.console(f'\n[white][dim][[/dim][red][i]ACME[/i][/red][dim]] CSE {C.version}', plain=True, nl=True)
 		if header:
-			L.console(f'**{header}**',nl=True)
+			L.console(header, nl=True, isHeader=True)
 	
 
 	def help(self, key:str) -> None:
@@ -134,6 +137,7 @@ class Console(object):
 		"""
 		self._about('Console Commands')
 		L.console("""- h, ?  - This help
+- A     - About
 - Q, ^C - Shutdown CSE
 - c     - Show configuration
 - C     - Clear the console screen
@@ -152,6 +156,40 @@ class Console(object):
 - u     - Open web UI
 - Z     - Reset the CSE
 """, nl=True)
+
+
+	def about(self, key:str) -> None:
+		"""	Print QR-code for keyboard commands.
+		"""
+		self._about('About')
+		L.console(Text("""
+ACME oneM2M CSE - An open source CSE Middleware for Education
+
+(c) 2021 by Andreas Kraft
+Available under the BSD 3-Clause License
+"""))
+		L.console(Text('https://github.com/ankraft/ACME-oneM2M-CSE', style='link https://github.com/ankraft/ACME-oneM2M-CSE'), nl=True)
+		L.console(Text("""
+█▀▀▀▀▀█ ▀▀▀▀▀▄█▀▄▄█  ▄█ ▄ █▀▀▀▀▀█
+█ ███ █ ▀█▀▀  ███ █▄▄ █▀  █ ███ █
+█ ▀▀▀ █ ▄▀▀▀▄██▀█▄▀▀██▀▀▀ █ ▀▀▀ █
+▀▀▀▀▀▀▀ ▀▄█ █ ▀ ▀ █ ▀ ▀ ▀ ▀▀▀▀▀▀▀
+▀▄▀▄ ▄▀▀ ███ ▀ ▀  ▄██ ▀█▄ ▄▀ ▄▀▄▀
+▀▄▄█▄▀▀▄▄▀▄██▀█▄▄▀█▀ ▀█▀▀██▄▄█▀▀▄
+▀ ▀ ██▀▄██ ▄▄██▀█▀█▀███ █ ▀ █ ▄██
+█▀▄▀▀ ▀▀▀█▄▀  ▄▄█ ▀▄█  ▀ ▄▄██▄▄ ▀
+▀▀▀ ▄ ▀▄▀████▄▄▄ ▄ ▄█▄ ██ █▀ ▄▀▀
+█ ▄  █▀█▄▀█▄▀▄ ▀▀▄ █▄▄ ▀██▄▀▄█▀█▀
+▀▄▀█ ▀▀ ▄█▀█ █ ▀ ▀   ▀ ▀▄▄▀█▀ ▄ ▄
+▀▀▀ █▄▀▀▄ ▄▀▀█▄▀ ▀█▀  █ █▄█   ▄ █
+▀▀ ▀  ▀ █ ▀▄▄▀ █▀  █▀  ██▀▀▀█ ▀█▄
+█▀▀▀▀▀█ ▀ ▄▄▄▀ ▀█▀█▀▄▀█▄█ ▀ ██▀ █
+█ ███ █  ▄▄▄ ▀▀▀█▀█ ████▀█▀██ ▄█  
+█ ▀▀▀ █ ▀█▄▄▀▀▀▄█  ▄█ ▄█ ▀ ██▄▀▀▀
+▀▀▀▀▀▀▀ ▀▀ ▀▀▀      ▀    ▀▀▀▀ ▀ ▀
+"""), nl=True)
+
+
 
 
 	def shutdownCSE(self, key:str) -> None:
@@ -622,4 +660,4 @@ class Console(object):
 		console = RichConsole(color_system=None)
 		console.begin_capture()
 		console.print(self.getResourceTreeRich())
-		return console.end_capture()
+		return '\n'.join([item.rstrip() for item in console.end_capture().splitlines()])
