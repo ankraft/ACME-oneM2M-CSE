@@ -3,8 +3,8 @@
 # Importing
 
 [Resources](#resources)  
-[Importing Attribute Policies for FlexContainers](#importing-attribute-policies-for-flexcontainers)  
-[Importing Attribute Policies for Common Resources](#importing-attribute-policies-for-common-resources)
+[Attribute and Hierarchy Policies for FlexContainers](#attribute-and-hierarchy-policies-for-flexcontainers)  
+[Attribute Policies for Common Resources](#attribute-policies-for-common-resources)
 
 
 ## Resources
@@ -55,7 +55,7 @@ A minimal set of resources is provided in the [init](../init) directory. Definit
 The directory [tools/resourceTemplates](../tools/resourceTemplates) contains templates for supported resource types. Please see the [README](../tools/resourceTemplates/README.md) there for further details.
 
 
-## Importing Attribute and Hierarchy Policies for FlexContainers
+## Attribute and Hierarchy Policies for FlexContainers
 
 The CSE uses attribute policies for validating the attributes of all supported resource types (internal to the *m2m* namespace). 
 But for all &lt;flexContainer> specializations, e.g. for oneM2M's TS-0023 ModuleClasses, those attribute policies and the allowed &lt;flexContainer> hierarchy must be provided. This can be done by adding attribute policy files for import. 
@@ -67,7 +67,7 @@ Those files are imported from the common import / init directory. More than one 
 The format is a JSON structure that follows the structure described in the following code.  
 Some of the fields are not yet used, but will supported by a future version of the CSE.
 
-```
+```JSON
 // A file contains a list of Attribute Policies
 attributePolicies = [
 	
@@ -194,7 +194,7 @@ The following examples show the attribute policies for the *binarySwitch* and *d
 ]
 ```
 
-## Importing Attribute Policies for Common Resources
+## Attribute Policies for Common Resources
 
 During startup the CSE reads the attribute policies for normal/common resources from the file [attributePolicies.ap](../init/attributePolicies.ap) in the import / init directory.
 
@@ -202,29 +202,61 @@ During startup the CSE reads the attribute policies for normal/common resources 
 
 The format is a JSON structure that follows the structure described in the following code.  
 
-
-```
+```JSON
 // The attributePolicy.ap file contains a dictionary of AttributePolicies
-attributePolicies = {
+{
 
-	// Each Attribute Policy is identified by an attribute's short name
-	"attribute shortname": [
+	// Each Attribute Policy is identified for an attribute's short name
+	"attributeShortname": [
 
-		// A list of attribute policies is defined for each short name
-
+		// A list of attribute policies may be defined for each short name.
+		// There might be some definitions for the same attribute that are defined
+		// slighly from each other. Therefore, a list of resource types is given
+		// for each definition for which that definition is valid.
 		// See the attributes definition for flexContainer attribute policies above.
 			
 		{
 			// The rtypes definition is mandatory here. It defines a list of oneM2M
 			// resource types for which this definition is valid. This way slight
 			// differences in attributes in some resource can be distinguished.
-			"rtype" : [ '<resource types>' ]
+			// The special names "ALL" (short for all resource types) and "REQRESP"
+			// (for attributes in requests and responses) can be used accordingly.
+			"rtype" : [ "<resource type>", "<resource type>" ]
 
-			...
+			// The other definitions that can be used are (see above for details):
+			//
+			//	- lname
+			//	- ns
+			//	- type
+			//	- car
+			//	- oc
+			//	- ou
+			//	- od
+			//	- annc
 		}
-	],
+	]
+}
+```
 
+**Example**
 
+The following gives an example for the attribute *ty* (*resourceType*).
 
-
+```JSON
+{
+	"ty": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "resourceType",
+			"ns": "m2m",
+			"type": "positiveInteger",
+			"car": "1",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "O",
+			"annc": "NA"
+		}
+	]
+}
+```
 [← README](../README.md) 

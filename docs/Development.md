@@ -104,7 +104,7 @@ The Python script [runTests.py](../tests/runTests.py) can be used to run all tes
 
 	...
 
-										[ACME] - Test Results
+	                                 [ACME] - Test Results
 	┏━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
 	┃ Test Suites     ┃ Test Count ┃ Skipped ┃ Errors ┃ Exec Time  ┃ Process Time ┃ Time / Test ┃
 	┡━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
@@ -182,10 +182,10 @@ Only the following configuration settings can updated by this method yet:
 | Macro name                   | Description                                                                                                        |
 |:-----------------------------|:-------------------------------------------------------------------------------------------------------------------|
 | cse.checkExpirationsInterval | Assigning a new value to this configuration setting will also force a restart CSE's *RegistrationManager* module.  |
+| cse.checkTimeSeriesInterval  | Assigning a new value to this configuration setting will also force a restart CSE's *TimeSeriesManager* component. |
 | cse.req.minet                | Minimum time for &lt;request> resource expiration.                                                                 |
 | cse.req.maxnet               | Maximum time for &lt;request> resource expiration.                                                                 |
-| cse.checkTimeSeriesInterval  | Assigning a new value to this configuration setting will also force a restart CSE's *TimeSeriesManager* component. |
-
+| cse.requestExpirationDelta   | Assign a new value to the *Request Expiration Time* for requests sent by the CSE                                   |
 
 <a name="mypy"></a>
 ## MyPy Static Type Checker

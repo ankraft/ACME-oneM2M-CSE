@@ -4,14 +4,17 @@
 
 ## Near Future
 
-- [CSE] Add support for the PollingChannel resource type
-- [CSE] Add support for MQTT, CoAP, and WebSocket bindings
-- [CSE] Improve ACP resources
+- [CSE] Add support for CoAP, and WebSocket bindings
+- [CSE] Improve ACP resource and conditions 
 - [CSE] Improve notifications (like pendingNotifications etc)
+- 
 
 ## Far Future
-- [WEB] Add Support for actions
+- [CSE] Add Support for actions
+- [CSE] Add Support for primitive profiles
 - [CSE] Support more resource types when necessary
+- [CSE] Support for Process Management
+- [CSE] Support for TimeBeacon
 
 
 ## Sometimes

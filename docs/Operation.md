@@ -46,6 +46,10 @@ See the [configuration](Configuration.md) for more examples.
 
 The CSE can generate a diagram with an overview about the hosted resource tree and the current deployment infrastructure of remote CSE's.
 
+```bash
+$ curl localhost:8080/__sturcture__
+```
+
 ![](images/structure.png)
 
 This feature must be enabled in the configuration file under "\[server.http]->enableStructureEndpoint" (see also [Configuration](Configuration.md#server_http)). 
@@ -56,6 +60,14 @@ When enabled the http server creates an additional endpoint */\_\_structure__*. 
 
 A similar text representation of the resource tree can be retrieved from the endpoint */\_\_structure__/text* .
 
+```bash
+$ curl localhost:8080/__structure__/text
+
+cse-in -> m2m:cb (csi=/id-in) | ri=id-in
+├── acpCreateACPs -> m2m:acp | ri=acpCreateACPs
+└── CAdmin -> m2m:ae | ri=CAdmin
+``` 
+
 
 ## Resetting the CSE via http
 
@@ -64,5 +76,20 @@ The CSE can be reset from remote by sending a GET request to the endpoint */\_\_
 This feature must be enabled in the configuration file under "\[server.http]->enableResetEndpoint" (see also [Configuration](Configuration.md#server_http)). 
 
 **ATTENTION**: Enabling this feature might lead to a total loss of data. It should be disabled if not used.
+
+**Example**
+
+```bash
+$ curl localhost:8080/__reset__
+```
+
+## Running with MQTT Support
+
+ACME supports Mca and Mcc communication via MQTT. This binding must be enabled in the configuration file under "\[client.mqtt]->enable" (see also [Configuration](Configuration.md#client_mqtt)). 
+
+ACME does not bring an own MQTT broker. Instead any MQTT broker that supports at least MQTT version 3.1.x can be used. This can be either be an own operated or a public broker installation (see, for example, [https://test.mosquitto.org](https://test.mosquitto.org)). The connection details need to be configured in the "[client.mqtt]" section as well.
+
+
+
 
 [← README](../README.md) 

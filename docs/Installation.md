@@ -33,7 +33,7 @@ You may consider to use a virtual environment manager like pyenv + virtualenv (s
 ## Installation and Configuration
 
 1. Optional: Install the ACME CSE by copying the whole distribution to a new directory.  
-1. You may want to copy the configuration file [acme.ini.default](acme.ini.default) to a new file *acme.ini* so that you can make adjustments to the configuration.
+1. You may want to copy the configuration file [acme.ini.default](../acme.ini.default) to a new file *acme.ini* so that you can make adjustments to the configuration.
 
 		cp acme.ini.default acme.ini
 
