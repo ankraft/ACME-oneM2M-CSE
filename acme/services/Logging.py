@@ -233,7 +233,7 @@ class Logging:
 	
 
 	@staticmethod
-	def console(msg:Union[str, Tree, Table, JSON]='&nbsp;', nl:bool=False, nlb:bool=False, end:str='\n', plain:bool=False, isError:bool=False, isHeader:bool=False) -> None:
+	def console(msg:Union[str, Text, Tree, Table, JSON]='&nbsp;', nl:bool=False, nlb:bool=False, end:str='\n', plain:bool=False, isError:bool=False, isHeader:bool=False) -> None:
 		"""	Print a message or object on the console.
 		"""
 		# if this is a header then call the method again with different parameters
@@ -248,7 +248,7 @@ class Logging:
 			Logging._console.print(msg if plain else Markdown(msg), style=style, end=end)
 		elif isinstance(msg, dict):
 			Logging._console.print(msg, style=style, end=end)
-		elif isinstance(msg, (Tree, Table)):
+		elif isinstance(msg, (Tree, Table, Text)):
 			Logging._console.print(msg, style=style, end=end)
 		if nl:	# Empty line after
 			Logging._console.print()
