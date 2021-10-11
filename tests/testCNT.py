@@ -153,6 +153,16 @@ class TestCNT(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCNTempty(self) -> None:
+		"""	Update <CNT> empty content """
+		dct = 	{ 'm2m:cnt' : {
+				}}
+		r, rsc = UPDATE(cntURL, TestCNT.originator, dct)
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt'))
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTUnderCNT(self) -> None:
 		""" Create <CNT> under <CNT> """
 		dct = 	{ 'm2m:cnt' : { 
@@ -259,6 +269,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCNT('test_attributesCNT'))
 	suite.addTest(TestCNT('test_updateCNT'))
 	suite.addTest(TestCNT('test_updateCNTTy'))
+	suite.addTest(TestCNT('test_updateCNTempty'))
 	suite.addTest(TestCNT('test_updateCNTPi'))
 	suite.addTest(TestCNT('test_updateCNTUnknownAttribute'))
 	suite.addTest(TestCNT('test_updateCNTWrongMNI'))

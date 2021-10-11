@@ -89,8 +89,6 @@ class Validator(object):
 
 		# Get the pure resource and the resource's tpe
 		(pureResDict, _tpe) = Utils.pureResource(resource)
-		if not pureResDict:
-			return Result(status=False, rsc=RC.badRequest, dbg='content is None')
 
 		tpe = _tpe if _tpe and _tpe != tpe else tpe 				# determine the real tpe
 
