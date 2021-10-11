@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-from typing import Dict, cast
+from typing import Dict, List, cast
 import datetime, os, sys, webbrowser
 from enum import IntEnum, auto
 from rich.style import Style
@@ -402,7 +402,7 @@ Available under the BSD 3-Clause License
 				if not (resdis := CSE.dispatcher.discoverResources(ri, originator=CSE.cseOriginator)).status:
 					L.console(resdis.dbg, isError=True)
 				else:
-					CSE.dispatcher.resourceTreeDict(resdis.lst, res.resource)	# the function call add attributes to the target resource
+					CSE.dispatcher.resourceTreeDict(cast(List[Resource], resdis.data), res.resource)	# the function call add attributes to the target resource
 					L.console(res.resource.asDict())
 		L.on()
 

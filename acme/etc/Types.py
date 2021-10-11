@@ -816,22 +816,18 @@ class ContentSerializationType(IntEnum):
 @dataclass
 class Result:
 	resource:Resource			= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
-	dict:JSON 					= None		# Contains the result dictionary
-	data:Any 					= None 		# Anything
-	lst:List[Any]   			= None		# List of Anything
-	rsc:ResponseStatusCode			= ResponseStatusCode.OK	# OK
+	data:Any|List[Any]|JSON		= None 		# Anything, or list of anything, or a JSON dictionary	
+	rsc:ResponseStatusCode		= ResponseStatusCode.UNKNOWN	#	The resultStatusCode of a Result
 	dbg:str 					= None
-	request:CSERequest			= None  	# may contain the processed http request object
+	request:CSERequest			= None  	# may contain the processed incoming request object
 	embeddedRequest:CSERequest 	= None		# May contain a request as a response, e.g. when polling
 	status:bool 				= None
-	originator:str				= None
-	uri:str						= None
 
 
 	def errorResult(self) -> Result:
 		""" Copy only the rsc and dbg to a new result instance.
 		"""
-		return Result(rsc=self.rsc, dbg=self.dbg)
+		return Result(status=self.status, rsc=self.rsc, dbg=self.dbg)
 
 	def toData(self, ct:ContentSerializationType=None) -> str|bytes|JSON:
 		from ..resources.Resource import Resource
@@ -847,8 +843,8 @@ class Result:
 			r = serializeData({ 'm2m:dbg' : self.dbg }, ct)
 		elif isinstance(self.resource, dict):
 			r = serializeData(self.resource, ct)
-		elif self.dict:									# explicit json or cbor from the dict
-			r = serializeData(self.dict, ct)
+		elif self.data:									# explicit json or cbor from the dict
+			r = serializeData(cast(JSON, self.data), ct)
 		elif self.request and self.request.pc:		# Return the dict if the request is set and has a dict
 			r = self.request.pc
 		else:

@@ -77,43 +77,41 @@ class RequestManager(object):
 		return self.requestHandlers[request.op].ownRequest(request)
 
 
-	def handleReceivedNotifyRequest(self, targetResource:Resource, request:CSERequest, id:str, originator:str) -> Result:
+	# def handleReceivedNotifyRequest(self, targetResource:Resource, request:CSERequest, id:str, originator:str) -> Result:
+	def handleReceivedNotifyRequest(self, id:str, request:CSERequest, originator:str) -> Result:
 		"""	Handle a NOTIFY request to a PCU-enabled resource.
 		"""
 		L.isDebug and L.logDebug(f'NOTIFY request for polling channel. Originator: {originator}')
 
-		# Get pollingChannel
-		if not (pchList := CSE.dispatcher.directChildResources(targetResource.ri, T.PCH)):
-			L.logDebug(dbg := f'Resource: {targetResource.ri} has no <PCH>')
-			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
-		pch = pchList[0]	# We only assume one PCH
-
-		# # Check whether the request is allowed by this originator
-		# if not CSE.security.hasAccessToPollingChannel(originator, cast(PCH, pch)):
-		# 	L.logDebug(dbg:=f'Originator: {originator} has not access to <pollingChannelURI>: {id}')
-		# 	return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
+		# # Get pollingChannel
+		# if not (pchList := CSE.dispatcher.directChildResources(targetResource.ri, T.PCH)):
+		# 	L.logDebug(dbg := f'Resource: {targetResource.ri} has no <PCH>')
+		# 	return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+		# pch = pchList[0]	# We only assume one PCH
 
 		# Check content
 		if request.pc is None:
 			L.logDebug(dbg := f'Missing content/request in notification')
 			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
-		# Fill various request attributes
-		if (pc := request.pc.get('m2m:rsp')) or (pc := request.pc.get('rsp')):		# Request is a response
-			nrequest 									= CSERequest()
-			nrequest.headers.originator					= pc.get('fr')
-			nrequest.headers.originatingTimestamp		= pc.get('or')
-			nrequest.headers.requestIdentifier			= pc.get('rqi')
-			nrequest.headers.releaseVersionIndicator	= pc.get('rvi')
-			nrequest.rsc								= pc.get('rsc')
-			nrequest.pc 								= pc.get('pc')
+		# # Fill various request attributes
+		# if pc := request.pc.get('m2m:rsp'):		# Request is a response
+		# 	nrequest 									= CSERequest()
+		# 	nrequest.headers.originator					= pc.get('fr')
+		# 	nrequest.headers.originatingTimestamp		= pc.get('or')
+		# 	nrequest.headers.requestIdentifier			= pc.get('rqi')
+		# 	nrequest.headers.releaseVersionIndicator	= pc.get('rvi')
+		# 	nrequest.rsc								= pc.get('rsc')
+		# 	nrequest.pc 								= pc.get('pc')
 
-			if req := CSE.request.queueRequestForPCH(cast(PCH, pch), request=nrequest, reqType=RequestType.RESPONSE):
-				return Result(status=True, request=req)	# A Notification to PCU always contains a response to a previous request
-			return Result(status=False)
+		# 	if req := CSE.request.queueRequestForPCH(cast(PCH, pch), request=nrequest, reqType=RequestType.RESPONSE):
+		# 		return Result(status=True, request=req)	# A Notification to PCU always contains a response to a previous request
+		# 	return Result(status=False)
 	
-		else:
-			return self.sendNotifyRequest(id, originator=originator, data=request.pc)
+		# else:
+		# 	return self.sendNotifyRequest(id, originator=originator, data=request.pc)
+		
+		return self.sendNotifyRequest(id, originator=originator, data=request.pc)
 
 
 
@@ -290,7 +288,7 @@ class RequestManager(object):
 		# Register <request>
 		if not (cseres := Utils.getCSE()).resource:
 			return Result(rsc=RC.badRequest, dbg=cseres.dbg)
-		if (rres := CSE.registration.checkResourceCreation(nres.resource, request.headers.originator, cseres.resource)).rsc != RC.OK:
+		if not (rres := CSE.registration.checkResourceCreation(nres.resource, request.headers.originator, cseres.resource)).status:
 			return rres.errorResult()
 		
 		# set the CSE.ri as indicator that this resource was created internally
@@ -315,14 +313,14 @@ class RequestManager(object):
 			# Run operation in the background
 			BackgroundWorkerPool.newActor(self._runNonBlockingRequestSync, name=f'request_{request.headers.requestIdentifier}').start(request=request, reqRi=reqres.resource.ri)
 			# Create the response content with the <request> ri 
-			return Result(dict={ 'm2m:uri' : reqres.resource.ri }, rsc=RC.acceptedNonBlockingRequestSynch)
+			return Result(data={ 'm2m:uri' : reqres.resource.ri }, rsc=RC.acceptedNonBlockingRequestSynch)
 
 		# Asynchronous handling
 		if request.args.rt == ResponseType.nonBlockingRequestAsynch:
 			# Run operation in the background
 			BackgroundWorkerPool.newActor(self._runNonBlockingRequestAsync, name=f'request_{request.headers.requestIdentifier}').start(request=request, reqRi=reqres.resource.ri)
 			# Create the response content with the <request> ri 
-			return Result(dict={ 'm2m:uri' : reqres.resource.ri }, rsc=RC.acceptedNonBlockingRequestAsynch)
+			return Result(data={ 'm2m:uri' : reqres.resource.ri }, rsc=RC.acceptedNonBlockingRequestAsynch)
 
 		# Error
 		return Result(rsc=RC.badRequest, dbg=f'Unknown or unsupported ResponseType: {request.args.rt}')
@@ -429,7 +427,7 @@ class RequestManager(object):
 		# if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 		# 	url += '?' + urllib.parse.urlencode(request.originalArgs)
 		L.isInfo and L.log(f'Forwarding RETRIEVE/DISCOVERY request to: {res.data}')
-		return self.sendRetrieveRequest(res.uri, request.headers.originator)
+		return self.sendRetrieveRequest(cast(str, res.data), request.headers.originator)
 
 
 	def handleTransitCreateRequest(self, request:CSERequest) -> Result:
@@ -441,7 +439,7 @@ class RequestManager(object):
 		# if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 		# 	url += '?' + urllib.parse.urlencode(request.originalArgs)
 		L.isInfo and L.log(f'Forwarding CREATE request to: {res.data}')
-		return self.sendCreateRequest(res.uri, request.headers.originator, data=request.data, ty=request.headers.resourceType)
+		return self.sendCreateRequest(cast(str, res.data), request.headers.originator, data=request.data, ty=request.headers.resourceType)
 
 
 	def handleTransitUpdateRequest(self, request:CSERequest) -> Result:
@@ -453,7 +451,7 @@ class RequestManager(object):
 		# if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 		# 	url += '?' + urllib.parse.urlencode(request.originalArgs)
 		L.isInfo and L.log(f'Forwarding UPDATE request to: {res.data}')
-		return self.sendUpdateRequest(res.uri, request.headers.originator, data=request.data)
+		return self.sendUpdateRequest(cast(str, res.data), request.headers.originator, data=request.data)
 
 
 	def handleTransitDeleteRequest(self, request:CSERequest) -> Result:
@@ -465,7 +463,7 @@ class RequestManager(object):
 		# if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 		# 	url += '?' + urllib.parse.urlencode(request.originalArgs)
 		L.isInfo and L.log(f'Forwarding DELETE request to: {res.data}')
-		return self.sendDeleteRequest(res.uri, request.headers.originator)
+		return self.sendDeleteRequest(cast(str, res.data), request.headers.originator)
 
 
 	def handleTransitNotifyRequest(self, request:CSERequest) -> Result:
@@ -473,7 +471,7 @@ class RequestManager(object):
 		if not (res := self._constructForwardURL(request)).status:
 			return res
 		L.isInfo and L.log(f'Forwarding NOTIFY request to: {res.data}')
-		return self.sendNotifyRequest(res.uri, request.headers.originator, data=request.data)
+		return self.sendNotifyRequest(cast(str, res.data), request.headers.originator, data=request.data)
 
 
 	def isTransitID(self, id:str) -> bool:
@@ -501,13 +499,13 @@ class RequestManager(object):
 
 	def _constructForwardURL(self, request:CSERequest) -> Result:
 		"""	Construct the target URL for the forward request. Add the original
-			arguments.
+			arguments. The URL is returned in Result.data .
 		"""
 		if not (url := self._getForwardURL(request.id)):
 			return Result(status=False, rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
 		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 			url += '?' + urllib.parse.urlencode(request.originalArgs)
-		return Result(status=True, uri=url)
+		return Result(status=True, data=url)
 
 
 	##############################################################################
@@ -1094,7 +1092,7 @@ class RequestManager(object):
 			return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=dbg)
 
 
-		return Result(status=True, request=cseRequest, dict=cseRequest.pc)
+		return Result(status=True, request=cseRequest, data=cseRequest.pc)
 
 	###########################################################################
 

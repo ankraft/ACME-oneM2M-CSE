@@ -176,7 +176,7 @@ class Resource(object):
 				return Result(status=False, rsc=RC.badRequest, dbg='acpi must not be an empty list')
 			if not (res := self._checkAndFixACPIreferences(self.acpi)).status:
 				return res
-			self.setAttribute('acpi', res.lst)
+			self.setAttribute('acpi', res.data)
 
 
 		self.setAttribute(self._originator, originator, overwrite=False)
@@ -231,7 +231,7 @@ class Resource(object):
 				if not (res := self._checkAndFixACPIreferences(ua)).status:
 					return res
 				
-				self.setAttribute('acpi', res.lst, overwrite=True) # copy new value or add new attributes
+				self.setAttribute('acpi', res.data, overwrite=True) # copy new value or add new attributes
 
 			else:
 
@@ -488,7 +488,7 @@ class Resource(object):
 				newACPIList.append(acp.ri)
 			else:
 				newACPIList.append(ri)
-		return Result(status=True, lst=newACPIList)
+		return Result(status=True, data=newACPIList)
 
 
 

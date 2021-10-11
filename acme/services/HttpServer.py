@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging, sys, urllib3
 from ssl import OP_ALL
 from copy import deepcopy
-from typing import Any, Callable, cast
+from typing import Any, Callable, cast, Tuple
 
 
 import flask
@@ -350,6 +350,10 @@ class HttpServer(object):
 
 
 	def sendHttpRequest(self, operation:Operation, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None) -> Result:	 # type: ignore[type-arg]
+		"""	Send an http request.
+		
+			The result is returned in *Result.data*.
+		"""
 
 		# Set the request method
 		method:Callable = self.operation2method[operation]
@@ -396,7 +400,7 @@ class HttpServer(object):
 		except Exception as e:
 			L.isDebug and L.logWarn(f'Failed to send request: {str(e)}')
 			return Result(status=False, rsc=RC.targetNotReachable, dbg='target not reachable')
-		return Result(status=True, dict=RequestUtils.deserializeData(r.content, responseCt), rsc=rc)
+		return Result(status=True, data=RequestUtils.deserializeData(r.content, responseCt), rsc=rc)
 		
 
 	#########################################################################
@@ -437,9 +441,7 @@ class HttpServer(object):
 		#
 		#	Transform request to oneM2M request
 		#
-
 		outResult = RequestUtils.requestFromResult(result)
-		outResult.data = cast(bytes, RequestUtils.serializeData(outResult.dict, outResult.request.ct))
 
 		#
 		#	Transform oneM2M request to http message
@@ -450,11 +452,11 @@ class HttpServer(object):
 		headers['Server'] = self.serverID						# set server field
 		if result.rsc:
 			headers[C.hfRSC] = f'{int(result.rsc)}'				# set the response status code
-		if rqi := Utils.findXPath(outResult.dict, 'rqi'):
+		if rqi := Utils.findXPath(cast(JSON, outResult.data), 'rqi'):
 			headers[C.hfRI] = rqi
-		if rvi := Utils.findXPath(outResult.dict, 'rvi'):
+		if rvi := Utils.findXPath(cast(JSON, outResult.data), 'rvi'):
 			headers[C.hfRVI] = rvi
-		if vsi := Utils.findXPath(outResult.dict, 'vsi'):
+		if vsi := Utils.findXPath(cast(JSON, outResult.data), 'vsi'):
 			headers[C.hfVSI] = vsi
 
 		# HTTP status code
@@ -463,15 +465,17 @@ class HttpServer(object):
 		# Assign and encode content accordingly
 		headers['Content-Type'] = (cts := result.request.ct.toHeader())
 		# (re-)add an empty pc if it is missing
-		outResult.data = RequestUtils.serializeData(outResult.dict['pc'], result.request.ct) if 'pc' in outResult.dict else ''
-		# outResult.data = cast(bytes, RequestUtils.serializeData(result.dict, result.request.ct))
+
+		# From hereon, data is a string or byte string
+		origData:JSON = cast(JSON, outResult.data)
+		outResult.data = RequestUtils.serializeData(cast(JSON, outResult.data)['pc'], result.request.ct) if 'pc' in cast(JSON, outResult.data) else ''
 		
 		# Build and return the response
 		if isinstance(outResult.data, bytes):
 			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: \n{TextTools.toHex(outResult.data)}\n=>\n{str(result.toData())}')
-		elif 'pc' in outResult.dict:
+		elif 'pc' in origData:
 			# L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
-			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: {outResult.dict["pc"]}\n')	# might be different serialization
+			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: {origData["pc"]}\n')	# might be different serialization
 		else:
 			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\n')
 		return Response(response=outResult.data, status=statusCode, content_type=cts, headers=headers)
@@ -593,8 +597,8 @@ class HttpServer(object):
 		req = Utils.removeNoneValuesFromDict(req)
 
 		# Add the primitive content and 
-		req['pc'] 	 	= contentResult.data[0]	# The actual content
-		cseRequest.ct	= contentResult.data[1]	# The conten serialization type
+		req['pc'] 	 	= cast(Tuple, contentResult.data)[0]			# The actual content
+		cseRequest.ct	= cast(Tuple, contentResult.data)[1]	# The conten serialization type
 		cseRequest.req	= req					# finally store the oneM2M request object in the cseRequest
 		
 		# do validation and copying of attributes of the whole request

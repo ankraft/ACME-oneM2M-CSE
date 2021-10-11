@@ -10,7 +10,7 @@
 #
 
 
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, cast
 from ..etc.Constants import Constants as C
 from ..etc.Types import ResourceTypes as T, Result, CSEType, ResponseStatusCode as RC, ContentSerializationType, JSON
 from ..etc import Utils as Utils
@@ -97,7 +97,7 @@ class RemoteCSEManager(object):
 		res = self._retrieveLocalCSRs()	# retrieve local CSR of the registrar
 		if res.rsc == RC.OK:
 			L.isDebug and L.logDebug('Deleting local registrar CSR ')
-			self._deleteLocalCSR(res.lst[0])		# delete local CSR of the registrar
+			self._deleteLocalCSR(cast(List, res.data)[0])		# delete local CSR of the registrar
 
 
 	#
@@ -141,7 +141,7 @@ class RemoteCSEManager(object):
 
 				# when validateRegistrations == False then only check when there is no connection
 				if not self.checkLiveliness:
-					if (r := self._retrieveLocalCSRs(onlyOwn=True)).lst and len(r.lst) == 1:
+					if (r := self._retrieveLocalCSRs(onlyOwn=True)).data and len(r.data) == 1:
 						return True
 			
 				# Check the connection to the registrar CSE and establish one if necessary
@@ -267,7 +267,7 @@ class RemoteCSEManager(object):
 		# first check whether there is already a local CSR
 		res = self._retrieveLocalCSRs()
 		if res.rsc == RC.OK:
-			localCSR = res.lst[0] # hopefully, there is only one registrar CSR
+			localCSR = cast(List, res.data)[0] # hopefully, there is only one registrar CSR
 			result = self._retrieveCSRfromRegistrarCSE()	# retrieve own CSR from the remote CSE
 			if result.rsc == RC.OK:
 				self.ownCSRonRegistrar = result.resource
@@ -320,7 +320,7 @@ class RemoteCSEManager(object):
 	#	This is done by trying to retrieve a remote CSR. If it cannot be retrieved
 	#	then the related local CSR is removed.
 	def _checkCSRLiveliness(self) -> None:
-		for localCsr in self._retrieveLocalCSRs(onlyOwn=False).lst:
+		for localCsr in cast(List, self._retrieveLocalCSRs(onlyOwn=False).data):
 			# Determine content serialization
 			# ct = CSE.defaultSerialization
 			# for csz in localCsr.csz:
@@ -348,6 +348,9 @@ class RemoteCSEManager(object):
 	#
 
 	def _retrieveLocalCSRs(self, csi:str=None, onlyOwn:bool=True) -> Result:
+		"""	Retrieve all local CSR's that match the given `csi` and return
+			them in a list in *Result.data* .
+		"""
 		localCsrs = CSE.dispatcher.directChildResources(pi=CSE.cseRi, ty=T.CSR)
 		if not csi:
 			csi = self.registrarCSI
@@ -355,15 +358,15 @@ class RemoteCSEManager(object):
 		if onlyOwn:
 			for localCsr in localCsrs:
 				if (c := localCsr.csi) and c == csi:
-					return Result(lst=[ localCsr ])
+					return Result(data=[ localCsr ])
 			return Result(rsc=RC.badRequest, dbg='local CSR not found')
 		else:
-			result = []
+			localCsrList = []
 			for localCsr in localCsrs:
 				if (c := localCsr.csi) and c == csi:	# skip own
 					continue
-				result.append(localCsr)
-			return Result(lst=result)
+				localCsrList.append(localCsr)
+			return Result(data=localCsrList)	# hopefully only one
 
 
 	def _createLocalCSR(self, remoteCSE: Resource) -> Result:
@@ -410,7 +413,7 @@ class RemoteCSEManager(object):
 		result = CSE.request.sendRetrieveRequest(self.registrarCSRURL, CSE.cseCsi, ct=self.registrarSerialization)	# own CSE.csi is the originator
 		if result.rsc not in [ RC.OK ]:
 			return result.errorResult()
-		return Result(resource=CSR.CSR(result.dict, pi=''), rsc=RC.OK)
+		return Result(resource=CSR.CSR(cast(JSON, result.data), pi=''), rsc=RC.OK)
 
 
 	def _createCSRonRegistrarCSE(self) -> Result:
@@ -431,7 +434,7 @@ class RemoteCSEManager(object):
 				L.isDebug and L.logDebug(f'Error creating registrar CSR: {int(res.rsc)}')
 			return Result(rsc=res.rsc, dbg='cannot create remote CSR')
 		L.isDebug and L.logDebug(f'Registrar CSR created: {self.registrarCSI}')
-		return Result(resource=CSR.CSR(res.dict, pi=''), rsc=RC.created)
+		return Result(resource=CSR.CSR(cast(JSON, res.data), pi=''), rsc=RC.created)
 
 
 	def _updateCSRonRegistrarCSE(self, localCSE:Resource=None) -> Result:
@@ -448,7 +451,7 @@ class RemoteCSEManager(object):
 				L.isDebug and L.logDebug(f'Error updating registrar CSR in CSE: {int(res.rsc)}')
 			return Result(rsc=res.rsc, dbg='cannot update remote CSR')
 		L.isDebug and L.logDebug(f'Registrar CSR updated in CSE: {self.registrarCSI}')
-		return Result(resource=CSR.CSR(res.dict, pi=''), rsc=RC.updated)
+		return Result(resource=CSR.CSR(cast(JSON, res.data), pi=''), rsc=RC.updated)
 
 
 
@@ -475,14 +478,14 @@ class RemoteCSEManager(object):
 		# L.logWarn(res.dict)
 		if res.rsc not in [ RC.OK ]:
 			return res.errorResult()
-		if (csi := Utils.findXPath(res.dict, 'm2m:cb/csi')) == None:
+		if (csi := Utils.findXPath(cast(JSON, res.data), 'm2m:cb/csi')) == None:
 			L.logErr(err := 'csi not found in remote CSE resource', showStackTrace=False)
 			return Result(rsc=RC.badRequest, dbg=err)
 		if not csi.startswith('/'):
 			L.isDebug and L.logWarn('Remote CSE.csi doesn\'t start with /. Correcting.')	# TODO Decide whether correcting this is actually correct. Also in validator.validateCSICB()
-			Utils.setXPath(res.dict, 'm2m:cb/csi', f'/{csi}')
+			Utils.setXPath(cast(JSON, res.data), 'm2m:cb/csi', f'/{csi}')
 
-		return Result(resource=CSEBase.CSEBase(res.dict), rsc=RC.OK)
+		return Result(resource=CSEBase.CSEBase(cast(JSON, res.data)), rsc=RC.OK)
 
 
 	# def getCSRForRemoteCSE(self, remoteCSE:Resource) -> Resource:
@@ -518,16 +521,16 @@ class RemoteCSEManager(object):
 			originator = CSE.cseCsi
 		L.isDebug and L.logDebug(f'Retrieve remote resource from: {url}')
 		res = CSE.request.sendRetrieveRequest(url, originator)	## todo
-		if res.rsc != RC.OK:
+		if not res.status:
 			return res.errorResult()
 		
 		# assign the remote ID to the resource's dictionary
-		_, tpe = Utils.pureResource(res.dict)
-		Utils.setXPath(res.dict, f'{tpe}/{Resource._remoteID}', id)
+		_, tpe = Utils.pureResource(cast(JSON, res.data))
+		Utils.setXPath(cast(JSON, res.data), f'{tpe}/{Resource._remoteID}', id)
 
 		# Instantiate
 		# return Factory.resourceFromDict(res.dict, isRemote=True) if not raw else Result(resource=res.dict)
-		return Factory.resourceFromDict(res.dict)
+		return Factory.resourceFromDict(cast(JSON, res.data))
 
 
 	def getCSRFromPath(self, id:str) -> Tuple[Resource, List[str]]:

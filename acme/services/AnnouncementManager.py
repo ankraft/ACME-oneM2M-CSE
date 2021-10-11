@@ -197,7 +197,7 @@ class AnnouncementManager(object):
 					resource.setAttribute('at', None if len(at) == 0 else at)
 				return
 		else:
-			self._addAnnouncementToResource(resource, res.dict, csi)
+			self._addAnnouncementToResource(resource, cast(JSON, res.data), csi)
 		L.isDebug and L.logDebug('Announced resource created')
 		resource.dbUpdate()
 

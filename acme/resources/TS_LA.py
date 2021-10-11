@@ -35,25 +35,25 @@ class TS_LA(Resource):
 		""" Handle a RETRIEVE request. Return resource """
 		if L.isDebug: L.logDebug('Retrieving latest TSI from TS')
 		if not (r := self._getLatest()):
-			return Result(rsc=RC.notFound, dbg='no instance for <latest>')
-		return Result(resource=r)
+			return Result(status=False, rsc=RC.notFound, dbg='no instance for <latest>')
+		return Result(status=True, rsc=RC.OK, resource=r)
 
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a CREATE request. Fail with error code. """
-		return Result(rsc=RC.operationNotAllowed, dbg='CREATE operation not allowed for <latest> resource type')
+		return Result(status=False, rsc=RC.operationNotAllowed, dbg='CREATE operation not allowed for <latest> resource type')
 
 
 	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a UPDATE request. Fail with error code. """
-		return Result(rsc=RC.operationNotAllowed, dbg='UPDATE operation not allowed for <latest> resource type')
+		return Result(status=False, rsc=RC.operationNotAllowed, dbg='UPDATE operation not allowed for <latest> resource type')
 
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a DELETE request. Delete the latest resource. """
 		if L.isDebug: L.logDebug('Deleting latest TSI from TS')
 		if not (r := self._getLatest()):
-			return Result(rsc=RC.notFound, dbg='no instance for <latest>')
+			return Result(status=False, rsc=RC.notFound, dbg='no instance for <latest>')
 		return CSE.dispatcher.deleteResource(r, originator, withDeregistration=True)
 
 

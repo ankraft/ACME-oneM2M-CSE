@@ -125,9 +125,9 @@ class Storage(object):
 		if (l := len(resources)) == 1:
 			return Factory.resourceFromDict(resources[0])
 		elif l == 0:
-			return Result(rsc=RC.notFound, dbg='resource not found')
+			return Result(status=False, rsc=RC.notFound, dbg='resource not found')
 
-		return Result(rsc=RC.internalServerError, dbg='database inconsistency')
+		return Result(status=False, rsc=RC.internalServerError, dbg='database inconsistency')
 
 
 	def retrieveResourcesByType(self, ty:T) -> list[Document]:

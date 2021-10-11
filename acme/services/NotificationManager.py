@@ -209,7 +209,7 @@ class NotificationManager(object):
 						L.logDebug(dbg := f'Verification request failed for nu: {nu}')
 						return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg=dbg)
 
-		return Result(status=True, lst=newNus)
+		return Result(status=True, data=newNus)
 
 
 	#########################################################################

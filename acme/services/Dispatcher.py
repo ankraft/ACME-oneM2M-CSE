@@ -10,7 +10,7 @@
 from __future__ import annotations
 import sys
 from copy import deepcopy
-from typing import Any, Tuple, Dict
+from typing import Any, List, Tuple, Dict, cast
 
 from ..helpers import TextTools as TextTools
 from ..etc.Constants import Constants as C
@@ -84,7 +84,7 @@ class Dispatcher(object):
 
 		# Retrieve the target resource, because it is needed for some rcn (and the default)
 		if request.args.rcn in [RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource]:
-			if not (res := self.retrieveResource(id, originator, request)).resource:
+			if not (res := self.retrieveResource(id, originator, request)).status:
 			 	return res # error
 			if not CSE.security.hasAccess(originator, res.resource, permission):
 				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=f'originator has no permission ({permission})')
@@ -118,7 +118,7 @@ class Dispatcher(object):
 
 		# check and filter by ACP. After this allowedResources only contains the resources that are allowed
 		allowedResources = []
-		for r in res.lst:
+		for r in cast(List[Resource], res.data):
 			if CSE.security.hasAccess(originator, r, permission):
 				if not r.willBeRetrieved(originator).status:	# resource instance may be changed in this call
 					continue
@@ -131,26 +131,26 @@ class Dispatcher(object):
 
 		if request.args.rcn == RCN.attributesAndChildResources:
 			self.resourceTreeDict(allowedResources, resource)	# the function call add attributes to the target resource
-			return Result(status=True, resource=resource)
+			return Result(status=True, rsc=RC.OK, resource=resource)
 
 		elif request.args.rcn == RCN.attributesAndChildResourceReferences:
 			self._resourceTreeReferences(allowedResources, resource, request.args.drt, 'ch')	# the function call add attributes to the target resource
-			return Result(status=True, resource=resource)
+			return Result(status=True, rsc=RC.OK, resource=resource)
 
 		elif request.args.rcn == RCN.childResourceReferences: 
 			#childResourcesRef:JSON = { resource.tpe: {} }  # Root resource with no attribute
 			#childResourcesRef = self._resourceTreeReferences(allowedResources,  None, request.args.drt, 'm2m:rrl')
 			# self._resourceTreeReferences(allowedResources, childResourcesRef[resource.tpe], request.args.drt, 'm2m:rrl')
 			childResourcesRef = self._resourceTreeReferences(allowedResources, None, request.args.drt, 'm2m:rrl')
-			return Result(status=True, resource=childResourcesRef)
+			return Result(status=True, rsc=RC.OK, resource=childResourcesRef)
 
 		elif request.args.rcn == RCN.childResources:
 			childResources:JSON = { resource.tpe : {} } #  Root resource as a dict with no attribute
 			self.resourceTreeDict(allowedResources, childResources[resource.tpe]) # Adding just child resources
-			return Result(status=True, resource=childResources)
+			return Result(status=True, rsc=RC.OK, resource=childResources)
 
 		elif request.args.rcn == RCN.discoveryResultReferences: # URIList
-			return Result(status=True, resource=self._resourcesToURIList(allowedResources, request.args.drt))
+			return Result(status=True, rsc=RC.OK, resource=self._resourcesToURIList(allowedResources, request.args.drt))
 
 		else:
 			return Result(status=False, rsc=RC.badRequest, dbg='wrong rcn for RETRIEVE')
@@ -172,7 +172,7 @@ class Dispatcher(object):
 
 
 	def retrieveLocalResource(self, ri:str=None, srn:str=None, originator:str=None, request:CSERequest=None) -> Result:
-		L.isDebug and L.logDebug(f'Retrieve resource: {ri}|{srn} for originator: {originator}')
+		L.isDebug and L.logDebug(f'Retrieve resource: {ri}|{srn} for originator: {originator if originator else "<internal>"}')
 
 		if ri:
 			result = CSE.storage.retrieveResource(ri=ri)		# retrieve via normal ID
@@ -185,7 +185,7 @@ class Dispatcher(object):
 			# Check for virtual resource
 			if resource.ty not in [T.GRP_FOPT, T.PCH_PCU] and Utils.isVirtualResource(resource): # fopt, PCU are handled elsewhere
 				return resource.handleRetrieveRequest(request=request, originator=originator)	# type: ignore[no-any-return]
-			return Result(status=True, resource=resource)
+			return result
 		# error
 		L.isDebug and L.logDebug(f'{result.dbg}: ri:{ri} srn:{srn}')
 		return result
@@ -243,7 +243,7 @@ class Dispatcher(object):
 					result.append(res.resource)
 			discoveredResources = result	# re-assign the new resources to discoveredResources
 
-		return Result(status=True, lst=discoveredResources)
+		return Result(status=True, data=discoveredResources)
 
 
 	def _discoverResources(self, rootResource:Resource, originator:str, level:int, fo:int, allLen:int, dcrs:list[Resource]=None, conditions:Conditions=None, attributes:Parameters=None, permission:Permission=Permission.DISCOVERY) -> list[Resource]:
@@ -422,9 +422,9 @@ class Dispatcher(object):
 			return Result(status=False, rsc=RC.conflict, dbg=dbg)
 
 		# Check resource creation
-		if (rres := CSE.registration.checkResourceCreation(nresource, originator, parentResource)).rsc != RC.OK:
+		if not (rres := CSE.registration.checkResourceCreation(nresource, originator, parentResource)).status:
 			return rres.errorResult()
-		originator = rres.originator 	# originator might have changed during this check
+		originator = cast(str, rres.data) 	# originator might have changed during this check. Result.data contains this new originator
 
 		# Create the resource. If this fails we deregister everything
 		if not (res := CSE.dispatcher.createResource(nresource, parentResource, originator)).resource:
@@ -471,7 +471,7 @@ class Dispatcher(object):
 			resource[resource._srn] = Utils.structuredPath(resource)
 
 		# add the resource to storage
-		if (res := resource.dbCreate(overwrite=False)).rsc != RC.created:
+		if not (res := resource.dbCreate(overwrite=False)).status:
 			return res
 
 		# Activate the resource
@@ -543,7 +543,7 @@ class Dispatcher(object):
 		resource = res.resource 	# re-assign resource (might have been changed during update)
 
 		# Check resource update with registration
-		if (rres := CSE.registration.checkResourceUpdate(resource, deepcopy(request.pc))).rsc != RC.OK:
+		if not (rres := CSE.registration.checkResourceUpdate(resource, deepcopy(request.pc))).status:
 			return rres.errorResult()
 
 		#
@@ -689,17 +689,18 @@ class Dispatcher(object):
 		
 		# Check for <pollingChannelURI> resource
 		# This is also the only resource type supported that can receive notifications, yet
-		# if resource.ty == T.PCH_PCU :
-		# 	if not CSE.security.hasAccessToPCU(originator, resource):
-		# 		L.logDebug(dbg:=f'Originator: {originator} has not access to <pollingChannelURI>: {id}')
-		# 		return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
-		# 	return resource.handleNotifyRequest(request=request, id=id, originator=originator)	# type: ignore[no-any-return]
+		if targetResource.ty == T.PCH_PCU :
+			if not CSE.security.hasAccessToPollingChannel(originator, targetResource):
+				L.logDebug(dbg:=f'Originator: {originator} has not access to <pollingChannelURI>: {id}')
+				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
+			return targetResource.handleNotifyRequest(request, originator)	# type: ignore[no-any-return]
 
 		if targetResource.ty in [ T.AE, T.CSR, T.CSEBase ]:
 			if not CSE.security.hasAccess(originator, targetResource, Permission.NOTIFY):
 				L.isDebug and L.logDebug(dbg := f'Originator has no NOTIFY privilege for: {id}')
 				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
-			return CSE.request.handleReceivedNotifyRequest(targetResource, request=request, id=id, originator=originator)
+			#  A Notification to one of these resources will always be a R
+			return CSE.request.handleReceivedNotifyRequest(id, request=request, originator=originator)
 
 		# error
 		L.logDebug(dbg := f'Unsupported resource type: {targetResource.ty} for notifications. Supported: <PCU>.')
@@ -731,7 +732,7 @@ class Dispatcher(object):
 			return None
 		# check and filter by ACP
 		children = []
-		for r in res.lst:
+		for r in cast(List[Resource], res.data):
 			if CSE.security.hasAccess(originator, r, permission):
 				children.append(r)
 		return children

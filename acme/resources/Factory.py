@@ -10,7 +10,7 @@
 from typing import Dict, Callable, Any, Tuple, cast
 from ..etc.Types import ResourceTypes as T
 from ..etc.Types import ResponseStatusCode as RC
-from ..etc.Types import Result
+from ..etc.Types import Result, JSON
 from ..etc import Utils as Utils
 from ..services.Logging import Logging as L
 
@@ -156,7 +156,7 @@ resourceFactoryMap:Dict[T, FactoryT] = {
 
 
 
-def resourceFromDict(resDict:Dict[str, Any]={}, pi:str=None, ty:T=None, create:bool=False, isImported:bool=False) -> Result:
+def resourceFromDict(resDict:JSON={}, pi:str=None, ty:T=None, create:bool=False, isImported:bool=False) -> Result:
 	""" Create a resource from a dictionary structure.
 		This will *not* call the activate method, therefore some attributes
 		may be set separately.
@@ -200,9 +200,9 @@ def resourceFromDict(resDict:Dict[str, Any]={}, pi:str=None, ty:T=None, create:b
 	else:
 		factory = resourceFactoryMap.get(typ)
 	if factory:
-		return Result(resource=factory[1](resDict, tpe, pi, create))
+		return Result(status=True, rsc=RC.OK, resource=factory[1](resDict, tpe, pi, create))
 
-	return Result(resource=Unknown(resDict, tpe, pi=pi, create=create))	# Capture-All resource
+	return Result(status=True, rsc=RC.OK, resource=Unknown(resDict, tpe, pi=pi, create=create))	# Capture-All resource
 
 
 def resourceClassByType(typ:T) -> Resource:

@@ -103,8 +103,8 @@ def determineSerialization(url:str, csz:list[str]=None, defaultSerialization:Con
 
 
 def requestFromResult(inResult:Result, originator:str=None, ty:T=None, op:Operation=None) -> Result:
-	"""	Convert a response request to a new *Result* object and create a nw dictionary in *Result.dict*
-		with the full Response structure. Recursively do this if the *Primitive Content* is also
+	"""	Convert a response request to a new *Result* object and create a new dictionary in *Result.data*
+		with the full Response structure. Recursively do this if the *embeddedRequest* is also
 		a full Request or Response.
 	"""
 	from ..services import CSE
@@ -141,12 +141,18 @@ def requestFromResult(inResult:Result, originator:str=None, ty:T=None, op:Operat
 	# If the response contains a request (ie. for polling), then recursively add that request to the pc
 	pc = None
 	if inResult.embeddedRequest:
-		pc = requestFromResult(Result(request=inResult.embeddedRequest, rsc=None)).dict
+		pc = requestFromResult(Result(request=inResult.embeddedRequest)).data
 	else:
 		# construct and serialize the data as JSON/dictionary. Encoding to JSON or CBOR is done later
 		pc = inResult.toData(ContentSerializationType.PLAIN)	#  type:ignore[assignment]
+		pass
 	if pc:
 		req['pc'] = pc
-	return Result(dict=req, request=inResult.request, status=True)
+	
+	# if the request/result is actually an incoming request targeted to the receiver, then the
+	# whole request must be embeded as a "m2m:rqp" request. Most likely this is an embedded request
+	if inResult.request.requestType == RequestType.REQUEST:
+		req = { 'm2m:rqp' : req }
+	return Result(status=True, data=req, resource=inResult.resource, request=inResult.request, rsc=inResult.rsc)
 
 

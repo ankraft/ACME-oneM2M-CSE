@@ -7,7 +7,7 @@
 #	Managing entity for resource groups
 #
 
-from typing import Union, List
+from typing import Union, List, cast
 from ..etc.Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseStatusCode as RC, CSERequest, JSON
 from ..etc import Utils as Utils
 from ..resources.FCNT import FCNT
@@ -54,7 +54,7 @@ class GroupManager(object):
 
 		group.dbUpdate()
 		# TODO: check virtual resources
-		return Result(status=True)
+		return Result(status=True, rsc=RC.OK)
 
 
 
@@ -88,13 +88,13 @@ class GroupManager(object):
 					return Result(status=False, rsc=RC.notFound, dbg=res.dbg)
 				resource = res.resource
 			else:
-				if not remoteResult.dict or len(remoteResult.dict) == 0:
+				if not remoteResult.data or len(remoteResult.data) == 0:
 					if remoteResult.rsc == RC.originatorHasNoPrivilege:  # CSE has no privileges for retrieving the member
 						return Result(status=False, rsc=RC.receiverHasNoPrivileges, dbg='wrong privileges for CSE to retrieve remote resource')
 					else:  # Member not found
 						return Result(status=False, rsc=RC.notFound, dbg=f'remote resource not found: {mid}')
 				else:
-					resource = Factory.resourceFromDict(remoteResult.dict).resource
+					resource = Factory.resourceFromDict(cast(JSON, remoteResult.data)).resource
 
 			# skip if ri is already in th
 			if isLocalResource:
@@ -147,7 +147,7 @@ class GroupManager(object):
 		group['cnm'] = len(midsList)
 		group['mtv'] = True
 		
-		return Result(status=True)
+		return Result(status=True, rsc=RC.OK)
 
 
 
@@ -158,14 +158,14 @@ class GroupManager(object):
 
 		# get parent / group and check permissions
 		if not (group := fopt.retrieveParentResource()):
-			return Result(rsc=RC.notFound, dbg='group resource not found')
+			return Result(status=False, rsc=RC.notFound, dbg='group resource not found')
 
 		# get the permission flags for the request operation
 		permission = operation.permission()
 
 		#check access rights for the originator through memberAccessControlPolicies
 		if CSE.security.hasAccess(originator, group, requestedPermission=permission, ty=request.headers.resourceType, isCreateRequest=True if operation == Operation.CREATE else False) == False:
-			return Result(rsc=RC.originatorHasNoPrivilege, dbg='access denied')
+			return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg='access denied')
 
 		# check whether there is something after the /fopt ...
 		_, _, tail = id.partition('/fopt/') if '/fopt/' in id else (None, None, '')
@@ -192,10 +192,10 @@ class GroupManager(object):
 				if not (res := CSE.dispatcher.processUpdateRequest(request, originator, mid)).resource:
 					return res 
 			elif operation == Operation.DELETE:
-				if (res := CSE.dispatcher.processDeleteRequest(request, originator, mid)).rsc != RC.deleted:
+				if not (res := CSE.dispatcher.processDeleteRequest(request, originator, mid)).status:
 					return res 
 			else:
-				return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
+				return Result(status=False, rsc=RC.operationNotAllowed, dbg='operation not allowed')
 			resultList.append(res)
 
 		# construct aggregated response
@@ -220,7 +220,7 @@ class GroupManager(object):
 		else:
 			agr = {}
 
-		return Result(resource=agr) # Response Status Code is OK regardless of the requested fanout operation
+		return Result(status=True, rsc=RC.OK, resource=agr) # Response Status Code is OK regardless of the requested fanout operation
 
 
 

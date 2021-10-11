@@ -137,10 +137,10 @@ class MQTTClientHandler(MQTTHandler):
 			if (response := prepareMqttRequest(result)).status:
 				topic = f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}'
 				logRequest(response, topic, isResponse=True)
-				if isinstance(response.data, bytes):
-					connection.publish(topic, response.data)
+				if isinstance(cast(Tuple, response.data)[1], bytes):
+					connection.publish(topic, cast(Tuple, response.data)[1])
 				else:
-					connection.publish(topic, response.data.encode())
+					connection.publish(topic, cast(str, cast(Tuple, response.data)[1]).encode())
 					
 
 		# SP relative of for : /cseid/aei
@@ -238,7 +238,7 @@ class MQTTClientHandler(MQTTHandler):
 		# De-Serialize the content
 		if not (contentResult := CSE.request.deserializeContent(cseRequest.data, cseRequest.headers.contentType)).status:
 			return Result(rsc=contentResult.rsc, request=cseRequest, dbg=contentResult.dbg, status=False)
-		cseRequest.req, cseRequest.ct = contentResult.data
+		cseRequest.req, cseRequest.ct = contentResult.data	# type: ignore[assignment] # Actual, .data contains a tuple
 
 		# Validate the request
 		try:
@@ -432,7 +432,7 @@ class MQTTClient(object):
 		# Publish the request and wait for the response.
 		# Then return the response as result
 		logRequest(preq, topic, isResponse=False)
-		mqttConnection.publish(topic, preq.data)
+		mqttConnection.publish(topic, cast(bytes, cast(Tuple, preq.data)[1]))
 		response, responseTopic = self.waitForResponse(req.request.headers.requestIdentifier, self.requestTimeout)
 		logRequest(response, responseTopic, isResponse=True)
 		return response
@@ -469,14 +469,14 @@ class MQTTClient(object):
 ##############################################################################
 
 
-def prepareMqttRequest(result:Result, originator:str=None, ty:T=None, op:Operation=None) -> Result:
+def prepareMqttRequest(inResult:Result, originator:str=None, ty:T=None, op:Operation=None) -> Result:
 	"""	Prepare a new request for MQTT. Remember, a response is actually just a new request.
 	
-		The constructed and serialized content is returned in `Result.data`.
+		The constructed and serialized content is returned in a tuple in `Result.data`: the content as a dictionary and the serialized content.
 	"""
 
-	result = RequestUtils.requestFromResult(result, originator, ty, op=op)
-	result.data = cast(bytes, RequestUtils.serializeData(result.dict, result.request.ct))
+	result = RequestUtils.requestFromResult(inResult, originator, ty, op=op)
+	result.data = (result.data, cast(bytes, RequestUtils.serializeData(cast(JSON, result.data), result.request.ct)))
 	return result
 
 
@@ -490,7 +490,7 @@ def logRequest(req:Result, topic:str, isResponse:bool=False) -> None:
 			if isResponse and req.request.data:
 				body = f'\nBody: \n{TextTools.toHex(req.request.data)}\n=>\n{str(req.request.req)}'
 			else:
-				body = f'\nBody: \n{TextTools.toHex(req.data)}\n=>\n{req.dict}'
+				body = f'\nBody: \n{TextTools.toHex(cast(bytes, cast(Tuple, req.data)[1]))}\n=>\n{cast(Tuple, req.data)[0]}'
 		elif req.request.headers.contentType == ContentSerializationType.JSON or req.request.ct == ContentSerializationType.JSON:
 			body = f'\nBody: {str(req.data) if not isResponse else str(req.request.req)}' 
 	L.isDebug and L.logDebug(f'{prefix}: {topic}{body}')
