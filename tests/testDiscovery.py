@@ -21,6 +21,7 @@ from init import *
 
 cnt2RN = f'{cntRN}2' 
 cnt3RN = f'{cntRN}3'
+cnt4RN = f'{cntRN}4'
 cntARPRN = 'arpCnt'
 bat2RN	= f'{batRN}2'
 nodeID  = 'urn:sn:1234'
@@ -681,6 +682,22 @@ class TestDiscovery(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest)
 
 
+	# Test CREATE and RCN=0 (nothing)
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNTwithRCN0(self) -> None:
+		""" Create <CNT> under <AE> & rcn=0 (nothing) """
+		# create another container
+		dct = 	{ 'm2m:cnt' : { 
+					'rn'  : cnt4RN,
+					'mni' : 42,
+					'lbl' : [ 'test' ]
+				}}
+		r, rsc = CREATE(f'{aeURL}?rcn={int(RCN.nothing)}', TestDiscovery.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNone(r)
+		# self.assertEqual(len(r), 0, r)
+
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveWithWrongArgument(self) -> None:
 		""" Retrieve <AE> with wrong argument & rcn=1 """
@@ -778,6 +795,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestDiscovery('test_appendArp'))
 	suite.addTest(TestDiscovery('test_createCNTwithRCN9'))
 	suite.addTest(TestDiscovery('test_updateCNTwithRCN9'))
+	suite.addTest(TestDiscovery('test_createCNTwithRCN0'))
 	suite.addTest(TestDiscovery('test_updateCNTwithWrongRCN2'))
 	suite.addTest(TestDiscovery('test_retrieveWithWrongArgument'))
 	suite.addTest(TestDiscovery('test_retrieveWithWrongFU'))

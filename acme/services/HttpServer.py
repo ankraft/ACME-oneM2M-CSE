@@ -401,29 +401,49 @@ class HttpServer(object):
 
 	#########################################################################
 
-	def _prepareResponse(self, result:Result, request:CSERequest=None) -> Response:
+	def _prepareResponse(self, result:Result, originalRequest:CSERequest=None) -> Response:
 		"""	Prepare the response for a request. If `request` is given then
 			set it for the response.
 		"""
 		content:str|bytes|JSON = ''
-
-		if request:
-			result.request = request
+		if not result.request:
+			result.request = CSERequest()
 
 		#
-		# Determine the accept type and encode the content accordinly
+		#  Copy a couple of attributes from the originalRequest to the new request
 		#
-		# Look whether there is a accept header in the original request
-		if result.request.headers.accept:
-			result.request.ct = ContentSerializationType.getType(result.request.headers.accept[0])
-		# No accept, check originator
-		elif len(csz := CSE.request.getSerializationFromOriginator(result.request.headers.originator)) > 0:
-			result.request.ct = csz[0]
-		# Default: configured CSE's default
-		else:
-			result.request.ct = CSE.defaultSerialization
+
+		result.request.ct = CSE.defaultSerialization	# default serialization
+		if originalRequest:
+
+			# Determine contentType for the response. Check the 'accept' header first, then take the
+			# original request's contentType. If this is not possible, the fallback is still the
+			# CSE's default
+			result.request.headers.originator = originalRequest.headers.originator
+			if originalRequest.headers.accept:																# accept / contentType
+				result.request.ct = ContentSerializationType.getType(originalRequest.headers.accept[0])
+			elif csz := CSE.request.getSerializationFromOriginator(originalRequest.headers.originator):
+				result.request.ct = csz[0]
+
+			result.request.headers.requestIdentifier = originalRequest.headers.requestIdentifier
+			result.request.headers.releaseVersionIndicator = originalRequest.headers.releaseVersionIndicator
+			result.request.headers.vendorInformation = originalRequest.headers.vendorInformation
+	
+			# Add additional parameters
+			if ec := originalRequest.parameters.get(C.hfEC):												# Event Category, copy from the original request
+				result.request.parameters[C.hfEC] = ec
+	
+
+		#
+		#	Transform request to oneM2M request
+		#
 
 		outResult = RequestUtils.requestFromResult(result)
+		outResult.data = cast(bytes, RequestUtils.serializeData(outResult.dict, outResult.request.ct))
+
+		#
+		#	Transform oneM2M request to http message
+		#
 
 		# Build the headers
 		headers = {}
@@ -443,17 +463,18 @@ class HttpServer(object):
 		# Assign and encode content accordingly
 		headers['Content-Type'] = (cts := result.request.ct.toHeader())
 		# (re-)add an empty pc if it is missing
-		content = RequestUtils.serializeData(outResult.dict['pc'], result.request.ct) if 'pc' in outResult.dict else ''
+		outResult.data = RequestUtils.serializeData(outResult.dict['pc'], result.request.ct) if 'pc' in outResult.dict else ''
+		# outResult.data = cast(bytes, RequestUtils.serializeData(result.dict, result.request.ct))
 		
 		# Build and return the response
-		if isinstance(content, bytes):
-			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: \n{TextTools.toHex(content)}\n=>\n{str(result.toData())}')
+		if isinstance(outResult.data, bytes):
+			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: \n{TextTools.toHex(outResult.data)}\n=>\n{str(result.toData())}')
 		elif 'pc' in outResult.dict:
 			# L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: {str(content)}\n')
-			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: {outResult.dict["pc"]}\n')
+			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\nBody: {outResult.dict["pc"]}\n')	# might be different serialization
 		else:
 			L.isDebug and L.logDebug(f'<== HTTP Response (RSC: {int(result.rsc)}):\nHeaders: {str(headers)}\n')
-		return Response(response=content, status=statusCode, content_type=cts, headers=headers)
+		return Response(response=outResult.data, status=statusCode, content_type=cts, headers=headers)
 
 
 	#########################################################################

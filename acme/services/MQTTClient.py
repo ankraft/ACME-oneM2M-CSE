@@ -167,7 +167,6 @@ class MQTTClientHandler(MQTTHandler):
 		# dissect and validate request
 		if not (dissectResult := self._dissectMQTTRequest(data, contentType)).status:
 			# something went wrong during dissection
-			L.logWarn(dissectResult)
 			_sendResponse(dissectResult)
 			return
 
