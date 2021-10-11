@@ -14,7 +14,7 @@ from typing import Any, cast, Dict
 from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode
 from ..etc.DateUtils import waitFor
 
-from .Types import CSERequest, ContentSerializationType, JSON, ResponseStatusCode as RC, Result, ResourceTypes as T, Operation
+from .Types import CSERequest, ContentSerializationType, JSON, RequestType, ResponseStatusCode as RC, Result, ResourceTypes as T, Operation
 from ..etc import DateUtils
 from .Constants import Constants as C
 from ..services.Logging import Logging as L
@@ -118,7 +118,7 @@ def requestFromResult(inResult:Result, originator:str=None, ty:T=None, op:Operat
 	else:
 		req['fr'] = CSE.cseCsi
 
-	req['to'] = inResult.request.headers.originator if inResult.request.headers.originator else 'non-onem2m-entity'
+	req['to'] = inResult.request.id if inResult.request.id else inResult.request.headers.originator # else 'non-onem2m-entity'
 	req['ot'] = DateUtils.getResourceDate()
 	if inResult.rsc and inResult.rsc != RC.UNKNOWN:
 		req['rsc'] = int(inResult.rsc)

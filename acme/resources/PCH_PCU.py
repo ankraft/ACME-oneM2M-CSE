@@ -48,40 +48,48 @@ class PCH_PCU(Resource):
 		if not (r := CSE.request.waitForPollingRequest(originator, None, timeout=ret)).status:
 			L.logWarn(dbg := f'Request Expiration Timestamp reached. No request queued for originator: {self.getOriginator()}')
 			return Result(status=False, rsc=RC.requestTimeout, dbg=dbg)
+		if r.request.requestType == RequestType.REQUEST:
+			r.request.pc = { 'm2m:rqp' : r.request.pc }
+		elif r.request.requestType == RequestType.RESPONSE:
+			r.request.pc = { 'm2m:rsp' : r.request.pc }
+		L.logWarn
+
 		# normal response
 		return Result(status=True, embeddedRequest=r.request)
 
 
-	def handleReceivedNotifyRequest(self, request:CSERequest, id:str, originator:str) -> Result:
-		"""	Handle a NOTIFY request to a PCU resource.
-		"""
-		L.isDebug and L.logDebug(f'NOTIFY request for polling channel. Originator: {originator}')
+	# def handleReceivedNotifyRequest(self, request:CSERequest, id:str, originator:str) -> Result:
+	# 	"""	Handle a NOTIFY request to a PCU resource.
+	# 	"""
+	# 	L.isDebug and L.logDebug(f'NOTIFY request for polling channel. Originator: {originator}')
 
-		# Check whether the request is allowed by this originator was done in the dispatcher
+	# 	# Check whether the request is allowed by this originator was done in the dispatcher
 
-		# Check content
-		if request.pc is None:
-			L.logDebug(dbg := f'Missing content/request in notification')
-			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+	# 	# Check content
+	# 	if request.pc is None:
+	# 		L.logDebug(dbg := f'Missing content/request in notification')
+	# 		return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
-		from ..resources.PCH import PCH
+	# 	from ..resources.PCH import PCH
 
-		# Get parent PCH and add the request to the PCU's queue.
-		if pch := self.retrieveParentResource():
+	# 	# Get parent PCH and add the request to the PCU's queue.
+	# 	if pch := self.retrieveParentResource():
 
-			# Fill various request attributes
-			nrequest 									= CSERequest()
-			if resp := request.pc.get('rsp'):
-				nrequest.headers.originator					= resp.get('fr')
-				nrequest.headers.resourceType 				= T.RESPONSE
-				nrequest.headers.originatingTimestamp		= resp.get('or')
-				nrequest.headers.requestIdentifier			= resp.get('rqi')
-				nrequest.headers.releaseVersionIndicator	= resp.get('rvi')
-				nrequest.rsc								= resp.get('rsc')
-				nrequest.pc 								= resp.get('pc')
+	# 		# Fill various request attributes
+	# 		nrequest 										= CSERequest()
 
-			CSE.request.queueRequestForPCH(cast(PCH, pch), request=nrequest, reqType=RequestType.RESPONSE)	# A Notification to PCU always contains a response to a previous request
-		return Result(status=True, rsc=RC.OK)
+	# 		if (pc := request.pc.get('m2m:sgn')) or (pc := request.pc.get('sgn')):	# A notification is a request
+	# 			L.logWarn(pc.get('fr'))
+	# 			nrequest.headers.originator					= pc.get('fr')
+	# 			nrequest.headers.originatingTimestamp		= pc.get('or')
+	# 			nrequest.headers.requestIdentifier			= pc.get('rqi')
+	# 			nrequest.headers.releaseVersionIndicator	= pc.get('rvi')
+	# 			nrequest.rsc								= pc.get('rsc')
+	# 			nrequest.pc 								= pc.get('pc')
+	# 			nrequest.requestType						= RequestType.REQUEST
+
+	# 			CSE.request.queueRequestForPCH(cast(PCH, pch), request=nrequest, reqType=RequestType.RESPONSE)	# A Notification to PCU always contains a response to a previous request
+	# 	return Result(status=True, rsc=RC.OK)
 
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:

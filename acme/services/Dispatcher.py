@@ -696,6 +696,9 @@ class Dispatcher(object):
 		# 	return resource.handleNotifyRequest(request=request, id=id, originator=originator)	# type: ignore[no-any-return]
 
 		if targetResource.ty in [ T.AE, T.CSR, T.CSEBase ]:
+			if not CSE.security.hasAccess(originator, targetResource, Permission.NOTIFY):
+				L.isDebug and L.logDebug(dbg := f'Originator has no NOTIFY privilege for: {id}')
+				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
 			return CSE.request.handleReceivedNotifyRequest(targetResource, request=request, id=id, originator=originator)
 
 		# error

@@ -157,8 +157,6 @@ class ResourceTypes(ACMEIntEnum):
 	EVLAnnc			= -30010
 	NYCFCAnnc		= -30023
 
-	# Complex Types
-	RESPONSE		= -40000
 
 
 	def tpe(self) -> str:
@@ -305,8 +303,6 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.RBOAnnc		: 'm2m:rboA',
 		ResourceTypes.EVLAnnc		: 'm2m:evlA',
 		ResourceTypes.NYCFCAnnc		: 'm2m:nycfcA',
-
-		ResourceTypes.RESPONSE		: 'rsp'
 
 	}
 
@@ -901,6 +897,11 @@ class Result:
 #	Requests
 #
 
+class RequestType(ACMEIntEnum):
+	REQUEST							= auto()
+	RESPONSE 						= auto()
+	NOTSET	 						= auto()
+
 @dataclass
 class RequestArguments:
 	fu:FilterUsage 					= FilterUsage.conditionalRetrieval
@@ -945,11 +946,7 @@ class CSERequest:
 	op:Operation					= None	# request operation
 	rsc:ResponseStatusCode			= None	# Response Status Code
 	parameters:Parameters			= field(default_factory=dict)	# Any additional parameters
-
-
-class RequestType(ACMEIntEnum):
-	REQUEST							= auto()
-	RESPONSE 						= auto()
+	requestType:RequestType			= RequestType.NOTSET
 
 
 ##############################################################################

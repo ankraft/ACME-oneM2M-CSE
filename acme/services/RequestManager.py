@@ -88,10 +88,10 @@ class RequestManager(object):
 			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 		pch = pchList[0]	# We only assume one PCH
 
-		# Check whether the request is allowed by this originator
-		if not CSE.security.hasAccessToPollingChannel(originator, cast(PCH, pch)):
-			L.logDebug(dbg:=f'Originator: {originator} has not access to <pollingChannelURI>: {id}')
-			return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
+		# # Check whether the request is allowed by this originator
+		# if not CSE.security.hasAccessToPollingChannel(originator, cast(PCH, pch)):
+		# 	L.logDebug(dbg:=f'Originator: {originator} has not access to <pollingChannelURI>: {id}')
+		# 	return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
 
 		# Check content
 		if request.pc is None:
@@ -99,15 +99,14 @@ class RequestManager(object):
 			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 		# Fill various request attributes
-		if resp := request.pc.get('rsp'):		# Request is a response
+		if (pc := request.pc.get('m2m:rsp')) or (pc := request.pc.get('rsp')):		# Request is a response
 			nrequest 									= CSERequest()
-			nrequest.headers.originator					= resp.get('fr')
-			nrequest.headers.resourceType 				= T.RESPONSE
-			nrequest.headers.originatingTimestamp		= resp.get('or')
-			nrequest.headers.requestIdentifier			= resp.get('rqi')
-			nrequest.headers.releaseVersionIndicator	= resp.get('rvi')
-			nrequest.rsc								= resp.get('rsc')
-			nrequest.pc 								= resp.get('pc')
+			nrequest.headers.originator					= pc.get('fr')
+			nrequest.headers.originatingTimestamp		= pc.get('or')
+			nrequest.headers.requestIdentifier			= pc.get('rqi')
+			nrequest.headers.releaseVersionIndicator	= pc.get('rvi')
+			nrequest.rsc								= pc.get('rsc')
+			nrequest.pc 								= pc.get('pc')
 
 			if req := CSE.request.queueRequestForPCH(cast(PCH, pch), request=nrequest, reqType=RequestType.RESPONSE):
 				return Result(status=True, request=req)	# A Notification to PCU always contains a response to a previous request
@@ -546,13 +545,15 @@ class RequestManager(object):
 		if not request.headers.requestIdentifier:
 			L.logErr(f'Request must have a "requestIdentifier". Ignored. {request}', showStackTrace=False)
 			return
-		if not request.headers.originator:
+		# if not request.headers.originator:
+		if not request.id:
 			L.logErr(f'Request must have an "originator". Ignored. {request}', showStackTrace=False)
 			return
 		
 		# Add to queue
 		with self._requestLock:
-			if not (originator := request.headers.originator) in self._requests:
+			# if not (originator := request.headers.originator) in self._requests:
+			if not (originator := request.id) in self._requests:
 				self._requests[originator] = [ (request, reqType) ]
 			else:
 				self._requests[originator].append( (request, reqType) )
@@ -626,7 +627,7 @@ class RequestManager(object):
 		# return resultRequest
 
 
-	def queueRequestForPCH(self, pch:PCH, operation:Operation=Operation.NOTIFY, parameters:Parameters=None, data:JSON=None, ty:T=None, request:CSERequest=None, reqType:RequestType=RequestType.REQUEST) -> CSERequest:
+	def queueRequestForPCH(self, pch:PCH, operation:Operation=Operation.NOTIFY, parameters:Parameters=None, data:JSON=None, ty:T=None, request:CSERequest=None, reqType:RequestType=RequestType.REQUEST, originator:str=None) -> CSERequest:
 		"""	Queue a request for a <PCH>. It can be retrieved via its <PCU> child resource.
 
 			If a `request` is passed then this object is queued.
@@ -635,8 +636,10 @@ class RequestManager(object):
 		if not request:
 			# Fill various request attributes
 			request 									= CSERequest()
+			request.id									= pch.getOriginator()
 			request.op 									= operation
-			request.headers.originator					= pch.getOriginator()
+			# request.headers.originator					= pch.getOriginator()
+			request.headers.originator					= originator
 			request.headers.resourceType 				= ty
 			request.headers.originatingTimestamp		= DateUtils.getResourceDate()
 			request.headers.requestIdentifier			= Utils.uniqueRI()
@@ -645,8 +648,9 @@ class RequestManager(object):
 				if C.hfcEC in parameters:			
 					request.parameters[C.hfEC] 			= parameters[C.hfcEC]	# Event Category
 			request.pc 									= data
+		request.requestType = reqType
 
-		L.isDebug and L.logDebug(f'Storing REQUEST for: {request.headers.originator} with ID: {request.headers.requestIdentifier} for polling')
+		L.isDebug and L.logDebug(f'Storing REQUEST for: {request.id} with ID: {request.headers.requestIdentifier} for polling')
 		self.queuePollingRequest(request, reqType)
 		return request
 	
@@ -660,7 +664,6 @@ class RequestManager(object):
 			L.isDebug and L.logDebug(f'RESPONSE received ID: {response.request.headers.requestIdentifier}')
 			return Result(status=True, request=response.request)
 		
-		L.logWarn(response.dbg)
 		return Result(status=False, rsc=RC.requestTimeout, dbg=response.dbg)
 
 		
@@ -682,11 +685,11 @@ class RequestManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Sending RETRIEVE request to: {uri}{appendID}')
 
-		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID=appendID, permission=Permission.RETRIEVE, originator=originator):
+		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID=appendID, permission=Permission.RETRIEVE):
 
 			# Send the request via a PCH, if present
 			if pch:
-				request = self.queueRequestForPCH(pch, Operation.RETRIEVE, parameters=parameters)
+				request = self.queueRequestForPCH(pch, Operation.RETRIEVE, parameters=parameters, originator=originator)
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
@@ -716,7 +719,7 @@ class RequestManager(object):
 
 			# Send the request via a PCH, if present
 			if pch:
-				request = self.queueRequestForPCH(pch, Operation.CREATE, parameters=parameters, data=data)
+				request = self.queueRequestForPCH(pch, Operation.CREATE, parameters=parameters, data=data, originator=originator)
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
@@ -746,7 +749,7 @@ class RequestManager(object):
 
 			# Send the request via a PCH, if present
 			if pch:
-				request = self.queueRequestForPCH(pch, Operation.UPDATE, parameters=parameters, data=data)
+				request = self.queueRequestForPCH(pch, Operation.UPDATE, parameters=parameters, data=data, originator=originator)
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
@@ -775,7 +778,7 @@ class RequestManager(object):
 
 			# Send the request via a PCH, if present
 			if pch:
-				request = self.queueRequestForPCH(pch, Operation.DELETE, parameters=parameters)
+				request = self.queueRequestForPCH(pch, Operation.DELETE, parameters=parameters, originator=originator)
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
@@ -808,7 +811,7 @@ class RequestManager(object):
 
 			# Send the request via a PCH, if present
 			if pch:
-				request = self.queueRequestForPCH(pch, Operation.NOTIFY, parameters=parameters, data=data)
+				request = self.queueRequestForPCH(pch, Operation.NOTIFY, parameters=parameters, data=data, originator=originator)
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
