@@ -199,7 +199,7 @@ class MQTTClientHandler(MQTTHandler):
 		if contentType == ContentSerializationType.JSON:
 			L.isDebug and L.logDebug(f'Body: \n{cast(str, data)}')
 		else:
-			L.isDebug and L.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, data))}\n=>\n{dissectResult.request.req}')
+			L.isDebug and L.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, data))}\n=>\n{dissectResult.request.originalRequest}')
 		
 		# handle request
 		if self.mqttClient.isStopped:
@@ -232,13 +232,13 @@ class MQTTClientHandler(MQTTHandler):
 		"""	Dissect an MQTT request. Return it in `Result.request` .
 		"""
 		cseRequest = CSERequest()
-		cseRequest.data = data
+		cseRequest.originalData = data
 		cseRequest.headers.contentType = contenType.lower()
 
 		# De-Serialize the content
-		if not (contentResult := CSE.request.deserializeContent(cseRequest.data, cseRequest.headers.contentType)).status:
+		if not (contentResult := CSE.request.deserializeContent(cseRequest.originalData, cseRequest.headers.contentType)).status:
 			return Result(rsc=contentResult.rsc, request=cseRequest, dbg=contentResult.dbg, status=False)
-		cseRequest.req, cseRequest.ct = contentResult.data	# type: ignore[assignment] # Actual, .data contains a tuple
+		cseRequest.originalRequest, cseRequest.ct = contentResult.data	# type: ignore[assignment] # Actual, .data contains a tuple
 
 		# Validate the request
 		try:
@@ -480,17 +480,17 @@ def prepareMqttRequest(inResult:Result, originator:str=None, ty:T=None, op:Opera
 	return result
 
 
-def logRequest(req:Result, topic:str, isResponse:bool=False) -> None:
+def logRequest(reqResult:Result, topic:str, isResponse:bool=False) -> None:
 	"""	Log a request. Make some adjustments, depending on the request or response type.
 	"""
-	prefix = f'<== MQTT Response (RSC: {req.rsc})' if isResponse else f'MQTT Request ==>'
+	prefix = f'<== MQTT Response (RSC: {reqResult.rsc})' if isResponse else f'MQTT Request ==>'
 	body   = ''
-	if req.request and req.request.headers:
-		if req.request.headers.contentType == ContentSerializationType.CBOR or req.request.ct == ContentSerializationType.CBOR:
-			if isResponse and req.request.data:
-				body = f'\nBody: \n{TextTools.toHex(req.request.data)}\n=>\n{str(req.request.req)}'
+	if reqResult.request and reqResult.request.headers:
+		if reqResult.request.headers.contentType == ContentSerializationType.CBOR or reqResult.request.ct == ContentSerializationType.CBOR:
+			if isResponse and reqResult.request.originalData:
+				body = f'\nBody: \n{TextTools.toHex(reqResult.request.originalData)}\n=>\n{str(reqResult.request.originalRequest)}'
 			else:
-				body = f'\nBody: \n{TextTools.toHex(cast(bytes, cast(Tuple, req.data)[1]))}\n=>\n{cast(Tuple, req.data)[0]}'
-		elif req.request.headers.contentType == ContentSerializationType.JSON or req.request.ct == ContentSerializationType.JSON:
-			body = f'\nBody: {str(req.data) if not isResponse else str(req.request.req)}' 
+				body = f'\nBody: \n{TextTools.toHex(cast(bytes, cast(Tuple, reqResult.data)[1]))}\n=>\n{cast(Tuple, reqResult.data)[0]}'
+		elif reqResult.request.headers.contentType == ContentSerializationType.JSON or reqResult.request.ct == ContentSerializationType.JSON:
+			body = f'\nBody: {str(reqResult.data) if not isResponse else str(reqResult.request.originalRequest)}' 
 	L.isDebug and L.logDebug(f'{prefix}: {topic}{body}')

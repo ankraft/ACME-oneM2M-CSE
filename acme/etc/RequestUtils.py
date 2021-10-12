@@ -119,7 +119,10 @@ def requestFromResult(inResult:Result, originator:str=None, ty:T=None, op:Operat
 		req['fr'] = CSE.cseCsi
 
 	req['to'] = inResult.request.id if inResult.request.id else inResult.request.headers.originator # else 'non-onem2m-entity'
-	req['ot'] = DateUtils.getResourceDate()
+	if inResult.request.headers.originatingTimestamp:
+		req['ot'] = inResult.request.headers.originatingTimestamp
+	else:
+		req['ot'] = DateUtils.getResourceDate()
 	if inResult.rsc and inResult.rsc != RC.UNKNOWN:
 		req['rsc'] = int(inResult.rsc)
 	if op:
@@ -141,7 +144,8 @@ def requestFromResult(inResult:Result, originator:str=None, ty:T=None, op:Operat
 	# If the response contains a request (ie. for polling), then recursively add that request to the pc
 	pc = None
 	if inResult.embeddedRequest:
-		pc = requestFromResult(Result(request=inResult.embeddedRequest)).data
+		# pc = requestFromResult(Result(request=inResult.embeddedRequest)).data
+		pc = inResult.embeddedRequest.originalRequest
 	else:
 		# construct and serialize the data as JSON/dictionary. Encoding to JSON or CBOR is done later
 		pc = inResult.toData(ContentSerializationType.PLAIN)	#  type:ignore[assignment]

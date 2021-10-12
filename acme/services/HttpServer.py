@@ -32,6 +32,7 @@ from ..webui.webUI import WebUI
 from ..resources.Resource import Resource
 from ..helpers import TextTools as TextTools
 from ..helpers.BackgroundWorker import *
+from ..etc import DateUtils
 
 
 #
@@ -185,11 +186,11 @@ class HttpServer(object):
 		dissectResult = self._dissectHttpRequest(request, operation, path)
 
 		# log Body, if there is one
-		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ] and dissectResult.request.data:
+		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ] and dissectResult.request.originalData:
 			if dissectResult.request.ct == ContentSerializationType.JSON:
-				L.isDebug and L.logDebug(f'Body: \n{str(dissectResult.request.data)}')
+				L.isDebug and L.logDebug(f'Body: \n{str(dissectResult.request.originalData)}')
 			else:
-				L.isDebug and L.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, dissectResult.request.data))}\n=>\n{dissectResult.request.pc}')
+				L.isDebug and L.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, dissectResult.request.originalData))}\n=>\n{dissectResult.request.pc}')
 
 		# Send and error message when the CSE is shutting down, or the http server is stopped
 		if self.isStopped:
@@ -486,7 +487,6 @@ class HttpServer(object):
 	#	HTTP request helper functions
 	#
 
-	#def _dissectHttpRequest(self, request:Request, operation:Operation, _id:Tuple[str, str, str]) -> Result:
 	def _dissectHttpRequest(self, request:Request, operation:Operation, path:str) -> Result:
 		"""	Dissect an HTTP request. Combine headers and contents into a single structure. Result is returned in Result.request.
 		"""
@@ -513,12 +513,18 @@ class HttpServer(object):
 		elif path[0] == '_':
 			path = f'/{path[1:]}'	# _/xxx -> //xxx
 
-		cseRequest 			= CSERequest()
-		req:ReqResp 		= {}
-		cseRequest.data 	= request.data			# get the data first. This marks the request as consumed, just in case that we have to return early
-		cseRequest.op 		= operation
-		req['op']   		= operation.value		# Needed later for validation
-		req['to'] 		 	= path
+		cseRequest 					= CSERequest()
+		req:ReqResp 				= {}
+		cseRequest.originalData 	= request.data			# get the data first. This marks the request as consumed, just in case that we have to return early
+		cseRequest.op 				= operation
+		req['op']   				= operation.value		# Needed later for validation
+		req['to'] 		 			= path
+
+		# Get the request date
+		if (date := request.date):
+			req['ot'] = DateUtils.toISO8601Date(date.timestamp, isUTCtimestamp=False)
+		else:
+			req['ot'] = DateUtils.getResourceDate()
 
 		# Copy and parse the original request headers
 		if f := requestHeaderField(request, C.hfOrigin):
@@ -587,19 +593,20 @@ class HttpServer(object):
 		filterCriteria:ReqResp = {}
 		for k,v in args.items():
 			filterCriteria[k] = v
-		req['fc'] = filterCriteria
+		if len(filterCriteria) > 0:
+			req['fc'] = filterCriteria
 
 		# De-Serialize the content
-		if not (contentResult := CSE.request.deserializeContent(cseRequest.data, cseRequest.headers.contentType)).status:
+		if not (contentResult := CSE.request.deserializeContent(cseRequest.originalData, cseRequest.headers.contentType)).status:
 			return Result(rsc=contentResult.rsc, request=cseRequest, dbg=contentResult.dbg, status=False)
 		
 		# Remove 'None' fields *before* adding the pc, because the pc may contain 'None' fields that need to be preserved
 		req = Utils.removeNoneValuesFromDict(req)
 
 		# Add the primitive content and 
-		req['pc'] 	 	= cast(Tuple, contentResult.data)[0]			# The actual content
-		cseRequest.ct	= cast(Tuple, contentResult.data)[1]	# The conten serialization type
-		cseRequest.req	= req					# finally store the oneM2M request object in the cseRequest
+		req['pc'] 	 				= cast(Tuple, contentResult.data)[0]			# The actual content
+		cseRequest.ct				= cast(Tuple, contentResult.data)[1]	# The conten serialization type
+		cseRequest.originalRequest	= req					# finally store the oneM2M request object in the cseRequest
 		
 		# do validation and copying of attributes of the whole request
 		try:

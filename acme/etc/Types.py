@@ -933,8 +933,8 @@ class CSERequest:
 	args:RequestArguments 			= field(default_factory=RequestArguments)
 	ct:ContentSerializationType		= None
 	originalArgs:Any 				= None	# Actually a MultiDict
-	data:bytes 						= None 	# The request original data
-	req:JSON						= None	# The original request after dissection as a dictionary
+	originalData:bytes				= None 	# The request original data
+	originalRequest:JSON			= None 	# The original request after dissection as a dictionary
 	pc:JSON 						= None	# The request's primitive content as a dictionary
 	id:str 							= None 	# target ID / to
 	srn:str 						= None 	# target structured resource name
