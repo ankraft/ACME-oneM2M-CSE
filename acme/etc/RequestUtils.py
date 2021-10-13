@@ -121,8 +121,6 @@ def requestFromResult(inResult:Result, originator:str=None, ty:T=None, op:Operat
 	req['to'] = inResult.request.id if inResult.request.id else inResult.request.headers.originator # else 'non-onem2m-entity'
 	if inResult.request.headers.originatingTimestamp:
 		req['ot'] = inResult.request.headers.originatingTimestamp
-	else:
-		req['ot'] = DateUtils.getResourceDate()
 	if inResult.rsc and inResult.rsc != RC.UNKNOWN:
 		req['rsc'] = int(inResult.rsc)
 	if op:
