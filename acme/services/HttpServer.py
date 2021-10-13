@@ -523,8 +523,8 @@ class HttpServer(object):
 		# Get the request date
 		if (date := request.date):
 			req['ot'] = DateUtils.toISO8601Date(date.timestamp, isUTCtimestamp=False)
-		else:
-			req['ot'] = DateUtils.getResourceDate()
+		# else:
+		# 	req['ot'] = DateUtils.getResourceDate()
 
 		# Copy and parse the original request headers
 		if f := requestHeaderField(request, C.hfOrigin):
