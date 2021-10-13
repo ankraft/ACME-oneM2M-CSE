@@ -562,8 +562,8 @@ class Operation(ACMEIntEnum):
 	RETRIEVE			= 2
 	UPDATE				= 3
 	DELETE				= 4
-	DISCOVERY			= 5
-	NOTIFY 				= 6
+	NOTIFY 				= 5
+	DISCOVERY			= -2
 	NA 					= -1
 
 
