@@ -49,12 +49,7 @@ class PCH_PCU(Resource):
 			L.logWarn(dbg := f'Request Expiration Timestamp reached. No request queued for originator: {self.getOriginator()}')
 			return Result(status=False, rsc=RC.requestTimeout, dbg=dbg)
 		
-		# A request delivered TO the PCU is always a request.
-		# Wrap it in "m2m:rqp"
-		r.request.requestType = RequestType.REQUEST
-		L.logWarn(r.request)
-
-		return Result(status=True, rsc=RC.OK, embeddedRequest=r.request)
+		return Result(status=True, rsc=RC.OK, request=request, embeddedRequest=r.request)
 
 
 	def handleNotifyRequest(self, request:CSERequest, originator:str) -> Result:

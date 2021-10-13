@@ -141,22 +141,22 @@ def requestFromResult(inResult:Result, originator:str=None, ty:T=None, op:Operat
 		if (ec := inResult.request.parameters.get(C.hfEC)):			# Event Category, copy from the original request
 			req['ec'] = ec
 	
-	# If the response contains a request (ie. for polling), then recursively add that request to the pc
+	# If the response contains a request (ie. for polling), then add that request to the pc
 	pc = None
 	if inResult.embeddedRequest:
-		# pc = requestFromResult(Result(request=inResult.embeddedRequest)).data
+		#pc = requestFromResult(Result(request=inResult.embeddedRequest)).data
 		pc = inResult.embeddedRequest.originalRequest
 	else:
 		# construct and serialize the data as JSON/dictionary. Encoding to JSON or CBOR is done later
 		pc = inResult.toData(ContentSerializationType.PLAIN)	#  type:ignore[assignment]
-		pass
 	if pc:
-		req['pc'] = pc
+		# if the request/result is actually an incoming request targeted to the receiver, then the
+		# whole request must be embeded as a "m2m:rqp" request.
+		if inResult.embeddedRequest and inResult.embeddedRequest.requestType == RequestType.REQUEST:
+			req['pc'] = { 'm2m:rqp' : pc }
+		else:
+			req['pc'] = pc
 	
-	# if the request/result is actually an incoming request targeted to the receiver, then the
-	# whole request must be embeded as a "m2m:rqp" request. Most likely this is an embedded request
-	if inResult.request.requestType == RequestType.REQUEST:
-		req = { 'm2m:rqp' : req }
-	return Result(status=True, data=req, resource=inResult.resource, request=inResult.request, rsc=inResult.rsc)
+	return Result(status=True, data=req, resource=inResult.resource, request=inResult.request, embeddedRequest=inResult.embeddedRequest, rsc=inResult.rsc)
 
 

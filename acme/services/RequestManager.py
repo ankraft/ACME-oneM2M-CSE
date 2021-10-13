@@ -111,7 +111,6 @@ class RequestManager(object):
 	
 		# else:
 		# 	return self.sendNotifyRequest(id, originator=originator, data=request.pc)
-		
 		return self.sendNotifyRequest(id, originator=originator, data=request)
 
 
@@ -626,8 +625,8 @@ class RequestManager(object):
 		# return resultRequest
 
 
-	def queueRequestForPCH(self, pch:PCH, operation:Operation=Operation.NOTIFY, parameters:Parameters=None, data:CSERequest=None, ty:T=None, request:CSERequest=None, reqType:RequestType=RequestType.REQUEST, originator:str=None) -> CSERequest:
-		"""	Queue a request for a <PCH>. It can be retrieved via its <PCU> child resource.
+	def queueRequestForPCH(self, pch:PCH, operation:Operation=Operation.NOTIFY, parameters:Parameters=None, data:Any=None, ty:T=None, request:CSERequest=None, reqType:RequestType=RequestType.REQUEST, originator:str=None) -> CSERequest:
+		"""	Queue a (incoming) request for a <PCH>. It can be retrieved via its <PCU> child resource.
 
 			If a `request` is passed then this object is queued.
 		"""
@@ -647,7 +646,9 @@ class RequestManager(object):
 				if C.hfcEC in parameters:			
 					request.parameters[C.hfEC] 			= parameters[C.hfcEC]	# Event Category
 			request.pc 									= data
-			request.requestType = reqType
+
+		# Always mark the request as a REQUEST
+		request.requestType = reqType
 
 		L.isDebug and L.logDebug(f'Storing REQUEST for: {request.id} with ID: {request.headers.requestIdentifier} for polling')
 		self.queuePollingRequest(request, reqType)
@@ -718,7 +719,11 @@ class RequestManager(object):
 
 			# Send the request via a PCH, if present
 			if pch:
-				request = self.queueRequestForPCH(pch, Operation.CREATE, parameters=parameters, data=data, originator=originator)
+				if isinstance(data, CSERequest):
+					request = self.queueRequestForPCH(pch, Operation.CREATE, parameters=parameters, request=data, originator=originator)
+				else:
+					request = self.queueRequestForPCH(pch, Operation.CREATE, parameters=parameters, data=data, originator=originator)
+
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
@@ -748,7 +753,12 @@ class RequestManager(object):
 
 			# Send the request via a PCH, if present
 			if pch:
-				request = self.queueRequestForPCH(pch, Operation.UPDATE, parameters=parameters, data=data, originator=originator)
+				if isinstance(data, CSERequest):
+					request = self.queueRequestForPCH(pch, Operation.UPDATE, parameters=parameters, request=data, originator=originator)
+				else:
+					request = self.queueRequestForPCH(pch, Operation.UPDATE, parameters=parameters, data=data, originator=originator)
+				return self.waitForResponseToPCH(request)
+
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings

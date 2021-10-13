@@ -399,7 +399,7 @@ class HttpServer(object):
 			rc = RC(int(r.headers[C.hfRSC])) if C.hfRSC in r.headers else RC.internalServerError
 			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
 		except Exception as e:
-			L.isDebug and L.logWarn(f'Failed to send request: {str(e)}')
+			L.isWarn and L.logWarn(f'Failed to send request: {str(e)}')
 			return Result(status=False, rsc=RC.targetNotReachable, dbg='target not reachable')
 		return Result(status=True, data=RequestUtils.deserializeData(r.content, responseCt), rsc=rc)
 		
