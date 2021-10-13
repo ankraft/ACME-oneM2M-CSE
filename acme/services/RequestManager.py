@@ -15,7 +15,7 @@ from copy import deepcopy
 from threading import Lock
 
 
-from ..etc.Types import JSON, BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, Permission, ReqResp, RequestArguments, RequestCallback, RequestType, ResultContentType
+from ..etc.Types import JSON, BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, Permission, ReqResp, RequestArguments, RequestCallback, RequestType, ResponseStatusCode, ResultContentType
 from ..etc.Types import RequestStatus
 from ..etc.Types import CSERequest
 from ..etc.Types import RequestHandler
@@ -53,8 +53,11 @@ class RequestManager(object):
 			Operation.DELETE	: RequestCallback(self.deleteRequest,   CSE.dispatcher.processDeleteRequest),
 		}
 
+		# TODO doc
 		self._requestLock = Lock()
 		self._requests:Dict[str, List[ Tuple[CSERequest, RequestType] ] ] = {}
+
+		self._rqiOriginator:Dict[str, str] = {}
 
 		L.log('RequestManager initialized')
 
@@ -543,18 +546,28 @@ class RequestManager(object):
 		if not request.headers.requestIdentifier:
 			L.logErr(f'Request must have a "requestIdentifier". Ignored. {request}', showStackTrace=False)
 			return
-		# if not request.headers.originator:
+		
+		# If no id? Try to determine it via the requestID
+		if not request.id and reqType == RequestType.RESPONSE:
+			with self._requestLock:
+				request.id = self._rqiOriginator.get(request.headers.requestIdentifier)
+
 		if not request.id:
-			L.logErr(f'Request must have an "originator". Ignored. {request}', showStackTrace=False)
+			L.logErr(f'Request must have a target originator. Ignored. {request}', showStackTrace=False)
 			return
 		
 		# Add to queue
 		with self._requestLock:
-			# if not (originator := request.headers.originator) in self._requests:
 			if not (originator := request.id) in self._requests:
 				self._requests[originator] = [ (request, reqType) ]
 			else:
 				self._requests[originator].append( (request, reqType) )
+			# store mapping between RQI and request originator
+			self._rqiOriginator[request.headers.requestIdentifier] = request.headers.originator
+
+			if reqType == RequestType.RESPONSE:
+				del self._rqiOriginator[request.headers.requestIdentifier]
+
 		
 		# Start an actor to remove the request after the timeout		
 		BackgroundWorkerPool.newActor(	lambda: self.unqueuePollingRequest(originator, request.headers.requestIdentifier, reqType), 
@@ -598,9 +611,9 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'Waiting for: {reqType} for originator: {originator}, requestID: {requestID}')
 
 		if DateUtils.waitFor(timeout, lambda:self.hasPollingRequest(originator, requestID, reqType)):	# Wait until timeout, or the request of the correct type was found
-			L.isDebug and L.logDebug(f'Received request for: {reqType} for originator: {originator}, requestID: {requestID}')
+			L.isDebug and L.logDebug(f'Received {reqType} request for originator: {originator}, requestID: {requestID}')
 			if req := self.unqueuePollingRequest(originator, requestID, reqType):
-				return Result(status=True, request=req)
+				return Result(status=True, request=req, rsc=req.rsc)
 			# fall-through
 		L.logWarn(dbg := f'Timeout while waiting for: {reqType} for originator: {originator}, requestID: {requestID}')
 		return Result(status=False, rsc=RC.requestTimeout, dbg=dbg)
@@ -631,6 +644,10 @@ class RequestManager(object):
 			If a `request` is passed then this object is queued.
 		"""
 
+		# TODO Data or request must be given!
+
+
+		# Create a requst if none was given
 		if not request:
 			# Fill various request attributes
 			request 									= CSERequest()
@@ -661,8 +678,8 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'Waiting for RESPONSE with request ID: {request.headers.requestIdentifier}')
 
 		if (response := self.waitForPollingRequest(request.headers.originator, request.headers.requestIdentifier, timeout=CSE.request.requestExpirationDelta, reqType=RequestType.RESPONSE)).status:
-			L.isDebug and L.logDebug(f'RESPONSE received ID: {response.request.headers.requestIdentifier}')
-			return Result(status=True, request=response.request)
+			L.isDebug and L.logDebug(f'RESPONSE received ID: {response.request.headers.requestIdentifier} rsc: {response.request.rsc}')
+			return Result(status=True, rsc=response.request.rsc, request=response.request)
 		
 		return Result(status=False, rsc=RC.requestTimeout, dbg=response.dbg)
 
@@ -918,13 +935,13 @@ class RequestManager(object):
 				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg)
 
 			# FR - originator 
-			if not (fr := gget(cseRequest.originalRequest, 'fr', greedy=False)) and not (cseRequest.headers.resourceType == T.AE and cseRequest.op == Operation.CREATE):
+			if not (fr := gget(cseRequest.originalRequest, 'fr', greedy=False)) and not isResponse and not (cseRequest.headers.resourceType == T.AE and cseRequest.op == Operation.CREATE):
 				L.logDebug(dbg := 'From/Originator parameter is mandatory in request')
 				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
 			cseRequest.headers.originator = fr
 
 			# TO - target
-			if not (to := gget(cseRequest.originalRequest, 'to', greedy=False)):
+			if not (to := gget(cseRequest.originalRequest, 'to', greedy=False)) and not isResponse:
 				L.logDebug(dbg := 'To/Target parameter is mandatory in request')
 				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
 			cseRequest.id, cseRequest.csi, cseRequest.srn =  Utils.retrieveIDFromPath(to, CSE.cseRn, CSE.cseCsi)
@@ -1084,6 +1101,9 @@ class RequestManager(object):
 				for h in list(fc.keys()):
 					cseRequest.args.attributes[h] = gget(fc, h)
 
+			# Copy rsc
+			if (rsc := gget(cseRequest.originalRequest, 'rsc', greedy=False)): 
+				cseRequest.rsc = ResponseStatusCode(rsc)
 
 			# Copy primitive content
 			# Check whether content is empty and operation is UPDATE or CREATE -> Error
@@ -1096,20 +1116,18 @@ class RequestManager(object):
 				return res
 
 
-
-
 		# end of try..except
 		except ValueError as e:
 			L.logWarn(dbg := f'Error validating attribute/parameter: {str(e)}')
 			return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=dbg)
 
 
-		return Result(status=True, request=cseRequest, data=cseRequest.pc)
+		return Result(status=True, rsc=cseRequest.rsc, request=cseRequest, data=cseRequest.pc)
 
 	###########################################################################
 
 	#
-	#	Utilities.
+	#	Utilities
 	#
 
 	def getSerializationFromOriginator(self, originator:str) -> List[ContentSerializationType]:

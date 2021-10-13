@@ -2128,6 +2128,19 @@
 			"annc": "OA"
 		}
 	],
+	"rsc" : [
+		{
+			"rtypes": [ "REQRESP" ],
+			"lname": "responseStatusCode",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
 	"scp": [
 		{
 			"rtypes": [ "ALL" ],

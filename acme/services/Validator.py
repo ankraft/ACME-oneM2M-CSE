@@ -193,7 +193,7 @@ class Validator(object):
 	complexAttributePolicies:Dict[str, AttributePolicyDict] = {
 		# Response
 		'rsp' :	{
-			'rsc' : AttributePolicy(type=BT.integer,          cardinality=CAR.CAR1,  optionalCreate=RO.M, optionalUpdate=RO.M, optionalDiscovery=RO.O, announcement=AN.NA, sname='rsp', lname='responseStatusCode', namespace='m2m', tpe='m2m:rsp'),
+			'rsc' : AttributePolicy(type=BT.integer,          cardinality=CAR.CAR1,  optionalCreate=RO.M, optionalUpdate=RO.M, optionalDiscovery=RO.O, announcement=AN.NA, sname='rsp', lname='responseStatusCode', namespace='m2m', tpe='m2m:rsc'),
 			'rqi' : AttributePolicy(type=BT.string,           cardinality=CAR.CAR1,  optionalCreate=RO.M, optionalUpdate=RO.M, optionalDiscovery=RO.O, announcement=AN.NA, sname='rqi', lname='requestIdentifier', namespace='m2m', tpe='m2m:rqi'),
 			'pc' : AttributePolicy(type=BT.dict,              cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='pc', lname='primitiveContent', namespace='m2m', tpe='m2m:pc'),
 			'to' : AttributePolicy(type=BT.string,            cardinality=CAR.CAR01, optionalCreate=RO.O, optionalUpdate=RO.O, optionalDiscovery=RO.O, announcement=AN.NA, sname='to', lname='to', namespace='m2m', tpe='m2m:to'),

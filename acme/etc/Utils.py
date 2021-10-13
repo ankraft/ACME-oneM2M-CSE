@@ -187,6 +187,10 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
 		Also handle retargeting paths.
 		The return tupple is (RI, CSI, SRN).
 	"""
+
+	if not id:
+		return None, None, None
+		
 	csi 		= None
 	spi 		= None
 	srn 		= None

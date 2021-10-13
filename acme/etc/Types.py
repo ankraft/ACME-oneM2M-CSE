@@ -940,7 +940,7 @@ class CSERequest:
 	srn:str 						= None 	# target structured resource name
 	csi:str 						= None 	# target csi
 	op:Operation					= None	# request operation
-	rsc:ResponseStatusCode			= None	# Response Status Code
+	rsc:ResponseStatusCode			= ResponseStatusCode.UNKNOWN	# Response Status Code
 	parameters:Parameters			= field(default_factory=dict)	# Any additional parameters
 	requestType:RequestType			= RequestType.NOTSET
 
