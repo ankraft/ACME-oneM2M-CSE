@@ -77,7 +77,6 @@ shuttingDown									= False
 ##############################################################################
 
 
-#def startup(args=None, configfile=None, resetdb=None, loglevel=None):
 def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	global announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
 	global remote, request, security, statistics, storage, timeSeries, validator
@@ -232,7 +231,8 @@ def resetCSE() -> None:
 	L.isWarn and L.logWarn('Resetting CSE started')
 	storage.purge()
 
-	# The following event is executed synchronously
+	# The following event is executed synchronously to give every component
+	# a chance to finish
 	event.cseReset()	# type: ignore [attr-defined]   
 	if not importer.doImport():
 		L.isWarn and L.logErr('Error during import')
