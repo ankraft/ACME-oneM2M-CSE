@@ -634,7 +634,7 @@ class RequestManager(object):
 		return Result(status=False, rsc=RC.requestTimeout, dbg=dbg)
 
 
-	def queueRequestForPCH(self, pch:PCH, operation:Operation=Operation.NOTIFY, parameters:Parameters=None, data:Any=None, ty:T=None, request:CSERequest=None, reqType:RequestType=RequestType.REQUEST, originator:str=None) -> CSERequest:
+	def queueRequestForPCH(self, pchOriginator:str, operation:Operation=Operation.NOTIFY, parameters:Parameters=None, data:Any=None, ty:T=None, request:CSERequest=None, reqType:RequestType=RequestType.REQUEST, originator:str=None) -> CSERequest:
 		"""	Queue a (incoming) `request` or `data` for a <PCH>. It can be retrieved via the target's <PCU> child resource.
 
 			If a `request` is passed then this object is queued. If no `request` but `data` is given then a new request object is created 
@@ -650,7 +650,7 @@ class RequestManager(object):
 		if not request:
 			# Fill various request attributes
 			request 									= CSERequest()
-			request.id									= pch.getOriginator()
+			request.id									= pchOriginator
 			request.op 									= operation
 			request.headers.originator					= originator
 			request.headers.resourceType 				= ty
@@ -721,7 +721,7 @@ class RequestManager(object):
 
 			# Send the request via a PCH, if present
 			if pch:
-				request = self.queueRequestForPCH(pch, Operation.RETRIEVE, parameters=parameters, originator=originator)
+				request = self.queueRequestForPCH(pch.getOriginator(), Operation.RETRIEVE, parameters=parameters, originator=originator)
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
@@ -752,9 +752,9 @@ class RequestManager(object):
 			# Send the request via a PCH, if present
 			if pch:
 				if isinstance(data, CSERequest):
-					request = self.queueRequestForPCH(pch, Operation.CREATE, parameters=parameters, request=data, originator=originator)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.CREATE, parameters=parameters, request=data, originator=originator)
 				else:
-					request = self.queueRequestForPCH(pch, Operation.CREATE, parameters=parameters, data=data, originator=originator)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.CREATE, parameters=parameters, data=data, originator=originator)
 
 				return self.waitForResponseToPCH(request)
 
@@ -786,9 +786,9 @@ class RequestManager(object):
 			# Send the request via a PCH, if present
 			if pch:
 				if isinstance(data, CSERequest):
-					request = self.queueRequestForPCH(pch, Operation.UPDATE, parameters=parameters, request=data, originator=originator)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.UPDATE, parameters=parameters, request=data, originator=originator)
 				else:
-					request = self.queueRequestForPCH(pch, Operation.UPDATE, parameters=parameters, data=data, originator=originator)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.UPDATE, parameters=parameters, data=data, originator=originator)
 				return self.waitForResponseToPCH(request)
 
 				return self.waitForResponseToPCH(request)
@@ -819,7 +819,7 @@ class RequestManager(object):
 
 			# Send the request via a PCH, if present
 			if pch:
-				request = self.queueRequestForPCH(pch, Operation.DELETE, parameters=parameters, originator=originator)
+				request = self.queueRequestForPCH(pch.getOriginator(), Operation.DELETE, parameters=parameters, originator=originator)
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
@@ -853,9 +853,9 @@ class RequestManager(object):
 			# Send the request via a PCH, if present
 			if pch:
 				if isinstance(data, CSERequest):
-					request = self.queueRequestForPCH(pch, Operation.NOTIFY, parameters=parameters, request=data, originator=originator)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.NOTIFY, parameters=parameters, request=data, originator=originator)
 				else:
-					request = self.queueRequestForPCH(pch, Operation.NOTIFY, parameters=parameters, data=data, originator=originator)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.NOTIFY, parameters=parameters, data=data, originator=originator)
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings

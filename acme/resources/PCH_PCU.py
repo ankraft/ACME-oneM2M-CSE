@@ -31,8 +31,9 @@ class PCH_PCU(Resource):
 		super().__init__(T.PCH_PCU, dct, pi=pi, create=create, inheritACP=True, readOnly=True, rn='pcu', isVirtual=True)
 		
 
-	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:
-		""" Handle a RETRIEVE request. Return resource or block until available. At the PCU, only received requests are retrieved.
+	def handleRetrieveRequest(self, request:CSERequest=None, _:str=None, originator:str=None) -> Result:
+		""" Handle a RETRIEVE request. Return resource or block until available. At the PCU, only received requests are retrieved, otherwise
+			this function does not return until a reqeust timeout occurs. Only the AE's originator has access to this virtual resource.
 		"""
 		L.isDebug and L.logDebug(f'RETRIEVE request for polling channel. Originator: {originator}')
 
@@ -53,7 +54,8 @@ class PCH_PCU(Resource):
 
 
 	def handleNotifyRequest(self, request:CSERequest, originator:str) -> Result:
-		"""	Handle a NOTIFY request to a PCU resource. At the PCU, only Responses are delivered
+		"""	Handle a NOTIFY request to a PCU resource. At the PCU, only Responses are delivered. This method is called
+			when a notification is directed to a non-request-reachable target.
 		"""
 		L.isDebug and L.logDebug(f'NOTIFY request for polling channel. Originator: {originator}')
 
@@ -76,60 +78,19 @@ class PCH_PCU(Resource):
 		if not innerPC.get('fr'):
 			L.isDebug and L.logDebug(f'Adding originator: {request.headers.originator} to request')
 			innerPC['fr'] = request.headers.originator
-		# if not innerPC.get('to'):
-		# 	L.isDebug and L.logDebug(f'Adding originator: {request.headers.originator} to request')
-		# 	innerPC['fr'] = request.headers.originator
+
 		nrequest 									= CSERequest()
 		nrequest.originalRequest = innerPC
-		nrequest.pc 			= innerPC.get('pc')
+		nrequest.pc 			 = innerPC.get('pc')
 
-
-		# nrequest.headers.originator					= request.headers.originator
-		# nrequest.headers.originatingTimestamp		= nrequest.headers.originatingTimestamp
-		# nrequest.headers.requestIdentifier			= innerPC.get('rqi')
-		# nrequest.headers.releaseVersionIndicator	= innerPC.get('rvi')
-		# nrequest.rsc								= innerPC.get('rsc')
-		# nrequest.pc 								= innerPc.get('pc')
-		# nrequest.requestType						= RequestType.RESPONSE
-		
 		if not (res := CSE.request.fillAndValidateCSERequest(nrequest, isResponse=True)).status:
 			return res
 		L.logWarn(res.request)
 
-
-		from ..resources.PCH import PCH
-
-		# Get parent PCH and add the request to the PCU's queue.
-		if pch := self.retrieveParentResource():
-			CSE.request.queueRequestForPCH(cast(PCH, pch), request=res.request, reqType=RequestType.RESPONSE)	# A Notification to PCU always contains a response to a previous request
+		# Enqueue the reqeust
+		CSE.request.queueRequestForPCH(self.getOriginator(), request=res.request, reqType=RequestType.RESPONSE)	# A Notification to PCU always contains a response to a previous request
 		
 		return Result(status=True, rsc=RC.OK)
-
-
-		# 	L.logWarn(request)
-
-		# 	if not (res := CSE.request.fillAndValidateCSERequest(request, isResponse=True)).status:
-
-
-
-		# 		return Result(status=False, rsc=RC.notImplemented)
-		
-		# 	L.logWarn(res)
-		# 	# Fill various request attributes
-		# 	nrequest 										= CSERequest()
-
-		# 	if (pc := request.pc.get('m2m:sgn')) or (pc := request.pc.get('sgn')):	# A notification is a request
-		# 		L.logWarn(pc.get('fr'))
-		# 		nrequest.headers.originator					= pc.get('fr')
-		# 		nrequest.headers.originatingTimestamp		= pc.get('or')
-		# 		nrequest.headers.requestIdentifier			= pc.get('rqi')
-		# 		nrequest.headers.releaseVersionIndicator	= pc.get('rvi')
-		# 		nrequest.rsc								= pc.get('rsc')
-		# 		nrequest.pc 								= pc.get('pc')
-		# 		nrequest.requestType						= RequestType.REQUEST
-
-		# 		CSE.request.queueRequestForPCH(cast(PCH, pch), request=nrequest, reqType=RequestType.RESPONSE)	# A Notification to PCU always contains a response to a previous request
-		# return Result(status=True, rsc=RC.OK)
 
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:

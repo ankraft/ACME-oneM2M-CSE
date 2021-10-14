@@ -57,7 +57,7 @@ class SecurityManager(object):
 		return True
 
 
-	def hasAccess(self, originator:str, resource:Resource, requestedPermission:Permission, checkSelf:bool=False, ty:int=None, isCreateRequest:bool=False, parentResource:Resource=None) -> bool:
+	def hasAccess(self, originator:str, resource:Resource, requestedPermission:Permission, checkSelf:bool=False, ty:T=None, isCreateRequest:bool=False, parentResource:Resource=None) -> bool:
 
 		#  Do or ignore the check
 		if not self.enableACPChecks:
@@ -87,7 +87,7 @@ class SecurityManager(object):
 				else:
 					L.isWarn and L.logWarn('Originator for CSR CREATE not found.')
 					return False
-
+			
 			if T(ty).isAnnounced():
 				if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators) or originator[1:] == parentResource.ri:
 					L.isDebug and L.logDebug('Originator for Announcement. OK.')
@@ -113,6 +113,16 @@ class SecurityManager(object):
 			if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators):
 				L.isDebug and L.logDebug(f'Allow remote CSE Orignator {originator} to RETRIEVE CSEBase. OK.')
 				return True
+
+		# Checking for PollingChannel
+		if resource.ty == T.PCH:
+			if parentResource := resource.retrieveParentResource():
+				if originator != parentResource.getOriginator():
+					L.isWarn and L.logWarn('Access to <PCH> resource is only granted to the parent originator.')
+					return False
+				return True
+			else:
+				return False
 			
 
 		# Check parameters
