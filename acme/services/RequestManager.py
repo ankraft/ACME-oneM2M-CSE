@@ -53,22 +53,42 @@ class RequestManager(object):
 			Operation.DELETE	: RequestCallback(self.deleteRequest,   CSE.dispatcher.processDeleteRequest),
 		}
 
-		# TODO doc
-		self._requestLock = Lock()
-		self._requests:Dict[str, List[ Tuple[CSERequest, RequestType] ] ] = {}
+		#
+		#	Structures for pollingChannel requests
+		#
+		self._requestLock = Lock()													# Lock to access the following two dictionaries
+		self._requests:Dict[str, List[ Tuple[CSERequest, RequestType] ] ] = {}		# Dictionary to map request originators to a list of reqeusts. Used for handling polling requests.
+		self._rqiOriginator:Dict[str, str] = {}										# Dictionary to map requestIdentifiers to an originator of a request. Used for handling of polling requests.
+		self._pcWorker = BackgroundWorkerPool.newWorker(self.requestExpirationDelta * 2.0, self._cleanupPollingRequests, name='pollingChannelCleanup').start()
 
-		self._rqiOriginator:Dict[str, str] = {}
+		# Add a handler when the CSE is reset
+		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
 
 		L.log('RequestManager initialized')
 
 
 	def shutdown(self) -> bool:
+		# Stop the PollingChannel Cleanup worker
+		if self._pcWorker:
+			self._pcWorker.stop()
+
 		L.log('RequestManager shut down')
 		return True
 
+	
+	def restart(self) -> None:
+		"""	Restart the registrationManager service.
+		"""
+		# Terminate waiting request and pollingQueue actors
+		BackgroundWorkerPool.removeWorkers('request_*')
+		BackgroundWorkerPool.removeWorkers('unqueuePolling_*')
 
-# TODO Worker to cleanup the requests
-# TODO Reset queue during CSE reset
+		# empty polling channel queues
+		with self._requestLock:
+			self._requests = {}
+			self._rqiOriginator = {}
+		L.logDebug('RequestManager restarted')
+
 
 	#########################################################################
 	#
@@ -414,12 +434,9 @@ class RequestManager(object):
 
 
 	###########################################################################
-
 	#
 	#	Handling of Transit requests. Forward requests to the resp. remote CSE's.
 	#
-
-	# TODO Change for generic forward to also support MQTT etc
 
 	def handleTransitRetrieveRequest(self, request:CSERequest) -> Result:
 		""" Forward a RETRIEVE request to a remote CSE """
@@ -518,7 +535,6 @@ class RequestManager(object):
 	#	All the requests for all PCU are stored in a single dictionary:
 	#		originator : [ request* ]
 	#
-	# TODO Worker for cleanup
 
 
 	def hasPollingRequest(self, originator:str, requestID:str=None, reqType:RequestType=RequestType.REQUEST) -> bool:
@@ -550,7 +566,7 @@ class RequestManager(object):
 		# If no id? Try to determine it via the requestID
 		if not request.id and reqType == RequestType.RESPONSE:
 			with self._requestLock:
-				request.id = self._rqiOriginator.get(request.headers.requestIdentifier)
+				request.id = self._rqiOriginator.pop(request.headers.requestIdentifier)	# get and remove from dictionary
 
 		if not request.id:
 			L.logErr(f'Request must have a target originator. Ignored. {request}', showStackTrace=False)
@@ -602,7 +618,6 @@ class RequestManager(object):
 			return resultRequest
 
 
-
 	def waitForPollingRequest(self, originator:str, requestID:str, timeout:float, reqType:RequestType=RequestType.REQUEST) -> Result:
 		"""	Busy waiting for a polling request for the `originator`, `requestID` and `reqType`. 
 			The function returns when there is a new or pending matching request in the queue, or when the `timeout` (in seconds)
@@ -618,42 +633,25 @@ class RequestManager(object):
 		L.logWarn(dbg := f'Timeout while waiting for: {reqType} for originator: {originator}, requestID: {requestID}')
 		return Result(status=False, rsc=RC.requestTimeout, dbg=dbg)
 
-		# with self._requestLock:
-		# 	resultRequest = None
-		# 	if (lst := self._requests.get(originator)):
-		# 		requests = []
-				
-		# 		# extract the queried request, and build a new list for the remaining
-		# 		# Building a new list is faster than extracting and removing elements in place
-		# 		for r,t in lst:	
-		# 			if (requestID is None or requestID == r.headers.requestIdentifier) and t == reqType:
-		# 				resultRequest = r
-		# 			else:
-		# 				requests.append( (r, t) )
-		# 		if requests:
-		# 			self._requests[originator] = requests
-		# 		else:
-		# 			del self._requests[originator]
-
-		# return resultRequest
-
 
 	def queueRequestForPCH(self, pch:PCH, operation:Operation=Operation.NOTIFY, parameters:Parameters=None, data:Any=None, ty:T=None, request:CSERequest=None, reqType:RequestType=RequestType.REQUEST, originator:str=None) -> CSERequest:
-		"""	Queue a (incoming) request for a <PCH>. It can be retrieved via its <PCU> child resource.
+		"""	Queue a (incoming) `request` or `data` for a <PCH>. It can be retrieved via the target's <PCU> child resource.
 
-			If a `request` is passed then this object is queued.
+			If a `request` is passed then this object is queued. If no `request` but `data` is given then a new request object is created 
+			for `data`.
 		"""
 
-		# TODO Data or request must be given!
+		# Check required arguments
+		if not request and not data:
+			L.logErr('Internal error. queueRequestForPCH() needs either a request or data to enqueue.')
+			return None
 
-
-		# Create a requst if none was given
+		# If no request is given, we create one here.
 		if not request:
 			# Fill various request attributes
 			request 									= CSERequest()
 			request.id									= pch.getOriginator()
 			request.op 									= operation
-			# request.headers.originator					= pch.getOriginator()
 			request.headers.originator					= originator
 			request.headers.resourceType 				= ty
 			request.headers.originatingTimestamp		= DateUtils.getResourceDate()
@@ -683,18 +681,35 @@ class RequestManager(object):
 		
 		return Result(status=False, rsc=RC.requestTimeout, dbg=response.dbg)
 
+
+	def _cleanupPollingRequests(self) -> bool:
+		L.isDebug and L.logDebug('Performing removal of old polling requests')
+		with self._requestLock:
+			# Search all entries in the queue and remove those that have expired in the past
+			# Remove those requests also from 
+			now = DateUtils.toISO8601Date(DateUtils.utcTime())
+			for originator, requests in list(self._requests.items()):
+				nList = []
+				for tup in list(requests):	# Test all requests for expiration
+					if tup[0].headers.requestExpirationTimestamp > now:
+						nList.append(tup)	# add the request tupple again to the list if it hasnt expired
+					else:
+						# Also remove the requestID - originator mapping
+						if (rqi := tup[0].headers.requestIdentifier) in self._rqiOriginator:
+							del self._rqiOriginator[rqi]
+				if len(nList) > 0:	# Add the lists again if there still more requests for this originator
+					self._requests[originator] = nList
+				else:				# remove the entry
+					del self._requests[originator]
+		return True
+					
 		
 
 	###########################################################################
-
 	#
 	#	Handling sending requests.
 	#
 	#
-	#	TODO	Is targetResource necessary?
-	#	TODO	check whether url is actually an ri, then target that reource
-	#	TODO	Add further transport protocols here
-
 
 
 	def sendRetrieveRequest(self, uri:str, originator:str, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='') -> Result:
@@ -1225,7 +1240,7 @@ class RequestManager(object):
 
 
 	def resolveSingleUriCszTo(self, uri:str, permission:Permission, appendID:str='', originator:str=None, noAccessIsError:bool=False) -> list[ Tuple[str, list[str], str, PCH ] ]:
-		"""	Resolve the real URL, contentSerialization, and the targetOriginator from a (notification) URI.
+		"""	Resolve the real URL, contentSerialization, the target, and an optional PCU resource from a (notification) URI.
 			The result is a list of tuples of (url, list of contentSerializations, target originator, PollingChannel resource).
 
 			Return a list of (url, None, None, None) (containing only one element) if the URI is already a URL. 
@@ -1238,8 +1253,6 @@ class RequestManager(object):
 
 			In case of an error, an empty list is returned. If `noAccessIsError` is *True* then None is returned.
 		"""
-
-		# TODO Doesn't do this method do to much?
 
 		if Utils.isURL(uri):	# The uri is a direct URL
 			return [ (uri, None, None, None) ]
