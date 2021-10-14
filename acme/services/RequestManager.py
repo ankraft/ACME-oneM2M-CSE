@@ -665,6 +665,14 @@ class RequestManager(object):
 		# Always mark the request as a REQUEST
 		request.requestType = reqType
 
+		# Convert "from" to SP-relative format in the request
+		# See TS-0001, 7.3.2.6, Forwarding
+		if Utils.isCSERelative(request.headers.originator):
+			request.headers.originator = f'{CSE.cseCsi}/{request.headers.originator}'
+			Utils.setXPath(request.originalRequest, 'to', request.headers.originator, overwrite=True)	# Also in the original request
+			# Attn: not changed in originatData !
+
+
 		L.isDebug and L.logDebug(f'Storing REQUEST for: {request.id} with ID: {request.headers.requestIdentifier} for polling')
 		self.queuePollingRequest(request, reqType)
 		return request
