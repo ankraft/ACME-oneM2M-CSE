@@ -49,6 +49,8 @@ class BackgroundWorker(object):
 	def start(self, **args:Any) -> BackgroundWorker:
 		"""	Start the background worker in a thread. If the background worker is already
 			running then it is stopped and started again.
+
+			Returns the background worker instance.
 		"""
 
 		if self.running:
@@ -67,6 +69,8 @@ class BackgroundWorker(object):
 
 	def stop(self) -> BackgroundWorker:
 		"""	Stop the background worker.
+
+			Returns the background worker instance.
 		"""
 		if not self.running:
 			return self
