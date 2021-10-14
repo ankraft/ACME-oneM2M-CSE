@@ -522,7 +522,7 @@ class HttpServer(object):
 
 		# Get the request date
 		if (date := request.date):
-			req['ot'] = DateUtils.toISO8601Date(date.timestamp(), isUTCtimestamp=False)
+			req['ot'] = DateUtils.toISO8601Date(DateUtils.utcTime())
 		# else:
 		# 	req['ot'] = DateUtils.getResourceDate()
 
