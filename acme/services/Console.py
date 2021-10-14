@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Dict, List, cast
 import datetime, os, sys, webbrowser
 from enum import IntEnum, auto
+from rich.console import JustifyMethod
 from rich.style import Style
 from rich.table import Table
 from rich.panel import Panel
@@ -234,8 +235,8 @@ Available under the BSD 3-Clause License
 		table = Table()
 		table.add_column('Name', no_wrap=True)
 		table.add_column('Type', no_wrap=True)
-		table.add_column('Interval', no_wrap=True)
-		table.add_column('Runs', no_wrap=True)
+		table.add_column('Intvl (s)', no_wrap=True, justify='right')
+		table.add_column('Runs', no_wrap=True, justify='right')
 		for w in BackgroundWorkerPool.backgroundWorkers.values():
 			a = 'Actor' if w.maxCount == 1 else 'Worker'
 			table.add_row(w.name, a, str(float(w.interval)) if w.interval > 0.0 else '', str(w.numberOfRuns) if w.interval > 0.0 else '')
