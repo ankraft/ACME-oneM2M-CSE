@@ -155,7 +155,7 @@ class TestCNT(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTempty(self) -> None:
 		"""	Update <CNT> empty content """
-		dct = 	{ 'm2m:cnt' : {
+		dct:JSON = { 'm2m:cnt' : {
 				}}
 		r, rsc = UPDATE(cntURL, TestCNT.originator, dct)
 		self.assertEqual(rsc, RC.updated, r)

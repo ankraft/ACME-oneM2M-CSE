@@ -129,6 +129,7 @@ class TestPCH(unittest.TestCase):
 # TODO multiple non-blocking async requests, then retrieve notification via pcu
 
 # TODO retrieve via PCU *after* delete
+# TODO Access to PCH via another originator, even if granted
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()

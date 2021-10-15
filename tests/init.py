@@ -802,8 +802,10 @@ def setXPath(dct:JSON, element:str, value:Any, overwrite:bool=True) -> None:
 
 # TODO check whether these functions can be replaced by the etc.DateUtils
 
-def getDate(delta:int = 0) -> str:
-	return toISO8601Date(datetime.datetime.utcnow() + datetime.timedelta(seconds=delta))
+def getDate(delta:float = 0) -> str:
+	# return toISO8601Date(datetime.datetime.utcnow() + datetime.timedelta(seconds=delta))
+	return toISO8601Date(DateUtils.utcTime() + delta)
+
 
 
 def toISO8601Date(ts: Union[float, datetime.datetime]) -> str:
