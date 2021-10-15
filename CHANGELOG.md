@@ -10,7 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [unreleased] - xxxx-xx-xx
 
 ### Added
+- [CSE] Added support for &lt;pollingChannel> and &lt;pollinChannelURI> for polling communication scenarios.
 - [CSE] Added [logging].enableBindingsLogging configuration to enable/disable low-level transport bindings logging.
+- [CSE] Added converting resource IDs to SP-relative when retargeting to different CSEs.
+- [MQTT] Added MQTT binding support for Mca and Mcc communication.
 - [CONSOLE] Added the possibility to toggle through the display modes with "^T" when displaying the resource tree continuously.
 - [CONSOLE] Real-time update for the continuous tree (when creating, deleting, updating resources).
 - [CONSOLE] Added [cse.console].confirmQuit configuration option. It is switched off by default.
@@ -21,8 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Improved attribute validation: checking empty lists.
 - [CSE] Simplified initial configuration. First time users can now choose between three deployment configurations (IN, MN, ASN) to quickly set-up a CSE.
 - [CSE] Improved fallback and debug message of missing Release Version Indicator attribute in requests.
-- [CSE] New implementation to improve attribute policies and validation. Policies are now defined by a definition file and assigned to each resource type.
+- [CSE] Refactored project directory structure.
+- [CSE] Refactored validation to improve attribute policies and validation handling and extension. Policies are now defined by a definition file and assigned to each resource type.
 - [IMPORTING] Changed the file extension for &lt;flexContainer> attribute policies from ".ap" to ".fcp".
+- [RUNTIME] Due to the restructuring of the project structure the CSE must now be started like this: ```python3 -m acme```
 
 ### Removed
 - [APPS] Removed the example AEs from the CSE. This makes the CSE a bit smaller and also removes a big dependency to the non-portable psutils package. They will be available in  separate project in the future.

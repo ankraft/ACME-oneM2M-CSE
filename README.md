@@ -43,7 +43,9 @@ This release removes the example  AEs from the project. They will become availab
 
 ### Highlights in this release
 
-- Long-necessary refactoring of the source structure.
+- Long-necessary refactoring of the project source structure.
+- MQTT Binding support.
+- PollingChannel support.
 - Lot's of small improvements, bug fixes, and optimizations
 
 ## Acknowledgements
