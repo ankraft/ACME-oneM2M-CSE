@@ -446,6 +446,11 @@ class RequestManager(object):
 		# 	return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
 		# if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 		# 	url += '?' + urllib.parse.urlencode(request.originalArgs)
+
+		# Convert "from" to SP-relative format in the request
+		# See TS-0001, 7.3.2.6, Forwarding
+		self._fromToSPRelative(request)
+
 		L.isInfo and L.log(f'Forwarding RETRIEVE/DISCOVERY request to: {res.data}')
 		return self.sendRetrieveRequest(cast(str, res.data), request.headers.originator)
 
@@ -458,6 +463,11 @@ class RequestManager(object):
 		# 	return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
 		# if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 		# 	url += '?' + urllib.parse.urlencode(request.originalArgs)
+
+		# Convert "from" to SP-relative format in the request
+		# See TS-0001, 7.3.2.6, Forwarding
+		self._fromToSPRelative(request)
+
 		L.isInfo and L.log(f'Forwarding CREATE request to: {res.data}')
 		return self.sendCreateRequest(cast(str, res.data), request.headers.originator, data=request.originalData, ty=request.headers.resourceType)
 
@@ -470,6 +480,11 @@ class RequestManager(object):
 		# 	return Result(rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
 		# if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 		# 	url += '?' + urllib.parse.urlencode(request.originalArgs)
+
+		# Convert "from" to SP-relative format in the request
+		# See TS-0001, 7.3.2.6, Forwarding
+		self._fromToSPRelative(request)
+
 		L.isInfo and L.log(f'Forwarding UPDATE request to: {res.data}')
 		return self.sendUpdateRequest(cast(str, res.data), request.headers.originator, data=request.originalData)
 
@@ -490,6 +505,11 @@ class RequestManager(object):
 		""" Forward a NOTIFY request to a remote CSE. """
 		if not (res := self._constructForwardURL(request)).status:
 			return res
+
+		# Convert "from" to SP-relative format in the request
+		# See TS-0001, 7.3.2.6, Forwarding
+		self._fromToSPRelative(request)
+
 		L.isInfo and L.log(f'Forwarding NOTIFY request to: {res.data}')
 		return self.sendNotifyRequest(cast(str, res.data), request.headers.originator, data=request.originalData)
 
@@ -526,6 +546,19 @@ class RequestManager(object):
 		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
 			url += '?' + urllib.parse.urlencode(request.originalArgs)
 		return Result(status=True, data=url)
+
+
+	def _fromToSPRelative(self, request:CSERequest) -> None:
+		"""	Convert *from* to SP-relative format in the request. The *from* is converted in
+			*request.headers.originator* and *request.originalRequest*, but NOT in 
+			*request.originalData*.
+		
+			See TS-0001, 7.3.2.6, Forwarding
+		"""
+		if Utils.isCSERelative(request.headers.originator):
+			request.headers.originator = f'{CSE.cseCsi}/{request.headers.originator}'
+			Utils.setXPath(request.originalRequest, 'to', request.headers.originator, overwrite=True)	# Also in the original request
+			# Attn: not changed in originatData !
 
 
 	##############################################################################
@@ -667,11 +700,7 @@ class RequestManager(object):
 
 		# Convert "from" to SP-relative format in the request
 		# See TS-0001, 7.3.2.6, Forwarding
-		if Utils.isCSERelative(request.headers.originator):
-			request.headers.originator = f'{CSE.cseCsi}/{request.headers.originator}'
-			Utils.setXPath(request.originalRequest, 'to', request.headers.originator, overwrite=True)	# Also in the original request
-			# Attn: not changed in originatData !
-
+		self._fromToSPRelative(request)
 
 		L.isDebug and L.logDebug(f'Storing REQUEST for: {request.id} with ID: {request.headers.requestIdentifier} for polling')
 		self.queuePollingRequest(request, reqType)
