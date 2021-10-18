@@ -39,7 +39,7 @@ class TestPCH_PCU(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
-		"""	Setup the starting resource structure
+		"""	Setup the initial resource structure
 		```
 		CSEBase                             
 		    ├─testAE                       
@@ -95,7 +95,7 @@ class TestPCH_PCU(unittest.TestCase):
 				} ]
 			},
 		}}
-		cls.acp2, rsc = CREATE(f'{aeURL}2', cls.originator2, T.ACP, dct)
+		cls.acp2, rsc = CREATE(ae2URL, cls.originator2, T.ACP, dct)
 		assert rsc == RC.created, 'cannot create ACP'
 		cls.acpRI2 = findXPath(cls.acp2, 'm2m:acp/ri')
 
@@ -103,7 +103,7 @@ class TestPCH_PCU(unittest.TestCase):
 		dct = 	{ 'm2m:ae' : {
 					'acpi' : [ cls.acpRI2 ]
 				}}
-		cls.ae, rsc = UPDATE(f'{aeURL}2', cls.originator2, dct)
+		cls.ae, rsc = UPDATE(ae2URL, cls.originator2, dct)
 		assert rsc == RC.updated, 'cannot update AE'
 		
 		# Add container to first AE
@@ -119,7 +119,7 @@ class TestPCH_PCU(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
-		DELETE(f'{aeURL}2', ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		DELETE(ae2URL, ORIGINATOR)	# Just delete the 2nd AE and everything below it. Ignore whether it exists or not
 
 		with console.status('[bright_blue]Waiting for polling requests to timeout...') as status:
 			time.sleep(sentRequestExpirationDelay)
@@ -132,21 +132,22 @@ class TestPCH_PCU(unittest.TestCase):
 			return
 
 		# response is a oneM2M request			
-		self.assertIsNotNone(findXPath(r, 'pc'), r)
-		self.assertIsNotNone(findXPath(r, 'pc/m2m:sgn'), r)
-		if isCreate: self.assertIsNotNone(findXPath(r, 'pc/m2m:sgn/vrq'), r)
-		if isCreate: self.assertTrue(findXPath(r, 'pc/m2m:sgn/vrq'))
-		if isDelete: self.assertIsNotNone(findTestCases(r, 'pc/m2m:sgn/sud'))
-		if isDelete: self.assertTrue(findXPath(r, 'pc/m2m:sgn/sud'))
-		self.assertIsNotNone(findXPath(r, 'pc/m2m:sgn/sur'))
-		if isCreate: self.assertIsNotNone(findXPath(r, 'pc/m2m:sgn/cr'))
-		self.assertIsNotNone(findXPath(r, 'rqi'))
-		rqi = findXPath(r, 'rqi')
+		self.assertIsNotNone(findXPath(r, 'm2m:rqp'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:rqp/pc'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:rqp/pc/m2m:sgn'), r)
+		if isCreate: self.assertIsNotNone(findXPath(r, 'm2m:rqp/pc/m2m:sgn/vrq'), r)
+		if isCreate: self.assertTrue(findXPath(r, 'm2m:rqp/pc/m2m:sgn/vrq'))
+		if isDelete: self.assertIsNotNone(findXPath(r, 'm2m:rqp/pc/m2m:sgn/sud'))
+		if isDelete: self.assertTrue(findXPath(r, 'm2m:rqp/pc/m2m:sgn/sud'))
+		self.assertIsNotNone(findXPath(r, 'm2m:rqp/pc/m2m:sgn/sur'))
+		if isCreate: self.assertIsNotNone(findXPath(r, 'm2m:rqp/pc/m2m:sgn/cr'))
+		self.assertIsNotNone(findXPath(r, 'm2m:rqp/rqi'))
+		rqi = findXPath(r, 'm2m:rqp/rqi')
 
 		# Build and send OK response as a Notification
 		dct = {
-			'rsp' : {
-				'fr'  : originator,
+			'm2m:rsp' : {
+				'fr'  : originator,	# TODO Configurable
 				'rqi' : rqi,
 				'rvi' : RVI,
 				'rsc' : int(RC.OK)
@@ -184,7 +185,7 @@ class TestPCH_PCU(unittest.TestCase):
 			        'enc': {
 			            'net': [ NET.createDirectChild ]
 					},
-					'nu': [ TestPCH_PCU.aeRI2 ],
+						'nu': [ TestPCH_PCU.aeRI2 ],
 					# 'su': TestPCH_PCU.aeRI2
 				}}
 		r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.SUB, dct)
@@ -193,7 +194,7 @@ class TestPCH_PCU(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createPCHunderAE2(self) -> None:
-		"""	Create <PCH> under <AE> """
+		"""	Create <PCH> under <AE> 2"""
 		self.assertIsNotNone(TestPCH_PCU.ae)
 		dct = 	{ 'm2m:pch' : { 
 					'rn' : pchRN,
@@ -207,7 +208,6 @@ class TestPCH_PCU(unittest.TestCase):
 		"""	Retrieve <PCU>'s with implicite request timeout (nothing to retrieve) -> FAIL """
 		r, rsc = RETRIEVE(pcu2URL, TestPCH_PCU.originator2)
 		self.assertEqual(rsc, RC.requestTimeout, r)
-
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -273,7 +273,6 @@ class TestPCH_PCU(unittest.TestCase):
 		self.assertEqual(rsc, RC.requestTimeout, r)
 
 
-
 	def test_createNotificationDoPolling(self) -> None:
 		""" Create a <CIN> to create a notification and poll <PCU> """
 		dct = 	{ 'm2m:cin' : {
@@ -285,38 +284,20 @@ class TestPCH_PCU(unittest.TestCase):
 
 
 
-		# 	dct = {
-		# 		'm2m:sgn' : {
-		# 			'nev' : {
-		# 				'rep' : {},
-		# 				'net' : NotificationEventType.resourceUpdate
-		# 			},
-		# 			'sur' : Utils.fullRI(sub['ri'])
-		# 		}
-		# 	}
 
-		# responseNotification = {
-		# 	'm2m:rsp' : {
-		# 		'rsc'	:	RC.ok,
-		# 		'rqi'	:	result.resource['ors/rqi'],
-		# 		'pc'	:	result.resource['ors/pc'],
-		# 		'to' 	:	result.resource['ors/to'],
-		# 		'fr' 	: 	originator,
-		# 		'rvi'	: 	request.headers.releaseVersionIndicator
-		# 	}
-		# }
+
+# TODO: Add a CIN to create notification.
+
 
 # TODO Non-Blocking async request, then retrieve notification via pcu
 # TODO multiple non-blocking async requests, then retrieve notification via pcu
 
-# TODO retrieve PCU with expirationTimestamp
-
 # TODO reply with notify but different originator -> Fail
 
-# TODO return a wrong response
+# TODO return a wrong response 
 # TODO return a empty response
-# TODO add multiple PCH
-# TODO retrieve PCU with another originator, even when given access
+
+# TODO retrieve via PCU *after* delete
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()

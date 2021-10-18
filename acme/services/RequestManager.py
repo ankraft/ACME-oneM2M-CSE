@@ -553,7 +553,7 @@ class RequestManager(object):
 			*request.headers.originator* and *request.originalRequest*, but NOT in 
 			*request.originalData*.
 		
-			See TS-0001, 7.3.2.6, Forwarding
+			See TS-0004, 7.3.2.6, Forwarding
 		"""
 		if Utils.isCSERelative(request.headers.originator):
 			request.headers.originator = Utils.toSPRelative(request.headers.originator)

@@ -15,11 +15,17 @@ from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, NotificationContentType, ResponseStatusCode as RC, Operation, ResponseType, Permission
 from init import *
 
+aeRN2 = f'{aeRN}2'
+ae2URL = f'{aeURL}2'
 
 class TestPCH(unittest.TestCase):
 
 	ae 			= None
+	ae2 		= None
+	acp			= None
+	acpRI		= None
 	originator 	= None
+	originator2	= None
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -34,15 +40,56 @@ class TestPCH(unittest.TestCase):
 		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
 
+		# Create 2nd AE
+
+		dct = 	{ 'm2m:ae' : {
+					'rn'  : aeRN2, 
+					'api' : 'NMyAppId',
+				 	'rr'  : True,
+				 	'srv' : [ '3' ]
+				}}
+		cls.ae2, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
+		assert rsc == RC.created, 'cannot create parent AE'
+		cls.originator2 = findXPath(cls.ae2, 'm2m:ae/aei')
+
+		# Add permissions for second AE to first AE
+		dct = 	{ "m2m:acp": {
+			"rn": acpRN,
+			"pv": {
+				"acr": [ { 	
+					"acor": [ cls.originator, cls.originator2 ],
+					"acop": Permission.ALL
+				}
+				]
+			},
+			"pvs": { 
+				"acr": [ {
+					"acor": [ cls.originator ],
+					"acop": Permission.ALL
+				} ]
+			},
+		}}
+		cls.acp, rsc = CREATE(aeURL, cls.originator, T.ACP, dct)
+		assert rsc == RC.created, 'cannot create ACP'
+		cls.acpRI = findXPath(cls.acp, 'm2m:acp/ri')
+
+		# Add acpi to second AE 
+		dct = 	{ 'm2m:ae' : {
+					'acpi' : [ cls.acpRI ]
+				}}
+		cls.ae, rsc = UPDATE(aeURL, cls.originator, dct)
+		assert rsc == RC.updated, 'cannot update AE'
+
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		DELETE(ae2URL, ORIGINATOR)	# Just delete the 2nd AE and everything below it. Ignore whether it exists or not
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createPCHwithWrongOriginator(self) -> None:
+	def test_createPCHwithWrongOriginatorFail(self) -> None:
 		"""	Create <PCH> with valid but different originator -> Fail"""
 		self.assertIsNotNone(TestPCH.ae)
 		dct = 	{ 'm2m:pch' : { 
@@ -64,7 +111,7 @@ class TestPCH(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createSecondPCH(self) -> None:
+	def test_createSecondPCHFail(self) -> None:
 		"""	Create second <PCH> (but only one is allowed) -> Fail"""
 		self.assertIsNotNone(TestPCH.ae)
 		dct = 	{ 'm2m:pch' : { 
@@ -75,7 +122,7 @@ class TestPCH(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createPCHunderCSEBase(self) -> None:
+	def test_createPCHunderCSEBaseFail(self) -> None:
 		"""	Create <PCH> under <CSEBase> -> Fail """
 		self.assertIsNotNone(TestPCH.ae)
 		dct = 	{ 'm2m:pch' : { 
@@ -93,10 +140,17 @@ class TestPCH(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrievePCHwithWrongOriginator(self) -> None:
-		""" Retrieve <PCH> """
+	def test_retrievePCHwithWrongOriginatorFail(self) -> None:
+		""" Retrieve <PCH> with wrong originator -> Fail"""
 		_, rsc = RETRIEVE(pchURL, 'wrong')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrievePCHWithAE2Fail(self) -> None:
+		""" Retrieve <PCH> with <AE> 2 -> Fail """
+		r, rsc = RETRIEVE(pchURL, TestPCH.originator2)
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -125,22 +179,18 @@ class TestPCH(unittest.TestCase):
 		_, rsc = DELETE(pchURL, self.originator)
 		self.assertEqual(rsc, RC.deleted)
 
-# TODO Non-Blocking async request, then retrieve notification via pcu
-# TODO multiple non-blocking async requests, then retrieve notification via pcu
-
-# TODO retrieve via PCU *after* delete
-# TODO Access to PCH via another originator, even if granted
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 
 	# basic tests
-	suite.addTest(TestPCH('test_createPCHwithWrongOriginator'))
+	suite.addTest(TestPCH('test_createPCHwithWrongOriginatorFail'))
 	suite.addTest(TestPCH('test_createPCH'))
-	suite.addTest(TestPCH('test_createSecondPCH'))
-	suite.addTest(TestPCH('test_createPCHunderCSEBase'))
+	suite.addTest(TestPCH('test_createSecondPCHFail'))
+	suite.addTest(TestPCH('test_createPCHunderCSEBaseFail'))
 	suite.addTest(TestPCH('test_retrievePCH'))
-	suite.addTest(TestPCH('test_retrievePCHwithWrongOriginator'))
+	suite.addTest(TestPCH('test_retrievePCHwithWrongOriginatorFail'))
+	suite.addTest(TestPCH('test_retrievePCHWithAE2Fail'))
 	suite.addTest(TestPCH('test_attributesPCH'))
 
 	# delete tests
