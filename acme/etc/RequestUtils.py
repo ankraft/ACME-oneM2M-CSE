@@ -141,9 +141,18 @@ def requestFromResult(inResult:Result, originator:str=None, ty:T=None, op:Operat
 	
 	# If the response contains a request (ie. for polling), then add that request to the pc
 	pc = None
+	# L.isDebug and L.logDebug(inResult)
+
 	if inResult.embeddedRequest:
-		#pc = requestFromResult(Result(request=inResult.embeddedRequest)).data
-		pc = inResult.embeddedRequest.originalRequest
+		if inResult.embeddedRequest.originalRequest:
+			pc = inResult.embeddedRequest.originalRequest
+		else:
+			pc = cast(JSON, requestFromResult(Result(request=inResult.embeddedRequest)).data)
+		# L.isDebug and L.logDebug(pc)
+
+		# pc = inResult.embeddedRequest.originalRequest if inResult.embeddedRequest.originalRequest else inResult.embeddedRequest.pc
+		# pc = inResult.embeddedRequest.pc if inResult.embeddedRequest.pc is not None else inResult.embeddedRequest.originalRequest
+		# pc = inResult.embeddedRequest.originalRequest
 	else:
 		# construct and serialize the data as JSON/dictionary. Encoding to JSON or CBOR is done later
 		pc = inResult.toData(ContentSerializationType.PLAIN)	#  type:ignore[assignment]

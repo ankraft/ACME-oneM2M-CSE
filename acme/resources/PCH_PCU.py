@@ -85,7 +85,7 @@ class PCH_PCU(Resource):
 
 		if not (res := CSE.request.fillAndValidateCSERequest(nrequest, isResponse=True)).status:
 			return res
-		L.logWarn(res.request)
+		# L.logWarn(res.request)
 
 		# Enqueue the reqeust
 		CSE.request.queueRequestForPCH(self.getOriginator(), request=res.request, reqType=RequestType.RESPONSE)	# A Notification to PCU always contains a response to a previous request

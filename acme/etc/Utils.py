@@ -306,6 +306,14 @@ def getIdFromOriginator(originator: str, idOnly: bool = False) -> str:
 		return originator.split("/")[-1] if originator and originator.startswith('/') else originator
 
 
+def toSPRelative(originator:str) -> str:
+	"""	Add the CSI to an originator (if not already present).
+	"""
+	if not originator.startswith(CSE.cseCsi):
+		return  f'{CSE.cseCsi}/{originator}'
+	return originator
+
+
 ##############################################################################
 #
 #	URL and Addressung related

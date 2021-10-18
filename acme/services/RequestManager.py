@@ -449,7 +449,7 @@ class RequestManager(object):
 
 		# Convert "from" to SP-relative format in the request
 		# See TS-0001, 7.3.2.6, Forwarding
-		self._fromToSPRelative(request)
+		self._originatorToSPRelative(request)
 
 		L.isInfo and L.log(f'Forwarding RETRIEVE/DISCOVERY request to: {res.data}')
 		return self.sendRetrieveRequest(cast(str, res.data), request.headers.originator)
@@ -466,7 +466,7 @@ class RequestManager(object):
 
 		# Convert "from" to SP-relative format in the request
 		# See TS-0001, 7.3.2.6, Forwarding
-		self._fromToSPRelative(request)
+		self._originatorToSPRelative(request)
 
 		L.isInfo and L.log(f'Forwarding CREATE request to: {res.data}')
 		return self.sendCreateRequest(cast(str, res.data), request.headers.originator, data=request.originalData, ty=request.headers.resourceType)
@@ -483,7 +483,7 @@ class RequestManager(object):
 
 		# Convert "from" to SP-relative format in the request
 		# See TS-0001, 7.3.2.6, Forwarding
-		self._fromToSPRelative(request)
+		self._originatorToSPRelative(request)
 
 		L.isInfo and L.log(f'Forwarding UPDATE request to: {res.data}')
 		return self.sendUpdateRequest(cast(str, res.data), request.headers.originator, data=request.originalData)
@@ -508,7 +508,7 @@ class RequestManager(object):
 
 		# Convert "from" to SP-relative format in the request
 		# See TS-0001, 7.3.2.6, Forwarding
-		self._fromToSPRelative(request)
+		self._originatorToSPRelative(request)
 
 		L.isInfo and L.log(f'Forwarding NOTIFY request to: {res.data}')
 		return self.sendNotifyRequest(cast(str, res.data), request.headers.originator, data=request.originalData)
@@ -548,7 +548,7 @@ class RequestManager(object):
 		return Result(status=True, data=url)
 
 
-	def _fromToSPRelative(self, request:CSERequest) -> None:
+	def _originatorToSPRelative(self, request:CSERequest) -> None:
 		"""	Convert *from* to SP-relative format in the request. The *from* is converted in
 			*request.headers.originator* and *request.originalRequest*, but NOT in 
 			*request.originalData*.
@@ -556,8 +556,8 @@ class RequestManager(object):
 			See TS-0001, 7.3.2.6, Forwarding
 		"""
 		if Utils.isCSERelative(request.headers.originator):
-			request.headers.originator = f'{CSE.cseCsi}/{request.headers.originator}'
-			Utils.setXPath(request.originalRequest, 'to', request.headers.originator, overwrite=True)	# Also in the original request
+			request.headers.originator = Utils.toSPRelative(request.headers.originator)
+			Utils.setXPath(request.originalRequest, 'fr', request.headers.originator, overwrite=True)	# Also in the original request
 			# Attn: not changed in originatData !
 
 
@@ -679,6 +679,7 @@ class RequestManager(object):
 			L.logErr('Internal error. queueRequestForPCH() needs either a request or data to enqueue.')
 			return None
 
+		# L.isDebug and L.logDebug(request)
 		# If no request is given, we create one here.
 		if not request:
 			# Fill various request attributes
@@ -700,9 +701,9 @@ class RequestManager(object):
 
 		# Convert "from" to SP-relative format in the request
 		# See TS-0001, 7.3.2.6, Forwarding
-		self._fromToSPRelative(request)
+		self._originatorToSPRelative(request)
 
-		L.isDebug and L.logDebug(f'Storing REQUEST for: {request.id} with ID: {request.headers.requestIdentifier} for polling')
+		L.isDebug and L.logDebug(f'Storing REQUEST for: {request.id} with ID: {request.headers.requestIdentifier} pc:{request.pc} for polling')
 		self.queuePollingRequest(request, reqType)
 		return request
 	
@@ -714,6 +715,9 @@ class RequestManager(object):
 
 		if (response := self.waitForPollingRequest(request.headers.originator, request.headers.requestIdentifier, timeout=CSE.request.requestExpirationDelta, reqType=RequestType.RESPONSE)).status:
 			L.isDebug and L.logDebug(f'RESPONSE received ID: {response.request.headers.requestIdentifier} rsc: {response.request.rsc}')
+			if (o1 := Utils.toSPRelative(response.request.headers.originator)) != (o2 := Utils.toSPRelative(request.id)):
+				L.logWarn(dbg := f'Received originator: {o1} is different from original target originator: {o2}')
+				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 			return Result(status=True, rsc=response.request.rsc, request=response.request)
 		
 		return Result(status=False, rsc=RC.requestTimeout, dbg=response.dbg)

@@ -36,10 +36,13 @@ Please consult the following pages for further instructions.
 
 ## Changes
 
-Please see the [Changelog](CHANGELOG.md) for the latest changes.
+Please see the [Changelog](CHANGELOG.md) for the detailed list of changes.
 
-### Important: Example AEs removed
+### Important 1: Example AEs removed
 This release removes the example  AEs from the project. They will become available in another project in the future. This make the distribution a bit smaller and removes the problematic dependency to the *psutil* package, which is not available on all platforms.
+
+### Important 2: Changed the start method (again)
+Due to the project restructuring the CSE is now started with the command ```python3 -m acme```.
 
 ### Highlights in this release
 
