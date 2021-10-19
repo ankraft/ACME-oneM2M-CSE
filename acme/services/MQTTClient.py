@@ -404,11 +404,14 @@ class MQTTClient(object):
 
 		if targetOriginator:
 			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(targetOriginator)}/{ct.name.lower()}'
+		elif not len(topic):
+			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(originator)}/{ct.name.lower()}'
+
 		elif topic.startswith('///'):
 			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[3])}/{ct.name.lower()}'
 		elif topic.startswith('//'):
 			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[2])}/{ct.name.lower()}'
-		elif not topic.startswith('/oneM2M/') and topic[0] == '/':	# remove leading "/" if not /oneM2M
+		elif not topic.startswith('/oneM2M/') and len(topic) > 0 and topic[0] == '/':	# remove leading "/" if not /oneM2M
 			topic = topic[1:]
 		else:
 			 return Result(status=False, rsc=RC.internalServerError, dbg='Cannot build topic')
@@ -427,7 +430,8 @@ class MQTTClient(object):
 
 		# We are not connected, so -> fail
 		if not mqttConnection.isConnected:
-			return Result(status=False, rsc=RC.targetNotReachable, dbg=f'Cannot connect to MQTT broker at: {mqttHost}:{mqttPort}')
+			L.logWarn(dbg := f'Cannot connect to MQTT broker at: {mqttHost}:{mqttPort}')
+			return Result(status=False, rsc=RC.targetNotReachable, dbg=dbg)
 		
 		# Publish the request and wait for the response.
 		# Then return the response as result

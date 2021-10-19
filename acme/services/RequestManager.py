@@ -883,7 +883,7 @@ class RequestManager(object):
 	def sendNotifyRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', noAccessIsError:bool=False) -> Result:
 		"""	Send a NOTIFY request via the appropriate channel or transport protocol.
 		"""
-		L.isDebug and L.logDebug(f'Sending NOTIFY request to: {uri}{appendID} for Originator: {originator}')
+		L.isDebug and L.logDebug(f'Sending NOTIFY request to: {uri}{appendID} for Originator: {originator}, targetOriginator: {targetOriginator}, targetResource: {targetResource}')
 
 		if (resolved := self.resolveSingleUriCszTo(uri, appendID=appendID, originator=originator, permission=Permission.NOTIFY, noAccessIsError=noAccessIsError)) is None:
 			L.logWarn("error")
@@ -1217,21 +1217,21 @@ class RequestManager(object):
 	#
 	#	Notifications.
 	#
-	def resolveURIs(self, uris:list[str]|str, originator:str=None, noAccessIsError:bool=False) -> list[str]:
-		"""	Return resolved (notification) URLs, so also POA from referenced AE's and CSE's etc.
+	def resolveURIs(self, uris:list[str]|str, originator:str=None, noAccessIsError:bool=False) -> list[Tuple[str, Resource]]:
+		"""	Return a list of tuples: (resolved URLs, target resource or None). This includes thenresolved URL's, so also POA from referenced AE's and CSE's etc.
 
 			If the `originator` is specified then the URLs contain in the *poa* of that target/originator are excluded.
 			
 			If the target is not request reachable then the resource ID of that target is included in the
 			list, and it is handled later, e.g. for a pollingChannel.
 
-			The returned result is a list of direct URLs. This could be an empty list, so None is returned in case of an error.
+			The returned result is a list or tuples of (direct URLs, target resource). This could be an empty list, so None is returned in case of an error.
 		"""
 
 		if not uris:
 			return []
 		uris = uris if isinstance(uris, list) else [ uris ]	# make a list out of it even when it is a single value
-		result = []
+		result:list[Tuple[str, Resource]] = []
 		for url in uris:
 			if not url:
 				continue
@@ -1240,7 +1240,7 @@ class RequestManager(object):
 
 			# A direct url already, append it directly
 			if Utils.isURL(url):	
-				result.append(url)
+				result.append((url, None))
 			else:					
 				
 				# Assume that this is a resource ID
@@ -1265,8 +1265,8 @@ class RequestManager(object):
 				# Is the target request reachable?
 				if resource.rr:
 					# Add the poa list if present
-					if (poa := resource.poa) and isinstance(poa, list):	
-						result += poa
+					if (poa := resource.poa) and isinstance(poa, list):
+						result += [ (u, resource) for u in poa ]
 					else:
 						L.isWarn and L.logWarn(f'Target resource: {resource.ri} has no poa: {resource.ri}, ignoring: {url}')
 						continue
@@ -1275,7 +1275,7 @@ class RequestManager(object):
 				# It will be handled later when checking for polling channel
 				else:	
 					L.isDebug and L.logDebug(f'Resource: {resource.ri} with no request reachability')
-					result.append(resource.ri)
+					result.append((resource.ri, resource))
 
 		return result
 

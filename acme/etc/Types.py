@@ -443,36 +443,36 @@ ResponseStatusCode._httpStatusCodes = {																		# type: ignore
 		ResponseStatusCode.deleted 									: HTTPStatus.OK,						# DELETED
 		ResponseStatusCode.updated 									: HTTPStatus.OK,						# UPDATED
 		ResponseStatusCode.created									: HTTPStatus.CREATED,					# CREATED
-		ResponseStatusCode.accepted 									: HTTPStatus.ACCEPTED, 					# ACCEPTED
+		ResponseStatusCode.accepted 								: HTTPStatus.ACCEPTED, 					# ACCEPTED
 		ResponseStatusCode.acceptedNonBlockingRequestSynch 			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTSYNCH
 		ResponseStatusCode.acceptedNonBlockingRequestAsynch			: HTTPStatus.ACCEPTED,					# ACCEPTED FOR NONBLOCKINGREQUESTASYNCH
-		ResponseStatusCode.badRequest									: HTTPStatus.BAD_REQUEST,				# BAD REQUEST
+		ResponseStatusCode.badRequest								: HTTPStatus.BAD_REQUEST,				# BAD REQUEST
 		ResponseStatusCode.contentsUnacceptable						: HTTPStatus.BAD_REQUEST,				# NOT ACCEPTABLE
-		ResponseStatusCode.insufficientArguments 						: HTTPStatus.BAD_REQUEST,				# INSUFFICIENT ARGUMENTS
+		ResponseStatusCode.insufficientArguments 					: HTTPStatus.BAD_REQUEST,				# INSUFFICIENT ARGUMENTS
 		ResponseStatusCode.invalidArguments							: HTTPStatus.BAD_REQUEST,				# INVALID ARGUMENTS
-		ResponseStatusCode.maxNumberOfMemberExceeded					: HTTPStatus.BAD_REQUEST, 				# MAX NUMBER OF MEMBER EXCEEDED
+		ResponseStatusCode.maxNumberOfMemberExceeded				: HTTPStatus.BAD_REQUEST, 				# MAX NUMBER OF MEMBER EXCEEDED
 		ResponseStatusCode.groupMemberTypeInconsistent				: HTTPStatus.BAD_REQUEST,				# GROUP MEMBER TYPE INCONSISTENT
 		ResponseStatusCode.originatorHasNoPrivilege					: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS NO PRIVILEGE
 		ResponseStatusCode.invalidChildResourceType					: HTTPStatus.FORBIDDEN,					# INVALID CHILD RESOURCE TYPE
-		ResponseStatusCode.targetNotReachable							: HTTPStatus.FORBIDDEN,					# TARGET NOT REACHABLE
-		ResponseStatusCode.alreadyExists								: HTTPStatus.FORBIDDEN,					# ALREAD EXISTS
-		ResponseStatusCode.targetNotSubscribable						: HTTPStatus.FORBIDDEN,					# TARGET NOT SUBSCRIBABLE
+		ResponseStatusCode.targetNotReachable						: HTTPStatus.FORBIDDEN,					# TARGET NOT REACHABLE
+		ResponseStatusCode.alreadyExists							: HTTPStatus.FORBIDDEN,					# ALREAD EXISTS
+		ResponseStatusCode.targetNotSubscribable					: HTTPStatus.FORBIDDEN,					# TARGET NOT SUBSCRIBABLE
 		ResponseStatusCode.receiverHasNoPrivileges					: HTTPStatus.FORBIDDEN,					# RECEIVER HAS NO PRIVILEGE
 		ResponseStatusCode.securityAssociationRequired				: HTTPStatus.FORBIDDEN,					# SECURITY ASSOCIATION REQUIRED
-		ResponseStatusCode.subscriptionCreatorHasNoPrivilege			: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
-		ResponseStatusCode.subscriptionHostHasNoPrivilege				: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION HOST HAS NO PRIVILEGE
-		ResponseStatusCode.originatorHasAlreadyRegistered				: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS ALREADY REGISTERED
+		ResponseStatusCode.subscriptionCreatorHasNoPrivilege		: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION CREATOR HAS NO PRIVILEGE
+		ResponseStatusCode.subscriptionHostHasNoPrivilege			: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION HOST HAS NO PRIVILEGE
+		ResponseStatusCode.originatorHasAlreadyRegistered			: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS ALREADY REGISTERED
 		ResponseStatusCode.appRuleValidationFailed					: HTTPStatus.FORBIDDEN,					# APP RULE VALIDATION FAILED
-		ResponseStatusCode.requestTimeout								: HTTPStatus.FORBIDDEN,					# REQUEST TIMEOUT
+		ResponseStatusCode.requestTimeout							: HTTPStatus.FORBIDDEN,					# REQUEST TIMEOUT
 		ResponseStatusCode.notFound									: HTTPStatus.NOT_FOUND,					# NOT FOUND
 		ResponseStatusCode.operationNotAllowed						: HTTPStatus.METHOD_NOT_ALLOWED,		# OPERATION NOT ALLOWED
-		ResponseStatusCode.notAcceptable 								: HTTPStatus.NOT_ACCEPTABLE,			# NOT ACCEPTABLE
+		ResponseStatusCode.notAcceptable 							: HTTPStatus.NOT_ACCEPTABLE,			# NOT ACCEPTABLE
 		ResponseStatusCode.conflict									: HTTPStatus.CONFLICT,					# CONFLICT
 		ResponseStatusCode.unsupportedMediaType						: HTTPStatus.UNSUPPORTED_MEDIA_TYPE,	# UNSUPPORTED_MEDIA_TYPE
 		ResponseStatusCode.internalServerError 						: HTTPStatus.INTERNAL_SERVER_ERROR,		# INTERNAL SERVER ERROR
 		ResponseStatusCode.subscriptionVerificationInitiationFailed	: HTTPStatus.INTERNAL_SERVER_ERROR,		# SUBSCRIPTION_VERIFICATION_INITIATION_FAILED
-		ResponseStatusCode.releaseVersionNotSupported					: HTTPStatus.NOT_IMPLEMENTED,			# RELEASE_VERSION_NOT_SUPPORTED
-		ResponseStatusCode.notImplemented								: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
+		ResponseStatusCode.releaseVersionNotSupported				: HTTPStatus.NOT_IMPLEMENTED,			# RELEASE_VERSION_NOT_SUPPORTED
+		ResponseStatusCode.notImplemented							: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
 		
 		ResponseStatusCode.UNKNOWN									: HTTPStatus.NOT_IMPLEMENTED,			# NOT IMPLEMENTED
 
