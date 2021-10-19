@@ -227,7 +227,7 @@ class Validator(object):
 		
 		# Check number of elements == 1
 		if len(pc.keys()) != 1:	# TODO is this correct?
-			return Result(status=False, rsc=RC.badRequest, dbg=f'primitive content shall only contain one element')
+			return Result(status=False, rsc=RC.badRequest, dbg=f'primitive content shall contain exactly one element')
 		
 		name,obj = list(pc.items())[0]
 		if ap := self.complexAttributePolicies.get(name):

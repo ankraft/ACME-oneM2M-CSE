@@ -125,7 +125,7 @@ class TestPCH_PCU(unittest.TestCase):
 			time.sleep(sentRequestExpirationDelay)
 
 
-	def _pollForRequest(self, originator:str, rcs:RC, isCreate:bool=False, isDelete:bool=False) -> None:
+	def _pollForRequest(self, originator:str, rcs:RC, isCreate:bool=False, isDelete:bool=False, emptyAnswer:bool=False, wrongAnswer:bool=False) -> None:
 		r, rsc = RETRIEVE(pcu2URL, originator)	# polling request
 		self.assertEqual(rsc, rcs, r)
 		if rcs in [ RC.originatorHasNoPrivilege, RC.requestTimeout ]:
@@ -153,12 +153,28 @@ class TestPCH_PCU(unittest.TestCase):
 				'rsc' : int(RC.OK)
 			}
 		}
+		if emptyAnswer:
+			dct = {}
+		if wrongAnswer:
+			dct = {
+				'm2m:rqp' : {
+					'fr'  : originator,
+					'rqi' : rqi,
+					'rvi' : RVI,
+					'rsc' : int(RC.OK)
+				}
+			}
 		r, rsc = NOTIFY(pcu2URL, originator, data=dct)
 	
 
-	def _pollWhenCreating(self, originator:str, rcs:RC=RC.OK) -> Thread:
+	def _pollWhenCreating(self, originator:str, rcs:RC=RC.OK, emptyAnswer:bool=False, wrongAnswer:bool=False) -> Thread:
 		# Start polling thread and wait moment before sending next request
-		thread = Thread(target=self._pollForRequest, kwargs={'originator':originator, 'rcs':rcs, 'isCreate':True})
+		thread = Thread(target=self._pollForRequest, kwargs={'originator':originator, 
+															 'rcs':rcs,
+															 'isCreate':True,
+															 'emptyAnswer':emptyAnswer,
+															 'wrongAnswer':wrongAnswer
+															})
 		thread.start()
 		time.sleep(waitBetweenPollingRequests)	# Wait for delete notification
 		return thread
@@ -241,7 +257,7 @@ class TestPCH_PCU(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createSUB2underCNTAnswerWithWrongTarget(self) -> None:
+	def test_createSUB2underCNTAnswerWithWrongTargetFail(self) -> None:
 		"""	CREATE <SUB> under <CNT> with <PCH> (wrong target) -> Fail"""
 
 		dct = 	{ 'm2m:sub' : { 
@@ -255,6 +271,44 @@ class TestPCH_PCU(unittest.TestCase):
 		thread = self._pollWhenCreating(TestPCH_PCU.originator2, rcs=RC.requestTimeout)
 		r, rsc = CREATE(cntURL, TestPCH_PCU.originator2, T.SUB, dct)
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
+		self._waitForPolling(thread)
+		# No <sub> created
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSUB2underCNTAnswerWithEmptyAnswerFail(self) -> None:
+		"""	CREATE <SUB> under <CNT> with <PCH> (empüty answer) -> Fail"""
+
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'net': [ NET.createDirectChild ]
+					},
+					'nu': [ TestPCH_PCU.originator2 ],
+					'su': TestPCH_PCU.originator2
+				}}
+		thread = self._pollWhenCreating(TestPCH_PCU.originator2, emptyAnswer=True)
+		r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.subscriptionVerificationInitiationFailed, r)
+		self._waitForPolling(thread)
+		# No <sub> created
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSUB2underCNTAnswerWithWrongAnswerFail(self) -> None:
+		"""	CREATE <SUB> under <CNT> with <PCH> (wrong answer) -> Fail"""
+
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'net': [ NET.createDirectChild ]
+					},
+					'nu': [ TestPCH_PCU.originator2 ],
+					'su': TestPCH_PCU.originator2
+				}}
+		thread = self._pollWhenCreating(TestPCH_PCU.originator2, wrongAnswer=True)
+		r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.subscriptionVerificationInitiationFailed, r)
 		self._waitForPolling(thread)
 		# No <sub> created
 
@@ -294,10 +348,7 @@ class TestPCH_PCU(unittest.TestCase):
 
 # TODO reply with notify but different originator -> Fail
 
-# TODO return a wrong response 
-# TODO return a empty response
 
-# TODO retrieve via PCU *after* delete
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
@@ -315,7 +366,9 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestPCH_PCU('test_createSUBunderCNT'))
 	suite.addTest(TestPCH_PCU('test_DeleteSUBunderCNT'))
 	suite.addTest(TestPCH_PCU('test_accesPCUwithWrongOriginator'))
-	suite.addTest(TestPCH_PCU('test_createSUB2underCNTAnswerWithWrongTarget'))
+	suite.addTest(TestPCH_PCU('test_createSUB2underCNTAnswerWithWrongTargetFail'))
+	suite.addTest(TestPCH_PCU('test_createSUB2underCNTAnswerWithEmptyAnswerFail'))
+	suite.addTest(TestPCH_PCU('test_createSUB2underCNTAnswerWithWrongAnswerFail'))
 
 	# TODO suite.addTest(TestPCH_PCU('test_createNotificationDoPolling'))
 

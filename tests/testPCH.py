@@ -167,7 +167,7 @@ class TestPCH(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deletePCHwrongOriginator(self) -> None:
+	def test_deletePCHwrongOriginatorFail(self) -> None:
 		""" Delete <PCH> with wrong originator -> Fail """
 		_, rsc = DELETE(pchURL, 'wrong')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
@@ -178,6 +178,14 @@ class TestPCH(unittest.TestCase):
 		""" Delete <PCH> with correct originator """
 		_, rsc = DELETE(pchURL, self.originator)
 		self.assertEqual(rsc, RC.deleted)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrievePCUAfterDeleteFail(self) -> None:
+		""" Retrieve <PCU> after delete -> Fail """
+		_, rsc = RETRIEVE(pcuURL, self.originator)
+		self.assertEqual(rsc, RC.notFound)
+
 
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
@@ -194,8 +202,11 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestPCH('test_attributesPCH'))
 
 	# delete tests
-	suite.addTest(TestPCH('test_deletePCHwrongOriginator'))
+	suite.addTest(TestPCH('test_deletePCHwrongOriginatorFail'))
 	suite.addTest(TestPCH('test_deletePCH'))
+
+	suite.addTest(TestPCH('test_retrievePCUAfterDeleteFail'))
+
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

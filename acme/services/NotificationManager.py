@@ -247,7 +247,9 @@ class NotificationManager(object):
 					'sur' : Utils.fullRI(ri)
 				}
 			}
-			return self._sendRequest(url, deletionNotification, targetOriginator=targetResource.getOriginator())
+			return self._sendRequest(	url, 
+										deletionNotification, 
+										targetOriginator=targetResource.getOriginator() if targetResource else None)
 
 		return self._sendNotification([ (uri, targetResource) ], sender) if uri else True	# Ignore if the uri is None
 

@@ -932,8 +932,8 @@ class RequestManager(object):
 		ct = ContentSerializationType.getType(mediaType, default=CSE.defaultSerialization)
 		if data:
 			try:
-				if not (dct := RequestUtils.deserializeData(data, ct)):
-					return Result(rsc=RC.unsupportedMediaType, dbg=f'Unsupported media type for content-type: {ct}', status=False)
+				if (dct := RequestUtils.deserializeData(data, ct)) is None:
+					return Result(rsc=RC.unsupportedMediaType, dbg=f'Unsupported media type for content-type: {ct.name}', status=False)
 			except Exception as e:
 				L.isWarn and L.logWarn('Bad request (malformed content?)')
 				return Result(rsc=RC.badRequest, dbg=f'Malformed content? {str(e)}', status=False)
@@ -1020,7 +1020,7 @@ class RequestManager(object):
 					return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
 				if _ts < DateUtils.utcTime():
 					L.logDebug(dbg := 'Request timeout')
-					return Result(request=cseRequest, rsc=RC.requestTimeout, dbg=dbg)
+					return Result(status=False, request=cseRequest, rsc=RC.requestTimeout, dbg=dbg)
 				cseRequest.headers.requestExpirationTimestamp = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
 
 			# RSET - resultExpirationTimestamp
@@ -1030,7 +1030,7 @@ class RequestManager(object):
 					return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
 				if _ts < DateUtils.utcTime():
 					L.logDebug(dbg := 'Result timeout')
-					return Result(request=cseRequest, rsc=RC.requestTimeout, dbg=dbg)
+					return Result(status=False, request=cseRequest, rsc=RC.requestTimeout, dbg=dbg)
 				cseRequest.headers.resultExpirationTimestamp = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
 
 			# OET - operationExecutionTime
@@ -1045,7 +1045,7 @@ class RequestManager(object):
 				L.logDebug(dbg := f'Release Version Indicator is missing in request, falling back to RVI=\'1\'. But Release Version \'1\' is not supported. Use RVI with one of {C.supportedReleaseVersions}.')
 				return Result(rsc=RC.releaseVersionNotSupported, request=cseRequest, dbg=dbg, status=False)
 			if rvi not in C.supportedReleaseVersions:
-				return Result(rsc=RC.releaseVersionNotSupported, request=cseRequest, dbg=f'Release version unsupported: {rvi}')
+				return Result(status=False, rsc=RC.releaseVersionNotSupported, request=cseRequest, dbg=f'Release version unsupported: {rvi}')
 			cseRequest.headers.releaseVersionIndicator = rvi	
 
 			# VSI - vendorInformation
@@ -1166,6 +1166,7 @@ class RequestManager(object):
 			cseRequest.pc = cseRequest.originalRequest.get('pc')	# The reqeust.pc contains the primitive content
 			if not (res := CSE.validator.validatePrimitiveContent(cseRequest.pc)).status:
 				L.isDebug and L.logDebug(res.dbg)
+				res.request = cseRequest
 				return res
 
 

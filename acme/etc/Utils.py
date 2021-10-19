@@ -252,7 +252,7 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
 			else:
 				return None, None, None
 
-	# Absolute
+	# Absolute (2 first elements are /)
 	elif lvl == 2: 								
 		# L.logDebug("Absolute")
 		if idsLen < 2:
