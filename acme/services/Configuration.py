@@ -32,15 +32,16 @@ class Configuration(object):
 		argsLoglevel			= args.loglevel if args and 'loglevel' in args else None
 		argsDBReset				= args.dbreset if args and 'dbreset' in args else False
 		argsDBStorageMode		= args.dbstoragemode if args and 'dbstoragemode' in args else None
-		argsImportDirectory		= args.importdirectory if args and 'importdirectory' in args else None
-		argsRemoteCSEEnabled	= args.remotecseenabled if args and 'remotecseenabled' in args else None
-		argsValidationEnabled	= args.validationenabled if args and 'validationenabled' in args else None
-		argsStatisticsEnabled	= args.statisticsenabled if args and 'statisticsenabled' in args else None
-		argsRunAsHttps			= args.https if args and 'https' in args else None
-		argsRemoteConfigEnabled	= args.remoteconfigenabled if args and 'remoteconfigenabled' in args else None
-		argsListenIF			= args.listenif if args and 'listenif' in args else None
-		argsHttpAddress			= args.httpaddress if args and 'httpaddress' in args else None
 		argsHeadless			= args.headless if args and 'headless' in args else False
+		argsHttpAddress			= args.httpaddress if args and 'httpaddress' in args else None
+		argsImportDirectory		= args.importdirectory if args and 'importdirectory' in args else None
+		argsListenIF			= args.listenif if args and 'listenif' in args else None
+		argsMqttEnabled			= args.mqttenabled if args and 'mqttenabled' in args else None
+		argsRemoteCSEEnabled	= args.remotecseenabled if args and 'remotecseenabled' in args else None
+		argsRemoteConfigEnabled	= args.remoteconfigenabled if args and 'remoteconfigenabled' in args else None
+		argsRunAsHttps			= args.https if args and 'https' in args else None
+		argsStatisticsEnabled	= args.statisticsenabled if args and 'statisticsenabled' in args else None
+		argsValidationEnabled	= args.validationenabled if args and 'validationenabled' in args else None
 
 		# own print function that takes the headless setting into account
 		def _print(out:str) -> None:
@@ -335,16 +336,17 @@ class Configuration(object):
 		else:
 			Configuration._configuration['logging.level'] = LogLevel.DEBUG
 
-		if argsDBReset is True:		Configuration._configuration['db.resetOnStartup'] = True									# Override DB reset from command line
-		if argsDBStorageMode:		Configuration._configuration['db.inMemory'] = argsDBStorageMode == 'memory'					# Override DB storage mode from command line
-		if argsImportDirectory:		Configuration._configuration['cse.resourcesPath'] = argsImportDirectory						# Override import directory from command line
-		if argsRemoteCSEEnabled:	Configuration._configuration['cse.enableRemoteCSE'] = argsRemoteCSEEnabled					# Override remote CSE enablement
-		if argsValidationEnabled:	Configuration._configuration['cse.enableValidation'] = argsValidationEnabled				# Override validation enablement
-		if argsStatisticsEnabled:	Configuration._configuration['cse.statistics.enable'] = argsStatisticsEnabled				# Override statistics enablement
-		if argsRunAsHttps:			Configuration._configuration['http.security.useTLS'] = argsRunAsHttps						# Override useTLS
-		if argsRemoteConfigEnabled:	Configuration._configuration['http.enableRemoteConfiguration'] = argsRemoteConfigEnabled	# Override remote/httpConfiguration
-		if argsListenIF:			Configuration._configuration['http.listenIF'] = argsListenIF								# Override binding network interface
-		if argsHttpAddress:			Configuration._configuration['http.address'] = argsHttpAddress								# Override server http address
+		if argsDBReset is True:					Configuration._configuration['db.resetOnStartup'] = True									# Override DB reset from command line
+		if argsDBStorageMode is not None:		Configuration._configuration['db.inMemory'] = argsDBStorageMode == 'memory'					# Override DB storage mode from command line
+		if argsHttpAddress is not None:			Configuration._configuration['http.address'] = argsHttpAddress								# Override server http address
+		if argsImportDirectory is not None:		Configuration._configuration['cse.resourcesPath'] = argsImportDirectory						# Override import directory from command line
+		if argsListenIF is not None:			Configuration._configuration['http.listenIF'] = argsListenIF								# Override binding network interface
+		if argsMqttEnabled is not None:			Configuration._configuration['mqtt.enable'] = argsMqttEnabled								# Override mqtt enable
+		if argsRemoteConfigEnabled is not None:	Configuration._configuration['http.enableRemoteConfiguration'] = argsRemoteConfigEnabled	# Override remote/httpConfiguration
+		if argsRemoteCSEEnabled is not None:	Configuration._configuration['cse.enableRemoteCSE'] = argsRemoteCSEEnabled					# Override remote CSE enablement
+		if argsRunAsHttps is not None:			Configuration._configuration['http.security.useTLS'] = argsRunAsHttps						# Override useTLS
+		if argsStatisticsEnabled is not None:	Configuration._configuration['cse.statistics.enable'] = argsStatisticsEnabled				# Override statistics enablement
+		if argsValidationEnabled is not None:	Configuration._configuration['cse.enableValidation'] = argsValidationEnabled				# Override validation enablement
 
 		if argsHeadless:
 			Configuration._configuration['logging.enableScreenLogging'] = False

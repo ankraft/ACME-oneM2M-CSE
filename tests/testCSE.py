@@ -88,14 +88,14 @@ class TestCSE(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteCSE(self) -> None:
+	def test_deleteCSEFail(self) -> None:
 		"""	Delete <CB> -> Fail """
 		_, rsc = DELETE(cseURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.operationNotAllowed)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCSE(self) -> None:
+	def test_updateCSEFail(self) -> None:
 		"""	Update <CB> -> Fail """
 		dct = 	{ 'm2m:cse' : {
 					'lbl' : [ 'aTag' ]
@@ -111,8 +111,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCSE('test_attributesCSE'))
 	suite.addTest(TestCSE('test_attributeCSEctm'))
 	suite.addTest(TestCSE('test_CSESupportedResourceTypes'))
-	suite.addTest(TestCSE('test_deleteCSE'))
-	suite.addTest(TestCSE('test_updateCSE'))
+	suite.addTest(TestCSE('test_deleteCSEFail'))
+	suite.addTest(TestCSE('test_updateCSEFail'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)

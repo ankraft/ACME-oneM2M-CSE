@@ -24,21 +24,25 @@ def parseArgs() -> argparse.Namespace:
 	parser.add_argument('--config', action='store', dest='configfile', default=C.defaultConfigFile, metavar='<filename>', help='specify the configuration file')
 
 	# two mutual exlcusive arguments
-	groupRemoteCSE = parser.add_mutually_exclusive_group()
-	groupRemoteCSE.add_argument('--http', action='store_false', dest='http', default=None, help='run CSE with http server')
-	groupRemoteCSE.add_argument('--https', action='store_true', dest='https', default=None, help='run CSE with https server')
+	groupEnableHttp = parser.add_mutually_exclusive_group()
+	groupEnableHttp.add_argument('--http', action='store_false', dest='http', default=None, help='run CSE with http server')
+	groupEnableHttp.add_argument('--https', action='store_true', dest='https', default=None, help='run CSE with https server')
+
+	groupEnableMqtt = parser.add_mutually_exclusive_group()
+	groupEnableMqtt.add_argument('--mqtt', action='store_true', dest='mqttenabled', default=None, help='enable mqtt binding')
+	groupEnableMqtt.add_argument('--no-mqtt', action='store_false', dest='mqttenabled', default=None, help='disable mqtt binding')
 
 	groupRemoteCSE = parser.add_mutually_exclusive_group()
 	groupRemoteCSE.add_argument('--remote-cse', action='store_true', dest='remotecseenabled', default=None, help='enable remote CSE connections')
 	groupRemoteCSE.add_argument('--no-remote-cse', action='store_false', dest='remotecseenabled', default=None, help='disable remote CSE connections')
 
-	groupRemoteCSE = parser.add_mutually_exclusive_group()
-	groupRemoteCSE.add_argument('--statistics', action='store_true', dest='statisticsenabled', default=None, help='enable collecting CSE statistics')
-	groupRemoteCSE.add_argument('--no-statistics', action='store_false', dest='statisticsenabled', default=None, help='disable collecting CSE statistics')
+	groupEnableStats = parser.add_mutually_exclusive_group()
+	groupEnableStats.add_argument('--statistics', action='store_true', dest='statisticsenabled', default=None, help='enable collecting CSE statistics')
+	groupEnableStats.add_argument('--no-statistics', action='store_false', dest='statisticsenabled', default=None, help='disable collecting CSE statistics')
 
-	groupRemoteCSE = parser.add_mutually_exclusive_group()
-	groupRemoteCSE.add_argument('--validation', action='store_true', dest='validationenabled', default=None, help='enable attributes and arguments validation')
-	groupRemoteCSE.add_argument('--no-validation', action='store_false', dest='validationenabled', default=None, help='disable attributes and arguments validation')
+	groupEnableValidation = parser.add_mutually_exclusive_group()
+	groupEnableValidation.add_argument('--validation', action='store_true', dest='validationenabled', default=None, help='enable attributes and arguments validation')
+	groupEnableValidation.add_argument('--no-validation', action='store_false', dest='validationenabled', default=None, help='disable attributes and arguments validation')
 
 	groupRemoteConfig = parser.add_mutually_exclusive_group()
 	groupRemoteConfig.add_argument('--remote-configuration', action='store_true', dest='remoteconfigenabled', default=None, help='enable http remote configuration endpoint')
