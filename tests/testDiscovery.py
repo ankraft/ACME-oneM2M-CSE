@@ -579,7 +579,7 @@ class TestDiscovery(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl/rrf'))
 		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 2)
 		cnt1 = f'/{aeRN}/{cntRN}'
-		cnt2 = '/{aeRN}/{cnt2RN}'
+		cnt2 = f'/{aeRN}/{cnt2RN}'
 		self.assertFalse(findXPath(r, 'm2m:rrl/rrf/{0}/val').endswith(cnt1) or findXPath(r, 'm2m:rrl/rrf/{0}/val').endswith(cnt2))
 		self.assertFalse(findXPath(r, 'm2m:rrl/rrf/{1}/val').endswith(cnt1) or findXPath(r, 'm2m:rrl/rrf/{1}/val').endswith(cnt2))
 

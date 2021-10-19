@@ -406,6 +406,9 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 	if (rp := urlquery.get('rp')):
 		req['rp'] = rp[0]	# only first rp
 		del urlquery['rp']
+	if (rp := urlquery.get('drt')):
+		req['drt'] = int(rp[0])	# only first rp
+		del urlquery['drt']
 	
 	# FilterCriteria
 	if (fu := urlquery.get('fu')):

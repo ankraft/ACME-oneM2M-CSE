@@ -1052,21 +1052,19 @@ class RequestManager(object):
 			if (vsi := gget(cseRequest.originalRequest, 'vsi', greedy=False)):
 				cseRequest.headers.vendorInformation = vsi	
 
+			# DRT - Desired Identifier Result Type
+			cseRequest.args.drt = DesiredIdentifierResultType(gget(cseRequest.originalRequest, 'drt', DesiredIdentifierResultType.structured, greedy=False))	# 1=strucured, 2=unstructured
+
 			#
 			# Transfer filterCriteria: handling, conditions and attributes
 			#
 
-			cseRequest.args = RequestArguments()
 			fc = deepcopy(cseRequest.originalRequest.get('fc'))	# copy because we will greedy consume attributes here
 
 			# FU - Filter Usage
 			cseRequest.args.fu = FilterUsage(gget(fc, 'fu', FilterUsage.conditionalRetrieval))
 			if cseRequest.args.fu == FilterUsage.discoveryCriteria and cseRequest.op == Operation.RETRIEVE:	# correct operation if necessary
 				cseRequest.op = Operation.DISCOVERY
-
-			# DRT - Desired Identifier Result Type
-			cseRequest.args.drt = DesiredIdentifierResultType(gget(fc, 'drt', DesiredIdentifierResultType.structured))	# 1=strucured, 2=unstructured
-
 
 			# FO - Filter Operation
 			cseRequest.args.fo = FilterOperation(gget(fc, 'fo', FilterOperation.AND))
@@ -1140,7 +1138,6 @@ class RequestManager(object):
 				cseRequest.args.rp = None
 				cseRequest.args.rpts = None
 
-
 			#
 			#	Discovery and FilterCriteria
 			#
@@ -1176,7 +1173,6 @@ class RequestManager(object):
 		except ValueError as e:
 			L.logWarn(dbg := f'Error validating attribute/parameter: {str(e)}')
 			return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=dbg)
-
 
 		return Result(status=True, rsc=cseRequest.rsc, request=cseRequest, data=cseRequest.pc)
 
