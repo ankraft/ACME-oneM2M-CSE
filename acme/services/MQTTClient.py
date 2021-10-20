@@ -401,6 +401,7 @@ class MQTTClient(object):
 		preq = prepareMqttRequest(req, originator=originator, ty=ty, op=operation)
 		topic = u.path
 		pathSplit = u.path.split('/')
+		ct = ct if ct else CSE.defaultSerialization
 
 		if targetOriginator:
 			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(Utils.toSPRelative(targetOriginator))}/{ct.name.lower()}'
