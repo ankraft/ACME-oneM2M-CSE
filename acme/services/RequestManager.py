@@ -766,7 +766,7 @@ class RequestManager(object):
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
-			if not ct and not (ct := RequestUtils.determineSerialization(url, csz), CSE.defaultSerialization):
+			if not ct and not (ct := RequestUtils.determineSerialization(url, csz, CSE.defaultSerialization)):
 				continue
 
 			targetOriginator = tor if not targetOriginator else targetOriginator

@@ -59,7 +59,7 @@ def toHttpUrl(url:str) -> str:
 	return url
 
 
-def determineSerialization(url:str, csz:list[str]=None, defaultSerialization:ContentSerializationType=None) -> ContentSerializationType:
+def determineSerialization(url:str, csz:list[str], defaultSerialization:ContentSerializationType) -> ContentSerializationType:
 	"""	Determine the type of serialization for a notification from either the `url`'s `ct` query parameter,
 		or the given list of `csz`(contentSerializations, attribute of a target AE/CSE), or the CSE's default serialization.
 	"""
