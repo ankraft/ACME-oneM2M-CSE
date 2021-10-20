@@ -350,12 +350,15 @@ class HttpServer(object):
 		return content.decode('utf-8') if ct == ContentSerializationType.JSON else TextTools.toHex(content)
 
 
-	def sendHttpRequest(self, operation:Operation, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, isForward:bool=False) -> Result:	 # type: ignore[type-arg]
+	def sendHttpRequest(self, operation:Operation, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, raw:bool=False) -> Result:	 # type: ignore[type-arg]
 		"""	Send an http request.
 		
 			The result is returned in *Result.data*.
 		"""
 
+		# TODO handle raw data?
+
+		
 		# Set the request method
 		method:Callable = self.operation2method[operation]
 

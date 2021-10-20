@@ -898,6 +898,7 @@ class RequestType(ACMEIntEnum):
 	RESPONSE 						= auto()
 	NOTSET	 						= auto()
 
+
 @dataclass
 class RequestArguments:
 	fu:FilterUsage 					= FilterUsage.conditionalRetrieval
@@ -910,6 +911,7 @@ class RequestArguments:
 	handling:Conditions 			= field(default_factory=dict)
 	conditions:Conditions 			= field(default_factory=dict)
 	attributes:Parameters 			= field(default_factory=dict)
+
 
 @dataclass
 class RequestHeaders:

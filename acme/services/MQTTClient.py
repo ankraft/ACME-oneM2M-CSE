@@ -15,7 +15,7 @@ from copy import deepcopy
 from threading import Lock
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType, ResourceTypes, Result, Parameters, ResponseStatusCode as RC, ResourceTypes as T
+from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes, Result, Parameters, ResponseStatusCode as RC, ResourceTypes as T
 from ..etc import Utils as Utils, DateUtils as DateUtils, RequestUtils as RequestUtils
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
@@ -367,7 +367,7 @@ class MQTTClient(object):
 	#	Send MQTT requests
 	#
 
-	def sendMqttRequest(self, operation:Operation, url:str, originator:str, ty:T=None, data:JSON=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, isForward:bool=False) -> Result:	 # type: ignore[type-arg]
+	def sendMqttRequest(self, operation:Operation, url:str, originator:str, ty:T=None, data:JSON=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, raw:bool=False) -> Result:	 # type: ignore[type-arg]
 		"""	Sending a request via MQTT.
 		"""
 
@@ -398,7 +398,7 @@ class MQTTClient(object):
 
 		# construct the actual request and topic.
 		# Some work is needed here because we take a normal URL
-		preq = prepareMqttRequest(req, originator=originator, ty=ty, op=operation, isForward=isForward)
+		preq = prepareMqttRequest(req, originator=originator, ty=ty, op=operation, raw=raw)
 		topic = u.path
 		pathSplit = u.path.split('/')
 		ct = ct if ct else CSE.defaultSerialization
@@ -436,7 +436,7 @@ class MQTTClient(object):
 		
 		# Publish the request and wait for the response.
 		# Then return the response as result
-		logRequest(preq, topic, isResponse=False, isForward=isForward)
+		logRequest(preq, topic, isResponse=False)
 		mqttConnection.publish(topic, cast(bytes, cast(Tuple, preq.data)[1]))
 		response, responseTopic = self.waitForResponse(req.request.headers.requestIdentifier, self.requestTimeout)
 		logRequest(response, responseTopic, isResponse=True)
@@ -474,20 +474,21 @@ class MQTTClient(object):
 ##############################################################################
 
 
-def prepareMqttRequest(inResult:Result, originator:str=None, ty:T=None, op:Operation=None, isResponse:bool=False, isForward:bool=False) -> Result:
+def prepareMqttRequest(inResult:Result, originator:str=None, ty:T=None, op:Operation=None, isResponse:bool=False, raw:bool=False) -> Result:
 	"""	Prepare a new request for MQTT. Remember, a response is actually just a new request.
 	
 		The constructed and serialized content is returned in a tuple in `Result.data`: the content as a dictionary and the serialized content.
 	"""
-
 	result = RequestUtils.requestFromResult(inResult, originator, ty, op=op, isResponse=isResponse)
-	if isForward and (pc := cast(JSON, result.data).get('pc')):
+
+	# When raw: Replace the data with its own primitive content, the rest of the result is fine
+	if raw and (pc := cast(JSON, result.data).get('pc')):
 		result.data = pc
 	result.data = (result.data, cast(bytes, RequestUtils.serializeData(cast(JSON, result.data), result.request.ct)))
 	return result
 
 
-def logRequest(reqResult:Result, topic:str, isResponse:bool=False, isForward:bool=False) -> None:
+def logRequest(reqResult:Result, topic:str, isResponse:bool=False, raw:bool=False) -> None:
 	"""	Log a request. Make some adjustments, depending on the request or response type.
 	"""
 	prefix = f'<== MQTT Response (RSC: {reqResult.rsc})' if isResponse else f'MQTT Request ==>'
@@ -499,7 +500,7 @@ def logRequest(reqResult:Result, topic:str, isResponse:bool=False, isForward:boo
 			else:
 				body = f'\nBody: \n{TextTools.toHex(cast(bytes, cast(Tuple, reqResult.data)[1]))}\n=>\n{cast(Tuple, reqResult.data)[0]}'
 		elif reqResult.request.headers.contentType == ContentSerializationType.JSON or reqResult.request.ct == ContentSerializationType.JSON:
-			if (isResponse or isForward) and reqResult.data:
+			if (isResponse or raw) and reqResult.data:
 				bodyPrint = str(cast(Tuple, reqResult.data)[0])
 			else:
 				bodyPrint = str(reqResult.request.originalRequest)
