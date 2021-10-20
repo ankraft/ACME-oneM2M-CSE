@@ -221,7 +221,8 @@ class NotificationManager(object):
 		"""
 
 		def sender(url:str, targetResource:Resource) -> bool:
-			L.isDebug and L.logDebug(f'Sending verification request to: {url}, targetOriginator: {targetResource.getOriginator()}')
+			targetOriginator = targetResource.getOriginator() if targetResource else None
+			L.isDebug and L.logDebug(f'Sending verification request to: {url}, targetOriginator: {targetOriginator}')
 			verificationRequest = {
 				'm2m:sgn' : {
 					'vrq' : True,
@@ -229,7 +230,7 @@ class NotificationManager(object):
 				}
 			}
 			originator and Utils.setXPath(verificationRequest, 'm2m:sgn/cr', originator)
-			return self._sendRequest(url, verificationRequest, targetOriginator=targetResource.getOriginator(), noAccessIsError=True)
+			return self._sendRequest(url, verificationRequest, targetOriginator=targetOriginator, noAccessIsError=True)
 
 		return self._sendNotification([ (uri, targetResource) ], sender)
 
@@ -286,19 +287,15 @@ class NotificationManager(object):
 
 			# Check for batch notifications
 			if sub['bn']:
-
-
-				# TODO implement hasPCH()
-
-
 				if targetResource and targetResource.hasPCH():	# if the target resource has a PCH child resource then that will be the target later
 					url = targetResource.ri
 				return self._storeBatchNotification(url, sub, notificationRequest)
 			else:
-				return self._sendRequest(url, notificationRequest, targetOriginator=targetResource.getOriginator())
+				return self._sendRequest(url, notificationRequest, targetOriginator=targetResource.getOriginator() if targetResource else None)
 
 
-		result = self._sendNotification(sub['nus'], sender)	# ! This is not a <sub> resource, but the internal data structure, therefore 'nus
+		# result = self._sendNotification(sub['nus'], sender)	# ! This is not a <sub> resource, but the internal data structure, therefore 'nus
+		result = self._sendNotification(CSE.request.resolveURIs(sub['nus']), sender)	# ! This is not a <sub> resource, but the internal data structure, therefore 'nus
 
 		# Handle subscription expiration in case of a successful notification
 		if result and (exc := sub['exc']):
