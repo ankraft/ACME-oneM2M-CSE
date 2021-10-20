@@ -932,7 +932,7 @@ class CSERequest:
 	headers:RequestHeaders 			= field(default_factory=RequestHeaders)	# always initialize with a new(!) RequestHeaders object	
 	args:RequestArguments 			= field(default_factory=RequestArguments)
 	ct:ContentSerializationType		= None
-	originalArgs:Any 				= None	# Actually a MultiDict
+	originalHttpArgs:Any 			= None	# Actually a MultiDict
 	originalData:bytes				= None 	# The request original data
 	originalRequest:JSON			= None 	# The original request after dissection as a dictionary
 	pc:JSON 						= None	# The request's primitive content as a dictionary

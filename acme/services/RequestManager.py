@@ -543,8 +543,8 @@ class RequestManager(object):
 		"""
 		if not (url := self._getForwardURL(request.id)):
 			return Result(status=False, rsc=RC.notFound, dbg=f'forward URL not found for id: {request.id}')
-		if len(request.originalArgs) > 0:	# pass on other arguments, for discovery
-			url += '?' + urllib.parse.urlencode(request.originalArgs)
+		if request.originalHttpArgs is not None and len(request.originalHttpArgs) > 0:	# pass on other arguments, for discovery. Only http
+			url += '?' + urllib.parse.urlencode(request.originalHttpArgs)
 		return Result(status=True, data=url)
 
 
