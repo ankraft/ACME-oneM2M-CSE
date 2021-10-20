@@ -14,7 +14,7 @@ from threading import Lock
 from tinydb.utils import V
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import MissingData, Result, NotificationContentType, NotificationEventType, ResponseStatusCode as RC
+from ..etc.Types import ContentSerializationType, MissingData, Result, NotificationContentType, NotificationEventType, ResponseStatusCode as RC
 from ..etc.Types import JSON, Parameters
 from ..etc import Utils as Utils
 from ..services.Logging import Logging as L
@@ -230,7 +230,13 @@ class NotificationManager(object):
 				}
 			}
 			originator and Utils.setXPath(verificationRequest, 'm2m:sgn/cr', originator)
-			return self._sendRequest(url, verificationRequest, targetOriginator=targetOriginator, noAccessIsError=True)
+			
+			# Determine contentSerialization if possible
+			ct = None
+			if targetResource and (csz := targetResource.csz) is not None and len(csz) > 0:
+				ct = ContentSerializationType.to(csz[0])
+
+			return self._sendRequest(url, verificationRequest, targetOriginator=targetOriginator, noAccessIsError=True, ct=ct)
 
 		return self._sendNotification([ (uri, targetResource) ], sender)
 
@@ -248,9 +254,16 @@ class NotificationManager(object):
 					'sur' : Utils.fullRI(ri)
 				}
 			}
+
+			# Determine contentSerialization if possible
+			ct = None
+			if targetResource and (csz := targetResource.csz) is not None and len(csz) > 0:
+				ct = ContentSerializationType.to(csz[0])
+
 			return self._sendRequest(	url, 
 										deletionNotification, 
-										targetOriginator=targetResource.getOriginator() if targetResource else None)
+										targetOriginator=targetResource.getOriginator() if targetResource else None,
+										ct=ct)
 
 		return self._sendNotification([ (uri, targetResource) ], sender) if uri else True	# Ignore if the uri is None
 
@@ -263,7 +276,7 @@ class NotificationManager(object):
 		def sender(url:str, targetResource:Resource) -> bool:
 			"""	Sender callback function for normal subscription notifications
 			"""
-			L.isDebug and L.logDebug(f'Sending notification to: {url}, reason: {reason}')
+			L.isDebug and L.logDebug(f'Sending notification to: {url}, reason: {reason}, targetResource: {targetResource}')
 			notificationRequest = {
 				'm2m:sgn' : {
 					'nev' : {
@@ -285,13 +298,18 @@ class NotificationManager(object):
 			reason is not None 									and Utils.setXPath(notificationRequest, 'm2m:sgn/nev/net', reason)
 			data is not None 									and Utils.setXPath(notificationRequest, 'm2m:sgn/nev/rep', data)
 
+			# Determine contentSerialization if possible
+			ct = None
+			if targetResource and (csz := targetResource.csz) is not None and len(csz) > 0:
+				ct = ContentSerializationType.to(csz[0])
+
 			# Check for batch notifications
 			if sub['bn']:
 				if targetResource and targetResource.hasPCH():	# if the target resource has a PCH child resource then that will be the target later
 					url = targetResource.ri
 				return self._storeBatchNotification(url, sub, notificationRequest)
 			else:
-				return self._sendRequest(url, notificationRequest, targetOriginator=targetResource.getOriginator() if targetResource else None)
+				return self._sendRequest(url, notificationRequest, targetOriginator=targetResource.getOriginator() if targetResource else None, ct=ct)
 
 
 		# result = self._sendNotification(sub['nus'], sender)	# ! This is not a <sub> resource, but the internal data structure, therefore 'nus
@@ -329,13 +347,14 @@ class NotificationManager(object):
 		return True
 
 
-	def _sendRequest(self, uri:str, notificationRequest:JSON, parameters:Parameters=None, originator:str=None, targetOriginator:str=None, noAccessIsError:bool=False) -> bool:
+	def _sendRequest(self, uri:str, notificationRequest:JSON, parameters:Parameters=None, originator:str=None, targetOriginator:str=None, noAccessIsError:bool=False, ct:ContentSerializationType=None) -> bool:
 		"""	Actually send a Notification request.
 		"""
 		return CSE.request.sendNotifyRequest(	uri, 
 												originator if originator else CSE.cseCsi,
 												data=notificationRequest,
 												parameters=parameters,
+												ct=ct,
 												targetOriginator=targetOriginator,
 												noAccessIsError=noAccessIsError).status
 
