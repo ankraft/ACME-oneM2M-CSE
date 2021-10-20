@@ -424,7 +424,9 @@ class Dispatcher(object):
 		# Check resource creation
 		if not (rres := CSE.registration.checkResourceCreation(nresource, originator, parentResource)).status:
 			return rres.errorResult()
-		originator = cast(str, rres.data) 	# originator might have changed during this check. Result.data contains this new originator
+		# originator might have changed during this check. Result.data contains this new originator
+		originator = cast(str, rres.data) 					
+		request.headers.originator = originator	
 
 		# Create the resource. If this fails we deregister everything
 		if not (res := CSE.dispatcher.createResource(nresource, parentResource, originator)).resource:

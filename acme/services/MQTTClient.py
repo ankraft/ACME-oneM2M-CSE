@@ -134,7 +134,7 @@ class MQTTClientHandler(MQTTHandler):
 		def _sendResponse(result:Result) -> None:
 			"""	Send a response for a request.
 			"""
-			if (response := prepareMqttRequest(result)).status:
+			if (response := prepareMqttRequest(result, isResponse=True)).status:
 				topic = f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}'
 				logRequest(response, topic, isResponse=True)
 				if isinstance(cast(Tuple, response.data)[1], bytes):
@@ -409,9 +409,9 @@ class MQTTClient(object):
 			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(Utils.toSPRelative(originator))}/{ct.name.lower()}'
 
 		elif topic.startswith('///'):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[3])}/{ct.name.lower()}'
+			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[3])}/{ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif topic.startswith('//'):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[2])}/{ct.name.lower()}'
+			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[2])}/{ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif not topic.startswith('/oneM2M/') and len(topic) > 0 and topic[0] == '/':	# remove leading "/" if not /oneM2M
 			topic = topic[1:]
 		else:
@@ -474,13 +474,13 @@ class MQTTClient(object):
 ##############################################################################
 
 
-def prepareMqttRequest(inResult:Result, originator:str=None, ty:T=None, op:Operation=None) -> Result:
+def prepareMqttRequest(inResult:Result, originator:str=None, ty:T=None, op:Operation=None, isResponse:bool=False) -> Result:
 	"""	Prepare a new request for MQTT. Remember, a response is actually just a new request.
 	
 		The constructed and serialized content is returned in a tuple in `Result.data`: the content as a dictionary and the serialized content.
 	"""
 
-	result = RequestUtils.requestFromResult(inResult, originator, ty, op=op)
+	result = RequestUtils.requestFromResult(inResult, originator, ty, op=op, isResponse=isResponse)
 	result.data = (result.data, cast(bytes, RequestUtils.serializeData(cast(JSON, result.data), result.request.ct)))
 	return result
 
@@ -497,5 +497,6 @@ def logRequest(reqResult:Result, topic:str, isResponse:bool=False) -> None:
 			else:
 				body = f'\nBody: \n{TextTools.toHex(cast(bytes, cast(Tuple, reqResult.data)[1]))}\n=>\n{cast(Tuple, reqResult.data)[0]}'
 		elif reqResult.request.headers.contentType == ContentSerializationType.JSON or reqResult.request.ct == ContentSerializationType.JSON:
-			body = f'\nBody: {str(reqResult.data) if not isResponse else str(reqResult.request.originalRequest)}' 
+			# body = f'\nBody: {str(reqResult.data) if not isResponse else str(reqResult.request.originalRequest)}' 
+			body = f'\nBody: {str(reqResult.data) if isResponse and reqResult.data else str(reqResult.request.originalRequest)}' 
 	L.isDebug and L.logDebug(f'{prefix}: {topic}{body}')

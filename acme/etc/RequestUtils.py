@@ -102,7 +102,7 @@ def determineSerialization(url:str, csz:list[str]=None, defaultSerialization:Con
 	return defaultSerialization
 
 
-def requestFromResult(inResult:Result, originator:str=None, ty:T=None, op:Operation=None) -> Result:
+def requestFromResult(inResult:Result, originator:str=None, ty:T=None, op:Operation=None, isResponse:bool=False) -> Result:
 	"""	Convert a response request to a new *Result* object and create a new dictionary in *Result.data*
 		with the full Response structure. Recursively do this if the *embeddedRequest* is also
 		a full Request or Response.
@@ -111,14 +111,19 @@ def requestFromResult(inResult:Result, originator:str=None, ty:T=None, op:Operat
 
 	req:JSON = {}
 
+	# Assign the From and to of the request. An assigned originator has priority for this
 	if originator:
-		req['fr'] = originator
+		req['fr'] = CSE.cseCsi if isResponse else originator
+		req['to'] = inResult.request.id if inResult.request.id else originator
 	elif inResult.request.headers.originator:
-		req['fr'] = inResult.request.headers.originator
+		req['fr'] = CSE.cseCsi if isResponse else inResult.request.headers.originator
+		req['to'] = inResult.request.id if inResult.request.id else inResult.request.headers.originator    
 	else:
 		req['fr'] = CSE.cseCsi
+		req['to'] = inResult.request.id if inResult.request.id else CSE.cseCsi
 
-	req['to'] = inResult.request.id if inResult.request.id else inResult.request.headers.originator # else 'non-onem2m-entity'
+	# req['to'] = inResult.request.id if inResult.request.id else inResult.request.headers.originator # else 'non-onem2m-entity'
+
 	if inResult.request.headers.originatingTimestamp:
 		req['ot'] = inResult.request.headers.originatingTimestamp
 	if inResult.rsc and inResult.rsc != RC.UNKNOWN:

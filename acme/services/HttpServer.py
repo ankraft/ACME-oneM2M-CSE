@@ -442,7 +442,7 @@ class HttpServer(object):
 		#
 		#	Transform request to oneM2M request
 		#
-		outResult = RequestUtils.requestFromResult(result)
+		outResult = RequestUtils.requestFromResult(result, isResponse=True)
 
 		#
 		#	Transform oneM2M request to http message
