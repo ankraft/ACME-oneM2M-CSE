@@ -1124,7 +1124,7 @@ class RequestManager(object):
 			if (rt := gget(cseRequest.originalRequest, 'rt', greedy=False)) is not None: # rt is an int
 				cseRequest.args.rt = ResponseType(gget(rt, 'rtv', ResponseType.blockingRequest, greedy=False))
 				# TODO nu should only be set when responseType=non-blocking async
-				if nu := gget(rt, 'nu', greedy=False):
+				if (nu := gget(rt, 'nu', greedy=False)) is not None:
 					cseRequest.headers.responseTypeNUs = nu	#  TODO validate for url?
 
 
