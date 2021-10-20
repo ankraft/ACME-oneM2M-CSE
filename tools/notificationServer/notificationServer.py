@@ -161,12 +161,12 @@ class MQTTClientHandler(MQTTHandler):
 		console.print(f'Topic: {topic}')
 		topicArray	= topic.split('/')
 		if len(topicArray) > 4 and topicArray[-4] == 'req' and topicArray[-5] == 'oneM2M':
-			frm			= topicArray[-3]
-			to			= topicArray[-2]
+			_frm		= topicArray[-3]
+			_to			= topicArray[-2]
 			encoding	= topicArray[-1]
 		else:
-			frm 		= 'non-onem2m-entity'	
-			to 			= 'unknown'
+			_frm 		= 'non-onem2m-entity'	
+			_to 		= 'unknown'
 			encoding	= 'json'
 
 		# Print JSON
@@ -176,8 +176,8 @@ class MQTTClientHandler(MQTTHandler):
 							 'json', 
 							 theme='monokai',
 							 line_numbers=False))
-			to 	= jsn['to'] if 'to' in jsn else to
-			frm = jsn['fr'] if 'fr' in jsn else frm
+			to 	= jsn['to'] if 'to' in jsn else _to
+			frm = jsn['fr'] if 'fr' in jsn else _frm
 			responseData = cast(bytes, serializeData(_constructResponse(to, frm, jsn), ContentSerializationType.JSON))
 			console.print(responseData)
 
@@ -203,7 +203,8 @@ class MQTTClientHandler(MQTTHandler):
 		# TODO send a response
 
 		if responseData:
-			connection.publish(f'/oneM2M/resp{frm}/{to.lstrip("/").replace("/", ":")}/{encoding}', responseData)
+			# connection.publish(f'/oneM2M/resp{frm}/{to.lstrip("/").replace("/", ":")}/{encoding}', responseData)
+			connection.publish(f'/oneM2M/resp{_frm}/{_to}/{encoding}', responseData)
 
 
 class MQTTClient(object):
