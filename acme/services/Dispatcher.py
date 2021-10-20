@@ -311,8 +311,8 @@ class Dispatcher(object):
 				found += 1 if (c_us := conditions.get('us')) and (lt < c_us) else 0
 
 			if (st := r.st) is not None:	# st is an int
-				found += 1 if (c_sts := conditions.get('sts')) is not None and (str(st) > c_sts) else 0	# st is an int
-				found += 1 if (c_stb := conditions.get('stb')) is not None and (str(st) < c_stb) else 0
+				found += 1 if (c_sts := conditions.get('sts')) is not None and (st > c_sts) else 0	# st is an int
+				found += 1 if (c_stb := conditions.get('stb')) is not None and (st < c_stb) else 0
 
 			if et := r.et:
 				found += 1 if (c_exb := conditions.get('exb')) and (et < c_exb) else 0
