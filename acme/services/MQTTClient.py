@@ -403,9 +403,9 @@ class MQTTClient(object):
 		pathSplit = u.path.split('/')
 
 		if targetOriginator:
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(targetOriginator)}/{ct.name.lower()}'
+			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(Utils.toSPRelative(targetOriginator))}/{ct.name.lower()}'
 		elif not len(topic):
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(originator)}/{ct.name.lower()}'
+			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(Utils.toSPRelative(originator))}/{ct.name.lower()}'
 
 		elif topic.startswith('///'):
 			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[3])}/{ct.name.lower()}'
