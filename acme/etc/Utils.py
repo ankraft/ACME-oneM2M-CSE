@@ -506,6 +506,14 @@ def resourceDiff(old:Resource|JSON, new:Resource|JSON, modifiers:JSON=None) -> J
 	return res
 
 
+def resourceModifiedAttributes(old:Resource|JSON, new:Resource|JSON, requestPC:JSON, modifiers:JSON=None) -> JSON:
+	"""	Calculate the diff between a original resource and after it has been updated, and then remove the attributes
+		that are part of the update request. In other words: Return a dictionary of those attributes that have been
+		changed due in a CREATE or UPDATE request.
+	"""
+	return { k:v for k,v in resourceDiff(old, new, modifiers).items() if k not in requestPC or v != requestPC[k] }
+
+
 def getCSE() -> Result:
 	"""	Return the <CSEBase> resource.
 	"""

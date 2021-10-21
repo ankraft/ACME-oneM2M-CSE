@@ -564,7 +564,7 @@ class TestDiscovery(unittest.TestCase):
 		r, rsc = RETRIEVE(f'{aeURL}?rcn={int(RCN.childResourceReferences)}&ty={int(T.CNT)}&drt={int(DesiredIdentifierResultType.structured)}', TestDiscovery.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:rrl'))
-		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 2)
+		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 2, r)
 		cnt1 = f'/{aeRN}/{cntRN}'
 		cnt2 = f'/{aeRN}/{cnt2RN}'
 		self.assertTrue(findXPath(r, 'm2m:rrl/rrf/{0}/val').endswith(cnt1) or findXPath(r, 'm2m:rrl/rrf/{0}/val').endswith(cnt2))
@@ -648,6 +648,11 @@ class TestDiscovery(unittest.TestCase):
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNone(findXPath(r, 'm2m:cnt/mni'))
 		self.assertIsNone(findXPath(r, 'm2m:cnt/lbl'))
+		# test only some attributes the should be in the reply
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/st'))
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/ri'))
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/ct'))
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/lt'))
 
 
 	# Test UPDATE and RCN=9 (modifiedAttributes)
@@ -661,10 +666,8 @@ class TestDiscovery(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(f'{aeURL}/{cnt3RN}?rcn={int(RCN.modifiedAttributes)}', TestDiscovery.originator, dct)
 		self.assertEqual(rsc, RC.updated)
-		self.assertIsNotNone(findXPath(r, 'm2m:cnt/mni'))
-		self.assertEqual(findXPath(r, 'm2m:cnt/mni'), 23)
-		self.assertIsNotNone(findXPath(r, 'm2m:cnt/lbl'))
-		self.assertEqual(findXPath(r, 'm2m:cnt/lbl'), [ 'test' ])
+		self.assertIsNone(findXPath(r, 'm2m:cnt/mni'), r)
+		self.assertIsNone(findXPath(r, 'm2m:cnt/lbl'))
 		self.assertIsNotNone(findXPath(r, 'm2m:cnt/st'))
 		self.assertIsNotNone(findXPath(r, 'm2m:cnt/lt'))
 

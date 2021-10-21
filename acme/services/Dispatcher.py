@@ -443,7 +443,7 @@ class Dispatcher(object):
 		elif request.args.rcn == RCN.modifiedAttributes:
 			dictOrg = request.pc[tpe]
 			dictNew = res.resource.asDict()[tpe]
-			return Result(status=res.status, resource={ tpe : Utils.resourceDiff(dictOrg, dictNew) }, rsc=res.rsc, dbg=res.dbg)
+			return Result(status=res.status, resource={ tpe : Utils.resourceModifiedAttributes(dictOrg, dictNew, request.pc[tpe]) }, rsc=res.rsc, dbg=res.dbg)
 		elif request.args.rcn == RCN.hierarchicalAddress:
 			return Result(status=res.status, resource={ 'm2m:uri' : Utils.structuredPath(res.resource) }, rsc=res.rsc, dbg=res.dbg)
 		elif request.args.rcn == RCN.hierarchicalAddressAttributes:
@@ -557,9 +557,11 @@ class Dispatcher(object):
 			return res
 		elif request.args.rcn == RCN.modifiedAttributes:
 			dictNew = deepcopy(resource.dict)
-			# return only the diff. This includes those attributes that are updated with the same value. Luckily, 
-			# all key/values that are touched in the update request are in the resource's __modified__ variable.
-			return Result(status=res.status, resource={ tpe : Utils.resourceDiff(dictOrg, dictNew, modifiers=resource[Resource._modified]) }, rsc=res.rsc)
+			requestPC = request.pc[tpe]
+			# return only the modified attributes. This does only include those attributes that are updated differently, or are
+			# changed by the CSE, then from the original request. Luckily, all key/values that are touched in the update request
+			#  are in the resource's __modified__ variable.
+			return Result(status=res.status, resource={ tpe : Utils.resourceModifiedAttributes(dictOrg, dictNew, requestPC, modifiers=resource[Resource._modified]) }, rsc=res.rsc)
 		elif request.args.rcn == RCN.nothing:
 			return Result(status=res.status, rsc=res.rsc)
 		# TODO C.rcnDiscoveryResultReferences 

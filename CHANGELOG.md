@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Improved fallback and debug message of missing Release Version Indicator attribute in requests.
 - [CSE] Refactored project directory structure.
 - [CSE] Refactored validation to improve attribute policies and validation handling and extension. Policies are now defined by a definition file and assigned to each resource type.
+- [CSE] Changed rcn = modifiedAttributes to the improved definition in the spec: return only those modified attributes that where *not* in the original request, but were modified by the CSE as a result of the request.
 - [IMPORTING] Changed the file extension for &lt;flexContainer> attribute policies from ".ap" to ".fcp".
 - [RUNTIME] Due to the restructuring of the project structure the CSE must now be started like this: ```python3 -m acme```
 
