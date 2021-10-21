@@ -433,12 +433,18 @@ class MQTTClient(object):
 		if not mqttConnection.isConnected:
 			L.logWarn(dbg := f'Cannot connect to MQTT broker at: {mqttHost}:{mqttPort}')
 			return Result(status=False, rsc=RC.targetNotReachable, dbg=dbg)
-		
+
+		# determine the request identifier. In case it is raw content then try
+		# to take the rqi from there		
+		rqi = preq.request.headers.requestIdentifier
+		if raw and 'rqi' in data:
+			rqi = data['rqi']
+
 		# Publish the request and wait for the response.
 		# Then return the response as result
 		logRequest(preq, topic, isResponse=False)
 		mqttConnection.publish(topic, cast(bytes, cast(Tuple, preq.data)[1]))
-		response, responseTopic = self.waitForResponse(req.request.headers.requestIdentifier, self.requestTimeout)
+		response, responseTopic = self.waitForResponse(rqi, self.requestTimeout)
 		logRequest(response, responseTopic, isResponse=True)
 		return response
 
@@ -467,7 +473,7 @@ class MQTTClient(object):
 			return False
 			
 		if not DateUtils.waitFor(timeOut, _receivedResponse):
-			return Result(status=False, rsc=RC.targetNotReachable), None
+			return Result(status=False, rsc=RC.targetNotReachable, dbg='Target not reachable or timeout'), None
 		return resp, topic
 
 
@@ -501,7 +507,10 @@ def logRequest(reqResult:Result, topic:str, isResponse:bool=False, raw:bool=Fals
 				body = f'\nBody: \n{TextTools.toHex(cast(bytes, cast(Tuple, reqResult.data)[1]))}\n=>\n{cast(Tuple, reqResult.data)[0]}'
 		elif reqResult.request.headers.contentType == ContentSerializationType.JSON or reqResult.request.ct == ContentSerializationType.JSON:
 			if (isResponse or raw) and reqResult.data:
-				bodyPrint = str(cast(Tuple, reqResult.data)[0])
+				if isinstance(reqResult.data, tuple):
+					bodyPrint = str(cast(Tuple, reqResult.data)[0])
+				else:
+					bodyPrint = str(reqResult.data)
 			else:
 				bodyPrint = str(reqResult.request.originalRequest)
 			# body = f'\nBody: {str(reqResult.data) if not isResponse else str(reqResult.request.originalRequest)}' 
