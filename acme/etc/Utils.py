@@ -309,7 +309,7 @@ def getIdFromOriginator(originator: str, idOnly: bool = False) -> str:
 def toSPRelative(originator:str) -> str:
 	"""	Add the CSI to an originator (if not already present).
 	"""
-	if not originator.startswith(CSE.cseCsi):
+	if not isSPRelative(originator):
 		return  f'{CSE.cseCsi}/{originator}'
 	return originator
 
