@@ -436,15 +436,15 @@ class MQTTClient(object):
 
 		# determine the request identifier. In case it is raw content then try
 		# to take the rqi from there		
-		rqi = preq.request.headers.requestIdentifier
-		if raw and 'rqi' in data:
-			rqi = data['rqi']
+		# rqi = preq.request.headers.requestIdentifier
+		# if raw and 'rqi' in data:
+		# 	rqi = data['rqi']
 
 		# Publish the request and wait for the response.
 		# Then return the response as result
 		logRequest(preq, topic, isResponse=False)
 		mqttConnection.publish(topic, cast(bytes, cast(Tuple, preq.data)[1]))
-		response, responseTopic = self.waitForResponse(rqi, self.requestTimeout)
+		response, responseTopic = self.waitForResponse(preq.request.headers.requestIdentifier, self.requestTimeout)
 		logRequest(response, responseTopic, isResponse=True)
 		return response
 
@@ -490,6 +490,9 @@ def prepareMqttRequest(inResult:Result, originator:str=None, ty:T=None, op:Opera
 	# When raw: Replace the data with its own primitive content, the rest of the result is fine
 	if raw and (pc := cast(JSON, result.data).get('pc')):
 		result.data = pc
+		if 'rqi' in pc:
+			result.request.headers.requestIdentifier = pc['rqi']
+
 	result.data = (result.data, cast(bytes, RequestUtils.serializeData(cast(JSON, result.data), result.request.ct)))
 	return result
 
