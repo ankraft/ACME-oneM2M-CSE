@@ -440,85 +440,110 @@ class RequestManager(object):
 
 	def handleTransitRetrieveRequest(self, request:CSERequest) -> Result:
 		""" Forward a RETRIEVE request to a remote CSE """
-		if not (res := self._constructForwardURL(request)).status:	# FIXME remove
-			return res
+		# if not (res := self._constructForwardURL(request)).status:	# FIXME remove
+		# 	return res
 	
 		# Convert "from" to SP-relative format in the request
 		# See TS-0001, 7.3.2.6, Forwarding
 		self._originatorToSPRelative(request)
 
-		L.isInfo and L.log(f'Forwarding RETRIEVE/DISCOVERY request to: {res.data}')
-		return self.sendRetrieveRequest(uri=cast(str, res.data),
+		# L.isDebug and L.logDebug(f'Forwarding RETRIEVE/DISCOVERY request to: {res.data}')
+		L.isDebug and L.logDebug(f'Forwarding RETRIEVE/DISCOVERY request to: {request.id}')
+		# return self.sendRetrieveRequest(uri=cast(str, res.data),
+		# 							    originator=request.headers.originator,
+		# 								data=request.originalData,
+		# 								isForward=True)
+		return self.sendRetrieveRequest(uri=cast(str, request.id),
 									    originator=request.headers.originator,
 										data=request.originalData,
-										raw=True)
+										isForward=True)
 
 
 	def handleTransitCreateRequest(self, request:CSERequest) -> Result:
 		""" Forward a CREATE request to a remote CSE. """
-		if not (res := self._constructForwardURL(request)).status:	# FIXME remove
-			return res
+		# if not (res := self._constructForwardURL(request)).status:
+		# 	return res
 
 		# Convert "from" to SP-relative format in the request
 		# See TS-0001, 7.3.2.6, Forwarding
 		self._originatorToSPRelative(request)
 
-		L.isInfo and L.log(f'Forwarding CREATE request to: {res.data}')
+		L.isDebug and L.logDebug(f'Forwarding CREATE request to: {request.id}')
+		# L.isInfo and L.log(f'Forwarding CREATE request to: {res.data}')
 		# L.logWarn(request)
 		# return self.sendCreateRequest(cast(str, res.data), request.headers.originator, data=request.originalData, ty=request.headers.resourceType)
-		return self.sendCreateRequest(uri=cast(str, res.data),
+		# return self.sendCreateRequest(uri=cast(str, res.data),
+									#   originator=request.headers.originator,
+									#   data=request.originalRequest,
+									#   ty=request.headers.resourceType,
+									#   raw=True)
+		return self.sendCreateRequest(uri=request.id,
 									  originator=request.headers.originator,
 									  data=request.originalRequest,
 									  ty=request.headers.resourceType,
-									  raw=True)
+									  isForward=True)
 
 
 	def handleTransitUpdateRequest(self, request:CSERequest) -> Result:
 		""" Forward an UPDATE request to a remote CSE. """
-		if not (res := self._constructForwardURL(request)).status:	# FIXME remove
-			return res
+		# if not (res := self._constructForwardURL(request)).status:	# FIXME remove
+		# 	return res
 
 		# Convert "from" to SP-relative format in the request
 		# See TS-0001, 7.3.2.6, Forwarding
 		self._originatorToSPRelative(request)
 
-		L.isInfo and L.log(f'Forwarding UPDATE request to: {res.data}')
-		return self.sendUpdateRequest(uri=cast(str, res.data),
+		# L.isDebug and L.logDebug(f'Forwarding UPDATE request to: {res.data}')
+		# return self.sendUpdateRequest(uri=cast(str, res.data),
+		# 							  originator=request.headers.originator,
+		# 							  data=request.originalData,
+		# 							  isForward=True)
+		L.isDebug and L.logDebug(f'Forwarding UPDATE request to: {request.id}')
+		return self.sendUpdateRequest(uri=cast(str, request.id),
 									  originator=request.headers.originator,
 									  data=request.originalData,
-									  raw=True)
-
+									  isForward=True)
 
 	def handleTransitDeleteRequest(self, request:CSERequest) -> Result:
 		""" Forward a DELETE request to a remote CSE. """
-		if not (res := self._constructForwardURL(request)).status:	# FIXME remove
-			return res
+		# if not (res := self._constructForwardURL(request)).status:	# FIXME remove
+		# 	return res
 
 		# Convert "from" to SP-relative format in the request
 		# See TS-0001, 7.3.2.6, Forwarding
 		self._originatorToSPRelative(request)
 
-		L.isInfo and L.log(f'Forwarding DELETE request to: {res.data}')
-		return self.sendDeleteRequest(uri=cast(str, res.data),
+		# L.isDebug and L.logDebug(f'Forwarding DELETE request to: {res.data}')
+		# return self.sendDeleteRequest(uri=cast(str, res.data),
+		# 							  originator=request.headers.originator,
+  		# 							  data=request.originalData,
+		# 							  isForward=True)
+		L.isDebug and L.logDebug(f'Forwarding DELETE request to: {request.id}')
+		return self.sendDeleteRequest(uri=cast(str, request.id),
 									  originator=request.headers.originator,
   									  data=request.originalData,
-									  raw=True)
+									  isForward=True)
 
 
 	def handleTransitNotifyRequest(self, request:CSERequest) -> Result:
 		""" Forward a NOTIFY request to a remote CSE. """
-		if not (res := self._constructForwardURL(request)).status:
-			return res
+		# if not (res := self._constructForwardURL(request)).status:
+		# 	return res
 
 		# Convert "from" to SP-relative format in the request
 		# See TS-0001, 7.3.2.6, Forwarding
 		self._originatorToSPRelative(request)
 
-		L.isInfo and L.log(f'Forwarding NOTIFY request to: {res.data}')
-		return self.sendNotifyRequest(uri=cast(str, res.data),
+		# L.isDebug and L.logDebug(f'Forwarding NOTIFY request to: {res.data}')
+		# return self.sendNotifyRequest(uri=cast(str, res.data),
+		# 					 		  originator=request.headers.originator,
+		# 							  data=request.originalData,
+		# 							  isForward=True)
+		L.isDebug and L.logDebug(f'Forwarding NOTIFY request to: {request.id}')
+		return self.sendNotifyRequest(uri=cast(str, request.id),
 							 		  originator=request.headers.originator,
 									  data=request.originalData,
-									  raw=True)
+									  isForward=True)
 
 
 	def isTransitID(self, id:str) -> bool:
@@ -760,12 +785,12 @@ class RequestManager(object):
 	#
 
 
-	def sendRetrieveRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False) -> Result:
+	def sendRetrieveRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', isForward:bool=False) -> Result:
 		"""	Send a RETRIEVE request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending RETRIEVE request to: {uri}{appendID}')
 
-		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID=appendID, permission=Permission.RETRIEVE):
+		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID=appendID, permission=Permission.RETRIEVE, isForward=isForward):
 
 			# Send the request via a PCH, if present
 			if pch:
@@ -788,7 +813,7 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=isForward)
 			elif Utils.isMQTTUrl(url):
 				CSE.event.mqttSendRetrieve()	# type: ignore [attr-defined]
 				return CSE.mqttClient.sendMqttRequest(Operation.RETRIEVE, 
@@ -799,19 +824,19 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=isForward)
 			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
 			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 		return Result(status=False, rsc=RC.internalServerError, dbg=f'No target found for uri: {uri}')
 
 
-	def sendCreateRequest(self, uri:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False) -> Result:
+	def sendCreateRequest(self, uri:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', isForward:bool=False) -> Result:
 		"""	Send a CREATE request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending CREATE request to: {uri}{appendID}')
 
-		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID=appendID, originator=originator, permission=Permission.CREATE):
+		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID=appendID, originator=originator, permission=Permission.CREATE, isForward=isForward):
 
 			# Send the request via a PCH, if present
 			if pch:
@@ -839,7 +864,7 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=isForward)
 			elif Utils.isMQTTUrl(url):
 				CSE.event.mqttSendCreate()	# type: ignore [attr-defined]
 				return CSE.mqttClient.sendMqttRequest(Operation.CREATE,
@@ -851,19 +876,19 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=isForward)
 			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
 			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 		
 		return Result(status=False, rsc=RC.internalServerError, dbg=f'No target found for uri: {uri}')
 
 
-	def sendUpdateRequest(self, uri:str, originator:str, data:Any, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False) -> Result:
+	def sendUpdateRequest(self, uri:str, originator:str, data:Any, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', isForward:bool=False) -> Result:
 		"""	Send an UPDATE request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending UPDATE request to: {uri}{appendID}')
 
-		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID=appendID, originator=originator, permission=Permission.UPDATE):
+		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID=appendID, originator=originator, permission=Permission.UPDATE, isForward=isForward):
 
 			# Send the request via a PCH, if present
 			if pch:
@@ -888,7 +913,7 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=isForward)
 			elif Utils.isMQTTUrl(url):
 				CSE.event.mqttSendUpdate()	# type: ignore [attr-defined]
 				return CSE.mqttClient.sendMqttRequest(Operation.UPDATE,
@@ -899,19 +924,19 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=isForward)
 			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
 			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 		
 		return Result(status=False, rsc=RC.internalServerError, dbg=f'No target found for uri: {uri}')
 
 
-	def sendDeleteRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False) -> Result:
+	def sendDeleteRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', isForward:bool=False) -> Result:
 		"""	Send a DELETE request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending DELETE request to: {uri}{appendID}')
 
-		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID=appendID, originator=originator, permission=Permission.DELETE):
+		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID=appendID, originator=originator, permission=Permission.DELETE, isForward=isForward):
 
 			# Send the request via a PCH, if present
 			if pch:
@@ -933,7 +958,7 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=isForward)
 			elif Utils.isMQTTUrl(url):
 				CSE.event.mqttSendDelete()	# type: ignore [attr-defined]
 				return CSE.mqttClient.sendMqttRequest(Operation.DELETE,
@@ -944,19 +969,19 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=isForward)
 			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
 			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 		return Result(status=False, rsc=RC.internalServerError, dbg=f'No target found for uri: {uri}')
 
 
-	def sendNotifyRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', noAccessIsError:bool=False, raw:bool=False) -> Result:
+	def sendNotifyRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', noAccessIsError:bool=False, isForward:bool=False) -> Result:
 		"""	Send a NOTIFY request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending NOTIFY request to: {uri}{appendID} for Originator: {originator}, targetOriginator: {targetOriginator}, targetResource: {targetResource}')
 
-		if (resolved := self.resolveSingleUriCszTo(uri, appendID=appendID, originator=originator, permission=Permission.NOTIFY, noAccessIsError=noAccessIsError)) is None:
+		if (resolved := self.resolveSingleUriCszTo(uri, appendID=appendID, originator=originator, permission=Permission.NOTIFY, noAccessIsError=noAccessIsError, isForward=isForward)) is None:
 			L.logWarn("error")
 			return Result(status=False)
 
@@ -986,10 +1011,18 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=isForward)
 			elif Utils.isMQTTUrl(url):
 				CSE.event.mqttSendNotify()	# type: ignore [attr-defined]
-				return CSE.mqttClient.sendMqttRequest(Operation.NOTIFY, url, originator, data=data, parameters=parameters, ct=ct, targetResource=targetResource, targetOriginator=targetOriginator)
+				return CSE.mqttClient.sendMqttRequest(Operation.NOTIFY,
+													  url,
+													  originator,
+													  data=data,
+													  parameters=parameters,
+													  ct=ct,
+													  targetResource=targetResource,
+													  targetOriginator=targetOriginator,
+													  raw=isForward)
 			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
 			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 		
@@ -1356,7 +1389,7 @@ class RequestManager(object):
 		return result
 
 
-	def resolveSingleUriCszTo(self, uri:str, permission:Permission, appendID:str='', originator:str=None, noAccessIsError:bool=False) -> list[ Tuple[str, list[str], str, PCH ] ]:
+	def resolveSingleUriCszTo(self, uri:str, permission:Permission, appendID:str='', originator:str=None, noAccessIsError:bool=False, isForward:bool=False) -> list[ Tuple[str, list[str], str, PCH ] ]:
 		"""	Resolve the real URL, contentSerialization, the target, and an optional PCU resource from a (notification) URI.
 			The result is a list of tuples of (url, list of contentSerializations, target originator, PollingChannel resource).
 
@@ -1371,18 +1404,25 @@ class RequestManager(object):
 			In case of an error, an empty list is returned. If `noAccessIsError` is *True* then None is returned.
 		"""
 
+		# TODO check whether noAccessIsError is needed anymore
+
 		if Utils.isURL(uri):	# The uri is a direct URL
 			return [ (uri, None, None, None) ]
 
+
+		targetResource = None
+		if Utils.isSPRelative(uri) or Utils.isAbsolute(uri):
+			targetResource = CSE.remote.getCSRFromPath(uri)[0]
+			# L.logWarn(targetResource)
 		# The uri is an indirect resource with poa, retrieve one or more URIs from it
-		if not (targetResource := CSE.dispatcher.retrieveResource(uri).resource):
+		if not targetResource and not (targetResource := CSE.dispatcher.retrieveResource(uri).resource):
 			L.isWarn and L.logWarn(f'Resource not found to get URL: {uri}')
 			return []
 		
 		# Checking permissions
 		if originator == CSE.cseCsi:
 			L.isDebug and L.logDebug(f'Originator: {originator} is CSE -> Permission granted.')
-		elif not CSE.security.hasAccess(originator, targetResource, permission):
+		elif not isForward and not CSE.security.hasAccess(originator, targetResource, permission):
 			L.isWarn and L.logWarn(f'Originator: {originator} has no permission: {permission} for {targetResource.ri}')
 			if noAccessIsError:
 				return None
