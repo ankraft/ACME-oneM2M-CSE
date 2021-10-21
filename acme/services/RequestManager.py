@@ -455,7 +455,7 @@ class RequestManager(object):
 		# 								isForward=True)
 		return self.sendRetrieveRequest(uri=cast(str, request.id),
 									    originator=request.headers.originator,
-										data=request.originalData,
+										data=request.originalRequest,
 										isForward=True)
 
 
@@ -501,7 +501,7 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'Forwarding UPDATE request to: {request.id}')
 		return self.sendUpdateRequest(uri=cast(str, request.id),
 									  originator=request.headers.originator,
-									  data=request.originalData,
+									  data=request.originalRequest,
 									  isForward=True)
 
 	def handleTransitDeleteRequest(self, request:CSERequest) -> Result:
@@ -521,7 +521,7 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'Forwarding DELETE request to: {request.id}')
 		return self.sendDeleteRequest(uri=cast(str, request.id),
 									  originator=request.headers.originator,
-  									  data=request.originalData,
+  									  data=request.originalRequest,
 									  isForward=True)
 
 
@@ -542,7 +542,7 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'Forwarding NOTIFY request to: {request.id}')
 		return self.sendNotifyRequest(uri=cast(str, request.id),
 							 		  originator=request.headers.originator,
-									  data=request.originalData,
+									  data=request.originalRequest,
 									  isForward=True)
 
 
