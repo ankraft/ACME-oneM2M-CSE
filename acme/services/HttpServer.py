@@ -578,8 +578,8 @@ class HttpServer(object):
 		extractMultipleArgs(args, 'lbl')
 
 		# Handle some parameters differently.
-		# They are not filter cirteria, but request attributes
-		for param in ['rcn', 'rp']:
+		# They are not filter criteria, but request attributes
+		for param in ['rcn', 'rp', 'drt']:
 			if p := args.get(param):	# type: ignore [assignment]
 				req[param] = p
 				del args[param]
