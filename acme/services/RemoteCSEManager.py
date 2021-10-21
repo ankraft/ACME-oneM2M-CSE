@@ -534,11 +534,14 @@ class RemoteCSEManager(object):
 
 
 	def getCSRFromPath(self, id:str) -> Tuple[Resource, List[str]]:
-		""" Try to get a CSR even from a longer path (only the first 2 path elements are relevant). """
+		"""	Try to get a CSR even from a longer path (only the first 2 path elements are relevant). 
+
+			Returns a tuple (csr resource, list of path elements), or (None, None) in case of an error).
+		"""
 		if not id:
 			return None, None
 		ids = id.split('/')
-		L.isDebug and L.logDebug(f'CSR ids: {ids}')
+		# L.isDebug and L.logDebug(f'CSR ids: {ids}')
 		if Utils.isSPRelative(id):
 			resource = CSE.dispatcher.retrieveLocalResource(ri=ids[1]).resource
 		elif Utils.isAbsolute(id):
