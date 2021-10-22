@@ -305,8 +305,8 @@ class NotificationManager(object):
 
 			# Check for batch notifications
 			if sub['bn']:
-				if targetResource and targetResource.hasPCH():	# if the target resource has a PCH child resource then that will be the target later
-					url = targetResource.ri
+				#if targetResource and targetResource.hasPCH():	# if the target resource has a PCH child resource then that will be the target later
+				url = targetResource.ri
 				return self._storeBatchNotification(url, sub, notificationRequest)
 			else:
 				return self._sendRequest(url, notificationRequest, targetOriginator=targetResource.getOriginator() if targetResource else None, ct=ct)
