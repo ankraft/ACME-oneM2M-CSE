@@ -128,6 +128,8 @@ The following Protocol Bindings are supported:
 | coap             | &cross;   |                                   |
 | mqtt             | &check;   | incl. mqtts                       |
 
+The supported bindings can be used together, and combined and mixed in any way.
+
 ## Serialization Types
 The following serialization types are supported:
 
@@ -135,7 +137,9 @@ The following serialization types are supported:
 |:-------------------|:---------:|:-------------------------------------------------------------------------------------------------------------|
 | JSON               |  &check;  | In addition to normal JSON syntax, C-style comments ("//...", "#..." and "/* ... */") are supported as well. |
 | CBOR               |  &check;  |                                                                                                              |
-| XML                |  &cross;  |                                                                                                              |
+| XML                |  &cross;  |                      
+
+The supported serializations can be used together, e.g. between different or even the same entity.
 
 
 

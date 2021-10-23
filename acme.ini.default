@@ -245,7 +245,9 @@ listenIF=${basic.config:networkInterface}
 ; Optional prefix for topics.
 ; Default: empty string
 topicPrefix=
-
+; Timeout when sending MQTT requests and waiting for responses.
+; Default: 5.0 seconds
+timeout=5.0
 
 
 ;
