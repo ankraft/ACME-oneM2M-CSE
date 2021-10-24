@@ -341,12 +341,11 @@ class TestPCH_PCU(unittest.TestCase):
 
 
 # TODO: Add a CIN to create notification.
-
-
 # TODO Non-Blocking async request, then retrieve notification via pcu
 # TODO multiple non-blocking async requests, then retrieve notification via pcu
+# TODO Test: sp-relative id
+# TODO Test: create other resources
 
-# TODO reply with notify but different originator -> Fail
 
 
 
