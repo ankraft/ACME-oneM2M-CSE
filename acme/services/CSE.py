@@ -146,7 +146,9 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	notification = NotificationManager()	# Initialize the notification manager
 	group = GroupManager()					# Initialize the group manager
 	timeSeries = TimeSeriesManager()		# Initialize the timeSeries manager
-	
+	remote = RemoteCSEManager()				# Initialize the remote CSE manager
+	announce = AnnouncementManager()		# Initialize the announcement manager
+
 	# Import a default set of resources, e.g. the CSE, first ACP or resource structure
 	# Import extra attribute policies for specializations first
 	# When this fails, we cannot continue with the CSE startup
@@ -160,8 +162,6 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	# Start the MQTT client
 	if not mqttClient.run():				# This does return
 		return False 					
-	remote = RemoteCSEManager()				# Initialize the remote CSE manager
-	announce = AnnouncementManager()		# Initialize the announcement manager
 
 	# Send an event that the CSE startup finished
 	event.cseStartup()	# type: ignore

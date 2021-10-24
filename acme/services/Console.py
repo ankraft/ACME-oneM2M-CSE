@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from typing import Dict, List, cast
-import datetime, os, sys, webbrowser
+import datetime, json, os, sys, webbrowser
 from enum import IntEnum, auto
 from rich.console import JustifyMethod
 from rich.style import Style
@@ -97,6 +97,7 @@ class Console(object):
 			'c'		: self.configuration,
 			'C'		: self.clearScreen,
 			'D'		: self.deleteResource,
+			'E'		: self.exportResources,
 			'i'		: self.inspectResource,
 			'I'		: self.inspectResourceChildren,
 			'l'     : self.toggleScreenLogging,
@@ -143,6 +144,7 @@ class Console(object):
 - c     - Show configuration
 - C     - Clear the console screen
 - D     - Delete resource
+- E     - Export resource tree to *init* directory
 - i     - Inspect resource
 - I     - Inspect resource and child resources
 - l     - Toggle screen logging on/off
@@ -406,6 +408,27 @@ Available under the BSD 3-Clause License
 					CSE.dispatcher.resourceTreeDict(cast(List[Resource], resdis.data), res.resource)	# the function call add attributes to the target resource
 					L.console(res.resource.asDict())
 		L.on()
+
+
+	def exportResources(self, _:str) -> None:
+		L.console('Export Resources', isHeader=True)
+		L.off()
+		if not (resdis := CSE.dispatcher.discoverResources(CSE.cseRi, originator=CSE.cseOriginator)).status:
+			L.console(resdis.dbg, isError=True)
+		else:
+			count = 0
+			for r in cast(List[Resource], resdis.data):
+				if r.isImported:
+					continue
+				fn = f'{r[r._srn].count("/"):02d}_{r[r._srn].replace("/", "+")}.{r.tpe.replace(":", "_")}.json'
+				fpn = f'{CSE.importer.resourcePath}/{fn}'
+				L.console(f'Exporting {fn}')
+				with open(fpn, 'w') as exportFile:
+					json.dump(r.asDict(), exportFile, indent=4, sort_keys=True)
+				count += 1
+			L.console(f'Exported {count} resources')
+		L.on()
+
 
 
 	def resetCSE(self, key:str) -> None:

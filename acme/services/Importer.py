@@ -12,7 +12,7 @@ from __future__ import annotations
 import json, os, fnmatch, re
 from typing import cast, List
 from copy import deepcopy
-from ..etc.Utils import findXPath, getCSE
+from ..etc.Utils import findXPath, getCSE, resourceModifiedAttributes
 from ..etc.Types import Announced, AttributePolicy, AttributePolicyDict, BasicType, Cardinality, RequestOptionality
 from ..etc.Types import ResourceTypes as T
 from ..etc.Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, JSON, JSONLIST
@@ -30,6 +30,7 @@ class Importer(object):
 	_firstImporters = [ 'csebase.json']
 
 	def __init__(self) -> None:
+		self.resourcePath = Configuration.get('cse.resourcesPath')
 		self.macroMatch = re.compile(r"\$\{[\w.]+\}")
 		self.isImporting = False
 		L.isInfo and L.log('Importer initialized')
@@ -79,9 +80,7 @@ class Importer(object):
 
 		# Import
 		if not path:
-			if Configuration.has('cse.resourcesPath'):
-				path = Configuration.get('cse.resourcesPath')
-			else:
+			if (path := self.resourcePath) is None:
 				L.logErr('cse.resourcesPath not set')
 				raise RuntimeError('cse.resourcesPath not set')
 		if not os.path.exists(path):
@@ -148,9 +147,14 @@ class Importer(object):
 						parentResource = None
 						if pi := resource.pi:
 							parentResource = CSE.dispatcher.retrieveResource(pi).resource
+
+						# Determine originator for AE resources
+						orig = resource.aei if resource.ty == T.AE else CSE.cseOriginator
+
 						# Check resource creation
-						if not CSE.registration.checkResourceCreation(resource, CSE.cseOriginator):
+						if not CSE.registration.checkResourceCreation(resource, orig):
 							continue
+						
 						# Add the resource
 						CSE.dispatcher.createResource(resource, parentResource)
 						countImport += 1
@@ -176,9 +180,7 @@ class Importer(object):
 
 		# Get import path
 		if not path:
-			if Configuration.has('cse.resourcesPath'):
-				path = Configuration.get('cse.resourcesPath')
-			else:
+			if (path := self.resourcePath) is None:
 				L.logErr('cse.resourcesPath not set')
 				raise RuntimeError('cse.resourcesPath not set')
 
@@ -227,9 +229,7 @@ class Importer(object):
 
 		# Get import path
 		if not path:
-			if Configuration.has('cse.resourcesPath'):
-				path = Configuration.get('cse.resourcesPath')
-			else:
+			if (path := self.resourcePath) is None:
 				L.logErr('cse.resourcesPath not set')
 				raise RuntimeError('cse.resourcesPath not set')
 

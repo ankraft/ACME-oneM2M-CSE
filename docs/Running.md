@@ -66,9 +66,11 @@ The CSE has a simple command console interface to execute build-in commands. Cur
 
 - h, ?  - This help
 - Q, ^C - Shutdown CSE
+- A     - About
 - c     - Show configuration
 - C     - Clear the console screen
 - D     - Delete resource
+- E     - Export resource tree to *init* directory
 - i     - Inspect resource
 - I     - Inspect resource and child resources
 - l     - Toggle screen logging on/off
