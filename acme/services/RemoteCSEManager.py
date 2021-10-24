@@ -73,9 +73,10 @@ class RemoteCSEManager(object):
 			if (csi := csr.csi) != self.registrarCSI:			# Skipping the own registrar csr
 				L.isDebug and L.logDebug(f'Addind remote CSE: {csi}')
 				self.descendantCSR[csi] = (csr, CSE.cseCsi)		# Add the direct child CSR
-				for dcse in csr.dcse:							# Add the descendant CSE's
-					L.isDebug and L.logDebug(f'Adding descendant CSE: {csi} -> {dcse}')
-					self.descendantCSR[dcse] = (None, csi)
+				if csr.dcse:
+					for dcse in csr.dcse:							# Add the descendant CSE's
+						L.isDebug and L.logDebug(f'Adding descendant CSE: {csi} -> {dcse}')
+						self.descendantCSR[dcse] = (None, csi)
 
 
 		L.isInfo and L.log('Starting remote CSE connection monitor')

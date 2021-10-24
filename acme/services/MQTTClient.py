@@ -434,12 +434,6 @@ class MQTTClient(object):
 			L.logWarn(dbg := f'Cannot connect to MQTT broker at: {mqttHost}:{mqttPort}')
 			return Result(status=False, rsc=RC.targetNotReachable, dbg=dbg)
 
-		# determine the request identifier. In case it is raw content then try
-		# to take the rqi from there		
-		# rqi = preq.request.headers.requestIdentifier
-		# if raw and 'rqi' in data:
-		# 	rqi = data['rqi']
-
 		# Publish the request and wait for the response.
 		# Then return the response as result
 		logRequest(preq, topic, isResponse=False)
