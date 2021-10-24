@@ -59,7 +59,7 @@ class RequestManager(object):
 		self._requestLock = Lock()													# Lock to access the following two dictionaries
 		self._requests:Dict[str, List[ Tuple[CSERequest, RequestType] ] ] = {}		# Dictionary to map request originators to a list of reqeusts. Used for handling polling requests.
 		self._rqiOriginator:Dict[str, str] = {}										# Dictionary to map requestIdentifiers to an originator of a request. Used for handling of polling requests.
-		self._pcWorker = BackgroundWorkerPool.newWorker(self.requestExpirationDelta * 2.0, self._cleanupPollingRequests, name='pollingChannelCleanup').start()
+		self._pcWorker = BackgroundWorkerPool.newWorker(self.requestExpirationDelta * 2.0, self._cleanupPollingRequests, name='pollingChannelExpiration').start()
 
 		# Add a handler when the CSE is reset
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
