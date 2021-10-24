@@ -26,6 +26,8 @@ A default configuration file is provided with the file [acme.ini.default](../acm
 
 At the top of the configuration file three *\[basic.config]* sections are provided, one for each CSE type. Each section has meaningful values for the most 
 necessary settings. Choose and uncomment one section for either running the CSE as an IN, MN, or ASN CSE (IN-CSE might be the most common choice to start with).
+Please note, that the [MQTT Binding](#client_mqtt) is not covered by quick configuration 
+and disabled by default.
 
 The settings here are:
 
