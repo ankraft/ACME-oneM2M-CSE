@@ -1045,10 +1045,10 @@ class RequestManager(object):
 		if data:
 			try:
 				if (dct := RequestUtils.deserializeData(data, ct)) is None:
-					return Result(rsc=RC.unsupportedMediaType, dbg=f'Unsupported media type for content-type: {ct.name}', status=False)
+					return Result(rsc=RC.unsupportedMediaType, dbg=f'Unsupported media type for content-type: {ct.name}', status=False, data=(None, ct))
 			except Exception as e:
 				L.isWarn and L.logWarn('Bad request (malformed content?)')
-				return Result(rsc=RC.badRequest, dbg=f'Malformed content? {str(e)}', status=False)
+				return Result(rsc=RC.badRequest, dbg=f'Malformed content? {str(e)}', status=False, data=(None, ct))
 		
 		return Result(status=True, data=(dct, ct))
 

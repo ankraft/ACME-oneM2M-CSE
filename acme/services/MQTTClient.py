@@ -237,6 +237,7 @@ class MQTTClientHandler(MQTTHandler):
 
 		# De-Serialize the content
 		if not (contentResult := CSE.request.deserializeContent(cseRequest.originalData, cseRequest.headers.contentType)).status:
+			_, cseRequest.ct = contentResult.data	# type: ignore[assignment] # Actual, .data contains a tuple
 			return Result(rsc=contentResult.rsc, request=cseRequest, dbg=contentResult.dbg, status=False)
 		cseRequest.originalRequest, cseRequest.ct = contentResult.data	# type: ignore[assignment] # Actual, .data contains a tuple
 
