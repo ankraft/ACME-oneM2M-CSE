@@ -204,7 +204,7 @@ class MQTTClientHandler(MQTTHandler):
 
 		if responseData:
 			# connection.publish(f'/oneM2M/resp{frm}/{to.lstrip("/").replace("/", ":")}/{encoding}', responseData)
-			connection.publish(f'/oneM2M/resp{_frm}/{_to}/{encoding}', responseData)
+			connection.publish(f'/oneM2M/resp/{_frm}/{_to}/{encoding}', responseData)
 
 
 class MQTTClient(object):
