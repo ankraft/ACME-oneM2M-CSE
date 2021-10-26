@@ -351,13 +351,15 @@ class NotificationManager(object):
 	def _sendRequest(self, uri:str, notificationRequest:JSON, parameters:Parameters=None, originator:str=None, targetOriginator:str=None, noAccessIsError:bool=False, ct:ContentSerializationType=None) -> bool:
 		"""	Actually send a Notification request.
 		"""
-		return CSE.request.sendNotifyRequest(	uri, 
+		result = CSE.request.sendNotifyRequest(	uri, 
 												originator if originator else CSE.cseCsi,
 												data=notificationRequest,
 												parameters=parameters,
 												ct=ct,
 												targetOriginator=targetOriginator,
-												noAccessIsError=noAccessIsError).status
+												noAccessIsError=noAccessIsError,
+												raw=True)
+		return result.status and result.rsc == RC.OK
 
 
 	##########################################################################

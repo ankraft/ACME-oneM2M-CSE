@@ -437,10 +437,10 @@ class MQTTClient(object):
 
 		# Publish the request and wait for the response.
 		# Then return the response as result
-		logRequest(preq, topic, isResponse=False)
+		logRequest(preq, topic, isResponse=False, raw=raw)
 		mqttConnection.publish(topic, cast(bytes, cast(Tuple, preq.data)[1]))
 		response, responseTopic = self.waitForResponse(preq.request.headers.requestIdentifier, self.requestTimeout)
-		logRequest(response, responseTopic, isResponse=True)
+		logRequest(response, responseTopic, isResponse=True, raw=raw)
 		return response
 
 
