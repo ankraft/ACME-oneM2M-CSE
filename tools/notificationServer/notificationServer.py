@@ -35,6 +35,8 @@ port = 9999	# Change this variable to specify another port.
 messageColor = 'spring_green2'
 errorColor = 'red'
 
+failVerification = False
+
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 	def do_GET(self) -> None:
@@ -53,7 +55,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		# Construct return header
 		# Always acknowledge the verification requests
 		self.send_response(200)
-		self.send_header('X-M2M-RSC', '2000')
+		self.send_header('X-M2M-RSC', '2000' if not failVerification else '4101')
 		self.end_headers()
 
 		# Get headers and content data
@@ -147,7 +149,7 @@ class MQTTClientHandler(MQTTHandler):
 		def _constructResponse(frm:str, to:str, jsn:dict) -> dict:
 			responseData = 	{ 	'fr':	frm,
 								'to':	to, 
-								'rsc':	2000,
+								'rsc':	2000 if not failVerification else 4101,
 								'ot':	getResourceDate()
 							}
 			if (rqi := jsn.get('rqi')):
@@ -254,12 +256,12 @@ if __name__ == '__main__':
 
 	# parse command line argiments
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--port', action='store', dest='port', default=port, type=int, help='specify the server port')
 
 	# mutual exlcusive arguments for http
 	groupHttp = parser.add_mutually_exclusive_group()
 	groupHttp.add_argument('--http', action='store_false', dest='usehttps', default=None, help='run as http server (the default)')
 	groupHttp.add_argument('--https', action='store_true', dest='usehttps', default=None, help='run as https server')
+	parser.add_argument('--port', action='store', dest='port', default=port, type=int, help='specify the server port')
 	parser.add_argument('--certfile', action='store', dest='certfile', required='--https' in sys.argv, metavar='<filename>', help='specify the certificate file for https')
 	parser.add_argument('--keyfile', action='store', dest='keyfile', required='--https' in sys.argv, metavar='<filename>', 	help='specify the key file for https')
 
@@ -272,8 +274,15 @@ if __name__ == '__main__':
 	parser.add_argument('--mqtt-password', action='store', dest='mqttPassword', default=None, required='--mqttUsername' in sys.argv, metavar='<password>',  help='MQTT password (default: None)')
 	parser.add_argument('--mqtt-logging', action='store_true', dest='mqttLogging', default=False, help='MQTT enable logging (default: disabled)')
 
+	# Generic
+	parser.add_argument('--fail-verification', action='store_true', dest='failVerification', default=False, help='Fail verification requests (default: false)')
+
+
 
 	args = parser.parse_args()
+
+	# Generic arguments
+	failVerification = args.failVerification
 
 	# run http(s) server
 	httpd = HTTPServer(('', args.port), SimpleHTTPRequestHandler)

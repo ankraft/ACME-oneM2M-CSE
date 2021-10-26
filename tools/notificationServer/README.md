@@ -37,6 +37,7 @@ In additions, you can provide additional command line arguments:
 | --mqtt-username &lt;>username>             | MQTT username (default: None)                                        |
 | --mqtt-password &lt;>password>             | MQTT password (default: None)                                        |
 | --mqtt-logging                             | MQTT enable logging (default: disabled)                              |
+| --fail-verification                        | Fail all verification requests with "no privileges" (default: False) |
 
 
 ### Example: NotificationServer with MQTT
