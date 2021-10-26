@@ -8,6 +8,12 @@
    By default the CSE binds to the *localhost* interface. To make it accessible from a remote machine you need to bind the CSE's http server to another network interface, or address. This can be done in the *[server.http]* and *[client.mqtt]* sections of the configuration file. 
    Setting the listen interface to "0.0.0.0" binds the http server to all available interfaces.
 
+
+## Database
+
+1. **Corrupt database files**  
+   In very rare cases, e.g. when the CSE was not properly shut down, the on-disk database files may be corrupted. The CSE tries to detect this during start-up, but there is not much one can do about this. However, a backup of the database file is created every time the CSE starts. This backup can be found in the *backup* sub-directory of the *data* directory. 
+
 ## MQTT
 
 1. **What does this error message "Out of memory" mean that appears sometimes?**  

@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CONSOLE] Added the possibility to toggle through the display modes with "^T" when displaying the resource tree continuously.
 - [CONSOLE] Real-time update for the continuous tree (when creating, deleting, updating resources).
 - [CONSOLE] Added [cse.console].confirmQuit configuration option. It is switched off by default.
+- [DATABASE] Added validation of data base files during start-up.
+- [DATABASE] Added backup of data base files during start-up.
 
 ### Changed
 - [HTTP] Moved the security setting for http to the separate section *server.http.security*.

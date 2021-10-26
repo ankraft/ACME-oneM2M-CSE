@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 
-import os
+import os, shutil
 from threading import Lock
 from copy import deepcopy
 from typing import Callable, cast
@@ -35,23 +35,33 @@ class Storage(object):
 	def __init__(self) -> None:
 
 		# create data directory
-		path = None
-		if not Configuration.get('db.inMemory'):
-			if Configuration.has('db.path'):
-				path = Configuration.get('db.path')
-				L.isInfo and L.log('Using data directory: ' + path)
-				os.makedirs(path, exist_ok=True)
+		self.inMemory 	= Configuration.get('db.inMemory')
+		self.dbPath 	= Configuration.get('db.path')
+		self.dbReset 	= Configuration.get('db.resetOnStartup') 
+
+		if not self.inMemory:
+			if self.dbPath:
+				L.isInfo and L.log('Using data directory: ' + self.dbPath)
+				os.makedirs(self.dbPath, exist_ok=True)
 			else:
 				L.logErr('db.path not set')
 				raise RuntimeError('db.path not set')
 
-		
-		self.db = TinyDBBinding(path)
-		self.db.openDB(f'-{CSE.cseCsi[1:]}') # add CSE CSI as postfix
+		# create DB object and open DB
+		self.db = TinyDBBinding(self.dbPath, postfix=f'-{CSE.cseCsi[1:]}') # add CSE CSI as postfix
 
 		# Reset dbs?
-		if Configuration.get('db.resetOnStartup') is True:
+		if self.dbReset:
+			self._backupDB()	# In this case do a backup *before* startup.
 			self.db.purgeDB()
+		
+		# Check validity
+		if not self.dbReset and not self._validateDB():
+			raise RuntimeError('DB error')
+		
+		# Make backup *after* validation, only when *not* reset
+		if not self.inMemory and not self.dbReset and not self._backupDB():
+			raise RuntimeError('DB Error')
 
 		L.isInfo and L.log('Storage initialized')
 
@@ -63,7 +73,42 @@ class Storage(object):
 
 
 	def purge(self) -> None:
+		"""	Empty the databases.
+		"""
 		self.db.purgeDB()
+	
+
+	def _validateDB(self) -> bool:
+		"""	Trying to validate the database files by reading from them.
+		"""
+		L.isDebug and L.logDebug('Validating database files')
+		dbFile = ''
+		try:
+			dbFile = 'resources'
+			self.hasResource('_')
+			dbFile = 'identifiers'
+			self.structuredPath('_')
+			dbFile = 'subscription'
+			self.getSubscription('_')
+			dbFile = 'batch notification'
+			self.countBatchNotifications('_', '_')
+			dbFile = 'statistics'
+			self.getStatistics()
+			dbFile = 'app data'
+			self.getAppData('_')
+		except Exception as e:
+			L.logErr(f'Error validating data files. Error in {dbFile} database.', exc=e)
+			return False
+		return True
+	
+
+	def _backupDB(self) -> bool:
+		"""	Creating a backup from the DB to a sub directory.
+		"""
+		dir = f'{self.dbPath}/backup'
+		L.isDebug and L.logDebug(f'Creating DB backup in directory: {dir}')
+		os.makedirs(dir, exist_ok=True)
+		return self.db.backupDB(dir)
 		
 
 	#########################################################################
@@ -312,21 +357,27 @@ class Storage(object):
 
 class TinyDBBinding(object):
 
-	def __init__(self, path: str = None) -> None:
+	def __init__(self, path:str=None, postfix:str='') -> None:
 		self.path = path
 		self.cacheSize = Configuration.get('db.cacheSize')
 		L.isInfo and L.log(f'Cache Size: {self.cacheSize:d}')
 
 		# create transaction locks
-		self.lockResources = Lock()
-		self.lockIdentifiers = Lock()
-		self.lockSubscriptions = Lock()
-		self.lockBatchNotifications = Lock()
-		self.lockStatistics = Lock()
-		self.lockAppData = Lock()
+		self.lockResources			= Lock()
+		self.lockIdentifiers		= Lock()
+		self.lockSubscriptions		= Lock()
+		self.lockBatchNotifications	= Lock()
+		self.lockStatistics 		= Lock()
+		self.lockAppData 			= Lock()
 
+		# file names
+		self.fileResources			= f'{self.path}/resources{postfix}.json'
+		self.fileIdentifiers		= f'{self.path}/identifiers{postfix}.json'
+		self.fileSubscriptions		= f'{self.path}/subscriptions{postfix}.json'
+		self.fileBatchNotifications	= f'{self.path}/batchNotifications{postfix}.json'
+		self.fileStatistics			= f'{self.path}/statistics{postfix}.json'
+		self.fileAppData			= f'{self.path}/appdata{postfix}.json'
 
-	def openDB(self, postfix: str) -> None:
 		# All databases/tables will use the smart query cache
 		if Configuration.get('db.inMemory'):
 			L.isInfo and L.log('DB in memory')
@@ -338,12 +389,12 @@ class TinyDBBinding(object):
 			self.dbAppData = TinyDB(storage=MemoryStorage)
 		else:
 			L.isInfo and L.log('DB in file system')
-			self.dbResources = TinyDB(f'{self.path}/resources{postfix}.json')
-			self.dbIdentifiers = TinyDB(f'{self.path}/identifiers{postfix}.json')
-			self.dbSubscriptions = TinyDB(f'{self.path}/subscriptions{postfix}.json')
-			self.dbBatchNotifications = TinyDB(f'{self.path}/batchNotifications{postfix}.json')
-			self.dbStatistics = TinyDB(f'{self.path}/statistics{postfix}.json')
-			self.dbAppData = TinyDB(f'{self.path}/appdata{postfix}.json')
+			self.dbResources = TinyDB(self.fileResources)
+			self.dbIdentifiers = TinyDB(self.fileIdentifiers)
+			self.dbSubscriptions = TinyDB(self.fileSubscriptions)
+			self.dbBatchNotifications = TinyDB(self.fileBatchNotifications)
+			self.dbStatistics = TinyDB(self.fileStatistics)
+			self.dbAppData = TinyDB(self.fileAppData)
 		self.tabResources = self.dbResources.table('resources', cache_size=self.cacheSize)
 		self.tabIdentifiers = self.dbIdentifiers.table('identifiers', cache_size=self.cacheSize)
 		self.tabSubscriptions = self.dbSubscriptions.table('subsriptions', cache_size=self.cacheSize)
@@ -370,6 +421,17 @@ class TinyDBBinding(object):
 		self.tabBatchNotifications.truncate()
 		self.tabStatistics.truncate()
 		self.tabAppData.truncate()
+	
+
+	def backupDB(self, dir:str) -> bool:
+		shutil.copy2(self.fileResources, dir)
+		shutil.copy2(self.fileIdentifiers, dir)
+		shutil.copy2(self.fileSubscriptions, dir)
+		shutil.copy2(self.fileBatchNotifications, dir)
+		shutil.copy2(self.fileStatistics, dir)
+		shutil.copy2(self.fileAppData, dir)
+		return True
+
 
 
 	#
