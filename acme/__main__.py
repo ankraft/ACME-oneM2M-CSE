@@ -40,10 +40,6 @@ def parseArgs() -> argparse.Namespace:
 	groupEnableStats.add_argument('--statistics', action='store_true', dest='statisticsenabled', default=None, help='enable collecting CSE statistics')
 	groupEnableStats.add_argument('--no-statistics', action='store_false', dest='statisticsenabled', default=None, help='disable collecting CSE statistics')
 
-	groupEnableValidation = parser.add_mutually_exclusive_group()
-	groupEnableValidation.add_argument('--validation', action='store_true', dest='validationenabled', default=None, help='enable attributes and arguments validation')
-	groupEnableValidation.add_argument('--no-validation', action='store_false', dest='validationenabled', default=None, help='disable attributes and arguments validation')
-
 	groupRemoteConfig = parser.add_mutually_exclusive_group()
 	groupRemoteConfig.add_argument('--remote-configuration', action='store_true', dest='remoteconfigenabled', default=None, help='enable http remote configuration endpoint')
 	groupRemoteConfig.add_argument('--no-remote-configuration', action='store_false', dest='remoteconfigenabled', default=None, help='disable http remote configuration endpoint')

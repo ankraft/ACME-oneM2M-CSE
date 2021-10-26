@@ -32,7 +32,6 @@ In additions, you can provide additional command line arguments that will overri
 | --remote-configuration, --no-remote-configuration | Enable or disable http remote configuration endpoint.<br />This overrides the [enableRemoteConfiguration](Configuration.md##server_http) configuration setting. |
 | --remote-cse, --no-remote-cse                     | Enable or disable remote CSE connections and checking.<br />This overrides the [enableRemoteCSE](Configuration.md#general) configuration setting.               |
 | --statistics, --no-statistics                     | Enable or disable collecting CSE statics.<br />This overrides the [enable](Configuration.md#statistics) configuration setting.                                  |
-| --validation, --no-validation                     | Enable or disable attribute and argument validations.<br />This overrides the [enableValidation](Configuration.md#general) configuration setting.               |
 
 ### Certificates and Support for https
 

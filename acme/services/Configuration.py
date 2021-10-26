@@ -41,7 +41,6 @@ class Configuration(object):
 		argsRemoteConfigEnabled	= args.remoteconfigenabled if args and 'remoteconfigenabled' in args else None
 		argsRunAsHttps			= args.https if args and 'https' in args else None
 		argsStatisticsEnabled	= args.statisticsenabled if args and 'statisticsenabled' in args else None
-		argsValidationEnabled	= args.validationenabled if args and 'validationenabled' in args else None
 
 		# own print function that takes the headless setting into account
 		def _print(out:str) -> None:
@@ -96,7 +95,6 @@ class Configuration(object):
 				'cse.requestExpirationDelta'			: config.getfloat('cse', 'requestExpirationDelta',		fallback=10.0),	# 10 seconds
 				'cse.originator'						: config.get('cse', 'originator',						fallback='CAdmin'),
 				'cse.enableRemoteCSE'					: config.getboolean('cse', 'enableRemoteCSE', 			fallback=True),
-				'cse.enableValidation'					: config.getboolean('cse', 'enableValidation', 			fallback=True),
 				'cse.sortDiscoveredResources'			: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
 				'cse.checkExpirationsInterval'			: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
 				'cse.flexBlockingPreference'			: config.get('cse', 'flexBlockingPreference',			fallback='blocking'),
@@ -344,7 +342,6 @@ class Configuration(object):
 		if argsRemoteCSEEnabled is not None:	Configuration._configuration['cse.enableRemoteCSE'] = argsRemoteCSEEnabled					# Override remote CSE enablement
 		if argsRunAsHttps is not None:			Configuration._configuration['http.security.useTLS'] = argsRunAsHttps						# Override useTLS
 		if argsStatisticsEnabled is not None:	Configuration._configuration['cse.statistics.enable'] = argsStatisticsEnabled				# Override statistics enablement
-		if argsValidationEnabled is not None:	Configuration._configuration['cse.enableValidation'] = argsValidationEnabled				# Override validation enablement
 
 		if argsHeadless:
 			Configuration._configuration['logging.enableScreenLogging'] = False

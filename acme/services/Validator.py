@@ -43,9 +43,7 @@ flexContainerAttributes:FlexContainerAttributes = { }
 class Validator(object):
 
 
-
 	def __init__(self) -> None:
-		self.validationEnabled = Configuration.get('cse.enableValidation')
 		if L.isInfo: L.log('Validator initialized')
 
 
@@ -60,9 +58,6 @@ class Validator(object):
 
 	def	validateAttributes(self, resource:JSON, tpe:str, ty:T=T.UNKNOWN, attributes:AttributePolicyDict=None, create:bool=True , isImported:bool=False, createdInternally:bool=False, isAnnounced:bool=False) -> Result:
 		""" Validate a resources attributes for types etc."""
-		if not self.validationEnabled:	# just return if disabled
-			return Result(status=True)
-
 		if L.isDebug: L.logDebug('Validating attributes')
 
 		# Just return in case the resource instance is imported

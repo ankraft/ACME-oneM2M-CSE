@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - [CSE] Removed "cse.enableNotifications" configuration option. Notifications are now always enabled.
 - [CSE] Removed "cse.enableTransitRequests" configuration option. Requests are now always forwarded.
+- [CSE] Removed "cse.enableValidation" configuration option. Validation is now always performed.
 - [APPS] Removed the example AEs from the CSE. This makes the CSE a bit smaller and also removes a big dependency to the non-portable psutils package. They will be available in  separate project in the future.
 - [HTTP] Removed the *server.http.multithreaded* configuration option. The http server now always runs in multithread mode.
 
