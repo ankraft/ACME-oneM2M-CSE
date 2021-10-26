@@ -360,8 +360,6 @@ enableBindingsLogging=False
 ;
 
 [cse.announcements]
-; Enable announcement to remote CSE and allow announced resource registrations. Default: True
-enable=true
 ; Wait n seconds between tries to to announce resources to registered remote CSE.
 ; Default: 10
 checkInterval=10

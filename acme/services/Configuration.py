@@ -205,7 +205,6 @@ class Configuration(object):
 				#	Announcements
 				#
 
-				'cse.announcements.enable'				: config.getboolean('cse.announcements', 'enable',		fallback=True),
 				'cse.announcements.checkInterval'		: config.getint('cse.announcements', 'checkInterval',	fallback=10),
 
 

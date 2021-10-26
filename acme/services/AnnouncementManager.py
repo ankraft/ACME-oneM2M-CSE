@@ -35,7 +35,6 @@ class AnnouncementManager(object):
 		
 		# Configuration values
 		self.checkInterval			= Configuration.get('cse.announcements.checkInterval')
-		self.announcementsEnabled 	= Configuration.get('cse.announcements.enable')
 
 		self.start()
 		L.isInfo and L.log('AnnouncementManager initialized')
@@ -56,16 +55,12 @@ class AnnouncementManager(object):
 
 	# Start the monitor in a thread. 
 	def start(self) -> None:
-		if not self.announcementsEnabled:
-			return
 		L.isInfo and L.log('Starting Announcements monitor')
 		BackgroundWorkerPool.newWorker(self.checkInterval, self.announcementMonitorWorker, 'anncMonitor').start()
 
 
 	# Stop the monitor. Also delete the CSR resources on both sides
 	def stop(self) -> None:
-		if not self.announcementsEnabled:
-			return
 		L.isInfo and L.log('Stopping Announcements monitor')
 		# Stop the thread
 		BackgroundWorkerPool.stopWorkers('anncMonitor')
@@ -125,7 +120,7 @@ class AnnouncementManager(object):
 	def checkResourcesForAnnouncement(self, remoteCSR:Resource) -> None:
 		"""	Check all resources and announce them if necessary.
 		"""
-		if not self.announcementsEnabled or not remoteCSR:
+		if not remoteCSR:
 			return
 
 		# get all reources for this specific CSI that are NOT announced to it yet
@@ -138,9 +133,6 @@ class AnnouncementManager(object):
 	def announceResource(self, resource:AnnounceableResource) -> None:
 		"""	Announce a single resource to its announcement targets.
 		"""
-
-		if not self.announcementsEnabled:
-			return
 		L.isDebug and L.logDebug(f'Announce resource: {resource.ri} to all connected csr')
 		csi = CSE.cseCsi
 		for at in resource.at:
@@ -210,8 +202,6 @@ class AnnouncementManager(object):
 		"""	Check whether resources need announcements and initiate announcement
 			if they are.
 		"""
-		if not self.announcementsEnabled:
-			return
 		csi = remoteCSR.csi
 		L.isDebug and L.logDebug(f'Checking resources for Unannouncement to: {csi}')
 		# get all reources for this specific CSI that are NOT announced to it yet
@@ -226,8 +216,6 @@ class AnnouncementManager(object):
 	def deAnnounceResource(self, resource:AnnounceableResource) -> None:
 		"""	De-announce a single resource from its announcement targets.
 		"""
-		if not self.announcementsEnabled:
-			return
 		L.isDebug and L.logDebug(f'De-Announce resource: {resource.ri} from all connected csr')
 
 		for (csi, remoteRI) in resource[Resource._announcedTo]:
@@ -273,8 +261,6 @@ class AnnouncementManager(object):
 
 
 	def announceUpdatedResource(self, resource:AnnounceableResource) -> None:
-		if not self.announcementsEnabled:
-			return
 		L.isDebug and L.logDebug(f'Updating announced resource: {resource.ri}')
 
 		# Check for removed AT

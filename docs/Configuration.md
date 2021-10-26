@@ -272,7 +272,6 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 | Keyword             | Description                                                                                      | Macro Name                            |
 |:--------------------|:-------------------------------------------------------------------------------------------------|:--------------------------------------|
-| enable              | Enable announcement to remote CSE and allow announced resource registrations.<br />Default: True | cse.announcements.enable              |
 | checkInterval       | Wait n seconds between tries to to announce resources to registered remote CSE.<br />Default: 10 | cse.announcements.checkInterval       |
 
 
