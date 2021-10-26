@@ -982,7 +982,6 @@ class RequestManager(object):
 		L.isDebug and L.logDebug(f'Sending NOTIFY request to: {uri}{appendID} for Originator: {originator}, targetOriginator: {targetOriginator}, targetResource: {targetResource}')
 
 		if (resolved := self.resolveSingleUriCszTo(uri, appendID=appendID, originator=originator, permission=Permission.NOTIFY, noAccessIsError=noAccessIsError, raw=raw)) is None:
-			L.logWarn("error")
 			return Result(status=False)
 
 		for url, csz, tor, pch in resolved:
@@ -1327,7 +1326,7 @@ class RequestManager(object):
 	#	Notifications.
 	#
 	def resolveURIs(self, uris:list[str]|str, originator:str=None, noAccessIsError:bool=False) -> list[Tuple[str, Resource]]:
-		"""	Return a list of tuples: (resolved URLs, target resource or None). This includes thenresolved URL's, so also POA from referenced AE's and CSE's etc.
+		"""	Return a list of tuples: (resolved URLs, target resource or None). This includes resolved URL's, ie. also POAs from referenced AEs and CSEs etc.
 
 			If the `originator` is specified then the URLs contain in the *poa* of that target/originator are excluded.
 			

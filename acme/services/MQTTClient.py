@@ -136,7 +136,7 @@ class MQTTClientHandler(MQTTHandler):
 			"""
 			if (response := prepareMqttRequest(result, isResponse=True)).status:
 				topic = f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}'
-				logRequest(response, topic, isResponse=True)
+				logRequest(response, topic, isResponse=True, isIncoming=False)
 				if isinstance(cast(Tuple, response.data)[1], bytes):
 					connection.publish(topic, cast(Tuple, response.data)[1])
 				else:
@@ -437,10 +437,10 @@ class MQTTClient(object):
 
 		# Publish the request and wait for the response.
 		# Then return the response as result
-		logRequest(preq, topic, isResponse=False, raw=raw)
+		logRequest(preq, topic, isResponse=False, isIncoming=False)
 		mqttConnection.publish(topic, cast(bytes, cast(Tuple, preq.data)[1]))
 		response, responseTopic = self.waitForResponse(preq.request.headers.requestIdentifier, self.requestTimeout)
-		logRequest(response, responseTopic, isResponse=True, raw=raw)
+		logRequest(response, responseTopic, isResponse=True, isIncoming=True)
 		return response
 
 
@@ -492,10 +492,20 @@ def prepareMqttRequest(inResult:Result, originator:str=None, ty:T=None, op:Opera
 	return result
 
 
-def logRequest(reqResult:Result, topic:str, isResponse:bool=False, raw:bool=False) -> None:
+def logRequest(reqResult:Result, topic:str, isResponse:bool=False, isIncoming:bool=False) -> None:
 	"""	Log a request. Make some adjustments, depending on the request or response type.
 	"""
-	prefix = f'<== MQTT Response (RSC: {reqResult.rsc})' if isResponse else f'MQTT Request ==>'
+	if isIncoming:
+		if isResponse:
+			prefix = f'MQTT Response <== (RSC: {reqResult.rsc})'
+		else:
+			prefix = f'MQTT Request <=='
+	else:
+		if isResponse:
+			prefix = f'<== MQTT Response (RSC: {reqResult.rsc})'
+		else:
+			prefix = f'MQTT Request ==>'
+
 	body   = ''
 	if reqResult.request and reqResult.request.headers:
 		if reqResult.request.headers.contentType == ContentSerializationType.CBOR or reqResult.request.ct == ContentSerializationType.CBOR:
@@ -504,13 +514,24 @@ def logRequest(reqResult:Result, topic:str, isResponse:bool=False, raw:bool=Fals
 			else:
 				body = f'\nBody: \n{TextTools.toHex(cast(bytes, cast(Tuple, reqResult.data)[1]))}\n=>\n{cast(Tuple, reqResult.data)[0]}'
 		elif reqResult.request.headers.contentType == ContentSerializationType.JSON or reqResult.request.ct == ContentSerializationType.JSON:
-			if (isResponse or raw) and reqResult.data:
+			if isResponse:
+				bodyPrint = str(reqResult.request.originalRequest)
+
+			elif reqResult.data:
 				if isinstance(reqResult.data, tuple):
 					bodyPrint = str(cast(Tuple, reqResult.data)[0])
 				else:
 					bodyPrint = str(reqResult.data)
 			else:
 				bodyPrint = str(reqResult.request.originalRequest)
-			# body = f'\nBody: {str(reqResult.data) if not isResponse else str(reqResult.request.originalRequest)}' 
+
+
+			# if (isResponse or raw) and reqResult.data:
+			# 	if isinstance(reqResult.data, tuple):
+			# 		bodyPrint = str(cast(Tuple, reqResult.data)[0])
+			# 	else:
+			# 		bodyPrint = str(reqResult.data)
+			# else:
+			# 	bodyPrint = str(reqResult.request.originalRequest)
 			body = f'\nBody: {bodyPrint}' 
 	L.isDebug and L.logDebug(f'{prefix}: {topic}{body}')

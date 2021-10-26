@@ -357,8 +357,7 @@ class NotificationManager(object):
 												parameters=parameters,
 												ct=ct,
 												targetOriginator=targetOriginator,
-												noAccessIsError=noAccessIsError,
-												raw=True)
+												noAccessIsError=noAccessIsError)
 		return result.status and result.rsc == RC.OK
 
 

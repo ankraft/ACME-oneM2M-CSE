@@ -376,7 +376,7 @@ class ACMERichLogHandler(RichHandler):
 			r"(?P<request>==>.*:)",							# Incoming request or response
 			r"(?P<request>[^-]+Request ==>)",					# Outgoing request or response
 			r"(?P<response><== [^:]+[(:]+)",				# outgoing response or request
-			r"(?P<response>Response <== [^ :]+[ :]+)",		# Incoming response or request
+			r"(?P<response>[^-]+Response <== [^ :]+[ :]+)",		# Incoming response or request
 			r"(?P<number>\(RSC: [0-9]+\.?[0-9]\))",			# Result code
 			#r"(?P<id> [\w/\-_]*/[\w/\-_]+)",				# ID
 			r"(?P<number>\nHeaders: )",
