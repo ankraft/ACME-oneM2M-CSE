@@ -144,7 +144,7 @@ class TestRemote(unittest.TestCase):
 		# _, rsc = DELETE(csrURL, ORIGINATOR)
 		# self.assertEqual(rsc, RC.deleted)
 
-
+# TODO Transfer requests
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()

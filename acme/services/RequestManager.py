@@ -40,7 +40,6 @@ from ..helpers.BackgroundWorker import BackgroundWorkerPool
 class RequestManager(object):
 
 	def __init__(self) -> None:
-		self.enableTransit 					 = Configuration.get('cse.enableTransitRequests')
 		self.flexBlockingBlocking			 = Configuration.get('cse.flexBlockingPreference') == 'blocking'
 		self.requestExpirationDelta			 = Configuration.get('cse.requestExpirationDelta')
 
@@ -148,7 +147,7 @@ class RequestManager(object):
 		
 		# handle transit requests
 		if self.isTransitID(request.id):
-			return self.handleTransitRetrieveRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
+			return self.handleTransitRetrieveRequest(request)
 
 		if request.args.rt == ResponseType.blockingRequest:
 			return CSE.dispatcher.processRetrieveRequest(request, request.headers.originator)
@@ -176,7 +175,7 @@ class RequestManager(object):
 
 		# handle transit requests
 		if self.isTransitID(request.id):
-			return self.handleTransitCreateRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
+			return self.handleTransitCreateRequest(request)
 
 		# Check contentType and resourceType
 		if request.headers.contentType == None or request.headers.contentType == None:
@@ -212,7 +211,7 @@ class RequestManager(object):
 
 		# handle transit requests
 		if self.isTransitID(request.id):
-			return self.handleTransitUpdateRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
+			return self.handleTransitUpdateRequest(request)
 
 		# Check contentType and resourceType
 		if request.headers.contentType == None:
@@ -248,7 +247,7 @@ class RequestManager(object):
 
 		# handle transit requests
 		if self.isTransitID(request.id):
-			return self.handleTransitDeleteRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
+			return self.handleTransitDeleteRequest(request)
 
 		if request.args.rt == ResponseType.blockingRequest or (request.args.rt == ResponseType.flexBlocking and self.flexBlockingBlocking):
 			return CSE.dispatcher.processDeleteRequest(request, request.headers.originator)
@@ -275,7 +274,7 @@ class RequestManager(object):
 
 		# handle transit requests
 		if self.isTransitID(request.id):
-			return self.handleTransitNotifyRequest(request) if self.enableTransit else Result(rsc=RC.operationNotAllowed, dbg='operation not allowed')
+			return self.handleTransitNotifyRequest(request)
 
 		# Check contentType and resourceType
 		if request.headers.contentType == None or request.headers.contentType == None:

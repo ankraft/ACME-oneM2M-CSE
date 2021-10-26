@@ -137,8 +137,6 @@ requestExpirationDelta=10.0
 originator=${basic.config:adminID}
 ; Enable remote CSE registration and checking. Default: True
 enableRemoteCSE=true
-; Enable forwarding of requests to a remote CSE. Default: True
-enableTransitRequests=true
 ; Enable the validation of attributes and arguments. Default: true
 enableValidation=true
 ; Enable alphabetical sorting of discovery results. Default: True

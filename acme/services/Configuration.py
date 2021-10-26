@@ -96,7 +96,6 @@ class Configuration(object):
 				'cse.requestExpirationDelta'			: config.getfloat('cse', 'requestExpirationDelta',		fallback=10.0),	# 10 seconds
 				'cse.originator'						: config.get('cse', 'originator',						fallback='CAdmin'),
 				'cse.enableRemoteCSE'					: config.getboolean('cse', 'enableRemoteCSE', 			fallback=True),
-				'cse.enableTransitRequests'				: config.getboolean('cse', 'enableTransitRequests',		fallback=True),
 				'cse.enableValidation'					: config.getboolean('cse', 'enableValidation', 			fallback=True),
 				'cse.sortDiscoveredResources'			: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
 				'cse.checkExpirationsInterval'			: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
