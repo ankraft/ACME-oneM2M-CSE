@@ -35,12 +35,6 @@ class NotificationManager(object):
 
 	def __init__(self) -> None:
 		self.lockBatchNotification = Lock()	# Lock for batchNotifications
-		self.enableNotifications = Configuration.get('cse.enableNotifications')
-
-		if self.enableNotifications:
-			L.isInfo and L.log('Notifications ENABLED')
-		else:
-			L.isInfo and L.log('Notifications DISABLED')
 		if L.isInfo: L.log('NotificationManager initialized')
 
 
@@ -55,8 +49,6 @@ class NotificationManager(object):
 
 	def addSubscription(self, subscription:Resource, originator:str) -> Result:
 		"""	Add a new subscription. Check each receipient with verification requests. """
-		if not self.enableNotifications:
-			return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg='notifications are disabled')
 		L.isDebug and L.logDebug('Adding subscription')
 		if not (res := self._checkNusInSubscription(subscription, originator=originator)).status:	# verification requests happen here
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
@@ -66,10 +58,6 @@ class NotificationManager(object):
 	def removeSubscription(self, subscription:Resource) -> Result:
 		""" Remove a subscription. Send the deletion notifications, if possible. """
 		L.isDebug and L.logDebug('Removing subscription')
-
-		# This check does allow for removal of subscriptions
-		if not self.enableNotifications:
-			return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg='notifications are disabled')
 
 		# Send outstanding batchNotifications for a subscription
 		self._flushBatchNotifications(subscription)
@@ -97,9 +85,6 @@ class NotificationManager(object):
 
 
 	def checkSubscriptions(self, resource:Resource, reason:NotificationEventType, childResource:Resource=None, modifiedAttributes:JSON=None, ri:str=None, missingData:dict[str, MissingData]=None, now:float=None) -> None:
-		if not self.enableNotifications:
-			return
-
 		if Utils.isVirtualResource(resource):
 			return 
 		ri = resource.ri if not ri else ri

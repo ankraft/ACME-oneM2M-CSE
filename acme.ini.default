@@ -135,8 +135,6 @@ maxExpirationDelta=157680000
 requestExpirationDelta=10.0
 ; Admin originator for the CSE. Default: CAdmin
 originator=${basic.config:adminID}
-; Enable notifications. Default: True
-enableNotifications=true
 ; Enable remote CSE registration and checking. Default: True
 enableRemoteCSE=true
 ; Enable forwarding of requests to a remote CSE. Default: True
