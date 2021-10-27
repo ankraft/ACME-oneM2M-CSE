@@ -497,12 +497,12 @@ def logRequest(reqResult:Result, topic:str, isResponse:bool=False, isIncoming:bo
 	"""
 	if isIncoming:
 		if isResponse:
-			prefix = f'MQTT Response <== (RSC: {reqResult.rsc})'
+			prefix = f'MQTT Response <== ({reqResult.rsc})'
 		else:
 			prefix = f'MQTT Request <=='
 	else:
 		if isResponse:
-			prefix = f'<== MQTT Response (RSC: {reqResult.rsc})'
+			prefix = f'<== MQTT Response ({reqResult.rsc})'
 		else:
 			prefix = f'MQTT Request ==>'
 
