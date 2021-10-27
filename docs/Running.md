@@ -90,12 +90,18 @@ The CSE has a simple command console interface to execute build-in commands. Cur
 
 ### Hiding Resources in the Console's Tree
 
-Sometimes it would be useful if one could hide resources from the console's resource tree. That can be accomplished by listing these resources in the setting *[cse.console].hideResources*. Simple wildcards are allowed in this setting.
+Sometimes it could be useful if one would be able to hide resources from the console's resource tree. That can be accomplished by listing these resources in the setting *[cse.console].hideResources*. Simple wildcards are allowed in this setting.
 
 Example to hide all resources with resource identifiers starting with 'acp':
 
 	[cse.console]
 	hideResources=acp*
+
+### Exporting Resources
+
+One of the tasks the CSE performs during start-up is that it imports resources located in the *init* directory. This builds up an initial resource tree. See [Importing Resources](Importing.md#resources) for a more detailed description.
+
+With the console command "E - Export resource tree to *init* directory" one can export the current state of the resource tree to the *init* directory so that it can be imported again automatically during the next CSE start-up, or reset. The structured resource path and the resource type are taken for the filename of the resources, and should be therefore easily identifiable.
 
 ## Running a Notifications Server
 
