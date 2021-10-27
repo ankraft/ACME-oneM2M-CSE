@@ -32,6 +32,7 @@ Please consult the following pages for further instructions.
 	- [Limitations](docs/Supported.md#limitations)
 - [Roadmap](docs/Roadmap.md)
 - [Development](docs/Development.md)
+- [Contributing](docs/Contributing.md)
 - [FAQ](docs/FAQ.md)
 
 ## Changes
