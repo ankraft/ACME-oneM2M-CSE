@@ -100,7 +100,6 @@ class SUB(Resource):
 
 	def update(self, dct:JSON=None, originator:str=None) -> Result:
 		previousNus = deepcopy(self.nu)
-		newDict = deepcopy(dct)
 		if not (res := super().update(dct, originator)).status:
 			return res
 
@@ -112,7 +111,7 @@ class SUB(Resource):
 			if  not (res := self._checkAllowedCHTY(parentResource, chty)).status:
 				return res
 
-		return CSE.notification.updateSubscription(self, newDict, previousNus, originator)
+		return CSE.notification.updateSubscription(self, previousNus, originator)
 
  
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:

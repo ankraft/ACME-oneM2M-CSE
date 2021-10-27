@@ -1324,67 +1324,67 @@ class RequestManager(object):
 	#
 	#	Notifications.
 	#
-	def resolveURIs(self, uris:list[str]|str, originator:str=None, noAccessIsError:bool=False) -> list[Tuple[str, Resource]]:
-		"""	Return a list of tuples: (resolved URLs, target resource or None). This includes resolved URL's, ie. also POAs from referenced AEs and CSEs etc.
+	# def resolveURIs(self, uris:list[str]|str, originator:str=None, noAccessIsError:bool=False) -> list[Tuple[str, Resource]]:
+	# 	"""	Return a list of tuples: (resolved URLs, target resource or None). This includes resolved URL's, ie. also POAs from referenced AEs and CSEs etc.
 
-			If the `originator` is specified then the URLs contain in the *poa* of that target/originator are excluded.
+	# 		If the `originator` is specified then the URLs contain in the *poa* of that target/originator are excluded.
 			
-			If the target is not request reachable then the resource ID of that target is included in the
-			list, and it is handled later, e.g. for a pollingChannel.
+	# 		If the target is not request reachable then the resource ID of that target is included in the
+	# 		list, and it is handled later, e.g. for a pollingChannel.
 
-			The returned result is a list or tuples of (direct URLs, target resource). This could be an empty list, so None is returned in case of an error.
-		"""
+	# 		The returned result is a list or tuples of (direct URLs, target resource). This could be an empty list, so None is returned in case of an error.
+	# 	"""
 
-		if not uris:
-			return []
-		uris = uris if isinstance(uris, list) else [ uris ]	# make a list out of it even when it is a single value
-		result:list[Tuple[str, Resource]] = []
-		for url in uris:
-			if not url:
-				continue
-			# check if it is a direct URL
-			if L.isDebug: L.logDebug(f'Checking next URL: {url}')
+	# 	if not uris:
+	# 		return []
+	# 	uris = uris if isinstance(uris, list) else [ uris ]	# make a list out of it even when it is a single value
+	# 	result:list[Tuple[str, Resource]] = []
+	# 	for url in uris:
+	# 		if not url:
+	# 			continue
+	# 		# check if it is a direct URL
+	# 		if L.isDebug: L.logDebug(f'Checking next URL: {url}')
 
-			# A direct url already, append it directly
-			if Utils.isURL(url):	
-				result.append((url, None))
-			else:					
+	# 		# A direct url already, append it directly
+	# 		if Utils.isURL(url):	
+	# 			result.append((url, None))
+	# 		else:					
 				
-				# Assume that this is a resource ID
-				if not (resource := CSE.dispatcher.retrieveResource(url).resource):
-					L.isWarn and L.logWarn(f'Resource not found to get URL: ignoring {url}')
-					continue
+	# 			# Assume that this is a resource ID
+	# 			if not (resource := CSE.dispatcher.retrieveResource(url).resource):
+	# 				L.isWarn and L.logWarn(f'Resource not found to get URL: ignoring {url}')
+	# 				continue
 
-				# For notifications:
-				# If the given originator is the target then exclude it from the list of targets.
-				# Test for AE and CSE (CSI starts with a /)
-				if originator and (resource.ri == originator or resource.ri == f'/{originator}'):
-					L.isDebug and L.logDebug(f'Notification target is the originator: {originator}, ignoring: {url}')
-					continue
+	# 			# For notifications:
+	# 			# If the given originator is the target then exclude it from the list of targets.
+	# 			# Test for AE and CSE (CSI starts with a /)
+	# 			if originator and (resource.ri == originator or resource.ri == f'/{originator}'):
+	# 				L.isDebug and L.logDebug(f'Notification target is the originator: {originator}, ignoring: {url}')
+	# 				continue
 				
-				# Check for NOTIFY access to the target
-				if originator and not CSE.security.hasAccess(originator, resource, Permission.NOTIFY):
-					L.isWarn and L.logWarn(f'Originator: {originator} has no NOTIFY permission for target resource, ignoring: {url}')
-					if noAccessIsError:
-						return None
-					continue
+	# 			# Check for NOTIFY access to the target
+	# 			if originator and not CSE.security.hasAccess(originator, resource, Permission.NOTIFY):
+	# 				L.isWarn and L.logWarn(f'Originator: {originator} has no NOTIFY permission for target resource, ignoring: {url}')
+	# 				if noAccessIsError:
+	# 					return None
+	# 				continue
 				
-				# Is the target request reachable?
-				if resource.rr:
-					# Add the poa list if present
-					if (poa := resource.poa) and isinstance(poa, list):
-						result += [ (u, resource) for u in poa ]
-					else:
-						L.isWarn and L.logWarn(f'Target resource: {resource.ri} has no poa: {resource.ri}, ignoring: {url}')
-						continue
+	# 			# Is the target request reachable?
+	# 			if resource.rr:
+	# 				# Add the poa list if present
+	# 				if (poa := resource.poa) and isinstance(poa, list):
+	# 					result += [ (u, resource) for u in poa ]
+	# 				else:
+	# 					L.isWarn and L.logWarn(f'Target resource: {resource.ri} has no poa: {resource.ri}, ignoring: {url}')
+	# 					continue
 				
-				# If the resource is not request reachable then just add its resource ID to the list
-				# It will be handled later when checking for polling channel
-				else:	
-					L.isDebug and L.logDebug(f'Resource: {resource.ri} with no request reachability')
-					result.append((resource.ri, resource))
+	# 			# If the resource is not request reachable then just add its resource ID to the list
+	# 			# It will be handled later when checking for polling channel
+	# 			else:	
+	# 				L.isDebug and L.logDebug(f'Resource: {resource.ri} with no request reachability')
+	# 				result.append((resource.ri, resource))
 
-		return result
+	# 	return result
 
 
 	def resolveSingleUriCszTo(self, uri:str, permission:Permission, appendID:str='', originator:str=None, noAccessIsError:bool=False, raw:bool=False) -> list[ Tuple[str, list[str], str, PCH ] ]:

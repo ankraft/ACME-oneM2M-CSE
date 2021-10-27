@@ -170,6 +170,37 @@ class TestSUB(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateSUBwithNu(self) -> None:
+		"""	CREATE <SUB> and update nu. """
+		clearLastNotification()	# clear the notification first
+		self.assertIsNotNone(TestSUB.ae)
+		self.assertIsNotNone(TestSUB.cnt)
+		# create
+		dct = 	{ 'm2m:sub' : { 
+        			'nu': [ TestSUB.originator ]
+				}}
+		sub, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.created, sub)
+		subrn = findXPath(sub, 'm2m:sub/rn')
+
+		# update
+		dct = 	{ 'm2m:sub' : { 
+        			'nu': [ NOTIFICATIONSERVER ]
+				}}
+
+		r, rsc = UPDATE(f'{cntURL}/{subrn}', TestSUB.originator, dct)
+		self.assertEqual(rsc, RC.updated, r)
+		lastNotification = getLastNotification()
+		self.assertIsNotNone(lastNotification)
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/vrq'))
+		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sur').endswith(findXPath(r, 'm2m:sub/ri')))
+
+		# delete
+		_, rsc = DELETE(f'{cntURL}/{subrn}', TestSUB.originator)
+		self.assertEqual(rsc, RC.deleted)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNT(self) -> None:
 		"""	UPDATE <CNT> -> Send notification with full <CNT> resource"""
 		dct = 	{ 'm2m:cnt' : {
@@ -1137,6 +1168,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 
 	suite.addTest(TestSUB('test_createSUBWrong'))
 	suite.addTest(TestSUB('test_updateSUB'))
+	suite.addTest(TestSUB('test_updateSUBwithNu'))
 	suite.addTest(TestSUB('test_updateCNT'))
 	suite.addTest(TestSUB('test_addCIN2CNT'))
 	suite.addTest(TestSUB('test_removeCNT'))
