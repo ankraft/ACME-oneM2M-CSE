@@ -11,13 +11,12 @@ from __future__ import annotations
 from argparse import OPTIONAL
 from urllib.parse import ParseResult, urlparse, parse_qs
 import sys, io, atexit
-from queue import Queue
 import unittest
 
 from rich.console import Console
-import requests, random, sys, json, re, time, datetime, ssl, urllib3
+import requests, sys, json, time, ssl, urllib3, random, re, random
 import cbor2
-from typing import Any, Callable, Union, Tuple, cast
+from typing import Any, Callable, Tuple, cast
 from threading import Thread
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import cbor2
@@ -26,8 +25,8 @@ import cbor2
 if '..' not in sys.path:
 	sys.path.append('..')
 from acme.etc.Types import ContentSerializationType, Parameters, JSON, Operation, ResourceTypes, ResponseStatusCode
-import acme.etc.RequestUtils as RequestUtils, acme.etc.DateUtils as DateUtils
 import acme.helpers.OAuth as OAuth
+from acme.etc import RequestUtils, DateUtils
 from acme.helpers.MQTTConnection import MQTTConnection, MQTTHandler
 from acme.etc.Constants import Constants as C
 from config import *
@@ -162,7 +161,7 @@ mqttHandler:MQTTClientHandler = None
 
 # A timestamp far in the future
 # Why 8888? Year 9999 may actually problematic, because this might be interpreteted
-# already as year 10000 (and this hits the limit of the isodata module implmenetation)
+# already as year 10000 (and this hits the limit of the isodate module implementation)
 
 def isRaspberrypi() -> bool:
 	"""	Check whether we run on a Raspberry Pi. 
@@ -752,69 +751,10 @@ def getLastNotificationHeaders() -> Parameters:
 
 
 #
-#	ID
-#
-
-def uniqueID() -> str:
-	return str(random.randint(1,sys.maxsize))
-
-
-def uniqueRN(prefix:str='') -> str:
-	"""	Create a unique resource name.
-	"""
-	return f'{prefix}{round(time.time() * 1000)}-{uniqueID()}'
-
-#
 #	Utilities
+#	Some are copied from acme.etc.Utils . 
+#	We wont import Utils, because of circular imports with other CSE modules
 #
-
-# find a structured element in JSON
-decimalMatch = re.compile(r'{(\d+)}')
-def findXPath(dct:JSON, element:str, default:Any=None) -> Any:
-	if dct is None:
-		return default
-	paths = element.split("/")
-	data = dct
-	for i in range(0,len(paths)):
-		if len(paths[i]) == 0:	# return if there is an empty path element
-			return default
-		elif (m := decimalMatch.search(paths[i])) is not None:	# Match array index {i}
-			idx = int(m.group(1))
-			if not isinstance(data, list) or idx >= len(data):	# Check idx within range of list
-				return default
-			data = data[idx]
-		elif paths[i] not in data:	# if key not in dict
-			return default
-		else:
-			data = data[paths[i]]	# found data for the next level down
-	return data
-
-
-def setXPath(dct:JSON, element:str, value:Any, overwrite:bool=True) -> None:
-	paths = element.split("/")
-	ln = len(paths)
-	data = dct
-	for i in range(0,ln-1):
-		if paths[i] not in data:
-			data[paths[i]] = {}
-		data = data[paths[i]]
-	if paths[ln-1] in data is not None and not overwrite:
-			return # don't overwrite
-	data[paths[ln-1]] = value
-
-
-# TODO check whether these functions can be replaced by the etc.DateUtils
-
-def getDate(delta:float = 0) -> str:
-	# return toISO8601Date(datetime.datetime.utcnow() + datetime.timedelta(seconds=delta))
-	return toISO8601Date(DateUtils.utcTime() + delta)
-
-
-
-def toISO8601Date(ts: Union[float, datetime.datetime]) -> str:
-	if isinstance(ts, float):
-		ts = datetime.datetime.fromtimestamp(ts)
-	return ts.strftime('%Y%m%dT%H%M%S,%f')
 
 
 def printResult(result:unittest.TestResult) -> None:
@@ -827,11 +767,89 @@ def printResult(result:unittest.TestResult) -> None:
 		console.print(f[1])
 
 
+def uniqueID() -> str:
+	return str(random.randint(1,sys.maxsize))
 
+
+def uniqueRN(prefix:str='') -> str:
+	"""	Create a unique resource name.
+	"""
+	return f'{prefix}{round(time.time() * 1000)}-{uniqueID()}'
+
+
+
+decimalMatch = re.compile(r'{(\d+)}')
+def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
+	""" Find a structured `key` in the dictionary `dct`. If `key` does not exists then
+		`default` is returned.
+
+		It is possible to address a specific element in an array. This is done be
+		specifying the element as `{n}`.
+
+		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
+
+		If an element if specified as '{}' then all elements in that array are returned in
+		an array.
+
+		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{}') or findXPath(input, 'm2m:cnt/m2m:cin/{}/rn')
+
+	"""
+
+	if not key or not dct:
+		return default
+
+	paths = key.split("/")
+	data:Any = dct
+	for i in range(0,len(paths)):
+		if not data:
+		 	return default
+		pathElement = paths[i]
+		if len(pathElement) == 0:	# return if there is an empty path element
+			return default
+		elif (m := decimalMatch.search(pathElement)) is not None:	# Match array index {i}
+			idx = int(m.group(1))
+			if not isinstance(data, (list,dict)) or idx >= len(data):	# Check idx within range of list
+				return default
+			if isinstance(data, dict):
+				data = data[list(data)[i]]
+			else:
+				data = data[idx]
+
+		elif pathElement == '{}':	# Match an array in general
+			if not isinstance(data, (list,dict)):	# not a list, return the default
+				return default
+			if i == len(paths)-1:	# if this is the last element and it is a list then return the data
+				return data
+			return [ findXPath(d, '/'.join(paths[i+1:]), default) for d in data  ]	# recursively build an array with remnainder of the selector
+
+		elif pathElement not in data:	# if key not in dict
+			return default
+		else:
+			data = data[pathElement]	# found data for the next level down
+	return data
+
+
+def setXPath(dct:JSON, key:str, value:Any, overwrite:bool=True) -> bool:
+	"""	Set a structured `key` and `value` in the dictionary `dict`. 
+		Create if necessary, and observe the `overwrite` option (True overwrites an
+		existing key/value).
+	"""
+	paths = key.split("/")
+	ln1 = len(paths)-1
+	data = dct
+	if ln1 > 0:	# Small optimization. don't check if there is no extended path
+		for i in range(0,ln1):
+			if paths[i] not in data:
+				data[paths[i]] = {}
+			data = data[paths[i]]
+	# if not isinstance(data, dict):
+	# 	return False
+	if not overwrite and paths[ln1] in data: # test overwrite first, it's faster
+		return True # don't overwrite
+	data[paths[ln1]] = value
+	return True
 
 ###############################################################################
-
-
 
 
 # Start MQTT Client if test protocol is mqtt

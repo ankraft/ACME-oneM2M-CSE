@@ -15,6 +15,7 @@ from typing import Tuple
 from rich import print
 from acme.etc.Constants import Constants as C
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
+from acme.etc.DateUtils import getResourceDate
 from init import *
 
 
@@ -52,7 +53,7 @@ class TestExpiration(unittest.TestCase):
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
-					'et' : getDate(expirationCheckDelay) # 2 seconds in the future
+					'et' : getResourceDate(expirationCheckDelay) # 2 seconds in the future
 				}}
 		_, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
@@ -68,7 +69,7 @@ class TestExpiration(unittest.TestCase):
 		self.assertTrue(isTestExpirations())
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
-					'et' : getDate(expirationCheckDelay), # 2 seconds in the future
+					'et' : getResourceDate(expirationCheckDelay), # 2 seconds in the future
 					'rn' : cntRN
 				}}
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
@@ -115,7 +116,7 @@ class TestExpiration(unittest.TestCase):
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
-					'et' : getDate(-60) # 1 minute in the past
+					'et' : getResourceDate(-60) # 1 minute in the past
 				}}
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.badRequest)
@@ -128,7 +129,7 @@ class TestExpiration(unittest.TestCase):
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
-					'et' : getDate(60) # 1 minute in the future
+					'et' : getResourceDate(60) # 1 minute in the future
 				}}
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
@@ -192,7 +193,7 @@ class TestExpiration(unittest.TestCase):
 					'cnf' : 'text/plain:0',
 					'con' : 'AnyValue'
 				}}
-		tooLargeET = getDate(tooLargeExpirationDelta())
+		tooLargeET = getResourceDate(tooLargeExpirationDelta())
 		for _ in range(0, 5):
 			r, rsc = CREATE(cntURL, TestExpiration.originator, T.CIN, dct)
 			self.assertEqual(rsc, RC.created)

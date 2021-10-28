@@ -21,7 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [DATABASE] Added backup of data base files during start-up.
 
 ### Changed
-- [HTTP] Moved the security setting for http to the separate section *server.http.security*.
 - [WEB] Moved the webUI to the acme module.
 - [CSE] Improved attribute validation: checking empty lists.
 - [CSE] Simplified initial configuration. First time users can now choose between three deployment configurations (IN, MN, ASN) to quickly set-up a CSE.
@@ -29,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Refactored project directory structure.
 - [CSE] Refactored validation to improve attribute policies and validation handling and extension. Policies are now defined by a definition file and assigned to each resource type.
 - [CSE] Changed rcn = modifiedAttributes to the improved definition in the spec: return only those modified attributes that where *not* in the original request, but were modified by the CSE as a result of the request.
+- [CSE] Improved transit requests: serialization according to target's preferences.
+- [HTTP] Moved the security setting for http to the separate section *server.http.security*.
 - [IMPORTING] Changed the file extension for &lt;flexContainer> attribute policies from ".ap" to ".fcp".
 - [RUNTIME] Due to the restructuring of the project structure the CSE must now be started like this: ```python3 -m acme```
 

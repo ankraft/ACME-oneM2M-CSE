@@ -12,6 +12,7 @@ if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
 from acme.etc.Types import ResponseStatusCode as RC, ResourceTypes as T
+from acme.etc.DateUtils import getResourceDate
 from init import *
 
 # TODO move a couple of tests to a http or general request test
@@ -42,7 +43,7 @@ class TestMisc(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_checkHTTPRET(self) -> None:
 		"""	Check Request Expiration Timeout in request"""
-		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={C.hfRET : getDate(10)}) # request expiration in 10 seconds
+		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={C.hfRET : getResourceDate(10)}) # request expiration in 10 seconds
 		self.assertEqual(rsc, RC.OK)
 
 
@@ -64,7 +65,7 @@ class TestMisc(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_checkHTTPRETWrong(self) -> None:
 		"""	Check Request Expiration Timeout in request (past date) -> Fail"""
-		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={C.hfRET : getDate(-10)}) # request expiration in 10 seconds
+		_, rsc = RETRIEVE(cseURL, ORIGINATOR, headers={C.hfRET : getResourceDate(-10)}) # request expiration in 10 seconds
 		self.assertEqual(rsc, RC.requestTimeout)
 
 
@@ -131,7 +132,7 @@ class TestMisc(unittest.TestCase):
 	@unittest.skipUnless(BINDING in [ 'http', 'https' ], 'Only when testing with http(s) binding')
 	def test_checkHTTPmissingOriginator(self) -> None:
 		"""	Check missing originator in request"""
-		_, rsc = RETRIEVE(cseURL, None, headers={C.hfRET : getDate(10)}) # request expiration in 10 seconds
+		_, rsc = RETRIEVE(cseURL, None, headers={C.hfRET : getResourceDate(10)}) # request expiration in 10 seconds
 		self.assertEqual(rsc, RC.badRequest)
 
 

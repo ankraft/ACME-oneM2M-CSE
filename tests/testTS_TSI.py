@@ -7,11 +7,12 @@
 #	Unit tests for timeSeriean & timeSeries functionality
 #
 
-import unittest, sys
+import unittest, sys, datetime
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
+from acme.etc.DateUtils import toISO8601Date, getResourceDate
 from init import *
 
 maxBS	= 30
@@ -70,7 +71,7 @@ class TestTS_TSI(unittest.TestCase):
 		self.assertIsNotNone(TestTS_TSI.ae)
 		self.assertIsNotNone(TestTS_TSI.ts)
 		dct = 	{ 'm2m:tsi' : {
-					'dgt' : (date := getDate()),
+					'dgt' : (date := getResourceDate()),
 					'con' : 'aValue',
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
@@ -96,7 +97,7 @@ class TestTS_TSI(unittest.TestCase):
 	def test_addMoreTSI(self) -> None:
 		"""	CREATE more <TSI>s under <TS> """
 		dct = 	{ 'm2m:tsi' : {
-					'dgt' : (date := getDate()),
+					'dgt' : (date := getResourceDate()),
 					'con' : 'bValue'
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
@@ -113,7 +114,7 @@ class TestTS_TSI(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:ts/cbs'), 12, r)
 
 		dct = 	{ 'm2m:tsi' : {
-					'dgt' : (date := getDate()),
+					'dgt' : (date := getResourceDate()),
 					'con' : 'cValue'
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
@@ -130,7 +131,7 @@ class TestTS_TSI(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:ts/cbs'), 18, r)
 
 		dct = 	{ 'm2m:tsi' : {
-					'dgt' : (date := getDate()),
+					'dgt' : (date := getResourceDate()),
 					'con' : 'dValue'
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
@@ -219,7 +220,7 @@ class TestTS_TSI(unittest.TestCase):
 	def test_createTSIexactSize(self) -> None:
 		"""	CREATE <TSI> to <TS> with exact max size"""
 		dct = 	{ 'm2m:tsi' : {
-					'dgt' : getDate(),
+					'dgt' : getResourceDate(),
 					'con' : 'x' * maxBS
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
@@ -231,7 +232,7 @@ class TestTS_TSI(unittest.TestCase):
 	def test_createTSItooLarge(self) -> None:
 		"""	CREATE <TSI> to <TS> with size > mbs -> Fail """
 		dct = 	{ 'm2m:tsi' : {
-					'dgt' : getDate(),
+					'dgt' : getResourceDate(),
 					'con' : 'x' * (maxBS + 1)
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
@@ -244,7 +245,7 @@ class TestTS_TSI(unittest.TestCase):
 		# First fill up the container
 		for _ in range(int(maxBS / 3)):
 			dct = 	{ 'm2m:tsi' : {
-						'dgt' : getDate(),
+						'dgt' : getResourceDate(),
 						'con' : 'x' * int(maxBS / 3)
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
@@ -259,7 +260,7 @@ class TestTS_TSI(unittest.TestCase):
 
 		# Add another TSI
 		dct = 	{ 'm2m:tsi' : {
-					'dgt' : getDate(),
+					'dgt' : getResourceDate(),
 					'con' : 'y' * int(maxBS / 3)
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
@@ -295,7 +296,7 @@ class TestTS_TSI(unittest.TestCase):
 	def test_createTSIwithSameDGT(self) -> None:
 		"""	CREATE <TSI>s with same DGT attribute -> Fail """
 		dct = 	{ 'm2m:tsi' : {
-					'dgt' : (date := getDate()),
+					'dgt' : (date := getResourceDate()),
 					'con' : 'first'
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
@@ -312,7 +313,7 @@ class TestTS_TSI(unittest.TestCase):
 	def test_createTSIwithSNR(self) -> None:
 		"""	CREATE <TSI> with SNR"""
 		dct = 	{ 'm2m:tsi' : {
-					'dgt' : (date := getDate()),
+					'dgt' : (date := getResourceDate()),
 					'con' : 'aValue',
 					'snr' : 1
 				}}
@@ -502,7 +503,7 @@ class TestTS_TSI(unittest.TestCase):
 		_mdt = findXPath(r, 'm2m:ts/mdt') / 1000.0 
 		for i in range(expectedMdc):
 			tsidct = { 'm2m:tsi' : {
-						'dgt' : (date := getDate()),
+						'dgt' : (date := getResourceDate()),
 						'con' : 'aValue',
 						'snr' : i
 					}}

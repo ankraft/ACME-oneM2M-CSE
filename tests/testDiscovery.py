@@ -16,6 +16,7 @@ from typing import Tuple
 from acme.etc.Types import ResultContentType as RCN
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from acme.etc.Types import DesiredIdentifierResultType, FilterOperation
+from acme.etc.DateUtils import getResourceDate
 from init import *
 
 
@@ -39,7 +40,7 @@ class TestDiscovery(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
-		cls.crTimestamp1 = getDate(-timeDelta)	# first timestamp
+		cls.crTimestamp1 = getResourceDate(-timeDelta)	# first timestamp
 
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
@@ -117,7 +118,7 @@ class TestDiscovery(unittest.TestCase):
 		_, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
 		assert rsc == RC.created, 'cannot create m2m:bat (2)'
 
-		cls.crTimestamp2 = getDate()	# Second timestamp
+		cls.crTimestamp2 = getResourceDate()	# Second timestamp
 
 
 	@classmethod
