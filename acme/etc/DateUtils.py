@@ -24,7 +24,8 @@ def getResourceDate(delta:int=0) -> str:
 
 		`delta` adds or substracts n seconds to the generated timestamp.
 	"""
-	return toISO8601Date(datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=delta))
+	# return toISO8601Date(datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=delta))
+	return toISO8601Date(utcTime() + delta)
 
 
 def toISO8601Date(ts:Union[float, datetime.datetime], isUTCtimestamp:bool=True) -> str:
@@ -78,8 +79,16 @@ def utcTime() -> float:
 	return datetime.datetime.utcnow().timestamp()
 
 
+def timeUntilTimestamp(ts:float) -> float:
+	"""	Return the time in seconds until the UTC-based `ts` timestamp is reached.
+	
+		Negative values mean that the timestamp lies is the past.
+	"""
+	return ts - utcTime()
+
+
 def timeUntilAbsRelTimestamp(absRelTimestamp:str) -> float:
-	"""	Return the time in s until the UTC-based `absRelTimestamp` is reaced.
+	"""	Return the time in seconds until the UTC-based `absRelTimestamp` is reached.
 
 		Negative values mean that the timestamp lies is the past.
 		
@@ -87,8 +96,7 @@ def timeUntilAbsRelTimestamp(absRelTimestamp:str) -> float:
 	"""
 	if (ts := fromAbsRelTimestamp(absRelTimestamp)) == 0.0:
 		return 0.0
-	return ts - utcTime()
-
+	return timeUntilTimestamp(ts)
 
 
 def waitFor(timeout:float, condition:Callable[[], bool]=None) -> bool:
@@ -100,7 +108,11 @@ def waitFor(timeout:float, condition:Callable[[], bool]=None) -> bool:
 
 		If `condition` is None, then only the `timeout` is used, and *False*
 		is always returned.
+
+		If `timeout` is negative then *False* is returned.
 	"""
+	if timeout < 0.0:
+		return False
 	if not condition:
 		time.sleep(timeout)
 		return False
