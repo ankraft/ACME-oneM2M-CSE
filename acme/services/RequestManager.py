@@ -106,33 +106,11 @@ class RequestManager(object):
 		"""
 		L.isDebug and L.logDebug(f'NOTIFY request for polling channel. Originator: {originator}')
 
-		# # Get pollingChannel
-		# if not (pchList := CSE.dispatcher.directChildResources(targetResource.ri, T.PCH)):
-		# 	L.logDebug(dbg := f'Resource: {targetResource.ri} has no <PCH>')
-		# 	return Result(status=False, rsc=RC.badRequest, dbg=dbg)
-		# pch = pchList[0]	# We only assume one PCH
-
 		# Check content
 		if request.pc is None:
 			L.logDebug(dbg := f'Missing content/request in notification')
 			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
-		# # Fill various request attributes
-		# if pc := request.pc.get('m2m:rsp'):		# Request is a response
-		# 	nrequest 									= CSERequest()
-		# 	nrequest.headers.originator					= pc.get('fr')
-		# 	nrequest.headers.originatingTimestamp		= pc.get('or')
-		# 	nrequest.headers.requestIdentifier			= pc.get('rqi')
-		# 	nrequest.headers.releaseVersionIndicator	= pc.get('rvi')
-		# 	nrequest.rsc								= pc.get('rsc')
-		# 	nrequest.pc 								= pc.get('pc')
-
-		# 	if req := CSE.request.queueRequestForPCH(cast(PCH, pch), request=nrequest, reqType=RequestType.RESPONSE):
-		# 		return Result(status=True, request=req)	# A Notification to PCU always contains a response to a previous request
-		# 	return Result(status=False)
-	
-		# else:
-		# 	return self.sendNotifyRequest(id, originator=originator, data=request.pc)
 		return self.sendNotifyRequest(id, originator=originator, data=request)
 
 
@@ -623,6 +601,7 @@ class RequestManager(object):
 			ret = DateUtils.getResourceDate(self.requestExpirationDelta)
 			L.isDebug and L.logDebug(f'Request must have a "requestExpirationTimestamp". Adding a default one: {ret}')
 			request.headers.requestExpirationTimestamp = ret
+			request.headers._retUTCts = DateUtils.fromAbsRelTimestamp(ret)
 		if not request.headers.requestIdentifier:
 			L.logErr(f'Request must have a "requestIdentifier". Ignored. {request}', showStackTrace=False)
 			return
@@ -651,7 +630,7 @@ class RequestManager(object):
 		
 		# Start an actor to remove the request after the timeout		
 		BackgroundWorkerPool.newActor(	lambda: self.unqueuePollingRequest(originator, request.headers.requestIdentifier, reqType), 
-										delay=DateUtils.fromAbsRelTimestamp(request.headers.requestExpirationTimestamp) - DateUtils.utcTime() + 1.0,	# +1 second delay 
+										delay=request.headers._retUTCts - DateUtils.utcTime() + 1.0,	# +1 second delay 
 										name=f'unqueuePolling_{request.headers.requestIdentifier}-{reqType}').start()
 	
 
@@ -759,12 +738,12 @@ class RequestManager(object):
 		with self._requestLock:
 			# Search all entries in the queue and remove those that have expired in the past
 			# Remove those requests also from 
-			now = DateUtils.toISO8601Date(DateUtils.utcTime())
+			now = DateUtils.utcTime()
 			for originator, requests in list(self._requests.items()):
 				nList = []
-				for tup in list(requests):	# Test all requests for expiration
-					if tup[0].headers.requestExpirationTimestamp > now:
-						nList.append(tup)	# add the request tupple again to the list if it hasnt expired
+				for tup in list(requests):				# Test all requests for expiration
+					if tup[0].headers._retUTCts > now:	# not expired
+						nList.append(tup)				# add the request tupple again to the list if it hasnt expired
 					else:
 						# Also remove the requestID - originator mapping
 						if (rqi := tup[0].headers.requestIdentifier) in self._rqiOriginator:
@@ -1131,7 +1110,8 @@ class RequestManager(object):
 				if _ts < DateUtils.utcTime():
 					L.logDebug(dbg := 'Request timeout')
 					return Result(status=False, request=cseRequest, rsc=RC.requestTimeout, dbg=dbg)
-				cseRequest.headers.requestExpirationTimestamp = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
+				cseRequest.headers._retUTCts = _ts		# Re-assign "real" ISO8601 timestamp
+				cseRequest.headers.requestExpirationTimestamp = DateUtils.toISO8601Date(_ts)
 
 			# RSET - resultExpirationTimestamp
 			if (rset := gget(cseRequest.originalRequest, 'rset', greedy=False)):

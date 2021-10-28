@@ -915,18 +915,19 @@ class RequestArguments:
 
 @dataclass
 class RequestHeaders:
-	originator:str 					= None 	# X-M2M-Origin, from
-	requestIdentifier:str 			= None	# X-M2M-RI
-	contentType:str 				= None	# Content-Type
-	accept:list[str]				= None	# Accept
-	resourceType:ResourceTypes		= None
-	requestExpirationTimestamp:str 	= None 	# X-M2M-RET
-	resultExpirationTimestamp:str	= None 	# X-M2M-RST
-	operationExecutionTime:str 		= None 	# X-M2M-OET
-	releaseVersionIndicator:str 	= None 	# X-M2M-RVI
-	responseTypeNUs:list[str]		= None	# X-M2M-RTU
-	vendorInformation:str			= None	# X-M2M-VSI
-	originatingTimestamp:str		= None  # ot in request
+	originator:str 							= None 	# X-M2M-Origin, from
+	requestIdentifier:str 					= None	# X-M2M-RI
+	contentType:str 						= None	# Content-Type
+	accept:list[str]						= None	# Accept
+	resourceType:ResourceTypes				= None
+	requestExpirationTimestamp:str 			= None 	# X-M2M-RET
+	_retUTCts:float							= None 	# X-M2M-RET as UTC based timestamp
+	resultExpirationTimestamp:str			= None 	# X-M2M-RST
+	operationExecutionTime:str 				= None 	# X-M2M-OET
+	releaseVersionIndicator:str 			= None 	# X-M2M-RVI
+	responseTypeNUs:list[str]				= None	# X-M2M-RTU
+	vendorInformation:str					= None	# X-M2M-VSI
+	originatingTimestamp:str				= None  # ot in request
 
 
 @dataclass

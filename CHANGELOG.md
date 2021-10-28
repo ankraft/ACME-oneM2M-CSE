@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added support for &lt;pollingChannel> and &lt;pollinChannelURI> for polling communication scenarios.
 - [CSE] Added [logging].enableBindingsLogging configuration to enable/disable low-level transport bindings logging.
 - [CSE] Added converting resource IDs to SP-relative when retargeting to different CSEs.
+- [CSE] Added support for request expiration (*Request Expiration Timestamp*) and delayed request execution (*Operation Execution Timestamp*).
 - [MQTT] Added MQTT binding support for Mca and Mcc communication.
 - [CONSOLE] Added the possibility to toggle through the display modes with "^T" when displaying the resource tree continuously.
 - [CONSOLE] Real-time update for the continuous tree (when creating, deleting, updating resources).
@@ -38,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Removed "cse.enableTransitRequests" configuration option. Requests are now always forwarded.
 - [CSE] Removed "cse.enableValidation" configuration option. Validation is now always performed.
 - [CSE] Removed "cse.announcements.enable" configuration option. Resources can now always be announced.
-- [APPS] Removed the example AEs from the CSE. This makes the CSE a bit smaller and also removes a big dependency to the non-portable psutils package. They will be available in  separate project in the future.
+- [APPS] Removed the example AEs from the CSE. This makes the CSE a bit smaller and also removes a big dependency to the non-portable psutils package. They will be available in a separate project in the future.
 - [HTTP] Removed the *server.http.multithreaded* configuration option. The http server now always runs in multithread mode.
 
 ### Fixed

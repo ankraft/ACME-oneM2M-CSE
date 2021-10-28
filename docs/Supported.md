@@ -9,7 +9,7 @@ The CSE implementation successfully passes most of the oneM2M release 1 test cas
 
 ## Release Versions
 
-The ACME CSE supports oneM2M release 2a, 3, and 4 for the resource types and functionalities listed below. 
+The ACME CSE supports oneM2M release 2a, 3, and 4 for the supported resource types and functionalities listed below. 
 
 ## CSE Types
 
@@ -85,6 +85,8 @@ The following table presents the supported management object specifications.
 | Non-blocking requests         |  &check;  | Non-blocking synchronous and asynchronous, and flex-blocking, incl. *Result Persistence*. |
 | TimeSeries data handling      |  &check;  | incl. missing data detection, monitoring and notifications.                               |
 | Long polling                  |  &check;  | Long polling for request unreachable AEs and CSEs.                                        |
+| Request expiration            |  &check;  | Through the *Request Expiration Timestamp* request attribute                              |
+| Delayed request execution     |  &check;  | Through the *Operation Execution Timestamp* request attribute.                            |
 
 
 ## Result Content Types

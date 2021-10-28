@@ -23,8 +23,9 @@ from ..etc.Types import ResponseStatusCode as RC
 from ..etc.Types import Result
 from ..etc.Types import CSERequest
 from ..etc.Types import JSON, Parameters, Conditions
-from ..etc import Utils as Utils
-from ..services import CSE as CSE
+from ..etc import Utils
+from ..etc import DateUtils
+from ..services import CSE
 from ..services.Configuration import Configuration
 from ..services.Logging import Logging as L
 from ..resources import Factory as Factory
@@ -58,6 +59,11 @@ class Dispatcher(object):
 
 	def processRetrieveRequest(self, request:CSERequest, originator:str, id:str=None) -> Result:
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
+
+		# Handle operation execution time and check request expiration
+		self._handleOperationExecutionTime(request)
+		if not (res := self._checkRequestExpiration(request)).status:
+			return res
 
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(srn)) and fanoutPointResource.ty == T.GRP_FOPT:
@@ -375,6 +381,11 @@ class Dispatcher(object):
 	def processCreateRequest(self, request:CSERequest, originator:str, id:str=None) -> Result:
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
+		# Handle operation execution time and check request expiration
+		self._handleOperationExecutionTime(request)
+		if not (res := self._checkRequestExpiration(request)).status:
+			return res
+
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == T.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
@@ -506,6 +517,11 @@ class Dispatcher(object):
 	def processUpdateRequest(self, request:CSERequest, originator:str, id:str=None) -> Result: 
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
+		# Handle operation execution time and check request expiration
+		self._handleOperationExecutionTime(request)
+		if not (res := self._checkRequestExpiration(request)).status:
+			return res
+
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == T.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
@@ -589,6 +605,11 @@ class Dispatcher(object):
 
 	def processDeleteRequest(self, request:CSERequest, originator:str, id:str=None) -> Result:
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
+
+		# Handle operation execution time and check request expiration
+		self._handleOperationExecutionTime(request)
+		if not (res := self._checkRequestExpiration(request)).status:
+			return res
 
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == T.GRP_FOPT:
@@ -682,6 +703,11 @@ class Dispatcher(object):
 	def processNotifyRequest(self, request:CSERequest, originator:str, id:str=None) -> Result:
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
+		# Handle operation execution time and check request expiration
+		self._handleOperationExecutionTime(request)
+		if not (res := self._checkRequestExpiration(request)).status:
+			return res
+
 		# get resource to be notified and check permissions
 		if not (res := self.retrieveResource(id)).resource:
 			L.isDebug and L.logDebug(res.dbg)
@@ -714,7 +740,7 @@ class Dispatcher(object):
 
 	#########################################################################
 	#
-	#	Utility methods
+	#	Public Utility methods
 	#
 
 	def directChildResources(self, pi:str, ty:T=None) -> list[Resource]:
@@ -786,11 +812,37 @@ class Dispatcher(object):
 
 	#########################################################################
 	#
+	#	Request execution utilities
+	#
+
+	def _handleOperationExecutionTime(self, request:CSERequest) -> None:
+		"""	Handle operation execution time and request expiration.
+		"""
+		if request.headers.operationExecutionTime:
+			delay = DateUtils.timeUntilAbsRelTimestamp(request.headers.operationExecutionTime)
+			L.isDebug and L.logDebug(f'Waiting: {delay:.4f} seconds until delayed execution')
+			DateUtils.waitFor(delay)	# Just wait some time
+
+
+	def _checkRequestExpiration(self, request:CSERequest) -> Result:
+		"""	Check request expiration timeout. Returns a negative Result when the timeout
+			timestamp has been reached or passed.
+		"""
+		if request.headers._retUTCts is not None and DateUtils.timeUntilTimestamp(request.headers._retUTCts) <= 0.0:
+			L.logDebug(dbg := 'Request timed out')
+			return Result(status=False, rsc=RC.requestTimeout, dbg=dbg)
+		return Result(status=True)
+
+
+
+	#########################################################################
+	#
 	#	Internal methods for collecting resources and child resources into structures
 	#
 
-	#	Create a m2m:uril structure from a list of resources
 	def _resourcesToURIList(self, resources:list[Resource], drt:int) -> JSON:
+		"""	Create a m2m:uril structure from a list of resources.
+		"""
 		cseid = f'{CSE.cseCsi}/'	# SP relative. csi already starts with a "/"
 		lst = []
 		for r in resources:
@@ -798,8 +850,9 @@ class Dispatcher(object):
 		return { 'm2m:uril' : lst }
 
 
-	# Recursively walk the results and build a sub-resource tree for each resource type
 	def resourceTreeDict(self, resources:list[Resource], targetResource:Resource|JSON) -> list[Resource]:
+		"""	Recursively walk the results and build a sub-resource tree for each resource type.
+		"""
 		rri = targetResource['ri'] if 'ri' in targetResource else None
 		while True:		# go multiple times per level through the resources until the list is empty
 			result = []

@@ -39,7 +39,7 @@ class PCH_PCU(Resource):
 
 		# Determine the request's timeout
 		if request.headers.requestExpirationTimestamp:
-			ret = DateUtils.timeUntilAbsRelTimestamp(request.headers.requestExpirationTimestamp)
+			ret = DateUtils.timeUntilTimestamp(request.headers._retUTCts)
 			L.isDebug and L.logDebug(f'Polling timeout: {ret} seconds')
 		else:
 			ret = CSE.request.requestExpirationDelta
