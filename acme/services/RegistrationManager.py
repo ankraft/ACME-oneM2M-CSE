@@ -173,6 +173,10 @@ class RegistrationManager(object):
 	def handleCSRRegistration(self, csr:Resource, originator:str) -> Result:
 		L.isDebug and L.logDebug(f'Registering CSR. csi: {csr.csi}')
 
+		# Fill missing csi with the originator (accoring to TS-0004, 7.4.4.2.1)
+		if csr.csi is None:
+			csr['csi'] = originator
+			
 		# Validate csi in csr
 		if not (res := CSE.validator.validateCSICB(csr.csi, 'csi')).status:
 			return res

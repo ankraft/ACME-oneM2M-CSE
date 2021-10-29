@@ -686,12 +686,23 @@
 	],
 	"csi": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "CSEBase", "CSRAnnc" ],
 			"lname": "CSE-ID",
 			"ns": "m2m",
 			"type": "string",
 			"car": "1",
 			"oc": "M",
+			"ou": "NP",
+			"od": "O",
+			"annc": "OA"
+		},
+		{
+			"rtypes": [ "CSR" ],
+			"lname": "CSE-ID",
+			"ns": "m2m",
+			"type": "string",
+			"car": "1",
+			"oc": "O",
 			"ou": "NP",
 			"od": "O",
 			"annc": "OA"
