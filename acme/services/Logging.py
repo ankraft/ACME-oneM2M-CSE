@@ -373,7 +373,7 @@ class ACMERichLogHandler(RichHandler):
 
 			# r"(?P<dim>^[0-9]+\.?[0-9]*\b - )",			# thread ident at front
 			r"(?P<dim>^[^ ]*[ ]*- )",						# thread ident at front
-			#r"(?P<request>==>.*:)",							# Outgoing request or response
+			r"(?P<request>==>.*:)",							# Incoming request or response
 			r"(?P<request>[^-]+Request ==>:)",				# Outgoing request or response
 			r"(?P<response><== [^:]+[(:]+)",				# outgoing response or request
 			r"(?P<response>[^-]+Response <== [^ :]+[ :]+)",		# Incoming response or request

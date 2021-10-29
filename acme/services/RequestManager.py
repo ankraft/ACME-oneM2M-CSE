@@ -298,7 +298,7 @@ class RequestManager(object):
 		return CSE.dispatcher.createResource(nres.resource, cseres.resource, request.headers.originator)
 
 
-	def _handleNonBlockingRequest(self, request:CSERequest ) -> Result:
+	def _handleNonBlockingRequest(self, request:CSERequest) -> Result:
 		"""	This method creates a <request> resource, initiates the execution of the desired operation in
 			the background, but immediately returns with the reference of the <request> resource that
 			will contain the result of the operation.
@@ -763,7 +763,7 @@ class RequestManager(object):
 	#
 
 
-	def sendRetrieveRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False) -> Result:
+	def sendRetrieveRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False, id:str=None) -> Result:
 		"""	Send a RETRIEVE request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending RETRIEVE request to: {uri}{appendID}')
@@ -791,7 +791,8 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=raw,
+													  id=id)
 			elif Utils.isMQTTUrl(url):
 				CSE.event.mqttSendRetrieve()	# type: ignore [attr-defined]
 				return CSE.mqttClient.sendMqttRequest(Operation.RETRIEVE, 
@@ -802,14 +803,15 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=raw,
+													  id=id)
 			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
 			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
-		return Result(status=False, rsc=RC.internalServerError, dbg=f'No target found for uri: {uri}')
+		return Result(status=False, rsc=RC.notFound, dbg=f'No target found for uri: {uri}')
 
 
-	def sendCreateRequest(self, uri:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False) -> Result:
+	def sendCreateRequest(self, uri:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False, id:str=None) -> Result:
 		"""	Send a CREATE request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending CREATE request to: {uri}{appendID}')
@@ -842,7 +844,8 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=raw,
+													  id=id)
 			elif Utils.isMQTTUrl(url):
 				CSE.event.mqttSendCreate()	# type: ignore [attr-defined]
 				return CSE.mqttClient.sendMqttRequest(Operation.CREATE,
@@ -854,14 +857,15 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=raw,
+													  id=id)
 			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
 			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 		
-		return Result(status=False, rsc=RC.internalServerError, dbg=f'No target found for uri: {uri}')
+		return Result(status=False, rsc=RC.notFound, dbg=f'No target found for uri: {uri}')
 
 
-	def sendUpdateRequest(self, uri:str, originator:str, data:Any, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False) -> Result:
+	def sendUpdateRequest(self, uri:str, originator:str, data:Any, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False, id:str=None) -> Result:
 		"""	Send an UPDATE request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending UPDATE request to: {uri}{appendID}')
@@ -891,7 +895,8 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=raw,
+													  id=id)
 			elif Utils.isMQTTUrl(url):
 				CSE.event.mqttSendUpdate()	# type: ignore [attr-defined]
 				return CSE.mqttClient.sendMqttRequest(Operation.UPDATE,
@@ -902,14 +907,15 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=raw,
+													  id=id)
 			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
 			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 		
-		return Result(status=False, rsc=RC.internalServerError, dbg=f'No target found for uri: {uri}')
+		return Result(status=False, rsc=RC.notFound, dbg=f'No target found for uri: {uri}')
 
 
-	def sendDeleteRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False) -> Result:
+	def sendDeleteRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False, id:str=None) -> Result:
 		"""	Send a DELETE request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending DELETE request to: {uri}{appendID}')
@@ -936,7 +942,8 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=raw,
+													  id=id)
 			elif Utils.isMQTTUrl(url):
 				CSE.event.mqttSendDelete()	# type: ignore [attr-defined]
 				return CSE.mqttClient.sendMqttRequest(Operation.DELETE,
@@ -947,14 +954,15 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=raw,
+													  id=id)
 			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
 			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
-		return Result(status=False, rsc=RC.internalServerError, dbg=f'No target found for uri: {uri}')
+		return Result(status=False, rsc=RC.notFound, dbg=f'No target found for uri: {uri}')
 
 
-	def sendNotifyRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', noAccessIsError:bool=False, raw:bool=False) -> Result:
+	def sendNotifyRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', noAccessIsError:bool=False, raw:bool=False, id:str=None) -> Result:
 		"""	Send a NOTIFY request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending NOTIFY request to: {uri}{appendID} for Originator: {originator}, targetOriginator: {targetOriginator}, targetResource: {targetResource}')
@@ -988,7 +996,8 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=raw,
+													  id=id)
 			elif Utils.isMQTTUrl(url):
 				CSE.event.mqttSendNotify()	# type: ignore [attr-defined]
 				return CSE.mqttClient.sendMqttRequest(Operation.NOTIFY,
@@ -999,11 +1008,12 @@ class RequestManager(object):
 													  ct=ct,
 													  targetResource=targetResource,
 													  targetOriginator=targetOriginator,
-													  raw=raw)
+													  raw=raw,
+													  id=id)
 			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
 			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 		
-		return Result(status=False, rsc=RC.internalServerError, dbg=f'No target found for uri: {uri}')
+		return Result(status=False, rsc=RC.notFound, dbg=f'No target found for uri: {uri}')
 
 
 	###########################################################################

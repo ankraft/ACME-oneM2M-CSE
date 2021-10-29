@@ -380,6 +380,8 @@ class Dispatcher(object):
 
 	def processCreateRequest(self, request:CSERequest, originator:str, id:str=None) -> Result:
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
+		if not id:
+			id = request.id
 
 		# Handle operation execution time and check request expiration
 		self._handleOperationExecutionTime(request)

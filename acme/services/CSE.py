@@ -59,6 +59,7 @@ validator:Validator 							= None
 supportedReleaseVersions:list[str]				= None
 cseType:CSEType									= None
 cseCsi:str										= None
+cseCsiRelative:str								= None	# Without the leading /
 cseCsiSlash:str  								= None
 cseRi:str 										= None
 cseRn:str										= None
@@ -81,7 +82,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	global announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
 	global remote, request, security, statistics, storage, timeSeries, validator
 	global aeStatistics
-	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseRi, cseRn, releaseVersion
+	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiRelative, cseRi, cseRn, releaseVersion
 	global cseOriginator
 	global isHeadless
 
@@ -108,6 +109,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	supportedReleaseVersions = Configuration.get('cse.supportedReleaseVersions')
 	cseType					 = Configuration.get('cse.type')
 	cseCsi					 = Configuration.get('cse.csi')
+	cseCsiRelative			 = cseCsi[1:]
 	cseCsiSlash				 = f'{cseCsi}/'
 	cseRi					 = Configuration.get('cse.ri')
 	cseRn					 = Configuration.get('cse.rn')

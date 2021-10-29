@@ -368,7 +368,7 @@ class MQTTClient(object):
 	#	Send MQTT requests
 	#
 
-	def sendMqttRequest(self, operation:Operation, url:str, originator:str, ty:T=None, data:JSON=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, raw:bool=False) -> Result:	 # type: ignore[type-arg]
+	def sendMqttRequest(self, operation:Operation, url:str, originator:str, ty:T=None, data:JSON=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, raw:bool=False, id:str=None) -> Result:	 # type: ignore[type-arg]
 		"""	Sending a request via MQTT.
 		"""
 
@@ -388,6 +388,7 @@ class MQTTClient(object):
 		# Pack everything that is needed in a Result object as if this is a normal "response" (for MQTT this doesn't matter)
 		# This seems to be a bit complicated, but we fill in the necessary values as if this is a normal "response"
 		req 										= Result(request=CSERequest())
+		req.request.id								= id
 		req.request.op								= operation
 		req.resource								= data
 		req.request.headers.originator				= targetOriginator if targetOriginator else u.path[1:]
