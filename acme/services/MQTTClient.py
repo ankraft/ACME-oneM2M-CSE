@@ -185,7 +185,7 @@ class MQTTClientHandler(MQTTHandler):
 				_sendResponse(Result(rsc=RC.badRequest, request=dissectResult.request, dbg=dbg))
 				return
 
-			if dissectResult.request.headers.resourceType != ResourceTypes.AE:
+			if dissectResult.request.headers.resourceType not in [ ResourceTypes.AE, ResourceTypes.CSR]:
 				# Registration type must be AE
 				L.logWarn(dbg := f'Invalid resource type for registration: {dissectResult.request.headers.resourceType}')
 				_sendResponse(Result(rsc=RC.badRequest, request=dissectResult.request, dbg=f'Invalid resource type for registration: {dissectResult.request.headers.resourceType.name}'))
