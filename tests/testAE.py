@@ -36,7 +36,6 @@ class TestAE(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
-		pass
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

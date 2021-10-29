@@ -591,6 +591,11 @@ def getAttributeSize(attribute:Any) -> int:
 	return size
 	
 	
+def hasRegisteredAE(originator:str) -> bool:
+	"""	Check wether an AE with `originator` is registered at the CSE.
+	"""
+	return len(CSE.storage.searchByFragment({'aei' : originator})) > 0
+
 
 ##############################################################################
 #

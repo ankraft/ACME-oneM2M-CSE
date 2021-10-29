@@ -68,7 +68,8 @@ class CSR(AnnounceableResource):
 
 		#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
 		if self.csi:
-			self.setAttribute('ri', self.csi.split('/')[-1])				# overwrite ri (only after /'s')
+			# self.setAttribute('ri', self.csi.split('/')[-1])				# overwrite ri (only after /'s')
+			self.setAttribute('ri', Utils.getIdFromOriginator(self.csi))	# overwrite ri (only after /'s')
 		self.setAttribute('rr', False, overwrite=False)
 
 

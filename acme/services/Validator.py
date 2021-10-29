@@ -275,10 +275,10 @@ class Validator(object):
 		# TODO Decide whether to correct this automatically, like in RemoteCSEManager._retrieveRemoteCSE()
 		if not val:
 			L.logDebug(dbg := f"{name} is missing")
-			return Result(status=False, dbg=dbg)
+			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 		if not val.startswith('/'):
 			L.logDebug(dbg := f"{name} must start with '/': {val}")
-			return Result(status=False, dbg=dbg)
+			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 		return Result(status=True)
 
 

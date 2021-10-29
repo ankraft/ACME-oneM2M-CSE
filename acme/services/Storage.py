@@ -530,6 +530,7 @@ class TinyDBBinding(object):
 
 
 	def insertIdentifier(self, resource:Resource, ri:str, srn:str) -> None:
+		# L.isDebug and L.logDebug({'ri' : ri, 'rn' : resource.rn, 'srn' : srn, 'ty' : resource.ty})		
 		with self.lockIdentifiers:
 			self.tabIdentifiers.upsert(
 				# ri, rn, srn 

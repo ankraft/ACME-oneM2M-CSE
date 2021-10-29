@@ -15,6 +15,7 @@ from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
+csrOriginator = '/Ctest'
 
 class TestRemote(unittest.TestCase):
 
@@ -31,7 +32,8 @@ class TestRemote(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def tearDownClass(cls) -> None:
-		pass
+		DELETE(csrURL, ORIGINATOR)
+		DELETE(aeURL, ORIGINATOR)
 		
 
 	# Retrieve the CSR on the local CSE
@@ -89,7 +91,9 @@ class TestRemote(unittest.TestCase):
 			'srv': [ '2a', '3', '4' ],
 			'dcse': [],
 		}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, T.CSR, dct)
+		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
+		if rsc == RC.originatorHasNoPrivilege:
+			console.print(f'\n[red]Please add "{csrOriginator[1:]}" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
@@ -107,7 +111,9 @@ class TestRemote(unittest.TestCase):
 			'srv': [ '2a', '3', '4' ],
 			'dcse': [],
 		}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, T.CSR, dct)
+		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
+		if rsc == RC.originatorHasNoPrivilege:
+			console.print(f'\n[red]Please add "{csrOriginator[1:]}" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
@@ -125,24 +131,69 @@ class TestRemote(unittest.TestCase):
 			'srv': [ '2a', '3', '4' ],
 			'dcse': [],
 		}}
-		r, rsc = CREATE(cseURL, ORIGINATOR, T.CSR, dct)
-		self.assertEqual(rsc, RC.badRequest, r)
+		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
+		if rsc == RC.originatorHasNoPrivilege:
+			console.print(f'\n[red]Please add "{csrOriginator[1:]}" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
+		self.assertEqual(rsc, RC.created, r)	# actually, it is overwritten by the CSE
 
-		# dct = { 'm2m:csr' : {
-		# 	'rn': csrRN,
-		# 	'cb': '/someCB',
-		# 	'csi': '/wrongCSI',
-		# 	'rr': False,
-		# 	'cst': 2, 
-		# 	'csz': [ 'application/json' ],
-		# 	'poa': [ URL ], 
-		# 	'srv': [ '2a', '3', '4' ],
-		# 	'dcse': [],
-		# }}
-		# r, rsc = CREATE(cseURL, ORIGINATOR, T.CSR, dct)
-		# self.assertEqual(rsc, RC.created, r)
-		# _, rsc = DELETE(csrURL, ORIGINATOR)
-		# self.assertEqual(rsc, RC.deleted)
+		_, rsc = DELETE(csrURL, csrOriginator)
+		self.assertEqual(rsc, RC.deleted)
+
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_createCSRnoCsi(self) -> None:
+		""" Create a local <CSR> without csi, but allowed originator"""
+		dct = { 'm2m:csr' : {
+			'rn': csrRN,
+			'cb': '/someCB',
+			'rr': False,
+			'cst': 2, 
+			'csz': [ 'application/json' ],
+			'poa': [ URL ], 
+			'srv': [ '2a', '3', '4' ],
+			'dcse': [],
+		}}
+		r, rsc = CREATE(cseURL, csrOriginator, T.CSR, dct)
+		if rsc == RC.originatorHasNoPrivilege:
+			console.print('\n[red]Please add "id-nocsi" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
+		self.assertEqual(rsc, RC.created, r)
+		
+		_, rsc = DELETE(csrURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.deleted)
+
+
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_createCSRsameAsAE(self) -> None:
+		""" Create a local <CSR> with the same originator as an <AE> -> Fail """
+
+		# Create AE first
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN, 
+					'api': 'NMyApp1Id',
+				 	'rr': False,
+				 	'srv': [ '3' ]
+				}}
+		r, rsc = CREATE(cseURL, 'Ctest', T.AE, dct)
+		self.assertEqual(rsc, RC.created, r)
+
+		dct = { 'm2m:csr' : {
+			'rn': csrRN,
+			'cb': '/Ctest',
+			'rr': False,
+			'cst': 2, 
+			'csz': [ 'application/json' ],
+			'poa': [ URL ], 
+			'srv': [ '2a', '3', '4' ],
+			'dcse': [],
+		}}
+		r, rsc = CREATE(cseURL, 'Ctest', T.CSR, dct)
+		if rsc == RC.originatorHasNoPrivilege:
+			console.print('\n[red]Please add "Ctest" to the configuration \[cse.registration].allowedCSROriginators in the IN-CSE\'s ini file')
+		self.assertEqual(rsc, RC.operationNotAllowed, r)
+
+		_, rsc = DELETE(aeURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.deleted)
+
+
 
 # TODO Transfer requests
 
@@ -153,6 +204,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestRemote('test_createCSRmissingCSI'))
 	suite.addTest(TestRemote('test_createCSRmissingCB'))
 	suite.addTest(TestRemote('test_createCSRwrongCSI'))
+	suite.addTest(TestRemote('test_createCSRnoCsi'))
+	suite.addTest(TestRemote('test_createCSRsameAsAE'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)

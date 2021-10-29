@@ -416,7 +416,7 @@ class Dispatcher(object):
 		if Utils.isVirtualResource(parentResource):
 			return parentResource.handleCreateRequest(request, id, originator)	# type: ignore[no-any-return]
 
-		# Create resource from teh dictionary
+		# Create resource from the dictionary
 		if not (nres := Factory.resourceFromDict(deepcopy(request.pc), pi=parentResource.ri, ty=ty)).resource:	# something wrong, perhaps wrong type
 			return Result(status=False, rsc=RC.badRequest, dbg=nres.dbg)
 		nresource = nres.resource
@@ -424,6 +424,10 @@ class Dispatcher(object):
 		# Check whether the parent allows the adding
 		if not (res := parentResource.childWillBeAdded(nresource, originator)).status:
 			return res.errorResult()
+
+		# Check resource creation
+		if not (rres := CSE.registration.checkResourceCreation(nresource, originator, parentResource)).status:
+			return rres.errorResult()
 
 		# check whether the resource already exists, either via ri or srn
 		# hasResource() may actually perform the test in one call, but we want to give a distinguished debug message
@@ -434,9 +438,6 @@ class Dispatcher(object):
 			L.logWarn(dbg := f'Resource with structured id: {nresource.__srn__} already exists')
 			return Result(status=False, rsc=RC.conflict, dbg=dbg)
 
-		# Check resource creation
-		if not (rres := CSE.registration.checkResourceCreation(nresource, originator, parentResource)).status:
-			return rres.errorResult()
 		# originator might have changed during this check. Result.data contains this new originator
 		originator = cast(str, rres.data) 					
 		request.headers.originator = originator	
