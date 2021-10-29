@@ -180,8 +180,9 @@ class RegistrationManager(object):
 			return Result(status=False, rsc=RC.operationNotAllowed, dbg=dbg)
 		
 		# Always replace csi with the originator (according to TS-0004, 7.4.4.2.1)
-		csr['csi'] = originator
-		csr['ri']  = Utils.getIdFromOriginator(originator)
+		if not CSE.importer.isImporting:	# ... except when the resource was just been imported
+			csr['csi'] = originator
+			csr['ri']  = Utils.getIdFromOriginator(originator)
 
 		# Validate csi in csr
 		if not (res := CSE.validator.validateCSICB(csr.csi, 'csi')).status:
