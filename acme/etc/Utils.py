@@ -81,12 +81,12 @@ def isSPRelative(uri:str) -> bool:
 
 def isAbsolute(uri:str) -> bool:
 	""" Check whether a URI is Absolute. """
-	return uri is not None and uri.startswith('//')
+	return uri and uri.startswith('//')
 
 
 def isCSERelative(uri:str) -> bool:
 	""" Check whether a URI is CSE-Relative. """
-	return uri is not None and uri[0] != '/'
+	return uri and not uri.startswith('/')
 
 
 def isStructured(uri:str) -> bool:
