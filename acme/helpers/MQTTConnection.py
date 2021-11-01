@@ -207,10 +207,16 @@ class MQTTConnection(object):
 		if rc == 0:
 			self.isConnected = False
 			self.messageHandler and	self.messageHandler.onDisconnect(self)
+		elif rc == 7:
+			self.isConnected = False
+			self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot disconnect from broker. Result code: {rc} ({mqtt.error_string(rc)})')
+			self.messageHandler.logging(self, logging.ERROR, f'MQTT: Did another client connected with the same ID ({self.clientID})?')
+			self.messageHandler and	self.messageHandler.onDisconnect(self)
 		else:
 			self.isConnected = False
 			if self.messageHandler:
 				self.messageHandler.logging(self, logging.ERROR, f'MQTT: Cannot disconnect from broker. Result code: {rc} ({mqtt.error_string(rc)})')
+				self.messageHandler.onDisconnect(self)
 				self.messageHandler.onError(self, rc)
 
 

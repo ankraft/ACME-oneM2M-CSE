@@ -16,8 +16,11 @@
 
 ## MQTT
 
-1. **What does this error message "Out of memory" mean that appears sometimes?**  
+1. **What does the error message "Out of memory" mean that appears sometimes?**  
    This error message should actually read "connection refused" or "general error" that is returned by the underlying MQTT library. The error code "1" indicates this error but the human readable error message seems to be wrongly assigned here.
+1. **What is going on when the error "rc=7: The connection was lost" is repeatedly thrown?**  
+   This error message might occur when another client (perhaps another running CSE with the same CSE-ID) connected to an MQTT broker with the same client ID. The CSE then tries to re-connect and the other CSE is disconnected by the broker. And then this client tries to reconnect. This will then repeat over and over again.  
+   Identify the other client, stop it, and assign it a different CSE-ID.
 1. **What does "cannot connect to broker: [Errno 49] Can't assign requested address" mean?**  
    You most likely want to connect to an MQTT broker that does not run on your local machine and you configured the listen interface to "127.0.0.1", which means that only local running services can be reached. Try to set the configuration *[client.mqtt].listenIF* to "0.0.0.0".
 
