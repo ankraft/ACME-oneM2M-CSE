@@ -30,7 +30,7 @@ from rich.table import Table
 from rich.prompt import Prompt
 
 from ..etc.Types import JSON
-from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..services.Configuration import Configuration
 
 levelName = {
@@ -86,12 +86,12 @@ class Logging:
 	worker 							= None
 	queue:Queue						= None
 
-	checkInterval:float				= 0.2		# wait (in s) between checks of the logging queue # TODO configurable
 	queueMaxsize:int				= 5000		# max number of items in the logging queue. Might otherwise grow forever on large load
 
 	_console:Console				= None
 	_richHandler:ACMERichLogHandler	= None
 	_handlers:List[Any] 			= None
+	_logWorker:BackgroundWorker		= None
 
 	terminalColor					= 'spring_green2'
 	terminalStyle:Style				= Style(color=terminalColor)
@@ -143,7 +143,9 @@ class Logging:
 
 		# Start worker to handle logs in the background
 		from ..helpers.BackgroundWorker import BackgroundWorkerPool
-		BackgroundWorkerPool.newWorker(Logging.checkInterval, Logging.loggingWorker, 'loggingWorker', runOnTime=False).start()
+		Logging._logWorker = BackgroundWorkerPool.newActor(Logging.loggingActor, name='loggingWorker')
+		Logging._logWorker.start()	# Yes, this could be in one line but the _logworker attribute may not be assigned yet before the 
+									# actor callback is executed, and this might result in a None exception
 	
 	
 	@staticmethod
@@ -151,14 +153,14 @@ class Logging:
 		if Logging.queue:
 			while not Logging.queue.empty():
 				time.sleep(0.5)
-		from ..helpers.BackgroundWorker import BackgroundWorkerPool
-		BackgroundWorkerPool.stopWorkers('loggingWorker')
+		Logging._logWorker.stop()
+		Logging.log('')
 
 
 	@staticmethod
-	def loggingWorker() -> bool:
-		while not Logging.queue.empty():
-			level, msg, caller, thread = Logging.queue.get()
+	def loggingActor() -> bool:
+		while Logging._logWorker.running:
+			level, msg, caller, thread = Logging.queue.get(block=True)
 			Logging.loggerConsole.log(level, f'{os.path.basename(caller.filename)}*{caller.lineno}*{thread.name:<10.10}*{msg}')
 		return True
 
