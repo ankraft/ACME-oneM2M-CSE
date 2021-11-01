@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Changed optionality of and originator assignment to CSR.csi according to TS-0004 spec change.
 - [HTTP] Moved the security setting for http to the separate section *server.http.security*.
 - [IMPORTING] Changed the file extension for &lt;flexContainer> attribute policies from ".ap" to ".fcp".
+- [Logging] Changed the internal handling of log messages. Output should be more immediate than before.
 - [RUNTIME] Due to the restructuring of the project structure the CSE must now be started like this: ```python3 -m acme```
 
 ### Removed
