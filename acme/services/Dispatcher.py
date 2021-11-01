@@ -508,7 +508,7 @@ class Dispatcher(object):
 		if parentResource:
 			parentResource = parentResource.dbReload().resource		# Read the resource again in case it was updated in the DB
 			if not parentResource:
-				L.logErr(dbg := 'Parent resource not found. Probably removed in between?')
+				L.logWarn(dbg := 'Parent resource not found. Probably removed in between?')
 				self.deleteResource(resource)
 				return Result(status=False, rsc=RC.internalServerError, dbg=dbg)
 			parentResource.childAdded(resource, originator)			# notify the parent resource
