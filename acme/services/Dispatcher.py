@@ -502,15 +502,16 @@ class Dispatcher(object):
 			resource.dbDelete()
 			return res
 
+		# send a create event
+		CSE.event.createResource(resource)	# type: ignore
+
 		if parentResource:
 			parentResource = parentResource.dbReload().resource		# Read the resource again in case it was updated in the DB
 			if not parentResource:
 				L.logErr(dbg := 'Parent resource not found. Probably removed in between?')
+				self.deleteResource(resource)
 				return Result(status=False, rsc=RC.internalServerError, dbg=dbg)
 			parentResource.childAdded(resource, originator)			# notify the parent resource
-
-		# send a create event
-		CSE.event.createResource(resource)	# type: ignore
 
 		return Result(status=True, resource=resource, rsc=RC.created) 	# everything is fine. resource created.
 
