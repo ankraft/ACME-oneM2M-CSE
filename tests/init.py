@@ -432,7 +432,7 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 		req['fc'] = fc
 
 	if headers:			# extend with other headers
-		for hdr,attr in [ (C.hfRVI, 'rvi'), (C.hfVSI, 'vsi'), (C.hfRET, 'rqet') ]:
+		for hdr,attr in [ (C.hfRVI, 'rvi'), (C.hfVSI, 'vsi'), (C.hfRET, 'rqet'), (C.hfOET, 'oet')]:
 			if (h := headers.get(hdr)) is not None:	# overwrite X-M2M-RVI header
 				req[attr] = h
 				del headers[hdr]
