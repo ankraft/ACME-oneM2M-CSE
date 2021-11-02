@@ -191,8 +191,14 @@ class Statistics(object):
 	def _handleStatsEvent(self, eventType:str) -> None:
 		"""	Generic handling of statist events.
 		"""
-		with self.statLock:
-			self.stats[eventType] += 1		# type: ignore
+		try:
+			with self.statLock:
+				self.stats[eventType] += 1		# type: ignore
+		except KeyError:
+			# In case there is a version update and a new event was added,
+			# the we might just add this event as the first entry
+			with self.statLock:
+				self.stats[eventType] = 1		# type: ignore
 
 
 	def handleCseStartup(self) -> None:
