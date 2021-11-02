@@ -7,10 +7,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [unreleased] - xxxx-xx-xx
+## [0.9.0] - 2021-11-03
 
 ### Added
-- [CSE] Added support for &lt;pollingChannel> and &lt;pollinChannelURI> for polling communication scenarios.
+- [CSE] Added support for &lt;pollingChannel> and &lt;pollingChannelURI> for polling communication scenarios.
 - [CSE] Added [logging].enableBindingsLogging configuration to enable/disable low-level transport bindings logging.
 - [CSE] Added converting resource IDs to SP-relative when retargeting to different CSEs.
 - [CSE] Added support for request expiration (*Request Expiration Timestamp*) and delayed request execution (*Operation Execution Timestamp*).
@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CONSOLE] Added the possibility to toggle through the display modes with "^T" when displaying the resource tree continuously.
 - [CONSOLE] Real-time update for the continuous tree (when creating, deleting, updating resources).
 - [CONSOLE] Added [cse.console].confirmQuit configuration option. It is switched off by default.
-- [DATABASE] Added validation of data base files during start-up.
+- [DATABASE] Added validation of data base fil∑es during start-up.
 - [DATABASE] Added backup of data base files during start-up.
 
 ### Changed
@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Improved fallback and debug message of missing Release Version Indicator attribute in requests.
 - [CSE] Refactored project directory structure.
 - [CSE] Refactored validation to improve attribute policies and validation handling and extension. Policies are now defined by a definition file and assigned to each resource type.
+- [CSE] Refactored the handling of target URI's. They are now evaluated as late as possible. This may have impact on, for example, batch notifications and whenever the real target URL may change over time.
 - [CSE] Changed rcn = modifiedAttributes to the improved definition in the spec: return only those modified attributes that where *not* in the original request, but were modified by the CSE as a result of the request.
 - [CSE] Improved transit requests: serialization according to target's preferences.
 - [CSE] Changed optionality of and originator assignment to CSR.csi according to TS-0004 spec change.

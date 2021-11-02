@@ -18,15 +18,15 @@
 ;
 ;	This part sets the necessary parameters for running the CSE.
 ;
-;	Uncomment one of the following sections for a basic IN, MN, or ASN configuration, and make the necessary changes to the
-;	following configuration settings:
+;	Uncomment one of the following sections for either a basic IN (infra-structure node), MN (middle node), or 
+;	ASN (application service node) configuration, and make the necessary changes to the following configuration settings:
 ;
 ;		cseType          : The CSE type. Allowed values are: IN, MN, ASN .
-;		cseID            : The CSE ID. This is just the ID, without a leading "/" character.
+;		cseID            : The CSE-ID. This is just the ID, without a leading "/" character.
 ;		cseName          : The name of the CSE. This is also the CSEBase's resource name.
 ;		adminID          : The name of the admin originator for the CSE.
-;		dataDirectory    : The root directory for the data, init, log and cert directories. The macro "${baseDirectory}" 
-;		                   provides the path to the installation directory of the acme package itself.
+;		dataDirectory    : The root directory for the data, init, log and cert directories. The built-in macro "${baseDirectory}" 
+;		                   provides the path to the installation directory of the acme module itself.
 ;		networkInterface : The network interface to listen to. Use 0.0.0.0 for all interfaces.
 ;       cseHost          : The IP address or hostname under which the CSE is reachable.
 ;		httpPort         : The port for the CSE's HTTP server to listen for incoming requests.
@@ -34,9 +34,9 @@
 ;		databaseInMemory : Specify whether the CSE's database is stored in memory. Be aware that setting this configuration 
 ;		                   to "true" means that the database content is removed when the CSE terminates.
 ;
-;	The following additional configuration values are only needed for MN and ASN CSE installations, and when the CSE should
-;	register to another CSE. They provide the necessary information about the registrar CSE (ie. the CSE that 
-;	the CSE will register itself).
+;	The following additional configuration settings are only needed for MN-CSE and ASN-CSE installations, and when the CSE should
+;	register to another CSE. They provide the necessary information about the registrar CSE (ie. the remote CSE that 
+;	the CSE will register to).
 ;
 ; 		registrarCseHost : The IP address of the registrar CSE
 ;		registrarCsePort : The TCP port of the registrar CSE
