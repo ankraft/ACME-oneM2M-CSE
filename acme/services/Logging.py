@@ -153,7 +153,8 @@ class Logging:
 		if Logging.queue:
 			while not Logging.queue.empty():
 				time.sleep(0.5)
-		Logging._logWorker.stop()
+		if Logging._logWorker:
+			Logging._logWorker.stop()
 		Logging.log('')
 
 
