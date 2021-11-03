@@ -21,29 +21,33 @@ You may consider to use a virtual environment manager like pyenv + virtualenv (s
 - **Rich**: The CSE uses the [Rich](https://github.com/willmcgugan/rich) text formatter library to format various terminal output.
 - **tinydb 4.x** : To store resources the CSE uses the lightweight [TinyDB](https://github.com/msiemens/tinydb) document database.
 
-**Either** install these packages by running the following command:
+**Either** install these packages by running the following command (recommended):
 
 	python3 -m pip install -r requirements.txt
 
-**or** install them manually:  
+**or** install them individually:  
 
 	python3 -m pip install cbor2 flask isodate paho-mqtt requests rich tinydb
 
+## Installation and Quick Configuration
 
-## Installation and Configuration
+1. Install the ACME CSE by cloning the repository, or by copying the whole distribution to a new directory.
 
-1. Install the ACME CSE by cloning the repository, or by copying the whole distribution to a new directory.  
+		git clone https://github.com/ankraft/ACME-oneM2M-CSE.git
+		cd ACME-oneM2M-CSE
+
 1. Copy the configuration file [acme.ini.default](../acme.ini.default) to a new file *acme.ini* so that you can make adjustments to the configuration. Also, the ACME detects a file by this name and reads the configuration from it.
 
 		cp acme.ini.default acme.ini
 
-1.  Have a look at the configuration file *acme.ini*. The CSE's settings are read from this file. 
+1.  Edit the configuration file *acme.ini*. The CSE's settings are read from this file.  
 	There are a lot of individual things to configure here. Mostly, the defaults should be sufficient, but individual settings can be applied to each of the sections.  
-	The next section describes the quick configuration that is sufficient for most cases.
+	The next section describes the quick configuration procedure that is sufficient for most cases.
 
-### Quick configuration
+### Quick Configuration
 
-The format follows the Windows INI file format with sections, keywords and values. A configuration file may include comments, prefixed with the characters "#"" or ";"" .
+The format of the configuration file follows the Windows INI file format with sections, keywords and values. 
+A configuration file may include comments, where lines are starting with the characters "#"" or ";"" .
 
 At the top of the configuration file *acme.ini* are templates for a section named *basic.config*. Uncomment one of these sections for the basic values
 for either an IN (infra-structure node), MN (middle node), or ASN (application service node) configuration, and make changes to the following individual
@@ -72,6 +76,8 @@ The level for log messages. Allowed values are: *debug*, *info*, *warning*, *err
 Specify whether the CSE's database is stored in memory. Be aware that setting this configuration 
 to "true" means that the database content is removed when the CSE terminates.
 
+This quick configuration will configure a CSE that is reachable via http and that uses JSON as the default serialization.
+
 The following additional configuration settings are only needed for MN-CSE and ASN-CSE installations, and in case the CSE should
 register to another CSE. They provide the necessary information about the registrar CSE (ie. the rempote CSE that the CSE will register to).
 
@@ -83,8 +89,6 @@ The TCP port of the registrar CSE.
 The CSE-ID of the registrar CSE.
 - **registrarCseName**  
 The resource name of the registrar CSE's CSEBase.
-
-This quick configuration will configure a CSE that is reachable via http and that uses JSON as the default serialization.
 
 Please see [Configuration](Configuration.md) for further details on the configuration, e.g. how to enable MQTT or to change other
 CSE parameters.
@@ -124,6 +128,27 @@ The following is an example for an MN-CSE. It will register to an IN-CSE that ru
 	registrarCsePort=8080
 	registrarCseID=id-in
 	registrarCseName=cse-in
+
+## Running the CSE
+
+Please refer to the [Running](Running.md) documentation for instructions how to start and run the ACME CSE next.
+
+---
+## Certificates and Support for https
+
+To enable https you have to set various settings [\[server.http.security\] - HTTP Security Settings](Configuration.md#security_http), and provide a certificate and a key file. 
+One way to generate those files is the [openssl](https://www.openssl.org) tool that may already be installed on your OS. The following example shows how to 
+generate a self-signed certificate:
+
+	openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -nodes -days 1000
+
+This will generate the self-signed certificate and private key without password protection (*-nodes*), and stores them in the files *cert.pem* and *key.pem* respectively. 
+*openssl* will prompt you with questions for *Country Name* etc, but you can just hit *Enter* and accept the defaults. The *-days* parameter affects the certificate's
+expiration date.
+
+Please also consult the *openssl* manual for further instructions. 
+
+After you generated these files you can move them to a separate directory (for example you may create a new directory named *cert* in ACME's installation directory) and set the *caCertificateFile* and *caPrivateKeyFile* configuration parameters accordingly.
 
 ---
 

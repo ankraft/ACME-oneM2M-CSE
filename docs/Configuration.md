@@ -22,7 +22,7 @@ A default configuration file is provided with the file [acme.ini.default](../acm
 
 
 <a name="sections"></a>
-## Detailed Configuration Sections
+## Configuration Sections
 
 The following tables provide detailed descriptions of all the possible CSE configuration settings.
 
@@ -248,7 +248,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 |:-------------|:-------------------------------------------------------|:---------------------|
 | enableLimits | Enable/disable the default limits.<br/> Default: False | cse.ts.enableLimits  |
 | mni          | Default for maxNrOfInstances.<br/> Default: 10         | cse.ts.mni           |
-| mbs          | Default for maxByteSize.<br/>Default: 10.000 bytes     | cse.ts.mbs           |
+| mbs          | Default for maxByteSize.<br/>Default: 10.000 bytes     | cse.ts.mbs           |	
 | mdn          | Default for missingDataMaxNr.<br />Default: 10         | cse.ts.mdn           |
 
 
@@ -260,7 +260,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | refreshInterval | Interval for continuously refreshing information displays. Must be > 0.0<br/>Default: 2.0 seconds.                                                                   | cse.console.refreshInterval |
 | hideResources   | Hide certain resources from display in the console. This is a list of resource identifiers. Wildcards are allowed.<br/>Default: Empty list.                          | cse.console.hideResources   |
 | treeMode        | Set the mode how resources and their content are presented in the console's tree view.<br/>Allowed values: normal, compact, content, contentOnly<br/>Default: normal | cse.console.treeMode        |
-| confirmQuit     | Quitting the console needs to be confirmed.<br />This may not work under Windows, so it should be switched off.<br />Default: False                                  | cse.console.confirmQuit     |
+| confirmQuit     | Quitting the console needs to be confirmed.<br />This may not work under Windows, so it is switched off by default.<br />Default: False                              | cse.console.confirmQuit     |
 
 <a name="webui"></a>
 ###	[cse.webui] - Web UI Settings
@@ -275,7 +275,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 ###	[server.http.mappings] - ID Mappings
 
 This section defines mappings for URI paths to IDs in the CSE. Mappings
-can be used to provide a more convenient way to access the CSE's resources.
+can be used to provide a more convenient way to access the CSE's resources via http.
 Each setting in the configuration file  specifies a mapping, where the key
 specifies a new path and the value specified the mapping to a request
 (including optional arguments).
@@ -284,7 +284,8 @@ The http server redirects a request to a path element that matches one of
 specified keys to the respective request mapping (using the http status code 307).
 
 Please note, that the "root" path in [server.http](#server_http) prefixes both the new
-path and the respecting mapping.
+path and the respecting mapping. Also note, that the request still needs to have the necessary
+headers set in the request.
 
 The following snippet only presents some example for ID mappings.
 
