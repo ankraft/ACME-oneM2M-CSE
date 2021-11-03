@@ -522,8 +522,9 @@ class HttpServer(object):
 		req['to'] 		 			= path
 
 		# Get the request date
-		if (date := request.date):
-			req['ot'] = DateUtils.toISO8601Date(DateUtils.utcTime())
+		if date := request.date:
+			# req['ot'] = DateUtils.toISO8601Date(DateUtils.utcTime())
+			req['ot'] = DateUtils.toISO8601Date(date)
 		# else:
 		# 	req['ot'] = DateUtils.getResourceDate()
 
@@ -560,8 +561,7 @@ class HttpServer(object):
 		cseRequest.headers.contentType = ct
 
 		# parse accept header
-		cseRequest.headers.accept	= request.headers.getlist('accept')
-		cseRequest.headers.accept 	= [ a for a in cseRequest.headers.accept if a != '*/*' ]
+		cseRequest.headers.accept 	= [ a for a in request.headers.getlist('accept') if a != '*/*' ]
 		cseRequest.originalHttpArgs	= deepcopy(request.args)	# Keep the original args
 
 		# copy request arguments for greedy attributes checking

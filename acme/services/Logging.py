@@ -78,6 +78,9 @@ class Logging:
 	logger  						= None
 	loggerConsole					= None
 	logLevel:LogLevel				= LogLevel.INFO
+	isInfo 							= False
+	isWarn 							= False
+	isDebug 						= False
 	lastLogLevel:LogLevel			= None
 	enableFileLogging				= True
 	enableScreenLogging				= True
@@ -107,14 +110,16 @@ class Logging:
 			return
 		Logging.enableFileLogging 		= Configuration.get('logging.enableFileLogging')
 		Logging.enableScreenLogging		= Configuration.get('logging.enableScreenLogging')
-		Logging.logLevel 				= Configuration.get('logging.level')
 		Logging.stackTraceOnError		= Configuration.get('logging.stackTraceOnError')
 		Logging.enableBindingsLogging	= Configuration.get('logging.enableBindingsLogging')
+		
 
 		Logging.logger					= logging.getLogger('logging')			# general logger
 		Logging.loggerConsole			= logging.getLogger('rich')				# Rich Console logger
 		Logging._console				= Console()								# Console object
 		Logging._richHandler			= ACMERichLogHandler()
+		
+		Logging.setLogLevel(Configuration.get('logging.level'))					# Assign the initial log level
 
 		# Add logging queue
 		Logging.queue = Queue(maxsize=Logging.queueMaxsize)
@@ -281,29 +286,29 @@ class Logging:
 		return answer
 
 
-	@staticmethod
-	@property
-	def isInfo() -> bool:
-		"""	Return True if logging is enabled and the logLevel <= INFO
-		"""
-		return Logging.logLevel <= LogLevel.INFO
+	# @staticmethod
+	# @property
+	# def isInfo() -> bool:
+	# 	"""	Return True if logging is enabled and the logLevel <= INFO
+	# 	"""
+	# 	return Logging.logLevel <= LogLevel.INFO
 
 
-	@staticmethod
-	@property
-	def isDebug() -> bool:
-		"""	Return True if logging is enabled and the logLevel <= DEBUG
-		"""
-		return Logging.logLevel <= LogLevel.DEBUG
-
-
-	@staticmethod
-	@property
-	def isWarn() -> bool:
-		"""	Return True if logging is enabled and the logLevel <= WARNING
-		"""
-		return Logging.logLevel <= LogLevel.WARNING
+	# @staticmethod
+	# @property
+	# def isDebug() -> bool:
+	# 	"""	Return True if logging is enabled and the logLevel <= DEBUG
+	# 	"""
+	# 	return Logging.logLevel <= LogLevel.DEBUG
 	
+
+
+	# @staticmethod
+	# @property
+	# def isWarn() -> bool:
+	# 	"""	Return True if logging is enabled and the logLevel <= WARNING
+	# 	"""
+	# 	return Logging.logLevel <= LogLevel.WARNING
 
 	@staticmethod
 	def off() -> None:
@@ -311,14 +316,15 @@ class Logging:
 		"""
 		if Logging.logLevel != LogLevel.OFF:
 			Logging.lastLogLevel = Logging.logLevel
-			Logging.logLevel = LogLevel.OFF
+			Logging.setLogLevel(LogLevel.OFF)
+
 
 	@staticmethod
 	def on() -> None:
 		"""	Switch logging on. Enable the last logLevel.
 		"""
 		if Logging.logLevel == LogLevel.OFF and Logging.lastLogLevel:
-			Logging.logLevel = Logging.lastLogLevel
+			Logging.setLogLevel(Logging.lastLogLevel)
 			Logging.lastLogLevel = None
 	
 
@@ -328,6 +334,11 @@ class Logging:
 		"""
 		Logging.logLevel = logLevel
 		Logging.loggerConsole.setLevel(logLevel)
+
+		# Set the is... indicators for optimizing the log output
+		Logging.isDebug = Logging.logLevel <= LogLevel.DEBUG
+		Logging.isInfo 	= Logging.logLevel <= LogLevel.INFO
+		Logging.isWarn	= Logging.logLevel <= LogLevel.WARNING
 
 
 

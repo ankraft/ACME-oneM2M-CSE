@@ -313,7 +313,7 @@ class AnnouncementManager(object):
 
 		# TODO: multi-hop announcement
 
-		L.logDebug and L.logDebug(f'Update announced resource: {resource.ri} to: {csi}')
+		L.isDebug and L.logDebug(f'Update announced resource: {resource.ri} to: {csi}')
 
 		data = resource.createAnnouncedResourceDict(remoteCSR, isCreate=False, csi=csi)
 
