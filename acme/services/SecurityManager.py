@@ -64,18 +64,20 @@ class SecurityManager(object):
 			return True
 		
 		# grant full access to the CSE originator
-		if not originator or originator == CSE.cseOriginator and self.fullAccessAdmin:
+		if originator is None or originator == CSE.cseOriginator and self.fullAccessAdmin:
 			L.isDebug and L.logDebug('Request from CSE Originator. OK.')
 			return True
 		
 
 		if ty is not None:	# ty is an int
+			# Special tests for some types
 
 			# Checking for AE	
 			if ty == T.AE and isCreateRequest:
 				# originator may be None or empty or C or S. 
 				# That is okay if type is AE and this is a create request
-				if not originator or len(originator) == 0 or self.isAllowedOriginator(originator, CSE.registration.allowedAEOriginators):
+				# Originator == None or len == 0
+				if not originator or self.isAllowedOriginator(originator, CSE.registration.allowedAEOriginators):
 					L.isDebug and L.logDebug('Originator for AE CREATE. OK.')
 					return True
 
@@ -95,12 +97,16 @@ class SecurityManager(object):
 				else:
 					L.isWarn and L.logWarn('Originator for Announcement not found.')
 					return False
-	
+
+		# Check for resource == None
+		if not resource:
+			L.logErr('Resource must not be None')
+			return False
+
 		# Allow some Originators to RETRIEVE the CSEBase
 		if resource.ty == T.CSEBase and requestedPermission & Permission.RETRIEVE:
 
 			# Allow registered AEs to RETRIEVE the CSEBase
-
 			if CSE.storage.retrieveResource(aei=originator).resource:
 				L.isDebug and L.logDebug(f'Allow registered AE Orignator {originator} to RETRIEVE CSEBase. OK.')
 				return True
@@ -116,19 +122,15 @@ class SecurityManager(object):
 
 		# Checking for PollingChannel
 		if resource.ty == T.PCH:
-			if parentResource := resource.retrieveParentResource():
-				if originator != parentResource.getOriginator():
-					L.isWarn and L.logWarn('Access to <PCH> resource is only granted to the parent originator.')
+			if not parentResource:
+				if not (parentResource := resource.retrieveParentResource()):
 					return False
-				return True
-			else:
+			if originator != parentResource.getOriginator():
+				L.isWarn and L.logWarn('Access to <PCH> resource is only granted to the parent originator.')
 				return False
-			
+			return True
 
 		# Check parameters
-		if not resource:
-			L.isWarn and L.logWarn('Resource must not be None')
-			return False
 		if not requestedPermission or not (0 <= requestedPermission <= Permission.ALL):
 			L.isWarn and L.logWarn('RequestedPermission must not be None, and between 0 and 63')
 			return False
@@ -168,7 +170,6 @@ class SecurityManager(object):
 				if self.hasAccess(originator, parentResource, Permission.RETRIEVE) == False:
 					return False
 
-
 			# When no acpi is configured for the resource
 			if not (acpi := resource.acpi):
 				L.isDebug and L.logDebug('Handle with missing acpi in resource')
@@ -194,7 +195,8 @@ class SecurityManager(object):
 				else:
 					if resource.inheritACP:
 						L.isDebug and L.logDebug('Checking parent\'s permission')
-						parentResource = CSE.dispatcher.retrieveResource(resource.pi).resource
+						if not parentResource:
+							parentResource = CSE.dispatcher.retrieveResource(resource.pi).resource
 						return self.hasAccess(originator, parentResource, requestedPermission, checkSelf, ty, isCreateRequest)
 
 				L.isDebug and L.logDebug('Permission NOT granted for resource w/o acpi')
@@ -263,8 +265,9 @@ class SecurityManager(object):
 
 		if not originator or not allowedOriginators:
 			return False
+		_id = Utils.getIdFromOriginator(originator)
 		for ao in allowedOriginators:
-			if TextTools.simpleMatch(Utils.getIdFromOriginator(originator), ao):
+			if TextTools.simpleMatch(_id, ao):
 				return True
 		return False
 

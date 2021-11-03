@@ -503,12 +503,10 @@ class HttpServer(object):
 				args[argName] = lst
 
 
-		def requestHeaderField(request:Request, field:str) -> str:
-			"""	Return the value of a specific Request header, or `None` if not found.
-			""" 
-			if not request.headers.has_key(field):
-				return None
-			return request.headers.get(field)
+		# def requestHeaderField(request:Request, field:str) -> str:
+		# 	"""	Return the value of a specific Request header, or `None` if not found.
+		# 	""" 
+		# 	return request.headers.get(field)
 
 		# resolve http's /~ and /_ special prefixs
 		if path[0] == '~':
@@ -530,29 +528,28 @@ class HttpServer(object):
 		# 	req['ot'] = DateUtils.getResourceDate()
 
 		# Copy and parse the original request headers
-		if f := requestHeaderField(request, C.hfOrigin):
+		if f := request.headers.get(C.hfOrigin):
 			req['fr'] = f
-		if f := requestHeaderField(request, C.hfRI):
+		if f := request.headers.get(C.hfRI):
 			req['rqi'] = f
-		if f := requestHeaderField(request, C.hfRET):
+		if f := request.headers.get(C.hfRET):
 			req['rqet'] = f
-		if f := requestHeaderField(request, C.hfRST):
+		if f := request.headers.get(C.hfRST):
 			req['rset'] = f
-		if f := requestHeaderField(request, C.hfOET):
+		if f := request.headers.get(C.hfOET):
 			req['oet'] = f
-		if f := requestHeaderField(request, C.hfRVI):
+		if f := request.headers.get(C.hfRVI):
 			req['rvi'] = f
-		if (rtu := requestHeaderField(request, C.hfRTU)) is not None:	# handle rtu as a list AND it may be an empty list!
+		if (rtu := request.headers.get(C.hfRTU)) is not None:	# handle rtu as a list AND it may be an empty list!
 			rt = dict()
 			rt['nu'] = rtu.split('&')		
 			req['rt'] = rt					# req.rt.rtu
-		if f := requestHeaderField(request, C.hfVSI):
+		if f := request.headers.get(C.hfVSI):
 			req['vsi'] = f
 
 		# parse and extract content-type header
-		# cseRequest.headers.contentType	= request.content_type
 		if ct := request.content_type:
-			if not ct.startswith(tuple(C.supportedContentHeaderFormat)):
+			if not ct.startswith(C.supportedContentHeaderFormatTuple):
 				ct = None
 			else:
 				p  = ct.partition(';')		# always returns a 3-tuple
@@ -563,9 +560,9 @@ class HttpServer(object):
 		cseRequest.headers.contentType = ct
 
 		# parse accept header
-		cseRequest.headers.accept = request.headers.getlist('accept')
-		cseRequest.headers.accept = [ a for a in cseRequest.headers.accept if a != '*/*' ]
-		cseRequest.originalHttpArgs	  = deepcopy(request.args)	# Keep the original args
+		cseRequest.headers.accept	= request.headers.getlist('accept')
+		cseRequest.headers.accept 	= [ a for a in cseRequest.headers.accept if a != '*/*' ]
+		cseRequest.originalHttpArgs	= deepcopy(request.args)	# Keep the original args
 
 		# copy request arguments for greedy attributes checking
 		args = request.args.copy() 	# type: ignore [no-untyped-call]
@@ -593,9 +590,9 @@ class HttpServer(object):
 
 		# Extract further request arguments from the http request
 		# add all the args to the filterCriteria
-		filterCriteria:ReqResp = {}
-		for k,v in args.items():
-			filterCriteria[k] = v
+		# for k,v in args.items():
+		# 	filterCriteria[k] = v
+		filterCriteria:ReqResp = { k:v for k,v in args.items() }
 		if len(filterCriteria) > 0:
 			req['fc'] = filterCriteria
 
@@ -607,9 +604,9 @@ class HttpServer(object):
 		req = Utils.removeNoneValuesFromDict(req)
 
 		# Add the primitive content and 
-		req['pc'] 	 				= cast(Tuple, contentResult.data)[0]			# The actual content
+		req['pc'] 	 				= cast(Tuple, contentResult.data)[0]	# The actual content
 		cseRequest.ct				= cast(Tuple, contentResult.data)[1]	# The conten serialization type
-		cseRequest.originalRequest	= req					# finally store the oneM2M request object in the cseRequest
+		cseRequest.originalRequest	= req									# finally store the oneM2M request object in the cseRequest
 		
 		# do validation and copying of attributes of the whole request
 		try:
