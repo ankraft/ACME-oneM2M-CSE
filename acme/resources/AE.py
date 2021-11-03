@@ -90,7 +90,7 @@ class AE(AnnounceableResource):
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 
-		self.normalizeURIAttribute('poa')
+		self._normalizeURIAttribute('poa')
 
 		# Update the nl attribute in the hosting node (similar to csebase) in case 
 		# the AE is now on a different node. This shouldn't be happen in reality,

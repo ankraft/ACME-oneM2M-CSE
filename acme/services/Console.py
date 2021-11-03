@@ -436,7 +436,8 @@ Available under the BSD 3-Clause License
 		"""
 		L.console('Resetting CSE', isHeader=True)
 		L.enableScreenLogging = True
-		L.logLevel = Configuration.get('logging.level')
+		# L.logLevel = Configuration.get('logging.level')
+		L.setLogLevel(Configuration.get('logging.level'))
 		CSE.resetCSE()
 
 

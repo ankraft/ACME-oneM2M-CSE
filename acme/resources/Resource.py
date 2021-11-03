@@ -40,17 +40,18 @@ class Resource(object):
 	# ATTN: There is a similar definition in FCNT! Don't Forget to add attributes there as well
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator, _announcedTo, _modified, _isAnnounced, _remoteID ]
 
-	def __init__(self, ty:T|int, dct:JSON=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, 
+	def __init__(self, ty:T, dct:JSON=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, 
 				 readOnly:bool=False, rn:str=None, isVirtual:bool=False, isAnnounced:bool=False) -> None:
 		self.tpe = tpe
-		if isinstance(ty, T) and ty not in [ T.FCNT, T.FCI ]: 	# For some types the tpe/root is empty and will be set later in this method
+		if ty not in [ T.FCNT, T.FCI ]: 	# For some types the tpe/root is empty and will be set later in this method
 			self.tpe = ty.tpe() if not tpe else tpe
+	
 		self.readOnly = readOnly
 		self.inheritACP = inheritACP
 		self.dict = {}
 
 		if dct: 
-			self.isImported = dct.get(C.isImported)	# might be None, or boolean
+			self.isImported = dct.get(self._imported)	# might be None, or boolean
 			self.dict = deepcopy(dct.get(self.tpe))
 			if not self.dict:
 				self.dict = deepcopy(dct)
@@ -67,14 +68,16 @@ class Resource(object):
 		if self.dict:
 			if not self.tpe: # and _rtype in self:
 				self.tpe = self.__rtype__
-			self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite=False)
+			if not self.hasAttribute('ri'):
+				self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite=False)
 
 			# override rn if given
 			if rn:
 				self['rn'] = rn
 
 			# Create an RN if there is none
-			self.setAttribute('rn', Utils.uniqueRN(self.tpe), overwrite=False)
+			if not self.hasAttribute('rn'):
+				self.setAttribute('rn', Utils.uniqueRN(self.tpe), overwrite=False)
 
 			# Check uniqueness of ri. otherwise generate a new one. Only when creating
 			if create:
@@ -90,17 +93,19 @@ class Resource(object):
 			self.setAttribute(self._isAnnounced, isAnnounced)
 			
 			# Set some more attributes
-			ts = DateUtils.getResourceDate()
-			self.setAttribute('ct', ts, overwrite=False)
-			self.setAttribute('lt', ts, overwrite=False)
-			if self.ty not in [ T.CSEBase ]:
+			if not (self.hasAttribute('ct') and self.hasAttribute('lt')):
+				ts = DateUtils.getResourceDate()
+				self.setAttribute('ct', ts, overwrite=False)
+				self.setAttribute('lt', ts, overwrite=False)
+
+			if self.ty not in [ T.CSEBase ] and not self.hasAttribute('et'):
 				self.setAttribute('et', DateUtils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite=False) 
 			if pi is not None: # test for None bc pi might be '' (for cse)
-				self['pi'] = pi
+				self.setAttribute('pi', pi)
 			if ty is not None:	# ty is an int
 				if ty in C.stateTagResourceTypes:	# Only for allowed resources
 					self.setAttribute('st', 0, overwrite=False)
-				self['ty'] = int(ty)
+				self.setAttribute('ty', int(ty))
 
 			#
 			## Note: ACPI is handled in activate() and update()
@@ -108,7 +113,6 @@ class Resource(object):
 
 			# Remove empty / null attributes from dict
 			# But see also the comment in update() !!!
-			#self.dict = {k: v for (k, v) in self.dict.items() if v is not None }
 			self.dict = Utils.removeNoneValuesFromDict(self.dict, ['cr'])	# allow the ct attribute to stay in the dictionary. It will be handled with in the RegistrationManager
 
 			# determine and add the srn, only when this is a local resource, otherwise we don't need this information
@@ -121,19 +125,27 @@ class Resource(object):
 
 
 	# Default encoding implementation. Overwrite in subclasses
+	_excludeFromUpdate = [ 'ri', 'ty', 'pi', 'ct', 'lt', 'st', 'rn', 'mgd' ]
 	def asDict(self, embedded:bool=True, update:bool=False, noACP: bool=False) -> JSON:
 		# remove (from a copy) all internal attributes before printing
-		dct = deepcopy(self.dict)
-		for k in self.internalAttributes:
-			if k in dct: 
-				del dct[k]
+		# dct = deepcopy(self.dict)
+		# for k in self.internalAttributes:
+		# 	if k in dct: 
+		# 		del dct[k]
 
-		if noACP:
-			if 'acpi' in dct:
-				del dct['acpi']
-		if update:
-			for k in [ 'ri', 'ty', 'pi', 'ct', 'lt', 'st', 'rn', 'mgd']:
-				dct.pop(k, None) # instead of using "del dct[k]" this doesn't throw an exception if k doesn't exist
+		# if noACP:
+		# 	if 'acpi' in dct:
+		# 		del dct['acpi']
+
+		# if update:
+		# 	for k in [ 'ri', 'ty', 'pi', 'ct', 'lt', 'st', 'rn', 'mgd']:
+		# 		dct.pop(k, None) # instead of using "del dct[k]" this doesn't throw an exception if k doesn't exist
+
+		dct = { k:deepcopy(v) for k,v in self.dict.items() 				# Copy k:v to the new dictionary, ...
+					if k not in self.internalAttributes 				# if k is not in internal attributes (starting with __), AND
+					and not (noACP and k == 'acpi')						# if not noACP is True and k is 'acpi', AND
+					and not (update and k in self._excludeFromUpdate) 	# if not update is True and k is in _excludeFromDict)
+				}
 
 		return { self.tpe : dct } if embedded else dct
 
@@ -455,14 +467,11 @@ class Resource(object):
 	#	Attribute specific helpers
 	#
 
-	def normalizeURIAttribute(self, attributeName: str) -> None:
+	def _normalizeURIAttribute(self, attributeName:str) -> None:
 		""" Normalize the URLs in the poa, nu etc. """
 		if uris := self[attributeName]:
 			if isinstance(uris, list):	# list of uris
-				result = []
-				for uri in uris:
-					result.append(Utils.normalizeURL(uri))
-				self[attributeName] = result
+				self[attributeName] = [ Utils.normalizeURL(uri) for uri in uris ] 
 			else: 							# single uri
 				self[attributeName] = Utils.normalizeURL(uris)
 
@@ -551,7 +560,8 @@ class Resource(object):
 	def retrieveParentResource(self) -> Resource:
 		"""	Retrieve the parent resource of this resouce.
 		"""
-		return CSE.dispatcher.retrieveResource(self.pi).resource	#type:ignore[no-any-return]
+		# return CSE.dispatcher.retrieveResource(self.pi).resource	#type:ignore[no-any-return]
+		return CSE.dispatcher.retrieveLocalResource(self.pi).resource	#type:ignore[no-any-return]
 
 
 	def getOriginator(self) -> str:

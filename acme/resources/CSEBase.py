@@ -78,7 +78,7 @@ class CSEBase(Resource):
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		
-		self.normalizeURIAttribute('poa')
+		self._normalizeURIAttribute('poa')
 
 		# Update the hcl attribute in the hosting node (similar to AE)
 		nl = self['nl']

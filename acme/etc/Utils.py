@@ -454,10 +454,10 @@ def setXPath(dct:JSON, key:str, value:Any, overwrite:bool=True) -> bool:
 	ln1 = len(paths)-1
 	data = dct
 	if ln1 > 0:	# Small optimization. don't check if there is no extended path
-		for i in range(0,ln1):
-			if paths[i] not in data:
-				data[paths[i]] = {}
-			data = data[paths[i]]
+		for i in range(0, ln1):
+			if (_p := paths[i]) not in data:
+				data[_p] = {}
+			data = data[_p]
 	# if not isinstance(data, dict):
 	# 	return False
 	if not overwrite and paths[ln1] in data: # test overwrite first, it's faster

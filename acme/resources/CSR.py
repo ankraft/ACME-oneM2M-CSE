@@ -94,5 +94,5 @@ class CSR(AnnounceableResource):
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
-		self.normalizeURIAttribute('poa')
+		self._normalizeURIAttribute('poa')
 		return Result(status=True)

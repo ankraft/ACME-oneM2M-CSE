@@ -237,7 +237,7 @@ def resetCSE() -> None:
 	# a chance to finish
 	event.cseReset()	# type: ignore [attr-defined]   
 	if not importer.doImport():
-		L.isWarn and L.logErr('Error during import')
+		L.logErr('Error during import')
 		sys.exit()	# what else can we do?
 	L.isWarn and L.logWarn('Resetting CSE finished')
 

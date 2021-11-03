@@ -91,8 +91,6 @@ class Constants(object):
 	#
 
 	# Additional internal resource fields
-	isImported					= '__imported__'
-
 	acpPrefix 					= 'acp_'
 
 	invalidValue 				= '__iNvAliD___'

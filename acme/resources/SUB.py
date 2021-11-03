@@ -157,9 +157,9 @@ class SUB(Resource):
 
 		
 		# check other attributes
-		self.normalizeURIAttribute('nfu')
-		self.normalizeURIAttribute('nu')
-		self.normalizeURIAttribute('su')
+		self._normalizeURIAttribute('nfu')
+		self._normalizeURIAttribute('nu')
+		self._normalizeURIAttribute('su')
 
 		return Result(status=True)
 
