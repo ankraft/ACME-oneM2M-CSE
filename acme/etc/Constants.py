@@ -65,7 +65,6 @@ class Constants(object):
 	hfRTU 							= 'X-M2M-RTU'
 	hfRSC 							= 'X-M2M-RSC'
 	hfVSI 							= 'X-M2M-VSI'
-	hfVSI 							= 'X-M2M-VSI'
 	hfAccept						= 'Accept'
 			
 

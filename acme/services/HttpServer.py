@@ -355,9 +355,6 @@ class HttpServer(object):
 		
 			The result is returned in *Result.data*.
 		"""
-
-		# TODO handle raw data?
-
 		
 		# Set the request method
 		method:Callable = self.operation2method[operation]
@@ -369,19 +366,52 @@ class HttpServer(object):
 		ct = CSE.defaultSerialization if not ct else ct
 
 		# Set basic headers
-		hty = f';ty={int(ty):d}' if ty else ''
-		hds = {	'User-Agent'	: self.serverID,
-				'Content-Type' 	: f'{ct.toHeader()}{hty}',
-				'Accept'		: ct.toHeader(),
-				C.hfOrigin	 	: originator,
-				C.hfRI 			: Utils.uniqueRI(),
-				C.hfRVI			: CSE.releaseVersion,			# TODO this actually depends in the originator
-			   }
+		if not raw:
 
-		# Add additional headers
-		if parameters:
-			if C.hfcEC in parameters:				# Event Category
-				hds[C.hfEC] = parameters[C.hfcEC]
+			hty = f';ty={int(ty):d}' if ty else ''
+			hds = {	'User-Agent'	: self.serverID,
+					'Content-Type' 	: f'{ct.toHeader()}{hty}',
+					'Accept'		: ct.toHeader(),
+					C.hfOrigin	 	: originator,
+					C.hfRI 			: Utils.uniqueRI(),
+					C.hfRVI			: CSE.releaseVersion,			# TODO this actually depends in the originator
+				}
+			# Add additional headers
+			if parameters:
+				if C.hfcEC in parameters:				# Event Category
+					hds[C.hfEC] = parameters[C.hfcEC]
+
+		else:	# raw	-> data contains a whole requests
+			# L.logDebug(data)
+
+			hty = f';ty={int(ty):d}' if ty else ''
+			hds = {	'User-Agent'	: self.serverID,
+					'Content-Type' 	: f'{ct.toHeader()}{hty}',
+					'Accept'		: ct.toHeader(),
+					C.hfOrigin	 	: Utils.toSPRelative(data['fr']),
+					C.hfRI 			: data['rqi'],
+					C.hfRVI			: data['rvi'],			# TODO this actually depends in the originator
+				}
+			if 'ec' in data:				# Event Category
+				hds[C.hfEC] = data['ec']
+			if 'rqet' in data:
+				hds[C.hfRET] = data['rqet']
+			if 'rset' in data:
+				hds[C.hfRST] = data['rset']
+			if 'oet' in data:
+				hds[C.hfOET] = data['oet']
+			if 'rt' in data:
+				hds[C.hfRTU] = data['rt']
+			if 'vsi' in data:
+				hds[C.hfVSI] = data['vsi']
+			
+			# Add to to URL
+			url = f'{url}/~{data["to"]}'
+			# re-assign the data to pc
+			if 'pc' in data:
+				data = data['pc']
+		
+		# L.logWarn(url)
 
 		# serialize data (only if dictionary, pass on non-dict data)
 		content = RequestUtils.serializeData(data, ct) if isinstance(data, dict) else data
