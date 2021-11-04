@@ -117,7 +117,8 @@ def requestFromResult(inResult:Result, originator:str=None, ty:T=None, op:Operat
 		req['to'] = inResult.request.id if inResult.request.id else originator
 	elif inResult.request.headers.originator:
 		req['fr'] = CSE.cseCsi if isResponse else inResult.request.headers.originator
-		req['to'] = inResult.request.id if inResult.request.id else inResult.request.headers.originator    
+		# req['to'] = inResult.request.id if inResult.request.id else inResult.request.headers.originator    
+		req['to'] = inResult.request.headers.originator if isResponse else inResult.request.id
 	else:
 		req['fr'] = CSE.cseCsi
 		req['to'] = inResult.request.id if inResult.request.id else CSE.cseCsi

@@ -64,7 +64,7 @@ class PCH_PCU(Resource):
 		# Check content
 		if request.pc is None:
 			L.logDebug(dbg := f'Missing content/request in notification')
-			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 		
 		# Validate the response
 		if not (r := CSE.validator.validatePrimitiveContent(request.pc)).status:
@@ -73,7 +73,7 @@ class PCH_PCU(Resource):
 
 		if (innerPC := cast(JSON, Utils.findXPath(request.pc, 'm2m:rsp'))) is None:
 			L.logDebug(dbg := f'Noification to PCU must contain a Response (m2m:rsp)')
-			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 		
 		if not innerPC.get('fr'):
 			L.isDebug and L.logDebug(f'Adding originator: {request.headers.originator} to request')

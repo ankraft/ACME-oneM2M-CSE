@@ -713,6 +713,8 @@ class RequestManager(object):
 		# See TS-0001, 7.3.2.6, Forwarding
 		self._originatorToSPRelative(request)
 
+		# L.isDebug and L.logDebug(request)
+
 		L.isDebug and L.logDebug(f'Storing REQUEST for: {request.id} with ID: {request.headers.requestIdentifier} pc:{request.pc} for polling')
 		self.queuePollingRequest(request, reqType)
 		return request
@@ -1066,94 +1068,123 @@ class RequestManager(object):
 
 
 		try:
+			errorResult = None
 
 			# RQI - requestIdentifier
 			# Check as early as possible
-			if not (rqi := gget(cseRequest.originalRequest, 'rqi', greedy=False)):
+			if (rqi := gget(cseRequest.originalRequest, 'rqi', greedy = False)):
+				cseRequest.headers.requestIdentifier = rqi
+			else:
 				L.logDebug(dbg := 'Request Identifier parameter is mandatory in request')
-				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)		
-			cseRequest.headers.requestIdentifier = rqi
-		
-			# TY - resource type
-			if (ty := gget(cseRequest.originalRequest, 'ty', greedy=False)) is not None:	# ty is an int
-				if not T.has(ty):
-					return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'Unknown/unsupported resource type: {ty}', status=False)
-				cseRequest.headers.resourceType = T(ty)
+				errorResult= Result(request = cseRequest, rsc = RC.badRequest, dbg = dbg, status=False)
 
+			# RVI - releaseVersionIndicator
+			if not (rvi := gget(cseRequest.originalRequest, 'rvi', greedy = False)):
+				L.logDebug(dbg := f'Release Version Indicator is missing in request, falling back to RVI=\'1\'. But Release Version \'1\' is not supported. Use RVI with one of {C.supportedReleaseVersions}.')
+				errorResult = Result(rsc = RC.releaseVersionNotSupported, request = cseRequest, dbg = dbg, status = False)
+			else:
+				if rvi in C.supportedReleaseVersions:
+					cseRequest.headers.releaseVersionIndicator = rvi	
+				else:
+					L.logDebug(dbg := f'Release version unsupported: {rvi}')
+					errorResult = Result(status = False, rsc = RC.releaseVersionNotSupported, request = cseRequest, dbg = dbg)
+		
 			# OP - operation
-			if (op := gget(cseRequest.originalRequest, 'op', greedy=False)) is not None:	# op is an int
-				if not Operation.isvalid(op):
-					return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'Unknown/unsupported operation: {op}', status=False)
-				cseRequest.op = Operation(op)
+			if (op := gget(cseRequest.originalRequest, 'op', greedy = False)) is not None:	# op is an int
+				if Operation.isvalid(op):
+					cseRequest.op = Operation(op)
+				else:
+					L.logDebug(dbg := f'Unknown/unsupported operation: {op}')
+					errorResult = Result(rsc = RC.badRequest, request = cseRequest, dbg = dbg, status=False)
 			elif not isResponse:
 				L.logDebug(dbg := 'operation parameter is mandatory in request')
-				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg)
+				errorResult = Result(request = cseRequest, rsc = RC.badRequest, dbg = dbg)
+
+			# TY - resource type
+			if (ty := gget(cseRequest.originalRequest, 'ty', greedy = False)) is not None:	# ty is an int
+				if T.has(ty):
+					cseRequest.headers.resourceType = T(ty)
+				else:
+					L.logDebug(dbg := f'Unknown/unsupported resource type: {ty}')
+					errorResult = Result(rsc = RC.badRequest, request = cseRequest, dbg = dbg, status = False)
 
 			# FR - originator 
-			if not (fr := gget(cseRequest.originalRequest, 'fr', greedy=False)) and not isResponse and not (cseRequest.headers.resourceType == T.AE and cseRequest.op == Operation.CREATE):
+			if not (fr := gget(cseRequest.originalRequest, 'fr', greedy = False)) and not isResponse and not (cseRequest.headers.resourceType == T.AE and cseRequest.op == Operation.CREATE):
 				L.logDebug(dbg := 'From/Originator parameter is mandatory in request')
-				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
-			cseRequest.headers.originator = fr
+				errorResult = Result(request = cseRequest, rsc = RC.badRequest, dbg = dbg, status = False)
+			else:
+				cseRequest.headers.originator = fr
 
 			# TO - target
-			if not (to := gget(cseRequest.originalRequest, 'to', greedy=False)) and not isResponse:
+			if not (to := gget(cseRequest.originalRequest, 'to', greedy = False)) and not isResponse:
 				L.logDebug(dbg := 'To/Target parameter is mandatory in request')
-				return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
-			cseRequest.id, cseRequest.csi, cseRequest.srn =  Utils.retrieveIDFromPath(to, CSE.cseRn, CSE.cseCsi)
+				errorResult = Result(request = cseRequest, rsc = RC.badRequest, dbg = dbg, status = False)
+			else:
+				cseRequest.id, cseRequest.csi, cseRequest.srn =  Utils.retrieveIDFromPath(to, CSE.cseRn, CSE.cseCsi)
 
 			# Check identifiers
 			if not isResponse and not cseRequest.id and not cseRequest.srn:
-				return Result(rsc=RC.notFound, request=cseRequest, dbg='missing identifier (no id nor srn)', status=False)
+				L.logDebug(dbg := 'missing identifier (no id nor srn)')
+				errorResult = Result(rsc = RC.notFound, request = cseRequest, dbg = dbg, status=False)
 
 			# OT - originating timestamp
 			if ot := gget(cseRequest.originalRequest, 'ot', greedy=False):
 				if (_ts := DateUtils.fromAbsRelTimestamp(ot)) == 0.0:
 					L.logDebug(dbg := 'Error in provided Originating Timestamp')
-					return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
-				cseRequest.headers.originatingTimestamp = ot
+					errorResult = Result(request = cseRequest, rsc = RC.badRequest, dbg = dbg, status = False)
+				else:
+					cseRequest.headers.originatingTimestamp = ot
 
 			# RQET - requestExpirationTimestamp
 			if rqet := gget(cseRequest.originalRequest, 'rqet', greedy=False):
 				if (_ts := DateUtils.fromAbsRelTimestamp(rqet)) == 0.0:
 					L.logDebug(dbg := 'Error in provided Request Expiration Timestamp')
-					return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
-				if _ts < DateUtils.utcTime():
-					L.logDebug(dbg := 'Request timeout')
-					return Result(status=False, request=cseRequest, rsc=RC.requestTimeout, dbg=dbg)
-				cseRequest.headers._retUTCts = _ts		# Re-assign "real" ISO8601 timestamp
-				cseRequest.headers.requestExpirationTimestamp = DateUtils.toISO8601Date(_ts)
+					errorResult = Result(request = cseRequest, rsc = RC.badRequest, dbg = dbg, status = False)
+				else:
+					if _ts < DateUtils.utcTime():
+						L.logDebug(dbg := 'Request timeout')
+						errorResult = Result(status = False, request = cseRequest, rsc = RC.requestTimeout, dbg = dbg)
+					else:
+						cseRequest.headers._retUTCts = _ts		# Re-assign "real" ISO8601 timestamp
+						cseRequest.headers.requestExpirationTimestamp = DateUtils.toISO8601Date(_ts)
 
 			# RSET - resultExpirationTimestamp
 			if (rset := gget(cseRequest.originalRequest, 'rset', greedy=False)):
 				if (_ts := DateUtils.fromAbsRelTimestamp(rset)) == 0.0:
 					L.logDebug(dbg := 'Error in provided Result Expiration Timestamp')
-					return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
-				if _ts < DateUtils.utcTime():
-					L.logDebug(dbg := 'Result timeout')
-					return Result(status=False, request=cseRequest, rsc=RC.requestTimeout, dbg=dbg)
-				cseRequest.headers.resultExpirationTimestamp = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
+					errorResult = Result(request = cseRequest, rsc = RC.badRequest, dbg = dbg, status = False)
+				else:
+					if _ts < DateUtils.utcTime():
+						L.logDebug(dbg := 'Result timeout')
+						errorResult = Result(status = False, request = cseRequest, rsc = RC.requestTimeout, dbg = dbg)
+					else:
+						cseRequest.headers.resultExpirationTimestamp = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
 
 			# OET - operationExecutionTime
 			if (oet := gget(cseRequest.originalRequest, 'oet', greedy=False)):
 				if (_ts := DateUtils.fromAbsRelTimestamp(oet)) == 0.0:
 					L.logDebug(dbg := 'Error in provided Operation Execution Time')
-					return Result(request=cseRequest, rsc=RC.badRequest, dbg=dbg, status=False)
-				cseRequest.headers.operationExecutionTime = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
+					errorResult = Result(request = cseRequest, rsc = RC.badRequest, dbg = dbg, status = False)
+				else:
+					cseRequest.headers.operationExecutionTime = DateUtils.toISO8601Date(_ts)	# Re-assign "real" ISO8601 timestamp
 
 			# RVI - releaseVersionIndicator
-			if not (rvi := gget(cseRequest.originalRequest, 'rvi', greedy=False)):
+			if  (rvi := gget(cseRequest.originalRequest, 'rvi', greedy=False)):
+				if rvi not in C.supportedReleaseVersions:
+					L.logDebug(dbg := f'Release version unsupported: {rvi}')
+					errorResult = Result(status = False, rsc = RC.releaseVersionNotSupported, request = cseRequest, dbg = dbg)
+				else:
+					cseRequest.headers.releaseVersionIndicator = rvi	
+			else:
 				L.logDebug(dbg := f'Release Version Indicator is missing in request, falling back to RVI=\'1\'. But Release Version \'1\' is not supported. Use RVI with one of {C.supportedReleaseVersions}.')
-				return Result(rsc=RC.releaseVersionNotSupported, request=cseRequest, dbg=dbg, status=False)
-			if rvi not in C.supportedReleaseVersions:
-				return Result(status=False, rsc=RC.releaseVersionNotSupported, request=cseRequest, dbg=f'Release version unsupported: {rvi}')
-			cseRequest.headers.releaseVersionIndicator = rvi	
+				errorResult = Result(rsc = RC.releaseVersionNotSupported, request = cseRequest, dbg = dbg, status = False)
 
 			# VSI - vendorInformation
 			if (vsi := gget(cseRequest.originalRequest, 'vsi', greedy=False)):
 				cseRequest.headers.vendorInformation = vsi	
 
 			# DRT - Desired Identifier Result Type
-			cseRequest.args.drt = DesiredIdentifierResultType(gget(cseRequest.originalRequest, 'drt', DesiredIdentifierResultType.structured, greedy=False))	# 1=strucured, 2=unstructured
+			cseRequest.args.drt = DesiredIdentifierResultType(gget(cseRequest.originalRequest, 'drt', DesiredIdentifierResultType.structured, greedy = False))	# 1=strucured, 2=unstructured
 
 			#
 			# Transfer filterCriteria: handling, conditions and attributes
@@ -1171,11 +1202,12 @@ class RequestManager(object):
 
 
 			# RCN Result Content Type
-			if (rcn := gget(cseRequest.originalRequest, 'rcn', greedy=False)) is not None: 	# rcn is an int
+			if (rcn := gget(cseRequest.originalRequest, 'rcn', greedy = False)) is not None: 	# rcn is an int
 				try:
 					rcn = ResultContentType(rcn)
 				except ValueError as e:
-					return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'Error validating rcn: {str(e)}')
+					L.logDebug(dbg := f'Error validating rcn: {str(e)}')
+					errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = dbg)
 			else:
 				# assign defaults when not provided
 				if cseRequest.args.fu != FilterUsage.discoveryCriteria:	
@@ -1196,44 +1228,50 @@ class RequestManager(object):
 																	ResultContentType.childResourceReferences,
 																	ResultContentType.childResources,
 																	ResultContentType.originalResource ]:
-				return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'rcn: {rcn} not allowed in RETRIEVE operation')
+				L.logDebug(dbg := f'rcn: {rcn} not allowed in RETRIEVE operation')
+				errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = dbg)
 			elif cseRequest.op == Operation.DISCOVERY and rcn not in [ ResultContentType.childResourceReferences,
 																	ResultContentType.discoveryResultReferences ]:
-				return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'rcn: {rcn} not allowed in DISCOVERY operation')
+				L.logDebug(dbg := f'rcn: {rcn} not allowed in DISCOVERY operation')
+				errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = dbg)
 			elif cseRequest.op == Operation.CREATE and rcn not in [ ResultContentType.attributes,
 																	ResultContentType.modifiedAttributes,
 																	ResultContentType.hierarchicalAddress,
 																	ResultContentType.hierarchicalAddressAttributes,
 																	ResultContentType.nothing ]:
-				return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'rcn: {rcn} not allowed in CREATE operation')
+				L.logDebug(dbg := f'rcn: {rcn} not allowed in CREATE operation')
+				errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = dbg)
 			elif cseRequest.op == Operation.UPDATE and rcn not in [ ResultContentType.attributes,
 																	ResultContentType.modifiedAttributes,
 																	ResultContentType.nothing ]:
-				return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'rcn: {rcn} not allowed in UPDATE operation')
+				L.logDebug(dbg := f'rcn: {rcn} not allowed in UPDATE operation')
+				errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = dbg)
 			elif cseRequest.op == Operation.DELETE and rcn not in [ ResultContentType.attributes,
 																	ResultContentType.nothing,
 																	ResultContentType.attributesAndChildResources,
 																	ResultContentType.childResources,
 																	ResultContentType.attributesAndChildResourceReferences,
 																	ResultContentType.childResourceReferences ]:
-				return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'rcn: {rcn} not allowed in DELETE operation')
+				L.logDebug(dbg := f'rcn: {rcn} not allowed in DELETE operation')
+				errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = dbg)
 			cseRequest.args.rcn = rcn
 
 
 			# RT - responseType: RTV responseTypeValue, RTU/NU responseTypeNUs
-			if (rt := gget(cseRequest.originalRequest, 'rt', greedy=False)) is not None: # rt is an int
-				cseRequest.args.rt = ResponseType(gget(rt, 'rtv', ResponseType.blockingRequest, greedy=False))
+			if (rt := gget(cseRequest.originalRequest, 'rt', greedy = False)) is not None: # rt is an int
+				cseRequest.args.rt = ResponseType(gget(rt, 'rtv', ResponseType.blockingRequest, greedy = False))
 				# TODO nu should only be set when responseType=non-blocking async
-				if (nu := gget(rt, 'nu', greedy=False)) is not None:
+				if (nu := gget(rt, 'nu', greedy = False)) is not None:
 					cseRequest.headers.responseTypeNUs = nu	#  TODO validate for url?
-
 
 			# RP - resultPersistence (also as timestamp)
 			if (rp := gget(cseRequest.originalRequest, 'rp', greedy=False)): 
 				cseRequest.args.rp = rp
 				if (rpts := DateUtils.toISO8601Date(DateUtils.fromAbsRelTimestamp(rp))) == 0.0:
-					return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'"{rp}" is not a valid value for rp')
-				cseRequest.args.rpts = rpts
+					L.logDebug(dbg := f'"{rp}" is not a valid value for rp')
+					errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = dbg)
+				else:
+					cseRequest.args.rpts = rpts
 			else:
 				cseRequest.args.rp = None
 				cseRequest.args.rpts = None
@@ -1255,27 +1293,29 @@ class RequestManager(object):
 					cseRequest.args.attributes[h] = gget(fc, h)
 
 			# Copy rsc
-			if (rsc := gget(cseRequest.originalRequest, 'rsc', greedy=False)): 
+			if (rsc := gget(cseRequest.originalRequest, 'rsc', greedy = False)): 
 				cseRequest.rsc = ResponseStatusCode(rsc)
 
 			# Copy primitive content
 			# Check whether content is empty and operation is UPDATE or CREATE -> Error
 			if not (pc := cseRequest.originalRequest.get('pc')):
 				if cseRequest.op in [ Operation.CREATE, Operation.UPDATE ]:
-					return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=f'Missing primitive content or body in request for operation: {cseRequest.op}')
-			cseRequest.pc = cseRequest.originalRequest.get('pc')	# The reqeust.pc contains the primitive content
-			if not (res := CSE.validator.validatePrimitiveContent(cseRequest.pc)).status:
-				L.isDebug and L.logDebug(res.dbg)
-				res.request = cseRequest
-				return res
-
+					L.logDebug(dbg := f'Missing primitive content or body in request for operation: {cseRequest.op}')
+					errorResult = Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = dbg)
+			else:
+				cseRequest.pc = cseRequest.originalRequest.get('pc')	# The reqeust.pc contains the primitive content
+				if not (res := CSE.validator.validatePrimitiveContent(cseRequest.pc)).status:
+					L.isDebug and L.logDebug(res.dbg)
+					res.request = cseRequest
+					errorResult = res
 
 		# end of try..except
 		except ValueError as e:
-			L.logWarn(dbg := f'Error validating attribute/parameter: {str(e)}')
-			return Result(status=False, rsc=RC.badRequest, request=cseRequest, dbg=dbg)
+			L.logDebug(dbg := f'Error getting or validating attribute/parameter: {str(e)}')
+			return Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = dbg)
 
-		return Result(status=True, rsc=cseRequest.rsc, request=cseRequest, data=cseRequest.pc)
+		# Return the error or success result 
+		return errorResult if errorResult else Result(status = True, rsc = cseRequest.rsc, request = cseRequest, data = cseRequest.pc)
 
 	###########################################################################
 

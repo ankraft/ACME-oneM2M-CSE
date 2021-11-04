@@ -141,6 +141,17 @@ class MQTTClientHandler(MQTTHandler):
 					connection.publish(topic, cast(Tuple, response.data)[1])
 				else:
 					connection.publish(topic, cast(str, cast(Tuple, response.data)[1]).encode())
+		
+
+		def _logRequest(result:Result) -> None:
+			"""	Log request.
+			"""
+			L.isDebug and L.logDebug(f'Operation: {result.request.op.name}')
+			if contentType == ContentSerializationType.JSON:
+				L.isDebug and L.logDebug(f'Body: \n{cast(str, data.decode())}')
+			else:
+				L.isDebug and L.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, data))}\n=>\n{result.request.originalRequest}')
+
 					
 
 		# SP relative of for : /cseid/aei
@@ -167,6 +178,7 @@ class MQTTClientHandler(MQTTHandler):
 		# dissect and validate request
 		if not (dissectResult := self._dissectMQTTRequest(data, contentType)).status:
 			# something went wrong during dissection
+			_logRequest(dissectResult)
 			_sendResponse(dissectResult)
 			return
 
@@ -176,17 +188,20 @@ class MQTTClientHandler(MQTTHandler):
 				L.logWarn(CSE.security.allowedCredentialIDsMqtt)
 				# The requestOriginator is actually a Credential ID. Check whether it is allowed
 				if not CSE.security.isAllowedOriginator(requestOriginator, CSE.security.allowedCredentialIDsMqtt):
-					_sendResponse(Result(rsc=RC.originatorHasNoPrivilege, request=dissectResult.request, dbg=f'Invalid credential ID: {requestOriginator}'))
+					_logRequest(dissectResult)
+					_sendResponse(Result(rsc = RC.originatorHasNoPrivilege, request = dissectResult.request, dbg = f'Invalid credential ID: {requestOriginator}'))
 					return
 			
 			if dissectResult.request.op != Operation.CREATE:
 				# Registration must be a CREATE operation
+				_logRequest(dissectResult)
 				L.logWarn(dbg := f'Invalid operation for registration: {dissectResult.request.op.name}')
-				_sendResponse(Result(rsc=RC.badRequest, request=dissectResult.request, dbg=dbg))
+				_sendResponse(Result(rsc = RC.badRequest, request = dissectResult.request, dbg = dbg))
 				return
 
 			if dissectResult.request.headers.resourceType not in [ ResourceTypes.AE, ResourceTypes.CSR]:
 				# Registration type must be AE
+				_logRequest(dissectResult)
 				L.logWarn(dbg := f'Invalid resource type for registration: {dissectResult.request.headers.resourceType}')
 				_sendResponse(Result(rsc=RC.badRequest, request=dissectResult.request, dbg=f'Invalid resource type for registration: {dissectResult.request.headers.resourceType.name}'))
 				return
@@ -194,13 +209,8 @@ class MQTTClientHandler(MQTTHandler):
 			# TODO Is it necessary to check here the originator for None, empty, C, S?
 
 
-		# log request
-		L.isDebug and L.logDebug(f'Operation: {dissectResult.request.op.name}')
-		if contentType == ContentSerializationType.JSON:
-			L.isDebug and L.logDebug(f'Body: \n{cast(str, data)}')
-		else:
-			L.isDebug and L.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, data))}\n=>\n{dissectResult.request.originalRequest}')
-		
+		_logRequest(dissectResult)
+
 		# handle request
 		if self.mqttClient.isStopped:
 			_sendResponse(Result(rsc=RC.internalServerError, request=dissectResult.request, dbg='mqtt server not running', status=False))
@@ -515,10 +525,17 @@ def logRequest(reqResult:Result, topic:str, isResponse:bool=False, isIncoming:bo
 			else:
 				body = f'\nBody: \n{TextTools.toHex(cast(bytes, cast(Tuple, reqResult.data)[1]))}\n=>\n{cast(Tuple, reqResult.data)[0]}'
 		elif reqResult.request.headers.contentType == ContentSerializationType.JSON or reqResult.request.ct == ContentSerializationType.JSON:
-			if isResponse and reqResult.request.originalRequest:
-				bodyPrint = str(reqResult.request.originalRequest)
+			# if isResponse and reqResult.request.originalRequest:
+			# 	bodyPrint = str(reqResult.request.originalRequest)
+			# elif reqResult.data:
+			# 	if isinstance(reqResult.data, tuple):
+			# 		bodyPrint = str(cast(Tuple, reqResult.data)[0])
+			# 	else:
+			# 		bodyPrint = str(reqResult.data)
+			# else:
+			# 	bodyPrint = str(reqResult.request.originalRequest)
 
-			elif reqResult.data:
+			if reqResult.data:
 				if isinstance(reqResult.data, tuple):
 					bodyPrint = str(cast(Tuple, reqResult.data)[0])
 				else:
