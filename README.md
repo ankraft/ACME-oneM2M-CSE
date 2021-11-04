@@ -62,7 +62,8 @@ Thank you for contributed code, patches, testing, bug fixes, time, and more!
 
 ![reinaortega](https://github.com/reinaortega.png?size=24) [Miguel Angel Reina Ortega](https://github.com/reinaortega)  
 ![YannGarcia](https://github.com/YannGarcia.png?size=24) [Yann Garcia](https://github.com/YannGarcia)  
-![MassimoVanetti](https://github.com/massimov.png?size=24) [Massimo Vanetti](https://github.com/massimov)  
+<img src="https://github.com/massimov.png" width="24"> [Massimo Vanetti](https://github.com/massimov)  
+
 
 ## License
 BSD 3-Clause License for the CSE and its native components and modules. Please see the individual licenses of the used third-party components.
