@@ -129,6 +129,9 @@ class MQTTClientHandler(MQTTHandler):
 	def registerOriginator(self, originator:str) -> MQTTTopics:
 		"""	Register and subscribe to a topic for that originator, only once. 
 		"""
+		if originator[0] == '/':	# Remove leading /, e.g. for csi
+			originator = originator[1:]
+
 		if originator in self.topics:
 			return self.topics[originator]
 		topics = MQTTTopics(MQTTREQUESTTOPIC.replace('$ORIGINATOR$', originator),
