@@ -20,7 +20,11 @@ from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
 from ..services import CSE as CSE
 from .Resource import *
+
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)
+# TODO cleanup optimizations
+
+
 
 
 class Resource(object):
@@ -46,9 +50,9 @@ class Resource(object):
 		if ty not in [ T.FCNT, T.FCI ]: 	# For some types the tpe/root is empty and will be set later in this method
 			self.tpe = ty.tpe() if not tpe else tpe
 	
-		self.readOnly = readOnly
-		self.inheritACP = inheritACP
-		self.dict = {}
+		self.readOnly	= readOnly
+		self.inheritACP	= inheritACP
+		self.dict 		= {}
 
 		if dct: 
 			self.isImported = dct.get(self._imported)	# might be None, or boolean
@@ -81,7 +85,7 @@ class Resource(object):
 
 			# Check uniqueness of ri. otherwise generate a new one. Only when creating
 			if create:
-				while Utils.isUniqueRI(ri := self.ri) == False:
+				while not Utils.isUniqueRI(ri := self.ri):
 					L.isWarn and L.logWarn(f'RI: {ri} is already assigned. Generating new RI.')
 					self['ri'] = Utils.uniqueRI(self.tpe)
 
@@ -484,7 +488,7 @@ class Resource(object):
 			if not CSE.importer.isImporting:
 
 				if not (acp := CSE.dispatcher.retrieveResource(ri).resource):
-					L.isDebug and L.logDebug(dbg := f'Referenced <ACP> resource not found: {ri}')
+					L.logDebug(dbg := f'Referenced <ACP> resource not found: {ri}')
 					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 
 

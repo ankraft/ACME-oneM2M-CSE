@@ -121,7 +121,7 @@ class RequestManager(object):
 	#
 
 	def retrieveRequest(self, request:CSERequest) ->  Result:
-		L.logDebug and L.logDebug(f'RETRIEVE ID: {request.id if request.id else request.srn}, originator: {request.headers.originator}')
+		L.isDebug and L.logDebug(f'RETRIEVE ID: {request.id if request.id else request.srn}, originator: {request.headers.originator}')
 		
 		# handle transit requests
 		if self.isTransitID(request.id):

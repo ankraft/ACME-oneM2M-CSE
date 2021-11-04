@@ -433,6 +433,7 @@ class TestTS_TSI(unittest.TestCase):
 			time.sleep(timeSeriesInterval) # == pei
 			dgt += timeSeriesInterval
 
+		time.sleep(timeSeriesInterval/2.0) 
 		# Check TS for missing TSI
 		r, rsc = RETRIEVE(tsURL, TestTS_TSI.originator)
 		self.assertEqual(rsc, RC.OK, r)

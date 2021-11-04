@@ -12,33 +12,35 @@ from .Types import ResourceTypes as T, ContentSerializationType as CST
 class Constants(object):
 
 	# ACME Version
-	version						= '0.9.0'
+	version								= '0.9.0'
 
 	# Supported release vesions
-	supportedReleaseVersions = ['2a', '3', '4']
+	supportedReleaseVersions 			= ['2a', '3', '4']
 
 	
 	# List of virtual resources
 
-	virtualResources 				= [ T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.TS_LA, T.TS_OL, 
-										T.GRP_FOPT, T.PCH_PCU ]
-	virtualResourcesNames 			= [ 'la', 'ol', 'fopt', 'pcu' ]
+	virtualResources 					= [ T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.TS_LA, T.TS_OL, 
+											T.GRP_FOPT, T.PCH_PCU ]
+	virtualResourcesNames 				= [ 'la', 'ol', 'fopt', 'pcu' ]
 
 	# List of announceable resource types
-	announcedResourceTypes 			= [ T.ACPAnnc, T.AEAnnc, T.CNTAnnc, T.CINAnnc, T.GRPAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.CSRAnnc, T.FCNTAnnc ]
+	announcedResourceTypes 				= [ T.ACPAnnc, T.AEAnnc, T.CNTAnnc, T.CINAnnc, T.GRPAnnc, T.MGMTOBJAnnc,
+										    T.NODAnnc, T.CSRAnnc, T.FCNTAnnc ]
 
 	# Supported resource types by this CSE
-	supportedResourceTypes 			= [	# Supported normal resource
-										T.ACP, T.AE, T.CNT, T.CIN, T.CSEBase, T.GRP, T.MGMTOBJ, T.NOD, T.CSR, 
-										T.REQ, T.SUB, T.FCNT, T.FCI, T.TS, T.TSI
+	supportedResourceTypes 				= [	# Supported normal resource
+											T.ACP, T.AE, T.CNT, T.CIN, T.CSEBase, T.GRP, T.MGMTOBJ, T.NOD, T.CSR, 
+											T.REQ, T.SUB, T.FCNT, T.FCI, T.TS, T.TSI
 									  ]
-	supportedResourceTypes			+= announcedResourceTypes	# add announced resource types as well
+	supportedResourceTypes				+= announcedResourceTypes	# add announced resource types as well
 
-	stateTagResourceTypes 			= [ T.CNT, T.CIN, T.FCNT, T.FCI, T.REQ ]	# those resource types allow state tags
-	supportedContentSerializations 	= [ CST.JSON.toHeader(), CST.CBOR.toHeader(), 'application/vnd.onem2m-res+json', 'application/vnd.onem2m-res+cbor' ]
+	stateTagResourceTypes 				= [ T.CNT, T.CIN, T.FCNT, T.FCI, T.REQ ]	# those resource types allow state tags
+	supportedContentSerializations 		= [ CST.JSON.toHeader(), CST.CBOR.toHeader(), 'application/vnd.onem2m-res+json', 'application/vnd.onem2m-res+cbor' ]
 	supportedContentSerializationsSimple = [ CST.JSON.toSimple(), CST.CBOR.toSimple() ]
 
-	supportedContentHeaderFormat 	= [ CST.JSON.toHeader(), CST.CBOR.toHeader(),'application/vnd.onem2m-res+json', 'application/vnd.onem2m-res+cbor' ]
+	supportedContentHeaderFormat 		= [ CST.JSON.toHeader(), CST.CBOR.toHeader(),'application/vnd.onem2m-res+json', 'application/vnd.onem2m-res+cbor' ]
+	supportedContentHeaderFormatTuple	= tuple(supportedContentHeaderFormat)
 
 	# List of resource types for which "creator" is allowed
 	# Also add later: eventConfig, pollingChannel, statsCollect, statsConfig, semanticDescriptor,

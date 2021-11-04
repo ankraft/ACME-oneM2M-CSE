@@ -134,9 +134,8 @@ class AnnouncementManager(object):
 		"""	Announce a single resource to its announcement targets.
 		"""
 		L.isDebug and L.logDebug(f'Announce resource: {resource.ri} to all connected csr')
-		csi = CSE.cseCsi
 		for at in resource.at:
-			if at == csi or at.startswith(CSE.cseCsiSlash):
+			if at == CSE.cseCsi or at.startswith(CSE.cseCsiSlash):
 				L.isWarn and L.logWarn('Targeting own CSE. Ignored.')
 				self._removeAnnouncementFromResource(resource, at)
 				continue
@@ -314,7 +313,7 @@ class AnnouncementManager(object):
 
 		# TODO: multi-hop announcement
 
-		L.logDebug and L.logDebug(f'Update announced resource: {resource.ri} to: {csi}')
+		L.isDebug and L.logDebug(f'Update announced resource: {resource.ri} to: {csi}')
 
 		data = resource.createAnnouncedResourceDict(remoteCSR, isCreate=False, csi=csi)
 
