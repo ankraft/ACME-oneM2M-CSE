@@ -130,7 +130,6 @@ class Configuration(object):
 				'http.security.caCertificateFile'		: config.get('server.http.security', 'caCertificateFile', 		fallback=None),
 				'http.security.caPrivateKeyFile'		: config.get('server.http.security', 'caPrivateKeyFile', 		fallback=None),
 
-
 				#
 				#	MQTT Client
 				#
@@ -143,8 +142,6 @@ class Configuration(object):
 				'mqtt.topicPrefix' 						: config.get('client.mqtt', 'topicPrefix',				fallback=''),
 				'mqtt.timeout' 							: config.getfloat('client.mqtt', 'timeout',				fallback=5.0),
 
-				# TODO check values of mqtt later
-
 				#
 				#	MQTT Client Security
 				#
@@ -155,7 +152,6 @@ class Configuration(object):
 				'mqtt.security.username'				: config.get('client.mqtt.security', 'username',		fallback=None),
 				'mqtt.security.password' 				: config.get('client.mqtt.security', 'password',		fallback=None),
 				'mqtt.security.allowedCredentialIDs'	: config.getlist('client.mqtt.security', 'allowedCredentialIDs', fallback=[]),	# type: ignore [attr-defined]
-
 
 				#
 				#	Database

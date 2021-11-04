@@ -295,7 +295,7 @@ class TestSUB(unittest.TestCase):
 					'nct': NotificationContentType.modifiedAttributes
 				}}
 		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.badRequest, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

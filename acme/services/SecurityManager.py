@@ -230,13 +230,13 @@ class SecurityManager(object):
 		if 'acpi' in updatedAttributes:
 			if len(updatedAttributes) > 1:
 				L.logDebug(dbg := '"acpi" must be the only attribute in update')
-				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 			
 			# Check whether the originator has UPDATE privileges for the acpi attribute (pvs!)
 			if not targetResource.acpi:
 				if originator != targetResource.getOriginator():
-					L.isDebug and L.logDebug(dbg := f'No access to update acpi for originator: {originator}')
-					return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
+					L.logDebug(dbg := f'No access to update acpi for originator: {originator}')
+					return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = dbg)
 				else:
 					pass	# allowed for creating originator
 			else:
@@ -248,12 +248,12 @@ class SecurityManager(object):
 					if acp.checkSelfPermission(originator, Permission.UPDATE):
 						break
 				else:
-					L.isDebug and L.logDebug(dbg := f'Originator: {originator} has no permission to update acpi for: {targetResource.ri}')
-					return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
+					L.logDebug(dbg := f'Originator: {originator} has no permission to update acpi for: {targetResource.ri}')
+					return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = dbg)
 
-			return Result(status=True, data=True)	# hack: data=True indicates that this is an ACPI update after all
+			return Result(status = True, data = True)	# hack: data=True indicates that this is an ACPI update after all
 
-		return Result(status=True)
+		return Result(status = True)
 
 
 	def isAllowedOriginator(self, originator:str, allowedOriginators:List[str]) -> bool:

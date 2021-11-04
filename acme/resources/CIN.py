@@ -58,8 +58,8 @@ class CIN(AnnounceableResource):
 
 
 	# Forbid updating
-	def update(self, dct:JSON=None, originator:str=None) -> Result:
-		return Result(status=False, rsc=RC.operationNotAllowed, dbg='updating CIN is forbidden')
+	def update(self, dct:JSON = None, originator:str = None) -> Result:
+		return Result(status = False, rsc = RC.operationNotAllowed, dbg='updating CIN is forbidden')
 
 
 	def willBeRetrieved(self, originator:str) -> Result:
@@ -68,8 +68,8 @@ class CIN(AnnounceableResource):
 
 		# Check whether the parent container's *disableRetrieval* attribute is set to True.
 		if (cnt := self.retrieveParentResource()) and cnt.disr:	# disr is either None, True or False. False means "not disabled retrieval"
-			L.isDebug and L.logDebug(dbg := f'Retrieval is disabled for the parent <container>')
-			return Result(status=False, rsc=RC.operationNotAllowed, dbg=dbg)
+			L.logDebug(dbg := f'Retrieval is disabled for the parent <container>')
+			return Result(status = False, rsc = RC.operationNotAllowed, dbg = dbg)
 		
 		# Check deletion Count
 		if (dcnt := self.dcnt) is not None:	# dcnt is an innt
@@ -83,22 +83,22 @@ class CIN(AnnounceableResource):
 				self.setAttribute('dcnt', dcnt+1)
 			else:
 				L.isDebug and L.logDebug(f'Deleting <cin>, ri: {self.ri} because dcnt reached 0')
-				CSE.dispatcher.deleteResource(self, originator=originator)
+				CSE.dispatcher.deleteResource(self, originator = originator)
 
 		return Result(status=True)
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 
 		# Check the format of the CNF attribute
 		if (cnf := self.cnf) and not (res := CSE.validator.validateCNF(cnf)).status:
-			return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
+			return Result(status = False, rsc = RC.badRequest, dbg = res.dbg)
 
 		# Add ST attribute
 		if parentResource := parentResource.dbReload().resource:		# Read the resource again in case it was updated in the DB
 			self.setAttribute('st', parentResource.st)
 		
-		return Result(status=True)
+		return Result(status = True)
 

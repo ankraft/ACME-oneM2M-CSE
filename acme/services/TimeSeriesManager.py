@@ -34,7 +34,6 @@ class TimeSeriesManager(object):
 		L.isInfo and L.log('TimeSeriesManager shut down')
 		return True
 
-
 	#
 	#	Monitor handling
 	#
@@ -87,8 +86,6 @@ class TimeSeriesManager(object):
 				md.missingDataCurrentNr += 1
 				if md.missingDataCurrentNr == 1:	# If it is the first missing data point in this run, then start an actor to react on the end of specified time window
 					md.timeWindowEndTimestamp = rts.nextRuntime + md.missingDataDuration
-					# md.actor = BackgroundWorkerPool.newActor(self.missingDataMonitor, at=rts.nextRuntime+md.missingDataDuration, name=f'tsMissingData_{tsRi}_{subRi}')
-					# md.actor.start(missingData=md)
 
 			# Check for sending the missing data subscriptions in  general
 			CSE.notification.checkSubscriptions(None, NET.reportOnGeneratedMissingDataPoints, ri=tsRi, missingData=rts.missingData, now=rts.nextRuntime)

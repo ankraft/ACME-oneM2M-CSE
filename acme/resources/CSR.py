@@ -63,8 +63,8 @@ class CSR(AnnounceableResource):
 	# TODO ^^^ Add Attribute EnableTimeCompensation, also in CSRAnnc
 	
 
-	def __init__(self, dct:JSON=None, pi:str=None, rn:str=None, create:bool=False) -> None:
-		super().__init__(T.CSR, dct, pi, rn=rn, create=create)
+	def __init__(self, dct:JSON=None, pi:str = None, rn:str = None, create:bool = False) -> None:
+		super().__init__(T.CSR, dct, pi, rn = rn, create=create)
 
 		#self.setAttribute('csi', 'cse', overwrite=False)	# This shouldn't happen
 		if self.csi:
@@ -81,17 +81,18 @@ class CSR(AnnounceableResource):
 		if childResource.ty == T.PCH:
 			# Check correct originator. Even the ADMIN is not allowed that		
 			if self.csi != originator:
-				if L.isDebug: L.logDebug(dbg := f'Originator must be the parent <CSR>')
-				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
+				L.logDebug(dbg := f'Originator must be the parent <CSR>')
+				return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = dbg)
 
 			# check that there will only by one PCH as a child
 			if CSE.dispatcher.countDirectChildResources(self.ri, ty=T.PCH) > 0:
-				return Result(status=False, rsc=RC.badRequest, dbg='Only one <PCH> per <CSR> is allowed')
+				L.logDebug(dbg := 'Only one <PCH> per <CSR> is allowed')
+				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
 		return Result(status=True)
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 		self._normalizeURIAttribute('poa')

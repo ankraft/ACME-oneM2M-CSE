@@ -378,7 +378,7 @@ class Dispatcher(object):
 	#	Add resources
 	#
 
-	def processCreateRequest(self, request:CSERequest, originator:str, id:str=None) -> Result:
+	def processCreateRequest(self, request:CSERequest, originator:str, id:str = None) -> Result:
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 		if not id:
 			id = request.id
@@ -394,7 +394,8 @@ class Dispatcher(object):
 			return fanoutPointResource.handleCreateRequest(request, fopsrn, request.headers.originator)
 
 		if (ty := request.headers.resourceType) is None:	# Check for type parameter in request, integer
-			return Result(status=False, rsc=RC.badRequest, dbg='type parameter missing in CREATE request')
+			L.logDebug(dbg := 'type parameter missing in CREATE request')
+			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
 		# Some Resources are not allowed to be created in a request, return immediately
 		if ty in [ T.CSEBase, T.REQ, T.FCI ]:	# TODO: move to constants
@@ -402,8 +403,8 @@ class Dispatcher(object):
 
 		# Get parent resource and check permissions
 		if not (res := CSE.dispatcher.retrieveResource(id)).resource:
-			L.isWarn and L.logWarn(dbg := f'Parent/target resource: {id} not found')
-			return Result(status=False, rsc=RC.notFound, dbg=dbg)
+			L.logWarn(dbg := f'Parent/target resource: {id} not found')
+			return Result(status = False, rsc = RC.notFound, dbg = dbg)
 		parentResource = res.resource
 
 		if CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty=ty, isCreateRequest=True, parentResource=parentResource) == False:
@@ -734,14 +735,14 @@ class Dispatcher(object):
 
 		if targetResource.ty in [ T.AE, T.CSR, T.CSEBase ]:
 			if not CSE.security.hasAccess(originator, targetResource, Permission.NOTIFY):
-				L.isDebug and L.logDebug(dbg := f'Originator has no NOTIFY privilege for: {id}')
-				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
+				L.logDebug(dbg := f'Originator has no NOTIFY privilege for: {id}')
+				return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = dbg)
 			#  A Notification to one of these resources will always be a R
-			return CSE.request.handleReceivedNotifyRequest(id, request=request, originator=originator)
+			return CSE.request.handleReceivedNotifyRequest(id, request = request, originator = originator)
 
 		# error
 		L.logDebug(dbg := f'Unsupported resource type: {targetResource.ty} for notifications. Supported: <PCU>.')
-		return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+		return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
 
 

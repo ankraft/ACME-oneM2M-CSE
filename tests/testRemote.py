@@ -42,7 +42,7 @@ class TestRemote(unittest.TestCase):
 		"""	Retrieve the local registree CSR """
 		r, _ = RETRIEVE(localCsrURL, ORIGINATOR)
 		self.assertIsNotNone(r)
-		self.assertEqual(findXPath(r, 'm2m:csr/ty'), T.CSR)
+		self.assertEqual(findXPath(r, 'm2m:csr/ty'), T.CSR, r)
 		self.assertEqual(findXPath(r, 'm2m:csr/rn'), REMOTECSEID[1:])
 		self.assertEqual(findXPath(r, 'm2m:csr/ri'), REMOTECSEID[1:])
 		self.assertEqual(findXPath(r, 'm2m:csr/cb'), f'{REMOTECSEID}/{REMOTECSERN}')

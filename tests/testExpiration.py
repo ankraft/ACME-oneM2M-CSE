@@ -119,7 +119,7 @@ class TestExpiration(unittest.TestCase):
 					'et' : getResourceDate(-60) # 1 minute in the past
 				}}
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
-		self.assertEqual(rsc, RC.badRequest)
+		self.assertEqual(rsc, RC.badRequest, r)
 		# should fail
 
 

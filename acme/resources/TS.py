@@ -120,13 +120,13 @@ class TS(AnnounceableResource):
 		# Check the format of the CNF attribute
 		if cnf := self.cnf:
 			if not (res := CSE.validator.validateCNF(cnf)).status:
-				return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
+				return Result(status = False, rsc = RC.badRequest, dbg = res.dbg)
 
 		# Check peid
 		if self.peid is not None and self.pei is not None:	# pei(d) is an int
 			if self.peid > self.pei/2:
-				L.isWarn and L.logWarn(dbg := 'peid must be <= pei/2')
-				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+				L.logWarn(dbg := 'peid must be <= pei/2')
+				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 		elif self.pei is not None:	# pei is an int
 			self.setAttribute('peid', int(self.pei/2), False)
 

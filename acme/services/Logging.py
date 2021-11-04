@@ -286,30 +286,6 @@ class Logging:
 		return answer
 
 
-	# @staticmethod
-	# @property
-	# def isInfo() -> bool:
-	# 	"""	Return True if logging is enabled and the logLevel <= INFO
-	# 	"""
-	# 	return Logging.logLevel <= LogLevel.INFO
-
-
-	# @staticmethod
-	# @property
-	# def isDebug() -> bool:
-	# 	"""	Return True if logging is enabled and the logLevel <= DEBUG
-	# 	"""
-	# 	return Logging.logLevel <= LogLevel.DEBUG
-	
-
-
-	# @staticmethod
-	# @property
-	# def isWarn() -> bool:
-	# 	"""	Return True if logging is enabled and the logLevel <= WARNING
-	# 	"""
-	# 	return Logging.logLevel <= LogLevel.WARNING
-
 	@staticmethod
 	def off() -> None:
 		"""	Switch logging off. Remember the last logLevel

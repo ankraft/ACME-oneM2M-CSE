@@ -123,7 +123,6 @@ def requestFromResult(inResult:Result, originator:str=None, ty:T=None, op:Operat
 		req['fr'] = CSE.cseCsi
 		req['to'] = inResult.request.id if inResult.request.id else CSE.cseCsi
 
-	# req['to'] = inResult.request.id if inResult.request.id else inResult.request.headers.originator # else 'non-onem2m-entity'
 
 	if inResult.request.headers.originatingTimestamp:
 		req['ot'] = inResult.request.headers.originatingTimestamp
@@ -156,9 +155,6 @@ def requestFromResult(inResult:Result, originator:str=None, ty:T=None, op:Operat
 			pc = cast(JSON, requestFromResult(Result(request=inResult.embeddedRequest)).data)
 		# L.isDebug and L.logDebug(pc)
 
-		# pc = inResult.embeddedRequest.originalRequest if inResult.embeddedRequest.originalRequest else inResult.embeddedRequest.pc
-		# pc = inResult.embeddedRequest.pc if inResult.embeddedRequest.pc is not None else inResult.embeddedRequest.originalRequest
-		# pc = inResult.embeddedRequest.originalRequest
 	else:
 		# construct and serialize the data as JSON/dictionary. Encoding to JSON or CBOR is done later
 		pc = inResult.toData(ContentSerializationType.PLAIN)	#  type:ignore[assignment]

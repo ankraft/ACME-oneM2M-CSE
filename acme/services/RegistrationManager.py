@@ -105,8 +105,6 @@ class RegistrationManager(object):
 
 
 
-
-
 	#########################################################################
 
 	#
@@ -123,8 +121,8 @@ class RegistrationManager(object):
 		# Check for allowed orginator
 		# TODO also allow when there is an ACP?
 		if not CSE.security.isAllowedOriginator(originator, self.allowedAEOriginators):
-			L.isDebug and L.logDebug(dbg := 'Originator not allowed')
-			return Result(status=False, rsc=RC.appRuleValidationFailed, dbg=dbg)
+			L.logDebug(dbg := 'Originator not allowed')
+			return Result(status = False, rsc = RC.appRuleValidationFailed, dbg = dbg)
 
 		# Assign originator for the AE
 		if originator == 'C':
@@ -138,8 +136,8 @@ class RegistrationManager(object):
 
 		# Check whether an originator has already registered with the same AE-ID
 		if Utils.hasRegisteredAE(originator):
-			L.isWarn and L.logWarn(dbg := f'Originator has already registered: {originator}')
-			return Result(status=False, rsc=RC.originatorHasAlreadyRegistered, dbg=dbg)
+			L.logWarn(dbg := f'Originator has already registered: {originator}')
+			return Result(status = False, rsc = RC.originatorHasAlreadyRegistered, dbg = dbg)
 		
 		# Make some adjustments to set the originator in the <AE> resource
 		L.isDebug and L.logDebug(f'Registering AE. aei: {originator}')
@@ -176,8 +174,8 @@ class RegistrationManager(object):
 		# Check whether an AE with the same originator has already registered
 
 		if originator != CSE.cseOriginator and Utils.hasRegisteredAE(originator):
-			L.isWarn and L.logWarn(dbg := f'Originator has already registered an AE: {originator}')
-			return Result(status=False, rsc=RC.operationNotAllowed, dbg=dbg)
+			L.logWarn(dbg := f'Originator has already registered an AE: {originator}')
+			return Result(status = False, rsc = RC.operationNotAllowed, dbg = dbg)
 		
 		# Always replace csi with the originator (according to TS-0004, 7.4.4.2.1)
 		if not CSE.importer.isImporting:	# ... except when the resource was just been imported
@@ -273,7 +271,6 @@ class RegistrationManager(object):
 			CSE.event.expireResource(resource) # type: ignore
 				
 		return True
-
 
 
 

@@ -417,19 +417,13 @@ class RequestManager(object):
 
 	def handleTransitRetrieveRequest(self, request:CSERequest) -> Result:
 		""" Forward a RETRIEVE request to a remote CSE """
-		# if not (res := self._constructForwardURL(request)).status:	# FIXME remove
-		# 	return res
-	
+
 		# Convert "from" to SP-relative format in the request
 		# See TS-0001, 7.3.2.6, Forwarding
 		self._originatorToSPRelative(request)
 
 		# L.isDebug and L.logDebug(f'Forwarding RETRIEVE/DISCOVERY request to: {res.data}')
 		L.isDebug and L.logDebug(f'Forwarding RETRIEVE/DISCOVERY request to: {request.id}')
-		# return self.sendRetrieveRequest(uri=cast(str, res.data),
-		# 							    originator=request.headers.originator,
-		# 								data=request.originalData,
-		# 								raw=True)
 		return self.sendRetrieveRequest(uri=cast(str, request.id),
 									    originator=request.headers.originator,
 										data=request.originalRequest,
@@ -438,22 +432,12 @@ class RequestManager(object):
 
 	def handleTransitCreateRequest(self, request:CSERequest) -> Result:
 		""" Forward a CREATE request to a remote CSE. """
-		# if not (res := self._constructForwardURL(request)).status:
-		# 	return res
-
+		
 		# Convert "from" to SP-relative format in the request
 		# See TS-0001, 7.3.2.6, Forwarding
 		self._originatorToSPRelative(request)
 
 		L.isDebug and L.logDebug(f'Forwarding CREATE request to: {request.id}')
-		# L.isInfo and L.log(f'Forwarding CREATE request to: {res.data}')
-		# L.logWarn(request)
-		# return self.sendCreateRequest(cast(str, res.data), request.headers.originator, data=request.originalData, ty=request.headers.resourceType)
-		# return self.sendCreateRequest(uri=cast(str, res.data),
-									#   originator=request.headers.originator,
-									#   data=request.originalRequest,
-									#   ty=request.headers.resourceType,
-									#   raw=True)
 		return self.sendCreateRequest(uri=request.id,
 									  originator=request.headers.originator,
 									  data=request.originalRequest,
@@ -463,38 +447,25 @@ class RequestManager(object):
 
 	def handleTransitUpdateRequest(self, request:CSERequest) -> Result:
 		""" Forward an UPDATE request to a remote CSE. """
-		# if not (res := self._constructForwardURL(request)).status:	# FIXME remove
-		# 	return res
 
 		# Convert "from" to SP-relative format in the request
 		# See TS-0001, 7.3.2.6, Forwarding
 		self._originatorToSPRelative(request)
 
-		# L.isDebug and L.logDebug(f'Forwarding UPDATE request to: {res.data}')
-		# return self.sendUpdateRequest(uri=cast(str, res.data),
-		# 							  originator=request.headers.originator,
-		# 							  data=request.originalData,
-		# 							  raw=True)
 		L.isDebug and L.logDebug(f'Forwarding UPDATE request to: {request.id}')
 		return self.sendUpdateRequest(uri=cast(str, request.id),
 									  originator=request.headers.originator,
 									  data=request.originalRequest,
 									  raw=True)
 
+
 	def handleTransitDeleteRequest(self, request:CSERequest) -> Result:
 		""" Forward a DELETE request to a remote CSE. """
-		# if not (res := self._constructForwardURL(request)).status:	# FIXME remove
-		# 	return res
 
 		# Convert "from" to SP-relative format in the request
 		# See TS-0001, 7.3.2.6, Forwarding
 		self._originatorToSPRelative(request)
 
-		# L.isDebug and L.logDebug(f'Forwarding DELETE request to: {res.data}')
-		# return self.sendDeleteRequest(uri=cast(str, res.data),
-		# 							  originator=request.headers.originator,
-  		# 							  data=request.originalData,
-		# 							  raw=True)
 		L.isDebug and L.logDebug(f'Forwarding DELETE request to: {request.id}')
 		return self.sendDeleteRequest(uri=cast(str, request.id),
 									  originator=request.headers.originator,
@@ -504,18 +475,11 @@ class RequestManager(object):
 
 	def handleTransitNotifyRequest(self, request:CSERequest) -> Result:
 		""" Forward a NOTIFY request to a remote CSE. """
-		# if not (res := self._constructForwardURL(request)).status:
-		# 	return res
 
 		# Convert "from" to SP-relative format in the request
 		# See TS-0001, 7.3.2.6, Forwarding
 		self._originatorToSPRelative(request)
 
-		# L.isDebug and L.logDebug(f'Forwarding NOTIFY request to: {res.data}')
-		# return self.sendNotifyRequest(uri=cast(str, res.data),
-		# 					 		  originator=request.headers.originator,
-		# 							  data=request.originalData,
-		# 							  raw=True)
 		L.isDebug and L.logDebug(f'Forwarding NOTIFY request to: {request.id}')
 		return self.sendNotifyRequest(uri=cast(str, request.id),
 							 		  originator=request.headers.originator,
@@ -807,10 +771,10 @@ class RequestManager(object):
 													  targetOriginator=targetOriginator,
 													  raw=raw,
 													  id=id)
-			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
-			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+			L.logWarn(dbg := f'unsupported url scheme: {url}')
+			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
-		return Result(status=False, rsc=RC.notFound, dbg=f'No target found for uri: {uri}')
+		return Result(status = False, rsc = RC.notFound, dbg = f'No target found for uri: {uri}')
 
 
 	def sendCreateRequest(self, uri:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False, id:str=None) -> Result:
@@ -861,13 +825,13 @@ class RequestManager(object):
 													  targetOriginator=targetOriginator,
 													  raw=raw,
 													  id=id)
-			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
-			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+			L.logWarn(dbg := f'unsupported url scheme: {url}')
+			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 		
-		return Result(status=False, rsc=RC.notFound, dbg=f'No target found for uri: {uri}')
+		return Result(status = False, rsc = RC.notFound, dbg = f'No target found for uri: {uri}')
 
 
-	def sendUpdateRequest(self, uri:str, originator:str, data:Any, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False, id:str=None) -> Result:
+	def sendUpdateRequest(self, uri:str, originator:str, data:Any, parameters:Parameters=None, ct:ContentSerializationType = None, targetResource:Resource = None, targetOriginator:str = None, appendID:str = '', raw:bool = False, id:str = None) -> Result:
 		"""	Send an UPDATE request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending UPDATE request to: {uri}{appendID}')
@@ -911,13 +875,13 @@ class RequestManager(object):
 													  targetOriginator=targetOriginator,
 													  raw=raw,
 													  id=id)
-			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
-			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+			L.logWarn(dbg := f'unsupported url scheme: {url}')
+			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 		
 		return Result(status=False, rsc=RC.notFound, dbg=f'No target found for uri: {uri}')
 
 
-	def sendDeleteRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False, id:str=None) -> Result:
+	def sendDeleteRequest(self, uri:str, originator:str, data:Any = None, parameters:Parameters = None, ct:ContentSerializationType = None, targetResource:Resource = None, targetOriginator:str = None, appendID:str = '', raw:bool = False, id:str = None) -> Result:
 		"""	Send a DELETE request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending DELETE request to: {uri}{appendID}')
@@ -958,13 +922,13 @@ class RequestManager(object):
 													  targetOriginator=targetOriginator,
 													  raw=raw,
 													  id=id)
-			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
-			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+			L.logWarn(dbg := f'unsupported url scheme: {url}')
+			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
-		return Result(status=False, rsc=RC.notFound, dbg=f'No target found for uri: {uri}')
+		return Result(status = False, rsc = RC.notFound, dbg = f'No target found for uri: {uri}')
 
 
-	def sendNotifyRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', noAccessIsError:bool=False, raw:bool=False, id:str=None) -> Result:
+	def sendNotifyRequest(self, uri:str, originator:str, data:Any = None, parameters:Parameters = None, ct:ContentSerializationType = None, targetResource:Resource = None, targetOriginator:str = None, appendID:str = '', noAccessIsError:bool = False, raw:bool = False, id:str = None) -> Result:
 		"""	Send a NOTIFY request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending NOTIFY request to: {uri}{appendID} for Originator: {originator}, targetOriginator: {targetOriginator}, targetResource: {targetResource}')
@@ -1012,10 +976,10 @@ class RequestManager(object):
 													  targetOriginator=targetOriginator,
 													  raw=raw,
 													  id=id)
-			L.isWarn and L.logWarn(dbg := f'unsupported url scheme: {url}')
-			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+			L.logWarn(dbg := f'unsupported url scheme: {url}')
+			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 		
-		return Result(status=False, rsc=RC.notFound, dbg=f'No target found for uri: {uri}')
+		return Result(status = False, rsc = RC.notFound, dbg = f'No target found for uri: {uri}')
 
 
 	###########################################################################
@@ -1351,72 +1315,6 @@ class RequestManager(object):
 		return [ ContentSerializationType.getType(c) for c in csz]
 
 
-	#
-	#	Notifications.
-	#
-	# def resolveURIs(self, uris:list[str]|str, originator:str=None, noAccessIsError:bool=False) -> list[Tuple[str, Resource]]:
-	# 	"""	Return a list of tuples: (resolved URLs, target resource or None). This includes resolved URL's, ie. also POAs from referenced AEs and CSEs etc.
-
-	# 		If the `originator` is specified then the URLs contain in the *poa* of that target/originator are excluded.
-			
-	# 		If the target is not request reachable then the resource ID of that target is included in the
-	# 		list, and it is handled later, e.g. for a pollingChannel.
-
-	# 		The returned result is a list or tuples of (direct URLs, target resource). This could be an empty list, so None is returned in case of an error.
-	# 	"""
-
-	# 	if not uris:
-	# 		return []
-	# 	uris = uris if isinstance(uris, list) else [ uris ]	# make a list out of it even when it is a single value
-	# 	result:list[Tuple[str, Resource]] = []
-	# 	for url in uris:
-	# 		if not url:
-	# 			continue
-	# 		# check if it is a direct URL
-	# 		if L.isDebug: L.logDebug(f'Checking next URL: {url}')
-
-	# 		# A direct url already, append it directly
-	# 		if Utils.isURL(url):	
-	# 			result.append((url, None))
-	# 		else:					
-				
-	# 			# Assume that this is a resource ID
-	# 			if not (resource := CSE.dispatcher.retrieveResource(url).resource):
-	# 				L.isWarn and L.logWarn(f'Resource not found to get URL: ignoring {url}')
-	# 				continue
-
-	# 			# For notifications:
-	# 			# If the given originator is the target then exclude it from the list of targets.
-	# 			# Test for AE and CSE (CSI starts with a /)
-	# 			if originator and (resource.ri == originator or resource.ri == f'/{originator}'):
-	# 				L.isDebug and L.logDebug(f'Notification target is the originator: {originator}, ignoring: {url}')
-	# 				continue
-				
-	# 			# Check for NOTIFY access to the target
-	# 			if originator and not CSE.security.hasAccess(originator, resource, Permission.NOTIFY):
-	# 				L.isWarn and L.logWarn(f'Originator: {originator} has no NOTIFY permission for target resource, ignoring: {url}')
-	# 				if noAccessIsError:
-	# 					return None
-	# 				continue
-				
-	# 			# Is the target request reachable?
-	# 			if resource.rr:
-	# 				# Add the poa list if present
-	# 				if (poa := resource.poa) and isinstance(poa, list):
-	# 					result += [ (u, resource) for u in poa ]
-	# 				else:
-	# 					L.isWarn and L.logWarn(f'Target resource: {resource.ri} has no poa: {resource.ri}, ignoring: {url}')
-	# 					continue
-				
-	# 			# If the resource is not request reachable then just add its resource ID to the list
-	# 			# It will be handled later when checking for polling channel
-	# 			else:	
-	# 				L.isDebug and L.logDebug(f'Resource: {resource.ri} with no request reachability')
-	# 				result.append((resource.ri, resource))
-
-	# 	return result
-
-
 	def resolveSingleUriCszTo(self, uri:str, permission:Permission, appendID:str='', originator:str=None, noAccessIsError:bool=False, raw:bool=False) -> list[ Tuple[str, list[str], str, PCH ] ]:
 		"""	Resolve the real URL, contentSerialization, the target, and an optional PCU resource from a (notification) URI.
 			The result is a list of tuples of (url, list of contentSerializations, target originator, PollingChannel resource).
@@ -1487,5 +1385,3 @@ class RequestManager(object):
 			result.append( (f'{p}{appendID}', targetResource.csz, targetOriginator, None) )
 		return result
 
-
-		

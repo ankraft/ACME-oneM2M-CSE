@@ -291,7 +291,7 @@ class Resource(object):
 		# Notify parent that a child has been updated
 		if not (parent := self.retrieveParentResource()):
 			L.logErr(dbg := f'cannot retrieve parent resource')
-			return Result(status=False, rsc=RC.internalServerError, dbg=dbg)
+			return Result(status = False, rsc = RC.internalServerError, dbg = dbg)
 		parent.childUpdated(self, updatedAttributes, originator)
 
 		return Result(status=True)
@@ -338,17 +338,17 @@ class Resource(object):
 		if (not Utils.isValidID(self.ri) or
 			not Utils.isValidID(self.pi) or
 			not Utils.isValidID(self.rn)):
-			L.isDebug and L.logDebug(dbg := f'Invalid ID ri: {self.ri}, pi: {self.pi}, rn: {self.rn})')
-			return Result(status=False, rsc=RC.contentsUnacceptable, dbg=dbg)
+			L.logDebug(dbg := f'Invalid ID ri: {self.ri}, pi: {self.pi}, rn: {self.rn})')
+			return Result(status = False, rsc = RC.contentsUnacceptable, dbg = dbg)
 
 		# expirationTime handling
 		if et := self.et:
 			if self.ty == T.CSEBase:
-				L.isWarn and L.logWarn(dbg := 'expirationTime is not allowed in CSEBase')
-				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+				L.logWarn(dbg := 'expirationTime is not allowed in CSEBase')
+				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 			if len(et) > 0 and et < (etNow := DateUtils.getResourceDate()):
-				L.isWarn and L.logWarn(dbg := f'expirationTime is in the past: {et} < {etNow}')
-				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+				L.logWarn(dbg := f'expirationTime is in the past: {et} < {etNow}')
+				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 			if et > (etMax := DateUtils.getResourceDate(Configuration.get('cse.maxExpirationDelta'))):
 				L.isDebug and L.logDebug(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
 				self['et'] = etMax
@@ -489,7 +489,7 @@ class Resource(object):
 
 				if not (acp := CSE.dispatcher.retrieveResource(ri).resource):
 					L.logDebug(dbg := f'Referenced <ACP> resource not found: {ri}')
-					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
 
 
@@ -527,7 +527,7 @@ class Resource(object):
 
 	def dbReload(self) -> Result:
 		"""  Load a new copy from the database. The current resource is NOT changed. """
-		return CSE.storage.retrieveResource(ri=self.ri)
+		return CSE.storage.retrieveResource(ri = self.ri)
 
 
 

@@ -107,7 +107,7 @@ class SUB(Resource):
 		if chty := self['enc/chty']:
 			if not (parentResource := self.retrieveParentResource()):
 				L.logErr(dbg := f'cannot retrieve parent resource')
-				return Result(status=False, rsc=RC.internalServerError, dbg=dbg)
+				return Result(status = False, rsc = RC.internalServerError, dbg = dbg)
 			if  not (res := self._checkAllowedCHTY(parentResource, chty)).status:
 				return res
 
@@ -121,35 +121,35 @@ class SUB(Resource):
 
 		# Check necessary attributes
 		if not (nu := self.nu) or not isinstance(nu, list):
-			L.isDebug and L.logDebug(dbg := f'"nu" attribute missing for subscription: {self.ri}')
-			return Result(status=False, rsc=RC.insufficientArguments, dbg=dbg)
+			L.logDebug(dbg := f'"nu" attribute missing for subscription: {self.ri}')
+			return Result(status = False, rsc = RC.insufficientArguments, dbg = dbg)
 
 		# check nct and net combinations
 		if (nct := self.nct) is not None and (net := self['enc/net']) is not None:
 			for n in net:
 				if not NotificationEventType(n).isAllowedNCT(NotificationContentType(nct)):
-					L.isDebug and L.logDebug(dbg := f'nct={nct} is not allowed for one or more values in enc/net={net}')
-					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+					L.logDebug(dbg := f'nct={nct} is not allowed for one or more values in enc/net={net}')
+					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 				# fallthough
 			if n == NotificationEventType.reportOnGeneratedMissingDataPoints:
 				# Check that parent is a TimeSeries
 				if not (parent := self.retrieveParentResource()):
 					L.logErr(dbg := f'cannot retrieve parent resource')
-					return Result(status=False, rsc=RC.internalServerError, dbg=dbg)
+					return Result(status = False, rsc = RC.internalServerError, dbg = dbg)
 				if parent.ty != T.TS:
-					L.isDebug and L.logDebug(dbg := f'parent must be a <TS> resource for net==reportOnGeneratedMissingDataPoints')
-					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+					L.logDebug(dbg := f'parent must be a <TS> resource for net==reportOnGeneratedMissingDataPoints')
+					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
 				# Check missing data structure
 				if (md := self['enc/md']) is None:	# enc/md is a boolean
-					L.isDebug and L.logDebug(dbg := f'net==reportOnGeneratedMissingDataPoints is set, but enc/md is missing')
-					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+					L.logDebug(dbg := f'net==reportOnGeneratedMissingDataPoints is set, but enc/md is missing')
+					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 				if not (res := CSE.validator.validateAttribute('num', md.get('num'))).status:
 					L.isDebug and L.logDebug(res.dbg)
-					return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
+					return Result(status = False, rsc = RC.badRequest, dbg = res.dbg)
 				if not (res := CSE.validator.validateAttribute('dur', md.get('dur'))).status:
 					L.isDebug and L.logDebug(res.dbg)
-					return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
+					return Result(status = False, rsc = RC.badRequest, dbg = res.dbg)
 
 
 		# TODO: Validate enc/missing/data
@@ -168,6 +168,6 @@ class SUB(Resource):
 		for ty in chty:
 			if ty not in parentResource._allowedChildResourceTypes:
 				L.logDebug(dbg := f'ChildResourceType {T(ty).name} is not an allowed child resource of {T(parentResource.ty).name}')
-				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 		return Result(status=True)
 

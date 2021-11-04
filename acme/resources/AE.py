@@ -76,12 +76,12 @@ class AE(AnnounceableResource):
 		if childResource.ty == T.PCH:
 			# Check correct originator. Even the ADMIN is not allowed that		
 			if self.aei != originator:
-				if L.isDebug: L.logDebug(dbg := f'Originator must be the parent <AE>')
-				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
+				L.logDebug(dbg := f'Originator must be the parent <AE>')
+				return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = dbg)
 
 			# check that there will only by one PCH as a child
 			if CSE.dispatcher.countDirectChildResources(self.ri, ty=T.PCH) > 0:
-				return Result(status=False, rsc=RC.badRequest, dbg='Only one PCH per AE is allowed')
+				return Result(status = False, rsc = RC.badRequest, dbg = 'Only one PCH per AE is allowed')
 
 		return Result(status=True)
 
@@ -121,19 +121,19 @@ class AE(AnnounceableResource):
 		if csz := self.csz:
 			for c in csz:
 				if c not in C.supportedContentSerializations:
-					return Result(status=False, rsc=RC.badRequest, dbg=f'unsupported content serialization: {c}')
+					return Result(status = False, rsc = RC.badRequest, dbg  = 'unsupported content serialization: {c}')
 		
 		# check api attribute
 		if not (api := self['api']) or len(api) < 2:	# at least R|N + another char
-			return Result(status=False, rsc=RC.badRequest, dbg=f'missing or empty attribute: "api"')
+			return Result(status = False, rsc = RC.badRequest, dbg = 'missing or empty attribute: "api"')
 		if api.startswith('N'):
 			pass # simple format
 		elif api.startswith('R'):
 			if len((apiElements := api.split('.'))) < 3:
-				return Result(status=False, rsc=RC.badRequest, dbg=f'wrong format for registered ID in attribute "api": to few elements')
+				return Result(status = False, rsc = RC.badRequest, dbg = 'wrong format for registered ID in attribute "api": to few elements')
 		else:
 			L.logWarn(dbg := f'wrong format for ID in attribute "api": {api} (must start with "R" or "N")')
-			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
 		return Result(status=True)
 

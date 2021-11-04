@@ -54,8 +54,6 @@ class Validator(object):
 	#########################################################################
 
 
-# TODO ty necessary?
-
 	def	validateAttributes(self, resource:JSON, tpe:str, ty:T=T.UNKNOWN, attributes:AttributePolicyDict=None, create:bool=True , isImported:bool=False, createdInternally:bool=False, isAnnounced:bool=False) -> Result:
 		""" Validate a resources attributes for types etc."""
 		if L.isDebug: L.logDebug('Validating attributes')
@@ -68,12 +66,6 @@ class Validator(object):
 		if not attributes:
 			if L.isWarn: L.logWarn(f'No attribute policies: {resource}')
 			return Result(status=True)
-
-		# determine the request column, depending on create or updates
-
-
-		# TBC The following might become problematic in a data class!
-
 
 		# Set an index into the policy dataclass, depending on the
 		# validation type
@@ -291,12 +283,10 @@ class Validator(object):
 		return attr not in resource.attributePolicies and not attr.startswith('__')
 
 
-
 	##########################################################################
 	#
 	#	Additional attribute definitions, e.g. for <flexContainer> specialisations.
 	#
-
 
 	def updateFlexContainerAttributes(self, additionalPolicies:FlexContainerAttributes) -> bool:
 		""" Add or update new specialization attribute definitions to the validator.
@@ -334,7 +324,6 @@ class Validator(object):
 		return flexContainerAttributes.get(tpe)
 
 
-
 	def addAttributePolicy(self, rtype:T, attr:str, attrPolicy:AttributePolicy) -> None:
 		"""	Add a new attribute policy for normal resources. 
 		"""
@@ -355,29 +344,9 @@ class Validator(object):
 		# TODO look for other types, requests, filter...
 		return None
 
-
-
-
-
-
-
 	#
 	#	Internals.
 	#
-
-
-# TODO remove the following method
-	# def _addFlexContainerAttributes(self, tpe:str, attributePolicies:AttributePolicies) -> AttributePolicies:
-	# 	#if tpe is not None and not tpe.startswith('m2m:'):
-	# 	if tpe and tpe in self.flexContainerAttributes:
-	# 		if tpe in self.flexContainerAttributes:
-	# 			newap = deepcopy(attributePolicies)
-	# 			newap.update(self.flexContainerAttributes.get(tpe))
-	# 			return newap
-	# 		else:
-	# 			return None # tpe not defined
-	# 	return attributePolicies
-
 
 	def _validateType(self, dataType:BT, value:Any, convert:bool = False) -> Result:
 		""" Check a value for its type. If the convert parameter is True then it
@@ -508,5 +477,4 @@ class Validator(object):
 			return Result(status=True, data=dataType)
 
 		return Result(status=False, dbg=f'unknown type: {str(dataType)}, value type:{type(value)}')
-
 

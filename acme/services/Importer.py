@@ -103,7 +103,7 @@ class Importer(object):
 			if not CSE.registration.checkResourceCreation(resource, CSE.cseOriginator):
 				continue
 			if not (res := CSE.dispatcher.createResource(resource)).resource:
-				L.isInfo and L.logErr(f'Error during import: {res.dbg}', showStackTrace=False)
+				L.logErr(f'Error during import: {res.dbg}', showStackTrace = False)
 				return False
 			ty = resource.ty
 			if ty == T.CSEBase:

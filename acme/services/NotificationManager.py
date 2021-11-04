@@ -49,9 +49,9 @@ class NotificationManager(object):
 	def addSubscription(self, subscription:Resource, originator:str) -> Result:
 		"""	Add a new subscription. Check each receipient with verification requests. """
 		L.isDebug and L.logDebug('Adding subscription')
-		if not (res := self._verifyNusInSubscription(subscription, originator=originator)).status:	# verification requests happen here
+		if not (res := self._verifyNusInSubscription(subscription, originator = originator)).status:	# verification requests happen here
 			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
-		return Result(status=True) if CSE.storage.addSubscription(subscription) else Result(status=False, rsc=RC.internalServerError, dbg='cannot add subscription to database')
+		return Result(status=True) if CSE.storage.addSubscription(subscription) else Result(status = False, rsc = RC.internalServerError, dbg = 'cannot add subscription to database')
 
 
 	def removeSubscription(self, subscription:Resource) -> Result:
@@ -127,38 +127,24 @@ class NotificationManager(object):
 				self._handleSubscriptionNotification(sub, reason, resource, modifiedAttributes=modifiedAttributes)
 
 
-	# def sendOutstandingNotifications(self, ri:str) -> None:
-	# 	"""	Send outstanding Notifications for a subscription (for ri).
-	# 	"""
-	# 	subs = CSE.storage.getSubscriptions(ri)
-	# 	if subs is None or len(subs) == 0:
-	# 		return
-	# 	for sub in subs:
-	# 		for nu in self._getNotificationURLs(sub['nus']):
-	# 			pass # TODO
-
 	###########################################################################
 	#
 	#	Notifications in general
 	#
 
-	def sendNotificationWithDict(self, data:JSON, nus:list[str]|str, originator:str=None) -> None:
+	def sendNotificationWithDict(self, data:JSON, nus:list[str]|str, originator:str = None) -> None:
 		"""	Send a notification to a single URI or a list of URIs. A URI may be a resource ID, then
 			the *poa* of that resource is taken. Also, the serialization is determined when 
 			actually sending the notification.
 		"""
-		# if nus and (resolvedNus := CSE.request.resolveURIs(nus)):
-		# 	for nu in resolvedNus:
-		# 		self._sendRequest(nu, data, originator=originator)
 		for nu in nus:
 			self._sendRequest(nu, data, originator=originator)
-
 
 
 	#########################################################################
 
 
-	def _verifyNusInSubscription(self, subscription:Resource, previousNus:list[str]=None, originator:str=None) -> Result:
+	def _verifyNusInSubscription(self, subscription:Resource, previousNus:list[str] = None, originator:str = None) -> Result:
 		"""	Check all the notification URI's in a subscription. A verification request is sent to new URI's. Notifications to the originator are not sent.
 
 			If `previousNus` is given then only new nus are notified.
@@ -176,41 +162,6 @@ class NotificationManager(object):
 						return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg=f'Verification request failed for: {nu}')
 
 		return Result(status=True)
-
-
-	# def _checkNusInSubscription(self, subscription:Resource, newDict:JSON=None, previousNus:list[str]=None, originator:str=None) -> Result:
-	# 	"""	Check all the notification URI's in a subscription. 
-	# 		A verification request is sent to new URI's.
-	# 		Notifications to the same originator are not sent.
-	# 	"""
-	# 	if not newDict:	# If there is no new resource structure, get the one from the subscription to work with
-	# 		newDict = subscription.asDict()
-
-	# 	# Resolve the URI's in the previousNus.
-	# 	if previousNus:
-	# 		# Get all the URIs/notification targets. Filter out the originator itself.
-	# 		if (previousNusAndResources := CSE.request.resolveURIs(previousNus, originator, noAccessIsError=True)) is None:	# ! could be an empty list, but None is an error
-	# 			# Fail if any of the NU's cannot be retrieved or accessed
-	# 			return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg='cannot retrieve all previous nu\'s')
-	# 		previousNus = [ p[0] for p in previousNusAndResources ] # Rebuild the old simple list, without the resources
-
-	# 	# Are there any new URI's?
-	# 	if nuAttribute := Utils.findXPath(newDict, 'm2m:sub/nu'):
-
-	# 		# Resolve the URI's for the new NU's
-	# 		# Get all the URIs/notification targets. Filter out the originator itself.
-	# 		if (newNusAndResources := CSE.request.resolveURIs(nuAttribute, originator, noAccessIsError=True)) is None:	# ! newNus can be an empty list
-	# 			# Fail if any of the NU's cannot be retrieved
-	# 			return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg='cannot retrieve or find all (new) nu\'s')
-
-	# 		# notify new nus (verification request). New ones are the ones that are not in the previousNU list
-	# 		for nu, targetResource in newNusAndResources:
-	# 			if not previousNus or (nu not in previousNus):
-	# 				if not self._sendVerificationRequest(nu, subscription.ri, targetResource=targetResource, originator=originator):
-	# 					L.logDebug(dbg := f'Verification request failed for nu: {nu}')
-	# 					return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg=dbg)
-
-	# 	return Result(status=True)
 
 
 	#########################################################################
@@ -239,31 +190,6 @@ class NotificationManager(object):
 
 		return self._sendNotification(uri, sender)
 
-	# def _sendVerificationRequest(self, uri:str, ri:str, targetResource:Resource, originator:str=None,) -> bool:
-	# 	""""	Define the callback function for verification notifications and send
-	# 			the notification.
-	# 	"""
-
-	# 	def sender(url:str, targetResource:Resource) -> bool:
-	# 		targetOriginator = targetResource.getOriginator() if targetResource else None
-	# 		L.isDebug and L.logDebug(f'Sending verification request to: {url}, targetOriginator: {targetOriginator}')
-	# 		verificationRequest = {
-	# 			'm2m:sgn' : {
-	# 				'vrq' : True,
-	# 				'sur' : Utils.fullRI(ri)
-	# 			}
-	# 		}
-	# 		originator and Utils.setXPath(verificationRequest, 'm2m:sgn/cr', originator)
-			
-	# 		# Determine contentSerialization if possible
-	# 		ct = None
-	# 		if targetResource and (csz := targetResource.csz) is not None and len(csz) > 0:
-	# 			ct = ContentSerializationType.to(csz[0])
-
-	# 		return self._sendRequest(url, verificationRequest, targetOriginator=targetOriginator, noAccessIsError=True, ct=ct)
-
-	# 	return self._sendNotification([ (uri, targetResource) ], sender)
-
 
 	def _sendDeletionNotification(self, uri:Union[str, list[str]], ri:str) -> bool:
 		"""	Define the callback function for deletion notifications and send
@@ -286,32 +212,6 @@ class NotificationManager(object):
 
 
 		return self._sendNotification(uri, sender) if uri else True	# Ignore if the uri is None
-
-	# def _sendDeletionNotification(self, uri:str, ri:str, targetResource:Resource) -> bool:
-	# 	"""	Define the callback function for deletion notifications and send
-	# 		the notification
-	# 	"""
-
-	# 	def sender(url:str, targetResource:Resource) -> bool:
-	# 		L.isDebug and L.logDebug(f'Sending deletion notification to: {url}')
-	# 		deletionNotification = {
-	# 			'm2m:sgn' : {
-	# 				'sud' : True,
-	# 				'sur' : Utils.fullRI(ri)
-	# 			}
-	# 		}
-
-	# 		# Determine contentSerialization if possible
-	# 		ct = None
-	# 		if targetResource and (csz := targetResource.csz) is not None and len(csz) > 0:
-	# 			ct = ContentSerializationType.to(csz[0])
-
-	# 		return self._sendRequest(	url, 
-	# 									deletionNotification, 
-	# 									targetOriginator=targetResource.getOriginator() if targetResource else None,
-	# 									ct=ct)
-
-	# 	return self._sendNotification(uri, sender) if uri else True	# Ignore if the uri is None
 
 
 	def _handleSubscriptionNotification(self, sub:JSON, reason:NotificationEventType, resource:Resource=None, modifiedAttributes:JSON=None, missingData:MissingData=None) ->  bool:
@@ -369,71 +269,7 @@ class NotificationManager(object):
 				subResource.setAttribute('exc', exc)		# Update the exc attribute
 				subResource.dbUpdate()						# Update the real subscription
 				CSE.storage.updateSubscription(subResource)	# Also update the internal sub
-		return result					
-
-
-	# def _handleSubscriptionNotification(self, sub:JSON, reason:NotificationEventType, resource:Resource=None, modifiedAttributes:JSON=None, missingData:MissingData=None) ->  bool:
-	# 	"""	Send a subscription notification.
-	# 	"""
-	# 	L.isDebug and L.logDebug(f'Handling notification for reason: {reason}')
-
-	# 	def sender(url:str, targetResource:Resource) -> bool:
-	# 		"""	Sender callback function for normal subscription notifications
-	# 		"""
-	# 		L.isDebug and L.logDebug(f'Sending notification to: {url}, reason: {reason}, targetResource: {targetResource}')
-	# 		notificationRequest = {
-	# 			'm2m:sgn' : {
-	# 				'nev' : {
-	# 					'rep' : {},
-	# 					'net' : NotificationEventType.resourceUpdate
-	# 				},
-	# 				'sur' : Utils.fullRI(sub['ri'])
-	# 			}
-	# 		}
-	# 		data = None
-	# 		nct = sub['nct']
-	# 		nct == NotificationContentType.all						and (data := resource.asDict())
-	# 		nct == NotificationContentType.ri 						and (data := { 'm2m:uri' : resource.ri })
-	# 		nct == NotificationContentType.modifiedAttributes		and (data := { resource.tpe : modifiedAttributes })
-	# 		nct == NotificationContentType.timeSeriesNotification	and (data := { 'm2m:tsn' : missingData.asDict() })
-	# 		# TODO nct == NotificationContentType.triggerPayload
-
-	# 		# Add some values to the notification
-	# 		reason is not None 									and Utils.setXPath(notificationRequest, 'm2m:sgn/nev/net', reason)
-	# 		data is not None 									and Utils.setXPath(notificationRequest, 'm2m:sgn/nev/rep', data)
-
-	# 		# Determine contentSerialization if possible
-	# 		ct = None
-	# 		if targetResource and (csz := targetResource.csz) is not None and len(csz) > 0:
-	# 			ct = ContentSerializationType.to(csz[0])
-
-	# 		# Check for batch notifications
-	# 		if sub['bn']:
-	# 			#if targetResource and targetResource.hasPCH():	# if the target resource has a PCH child resource then that will be the target later
-	# 			if targetResource:
-	# 				url = targetResource.ri
-	# 			return self._storeBatchNotification(url, sub, notificationRequest)
-	# 		else:
-	# 			return self._sendRequest(url, notificationRequest, targetOriginator=targetResource.getOriginator() if targetResource else None, ct=ct)
-
-
-	# 	# result = self._sendNotification(sub['nus'], sender)	# ! This is not a <sub> resource, but the internal data structure, therefore 'nus
-	# 	result = self._sendNotification(CSE.request.resolveURIs(sub['nus']), sender)	# ! This is not a <sub> resource, but the internal data structure, therefore 'nus
-
-	# 	# Handle subscription expiration in case of a successful notification
-	# 	if result and (exc := sub['exc']):
-	# 		L.isDebug and L.logDebug(f'Decrement expirationCounter: {exc} -> {exc-1}')
-
-	# 		exc -= 1
-	# 		subResource = CSE.storage.retrieveResource(ri=sub['ri']).resource
-	# 		if exc < 1:
-	# 			L.isDebug and L.logDebug(f'expirationCounter expired. Removing subscription: {subResource.ri}')
-	# 			CSE.dispatcher.deleteResource(subResource)	# This also deletes the internal sub
-	# 		else:
-	# 			subResource.setAttribute('exc', exc)		# Update the exc attribute
-	# 			subResource.dbUpdate()						# Update the real subscription
-	# 			CSE.storage.updateSubscription(subResource)	# Also update the internal sub
-	# 	return result					
+		return result								
 
 
 	def _sendNotification(self, uris:Union[str, list[str]], senderFunction:SenderFunction) -> bool:
@@ -454,20 +290,6 @@ class NotificationManager(object):
 					return False
 		return True
 
-	# def _sendNotification(self, uris:list[Tuple[str, Optional[Resource]]], senderFunction:SenderFunction) -> bool:
-	# 	"""	Send a notification to multiple targets if necessary. 
-		
-	# 		Call the infividual callback functions to do the resource preparation and the the actual sending.
-	# 	"""
-	# 	#	Event when notification is happening, not sent
-	# 	CSE.event.notification() # type: ignore
-
-	# 	for notificationTarget, targetResource in uris:
-	# 		if not senderFunction(notificationTarget, targetResource):
-	# 			return False
-
-	# 	return True
-
 
 	def _sendRequest(self, uri:str, notificationRequest:JSON, parameters:Parameters=None, originator:str=None, targetOriginator:str=None, noAccessIsError:bool=False, ct:ContentSerializationType=None) -> bool:
 		"""	Send a Notification request to a single target.
@@ -487,7 +309,6 @@ class NotificationManager(object):
 	#	Batch Notifications
 	#
 
-
 	def _flushBatchNotifications(self, subscription:Resource) -> None:
 		"""	Send and remove any outstanding batch notifications for a subscription.
 		"""
@@ -495,11 +316,6 @@ class NotificationManager(object):
 		# Get the subscription information (not the <sub> resource itself!).
 		# Then get all the URIs/notification targets from that subscription. They might already
 		# be filtered.
-		# if (sub := CSE.storage.getSubscription(ri)) and (nus := CSE.request.resolveURIs(sub['nus'])):
-		# 	ln = sub['ln'] if 'ln' in sub else False
-		# 	for nu in nus:
-		# 		self._stopNotificationBatchWorker(ri, nu)						# Stop a potential worker for that particular batch
-		# 		self._sendSubscriptionAggregatedBatchNotification(ri, nu, ln)	# Send all remaining notifications
 		if sub := CSE.storage.getSubscription(ri):
 			ln = sub['ln'] if 'ln' in sub else False
 			for nu in sub['nus']:

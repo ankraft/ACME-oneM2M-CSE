@@ -95,8 +95,8 @@ class TestPCH(unittest.TestCase):
 		dct = 	{ 'm2m:pch' : { 
 					'rn' : pchRN,
 				}}
-		_, rsc = CREATE(aeURL, ORIGINATOR, T.PCH, dct)	# Admin, should still fail
-		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
+		r, rsc = CREATE(aeURL, ORIGINATOR, T.PCH, dct)	# Admin, should still fail
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

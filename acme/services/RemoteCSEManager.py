@@ -491,17 +491,6 @@ class RemoteCSEManager(object):
 		return Result(status=True, resource=CSEBase.CSEBase(cast(JSON, res.data)), rsc=RC.OK)
 
 
-	# def getCSRForRemoteCSE(self, remoteCSE:Resource) -> Resource:
-	# 	if self.registrarCSE and self.registrarCSE.csi == remoteCSE.csi:
-	# 		return self.ownRegistrarCSR
-
-	# 	for csi,tup in self.descendantCSR.items():	# search the list of descendant CSR
-	# 		(csr, _) = tup
-	# 		if csr.ri == remoteCSE.ri:
-	# 			return csr
-	# 	return None
-
-
 	def getAllLocalCSRs(self) -> List[Resource]:
 		"""	Return all local CSR's. This includes the CSR of the registrar CSE.
 			This function builds the list from a temporary internal list, but not from the database.
@@ -512,7 +501,6 @@ class RemoteCSEManager(object):
 
 
 	#########################################################################
-
 
 
 	def retrieveRemoteResource(self, id:str, originator:str=None) -> Result:

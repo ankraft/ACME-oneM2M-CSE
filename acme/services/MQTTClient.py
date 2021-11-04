@@ -525,15 +525,6 @@ def logRequest(reqResult:Result, topic:str, isResponse:bool=False, isIncoming:bo
 			else:
 				body = f'\nBody: \n{TextTools.toHex(cast(bytes, cast(Tuple, reqResult.data)[1]))}\n=>\n{cast(Tuple, reqResult.data)[0]}'
 		elif reqResult.request.headers.contentType == ContentSerializationType.JSON or reqResult.request.ct == ContentSerializationType.JSON:
-			# if isResponse and reqResult.request.originalRequest:
-			# 	bodyPrint = str(reqResult.request.originalRequest)
-			# elif reqResult.data:
-			# 	if isinstance(reqResult.data, tuple):
-			# 		bodyPrint = str(cast(Tuple, reqResult.data)[0])
-			# 	else:
-			# 		bodyPrint = str(reqResult.data)
-			# else:
-			# 	bodyPrint = str(reqResult.request.originalRequest)
 
 			if reqResult.data:
 				if isinstance(reqResult.data, tuple):
@@ -543,14 +534,6 @@ def logRequest(reqResult:Result, topic:str, isResponse:bool=False, isIncoming:bo
 			else:
 				bodyPrint = str(reqResult.request.originalRequest)
 
-
-			# if (isResponse or raw) and reqResult.data:
-			# 	if isinstance(reqResult.data, tuple):
-			# 		bodyPrint = str(cast(Tuple, reqResult.data)[0])
-			# 	else:
-			# 		bodyPrint = str(reqResult.data)
-			# else:
-			# 	bodyPrint = str(reqResult.request.originalRequest)
 			body = f'\nBody: {bodyPrint}' 
 
 	L.isDebug and L.logDebug(f'{prefix}: {topic}{body}')
