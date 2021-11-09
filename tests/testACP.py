@@ -14,6 +14,12 @@ from typing import Tuple
 from acme.etc.Types import Permission, ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
+ae1RN  = f'{aeRN}1'
+ae1URL = f'{cseURL}/{ae1RN}'
+ae2RN = f'{aeRN}2'
+ae2URL = f'{cseURL}/{ae2RN}'
+cnt2URL = f'{ae2URL}/{cntRN}'
+
 
 class TestACP(unittest.TestCase):
 
@@ -43,6 +49,8 @@ class TestACP(unittest.TestCase):
 	def tearDownClass(cls) -> None:
 		DELETE(acpURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
+		DELETE(ae1URL, ORIGINATOR)
+		DELETE(ae2URL, ORIGINATOR)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -516,6 +524,105 @@ class TestACP(unittest.TestCase):
 		_, rsc = DELETE(f'{aeURL}/{acpRN}', TestACP.originator)
 		self.assertEqual(rsc, RC.deleted)
 
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_accessCINwithDifferentAENoAcpi(self) -> None:
+		""" Access CIN with different <AE> and no acpi -> Fail"""
+
+		#	CSEBase                             
+		#    ├─ae1                       
+		#    │  └─testCNT                 
+		#    └─ae2                      
+		#       └─acp   
+		#       └─cnt   
+		#          └─cin
+
+		# Create AE1
+		dct = 	{ 'm2m:ae' : {
+					'rn': ae1RN, 
+					'api': 'NMyApp1Id',
+				 	'rr': False,
+				 	'srv': [ '3' ],
+				}}
+		ae1, rsc = CREATE(cseURL, 'Cae1', T.AE, dct)
+		self.assertEqual(rsc, RC.created, ae1)
+
+		# Create AE2
+		dct = 	{ 'm2m:ae' : {
+					'rn': ae2RN, 
+					'api': 'NMyApp2Id',
+				 	'rr': False,
+				 	'srv': [ '3' ],
+				}}
+		ae2, rsc = CREATE(cseURL, 'Cae2', T.AE, dct)
+		self.assertEqual(rsc, RC.created, ae2)
+
+		# Create ACP under AE2
+		dct = 	{ "m2m:acp": {
+					"rn": acpRN,
+					"pv": {
+						"acr": [ {
+							"acor": [ 'Cae2', 'Cae1' ],
+							"acop": Permission.ALL,
+						}]
+					},
+					"pvs": { 
+						"acr": [ {
+							"acor": ['Cae2' ],
+							"acop": Permission.ALL
+						} ]
+					},
+				}}
+		acp, rsc = CREATE(ae2URL, 'Cae2', T.ACP, dct)
+		self.assertEqual(rsc, RC.created, acp)
+
+		# Create CNT under AE2
+		dct = 	{ 'm2m:cnt' : {
+					'rn': cntRN,
+				}}
+		cnt, rsc = CREATE(ae2URL, 'Cae2', T.CNT, dct)
+		self.assertEqual(rsc, RC.created, cnt)
+
+		# Add CIN
+		dct = 	{ 'm2m:cin' : {
+					'con' : 'content'
+				}}
+		r, rsc = CREATE(cnt2URL, 'Cae2', T.CIN, dct)
+		self.assertEqual(rsc, RC.created, r)
+
+		# Retrieve CIN by AE1
+		r, rsc = RETRIEVE(f'{cnt2URL}/la', 'Cae1')
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_accessCINwithDifferentAEWithAcpi(self) -> None:
+		""" Access CIN with different <AE> and with acpi"""
+
+		# Add acpi to CNT
+		dct = 	{ 'm2m:cnt' : {
+					'acpi': [ f'{CSERN}/{ae2RN}/{acpRN}' ]
+				}}
+		cnt, rsc = UPDATE(cnt2URL, 'Cae2', dct)
+		self.assertEqual(rsc, RC.updated, cnt)
+
+		# Retrieve CIN by AE1
+		r, rsc = RETRIEVE(f'{cnt2URL}/la', 'Cae1')
+		self.assertEqual(rsc, RC.OK, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_discoverCINwithDifferentAEWithAcpi(self) -> None:
+		""" Discover CIN with different <AE> and with acpi"""
+
+		# Retrieve CIN by AE1
+		r, rsc = RETRIEVE(f'{cnt2URL}?fu=1&ty=4', 'Cae1')
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:uril'), r)
+		self.assertEqual(len(findXPath(r, 'm2m:uril')), 1, r)
+
+
+
 # TODO reference a non-acp resource in acpi
 # TODO acod/specialization
 
@@ -569,6 +676,10 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestACP('test_updateAEACPIForChty'))
 	suite.addTest(TestACP('test_testACPChty'))
 	suite.addTest(TestACP('test_deleteACPUnderAEWithChty'))
+
+	suite.addTest(TestACP('test_accessCINwithDifferentAENoAcpi'))
+	suite.addTest(TestACP('test_accessCINwithDifferentAEWithAcpi'))
+	suite.addTest(TestACP('test_discoverCINwithDifferentAEWithAcpi'))
 
 
 	#suite.addTest(TestACP('test_handleAE'))

@@ -7,11 +7,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## [unreleased] - xxxx-xx-xx
 ### Added
 ### Changed
 ### Removed
 ### Fixed
+
+
+## [0.9.1] - 2021-11-09
+
+### Fixed
+- [CSE] Added &lt;pollingChannel> to the list of supported resource types for the &lt;CSEBase>.
+- [CSE] Removed *acpi* attribute definition from &lt;contentInstance> resource. Added more tests for inheriting ACPs.
 
 
 ## [0.9.0] - 2021-11-04
@@ -56,11 +64,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] When the CSE is reset then the statistics are now reset as well.
 - [WEB] Error/debug messages are now always shown.
 
+
 ## [0.8.1] - 2021-08-05
 
 ### Added
 - [CONSOLE] Added [cse.console].confirmQuit configuration option. It is switched off by default.
-
 
 
 ## [0.8.0] - 2021-07-27

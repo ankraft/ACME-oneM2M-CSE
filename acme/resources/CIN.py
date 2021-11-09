@@ -30,7 +30,6 @@ class CIN(AnnounceableResource):
 			'et': None,
 			'lbl': None,
 			'hld': None,
-			'acpi':None,
 			'at': None,
 			'aa': None,
 			'ast': None,

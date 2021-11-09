@@ -87,6 +87,8 @@ class TestCIN(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:cin/con'))
 		self.assertEqual(findXPath(r, 'm2m:cin/con'), 'AnyValue')
 		self.assertGreater(findXPath(r, 'm2m:cin/cs'), 0)
+		self.assertIsNone(findXPath(r, 'm2m:cin/acpi'))
+
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -235,6 +237,18 @@ class TestCIN(unittest.TestCase):
 		self.assertEqual(rsc, RC.notFound)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINwithAcpi(self) -> None:
+		""" Create a <CIN> with acpi attribute set -> Fail"""
+		dct = 	{ 'm2m:cin' : { 
+					'rn' : 'dcntTest',
+					'con' : 'AnyValue',
+					'acpi' : [ 'someACP' ]
+				}}
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)	
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
 
 # More tests of la, ol etc in testCNT_CNI.py
 
@@ -255,6 +269,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCIN('test_createCINWithCnfWrong5'))
 	suite.addTest(TestCIN('test_createCINWithCreator'))
 	suite.addTest(TestCIN('test_createRetrieveCINWithDcnt'))
+	suite.addTest(TestCIN('test_createCINwithAcpi'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
