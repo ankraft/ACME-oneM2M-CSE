@@ -107,8 +107,8 @@ class CSEBase(Resource):
 		self['ctm'] = DateUtils.getResourceDate()
 
 		# add the supported release versions
-		self['csz'] = C.supportedContentSerializations
-		
+		self['srv'] = C.supportedReleaseVersions
+
 		return Result(status=True)
 
 
