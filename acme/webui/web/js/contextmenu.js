@@ -62,12 +62,18 @@ function ContextMenu(menu, options){
 		container.appendChild(renderLevel(menu));
 	}
 
-	function renderLevel(level){
+	function renderLevel(level) {
 		var ul_outer = document.createElement("ul");
 
-		level.forEach(function(item){
+		level.forEach(function(item) {
 			var li = document.createElement("li");
 			li.menu = self;
+
+			if (ContextUtil.getProperty(item, "enabled", true) != true) {
+				return
+			}
+
+
 
 			if(typeof item.type === "undefined"){
 				var icon_span = document.createElement("span");

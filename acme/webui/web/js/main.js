@@ -152,6 +152,9 @@ function _getResource(ri, node, callback, errorCallback) {
     } else if (oldUserObject.endsWith("/fopt")) {
       node.setUserObject("fopt")
       node.hasDetails = false
+	} else if (oldUserObject.endsWith("/pcu")) {
+	  node.setUserObject("pcu")
+      node.hasDetails = false
     } else {
       node.setUserObject(resource[k].rn)  
     }
@@ -246,7 +249,12 @@ function setup() {
   var orField = document.getElementById("originator");
   originator = getUrlParameterByName("or")
   orField.value = originator
+  
+  // open the UI immediately if the parameter is present
+  openOnStart = getUrlParameterByName("open")
+  
   document.title = "ACME CSE - " + cseid
+
 
   getTextFromServer("/__version__", function(version) {
     var f = document.getElementById("version");
@@ -325,6 +333,10 @@ function setup() {
   }
 
   initRestUI();
+
+  if (openOnStart != null) {
+	  connectToCSE()
+  }
 }
 
 

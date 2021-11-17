@@ -31,6 +31,7 @@ const types = {
      5 : "CSEBase",
      9 : "Group",
     14 : "Node",
+	15 : "PollingChannel",
     16 : "RemoteCSE",
     17 : "Request",
     23 : "Subscription",
@@ -330,6 +331,24 @@ function removeNode(node) {
   null);
 }
 
+
+
+function openPOA(node) {
+  for (poa of node.resource.poa) {
+	let url;
+    try {
+      url = new URL(poa);
+	  if (url.protocol === "http:" || url.protocol === "https:") {
+		//window.open(url, '_blank').focus();
+		window.open(poa + "?open", poa).focus();
+		return
+	  }
+	} catch (_) {
+      return;
+	}
+  }
+}
+  
 
 
 function setNodeAsRoot(node) {

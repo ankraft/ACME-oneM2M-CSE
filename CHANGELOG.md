@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased] - xxxx-xx-xx
 ### Added
+- [WEB] Allow to open the WebUI of a registered CSE via the context menu.
+
 ### Changed
 ### Removed
 ### Fixed
