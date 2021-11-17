@@ -34,6 +34,7 @@ class Configuration(object):
 		argsDBStorageMode		= args.dbstoragemode if args and 'dbstoragemode' in args else None
 		argsHeadless			= args.headless if args and 'headless' in args else False
 		argsHttpAddress			= args.httpaddress if args and 'httpaddress' in args else None
+		argsHttpPort			= args.httpport if args and 'httpport' in args else None
 		argsImportDirectory		= args.importdirectory if args and 'importdirectory' in args else None
 		argsListenIF			= args.listenif if args and 'listenif' in args else None
 		argsMqttEnabled			= args.mqttenabled if args and 'mqttenabled' in args else None
@@ -330,6 +331,7 @@ class Configuration(object):
 		if argsDBReset is True:					Configuration._configuration['db.resetOnStartup'] = True									# Override DB reset from command line
 		if argsDBStorageMode is not None:		Configuration._configuration['db.inMemory'] = argsDBStorageMode == 'memory'					# Override DB storage mode from command line
 		if argsHttpAddress is not None:			Configuration._configuration['http.address'] = argsHttpAddress								# Override server http address
+		if argsHttpPort is not None:			Configuration._configuration['http.port'] = argsHttpPort									# Override server http port
 		if argsImportDirectory is not None:		Configuration._configuration['cse.resourcesPath'] = argsImportDirectory						# Override import directory from command line
 		if argsListenIF is not None:			Configuration._configuration['http.listenIF'] = argsListenIF								# Override binding network interface
 		if argsMqttEnabled is not None:			Configuration._configuration['mqtt.enable'] = argsMqttEnabled								# Override mqtt enable
