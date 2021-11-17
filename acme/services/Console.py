@@ -544,7 +544,7 @@ Available under the BSD 3-Clause License
 
 		misc  = '[underline]Misc[/underline]\n'
 		misc += '\n'
-		misc += f'StartTime : {datetime.datetime.fromtimestamp(DateUtils.fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime])))} (UTC)\n'
+		misc += f'StartTime : {datetime.datetime.fromtimestamp(DateUtils.fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
 		misc += f'Uptime    : {stats.get(Statistics.cseUpTime, "")}\n'
 		if hasattr(os, 'getloadavg'):
 			load = os.getloadavg()
