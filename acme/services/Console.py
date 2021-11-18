@@ -444,7 +444,7 @@ Available under the BSD 3-Clause License
 	def openWebUI(self, key:str) -> None:
 		"""	Open the web UI in the default web browser.
 		"""
-		webbrowser.open(CSE.httpServer.serverAddress)
+		webbrowser.open(f'{CSE.httpServer.serverAddress}?open')
 
 
 
@@ -537,8 +537,6 @@ Available under the BSD 3-Clause License
 			httpReceived = '\n[dim]statistics are disabled[/dim]\n'
 			httpSent     = '\n[dim]statistics are disabled[/dim]\n'
 			logs         = '\n[dim]statistics are disabled[/dim]\n'
-
-
 
 
 
