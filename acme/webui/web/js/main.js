@@ -296,15 +296,22 @@ function setup() {
       index = p.getIndexOfChild(nodeClicked)
       count = p.getChildCount()
     }
-    if (keyCode == 40 && typeof p !== "undefined") { // down
-      index = (index + 1) % count
-      newnode = p.getChildren()[index]
-      clickOnNode(null, newnode)
+    if (keyCode == 40) {  // down
+		e.preventDefault();
+		if (typeof p !== "undefined") {
+        index = (index + 1) % count
+        newnode = p.getChildren()[index]
+	 	clickOnNode(null, newnode)
+	  }
+	  e.preventDefault();
+
     } else if (keyCode == 38 && typeof p !== "undefined") { // up
       index = (index + count - 1) % count
       newnode = p.getChildren()[index]
+      e.preventDefault();
       clickOnNode(null, newnode)
-    } else if (keyCode == 39) { // right or open an unexpanded subtree
+
+	} else if (keyCode == 39) { // right or open an unexpanded subtree
       if (nodeClicked.isLeaf()) {
         return
       }
@@ -327,9 +334,10 @@ function setup() {
       nodeClicked.toggleExpanded()
       tree.reload()
     } else if (keyCode == 9) {
-      e.preventDefault();
-      e.stopPropagation();
+    //   e.preventDefault();
+    //   e.stopPropagation();
     }
+
   }
 
   initRestUI();
