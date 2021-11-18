@@ -198,8 +198,9 @@ function fillAttributesTable(resource) {
   // fill attribute table with resource attributes
   var table = document.getElementById("details");
   var tb = table.getElementsByTagName('tbody')[0]
-
-  for (var key in resource) {
+  var keys = Object.keys(resource).sort()	// sort the attributes
+  for (var i=0; i<keys.length; i++) {
+    var key = keys[i];
     var newRow = tb.insertRow()
     var keyCell  = newRow.insertCell(0)
     var valueCell  = newRow.insertCell(1);
