@@ -334,8 +334,8 @@ function setup() {
       nodeClicked.toggleExpanded()
       tree.reload()
     } else if (keyCode == 9) {
-    //   e.preventDefault();
-    //   e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
     }
 
   }
