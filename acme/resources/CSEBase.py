@@ -10,16 +10,18 @@
 from __future__ import annotations
 from ..etc.Constants import Constants as C
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, JSON
-from ..etc import DateUtils as DateUtils
-from ..resources.Resource import *
-from ..services import CSE as CSE
+from ..etc import DateUtils, Utils
+from ..resources.Resource import Resource
+from ..resources.AnnounceableResource import AnnounceableResource
+from ..services import CSE
+from ..services.Logging import Logging as L
 
 # TODO notificationCongestionPolicy
 
-class CSEBase(Resource):
+class CSEBase(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.ACP, T.AE, T.CSR, T.CNT, T.FCNT, T.GRP, T.NOD, T.REQ, T.SUB, T.TS ]
+	_allowedChildResourceTypes = [ T.ACP, T.AE, T.CSR, T.CNT, T.FCNT, T.GRP, T.NOD, T.REQ, T.SUB, T.TS, T.CSEBaseAnnc ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -35,6 +37,9 @@ class CSEBase(Resource):
 			'loc': None,	
 			'hld': None,
 			'acpi': None,
+			'at': None,
+			'aa': None,
+
 
 			# Resource attributes
 			'poa': None,

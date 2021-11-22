@@ -1383,5 +1383,6 @@ class RequestManager(object):
 
 		for p in targetResource.poa:
 			result.append( (f'{p}{appendID}', targetResource.csz, targetOriginator, None) )
+		# L.logWarn(result)
 		return result
 

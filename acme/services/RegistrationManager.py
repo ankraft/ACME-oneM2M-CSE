@@ -60,6 +60,10 @@ class RegistrationManager(object):
 				return Result(status=False, rsc=RC.operationNotAllowed, dbg='cannot register to ASN CSE')
 			if not (res := self.handleCSRRegistration(resource, originator)).status:
 				return Result(status=False, rsc=res.rsc, dbg=f'cannot register CSR: {res.dbg}')
+		if ty == T.CSEBaseAnnc:
+			if not (res := self.handleCSEBaseAnncRegistration(resource, originator)).status:
+				return Result(status=False, rsc=res.rsc, dbg=f'cannot register CSEBaseAnnc: {res.dbg}')
+
 
 		# Test and set creator attribute.
 		if not (res := self.handleCreator(resource, originator)).status:
@@ -215,6 +219,19 @@ class RegistrationManager(object):
 		CSE.event.remoteCSEUpdate(csr, updateDict)	# type: ignore
 		return True
 
+
+	#########################################################################
+
+	#
+	#	Handle CSEBaseAnnc registration
+	#
+
+	def handleCSEBaseAnncRegistration(self, cbA:Resource, originator:str) -> Result:
+		L.isDebug and L.logDebug(f'Registering CSEBaseAnnc. csi: {cbA.csi}')
+
+		# Assign a rn
+		cbA.setResourceName(f'{Utils.getIdFromOriginator(originator)}Annc')	# TODO correct?
+		return Result(status=True)
 
 
 	#########################################################################

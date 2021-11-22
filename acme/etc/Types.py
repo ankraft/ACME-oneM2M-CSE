@@ -137,6 +137,7 @@ class ResourceTypes(ACMEIntEnum):
 	AEAnnc 			= 10002	
 	CNTAnnc 		= 10003
 	CINAnnc 		= 10004
+	CSEBaseAnnc 	= 10005
 	GRPAnnc 		= 10009
 	MGMTOBJAnnc 	= 10013
 	NODAnnc 		= 10014
@@ -199,6 +200,7 @@ ResourceTypes._announcedMappings = {							#  type: ignore
 	ResourceTypes.AE 		: ResourceTypes.AEAnnc,
 	ResourceTypes.CNT		: ResourceTypes.CNTAnnc,
 	ResourceTypes.CIN 		: ResourceTypes.CINAnnc,
+	ResourceTypes.CSEBase 	: ResourceTypes.CSEBaseAnnc,
 	ResourceTypes.GRP		: ResourceTypes.GRPAnnc,
 	ResourceTypes.MGMTOBJ	: ResourceTypes.MGMTOBJAnnc,
 	ResourceTypes.NOD		: ResourceTypes.NODAnnc,
@@ -225,7 +227,7 @@ ResourceTypes._announcedMappingsMGD = {							#  type: ignore
 
 ResourceTypes._announcedSet = [									#  type: ignore
 	ResourceTypes.ACPAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc, ResourceTypes.CINAnnc,
-	ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc, 
+	ResourceTypes.CSEBaseAnnc, ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc, 
 	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.TSAnnc, ResourceTypes.TSIAnnc,
 
 	ResourceTypes.FWRAnnc, ResourceTypes.SWRAnnc, ResourceTypes.MEMAnnc, ResourceTypes.ANIAnnc,
@@ -261,6 +263,7 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.AEAnnc 		: 'm2m:aeA',
 		ResourceTypes.CNTAnnc 		: 'm2m:cntA',
 		ResourceTypes.CINAnnc 		: 'm2m:cinA',
+		ResourceTypes.CSEBaseAnnc	: 'm2m:cbA',
 		ResourceTypes.GRPAnnc 		: 'm2m:grpA',
 		ResourceTypes.MGMTOBJAnnc 	: 'm2m:mgoA',
 		ResourceTypes.NODAnnc 		: 'm2m:nodA',

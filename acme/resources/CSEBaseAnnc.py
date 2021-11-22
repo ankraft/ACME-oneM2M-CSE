@@ -1,7 +1,7 @@
 #
-#	CNTAnnc.py
+#	CSEBaseAnnc.py
 #
-#	(c) 2020 by Andreas Kraft
+#	(c) 2021 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
 #	CNT : Announceable variant
@@ -12,15 +12,17 @@ from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
 
 
-class CNTAnnc(AnnouncedResource):
+class CSEBaseAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.CNT, T.CNTAnnc, T.CIN, T.CINAnnc, T.FCNT, T.FCNTAnnc, T.SUB, T.TS, T.TSAnnc ]
+	_allowedChildResourceTypes = [ T.ACP, T.ACPAnnc, T.AE, T.AEAnnc, T.CNT, T.CNTAnnc, T.FCNT, T.FCNTAnnc, T.GRP, T.GRPAnnc, T.NOD
+	, T.NODAnnc, T.SUB, T.TS, T.TSAnnc ]
+
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		
-		# Common and universal attributes for announced resources
+		# Common and universal attributes
 		'rn': None,
 		'ty': None,
 		'ri': None,
@@ -29,22 +31,19 @@ class CNTAnnc(AnnouncedResource):
 		'lt': None,
 		'et': None,
 		'lbl': None,
-		'acpi':None,
+		'loc': None,	
+		'hld': None,
+		'acpi': None,
 		'daci': None,
-		'ast': None,
-		'loc': None,
 		'lnk': None,
 
 		# Resource attributes
-		'mni': None,
-		'mbs': None,
-		'mia': None,
-		'li': None,
-		'or': None,
-		'disr': None
+		'esi': None,
+		'srv': None,
+		# TODO no CSI?
 	}
 
 
 	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.CNTAnnc, dct, pi=pi, create=create)
+		super().__init__(T.CSEBaseAnnc, dct, pi=pi, create=create)
 

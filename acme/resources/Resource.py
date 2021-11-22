@@ -9,7 +9,7 @@
 
 # The following import allows to use "Resource" inside a method typing definition
 from __future__ import annotations
-from typing import Any, Tuple, cast
+from typing import Any, List, Tuple, cast
 from copy import deepcopy
 
 from ..etc.Constants import Constants as C
@@ -23,6 +23,7 @@ from .Resource import *
 
 # Future TODO: Check RO/WO etc for attributes (list of attributes per resource?)
 # TODO cleanup optimizations
+# TODO _remodeID - is anybody using that one??
 
 
 
@@ -74,14 +75,16 @@ class Resource(object):
 				self.tpe = self.__rtype__
 			if not self.hasAttribute('ri'):
 				self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite=False)
+			if pi is not None: # test for None bc pi might be '' (for cse). pi is used subsequently here
+				self.setAttribute('pi', pi)
 
 			# override rn if given
 			if rn:
-				self['rn'] = rn
+				self.setResourceName(rn)
 
-			# Create an RN if there is none
-			if not self.hasAttribute('rn'):
-				self.setAttribute('rn', Utils.uniqueRN(self.tpe), overwrite=False)
+			# Create an RN if there is none (not given, none in the resource)
+			if not self.hasAttribute('rn'):	# a bit of optimization bc the function call might cost some time
+				self.setResourceName(Utils.uniqueRN(self.tpe))
 
 			# Check uniqueness of ri. otherwise generate a new one. Only when creating
 			if create:
@@ -104,8 +107,6 @@ class Resource(object):
 
 			if self.ty not in [ T.CSEBase ] and not self.hasAttribute('et'):
 				self.setAttribute('et', DateUtils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite=False) 
-			if pi is not None: # test for None bc pi might be '' (for cse)
-				self.setAttribute('pi', pi)
 			if ty is not None:	# ty is an int
 				if ty in C.stateTagResourceTypes:	# Only for allowed resources
 					self.setAttribute('st', 0, overwrite=False)
@@ -119,10 +120,6 @@ class Resource(object):
 			# But see also the comment in update() !!!
 			self.dict = Utils.removeNoneValuesFromDict(self.dict, ['cr'])	# allow the ct attribute to stay in the dictionary. It will be handled with in the RegistrationManager
 
-			# determine and add the srn, only when this is a local resource, otherwise we don't need this information
-			# It is *not* a remote resource when the __remoteID__ is set
-			if not self[self._remoteID]:
-				self[self._srn] = Utils.structuredPath(self)
 			self[self._rtype] = self.tpe
 			self.setAttribute(self._announcedTo, [], overwrite=False)
 
@@ -186,7 +183,7 @@ class Resource(object):
 		#
 		#	Various ACPI handling
 		# ACPI: Check <ACP> existence and convert <ACP> references to CSE relative unstructured
-		if self.acpi is not None:
+		if self.acpi is not None and not T(self.ty).isAnnounced():
 			# Test wether an empty array is provided				
 			if len(self.acpi) == 0:
 				return Result(status=False, rsc=RC.badRequest, dbg='acpi must not be an empty list')
@@ -580,4 +577,24 @@ class Resource(object):
 		"""	Set a resource's originator.
 		"""
 		self.setAttribute(self._originator, originator, overwrite=True)
+	
+
+	def getAnnouncedTo(self) -> list[Tuple[str, str]]:
+		"""	This is a conveniance method to return the internal announcedTo
+			list of this resource. This method doesn't seem to add much functionality,
+			but the author still struggled in the past to do it right many times.
+		"""
+		return self[self._announcedTo]
+
+	
+	def setResourceName(self, rn:str) -> None:
+		self.setAttribute('rn', rn)
+
+		# determine and add the srn, only when this is a local resource, otherwise we don't need this information
+		# It is *not* a remote resource when the __remoteID__ is set
+		if not self[self._remoteID]:
+			self[self._srn] = Utils.structuredPath(self)
+		# L.logWarn(self[self._srn])
+		
+
 

@@ -81,13 +81,13 @@ class SecurityManager(object):
 					L.isDebug and L.logDebug('Originator for AE CREATE. OK.')
 					return True
 
-			# Checking for remoteCSE
-			if ty == T.CSR and isCreateRequest:
+			# Checking for remoteCSE or CSEBaseAnnc
+			if ty in [ T.CSR, T.CSEBaseAnnc] and isCreateRequest:
 				if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators):
-					L.isDebug and L.logDebug('Originator for CSR CREATE. OK.')
+					L.isDebug and L.logDebug('Originator for CSR/CSEBaseAnnc CREATE. OK.')
 					return True
 				else:
-					L.isWarn and L.logWarn('Originator for CSR CREATE not found.')
+					L.isWarn and L.logWarn('Originator for CSR/CSEBaseAnnc CREATE not found.')
 					return False
 			
 			if T(ty).isAnnounced():
@@ -136,6 +136,7 @@ class SecurityManager(object):
 			return False
 
 		L.isDebug and L.logDebug(f'Checking permission for originator: {originator}, ri: {resource.ri}, permission: {requestedPermission}, selfPrivileges: {checkSelf}')
+		# L.logWarn(resource)
 
 		if resource.ty == T.GRP: # target is a group resource
 			# Check membersAccessControlPolicyIDs if provided, otherwise accessControlPolicyIDs to be used

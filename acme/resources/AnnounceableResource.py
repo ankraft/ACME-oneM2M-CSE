@@ -29,7 +29,7 @@ class AnnounceableResource(Resource):
 
 		# Check announcements
 		if self.at:
-			CSE.announce.announceResource(self)
+			res = CSE.announce.announceResource(self)
 		return res
 
 
@@ -129,36 +129,20 @@ class AnnounceableResource(Resource):
 				}
 			# Add more  attributes
 			body = dct[tpe]
-			if (st := self.st) is not None:	# st is an int
-				body['st'] = st
+			# if (st := self.st) is not None:	# st is an int
+			# 	body['st'] = st
 
-			if lbl := self.lbl:
-				body['lbl'] = deepcopy(lbl)
+			# if lbl := self.lbl:
+			# 	body['lbl'] = deepcopy(lbl)
 
 
 			# copy mandatoy and optional attributes
 			for attr in announcedAttributes:
 				body[attr] = self[attr]
 
-			#
-			#	overwrite (!) acpi
-			#
-			# if (acpi := self.acpi) is not None:
-			# 	acpi = [ f'{CSE.cseCsi}/{acpi}' for acpi in self.acpi ]	# set to local CSE.csi
-			# else:
-			# 	acpi = None
-			# add remote acpi so that we will have access
-			# if remoteCSR is not None and (regAcpi := remoteCSR.acpi) is not None:
-			# 	if remoteCsi is not None:
-			# 		# acpi.extend([f'{CSE.remote.cseCsi}/{a}' for a in regAcpi])
-			# 		acpi.extend([a for a in regAcpi])
-			# 	else:
-			# 		acpi.extend(regAcpi)
-			# Utils.setXPath(	dct, f'{tpe}/acpi', acpi)
-			if (acpi := self.acpi) is not None:	# acpi might be an empty list
-				acpi = [ f'{CSE.cseCsi}/{acpi}' for acpi in self.acpi ]	# set to local CSE.csi
+			if (acpi := body.get('acpi')) is not None:	# acpi might be an empty list
+				acpi = [ f'{CSE.cseCsi}/{acpi}' if not acpi.startswith(CSE.cseCsi) else acpi    for acpi in self.acpi]	# set to local CSE.csi
 				body['acpi'] = acpi
-				# Utils.setXPath(	dct, f'{tpe}/acpi', acpi)
 
 
 		else: # update. Works a bit different
@@ -176,17 +160,6 @@ class AnnounceableResource(Resource):
 				if attr in announcedAttributes or (attributePolicy is not None and attributePolicy.announcement == AN.MA):	# either announced or an MA attribute
 				# if attr in announcedAttributes or (attr in policies and policies[attr][5] == AN.MA):	# either announced or an MA attribute
 					body[attr] = self[attr]
-
-			# copy only the updated attributes
-			# for attr in announcedAttributes:
-			# 	if attr in modifiedAttributes:
-			# 		body[attr] = self[attr]
-
-			#Add more attributes
-			# TODO: remove?
-			# for attr in modifiedAttributes:
-			# 	if attr in [ 'lbl' ]:
-			# 		body[attr] = self[attr]
 
 			# if aa was modified check also those attributes even when they are not modified
 			if 'aa' in modifiedAttributes and modifiedAttributes['aa']:
