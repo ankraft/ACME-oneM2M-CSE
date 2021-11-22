@@ -132,7 +132,7 @@ class Storage(object):
 			if not self.hasResource(ri, srn):	# Only when not resource does not exist yet
 				self.db.insertResource(resource)
 			else:
-				L.isWarn and L.logWarn(f'Resource already exists (Skipping): {resource}')
+				L.isWarn and L.logWarn(f'Resource already exists (Skipping): {resource} ri: {ri} srn:{srn}')
 				return Result(status=False, rsc=RC.alreadyExists, dbg='resource already exists')
 
 		# Add path to identifiers db
