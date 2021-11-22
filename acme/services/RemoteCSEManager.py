@@ -20,7 +20,7 @@ from ..resources import Factory as Factory
 from ..services.Configuration import Configuration
 from ..services.Logging import Logging as L
 from ..services import CSE as CSE
-from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 
 
 class RemoteCSEManager(object):
@@ -41,6 +41,7 @@ class RemoteCSEManager(object):
 		self.descendantCSR:Dict[str, Tuple[Resource, str]]	= {}	# dict of descendantCSR's - "csi : (CSR, registeredATcsi)". CSR is None for CSEs further down 
 		self.enableRemoteCSE				 	= Configuration.get('cse.enableRemoteCSE')
 
+		self.connectionMonitor:BackgroundWorker	= None	# BackgrioundWorker
 
 		CSE.event.addHandler(CSE.event.registeredToRemoteCSE, self.handleRegistrarRegistration)				# type: ignore
 		CSE.event.addHandler(CSE.event.deregisteredFromRemoteCSE, self.handleRegistrarDeregistration)		# type: ignore
@@ -57,6 +58,14 @@ class RemoteCSEManager(object):
 		self.stop()
 		L.isInfo and L.log('RemoteCSEManager shut down')
 		return True
+
+
+	def restart(self) -> None:
+		"""	Restart the remote service.
+		"""
+		if self.connectionMonitor:
+			self.connectionMonitor.workNow()
+		L.isDebug and L.logDebug('RemoteManager restarted')
 
 
 	#
@@ -81,7 +90,7 @@ class RemoteCSEManager(object):
 
 
 		L.isInfo and L.log('Starting remote CSE connection monitor')
-		BackgroundWorkerPool.newWorker(self.checkInterval, self.connectionMonitorWorker, 'csrMonitor').start()
+		self.connectionMonitor = BackgroundWorkerPool.newWorker(self.checkInterval, self.connectionMonitorWorker, 'csrMonitor').start()
 
 
 	# Stop the monitor. Also delete the CSR resources on both sides
@@ -91,7 +100,8 @@ class RemoteCSEManager(object):
 		L.isInfo and L.log('Stopping remote CSE connection monitor')
 
 		# Stop the worker
-		BackgroundWorkerPool.stopWorkers('csrMonitor')
+		if self.connectionMonitor:
+			self.connectionMonitor.stop
 
 		# Remove resources
 		if CSE.cseType in [ CSEType.ASN, CSEType.MN ]:
@@ -512,7 +522,7 @@ class RemoteCSEManager(object):
 			originator = CSE.cseCsi
 		L.isDebug and L.logDebug(f'Retrieve remote resource from: {url}')
 		res = CSE.request.sendRetrieveRequest(url, originator)	## todo
-		if not res.status:
+		if not res.status or res.rsc != RC.OK:
 			return res.errorResult()
 		
 		# assign the remote ID to the resource's dictionary

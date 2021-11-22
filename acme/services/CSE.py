@@ -12,7 +12,6 @@ import atexit, argparse, os, time, sys
 from typing import Dict, Any
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
-from ..etc import DateUtils
 from ..etc.Types import CSEType, ContentSerializationType
 from ..services.Configuration import Configuration
 from ..services.Console import Console
@@ -109,7 +108,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	supportedReleaseVersions = Configuration.get('cse.supportedReleaseVersions')
 	cseType					 = Configuration.get('cse.type')
 	cseCsi					 = Configuration.get('cse.csi')
-	cseCsiRelative			 = cseCsi[1:]
+	cseCsiRelative			 = cseCsi[1:]							# no leading slash
 	cseCsiSlash				 = f'{cseCsi}/'
 	cseRi					 = Configuration.get('cse.ri')
 	cseRn					 = Configuration.get('cse.rn')
@@ -239,6 +238,8 @@ def resetCSE() -> None:
 	if not importer.doImport():
 		L.logErr('Error during import')
 		sys.exit()	# what else can we do?
+	remote.restart()
+	
 	L.isWarn and L.logWarn('Resetting CSE finished')
 
 
