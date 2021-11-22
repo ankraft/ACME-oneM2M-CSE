@@ -53,7 +53,7 @@ class Storage(object):
 		# Reset dbs?
 		if self.dbReset:
 			self._backupDB()	# In this case do a backup *before* startup.
-			self.db.purgeDB()
+			self.purge()
 		
 		# Check validity
 		if not self.dbReset and not self._validateDB():
@@ -75,7 +75,12 @@ class Storage(object):
 	def purge(self) -> None:
 		"""	Empty the databases.
 		"""
-		self.db.purgeDB()
+		try:
+			self.db.purgeDB()
+		except Exception as e:
+			L.logErr(f'Exception during purge: {e}', exc=e)
+			quit()
+
 	
 
 	def _validateDB(self) -> bool:
