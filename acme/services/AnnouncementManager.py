@@ -192,19 +192,20 @@ class AnnouncementManager(object):
 					L.logDebug(dbg := 'Announcing instances without their parents is not allowed')
 					return Result(status=False, rsc=RC.operationNotAllowed, dbg=dbg)
 
-				# Check whether the CSEBase has been announced. Announce if necessay
-				cse = Utils.getCSE()
-				if not self._isResourceAnnouncedTo(cse.resource, csi):
+				# Whatever the parent resource is, check whether the CSEBase has been announced. Announce it if necessay
+				parentResoure = Utils.getCSE().resource
+				if not self._isResourceAnnouncedTo(parentResoure, csi):
 					# announce CSE recursively
-					self.announceResourceToCSR(cse.resource, remoteCSR)
-				targetID = f'/{remoteCSR.cb}{CSE.cseCsi}Annc'
-
-			else:
-				# parent resource is announced -> Announce the resource under the parent resource Annc
-				if not (at := self._announcedInfos(parentResoure, csi)):
-					L.logWarn(dbg := f'No announcement for parent resource: {parentResoure.ri} to: {csi}')
-					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
-				targetID = f'/{at[1]}'
+					if not (res := self.announceResourceToCSR(parentResoure, remoteCSR)).status:
+						return res
+				
+				# ... then continue with normale announcement of the resource. The parent for the announcement is now the CSEBase
+				
+			# parent resource is announced -> Announce the resource under the parent resource Annc
+			if not (at := self._announcedInfos(parentResoure, csi)):
+				L.logWarn(dbg := f'No announcement for parent resource: {parentResoure.ri} to: {csi}')
+				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+			targetID = f'/{at[1]}'
 
 		# Create the announed resource on the remote CSE
 		L.isDebug and L.logDebug(f'Creating announced resource at: {targetUri} ID: {targetID}')	
@@ -215,7 +216,7 @@ class AnnouncementManager(object):
 				return Result(status=False, rsc=res.rsc, dbg=dbg)
 		else:
 			resource.addAnnouncementToResource(Utils.findXPath(cast(JSON, res.data), '{0}/ri'), csi)
-		L.isDebug and L.logDebug('Announced resource created')
+		L.isDebug and L.logDebug(f'Announced resource created: {resource.getAnnouncedTo()}')
 		resource.dbUpdate()
 		return Result(status=True)
 
