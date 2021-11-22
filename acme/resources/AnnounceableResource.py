@@ -176,6 +176,31 @@ class AnnounceableResource(Resource):
 		return dct
 
 
+	def addAnnouncementToResource(self, remoteRI:str, csi:str) -> None:
+		"""	Add anouncement information to the resource. These are a list of tuples of 
+			the csi to which the resource is registered as well as the ri of the 
+			resource on the remote CSE. Also, add the reference in the at attribute.
+		"""
+
+		# Set the internal __announcedTo__ attribute
+		ats = self.getAnnouncedTo()
+		ats.append((csi, remoteRI))
+		self.setAttribute(Resource._announcedTo, ats)	# TODO replacement as below?
+
+		# Modify the at attribute, if applicable
+		if 'at' in self._attributes:
+			if (at := self.at) is None:
+				at = []
+			if len(at) > 0 and csi in at:
+				at[at.index(csi)] = f'{csi}/{remoteRI}' # replace the element in at
+			else:
+				at.append(f'{csi}/{remoteRI}')
+			self.setAttribute('at', at)
+
+
+	# TODO add _removeAnnouncementFromResource() here
+
+	
 	#########################################################################
 	#
 	#	Policy support
@@ -201,3 +226,4 @@ class AnnounceableResource(Resource):
 				# else: just ignore AN.NA
 
 		return mandatory + optional
+

@@ -229,8 +229,15 @@ class RegistrationManager(object):
 	def handleCSEBaseAnncRegistration(self, cbA:Resource, originator:str) -> Result:
 		L.isDebug and L.logDebug(f'Registering CSEBaseAnnc. csi: {cbA.csi}')
 
+		rn = f'{Utils.getIdFromOriginator(originator)}Annc'
+		L.logWarn(f'{CSE.cseRn}/{rn}')
+
+		if (res := CSE.dispatcher.retrieveLocalResource(srn=f'{CSE.cseRn}/{rn}')).status:
+			L.logWarn(dbg := f'CSEBaseAnnc: {rn} csi: {cbA.csi} already exsists')
+			return Result(status=False, rsc=RC.conflict, dbg=dbg)	# TODO error message
+
 		# Assign a rn
-		cbA.setResourceName(f'{Utils.getIdFromOriginator(originator)}Annc')	# TODO correct?
+		cbA.setResourceName(rn)	# TODO correct?
 		return Result(status=True)
 
 
@@ -251,7 +258,7 @@ class RegistrationManager(object):
 	#	Handle REQ deregistration
 	#
 
-	def handleREQDeRegistration(self, resource: Resource) -> bool:
+	def handleREQDeRegistration(self, resource:  	 	 Resource) -> bool:
 		L.isDebug and L.logDebug(f'DeRegisterung REQ. ri: {resource.ri}')
 		return True
 

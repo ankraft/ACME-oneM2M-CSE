@@ -153,16 +153,14 @@ class AnnouncementManager(object):
 	def announceResourceToCSR(self, resource:AnnounceableResource, remoteCSR:Resource) -> Result:
 		"""	Announce a resource to a specific CSR.
 		"""
-
+		# TODO direct URL
 
 		# retrieve the csi & poas for the remote CSR
 		csi, poas = self._getCsiPoaForRemoteCSR(remoteCSR)
 
-
 		# TODO: multi-hop announcement
 
 		L.isDebug and L.logDebug(f'Announce resource: {resource.ri} to: {csi}')
-
 		if self._isResourceAnnouncedTo(resource, csi):
 			L.isDebug and L.logDebug(f'Resource already announced: {resource.ri}')
 			return Result(status=True)
@@ -172,11 +170,6 @@ class AnnouncementManager(object):
 		tyAnnc = T(resource.ty).announced()
 		targetUri = csi
 
-
-		# L.logDebug(f'announcing: {resource}')
-		# L.logDebug(f'data: {data}')
-		# L.logDebug(f'tyAnnc: {tyAnnc}')
-
 		if resource.ty == T.CSEBase:
 			targetID = csi
 
@@ -185,14 +178,11 @@ class AnnouncementManager(object):
 				L.isWarn and L.logWarn('at attribute is empty')
 				return Result(status=True)	# Not much to do here
 
-			# if csi not in at:
-			# 	L.isWarn and L.logWarn(f'CSI: {csi} not found for at: {at}')
-			# 	return
-
 			# Check if parent is announced already to the same remote CSE
 			if not (res := CSE.dispatcher.retrieveLocalResource(resource.pi)).status:
 				L.logErr(dbg := f'Cannot retrieve parent. Announcement not possible: {res.dbg}')
 				return Result(status=False, rsc=RC.internalServerError, dbg=dbg)
+			
 			parentResoure = res.resource
 			if not self._isResourceAnnouncedTo(parentResoure, csi):
 				# parent resource is not announced -> announce the resource directly under the CSEBaseAnnc
@@ -204,11 +194,10 @@ class AnnouncementManager(object):
 
 				# Check whether the CSEBase has been announced. Announce if necessay
 				cse = Utils.getCSE()
-				if not self._isResourceAnnouncedTo(cse.resource, csi):
+				if not self._isResourceAnnouncedTo(cse.resource, csi) or True:
 					# announce CSE recursively
 					self.announceResourceToCSR(cse.resource, remoteCSR)
 				targetID = f'/{remoteCSR.cb}{CSE.cseCsi}Annc'
-				
 
 			else:
 				# parent resource is announced -> Announce the resource under the parent resource Annc
@@ -223,12 +212,9 @@ class AnnouncementManager(object):
 		if res.rsc not in [ RC.created, RC.OK ]:
 			if res.rsc != RC.alreadyExists:	# assume that it is ok if the remote resource already exists 
 				L.logDebug(dbg := f'Error creating remote announced resource: {int(res.rsc)} ({res.dbg})')
-				if (at := resource.at) and csi in at:
-					at.remove(csi)
-					resource.setAttribute('at', None if len(at) == 0 else at)
 				return Result(status=False, rsc=res.rsc, dbg=dbg)
 		else:
-			self._addAnnouncementToResource(resource, cast(JSON, res.data), csi)
+			resource.addAnnouncementToResource(Utils.findXPath(cast(JSON, res.data), '{0}/ri'), csi)
 		L.isDebug and L.logDebug('Announced resource created')
 		resource.dbUpdate()
 		return Result(status=True)
@@ -388,27 +374,6 @@ class AnnouncementManager(object):
 				csi = CSE.remote.registrarCSE.csi
 				poas = CSE.remote.registrarCSE.poa
 		return csi, poas
-
-
-	def _addAnnouncementToResource(self, resource:Resource, dct:JSON, csi:str) -> None:
-		"""	Add anouncement information to the resource. These are a list of tuples of 
-			the csi to which the resource is registered as well as the ri of the 
-			resource on the remote CSE. Also, add the reference in the at attribute.
-		"""
-		remoteRI = Utils.findXPath(dct, '{0}/ri')
-		ats = resource.getAnnouncedTo()
-		ats.append((csi, remoteRI))
-		resource.setAttribute(Resource._announcedTo, ats)
-
-		# Modify the at attribute
-		if (at := resource.at) is None:
-			resource['at'] = []
-			at = resource.at
-		if len(at) > 0 and csi in at:
-			at[at.index(csi)] = f'{csi}/{remoteRI}' # replace the element in at
-		else:
-			at.append(f'{csi}/{remoteRI}')
-		resource.setAttribute('at', at)
 
 
 	def _removeAnnouncementFromResource(self, resource:Resource, csi:str) -> None:
