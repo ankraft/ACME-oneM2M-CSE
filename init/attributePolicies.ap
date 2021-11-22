@@ -50,7 +50,8 @@
 			"annc": "NA"
 		},
 		{
-			"rtypes": [ 	"ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "DVCAnnc",
+			"rtypes": [ "ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "DVCAnnc", "CNTAnnc",
+						"FCNTAnnc", "TSAnnc", "CSEBaseAnnc",
 						"DVIAnnc", "EVLAnnc", "FWRAnnc", "MEMAnnc", "NYCFCAnnc", "RBOAnnc",
 						"SWRAnnc" ],
 			"lname": "resourceName",
@@ -169,7 +170,18 @@
 	],
 	"at": [
 		{
-			"rtypes": [ "ALL"	],
+			"rtypes": [ "CSEBase" ],
+			"lname": "announceTo",
+			"ns": "m2m",
+			"type": "list",
+			"car": "01L",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "NA"
+		},
+		{
+			"rtypes": [ "ALL" ],
 			"lname": "announceTo",
 			"ns": "m2m",
 			"type": "list",
@@ -182,7 +194,18 @@
 	],
 	"aa": [
 		{
-			"rtypes": [ "ALL"	], 
+			"rtypes": [ "CSEBase" ], 
+			"lname": "announcedAttribute",
+			"ns": "m2m",
+			"type": "list",
+			"car": "01L",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "NA"
+		},
+		{
+			"rtypes": [ "ALL" ], 
 			"lname": "announcedAttribute",
 			"ns": "m2m",
 			"type": "list",
@@ -1293,9 +1316,9 @@
 	],
 	"lnk": [
 		{
-			"rtypes": [ 	"ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "CINAnnc", 
-						"CNTAnnc", "CSRAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc", "FCNTAnnc",
-						"FWRAnnc", "GRPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
+			"rtypes": [ "ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "CINAnnc", 
+						"CNTAnnc", "CSEBaseAnnc", "CSRAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc",
+						"FCNTAnnc", "FWRAnnc", "GRPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
 						"SWRAnnc", "TSAnnc", "TSIAnnc" ],
 			"lname": "link",
 			"ns": "m2m",

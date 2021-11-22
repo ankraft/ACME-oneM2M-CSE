@@ -5,6 +5,6 @@
 		"csi" : "${cse.csi}",
 		"rr"  : true,
 		"csz" : [ "application/json", "application/cbor" ],
-		"acpi": [ "${cse.rn}/acpCreateACPs" ]
+		"acpi": [ "${cse.csi}/acpCreateACPs" ]
 	}
 }
