@@ -194,7 +194,7 @@ class AnnouncementManager(object):
 
 				# Check whether the CSEBase has been announced. Announce if necessay
 				cse = Utils.getCSE()
-				if not self._isResourceAnnouncedTo(cse.resource, csi) or True:
+				if not self._isResourceAnnouncedTo(cse.resource, csi):
 					# announce CSE recursively
 					self.announceResourceToCSR(cse.resource, remoteCSR)
 				targetID = f'/{remoteCSR.cb}{CSE.cseCsi}Annc'
