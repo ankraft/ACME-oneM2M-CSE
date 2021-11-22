@@ -26,6 +26,12 @@ except ImportError:
 		raise ImportError('getch not available')
 	else:
 		getch = msvcrt.getch	# type: ignore
+
+		def flushInput() -> None:
+			pass
+			# while msvcrt.kbhit():	# type: ignore
+			# 	msvcrt.getch()		# type: ignore
+
 else:
 	_errorInGetch:bool = False
 	def getch() -> str:
@@ -61,6 +67,9 @@ else:
 		finally:
 			termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 		return ch
+	
+	def flushInput() -> None:
+		sys.stdin.flush()
 
 
 Commands = Dict[str, Callable[[str], None]]
@@ -93,6 +102,7 @@ def loop(commands:Commands, quit:str=None, catchKeyboardInterrupt:bool=False, he
 				if isinstance(ch, bytes):	# Windows getch() returns a byte-string
 					ch = ch.decode('utf-8') # type: ignore [attr-defined]
 			except KeyboardInterrupt as e:
+				flushInput()
 				if catchKeyboardInterrupt:
 					ch = '\x03'
 				else:
