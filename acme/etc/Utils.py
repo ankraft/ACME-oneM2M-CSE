@@ -149,7 +149,7 @@ def structuredPath(resource:Resource) -> str:
 		return rn
 	rpi = CSE.storage.identifier(pi) 
 	if len(rpi) == 1:
-		return cast(str, rpi[0]['srn'] + '/' + rn)
+		return cast(str, f'{rpi[0]["srn"]}/{rn}')
 	# L.logErr(traceback.format_stack())
 	L.logErr(f'Parent {pi} not found in DB')
 	return rn # fallback
@@ -445,6 +445,7 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 			data = data[pathElement]	# found data for the next level down
 	return data
 
+
 def setXPath(dct:JSON, key:str, value:Any, overwrite:bool=True) -> bool:
 	"""	Set a structured `key` and `value` in the dictionary `dict`. 
 		Create if necessary, and observe the `overwrite` option (True overwrites an
@@ -464,6 +465,15 @@ def setXPath(dct:JSON, key:str, value:Any, overwrite:bool=True) -> bool:
 		return True # don't overwrite
 	data[paths[ln1]] = value
 	return True
+
+
+def removeKeyFromDict(dct:dict, keys:list[str]) -> Any:
+	"""	Recursively remove all occurences of `keys` from a dictionary `dct`.
+	"""
+	if not isinstance(dct, dict):
+		return dct
+	return {key:value for key, value in ((key, removeKeyFromDict(value, keys)) for key, value in dct.items()) if key not in keys}
+
 
 
 def removeNoneValuesFromDict(dct:JSON, allowedNull:list[str]=[]) -> JSON:
