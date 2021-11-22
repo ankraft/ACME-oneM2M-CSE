@@ -193,7 +193,7 @@ class Logging:
 		"""
 		from ..services import CSE
 		# raise logError event
-		(not CSE.event or CSE.event.logError())	# type: ignore
+		(CSE.event and CSE.event.logError())	# type: ignore
 		if exc:
 			fmtexc = ''.join(traceback.TracebackException.from_exception(exc).format())
 			Logging._log(logging.ERROR, f'{msg}\n\n{fmtexc}', stackOffset=stackOffset)
@@ -210,7 +210,7 @@ class Logging:
 		"""
 		from ..services import CSE as CSE
 		# raise logWarning event
-		(not CSE.event or CSE.event.logWarning()) 	# type: ignore
+		(CSE.event and CSE.event.logWarning()) 	# type: ignore
 		Logging._log(logging.WARNING, msg, stackOffset=stackOffset)
 
 
