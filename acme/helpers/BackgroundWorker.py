@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from .TextTools import simpleMatch
-import random, sys, heapq, datetime, traceback
+import random, sys, heapq, datetime, traceback, time
 from threading import Thread, Timer, Lock
 from typing import Callable, List, Dict, Any
 import logging
@@ -38,6 +38,7 @@ class BackgroundWorker(object):
 		self.nextRunTime:float		= None				# Timestamp
 		self.callback 				= callback			# Actual callback to process
 		self.running 				= False				# Indicator that a worker is running or will be stopped
+		self.executing				= False				# Indicator that the worker callback is currently executed
 		self.name 					= name
 		self.startWithDelay 		= startWithDelay
 		self.maxCount 				= maxCount			# max runs
@@ -77,8 +78,40 @@ class BackgroundWorker(object):
 		self.running = False
 		if BackgroundWorker._logger:
 				BackgroundWorker._logger(logging.DEBUG, f'Stopping {"actor" if self.maxCount and self.maxCount > 0 else "worker"}: {self.name}')
-		BackgroundWorkerPool._unqueueWorker(self.id)		# Stop the timer and remove from queue
+		BackgroundWorkerPool._unqueueWorker(self)		# Stop the timer and remove from queue
 		self._postCall()									# Note: worker is removed in _postCall()
+		return self
+	
+
+	def pause(self) -> BackgroundWorker:
+		"""	Pause the execution of a a worker.
+		"""
+		if not self.running:
+			return self
+		while self.executing:
+			time.sleep(0.001)
+		BackgroundWorkerPool._unqueueWorker(self)
+		return self
+
+
+	def unpause(self, immediately:bool=False) -> BackgroundWorker:
+		""" Continue the running of a worker. If `immediately` is True then the worker
+			is executed immediately and then the normal schedule continues.
+		"""
+		if not self.running:
+			return None
+		self.nextRunTime = _utcTime() if immediately else _utcTime() + self.interval		# timestamp for next interval (interval + time from end of processing)
+		BackgroundWorkerPool._queueWorker(self.nextRunTime, self)
+		return self
+
+
+	def workNow(self) -> BackgroundWorker:
+		"""	Execute the worker right immediately and outside the normal schedule.
+		"""
+		if self.executing:
+			return self
+		self.pause()
+		self.unpause(immediately=True)
 		return self
 
 
@@ -93,11 +126,13 @@ class BackgroundWorker(object):
 		result = True
 		try:
 			self.numberOfRuns += 1
+			self.executing = True
 			result = self.callback(**self.args)
 		except Exception as e:
 			if BackgroundWorker._logger:
 				BackgroundWorker._logger(logging.ERROR, f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}\n{"".join(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))}')
 		finally:
+			self.executing = False
 			if not result or (self.maxCount and self.numberOfRuns >= self.maxCount):
 				# False returned, or the numberOfRuns has reached the maxCount
 				self.stop()
@@ -227,13 +262,13 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def _unqueueWorker(cls, id:int) -> None:
+	def _unqueueWorker(cls, worker:BackgroundWorker) -> None:
 		"""	Remove the Backgroundworker for `id` from the queue.
 		"""
 		with cls.queueLock:
 			cls._stopTimer()
 			for h in cls.workerQueue:
-				if h[1] == id:
+				if h[1] == worker.id:
 					cls.workerQueue.remove(h)
 					heapq.heapify(cls.workerQueue)
 					break	# Only 1 worker
