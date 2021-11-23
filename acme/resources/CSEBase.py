@@ -109,7 +109,7 @@ class CSEBase(AnnounceableResource):
 		self['ctm'] = DateUtils.getResourceDate()
 
 		# add the supported release versions
-		self['srv'] = C.supportedReleaseVersions
+		self['srv'] = CSE.supportedReleaseVersions
 
 		return Result(status=True)
 

@@ -14,7 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added *--http-port* command line argument.
 
 ### Changed
+- [CSE] Changed the default release version to 4. Also, the supported and the actual release versions are now fully configurable (in the config file).
+- [CSE] Indicated Release Version must now be the highest value in the list of supported release versions.
+
 ### Removed
+
 ### Fixed
 
 

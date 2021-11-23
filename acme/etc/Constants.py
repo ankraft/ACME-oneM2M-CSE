@@ -13,10 +13,6 @@ class Constants(object):
 
 	# ACME Version
 	version								= '0.10.0-dev'
-
-	# Supported release vesions
-	supportedReleaseVersions 			= ['2a', '3', '4']
-
 	
 	# List of virtual resources
 

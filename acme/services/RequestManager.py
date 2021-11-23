@@ -1044,10 +1044,10 @@ class RequestManager(object):
 
 			# RVI - releaseVersionIndicator
 			if not (rvi := gget(cseRequest.originalRequest, 'rvi', greedy = False)):
-				L.logDebug(dbg := f'Release Version Indicator is missing in request, falling back to RVI=\'1\'. But Release Version \'1\' is not supported. Use RVI with one of {C.supportedReleaseVersions}.')
+				L.logDebug(dbg := f'Release Version Indicator is missing in request, falling back to RVI=\'1\'. But Release Version \'1\' is not supported. Use RVI with one of {CSE.supportedReleaseVersions}.')
 				errorResult = Result(rsc = RC.releaseVersionNotSupported, request = cseRequest, dbg = dbg, status = False)
 			else:
-				if rvi in C.supportedReleaseVersions:
+				if rvi in CSE.supportedReleaseVersions:
 					cseRequest.headers.releaseVersionIndicator = rvi	
 				else:
 					L.logDebug(dbg := f'Release version unsupported: {rvi}')
@@ -1134,13 +1134,13 @@ class RequestManager(object):
 
 			# RVI - releaseVersionIndicator
 			if  (rvi := gget(cseRequest.originalRequest, 'rvi', greedy=False)):
-				if rvi not in C.supportedReleaseVersions:
+				if rvi not in CSE.supportedReleaseVersions:
 					L.logDebug(dbg := f'Release version unsupported: {rvi}')
 					errorResult = Result(status = False, rsc = RC.releaseVersionNotSupported, request = cseRequest, dbg = dbg)
 				else:
 					cseRequest.headers.releaseVersionIndicator = rvi	
 			else:
-				L.logDebug(dbg := f'Release Version Indicator is missing in request, falling back to RVI=\'1\'. But Release Version \'1\' is not supported. Use RVI with one of {C.supportedReleaseVersions}.')
+				L.logDebug(dbg := f'Release Version Indicator is missing in request, falling back to RVI=\'1\'. But Release Version \'1\' is not supported. Use RVI with one of {CSE.supportedReleaseVersions}.')
 				errorResult = Result(rsc = RC.releaseVersionNotSupported, request = cseRequest, dbg = dbg, status = False)
 
 			# VSI - vendorInformation

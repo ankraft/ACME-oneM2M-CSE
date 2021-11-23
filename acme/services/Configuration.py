@@ -99,8 +99,8 @@ class Configuration(object):
 				'cse.sortDiscoveredResources'			: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
 				'cse.checkExpirationsInterval'			: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
 				'cse.flexBlockingPreference'			: config.get('cse', 'flexBlockingPreference',			fallback='blocking'),
-				'cse.supportedReleaseVersions'			: config.getlist('cse', 'supportedReleaseVersions',		fallback=C.supportedReleaseVersions), # type: ignore [attr-defined]
-				'cse.releaseVersion'					: config.get('cse', 'releaseVersion',					fallback='3'),
+				'cse.supportedReleaseVersions'			: config.getlist('cse', 'supportedReleaseVersions',		fallback=['2a', '3', '4']), # type: ignore [attr-defined]
+				'cse.releaseVersion'					: config.get('cse', 'releaseVersion',					fallback='4'),
 				'cse.defaultSerialization'				: config.get('cse', 'defaultSerialization',				fallback='json'),
 
 				#
@@ -432,23 +432,20 @@ class Configuration(object):
 			return False
 
 		# Check release versions
-		if len(Configuration._configuration['cse.supportedReleaseVersions']) == 0:
+		if len(srv := Configuration._configuration['cse.supportedReleaseVersions']) == 0:
 			_print('[red]Configuration Error: \[cse]:supportedReleaseVersions must not be empty')
 			return False
-		for rv in Configuration._configuration['cse.supportedReleaseVersions']:
-			if rv not in C.supportedReleaseVersions:
-				_print(f'[red]Configuration Error: \[cse]:supportedReleaseVersions: unsupported version: {rv}')
-				return False
-
-		if len(Configuration._configuration['cse.releaseVersion']) == 0:
+			
+		if len(rvi := Configuration._configuration['cse.releaseVersion']) == 0:
 			_print('[red]Configuration Error: \[cse]:releaseVersion must not be empty')
 			return False
-		for rv in Configuration._configuration['cse.releaseVersion']:
-			srv = Configuration._configuration['cse.supportedReleaseVersions']
-			if rv not in srv:
-				_print(f'[red]Configuration Error: \[cse]:releaseVersion: {rv} not in \[cse].supportedReleaseVersions: {srv}')
-				return False
-			
+		if rvi not in srv:
+			_print(f'[red]Configuration Error: \[cse]:releaseVersion: {rvi} not in \[cse].supportedReleaseVersions: {srv}')
+			return False
+		if any([s for s in srv if str(rvi) < s]):
+			_print(f'[red]Configuration Error: \[cse]:releaseVersion: {rvi} less than highest value in \[cse].supportedReleaseVersions: {srv}')
+			return False
+
 		# Check various intervals
 		if Configuration._configuration['cse.checkExpirationsInterval'] <= 0:
 			_print('[red]Configuration Error: \[cse]:checkExpirationsInterval must be greater than 0')
