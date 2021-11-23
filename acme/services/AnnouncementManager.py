@@ -91,7 +91,8 @@ class AnnouncementManager(object):
 	def handleDeRegisteredFromRemoteCSE(self, remoteCSR:Resource) -> None:
 		"""	Handle de-registrations from a remote CSE (registrar CSE).
 		"""
-		self.checkResourcesForUnAnnouncement(remoteCSR)
+		# self.checkResourcesForUnAnnouncement(remoteCSR)	# TODO remove this for new Announcement behaviour
+		pass
 
 
 	def handleRemoteCSEHasRegistered(self, remoteCSR:Resource) -> None:
@@ -104,7 +105,8 @@ class AnnouncementManager(object):
 	def handleRemoteCSEHasDeregistered(self, remoteCSR:Resource) -> None:
 		""" Handle de-registrations when a remote CSE has de-registered (registree CSE).
 		"""
-		self.checkResourcesForUnAnnouncement(remoteCSR)
+		#self.checkResourcesForUnAnnouncement(remoteCSR)	# TODO remove this for new Announcement behaviour+
+		pass
 
 
 
@@ -145,8 +147,7 @@ class AnnouncementManager(object):
 				L.isWarn and L.logWarn('Announcement Target CSE not found. Ignored.')
 				self._removeAnnouncementFromResource(resource, at)
 				continue
-			if not (res := self.announceResourceToCSR(resource, csr)).status:
-				return res
+			self.announceResourceToCSR(resource, csr)	# ignore result
 		return Result(status=True)
 
 
@@ -196,7 +197,7 @@ class AnnouncementManager(object):
 				parentResoure = Utils.getCSE().resource
 				if not self._isResourceAnnouncedTo(parentResoure, csi):
 					# announce CSE recursively
-					if not (res := self.announceResourceToCSR(parentResoure, remoteCSR)).status:
+					if not (res := self.announceResourceToCSR(parentResoure, remoteCSR)).status:	# Don't ignore result for this one
 						return res
 				
 				# ... then continue with normale announcement of the resource. The parent for the announcement is now the CSEBase
