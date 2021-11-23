@@ -944,6 +944,7 @@ class CSERequest:
 	pc:JSON 						= None	# The request's primitive content as a dictionary
 	id:str 							= None 	# target ID / to
 	srn:str 						= None 	# target structured resource name
+	to:str 							= None	# original to
 	csi:str 						= None 	# target csi
 	op:Operation					= None	# request operation
 	rsc:ResponseStatusCode			= ResponseStatusCode.UNKNOWN	# Response Status Code

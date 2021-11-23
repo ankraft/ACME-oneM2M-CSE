@@ -8,7 +8,8 @@
 #
 
 from __future__ import annotations
-import logging, sys, urllib3
+import logging, sys, urllib3, json
+from requests.api import head
 from ssl import OP_ALL
 from copy import deepcopy
 from typing import Any, Callable, cast, Tuple
@@ -28,6 +29,7 @@ from ..etc import Utils as Utils, RequestUtils as RequestUtils
 from ..services.Configuration import Configuration
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L, LogLevel
+from ..services.MQTTClient import dissectMQTTRequest
 from ..webui.webUI import WebUI
 from ..resources.Resource import Resource
 from ..helpers import TextTools as TextTools
@@ -71,17 +73,12 @@ class HttpServer(object):
 
 		# Add endpoints
 
-		# self.addEndpoint(self.rootPath + '/', handler=self.handleGET, methods=['GET'])
 		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handleGET, methods=['GET'])
-
-		# self.addEndpoint(self.rootPath + '/', handler=self.handlePOST, methods=['POST'])
 		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handlePOST, methods=['POST'])
-
-		# self.addEndpoint(self.rootPath + '/', handler=self.handlePUT, methods=['PUT'])
 		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handlePUT, methods=['PUT'])
-
-		# self.addEndpoint(self.rootPath + '/', handler=self.handleDELETE, methods=['DELETE'])
 		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handleDELETE, methods=['DELETE'])
+
+		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handlePATCH, methods=['PATCH'])
 
 		# Register the endpoint for the web UI
 		# This is done by instancing the otherwise "external" web UI
@@ -111,6 +108,13 @@ class HttpServer(object):
 			resetEndPoint = f'{self.rootPath}/__reset__'
 			L.isInfo and L.log(f'Registering reset endpoint at: {resetEndPoint}')
 			self.addEndpoint(resetEndPoint, handler=self.handleReset, methods=['GET'], strictSlashes=False)
+
+		# Enable the upper tester endpoint
+		if Configuration.get('http.enableUpperTesterEndpoint') or True:
+			upperTesterEndpoint = f'{self.rootPath}/__ut__'
+			L.isInfo and L.log(f'Registering upper tester endpoint at: {upperTesterEndpoint}')
+			self.addEndpoint(upperTesterEndpoint, handler=self.handleUpperTester, methods=['POST'], strictSlashes=False)
+
 
 		# Add mapping / macro endpoints
 		self.mappings = {}
@@ -235,6 +239,17 @@ class HttpServer(object):
 		return self._handleRequest(path, Operation.DELETE)
 
 
+	def handlePATCH(self, path:str=None) -> Response:
+		"""	Support instead of DELETE for http/1.0.
+		"""
+		if request.environ.get('SERVER_PROTOCOL') != 'HTTP/1.0':
+			L.logWarn(dbg := 'PATCH method is only allowed for HTTP/1.0. Rejected.')
+			return Response(dbg, status=405)
+		Utils.renameCurrentThread()
+		CSE.event.httpDelete()	# type: ignore [attr-defined]
+		return self._handleRequest(path, Operation.DELETE)
+
+
 	#########################################################################
 
 
@@ -332,6 +347,98 @@ class HttpServer(object):
 
 	#########################################################################
 
+	# 
+	#	Upper Tester
+	#
+
+	def handleUpperTester(self, path:str=None) -> Response:
+		"""	Handle a Upper Tester request. See TS-0019 for details.
+		"""
+
+		# TODO: make this configurable. See above in the registration. Remove the True
+
+		def prepareUTResponse(rcs:RC) -> Response:
+			"""	Prepare the Upper Tester Response.
+			"""
+			headers = {}
+			headers['Server'] = self.serverID
+			headers['X-M2M-RSC'] = str(rcs.value)
+			return Response(status = 200 if rcs == RC.OK else 400, headers = headers)
+
+
+		Utils.renameCurrentThread()
+		L.isDebug and L.logDebug(f'==> Upper Tester Request') 
+		L.isDebug and L.logDebug(f'Headers: \n{str(request.headers).rstrip()}')
+		L.isDebug and L.logDebug(f'Body: \n{request.json}')
+
+		# Handle special commands
+		if (cmd := request.headers.get('X-M2M-UT-CMD')) is not None:
+			if cmd.lower() == 'reset':
+				CSE.resetCSE()
+				return prepareUTResponse(RC.OK)
+			return prepareUTResponse(RC.badRequest)
+		
+		# Otherwise	process this as a oneM2M request
+
+		if request.content_type != 'application/json':
+			# return Response(response = f'Unsupported Content-Type: {request.content_type}', status = 400)
+			return prepareUTResponse(RC.badRequest)
+		if (jsn := request.json.get('m2m:rqp')) is None:
+			# return Response(response = f'Content is not a request. "m2m:rqp" required', status = 400)
+			return prepareUTResponse(RC.badRequest)
+
+		# Dissect and validate
+		if not (dissectResult := dissectMQTTRequest(bytes(json.dumps(jsn), 'utf-8'), ContentSerializationType.JSON.toSimple())).status:
+			return prepareUTResponse(RC.badRequest)
+
+		# Send the request
+		if dissectResult.request.op == Operation.CREATE:
+			result = CSE.request.sendCreateRequest(	uri = dissectResult.request.to, 
+													originator = dissectResult.request.headers.originator, 
+													ct = dissectResult.request.ct,
+													data = dissectResult.request.originalRequest,
+													raw = True)
+		elif dissectResult.request.op == Operation.RETRIEVE:
+			result = CSE.request.sendRetrieveRequest(	uri = dissectResult.request.to, 
+														originator = dissectResult.request.headers.originator, 
+														ct = dissectResult.request.ct,
+														data = dissectResult.request.originalRequest,
+														raw = True)
+		elif dissectResult.request.op == Operation.UPDATE:
+			result = CSE.request.sendUpdateRequest(	uri = dissectResult.request.to, 
+													originator = dissectResult.request.headers.originator, 
+													ct = dissectResult.request.ct,
+													data = dissectResult.request.originalRequest,
+													raw = True)
+		elif dissectResult.request.op == Operation.DELETE:
+			result = CSE.request.sendDeleteRequest(	uri = dissectResult.request.to, 
+													originator = dissectResult.request.headers.originator, 
+													ct = dissectResult.request.ct,
+													data = dissectResult.request.originalRequest,
+													raw = True)
+		elif dissectResult.request.op == Operation.NOTIFY:
+			result = CSE.request.sendNotifyRequest(	uri = dissectResult.request.to, 
+													originator = dissectResult.request.headers.originator, 
+													ct = dissectResult.request.ct,
+													data = dissectResult.request.originalRequest,
+													raw = True)
+		else:
+			result = Result(status = False, rsc = RC.badRequest, dbg = f'Unknown operation')
+			return prepareUTResponse(RC.badRequest)
+
+		return prepareUTResponse(RC.OK)
+
+		# if result.rsc in [RC.OK, RC.created, RC.deleted ]:
+		# 	headers['X-M2M-RSC'] = str(RC.OK.value)
+		# 	return Response(status = 200, headers = headers )
+		# else:
+		# 	headers['X-M2M-RSC'] = str(RC.badRequest.value)
+		# 	return Response(status = 400, headers = headers )
+	
+
+
+	#########################################################################
+
 	#
 	#	Send HTTP requests
 	#
@@ -388,7 +495,7 @@ class HttpServer(object):
 			hds = {	'User-Agent'	: self.serverID,
 					'Content-Type' 	: f'{ct.toHeader()}{hty}',
 					'Accept'		: ct.toHeader(),
-					C.hfOrigin	 	: Utils.toSPRelative(data['fr']),
+					C.hfOrigin	 	: Utils.toSPRelative(data['fr']) if 'fr' in data else '',
 					C.hfRI 			: data['rqi'],
 					C.hfRVI			: data['rvi'],			# TODO this actually depends in the originator
 				}
@@ -512,7 +619,7 @@ class HttpServer(object):
 			L.isDebug and L.logDebug(f'<== HTTP Response ({result.rsc}):\nHeaders: {str(headers)}\nBody: {origData["pc"]}\n')	# might be different serialization
 		else:
 			L.isDebug and L.logDebug(f'<== HTTP Response ({result.rsc}):\nHeaders: {str(headers)}\n')
-		return Response(response=outResult.data, status=statusCode, content_type=cts, headers=headers)
+		return Response(response = outResult.data, status = statusCode, content_type = cts, headers = headers)
 
 
 	#########################################################################

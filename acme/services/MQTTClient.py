@@ -119,7 +119,7 @@ class MQTTClientHandler(MQTTHandler):
 		
 		# Dissect Body
 		contentType:str = ts[-1]
-		if not (dissectResult := self._dissectMQTTRequest(data, contentType, isResponse=True)).status:
+		if not (dissectResult := dissectMQTTRequest(data, contentType, isResponse=True)).status:
 			return
 		
 		# Add it to a response queue in the manager
@@ -176,7 +176,7 @@ class MQTTClientHandler(MQTTHandler):
 			return
 
 		# dissect and validate request
-		if not (dissectResult := self._dissectMQTTRequest(data, contentType)).status:
+		if not (dissectResult := dissectMQTTRequest(data, contentType)).status:
 			# something went wrong during dissection
 			_logRequest(dissectResult)
 			_sendResponse(dissectResult)
@@ -236,32 +236,7 @@ class MQTTClientHandler(MQTTHandler):
 		# TODO Also change in http
 		responseResult.prepareResultFromRequest(dissectResult.request)	# Add some fields from the original request
 		_sendResponse(responseResult)
-
-
-	def _dissectMQTTRequest(self, data:bytes, contenType:str, isResponse:bool=False) -> Result:
-		"""	Dissect an MQTT request. Return it in `Result.request` .
-		"""
-		cseRequest = CSERequest()
-		cseRequest.originalData = data
-		cseRequest.headers.contentType = contenType.lower()
-
-		# De-Serialize the content
-		if not (contentResult := CSE.request.deserializeContent(cseRequest.originalData, cseRequest.headers.contentType)).status:
-			_, cseRequest.ct = contentResult.data	# type: ignore[assignment] # Actual, .data contains a tuple
-			return Result(rsc=contentResult.rsc, request=cseRequest, dbg=contentResult.dbg, status=False)
-		cseRequest.originalRequest, cseRequest.ct = contentResult.data	# type: ignore[assignment] # Actual, .data contains a tuple
-
-		# Validate the request
-		try:
-			if not (res := CSE.request.fillAndValidateCSERequest(cseRequest, isResponse)).status:
-				#return Result(rsc=res.rsc, request=cseRequest, dbg=res.dbg, status=res.status)
-				return res
-		except Exception as e:
-			import traceback
-			traceback.print_exc()
-			return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'invalid arguments/attributes ({str(e)})', status=False)
-		
-		return res	
+	
 	
 
 
@@ -484,6 +459,32 @@ class MQTTClient(object):
 
 
 ##############################################################################
+
+
+def dissectMQTTRequest(data:bytes, contenType:str, isResponse:bool=False) -> Result:
+	"""	Dissect an MQTT request. Return it in `Result.request` .
+	"""
+	cseRequest = CSERequest()
+	cseRequest.originalData = data
+	cseRequest.headers.contentType = contenType.lower()
+
+	# De-Serialize the content
+	if not (contentResult := CSE.request.deserializeContent(cseRequest.originalData, cseRequest.headers.contentType)).status:
+		_, cseRequest.ct = contentResult.data	# type: ignore[assignment] # Actual, .data contains a tuple
+		return Result(rsc=contentResult.rsc, request=cseRequest, dbg=contentResult.dbg, status=False)
+	cseRequest.originalRequest, cseRequest.ct = contentResult.data	# type: ignore[assignment] # Actual, .data contains a tuple
+
+	# Validate the request
+	try:
+		if not (res := CSE.request.fillAndValidateCSERequest(cseRequest, isResponse)).status:
+			#return Result(rsc=res.rsc, request=cseRequest, dbg=res.dbg, status=res.status)
+			return res
+	except Exception as e:
+		import traceback
+		traceback.print_exc()
+		return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'invalid arguments/attributes ({str(e)})', status=False)
+	
+	return res
 
 
 def prepareMqttRequest(inResult:Result, originator:str=None, ty:T=None, op:Operation=None, isResponse:bool=False, raw:bool=False) -> Result:

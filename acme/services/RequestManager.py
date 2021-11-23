@@ -1084,7 +1084,8 @@ class RequestManager(object):
 				L.logDebug(dbg := 'To/Target parameter is mandatory in request')
 				errorResult = Result(request = cseRequest, rsc = RC.badRequest, dbg = dbg, status = False)
 			else:
-				cseRequest.id, cseRequest.csi, cseRequest.srn =  Utils.retrieveIDFromPath(to, CSE.cseRn, CSE.cseCsi)
+				cseRequest.to = to
+				cseRequest.id, cseRequest.csi, cseRequest.srn = Utils.retrieveIDFromPath(to, CSE.cseRn, CSE.cseCsi)
 
 			# Check identifiers
 			if not isResponse and not cseRequest.id and not cseRequest.srn:
