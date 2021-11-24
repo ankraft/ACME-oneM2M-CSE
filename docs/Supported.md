@@ -65,28 +65,29 @@ The following table presents the supported management object specifications.
 | EventLog (EVL)           |
 | myCertFileCred (NYCFC)   |
 
-## Functions
+## Features
 
 | Functionality                 | Supported | Remark                                                                                    |
 |:------------------------------|:---------:|:------------------------------------------------------------------------------------------|
 | Resource addressing           |  &check;  | *CSE-Relative*, *SP-Relative* and *Absolute* as well as hybrid addressing are supported.  |
 | Standard oneM2M requests      |  &check;  | CREATE, RETRIEVE, UPDATE, DELETE, NOTIFY                                                  |
 | Discovery                     |  &check;  |                                                                                           |
-| Subscriptions                 |  &check;  | incl. batch notification, and resource type and attribute filtering.                      |
+| Subscriptions                 |  &check;  | Incl. batch notification, and resource type and attribute filtering.                      |
 | Notifications                 |  &check;  | E.g. for subscriptions and non-blocking requests.                                         |
 | AE registration               |  &check;  |                                                                                           |
 | Remote CSE registration       |  &check;  |                                                                                           |
 | Resource expiration           |  &check;  |                                                                                           |
-| Resource announcements        |  &check;  | Only one hop is supported at the moment.                                                  |
+| Resource announcements        |  &check;  | Under the CSEBaseAnnc resource                                                            |
 | Resource validations          |  &check;  |                                                                                           |
 | Request parameter validations |  &check;  |                                                                                           |
 | Transit requests              |  &check;  | Forwarding requests from one CSE to another.                                              |
 | Blocking requests             |  &check;  |                                                                                           |
 | Non-blocking requests         |  &check;  | Non-blocking synchronous and asynchronous, and flex-blocking, incl. *Result Persistence*. |
-| TimeSeries data handling      |  &check;  | incl. missing data detection, monitoring and notifications.                               |
-| Long polling                  |  &check;  | Long polling for request unreachable AEs and CSEs.                                        |
+| TimeSeries data handling      |  &check;  | Incl. missing data detection, monitoring and notifications.                               |
+| Long polling                  |  &check;  | Long polling for request unreachable AEs and CSEs through &lt;PollingChannel>.            |
 | Request expiration            |  &check;  | Through the *Request Expiration Timestamp* request attribute                              |
 | Delayed request execution     |  &check;  | Through the *Operation Execution Timestamp* request attribute.                            |
+| Testing: Upper Tester         |  &check;  | Basic support for the Upper Tester protocol defined in TS-0019.                           |
 
 
 ## Result Content Types
@@ -129,6 +130,7 @@ The following Protocol Bindings are supported:
 | http             | &check;   | incl https.                       |
 | coap             | &cross;   |                                   |
 | mqtt             | &check;   | incl. mqtts                       |
+| WebSocket        | &cross;   |                                   |
 
 The supported bindings can be used together, and combined and mixed in any way.
 
@@ -137,7 +139,7 @@ The following serialization types are supported:
 
 | Serialization Type | Supported | Remark                                                                                                       |
 |:-------------------|:---------:|:-------------------------------------------------------------------------------------------------------------|
-| JSON               |  &check;  | In addition to normal JSON syntax, C-style comments ("//...", "#..." and "/* ... */") are supported as well. |
+| JSON               |  &check;  | In addition to normal JSON syntax, C-style comments ("//...", "#..." and "/\* ... \*/") are supported as well. |
 | CBOR               |  &check;  |                                                                                                              |
 | XML                |  &cross;  |                      
 

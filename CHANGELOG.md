@@ -10,10 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased] - xxxx-xx-xx
 ### Added
-- [WEB] Allow to open the WebUI of a registered CSE via the context menu.
 - [CSE] Added *--http-port* command line argument.
+- [CSE] Added initial support for the Upper Tester protocol defined in TS-0019.
+- [WEB] Allow to open the WebUI of a registered CSE via the context menu.
 
 ### Changed
+- [CSE] Adapted Announcements to latest R4 changes. 
 - [CSE] Changed the default release version to 4. Also, the supported and the actual release versions are now fully configurable (in the config file).
 - [CSE] Indicated Release Version must now be the highest value in the list of supported release versions.
 
