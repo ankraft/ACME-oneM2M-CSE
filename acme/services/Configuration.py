@@ -85,124 +85,125 @@ class Configuration(object):
 				#
 
 
-				'cse.type'								: config.get('cse', 'type',								fallback='IN'),		# IN, MN, ASN
-				'cse.spid'								: config.get('cse', 'serviceProviderID',				fallback='acme.example.com'),
-				'cse.csi'								: config.get('cse', 'cseID',							fallback='/id-in'),
-				'cse.ri'								: config.get('cse', 'resourceID',						fallback='id-in'),
-				'cse.rn'								: config.get('cse', 'resourceName',						fallback='cse-in'),
-				'cse.resourcesPath'						: config.get('cse', 'resourcesPath', 					fallback=C.defaultImportDirectory),
-				'cse.expirationDelta'					: config.getint('cse', 'expirationDelta', 				fallback=60*60*24*365),	# 1 year, in seconds
-				'cse.maxExpirationDelta'				: config.getint('cse', 'maxExpirationDelta',			fallback=60*60*24*365*5),	# 5 years, in seconds
-				'cse.requestExpirationDelta'			: config.getfloat('cse', 'requestExpirationDelta',		fallback=10.0),	# 10 seconds
-				'cse.originator'						: config.get('cse', 'originator',						fallback='CAdmin'),
-				'cse.enableRemoteCSE'					: config.getboolean('cse', 'enableRemoteCSE', 			fallback=True),
-				'cse.sortDiscoveredResources'			: config.getboolean('cse', 'sortDiscoveredResources',	fallback=True),
-				'cse.checkExpirationsInterval'			: config.getint('cse', 'checkExpirationsInterval',		fallback=60),		# Seconds
-				'cse.flexBlockingPreference'			: config.get('cse', 'flexBlockingPreference',			fallback='blocking'),
-				'cse.supportedReleaseVersions'			: config.getlist('cse', 'supportedReleaseVersions',		fallback=['2a', '3', '4']), # type: ignore [attr-defined]
-				'cse.releaseVersion'					: config.get('cse', 'releaseVersion',					fallback='4'),
-				'cse.defaultSerialization'				: config.get('cse', 'defaultSerialization',				fallback='json'),
+				'cse.type'								: config.get('cse', 'type',								fallback = 'IN'),		# IN, MN, ASN
+				'cse.spid'								: config.get('cse', 'serviceProviderID',				fallback = 'acme.example.com'),
+				'cse.csi'								: config.get('cse', 'cseID',							fallback = '/id-in'),
+				'cse.ri'								: config.get('cse', 'resourceID',						fallback = 'id-in'),
+				'cse.rn'								: config.get('cse', 'resourceName',						fallback = 'cse-in'),
+				'cse.resourcesPath'						: config.get('cse', 'resourcesPath', 					fallback = C.defaultImportDirectory),
+				'cse.expirationDelta'					: config.getint('cse', 'expirationDelta', 				fallback = 60*60*24*365),	# 1 year, in seconds
+				'cse.maxExpirationDelta'				: config.getint('cse', 'maxExpirationDelta',			fallback = 60*60*24*365*5),	# 5 years, in seconds
+				'cse.requestExpirationDelta'			: config.getfloat('cse', 'requestExpirationDelta',		fallback = 10.0),	# 10 seconds
+				'cse.originator'						: config.get('cse', 'originator',						fallback = 'CAdmin'),
+				'cse.enableRemoteCSE'					: config.getboolean('cse', 'enableRemoteCSE', 			fallback = True),
+				'cse.sortDiscoveredResources'			: config.getboolean('cse', 'sortDiscoveredResources',	fallback = True),
+				'cse.checkExpirationsInterval'			: config.getint('cse', 'checkExpirationsInterval',		fallback = 60),		# Seconds
+				'cse.flexBlockingPreference'			: config.get('cse', 'flexBlockingPreference',			fallback = 'blocking'),
+				'cse.supportedReleaseVersions'			: config.getlist('cse', 'supportedReleaseVersions',		fallback = ['2a', '3', '4']), # type: ignore [attr-defined]
+				'cse.releaseVersion'					: config.get('cse', 'releaseVersion',					fallback = '4'),
+				'cse.defaultSerialization'				: config.get('cse', 'defaultSerialization',				fallback = 'json'),
 
 				#
 				#	CSE Security
 				#
-				'cse.security.enableACPChecks'			: config.getboolean('cse.security', 'enableACPChecks', 	fallback=True),
-				'cse.security.fullAccessAdmin'			: config.getboolean('cse.security', 'fullAccessAdmin', 	fallback=True),
+				'cse.security.enableACPChecks'			: config.getboolean('cse.security', 'enableACPChecks', 	fallback = True),
+				'cse.security.fullAccessAdmin'			: config.getboolean('cse.security', 'fullAccessAdmin', 	fallback = True),
 
 				#
 				#	HTTP Server
 				#
 
-				'http.listenIF'							: config.get('server.http', 'listenIF', 				fallback='127.0.0.1'),
-				'http.port' 							: config.getint('server.http', 'port', 					fallback=8080),
-				'http.root'								: config.get('server.http', 'root', 					fallback=''),
-				'http.address'							: config.get('server.http', 'address', 					fallback='http://127.0.0.1:8080'),
-				'http.enableRemoteConfiguration'		: config.getboolean('server.http', 'enableRemoteConfiguration', fallback=False),
-				'http.enableStructureEndpoint'			: config.getboolean('server.http', 'enableStructureEndpoint', fallback=False),
-				'http.enableResetEndpoint'				: config.getboolean('server.http', 'enableResetEndpoint', fallback=False),
+				'http.listenIF'							: config.get('server.http', 'listenIF', 				fallback = '127.0.0.1'),
+				'http.port' 							: config.getint('server.http', 'port', 					fallback = 8080),
+				'http.root'								: config.get('server.http', 'root', 					fallback = ''),
+				'http.address'							: config.get('server.http', 'address', 					fallback = 'http://127.0.0.1:8080'),
+				'http.enableRemoteConfiguration'		: config.getboolean('server.http', 'enableRemoteConfiguration', fallback = False),
+				'http.enableStructureEndpoint'			: config.getboolean('server.http', 'enableStructureEndpoint', fallback = False),
+				'http.enableResetEndpoint'				: config.getboolean('server.http', 'enableResetEndpoint', fallback = False),
+				'http.enableUpperTesterEndpoint'		: config.getboolean('server.http', 'enableUpperTesterEndpoint', fallback = False),
 
 				#
 				#	HTTP Server Security
 				#
 
-				'http.security.useTLS'					: config.getboolean('server.http.security', 'useTLS', 			fallback=False),
-				'http.security.tlsVersion'				: config.get('server.http.security', 'tlsVersion', 				fallback='auto'),
-				'http.security.verifyCertificate'		: config.getboolean('server.http.security', 'verifyCertificate',fallback=False),
-				'http.security.caCertificateFile'		: config.get('server.http.security', 'caCertificateFile', 		fallback=None),
-				'http.security.caPrivateKeyFile'		: config.get('server.http.security', 'caPrivateKeyFile', 		fallback=None),
+				'http.security.useTLS'					: config.getboolean('server.http.security', 'useTLS', 			fallback = False),
+				'http.security.tlsVersion'				: config.get('server.http.security', 'tlsVersion', 				fallback = 'auto'),
+				'http.security.verifyCertificate'		: config.getboolean('server.http.security', 'verifyCertificate',fallback = False),
+				'http.security.caCertificateFile'		: config.get('server.http.security', 'caCertificateFile', 		fallback = None),
+				'http.security.caPrivateKeyFile'		: config.get('server.http.security', 'caPrivateKeyFile', 		fallback = None),
 
 				#
 				#	MQTT Client
 				#
 
-				'mqtt.enable'							: config.getboolean('client.mqtt', 'enable', 			fallback=False),
-				'mqtt.address'							: config.get('client.mqtt', 'address', 					fallback='127.0.0.1'),
-				'mqtt.port' 							: config.getint('client.mqtt', 'port', 					fallback=None),	# Default will be determined later (s.b.)
-				'mqtt.keepalive' 						: config.getint('client.mqtt', 'keepalive',				fallback=60),
-				'mqtt.listenIF' 						: config.get('client.mqtt', 'listenIF',					fallback='127.0.0.1'),
-				'mqtt.topicPrefix' 						: config.get('client.mqtt', 'topicPrefix',				fallback=''),
-				'mqtt.timeout' 							: config.getfloat('client.mqtt', 'timeout',				fallback=5.0),
+				'mqtt.enable'							: config.getboolean('client.mqtt', 'enable', 			fallback = False),
+				'mqtt.address'							: config.get('client.mqtt', 'address', 					fallback = '127.0.0.1'),
+				'mqtt.port' 							: config.getint('client.mqtt', 'port', 					fallback = None),	# Default will be determined later (s.b.)
+				'mqtt.keepalive' 						: config.getint('client.mqtt', 'keepalive',				fallback = 60),
+				'mqtt.listenIF' 						: config.get('client.mqtt', 'listenIF',					fallback = '127.0.0.1'),
+				'mqtt.topicPrefix' 						: config.get('client.mqtt', 'topicPrefix',				fallback = ''),
+				'mqtt.timeout' 							: config.getfloat('client.mqtt', 'timeout',				fallback = 5.0),
 
 				#
 				#	MQTT Client Security
 				#
 
-				'mqtt.security.useTLS'					: config.getboolean('client.mqtt.security', 'useTLS', 	fallback=False),
-				'mqtt.security.verifyCertificate'		: config.getboolean('client.mqtt.security', 'verifyCertificate', fallback=False),
-				'mqtt.security.caCertificateFile'		: config.get('client.mqtt.security', 'caCertificateFile',fallback=None),
-				'mqtt.security.username'				: config.get('client.mqtt.security', 'username',		fallback=None),
-				'mqtt.security.password' 				: config.get('client.mqtt.security', 'password',		fallback=None),
-				'mqtt.security.allowedCredentialIDs'	: config.getlist('client.mqtt.security', 'allowedCredentialIDs', fallback=[]),	# type: ignore [attr-defined]
+				'mqtt.security.useTLS'					: config.getboolean('client.mqtt.security', 'useTLS', 				fallback = False),
+				'mqtt.security.verifyCertificate'		: config.getboolean('client.mqtt.security', 'verifyCertificate', 	fallback = False),
+				'mqtt.security.caCertificateFile'		: config.get('client.mqtt.security', 'caCertificateFile',			fallback = None),
+				'mqtt.security.username'				: config.get('client.mqtt.security', 'username',					fallback = None),
+				'mqtt.security.password' 				: config.get('client.mqtt.security', 'password',					fallback = None),
+				'mqtt.security.allowedCredentialIDs'	: config.getlist('client.mqtt.security', 'allowedCredentialIDs', 	fallback = []),	# type: ignore [attr-defined]
 
 				#
 				#	Database
 				#
 
-				'db.path'								: config.get('database', 'path', 						fallback=C.defaultDataDirectory),
-				'db.inMemory'							: config.getboolean('database', 'inMemory', 			fallback=False),
-				'db.cacheSize'							: config.getint('database', 'cacheSize', 				fallback=0),		# Default: no caching
-				'db.resetOnStartup' 					: config.getboolean('database', 'resetOnStartup',		fallback=False),
+				'db.path'								: config.get('database', 'path', 						fallback = C.defaultDataDirectory),
+				'db.inMemory'							: config.getboolean('database', 'inMemory', 			fallback = False),
+				'db.cacheSize'							: config.getint('database', 'cacheSize', 				fallback = 0),		# Default: no caching
+				'db.resetOnStartup' 					: config.getboolean('database', 'resetOnStartup',		fallback = False),
 
 				#
 				#	Logging
 				#
 
-				'logging.enableFileLogging'				: config.getboolean('logging', 'enableFileLogging', 	fallback=False),
-				'logging.enableScreenLogging'			: config.getboolean('logging', 'enableScreenLogging', 	fallback=True),
-				'logging.path'							: config.get('logging', 'path', 						fallback=C.defaultLogDirectory),
-				'logging.level'							: config.get('logging', 'level', 						fallback='debug'),
-				'logging.size'							: config.getint('logging', 'size', 						fallback=100000),
-				'logging.count'							: config.getint('logging', 'count', 					fallback=10),		# Number of log files
-				'logging.stackTraceOnError'				: config.getboolean('logging', 'stackTraceOnError',		fallback=True),
-				'logging.enableBindingsLogging'			: config.getboolean('logging', 'enableBindingsLogging',	fallback=False),
+				'logging.enableFileLogging'				: config.getboolean('logging', 'enableFileLogging', 	fallback = False),
+				'logging.enableScreenLogging'			: config.getboolean('logging', 'enableScreenLogging', 	fallback = True),
+				'logging.path'							: config.get('logging', 'path', 						fallback = C.defaultLogDirectory),
+				'logging.level'							: config.get('logging', 'level', 						fallback = 'debug'),
+				'logging.size'							: config.getint('logging', 'size', 						fallback = 100000),
+				'logging.count'							: config.getint('logging', 'count', 					fallback = 10),		# Number of log files
+				'logging.stackTraceOnError'				: config.getboolean('logging', 'stackTraceOnError',		fallback = True),
+				'logging.enableBindingsLogging'			: config.getboolean('logging', 'enableBindingsLogging',	fallback = False),
 
 
 				#
 				#	Registrar CSE
 				#
 
-				'cse.registrar.address'					: config.get('cse.registrar', 'address', 				fallback=None),
-				'cse.registrar.root'					: config.get('cse.registrar', 'root', 					fallback=None),
-				'cse.registrar.csi'						: config.get('cse.registrar', 'cseID', 					fallback=None),
-				'cse.registrar.rn'						: config.get('cse.registrar', 'resourceName', 			fallback=None),
-				'cse.registrar.checkInterval'			: config.getint('cse.registrar', 'checkInterval', 		fallback=30),		# Seconds
-				'cse.registrar.excludeCSRAttributes'	: config.getlist('cse.registrar', 'excludeCSRAttributes',fallback=[]),		# type: ignore [attr-defined]
-				'cse.registrar.serialization'			: config.get('cse.registrar', 'serialization',			fallback='json'),
+				'cse.registrar.address'					: config.get('cse.registrar', 'address', 					fallback = None),
+				'cse.registrar.root'					: config.get('cse.registrar', 'root', 						fallback = None),
+				'cse.registrar.csi'						: config.get('cse.registrar', 'cseID', 						fallback = None),
+				'cse.registrar.rn'						: config.get('cse.registrar', 'resourceName', 				fallback = None),
+				'cse.registrar.checkInterval'			: config.getint('cse.registrar', 'checkInterval', 			fallback = 30),		# Seconds
+				'cse.registrar.excludeCSRAttributes'	: config.getlist('cse.registrar', 'excludeCSRAttributes',	fallback = []),		# type: ignore [attr-defined]
+				'cse.registrar.serialization'			: config.get('cse.registrar', 'serialization',				fallback = 'json'),
 
 				#
 				#	Registrations
 				#
 
-				'cse.registration.allowedAEOriginators'		: config.getlist('cse.registration', 'allowedAEOriginators',	fallback=['C*','S*']),		# type: ignore [attr-defined]
-				'cse.registration.allowedCSROriginators'	: config.getlist('cse.registration', 'allowedCSROriginators',	fallback=[]),				# type: ignore [attr-defined]
-				'cse.registration.checkLiveliness'			: config.getboolean('cse.registration', 'checkLiveliness',		fallback=True),
+				'cse.registration.allowedAEOriginators'		: config.getlist('cse.registration', 'allowedAEOriginators',	fallback = ['C*','S*']),		# type: ignore [attr-defined]
+				'cse.registration.allowedCSROriginators'	: config.getlist('cse.registration', 'allowedCSROriginators',	fallback = []),				# type: ignore [attr-defined]
+				'cse.registration.checkLiveliness'			: config.getboolean('cse.registration', 'checkLiveliness',		fallback = True),
 
 
 				#
 				#	Announcements
 				#
 
-				'cse.announcements.checkInterval'		: config.getint('cse.announcements', 'checkInterval',	fallback=10),
+				'cse.announcements.checkInterval'		: config.getint('cse.announcements', 'checkInterval',	fallback = 10),
 
 
 				#

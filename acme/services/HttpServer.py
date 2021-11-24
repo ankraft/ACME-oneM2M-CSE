@@ -110,7 +110,7 @@ class HttpServer(object):
 			self.addEndpoint(resetEndPoint, handler=self.handleReset, methods=['GET'], strictSlashes=False)
 
 		# Enable the upper tester endpoint
-		if Configuration.get('http.enableUpperTesterEndpoint') or True:
+		if Configuration.get('http.enableUpperTesterEndpoint'):
 			upperTesterEndpoint = f'{self.rootPath}/__ut__'
 			L.isInfo and L.log(f'Registering upper tester endpoint at: {upperTesterEndpoint}')
 			self.addEndpoint(upperTesterEndpoint, handler=self.handleUpperTester, methods=['POST'], strictSlashes=False)
@@ -348,14 +348,12 @@ class HttpServer(object):
 	#########################################################################
 
 	# 
-	#	Upper Tester
+	#	Upper Tester Handler
 	#
 
 	def handleUpperTester(self, path:str=None) -> Response:
 		"""	Handle a Upper Tester request. See TS-0019 for details.
 		"""
-
-		# TODO: make this configurable. See above in the registration. Remove the True
 
 		def prepareUTResponse(rcs:RC) -> Response:
 			"""	Prepare the Upper Tester Response.
@@ -367,73 +365,77 @@ class HttpServer(object):
 
 
 		Utils.renameCurrentThread()
-		L.isDebug and L.logDebug(f'==> Upper Tester Request') 
+		L.isDebug and L.logDebug(f'==> Upper Tester Request:') 
 		L.isDebug and L.logDebug(f'Headers: \n{str(request.headers).rstrip()}')
 		L.isDebug and L.logDebug(f'Body: \n{request.json}')
 
 		# Handle special commands
-		if (cmd := request.headers.get('X-M2M-UT-CMD')) is not None:
+		if (cmd := request.headers.get('X-M2M-UTCMD')) is not None:
 			if cmd.lower() == 'reset':
 				CSE.resetCSE()
 				return prepareUTResponse(RC.OK)
 			return prepareUTResponse(RC.badRequest)
 		
+		L.logWarn('UT functionality is not fully supported.')
+		return prepareUTResponse(RC.badRequest)
+
+		
+		# TODO implement further functionality of Upper Tester spec
+		
 		# Otherwise	process this as a oneM2M request
 
-		if request.content_type != 'application/json':
-			# return Response(response = f'Unsupported Content-Type: {request.content_type}', status = 400)
-			return prepareUTResponse(RC.badRequest)
-		if (jsn := request.json.get('m2m:rqp')) is None:
-			# return Response(response = f'Content is not a request. "m2m:rqp" required', status = 400)
-			return prepareUTResponse(RC.badRequest)
+		# if request.content_type != 'application/json':
+		# 	# return Response(response = f'Unsupported Content-Type: {request.content_type}', status = 400)
+		# 	return prepareUTResponse(RC.badRequest)
+		# if (jsn := request.json.get('m2m:rqp')) is None:
+		# 	# return Response(response = f'Content is not a request. "m2m:rqp" required', status = 400)
+		# 	return prepareUTResponse(RC.badRequest)
 
-		# Dissect and validate
-		if not (dissectResult := dissectMQTTRequest(bytes(json.dumps(jsn), 'utf-8'), ContentSerializationType.JSON.toSimple())).status:
-			return prepareUTResponse(RC.badRequest)
+		# # TODO Add missing but mandatory attributes (like rqi) - just to keep the dissectMQTTRequest
+
+		# # Dissect and validate
+		# if not (dissectResult := dissectMQTTRequest(bytes(json.dumps(jsn), 'utf-8'), ContentSerializationType.JSON.toSimple())).status:
+		# 	return prepareUTResponse(RC.badRequest)
+		# L.logWarn(dissectResult)
+
+		# result = performBatchOperation(dissectResult)
 
 		# Send the request
-		if dissectResult.request.op == Operation.CREATE:
-			result = CSE.request.sendCreateRequest(	uri = dissectResult.request.to, 
-													originator = dissectResult.request.headers.originator, 
-													ct = dissectResult.request.ct,
-													data = dissectResult.request.originalRequest,
-													raw = True)
-		elif dissectResult.request.op == Operation.RETRIEVE:
-			result = CSE.request.sendRetrieveRequest(	uri = dissectResult.request.to, 
-														originator = dissectResult.request.headers.originator, 
-														ct = dissectResult.request.ct,
-														data = dissectResult.request.originalRequest,
-														raw = True)
-		elif dissectResult.request.op == Operation.UPDATE:
-			result = CSE.request.sendUpdateRequest(	uri = dissectResult.request.to, 
-													originator = dissectResult.request.headers.originator, 
-													ct = dissectResult.request.ct,
-													data = dissectResult.request.originalRequest,
-													raw = True)
-		elif dissectResult.request.op == Operation.DELETE:
-			result = CSE.request.sendDeleteRequest(	uri = dissectResult.request.to, 
-													originator = dissectResult.request.headers.originator, 
-													ct = dissectResult.request.ct,
-													data = dissectResult.request.originalRequest,
-													raw = True)
-		elif dissectResult.request.op == Operation.NOTIFY:
-			result = CSE.request.sendNotifyRequest(	uri = dissectResult.request.to, 
-													originator = dissectResult.request.headers.originator, 
-													ct = dissectResult.request.ct,
-													data = dissectResult.request.originalRequest,
-													raw = True)
-		else:
-			result = Result(status = False, rsc = RC.badRequest, dbg = f'Unknown operation')
-			return prepareUTResponse(RC.badRequest)
-
-		return prepareUTResponse(RC.OK)
-
-		# if result.rsc in [RC.OK, RC.created, RC.deleted ]:
-		# 	headers['X-M2M-RSC'] = str(RC.OK.value)
-		# 	return Response(status = 200, headers = headers )
+		# if dissectResult.request.op == Operation.CREATE:
+		# 	result = CSE.request.sendCreateRequest(	uri = dissectResult.request.to, 
+		# 											originator = dissectResult.request.headers.originator, 
+		# 											ct = dissectResult.request.ct,
+		# 											data = dissectResult.request.originalRequest,
+		# 											raw = True)
+		# elif dissectResult.request.op == Operation.RETRIEVE:
+		# 	result = CSE.request.sendRetrieveRequest(	uri = dissectResult.request.to, 
+		# 												originator = dissectResult.request.headers.originator, 
+		# 												ct = dissectResult.request.ct,
+		# 												data = dissectResult.request.originalRequest,
+		# 												raw = True)
+		# elif dissectResult.request.op == Operation.UPDATE:
+		# 	result = CSE.request.sendUpdateRequest(	uri = dissectResult.request.to, 
+		# 											originator = dissectResult.request.headers.originator, 
+		# 											ct = dissectResult.request.ct,
+		# 											data = dissectResult.request.originalRequest,
+		# 											raw = True)
+		# elif dissectResult.request.op == Operation.DELETE:
+		# 	result = CSE.request.sendDeleteRequest(	uri = dissectResult.request.to, 
+		# 											originator = dissectResult.request.headers.originator, 
+		# 											ct = dissectResult.request.ct,
+		# 											data = dissectResult.request.originalRequest,
+		# 											raw = True)
+		# elif dissectResult.request.op == Operation.NOTIFY:
+		# 	result = CSE.request.sendNotifyRequest(	uri = dissectResult.request.to, 
+		# 											originator = dissectResult.request.headers.originator, 
+		# 											ct = dissectResult.request.ct,
+		# 											data = dissectResult.request.originalRequest,
+		# 											raw = True)
 		# else:
-		# 	headers['X-M2M-RSC'] = str(RC.badRequest.value)
-		# 	return Response(status = 400, headers = headers )
+		# 	result = Result(status = False, rsc = RC.badRequest, dbg = f'Unknown operation')
+		# 	return prepareUTResponse(RC.badRequest)
+
+		# return prepareUTResponse(RC.OK)
 	
 
 
@@ -479,6 +481,7 @@ class HttpServer(object):
 			hds = {	'User-Agent'	: self.serverID,
 					'Content-Type' 	: f'{ct.toHeader()}{hty}',
 					'Accept'		: ct.toHeader(),
+					'cache-control'	: 'no-cache',
 					C.hfOrigin	 	: originator,
 					C.hfRI 			: Utils.uniqueRI(),
 					C.hfRVI			: CSE.releaseVersion,			# TODO this actually depends in the originator

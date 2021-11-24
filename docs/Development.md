@@ -7,6 +7,7 @@
 [Developing Nodes and AEs](#developing_nodes_aes)  
 [Running Test Cases](#test_cases)  
 [HTTP Server Remote Configuration Interface](#config_interface)  
+[Upper Tester Support](#upper_tester)  
 [MyPy Static Type Checker](#mypy)  
 
 
@@ -155,7 +156,7 @@ Some test suites (for example *testRemote*) need in addition to a running IN- or
 <a name="config_interface"></a>
 ## HTTP Server Remote Configuration Interface
 
-The http server can register a remote configuration interface (see [enableRemoteConfiguration](Configuration.md#server_http)). This "\_\_config__" endpoint is available under the http server's root. 
+The http server can register a remote configuration interface (see [enableRemoteConfiguration](Configuration.md#server_http)). This "\_\_config\_\_" endpoint is available under the http server's root. 
 
 **ATTENTION: Enabling this feature exposes configuration values, IDs and passwords, and is a security risk.**
 
@@ -188,6 +189,26 @@ Only the following configuration settings can updated by this method yet:
 | cse.req.minet                | Minimum time for &lt;request> resource expiration.                                                                 |
 | cse.req.maxnet               | Maximum time for &lt;request> resource expiration.                                                                 |
 | cse.requestExpirationDelta   | Assign a new value to the *Request Expiration Time* for requests sent by the CSE                                   |
+
+<a name="upper_tester"></a>
+## Upper Tester Support
+
+The CSE has limited support for the *Upper Tester* (UT) test protocol. This protocol is used to trigger a System Under 
+Test to perform certain oneM2M operations and other actions. See oneM2M's TS-0019, *Abstract Test Suite and Implementation
+eXtra Information for Test* specification for further details.
+
+
+To support this feature a special endpoint "\_\_UT\_\_" is available under the server's root. It can be enabled by setting the configuration *[http].enenableUpperTesterEndpoint* in the configuration file to True. See also [enableRemoteConfiguration](Configuration.md#server_http)). 
+
+**ATTENTION: Only use this feature in a controlled environment. Enabling it may lead to a total loss of data because several internal functions and resources are exposed or can be managed without added security.**
+
+### Supported Functions
+
+The *Upper Tester* endpoint only supports a limited set of the functionality specified in TS-0019. The following table presents an overview.
+
+| UT Functionality | Description                                                                                                                                                                                                |
+|------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Reset CSE        | Header field **X-M2M-UTCMD: reset**<br/>Adding this header field in a HTTP request to the endpoint resets the CSE to its initial state. No other function or operation present in the request is executed. |
 
 <a name="mypy"></a>
 ## MyPy Static Type Checker

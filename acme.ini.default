@@ -192,6 +192,12 @@ enableStructureEndpoint=false
 ; ATTENTION: Enabling this feature may lead to a total loss of data.
 ; Default: False
 enableResetEndpoint=false
+; Enable an endpoint for supporting Upper Tester commands to the CSE.
+; This is to support certain testing and certification systems.
+; See oneM2M's TS-0019 for further details.
+; ATTENTION: Enabling this feature may lead to a total loss of data.
+; Default: False
+enableUpperTesterEndpoint=false
 
 
 ;
