@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 import atexit, argparse, os, time, sys
+from threading import Lock
 from typing import Dict, Any
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
@@ -68,6 +69,8 @@ releaseVersion:str								= None
 isHeadless 										= False
 shuttingDown									= False
 
+
+_cseResetLock									= Lock()	# lock for resetting the CSE
 
 
 # TODO move further configurable "constants" here
@@ -229,18 +232,24 @@ def _shutdown() -> None:
 def resetCSE() -> None:
 	""" Reset the CSE: Clear databases and import the resources again.
 	"""
-	L.isWarn and L.logWarn('Resetting CSE started')
-	storage.purge()
+	with _cseResetLock:
+		L.isWarn and L.logWarn('Resetting CSE started')
+		httpServer.pause()
+		mqttClient.pause()
 
-	# The following event is executed synchronously to give every component
-	# a chance to finish
-	event.cseReset()	# type: ignore [attr-defined]   
-	if not importer.doImport():
-		L.logErr('Error during import')
-		sys.exit()	# what else can we do?
-	remote.restart()
-	
-	L.isWarn and L.logWarn('Resetting CSE finished')
+		storage.purge()
+
+		# The following event is executed synchronously to give every component
+		# a chance to finish
+		event.cseReset()	# type: ignore [attr-defined]   
+		if not importer.doImport():
+			L.logErr('Error during import')
+			sys.exit()	# what else can we do?
+		remote.restart()
+		mqttClient.unpause()
+		httpServer.unpause()
+
+		L.isWarn and L.logWarn('Resetting CSE finished')
 
 
 def run() -> None:

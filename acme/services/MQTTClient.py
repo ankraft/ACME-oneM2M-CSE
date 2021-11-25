@@ -289,6 +289,20 @@ class MQTTClient(object):
 		return True
 	
 
+	def pause(self) -> None:
+		"""	Stop handling requests.
+		"""
+		L.isInfo and L.log('MqttClient paused')
+		self.isStopped = True
+		
+	
+	def unpause(self) -> None:
+		"""	Continue handling requests.
+		"""
+		L.isInfo and L.log('MqttClient unpaused')
+		self.isStopped = False
+
+
 	#
 	#	Additional methods
 	#

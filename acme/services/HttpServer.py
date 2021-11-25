@@ -147,7 +147,21 @@ class HttpServer(object):
 		L.isInfo and L.log('HttpServer shut down')
 		self.isStopped = True
 		return True
+	
+
+	def pause(self) -> None:
+		"""	Stop handling requests.
+		"""
+		L.isInfo and L.log('HttpServer paused')
+		self.isStopped = True
 		
+	
+	def unpause(self) -> None:
+		"""	Continue handling requests.
+		"""
+		L.isInfo and L.log('HttpServer unpaused')
+		self.isStopped = False
+
 	
 	def _run(self) -> None:
 		WSGIRequestHandler.protocol_version = "HTTP/1.1"
@@ -255,6 +269,8 @@ class HttpServer(object):
 
 	# Handle requests to mapped paths
 	def requestRedirect(self, path:str=None) -> Response:
+		if self.isStopped:
+			return Response('Service not available', status=503)
 		path = request.path[len(self.rootPath):] if request.path.startswith(self.rootPath) else request.path
 		if path in self.mappings:
 			L.isDebug and L.logDebug(f'==> Redirecting to: /{path}')
@@ -273,12 +289,16 @@ class HttpServer(object):
 	def redirectRoot(self) -> Response:
 		"""	Redirect a request to the webroot to the web UI.
 		"""
+		if self.isStopped:
+			return Response('Service not available', status=503)
 		return flask.redirect(self.webuiRoot, code=302)
 
 
 	def getVersion(self) -> Response:
 		"""	Handle a GET request to return the CSE version.
 		"""
+		if self.isStopped:
+			return Response('Service not available', status=503)
 		return Response(C.version, headers=self._responseHeaders)
 
 
@@ -287,6 +307,8 @@ class HttpServer(object):
 			configuration value, or a PUT request to set a new value to a configuration setting.
 			Note, that only a few of configuration settings are supported.
 		"""
+		if self.isStopped:
+			return Response('Service not available', status=503)
 
 		def _r(r:str) -> Response:	# just construct a response. Trying to reduce the clutter here
 			return Response(r, headers=self._responseHeaders)
@@ -330,6 +352,8 @@ class HttpServer(object):
 			and registrar / registree deployment.
 			An optional parameter 'lvl=<int>' can limit the generated resource tree's depth.
 		"""
+		if self.isStopped:
+			return Response('Service not available', status=503)
 		lvl = request.args.get('lvl', default=0, type=int)
 		if path == 'puml':
 			return Response(response=CSE.statistics.getStructurePuml(lvl), headers=self._responseHeaders)
@@ -341,6 +365,8 @@ class HttpServer(object):
 	def handleReset(self, path:str=None) -> Response:
 		"""	Handle a CSE reset request.
 		"""
+		if self.isStopped:
+			return Response('Service not available', status=503)
 		CSE.resetCSE()
 		return Response(response='', status=200)
 
@@ -354,6 +380,8 @@ class HttpServer(object):
 	def handleUpperTester(self, path:str=None) -> Response:
 		"""	Handle a Upper Tester request. See TS-0019 for details.
 		"""
+		if self.isStopped:
+			return Response('Service not available', status=503)
 
 		def prepareUTResponse(rcs:RC) -> Response:
 			"""	Prepare the Upper Tester Response.

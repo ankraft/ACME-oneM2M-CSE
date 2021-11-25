@@ -57,7 +57,7 @@ class Storage(object):
 		
 		# Check validity
 		if not self.dbReset and not self._validateDB():
-			raise RuntimeError('DB error')
+			raise RuntimeError('DB error. Please check or remove database files.')
 		
 		# Make backup *after* validation, only when *not* reset
 		if not self.inMemory and not self.dbReset and not self._backupDB():
