@@ -89,7 +89,6 @@ class EventManager(object):
 
 	def shutdown(self) -> bool:
 		self._running = False
-		self.removeAllEvents()
 		return True
 
 	#########################################################################
