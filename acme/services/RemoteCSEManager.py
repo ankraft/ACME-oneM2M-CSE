@@ -520,7 +520,7 @@ class RemoteCSEManager(object):
 			return Result(status=False, rsc=RC.notFound, dbg=f'URL not found for id: {id}')
 		if not originator:
 			originator = CSE.cseCsi
-		L.isDebug and L.logDebug(f'Retrieve remote resource from: {url}')
+		L.isDebug and L.logDebug(f'Retrieve remote resource id: {id} url: {url}')
 		res = CSE.request.sendRetrieveRequest(url, originator)	## todo
 		if not res.status or res.rsc != RC.OK:
 			return res.errorResult()
@@ -537,19 +537,38 @@ class RemoteCSEManager(object):
 	def getCSRFromPath(self, id:str) -> Tuple[Resource, List[str]]:
 		"""	Try to get a CSR even from a longer path (only the first 2 path elements are relevant). 
 
+			If no direct CSR could be found then that CSR is returned where the addressed csi is a descendant.
+
 			Returns a tuple (csr resource, list of path elements), or (None, None) in case of an error).
 		"""
+
+		def getCSRWithDescendant(csi:str) -> Resource:
+			# L.logWarn(self.descendantCSR)
+			t = self.descendantCSR.get(csi)
+			
+			if t and t[0]:
+				return t[0]		# already a CSR resource
+			if t and t[1]:
+				return getCSRWithDescendant(t[1]) # indirect, need further step
+			return None
+
 		if not id:
 			return None, None
 		ids = id.split('/')
 		# L.isDebug and L.logDebug(f'CSR ids: {ids}')
 		if Utils.isSPRelative(id):
-			resource = CSE.dispatcher.retrieveLocalResource(ri=ids[1]).resource
+			ri = ids[1]
 		elif Utils.isAbsolute(id):
-			resource = CSE.dispatcher.retrieveLocalResource(ri=ids[2]).resource
+			ri = ids[2]
 		else:
-			resource = CSE.dispatcher.retrieveLocalResource(ri=id).resource
-		return resource, ids
+			ri = id
+
+		if not (res := CSE.dispatcher.retrieveLocalResource(ri=ri)).status:
+			csr = getCSRWithDescendant(f'/{ri}')
+		else:
+			csr = res.resource
+		# L.logWarn(csr)
+		return csr, ids
 
 
 	#########################################################################

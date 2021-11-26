@@ -68,6 +68,7 @@ class Storage(object):
 
 	def shutdown(self) -> bool:
 		self.db.closeDB()
+		self.db = None
 		L.isInfo and L.log('Storage shut down')
 		return True
 
@@ -418,12 +419,18 @@ class TinyDBBinding(object):
 
 	def closeDB(self) -> None:
 		L.isInfo and L.log('Closing DBs')
-		self.dbResources.close()
-		self.dbIdentifiers.close()
-		self.dbSubscriptions.close()
-		self.dbBatchNotifications.close()
-		self.dbStatistics.close()
-		self.dbAppData.close()
+		with self.lockResources:
+			self.dbResources.close()
+		with self.lockIdentifiers:
+			self.dbIdentifiers.close()
+		with self.lockSubscriptions:
+			self.dbSubscriptions.close()
+		with self.lockBatchNotifications:
+			self.dbBatchNotifications.close()
+		with self.lockStatistics:
+			self.dbStatistics.close()
+		with self.lockAppData:
+			self.dbAppData.close()
 
 
 	def purgeDB(self) -> None:

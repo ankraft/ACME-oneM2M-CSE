@@ -18,9 +18,11 @@ from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources import Factory as Factory
 
 
-# TODO periodicIntervalDelta missing in TS-0004? Shortname for validation
 # TODO periodicIntervalDelta default
 
+
+# CSE default:
+#	- peid is set to pei/2 if ommitted, and pei is set
 
 class TS(AnnounceableResource):
 
@@ -66,15 +68,17 @@ class TS(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.TS, dct, pi, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.TS, dct, pi, create = create)
 
-		self.setAttribute('cni', 0, overwrite=False)
-		self.setAttribute('cbs', 0, overwrite=False)
+		self.setAttribute('mdd', True, overwrite = False)	# Default is False if not provided
+
+		self.setAttribute('cni', 0, overwrite = False)
+		self.setAttribute('cbs', 0, overwrite = False)
 		if Configuration.get('cse.ts.enableLimits'):	# Only when limits are enabled
-			self.setAttribute('mni', Configuration.get('cse.ts.mni'), overwrite=False)
-			self.setAttribute('mbs', Configuration.get('cse.ts.mbs'), overwrite=False)
-			self.setAttribute('mdn', Configuration.get('cse.ts.mdn'), overwrite=False)
+			self.setAttribute('mni', Configuration.get('cse.ts.mni'), overwrite = False)
+			self.setAttribute('mbs', Configuration.get('cse.ts.mbs'), overwrite = False)
+			self.setAttribute('mdn', Configuration.get('cse.ts.mdn'), overwrite = False)
 
 		self.__validating = False	# semaphore for validating
 
@@ -87,17 +91,17 @@ class TS(AnnounceableResource):
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		resource = Factory.resourceFromDict({}, pi=self.ri, ty=T.TS_LA).resource	# rn is assigned by resource itself
+		resource = Factory.resourceFromDict({}, pi = self.ri, ty = T.TS_LA).resource	# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createResource(resource)).resource:
-			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
 
 		# add oldest
-		resource = Factory.resourceFromDict({}, pi=self.ri, ty=T.TS_OL).resource	# rn is assigned by resource itself
+		resource = Factory.resourceFromDict({}, pi = self.ri, ty = T.TS_OL).resource	# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createResource(resource)).resource:
-			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
 		
 		self._validateDataDetect()
-		return Result(status=True)
+		return Result(status = True)
 
 
 	def deactivate(self, originator:str) -> None:
@@ -105,14 +109,40 @@ class TS(AnnounceableResource):
 		CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 
 
-	def update(self, dct:JSON=None, originator:str=None) -> Result:
+	def update(self, dct:JSON = None, originator:str = None) -> Result:
 		if not (res := super().update(dct, originator)).status:
 			return res
-		self._validateDataDetect(dct)
-		return res
+		# TODO necessary? self._validateDataDetect(dct)
+
+		# Extra checks if mdd is present in an update
+		updatedAttributes = Utils.findXPath(dct, 'm2m:ts')
+		if mddNew := updatedAttributes.get('mdd') is not None:
+			if any(key in ['mdt', 'mdn', 'peid', 'pei'] for key in updatedAttributes.keys()):
+				L.isDebug and L.logDebug(dbg := 'mdd must not be updated together with mdt, mdn, pei or peid.')
+				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+			if mddNew == True:
+				self.setAttribute('mdlt', [])
+				self.setAttribute('mdc', 0)
+				#CSE.timeSeries.restartTimeSeries() # TODO
+			else:
+				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
+
+
+# If the current value of missingDataDetect is true the Hosting CSE shall return the response primitive with a Response Status Code indicating “BAD_REQUEST” 
+# if any of the following attributes are present in the UPDATE request: missingDataDetectTimer, missingDataMaxNr, periodicIntervalDelta, periodicInterval.
+
+# If the Originator provides a value for periodicInterval the Hosting CSE shall check that the periodicIntervalDelta has a value less than or equal to (periodicInterval/2), 
+# if not the Hosting CSE shall return the response primitive with a Response Status Code indicating “BAD_REQUEST”. 
+# If the Originator provides a value for periodicInterval and does not set the periodicIntervalDelta, the Hosting CSE shall set the periodicIntervalDelta according to local policy.
+
+# If missingDataDetect is set to true 
+# The Hosting CSE shall check that the value of missingDataDetectTimer attribute is greater than periodicIntervalDelta and if not the Hosting CSE shall return t
+# he response primitive with a Response Status Code indicating “BAD_REQUEST”.
+
+		return (Result(status = True))
 
  
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
 		L.isDebug and L.logDebug(f'Validating timeSeries: {self.ri}')
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
@@ -124,12 +154,17 @@ class TS(AnnounceableResource):
 
 		# Check peid
 		if self.peid is not None and self.pei is not None:	# pei(d) is an int
-			if self.peid > self.pei/2:
-				L.logWarn(dbg := 'peid must be <= pei/2')
+			if not self.peid <= self.pei/2:	# complicated, but reflects the text in the spec
+				L.isDebug and L.logDebug(dbg := 'peid must be <= pei/2')
 				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 		elif self.pei is not None:	# pei is an int
-			self.setAttribute('peid', int(self.pei/2), False)
-
+			self.setAttribute('peid', int(self.pei/2), False)	# CSE internal policy
+		
+		# Check MDT
+		if self.mdd and self.mdt is not None and self.peid is not None and self.mdt <= self.peid:
+			L.isDebug and L.logDebug(dbg := 'mdt must be > peid')
+			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+		
 		self._validateChildren()
 		return Result(status=True)
 

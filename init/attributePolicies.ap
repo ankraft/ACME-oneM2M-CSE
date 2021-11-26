@@ -1414,9 +1414,9 @@
 			"lname": "missingDataDetect",
 			"ns": "m2m",
 			"type": "boolean",
-			"car": "01",
+			"car": "1",
 			"oc": "O",
-			"ou": "NP",
+			"ou": "O",
 			"od": "O",
 			"annc": "NA"
 		}
@@ -1949,7 +1949,7 @@
 			"type": "positiveInteger",
 			"car": "01",
 			"oc": "O",
-			"ou": "NP",
+			"ou": "O",
 			"od": "O",
 			"annc": "OA"
 		}

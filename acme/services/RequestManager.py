@@ -732,7 +732,7 @@ class RequestManager(object):
 	def sendRetrieveRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False, id:str=None) -> Result:
 		"""	Send a RETRIEVE request via the appropriate channel or transport protocol.
 		"""
-		L.isDebug and L.logDebug(f'Sending RETRIEVE request to: {uri}{appendID}')
+		L.isDebug and L.logDebug(f'Sending RETRIEVE request to: {uri} id: {appendID}')
 
 		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID=appendID, permission=Permission.RETRIEVE, raw=raw):
 
@@ -780,7 +780,7 @@ class RequestManager(object):
 	def sendCreateRequest(self, uri:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False, id:str=None) -> Result:
 		"""	Send a CREATE request via the appropriate channel or transport protocol.
 		"""
-		L.isDebug and L.logDebug(f'Sending CREATE request to: {uri}{appendID}')
+		L.isDebug and L.logDebug(f'Sending CREATE request to: {uri} id: {appendID}')
 
 		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID=appendID, originator=originator, permission=Permission.CREATE, raw=raw):
 
@@ -834,16 +834,16 @@ class RequestManager(object):
 	def sendUpdateRequest(self, uri:str, originator:str, data:Any, parameters:Parameters=None, ct:ContentSerializationType = None, targetResource:Resource = None, targetOriginator:str = None, appendID:str = '', raw:bool = False, id:str = None) -> Result:
 		"""	Send an UPDATE request via the appropriate channel or transport protocol.
 		"""
-		L.isDebug and L.logDebug(f'Sending UPDATE request to: {uri}{appendID}')
+		L.isDebug and L.logDebug(f'Sending UPDATE request to: {uri} id: {appendID}')
 
-		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID=appendID, originator=originator, permission=Permission.UPDATE, raw=raw):
+		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID = appendID, originator = originator, permission = Permission.UPDATE, raw = raw):
 
 			# Send the request via a PCH, if present
 			if pch:
 				if isinstance(data, CSERequest):
-					request = self.queueRequestForPCH(pch.getOriginator(), Operation.UPDATE, parameters=parameters, request=data, originator=originator)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.UPDATE, parameters = parameters, request = data, originator = originator)
 				else:
-					request = self.queueRequestForPCH(pch.getOriginator(), Operation.UPDATE, parameters=parameters, data=data, originator=originator)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.UPDATE, parameters = parameters, data = data, originator = originator)
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
@@ -856,25 +856,25 @@ class RequestManager(object):
 				return CSE.httpServer.sendHttpRequest(Operation.UPDATE,
 													  url,
 													  originator,
-													  data=data,
-													  parameters=parameters,
-													  ct=ct,
-													  targetResource=targetResource,
-													  targetOriginator=targetOriginator,
-													  raw=raw,
-													  id=id)
+													  data = data,
+													  parameters = parameters,
+													  ct = ct,
+													  targetResource = targetResource,
+													  targetOriginator = targetOriginator,
+													  raw = raw,
+													  id = id)
 			elif Utils.isMQTTUrl(url):
 				CSE.event.mqttSendUpdate()	# type: ignore [attr-defined]
 				return CSE.mqttClient.sendMqttRequest(Operation.UPDATE,
 													  url,
 													  originator,
-													  data=data,
-													  parameters=parameters,
-													  ct=ct,
-													  targetResource=targetResource,
-													  targetOriginator=targetOriginator,
-													  raw=raw,
-													  id=id)
+													  data = data,
+													  parameters = parameters,
+													  ct = ct,
+													  targetResource = targetResource,
+													  targetOriginator = targetOriginator,
+													  raw = raw,
+													  id = id)
 			L.logWarn(dbg := f'unsupported url scheme: {url}')
 			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 		
@@ -884,7 +884,7 @@ class RequestManager(object):
 	def sendDeleteRequest(self, uri:str, originator:str, data:Any = None, parameters:Parameters = None, ct:ContentSerializationType = None, targetResource:Resource = None, targetOriginator:str = None, appendID:str = '', raw:bool = False, id:str = None) -> Result:
 		"""	Send a DELETE request via the appropriate channel or transport protocol.
 		"""
-		L.isDebug and L.logDebug(f'Sending DELETE request to: {uri}{appendID}')
+		L.isDebug and L.logDebug(f'Sending DELETE request to: {uri} id: {appendID}')
 
 		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID=appendID, originator=originator, permission=Permission.DELETE, raw=raw):
 
@@ -931,7 +931,7 @@ class RequestManager(object):
 	def sendNotifyRequest(self, uri:str, originator:str, data:Any = None, parameters:Parameters = None, ct:ContentSerializationType = None, targetResource:Resource = None, targetOriginator:str = None, appendID:str = '', noAccessIsError:bool = False, raw:bool = False, id:str = None) -> Result:
 		"""	Send a NOTIFY request via the appropriate channel or transport protocol.
 		"""
-		L.isDebug and L.logDebug(f'Sending NOTIFY request to: {uri}{appendID} for Originator: {originator}, targetOriginator: {targetOriginator}, targetResource: {targetResource}')
+		L.isDebug and L.logDebug(f'Sending NOTIFY request to: {uri} id: {appendID} for Originator: {originator}, targetOriginator: {targetOriginator}, targetResource: {targetResource}')
 
 		if (resolved := self.resolveSingleUriCszTo(uri, appendID=appendID, originator=originator, permission=Permission.NOTIFY, noAccessIsError=noAccessIsError, raw=raw)) is None:
 			return Result(status=False)
@@ -994,24 +994,24 @@ class RequestManager(object):
 			If successful then the Result.data contains a tuple (dict, contentType)
 		"""
 		dct = None
-		ct = ContentSerializationType.getType(mediaType, default=CSE.defaultSerialization)
+		ct = ContentSerializationType.getType(mediaType, default = CSE.defaultSerialization)
 		if data:
 			try:
 				if (dct := RequestUtils.deserializeData(data, ct)) is None:
-					return Result(rsc=RC.unsupportedMediaType, dbg=f'Unsupported media type for content-type: {ct.name}', status=False, data=(None, ct))
+					return Result(rsc = RC.unsupportedMediaType, dbg = f'Unsupported media type for content-type: {ct.name}', status = False, data = (None, ct))
 			except Exception as e:
 				L.isWarn and L.logWarn('Bad request (malformed content?)')
-				return Result(rsc=RC.badRequest, dbg=f'Malformed content? {str(e)}', status=False, data=(None, ct))
+				return Result(rsc = RC.badRequest, dbg = f'Malformed content? {str(e)}', status = False, data = (None, ct))
 		
-		return Result(status=True, data=(dct, ct))
+		return Result(status = True, data = (dct, ct))
 
 
 
-	def fillAndValidateCSERequest(self, cseRequest:CSERequest, isResponse:bool=False) -> Result:
+	def fillAndValidateCSERequest(self, cseRequest:CSERequest, isResponse:bool = False) -> Result:
 		"""	Fill a `cseRequest` object according to its request structure in the *req* attribute.
 		"""
 
-		def gget(dct:dict, attribute:str, default:Any=None, attributeType:BasicType=None, greedy:bool=True) -> Any:
+		def gget(dct:dict, attribute:str, default:Any = None, attributeType:BasicType = None, greedy:bool = True) -> Any:
 			"""	Local helper to greedy check and return a key/value from a dictionary.
 
 				If `dct` is None or `attribute` couldn't be found then the `default` is returned.
@@ -1339,8 +1339,10 @@ class RequestManager(object):
 
 		targetResource = None
 		if Utils.isSPRelative(uri) or Utils.isAbsolute(uri):
-			targetResource = CSE.remote.getCSRFromPath(uri)[0]
+			if (t := CSE.remote.getCSRFromPath(uri)):
+				targetResource, _ = t
 			# L.logWarn(targetResource)
+
 		# The uri is an indirect resource with poa, retrieve one or more URIs from it
 		if not targetResource and not (targetResource := CSE.dispatcher.retrieveResource(uri).resource):
 			L.isWarn and L.logWarn(f'Resource not found to get URL: {uri}')
@@ -1383,6 +1385,8 @@ class RequestManager(object):
 				targetOriginator = targetResource.csi
 
 		for p in targetResource.poa:
+			if Utils.isHttpUrl(p) and p[-1] != '/':	# Special handling for http urls
+				p += '/'
 			result.append( (f'{p}{appendID}', targetResource.csz, targetOriginator, None) )
 		# L.logWarn(result)
 		return result

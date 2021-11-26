@@ -62,13 +62,13 @@ class SecurityManager(object):
 		#  Do or ignore the check
 		if not self.enableACPChecks:
 			return True
+		# L.logWarn(ty)
 		
 		# grant full access to the CSE originator
-		if originator is None or originator == CSE.cseOriginator and self.fullAccessAdmin:
+		if originator is None or originator == CSE.cseOriginator or originator.endswith(f'/{CSE.cseOriginator}') and self.fullAccessAdmin:
 			L.isDebug and L.logDebug('Request from CSE Originator. OK.')
 			return True
-		
-
+	
 		if ty is not None:	# ty is an int
 			# Special tests for some types
 
@@ -89,19 +89,26 @@ class SecurityManager(object):
 				else:
 					L.isWarn and L.logWarn('Originator for CSR/CSEBaseAnnc CREATE not found.')
 					return False
-			
+
 			if T(ty).isAnnounced():
-				if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators) or originator[1:] == parentResource.ri:
+				if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators) or (parentResource and originator[1:] == parentResource.ri):
 					L.isDebug and L.logDebug('Originator for Announcement. OK.')
 					return True
 				else:
 					L.isWarn and L.logWarn('Originator for Announcement not found.')
 					return False
-
+			
 		# Check for resource == None
 		if not resource:
 			L.logErr('Resource must not be None')
 			return False
+
+		# Allow 
+		if T(resource.ty).isAnnounced():
+			if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators) and resource.lnk.startswith(f'{originator}/'):
+				L.isDebug and L.logDebug('Announcement Originator. OK.')
+				return True
+
 
 		# Allow some Originators to RETRIEVE the CSEBase
 		if resource.ty == T.CSEBase and requestedPermission & Permission.RETRIEVE:
@@ -135,7 +142,7 @@ class SecurityManager(object):
 			L.isWarn and L.logWarn('RequestedPermission must not be None, and between 0 and 63')
 			return False
 
-		L.isDebug and L.logDebug(f'Checking permission for originator: {originator}, ri: {resource.ri}, permission: {requestedPermission}, selfPrivileges: {checkSelf}')
+		L.isDebug and L.logDebug(f'Permission check originator: {originator} ri: {resource.ri} permission: {requestedPermission} selfPrivileges: {checkSelf}')
 		# L.logWarn(resource)
 
 		if resource.ty == T.GRP: # target is a group resource
@@ -261,12 +268,14 @@ class SecurityManager(object):
 		""" Check whether an Originator is in the provided list of allowed 
 			originators. This list may contain regex.
 		"""
-		# if L.isDebug: L.logDebug(f'Originator: {originator}')
-		# if L.isDebug: L.logDebug(f'Allowed originators: {allowedOriginators}')
+		if L.isDebug: L.logDebug(f'Originator: {originator}')
+		if L.isDebug: L.logDebug(f'Allowed originators: {allowedOriginators}')
 
 		if not originator or not allowedOriginators:
 			return False
 		_id = Utils.getIdFromOriginator(originator)
+		if L.isDebug: L.logDebug(f'ID: {_id}')
+
 		for ao in allowedOriginators:
 			if TextTools.simpleMatch(_id, ao):
 				return True

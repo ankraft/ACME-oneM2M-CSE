@@ -492,11 +492,10 @@ class HttpServer(object):
 		
 			The result is returned in *Result.data*.
 		"""
-		
 		# Set the request method
 		method:Callable = self.operation2method[operation]
 
-		# Make the URL a valid http URL (escpe // and ///)
+		# Make the URL a valid http URL (escape // and ///)
 		url = RequestUtils.toHttpUrl(url)
 
 		# get the serialization

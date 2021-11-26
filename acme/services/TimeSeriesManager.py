@@ -163,7 +163,7 @@ class TimeSeriesManager(object):
 
 
 	def stopMonitoringTimeSeries(self, tsRi:str) -> bool:
-		"""	Remove a timeSeries from monitoring.
+		"""	Remove a timeSeries from monitoring. No other attributes are updated.
 		"""
 		L.isDebug and L.logDebug(f'Remove <ts> from monitoring: {tsRi}')
 		if tsRi in runningTimeserieses:

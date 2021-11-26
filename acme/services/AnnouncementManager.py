@@ -11,6 +11,7 @@ from __future__ import annotations
 import time
 from copy import deepcopy
 from typing import Optional, Tuple, List, cast
+import typing_extensions
 from ..etc import Utils as Utils
 from ..etc.Types import ResourceTypes as T, ResponseStatusCode as RC, JSON, Result
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
@@ -143,23 +144,30 @@ class AnnouncementManager(object):
 				L.isWarn and L.logWarn('Targeting own CSE. Ignored.')
 				self._removeAnnouncementFromResource(resource, at)
 				continue
-			if not (csr := Utils.resourceFromCSI(at).resource):
-				L.isWarn and L.logWarn('Announcement Target CSE not found. Ignored.')
-				self._removeAnnouncementFromResource(resource, at)
-				continue
-			self.announceResourceToCSR(resource, csr)	# ignore result
+			self.announceResourceToCSI(resource, at)	# ignore result
 		return Result(status=True)
 
 
-	def announceResourceToCSR(self, resource:AnnounceableResource, remoteCSR:Resource) -> Result:
+	def announceResourceToCSI(self, resource:AnnounceableResource, csi:str) -> Result:
 		"""	Announce a resource to a specific CSR.
 		"""
 		# TODO direct URL
 
-		# retrieve the csi & poas for the remote CSR
-		csi, poas = self._getCsiPoaForRemoteCSR(remoteCSR)
+		def checkCSEBaseAnnouncement(cseBase:Resource) -> Result:
+			if t := self._announcedInfos(cseBase, csi):
+				# CSEBase has "old" announcement infos
+				if CSE.dispatcher.retrieveResource(f'{csi}/{t[1]}', CSE.cseCsi).rsc != RC.OK:	# Not a local resource
+					# No, it's not there anymore -> announce it again.
+					self._removeAnnouncementFromResource(cseBase, csi)
+					# announce CSE recursively
+					if not (res := self.announceResourceToCSI(cseBase, csi)).status:	# Don't ignore result for this one
+						return res
+			else:
+				# No internal announcement infos, announce it
+				if not (res := self.announceResourceToCSI(parentResource, csi)).status:	# Don't ignore result for this one
+					return res
+			return Result(status = True)
 
-		# TODO: multi-hop announcement
 
 		L.isDebug and L.logDebug(f'Announce resource: {resource.ri} to: {csi}')
 		if self._isResourceAnnouncedTo(resource, csi):
@@ -167,14 +175,11 @@ class AnnouncementManager(object):
 			return Result(status=True)
 
 		# Create announced resource & type
-		data = resource.createAnnouncedResourceDict(remoteCSR, isCreate=True, csi=csi)
+		data = resource.createAnnouncedResourceDict(isCreate = True)
 		tyAnnc = T(resource.ty).announced()
-		targetUri = csi
+		targetID = ''
 
-		if resource.ty == T.CSEBase:
-			targetID = csi
-
-		else:
+		if resource.ty != T.CSEBase:	# CSEBase is just announced below
 			if not (at := resource.at):
 				L.isWarn and L.logWarn('at attribute is empty')
 				return Result(status=True)	# Not much to do here
@@ -184,39 +189,51 @@ class AnnouncementManager(object):
 				L.logErr(dbg := f'Cannot retrieve parent. Announcement not possible: {res.dbg}')
 				return Result(status=False, rsc=RC.internalServerError, dbg=dbg)
 			
-			parentResoure = res.resource
-			if not self._isResourceAnnouncedTo(parentResoure, csi):
-				# parent resource is not announced -> announce the resource directly under the CSEBaseAnnc
+			parentResource = res.resource
 
-				# Don't allow instances to be announced without their parents
-				if resource.ty in [T.CIN, T.FCI, T.TSI]:
-					L.logDebug(dbg := 'Announcing instances without their parents is not allowed')
-					return Result(status=False, rsc=RC.operationNotAllowed, dbg=dbg)
+			# For announcing the CSEBase we want to take some extra care and check whether it really
+			# is available at the remote CSE. It could have been removed (expiration, restart, ...) and
+			# this may not be reflected
+			if parentResource.ty == T.CSEBase:
+				if not (res := checkCSEBaseAnnouncement(parentResource)).status:
+					return res
+	
+			else:	# parent is not a CSEBase
+				if not self._isResourceAnnouncedTo(parentResource, csi):
+					# parent resource is not announced -> announce the resource directly under the CSEBaseAnnc
 
-				# Whatever the parent resource is, check whether the CSEBase has been announced. Announce it if necessay
-				parentResoure = Utils.getCSE().resource
-				if not self._isResourceAnnouncedTo(parentResoure, csi):
-					# announce CSE recursively
-					if not (res := self.announceResourceToCSR(parentResoure, remoteCSR)).status:	# Don't ignore result for this one
+					# Don't allow instances to be announced without their parents
+					if resource.ty in [T.CIN, T.FCI, T.TSI]:
+						L.logDebug(dbg := 'Announcing instances without their parents is not allowed')
+						return Result(status=False, rsc=RC.operationNotAllowed, dbg=dbg)
+
+					# Whatever the parent resource is, check whether the CSEBase has been announced. Announce it if necessay
+					if not (res := checkCSEBaseAnnouncement(Utils.getCSE().resource)).status:
 						return res
-				
-				# ... then continue with normale announcement of the resource. The parent for the announcement is now the CSEBase
+
+					# if not self._isResourceAnnouncedTo(parentResource, csi):
+					# 	# announce CSE recursively
+					# 	if not (res := self.announceResourceToCSI(parentResource, csi)).status:	# Don't ignore result for this one
+					# 		return res
+					
+					# ... then continue with normale announcement of the resource. The parent for the announcement is now the CSEBase
 				
 			# parent resource is announced -> Announce the resource under the parent resource Annc
-			if not (at := self._announcedInfos(parentResoure, csi)):
-				L.logWarn(dbg := f'No announcement for parent resource: {parentResoure.ri} to: {csi}')
+			if not (at := self._announcedInfos(parentResource, csi)):
+				L.logWarn(dbg := f'No announcement for parent resource: {parentResource.ri} to: {csi}')
 				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
 			targetID = f'/{at[1]}'
 
 		# Create the announed resource on the remote CSE
-		L.isDebug and L.logDebug(f'Creating announced resource at: {targetUri} ID: {targetID}')	
-		res = CSE.request.sendCreateRequest(targetUri, CSE.cseCsi, appendID=targetID, ty=tyAnnc, data=data)
+		spRi = f'{csi}{targetID}'
+		L.isDebug and L.logDebug(f'Creating announced resource at: {csi} ID: {spRi}')	
+		res = CSE.request.sendCreateRequest(csi, CSE.cseCsi, appendID = spRi, ty = tyAnnc, data = data)
 		if res.rsc not in [ RC.created, RC.OK ]:
 			if res.rsc != RC.alreadyExists:	# assume that it is ok if the remote resource already exists 
 				L.logDebug(dbg := f'Error creating remote announced resource: {int(res.rsc)} ({res.dbg})')
-				return Result(status=False, rsc=res.rsc, dbg=dbg)
+				return Result(status = False, rsc = res.rsc, dbg = dbg)
 		else:
-			resource.addAnnouncementToResource(Utils.findXPath(cast(JSON, res.data), '{0}/ri'), csi)
+			resource.addAnnouncementToResource(csi, Utils.findXPath(cast(JSON, res.data), '{0}/ri'))
 		L.isDebug and L.logDebug(f'Announced resource created: {resource.getAnnouncedTo()}')
 		resource.dbUpdate()
 		return Result(status=True)
@@ -247,33 +264,17 @@ class AnnouncementManager(object):
 		L.isDebug and L.logDebug(f'De-Announce resource: {resource.ri} from all connected csr')
 
 		for (csi, remoteRI) in resource.getAnnouncedTo():
-			if not (csr := Utils.resourceFromCSI(csi).resource):
-				self._removeAnnouncementFromResource(resource, csi)
-				continue
-			self.deAnnounceResourceFromCSR(resource, csr, remoteRI)
+			self.deAnnounceResourceFromCSI(resource, csi, remoteRI)
 
 
-	def deAnnounceResourceFromCSR(self, resource:AnnounceableResource, remoteCSR:Resource, resourceRI:str) -> None:
+	def deAnnounceResourceFromCSI(self, resource:AnnounceableResource, csi:str, remoteRI:str) -> None:
 		"""	De-Announce a resource from a specific CSR.
 		"""
 
-		# retrieve the cse & poas for the remote CSR
-		csi, poas = self._getCsiPoaForRemoteCSR(remoteCSR)
-
-		# TODO: multi-hop announcement
-
-		L.isDebug and L.logDebug(f'De-Announce remote resource: {resource.ri} from: {csi}')
-
-		# Get target URL for request
-		if poas:
-			url = f'{poas[0]}/{resourceRI}'	# TODO check all available poas. remote CSR is always own csi
-		else:
-			L.isWarn and L.logWarn('Cannot get URL')
-			return
-
+		spRi = f'{csi}/{remoteRI}'
 		# Delete the announed resource from the remote CSE
-		L.isDebug and L.logDebug(f'Delete announced resource from: %{csi} url: {url}')	
-		res = CSE.request.sendDeleteRequest(url, CSE.cseCsi)
+		L.isDebug and L.logDebug(f'Delete announced resource: {spRi}')	
+		res = CSE.request.sendDeleteRequest(csi, CSE.cseCsi, appendID = spRi)
 		if res.rsc not in [ RC.deleted, RC.OK ]:
 			L.isDebug and L.logDebug(f'Error deleting remote announced resource: {res.rsc}')
 			# ignore the fact that we cannot delete the announced resource.
@@ -298,9 +299,8 @@ class AnnouncementManager(object):
 
 
 		# get all reources for this specific CSI that are  announced to it yet
-		at = deepcopy(resource.at)
 		CSIsFromAnnounceTo = []
-		for announcedResource in at:
+		for announcedResource in deepcopy(resource.at):
 			if len(sp := announcedResource.split('/')) >= 2:
 				if (csi := f'/{sp[1]}') == CSE.cseCsi or csi.startswith(f'{CSE.cseCsi}/'):	# Ignore own CSE as target
 					continue
@@ -309,73 +309,29 @@ class AnnouncementManager(object):
 		announcedCSIs = []
 		remoteRIs = []
 		for (csi, remoteRI) in resource.getAnnouncedTo():
-			announcedCSIs.append(csi) # build a list of already announced CSIs
-			remoteRIs.append(csi) # build a list of remote RIs
-
-			# CSR still connected?
-			if not (csr := Utils.resourceFromCSI(csi).resource):
-				self._removeAnnouncementFromResource(resource, csi)
-				continue
-			
-			# remote csi still in at? If not then remove it
-			if csi not in CSIsFromAnnounceTo:
-				self.deAnnounceResourceFromCSR(resource, csr, remoteRI)
-				continue
-
-			self.updateResourceOnCSR(resource, csr, remoteRI)
+			announcedCSIs.append(csi)	# build a list of already announced CSIs
+			remoteRIs.append(csi) 		# build a list of remote RIs
+			self.updateResourceOnCSI(resource, csi, remoteRI)
 
 		# Check for any non-announced csi in at, and possibly announce them 
 		for csi in CSIsFromAnnounceTo:
 			if csi not in announcedCSIs and csi not in remoteRIs:
-				if not (csr := Utils.resourceFromCSI(csi).resource):
-					continue
-				self.announceResourceToCSR(resource, csr)
+				self.announceResourceToCSI(resource, csi)
 
 
-	def updateResourceOnCSR(self, resource:Resource, remoteCSR:Resource, remoteRI:str) -> None:
+	def updateResourceOnCSI(self, resource:Resource, csi:str, remoteRI:str) -> None:
 		"""	Update an announced resource to a specific CSR.
 		"""
-
-		# retrieve the cse & poas for the remote CSR
-		csi, poas = self._getCsiPoaForRemoteCSR(remoteCSR)
-
-
-		# TODO: multi-hop announcement
-
-		L.isDebug and L.logDebug(f'Update announced resource: {resource.ri} to: {csi}')
-
-		data = resource.createAnnouncedResourceDict(remoteCSR, isCreate=False, csi=csi)
-
-		# Get target URL for request
-		if poas:
-			url = f'{poas[0]}/{remoteRI}'	# TODO check all available poas.
-		else:
-			L.isWarn and L.logWarn('Cannot get URL')
-			return
+		data = resource.createAnnouncedResourceDict(isCreate = False)
+		spRi = f'{csi}/{remoteRI}'
 
 		# Create the announed resource on the remote CSE
-		L.isDebug and L.logDebug(f'Updating announced resource at: {csi} url: {url}')	
-		res = CSE.request.sendUpdateRequest(url, CSE.cseCsi, data=data)
+		L.isDebug and L.logDebug(f'Updating announced resource at: {spRi}')	
+		res = CSE.request.sendUpdateRequest(csi, CSE.cseCsi, data = data, appendID = spRi)
 		if res.rsc not in [ RC.updated, RC.OK ]:
 			L.isDebug and L.logDebug(f'Error updating remote announced resource: {int(res.rsc)}')
 			# Ignore and fallthrough
 		L.isDebug and L.logDebug('Announced resource updated')
-
-
-	def _getCsiPoaForRemoteCSR(self, remoteCSR:Resource) -> Tuple[str,List[str]]:
-		"""	This function returns the correct csi and poas for the provided remoteCSR
-			resource. This is different for getting it for the registrar CSE and for
-			the descendant CSE's. In case of a descendant CSR all the information are
-			there, but in case of own's CSR we need to get the information from the
-			registrar CSE)
-		"""
-		csi  = remoteCSR.csi
-		poas = remoteCSR.poa
-		if csi == CSE.cseCsi:	# own registrar
-			if CSE.remote.registrarCSE:
-				csi = CSE.remote.registrarCSE.csi
-				poas = CSE.remote.registrarCSE.poa
-		return csi, poas
 
 
 	def _removeAnnouncementFromResource(self, resource:Resource, csi:str) -> None:

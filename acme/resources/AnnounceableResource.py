@@ -23,7 +23,7 @@ class AnnounceableResource(Resource):
 
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
-		L.isDebug and L.logDebug(f'Activating AnnounceableResource resource: {self.ri}')
+		# L.isDebug and L.logDebug(f'Activating AnnounceableResource resource: {self.ri}')
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
 
@@ -34,8 +34,7 @@ class AnnounceableResource(Resource):
 
 
 	def deactivate(self, originator:str) -> None:
-		L.isDebug and L.logDebug(f'Deactivating AnnounceableResource and removing sub-resources: {self.ri}')
-
+		# L.isDebug and L.logDebug(f'Deactivating AnnounceableResource and removing sub-resources: {self.ri}')
 		# perform deannouncements
 		if self.at:
 			CSE.announce.deAnnounceResource(self)
@@ -43,7 +42,7 @@ class AnnounceableResource(Resource):
 
 
 	def update(self, dct:JSON=None, originator:str=None) -> Result:
-		L.isDebug and L.logDebug(f'Updating AnnounceableResource: {self.ri}')
+		# L.isDebug and L.logDebug(f'Updating AnnounceableResource: {self.ri}')
 		self._origAA = self.aa
 		self._origAT = self.at
 		if not (res := super().update(dct=dct, originator=originator)).status:
@@ -60,7 +59,7 @@ class AnnounceableResource(Resource):
 
 
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
-		L.isDebug and L.logDebug(f'Validating AnnounceableResource: {self.ri}')
+		# L.isDebug and L.logDebug(f'Validating AnnounceableResource: {self.ri}')
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 
@@ -90,16 +89,16 @@ class AnnounceableResource(Resource):
 		return Result(status=True)
 
 
-	def createAnnouncedResourceDict(self, remoteCSR:Resource, isCreate:bool=False, csi:str=None) -> JSON:
+	def createAnnouncedResourceDict(self, isCreate:bool = False) -> JSON:
 		"""	Create the dict stub for the announced resource.
 		"""
 		# special case for FCNT, FCI
 		if (additionalAttributes := CSE.validator.getFlexContainerAttributesFor(self.tpe)):
 			attributes:AttributePolicyDict = deepcopy(self._attributes)
 			attributes.update(additionalAttributes)
-			return self._createAnnouncedDict(attributes, remoteCSR, isCreate=isCreate, remoteCsi=csi)
+			return self._createAnnouncedDict(attributes, isCreate = isCreate)
 		# Normal behaviour for other resources
-		return self.validateAnnouncedDict( self._createAnnouncedDict(self._attributes, remoteCSR, isCreate=isCreate, remoteCsi=csi) )
+		return self.validateAnnouncedDict( self._createAnnouncedDict(self._attributes, isCreate = isCreate) )
 
 
 	def validateAnnouncedDict(self, dct:JSON) -> JSON:
@@ -109,7 +108,7 @@ class AnnounceableResource(Resource):
 		return dct
 
 
-	def _createAnnouncedDict(self, attributes:AttributePolicyDict, remoteCSR:Resource, isCreate:bool=False, remoteCsi:str=None) -> JSON:
+	def _createAnnouncedDict(self, attributes:AttributePolicyDict, isCreate:bool = False) -> JSON:
 		"""	Actually create the resource dict.
 		"""
 		# Stub
@@ -129,19 +128,17 @@ class AnnounceableResource(Resource):
 				}
 			# Add more  attributes
 			body = dct[tpe]
-			# if (st := self.st) is not None:	# st is an int
-			# 	body['st'] = st
 
-			# if lbl := self.lbl:
-			# 	body['lbl'] = deepcopy(lbl)
-
+			# Conditional announced
+			if lbl := self.lbl:
+				body['lbl'] = deepcopy(lbl)
 
 			# copy mandatoy and optional attributes
 			for attr in announcedAttributes:
 				body[attr] = self[attr]
 
 			if (acpi := body.get('acpi')) is not None:	# acpi might be an empty list
-				acpi = [ f'{CSE.cseCsi}/{acpi}' if not acpi.startswith(CSE.cseCsi) else acpi    for acpi in self.acpi]	# set to local CSE.csi
+				acpi = [ f'{CSE.cseCsi}/{acpi}' if not acpi.startswith(CSE.cseCsi) else acpi for acpi in self.acpi]	# set to local CSE.csi
 				body['acpi'] = acpi
 
 
@@ -176,9 +173,9 @@ class AnnounceableResource(Resource):
 		return dct
 
 
-	def addAnnouncementToResource(self, remoteRI:str, csi:str) -> None:
+	def addAnnouncementToResource(self, csi:str, remoteRI:str, ) -> None:
 		"""	Add anouncement information to the resource. These are a list of tuples of 
-			the csi to which the resource is registered as well as the ri of the 
+			the csi to which the resource is registered and the CSE-relative ri of the 
 			resource on the remote CSE. Also, add the reference in the at attribute.
 		"""
 
