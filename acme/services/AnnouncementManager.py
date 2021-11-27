@@ -164,7 +164,8 @@ class AnnouncementManager(object):
 						return res
 			else:
 				# No internal announcement infos, announce it
-				if not (res := self.announceResourceToCSI(parentResource, csi)).status:	# Don't ignore result for this one
+				L.isDebug and L.logDebug(f'Announcing CSEBase: {cseBase.ri}')
+				if not (res := self.announceResourceToCSI(cseBase, csi)).status:	# Don't ignore result for this one
 					return res
 			return Result(status = True)
 
@@ -181,7 +182,7 @@ class AnnouncementManager(object):
 
 		if resource.ty != T.CSEBase:	# CSEBase is just announced below
 			if not (at := resource.at):
-				L.isWarn and L.logWarn('at attribute is empty')
+				L.isDebug and L.logDebug('at attribute is empty.')
 				return Result(status=True)	# Not much to do here
 
 			# Check if parent is announced already to the same remote CSE
@@ -200,6 +201,7 @@ class AnnouncementManager(object):
 	
 			else:	# parent is not a CSEBase
 				if not self._isResourceAnnouncedTo(parentResource, csi):
+					L.isDebug and L.logDebug(f'Parent resource is not announced: {parentResource.ri}')
 					# parent resource is not announced -> announce the resource directly under the CSEBaseAnnc
 
 					# Don't allow instances to be announced without their parents
