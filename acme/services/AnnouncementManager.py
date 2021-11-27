@@ -198,7 +198,8 @@ class AnnouncementManager(object):
 			if parentResource.ty == T.CSEBase:
 				if not (res := checkCSEBaseAnnouncement(parentResource)).status:
 					return res
-	
+				parentResource.dbreload().resource 	# parent is already the CSEBase, just reload from DB
+
 			else:	# parent is not a CSEBase
 				if not self._isResourceAnnouncedTo(parentResource, csi):
 					L.isDebug and L.logDebug(f'Parent resource is not announced: {parentResource.ri}')
@@ -212,6 +213,7 @@ class AnnouncementManager(object):
 					# Whatever the parent resource is, check whether the CSEBase has been announced. Announce it if necessay
 					if not (res := checkCSEBaseAnnouncement(Utils.getCSE().resource)).status:
 						return res
+					parentResource = Utils.getCSE().resource	# set the announced CSEBase as new parent
 
 					# if not self._isResourceAnnouncedTo(parentResource, csi):
 					# 	# announce CSE recursively
