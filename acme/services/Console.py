@@ -469,13 +469,16 @@ Available under the BSD 3-Clause License
 			if len(CSE.remote.descendantCSR) > 0:
 				result += f'- **Registree CSEs**\n'
 				for desc in CSE.remote.descendantCSR.keys():
-					(csr, _) = CSE.remote.descendantCSR[desc]
-					if csr:
-						result += f'  - {desc[1:]} ({CSEType(csr.cst).name}) @ {csr.poa}\n'
-						for desc2 in CSE.remote.descendantCSR.keys():
-							(csr2, atCsi2) = CSE.remote.descendantCSR[desc2]
-							if not csr2 and atCsi2 == desc:
-								result += f'    - {desc2[1:]}\n'
+					try:
+						(csr, _) = CSE.remote.descendantCSR[desc]
+						if csr:
+							result += f'  - {desc[1:]} ({CSEType(csr.cst).name}) @ {csr.poa}\n'
+							for desc2 in CSE.remote.descendantCSR.keys():
+								(csr2, atCsi2) = CSE.remote.descendantCSR[desc2]
+								if not csr2 and atCsi2 == desc:
+									result += f'    - {desc2[1:]}\n'
+					except:
+						pass
 		
 		return result if len(result) else 'None'
 		
