@@ -214,11 +214,6 @@ class AnnouncementManager(object):
 					if not (res := checkCSEBaseAnnouncement(Utils.getCSE().resource)).status:
 						return res
 					parentResource = Utils.getCSE().resource	# set the announced CSEBase as new parent
-
-					# if not self._isResourceAnnouncedTo(parentResource, csi):
-					# 	# announce CSE recursively
-					# 	if not (res := self.announceResourceToCSI(parentResource, csi)).status:	# Don't ignore result for this one
-					# 		return res
 					
 					# ... then continue with normale announcement of the resource. The parent for the announcement is now the CSEBase
 				
