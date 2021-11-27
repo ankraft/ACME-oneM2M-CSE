@@ -153,7 +153,7 @@ class AnnouncementManager(object):
 		"""
 		# TODO direct URL
 
-		def checkCSEBaseAnnouncement(cseBase:Resource) -> Result:
+		def checkCSEBaseAnnouncement(cseBase:AnnounceableResource) -> Result:
 			if t := self._announcedInfos(cseBase, csi):
 				# CSEBase has "old" announcement infos
 				if CSE.dispatcher.retrieveResource(f'{csi}/{t[1]}', CSE.cseCsi).rsc != RC.OK:	# Not a local resource
