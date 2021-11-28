@@ -79,16 +79,21 @@ _stopLoop = False
 """ Internal variable to indicate to stop the keyboard loop. """
 
 
-def loop(commands:Commands, quit:str=None, catchKeyboardInterrupt:bool=False, headless:bool=False) -> None:
+def loop(commands:Commands, quit:str = None, catchKeyboardInterrupt:bool = False, headless:bool = False, ignoreException:bool = True) -> None:
 	"""	Endless loop that reads single chars from the keyboard and then executes
-		a handler function for that key (from the dictionary 'commands').
-		If a single 'key' value is set in 'quit' and this key is pressed, then
+		a handler function for that key (from the dictionary `commands`).
+		If a single 'key' value is set in `quit` and this key is pressed, then
 		the loop terminates.
-		If 'catchKeyboardInterrupt' is True, then this key is handled as the ^C key,
+
+		If `catchKeyboardInterrupt` is True, then this key is handled as the ^C key,
 		otherweise a KeyboardInterrupt event is raised.
-		If 'headless' is True, then operate differently. Ignore all key inputs, but handle
-		a keyboard interrupt. If the 'quit' key is set then the loop is just interrupted. Otherwise
-		tread the keyboard interrupt as ^C key. It must be hanled in the commands.
+
+		If `headless` is True, then operate differently. Ignore all key inputs, but handle
+		a keyboard interrupt. If the `quit` key is set then the loop is just interrupted. Otherwise
+		tread the keyboard interrupt as ^C key. It must be hanled in the `commands`.
+
+		If `ignoreException` is True, then exceptions raised during command execution is ignore, or
+		passed on otherwise.
 	"""
 	
 	# main loop
@@ -130,7 +135,11 @@ def loop(commands:Commands, quit:str=None, catchKeyboardInterrupt:bool=False, he
 
 		# handle all other keys
 		if ch in commands:
-			commands[ch](ch)
+			try:
+				commands[ch](ch)
+			except Exception as e:
+				if not ignoreException:
+					raise e
 
 
 def stopLoop() -> None:

@@ -129,7 +129,8 @@ class Console(object):
 	#
 
 	def _about(self, header:str=None) -> None:
-		L.console(f'\n[white][dim][[/dim][red][i]ACME[/i][/red][dim]] CSE {C.version}', plain=True, nl=True)
+		L.console(f'\n[white][dim][[/dim][red][i]ACME[/i][/red][dim]] ', plain=True, end='')
+		L.console(f'oneM2M CSE {C.version}', nl=False,)
 		if header:
 			L.console(header, nl=True, isHeader=True)
 	
@@ -164,9 +165,8 @@ class Console(object):
 	def about(self, key:str) -> None:
 		"""	Print QR-code for keyboard commands.
 		"""
-		self._about('About')
-		L.console(Text("""
-ACME oneM2M CSE - An open source CSE Middleware for Education
+		self._about()
+		L.console(Text("""An open source CSE Middleware for Education
 
 (c) 2021 by Andreas Kraft
 Available under the BSD 3-Clause License
@@ -469,17 +469,14 @@ Available under the BSD 3-Clause License
 			if len(CSE.remote.descendantCSR) > 0:
 				result += f'- **Registree CSEs**\n'
 				for desc in CSE.remote.descendantCSR.keys():
-					try:
-						(csr, _) = CSE.remote.descendantCSR[desc]
-						if csr:
-							result += f'  - {desc[1:]} ({CSEType(csr.cst).name}) @ {csr.poa}\n'
-							for desc2 in CSE.remote.descendantCSR.keys():
-								(csr2, atCsi2) = CSE.remote.descendantCSR[desc2]
-								if not csr2 and atCsi2 == desc:
-									result += f'    - {desc2[1:]}\n'
-					except:
-						pass
-		
+					(csr, _) = CSE.remote.descendantCSR[desc]
+					if csr:
+						result += f'  - {desc[1:]} ({CSEType(csr.cst).name}) @ {csr.poa}\n'
+						for desc2 in CSE.remote.descendantCSR.keys():
+							(csr2, atCsi2) = CSE.remote.descendantCSR[desc2]
+							if not csr2 and atCsi2 == desc:
+								result += f'    - {desc2[1:]}\n'
+	
 		return result if len(result) else 'None'
 		
 
