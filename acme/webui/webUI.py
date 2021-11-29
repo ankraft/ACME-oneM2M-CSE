@@ -78,7 +78,6 @@ class WebUI(object):
 		# if path == None or len(path) == 0 or (path.endswith('index.html') and len(request.args) != 2):
 		if not path:
 			# print(f'{self.webuiRoot}/index.html?ri=/{self.defaultRII}&or={self.defaultOriginator}')
-			print(request.query_string)
 			return flask.redirect(f'{self.webuiRoot}/index.html?ri={self.defaultRI}&or={self.defaultOriginator}{"&" + request.query_string.decode() if request.query_string else ""}', code=302)
 		else:
 			filename = f'{self.webuiDirectory}/{path}'	# return any file in the web directory
