@@ -14,35 +14,22 @@ class Constants(object):
 	# ACME Version
 	version								= '0.10.0-dev'
 	
-	# List of virtual resources
 
-	virtualResources 					= [ T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.TS_LA, T.TS_OL, 
-											T.GRP_FOPT, T.PCH_PCU ]
-	virtualResourcesNames 				= [ 'la', 'ol', 'fopt', 'pcu' ]
 
-	# List of announceable resource types
-	announcedResourceTypes 				= [ T.ACPAnnc, T.AEAnnc, T.CNTAnnc, T.CINAnnc, T.GRPAnnc, T.MGMTOBJAnnc,
-										    T.NODAnnc, T.CSRAnnc, T.FCNTAnnc ]
+	# TODO move to types
 
-	# Supported resource types by this CSE
-	supportedResourceTypes 				= [	# Supported normal resource
-											T.ACP, T.AE, T.CNT, T.CIN, T.CSEBase, T.GRP, T.MGMTOBJ, T.NOD, T.PCH, T.CSR, 
-											T.REQ, T.SUB, T.FCNT, T.FCI, T.TS, T.TSI
-									 	  ]
-	supportedResourceTypes				+= announcedResourceTypes	# add announced resource types as well
+	#
+	#	Supported content serializations
+	#
 
-	stateTagResourceTypes 				= [ T.CNT, T.CIN, T.FCNT, T.FCI, T.REQ ]	# those resource types allow state tags
 	supportedContentSerializations 		= [ CST.JSON.toHeader(), CST.CBOR.toHeader(), 'application/vnd.onem2m-res+json', 'application/vnd.onem2m-res+cbor' ]
 	supportedContentSerializationsSimple = [ CST.JSON.toSimple(), CST.CBOR.toSimple() ]
 
 	supportedContentHeaderFormat 		= [ CST.JSON.toHeader(), CST.CBOR.toHeader(),'application/vnd.onem2m-res+json', 'application/vnd.onem2m-res+cbor' ]
 	supportedContentHeaderFormatTuple	= tuple(supportedContentHeaderFormat)
 
-	# List of resource types for which "creator" is allowed
-	# Also add later: eventConfig, pollingChannel, statsCollect, statsConfig, semanticDescriptor,
-	# notificationTargetPolicy, timeSeries, crossResourceSubscription, backgroundDataTransfer
-	creatorAllowed = [ T.CIN, T.CNT, T.GRP, T.SUB, T.FCNT, T.TS ]
 
+	# TODO move to types, own enum?
 
 	#
 	#	HTTP Header Fields
@@ -51,7 +38,6 @@ class Constants(object):
 	hfOrigin						= 'X-M2M-Origin'
 	hfRI 							= 'X-M2M-RI'
 	hfRVI							= 'X-M2M-RVI'
-	hfvContentType					= 'application/json'
 	hfEC 							= 'X-M2M-EC'
 	hfcEC 							= 'Event Category'
 	hfvECLatest 					= '4'
@@ -70,9 +56,6 @@ class Constants(object):
 	supportedSchemes = ['http', 'https', 'mqtt', 'mqtts']	# Supported by the CSE
 	# TODO add Coap here later
 
-	#
-	#	Supported content serializations
-	#
 
 	#
 	#	Configuration meta defaults
@@ -86,12 +69,6 @@ class Constants(object):
 	#
 	#	Magic strings and numbers
 	#
-
-	# Additional internal resource fields
-	acpPrefix 					= 'acp_'
-
-	invalidValue 				= '__iNvAliD___'
-
 
 	# max length of identifiers
 	maxIDLength	= 10

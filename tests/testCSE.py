@@ -12,8 +12,8 @@ import isodate
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
-from acme.etc.Constants import Constants as C
 from acme.etc.Types import ResponseStatusCode as RC
+from acme.etc.Types import ResourceTypes as T
 from init import *
 
 
@@ -96,7 +96,7 @@ class TestCSE(unittest.TestCase):
 		r, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(srt := findXPath(r, 'm2m:cb/srt'))
-		for t in C.supportedResourceTypes:
+		for t in T.supportedResourceTypes():	#  type: ignore
 			self.assertIn(t, srt)
 
 

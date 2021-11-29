@@ -109,9 +109,6 @@ def isVirtualResource(resource: Resource) -> bool:
 	if not resource:
 		return False
 	return resource[resource._isVirtual]
-	# result:bool = resource[resource._isVirtual]
-	# return result if result else False
-	# return (ty := r.ty) and ty in C.virtualResources
 
 
 def isAnnouncedResource(resource:Resource) -> bool:
@@ -175,7 +172,7 @@ def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
 	""" Handle Hybrid ID. """
 	if id:
 		ids = id.split('/')
-		if not srn and len(ids) > 1  and ids[-1] in C.virtualResourcesNames: # Hybrid
+		if not srn and len(ids) > 1  and T.isVirtualResourceName(ids[-1]): # Hybrid
 			if (srn := structuredPathFromRI('/'.join(ids[:-1]))):
 				srn = '/'.join([srn, ids[-1]])
 				id = riFromStructuredPath(srn) # id becomes the ri of the fopt
@@ -216,7 +213,7 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
 		return None, None, None
 
 	# Remove virtual resource shortname if it is present
-	if ids[-1] in C.virtualResourcesNames:
+	if T.isVirtualResourceName(ids[-1]):
 		vrPresent = ids.pop()	# remove and return last path element
 		idsLen -= 1
 	

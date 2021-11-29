@@ -108,7 +108,7 @@ class Resource(object):
 			if self.ty not in [ T.CSEBase ] and not self.hasAttribute('et'):
 				self.setAttribute('et', DateUtils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite=False) 
 			if ty is not None:	# ty is an int
-				if ty in C.stateTagResourceTypes:	# Only for allowed resources
+				if T.isStateTagResourceTypes(ty):		# Only for allowed resources
 					self.setAttribute('st', 0, overwrite=False)
 				self.setAttribute('ty', int(ty))
 

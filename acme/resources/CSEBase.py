@@ -58,7 +58,7 @@ class CSEBase(AnnounceableResource):
 		self.setAttribute('csi', '/cse', overwrite=False)
 
 		self.setAttribute('rr', False, overwrite=False)
-		self.setAttribute('srt', C.supportedResourceTypes, overwrite=False)
+		self.setAttribute('srt', T.supportedResourceTypes(), overwrite=False			)#  type: ignore
 		self.setAttribute('csz', C.supportedContentSerializations, overwrite=False)		# Will be replaced when retrieveds
 		self.setAttribute('srv', CSE.supportedReleaseVersions, overwrite=False)			# This must be a list
 		self.setAttribute('poa', [ CSE.httpServer.serverAddress ], overwrite=False)		# TODO add more address schemes when available

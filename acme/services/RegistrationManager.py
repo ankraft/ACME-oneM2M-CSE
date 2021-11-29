@@ -54,33 +54,33 @@ class RegistrationManager(object):
 			originator = cast(str, res.data)	# assigns new originator
 		if ty == T.REQ:
 			if not self.handleREQRegistration(resource, originator):
-				return Result(status=False, rsc=RC.badRequest, dbg='cannot register REQ')
+				return Result(status = False, rsc = RC.badRequest, dbg = 'cannot register REQ')
 		if ty == T.CSR:
 			if CSE.cseType == CSEType.ASN:
-				return Result(status=False, rsc=RC.operationNotAllowed, dbg='cannot register to ASN CSE')
+				return Result(status = False, rsc = RC.operationNotAllowed, dbg = 'cannot register to ASN CSE')
 			if not (res := self.handleCSRRegistration(resource, originator)).status:
-				return Result(status=False, rsc=res.rsc, dbg=f'cannot register CSR: {res.dbg}')
+				return Result(status = False, rsc = res.rsc, dbg = f'cannot register CSR: {res.dbg}')
 		if ty == T.CSEBaseAnnc:
 			if not (res := self.handleCSEBaseAnncRegistration(resource, originator)).status:
-				return Result(status=False, rsc=res.rsc, dbg=f'cannot register CSEBaseAnnc: {res.dbg}')
+				return Result(status = False, rsc = res.rsc, dbg = f'cannot register CSEBaseAnnc: {res.dbg}')
 
 
 		# Test and set creator attribute.
 		if not (res := self.handleCreator(resource, originator)).status:
 			return res
 
-		return Result(status=True, data=originator) # return (possibly new) originator
+		return Result(status = True, data = originator) # return (possibly new) originator
 
 
 	def handleCreator(self, resource:Resource, originator:str) -> Result:
 		"""	Check for set creator attribute as well as assign it to allowed resources.
 		"""
-		if resource.hasAttribute('cr'):
-			if resource.ty not in C.creatorAllowed:
-				return Result(status=False, rsc=RC.badRequest, dbg=f'"creator" attribute is not allowed for resource type: {resource.ty}')
+		if resource.hasAttribute('cr'):	# not get, might be empty
+			if not T.isCreatorAllowed(resource.ty):
+				return Result(status = False, rsc = RC.badRequest, dbg = f'"creator" attribute is not allowed for resource type: {resource.ty}')
 			if resource.cr:		# Check whether cr is set to a value in the request. This is wrong
 				L.isWarn and L.logWarn('Setting "creator" attribute is not allowed.')
-				return Result(status=False, rsc=RC.badRequest, dbg='setting "creator" attribute is not allowed')
+				return Result(status = False, rsc = RC.badRequest, dbg = 'setting "creator" attribute is not allowed')
 			else:
 				resource['cr'] = originator
 				# fall-through

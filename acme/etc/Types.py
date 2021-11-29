@@ -103,6 +103,7 @@ class ResourceTypes(ACMEIntEnum):
 	TS				= 29
 	TSI   			= 30
 	FCI 			= 58
+	ACTR			= 63
 
 
 	# Virtual resources (some are proprietary resource types)
@@ -145,6 +146,7 @@ class ResourceTypes(ACMEIntEnum):
 	FCNTAnnc 		= 10028
 	TSAnnc			= 10029
 	TSIAnnc			= 10030
+	ACTRAnnc		= 10063
 
 	FWRAnnc			= -30001
 	SWRAnnc			= -30002
@@ -171,7 +173,8 @@ class ResourceTypes(ACMEIntEnum):
 
 
 	def isAnnounced(self) -> bool:
-		return self.value in ResourceTypes._announcedSet 			# type: ignore
+		return self.value in ResourceTypes._announcedSetFull 		# type: ignore
+
 
 
 	# def __str__(self) -> str:
@@ -195,7 +198,45 @@ class ResourceTypes(ACMEIntEnum):
 		return ResourceTypes.UNKNOWN
 
 
-ResourceTypes._announcedMappings = {							#  type: ignore
+	@classmethod
+	def isVirtualResource(cls, ty:int) -> bool:
+		"""	Check whether `ty` is a virtual resource.
+		"""
+		return ty in ResourceTypes._virtualResourcesSet				#  type: ignore
+
+
+	@classmethod
+	def isVirtualResourceName(cls, name:str) -> bool:
+		"""	Check whether `name` is the name of a virtual resource.
+		"""
+		return name in ResourceTypes._virtualResourcesNames			#  type: ignore
+	
+
+	@classmethod
+	def isCreatorAllowed(self, ty:int) -> bool:
+		"""	Check whether the type `ty` allows the 'creator' attribute.
+		"""
+		return ty in ResourceTypes._creatorAllowed					# type: ignore
+
+
+	@classmethod
+	def supportedResourceTypes(self) -> list[ResourceTypes]:
+		"""	Return the supported resource types, including the 
+			announced resource types.
+		"""
+		return ResourceTypes._supportedResourceTypes				# type: ignore
+
+
+	@classmethod
+	def isStateTagResourceTypes(self, ty:int) -> bool:
+		"""	Check wether `ty` is a resource type that allowes the 
+			'stateTage' attribute.
+		"""
+		return ty in ResourceTypes._stateTagResourceTypes			# type: ignore
+
+
+
+ResourceTypes._announcedMappings = {								#  type: ignore
 	ResourceTypes.ACP 		: ResourceTypes.ACPAnnc,
 	ResourceTypes.AE 		: ResourceTypes.AEAnnc,
 	ResourceTypes.CNT		: ResourceTypes.CNTAnnc,
@@ -208,10 +249,11 @@ ResourceTypes._announcedMappings = {							#  type: ignore
 	ResourceTypes.FCNT		: ResourceTypes.FCNTAnnc,
 	ResourceTypes.TS 		: ResourceTypes.TSAnnc,
 	ResourceTypes.TSI 		: ResourceTypes.TSIAnnc,
+	ResourceTypes.ACTR 		: ResourceTypes.ACTRAnnc,
 }
 
 
-ResourceTypes._announcedMappingsMGD = {							#  type: ignore
+ResourceTypes._announcedMappingsMGD = {								#  type: ignore
 	ResourceTypes.FWR		: ResourceTypes.FWRAnnc,
 	ResourceTypes.SWR		: ResourceTypes.SWRAnnc,
 	ResourceTypes.MEM		: ResourceTypes.MEMAnnc,
@@ -225,8 +267,10 @@ ResourceTypes._announcedMappingsMGD = {							#  type: ignore
 	ResourceTypes.NYCFC		: ResourceTypes.NYCFCAnnc,
 }
 
-ResourceTypes._announcedSet = [									#  type: ignore
-	ResourceTypes.ACPAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc, ResourceTypes.CINAnnc,
+
+ResourceTypes._announcedSetFull = [									#  type: ignore
+	ResourceTypes.ACPAnnc, ResourceTypes.ACTRAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc,
+	ResourceTypes.CINAnnc,
 	ResourceTypes.CSEBaseAnnc, ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc, 
 	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.TSAnnc, ResourceTypes.TSIAnnc,
 
@@ -235,14 +279,49 @@ ResourceTypes._announcedSet = [									#  type: ignore
 	ResourceTypes.RBOAnnc, ResourceTypes.EVLAnnc, ResourceTypes.NYCFCAnnc,
 ]
 
-# Mapping between oneM2M resource types to type identifies
 
-ResourceTypes._names 	= {										# type: ignore
+# List of announceable resource types in order
+ResourceTypes._announcedResourceTypes = [ 							#  type: ignore
+	ResourceTypes.ACPAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc, ResourceTypes.CINAnnc,
+	ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc,
+	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.ACTRAnnc, 
+]
+
+
+# Supported resource types by this CSE, including the announced resource types
+ResourceTypes._supportedResourceTypes = [							#  type: ignore
+	ResourceTypes.ACP, ResourceTypes.AE, ResourceTypes.CNT, ResourceTypes.CIN, 
+	ResourceTypes.CSEBase, ResourceTypes.GRP, ResourceTypes.MGMTOBJ, ResourceTypes.NOD,
+	ResourceTypes.PCH, ResourceTypes.CSR, ResourceTypes.REQ, ResourceTypes.SUB,
+	ResourceTypes.FCNT, ResourceTypes.FCI, ResourceTypes.TS, ResourceTypes.TSI,
+	ResourceTypes.ACTR,
+] + ResourceTypes._announcedResourceTypes							#  type: ignore
+
+
+# List of virtual resources
+ResourceTypes._virtualResourcesSet = [								#  type: ignore
+	ResourceTypes.CNT_LA, ResourceTypes.CNT_OL,
+	ResourceTypes.FCNT_LA, ResourceTypes.FCNT_OL,
+	ResourceTypes.TS_LA, ResourceTypes.TS_OL,
+	ResourceTypes.GRP_FOPT,
+	ResourceTypes.PCH_PCU 
+]
+
+
+# List of possible virtual resource names
+ResourceTypes._virtualResourcesNames = [							#  type: ignore
+	'la', 'ol', 'fopt', 'pcu' 
+]
+
+
+# Mapping between oneM2M resource types to type identifies
+ResourceTypes._names 	= {											# type: ignore
 		ResourceTypes.UNKNOWN		: 'unknown',
 		ResourceTypes.ALL 			: 'all',
 
 		ResourceTypes.MIXED			: 'mixed',
 		ResourceTypes.ACP 			: 'm2m:acp',
+		ResourceTypes.ACTR			: 'm2m:actr',
 		ResourceTypes.AE 			: 'm2m:ae',
 		ResourceTypes.CNT			: 'm2m:cnt',
 		ResourceTypes.CIN 			: 'm2m:cin',
@@ -260,6 +339,7 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.SUB			: 'm2m:sub',
 
 		ResourceTypes.ACPAnnc 		: 'm2m:acpA',
+		ResourceTypes.ACTRAnnc 		: 'm2m:actrA',
 		ResourceTypes.AEAnnc 		: 'm2m:aeA',
 		ResourceTypes.CNTAnnc 		: 'm2m:cntA',
 		ResourceTypes.CINAnnc 		: 'm2m:cinA',
@@ -309,6 +389,19 @@ ResourceTypes._names 	= {										# type: ignore
 
 	}
 
+# List of resource types for which "creator" is allowed
+# Also add later: eventConfig, statsCollect, statsConfig, semanticDescriptor,
+# notificationTargetPolicy, crossResourceSubscription, backgroundDataTransfer
+ResourceTypes._creatorAllowed = [ 							#  type: ignore
+		ResourceTypes.ACTR, ResourceTypes.CIN, ResourceTypes.CNT, ResourceTypes.GRP, 	
+		ResourceTypes.SUB, ResourceTypes.FCNT, ResourceTypes.TS 
+]
+
+
+# Resource types that allow state tags
+ResourceTypes._stateTagResourceTypes = [					#  type: ignore
+	 ResourceTypes.CNT, ResourceTypes.CIN, ResourceTypes.FCNT, ResourceTypes.FCI, ResourceTypes.REQ
+]
 	
 
 
