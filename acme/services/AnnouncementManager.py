@@ -228,7 +228,7 @@ class AnnouncementManager(object):
 		L.isDebug and L.logDebug(f'Creating announced resource at: {csi} ID: {spRi}')	
 		res = CSE.request.sendCreateRequest(csi, CSE.cseCsi, appendID = spRi, ty = tyAnnc, data = data)
 		if res.rsc not in [ RC.created, RC.OK ]:
-			if res.rsc != RC.alreadyExists:	# assume that it is ok if the remote resource already exists 
+			if res.rsc != RC.conflict:	# assume that it is ok if the remote resource already exists 
 				L.logDebug(dbg := f'Error creating remote announced resource: {int(res.rsc)} ({res.dbg})')
 				return Result(status = False, rsc = res.rsc, dbg = dbg)
 		else:

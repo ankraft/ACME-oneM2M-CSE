@@ -873,7 +873,7 @@ class Dispatcher(object):
 				if rri and r.pi != rri:	# only direct children
 					idx += 1
 					continue
-				if r.ty in C.virtualResources:	# Skip latest, oldest etc virtual resources
+				if T.isVirtualResource(r.ty):	# Skip latest, oldest etc virtual resources
 					idx += 1
 					continue
 				if handledTy is None:					# ty is an int

@@ -445,7 +445,7 @@ class RemoteCSEManager(object):
 		L.isDebug and L.logDebug(f'Creating registrar CSR at: {self.registrarCSI} url: {self.registrarCSEURL}')	
 		res = CSE.request.sendCreateRequest(self.registrarCSEURL, CSE.cseCsi, ty=T.CSR, data=csr.asDict(), ct=self.registrarSerialization, id=self.registrarCseRN) # own CSE.csi is the originator
 		if res.rsc not in [ RC.created, RC.OK ]:
-			if res.rsc != RC.alreadyExists:
+			if res.rsc != RC.conflict:
 				L.isDebug and L.logDebug(f'Error creating registrar CSR: {int(res.rsc)}')
 			return Result(status=False, rsc=res.rsc, dbg='cannot create remote CSR')
 		L.isDebug and L.logDebug(f'Registrar CSR created: {self.registrarCSI}')
@@ -462,7 +462,7 @@ class RemoteCSEManager(object):
 
 		res = CSE.request.sendUpdateRequest(self.registrarCSRURL, CSE.cseCsi, data=csr.asDict(), ct=self.registrarSerialization, id=CSE.cseCsiRelative) 	# own CSE.csi is the originator
 		if res.rsc not in [ RC.updated, RC.OK ]:
-			if res.rsc != RC.alreadyExists:
+			if res.rsc != RC.conflict:
 				L.isDebug and L.logDebug(f'Error updating registrar CSR in CSE: {int(res.rsc)}')
 			return Result(status=False, rsc=res.rsc, dbg='cannot update remote CSR')
 		L.isDebug and L.logDebug(f'Registrar CSR updated in CSE: {self.registrarCSI}')
