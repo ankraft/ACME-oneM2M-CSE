@@ -15,7 +15,7 @@ from copy import deepcopy
 from threading import Lock
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes, Result, Parameters, ResponseStatusCode as RC, ResourceTypes as T
+from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType as CST, ResourceTypes, Result, Parameters, ResponseStatusCode as RC, ResourceTypes as T
 from ..etc import Utils as Utils, DateUtils as DateUtils, RequestUtils as RequestUtils
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
@@ -147,7 +147,7 @@ class MQTTClientHandler(MQTTHandler):
 			"""	Log request.
 			"""
 			L.isDebug and L.logDebug(f'Operation: {result.request.op.name}')
-			if contentType == ContentSerializationType.JSON:
+			if contentType == CST.JSON:
 				L.isDebug and L.logDebug(f'Body: \n{cast(str, data.decode())}')
 			else:
 				L.isDebug and L.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, data))}\n=>\n{result.request.originalRequest}')
@@ -169,7 +169,7 @@ class MQTTClientHandler(MQTTHandler):
 		contentType:str   		= ts[-1]
 
 		# Check supported contentTypes, and send an error message if not supported
-		if contentType not in C.supportedContentSerializationsSimple:
+		if contentType not in CST.supportedContentSerializationsSimple():
 			L.logErr(f'Unsupported content serialization type: {contentType}, topic: {topic}', showStackTrace=False)
 			# We cannot do much about an unsupported content serialization type since we cannot parse the request
 			# sendResponse(Result(rsc=RC.badRequest, dbg=f'Unsupported content serialization type: {contentType}'))
@@ -367,7 +367,7 @@ class MQTTClient(object):
 	#	Send MQTT requests
 	#
 
-	def sendMqttRequest(self, operation:Operation, url:str, originator:str, ty:T=None, data:JSON=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, raw:bool=False, id:str=None) -> Result:	 # type: ignore[type-arg]
+	def sendMqttRequest(self, operation:Operation, url:str, originator:str, ty:T=None, data:JSON=None, parameters:Parameters=None, ct:CST=None, targetResource:Resource=None, targetOriginator:str=None, raw:bool=False, id:str=None) -> Result:	 # type: ignore[type-arg]
 		"""	Sending a request via MQTT.
 		"""
 
@@ -534,12 +534,12 @@ def logRequest(reqResult:Result, topic:str, isResponse:bool=False, isIncoming:bo
 
 	body   = ''
 	if reqResult.request and reqResult.request.headers:
-		if reqResult.request.headers.contentType == ContentSerializationType.CBOR or reqResult.request.ct == ContentSerializationType.CBOR:
+		if reqResult.request.headers.contentType == CST.CBOR or reqResult.request.ct == CST.CBOR:
 			if isResponse and reqResult.request.originalData:
 				body = f'\nBody: \n{TextTools.toHex(reqResult.request.originalData)}\n=>\n{str(reqResult.request.originalRequest)}'
 			else:
 				body = f'\nBody: \n{TextTools.toHex(cast(bytes, cast(Tuple, reqResult.data)[1]))}\n=>\n{cast(Tuple, reqResult.data)[0]}'
-		elif reqResult.request.headers.contentType == ContentSerializationType.JSON or reqResult.request.ct == ContentSerializationType.JSON:
+		elif reqResult.request.headers.contentType == CST.JSON or reqResult.request.ct == CST.JSON:
 
 			if reqResult.data:
 				if isinstance(reqResult.data, tuple):

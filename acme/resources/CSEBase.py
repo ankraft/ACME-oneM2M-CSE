@@ -8,8 +8,7 @@
 #
 
 from __future__ import annotations
-from ..etc.Constants import Constants as C
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ContentSerializationType as CST, Result, JSON
 from ..etc import DateUtils, Utils
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
@@ -50,19 +49,19 @@ class CSEBase(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:JSON=None, create:bool=False) -> None:
-		super().__init__(T.CSEBase, dct, '', create=create)
+	def __init__(self, dct:JSON = None, create:bool = False) -> None:
+		super().__init__(T.CSEBase, dct, '', create = create)
 
-		self.setAttribute('ri', 'cseid', overwrite=False)
-		self.setAttribute('rn', 'cse', overwrite=False)
-		self.setAttribute('csi', '/cse', overwrite=False)
+		self.setAttribute('ri', 'cseid', overwrite = False)
+		self.setAttribute('rn', 'cse', overwrite = False)
+		self.setAttribute('csi', '/cse', overwrite = False)
 
-		self.setAttribute('rr', False, overwrite=False)
-		self.setAttribute('srt', T.supportedResourceTypes(), overwrite=False			)#  type: ignore
-		self.setAttribute('csz', C.supportedContentSerializations, overwrite=False)		# Will be replaced when retrieveds
-		self.setAttribute('srv', CSE.supportedReleaseVersions, overwrite=False)			# This must be a list
-		self.setAttribute('poa', [ CSE.httpServer.serverAddress ], overwrite=False)		# TODO add more address schemes when available
-		self.setAttribute('cst', CSE.cseType, overwrite=False)
+		self.setAttribute('rr', False, overwrite = False)
+		self.setAttribute('srt', T.supportedResourceTypes(), overwrite = False)			#  type: ignore
+		self.setAttribute('csz', CST.supportedContentSerializations(), overwrite = False)	# Will be replaced when retrieved
+		self.setAttribute('srv', CSE.supportedReleaseVersions, overwrite = False)			# This must be a list
+		self.setAttribute('poa', [ CSE.httpServer.serverAddress ], overwrite = False)		# TODO add more address schemes when available
+		self.setAttribute('cst', CSE.cseType, overwrite = False)
 
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
@@ -71,12 +70,12 @@ class CSEBase(AnnounceableResource):
 		
 		if not Utils.isValidCSI(self.csi):
 			L.logWarn(dbg := f'Wrong format for CSEBase.csi: {self.csi}')
-			return Result(status=False, dbg=dbg)
+			return Result(status = False, dbg = dbg)
 
-		return Result(status=True)
+		return Result(status =True)
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		
@@ -98,7 +97,7 @@ class CSEBase(AnnounceableResource):
 					CSE.dispatcher.updateResource(nresource)
 			self[Resource._node] = nl
 
-		return Result(status=True)
+		return Result(status = True)
 
 
 	def willBeRetrieved(self, originator:str) -> Result:
@@ -111,7 +110,7 @@ class CSEBase(AnnounceableResource):
 		# add the supported release versions
 		self['srv'] = CSE.supportedReleaseVersions
 
-		return Result(status=True)
+		return Result(status = True)
 
 
 		

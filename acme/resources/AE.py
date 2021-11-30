@@ -7,8 +7,7 @@
 #	ResourceType: Application Entity
 #
 
-from ..etc.Constants import Constants as C
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ContentSerializationType as CST, Result, ResponseStatusCode as RC, JSON
 from ..etc import Utils as Utils
 from ..services.Logging import Logging as L
 from ..services import CSE as CSE
@@ -61,11 +60,11 @@ class AE(AnnounceableResource):
 	}
 	
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.AE, dct, pi, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.AE, dct, pi, create = create)
 
-		self.setAttribute('aei', Utils.uniqueAEI(), overwrite=False)
-		self.setAttribute('rr', False, overwrite=False)
+		self.setAttribute('aei', Utils.uniqueAEI(), overwrite = False)
+		self.setAttribute('rr', False, overwrite = False)
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
@@ -83,10 +82,10 @@ class AE(AnnounceableResource):
 			if CSE.dispatcher.countDirectChildResources(self.ri, ty=T.PCH) > 0:
 				return Result(status = False, rsc = RC.badRequest, dbg = 'Only one PCH per AE is allowed')
 
-		return Result(status=True)
+		return Result(status = True)
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 
@@ -120,7 +119,7 @@ class AE(AnnounceableResource):
 		# check csz attribute
 		if csz := self.csz:
 			for c in csz:
-				if c not in C.supportedContentSerializations:
+				if c not in CST.supportedContentSerializations():
 					return Result(status = False, rsc = RC.badRequest, dbg  = 'unsupported content serialization: {c}')
 		
 		# check api attribute
@@ -135,7 +134,7 @@ class AE(AnnounceableResource):
 			L.logWarn(dbg := f'wrong format for ID in attribute "api": {api} (must start with "R" or "N")')
 			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
-		return Result(status=True)
+		return Result(status = True)
 
 
 	def deactivate(self, originator:str) -> None:

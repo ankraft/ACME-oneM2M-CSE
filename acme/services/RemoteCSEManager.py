@@ -330,28 +330,13 @@ class RemoteCSEManager(object):
 						
 
 
-	#	Check the liveliness of all remote CSE's that are connected to this CSE.
-	#	This is done by trying to retrieve a remote CSR. If it cannot be retrieved
-	#	then the related local CSR is removed.
-	def _checkCSRLiveliness(self) -> None:
-		for localCsr in cast(List, self._retrieveLocalCSRs(onlyOwn=False).data):
-			# Determine content serialization
-			# ct = CSE.defaultSerialization
-			# for csz in localCsr.csz:
-			# 	if csz in C.supportedContentSerializations:
-			# 		ct = ContentSerializationType.to(csz)
-			# 		break
-	
-			# # Retrieve remote CSE via a method given in the poa (might contain more than one URI)
-			# found = False
-			# for url in (localCsr.poa or []):
-			# 	if Utils.isURL(url):
-			# 		if self._retrieveRemoteCSE(url=f'{url}{localCsr.csi}', ct=ct).rsc == RC.OK:
-			# 			found = True
-			# 			break
-			# if not found:
-			# 	self._deleteLocalCSR(localCsr)
 
+	def _checkCSRLiveliness(self) -> None:
+		"""	Check the liveliness of all remote CSE's that are connected to this CSE.
+			This is done by trying to retrieve a remote CSR. If it cannot be retrieved
+			then the related local CSR is removed.
+		"""
+		for localCsr in cast(List, self._retrieveLocalCSRs(onlyOwn=False).data):
 			if CSE.request.sendRetrieveRequest(localCsr.ri, originator=CSE.cseCsi, appendID=localCsr.csi, id=CSE.cseCsiRelative).rsc != RC.OK:
 				L.isWarn and L.logWarn(f'Remote CSE unreachable. Removing CSR: {localCsr.rn if localCsr else ""}')
 				self._deleteLocalCSR(localCsr)

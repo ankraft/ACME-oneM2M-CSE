@@ -24,12 +24,11 @@ import requests
 
 from ..etc.Constants import Constants as C
 from ..etc.Types import ReqResp, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
-from ..etc.Types import Operation, CSERequest, ContentSerializationType, Parameters
+from ..etc.Types import Operation, CSERequest, ContentSerializationType as CST, Parameters
 from ..etc import Utils as Utils, RequestUtils as RequestUtils
 from ..services.Configuration import Configuration
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L, LogLevel
-from ..services.MQTTClient import dissectMQTTRequest
 from ..webui.webUI import WebUI
 from ..resources.Resource import Resource
 from ..helpers import TextTools as TextTools
@@ -205,7 +204,7 @@ class HttpServer(object):
 
 		# log Body, if there is one
 		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ] and dissectResult.request.originalData:
-			if dissectResult.request.ct == ContentSerializationType.JSON:
+			if dissectResult.request.ct == CST.JSON:
 				L.isDebug and L.logDebug(f'Body: \n{str(dissectResult.request.originalData)}')
 			else:
 				L.isDebug and L.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, dissectResult.request.originalData))}\n=>\n{dissectResult.request.pc}')
@@ -422,7 +421,7 @@ class HttpServer(object):
 		# # TODO Add missing but mandatory attributes (like rqi) - just to keep the dissectMQTTRequest
 
 		# # Dissect and validate
-		# if not (dissectResult := dissectMQTTRequest(bytes(json.dumps(jsn), 'utf-8'), ContentSerializationType.JSON.toSimple())).status:
+		# if not (dissectResult := dissectMQTTRequest(bytes(json.dumps(jsn), 'utf-8'), CST.JSON.toSimple())).status:
 		# 	return prepareUTResponse(RC.badRequest)
 		# L.logWarn(dissectResult)
 
@@ -481,13 +480,13 @@ class HttpServer(object):
 		Operation.NOTIFY 	: requests.post
 	}
 
-	def _prepContent(self, content:bytes|str|Any, ct:ContentSerializationType) -> str:
+	def _prepContent(self, content:bytes|str|Any, ct:CST) -> str:
 		if not content:	return ''
 		if isinstance(content, str): return content
-		return content.decode('utf-8') if ct == ContentSerializationType.JSON else TextTools.toHex(content)
+		return content.decode('utf-8') if ct == CST.JSON else TextTools.toHex(content)
 
 
-	def sendHttpRequest(self, operation:Operation, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, raw:bool=False, id:str=None) -> Result:	 # type: ignore[type-arg]
+	def sendHttpRequest(self, operation:Operation, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:CST=None, targetResource:Resource=None, targetOriginator:str=None, raw:bool=False, id:str=None) -> Result:	 # type: ignore[type-arg]
 		"""	Send an http request.
 		
 			The result is returned in *Result.data*.
@@ -557,7 +556,7 @@ class HttpServer(object):
 		# ! The attribute names are different
 		try:
 			L.isDebug and L.logDebug(f'Sending request: {method.__name__.upper()} {url}')
-			if ct == ContentSerializationType.CBOR:
+			if ct == CST.CBOR:
 				L.isDebug and L.logDebug(f'HTTP Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n=>\n{str(data) if data else ""}\n')
 			else:
 				L.isDebug and L.logDebug(f'HTTP Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n')
@@ -565,7 +564,7 @@ class HttpServer(object):
 			# Actual sending the request
 			r = method(url, data=content, headers=hds, verify=CSE.security.verifyCertificateHttp)
 
-			responseCt = ContentSerializationType.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
+			responseCt = CST.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
 			rc = RC(int(r.headers[C.hfRSC])) if C.hfRSC in r.headers else RC.internalServerError
 			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
 		except Exception as e:
@@ -596,7 +595,7 @@ class HttpServer(object):
 			# CSE's default
 			result.request.headers.originator = originalRequest.headers.originator
 			if originalRequest.headers.accept:																# accept / contentType
-				result.request.ct = ContentSerializationType.getType(originalRequest.headers.accept[0])
+				result.request.ct = CST.getType(originalRequest.headers.accept[0])
 			elif csz := CSE.request.getSerializationFromOriginator(originalRequest.headers.originator):
 				result.request.ct = csz[0]
 
@@ -717,7 +716,7 @@ class HttpServer(object):
 
 		# parse and extract content-type header
 		if ct := request.content_type:
-			if not ct.startswith(C.supportedContentHeaderFormatTuple):
+			if not ct.startswith(tuple(CST.supportedContentSerializations())):
 				ct = None
 			else:
 				p  = ct.partition(';')		# always returns a 3-tuple
@@ -757,8 +756,6 @@ class HttpServer(object):
 
 		# Extract further request arguments from the http request
 		# add all the args to the filterCriteria
-		# for k,v in args.items():
-		# 	filterCriteria[k] = v
 		filterCriteria:ReqResp = { k:v for k,v in args.items() }
 		if len(filterCriteria) > 0:
 			req['fc'] = filterCriteria

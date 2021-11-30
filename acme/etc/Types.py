@@ -839,8 +839,10 @@ class LastTSInstance:
 #
 
 # TODO ACMEIntEnum ?
-class ContentSerializationType(IntEnum):
-	"""	Content Serialization Types """
+class ContentSerializationType(ACMEIntEnum):
+	"""	Content Serialization Types 
+	"""
+	
 	XML					= auto()
 	JSON				= auto()
 	CBOR				= auto()
@@ -893,15 +895,29 @@ class ContentSerializationType(IntEnum):
 		return cls.UNKNOWN
 	
 
+	@classmethod
+	def supportedContentSerializations(cls) -> list[str]:
+		"""	Return a list of supported media types for content serialization.
+		"""
+		return [ 'application/json',
+				 'application/vnd.onem2m-res+json', 
+				 'application/cbor',
+				 'application/vnd.onem2m-res+cbor' ]
+
+
+	@classmethod
+	def supportedContentSerializationsSimple(cls) -> list[str]:
+		"""	Return a simplified (only the names of the serializations)
+			list of supported media types for content serialization.
+		"""
+		return [ cls.JSON.toSimple(), cls.CBOR.toSimple() ]
+
+
 	def __eq__(self, other:object) -> bool:
 		if not isinstance(other, str):
 			return NotImplemented
 		return self.value == self.getType(str(other))
 	
-
-	def __repr__(self) -> str:
-		return self.name
-
 
 
 ##############################################################################

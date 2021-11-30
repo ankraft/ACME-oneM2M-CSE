@@ -7,7 +7,7 @@
 #	Various CSE and oneM2M constants
 #
 
-from .Types import ResourceTypes as T, ContentSerializationType as CST
+from .Types import ContentSerializationType as CST
 
 class Constants(object):
 
@@ -15,24 +15,9 @@ class Constants(object):
 	version								= '0.10.0-dev'
 	
 
-
-	# TODO move to types
-
-	#
-	#	Supported content serializations
-	#
-
-	supportedContentSerializations 		= [ CST.JSON.toHeader(), CST.CBOR.toHeader(), 'application/vnd.onem2m-res+json', 'application/vnd.onem2m-res+cbor' ]
-	supportedContentSerializationsSimple = [ CST.JSON.toSimple(), CST.CBOR.toSimple() ]
-
-	supportedContentHeaderFormat 		= [ CST.JSON.toHeader(), CST.CBOR.toHeader(),'application/vnd.onem2m-res+json', 'application/vnd.onem2m-res+cbor' ]
-	supportedContentHeaderFormatTuple	= tuple(supportedContentHeaderFormat)
-
-
-	# TODO move to types, own enum?
-
 	#
 	#	HTTP Header Fields
+	#	These fields are here instead of the httpServer bc they are also used by the test cases.
 	#
 
 	hfOrigin						= 'X-M2M-Origin'
@@ -54,11 +39,12 @@ class Constants(object):
 	#	Supported URL schemes
 	#
 	supportedSchemes = ['http', 'https', 'mqtt', 'mqtts']	# Supported by the CSE
-	# TODO add Coap here later
 
 
 	#
 	#	Configuration meta defaults
+	#
+	#	TODO Perhaps move this to an String Enum when we switch to Python 3.10
 	#
 
 	defaultConfigFile			= 'acme.ini'
