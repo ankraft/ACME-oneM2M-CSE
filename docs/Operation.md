@@ -44,10 +44,10 @@ See the [configuration](Configuration.md) for more examples.
 
 ## Resource Tree and Deployment Infrastructure via http
 
-The CSE can generate a diagram with an overview about the hosted resource tree and the current deployment infrastructure of remote CSE's.
+The CSE can generate a diagram with an overview about the hosted resource tree and the current deployment infrastructure of remote CSEs.
 
 ```bash
-$ curl localhost:8080/__sturcture__
+$ curl localhost:8080/__structure__
 ```
 
 ![](images/structure.png)

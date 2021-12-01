@@ -321,7 +321,7 @@ skinparam rectangle {
 				csi = desc[1:]
 				(csr, atCsi) = CSE.remote.descendantCSR[desc]
 				address = f'\\n{csr.poa}' if csr else ''
-				tpe = f' ({CSEType(csr.cst).name})' if csr else ''
+				tpe = f' ({CSEType(csr.cst).name})' if csr and csr.cst else ''
 				shape = 'node' if csr else 'rectangle'
 				result += f'{shape} d{cnt} as "<color:green>{csi}</color>{tpe}{address}" #white\n'
 				connections[desc] = (cnt, atCsi)
