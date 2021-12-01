@@ -54,7 +54,7 @@ Due to the project restructuring the CSE is now started with the command ```pyth
 - Improved evaluation of target URIs for notifications, forward URIs etc.
 - New console commands (Continuous updating tree view, resource export etc).
 - Support for delayed operation execution.
-- Lot's of small improvements, bug fixes, and optimizations
+- Lots of small improvements, bug fixes, and optimizations
 
 ## Acknowledgements
 
