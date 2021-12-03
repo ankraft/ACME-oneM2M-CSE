@@ -85,7 +85,7 @@ def determineSerialization(url:str, csz:list[str], defaultSerialization:CST) -> 
 		# otherwise ignore this url
 		if ct not in CST.supportedContentSerializationsSimple():
 			return None	# Requested serialization not supported
-		return CST.to(ct)
+		return CST.toContentSerialization(ct)
 
 	elif csz:
 		# if csz is given then build an intersection between the given list and
@@ -94,7 +94,7 @@ def determineSerialization(url:str, csz:list[str], defaultSerialization:CST) -> 
 		common = [x for x in csz if x in CST.supportedContentSerializations()]	# build intersection, keep the old sort order
 		if len(common) == 0:
 			return None
-		return CST.to(common[0]) # take the first
+		return CST.toContentSerialization(common[0]) # take the first
 	
 	# Just use default serialization.
 	return defaultSerialization

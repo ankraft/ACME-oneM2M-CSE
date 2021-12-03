@@ -838,11 +838,10 @@ class LastTSInstance:
 #	Content Serializations
 #
 
-# TODO ACMEIntEnum ?
 class ContentSerializationType(ACMEIntEnum):
 	"""	Content Serialization Types 
 	"""
-	
+
 	XML					= auto()
 	JSON				= auto()
 	CBOR				= auto()
@@ -867,7 +866,7 @@ class ContentSerializationType(ACMEIntEnum):
 		return None
 
 	@classmethod
-	def to(cls, t:str) -> ContentSerializationType:
+	def toContentSerialization(cls, t:str) -> ContentSerializationType:
 		"""	Return the enum from a string.
 		"""
 		t = t.lower()

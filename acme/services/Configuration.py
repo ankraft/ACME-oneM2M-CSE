@@ -302,14 +302,14 @@ class Configuration(object):
 
 		# CSE Serialization
 		ct = Configuration._configuration['cse.defaultSerialization']
-		Configuration._configuration['cse.defaultSerialization'] = ContentSerializationType.to(ct)
+		Configuration._configuration['cse.defaultSerialization'] = ContentSerializationType.toContentSerialization(ct)
 		if Configuration._configuration['cse.defaultSerialization'] == ContentSerializationType.UNKNOWN:
 			_print(f'[red]Configuration Error: Unsupported \[cse]:defaultSerialization: {ct}')
 			return False
 		
 		# Registrar Serialization
 		ct = Configuration._configuration['cse.registrar.serialization']
-		Configuration._configuration['cse.registrar.serialization'] = ContentSerializationType.to(ct)
+		Configuration._configuration['cse.registrar.serialization'] = ContentSerializationType.toContentSerialization(ct)
 		if Configuration._configuration['cse.registrar.serialization'] == ContentSerializationType.UNKNOWN:
 			_print(f'[red]Configuration Error: Unsupported \[cse.registrar]:serialization: {ct}')
 			return False
