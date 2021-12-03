@@ -16,8 +16,10 @@ import traceback
 import logging, logging.handlers, os, inspect, sys, datetime, time, threading
 from queue import Queue
 from typing import List, Any, Union
-from logging import LogRecord, Logger
+from logging import LogRecord
 
+
+from rich import inspect as richInspect
 from rich.logging import RichHandler
 from rich.style import Style
 from rich.console import Console
@@ -167,7 +169,11 @@ class Logging:
 	def loggingActor() -> bool:
 		while Logging._logWorker.running:
 			level, msg, caller, thread = Logging.queue.get(block=True)
-			Logging.loggerConsole.log(level, f'{os.path.basename(caller.filename)}*{caller.lineno}*{thread.name:<10.10}*{msg}')
+			if isinstance(msg, str):
+				Logging.loggerConsole.log(level, f'{os.path.basename(caller.filename)}*{caller.lineno}*{thread.name:<10.10}*{str(msg)}')
+			else:
+				richInspect(msg, private=True, dunder=True)
+
 		return True
 
 
@@ -234,7 +240,7 @@ class Logging:
 		if Logging.logLevel <= level:
 			# Queue a log message : (level, message, caller from stackframe, current thread)
 			try:
-				Logging.queue.put((level, str(msg), inspect.getframeinfo(inspect.stack()[2 if not stackOffset else 2+stackOffset][0]), threading.current_thread()))
+				Logging.queue.put((level, msg, inspect.getframeinfo(inspect.stack()[2 if not stackOffset else 2+stackOffset][0]), threading.current_thread()))
 			except Exception as e:
 				# sometimes this raises an exception. Just ignore it.
 				pass
@@ -284,6 +290,11 @@ class Logging:
 		except Exception:
 			pass
 		return answer
+
+	
+	@staticmethod
+	def inspect(obj:Any) -> None:
+		Logging._log(Logging.logLevel, obj)
 
 
 	@staticmethod
