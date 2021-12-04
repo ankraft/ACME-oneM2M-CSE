@@ -19,13 +19,13 @@ import isodate
 #	Time, Date, Timestamp related
 #
 
-def getResourceDate(delta:int=0) -> str:
+def getResourceDate(offset:int=0) -> str:
 	"""	Generate an UTC-relative ISO 8601 timestamp and return it.
 
-		`delta` adds or substracts n seconds to the generated timestamp.
+		`offset` adds or substracts n seconds to the generated timestamp.
 	"""
 	# return toISO8601Date(datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=delta))
-	return toISO8601Date(utcTime() + delta)
+	return toISO8601Date(utcTime() + offset)
 
 
 def toISO8601Date(ts:Union[float, datetime.datetime], isUTCtimestamp:bool=True) -> str:
