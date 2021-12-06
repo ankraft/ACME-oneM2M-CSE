@@ -17,6 +17,7 @@ from ..services.Logging import Logging as L
 
 from ..resources.ACP import ACP
 from ..resources.ACPAnnc import ACPAnnc
+from ..resources.ACTR import ACTR				# TODO ANNC
 from ..resources.AE import AE
 from ..resources.AEAnnc import AEAnnc
 from ..resources.CIN import CIN
@@ -85,6 +86,7 @@ resourceFactoryMap:Dict[T, FactoryT] = {
 	#	type -> (Class, factory)
 	
 	T.ACP			: (ACP,			lambda dct, tpe, pi, create : ACP(dct, pi=pi, create=create)),
+	T.ACTR			: (ACTR,		lambda dct, tpe, pi, create : ACTR(dct, pi=pi, create=create)),		# TODO ACTRAnnc
 	T.AE			: (AE,			lambda dct, tpe, pi, create : AE(dct, pi=pi, create=create)),
 	T.CIN			: (CIN,			lambda dct, tpe, pi, create : CIN(dct, pi=pi, create=create)),
 	T.CNT			: (CNT,			lambda dct, tpe, pi, create : CNT(dct, pi=pi, create=create)),
