@@ -18,9 +18,6 @@ from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources import Factory as Factory
 
 
-# TODO periodicIntervalDelta default
-
-
 # CSE default:
 #	- peid is set to pei/2 if ommitted, and pei is set
 
@@ -86,6 +83,7 @@ class TS(AnnounceableResource):
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
+		# Validation of CREATE is done in self.validate()
 
 		# register latest and oldest virtual resources
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
@@ -110,34 +108,84 @@ class TS(AnnounceableResource):
 
 
 	def update(self, dct:JSON = None, originator:str = None) -> Result:
-		if not (res := super().update(dct, originator)).status:
-			return res
-		# TODO necessary? self._validateDataDetect(dct)
+
+		def clearMdlt() -> None:
+			self.setAttribute('mdlt', [])
+			self.setAttribute('mdc', 0)
 
 		# Extra checks if mdd is present in an update
 		updatedAttributes = Utils.findXPath(dct, 'm2m:ts')
 		if mddNew := updatedAttributes.get('mdd') is not None:
+			# Check that mdd is updated alone
 			if any(key in ['mdt', 'mdn', 'peid', 'pei'] for key in updatedAttributes.keys()):
-				L.isDebug and L.logDebug(dbg := 'mdd must not be updated together with mdt, mdn, pei or peid.')
+				L.logDebug(dbg := 'mdd must not be updated together with mdt, mdn, pei or peid.')
 				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+
 			if mddNew == True:
-				self.setAttribute('mdlt', [])
-				self.setAttribute('mdc', 0)
-				#CSE.timeSeries.restartTimeSeries() # TODO
+				if self.mdn is None:	# TODO Change after spec clarification.
+					# mdd can not be enabled when there is no mdn!
+					L.logDebug(dbg := 'mdn is not set. Missing data detect cannot be enabled.')
+					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+
+				clearMdlt()
+
+				# Restart the monitoring process
+				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
+				# "restart" is happening when the next TSI is received
 			else:
 				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
+		
+
+		if self.mdd  == True: # existing mdd
+			# Check that certain attributes are not updated when mdd is true
+			if any(key in ['mdt', 'mdn', 'peid', 'pei'] for key in updatedAttributes.keys()):
+				L.logDebug(dbg := 'mdd must not be True when mdt, mdn, pei or peid are updated.')
+				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+
+			if not (peidNew := updatedAttributes.get('peid')):
+				peidNew = self.peid	# If no new peid is provided then take the old value
+
+		if peiNew := updatedAttributes.get('pei'):
+			if not (peidNew := updatedAttributes.get('peid')):
+				peidNew = self.peid	# If no new peid is provided then take the old value
+			if peidNew > (peiNew / 2):
+				L.logDebug(dbg := 'peid must be <= pei/2')
+				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+		
+			# Set peid if not present and not provided
+			if 'peid' not in updatedAttributes and not self.peid:
+				updatedAttributes['peid'] = int(self.pei/2)	# CSE internal policy
+
+		if mddNew == True or (mddNew is None and self.mdd == True):	# either mdd is set to True or was and stays True:
+			if (mdt := updatedAttributes.get('mdt')) is None:
+				mdt = self.mdt
+			if (peid := updatedAttributes.get('peid')) is None:
+				peid = self.peid
+			if mdt is not None and peid is not None and mdt <= peid:
+				L.logDebug(dbg := 'mdt must be > peid')
+				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+		
+
+		# If any of the parameters (mdt, mdn, peid, pei) related to the missing data detection process is
+		# updated while the data detection process is paused the Hosting CSE will clear the missingDataList
+		# and missingDataCurrentNr. 
+		if self.mdd and any(key in ['mdt', 'mdn', 'peid', 'pei'] for key in updatedAttributes.keys()):
+			clearMdlt()
+			
+
+		# Remove mdlt and mdc if mdn is removed
+		# mdd is False, otherwise mdn could not be updated. See above
+		if 'mdn' in updatedAttributes and updatedAttributes.get('mdn') is None:	# nulled -> remove mdn
+			self.delAttribute('mdlt')
+			self.delAttribute('mdc')
 
 
-# If the current value of missingDataDetect is true the Hosting CSE shall return the response primitive with a Response Status Code indicating “BAD_REQUEST” 
-# if any of the following attributes are present in the UPDATE request: missingDataDetectTimer, missingDataMaxNr, periodicIntervalDelta, periodicInterval.
-
-# If the Originator provides a value for periodicInterval the Hosting CSE shall check that the periodicIntervalDelta has a value less than or equal to (periodicInterval/2), 
-# if not the Hosting CSE shall return the response primitive with a Response Status Code indicating “BAD_REQUEST”. 
-# If the Originator provides a value for periodicInterval and does not set the periodicIntervalDelta, the Hosting CSE shall set the periodicIntervalDelta according to local policy.
-
-# If missingDataDetect is set to true 
-# The Hosting CSE shall check that the value of missingDataDetectTimer attribute is greater than periodicIntervalDelta and if not the Hosting CSE shall return t
-# he response primitive with a Response Status Code indicating “BAD_REQUEST”.
+		# Do real update last
+		if not (res := super().update(dct, originator)).status:
+			return res
+		
+		self._validateChildren()	# Check consequences from the update
+		self._validateDataDetect(updatedAttributes)
 
 		return (Result(status = True))
 
@@ -208,10 +256,10 @@ class TS(AnnounceableResource):
 					childResource.setAttribute('et', maxEt)
 					childResource.dbUpdate()
 
-			self.validate(originator)
+			self.validate(originator)	# Handle old TSI removals
 		
 			# Add to monitoring if this is enabled for this TS (mdd & pei & mdt are not None, and mdd==True)
-			if (mdd := self.mdd) and self.pei is not None and self.mdt is not None:
+			if self.mdd and self.pei is not None and self.mdt is not None:
 				CSE.timeSeries.updateTimeSeries(self, childResource)
 		
 		elif childResource.ty == T.SUB:		# start monitoring
@@ -219,7 +267,7 @@ class TS(AnnounceableResource):
 				CSE.timeSeries.addSubscription(self, childResource)
 
 
-	# Handle the removal of a CIN. 
+	# Handle the removal of a TSI. 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
 		L.isDebug and L.logDebug(f'Child resource removed: {childResource.ri}')
 		super().childRemoved(childResource, originator)
@@ -292,7 +340,9 @@ class TS(AnnounceableResource):
 		self.__validating = False
 
 
-	def _validateDataDetect(self, dct:JSON=None) -> None:
+	def _validateDataDetect(self, updatedAttributes:JSON=None) -> None:
+		"""	This method checks and enables or disables certain data detect monitoring attributes.
+		"""
 		L.isDebug and L.logDebug('Validating data detection')
 
 		# Check whether missing data detection is turned on
@@ -316,7 +366,7 @@ class TS(AnnounceableResource):
 				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 		
 		# Check if mdn was changed and shorten mdlt accordingly, if exists
-		if self.mdlt and (newMdn := Utils.findXPath(dct, 'm2m:ts/mdn')) is not None:	# Returns None if dct is None or not found in dct
+		if self.mdlt and updatedAttributes and (newMdn := updatedAttributes.get('mdn') ) is not None:	# Returns None if dct is None or not found in dct
 			mdlt = self.mdlt
 			if (l := len(mdlt)) > newMdn:
 				mdlt = mdlt[l-newMdn:]
@@ -324,15 +374,10 @@ class TS(AnnounceableResource):
 				self['mdc'] = newMdn
 
 		# Check if mdt was changed in an update
-		if dct and 'mdt' in dct['m2m:ts']:	# mdt is in the update
-			mdt = Utils.findXPath(dct, 'm2m:ts/mdt')
+		if updatedAttributes and (newMdt := updatedAttributes.get('mdt')):	# mdt is in the update, either True, False or None!
 			isMonitored = CSE.timeSeries.isMonitored(self.ri)
-			if mdt is None and isMonitored:				# it is in the update, but set to None, meaning remove the mdt from the TS
+			if newMdt is None and isMonitored:				# it is in the update, but set to None, meaning remove the mdt from the TS
 				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
-			# akr: not sure about the following. mdt is checked in the next period
-			# elif mdt is not None and isMonitored:		# it is in the update and has a value, so update the monitor
-			# 	CSE.timeSeries.updateTimeSeries(self)	# This will implicitly start monitoring
-
 
 		# Save changes
 		self.dbUpdate()
