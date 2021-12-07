@@ -136,11 +136,137 @@ class TestTS(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateTSmdd(self) -> None:
-		""" Update <TS> mdd -> Fail"""
+	def test_updateTSmddTrue(self) -> None:
+		""" Update <TS> mdd = True"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'mdd'	: True,
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.updated, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddTrueAndMdtFail(self) -> None:
+		""" Update <TS> mdd = True with mdt -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'mdn'	: 2000
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddTrueAndMdnFail(self) -> None:
+		""" Update <TS> mdd = True with mdn -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'mdn'	: 2000
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddTrueAndMdnNoneFail(self) -> None:
+		""" Update <TS> mdd = True with remove mdn -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'mdn'	: None
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddTrueAndPeiFail(self) -> None:
+		""" Update <TS> mdd = True with pei -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'pei'	: 2000
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddTrueAndPeidFail(self) -> None:
+		""" Update <TS> mdd = True with peid -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'pei'	: 200
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddFalse(self) -> None:
+		""" Update <TS> mdd"""
 		self.assertIsNotNone(TestTS.ae)
 		dct = 	{ 'm2m:ts' : { 
 					'mdd'	: False
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.updated, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddWithMdtFail(self) -> None:
+		""" Update <TS> mdd with mdt -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'mdd'	: False,
+					'mdt'	: 2000
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddWithMdnFail(self) -> None:
+		""" Update <TS> mdd with mdn -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'mdd'	: False,
+					'mdn'	: 10
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddWithPeiFail(self) -> None:
+		""" Update <TS> mdd with pei -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'mdd'	: False,
+					'pei'	: 1000
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddWithPeidFail(self) -> None:
+		""" Update <TS> mdd with peid -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'mdd'	: False,
+					'peid'	: 200
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddWithWrongPeiPeidFail(self) -> None:
+		""" Update <TS> mdd with wrong pei and peid -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'pei'	: 2000,
+					'peid'	: 2000
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
 		self.assertEqual(rsc, RC.badRequest, r)
@@ -171,7 +297,7 @@ class TestTS(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateTSmdlt(self) -> None:
-		""" Update <TS> mdc -> Fail"""
+		""" Update <TS> mdlt -> Fail"""
 		self.assertIsNotNone(TestTS.ae)
 		dct = 	{ 'm2m:ts' : { 			# type: ignore [var-annotated]
 					'mdlt'	: [ ]
@@ -283,7 +409,22 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestTS('test_updateTSmbs'))
 	suite.addTest(TestTS('test_updateTSpei'))
 	suite.addTest(TestTS('test_updateTSpeid'))
-	suite.addTest(TestTS('test_updateTSmdd'))
+
+	suite.addTest(TestTS('test_updateTSmddTrue'))
+	suite.addTest(TestTS('test_updateTSmddTrueAndMdtFail'))
+	suite.addTest(TestTS('test_updateTSmddTrueAndMdnFail'))
+	suite.addTest(TestTS('test_updateTSmddTrueAndMdnNoneFail'))
+	suite.addTest(TestTS('test_updateTSmddTrueAndPeiFail'))
+	suite.addTest(TestTS('test_updateTSmddTrueAndPeidFail'))
+	
+	suite.addTest(TestTS('test_updateTSmddFalse'))
+	suite.addTest(TestTS('test_updateTSmddWithMdtFail'))
+	suite.addTest(TestTS('test_updateTSmddWithMdnFail'))
+	suite.addTest(TestTS('test_updateTSmddWithPeiFail'))
+	suite.addTest(TestTS('test_updateTSmddWithPeidFail'))
+	suite.addTest(TestTS('test_updateTSmddWithWrongPeiPeidFail'))
+
+	
 	suite.addTest(TestTS('test_updateTSmdn'))
 	suite.addTest(TestTS('test_updateTSmdc'))
 	suite.addTest(TestTS('test_updateTSmdlt'))

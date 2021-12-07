@@ -814,10 +814,10 @@ class LastTSInstance:
 	"""	Data class for a single TS's latest and next expected TSI/dgt, and other information """
 
 	# runtime attributes
-	lastSeenDgt:float					= 0.0
-	tsiArrivedAt:float					= 0.0
-	nextExpectedDgt:float				= 0.0
-	nextRuntime:float					= 0.0
+	dgt:float							= 0.0
+	expectedDgt:float				 	= 0.0
+	arrivedAt:float						= 0.0
+	missingDataDetectionTime:float		= 0.0
 
 	# <TS> attributes
 	pei:float							= 0.0
@@ -830,6 +830,12 @@ class LastTSInstance:
 	# Internal
 	actor:BackgroundWorker				= None	#type:ignore[name-defined] # actor for this TS 
 	running:bool 						= False # for late activation of this 
+
+	def prepareNextRun(self) -> None:
+		"""	Set the next expectedDgt and missingDataDetectionTime.
+		"""
+		self.expectedDgt += self.pei
+		self.missingDataDetectionTime += self.pei
 
 
 
