@@ -424,6 +424,7 @@ class BasicType(ACMEIntEnum):
 	integer			= auto()
 	void 			= auto()
 	duration 		= auto()
+	any				= auto()
 	time			= timestamp	# alias type for time
 	date			= timestamp	# alias type for date
 
@@ -574,6 +575,28 @@ ResponseStatusCode._httpStatusCodes = {																		# type: ignore
 
 	}
 
+
+##############################################################################
+#
+#	Gweneric Enums
+#
+
+class EvalCriteriaOperator(ACMEIntEnum):
+	"""	Eval Criteria Operator """
+	equal				= 1
+	notEqual			= 2
+	greaterThan			= 3
+	lessThan			= 4
+	greaterThanEqual	= 5
+	lessThanEqual		= 6
+
+
+class EvalMode(ACMEIntEnum):
+	"""	Eval Mode """
+	off					= 0
+	once				= 1
+	periodic			= 2
+	continous 			= 3
 
 
 ##############################################################################
