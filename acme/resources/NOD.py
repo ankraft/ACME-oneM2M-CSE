@@ -22,7 +22,7 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class NOD(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.MGMTOBJ, T.SUB ]
+	_allowedChildResourceTypes = [ T.ACTR, T.MGMTOBJ, T.SUB ]
 
 
 	# Attributes and Attribute policies for this Resource Class

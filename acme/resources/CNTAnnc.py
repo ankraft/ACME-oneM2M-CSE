@@ -15,7 +15,7 @@ from ..resources.AnnouncedResource import AnnouncedResource
 class CNTAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.CNT, T.CNTAnnc, T.CIN, T.CINAnnc, T.FCNT, T.FCNTAnnc, T.SUB, T.TS, T.TSAnnc ]
+	_allowedChildResourceTypes = [ T.ACTR, T.ACTRAnnc, T.CNT, T.CNTAnnc, T.CIN, T.CINAnnc, T.FCNT, T.FCNTAnnc, T.SUB, T.TS, T.TSAnnc ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer

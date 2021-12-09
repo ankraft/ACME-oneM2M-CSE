@@ -18,7 +18,7 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class GRP(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.SUB, T.GRP_FOPT ]
+	_allowedChildResourceTypes = [ T.ACTR, T.SUB, T.GRP_FOPT ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer

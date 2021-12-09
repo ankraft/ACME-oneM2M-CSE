@@ -285,6 +285,9 @@ class Resource(object):
 		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceUpdate, modifiedAttributes=self[self._modified])
 		self.dbUpdate()
 
+		# Check Attribute Trigger
+		# TODO CSE.action.checkTrigger, self, modifiedAttributes=self[self._modified])
+
 		# Notify parent that a child has been updated
 		if not (parent := self.retrieveParentResource()):
 			L.logErr(dbg := f'cannot retrieve parent resource')
@@ -308,6 +311,7 @@ class Resource(object):
 
 	def childAdded(self, childResource:Resource, originator:str) -> None:
 		""" Called when a child resource was added to the resource. """
+		# Check Subscriptions
 		CSE.notification.checkSubscriptions(self, NotificationEventType.createDirectChild, childResource)
 
 

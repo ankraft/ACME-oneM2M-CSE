@@ -316,31 +316,31 @@ class Importer(object):
 			tpe = f'{ns}:{sname}'
 
 		if not (lname := findXPath(attr, 'lname')) or not isinstance(lname, str) or len(lname) == 0:
-			L.logErr(f'Missing, empty, or wrong long name (lname) for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+			L.logErr(f'Missing, empty, or wrong long name (lname) for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 
 		if not (tmp := findXPath(attr, 'type')) or not isinstance(tmp, str) or len(tmp) == 0 or not (typ := BT.to(tmp)):	# no default
-			L.logErr(f'Missing, empty, or wrong type name (type): {tmp} for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+			L.logErr(f'Missing, empty, or wrong type name (type): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 
 		if not (tmp := findXPath(attr, 'car', '01')) or not isinstance(tmp, str) or len(tmp) == 0 or not (car := CAR.to(tmp, insensitive=True)):	# default car01
-			L.logErr(f'Empty, or wrong cardinality (car): {tmp} for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+			L.logErr(f'Empty, or wrong cardinality (car): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 
 		if not (tmp := findXPath(attr, 'oc', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (oc := RO.to(tmp, insensitive=True)):	# default O
-			L.logErr(f'Empty, or wrong optionalCreate (oc): {tmp} for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+			L.logErr(f'Empty, or wrong optionalCreate (oc): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 
 		if not (tmp := findXPath(attr, 'ou', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (ou := RO.to(tmp, insensitive=True)):	# default O
-			L.logErr(f'Empty, or wrong optionalUpdate (ou): {tmp} for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+			L.logErr(f'Empty, or wrong optionalUpdate (ou): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 
 		if not (tmp := findXPath(attr, 'od', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (od := RO.to(tmp, insensitive=True)):	# default O
-			L.logErr(f'Empty, or wrong optionalDiscovery (od): {tmp} for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+			L.logErr(f'Empty, or wrong optionalDiscovery (od): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 
 		if not (tmp := findXPath(attr, 'annc', 'oa')) or not isinstance(tmp, str) or len(tmp) == 0 or not (annc := AN.to(tmp, insensitive=True)):	# default OA
-			L.logErr(f'Empty, or wrong announcement (annc): {tmp} for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+			L.logErr(f'Empty, or wrong announcement (annc): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 
 		if (rtypes := findXPath(attr, 'rtypes')):

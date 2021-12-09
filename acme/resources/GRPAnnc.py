@@ -16,7 +16,7 @@ from ..resources.Resource import *
 class GRPAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.SUB ]
+	_allowedChildResourceTypes = [ T.ACTR, T.ACTRAnnc, T.SUB ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
