@@ -542,7 +542,9 @@ class HttpServer(object):
 				hds[C.hfVSI] = data['vsi']
 			
 			# Add to to URL
-			url = f'{url}/~{data["to"]}'
+			# TODO improve http URL handling. Don't assume SP-Relative, could be absolute
+			delim = '~'	if url.endswith('/') else '/~'
+			url = f'{url}{delim}{data["to"]}'
 			# re-assign the data to pc
 			if 'pc' in data:
 				data = data['pc']
