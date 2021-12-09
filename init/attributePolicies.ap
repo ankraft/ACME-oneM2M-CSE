@@ -1956,19 +1956,6 @@
 			"annc": "OA"
 		}
 	],
-	"orc": [
-		{
-			"rtypes": [ "ALL" ],
-			"lname": "objectResourceID",
-			"ns": "m2m",
-			"type": "anyURI",
-			"car": "1",
-			"oc": "M",
-			"ou": "O",
-			"od": "O",
-			"annc": "MA"
-		}
-	],
 	"op": [
 		{
 			"rtypes": [ "ALL", "REQRESP" ],
@@ -1978,6 +1965,19 @@
 			"car": "1",
 			"oc": "M",
 			"ou": "NP",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
+	"optr": [
+		{
+			"rtypes": [ "ALL"],
+			"lname": "operator",
+			"ns": "m2m",
+			"type": "positiveInteger",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
 			"od": "O",
 			"annc": "NA"
 		}
@@ -1995,17 +1995,17 @@
 			"annc": "OA"
 		}
 	],
-	"ot": [
+	"orc": [
 		{
 			"rtypes": [ "ALL" ],
-			"lname": "originatingTimestamp",
+			"lname": "objectResourceID",
 			"ns": "m2m",
-			"type": "timestamp",
-			"car": "01",
-			"oc": "O",
+			"type": "anyURI",
+			"car": "1",
+			"oc": "M",
 			"ou": "O",
 			"od": "O",
-			"annc": "OA"
+			"annc": "MA"
 		}
 	],
 	"org": [
@@ -2040,6 +2040,19 @@
 			"lname": "osVersion",
 			"ns": "m2m",
 			"type": "string",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"ot": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "originatingTimestamp",
+			"ns": "m2m",
+			"type": "timestamp",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2294,6 +2307,19 @@
 			"annc": "NA"
 		}
 	],
+	"sbjt": [
+		{
+			"rtypes": [ "ALL"],
+			"lname": "operator",
+			"ns": "m2m",
+			"type": "string",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
 	"scp": [
 		{
 			"rtypes": [ "ALL" ],
@@ -2524,6 +2550,19 @@
 			"car": "1",
 			"oc": "M",
 			"ou": "NP",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
+	"thld": [
+		{
+			"rtypes": [ "ALL"],
+			"lname": "threshold",
+			"ns": "m2m",
+			"type": "any",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
 			"od": "O",
 			"annc": "NA"
 		}
