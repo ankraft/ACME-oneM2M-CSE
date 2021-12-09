@@ -16,8 +16,8 @@ from ..resources.Resource import *
 class FCNTAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [	T.CNT, T.CNTAnnc, T.CIN, T.CINAnnc, T.FCNT, T.FCNTAnnc, T.FCI, 
-									T.TS, T.TSAnnc, T.SUB ]
+	_allowedChildResourceTypes = [	T.ACTR, T.ACTRAnnc, T.CNT, T.CNTAnnc, T.CIN, T.CINAnnc, 
+									T.FCNT, T.FCNTAnnc, T.FCI, T.TS, T.TSAnnc, T.SUB ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
