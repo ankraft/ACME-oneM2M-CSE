@@ -433,7 +433,7 @@ class Dispatcher(object):
 		# check whether the resource already exists, either via ri or srn
 		# hasResource() may actually perform the test in one call, but we want to give a distinguished debug message
 		if CSE.storage.hasResource(ri=nresource.ri):
-			L.logWarn(dbg := f'Resource with ri: {nresource.__srn__} already exists')
+			L.logWarn(dbg := f'Resource with ri: {nresource.ri} already exists')
 			return Result(status=False, rsc=RC.conflict, dbg=dbg)
 		if CSE.storage.hasResource(srn=nresource.__srn__):
 			L.logWarn(dbg := f'Resource with structured id: {nresource.__srn__} already exists')
