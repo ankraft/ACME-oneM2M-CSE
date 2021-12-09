@@ -7,12 +7,11 @@
 #	Unit tests for PollingChannel functionality
 #
 
-import unittest, sys, time
-import requests
+import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
-from acme.etc.Types import ResourceTypes as T, NotificationContentType, ResponseStatusCode as RC, Operation, ResponseType, Permission
+from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, Permission
 from init import *
 
 aeRN2 = f'{aeRN}2'

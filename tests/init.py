@@ -185,6 +185,7 @@ console = Console()
 
 ###############################################################################
 
+actrRN	= 'testACTR'
 aeRN	= 'testAE'
 acpRN	= 'testACP'
 batRN	= 'testBAT'
@@ -218,6 +219,8 @@ pchURL 	= f'{aeURL}/{pchRN}'
 pcuURL 	= f'{pchURL}/pcu'
 subURL 	= f'{cntURL}/{subRN}'	# under the <cnt>
 tsURL 	= f'{aeURL}/{tsRN}'
+actrURL = f'{aeURL}/{actrRN}'
+
 batURL 	= f'{nodURL}/{batRN}'	# under the <nod>
 memURL	= f'{nodURL}/{memRN}'	# under the <nod>
 
