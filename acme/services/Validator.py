@@ -13,7 +13,7 @@ import re
 from typing import Any, List, Dict, Tuple
 import isodate
 
-from ..etc.Types import AttributePolicy, AttributePolicyDict, BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, ResponseStatusCode as RC, AttributePolicy
+from ..etc.Types import AttributePolicy, AttributePolicyDict, BasicType as BT, Cardinality as CAR, EvalCriteriaOperator, RequestOptionality as RO, Announced as AN, ResponseStatusCode as RC, AttributePolicy
 from ..etc.Types import JSON, FlexContainerAttributes
 from ..etc.Types import Result, ResourceTypes as T
 from ..etc import Utils as Utils, DateUtils as DateUtils
@@ -267,11 +267,40 @@ class Validator(object):
 		# TODO Decide whether to correct this automatically, like in RemoteCSEManager._retrieveRemoteCSE()
 		if not val:
 			L.logDebug(dbg := f"{name} is missing")
-			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 		if not val.startswith('/'):
 			L.logDebug(dbg := f"{name} must start with '/': {val}")
-			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
-		return Result(status=True)
+			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+		return Result(status = True)
+
+
+	def validateEvalCriteria(self, dct:JSON) -> Result:
+		"""	Validate the format and content of an evc attribute.
+		"""
+		if (optr := dct.get('optr')) is None:
+			L.logDebug(dbg := f'evc/optr is missing in evalCriteria')
+			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+		if not (res := self.validateAttribute('optr', optr)).status:
+			return res
+		if not (EvalCriteriaOperator.equal <= optr <= EvalCriteriaOperator.lessThanEqual):
+			L.logDebug(dbg := f'evc/optr is out of range')
+			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+		
+		if (sbjt := dct.get('sbjt')) is None:
+			L.logDebug(dbg := f'evc/sbjt is missing in evalCriteria')
+			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+		if not (res := self.validateAttribute('sbjt', sbjt)).status:
+			return res
+
+		if (thld := dct.get('thld')) is None:
+			L.logDebug(dbg := f'evc/thld is missing in evalCriteria')
+			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+		if not (res := self.validateAttribute('thld', sbjt)).status:
+			return res
+
+		return Result(status = True)
+	
+
 
 
 	def isExtraResourceAttribute(self, attr:str, resource:Resource) -> bool:
@@ -281,6 +310,7 @@ class Validator(object):
 		
 		"""
 		return attr not in resource.attributePolicies and not attr.startswith('__')
+
 
 
 	##########################################################################
@@ -461,20 +491,23 @@ class Validator(object):
 			if convert and isinstance(value, str):
 				try:
 					int(value)
-					return Result(status=True, data=dataType)
+					return Result(status = True, data = dataType)
 				except Exception as e:
-					return Result(status=False, dbg=str(e))
-			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: integer')
+					return Result(status = False, dbg = str(e))
+			return Result(status = False, dbg = f'invalid type: {type(value).__name__}. Expected: integer')
 
 		if dataType == BT.geoCoordinates and isinstance(value, dict):
-			return Result(status=True, data=dataType)
+			return Result(status = True, data = dataType)
 		
 		if dataType == BT.duration:
 			try:
 				isodate.parse_duration(value)
 			except Exception as e:
-				return Result(status=False, dbg=str(e))
-			return Result(status=True, data=dataType)
+				return Result(status = False, dbg = str(e))
+			return Result(status = True, data = dataType)
+		
+		if dataType == BT.any:
+			return Result(status = True, data = dataType)
 
-		return Result(status=False, dbg=f'unknown type: {str(dataType)}, value type:{type(value)}')
+		return Result(status = False, dbg = f'unknown type: {str(dataType)}, value type:{type(value)}')
 
