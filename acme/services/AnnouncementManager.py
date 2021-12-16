@@ -11,7 +11,6 @@ from __future__ import annotations
 import time
 from copy import deepcopy
 from typing import Optional, Tuple, List, cast
-import typing_extensions
 from ..etc import Utils as Utils
 from ..etc.Types import ResourceTypes as T, ResponseStatusCode as RC, JSON, Result
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
