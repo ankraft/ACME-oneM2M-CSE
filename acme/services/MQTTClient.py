@@ -367,7 +367,7 @@ class MQTTClient(object):
 	#	Send MQTT requests
 	#
 
-	def sendMqttRequest(self, operation:Operation, url:str, originator:str, ty:T=None, data:JSON=None, parameters:Parameters=None, ct:CST=None, targetResource:Resource=None, targetOriginator:str=None, raw:bool=False, id:str=None) -> Result:	 # type: ignore[type-arg]
+	def sendMqttRequest(self, operation:Operation, url:str, originator:str, ty:T = None, data:JSON = None, parameters:Parameters = None, ct:CST = None, raw:bool = False) -> Result:	 # type: ignore[type-arg]
 		"""	Sending a request via MQTT.
 		"""
 
@@ -387,10 +387,10 @@ class MQTTClient(object):
 		# Pack everything that is needed in a Result object as if this is a normal "response" (for MQTT this doesn't matter)
 		# This seems to be a bit complicated, but we fill in the necessary values as if this is a normal "response"
 		req 										= Result(request=CSERequest())
-		req.request.id								= id
+		req.request.id								= u.path[1:]
 		req.request.op								= operation
 		req.resource								= data
-		req.request.headers.originator				= targetOriginator if targetOriginator else u.path[1:]
+		req.request.headers.originator				= originator
 		req.request.headers.requestIdentifier		= Utils.uniqueRI()
 		req.request.headers.releaseVersionIndicator	= CSE.releaseVersion						# TODO this actually depends in the originator
 		req.rsc										= RC.UNKNOWN								# explicitly remove the provided OK because we don't want have any
@@ -404,11 +404,9 @@ class MQTTClient(object):
 		pathSplit = u.path.split('/')
 		ct = ct if ct else CSE.defaultSerialization
 
-		if targetOriginator:
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(Utils.toSPRelative(targetOriginator))}/{ct.name.lower()}'
-		elif not len(topic):
+		# Build the topic
+		if not len(topic):
 			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(Utils.toSPRelative(originator))}/{ct.name.lower()}'
-
 		elif topic.startswith('///'):
 			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[3])}/{ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif topic.startswith('//'):
@@ -428,10 +426,10 @@ class MQTTClient(object):
 													  password	= mqttPassword)
 
 			# Wait a moment until we are connected.
-			DateUtils.waitFor(self.requestTimeout, lambda:mqttConnection.isConnected)
+			DateUtils.waitFor(self.requestTimeout, lambda: mqttConnection is not None and mqttConnection.isConnected)
 
 		# We are not connected, so -> fail
-		if not mqttConnection.isConnected:
+		if not mqttConnection or not mqttConnection.isConnected:
 			L.logWarn(dbg := f'Cannot connect to MQTT broker at: {mqttHost}:{mqttPort}')
 			return Result(status=False, rsc=RC.targetNotReachable, dbg=dbg)
 

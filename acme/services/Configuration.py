@@ -183,7 +183,7 @@ class Configuration(object):
 				#
 
 				'cse.registrar.address'					: config.get('cse.registrar', 'address', 					fallback = None),
-				'cse.registrar.root'					: config.get('cse.registrar', 'root', 						fallback = None),
+				'cse.registrar.root'					: config.get('cse.registrar', 'root', 						fallback = ''),
 				'cse.registrar.csi'						: config.get('cse.registrar', 'cseID', 						fallback = None),
 				'cse.registrar.rn'						: config.get('cse.registrar', 'resourceName', 				fallback = None),
 				'cse.registrar.checkInterval'			: config.getint('cse.registrar', 'checkInterval', 			fallback = 30),		# Seconds

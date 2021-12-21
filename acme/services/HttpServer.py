@@ -486,7 +486,7 @@ class HttpServer(object):
 		return content.decode('utf-8') if ct == CST.JSON else TextTools.toHex(content)
 
 
-	def sendHttpRequest(self, operation:Operation, url:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:CST=None, targetResource:Resource=None, targetOriginator:str=None, raw:bool=False, id:str=None) -> Result:	 # type: ignore[type-arg]
+	def sendHttpRequest(self, operation:Operation, url:str, originator:str, ty:T = None, data:Any = None, parameters:Parameters = None, ct:CST = None, raw:bool = False) -> Result:	 # type: ignore[type-arg]
 		"""	Send an http request.
 		
 			The result is returned in *Result.data*.
@@ -501,33 +501,31 @@ class HttpServer(object):
 		ct = CSE.defaultSerialization if not ct else ct
 
 		# Set basic headers
-		if not raw:
+		hty = f';ty={int(ty):d}' if ty else ''
+		hds = {	'User-Agent'	: self.serverID,
+				'Content-Type' 	: f'{ct.toHeader()}{hty}',
+				'cache-control'	: 'no-cache',
+		}
 
-			hty = f';ty={int(ty):d}' if ty else ''
-			hds = {	'User-Agent'	: self.serverID,
-					'Content-Type' 	: f'{ct.toHeader()}{hty}',
-					'Accept'		: ct.toHeader(),
-					'cache-control'	: 'no-cache',
-					C.hfOrigin	 	: originator,
-					C.hfRI 			: Utils.uniqueRI(),
-					C.hfRVI			: CSE.releaseVersion,			# TODO this actually depends in the originator
-				}
+		if not raw:
+			# Not raw means we need to construct everything from the request
+			hds[C.hfOrigin] = originator
+			hds[C.hfRI] 	= Utils.uniqueRI()
+			hds[C.hfRVI]	= CSE.releaseVersion			# TODO this actually depends in the originator
+
 			# Add additional headers
 			if parameters:
 				if C.hfcEC in parameters:				# Event Category
 					hds[C.hfEC] = parameters[C.hfcEC]
+			
+		else:	
+			# raw	-> "data" contains a whole requests
 
-		else:	# raw	-> data contains a whole requests
-			# L.logDebug(data)
-
-			hty = f';ty={int(ty):d}' if ty else ''
-			hds = {	'User-Agent'	: self.serverID,
-					'Content-Type' 	: f'{ct.toHeader()}{hty}',
-					'Accept'		: ct.toHeader(),
-					C.hfOrigin	 	: Utils.toSPRelative(data['fr']) if 'fr' in data else '',
-					C.hfRI 			: data['rqi'],
-					C.hfRVI			: data['rvi'],			# TODO this actually depends in the originator
-				}
+			hds[C.hfOrigin]	= Utils.toSPRelative(data['fr']) if 'fr' in data else ''
+			hds[C.hfRI]		= data['rqi']
+			hds[C.hfRVI]	= data['rvi']
+			
+			# Add additional headers from the request
 			if 'ec' in data:				# Event Category
 				hds[C.hfEC] = data['ec']
 			if 'rqet' in data:
@@ -549,8 +547,6 @@ class HttpServer(object):
 			if 'pc' in data:
 				data = data['pc']
 		
-		# L.logWarn(url)
-
 		# serialize data (only if dictionary, pass on non-dict data)
 		content = RequestUtils.serializeData(data, ct) if isinstance(data, dict) else data
 

@@ -11,8 +11,7 @@
 
 
 from typing import List, Tuple, Dict, cast
-from ..etc.Constants import Constants as C
-from ..etc.Types import ResourceTypes as T, Result, CSEType, ResponseStatusCode as RC, ContentSerializationType, JSON
+from ..etc.Types import ResourceTypes as T, Result, CSEType, ResponseStatusCode as RC, JSON
 from ..etc import Utils as Utils
 from ..resources import CSR, CSEBase
 from ..resources.Resource import Resource
@@ -153,7 +152,7 @@ class RemoteCSEManager(object):
 
 				# when validateRegistrations == False then only check when there is no connection
 				if not self.checkLiveliness:
-					if (r := self._retrieveLocalCSRs(onlyOwn=True)).data and len(r.data) == 1:
+					if (r := self._retrieveLocalCSRs(onlyOwn = True)).data and len(r.data) == 1:
 						return True
 			
 				# Check the connection to the registrar CSE and establish one if necessary
@@ -336,8 +335,8 @@ class RemoteCSEManager(object):
 			This is done by trying to retrieve a remote CSR. If it cannot be retrieved
 			then the related local CSR is removed.
 		"""
-		for localCsr in cast(List, self._retrieveLocalCSRs(onlyOwn=False).data):
-			if CSE.request.sendRetrieveRequest(localCsr.ri, originator=CSE.cseCsi, appendID=localCsr.csi, id=CSE.cseCsiRelative).rsc != RC.OK:
+		for localCsr in cast(List, self._retrieveLocalCSRs(onlyOwn = False).data):
+			if CSE.request.sendRetrieveRequest(localCsr.ri, originator = CSE.cseCsi, appendID = localCsr.csi).rsc != RC.OK:
 				L.isWarn and L.logWarn(f'Remote CSE unreachable. Removing CSR: {localCsr.rn if localCsr else ""}')
 				self._deleteLocalCSR(localCsr)
 
@@ -346,26 +345,26 @@ class RemoteCSEManager(object):
 	#	Local CSR
 	#
 
-	def _retrieveLocalCSRs(self, csi:str=None, onlyOwn:bool=True) -> Result:
+	def _retrieveLocalCSRs(self, csi:str = None, onlyOwn:bool = True) -> Result:
 		"""	Retrieve all local CSR's that match the given `csi` and return
 			them in a list in *Result.data* .
 		"""
-		localCsrs = CSE.dispatcher.directChildResources(pi=CSE.cseRi, ty=T.CSR)
+		localCsrs = CSE.dispatcher.directChildResources(pi = CSE.cseRi, ty = T.CSR)
 		if not csi:
 			csi = self.registrarCSI
 		# Logging.logDebug(f'Retrieving local CSR: {csi}')
 		if onlyOwn:
 			for localCsr in localCsrs:
 				if (c := localCsr.csi) and c == csi:
-					return Result(status=True, data=[ localCsr ])
-			return Result(status=False, rsc=RC.badRequest, dbg='local CSR not found')
+					return Result(status = True, data = [ localCsr ])
+			return Result(status = False, rsc = RC.badRequest, dbg = 'local CSR not found')
 		else:
 			localCsrList = []
 			for localCsr in localCsrs:
 				if (c := localCsr.csi) and c == csi:	# skip own
 					continue
 				localCsrList.append(localCsr)
-			return Result(status=True, data=localCsrList)	# hopefully only one
+			return Result(status = True, data = localCsrList)	# hopefully only one
 
 
 	def _createLocalCSR(self, remoteCSE: Resource) -> Result:
@@ -409,7 +408,7 @@ class RemoteCSEManager(object):
 
 	def _retrieveCSRfromRegistrarCSE(self) -> Result:
 		L.isDebug and L.logDebug(f'Retrieving CSR from registrar CSE: {self.registrarCSI}')
-		result = CSE.request.sendRetrieveRequest(self.registrarCSRURL, CSE.cseCsi, ct=self.registrarSerialization, id=CSE.cseCsiRelative)	# own CSE.csi is the originator
+		result = CSE.request.sendRetrieveRequest(self.registrarCSRURL, CSE.cseCsi, ct=self.registrarSerialization)	# own CSE.csi is the originator
 		if not result.rsc == RC.OK:
 			result.status = False	# The request returns OK, but for the procedure it is false
 			return result
@@ -428,7 +427,7 @@ class RemoteCSEManager(object):
 
 		# Create the <remoteCSE> in the remote CSE
 		L.isDebug and L.logDebug(f'Creating registrar CSR at: {self.registrarCSI} url: {self.registrarCSEURL}')	
-		res = CSE.request.sendCreateRequest(self.registrarCSEURL, CSE.cseCsi, ty=T.CSR, data=csr.asDict(), ct=self.registrarSerialization, id=self.registrarCseRN) # own CSE.csi is the originator
+		res = CSE.request.sendCreateRequest(self.registrarCSEURL, CSE.cseCsi, ty = T.CSR, data = csr.asDict(), ct = self.registrarSerialization) # own CSE.csi is the originator
 		if res.rsc not in [ RC.created, RC.OK ]:
 			if res.rsc != RC.conflict:
 				L.isDebug and L.logDebug(f'Error creating registrar CSR: {int(res.rsc)}')
@@ -445,23 +444,23 @@ class RemoteCSEManager(object):
 		self._copyCSE2CSR(csr, localCSE, isUpdate=True)
 		del csr['acpi']			# remove ACPI (don't provide ACPI in updates...a bit)
 
-		res = CSE.request.sendUpdateRequest(self.registrarCSRURL, CSE.cseCsi, data=csr.asDict(), ct=self.registrarSerialization, id=CSE.cseCsiRelative) 	# own CSE.csi is the originator
+		res = CSE.request.sendUpdateRequest(self.registrarCSRURL, CSE.cseCsi, data = csr.asDict(), ct = self.registrarSerialization) 	# own CSE.csi is the originator
 		if res.rsc not in [ RC.updated, RC.OK ]:
 			if res.rsc != RC.conflict:
 				L.isDebug and L.logDebug(f'Error updating registrar CSR in CSE: {int(res.rsc)}')
 			return Result(status=False, rsc=res.rsc, dbg='cannot update remote CSR')
 		L.isDebug and L.logDebug(f'Registrar CSR updated in CSE: {self.registrarCSI}')
-		return Result(status=True, resource=CSR.CSR(cast(JSON, res.data), pi=''), rsc=RC.updated)
+		return Result(status = True, resource = CSR.CSR(cast(JSON, res.data), pi = ''), rsc=RC.updated)
 
 
 
 	def _deleteOwnCSRonRegistrarCSE(self) -> Result:
 		L.isDebug and L.logDebug(f'Deleting registrar CSR: {self.registrarCSI} url: {self.registrarCSRURL}')
-		res = CSE.request.sendDeleteRequest(self.registrarCSRURL, CSE.cseCsi, ct=self.registrarSerialization, id=CSE.cseCsiRelative)	# own CSE.csi is the originator
+		res = CSE.request.sendDeleteRequest(self.registrarCSRURL, CSE.cseCsi, ct = self.registrarSerialization,)	# own CSE.csi is the originator
 		if res.rsc not in [ RC.deleted, RC.OK ]:
-			return Result(status=False, rsc=res.rsc, dbg='cannot delete registrar CSR')
+			return Result(status = False, rsc = res.rsc, dbg = 'cannot delete registrar CSR')
 		L.isInfo and L.log(f'Registrar CSR deleted: {self.registrarCSI}')
-		return Result(status=True, rsc=RC.deleted)
+		return Result(status = True, rsc = RC.deleted)
 
 
 	#
@@ -473,18 +472,17 @@ class RemoteCSEManager(object):
 		"""
 
 		L.isDebug and L.logDebug(f'Retrieving registrar CSE from: {self.registrarCSI} url: {self.registrarCSEURL}')	
-		res = CSE.request.sendRetrieveRequest(self.registrarCSEURL, CSE.cseCsi, ct=self.registrarSerialization, id=self.registrarCseRN)	# own CSE.csi is the originator
+		res = CSE.request.sendRetrieveRequest(self.registrarCSEURL, CSE.cseCsi, ct = self.registrarSerialization)	# own CSE.csi is the originator
 		if res.rsc not in [ RC.OK ]:
 			return res.errorResult()
 		if (csi := Utils.findXPath(cast(JSON, res.data), 'm2m:cb/csi')) == None:
-			L.logErr(err := 'csi not found in remote CSE resource', showStackTrace=False)
-			return Result(status=False, rsc=RC.badRequest, dbg=err)
+			L.logErr(err := 'csi not found in remote CSE resource', showStackTrace = False)
+			return Result(status = False, rsc = RC.badRequest, dbg = err)
 		if not csi.startswith('/'):
 			L.isDebug and L.logWarn('Remote CSE.csi doesn\'t start with /. Correcting.')	# TODO Decide whether correcting this is actually correct. Also in validator.validateCSICB()
 			Utils.setXPath(cast(JSON, res.data), 'm2m:cb/csi', f'/{csi}')
 
-		return Result(status=True, resource=CSEBase.CSEBase(cast(JSON, res.data)), rsc=RC.OK)
-
+		return Result(status =  True, resource = CSEBase.CSEBase(cast(JSON, res.data)), rsc = RC.OK)
 
 	def getAllLocalCSRs(self) -> List[Resource]:
 		"""	Return all local CSR's. This includes the CSR of the registrar CSE.
@@ -498,11 +496,11 @@ class RemoteCSEManager(object):
 	#########################################################################
 
 
-	def retrieveRemoteResource(self, id:str, originator:str=None) -> Result:
+	def retrieveRemoteResource(self, id:str, originator:str = None) -> Result:
 		"""	Retrieve a resource from a remote CSE.
 		"""
 		if not (url := CSE.request._getForwardURL(id)):
-			return Result(status=False, rsc=RC.notFound, dbg=f'URL not found for id: {id}')
+			return Result(status = False, rsc = RC.notFound, dbg = f'URL not found for id: {id}')
 		if not originator:
 			originator = CSE.cseCsi
 		L.isDebug and L.logDebug(f'Retrieve remote resource id: {id} url: {url}')
@@ -559,7 +557,7 @@ class RemoteCSEManager(object):
 	#########################################################################
 
 
-	def _copyCSE2CSR(self, target:Resource, source:Resource, isUpdate:bool=False) -> None:
+	def _copyCSE2CSR(self, target:Resource, source:Resource, isUpdate:bool = False) -> None:
 
 		def _copyAttribute(attr:str) -> None:
 			if attr in source and attr not in self.excludeCSRAttributes:

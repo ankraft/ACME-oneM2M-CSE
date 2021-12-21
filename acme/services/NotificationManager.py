@@ -34,7 +34,7 @@ class NotificationManager(object):
 
 	def __init__(self) -> None:
 		self.lockBatchNotification = Lock()	# Lock for batchNotifications
-		if L.isInfo: L.log('NotificationManager initialized')
+		L.isInfo and L.log('NotificationManager initialized')
 
 
 	def shutdown(self) -> bool:
@@ -291,16 +291,15 @@ class NotificationManager(object):
 		return True
 
 
-	def _sendRequest(self, uri:str, notificationRequest:JSON, parameters:Parameters=None, originator:str=None, targetOriginator:str=None, noAccessIsError:bool=False, ct:ContentSerializationType=None) -> bool:
+	def _sendRequest(self, uri:str, notificationRequest:JSON, parameters:Parameters=None, originator:str = None, noAccessIsError:bool = False, ct:ContentSerializationType = None) -> bool:
 		"""	Send a Notification request to a single target.
 		"""
 		result = CSE.request.sendNotifyRequest(	uri, 
 												originator if originator else CSE.cseCsi,
-												data=notificationRequest,
-												parameters=parameters,
-												ct=ct,
-												targetOriginator=targetOriginator,
-												noAccessIsError=noAccessIsError)
+												data = notificationRequest,
+												parameters = parameters,
+												ct = ct,
+												noAccessIsError = noAccessIsError)
 		return result.status and result.rsc == RC.OK
 
 
