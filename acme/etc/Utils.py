@@ -180,7 +180,7 @@ def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
 
 
 def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
-	""" Split a ful path e.g. from a http request into its component and return a local ri .
+	""" Split a full path e.g. from a http request into its component and return a local ri .
 		Also handle retargeting paths.
 		The return tupple is (RI, CSI, SRN).
 	"""
