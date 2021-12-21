@@ -322,8 +322,8 @@ checkLiveliness=True
 [cse.registrar]
 ; URL of the Registrar CSE. Default: no default
 address=http://${basic.config:registrarCseHost}:${basic.config:registrarCsePort}
-; Registrar CSE root path. Default: /
-root=/
+; Registrar CSE root path. Never provide a trailing /. Default: empty string
+root=
 ; CSE-ID of the Registrar CSE. Default: None
 cseID=/${basic.config:registrarCseID}
 ; The Registrar CSE's resource name. Default: None
