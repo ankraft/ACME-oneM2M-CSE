@@ -32,7 +32,7 @@ from rich.table import Table
 from rich.prompt import Prompt
 
 from ..etc.Types import JSON
-from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
+from ..helpers.BackgroundWorker import BackgroundWorker
 from ..services.Configuration import Configuration
 
 levelName = {
@@ -99,8 +99,8 @@ class Logging:
 	_logWorker:BackgroundWorker		= None
 
 	terminalColor					= 'spring_green2'
-	terminalStyle:Style				= Style(color=terminalColor)
-	terminalStyleError:Style		= Style(color='red')
+	terminalStyle:Style				= Style(color = terminalColor)
+	terminalStyleError:Style		= Style(color = 'red')
 
 
 	@staticmethod
@@ -124,7 +124,7 @@ class Logging:
 		Logging.setLogLevel(Configuration.get('logging.level'))					# Assign the initial log level
 
 		# Add logging queue
-		Logging.queue = Queue(maxsize=Logging.queueMaxsize)
+		Logging.queue = Queue(maxsize = Logging.queueMaxsize)
 
 		# List of log handlers
 		Logging._handlers = [ Logging._richHandler ]
@@ -135,22 +135,22 @@ class Logging:
 			from ..services import CSE as CSE
 
 			logpath = Configuration.get('logging.path')
-			os.makedirs(logpath, exist_ok=True)# create log directory if necessary
+			os.makedirs(logpath, exist_ok = True)# create log directory if necessary
 			logfile = f'{logpath}/cse-{CSE.cseType.name}.log'
 			logfp = logging.handlers.RotatingFileHandler(logfile,
-														 maxBytes=Configuration.get('logging.size'),
-														 backupCount=Configuration.get('logging.count'))
+														 maxBytes = Configuration.get('logging.size'),
+														 backupCount = Configuration.get('logging.count'))
 			logfp.setLevel(Logging.logLevel)
 			logfp.setFormatter(logging.Formatter('%(levelname)s %(asctime)s %(message)s'))
 			Logging.logger.addHandler(logfp) 
 			Logging._handlers.append(logfp)
 
 		# config the logging system
-		logging.basicConfig(level=Logging.logLevel, format='%(message)s', datefmt='[%X]', handlers=Logging._handlers)
+		logging.basicConfig(level = Logging.logLevel, format = '%(message)s', datefmt = '[%X]', handlers = Logging._handlers)
 
 		# Start worker to handle logs in the background
 		from ..helpers.BackgroundWorker import BackgroundWorkerPool
-		Logging._logWorker = BackgroundWorkerPool.newActor(Logging.loggingActor, name='loggingWorker')
+		Logging._logWorker = BackgroundWorkerPool.newActor(Logging.loggingActor, name = 'loggingWorker')
 		Logging._logWorker.start()	# Yes, this could be in one line but the _logworker attribute may not be assigned yet before the 
 									# actor callback is executed, and this might result in a None exception
 	
@@ -168,12 +168,12 @@ class Logging:
 	@staticmethod
 	def loggingActor() -> bool:
 		while Logging._logWorker.running:
-			level, msg, caller, thread = Logging.queue.get(block=True)
+			level, msg, caller, thread = Logging.queue.get(block = True)
 			if isinstance(msg, str):
 				Logging.loggerConsole.log(level, f'{os.path.basename(caller.filename)}*{caller.lineno}*{thread.name:<10.10}*{str(msg)}')
 			else:
 				try:
-					richInspect(msg, private=True, dunder=True)
+					richInspect(msg, private = True, dunder = False)
 				except:
 					pass
 
@@ -181,21 +181,21 @@ class Logging:
 
 
 	@staticmethod
-	def log(msg:Any, stackOffset:int=None) -> None:
+	def log(msg:Any, stackOffset:int = None) -> None:
 		"""Print a log message with level INFO. 
 		"""
-		Logging._log(logging.INFO, msg, stackOffset=stackOffset)
+		Logging._log(logging.INFO, msg, stackOffset = stackOffset)
 
 
 	@staticmethod
-	def logDebug(msg:Any, stackOffset:int=None) -> None:
+	def logDebug(msg:Any, stackOffset:int = None) -> None:
 		"""Print a log message with level DEBUG. 
 		"""
-		Logging._log(logging.DEBUG, msg, stackOffset=stackOffset)
+		Logging._log(logging.DEBUG, msg, stackOffset = stackOffset)
 
 
 	@staticmethod
-	def logErr(msg:Any, showStackTrace:bool=True, exc:Exception=None, stackOffset:int=None) -> None:
+	def logErr(msg:Any, showStackTrace:bool = True, exc:Exception = None, stackOffset:int = None) -> None:
 		"""	Print a log message with level ERROR. 
 			`showStackTrace` indicates whether a stacktrace shall be logged together with the error
 			as well.
@@ -205,38 +205,38 @@ class Logging:
 		CSE.event.logError()	# type: ignore
 		if exc:
 			fmtexc = ''.join(traceback.TracebackException.from_exception(exc).format())
-			Logging._log(logging.ERROR, f'{msg}\n\n{fmtexc}', stackOffset=stackOffset)
+			Logging._log(logging.ERROR, f'{msg}\n\n{fmtexc}', stackOffset = stackOffset)
 		elif showStackTrace and Logging.stackTraceOnError:
 			strace = ''.join(map(str, traceback.format_stack()[:-1]))
-			Logging._log(logging.ERROR, f'{msg}\n\n{strace}', stackOffset=stackOffset)
+			Logging._log(logging.ERROR, f'{msg}\n\n{strace}', stackOffset = stackOffset)
 		else:
-			Logging._log(logging.ERROR, msg, stackOffset=stackOffset)
+			Logging._log(logging.ERROR, msg, stackOffset = stackOffset)
 
 
 	@staticmethod
-	def logWarn(msg:Any, stackOffset:int=None) -> None:
+	def logWarn(msg:Any, stackOffset:int = None) -> None:
 		"""Print a log message with level WARNING. 
 		"""
 		from ..services import CSE as CSE
 		# raise logWarning event
 		CSE.event.logWarning() 	# type: ignore
-		Logging._log(logging.WARNING, msg, stackOffset=stackOffset)
+		Logging._log(logging.WARNING, msg, stackOffset = stackOffset)
 
 
 	@staticmethod
-	def logWithLevel(level:int, message:Any, showStackTrace:bool=False, stackOffset:int=None) -> None:
+	def logWithLevel(level:int, message:Any, showStackTrace:bool = False, stackOffset:int = None) -> None:
 		"""	Fallback log method when the `level` is a separate argument.
 		"""
 		# TODO add a parameter frame substractor to correct the line number, here and in In _log()
 		# TODO change to match in Python10
-		level == logging.DEBUG and Logging.logDebug(message, stackOffset=stackOffset)
-		level == logging.INFO and Logging.log(message, stackOffset=stackOffset)
-		level == logging.WARNING and Logging.logWarn(message, stackOffset=stackOffset)
-		level == logging.ERROR and Logging.logErr(message, showStackTrace=showStackTrace, stackOffset=stackOffset)
+		level == logging.DEBUG and Logging.logDebug(message, stackOffset = stackOffset)
+		level == logging.INFO and Logging.log(message, stackOffset = stackOffset)
+		level == logging.WARNING and Logging.logWarn(message, stackOffset = stackOffset)
+		level == logging.ERROR and Logging.logErr(message, showStackTrace = showStackTrace, stackOffset = stackOffset)
 
 
 	@staticmethod
-	def _log(level:int, msg:Any, stackOffset:int=None) -> None:
+	def _log(level:int, msg:Any, stackOffset:int = None) -> None:
 		"""	Internally adding various information to the log output. The `stackOffset` is used to determine 
 			the correct caller. It is set by a calling method in case the log information are re-routed.
 		"""
@@ -250,23 +250,23 @@ class Logging:
 	
 
 	@staticmethod
-	def console(msg:Union[str, Text, Tree, Table, JSON]='&nbsp;', nl:bool=False, nlb:bool=False, end:str='\n', plain:bool=False, isError:bool=False, isHeader:bool=False) -> None:
+	def console(msg:Union[str, Text, Tree, Table, JSON] = '&nbsp;', nl:bool = False, nlb:bool = False, end:str = '\n', plain:bool = False, isError:bool = False, isHeader:bool = False) -> None:
 		"""	Print a message or object on the console.
 		"""
 		# if this is a header then call the method again with different parameters
 		if isHeader:
-			Logging.console(f'**{msg}**', nlb=True, nl=True)
+			Logging.console(f'**{msg}**', nlb = True, nl = True)
 			return
 
 		style = Logging.terminalStyle if not isError else Logging.terminalStyleError
 		if nlb:	# Empty line before
 			Logging._console.print()
 		if isinstance(msg, str):
-			Logging._console.print(msg if plain else Markdown(msg), style=style, end=end)
+			Logging._console.print(msg if plain else Markdown(msg), style = style, end = end)
 		elif isinstance(msg, dict):
-			Logging._console.print(msg, style=style, end=end)
+			Logging._console.print(msg, style = style, end = end)
 		elif isinstance(msg, (Tree, Table, Text)):
-			Logging._console.print(msg, style=style, end=end)
+			Logging._console.print(msg, style = style, end = end)
 		if nl:	# Empty line after
 			Logging._console.print()
 	
@@ -279,13 +279,13 @@ class Logging:
 	
 
 	@staticmethod
-	def consolePrompt(prompt:str, nl:bool=True) -> str:
+	def consolePrompt(prompt:str, nl:bool = True) -> str:
 		"""	Read a line from the console. 
 			Catch EOF (^D) and Keyboard Interrup (^C). In that case None is returned.
 		"""
 		answer = None
 		try:
-			answer = Prompt.ask(prompt, console=Logging._console)
+			answer = Prompt.ask(prompt, console = Logging._console)
 			if nl:
 				Logging.console()
 		except KeyboardInterrupt as e:
@@ -338,25 +338,25 @@ class Logging:
 
 class ACMERichLogHandler(RichHandler):
 
-	def __init__(self, level: int = logging.NOTSET, console: Console = None) -> None:
+	def __init__(self, level: int = logging.NOTSET) -> None:
 
 		# Add own styles to the default styles and create a new theme for the console
 		ACMEStyles = { 
-			'repr.dim' 				: Style(color='grey70', dim=True),
-			'repr.request'			: Style(color='spring_green2'),
-			'repr.response'			: Style(color='magenta2'),
-			'repr.id'				: Style(color='light_sky_blue1'),
-			'repr.url'				: Style(color='sandy_brown', underline=True),
-			'repr.start'			: Style(color='orange1'),
-			'logging.level.debug'	: Style(color='grey50'),
-			'logging.level.warning'	: Style(color='orange3'),
-			'logging.level.error'	: Style(color='red', reverse=True),
-			'logging.console'		: Style(color='spring_green2'),
+			'repr.dim' 				: Style(color = 'grey70', dim = True),
+			'repr.request'			: Style(color = 'spring_green2'),
+			'repr.response'			: Style(color = 'magenta2'),
+			'repr.id'				: Style(color = 'light_sky_blue1'),
+			'repr.url'				: Style(color = 'sandy_brown', underline = True),
+			'repr.start'			: Style(color = 'orange1'),
+			'logging.level.debug'	: Style(color = 'grey50'),
+			'logging.level.warning'	: Style(color = 'orange3'),
+			'logging.level.error'	: Style(color = 'red', reverse = True),
+			'logging.console'		: Style(color = 'spring_green2'),
 		}
 		_styles = DEFAULT_STYLES.copy()
 		_styles.update(ACMEStyles)
 
-		super().__init__(level=level, console=Console(theme=Theme(_styles)))
+		super().__init__(level=level, console = Console(theme = Theme(_styles)))
 
 
 		# Set own highlights 
