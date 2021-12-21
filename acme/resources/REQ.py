@@ -99,7 +99,7 @@ class REQ(Resource):
 						'fo'	: request.args.fo,
 					},
 					'drt'	: request.args.drt,
-					'rvi'	: request.headers.releaseVersionIndicator if request.headers.releaseVersionIndicator else Configuration.get('cse.releaseVersion'),
+					'rvi'	: request.headers.releaseVersionIndicator if request.headers.releaseVersionIndicator else CSE.releaseVersion,
 					'vsi'	: request.headers.vendorInformation,
 				},
 				'rs'	: RequestStatus.PENDING,
