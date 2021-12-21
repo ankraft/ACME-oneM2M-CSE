@@ -178,7 +178,7 @@ class Dispatcher(object):
 
 
 	def retrieveLocalResource(self, ri:str=None, srn:str=None, originator:str=None, request:CSERequest=None) -> Result:
-		L.isDebug and L.logDebug(f'Retrieve resource: {ri}|{srn} for originator: {originator if originator else "<internal>"}')
+		L.isDebug and L.logDebug(f'Retrieve local resource: {ri}|{srn} for originator: {originator if originator else "<internal>"}')
 
 		if ri:
 			result = CSE.storage.retrieveResource(ri=ri)		# retrieve via normal ID
@@ -379,6 +379,8 @@ class Dispatcher(object):
 	#
 
 	def processCreateRequest(self, request:CSERequest, originator:str, id:str = None) -> Result:
+		L.isDebug and L.logDebug(f'Process CREATE request for id: {request.id}')
+
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 		if not id:
 			id = request.id
@@ -402,6 +404,7 @@ class Dispatcher(object):
 			return Result(status=False, rsc=RC.operationNotAllowed, dbg=f'CREATE not allowed for type: {ty}')
 
 		# Get parent resource and check permissions
+		L.isDebug and L.logDebug(f'Get parent resource and check permissions: {id}')
 		if not (res := CSE.dispatcher.retrieveResource(id)).resource:
 			L.logWarn(dbg := f'Parent/target resource: {id} not found')
 			return Result(status = False, rsc = RC.notFound, dbg = dbg)
@@ -471,7 +474,7 @@ class Dispatcher(object):
 
 
 	def createResource(self, resource:Resource, parentResource:Resource=None, originator:str=None) -> Result:
-		L.isDebug and L.logDebug(f'Adding resource ri: {resource.ri}, type: {resource.ty}')
+		L.isDebug and L.logDebug(f'CREATING resource ri: {resource.ri}, type: {resource.ty}')
 
 		if parentResource:
 			L.isDebug and L.logDebug(f'Parent ri: {parentResource.ri}')
