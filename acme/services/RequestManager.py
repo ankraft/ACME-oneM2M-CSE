@@ -156,8 +156,10 @@ class RequestManager(object):
 			return self.handleTransitCreateRequest(request)
 
 		# Check contentType and resourceType
-		if request.headers.contentType == None or request.headers.contentType == None:
-			return Result(rsc=RC.badRequest, dbg='missing or wrong contentType or resourceType in request')
+		# if request.headers.contentType == None:
+		# 	return Result(rsc=RC.badRequest, dbg='missing or wrong contentType in request')
+		if request.headers.resourceType == None:
+			return Result(rsc=RC.badRequest, dbg='missing or wrong resourceType in request')
 
 		if request.args.rt == ResponseType.blockingRequest:
 			res = CSE.dispatcher.processCreateRequest(request, request.headers.originator)
@@ -192,8 +194,8 @@ class RequestManager(object):
 			return self.handleTransitUpdateRequest(request)
 
 		# Check contentType and resourceType
-		if request.headers.contentType == None:
-			return Result(rsc=RC.badRequest, dbg='missing or wrong content type in request')
+		# if request.headers.contentType == None:
+		# 	return Result(rsc=RC.badRequest, dbg='missing or wrong content type in request')
 
 		if request.args.rt == ResponseType.blockingRequest:
 			return CSE.dispatcher.processUpdateRequest(request, request.headers.originator)
@@ -255,8 +257,10 @@ class RequestManager(object):
 			return self.handleTransitNotifyRequest(request)
 
 		# Check contentType and resourceType
-		if request.headers.contentType == None or request.headers.contentType == None:
-			return Result(rsc=RC.badRequest, dbg='missing or wrong contentType or resourceType in request')
+		# if request.headers.contentType == None:
+		# 	return Result(rsc=RC.badRequest, dbg='missing or wrong contentType in request')
+		# if request.headers.resourceType == None:
+		# 	return Result(rsc=RC.badRequest, dbg='missing or wrong resourceType in request')
 
 		if request.args.rt == ResponseType.blockingRequest:
 			res = CSE.dispatcher.processNotifyRequest(request, request.headers.originator)
@@ -424,10 +428,10 @@ class RequestManager(object):
 
 		# L.isDebug and L.logDebug(f'Forwarding RETRIEVE/DISCOVERY request to: {res.data}')
 		L.isDebug and L.logDebug(f'Forwarding RETRIEVE/DISCOVERY request to: {request.id}')
-		return self.sendRetrieveRequest(uri=cast(str, request.id),
-									    originator=request.headers.originator,
-										data=request.originalRequest,
-										raw=True)
+		return self.sendRetrieveRequest(uri = cast(str, request.id),
+									    originator = request.headers.originator,
+										data = request.originalRequest,
+										raw = True)
 
 
 	def handleTransitCreateRequest(self, request:CSERequest) -> Result:
@@ -438,11 +442,11 @@ class RequestManager(object):
 		self._originatorToSPRelative(request)
 
 		L.isDebug and L.logDebug(f'Forwarding CREATE request to: {request.id}')
-		return self.sendCreateRequest(uri=request.id,
-									  originator=request.headers.originator,
-									  data=request.originalRequest,
-									  ty=request.headers.resourceType,
-									  raw=True)
+		return self.sendCreateRequest(uri = request.id,
+									  originator = request.headers.originator,
+									  data = request.originalRequest,
+									  ty = request.headers.resourceType,
+									  raw = True)
 
 
 	def handleTransitUpdateRequest(self, request:CSERequest) -> Result:
@@ -453,10 +457,10 @@ class RequestManager(object):
 		self._originatorToSPRelative(request)
 
 		L.isDebug and L.logDebug(f'Forwarding UPDATE request to: {request.id}')
-		return self.sendUpdateRequest(uri=cast(str, request.id),
-									  originator=request.headers.originator,
-									  data=request.originalRequest,
-									  raw=True)
+		return self.sendUpdateRequest(uri = cast(str, request.id),
+									  originator = request.headers.originator,
+									  data = request.originalRequest,
+									  raw = True)
 
 
 	def handleTransitDeleteRequest(self, request:CSERequest) -> Result:
@@ -467,10 +471,10 @@ class RequestManager(object):
 		self._originatorToSPRelative(request)
 
 		L.isDebug and L.logDebug(f'Forwarding DELETE request to: {request.id}')
-		return self.sendDeleteRequest(uri=cast(str, request.id),
-									  originator=request.headers.originator,
-  									  data=request.originalRequest,
-									  raw=True)
+		return self.sendDeleteRequest(uri = cast(str, request.id),
+									  originator = request.headers.originator,
+  									  data = request.originalRequest,
+									  raw = True)
 
 
 	def handleTransitNotifyRequest(self, request:CSERequest) -> Result:
@@ -481,10 +485,10 @@ class RequestManager(object):
 		self._originatorToSPRelative(request)
 
 		L.isDebug and L.logDebug(f'Forwarding NOTIFY request to: {request.id}')
-		return self.sendNotifyRequest(uri=cast(str, request.id),
-							 		  originator=request.headers.originator,
-									  data=request.originalRequest,
-									  raw=True)
+		return self.sendNotifyRequest(uri = cast(str, request.id),
+							 		  originator = request.headers.originator,
+									  data = request.originalRequest,
+									  raw = True)
 
 
 	def isTransitID(self, id:str) -> bool:
@@ -728,17 +732,16 @@ class RequestManager(object):
 	#
 	#
 
-
-	def sendRetrieveRequest(self, uri:str, originator:str, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False, id:str=None) -> Result:
+	def sendRetrieveRequest(self, uri:str, originator:str, data:Any = None, parameters:Parameters = None, ct:ContentSerializationType = None, targetResource:Resource = None, targetOriginator:str = None, appendID:str = '', raw:bool = False, id:str = None) -> Result:
 		"""	Send a RETRIEVE request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending RETRIEVE request to: {uri} id: {appendID}')
 
-		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID=appendID, permission=Permission.RETRIEVE, raw=raw):
+		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID = appendID, permission = Permission.RETRIEVE, raw = raw):
 
 			# Send the request via a PCH, if present
 			if pch:
-				request = self.queueRequestForPCH(pch.getOriginator(), Operation.RETRIEVE, parameters=parameters, originator=originator)
+				request = self.queueRequestForPCH(pch.getOriginator(), Operation.RETRIEVE, parameters = parameters, originator = originator)
 				return self.waitForResponseToPCH(request)
 
 			# Otherwise send it via one of the bindings
@@ -752,44 +755,44 @@ class RequestManager(object):
 				return CSE.httpServer.sendHttpRequest(Operation.RETRIEVE, 
 													  url,
 													  originator,
-													  data=data,
-													  parameters=parameters,
-													  ct=ct,
-													  targetResource=targetResource,
-													  targetOriginator=targetOriginator,
-													  raw=raw,
-													  id=id)
+													  data = data,
+													  parameters = parameters,
+													  ct = ct,
+													  targetResource = targetResource,
+													  targetOriginator = targetOriginator,
+													  raw = raw,
+													  id = id)
 			elif Utils.isMQTTUrl(url):
 				CSE.event.mqttSendRetrieve()	# type: ignore [attr-defined]
 				return CSE.mqttClient.sendMqttRequest(Operation.RETRIEVE, 
 													  url,
 													  originator,
-													  data=data,
-													  parameters=parameters,
-													  ct=ct,
-													  targetResource=targetResource,
-													  targetOriginator=targetOriginator,
-													  raw=raw,
-													  id=id)
+													  data = data,
+													  parameters = parameters,
+													  ct = ct,
+													  targetResource = targetResource,
+													  targetOriginator = targetOriginator,
+													  raw = raw,
+													  id = id)
 			L.logWarn(dbg := f'unsupported url scheme: {url}')
 			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
 		return Result(status = False, rsc = RC.notFound, dbg = f'No target found for uri: {uri}')
 
 
-	def sendCreateRequest(self, uri:str, originator:str, ty:T=None, data:Any=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, appendID:str='', raw:bool=False, id:str=None) -> Result:
+	def sendCreateRequest(self, uri:str, originator:str, ty:T = None, data:Any = None, parameters:Parameters = None, ct:ContentSerializationType = None, targetResource:Resource = None, targetOriginator:str = None, appendID:str = '', raw:bool = False, id:str = None) -> Result:
 		"""	Send a CREATE request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending CREATE request to: {uri} id: {appendID}')
 
-		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID=appendID, originator=originator, permission=Permission.CREATE, raw=raw):
+		for url, csz, tor, pch in self.resolveSingleUriCszTo(uri, appendID = appendID, originator = originator, permission = Permission.CREATE, raw = raw):
 
 			# Send the request via a PCH, if present
 			if pch:
 				if isinstance(data, CSERequest):
-					request = self.queueRequestForPCH(pch.getOriginator(), Operation.CREATE, parameters=parameters, request=data, originator=originator)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.CREATE, parameters = parameters, request = data, originator = originator)
 				else:
-					request = self.queueRequestForPCH(pch.getOriginator(), Operation.CREATE, parameters=parameters, data=data, originator=originator)
+					request = self.queueRequestForPCH(pch.getOriginator(), Operation.CREATE, parameters = parameters, data = data, originator = originator)
 
 				return self.waitForResponseToPCH(request)
 
@@ -805,13 +808,13 @@ class RequestManager(object):
 													  url,
 													  originator,
 													  ty,
-													  data,
-													  parameters=parameters,
-													  ct=ct,
-													  targetResource=targetResource,
-													  targetOriginator=targetOriginator,
-													  raw=raw,
-													  id=id)
+													  data = data,
+													  parameters = parameters,
+													  ct = ct,
+													  targetResource = targetResource,
+													  targetOriginator = targetOriginator,
+													  raw = raw,
+													  id = id)
 			elif Utils.isMQTTUrl(url):
 				CSE.event.mqttSendCreate()	# type: ignore [attr-defined]
 				return CSE.mqttClient.sendMqttRequest(Operation.CREATE,
@@ -819,12 +822,12 @@ class RequestManager(object):
 													  originator,
 													  ty,
 													  data,
-													  parameters=parameters,
-													  ct=ct,
-													  targetResource=targetResource,
-													  targetOriginator=targetOriginator,
-													  raw=raw,
-													  id=id)
+													  parameters = parameters,
+													  ct = ct,
+													  targetResource = targetResource,
+													  targetOriginator = targetOriginator,
+													  raw = raw,
+													  id = id)
 			L.logWarn(dbg := f'unsupported url scheme: {url}')
 			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 		
@@ -1281,6 +1284,33 @@ class RequestManager(object):
 
 		# Return the error or success result 
 		return errorResult if errorResult else Result(status = True, rsc = cseRequest.rsc, request = cseRequest, data = cseRequest.pc)
+
+
+	def dissectRequestFromBytes(self, data:bytes, contenType:str, isResponse:bool=False) -> Result:
+		"""	Dissect a request in a byte string and build up a . Return it in `Result.request` .
+		"""
+		cseRequest = CSERequest()
+		cseRequest.originalData = data
+		cseRequest.headers.contentType = contenType.lower()
+
+		# De-Serialize the content
+		if not (contentResult := self.deserializeContent(cseRequest.originalData, cseRequest.headers.contentType)).status:
+			_, cseRequest.ct = contentResult.data	# type: ignore[assignment] # Actual, .data contains a tuple
+			return Result(rsc=contentResult.rsc, request=cseRequest, dbg=contentResult.dbg, status=False)
+		cseRequest.originalRequest, cseRequest.ct = contentResult.data	# type: ignore[assignment] # Actual, .data contains a tuple
+
+		# Validate the request
+		try:
+			if not (res := self.fillAndValidateCSERequest(cseRequest, isResponse)).status:
+				#return Result(rsc=res.rsc, request=cseRequest, dbg=res.dbg, status=res.status)
+				return res
+		except Exception as e:
+			import traceback
+			traceback.print_exc()
+			return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'invalid arguments/attributes ({str(e)})', status=False)
+		
+		return res
+
 
 	###########################################################################
 
