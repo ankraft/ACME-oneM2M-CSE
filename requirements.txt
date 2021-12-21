@@ -34,7 +34,7 @@ pygments==2.10.0
     # via rich
 requests==2.26.0
     # via ACME-oneM2M-CSE (setup.py)
-rich==10.12.0
+rich==10.16.1
     # via ACME-oneM2M-CSE (setup.py)
 six==1.16.0
     # via isodate
