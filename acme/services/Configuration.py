@@ -8,8 +8,8 @@
 #
 
 
-import configparser, re, argparse, os.path, pathlib
-from typing import Any, Dict
+import configparser, argparse, os.path, pathlib
+from typing import Any, Dict, Tuple
 from rich.console import Console
 from ..etc.Constants import Constants as C
 from ..etc.Types import CSEType, ContentSerializationType, Permission
@@ -21,32 +21,47 @@ class Configuration(object):
 	"""
 	_configuration: Dict[str, Any] = {}
 
-	@staticmethod
-	def init(args: argparse.Namespace = None) -> bool:
-		console = Console()
+	_argsConfigfile:str 			= None
+	_argsLoglevel:str				= None
+	_argsDBReset:bool				= None
+	_argsDBStorageMode:str			= None
+	_argsHeadless:bool				= None
+	_argsHttpAddress:str			= None
+	_argsHttpPort:int				= None
+	_argsImportDirectory:str		= None
+	_argsListenIF:str				= None
+	_argsMqttEnabled:bool			= None
+	_argsRemoteCSEEnabled:bool		= None
+	_argsRemoteConfigEnabled:bool	= None
+	_argsRunAsHttps:bool			= None
+	_argsStatisticsEnabled:bool		= None
 
-		from ..etc import Utils as Utils	# cannot import at the top because of circel import
+
+	# Internal print function that takes the headless setting into account
+	@staticmethod
+	def _print(msg:str) -> None:
+		if not Configuration._argsHeadless:
+			Console().print(msg)	# Print error message to console
+
+
+	@staticmethod
+	def init(args:argparse.Namespace = None) -> bool:
 
 		# resolve the args, of any
-		argsConfigfile			= args.configfile if args and 'configfile' in args else C.defaultConfigFile
-		argsLoglevel			= args.loglevel if args and 'loglevel' in args else None
-		argsDBReset				= args.dbreset if args and 'dbreset' in args else False
-		argsDBStorageMode		= args.dbstoragemode if args and 'dbstoragemode' in args else None
-		argsHeadless			= args.headless if args and 'headless' in args else False
-		argsHttpAddress			= args.httpaddress if args and 'httpaddress' in args else None
-		argsHttpPort			= args.httpport if args and 'httpport' in args else None
-		argsImportDirectory		= args.importdirectory if args and 'importdirectory' in args else None
-		argsListenIF			= args.listenif if args and 'listenif' in args else None
-		argsMqttEnabled			= args.mqttenabled if args and 'mqttenabled' in args else None
-		argsRemoteCSEEnabled	= args.remotecseenabled if args and 'remotecseenabled' in args else None
-		argsRemoteConfigEnabled	= args.remoteconfigenabled if args and 'remoteconfigenabled' in args else None
-		argsRunAsHttps			= args.https if args and 'https' in args else None
-		argsStatisticsEnabled	= args.statisticsenabled if args and 'statisticsenabled' in args else None
-
-		# own print function that takes the headless setting into account
-		def _print(out:str) -> None:
-			if not argsHeadless:
-				console.print(out)
+		Configuration._argsConfigfile			= args.configfile if args and 'configfile' in args else C.defaultConfigFile
+		Configuration._argsLoglevel				= args.loglevel if args and 'loglevel' in args else None
+		Configuration._argsDBReset				= args.dbreset if args and 'dbreset' in args else False
+		Configuration._argsDBStorageMode		= args.dbstoragemode if args and 'dbstoragemode' in args else None
+		Configuration._argsHeadless				= args.headless if args and 'headless' in args else False
+		Configuration._argsHttpAddress			= args.httpaddress if args and 'httpaddress' in args else None
+		Configuration._argsHttpPort				= args.httpport if args and 'httpport' in args else None
+		Configuration._argsImportDirectory		= args.importdirectory if args and 'importdirectory' in args else None
+		Configuration._argsListenIF				= args.listenif if args and 'listenif' in args else None
+		Configuration._argsMqttEnabled			= args.mqttenabled if args and 'mqttenabled' in args else None
+		Configuration._argsRemoteCSEEnabled		= args.remotecseenabled if args and 'remotecseenabled' in args else None
+		Configuration._argsRemoteConfigEnabled	= args.remoteconfigenabled if args and 'remoteconfigenabled' in args else None
+		Configuration._argsRunAsHttps			= args.https if args and 'https' in args else None
+		Configuration._argsStatisticsEnabled	= args.statisticsenabled if args and 'statisticsenabled' in args else None
 
 
 		# Read and parse the configuration file
@@ -62,12 +77,12 @@ class Configuration(object):
 						 }
 					})
 		try:
-			if len(config.read(argsConfigfile)) == 0 and argsConfigfile != C.defaultConfigFile:		# Allow 
-				_print(f'[red]Configuration file missing or not readable: {argsConfigfile}')
+			if len(config.read(Configuration._argsConfigfile)) == 0 and Configuration._argsConfigfile != C.defaultConfigFile:		# Allow 
+				Configuration._print(f'[red]Configuration file missing or not readable: {Configuration._argsConfigfile}')
 				return False
 		except configparser.Error as e:
-			_print('[red]Error in configuration file')
-			_print(str(e))
+			Configuration._print('[red]Error in configuration file')
+			Configuration._print(str(e))
 			return False
 
 		#
@@ -76,7 +91,7 @@ class Configuration(object):
 
 		try:
 			Configuration._configuration = {
-				'configfile'							: argsConfigfile,
+				'configfile'							: Configuration._argsConfigfile,
 				'packageDirectory'						: pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent,	# points to the acme package directory
 
 
@@ -276,72 +291,81 @@ class Configuration(object):
 			}
 
 		except configparser.InterpolationMissingOptionError as e:
-			_print(f'[red]Error in configuration file: {argsConfigfile}\n{str(e)}')
-			_print('\n[red]Please check the section [bold]\[basic.config][/bold] in the configuration file.\n')
+			Configuration._print(f'[red]Error in configuration file: {Configuration._argsConfigfile}\n{str(e)}')
+			Configuration._print('\n[red]Please check the section [bold](basic.config)[/bold] in the configuration file.\n')
 			return False
 
 		except Exception as e:	# about when findings errors in configuration
-			_print(f'[red]Error in configuration file: {argsConfigfile}\n{str(e)}')
+			Configuration._print(f'[red]Error in configuration file: {Configuration._argsConfigfile}\n{str(e)}')
 			return False
 
 		# Read id-mappings
 		if  config.has_section('server.http.mappings'):
 			Configuration._configuration['server.http.mappings'] = config.items('server.http.mappings')
 			# print(config.items('server.http.mappings'))
+		
+		if not (v := Configuration.validate())[0]:
+			Configuration._print(f'[red]{v[1]}')
+		return v[0]
 
+
+	@staticmethod
+	def validate() -> Tuple[bool, str]:
 		# Some clean-ups and overrides
 
+		from ..etc import Utils as Utils	# cannot import at the top because of circel import
+
 		# CSE type
-		cseType = Configuration._configuration['cse.type'].lower()
-		if  cseType == 'asn':
-			Configuration._configuration['cse.type'] = CSEType.ASN
-		elif cseType == 'mn':
-			Configuration._configuration['cse.type'] = CSEType.MN
-		else:
-			Configuration._configuration['cse.type'] = CSEType.IN
+		if isinstance(cseType := Configuration._configuration['cse.type'], str):
+			cseType = cseType.lower()
+			if  cseType == 'asn':
+				Configuration._configuration['cse.type'] = CSEType.ASN
+			elif cseType == 'mn':
+				Configuration._configuration['cse.type'] = CSEType.MN
+			else:
+				Configuration._configuration['cse.type'] = CSEType.IN
 
 		# CSE Serialization
-		ct = Configuration._configuration['cse.defaultSerialization']
-		Configuration._configuration['cse.defaultSerialization'] = ContentSerializationType.toContentSerialization(ct)
-		if Configuration._configuration['cse.defaultSerialization'] == ContentSerializationType.UNKNOWN:
-			_print(f'[red]Configuration Error: Unsupported \[cse]:defaultSerialization: {ct}')
-			return False
+		if isinstance(ct := Configuration._configuration['cse.defaultSerialization'], str):
+			Configuration._configuration['cse.defaultSerialization'] = ContentSerializationType.toContentSerialization(ct)
+			if Configuration._configuration['cse.defaultSerialization'] == ContentSerializationType.UNKNOWN:
+				return False, f'Configuration Error: Unsupported \[cse]:defaultSerialization: {ct}'
 		
 		# Registrar Serialization
-		ct = Configuration._configuration['cse.registrar.serialization']
-		Configuration._configuration['cse.registrar.serialization'] = ContentSerializationType.toContentSerialization(ct)
-		if Configuration._configuration['cse.registrar.serialization'] == ContentSerializationType.UNKNOWN:
-			_print(f'[red]Configuration Error: Unsupported \[cse.registrar]:serialization: {ct}')
-			return False
+		if isinstance(ct := Configuration._configuration['cse.registrar.serialization'], str):
+			Configuration._configuration['cse.registrar.serialization'] = ContentSerializationType.toContentSerialization(ct)
+			if Configuration._configuration['cse.registrar.serialization'] == ContentSerializationType.UNKNOWN:
+				return False, f'Configuration Error: Unsupported \[cse.registrar]:serialization: {ct}'
 
 		# Loglevel and various overrides from command line
 		from ..services.Logging import LogLevel
-		logLevel = Configuration._configuration['logging.level'].lower()
-		logLevel = (argsLoglevel or logLevel) 	# command line args override config
-		if logLevel == 'off':
-			Configuration._configuration['logging.level'] = LogLevel.OFF
-		elif logLevel == 'info':
-			Configuration._configuration['logging.level'] = LogLevel.INFO
-		elif logLevel == 'warn':
-			Configuration._configuration['logging.level'] = LogLevel.WARNING
-		elif logLevel == 'error':
-			Configuration._configuration['logging.level'] = LogLevel.ERROR
-		else:
-			Configuration._configuration['logging.level'] = LogLevel.DEBUG
+		if isinstance(logLevel := Configuration._configuration['logging.level'], str):	
+			logLevel = logLevel.lower()
+			logLevel = (Configuration._argsLoglevel or logLevel) 	# command line args override config
+			if logLevel == 'off':
+				Configuration._configuration['logging.level'] = LogLevel.OFF
+			elif logLevel == 'info':
+				Configuration._configuration['logging.level'] = LogLevel.INFO
+			elif logLevel == 'warn':
+				Configuration._configuration['logging.level'] = LogLevel.WARNING
+			elif logLevel == 'error':
+				Configuration._configuration['logging.level'] = LogLevel.ERROR
+			else:
+				Configuration._configuration['logging.level'] = LogLevel.DEBUG
 
-		if argsDBReset is True:					Configuration._configuration['db.resetOnStartup'] = True									# Override DB reset from command line
-		if argsDBStorageMode is not None:		Configuration._configuration['db.inMemory'] = argsDBStorageMode == 'memory'					# Override DB storage mode from command line
-		if argsHttpAddress is not None:			Configuration._configuration['http.address'] = argsHttpAddress								# Override server http address
-		if argsHttpPort is not None:			Configuration._configuration['http.port'] = argsHttpPort									# Override server http port
-		if argsImportDirectory is not None:		Configuration._configuration['cse.resourcesPath'] = argsImportDirectory						# Override import directory from command line
-		if argsListenIF is not None:			Configuration._configuration['http.listenIF'] = argsListenIF								# Override binding network interface
-		if argsMqttEnabled is not None:			Configuration._configuration['mqtt.enable'] = argsMqttEnabled								# Override mqtt enable
-		if argsRemoteConfigEnabled is not None:	Configuration._configuration['http.enableRemoteConfiguration'] = argsRemoteConfigEnabled	# Override remote/httpConfiguration
-		if argsRemoteCSEEnabled is not None:	Configuration._configuration['cse.enableRemoteCSE'] = argsRemoteCSEEnabled					# Override remote CSE enablement
-		if argsRunAsHttps is not None:			Configuration._configuration['http.security.useTLS'] = argsRunAsHttps						# Override useTLS
-		if argsStatisticsEnabled is not None:	Configuration._configuration['cse.statistics.enable'] = argsStatisticsEnabled				# Override statistics enablement
+		if Configuration._argsDBReset is True:					Configuration._configuration['db.resetOnStartup'] = True									# Override DB reset from command line
+		if Configuration._argsDBStorageMode is not None:		Configuration._configuration['db.inMemory'] = Configuration._argsDBStorageMode == 'memory'					# Override DB storage mode from command line
+		if Configuration._argsHttpAddress is not None:			Configuration._configuration['http.address'] = Configuration._argsHttpAddress								# Override server http address
+		if Configuration._argsHttpPort is not None:				Configuration._configuration['http.port'] = Configuration._argsHttpPort									# Override server http port
+		if Configuration._argsImportDirectory is not None:		Configuration._configuration['cse.resourcesPath'] = Configuration._argsImportDirectory						# Override import directory from command line
+		if Configuration._argsListenIF is not None:				Configuration._configuration['http.listenIF'] = Configuration._argsListenIF								# Override binding network interface
+		if Configuration._argsMqttEnabled is not None:			Configuration._configuration['mqtt.enable'] = Configuration._argsMqttEnabled								# Override mqtt enable
+		if Configuration._argsRemoteConfigEnabled is not None:	Configuration._configuration['http.enableRemoteConfiguration'] = Configuration._argsRemoteConfigEnabled	# Override remote/httpConfiguration
+		if Configuration._argsRemoteCSEEnabled is not None:		Configuration._configuration['cse.enableRemoteCSE'] = Configuration._argsRemoteCSEEnabled					# Override remote CSE enablement
+		if Configuration._argsRunAsHttps is not None:			Configuration._configuration['http.security.useTLS'] = Configuration._argsRunAsHttps						# Override useTLS
+		if Configuration._argsStatisticsEnabled is not None:	Configuration._configuration['cse.statistics.enable'] = Configuration._argsStatisticsEnabled				# Override statistics enablement
 
-		if argsHeadless:
+		if Configuration._argsHeadless:
 			Configuration._configuration['logging.enableScreenLogging'] = False
 
 		# Correct urls
@@ -353,7 +377,7 @@ class Configuration(object):
 		# Just in case: check the URL's
 		if Configuration._configuration['http.security.useTLS']:
 			if Configuration._configuration['http.address'].startswith('http:'):
-				_print('[orange3]Configuration Warning: Changing "http" to "https" in \[server.http]:address')
+				Configuration._print('[orange3]Configuration Warning: Changing "http" to "https" in \[server.http]:address')
 				Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('http:', 'https:')
 			# registrar might still be accessible vi another protocol
 			# if Configuration._configuration['cse.registrar.address'].startswith('http:'):
@@ -361,7 +385,7 @@ class Configuration(object):
 			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('http:', 'https:')
 		else: 
 			if Configuration._configuration['http.address'].startswith('https:'):
-				_print('[orange3]Configuration Warning: Changing "https" to "http" in \[server.http]:address')
+				Configuration._print('[orange3]Configuration Warning: Changing "https" to "http" in \[server.http]:address')
 				Configuration._configuration['http.address'] = Configuration._configuration['http.address'].replace('https:', 'http:')
 			# registrar might still be accessible vi another protocol
 			# if Configuration._configuration['cse.registrar.address'].startswith('https:'):
@@ -381,20 +405,15 @@ class Configuration(object):
 			Configuration._configuration['http.security.caPrivateKeyFile'] = None
 		else:
 			if not (val := Configuration._configuration['http.security.tlsVersion']).lower() in [ 'tls1.1', 'tls1.2', 'auto' ]:
-				_print(f'[red]Configuration Error: Unknown value for \[http.security]:tlsVersion: {val}')
-				return False
+				return False, f'Configuration Error: Unknown value for \[http.security]:tlsVersion: {val}'
 			if not (val := Configuration._configuration['http.security.caCertificateFile']):
-				_print('[red]Configuration Error: \[http.security]:caCertificateFile must be set when TLS is enabled')
-				return False
+				return False, 'Configuration Error: \[http.security]:caCertificateFile must be set when TLS is enabled'
 			if not os.path.exists(val):
-				_print(f'[red]Configuration Error: \[http.security]:caCertificateFile does not exists or is not accessible: {val}')
-				return False
+				return False, f'Configuration Error: \[http.security]:caCertificateFile does not exists or is not accessible: {val}'
 			if not (val := Configuration._configuration['http.security.caPrivateKeyFile']):
-				_print('[red]Configuration Error: \[http.security]:caPrivateKeyFile must be set when TLS is enabled')
-				return False
+				return False, 'Configuration Error: \[http.security]:caPrivateKeyFile must be set when TLS is enabled'
 			if not os.path.exists(val):
-				_print(f'[red]Configuration Error: \[http.security]:caPrivateKeyFile does not exists or is not accessible: {val}')
-				return False
+				return False, f'Configuration Error: \[http.security]:caPrivateKeyFile does not exists or is not accessible: {val}'
 		
 		#
 		#	MQTT client
@@ -402,67 +421,54 @@ class Configuration(object):
 		if not Configuration._configuration['mqtt.port']:	# set the default port depending on whether to use TLS
 			Configuration._configuration['mqtt.port'] = 8883 if Configuration._configuration['mqtt.security.useTLS'] else 1883
 		if not (Configuration._configuration['mqtt.security.username']) != (not Configuration._configuration['mqtt.security.password']):
-			_print(f'[red]Configuration Error: Username or password missing for \[mqtt.security]]')
-			return False
+			return False, f'Configuration Error: Username or password missing for \[mqtt.security]]'
 		# remove empty cid from the list
 		Configuration._configuration['mqtt.security.allowedCredentialIDs'] = [ cid for cid in Configuration._configuration['mqtt.security.allowedCredentialIDs'] if len(cid) ]
 		
 
 		# check the csi format
 		if not Utils.isValidCSI(val:=Configuration._configuration['cse.csi']):
-			_print(f'[red]Configuration Error: Wrong format for \[cse]:cseID: {val}')
-			return False
+			return False, f'Configuration Error: Wrong format for \[cse]:cseID: {val}'
 
 		if Configuration._configuration['cse.registrar.address'] and Configuration._configuration['cse.registrar.csi']:
 			if not Utils.isValidCSI(val:=Configuration._configuration['cse.registrar.csi']):
-				_print(f'[red]Configuration Error: Wrong format for \[cse.registrar]:cseID: {val}')
-				return False
+				return False, f'Configuration Error: Wrong format for \[cse.registrar]:cseID: {val}'
 			if len(Configuration._configuration['cse.registrar.csi']) > 0 and len(Configuration._configuration['cse.registrar.rn']) == 0:
-				_print('[red]Configuration Error: Missing configuration \[cse.registrar]:resourceName')
-				return False
+				return False, 'Configuration Error: Missing configuration \[cse.registrar]:resourceName'
 
 		# Check default subscription duration
 		if Configuration._configuration['cse.sub.dur'] < 1:
-			_print('[red]Configuration Error: \[cse.resource.sub]:batchNotifyDuration must be > 0')
-			return False
+			return False, 'Configuration Error: \[cse.resource.sub]:batchNotifyDuration must be > 0'
 
 		# Check flexBlocking value
 		Configuration._configuration['cse.flexBlockingPreference'] = Configuration._configuration['cse.flexBlockingPreference'].lower()
 		if Configuration._configuration['cse.flexBlockingPreference'] not in ['blocking', 'nonblocking']:
-			_print('[red]Configuration Error: \[cse]:flexBlockingPreference must be "blocking" or "nonblocking"')
-			return False
+			return False, 'Configuration Error: \[cse]:flexBlockingPreference must be "blocking" or "nonblocking"'
 
 		# Check release versions
 		if len(srv := Configuration._configuration['cse.supportedReleaseVersions']) == 0:
-			_print('[red]Configuration Error: \[cse]:supportedReleaseVersions must not be empty')
-			return False
-			
+			return False, 'Configuration Error: \[cse]:supportedReleaseVersions must not be empty'
 		if len(rvi := Configuration._configuration['cse.releaseVersion']) == 0:
-			_print('[red]Configuration Error: \[cse]:releaseVersion must not be empty')
-			return False
+			return False, 'Configuration Error: \[cse]:releaseVersion must not be empty'
 		if rvi not in srv:
-			_print(f'[red]Configuration Error: \[cse]:releaseVersion: {rvi} not in \[cse].supportedReleaseVersions: {srv}')
-			return False
+			return False, f'Configuration Error: \[cse]:releaseVersion: {rvi} not in \[cse].supportedReleaseVersions: {srv}'
 		if any([s for s in srv if str(rvi) < s]):
-			_print(f'[red]Configuration Error: \[cse]:releaseVersion: {rvi} less than highest value in \[cse].supportedReleaseVersions: {srv}')
-			return False
+			return False, f'Configuration Error: \[cse]:releaseVersion: {rvi} less than highest value in \[cse].supportedReleaseVersions: {srv}'
 
 		# Check various intervals
 		if Configuration._configuration['cse.checkExpirationsInterval'] <= 0:
-			_print('[red]Configuration Error: \[cse]:checkExpirationsInterval must be greater than 0')
-			return False
+			return False, 'Configuration Error: \[cse]:checkExpirationsInterval must be greater than 0'
 		if Configuration._configuration['cse.console.refreshInterval'] <= 0.0:
-			_print('[red]Configuration Error: \[cse.console]:refreshInterval must be greater than 0.0')
-			return False
+			return False, 'Configuration Error: \[cse.console]:refreshInterval must be greater than 0.0'
 
 		from ..services.Console import TreeMode
-		if not (treeMode := TreeMode.to(Configuration._configuration['cse.console.treeMode'])):
-			_print(f'[red]Configuration Error: \[cse.console]:treeMode must be one of {TreeMode.names()}')
-			return False
-		Configuration._configuration['cse.console.treeMode'] = treeMode
+		if isinstance(tm := Configuration._configuration['cse.console.treeMode'], str):
+			if not (treeMode := TreeMode.to(tm)):
+				return False, f'Configuration Error: \[cse.console]:treeMode must be one of {TreeMode.names()}'
+			Configuration._configuration['cse.console.treeMode'] = treeMode
 
 		# Everything is fine
-		return True
+		return True, None
 
 
 	@staticmethod
@@ -482,16 +488,34 @@ class Configuration(object):
 	def get(key: str) -> Any:
 		"""	Retrieve a configuration value or None if no configuration could be found for a key.
 		"""
-		if not Configuration.has(key):
-			return None
-		return Configuration._configuration[key]
+		return Configuration._configuration.get(key)
 
 
 	@staticmethod
-	def set(key: str, value: Any) -> None:
-		Configuration._configuration[key] = value
+	def update(key:str, value:Any) -> str:
+		""" Update a configuration value and inform other components via an event.
+
+			Returns:
+				None if no error occurs, or a string with an error message, what has gone wrong while validating
+		"""
+		if key not in Configuration._configuration:
+			return f'Unknown key: {key}'
+		if value is not None:	# ignore invalid values
+			original = Configuration._configuration[key]
+			Configuration._configuration[key] = value
+			if not (r := Configuration.validate())[0]:
+				Configuration._configuration[key] = original
+				return r[1].replace('\[', '[')	# unescape "\[" in error messages
+
+			from ..services import CSE
+			CSE.event.configUpdate(key, value)		# type:ignore [attr-defined]
+		else:
+			return f'Invalid value for key: {key}'
+		return None
 
 
 	@staticmethod
-	def has(key: str) -> bool:
+	def has(key:str) -> bool:
+		"""	Check whether a configuration setting exsists.
+		"""
 		return key in Configuration._configuration

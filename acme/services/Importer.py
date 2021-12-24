@@ -51,17 +51,17 @@ class Importer(object):
 			if CSE.cseCsi != csi:
 				L.logWarn(f'Imported CSEBase overwrites configuration. csi: {CSE.cseCsi} -> {csi}')
 				CSE.cseCsi = csi
-				Configuration.set('cse.csi', csi)
+				Configuration.update('cse.csi', csi)
 
 			if CSE.cseRi != ri:
 				L.logWarn(f'Imported CSEBase overwrites configuration. ri: {CSE.cseRi} -> {ri}')
 				CSE.cseRi  = ri
-				Configuration.set('cse.ri', ri)
+				Configuration.update('cse.ri', ri)
 
 			if CSE.cseRn != rn:
 				L.logWarn(f'Imported CSEBase overwrites configuration. rn: {CSE.cseRn} -> {rn}')
 				CSE.cseRn  = rn
-				Configuration.set('cse.rn', rn)
+				Configuration.update('cse.rn', rn)
 
 
 		countImport = 0
@@ -369,7 +369,7 @@ class Importer(object):
 	def _prepareImporting(self) -> None:
 		# temporarily disable access control
 		self._oldacp = Configuration.get('cse.security.enableACPChecks')
-		Configuration.set('cse.security.enableACPChecks', False)
+		Configuration.update('cse.security.enableACPChecks', False)
 		self.isImporting = True
 
 
@@ -408,6 +408,6 @@ class Importer(object):
 
 
 	def _finishImporting(self) -> None:
-		Configuration.set('cse.security.enableACPChecks', self._oldacp)
+		Configuration.update('cse.security.enableACPChecks', self._oldacp)
 		self.isImporting = False
 
