@@ -66,7 +66,7 @@ class ACMEIntEnum(IntEnum):
 
 
 	def __str__(self) -> str:
-		return str(self.name)
+		return self.name
 
 
 	def __repr__(self) -> str:
@@ -450,6 +450,7 @@ class Cardinality(ACMEIntEnum):
 			Example: `hasCar('01')`
 		"""
 		return cls.has(f'CAR{name}')
+	
 	
 	@classmethod
 	def to(cls, name:str|Tuple[str], insensitive:bool=True) -> Cardinality:
