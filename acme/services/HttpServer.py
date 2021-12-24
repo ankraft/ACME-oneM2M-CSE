@@ -301,7 +301,6 @@ class HttpServer(object):
 		return Response(C.version, headers=self._responseHeaders)
 
 
-	def handleConfig(self, path:str = None) -> Response:
 		"""	Handle a configuration request. This can either be e GET request to query a 
 			configuration value, or a PUT request to set a new value to a configuration setting.
 			Note, that only a few of configuration settings are supported.
@@ -325,19 +324,19 @@ class HttpServer(object):
 				if path == 'cse.checkExpirationsInterval':
 					if (d := int(data)) < 1:
 						return _r('nak')
-					Configuration.set(path, d)
+					Configuration.update(path, d)
 					CSE.registration.stopExpirationMonitor()
 					CSE.registration.startExpirationMonitor()
 					return _r('ack')
 				elif path in [ 'cse.req.minet', 'cse.req.maxnet' ]:	# int configs
 					if (d := int(data)) < 1:
 							return _r('nak')
-					Configuration.set(path, d)
+					Configuration.update(path, d)
 					return _r('ack')
 				elif path == 'cse.requestExpirationDelta':	# float configs
 					if (f := float(data)) <= 0.0:
 							return _r('nak')
-					Configuration.set(path, f)
+					Configuration.update(path, f)
 					CSE.request.requestExpirationDelta = f
 					return _r('ack')
 			except:

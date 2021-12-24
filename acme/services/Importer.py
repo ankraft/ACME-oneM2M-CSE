@@ -10,7 +10,7 @@
 
 from __future__ import annotations
 import json, os, fnmatch, re
-from typing import cast, List
+from typing import cast
 from copy import deepcopy
 from ..etc.Utils import findXPath, getCSE, resourceModifiedAttributes
 from ..etc.Types import Announced, AttributePolicy, AttributePolicyDict, BasicType, Cardinality, RequestOptionality

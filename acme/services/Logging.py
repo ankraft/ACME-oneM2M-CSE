@@ -11,7 +11,6 @@
 """	Wrapper class for the logging subsystem. """
 
 from __future__ import annotations
-from enum import IntEnum
 import traceback
 import logging, logging.handlers, os, inspect, sys, datetime, time, threading
 from queue import Queue
@@ -31,7 +30,7 @@ from rich.tree import Tree
 from rich.table import Table
 from rich.prompt import Prompt
 
-from ..etc.Types import JSON
+from ..etc.Types import JSON, ACMEIntEnum
 from ..helpers.BackgroundWorker import BackgroundWorker
 from ..services.Configuration import Configuration
 
@@ -47,15 +46,12 @@ levelName = {
 }
 
 
-class LogLevel(IntEnum):
+class LogLevel(ACMEIntEnum):
 	INFO 	= logging.INFO
 	DEBUG 	= logging.DEBUG
 	ERROR 	= logging.ERROR
 	WARNING = logging.WARNING
 	OFF		= sys.maxsize
-
-	def __str__(self) -> str:
-		return self.name
 	
 
 	def next(self) -> LogLevel:
@@ -110,17 +106,18 @@ class Logging:
 
 		if Logging.logger:
 			return
+
 		Logging.enableFileLogging 		= Configuration.get('logging.enableFileLogging')
 		Logging.enableScreenLogging		= Configuration.get('logging.enableScreenLogging')
 		Logging.stackTraceOnError		= Configuration.get('logging.stackTraceOnError')
 		Logging.enableBindingsLogging	= Configuration.get('logging.enableBindingsLogging')
-		
+
 
 		Logging.logger					= logging.getLogger('logging')			# general logger
 		Logging.loggerConsole			= logging.getLogger('rich')				# Rich Console logger
 		Logging._console				= Console()								# Console object
 		Logging._richHandler			= ACMERichLogHandler()
-		
+
 		Logging.setLogLevel(Configuration.get('logging.level'))					# Assign the initial log level
 
 		# Add logging queue
@@ -153,16 +150,48 @@ class Logging:
 		Logging._logWorker = BackgroundWorkerPool.newActor(Logging.loggingActor, name = 'loggingWorker')
 		Logging._logWorker.start()	# Yes, this could be in one line but the _logworker attribute may not be assigned yet before the 
 									# actor callback is executed, and this might result in a None exception
-	
+
+		# React on config update. Only assig if it hasn't assigned before
+		from ..services import CSE
+		if not CSE.event.hasHandler(CSE.event.configUpdate, Logging.configUpdate):		# type: ignore [attr-defined]
+			CSE.event.addHandler(CSE.event.configUpdate, Logging.configUpdate)			# type: ignore
+
+
+	@staticmethod
+	def configUpdate(key:str = None, value:Any = None) -> None:
+		"""	Handle configuration update.
+		"""
+		if key.startswith('logging.'):
+			# No special action needed
+			if key in [ 'logging.enableScreenLogging', 'logging.stackTraceOnError',	'logging.enableBindingsLogging' ]:
+				return
+			
+			# Use the log level function to perform extra actions
+			if key == 'logging.level':
+				Logging.setLogLevel(Configuration.get('logging.level'))
+				return 
+			
+			# Otherwise a restart of the log system is needed
+			Logging.logDebug('Restarting Logging')
+			Logging.finit()
+			Logging.init()
+		
 	
 	@staticmethod
 	def finit() -> None:
+		"""	End logging.
+		"""
 		if Logging.queue:
 			while not Logging.queue.empty():
 				time.sleep(0.5)
 		if Logging._logWorker:
 			Logging._logWorker.stop()
 		Logging.log('')
+		if Logging.logger:
+			Logging.logger.handlers.clear()
+		if Logging._handlers:
+			Logging._handlers.clear()
+		Logging.logger = None
 
 
 	@staticmethod
@@ -176,7 +205,6 @@ class Logging:
 					richInspect(msg, private = True, docs = False, dunder = False)
 				except:
 					pass
-
 		return True
 
 
@@ -297,6 +325,11 @@ class Logging:
 	
 	@staticmethod
 	def inspect(obj:Any) -> None:
+		"""	Output a very comprehensive description of an object.
+		
+			Args:
+				obj: The object to inspect.
+		"""
 		Logging._log(Logging.logLevel, obj)
 
 
@@ -321,6 +354,9 @@ class Logging:
 	@staticmethod
 	def setLogLevel(logLevel:LogLevel) -> None:
 		"""	Set a new log level to the logging system.
+
+			Args:
+				logLevel: New log level
 		"""
 		Logging.logLevel = logLevel
 		Logging.loggerConsole.setLevel(logLevel)

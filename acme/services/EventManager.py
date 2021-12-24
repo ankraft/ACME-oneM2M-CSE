@@ -58,6 +58,7 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('remoteCSEUpdate')
 		self.addEvent('remoteCSEHasDeregistered')
 		self.addEvent('notification')
+		self.addEvent('configUpdate', runInBackground=False)
 
 
 	def shutdown(self) -> bool:
