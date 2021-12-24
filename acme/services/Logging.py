@@ -173,7 +173,7 @@ class Logging:
 				Logging.loggerConsole.log(level, f'{os.path.basename(caller.filename)}*{caller.lineno}*{thread.name:<10.10}*{str(msg)}')
 			else:
 				try:
-					richInspect(msg, private = True, dunder = False)
+					richInspect(msg, private = True, docs = False, dunder = False)
 				except:
 					pass
 
