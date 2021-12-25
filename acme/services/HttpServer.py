@@ -301,6 +301,7 @@ class HttpServer(object):
 		return Response(C.version, headers=self._responseHeaders)
 
 
+	def handleConfig(self, path:str = None) -> Response:
 		"""	Handle a configuration request. This can either be e GET request to query a 
 			configuration value, or a PUT request to set a new value to a configuration setting.
 			Note, that only a few of configuration settings are supported.
