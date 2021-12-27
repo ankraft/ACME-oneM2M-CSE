@@ -44,7 +44,7 @@ class RegistrationManager(object):
 	#	Handle new resources in general
 	#
 
-	def checkResourceCreation(self, resource:Resource, originator:str, parentResource:Resource=None) -> Result:
+	def checkResourceCreation(self, resource:Resource, originator:str, parentResource:Resource = None) -> Result:
 		# Some Resources are not allowed to be created in a request, return immediately
 		ty = resource.ty
 
