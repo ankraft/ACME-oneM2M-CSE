@@ -63,6 +63,9 @@ class CSEBase(AnnounceableResource):
 		self.setAttribute('poa', [ CSE.httpServer.serverAddress ], overwrite = False)		# TODO add more address schemes when available
 		self.setAttribute('cst', CSE.cseType, overwrite = False)
 
+		# remove the et attribute that was set by the parent. The CSEBase doesn't have one	
+		self.delAttribute('et', setNone = False)	
+
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (res := super().activate(parentResource, originator)).status:
