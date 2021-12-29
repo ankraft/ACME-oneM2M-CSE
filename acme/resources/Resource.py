@@ -337,9 +337,9 @@ class Resource(object):
 		""" Validate a resource. Usually called within activate() or update() methods. """
 		L.isDebug and L.logDebug(f'Validating resource: {self.ri}')
 		if (not Utils.isValidID(self.ri) or
-			not Utils.isValidID(self.pi) or
+			not Utils.isValidID(self.pi, allowEmpty = self.ty == T.CSEBase) or # pi is empty for CSEBase
 			not Utils.isValidID(self.rn)):
-			L.logDebug(dbg := f'Invalid ID ri: {self.ri}, pi: {self.pi}, rn: {self.rn})')
+			L.logDebug(dbg := f'Invalid ID: ri: {self.ri}, pi: {self.pi}, or rn: {self.rn})')
 			return Result(status = False, rsc = RC.contentsUnacceptable, dbg = dbg)
 
 		# expirationTime handling

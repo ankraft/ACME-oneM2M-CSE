@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [unreleased] - xxxx-xx-xx
+
 ### Added
 - [CSE] Added *--http-port* command line argument.
 - [CSE] Added initial support for the Upper Tester protocol defined in TS-0019.
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+- Improved check that IDs contain only unreserved characters.
 
 
 ## [0.9.1] - 2021-11-09

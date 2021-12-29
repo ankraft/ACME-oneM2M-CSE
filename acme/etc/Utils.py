@@ -121,10 +121,34 @@ def isAnnouncedResource(resource:Resource) -> bool:
 	# return result if result is not None else False
 
 
-def isValidID(id:str) -> bool:
-	""" Check for valid ID. """
-	#return len(id) > 0 and '/' not in id 	# pi might be ""
-	return id is not None and '/' not in id	# pi might be ""
+def isValidID(id:str, allowEmpty:bool = False) -> bool:
+	""" Check for a valid ID. 
+
+		Args:
+			id: The ID to check
+			allowedEmpty: Indicate whether an ID can be empty.
+		
+		Returns:
+			Boolean
+
+	"""
+	if allowEmpty:
+		return id is not None and '/' not in id	# pi might be ""
+	return id is not None and len(id) > 0 and hasOnlyUnreserved(id)
+
+
+_unreserved = re.compile(r'^[\w\-.~]*$')
+def hasOnlyUnreserved(id:str) -> bool:
+	"""	Test that an ID only contains characters from the unreserved character set of 
+		RFC 3986.
+		
+		Args:
+			id: the ID to check.
+		
+		Returns:
+			Boolean
+	"""
+	return re.match(_unreserved, id) is not None
 
 
 csiRx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
