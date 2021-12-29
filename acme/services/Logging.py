@@ -307,13 +307,13 @@ class Logging:
 	
 
 	@staticmethod
-	def consolePrompt(prompt:str, nl:bool = True) -> str:
+	def consolePrompt(prompt:str, nl:bool = True, default:str = None) -> str:
 		"""	Read a line from the console. 
 			Catch EOF (^D) and Keyboard Interrup (^C). In that case None is returned.
 		"""
 		answer = None
 		try:
-			answer = Prompt.ask(prompt, console = Logging._console)
+			answer = Prompt.ask(prompt, console = Logging._console, default = default)
 			if nl:
 				Logging.console()
 		except KeyboardInterrupt as e:
