@@ -88,7 +88,7 @@ class BackgroundWorker(object):
 		"""
 		if not self.running:
 			return self
-		while self.executing:
+		while self.executing:	# Wait until the worker is finished executing its current turn
 			time.sleep(0.001)
 		BackgroundWorkerPool._unqueueWorker(self)
 		return self

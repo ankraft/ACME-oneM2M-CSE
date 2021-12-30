@@ -287,6 +287,7 @@ class Configuration(object):
 				'cse.console.hideResources'				: config.getlist('cse.console', 'hideResources', 		fallback=[]),		# type: ignore[attr-defined]
 				'cse.console.treeMode'					: config.get('cse.console', 'treeMode', 				fallback='normal'),
 				'cse.console.confirmQuit'				: config.getboolean('cse.console', 'confirmQuit', 		fallback=False),
+				'cse.console.theme'						: config.get('cse.console', 'theme', 					fallback='dark'),
 
 			}
 
@@ -461,11 +462,17 @@ class Configuration(object):
 		if Configuration._configuration['cse.console.refreshInterval'] <= 0.0:
 			return False, 'Configuration Error: \[cse.console]:refreshInterval must be greater than 0.0'
 
+		# Console settings
 		from ..services.Console import TreeMode
 		if isinstance(tm := Configuration._configuration['cse.console.treeMode'], str):
 			if not (treeMode := TreeMode.to(tm)):
 				return False, f'Configuration Error: \[cse.console]:treeMode must be one of {TreeMode.names()}'
 			Configuration._configuration['cse.console.treeMode'] = treeMode
+		
+		Configuration._configuration['cse.console.theme'] = (theme := Configuration._configuration['cse.console.theme'].lower())
+		if theme not in [ 'dark', 'light' ]:
+			return False, f'Configuration Error: \[cse.console]:theme must be "light" or "dark"'
+
 
 		# Everything is fine
 		return True, None

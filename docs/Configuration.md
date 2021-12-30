@@ -262,6 +262,8 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | hideResources   | Hide certain resources from display in the console. This is a list of resource identifiers. Wildcards are allowed.<br/>Default: Empty list.                          | cse.console.hideResources   |
 | treeMode        | Set the mode how resources and their content are presented in the console's tree view.<br/>Allowed values: normal, compact, content, contentOnly<br/>Default: normal | cse.console.treeMode        |
 | confirmQuit     | Quitting the console needs to be confirmed.<br />This may not work under Windows, so it is switched off by default.<br />Default: False                              | cse.console.confirmQuit     |
+| theme           | Set the color theme for the console. Allowed values are "dark" and "light".<br />Default: dark                                                                       | cse.console.theme           |
+
 
 <a name="webui"></a>
 ###	[cse.webui] - Web UI Settings

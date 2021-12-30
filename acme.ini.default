@@ -476,6 +476,9 @@ treeMode=normal
 ; This may not work under Windows, so it should be switched off.
 ; Default: False
 confirmQuit=False
+; Set the color theme for the console. Allowed values are "dark" and "light".
+; Default: dark
+theme=dark
 
 
 ;

@@ -94,8 +94,7 @@ class Logging:
 	_handlers:List[Any] 			= None
 	_logWorker:BackgroundWorker		= None
 
-	terminalColor					= 'spring_green2'
-	terminalStyle:Style				= Style(color = terminalColor)
+	terminalStyle:Style				= Style(color = 'spring_green2')
 	terminalStyleError:Style		= Style(color = 'red')
 
 
@@ -111,6 +110,8 @@ class Logging:
 		Logging.enableScreenLogging		= Configuration.get('logging.enableScreenLogging')
 		Logging.stackTraceOnError		= Configuration.get('logging.stackTraceOnError')
 		Logging.enableBindingsLogging	= Configuration.get('logging.enableBindingsLogging')
+
+		Logging._configureColors(Configuration.get('cse.console.theme'))
 
 
 		Logging.logger					= logging.getLogger('logging')			# general logger
@@ -158,9 +159,18 @@ class Logging:
 
 
 	@staticmethod
+	def _configureColors(theme:str) -> None:
+		terminalColor				= 'spring_green2' if theme == 'dark' else 'dark_green'
+		print(terminalColor)
+		Logging.terminalStyle 		= Style(color = terminalColor)
+		Logging.terminalStyleError	= Style(color = 'red')
+
+
+	@staticmethod
 	def configUpdate(key:str = None, value:Any = None) -> None:
 		"""	Handle configuration update.
 		"""
+		restartNeeded = False
 		if key.startswith('logging.'):
 			# No special action needed
 			if key in [ 'logging.enableScreenLogging', 'logging.stackTraceOnError',	'logging.enableBindingsLogging' ]:
@@ -170,7 +180,13 @@ class Logging:
 			if key == 'logging.level':
 				Logging.setLogLevel(Configuration.get('logging.level'))
 				return 
+
+			restartNeeded = True
+
+		# Check console theme color		
+		restartNeeded = True if key == 'cse.logging.theme' else restartNeeded
 			
+		if restartNeeded:
 			# Otherwise a restart of the log system is needed
 			Logging.logDebug('Restarting Logging')
 			Logging.finit()

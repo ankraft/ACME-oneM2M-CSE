@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added *--http-port* command line argument.
 - [CSE] Added initial support for the Upper Tester protocol defined in TS-0019.
 - [WEB] Allow to open the WebUI of a registered CSE via the context menu.
+- [CONSOLE] Added config for dark (default) and light theme for better readability on consoles with light background.
 
 ### Changed
 - [CSE] Adapted Announcements to latest R4 changes. 
@@ -24,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
-- Improved check that IDs contain only unreserved characters.
+- [CSE] Improved check that IDs contain only unreserved characters.
 
 
 ## [0.9.1] - 2021-11-09

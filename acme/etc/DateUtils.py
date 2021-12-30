@@ -77,6 +77,9 @@ def fromDuration(duration:str) -> float:
 
 def utcTime() -> float:
 	"""	Return the current time's timestamp, but relative to UTC.
+
+		Returns:
+			Float with the curret UTC time.
 	"""
 	return datetime.datetime.utcnow().timestamp()
 
