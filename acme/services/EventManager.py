@@ -47,9 +47,10 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('mqttSendUpdate')
 		self.addEvent('mqttSendDelete')
 		self.addEvent('mqttSendNotify')
-		self.addEvent('cseStartup')
-		self.addEvent('cseShutdown', runInBackground=False)
-		self.addEvent('cseReset', runInBackground=False)
+		self.addEvent('cseStartup')										# After the CSE started
+		self.addEvent('cseShutdown', runInBackground=False)				# When the CSE is shutdown
+		self.addEvent('cseReset', runInBackground=False)				# When the CSE is reset
+		self.addEvent('cseRestarted', runInBackground=False)			# After the CSE finished the reset
 		self.addEvent('logError')
 		self.addEvent('logWarning')
 		self.addEvent('registeredToRemoteCSE')
