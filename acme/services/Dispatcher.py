@@ -541,14 +541,14 @@ class Dispatcher(object):
 		# Get resource to update
 		if not (res := self.retrieveResource(id)).resource:
 			L.isWarn and L.logWarn(f'Resource not found: {res.dbg}')
-			return Result(status=False, rsc=RC.notFound, dbg=res.dbg)
+			return Result(status = False, rsc = RC.notFound, dbg=res.dbg)
 		resource = res.resource
 		if resource.readOnly:
-			return Result(status=False, rsc=RC.operationNotAllowed, dbg='resource is read-only')
+			return Result(status = False, rsc = RC.operationNotAllowed, dbg = 'resource is read-only')
 
 		# Some Resources are not allowed to be updated in a request, return immediately
 		if resource.ty in [ T.CIN, T.FCI, T.TSI ]:		# TODO: move to constants
-			return Result(status=False, rsc=RC.operationNotAllowed, dbg=f'UPDATE not allowed for type: {resource.ty}')
+			return Result(status = False, rsc = RC.operationNotAllowed, dbg = f'UPDATE not allowed for type: {resource.ty}')
 
 		#
 		#	Permission check
@@ -558,7 +558,7 @@ class Dispatcher(object):
 			return res
 		if not res.data:	# data == None or False indicates that this is NOT an ACPI update. In this case we need a normal permission check
 			if CSE.security.hasAccess(originator, resource, Permission.UPDATE) == False:
-				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
+				return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = 'originator has no privileges')
 
 		# Check for virtual resource
 		if Utils.isVirtualResource(resource):
@@ -588,12 +588,12 @@ class Dispatcher(object):
 			# return only the modified attributes. This does only include those attributes that are updated differently, or are
 			# changed by the CSE, then from the original request. Luckily, all key/values that are touched in the update request
 			#  are in the resource's __modified__ variable.
-			return Result(status=res.status, resource={ tpe : Utils.resourceModifiedAttributes(dictOrg, dictNew, requestPC, modifiers=resource[Resource._modified]) }, rsc=res.rsc)
+			return Result(status = res.status, resource = { tpe : Utils.resourceModifiedAttributes(dictOrg, dictNew, requestPC, modifiers = resource[Resource._modified]) }, rsc = res.rsc)
 		elif request.args.rcn == RCN.nothing:
-			return Result(status=res.status, rsc=res.rsc)
+			return Result(status = res.status, rsc=res.rsc)
 		# TODO C.rcnDiscoveryResultReferences 
 		else:
-			return Result(status=False, rsc=RC.badRequest, dbg='wrong rcn for UPDATE')
+			return Result(status = False, rsc = RC.badRequest, dbg = 'wrong rcn for UPDATE')
 
 
 	def updateResource(self, resource:Resource, dct:JSON=None, doUpdateCheck:bool=True, originator:str=None) -> Result:
@@ -841,8 +841,8 @@ class Dispatcher(object):
 		"""
 		if request.headers._retUTCts is not None and DateUtils.timeUntilTimestamp(request.headers._retUTCts) <= 0.0:
 			L.logDebug(dbg := 'Request timed out')
-			return Result(status=False, rsc=RC.requestTimeout, dbg=dbg)
-		return Result(status=True)
+			return Result(status = False, rsc = RC.requestTimeout, dbg = dbg)
+		return Result(status = True)
 
 
 

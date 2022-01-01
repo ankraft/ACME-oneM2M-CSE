@@ -196,7 +196,7 @@ class Storage(object):
 			raise RuntimeError(dbg)
 		ri = resource.ri
 		# L.logDebug(f'Updating resource (ty: {resource.ty}, ri: {ri}, rn: {resource.rn})')
-		return Result(resource = self.db.updateResource(resource), rsc = RC.updated)
+		return Result(status = True, resource = self.db.updateResource(resource), rsc = RC.updated)
 
 
 	def deleteResource(self, resource:Resource) -> Result:

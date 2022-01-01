@@ -138,7 +138,7 @@ class RequestManager(object):
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result(rsc=RC.badRequest, dbg='Unknown or unsupported ResponseType: {request.args.rt}')
+		return Result(status = False, rsc = RC.badRequest, dbg = 'Unknown or unsupported ResponseType: {request.args.rt}')
 
 
 
@@ -158,7 +158,7 @@ class RequestManager(object):
 		# if request.headers.contentType == None:
 		# 	return Result(rsc=RC.badRequest, dbg='missing or wrong contentType in request')
 		if request.headers.resourceType == None:
-			return Result(rsc=RC.badRequest, dbg='missing or wrong resourceType in request')
+			return Result(status = False, rsc = RC.badRequest, dbg = 'missing or wrong resourceType in request')
 
 		if request.args.rt == ResponseType.blockingRequest:
 			res = CSE.dispatcher.processCreateRequest(request, request.headers.originator)
@@ -173,7 +173,7 @@ class RequestManager(object):
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result(rsc=RC.badRequest, dbg=f'Unknown or unsupported ResponseType: {request.args.rt}')
+		return Result(rsc = RC.badRequest, dbg = f'Unknown or unsupported ResponseType: {request.args.rt}')
 
 
 	#########################################################################
@@ -186,7 +186,7 @@ class RequestManager(object):
 
 		# Don't update the CSEBase
 		if request.id == CSE.cseRi:
-			return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for CSEBase')
+			return Result(status = False, rsc = RC.operationNotAllowed, dbg = 'operation not allowed for CSEBase')
 
 		# handle transit requests
 		if self.isTransitID(request.id):
@@ -208,7 +208,7 @@ class RequestManager(object):
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result(rsc=RC.badRequest, dbg=f'Unknown or unsupported ResponseType: {request.args.rt}')
+		return Result(status = False, rsc = RC.badRequest, dbg = f'Unknown or unsupported ResponseType: {request.args.rt}')
 
 
 	#########################################################################
@@ -222,7 +222,7 @@ class RequestManager(object):
 
 		# Don't update the CSEBase
 		if request.id == CSE.cseRi:
-			return Result(rsc=RC.operationNotAllowed, dbg='operation not allowed for CSEBase')
+			return Result(status = False, rsc = RC.operationNotAllowed, dbg = 'operation not allowed for CSEBase')
 
 		# handle transit requests
 		if self.isTransitID(request.id):
@@ -240,7 +240,7 @@ class RequestManager(object):
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result(rsc=RC.badRequest, dbg=f'Unknown or unsupported ResponseType: {request.args.rt}')
+		return Result(status = False, rsc = RC.badRequest, dbg = f'Unknown or unsupported ResponseType: {request.args.rt}')
 
 
 	#########################################################################
@@ -274,7 +274,7 @@ class RequestManager(object):
 			else:									# flexBlocking as non-blocking
 				return self._handleNonBlockingRequest(request)
 
-		return Result(rsc=RC.badRequest, dbg=f'Unknown or unsupported ResponseType: {request.args.rt}')
+		return Result(status = False, rsc = RC.badRequest, dbg = f'Unknown or unsupported ResponseType: {request.args.rt}')
 
 
 	#########################################################################

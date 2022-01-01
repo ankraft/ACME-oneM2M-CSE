@@ -8,9 +8,8 @@
 #
 
 from copy import deepcopy
-from typing import List, Tuple, cast
+from typing import List, cast, Any
 
-from ..etc.Constants import Constants as C
 from ..etc.Types import ResourceTypes as T, Result, ResponseStatusCode as RC, JSON, CSEType
 from ..etc import Utils as Utils, DateUtils as DateUtils
 from ..services.Logging import Logging as L
@@ -27,8 +26,12 @@ class RegistrationManager(object):
 	def __init__(self) -> None:
 		self.allowedCSROriginators 	= Configuration.get('cse.registration.allowedCSROriginators')
 		self.allowedAEOriginators	= Configuration.get('cse.registration.allowedAEOriginators')
-
+ 
 		self.startExpirationMonitor()
+		
+		# Add handler for configuration updates
+		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
+
 		L.isInfo and L.log('RegistrationManager initialized')
 
 
@@ -36,6 +39,14 @@ class RegistrationManager(object):
 		self.stopExpirationMonitor()
 		L.isInfo and L.log('RegistrationManager shut down')
 		return True
+
+
+	def configUpdate(self, key:str = None, value:Any = None) -> None:
+		"""	Handle configuration updates.
+		"""
+		if key in [ 'cse.checkExpirationsInterval' ]:
+			self.stopExpirationMonitor()
+			self.startExpirationMonitor()
 
 
 	#########################################################################
