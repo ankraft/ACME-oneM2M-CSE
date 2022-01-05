@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-from typing import Dict, List, cast
+from typing import List, cast
 import datetime, json, os, sys, webbrowser
 from enum import IntEnum, auto
 from rich.console import JustifyMethod
@@ -100,10 +100,12 @@ class Console(object):
 			'E'		: self.exportResources,
 			'i'		: self.inspectResource,
 			'I'		: self.inspectResourceChildren,
+			'k'		: self.katalogScripts,
 			'l'     : self.toggleScreenLogging,
 			'L'     : self.toggleLogging,
 			'Q'		: self.shutdownCSE,		# See handler below
 			'r'		: self.cseRegistrations,
+			'R'		: self.runScript,
 			's'		: self.statistics,
 			'\x13'	: self.continuesStatistics,
 			't'		: self.resourceTree,
@@ -148,6 +150,7 @@ class Console(object):
 - E     - Export resource tree to *init* directory
 - i     - Inspect resource
 - I     - Inspect resource and child resources
+- k     - Catalog of scripts
 - l     - Toggle screen logging on/off
 - L     - Toggle through log levels
 - r     - Show CSE registrations
@@ -239,7 +242,7 @@ Available under the BSD 3-Clause License
 		table.add_column('Type', no_wrap=True)
 		table.add_column('Intvl (s)', no_wrap=True, justify='right')
 		table.add_column('Runs', no_wrap=True, justify='right')
-		for w in BackgroundWorkerPool.backgroundWorkers.values():
+		for w in sorted(BackgroundWorkerPool.backgroundWorkers.values(), key = lambda w: w.name.lower()):
 			a = 'Actor' if w.maxCount == 1 else 'Worker'
 			table.add_row(w.name, a, str(float(w.interval)) if w.interval > 0.0 else '', str(w.numberOfRuns) if w.interval > 0.0 else '')
 		L.console(table, nl=True)
@@ -253,6 +256,7 @@ Available under the BSD 3-Clause License
 		L.console('Configuration', isHeader=True)
 		conf = Configuration.print().split('\n')
 		conf.sort()
+			
 		table = Table()
 		table.add_column('Key', no_wrap=True)
 		table.add_column('Value', no_wrap=False)
@@ -338,19 +342,6 @@ Available under the BSD 3-Clause License
 		L.console(self.getStatisticsRich())
 		L.console()
 
-	
-	# def continuesStatistics(self, key:str) -> None:
-	# 	L.off()
-	# 	while True:
-	# 		self.clearScreen(key)
-	# 		self._about()
-	# 		self.statistics(key)
-	# 		L.console('(Press any key to return)', plain=True, end='')
-	# 		if waitForKeypress(self.refreshInterval) is not None:
-	# 			break
-	# 	self.clearScreen(key)
-	# 	L.on()
-
 
 	def continuesStatistics(self, key:str) -> None:
 		L.off()
@@ -396,56 +387,93 @@ Available under the BSD 3-Clause License
 	def inspectResourceChildren(self, _:str) -> None:
 		"""	Show a resource and its children.
 		"""
-		L.console('Inspect Resource and Children', isHeader=True)
+		L.console('Inspect Resource and Children', isHeader = True)
 		L.off()		
 		if (ri := L.consolePrompt('ri')):
 			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
-				L.console(res.dbg, isError=True)
+				L.console(res.dbg, isError = True)
 			else: 
-				if not (resdis := CSE.dispatcher.discoverResources(ri, originator=CSE.cseOriginator)).status:
-					L.console(resdis.dbg, isError=True)
+				if not (resdis := CSE.dispatcher.discoverResources(ri, originator = CSE.cseOriginator)).status:
+					L.console(resdis.dbg, isError = True)
 				else:
 					CSE.dispatcher.resourceTreeDict(cast(List[Resource], resdis.data), res.resource)	# the function call add attributes to the target resource
 					L.console(res.resource.asDict())
 		L.on()
 
 
-	def exportResources(self, _:str) -> None:
-		L.console('Export Resources', isHeader=True)
+	def katalogScripts(self, _:str) -> None:
+		"""	List the loaded scripts.
+		"""
+		L.console('Script Catalog', isHeader = True)
 		L.off()
-		if not (resdis := CSE.dispatcher.discoverResources(CSE.cseRi, originator=CSE.cseOriginator)).status:
+		table = Table()
+		table.add_column('Script', no_wrap = True)
+		table.add_column('Description')
+		table.add_column('UT ', no_wrap = True, justify = 'center')
+		for n in CSE.script.findScripts(name = '*'):
+			if 'hide' not in n.meta:
+				usage = n.meta.get('usage')
+				ut = n.meta.get('uppertester') is not None
+				table.add_row(n.scriptName, usage if usage else '', '✔︎' if ut else '' )
+		L.console(table, nl = True)
+		L.on()
+
+
+	def exportResources(self, _:str) -> None:
+		L.console('Export Resources', isHeader = True)
+		L.off()
+		if not (resdis := CSE.dispatcher.discoverResources(CSE.cseRi, originator = CSE.cseOriginator)).status:
 			L.console(resdis.dbg, isError=True)
 		else:
-			count = 0
+			resources:list[Resource] = []
 			for r in cast(List[Resource], resdis.data):
 				if r.isImported:
 					continue
-				fn = f'{r[r._srn].count("/"):02d}_{r[r._srn].replace("/", "+")}.{r.tpe.replace(":", "_")}.json'
+				resources.append(r)
+			if resources:
+				fn = f'{datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%S")}.as'
 				fpn = f'{CSE.importer.resourcePath}/{fn}'
-				L.console(f'Exporting {fn}')
+				L.console(f'Exporting to {fn}')
 				with open(fpn, 'w') as exportFile:
-					json.dump(r.asDict(), exportFile, indent=4, sort_keys=True)
-				count += 1
-			L.console(f'Exported {count} resources')
+					for r in resources:
+						exportFile.write('importRaw\n')
+						json.dump(r.asDict(), exportFile, indent=4, sort_keys=True)
+						exportFile.write('\n')
+			L.console(f'Exported {len(resources)} resources')
 		L.on()
 
 
 
-	def resetCSE(self, key:str) -> None:
+	def resetCSE(self, _:str) -> None:
 		"""	Reset the CSE. Remove all resources and do the importing again.
 		"""
-		L.console('Resetting CSE', isHeader=True)
+		L.console('Resetting CSE', isHeader = True)
 		L.enableScreenLogging = True
 		# L.logLevel = Configuration.get('logging.level')
 		L.setLogLevel(Configuration.get('logging.level'))
 		CSE.resetCSE()
+	
+
+	previousScript = ''
+	def runScript(self, _:str) -> None:
+		L.console('Run ACMEScript', isHeader = True)
+		L.off()		
+		if (name := L.consolePrompt('Script name', nl = False, default = Console.previousScript)):
+			Console.previousScript = name
+			if len(scripts := CSE.script.findScripts(name = name)) != 1:
+				L.console(f'**Script {name} not found**')
+				L.on()
+				return
+			argument = L.consolePrompt('Arguments')
+			L.on()	# Turn on log before running the script
+			CSE.script.runScript(scripts[0], argument = argument, background = True)
+		L.on()
 
 
-	def openWebUI(self, key:str) -> None:
+	def openWebUI(self, _:str) -> None:
 		"""	Open the web UI in the default web browser.
 		"""
 		webbrowser.open(f'{CSE.httpServer.serverAddress}?open')
-
 
 
 
@@ -684,3 +712,4 @@ Available under the BSD 3-Clause License
 		console.begin_capture()
 		console.print(self.getResourceTreeRich())
 		return '\n'.join([item.rstrip() for item in console.end_capture().splitlines()])
+

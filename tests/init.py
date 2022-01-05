@@ -12,6 +12,7 @@ from argparse import OPTIONAL
 from urllib.parse import ParseResult, urlparse, parse_qs
 import sys, io, atexit
 import unittest
+from requests.exceptions import URLRequired
 
 from rich.console import Console
 import requests, sys, json, time, ssl, urllib3, random, re, random
@@ -33,6 +34,7 @@ from config import *
 
 
 CONFIGURL					= f'{CONFIGSERVER}{ROOTPATH}__config__'
+UTURL						= f'{CONFIGSERVER}{ROOTPATH}__ut__'
 
 
 verifyCertificate			= False	# verify the certificate when using https?
@@ -49,7 +51,7 @@ expirationSleep				= expirationCheckDelay * 3
 requestETDuration 			= f'PT{expirationCheckDelay:d}S'
 requestETDurationInteger	= expirationCheckDelay * 1000
 requestCheckDelay			= 1	#seconds
-sentRequestExpirationDelay	= 3.0
+requestExpirationDelay		= 3.0
 
 # TimeSeries Interval
 timeSeriesInterval 		= 2.0 # seconds
@@ -502,6 +504,11 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 _lastRequstID = None
 
 def setLastRequestID(rid:str) -> None:
+	"""	Set the last request's ID.
+	
+		Args:
+			rid: Request ID	
+	"""
 	global _lastRequstID
 	_lastRequstID = rid
 
@@ -530,125 +537,100 @@ def lastHeaders() -> Parameters:
 
 ###############################################################################
 #
-#	Expirations
+#	Reconfiguring CSE via the upper tester interface
 #
 
-def setExpirationCheck(interval:int) -> int:
-	c, rc = RETRIEVESTRING(CONFIGURL, '')
-	if rc == 200 and c.startswith('Configuration:'):
-		# retrieve the old value
-		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.checkExpirationsInterval', '')
-		oldValue = int(c)
-		c, rc = UPDATESTRING(f'{CONFIGURL}/cse.checkExpirationsInterval', '', str(interval))
-		return oldValue if c == 'ack' else -1
-	return -1
-
-
-def getMaxExpiration() -> int:
-	c, rc = RETRIEVESTRING(CONFIGURL, '')
-	if rc == 200 and c.startswith('Configuration:'):
-		# retrieve the old value
-		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.maxExpirationDelta', '')
-		return int(c)
-	return -1
-
+UTCMD = 'X-M2M-UTCMD'
+UTRSP = 'X-M2M-UTRSP'
 
 _orgExpCheck = -1
 _orgREQExpCheck = -1
 _maxExpiration = -1
-_tooLargeExpirationDelta = -1
-_orgSentRequestExpirationDelta = -1.0
-
-#	Request expirations
-
-def setRequestMinET(interval:int) -> int:
-	c, rc = RETRIEVESTRING(CONFIGURL, '')
-	if rc == 200 and c.startswith('Configuration:'):
-		# retrieve the old value
-		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.req.minet', '')
-		oldValue = int(c)
-		c, rc = UPDATESTRING(f'{CONFIGURL}/cse.req.minet', '', str(interval))
-		return oldValue if c == 'ack' else -1
-	return -1
-
-
-def getRequestMinET() -> int:
-	c, rc = RETRIEVESTRING(CONFIGURL, '')
-	if rc == 200 and c.startswith('Configuration:'):
-		# retrieve the old value
-		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.req.minet', '')
-		return int(c)
-	return -1
-
-
-def setSentRequestExpirationDelta(interval:float) -> float:
-	c, rc = RETRIEVESTRING(CONFIGURL, '')
-	if rc == 200 and c.startswith('Configuration:'):
-		# retrieve the old value
-		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.requestExpirationDelta', '')
-		oldValue = float(c)
-		c, rc = UPDATESTRING(f'{CONFIGURL}/cse.requestExpirationDelta', '', str(interval))
-		return oldValue if c == 'ack' else -1
-	return -1
-
-
-def getSentRequestExpirationDelta() -> float:
-	c, rc = RETRIEVESTRING(CONFIGURL, '')
-	if rc == 200 and c.startswith('Configuration:'):
-		# retrieve the old value
-		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.requestExpirationDelta', '')
-		return float(c)
-	return -1
-	
+_tooLargeResourceExpirationDelta = -1
+_orgRequestExpirationDelta = -1.0
 
 
 # Reconfigure the server to check faster for expirations. This is set to the
 # old value in the tearDowndClass() method.
-def enableShortExpirations() -> None:
-	global _orgExpCheck, _orgREQExpCheck, _maxExpiration, _tooLargeExpirationDelta
-	try:
-		_orgExpCheck = setExpirationCheck(expirationCheckDelay)
-		_orgREQExpCheck = setRequestMinET(expirationCheckDelay)
-		# Retrieve the max expiration delta from the CSE
-		_maxExpiration = getMaxExpiration()
-		_tooLargeExpirationDelta = _maxExpiration * 2	# double of what is allowed
-	except:
-		pass
+def enableShortResourceExpirations() -> None:
+	"""	Enable the short resource expiration in the CSE.
+	"""
+	global _orgExpCheck, _maxExpiration, _tooLargeResourceExpirationDelta
 
-def disableShortExpirations() -> None:
+	# Send UT request
+	resp = requests.post(UTURL, headers = { UTCMD: f'enableShortResourceExpiration {expirationCheckDelay}'})
+	_maxExpiration = -1
+	_orgExpCheck = -1
+	if resp.status_code == 200:
+		if UTRSP in resp.headers:
+			rsp = resp.headers[UTRSP].split(',')
+			_orgExpCheck = int(rsp[0])
+			_maxExpiration = int(rsp[1])
+			_tooLargeResourceExpirationDelta = _maxExpiration * 2	# double of what is allowed
+
+
+def disableShortResourceExpirations() -> None:
+	"""	Disable the short resource expiration in the CSE.
+	"""
 	global _orgExpCheck, _orgREQExpCheck
 	if _orgExpCheck != -1:
-		setExpirationCheck(_orgExpCheck)
-		_orgExpCheck = -1
-	if _orgREQExpCheck != -1:
-		setRequestMinET(_orgREQExpCheck)
-		_orgREQExpCheck = -1
+		# Send UT request
+		resp = requests.post(UTURL, headers = { UTCMD: f'disableShortResourceExpiration'})
+		if resp.status_code == 200:
+			_orgExpCheck = -1
+			_orgREQExpCheck = -1
 
-def isTestExpirations() -> bool:
+
+def isTestResourceExpirations() -> bool:
+	"""	Test whether the resource expiration values have been configured for testing.
+
+		Return:
+			Boolean.
+	"""
 	return _orgExpCheck != -1
 
 
-def tooLargeExpirationDelta() -> int:
-	return _tooLargeExpirationDelta
+def tooLargeResourceExpirationDelta() -> int:
+	"""	Return the configured "too large" value for resource expiration delta.
+
+		Return:
+			Integer, the too large expiration delta, or -1 of it is not configured.
+	"""
+	return _tooLargeResourceExpirationDelta
 
 
 # Reconfigure the server to check faster for sent request expirations. This is set to the
 # old value in the tearDowndClass() method.
-def enableShortSentRequestExpirations() -> None:
-	global _orgSentRequestExpirationDelta
-	try:
-		_orgSentRequestExpirationDelta = setSentRequestExpirationDelta(sentRequestExpirationDelay)
-	except Exception as e:
-		pass
+def enableShortRequestExpirations() -> None:
+	"""	Enable the short request expiration in the CSE.
+	"""
+	global _orgRequestExpirationDelta
 
-def disableShortSentRequestExpirations() -> None:
-	global _orgSentRequestExpirationDelta
-	setSentRequestExpirationDelta(_orgSentRequestExpirationDelta)
-	_orgSentRequestExpirationDelta = -1
+	# Send UT request
+	resp = requests.post(UTURL, headers = { UTCMD: f'enableShortRequestExpiration {requestExpirationDelay}'})
+	if resp.status_code == 200:
+		if UTRSP in resp.headers:
+			_orgRequestExpirationDelta = float(resp.headers[UTRSP])
+
+
+def disableShortRequestExpirations() -> None:
+	"""	Disable the short request expiration in the CSE.
+	"""
+	global _orgRequestExpirationDelta
+	
+	# Send UT request
+	resp = requests.post(UTURL, headers = { UTCMD: f'disableShortRequestExpiration'})
+	if resp.status_code == 200:
+		_orgRequestExpirationDelta = -1.0
 	
 
-def isShortSentRequestExpirations() -> bool:
-	return _orgSentRequestExpirationDelta != -1.0
+def isShortRequestExpirations() -> bool:
+	"""	Test whether the request expiration have been configured for testing.
+
+		Return:
+			Boolean.
+	"""
+	return _orgRequestExpirationDelta != -1.0
 
 ###############################################################################
 
@@ -656,7 +638,6 @@ def isShortSentRequestExpirations() -> bool:
 if not verifyCertificate:
 	#requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning) 
 	urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning) 
-
 
 
 #

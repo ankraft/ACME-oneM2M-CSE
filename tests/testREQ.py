@@ -58,14 +58,14 @@ class TestREQ(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
 		time.sleep(expirationSleep)	# give the server a moment to expire the resource
-		disableShortExpirations()
+		disableShortResourceExpirations()
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		stopNotificationServer()
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createREQFail(self) -> None:
 		"""	Manually create <REQ> -> Fail """
-		self.assertTrue(isTestExpirations())
+		self.assertTrue(isTestResourceExpirations())
 		self.assertIsNotNone(TestREQ.ae)
 		dct = 	{ 'm2m:req' : { }}	# type: ignore
 		r, rsc = CREATE(cseURL, TestREQ.originator, T.REQ, dct)
@@ -536,8 +536,8 @@ class TestREQ(unittest.TestCase):
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	# Reconfigure the server to check faster for expirations.
-	enableShortExpirations()
-	if not isTestExpirations():
+	enableShortResourceExpirations()
+	if not isTestResourceExpirations():
 		print('\n[red reverse] Error configuring the CSE\'s test settings ')
 		print('Did you enable [i]remote configuration[/i] for the CSE?\n')
 		return 0,0,1	
@@ -575,7 +575,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
-	disableShortExpirations()
+	disableShortResourceExpirations()
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':

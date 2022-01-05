@@ -27,6 +27,7 @@ from ..services.MQTTClient import MQTTClient
 from ..services.NotificationManager import NotificationManager
 from ..services.RegistrationManager import RegistrationManager
 from ..services.RemoteCSEManager import RemoteCSEManager
+from ..services.ScriptManager import ScriptManager
 from ..services.SecurityManager import SecurityManager
 from ..services.Statistics import Statistics
 from ..services.Storage import Storage
@@ -50,6 +51,7 @@ notification:NotificationManager				= None
 registration:RegistrationManager 				= None
 remote:RemoteCSEManager							= None
 request:RequestManager							= None
+script:ScriptManager							= None
 security:SecurityManager 						= None
 statistics:Statistics							= None
 storage:Storage									= None
@@ -82,7 +84,7 @@ _cseResetLock									= Lock()	# lock for resetting the CSE
 
 def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	global announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
-	global remote, request, security, statistics, storage, timeSeries, validator
+	global remote, request, script, security, statistics, storage, timeSeries, validator
 	global aeStatistics
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiRelative, cseRi, cseRn, releaseVersion
 	global cseOriginator
@@ -103,6 +105,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 			args.__setattr__(key, value)
 	isHeadless = args.headless
 
+	event = EventManager()					# Initialize the event manager before anything else
 
 	if not Configuration.init(args):
 		return False
@@ -138,7 +141,6 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	console = Console()						# Start the console
 
 	storage = Storage()						# Initiatlize the resource storage
-	event = EventManager()					# Initialize the event manager
 	statistics = Statistics()				# Initialize the statistics system
 	registration = RegistrationManager()	# Initialize the registration manager
 	validator = Validator()					# Initialize the resource validator
@@ -152,6 +154,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	timeSeries = TimeSeriesManager()		# Initialize the timeSeries manager
 	remote = RemoteCSEManager()				# Initialize the remote CSE manager
 	announce = AnnouncementManager()		# Initialize the announcement manager
+	script = ScriptManager()				# Initialize the script manager
 
 	# Import a default set of resources, e.g. the CSE, first ACP or resource structure
 	# Import extra attribute policies for specializations first
@@ -212,6 +215,7 @@ def _shutdown() -> None:
 	remote and remote.shutdown()
 	mqttClient and mqttClient.shutdown()
 	httpServer and httpServer.shutdown()
+	script and script.shutdown()
 	announce and announce.shutdown()
 	timeSeries and timeSeries.shutdown()
 	group  and group.shutdown()
@@ -248,6 +252,8 @@ def resetCSE() -> None:
 		remote.restart()
 		mqttClient.unpause()
 		httpServer.unpause()
+		event.cseRestarted()	# type: ignore [attr-defined]   
+
 
 		L.isWarn and L.logWarn('Resetting CSE finished')
 

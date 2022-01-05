@@ -19,7 +19,7 @@ ae2URL = f'{aeURL}2'
 pch2URL = f'{ae2URL}/{pchRN}'
 pcu2URL = f'{pch2URL}/pcu'
 
-waitBetweenPollingRequests = sentRequestExpirationDelay/2.0 # seconds
+waitBetweenPollingRequests = requestExpirationDelay/2.0 # seconds
 
 class TestPCH_PCU(unittest.TestCase):
 
@@ -120,7 +120,7 @@ class TestPCH_PCU(unittest.TestCase):
 		DELETE(ae2URL, ORIGINATOR)	# Just delete the 2nd AE and everything below it. Ignore whether it exists or not
 
 		with console.status('[bright_blue]Waiting for polling requests to timeout...') as status:
-			time.sleep(sentRequestExpirationDelay)
+			time.sleep(requestExpirationDelay)
 
 
 	def _pollForRequest(self, originator:str, rcs:RC, isCreate:bool=False, isDelete:bool=False, emptyAnswer:bool=False, wrongAnswer:bool=False) -> None:
@@ -321,7 +321,7 @@ class TestPCH_PCU(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_accessPCUwithshortExpiration(self) -> None:
 		"""	RETRIEVE <PCU> with short expiration -> Fail"""
-		r, rsc = RETRIEVE(pcu2URL, TestPCH_PCU.originator2, headers={C.hfRET : str(sentRequestExpirationDelay/2.0*1000)})	# polling request
+		r, rsc = RETRIEVE(pcu2URL, TestPCH_PCU.originator2, headers={C.hfRET : str(requestExpirationDelay/2.0*1000)})	# polling request
 		self.assertEqual(rsc, RC.requestTimeout, r)
 
 
@@ -349,8 +349,8 @@ class TestPCH_PCU(unittest.TestCase):
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
-	enableShortSentRequestExpirations()
-	if not isShortSentRequestExpirations():
+	enableShortRequestExpirations()
+	if not isShortRequestExpirations():
 		console.print('\n[red reverse] Error configuring the CSE\'s test settings ')
 		console.print('Did you enable [i]remote configuration[/i] for the CSE?\n')
 		return 0,0,1	
@@ -372,7 +372,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
-	disableShortSentRequestExpirations()
+	disableShortRequestExpirations()
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 

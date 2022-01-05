@@ -76,8 +76,7 @@ class HttpServer(object):
 		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handlePOST, methods=['POST'])
 		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handlePUT, methods=['PUT'])
 		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handleDELETE, methods=['DELETE'])
-
-		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handlePATCH, methods=['PATCH'])
+		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handlePATCH, methods=['PATCH'])		# TODO Experimentel
 
 		# Register the endpoint for the web UI
 		# This is done by instancing the otherwise "external" web UI
@@ -89,24 +88,11 @@ class HttpServer(object):
 						   version=C.version)
 
 		# Enable the config endpoint
-		if Configuration.get('http.enableRemoteConfiguration'):
-			configEndpoint = f'{self.rootPath}/__config__'
-			L.isInfo and L.log(f'Registering configuration endpoint at: {configEndpoint}')
-			self.addEndpoint(configEndpoint, handler=self.handleConfig, methods=['GET'], strictSlashes=False)
-			self.addEndpoint(f'{configEndpoint}/<path:path>', handler=self.handleConfig, methods=['GET', 'PUT'])
-
-		# Enable the config endpoint
 		if Configuration.get('http.enableStructureEndpoint'):
 			structureEndpoint = f'{self.rootPath}/__structure__'
 			L.isInfo and L.log(f'Registering structure endpoint at: {structureEndpoint}')
 			self.addEndpoint(structureEndpoint, handler=self.handleStructure, methods=['GET'], strictSlashes=False)
 			self.addEndpoint(f'{structureEndpoint}/<path:path>', handler=self.handleStructure, methods=['GET', 'PUT'])
-
-		# Enable the reset endpoint
-		if Configuration.get('http.enableResetEndpoint'):
-			resetEndPoint = f'{self.rootPath}/__reset__'
-			L.isInfo and L.log(f'Registering reset endpoint at: {resetEndPoint}')
-			self.addEndpoint(resetEndPoint, handler=self.handleReset, methods=['GET'], strictSlashes=False)
 
 		# Enable the upper tester endpoint
 		if Configuration.get('http.enableUpperTesterEndpoint'):
@@ -130,7 +116,6 @@ class HttpServer(object):
 		if not CSE.security.verifyCertificateHttp:	# only when we also verify  certificates
 			urllib3.disable_warnings()
 		L.isInfo and L.log('HTTP Server initialized')
-
 
 
 	def run(self) -> None:
@@ -283,7 +268,6 @@ class HttpServer(object):
 	#	Various handlers
 	#
 
-
 	# Redirect request to / to webui
 	def redirectRoot(self) -> Response:
 		"""	Redirect a request to the webroot to the web UI.
@@ -291,59 +275,6 @@ class HttpServer(object):
 		if self.isStopped:
 			return Response('Service not available', status=503)
 		return flask.redirect(self.webuiRoot, code=302)
-
-
-	def getVersion(self) -> Response:
-		"""	Handle a GET request to return the CSE version.
-		"""
-		if self.isStopped:
-			return Response('Service not available', status=503)
-		return Response(C.version, headers=self._responseHeaders)
-
-
-	def handleConfig(self, path:str = None) -> Response:
-		"""	Handle a configuration request. This can either be e GET request to query a 
-			configuration value, or a PUT request to set a new value to a configuration setting.
-			Note, that only a few of configuration settings are supported.
-		"""
-		if self.isStopped:
-			return Response('Service not available', status=503)
-
-		def _r(r:str) -> Response:	# just construct a response. Trying to reduce the clutter here
-			return Response(r, headers=self._responseHeaders)
-
-		if request.method == 'GET':
-			if path == None or len(path) == 0:
-				return _r(Configuration.print())
-			if Configuration.has(path):
-				return _r(str(Configuration.get(path)))
-			return _r('')
-		elif request.method =='PUT':
-			data = request.data.decode('utf-8').rstrip()
-			try:
-				L.isDebug and L.logDebug(f'New remote configuration: {path} = {data}')
-				if path == 'cse.checkExpirationsInterval':
-					if (d := int(data)) < 1:
-						return _r('nak')
-					Configuration.update(path, d)
-					CSE.registration.stopExpirationMonitor()
-					CSE.registration.startExpirationMonitor()
-					return _r('ack')
-				elif path in [ 'cse.req.minet', 'cse.req.maxnet' ]:	# int configs
-					if (d := int(data)) < 1:
-							return _r('nak')
-					Configuration.update(path, d)
-					return _r('ack')
-				elif path == 'cse.requestExpirationDelta':	# float configs
-					if (f := float(data)) <= 0.0:
-							return _r('nak')
-					Configuration.update(path, f)
-					CSE.request.requestExpirationDelta = f
-					return _r('ack')
-			except:
-				return _r('nak')
-			return _r('nak')
-		return _r('unsupported')
 
 
 	def handleStructure(self, path:str='puml') -> Response:
@@ -361,35 +292,25 @@ class HttpServer(object):
 		return Response(response='unsupported', status=422, headers=self._responseHeaders)
 
 
-	def handleReset(self, path:str=None) -> Response:
-		"""	Handle a CSE reset request.
-		"""
-		if self.isStopped:
-			return Response('Service not available', status=503)
-		CSE.resetCSE()
-		return Response(response='', status=200)
-
-
-	#########################################################################
-
-	# 
-	#	Upper Tester Handler
-	#
-
 	def handleUpperTester(self, path:str=None) -> Response:
 		"""	Handle a Upper Tester request. See TS-0019 for details.
 		"""
 		if self.isStopped:
 			return Response('Service not available', status=503)
 
-		def prepareUTResponse(rcs:RC) -> Response:
+		def prepareUTResponse(rcs:RC, result:str) -> Response:
 			"""	Prepare the Upper Tester Response.
 			"""
 			headers = {}
 			headers['Server'] = self.serverID
-			headers['X-M2M-RSC'] = str(rcs.value)
-			return Response(status = 200 if rcs == RC.OK else 400, headers = headers)
-
+			headers['X-M2M-RSC'] = str(rcs.value)	# Set the ResponseStatusCode accordingly
+			if result:								# Return an optional return value
+				headers['X-M2M-UTRSP'] = result
+			resp = Response(status = 200 if rcs == RC.OK else 400, headers = headers)
+			L.isDebug and L.logDebug(f'<== Upper Tester Response:') 
+			L.isDebug and L.logDebug(f'Headers: \n{str(resp.headers).rstrip()}')
+			#L.isDebug and L.logDebug(f'Body: \n{request.json}')
+			return resp
 
 		Utils.renameCurrentThread()
 		L.isDebug and L.logDebug(f'==> Upper Tester Request:') 
@@ -398,72 +319,13 @@ class HttpServer(object):
 
 		# Handle special commands
 		if (cmd := request.headers.get('X-M2M-UTCMD')) is not None:
-			if cmd.lower() == 'reset':
-				CSE.resetCSE()
-				return prepareUTResponse(RC.OK)
-			return prepareUTResponse(RC.badRequest)
-		
+			cmd, _, arg = cmd.partition(' ')
+			if (res := CSE.script.run(cmd, arg, metaFilter = [ 'uppertester' ])) is None:
+				return prepareUTResponse(RC.badRequest, res)
+			return prepareUTResponse(RC.OK, res)
+
 		L.logWarn('UT functionality is not fully supported.')
-		return prepareUTResponse(RC.badRequest)
-
-		
-		# TODO implement further functionality of Upper Tester spec
-		
-		# Otherwise	process this as a oneM2M request
-
-		# if request.content_type != 'application/json':
-		# 	# return Response(response = f'Unsupported Content-Type: {request.content_type}', status = 400)
-		# 	return prepareUTResponse(RC.badRequest)
-		# if (jsn := request.json.get('m2m:rqp')) is None:
-		# 	# return Response(response = f'Content is not a request. "m2m:rqp" required', status = 400)
-		# 	return prepareUTResponse(RC.badRequest)
-
-		# # TODO Add missing but mandatory attributes (like rqi) - just to keep the dissectMQTTRequest
-
-		# # Dissect and validate
-		# if not (dissectResult := dissectMQTTRequest(bytes(json.dumps(jsn), 'utf-8'), CST.JSON.toSimple())).status:
-		# 	return prepareUTResponse(RC.badRequest)
-		# L.logWarn(dissectResult)
-
-		# result = performBatchOperation(dissectResult)
-
-		# Send the request
-		# if dissectResult.request.op == Operation.CREATE:
-		# 	result = CSE.request.sendCreateRequest(	uri = dissectResult.request.to, 
-		# 											originator = dissectResult.request.headers.originator, 
-		# 											ct = dissectResult.request.ct,
-		# 											data = dissectResult.request.originalRequest,
-		# 											raw = True)
-		# elif dissectResult.request.op == Operation.RETRIEVE:
-		# 	result = CSE.request.sendRetrieveRequest(	uri = dissectResult.request.to, 
-		# 												originator = dissectResult.request.headers.originator, 
-		# 												ct = dissectResult.request.ct,
-		# 												data = dissectResult.request.originalRequest,
-		# 												raw = True)
-		# elif dissectResult.request.op == Operation.UPDATE:
-		# 	result = CSE.request.sendUpdateRequest(	uri = dissectResult.request.to, 
-		# 											originator = dissectResult.request.headers.originator, 
-		# 											ct = dissectResult.request.ct,
-		# 											data = dissectResult.request.originalRequest,
-		# 											raw = True)
-		# elif dissectResult.request.op == Operation.DELETE:
-		# 	result = CSE.request.sendDeleteRequest(	uri = dissectResult.request.to, 
-		# 											originator = dissectResult.request.headers.originator, 
-		# 											ct = dissectResult.request.ct,
-		# 											data = dissectResult.request.originalRequest,
-		# 											raw = True)
-		# elif dissectResult.request.op == Operation.NOTIFY:
-		# 	result = CSE.request.sendNotifyRequest(	uri = dissectResult.request.to, 
-		# 											originator = dissectResult.request.headers.originator, 
-		# 											ct = dissectResult.request.ct,
-		# 											data = dissectResult.request.originalRequest,
-		# 											raw = True)
-		# else:
-		# 	result = Result(status = False, rsc = RC.badRequest, dbg = f'Unknown operation')
-		# 	return prepareUTResponse(RC.badRequest)
-
-		# return prepareUTResponse(RC.OK)
-	
+		return prepareUTResponse(RC.badRequest, None)
 
 
 	#########################################################################

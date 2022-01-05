@@ -12,8 +12,9 @@ from __future__ import annotations
 import json, os, fnmatch, re
 from typing import cast
 from copy import deepcopy
+
 from ..etc.Utils import findXPath, getCSE, resourceModifiedAttributes
-from ..etc.Types import Announced, AttributePolicy, AttributePolicyDict, BasicType, Cardinality, RequestOptionality
+from ..etc.Types import AttributePolicy
 from ..etc.Types import ResourceTypes as T
 from ..etc.Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, JSON, JSONLIST
 from ..services.Configuration import Configuration
@@ -39,44 +40,13 @@ class Importer(object):
 	def doImport(self) -> bool:
 		"""	Perform all the imports.
 		"""	
-		return self.importAttributePolicies() and self.importFlexContainerPolicies() and self.importResources() and self.assignAttributePolicies()
-		# return self.importAttributePolicies() and self.importFlexContainerPolicies() and self.importResources() 
+		return self.importAttributePolicies() and self.importFlexContainerPolicies() and self.assignAttributePolicies() and self.importScripts()
 
 
-	def importResources(self, path:str=None) -> bool:
+	def importScripts(self, path:str = None) -> bool:
+		# TODO
 
-		def setCSEParameters(csi:str, ri:str, rn:str) -> None:
-			""" Set some values in the configuration and the CSE instance.
-			"""
-			if CSE.cseCsi != csi:
-				L.logWarn(f'Imported CSEBase overwrites configuration. csi: {CSE.cseCsi} -> {csi}')
-				CSE.cseCsi = csi
-				Configuration.update('cse.csi', csi)
-
-			if CSE.cseRi != ri:
-				L.logWarn(f'Imported CSEBase overwrites configuration. ri: {CSE.cseRi} -> {ri}')
-				CSE.cseRi  = ri
-				Configuration.update('cse.ri', ri)
-
-			if CSE.cseRn != rn:
-				L.logWarn(f'Imported CSEBase overwrites configuration. rn: {CSE.cseRn} -> {rn}')
-				CSE.cseRn  = rn
-				Configuration.update('cse.rn', rn)
-
-
-		countImport = 0
-		countUpdate = 0
-
-		# Only when the DB is empty else don't imports
-		if CSE.dispatcher.countResources() > 0:
-			L.isInfo and L.log('Resources already imported, skipping importing')
-			# But we still need the CSI etc of the CSE
-			if cse := getCSE().resource:
-				# Set some values in the configuration and the CSE instance
-				setCSEParameters(cse.csi, cse.ri, cse.rn)
-				return True
-			L.logErr('CSE not found')
-			return False
+		countScripts = 0
 
 		# Import
 		if not path:
@@ -87,83 +57,58 @@ class Importer(object):
 			L.isWarn and L.logWarn(f'Import directory does not exist: {path}')
 			return False
 
-		L.isInfo and L.log(f'Importing resources from directory: {path}')
 		self._prepareImporting()
-
-
-		# first import the priority resources, like CSE, Admin ACP, Default ACP
-		hasCSE = False
-		for rn in self._firstImporters:
-			fn = path + '/' + rn
-			if os.path.exists(fn):
-				L.isInfo and L.log(f'Importing resource: {fn}')
-				resource = Factory.resourceFromDict(cast(JSON, self.readJSONFromFile(fn)), create=True, isImported=True).resource
-
-			# Check resource creation
-			if not CSE.registration.checkResourceCreation(resource, CSE.cseOriginator):
-				continue
-			if not (res := CSE.dispatcher.createResource(resource)).resource:
-				L.logErr(f'Error during import: {res.dbg}', showStackTrace = False)
-				return False
-			ty = resource.ty
-			if ty == T.CSEBase:
-				# Set some values in the configuration and the CSE instance
-				setCSEParameters(resource.csi, resource.ri, resource.rn)
-				hasCSE = True
-			countImport += 1
-
-
-		# Check presence of CSE and at least one ACP
-		if not (hasCSE):
-			L.logErr('CSE and/or default ACP missing during import')
-			self._finishImporting()
+		L.isInfo and L.log(f'Importing scripts from directory: {path}')
+		if (countScripts := CSE.script.loadScriptsFromDirectory(path)) == -1:
+			return False
+		# for fn in fnmatch.filter(os.listdir(path), '*.as'):
+		# 	ffn = f'{path}{os.path.sep}{fn}'
+		# 	# read the file and add it to the script manager
+		# 	L.isDebug and L.logDebug(f'Importing script: {fn}')
+		# 	if not CSE.script.loadScriptFromFile(ffn):
+		# 		return False
+		# 	countScripts += 1
+		
+		# Check that there is only one startup script, then execute it
+		if len(scripts := CSE.script.findScripts(meta = 'startup')) > 1:
+			L.logErr(f'Only one startup script allowed. Found: {[ s.scriptName for s in scripts ]}')
 			return False
 
-		# then get the filenames of all other files and sort them. Process them in order
-
-		filenames = sorted(fnmatch.filter(os.listdir(path), '*.json'))
-		for fn in filenames:
-			if fn not in self._firstImporters:
-				L.isInfo and L.log(f'Importing resource: {fn}')
-				filename = path + '/' + fn
-
-				# update an existing resource
-				if 'update' in fn:
-					dct = cast(JSON, self.readJSONFromFile(filename))
-					keys = list(dct.keys())
-					if len(keys) == 1 and (k := keys[0]) and 'ri' in dct[k] and (ri := dct[k]['ri']):
-						if resource := CSE.dispatcher.retrieveResource(ri).resource:
-							CSE.dispatcher.updateResource(resource, dct)
-							countUpdate += 1
-						# TODO handle error
-
-				# create a new cresource
-				else:
-					# Try to get parent resource
-					if not (jsn := self.readJSONFromFile(filename)):
-						L.isWarn and L.logWarn(f'Error parsing file: {filename}')
-						continue
-					if resource := Factory.resourceFromDict(cast(JSON, jsn), create=True, isImported=True).resource:
-						parentResource = None
-						if pi := resource.pi:
-							parentResource = CSE.dispatcher.retrieveResource(pi).resource
-
-						# Determine originator for AE resources
-						orig = resource.aei if resource.ty == T.AE else CSE.cseOriginator
-
-						# Check resource creation
-						if not CSE.registration.checkResourceCreation(resource, orig):
-							continue
-						
-						# Add the resource
-						CSE.dispatcher.createResource(resource, parentResource)
-						countImport += 1
-					else:
-						L.isWarn and L.logWarn(f'Unknown or wrong resource in file: {fn}')
+		elif len(scripts) == 1:
+			# Check whether there is already a filled DB, then skip the imports
+			if CSE.dispatcher.countResources() > 0:
+				L.isInfo and L.log('Resources already imported, skipping boostrap')
+			else:
+				# Run the startup script. There shall only be one.
+				s = scripts[0]
+				L.isInfo and L.log(f'Running boostrap script: {s.scriptName}')
+				if not CSE.script.runScript(s):	
+					L.logErr(f'Error during startup: {s.error}')
+					return False
 
 		self._finishImporting()
-		L.isDebug and L.logDebug(f'Imported {countImport} resources')
-		L.isDebug and L.logDebug(f'Updated  {countUpdate} resources')
+
+		# But we still need the CSI etc of the CSE, and also check presence of CSE
+		if cse := getCSE().resource:
+			# Set some values in the configuration and the CSE instance
+			if CSE.cseCsi != cse.csi:
+				L.logWarn(f'Imported CSEBase overwrites configuration. csi: {CSE.cseCsi} -> {cse.csi}')
+				CSE.cseCsi = cse.csi
+				Configuration.update('cse.csi', cse.csi)
+			if CSE.cseRi != cse.ri:
+				L.logWarn(f'Imported CSEBase overwrites configuration. ri: {CSE.cseRi} -> {cse.ri}')
+				CSE.cseRi = cse.ri
+				Configuration.update('cse.ri',cse.ri)
+			if CSE.cseRn != cse.rn:
+				L.logWarn(f'Imported CSEBase overwrites configuration. rn: {CSE.cseRn} -> {cse.rn}')
+				CSE.cseRn  = cse.rn
+				Configuration.update('cse.rn', cse.rn)
+		else:
+			# We don't have a CSE!
+			L.logErr('CSE missing in startup script')
+			return False
+
+		L.isDebug and L.logDebug(f'Imported {countScripts} scripts')
 		return True
 
 
@@ -188,10 +133,11 @@ class Importer(object):
 			L.isWarn and L.logWarn(f'Import directory for flexContainer policies does not exist: {path}')
 			return False
 
+		L.isInfo and L.log(f'Importing flexContainer attribute policies from: {path}')
 		filenames = fnmatch.filter(os.listdir(path), '*.fcp')
-		for fn in filenames:
-			fn = os.path.join(path, fn)
-			L.isInfo and L.log(f'Importing flexContainer attribute policies: {fn}')
+		for fno in filenames:
+			fn = os.path.join(path, fno)
+			L.isDebug and L.logDebug(f'Importing policies: {fno}')
 			if os.path.exists(fn):
 				if not (lst := cast(JSONLIST, self.readJSONFromFile(fn))):
 					continue
@@ -237,10 +183,12 @@ class Importer(object):
 			L.isWarn and L.logWarn(f'Import directory for attribute policies does not exist: {path}')
 			return False
 
+		L.isInfo and L.log(f'Importing attribute policies from: {path}')
+
 		filenames = fnmatch.filter(os.listdir(path), '*.ap')
-		for fn in filenames:
-			fn = os.path.join(path, fn)
-			L.isInfo and L.log(f'Importing attribute policies: {fn}')
+		for fno in filenames:
+			fn = os.path.join(path, fno)
+			L.isInfo and L.log(f'Importing policies: {fno}')
 			if os.path.exists(fn):
 				
 				# Read the JSON file
