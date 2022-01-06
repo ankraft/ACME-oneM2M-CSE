@@ -59,9 +59,11 @@ The CSE has a simple command console interface to execute build-in commands. Cur
 - E     - Export resource tree to *init* directory
 - i     - Inspect resource
 - I     - Inspect resource and child resources
+- k 	- Show a catalog of available scripts
 - l     - Toggle screen logging on/off
 - L     - Toggle through log levels
 - r     - Show CSE registrations
+- R     - Run a script
 - s     - Show statistics
 - ^S    - Show & refresh statistics continuously
 - t     - Show resource tree
