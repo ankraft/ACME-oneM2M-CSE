@@ -13,7 +13,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import IntEnum, auto
-import time, re, copy
+import datetime, time, re, copy
 from typing import 	Callable, Dict, Tuple, Union
 
 _maxProcStackSize = 64	# max number of calls to procedures
@@ -513,7 +513,7 @@ def run(pcontext:PContext, doLogging:bool = False, argument:str = '') -> PContex
 				pcontext: Current PContext for the script.
 		"""
 		if pcontext.error[0] != PError.noError:
-			_doLogError(pcontext, f'{pcontext.error[1]}: {pcontext.error[2]}')
+			_doLog(pcontext, f'{pcontext.error[1]}: {pcontext.error[2]}', isError = True)
 			if pcontext.errorFunc:
 				pcontext.errorFunc(pcontext)
 		if pcontext.state != PState.ready and pcontext.postFunc:	# only when really running, after preFunc succeeded
@@ -1018,6 +1018,7 @@ _builtinCommands:PCmdDict = {
 	'continue':		_doContinue,
 	'endprocedure':	_doEndProcedure,
 	'dec':			lambda p, a : _doIncDec(p, a, isInc = False),
+	'echo':			_doPrint,
 	'error':		lambda p, a : _doLog(p, a, isError = True),
 	'exit':			_doExit,
 	'else':			_doElse,
@@ -1036,8 +1037,7 @@ _builtinCommands:PCmdDict = {
 
 
 _builtinMacros:PMacroDict = {
-	'time':		lambda c, a: time.strftime('%H:%M:%S', time.gmtime()),	# TODO with arguments
-	'date':		lambda c, a: time.strftime('%Y-%m-%d', time.gmtime()),
+	'datetime':	lambda c, a: datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%S.%f' if not a else a),
 	'result':	lambda c, a: c.result,
 	'argc':		lambda c, a: _doArgc(c, a),
 	'argv':		lambda c, a: _doArgv(c, a),
@@ -1245,9 +1245,9 @@ def _compareExpression(pcontext:PContext, expr:str) -> bool:
 		Return:
 			Boolean.
 	"""
-	def floatStr(val:str) -> str:
+	def strFloat(val:str) -> Union[float, str]:
 		try:
-			return str(float(val))	# try to unify float values
+			return float(val)	# try to unify float values
 		except ValueError as e:
 			# print(str(e))
 			return val.strip()
@@ -1257,17 +1257,17 @@ def _compareExpression(pcontext:PContext, expr:str) -> bool:
 	if expr.lower() == 'false':
 		return False
 	if (t := expr.partition('==')) and t[1]:
-		return floatStr(t[0]) == floatStr(t[2])
+		return strFloat(t[0]) == strFloat(t[2])
 	if (t := expr.partition('!=')) and t[1]:
-		return floatStr(t[0]) != floatStr(t[2])
+		return strFloat(t[0]) != strFloat(t[2])
 	if (t := expr.partition('<=')) and t[1]:
-		return floatStr(t[0]) <= floatStr(t[2])
+		return strFloat(t[0]) <= strFloat(t[2])
 	if (t := expr.partition('>=')) and t[1]:
-		return floatStr(t[0]) >= floatStr(t[2])
+		return strFloat(t[0]) >= strFloat(t[2])
 	if (t := expr.partition('<')) and t[1]:
-		return floatStr(t[0]) < floatStr(t[2])
+		return strFloat(t[0]) < strFloat(t[2])
 	if (t := expr.partition('>')) and t[1]:
-		return floatStr(t[0]) > floatStr(t[2])
+		return strFloat(t[0]) > strFloat(t[2])
 	pcontext.setError(PError.unknown, f'Unknown expression: {expr}')
 	return None
 
