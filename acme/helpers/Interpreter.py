@@ -1324,7 +1324,7 @@ def _executeProcedure(pcontext:PContext, cmd:str, arg:str) -> PContext:
 	"""
 	pcontext.saveScope(arg = arg, name = cmd)
 	pcontext.pc = 0
-	_procedureMatch = re.compile(r'^\s*procedure\s*' + cmd + '\s*$')
+	_procedureMatch = re.compile(r'^\s*procedure\s*' + cmd + '\s*$', flags = re.IGNORECASE)
 	while line := pcontext.nextLine:
 		if re.match(_procedureMatch, line):
 			return pcontext
