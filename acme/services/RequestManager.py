@@ -254,6 +254,7 @@ class RequestManager(object):
 		# handle transit requests
 		if self.isTransitID(request.id):
 			return self.handleTransitNotifyRequest(request)
+			
 
 		# Check contentType and resourceType
 		# if request.headers.contentType == None:
@@ -923,6 +924,10 @@ class RequestManager(object):
 			# Otherwise send it via one of the bindings
 			if not ct and not (ct := RequestUtils.determineSerialization(url, csz, CSE.defaultSerialization)):
 				continue
+		
+			# Get the content if data is a CSERequest
+			if isinstance(data, CSERequest):
+				data = data.pc
 
 			if Utils.isHttpUrl(url):
 				CSE.event.httpSendNotify() # type: ignore [attr-defined]

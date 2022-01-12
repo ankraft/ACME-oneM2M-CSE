@@ -426,12 +426,12 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
 
-		- If an element is specified as '{}' then all elements in that array are returned in
+		- If an element is specified as `{}` then all elements in that array are returned in
 		an array.
 
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{}') or findXPath(input, 'm2m:cnt/m2m:cin/{}/rn')
 
-		- If an element is specified as '{_}' and is targeting a dictionary then a single random path is choosen.
+		- If an element is specified as `{_}` and is targeting a dictionary then a single random path is chosen.
 		This can be used to skip, for example, unknown first elements in a structure.
 
 		Example: findXPath(resource, '{_}/rn') 
