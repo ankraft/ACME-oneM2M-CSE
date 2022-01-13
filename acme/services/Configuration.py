@@ -8,9 +8,12 @@
 #
 
 
-import configparser, argparse, os.path, pathlib
+import configparser, argparse, os, os.path, pathlib, ipaddress, re
+
 from typing import Any, Dict, Tuple
+from InquirerPy.utils import InquirerPySessionResult
 from rich.console import Console
+from InquirerPy import prompt, inquirer
 from ..etc.Constants import Constants as C
 from ..etc.Types import CSEType, ContentSerializationType, Permission
 
@@ -20,6 +23,8 @@ class Configuration(object):
 		method init(). Access to configuration valus is done by calling Configuration.get(<key>).
 	"""
 	_configuration: Dict[str, Any] = {}
+
+	_defaultConfigFile:str 			= None
 
 	_argsConfigfile:str 			= None
 	_argsLoglevel:str				= None
@@ -47,8 +52,11 @@ class Configuration(object):
 	@staticmethod
 	def init(args:argparse.Namespace = None) -> bool:
 
+		# The default ini file
+		Configuration._defaultConfigFile		= f'{pathlib.Path.cwd()}{os.sep}{C.defaultConfigFile}'
+
 		# resolve the args, of any
-		Configuration._argsConfigfile			= args.configfile if args and 'configfile' in args else C.defaultConfigFile
+		Configuration._argsConfigfile			= args.configfile if args and 'configfile' in args else C.defaultUserConfigFile
 		Configuration._argsLoglevel				= args.loglevel if args and 'loglevel' in args else None
 		Configuration._argsDBReset				= args.dbreset if args and 'dbreset' in args else False
 		Configuration._argsDBStorageMode		= args.dbstoragemode if args and 'dbstoragemode' in args else None
@@ -64,6 +72,16 @@ class Configuration(object):
 		Configuration._argsStatisticsEnabled	= args.statisticsenabled if args and 'statisticsenabled' in args else None
 
 
+		# Create user config file if doesn't exist
+		if not os.path.exists(Configuration._argsConfigfile):
+			try:
+				if not Configuration._buildUserConfigFile(Configuration._argsConfigfile):
+					return False
+			except Exception as e:
+				print(e)
+				raise e
+
+
 		# Read and parse the configuration file
 		config = configparser.ConfigParser(	interpolation=configparser.ExtendedInterpolation(),
 											converters={'list': lambda x: [i.strip() for i in x.split(',')]},	# Convert csv to list
@@ -77,7 +95,7 @@ class Configuration(object):
 						 }
 					})
 		try:
-			if len(config.read(Configuration._argsConfigfile)) == 0 and Configuration._argsConfigfile != C.defaultConfigFile:		# Allow 
+			if len(config.read( [Configuration._defaultConfigFile, Configuration._argsConfigfile])) == 0 and Configuration._argsConfigfile != C.defaultUserConfigFile:		# Allow 
 				Configuration._print(f'[red]Configuration file missing or not readable: {Configuration._argsConfigfile}')
 				return False
 		except configparser.Error as e:
@@ -526,3 +544,269 @@ class Configuration(object):
 		"""	Check whether a configuration setting exsists.
 		"""
 		return key in Configuration._configuration
+
+
+	##########################################################################
+	#
+	#	Interactively create a new basic configuration file
+	#
+
+	iniValues = {
+		'IN' : { 
+			'cseID': 'id-in',
+			'cseName': 'cse-in',
+			'adminID': 'CAdmin',
+			'dataDirectory': '${baseDirectory}',
+			'networkInterface': '127.0.0.1',
+			'cseHost': '127.0.0.1',
+			'httpPort': '8080',
+			'logLevel': 'debug',
+			'databaseInMemory': 'False',
+		},
+		'MN' : { 
+			'cseID': 'id-mn',
+			'cseName': 'cse-mn',
+			'adminID': 'CAdmin',
+			'dataDirectory': '${baseDirectory}',
+			'networkInterface': '127.0.0.1',
+			'cseHost': '127.0.0.1',
+			'httpPort': '8081',
+			'logLevel': 'debug',
+			'databaseInMemory': 'False',
+			'registrarCseHost': '127.0.0.1',
+			'registrarCsePort': '8080',
+			'registrarCseID': 'id-in',
+			'registrarCseName': 'cse-in',
+
+		},
+		'ASN' : { 
+			'cseID': 'id-asn',
+			'cseName': 'cse-asn',
+			'adminID': 'CAdmin',
+			'dataDirectory': '${baseDirectory}',
+			'networkInterface': '127.0.0.1',
+			'cseHost': '127.0.0.1',
+			'httpPort': '8082',
+			'logLevel': 'debug',
+			'databaseInMemory': 'False',
+			'registrarCseHost': '127.0.0.1',
+			'registrarCsePort': '8081',
+			'registrarCseID': 'id-mn',
+			'registrarCseName': 'cse-mn',
+		}		
+	}
+
+
+	@staticmethod
+	def _buildUserConfigFile(configFile:str) -> bool:
+		from ..etc import Utils
+
+		cseType = 'IN'
+
+		def _isValidateIpAddress(ip:str) -> bool:
+			try:
+				ipaddress.ip_address(ip)
+			except Exception:
+				return False
+			return True
+		
+
+		def _isValidateHostname(hostname:str) -> bool:
+			if len(hostname) > 255:
+				return False
+			if hostname[-1] == '.':
+				hostname = hostname[:-1] # strip exactly one dot from the right, if present
+			allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+			return all(allowed.match(x) for x in hostname.split("."))
+
+
+		def _isValidPort(port:str) -> bool:
+			try:
+				_port = int(port)
+			except ValueError:
+				return False
+			return 0 < _port <= 65535
+
+
+		def basicConfig() -> InquirerPySessionResult:
+			Configuration._print('\n[b]Basic Configuration\n')
+			return prompt(
+				[
+					{	'type': 'input',
+						'message': 'CSE-ID:',
+						'long_instruction': 'This is the CSE-ID of the CSE.',
+						'default': Configuration.iniValues[cseType]['cseID'],
+						'validate': lambda result: Utils.isValidID(result),
+						'name': 'cseID',
+						'amark': '✓',
+					},
+					{	'type': 'input',
+						'message': 'Name of the CSE:',
+						'long_instruction': 'This is the resource name of the CSEBase resource.',
+						'default': Configuration.iniValues[cseType]['cseName'],
+						'validate': lambda result: Utils.isValidID(result),
+						'name': 'cseName',
+						'amark': '✓',
+					},
+					{	'type': 'input',
+						'message': 'Admin Originator:',
+						'long_instruction': 'The originator who has admin access rights to the CSE and the CSE\'s resources.',
+						'default': Configuration.iniValues[cseType]['adminID'],
+						'validate': lambda result: Utils.isValidID(result),
+						'name': 'adminID',
+						'amark': '✓',
+					},
+					{	'type': 'input',
+						'message': 'Data root directory:',
+						'long_instruction': 'The directory under which the "data", "init" and "log" directories are located.',
+						'default': Configuration.iniValues[cseType]['dataDirectory'],
+						'name': 'dataDirectory',
+						'amark': '✓',
+					},
+					{	'type': 'input',
+						'message': 'Network interface to bind to (IP address):',
+						'long_instruction': 'The network interface to listen for requests. Use "0.0.0.0" for all interfaces.',
+						'validate': _isValidateIpAddress,
+						'default': Configuration.iniValues[cseType]['networkInterface'],
+						'name': 'networkInterface',
+						'amark': '✓',
+					},
+					{	'type': 'input',
+						'message': 'CSE host address (IP address or host name):',
+						'long_instruction': 'IP address or host name at with the CSE is reachable for requests.',
+						'validate': lambda result: _isValidateIpAddress(result) or _isValidateHostname(result),
+						'default': Configuration.iniValues[cseType]['cseHost'],
+						'name': 'cseHost',
+						'amark': '✓',
+					},
+					{	'type': 'input',
+						'message': 'CSE host http port:',
+						'long_instruction': 'TCP port at with the CSE is reachable for requests.',
+						'validate': _isValidPort,
+						'default': Configuration.iniValues[cseType]['httpPort'],
+						'name': 'httpPort',
+						'amark': '✓',
+					},
+					{	'type': 'rawlist',
+						'message': 'Log level:',
+						'long_instruction': 'Set the logging verbosity',
+						"choices": lambda x: [ 'debug', 'info', 'warning', 'error', 'off' ],
+						'default': 1,
+						'name': 'logLevel',
+						'amark': '✓',
+					},
+					{	'type': 'rawlist',
+						'message': 'Database location:',
+						'long_instruction': 'Store data in memory (volatile) or on disk (persistent).',
+						'default': 2,
+						"choices": lambda x: [ 'memory', 'disk' ],
+						"filter": lambda result: str(result == 'memory'),
+						'name': 'databaseInMemory',
+						'amark': '✓',
+					},
+				],
+			)
+
+
+		def registrarConfig() -> InquirerPySessionResult:
+			Configuration._print('\n[b]Registrar Configuration\n')
+			return prompt(
+				[
+					{	'type': 'input',
+						'message': 'Registrar CSE-ID:',
+						'long_instruction': 'The CSE-ID of the remote (registrar) CSE.',
+						'default': Configuration.iniValues[cseType]['registrarCseID'],
+						'validate': lambda result: Utils.isValidID(result),
+						'name': 'registrarCseID',
+						'amark': '✓',
+					},
+					{	'type': 'input',
+						'message': 'Name of the Registrar CSE:',
+						'long_instruction': 'The resource name of the remote (registrar) CSE.',
+						'default': Configuration.iniValues[cseType]['registrarCseName'],
+						'validate': lambda result: Utils.isValidID(result),
+						'name': 'registrarCseName',
+						'amark': '✓',
+					},
+					{	'type': 'input',
+						'message': 'Registrar CSE IP address / host name:',
+						'long_instruction': 'The IP address or host name of the remote (registrar) CSE.',
+						'default': Configuration.iniValues[cseType]['registrarCseHost'],
+						'validate': lambda result: _isValidateIpAddress(result) or _isValidateHostname(result),
+						'name': 'registrarCseHost',
+						'amark': '✓',
+					},
+					{	'type': 'input',
+						'message': 'Registrar CSE host http port:',
+						'long_instruction': 'The TCP port of the remote (registrar) CSE.',
+						'validate': _isValidPort,
+						'default': Configuration.iniValues[cseType]['registrarCsePort'],
+						'name': 'registrarCsePort',
+						'amark': '✓',
+					},
+				]
+			)
+
+
+		# Header for the configuration
+		# Split it into a header and configuration. 
+		# Also easier to print with rich and the [...]'s
+		cnfheader = [
+				'; acme.ini',
+				'; This file was generated by the [ACME] CSE',
+				'',
+				'[basic.config]',
+		]
+		cnf:list[str] = []
+
+		try:
+			Configuration._print('[b]Creating a new configuration file\n')
+
+			# Get the CSE Type first
+			questionsCseType = [
+				{	"type": "rawlist",
+					"message": "What type of CSE do you want to run:",
+					"default": 1,
+					"choices": lambda x: [ 'IN', 'MN', 'ASN' ],
+					"name": "cseType",
+					'amark': '✓',
+				}
+			]
+			t = prompt(questionsCseType)
+			cseType = t['cseType']
+			cnf.append(f'cseType={cseType}')
+		
+			# Prompt for the basic configuration
+			for each in (bc := basicConfig()):
+				cnf.append(f'{each}={bc[each]}')
+			
+			# Prompt for registrar configuration
+			if cseType in [ 'MN', 'ASN' ]:
+				for each in (bc := registrarConfig()):
+					cnf.append(f'{each}={bc[each]}')
+
+			# Show configuration and confirm write
+			Configuration._print('\n[b]Write config to file\n')
+			jcnf = "\n".join(cnf)
+			Configuration._print(f'[dim]{jcnf}\n')
+
+			if not inquirer.confirm(message = f'Write configuration to {configFile}?', amark = '✓', default = True).execute():
+				Configuration._print('\n[red]Configuration canceled\n')
+				return False
+	
+		except KeyboardInterrupt:
+			Configuration._print('\n[red]Configuration canceled\n')
+			return False
+
+		try:
+			with open(configFile, 'w') as file:
+				file.write('\n'.join(cnfheader))
+				file.write('\n')
+				file.write('\n'.join(cnf))
+		except Exception as e:
+			Configuration._print(str(e))
+			return False
+
+		Configuration._print(f'\n[spring_green2]New {cseType}-CSE configuration created.\n')
+		return True
+

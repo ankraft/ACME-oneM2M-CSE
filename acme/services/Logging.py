@@ -161,7 +161,6 @@ class Logging:
 	@staticmethod
 	def _configureColors(theme:str) -> None:
 		terminalColor				= 'spring_green2' if theme == 'dark' else 'dark_green'
-		print(terminalColor)
 		Logging.terminalStyle 		= Style(color = terminalColor)
 		Logging.terminalStyleError	= Style(color = 'red')
 

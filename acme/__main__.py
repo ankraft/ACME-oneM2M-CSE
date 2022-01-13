@@ -21,7 +21,7 @@ except ImportError as e:
 # Handle command line arguments
 def parseArgs() -> argparse.Namespace:
 	parser = argparse.ArgumentParser(prog='acme')
-	parser.add_argument('--config', action='store', dest='configfile', default=C.defaultConfigFile, metavar='<filename>', help='specify the configuration file')
+	parser.add_argument('--config', action='store', dest='configfile', default=C.defaultUserConfigFile, metavar='<filename>', help='specify the configuration file')
 
 	# two mutual exlcusive arguments
 	groupEnableHttp = parser.add_mutually_exclusive_group()
@@ -55,7 +55,6 @@ def parseArgs() -> argparse.Namespace:
 	
 	return parser.parse_args()
 
-	# TODO init directory
 
 
 def main() -> None:

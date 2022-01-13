@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - [CSE] Added *--http-port* command line argument.
 - [CSE] Added initial support for the Upper Tester protocol defined in TS-0019.
+- [CSE] Added guided setup of a configuration file when the CSE is started without a config file.
 - [WEB] Allow to open the WebUI of a registered CSE via the context menu.
 - [CONSOLE] Added config for dark (default) and light theme for better readability on consoles with light background.
 - [SCRIPTS] Added scripting to the CSE.

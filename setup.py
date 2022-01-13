@@ -1,4 +1,5 @@
-from setuptools import setup, find_packages
+from setuptools import setup
+
 import pathlib
 
 # The directory containing this file
@@ -28,6 +29,7 @@ setup(
 	install_requires=[
 		'cbor2',
 		'flask',
+		'InquirerPy',
 		'isodate',
 		'paho-mqtt',
 		'requests', 

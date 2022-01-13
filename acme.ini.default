@@ -49,17 +49,17 @@
 ; IN Configuration
 ;
 
-[basic.config]
-cseType=IN
-cseID=id-in
-cseName=cse-in
-adminID=CAdmin
-dataDirectory=${baseDirectory}
-networkInterface=0.0.0.0
-cseHost=127.0.0.1
-httpPort=8080
-logLevel=debug
-databaseInMemory=False
+; [basic.config]
+; cseType=IN
+; cseID=id-in
+; cseName=cse-in
+; adminID=CAdmin
+; dataDirectory=${baseDirectory}
+; networkInterface=0.0.0.0
+; cseHost=127.0.0.1
+; httpPort=8080
+; logLevel=debug
+; databaseInMemory=False
 
 ;
 ; MN Configuration

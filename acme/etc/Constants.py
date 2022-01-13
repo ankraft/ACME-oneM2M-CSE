@@ -7,7 +7,6 @@
 #	Various CSE and oneM2M constants
 #
 
-from .Types import ContentSerializationType as CST
 
 class Constants(object):
 
@@ -47,7 +46,8 @@ class Constants(object):
 	#	TODO Perhaps move this to an String Enum when we switch to Python 3.10
 	#
 
-	defaultConfigFile			= 'acme.ini'
+	defaultConfigFile			= 'acme.ini.default'
+	defaultUserConfigFile		= 'acme.ini'
 	defaultImportDirectory		= './init'
 	defaultDataDirectory		= './data'
 	defaultLogDirectory			= './logs'
