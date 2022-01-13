@@ -60,6 +60,7 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('remoteCSEHasDeregistered')
 		self.addEvent('notification')
 		self.addEvent('configUpdate', runInBackground=False)
+		self.addEvent('keyboard')
 
 
 	def shutdown(self) -> bool:

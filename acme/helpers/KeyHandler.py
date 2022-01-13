@@ -79,7 +79,7 @@ _stopLoop = False
 """ Internal variable to indicate to stop the keyboard loop. """
 
 
-def loop(commands:Commands, quit:str = None, catchKeyboardInterrupt:bool = False, headless:bool = False, ignoreException:bool = True) -> None:
+def loop(commands:Commands, quit:str = None, catchKeyboardInterrupt:bool = False, headless:bool = False, ignoreException:bool = True, catchAll:Callable = None) -> None:
 	"""	Endless loop that reads single chars from the keyboard and then executes
 		a handler function for that key (from the dictionary `commands`).
 		If a single 'key' value is set in `quit` and this key is pressed, then
@@ -94,6 +94,9 @@ def loop(commands:Commands, quit:str = None, catchKeyboardInterrupt:bool = False
 
 		If `ignoreException` is True, then exceptions raised during command execution is ignore, or
 		passed on otherwise.
+
+		If `catchAll` is given then this callback is called in case the pressed key was not found
+		in `commands`.
 	"""
 	
 	# main loop
@@ -140,6 +143,8 @@ def loop(commands:Commands, quit:str = None, catchKeyboardInterrupt:bool = False
 			except Exception as e:
 				if not ignoreException:
 					raise e
+		elif ch and catchAll:
+			catchAll(ch)
 
 
 def stopLoop() -> None:

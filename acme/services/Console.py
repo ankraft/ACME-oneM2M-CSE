@@ -118,7 +118,10 @@ class Console(object):
 
 		#	Endless runtime loop. This handles key input & commands
 		#	The CSE's shutdown happens in one of the key handlers below
-		loop(commands, catchKeyboardInterrupt=True, headless=CSE.isHeadless)
+		loop(commands, 
+			 catchKeyboardInterrupt = True, 
+			 headless = CSE.isHeadless,
+			 catchAll = lambda ch: CSE.event.keyboard(ch))
 		CSE.shutdown()
 
 
@@ -130,11 +133,11 @@ class Console(object):
 	#	Various keyboard command handlers
 	#
 
-	def _about(self, header:str=None) -> None:
-		L.console(f'\n[white][dim][[/dim][red][i]ACME[/i][/red][dim]] ', plain=True, end='')
-		L.console(f'oneM2M CSE {C.version}', nl=False,)
+	def _about(self, header:str = None) -> None:
+		L.console(f'\n[white][dim][[/dim][red][i]ACME[/i][/red][dim]] ', plain = True, end = '')
+		L.console(f'oneM2M CSE {C.version}', nl = False,)
 		if header:
-			L.console(header, nl=True, isHeader=True)
+			L.console(header, nl = True, isHeader = True)
 	
 
 	def help(self, key:str) -> None:
@@ -404,17 +407,23 @@ Available under the BSD 3-Clause License
 	def katalogScripts(self, _:str) -> None:
 		"""	List the loaded scripts.
 		"""
+		from rich.style import Style
 		L.console('Script Catalog', isHeader = True)
 		L.off()
-		table = Table()
+		table = Table(row_styles = [ '', Style(bgcolor = "grey15")])
 		table.add_column('Script', no_wrap = True)
 		table.add_column('Description')
 		table.add_column('UT ', no_wrap = True, justify = 'center')
+		table.add_column('Key ', no_wrap = True, justify = 'center')
 		for n in CSE.script.findScripts(name = '*'):
 			if 'hide' not in n.meta:
 				usage = n.meta.get('usage')
 				ut = n.meta.get('uppertester') is not None
-				table.add_row(n.scriptName, usage if usage else '', '✔︎' if ut else '' )
+				key = n.meta.get('onkey')
+				table.add_row(n.scriptName, 
+							  usage if usage else '', 
+							  '✔︎' if ut else '',
+							  key if key else '' )
 		L.console(table, nl = True)
 		L.on()
 
