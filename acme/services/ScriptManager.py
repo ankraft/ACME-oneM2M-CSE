@@ -843,6 +843,7 @@ class ScriptManager(object):
 		# Look for the shutdown script(s) and run them. 
 		for each in self.scripts.values():
 			if (v := each.meta.get('onkey')) and v == ch:
+				L.isDebug and L.logDebug(f'Running script: {each.scriptName} because of keyboard event: {ch}')
 				self.runScript(each)
 
 
