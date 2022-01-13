@@ -629,12 +629,12 @@ class Configuration(object):
 
 
 		def basicConfig() -> InquirerPySessionResult:
-			Configuration._print('\n[b]Basic Configuration\n')
+			Configuration._print('\n[b]Basic configuration\n')
 			return prompt(
 				[
 					{	'type': 'input',
 						'message': 'CSE-ID:',
-						'long_instruction': 'This is the CSE-ID of the CSE.',
+						'long_instruction': 'The CSE-ID of the CSE and the resource ID of the CSEBase.',
 						'default': Configuration.iniValues[cseType]['cseID'],
 						'validate': lambda result: Utils.isValidID(result),
 						'name': 'cseID',
@@ -673,7 +673,7 @@ class Configuration(object):
 					},
 					{	'type': 'input',
 						'message': 'CSE host address (IP address or host name):',
-						'long_instruction': 'IP address or host name at with the CSE is reachable for requests.',
+						'long_instruction': 'IP address or host name at which the CSE is reachable for requests.',
 						'validate': lambda result: _isValidateIpAddress(result) or _isValidateHostname(result),
 						'default': Configuration.iniValues[cseType]['cseHost'],
 						'name': 'cseHost',
@@ -681,7 +681,7 @@ class Configuration(object):
 					},
 					{	'type': 'input',
 						'message': 'CSE host http port:',
-						'long_instruction': 'TCP port at with the CSE is reachable for requests.',
+						'long_instruction': 'TCP port at which the CSE is reachable for requests.',
 						'validate': _isValidPort,
 						'default': Configuration.iniValues[cseType]['httpPort'],
 						'name': 'httpPort',
@@ -709,7 +709,7 @@ class Configuration(object):
 
 
 		def registrarConfig() -> InquirerPySessionResult:
-			Configuration._print('\n[b]Registrar Configuration\n')
+			Configuration._print('\n[b]Registrar configuration\n')
 			return prompt(
 				[
 					{	'type': 'input',
@@ -786,11 +786,11 @@ class Configuration(object):
 					cnf.append(f'{each}={bc[each]}')
 
 			# Show configuration and confirm write
-			Configuration._print('\n[b]Write config to file\n')
+			Configuration._print('\n[b]Save configuration\n')
 			jcnf = "\n".join(cnf)
 			Configuration._print(f'[dim]{jcnf}\n')
 
-			if not inquirer.confirm(message = f'Write configuration to {configFile}?', amark = '✓', default = True).execute():
+			if not inquirer.confirm(message = f'Write configuration to file {configFile}?', amark = '✓', default = True).execute():
 				Configuration._print('\n[red]Configuration canceled\n')
 				return False
 	
