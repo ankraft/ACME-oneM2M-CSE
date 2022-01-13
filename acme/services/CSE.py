@@ -174,7 +174,6 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	event.cseStartup()	# type: ignore
 
 
-	
 	if not shuttingDown:
 		L.isInfo and L.log('CSE started')
 		if isHeadless:

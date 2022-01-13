@@ -145,6 +145,8 @@ class RemoteCSEManager(object):
 	#		
 
 	def connectionMonitorWorker(self) -> bool:
+		if CSE.shuttingDown:
+			return False
 		try:
 
 			# Check the current state of the connection to the "upstream" CSEs
