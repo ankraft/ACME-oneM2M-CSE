@@ -25,6 +25,7 @@ from ..resources import Factory
 
 # TODO implement defaults
 # TODO on event (better than shutdown, etc?)
+# TODO at
 # TODO script check interval configurable
 # TODO script debug loggng configurable
 
@@ -53,12 +54,13 @@ class ACMEPContext(PContext):
 							 			'retrieve':		self.doRetrieve,
 										'run':			self.doRun,
 										'setconfig':	self.doSetConfig,
-						 				'storageremove':self.doStorageRemove,
 										'storageput':	self.doStoragePut,
+						 				'storageremove':self.doStorageRemove,
 							 			'update':		self.doUpdate,
 									}, 
 						 macros = 	{ 
 							 			'attribute':	lambda c, m: self.doAttribute(c, m),
+							 			'hasAttribute':	lambda c, m: self.doHasAttribute(c, m),
 										'storageHas':	lambda c, m: self.doStorageHas(c, m),
 										'storageGet':	lambda c, m: self.doStorageGet(c, m),
 						 				'__default__':	lambda c, m: Configuration.get(m),
@@ -346,15 +348,14 @@ class ACMEPContext(PContext):
 			of the run sript.
 		
 			Example:
-				RUN <script name>
+				RUN <script name> [<arguments>]
 
 			Args:
 				pcontext: PContext object of the runnig script.
-				arg: remaining argument(s) of the command, only the name of a script
+				arg: remaining argument(s) of the command, name of a script and arguments
 			
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
-
 		"""
 		name, found, arg = arg.partition(' ')
 		if name:
@@ -506,7 +507,34 @@ class ACMEPContext(PContext):
 			pcontext.setError(PError.invalid, f'Error decoding resource: {e}')
 			return None
 		return value
+
+
+	def doHasAttribute(self, pcontext:PContext, arg:str) -> str:
+		""" Check whether an attribute exists for the given its key path . 
 		
+			Example:
+				${hasAttribute <key path> <resource>}
+
+			Args:
+				pcontext: PContext object of the runnig script.
+				arg: remaining argument(s) of the command.
+			
+			Returns:
+				True or False, depending whether the `key path` exists in the `resource`.
+		"""
+		# extract key path
+		key, found, res = arg.strip().partition(' ')	
+		if not found:
+			pcontext.setError(PError.invalid, f'Invalid format: hasAttribute <key> <resource>')
+			return None
+		try:
+			if Utils.findXPath(json.loads(res), key) is None:
+				return 'false'
+		except Exception as e:
+			pcontext.setError(PError.invalid, f'Error decoding resource: {e}')
+			return None
+		return 'true'
+
 
 	def doStorageHas(self, pcontext:PContext, arg:str) -> str:
 		"""	Implementation of the `storageHas` macro. Test for a key in the persistent storage.
@@ -660,15 +688,16 @@ class ACMEPContext(PContext):
 			if (dct := self._getResourceFromScript(pcontext, content)) is None:
 				pcontext.setError(PError.invalid, f'No or invalid content found')
 				return None
-			if (ty := ResourceTypes.fromTPE( list(dct.keys())[0] )) is None: # first is tpe # TODO remove?
-				pcontext.setError(PError.invalid, 'Cannot determine resource type')
-				return None
 
 			# TODO add defaults when CREATE
 
 			# Add type when CREATE
 			if operation == Operation.CREATE:
+				if (ty := ResourceTypes.fromTPE( list(dct.keys())[0] )) is None: # first is tpe # TODO remove?
+					pcontext.setError(PError.invalid, 'Cannot determine resource type')
+					return None
 				req['ty'] = ty
+
 
 			# Add primitive content when content is available
 			req['pc'] = dct
@@ -747,6 +776,7 @@ class ScriptManager(object):
 		CSE.event.addHandler(CSE.event.cseStartup, self.cseStarted)			# type: ignore
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)				# type: ignore
 		CSE.event.addHandler(CSE.event.cseRestarted, self.restartFinished)	# type: ignore
+		CSE.event.addHandler(CSE.event.keyboard, self.onKeyboard)			# type: ignore
 		L.isInfo and L.log('ScriptManager initialized')
 
 
@@ -769,6 +799,11 @@ class ScriptManager(object):
 		L.isInfo and L.log('ScriptManager shut down')
 		return True
 	
+
+	##########################################################################
+	#
+	#	Event handlers
+	#
 
 	def cseStarted(self) -> None:
 		"""	Callback for the `cseStartup` event.
@@ -800,6 +835,22 @@ class ScriptManager(object):
 				self.runScript(each)
 
 
+	def onKeyboard(self, ch:str) -> None:
+		"""	Callback for the `keyboard` event.
+		
+			Run script(s) with configured meta tags, if any.
+		"""
+		# Look for the shutdown script(s) and run them. 
+		for each in self.scripts.values():
+			if (v := each.meta.get('onkey')) and v == ch:
+				self.runScript(each)
+
+
+	##########################################################################
+	#
+	#	Monitor handlers
+	#
+
 	def checkScriptUpdates(self) -> bool:
 		"""	This is the callback for the monitor to look for new, updated or outdated
 			scripts. 
@@ -824,6 +875,9 @@ class ScriptManager(object):
 			if self.loadScriptsFromDirectory(CSE.importer.resourcePath) == -1:
 				L.isWarn and L.logWarn('Cannot import new scripts')
 		return True
+
+
+	##########################################################################
 
 
 	def loadScriptsFromDirectory(self, directory:str) -> int:

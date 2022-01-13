@@ -490,7 +490,7 @@ PMacroDict = Dict[str, Callable[[PContext, str], str]]
 
 ##############################################################################
 #
-#	Run procedure
+#	Run a script
 #
 
 def run(pcontext:PContext, doLogging:bool = False, argument:str = '') -> PContext:
@@ -741,7 +741,7 @@ def _doEndWhile(pcontext:PContext, arg:str) -> PContext:
 	return pcontext
 
 
-def _doExit(pcontext:PContext, arg:str) -> PContext:
+def _doQuit(pcontext:PContext, arg:str) -> PContext:
 	"""	End script execution. The optional argument will be 
 		assigned as the result of the script (pcontect.result).
 
@@ -1016,20 +1016,18 @@ _builtinCommands:PCmdDict = {
 	'assert':		_doAssert,
 	'break':		_doBreak,
 	'continue':		_doContinue,
-	'endprocedure':	_doEndProcedure,
 	'dec':			lambda p, a : _doIncDec(p, a, isInc = False),
-	'echo':			_doPrint,
-	'error':		lambda p, a : _doLog(p, a, isError = True),
-	'exit':			_doExit,
 	'else':			_doElse,
 	'endif':		_doEndIf,
+	'endprocedure':	_doEndProcedure,
 	'endwhile':		_doEndWhile,
+	'error':		lambda p, a : _doLog(p, a, isError = True),
 	'if':			_doIf,
 	'inc':			lambda p, a : _doIncDec(p, a),
 	'log':			lambda p, a : _doLog(p, a,),
 	'print':		_doPrint,
 	'procedure':	_doProcedure,
-	'quit':			_doExit,
+	'quit':			_doQuit,
 	'set':			_doSet,
 	'sleep':		_doSleep,
 	'while':		_doWhile,
@@ -1084,14 +1082,15 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 
 		# Then check macros
 		name, _, arg = macro.partition(' ')
+		arg = arg.strip()
 		if (cb := pcontext._macros.get(name)) is not None:
-			if (result := cb(pcontext, arg.strip())) is not None:
+			if (result := cb(pcontext, arg)) is not None:
 				return str(result)
 			if pcontext.error[0] == PError.noError:	# provide an own error if not set by the macro function
 				pcontext.setError(PError.invalid, f'Error from macro: {macro}')
 			return None
-
-		# Lastly, try the default macro definitio
+		
+		# Lastly, try the default macro definition
 		if (cb := pcontext._macros.get('__default__')) is not None:
 			if (result := cb(pcontext, macro)) is not None:
 				return str(result)
