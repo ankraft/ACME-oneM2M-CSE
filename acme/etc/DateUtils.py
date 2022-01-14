@@ -9,8 +9,9 @@
 
 
 from __future__ import annotations
-from typing import Callable, Union
-import datetime, time
+from typing import Callable, Union, Tuple
+import time
+from datetime import datetime, timedelta
 import isodate
 
 
@@ -19,27 +20,27 @@ import isodate
 #	Time, Date, Timestamp related
 #
 
-def getResourceDate(offset:int=0) -> str:
+def getResourceDate(offset:int = 0) -> str:
 	"""	Generate an UTC-relative ISO 8601 timestamp and return it.
 
 		`offset` adds or substracts n seconds to the generated timestamp.
 	"""
-	# return toISO8601Date(datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(seconds=delta))
+	# return toISO8601Date(datetime.now(timezone.utc) + timedelta(seconds=delta))
 	return toISO8601Date(utcTime() + offset)
 
 
-def toISO8601Date(ts:Union[float, datetime.datetime], isUTCtimestamp:bool=True) -> str:
+def toISO8601Date(ts:Union[float, datetime], isUTCtimestamp:bool = True) -> str:
 	"""	Convert and return a UTC-relative float timestamp or datetime object to an ISO 8601 string.
 	"""
 	if isinstance(ts, float):
 		if isUTCtimestamp:
-			ts = datetime.datetime.fromtimestamp(ts)
+			ts = datetime.fromtimestamp(ts)
 		else:
-			ts = datetime.datetime.utcfromtimestamp(ts)
+			ts = datetime.utcfromtimestamp(ts)
 	return ts.strftime('%Y%m%dT%H%M%S,%f')
 
 
-def fromAbsRelTimestamp(absRelTimestamp:str, default:float=0.0, withMicroseconds:bool=True) -> float:
+def fromAbsRelTimestamp(absRelTimestamp:str, default:float = 0.0, withMicroseconds:bool = True) -> float:
 	"""	Parse a ISO 8601 string and return a UTC-relative timestamp as a float.
 		If  `absRelTimestamp` in the string is a period (relatice) timestamp (e.g. PT2S), then this function
 		tries to convert it and return an absolute timestamp as a float, based on the current UTC time.
@@ -48,7 +49,7 @@ def fromAbsRelTimestamp(absRelTimestamp:str, default:float=0.0, withMicroseconds
 	"""
 	try:
 		if not withMicroseconds:
-			return isodate.parse_datetime(absRelTimestamp).replace(microsecond=0).timestamp()
+			return isodate.parse_datetime(absRelTimestamp).replace(microsecond = 0).timestamp()
 		return isodate.parse_datetime(absRelTimestamp).timestamp()
 		# return datetime.datetime.strptime(timestamp, '%Y%m%dT%H%M%S,%f').timestamp()
 	except Exception as e:
@@ -81,7 +82,7 @@ def utcTime() -> float:
 		Returns:
 			Float with the curret UTC time.
 	"""
-	return datetime.datetime.utcnow().timestamp()
+	return datetime.utcnow().timestamp()
 
 
 def timeUntilTimestamp(ts:float) -> float:
@@ -126,3 +127,160 @@ def waitFor(timeout:float, condition:Callable[[], bool]=None) -> bool:
 		while not (res := condition()) and toTs > time.time():
 			time.sleep(0.01)
 		return res
+
+##############################################################################
+#
+#	Cron
+#
+
+def cronMatchesTimestamp(cronPattern:Union[str, list[str]], ts:datetime = None) -> bool:
+	'''	A cron parser to determine if the 'cronPattern' matches for the given timestamp `ts`.
+		The cronPattern must follow the usual crontab pattern of 5 fields 
+	
+			minute hour dayOfMonth month dayOfWeek
+
+		which each must comply to the following patterns:
+
+		- *            any integer value
+		- */num        step values
+		- num[,num]*   value list separator (either num, range or step)
+		- num-num      range of values
+	
+		see also: https://crontab.guru/crontab.5.html
+
+		Args:
+			cronPattern: Either a string with the pattern or a list of strings, one for each pattern element.
+			ts: Optional timestamp. If none then `utcnow()` is used to fill the timestamp.
+		
+		Return:
+			Boolean, indicating whether time pattern matches the given timestamp.
+		
+		Raises:
+			ValueError: If `cronPattern` is invalid.
+	'''
+
+	def _parseMatchCronArg(element:str, target:int) -> bool:
+		"""	Parse and match a single cron element and match it against a target value.
+
+			Args:
+				element: A single cron element/pattern.
+				target: Target value to match.
+			
+			Return:
+				Indication whether the target value matches against the pattern element.
+
+			Raises:
+				ValueError: If `element` is invalid.
+		"""
+
+		# Return True if element is only a *, because this matches anything
+		if element == '*':
+			return True
+
+		# Either a list of values, of a single value 
+		for element in element.split(',') if ',' in element else [ element ] :
+			try:
+				# First, try a direct comparison
+				# If this isn't a number then continue after the exception
+				if int(element) == target:
+					return True
+				continue	# It didnt raise an exception, but didn't match either, so continue
+			except ValueError:
+				pass		# Exception, no number, but maybe a pattern
+			
+			# Value is something else, not a number, look for - or /
+			# If not, then ignore wrong format of value
+
+			if '-' in element:
+				step = 1
+				if '/' in element:
+					# Allow divider in values
+					try:
+						st, tmp = ( x for x in element.split('-') )	# tmp could be another value
+						start = int(st)
+						end, step =( int(x) for x in tmp.split('/') )
+					except ValueError:
+						raise ValueError(f'Invalid cron element: {element}')	# Error in any of the values
+				else:
+					try:
+						start, end = ( int(x) for x in element.split('-') )
+					except ValueError:
+						raise ValueError(f'Invalid cron element: {element}. Not a number.')	# Not a number
+
+				# If target value is in the range, it matches
+				if target in range(start, end + 1, step):
+					return True
+			
+				# Else continue
+				continue
+
+			if '/' in element:
+				v, interval = ( x for x in element.split('/') )
+				if v != '*':	
+					raise ValueError(f'Invalid cron element: {element}. Interval only for *.')	# Intervals only, if it is a *
+				# If the remainder is zero, this matches
+				try:
+					if target % int(interval) == 0:
+						return True
+				except ValueError:
+					raise ValueError(f'Invalid cron element: {element}. Not a number.')	# Not a number
+				# Else continue
+				continue
+
+			raise ValueError(f'Invalid cron element: {element}.')	# Not a number
+
+		return False
+
+	if ts is None:
+		ts = datetime.utcnow()
+	
+	cronElements = cronPattern.split() if isinstance(cronPattern, str) else cronPattern
+	if len(cronElements) != 5:
+		raise ValueError(f'Invalid or empty cron pattern: "{cronPattern}". Must have 5 elements.')
+
+	weekday = ts.isoweekday()
+	return  _parseMatchCronArg(cronElements[0], ts.minute) \
+		and _parseMatchCronArg(cronElements[1], ts.hour) \
+		and _parseMatchCronArg(cronElements[2], ts.day) \
+		and _parseMatchCronArg(cronElements[3], ts.month) \
+		and _parseMatchCronArg(cronElements[4], 0 if weekday == 7 else weekday)
+
+
+def cronInPeriod(cronPattern:Union[str, list[str]], startTs:datetime, endTs:datetime = None) -> Tuple[bool, datetime]:
+	''' A parser to check whether a cron pattern has been true during a certain time period. This is useful
+		for applications which cannot check every minute or need to catch up during a restart, or want to determine
+		the next run at some time in the future.
+
+		Be aware that this function just tries every minute between `startTs` and `endTs`, so it might take some
+		time.
+	
+		Args:
+			cronPattern: Either a string with the pattern or a list of strings, one for each pattern element.
+			startTs: Start timestamp.
+			endTs: End timestamp. If none then `utcnow()` is used to fill the timestamp. In this case `startTs` must be before `endTs`.
+		
+		Return:
+			Tupple[bool, datetime]. The first element indicates whether the `cronPattern` matches any time in the given period. The
+			second element provides the matched timestamp.
+		
+		Raises:
+			ValueError: If `cronPattern` is invalid.
+	'''
+
+	# Fill in the default
+	if endTs is None:
+		endTs = datetime.utcnow()
+
+	# Check the validity of the range
+	if endTs < startTs:
+		raise ValueError('timestamp must be before the current datetime.')
+
+	# Check for every minute
+	td = timedelta(minutes = 1)
+	while startTs <= endTs:
+		if cronMatchesTimestamp(cronPattern, startTs):
+			return True, startTs
+		startTs += td	# Increase by 1 minute for each iteration
+
+	return False, None
+
