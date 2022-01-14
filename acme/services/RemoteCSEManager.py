@@ -100,7 +100,8 @@ class RemoteCSEManager(object):
 
 		# Stop the worker
 		if self.connectionMonitor:
-			self.connectionMonitor.stop
+			self.connectionMonitor.stop()
+			self.connectionMonitor = None
 
 		# Remove resources
 		if CSE.cseType in [ CSEType.ASN, CSEType.MN ]:
