@@ -1244,29 +1244,54 @@ def _compareExpression(pcontext:PContext, expr:str) -> bool:
 		Return:
 			Boolean.
 	"""
-	def strFloat(val:str) -> Union[float, str]:
+	def _strFloat(val:str) -> Union[float, str]:
 		try:
 			return float(val)	# try to unify float values
 		except ValueError as e:
 			# print(str(e))
 			return val.strip()
+	
+	def _checkFloat(l:str, r:str) -> Tuple[float, float]:
+		_l = _strFloat(l)
+		_r = _strFloat(r)
+		if isinstance(_l, float) and isinstance(_r, float):
+			return _l, _r
+		pcontext.setError(PError.unknown, f'Unknown expression: {expr}')
+		return None
 
+	# Boolean checks
 	if expr.lower() == 'true':
 		return True
 	if expr.lower() == 'false':
 		return False
+
+	# equality checks
 	if (t := expr.partition('==')) and t[1]:
-		return strFloat(t[0]) == strFloat(t[2])
+		return _strFloat(t[0]) == _strFloat(t[2])	# still convert to float to convert an int to a float, if necessary
 	if (t := expr.partition('!=')) and t[1]:
-		return strFloat(t[0]) != strFloat(t[2])
+		return _strFloat(t[0]) != _strFloat(t[2])	# still convert to float to convert an int to a float, if necessary
+
+	# order checks
 	if (t := expr.partition('<=')) and t[1]:
-		return strFloat(t[0]) <= strFloat(t[2])
-	if (t := expr.partition('>=')) and t[1]:
-		return strFloat(t[0]) >= strFloat(t[2])
-	if (t := expr.partition('<')) and t[1]:
-		return strFloat(t[0]) < strFloat(t[2])
-	if (t := expr.partition('>')) and t[1]:
-		return strFloat(t[0]) > strFloat(t[2])
+		if not (lr := _checkFloat(t[0], t[2])):	# Error set in function
+			return None
+		return lr[0] <= lr[1]
+		# return strFloat(t[0]) <= strFloat(t[2])
+	elif (t := expr.partition('>=')) and t[1]:
+		if not (lr := _checkFloat(t[0], t[2])):	# Error set in function
+			return None
+		return lr[0] >= lr[1]
+		# return _strFloat(t[0]) >= _strFloat(t[2])
+	elif (t := expr.partition('<')) and t[1]:
+		if not (lr := _checkFloat(t[0], t[2])):	# Error set in function
+			return None
+		return lr[0] < lr[1]
+		# return _strFloat(t[0]) < _strFloat(t[2])
+	elif (t := expr.partition('>')) and t[1]:
+		if not (lr := _checkFloat(t[0], t[2])):	# Error set in function
+			return None
+		return lr[0] > lr[1]
+		# return _strFloat(t[0]) > _strFloat(t[2])
 	pcontext.setError(PError.unknown, f'Unknown expression: {expr}')
 	return None
 

@@ -121,7 +121,7 @@ class Console(object):
 		loop(commands, 
 			 catchKeyboardInterrupt = True, 
 			 headless = CSE.isHeadless,
-			 catchAll = lambda ch: CSE.event.keyboard(ch))
+			 catchAll = lambda ch: CSE.event.keyboard(ch))	# type: ignore [attr-defined]
 		CSE.shutdown()
 
 
