@@ -105,7 +105,7 @@ class ACMEPContext(PContext):
 				pcontext: Script context.
 				msg: log message.
 		"""
-		L.isInfo and L.log(msg)
+		L.console(msg)
 	
 
 	def isStartup(self) -> bool:
@@ -987,7 +987,7 @@ class ScriptManager(object):
 					_result.append(s)
 			result = _result
 
-		result.sort(key = lambda p: p.scriptName)
+		result.sort(key = lambda p: p.scriptName.lower())
 		return result
 
 
