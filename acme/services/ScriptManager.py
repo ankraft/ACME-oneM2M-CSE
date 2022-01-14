@@ -9,6 +9,7 @@
 
 
 from __future__ import annotations
+from signal import valid_signals
 from typing import Dict, Union
 from pathlib import Path
 import json, os, fnmatch
@@ -19,7 +20,7 @@ from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers import TextTools
 from ..services.Logging import Logging as L
 from ..services import CSE
-from ..etc import Utils
+from ..etc import Utils, DateUtils
 from ..resources import Factory
 
 
@@ -27,9 +28,7 @@ from ..resources import Factory
 # TODO on event (better than shutdown, etc?)
 # TODO at
 # TODO script check interval configurable
-# TODO script debug loggng configurable
-
-# TODO add debugging to commands
+# TODO make script debugging configurable
 
 
 class ACMEPContext(PContext):
@@ -75,7 +74,6 @@ class ACMEPContext(PContext):
 		self.poas:Dict[str, str] = { CSE.cseCsi: None }		# Default: Own CSE
 		self.filename = filename
 		self.fileMtime = os.stat(filename).st_mtime
-
 
 
 	def log(self, pcontext:PContext, msg:str) -> None:
@@ -771,6 +769,7 @@ class ScriptManager(object):
 		self.doLogging = True	# TODO configurable
 		self.scriptMonitorInterval = 2 # TODO configurale
 		self.scriptUpdatesMonitor:BackgroundWorker = None
+		self.scriptCronWorker:BackgroundWorker = None
 
 		# Also do some internal handling
 		CSE.event.addHandler(CSE.event.cseStartup, self.cseStarted)			# type: ignore
@@ -792,9 +791,11 @@ class ScriptManager(object):
 			if each.isShutdown():
 				self.runScript(each)
 
-		# Stop the monitor
+		# Stop the monitors
 		if self.scriptUpdatesMonitor:
 			self.scriptUpdatesMonitor.stop()
+		if self.scriptCronWorker:
+			self.scriptCronWorker.stop()
 
 		L.isInfo and L.log('ScriptManager shut down')
 		return True
@@ -812,6 +813,9 @@ class ScriptManager(object):
 		"""
 		# Add a worker to monitor changes in the scripts
 		self.scriptUpdatesMonitor = BackgroundWorkerPool.newWorker(self.scriptMonitorInterval, self.checkScriptUpdates, 'scriptUpdatesMonitor').start()
+
+		# Add a worker to check scheduled script, every minute
+		self.scriptCronWorker = BackgroundWorkerPool.newWorker(60.0, self.cronMonitor, 'scriptCronMonitor').start()
 
 
 	def restart(self) -> None:
@@ -877,6 +881,24 @@ class ScriptManager(object):
 				L.isWarn and L.logWarn('Cannot import new scripts')
 		return True
 
+
+	def cronMonitor(self) -> bool:
+		"""	This is the callback for the cron scheduler. It looks for scripts with an @at meta tag
+			and takes the argument as a cron pattern. Scripts that are scheduled to run now will
+			be run, one after the other.
+			
+			Return:
+				Boolean. Usually true to continue with monitoring.
+		"""
+		L.isDebug and L.logDebug(f'Looking for scheduled scripts')
+		for each in self.findScripts(meta = 'at'):
+			try:
+				if DateUtils.cronMatchesTimestamp(at := each.meta.get('at')):
+					L.isDebug and L.logDebug(f'Running script: {each.scriptName} at: {at}')
+					self.runScript(each)
+			except ValueError as e:
+				L.logErr(f'Error in script: {each.scriptName} - {str(e)}')
+		return True
 
 	##########################################################################
 
