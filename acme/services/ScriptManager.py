@@ -25,10 +25,10 @@ from ..resources import Factory
 
 
 # TODO implement defaults
-# TODO on event (better than shutdown, etc?)
-# TODO at
 # TODO script check interval configurable
 # TODO make script debugging configurable
+
+# TODO Re-configure event callback! 
 
 
 class ACMEPContext(PContext):
@@ -59,6 +59,7 @@ class ACMEPContext(PContext):
 									}, 
 						 macros = 	{ 
 							 			'attribute':	lambda c, m: self.doAttribute(c, m),
+										'cseStatus':	lambda c, m: self.doCseStatus(c, m),
 							 			'hasAttribute':	lambda c, m: self.doHasAttribute(c, m),
 										'storageHas':	lambda c, m: self.doStorageHas(c, m),
 										'storageGet':	lambda c, m: self.doStorageGet(c, m),
@@ -105,45 +106,6 @@ class ACMEPContext(PContext):
 		"""
 		L.console(msg)
 	
-
-	def isStartup(self) -> bool:
-		"""	Check whether a script is marked as to be run during startup of the CSE. 
-			This is done by adding the "@startup" meta data line in a script.
-
-			Example:
-				@startup
-			
-			Returns:
-				boolean
-		"""
-		return 'startup' in self.meta
-	
-
-	def isShutdown(self) -> bool:
-		"""	Check whether a script is marked as to be run during shutdown of the CSE. 
-			This is done by adding the "@shutdown" meta data line in a script.
-
-			Example:
-				@shutdoown
-			
-			Returns:
-				boolean
-		"""
-		return 'shutdown' in self.meta
-
-
-	def isRestart(self) -> bool:
-		"""	Check whether a script is marked as to be run during restart of the CSE. 
-			This is done by adding the "@restart" meta data line in a script.
-
-			Example:
-				@restart
-			
-			Returns:
-				boolean
-		"""
-		return 'restart' in self.meta
-
 	
 	@property
 	def errorMessage(self) -> str:
@@ -179,7 +141,6 @@ class ACMEPContext(PContext):
 	#
 	#	Commands
 	#
-
 
 	def doCreate(self, pcontext:PContext, arg:str) -> PContext:
 		"""	Execute a CREATE request. The originator must be set before this command.
@@ -283,15 +244,15 @@ class ACMEPContext(PContext):
 	def doPoa(self, pcontext:PContext, arg:str) -> PContext:
 		"""	Assign a poa for an identifier.
 
-		Example:
-			poa <identifier> <url>
-		
-		Args:
-			pcontext: PContext object of the runnig script.
-			arg: remaining argument of the command.
+			Example:
+				poa <identifier> <url>
 			
-		Returns:
-			The scripts "PContext" object, or None in case of an error.
+			Args:
+				pcontext: PContext object of the runnig script.
+				arg: remaining argument of the command.
+				
+			Returns:
+				The scripts "PContext" object, or None in case of an error.
 		"""
 		orig, found, url = arg.partition(' ')
 		if found:
@@ -305,15 +266,15 @@ class ACMEPContext(PContext):
 	def doReset(self, pcontext:PContext, arg:str) -> PContext:
 		"""	Initiate a CSE reset.
 
-		Example:
-			reset
-		
-		Args:
-			pcontext: PContext object of the runnig script.
-			arg: remaining argument of the command.
+			Example:
+				reset
 			
-		Returns:
-			The scripts "PContext" object, or None in case of an error.
+			Args:
+				pcontext: PContext object of the runnig script.
+				arg: remaining argument of the command.
+				
+			Returns:
+				The scripts "PContext" object, or None in case of an error.
 		"""
 
 		orig, found, url = arg.partition(' ')
@@ -384,7 +345,6 @@ class ACMEPContext(PContext):
 			
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
-
 		"""
 		key, found, value = arg.partition(' ')
 		if found:
@@ -473,14 +433,13 @@ class ACMEPContext(PContext):
 		return self._handleRequest(pcontext, Operation.UPDATE, arg)
 	
 
-
 	#########################################################################
 	#
 	#	Macros
 	#
 
 	def doAttribute(self, pcontext:PContext, arg:str) -> str:
-		""" Retrieve an attribute of a resource via its key path . 
+		""" Retrieve an attribute of a resource via its key path. 
 		
 			Example:
 				${attribute <key path> <resource>}
@@ -505,6 +464,18 @@ class ACMEPContext(PContext):
 			pcontext.setError(PError.invalid, f'Error decoding resource: {e}')
 			return None
 		return value
+
+
+	def doCseStatus(self, pcontext:PContext, arg:str) -> str:
+		""" Retrieve the CSE status . 
+		
+			Example:
+				${cseStatus}
+			
+			Returns:
+				The CSE status as a string, or None in case of an error.
+		"""
+		return str(CSE.cseStatus)
 
 
 	def doHasAttribute(self, pcontext:PContext, arg:str) -> str:
@@ -787,9 +758,7 @@ class ScriptManager(object):
 		"""
 
 		# Look for the shutdown script(s) and run them. 
-		for each in self.scripts.values():
-			if each.isShutdown():
-				self.runScript(each)
+		self.runEventScripts('onshutdown')
 
 		# Stop the monitors
 		if self.scriptUpdatesMonitor:
@@ -817,11 +786,15 @@ class ScriptManager(object):
 		# Add a worker to check scheduled script, every minute
 		self.scriptCronWorker = BackgroundWorkerPool.newWorker(60.0, self.cronMonitor, 'scriptCronMonitor').start()
 
+		# Look for the startup script(s) and run them. 
+		self.runEventScripts('onstartup')
+
 
 	def restart(self) -> None:
 		"""	Callback for the `cseReset` event.
 		
-			Restart the script manager service.
+			Restart the script manager service, ie. clear the scripts and storage. 
+			They are reloaded during import.
 		"""
 		self.scripts.clear()
 		self.storage.clear()
@@ -834,9 +807,7 @@ class ScriptManager(object):
 			Run the restart script(s), if any.
 		"""
 		# Look for the shutdown script(s) and run them. 
-		for each in self.scripts.values():
-			if each.isRestart():
-				self.runScript(each)
+		self.runEventScripts('onrestart')
 
 
 	def onKeyboard(self, ch:str) -> None:
@@ -845,10 +816,7 @@ class ScriptManager(object):
 			Run script(s) with configured meta tags, if any.
 		"""
 		# Look for the shutdown script(s) and run them. 
-		for each in self.scripts.values():
-			if (v := each.meta.get('onkey')) and v == ch:
-				L.isDebug and L.logDebug(f'Running script: {each.scriptName} because of keyboard event: {ch}')
-				self.runScript(each)
+		self.runEventScripts('onkey', ch)
 
 
 	##########################################################################
@@ -912,6 +880,7 @@ class ScriptManager(object):
 			Return:
 				Number scripts loaded, or -1 in case of an error.
 		"""
+
 
 		def _hasScriptWithFilename(filename:str) -> bool:
 			"""	Test whether a script with the filename exists.
@@ -1028,7 +997,8 @@ class ScriptManager(object):
 			pcontext.run(doLogging = self.doLogging, argument = argument)
 
 		if pcontext.state == PState.running:
-			pcontext.setError(PError.invalid, f'Script "{pcontext.name}" is already running')
+			L.isWarn and L.logWarn(f'Script "{pcontext.name}" is already running')
+			# pcontext.setError(PError.invalid, f'Script "{pcontext.name}" is already running')
 			return False
 		if background:
 			BackgroundWorkerPool.newActor(runCB, name = f'AS:{pcontext.scriptName}-{Utils.uniqueID()}').start(argument = argument)
@@ -1059,6 +1029,11 @@ class ScriptManager(object):
 		L.isWarn and L.logWarn(f'Script: "{scriptName}"finished with error: {script.error}')
 		return None
 
+
+	##########################################################################
+	#
+	#	Storage handlers
+	#
 
 	def storageGet(self, key:str) -> str:
 		"""	Retrieve a key/value pair from the persistent storage. 
@@ -1105,3 +1080,23 @@ class ScriptManager(object):
 		if key in self.storage:
 			del self.storage[key]
 
+
+	##########################################################################
+	#
+	#	Misc
+	#
+
+	def runEventScripts(self, event:str, argument:str = None) -> None:
+		"""	Get and run all the scripts for a specific event. If the `argument` is given
+			then the event's parameter must match the argument.
+
+			Args:
+				event: The event for which the script(s) are run.
+				argument: The optional argument that needs to match the event's pararmater in the script.
+		"""
+		for each in self.findScripts(meta = event):
+			if argument:
+				if (v := each.meta.get(event)) and v == argument:
+					self.runScript(each, argument = argument)
+			else:
+				self.runScript(each)
