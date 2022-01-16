@@ -288,7 +288,6 @@ class PContext():
 				msg: String that further explains the error.
 				pc: Integer, the program counter pointing at the line causing the error. Default -1 means the current pc.
 				state: PState to indicate the state of the script. Default is "terminatedWithError".
-
 		"""
 		self.state = state
 		self.error = ( error, self.pc if pc == -1 else pc, msg )
@@ -1039,6 +1038,8 @@ _builtinMacros:PMacroDict = {
 	'result':	lambda c, a: c.result,
 	'argc':		lambda c, a: _doArgc(c, a),
 	'argv':		lambda c, a: _doArgv(c, a),
+	'runCount':	lambda c, a: str(c.runs),
+
 }
 
 
