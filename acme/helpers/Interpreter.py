@@ -460,6 +460,21 @@ class PContext():
 				name: Name of the script.
 		"""
 		self.meta['name'] = name
+	
+
+	def getMeta(self, key:str) -> str:
+		"""	Return the argument of meta data, or an empty string.
+
+			Args:
+				key: Key of the meta data to look for.
+
+			Return:
+				String, value or empty string.
+		
+		"""
+		if v := self.meta.get(key):
+			return v
+		return ''
 
 
 ##############################################################################
