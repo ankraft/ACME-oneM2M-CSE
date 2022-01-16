@@ -11,7 +11,7 @@
 
 
 from typing import List, Tuple, Dict, cast
-from ..etc.Types import ResourceTypes as T, Result, CSEType, ResponseStatusCode as RC, JSON
+from ..etc.Types import CSEStatus, ResourceTypes as T, Result, CSEType, ResponseStatusCode as RC, JSON
 from ..etc import Utils as Utils
 from ..resources import CSR, CSEBase
 from ..resources.Resource import Resource
@@ -146,7 +146,7 @@ class RemoteCSEManager(object):
 	#		
 
 	def connectionMonitorWorker(self) -> bool:
-		if CSE.shuttingDown:
+		if CSE.cseStatus != CSEStatus.RUNNING:
 			return False
 		try:
 

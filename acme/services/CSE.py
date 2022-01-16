@@ -13,7 +13,7 @@ from threading import Lock
 from typing import Dict, Any
 
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
-from ..etc.Types import CSEType, ContentSerializationType
+from ..etc.Types import CSEStatus, CSEType, ContentSerializationType
 from ..services.Configuration import Configuration
 from ..services.Console import Console
 from ..services.Dispatcher import Dispatcher
@@ -69,8 +69,7 @@ cseOriginator:str								= None
 defaultSerialization:ContentSerializationType	= None
 releaseVersion:str								= None
 isHeadless 										= False
-shuttingDown									= False
-
+cseStatus:CSEStatus								= CSEStatus.STOPPED
 
 _cseResetLock									= Lock()	# lock for resetting the CSE
 
@@ -88,11 +87,13 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	global aeStatistics
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiRelative, cseRi, cseRn, releaseVersion
 	global cseOriginator
-	global isHeadless
+	global isHeadless, cseStatus
 
 	os.environ["FLASK_ENV"] = "development"		# get rid if the warning message from flask. 
 												# Hopefully it is clear at this point that this is not a production CSE
 
+	# Set status
+	cseStatus = CSEStatus.STARTING
 
 	# Handle command line arguments and load the configuration
 	if not args:
@@ -108,6 +109,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	event = EventManager()					# Initialize the event manager before anything else
 
 	if not Configuration.init(args):
+		cseStatus = CSEStatus.STOPPED
 		return False
 
 	# Initialize configurable constants
@@ -161,6 +163,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	# When this fails, we cannot continue with the CSE startup
 	importer = Importer()
 	if not importer.doImport():
+		cseStatus = CSEStatus.STOPPED
 		return False
 	
 	# Start the HTTP server
@@ -168,17 +171,19 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 
 	# Start the MQTT client
 	if not mqttClient.run():				# This does return
+		cseStatus = CSEStatus.STOPPED
 		return False 					
 
 	# Send an event that the CSE startup finished
+	cseStatus = CSEStatus.RUNNING
 	event.cseStartup()	# type: ignore
 
 
-	if not shuttingDown:
+	if not cseStatus.RUNNING:
 		L.isInfo and L.log('CSE started')
 		if isHeadless:
 			# when in headless mode give the CSE a moment (2s) to experience fatal errors before printing the start message
-			BackgroundWorkerPool.newActor(lambda : L.console('CSE started') if not shuttingDown else None, delay=2.0 ).start()
+			BackgroundWorkerPool.newActor(lambda : L.console('CSE started') if cseStatus != CSEStatus.RUNNING else None, delay=2.0 ).start()
 	
 	return True
 
@@ -189,11 +194,11 @@ def shutdown() -> None:
 		to terminate.
 		The actual shutdown happens in the _shutdown() method.
 	"""
-	global shuttingDown
+	global cseStatus
 	
 	# indicating the shutting down status. When running in another environment the
 	# atexit-handler might not be called. Therefore, we need to set it here
-	shuttingDown = True
+	cseStatus = CSEStatus.STOPPING
 	if console:
 		console.stop()				# This will end the main run loop.
 	if isHeadless:
@@ -204,6 +209,7 @@ def shutdown() -> None:
 def _shutdown() -> None:
 	"""	shutdown the CSE, e.g. when receiving a keyboard interrupt or at the end of the programm run.
 	"""
+	global cseStatus
 
 	L.isInfo and L.log('CSE shutting down')
 	if event:	# send shutdown event
@@ -230,12 +236,16 @@ def _shutdown() -> None:
 	
 	L.isInfo and L.log('CSE shutdown')
 	L.finit()
+	cseStatus = CSEStatus.STOPPED
 
 
 def resetCSE() -> None:
 	""" Reset the CSE: Clear databases and import the resources again.
 	"""
+	global cseStatus
+
 	with _cseResetLock:
+		cseStatus = CSEStatus.RESETTING
 		L.isWarn and L.logWarn('Resetting CSE started')
 		httpServer.pause()
 		mqttClient.pause()
@@ -253,7 +263,7 @@ def resetCSE() -> None:
 		httpServer.unpause()
 		event.cseRestarted()	# type: ignore [attr-defined]   
 
-
+		cseStatus = CSEStatus.RUNNING
 		L.isWarn and L.logWarn('Resetting CSE finished')
 
 

@@ -653,6 +653,14 @@ class CSEType(ACMEIntEnum):
 	ASN					=  3
 
 
+class CSEStatus(ACMEIntEnum):
+	"""	CSE Status """
+	STOPPED				= auto()
+	STARTING			= auto()
+	RUNNING				= auto()
+	STOPPING			= auto()
+	RESETTING			= auto()
+
 
 ##############################################################################
 #

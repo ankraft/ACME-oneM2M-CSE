@@ -5,7 +5,7 @@
 #
 
 @name disableShortRequestExpiration
-@usage (Tests) Disable shorter expirations: disableShortRequestExpiration
+@usage (Tests) Disable shorter request expirations: disableShortRequestExpiration
 @uppertester
 
 if ${argc} > 0

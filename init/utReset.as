@@ -1,5 +1,5 @@
 #
-#	reset.as
+#	utReset.as
 #
 #	This script initiates a CSE reset
 #

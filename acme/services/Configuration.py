@@ -644,7 +644,7 @@ class Configuration(object):
 					},
 					{	'type': 'input',
 						'message': 'Name of the CSE:',
-						'long_instruction': 'This is the resource name of the CSEBase resource.',
+						'long_instruction': 'This is the resource name of the CSEBase.',
 						'default': Configuration.iniValues[cseType]['cseName'],
 						'validate': lambda result: Utils.isValidID(result),
 						'name': 'cseName',

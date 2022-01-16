@@ -292,7 +292,7 @@ class HttpServer(object):
 		return Response(response='unsupported', status=422, headers=self._responseHeaders)
 
 
-	def handleUpperTester(self, path:str=None) -> Response:
+	def handleUpperTester(self, path:str = None) -> Response:
 		"""	Handle a Upper Tester request. See TS-0019 for details.
 		"""
 		if self.isStopped:
