@@ -5,7 +5,8 @@
 #
 
 @name disableShortResourceExpiration
-@usage (Tests) Disable shorter resource expirations: disableShortResourceExpiration
+@description (Tests) Disable shorter resource expirations
+@usage disableShortResourceExpiration
 @uppertester
 
 if ${argc} > 0

@@ -7,7 +7,7 @@
 
 @startup
 @name startup
-@usage This script is run during startup of the CSE
+@description This script is run during startup of the CSE
 @hide
 
 #############################################################################

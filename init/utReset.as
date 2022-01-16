@@ -4,12 +4,9 @@
 #	This script initiates a CSE reset
 #
 @name reset
-@usage Initiate a CSE reset: reset
+@description Initiate a CSE reset
+@usage reset
 @uppertester
-
-if ${argc} > 0
-	error "reset" command has no arguments
-	quit
-endif
+@onkey Z
 
 reset

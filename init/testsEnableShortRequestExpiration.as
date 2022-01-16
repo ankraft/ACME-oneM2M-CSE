@@ -6,7 +6,8 @@
 #
 
 @name enableShortRequestExpiration
-@usage (Tests) Enable shorter request expirations: enableShortRequestExpiration <seconds>
+@description (Tests) Enable shorter request expirations
+@usage enableShortRequestExpiration <seconds>
 @uppertester
 
 if ${argc} != 1

@@ -247,6 +247,9 @@ def resetCSE() -> None:
 	with _cseResetLock:
 		cseStatus = CSEStatus.RESETTING
 		L.isWarn and L.logWarn('Resetting CSE started')
+		L.enableScreenLogging = True
+		L.setLogLevel(Configuration.get('logging.level'))
+		
 		httpServer.pause()
 		mqttClient.pause()
 

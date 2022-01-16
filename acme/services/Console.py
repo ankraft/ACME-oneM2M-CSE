@@ -113,7 +113,7 @@ class Console(object):
 			'T'		: self.childResourceTree,
 			'u'		: self.openWebUI,
 			'w'		: self.workers,
-			'Z'		: self.resetCSE,
+			#'Z'		: self.resetCSE,
 		}
 
 		#	Endless runtime loop. This handles key input & commands
@@ -164,8 +164,15 @@ class Console(object):
 - ^T    - Show & refresh resource tree continuously
 - w     - Show workers status
 - u     - Open web UI
-- Z     - Reset the CSE
-""", nl=True)
+""", nl = True)
+
+		# List script with key bindings
+		L.console('**Script Commands**', nl = True)
+		lst = ''
+		for each in sorted(CSE.script.findScripts(meta = 'onkey'), key = lambda x: x.getMeta('onkey')):
+			lst += f'- {each.meta.get("onkey")}     - {each.meta.get("description")}\n'
+		L.console(lst, nl = True)
+
 
 
 	def about(self, key:str) -> None:
@@ -412,18 +419,21 @@ Available under the BSD 3-Clause License
 		L.off()
 		table = Table(row_styles = [ '', Style(bgcolor = "grey15")])
 		table.add_column('Script', no_wrap = True)
-		table.add_column('Description')
+		table.add_column('Description / Usage')
 		table.add_column('UT ', no_wrap = True, justify = 'center')
 		table.add_column('Key ', no_wrap = True, justify = 'center')
+		table.add_column('Run at', no_wrap = True, justify = 'center')
 		for n in CSE.script.findScripts(name = '*'):
 			if 'hide' not in n.meta:
-				usage = n.meta.get('usage')
-				ut = n.meta.get('uppertester') is not None
-				key = n.meta.get('onkey')
+				desc = f'{n.getMeta("description")}\n[dim]{n.getMeta("usage")}'
+				ut = n.getMeta('uppertester') is not None
+				at = n.getMeta('at')
+				key = n.getMeta('onkey')
 				table.add_row(n.scriptName, 
-							  usage if usage else '', 
+							  desc, 
 							  '✔︎' if ut else '',
-							  key if key else '' )
+							  key,
+							  at )
 		L.console(table, nl = True)
 		L.on()
 
@@ -450,17 +460,6 @@ Available under the BSD 3-Clause License
 						exportFile.write('\n')
 			L.console(f'Exported {len(resources)} resources')
 		L.on()
-
-
-
-	def resetCSE(self, _:str) -> None:
-		"""	Reset the CSE. Remove all resources and do the importing again.
-		"""
-		L.console('Resetting CSE', isHeader = True)
-		L.enableScreenLogging = True
-		# L.logLevel = Configuration.get('logging.level')
-		L.setLogLevel(Configuration.get('logging.level'))
-		CSE.resetCSE()
 	
 
 	previousScript = ''

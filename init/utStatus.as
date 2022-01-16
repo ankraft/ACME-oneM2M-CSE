@@ -4,7 +4,8 @@
 #	This script returns the CSE's runtime status
 #
 @name status
-@usage Return the CSE status: status
+@description Return the CSE status
+@usage status
 @uppertester
 
 if ${argc} > 0
