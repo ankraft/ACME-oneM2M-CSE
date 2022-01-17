@@ -31,7 +31,7 @@ class BackgroundWorker(object):
 	_logger:Callable[[int, str], None] = logging.log
 
 
-	def __init__(self, interval:float, callback:Callable, name:str=None, startWithDelay:bool=False, maxCount:int=None, dispose:bool=True, id:int=None, runOnTime:bool=True, runPastEvents:bool=False) -> None:
+	def __init__(self, interval:float, callback:Callable, name:str = None, startWithDelay:bool = False, maxCount:int = None, dispose:bool = True, id:int = None, runOnTime:bool = True, runPastEvents:bool = False) -> None:
 		self.interval 				= interval
 		self.runOnTime				= runOnTime			# Compensate for processing time
 		self.runPastEvents			= runPastEvents		# Run events that are in the past
@@ -51,7 +51,11 @@ class BackgroundWorker(object):
 		"""	Start the background worker in a thread. If the background worker is already
 			running then it is stopped and started again.
 
-			Returns the background worker instance.
+			Args:
+				Any number of arguments are passed to the worker.
+
+			Return:
+				The background worker instance.
 		"""
 
 		if self.running:
@@ -71,7 +75,8 @@ class BackgroundWorker(object):
 	def stop(self) -> BackgroundWorker:
 		"""	Stop the background worker.
 
-			Returns the background worker instance.
+			Return:
+				The background worker instance.
 		"""
 		if not self.running:
 			return self
@@ -83,8 +88,28 @@ class BackgroundWorker(object):
 		return self
 	
 
+	def restart(self, interval:float = None) -> BackgroundWorker:
+		"""	Restart the worker. Optionally use new interval, and re-use the previous arguments passed with the `start()` method.
+		
+			Args:
+				interval: Optional float with the interval.
+
+			Return:
+				The background worker instance, or None if the worker isn't running
+		"""
+		if not self.running:
+			return None
+		self.pause()
+		if interval is not None:
+			self.interval = interval
+		return self.unpause()
+	
+
 	def pause(self) -> BackgroundWorker:
 		"""	Pause the execution of a a worker.
+
+			Return:
+				The background worker instance.
 		"""
 		if not self.running:
 			return self
