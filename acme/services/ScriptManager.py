@@ -9,7 +9,6 @@
 
 
 from __future__ import annotations
-from signal import valid_signals
 from typing import Dict, Union
 from pathlib import Path
 import json, os, fnmatch
@@ -28,7 +27,7 @@ from ..resources import Factory
 # TODO script check interval configurable
 # TODO make script debugging configurable
 
-# TODO Re-configure event callback! 
+# TODO Implement re-configuration callbacks when necessary! 
 
 
 class ACMEPContext(PContext):

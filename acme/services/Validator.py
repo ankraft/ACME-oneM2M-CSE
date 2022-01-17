@@ -17,7 +17,6 @@ from ..etc.Types import AttributePolicy, AttributePolicyDict, BasicType as BT, C
 from ..etc.Types import JSON, FlexContainerAttributes
 from ..etc.Types import Result, ResourceTypes as T
 from ..etc import Utils as Utils, DateUtils as DateUtils
-from ..services.Configuration import Configuration
 from ..services.Logging import Logging as L
 from ..resources.Resource import Resource
 

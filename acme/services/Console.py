@@ -426,7 +426,7 @@ Available under the BSD 3-Clause License
 		for n in CSE.script.findScripts(name = '*'):
 			if 'hide' not in n.meta:
 				desc = f'{n.getMeta("description")}\n[dim]{n.getMeta("usage")}'
-				ut = n.getMeta('uppertester') is not None
+				ut = n.meta.get('uppertester') is not None
 				at = n.getMeta('at')
 				key = n.getMeta('onkey')
 				table.add_row(n.scriptName, 
