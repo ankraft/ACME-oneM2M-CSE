@@ -17,16 +17,19 @@ from ..services.Configuration import Configuration
 from ..services import CSE as CSE
 from ..resources.Resource import Resource
 from ..resources.ACP import ACP
-from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 
 
 
 class RegistrationManager(object):
 
 	def __init__(self) -> None:
-		self.allowedCSROriginators 	= Configuration.get('cse.registration.allowedCSROriginators')
-		self.allowedAEOriginators	= Configuration.get('cse.registration.allowedAEOriginators')
- 
+		self.allowedCSROriginators 		= Configuration.get('cse.registration.allowedCSROriginators')
+		self.allowedAEOriginators		= Configuration.get('cse.registration.allowedAEOriginators')
+		self.checkExpirationsInterval	= Configuration.get('cse.checkExpirationsInterval')
+
+		# Start expiration Monitor
+		self.expWorker:BackgroundWorker	= None
 		self.startExpirationMonitor()
 		
 		# Add handler for configuration updates
@@ -44,9 +47,11 @@ class RegistrationManager(object):
 	def configUpdate(self, key:str = None, value:Any = None) -> None:
 		"""	Handle configuration updates.
 		"""
-		if key in [ 'cse.checkExpirationsInterval' ]:
-			self.stopExpirationMonitor()
-			self.startExpirationMonitor()
+		if key not in [ 'cse.checkExpirationsInterval']:
+			return
+		self.checkExpirationsInterval = value
+		self.restartExpirationMonitor()
+
 
 
 	#########################################################################
@@ -95,28 +100,28 @@ class RegistrationManager(object):
 			else:
 				resource['cr'] = originator
 				# fall-through
-		return Result(status=True) # implicit OK
+		return Result(status = True) # implicit OK
 
 
 	def checkResourceUpdate(self, resource:Resource, updateDict:JSON) -> Result:
 		if resource.ty == T.CSR:
 			if not self.handleCSRUpdate(resource, updateDict):
-				return Result(status=False, dbg='cannot update CSR')
-		return Result(status=True)
+				return Result(status = False, dbg = 'cannot update CSR')
+		return Result(status = True)
 
 
 	def checkResourceDeletion(self, resource:Resource) -> Result:
 		ty = resource.ty
 		if ty == T.AE:
 			if not self.handleAEDeRegistration(resource):
-				return Result(status=False, dbg='cannot deregister AE')
+				return Result(status = False, dbg = 'cannot deregister AE')
 		if ty == T.REQ:
 			if not self.handleREQDeRegistration(resource):
-				return Result(status=False, dbg='cannot deregister REQ')
+				return Result(status = False, dbg = 'cannot deregister REQ')
 		if ty == T.CSR:
 			if not self.handleCSRDeRegistration(resource):
-				return Result(status=False, dbg='cannot deregister CSR')
-		return Result(status=True)
+				return Result(status = False, dbg = 'cannot deregister CSR')
+		return Result(status = True)
 
 
 
@@ -268,7 +273,7 @@ class RegistrationManager(object):
 	#	Handle REQ deregistration
 	#
 
-	def handleREQDeRegistration(self, resource:  	 	 Resource) -> bool:
+	def handleREQDeRegistration(self, resource:Resource) -> bool:
 		L.isDebug and L.logDebug(f'DeRegisterung REQ. ri: {resource.ri}')
 		return True
 
@@ -281,14 +286,22 @@ class RegistrationManager(object):
 	def startExpirationMonitor(self) -> None:
 		# Start background monitor to handle expired resources
 		L.isDebug and L.logDebug('Starting expiration monitor')
-		if (interval := Configuration.get('cse.checkExpirationsInterval')) > 0:
-			BackgroundWorkerPool.newWorker(interval, self.expirationDBMonitor, 'expirationMonitor', runOnTime=False).start()
+		if self.checkExpirationsInterval > 0:
+			self.expWorker = BackgroundWorkerPool.newWorker(self.checkExpirationsInterval, self.expirationDBMonitor, 'expirationMonitor', runOnTime=False).start()
 
 
 	def stopExpirationMonitor(self) -> None:
 		# Stop the expiration monitor
 		L.isDebug and L.logDebug('Stopping expiration monitor')
-		BackgroundWorkerPool.stopWorkers('expirationMonitor')
+		if self.expWorker:
+			self.expWorker.stop()
+
+
+	def restartExpirationMonitor(self) -> None:
+		# Stop the expiration monitor
+		L.isDebug and L.logDebug('Restart expiration monitor')
+		if self.expWorker:
+			self.expWorker.restart(self.checkExpirationsInterval)
 
 
 	def expirationDBMonitor(self) -> bool:
@@ -301,7 +314,7 @@ class RegistrationManager(object):
 			if not CSE.storage.hasResource(ri=resource.ri):
 				continue
 			L.isDebug and L.logDebug(f'Expiring resource (and child resouces): {resource.ri}')
-			CSE.dispatcher.deleteResource(resource, withDeregistration=True)	# ignore result
+			CSE.dispatcher.deleteResource(resource, withDeregistration = True)	# ignore result
 			CSE.event.expireResource(resource) # type: ignore
 				
 		return True
@@ -311,14 +324,14 @@ class RegistrationManager(object):
 	#########################################################################
 
 
-	def _createACP(self, parentResource:Resource=None, rn:str=None, createdByResource:str=None, originators:List[str]=None, permission:int=None, selfOriginators:List[str]=None, selfPermission:int=None) -> Result:
+	def _createACP(self, parentResource:Resource = None, rn:str = None, createdByResource:str = None, originators:List[str] = None, permission:int = None, selfOriginators:List[str] = None, selfPermission:int = None) -> Result:
 		""" Create an ACP with some given defaults. """
 		if not parentResource or not rn or not originators or permission is None:	# permission is an int
-			return Result(status=False, rsc=RC.badRequest, dbg='missing attribute(s)')
+			return Result(status = False, rsc = RC.badRequest, dbg = 'missing attribute(s)')
 
 		# Remove existing ACP with that name first
 		acpSrn = f'{CSE.cseRn}/{rn}'
-		if (acpRes := CSE.dispatcher.retrieveResource(id=acpSrn)).rsc == RC.OK:
+		if (acpRes := CSE.dispatcher.retrieveResource(id = acpSrn)).rsc == RC.OK:
 			CSE.dispatcher.deleteResource(acpRes.resource)	# ignore errors
 
 		# Create the ACP

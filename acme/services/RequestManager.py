@@ -37,11 +37,15 @@ from ..resources.Resource import Resource
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
 
+# This factor determines how often the monitor looks for expired request resources
+expirationCheckFactor = 2.0
+
 class RequestManager(object):
 
 	def __init__(self) -> None:
 		self.flexBlockingBlocking			 = Configuration.get('cse.flexBlockingPreference') == 'blocking'
 		self.requestExpirationDelta			 = Configuration.get('cse.requestExpirationDelta')
+
 
 		self.requestHandlers:RequestHandler  = { 		# Map request handlers for operations in the RequestManager and the dispatcher
 			Operation.RETRIEVE	: RequestCallback(self.retrieveRequest, CSE.dispatcher.processRetrieveRequest),
@@ -58,10 +62,13 @@ class RequestManager(object):
 		self._requestLock = Lock()													# Lock to access the following two dictionaries
 		self._requests:Dict[str, List[ Tuple[CSERequest, RequestType] ] ] = {}		# Dictionary to map request originators to a list of reqeusts. Used for handling polling requests.
 		self._rqiOriginator:Dict[str, str] = {}										# Dictionary to map requestIdentifiers to an originator of a request. Used for handling of polling requests.
-		self._pcWorker = BackgroundWorkerPool.newWorker(self.requestExpirationDelta * 2.0, self._cleanupPollingRequests, name='pollingChannelExpiration').start()
+		self._pcWorker = BackgroundWorkerPool.newWorker(self.requestExpirationDelta * expirationCheckFactor, self._cleanupPollingRequests, name='pollingChannelExpiration').start()
 
 		# Add a handler when the CSE is reset
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
+
+		# Add a handler for configuration changes
+		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)	# type: ignore
 
 		L.isInfo and L.log('RequestManager initialized')
 
@@ -86,6 +93,18 @@ class RequestManager(object):
 			self._requests = {}
 			self._rqiOriginator = {}
 		L.logDebug('RequestManager restarted')
+	
+
+	def configUpdate(self, key:str = None, value:Any = None) -> None:
+		if key not in [ 'cse.flexBlockingPreference', 'cse.requestExpirationDelta']:
+			return
+		# assign new values
+		self.flexBlockingBlocking			 = Configuration.get('cse.flexBlockingPreference') == 'blocking'
+		self.requestExpirationDelta			 = Configuration.get('cse.requestExpirationDelta')
+
+		# restart expiration worker
+		if self._pcWorker:
+			self._pcWorker.restart(self.requestExpirationDelta * expirationCheckFactor)
 
 
 	#########################################################################

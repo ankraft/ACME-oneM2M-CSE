@@ -1018,7 +1018,7 @@ class ScriptManager(object):
 			Return:
 				The result of the script run, or None in case if an error.
 		"""
-		L.isDebug and L.logDebug(f'Looking for script: {scriptName}, arguments: {argument}, meta: {metaFilter}')
+		L.isDebug and L.logDebug(f'Looking for script: {scriptName}, arguments: {argument if argument else "None"}, meta: {metaFilter}')
 		if len(scripts := CSE.script.findScripts(name = scriptName, meta = metaFilter)) != 1:
 			L.isWarn and L.logWarn(f'Script not found: "{scriptName}"')
 			return None
