@@ -203,7 +203,7 @@ class TS(AnnounceableResource):
 		# Check peid
 		if self.peid is not None and self.pei is not None:	# pei(d) is an int
 			if not self.peid <= self.pei/2:	# complicated, but reflects the text in the spec
-				L.isDebug and L.logDebug(dbg := 'peid must be <= pei/2')
+				L.logDebug(dbg := 'peid must be <= pei/2')
 				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 		elif self.pei is not None:	# pei is an int
 			self.setAttribute('peid', int(self.pei/2), False)	# CSE internal policy
