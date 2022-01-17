@@ -12,7 +12,6 @@ from argparse import OPTIONAL
 from urllib.parse import ParseResult, urlparse, parse_qs
 import sys, io, atexit
 import unittest
-from requests.exceptions import URLRequired
 
 from rich.console import Console
 import requests, sys, json, time, ssl, urllib3, random, re, random
@@ -859,4 +858,13 @@ if PROTOCOL == 'mqtt':
 # It checks whether there actually is a CSE running.
 noCSE = not connectionPossible(cseURL)
 noRemote = not connectionPossible(REMOTEcseURL)
+
+try:
+	if requests.post(UTURL, headers = { UTCMD: f'status'}).status_code == 501:
+		console.print('[red]Upper Tester Interface not enabeled in CSE')
+		console.print('Enable with configuration setting: "\[server.http] -> enableUpperTesterEndpoint=True"')
+		quit(-1)
+except (ConnectionRefusedError, requests.exceptions.ConnectionError):
+	console.print('[red]Connection to CSE not possible[/red]\nIs it running?')
+	quit(-1)
 
