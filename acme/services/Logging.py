@@ -310,6 +310,8 @@ class Logging:
 			Logging._console.print(msg, style = style, end = end)
 		elif isinstance(msg, (Tree, Table, Text)):
 			Logging._console.print(msg, style = style, end = end)
+		else:
+			Logging._console.print(str(msg), style = style, end = end)
 		if nl:	# Empty line after
 			Logging._console.print()
 	
