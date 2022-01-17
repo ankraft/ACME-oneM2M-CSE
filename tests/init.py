@@ -33,10 +33,6 @@ from acme.etc.Constants import Constants as C
 from config import *
 
 
-CONFIGURL					= f'{CONFIGSERVER}{ROOTPATH}__config__'
-UTURL						= f'{CONFIGSERVER}{ROOTPATH}__ut__'
-
-
 verifyCertificate			= False	# verify the certificate when using https?
 oauthToken					= None	# current OAuth Token
 
@@ -516,7 +512,18 @@ def setLastRequestID(rid:str) -> None:
 def lastRequestID() -> str:
 	return _lastRequstID
 
+
 def connectionPossible(url:str) -> bool:
+	"""	Check whether a connection to the CSE is possible and the CSE is running. This is
+		done by retrieving the CSEBase using the protocol binding that tis used also
+		for the rest of the tests. So, it the Upper Tester interface is not used.
+
+		Args:
+			url: The URL of the CSEBase
+		
+		Return:
+			Return the status (reachable and available).
+	"""
 	try:
 		# The following request is not supposed to return a resource, it just
 		# tests whether a connection can be established at all.
@@ -539,9 +546,6 @@ def lastHeaders() -> Parameters:
 #
 #	Reconfiguring CSE via the upper tester interface
 #
-
-UTCMD = 'X-M2M-UTCMD'
-UTRSP = 'X-M2M-UTRSP'
 
 _orgExpCheck = -1
 _orgREQExpCheck = -1
