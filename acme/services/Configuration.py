@@ -245,69 +245,76 @@ class Configuration(object):
 				#	Statistics
 				#
 
-				'cse.statistics.enable'					: config.getboolean('cse.statistics', 'enable', 		fallback=True),
-				'cse.statistics.writeInterval'			: config.getint('cse.statistics', 'writeInterval',		fallback=60),		# Seconds
+				'cse.statistics.enable'					: config.getboolean('cse.statistics', 'enable', 		fallback = True),
+				'cse.statistics.writeInterval'			: config.getint('cse.statistics', 'writeInterval',		fallback = 60),		# Seconds
 
 
 				#
 				#	Defaults for Access Control Policies
 				#
 
-				'cse.acp.pv.acop'						: config.getint('cse.resource.acp', 'permission', 		fallback=Permission.ALL),
-				'cse.acp.pvs.acop'						: config.getint('cse.resource.acp', 'selfPermission', 	fallback=Permission.DISCOVERY+Permission.NOTIFY+Permission.CREATE+Permission.RETRIEVE),
+				'cse.acp.pv.acop'						: config.getint('cse.resource.acp', 'permission', 		fallback = Permission.ALL),
+				'cse.acp.pvs.acop'						: config.getint('cse.resource.acp', 'selfPermission', 	fallback = Permission.DISCOVERY+Permission.NOTIFY+Permission.CREATE+Permission.RETRIEVE),
 
 
 				#
 				#	Defaults for Container Resources
 				#
 
-				'cse.cnt.enableLimits'					: config.getboolean('cse.resource.cnt', 'enableLimits', fallback=False),
-				'cse.cnt.mni'							: config.getint('cse.resource.cnt', 'mni', 				fallback=10),
-				'cse.cnt.mbs'							: config.getint('cse.resource.cnt', 'mbs', 				fallback=10000),
+				'cse.cnt.enableLimits'					: config.getboolean('cse.resource.cnt', 'enableLimits', fallback = False),
+				'cse.cnt.mni'							: config.getint('cse.resource.cnt', 'mni', 				fallback = 10),
+				'cse.cnt.mbs'							: config.getint('cse.resource.cnt', 'mbs', 				fallback = 10000),
 
 
 				#
 				#	Defaults for Request Resources
 				#
 
-				'cse.req.minet'							: config.getint('cse.resource.req', 'minimumExpirationTime', fallback=60),
-				'cse.req.maxet'							: config.getint('cse.resource.req', 'maximumExpirationTime', fallback=180),
+				'cse.req.minet'							: config.getint('cse.resource.req', 'minimumExpirationTime', fallback = 60),
+				'cse.req.maxet'							: config.getint('cse.resource.req', 'maximumExpirationTime', fallback = 180),
 
 
 				#
 				#	Defaults for Subscription Resources
 				#
 
-				'cse.sub.dur'							: config.getint('cse.resource.sub', 'batchNotifyDuration', 	fallback=60),	# seconds
+				'cse.sub.dur'							: config.getint('cse.resource.sub', 'batchNotifyDuration', 	fallback = 60),	# seconds
 
 
 				#
 				#	Defaults for timeSeries Resources
 				#
 
-				'cse.ts.enableLimits'					: config.getboolean('cse.resource.ts', 'enableLimits',	fallback=False),
-				'cse.ts.mni'							: config.getint('cse.resource.ts', 'mni', 				fallback=10),
-				'cse.ts.mbs'							: config.getint('cse.resource.ts', 'mbs', 				fallback=10000),
-				'cse.ts.mdn'							: config.getint('cse.resource.ts', 'mdn', 				fallback=10),
+				'cse.ts.enableLimits'					: config.getboolean('cse.resource.ts', 'enableLimits',	fallback = False),
+				'cse.ts.mni'							: config.getint('cse.resource.ts', 'mni', 				fallback = 10),
+				'cse.ts.mbs'							: config.getint('cse.resource.ts', 'mbs', 				fallback = 10000),
+				'cse.ts.mdn'							: config.getint('cse.resource.ts', 'mdn', 				fallback = 10),
 
 
 				#
 				#	Web UI
 				#
 
-				'cse.webui.enable'						: config.getboolean('cse.webui', 'enable', 				fallback=True),
-				'cse.webui.root'						: config.get('cse.webui', 'root', 						fallback='/webui'),
+				'cse.webui.enable'						: config.getboolean('cse.webui', 'enable', 				fallback = True),
+				'cse.webui.root'						: config.get('cse.webui', 'root', 						fallback = '/webui'),
 
 
 				#
 				#	Console
 				#
 
-				'cse.console.refreshInterval'			: config.getfloat('cse.console', 'refreshInterval', 	fallback=2.0),
-				'cse.console.hideResources'				: config.getlist('cse.console', 'hideResources', 		fallback=[]),		# type: ignore[attr-defined]
-				'cse.console.treeMode'					: config.get('cse.console', 'treeMode', 				fallback='normal'),
-				'cse.console.confirmQuit'				: config.getboolean('cse.console', 'confirmQuit', 		fallback=False),
-				'cse.console.theme'						: config.get('cse.console', 'theme', 					fallback='dark'),
+				'cse.console.refreshInterval'			: config.getfloat('cse.console', 'refreshInterval', 	fallback = 2.0),
+				'cse.console.hideResources'				: config.getlist('cse.console', 'hideResources', 		fallback = []),		# type: ignore[attr-defined]
+				'cse.console.treeMode'					: config.get('cse.console', 'treeMode', 				fallback = 'normal'),
+				'cse.console.confirmQuit'				: config.getboolean('cse.console', 'confirmQuit', 		fallback = False),
+				'cse.console.theme'						: config.get('cse.console', 'theme', 					fallback = 'dark'),
+
+				#
+				#	Scripting
+				#
+
+				'cse.scripting.verbose'					: config.getboolean('cse.scripting', 'verbose', 		fallback = False),
+				'cse.scripting.fileMonitoringInterval'	: config.getfloat('cse.scripting', 'fileMonitoringInterval', fallback = 2.0),
 
 			}
 
@@ -493,6 +500,10 @@ class Configuration(object):
 		if theme not in [ 'dark', 'light' ]:
 			return False, f'Configuration Error: \[cse.console]:theme must be "light" or "dark"'
 
+
+		# Script settings
+		if Configuration._configuration['cse.scripting.fileMonitoringInterval'] < 0.0:
+			return False, f'Configuration Error: \[cse.scripting]:fileMonitoringInterval must be >= 0.0'
 
 		# Everything is fine
 		return True, None
@@ -749,6 +760,7 @@ class Configuration(object):
 				]
 			)
 
+		Console().clear()
 
 		# Header for the configuration
 		# Split it into a header and configuration. 

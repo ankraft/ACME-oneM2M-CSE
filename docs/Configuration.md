@@ -44,6 +44,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [\[cse.resource.sub\] - Resource Defaults: Subscription](#resource_sub)  
 [\[cse.resource.ts\] - Resource Defaults: TimeSeries](#resource_ts)  
 [\[cse.console\] - Console Settings](#console)  
+[\[cse.scripting\] - Scripting Settings](#scripting)  
 [\[cse.webui\] - Web UI Settings](#webui)  
 	
 
@@ -258,11 +259,20 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 | Keyword         | Description                                                                                                                                                          | Macro Name                  |
 |:----------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------|
-| refreshInterval | Interval for continuously refreshing information displays. Must be > 0.0<br/>Default: 2.0 seconds.                                                                   | cse.console.refreshInterval |
-| hideResources   | Hide certain resources from display in the console. This is a list of resource identifiers. Wildcards are allowed.<br/>Default: Empty list.                          | cse.console.hideResources   |
+| refreshInterval | Interval for continuously refreshing information displays. Must be > 0.0<br/>Default: 2.0 seconds                                                                    | cse.console.refreshInterval |
+| hideResources   | Hide certain resources from display in the console. This is a list of resource identifiers. Wildcards are allowed.<br/>Default: Empty list                           | cse.console.hideResources   |
 | treeMode        | Set the mode how resources and their content are presented in the console's tree view.<br/>Allowed values: normal, compact, content, contentOnly<br/>Default: normal | cse.console.treeMode        |
 | confirmQuit     | Quitting the console needs to be confirmed.<br />This may not work under Windows, so it is switched off by default.<br />Default: False                              | cse.console.confirmQuit     |
 | theme           | Set the color theme for the console. Allowed values are "dark" and "light".<br />Default: dark                                                                       | cse.console.theme           |
+
+
+<a name="scripting"></a>
+###	[cse.scripting] - Scripting Settings
+
+| Keyword                | Description                                                                                                                                      | Macro Name                           |
+|:-----------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------|
+| verbose                | Enable debug output during script execution, such as the current executed line.<br/>Default: False                                               | cse.scripting.verbose                |
+| fileMonitoringInterval | Set the interval to check for new files in the script (init) directory.<br/>0 means disable monitoring. Must be >= 0.0.<br/>Default: 2.0 seconds | cse.scripting.fileMonitoringInterval |
 
 
 <a name="webui"></a>

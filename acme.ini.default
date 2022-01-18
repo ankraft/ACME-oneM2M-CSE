@@ -482,6 +482,20 @@ theme=dark
 
 
 ;
+;	Scripting settings
+;
+
+[cse.scripting]
+; Enable debug output during script execution, such as the current executed line.
+; Default: False
+verbose=false
+; Set the interval to check for new files in the script (init) directory.
+; 0 means disable monitoring.
+; Default: 2.0 seconds
+fileMonitoringInterval=2.0
+
+
+;
 ;	ID Mappings
 ;	This section defines mappings for URI paths to IDs in the CSE. Mappings
 ;	can be used to provide a more convenient way to access the CSE's resources.
