@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import List, cast
 import datetime, json, os, sys, webbrowser
 from enum import IntEnum, auto
+from xml.etree.ElementTree import iselement
 from rich.console import JustifyMethod
 from rich.style import Style
 from rich.table import Table
@@ -20,9 +21,11 @@ from rich.live import Live
 from rich.text import Text
 
 
+
 from ..helpers.KeyHandler import loop, stopLoop, waitForKeypress
 from ..helpers import TextTools
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..helpers.Interpreter import PContext, PError
 from ..helpers import TextTools as TextTools
 from ..etc.Constants import Constants as C
 from ..etc.Types import CSEType, ResourceTypes as T
@@ -464,6 +467,14 @@ Available under the BSD 3-Clause License
 
 	previousScript = ''
 	def runScript(self, _:str) -> None:
+
+		def finished(pcontext:PContext, argument:str) -> None:
+			if (error := pcontext.error)[0] == PError.noError:
+				L.console(f'Result: {pcontext.result}')
+			else:
+				L.console(f'Error in {pcontext.scriptName}:{error[1]}: {error[2]}', isError = True)
+
+
 		L.console('Run ACMEScript', isHeader = True)
 		L.off()		
 		if (name := L.consolePrompt('Script name', nl = False, default = Console.previousScript)):
@@ -473,8 +484,9 @@ Available under the BSD 3-Clause License
 				L.on()
 				return
 			argument = L.consolePrompt('Arguments')
+			pcontext = scripts[0]
 			L.on()	# Turn on log before running the script
-			CSE.script.runScript(scripts[0], argument = argument, background = True)
+			CSE.script.runScript(pcontext, argument = argument, background = True, finished = finished)
 		L.on()
 
 

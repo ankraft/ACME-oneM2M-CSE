@@ -330,7 +330,7 @@ class Logging:
 		"""
 		answer = None
 		try:
-			answer = Prompt.ask(prompt, console = Logging._console, default = default)
+			answer = Prompt.ask(f'[{Logging.terminalStyle}]{prompt}', console = Logging._console, default = default)
 			if nl:
 				Logging.console()
 		except KeyboardInterrupt as e:

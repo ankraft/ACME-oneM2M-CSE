@@ -96,6 +96,12 @@ class RequestManager(object):
 	
 
 	def configUpdate(self, key:str = None, value:Any = None) -> None:
+		"""	Callback for the `configUpdate` event.
+			
+			Args:
+				key: Name of the updated configuration setting.
+				value: New value for the config setting.
+		"""
 		if key not in [ 'cse.flexBlockingPreference', 'cse.requestExpirationDelta']:
 			return
 		# assign new values
