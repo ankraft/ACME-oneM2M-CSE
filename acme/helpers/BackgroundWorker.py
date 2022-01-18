@@ -31,7 +31,7 @@ class BackgroundWorker(object):
 	_logger:Callable[[int, str], None] = logging.log
 
 
-	def __init__(self, interval:float, callback:Callable, name:str = None, startWithDelay:bool = False, maxCount:int = None, dispose:bool = True, id:int = None, runOnTime:bool = True, runPastEvents:bool = False) -> None:
+	def __init__(self, interval:float, callback:Callable, name:str = None, startWithDelay:bool = False, maxCount:int = None, dispose:bool = True, id:int = None, runOnTime:bool = True, runPastEvents:bool = False, finished:Callback = None) -> None:
 		self.interval 				= interval
 		self.runOnTime				= runOnTime			# Compensate for processing time
 		self.runPastEvents			= runPastEvents		# Run events that are in the past
@@ -44,6 +44,7 @@ class BackgroundWorker(object):
 		self.maxCount 				= maxCount			# max runs
 		self.numberOfRuns 			= 0					# Actual runs
 		self.dispose 				= dispose			# Only run once, then remove itself from the pool
+		self.finished				= finished			# Callback after worker finished
 		self.id 					= id
 
 
@@ -178,6 +179,8 @@ class BackgroundWorker(object):
 	def _postCall(self) -> None:
 		"""	Internal cleanup after execution finished.
 		"""
+		if self.finished:
+			self.finished(**self.args)
 		if self.dispose:
 			BackgroundWorkerPool._removeBackgroundWorkerFromPool(self)
 
@@ -208,24 +211,26 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def newWorker(cls, interval:float, workerCallback:Callable, name:str=None, startWithDelay:bool=False, maxCount:int=None, dispose:bool=True, runOnTime:bool=True, runPastEvents:bool=False) -> BackgroundWorker:	# typxe:ignore[type-arg]
+	def newWorker(cls, interval:float, workerCallback:Callable, name:str = None, startWithDelay:bool = False, maxCount:int = None, dispose:bool = True, runOnTime:bool = True, runPastEvents:bool = False, finished:Callback = None) -> BackgroundWorker:	# typxe:ignore[type-arg]
 		"""	Create a new background worker that periodically executes the callback.
 		"""
 		# Get a unique worker ID
 		while True:
 			if (id := random.randint(1,sys.maxsize)) not in cls.backgroundWorkers:
 				break
-		worker = BackgroundWorker(interval, workerCallback, name, startWithDelay, maxCount=maxCount, dispose=dispose, id=id, runOnTime=runOnTime, runPastEvents=runPastEvents)
+		worker = BackgroundWorker(interval, workerCallback, name, startWithDelay, maxCount = maxCount, dispose = dispose, id = id, runOnTime = runOnTime, runPastEvents = runPastEvents, finished = finished)
 		cls.backgroundWorkers[id] = worker
 		return worker
 
 
 	@classmethod
-	def newActor(cls, workerCallback:Callable, delay:float=0.0, at:float=None, name:str=None, dispose:bool=True) -> BackgroundWorker:
+	def newActor(cls, workerCallback:Callable, delay:float = 0.0, at:float = None, name:str = None, dispose:bool = True, finished:Callable = None) -> BackgroundWorker:
 		"""	Create a new background worker that runs only once after a `delay`
 			(the 'delay' may be 0.0s, though), or `at` a sepcific time (UTC timestamp).
 			The `at` argument provide convenience to calculate the delay to wait before the
 			actor runs.
+			`finished` is an optional callback that is called after the actor finished. It will
+			receive the same arguments as the normal workerCallback.
 			The "actor" is only a BackgroundWorker object and needs to be started manuall
 			with the `start()` method.
 		"""
@@ -233,7 +238,7 @@ class BackgroundWorkerPool(object):
 			if delay != 0.0:
 				raise ValueError('Cannot set both "delay" and "at" arguments')
 			delay = at - _utcTime()
-		return cls.newWorker(delay, workerCallback, name=name, startWithDelay=delay>0.0, maxCount=1, dispose=dispose)
+		return cls.newWorker(delay, workerCallback, name = name, startWithDelay = delay>0.0, maxCount = 1, dispose = dispose, finished = finished)
 
 
 	@classmethod
