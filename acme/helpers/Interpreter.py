@@ -13,7 +13,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import IntEnum, auto
-import datetime, time, re, copy
+import datetime, time, re, copy, random
 from typing import 	Callable, Dict, Tuple, Union
 
 _maxProcStackSize = 64	# max number of calls to procedures
@@ -150,11 +150,11 @@ class PContext():
 		self.state = PState.ready
 
 
-	def run(self, doLogging:bool = False, argument:str = '') -> PContext:
+	def run(self, verbose:bool = False, argument:str = '') -> PContext:
 		"""	Run the script.
 
 			Args:
-				doLogging: Boolean to indicate whether each executed line shall be logged.
+				verbose: Boolean to indicate whether each executed line shall be logged.
 				argument: String with the argument(s)
 
 			Return:
@@ -163,7 +163,7 @@ class PContext():
 		global run
 		self.reset()	# Reset the PContext
 		self.runs += 1
-		return run(self, doLogging = doLogging, argument = argument)
+		return run(self, verbose = verbose, argument = argument)
 
 
 	def stop(self) -> None:
@@ -507,12 +507,12 @@ PMacroDict = Dict[str, Callable[[PContext, str], str]]
 #	Run a script
 #
 
-def run(pcontext:PContext, doLogging:bool = False, argument:str = '') -> PContext:
+def run(pcontext:PContext, verbose:bool = False, argument:str = '') -> PContext:
 	"""	Run a script. An own, extended `contextClass` can be provided, that supports the `extraCommands`.
 
 		Args:
 			pcontext: Current PContext for the script.
-			doLogging: Log each executed line.
+			verbose: Log each executed line.
 			argument: The argument to the script, available via the `argv` macro.
 
 		Return:
@@ -563,7 +563,7 @@ def run(pcontext:PContext, doLogging:bool = False, argument:str = '') -> PContex
 			break
 
 		# get command and arguments
-		if doLogging:
+		if verbose:
 			pcontext.logFunc(pcontext, f'{pcontext.pc}: {line}')
 		cmd, _, arg = line.partition(' ')
 		cmd = cmd.lower()
@@ -864,7 +864,7 @@ def _doProcedure(pcontext:PContext, arg:str) -> PContext:
 	# Reached end of script
 	pcontext.setError(PError.procedureWithoutEnd, 'PROCEDURE without ENDPROCEDURE')
 	return None
-	
+
 
 def _doSet(pcontext:PContext, arg:str) -> PContext:
 	"""	Set a variable. This command behaves differently depending on how it 
@@ -984,7 +984,7 @@ def _doArgv(pcontext:PContext, arg:str) -> str:
 			arg: The optional index.
 		
 		Return:
-			Current PContext object, or None in case of an error.
+			String or None in case of an error.
 	"""
 
 	# just return the whole argument if no parameter is given
@@ -1015,11 +1015,80 @@ def _doArgc(pcontext:PContext, arg:str) -> str:
 			arg: Not used.
 		
 		Return:
-			Current PContext object, or None in case of an error.
+			String, or None in case of an error.
 	"""
 	if pcontext.argument:
 		return str(len(pcontext.argument.split()))
 	return '0'
+
+
+
+def _doRandom(pcontext:PContext, arg:str) -> str:
+	"""	Generate a random float number in the given range. The default for the
+		range is [0.0, 1.0]. If one argument is given then this indicates a range
+		of [0,0, arg].
+
+		Examples:
+			- random 1 -> 0.3
+			- random 2 3 -> 2.87
+
+		Args:
+			pcontext: Current PContext for the script.
+			arg: One or two arguments for the range.
+		
+		Return:
+			String, or None in case of an error.
+	"""
+	try:
+		start = 0.0
+		end = 1.0
+		if arg:
+			args = arg.split()
+			if len(args) == 1:
+				end = float(args[0])
+			elif len(args) == 2:
+				start = float(args[0])
+				end = float(args[1])
+			else:
+				pcontext.setError(PError.invalid, f'Wrong number of arguments for random: {len(args)}')
+				return None
+		return str(random.uniform(start, end))
+	except ValueError as e:
+		pcontext.setError(PError.notANumber, f'Not a number: {e}')
+		return None
+
+
+def _doRound(pcontext:PContext, arg:str) -> str:
+	"""	Return a number rounded to optional `ndigits` precision after the decimal point. If `ndigits` is omitted,
+		it returns the nearest integer.
+
+		Examples:
+			- round 1.6 -> 2
+			- round 1.678 2 -> 1.67
+
+		Args:
+			pcontext: Current PContext for the script.
+			arg: One or two arguments for the number and precision.		
+		Return:
+			String, or None in case of an error.
+	"""
+	try:
+		number = 0.0
+		ndigits = None
+		if arg:
+			args = arg.split()
+			if len(args) == 1:
+				number = float(args[0])
+			elif len(args) == 2:
+				number = float(args[0])
+				ndigits = int(args[1])
+			else:
+				pcontext.setError(PError.invalid, f'Wrong number of arguments for round: {len(args)}')
+				return None
+		return str(round(number, ndigits))
+	except ValueError as e:
+		pcontext.setError(PError.notANumber, f'Not a number: {e}')
+		return None
 
 
 ##############################################################################
@@ -1051,8 +1120,10 @@ _builtinCommands:PCmdDict = {
 _builtinMacros:PMacroDict = {
 	'datetime':	lambda c, a: datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%S.%f' if not a else a),
 	'result':	lambda c, a: c.result,
-	'argc':		lambda c, a: _doArgc(c, a),
-	'argv':		lambda c, a: _doArgv(c, a),
+	'argc':		_doArgc,
+	'argv':		_doArgv,
+	'random':	_doRandom,
+	'round':	_doRound,
 	'runCount':	lambda c, a: str(c.runs),
 
 }
