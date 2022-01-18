@@ -9,7 +9,7 @@
 
 
 from __future__ import annotations
-from typing import Callable, Dict, Union
+from typing import Dict, Union
 from pathlib import Path
 import json, os, fnmatch
 from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes
@@ -24,6 +24,10 @@ from ..resources import Factory
 
 
 # TODO implement defaults
+# TODO script check interval configurable
+# TODO make script debugging configurable
+
+# TODO Implement re-configuration callbacks when necessary! 
 
 
 class ACMEPContext(PContext):
@@ -657,7 +661,7 @@ class ACMEPContext(PContext):
 
 			# Add type when CREATE
 			if operation == Operation.CREATE:
-				if (ty := ResourceTypes.fromTPE( list(dct.keys())[0] )) is None: # first is tpe
+				if (ty := ResourceTypes.fromTPE( list(dct.keys())[0] )) is None: # first is tpe # TODO remove?
 					pcontext.setError(PError.invalid, 'Cannot determine resource type')
 					return None
 				req['ty'] = ty
@@ -729,11 +733,11 @@ class ACMEPContext(PContext):
 class ScriptManager(object):
 
 	def __init__(self) -> None:
-		self.scripts:Dict[str,ACMEPContext] = {}			# The managed scripts
+		self.scripts:Dict[str,ACMEPContext] = {}
 		self.storage:Dict[str, str] = {}					# storage for global values
 
-		self.verbose = Configuration.get('cse.scripting.verbose')
-		self.scriptMonitorInterval = Configuration.get('cse.scripting.fileMonitoringInterval')
+		self.doLogging = True	# TODO configurable
+		self.scriptMonitorInterval = 2 # TODO configurale
 		self.scriptUpdatesMonitor:BackgroundWorker = None
 		self.scriptCronWorker:BackgroundWorker = None
 
@@ -742,10 +746,6 @@ class ScriptManager(object):
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)				# type: ignore
 		CSE.event.addHandler(CSE.event.cseRestarted, self.restartFinished)	# type: ignore
 		CSE.event.addHandler(CSE.event.keyboard, self.onKeyboard)			# type: ignore
-
-		# Add a handler for configuration changes
-		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)		# type: ignore
-
 		L.isInfo and L.log('ScriptManager initialized')
 
 
@@ -769,27 +769,6 @@ class ScriptManager(object):
 		return True
 	
 
-	def configUpdate(self, key:str = None, value:Any = None) -> None:
-		"""	Callback for the `configUpdate` event.
-			
-			Args:
-				key: Name of the updated configuration setting.
-				value: New value for the config setting.
-		"""
-		if key not in [ 'cse.scripting.verbose', 'cse.scripting.fileMonitoringInterval']:
-			return
-		# assign new values
-		self.verbose = Configuration.get('cse.scripting.verbose')
-		self.scriptMonitorInterval = Configuration.get('cse.scripting.fileMonitoringInterval')
-
-		# restart or stop monitor worker
-		if self.scriptUpdatesMonitor:
-			if self.scriptMonitorInterval > 0.0:
-				self.scriptUpdatesMonitor.restart(interval = self.scriptMonitorInterval)
-			else:
-				self.scriptUpdatesMonitor.stop()
-
-
 	##########################################################################
 	#
 	#	Event handlers
@@ -801,11 +780,9 @@ class ScriptManager(object):
 			Start a background worker to monitor for scripts.
 		"""
 		# Add a worker to monitor changes in the scripts
-		self.scriptUpdatesMonitor = BackgroundWorkerPool.newWorker(self.scriptMonitorInterval, self.checkScriptUpdates, 'scriptUpdatesMonitor')
-		if self.scriptMonitorInterval > 0.0:
-			self.scriptUpdatesMonitor.start()
+		self.scriptUpdatesMonitor = BackgroundWorkerPool.newWorker(self.scriptMonitorInterval, self.checkScriptUpdates, 'scriptUpdatesMonitor').start()
 
-		# Add a worker to check scheduled script, fixed every minute
+		# Add a worker to check scheduled script, every minute
 		self.scriptCronWorker = BackgroundWorkerPool.newWorker(60.0, self.cronMonitor, 'scriptCronMonitor').start()
 
 		# Look for the startup script(s) and run them. 
@@ -1004,7 +981,7 @@ class ScriptManager(object):
 		return result
 
 
-	def runScript(self, pcontext:PContext, argument:str = '', background:bool = False, finished:Callable = None) -> bool:
+	def runScript(self, pcontext:PContext, argument:str = '', background:bool = False) -> bool:
 		""" Run a script.
 
 			Args:
@@ -1015,18 +992,18 @@ class ScriptManager(object):
 			Return:
 				Boolean that indicates the successful running of the script. A background script always returns True.
 		"""
-		def runCB(pcontext:PContext, argument:str) -> None:
-			pcontext.run(verbose = self.verbose, argument = argument)
+		def runCB(argument:str) -> None:
+			pcontext.run(doLogging = self.doLogging, argument = argument)
 
 		if pcontext.state == PState.running:
 			L.isWarn and L.logWarn(f'Script "{pcontext.name}" is already running')
 			# pcontext.setError(PError.invalid, f'Script "{pcontext.name}" is already running')
 			return False
 		if background:
-			BackgroundWorkerPool.newActor(runCB, name = f'AS:{pcontext.scriptName}-{Utils.uniqueID()}', finished = finished).start(pcontext = pcontext, argument = argument)
+			BackgroundWorkerPool.newActor(runCB, name = f'AS:{pcontext.scriptName}-{Utils.uniqueID()}').start(argument = argument)
 			return True	# Always return True when running in Background
-		
-		return pcontext.run(verbose = self.verbose, argument = argument).state != PState.terminatedWithError
+
+		return pcontext.run(doLogging = self.doLogging, argument = argument).state != PState.terminatedWithError
 	
 
 	def run(self, scriptName:str, argument:str = '', metaFilter:list[str] = []) -> str:
