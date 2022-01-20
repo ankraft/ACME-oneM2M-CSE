@@ -82,6 +82,9 @@ attributePolicies = [
 		// The specialisation's containerDefinition. Optional, and for future developments.
 		"cnd"       : "containerDefinition",
 
+		// The specialisation's SDT type. Could be "device", "subdevice", "moduleclass", or "action". Optional, and for future developments.
+		"sdttype"   : "SDTcontainerType",
+
 		// A list of attributes. Each entry specifies a single attribute of the specialization. Optional.
         "attributes": [
 

@@ -13,7 +13,7 @@ import json, os, fnmatch, re
 from typing import cast
 from copy import deepcopy
 
-from ..etc.Utils import findXPath, getCSE, resourceModifiedAttributes
+from ..etc.Utils import findXPath, getCSE
 from ..etc.Types import AttributePolicy
 from ..etc.Types import ResourceTypes as T
 from ..etc.Types import BasicType as BT, Cardinality as CAR, RequestOptionality as RO, Announced as AN, JSON, JSONLIST
@@ -118,7 +118,7 @@ class Importer(object):
 	#
 
 
-	def importFlexContainerPolicies(self, path:str=None) -> bool:
+	def importFlexContainerPolicies(self, path:str = None) -> bool:
 		"""	Import the attribute and hierarchy policies for flexContainer specializations.
 		"""
 		countFCP = 0
@@ -168,7 +168,7 @@ class Importer(object):
 		return True
 
 
-	def importAttributePolicies(self, path:str=None) -> bool:
+	def importAttributePolicies(self, path:str = None) -> bool:
 		"""	Import the resource attribute policies.
 		"""
 		countAP = 0
@@ -247,7 +247,7 @@ class Importer(object):
 		return noErrors
 
 
-	def _parseAttribute(self, attr:JSON, fn:str, tpe:str=None, sname:str=None) -> AttributePolicy:
+	def _parseAttribute(self, attr:JSON, fn:str, tpe:str = None, sname:str = None) -> AttributePolicy:
 		"""	Parse a singel attribute definitions for normal as well as for flexContainer attributes.
 		"""
 		if not sname:
@@ -321,7 +321,7 @@ class Importer(object):
 		self.isImporting = True
 
 
-	def replaceMacro(self, macro: str, filename: str) -> str:	# TODO move to helper
+	def replaceMacro(self, macro:str, filename:str) -> str:	# TODO move to helper
 		macro = macro[2:-1]
 		if (value := Configuration.get(macro)) is None:	# could be int or len == 0
 			L.logErr(f'Unknown macro ${{{macro}}} in file {filename}')
@@ -329,7 +329,7 @@ class Importer(object):
 		return str(value)
 
 
-	def readJSONFromFile(self, filename: str) -> JSON|JSONLIST:		# TODO move to helper
+	def readJSONFromFile(self, filename:str) -> JSON|JSONLIST:		# TODO move to helper
 		"""	Read and parse a JSON data structure from a file `filename`. 
 			Return the parsed structure, or `None` in case of an error.
 		"""
