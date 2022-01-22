@@ -9,6 +9,7 @@
 
 
 from __future__ import annotations
+from inspect import getargs
 from typing import Callable, Dict, Union
 from pathlib import Path
 import json, os, fnmatch
@@ -38,6 +39,7 @@ class ACMEPContext(PContext):
 				 filename:str = None) -> None:
 		super().__init__(script, 
 						 commands = {	
+							 			'clear':		self.doClear,
 							 			'create':		self.doCreate,
 							 			'delete':		self.doDelete,
 										'importraw':	self.doImportRaw,
@@ -53,11 +55,11 @@ class ACMEPContext(PContext):
 							 			'update':		self.doUpdate,
 									}, 
 						 macros = 	{ 
-							 			'attribute':	lambda c, m: self.doAttribute(c, m),
-										'cseStatus':	lambda c, m: self.doCseStatus(c, m),
-							 			'hasAttribute':	lambda c, m: self.doHasAttribute(c, m),
-										'storageHas':	lambda c, m: self.doStorageHas(c, m),
-										'storageGet':	lambda c, m: self.doStorageGet(c, m),
+							 			'attribute':	self.doAttribute,
+										'cseStatus':	self.doCseStatus,
+							 			'hasAttribute':	self.doHasAttribute,
+										'storageHas':	self.doStorageHas,
+										'storageGet':	self.doStorageGet,
 						 				'__default__':	lambda c, m: Configuration.get(m),
 						  			},
 						 logFunc = self.log, 
@@ -136,6 +138,23 @@ class ACMEPContext(PContext):
 	#
 	#	Commands
 	#
+
+	def doClear(self, pcontext:PContext, arg:str) -> PContext:
+		"""	Execute a CLEAR command. Clear the console.
+		
+			Example:
+				CREATE
+
+			Args:
+				pcontext: PContext object of the runnig script.
+				arg: remaining argument(s) of the command.
+			
+			Returns:
+				The scripts "PContext" object, or None in case of an error.
+		"""
+		L.consoleClear()
+		return pcontext
+
 
 	def doCreate(self, pcontext:PContext, arg:str) -> PContext:
 		"""	Execute a CREATE request. The originator must be set before this command.
@@ -1109,16 +1128,32 @@ class ScriptManager(object):
 	#
 
 	def runEventScripts(self, event:str, argument:str = None) -> None:
-		"""	Get and run all the scripts for a specific event. If the `argument` is given
+		"""	Get and run all the scripts for specific events. If the `argument` is given
 			then the event's parameter must match the argument.
+
+			This method is still called in the same thread as the console (the event is raised not in
+			the background!), because otherwise the prompt input and the getch() function from the
+			console are mixing up.
 
 			Args:
 				event: The event for which the script(s) are run.
 				argument: The optional argument that needs to match the event's pararmater in the script.
 		"""
+
+		def getPrompt(r:str) -> str:
+			if (p := each.meta.get('prompt')) is not None:
+				L.off()
+				if (r := L.consolePrompt(p, nl = False)) is None:
+					# Normally we would provide an empty string as default, but
+					# this would add the ugly empty "()". So, we assign an empty
+					# string afterwards.
+					r = ''
+				L.on()
+			return r
+
 		for each in self.findScripts(meta = event):
 			if argument:
 				if (v := each.meta.get(event)) and v == argument:
-					self.runScript(each, argument = argument)
+					self.runScript(each, argument = getPrompt(argument), background = True)
 			else:
-				self.runScript(each)
+				self.runScript(each, argument = getPrompt(''), background = True)
