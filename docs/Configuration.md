@@ -55,40 +55,40 @@ The following tables provide detailed descriptions of all the possible CSE confi
 <a name="general"></a>
 ### [cse] - General CSE Settings
 
-| Keyword                  | Description                                                                                                                                                                                    | Macro Name                   |
-|:-------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------|
-| type                     | The CSE type. Allowed values: IN, MN, ASN.<br/>Default: IN                                                                                                                                     | cse.type                     |
-| serviceProviderID        | The CSE's service provider ID.<br/>Default: acme                                                                                                                                               | cse.spid                     |
-| cseID                    | The CSE ID. Can be overwritten in imported CSE definition. A CSE-ID must start with a /.<br/>Default: id-in                                                                                    | cse.csi                      |
-| resourceID               | The CSE's resource ID. This should be the *cseid* without the leading "/". Can be overwritten in imported CSE definition.<br/>Default: id-in                                                   | cse.ri                       |
-| resourceName             | The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition.<br>Default: cse-in                                                                                         | cse.rn                       |
-| resourcesPath            | Directory of default resources to import.<br/>See also command line argument [–import-directory](Running.md).<br/>Default: ./init                                                              | cse.resourcesPath            |
-| expirationDelta          | Expiration time before resources are removed in seconds.<br/> Default: 60*60*24*365 = 31536000 seconds = 1 year                                                                                | cse.expirationDelta          |
-| maxExpirationDelta       | Maximum expirationTime allowed for resources in seconds.<br/>Default: 5 years = 157680000 seconds                                                                                              | cse.maxExpirationDelta       |
-| requestExpirationDelta   | Expiration time for requests sent by the CSE in seconds<br/>Default: 10.0 seconds                                                                                                              | cse.requestExpirationDelta   |
-| originator               | Admin originator for the CSE.<br/>Default: CAdmin                                                                                                                                              | cse.originator               |
-| enableRemoteCSE          | Enable remote CSE registration and checking.<br/>See also command line arguments [–remote-cse and –no-remote-cse](Running.md).<br/>Default: true                                               | cse.enableRemoteCSE          |
-| sortDiscoveredResources  | Enable alphabetical sorting of discovery results.<br/>Default: true                                                                                                                            | cse.sortDiscoveredResources  |
-| checkExpirationsInterval | Interval to check for expired resources. 0 means "no checking".<br/>Default: 60 seconds                                                                                                        | cse.checkExpirationsInterval |
-| flexBlockingPreference   | Indicate the preference for flexBlocking response types. Allowed values: "blocking", "nonblocking".<br />Default: blocking                                                                     | cse.flexBlockingPreference   |
-| supportedReleaseVersions | A comma-separated list of supported release versions. This list can contain a single or multiple values.<br />Default: 2a,3,4                                                                  | cse.supportedReleaseVersions |
-| releaseVersion           | The release version indicator for requests. Allowed values: 2a, 3, 4.<br />Default: 3                                                                                                          | cse.releaseVersion           |
-| defaultSerialization     | Indicate the serialization format if none was given in a request and cannot be determined otherwise.<br/>Allowed values: json, cbor.<br/>Default: json                                         | cse.defaultSerialization     |
+| Keyword                  | Description                                                                                                                                            | Configuration Name           |
+|:-------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------|
+| type                     | The CSE type. Allowed values: IN, MN, ASN.<br/>Default: IN                                                                                             | cse.type                     |
+| serviceProviderID        | The CSE's service provider ID.<br/>Default: acme                                                                                                       | cse.spid                     |
+| cseID                    | The CSE ID. Can be overwritten in imported CSE definition. A CSE-ID must start with a /.<br/>Default: id-in                                            | cse.csi                      |
+| resourceID               | The CSE's resource ID. This should be the *cseid* without the leading "/". Can be overwritten in imported CSE definition.<br/>Default: id-in           | cse.ri                       |
+| resourceName             | The CSE's resource name or CSE-Name. Can be overwritten in imported CSE definition.<br>Default: cse-in                                                 | cse.rn                       |
+| resourcesPath            | Directory of default resources to import.<br/>See also command line argument [–import-directory](Running.md).<br/>Default: ./init                      | cse.resourcesPath            |
+| expirationDelta          | Expiration time before resources are removed in seconds.<br/> Default: 60*60*24*365 = 31536000 seconds = 1 year                                        | cse.expirationDelta          |
+| maxExpirationDelta       | Maximum expirationTime allowed for resources in seconds.<br/>Default: 5 years = 157680000 seconds                                                      | cse.maxExpirationDelta       |
+| requestExpirationDelta   | Expiration time for requests sent by the CSE in seconds<br/>Default: 10.0 seconds                                                                      | cse.requestExpirationDelta   |
+| originator               | Admin originator for the CSE.<br/>Default: CAdmin                                                                                                      | cse.originator               |
+| enableRemoteCSE          | Enable remote CSE registration and checking.<br/>See also command line arguments [–remote-cse and –no-remote-cse](Running.md).<br/>Default: true       | cse.enableRemoteCSE          |
+| sortDiscoveredResources  | Enable alphabetical sorting of discovery results.<br/>Default: true                                                                                    | cse.sortDiscoveredResources  |
+| checkExpirationsInterval | Interval to check for expired resources. 0 means "no checking".<br/>Default: 60 seconds                                                                | cse.checkExpirationsInterval |
+| flexBlockingPreference   | Indicate the preference for flexBlocking response types. Allowed values: "blocking", "nonblocking".<br />Default: blocking                             | cse.flexBlockingPreference   |
+| supportedReleaseVersions | A comma-separated list of supported release versions. This list can contain a single or multiple values.<br />Default: 2a,3,4                          | cse.supportedReleaseVersions |
+| releaseVersion           | The release version indicator for requests. Allowed values: 2a, 3, 4.<br />Default: 3                                                                  | cse.releaseVersion           |
+| defaultSerialization     | Indicate the serialization format if none was given in a request and cannot be determined otherwise.<br/>Allowed values: json, cbor.<br/>Default: json | cse.defaultSerialization     |
 
 
 <a name="security"></a>
 ### [cse.security] - General Security Settings
 
-| Keyword           | Description                                                                                                                                                                                                                                      | Macro Name                     |
-|:------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|
-| enableACPChecks   | Enable access control checks.<br/> Default: true                                                                                                                                                                                                 | cse.secuerity.enableACPChecks  |
-| fullAccessAdmin   | Always grant the admin originator full access (bypass access checks).<br /> Default: True                                                                                                                                                        | cse.security.fullAccessAdmin   |
+| Keyword         | Description                                                                               | Configuration Name            |
+|:----------------|:------------------------------------------------------------------------------------------|:------------------------------|
+| enableACPChecks | Enable access control checks.<br/> Default: true                                          | cse.secuerity.enableACPChecks |
+| fullAccessAdmin | Always grant the admin originator full access (bypass access checks).<br /> Default: True | cse.security.fullAccessAdmin  |
 
 
 <a name="server_http"></a>
 ###	[server.http] - HTTP Server Settings
 
-| Keyword                   | Description                                                                                                                                                                                                                                                               | Macro Name                     |
+| Keyword                   | Description                                                                                                                                                                                                                                                               | Configuration Name             |
 |:--------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|
 | port                      | Port to listen to.<br/>Default: 8080                                                                                                                                                                                                                                      | http.port                      |
 | listenIF                  | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1                                                                                                                                                                                           | http.listenIF                  |
@@ -103,7 +103,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 <a name="security_http"></a>
 ### [server.http.security] - HTTP Security Settings
 
-| Keyword           | Description                                                                                                                                                                                                                                      | Macro Name                      |
+| Keyword           | Description                                                                                                                                                                                                                                      | Configuration Name              |
 |:------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------|
 | useTLS            | Enable TLS for communications.<br />This can be overridden by the command line arguments [--http and --https](Running.md).<br />See oneM2M TS-0003 Clause 8.2.1 "Overview on Security Association Establishment Frameworks".<br />Default: False | http.security.useTLS            |
 | tlsVersion        | TLS version to be used in connections. <br />Allowed versions: TLS1.1, TLS1.2, auto . Use "auto" to allow client-server certificate version negotiation.<br />Default: auto                                                                      | http.security.tlsVersion        |
@@ -115,21 +115,21 @@ The following tables provide detailed descriptions of all the possible CSE confi
 <a name="client_mqtt"></a>
 ###	[client.mqtt] - MQTT Client Settings
 
-| Keyword       | Description                                                                               | Macro Name         |
-|:--------------|:------------------------------------------------------------------------------------------|:-------------------|
-| enable        | Enable the MQTT binding.<br />Default: False                                              | mqtt.enable        |
-| address       | he hostname of the MQTT broker.<br />Default; 127.0.0.1                                   | mqtt.address       |
-| port          | Set the port for the MQTT broker.<br />Default: 1883, or 8883 for TLS                     | mqtt.port          |
-| listenIF      | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1           | mqtt.listenIF      |
-| keepalive     | Value for the MQTT connection's keep-alive parameter in seconds.<br />Default: 60 seconds | mqtt.keepalive     |
-| topicPrefix   | Optional prefix for topics.<br />Default: empty string                                    | mqtt.topicPrefix   |
-| timeout       | Timeout when sending MQTT requests and waiting for responses.<br />Default: 5.0 seconds   | mqtt.timeout       |
+| Keyword     | Description                                                                               | Configuration Name |
+|:------------|:------------------------------------------------------------------------------------------|:-------------------|
+| enable      | Enable the MQTT binding.<br />Default: False                                              | mqtt.enable        |
+| address     | he hostname of the MQTT broker.<br />Default; 127.0.0.1                                   | mqtt.address       |
+| port        | Set the port for the MQTT broker.<br />Default: 1883, or 8883 for TLS                     | mqtt.port          |
+| listenIF    | Interface to listen to. Use 0.0.0.0 for "all" interfaces.<br/>Default:127.0.0.1           | mqtt.listenIF      |
+| keepalive   | Value for the MQTT connection's keep-alive parameter in seconds.<br />Default: 60 seconds | mqtt.keepalive     |
+| topicPrefix | Optional prefix for topics.<br />Default: empty string                                    | mqtt.topicPrefix   |
+| timeout     | Timeout when sending MQTT requests and waiting for responses.<br />Default: 5.0 seconds   | mqtt.timeout       |
 
 
 <a name="security_mqtt"></a>
 ### [client.mqtt.security] - MQTT Security Settings		
 
-| Keyword              | Description                                                                                                                                                                                                                     | Macro Name                         |
+| Keyword              | Description                                                                                                                                                                                                                     | Configuration Name                 |
 |:---------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------|
 | username             | The username for MQTT broker authentication if required by the broker.<br/>Default: None                                                                                                                                        | mqtt.security.username             |
 | password             | The password for MQTT broker authentication.<br/>Default: None                                                                                                                                                                  | mqtt.security.password             |
@@ -142,18 +142,18 @@ The following tables provide detailed descriptions of all the possible CSE confi
 <a name="database"></a>
 ###	[database] - Database Settings
 
-| Keyword        | Description                                                                                                                                                          | Macro Name        |
-|:---------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------|
-| path           | Directory for the database files.<br/>Default: ./data                                                                                                                | db.path           |
-| inMemory       | Operate the database in in-memory mode. Attention: No data is stored persistently.<br/>See also command line argument [--db-storage](Running.md).<br/>Default: false | db.inMemory       |
-| cacheSize      | Cache size in bytes, or 0 to disable caching.<br/>Default: 0                                                                                                         | db.cacheSize      |
-| resetOnStartup | Reset the databases at startup.<br/>See also command line argument [--db-reset](Running.md).<br/>Default: false                                                      | db.resetOnStartup |
+| Keyword        | Description                                                                                                                                                          | Configuration Name |
+|:---------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------|
+| path           | Directory for the database files.<br/>Default: ./data                                                                                                                | db.path            |
+| inMemory       | Operate the database in in-memory mode. Attention: No data is stored persistently.<br/>See also command line argument [--db-storage](Running.md).<br/>Default: false | db.inMemory        |
+| cacheSize      | Cache size in bytes, or 0 to disable caching.<br/>Default: 0                                                                                                         | db.cacheSize       |
+| resetOnStartup | Reset the databases at startup.<br/>See also command line argument [--db-reset](Running.md).<br/>Default: false                                                      | db.resetOnStartup  |
 
 
 <a name="logging"></a>
 ###	[logging] - Logging Settings
 
-| Keyword               | Description                                                                                                                                  | Macro Name                    |
+| Keyword               | Description                                                                                                                                  | Configuration Name            |
 |:----------------------|:---------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------|
 | enableFileLogging     | Enable logging to file.<br/>Default: false                                                                                                   | logging.enableFileLogging     |
 | enableScreenLogging   | Enable logging to the screen.<br/>Default: true                                                                                              | logging.enableScreenLogging   |
@@ -168,7 +168,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 <a name="cse_registration"></a>
 ###	[cse.registration] - Settings for Self-Registrations
 
-| Keyword               | Description                                                                                                                                                                     | Macro Name                             |
+| Keyword               | Description                                                                                                                                                                     | Configuration Name                     |
 |:----------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------|
 | allowedAEOriginators  | List of AE originators that can register. This is a comma-separated list of originators. Wildcards (* and ?) are supported.<br />Default: C\*, S\*                              | cse.registration.allowedAEOriginators  |
 | allowedCSROriginators | List of CSR originators that can register. This is a comma-separated list of originators. Wildcards (* and ?) are supported.<br />Note: No leading "/"<br />Default: empty list | cse.registration.allowedCSROriginators |
@@ -178,7 +178,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 <a name="registrar"></a>
 ### [cse.registrar] - Settings for Registrar Registrar CSE Access 
 
-| Keyword              | Description                                                                                                                                          | Macro Name                         |
+| Keyword              | Description                                                                                                                                          | Configuration Name                 |
 |:---------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------|
 | address              | URL of the Registrar CSE.<br/>Default: no default                                                                                                    | cse.registrar.address              |
 | root                 | Registrar CSE root path. Never provide a trailing /.<br/>Default: empty string                                                                       | cse.registrar.root                 |
@@ -192,34 +192,34 @@ The following tables provide detailed descriptions of all the possible CSE confi
 <a name="announcements"></a>
 ### [cse.announcements] - Settings for Resource Announcements 
 
-| Keyword             | Description                                                                                      | Macro Name                            |
-|:--------------------|:-------------------------------------------------------------------------------------------------|:--------------------------------------|
-| checkInterval       | Wait n seconds between tries to to announce resources to registered remote CSE.<br />Default: 10 | cse.announcements.checkInterval       |
+| Keyword       | Description                                                                                      | Configuration Name              |
+|:--------------|:-------------------------------------------------------------------------------------------------|:--------------------------------|
+| checkInterval | Wait n seconds between tries to to announce resources to registered remote CSE.<br />Default: 10 | cse.announcements.checkInterval |
 
 
 
 <a name="statistics"></a>
 ###	[cse.statistics] - Statistic Settings
 
-| Keyword        | Description                                                               | Macro Name                    |
-|:---------------|:--------------------------------------------------------------------------|:------------------------------|
-| enable         | Enable or disable collecting CSE statistics.<br />Default: True           | cse.statistics.enable         |
-| writeInterval  | Interval for saving statistics data to disk in seconds.<br />Default: 60  | cse.statistics.writeInterval |
+| Keyword       | Description                                                              | Configuration Name           |
+|:--------------|:-------------------------------------------------------------------------|:-----------------------------|
+| enable        | Enable or disable collecting CSE statistics.<br />Default: True          | cse.statistics.enable        |
+| writeInterval | Interval for saving statistics data to disk in seconds.<br />Default: 60 | cse.statistics.writeInterval |
 
 
 <a name="resource_acp"></a>
 ###	[cse.resource.acp] - Resource Defaults: ACP
 
-| Keyword           | Description                                                                   | Macro Name                |
-|:------------------|:------------------------------------------------------------------------------|:--------------------------|
-| permission        | Default permission when creating an ACP resource.<br />Default: 63            | cse.acp.pv.acop           |
-| selfPermission    | Default selfPermission when creating an ACP resource.<br/>Default: 51         | cse.acp.pvs.acop          |
+| Keyword        | Description                                                           | Configuration Name |
+|:---------------|:----------------------------------------------------------------------|:-------------------|
+| permission     | Default permission when creating an ACP resource.<br />Default: 63    | cse.acp.pv.acop    |
+| selfPermission | Default selfPermission when creating an ACP resource.<br/>Default: 51 | cse.acp.pvs.acop   |
 
 
 <a name="resource_cnt"></a>
 ### [cse.resource.cnt] - Resource Defaults: Container
 
-| Keyword      | Description                                            | Macro Name           |
+| Keyword      | Description                                            | Configuration Name   |
 |:-------------|:-------------------------------------------------------|:---------------------|
 | enableLimits | Enable/disable the default limits.<br/> Default: False | cse.cnt.enableLimits |
 | mni          | Default for maxNrOfInstances.<br/> Default: 10         | cse.cnt.mni          |
@@ -229,35 +229,35 @@ The following tables provide detailed descriptions of all the possible CSE confi
 <a name="resource_req"></a>
 ### [cse.resource.req] - Resource Defaults: Request
 
-| Keyword               | Description                                                                               | Macro Name    |
-|:----------------------|:------------------------------------------------------------------------------------------|:--------------|
-| minimumExpirationTime | A \<request> resource's minimum expiration time in seconds. Must be >0.<br />Default: 60  | cse.req.minet |
-| maximumExpirationTime | A \<request> resource's maximum expiration time in seconds. Must be >0.<br />Default: 180 | cse.req.maxet |
+| Keyword               | Description                                                                               | Configuration Name |
+|:----------------------|:------------------------------------------------------------------------------------------|:-------------------|
+| minimumExpirationTime | A \<request> resource's minimum expiration time in seconds. Must be >0.<br />Default: 60  | cse.req.minet      |
+| maximumExpirationTime | A \<request> resource's maximum expiration time in seconds. Must be >0.<br />Default: 180 | cse.req.maxet      |
 
 
 <a name="resource_sub"></a>
 ### [cse.resource.sub] - Resource Defaults: Subscription
 
-| Keyword             | Description                                                                           | Macro Name  |
-|:--------------------|:--------------------------------------------------------------------------------------|:------------|
-| batchNotifyDuration | Default for the batchNotify/duration in seconds. Must be >0.<br />Default: 60 seconds | cse.sub.dur |
+| Keyword             | Description                                                                           | Configuration Name |
+|:--------------------|:--------------------------------------------------------------------------------------|:-------------------|
+| batchNotifyDuration | Default for the batchNotify/duration in seconds. Must be >0.<br />Default: 60 seconds | cse.sub.dur        |
 
 
 <a name="resource_ts"></a>
 ### [cse.resource.ts] - Resource Defaults: TimeSeries
 
-| Keyword      | Description                                            | Macro Name           |
-|:-------------|:-------------------------------------------------------|:---------------------|
-| enableLimits | Enable/disable the default limits.<br/> Default: False | cse.ts.enableLimits  |
-| mni          | Default for maxNrOfInstances.<br/> Default: 10         | cse.ts.mni           |
-| mbs          | Default for maxByteSize.<br/>Default: 10.000 bytes     | cse.ts.mbs           |	
-| mdn          | Default for missingDataMaxNr.<br />Default: 10         | cse.ts.mdn           |
+| Keyword      | Description                                            | Configuration Name  |
+|:-------------|:-------------------------------------------------------|:--------------------|
+| enableLimits | Enable/disable the default limits.<br/> Default: False | cse.ts.enableLimits |
+| mni          | Default for maxNrOfInstances.<br/> Default: 10         | cse.ts.mni          |
+| mbs          | Default for maxByteSize.<br/>Default: 10.000 bytes     | cse.ts.mbs          |
+| mdn          | Default for missingDataMaxNr.<br />Default: 10         | cse.ts.mdn          |
 
 
 <a name="console"></a>
 ###	[cse.console] - Console Settings
 
-| Keyword         | Description                                                                                                                                                          | Macro Name                  |
+| Keyword         | Description                                                                                                                                                          | Configuration Name          |
 |:----------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------|
 | refreshInterval | Interval for continuously refreshing information displays. Must be > 0.0<br/>Default: 2.0 seconds                                                                    | cse.console.refreshInterval |
 | hideResources   | Hide certain resources from display in the console. This is a list of resource identifiers. Wildcards are allowed.<br/>Default: Empty list                           | cse.console.hideResources   |
@@ -269,7 +269,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 <a name="scripting"></a>
 ###	[cse.scripting] - Scripting Settings
 
-| Keyword                | Description                                                                                                                                      | Macro Name                           |
+| Keyword                | Description                                                                                                                                      | Configuration Name                   |
 |:-----------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------|
 | verbose                | Enable debug output during script execution, such as the current executed line.<br/>Default: False                                               | cse.scripting.verbose                |
 | fileMonitoringInterval | Set the interval to check for new files in the script (init) directory.<br/>0 means disable monitoring. Must be >= 0.0.<br/>Default: 2.0 seconds | cse.scripting.fileMonitoringInterval |
@@ -278,10 +278,10 @@ The following tables provide detailed descriptions of all the possible CSE confi
 <a name="webui"></a>
 ###	[cse.webui] - Web UI Settings
 
-| Keyword | Description                                  | Macro Name       |
-|:--------|:---------------------------------------------|:-----------------|
-| enable  | Enable the web UI.<br/>Default: true         | cse.webui.enable |
-| root    | Root path of the web UI.<br/>Default: /webui | cse.webui.root   |
+| Keyword | Description                                  | Configuration Name |
+|:--------|:---------------------------------------------|:-------------------|
+| enable  | Enable the web UI.<br/>Default: true         | cse.webui.enable   |
+| root    | Root path of the web UI.<br/>Default: /webui | cse.webui.root     |
 
 
 <a name="id_mappings"></a>
@@ -318,14 +318,14 @@ The CSE's configuration module uses the [Python Extended Interpolation Parser](h
 
 ### Using Settings During Imports
 
-Configuration values can be referenced by their respective macro name and used when [importing resources](Importing.md#accessing-configuration-settings).
+Configuration values can be referenced by their respective configuration name and used when [importing resources](Importing.md#accessing-configuration-settings).
 
-The following macros are supported in addition to those defined in the sections below. They are set by the CSE at runtime.
+The following configuration names are supported in addition to those defined in the sections below. They are set by the CSE at runtime.
 
-| Macro name       | Description                              |
-|:-----------------|:-----------------------------------------|
-| configfile       | Path and name of the configuration file. |
-| packageDirectory | Path to the acme package directory.      |
+| Configuration name | Description                              |
+|:-------------------|:-----------------------------------------|
+| configfile         | Path and name of the configuration file. |
+| packageDirectory   | Path to the acme package directory.      |
 
 
 [← README](../README.md) 
