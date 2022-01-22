@@ -4,7 +4,7 @@
 
 ## oneM2M Specification Conformance
 
-The CSE implementation successfully passes most of the oneM2M release 1 test cases (353 out of 361), and all relevant release 2 test cases.
+The CSE implementation successfully passes most of the oneM2M Release 1 test cases (353 out of 361), and all relevant test cases from Release 2, 3 and 4.
 
 
 ## Release Versions
