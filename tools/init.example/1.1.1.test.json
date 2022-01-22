@@ -1,8 +1,0 @@
-{ "m2m:unk" : {
-		"ty" : 200,
-		"rn" : "unknown",
-		"pi" : "ae1",
-		"key" : "value",
-		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.defaultACPI}" ]
-	}
-}
