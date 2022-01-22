@@ -15,7 +15,7 @@ from copy import deepcopy
 from threading import Lock
 
 
-from ..etc.Types import JSON, BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, Permission, ReqResp, RequestArguments, RequestCallback, RequestType, ResponseStatusCode, ResultContentType
+from ..etc.Types import JSON, BasicType, DesiredIdentifierResultType, FilterOperation, FilterUsage, Operation, Permission, ReqResp, RequestCallback, RequestType, ResponseStatusCode, ResultContentType
 from ..etc.Types import RequestStatus
 from ..etc.Types import CSERequest
 from ..etc.Types import RequestHandler
@@ -33,7 +33,6 @@ from ..services.Configuration import Configuration
 from ..services import CSE as CSE
 from ..resources.REQ import REQ
 from ..resources.PCH import PCH
-from ..resources.Resource import Resource
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
 

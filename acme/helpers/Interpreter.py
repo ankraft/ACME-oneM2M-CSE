@@ -56,7 +56,7 @@ class PScope():
 	"""	Scope-specific data points.
 	"""
 	name:str				= None
-	argument:str			= None
+	argument:str			= ''
 	result:str				= None
 	returnPc:int			= 0
 	whileStack:list[int]	= field(default_factory = list)
@@ -969,7 +969,6 @@ def _doWhile(pcontext:PContext, arg:str) -> PContext:
 
 def _doArgv(pcontext:PContext, arg:str) -> str:
 	"""	With the `argv` macro one can access the individual arguments of a script.
-
 
 		Example:
 

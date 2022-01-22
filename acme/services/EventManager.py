@@ -48,9 +48,9 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('mqttSendDelete')
 		self.addEvent('mqttSendNotify')
 		self.addEvent('cseStartup')										# After the CSE started
-		self.addEvent('cseShutdown', runInBackground=False)				# When the CSE is shutdown
-		self.addEvent('cseReset', runInBackground=False)				# When the CSE is reset
-		self.addEvent('cseRestarted', runInBackground=False)			# After the CSE finished the reset
+		self.addEvent('cseShutdown', runInBackground = False)			# When the CSE is shutdown
+		self.addEvent('cseReset', runInBackground = False)				# When the CSE is reset
+		self.addEvent('cseRestarted', runInBackground = False)			# After the CSE finished the reset
 		self.addEvent('logError')
 		self.addEvent('logWarning')
 		self.addEvent('registeredToRemoteCSE')
@@ -59,8 +59,8 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('remoteCSEUpdate')
 		self.addEvent('remoteCSEHasDeregistered')
 		self.addEvent('notification')
-		self.addEvent('configUpdate', runInBackground=False)
-		self.addEvent('keyboard')
+		self.addEvent('configUpdate', runInBackground = False)
+		self.addEvent('keyboard', runInBackground = False)
 
 
 	def shutdown(self) -> bool:
