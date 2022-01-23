@@ -427,7 +427,7 @@ Available under the BSD 3-Clause License
 		table.add_column('Key ', no_wrap = True, justify = 'center')
 		table.add_column('Run at', no_wrap = True, justify = 'center')
 		for n in CSE.script.findScripts(name = '*'):
-			if 'hide' not in n.meta:
+			if 'hidden' not in n.meta:
 				desc = f'{n.getMeta("description")}\n[dim]{n.getMeta("usage")}'
 				ut = n.meta.get('uppertester') is not None
 				at = n.getMeta('at')
