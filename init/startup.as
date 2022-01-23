@@ -8,7 +8,7 @@
 @startup
 @name startup
 @description This script is run during startup of the CSE
-@hide
+@hidden
 
 #############################################################################
 #
