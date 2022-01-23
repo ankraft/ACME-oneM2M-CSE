@@ -30,6 +30,7 @@ class PState(IntEnum):
 	terminated 				= auto()
 	terminatedWithResult	= auto()
 	terminatedWithError 	= auto()
+	invalid					= auto()
 
 
 class PError(IntEnum): 

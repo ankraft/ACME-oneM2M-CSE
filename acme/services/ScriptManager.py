@@ -25,6 +25,7 @@ from ..resources import Factory
 
 
 # TODO implement defaults
+# TODO Change tags (e.g. meta tags to) constants
 
 
 class ACMEPContext(PContext):
@@ -72,6 +73,20 @@ class ACMEPContext(PContext):
 		self.poas:Dict[str, str] = { CSE.cseCsi: None }		# Default: Own CSE
 		self.filename = filename
 		self.fileMtime = os.stat(filename).st_mtime
+		self._validate()	# May change the state to indicate an error
+
+
+
+	def _validate(self) -> None:
+		"""	Check that @prompt is not used together with conflicting events, and other checks.
+
+			If an invalid script is detected then the state is set to `invalid`.
+		"""
+		events = ['onstartup', 'onrestart', 'onshutdown', 'at']
+		if 'prompt' in self.meta:
+			if any(key in events for key in self.meta.keys()):
+				self.setError(PError.invalid, f'"@prompt" is not allowed together with any of: {events}')
+				self.state = PState.invalid
 
 
 	def log(self, pcontext:PContext, msg:str) -> None:
@@ -975,19 +990,19 @@ class ScriptManager(object):
 			Return:
 				ACMEPContext object with the script, or None.
 		"""
-		p = ACMEPContext(script, filename = filename)
-		if p.state != PState.ready:
-			L.isWarn and L.logWarn(f'Error importing script: {p.errorMessage}')
+		pcontext = ACMEPContext(script, filename = filename)
+		if pcontext.state != PState.ready:
+			L.isWarn and L.logWarn(f'Error loading script: {pcontext.errorMessage}')
 			return None
-		
+
 		# Add to scripts
-		if not (name := p.scriptName):		# Add name to meta data if not set
-			p.scriptName = Path(filename).stem
-			name = p.scriptName
-		if not p.filename:							# Add filename to meta data
-			p.filename = filename
-		self.scripts[name] = p
-		return p
+		if not (name := pcontext.scriptName):		# Add name to meta data if not set
+			pcontext.scriptName = Path(filename).stem
+			name = pcontext.scriptName
+		if not pcontext.filename:							# Add filename to meta data
+			pcontext.filename = filename
+		self.scripts[name] = pcontext
+		return pcontext
 	
 
 	def findScripts(self, name:str = None, meta:Union[str, list[str]] = None) -> list[PContext]:
