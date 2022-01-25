@@ -657,7 +657,31 @@ def renameCurrentThread(name:str = None, thread:threading.Thread = None) -> None
 #	Various
 
 def exceptionToResult(e:Exception) -> Result:
+	"""	Transform a Python exception to a result.
+	
+		Args:
+			e: Exception
+		
+		Return:
+			Result object, with "rsc" set to internal server error, and "dbg" to the exception message.
+		"""
 	tb = traceback.format_exc()
 	L.logErr(tb, exc=e)
 	tbs = tb.replace('"', '\\"').replace('\n', '\\n')
-	return Result(rsc=ResponseStatusCode.internalServerError, dbg=f'encountered exception: {tbs}')
+	return Result(rsc = ResponseStatusCode.internalServerError, dbg = f'encountered exception: {tbs}')
+
+
+
+def runsInIPython() -> bool:
+	"""	Check whether the current runtime environment is IPython or not.
+
+		This is a hack!
+
+		Return:
+			True if run in IPython, otherwise False.
+	"""
+	import traceback
+	for each in traceback.extract_stack():
+		if each.filename.startswith('<ipython'):
+			return True
+	return False
