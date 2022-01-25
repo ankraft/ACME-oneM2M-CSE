@@ -201,7 +201,7 @@ def shutdown() -> None:
 	
 	from ..etc.Utils import runsInIPython
 	if runsInIPython():
-		L.console('CSE shutdown', nlb = True)
+		L.console('CSE shut down', nlb = True)
 
 
 @atexit.register
@@ -234,8 +234,8 @@ def _shutdown() -> None:
 	event and event.shutdown()
 	storage  and storage.shutdown()
 	
-	L.isInfo and L.log('CSE shutdown')
-	L.console('CSE shutdown', nlb = True)
+	L.isInfo and L.log('CSE shut down')
+	L.console('CSE shut down', nlb = True)
 
 	L.finit()
 	cseStatus = CSEStatus.STOPPED
