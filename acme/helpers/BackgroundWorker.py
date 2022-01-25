@@ -242,7 +242,7 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def findWorkers(cls, name:str=None, running:bool=None) -> List[BackgroundWorker]:
+	def findWorkers(cls, name:str = None, running:bool = None) -> List[BackgroundWorker]:
 		"""	Find and return a list of worker(s) that match the search criteria:
 
 			- `name` - Name of the worker. The `name` may contain simple wildcards (* and ?)
@@ -252,11 +252,11 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def stopWorkers(cls, name:str=None) -> List[BackgroundWorker]:
+	def stopWorkers(cls, name:str = None) -> List[BackgroundWorker]:
 		"""	Stop the worker(s) that match the optional `name` parameter. If `name` is not given then stop all workers.
 			It returns a list of the stopped workers.
 		"""
-		workers = cls.findWorkers(name=name)
+		workers = cls.findWorkers(name = name)
 		for w in workers:
 			w.stop()
 		return workers

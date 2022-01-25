@@ -118,6 +118,10 @@ def simpleMatch(st:str, pattern:str, star:str='*') -> bool:
 		last:int		= 0
 		matched:bool	= False
 		reverse:bool	= False
+
+		if st is None or pattern is None:
+			return False
+			
 		stLen			= len(st)
 		patternLen 		= len(pattern)
 
