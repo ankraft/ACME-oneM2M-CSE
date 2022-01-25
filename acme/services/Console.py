@@ -223,10 +223,7 @@ Available under the BSD 3-Clause License
 					L.on()
 					return
 				L.console('confirmed')
-				L.console('Shutdown CSE')
 				L.on()
-			else:
-				L.console('Shutdown CSE')
 		sys.exit()
 
 

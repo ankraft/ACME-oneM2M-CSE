@@ -8,7 +8,7 @@
 #
 
 from __future__ import annotations
-import atexit, argparse, os, time, sys
+import atexit, argparse, os, sys
 from threading import Lock
 from typing import Dict, Any
 
@@ -178,15 +178,12 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	cseStatus = CSEStatus.RUNNING
 	event.cseStartup()	# type: ignore
 
+	L.isInfo and L.log('CSE started')
 
-	if not cseStatus.RUNNING:
-		L.isInfo and L.log('CSE started')
-		if isHeadless:
-			# when in headless mode give the CSE a moment (2s) to experience fatal errors before printing the start message
-			BackgroundWorkerPool.newActor(lambda : L.console('CSE started') if cseStatus != CSEStatus.RUNNING else None, delay=2.0 ).start()
+	# Give the CSE a moment (2s) to experience fatal errors before printing the start message
+	BackgroundWorkerPool.newActor(lambda : [L.console('CSE started') if cseStatus == CSEStatus.RUNNING else None], delay = 2.0 if isHeadless else 0.0 ).start()
 	
 	return True
-
 
 
 def shutdown() -> None:
@@ -201,8 +198,10 @@ def shutdown() -> None:
 	cseStatus = CSEStatus.STOPPING
 	if console:
 		console.stop()				# This will end the main run loop.
-	if isHeadless:
-		L.console('CSE shutting down')
+	
+	from ..etc.Utils import runsInIPython
+	if runsInIPython():
+		L.console('CSE shutdown', nlb = True)
 
 
 @atexit.register
@@ -211,6 +210,7 @@ def _shutdown() -> None:
 	"""
 	global cseStatus
 
+	cseStatus = CSEStatus.STOPPING
 	L.isInfo and L.log('CSE shutting down')
 	if event:	# send shutdown event
 		event.cseShutdown() 	# type: ignore
@@ -235,6 +235,8 @@ def _shutdown() -> None:
 	storage  and storage.shutdown()
 	
 	L.isInfo and L.log('CSE shutdown')
+	L.console('CSE shutdown', nlb = True)
+
 	L.finit()
 	cseStatus = CSEStatus.STOPPED
 
@@ -272,4 +274,3 @@ def resetCSE() -> None:
 
 def run() -> None:
 	console.run()
-

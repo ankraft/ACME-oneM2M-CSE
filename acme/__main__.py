@@ -70,6 +70,5 @@ def main() -> None:
 	if CSE.startup(parseArgs()):
 		CSE.run()
 
-
 if __name__ == '__main__':
 	main()
