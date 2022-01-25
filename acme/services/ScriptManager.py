@@ -59,6 +59,7 @@ class ACMEPContext(PContext):
 							 			'attribute':	self.doAttribute,
 										'cseStatus':	self.doCseStatus,
 							 			'hasAttribute':	self.doHasAttribute,
+										'isIPython':	self.doIsIPython,
 										'storageHas':	self.doStorageHas,
 										'storageGet':	self.doStorageGet,
 						 				'__default__':	lambda c, m: Configuration.get(m),
@@ -384,12 +385,14 @@ class ACMEPContext(PContext):
 					r = Configuration.update(key, v.__class__.to(value, insensitive = True))
 				elif isinstance(v, str):
 					r = Configuration.update(key, value.strip())
+				# bool must be tested before int! 
+				# See https://stackoverflow.com/questions/37888620/comparing-boolean-and-int-using-isinstance/37888668#37888668
+				elif isinstance(v, bool):	
+					r = Configuration.update(key, value.strip().lower() == 'true')
 				elif isinstance(v, int):
 					r = Configuration.update(key, int(value.strip()))
 				elif isinstance(v, float):
 					r = Configuration.update(key, float(value.strip()))
-				elif isinstance(v, bool):
-					r = Configuration.update(key, value.strip().lower() == 'true')
 				elif isinstance(v, list):
 					r = Configuration.update(key, value.split(','))
 				else:
@@ -533,6 +536,26 @@ class ACMEPContext(PContext):
 			return None
 		return 'true'
 
+
+	def doIsIPython(self, pcontext:PContext, arg:str) -> str:
+		"""	Check whether the CSE currently runs in an IPython environment,
+			such as Jupyter Notebooks.
+		
+			Example:
+				${isIPython}
+
+			Args:
+				pcontext: PContext object of the runnig script.
+				arg: remaining argument(s) of the command. Shall be none.
+			
+			Returns:
+				True or False, depending whether the current environment in IPython.
+		"""
+		if arg:
+			pcontext.setError(PError.invalid, f'Invalid format: isIPython')
+			return None
+		return str(Utils.runsInIPython()).lower()
+		
 
 	def doStorageHas(self, pcontext:PContext, arg:str) -> str:
 		"""	Implementation of the `storageHas` macro. Test for a key in the persistent storage.
