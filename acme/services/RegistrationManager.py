@@ -248,12 +248,12 @@ class RegistrationManager(object):
 		# Check whether the same CSEBase has already registered (-> only once)
 		if (lnk := cbA.lnk):
 			if len(list := CSE.storage.searchByFragment({'lnk': lnk})) > 0:
-				L.isDebug and L.logDebug(dbg := f'CSEBaseAnnc with lnk: {lnk} already exists')
-				return Result(status=False, rsc=RC.conflict, dbg=dbg)
+				L.logDebug(dbg := f'CSEBaseAnnc with lnk: {lnk} already exists')
+				return Result(status = False, rsc = RC.conflict, dbg = dbg)
 
 		# Assign a rn
 		cbA.setResourceName(Utils.uniqueRN(f'{cbA.tpe}_{Utils.getIdFromOriginator(originator)}'))
-		return Result(status=True)
+		return Result(status = True)
 
 
 	#########################################################################
