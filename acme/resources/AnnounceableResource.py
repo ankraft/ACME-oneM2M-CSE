@@ -57,7 +57,6 @@ class AnnounceableResource(Resource):
 		return res
 
 
-
 	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
 		# L.isDebug and L.logDebug(f'Validating AnnounceableResource: {self.ri}')
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
@@ -177,6 +176,10 @@ class AnnounceableResource(Resource):
 		"""	Add anouncement information to the resource. These are a list of tuples of 
 			the csi to which the resource is registered and the CSE-relative ri of the 
 			resource on the remote CSE. Also, add the reference in the at attribute.
+
+			Args:
+				csi: csi of the remote CSE
+				remoteRI: ri of the announced resource on the remote CSE
 		"""
 
 		# Set the internal __announcedTo__ attribute

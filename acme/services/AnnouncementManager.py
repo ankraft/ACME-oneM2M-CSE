@@ -11,12 +11,13 @@ from __future__ import annotations
 import time
 from copy import deepcopy
 from typing import Optional, Tuple, List, cast
-from ..etc import Utils as Utils
-from ..etc.Types import ResourceTypes as T, ResponseStatusCode as RC, JSON, Result
+from ..etc import Utils
+from ..etc import RequestUtils
+from ..etc.Types import DesiredIdentifierResultType, ResourceTypes as T, ResponseStatusCode as RC, JSON, Result, ResultContentType
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
-from . import CSE as CSE
+from . import CSE
 from .Logging import Logging as L
 from .Configuration import Configuration
 
@@ -162,7 +163,32 @@ class AnnouncementManager(object):
 					if not (res := self.announceResourceToCSI(cseBase, csi)).status:	# Don't ignore result for this one
 						return res
 			else:
-				# No internal announcement infos, announce it
+
+				# No internal announcement infos, try to discover it on the remote CSE.
+				# This is done by discovering a CSEBaseAnnc resource with a link to our CSE.
+				req = RequestUtils.createRawRequest(
+						to = csi,
+						rcn = ResultContentType.childResourceReferences.value,
+						drt = DesiredIdentifierResultType.unstructured.value,
+						fc = {	'ty' : T.CSEBaseAnnc.value,
+								'lnk' : f'{cseBase.csi}/{cseBase.ri}'
+							 }
+						)
+				if not (res := CSE.request.sendRetrieveRequest(csi, originator = CSE.cseCsi, data = req, raw = True)).status:
+					return res
+				if res.rsc == RC.OK and res.data:	# Found a remote CSEBaseAnnc
+					# Assign to the local CSEBase
+					if (ri := Utils.findXPath(cast(dict, res.data), 'm2m:rrl/rrf/{0}/val')):
+						atri = f'{csi}/{ri}'
+						L.isDebug and L.logDebug(f'CSEBase already announced: {atri}. Updating CSEBase announcement')
+						cseBase.addAnnouncementToResource(csi, ri)
+						at:list[str] = cseBase.attribute('at', [])
+						at.append(atri)
+						cseBase.setAttribute('at', at)
+						cseBase.dbUpdate()
+						return Result(status = True)
+
+				# Not found, so announce it
 				L.isDebug and L.logDebug(f'Announcing CSEBase: {cseBase.ri}')
 				if not (res := self.announceResourceToCSI(cseBase, csi)).status:	# Don't ignore result for this one
 					return res
@@ -197,7 +223,7 @@ class AnnouncementManager(object):
 			if parentResource.ty == T.CSEBase:
 				if not (res := checkCSEBaseAnnouncement(parentResource)).status:
 					return res
-				parentResource.dbreload().resource 	# parent is already the CSEBase, just reload from DB
+				parentResource.dbReload() 	# parent is already the CSEBase, just reload from DB
 
 			else:	# parent is not a CSEBase
 				if not self._isResourceAnnouncedTo(parentResource, csi):
@@ -339,6 +365,8 @@ class AnnouncementManager(object):
 		"""
 		ats = resource.getAnnouncedTo()
 		remoteRI:str = None
+
+		# TODO put this method of AnnounceableResource
 		for x in ats:
 			if x[0] == csi:
 				remoteRI = x[1]

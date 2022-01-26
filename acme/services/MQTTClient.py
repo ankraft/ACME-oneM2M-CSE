@@ -372,7 +372,7 @@ class MQTTClient(object):
 		"""
 
 		if self.isStopped:
-			 return Result(status=False, rsc=RC.internalServerError, dbg='MQTT client is not running')
+			 return Result(status=False, rsc = RC.internalServerError, dbg = 'MQTT client is not running')
 
 		# deconstruct URL
 		u = urlparse(url)
@@ -386,7 +386,7 @@ class MQTTClient(object):
 
 		# Pack everything that is needed in a Result object as if this is a normal "response" (for MQTT this doesn't matter)
 		# This seems to be a bit complicated, but we fill in the necessary values as if this is a normal "response"
-		req 										= Result(request=CSERequest())
+		req 										= Result(request = CSERequest())
 		req.request.id								= u.path[1:]
 		req.request.op								= operation
 		req.resource								= data
@@ -399,7 +399,7 @@ class MQTTClient(object):
 
 		# construct the actual request and topic.
 		# Some work is needed here because we take a normal URL
-		preq = prepareMqttRequest(req, originator=originator, ty=ty, op=operation, raw=raw)
+		preq = prepareMqttRequest(req, originator = originator, ty = ty, op = operation, raw=raw)
 		topic = u.path
 		pathSplit = u.path.split('/')
 		ct = ct if ct else CSE.defaultSerialization
@@ -473,12 +473,12 @@ class MQTTClient(object):
 ##############################################################################
 
 
-def prepareMqttRequest(inResult:Result, originator:str=None, ty:T=None, op:Operation=None, isResponse:bool=False, raw:bool=False) -> Result:
+def prepareMqttRequest(inResult:Result, originator:str = None, ty:T = None, op:Operation = None, isResponse:bool = False, raw:bool = False) -> Result:
 	"""	Prepare a new request for MQTT. Remember, a response is actually just a new request.
 	
 		The constructed and serialized content is returned in a tuple in `Result.data`: the content as a dictionary and the serialized content.
 	"""
-	result = RequestUtils.requestFromResult(inResult, originator, ty, op=op, isResponse=isResponse)
+	result = RequestUtils.requestFromResult(inResult, originator, ty, op = op, isResponse=isResponse)
 
 	# When raw: Replace the data with its own primitive content, the rest of the result is fine
 	if raw and (pc := cast(JSON, result.data).get('pc')):
@@ -490,7 +490,7 @@ def prepareMqttRequest(inResult:Result, originator:str=None, ty:T=None, op:Opera
 	return result
 
 
-def logRequest(reqResult:Result, topic:str, isResponse:bool=False, isIncoming:bool=False) -> None:
+def logRequest(reqResult:Result, topic:str, isResponse:bool = False, isIncoming:bool = False) -> None:
 	"""	Log a request. Make some adjustments, depending on the request or response type.
 	"""
 	if isIncoming:

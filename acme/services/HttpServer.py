@@ -8,7 +8,9 @@
 #
 
 from __future__ import annotations
+from lib2to3.pgen2.token import OP
 import logging, sys, urllib3, json
+from webbrowser import Opera
 from requests.api import head
 from ssl import OP_ALL
 from copy import deepcopy
@@ -400,17 +402,34 @@ class HttpServer(object):
 				hds[C.hfRTU] = data['rt']
 			if 'vsi' in data:
 				hds[C.hfVSI] = data['vsi']
-			
+
+			# Get filter criteria
+			filterCriteria = []
+			if 'rcn' in data:
+				filterCriteria.append(f'rcn={data["rcn"]}')
+			if 'drt' in data:
+				filterCriteria.append(f'drt={data["drt"]}')
+			if fc := data.get('fc'):
+				for key in list(fc.keys()):
+					filterCriteria.append(f'{key}={fc[key]}')
+
 			# Add to to URL
 			# TODO improve http URL handling. Don't assume SP-Relative, could be absolute
 			delim = '~'	if url.endswith('/') else '/~'
 			url = f'{url}{delim}{data["to"]}'
+
+			# Add filtercriteria to URL
+			if filterCriteria:
+				url += f'?{"&".join(filterCriteria)}'
+				
 			# re-assign the data to pc
 			if 'pc' in data:
 				data = data['pc']
 		
 		# serialize data (only if dictionary, pass on non-dict data)
-		content = RequestUtils.serializeData(data, ct) if isinstance(data, dict) else data
+		content = None
+		if operation in [ Operation.CREATE, Operation.UPDATE, Operation.NOTIFY ]:
+			content = RequestUtils.serializeData(data, ct) if isinstance(data, dict) else data
 
 		# ! Don't forget: requests are done through the request library, not flask.
 		# ! The attribute names are different
@@ -422,20 +441,20 @@ class HttpServer(object):
 				L.isDebug and L.logDebug(f'HTTP Request ==>:\nHeaders: {hds}\nBody: \n{self._prepContent(content, ct)}\n')
 			
 			# Actual sending the request
-			r = method(url, data=content, headers=hds, verify=CSE.security.verifyCertificateHttp)
+			r = method(url, data = content, headers = hds, verify = CSE.security.verifyCertificateHttp)
 
 			responseCt = CST.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
 			rc = RC(int(r.headers[C.hfRSC])) if C.hfRSC in r.headers else RC.internalServerError
 			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
 		except Exception as e:
 			L.isWarn and L.logWarn(f'Failed to send request: {str(e)}')
-			return Result(status=False, rsc=RC.targetNotReachable, dbg='target not reachable')
-		return Result(status=True, data=RequestUtils.deserializeData(r.content, responseCt), rsc=rc)
+			return Result(status = False, rsc = RC.targetNotReachable, dbg = 'target not reachable')
+		return Result(status = True, data = RequestUtils.deserializeData(r.content, responseCt), rsc = rc)
 		
 
 	#########################################################################
 
-	def _prepareResponse(self, result:Result, originalRequest:CSERequest=None) -> Response:
+	def _prepareResponse(self, result:Result, originalRequest:CSERequest = None) -> Response:
 		"""	Prepare the response for a request. If `request` is given then
 			set it for the response.
 		"""
