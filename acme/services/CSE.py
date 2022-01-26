@@ -210,6 +210,9 @@ def _shutdown() -> None:
 	"""
 	global cseStatus
 
+	if cseStatus != CSEStatus.RUNNING:
+		return
+		
 	cseStatus = CSEStatus.STOPPING
 	L.isInfo and L.log('CSE shutting down')
 	if event:	# send shutdown event
