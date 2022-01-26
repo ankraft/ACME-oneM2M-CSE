@@ -39,7 +39,6 @@ class Configuration(object):
 	_argsListenIF:str				= None
 	_argsMqttEnabled:bool			= None
 	_argsRemoteCSEEnabled:bool		= None
-	_argsRemoteConfigEnabled:bool	= None
 	_argsRunAsHttps:bool			= None
 	_argsStatisticsEnabled:bool		= None
 
@@ -69,7 +68,6 @@ class Configuration(object):
 		Configuration._argsListenIF				= args.listenif if args and 'listenif' in args else None
 		Configuration._argsMqttEnabled			= args.mqttenabled if args and 'mqttenabled' in args else None
 		Configuration._argsRemoteCSEEnabled		= args.remotecseenabled if args and 'remotecseenabled' in args else None
-		Configuration._argsRemoteConfigEnabled	= args.remoteconfigenabled if args and 'remoteconfigenabled' in args else None
 		Configuration._argsRunAsHttps			= args.https if args and 'https' in args else None
 		Configuration._argsStatisticsEnabled	= args.statisticsenabled if args and 'statisticsenabled' in args else None
 
@@ -388,7 +386,6 @@ class Configuration(object):
 		if Configuration._argsImportDirectory is not None:		Configuration._configuration['cse.resourcesPath'] = Configuration._argsImportDirectory						# Override import directory from command line
 		if Configuration._argsListenIF is not None:				Configuration._configuration['http.listenIF'] = Configuration._argsListenIF								# Override binding network interface
 		if Configuration._argsMqttEnabled is not None:			Configuration._configuration['mqtt.enable'] = Configuration._argsMqttEnabled								# Override mqtt enable
-		if Configuration._argsRemoteConfigEnabled is not None:	Configuration._configuration['http.enableRemoteConfiguration'] = Configuration._argsRemoteConfigEnabled	# Override remote/httpConfiguration
 		if Configuration._argsRemoteCSEEnabled is not None:		Configuration._configuration['cse.enableRemoteCSE'] = Configuration._argsRemoteCSEEnabled					# Override remote CSE enablement
 		if Configuration._argsRunAsHttps is not None:			Configuration._configuration['http.security.useTLS'] = Configuration._argsRunAsHttps						# Override useTLS
 		if Configuration._argsStatisticsEnabled is not None:	Configuration._configuration['cse.statistics.enable'] = Configuration._argsStatisticsEnabled				# Override statistics enablement
