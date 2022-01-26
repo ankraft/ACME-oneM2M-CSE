@@ -10,7 +10,7 @@
 
 from __future__ import annotations
 import cbor2, json
-from typing import cast
+from typing import Any, cast
 from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode
 
 from .Types import ContentSerializationType as CST, JSON, RequestType, ResponseStatusCode as RC, Result, ResourceTypes as T, Operation
@@ -149,7 +149,7 @@ def requestFromResult(inResult:Result, originator:str = None, ty:T = None, op:Op
 		if inResult.embeddedRequest.originalRequest:
 			pc = inResult.embeddedRequest.originalRequest
 		else:
-			pc = cast(JSON, requestFromResult(Result(request=inResult.embeddedRequest)).data)
+			pc = cast(JSON, requestFromResult(Result(request = inResult.embeddedRequest)).data)
 		# L.isDebug and L.logDebug(pc)
 
 	else:
@@ -166,3 +166,21 @@ def requestFromResult(inResult:Result, originator:str = None, ty:T = None, op:Op
 	return Result(status = True, data = req, resource = inResult.resource, request = inResult.request, embeddedRequest = inResult.embeddedRequest, rsc = inResult.rsc)
 
 
+def createRawRequest(**kwargs:Any) -> JSON:
+	"""	Create a dictionary with a couple of pre-initialized fields. No validation is done.
+	
+		Args:
+			kwargs: individual attributes to set in the request.
+		
+		Return:
+			JSON dictionary with the request.
+	"""
+	from ..services import CSE 
+	from ..etc import Utils
+
+	r = {	'fr': CSE.cseCsi,
+			'rqi': Utils.uniqueRI(),
+			'rvi': CSE.releaseVersion,
+		}
+	r.update(kwargs)
+	return r
