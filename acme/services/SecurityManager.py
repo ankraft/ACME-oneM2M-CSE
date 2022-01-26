@@ -87,7 +87,7 @@ class SecurityManager(object):
 					L.isDebug and L.logDebug('Originator for CSR/CSEBaseAnnc CREATE. OK.')
 					return True
 				else:
-					L.isWarn and L.logWarn('Originator for CSR/CSEBaseAnnc CREATE not found.')
+					L.isWarn and L.logWarn(f'Originator for CSR/CSEBaseAnnc registration not found. Add "{originator}" to the configuration [cse.registration].allowedCSROriginators in the CSE\'s ini file to allow access for this originator.')
 					return False
 
 			if T(ty).isAnnounced():

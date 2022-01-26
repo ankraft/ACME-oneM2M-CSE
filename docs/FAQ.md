@@ -30,6 +30,19 @@
    All resources and specializations are validated by the CSE. You can add your own specializations and validation policies by providing them in one or more separate files in the *import* directory. Those files must have the file extension ".ap". These files are read during the startup of the CSE.
    See [the documentation about Importing ](Importing.md#attributes) for further details.
 
+## CSE Registrations
+
+1. **Why does my CSE cannot register to another CSE?**  
+   One problem could be that the CSE has no access rights to register to the target CSE. To solve this, the CSE's originator (ie. the CSE's CSE-ID, for example "/id-mn") must be added to the
+   target CSE's configuration file. The configuration section [cse.registration] has a setting *allowedCSROriginators*, which is a comma separated list of originators. Add the registering CSE's
+   CSE-ID (without a leading slash!) to this setting to allow access for this originator.  
+   Example:
+
+```ini
+[cse.registration]
+allowedCSROriginators=id-mn
+```
+
 ## Performance
 
 1. **How to increase the performance of ACME CSE?**  

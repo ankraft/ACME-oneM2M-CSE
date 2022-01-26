@@ -313,7 +313,7 @@ allowedAEOriginators=C*,S*
 ; Wildcards (* and ?) are supported.
 ; Note: No leading "/"
 ; Default: empty list
-allowedCSROriginators=id-mn,id-asn
+allowedCSROriginators=
 ; Check the liveliness if the registrations to the registrar CSE and also from the registree CSEs. Default: True
 checkLiveliness=True
 
