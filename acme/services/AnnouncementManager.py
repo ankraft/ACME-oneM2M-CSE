@@ -182,9 +182,11 @@ class AnnouncementManager(object):
 						atri = f'{csi}/{ri}'
 						L.isDebug and L.logDebug(f'CSEBase already announced: {atri}. Updating CSEBase announcement')
 						cseBase.addAnnouncementToResource(csi, ri)
-						at:list[str] = cseBase.attribute('at', [])
-						at.append(atri)
-						cseBase.setAttribute('at', at)
+						# !! CSEBase has no (exposed) at attribute, therefore the following code shall not
+						# !! be run for the CSEBase. Only the internal attribute is updated (previous code line).
+						# at:list[str] = cseBase.attribute('at', [])
+						# at.append(atri)
+						# cseBase.setAttribute('at', at)
 						cseBase.dbUpdate()
 						return Result(status = True)
 
