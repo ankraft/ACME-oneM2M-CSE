@@ -54,13 +54,14 @@ class ACMEPContext(PContext):
 						 				'storageremove':self.doStorageRemove,
 							 			'update':		self.doUpdate,
 									}, 
-						 macros = 	{ 
+						 macros = 	{ 	# !!! macro names must be lower case
+
 							 			'attribute':	self.doAttribute,
-										'cseStatus':	self.doCseStatus,
-							 			'hasAttribute':	self.doHasAttribute,
-										'isIPython':	self.doIsIPython,
-										'storageHas':	self.doStorageHas,
-										'storageGet':	self.doStorageGet,
+										'csestatus':	self.doCseStatus,
+							 			'hasattribute':	self.doHasAttribute,
+										'isipython':	self.doIsIPython,
+										'storagehas':	self.doStorageHas,
+										'storageget':	self.doStorageGet,
 						 				'__default__':	lambda c, m: Configuration.get(m),
 						  			},
 						 logFunc = self.log, 
@@ -159,11 +160,9 @@ class ACMEPContext(PContext):
 		
 			Example:
 				CREATE
-
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument(s) of the command.
-			
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
 		"""
@@ -176,11 +175,9 @@ class ACMEPContext(PContext):
 		
 			Example:
 				CREATE <target> <resource>
-
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument(s) of the command.
-			
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
 		"""
@@ -192,11 +189,9 @@ class ACMEPContext(PContext):
 		
 			Example:
 				DELETE <target>
-
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument(s) of the command, only the target.
-			
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
 		"""
@@ -209,11 +204,9 @@ class ACMEPContext(PContext):
 		
 			Example:
 				importRaw <resource>
-
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument(s) of the command, only the resource, which may start on a new line.
-			
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
 		"""
@@ -239,11 +232,9 @@ class ACMEPContext(PContext):
 		
 			Example:
 				NOTIFY <target> <resource>
-
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument(s) of the command.
-			
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
 		"""
@@ -262,11 +253,10 @@ class ACMEPContext(PContext):
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument of the command.
-			
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
 		"""
-		self.variables['request.originator'] = arg if arg else ''
+		self.setVariable('request.originator', arg if arg else '')
 		return pcontext
 
 
@@ -275,11 +265,9 @@ class ACMEPContext(PContext):
 
 			Example:
 				poa <identifier> <url>
-			
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument of the command.
-				
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
 		"""
@@ -296,12 +284,10 @@ class ACMEPContext(PContext):
 		"""	Initiate a CSE reset.
 
 			Example:
-				reset
-			
+				RESET
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument of the command.
-				
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
 		"""
@@ -320,11 +306,9 @@ class ACMEPContext(PContext):
 		
 			Example:
 				RETRIEVE <target>
-
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument(s) of the command.
-			
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
 		"""
@@ -337,11 +321,9 @@ class ACMEPContext(PContext):
 		
 			Example:
 				RUN <script name> [<arguments>]
-
 			Args:
 				pcontext: PContext object of the runnig script.
-				arg: remaining argument(s) of the command, name of a script and arguments
-			
+				arg: remaining argument(s) of the command, name of a script and arguments.
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
 		"""
@@ -367,11 +349,9 @@ class ACMEPContext(PContext):
 		
 			Example:
 				setConfig <configuration key> <value>
-
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument(s) of the command, the key and the value
-			
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
 		"""
@@ -418,7 +398,6 @@ class ACMEPContext(PContext):
 			Args:
 				pcontext: Current script context.
 				arg: Remaining arguments, key and value
-		
 			Return:
 				Current PContext object, or None in case of an error.
 		"""
@@ -436,7 +415,6 @@ class ACMEPContext(PContext):
 			Args:
 				pcontext: Current script context.
 				arg: Remaining arguments, key.
-		
 			Return:
 				Current PContext object, or None in case of an error.
 		"""
@@ -453,11 +431,9 @@ class ACMEPContext(PContext):
 		
 			Example:
 				UPDATE <target> <resource>
-
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument(s) of the command.
-			
 			Returns:
 				The scripts "PContext" object, or "None" in case of an error.
 		"""
@@ -474,11 +450,9 @@ class ACMEPContext(PContext):
 		
 			Example:
 				${attribute <key path> <resource>}
-
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument(s) of the command.
-			
 			Returns:
 				The value of the resource attribute, or None in case of an error.
 		"""
@@ -502,7 +476,9 @@ class ACMEPContext(PContext):
 		
 			Example:
 				${cseStatus}
-			
+			Args:
+				pcontext: PContext object of the runnig script.
+				arg: remaining argument(s) of the command.
 			Returns:
 				The CSE status as a string, or None in case of an error.
 		"""
@@ -514,11 +490,9 @@ class ACMEPContext(PContext):
 		
 			Example:
 				${hasAttribute <key path> <resource>}
-
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument(s) of the command.
-			
 			Returns:
 				True or False, depending whether the `key path` exists in the `resource`.
 		"""
@@ -542,11 +516,9 @@ class ACMEPContext(PContext):
 		
 			Example:
 				${isIPython}
-
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument(s) of the command. Shall be none.
-			
 			Returns:
 				True or False, depending whether the current environment in IPython.
 		"""
@@ -561,8 +533,7 @@ class ACMEPContext(PContext):
 
 			Args:
 				pcontext: Current script context.
-				arg: Remaining arguments, key only
-		
+				arg: Remaining arguments, key only.
 			Return:
 				Boolean result, or None in case of an error.
 		"""
@@ -581,8 +552,7 @@ class ACMEPContext(PContext):
 
 			Args:
 				pcontext: Current script context.
-				arg: Remaining arguments, key only
-		
+				arg: Remaining arguments, key only.
 			Return:
 				The stored value for the key, or None in case of an error.
 		"""
@@ -611,7 +581,6 @@ class ACMEPContext(PContext):
 			Args:
 				pcontext: PContext object for the script.
 				arg: The remaining args
-
 			Returns:
 				A resource as JSON object (dict), or None in case of an error.
 		"""
@@ -682,14 +651,13 @@ class ACMEPContext(PContext):
 				pcontext: PContext object for the script.
 				operation: The operation to perform.
 				arg: The remaining args.
-
 			Returns:
 				The stored value for the key, or None in case of an error.
 		"""
 		target, _, content = arg.partition(' ')
 
 		# Get the request originator
-		if (originator := self.variables.get('request.originator')) is None:
+		if (originator := self.getVariable('request.originator')) is None:
 			pcontext.setError(PError.undefined, f'"originator" is not set. Set before a request with "originator <id>".')
 			return None
 
@@ -759,16 +727,16 @@ class ACMEPContext(PContext):
 			res = CSE.request.handleRequest(request)
 
 		# Construct response
-		self.variables['response.status'] = str(res.rsc.value)
+		self.setVariables('response.status', str(res.rsc.value))
 		try:
 			if not res.status:
-				self.variables['response.resource'] = res.dbg
+				self.setVariables('response.resource', res.dbg)
 			elif res.data:
-				self.variables['response.resource'] = json.dumps(res.data) if isinstance(res.data, dict) else str(res.data)
+				self.setVariables('response.resource', json.dumps(res.data) if isinstance(res.data, dict) else str(res.data))
 			elif res.resource:
-				self.variables['response.resource'] = json.dumps(res.resource.asDict())
+				self.setVariables('response.resource', json.dumps(res.resource.asDict()))
 			else:
-				self.variables['response.resource'] = ''
+				self.setVariables('response.resource', '')
 		except Exception as e:
 			pcontext.setError(PError.invalid, f'Invalid resource or data: {res.data if res.data else res.resource}')
 			L.logErr(f'Error while decoding result: {str(e)}', exc = e)
@@ -954,7 +922,6 @@ class ScriptManager(object):
 
 			Args:
 				directory: The directory from which to load the scripts.
-
 			Return:
 				Number scripts loaded, or -1 in case of an error.
 		"""
@@ -965,7 +932,6 @@ class ScriptManager(object):
 
 				Args:
 					filename: The filename to look for.
-				
 				Return:
 					Boolean, indicating whether a script with the filename exists.
 			"""
@@ -993,7 +959,6 @@ class ScriptManager(object):
 
 			Args:
 				filename: The filename of the file.
-
 			Return:
 				ACMEPContext object with the script, or None.
 		"""
@@ -1008,7 +973,6 @@ class ScriptManager(object):
 			Args:
 				script: The script as a single string.
 				filename: The filename of the file.
-			
 			Return:
 				ACMEPContext object with the script, or None.
 		"""
@@ -1034,7 +998,6 @@ class ScriptManager(object):
 			Args:
 				name: Filter by script name. The name can be a simple match.
 				meta: Filter by script meta data. This can be a single string or a list of strings.
-			
 			Return:
 				List of PContext objects with the script(s), sorted by name, or None in case of an error.
 		"""
@@ -1067,7 +1030,6 @@ class ScriptManager(object):
 				pcontext: The script to run.
 				argument: An optional argument to the script. This is available to the script via the `argv` macro.
 				background: Boolean to indicate whether to run the script in the backhround (as an Actor).
-			
 			Return:
 				Boolean that indicates the successful running of the script. A background script always returns True.
 		"""
@@ -1092,7 +1054,6 @@ class ScriptManager(object):
 				scriptName: The name of the script to run..
 				argument: An optional argument to the script. This is available to the script via the `argv` macro.
 				metaFiler: Extra filter to select a script.
-			
 			Return:
 				The result of the script run in a tuple: Boolean indicating success, and an optional result.
 		"""
@@ -1122,7 +1083,6 @@ class ScriptManager(object):
 		
 			Args:
 				key: Key for the value to retrieve.
-			
 			Return:
 				Previously stored value for the key, or None.
 		"""
@@ -1136,7 +1096,6 @@ class ScriptManager(object):
 		
 			Args:
 				key: Key to check.
-			
 			Return:
 				Boolean result.
 		"""

@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from collections import namedtuple
 from enum import IntEnum, auto
 import datetime, time, re, copy, random
-from typing import 	Callable, Dict, Tuple, Union
+from typing import 	Any, Callable, Dict, Tuple, Union
 
 _maxProcStackSize = 64	# max number of calls to procedures
 
@@ -52,8 +52,6 @@ class PError(IntEnum):
 	unexpectedArgument		= auto()
 	unexpectedCommand		= auto()
 	unknown 				= auto()
-
-PErrorState = namedtuple('PErrorState', [ 'error', 'line', 'message' ])
 
 
 @dataclass
@@ -116,7 +114,7 @@ class PContext():
 
 		# Internal attributes that should not be accessed
 		self._length:int					= 0
-		self.variables:Dict[str,str]		= {}
+		self._variables:Dict[str,str]		= {}
 		self._scopeStack:list[PScope]		= []
 		self._commands:PCmdDict				= None		# builtins + provided commands
 		self._macros:PMacroDict				= None		# builtins + provided macros
@@ -161,7 +159,6 @@ class PContext():
 			Args:
 				verbose: Boolean to indicate whether each executed line shall be logged.
 				argument: String with the argument(s)
-
 			Return:
 				PContext object, or None in case of an error.
 		"""
@@ -218,7 +215,6 @@ class PContext():
 
 			Args:
 				sep: Separator for partitioning the command from the rest of the arguments.
-			
 			Returns:
 				Tuple: command, separator, rest of the line, full line
 		"""
@@ -236,7 +232,6 @@ class PContext():
 				prefix: If `prefix` is given then it is added to the begining of the result.
 				upto:  If `upto` is given then only the lines up to the first line that starts with `upto` are returned.
 				ignoreComments: If set to True then comment lines are not included in the result.
-			
 			Return:
 				String with all the remaining lines in a single string.
 		"""
@@ -265,7 +260,6 @@ class PContext():
 
 			Args:
 				line: The line to test
-				
 			Return:
 				Boolean indicating whether a line shall be ignored.
 		"""
@@ -278,7 +272,7 @@ class PContext():
 		"""
 		self.pc = 0
 		self.error = PErrorState(PError.noError, 0, '')
-		self.variables.clear()
+		self._variables.clear()
 		self._scopeStack.clear()
 		self.saveScope(pc = -1, name = self.meta.get('name'))
 		self.state = PState.ready
@@ -367,7 +361,6 @@ class PContext():
 				pc: Program counter.
 				arg: Arguments for the scope.
 				name: Name of the scope. Relevant for procedures.
-			
 			Return:
 				Boolean, whether setting of the scope succeeded.
 		"""
@@ -472,14 +465,60 @@ class PContext():
 
 			Args:
 				key: Key of the meta data to look for.
-
 			Return:
 				String, value or empty string.
-		
 		"""
 		if v := self.meta.get(key):
 			return v
 		return ''
+	
+
+	def getVariable(self, key:str) -> str:
+		"""	Return a variable for a case insensitive name.
+
+			Args:
+				key: Variable name
+			Return:
+				Variable content, or None.		
+		"""
+		return self._variables.get(key.lower())
+	
+
+	def setVariable(self, key:str, value:str) -> None:
+		"""	Set a variable for a case insensitive name.
+
+			Args:
+				key: Variable name
+				value: Value to store	
+		"""
+		self._variables[key.lower()] = value
+	
+
+	def delVariable(self, key:str) -> str:
+		"""	Delete a variable for a case insensitive name.
+
+			Args:
+				key: Variable name
+			Return:
+				Variable content, or None if variable is not defined.		
+		"""
+		key = key.lower()
+		if key in self._variables:
+			v = self._variables[key]
+			del self._variables[key]
+			return v
+		return None
+
+
+	def getMacro(self, key:str) -> PMacroCallable:
+		"""	Return a macro callable for a case insensitive name.
+
+			Args:
+				key: Macro name
+			Return:
+				Macro callable, or None.		
+		"""
+		return self._macros.get(key.lower())
 
 
 ##############################################################################
@@ -496,14 +535,27 @@ PLogCallable = Callable[[PContext, str], None]
 """	Function callback for log functions.
 """
 
-PCmdDict = Dict[str, Callable[[PContext, str], PContext]]
+PCmdCallable = Callable[[PContext, str], PContext]
+"""	Signature of a command callable.
+"""
+
+PCmdDict = Dict[str, PCmdCallable]
 """	Function callback for commands. The callback is called with a `PContext` object
 	and is supposed to return it again, or None in case of an error.
 """
 
-PMacroDict = Dict[str, Callable[[PContext, str], str]]
+PMacroCallable = Callable[[PContext, str], str]
+"""	Signature of a macro callable.
+"""
+
+PMacroDict = Dict[str, PMacroCallable]
 """	Function callback for macros. The callback is called with a `PContext` object
 	and returns a string.
+"""
+
+PErrorState = namedtuple('PErrorState', [ 'error', 'line', 'message' ])
+"""	Named tuple that represents an error state. The error, the line numer,
+	and the error message.
 """
 
 
@@ -519,7 +571,6 @@ def run(pcontext:PContext, verbose:bool = False, argument:str = '') -> PContext:
 			pcontext: Current PContext for the script.
 			verbose: Log each executed line.
 			argument: The argument to the script, available via the `argv` macro.
-
 		Return:
 			PContext object, or None in case of an error.
 		"""
@@ -616,7 +667,6 @@ def _doAssert(pcontext:PContext, arg:str) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: Assertion expression
-
 		Return:
 			The PContext object, or None in case of an error.
 	"""
@@ -634,7 +684,6 @@ def _doBreak(pcontext:PContext, arg:str) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: The argument of the break, used as the result of a while
-
 		Return:
 			The PContext object, or None in case of an error.
 	"""
@@ -651,7 +700,6 @@ def _doContinue(pcontext:PContext, arg:str) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: not used.
-
 		Return:
 			The PContext object, or None in case of an error.
 	"""
@@ -670,7 +718,6 @@ def _doPrint(pcontext:PContext, arg:str) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: The output to log.
-
 		Return:
 			The PContext object, or None in case of an error.
 	"""
@@ -686,7 +733,6 @@ def _doElse(pcontext:PContext, arg:str) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: Else shall have no argument.
-
 		Return:
 			PContext object, or None in case of an error.
 	"""
@@ -705,7 +751,6 @@ def _doEndIf(pcontext:PContext, arg:str) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: ENDIF shall have no argument.
-
 		Return:
 			PContext object, or None in case of an error.
 	"""
@@ -725,15 +770,16 @@ def _doEndProcedure(pcontext:PContext, arg:str) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: The result of the procedure.
-
 		Return:
 			PContext object, or None in case of an error.
 	"""
 	if pcontext.scope is None:
 		pcontext.setError(PError.unexpectedCommand, 'ENDPROCEDURE without PROCEDURE')
 		return None
+	name = pcontext.name	# copy the name of the procedure. Gone after restoreScope
 	pcontext.restoreScope()
 	pcontext.result = arg	# Copy the argument (ie the result) to the previous scope
+	pcontext.setVariable(name, arg)
 	return pcontext
 
 
@@ -746,7 +792,6 @@ def _doEndWhile(pcontext:PContext, arg:str) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: The result of the while.
-
 		Return:
 			PContext object, or None in case of an error.
 	"""
@@ -766,7 +811,6 @@ def _doError(pcontext:PContext, arg:str) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: The result of the script.
-
 		Return:
 			PContext object, or None in case of an error.
 	"""
@@ -781,7 +825,6 @@ def _doIf(pcontext:PContext, arg:str) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: The IF-expressions.
-
 		Return:
 			PContext object, or None in case of an error.
 	"""
@@ -801,19 +844,18 @@ def _doIncDec(pcontext:PContext, arg:str, isInc:bool = True) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: The value to increment/decrement the variable. The default is 1.
-			isInc: Indicate whether to increment or decrement
-
+			isInc: Indicate whether to increment or decrement.
 		Return:
 			PContext object, or None in case of an error.
 	"""
 	var, _, value = arg.partition(' ')
 	value = value.strip()
-	if (variable := pcontext.variables.get(var)) is None:
+	if (variable := pcontext.getVariable(var)) is None:
 		pcontext.setError(PError.undefined, f'undefined variable: {var}')
 		return None
 	try:
 		n = float(value) if len(value) > 0 else 1.0	# either a number or 1.0 (default)
-		pcontext.variables[var] = str(float(variable) + n) if isInc else str(float(variable) - n)
+		pcontext.setVariable(var, str(float(variable) + n) if isInc else str(float(variable) - n))
 	except ValueError as e:
 		pcontext.setError(PError.notANumber, f'Not a number: {e}')
 		return None
@@ -827,7 +869,6 @@ def _doLog(pcontext:PContext, arg:str, isError:bool = False) -> PContext:
 			pcontext: Current PContext for the script.
 			arg: The message to log.
 			isError: Indicate whether this message will be logged as an error or a normal log message.
-
 		Return:
 			PContext object, or None in case of an error.
 	"""
@@ -847,7 +888,6 @@ def _doProcedure(pcontext:PContext, arg:str) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: Not used.
-
 		Return:
 			PContext object, or None in case of an error.
 	"""
@@ -873,7 +913,6 @@ def _doQuit(pcontext:PContext, arg:str) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: The result of the script.
-
 		Return:
 			PContext object, or None in case of an error.
 	"""
@@ -897,7 +936,6 @@ def _doSet(pcontext:PContext, arg:str) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: The arguments to the SET command.
-
 		Return:
 			PContext object, or None in case of an error.
 	"""
@@ -915,7 +953,7 @@ def _doSet(pcontext:PContext, arg:str) -> PContext:
 		except ZeroDivisionError as e:
 			pcontext.setError(PError.divisionByZero, f'Division by zero: {arg}')
 			return None
-		pcontext.variables[var] = str(result)
+		pcontext.setVariable(var, str(result))
 		return pcontext
 
 	# Else: normal assignment
@@ -924,15 +962,13 @@ def _doSet(pcontext:PContext, arg:str) -> PContext:
 
 	# remove variable if no value
 	if not value:	
-		if var in pcontext.variables:
-			del pcontext.variables[var]
-		else:
+		if pcontext.delVariable(var) is None:
 			pcontext.setError(PError.undefined, f'Undefined variable: {var}')
 			return None
 		return pcontext
 
 	# Just assign
-	pcontext.variables[var] = value.strip()
+	pcontext.setVariable(var, value.strip())
 	return pcontext
 
 
@@ -943,7 +979,6 @@ def _doSleep(pcontext:PContext, arg:str) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: Number of seconds to sleep.
-		
 		Return:
 			Current PContext object, or None in case of an error.
 	"""
@@ -966,7 +1001,6 @@ def _doWhile(pcontext:PContext, arg:str) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: The comparison for the while loop.
-		
 		Return:
 			Current PContext object, or None in case of an error.
 	"""
@@ -1001,7 +1035,6 @@ def _doArgv(pcontext:PContext, arg:str) -> str:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: The optional index.
-		
 		Return:
 			String or None in case of an error.
 	"""
@@ -1032,7 +1065,6 @@ def _doArgc(pcontext:PContext, arg:str) -> str:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: Not used.
-		
 		Return:
 			String, or None in case of an error.
 	"""
@@ -1054,7 +1086,6 @@ def _doRandom(pcontext:PContext, arg:str) -> str:
 		Args:
 			pcontext: Current PContext for the script.
 			arg: One or two arguments for the range.
-		
 		Return:
 			String, or None in case of an error.
 	"""
@@ -1138,14 +1169,15 @@ _builtinCommands:PCmdDict = {
 
 
 _builtinMacros:PMacroDict = {
+	# !!! macro names must be lower case
+
 	'datetime':	lambda c, a: datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%S.%f' if not a else a),
 	'result':	lambda c, a: c.result,
 	'argc':		_doArgc,
 	'argv':		_doArgv,
 	'random':	_doRandom,
 	'round':	_doRound,
-	'runCount':	lambda c, a: str(c.runs),
-
+	'runcount':	lambda c, a: str(c.runs),
 }
 
 
@@ -1161,7 +1193,6 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 		Args:
 			pcontext: Current PContext for the script.
 			line: The line to process.
-		
 		Return:
 			String, the line with all variabes, macros etc replaces, or None in case of an error.
 	"""
@@ -1171,7 +1202,6 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 
 			Args:
 				macro: The name and argument of a macro. Everything between ${...}.
-			
 			Return:
 				The fully replaced macro.
 		"""
@@ -1184,13 +1214,14 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 			return None
 
 		# First check variables
-		if macro in pcontext.variables:
-			return pcontext.variables[macro]
+		if (v := pcontext.getVariable(macro)) is not None:
+			return v
+
 
 		# Then check macros
 		name, _, arg = macro.partition(' ')
 		arg = arg.strip()
-		if (cb := pcontext._macros.get(name)) is not None:
+		if (cb := pcontext.getMacro(name)) is not None:
 			if (result := cb(pcontext, arg)) is not None:
 				return str(result)
 			if pcontext.error.error == PError.noError:	# provide an own error if not set by the macro function
@@ -1198,7 +1229,7 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 			return None
 		
 		# Lastly, try the default macro definition
-		if (cb := pcontext._macros.get('__default__')) is not None:
+		if (cb := pcontext.getMacro('__default__')) is not None:
 			if (result := cb(pcontext, macro)) is not None:
 				return str(result)
 			## FALL-THROUGH
@@ -1276,7 +1307,6 @@ def _skipIfElse(pcontext:PContext, isIf:bool) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			isIf: True when the part to be skipped over is the if - part.
-		
 		Return:
 			Current PContext object, or None in case of an error.
 	"""
@@ -1318,7 +1348,6 @@ def _skipWhile(pcontext:PContext) -> PContext:
 
 		Args:
 			pcontext: Current PContext for the script.
-		
 		Return:
 			Current PContext object, or None in case of an error.
 	"""
@@ -1347,7 +1376,6 @@ def _compareExpression(pcontext:PContext, expr:str) -> bool:
 		Args:
 			pcontext: Current PContext for the script.
 			expr: The compare expression.
-		
 		Return:
 			Boolean.
 	"""
@@ -1410,7 +1438,6 @@ def _calcExpression(pcontext:PContext, expr:str) -> float:
 		Args:
 			pcontext: Current PContext for the script.
 			expr: The expression to calculate
-		
 		Return:
 			Float, the result of the calculation.
 	"""
@@ -1447,8 +1474,7 @@ def _executeProcedure(pcontext:PContext, cmd:str, arg:str) -> PContext:
 		Args:
 			pcontext: Current PContext for the script.
 			cmd: The name of the procedure to execute.
-			arg: The argument for the procedure
-		
+			arg: The argument for the procedure.
 		Return:
 			Current PContext object, or None in case of an error.
 
