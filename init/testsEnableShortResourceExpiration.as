@@ -10,8 +10,8 @@
 @uppertester
 
 if ${argc} != 1
-	error Wrong number of arguments: enableShortResourceExpiration <expirationInterval>
-	quit
+	logError Wrong number of arguments: enableShortResourceExpiration <expirationInterval>
+	error
 endif
 
 ##################################################################

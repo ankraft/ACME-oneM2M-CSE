@@ -1,5 +1,5 @@
 #
-#	utReset.as
+#	utStatus.as
 #
 #	This script returns the CSE's runtime status
 #
@@ -10,7 +10,6 @@
 
 if ${argc} > 0
 	error "status" command has no arguments
-	quit
 endif
 
 quit ${cseStatus}

@@ -11,8 +11,8 @@
 @uppertester
 
 if ${argc} != 1
-	error Wrong number of arguments: enableShortRequestExpiration <expirationTimeout>
-	quit
+	logError Wrong number of arguments: enableShortRequestExpiration <expirationTimeout>
+	error
 endif
 
 ##################################################################

@@ -311,7 +311,6 @@ class HttpServer(object):
 			resp = Response(status = 200 if rcs == RC.OK else 400, headers = headers)
 			L.isDebug and L.logDebug(f'<== Upper Tester Response:') 
 			L.isDebug and L.logDebug(f'Headers: \n{str(resp.headers).rstrip()}')
-			#L.isDebug and L.logDebug(f'Body: \n{request.json}')
 			return resp
 
 		Utils.renameCurrentThread()
@@ -322,9 +321,9 @@ class HttpServer(object):
 		# Handle special commands
 		if (cmd := request.headers.get('X-M2M-UTCMD')) is not None:
 			cmd, _, arg = cmd.partition(' ')
-			if (res := CSE.script.run(cmd, arg, metaFilter = [ 'uppertester' ])) is None:
-				return prepareUTResponse(RC.badRequest, res)
-			return prepareUTResponse(RC.OK, res)
+			if not (res := CSE.script.run(cmd, arg, metaFilter = [ 'uppertester' ]))[0]:
+				return prepareUTResponse(RC.badRequest, res[1])
+			return prepareUTResponse(RC.OK, res[1])
 
 		L.logWarn('UT functionality is not fully supported.')
 		return prepareUTResponse(RC.badRequest, None)

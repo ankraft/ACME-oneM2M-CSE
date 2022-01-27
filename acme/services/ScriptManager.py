@@ -9,8 +9,7 @@
 
 
 from __future__ import annotations
-from inspect import getargs
-from typing import Callable, Dict, Union
+from typing import Callable, Dict, Union, Any, Tuple
 from pathlib import Path
 import json, os, fnmatch
 from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes
@@ -127,7 +126,7 @@ class ACMEPContext(PContext):
 			Return:
 				String with the error message.
 		"""
-		return f'{self.error[0].name} error in {self.filename}:{self.error[1]} - {self.error[2]}'
+		return f'{self.error.error.name} error in {self.filename}:{self.error.line} - {self.error.message}'
 
 
 	@property
@@ -354,7 +353,7 @@ class ACMEPContext(PContext):
 			else:
 				script = scripts[0]
 				if not CSE.script.runScript(script, argument = arg, background = False):
-					pcontext.setError(script.error[0], f'Running script error: {script.error[2]}')
+					pcontext.setError(script.error.error, f'Running script error: {script.error.message}')
 					return None
 				pcontext.result = script.result
 				return pcontext
@@ -691,7 +690,7 @@ class ACMEPContext(PContext):
 
 		# Get the request originator
 		if (originator := self.variables.get('request.originator')) is None:
-			pcontext.setError(PError.undefined, f'"originator" is not set')
+			pcontext.setError(PError.undefined, f'"originator" is not set. Set before a request with "originator <id>".')
 			return None
 
 		# Prepare request structure
@@ -1086,7 +1085,7 @@ class ScriptManager(object):
 		return pcontext.run(verbose = self.verbose, argument = argument).state != PState.terminatedWithError
 	
 
-	def run(self, scriptName:str, argument:str = '', metaFilter:list[str] = []) -> str:
+	def run(self, scriptName:str, argument:str = '', metaFilter:list[str] = []) -> Tuple[bool, str]:
 		""" Run a script by its name (only in the foreground).
 
 			Args:
@@ -1095,18 +1094,22 @@ class ScriptManager(object):
 				metaFiler: Extra filter to select a script.
 			
 			Return:
-				The result of the script run, or None in case if an error.
+				The result of the script run in a tuple: Boolean indicating success, and an optional result.
 		"""
 		L.isDebug and L.logDebug(f'Looking for script: {scriptName}, arguments: {argument if argument else "None"}, meta: {metaFilter}')
 		if len(scripts := CSE.script.findScripts(name = scriptName, meta = metaFilter)) != 1:
-			L.isWarn and L.logWarn(f'Script not found: "{scriptName}"')
-			return None
+			L.logWarn(dbg := f'Script not found: "{scriptName}"')
+			return (False, dbg)
 		script = scripts[0]
 		if CSE.script.runScript(script, argument = argument, background = False):
 			L.isDebug and L.logDebug(f'Script: "{scriptName}"" finished successfully')
-			return script.result if script.result else ''
-		L.isWarn and L.logWarn(f'Script: "{scriptName}"finished with error: {script.error}')
-		return None
+			return (True, script.result if script.result else '')
+			
+		L.isWarn and L.logWarn(f'Script "{scriptName}" finished with error: {script.error.error.name} ({script.error.line}) : {script.error.message}')
+
+		if script.error.error == PError.quitWithError:
+			script.result = script.error.message
+		return (False, script.result)
 
 
 	##########################################################################

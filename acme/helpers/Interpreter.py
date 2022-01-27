@@ -12,6 +12,7 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, field
+from collections import namedtuple
 from enum import IntEnum, auto
 import datetime, time, re, copy, random
 from typing import 	Callable, Dict, Tuple, Union
@@ -36,20 +37,23 @@ class PState(IntEnum):
 class PError(IntEnum): 
 	"""	Error codes.
 	"""
-	noError 				= auto()
-	unknown 				= auto()
-	undefined				= auto()
 	assertionFailed			= auto()
-	unexpectedArgument		= auto()
-	unexpectedCommand		= auto()
-	maxProceduresExceeded 	= auto()
-	notANumber				= auto()
+	canceled				= auto()
 	divisionByZero			= auto()
-	procedureWithoutEnd		= auto()
-	nestedProcedure			= auto()
 	interrupted				= auto()
 	invalid					= auto()
-	canceled				= auto()
+	maxProceduresExceeded 	= auto()
+	nestedProcedure			= auto()
+	noError 				= auto()
+	notANumber				= auto()
+	procedureWithoutEnd		= auto()
+	quitWithError			= auto()
+	undefined				= auto()
+	unexpectedArgument		= auto()
+	unexpectedCommand		= auto()
+	unknown 				= auto()
+
+PErrorState = namedtuple('PErrorState', [ 'error', 'line', 'message' ])
 
 
 @dataclass
@@ -106,7 +110,7 @@ class PContext():
 		# State, result and error attributes
 		self.pc:int 						= 0
 		self.state:PState 					= PState.created
-		self.error:Tuple[PError,int,str]	= ( PError.noError, 0, '' )
+		self.error:PErrorState				= PErrorState(PError.noError, 0, '' )
 		self.meta:Dict[str, str]			= {}
 		self.runs:int						= 0
 
@@ -273,7 +277,7 @@ class PContext():
 			method as well.
 		"""
 		self.pc = 0
-		self.error = ( PError.noError, 0, '' )
+		self.error = PErrorState(PError.noError, 0, '')
 		self.variables.clear()
 		self._scopeStack.clear()
 		self.saveScope(pc = -1, name = self.meta.get('name'))
@@ -291,7 +295,7 @@ class PContext():
 				state: PState to indicate the state of the script. Default is "terminatedWithError".
 		"""
 		self.state = state
-		self.error = ( error, self.pc if pc == -1 else pc, msg )
+		self.error = PErrorState(error, self.pc if pc == -1 else pc, msg)
 
 
 	@property
@@ -527,8 +531,8 @@ def run(pcontext:PContext, verbose:bool = False, argument:str = '') -> PContext:
 			Args:
 				pcontext: Current PContext for the script.
 		"""
-		if pcontext.error[0] != PError.noError:
-			_doLog(pcontext, f'{pcontext.error[1]}: {pcontext.error[2]}', isError = True)
+		if pcontext.error.error not in [ PError.noError, PError.quitWithError ]:
+			_doLog(pcontext, f'{pcontext.error.line}: {pcontext.error.message}', isError = True)
 			if pcontext.errorFunc:
 				pcontext.errorFunc(pcontext)
 		if pcontext.state != PState.ready and pcontext.postFunc:	# only when really running, after preFunc succeeded
@@ -577,7 +581,6 @@ def run(pcontext:PContext, verbose:bool = False, argument:str = '') -> PContext:
 					else:
 						pcontext.state = PState.terminatedWithError
 				except Exception as e:
-					#pcontext.logErrorFunc(e)
 					pcontext.setError(PError.unknown, f'Error: {e}')
 			else:
 				# Ignore "empty" (None) commands
@@ -756,8 +759,8 @@ def _doEndWhile(pcontext:PContext, arg:str) -> PContext:
 	return pcontext
 
 
-def _doQuit(pcontext:PContext, arg:str) -> PContext:
-	"""	End script execution. The optional argument will be 
+def _doError(pcontext:PContext, arg:str) -> PContext:
+	"""	End script execution with an error. The optional argument will be 
 		assigned as the result of the script (pcontect.result).
 
 		Args:
@@ -767,13 +770,9 @@ def _doQuit(pcontext:PContext, arg:str) -> PContext:
 		Return:
 			PContext object, or None in case of an error.
 	"""
-	if arg:
-		pcontext.state = PState.terminatedWithResult
-		pcontext.result = arg
-	else:
-		pcontext.state = PState.terminated
-		pcontext.result = None
-	return pcontext
+	pcontext.state = PState.terminatedWithError
+	pcontext.setError(PError.quitWithError, arg)
+	return None
 
 
 def _doIf(pcontext:PContext, arg:str) -> PContext:
@@ -865,6 +864,26 @@ def _doProcedure(pcontext:PContext, arg:str) -> PContext:
 	# Reached end of script
 	pcontext.setError(PError.procedureWithoutEnd, 'PROCEDURE without ENDPROCEDURE')
 	return None
+
+
+def _doQuit(pcontext:PContext, arg:str) -> PContext:
+	"""	End script execution. The optional argument will be 
+		assigned as the result of the script (pcontect.result).
+
+		Args:
+			pcontext: Current PContext for the script.
+			arg: The result of the script.
+
+		Return:
+			PContext object, or None in case of an error.
+	"""
+	if arg:
+		pcontext.state = PState.terminatedWithResult
+		pcontext.result = arg
+	else:
+		pcontext.state = PState.terminated
+		pcontext.result = None
+	return pcontext
 
 
 def _doSet(pcontext:PContext, arg:str) -> PContext:
@@ -1104,10 +1123,11 @@ _builtinCommands:PCmdDict = {
 	'endif':		_doEndIf,
 	'endprocedure':	_doEndProcedure,
 	'endwhile':		_doEndWhile,
-	'error':		lambda p, a : _doLog(p, a, isError = True),
+	'error':		_doError,
 	'if':			_doIf,
 	'inc':			lambda p, a : _doIncDec(p, a),
 	'log':			lambda p, a : _doLog(p, a,),
+	'logerror':		lambda p, a : _doLog(p, a, isError = True),
 	'print':		_doPrint,
 	'procedure':	_doProcedure,
 	'quit':			_doQuit,
@@ -1173,7 +1193,7 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 		if (cb := pcontext._macros.get(name)) is not None:
 			if (result := cb(pcontext, arg)) is not None:
 				return str(result)
-			if pcontext.error[0] == PError.noError:	# provide an own error if not set by the macro function
+			if pcontext.error.error == PError.noError:	# provide an own error if not set by the macro function
 				pcontext.setError(PError.invalid, f'Error from macro: {macro}')
 			return None
 		
