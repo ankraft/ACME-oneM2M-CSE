@@ -62,6 +62,11 @@ else:
 			tty.setcbreak(fd)	# Not extra lines in input
 			if select.select([sys.stdin,], [], [], _timeout)[0]:
 				ch = sys.stdin.read(1)
+				if ch == '\x1b':
+					ch2 = sys.stdin.read(1)
+					if ch2 == '[':
+						ch3 = sys.stdin.read(1)
+						ch += ch2 + ch3
 			else:
 				ch = None
 		finally:
