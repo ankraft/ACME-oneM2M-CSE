@@ -181,7 +181,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	L.isInfo and L.log('CSE started')
 
 	# Give the CSE a moment (2s) to experience fatal errors before printing the start message
-	BackgroundWorkerPool.newActor(lambda : [L.console('CSE started') if cseStatus == CSEStatus.RUNNING else None], delay = 2.0 if isHeadless else 0.0 ).start()
+	BackgroundWorkerPool.newActor(lambda : [L.console('CSE started') if cseStatus == CSEStatus.RUNNING else None], delay = 2.0 if isHeadless else 0.0, name = 'Delayed startup message' ).start()
 	
 	return True
 
