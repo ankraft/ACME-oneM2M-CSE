@@ -31,7 +31,7 @@ class BackgroundWorker(object):
 	_logger:Callable[[int, str], None] = logging.log
 
 
-	def __init__(self, interval:float, callback:Callable, name:str = None, startWithDelay:bool = False, maxCount:int = None, dispose:bool = True, id:int = None, runOnTime:bool = True, runPastEvents:bool = False, finished:Callback = None) -> None:
+	def __init__(self, interval:float, callback:Callable, name:str = None, startWithDelay:bool = False, maxCount:int = None, dispose:bool = True, id:int = None, runOnTime:bool = True, runPastEvents:bool = False, finished:Callable = None) -> None:
 		self.interval 				= interval
 		self.runOnTime				= runOnTime			# Compensate for processing time
 		self.runPastEvents			= runPastEvents		# Run events that are in the past
@@ -211,7 +211,7 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def newWorker(cls, interval:float, workerCallback:Callable, name:str = None, startWithDelay:bool = False, maxCount:int = None, dispose:bool = True, runOnTime:bool = True, runPastEvents:bool = False, finished:Callback = None) -> BackgroundWorker:	# typxe:ignore[type-arg]
+	def newWorker(cls, interval:float, workerCallback:Callable, name:str = None, startWithDelay:bool = False, maxCount:int = None, dispose:bool = True, runOnTime:bool = True, runPastEvents:bool = False, finished:Callable = None) -> BackgroundWorker:	# typxe:ignore[type-arg]
 		"""	Create a new background worker that periodically executes the callback.
 		"""
 		# Get a unique worker ID
