@@ -778,6 +778,7 @@ class Configuration(object):
 			questionsCseType = [
 				{	"type": "rawlist",
 					"message": "What type of CSE do you want to run:",
+					'long_instruction': 'Type of CSE to run: Infrastructure, Middle, or Application Service Node.',
 					"default": 1,
 					"choices": lambda x: [ 'IN', 'MN', 'ASN' ],
 					"name": "cseType",
