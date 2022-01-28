@@ -840,7 +840,6 @@ class MissingData:
 
 
 
-
 @dataclass
 class LastTSInstance:
 	"""	Data class for a single TS's latest and next expected TSI/dgt, and other information """
@@ -920,15 +919,20 @@ class ContentSerializationType(ACMEIntEnum):
 		"""
 		default = cls.UNKNOWN if not default else default
 		if not hdr:														return default
+		hdr = hdr.lower()
+
 		if hdr.lower() == 'json':										return cls.JSON
 		if hdr.lower().startswith('application/json'):					return cls.JSON
 		if hdr.lower().startswith('application/vnd.onem2m-res+json'):	return cls.JSON
+
 		if hdr.lower() == 'cbor':										return cls.CBOR
 		if hdr.lower().startswith('application/cbor'):					return cls.CBOR
 		if hdr.lower().startswith('application/vnd.onem2m-res+cbor'):	return cls.CBOR
+		
 		if hdr.lower() == 'xml':										return cls.XML
 		if hdr.lower().startswith('application/xml'):					return cls.XML
 		if hdr.lower().startswith('application/vnd.onem2m-res+XML'):	return cls.XML
+
 		return cls.UNKNOWN
 	
 
@@ -997,9 +1001,9 @@ class Result:
 		elif self.request and self.request.pc:		# Return the dict if the request is set and has a dict
 			r = self.request.pc
 		else:
-		 	r = ''
+			r = ''
 		return r
-	
+
 
 	def prepareResultFromRequest(self, originalRequest:CSERequest) -> None:
 		"""	Copy the necessary fields from an original request. Existing
@@ -1030,12 +1034,6 @@ class Result:
 					if k not in self.request.parameters:
 						self.request.parameters[k] = v
 
-
-	# def __str__(self) -> str:
-	# 	return str(self.toData())
-		
-	# def __repr__(self) -> str:
-	# 	return self.__str__()
 
 ##############################################################################
 #

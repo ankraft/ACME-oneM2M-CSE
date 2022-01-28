@@ -727,16 +727,16 @@ class ACMEPContext(PContext):
 			res = CSE.request.handleRequest(request)
 
 		# Construct response
-		self.setVariables('response.status', str(res.rsc.value))
+		self.setVariable('response.status', str(res.rsc.value))
 		try:
 			if not res.status:
-				self.setVariables('response.resource', res.dbg)
+				self.setVariable('response.resource', res.dbg)
 			elif res.data:
-				self.setVariables('response.resource', json.dumps(res.data) if isinstance(res.data, dict) else str(res.data))
+				self.setVariable('response.resource', json.dumps(res.data) if isinstance(res.data, dict) else str(res.data))
 			elif res.resource:
-				self.setVariables('response.resource', json.dumps(res.resource.asDict()))
+				self.setVariable('response.resource', json.dumps(res.resource.asDict()))
 			else:
-				self.setVariables('response.resource', '')
+				self.setVariable('response.resource', '')
 		except Exception as e:
 			pcontext.setError(PError.invalid, f'Invalid resource or data: {res.data if res.data else res.resource}')
 			L.logErr(f'Error while decoding result: {str(e)}', exc = e)
