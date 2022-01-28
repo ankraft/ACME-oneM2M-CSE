@@ -10,9 +10,9 @@
 from __future__ import annotations
 from typing import List, cast
 import datetime, json, os, sys, webbrowser
+from copy import deepcopy
 from enum import IntEnum, auto
 from xml.etree.ElementTree import iselement
-from rich.console import JustifyMethod
 from rich.style import Style
 from rich.table import Table
 from rich.panel import Panel
@@ -145,37 +145,48 @@ class Console(object):
 
 	def help(self, key:str) -> None:
 		"""	Print help for keyboard commands.
+
+			Args:
+				key: Not used
 		"""
 		self._about('Console Commands')
-		L.console("""- h, ?  - This help
-- A     - About
-- Q, ^C - Shutdown CSE
-- c     - Show configuration
-- C     - Clear the console screen
-- D     - Delete resource
-- E     - Export resource tree to *init* directory
-- i     - Inspect resource
-- I     - Inspect resource and child resources
-- k     - Catalog of scripts
-- l     - Toggle screen logging on/off
-- L     - Toggle through log levels
-- r     - Show CSE registrations
-- s     - Show statistics
-- ^S    - Show & refresh statistics continuously
-- t     - Show resource tree
-- T     - Show child resource tree
-- ^T    - Show & refresh resource tree continuously
-- w     - Show workers status
-- u     - Open web UI
-""", nl = True)
 
-		# List script with key bindings
-		L.console('**Script Commands**', nl = True)
-		lst = ''
-		for each in sorted(CSE.script.findScripts(meta = 'onkey'), key = lambda x: x.getMeta('onkey')):
-			lst += f'- {each.meta.get("onkey")}     - {each.meta.get("description")}\n'
-		L.console(lst, nl = True)
+		# Built-in Console commands
+		commands = [
+			# (Key, description, built-in)
+			('h, ?', 'This help'),
+			('A', 'About'),
+			('Q, ^C', 'Shutdown CSE'),
+			('c', 'Show configuration'),
+			('C', 'Clear the console screen'),
+			('D', 'Delete resource'),
+			('E', 'Export resource tree to *init* directory'),
+			('i', 'Inspect resource'),
+			('I', 'Inspect resource and child resources'),
+			('k', 'Catalog of scripts'),
+			('l', 'Toggle screen logging on/off'),
+			('L', 'Toggle through log levels'),
+			('r', 'Show CSE registrations'),
+			('s', 'Show statistics'),
+			('^S', 'Show & refresh statistics continuously'),
+			('t', 'Show resource tree'),
+			('T', 'Show child resource tree'),
+			('^T', 'Show & refresh resource tree continuously'),
+			('u', 'Open web UI'),
+			('w', 'Show workers status'),
+		]
 
+		table = Table(row_styles = [ '', L.tableRowStyle])
+		table.add_column('Key', no_wrap=True, justify = 'left')
+		table.add_column('Description', no_wrap=True)
+		table.add_column('Script', no_wrap=True, justify='center')
+		for each in commands:
+			table.add_row(each[0], each[1], '', end_section = each == commands[-1])
+
+		# Add Scripts that have a key binding
+		for eachScript in (scripts :=  sorted(CSE.script.findScripts(meta = 'onkey'), key = lambda x: x.getMeta('onkey'))):
+			table.add_row(eachScript.meta.get('onkey'), eachScript.meta.get('description'), '✔︎')
+		L.console(table, nl=True)
 
 
 	def about(self, key:str) -> None:
@@ -244,10 +255,8 @@ Available under the BSD 3-Clause License
 	def workers(self, key:str) -> None:
 		"""	Print the worker and actor ts.
 		"""
-		from rich.table import Table
-
 		L.console('Worker & Actor Threads', isHeader=True)
-		table = Table()
+		table = Table(row_styles = [ '', L.tableRowStyle])
 		table.add_column('Name', no_wrap=True)
 		table.add_column('Type', no_wrap=True)
 		table.add_column('Intvl (s)', no_wrap=True, justify='right')
@@ -261,13 +270,11 @@ Available under the BSD 3-Clause License
 	def configuration(self, key:str) -> None:
 		"""	Print the configuration.
 		"""
-		from rich.table import Table
-
 		L.console('Configuration', isHeader=True)
 		conf = Configuration.print().split('\n')
 		conf.sort()
 			
-		table = Table()
+		table = Table(row_styles = [ '', L.tableRowStyle])
 		table.add_column('Key', no_wrap=True)
 		table.add_column('Value', no_wrap=False)
 		for c in conf:
@@ -417,7 +424,7 @@ Available under the BSD 3-Clause License
 		from rich.style import Style
 		L.console('Script Catalog', isHeader = True)
 		L.off()
-		table = Table(row_styles = [ '', Style(bgcolor = "grey15")])
+		table = Table(row_styles = [ '', L.tableRowStyle])
 		table.add_column('Script', no_wrap = True)
 		table.add_column('Description / Usage')
 		table.add_column('UT ', no_wrap = True, justify = 'center')

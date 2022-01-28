@@ -96,6 +96,7 @@ class Logging:
 
 	terminalStyle:Style				= Style(color = 'spring_green2')
 	terminalStyleError:Style		= Style(color = 'red')
+	tableRowStyle:Style				= Style(bgcolor = 'grey15')
 
 
 	@staticmethod
