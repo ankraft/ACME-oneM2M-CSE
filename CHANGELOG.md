@@ -20,17 +20,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SCRIPTS] A special startup script is now executed during startup. This is also used to import the base resources and replaces the JSON resource imports.
 - [SCRIPTS] Added executing scripts to the console
 - [SCRIPTS] Added scripts tagged with "@uppertester" can be executed as upper tester commands.
+- [SCRIPTS] Added scripts scheduling vie the "@at" meta tag.
 
 ### Changed
 - [CSE] Adapted Announcements to latest R4 changes. 
 - [CSE] Adapted TimeSeries to latest R4 changes. 
 - [CSE] Changed the default release version to 4. Also, the supported and the actual release versions are now fully configurable (in the config file).
 - [CSE] Indicated Release Version must now be the highest value in the list of supported release versions.
-- [TESTS] Replaced CSE test reconfiguration with upper tester commands / script calls.
+- [TESTS] Replaced CSE test cases' re-configurations with upper tester commands / script calls.
 
 ### Removed
 - [HTTP] Removed the http server's configuration and reset endpoints. This functionality is now handled by the upper tester endpoint and scripts.
-- [CSE] Removed import of JSON resources from the init directory during startup. This functionality is now implemented by a startup script. 
+- [CSE] Removed import of JSON resources from the init directory during startup. This functionality is now provided by a startup script. 
 
 ### Fixed
 - [CSE] Improved check that IDs contain only unreserved characters.
