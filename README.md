@@ -28,6 +28,10 @@ Please consult the following pages for further instructions.
 - [Web & Rest UI](docs/WebUI.md)
 - [Importing Resources](docs/Importing.md)
 - [Operation](docs/Operation.md)
+- [ACMEScript](docs/ACMEScript.md)
+	- [Commands](docs/ACMEScript-commands.md)
+	- [Macros](docs/ACMEScript-macros.md)
+	- [Meta Tags](docs/ACMEScript-metatags.md)
 - [Supported Resource Types and Functionalities](docs/Supported.md)
 	- [Limitations](docs/Supported.md#limitations)
 - [Roadmap](docs/Roadmap.md)
@@ -39,11 +43,10 @@ Please consult the following pages for further instructions.
 
 Please see the [Changelog](CHANGELOG.md) for the detailed list of changes.
 
-### Important 1: Example AEs removed
-This release removes the example  AEs from the project. They will become available in another project in the future. This make the distribution a bit smaller and removes the problematic dependency to the *psutil* package, which is not available on all platforms.
+### Important: Changed CSE bootstrapping
+Before this release the initial resources to bootstrap the CSE were JSON scripts that were imported at the CSE's startup phase.
+With this release this is changed to running the script *startup.as* that [imports the initial resources](docs/Importing.md#resources).
 
-### Important 2: Changed the start method (again)
-Due to the project restructuring the CSE is now started with the command ```python3 -m acme```.
 
 ### Highlights in this release
 

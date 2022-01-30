@@ -4,7 +4,8 @@
 
 ## Installation and Configuration
 
-Please refer to the [Installation](Installation.md) and [Configuration](Configuration.md) documentation for installing the CSE and setting up the CSE's configuration. 
+Please refer to the [Installation](Installation.md) and [Configuration](Configuration.md) documentation for
+installing the CSE and setting up the CSE's configuration. 
 
 ## Running the CSE
 
@@ -12,7 +13,8 @@ You can start the CSE by simply running it from a command line:
 
 	python3 -m acme
 
-In this case the [configuration file](Configuration.md) *acme.ini* configuration file must be in the same directory.
+In this case the [configuration file](Configuration.md) *acme.ini* configuration file must be in the same directory. An [interactive
+configuration process](Installation.md#first_setup) is started if the configuration file is not found.
 
 In additions, you can provide additional command line arguments that will override the respective settings from the configuration file:
 
@@ -30,7 +32,6 @@ In additions, you can provide additional command line arguments that will overri
 | --network-interface &lt;ip address                | Specify the network interface/IP address to bind to.<br />This overrides the [listenIF](Configuration.md#server_http) configuration setting.                    |
 | --log-level {info, error, warn, debug, off}       | Set the log level, or turn logging off.<br />This overrides the [level](Configuration.md#logging) configuration setting.                                        |
 | --mqtt, --no-mqtt                                 | Enable or disable the MQTT binding.<br />This overrides MQTT's [enable](Configuration.md#client_mqtt) configuration setting.                                    |
-| --remote-configuration, --no-remote-configuration | Enable or disable http remote configuration endpoint.<br />This overrides the [enableRemoteConfiguration](Configuration.md##server_http) configuration setting. |
 | --remote-cse, --no-remote-cse                     | Enable or disable remote CSE connections and checking.<br />This overrides the [enableRemoteCSE](Configuration.md#general) configuration setting.               |
 | --statistics, --no-statistics                     | Enable or disable collecting CSE statistics.<br />This overrides the [enable](Configuration.md#statistics) configuration setting.                               |
 
@@ -48,50 +49,70 @@ Please note, that the shutdown might take a moment (e.g. gracefully terminating 
 
 ## Command Console
 
-The CSE has a simple command console interface to execute build-in commands. Currently these commands are available:
+The CSE has a command console interface to execute build-in commands. The following commands are available:
 
-- h, ?  - This help
-- Q, ^C - Shutdown CSE
-- A     - About
-- c     - Show configuration
-- C     - Clear the console screen
-- D     - Delete resource
-- E     - Export resource tree to *init* directory
-- i     - Inspect resource
-- I     - Inspect resource and child resources
-- k 	- Show a catalog of available scripts
-- l     - Toggle screen logging on/off
-- L     - Toggle through log levels
-- r     - Show CSE registrations
-- R     - Run a script
-- s     - Show statistics
-- ^S    - Show & refresh statistics continuously
-- t     - Show resource tree
-- T     - Show child resource tree
-- ^T    - Show & refresh resource tree continuously.  
-  Pressing ^T in this mode multiple times toggles through the display modes.
-- u     - Open web UI
-- w     - Show worker threads status
-- Z     - Reset the CSE
+	┏━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┓
+	┃ Key   ┃ Description                               ┃ Script ┃
+	┡━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━┩
+	│ h, ?  │ This help                                 │        │
+	│ A     │ About                                     │        │
+	│ Q, ^C │ Shutdown CSE                              │        │
+	│ c     │ Show configuration                        │        │
+	│ C     │ Clear the console screen                  │        │
+	│ D     │ Delete resource                           │        │
+	│ E     │ Export resource tree to *init* directory  │        │
+	│ i     │ Inspect resource                          │        │
+	│ I     │ Inspect resource and child resources      │        │
+	│ k     │ Catalog of scripts                        │        │
+	│ l     │ Toggle screen logging on/off              │        │
+	│ L     │ Toggle through log levels                 │        │
+	│ r     │ Show CSE registrations                    │        │
+	│ s     │ Show statistics                           │        │
+	│ ^S    │ Show & refresh statistics continuously    │        │
+	│ t     │ Show resource tree                        │        │
+	│ T     │ Show child resource tree                  │        │
+	│ ^T    │ Show & refresh resource tree continuously │        │
+	│ u     │ Open web UI                               │        │
+	│ w     │ Show workers status                       │        │
+	├───────┼───────────────────────────────────────────┼────────┤
+	│ 9     │ test operations                           │   ✔︎    │
+	│ Z     │ Reset and restart the CSE                 │   ✔︎    │
+	└───────┴───────────────────────────────────────────┴────────┘
 
- The following screenshot shows, for example, a CSE's resource tree:
+[Script commands](ACMEScript.md) with configured [key binding](ACMEScript-metatags.md#meta_onkey) are shown in addition to
+the build-in commands.
+
+**Example**  
+The CSE's resource tree can be shown by pressing the `t` key:
 
 ![](images/console_tree.png)
 
+
+
 ### Hiding Resources in the Console's Tree
 
-Sometimes it could be useful if one would be able to hide resources from the console's resource tree. That can be accomplished by listing these resources in the setting *[cse.console].hideResources*. Simple wildcards are allowed in this setting.
+Sometimes it could be useful in demonstrations if one would be able to hide resources from the console's resource tree.
+That can be accomplished by listing these resources in the setting *[cse.console].hideResources*. 
+Simple wildcards are allowed in this setting.
 
 Example to hide all resources with resource identifiers starting with 'acp':
 
 	[cse.console]
 	hideResources=acp*
 
+
 ### Exporting Resources
 
-One of the tasks the CSE performs during start-up is that it imports resources located in the *init* directory. This builds up an initial resource tree. See [Importing Resources](Importing.md#resources) for a more detailed description.
+One of the tasks the CSE performs during start-up is that it imports resources located in the *init* directory. 
+This builds up an initial resource tree. See [Importing Resources](Importing.md#resources) for a more detailed description.
 
-With the console command "E - Export resource tree to *init* directory" one can export the current state of the resource tree to the *init* directory so that it can be imported again automatically during the next CSE start-up, or reset. The structured resource path and the resource type are taken for the filename of the resources, and should be therefore easily identifiable.
+With the console command "E - Export resource tree to *init* directory" one can export the current state of the resource 
+tree to the *init* directory as a [ACMEScript script](ACMEScript.md) so that it can be imported again automatically 
+during the next CSE start-up, or reset. The structured resource path and the resource type are taken for the filename of the 
+resources, and should be therefore easily identifiable.
+
+Resource that have been imported this way are ignored in the export to avoid conflicts.
+
 
 ## Running a Notifications Server
 

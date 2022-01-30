@@ -4,10 +4,7 @@
 [The Messy Details](#messy_details)  
 [Resource Class Hierarchy](#classes)  
 [Integration Into Other Applications](#integration)  
-[Developing Nodes and AEs](#developing_nodes_aes)  
 [Running Test Cases](#test_cases)  
-[HTTP Server Remote Configuration Interface](#config_interface)  
-[Upper Tester Support](#upper_tester)  
 [MyPy Static Type Checker](#mypy)  
 
 
@@ -44,20 +41,6 @@ Please note that in case you provide the arguments directly the first argument n
 
 The names of the *argparse* variables can be used here, and you may provide all or only some of the arguments. Please note that you need to keep or copy the `import` and `sys.path` statements at the top of that file.
 
-
-<a name="developing_nodes_aes"></a>
-## Developing Nodes and AEs
-
-You can develop your own components that technically run inside the CSE themselves by following the pattern of those two components:
-
-- Implement a class with either *AEBase* or *NodeBase* as a base class. This will create an &lt;AE> or &lt;node> resource for you.
--  Implement a worker method and start it in the *\_\_init\_\_()* method. This method is called regularly in the background. This worker method can implement the main functionality of the &lt;AE> or &lt;node>.
--  Implement a *shutdown()* method that is called when the CSE shuts down.
--  Add your new component to the following methods in [acme/CSE.py](../acme/CSE.py):
-	-  *startApps()*: starting your component.
-	-  *stopApps()*: shutting down your component.
-
-There are more helper methods provided by the common *AppBase* and *AEBase* base classes, e.g. to send requests to the CSE via Mca, store AE data persistently etc.
 
 <a name="test_cases"></a>
 ## Running Test Cases
@@ -153,62 +136,6 @@ Some test cases in each test suite build on each other (such as adding a resourc
 
 Some test suites (for example *testRemote*) need in addition to a running IN- or MN-CSE another MN-CSE that registers to the "main" CSE in order to run registration and announcement tests.
 
-<a name="config_interface"></a>
-## HTTP Server Remote Configuration Interface
-
-The http server can register a remote configuration interface (see [enableRemoteConfiguration](Configuration.md#server_http)). This "\_\_config\_\_" endpoint is available under the http server's root. 
-
-**ATTENTION: Enabling this feature exposes configuration values, IDs and passwords, and is a security risk.**
-
-This feature is mainly used for testing and debugging.
-
-### GET Configuration
-When sending a GET request to the endpoint then the full configuration is returned. Example:
-
-	Request: GET /__config__
-
-
-When sending a GET request to the endpoint followed by the name of a configuration macro then the current value of that configuration setting is returned. Example:
-
-	Request: GET /__config__/cse.maxExpirationDelta
- 
-### PUT Configuration
-When sending a PUT request to the endpoint followed by the name of a configuration macro and with a new value in the body of the request then a new value is assigned to that configuration setting.  Example
-
-	Request: POST /__config__/cse.checkExpirationsInterval
-	Body: 2
-
-A successful operation is answered with an *ack* response, an error or failure to process is answered with a *nak* response.
-
-Only the following configuration settings can updated by this method yet:
-
-| Macro name                   | Description                                                                                                        |
-|:-----------------------------|:-------------------------------------------------------------------------------------------------------------------|
-| cse.checkExpirationsInterval | Assigning a new value to this configuration setting will also force a restart CSE's *RegistrationManager* module.  |
-| cse.checkTimeSeriesInterval  | Assigning a new value to this configuration setting will also force a restart CSE's *TimeSeriesManager* component. |
-| cse.req.minet                | Minimum time for &lt;request> resource expiration.                                                                 |
-| cse.req.maxnet               | Maximum time for &lt;request> resource expiration.                                                                 |
-| cse.requestExpirationDelta   | Assign a new value to the *Request Expiration Time* for requests sent by the CSE                                   |
-
-<a name="upper_tester"></a>
-## Upper Tester Support
-
-The CSE has limited support for the *Upper Tester* (UT) test protocol. This protocol is used to trigger a System Under 
-Test to perform certain oneM2M operations and other actions. See oneM2M's TS-0019, *Abstract Test Suite and Implementation
-eXtra Information for Test* specification for further details.
-
-
-To support this feature a special endpoint "\_\_UT\_\_" is available under the server's root. It can be enabled by setting the configuration *[http].enenableUpperTesterEndpoint* in the configuration file to True. See also [enableRemoteConfiguration](Configuration.md#server_http)). 
-
-**ATTENTION: Only use this feature in a controlled environment. Enabling it may lead to a total loss of data because several internal functions and resources are exposed or can be managed without added security.**
-
-### Supported Functions
-
-The *Upper Tester* endpoint only supports a limited set of the functionality specified in TS-0019. The following table presents an overview.
-
-| UT Functionality | Description                                                                                                                                                                                                |
-|------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Reset CSE        | Header field **X-M2M-UTCMD: reset**<br/>Adding this header field in a HTTP request to the endpoint resets the CSE to its initial state. No other function or operation present in the request is executed. |
 
 <a name="mypy"></a>
 ## MyPy Static Type Checker
@@ -216,5 +143,6 @@ The *Upper Tester* endpoint only supports a limited set of the functionality spe
 The CSE code is statically type-checked with [mypy](http://mypy-lang.org). 
 
 Just execute the ```mypy``` command in the project's root directory. It will read its configuration from the configuration file [mypy.ini](../mypy.ini).
+
 
 [← README](../README.md) 

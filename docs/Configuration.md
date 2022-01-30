@@ -7,18 +7,27 @@
 [Advanced Usage](#advanced)  
 
 
-Configuration of CSE parameters is done through a configuration file. This file contains all configurable and customizable settings for the CSE. It is optional, and settings in this file overwrite the CSE's default values. 
+Configuration of CSE parameters is done through a configuration file. This file contains all configurable and customizable
+settings for the CSE. It is optional, and settings in this file overwrite the CSE's default values. 
 
-It follows the Windows INI file format with sections, keywords and values. A configuration file may include comments, prefixed with the characters "#"" or ";"" .
+It follows the Windows INI file format with sections, keywords and values. A configuration file may include comments, 
+prefixed with the characters "#"" or ";"" .
 
-Also, some settings can be applied via the command line when starting the CSE. These command line arguments overwrite the settings in the configuration file.
+Also, some settings can be applied via the command line when starting the CSE. These command line arguments overwrite the
+settings in the configuration file.
 
 
 ## The Configuration File
 
 **Changes should only be done to a copy of the default configuration file.**
 
-A default configuration file is provided with the file [acme.ini.default](../acme.ini.default). Don't make changes to this file, but rather copy it to a new file named *acme.ini*, which is the default configuration file name. You can use another filename, but must then specify it with the *--config* command line argument when running the the (see [Running the CSE](Running.md#running-the-cse)).
+A default configuration file is provided with the file [acme.ini.default](../acme.ini.default). Don't make changes to this file, 
+but rather copy it to a new file named *acme.ini*, which is the default configuration file name. You can use another filename, 
+but must then specify it with the *--config* command line argument when running the 
+(see [Running the CSE](Running.md#running-the-cse)).
+
+If the specified or the default *acme.ini* could not be found then an interactive procedure is started to generate a file
+with basic configuration settings.
 
 
 <a name="sections"></a>
