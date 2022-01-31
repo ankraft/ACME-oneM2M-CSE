@@ -182,10 +182,8 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	cseStatus = CSEStatus.RUNNING
 	event.cseStartup()	# type: ignore
 
-	L.isInfo and L.log('CSE started')
-
 	# Give the CSE a moment (2s) to experience fatal errors before printing the start message
-	BackgroundWorkerPool.newActor(lambda : [L.console('CSE started') if cseStatus == CSEStatus.RUNNING else None], delay = 2.0 if isHeadless else 0.0, name = 'Delayed startup message' ).start()
+	BackgroundWorkerPool.newActor(lambda : (L.console('CSE started'), L.log('CSE started')) if cseStatus == CSEStatus.RUNNING else None, delay = 2.0 if isHeadless else 0.5, name = 'Delayed startup message' ).start()
 	
 	return True
 
@@ -196,6 +194,9 @@ def shutdown() -> None:
 		The actual shutdown happens in the _shutdown() method.
 	"""
 	global cseStatus
+	
+	if cseStatus in [ CSEStatus.STOPPING, CSEStatus.STOPPED ]:
+		return
 	
 	# indicating the shutting down status. When running in another environment the
 	# atexit-handler might not be called. Therefore, we need to set it here

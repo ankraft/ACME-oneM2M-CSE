@@ -14,6 +14,15 @@
 1. **Corrupt database files**  
    In very rare cases, e.g. when the CSE was not properly shut down, the on-disk database files may be corrupted. The CSE tries to detect this during start-up, but there is not much one can do about this. However, a backup of the database file is created every time the CSE starts. This backup can be found in the *backup* sub-directory of the *data* directory. 
 
+
+## HTTP
+
+1. **What does the error message "[Errno 13] Permission denied" during startup of the CSE mean?**  
+   This error is shown by the CSE when the http server tries to bind to a TCP/IP port to listen for incoming requests, 
+   but doesn't have enough privileges to do so. This usually happens when an http port < 1024 is configured (e.g. 80) and 
+   the CSE is run with normal user privileges. Either run the CSE with admin / superuser rights (NOT recommended), 
+   or choose another TCP/IP port, larger than 1024.
+
 ## MQTT
 
 1. **What does the error message "Out of memory" mean that appears sometimes?**  

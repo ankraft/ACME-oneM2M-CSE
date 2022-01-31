@@ -171,7 +171,14 @@ class HttpServer(object):
 				# No logging for headless, nevertheless print the reason what happened
 				if CSE.isHeadless:
 					L.console(str(e), isError=True)
-				L.logErr(str(e))
+				if type(e) == PermissionError:
+					m  = f'{e}.'
+					m += f' You may not have enough permission to run a server on this port ({self.port}).'
+					if self.port < 1024:
+						m += ' Try another, non-privileged port > 1024.'
+					L.logErr(m )
+				else:
+					L.logErr(str(e))
 				CSE.shutdown() # exit the CSE. Cleanup happens in the CSE atexit() handler
 
 
