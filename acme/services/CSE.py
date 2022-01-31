@@ -135,6 +135,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	L.log('Starting CSE')
 	L.log(f'CSE-Type: {cseType.name}')
 	L.log(Configuration.print())
+	L.enableQueue = False		# No queuing of log messages during startup
 	
 	# set the logger for the backgroundWorkers. Add an offset to compensate for
 	# this and other redirect functions to determine the correct file / linenumber
@@ -173,6 +174,9 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	if not mqttClient.run():				# This does return
 		cseStatus = CSEStatus.STOPPED
 		return False 					
+
+	# Enable log queuing
+	L.enableQueue = True	
 
 	# Send an event that the CSE startup finished
 	cseStatus = CSEStatus.RUNNING
@@ -214,6 +218,7 @@ def _shutdown() -> None:
 		return
 		
 	cseStatus = CSEStatus.STOPPING
+	L.enableQueue = False
 	L.isInfo and L.log('CSE shutting down')
 	if event:	# send shutdown event
 		event.cseShutdown() 	# type: ignore
@@ -254,6 +259,7 @@ def resetCSE() -> None:
 		L.isWarn and L.logWarn('Resetting CSE started')
 		L.enableScreenLogging = True
 		L.setLogLevel(Configuration.get('logging.level'))
+		L.enableQueue = False	# Disable log queuing for restart
 		
 		httpServer.pause()
 		mqttClient.pause()
@@ -269,6 +275,11 @@ def resetCSE() -> None:
 		remote.restart()
 		mqttClient.unpause()
 		httpServer.unpause()
+
+		# Enable log queuing again
+		L.enableQueue = True
+
+		# Send restart event
 		event.cseRestarted()	# type: ignore [attr-defined]   
 
 		cseStatus = CSEStatus.RUNNING

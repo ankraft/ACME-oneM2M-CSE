@@ -86,6 +86,7 @@ class Logging:
 	enableBindingsLogging			= True
 	worker 							= None
 	queue:Queue						= None
+	enableQueue						= True
 
 	queueMaxsize:int				= 5000		# max number of items in the logging queue. Might otherwise grow forever on large load
 
@@ -211,16 +212,22 @@ class Logging:
 
 
 	@staticmethod
+	def _logMessageToLoggerConsole(level:int, msg:str, caller:inspect.Traceback, thread:threading.Thread) -> None:
+		if isinstance(msg, str):
+			Logging.loggerConsole.log(level, f'{os.path.basename(caller.filename)}*{caller.lineno}*{thread.name:<10.10}*{str(msg)}')
+		else:
+			try:
+				richInspect(msg, private = True, docs = False, dunder = False)
+			except:
+				pass
+			
+	@staticmethod
 	def loggingActor() -> bool:
 		while Logging._logWorker.running:
 			level, msg, caller, thread = Logging.queue.get(block = True)
-			if isinstance(msg, str):
-				Logging.loggerConsole.log(level, f'{os.path.basename(caller.filename)}*{caller.lineno}*{thread.name:<10.10}*{str(msg)}')
-			else:
-				try:
-					richInspect(msg, private = True, docs = False, dunder = False)
-				except:
-					pass
+			if msg and not len(msg):
+				continue
+			Logging._logMessageToLoggerConsole(level, msg, caller, thread)
 		return True
 
 
@@ -286,11 +293,18 @@ class Logging:
 		"""
 		if Logging.logLevel <= level:
 			# Queue a log message : (level, message, caller from stackframe, current thread)
-			try:
-				Logging.queue.put((level, msg, inspect.getframeinfo(inspect.stack()[2 if not stackOffset else 2+stackOffset][0]), threading.current_thread()))
-			except Exception as e:
-				# sometimes this raises an exception. Just ignore it.
-				pass
+			caller = inspect.getframeinfo(inspect.stack()[2 if not stackOffset else 2+stackOffset][0])
+			thread = threading.current_thread()
+			if Logging.enableQueue:
+				Logging.queue.put((level, msg, caller, thread))
+			else:
+				if msg:
+					Logging._logMessageToLoggerConsole(level, msg, caller, thread)
+			# try:
+			# 	Logging.queue.put((level, msg, inspect.getframeinfo(inspect.stack()[2 if not stackOffset else 2+stackOffset][0]), threading.current_thread()))
+			# except Exception as e:
+			# 	# sometimes this raises an exception. Just ignore it.
+			# 	pass
 	
 
 	@staticmethod
