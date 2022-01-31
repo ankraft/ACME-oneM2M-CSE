@@ -139,8 +139,8 @@ class Importer(object):
 			fn = os.path.join(path, fno)
 			L.isDebug and L.logDebug(f'Importing policies: {fno}')
 			if os.path.exists(fn):
-				if not (lst := cast(JSONLIST, self.readJSONFromFile(fn))):
-					continue
+				if (lst := cast(JSONLIST, self.readJSONFromFile(fn))) is None:
+					return False
 				for ap in lst:
 					if not (tpe := findXPath(ap, 'type')):
 						L.logErr(f'Missing or empty resource type in file: {fn}')
