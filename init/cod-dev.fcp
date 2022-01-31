@@ -1,53 +1,24 @@
 // Created by SDTTool
-// oneM2M Release: 4.5.0
+// oneM2M Release: 4.9.0
 // Domain:         org.onem2m.common
 [
-    // SubDevice: subDevicePowerOutlet
-    {
-        "type"      : "cod:sDPO0",
-        "lname"     : "sDPOt",
-        "cnd"       : "org.onem2m.common.subdevice.subDevicePowerOutlet",
-        "children"  : [
-            "cod:binSh", 
-            "cod:eneCn", 
-            "cod:oveSr", 
-            "cod:numVe"
-        ]
-    },
 
-    // SubDevice Announced: subDevicePowerOutletAnnc
-    {
-        "type"      : "cod:sDPO0Annc",
-        "lname"     : "sDPOtAnnc",
-        "cnd"       : "org.onem2m.common.subdevice.subDevicePowerOutletAnnc",
-        "children"  : [
-            "cod:binSh", 
-            "cod:binShAnnc", 
-            "cod:eneCn", 
-            "cod:eneCnAnnc", 
-            "cod:oveSr", 
-            "cod:oveSrAnnc", 
-            "cod:numVe", 
-            "cod:numVeAnnc"
-        ]
-    }
-
-,
     // DeviceClass: deviceThreeDPrinter
     {
-        "type"      : "cod:dTDPr",
+        "type"      : "cod:dTDP0",
         "lname"     : "deviceThreeDPrinter",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceThreeDPrinter",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
         "children"  : [
             "cod:binSh", 
             "cod:fauDn", 
-            "cod:thDPr", 
+            "cod:thDP0", 
             "cod:runSe", 
             "cod:tempe", 
             "cod:priQe"
@@ -58,12 +29,13 @@
 
     // DeviceClass Announced: deviceThreeDPrinterAnnc
     {
-        "type"      : "cod:dTDPrAnnc",
+        "type"      : "cod:dTDP0Annc",
         "lname"     : "deviceThreeDPrinterAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceThreeDPrinterAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -72,8 +44,8 @@
             "cod:binShAnnc", 
             "cod:fauDn", 
             "cod:fauDnAnnc", 
-            "cod:thDPr", 
-            "cod:thDPrAnnc", 
+            "cod:thDP0", 
+            "cod:thDP0Annc", 
             "cod:runSe", 
             "cod:runSeAnnc", 
             "cod:tempe", 
@@ -87,10 +59,11 @@
     {
         "type"      : "cod:dAQMr",
         "lname"     : "deviceAirQualityMonitor",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceAirQualityMonitor",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -108,10 +81,11 @@
     {
         "type"      : "cod:dAQMrAnnc",
         "lname"     : "deviceAirQualityMonitorAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceAirQualityMonitorAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -131,10 +105,11 @@
     {
         "type"      : "cod:deARr",
         "lname"     : "deviceAudioReceiver",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceAudioReceiver",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -152,10 +127,11 @@
     {
         "type"      : "cod:deARrAnnc",
         "lname"     : "deviceAudioReceiverAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceAudioReceiverAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -175,10 +151,11 @@
     {
         "type"      : "cod:devCa",
         "lname"     : "deviceCamera",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceCamera",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -195,10 +172,11 @@
     {
         "type"      : "cod:devCaAnnc",
         "lname"     : "deviceCameraAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceCameraAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -214,12 +192,13 @@
 
     // DeviceClass: deviceDoor
     {
-        "type"      : "cod:devDr",
+        "type"      : "cod:devD0",
         "lname"     : "deviceDoor",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceDoor",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -234,12 +213,13 @@
 
     // DeviceClass Announced: deviceDoorAnnc
     {
-        "type"      : "cod:devDrAnnc",
+        "type"      : "cod:devD0Annc",
         "lname"     : "deviceDoorAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceDoorAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -257,10 +237,11 @@
     {
         "type"      : "cod:deDLk",
         "lname"     : "deviceDoorLock",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceDoorLock",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -277,10 +258,11 @@
     {
         "type"      : "cod:deDLkAnnc",
         "lname"     : "deviceDoorLockAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceDoorLockAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -298,10 +280,11 @@
     {
         "type"      : "cod:deGSr",
         "lname"     : "deviceGenericSensor",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceGenericSensor",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -322,10 +305,11 @@
     {
         "type"      : "cod:deGSrAnnc",
         "lname"     : "deviceGenericSensorAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceGenericSensorAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -351,10 +335,11 @@
     {
         "type"      : "cod:devLt",
         "lname"     : "deviceLight",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceLight",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -364,7 +349,8 @@
             "cod:runSe", 
             "cod:color", 
             "cod:colSn", 
-            "cod:brigs"
+            "cod:brigs", 
+            "cod:timer"
         ]
     },        
 
@@ -374,10 +360,11 @@
     {
         "type"      : "cod:devLtAnnc",
         "lname"     : "deviceLightAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceLightAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -393,7 +380,9 @@
             "cod:colSn", 
             "cod:colSnAnnc", 
             "cod:brigs", 
-            "cod:brigsAnnc"
+            "cod:brigsAnnc", 
+            "cod:timer", 
+            "cod:timerAnnc"
         ]
     }, 
 
@@ -401,10 +390,11 @@
     {
         "type"      : "cod:dMFPr",
         "lname"     : "deviceMultiFunctionPrinter",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceMultiFunctionPrinter",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -423,10 +413,11 @@
     {
         "type"      : "cod:dMFPrAnnc",
         "lname"     : "deviceMultiFunctionPrinterAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceMultiFunctionPrinterAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -448,10 +439,11 @@
     {
         "type"      : "cod:devPr",
         "lname"     : "devicePrinter",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.devicePrinter",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -468,10 +460,11 @@
     {
         "type"      : "cod:devPrAnnc",
         "lname"     : "devicePrinterAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.devicePrinterAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -489,10 +482,11 @@
     {
         "type"      : "cod:devSr",
         "lname"     : "deviceScanner",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceScanner",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -509,10 +503,11 @@
     {
         "type"      : "cod:devSrAnnc",
         "lname"     : "deviceScannerAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceScannerAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -530,10 +525,11 @@
     {
         "type"      : "cod:devTt",
         "lname"     : "deviceThermostat",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceThermostat",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -550,10 +546,11 @@
     {
         "type"      : "cod:devTtAnnc",
         "lname"     : "deviceThermostatAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceThermostatAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -571,10 +568,11 @@
     {
         "type"      : "cod:deSBn",
         "lname"     : "deviceServiceButton",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceServiceButton",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -596,10 +594,11 @@
     {
         "type"      : "cod:deSBnAnnc",
         "lname"     : "deviceServiceButtonAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceServiceButtonAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -627,10 +626,11 @@
     {
         "type"      : "cod:deSPg",
         "lname"     : "deviceSmartPlug",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceSmartPlug",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -648,10 +648,11 @@
     {
         "type"      : "cod:deSPgAnnc",
         "lname"     : "deviceSmartPlugAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceSmartPlugAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -671,10 +672,11 @@
     {
         "type"      : "cod:devSh",
         "lname"     : "deviceSwitch",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceSwitch",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -689,10 +691,11 @@
     {
         "type"      : "cod:devShAnnc",
         "lname"     : "deviceSwitchAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceSwitchAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -706,10 +709,11 @@
     {
         "type"      : "cod:devTr",
         "lname"     : "deviceThermometer",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceThermometer",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -725,10 +729,11 @@
     {
         "type"      : "cod:devTrAnnc",
         "lname"     : "deviceThermometerAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceThermometerAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -744,10 +749,11 @@
     {
         "type"      : "cod:devTt",
         "lname"     : "deviceThermostat",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceThermostat",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -764,10 +770,11 @@
     {
         "type"      : "cod:devTtAnnc",
         "lname"     : "deviceThermostatAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceThermostatAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -785,10 +792,11 @@
     {
         "type"      : "cod:deWVe",
         "lname"     : "deviceWaterValve",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceWaterValve",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -803,10 +811,11 @@
     {
         "type"      : "cod:deWVeAnnc",
         "lname"     : "deviceWaterValveAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceWaterValveAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -820,10 +829,11 @@
     {
         "type"      : "cod:deWVe",
         "lname"     : "deviceWaterValve",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceWaterValve",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -838,16 +848,121 @@
     {
         "type"      : "cod:deWVeAnnc",
         "lname"     : "deviceWaterValveAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.common.device.deviceWaterValveAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
         "children"  : [
             "cod:opeLl", 
             "cod:opeLlAnnc"
+        ]
+    }, 
+
+    // DeviceClass: deviceThreeDDisplay
+    {
+        "type"      : "cod:dTDDy",
+        "lname"     : "deviceThreeDDisplay",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.common.device.deviceThreeDDisplay",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:binSh", 
+            "cod:clock", 
+            "cod:audVe", 
+            "cod:thDDy", 
+            "cod:conny", 
+            "cod:runSe", 
+            "cod:lock"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceThreeDDisplayAnnc
+    {
+        "type"      : "cod:dTDDyAnnc",
+        "lname"     : "deviceThreeDDisplayAnnc",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.common.device.deviceThreeDDisplayAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:clock", 
+            "cod:clockAnnc", 
+            "cod:audVe", 
+            "cod:audVeAnnc", 
+            "cod:thDDy", 
+            "cod:thDDyAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:lock", 
+            "cod:lockAnnc"
+        ]
+    }, 
+
+    // DeviceClass: deviceThreeDScanner
+    {
+        "type"      : "cod:dTDSr",
+        "lname"     : "deviceThreeDScanner",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.common.device.deviceThreeDScanner",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:binSh", 
+            "cod:clock", 
+            "cod:runSe", 
+            "cod:thDSr", 
+            "cod:conny"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceThreeDScannerAnnc
+    {
+        "type"      : "cod:dTDSrAnnc",
+        "lname"     : "deviceThreeDScannerAnnc",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.common.device.deviceThreeDScannerAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:clock", 
+            "cod:clockAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:thDSr", 
+            "cod:thDSrAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc"
         ]
     }
 

@@ -1,14 +1,15 @@
 // Created by SDTTool
-// oneM2M Release: 4.5.0
+// oneM2M Release: 4.9.0
 // Domain:         org.onem2m.management
 [
     // SubDevice: dmAreaNwkInfo
     {
         "type"      : "mad:dANI0",
         "lname"     : "dANIo",
+        "sdttype"   : "subdevice",
         "cnd"       : "org.onem2m.management.subdevice.dmAreaNwkInfo",
         "children"  : [
-            "mad:dANDI"
+            "mad:dANDo"
         ]
     },
 
@@ -16,10 +17,11 @@
     {
         "type"      : "mad:dANI0Annc",
         "lname"     : "dANIoAnnc",
+        "sdttype"   : "subdevice",
         "cnd"       : "org.onem2m.management.subdevice.dmAreaNwkInfoAnnc",
         "children"  : [
-            "mad:dANDI", 
-            "mad:dANDIAnnc"
+            "mad:dANDo", 
+            "mad:dANDoAnnc"
         ]
     }
 
@@ -28,24 +30,31 @@
     {
         "type"      : "mad:fleNe",
         "lname"     : "flexNode",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.management.device.flexNode",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
-            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }, 
+            // Property: nodeID
+            { "sname" : "nodID", "lname" : "nodeID", "type" : "string", "car" : "1" }, 
+            // Property: hostedAELinks
+            { "sname" : "hAELs", "lname" : "hostedAELinks", "type" : "string", "car" : "01" }, 
+            // Property: hostedServiceLinks
+            { "sname" : "hoSLs", "lname" : "hostedServiceLinks", "type" : "string", "car" : "01" }
         ],
         "children"  : [
-            "mad:dmgAt", 
+            "mad:dmAgt", 
             "mad:dmDIo", 
             "mad:dDMIO", 
-            "mad:dmiFe", 
-            "mad:dmoSe", 
+            "mad:dmFie", 
+            "mad:dmSoe", 
             "mad:dmELg", 
-            "mad:dmaPe", 
+            "mad:dmPae", 
             "cod:bat", 
-            "mad:dmaCy", 
-            "mad:dmtSe", 
+            "mad:dmCay", 
+            "mad:dmSte", 
             "mad:dANIo"
         ]
     },        
@@ -56,34 +65,41 @@
     {
         "type"      : "mad:fleNeAnnc",
         "lname"     : "flexNodeAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.management.device.flexNodeAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
-            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }, 
+            // Property: nodeID
+            { "sname" : "nodID", "lname" : "nodeID", "type" : "string", "car" : "1" }, 
+            // Property: hostedAELinks
+            { "sname" : "hAELs", "lname" : "hostedAELinks", "type" : "string", "car" : "01" }, 
+            // Property: hostedServiceLinks
+            { "sname" : "hoSLs", "lname" : "hostedServiceLinks", "type" : "string", "car" : "01" }
         ],
         "children"  : [
-            "mad:dmgAt", 
-            "mad:dmgAtAnnc", 
+            "mad:dmAgt", 
+            "mad:dmAgtAnnc", 
             "mad:dmDIo", 
             "mad:dmDIoAnnc", 
             "mad:dDMIO", 
             "mad:dDMIOAnnc", 
-            "mad:dmiFe", 
-            "mad:dmiFeAnnc", 
-            "mad:dmoSe", 
-            "mad:dmoSeAnnc", 
+            "mad:dmFie", 
+            "mad:dmFieAnnc", 
+            "mad:dmSoe", 
+            "mad:dmSoeAnnc", 
             "mad:dmELg", 
             "mad:dmELgAnnc", 
-            "mad:dmaPe", 
-            "mad:dmaPeAnnc", 
+            "mad:dmPae", 
+            "mad:dmPaeAnnc", 
             "cod:bat", 
             "cod:batAnnc", 
-            "mad:dmaCy", 
-            "mad:dmaCyAnnc", 
-            "mad:dmtSe", 
-            "mad:dmtSeAnnc", 
+            "mad:dmCay", 
+            "mad:dmCayAnnc", 
+            "mad:dmSte", 
+            "mad:dmSteAnnc", 
             "mad:dANIo", 
             "mad:dANIoAnnc"
         ]

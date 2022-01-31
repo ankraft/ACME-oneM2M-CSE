@@ -1,5 +1,5 @@
 // Created by SDTTool
-// oneM2M Release: 4.5.0
+// oneM2M Release: 4.9.0
 // Domain:         org.onem2m.railway
 [
 
@@ -7,10 +7,11 @@
     {
         "type"      : "rad:dHPTT",
         "lname"     : "deviceHandheldPTTTerminal",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.railway.device.deviceHandheldPTTTerminal",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -35,10 +36,11 @@
     {
         "type"      : "rad:dHPTTAnnc",
         "lname"     : "deviceHandheldPTTTerminalAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.railway.device.deviceHandheldPTTTerminalAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -72,10 +74,11 @@
     {
         "type"      : "rad:deTTl",
         "lname"     : "deviceTrainborneTerminal",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.railway.device.deviceTrainborneTerminal",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -101,10 +104,11 @@
     {
         "type"      : "rad:deTTlAnnc",
         "lname"     : "deviceTrainborneTerminalAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.railway.device.deviceTrainborneTerminalAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -133,6 +137,231 @@
             "rad:baTMeAnnc", 
             "cod:conny", 
             "cod:connyAnnc"
+        ]
+    }, 
+
+    // DeviceClass: deviceCardRechargingMachine
+    {
+        "type"      : "rad:dCRMe",
+        "lname"     : "deviceCardRechargingMachine",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.railway.device.deviceCardRechargingMachine",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:binSh", 
+            "cod:clock", 
+            "cod:eneCn", 
+            "cod:keypd", 
+            "cod:pushn", 
+            "cod:audVe", 
+            "cod:pPCRr", 
+            "cod:bilDt", 
+            "cod:bilWl", 
+            "cod:coiDt", 
+            "cod:casDr", 
+            "cod:carSr", 
+            "cod:conny", 
+            "cod:runSe", 
+            "cod:lock"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceCardRechargingMachineAnnc
+    {
+        "type"      : "rad:dCRMeAnnc",
+        "lname"     : "deviceCardRechargingMachineAnnc",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.railway.device.deviceCardRechargingMachineAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:clock", 
+            "cod:clockAnnc", 
+            "cod:eneCn", 
+            "cod:eneCnAnnc", 
+            "cod:keypd", 
+            "cod:keypdAnnc", 
+            "cod:pushn", 
+            "cod:pushnAnnc", 
+            "cod:audVe", 
+            "cod:audVeAnnc", 
+            "cod:pPCRr", 
+            "cod:pPCRrAnnc", 
+            "cod:bilDt", 
+            "cod:bilDtAnnc", 
+            "cod:bilWl", 
+            "cod:bilWlAnnc", 
+            "cod:coiDt", 
+            "cod:coiDtAnnc", 
+            "cod:casDr", 
+            "cod:casDrAnnc", 
+            "cod:carSr", 
+            "cod:carSrAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:lock", 
+            "cod:lockAnnc"
+        ]
+    }, 
+
+    // DeviceClass: deviceSmartGate
+    {
+        "type"      : "rad:deSGe",
+        "lname"     : "deviceSmartGate",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.railway.device.deviceSmartGate",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:binSh", 
+            "cod:clock", 
+            "cod:eneCn", 
+            "cod:pusBn", 
+            "cod:audVe", 
+            "cod:pPCRr", 
+            "cod:traSr", 
+            "cod:conny", 
+            "cod:runSe", 
+            "cod:dirPl", 
+            "cod:color", 
+            "cod:colSn", 
+            "cod:brigs", 
+            "cod:croBr"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceSmartGateAnnc
+    {
+        "type"      : "rad:deSGeAnnc",
+        "lname"     : "deviceSmartGateAnnc",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.railway.device.deviceSmartGateAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:clock", 
+            "cod:clockAnnc", 
+            "cod:eneCn", 
+            "cod:eneCnAnnc", 
+            "cod:pusBn", 
+            "cod:pusBnAnnc", 
+            "cod:audVe", 
+            "cod:audVeAnnc", 
+            "cod:pPCRr", 
+            "cod:pPCRrAnnc", 
+            "cod:traSr", 
+            "cod:traSrAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:dirPl", 
+            "cod:dirPlAnnc", 
+            "cod:color", 
+            "cod:colorAnnc", 
+            "cod:colSn", 
+            "cod:colSnAnnc", 
+            "cod:brigs", 
+            "cod:brigsAnnc", 
+            "cod:croBr", 
+            "cod:croBrAnnc"
+        ]
+    }, 
+
+    // DeviceClass: deviceSmartScreenDoor
+    {
+        "type"      : "rad:dSSDr",
+        "lname"     : "deviceSmartScreenDoor",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.railway.device.deviceSmartScreenDoor",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:binSh", 
+            "cod:clock", 
+            "cod:binSh", 
+            "cod:pusBn", 
+            "cod:audVe", 
+            "cod:audVe", 
+            "cod:traSr", 
+            "cod:conny", 
+            "cod:runSe", 
+            "cod:dirPl", 
+            "cod:colSn", 
+            "cod:brigs"
+        ]
+    },        
+
+
+
+    // DeviceClass Announced: deviceSmartScreenDoorAnnc
+    {
+        "type"      : "rad:dSSDrAnnc",
+        "lname"     : "deviceSmartScreenDoorAnnc",
+        "sdttype"   : "device",
+        "cnd"       : "org.onem2m.railway.device.deviceSmartScreenDoorAnnc",
+        "attributes": [
+            // Property: nodeLink
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            // Property: flexNodeLink
+            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
+        ],
+        "children"  : [
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:clock", 
+            "cod:clockAnnc", 
+            "cod:binSh", 
+            "cod:binShAnnc", 
+            "cod:pusBn", 
+            "cod:pusBnAnnc", 
+            "cod:audVe", 
+            "cod:audVeAnnc", 
+            "cod:audVe", 
+            "cod:audVeAnnc", 
+            "cod:traSr", 
+            "cod:traSrAnnc", 
+            "cod:conny", 
+            "cod:connyAnnc", 
+            "cod:runSe", 
+            "cod:runSeAnnc", 
+            "cod:dirPl", 
+            "cod:dirPlAnnc", 
+            "cod:colSn", 
+            "cod:colSnAnnc", 
+            "cod:brigs", 
+            "cod:brigsAnnc"
         ]
     }
 
