@@ -671,7 +671,7 @@ Available under the BSD 3-Clause License
 					extraInfo = f' ({res.cnd})'
 				if res.ty in [ T.CIN, T.TS ]:
 					extraInfo = f' ({res.cnf})' if res.cnf else ''
-				elif res.ty == T.CSEBase:
+				elif res.ty in [ T.CSEBase, T.CSEBaseAnnc, T.CSR ]:
 					extraInfo = f' (csi={res.csi})'
 			
 			# Determine content
