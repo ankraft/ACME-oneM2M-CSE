@@ -255,7 +255,7 @@ log Hello, World!
 
 
 <a name="command_logerror"></a>
-### ERROR
+### LOGERROR
 
 Usage:  
 LOGERROR &lt;message>

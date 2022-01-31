@@ -41,8 +41,8 @@ Example:
 
 ```text
 if ${argc} > 2
-	error Wrong number of arguments
-	quit
+	logError Wrong number of arguments
+	error
 endif
 ``` 
 
