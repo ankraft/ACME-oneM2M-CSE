@@ -1092,6 +1092,7 @@ class RequestHeaders:
 	resourceType:ResourceTypes				= None
 	requestExpirationTimestamp:str 			= None 	# X-M2M-RET
 	_retUTCts:float							= None 	# X-M2M-RET as UTC based timestamp
+	""" request expiration timeout as UTC-based timestamp """
 	resultExpirationTimestamp:str			= None 	# X-M2M-RST
 	operationExecutionTime:str 				= None 	# X-M2M-OET
 	releaseVersionIndicator:str 			= None 	# X-M2M-RVI

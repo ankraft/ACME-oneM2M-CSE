@@ -571,44 +571,56 @@ def resourceFromCSI(csi:str) -> Result:
 	return CSE.storage.retrieveResource(csi=csi)
 
 	
-def fanoutPointResource(id: str) -> Resource:
-	"""	Check whether the target contains a fanoutPoint in between or as the target.
+def fanoutPointResource(id:str) -> Resource:
+	"""	Check whether the target resource contains a fanoutPoint along its path,
+		is a fanoutPoint itself.
 
-		Return either the virtual fanoutPoint resource or None.
+		Args:
+			id: the target's resource ID.
+		Return:
+			Return either the virtual fanoutPoint resource or None.
 	"""
 	if not id:
 		return None
 	# Convert to srn
 	if not isStructured(id):
-		id = structuredPathFromRI(id)
-	if not id:
-		return None
+		if not (id := structuredPathFromRI(id)):
+			return None
+	# from here on id is a srn
 	nid = None
 	if id.endswith('/fopt'):
 		nid = id
-	elif '/fopt/' in id:
-		(head, sep, tail) = id.partition('/fopt/')
-		nid = head + '/fopt'
+	else:
+		(head, found, _) = id.partition('/fopt/')
+		if found:
+			nid = head + '/fopt'
+	# elif '/fopt/' in id:
+	# 	(head, sep, tail) = id.partition('/fopt/')
+	# 	nid = head + '/fopt'
+
 	if nid and (result := CSE.dispatcher.retrieveResource(nid)).resource:
 		return cast(Resource, result.resource)
 	return None
 
 
-def pollingChannelURIResource(id: str) -> PCH_PCU:
+def pollingChannelURIResource(id:str) -> PCH_PCU:
 	"""	Check whether the target is a PollingChannelURI resource and return it.
 
-		Return either the virtual PollingChannelURI resource or None.
+		Args:
+			id: Target resource ID
+		Return:
+			Return either the virtual PollingChannelURI resource or None.
 	"""
 	if not id:
 		return None
 	if id.endswith('pcu'):
 		# Convert to srn
 		if not isStructured(id):
-			id = structuredPathFromRI(id)
-		if not id:
-			return None
+			if not (id := structuredPathFromRI(id)):
+				return None
 		if (result := CSE.dispatcher.retrieveResource(id)).resource and result.resource.ty == T.PCH_PCU:
 			return cast(PCH_PCU, result.resource)
+		# Fallthrough
 	return None
 
 

@@ -41,6 +41,11 @@ class Dispatcher(object):
 
 
 	def shutdown(self) -> bool:
+		"""	Shutdown the Dispatcher servide.
+			
+			Return:
+				Boolean indicating the success.
+		"""
 		L.isInfo and L.log('Dispatcher shut down')
 		return True
 
@@ -57,7 +62,17 @@ class Dispatcher(object):
 	#	Retrieve resources
 	#
 
-	def processRetrieveRequest(self, request:CSERequest, originator:str, id:str=None) -> Result:
+	def processRetrieveRequest(self, request:CSERequest, originator:str, id:str = None) -> Result:
+		"""	Process a RETRIEVE request. Retrieve and discover resource(s).
+
+			Args:
+				request: The incoming request.
+				originator: The requests originator.
+				id: Optional ID of the request.
+			Return:
+				Result object.
+		
+		"""
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
 		# Handle operation execution time and check request expiration
@@ -73,8 +88,8 @@ class Dispatcher(object):
 		# Handle PollingChannelURI RETRIEVE
 		if (pollingChannelURIResource := Utils.pollingChannelURIResource(srn)):		# We need to check the srn here
 			if not CSE.security.hasAccessToPollingChannel(originator, pollingChannelURIResource):
-				L.logDebug(dbg:=f'Originator: {originator} has not access to <pollingChannelURI>: {id}')
-				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=dbg)
+				L.logDebug(dbg := f'Originator: {originator} has not access to <pollingChannelURI>: {id}')
+				return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = dbg)
 			L.isDebug and L.logDebug(f'Redirecting request <PCU>: {pollingChannelURIResource.__srn__}')
 			return pollingChannelURIResource.handleRetrieveRequest(request, id, originator)
 
@@ -82,9 +97,9 @@ class Dispatcher(object):
 
 		# check rcn & operation
 		if permission == Permission.DISCOVERY and request.args.rcn not in [ RCN.discoveryResultReferences, RCN.childResourceReferences ]:	# Only allow those two
-			return Result(status=False, rsc=RC.badRequest, dbg=f'invalid rcn: {int(request.args.rcn)} for fu: {int(request.args.fu)}')
+			return Result(status = False, rsc = RC.badRequest, dbg = f'invalid rcn: {int(request.args.rcn)} for fu: {int(request.args.fu)}')
 		if permission == Permission.RETRIEVE and request.args.rcn not in [ RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource, RCN.childResourceReferences]: # TODO
-			return Result(status=False, rsc=RC.badRequest, dbg=f'invalid rcn: {int(request.args.rcn)} for fu: {int(request.args.fu)}')
+			return Result(status = False, rsc = RC.badRequest, dbg = f'invalid rcn: {int(request.args.rcn)} for fu: {int(request.args.fu)}')
 
 		L.isDebug and L.logDebug(f'Discover/Retrieve resources (rcn: {request.args.rcn}, fu: {request.args.fu.name}, drt: {request.args.drt.name}, handling: {request.args.handling}, conditions: {request.args.conditions}, resultContent: {request.args.rcn.name}, attributes: {str(request.args.attributes)})')
 
@@ -93,7 +108,7 @@ class Dispatcher(object):
 			if not (res := self.retrieveResource(id, originator, request)).status:
 			 	return res # error
 			if not CSE.security.hasAccess(originator, res.resource, permission):
-				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg=f'originator has no permission ({permission})')
+				return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = f'originator has no permission ({permission})')
 
 			# if rcn == attributes then we can return here, whatever the result is
 			if request.args.rcn == RCN.attributes:
@@ -108,7 +123,7 @@ class Dispatcher(object):
 				if not resource:	# continue only when there actually is a resource
 					return res
 				if not (lnk := resource.lnk):	# no link attribute?
-					return Result(status=False, rsc=RC.badRequest, dbg='missing lnk attribute in target resource')
+					return Result(status = False, rsc = RC.badRequest, dbg = 'missing lnk attribute in target resource')
 
 				# Retrieve and check the linked-to request
 				if (res := self.retrieveResource(lnk, originator, request)).resource:
@@ -137,29 +152,29 @@ class Dispatcher(object):
 
 		if request.args.rcn == RCN.attributesAndChildResources:
 			self.resourceTreeDict(allowedResources, resource)	# the function call add attributes to the target resource
-			return Result(status=True, rsc=RC.OK, resource=resource)
+			return Result(status = True, rsc = RC.OK, resource = resource)
 
 		elif request.args.rcn == RCN.attributesAndChildResourceReferences:
 			self._resourceTreeReferences(allowedResources, resource, request.args.drt, 'ch')	# the function call add attributes to the target resource
-			return Result(status=True, rsc=RC.OK, resource=resource)
+			return Result(status = True, rsc = RC.OK, resource = resource)
 
 		elif request.args.rcn == RCN.childResourceReferences: 
 			#childResourcesRef:JSON = { resource.tpe: {} }  # Root resource with no attribute
 			#childResourcesRef = self._resourceTreeReferences(allowedResources,  None, request.args.drt, 'm2m:rrl')
 			# self._resourceTreeReferences(allowedResources, childResourcesRef[resource.tpe], request.args.drt, 'm2m:rrl')
 			childResourcesRef = self._resourceTreeReferences(allowedResources, None, request.args.drt, 'm2m:rrl')
-			return Result(status=True, rsc=RC.OK, resource=childResourcesRef)
+			return Result(status = True, rsc = RC.OK, resource = childResourcesRef)
 
 		elif request.args.rcn == RCN.childResources:
 			childResources:JSON = { resource.tpe : {} } #  Root resource as a dict with no attribute
 			self.resourceTreeDict(allowedResources, childResources[resource.tpe]) # Adding just child resources
-			return Result(status=True, rsc=RC.OK, resource=childResources)
+			return Result(status = True, rsc = RC.OK, resource = childResources)
 
 		elif request.args.rcn == RCN.discoveryResultReferences: # URIList
-			return Result(status=True, rsc=RC.OK, resource=self._resourcesToURIList(allowedResources, request.args.drt))
+			return Result(status = True, rsc = RC.OK, resource = self._resourcesToURIList(allowedResources, request.args.drt))
 
 		else:
-			return Result(status=False, rsc=RC.badRequest, dbg='wrong rcn for RETRIEVE')
+			return Result(status = False, rsc = RC.badRequest, dbg = 'wrong rcn for RETRIEVE')
 
 
 	def retrieveResource(self, id:str, originator:str=None, request:CSERequest=None) -> Result:
@@ -840,17 +855,27 @@ class Dispatcher(object):
 	#
 
 	def _handleOperationExecutionTime(self, request:CSERequest) -> None:
-		"""	Handle operation execution time and request expiration.
+		"""	Handle operation execution time and request expiration. If the OET is set then
+			wait until the provided timestamp is reached.
+
+			Args:
+				request: The request to check.
 		"""
 		if request.headers.operationExecutionTime:
+			# Calculate the dealy
 			delay = DateUtils.timeUntilAbsRelTimestamp(request.headers.operationExecutionTime)
 			L.isDebug and L.logDebug(f'Waiting: {delay:.4f} seconds until delayed execution')
-			DateUtils.waitFor(delay)	# Just wait some time
+			# Just wait some time
+			DateUtils.waitFor(delay)	
 
 
 	def _checkRequestExpiration(self, request:CSERequest) -> Result:
-		"""	Check request expiration timeout. Returns a negative Result when the timeout
-			timestamp has been reached or passed.
+		"""	Check request expiration timeout if a request timeout is give.
+
+			Args:
+				request: The request to check.
+			Return:
+				 A negative Result status when the timeout timestamp has been reached or passed.
 		"""
 		if request.headers._retUTCts is not None and DateUtils.timeUntilTimestamp(request.headers._retUTCts) <= 0.0:
 			L.logDebug(dbg := 'Request timed out')
@@ -960,9 +985,13 @@ class Dispatcher(object):
 	#
 
 	def _checkHybridID(self, request:CSERequest, id:str) -> Tuple[str, str]:
-		"""	Return a corrected ID and SRN in case this is a hybrid ID.
-			srn might be None. 
-			Returns: (srn, id)
+		"""	Return a corrected `id` and `srn` in case this is a hybrid ID.
+
+			Args:
+				request: A request object that provides `id` and `srn`. `srn` might be None.
+				id: An ID which might be None. If it is not None, then it will be taken to generate the `srn`
+			Return:
+				Tuple of `srn` and `id`
 		"""
 		if id:
 			return Utils.srnFromHybrid(None, id) # Hybrid

@@ -294,6 +294,12 @@ class SecurityManager(object):
 		"""	Check whether the originator has access to the PCU resource.
 			This should be done to check the parent PCH, but the originator
 			would be the same as the PCU, so we can optimize this a bit.
+
+			Args:
+				originator: The request originator
+				resource: Either a PCH or PCU resource
+			Return:
+				Boolean indicating the result.
 		"""
 		return originator == resource.getOriginator()
 
