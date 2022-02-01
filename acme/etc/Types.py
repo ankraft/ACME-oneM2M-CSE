@@ -172,6 +172,19 @@ class ResourceTypes(ACMEIntEnum):
 		return ResourceTypes.UNKNOWN
 
 
+	def fromAnnounced(self) -> ResourceTypes:
+		"""	Get the orginal resource type for an announced type.
+
+			Return:
+				Not-announced resource type, or UNKNOWN
+		"""
+		for (k, v) in ResourceTypes._announcedMappings.items():		#  type: ignore
+			if self.value == v:
+				return k
+		return ResourceTypes.UNKNOWN
+
+
+
 	def isAnnounced(self) -> bool:
 		return self.value in ResourceTypes._announcedSetFull 		# type: ignore
 
@@ -640,7 +653,6 @@ class DesiredIdentifierResultType(ACMEIntEnum):
 	unstructured	= 2
 
 
-
 ##############################################################################
 #
 #	CSE related
@@ -763,6 +775,96 @@ class RequestStatus(ACMEIntEnum):
 
 ##############################################################################
 #
+#	Content Serializations
+#
+
+class ContentSerializationType(ACMEIntEnum):
+	"""	Content Serialization Types 
+	"""
+
+	XML					= auto()
+	JSON				= auto()
+	CBOR				= auto()
+	PLAIN				= auto()
+	NA	 				= auto()
+	UNKNOWN				= auto()
+
+	def toHeader(self) -> str:
+		"""	Return the mime header for a enum value.
+		"""
+		if self.value == self.JSON:	return 'application/json'
+		if self.value == self.CBOR:	return 'application/cbor'
+		if self.value == self.XML:	return 'application/xml'
+		return None
+	
+	def toSimple(self) -> str:
+		"""	Return the simple string for a enum value.
+		"""
+		if self.value == self.JSON:	return 'json'
+		if self.value == self.CBOR:	return 'cbor'
+		if self.value == self.XML:	return 'xml'
+		return None
+
+	@classmethod
+	def toContentSerialization(cls, t:str) -> ContentSerializationType:
+		"""	Return the enum from a string.
+		"""
+		t = t.lower()
+		if t in [ 'cbor', 'application/cbor' ]:	return cls.CBOR
+		if t in [ 'json', 'application/json' ]:	return cls.JSON
+		if t in [ 'xml',  'application/xml'  ]:	return cls.XML
+		return cls.UNKNOWN
+
+	
+	@classmethod
+	def getType(cls, hdr:str, default:ContentSerializationType=None) -> ContentSerializationType:
+		"""	Return the enum from a header definition.
+		"""
+		default = cls.UNKNOWN if not default else default
+		if not hdr:														return default
+		hdr = hdr.lower()
+
+		if hdr.lower() == 'json':										return cls.JSON
+		if hdr.lower().startswith('application/json'):					return cls.JSON
+		if hdr.lower().startswith('application/vnd.onem2m-res+json'):	return cls.JSON
+
+		if hdr.lower() == 'cbor':										return cls.CBOR
+		if hdr.lower().startswith('application/cbor'):					return cls.CBOR
+		if hdr.lower().startswith('application/vnd.onem2m-res+cbor'):	return cls.CBOR
+		
+		if hdr.lower() == 'xml':										return cls.XML
+		if hdr.lower().startswith('application/xml'):					return cls.XML
+		if hdr.lower().startswith('application/vnd.onem2m-res+XML'):	return cls.XML
+
+		return cls.UNKNOWN
+	
+
+	@classmethod
+	def supportedContentSerializations(cls) -> list[str]:
+		"""	Return a list of supported media types for content serialization.
+		"""
+		return [ 'application/json',
+				 'application/vnd.onem2m-res+json', 
+				 'application/cbor',
+				 'application/vnd.onem2m-res+cbor' ]
+
+
+	@classmethod
+	def supportedContentSerializationsSimple(cls) -> list[str]:
+		"""	Return a simplified (only the names of the serializations)
+			list of supported media types for content serialization.
+		"""
+		return [ cls.JSON.toSimple(), cls.CBOR.toSimple() ]
+
+
+	def __eq__(self, other:object) -> bool:
+		if not isinstance(other, str):
+			return NotImplemented
+		return self.value == self.getType(str(other))
+
+
+##############################################################################
+#
 #	Group related
 #
 
@@ -771,6 +873,7 @@ class ConsistencyStrategy(ACMEIntEnum):
 	abandonMember		= 1	# default
 	abandonGroup		= 2
 	setMixed			= 3
+
 
 ##############################################################################
 #
@@ -869,96 +972,16 @@ class LastTSInstance:
 		self.missingDataDetectionTime += self.pei
 
 
-
 ##############################################################################
 #
-#	Content Serializations
+#	Announcement related
 #
-
-class ContentSerializationType(ACMEIntEnum):
-	"""	Content Serialization Types 
-	"""
-
-	XML					= auto()
-	JSON				= auto()
-	CBOR				= auto()
-	PLAIN				= auto()
-	NA	 				= auto()
-	UNKNOWN				= auto()
-
-	def toHeader(self) -> str:
-		"""	Return the mime header for a enum value.
-		"""
-		if self.value == self.JSON:	return 'application/json'
-		if self.value == self.CBOR:	return 'application/cbor'
-		if self.value == self.XML:	return 'application/xml'
-		return None
-	
-	def toSimple(self) -> str:
-		"""	Return the simple string for a enum value.
-		"""
-		if self.value == self.JSON:	return 'json'
-		if self.value == self.CBOR:	return 'cbor'
-		if self.value == self.XML:	return 'xml'
-		return None
-
-	@classmethod
-	def toContentSerialization(cls, t:str) -> ContentSerializationType:
-		"""	Return the enum from a string.
-		"""
-		t = t.lower()
-		if t in [ 'cbor', 'application/cbor' ]:	return cls.CBOR
-		if t in [ 'json', 'application/json' ]:	return cls.JSON
-		if t in [ 'xml',  'application/xml'  ]:	return cls.XML
-		return cls.UNKNOWN
-
-	
-	@classmethod
-	def getType(cls, hdr:str, default:ContentSerializationType=None) -> ContentSerializationType:
-		"""	Return the enum from a header definition.
-		"""
-		default = cls.UNKNOWN if not default else default
-		if not hdr:														return default
-		hdr = hdr.lower()
-
-		if hdr.lower() == 'json':										return cls.JSON
-		if hdr.lower().startswith('application/json'):					return cls.JSON
-		if hdr.lower().startswith('application/vnd.onem2m-res+json'):	return cls.JSON
-
-		if hdr.lower() == 'cbor':										return cls.CBOR
-		if hdr.lower().startswith('application/cbor'):					return cls.CBOR
-		if hdr.lower().startswith('application/vnd.onem2m-res+cbor'):	return cls.CBOR
-		
-		if hdr.lower() == 'xml':										return cls.XML
-		if hdr.lower().startswith('application/xml'):					return cls.XML
-		if hdr.lower().startswith('application/vnd.onem2m-res+XML'):	return cls.XML
-
-		return cls.UNKNOWN
 	
 
-	@classmethod
-	def supportedContentSerializations(cls) -> list[str]:
-		"""	Return a list of supported media types for content serialization.
-		"""
-		return [ 'application/json',
-				 'application/vnd.onem2m-res+json', 
-				 'application/cbor',
-				 'application/vnd.onem2m-res+cbor' ]
-
-
-	@classmethod
-	def supportedContentSerializationsSimple(cls) -> list[str]:
-		"""	Return a simplified (only the names of the serializations)
-			list of supported media types for content serialization.
-		"""
-		return [ cls.JSON.toSimple(), cls.CBOR.toSimple() ]
-
-
-	def __eq__(self, other:object) -> bool:
-		if not isinstance(other, str):
-			return NotImplemented
-		return self.value == self.getType(str(other))
-	
+class AnnounceSyncType(ACMEIntEnum):
+	""" Announce Sync Types """
+	UNI_DIRECTIONAL = 1
+	BI_DIRECTIONAL = 2
 
 
 ##############################################################################
