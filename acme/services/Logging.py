@@ -198,9 +198,11 @@ class Logging:
 	def finit() -> None:
 		"""	End logging.
 		"""
+		from ..etc.DateUtils import waitFor
 		if Logging.queue:
-			while not Logging.queue.empty():
-				time.sleep(0.5)
+			waitFor(5.0, Logging.queue.empty)
+			# while not Logging.queue.empty():
+			# 	time.sleep(0.5)
 		if Logging._logWorker:
 			Logging._logWorker.stop()
 		Logging.log('')
@@ -223,11 +225,15 @@ class Logging:
 			
 	@staticmethod
 	def loggingActor() -> bool:
-		while Logging._logWorker.running:
-			level, msg, caller, thread = Logging.queue.get(block = True)
-			if msg and not len(msg):
-				continue
-			Logging._logMessageToLoggerConsole(level, msg, caller, thread)
+		try:
+			while Logging._logWorker.running:
+				level, msg, caller, thread = Logging.queue.get(block = True)
+				if msg is None or (isinstance(msg, str) and not len(msg)):
+					continue
+				Logging._logMessageToLoggerConsole(level, msg, caller, thread)
+		except Exception as e:
+			# Not much that we can do here
+			pass
 		return True
 
 
@@ -292,20 +298,19 @@ class Logging:
 			the correct caller. It is set by a calling method in case the log information are re-routed.
 		"""
 		if Logging.logLevel <= level:
-			# Queue a log message : (level, message, caller from stackframe, current thread)
-			caller = inspect.getframeinfo(inspect.stack()[2 if not stackOffset else 2+stackOffset][0])
-			thread = threading.current_thread()
-			if Logging.enableQueue:
-				Logging.queue.put((level, msg, caller, thread))
-			else:
-				if msg:
-					Logging._logMessageToLoggerConsole(level, msg, caller, thread)
-			# try:
-			# 	Logging.queue.put((level, msg, inspect.getframeinfo(inspect.stack()[2 if not stackOffset else 2+stackOffset][0]), threading.current_thread()))
-			# except Exception as e:
-			# 	# sometimes this raises an exception. Just ignore it.
-			# 	pass
-	
+			try:
+				# Queue a log message : (level, message, caller from stackframe, current thread)
+				caller = inspect.getframeinfo(inspect.stack()[2 if not stackOffset else 2+stackOffset][0])
+				thread = threading.current_thread()
+				if Logging.enableQueue:
+					Logging.queue.put((level, msg, caller, thread))
+				else:
+					if msg:
+						Logging._logMessageToLoggerConsole(level, msg, caller, thread)
+			except Exception as e:
+				# sometimes this raises an exception. Just ignore it.
+				pass
+
 
 	@staticmethod
 	def console(msg:Union[str, Text, Tree, Table, JSON] = '&nbsp;', nl:bool = False, nlb:bool = False, end:str = '\n', plain:bool = False, isError:bool = False, isHeader:bool = False) -> None:
