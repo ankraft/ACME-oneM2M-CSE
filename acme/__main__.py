@@ -42,8 +42,8 @@ def parseArgs() -> argparse.Namespace:
 
 	parser.add_argument('--db-reset', action='store_true', dest='dbreset', default=None, help='reset the DB when starting the CSE')
 	parser.add_argument('--db-storage', action='store', dest='dbstoragemode', default=None, choices=[ 'memory', 'disk' ], type=str.lower, help='specify the DB´s storage mode')
-	parser.add_argument('--http-address', action='store', dest='httpaddress', metavar='<server URL>',  type=int, help='specify the CSE\'s http server URL')
-	parser.add_argument('--http-port', action='store', dest='httpport', metavar='<http port>',  help='specify the CSE\'s http port')
+	parser.add_argument('--http-address', action='store', dest='httpaddress', metavar='<server URL>', help='specify the CSE\'s http server URL')
+	parser.add_argument('--http-port', action='store', dest='httpport', metavar='<http port>',  type=int, help='specify the CSE\'s http port')
 	parser.add_argument('--import-directory', action='store', dest='importdirectory', default=None, metavar='<directory>', help='specify the import directory')
 	parser.add_argument('--network-interface', action='store', dest='listenif', metavar='<ip address>', default=None, help='specify the network interface/IP address to bind to')
 	parser.add_argument('--log-level', action='store', dest='loglevel', default=None, choices=[ 'info', 'error', 'warn', 'debug', 'off'], type=str.lower, help='set the log level, or turn logging off')
