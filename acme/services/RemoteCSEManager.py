@@ -40,7 +40,7 @@ class RemoteCSEManager(object):
 		self.descendantCSR:Dict[str, Tuple[Resource, str]]	= {}	# dict of descendantCSR's - "csi : (CSR, registeredATcsi)". CSR is None for CSEs further down 
 		self.enableRemoteCSE				 	= Configuration.get('cse.enableRemoteCSE')
 
-		self.connectionMonitor:BackgroundWorker	= None	# BackgrioundWorker
+		self.connectionMonitor:BackgroundWorker	= None	# BackgroundWorker
 
 		CSE.event.addHandler(CSE.event.registeredToRemoteCSE, self.handleRegistrarRegistration)				# type: ignore
 		CSE.event.addHandler(CSE.event.deregisteredFromRemoteCSE, self.handleRegistrarDeregistration)		# type: ignore
@@ -147,7 +147,7 @@ class RemoteCSEManager(object):
 
 	def connectionMonitorWorker(self) -> bool:
 		if CSE.cseStatus != CSEStatus.RUNNING:
-			return False
+			return True
 		try:
 
 			# Check the current state of the connection to the "upstream" CSEs
