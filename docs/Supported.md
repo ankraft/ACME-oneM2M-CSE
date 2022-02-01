@@ -77,7 +77,7 @@ The following table presents the supported management object specifications.
 | AE registration               |  &check;  |                                                                                           |
 | Remote CSE registration       |  &check;  |                                                                                           |
 | Resource expiration           |  &check;  |                                                                                           |
-| Resource announcements        |  &check;  | Under the CSEBaseAnnc resource                                                            |
+| Resource announcements        |  &check;  | Under the CSEBaseAnnc resource (R4 feature). Bi-directional update sync.                  |
 | Resource validations          |  &check;  |                                                                                           |
 | Request parameter validations |  &check;  |                                                                                           |
 | Transit requests              |  &check;  | Forwarding requests from one CSE to another.                                              |

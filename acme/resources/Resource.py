@@ -166,11 +166,11 @@ class Resource(object):
 		# Also don't validate virtual resources
 		# if (self[self._isInstantiated] is None or not self[self._isInstantiated]) and not self[self._isVirtual] :
 		if not self[self._isInstantiated] and not self[self._isVirtual] :
-			if not (res := CSE.validator.validateAttributes(self._originalDict, self.tpe, self.ty, self._attributes, isImported=self.isImported, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
+			if not (res := CSE.validator.validateAttributes(self._originalDict, self.tpe, self.ty, self._attributes, isImported = self.isImported, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())).status:
 				return res
 
 		# validate the resource logic
-		if not (res := self.validate(originator, create=True, parentResource=parentResource)).status:
+		if not (res := self.validate(originator, create = True, parentResource = parentResource)).status:
 			return res
 		self.dbUpdate()
 		# increment parent resource's state tag
@@ -178,7 +178,7 @@ class Resource(object):
 			parentResource = parentResource.dbReload().resource	# Read the resource again in case it was updated in the DB
 			parentResource['st'] = parentResource.st + 1
 			if not (res := parentResource.dbUpdate()).resource:
-				return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+				return Result(status = False, rsc = res.rsc, dbg = res.dbg)
 		
 		#
 		#	Various ACPI handling
@@ -186,16 +186,16 @@ class Resource(object):
 		if self.acpi is not None and not T(self.ty).isAnnounced():
 			# Test wether an empty array is provided				
 			if len(self.acpi) == 0:
-				return Result(status=False, rsc=RC.badRequest, dbg='acpi must not be an empty list')
+				return Result(status = False, rsc = RC.badRequest, dbg = 'acpi must not be an empty list')
 			if not (res := self._checkAndFixACPIreferences(self.acpi)).status:
 				return res
 			self.setAttribute('acpi', res.data)
 
 
-		self.setAttribute(self._originator, originator, overwrite=False)
-		self.setAttribute(self._rtype, self.tpe, overwrite=False) 
+		self.setAttribute(self._originator, originator, overwrite = False)
+		self.setAttribute(self._rtype, self.tpe, overwrite = False) 
 
-		return Result(status=True, rsc=RC.OK)
+		return Result(status = True, rsc = RC.OK)
 
 
 	# Deactivate an active resource.
@@ -215,17 +215,17 @@ class Resource(object):
 
 	# Update this resource with (new) fields.
 	# Call validate() afterward to react on changes.
-	def update(self, dct:JSON=None, originator:str=None) -> Result:
+	def update(self, dct:JSON = None, originator:str = None) -> Result:
 		dictOrg = deepcopy(self.dict)	# Save for later for notification
 
 		updatedAttributes = None
 		if dct:
 			if self.tpe not in dct and self.ty not in [T.FCNTAnnc]:	# Don't check announced versions of announced FCNT
 				L.isWarn and L.logWarn("Update type doesn't match target")
-				return Result(status=False, rsc=RC.contentsUnacceptable, dbg='resource types mismatch')
+				return Result(status = False, rsc = RC.contentsUnacceptable, dbg = 'resource types mismatch')
 
 			# validate the attributes
-			if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self._attributes, create=False, createdInternally=self.isCreatedInternally(), isAnnounced=self.isAnnounced())).status:
+			if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self._attributes, create = False, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())).status:
 				return res
 
 			if self.ty not in [T.FCNTAnnc]:
@@ -239,12 +239,12 @@ class Resource(object):
 																						# acpi can be None! Therefore the complicated test
 				# Test wether an empty array is provided				
 				if len(ua := updatedAttributes['acpi']) == 0:
-					return Result(status=False, rsc=RC.badRequest, dbg='acpi must not be an empty list')
+					return Result(status = False, rsc = RC.badRequest, dbg = 'acpi must not be an empty list')
 				# Check whether referenced <ACP> exists. If yes, change ID also to CSE relative unstructured
 				if not (res := self._checkAndFixACPIreferences(ua)).status:
 					return res
 				
-				self.setAttribute('acpi', res.data, overwrite=True) # copy new value or add new attributes
+				self.setAttribute('acpi', res.data, overwrite = True) # copy new value or add new attributes
 
 			else:
 
@@ -259,7 +259,7 @@ class Resource(object):
 					if key == 'et' and not value:
 						self['et'] = DateUtils.getResourceDate(Configuration.get('cse.expirationDelta'))
 						continue
-					self.setAttribute(key, value, overwrite=True) # copy new value or add new attributes
+					self.setAttribute(key, value, overwrite = True) # copy new value or add new attributes
 			
 
 		# - state and lt
@@ -275,14 +275,14 @@ class Resource(object):
 		#self.dict = {k: v for (k, v) in self.dict.items() if v is not None }
 
 		# Do some extra validations, if necessary
-		if not (res := self.validate(originator, dct=dct)).status:
+		if not (res := self.validate(originator, dct = dct)).status:
 			return res
 
 		# store last modified attributes
 		self[self._modified] = Utils.resourceDiff(dictOrg, self.dict, updatedAttributes)
 
 		# Check subscriptions
-		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceUpdate, modifiedAttributes=self[self._modified])
+		CSE.notification.checkSubscriptions(self, NotificationEventType.resourceUpdate, modifiedAttributes = self[self._modified])
 		self.dbUpdate()
 
 		# Check Attribute Trigger
@@ -294,29 +294,62 @@ class Resource(object):
 			return Result(status = False, rsc = RC.internalServerError, dbg = dbg)
 		parent.childUpdated(self, updatedAttributes, originator)
 
-		return Result(status=True)
+		return Result(status = True)
+
+
+	def updated(self, dct:JSON = None, originator:str = None) -> None:
+		"""	Signal to a resource that is was successfully updated. This handler can be used to perform
+			additional actions after the resource was updated, stored etc.
+			
+			Args:
+				dct: JSON dictionary with the updated attributes.
+				originator: the request originator.
+		"""
+		pass
 
 
 	def willBeRetrieved(self, originator:str) -> Result:
 		""" Called before a resource will be send back in a response.
+			
+			Args:
+				originator: the request originator.
+			Return:
+				A Result object.
 		"""
-		return Result(status=True)
+		return Result(status = True)
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
 		""" Called before a child will be added to a resource.
-			This method return True, or False in kind the adding should be rejected, and an error code."""
-		return Result(status=True)
+			
+			Args:
+				childResource: Resource that will be added as a child to the resource.
+				originator: the request originator.
+			Return:
+				A Result object with status True, or Fale case the adding must be rejected, and an error code.
+		"""
+		return Result(status = True)
 
 
 	def childAdded(self, childResource:Resource, originator:str) -> None:
-		""" Called when a child resource was added to the resource. """
+		""" Called after a child resource was added to the resource.
+					
+			Args:
+				childResource: Resource that was be added as a child to the resource.
+				originator: the request originator.
+ 		"""
 		# Check Subscriptions
 		CSE.notification.checkSubscriptions(self, NotificationEventType.createDirectChild, childResource)
 
 
 	def childUpdated(self, childResource:Resource, updatedAttributes:JSON, originator:str) -> None:
-		"""	Called when a child resource was updated. """
+		"""	Called when a child resource was updated.
+							
+			Args:
+				childResource: Resource that was be added as a child to the resource.
+				updatedAttributes: JSON dictionary with the updated attributes.
+				originator: the request originator.
+		"""
 		pass
 
 

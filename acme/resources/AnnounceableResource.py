@@ -41,23 +41,26 @@ class AnnounceableResource(Resource):
 		super().deactivate(originator)
 
 
-	def update(self, dct:JSON=None, originator:str=None) -> Result:
+	def update(self, dct:JSON = None, originator:str = None) -> Result:
 		# L.isDebug and L.logDebug(f'Updating AnnounceableResource: {self.ri}')
 		self._origAA = self.aa
 		self._origAT = self.at
-		if not (res := super().update(dct=dct, originator=originator)).status:
+		if not (res := super().update(dct = dct, originator = originator)).status:
 			return res
+
+
+		# TODO handle update from announced resource. Check originator???
 
 		# Check announcements
 		if self.at:
-			CSE.announce.announceUpdatedResource(self)
+			CSE.announce.announceUpdatedResource(self, originator)
 		else:
 			if self._origAT:	# at is removed in update, so remove self
 				CSE.announce.deAnnounceResource(self)
 		return res
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
 		# L.isDebug and L.logDebug(f'Validating AnnounceableResource: {self.ri}')
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res

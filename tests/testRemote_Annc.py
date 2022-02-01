@@ -8,11 +8,12 @@
 #	skipped if there is no remote CSE.
 #
 
+from re import M
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
-from acme.etc.Types import ResultContentType as RCN
+from acme.etc.Types import AnnounceSyncType, ResultContentType as RCN
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
@@ -24,9 +25,11 @@ class TestRemote_Annc(unittest.TestCase):
 	node 			= None
 	bat 			= None
 	acp 			= None
+	cnt 			= None
 	remoteCse 		= None
 	remoteCbARI 	= None
 	remoteAeRI		= None
+	remoteCntRI		= None
 	remoteNodRI		= None
 	remoteBatRI 	= None
 	remoteAcpRI 	= None
@@ -46,6 +49,8 @@ class TestRemote_Annc(unittest.TestCase):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
 		DELETE(acpURL, ORIGINATOR)	# Just delete the ACP 
+		if TestRemote_Annc.cnt is not None:
+			DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)		# Delete the extra container
 
 
 	# Create an AE with AT, but no AA
@@ -626,6 +631,63 @@ class TestRemote_Annc(unittest.TestCase):
 		TestRemote_Annc.remoteAcpRI = None
 
 
+	# Create CNT with announcedSyncType
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_createAnnouncedCNTSynced(self) -> None:
+		""" Create and announce <CNT> (synced) """
+		dct = 	{ 'm2m:cnt' : {
+					'rn': 	cntRN, 
+					'lbl':	[ 'aLabel' ],
+					'mni':	10,
+				 	'at': 	[ REMOTECSEID ],
+					'aa': 	[ 'mni' ],
+					'ast':	AnnounceSyncType.BI_DIRECTIONAL
+				}}
+		r, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/at'))
+		self.assertIsInstance(findXPath(r, 'm2m:cnt/at'), list)
+		self.assertEqual(len(findXPath(r, 'm2m:cnt/at')), 1)
+		self.assertTrue(findXPath(r, 'm2m:cnt/at')[0].startswith(f'{REMOTECSEID}/'), r)
+		TestRemote_Annc.remoteCntRI = findXPath(r, 'm2m:cnt/at')[0]
+		self.assertIsNotNone(self.remoteCntRI)
+		TestRemote_Annc.cnt = r
+
+
+	# Update a remote CNT (synced)
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_updateRemoteCNT(self) -> None:
+		""" Update remote CNT (synced) """
+		if TestRemote_Annc.cnt is None:
+			self.skipTest('cnt not found')
+		dct = 	{ 'm2m:cnt' : {
+				 	'lbl':	[ 'aLabel', 'bLabel'],
+				 	'mni': 	20
+				}}
+		r, rsc = UPDATE(f'{cseURL}/{cntRN}', ORIGINATOR, dct)
+		self.assertEqual(rsc, RC.updated)
+		self.assertIsNotNone(findXPath(r, 'm2m:cnt/lbl'))
+		self.assertIsInstance(findXPath(r, 'm2m:cnt/lbl'), list)
+		self.assertEqual(len(findXPath(r, 'm2m:cnt/lbl')), 2)
+		self.assertEqual(findXPath(r, 'm2m:cnt/mni'), 20)
+
+
+	# Delete CNT with announcedSyncType
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_deleteAnnouncedCNTSynced(self) -> None:
+		""" Delete remote CNT (synced) """
+		if TestRemote_Annc.cnt is None:
+			self.skipTest('cnt not found')
+		_, rsc = DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
+		self.assertEqual(rsc, RC.deleted)
+		# try to retrieve the announced CNT. Should not be found
+		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteCntRI}', CSEID)
+		self.assertEqual(rsc, RC.notFound)
+		TestRemote_Annc.cnt = None
+		TestRemote_Annc.remoteCntRI = None
+
+
+
 # TODO Test: non-resource attribute in "aa" attribute
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
@@ -672,6 +734,12 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestRemote_Annc('test_retrieveAnnouncedACP'))
 	suite.addTest(TestRemote_Annc('test_retrieveAnnouncedACPwithCSI'))
 	suite.addTest(TestRemote_Annc('test_deleteAnnounceACP'))
+
+	# create an announced CNT with announcedSyncType = bi-directional
+	suite.addTest(TestRemote_Annc('test_createAnnouncedCNTSynced'))
+	suite.addTest(TestRemote_Annc('test_updateRemoteCNT'))
+	suite.addTest(TestRemote_Annc('test_deleteAnnouncedCNTSynced'))
+
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

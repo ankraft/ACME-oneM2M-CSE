@@ -375,7 +375,7 @@ class RemoteCSEManager(object):
 
 		# copy local CSE attributes into a new CSR
 		localCSE = Utils.getCSE().resource
-		csr = CSR.CSR(pi=localCSE.ri, rn=remoteCSE.csi[1:])	# remoteCSE.csi as name!
+		csr = CSR.CSR(pi = localCSE.ri, rn = remoteCSE.csi[1:])	# remoteCSE.csi as name!
 		self._copyCSE2CSR(csr, remoteCSE)
 		#csr['ri'] = remoteCSE.ri 						# set the ri to the remote CSE's ri
 		csr['ri'] = remoteCSE.csi[1:] 						# set the ri to the remote CSE's ri
@@ -383,8 +383,8 @@ class RemoteCSEManager(object):
 		if not (result := CSE.dispatcher.createResource(csr, localCSE)).resource:
 			return result # Problem
 		if not (res := CSE.registration.handleCSRRegistration(csr, remoteCSE.csi)).status:
-			return Result(status=False, rsc=RC.badRequest, dbg=f'cannot register CSR: {res.dbg}')
-		return CSE.dispatcher.updateResource(csr, doUpdateCheck=False)		# TODO dbupdate() instead?
+			return Result(status = False, rsc = RC.badRequest, dbg = f'cannot register CSR: {res.dbg}')
+		return CSE.dispatcher.updateResource(csr, doUpdateCheck = False)		# TODO dbupdate() instead?
 
 
 
@@ -439,21 +439,28 @@ class RemoteCSEManager(object):
 		return Result(status=True, resource=CSR.CSR(cast(JSON, res.data), pi=''), rsc=RC.created)
 
 
-	def _updateCSRonRegistrarCSE(self, localCSE:Resource=None) -> Result:
+	def _updateCSRonRegistrarCSE(self, localCSE:Resource = None) -> Result:
+		"""	Update the <remoteCSE> resource on the registrar CSE.
+
+			Args:
+				localCSE: Optional CSE resource to use for the update, otherwise take the normal CSE resource.
+			Return:
+				Result object
+		"""
 		L.isDebug and L.logDebug(f'Updating registrar CSR in CSE: {self.registrarCSI}')
 		if not localCSE:
 			localCSE = Utils.getCSE().resource
 		csr = CSR.CSR()
-		self._copyCSE2CSR(csr, localCSE, isUpdate=True)
+		self._copyCSE2CSR(csr, localCSE, isUpdate = True)
 		del csr['acpi']			# remove ACPI (don't provide ACPI in updates...a bit)
 
 		res = CSE.request.sendUpdateRequest(self.registrarCSRURL, CSE.cseCsi, data = csr.asDict(), ct = self.registrarSerialization) 	# own CSE.csi is the originator
 		if res.rsc not in [ RC.updated, RC.OK ]:
 			if res.rsc != RC.conflict:
 				L.isDebug and L.logDebug(f'Error updating registrar CSR in CSE: {int(res.rsc)}')
-			return Result(status=False, rsc=res.rsc, dbg='cannot update remote CSR')
+			return Result(status = False, rsc = res.rsc, dbg = 'cannot update remote CSR')
 		L.isDebug and L.logDebug(f'Registrar CSR updated in CSE: {self.registrarCSI}')
-		return Result(status = True, resource = CSR.CSR(cast(JSON, res.data), pi = ''), rsc=RC.updated)
+		return Result(status = True, resource = CSR.CSR(cast(JSON, res.data), pi = ''), rsc = RC.updated)
 
 
 

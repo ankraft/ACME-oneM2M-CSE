@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added *--http-port* command line argument.
 - [CSE] Added initial support for the Upper Tester protocol defined in TS-0019.
 - [CSE] Added guided setup of a configuration file when the CSE is started without a config file.
+- [CSE] Added bi-directional update of announced resources.
 - [WEB] Allow to open the WebUI of a registered CSE via the context menu.
 - [CONSOLE] Added config for dark (default) and light theme for better readability on consoles with light background.
 - [SCRIPTS] Added scripting to the CSE.
@@ -71,8 +72,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Changed optionality of and originator assignment to CSR.csi according to TS-0004 spec change.
 - [HTTP] Moved the security setting for http to the separate section *server.http.security*.
 - [IMPORTING] Changed the file extension for &lt;flexContainer> attribute policies from ".ap" to ".fcp".
+- [IMPORTING] Updated the &lt;flexContainer> attribute policies to the latest version of TS-0023.
 - [Logging] Changed the internal handling of log messages. Output should be more immediate than before.
 - [RUNTIME] Due to the restructuring of the project structure the CSE must now be started like this: ```python3 -m acme```
+
 
 ### Removed
 - [CSE] Removed "cse.enableNotifications" configuration option. Notifications are now always enabled.

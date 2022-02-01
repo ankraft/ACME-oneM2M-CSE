@@ -596,13 +596,26 @@ class Dispatcher(object):
 			return Result(status = False, rsc = RC.badRequest, dbg = 'wrong rcn for UPDATE')
 
 
-	def updateResource(self, resource:Resource, dct:JSON=None, doUpdateCheck:bool=True, originator:str=None) -> Result:
+	def updateResource(self, resource:Resource, dct:JSON = None, doUpdateCheck:bool = True, originator:str = None) -> Result:
+		"""	Update a resource in the CSE. Call update() and updated() callbacks on the resource.
+		
+			Args:
+				resource: Resource to update.
+				dct: JSON dictionary with the updated attributes.
+				doUpdateCheck: Enable/disable a call to update().
+				originator: The request's originator.
+			Return:
+				Result object.
+		"""
 		L.isDebug and L.logDebug(f'Updating resource ri: {resource.ri}, type: {resource.ty}')
 		if doUpdateCheck:
 			if not (res := resource.update(dct, originator)).status:
 				return res.errorResult()
 		else:
 			L.isDebug and L.logDebug('No check, skipping resource update')
+
+		# Signal a successful update so that further actions can be taken
+		resource.updated(dct, originator)
 
 		# send a create event
 		CSE.event.updateResource(resource)		# type: ignore
@@ -614,7 +627,7 @@ class Dispatcher(object):
 	#	Remove resources
 	#
 
-	def processDeleteRequest(self, request:CSERequest, originator:str, id:str=None) -> Result:
+	def processDeleteRequest(self, request:CSERequest, originator:str, id:str = None) -> Result:
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
 		# Handle operation execution time and check request expiration
@@ -630,11 +643,11 @@ class Dispatcher(object):
 		# get resource to be removed and check permissions
 		if not (res := self.retrieveResource(id)).resource:
 			L.isDebug and L.logDebug(res.dbg)
-			return Result(status=False, rsc=RC.notFound, dbg=res.dbg)
+			return Result(status = False, rsc = RC.notFound, dbg = res.dbg)
 		resource = res.resource
 
 		if CSE.security.hasAccess(originator, resource, Permission.DELETE) == False:
-			return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
+			return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = 'originator has no privileges')
 
 		# Check for virtual resource
 		if Utils.isVirtualResource(resource):
