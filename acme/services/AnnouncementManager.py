@@ -315,7 +315,7 @@ class AnnouncementManager(object):
 	#
 
 
-	def announceUpdatedResource(self, resource:AnnounceableResource) -> None:
+	def announceUpdatedResource(self, resource:AnnounceableResource, originator:str) -> None:
 		L.isDebug and L.logDebug(f'Updating announced resource: {resource.ri}')
 
 		# Check for removed AT
@@ -324,17 +324,21 @@ class AnnouncementManager(object):
 		# Logging.logErr(set(self.at) == set(self._origAT))
 
 
-		# get all reources for this specific CSI that are  announced to it yet
+		# get all resources for this specific CSI that are announced to it yet
 		CSIsFromAnnounceTo = []
-		for announcedResource in deepcopy(resource.at):
-			if len(sp := announcedResource.split('/')) >= 2:
+		for announcedResourceID in resource.at:
+			if len(sp := announcedResourceID.split('/')) >= 2:
 				if (csi := f'/{sp[1]}') == CSE.cseCsi or csi.startswith(f'{CSE.cseCsi}/'):	# Ignore own CSE as target
 					continue
 				CSIsFromAnnounceTo.append(csi)
 
+		# Update the annoucned remote resources 
 		announcedCSIs = []
 		remoteRIs = []
+		ot = f'{originator}/'
 		for (csi, remoteRI) in resource.getAnnouncedTo():
+			if csi == originator:	# Skip the announced resource at the originator !!
+				continue
 			announcedCSIs.append(csi)	# build a list of already announced CSIs
 			remoteRIs.append(csi) 		# build a list of remote RIs
 			self.updateResourceOnCSI(resource, csi, remoteRI)

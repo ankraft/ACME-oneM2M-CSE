@@ -116,6 +116,8 @@ def waitFor(timeout:float, condition:Callable[[], bool]=None) -> bool:
 		is always returned.
 
 		If `timeout` is negative then *False* is returned.
+
+		If `condition` is not callable then *False* is returned.
 	"""
 	if timeout < 0.0:
 		return False
@@ -123,6 +125,8 @@ def waitFor(timeout:float, condition:Callable[[], bool]=None) -> bool:
 		time.sleep(timeout)
 		return False
 	else:
+		if not callable(condition):
+			return False
 		toTs = time.time() + timeout
 		while not (res := condition()) and toTs > time.time():
 			time.sleep(0.01)

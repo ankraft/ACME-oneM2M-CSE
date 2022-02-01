@@ -1364,6 +1364,7 @@ class RequestManager(object):
 			if (t := CSE.remote.getCSRFromPath(uri)):
 				targetResource, _ = t
 			# L.logWarn(targetResource)
+			# L.logWarn(uri)
 
 		# The uri is an indirect resource with poa, retrieve one or more URIs from it
 		if not targetResource and not (targetResource := CSE.dispatcher.retrieveResource(uri).resource):

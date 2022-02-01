@@ -548,6 +548,7 @@ Available under the BSD 3-Clause License
 			resourceOps +=  f'Deleted       : {stats.get(Statistics.deletedResources, 0)}\n'
 			resourceOps +=  f'Expired       : {stats.get(Statistics.expiredResources, 0)}\n'
 			resourceOps +=  f'Notifications : {stats.get(Statistics.notifications, 0)}\n'
+			resourceOps +=  f'\n[dim]Includes virtual resources[/dim]'
 
 			httpReceived  = '[underline]HTTP:R[/underline]\n'
 			httpReceived += 	'\n'
@@ -606,7 +607,7 @@ Available under the BSD 3-Clause License
 
 		# Adapt the following line when adding resources to keep formatting. 
 		# It fills up the right columns to match the length of the left column.
-		misc += '\n' * ( 3 if CSE.statistics.statisticsEnabled else 8)
+		misc += '\n' * ( 2 if CSE.statistics.statisticsEnabled else 7)
 
 		requestsGrid = Table.grid(expand=True)
 		requestsGrid.add_column(ratio=28)

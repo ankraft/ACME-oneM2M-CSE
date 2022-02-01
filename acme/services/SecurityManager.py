@@ -103,11 +103,19 @@ class SecurityManager(object):
 			L.logErr('Resource must not be None')
 			return False
 
-		# Allow 
+		# Allow originator for announced resource
 		if T(resource.ty).isAnnounced():
 			if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators) and resource.lnk.startswith(f'{originator}/'):
-				L.isDebug and L.logDebug('Announcement Originator. OK.')
+				L.isDebug and L.logDebug('Announcement originator. OK.')
 				return True
+		
+		# Allow originator if resource is announced to the originator
+		if (at := resource.at) is not None:
+			ot = f'{originator}/'
+			if any(each.startswith(ot) for each in at):
+				L.isDebug and L.logDebug('Announcement target originator. OK.')
+				return True
+
 
 
 		# Allow some Originators to RETRIEVE the CSEBase
