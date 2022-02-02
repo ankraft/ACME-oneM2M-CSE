@@ -47,7 +47,7 @@ class TestUpperTester(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_performReset(self) -> None:
-		""" Perform a CSE reset via UT interface """#
+		""" Perform a CSE reset via UT interface """
 
 		# Retrieve CSE
 		cse, rsc = RETRIEVE(cseURL, ORIGINATOR)

@@ -126,7 +126,7 @@ class TestREQ(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK, r)
 
 		# Wait a bit longer. The <req> should have been deleted.
-		time.sleep(expirationCheckDelay)
+		time.sleep(expirationCheckDelay * 2)
 		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.notFound, r)
 
