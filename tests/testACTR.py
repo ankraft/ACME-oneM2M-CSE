@@ -15,7 +15,7 @@ from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, Permiss
 from init import *
 
 
-# TIODO test: create under cnt without orc
+# TODO test: create under cnt without orc
 
 
 class TestACTR(unittest.TestCase):
