@@ -78,6 +78,7 @@ class TimeSeriesManager(object):
 				md.clear()
 
 		if not ((rts.expectedDgt - rts.peid) < rts.dgt <= (rts.expectedDgt + rts.peid)):
+			L.isDebug and L.logDebug(f'rts.expectedDgt: {rts.expectedDgt}, rts.peid: {rts.peid}')
 			L.isWarn and L.logWarn(f'<tsi> not within expected dataGenerationTimeRange: {rts.expectedDgt - rts.peid} < rts.dgt:{rts.dgt} <= {rts.expectedDgt + rts.peid}')
 
 			# If not, then add the expected arrival time as the dgt to the parent's mdlt list.

@@ -75,8 +75,27 @@ def fullRI(ri:str) -> str:
 
 
 def isSPRelative(uri:str) -> bool:
-	""" Check whether a URI is SP-Relative. """
+	""" Check whether a URI is SP-Relative. 
+
+		Args:
+			uri: The URI to check
+		Return:
+			Boolean
+	"""
 	return uri is not None and len(uri) >= 2 and uri[0] == '/' and uri [1] != '/'
+
+
+def csiFromSPRelative(ri:str) -> str:
+	"""	Return the csi from a SP-relative resource ID. It is assumed that
+		the passed `ri` is in SP-relative format.
+		
+		Args:
+			ri: A SP-relative resource ID
+		Return:
+			The csi of the resource ID, or None
+	"""
+	ids = ri.split('/')
+	return f'/{ids[0]}' if len(ids) > 0 else None
 
 
 def isAbsolute(uri:str) -> bool:
@@ -127,10 +146,8 @@ def isValidID(id:str, allowEmpty:bool = False) -> bool:
 		Args:
 			id: The ID to check
 			allowedEmpty: Indicate whether an ID can be empty.
-		
 		Returns:
 			Boolean
-
 	"""
 	if allowEmpty:
 		return id is not None and '/' not in id	# pi might be ""
@@ -144,7 +161,6 @@ def hasOnlyUnreserved(id:str) -> bool:
 		
 		Args:
 			id: the ID to check.
-		
 		Returns:
 			Boolean
 	"""
@@ -153,12 +169,23 @@ def hasOnlyUnreserved(id:str) -> bool:
 
 csiRx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
 def isValidCSI(csi:str) -> bool:
-	"""	Check for valid CSE-ID format. """
+	"""	Check for valid CSE-ID format.
+
+		Args:
+			csi: The CSE-ID to check
+		Return:
+			Boolean
+	"""
 	return re.fullmatch(csiRx, csi) is not None
 
 
 def structuredPath(resource:Resource) -> str:
 	""" Determine the structured path of a resource.
+
+		Args:
+			resource: The resource for which to get the structured path
+		Return:
+			Structured path or None
 	"""
 	rn:str = resource.rn
 	if resource.ty == T.CSEBase: # if CSE
@@ -168,8 +195,7 @@ def structuredPath(resource:Resource) -> str:
 	if not (pi := resource.pi):
 		# L.logErr('PI is None')
 		return rn
-	rpi = CSE.storage.identifier(pi) 
-	if len(rpi) == 1:
+	if len(rpi := CSE.storage.identifier(pi)) == 1:
 		return cast(str, f'{rpi[0]["srn"]}/{rn}')
 	# L.logErr(traceback.format_stack())
 	L.logErr(f'Parent {pi} not found in DB')
@@ -177,19 +203,38 @@ def structuredPath(resource:Resource) -> str:
 
 
 def structuredPathFromRI(ri:str) -> str:
-	""" Get the structured path of a resource by its ri. """
-	if len((identifiers := CSE.storage.identifier(ri))) == 1:
-		return cast(str, identifiers[0]['srn'])
-	return None
+	""" Get the structured path of a resource by its ri.
+	
+		Args:
+			ri: Resource ID
+		Return:
+			Structured path
+	"""
+	try:
+		return CSE.storage.identifier(ri)[0]['srn']
+	except:
+		return None
+	# if len((identifiers := CSE.storage.identifier(ri))) == 1:
+	# 	return cast(str, identifiers[0]['srn'])
+	# return None
 
 
 def riFromStructuredPath(srn: str) -> str:
-	""" Get the ri from a resource by its structured path. 
+	""" Get the resource ID from a resource by its structured path. 
 		Makes a lookup to a table in the DB.
+
+		Args:
+			srn: structured path
+		Return:
+			Resource ID
 	"""
-	if len((paths := CSE.storage.structuredPath(srn))) == 1:
-		return cast(str, paths[0]['ri'])
-	return None
+	try:
+		return CSE.storage.structuredPath(srn)[0]['ri']
+	except:
+		return None
+	# if len((paths := CSE.storage.structuredPath(srn))) == 1:
+	# 	return cast(str, paths[0]['ri'])
+	# return None
 
 
 def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
@@ -311,8 +356,14 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
 	return None, None, None
 
 
-def riFromCSI(csi: str) -> str:
-	""" Get the ri from an CSEBase resource by its csi. """
+def riFromCSI(csi:str) -> str:
+	""" Get the resource ID from any CSEBase or remoteCSE resource by its csi.
+	
+		Args:
+			csi: The CSE-ID to search for
+		Return:
+			The resource ID of the resource with the `csi`, or None
+	 """
 	if not (res := resourceFromCSI(csi).resource):
 		return None
 	return cast(str, res.ri)
@@ -445,7 +496,7 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 	data:Any = dct
 	for i in range(0,len(paths)):
 		if not data:
-		 	return default
+			return default
 		pathElement = paths[i]
 		if len(pathElement) == 0:	# return if there is an empty path element
 			return default
@@ -568,7 +619,7 @@ def getCSE() -> Result:
 
 def resourceFromCSI(csi:str) -> Result:
 	""" Get the CSEBase resource by its csi. """
-	return CSE.storage.retrieveResource(csi=csi)
+	return CSE.storage.retrieveResource(csi = csi)
 
 	
 def fanoutPointResource(id:str) -> Resource:
