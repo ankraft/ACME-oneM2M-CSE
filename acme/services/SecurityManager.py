@@ -109,8 +109,8 @@ class SecurityManager(object):
 				L.isDebug and L.logDebug('Announcement originator. OK.')
 				return True
 		
-		# Allow originator if resource is announced to the originator
-		if (at := resource.at) is not None:
+		# Allow originator if resource is announced to the originator and the request is UPDATE
+		if (at := resource.at) is not None and requestedPermission == Permission.UPDATE:
 			ot = f'{originator}/'
 			if any(each.startswith(ot) for each in at):
 				L.isDebug and L.logDebug('Announcement target originator. OK.')
