@@ -27,50 +27,111 @@ from ..services import CSE as CSE
 #	Identifier and path related
 #
 
-def uniqueRI(prefix:str='') -> str:
-	return noNamespace(prefix) + uniqueID()
+def uniqueRI(prefix:str = '') -> str:
+	"""	Generate a unique resource ID. Beside a random number it
+		can have a prefix.
+		
+		Args:
+			prefix: Prefix for the ID
+		Return:
+			String with the new ID
+	"""
+	return f'{noNamespace(prefix)}{uniqueID()}'
 
 
 def uniqueID() -> str:
+	"""	Generate a unique ID. This is for the moment just a large random number.
+		NO check for uniqueness is done.
+		
+		Return:
+			String with the identifier
+	"""
 	return str(random.randint(1,sys.maxsize))
 
 
 def isUniqueRI(ri:str) -> bool:
-	return len(CSE.storage.identifier(ri)) == 0
+	"""	Test whether a resource ID does not yet exists.
+	
+		Args:
+			ri: Resource ID to check
+		Return:
+			Boolean indicating the result of the test
+	"""
+	return not CSE.storage.identifier(ri)
 
 
-def uniqueRN(prefix:str='un') -> str:
+def uniqueRN(prefix:str) -> str:
+	"""	Generate a unique resource name. A resource name has a prefix and 
+		a random alpha-numeric string.
+
+		Args:
+			prefix: String prefix. If it contains a domain then that is removed
+		Return:
+			String with the resource name
+
+	"""
 	return f'{noNamespace(prefix)}_{_randomID()}'
 
+
 def announcedRN(resource:Resource) -> str:
-	""" Create the announced rn for a resource.
+	""" Create the announced resource name for a resource.
+
+		Args:
+			resource: The Resource for which to generate the announced resource name
+		Return:
+			String with the announced resource name
 	"""
 	return f'{resource.rn}_Annc'
 
 
 # create a unique aei, M2M-SP type
-def uniqueAEI(prefix:str='S') -> str:
+def uniqueAEI(prefix:str = 'S') -> str:
+	"""	Create a new AE ID. An AE ID must always start with either "S" or "C".
+	
+		Args:
+			prefix: "S" or "C"
+		Return:
+			String with the AE ID
+	"""
 	return f'{prefix}{_randomID()}'
 
 
 def noNamespace(id:str) -> str:
 	"""	Remove the namespace part of an identifier and return the remainder.
 
-		Example: 'm2m:cnt' -> 'cnt'
+		Example: 
+			'm2m:cnt' -> 'cnt'
+		
+		Args:
+			id: String with the identifier. May be prefixed with a domain.
+		Return:
+			String that only contains the ID
 	"""
-	p = id.split(':')
-	return p[1] if len(p) == 2 else p[0]
+	_, found, tail = id.partition(':')
+	return tail if found else id
 
 
+_randomIDCharSet = string.ascii_uppercase + string.digits + string.ascii_lowercase
 def _randomID() -> str:
-	""" Generate an ID. Prevent certain patterns in the ID. """
+	""" Generate an ID. Prevent certain patterns in the ID.
+
+		Return:
+			String with a random ID
+	"""
 	while True:
-		result = ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=C.maxIDLength))
-		if 'fopt' not in result:	# prevent 'fopt' in ID
+		result = ''.join(random.choices(_randomIDCharSet, k = C.maxIDLength))
+		if 'fopt' not in result:	# prevent 'fopt' in ID	# TODO really necessary?
 			return result
 
 
-def fullRI(ri:str) -> str:
+def spRelRI(ri:str) -> str:
+	"""	Return a SP-relative resource ID for a resource ID.
+	
+		Args:
+			ri: Resource ID
+		Return:
+			The SP-relative form of the provided resource ID
+	"""
 	return f'{CSE.cseCsi}/{ri}'
 
 
@@ -95,7 +156,13 @@ def csiFromSPRelative(ri:str) -> str:
 			The csi of the resource ID, or None
 	"""
 	ids = ri.split('/')
-	return f'/{ids[0]}' if len(ids) > 0 else None
+	# return f'/{ids[0]}' if len(ids) > 0 else None
+	return f'/{ids[1]}' if len(ids) > 1 else None
+
+
+
+
+
 
 
 def isAbsolute(uri:str) -> bool:
@@ -110,14 +177,11 @@ def isCSERelative(uri:str) -> bool:
 
 def isStructured(uri:str) -> bool:
 	if isCSERelative(uri):
-		if '/' in uri or uri == CSE.cseRn:
-			return True
+		return '/' in uri or uri == CSE.cseRn
 	elif isSPRelative(uri):
-		if uri.count('/') > 2:
-			return True
+		return uri.count('/') > 2
 	elif isAbsolute(uri):
-		if uri.count('/') > 4:
-			return True
+		return uri.count('/') > 4
 	return False
 
 
@@ -214,9 +278,6 @@ def structuredPathFromRI(ri:str) -> str:
 		return CSE.storage.identifier(ri)[0]['srn']
 	except:
 		return None
-	# if len((identifiers := CSE.storage.identifier(ri))) == 1:
-	# 	return cast(str, identifiers[0]['srn'])
-	# return None
 
 
 def riFromStructuredPath(srn: str) -> str:
@@ -232,9 +293,6 @@ def riFromStructuredPath(srn: str) -> str:
 		return CSE.storage.structuredPath(srn)[0]['ri']
 	except:
 		return None
-	# if len((paths := CSE.storage.structuredPath(srn))) == 1:
-	# 	return cast(str, paths[0]['ri'])
-	# return None
 
 
 def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
