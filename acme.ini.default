@@ -184,6 +184,8 @@ root=/
 ; REST interface.
 ; ATTENTION: Enabling this feature exposes configuration values, IDs and
 ; passwords, and is a security risk.
+; See also the [cse.console].hideResources setting to hide resources
+; from the tree.
 ; Default: False
 enableStructureEndpoint=false
 ; Enable an endpoint for supporting Upper Tester commands to the CSE.
