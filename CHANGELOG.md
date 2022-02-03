@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added initial support for the Upper Tester protocol defined in TS-0019.
 - [CSE] Added guided setup of a configuration file when the CSE is started without a config file.
 - [CSE] Added bi-directional update of announced resources.
+- [CSE] Added remote resources support for &lt;group>.
 - [WEB] Allow to open the WebUI of a registered CSE via the context menu.
 - [CONSOLE] Added config for dark (default) and light theme for better readability on consoles with light background.
 - [SCRIPTS] Added scripting to the CSE.

@@ -86,7 +86,7 @@ class Logging:
 	enableBindingsLogging			= True
 	worker 							= None
 	queue:Queue						= None
-	enableQueue						= True
+	enableQueue						= True		# Can be used to enable/disable the logging queue 
 
 	queueMaxsize:int				= 5000		# max number of items in the logging queue. Might otherwise grow forever on large load
 

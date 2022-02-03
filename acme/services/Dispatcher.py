@@ -106,7 +106,7 @@ class Dispatcher(object):
 		# Retrieve the target resource, because it is needed for some rcn (and the default)
 		if request.args.rcn in [RCN.attributes, RCN.attributesAndChildResources, RCN.childResources, RCN.attributesAndChildResourceReferences, RCN.originalResource]:
 			if not (res := self.retrieveResource(id, originator, request)).status:
-			 	return res # error
+				return res # error
 			if not CSE.security.hasAccess(originator, res.resource, permission):
 				return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = f'originator has no permission ({permission})')
 

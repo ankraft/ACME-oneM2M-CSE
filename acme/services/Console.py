@@ -36,6 +36,10 @@ from ..services.Configuration import Configuration
 from ..services.Logging import Logging as L
 
 
+# TODO support configevent!
+
+
+
 class TreeMode(IntEnum):
 	""" Available modes do display the resource tree
 	"""

@@ -67,6 +67,7 @@ class GroupManager(object):
 				L.logWarn(dbg := f'invalid argument or type: {group.mnm}')
 				return Result(status = False, rsc = RC.invalidArguments, dbg = dbg)
 
+
 		group.dbUpdate()
 		# TODO: check virtual resources
 		return Result(status = True, rsc = RC.OK)
@@ -158,7 +159,7 @@ class GroupManager(object):
 				else:												# abandon group
 					return Result(status = False, rsc = RC.groupMemberTypeInconsistent, dbg = 'group consistency strategy and type "mixed" mismatch')
 
-			# member seems to be ok, so add ri to th
+			# member seems to be ok, so add ri to the list
 			if isLocalResource:
 				midsList.append(ri if not hasFopt else ri + '/fopt')		# restore fopt for ri
 			else:

@@ -451,17 +451,33 @@ class Resource(object):
 	#
 
 
-	def setAttribute(self, key:str, value:Any, overwrite:bool=True) -> None:
+	def setAttribute(self, key:str, value:Any, overwrite:bool = True) -> None:
+		"""	Assign a value to a resource attribute.
+		
+			Args:
+				key: Name of the resource attribute
+				value: Value to assign
+				overwrite: Overwrite if present
+		"""
 		Utils.setXPath(self.dict, key, value, overwrite)
 
 
-	def attribute(self, key:str, default:Any=None) -> Any:
+	def attribute(self, key:str, default:Any = None) -> Any:
 		if '/' in key:	# search in path
 			return Utils.findXPath(self.dict, key, default)		
 		return self.dict.get(key, default)
 
 
-	def hasAttribute(self, key: str) -> bool:
+	def hasAttribute(self, key:str) -> bool:
+		"""	Check whether an attribute exists.
+		
+			Todo:
+				Check sub-elements as well via findXPath
+			Args:
+				key: attribute to look for
+			Return:
+				Boolean
+		"""
 		# TODO check sub-elements as well via findXPath
 		return key in self.dict
 

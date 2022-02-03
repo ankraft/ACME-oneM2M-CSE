@@ -230,11 +230,18 @@ class Storage(object):
 		return self.db.countResources()
 
 
-	def identifier(self, ri:str) -> list[JSON] | list[Document]:
+	def identifier(self, ri:str) -> list[Document]:
+		"""	Search for the resource with the given resource ID
+
+			Args:
+				ri: Resource ID for the resource to look for
+			Return:
+				List of found resources, or an empty list
+		"""
 		return self.db.searchIdentifiers(ri = ri)
 
 
-	def structuredPath(self, srn:str) -> list[JSON] | list[Document]:
+	def structuredPath(self, srn:str) -> list[Document]:
 		return self.db.searchIdentifiers(srn = srn)
 
 
@@ -564,7 +571,17 @@ class TinyDBBinding(object):
 			self.tabIdentifiers.remove(self.identifierQuery.ri == resource.ri)
 
 
-	def searchIdentifiers(self, ri:str=None, srn:str=None) -> list[Document]:
+	def searchIdentifiers(self, ri:str = None, srn:str = None) -> list[Document]:
+		"""	Search for an resource ID OR for a structured name in the identifiers DB.
+			Only one `ri` or `srn` shall be given. If both are given then `srn`
+			is taken.
+		
+			Args:
+				ri: Resource ID to search for
+				srn: Structured path to search for
+			Return:
+				A list of found documents, or an empty list if not found
+		 """
 		with self.lockIdentifiers:
 			if srn:
 				return self.tabIdentifiers.search(self.identifierQuery.srn == srn)

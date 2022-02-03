@@ -177,7 +177,7 @@ class NotificationManager(object):
 			verificationRequest = {
 				'm2m:sgn' : {
 					'vrq' : True,
-					'sur' : Utils.fullRI(ri)
+					'sur' : Utils.spRelRI(ri)
 				}
 			}
 			originator and Utils.setXPath(verificationRequest, 'm2m:sgn/cr', originator)
@@ -201,7 +201,7 @@ class NotificationManager(object):
 			deletionNotification = {
 				'm2m:sgn' : {
 					'sud' : True,
-					'sur' : Utils.fullRI(ri)
+					'sur' : Utils.spRelRI(ri)
 				}
 			}
 
@@ -229,7 +229,7 @@ class NotificationManager(object):
 						'rep' : {},
 						'net' : NotificationEventType.resourceUpdate
 					},
-					'sur' : Utils.fullRI(sub['ri'])
+					'sur' : Utils.spRelRI(sub['ri'])
 				}
 			}
 			data = None
