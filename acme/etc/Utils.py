@@ -136,7 +136,7 @@ def spRelRI(ri:str) -> str:
 
 
 def isSPRelative(uri:str) -> bool:
-	""" Check whether a URI is SP-Relative. 
+	""" Test whether a URI is SP-Relative. 
 
 		Args:
 			uri: The URI to check
@@ -146,36 +146,36 @@ def isSPRelative(uri:str) -> bool:
 	return uri is not None and len(uri) >= 2 and uri[0] == '/' and uri [1] != '/'
 
 
-def csiFromSPRelative(ri:str) -> str:
-	"""	Return the csi from a SP-relative resource ID. It is assumed that
-		the passed `ri` is in SP-relative format.
-		
-		Args:
-			ri: A SP-relative resource ID
-		Return:
-			The csi of the resource ID, or None
-	"""
-	ids = ri.split('/')
-	# return f'/{ids[0]}' if len(ids) > 0 else None
-	return f'/{ids[1]}' if len(ids) > 1 else None
-
-
-
-
-
-
-
 def isAbsolute(uri:str) -> bool:
-	""" Check whether a URI is Absolute. """
+	""" Test whether a URI is in absolute format.
+	
+		Args:
+			uri: The URI to check
+		Return:
+			Boolean if the URI is in absolute format
+	"""
 	return uri is not None and uri.startswith('//')
 
 
 def isCSERelative(uri:str) -> bool:
-	""" Check whether a URI is CSE-Relative. """
+	""" Test whether a URI is in CSE-relative format.
+
+		Args:
+			uri: The URI to check
+		Return:
+			Boolean if the URI is in CSE-relative format
+	"""
 	return uri is not None and not uri.startswith('/')
 
 
 def isStructured(uri:str) -> bool:
+	""" Test whether a URI is in structured format.
+	
+		Args:
+			uri: The URI to check
+		Return:
+			Boolean if the URI is in structured format
+	"""
 	if isCSERelative(uri):
 		return '/' in uri or uri == CSE.cseRn
 	elif isSPRelative(uri):
@@ -185,27 +185,25 @@ def isStructured(uri:str) -> bool:
 	return False
 
 
+
+
+
+
 def isVirtualResource(resource: Resource) -> bool:
-	"""	Check whether the `resource` is a virtual resource. 
+	"""	Test whether the `resource` is a virtual resource. 
 		The function returns `False` when the resource is not a virtual resource, or when it is `None`.
 	"""
-	if not resource:
-		return False
 	return resource[resource._isVirtual]
 
 
 def isAnnouncedResource(resource:Resource) -> bool:
-	"""	Check whether the `resource` is an announced resource. 
+	"""	Test whether the `resource` is an announced resource. 
 	"""
-	if not resource:
-		return False
 	return resource[resource._isAnnounced]
-	# result:bool = resource[resource._isAnnounced]
-	# return result if result is not None else False
 
 
 def isValidID(id:str, allowEmpty:bool = False) -> bool:
-	""" Check for a valid ID. 
+	""" Test for a valid ID. 
 
 		Args:
 			id: The ID to check
@@ -233,7 +231,7 @@ def hasOnlyUnreserved(id:str) -> bool:
 
 csiRx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
 def isValidCSI(csi:str) -> bool:
-	"""	Check for valid CSE-ID format.
+	"""	Test for valid CSE-ID format.
 
 		Args:
 			csi: The CSE-ID to check
@@ -241,6 +239,20 @@ def isValidCSI(csi:str) -> bool:
 			Boolean
 	"""
 	return re.fullmatch(csiRx, csi) is not None
+
+
+def csiFromSPRelative(ri:str) -> str:
+	"""	Return the csi from a SP-relative resource ID. It is assumed that
+		the passed `ri` is in SP-relative format.
+		
+		Args:
+			ri: A SP-relative resource ID
+		Return:
+			The csi of the resource ID, or None
+	"""
+	ids = ri.split('/')
+	# return f'/{ids[0]}' if len(ids) > 0 else None
+	return f'/{ids[1]}' if len(ids) > 1 else None
 
 
 def structuredPath(resource:Resource) -> str:
@@ -549,6 +561,8 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 
 	if not key or not dct:
 		return default
+	if key in dct:
+		return dct[key]
 
 	paths = key.split("/")
 	data:Any = dct
@@ -689,8 +703,8 @@ def fanoutPointResource(id:str) -> Resource:
 		Return:
 			Return either the virtual fanoutPoint resource or None.
 	"""
-	if not id:
-		return None
+	# if not id:
+	# 	return None
 	# Convert to srn
 	if not isStructured(id):
 		if not (id := structuredPathFromRI(id)):
@@ -720,8 +734,8 @@ def pollingChannelURIResource(id:str) -> PCH_PCU:
 		Return:
 			Return either the virtual PollingChannelURI resource or None.
 	"""
-	if not id:
-		return None
+	# if not id:
+	# 	return None
 	if id.endswith('pcu'):
 		# Convert to srn
 		if not isStructured(id):
@@ -782,7 +796,6 @@ def exceptionToResult(e:Exception) -> Result:
 	
 		Args:
 			e: Exception
-		
 		Return:
 			Result object, with "rsc" set to internal server error, and "dbg" to the exception message.
 		"""

@@ -366,12 +366,19 @@ class Resource(object):
 		return resource.ty in self._allowedChildResourceTypes or isinstance(resource, Unknown)
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
-		""" Validate a resource. Usually called within activate() or update() methods. """
+	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+		""" Validate a resource. Usually called within activate() or update() methods.
+
+			Args:
+				originator: Request originator
+				create: Indicator whether this is CREATE request
+				dct: Attributes to validate
+				parentResource: The parent resource
+		"""
 		L.isDebug and L.logDebug(f'Validating resource: {self.ri}')
-		if (not Utils.isValidID(self.ri) or
-			not Utils.isValidID(self.pi, allowEmpty = self.ty == T.CSEBase) or # pi is empty for CSEBase
-			not Utils.isValidID(self.rn)):
+		if not ( Utils.isValidID(self.ri) and
+				 Utils.isValidID(self.pi, allowEmpty = self.ty == T.CSEBase) and # pi is empty for CSEBase
+				 Utils.isValidID(self.rn)):
 			L.logDebug(dbg := f'Invalid ID: ri: {self.ri}, pi: {self.pi}, or rn: {self.rn})')
 			return Result(status = False, rsc = RC.contentsUnacceptable, dbg = dbg)
 
@@ -463,9 +470,15 @@ class Resource(object):
 
 
 	def attribute(self, key:str, default:Any = None) -> Any:
-		if '/' in key:	# search in path
-			return Utils.findXPath(self.dict, key, default)		
-		return self.dict.get(key, default)
+		"""	Return the value of an attribute.
+		
+			Args:
+				key: Key to look for. This can be a path (see `findXPath()`)
+				default: A default to return if the attribute is not set
+			Return:
+				The attribute's value, the `default`, or None
+				"""
+		return Utils.findXPath(self.dict, key, default)
 
 
 	def hasAttribute(self, key:str) -> bool:
