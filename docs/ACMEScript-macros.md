@@ -9,14 +9,17 @@
 | [Basic](#macros_basic)     | [argc](#macro_argc)                          | Get number of arguments                                                 |
 |                            | [argv](#macro_argv)                          | Get script or procedure arguments                                       |
 |                            | [datetime](#macro_datetime)                  | Get current date and time                                               |
+|                            | [lower](#macro_lower)                        | Get a lower-case version of the provided string argument                |
 |                            | [random](#random)                            | Generate a random number.                                               |
 |                            | [result](#macro_result)                      | Get the last result of a while, procedure etc.                          |
 |                            | [round](#round)                              | Round a float number.                                                   |
 |                            | [runCount](#macro_runcount)                  | Get the number of script runs.                                          |
+|                            | [upper](#macro_upper)                        | Get an upper-case version of the provided string argument               |
 | [Storage](#macros_storage) | [storageGet](#macro_storageget)              | Get a value from the persistent key/value storage                       |
 |                            | [storageHas](#macro_storagehas)              | Test the existence of a key in the persistent key/value storage         |
 | [oneM2M](#macros_onem2m)   | [attribute](#macro_attribute)                | Get the value of an attribute from a oneM2M resource                    |
 |                            | [hasAttribute](#macro_hasattribute)          | Test the existence of an attribute from a oneM2M resource               |
+|                            | [request.originator](#macro_req_originator)  | Get the assigned originator used in requests                            |
 |                            | [response.resource](#macro_resp_resource)    | Get the resource of the last oneM2M request                             |
 |                            | [response.status](#macro_resp_status)        | Get the status of the last oneM2M request                               |
 | [CSE](#macros_cse)         | [isIPython](#macro_isipython)                | Check whether the runtime environment is IPython, e.g. Jupyter Notebook |
@@ -81,6 +84,22 @@ print ${datetime}
 # -> 20220107T221625.771604
 print ${datetime %H:%M}
 # -> 22:26
+```
+
+
+<a name="macro_lower"></a>
+### lower
+
+Usage:  
+${lower &lt;text:string> }
+
+Return a lower-case version of the provided string `text`.
+
+Example:
+
+```text
+print ${upper Hello}
+# -> hello
 ```
 
 
@@ -150,6 +169,7 @@ print ${round 2361.678 -2}
 # -> 2400.0
 ```
 
+
 <a name="macro_runcount"></a>
 ### runCount
 
@@ -164,6 +184,44 @@ Example:
 print ${runCount}
 # -> 42
 ``` 
+
+
+<a name="macro_round"></a>
+### round
+
+Usage:  
+${round &lt;number:float> [ &lt; ndigits> ] }
+
+Get a number rounded to `ndigits` precision after the decimal point. If `ndigits` is omitted, 
+then this macro returns the nearest integer. `ndigits` may be negative.
+
+Example:
+
+```text
+print ${round 1.6}
+# -> 2
+print ${round 1.678}
+# -> 1.68
+print ${round 2361.678 -2}
+# -> 2400.0
+```
+
+
+<a name="macro_upper"></a>
+### upper
+
+Usage:  
+${upper &lt;text:string> }
+
+Return a upper-case version of the provided string `text`.
+
+
+Example:
+
+```text
+print ${upper hello}
+# -> HELLO
+```
 
 
 <a name="macros_storage"></a>
@@ -269,6 +327,23 @@ print ${response.resource}
 # -> ... the retrieved resource ...
 ```
 
+
+<a name="macro_req_originator"></a>
+### request.originator
+
+Usage:  
+${request.originator}
+
+Evaluates to the assigned originator for all following oneM2M requests. See also the command [ORIGINATOR](ACMEScript-commands.md#command_originator).
+
+Example:
+
+```text
+print ${request.originator}
+# -> ... the originator ...
+```
+
+
 <a name="macro_response_status"></a>
 ### response.status
 
@@ -310,7 +385,7 @@ if ${cseStatus} == RUNNING
 endif
 ```
 
-
+x
 <a name="macro_isipython"></a>
 ### isIPython
 

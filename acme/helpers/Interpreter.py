@@ -1175,9 +1175,11 @@ _builtinMacros:PMacroDict = {
 	'result':	lambda c, a: c.result,
 	'argc':		_doArgc,
 	'argv':		_doArgv,
+	'lower':	lambda c, a: a.lower(),
 	'random':	_doRandom,
 	'round':	_doRound,
 	'runcount':	lambda c, a: str(c.runs),
+	'upper':	lambda c, a: a.upper(),
 }
 
 
