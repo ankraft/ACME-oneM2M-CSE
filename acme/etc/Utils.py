@@ -193,12 +193,16 @@ def isVirtualResource(resource: Resource) -> bool:
 	"""	Test whether the `resource` is a virtual resource. 
 		The function returns `False` when the resource is not a virtual resource, or when it is `None`.
 	"""
+	if not resource:
+		return False
 	return resource[resource._isVirtual]
 
 
 def isAnnouncedResource(resource:Resource) -> bool:
 	"""	Test whether the `resource` is an announced resource. 
 	"""
+	if not resource:
+		return False
 	return resource[resource._isAnnounced]
 
 
