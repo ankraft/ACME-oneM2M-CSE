@@ -199,7 +199,7 @@ class Console(object):
 		self._about()
 		L.console(Text("""An open source CSE Middleware for Education
 
-(c) 2021 by Andreas Kraft
+(c) 2022 by Andreas Kraft
 Available under the BSD 3-Clause License
 """))
 		L.console(Text('https://github.com/ankraft/ACME-oneM2M-CSE', style='link https://github.com/ankraft/ACME-oneM2M-CSE'), nl=True)

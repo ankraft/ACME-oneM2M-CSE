@@ -71,7 +71,6 @@ class Dispatcher(object):
 				id: Optional ID of the request.
 			Return:
 				Result object.
-		
 		"""
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
 

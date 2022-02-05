@@ -53,25 +53,36 @@ class Validator(object):
 	#########################################################################
 
 
-	def	validateAttributes(self, resource:JSON, tpe:str, ty:T=T.UNKNOWN, attributes:AttributePolicyDict=None, create:bool=True , isImported:bool=False, createdInternally:bool=False, isAnnounced:bool=False) -> Result:
-		""" Validate a resources attributes for types etc."""
-		if L.isDebug: L.logDebug('Validating attributes')
+	def	validateAttributes(self, resource:JSON, tpe:str, ty:T = T.UNKNOWN, attributes:AttributePolicyDict = None, create:bool = True , isImported:bool = False, createdInternally:bool = False, isAnnounced:bool = False) -> Result:
+		""" Validate a resources' attributes for types etc.
+
+			Args:
+				resource: dictionary to check
+				tpe: The resource's resource type name
+				ty: The resource type
+				attributes: The attribute policy dictionary for the resource type. If this is None then validate automatically
+				create: Boolean indicating whether this a CREATE request
+				isImported: Boolean indicating whether a resource is imported. Then automatically return True.
+				createdInternally: Boolean indicating that a resource is created internally
+				isAnnounced: Boolean indicating that a resource is announced
+			Return:
+				Result object
+		"""
+		L.isDebug and L.logDebug('Validating attributes')
 
 		# Just return in case the resource instance is imported
 		if isImported:
-			return Result(status=True)
+			return Result(status = True)
 
 		# No policies?
 		if not attributes:
-			if L.isWarn: L.logWarn(f'No attribute policies: {resource}')
-			return Result(status=True)
+			L.isWarn and L.logWarn(f'No attribute policies: {resource}')
+			return Result(status = True)
 
-		# Set an index into the policy dataclass, depending on the
-		# validation type
+		# Set an index into the policy dataclass, depending on the validation type
+		optionalIndex = 2 if create else 3	# index to create or update
 		if isAnnounced:
 			optionalIndex = 5	# index to announced
-		else:
-			optionalIndex = 2 if create else 3	# index to create or update
 
 		# Get the pure resource and the resource's tpe
 		(pureResDict, _tpe) = Utils.pureResource(resource)
@@ -86,27 +97,31 @@ class Validator(object):
 		# We don't want to change the original attributes, so copy it before (only if we add new attributePolicies)
 
 		if ty in [ T.FCNT, T.FCI ] and tpe:
-			if tpe in flexContainerAttributes:
+			if (fca := flexContainerAttributes.get(tpe)) is not None:
 				attributePolicies = deepcopy(attributePolicies)
-				attributePolicies.update(flexContainerAttributes.get(tpe))
+				attributePolicies.update(fca)
 			else:
 				L.logWarn(dbg := f'Unknown resource type: {tpe}')
-				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
 		# L.logDebug(attributePolicies.items())
 		# L.logWarn(pureResDict)
 		
+		# Check that all attributes have been defied
 		for attributeName in pureResDict.keys():
 			if attributeName not in attributePolicies.keys():
 				L.logWarn(dbg := f'Unknown attribute: {attributeName} in resource: {tpe}')
-				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+
 		for attributeName, policy in attributePolicies.items():
 			if not policy:
-				if L.isWarn: L.logWarn(f'No attribute policy found for attribute: {attributeName}')
+				L.isWarn and L.logWarn(f'No attribute policy found for attribute: {attributeName}')
 				continue
 
-			# Get the correct tuple for a resource when there are more
-			# definitions
+			# Get the correct tuple for a resource when there are more definitions
+
+			# Used a couple of times below
+			policyOptional = policy.select(optionalIndex)
 
 			# Check whether the attribute is allowed or mandatory in the request
 			if (attributeValue := pureResDict.get(attributeName)) is None:	# ! might be an int, bool, so we need to check for None
@@ -116,33 +131,33 @@ class Validator(object):
 					# MA are not checked bc they are only present if they are present in the original resource
 					continue
 					
-				if policy.select(optionalIndex) == RO.M:		# Not okay, this attribute is mandatory but absent
+				if policyOptional == RO.M:		# Not okay, this attribute is mandatory but absent
 					L.logWarn(dbg := f'Cannot find mandatory attribute: {attributeName}')
-					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
 				# TODO Is the following actually executed??? Should it be somewhere else? Write a test
 				if attributeName in pureResDict and policy.cardinality == CAR.CAR1: 	# but ignore CAR.car1N (which may be Null/None)
 					L.logWarn(dbg := f'Cannot delete a mandatory attribute: {attributeName}')
-					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
-				if policy.select(optionalIndex) in [ RO.NP, RO.O ]:		# Okay that the attribute is not in the dict, since it is provided or optional
+				if policyOptional in [ RO.NP, RO.O ]:		# Okay that the attribute is not in the dict, since it is provided or optional
 					continue
 			else:
 				if not createdInternally:
-					if policy.select(optionalIndex) == RO.NP:
+					if policyOptional == RO.NP:
 						L.logWarn(dbg := f'Found non-provision attribute: {attributeName}')
-						return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+						return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
 				# check the the announced cases
 				if isAnnounced:
 					if policy.announcement == AN.NA:	# Not okay, attribute is not announced
 						L.logWarn(dbg := f'Found non-announced attribute: {attributeName}')
-						return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+						return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 					continue
 
 				# Special handling for the ACP's pvs attribute
 				if attributeName == 'pvs' and not (res := self.validatePvs(pureResDict)).status:
-					return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
+					return Result(status = False, rsc = RC.badRequest, dbg = res.dbg)
 
 			# Check whether the value is of the correct type
 			if (res := self._validateType(policy.type, attributeValue)).status:
@@ -150,9 +165,9 @@ class Validator(object):
 
 			# fall-through means: not validated
 			L.logWarn(dbg := f'Attribute/value validation error: {attributeName}={str(attributeValue)} ({res.dbg})')
-			return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
-		return Result(status=True)
+		return Result(status = True)
 
 
 
