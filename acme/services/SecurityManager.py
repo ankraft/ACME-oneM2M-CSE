@@ -57,7 +57,13 @@ class SecurityManager(object):
 		return True
 
 
-	def hasAccess(self, originator:str, resource:Resource, requestedPermission:Permission, checkSelf:bool=False, ty:T=None, isCreateRequest:bool=False, parentResource:Resource=None) -> bool:
+	def hasAccess(self, originator:str, 
+						resource:Resource, 
+						requestedPermission:Permission, 
+						checkSelf:bool = False, 
+						ty:T = None, 
+						isCreateRequest:bool = False,
+						parentResource:Resource = None) -> bool:
 
 		#  Do or ignore the check
 		if not self.enableACPChecks:
@@ -116,8 +122,6 @@ class SecurityManager(object):
 				L.isDebug and L.logDebug('Announcement target originator. OK.')
 				return True
 
-
-
 		# Allow some Originators to RETRIEVE the CSEBase
 		if resource.ty == T.CSEBase and requestedPermission & Permission.RETRIEVE:
 
@@ -173,64 +177,68 @@ class SecurityManager(object):
 				return False
 
 
-		if resource.ty in [T.ACP, T.ACPAnnc]:	# target is an ACP or ACPAnnc resource
+		# target is an ACP or ACPAnnc resource
+		if resource.ty in [T.ACP, T.ACPAnnc]:	
 			if resource.checkSelfPermission(originator, requestedPermission):
 				L.isDebug and L.logDebug('Permission granted')
 				return True
 			# fall-through
 
-		else:		# target is any other resource type
-			
-			# If subscription, check whether originator has retrieve permissions on the subscribed-to resource (parent)	
-			if ty == T.SUB and parentResource:
-				if self.hasAccess(originator, parentResource, Permission.RETRIEVE) == False:
-					return False
-
-			# When no acpi is configured for the resource
-			if not (acpi := resource.acpi):
-				L.isDebug and L.logDebug('Handle with missing acpi in resource')
-
-				# if the resource *may* have an acpi
-				if resource._attributes and 'acpi' in resource._attributes:
-
-					# Check holder attribute
-					if holder := resource.hld:
-						if holder == originator:	# resource.holder == originator -> all access
-							L.isDebug and L.logDebug('Allow access for holder')
-							return True
-						# When holder is set, but doesn't match the originator then fall-through to fail
-						
-					# Check resource creator
-					elif (creator := resource.getOriginator()) and creator == originator:
-						L.isDebug and L.logDebug('Allow access for creator')
-						return True
-					
-					# Fall-through to fail
-
-				# resource doesn't support acpi attribute
-				else:
-					if resource.inheritACP:
-						L.isDebug and L.logDebug('Checking parent\'s permission')
-						if not parentResource:
-							parentResource = CSE.dispatcher.retrieveResource(resource.pi).resource
-						return self.hasAccess(originator, parentResource, requestedPermission, checkSelf, ty, isCreateRequest)
-
-				L.isDebug and L.logDebug('Permission NOT granted for resource w/o acpi')
+		# If subscription, check whether originator has retrieve permissions on the subscribed-to resource (parent)	
+		if ty == T.SUB and parentResource:
+			if self.hasAccess(originator, parentResource, Permission.RETRIEVE) == False:
 				return False
 
-			for a in acpi:
-				if not (acp := CSE.dispatcher.retrieveResource(a).resource):
-					L.isDebug and L.logDebug(f'ACP resource not found: {a}')
-					continue
-				if checkSelf:	# forced check for self permissions
-					if acp.checkSelfPermission(originator, requestedPermission):
-						L.isDebug and L.logDebug('Permission granted')
-						return True				
-				else:
-					# L.isWarn and L.logWarn(acp)
-					if acp.checkPermission(originator, requestedPermission, ty):
-						L.isDebug and L.logDebug('Permission granted')
+		#
+		# target is any other resource type
+		#
+		
+		# When no acpi is configured for the resource
+		if not (acpi := resource.acpi):
+			L.isDebug and L.logDebug('Handle with missing acpi in resource')
+
+			# if the resource *may* have an acpi
+			if resource._attributes and 'acpi' in resource._attributes:
+
+				# Check holder attribute
+				if holder := resource.hld:
+					if holder == originator:	# resource.holder == originator -> all access
+						L.isDebug and L.logDebug('Allow access for holder')
 						return True
+					# When holder is set, but doesn't match the originator then fall-through to fail
+					
+				# Check resource creator
+				elif (creator := resource.getOriginator()) and creator == originator:
+					L.isDebug and L.logDebug('Allow access for creator')
+					return True
+				
+				# Fall-through to fail
+
+			# resource doesn't support acpi attribute
+			else:
+				if resource.inheritACP:
+					L.isDebug and L.logDebug('Checking parent\'s permission')
+					if not parentResource:
+						parentResource = CSE.dispatcher.retrieveResource(resource.pi).resource
+					return self.hasAccess(originator, parentResource, requestedPermission, checkSelf, ty, isCreateRequest)
+
+			L.isDebug and L.logDebug('Permission NOT granted for resource w/o acpi')
+			return False
+
+		# Finally check the acpi
+		for a in acpi:
+			if not (acp := CSE.dispatcher.retrieveResource(a).resource):
+				L.isDebug and L.logDebug(f'ACP resource not found: {a}')
+				continue
+			if checkSelf:	# forced check for self permissions
+				if acp.checkSelfPermission(originator, requestedPermission):
+					L.isDebug and L.logDebug('Permission granted')
+					return True				
+			else:
+				# L.isWarn and L.logWarn(acp)
+				if acp.checkPermission(originator, requestedPermission, ty):
+					L.isDebug and L.logDebug('Permission granted')
+					return True
 
 		# no fitting permission identified
 		L.isDebug and L.logDebug('Permission NOT granted')
