@@ -19,6 +19,9 @@ import logging
 
 def _utcTime() -> float:
 	"""	Return the current time's timestamp, but relative to UTC.
+
+		Return:
+			Float UTC-based timestamp
 	"""
 	return datetime.datetime.utcnow().timestamp()
 
@@ -31,7 +34,18 @@ class BackgroundWorker(object):
 	_logger:Callable[[int, str], None] = logging.log
 
 
-	def __init__(self, interval:float, callback:Callable, name:str = None, startWithDelay:bool = False, maxCount:int = None, dispose:bool = True, id:int = None, runOnTime:bool = True, runPastEvents:bool = False, finished:Callable = None) -> None:
+	def __init__(self,
+						interval:float,
+						callback:Callable, 
+						name:str = None, 
+						startWithDelay:bool = False,
+						maxCount:int = None, 
+						dispose:bool = True, 
+						id:int = None, 
+						runOnTime:bool = True, 
+						runPastEvents:bool = False, 
+						finished:Callable = None,
+						ignoreException:bool = False) -> None:
 		self.interval 				= interval
 		self.runOnTime				= runOnTime			# Compensate for processing time
 		self.runPastEvents			= runPastEvents		# Run events that are in the past
@@ -45,6 +59,7 @@ class BackgroundWorker(object):
 		self.numberOfRuns 			= 0					# Actual runs
 		self.dispose 				= dispose			# Only run once, then remove itself from the pool
 		self.finished				= finished			# Callback after worker finished
+		self.ignoreException		= bool				# Ignore exception when running workers
 		self.id 					= id
 
 
@@ -120,9 +135,13 @@ class BackgroundWorker(object):
 		return self
 
 
-	def unpause(self, immediately:bool=False) -> BackgroundWorker:
-		""" Continue the running of a worker. If `immediately` is True then the worker
-			is executed immediately and then the normal schedule continues.
+	def unpause(self, immediately:bool = False) -> BackgroundWorker:
+		""" Continue the running of a worker. 
+
+			Args:
+				immediately: If `immediately` is True then the worker is executed immediately and then the normal schedule continues.
+			Return:
+				self, BackgroundWorker
 		"""
 		if not self.running:
 			return None
@@ -133,6 +152,9 @@ class BackgroundWorker(object):
 
 	def workNow(self) -> BackgroundWorker:
 		"""	Execute the worker right immediately and outside the normal schedule.
+
+			Return:
+				self, BackgroundWorker
 		"""
 		if self.executing:
 			return self
@@ -144,6 +166,7 @@ class BackgroundWorker(object):
 	def _work(self) -> None:
 		"""	Wrapper around the actual worker function. It deals with terminating,
 			process time compensation, etc.
+
 			This wrapper and the callback are executed in a separate Thread.
 			At the end, depending on return value and whether the maxCount has been reached, the worker is added to the queue again.
 		"""
@@ -153,7 +176,22 @@ class BackgroundWorker(object):
 		try:
 			self.numberOfRuns += 1
 			self.executing = True
-			result = self.callback(**self.args)
+
+			# The following calls the worker callback.
+			# If there is no exception, then the loop is left
+			# If there is an exception and
+			# - ignoreException is True then the loop is run again
+			# - ignoreException is False then the exception is raised again
+			while True:
+				try:
+					result = self.callback(**self.args)
+					break
+				except Exception as e:
+					print(e.with_traceback())
+					if self.ignoreException:
+						continue
+					raise
+
 		except Exception as e:
 			if BackgroundWorker._logger:
 				BackgroundWorker._logger(logging.ERROR, f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}\n{"".join(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))}')
@@ -186,7 +224,7 @@ class BackgroundWorker(object):
 
 
 	def __repr__(self) -> str:
-		return f'BackgroundWorker(name={self.name}, callback={str(self.callback)}, running={self.running}, interval={self.interval:f}, startWithDelay={self.startWithDelay}, numberOfRuns={self.numberOfRuns:d}, dispose={self.dispose}, id={self.id}, runOnTime={self.runOnTime})'
+		return f'BackgroundWorker(name={self.name}, callback = {str(self.callback)}, running = {self.running}, interval = {self.interval:f}, startWithDelay = {self.startWithDelay}, numberOfRuns = {self.numberOfRuns:d}, dispose = {self.dispose}, id = {self.id}, runOnTime = {self.runOnTime})'
 
 
 class BackgroundWorkerPool(object):
@@ -205,14 +243,40 @@ class BackgroundWorkerPool(object):
 
 	@classmethod
 	def setLogger(cls, logger:Callable) -> None:
-		"""	Assign a callback for logging
+		"""	Assign a callback for logging.
+
+			Args:
+				logger: Logging callback.
 		"""
 		BackgroundWorker._logger = logger
 
 
 	@classmethod
-	def newWorker(cls, interval:float, workerCallback:Callable, name:str = None, startWithDelay:bool = False, maxCount:int = None, dispose:bool = True, runOnTime:bool = True, runPastEvents:bool = False, finished:Callable = None) -> BackgroundWorker:	# typxe:ignore[type-arg]
+	def newWorker(cls,	interval:float, 
+						workerCallback:Callable,
+						name:str = None, 
+						startWithDelay:bool = False, 
+						maxCount:int = None, 
+						dispose:bool = True, 
+						runOnTime:bool = True, 
+						runPastEvents:bool = False, 
+						finished:Callable = None, 
+						ignoreException:bool = False) -> BackgroundWorker:	# typxe:ignore[type-arg]
 		"""	Create a new background worker that periodically executes the callback.
+
+			Args:
+				interval: Interval in seconds to run the worker callback
+				workerCallback: Callback to run as a worker
+				name: Name of the worker
+				startWithDelay: If True then start the worker after a `interval` delay 
+				maxCount: Maximum number runs
+				dispose: If True then dispose the worker after finish
+				runOnTime: If True then the worker is always run *at* the interval, otherwise the interval starts *after* the worker execution
+				runPastEvents: If True then runs in the past are executed, otherwise they are dismissed
+				finished: Callable that is executed after the worker finished
+			Return:
+				BackgroundWorker
+
 		"""
 		# Get a unique worker ID
 		while True:
@@ -224,7 +288,13 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def newActor(cls, workerCallback:Callable, delay:float = 0.0, at:float = None, name:str = None, dispose:bool = True, finished:Callable = None) -> BackgroundWorker:
+	def newActor(cls,	workerCallback:Callable, 
+						delay:float = 0.0, 
+						at:float = None, 
+						name:str = None, 
+						dispose:bool = True, 
+						finished:Callable = None, 
+						ignoreException:bool = False) -> BackgroundWorker:
 		"""	Create a new background worker that runs only once after a `delay`
 			(the 'delay' may be 0.0s, though), or `at` a sepcific time (UTC timestamp).
 			The `at` argument provide convenience to calculate the delay to wait before the
@@ -233,28 +303,44 @@ class BackgroundWorkerPool(object):
 			receive the same arguments as the normal workerCallback.
 			The "actor" is only a BackgroundWorker object and needs to be started manuall
 			with the `start()` method.
+
+			Args:
+				workerCallback: Callback to run as an actor
+				dekay: Delay in seconds after which the actor callback is executed
+				at: Run the actor at a specific time (timestamp)
+				name: Name of the actor
+				dispose: If True then dispose the actor after finish
+				finished: Callable that is executed after the worker finished
+				ignoreExceptions: Restart the actor in case an exception is encountered
+			Return:
+				BackgroundWorker
 		"""
 		if at:
 			if delay != 0.0:
 				raise ValueError('Cannot set both "delay" and "at" arguments')
 			delay = at - _utcTime()
-		return cls.newWorker(delay, workerCallback, name = name, startWithDelay = delay>0.0, maxCount = 1, dispose = dispose, finished = finished)
+		return cls.newWorker(delay, workerCallback, name = name, startWithDelay = delay>0.0, maxCount = 1, dispose = dispose, finished = finished, ignoreException = ignoreException)
 
 
 	@classmethod
 	def findWorkers(cls, name:str = None, running:bool = None) -> List[BackgroundWorker]:
-		"""	Find and return a list of worker(s) that match the search criteria:
+		"""	Find and return a list of worker(s) that match the search criteria.
 
-			- `name` - Name of the worker. The `name` may contain simple wildcards (* and ?)
-			- `running` - The running status of the worker
+			Args:
+				name: Name of the worker. It may contain simple wildcards (* and ?)
+				running: The running status of the worker to match
 		"""
 		return [ w for w in cls.backgroundWorkers.values() if (not name or simpleMatch(w.name, name)) and (not running or running == w.running) ]
 
 
 	@classmethod
 	def stopWorkers(cls, name:str = None) -> List[BackgroundWorker]:
-		"""	Stop the worker(s) that match the optional `name` parameter. If `name` is not given then stop all workers.
-			It returns a list of the stopped workers.
+		"""	Stop the worker(s) that match the optional `name` parameter. 
+
+			Args:
+				name: Name of the worker(s) to remove. This could be a simple regex. If None then stop all workers.
+			Return:
+				The list of removed BackgroundWorker(s)
 		"""
 		workers = cls.findWorkers(name = name)
 		for w in workers:
@@ -266,6 +352,11 @@ class BackgroundWorkerPool(object):
 	def removeWorkers(cls, name:str) -> List[BackgroundWorker]:
 		"""	Remove workers from the pool. Before removal they will be stopped first.
 			Only workers that match the `name` are removed.
+
+			Args:
+				name: Name of the worker(s) to remove. This could be a simple regex.
+			Return:
+				The list of removed BackgroundWorker(s)
 		"""
 		workers = cls.stopWorkers(name)
 		# Most workers should be removed when stopped, but remove the rest here
@@ -276,6 +367,11 @@ class BackgroundWorkerPool(object):
 
 	@classmethod
 	def _removeBackgroundWorkerFromPool(cls, worker:BackgroundWorker) -> None:
+		"""	Remove a BackgroundWorker from the internal pool.
+		
+			Args:
+				worker: Backgroundworker to remove
+			"""
 		if worker and worker.id in cls.backgroundWorkers:
 			del cls.backgroundWorkers[worker.id]
 
@@ -283,6 +379,10 @@ class BackgroundWorkerPool(object):
 	@classmethod
 	def _queueWorker(cls, delay:float, worker:BackgroundWorker) -> None:
 		"""	Queue a `worker` for execution after `delay` seconds.
+
+			Args:
+				delay: Time in seconds after which the worker shall be executed
+				worker: Backgroundworker to unqueue
 		"""
 		top = cls.workerQueue[0] if cls.workerQueue else None
 		with cls.queueLock:
@@ -294,6 +394,9 @@ class BackgroundWorkerPool(object):
 	@classmethod
 	def _unqueueWorker(cls, worker:BackgroundWorker) -> None:
 		"""	Remove the Backgroundworker for `id` from the queue.
+
+			Args:
+				worker: Backgroundworker to unqueue
 		"""
 		with cls.queueLock:
 			cls._stopTimer()
