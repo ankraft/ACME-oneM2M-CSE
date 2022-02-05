@@ -1127,6 +1127,9 @@ class CSERequest:
 
 @dataclass
 class AttributePolicy:
+	
+	# !!! DON'T CHANGE the order of the attributes!
+
 	type:BasicType
 	cardinality:Cardinality
 	optionalCreate:RequestOptionality
@@ -1143,6 +1146,11 @@ class AttributePolicy:
 
 	def select(self, index:int) -> Any:
 		"""	Return the n-th attributes in the dataclass.
+
+			Args:
+				index: Attribute index
+			Return:
+				n-th attribute from the dataclass
 		"""
 		try:
 			return astuple(self)[index]

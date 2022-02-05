@@ -514,8 +514,14 @@ mgmtObjAnncTPEs = 	[	T.FWRAnnc.tpe(), T.SWRAnnc.tpe(), T.MEMAnnc.tpe(), T.ANIAnn
 
 excludeFromRoot = [ 'pi' ]
 pureResourceRegex = re.compile('[\w]+:[\w]')
+
 def pureResource(dct:JSON) -> Tuple[JSON, str]:
-	"""	Return the "pure" structure without the "m2m:xxx" or "<domain>:id" resource specifier, and the oneM2M type identifier. 
+	"""	Return the "pure" structure without "<domain>:xxx" resource specifier, and the oneM2M type identifier. 
+
+		Args:
+			dct: JSON dictionary with the resource attributes
+		Return:
+			Tupple with the inner JSON and the tpe
 	"""
 	rootKeys = list(dct.keys())
 	# Try to determine the root identifier 
@@ -734,8 +740,8 @@ def pollingChannelURIResource(id:str) -> PCH_PCU:
 		Return:
 			Return either the virtual PollingChannelURI resource or None.
 	"""
-	# if not id:
-	# 	return None
+	if not id:
+		return None
 	if id.endswith('pcu'):
 		# Convert to srn
 		if not isStructured(id):
