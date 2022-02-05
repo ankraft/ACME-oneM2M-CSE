@@ -150,7 +150,7 @@ class Logging:
 
 		# Start worker to handle logs in the background
 		from ..helpers.BackgroundWorker import BackgroundWorkerPool
-		Logging._logWorker = BackgroundWorkerPool.newActor(Logging.loggingActor, name = 'loggingWorker')
+		Logging._logWorker = BackgroundWorkerPool.newActor(Logging.loggingActor, name = 'loggingWorker', ignoreException = True)
 		Logging._logWorker.start()	# Yes, this could be in one line but the _logworker attribute may not be assigned yet before the 
 									# actor callback is executed, and this might result in a None exception
 
@@ -225,34 +225,45 @@ class Logging:
 			
 	@staticmethod
 	def loggingActor() -> bool:
-		try:
-			while Logging._logWorker.running:
-				level, msg, caller, thread = Logging.queue.get(block = True)
-				if msg is None or (isinstance(msg, str) and not len(msg)):
-					continue
-				Logging._logMessageToLoggerConsole(level, msg, caller, thread)
-		except Exception as e:
-			# Not much that we can do here
-			pass
+		while Logging._logWorker.running:
+			# Check queue and give up the CPU
+			if Logging.queue.empty():
+				time.sleep(0.1)
+				continue
+			level, msg, caller, thread = Logging.queue.get(block = True)
+			# if msg is None or (isinstance(msg, str) and not len(msg)):
+			if msg is None:
+				continue
+			Logging._logMessageToLoggerConsole(level, msg, caller, thread)
+
+		# try:
+		# 	while Logging._logWorker.running:
+		# 		level, msg, caller, thread = Logging.queue.get(block = True)
+		# 		if msg is None or (isinstance(msg, str) and not len(msg)):
+		# 			continue
+		# 		Logging._logMessageToLoggerConsole(level, msg, caller, thread)
+		# except Exception as e:
+		# 	# Not much that we can do here
+		# 	pass
 		return True
 
 
 	@staticmethod
-	def log(msg:Any, stackOffset:int = None) -> None:
+	def log(msg:Any, stackOffset:int = 0) -> None:
 		"""Print a log message with level INFO. 
 		"""
 		Logging._log(logging.INFO, msg, stackOffset = stackOffset)
 
 
 	@staticmethod
-	def logDebug(msg:Any, stackOffset:int = None) -> None:
+	def logDebug(msg:Any, stackOffset:int = 0) -> None:
 		"""Print a log message with level DEBUG. 
 		"""
 		Logging._log(logging.DEBUG, msg, stackOffset = stackOffset)
 
 
 	@staticmethod
-	def logErr(msg:Any, showStackTrace:bool = True, exc:Exception = None, stackOffset:int = None) -> None:
+	def logErr(msg:Any, showStackTrace:bool = True, exc:Exception = None, stackOffset:int = 0) -> None:
 		"""	Print a log message with level ERROR. 
 			`showStackTrace` indicates whether a stacktrace shall be logged together with the error
 			as well.
@@ -271,7 +282,7 @@ class Logging:
 
 
 	@staticmethod
-	def logWarn(msg:Any, stackOffset:int = None) -> None:
+	def logWarn(msg:Any, stackOffset:int = 0) -> None:
 		"""Print a log message with level WARNING. 
 		"""
 		from ..services import CSE as CSE
@@ -281,7 +292,7 @@ class Logging:
 
 
 	@staticmethod
-	def logWithLevel(level:int, message:Any, showStackTrace:bool = False, stackOffset:int = None) -> None:
+	def logWithLevel(level:int, message:Any, showStackTrace:bool = False, stackOffset:int = 0) -> None:
 		"""	Fallback log method when the `level` is a separate argument.
 		"""
 		# TODO add a parameter frame substractor to correct the line number, here and in In _log()
@@ -293,14 +304,18 @@ class Logging:
 
 
 	@staticmethod
-	def _log(level:int, msg:Any, stackOffset:int = None) -> None:
+	def _log(level:int, msg:Any, stackOffset:int = 0) -> None:
 		"""	Internally adding various information to the log output. The `stackOffset` is used to determine 
 			the correct caller. It is set by a calling method in case the log information are re-routed.
+
+			Args:
+				level: The log level
+				stackOffset: Offset in the stack frame
 		"""
 		if Logging.logLevel <= level:
 			try:
 				# Queue a log message : (level, message, caller from stackframe, current thread)
-				caller = inspect.getframeinfo(inspect.stack()[2 if not stackOffset else 2+stackOffset][0])
+				caller = inspect.getframeinfo(inspect.stack()[stackOffset + 2][0])
 				thread = threading.current_thread()
 				if Logging.enableQueue:
 					Logging.queue.put((level, msg, caller, thread))
@@ -308,6 +323,7 @@ class Logging:
 					if msg:
 						Logging._logMessageToLoggerConsole(level, msg, caller, thread)
 			except Exception as e:
+				print(e)
 				# sometimes this raises an exception. Just ignore it.
 				pass
 
