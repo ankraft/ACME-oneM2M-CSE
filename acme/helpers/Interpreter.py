@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from collections import namedtuple
 from enum import IntEnum, auto
 import datetime, time, re, copy, random
+from socket import timeout
 from signal import SIG_DFL
 from typing import 	Any, Callable, Dict, Tuple, Union
 
@@ -49,6 +50,7 @@ class PError(IntEnum):
 	notANumber				= auto()
 	procedureWithoutEnd		= auto()
 	quitWithError			= auto()
+	timeout					= auto()
 	undefined				= auto()
 	unexpectedArgument		= auto()
 	unexpectedCommand		= auto()
@@ -81,7 +83,8 @@ class PContext():
 				 printFunc:PLogCallable 	= lambda pcontext, msg: print(msg),
 				 preFunc:PFuncCallable		= None,
 				 postFunc:PFuncCallable		= None,
-			 	 errorFunc:PFuncCallable	= None) -> None:
+			 	 errorFunc:PFuncCallable	= None,
+				 maxRuntime:float			= None) -> None:
 		"""	Initialize the process context.
 
 			Args:
@@ -94,6 +97,7 @@ class PContext():
 				preFunc: optional callback that is called with the PContext object just before the script is executed. Returning *None* prevents the script execution.
 				postFunc: optional callback that is called with the PContext object just after the script finished execution.
 				errorFunc: optional callback that is called with the PContext object when encountering an error during script execution.
+				maxRuntime: optional limitation for script runtime
 		"""
 		
 		# Extra parameters that can be provided
@@ -106,6 +110,7 @@ class PContext():
 		self.preFunc						= preFunc
 		self.postFunc						= postFunc
 		self.errorFunc						= errorFunc
+		self.maxRuntime						= maxRuntime
 
 		# State, result and error attributes
 		self.pc:int 						= 0
@@ -116,6 +121,7 @@ class PContext():
 
 		# Internal attributes that should not be accessed
 		self._length:int					= 0
+		self._maxRTimestamp:float			= None
 		self._variables:Dict[str,str]		= {}
 		self._scopeStack:list[PScope]		= []
 		self._commands:PCmdDict				= None		# builtins + provided commands
@@ -653,6 +659,8 @@ def run(pcontext:PContext, verbose:bool = False, argument:str = '') -> PContext:
 
 	# Start running
 	pcontext.state = PState.running
+	if pcontext.maxRuntime is not None:	# set max runtime
+		pcontext._maxRTimestamp = datetime.datetime.utcnow().timestamp() + pcontext.maxRuntime
 	if scriptName := pcontext.scriptName:
 		pcontext.logFunc(pcontext, f'Running script: {scriptName}, arguments: {argument}')
 
@@ -660,7 +668,13 @@ def run(pcontext:PContext, verbose:bool = False, argument:str = '') -> PContext:
 	# main processing loops
 	endScriptStates = [ PState.canceled, PState.terminated, PState.terminatedWithResult, PState.terminatedWithError ]
 	while (line := pcontext.nextLine) is not None and pcontext.state not in endScriptStates:
-		
+
+		# Check for timeout
+		if pcontext._maxRTimestamp is not None and pcontext._maxRTimestamp < datetime.datetime.utcnow().timestamp():
+			pcontext.setError(PError.timeout, f'Script timeout ({pcontext.maxRuntime} s)')
+			pcontext.state = PState.terminatedWithError
+			break
+
 		# Resolve macros and variables
 		if (line := checkMacros(pcontext, line)) is None:
 			pcontext.state = PState.terminatedWithError

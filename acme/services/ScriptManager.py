@@ -79,15 +79,25 @@ class ACMEPContext(PContext):
 
 
 	def _validate(self) -> None:
-		"""	Check that @prompt is not used together with conflicting events, and other checks.
+		"""	Validate the script
 
 			If an invalid script is detected then the state is set to `invalid`.
 		"""
 		events = ['onstartup', 'onrestart', 'onshutdown', 'at']
+		# Check that @prompt is not used together with conflicting events, and other checks.
 		if 'prompt' in self.meta:
 			if any(key in events for key in self.meta.keys()):
 				self.setError(PError.invalid, f'"@prompt" is not allowed together with any of: {events}')
 				self.state = PState.invalid
+		if 'timeout' in self.meta:
+			t = self.meta['timeout']
+			try:
+				self.maxRuntime = float(t)
+			except ValueError as e:
+				self.setError(PError.invalid, f'"@timeout" invalid value, must be a float: {t}')
+				self.state = PState.invalid
+			print(self.maxRuntime)
+
 
 
 	def log(self, pcontext:PContext, msg:str) -> None:

@@ -19,6 +19,7 @@ Meta tags are lines that start with an at-sign "@". They can appear anywhere in 
 | [onShutdown](#meta_onshutdown)   | Run a script just before the CSE shuts down                                                    |
 | [onStartup](#meta_onstartup)     | Run a script just after the CSE started                                                        |
 | [prompt](#meta_prompt)           | Prompt the user for input before the script is run                                             |
+| [timeout](#meta_timeout)         | Set a timeout after which script execution is stopped                                          |
 | [uppertester](#meta_uppertester) | A script with this test can be run via the [Upper Tester Interface](Operation.md#upper_tester) |
 | [usage](#meta_usage)             | Provide a short usage help                                                                     |
 
@@ -182,6 +183,21 @@ will cause the script to wait for user input forever.
 Example:
 ```text
 @prompt Enter some arguments
+```
+
+
+<a name="meta_timeout"></a>
+### @timeout
+
+Usage:  
+@timeout &lt;seconds>
+
+This meta tag sets a timeout after which the script execution is terminated with a *timeout* error.
+Note, that the script may terminate some time after the timeout when a script command takes longer to run.
+
+Example:
+```text
+@timeout 10
 ```
 
 
