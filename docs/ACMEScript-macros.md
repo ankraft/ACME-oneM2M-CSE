@@ -9,6 +9,7 @@
 | [Basic](#macros_basic)     | [argc](#macro_argc)                          | Get number of arguments                                                 |
 |                            | [argv](#macro_argv)                          | Get script or procedure arguments                                       |
 |                            | [datetime](#macro_datetime)                  | Get current date and time                                               |
+|                            | [loop](#macro_loop)                          | Get the current while loop's loop count                                 |
 |                            | [lower](#macro_lower)                        | Get a lower-case version of the provided string argument                |
 |                            | [random](#random)                            | Generate a random number.                                               |
 |                            | [result](#macro_result)                      | Get the last result of a while, procedure etc.                          |
@@ -84,6 +85,24 @@ print ${datetime}
 # -> 20220107T221625.771604
 print ${datetime %H:%M}
 # -> 22:26
+```
+
+
+
+<a name="macro_loop"></a>
+### loop
+
+Usage:  
+${loop}
+
+Return the current [while](ACMEScript-commands.md#command_while) loop's loop count. This counter is automatically incremented by 1 for every iteration of a while loop. It starts at 0 when the while loop is entered. Every (nested) while loop has its own loop counter.
+
+Example:
+
+```text
+while ${loop} < 10
+	...
+endwhile
 ```
 
 
