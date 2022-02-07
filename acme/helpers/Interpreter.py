@@ -987,11 +987,31 @@ def _doSet(pcontext:PContext, arg:str) -> PContext:
 		Return:
 			PContext object, or None in case of an error.
 	"""
+
+	def testMacro(name:str) -> bool:
+		"""	Test whether we would overwrite a built-in macro.
+		
+			Args:
+				name: The macro name
+			Return:
+				Boolean
+		"""
+		if pcontext.getMacro(name) is not None:
+			pcontext.setError(PError.invalid, f'Overwriting built-in macro is not allowed: {var}')
+			return False
+		return True
+
+
 	# Check whether this is an expression asignment
 	var, found, value = arg.partition('=')
 	if found:	# = means assignment
 		var = var.strip()
 		value = value.strip()
+
+		# Test for overwrite macro
+		if not testMacro(var):
+			return None
+
 		try:
 			if (result := str(_calcExpression(pcontext, value))) is None:
 				return None
@@ -1007,6 +1027,10 @@ def _doSet(pcontext:PContext, arg:str) -> PContext:
 	# Else: normal assignment
 	var, _, value = arg.partition(' ')
 	var = var.strip()
+
+	# Test for overwrite macro
+	if not testMacro(var):
+		return None
 
 	# remove variable if no value
 	if not value:	
