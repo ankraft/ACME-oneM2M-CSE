@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from collections import namedtuple
 from enum import IntEnum, auto
 import datetime, time, re, copy, random
+from signal import SIG_DFL
 from typing import 	Any, Callable, Dict, Tuple, Union
 
 _maxProcStackSize = 64	# max number of calls to procedures
@@ -63,6 +64,7 @@ class PScope():
 	result:str				= None
 	returnPc:int			= 0
 	whileStack:list[int]	= field(default_factory = list)
+	whileLoop:dict[int, int]= field(default_factory = dict)	# Loop counter for while loops, automatic incremented
 	ifLevel:int				= 0
 
 
@@ -416,6 +418,52 @@ class PContext():
 			self.scope.whileStack.pop()
 
 
+	def addWhileLoop(self) -> None:
+		"""	Save the current while program counter and initialize it with 0.
+			This is used to keep the beginning line of the while loop.
+			It is only done once because we need to keep the counter!
+		"""
+		if not self.whilePc in self.scope.whileLoop:
+			self.scope.whileLoop[self.whilePc] = 0
+
+
+	def removeWhileLoop(self) -> None:
+		"""	Remove the current while loop's counter.
+		"""
+		if self.whilePc in self.scope.whileLoop:
+			del self.scope.whileLoop[self.whilePc]
+
+
+	def incrementWhileLoop(self) -> int:
+		"""	Increment the current while loop's counter by 1.
+
+			Return:
+				The new value of the loop counter, or 0
+		"""
+		if (l := self.scope.whileLoop.get(self.whilePc)) is not None:
+			self.scope.whileLoop[self.whilePc] = l + 1
+			return l + 1
+		return 0
+	
+
+	def whileLoopCounter(self, line:str) -> int:
+		"""	Return the latest loop counter for a while loop.
+
+			Args:
+				line: The input line. Necessary to detect while commands
+			Return:
+				Integer, the loop counter for the current while loop.
+		"""
+		# The following is important. When the line with the "while ..." loop is evaluated for the first time
+		# then no loop counter for this line exists. Also, the whilePc variable that points to the to while start line
+		# is not yet set. This is while we need to check the program counter instead, and return a 0 as a default
+		# if nothing has been assigned yet. Otherwise this would return the loop counter for that while.
+		# If the line isn't a "while ..." then we can savely return the normal loop counter for the while.
+		if line.lower().startswith('while'):
+			return self.scope.whileLoop.get(self.pc - 1, 0)
+		return self.scope.whileLoop.get(self.whilePc)
+
+
 	@property
 	def whilePc(self) -> int:
 		"""	Return the latest saved program counter for a while loop.
@@ -544,7 +592,7 @@ PCmdDict = Dict[str, PCmdCallable]
 	and is supposed to return it again, or None in case of an error.
 """
 
-PMacroCallable = Callable[[PContext, str], str]
+PMacroCallable = Callable[[PContext, str, str], str]
 """	Signature of a macro callable.
 """
 
@@ -695,7 +743,7 @@ def _doBreak(pcontext:PContext, arg:str) -> PContext:
 
 
 def _doContinue(pcontext:PContext, arg:str) -> PContext:
-	"""	Handle a break command operation.
+	"""	Handle a continue command operation.
 
 		Args:
 			pcontext: Current PContext for the script.
@@ -1005,13 +1053,15 @@ def _doWhile(pcontext:PContext, arg:str) -> PContext:
 			Current PContext object, or None in case of an error.
 	"""
 	wpc = pcontext.whilePc
-	if wpc is None or wpc != pcontext.pc:	# Only put this while on the stack if we just run into it
+	if wpc is None or wpc != pcontext.pc:	# Only put this while on the stack if we just run into it for the first time
 		pcontext.saveWhileState()
+		pcontext.addWhileLoop()
 	if (result := _compareExpression(pcontext, arg)) is None:
 		return None
 	if not result:
 		# Skip to endwhile if False(!).
 		return _skipWhile(pcontext)
+	pcontext.incrementWhileLoop()	# Increment the loop counter for this while loop
 	return pcontext
 
 
@@ -1021,7 +1071,7 @@ def _doWhile(pcontext:PContext, arg:str) -> PContext:
 #
 
 
-def _doArgv(pcontext:PContext, arg:str) -> str:
+def _doArgv(pcontext:PContext, arg:str, line:str) -> str:
 	"""	With the `argv` macro one can access the individual arguments of a script.
 
 		Example:
@@ -1059,7 +1109,7 @@ def _doArgv(pcontext:PContext, arg:str) -> str:
 	return ''
 			
 
-def _doArgc(pcontext:PContext, arg:str) -> str:
+def _doArgc(pcontext:PContext, arg:str, line:str) -> str:
 	"""	This macro returns the number of arguments to the script.
 
 		Args:
@@ -1074,7 +1124,7 @@ def _doArgc(pcontext:PContext, arg:str) -> str:
 
 
 
-def _doRandom(pcontext:PContext, arg:str) -> str:
+def _doRandom(pcontext:PContext, arg:str, line:str) -> str:
 	"""	Generate a random float number in the given range. The default for the
 		range is [0.0, 1.0]. If one argument is given then this indicates a range
 		of [0,0, arg].
@@ -1108,7 +1158,7 @@ def _doRandom(pcontext:PContext, arg:str) -> str:
 		return None
 
 
-def _doRound(pcontext:PContext, arg:str) -> str:
+def _doRound(pcontext:PContext, arg:str, line:str) -> str:
 	"""	Return a number rounded to optional `ndigits` precision after the decimal point. If `ndigits` is omitted,
 		it returns the nearest integer.
 
@@ -1171,15 +1221,16 @@ _builtinCommands:PCmdDict = {
 _builtinMacros:PMacroDict = {
 	# !!! macro names must be lower case
 
-	'datetime':	lambda c, a: datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%S.%f' if not a else a),
-	'result':	lambda c, a: c.result,
+	'datetime':	lambda c, a, l: datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%S.%f' if not a else a),
+	'result':	lambda c, a, l: c.result,
 	'argc':		_doArgc,
 	'argv':		_doArgv,
-	'lower':	lambda c, a: a.lower(),
+	'loop':	lambda c, a, l: str(c.whileLoopCounter(l)),
+	'lower':	lambda c, a, l: a.lower(),
 	'random':	_doRandom,
 	'round':	_doRound,
-	'runcount':	lambda c, a: str(c.runs),
-	'upper':	lambda c, a: a.upper(),
+	'runcount':	lambda c, a, l: str(c.runs),
+	'upper':	lambda c, a, l: a.upper(),
 }
 
 
@@ -1224,7 +1275,7 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 		name, _, arg = macro.partition(' ')
 		arg = arg.strip()
 		if (cb := pcontext.getMacro(name)) is not None:
-			if (result := cb(pcontext, arg)) is not None:
+			if (result := cb(pcontext, arg, line)) is not None:
 				return str(result)
 			if pcontext.error.error == PError.noError:	# provide an own error if not set by the macro function
 				pcontext.setError(PError.invalid, f'Error from macro: {macro}')
@@ -1232,7 +1283,7 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 		
 		# Lastly, try the default macro definition
 		if (cb := pcontext.getMacro('__default__')) is not None:
-			if (result := cb(pcontext, macro)) is not None:
+			if (result := cb(pcontext, macro, line)) is not None:
 				return str(result)
 			## FALL-THROUGH
 
@@ -1367,6 +1418,7 @@ def _skipWhile(pcontext:PContext) -> PContext:
 		if cmd == 'endprocedure':
 			pcontext.setError(PError.unexpectedCommand, 'WHILE without ENDWHILE')
 			return None
+	pcontext.removeWhileLoop()
 	pcontext.restoreWhileState()
 	return pcontext
 

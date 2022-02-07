@@ -62,7 +62,7 @@ class ACMEPContext(PContext):
 										'isipython':	self.doIsIPython,
 										'storagehas':	self.doStorageHas,
 										'storageget':	self.doStorageGet,
-						 				'__default__':	lambda c, m: Configuration.get(m),
+						 				'__default__':	lambda c, a, l: Configuration.get(a),
 						  			},
 						 logFunc = self.log, 
 						 logErrorFunc = self.logError,
@@ -445,7 +445,7 @@ class ACMEPContext(PContext):
 	#	Macros
 	#
 
-	def doAttribute(self, pcontext:PContext, arg:str) -> str:
+	def doAttribute(self, pcontext:PContext, arg:str, line:str) -> str:
 		""" Retrieve an attribute of a resource via its key path. 
 		
 			Example:
@@ -471,7 +471,7 @@ class ACMEPContext(PContext):
 		return value
 
 
-	def doCseStatus(self, pcontext:PContext, arg:str) -> str:
+	def doCseStatus(self, pcontext:PContext, arg:str, line:str) -> str:
 		""" Retrieve the CSE status . 
 		
 			Example:
@@ -485,7 +485,7 @@ class ACMEPContext(PContext):
 		return str(CSE.cseStatus)
 
 
-	def doHasAttribute(self, pcontext:PContext, arg:str) -> str:
+	def doHasAttribute(self, pcontext:PContext, arg:str, line:str) -> str:
 		""" Check whether an attribute exists for the given its key path . 
 		
 			Example:
@@ -510,7 +510,7 @@ class ACMEPContext(PContext):
 		return 'true'
 
 
-	def doIsIPython(self, pcontext:PContext, arg:str) -> str:
+	def doIsIPython(self, pcontext:PContext, arg:str, line:str) -> str:
 		"""	Check whether the CSE currently runs in an IPython environment,
 			such as Jupyter Notebooks.
 		
@@ -528,7 +528,7 @@ class ACMEPContext(PContext):
 		return str(Utils.runsInIPython()).lower()
 		
 
-	def doStorageHas(self, pcontext:PContext, arg:str) -> str:
+	def doStorageHas(self, pcontext:PContext, arg:str, line:str) -> str:
 		"""	Implementation of the `storageHas` macro. Test for a key in the persistent storage.
 
 			Args:
@@ -547,7 +547,7 @@ class ACMEPContext(PContext):
 		return CSE.script.storageHas(key)
 
 
-	def doStorageGet(self, pcontext:PContext, arg:str) -> str:
+	def doStorageGet(self, pcontext:PContext, arg:str, line:str) -> str:
 		"""	Implementation of the `storageGet` macro. Retrieve a value from the persistent storage.
 
 			Args:

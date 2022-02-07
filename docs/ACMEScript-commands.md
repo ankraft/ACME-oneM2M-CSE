@@ -79,6 +79,13 @@ while true
 endwhile
 ```
 
+Example using the [loop](ACMEScript-macros.md#macro_loop) macro.
+```text
+while ${loop} < 10
+	print ${loop}
+endwhile
+```
+
 
 <a name="command_continue"></a>
 ### CONTINUE
