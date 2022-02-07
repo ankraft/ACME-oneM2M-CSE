@@ -187,7 +187,8 @@ class BackgroundWorker(object):
 					result = self.callback(**self.args)
 					break
 				except Exception as e:
-					print(e.with_traceback())
+					if BackgroundWorker._logger:
+						BackgroundWorker._logger(logging.ERROR, f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}\n{"".join(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))}')
 					if self.ignoreException:
 						continue
 					raise
