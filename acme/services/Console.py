@@ -474,6 +474,7 @@ Available under the BSD 3-Clause License
 	
 
 	previousScript = ''
+	previousArgument = ''
 	def runScript(self, _:str) -> None:
 
 		def finished(pcontext:PContext, argument:str) -> None:
@@ -491,7 +492,8 @@ Available under the BSD 3-Clause License
 				L.console(f'**Script {name} not found**')
 				L.on()
 				return
-			argument = L.consolePrompt('Arguments')
+			argument = L.consolePrompt('Arguments', default = Console.previousArgument)
+			Console.previousArgument = argument
 			pcontext = scripts[0]
 			L.on()	# Turn on log before running the script
 			CSE.script.runScript(pcontext, argument = argument, background = True, finished = finished)
