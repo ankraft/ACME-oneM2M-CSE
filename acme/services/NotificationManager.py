@@ -75,13 +75,19 @@ class NotificationManager(object):
 
 	def updateSubscription(self, subscription:Resource, previousNus:list[str], originator:str) -> Result:
 		L.isDebug and L.logDebug('Updating subscription')
-		if not (res := self._verifyNusInSubscription(subscription, previousNus, originator=originator)).status:	# verification requests happen here
-			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
-		return Result(status=True) if CSE.storage.updateSubscription(subscription) else Result(status=False, rsc=RC.internalServerError, dbg='cannot update subscription in database')
+		if not (res := self._verifyNusInSubscription(subscription, previousNus, originator = originator)).status:	# verification requests happen here
+			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
+		return Result(status = True) if CSE.storage.updateSubscription(subscription) else Result(status = False, rsc = RC.internalServerError, dbg = 'cannot update subscription in database')
 
 
-	def checkSubscriptions(self, resource:Resource, reason:NotificationEventType, childResource:Resource=None, modifiedAttributes:JSON=None, ri:str=None, missingData:dict[str, MissingData]=None, now:float=None) -> None:
-		if Utils.isVirtualResource(resource):
+	def checkSubscriptions(self, resource:Resource, 
+								 reason:NotificationEventType, 
+								 childResource:Resource = None, 
+								 modifiedAttributes:JSON = None,
+								 ri:str = None,
+								 missingData:dict[str, MissingData] = None,
+								 now:float = None) -> None:
+		if resource and resource.isVirtual():
 			return 
 		ri = resource.ri if not ri else ri
 		L.isDebug and L.logDebug(f'Checking subscriptions ({reason.name}) ri: {ri}')
@@ -103,7 +109,7 @@ class NotificationManager(object):
 				chty = sub['chty']
 				if chty and not childResource.ty in chty:	# skip if chty is set and child.type is not in the list
 					continue
-				self._handleSubscriptionNotification(sub, reason, resource=childResource, modifiedAttributes=modifiedAttributes)
+				self._handleSubscriptionNotification(sub, reason, resource = childResource, modifiedAttributes = modifiedAttributes)
 			
 			# Check Update and enc/atr vs the modified attributes 
 			elif reason == NotificationEventType.resourceUpdate and (atr := sub['atr']) and modifiedAttributes:
@@ -112,7 +118,7 @@ class NotificationManager(object):
 					if k in modifiedAttributes:
 						found = True
 				if found:
-					self._handleSubscriptionNotification(sub, reason, resource=resource, modifiedAttributes=modifiedAttributes)
+					self._handleSubscriptionNotification(sub, reason, resource = resource, modifiedAttributes = modifiedAttributes)
 				else:
 					L.isDebug and L.logDebug('Skipping notification: No matching attributes found')
 			
@@ -124,7 +130,7 @@ class NotificationManager(object):
 					md.missingDataList = []	# delete only the sent missing data points
 
 			else: # all other reasons that target the resource
-				self._handleSubscriptionNotification(sub, reason, resource, modifiedAttributes=modifiedAttributes)
+				self._handleSubscriptionNotification(sub, reason, resource, modifiedAttributes = modifiedAttributes)
 
 
 	###########################################################################
@@ -138,7 +144,7 @@ class NotificationManager(object):
 			actually sending the notification.
 		"""
 		for nu in nus:
-			self._sendRequest(nu, data, originator=originator)
+			self._sendRequest(nu, data, originator = originator)
 
 
 	#########################################################################
@@ -157,9 +163,9 @@ class NotificationManager(object):
 					if nu == originator:
 						continue
 					# Send verification notification to target (either direct URL, or an entity)
-					if not self._sendVerificationRequest(nu, subscription.ri, originator=originator):
+					if not self._sendVerificationRequest(nu, subscription.ri, originator = originator):
 						# Return when even a single verification request fails
-						return Result(status=False, rsc=RC.subscriptionVerificationInitiationFailed, dbg=f'Verification request failed for: {nu}')
+						return Result(status = False, rsc = RC.subscriptionVerificationInitiationFailed, dbg = f'Verification request failed for: {nu}')
 
 		return Result(status=True)
 
@@ -167,7 +173,7 @@ class NotificationManager(object):
 	#########################################################################
 
 
-	def _sendVerificationRequest(self, uri:Union[str, list[str]], ri:str, originator:str=None) -> bool:
+	def _sendVerificationRequest(self, uri:Union[str, list[str]], ri:str, originator:str = None) -> bool:
 		""""	Define the callback function for verification notifications and send
 				the notification.
 		"""
@@ -182,7 +188,7 @@ class NotificationManager(object):
 			}
 			originator and Utils.setXPath(verificationRequest, 'm2m:sgn/cr', originator)
 	
-			if not self._sendRequest(uri, verificationRequest, noAccessIsError=True):
+			if not self._sendRequest(uri, verificationRequest, noAccessIsError = True):
 				L.isDebug and L.logDebug(f'Verification request failed for: {uri}')
 				return False
 			return True

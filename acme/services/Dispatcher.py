@@ -201,9 +201,9 @@ class Dispatcher(object):
 		else:
 			return Result(status=False, rsc=RC.notFound, dbg='resource not found')
 
-		if resource := result.resource:	# Resource found
+		if resource := cast(Resource, result.resource):	# Resource found
 			# Check for virtual resource
-			if resource.ty not in [T.GRP_FOPT, T.PCH_PCU] and Utils.isVirtualResource(resource): # fopt, PCU are handled elsewhere
+			if resource.ty not in [T.GRP_FOPT, T.PCH_PCU] and resource.isVirtual(): # fopt, PCU are handled elsewhere
 				return resource.handleRetrieveRequest(request=request, originator=originator)	# type: ignore[no-any-return]
 			return result
 		# error
@@ -280,7 +280,7 @@ class Dispatcher(object):
 		for r in dcrs:
 
 			# Exclude virtual resources
-			if Utils.isVirtualResource(r):
+			if r.isVirtual():
 				continue
 
 			# check permissions and filter. Only then add a resource
@@ -422,7 +422,7 @@ class Dispatcher(object):
 		if not (res := CSE.dispatcher.retrieveResource(id)).resource:
 			L.logWarn(dbg := f'Parent/target resource: {id} not found')
 			return Result(status = False, rsc = RC.notFound, dbg = dbg)
-		parentResource = res.resource
+		parentResource = cast(Resource, res.resource)
 
 		if CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty=ty, isCreateRequest=True, parentResource=parentResource) == False:
 			if ty == T.AE:
@@ -431,7 +431,7 @@ class Dispatcher(object):
 				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
 
 		# Check for virtual resource
-		if Utils.isVirtualResource(parentResource):
+		if parentResource.isVirtual():
 			return parentResource.handleCreateRequest(request, id, originator)	# type: ignore[no-any-return]
 
 		# Create resource from the dictionary
@@ -556,7 +556,7 @@ class Dispatcher(object):
 		if not (res := self.retrieveResource(id)).resource:
 			L.isWarn and L.logWarn(f'Resource not found: {res.dbg}')
 			return Result(status = False, rsc = RC.notFound, dbg=res.dbg)
-		resource = res.resource
+		resource = cast(Resource, res.resource)
 		if resource.readOnly:
 			return Result(status = False, rsc = RC.operationNotAllowed, dbg = 'resource is read-only')
 
@@ -575,7 +575,7 @@ class Dispatcher(object):
 				return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = 'originator has no privileges')
 
 		# Check for virtual resource
-		if Utils.isVirtualResource(resource):
+		if resource.isVirtual():
 			return resource.handleUpdateRequest(request, id, originator)	# type: ignore[no-any-return]
 
 		dictOrg = deepcopy(resource.dict)	# Save for later
@@ -658,13 +658,13 @@ class Dispatcher(object):
 		if not (res := self.retrieveResource(id)).resource:
 			L.isDebug and L.logDebug(res.dbg)
 			return Result(status = False, rsc = RC.notFound, dbg = res.dbg)
-		resource = res.resource
+		resource = cast(Resource, res.resource)
 
 		if CSE.security.hasAccess(originator, resource, Permission.DELETE) == False:
 			return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = 'originator has no privileges')
 
 		# Check for virtual resource
-		if Utils.isVirtualResource(resource):
+		if resource.isVirtual():
 			return resource.handleDeleteRequest(request, id, originator)	# type: ignore[no-any-return]
 
 		#
@@ -913,7 +913,7 @@ class Dispatcher(object):
 				if rri and r.pi != rri:	# only direct children
 					idx += 1
 					continue
-				if T.isVirtualResource(r.ty):	# Skip latest, oldest etc virtual resources
+				if r.isVirtual():	# Skip latest, oldest etc virtual resources
 					idx += 1
 					continue
 				if handledTy is None:					# ty is an int

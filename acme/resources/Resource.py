@@ -425,6 +425,15 @@ class Resource(object):
 		""" Return whether a resource is an announced resource. """
 		return cast(bool, self[self._isAnnounced])
 
+	
+	def isVirtual(self) -> bool:
+		"""	Test whether the resource is a virtual resource. 
+
+			Return:
+				Returns `False` when the resource is not a virtual resource.
+		"""
+		return cast(bool, self[self._isVirtual]) == True	# might be none
+
 	#########################################################################
 	#
 	#	request handler stubs for virtual resources
