@@ -258,7 +258,8 @@ def resetCSE() -> None:
 	with _cseResetLock:
 		cseStatus = CSEStatus.RESETTING
 		L.isWarn and L.logWarn('Resetting CSE started')
-		L.enableScreenLogging = True
+		L.enableScreenLogging = Configuration.get('logging.enableScreenLogging')	# Set screen logging to the originally configured values
+
 		L.setLogLevel(Configuration.get('logging.level'))
 		L.enableQueue = False	# Disable log queuing for restart
 		
