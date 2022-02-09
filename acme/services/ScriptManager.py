@@ -127,7 +127,7 @@ class ACMEPContext(PContext):
 				pcontext: Script context.
 				msg: log message.
 		"""
-		L.console(msg)
+		L.console(msg, nl = not len(msg))
 	
 	
 	@property
@@ -1033,7 +1033,10 @@ class ScriptManager(object):
 		return result
 
 
-	def runScript(self, pcontext:PContext, argument:str = '', background:bool = False, finished:Callable = None) -> bool:
+	def runScript(self, pcontext:PContext, 
+						argument:str = '', 
+						background:bool = False, 
+						finished:Callable = None) -> bool:
 		""" Run a script.
 
 			Args:
@@ -1151,6 +1154,8 @@ class ScriptManager(object):
 		"""
 
 		def getPrompt(r:str) -> str:
+			"""	Prompt the user for input if the @prompt meta tag is set.
+			"""
 			if (p := each.meta.get('prompt')) is not None:
 				L.off()
 				if (r := L.consolePrompt(p, nl = False)) is None:
@@ -1161,9 +1166,10 @@ class ScriptManager(object):
 				L.on()
 			return r
 
+		arg = f'{event}' if argument is None else f'{event} {argument}'
 		for each in self.findScripts(meta = event):
 			if argument:
 				if (v := each.meta.get(event)) and v == argument:
-					self.runScript(each, argument = getPrompt(argument), background = True)
+					self.runScript(each, argument = getPrompt(arg), background = True)
 			else:
 				self.runScript(each, argument = getPrompt(''), background = True)

@@ -15,7 +15,6 @@ from dataclasses import dataclass, field
 from collections import namedtuple
 from enum import IntEnum, auto
 import datetime, time, re, copy, random
-from socket import timeout
 from signal import SIG_DFL
 from typing import 	Any, Callable, Dict, Tuple, Union
 
@@ -117,15 +116,16 @@ class PContext():
 		self.state:PState 					= PState.created
 		self.error:PErrorState				= PErrorState(PError.noError, 0, '' )
 		self.meta:Dict[str, str]			= {}
+		self.variables:Dict[str,str]		= {}
 		self.runs:int						= 0
 
 		# Internal attributes that should not be accessed
 		self._length:int					= 0
 		self._maxRTimestamp:float			= None
-		self._variables:Dict[str,str]		= {}
 		self._scopeStack:list[PScope]		= []
 		self._commands:PCmdDict				= None		# builtins + provided commands
 		self._macros:PMacroDict				= None		# builtins + provided macros
+		self._verbose:bool					= None		# Store the runtime verbosity of the run() function
 
 		#
 		# Further initializations and copying of context information
@@ -280,15 +280,15 @@ class PContext():
 		"""
 		self.pc = 0
 		self.error = PErrorState(PError.noError, 0, '')
-		self._variables.clear()
+		self.variables.clear()
 		self._scopeStack.clear()
 		self.saveScope(pc = -1, name = self.meta.get('name'))
 		self.state = PState.ready
 
 
 	def setError(self, error:PError, msg:str, pc:int = -1, state:PState = PState.terminatedWithError) -> None:
-		"""	Set the internal state and error codes. These can be retrieved by the calling function in order
-			to provide informations.
+		"""	Set the internal state and error codes. These can be retrieved by accessing the state and error
+			attributes.
 
 			Args:
 				error: PError to indicate the type of error.
@@ -535,7 +535,7 @@ class PContext():
 			Return:
 				Variable content, or None.		
 		"""
-		return self._variables.get(key.lower())
+		return self.variables.get(key.lower())
 	
 
 	def setVariable(self, key:str, value:str) -> None:
@@ -545,7 +545,7 @@ class PContext():
 				key: Variable name
 				value: Value to store	
 		"""
-		self._variables[key.lower()] = value
+		self.variables[key.lower()] = value
 	
 
 	def delVariable(self, key:str) -> str:
@@ -557,9 +557,9 @@ class PContext():
 				Variable content, or None if variable is not defined.		
 		"""
 		key = key.lower()
-		if key in self._variables:
-			v = self._variables[key]
-			del self._variables[key]
+		if key in self.variables:
+			v = self.variables[key]
+			del self.variables[key]
 			return v
 		return None
 
@@ -618,7 +618,7 @@ PErrorState = namedtuple('PErrorState', [ 'error', 'line', 'message' ])
 #	Run a script
 #
 
-def run(pcontext:PContext, verbose:bool = False, argument:str = '') -> PContext:
+def run(pcontext:PContext, verbose:bool = False, argument:str = '', procedure:str = None) -> PContext:
 	"""	Run a script. An own, extended `contextClass` can be provided, that supports the `extraCommands`.
 
 		Args:
@@ -647,8 +647,10 @@ def run(pcontext:PContext, verbose:bool = False, argument:str = '') -> PContext:
 	# Validate script first.
 	if not pcontext.validate():
 		return pcontext
-	pcontext.reset()
+	if not procedure:	# only reset when not executing a procedure
+		pcontext.reset()
 	pcontext.argument = argument
+	pcontext._verbose = verbose
 	
 	# Call Pre-Function
 	if pcontext.preFunc:
@@ -662,12 +664,27 @@ def run(pcontext:PContext, verbose:bool = False, argument:str = '') -> PContext:
 	if pcontext.maxRuntime is not None:	# set max runtime
 		pcontext._maxRTimestamp = datetime.datetime.utcnow().timestamp() + pcontext.maxRuntime
 	if scriptName := pcontext.scriptName:
-		pcontext.logFunc(pcontext, f'Running script: {scriptName}, arguments: {argument}')
+		pcontext.logFunc(pcontext, f'Running script: {scriptName}, arguments: {argument}, procedure: {procedure}')
 
+	# If procedure is set then the program counter is set to run a procedure with that name.
+	# Or return an error
+	# Only that procedure is executed
+	if procedure is not None:
+		if (result := _executeProcedure(pcontext, procedure, pcontext.argument)):
+			pcontext = result
+		else:
+			pcontext.setError(PError.undefined, f'Undefined procedure: {procedure}')
+			pcontext.result = None
+			return pcontext
 
 	# main processing loops
 	endScriptStates = [ PState.canceled, PState.terminated, PState.terminatedWithResult, PState.terminatedWithError ]
 	while (line := pcontext.nextLine) is not None and pcontext.state not in endScriptStates:
+
+		# If we only run a procedure that ignore every scope that is not the proc
+		# if procedure is set and we are just in the lowest script scope then we ignore that line:
+		if procedure and len(pcontext._scopeStack) == 1:
+			continue
 
 		# Check for timeout
 		if pcontext._maxRTimestamp is not None and pcontext._maxRTimestamp < datetime.datetime.utcnow().timestamp():
@@ -706,10 +723,12 @@ def run(pcontext:PContext, verbose:bool = False, argument:str = '') -> PContext:
 			pcontext.setError(PError.undefined, f'Undefined command: {line}')
 			break
 	
-	# Check for gosub without return when reaching the end of the script
-	if pcontext.state != PState.terminatedWithResult:
+	# Determine the error states and codes
+	# DONT remove the result when we only execute a procedure
+	if pcontext.state != PState.terminatedWithResult and not procedure:
 		pcontext.result = None
 	if pcontext.state not in endScriptStates:
+		# Check whether we reached the end of the script, but haven't ended a procedure
 		if len(pcontext._scopeStack) > 1:
 			pcontext.setError(PError.procedureWithoutEnd, f'PROCEDURE without return', pcontext.scope.returnPc )
 
@@ -841,7 +860,6 @@ def _doEndProcedure(pcontext:PContext, arg:str) -> PContext:
 	name = pcontext.name	# copy the name of the procedure. Gone after restoreScope
 	pcontext.restoreScope()
 	pcontext.result = arg	# Copy the argument (ie the result) to the previous scope
-	pcontext.setVariable(name, arg)
 	return pcontext
 
 
@@ -1308,7 +1326,6 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 		if (v := pcontext.getVariable(macro)) is not None:
 			return v
 
-
 		# Then check macros
 		name, _, arg = macro.partition(' ')
 		arg = arg.strip()
@@ -1319,14 +1336,34 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 				pcontext.setError(PError.invalid, f'Error from macro: {macro}')
 			return None
 		
-		# Lastly, try the default macro definition
+		# Then try the default macro definition
 		if (cb := pcontext.getMacro('__default__')) is not None:
 			if (result := cb(pcontext, macro, line)) is not None:
 				return str(result)
 			## FALL-THROUGH
 
-		pcontext.setError(PError.undefined, f'Undefined macro or variable: {macro}')
-		return None
+		# Lastly try a procedure with that name
+		# To do this we run the same script, but only looking for a procedure with that name.
+		pcontext_ = copy.deepcopy(pcontext)				# Copy the pcontext
+		#pcontext_.argument = arg.strip()				# Set a possible argument
+		result = run(pcontext_, verbose = pcontext_._verbose, argument = arg, procedure = name)
+
+		# If undefined then return a general error
+		if result.error.error == PError.undefined:
+			pcontext.setError(PError.undefined, f'Undefined variable, macro, or procedure: {name}')
+			return None
+
+		# Otherwise if any other error then return that error
+		if result.error.error != PError.noError:
+			pcontext.state = pcontext_.state
+			pcontext.error = pcontext_.error
+			return None
+		
+		# Otherwise no error, so return the result from the call
+		pcontext.variables = pcontext_.variables	# copy back the variables because the might have changed
+		return pcontext_.result
+
+
 
 	# replace macros
 	# _macroMatch = re.compile(r"\$\{[\s\w-.]+\}")

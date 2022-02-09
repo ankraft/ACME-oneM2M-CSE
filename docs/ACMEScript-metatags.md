@@ -112,7 +112,7 @@ Usage:
 @onKey &lt;key>
 
 With this meta tag a script registers for a key-press event of the console interface. If the key is pressed then the
-script is run.
+script is run. The event and the key are passed as the script arguments.
 
 A script can only register for a single key.
 
@@ -120,6 +120,9 @@ Example:
 ```text
 # Run the script when the '9' key is pressed
 @onkey 9
+
+print ${argv}
+# -> onkey 9
 ```
 
 

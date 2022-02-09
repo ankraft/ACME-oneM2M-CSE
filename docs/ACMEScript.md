@@ -13,10 +13,11 @@ The \[ACME] CSE supports a simple script language, called ACMEScript, that can b
 
 
 [ACMEScript Basics](#basics)  
-[Variables and Macros](#variables_macros)  
+[Variables, Macros, and Procedures](#variables_macros_procedures)  
 [Commands](#commands)  
 [Calculations and Comparisons](#calc_comp)  
 [Context, Scopes, Arguments, and Results](#context_scope)  
+[Upper Tester Integration](#upper_tester)
 
 See also
 
@@ -89,12 +90,18 @@ Data can be stored "persistently" during a CSE's runtime. This is intended to pa
 [Macros](ACMEScript-macros.md#macros_storage) and [commands](commands_storage) help to store, access, check and remove key/values.
 
 
-<a name="variables_macros"></a>
-## Variables and Macros
+<a name="variables_macros_procedures"></a>
+## Variables, Macros, and Procedures
 
-ACMEScript supports variables and macros. The difference is that variables are assigned during the script's flow, and macros are functions evaluated during runtime, and may also have arguments. Both variables and macros are case insensitive.
+ACMEScript supports variables, macros, and procedures. The difference is that variables are assigned during the script's flow, and
+macros are build-in functions evaluated during runtime, and may also have arguments. Procedures are named command sequences that
+are defined in the script.  
 
-Variables are evaluated by wrapping them like this: `${name [<arguments>] }` .
+See also the [list of available macros and variables](ACMEScript-macros.md).
+
+
+### Usage
+Variables, macros, and procedures are case insensitive, and they are evaluated by wrapping them like this: ```${name [<arguments>] }``` .
 
 ```text
 # Assign the string "Hello, World!" to the variable "greeting"
@@ -102,7 +109,7 @@ set greeting Hello, World!
 print ${greeting}
 ```
 
-Variables and macros can be nested and are evaluated from the inside out:
+Variables, macros, and procedures can be nested and are evaluated from the inside out:
 
 ```text
 set variable greeting
@@ -113,13 +120,12 @@ set greeting Hello, World!
 print ${${variable}}
 ```
 
-A macro may have zero, one or more arguments:
+Macros and procedures may have zero, one or more arguments:
 
 ```text
 # Print the name of the script, which is the script's argument with index 0
 print ${argv 0}
 ```
-
 To print the string "${" one escape the special pattern with a backslash:
 
 ```text
@@ -130,7 +136,33 @@ This line will print:
 
 >${datetime} = 20220107T221625.771604
 
-See also the [list of available macros and variables](ACMEScript-macros.md).
+### Procedures
+The following example shows the definition of a procedure that returns a value, and its use:
+
+```text
+# Define a procedure to double its argument
+procedure double
+	set x = ${argv 1} * 2
+endProcedure ${x}
+
+# Call procedure
+print ${double 21}
+```
+
+One important difference for procedures is that they may be called like normal commands as well. They even might return a value, which is 
+then stored in the special variable *result*. Using the procedure defined in the previous example, one may call the procedure like
+this:
+
+```text
+# Call procedure
+double 21
+print ${result}
+```
+
+### Hierarchy
+
+Please note, that the evaluation of variables, macros, and procedures happens in that order. If evaluating a ```${name}```
+expression the ACMEScript interpreter first looks for a variable, then a macro, and lastly a procedure with that name.
 
 
 
@@ -247,9 +279,23 @@ print ${result}
 
 ```
 
+<a name="upper_tester"></a>
+## Upper Tester Integration
+
+ACMEScript is integrated with the [Upper Tester Interface](Operation.md#upper_tester). To enable this a script must have the
+[@uppertester](ACMEScript-metatags.md#meta_uppertester) meta tag set. It can then be run by having its
+[@name](ACMEScript-metatags.md#meta_name) (and optional script arguments) as the parameter of the upper tester's *X-M2M-UTCMD*
+header field:
+
+```text
+X-M2M-UTCMD: aScript param1 param2
+```
+
+A script result is then passed back in a response in the *X-M2M-UTRSP* header of the response:
+
+```text
+X-M2M-UTRSP: aResult
+```
 
 [← README](../README.md) 
 
-
-
-upper tester integration

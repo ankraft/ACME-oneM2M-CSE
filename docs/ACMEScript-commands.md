@@ -163,11 +163,7 @@ Usage:
 ENDPROCEDURE [&lt;result>]
 
 This command marks the end of a [PROCEDURE](#command_procedure). The command may have an optional result argument that is 
-returned as the result of the procedure. The result is stored in two variables:
-
-- a new variable with the same name as the procedure, and
-- the [result](ACMEScript-macros.md#macro_result) variable.
-
+returned as the result of the procedure. The result is stored in the vriable [result](ACMEScript-macros.md#macro_result).
 
 Example:
 ```text
@@ -176,7 +172,7 @@ procedure aProcedure
 endProcedure aResult
 
 aProcedure
-print ${aProcedure}
+print ${result}
 # -> aResult
 ```
 
@@ -281,26 +277,34 @@ LOGERROR Danger, Will Robinson!
 Usage:  
 PROCEDURE [&lt;result>]
 
-This command defines a procedure. A procedure is a block of commands that is executed in its own context. It can therefore have zero,
-one, or more arguments, which can be accessed via the [argc](ACMEScript-macros.md#macro_argc) and [argv](ACMEScript-macros.md#macro_argv) 
-macros. A procedure may also return a result, which is returned to the calling scope, see [ENDPROCEDURE](#command_endprocedure) for details.
+This command defines a procedure. A procedure is a named sequence of commands that is executed in its own context. 
+A procedure mqy have zero, one, or more arguments, which can be accessed via the [argc](ACMEScript-macros.md#macro_argc) and [argv](ACMEScript-macros.md#macro_argv)  macros. A procedure may also return a result, which is returned to the calling scope, 
+see [ENDPROCEDURE](#command_endprocedure) for details.
 
 One can regard a procedure as a script-local command definition.
 
-Also, it is allowed to call other or the same procedure inside a procedure, however it is not allowed to define procedures inside procedures.	
+Also, it is allowed to call other or the same procedure inside a procedure, however it is not allowed to define procedures inside procedures.
 
 Example:
 ```text
-# Define procedure to double its argument
+# Define a procedure to double its argument
 procedure double
 	set x = ${argv 1} * 2
 endProcedure ${x}
 
 # Call procedure
+print ${double 21}
+```
+
+Procedures may be called like normal commands as well. If they return a value then that is stored in the special 
+variable *result*. Using the procedure defined in the previous example, one may call the procedure like
+this:
+
+```text
+# Call procedure
 double 21
 print ${result}
 ```
-
 
 <a name="command_quit"></a>
 ### QUIT
@@ -422,11 +426,14 @@ clear
 Usage:  
 PRINT &lt;message>
 
-Print a message to the INFO-level log.
+Print a message to the INFO-level log. Basic markdown formatting, like \* and \*\* is supported.
+
+An empty ```print``` command prints an empty line.
 
 Example:
 ```text
 print Hello, World!
+print **bold** and *italics*
 ```
 
 
