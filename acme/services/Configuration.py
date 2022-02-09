@@ -302,6 +302,7 @@ class Configuration(object):
 				'cse.console.refreshInterval'			: config.getfloat('cse.console', 'refreshInterval', 	fallback = 2.0),
 				'cse.console.hideResources'				: config.getlist('cse.console', 'hideResources', 		fallback = []),		# type: ignore[attr-defined]
 				'cse.console.treeMode'					: config.get('cse.console', 'treeMode', 				fallback = 'normal'),
+				'cse.console.treeIncludeVirtualResources': config.getboolean('cse.console', 'treeIncludeVirtualResources', fallback = False),
 				'cse.console.confirmQuit'				: config.getboolean('cse.console', 'confirmQuit', 		fallback = False),
 				'cse.console.theme'						: config.get('cse.console', 'theme', 					fallback = 'dark'),
 

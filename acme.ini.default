@@ -460,10 +460,13 @@ refreshInterval=2.0
 ; Wildcards are allowed.
 ; Default: Empty list
 hideResources=
-; Set the mode how resources and their content are presented in the console's tree view. 
+; Set the mode how resources and their content are presented in the console's and structure endpoint tree view. 
 ; Allowed values: normal, compact, content, contentOnly
 ; Default: normal
 treeMode=normal
+; Show virtual resources in the console's and structure endpoint's tree view.
+; Default: False
+treeIncludeVirtualResources=False
 ; Quitting the console needs to be confirmed.
 ; This may not work under Windows, so it should be switched off.
 ; Default: False

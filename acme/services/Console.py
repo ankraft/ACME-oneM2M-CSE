@@ -78,10 +78,11 @@ class TreeMode(IntEnum):
 class Console(object):
 
 	def __init__(self) -> None:
-		self.refreshInterval = Configuration.get('cse.console.refreshInterval')
-		self.hideResources   = Configuration.get('cse.console.hideResources')
-		self.treeMode	     = Configuration.get('cse.console.treeMode')
-		self.confirmQuit     = Configuration.get('cse.console.confirmQuit')
+		self.refreshInterval 			 = Configuration.get('cse.console.refreshInterval')
+		self.hideResources  			 = Configuration.get('cse.console.hideResources')
+		self.treeMode	     			 = Configuration.get('cse.console.treeMode')
+		self.treeIncludeVirtualResources = Configuration.get('cse.console.treeIncludeVirtualResources')
+		self.confirmQuit     			 = Configuration.get('cse.console.confirmQuit')
 		if L.isInfo: L.log('Console initialized')
 
 
@@ -702,7 +703,10 @@ Available under the BSD 3-Clause License
 				if len(contentInfo) > 0:
 					info = f'-> {contentInfo}'
 			else: # self.treeMode == NORMAL
-				info = f'-> {res.__rtype__}{extraInfo} | ri={res.ri}'
+				if res.isVirtual():
+					info = f'-> {res.__rtype__}{extraInfo} (virtual)'
+				else:
+					info = f'-> {res.__rtype__}{extraInfo} | ri={res.ri}'
 
 			return f'{res.rn} [dim]{info}[/dim]'
 
@@ -713,7 +717,7 @@ Available under the BSD 3-Clause License
 				return
 			chs = CSE.dispatcher.directChildResources(res.ri)
 			for ch in chs:
-				if ch.__isVirtual__:	# Ignore virual resources
+				if ch.isVirtual() and not self.treeIncludeVirtualResources:	# Ignore virual resources
 					continue
 				# Ignore resources/resource patterns 
 				ri = ch.ri

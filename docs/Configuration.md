@@ -266,13 +266,14 @@ The following tables provide detailed descriptions of all the possible CSE confi
 <a name="console"></a>
 ###	[cse.console] - Console Settings
 
-| Keyword         | Description                                                                                                                                                          | Configuration Name          |
-|:----------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------|
-| refreshInterval | Interval for continuously refreshing information displays. Must be > 0.0<br/>Default: 2.0 seconds                                                                    | cse.console.refreshInterval |
-| hideResources   | Hide certain resources from display in the console. This is a list of resource identifiers. Wildcards are allowed.<br/>Default: Empty list                           | cse.console.hideResources   |
-| treeMode        | Set the mode how resources and their content are presented in the console's tree view.<br/>Allowed values: normal, compact, content, contentOnly<br/>Default: normal | cse.console.treeMode        |
-| confirmQuit     | Quitting the console needs to be confirmed.<br />This may not work under Windows, so it is switched off by default.<br />Default: False                              | cse.console.confirmQuit     |
-| theme           | Set the color theme for the console. Allowed values are "dark" and "light".<br />Default: dark                                                                       | cse.console.theme           |
+| Keyword                     | Description                                                                                                                                                                                   | Configuration Name                      |
+|:----------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------------------------------|
+| refreshInterval             | Interval for continuously refreshing information displays. Must be > 0.0<br/>Default: 2.0 seconds                                                                                             | cse.console.refreshInterval             |
+| hideResources               | Hide certain resources from display in the console. This is a list of resource identifiers. Wildcards are allowed.<br/>Default: Empty list                                                    | cse.console.hideResources               |
+| treeMode                    | Set the mode how resources and their content are presented in the console's and structure endpoint's tree view.<br/>Allowed values: normal, compact, content, contentOnly<br/>Default: normal | cse.console.treeMode                    |
+| treeIncludeVirtualResources | Show virtual resources in the console's and structure endpoint's tree view..<br/>Default: False                                                                                               | cse.console.treeIncludeVirtualResources |
+| confirmQuit                 | Quitting the console needs to be confirmed.<br />This may not work under Windows, so it is switched off by default.<br />Default: False                                                       | cse.console.confirmQuit                 |
+| theme                       | Set the color theme for the console. Allowed values are "dark" and "light".<br />Default: dark                                                                                                | cse.console.theme                       |
 
 
 <a name="scripting"></a>
