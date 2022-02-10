@@ -481,6 +481,10 @@ theme=dark
 ;
 
 [cse.scripting]
+; Add one or multiple directory paths to look for scripts, in addition to the ones in the "init" directory.
+; Must be a comma-separated list.
+; Default: not set
+scriptDirectories=
 ; Enable debug output during script execution, such as the current executed line.
 ; Default: False
 verbose=false

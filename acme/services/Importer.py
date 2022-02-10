@@ -38,9 +38,21 @@ class Importer(object):
 
 
 	def doImport(self) -> bool:
-		"""	Perform all the imports.
+		"""	Perform all the imports. This imports the attribute policies, flexContainer policies,
+			and scripts.
+
+			Return:
+				Boolean indicating success or failure
 		"""	
-		return self.importAttributePolicies() and self.importFlexContainerPolicies() and self.assignAttributePolicies() and self.importScripts()
+		if not (self.importAttributePolicies() and \
+				self.importFlexContainerPolicies() and \
+				self.assignAttributePolicies() and \
+				self.importScripts()):
+					return False
+		if CSE.script.scriptDirectories:
+			if not self.importScripts(CSE.script.scriptDirectories):
+				return False
+		return True		
 
 
 	def importScripts(self, path:str = None) -> bool:
@@ -53,21 +65,14 @@ class Importer(object):
 			if (path := self.resourcePath) is None:
 				L.logErr('cse.resourcesPath not set')
 				raise RuntimeError('cse.resourcesPath not set')
-		if not os.path.exists(path):
-			L.isWarn and L.logWarn(f'Import directory does not exist: {path}')
-			return False
+		# if not os.path.exists(path):
+		# 	L.isWarn and L.logWarn(f'Import directory does not exist: {path}')
+		# 	return False
 
 		self._prepareImporting()
 		L.isInfo and L.log(f'Importing scripts from directory: {path}')
 		if (countScripts := CSE.script.loadScriptsFromDirectory(path)) == -1:
 			return False
-		# for fn in fnmatch.filter(os.listdir(path), '*.as'):
-		# 	ffn = f'{path}{os.path.sep}{fn}'
-		# 	# read the file and add it to the script manager
-		# 	L.isDebug and L.logDebug(f'Importing script: {fn}')
-		# 	if not CSE.script.loadScriptFromFile(ffn):
-		# 		return False
-		# 	countScripts += 1
 		
 		# Check that there is only one startup script, then execute it
 		if len(scripts := CSE.script.findScripts(meta = 'startup')) > 1:

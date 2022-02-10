@@ -279,10 +279,11 @@ The following tables provide detailed descriptions of all the possible CSE confi
 <a name="scripting"></a>
 ###	[cse.scripting] - Scripting Settings
 
-| Keyword                | Description                                                                                                                                      | Configuration Name                   |
-|:-----------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------|
-| verbose                | Enable debug output during script execution, such as the current executed line.<br/>Default: False                                               | cse.scripting.verbose                |
-| fileMonitoringInterval | Set the interval to check for new files in the script (init) directory.<br/>0 means disable monitoring. Must be >= 0.0.<br/>Default: 2.0 seconds | cse.scripting.fileMonitoringInterval |
+| Keyword                | Description                                                                                                                                                    | Configuration Name                   |
+|:-----------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------|
+| scriptDirectories      | Add one or multiple directory paths to look for scripts, in addition to the ones in the "init" directory. Must be a comma-separated list.<br/>Default: not set | cse.scripting.scriptDirectories      |
+| verbose                | Enable debug output during script execution, such as the current executed line.<br/>Default: False                                                             | cse.scripting.verbose                |
+| fileMonitoringInterval | Set the interval to check for new files in the script (init) directory.<br/>0 means disable monitoring. Must be >= 0.0.<br/>Default: 2.0 seconds               | cse.scripting.fileMonitoringInterval |
 
 
 <a name="webui"></a>

@@ -768,6 +768,7 @@ class ScriptManager(object):
 
 		self.verbose = Configuration.get('cse.scripting.verbose')
 		self.scriptMonitorInterval = Configuration.get('cse.scripting.fileMonitoringInterval')
+		self.scriptDirectories = Configuration.get('cse.scripting.scriptDirectories')
 		self.scriptUpdatesMonitor:BackgroundWorker = None
 		self.scriptCronWorker:BackgroundWorker = None
 
@@ -810,11 +811,13 @@ class ScriptManager(object):
 				key: Name of the updated configuration setting.
 				value: New value for the config setting.
 		"""
-		if key not in [ 'cse.scripting.verbose', 'cse.scripting.fileMonitoringInterval']:
+		if key not in [ 'cse.scripting.verbose', 'cse.scripting.fileMonitoringInterval', 'cse.scripting.scriptDirectories']:
 			return
+
 		# assign new values
 		self.verbose = Configuration.get('cse.scripting.verbose')
 		self.scriptMonitorInterval = Configuration.get('cse.scripting.fileMonitoringInterval')
+		self.scriptDirectories = Configuration.get('cse.scripting.scriptDirectories')
 
 		# restart or stop monitor worker
 		if self.scriptUpdatesMonitor:
@@ -900,8 +903,11 @@ class ScriptManager(object):
 				del self.scripts[eachName]
 
 		# Read new scripts
-		if CSE.importer.resourcePath:
+		if CSE.importer.resourcePath:	# from the init directory
 			if self.loadScriptsFromDirectory(CSE.importer.resourcePath) == -1:
+				L.isWarn and L.logWarn('Cannot import new scripts')
+		if CSE.script.scriptDirectories:	# from the extra script directories
+			if self.loadScriptsFromDirectory(CSE.script.scriptDirectories) == -1:
 				L.isWarn and L.logWarn('Cannot import new scripts')
 		return True
 
@@ -927,7 +933,7 @@ class ScriptManager(object):
 	##########################################################################
 
 
-	def loadScriptsFromDirectory(self, directory:str) -> int:
+	def loadScriptsFromDirectory(self, directory:str|list[str]) -> int:
 		"""	Load all scripts from a directory.
 
 			Args:
@@ -950,16 +956,24 @@ class ScriptManager(object):
 					return True
 			return False
 
+		# If this is just a single directory then still put into a list		
+		if isinstance(directory, str):
+			directory = [ directory ]
+
 		countScripts = 0
-		for fn in fnmatch.filter(os.listdir(directory), '*.as'):
-			ffn = f'{directory}{os.path.sep}{fn}'
-			if _hasScriptWithFilename(ffn):	# Skip existing scripts, ie only new scripts
+		# Look into each directory
+		for each in directory:
+			if not each:	# skip empty directory names
 				continue
-			# read the file and add it to the script manager
-			L.isDebug and L.logDebug(f'Importing script: {ffn}')
-			if not self.loadScriptFromFile(ffn):
-				return -1
-			countScripts += 1
+			for fn in fnmatch.filter(os.listdir(each), '*.as'):
+				ffn = f'{each}{os.path.sep}{fn}'
+				if _hasScriptWithFilename(ffn):	# Skip existing scripts, ie only new scripts
+					continue
+				# read the file and add it to the script manager
+				L.isDebug and L.logDebug(f'Importing script: {ffn}')
+				if not self.loadScriptFromFile(ffn):
+					return -1
+				countScripts += 1
 
 		return countScripts
 

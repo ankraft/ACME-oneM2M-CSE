@@ -56,8 +56,9 @@ In ACMEScript everything is a string, but interpreted as a number or boolean val
 
 ### Loading and Running Scripts
 
-Scripts are stored in and read from the *init* directory. All files with the extension "*.as*" are treated as ACMEScript files and are automatically imported during CSE startup and also during runtime. Updated and new scripts are automatically read again from the
-directory.
+Scripts are stored in and read from the *init* directory, and from a list of directories that [can be specified](Configuration.md#scripting) in the configuration file. 
+All files with the extension "*.as*" are treated as ACMEScript files and are automatically imported during CSE startup and also during runtime. 
+Updated and new scripts are automatically read again from that directory.
 
 There are different ways to run scripts:
 

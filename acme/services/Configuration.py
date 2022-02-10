@@ -310,6 +310,7 @@ class Configuration(object):
 				#	Scripting
 				#
 
+				'cse.scripting.scriptDirectories'		: config.getlist('cse.scripting', 'scriptDirectories',		fallback = []),	# type: ignore[attr-defined]
 				'cse.scripting.verbose'					: config.getboolean('cse.scripting', 'verbose', 		fallback = False),
 				'cse.scripting.fileMonitoringInterval'	: config.getfloat('cse.scripting', 'fileMonitoringInterval', fallback = 2.0),
 
@@ -500,6 +501,12 @@ class Configuration(object):
 		# Script settings
 		if Configuration._configuration['cse.scripting.fileMonitoringInterval'] < 0.0:
 			return False, f'Configuration Error: \[cse.scripting]:fileMonitoringInterval must be >= 0.0'
+		if (scriptDirs := Configuration._configuration['cse.scripting.scriptDirectories']):
+			for each in scriptDirs:
+				if not each:
+					continue
+				if not os.path.isdir(each):
+					return False, f'Configuration Error: \[cse.scripting]:scriptDirectory : directory "{each}" does not exist, is not a directory or is not accessible'
 
 		# Everything is fine
 		return True, None
