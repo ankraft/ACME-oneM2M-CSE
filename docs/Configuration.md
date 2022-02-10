@@ -2,7 +2,6 @@
 
 # Configuration
 
-[Quick Configuration](#quick)  
 [Configuration Sections](#sections)  
 [Advanced Usage](#advanced)  
 
@@ -27,7 +26,27 @@ but must then specify it with the *--config* command line argument when running 
 (see [Running the CSE](Running.md#running-the-cse)).
 
 If the specified or the default *acme.ini* could not be found then an interactive procedure is started to generate a file
-with basic configuration settings.
+with basic configuration settings. You can add further configurations if necessary by copying sections and settings from *acme.ini.default*.
+
+### Interpolating Configuration Settings
+
+In addition to assigning individual values for configurations settings you can use
+[settings interpolation](https://docs.python.org/3/library/configparser.html#interpolation-of-values) which allows you to
+referece settings from the same or from other sections. The syntax to denote a value from a section is ```${section:option}```.
+
+### Built-in Configuration Macros
+
+#### ${basic.config:baseDirectory}
+
+A built-in configuration setting that points to the base-directory of the CSE installation can be 
+referenced by the interpolation ```${basic.config:baseDirectory}```.
+
+Example:
+
+```ini
+[cse]
+resourcesPath=${basic.config:baseDirectory}/init
+```
 
 
 <a name="sections"></a>
@@ -322,10 +341,6 @@ The following snippet only presents some example for ID mappings.
 
 <a name="advanced"></a>
 ## Advanced Usage
-
-### Configuration References
-
-The CSE's configuration module uses the [Python Extended Interpolation Parser](https://docs.python.org/3/library/configparser.html#interpolation-of-values) that implements a more advanced syntax in order to support settings references across the configuration file. That means that you can reference settings in the same or in other configuration sections. See the the [Python documentation](https://docs.python.org/3/library/configparser.html#interpolation-of-values) for a detailed description.
 
 ### Using Settings During Imports
 
