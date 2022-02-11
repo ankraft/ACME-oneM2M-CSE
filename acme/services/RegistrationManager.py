@@ -24,9 +24,7 @@ from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 class RegistrationManager(object):
 
 	def __init__(self) -> None:
-		self.allowedCSROriginators 		= Configuration.get('cse.registration.allowedCSROriginators')
-		self.allowedAEOriginators		= Configuration.get('cse.registration.allowedAEOriginators')
-		self.checkExpirationsInterval	= Configuration.get('cse.checkExpirationsInterval')
+		self._getConfig()
 
 		# Start expiration Monitor
 		self.expWorker:BackgroundWorker	= None
@@ -34,6 +32,9 @@ class RegistrationManager(object):
 		
 		# Add handler for configuration updates
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)			# type: ignore
+
+		# Add a handler when the CSE is reset
+		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
 
 		L.isInfo and L.log('RegistrationManager initialized')
 
@@ -43,6 +44,11 @@ class RegistrationManager(object):
 		L.isInfo and L.log('RegistrationManager shut down')
 		return True
 
+	def _getConfig(self) -> None:
+		self.allowedCSROriginators 		= Configuration.get('cse.registration.allowedCSROriginators')
+		self.allowedAEOriginators		= Configuration.get('cse.registration.allowedAEOriginators')
+		self.checkExpirationsInterval	= Configuration.get('cse.checkExpirationsInterval')
+
 
 	def configUpdate(self, key:str = None, value:Any = None) -> None:
 		"""	Handle configuration updates.
@@ -51,6 +57,14 @@ class RegistrationManager(object):
 			return
 		self.checkExpirationsInterval = value
 		self.restartExpirationMonitor()
+
+
+	def restart(self) -> None:
+		"""	Restart the registration services.
+		"""
+		self._getConfig()
+		self.restartExpirationMonitor()
+		L.isDebug and L.logDebug('RegistrationManager restarted')
 
 
 
