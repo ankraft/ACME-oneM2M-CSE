@@ -1346,15 +1346,15 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 		# To do this we run the same script, but only looking for a procedure with that name.
 		pcontext_ = copy.deepcopy(pcontext)				# Copy the pcontext
 		#pcontext_.argument = arg.strip()				# Set a possible argument
-		result = run(pcontext_, verbose = pcontext_._verbose, argument = arg, procedure = name)
+		presult = run(pcontext_, verbose = pcontext_._verbose, argument = arg, procedure = name)
 
 		# If undefined then return a general error
-		if result.error.error == PError.undefined:
+		if presult.error.error == PError.undefined:
 			pcontext.setError(PError.undefined, f'Undefined variable, macro, or procedure: {name}')
 			return None
 
 		# Otherwise if any other error then return that error
-		if result.error.error != PError.noError:
+		if presult.error.error != PError.noError:
 			pcontext.state = pcontext_.state
 			pcontext.error = pcontext_.error
 			return None

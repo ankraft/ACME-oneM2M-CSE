@@ -70,7 +70,7 @@ class Importer(object):
 		# 	return False
 
 		self._prepareImporting()
-		L.isInfo and L.log(f'Importing scripts from directory: {path}')
+		L.isInfo and L.log(f'Importing scripts from directories: {path}')
 		if (countScripts := CSE.script.loadScriptsFromDirectory(path)) == -1:
 			return False
 		
