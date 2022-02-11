@@ -38,7 +38,6 @@ class GRP(AnnounceableResource):
 		'aa': None,
 		'ast': None,
 		'daci': None,
-		'st': None,
 		'cr': None,
 
 		# Resource attributes
