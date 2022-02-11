@@ -103,8 +103,8 @@ class REQ(Resource):
 					'vsi'	: request.headers.vendorInformation,
 				},
 				'rs'	: RequestStatus.PENDING,
-				'ors'	: {
-				}
+				# 'ors'	: {
+				# }
 		}}
 
 		# add handlings, conditions and attributes from filter
