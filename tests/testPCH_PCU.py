@@ -119,8 +119,7 @@ class TestPCH_PCU(unittest.TestCase):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(ae2URL, ORIGINATOR)	# Just delete the 2nd AE and everything below it. Ignore whether it exists or not
 
-		with console.status('[bright_blue]Waiting for polling requests to timeout...') as status:
-			time.sleep(requestExpirationDelay)
+		waitMessage('Waiting for polling requests to timeout...', requestExpirationDelay)
 
 
 	def _pollForRequest(self, originator:str, rcs:RC, isCreate:bool=False, isDelete:bool=False, emptyAnswer:bool=False, wrongAnswer:bool=False) -> None:

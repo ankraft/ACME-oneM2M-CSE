@@ -44,6 +44,7 @@ expirationCheckDelay 		= 2	# seconds
 expirationSleep				= expirationCheckDelay * 3
 
 requestETDuration 			= f'PT{expirationCheckDelay:d}S'
+requestETDuration2 			= f'PT{expirationCheckDelay*2:d}S'
 requestETDurationInteger	= expirationCheckDelay * 1000
 requestCheckDelay			= 1	#seconds
 requestExpirationDelay		= 3.0
@@ -233,6 +234,7 @@ remoteCsrURL 	= f'{REMOTEcseURL}{CSEID}'
 @atexit.register
 def shutdown() -> None:
 	if mqttClient:
+		print(222)
 		mqttClient.shutdown()
 
 ###############################################################################
@@ -696,7 +698,7 @@ def runNotificationServer() -> None:
 def startNotificationServer() -> None:
 	notificationThread = Thread(target=runNotificationServer)
 	notificationThread.start()
-	time.sleep(0.1)	# give the server a moment to start
+	waitMessage('Starting notification server', 2)
 
 
 def stopNotificationServer() -> None:
@@ -706,6 +708,8 @@ def stopNotificationServer() -> None:
 		requests.post(NOTIFICATIONSERVER, verify=verifyCertificate)	# send empty/termination request
 	except Exception:
 		pass
+	waitMessage('Stopping notification server', 2.0)
+
 
 
 def isNotificationServerRunning() -> bool:
@@ -755,6 +759,13 @@ def printResult(result:unittest.TestResult) -> None:
 		console.print(f'\n[bold][red]{f[0]}')
 		console.print(f'[dim]{f[0].shortDescription()}')
 		console.print(f[1])
+
+def waitMessage(msg:str, delay:float) -> None:
+	if delay:
+		with console.status(f'[bright_blue]{msg}') as status:
+			time.sleep(delay)
+	else:
+		console.print(f'[bright_blue]{msg}')
 
 
 def uniqueID() -> str:

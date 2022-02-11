@@ -12,7 +12,7 @@ if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
 from rich import print
-from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, Operation, ResponseType
+from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, Operation, ResponseType, RequestStatus
 from init import *
 
 # Headers for async requests
@@ -26,6 +26,7 @@ headers2 = {
 headersEmpty = {
 	C.hfRTU	: ''
 }
+
 
 class TestREQ(unittest.TestCase):
 
@@ -57,10 +58,8 @@ class TestREQ(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
-		time.sleep(expirationSleep)	# give the server a moment to expire the resource
-		disableShortResourceExpirations()
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
-		stopNotificationServer()
+		disableShortResourceExpirations()
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createREQFail(self) -> None:
@@ -86,6 +85,7 @@ class TestREQ(unittest.TestCase):
 		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:req'))
+		self.assertIsNone(findXPath(r, 'm2m:req/st'))	# test absence of stateTag
 		self.assertIsNotNone(findXPath(r, 'm2m:req/lbl'))
 		self.assertIn(TestREQ.originator, findXPath(r, 'm2m:req/lbl'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/op'))
@@ -109,6 +109,36 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/pc'))
 		self.assertIsNotNone(findXPath(r, 'm2m:req/ors/pc/m2m:cb'))
 		self.assertEqual(findXPath(r, 'm2m:req/ors/pc/m2m:cb/ty'), T.CSEBase)	# Is the content the CSEBase
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveCSENBSynchValidateREQ(self) -> None:
+		""" Retrieve <CB> non-blocking synchronous. Validate <REQ>"""
+
+		r, rsc = RETRIEVE(f'{cseURL}?rt={int(ResponseType.nonBlockingRequestSynch)}&rp={requestETDuration2}', 
+						  TestREQ.originator,
+						  headers={ C.hfOET : DateUtils.getResourceDate(requestCheckDelay)})	# set OET to now+requestCheckDelay/2
+		self.assertEqual(rsc, RC.acceptedNonBlockingRequestSynch, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
+		requestURI = findXPath(r, 'm2m:uri')
+
+		# Immediately retrieve <request>
+		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:req/rs'))
+		self.assertEqual(findXPath(r, 'm2m:req/rs'), RequestStatus.PENDING)
+		self.assertIsNone(findXPath(r, 'm2m:req/ors'))
+
+		# get and check <request> after a delay to give the operation time to run
+		time.sleep(requestCheckDelay * 2)
+		r2, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
+		self.assertEqual(rsc, RC.OK, r2)
+		self.assertIsNotNone(findXPath(r, 'm2m:req/lt'))
+		self.assertIsNotNone(findXPath(r2, 'm2m:req/lt'))
+		self.assertGreater(findXPath(r2, 'm2m:req/lt'), findXPath(r, 'm2m:req/lt'))
+		self.assertIsNotNone(findXPath(r, 'm2m:req/rs'))
+		self.assertEqual(findXPath(r2, 'm2m:req/rs'), RequestStatus.COMPLETED)
+		self.assertIsNotNone(findXPath(r2, 'm2m:req/ors'))
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -548,6 +578,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 
 	# nonBlockingSync
 	suite.addTest(TestREQ('test_retrieveCSENBSynch'))
+	suite.addTest(TestREQ('test_retrieveCSENBSynchValidateREQ'))
 	suite.addTest(TestREQ('test_retrieveCSENBSynchMissingRP'))
 	suite.addTest(TestREQ('test_retrieveCSENBSynchWrongRT'))
 	suite.addTest(TestREQ('test_retrieveUnknownNBSynch'))
@@ -573,9 +604,13 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestREQ('test_updateCNTNBAsynch'))
 	suite.addTest(TestREQ('test_deleteCNTNBASynch'))
 
-	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
-	printResult(result)
-	disableShortResourceExpirations()
+	try:
+		result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
+		printResult(result)
+		#disableShortResourceExpirations()
+	finally:
+		stopNotificationServer()
+		time.sleep(expirationSleep)	# give the server a moment to expire the resource
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':
