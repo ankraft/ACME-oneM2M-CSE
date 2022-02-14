@@ -59,7 +59,7 @@ class BackgroundWorker(object):
 		self.numberOfRuns 			= 0					# Actual runs
 		self.dispose 				= dispose			# Only run once, then remove itself from the pool
 		self.finished				= finished			# Callback after worker finished
-		self.ignoreException		= bool				# Ignore exception when running workers
+		self.ignoreException		= ignoreException	# Ignore exception when running workers
 		self.id 					= id
 
 
