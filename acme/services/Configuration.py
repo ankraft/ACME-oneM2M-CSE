@@ -780,7 +780,7 @@ class Configuration(object):
 		cnf:list[str] = []
 
 		try:
-			Configuration._print('[b]Creating a new configuration file\n')
+			Configuration._print(f'[b]Creating a new [/b]{C.textLogo}[b] configuration file\n')
 
 			# Get the CSE Type first
 			questionsCseType = [

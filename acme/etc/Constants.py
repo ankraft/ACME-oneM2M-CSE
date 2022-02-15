@@ -11,7 +11,8 @@
 class Constants(object):
 
 	# ACME Version
-	version								= '0.10.0-dev'
+	version							= '0.10.0-dev'
+	textLogo						= '[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim]'
 	
 
 	#

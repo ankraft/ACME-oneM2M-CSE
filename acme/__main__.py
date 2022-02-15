@@ -62,7 +62,7 @@ def main() -> None:
 	#		CSE.startup(None, configfile=defaultConfigFile, loglevel='error', resetdb=None)
 	#
 	#	Note: Always pass at least 'None' as first and then the 'configfile' parameter.
-	Console().print('\n[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim] ' + C.version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight=False)
+	Console().print(f'\n{C.textLogo} ' + C.version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight=False)
 	if CSE.startup(parseArgs()):
 		CSE.run()
 

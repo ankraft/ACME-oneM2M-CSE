@@ -25,6 +25,7 @@ from acme.helpers.TextTools import toHex
 from acme.etc.RequestUtils import serializeData
 from acme.etc.DateUtils import getResourceDate
 from acme.etc.Types import ContentSerializationType
+from acme.etc.Constants import Constants as C
 
 ##############################################################################
 #
@@ -251,7 +252,7 @@ signal.signal(signal.SIGUSR1, exitSignalHandler)
 	
 if __name__ == '__main__':
 	console = Console()
-	console.print('\n[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim] - [bold]Notification Server[/bold]\n\n')
+	console.print(f'\n{C.textLogo} - [bold]Notification Server[/bold]\n\n')
 
 
 	# parse command line argiments

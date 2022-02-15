@@ -142,7 +142,7 @@ class Console(object):
 	#
 
 	def _about(self, header:str = None) -> None:
-		L.console(f'\n[white][dim][[/dim][red][i]ACME[/i][/red][dim]] ', plain = True, end = '')
+		L.console(f'\n[white]{C.textLogo} ', plain = True, end = '')
 		L.console(f'oneM2M CSE {C.version}', nl = False,)
 		if header:
 			L.console(header, nl = True, isHeader = True)
