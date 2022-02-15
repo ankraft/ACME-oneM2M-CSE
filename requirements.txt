@@ -20,7 +20,7 @@ flask==2.0.2
     # via ACME-oneM2M-CSE (setup.py)
 idna==3.3
     # via requests
-inquirerpy==0.3.1
+inquirerpy==0.3.3
     # via ACME-oneM2M-CSE (setup.py)
 isodate==0.6.1
     # via ACME-oneM2M-CSE (setup.py)
