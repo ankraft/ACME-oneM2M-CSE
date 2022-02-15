@@ -11,10 +11,10 @@ from __future__ import annotations
 import flask, sys, argparse, logging, ssl, collections, time, webbrowser
 from rich.console import Console
 import requests
-from flask import Flask, Request, make_response, request
+from flask import Flask, request
 from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
-from typing import Callable, List, Any
+from typing import Callable
 
 
 FlaskHandler = 	Callable[[str], Response]
@@ -156,8 +156,8 @@ def runServer(flaskApp:Flask, host:str, port:int, useTLS:bool, certFile:str=None
 		try:
 			context = None
 			if useTLS:
-			    context = ssl.SSLContext(ssl.PROTOCOL_TLS)
-			    context.load_cert_chain(certFile, privateKey)
+				context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+				context.load_cert_chain(certFile, privateKey)
 			flaskApp.run(	host=host, 
 							port=port,
 							threaded=True,
