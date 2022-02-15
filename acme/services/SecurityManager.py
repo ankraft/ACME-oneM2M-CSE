@@ -200,12 +200,12 @@ class SecurityManager(object):
 			# if the resource *may* have an acpi
 			if resource._attributes and 'acpi' in resource._attributes:
 
-				# Check holder attribute
-				if holder := resource.hld:
-					if holder == originator:	# resource.holder == originator -> all access
-						L.isDebug and L.logDebug('Allow access for holder')
+				# Check custodian attribute
+				if custodian := resource.cstn:
+					if custodian == originator:	# resource.custodian == originator -> all access
+						L.isDebug and L.logDebug('Allow access for custodian')
 						return True
-					# When holder is set, but doesn't match the originator then fall-through to fail
+					# When custodiabn is set, but doesn't match the originator then fall-through to fail
 					
 				# Check resource creator
 				elif (creator := resource.getOriginator()) and creator == originator:

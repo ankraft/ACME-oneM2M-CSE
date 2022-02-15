@@ -32,7 +32,7 @@ class REQ(Resource):
 		'lt': None,
 		'et': None,
 		'lbl': None,
-		'hld': None,
+		'cstn': None,
 		'acpi':None,
 		'daci': None,
 

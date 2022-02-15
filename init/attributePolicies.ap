@@ -253,10 +253,10 @@
 			"annc": "OA"
 		}
 	],
-	"hld": [
+	"cstn": [
 		{
 			"rtypes": [ "ALL" ],
-			"lname": "holder",
+			"lname": "custodian",
 			"ns": "m2m",
 			"type": "string",
 			"car": "01",

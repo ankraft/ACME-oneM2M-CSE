@@ -37,7 +37,7 @@ class ACTR(AnnounceableResource):
 		'acpi':None,
 		'et': None,
 		'daci': None,
-		'hld': None,
+		'cstn': None,
 		'at': None,
 		'aa': None,
 		'ast': None,

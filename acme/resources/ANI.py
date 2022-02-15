@@ -27,7 +27,7 @@ class ANI(MgmtObj):
 			'lt': None,
 			'et': None,
 			'lbl': None,
-			'hld': None,
+			'cstn': None,
 			'acpi':None,
 			'at': None,
 			'aa': None,

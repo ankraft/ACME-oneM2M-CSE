@@ -331,11 +331,11 @@ class TestACP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createCNTwithNoACPIAndHolder(self) -> None:
-		"""	Create <CNT> without ACPI / with holder """
+	def test_createCNTwithNoACPIAndCustodian(self) -> None:
+		"""	Create <CNT> without ACPI / with custodian """
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
-					'hld': 'someone'
+					'cstn': 'someone'
 				}}
 		r, rsc = CREATE(aeURL, ORIGINATOR, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
@@ -343,29 +343,29 @@ class TestACP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTwithNoACPIAndHolder(self) -> None:
-		"""	Retrieve <CNT> without ACPI / with holder and holder """
+	def test_retrieveCNTwithNoACPIAndCustodian(self) -> None:
+		"""	Retrieve <CNT> without ACPI / with custodian """
 		_, rsc = RETRIEVE(cntURL, 'someone')
 		self.assertEqual(rsc, RC.OK)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTwithNoACPIAndHolderAEOriginator(self) -> None:
-		"""	Retrieve <CNT> without ACPI / with holder and AE originator -> Fail """
+	def test_retrieveCNTwithNoACPIAndCustodianAEOriginator(self) -> None:
+		"""	Retrieve <CNT> without ACPI / with custodian and AE originator -> Fail """
 		_, rsc = RETRIEVE(cntURL, TestACP.originator)
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_retrieveCNTwithNoACPIAndHolderWrongOriginator(self) -> None:
-		"""	Retrieve <CNT> without ACPI / with holder and wrong originator -> Fail """
+	def test_retrieveCNTwithNoACPIAndCustodianWrongOriginator(self) -> None:
+		"""	Retrieve <CNT> without ACPI / with custodian and wrong originator -> Fail """
 		_, rsc = RETRIEVE(cntURL, 'wrong')
 		self.assertEqual(rsc, RC.originatorHasNoPrivilege)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteCNTwithNoACPIAndHolder(self) -> None:
-		"""	Delete <CNT> without ACPI / with holder and holder """
+	def test_deleteCNTwithNoACPIAndCustodian(self) -> None:
+		"""	Delete <CNT> without ACPI / with custodian"""
 		_, rsc = DELETE(cntURL, "someone")
 		self.assertEqual(rsc, RC.deleted)
 
@@ -657,11 +657,11 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestACP('test_retrieveCNTwithNoACPIWrongOriginator'))
 	suite.addTest(TestACP('test_deleteCNTwithNoACPI'))
 
-	suite.addTest(TestACP('test_createCNTwithNoACPIAndHolder'))
-	suite.addTest(TestACP('test_retrieveCNTwithNoACPIAndHolder'))
-	suite.addTest(TestACP('test_retrieveCNTwithNoACPIAndHolderAEOriginator'))
-	suite.addTest(TestACP('test_retrieveCNTwithNoACPIAndHolderWrongOriginator'))
-	suite.addTest(TestACP('test_deleteCNTwithNoACPIAndHolder'))
+	suite.addTest(TestACP('test_createCNTwithNoACPIAndCustodian'))
+	suite.addTest(TestACP('test_retrieveCNTwithNoACPIAndCustodian'))
+	suite.addTest(TestACP('test_retrieveCNTwithNoACPIAndCustodianAEOriginator'))
+	suite.addTest(TestACP('test_retrieveCNTwithNoACPIAndCustodianWrongOriginator'))
+	suite.addTest(TestACP('test_deleteCNTwithNoACPIAndCustodian'))
 
 	suite.addTest(TestACP('test_removeACPfromAEWrong'))
 	suite.addTest(TestACP('test_removeACPfromAEWrong2'))

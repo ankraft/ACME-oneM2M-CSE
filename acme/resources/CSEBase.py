@@ -34,7 +34,7 @@ class CSEBase(AnnounceableResource):
 			'lt': None,
 			'lbl': None,
 			'loc': None,	
-			'hld': None,
+			'cstn': None,
 			'acpi': None,
 
 			# Resource attributes

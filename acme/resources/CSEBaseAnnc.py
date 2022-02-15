@@ -32,7 +32,7 @@ class CSEBaseAnnc(AnnouncedResource):
 		'et': None,
 		'lbl': None,
 		'loc': None,	
-		'hld': None,
+		'cstn': None,
 		'acpi': None,
 		'daci': None,
 		'lnk': None,
