@@ -889,7 +889,7 @@
 	],
 	"dgt": [
 		{
-			"rtypes": [ "FCNT", "REQRESP" ],
+			"rtypes": [ "CIN", "FCNT", "REQRESP" ],
 			"lname": "dataGenerationTime",
 			"ns": "m2m",
 			"type": "absRelTimestamp",

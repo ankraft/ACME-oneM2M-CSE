@@ -45,7 +45,8 @@ class CIN(AnnounceableResource):
 			'con': None,
 			'or': None,
 			'conr': None,
-			'dcnt': None
+			'dcnt': None,
+			'dgt': None
 	}
 
 

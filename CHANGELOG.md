@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added guided setup of a configuration file when the CSE is started without a config file.
 - [CSE] Added bi-directional update of announced resources.
 - [CSE] Added remote resources support for &lt;group>.
+- [CSE] Added support for *dataGenerationTime* attribute for &lt;contentInstance> (R5 feature).
 - [WEB] Allow to open the WebUI of a registered CSE via the context menu.
 - [CONSOLE] Added config for dark (default) and light theme for better readability on consoles with light background.
 - [SCRIPTS] Added scripting to the CSE.
