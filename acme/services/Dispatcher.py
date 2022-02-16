@@ -72,6 +72,10 @@ class Dispatcher(object):
 			Return:
 				Result object.
 		"""
+		# handle transit requests first
+		if CSE.request.isTransitID(request.id):
+			return CSE.request.handleTransitRetrieveRequest(request)
+
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
 		# Handle operation execution time and check request expiration
@@ -107,7 +111,7 @@ class Dispatcher(object):
 			if not (res := self.retrieveResource(id, originator, request)).status:
 				return res # error
 			if not CSE.security.hasAccess(originator, res.resource, permission):
-				return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = f'originator has no permission ({permission})')
+				return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = f'originator has no permission for {permission}')
 
 			# if rcn == attributes then we can return here, whatever the result is
 			if request.args.rcn == RCN.attributes:
@@ -263,10 +267,18 @@ class Dispatcher(object):
 					result.append(res.resource)
 			discoveredResources = result	# re-assign the new resources to discoveredResources
 
-		return Result(status=True, data=discoveredResources)
+		return Result(status = True, data = discoveredResources)
 
 
-	def _discoverResources(self, rootResource:Resource, originator:str, level:int, fo:int, allLen:int, dcrs:list[Resource]=None, conditions:Conditions=None, attributes:Parameters=None, permission:Permission=Permission.DISCOVERY) -> list[Resource]:
+	def _discoverResources(self, rootResource:Resource,
+								 originator:str, 
+								 level:int, 
+								 fo:int, 
+								 allLen:int, 
+								 dcrs:list[Resource] = None, 
+								 conditions:Conditions = None, 
+								 attributes:Parameters = None, 
+								 permission:Permission = Permission.DISCOVERY) -> list[Resource]:
 		if not rootResource or level == 0:		# no resource or level == 0
 			return []
 
@@ -393,7 +405,20 @@ class Dispatcher(object):
 	#
 
 	def processCreateRequest(self, request:CSERequest, originator:str, id:str = None) -> Result:
+		"""	Process a CREATE request. Create and register resource(s).
+
+			Args:
+				request: The incoming request.
+				originator: The requests originator.
+				id: Optional ID of the request.
+			Return:
+				Result object.
+		"""
 		L.isDebug and L.logDebug(f'Process CREATE request for id: {request.id}')
+
+		# handle transit requests first
+		if CSE.request.isTransitID(request.id):
+			return CSE.request.handleTransitCreateRequest(request)
 
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 		if not id:
@@ -428,7 +453,7 @@ class Dispatcher(object):
 			if ty == T.AE:
 				return Result(status=False, rsc=RC.securityAssociationRequired, dbg='security association required')
 			else:
-				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges')
+				return Result(status=False, rsc=RC.originatorHasNoPrivilege, dbg='originator has no privileges for CREATE')
 
 		# Check for virtual resource
 		if parentResource.isVirtual():
@@ -475,15 +500,15 @@ class Dispatcher(object):
 		elif request.args.rcn == RCN.modifiedAttributes:
 			dictOrg = request.pc[tpe]
 			dictNew = res.resource.asDict()[tpe]
-			return Result(status=res.status, resource={ tpe : Utils.resourceModifiedAttributes(dictOrg, dictNew, request.pc[tpe]) }, rsc=res.rsc, dbg=res.dbg)
+			return Result(status = res.status, resource = { tpe : Utils.resourceModifiedAttributes(dictOrg, dictNew, request.pc[tpe]) }, rsc = res.rsc, dbg = res.dbg)
 		elif request.args.rcn == RCN.hierarchicalAddress:
-			return Result(status=res.status, resource={ 'm2m:uri' : Utils.structuredPath(res.resource) }, rsc=res.rsc, dbg=res.dbg)
+			return Result(status = res.status, resource = { 'm2m:uri' : Utils.structuredPath(res.resource) }, rsc = res.rsc, dbg = res.dbg)
 		elif request.args.rcn == RCN.hierarchicalAddressAttributes:
-			return Result(status=res.status, resource={ 'm2m:rce' : { Utils.noNamespace(tpe) : res.resource.asDict()[tpe], 'uri' : Utils.structuredPath(res.resource) }}, rsc=res.rsc, dbg=res.dbg)
+			return Result(status = res.status, resource = { 'm2m:rce' : { Utils.noNamespace(tpe) : res.resource.asDict()[tpe], 'uri' : Utils.structuredPath(res.resource) }}, rsc = res.rsc, dbg = res.dbg)
 		elif request.args.rcn == RCN.nothing:
-			return Result(status=res.status, rsc=res.rsc, dbg=res.dbg)
+			return Result(status = res.status, rsc = res.rsc, dbg = res.dbg)
 		else:
-			return Result(status=False, rsc=RC.badRequest, dbg='wrong rcn for CREATE')
+			return Result(status = False, rsc = RC.badRequest, dbg = 'wrong rcn for CREATE')
 		# TODO C.rcnDiscoveryResultReferences 
 
 
@@ -495,10 +520,10 @@ class Dispatcher(object):
 			if not parentResource.canHaveChild(resource):
 				if resource.ty == T.SUB:
 					L.logWarn(dbg := 'Parent resource is not subscribable')
-					return Result(status=False, rsc=RC.targetNotSubscribable, dbg=dbg)
+					return Result(status = False, rsc = RC.targetNotSubscribable, dbg = dbg)
 				else:
 					L.logWarn(dbg := f'Invalid child resource type: {T(resource.ty).value}')
-					return Result(status=False, rsc=RC.invalidChildResourceType, dbg=dbg)
+					return Result(status = False, rsc = RC.invalidChildResourceType, dbg = dbg)
 
 		# if not already set: determine and add the srn
 		if not resource.__srn__:
@@ -528,10 +553,10 @@ class Dispatcher(object):
 			if not parentResource:
 				L.logWarn(dbg := 'Parent resource not found. Probably removed in between?')
 				self.deleteResource(resource)
-				return Result(status=False, rsc=RC.internalServerError, dbg=dbg)
+				return Result(status = False, rsc = RC.internalServerError, dbg = dbg)
 			parentResource.childAdded(resource, originator)			# notify the parent resource
 
-		return Result(status=True, resource=resource, rsc=RC.created) 	# everything is fine. resource created.
+		return Result(status = True, resource = resource, rsc = RC.created) 	# everything is fine. resource created.
 
 
 	#########################################################################
@@ -539,7 +564,20 @@ class Dispatcher(object):
 	#	Update resources
 	#
 
-	def processUpdateRequest(self, request:CSERequest, originator:str, id:str=None) -> Result: 
+	def processUpdateRequest(self, request:CSERequest, originator:str, id:str = None) -> Result: 
+		"""	Process a UPDATE request. Update resource(s).
+
+			Args:
+				request: The incoming request.
+				originator: The requests originator.
+				id: Optional ID of the request.
+			Return:
+				Result object.
+		"""
+		# handle transit requests first
+		if CSE.request.isTransitID(request.id):
+			return CSE.request.handleTransitUpdateRequest(request)
+
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
 		# Handle operation execution time and check request expiration
@@ -572,7 +610,7 @@ class Dispatcher(object):
 			return res
 		if not res.data:	# data == None or False indicates that this is NOT an ACPI update. In this case we need a normal permission check
 			if CSE.security.hasAccess(originator, resource, Permission.UPDATE) == False:
-				return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = 'originator has no privileges')
+				return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = 'originator has no privileges for UPDATE')
 
 		# Check for virtual resource
 		if resource.isVirtual():
@@ -642,6 +680,20 @@ class Dispatcher(object):
 	#
 
 	def processDeleteRequest(self, request:CSERequest, originator:str, id:str = None) -> Result:
+		"""	Process a DELETE request. Delete resource(s).
+
+			Args:
+				request: The incoming request.
+				originator: The requests originator.
+				id: Optional ID of the request.
+			Return:
+				Result object.
+		"""
+
+		# handle transit requests
+		if CSE.request.isTransitID(request.id):
+			return CSE.request.handleTransitDeleteRequest(request)
+
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
 		# Handle operation execution time and check request expiration
@@ -661,7 +713,7 @@ class Dispatcher(object):
 		resource = cast(Resource, res.resource)
 
 		if CSE.security.hasAccess(originator, resource, Permission.DELETE) == False:
-			return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = 'originator has no privileges')
+			return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = 'originator has no privileges for DELETE')
 
 		# Check for virtual resource
 		if resource.isVirtual():
@@ -699,11 +751,11 @@ class Dispatcher(object):
 			result = childResourcesRef
 		# TODO RCN.discoveryResultReferences
 		else:
-			return Result(status=False, rsc=RC.badRequest, dbg='wrong rcn for DELETE')
+			return Result(status = False, rsc = RC.badRequest, dbg = 'wrong rcn for DELETE')
 
 		# remove resource
 		res = self.deleteResource(resource, originator, withDeregistration=True)
-		return Result(status=res.status, resource=result, rsc=res.rsc, dbg=res.dbg)
+		return Result(status = res.status, resource = result, rsc = res.rsc, dbg = res.dbg)
 
 
 	def deleteResource(self, resource:Resource, originator:str=None, withDeregistration:bool=False, parentResource:Resource=None, doDeleteCheck:bool=True) -> Result:
@@ -714,7 +766,7 @@ class Dispatcher(object):
 		# Check resource deletion
 		if withDeregistration:
 			if not (res := CSE.registration.checkResourceDeletion(resource)).status:
-				return Result(status=False, rsc=RC.badRequest, dbg=res.dbg)
+				return Result(status = False, rsc = RC.badRequest, dbg = res.dbg)
 
 		# Retrieve the parent resource now, because we need it later
 		if not parentResource:
@@ -730,7 +782,7 @@ class Dispatcher(object):
 		if doDeleteCheck and parentResource:
 			parentResource.childRemoved(resource, originator)
 
-		return Result(status=res.status, resource=resource, rsc=res.rsc, dbg=res.dbg)
+		return Result(status = res.status, resource = resource, rsc = res.rsc, dbg = res.dbg)
 
 
 	#########################################################################
@@ -738,7 +790,20 @@ class Dispatcher(object):
 	#	Notify
 	#
 
-	def processNotifyRequest(self, request:CSERequest, originator:str, id:str=None) -> Result:
+	def processNotifyRequest(self, request:CSERequest, originator:str, id:str = None) -> Result:
+		"""	Process a NOTIFY request. Send nortifications to resource(s).
+
+			Args:
+				request: The incoming request.
+				originator: The requests originator.
+				id: Optional ID of the request.
+			Return:
+				Result object.
+		"""
+		# handle transit requests
+		if CSE.request.isTransitID(request.id):
+			return CSE.request.handleTransitNotifyRequest(request)
+
 		srn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
 		# Handle operation execution time and check request expiration
@@ -767,7 +832,7 @@ class Dispatcher(object):
 			if not CSE.security.hasAccess(originator, targetResource, Permission.NOTIFY):
 				L.logDebug(dbg := f'Originator has no NOTIFY privilege for: {id}')
 				return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = dbg)
-			#  A Notification to one of these resources will always be a R
+			#  A Notification to one of these resources will always be a Received Notify Request
 			return CSE.request.handleReceivedNotifyRequest(id, request = request, originator = originator)
 
 		# error

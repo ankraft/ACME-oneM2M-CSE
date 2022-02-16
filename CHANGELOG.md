@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Changed the default release version to 4. Also, the supported and the actual release versions are now fully configurable (in the config file).
 - [CSE] Indicated Release Version must now be the highest value in the list of supported release versions.
 - [CSE] Changed name of *holder* attribute to *custodian* according to spec change.
+- [CSE] Transit requests will now be handled after the resolution for blocking/non-blocking was handled. Non-blocking happens in the first receiver CSE.
 - [TESTS] Replaced CSE test cases' re-configurations with upper tester commands / script calls.
 
 ### Removed

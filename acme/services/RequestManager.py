@@ -146,10 +146,6 @@ class RequestManager(object):
 	def retrieveRequest(self, request:CSERequest) ->  Result:
 		L.isDebug and L.logDebug(f'RETRIEVE ID: {request.id if request.id else request.srn}, originator: {request.headers.originator}')
 		
-		# handle transit requests
-		if self.isTransitID(request.id):
-			return self.handleTransitRetrieveRequest(request)
-
 		if request.args.rt == ResponseType.blockingRequest:
 			return CSE.dispatcher.processRetrieveRequest(request, request.headers.originator)
 
@@ -173,10 +169,6 @@ class RequestManager(object):
 
 	def createRequest(self, request:CSERequest) -> Result:
 		L.isDebug and L.logDebug(f'CREATE ID: {request.id if request.id else request.srn}, originator: {request.headers.originator}')
-
-		# handle transit requests
-		if self.isTransitID(request.id):
-			return self.handleTransitCreateRequest(request)
 
 		# Check contentType and resourceType
 		# if request.headers.contentType == None:
@@ -212,10 +204,6 @@ class RequestManager(object):
 		if request.id == CSE.cseRi:
 			return Result(status = False, rsc = RC.operationNotAllowed, dbg = 'operation not allowed for CSEBase')
 
-		# handle transit requests
-		if self.isTransitID(request.id):
-			return self.handleTransitUpdateRequest(request)
-
 		# Check contentType and resourceType
 		# if request.headers.contentType == None:
 		# 	return Result(rsc=RC.badRequest, dbg='missing or wrong content type in request')
@@ -244,13 +232,9 @@ class RequestManager(object):
 	def deleteRequest(self, request:CSERequest,) -> Result:
 		L.isDebug and L.logDebug(f'DELETE ID: {request.id if request.id else request.srn}, originator: {request.headers.originator}')
 
-		# Don't update the CSEBase
+		# Don't delete the CSEBase
 		if request.id == CSE.cseRi:
 			return Result(status = False, rsc = RC.operationNotAllowed, dbg = 'operation not allowed for CSEBase')
-
-		# handle transit requests
-		if self.isTransitID(request.id):
-			return self.handleTransitDeleteRequest(request)
 
 		if request.args.rt == ResponseType.blockingRequest or (request.args.rt == ResponseType.flexBlocking and self.flexBlockingBlocking):
 			return CSE.dispatcher.processDeleteRequest(request, request.headers.originator)
@@ -274,11 +258,6 @@ class RequestManager(object):
 
 	def notifyRequest(self, request:CSERequest) -> Result:
 		L.isDebug and L.logDebug(f'NOTIFY ID: {request.id if request.id else request.srn}, originator: {request.headers.originator}')
-
-		# handle transit requests
-		if self.isTransitID(request.id):
-			return self.handleTransitNotifyRequest(request)
-			
 
 		# Check contentType and resourceType
 		# if request.headers.contentType == None:
@@ -431,6 +410,9 @@ class RequestManager(object):
 			reqres['rs'] = RequestStatus.FAILED
 			if operationResult.dbg:
 				reqres['ors/pc'] = { 'm2m:dbg' : operationResult.dbg }
+
+		# Update lt etc attributes
+		reqres.update()
 
 		# Update in DB
 		reqres.dbUpdate()
