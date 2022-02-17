@@ -155,9 +155,18 @@ class Importer(object):
 					if not (attrs := findXPath(ap, 'attributes')):
 						attrs = [ { "sname" : "__none__", "lname" : "__none__", "type" : "void", "car" : "01" } ]
 						
+					definedAttrs:list[str] = []
 					for attr in attrs:
 						if not (attributePolicy := self._parseAttribute(attr, fn, tpe)):
 							return False
+
+						# Test whether an attribute has been defined twice
+						# Prevent copy-paste errors
+						if attributePolicy.sname in definedAttrs:
+							L.logErr(f'Double defined attribute: {attributePolicy.sname} type: {tpe}')
+							return False
+						definedAttrs.append(attributePolicy.sname)
+
 						# Add the attribute to the additional policies structure
 						try:
 							if not CSE.validator.addFlexContainerAttributePolicy(attributePolicy):
@@ -202,13 +211,17 @@ class Importer(object):
 				
 				# go through all the attributes in that attribute definition file
 				for sname in attributeList:
-					AttributeDefs = attributeList[sname]
-					if not AttributeDefs or not isinstance(AttributeDefs, list):
-						L.logErr(f'Attribute definition must be a non-empty list for attribute: {sname} in file: {fn}', showStackTrace=False)
+					if not isinstance(sname, str):
+						L.logErr(f'Attribute name must be a string: {str(sname)} in file: {fn}', showStackTrace = False)
+						return False
+
+					attributeDefs = attributeList[sname]
+					if not attributeDefs or not isinstance(attributeDefs, list):
+						L.logErr(f'Attribute definition must be a non-empty list for attribute: {sname} in file: {fn}', showStackTrace = False)
 						return False
 
 					# for each definition for this attribute parse it and add one or more attribute Policies
-					for entry in AttributeDefs:
+					for entry in attributeDefs:
 						if not (attributePolicy := self._parseAttribute(entry, fn, sname=sname)):
 							return False
 						# L.isDebug and L.logDebug(attributePolicy)
