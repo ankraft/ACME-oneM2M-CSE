@@ -692,8 +692,8 @@
             { "sname" : "atmPe", "lname" : "atmosphericPressure", "type" : "float", "car" : "1" }, 
             // DataPoint: minPressureThreshold
             { "sname" : "miPTd", "lname" : "minPressureThreshold", "type" : "integer", "car" : "01" }, 
-            // DataPoint: minPressureThreshold
-            { "sname" : "miPTd", "lname" : "minPressureThreshold", "type" : "integer", "car" : "01" }
+            // DataPoint: maxPressureThreshold
+            { "sname" : "maPTd", "lname" : "maxPressureThreshold", "type" : "integer", "car" : "01" }
         ]
     },
 
@@ -712,8 +712,8 @@
             { "sname" : "atmPe", "lname" : "atmosphericPressure", "type" : "float", "car" : "1" }, 
             // DataPoint: minPressureThreshold
             { "sname" : "miPTd", "lname" : "minPressureThreshold", "type" : "integer", "car" : "01" }, 
-            // DataPoint: minPressureThreshold
-            { "sname" : "miPTd", "lname" : "minPressureThreshold", "type" : "integer", "car" : "01" }
+            // DataPoint: maxPressureThreshold
+            { "sname" : "maPTd", "lname" : "maxPressureThreshold", "type" : "integer", "car" : "01" }
         ]
     }, 
 
@@ -1224,7 +1224,7 @@
             // DataPoint: dispenseStatus
             { "sname" : "disSs", "lname" : "dispenseStatus", "type" : "boolean", "car" : "1" }, 
             // DataPoint: balance
-            { "sname" : "balae", "lname" : "balance", "type" : "boolean", "car" : "1" }, 
+            { "sname" : "balae", "lname" : "balance", "type" : "float", "car" : "1" }, 
             // DataPoint: count
             { "sname" : "count", "lname" : "count", "type" : "integer", "car" : "1" }, 
             // DataPoint: currency
@@ -1244,7 +1244,7 @@
             // DataPoint: dispenseStatus
             { "sname" : "disSs", "lname" : "dispenseStatus", "type" : "boolean", "car" : "1" }, 
             // DataPoint: balance
-            { "sname" : "balae", "lname" : "balance", "type" : "boolean", "car" : "1" }, 
+            { "sname" : "balae", "lname" : "balance", "type" : "float", "car" : "1" }, 
             // DataPoint: count
             { "sname" : "count", "lname" : "count", "type" : "integer", "car" : "1" }, 
             // DataPoint: currency
@@ -4062,10 +4062,36 @@
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
-            // DataPoint: lqi
-            { "sname" : "lqi", "lname" : "lqi", "type" : "integer", "car" : "1" }, 
-            // DataPoint: rssi
-            { "sname" : "rssi", "lname" : "rssi", "type" : "float", "car" : "01" }
+            // DataPoint: overCurrentThreshold
+            { "sname" : "ovCTd", "lname" : "overCurrentThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: overCurrentDuration
+            { "sname" : "ovCDn", "lname" : "overCurrentDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: underCurrentThreshold
+            { "sname" : "unCTd", "lname" : "underCurrentThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: underCurrentDuration
+            { "sname" : "unCDn", "lname" : "underCurrentDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: overVoltageThreshold
+            { "sname" : "ovVTd", "lname" : "overVoltageThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: overVoltageDuration
+            { "sname" : "ovVDn", "lname" : "overVoltageDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: underVoltageThreshold
+            { "sname" : "unVTd", "lname" : "underVoltageThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: underVoltageDuration
+            { "sname" : "unVDn", "lname" : "underVoltageDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: overVoltagePercent
+            { "sname" : "ovVPt", "lname" : "overVoltagePercent", "type" : "integer", "car" : "01" }, 
+            // DataPoint: underVoltagePercent
+            { "sname" : "unVPt", "lname" : "underVoltagePercent", "type" : "integer", "car" : "01" }, 
+            // DataPoint: standardreferenceVoltage
+            { "sname" : "staVe", "lname" : "standardreferenceVoltage", "type" : "integer", "car" : "01" }, 
+            // DataPoint: overCurrentAlarm
+            { "sname" : "ovCAm", "lname" : "overCurrentAlarm", "type" : "boolean", "car" : "01" }, 
+            // DataPoint: underCurrentAlarm
+            { "sname" : "unCAm", "lname" : "underCurrentAlarm", "type" : "boolean", "car" : "01" }, 
+            // DataPoint: overVoltageAlarm
+            { "sname" : "ovVAm", "lname" : "overVoltageAlarm", "type" : "boolean", "car" : "01" }, 
+            // DataPoint: underVoltageAlarm
+            { "sname" : "unVAm", "lname" : "underVoltageAlarm", "type" : "boolean", "car" : "01" }
         ]
     },
 
@@ -4074,6 +4100,64 @@
         "type"      : "cod:sigShAnnc",
         "lname"     : "signalStrengthAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.signalStrengthAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: overCurrentThreshold
+            { "sname" : "ovCTd", "lname" : "overCurrentThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: overCurrentDuration
+            { "sname" : "ovCDn", "lname" : "overCurrentDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: underCurrentThreshold
+            { "sname" : "unCTd", "lname" : "underCurrentThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: underCurrentDuration
+            { "sname" : "unCDn", "lname" : "underCurrentDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: overVoltageThreshold
+            { "sname" : "ovVTd", "lname" : "overVoltageThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: overVoltageDuration
+            { "sname" : "ovVDn", "lname" : "overVoltageDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: underVoltageThreshold
+            { "sname" : "unVTd", "lname" : "underVoltageThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: underVoltageDuration
+            { "sname" : "unVDn", "lname" : "underVoltageDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: overVoltagePercent
+            { "sname" : "ovVPt", "lname" : "overVoltagePercent", "type" : "integer", "car" : "01" }, 
+            // DataPoint: underVoltagePercent
+            { "sname" : "unVPt", "lname" : "underVoltagePercent", "type" : "integer", "car" : "01" }, 
+            // DataPoint: standardreferenceVoltage
+            { "sname" : "staVe", "lname" : "standardreferenceVoltage", "type" : "integer", "car" : "01" }, 
+            // DataPoint: overCurrentAlarm
+            { "sname" : "ovCAm", "lname" : "overCurrentAlarm", "type" : "boolean", "car" : "01" }, 
+            // DataPoint: underCurrentAlarm
+            { "sname" : "unCAm", "lname" : "underCurrentAlarm", "type" : "boolean", "car" : "01" }, 
+            // DataPoint: overVoltageAlarm
+            { "sname" : "ovVAm", "lname" : "overVoltageAlarm", "type" : "boolean", "car" : "01" }, 
+            // DataPoint: underVoltageAlarm
+            { "sname" : "unVAm", "lname" : "underVoltageAlarm", "type" : "boolean", "car" : "01" }
+        ]
+    }, 
+
+    // ModuleClass: slcAlarm (slcAm)
+    {
+        "type"      : "cod:slcAm",
+        "lname"     : "slcAlarm",
+        "cnd"       : "org.onem2m.common.moduleclass.slcAlarm",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: lqi
+            { "sname" : "lqi", "lname" : "lqi", "type" : "integer", "car" : "1" }, 
+            // DataPoint: rssi
+            { "sname" : "rssi", "lname" : "rssi", "type" : "float", "car" : "01" }
+        ]
+    },
+
+    // ModuleClass Announced: slcAlarmAnnc (slcAmAnnc)
+    {
+        "type"      : "cod:slcAmAnnc",
+        "lname"     : "slcAlarmAnnc",
+        "cnd"       : "org.onem2m.common.moduleclass.slcAlarmAnnc",
 		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime

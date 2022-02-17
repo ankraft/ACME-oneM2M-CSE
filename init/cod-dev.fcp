@@ -582,7 +582,7 @@
             "cod:opeMe", 
             "cod:bat", 
             "cod:texMe", 
-            "cod:image", 
+            "cod:binOt", 
             "cod:creds", 
             "cod:geoLn"
         ]
@@ -613,8 +613,8 @@
             "cod:batAnnc", 
             "cod:texMe", 
             "cod:texMeAnnc", 
-            "cod:image", 
-            "cod:imageAnnc", 
+            "cod:binOt", 
+            "cod:binOtAnnc", 
             "cod:creds", 
             "cod:credsAnnc", 
             "cod:geoLn", 
