@@ -88,7 +88,6 @@ print ${datetime %H:%M}
 ```
 
 
-
 <a name="macro_loop"></a>
 ### loop
 

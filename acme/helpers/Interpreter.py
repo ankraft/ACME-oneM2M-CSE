@@ -67,6 +67,7 @@ class PScope():
 	whileStack:list[int]	= field(default_factory = list)
 	whileLoop:dict[int, int]= field(default_factory = dict)	# Loop counter for while loops, automatic incremented
 	ifLevel:int				= 0
+	switchLevel:int			= 0
 
 
 class PContext():
@@ -343,7 +344,7 @@ class PContext():
 
 	@property
 	def ifLevel(self) -> int:
-		"""	Return the nested if-commands of the current scope.
+		"""	Return the nested IF-commands of the current scope.
 
 			Return:
 				Integer, the IF-Level.
@@ -353,12 +354,32 @@ class PContext():
 
 	@ifLevel.setter
 	def ifLevel(self, level:int) -> None:
-		"""	Set the number of nested if-commands of the current scope.
+		"""	Set the number of nested IF-commands of the current scope.
 
 			Args:
-				level: Integer, the if-level of the current scope.
+				level: Integer, the IF-level of the current scope.
 		"""
 		self.scope.ifLevel = level
+
+
+	@property
+	def switchLevel(self) -> int:
+		"""	Return the nested SWITCH-commands of the current scope.
+
+			Return:
+				Integer, the SWITCH-Level.
+		"""
+		return self.scope.switchLevel
+
+
+	@switchLevel.setter
+	def switchLevel(self, level:int) -> None:
+		"""	Set the number of nested SWITCH-commands of the current scope.
+
+			Args:
+				level: Integer, the SWITCH-level of the current scope.
+		"""
+		self.scope.switchLevel = level
 
 
 	def saveScope(self, pc:int = None, arg:str = None, name:str = None) -> bool:
@@ -422,7 +443,6 @@ class PContext():
 		"""
 		if len(self.scope.whileStack) > 0:
 			self.scope.whileStack.pop()
-
 
 	def addWhileLoop(self) -> None:
 		"""	Save the current while program counter and initialize it with 0.
@@ -775,6 +795,21 @@ def _doBreak(pcontext:PContext, arg:str) -> PContext:
 	return _skipWhile(pcontext)	# jump out of while
 
 
+def _doCase(pcontext:PContext, arg:str) -> PContext:
+	"""	Handle a case command operation. This command must occur only in a SWITCH block.
+
+		Args:
+			pcontext: Current PContext for the script.
+			arg: The argument of the break statement, used to match the SWITCH argument.
+		Return:
+			The PContext object, or None in case of an error.
+	"""
+	if pcontext.switchLevel == 0:
+		pcontext.setError(PError.unexpectedCommand, 'CASE without SWITCH')
+		return None
+	return _skipSwitch(pcontext, None, skip = True)	# jump out of switch
+
+
 def _doContinue(pcontext:PContext, arg:str) -> PContext:
 	"""	Handle a continue command operation.
 
@@ -863,6 +898,26 @@ def _doEndProcedure(pcontext:PContext, arg:str) -> PContext:
 	return pcontext
 
 
+def _doEndSwitch(pcontext:PContext, arg:str) -> PContext:
+	"""	Handle an ENDSWITCH command. This ends a SWITCH block, and must only occurs as the last
+		command of a SWITCH block.
+
+		Args:
+			pcontext: Current PContext for the script.
+			arg: The result of the procedure, must be empty.
+		Return:
+			PContext object, or None in case of an error.
+	"""
+	if pcontext.switchLevel == 0:
+		pcontext.setError(PError.unexpectedCommand, f'ENDSWITCH without SWITCH')
+		return None
+	if arg:
+		pcontext.setError(PError.unexpectedArgument, 'ENDSWITCH has no argument')
+		return None
+	pcontext.switchLevel -= 1
+	return pcontext
+
+	
 def _doEndWhile(pcontext:PContext, arg:str) -> PContext:
 	"""	Handle a endwhile command operation. Copy the argument as the result
 		to the scope's result. This is only used when the while loop exits
@@ -1099,6 +1154,22 @@ def _doSleep(pcontext:PContext, arg:str) -> PContext:
 	return pcontext
 
 
+def _doSwitch(pcontext:PContext, arg:str) -> PContext:
+	"""	Start a SWITCH block. SWITCH blocks might be nested.
+
+		Args:
+			pcontext: Current PContext for the script.
+			arg: Argument of the SWITCH to compare the CASE statements against.
+		Return:
+			Current PContext object, or None in case of an error.
+	"""
+	if not arg:
+		pcontext.setError(PError.invalid, 'SWITCH without argument')
+		return None
+	pcontext.switchLevel += 1
+	return _skipSwitch(pcontext, arg)	# Skip to the correct switch block
+
+
 def _doWhile(pcontext:PContext, arg:str) -> PContext:
 	"""	Handle a while...endwhile command operation.
 
@@ -1254,11 +1325,13 @@ def _doRound(pcontext:PContext, arg:str, line:str) -> str:
 _builtinCommands:PCmdDict = {
 	'assert':		_doAssert,
 	'break':		_doBreak,
+	'case':			_doCase,
 	'continue':		_doContinue,
 	'dec':			lambda p, a : _doIncDec(p, a, isInc = False),
 	'else':			_doElse,
 	'endif':		_doEndIf,
 	'endprocedure':	_doEndProcedure,
+	'endswitch':	_doEndSwitch,
 	'endwhile':		_doEndWhile,
 	'error':		_doError,
 	'if':			_doIf,
@@ -1270,6 +1343,7 @@ _builtinCommands:PCmdDict = {
 	'quit':			_doQuit,
 	'set':			_doSet,
 	'sleep':		_doSleep,
+	'switch':		_doSwitch,
 	'while':		_doWhile,
 }
 
@@ -1465,6 +1539,49 @@ def _skipIfElse(pcontext:PContext, isIf:bool) -> PContext:
 	
 	if pcontext.pc == pcontext._length and level > 0:
 		pcontext.setError(PError.unexpectedCommand, 'IF without ENDIF')
+		return None
+
+	return pcontext
+
+
+def _skipSwitch(pcontext:PContext, compareTo:str, skip:bool = False) -> PContext:
+	"""	Skip to the first matching CASE statement of a a SWITCH block, or to the
+		end of the whole switch block
+
+		Args:
+			pcontext: Current PContext for the script.
+			compareTo: Value to compare the CASE argument with.
+			skip: If true then skip to the end of the SWITCH block..
+		Return:
+			Current PContext object, or None in case of an error.
+	"""
+	level = 0		# level of switches
+	while pcontext.pc < pcontext._length and level >= 0:
+		cmd, _, arg, _ = pcontext.nextLinePartition()
+
+		if cmd == 'case' and not skip:	# skip all cases if we just look for the end of the switch
+			if not arg:	# default case, always matches
+				break
+			if arg == compareTo: # found comparison
+				break
+			continue			# not the right one, continue search
+		if cmd == 'endswitch':
+			if arg:
+				pcontext.setError(PError.unexpectedArgument, 'ENDSWITCH has no argument')
+				return None
+			# This will eventually find the fittig "switch" and then
+			# the level will be negative and thereby end the SWITCH block
+			level -=1
+			continue
+		if cmd == 'switch':
+			level += 1
+			continue
+		if cmd == 'endprocedure':
+			pcontext.setError(PError.unexpectedCommand, 'SWITCH without ENDSWITCH')
+			return None
+	
+	if pcontext.pc == pcontext._length and level > 0:
+		pcontext.setError(PError.unexpectedCommand, 'SWITCH without ENDSWITCH')
 		return None
 
 	return pcontext

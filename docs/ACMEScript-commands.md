@@ -8,11 +8,13 @@
 |------------------------------|-----------------------------------------|------------------------------------------------------------------------------|
 | [Basic](#commands_basic)     | [ASSERT](#command_assert)               | Assert a condition                                                           |
 |                              | [BREAK](#command_break)                 | Break out of a [WHILE](#command_while) loop                                  |
+|                              | [CASE](#command_case)                   | Conditional command block for a  [SWITCH](#command_switch) block          M   |
 |                              | [CONTINUE](#command_break)              | Continue with the next iteration of a [WHILE](#command_while) loop           |
 |                              | [DEC](#command_dec)                     | Decrements a numeric variable                                                |
 |                              | [ELSE](#command_else)                   | Start the ELSE part of an [IF](#command_if) block                            |
 |                              | [ENDIF](#command_endif)                 | End an [IF](#command_if) or [ELSE](#command_else) block                      |
 |                              | [ENDPROCEDURE](#command_endprocedure)   | End a [PROCEDURE](#command_procedure)                                        |
+|                              | [ENDSWITCH](#command_endswitch)         | End a [SWITCH](#command_switch) block                                        |
 |                              | [ENDWHILE](#command_endwhile)           | End a [WHILE](#command_while) loop                                           |
 |                              | [IF](#command_if)                       | Check comparison condition and begin a conditional IF block                  |
 |                              | [INC](#command_inc)                     | Increments a numeric variable                                                |
@@ -23,6 +25,7 @@
 |                              | [RUN](#command_run)                     | Run another script                                                           |
 |                              | [SET](#command_set)                     | Set or remove a variable, or perform a calculation                           |
 |                              | [SLEEP](#command_sleep)                 | Pause the script execution                                                   |
+|                              | [SWITCH](#command_switch)               | Start a switch block                                                         |
 |                              | [WHILE](#command_while)                 | Start a while loop                                                           |
 | [Console](#commands_console) | [CLEAR](#command_clear)                 | Clear the console screen                                                     |
 |                              | [PRINT](#command_print)                 | Print a message to the info-level log                                        |
@@ -84,6 +87,35 @@ Example using the [loop](ACMEScript-macros.md#macro_loop) macro.
 while ${loop} < 10
 	print ${loop}
 endwhile
+```
+
+
+<a name="command_case"></a>
+### CASE
+
+Usage:  
+CASE [&lt;argument>]
+
+This command starts a CASE block inside a [SWITCH](#command_switch) block. If present the *argument* will be compared against the argument
+of the surrounding SWITCH block. If it matches then the code lines up to the next CASE or [ENDSWITCH](#command_endswitch) are executed.
+
+If multiple CASE statements would match the comparison then only the first matching block is executed.
+
+If the *argument* is missing then the CASE block is always executed. This can be used as a default block of a [SWITCH](#command_switch).  
+An empty CASE should always be the last CASE statement in a [SWITCH](#command_switch) block, because the all following CASE commands will not
+be evaluated.
+
+
+Example:
+```text
+switch ${variable}
+	case aValue
+		...
+	case anotherValue
+		...
+	case
+		...
+endSwitch
 ```
 
 
@@ -177,17 +209,25 @@ print ${result}
 ```
 
 
-<a name="command_error"></a>
-### ERROR
+<a name="command_endswitch"></a>
+### ENDSWITCH
 
 Usage:  
-ERROR [&lt;result>]
+ENDSWITCH
 
-Terminate the running script with an error and return an optional result.
+This command marks the end of a [SWITCH](#command_switch) block.
+
 
 Example:
 ```text
-error aResult
+switch ${variable}
+	case aValue
+		...
+	case anotherValue
+		...
+	case
+		...
+endSwitch
 ```
 
 
@@ -204,6 +244,20 @@ Example:
 while ${i} < 10	
 	...
 endWhile aResult
+```
+
+
+<a name="command_error"></a>
+### ERROR
+
+Usage:  
+ERROR [&lt;result>]
+
+Terminate the running script with an error and return an optional result.
+
+Example:
+```text
+error aResult
 ```
 
 
@@ -381,6 +435,29 @@ sleep 1.5
 ```
 
 
+<a name="command_switch"></a>
+### SWITCH
+
+Usage:  
+SWITCH &lt;argument>
+
+Start a SWITCH block. The argument is then matched against individual [CASE](#command_case) statement. The code block of the first matching 
+statement is executed. SWITCH blocks may be nested. A SWITCH block is closed by a [ENDSWITCH](#command_endswitch) command.
+
+
+Example:
+```text
+switch ${variable}
+	case aValue
+		...
+	case anotherValue
+		...
+	case
+		...
+endSwitch
+```
+
+
 <a name="command_while"></a>
 ### WHILE
 
@@ -397,6 +474,8 @@ while ${i} < 10
 	inc i
 endwhile
 ```
+
+See also the special variable [${loop}](ACME-macros.md#macro_loop) for an automated loop variable.
 
 ---
 
