@@ -354,7 +354,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "actionResult",
 			"ns": "m2m",
-			"type": "dict",	# m2m:responsePrimitive
+			"type": "dict",		// m2m:responsePrimitive
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -486,6 +486,71 @@
 			"ns": "m2m",
 			"type": "anyURI",
 			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"bcnc": [
+		{
+			"rtypes": [ "TSB", "TSBAnnc", "REQRESP" ],
+			"lname": "beaconCriteria",
+			"ns": "m2m",
+			"type": "nonNegInteger",	// m2m:beaconCriteria
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"bcni": [
+		{
+			"rtypes": [ "TSB", "TSBAnnc", "REQRESP" ],
+			"lname": "beaconInterval",
+			"ns": "m2m",
+			"type": "duration",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"bcnr": [
+		{
+			"rtypes": [ "TSB", "TSBAnnc", "REQRESP" ],
+			"lname": "beaconRequester",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "O",
+			"ou": "NP",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"bcnt": [
+		{
+			"rtypes": [ "TSB", "TSBAnnc", "REQRESP" ],
+			"lname": "beaconThreshold",
+			"ns": "m2m",
+			"type": "duration",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"bcnu": [
+		{
+			"rtypes": [ "TSB", "TSBAnnc", "REQRESP" ],
+			"lname": "beaconNotificationURIs",
+			"ns": "m2m",
+			"type": "list",		// m2m:listOfURIs
+			"car": "1L",
 			"oc": "M",
 			"ou": "O",
 			"od": "O",
@@ -1293,7 +1358,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "input",
 			"ns": "m2m",
-			"type": "dict",	#m2m:actionInput
+			"type": "dict",		// m2m:actionInput
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2087,7 +2152,7 @@
 			"annc": "OA"
 		}
 	],
-	"peid": [	// TODO check after TS-0004 consolidation
+	"peid": [
 		{
 			"rtypes": [ "ALL" ],
 			"lname": "periodicIntervalDelta",
