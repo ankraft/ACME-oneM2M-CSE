@@ -103,6 +103,7 @@ class ResourceTypes(ACMEIntEnum):
 	TS				= 29
 	TSI   			= 30
 	FCI 			= 58
+	TSB				= 60
 	ACTR			= 63
 
 
@@ -146,6 +147,7 @@ class ResourceTypes(ACMEIntEnum):
 	FCNTAnnc 		= 10028
 	TSAnnc			= 10029
 	TSIAnnc			= 10030
+	# TSBAnnc			= 10060
 	ACTRAnnc		= 10063
 
 	FWRAnnc			= -30001
@@ -262,6 +264,7 @@ ResourceTypes._announcedMappings = {								#  type: ignore
 	ResourceTypes.FCNT		: ResourceTypes.FCNTAnnc,
 	ResourceTypes.TS 		: ResourceTypes.TSAnnc,
 	ResourceTypes.TSI 		: ResourceTypes.TSIAnnc,
+	# ResourceTypes.TSB 		: ResourceTypes.TSBAnnc,
 	ResourceTypes.ACTR 		: ResourceTypes.ACTRAnnc,
 }
 
@@ -285,7 +288,9 @@ ResourceTypes._announcedSetFull = [									#  type: ignore
 	ResourceTypes.ACPAnnc, ResourceTypes.ACTRAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc,
 	ResourceTypes.CINAnnc,
 	ResourceTypes.CSEBaseAnnc, ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc, 
-	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.TSAnnc, ResourceTypes.TSIAnnc,
+	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.TSAnnc, 
+	#ResourceTypes.TSBAnnc,
+	ResourceTypes.TSIAnnc,
 
 	ResourceTypes.FWRAnnc, ResourceTypes.SWRAnnc, ResourceTypes.MEMAnnc, ResourceTypes.ANIAnnc,
 	ResourceTypes.ANDIAnnc, ResourceTypes.BATAnnc, ResourceTypes.DVIAnnc, ResourceTypes.DVCAnnc, 
@@ -298,6 +303,7 @@ ResourceTypes._announcedResourceTypes = [ 							#  type: ignore
 	ResourceTypes.ACPAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc, ResourceTypes.CINAnnc,
 	ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc,
 	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.ACTRAnnc, 
+	#ResourceTypes.TSBAnnc
 ]
 
 
@@ -307,7 +313,7 @@ ResourceTypes._supportedResourceTypes = [							#  type: ignore
 	ResourceTypes.CSEBase, ResourceTypes.GRP, ResourceTypes.MGMTOBJ, ResourceTypes.NOD,
 	ResourceTypes.PCH, ResourceTypes.CSR, ResourceTypes.REQ, ResourceTypes.SUB,
 	ResourceTypes.FCNT, ResourceTypes.FCI, ResourceTypes.TS, ResourceTypes.TSI,
-	ResourceTypes.ACTR,
+	ResourceTypes.TSB, ResourceTypes.ACTR,
 ] + ResourceTypes._announcedResourceTypes							#  type: ignore
 
 
@@ -348,6 +354,7 @@ ResourceTypes._names 	= {											# type: ignore
 		ResourceTypes.PCH			: 'm2m:pch',
 		ResourceTypes.REQ			: 'm2m:req',
 		ResourceTypes.TS 			: 'm2m:ts',
+		ResourceTypes.TSB 			: 'm2m:tsb',
 		ResourceTypes.TSI 			: 'm2m:tsi',
 		ResourceTypes.SUB			: 'm2m:sub',
 
@@ -363,6 +370,7 @@ ResourceTypes._names 	= {											# type: ignore
 		ResourceTypes.CSRAnnc 		: 'm2m:csrA',
 		ResourceTypes.FCNTAnnc 		: 'm2m:fcntA',
 		ResourceTypes.TSAnnc 		: 'm2m:tsA',
+		#ResourceTypes.TSBAnnc 		: 'm2m:tsbA',
 		ResourceTypes.TSIAnnc 		: 'm2m:tsiA',
 
 		ResourceTypes.CNT_OL		: 'm2m:ol',
@@ -917,7 +925,7 @@ class NotificationEventType(ACMEIntEnum):
 
 ##############################################################################
 #
-#	TimeSeries related.
+#	TimeSeries related
 #
 
 @dataclass
@@ -976,12 +984,22 @@ class LastTSInstance:
 #
 #	Announcement related
 #
-	
 
 class AnnounceSyncType(ACMEIntEnum):
 	""" Announce Sync Types """
 	UNI_DIRECTIONAL = 1
 	BI_DIRECTIONAL = 2
+
+
+##############################################################################
+#
+#	TimeSyncBeacon related
+#
+
+class BeaconCriteria(ACMEIntEnum):
+	""" TimeSyncBeacon criteria """
+	PERIODIC = 1	# default
+	LOSS_OF_SYNCHRONIZATION = 2
 
 
 ##############################################################################

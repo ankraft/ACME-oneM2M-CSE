@@ -494,7 +494,7 @@
 	],
 	"bcnc": [
 		{
-			"rtypes": [ "TSB", "TSBAnnc", "REQRESP" ],
+			"rtypes": [ "TSB", "REQRESP" ],
 			"lname": "beaconCriteria",
 			"ns": "m2m",
 			"type": "nonNegInteger",	// m2m:beaconCriteria
@@ -507,7 +507,7 @@
 	],
 	"bcni": [
 		{
-			"rtypes": [ "TSB", "TSBAnnc", "REQRESP" ],
+			"rtypes": [ "TSB", "REQRESP" ],
 			"lname": "beaconInterval",
 			"ns": "m2m",
 			"type": "duration",
@@ -520,7 +520,7 @@
 	],
 	"bcnr": [
 		{
-			"rtypes": [ "TSB", "TSBAnnc", "REQRESP" ],
+			"rtypes": [ "TSB", "REQRESP" ],
 			"lname": "beaconRequester",
 			"ns": "m2m",
 			"type": "string",
@@ -533,7 +533,7 @@
 	],
 	"bcnt": [
 		{
-			"rtypes": [ "TSB", "TSBAnnc", "REQRESP" ],
+			"rtypes": [ "TSB", "REQRESP" ],
 			"lname": "beaconThreshold",
 			"ns": "m2m",
 			"type": "duration",
@@ -546,7 +546,7 @@
 	],
 	"bcnu": [
 		{
-			"rtypes": [ "TSB", "TSBAnnc", "REQRESP" ],
+			"rtypes": [ "TSB", "REQRESP" ],
 			"lname": "beaconNotificationURIs",
 			"ns": "m2m",
 			"type": "list",		// m2m:listOfURIs

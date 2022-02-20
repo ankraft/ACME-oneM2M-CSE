@@ -18,7 +18,7 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class AE(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.ACP, T.ACTR, T.CNT, T.FCNT, T.GRP, T.PCH, T.SUB, T.TS ]
+	_allowedChildResourceTypes = [ T.ACP, T.ACTR, T.CNT, T.FCNT, T.GRP, T.PCH, T.SUB, T.TS, T.TSB ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer

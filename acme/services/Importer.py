@@ -311,10 +311,10 @@ class Importer(object):
 
 		if (rtypes := findXPath(attr, 'rtypes')):
 			if not isinstance(rtypes, list):
-				L.logErr(f'Empty, or wrong resourceTyoes (rtypes): {rtypes} for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+				L.logErr(f'Empty, or wrong resourceTyoes (rtypes): {rtypes} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 				return None
 			if not T.has(tuple(rtypes)):	# type: ignore[arg-type]
-				L.logErr(f'"rtype" containes unknown resource type(s): {rtypes} for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
+				L.logErr(f'"rtype" containes unknown resource type(s): {rtypes} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 				return None
 
 		ap = AttributePolicy(	type=typ,

@@ -60,7 +60,7 @@ def fromAbsRelTimestamp(absRelTimestamp:str, default:float = 0.0, withMicrosecon
 
 
 def fromDuration(duration:str) -> float:
-	"""	Convert a duration to a number of seconds (float). Input could be either an ISO period 
+	"""	Convert an duration to a number of seconds (float). Input could be either an ISO period 
 		or a number of ms.
 	"""
 	try:
@@ -72,7 +72,7 @@ def fromDuration(duration:str) -> float:
 			return float(duration) / 1000.0
 		except Exception as e:
 			#if L.isWarn: L.logWarn(f'Wrong format for duration: {duration}')
-			raise e
+			raise
 	return 0.0
 
 

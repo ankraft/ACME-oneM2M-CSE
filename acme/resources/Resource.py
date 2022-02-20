@@ -42,7 +42,7 @@ class Resource(object):
 	_modified			= '__modified__'
 	_remoteID			= '__remoteID__'			# When this is a resource from another CSE
 
-	# ATTN: There is a similar definition in FCNT! Don't Forget to add attributes there as well
+	# ATTN: There is a similar definition in FCNT, TSB! Don't Forget to add attributes there as well
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator, _announcedTo, _modified, _isAnnounced, _remoteID ]
 
 	def __init__(self, ty:T, dct:JSON=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, 

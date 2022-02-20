@@ -73,7 +73,6 @@ class FCNT(AnnounceableResource):
 		self.setAttribute(self._hasFCI, False, False)	# stored in DB
 
 		self.__validating = False
-		# self.ignoreAttributes = self.internalAttributes + [ 'acpi', 'cbs', 'cni', 'cnd', 'cs', 'cr', 'ct', 'et', 'lt', 'mbs', 'mia', 'mni', 'or', 'pi', 'ri', 'rn', 'st', 'ty', 'at', 'aa' ]
 		self.ignoreAttributes = self.internalAttributes + [ a for a in self._attributes.keys() ]
 
 

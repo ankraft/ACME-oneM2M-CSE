@@ -31,6 +31,7 @@ from ..services.ScriptManager import ScriptManager
 from ..services.SecurityManager import SecurityManager
 from ..services.Statistics import Statistics
 from ..services.Storage import Storage
+from ..services.TimeManager import TimeManager
 from ..services.TimeSeriesManager import TimeSeriesManager
 from ..services.Validator import Validator
 from .AnnouncementManager import AnnouncementManager
@@ -55,6 +56,7 @@ script:ScriptManager							= None
 security:SecurityManager 						= None
 statistics:Statistics							= None
 storage:Storage									= None
+time:TimeManager								= None
 timeSeries:TimeSeriesManager					= None
 validator:Validator 							= None
 
@@ -83,7 +85,7 @@ _cseResetLock									= Lock()	# lock for resetting the CSE
 
 def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	global announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
-	global remote, request, script, security, statistics, storage, timeSeries, validator
+	global remote, request, script, security, statistics, storage, time, timeSeries, validator
 	global aeStatistics
 	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiRelative, cseRi, cseRn, releaseVersion
 	global cseOriginator
@@ -157,6 +159,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	timeSeries = TimeSeriesManager()		# Initialize the timeSeries manager
 	remote = RemoteCSEManager()				# Initialize the remote CSE manager
 	announce = AnnouncementManager()		# Initialize the announcement manager
+	time = TimeManager()					# Initialize the time mamanger
 	script = ScriptManager()				# Initialize the script manager
 
 	# Import a default set of resources, e.g. the CSE, first ACP or resource structure
@@ -226,6 +229,7 @@ def _shutdown() -> None:
 	
 	# shutdown the services
 	console and console.shutdown()
+	time and time.shutdown()
 	remote and remote.shutdown()
 	mqttClient and mqttClient.shutdown()
 	httpServer and httpServer.shutdown()
