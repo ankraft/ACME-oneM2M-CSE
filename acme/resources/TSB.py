@@ -67,9 +67,7 @@ class TSB(Resource):
 # [cse.timesyncbeacon]
 # TODO docs for this
 
-# TODO remove TSBAnncs later
-
-
+# TODO remove TSBAnncs from types later
 
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
@@ -99,7 +97,7 @@ class TSB(Resource):
 			L.logWarn(dbg := f'beaconInterval attribute shall only be present when beaconCriteria is PERIODIC')
 			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 		if self.bcnc == BeaconCriteria.PERIODIC and not self.hasAttribute('bcni'):
-			self.setAttribute('bcni', CSE.time.defaultBeaconInterval)
+			self.setAttribute('bcni', Configuration.get('cse.tsb.bcni'))
 		if self.hasAttribute('bcni'):
 			self.setAttribute(self._bcni, DateUtils.fromDuration(self.bcni))
 		
@@ -108,7 +106,7 @@ class TSB(Resource):
 			L.logWarn(dbg := f'beaconThreshold attribute shall only be present when beaconCriteria is LOSS_OF_SYNCHRONIZATION')
 			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 		if self.bcnc == BeaconCriteria.LOSS_OF_SYNCHRONIZATION and not self.hasAttribute('bcnt'):
-			self.setAttribute('bcnt', CSE.time.defaultBeaconThreshold)
+			self.setAttribute('bcnt', Configuration.get('cse.tsb.bcnt'))
 		if self.hasAttribute('bcnt'):
 			self.setAttribute(self._bcnt, DateUtils.fromDuration(self.bcnt))
 		

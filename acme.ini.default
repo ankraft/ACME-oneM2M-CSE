@@ -379,21 +379,6 @@ writeInterval=60
 
 
 ;
-;	TimeSyncBeacon
-;
-
-[cse.timesyncbeacon]
-; Default beacon interval. This is the time between to beacon notifications sent by the CSE
-; to an AE or CSE.
-; Default: 60 seconds
-defaultBeaconInterval=60
-; Default beacon threshold. When this time threshold is passed then a beacon notifications
-; is sent to an AE or CSE.
-; Default: 10.0 seconds
-defaultBeaconThreshold=10
-
-
-;
 ;	Resource defaults: ACP
 ;
 
@@ -432,7 +417,19 @@ mbs=10000
 mdn=10
 
 
+;
+;	Resurce defaults: TimeSyncBeacon
+;
+
 [cse.resource.tsb]
+; Default timeSyncBeacon interval. This is the time between to beacon notifications sent by the CSE
+; to an AE or CSE.
+; Default: 60 minutes
+bcni=3600
+; Default timeSyncBeacon threshold. When this time threshold is passed then a beacon notifications
+; is sent to an AE or CSE.
+; Default: 10.0 seconds
+bcnt=10
 
 
 ;

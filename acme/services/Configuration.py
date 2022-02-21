@@ -288,6 +288,14 @@ class Configuration(object):
 
 
 				#
+				#	Defaults for TimeSyncBeacon Resources
+				#
+
+				'cse.tsb.bcni'							: config.getint('cse.resource.tsb', 'bcni', 			fallback = 3600),	# seconds
+				'cse.tsb.bcnt'							: config.getint('cse.resource.tsb', 'bcnt', 			fallback = 60),		# seconds
+
+
+				#
 				#	Web UI
 				#
 

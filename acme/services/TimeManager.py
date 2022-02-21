@@ -13,11 +13,7 @@ from ..services.Logging import Logging as L
 
 class TimeManager(object):
 
-	def __init__(self) -> None:
-		# TODO configurable
-		self.defaultBeaconInterval = 60 # s
-		self.defaultBeaconThreshold = 60 # s
-
+	def __init__(self) -> None:		
 		L.isInfo and L.log('TimeManager initialized')
 
 
