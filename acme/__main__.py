@@ -8,8 +8,6 @@
 #
 
 import sys
-from wsgiref.simple_server import sys_version
-
 if sys.version_info.major != 3 or (sys.version_info.major == 3 and sys.version_info.minor < 8):
 	print('Python version >= 3.8 is required')
 	quit(1)
@@ -27,7 +25,6 @@ except ImportError as e:
 	elif 'No module named' in e.msg:
 		print(f'\nOne or more required packages could not be found.\nPlease install the missing packages, e.g. by running the following command:\n\n\t{sys.executable} -m pip install -r requirements.txt\n')
 	quit(1)
-
 
 
 # Handle command line arguments
@@ -54,10 +51,10 @@ def parseArgs() -> argparse.Namespace:
 
 	parser.add_argument('--db-reset', action='store_true', dest='dbreset', default=None, help='reset the DB when starting the CSE')
 	parser.add_argument('--db-storage', action='store', dest='dbstoragemode', default=None, choices=[ 'memory', 'disk' ], type=str.lower, help='specify the DB´s storage mode')
-	parser.add_argument('--http-address', action='store', dest='httpaddress', metavar='<server URL>', help='specify the CSE\'s http server URL')
-	parser.add_argument('--http-port', action='store', dest='httpport', metavar='<http port>',  type=int, help='specify the CSE\'s http port')
+	parser.add_argument('--http-address', action='store', dest='httpaddress', metavar='<server-URL>', help='specify the CSE\'s http server URL')
+	parser.add_argument('--http-port', action='store', dest='httpport', metavar='<http-port>',  type=int, help='specify the CSE\'s http port')
 	parser.add_argument('--import-directory', action='store', dest='importdirectory', default=None, metavar='<directory>', help='specify the import directory')
-	parser.add_argument('--network-interface', action='store', dest='listenif', metavar='<ip address>', default=None, help='specify the network interface/IP address to bind to')
+	parser.add_argument('--network-interface', action='store', dest='listenif', metavar='<ip-address>', default=None, help='specify the network interface/IP address to bind to')
 	parser.add_argument('--log-level', action='store', dest='loglevel', default=None, choices=[ 'info', 'error', 'warn', 'debug', 'off'], type=str.lower, help='set the log level, or turn logging off')
 	parser.add_argument('--headless', action='store_true', dest='headless', default=None, help='operate the CSE in headless mode')
 	
@@ -74,7 +71,7 @@ def main() -> None:
 	#		CSE.startup(None, configfile=defaultConfigFile, loglevel='error', resetdb=None)
 	#
 	#	Note: Always pass at least 'None' as first and then the 'configfile' parameter.
-	Console().print(f'\n{C.textLogo} ' + C.version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight=False)
+	Console().print(f'\n{C.textLogo} ' + C.version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight = False)
 	if CSE.startup(parseArgs()):
 		CSE.run()
 

@@ -18,7 +18,7 @@ from ..resources.Resource import Resource
 from ..resources import Factory as Factory
 from ..services.Configuration import Configuration
 from ..services.Logging import Logging as L
-from ..services import CSE as CSE
+from ..services import CSE
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 
 

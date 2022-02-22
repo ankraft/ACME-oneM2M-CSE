@@ -147,7 +147,7 @@ class ResourceTypes(ACMEIntEnum):
 	FCNTAnnc 		= 10028
 	TSAnnc			= 10029
 	TSIAnnc			= 10030
-	# TSBAnnc			= 10060
+	TSBAnnc			= 10060
 	ACTRAnnc		= 10063
 
 	FWRAnnc			= -30001
@@ -264,7 +264,7 @@ ResourceTypes._announcedMappings = {								#  type: ignore
 	ResourceTypes.FCNT		: ResourceTypes.FCNTAnnc,
 	ResourceTypes.TS 		: ResourceTypes.TSAnnc,
 	ResourceTypes.TSI 		: ResourceTypes.TSIAnnc,
-	# ResourceTypes.TSB 		: ResourceTypes.TSBAnnc,
+	ResourceTypes.TSB 		: ResourceTypes.TSBAnnc,
 	ResourceTypes.ACTR 		: ResourceTypes.ACTRAnnc,
 }
 
@@ -289,8 +289,7 @@ ResourceTypes._announcedSetFull = [									#  type: ignore
 	ResourceTypes.CINAnnc,
 	ResourceTypes.CSEBaseAnnc, ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc, 
 	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.TSAnnc, 
-	#ResourceTypes.TSBAnnc,
-	ResourceTypes.TSIAnnc,
+	ResourceTypes.TSBAnnc, ResourceTypes.TSIAnnc,
 
 	ResourceTypes.FWRAnnc, ResourceTypes.SWRAnnc, ResourceTypes.MEMAnnc, ResourceTypes.ANIAnnc,
 	ResourceTypes.ANDIAnnc, ResourceTypes.BATAnnc, ResourceTypes.DVIAnnc, ResourceTypes.DVCAnnc, 
@@ -303,7 +302,7 @@ ResourceTypes._announcedResourceTypes = [ 							#  type: ignore
 	ResourceTypes.ACPAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc, ResourceTypes.CINAnnc,
 	ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc,
 	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.ACTRAnnc, 
-	#ResourceTypes.TSBAnnc
+	ResourceTypes.TSBAnnc
 ]
 
 
@@ -370,7 +369,7 @@ ResourceTypes._names 	= {											# type: ignore
 		ResourceTypes.CSRAnnc 		: 'm2m:csrA',
 		ResourceTypes.FCNTAnnc 		: 'm2m:fcntA',
 		ResourceTypes.TSAnnc 		: 'm2m:tsA',
-		#ResourceTypes.TSBAnnc 		: 'm2m:tsbA',
+		ResourceTypes.TSBAnnc 		: 'm2m:tsbA',
 		ResourceTypes.TSIAnnc 		: 'm2m:tsiA',
 
 		ResourceTypes.CNT_OL		: 'm2m:ol',
