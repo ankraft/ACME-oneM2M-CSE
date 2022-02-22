@@ -18,6 +18,9 @@ from ..services.Logging import Logging as L
 # DISCUSS child of CB, CSR, AE
 # DISCUSS announceable?
 
+# DISCUSS Only one TSB with loss_of_sync, but only one is relevant. Only one is allowed? Check in update/create
+
+
 
 class TSB(Resource):
 
@@ -61,13 +64,11 @@ class TSB(Resource):
 # DISCUSS Questions to Miguel? Bob?
 # beaconInterval, beaconThreshold are xs:duration? Is this correct? Not (also) second?
 # timeSyncBeaconAnnc is missing from TS-0001 Table 9.6.1.1-1: Resource Types
-# DISCUSS beaconRequester prerequisites are not specifically mentioned in CREATE and UPDATE procedure
+# DISCUSS beaconRequester prerequisites are not specifically mentioned in CREATE and UPDATE procedure. -> good would be that if not present then the CSE provides a value. Add to TS-0004 procedures
 
-# TODO configurations for defaults
-# [cse.timesyncbeacon]
-# TODO docs for this
+# TODO docs for configuration
 
-# TODO remove TSBAnncs from types later
+# TODO Implement Annc
 
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
