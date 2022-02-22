@@ -157,7 +157,7 @@ class TestFCNT_FCI(unittest.TestCase):
 	def test_updateLBL(self) -> None:
 		""" Update <FCNT> LBL """
 		dct = 	{ 'cod:tempe' : {
-					'lbl':   [ 'aLabel' ],
+					'lbl':	[ 'aLabel' ],
 				}}
 		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, dct)
 		self.assertEqual(rsc, RC.updated)
@@ -168,6 +168,23 @@ class TestFCNT_FCI(unittest.TestCase):
 		self.assertIsNotNone(rla)
 		self.assertIsNotNone(findXPath(rla, 'cod:tempe/lbl'))
 		self.assertTrue('aLabel', findXPath(rla, 'cod:tempe/lbl'))
+
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateMNInoFCICreated(self) -> None:
+		""" Update MNI, no <FCI> shall be created """
+		r, rsc = RETRIEVE(fcntURL, TestFCNT_FCI.originator)
+		self.assertEqual(rsc, RC.OK)
+		cni = findXPath(r, 'cod:tempe/cni')
+
+		dct = 	{ 'cod:tempe' : {
+					'mni':	10,				# Increase mni again
+				}}
+		r, rsc = UPDATE(fcntURL, TestFCNT_FCI.originator, dct)
+		self.assertEqual(rsc, RC.updated)
+		self.assertTrue('aLabel', findXPath(r, 'cod:tempe/lbl'))
+		self.assertEqual(cni, findXPath(r, 'cod:tempe/cni'))
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -195,7 +212,7 @@ class TestFCNT_FCI(unittest.TestCase):
 				}}
 		r, rsc = UPDATE(f'{fcntURL}/{findXPath(rla, "cod:tempe/rn")}', TestFCNT_FCI.originator, dct)
 		self.assertEqual(rsc, RC.operationNotAllowed)
-
+	
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateFCNTMniNull(self) -> None:
@@ -235,6 +252,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestFCNT_FCI('test_retrieveFCNTLaOl'))
 	suite.addTest(TestFCNT_FCI('test_updateFCNTMni'))
 	suite.addTest(TestFCNT_FCI('test_updateLBL'))
+	suite.addTest(TestFCNT_FCI('test_updateMNInoFCICreated'))
 	suite.addTest(TestFCNT_FCI('test_createFCIFail'))
 	suite.addTest(TestFCNT_FCI('test_updateFCIFail'))
 	suite.addTest(TestFCNT_FCI('test_updateFCNTMniNull'))
