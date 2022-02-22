@@ -15,7 +15,10 @@ try:
 	from .etc.Constants import Constants as C
 	from .services import CSE as CSE
 except ImportError as e:
-	Console().print(f'\n[red]Please run acme as a package, e.g. [red bold]python -m {sys.argv[0]}\n')
+	if 'attempted relative import' in e.msg:
+		Console().print(f'\n[red]Please run acme as a package:\n\n\t [red bold]{sys.executable} -m {sys.argv[0]} \[arguments]]\n')
+	elif 'No module named' in e.msg:
+		Console().print(f'\n[red]One or more required packages could not be found.\nPlease install the missing packages, e.g. by running the following command:\n\n\t[red bold]{sys.executable} -m pip install -r requirements.txt\n')
 	quit()
 
 # Handle command line arguments

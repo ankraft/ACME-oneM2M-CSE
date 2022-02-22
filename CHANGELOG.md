@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Indicated Release Version must now be the highest value in the list of supported release versions.
 - [CSE] Changed name of *holder* attribute to *custodian* according to spec change.
 - [CSE] Transit requests will now be handled after the resolution for blocking/non-blocking was handled. Non-blocking happens in the first receiver CSE.
+- [CSE] Improved feedback instructions when problems during startup are encountered, e.g. how to install missing packages.
 - [TESTS] Replaced CSE test cases' re-configurations with upper tester commands / script calls.
 
 ### Removed
