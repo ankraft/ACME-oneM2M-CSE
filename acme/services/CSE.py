@@ -131,8 +131,6 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	# init Logging
 	#
 	L.init()
-	if not args.headless:
-		L.console('Press ? for help')
 	L.log('============')
 	L.log('Starting CSE')
 	L.log(f'CSE-Type: {cseType.name}')

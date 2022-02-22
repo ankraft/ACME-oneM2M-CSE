@@ -126,6 +126,9 @@ class Console(object):
 
 		#	Endless runtime loop. This handles key input & commands
 		#	The CSE's shutdown happens in one of the key handlers below
+		if not CSE.isHeadless:
+			L.console('Press ? for help')
+
 		loop(commands, 
 			 catchKeyboardInterrupt = True, 
 			 headless = CSE.isHeadless,
