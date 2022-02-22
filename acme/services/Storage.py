@@ -82,7 +82,6 @@ class Storage(object):
 			L.logErr(f'Exception during purge: {e}', exc=e)
 			quit()
 
-	
 
 	def _validateDB(self) -> bool:
 		"""	Trying to validate the database files by reading from them.
@@ -212,12 +211,15 @@ class Storage(object):
 	def directChildResources(self, pi:str, ty:T = None) -> list[Resource]:
 		"""	Return a list of direct child resources, or an empty list
 		"""
-		rs = self.db.searchResources(pi = pi, ty = int(ty) if ty is not None else None)
-		result = []
-		for r in rs:
-			if res := Factory.resourceFromDict(r).resource:
-				result.append(res)
-		return result
+		# rs = self.db.searchResources(pi = pi, ty = int(ty) if ty is not None else None)
+		# result = []
+		# for r in rs:
+		# 	if res := Factory.resourceFromDict(r).resource:
+		# 		result.append(res)
+		# return result
+		return 	[ res	for each in self.db.searchResources(pi = pi, ty = int(ty) if ty is not None else None)
+						if (res := Factory.resourceFromDict(each).resource)
+				]
 
 
 	def countDirectChildResources(self, pi:str, ty:T = None) -> int:
@@ -248,22 +250,28 @@ class Storage(object):
 	def searchByFragment(self, dct:dict, filter:Callable[[JSON], bool] = None) -> list[Resource]:
 		""" Search and return all resources that match the given fragment dictionary/document.
 		"""
-		result = []
-		for j in self.db.searchByFragment(dct):
-			if not filter or filter(j):				# either there is no filter or the filter is called to test the resource
-				if res := Factory.resourceFromDict(j).resource:
-					result.append(res)
-		return result
+		# result = []
+		# for j in self.db.searchByFragment(dct):
+		# 	if not filter or filter(j):				# either there is no filter or the filter is called to test the resource
+		# 		if res := Factory.resourceFromDict(j).resource:
+		# 			result.append(res)
+		# return result
+		return	[ res	for each in self.db.searchByFragment(dct) 
+						if (not filter or filter(each)) and (res := Factory.resourceFromDict(each).resource) # either there is no filter or the filter is called to test the resource
+				] 
 
 
 	def searchByFilter(self, filter:Callable[[JSON], bool]) -> list[Resource]:
 		"""	Return a list of resouces that match the given filter, or an empty list.
 		"""
-		result = []
-		for j in self.db.discoverResourcesByFilter(filter):
-			if res := Factory.resourceFromDict(j).resource:
-				result.append(res)
-		return result
+		# result = []
+		# for j in self.db.discoverResourcesByFilter(filter):
+		# 	if res := Factory.resourceFromDict(j).resource:
+		# 		result.append(res)
+		# return result
+		return	[ res	for each in self.db.discoverResourcesByFilter(filter)
+						if (res := Factory.resourceFromDict(each).resource)
+				]
 
 
 	#########################################################################
@@ -461,7 +469,6 @@ class TinyDBBinding(object):
 		return True
 
 
-
 	#
 	#	Resources
 	#
@@ -607,20 +614,19 @@ class TinyDBBinding(object):
 	def upsertSubscription(self, subscription:Resource) -> bool:
 		with self.lockSubscriptions:
 			ri = subscription.ri
-			result = self.tabSubscriptions.upsert(
-									{	'ri'  : ri, 
-										'pi'  : subscription.pi,
-										'nct' : subscription.nct,
-										'net' : subscription['enc/net'],
-										'atr' : subscription['enc/atr'],
-										'chty': subscription['enc/chty'],
-										'exc' : subscription.exc,
-										'ln'  : subscription.ln,
-										'nus' : subscription.nu,
-										'bn'  : subscription.bn,
-									}, 
-									self.subscriptionQuery.ri == ri)
-			return result is not None
+			return self.tabSubscriptions.upsert(
+					{	'ri'  : ri, 
+						'pi'  : subscription.pi,
+						'nct' : subscription.nct,
+						'net' : subscription['enc/net'],
+						'atr' : subscription['enc/atr'],
+						'chty': subscription['enc/chty'],
+						'exc' : subscription.exc,
+						'ln'  : subscription.ln,
+						'nus' : subscription.nu,
+						'bn'  : subscription.bn,
+					}, 
+					self.subscriptionQuery.ri == ri) is not None
 
 
 	def removeSubscription(self, subscription:Resource) -> bool:
@@ -634,13 +640,12 @@ class TinyDBBinding(object):
 
 	def addBatchNotification(self, ri:str, nu:str, notificationRequest:JSON) -> bool:
 		with self.lockBatchNotifications:
-			result = self.tabBatchNotifications.insert(
-									{	'ri' 		: ri,
-										'nu' 		: nu,
-										'tstamp'	: DateUtils.utcTime(),
-										'request'	: notificationRequest
-									})
-			return result is not None
+			return self.tabBatchNotifications.insert(
+					{	'ri' 		: ri,
+						'nu' 		: nu,
+						'tstamp'	: DateUtils.utcTime(),
+						'request'	: notificationRequest
+					}) is not None
 
 
 	def countBatchNotifications(self, ri:str, nu:str) -> int:
