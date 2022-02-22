@@ -7,19 +7,28 @@
 #	Starter for the ACME CSE
 #
 
-import argparse, sys
-from rich.console import Console
+import sys
+from wsgiref.simple_server import sys_version
+
+if sys.version_info.major != 3 or (sys.version_info.major == 3 and sys.version_info.minor < 8):
+	print('Python version >= 3.8 is required')
+	quit(1)
+
+import argparse
 # parent = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent
 # # sys.path.append(f'{parent}/acme')
 try:
 	from .etc.Constants import Constants as C
 	from .services import CSE as CSE
+	from rich.console import Console
 except ImportError as e:
 	if 'attempted relative import' in e.msg:
-		Console().print(f'\n[red]Please run acme as a package:\n\n\t [red bold]{sys.executable} -m {sys.argv[0]} \[arguments]]\n')
+		print(f'\nPlease run acme as a package:\n\n\t{sys.executable} -m {sys.argv[0]} [arguments]\n')
 	elif 'No module named' in e.msg:
-		Console().print(f'\n[red]One or more required packages could not be found.\nPlease install the missing packages, e.g. by running the following command:\n\n\t[red bold]{sys.executable} -m pip install -r requirements.txt\n')
-	quit()
+		print(f'\nOne or more required packages could not be found.\nPlease install the missing packages, e.g. by running the following command:\n\n\t{sys.executable} -m pip install -r requirements.txt\n')
+	quit(1)
+
+
 
 # Handle command line arguments
 def parseArgs() -> argparse.Namespace:
