@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Transit requests will now be handled after the resolution for blocking/non-blocking was handled. Non-blocking happens in the first receiver CSE.
 - [CSE] Improved feedback instructions when problems during startup are encountered, e.g. how to install missing packages.
 - [TESTS] Replaced CSE test cases' re-configurations with upper tester commands / script calls.
+- [DATABASE] Optimizations when working with resource lists.
 
 ### Removed
 - [HTTP] Removed the http server's configuration and reset endpoints. This functionality is now handled by the upper tester endpoint and scripts.
