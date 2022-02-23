@@ -93,7 +93,7 @@ class TestCIN(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCIN(self) -> None:
+	def test_updateCINFail(self) -> None:
 		""" Update <CIN> -> Fail """
 		dct = 	{ 'm2m:cin' : {
 					'con' : 'NewValue'
@@ -279,7 +279,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCIN('test_createCIN'))
 	suite.addTest(TestCIN('test_retrieveCIN'))
 	suite.addTest(TestCIN('test_attributesCIN'))
-	suite.addTest(TestCIN('test_updateCIN'))
+	suite.addTest(TestCIN('test_updateCINFail'))
 	suite.addTest(TestCIN('test_createCINUnderAE'))
 	suite.addTest(TestCIN('test_createCINwithNoneString'))
 	suite.addTest(TestCIN('test_deleteCIN'))
