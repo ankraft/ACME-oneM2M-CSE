@@ -9,7 +9,7 @@
 
 from __future__ import annotations
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ContentSerializationType as CST, Result, JSON
-from ..etc import DateUtils, Utils
+from ..etc import Utils
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
 from ..services import CSE
@@ -108,7 +108,7 @@ class CSEBase(AnnounceableResource):
 			return res
 
 		# add the current time to this resource instance
-		self['ctm'] = DateUtils.getResourceDate()
+		self['ctm'] = CSE.time.getCSETimestamp()
 
 		# add the supported release versions
 		self['srv'] = CSE.supportedReleaseVersions

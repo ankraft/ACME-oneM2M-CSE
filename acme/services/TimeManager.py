@@ -9,12 +9,15 @@
 
 
 from __future__ import annotations
+from typing import cast, List
 from ..services.Logging import Logging as L
 from ..resources.TSB import TSB
 from ..resources.Resource import Resource
 from ..services import CSE
 from ..etc.Types import BeaconCriteria
 from ..etc.Types import ResourceTypes as T
+from ..etc import DateUtils
+
 
 
 class TimeManager(object):
@@ -43,10 +46,19 @@ class TimeManager(object):
 	# TODO isLossOfSynchronization
 
 
-	def _getAllPeriodicTimeSyncBeacons(self) -> list[Resource]:
-		return CSE.storage.searchByFragment( { 'ty': T.TSB, 'bcnc': BeaconCriteria.PERIODIC} )
+	def _getAllPeriodicTimeSyncBeacons(self) -> list[TSB]:
+		return cast(List[TSB], CSE.storage.searchByFragment( { 'ty': T.TSB, 'bcnc': BeaconCriteria.PERIODIC} ))
 
 	
 	def addPeriodicTimeSyncBeacon(self, tsb:TSB) -> None:
 		# TODO start monitor
 		pass
+
+
+	def getCSETimestamp(self) -> str:
+		"""	Get the CSE's current date and time (UTC based).
+		
+			Return:
+				ISO time stamp string
+		"""
+		return DateUtils.getResourceDate()
