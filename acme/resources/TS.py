@@ -294,42 +294,34 @@ class TS(AnnounceableResource):
 			return
 		self.__validating = True
 
-		cs = self.timeSeriesInstances()	# retrieve TIS child resources
-		cni = len(cs)			
+		tsis = self.timeSeriesInstances()	# retrieve TIS child resources
+		cni = len(tsis)			
 			
 		# Check number of instances
 		if (mni := self.mni) is not None:	# mni is an int
-			i = 0
-			l = cni
-			while cni > mni and i < l:
-				L.isDebug and L.logDebug(f'cni > mni: Removing <tsi>: {cs[i].ri}')
+			while cni > mni and cni > 0:
+				L.isDebug and L.logDebug(f'cni > mni: Removing <tsi>: {tsis[0].ri}')
 				# remove oldest
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that TS.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteResource(cs[i], parentResource=self, doDeleteCheck=False)
+				CSE.dispatcher.deleteResource(tsis[0], parentResource = self, doDeleteCheck = False)
+				del tsis[0]
 				cni -= 1	# decrement cni when deleting a <cin>
-				i += 1
-			cs = self.timeSeriesInstances()	# retrieve TSI child resources again
-			cni = len(cs)
 
 		# Calculate cbs
-		cbs = 0
-		for c in cs:
-			cbs += c.cs
+		cbs = sum([ each.cs for each in tsis])
 
 		# check size
 		if (mbs := self.mbs) is not None:
-			i = 0
-			l = len(cs)
-			while cbs > mbs and i < l:
-				L.isDebug and L.logDebug(f'cbs > mbs: Removing <tsi>: {cs[i].ri}')
+			while cbs > mbs and cbs > 0:
+				L.isDebug and L.logDebug(f'cbs > mbs: Removing <tsi>: {tsis[0].ri}')
 				# remove oldest
-				cbs -= cs[i]['cs']
+				cbs -= tsis[0]['cs']
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that TS.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteResource(cs[i], parentResource=self, doDeleteCheck=False)
+				CSE.dispatcher.deleteResource(tsis[0], parentResource = self, doDeleteCheck = False)
+				del tsis[0]
 				cni -= 1	# decrement cni when deleting a <tsi>
-				i += 1
 
 		# Some attributes may have been updated, so store the resource 
 		self['cni'] = cni

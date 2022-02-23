@@ -108,7 +108,7 @@ class CNT(AnnounceableResource):
 
 	# Get all content instances of a resource and return a sorted (by ct) list 
 	def contentInstances(self) -> List[Resource]:
-		return sorted(CSE.dispatcher.directChildResources(self.ri, T.CIN), key=lambda x: (x.ct))	# type: ignore[no-any-return]
+		return sorted(CSE.dispatcher.directChildResources(self.ri, T.CIN), key = lambda x: (x.ct))	# type: ignore[no-any-return]
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
@@ -171,42 +171,38 @@ class CNT(AnnounceableResource):
 			return
 		self.__validating = True
 
-		cs = self.contentInstances()	# retrieve CIN child resources
-		cni = len(cs)			
+		# TODO perhaps get the CON as raw directly from the DB. Sort them, but nothing else is
+		#  really done here. Only when delete the resources need to be instantiated
+		#	also ts, fcnt	
+		
+		cins = self.contentInstances()	# retrieve CIN child resources
+		cni = len(cins)			
 			
 		# Check number of instances
 		if (mni := self.mni) is not None:
-			i = 0
-			l = cni
-			while cni > mni and i < l:
-				if L.isDebug: L.logDebug(f'cni > mni: Removing <cin>: {cs[i].ri}')
+			while cni > mni and cni > 0:
+				L.isDebug and L.logDebug(f'cni > mni: Removing <cin>: {cins[0].ri}')
 				# remove oldest
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that CNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteResource(cs[i], parentResource=self, doDeleteCheck=False)
+				CSE.dispatcher.deleteResource(cins[0], parentResource = self, doDeleteCheck = False)
+				del cins[0]	# Remove from list
 				cni -= 1	# decrement cni when deleting a <cin>
-				i += 1
-			cs = self.contentInstances()	# retrieve CIN child resources again
-			cni = len(cs)
 
-		# Calculate cbs
-		cbs = 0
-		for c in cs:
-			cbs += c.cs
+		# Calculate cbs of remaining cins
+		cbs = sum([ each.cs for each in cins])
 
 		# check size
 		if (mbs := self.mbs) is not None:
-			i = 0
-			l = len(cs)
-			while cbs > mbs and i < l:
-				if L.isDebug: L.logDebug(f'cbs > mbs: Removing <cin>: {cs[i].ri}')
+			while cbs > mbs and cbs > 0:
+				L.isDebug and L.logDebug(f'cbs > mbs: Removing <cin>: {cins[0].ri}')
 				# remove oldest
-				cbs -= cs[i]['cs']
+				cbs -= cins[0].cs
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that CNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteResource(cs[i], parentResource=self, doDeleteCheck=False)
+				CSE.dispatcher.deleteResource(cins[0], parentResource = self, doDeleteCheck = False)
+				del cins[0]	# Remove from list
 				cni -= 1	# decrement cni when deleting a <cin>
-				i += 1
 
 		# Some attributes may have been updated, so store the resource 
 		self['cni'] = cni

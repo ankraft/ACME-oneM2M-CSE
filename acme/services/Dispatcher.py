@@ -8,6 +8,7 @@
 #
 
 from __future__ import annotations
+import operator
 import sys
 from copy import deepcopy
 from typing import Any, List, Tuple, Dict, cast
@@ -846,17 +847,55 @@ class Dispatcher(object):
 	#	Public Utility methods
 	#
 
-	def directChildResources(self, pi:str, ty:T=None) -> list[Resource]:
+	def directChildResources(self, pi:str, ty:T = None) -> list[Resource]:
 		"""	Return all child resources of a resource, optionally filtered by type.
 			An empty list is returned if no child resource could be found.
 		"""
-		return CSE.storage.directChildResources(pi, ty)
+		return cast(List[Resource], CSE.storage.directChildResources(pi, ty))
 
 
-	def countDirectChildResources(self, pi:str, ty:T=None) -> int:
+	def countDirectChildResources(self, pi:str, ty:T = None) -> int:
 		"""	Return the number of all child resources of resource, optionally filtered by type. 
 		"""
 		return CSE.storage.countDirectChildResources(pi, ty)
+
+
+
+	def retrieveLatestOldestInstance(self, pi:str, ty:T, oldest:bool = False) -> Resource:
+		"""	Get the latest or oldest x-Instance resource for a parent.
+
+			This is done by searching through all resources once to find the fitting resource 
+			(parent + type)	with the latest or oldest `ct` attribute.
+
+			Args:
+				pi: parent resourceIdentifier
+				ty: resource type to look for
+				oldest: switch between oldest and latest search
+			
+			Return:
+				Resource
+		"""
+		hit:Tuple[JSON, str] = None
+		op = operator.gt if oldest else operator.lt
+
+		# This function used as a mapper to search through all resources and
+		# determines the newest CIN resource for this parent
+		# This should be a bit faster than getting all the CIN, instantiating them, 
+		# and throwig them all away etc
+		def determineLatest(res:JSON) -> bool:
+			nonlocal hit
+			if res['pi'] == pi and res['ty'] == ty:
+				ct = res['ct']
+				if not hit or op(hit[1], ct):
+					hit = ( res, ct )
+			return False
+
+		# Search through the resources with the mapping functions
+		CSE.storage.searchByFilter(filter = determineLatest)
+		if not hit:
+			return None
+		# Instantiate and return resource
+		return Factory.resourceFromDict(hit[0]).resource
 
 
 	def discoverChildren(self, id:str, resource:Resource, originator:str, handling:JSON, permission:Permission) -> list[Resource]:

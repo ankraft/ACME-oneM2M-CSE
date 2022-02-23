@@ -10,13 +10,13 @@
 #
 
 from __future__ import annotations
+from ctypes import Union
 
 
 import os, shutil
 from threading import Lock
-from copy import deepcopy
-from typing import Callable, cast
-from tinydb import TinyDB, Query, where
+from typing import Callable, cast, List
+from tinydb import TinyDB, Query
 from tinydb.storages import MemoryStorage
 from tinydb.table import Document
 from tinydb.operations import delete 
@@ -27,7 +27,7 @@ from ..services.Configuration import Configuration
 from ..services.Logging import Logging as L
 from ..services import CSE as CSE
 from ..resources.Resource import Resource
-from ..resources import Factory as Factory
+from ..resources import Factory
 
 
 class Storage(object):
@@ -208,18 +208,15 @@ class Storage(object):
 		return Result(status = True, rsc = RC.deleted)
 
 
-	def directChildResources(self, pi:str, ty:T = None) -> list[Resource]:
+	def directChildResources(self, pi:str, ty:T = None, raw:bool = False) -> list[Document]|list[Resource]:
 		"""	Return a list of direct child resources, or an empty list
 		"""
-		# rs = self.db.searchResources(pi = pi, ty = int(ty) if ty is not None else None)
-		# result = []
-		# for r in rs:
-		# 	if res := Factory.resourceFromDict(r).resource:
-		# 		result.append(res)
-		# return result
-		return 	[ res	for each in self.db.searchResources(pi = pi, ty = int(ty) if ty is not None else None)
-						if (res := Factory.resourceFromDict(each).resource)
-				]
+		docs = 	[ each for each in self.db.searchResources(pi = pi, ty = int(ty) if ty is not None else None)]
+		return docs if raw else cast(List[Resource], list(map(lambda x: Factory.resourceFromDict(x).resource, docs)))
+		
+		# return 	[ res	for each in self.db.searchResources(pi = pi, ty = int(ty) if ty is not None else None)
+		# 				if (res := Factory.resourceFromDict(each).resource)
+		# 		]
 
 
 	def countDirectChildResources(self, pi:str, ty:T = None) -> int:
@@ -250,12 +247,6 @@ class Storage(object):
 	def searchByFragment(self, dct:dict, filter:Callable[[JSON], bool] = None) -> list[Resource]:
 		""" Search and return all resources that match the given fragment dictionary/document.
 		"""
-		# result = []
-		# for j in self.db.searchByFragment(dct):
-		# 	if not filter or filter(j):				# either there is no filter or the filter is called to test the resource
-		# 		if res := Factory.resourceFromDict(j).resource:
-		# 			result.append(res)
-		# return result
 		return	[ res	for each in self.db.searchByFragment(dct) 
 						if (not filter or filter(each)) and (res := Factory.resourceFromDict(each).resource) # either there is no filter or the filter is called to test the resource
 				] 
@@ -264,11 +255,6 @@ class Storage(object):
 	def searchByFilter(self, filter:Callable[[JSON], bool]) -> list[Resource]:
 		"""	Return a list of resouces that match the given filter, or an empty list.
 		"""
-		# result = []
-		# for j in self.db.discoverResourcesByFilter(filter):
-		# 	if res := Factory.resourceFromDict(j).resource:
-		# 		result.append(res)
-		# return result
 		return	[ res	for each in self.db.discoverResourcesByFilter(filter)
 						if (res := Factory.resourceFromDict(each).resource)
 				]
