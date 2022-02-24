@@ -7,6 +7,7 @@
 #	ResourceType: Container
 #
 
+from __future__ import annotations
 from typing import List
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
 from ..etc import Utils, DateUtils
@@ -106,11 +107,6 @@ class CNT(AnnounceableResource):
 		return Result(status=True)
 
 
-	# Get all content instances of a resource and return a sorted (by ct) list 
-	def contentInstances(self) -> List[Resource]:
-		return sorted(CSE.dispatcher.directChildResources(self.ri, T.CIN), key = lambda x: (x.ct))	# type: ignore[no-any-return]
-
-
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
 		if not (res := super().childWillBeAdded(childResource, originator)).status:
 			return res
@@ -161,6 +157,7 @@ class CNT(AnnounceableResource):
 
 
 	# TODO Align this and FCNT implementations
+	# TODO use raw for TS and TCNT
 	
 	def _validateChildren(self) -> None:
 		""" Internal validation and checks. This called more often then just from
@@ -171,37 +168,38 @@ class CNT(AnnounceableResource):
 			return
 		self.__validating = True
 
-		# TODO perhaps get the CON as raw directly from the DB. Sort them, but nothing else is
-		#  really done here. Only when delete the resources need to be instantiated
-		#	also ts, fcnt	
-		
-		cins = self.contentInstances()	# retrieve CIN child resources
-		cni = len(cins)			
+		# Only get the CINs in raw format. Instantiate them as resources if needed
+		cinsRaw = cast(List[JSON], sorted(CSE.storage.directChildResources(self.ri, T.CIN, raw = True), key = lambda x: x['ct']))
+		cni = len(cinsRaw)			
 			
 		# Check number of instances
 		if (mni := self.mni) is not None:
 			while cni > mni and cni > 0:
-				L.isDebug and L.logDebug(f'cni > mni: Removing <cin>: {cins[0].ri}')
+				# Only instantiate the <cin> when needed here for deletion
+				cin = Factory.resourceFromDict(cinsRaw[0]).resource
+				L.isDebug and L.logDebug(f'cni > mni: Removing <cin>: {cin.ri}')
 				# remove oldest
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that CNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteResource(cins[0], parentResource = self, doDeleteCheck = False)
-				del cins[0]	# Remove from list
+				CSE.dispatcher.deleteResource(cin, parentResource = self, doDeleteCheck = False)
+				del cinsRaw[0]	# Remove from list
 				cni -= 1	# decrement cni when deleting a <cin>
 
 		# Calculate cbs of remaining cins
-		cbs = sum([ each.cs for each in cins])
+		cbs = sum([ each['cs'] for each in cinsRaw])
 
 		# check size
 		if (mbs := self.mbs) is not None:
 			while cbs > mbs and cbs > 0:
-				L.isDebug and L.logDebug(f'cbs > mbs: Removing <cin>: {cins[0].ri}')
+				# Only instantiate the <cin> when needed here for deletion
+				cin = Factory.resourceFromDict(cinsRaw[0]).resource
+				L.isDebug and L.logDebug(f'cbs > mbs: Removing <cin>: {cin.ri}')
 				# remove oldest
-				cbs -= cins[0].cs
+				cbs -= cin.cs
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that CNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteResource(cins[0], parentResource = self, doDeleteCheck = False)
-				del cins[0]	# Remove from list
+				CSE.dispatcher.deleteResource(cin, parentResource = self, doDeleteCheck = False)
+				del cinsRaw[0]	# Remove from list
 				cni -= 1	# decrement cni when deleting a <cin>
 
 		# Some attributes may have been updated, so store the resource 

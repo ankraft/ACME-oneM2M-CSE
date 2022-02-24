@@ -151,7 +151,7 @@ class Storage(object):
 		return (ri is not None and self.db.hasResource(ri = ri)) or (srn is not None and self.db.hasResource(srn = srn))
 
 
-	def retrieveResource(self, ri:str = None, csi:str = None, srn:str = None, aei:str = None) -> Result:
+	def retrieveResource(self, ri:str = None, csi:str = None, srn:str = None, aei:str = None, raw:bool = False) -> Result:
 		""" Return a resource via different addressing methods. 
 		"""
 		resources = []
@@ -175,7 +175,7 @@ class Storage(object):
 		# L.logDebug(resources)
 		# return CSE.dispatcher.resourceFromDict(resources[0]) if len(resources) == 1 else None,
 		if (l := len(resources)) == 1:
-			return Factory.resourceFromDict(resources[0])
+			return Result(status = True, resource = resources[0]) if raw else Factory.resourceFromDict(resources[0])
 		elif l == 0:
 			return Result(status = False, rsc = RC.notFound, dbg = 'resource not found')
 

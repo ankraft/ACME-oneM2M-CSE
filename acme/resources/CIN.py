@@ -67,7 +67,8 @@ class CIN(AnnounceableResource):
 			return res
 
 		# Check whether the parent container's *disableRetrieval* attribute is set to True.
-		if (cnt := self.retrieveParentResource()) and cnt.disr:	# disr is either None, True or False. False means "not disabled retrieval"
+		# "cnt" is a raw resource!
+		if (cntRaw := self.retrieveParentResourceRaw()) and cntRaw.get('disr'):	# disr is either None, True or False. False means "not disabled retrieval"
 			L.logDebug(dbg := f'Retrieval is disabled for the parent <container>')
 			return Result(status = False, rsc = RC.operationNotAllowed, dbg = dbg)
 		

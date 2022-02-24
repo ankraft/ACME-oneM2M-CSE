@@ -289,7 +289,7 @@ class Resource(object):
 		# TODO CSE.action.checkTrigger, self, modifiedAttributes=self[self._modified])
 
 		# Notify parent that a child has been updated
-		if not (parent := self.retrieveParentResource()):
+		if not (parent := cast(Resource, self.retrieveParentResource())):
 			L.logErr(dbg := f'cannot retrieve parent resource')
 			return Result(status = False, rsc = RC.internalServerError, dbg = dbg)
 		parent.childUpdated(self, updatedAttributes, originator)
@@ -635,9 +635,21 @@ class Resource(object):
 
 	def retrieveParentResource(self) -> Resource:
 		"""	Retrieve the parent resource of this resouce.
+
+			Return:
+				Parent Resource of the resource
 		"""
-		# return CSE.dispatcher.retrieveResource(self.pi).resource	#type:ignore[no-any-return]
 		return CSE.dispatcher.retrieveLocalResource(self.pi).resource	#type:ignore[no-any-return]
+
+
+	def retrieveParentResourceRaw(self) -> JSON:
+		"""	Retrieve the raw (!) parent resource of this resouce.
+
+			Return:
+				Document of the parent resource
+		"""
+		return CSE.storage.retrieveResource(self.pi, raw = True).resource
+
 
 
 	def getOriginator(self) -> str:
