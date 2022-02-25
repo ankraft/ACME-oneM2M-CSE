@@ -10,9 +10,7 @@
 from __future__ import annotations
 from typing import List, cast
 import datetime, json, os, sys, webbrowser
-from copy import deepcopy
 from enum import IntEnum, auto
-from xml.etree.ElementTree import iselement
 from rich.style import Style
 from rich.table import Table
 from rich.panel import Panel
@@ -83,12 +81,22 @@ class Console(object):
 		self.treeMode	     			 = Configuration.get('cse.console.treeMode')
 		self.treeIncludeVirtualResources = Configuration.get('cse.console.treeIncludeVirtualResources')
 		self.confirmQuit     			 = Configuration.get('cse.console.confirmQuit')
+		self.interruptContinous			 = False
+		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
 		if L.isInfo: L.log('Console initialized')
 
 
 	def shutdown(self) -> bool:
 		if L.isInfo: L.log('Console shut down')
 		return True
+
+
+	def restart(self) -> None:
+		"""	Restart the TimeSeriesManager service.
+		"""
+		self.interruptContinous = True	# This will indirectly interrupt a running continous console command
+		L.isDebug and L.logDebug('Console restarted')
+
 
 
 	def run(self) -> None:
@@ -303,7 +311,7 @@ Available under the BSD 3-Clause License
 	def resourceTree(self, _:str) -> None:
 		"""	Render the CSE's resource tree.
 		"""
-		L.console('Resource Tree', isHeader=True)
+		L.console('Resource Tree', isHeader = True)
 		L.console(self.getResourceTreeRich())
 		L.console()
 
@@ -311,30 +319,31 @@ Available under the BSD 3-Clause License
 	def childResourceTree(self, _:str) -> None:
 		"""	Render the CSE's resource tree, beginning with a child resource.
 		"""
-		L.console('Child Resource Tree', isHeader=True)
+		L.console('Child Resource Tree', isHeader = True)
 		L.off()
 		
 		if not (ri := L.consolePrompt('ri')):
 			L.console()
 		elif len(ri) > 0:
-			if tree := self.getResourceTreeRich(parent=ri):
+			if tree := self.getResourceTreeRich(parent = ri):
 				L.console(tree)
 			else:
-				L.console('not found', isError=True)
+				L.console('not found', isError = True)
 
 		L.on()
 
 
 	def continuesTree(self, key:str) -> None:
 		L.off()
+		self.interruptContinous = False
 		self.clearScreen(key)
 		self._about('Resource Tree')
-		with Live(self.getResourceTreeRich(style=L.terminalStyle), auto_refresh=False) as live:
+		with Live(self.getResourceTreeRich(style = L.terminalStyle), auto_refresh = False) as live:
 
-			def _updateTree(_:Resource=None) -> None:
+			def _updateTree(_:Resource = None) -> None:
 				"""	Callback to update the on-screen tree on an event.
 				"""
-				live.update(self.getResourceTreeRich(style=L.terminalStyle), refresh=True)
+				live.update(self.getResourceTreeRich(style = L.terminalStyle), refresh = True)
 			
 			# Register events for which the tree is refreshed
 			CSE.event.addHandler([CSE.event.createResource, CSE.event.deleteResource, CSE.event.updateResource],  _updateTree)		# type:ignore[attr-defined]
@@ -343,6 +352,8 @@ Available under the BSD 3-Clause License
 				if ch == '\x14':	# Toggle through tree modes
 					self.treeMode = self.treeMode.succ()
 					_updateTree()
+				if self.interruptContinous:
+					break
 
 			# Remove the event callback for the events 
 			CSE.event.removeHandler([CSE.event.createResource, CSE.event.deleteResource, CSE.event.updateResource], _updateTree)	# type:ignore[attr-defined]
@@ -370,11 +381,15 @@ Available under the BSD 3-Clause License
 
 	def continuesStatistics(self, key:str) -> None:
 		L.off()
+		self.interruptContinous = False
 		self.clearScreen(key)
 		self._about('Statistics')
 		with Live(self.getStatisticsRich(style=L.terminalStyle), auto_refresh=False) as live:
 			while not waitForKeypress(self.refreshInterval):
-				live.update(self.getStatisticsRich(style=L.terminalStyle), refresh=True)
+				live.update(self.getStatisticsRich(style = L.terminalStyle), refresh=True)
+				if self.interruptContinous:
+					break
+
 		self.clearScreen(key)
 		L.on()
 
@@ -602,7 +617,6 @@ Available under the BSD 3-Clause License
 			logs         = '\n[dim]statistics are disabled[/dim]\n'
 
 
-
 		misc  = '[underline]Misc[/underline]\n'
 		misc += '\n'
 		misc += f'StartTime : {datetime.datetime.fromtimestamp(DateUtils.fromAbsRelTimestamp(cast(str, stats[Statistics.cseStartUpTime]), withMicroseconds=False))} (UTC)\n'
@@ -617,25 +631,25 @@ Available under the BSD 3-Clause License
 
 		# Adapt the following line when adding resources to keep formatting. 
 		# It fills up the right columns to match the length of the left column.
-		misc += '\n' * ( 2 if CSE.statistics.statisticsEnabled else 7)
+		misc += '\n' * ( 3 if CSE.statistics.statisticsEnabled else 8)
 
-		requestsGrid = Table.grid(expand=True)
-		requestsGrid.add_column(ratio=28)
-		requestsGrid.add_column(ratio=18)
-		requestsGrid.add_column(ratio=18)
-		requestsGrid.add_column(ratio=18)
-		requestsGrid.add_column(ratio=18)
+		requestsGrid = Table.grid(expand = True)
+		requestsGrid.add_column(ratio = 28)
+		requestsGrid.add_column(ratio = 18)
+		requestsGrid.add_column(ratio = 18)
+		requestsGrid.add_column(ratio = 18)
+		requestsGrid.add_column(ratio = 18)
 		requestsGrid.add_row(resourceOps, httpReceived, httpSent, mqttReceived, mqttSent)
 
 		infoGrid = Table.grid(expand=True)
-		infoGrid.add_column(ratio=33)
-		infoGrid.add_column(ratio=67)
+		infoGrid.add_column(ratio = 33)
+		infoGrid.add_column(ratio = 67)
 		infoGrid.add_row(logs, misc)
 
 		rightGrid = Table.grid(expand=True)
 		rightGrid.add_column()
-		rightGrid.add_row(Panel(requestsGrid))
-		rightGrid.add_row(Panel(infoGrid))
+		rightGrid.add_row(Panel(requestsGrid, style = style))
+		rightGrid.add_row(Panel(infoGrid, style = style))
 
 		resourceTypes = '[underline]Resource Types[/underline]\n'
 		resourceTypes += '\n'
@@ -654,15 +668,15 @@ Available under the BSD 3-Clause License
 		resourceTypes += f'REQ     : {CSE.dispatcher.countResources(T.REQ)}\n'
 		resourceTypes += f'SUB     : {CSE.dispatcher.countResources(T.SUB)}\n'
 		resourceTypes += f'TS      : {CSE.dispatcher.countResources(T.TS)}\n'
+		resourceTypes += f'TSB     : {CSE.dispatcher.countResources(T.TSB)}\n'
 		resourceTypes += f'TSI     : {CSE.dispatcher.countResources(T.TSI)}\n'
 		resourceTypes += '\n'
-		resourceTypes += f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - CSE.dispatcher.countResources((T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.TS_LA, T.TS_OL, T.GRP_FOPT, T.PCH_PCU))}\n'	# substract the virtual resources
+		resourceTypes += f'[bold]Total[/bold]   : {int(stats[Statistics.resourceCount]) - CSE.dispatcher.countResources((T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.TS_LA, T.TS_OL, T.GRP_FOPT, T.PCH_PCU, T.TSB))}\n'	# substract the virtual resources
 		
-		result = Table.grid(expand=True)
-		result.style = style
+		result = Table.grid(expand = True)
 		result.add_column(width=15)
 		result.add_column()
-		result.add_row(Panel(resourceTypes), rightGrid )
+		result.add_row(Panel(resourceTypes, style = style), rightGrid )
 
 		return result
 
@@ -736,12 +750,12 @@ Available under the BSD 3-Clause License
 			res = Utils.getCSE().resource
 		if not res:
 			return None
-		tree = Tree(info(res), style=style, guide_style=style)
+		tree = Tree(info(res), style = style, guide_style = style)
 		getChildren(res, tree, 0)
 		return tree
 
 
-	def getResourceTreeText(self, maxLevel:int=0) -> str:
+	def getResourceTreeText(self, maxLevel:int = 0) -> str:
 		"""	This function will generate a Text tree of a CSE's resource structure.
 		"""
 		from rich.console import Console as RichConsole
