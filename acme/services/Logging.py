@@ -45,6 +45,15 @@ levelName = {
 	# logging.WARNING : 'WARNING'
 }
 
+# Color Schemes for the terminal
+terminalColorDark		= '#2DFE54' 
+terminalColorErrorDark	= '#FF073A'
+tableRowColorDark		= 'grey15'
+
+terminalColorLight		= '#137E6D'
+terminalColorErrorLight	= '#FF073A'
+tableRowColorLight		= 'grey93'
+
 
 class LogLevel(ACMEIntEnum):
 	INFO 	= logging.INFO
@@ -95,9 +104,9 @@ class Logging:
 	_handlers:List[Any] 			= None
 	_logWorker:BackgroundWorker		= None
 
-	terminalStyle:Style				= Style(color = 'spring_green2')
-	terminalStyleError:Style		= Style(color = 'red')
-	tableRowStyle:Style				= Style(bgcolor = 'grey15')
+	terminalStyle:Style				= Style(color = terminalColorDark)
+	terminalStyleError:Style		= Style(color = terminalColorErrorDark)
+	tableRowStyle:Style				= Style(bgcolor = tableRowColorDark)
 
 
 	@staticmethod
@@ -162,9 +171,10 @@ class Logging:
 
 	@staticmethod
 	def _configureColors(theme:str) -> None:
-		terminalColor				= 'spring_green2' if theme == 'dark' else 'dark_green'
-		Logging.terminalStyle 		= Style(color = terminalColor)
-		Logging.terminalStyleError	= Style(color = 'red')
+		Logging.terminalStyle 		= Style(color = terminalColorDark if theme == 'dark' else terminalColorLight)
+		Logging.tableRowStyle		= Style(bgcolor = tableRowColorDark if theme == 'dark' else tableRowColorLight)
+		Logging.terminalStyleError	= Style(color = terminalColorErrorDark if theme == 'dark' else terminalColorErrorLight)
+		Logging.inspect(Logging.tableRowStyle)
 
 
 	@staticmethod

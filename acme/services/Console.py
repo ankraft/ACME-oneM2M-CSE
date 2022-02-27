@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import List, cast
 import datetime, json, os, sys, webbrowser
 from enum import IntEnum, auto
+from xml.etree.ElementTree import iselement
 from rich.style import Style
 from rich.table import Table
 from rich.panel import Panel
@@ -413,12 +414,12 @@ Available under the BSD 3-Clause License
 	def inspectResource(self, _:str) -> None:
 		"""	Show a resource.
 		"""
-		L.console('Inspect Resource', isHeader=True)
+		L.console('Inspect Resource', isHeader = True)
 		L.off()
 
 		if (ri := L.consolePrompt('ri')):
 			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
-				L.console(res.dbg, isError=True)
+				L.console(res.dbg, isError = True)
 			else:
 				L.console(res.resource.asDict())
 		L.on()		
@@ -508,7 +509,7 @@ Available under the BSD 3-Clause License
 		if (name := L.consolePrompt('Script name', nl = False, default = Console.previousScript)):
 			Console.previousScript = name
 			if len(scripts := CSE.script.findScripts(name = name)) != 1:
-				L.console(f'**Script {name} not found**')
+				L.console(f'Script {name} not found', isError = True, nlb = True)
 				L.on()
 				return
 			argument = L.consolePrompt('Arguments', default = Console.previousArgument)
