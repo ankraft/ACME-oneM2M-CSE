@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added bi-directional update of announced resources.
 - [CSE] Added remote resources support for &lt;group>.
 - [CSE] Added support for *dataGenerationTime* attribute for &lt;contentInstance> (R5 feature).
+- [CSE] Added "acme://" URL scheme for notifications to run ACMEScript scripts.
 - [WEB] Allow to open the WebUI of a registered CSE via the context menu.
 - [CONSOLE] Added config for dark (default) and light theme for better readability on consoles with light background.
 - [SCRIPTS] Added scripting to the CSE.
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SCRIPTS] Added executing scripts to the console
 - [SCRIPTS] Added scripts tagged with "@uppertester" can be executed as upper tester commands.
 - [SCRIPTS] Added scripts scheduling vie the "@at" meta tag.
+- [SCRIPTS] Added possibility to run scripts on notifications, when using the "acme://" URL scheme.
 
 ### Changed
 - [CSE] Adapted Announcements to latest R4 changes. 
@@ -42,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - [CSE] Improved check that IDs contain only unreserved characters.
+- [HTTP] HTTP request will not be sent with a *Date* header field.
 
 
 ## [0.9.1] - 2021-11-09
