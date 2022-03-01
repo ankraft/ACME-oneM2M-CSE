@@ -11,9 +11,9 @@
 from __future__ import annotations
 from typing import Callable, Union, Tuple
 import time
+from email.utils import formatdate
 from datetime import datetime, timedelta
 import isodate
-
 
 ##############################################################################
 #
@@ -74,6 +74,18 @@ def fromDuration(duration:str) -> float:
 			#if L.isWarn: L.logWarn(f'Wrong format for duration: {duration}')
 			raise
 	return 0.0
+
+
+def rfc1123Date(timeval:float = None) -> str:
+	"""	Return a date time string in RFC 1123 format, e.g. for use in HTTP requests.
+		The time stamp is GMT-based.
+
+		Args:
+			timeval: optional timestamp to use, otherwise the current time is used.
+		Return:
+			String with the GMT-based time.
+	"""
+	return formatdate(timeval = timeval, localtime = False, usegmt = True)
 
 
 def utcTime() -> float:

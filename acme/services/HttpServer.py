@@ -372,7 +372,8 @@ class HttpServer(object):
 
 		# Set basic headers
 		hty = f';ty={int(ty):d}' if ty else ''
-		hds = {	'User-Agent'	: self.serverID,
+		hds = {	'Date'			: DateUtils.rfc1123Date(),
+				'User-Agent'	: self.serverID,
 				'Content-Type' 	: f'{ct.toHeader()}{hty}',
 				'cache-control'	: 'no-cache',
 		}
