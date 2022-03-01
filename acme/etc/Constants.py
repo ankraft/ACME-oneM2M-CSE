@@ -38,7 +38,7 @@ class Constants(object):
 	#
 	#	Supported URL schemes
 	#
-	supportedSchemes = ['http', 'https', 'mqtt', 'mqtts']	# Supported by the CSE
+	supportedSchemes = ['http', 'https', 'mqtt', 'mqtts', 'acme']	# Supported by the CSE
 
 
 	#

@@ -38,6 +38,8 @@ class ACMEPContext(PContext):
 				 errorFunc:PFuncCallable = None,
 				 filename:str = None) -> None:
 		super().__init__(script, 
+
+						# !!! Always use lower case when adding new macros and commands below
 						 commands = {	
 							 			'clear':		self.doClear,
 							 			'create':		self.doCreate,
@@ -45,6 +47,7 @@ class ACMEPContext(PContext):
 										'importraw':	self.doImportRaw,
 							 			'notify':		self.doNotify,
 						 				'originator':	self.doOriginator,
+										'printjson':	self.doPrintJSON,
 						 				'poa':			self.doPoa,
 										'reset':		self.doReset,
 							 			'retrieve':		self.doRetrieve,
@@ -96,7 +99,6 @@ class ACMEPContext(PContext):
 			except ValueError as e:
 				self.setError(PError.invalid, f'"@timeout" invalid value, must be a float: {t}')
 				self.state = PState.invalid
-			print(self.maxRuntime)
 
 
 
@@ -288,6 +290,18 @@ class ACMEPContext(PContext):
 			pcontext.setError(PError.invalid, f'Missing of invalid argument for POA: {arg}')
 			return None
 		return pcontext
+
+
+	# TODO DOCs
+	def doPrintJSON(self, pcontext:PContext, arg:str) -> PContext:
+		
+		try:
+			L.console(json.loads(arg))
+		except Exception as e:
+			pcontext.setError(PError.invalid, str(e))
+			return None
+		return pcontext
+
 	
 
 	def doReset(self, pcontext:PContext, arg:str) -> PContext:
@@ -777,6 +791,7 @@ class ScriptManager(object):
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)				# type: ignore
 		CSE.event.addHandler(CSE.event.cseRestarted, self.restartFinished)	# type: ignore
 		CSE.event.addHandler(CSE.event.keyboard, self.onKeyboard)			# type: ignore
+		CSE.event.addHandler(CSE.event.acmeNotification, self.onNotification)	# type: ignore
 
 		# Add a handler for configuration changes
 		CSE.event.addHandler(CSE.event.configUpdate, self.configUpdate)		# type: ignore
@@ -876,6 +891,19 @@ class ScriptManager(object):
 		"""
 		# Look for the shutdown script(s) and run them. 
 		self.runEventScripts('onkey', ch)
+
+# TODO docs
+	def onNotification(self, url:str, originator:str, data:JSON) -> None:
+		try:
+			self.runEventScripts( 'onnotification', 	# !!! Lower case
+								  url,
+								  background = False, 
+								  environment = { 'notification.resource' : json.dumps(data), 
+								  				  'notification.originator' : originator,
+												  'notification.url': url })	
+		except Exception as e:
+			L.logErr('Error in JSON', exc = e)
+
 
 
 	##########################################################################
@@ -1050,7 +1078,8 @@ class ScriptManager(object):
 	def runScript(self, pcontext:PContext, 
 						argument:str = '', 
 						background:bool = False, 
-						finished:Callable = None) -> bool:
+						finished:Callable = None,
+						environment:dict[str, str] = {}) -> bool:
 		""" Run a script.
 
 			Args:
@@ -1067,10 +1096,14 @@ class ScriptManager(object):
 			L.isWarn and L.logWarn(f'Script "{pcontext.name}" is already running')
 			# pcontext.setError(PError.invalid, f'Script "{pcontext.name}" is already running')
 			return False
+		
+		# Set environemt
+		pcontext.setEnvironment(environment)
+
+		# Run in background or direct
 		if background:
 			BackgroundWorkerPool.newActor(runCB, name = f'AS:{pcontext.scriptName}-{Utils.uniqueID()}', finished = finished).start(pcontext = pcontext, argument = argument)
 			return True	# Always return True when running in Background
-		
 		return pcontext.run(verbose = self.verbose, argument = argument).state != PState.terminatedWithError
 	
 
@@ -1154,7 +1187,7 @@ class ScriptManager(object):
 	#	Misc
 	#
 
-	def runEventScripts(self, event:str, argument:str = None) -> None:
+	def runEventScripts(self, event:str, argument:str = None, background:bool = True, environment:dict[str, str] = {}) -> None:
 		"""	Get and run all the scripts for specific events. If the `argument` is given
 			then the event's parameter must match the argument.
 
@@ -1165,6 +1198,8 @@ class ScriptManager(object):
 			Args:
 				event: The event for which the script(s) are run.
 				argument: The optional argument that needs to match the event's pararmater in the script.
+				background: Run the script in the background
+				environment: extra variables to set in the script's environment
 		"""
 
 		def getPrompt(r:str) -> str:
@@ -1184,6 +1219,6 @@ class ScriptManager(object):
 		for each in self.findScripts(meta = event):
 			if argument:
 				if (v := each.meta.get(event)) and v == argument:
-					self.runScript(each, argument = getPrompt(arg), background = True)
+					self.runScript(each, argument = getPrompt(arg), background = background, environment = environment)
 			else:
-				self.runScript(each, argument = getPrompt(''), background = True)
+				self.runScript(each, argument = getPrompt(''), background = background, environment = environment)

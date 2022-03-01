@@ -118,6 +118,7 @@ class PContext():
 		self.error:PErrorState				= PErrorState(PError.noError, 0, '' )
 		self.meta:Dict[str, str]			= {}
 		self.variables:Dict[str,str]		= {}
+		self.environment:Dict[str,str]		= {}	# Similar to variables, but not cleared
 		self.runs:int						= 0
 
 		# Internal attributes that should not be accessed
@@ -582,6 +583,44 @@ class PContext():
 			del self.variables[key]
 			return v
 		return None
+
+
+	def getEnvironmentVariable(self, key:str) -> str:
+		"""	Return an evironment variable for a case insensitive name.
+
+			Args:
+				key: Environment variable name
+			Return:
+				Environment variable content, or None.		
+		"""
+		return self.environment.get(key.lower())
+	
+
+	def setEnvironmentVariale(self, key:str, value:str) -> None:
+		"""	Set an environment variable for a case insensitive name.
+
+			Args:
+				key: Environment variable name
+				value: Value to store	
+		"""
+		self.environment[key.lower()] = value
+	
+
+	def clearEnvironment(self) -> None:
+		"""	Clear the environment variables.
+		"""
+		self.environment.clear()
+
+
+	def setEnvironment(self, environment:dict[str, str] = {}) -> None:
+		"""	Clear old and assign a new environment.
+			
+			Args:
+				environment: Dictionary with the new environment
+		"""
+		self.clearEnvironment()
+		for eachKey, eachValue in environment.items():
+			self.setEnvironmentVariale(eachKey, eachValue)
 
 
 	def getMacro(self, key:str) -> PMacroCallable:
@@ -1409,6 +1448,10 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 			if pcontext.error.error == PError.noError:	# provide an own error if not set by the macro function
 				pcontext.setError(PError.invalid, f'Error from macro: {macro}')
 			return None
+		
+		# Then check environment variables
+		if (v := pcontext.getEnvironmentVariable(macro)) is not None:
+			return v
 		
 		# Then try the default macro definition
 		if (cb := pcontext.getMacro('__default__')) is not None:

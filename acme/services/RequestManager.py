@@ -953,6 +953,10 @@ class RequestManager(object):
 													  parameters = parameters,
 													  ct = ct,
 													  raw = raw)
+			elif Utils.isAcmeUrl(url):
+				CSE.event.acmeNotification(url, originator, data)	# type: ignore [attr-defined]
+				return Result(status = True)
+
 			L.logWarn(dbg := f'unsupported url scheme: {url}')
 			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 		
