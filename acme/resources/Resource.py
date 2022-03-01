@@ -316,6 +316,9 @@ class Resource(object):
 			Return:
 				A Result object.
 		"""
+		# Check for blockingRetrieve
+		if not (res := CSE.notification.checkPerformBlockingRetrieve(self, originator, finished = lambda: self.dbReloadDict())).status:
+			return res
 		return Result(status = True)
 
 
@@ -601,6 +604,12 @@ class Resource(object):
 		"""  Load a new copy from the database. The current resource is NOT changed. """
 		return CSE.storage.retrieveResource(ri = self.ri)
 
+
+	def dbReloadDict(self) -> Result:
+		"""  Load a new copy from the database. The current resource's internal dict is updated with the load dict. """
+		if (res := CSE.storage.retrieveResource(ri = self.ri)).status:
+			self.dict = res.resource.dict
+		return res
 
 
 	#########################################################################

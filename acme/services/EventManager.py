@@ -61,6 +61,7 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('notification')
 		self.addEvent('configUpdate', runInBackground = False)
 		self.addEvent('keyboard', runInBackground = False)
+		self.addEvent('acmeNotification', runInBackground = False)
 
 
 	def shutdown(self) -> bool:

@@ -114,7 +114,7 @@ class SUB(Resource):
 		return CSE.notification.updateSubscription(self, previousNus, originator)
 
  
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 		L.isDebug and L.logDebug(f'Validating subscription: {self.ri}')
@@ -123,9 +123,33 @@ class SUB(Resource):
 		if not (nu := self.nu) or not isinstance(nu, list):
 			L.logDebug(dbg := f'"nu" attribute missing for subscription: {self.ri}')
 			return Result(status = False, rsc = RC.insufficientArguments, dbg = dbg)
+		
+		# Check NotificationEventType
+		if (net := self['enc/net']) is not None:
+			if not NotificationEventType.has(net):
+				L.logDebug(dbg := f'enc/net={str(net)} is not an allowed or supported NotificationEventType')
+				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+
+
+			# Check if blocking RETRIEVE is the only NET in the subscription, AND that there is no other NET for this resource
+			if NotificationEventType.blockingRetrieve in net:
+				if len(net) > 1:
+					L.logDebug(dbg := f'blockingRetrieve must be the only value in enc/net')
+					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				if CSE.notification.getSubscriptionsByNet(parentResource, net = net):
+					L.logDebug(dbg := f'a subscription with blockingRetrieve already exsists for this resource')
+					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				if len(nu) > 1:
+					L.logDebug(dbg := f'nu must contain only one target for blockingRetrieve')
+					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				parentOriginator = parentResource.getOriginator()
+				if nu[0] != parentOriginator:
+					L.logDebug(dbg := f'nu must target the parent resource\'s originator')
+					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+
 
 		# check nct and net combinations
-		if (nct := self.nct) is not None and (net := self['enc/net']) is not None:
+		if (nct := self.nct) is not None and net is not None:
 			for n in net:
 				if not NotificationEventType(n).isAllowedNCT(NotificationContentType(nct)):
 					L.logDebug(dbg := f'nct={nct} is not allowed for one or more values in enc/net={net}')

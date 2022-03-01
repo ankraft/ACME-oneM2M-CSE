@@ -474,15 +474,36 @@ def isURL(url: str) -> bool:
 
 
 def isHttpUrl(url:str) -> bool:
-	"""	Check whether a URL is a http URL. 
+	"""	Test whether a URL is a http URL. 
+
+		Args:
+			url: URL to check
+		Returns:
+			Boolean True or False
 	"""
 	return url.startswith(('http', 'https'))
 
 
 def isMQTTUrl(url:str) -> bool:
-	"""	Check whether a URL is a mqtt URL. 
+	"""	Test whether a URL is an mqtt URL. 
+
+		Args:
+			url: URL to check
+		Returns:
+			Boolean True or False
 	"""
 	return url.startswith(('mqtt', 'mqtts'))
+
+
+def isAcmeUrl(url:str) -> bool:
+	"""	Test whether a URL is an internal ACME event URL. 
+
+		Args:
+			url: URL to check
+		Returns:
+			Boolean True or False
+	"""
+	return url.startswith('acme')
 
 
 def normalizeURL(url: str) -> str:

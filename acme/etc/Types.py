@@ -18,7 +18,7 @@ from collections import namedtuple
 class ACMEIntEnum(IntEnum):
 
 	@classmethod
-	def has(cls, value:int|str|Tuple[int|str]) -> bool:
+	def has(cls, value:int|str|List[int|str]|Tuple[int|str]) -> bool:
 		"""	Check whether the enum type has an entry with
 			either the given int value or string name. 
 
@@ -31,6 +31,12 @@ class ACMEIntEnum(IntEnum):
 				return value in cls.__members__.values()
 			else:
 				return value in cls.__members__
+
+		if isinstance(value, list):	# Checks if list
+			for v in cast(list, value):
+				if not _check(v):
+					return False
+			return True
 
 		if isinstance(value, tuple):	# Checks if tuple
 			for v in cast(tuple, value):
@@ -906,6 +912,7 @@ class NotificationEventType(ACMEIntEnum):
 	triggerReceivedForAE				= 6 # F # TODO not supported yet
 	blockingUpdate 						= 7 # G # TODO not supported yet
 	reportOnGeneratedMissingDataPoints	= 8 # H
+	blockingRetrieve					= 9 # I # EXPERIMENTAL
 
 
 	def isAllowedNCT(self, nct:NotificationContentType) -> bool:
