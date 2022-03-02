@@ -116,7 +116,7 @@ class Dispatcher(object):
 
 			# if rcn == attributes then we can return here, whatever the result is
 			if request.args.rcn == RCN.attributes:
-				if not (resCheck := res.resource.willBeRetrieved(originator)).status:	# resource instance may be changed in this call
+				if not (resCheck := res.resource.willBeRetrieved(originator, request)).status:	# resource instance may be changed in this call
 					return resCheck
 				return res
 
@@ -131,7 +131,7 @@ class Dispatcher(object):
 
 				# Retrieve and check the linked-to request
 				if (res := self.retrieveResource(lnk, originator, request)).resource:
-					if not (resCheck := res.resource.willBeRetrieved(originator)).status:	# resource instance may be changed in this call
+					if not (resCheck := res.resource.willBeRetrieved(originator, request)).status:	# resource instance may be changed in this call
 						return resCheck
 				return res
 
@@ -145,7 +145,7 @@ class Dispatcher(object):
 		allowedResources = []
 		for r in cast(List[Resource], res.data):
 			if CSE.security.hasAccess(originator, r, permission):
-				if not r.willBeRetrieved(originator).status:	# resource instance may be changed in this call
+				if not r.willBeRetrieved(originator, request).status:	# resource instance may be changed in this call
 					continue
 				allowedResources.append(r)
 

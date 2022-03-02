@@ -308,7 +308,7 @@ class Resource(object):
 		pass
 
 
-	def willBeRetrieved(self, originator:str) -> Result:
+	def willBeRetrieved(self, originator:str, request:CSERequest) -> Result:
 		""" Called before a resource will be send back in a response.
 			
 			Args:
@@ -317,7 +317,7 @@ class Resource(object):
 				A Result object.
 		"""
 		# Check for blockingRetrieve
-		if not (res := CSE.notification.checkPerformBlockingRetrieve(self, originator, finished = lambda: self.dbReloadDict())).status:
+		if not (res := CSE.notification.checkPerformBlockingRetrieve(self, originator, request, finished = lambda: self.dbReloadDict())).status:
 			return res
 		return Result(status = True)
 

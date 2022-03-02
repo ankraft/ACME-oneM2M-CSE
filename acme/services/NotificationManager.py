@@ -8,19 +8,19 @@
 #
 
 from __future__ import annotations
-from dataclasses import asdict
+import sys
 import isodate
-from typing import Optional, Callable, Tuple, Union
+from typing import Callable, Union
 from threading import Lock
 from tinydb.utils import V
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import ContentSerializationType, MissingData, Result, NotificationContentType, NotificationEventType, ResponseStatusCode as RC
+from ..etc.Types import CSERequest, ContentSerializationType, MissingData, Result, NotificationContentType, NotificationEventType, ResponseStatusCode as RC
 from ..etc.Types import JSON, Parameters
-from ..etc import Utils as Utils
+from ..etc import Utils, DateUtils
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
-from ..services import CSE as CSE
+from ..services import CSE
 from ..resources.Resource import Resource
 from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
@@ -153,17 +153,51 @@ class NotificationManager(object):
 				self._handleSubscriptionNotification(sub, reason, resource, modifiedAttributes = modifiedAttributes)
 
 
-	def checkPerformBlockingRetrieve(self, resource:Resource, originator:str, finished:Callable = None) -> Result:
-		# TODO originator?
-		# TODO modified dates
+	def checkPerformBlockingRetrieve(self, resource:Resource, originator:str, request:CSERequest, finished:Callable = None) -> Result:
 		# TODO originator in notification?
 		# EXPERIMENTAL
+		
+		L.isDebug and L.logDebug('handle blocking RETRIEVE')
+
 		subs = self.getSubscriptionsByNet(resource, [NotificationEventType.blockingRetrieve])
 		# must/should only be one
 		if subs:
-			# TODO check date
-			# TODO define sub field
-			sub = subs[0]
+			sub = subs[0]	# hopefully only one for the resource
+			maxAgeRequest:float = None
+			maxAgeSubscription:float = None
+
+			# Check for maxAge attribute provided in the request
+			if (maxAgeS := request.args.attributes.get('ma')) is not None:	# TODO attribute name
+				try:
+					maxAgeRequest = DateUtils.fromDuration(maxAgeS)
+				except Exception as e:
+					L.logWarn(dbg := f'error when parsing maxAge in request: {str(e)}')
+					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+
+			# Check for maxAge attribute provided in the subscription
+			if (maxAgeS := sub['ma']) is not None:	# TODO attribute name
+				try:
+					maxAgeSubscription = DateUtils.fromDuration(maxAgeS)
+				except Exception as e:
+					L.logWarn(dbg := f'error when parsing maxAge in subscription: {str(e)}')
+					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				
+			# Return if neither the request nor the subscription have a maxAge set
+			if maxAgeRequest is None and maxAgeSubscription is None:
+				L.isDebug and L.logDebug(f'no maxAge configured, blocking RETRIEVE notification not necessary')
+				return Result(status = True)
+
+
+			# Is one reached?
+			L.isDebug and L.logDebug(f'request.maxAge: {maxAgeRequest} subscription.maxAge: {maxAgeSubscription}')
+			maxAgeSubscription = maxAgeSubscription if maxAgeSubscription is not None else sys.float_info.max
+			maxAgeRequest = maxAgeRequest if maxAgeRequest is not None else sys.float_info.max
+
+			if resource.lt > DateUtils.getResourceDate(-int(min(maxAgeRequest, maxAgeSubscription))):
+				L.isDebug and L.logDebug(f'too early, no blocking RETRIEVE notification necessary')
+				return Result(status = True)
+			L.isDebug and L.logDebug(f'blocking RETRIEVE notification necessary')
+
 			notification = {
 				'm2m:sgn' : {
 					'nev' : {

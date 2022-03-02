@@ -34,7 +34,7 @@ class CNT_LA(Resource):
 		if L.isDebug: L.logDebug('Retrieving latest CIN from CNT')
 		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.CIN)):
 			return Result(status = False, rsc = RC.notFound, dbg = 'no instance for <latest>')
-		if not (res := r.willBeRetrieved(originator)).status:
+		if not (res := r.willBeRetrieved(originator, request)).status:
 			return res
 		return Result(status = True, rsc = RC.OK, resource = r)
 

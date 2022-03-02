@@ -116,7 +116,7 @@
 			"annc": "MA"
 		},
 		{
-			"rtypes": [ 	"ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "DVCAnnc",
+			"rtypes": [ "ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "DVCAnnc",
 						"DVIAnnc", "EVLAnnc", "FWRAnnc", "MEMAnnc", "NYCFCAnnc", "RBOAnnc",
 						"SWRAnnc" ],
 			"lname": "expirationTime",
@@ -1500,6 +1500,21 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "MA"
+		}
+	],
+	// TODO Align later
+	// EXPERIMENTAL
+	"ma": [
+		{
+			"rtypes": [ "SUB", "SUB", "REQRESP" ],
+			"lname": "maxAge",
+			"ns": "m2m",
+			"type": "duration",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
 		}
 	],
 	"macp": [

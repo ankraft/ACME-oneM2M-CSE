@@ -8,7 +8,8 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ContentSerializationType as CST, Result, JSON
+from urllib import request
+from ..etc.Types import AttributePolicyDict, CSERequest, ResourceTypes as T, ContentSerializationType as CST, Result, JSON
 from ..etc import Utils
 from ..resources.Resource import Resource
 from ..resources.AnnounceableResource import AnnounceableResource
@@ -103,8 +104,8 @@ class CSEBase(AnnounceableResource):
 		return Result(status = True)
 
 
-	def willBeRetrieved(self, originator:str) -> Result:
-		if not (res := super().willBeRetrieved(originator)).status:
+	def willBeRetrieved(self, originator:str, request:CSERequest) -> Result:
+		if not (res := super().willBeRetrieved(originator, request)).status:
 			return res
 
 		# add the current time to this resource instance

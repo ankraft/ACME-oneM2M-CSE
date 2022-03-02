@@ -23,7 +23,10 @@ import isodate
 def getResourceDate(offset:int = 0) -> str:
 	"""	Generate an UTC-relative ISO 8601 timestamp and return it.
 
-		`offset` adds or substracts n seconds to the generated timestamp.
+		Args:
+			offset: adds or substracts `offset` seconds to the generated timestamp
+		Return:
+			String with UTC-relative ISO 8601 timestamp
 	"""
 	# return toISO8601Date(datetime.now(timezone.utc) + timedelta(seconds=delta))
 	return toISO8601Date(utcTime() + offset)
@@ -60,8 +63,14 @@ def fromAbsRelTimestamp(absRelTimestamp:str, default:float = 0.0, withMicrosecon
 
 
 def fromDuration(duration:str) -> float:
-	"""	Convert an duration to a number of seconds (float). Input could be either an ISO period 
-		or a number of ms.
+	"""	Convert an duration to a number of seconds (float). 
+
+		Args:
+			duration: String with either an ISO period or a number of ms.
+		Return:
+			Float, number of seconds
+		Raise:
+			Exception if wrong format is provided in `duration`
 	"""
 	try:
 		return isodate.parse_duration(duration).total_seconds()

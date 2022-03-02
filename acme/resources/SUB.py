@@ -53,7 +53,8 @@ class SUB(Resource):
 		'nct': None,
 		'nec': None,
 		'su': None,
-		'acrs': None
+		'acrs': None,
+		'ma': None,		# EXPERIMENTAL
 	}
 
 

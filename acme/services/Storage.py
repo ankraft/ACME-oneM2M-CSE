@@ -611,6 +611,7 @@ class TinyDBBinding(object):
 						'ln'  : subscription.ln,
 						'nus' : subscription.nu,
 						'bn'  : subscription.bn,
+						'ma'  : subscription.ma, # EXPERIMENTAL
 					}, 
 					self.subscriptionQuery.ri == ri) is not None
 
