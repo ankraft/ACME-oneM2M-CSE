@@ -155,6 +155,9 @@ class NotificationManager(object):
 
 	def checkPerformBlockingRetrieve(self, resource:Resource, originator:str, request:CSERequest, finished:Callable = None) -> Result:
 		# TODO originator in notification?
+		# TODO check notify permission for originator
+		# TODO blockingRetrieveDirectChildren.
+		# TODO getSubscriptionsByNet + chty optional
 		# EXPERIMENTAL
 		
 		L.isDebug and L.logDebug('handle blocking RETRIEVE')
