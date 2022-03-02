@@ -95,7 +95,7 @@ class Logging:
 	enableBindingsLogging			= True
 	worker 							= None
 	queue:Queue						= None
-	enableQueue						= True		# Can be used to enable/disable the logging queue 
+	enableQueue						= False		# Can be used to enable/disable the logging queue 
 
 	queueMaxsize:int				= 5000		# max number of items in the logging queue. Might otherwise grow forever on large load
 
@@ -134,6 +134,7 @@ class Logging:
 
 		# Add logging queue
 		Logging.queue = Queue(maxsize = Logging.queueMaxsize)
+		Logging.enableQueue = True
 
 		# List of log handlers
 		Logging._handlers = [ Logging._richHandler ]
@@ -174,7 +175,6 @@ class Logging:
 		Logging.terminalStyle 		= Style(color = terminalColorDark if theme == 'dark' else terminalColorLight)
 		Logging.tableRowStyle		= Style(bgcolor = tableRowColorDark if theme == 'dark' else tableRowColorLight)
 		Logging.terminalStyleError	= Style(color = terminalColorErrorDark if theme == 'dark' else terminalColorErrorLight)
-		Logging.inspect(Logging.tableRowStyle)
 
 
 	@staticmethod
