@@ -9,7 +9,7 @@
 
 
 from __future__ import annotations
-from typing import Callable, Dict, Union, Any, Tuple
+from typing import Callable, Dict, Union, Any, Tuple, cast
 from pathlib import Path
 import json, os, fnmatch
 from ..etc.Types import JSON, ACMEIntEnum, CSERequest, Operation, ResourceTypes
@@ -41,31 +41,32 @@ class ACMEPContext(PContext):
 
 						# !!! Always use lower case when adding new macros and commands below
 						 commands = {	
-							 			'clear':		self.doClear,
-							 			'create':		self.doCreate,
-							 			'delete':		self.doDelete,
-										'importraw':	self.doImportRaw,
-							 			'notify':		self.doNotify,
-						 				'originator':	self.doOriginator,
-										'printjson':	self.doPrintJSON,
-						 				'poa':			self.doPoa,
-										'reset':		self.doReset,
-							 			'retrieve':		self.doRetrieve,
-										'run':			self.doRun,
-										'setconfig':	self.doSetConfig,
-										'storageput':	self.doStoragePut,
-						 				'storageremove':self.doStorageRemove,
-							 			'update':		self.doUpdate,
+							 			'clear':				self.doClear,
+							 			'create':				self.doCreate,
+							 			'delete':				self.doDelete,
+										'importraw':			self.doImportRaw,
+							 			'notify':				self.doNotify,
+						 				'originator':			self.doOriginator,
+										'printjson':			self.doPrintJSON,
+						 				'poa':					self.doPoa,
+										'reset':				self.doReset,
+							 			'retrieve':				self.doRetrieve,
+										'requestattributes':	self.doRequestAttributes,
+										'run':					self.doRun,
+										'setconfig':			self.doSetConfig,
+										'storageput':			self.doStoragePut,
+						 				'storageremove':		self.doStorageRemove,
+							 			'update':				self.doUpdate,
 									}, 
 						 macros = 	{ 	# !!! macro names must be lower case
 
-							 			'attribute':	self.doAttribute,
-										'csestatus':	self.doCseStatus,
-							 			'hasattribute':	self.doHasAttribute,
-										'isipython':	self.doIsIPython,
-										'storagehas':	self.doStorageHas,
-										'storageget':	self.doStorageGet,
-						 				'__default__':	lambda c, a, l: Configuration.get(a),
+							 			'attribute':			self.doAttribute,
+										'csestatus':			self.doCseStatus,
+							 			'hasattribute':			self.doHasAttribute,
+										'isipython':			self.doIsIPython,
+										'storagehas':			self.doStorageHas,
+										'storageget':			self.doStorageGet,
+						 				'__default__':			lambda c, a, l: Configuration.get(a),
 						  			},
 						 logFunc = self.log, 
 						 logErrorFunc = self.logError,
@@ -78,6 +79,7 @@ class ACMEPContext(PContext):
 		self.filename = filename
 		self.fileMtime = os.stat(filename).st_mtime
 		self._validate()	# May change the state to indicate an error
+		self.requestParameters:dict[str, Any] = {}
 
 
 
@@ -86,7 +88,7 @@ class ACMEPContext(PContext):
 
 			If an invalid script is detected then the state is set to `invalid`.
 		"""
-		events = ['onstartup', 'onrestart', 'onshutdown', 'at']
+		events = ['onstartup', 'onrestart', 'onshutdown', 'at', 'onNotification']
 		# Check that @prompt is not used together with conflicting events, and other checks.
 		if 'prompt' in self.meta:
 			if any(key in events for key in self.meta.keys()):
@@ -99,7 +101,12 @@ class ACMEPContext(PContext):
 			except ValueError as e:
 				self.setError(PError.invalid, f'"@timeout" invalid value, must be a float: {t}')
 				self.state = PState.invalid
+	
 
+	def reset(self) -> None:
+		# Additional things to reset
+		self.requestParameters = {}
+		return super().reset()
 
 
 	def log(self, pcontext:PContext, msg:str) -> None:
@@ -193,7 +200,7 @@ class ACMEPContext(PContext):
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
 		"""
-		return self._handleRequest(pcontext, Operation.CREATE, arg)
+		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.CREATE, arg)
 	
 
 	def doDelete(self, pcontext:PContext, arg:str) -> PContext:
@@ -207,7 +214,7 @@ class ACMEPContext(PContext):
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
 		"""
-		return self._handleRequest(pcontext, Operation.DELETE, arg)
+		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.DELETE, arg)
 
 
 	def doImportRaw(self, pcontext:PContext, arg:str) -> PContext:
@@ -250,7 +257,7 @@ class ACMEPContext(PContext):
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
 		"""
-		return self._handleRequest(pcontext, Operation.NOTIFY, arg)
+		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.NOTIFY, arg)
 
 
 	def doOriginator(self, pcontext:PContext, arg:str) -> PContext:
@@ -302,6 +309,15 @@ class ACMEPContext(PContext):
 			return None
 		return pcontext
 
+
+	# TODO DOCS
+	def doRequestAttributes(self, pcontext:PContext, arg:str) -> PContext:
+		if (dct := self._getResourceFromScript(pcontext, arg)) is None:
+			pcontext.setError(PError.invalid, f'No or invalid content found')
+			return None
+		cast(ACMEPContext, pcontext).requestParameters = dct
+		return pcontext
+
 	
 
 	def doReset(self, pcontext:PContext, arg:str) -> PContext:
@@ -336,7 +352,7 @@ class ACMEPContext(PContext):
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
 		"""
-		return self._handleRequest(pcontext, Operation.RETRIEVE, arg)
+		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.RETRIEVE, arg)
 	
 
 	def doRun(self, pcontext:PContext, arg:str) -> PContext:
@@ -461,7 +477,7 @@ class ACMEPContext(PContext):
 			Returns:
 				The scripts "PContext" object, or "None" in case of an error.
 		"""
-		return self._handleRequest(pcontext, Operation.UPDATE, arg)
+		return self._handleRequest(cast(ACMEPContext, pcontext), Operation.UPDATE, arg)
 	
 
 	#########################################################################
@@ -666,7 +682,7 @@ class ACMEPContext(PContext):
 			return None
 
 
-	def _handleRequest(self, pcontext:PContext, operation:Operation, arg:str) -> PContext:
+	def _handleRequest(self, pcontext:ACMEPContext, operation:Operation, arg:str) -> PContext:
 		"""	Internally handle a request, either via a direct URL or through an originator.
 			Return status and resources in the variables `result.status` and 
 			`result.resource` respectively.
@@ -692,6 +708,15 @@ class ACMEPContext(PContext):
 				'rvi': CSE.releaseVersion,
 				'rqi': Utils.uniqueRI(), 
 			}
+		
+		# Transform the extra request attributes set by the script
+		if pcontext.requestParameters:
+			# requestIentifier
+			if (rqi := pcontext.requestParameters.get('rqi')) is not None:
+				req['rqi'] = rqi
+			# maxAge (ma?) # TODO align later with spec
+			if (maxAge := pcontext.requestParameters.get('ma')) is not None:
+				Utils.setXPath(req, 'fc/ma', maxAge)
 
 		# Get the resource for some operations
 		dct:JSON = None

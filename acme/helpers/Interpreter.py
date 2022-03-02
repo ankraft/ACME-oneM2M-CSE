@@ -173,7 +173,6 @@ class PContext():
 				PContext object, or None in case of an error.
 		"""
 		global run
-		self.reset()	# Reset the PContext
 		self.runs += 1
 		return run(self, verbose = verbose, argument = argument)
 
