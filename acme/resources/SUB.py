@@ -131,13 +131,12 @@ class SUB(Resource):
 				L.logDebug(dbg := f'enc/net={str(net)} is not an allowed or supported NotificationEventType')
 				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
-
 			# Check if blocking RETRIEVE is the only NET in the subscription, AND that there is no other NET for this resource
 			if NotificationEventType.blockingRetrieve in net:
 				if len(net) > 1:
 					L.logDebug(dbg := f'blockingRetrieve must be the only value in enc/net')
 					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
-				if CSE.notification.getSubscriptionsByNet(parentResource, net = net):
+				if CSE.notification.getSubscriptionsByNetChty(parentResource.ri, net = net):
 					L.logDebug(dbg := f'a subscription with blockingRetrieve already exsists for this resource')
 					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 				if len(nu) > 1:

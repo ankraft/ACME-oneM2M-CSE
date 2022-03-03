@@ -9,6 +9,7 @@
 
 
 from __future__ import annotations
+from copy import deepcopy
 from typing import Callable, Dict, Union, Any, Tuple, cast
 from pathlib import Path
 import json, os, fnmatch
@@ -23,8 +24,23 @@ from ..etc import Utils, DateUtils
 from ..resources import Factory
 
 
-# TODO implement defaults
-# TODO Change tags (e.g. meta tags to) constants
+# TODO implement request sdefaults
+
+
+#
+#	Meta Tags
+#
+
+_metaOnStartup = 'onstartup'
+_metaOnRestart = 'onrestart'
+_metaOnShutdown = 'onshutdown'
+_metaPrompt = 'prompt'
+_metaTimeout = 'timeout'
+_metaFilename = 'filename'
+_metaAt = 'at'
+_metaOnNotification = 'onnotification'
+_metaOnKey = 'onkey'
+_metaPromptlessEvents = [ _metaOnStartup, _metaOnRestart, _metaOnShutdown, _metaAt, _metaOnNotification ]
 
 
 class ACMEPContext(PContext):
@@ -89,14 +105,13 @@ class ACMEPContext(PContext):
 
 			If an invalid script is detected then the state is set to `invalid`.
 		"""
-		events = ['onstartup', 'onrestart', 'onshutdown', 'at', 'onNotification']
 		# Check that @prompt is not used together with conflicting events, and other checks.
-		if 'prompt' in self.meta:
-			if any(key in events for key in self.meta.keys()):
-				self.setError(PError.invalid, f'"@prompt" is not allowed together with any of: {events}')
+		if _metaPrompt in self.meta:
+			if any(key in _metaPromptlessEvents for key in self.meta.keys()):
+				self.setError(PError.invalid, f'"@prompt" is not allowed together with any of: {_metaPromptlessEvents}')
 				self.state = PState.invalid
-		if 'timeout' in self.meta:
-			t = self.meta['timeout']
+		if _metaTimeout in self.meta:
+			t = self.meta[_metaTimeout]
 			try:
 				self.maxRuntime = float(t)
 			except ValueError as e:
@@ -157,7 +172,7 @@ class ACMEPContext(PContext):
 			Return:
 				String with the full filename.
 		"""
-		return self.meta.get('filename')
+		return self.meta.get(_metaFilename)
 
 
 	@filename.setter
@@ -167,7 +182,7 @@ class ACMEPContext(PContext):
 			Args:
 				filename: The full filename.
 		"""
-		self.meta['filename'] = filename
+		self.meta[_metaFilename] = filename
 
 
 	#########################################################################
@@ -284,7 +299,7 @@ class ACMEPContext(PContext):
 		"""	Assign a poa for an identifier.
 
 			Example:
-				poa <identifier> <url>
+				poa <identifier> <uri>
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument of the command.
@@ -300,9 +315,15 @@ class ACMEPContext(PContext):
 		return pcontext
 
 
-	# TODO DOCs
 	def doPrintJSON(self, pcontext:PContext, arg:str) -> PContext:
-		
+		"""	Print a beautified JSON to the console.
+			
+			Args:
+				pcontext: PContext object of the runnig script.
+				arg: remaining argument of the command, the JSON structure.
+			Returns:
+				The scripts "PContext" object, or None in case of an error.
+		 """
 		try:
 			L.console(json.loads(arg))
 		except Exception as e:
@@ -311,8 +332,16 @@ class ACMEPContext(PContext):
 		return pcontext
 
 
-	# TODO DOCS
 	def doRequestAttributes(self, pcontext:PContext, arg:str) -> PContext:
+		"""	Add extra request attributes to a request. The argument to this
+			command is a JSON structure with the attributes.
+			
+			Args:
+				pcontext: PContext object of the runnig script.
+				arg: remaining argument of the command, the JSON structure.
+			Returns:
+				The scripts "PContext" object, or None in case of an error.
+		 """
 		if (dct := self._getResourceFromScript(pcontext, arg)) is None:
 			pcontext.setError(PError.invalid, f'No or invalid content found')
 			return None
@@ -434,9 +463,15 @@ class ACMEPContext(PContext):
 
 
 	def doSetLogging(self, pcontext:PContext, arg:str) -> PContext:
+		"""	Implementation of the `setLoggin` command. Enable/disable the console
+			logging.
 
-		# TODO DOC
-
+			Args:
+				pcontext: Current script context.
+				arg: Remaining arguments, key and value
+			Return:
+				Current PContext object, or None in case of an error.
+		"""
 		if arg and (a := arg.lower()) in [ 'on', 'off' ]:
 			L.enableScreenLogging = a == 'on'
 		else:
@@ -725,12 +760,13 @@ class ACMEPContext(PContext):
 		
 		# Transform the extra request attributes set by the script
 		if pcontext.requestParameters:
+			rp = deepcopy(pcontext.requestParameters)
 			# requestIentifier
-			if (rqi := pcontext.requestParameters.get('rqi')) is not None:
+			if (rqi := rp.pop('rqi', None)) is not None:
 				req['rqi'] = rqi
-			# maxAge (ma?) # TODO align later with spec
-			if (maxAge := pcontext.requestParameters.get('ma')) is not None:
-				Utils.setXPath(req, 'fc/ma', maxAge)
+			# add remaining attributes to the filterCriteria of a request
+			for key in rp.keys():
+				Utils.setXPath(req, f'fc/{key}', rp.pop(key))
 
 		# Get the resource for some operations
 		dct:JSON = None
@@ -846,7 +882,7 @@ class ScriptManager(object):
 		"""
 
 		# Look for the shutdown script(s) and run them. 
-		self.runEventScripts('onshutdown')
+		self.runEventScripts(_metaOnShutdown)
 
 		# Stop the monitors
 		if self.scriptUpdatesMonitor:
@@ -900,7 +936,7 @@ class ScriptManager(object):
 		self.scriptCronWorker = BackgroundWorkerPool.newWorker(60.0, self.cronMonitor, 'scriptCronMonitor').start()
 
 		# Look for the startup script(s) and run them. 
-		self.runEventScripts('onstartup')
+		self.runEventScripts(_metaOnStartup)
 
 
 	def restart(self) -> None:
@@ -920,26 +956,37 @@ class ScriptManager(object):
 			Run the restart script(s), if any.
 		"""
 		# Look for the shutdown script(s) and run them. 
-		self.runEventScripts('onrestart')
+		self.runEventScripts(_metaOnRestart)
 
 
 	def onKeyboard(self, ch:str) -> None:
 		"""	Callback for the `keyboard` event.
 		
 			Run script(s) with configured meta tags, if any.
+
+			Args:
+				ch: The key pressed.
 		"""
 		# Look for the shutdown script(s) and run them. 
-		self.runEventScripts('onkey', ch)
+		self.runEventScripts(_metaOnKey, ch)
 
-# TODO docs
-	def onNotification(self, url:str, originator:str, data:JSON) -> None:
+
+	def onNotification(self, uri:str, originator:str, data:JSON) -> None:
+		"""	Callback for the `notification` event.
+
+			Run script(s) with configured meta tags, if any.
+
+			Args:
+				uri: The target URI
+				originator: The notification's originator
+		"""
 		try:
-			self.runEventScripts( 'onnotification', 	# !!! Lower case
-								  url,
+			self.runEventScripts( _metaOnNotification,	# !!! Lower case
+								  uri,
 								  background = False, 
 								  environment = { 'notification.resource' : json.dumps(data), 
 								  				  'notification.originator' : originator,
-												  'notification.url': url })	
+												  'notification.uri': uri })	
 		except Exception as e:
 			L.logErr('Error in JSON', exc = e)
 
@@ -988,9 +1035,9 @@ class ScriptManager(object):
 				Boolean. Usually true to continue with monitoring.
 		"""
 		L.isDebug and L.logDebug(f'Looking for scheduled scripts')
-		for each in self.findScripts(meta = 'at'):
+		for each in self.findScripts(meta = _metaAt):
 			try:
-				if DateUtils.cronMatchesTimestamp(at := each.meta.get('at')):
+				if DateUtils.cronMatchesTimestamp(at := each.meta.get(_metaAt)):
 					L.isDebug and L.logDebug(f'Running script: {each.scriptName} at: {at}')
 					self.runScript(each)
 			except ValueError as e:
