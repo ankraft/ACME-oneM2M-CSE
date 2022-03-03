@@ -904,15 +904,16 @@ class NotificationContentType(ACMEIntEnum):
 
 class NotificationEventType(ACMEIntEnum):
 	""" eventNotificationCriteria/NotificationEventTypes """
-	resourceUpdate						= 1	# A, default
-	resourceDelete						= 2	# B
-	createDirectChild					= 3 # C
-	deleteDirectChild					= 4 # D	
-	retrieveCNTNoChild					= 5	# E # TODO not supported yet
-	triggerReceivedForAE				= 6 # F # TODO not supported yet
-	blockingUpdate 						= 7 # G # TODO not supported yet
-	reportOnGeneratedMissingDataPoints	= 8 # H
-	blockingRetrieve					= 9 # I # EXPERIMENTAL
+	resourceUpdate						=  1	# A, default
+	resourceDelete						=  2	# B
+	createDirectChild					=  3 # C
+	deleteDirectChild					=  4 # D	
+	retrieveCNTNoChild					=  5	# E # TODO not supported yet
+	triggerReceivedForAE				=  6 # F # TODO not supported yet
+	blockingUpdate 						=  7 # G # TODO not supported yet
+	reportOnGeneratedMissingDataPoints	=  8 # H
+	blockingRetrieve					=  9 # I # EXPERIMENTAL
+	blockingRetrieveDirectChild			= 10 # J # EXPERIMENTAL
 
 
 	def isAllowedNCT(self, nct:NotificationContentType) -> bool:

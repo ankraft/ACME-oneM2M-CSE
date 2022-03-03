@@ -15,7 +15,7 @@ from threading import Lock
 from tinydb.utils import V
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import CSERequest, ContentSerializationType, MissingData, Result, NotificationContentType, NotificationEventType, ResponseStatusCode as RC
+from ..etc.Types import CSERequest, ContentSerializationType, MissingData, ResourceTypes, Result, NotificationContentType, NotificationEventType, ResponseStatusCode as RC
 from ..etc.Types import JSON, Parameters
 from ..etc import Utils, DateUtils
 from ..services.Logging import Logging as L
@@ -81,22 +81,28 @@ class NotificationManager(object):
 		return Result(status = True) if CSE.storage.updateSubscription(subscription) else Result(status = False, rsc = RC.internalServerError, dbg = 'cannot update subscription in database')
 
 
-	def getSubscriptionsByNet(self, resource:Resource, net:list[NotificationEventType] = None) -> list[JSON]:
+	def getSubscriptionsByNetChty(self, ri:str, net:list[NotificationEventType] = None, chty:ResourceTypes = None) -> list[JSON]:
 		"""	Returns a (possible empty) list of subscriptions for a resource. An optional filter can be used 
 			to return only those subscriptions with a specific enc/net.
 			
 			Args:
 				resource: the parent resource for the subscriptions
 				net: optional filter for enc/net
+				chty: optional single child resource typ
 			Return:
 				List of storage subscription documents, NOT Subscription resources.
 			"""
-		if not (subs := CSE.storage.getSubscriptionsForParent(resource.ri)):
+		if not (subs := CSE.storage.getSubscriptionsForParent(ri)):
 			return []
 		result:list[JSON] = []
 		for each in subs:
 			if net and any(x in net for x in each['net']):
 				result.append(each)
+		
+		# filter by chty if set
+		if chty:
+			result = [ each for each in result if (_chty := each['chty']) is None or chty in _chty]
+
 		return result
 
 
@@ -157,15 +163,18 @@ class NotificationManager(object):
 		# TODO originator in notification?
 		# TODO check notify permission for originator
 		# TODO blockingRetrieveDirectChildren.
-		# TODO getSubscriptionsByNet + chty optional
+		# TODO getSubscriptionsByNetChty + chty optional
 		# EXPERIMENTAL
 		
-		L.isDebug and L.logDebug('handle blocking RETRIEVE')
+		L.isDebug and L.logDebug('check blocking RETRIEVE')
 
-		subs = self.getSubscriptionsByNet(resource, [NotificationEventType.blockingRetrieve])
-		# must/should only be one
-		if subs:
-			sub = subs[0]	# hopefully only one for the resource
+		# Get blockingRetrieve <sub> for this resource , if any
+		subs = self.getSubscriptionsByNetChty(resource.ri, [NotificationEventType.blockingRetrieve])
+		# get and add blockingRetrieveDirectChild <sub> for this resource type, if any
+		subs.extend(self.getSubscriptionsByNetChty(resource.pi, [NotificationEventType.blockingRetrieveDirectChild], chty = resource.ty))
+		# L.logWarn(resource)
+
+		for eachSub in subs:
 			maxAgeRequest:float = None
 			maxAgeSubscription:float = None
 
@@ -178,7 +187,7 @@ class NotificationManager(object):
 					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
 			# Check for maxAge attribute provided in the subscription
-			if (maxAgeS := sub['ma']) is not None:	# TODO attribute name
+			if (maxAgeS := eachSub['ma']) is not None:	# TODO attribute name
 				try:
 					maxAgeSubscription = DateUtils.fromDuration(maxAgeS)
 				except Exception as e:
@@ -196,6 +205,8 @@ class NotificationManager(object):
 			maxAgeSubscription = maxAgeSubscription if maxAgeSubscription is not None else sys.float_info.max
 			maxAgeRequest = maxAgeRequest if maxAgeRequest is not None else sys.float_info.max
 
+			# L.logWarn(resource)
+
 			if resource.lt > DateUtils.getResourceDate(-int(min(maxAgeRequest, maxAgeSubscription))):
 				L.isDebug and L.logDebug(f'too early, no blocking RETRIEVE notification necessary')
 				return Result(status = True)
@@ -204,13 +215,16 @@ class NotificationManager(object):
 			notification = {
 				'm2m:sgn' : {
 					'nev' : {
-						'net' : NotificationEventType.blockingRetrieve,
-						'rep': resource.asDict()
+						'net' : eachSub['net'][0],	# Add the first and hopefully only NET to the notification
 					},
-					'sur' : Utils.spRelRI(sub['ri'])
+					'sur' : Utils.spRelRI(eachSub['ri'])
 				}
 			}
-			if not (res := self._sendRequest(sub['nus'][0], notification)).status:
+			# Don't include virtual resources
+			if not resource.isVirtual():
+				Utils.setXPath(notification, 'm2m:sgn/nev/rep', resource.asDict())
+
+			if not (res := self._sendRequest(eachSub['nus'][0], notification)).status:
 				return res
 			if finished:
 				finished()
