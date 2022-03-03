@@ -211,7 +211,7 @@ class Storage(object):
 	def directChildResources(self, pi:str, ty:T = None, raw:bool = False) -> list[Document]|list[Resource]:
 		"""	Return a list of direct child resources, or an empty list
 		"""
-		docs = 	[ each for each in self.db.searchResources(pi = pi, ty = int(ty) if ty is not None else None)]
+		docs = [ each for each in self.db.searchResources(pi = pi, ty = int(ty) if ty is not None else None)]
 		return docs if raw else cast(List[Resource], list(map(lambda x: Factory.resourceFromDict(x).resource, docs)))
 		
 		# return 	[ res	for each in self.db.searchResources(pi = pi, ty = int(ty) if ty is not None else None)
