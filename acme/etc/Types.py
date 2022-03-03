@@ -194,7 +194,13 @@ class ResourceTypes(ACMEIntEnum):
 
 
 	def isAnnounced(self) -> bool:
+		"""	Test whether this is an announced resource type.
+		
+			Return:
+				Boolean
+		"""
 		return self.value in ResourceTypes._announcedSetFull 		# type: ignore
+
 
 
 
@@ -255,6 +261,16 @@ class ResourceTypes(ACMEIntEnum):
 		"""
 		return ty in ResourceTypes._stateTagResourceTypes			# type: ignore
 
+	@classmethod
+	def isInstanceResource(cls, ty:int) -> bool:
+		"""	Test whether this is an instance data resource type
+
+			Args:
+				ty: Type to test
+			Return:
+				Boolean
+		"""
+		return self.value in ResourceTypes._instanceResourcesSet	# type: ignore
 
 
 ResourceTypes._announcedMappings = {								#  type: ignore
@@ -329,6 +345,11 @@ ResourceTypes._virtualResourcesSet = [								#  type: ignore
 	ResourceTypes.TS_LA, ResourceTypes.TS_OL,
 	ResourceTypes.GRP_FOPT,
 	ResourceTypes.PCH_PCU 
+]
+
+
+ResourceTypes._instanceResourcesSet = [								#  type: ignore
+	ResourceTypes.CIN, ResourceTypes.FCI, ResourceTypes.TSI
 ]
 
 

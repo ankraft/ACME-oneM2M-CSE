@@ -352,10 +352,10 @@ class Dispatcher(object):
 				found += 1 if (c_exa := conditions.get('exa')) and (et > c_exa) else 0
 
 			# Check labels similar to types
-			rlbl = r.lbl
-			if rlbl and (lbls := conditions.get('lbl')):
-				for l in lbls:	# TODO list comprehension
-					if l in rlbl:
+			resourceLbl = r.lbl
+			if resourceLbl and (lbls := conditions.get('lbl')):
+				for l in lbls:
+					if l in resourceLbl:
 						found += len(lbls)
 						break
 
@@ -600,7 +600,7 @@ class Dispatcher(object):
 			return Result(status = False, rsc = RC.operationNotAllowed, dbg = 'resource is read-only')
 
 		# Some Resources are not allowed to be updated in a request, return immediately
-		if resource.ty in [ T.CIN, T.FCI, T.TSI ]:		# TODO: move to constants
+		if T.isInstanceResource(resource.ty):
 			return Result(status = False, rsc = RC.operationNotAllowed, dbg = f'UPDATE not allowed for type: {resource.ty}')
 
 		#
