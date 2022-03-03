@@ -1598,6 +1598,7 @@ def _skipSwitch(pcontext:PContext, compareTo:str, skip:bool = False) -> PContext
 			Current PContext object, or None in case of an error.
 	"""
 	level = 0		# level of switches
+	compareTo = compareTo.lower() if compareTo else compareTo
 	while pcontext.pc < pcontext._length and level >= 0:
 		cmd, _, arg, _ = pcontext.nextLinePartition()
 
