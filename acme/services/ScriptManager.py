@@ -54,6 +54,7 @@ class ACMEPContext(PContext):
 										'requestattributes':	self.doRequestAttributes,
 										'run':					self.doRun,
 										'setconfig':			self.doSetConfig,
+										'setlogging':			self.doSetLogging,
 										'storageput':			self.doStoragePut,
 						 				'storageremove':		self.doStorageRemove,
 							 			'update':				self.doUpdate,
@@ -431,6 +432,18 @@ class ACMEPContext(PContext):
 			return None
 		return pcontext
 
+
+	def doSetLogging(self, pcontext:PContext, arg:str) -> PContext:
+
+		# TODO DOC
+
+		if arg and (a := arg.lower()) in [ 'on', 'off' ]:
+			L.enableScreenLogging = a == 'on'
+		else:
+			pcontext.setError(PError.invalid, f'Syntax error. Argument "on" or "off" missing')
+			return None
+		return pcontext
+
 	
 	def doStoragePut(self, pcontext:PContext, arg:str) -> PContext:
 		"""	Implementation of the `storagePut` command. Store a value in the persistent storage.
@@ -497,7 +510,8 @@ class ACMEPContext(PContext):
 				The value of the resource attribute, or None in case of an error.
 		"""
 		# extract key path
-		key, found, res = arg.strip().partition(' ')	
+		key, found, res = arg.strip().partition(' ')
+		L.logWarn(arg)
 		if not found:
 			pcontext.setError(PError.invalid, f'Invalid format: attribute <key> <resource>')
 			return None
