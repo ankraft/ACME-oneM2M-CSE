@@ -7,21 +7,22 @@ Meta tags are special commands in a script that are not executed during the runt
 
 Meta tags are lines that start with an at-sign "@". They can appear anywhere in a script file, but it is recommend to collect them either at the start or the end of a script.
 
-| Macro / Variable                 | Description                                                                                    |
-|----------------------------------|------------------------------------------------------------------------------------------------|
-| [at](#meta_at)                   | Schedule scripts to run on a time interval                                                     |
-| [description](#meta_description) | Provide a one-line script description                                                          |
-| [filename](#meta_filename)       | Contains a script's filename (internal only)                                                   |
-| [hidden](#meta_hidden)           | Hide a script from the console's script catalog                                                |
-| [name](#meta_name)               | Assign a name to a script                                                                      |
-| [onKey](#meta_onkey)             | Run a script when a specified key is pressed                                                   |
-| [onRestart](#meta_onrestart)     | Run a script just after the CSE restarted                                                      |
-| [onShutdown](#meta_onshutdown)   | Run a script just before the CSE shuts down                                                    |
-| [onStartup](#meta_onstartup)     | Run a script just after the CSE started                                                        |
-| [prompt](#meta_prompt)           | Prompt the user for input before the script is run                                             |
-| [timeout](#meta_timeout)         | Set a timeout after which script execution is stopped                                          |
-| [uppertester](#meta_uppertester) | A script with this test can be run via the [Upper Tester Interface](Operation.md#upper_tester) |
-| [usage](#meta_usage)             | Provide a short usage help                                                                     |
+| Meta Tag                               | Description                                                                                    |
+|----------------------------------------|------------------------------------------------------------------------------------------------|
+| [at](#meta_at)                         | Schedule scripts to run on a time interval                                                     |
+| [description](#meta_description)       | Provide a one-line script description                                                          |
+| [filename](#meta_filename)             | Contains a script's filename (internal only)                                                   |
+| [hidden](#meta_hidden)                 | Hide a script from the console's script catalog                                                |
+| [name](#meta_name)                     | Assign a name to a script                                                                      |
+| [onKey](#meta_onkey)                   | Run a script when a specified key is pressed                                                   |
+| [onNotification](#meta_onnotification) | Run a script as a receiver of a NOTIFY request from the CSE                                    |
+| [onRestart](#meta_onrestart)           | Run a script just after the CSE restarted                                                      |
+| [onShutdown](#meta_onshutdown)         | Run a script just before the CSE shuts down                                                    |
+| [onStartup](#meta_onstartup)           | Run a script just after the CSE started                                                        |
+| [prompt](#meta_prompt)                 | Prompt the user for input before the script is run                                             |
+| [timeout](#meta_timeout)               | Set a timeout after which script execution is stopped                                          |
+| [uppertester](#meta_uppertester)       | A script with this test can be run via the [Upper Tester Interface](Operation.md#upper_tester) |
+| [usage](#meta_usage)                   | Provide a short usage help                                                                     |
 
 
 <a name="meta_at"></a>
@@ -126,7 +127,36 @@ print ${argv}
 ```
 
 
-<a name="meta_onRestart></a>
+<a name="meta_onnotification"></a>
+### @onNotification
+
+Usage:  
+@onNotification &lt;URI: acme://someId>
+
+With this meta tag a script acts as a receiver of a notification request from the CSE. 
+The ACME's own URL scheme "acme://&lt;identifier>" is used to define a URI that is
+targeting the script. Such a URI must be used in either the *notificationURI* attribute of a
+subscription resource, or the *pointOfAccess* of an AE.
+
+When receiving a notification the following variables are set:
+
+
+- [notification.originator](ACMEScript-macros.md#macro_not_originator) : The notification's originator
+- [notification.resource](ACMEScript-macros.md#macro_not_resource) : The notification resource
+- [notification.uri](ACMEScript-macros.md#macro_not_uri) : The notification's target URI
+
+
+Example:
+```text
+# Run the script when the '9' key is pressed
+@onNotification acme://aNotification
+
+print ${notification.resource}
+# -> The notification resource
+```
+
+
+<a name="meta_onRestart"></a>
 ### @onRestart
 
 Usage:  

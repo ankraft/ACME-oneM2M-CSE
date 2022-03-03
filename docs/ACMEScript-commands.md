@@ -4,43 +4,46 @@
 # ACMEScript - Commands
 
 
-| Type                         | Command                                 | Description                                                                  |
-|------------------------------|-----------------------------------------|------------------------------------------------------------------------------|
-| [Basic](#commands_basic)     | [ASSERT](#command_assert)               | Assert a condition                                                           |
-|                              | [BREAK](#command_break)                 | Break out of a [WHILE](#command_while) loop                                  |
-|                              | [CASE](#command_case)                   | Conditional command block for a  [SWITCH](#command_switch) block          M   |
-|                              | [CONTINUE](#command_break)              | Continue with the next iteration of a [WHILE](#command_while) loop           |
-|                              | [DEC](#command_dec)                     | Decrements a numeric variable                                                |
-|                              | [ELSE](#command_else)                   | Start the ELSE part of an [IF](#command_if) block                            |
-|                              | [ENDIF](#command_endif)                 | End an [IF](#command_if) or [ELSE](#command_else) block                      |
-|                              | [ENDPROCEDURE](#command_endprocedure)   | End a [PROCEDURE](#command_procedure)                                        |
-|                              | [ENDSWITCH](#command_endswitch)         | End a [SWITCH](#command_switch) block                                        |
-|                              | [ENDWHILE](#command_endwhile)           | End a [WHILE](#command_while) loop                                           |
-|                              | [IF](#command_if)                       | Check comparison condition and begin a conditional IF block                  |
-|                              | [INC](#command_inc)                     | Increments a numeric variable                                                |
-|                              | [LOG](#command_log)                     | Print a message to the debug-level log                                       |
-|                              | [LOGERROR](#command_logerror)           | Print a message to the error-level log                                       |
-|                              | [PROCEDURE](#command_procedure)         | Define a procedure                                                           |
-|                              | [QUIT](#command_quit)                   | Quit the running script                                                      |
-|                              | [RUN](#command_run)                     | Run another script                                                           |
-|                              | [SET](#command_set)                     | Set or remove a variable, or perform a calculation                           |
-|                              | [SLEEP](#command_sleep)                 | Pause the script execution                                                   |
-|                              | [SWITCH](#command_switch)               | Start a switch block                                                         |
-|                              | [WHILE](#command_while)                 | Start a while loop                                                           |
-| [Console](#commands_console) | [CLEAR](#command_clear)                 | Clear the console screen                                                     |
-|                              | [PRINT](#command_print)                 | Print a message to the info-level log                                        |
-| [Storage](#commands_storage) | [STORAGEPUT](#command_storageput)       | Store a key/value pair in the [persistent storage](ACMEScript.md#storage)    |
-|                              | [STORAGEREMOVE](#command_storageremove) | Remove a key/value pair from the [persistent storage](ACMEScript.md#storage) |
-| [oneM2M](#commands_onem2m)   | [CREATE](#command_create)               | Send a CREATE request to a oneM2M CSE                                        |
-|                              | [DELETE](#command_delete)               | Send a DELETE request to a oneM2M CSE                                        |
-|                              | [IMPORTRAW](#command_importraw)         | Create a raw resource in the CSE's resource tree                             |
-|                              | [NOTIFY](#command_notify)               | Send a NOTIFY request to a target                                            |
-|                              | [ORIGINATOR](#command_originator)       | Set the originator for following oneM2M requests                             |
-|                              | [POA](#command_poa)                     | Assign a URI to a target for requests                                        |
-|                              | [RETRIEVE](#command_retrieve)           | Send a RETRIEVE request to a oneM2M CSE                                      |
-|                              | [UPDATE](#command_update)               | Send an UPDATE request to a oneM2M CSE                                       |
-| [CSE](#commands_CSE)         | [RESET](#command_reset)                 | Reset and restart the CSE                                                    |
-|                              | [SETCONFIG](#command_setconfig)         | Assign a new value to a configuration setting                                |
+| Type                         | Command                                         | Description                                                                  |
+|------------------------------|-------------------------------------------------|------------------------------------------------------------------------------|
+| [Basic](#commands_basic)     | [ASSERT](#command_assert)                       | Assert a condition                                                           |
+|                              | [BREAK](#command_break)                         | Break out of a [WHILE](#command_while) loop                                  |
+|                              | [CASE](#command_case)                           | Conditional command block for a  [SWITCH](#command_switch) block          M  |
+|                              | [CONTINUE](#command_break)                      | Continue with the next iteration of a [WHILE](#command_while) loop           |
+|                              | [DEC](#command_dec)                             | Decrements a numeric variable                                                |
+|                              | [ELSE](#command_else)                           | Start the ELSE part of an [IF](#command_if) block                            |
+|                              | [ENDIF](#command_endif)                         | End an [IF](#command_if) or [ELSE](#command_else) block                      |
+|                              | [ENDPROCEDURE](#command_endprocedure)           | End a [PROCEDURE](#command_procedure)                                        |
+|                              | [ENDSWITCH](#command_endswitch)                 | End a [SWITCH](#command_switch) block                                        |
+|                              | [ENDWHILE](#command_endwhile)                   | End a [WHILE](#command_while) loop                                           |
+|                              | [IF](#command_if)                               | Check comparison condition and begin a conditional IF block                  |
+|                              | [INC](#command_inc)                             | Increments a numeric variable                                                |
+|                              | [LOG](#command_log)                             | Print a message to the debug-level log                                       |
+|                              | [LOGERROR](#command_logerror)                   | Print a message to the error-level log                                       |
+|                              | [PROCEDURE](#command_procedure)                 | Define a procedure                                                           |
+|                              | [QUIT](#command_quit)                           | Quit the running script                                                      |
+|                              | [RUN](#command_run)                             | Run another script                                                           |
+|                              | [SET](#command_set)                             | Set or remove a variable, or perform a calculation                           |
+|                              | [SLEEP](#command_sleep)                         | Pause the script execution                                                   |
+|                              | [SWITCH](#command_switch)                       | Start a switch block                                                         |
+|                              | [WHILE](#command_while)                         | Start a while loop                                                           |
+| [Console](#commands_console) | [CLEAR](#command_clear)                         | Clear the console screen                                                     |
+|                              | [PRINT](#command_print)                         | Print a message to the info-level log                                        |
+|                              | [PRINTJSON](#command_printjson)                 | Print a beautified JSON document to the console                              |
+|                              | [SETLOGGING](#command_setlogging)               | Enable/disable console screen logging                                        |
+| [Storage](#commands_storage) | [STORAGEPUT](#command_storageput)               | Store a key/value pair in the [persistent storage](ACMEScript.md#storage)    |
+|                              | [STORAGEREMOVE](#command_storageremove)         | Remove a key/value pair from the [persistent storage](ACMEScript.md#storage) |
+| [oneM2M](#commands_onem2m)   | [CREATE](#command_create)                       | Send a CREATE request to a oneM2M CSE                                        |
+|                              | [DELETE](#command_delete)                       | Send a DELETE request to a oneM2M CSE                                        |
+|                              | [IMPORTRAW](#command_importraw)                 | Create a raw resource in the CSE's resource tree                             |
+|                              | [NOTIFY](#command_notify)                       | Send a NOTIFY request to a target                                            |
+|                              | [ORIGINATOR](#command_originator)               | Set the originator for following oneM2M requests                             |
+|                              | [POA](#command_poa)                             | Assign a URI to a target for requests                                        |
+|                              | [REQUESTATTRIBUTES](#command_requestattributes) | Add additional attributes to a request                                       |
+|                              | [RETRIEVE](#command_retrieve)                   | Send a RETRIEVE request to a oneM2M CSE                                      |
+|                              | [UPDATE](#command_update)                       | Send an UPDATE request to a oneM2M CSE                                       |
+| [CSE](#commands_CSE)         | [RESET](#command_reset)                         | Reset and restart the CSE                                                    |
+|                              | [SETCONFIG](#command_setconfig)                 | Assign a new value to a configuration setting                                |
 
 
 
@@ -516,6 +519,34 @@ print **bold** and *italics*
 ```
 
 
+<a name="command_printjson"></a>
+### PRINTJSON
+
+Usage:  
+PRINTJSON &lt;JSON document>
+
+Print a beautified JSON document to the console.
+
+Example:
+```text
+printJSON ${response.resource}
+```
+
+
+<a name="command_setlogging"></a>
+### SETLOGGING
+
+Usage:  
+SETLOGGING on | off
+
+Enable or disable the logging to the console. Arguments are `on` and `off`.
+
+Example:
+```text
+setLogging off
+```
+
+
 ---
 
 <a name="commands_storage"></a>
@@ -697,7 +728,8 @@ delete /id-in/cse-in/myCnt
 Usage:  
 POA &lt;target> &lt;targetURI>
 
-Set the point-of-access `targetURI` for a `target`. `target` could be an unknown originator, or be used as an alias for a URI.
+Set the point-of-access `targetURI` for a `target`. `target` could be an unknown originator, 
+or be used as an alias for a URI.
 The list of targets is used to resolve targets in the request commands.
 
 Each call of the `POA` command adds a new `target`/`targetURI` pair.
@@ -706,6 +738,32 @@ Example:
 ```text
 POA local http://localhost:8008/id-in
 POA cse /id-in/cse-in
+```
+
+
+<a name="command_requestattributes"></a>
+### REQUESTATTRIBUTES
+
+Usage:  
+REQUESTATTRIBUTES &lt;JSON>
+
+Add additional request attributes to a request. The argument to this command is a JSON 
+structure with the attributes. The attributes are added to all following requests until
+a new or empty structure is defined with this command.
+
+Some of the most common attributes are recognized (see following list), all others are 
+assigned to *filterCriteria*.
+
+> rqi
+
+
+Example:
+```text
+requestAttributes
+{ 
+	"rqi" : "myOwnRequestID"
+}
+retrieve /id-in/cse-in/myCnt
 ```
 
 

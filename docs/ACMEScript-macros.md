@@ -4,28 +4,31 @@
 # ACMEScript - Macros and Variables
 
 
-| Type                       | Macro / Variable                             | Description                                                             |
-|----------------------------|----------------------------------------------|-------------------------------------------------------------------------|
-| [Basic](#macros_basic)     | [argc](#macro_argc)                          | Get number of arguments                                                 |
-|                            | [argv](#macro_argv)                          | Get script or procedure arguments                                       |
-|                            | [datetime](#macro_datetime)                  | Get current date and time                                               |
-|                            | [loop](#macro_loop)                          | Get the current while loop's loop count                                 |
-|                            | [lower](#macro_lower)                        | Get a lower-case version of the provided string argument                |
-|                            | [random](#random)                            | Generate a random number.                                               |
-|                            | [result](#macro_result)                      | Get the last result of a while, procedure etc.                          |
-|                            | [round](#round)                              | Round a float number.                                                   |
-|                            | [runCount](#macro_runcount)                  | Get the number of script runs.                                          |
-|                            | [upper](#macro_upper)                        | Get an upper-case version of the provided string argument               |
-| [Storage](#macros_storage) | [storageGet](#macro_storageget)              | Get a value from the persistent key/value storage                       |
-|                            | [storageHas](#macro_storagehas)              | Test the existence of a key in the persistent key/value storage         |
-| [oneM2M](#macros_onem2m)   | [attribute](#macro_attribute)                | Get the value of an attribute from a oneM2M resource                    |
-|                            | [hasAttribute](#macro_hasattribute)          | Test the existence of an attribute from a oneM2M resource               |
-|                            | [request.originator](#macro_req_originator)  | Get the assigned originator used in requests                            |
-|                            | [response.resource](#macro_resp_resource)    | Get the resource of the last oneM2M request                             |
-|                            | [response.status](#macro_resp_status)        | Get the status of the last oneM2M request                               |
-| [CSE](#macros_cse)         | [isIPython](#macro_isipython)                | Check whether the runtime environment is IPython, e.g. Jupyter Notebook |
-|                            | [cseStatus](#macro_csestatus)                | Get the current CSE runtime status                                      |
-|                            | [&lt;any CSE configuration>](#macro_default) | Get the value of any of the CSE's configuration settings                |
+| Type                       | Macro / Variable                                 | Description                                                             |
+|----------------------------|--------------------------------------------------|-------------------------------------------------------------------------|
+| [Basic](#macros_basic)     | [argc](#macro_argc)                              | Get number of arguments                                                 |
+|                            | [argv](#macro_argv)                              | Get script or procedure arguments                                       |
+|                            | [datetime](#macro_datetime)                      | Get current date and time                                               |
+|                            | [loop](#macro_loop)                              | Get the current while loop's loop count                                 |
+|                            | [lower](#macro_lower)                            | Get a lower-case version of the provided string argument                |
+|                            | [random](#random)                                | Generate a random number.                                               |
+|                            | [result](#macro_result)                          | Get the last result of a while, procedure etc.                          |
+|                            | [round](#round)                                  | Round a float number.                                                   |
+|                            | [runCount](#macro_runcount)                      | Get the number of script runs.                                          |
+|                            | [upper](#macro_upper)                            | Get an upper-case version of the provided string argument               |
+| [Storage](#macros_storage) | [storageGet](#macro_storageget)                  | Get a value from the persistent key/value storage                       |
+|                            | [storageHas](#macro_storagehas)                  | Test the existence of a key in the persistent key/value storage         |
+| [oneM2M](#macros_onem2m)   | [attribute](#macro_attribute)                    | Get the value of an attribute from a oneM2M resource                    |
+|                            | [hasAttribute](#macro_hasattribute)              | Test the existence of an attribute from a oneM2M resource               |
+|                            | [notification.originator](#macro_not_originator) | Get a notification's originator                                         |
+|                            | [notification.resource](#macro_not_resource)     | Get a notification's resource                                           |
+|                            | [notification.uri](#macro_not_uri)               | Get a notification's URI                                                |
+|                            | [request.originator](#macro_req_originator)      | Get the assigned originator used in requests                            |
+|                            | [response.resource](#macro_resp_resource)        | Get the resource of the last oneM2M request                             |
+|                            | [response.status](#macro_resp_status)            | Get the status of the last oneM2M request                               |
+| [CSE](#macros_cse)         | [isIPython](#macro_isipython)                    | Check whether the runtime environment is IPython, e.g. Jupyter Notebook |
+|                            | [cseStatus](#macro_csestatus)                    | Get the current CSE runtime status                                      |
+|                            | [&lt;any CSE configuration>](#macro_default)     | Get the value of any of the CSE's configuration settings                |
 
 ---
 
@@ -327,6 +330,53 @@ ${hasAttribute &lt;key:pattern> &lt;resource:JSON>}
 This macro checks whether an attribute exists in a JSON structure. It evaluates to `true` or `false`, respectively.
 
 See the the description of the [attribute](#macro_attribute) macro for an explanation of the key pattern.
+
+
+<a name="macro_not_originator"></a>
+### notification.originator
+
+Usage:  
+${notification.originator}
+
+Get a notification's originator. This variable is only set in a script that is a notification target.
+
+Example:
+
+```text
+print ${notification.originator}
+# -> ... the notification's originator ...
+```
+
+
+<a name="macro_not_resource"></a>
+### notification.resource
+
+Usage:  
+${notification.resource}
+
+Get a notification's resource. This variable is only set in a script that is a notification target.
+
+Example:
+
+```text
+printJSON ${notification.resource}
+# -> ... the notification's resource ...
+```
+
+<a name="macro_not_uri"></a>
+### notification.uri
+
+Usage:  
+${notification.uri}
+
+Get a notification's target URI. This variable is only set in a script that is a notification target.
+
+Example:
+
+```text
+print ${notification.uri}
+# -> ... the notification's URI ...
+```
 
 
 <a name="macro_resp_resource"></a>

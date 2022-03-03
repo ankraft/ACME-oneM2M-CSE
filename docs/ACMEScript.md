@@ -63,9 +63,10 @@ Updated and new scripts are automatically read again from that directory.
 There are different ways to run scripts:
 
 - They can be run from the console interface with the `R` (Run) command.
-- They can be run by a keypress from the console interface (see [@onKey](ACMEScript-metatags.md#meta_onkey)).
-- They can be scheduled to run at specific times or dates. This is similar to the Unix cron system (see [@at](ACMEScript-metatags.md#meta_at)).
+- They can be run by a keypress from the console interface (see [onKey](ACMEScript-metatags.md#meta_onkey) meta tag).
+- They can be scheduled to run at specific times or dates. This is similar to the Unix cron system (see [at](ACMEScript-metatags.md#meta_at) meta tag).
 - They can be scheduled to run at certain events. Currently, the CSE [startup](ACMEScript-metatags.md#meta_onstartup), [restart](ACMEScript-metatags.md#meta_onrestart), and [shutdown](ACMEScript-metatags.md#meta_onshutdown) events are supported.
+- They can be run as a receiver of a NOTIFY request from the CSE. See [onNotification](ACMEScript-metatags.md#meta_onnotification) meta tag.
 - They can also be run as a command of the [Upper Tester Interface](Operation.md#upper_tester).
 
 
