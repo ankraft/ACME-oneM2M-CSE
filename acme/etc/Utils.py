@@ -770,6 +770,26 @@ def pollingChannelURIResource(id:str) -> PCH_PCU:
 	return None
 
 
+def latestOldestResource(id:str) -> Resource:
+	"""	Check whether the target is a latest or oldest virtual resource and return it.
+
+		Args:
+			id: Target resource ID
+		Return:
+			Return either the virtual resource or None.
+	"""
+	if not id:
+		return None
+	if id.endswith(('la', 'ol')):
+		# Convert to srn
+		if not isStructured(id):
+			if not (id := structuredPathFromRI(id)):
+				return None
+		if (result := CSE.dispatcher.retrieveResource(id)).resource and result.resource.ty in [ T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.TS_LA, T.TS_OL ]:
+			return result.resource
+		# Fallthrough
+	return None
+
 def getAttributeSize(attribute:Any) -> int:
 	"""	Return a realistic size for the content of an attribute.
 		Python does not really return good sizes for some of the data types.
