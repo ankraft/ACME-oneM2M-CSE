@@ -103,7 +103,12 @@ class Dispatcher(object):
 		if (laOlResource := Utils.latestOldestResource(srn)):		# We need to check the srn here
 			# Check for virtual resource
 			if laOlResource.isVirtual(): 
-				return laOlResource.handleRetrieveRequest(request = request, originator = originator)	# type: ignore[no-any-return]
+				if not (res := laOlResource.handleRetrieveRequest(request = request, originator = originator)).status:
+					return res
+				if not CSE.security.hasAccess(originator, res.resource, Permission.RETRIEVE):
+					return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = f'originator has no permission for {Permission.RETRIEVE}')
+				return res
+
 
 
 
@@ -1109,6 +1114,9 @@ class Dispatcher(object):
 				Tuple of `srn` and `id`
 		"""
 		if id:
-			return Utils.srnFromHybrid(None, id) # Hybrid
+			if Utils.isStructured(id):	# Overwrite srn if id is strcutured. This is a bit mixed up sometimes
+				srn = id
+			return Utils.srnFromHybrid(srn, id) # Hybrid
+			# return Utils.srnFromHybrid(None, id) # Hybrid
 		return Utils.srnFromHybrid(request.srn, request.id) # Hybrid
 
