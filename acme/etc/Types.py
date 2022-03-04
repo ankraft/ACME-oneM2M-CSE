@@ -270,7 +270,7 @@ class ResourceTypes(ACMEIntEnum):
 			Return:
 				Boolean
 		"""
-		return self.value in ResourceTypes._instanceResourcesSet	# type: ignore
+		return ty in ResourceTypes._instanceResourcesSet	# type: ignore
 
 
 ResourceTypes._announcedMappings = {								#  type: ignore
