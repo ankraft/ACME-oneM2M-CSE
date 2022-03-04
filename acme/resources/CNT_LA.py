@@ -32,10 +32,34 @@ class CNT_LA(Resource):
 	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:
 		""" Handle a RETRIEVE request. Return resource """
 		if L.isDebug: L.logDebug('Retrieving latest CIN from CNT')
+
+		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.CIN)):
+			r = self	# no instance, so take self as a resource
+
+		# Take the resource, either a CIN or self and check it # EXPERIMENTAL
+		if not (res := CSE.notification.checkPerformBlockingRetrieve(r, originator, request, finished = lambda: self.dbReloadDict())).status:
+			return res
+
+		# Then retrieve it, either for the first time or again
 		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.CIN)):
 			return Result(status = False, rsc = RC.notFound, dbg = 'no instance for <latest>')
-		if not (res := r.willBeRetrieved(originator, request)).status:
+		
+		# Do again some checks with the final resource, but no subscription checks!
+		if not (res := r.willBeRetrieved(originator, request, subCheck = False)).status:
 			return res
+
+
+
+
+
+		# TODO in all _la, _ol
+
+		# if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.CIN)):
+		# 	return Result(status = False, rsc = RC.notFound, dbg = 'no instance for <latest>')
+		# Do again some checks with the final resource, but no subscription checks!
+		# if not (res := r.willBeRetrieved(originator, request, subCheck = False)).status:
+		# 	return res
+
 		return Result(status = True, rsc = RC.OK, resource = r)
 
 
@@ -51,7 +75,7 @@ class CNT_LA(Resource):
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a DELETE request. Delete the latest resource. """
-		if L.isDebug: L.logDebug('Deleting latest CIN from CNT')
-		if not (r := self.retrieveLatestOldestInstance(self.pi, T.CIN)):
+		L.isDebug and L.logDebug('Deleting latest CIN from CNT')
+		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.CIN)):
 			return Result(status = False, rsc = RC.notFound, dbg='no instance for <latest>')
 		return CSE.dispatcher.deleteResource(r, originator, withDeregistration = True)

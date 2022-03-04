@@ -97,6 +97,16 @@ class Dispatcher(object):
 			L.isDebug and L.logDebug(f'Redirecting request <PCU>: {pollingChannelURIResource.__srn__}')
 			return pollingChannelURIResource.handleRetrieveRequest(request, id, originator)
 
+
+		# EXPERIMENTAL
+		# Handle latest and oldest RETRIEVE
+		if (laOlResource := Utils.latestOldestResource(srn)):		# We need to check the srn here
+			# Check for virtual resource
+			if laOlResource.isVirtual(): 
+				return laOlResource.handleRetrieveRequest(request = request, originator = originator)	# type: ignore[no-any-return]
+
+
+
 		permission = Permission.DISCOVERY if request.args.fu == 1 else Permission.RETRIEVE
 
 		# check rcn & operation
@@ -196,21 +206,23 @@ class Dispatcher(object):
 		return self.retrieveLocalResource(srn=id, originator=originator, request=request) if Utils.isStructured(id) else self.retrieveLocalResource(ri=id, originator=originator, request=request)
 
 
-	def retrieveLocalResource(self, ri:str=None, srn:str=None, originator:str=None, request:CSERequest=None) -> Result:
+	def retrieveLocalResource(self, ri:str = None, srn:str = None, originator:str = None, request:CSERequest = None) -> Result:
 		L.isDebug and L.logDebug(f'Retrieve local resource: {ri}|{srn} for originator: {originator if originator else "<internal>"}')
 
 		if ri:
-			result = CSE.storage.retrieveResource(ri=ri)		# retrieve via normal ID
+			result = CSE.storage.retrieveResource(ri = ri)		# retrieve via normal ID
 		elif srn:
-			result = CSE.storage.retrieveResource(srn=srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
+			result = CSE.storage.retrieveResource(srn = srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
 		else:
-			return Result(status=False, rsc=RC.notFound, dbg='resource not found')
+			return Result(status = False, rsc = RC.notFound, dbg = 'resource not found')
 
-		if resource := cast(Resource, result.resource):	# Resource found
-			# Check for virtual resource
-			if resource.ty not in [T.GRP_FOPT, T.PCH_PCU] and resource.isVirtual(): # fopt, PCU are handled elsewhere
-				return resource.handleRetrieveRequest(request=request, originator=originator)	# type: ignore[no-any-return]
-			return result
+		# EXPERIMENTAL remove this
+		# if resource := cast(Resource, result.resource):	# Resource found
+		# 	# Check for virtual resource
+		# 	if resource.ty not in [T.GRP_FOPT, T.PCH_PCU] and resource.isVirtual(): # fopt, PCU are handled elsewhere
+		# 		return resource.handleRetrieveRequest(request=request, originator=originator)	# type: ignore[no-any-return]
+		# 	return result
+		
 		# error
 		L.isDebug and L.logDebug(f'{result.dbg}: ri:{ri} srn:{srn}')
 		return result

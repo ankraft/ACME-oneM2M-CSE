@@ -132,15 +132,25 @@ class SUB(Resource):
 				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 
 			# Check if blocking RETRIEVE is the only NET in the subscription, AND that there is no other NET for this resource
-			if NotificationEventType.blockingRetrieve in net:
+			if NotificationEventType.blockingRetrieve in net or NotificationEventType.blockingRetrieveDirectChild in net:
 				if len(net) > 1:
 					L.logDebug(dbg := f'blockingRetrieve must be the only value in enc/net')
 					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 				if CSE.notification.getSubscriptionsByNetChty(parentResource.ri, net = net):
 					L.logDebug(dbg := f'a subscription with blockingRetrieve already exsists for this resource')
 					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				
+				if net[0] == NotificationEventType.blockingRetrieve:
+					if CSE.notification.getSubscriptionsByNetChty(parentResource.ri, net = [ NotificationEventType.blockingRetrieve ]):
+						L.logDebug(dbg := f'a subscription with blockingRetrieve already exsists for this resource')
+						return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				
+				# TODO: check that only one NotificationEventType.blockingRetrieveDirectChild per chty. Or, if one without chty exists
+				if net[0] == NotificationEventType.blockingRetrieveDirectChild:
+					...
+
 				if len(nu) > 1:
-					L.logDebug(dbg := f'nu must contain only one target for blockingRetrieve')
+					L.logDebug(dbg := f'nu must contain only one target for blockingRetrieve(DIrectChild)')
 					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
 				parentOriginator = parentResource.getOriginator()
 				if nu[0] != parentOriginator:

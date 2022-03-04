@@ -104,8 +104,8 @@ class CSEBase(AnnounceableResource):
 		return Result(status = True)
 
 
-	def willBeRetrieved(self, originator:str, request:CSERequest) -> Result:
-		if not (res := super().willBeRetrieved(originator, request)).status:
+	def willBeRetrieved(self, originator:str, request:CSERequest, subCheck:bool = True) -> Result:
+		if not (res := super().willBeRetrieved(originator, request, subCheck = subCheck)).status:
 			return res
 
 		# add the current time to this resource instance

@@ -308,7 +308,7 @@ class Resource(object):
 		pass
 
 
-	def willBeRetrieved(self, originator:str, request:CSERequest) -> Result:
+	def willBeRetrieved(self, originator:str, request:CSERequest, subCheck:bool = True) -> Result:
 		""" Called before a resource will be send back in a response.
 			
 			Args:
@@ -316,9 +316,10 @@ class Resource(object):
 			Return:
 				A Result object.
 		"""
-		# Check for blockingRetrieve
-		if not (res := CSE.notification.checkPerformBlockingRetrieve(self, originator, request, finished = lambda: self.dbReloadDict())).status:
-			return res
+		# Check for blockingRetrieve or blockingRetrieveDirectChild
+		if subCheck:
+			if not (res := CSE.notification.checkPerformBlockingRetrieve(self, originator, request, finished = lambda: self.dbReloadDict())).status:
+				return res
 		return Result(status = True)
 
 
@@ -442,7 +443,7 @@ class Resource(object):
 	#	request handler stubs for virtual resources
 	#
 
-	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:
+	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:
 		""" MUST be implemented by virtual class."""
 		raise NotImplementedError('handleRetrieveRequest()')
 

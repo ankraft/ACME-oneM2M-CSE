@@ -62,8 +62,8 @@ class CIN(AnnounceableResource):
 		return Result(status = False, rsc = RC.operationNotAllowed, dbg='updating CIN is forbidden')
 
 
-	def willBeRetrieved(self, originator:str, request:CSERequest) -> Result:
-		if not (res := super().willBeRetrieved(originator, request)).status:
+	def willBeRetrieved(self, originator:str, request:CSERequest, subCheck:bool = True) -> Result:
+		if not (res := super().willBeRetrieved(originator, request, subCheck = subCheck)).status:
 			return res
 
 		# Check whether the parent container's *disableRetrieval* attribute is set to True.
