@@ -10,8 +10,6 @@
 #
 
 from __future__ import annotations
-from ctypes import Union
-
 
 import os, shutil
 from threading import Lock
@@ -99,8 +97,6 @@ class Storage(object):
 			self.countBatchNotifications('_', '_')
 			dbFile = 'statistics'
 			self.getStatistics()
-			dbFile = 'app data'
-			self.getAppData('_')
 		except Exception as e:
 			L.logErr(f'Error validating data files. Error in {dbFile} database.', exc = e)
 			return False
@@ -123,10 +119,6 @@ class Storage(object):
 
 
 	def createResource(self, resource:Resource, overwrite:bool = True) -> Result:
-		if not resource:
-			L.logErr(dbg := 'resource is None')
-			raise RuntimeError(dbg)
-
 		ri  = resource.ri
 		srn = resource.__srn__
 		# L.logDebug(f'Adding resource (ty: {resource.ty}, ri: {resource.ri}, rn: {resource.rn}, srn: {srn}')
@@ -190,18 +182,12 @@ class Storage(object):
 
 
 	def updateResource(self, resource:Resource) -> Result:
-		if not resource:
-			L.logErr(dbg := 'resource is None')
-			raise RuntimeError(dbg)
-		ri = resource.ri
+		# ri = resource.ri
 		# L.logDebug(f'Updating resource (ty: {resource.ty}, ri: {ri}, rn: {resource.rn})')
 		return Result(status = True, resource = self.db.updateResource(resource), rsc = RC.updated)
 
 
 	def deleteResource(self, resource:Resource) -> Result:
-		if not resource:
-			L.logErr(dbg := 'resource is None')
-			raise RuntimeError(dbg)
 		# L.logDebug(f'Removing resource (ty: {resource.ty}, ri: {ri}, rn: {resource.rn})'
 		self.db.deleteResource(resource)
 		self.db.deleteIdentifier(resource)
@@ -338,24 +324,6 @@ class Storage(object):
 		self.db.purgeStatistics()
 
 
-
-	#########################################################################
-	##
-	##	App Support
-	##
-
-	def getAppData(self, id:str) -> JSON:
-		return self.db.searchAppData(id)
-
-
-	def updateAppData(self, data:JSON) -> bool:
-		return self.db.upsertAppData(data)
-
-
-	def removeAppData(self, data:JSON) -> bool:
-		return self.db.removeAppData(data)
-
-
 #########################################################################
 #
 #	DB class that implements the TinyDB binding
@@ -376,7 +344,6 @@ class TinyDBBinding(object):
 		self.lockSubscriptions			= Lock()
 		self.lockBatchNotifications		= Lock()
 		self.lockStatistics 			= Lock()
-		self.lockAppData 				= Lock()
 
 		# file names
 		self.fileResources				= f'{self.path}/resources{postfix}.json'
@@ -384,7 +351,6 @@ class TinyDBBinding(object):
 		self.fileSubscriptions			= f'{self.path}/subscriptions{postfix}.json'
 		self.fileBatchNotifications		= f'{self.path}/batchNotifications{postfix}.json'
 		self.fileStatistics				= f'{self.path}/statistics{postfix}.json'
-		self.fileAppData				= f'{self.path}/appdata{postfix}.json'
 
 		# All databases/tables will use the smart query cache
 		if Configuration.get('db.inMemory'):
@@ -394,7 +360,6 @@ class TinyDBBinding(object):
 			self.dbSubscriptions 		= TinyDB(storage = MemoryStorage)
 			self.dbBatchNotifications	= TinyDB(storage = MemoryStorage)
 			self.dbStatistics			= TinyDB(storage = MemoryStorage)
-			self.dbAppData 				= TinyDB(storage = MemoryStorage)
 		else:
 			L.isInfo and L.log('DB in file system')
 			self.dbResources 			= TinyDB(self.fileResources)
@@ -402,7 +367,6 @@ class TinyDBBinding(object):
 			self.dbSubscriptions 		= TinyDB(self.fileSubscriptions)
 			self.dbBatchNotifications 	= TinyDB(self.fileBatchNotifications)
 			self.dbStatistics 			= TinyDB(self.fileStatistics)
-			self.dbAppData 				= TinyDB(self.fileAppData)
 		
 		# Open/Create tables
 		self.tabResources 				= self.dbResources.table('resources', cache_size = self.cacheSize)
@@ -410,7 +374,6 @@ class TinyDBBinding(object):
 		self.tabSubscriptions 			= self.dbSubscriptions.table('subsriptions', cache_size = self.cacheSize)
 		self.tabBatchNotifications 		= self.dbBatchNotifications.table('batchNotifications', cache_size = self.cacheSize)
 		self.tabStatistics 				= self.dbStatistics.table('statistics', cache_size = self.cacheSize)
-		self.tabAppData 				= self.dbAppData.table('appdata', cache_size = self.cacheSize)
 
 		# Create the Queries
 		self.resourceQuery 				= Query()
@@ -431,8 +394,6 @@ class TinyDBBinding(object):
 			self.dbBatchNotifications.close()
 		with self.lockStatistics:
 			self.dbStatistics.close()
-		with self.lockAppData:
-			self.dbAppData.close()
 
 
 	def purgeDB(self) -> None:
@@ -442,7 +403,6 @@ class TinyDBBinding(object):
 		self.tabSubscriptions.truncate()
 		self.tabBatchNotifications.truncate()
 		self.tabStatistics.truncate()
-		self.tabAppData.truncate()
 	
 
 	def backupDB(self, dir:str) -> bool:
@@ -451,7 +411,6 @@ class TinyDBBinding(object):
 		shutil.copy2(self.fileSubscriptions, dir)
 		shutil.copy2(self.fileBatchNotifications, dir)
 		shutil.copy2(self.fileStatistics, dir)
-		shutil.copy2(self.fileAppData, dir)
 		return True
 
 
@@ -554,8 +513,11 @@ class TinyDBBinding(object):
 		# L.isDebug and L.logDebug({'ri' : ri, 'rn' : resource.rn, 'srn' : srn, 'ty' : resource.ty})		
 		with self.lockIdentifiers:
 			self.tabIdentifiers.upsert(
-				# ri, rn, srn 
-				{'ri' : ri, 'rn' : resource.rn, 'srn' : srn, 'ty' : resource.ty}, 
+				{	'ri' : ri, 
+					'rn' : resource.rn, 
+					'srn' : srn,
+					'ty' : resource.ty 
+				}, 
 				self.identifierQuery.ri == ri)
 
 
@@ -674,34 +636,4 @@ class TinyDBBinding(object):
 		"""
 		with self.lockStatistics:
 			self.tabStatistics.truncate()
-
-
-	#
-	#	App Data
-	#
-	# TODO remove?
-
-	def searchAppData(self, id:str) -> JSON:
-		with self.lockAppData:
-			data = self.tabAppData.get(Query().id == id)
-			#return data if data is not None and len(data) > 0 else None
-			return data if data else None
-
-
-	def upsertAppData(self, data:JSON) -> bool:
-		with self.lockAppData:
-			if 'id' not in data:
-				return None
-			if len(self.tabAppData) > 0:
-				return self.tabAppData.update(data, Query().id == data['id']) is not None
-			else:
-				return self.tabAppData.insert(data) is not None
-
-
-	def removeAppData(self, data:JSON) -> bool:
-		with self.lockAppData:
-			if 'id' not in data:
-				return False	
-			return len(self.tabAppData.remove(Query().id == data['id'])) > 0
-
 
