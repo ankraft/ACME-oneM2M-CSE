@@ -10,8 +10,8 @@
 from __future__ import annotations
 from .TextTools import simpleMatch
 import random, sys, heapq, datetime, traceback, time
-from threading import Thread, Timer, Lock
-from typing import Callable, List, Dict, Any
+from threading import Thread, Timer, Lock, current_thread
+from typing import Callable, List, Dict, Any, Tuple
 import logging
 
 
@@ -235,7 +235,13 @@ class BackgroundWorkerPool(object):
 	workerQueue:List 								= []
 	""" Priority queue. Contains tuples (nextExecution timestamp, workerID). """
 	workerTimer:Timer								= None
+
 	queueLock:Lock					 				= Lock()
+	threadQueueLock:Lock					 		= Lock()
+	threadQueue:list[Tuple[Callable, str]]			= []
+	threads:list[Thread]							= []
+	threadsRunning:bool								= True
+	_threadsTimeout:float							= 0.5
 
 
 	def __new__(cls, *args:str, **kwargs:str) -> BackgroundWorkerPool:
@@ -365,6 +371,52 @@ class BackgroundWorkerPool(object):
 			cls._removeBackgroundWorkerFromPool(w)
 		return workers
 
+
+	# TODO doc
+	@classmethod
+	def runAsThread(cls, task:Callable, name:str = None) -> None:
+		cls.threadQueue.append((task, name))
+
+
+	# TODO doc
+	@classmethod
+	def initThreadPool(cls, number:int) -> None:
+
+		def runner() -> None:
+			while cls.threadsRunning:
+				try:
+					with cls.queueLock:
+						f = None
+						if cls.threadQueue:
+							f, name = cls.threadQueue.pop(0)
+					if f:
+						t = current_thread()
+						t.name = name if name else str(t.native_id)
+						f()
+						continue
+					time.sleep(1)
+				except Exception as e:
+					print(e)
+
+		# End and remove all threads
+		cls.threadsRunning = False
+		for each in cls.threads:
+			each.join(cls._threadsTimeout)
+			if each.is_alive:
+				raise TimeoutError()
+		
+		cls.threads.clear()
+		cls.threadsRunning = True
+
+		# Create new number of threads
+		with cls.queueLock:
+			for i in range(number):
+				thread = Thread(target = runner)
+				thread.setDaemon(True)		# Make the thread a daemon of the main thread
+				thread.start()
+				thread.name = str(thread.native_id)
+				cls.threads.append(thread)
+			
 
 	@classmethod
 	def _removeBackgroundWorkerFromPool(cls, worker:BackgroundWorker) -> None:
