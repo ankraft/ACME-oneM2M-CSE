@@ -8,17 +8,12 @@
 #
 
 from __future__ import annotations
-import threading
 from typing import Callable, Any, cast
 from ..etc import Utils as Utils
-
-_running:bool = False
 
 # TODO: create/delete each resource to count! resourceCreate(ty)
 
 # TODO move event creations from here to the resp modules.
-
-
 
 
 #########################################################################
@@ -66,10 +61,7 @@ class Event(list):	# type:ignore[type-arg]
 			return
 		if self.runInBackground:
 			# Call the handlers in a thread so that we don't block everything
-			thread = threading.Thread(target = _callThread, args = args, kwargs = kwargs)
-			thread.setDaemon(True)		# Make the thread a daemon of the main thread
-			thread.start()
-			Utils.renameCurrentThread(thread=thread)
+			Utils.runAsThread(_callThread, *args, **kwargs)
 		else:
 			_callThread(*args, **kwargs)
 
@@ -107,7 +99,7 @@ class EventManager(object):
 				The created Event
 		"""
 		if not hasattr(self, name):
-			setattr(self, name, Event(runInBackground=runInBackground, manager=self))
+			setattr(self, name, Event(runInBackground = runInBackground, manager = self))
 		return cast(Event, getattr(self, name))
 
 
