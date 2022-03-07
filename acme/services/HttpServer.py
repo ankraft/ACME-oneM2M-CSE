@@ -8,17 +8,13 @@
 #
 
 from __future__ import annotations
-from lib2to3.pgen2.token import OP
-import logging, sys, urllib3, json
-from webbrowser import Opera
-from requests.api import head
-from ssl import OP_ALL
+import logging, sys, urllib3
 from copy import deepcopy
 from typing import Any, Callable, cast, Tuple
 
 
 import flask
-from flask import Flask, Request, make_response, request
+from flask import Flask, Request, request
 from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
 from werkzeug.datastructures import MultiDict
@@ -32,7 +28,6 @@ from ..services.Configuration import Configuration
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L, LogLevel
 from ..webui.webUI import WebUI
-from ..resources.Resource import Resource
 from ..helpers import TextTools as TextTools
 from ..helpers.BackgroundWorker import *
 from ..etc import DateUtils

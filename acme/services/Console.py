@@ -190,7 +190,7 @@ class Console(object):
 			('T', 'Show child resource tree'),
 			('^T', 'Show & refresh resource tree continuously'),
 			('u', 'Open web UI'),
-			('w', 'Show workers status'),
+			('w', 'Show workers and threads status'),
 		]
 
 		table = Table(row_styles = [ '', L.tableRowStyle])
@@ -274,20 +274,33 @@ Available under the BSD 3-Clause License
 		"""
 		L.console('Worker & Actor Threads', isHeader=True)
 		table = Table(row_styles = [ '', L.tableRowStyle])
-		table.add_column('Name', no_wrap=True)
-		table.add_column('Type', no_wrap=True)
-		table.add_column('Intvl (s)', no_wrap=True, justify='right')
-		table.add_column('Runs', no_wrap=True, justify='right')
+		table.add_column('Name', no_wrap = True)
+		table.add_column('Type', no_wrap = True)
+		table.add_column('Intvl (s)', no_wrap = True, justify = 'right')
+		table.add_column('Runs', no_wrap = True, justify = 'right')
 		for w in sorted(BackgroundWorkerPool.backgroundWorkers.values(), key = lambda w: w.name.lower()):
 			a = 'Actor' if w.maxCount == 1 else 'Worker'
 			table.add_row(w.name, a, str(float(w.interval)) if w.interval > 0.0 else '', str(w.numberOfRuns) if w.interval > 0.0 else '')
 		L.console(table, nl=True)
 
+		# Threads
+		L.console('System Threads', isHeader=True)
+
+		table = Table(row_styles = [ '', L.tableRowStyle])
+		table.add_column('Thread Queues', no_wrap = True)
+		table.add_column('Count', no_wrap = True)
+		r, p = BackgroundWorkerPool.countJobs()
+		table.add_row('Running', str(r))
+		table.add_row('Paused', str(p))
+		L.console(table, nl = True)
+
+
+
 
 	def configuration(self, key:str) -> None:
 		"""	Print the configuration.
 		"""
-		L.console('Configuration', isHeader=True)
+		L.console('Configuration', isHeader = True)
 		conf = Configuration.print().split('\n')
 		conf.sort()
 			
@@ -300,7 +313,7 @@ Available under the BSD 3-Clause License
 			kv = c.split(' = ', 1)
 			if len(kv) == 2:
 				table.add_row(kv[0].strip(), kv[1])
-		L.console(table, nl=True)
+		L.console(table, nl = True)
 
 
 	def clearScreen(self, _:str) -> None:

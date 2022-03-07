@@ -10,6 +10,7 @@
 from __future__ import annotations
 from typing import Callable, Any, cast
 from ..etc import Utils as Utils
+from ..helpers.BackgroundWorker import BackgroundWorkerPool
 
 # TODO: create/delete each resource to count! resourceCreate(ty)
 
@@ -51,7 +52,7 @@ class Event(list):	# type:ignore[type-arg]
 			are called sequentially (not individually!) as a thread.
 		"""
 
-		def _callThread(*args:Any, **kwargs:Any) -> None:
+		def _runner(*args:Any, **kwargs:Any) -> None:
 			"""	Call all registered function for this event object. Pass on any argument
 			"""
 			for function in self:
@@ -61,9 +62,9 @@ class Event(list):	# type:ignore[type-arg]
 			return
 		if self.runInBackground:
 			# Call the handlers in a thread so that we don't block everything
-			Utils.runAsThread(_callThread, *args, **kwargs)
+			BackgroundWorkerPool.runJob(lambda args = args, kwargs = kwargs: _runner(*args, **kwargs))
 		else:
-			_callThread(*args, **kwargs)
+			_runner(*args, **kwargs)
 
 
 	def __repr__(self) -> str:
