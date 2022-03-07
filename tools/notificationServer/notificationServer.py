@@ -12,7 +12,6 @@ from __future__ import annotations
 from typing import cast
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json, argparse, sys, ssl
-from copy import deepcopy
 import cbor2
 from rich.console import Console
 from rich.syntax import Syntax
