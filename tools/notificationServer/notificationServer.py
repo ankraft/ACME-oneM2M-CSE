@@ -9,14 +9,16 @@
 #
 
 from __future__ import annotations
+from http.client import HTTPMessage
 from typing import cast
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import json, argparse, sys, ssl
+import email.parser
+import json, argparse, sys, ssl, signal
 import cbor2
 from rich.console import Console
 from rich.syntax import Syntax
 
-import pathlib, os, signal
+import pathlib, os
 parent = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent.parent
 sys.path.append(f'{parent}')
 from acme.helpers.MQTTConnection import MQTTConnection, MQTTHandler
@@ -52,10 +54,13 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		"""	Handle notification.
 		"""
 
+		_responseHeaders:list = []
+
 		# Construct return header
 		# Always acknowledge the verification requests
 		self.send_response(200)
 		self.send_header('X-M2M-RSC', '2000' if not failVerification else '4101')
+		_responseHeaders = self._headers_buffer
 		self.end_headers()
 
 		# Get headers and content data
@@ -65,7 +70,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		
 		# Print the content data
 		console.print(f'[{messageColor}]### Notification (http)')
-		console.print(self.headers, highlight=False)
+		console.print(self.headers, highlight = False)
 
 		# Print JSON
 		if contentType in [ 'application/json', 'application/vnd.onem2m-res+json' ]:
@@ -87,11 +92,16 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		# Print other binary content
 		else:
 			console.print(toHex(post_data), highlight=False)
+		
+		# Print HTTP Response
+		# This looks a it more complicated but is necessary to render nicely in Jupyter
+		console.print(f'[{messageColor}]### Notification Response (http)')
+		console.print(email.parser.Parser(_class = HTTPMessage).parsestr(b''.join(_responseHeaders).decode('iso-8859-1')), highlight = False)
 
 
 	def log_message(self, format:str, *args:int) -> None:
 		if (msg := format%args).startswith('"GET'):	return	# ignore GET log messages
-		console.print(f'[{messageColor} reverse]{msg}')
+		console.print(f'[{messageColor} reverse]{msg}', highlight = False)
 
 
 ##############################################################################
