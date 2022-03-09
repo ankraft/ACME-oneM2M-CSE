@@ -706,8 +706,8 @@ Available under the BSD 3-Clause License
 			# Determine extra infos
 			extraInfo = ''
 			if self.treeMode not in [ TreeMode.COMPACT, TreeMode.CONTENTONLY ]: 
-				if res.ty in [ T.FCNT, T.FCI] :
-					extraInfo = f' (cnd={res.cnd})'
+				# if res.ty in [ T.FCNT, T.FCI] :
+				# 	extraInfo = f' (cnd={res.cnd})'
 				if res.ty in [ T.CIN, T.TS ]:
 					extraInfo = f' ({res.cnf})' if res.cnf else ''
 				elif res.ty in [ T.CSEBase, T.CSEBaseAnnc, T.CSR ]:
