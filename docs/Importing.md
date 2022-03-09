@@ -37,7 +37,7 @@ By using macros the initial resources can be kept rather independent from indivi
 
 The following example shows the initial *CSEBase* resource definition.
 
-```json
+```js
 {	"m2m:cb" : {
 		"ri" : "${cse.ri}",
 		"ty" : 5,
@@ -67,7 +67,7 @@ Those files are imported from the common import / init directory. More than one 
 The format is a JSON structure that follows the structure described in the following code.  
 Some of the fields are not yet used, but will supported by a future version of the CSE.
 
-```JSON
+```js
 // A file contains a list of Attribute Policies
 attributePolicies = [
 	
@@ -162,7 +162,7 @@ attributePolicies = [
 
 The following examples show the attribute policies for the *binarySwitch* and *deviceLight* specialisations, both defined in oneM2M's TS-0023 specification.
 
-```JSON
+```js
 [
     // ModuleClass: binarySwitch (binSh)
     {
@@ -202,7 +202,7 @@ During startup the CSE reads the attribute policies for normal/common resources 
 
 The format is a JSON structure that follows the structure described in the following code.  
 
-```JSON
+```js
 // The attributePolicy.ap file contains a dictionary of AttributePolicies
 {
 
@@ -242,7 +242,7 @@ The format is a JSON structure that follows the structure described in the follo
 
 The following gives an example for the attribute *ty* (*resourceType*).
 
-```JSON
+```js
 {
 	"ty": [
 		{
