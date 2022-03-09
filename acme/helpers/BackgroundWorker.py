@@ -10,11 +10,9 @@
 from __future__ import annotations
 from .TextTools import simpleMatch
 import random, sys, heapq, datetime, traceback, time
-from threading import Thread, Timer, Lock
-from typing import Callable, List, Dict, Any
+from threading import Thread, Timer, Event, Lock, enumerate as threadsEnumerate
+from typing import Callable, List, Dict, Any, Tuple
 import logging
-
-
 
 
 def _utcTime() -> float:
@@ -228,6 +226,117 @@ class BackgroundWorker(object):
 		return f'BackgroundWorker(name={self.name}, callback = {str(self.callback)}, running = {self.running}, interval = {self.interval:f}, startWithDelay = {self.startWithDelay}, numberOfRuns = {self.numberOfRuns:d}, dispose = {self.dispose}, id = {self.id}, runOnTime = {self.runOnTime})'
 
 
+
+class Job(Thread):
+	"""	Job class that extends Thread with pause, resume, stop functionalities, and lists of
+		running and paused jobs for reuse.
+	"""
+
+	jobListLock	= Lock()
+
+	pausedJobs:list[Job] = []
+	runningJobs:list[Job] = []
+
+
+	def __init__(self, *args:Any, **kwargs:Any) -> None:
+		super(Job, self).__init__(*args, **kwargs)
+		self.setDaemon(True)
+
+		self.pauseFlag = Event() # The flag used to pause the thread
+		self.pauseFlag.set() # Set to True
+		self.runningFlag = Event() # Used to stop the thread identification
+		self.runningFlag.set() # Set running to True
+
+		self.task:Callable = None
+		self.finished:Callable = None
+
+
+	def run(self) -> None:
+		"""	Internal runner function for a thread job.
+		"""
+		while self.runningFlag.is_set():
+			self.pauseFlag.wait() # return immediately when it is True, block until the internal flag is True when it is False
+			if not self.runningFlag.is_set():
+				break
+			if self.task:
+				self.task()
+
+			self.pause()
+			self.task = None
+
+			if self.finished:
+				self.finished(self)
+				self.finished = None
+
+
+	def pause(self) -> Job:
+		"""	Pause a thread job.
+		
+			Return:
+				The Job object.
+		"""
+		self.pauseFlag.clear() # Block the thread
+		return self
+
+
+	def resume(self) -> Job:
+		"""	Resume a thread job.
+		
+			Return:
+				The Job object.
+		"""
+		self.pauseFlag.set() # Stop blocking
+		return self
+
+
+	def stop(self) -> Job:
+		"""	Stop a thread job
+
+			Return:
+				The Job object.
+		"""
+		self.runningFlag.clear() # Stop the thread
+		self.pauseFlag.set() # Resume the thread from the suspended state
+		return self
+	
+
+	def setTask(self, task:Callable, finished:Callable = None) -> Job:
+		"""	Set a task to run for the Job.
+		
+			Args:
+				task: A Callable. This must include arguments, so a lambda can be used here.
+				finished: A Callable that is called when the task finished.
+			Return:
+				The Job object.
+		"""
+		self.task = task
+		self.finished = finished
+		return self
+	
+
+	@classmethod
+	def getJob(cls, task:Callable, finished:Callable) -> Job:
+		"""	Get a Job object, and set a task and a finished Callable for it to execute.
+			The Job object is either taken from the paused list (if available), or
+			a new one is created.
+
+			Args:
+				task: A Callable. This must include arguments, so a lambda can be used here.
+				finished: A Callable that is called when the task finished.
+			Return:
+				The Job object.
+		"""
+		with Job.jobListLock:
+			if not Job.pausedJobs:
+				job = Job().pause()	# new job and internal pause before start
+				job.start() 
+				Job.pausedJobs.append(job)
+			# remove next job from paused list and set the taske parameter
+			return Job.pausedJobs.pop(0).setTask(task, finished)
+
+
+
+
 class BackgroundWorkerPool(object):
 	"""	Pool and factory for background workers and actors.
 	"""
@@ -235,6 +344,7 @@ class BackgroundWorkerPool(object):
 	workerQueue:List 								= []
 	""" Priority queue. Contains tuples (nextExecution timestamp, workerID). """
 	workerTimer:Timer								= None
+
 	queueLock:Lock					 				= Lock()
 
 
@@ -262,7 +372,7 @@ class BackgroundWorkerPool(object):
 						runOnTime:bool = True, 
 						runPastEvents:bool = False, 
 						finished:Callable = None, 
-						ignoreException:bool = False) -> BackgroundWorker:	# typxe:ignore[type-arg]
+						ignoreException:bool = False) -> BackgroundWorker:	# type:ignore[type-arg]
 		"""	Create a new background worker that periodically executes the callback.
 
 			Args:
@@ -366,6 +476,66 @@ class BackgroundWorkerPool(object):
 		return workers
 
 
+	#
+	#	Jobs
+	#
+
+	@classmethod
+	def runJob(cls, task:Callable, name:str = None) -> None:
+		"""	Run a task as a Thread. Reuse finished threads if possible.
+
+			Args:
+				task: A Callable. This must include arguments, so a lambda can be used here.
+				name: Optional name of the job.
+		"""
+		
+		def finished(job:Job) -> None:
+			"""	Move a finished Job from the runningJobs to the pausedJobs
+				list.
+
+				Args:
+					job: Job object
+			"""
+			with Job.jobListLock:
+				Job.runningJobs.remove(job)
+				Job.pausedJobs.append(job)
+
+		job = Job.getJob(task, finished)
+
+		with Job.jobListLock:
+			Job.runningJobs.append(job)
+		if name:
+			job.setName(name)
+		# job.setName(name if name else str(job.native_id))
+		job.resume()
+	
+
+	@classmethod
+	def countJobs(cls) -> Tuple[int, int]:
+		"""	Return the number of running and paused Jobs.
+		
+			Return:
+				Tuple (running Jobs, paused Jobs). Both are integers
+		"""
+		return (len(Job.runningJobs), len(Job.pausedJobs))
+
+
+	@classmethod
+	def killJobs(cls) -> None:
+		"""	Stop and remove all Jobs.
+		"""
+		while Job.runningJobs:
+			Job.runningJobs.pop(0).stop()
+		while Job.pausedJobs:
+			Job.pausedJobs.pop(0).stop()
+		while any( [ isinstance(each, Job) for each in threadsEnumerate() ] ):
+			time.sleep(0.00001)
+
+
+	#
+	#	Internals
+	#
+
 	@classmethod
 	def _removeBackgroundWorkerFromPool(cls, worker:BackgroundWorker) -> None:
 		"""	Remove a BackgroundWorker from the internal pool.
@@ -435,9 +605,6 @@ class BackgroundWorkerPool(object):
 			if cls.workerQueue:
 				_, workerID, name = heapq.heappop(cls.workerQueue)
 				if worker := cls.backgroundWorkers.get(workerID):
-					thread = Thread(target=worker._work)
-					thread.setDaemon(True)
-					thread.setName(name)
-					thread.start()
+					cls.runJob(worker._work, name)
 			cls._startTimer()	# start timer again
 

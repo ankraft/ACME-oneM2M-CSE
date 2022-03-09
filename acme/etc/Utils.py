@@ -11,7 +11,7 @@
 from __future__ import annotations
 import random, string, sys, re, threading
 import traceback
-from typing import Any, Tuple, cast
+from typing import Any, Callable, Tuple, cast
 
 from .Constants import Constants as C
 from .Types import ResourceTypes as T, ResponseStatusCode
@@ -825,9 +825,19 @@ def hasRegisteredAE(originator:str) -> bool:
 #	Threads
 #
 
+# TODO Doc
 def renameCurrentThread(name:str = None, thread:threading.Thread = None) -> None:
 	thread = threading.current_thread() if not thread else thread
 	thread.name = name if name else str(thread.native_id)
+
+
+# TODO Doc
+def runAsThread(task:Callable, *args:Any, **kwargs:Any) -> None:
+	thread = threading.Thread(target = task, args = args, kwargs = kwargs)
+	thread.setDaemon(True)		# Make the thread a daemon of the main thread
+	thread.start()
+	thread.name = str(thread.native_id)
+
 
 
 ##############################################################################
