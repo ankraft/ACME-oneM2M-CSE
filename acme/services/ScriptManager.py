@@ -152,6 +152,8 @@ class ACMEPContext(PContext):
 				pcontext: Script context.
 				msg: log message.
 		"""
+		if CSE.isHeadless:
+			return
 		L.console(msg, nl = not len(msg))
 	
 	
@@ -201,6 +203,8 @@ class ACMEPContext(PContext):
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
 		"""
+		if CSE.isHeadless:
+			return
 		L.consoleClear()
 		return pcontext
 
@@ -324,6 +328,8 @@ class ACMEPContext(PContext):
 			Returns:
 				The scripts "PContext" object, or None in case of an error.
 		 """
+		if CSE.isHeadless:
+			return
 		try:
 			L.console(json.loads(arg))
 		except Exception as e:
