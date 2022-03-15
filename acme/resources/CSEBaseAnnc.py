@@ -15,8 +15,8 @@ from ..resources.AnnouncedResource import AnnouncedResource
 class CSEBaseAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.ACP, T.ACPAnnc, T.ACTR, T.ACTRAnnc, T.AE, T.AEAnnc, T.CNT, T.CNTAnnc, T.FCNT, T.FCNTAnnc, T.GRP, T.GRPAnnc, T.NOD
-	, T.NODAnnc, T.SUB, T.TS, T.TSAnnc ]
+	_allowedChildResourceTypes = [	T.ACPAnnc, T.ACTRAnnc, T.AEAnnc, T.CNTAnnc, T.FCNTAnnc, T.GRPAnnc,
+									T.NODAnnc, T.SUB, T.TSAnnc, T.TSBAnnc ]
 
 
 	# Attributes and Attribute policies for this Resource Class

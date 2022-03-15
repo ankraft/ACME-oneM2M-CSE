@@ -16,12 +16,7 @@ from ..services import CSE as CSE
 from ..services.Logging import Logging as L
 
 
-# DISCUSS child of CB, CSR, AE
-# DISCUSS announcedResource?
-
-# DISCUSS Only one TSB with loss_of_sync, but only one is relevant. Only one is allowed? Check in update/create
-
-# TODO docs for configuration
+# DISCUSS Only one TSB with loss_of_sync, but only one is relevant for a requester. Only one is allowed? Check in update/create
 
 
 class TSB(AnnounceableResource):
@@ -63,8 +58,9 @@ class TSB(AnnounceableResource):
 
 
 
-# timeSyncBeaconAnnc is missing from TS-0001 Table 9.6.1.1-1: Resource Types
-# DISCUSS beaconRequester prerequisites are not specifically mentioned in CREATE and UPDATE procedure. -> good would be that if not present then the CSE provides a value. Add to TS-0004 procedures
+
+# DISCUSS beaconRequester prerequisites are not specifically mentioned in CREATE and UPDATE procedure. ->
+#  good would be that if not present then the CSE provides a value. Add to TS-0004 procedures
 
 
 # TODO Implement Annc
@@ -81,13 +77,12 @@ class TSB(AnnounceableResource):
 
 # TODO activate: add to interval updater
 # TODO update:
+# TODO deactivate
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
-		
-		# TODO CSE.time.add
-		
+		CSE.time.addTimeSyncBeacon(self)
 		return Result(status = True)
 
 

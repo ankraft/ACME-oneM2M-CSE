@@ -30,6 +30,9 @@ class TimeManager(object):
 		L.isInfo and L.log('TimeManager initialized')
 
 
+# LoS table
+#dict[bcnr, (threshold, tsb.ri)]
+
 	def shutdown(self) -> bool:
 		"""	Shutdown the TimeManager.
 		
@@ -49,9 +52,21 @@ class TimeManager(object):
 	def _getAllPeriodicTimeSyncBeacons(self) -> list[TSB]:
 		return cast(List[TSB], CSE.storage.searchByFragment( { 'ty': T.TSB, 'bcnc': BeaconCriteria.PERIODIC} ))
 
-	
+
+	def addTimeSyncBeacon(self, tsb:TSB) -> None:
+		if tsb.bcnc == BeaconCriteria.PERIODIC:
+			self.addPeriodicTimeSyncBeacon(tsb)
+		else:	# Loss of sync
+			self.addLoSTimeSyncBeacon(tsb)
+
+
 	def addPeriodicTimeSyncBeacon(self, tsb:TSB) -> None:
 		# TODO start monitor
+		pass
+
+
+	def addLoSTimeSyncBeacon(self, tsb:TSB) -> None:
+		# TODO add to a table
 		pass
 
 
