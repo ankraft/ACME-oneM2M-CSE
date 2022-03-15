@@ -422,14 +422,14 @@ mdn=10
 ;
 
 [cse.resource.tsb]
-; Default timeSyncBeacon interval. This is the time between to beacon notifications sent by the CSE
+; Default timeSyncBeacon interval. This is the time in seconds between to beacon notifications sent by the CSE
 ; to an AE or CSE.
-; Default: 60 minutes
+; Default: 1 hour
 bcni=3600
 ; Default timeSyncBeacon threshold. When this time threshold is passed then a beacon notifications
 ; is sent to an AE or CSE.
 ; Default: 10.0 seconds
-bcnt=10
+bcnt=10.0
 
 
 ;

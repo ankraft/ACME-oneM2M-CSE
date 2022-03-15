@@ -71,6 +71,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 [\[cse.resource.req\] - Resource Defaults: Request](#resource_req)  
 [\[cse.resource.sub\] - Resource Defaults: Subscription](#resource_sub)  
 [\[cse.resource.ts\] - Resource Defaults: TimeSeries](#resource_ts)  
+[\[cse.resource.tsb\] - Resource Defaults: TimeSyncBeacon](#resource_tsb)  
 [\[cse.console\] - Console Settings](#console)  
 [\[cse.scripting\] - Scripting Settings](#scripting)  
 [\[cse.webui\] - Web UI Settings](#webui)  
@@ -280,6 +281,15 @@ The following tables provide detailed descriptions of all the possible CSE confi
 | mni          | Default for maxNrOfInstances.<br/> Default: 10         | cse.ts.mni          |
 | mbs          | Default for maxByteSize.<br/>Default: 10.000 bytes     | cse.ts.mbs          |
 | mdn          | Default for missingDataMaxNr.<br />Default: 10         | cse.ts.mdn          |
+
+
+<a name="resource_tsb"></a>
+### [cse.resource.tsb] - Resource Defaults: TimeSyncBeacon
+
+| Keyword | Description                                                                                                                                         | Configuration Name |
+|:--------|:----------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------|
+| bcni    | Default timeSyncBeacon interval. This is the time in seconds between to beacon notifications sent by the CSE to an AE or CSE.<br/>Default: 1 hour   | cse.tsb.bcni       |
+| bcnt    | Default timeSyncBeacon threshold. When this time threshold is passed then a beacon notifications is sent to an AE or CSE.<br/>Default: 10.0 seconds | cse.ts.bcnt        |
 
 
 <a name="console"></a>
