@@ -291,8 +291,8 @@ class Configuration(object):
 				#	Defaults for TimeSyncBeacon Resources
 				#
 
-				'cse.tsb.bcni'							: config.getint('cse.resource.tsb', 'bcni', 			fallback = 3600),	# seconds
-				'cse.tsb.bcnt'							: config.getint('cse.resource.tsb', 'bcnt', 			fallback = 60),		# seconds
+				'cse.tsb.bcni'							: config.getfloat('cse.resource.tsb', 'bcni', 			fallback = 3600),	# seconds
+				'cse.tsb.bcnt'							: config.getfloat('cse.resource.tsb', 'bcnt', 			fallback = 60.0),	# seconds
 
 
 				#
