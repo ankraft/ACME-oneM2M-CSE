@@ -517,7 +517,7 @@ class Validator(object):
 			try:
 				isodate.parse_duration(value)
 			except Exception as e:
-				return Result(status = False, dbg = str(e))
+				return Result(status = False, dbg = f'must be an ISO duration: {str(e)}')
 			return Result(status = True, data = dataType)
 		
 		if dataType == BT.any:
