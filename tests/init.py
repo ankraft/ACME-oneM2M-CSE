@@ -197,6 +197,7 @@ pchRN 	= 'testPCH'
 reqRN	= 'testREQ'
 subRN	= 'testSUB'
 tsRN	= 'testTS'
+tsbRN	= 'testTSB'
 tsiRN	= 'testTSI'
 memRN	= 'mem'
 batRN	= 'bat'
@@ -217,6 +218,7 @@ pchURL 	= f'{aeURL}/{pchRN}'
 pcuURL 	= f'{pchURL}/pcu'
 subURL 	= f'{cntURL}/{subRN}'	# under the <cnt>
 tsURL 	= f'{aeURL}/{tsRN}'
+tsBURL 	= f'{aeURL}/{tsbRN}'
 actrURL = f'{aeURL}/{actrRN}'
 
 batURL 	= f'{nodURL}/{batRN}'	# under the <nod>
