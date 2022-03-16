@@ -286,10 +286,10 @@ The following tables provide detailed descriptions of all the possible CSE confi
 <a name="resource_tsb"></a>
 ### [cse.resource.tsb] - Resource Defaults: TimeSyncBeacon
 
-| Keyword | Description                                                                                                                                         | Configuration Name |
-|:--------|:----------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------|
-| bcni    | Default timeSyncBeacon interval. This is the time in seconds between to beacon notifications sent by the CSE to an AE or CSE.<br/>Default: 1 hour   | cse.tsb.bcni       |
-| bcnt    | Default timeSyncBeacon threshold. When this time threshold is passed then a beacon notifications is sent to an AE or CSE.<br/>Default: 10.0 seconds | cse.ts.bcnt        |
+| Keyword | Description                                                                                                                                                                               | Configuration Name |
+|:--------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------|
+| bcni    | Default timeSyncBeacon interval. This is the duration between to beacon notifications sent by the CSE to an AE or CSE.T he format must be an ISO8601 duration.<br/>Default: PT1H = 1 hour | cse.tsb.bcni       |
+| bcnt    | Default timeSyncBeacon threshold. When this time threshold is passed then a beacon notifications is sent to an AE or CSE.<br/>Default: 10.0 seconds                                       | cse.ts.bcnt        |
 
 
 <a name="console"></a>

@@ -319,6 +319,8 @@ class Job(Thread):
 		"""	Get a Job object, and set a task and a finished Callable for it to execute.
 			The Job object is either taken from the paused list (if available), or
 			a new one is created.
+			After calling this method the Job instance is neither in the paused nor the
+			running list and must be moved in one of them afterwards.
 
 			Args:
 				task: A Callable. This must include arguments, so a lambda can be used here.
@@ -331,7 +333,7 @@ class Job(Thread):
 				job = Job().pause()	# new job and internal pause before start
 				job.start() 
 				Job.pausedJobs.append(job)
-			# remove next job from paused list and set the taske parameter
+			# remove next job from paused list and set the task parameter
 			return Job.pausedJobs.pop(0).setTask(task, finished)
 
 

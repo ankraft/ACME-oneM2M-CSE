@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - [CSE] Improved check that IDs contain only unreserved characters.
+- [CSE] Improved check for validating non-empty list attributes.
 - [HTTP] HTTP request will not be sent with a *Date* header field.
 
 

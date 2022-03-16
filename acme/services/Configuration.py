@@ -15,6 +15,7 @@ from typing import Any, Dict, Tuple
 from InquirerPy.utils import InquirerPySessionResult
 from rich.console import Console
 from InquirerPy import prompt, inquirer
+import isodate
 
 from ..etc.Constants import Constants as C
 from ..etc.Types import CSEType, ContentSerializationType, Permission
@@ -291,7 +292,7 @@ class Configuration(object):
 				#	Defaults for TimeSyncBeacon Resources
 				#
 
-				'cse.tsb.bcni'							: config.getfloat('cse.resource.tsb', 'bcni', 			fallback = 3600),	# seconds
+				'cse.tsb.bcni'							: config.get('cse.resource.tsb', 'bcni', 				fallback = 'PT1H'),	# duration
 				'cse.tsb.bcnt'							: config.getfloat('cse.resource.tsb', 'bcnt', 			fallback = 60.0),	# seconds
 
 
@@ -516,6 +517,13 @@ class Configuration(object):
 				if not os.path.isdir(each):
 					return False, f'Configuration Error: \[cse.scripting]:scriptDirectory : directory "{each}" does not exist, is not a directory or is not accessible'
 
+		# TimeSyncBeacon defaults
+		bcni = Configuration._configuration['cse.tsb.bcni']
+		try:
+			isodate.parse_duration(bcni)
+		except Exception as e:
+			return False, f'Configuration Error: \[cse.resource.tsb]:bcni : configuration value must be an ISO8601 duration'
+		
 		# Everything is fine
 		return True, None
 
