@@ -1040,7 +1040,7 @@ class ScriptManager(object):
 			Return:
 				Boolean. Usually true to continue with monitoring.
 		"""
-		L.isDebug and L.logDebug(f'Looking for scheduled scripts')
+		#L.isDebug and L.logDebug(f'Looking for scheduled scripts')
 		for each in self.findScripts(meta = _metaAt):
 			try:
 				if DateUtils.cronMatchesTimestamp(at := each.meta.get(_metaAt)):

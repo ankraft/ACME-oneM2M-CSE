@@ -167,7 +167,6 @@ class RemoteCSEManager(object):
 			# Only when we validate the registrations
 			if CSE.cseType in [ CSEType.MN, CSEType.IN ]:
 				if  self.checkLiveliness:	
-					L.isDebug and L.logDebug('Checking connections to registree CSEs')
 					self._checkCSRLiveliness()
 
 		except Exception as e:
@@ -339,6 +338,7 @@ class RemoteCSEManager(object):
 			then the related local CSR is removed.
 		"""
 		for localCsr in cast(List, self._retrieveLocalCSRs(onlyOwn = False).data):
+			L.isDebug and L.logDebug(f'Checking connection to registree CSE: {localCsr.ri}')
 			if CSE.request.sendRetrieveRequest(localCsr.ri, originator = CSE.cseCsi, appendID = localCsr.csi).rsc != RC.OK:
 				L.isWarn and L.logWarn(f'Remote CSE unreachable. Removing CSR: {localCsr.rn if localCsr else ""}')
 				self._deleteLocalCSR(localCsr)

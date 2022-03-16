@@ -215,11 +215,11 @@ class Statistics(object):
 
 	# Called by the background worker
 	def statisticsDBWorker(self) -> bool:
-		L.isDebug and L.logDebug('Writing statistics DB')
+		# L.isDebug and L.logDebug('Writing statistics DB')
 		try:
 			self.storeDBStatistics()
 		except Exception as e:
-			L.isDebug and L.logErr(f'Exception: {str(e)}')
+			L.logErr(f'Error while writing statistics DB Exception: {str(e)}', exc = e)
 			return False
 		return True
 

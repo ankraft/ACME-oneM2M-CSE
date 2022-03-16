@@ -319,7 +319,7 @@ class RegistrationManager(object):
 
 
 	def expirationDBMonitor(self) -> bool:
-		L.isDebug and L.logDebug('Looking for expired resources')
+		# L.isDebug and L.logDebug('Looking for expired resources')
 		now = DateUtils.getResourceDate()
 		resources = CSE.storage.searchByFilter(lambda r: (et := r.get('et'))  and et < now)
 		for resource in resources:

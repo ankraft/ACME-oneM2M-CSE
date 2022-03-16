@@ -710,7 +710,6 @@ class RequestManager(object):
 
 
 	def _cleanupPollingRequests(self) -> bool:
-		L.isDebug and L.logDebug('Performing removal of old polling requests')
 		with self._requestLock:
 			# Search all entries in the queue and remove those that have expired in the past
 			# Remove those requests also from 
@@ -721,6 +720,7 @@ class RequestManager(object):
 					if tup[0].headers._retUTCts > now:	# not expired
 						nList.append(tup)				# add the request tupple again to the list if it hasnt expired
 					else:
+						L.isDebug and L.logDebug(f'Remove old polling request: {tup}')
 						# Also remove the requestID - originator mapping
 						if (rqi := tup[0].headers.requestIdentifier) in self._rqiOriginator:
 							del self._rqiOriginator[rqi]
