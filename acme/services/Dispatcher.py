@@ -1114,8 +1114,7 @@ class Dispatcher(object):
 				Tuple of `srn` and `id`
 		"""
 		if id:
-			if Utils.isStructured(id):	# Overwrite srn if id is strcutured. This is a bit mixed up sometimes
-				srn = id
+			srn = id if Utils.isStructured(id) else None # Overwrite srn if id is strcutured. This is a bit mixed up sometimes
 			return Utils.srnFromHybrid(srn, id) # Hybrid
 			# return Utils.srnFromHybrid(None, id) # Hybrid
 		return Utils.srnFromHybrid(request.srn, request.id) # Hybrid
