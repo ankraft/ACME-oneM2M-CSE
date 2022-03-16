@@ -7,17 +7,15 @@
 #	Managing time related CSE functions
 #
 
-
 from __future__ import annotations
 from typing import cast, List
 from ..services.Logging import Logging as L
 from ..resources.TSB import TSB
-from ..resources.Resource import Resource
 from ..services import CSE
 from ..etc.Types import BeaconCriteria
 from ..etc.Types import ResourceTypes as T
 from ..etc import DateUtils
-
+from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 
 
 class TimeManager(object):
@@ -27,6 +25,10 @@ class TimeManager(object):
 		# Read all periofics and add them (again)
 		for each in self._getAllPeriodicTimeSyncBeacons():
 			self.addPeriodicTimeSyncBeacon(each)
+		
+		# Table for periodic timeSyncBeacons
+		self.periodicTimeSyncBeacons:dict[str, BackgroundWorker] = {}
+
 		L.isInfo and L.log('TimeManager initialized')
 
 
@@ -45,7 +47,7 @@ class TimeManager(object):
 	# TODO restart: stop all timers
 
 
-	# TODO addPeriodic
+	# TODO addLoS, removeLoS
 	# TODO isLossOfSynchronization
 
 
@@ -54,6 +56,7 @@ class TimeManager(object):
 
 
 	def addTimeSyncBeacon(self, tsb:TSB) -> None:
+		# TODO
 		if tsb.bcnc == BeaconCriteria.PERIODIC:
 			self.addPeriodicTimeSyncBeacon(tsb)
 		else:	# Loss of sync
@@ -61,19 +64,67 @@ class TimeManager(object):
 
 
 	def addPeriodicTimeSyncBeacon(self, tsb:TSB) -> None:
-		# TODO start monitor
-		pass
+		"""	Add a worker for a periodic timeSyncBeacon resource.
+		
+			Args:
+				tsb: timeSyncBeacon resource
+		"""
+
+		def periodicWorker() -> bool:
+			"""	Worker to send a time sync notification.
+
+				Return:
+					Bool to indicate the continous run of the worker.
+			"""
+			L.isDebug and L.logDebug(f'Sending beacon notification for {tsb.ri}')
+			return True
+
+		
+		# TODO send real notification
+
+		if (ri := tsb.ri) in self.periodicTimeSyncBeacons:
+			self.removePeriodicTimeSyncBeacon(tsb)
+		worker = BackgroundWorkerPool.newWorker(tsb.getInterval(), 
+												periodicWorker, 
+												f'tsbPeriodic_{ri}', 
+												startWithDelay = True).start()
+		self.periodicTimeSyncBeacons[ri] = worker
 
 
 	def addLoSTimeSyncBeacon(self, tsb:TSB) -> None:
 		# TODO add to a table
-		pass
+		...
+
+	
+	def updateTimeSyncBeacon(self, tsb:TSB, originalBcnc:BeaconCriteria) -> None:
+		# TODO
+		...
+	
+
+	def removeTimeSyncBeacon(self, tsb:TSB) -> None:
+		# TODO
+		if tsb.bcnc == BeaconCriteria.PERIODIC:
+			self.removePeriodicTimeSyncBeacon(tsb)
+		else:	# Loss of sync
+			# TODO
+			...
+
+
+	def removePeriodicTimeSyncBeacon(self, tsb:TSB) -> None:
+		"""	Remove a periodic timeSyncBeacon resource. A running worker is stopped.
+		
+			Args:
+				tsb: The timeSyncBeacon resource.
+		"""
+		if (ri := tsb.ri) in self.periodicTimeSyncBeacons:
+			self.periodicTimeSyncBeacons[ri].stop()
+			del self.periodicTimeSyncBeacons[tsb.ri]
 
 
 	def getCSETimestamp(self) -> str:
 		"""	Get the CSE's current date and time (UTC based).
 		
 			Return:
-				ISO time stamp string
+				ISO timestamp string
 		"""
 		return DateUtils.getResourceDate()

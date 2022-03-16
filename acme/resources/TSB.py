@@ -84,6 +84,20 @@ class TSB(AnnounceableResource):
 			return res
 		CSE.time.addTimeSyncBeacon(self)
 		return Result(status = True)
+	
+
+	def update(self, dct: JSON = None, originator: str = None) -> Result:
+		originalBcnc = self.bcnc
+		if not (res := super().update(dct, originator)).status:
+			return res
+		CSE.time.updateTimeSyncBeacon(self, originalBcnc)
+		return Result(status = True)
+	
+
+	def deactivate(self, originator: str) -> None:
+		super().deactivate(originator)
+		CSE.time.removeTimeSyncBeacon(self)
+
 
 
 	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
@@ -127,4 +141,11 @@ class TSB(AnnounceableResource):
 		return Result(status = True)
 		
 
+	def getInterval(self) -> float:
+		"""	Return the real beacon interval in seconds instead of the ISO period.
+		
+			Returns:
+				Beacon interval as a float representing seconds.
+		"""
+		return self[self._bcni]
 
