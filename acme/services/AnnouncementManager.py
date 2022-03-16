@@ -24,7 +24,7 @@ from .Configuration import Configuration
 # TODO for anounceable resource:
 # - update: update resource here
 
-waitBeforeAnnouncement = 3
+waitBeforeAnnouncement = 3	# seconds # TODO configurable
 
 class AnnouncementManager(object):
 
@@ -37,12 +37,12 @@ class AnnouncementManager(object):
 		# Configuration values
 		self.checkInterval			= Configuration.get('cse.announcements.checkInterval')
 
-		self.start()
+		# self.start()	# TODO remove after 0.10.0
 		L.isInfo and L.log('AnnouncementManager initialized')
 
 
 	def shutdown(self) -> bool:
-		self.stop()
+		# self.stop()	# TODO remove after 0.10.0
 		if CSE.remote:
 			for csr in CSE.remote.getAllLocalCSRs():
 				if csr:
@@ -50,30 +50,35 @@ class AnnouncementManager(object):
 		L.isInfo and L.log('AnnouncementManager shut down')
 		return True
 
-	#
-	#	Announcement Monitor
-	#
 
-	# Start the monitor in a thread. 
-	def start(self) -> None:
-		L.isInfo and L.log('Starting Announcements monitor')
-		BackgroundWorkerPool.newWorker(self.checkInterval, self.announcementMonitorWorker, 'anncMonitor').start()
+	# TODO Test this for a while. And remove it if this fully works as expected.
+	# A regular check might be overkill. Just using the events should be enough.
 
 
-	# Stop the monitor. Also delete the CSR resources on both sides
-	def stop(self) -> None:
-		L.isInfo and L.log('Stopping Announcements monitor')
-		# Stop the thread
-		BackgroundWorkerPool.stopWorkers('anncMonitor')
+	# #
+	# #	Announcement Monitor
+	# #
+
+	# # Start the monitor in a thread. 
+	# def start(self) -> None:
+	# 	L.isInfo and L.log('Starting Announcements monitor')
+	# 	BackgroundWorkerPool.newWorker(self.checkInterval, self.announcementMonitorWorker, 'anncMonitor').start()
 
 
-	def announcementMonitorWorker(self) -> bool:
-		L.isDebug and L.logDebug('Checking announcements to remote CSEs')
+	# # Stop the monitor
+	# def stop(self) -> None:
+	# 	L.isInfo and L.log('Stopping Announcements monitor')
+	# 	# Stop the worker
+	# 	BackgroundWorkerPool.stopWorkers('anncMonitor')
 
-		# check all CSR
-		for csr in CSE.remote.getAllLocalCSRs():
-			self.checkResourcesForAnnouncement(csr)
-		return True
+
+	# def announcementMonitorWorker(self) -> bool:
+	# 	L.isDebug and L.logDebug('Checking announcements to remote CSEs')
+
+	# 	# check all CSR
+	# 	for csr in CSE.remote.getAllLocalCSRs():
+	# 		self.checkResourcesForAnnouncement(csr)
+	# 	return True
 
 
 
