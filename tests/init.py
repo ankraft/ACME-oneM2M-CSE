@@ -50,10 +50,13 @@ requestCheckDelay			= 1	#seconds
 requestExpirationDelay		= 3.0
 
 # TimeSeries Interval
-timeSeriesInterval 		= 2.0 # seconds
+timeSeriesInterval 			= 2.0 # seconds
+
+# TimeSyncBeacon
+tsbPeriodicInterval			= 1.0
 
 # ReleaseVersionIndicator
-RVI						 ='3'
+RVI							='3'
 
 from dataclasses import dataclass, field
 
@@ -61,7 +64,7 @@ from dataclasses import dataclass, field
 class MQTTTopics:
 	reqTopic:str
 	respTopic:str
-	subscribed:bool					= False
+	subscribed:bool			= False
 
 
 # TODO think about to move this?

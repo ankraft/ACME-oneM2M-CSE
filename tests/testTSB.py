@@ -31,7 +31,8 @@ class TestTSB(unittest.TestCase):
 					'api' : 'NMyAppId',
 			 		'rr'  : True,
 			 		'srv' : [ '3' ],
-			 		'poa' : [ NOTIFICATIONSERVER ]
+			 		#'poa' : [ NOTIFICATIONSERVER ]
+			 		'poa' : [ ]
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
@@ -67,6 +68,19 @@ class TestTSB(unittest.TestCase):
 		# Delete again
 		r, rsc = DELETE(tsBURL, TestTSB.originator)
 		self.assertEqual(rsc, RC.deleted, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createTSBEmptyNuFail(self) -> None:
+		""" Create <TSB> with empty nu -> Fail """
+		self.assertIsNotNone(TestTSB.ae)
+		dct = 	{ 'm2m:tsb' : { 
+					'rn'	: tsbRN,
+					'bcnc'	: BeaconCriteria.PERIODIC,
+        			'bcnu'	: [  ]
+				}}
+		r, rsc = CREATE(aeURL, TestTSB.originator, T.TSB, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -113,7 +127,6 @@ class TestTSB(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
-
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSBBcniDefault(self) -> None:
 		""" Create <TSB> Periodic with default bcni"""
@@ -127,7 +140,7 @@ class TestTSB(unittest.TestCase):
 		self.assertEqual(rsc, RC.created, r)
 		self.assertIsNone(findXPath(r, 'm2m:tsb/bcnt'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:tsb/bcni'), r)
-		self.assertGreater(findXPath(r, 'm2m:tsb/bcni'), 0, r)
+		self.assertIsInstance(findXPath(r, 'm2m:tsb/bcni'), str, r)
 		# Delete again
 		r, rsc = DELETE(tsBURL, TestTSB.originator)
 		self.assertEqual(rsc, RC.deleted, r)
@@ -153,14 +166,42 @@ class TestTSB(unittest.TestCase):
 		self.assertEqual(rsc, RC.deleted, r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createTSBPeriodic(self) -> None:
+		""" Create <TSB> """
+		self.assertIsNotNone(TestTSB.ae)
+		dct = 	{ 'm2m:tsb' : { 
+					'rn'	: tsbRN,
+					'bcnc'	: BeaconCriteria.PERIODIC,
+					'bcni'	: f'PT{tsbPeriodicInterval}S',
+        			'bcnu'	: [ NOTIFICATIONSERVER ]
+				}}
+		r, rsc = CREATE(aeURL, TestTSB.originator, T.TSB, dct)
+		self.assertEqual(rsc, RC.created, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:tsb/ri'))
+		self.assertIsNotNone(findXPath(r, 'm2m:tsb/bcnc'))
+		self.assertIsNotNone(findXPath(r, 'm2m:tsb/bcni'))
+		self.assertEqual(findXPath(r, 'm2m:tsb/bcni'), f'PT{tsbPeriodicInterval}S', r)
+
+		self.assertEqual(findXPath(r, 'm2m:tsb/bcnc'), BeaconCriteria.PERIODIC)
+		time.sleep(10)
+		# Delete again
+		r, rsc = DELETE(tsBURL, TestTSB.originator)
+		self.assertEqual(rsc, RC.deleted, r)
+
+
+
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 
 	suite.addTest(TestTSB('test_createTSB'))
+	suite.addTest(TestTSB('test_createTSBEmptyNuFail'))
 	suite.addTest(TestTSB('test_createTSBBcniFail'))
 	suite.addTest(TestTSB('test_createTSBLOSNoBcnrFail'))
 	suite.addTest(TestTSB('test_createTSBBcniDefault'))
 	suite.addTest(TestTSB('test_createTSBBcntDefault'))
+	suite.addTest(TestTSB('test_createTSBPeriodic'))
+	
 
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	printResult(result)
