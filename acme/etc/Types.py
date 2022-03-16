@@ -484,6 +484,7 @@ class Cardinality(ACMEIntEnum):
 	""" Resource attribute cardinalities """
 	CAR1			= auto()
 	CAR1L			= auto()
+	CAR1LN			= auto() # mandatory list AND not empty
 	CAR01			= auto()
 	CAR01L			= auto()
 	CAR1N			= auto() # mandatory, but may be Null/None

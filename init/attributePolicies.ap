@@ -550,7 +550,7 @@
 			"lname": "beaconNotificationURIs",
 			"ns": "m2m",
 			"type": "list",		// m2m:listOfURIs
-			"car": "1L",
+			"car": "1LN",
 			"oc": "M",
 			"ou": "O",
 			"od": "O",
@@ -1991,7 +1991,7 @@
 			"lname": "notificationURI",
 			"ns": "m2m",
 			"type": "list",
-			"car": "1",
+			"car": "1LN",
 			"oc": "M",
 			"ou": "O",
 			"od": "O",

@@ -161,7 +161,15 @@ class Validator(object):
 
 			# Check whether the value is of the correct type
 			if (res := self._validateType(policy.type, attributeValue)).status:
+				# Still some further checks are necessary
+
+				# Check list. May be empty or needs to contain at least one member
+				if policy.cardinality == CAR.CAR1LN and len(attributeValue) == 0:
+					L.logWarn(dbg := f'List attribute must be non-empty: {attributeName}')
+					return Result(status = False, rsc = RC.badRequest, dbg = res.dbg)
+
 				continue
+		
 
 			# fall-through means: not validated
 			L.logWarn(dbg := f'Attribute/value validation error: {attributeName}={str(attributeValue)} ({res.dbg})')
