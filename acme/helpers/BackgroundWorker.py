@@ -10,7 +10,7 @@
 from __future__ import annotations
 from .TextTools import simpleMatch
 import random, sys, heapq, datetime, traceback, time
-from threading import Thread, Timer, Event, Lock, enumerate as threadsEnumerate
+from threading import Thread, Timer, Event, RLock, enumerate as threadsEnumerate
 from typing import Callable, List, Dict, Any, Tuple
 import logging
 
@@ -232,10 +232,12 @@ class Job(Thread):
 		running and paused jobs for reuse.
 	"""
 
-	jobListLock	= Lock()
+	jobListLock	= RLock()	# Re-entrent lock (for the same thread)
 
 	pausedJobs:list[Job] = []
 	runningJobs:list[Job] = []
+
+	# TODO remove the overhead paused Jobs after some time? Algorithm? average run threads?
 
 
 	def __init__(self, *args:Any, **kwargs:Any) -> None:
@@ -243,7 +245,7 @@ class Job(Thread):
 		self.setDaemon(True)
 
 		self.pauseFlag = Event() # The flag used to pause the thread
-		self.pauseFlag.set() # Set to True
+		self.pauseFlag.set() # Set to True, means the job is not paused
 		self.runningFlag = Event() # Used to stop the thread identification
 		self.runningFlag.set() # Set running to True
 
@@ -270,21 +272,31 @@ class Job(Thread):
 
 
 	def pause(self) -> Job:
-		"""	Pause a thread job.
+		"""	Pause a thread job. The job is removed from the running list
+			(if still present there) and moved to the paused list.
 		
 			Return:
 				The Job object.
 		"""
+		with Job.jobListLock:
+			if self in Job.runningJobs:
+				Job.runningJobs.remove(self)
+			Job.pausedJobs.append(self)
 		self.pauseFlag.clear() # Block the thread
 		return self
 
 
 	def resume(self) -> Job:
-		"""	Resume a thread job.
+		"""	Resume a thread job. The job is removed from the paused list
+			(if still present there) and moved to the running list.
 		
 			Return:
 				The Job object.
 		"""
+		with Job.jobListLock:
+			if self in Job.pausedJobs:
+				Job.pausedJobs.remove(self)
+			Job.runningJobs.append(self)
 		self.pauseFlag.set() # Stop blocking
 		return self
 
@@ -297,44 +309,53 @@ class Job(Thread):
 		"""
 		self.runningFlag.clear() # Stop the thread
 		self.pauseFlag.set() # Resume the thread from the suspended state
+		if self in Job.runningJobs:
+			Job.runningJobs.remove(self)
+		if self in Job.pausedJobs:
+			Job.runningJobs.remove(self)
 		return self
 	
 
-	def setTask(self, task:Callable, finished:Callable = None) -> Job:
+	def setTask(self, task:Callable, finished:Callable = None, name:str = None) -> Job:
 		"""	Set a task to run for the Job.
 		
 			Args:
 				task: A Callable. This must include arguments, so a lambda can be used here.
 				finished: A Callable that is called when the task finished.
+				name: Optional name of the job.
 			Return:
 				The Job object.
 		"""
 		self.task = task
 		self.finished = finished
+		self.setName(name)
 		return self
 	
 
 	@classmethod
-	def getJob(cls, task:Callable, finished:Callable) -> Job:
+	def getJob(cls, task:Callable, finished:Callable = None, name:str = None) -> Job:
 		"""	Get a Job object, and set a task and a finished Callable for it to execute.
 			The Job object is either taken from the paused list (if available), or
 			a new one is created.
 			After calling this method the Job instance is neither in the paused nor the
-			running list and must be moved in one of them afterwards.
+			running list. It is moved into the running list, for example, with the `resume()`
+			method.
 
 			Args:
 				task: A Callable. This must include arguments, so a lambda can be used here.
 				finished: A Callable that is called when the task finished.
+				name: Optional name of the job.
 			Return:
 				The Job object.
 		"""
-		with Job.jobListLock:
+		with Job.jobListLock :
 			if not Job.pausedJobs:
 				job = Job().pause()	# new job and internal pause before start
-				job.start() 
-				Job.pausedJobs.append(job)
+				job.start() # start the thread, but since it is paused, it will not run the task
+
 			# remove next job from paused list and set the task parameter
-			return Job.pausedJobs.pop(0).setTask(task, finished)
+			return Job.pausedJobs.pop(0).setTask(task, finished, name)
+
 
 
 
@@ -347,7 +368,7 @@ class BackgroundWorkerPool(object):
 	""" Priority queue. Contains tuples (nextExecution timestamp, workerID). """
 	workerTimer:Timer								= None
 
-	queueLock:Lock					 				= Lock()
+	queueLock:RLock					 				= RLock()
 
 
 	def __new__(cls, *args:str, **kwargs:str) -> BackgroundWorkerPool:
@@ -483,34 +504,18 @@ class BackgroundWorkerPool(object):
 	#
 
 	@classmethod
-	def runJob(cls, task:Callable, name:str = None) -> None:
+	def runJob(cls, task:Callable, name:str = None) -> Job:
 		"""	Run a task as a Thread. Reuse finished threads if possible.
 
 			Args:
 				task: A Callable. This must include arguments, so a lambda can be used here.
 				name: Optional name of the job.
+			Return:
+				Job instance
 		"""
-		
-		def finished(job:Job) -> None:
-			"""	Move a finished Job from the runningJobs to the pausedJobs
-				list.
-
-				Args:
-					job: Job object
-			"""
-			with Job.jobListLock:
-				Job.runningJobs.remove(job)
-				Job.pausedJobs.append(job)
-
-		job = Job.getJob(task, finished)
-
-		with Job.jobListLock:
-			Job.runningJobs.append(job)
-		if name:
-			job.setName(name)
+		return Job.getJob(task, name = name).resume()
 		# job.setName(name if name else str(job.native_id))
-		job.resume()
-	
+
 
 	@classmethod
 	def countJobs(cls) -> Tuple[int, int]:
@@ -527,9 +532,10 @@ class BackgroundWorkerPool(object):
 		"""	Stop and remove all Jobs.
 		"""
 		while Job.runningJobs:
-			Job.runningJobs.pop(0).stop()
+			# Job.runningJobs.pop(0).stop()
+			Job.runningJobs[0].stop()	# will remove itself
 		while Job.pausedJobs:
-			Job.pausedJobs.pop(0).stop()
+			Job.pausedJobs[0].stop()	# will remove itself
 		while any( [ isinstance(each, Job) for each in threadsEnumerate() ] ):
 			time.sleep(0.00001)
 
