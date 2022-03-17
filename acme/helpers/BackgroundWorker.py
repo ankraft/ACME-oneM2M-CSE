@@ -232,12 +232,17 @@ class Job(Thread):
 		running and paused jobs for reuse.
 	"""
 
-	jobListLock	= RLock()	# Re-entrent lock (for the same thread)
+	jobListLock	= RLock()			# Re-entrent lock (for the same thread)
 
+	# Paused and running job lists
 	pausedJobs:list[Job] = []
 	runningJobs:list[Job] = []
 
-	# TODO remove the overhead paused Jobs after some time? Algorithm? average run threads?
+	# Defaults for reducing overhead jobs
+	balanceTarget:float = 3.0		# Target balance between paused and running jobs (n paused for 1 running)
+	balanceLatency:int = 1000		# Number of requests for getting a new Job before a check
+	balanceReduceFactor:float = 2.0	# Factor to reduce the paused jobs (number of paused / balanceReduceFactor)
+	_balanceCount:int = 0			# Counter for current runs. Compares against balance
 
 
 	def __init__(self, *args:Any, **kwargs:Any) -> None:
@@ -353,11 +358,36 @@ class Job(Thread):
 				job = Job().pause()	# new job and internal pause before start
 				job.start() # start the thread, but since it is paused, it will not run the task
 
-			# remove next job from paused list and set the task parameter
-			return Job.pausedJobs.pop(0).setTask(task, finished, name)
+			job = Job.pausedJobs.pop(0).setTask(task, finished, name)	# remove next job from paused list and set the task parameter
+			Job._balanceJobs()	# check the pause/running jobs balance
+			return job
+	
+
+	@classmethod
+	def _balanceJobs(cls) -> None:
+		if not Job.balanceLatency:
+			return
+		Job._balanceCount += 1
+		if Job._balanceCount >= Job.balanceLatency:		# check after balancyLatency runs
+			if float(lp := len(Job.pausedJobs)) / float(len(Job.runningJobs)) > Job.balanceTarget:				# out of balance?
+				#print(f'balance: {float(lp := len(Job.pausedJobs)) / float(len(Job.runningJobs))} reducing: {int(lp / Job.balanceReduceFactor)} lp: {lp} lr: {len(Job.runningJobs)}')
+				for _ in range((int(lp / Job.balanceReduceFactor))):
+					Job.pausedJobs.pop(0).stop()
+			Job._balanceCount = 0
 
 
+	@classmethod
+	def setJobBalance(cls, balanceTarget:float = 3.0, balanceLatency:int = 1000, balanceReduceFactor:float = 2.0) -> None:
+		"""	Set parameters to balance the number of paused Jobs.
 
+			Args:
+				balanceTarget: Target balance between paused and running jobs (n paused for 1 running).
+				balanceLatency: Number of requests for getting a new Job before a balance check.
+				balanceReduceFactor: Factor to reduce the paused jobs (number of paused / balanceReduceFactor).	
+		"""
+		cls.balanceTarget = balanceTarget
+		cls.balanceLatency = balanceLatency
+		cls.balanceReduceFactor = balanceReduceFactor
 
 
 class BackgroundWorkerPool(object):
@@ -383,6 +413,18 @@ class BackgroundWorkerPool(object):
 				logger: Logging callback.
 		"""
 		BackgroundWorker._logger = logger
+
+
+	@classmethod
+	def setJobBalance(cls, balanceTarget:float = 3.0, balanceLatency:int = 1000, balanceReduceFactor:float = 2.0) -> None:
+		"""	Set parameters to balance the number of paused Jobs.
+
+			Args:
+				balanceTarget: Target balance between paused and running jobs (n paused for 1 running).
+				balanceLatency: Number of requests for getting a new Job before a balance check.
+				balanceReduceFactor: Factor to reduce the paused jobs (number of paused / balanceReduceFactor).	
+		"""
+		Job.setJobBalance(balanceTarget, balanceLatency, balanceReduceFactor)
 
 
 	@classmethod
