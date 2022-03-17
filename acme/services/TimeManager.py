@@ -8,19 +8,25 @@
 #
 
 from __future__ import annotations
-from typing import cast, List
+from typing import cast, List, Tuple
 from ..services.Logging import Logging as L
 from ..resources.TSB import TSB
 from ..services import CSE
-from ..etc.Types import BeaconCriteria
-from ..etc.Types import ResourceTypes as T
+from ..etc.Types import BeaconCriteria, Result, ResourceTypes as T, ResponseStatusCode as RC
 from ..etc import DateUtils
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 
+# TODO add check to http request handling
+# TODO add check to http response handling
+# TODO add check to mqtt request handling
+# TODO add check to mqtt response handling
 
 class TimeManager(object):
 
 	def __init__(self) -> None:
+
+		# Add a handler when the CSE is reset
+		CSE.event.addHandler(CSE.event.cseReset, self.restart)	# type: ignore
 
 		# Read all periofics and add them (again)
 		for each in self._getAllPeriodicTimeSyncBeacons():
@@ -29,11 +35,11 @@ class TimeManager(object):
 		# Table for periodic timeSyncBeacons
 		self.periodicTimeSyncBeacons:dict[str, BackgroundWorker] = {}
 
+		# Table for Loss of sync timeSyncBeacons
+		self.losTimeSyncBeacons:dict[str, Tuple[float, str]] = {}	# dict bcnr -> (threshold, tsb.ri)
+
 		L.isInfo and L.log('TimeManager initialized')
 
-
-# LoS table
-#dict[bcnr, (threshold, tsb.ri)]
 
 	def shutdown(self) -> bool:
 		"""	Shutdown the TimeManager.
@@ -41,13 +47,29 @@ class TimeManager(object):
 			Return:
 				Boolean, always True.
 		"""
+		self._stopPeriodicBeacons()
 		L.isInfo and L.log('TimeManager shut down')
 		return True
+
+
+	def restart(self) -> None:
+		"""	Restart the time manager services.
+		"""
+		self._stopPeriodicBeacons()
+		self.losTimeSyncBeacons.clear()
+		L.isDebug and L.logDebug('TimeManager restarted')
+
 	
-	# TODO restart: stop all timers
+	def _stopPeriodicBeacons(self) -> None:
+		# TODO 
+		for each in self.periodicTimeSyncBeacons.values():
+			each.stop()
+		self.periodicTimeSyncBeacons.clear()
 
 
-	# TODO addLoS, removeLoS
+	
+
+	# TODO  removeLoS
 	# TODO isLossOfSynchronization
 
 
@@ -55,15 +77,15 @@ class TimeManager(object):
 		return cast(List[TSB], CSE.storage.searchByFragment( { 'ty': T.TSB, 'bcnc': BeaconCriteria.PERIODIC} ))
 
 
-	def addTimeSyncBeacon(self, tsb:TSB) -> None:
-		# TODO
+	def addTimeSyncBeacon(self, tsb:TSB) -> Result:
+		# TODO doc
 		if tsb.bcnc == BeaconCriteria.PERIODIC:
-			self.addPeriodicTimeSyncBeacon(tsb)
+			return self.addPeriodicTimeSyncBeacon(tsb)
 		else:	# Loss of sync
-			self.addLoSTimeSyncBeacon(tsb)
+			return self.addLoSTimeSyncBeacon(tsb)
 
 
-	def addPeriodicTimeSyncBeacon(self, tsb:TSB) -> None:
+	def addPeriodicTimeSyncBeacon(self, tsb:TSB) -> Result:
 		"""	Add a worker for a periodic timeSyncBeacon resource.
 		
 			Args:
@@ -77,11 +99,16 @@ class TimeManager(object):
 					Bool to indicate the continous run of the worker.
 			"""
 			L.isDebug and L.logDebug(f'Sending beacon notification for {tsb.ri}')
+			notification = {
+				'm2m:tsbn' : {	# TODO proposed short name. Check with TS-0004 later
+					'tbr' : tsb.ri,
+					'ctm' : self.getCSETimestamp()
+				}
+			}
+			CSE.notification.sendNotificationWithDict(notification, tsb.bcnu)
 			return True
 
 		
-		# TODO send real notification
-
 		if (ri := tsb.ri) in self.periodicTimeSyncBeacons:
 			self.removePeriodicTimeSyncBeacon(tsb)
 		worker = BackgroundWorkerPool.newWorker(tsb.getInterval(), 
@@ -89,20 +116,29 @@ class TimeManager(object):
 												f'tsbPeriodic_{ri}', 
 												startWithDelay = True).start()
 		self.periodicTimeSyncBeacons[ri] = worker
+		return Result.positiveResult()
 
 
-	def addLoSTimeSyncBeacon(self, tsb:TSB) -> None:
-		# TODO add to a table
-		...
+	def addLoSTimeSyncBeacon(self, tsb:TSB) -> Result:
+		# TODO doc
+		if not (bcnr := tsb.bcnr):
+			L.isWarn and L.logWarn(dbg := f'bcnr missing in TSB: {tsb.ri}')
+			return Result.errorResult(dbg = dbg)
+		if bcnr in self.losTimeSyncBeacons: 
+			L.isDebug and L.logDebug(dbg := f'TimeSyncBeacon already defined for requester: {bcnr}')	# TODO wait for discussion whether multiple bcnr are allowed
+			return Result.errorResult(dbg = dbg)
+		self.losTimeSyncBeacons[bcnr] = (tsb.bcnt, tsb.ri)
+		return Result.positiveResult()
+
 
 	
-	def updateTimeSyncBeacon(self, tsb:TSB, originalBcnc:BeaconCriteria) -> None:
+	def updateTimeSyncBeacon(self, tsb:TSB, originalBcnc:BeaconCriteria) -> Result:
 		# TODO
 		...
 	
 
 	def removeTimeSyncBeacon(self, tsb:TSB) -> None:
-		# TODO
+		# TODO doc
 		if tsb.bcnc == BeaconCriteria.PERIODIC:
 			self.removePeriodicTimeSyncBeacon(tsb)
 		else:	# Loss of sync

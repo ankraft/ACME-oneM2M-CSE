@@ -8,14 +8,16 @@
 #
 
 import unittest, sys
+import isodate
 if '..' not in sys.path:
 	sys.path.append('..')
 from init import *
-from acme.etc.Types import CSEStatus
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC, BeaconCriteria
-from acme.etc.Constants import Constants as C
 from typing import Tuple
 
+
+# TODO update
+# TODO LOS
 
 class TestTSB(unittest.TestCase):
 
@@ -54,7 +56,6 @@ class TestTSB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSB(self) -> None:
 		""" Create <TSB> """
-		self.assertIsNotNone(TestTSB.ae)
 		dct = 	{ 'm2m:tsb' : { 
 					'rn'	: tsbRN,
 					'bcnc'	: BeaconCriteria.PERIODIC,
@@ -73,7 +74,6 @@ class TestTSB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSBEmptyNuFail(self) -> None:
 		""" Create <TSB> with empty nu -> Fail """
-		self.assertIsNotNone(TestTSB.ae)
 		dct = 	{ 'm2m:tsb' : { 
 					'rn'	: tsbRN,
 					'bcnc'	: BeaconCriteria.PERIODIC,
@@ -86,7 +86,6 @@ class TestTSB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSBBcniFail(self) -> None:
 		""" Create <TSB> with wrong bcni -> FAIL"""
-		self.assertIsNotNone(TestTSB.ae)
 		dct = 	{ 'm2m:tsb' : { 
 					'rn'	: tsbRN,
 					'bcnc'	: BeaconCriteria.LOSS_OF_SYNCHRONIZATION,
@@ -102,7 +101,6 @@ class TestTSB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSBLOSNoBcnrFail(self) -> None:
 		""" Create <TSB> with wrong bcnt -> FAIL"""
-		self.assertIsNotNone(TestTSB.ae)
 		dct = 	{ 'm2m:tsb' : { 
 					'rn'	: tsbRN,
 					'bcnc'	: BeaconCriteria.PERIODIC,
@@ -116,7 +114,6 @@ class TestTSB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSBBcntNoBcnrFail(self) -> None:
 		""" Create <TSB> with LossOfSync and no bcnr -> FAIL"""
-		self.assertIsNotNone(TestTSB.ae)
 		dct = 	{ 'm2m:tsb' : { 
 					'rn'	: tsbRN,
 					'bcnc'	: BeaconCriteria.LOSS_OF_SYNCHRONIZATION,
@@ -130,7 +127,6 @@ class TestTSB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSBBcniDefault(self) -> None:
 		""" Create <TSB> Periodic with default bcni"""
-		self.assertIsNotNone(TestTSB.ae)
 		dct = 	{ 'm2m:tsb' : { 
 					'rn'	: tsbRN,
 					'bcnc'	: BeaconCriteria.PERIODIC,
@@ -149,7 +145,6 @@ class TestTSB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSBBcntDefault(self) -> None:
 		""" Create <TSB> LossOfSync with default bcnt"""
-		self.assertIsNotNone(TestTSB.ae)
 		dct = 	{ 'm2m:tsb' : { 
 					'rn'	: tsbRN,
 					'bcnc'	: BeaconCriteria.LOSS_OF_SYNCHRONIZATION,
@@ -168,8 +163,8 @@ class TestTSB(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSBPeriodic(self) -> None:
-		""" Create <TSB> """
-		self.assertIsNotNone(TestTSB.ae)
+		clearLastNotification()
+		""" Create <TSB> with periodic notification"""
 		dct = 	{ 'm2m:tsb' : { 
 					'rn'	: tsbRN,
 					'bcnc'	: BeaconCriteria.PERIODIC,
@@ -182,13 +177,27 @@ class TestTSB(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:tsb/bcnc'))
 		self.assertIsNotNone(findXPath(r, 'm2m:tsb/bcni'))
 		self.assertEqual(findXPath(r, 'm2m:tsb/bcni'), f'PT{tsbPeriodicInterval}S', r)
-
 		self.assertEqual(findXPath(r, 'm2m:tsb/bcnc'), BeaconCriteria.PERIODIC)
-		time.sleep(10)
+
+		# Check notification
+		time.sleep(tsbPeriodicInterval * 2)	# wait a moment
+		lastNotification = getLastNotification()
+		self.assertIsNotNone(lastNotification)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:tsbn'), lastNotification)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:tsbn/tbr'), lastNotification)
+		self.assertEqual(findXPath(lastNotification, 'm2m:tsbn/tbr'), findXPath(r, 'm2m:tsb/ri'), lastNotification)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:tsbn/ctm'), lastNotification)
+		try:
+			raised = False
+			isodate.parse_time(findXPath(lastNotification, 'm2m:tsbn/ctm'))
+		except:
+			raised = True
+		finally:
+			self.assertFalse(raised, f'Error parsing timestamp: {lastNotification}')
+
 		# Delete again
 		r, rsc = DELETE(tsBURL, TestTSB.originator)
 		self.assertEqual(rsc, RC.deleted, r)
-
 
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
@@ -210,3 +219,4 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 if __name__ == '__main__':
 	_, errors, _ = run(2, True)
 	sys.exit(errors)
+

@@ -82,16 +82,14 @@ class TSB(AnnounceableResource):
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
-		CSE.time.addTimeSyncBeacon(self)
-		return Result(status = True)
+		return CSE.time.addTimeSyncBeacon(self)
 	
 
 	def update(self, dct: JSON = None, originator: str = None) -> Result:
 		originalBcnc = self.bcnc
 		if not (res := super().update(dct, originator)).status:
 			return res
-		CSE.time.updateTimeSyncBeacon(self, originalBcnc)
-		return Result(status = True)
+		return CSE.time.updateTimeSyncBeacon(self, originalBcnc)
 	
 
 	def deactivate(self, originator: str) -> None:
