@@ -296,7 +296,7 @@ class RequestManager(object):
 		if not (cseres := Utils.getCSE()).resource:
 			return Result(rsc=RC.badRequest, dbg=cseres.dbg)
 		if not (rres := CSE.registration.checkResourceCreation(nres.resource, request.headers.originator, cseres.resource)).status:
-			return rres.errorResult()
+			return rres.errorResultCopy()
 		
 		# set the CSE.ri as indicator that this resource was created internally
 		nres.resource.setCreatedInternally(cseres.resource.pi)

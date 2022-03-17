@@ -1036,6 +1036,7 @@ class BeaconCriteria(ACMEIntEnum):
 #	Result and Argument and Header Data Classes
 #
 
+
 @dataclass
 class Result:
 	resource:Resource			= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
@@ -1047,10 +1048,38 @@ class Result:
 	status:bool 				= None
 
 
-	def errorResult(self) -> Result:
+	def errorResultCopy(self) -> Result:
 		""" Copy only the rsc and dbg to a new result instance.
+
+			Return:
+				Result instance.
 		"""
-		return Result(status=self.status, rsc=self.rsc, dbg=self.dbg)
+		return Result(status = self.status, rsc = self.rsc, dbg = self.dbg)
+	
+
+	@classmethod
+	def errorResult(cls, rsc:ResponseStatusCode = ResponseStatusCode.badRequest, dbg:str = '') -> Result:
+		"""	Create and return a Result object with `status = False` and RSC and debug
+			message set.
+
+			Args:
+				rsc: ResponseStatusCode to return as an error.
+				dbg: String with the debug message.
+			Return:
+				Error Result instance.
+		"""
+		return Result(status = False, rsc = rsc, dbg = dbg) 
+
+
+	@classmethod
+	def positiveResult(cls) -> Result:
+		"""	Create and return a Result object with `status = True`.
+
+			Return:
+				Correct Result instance. This is always the same Result instance!
+		"""
+		return _positiveResult
+
 
 	def toData(self, ct:ContentSerializationType=None) -> str|bytes|JSON:
 		from ..resources.Resource import Resource
@@ -1103,6 +1132,10 @@ class Result:
 				for k,v in originalRequest.parameters.items():	# don't overwrite existing parameters
 					if k not in self.request.parameters:
 						self.request.parameters[k] = v
+
+
+# Result instance to be re-used all over the place
+_positiveResult = Result(status = True)
 
 
 ##############################################################################

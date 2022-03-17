@@ -364,7 +364,7 @@ class RegistrationManager(object):
 		acp.addSelfPermission(selfOrigs, selfPermission)
 
 		if not (res := self.checkResourceCreation(acp, CSE.cseOriginator, parentResource)).status:
-			return res.errorResult()
+			return res.errorResultCopy()
 		return CSE.dispatcher.createResource(acp, parentResource=parentResource, originator=CSE.cseOriginator)
 
 

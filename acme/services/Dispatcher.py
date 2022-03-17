@@ -154,7 +154,7 @@ class Dispatcher(object):
 		# do discovery
 		# TODO simplify arguments
 		if not (res := self.discoverResources(id, originator, request.args.handling, request.args.fo, request.args.conditions, request.args.attributes, permission=permission)).status:	# not found?
-			return res.errorResult()				
+			return res.errorResultCopy()				
 
 		# check and filter by ACP. After this allowedResources only contains the resources that are allowed
 		allowedResources = []
@@ -484,11 +484,11 @@ class Dispatcher(object):
 
 		# Check whether the parent allows the adding
 		if not (res := parentResource.childWillBeAdded(nresource, originator)).status:
-			return res.errorResult()
+			return res.errorResultCopy()
 
 		# Check resource creation
 		if not (rres := CSE.registration.checkResourceCreation(nresource, originator, parentResource)).status:
-			return rres.errorResult()
+			return rres.errorResultCopy()
 
 		# check whether the resource already exists, either via ri or srn
 		# hasResource() may actually perform the test in one call, but we want to give a distinguished debug message
@@ -556,7 +556,7 @@ class Dispatcher(object):
 		# resources that will try to read the resource from the DB.
 		if not (res := resource.activate(parentResource, originator)).status: 	# activate the new resource
 			resource.dbDelete()
-			return res.errorResult()
+			return res.errorResultCopy()
 		
 		# Could be that we changed the resource in the activate, therefore write it again
 		if not (res := resource.dbUpdate()).resource:
@@ -638,12 +638,12 @@ class Dispatcher(object):
 
 
 		if not (res := self.updateResource(resource, deepcopy(request.pc), originator=originator)).resource:
-			return res.errorResult()
+			return res.errorResultCopy()
 		resource = res.resource 	# re-assign resource (might have been changed during update)
 
 		# Check resource update with registration
 		if not (rres := CSE.registration.checkResourceUpdate(resource, deepcopy(request.pc))).status:
-			return rres.errorResult()
+			return rres.errorResultCopy()
 
 		#
 		# Handle RCN's
@@ -680,7 +680,7 @@ class Dispatcher(object):
 		L.isDebug and L.logDebug(f'Updating resource ri: {resource.ri}, type: {resource.ty}')
 		if doUpdateCheck:
 			if not (res := resource.update(dct, originator)).status:
-				return res.errorResult()
+				return res.errorResultCopy()
 		else:
 			L.isDebug and L.logDebug('No check, skipping resource update')
 

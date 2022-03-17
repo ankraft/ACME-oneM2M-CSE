@@ -484,7 +484,7 @@ class RemoteCSEManager(object):
 		L.isDebug and L.logDebug(f'Retrieving registrar CSE from: {self.registrarCSI} url: {self.registrarCSEURL}')	
 		res = CSE.request.sendRetrieveRequest(self.registrarCSEURL, CSE.cseCsi, ct = self.registrarSerialization)	# own CSE.csi is the originator
 		if res.rsc not in [ RC.OK ]:
-			return res.errorResult()
+			return res.errorResultCopy()
 		if (csi := Utils.findXPath(cast(JSON, res.data), 'm2m:cb/csi')) == None:
 			L.logErr(err := 'csi not found in remote CSE resource', showStackTrace = False)
 			return Result(status = False, rsc = RC.badRequest, dbg = err)
@@ -516,7 +516,7 @@ class RemoteCSEManager(object):
 		L.isDebug and L.logDebug(f'Retrieve remote resource id: {id} url: {url}')
 		res = CSE.request.sendRetrieveRequest(url, originator)	## todo
 		if not res.status or res.rsc != RC.OK:
-			return res.errorResult()
+			return res.errorResultCopy()
 		
 		# assign the remote ID to the resource's dictionary
 		_, tpe = Utils.pureResource(cast(JSON, res.data))
