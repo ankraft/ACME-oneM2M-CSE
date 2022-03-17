@@ -56,6 +56,7 @@ The following tables provide detailed descriptions of all the possible CSE confi
 
 [\[cse\] - General CSE Settings](#general)  
 [\[cse.security\] - General Security Settings](#security)  
+[\[cse.operation\] - CSE Operations Settings](#operation)  
 [\[server.http\] - HTTP Server Settings](#server_http)  
 [\[server.http.security\] - HTTP Security Settings](#security_http)  
 [\[client.mqtt\] - MQTT Client Settings](#client_mqtt)  
@@ -108,10 +109,20 @@ The following tables provide detailed descriptions of all the possible CSE confi
 <a name="security"></a>
 ### [cse.security] - General Security Settings
 
-| Keyword         | Description                                                                               | Configuration Name            |
-|:----------------|:------------------------------------------------------------------------------------------|:------------------------------|
-| enableACPChecks | Enable access control checks.<br/> Default: true                                          | cse.secuerity.enableACPChecks |
-| fullAccessAdmin | Always grant the admin originator full access (bypass access checks).<br /> Default: True | cse.security.fullAccessAdmin  |
+| Keyword         | Description                                                                               | Configuration Name           |
+|:----------------|:------------------------------------------------------------------------------------------|:-----------------------------|
+| enableACPChecks | Enable access control checks.<br/> Default: true                                          | cse.security.enableACPChecks |
+| fullAccessAdmin | Always grant the admin originator full access (bypass access checks).<br /> Default: True | cse.security.fullAccessAdmin |
+
+
+<a name="operation"></a>
+### [cse.operation] - CSE Operations Settings
+
+| Keyword                | Description                                                                                                                                                                                                                                     | Configuration Name                   |
+|:-----------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------------|
+| jobBalanceTarget       | Thread Pool Management: Target balance between paused and running jobs (n paused for 1 running threads).<br/>Default: 3.0                                                                                                                       | cse.operation.jobBalanceTarget       |
+| jobBalanceLatency      | Thread Pool Management: Number of get / create requests for a new thread before performing a balance check. A latency of 0 disables the thread pool balancing.<br/>Default: 1000                                                                | cse.operation.jobBalanceLatency      |
+| jobBalanceReduceFactor | Thread Pool Management: The Factor to reduce the paused jobs (number of paused / balanceReduceFactor) in a balance check.<br/>Example: a factor of 2.0 reduces the number of paused threads by half in a single balance check.<br/>Default: 2.0 | cse.operation.jobBalanceReduceFactor |
 
 
 <a name="server_http"></a>

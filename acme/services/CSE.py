@@ -140,7 +140,10 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	# set the logger for the backgroundWorkers. Add an offset to compensate for
 	# this and other redirect functions to determine the correct file / linenumber
 	# in the log output
-	BackgroundWorkerPool.setLogger(lambda l,m: L.logWithLevel(l,m, stackOffset = 2))
+	BackgroundWorkerPool.setLogger(lambda l,m: L.logWithLevel(l, m, stackOffset = 2))
+	BackgroundWorkerPool.setJobBalance(	balanceTarget = Configuration.get('cse.operation.jobBalanceTarget'),
+										balanceLatency = Configuration.get('cse.operation.jobBalanceLatency'),
+										balanceReduceFactor = Configuration.get('cse.operation.jobBalanceReduceFactor'))
 
 	console = Console()						# Start the console
 

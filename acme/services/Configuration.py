@@ -118,7 +118,6 @@ class Configuration(object):
 				#	CSE
 				#
 
-
 				'cse.type'								: config.get('cse', 'type',								fallback = 'IN'),		# IN, MN, ASN
 				'cse.spid'								: config.get('cse', 'serviceProviderID',				fallback = 'acme.example.com'),
 				'cse.csi'								: config.get('cse', 'cseID',							fallback = '/id-in'),
@@ -140,8 +139,17 @@ class Configuration(object):
 				#
 				#	CSE Security
 				#
+
 				'cse.security.enableACPChecks'			: config.getboolean('cse.security', 'enableACPChecks', 	fallback = True),
 				'cse.security.fullAccessAdmin'			: config.getboolean('cse.security', 'fullAccessAdmin', 	fallback = True),
+
+				#
+				#	CSE Operation
+				#
+
+				'cse.operation.jobBalanceTarget'		: config.getfloat('cse.operation', 'jobBalanceTarget', 	fallback = 3.0),
+				'cse.operation.jobBalanceLatency'		: config.getint('cse.operation', 'jobBalanceLatency', 	fallback = 1000),
+				'cse.operation.jobBalanceReduceFactor'	: config.getfloat('cse.operation', 'jobBalanceReduceFactor', 	fallback = 2.0),
 
 				#
 				#	HTTP Server
@@ -425,6 +433,15 @@ class Configuration(object):
 			# if Configuration._configuration['cse.registrar.address'].startswith('https:'):
 			# 	_print('[orange3]Configuration Warning: Changing "https" to "http" in \[cse.registrar]:address')
 			# 	Configuration._configuration['cse.registrar.address'] = Configuration._configuration['cse.registrar.address'].replace('https:', 'http:')
+
+
+		# Operation
+		if Configuration._configuration['cse.operation.jobBalanceTarget'] <= 0.0:
+			return False, f'Configuration Error: \[cse.operation]:jobBalanceTarget must be > 0.0'
+		if Configuration._configuration['cse.operation.jobBalanceLatency'] < 0:
+			return False, f'Configuration Error: \[cse.operation]:jobBalanceLatency must be >= 0'
+		if Configuration._configuration['cse.operation.jobBalanceReduceFactor'] < 1.0:
+			return False, f'Configuration Error: \[cse.operation]:jobBalanceReduceFactor must be >= 1.0'
 
 
 		#
