@@ -48,11 +48,11 @@ class RBO(MgmtObj):
 	}
 	
 	
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(dct, pi, mgd=T.RBO, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(dct, pi, mgd = T.RBO, create = create)
 
-		self.setAttribute('rbo', False, overwrite=True)	# always False
-		self.setAttribute('far', False, overwrite=True)	# always False
+		self.setAttribute('rbo', False, overwrite = True)	# always False
+		self.setAttribute('far', False, overwrite = True)	# always False
 
 
 	#
@@ -60,20 +60,20 @@ class RBO(MgmtObj):
 	#	validate() and update()
 	#
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
-		self.setAttribute('rbo', False, overwrite=True)	# always set (back) to False
-		self.setAttribute('far', False, overwrite=True)	# always set (back) to False
-		return Result(status=True)
+		self.setAttribute('rbo', False, overwrite = True)	# always set (back) to False
+		self.setAttribute('far', False, overwrite = True)	# always set (back) to False
+		return Result.successResult()
 
 
-	def update(self, dct:JSON=None, originator:str=None) -> Result:
+	def update(self, dct:JSON = None, originator:str = None) -> Result:
 		# Check for rbo & far updates 
 		if dct and self.tpe in dct:
 			rbo = Utils.findXPath(dct, 'm2m:rbo/rbo')
 			far = Utils.findXPath(dct, 'm2m:rbo/far')
 			if rbo and far:
-				return Result(status=False, rsc=RC.badRequest, dbg='update both rbo and far to True is not allowed')
+				return Result.errorResult(dbg='update both rbo and far to True is not allowed')
 
 		return super().update(dct, originator)

@@ -45,8 +45,16 @@ class Resource(object):
 	# ATTN: There is a similar definition in FCNT, TSB! Don't Forget to add attributes there as well
 	internalAttributes	= [ _rtype, _srn, _node, _createdInternally, _imported, _isVirtual, _isInstantiated, _originator, _announcedTo, _modified, _isAnnounced, _remoteID ]
 
-	def __init__(self, ty:T, dct:JSON=None, pi:str=None, tpe:str=None, create:bool=False, inheritACP:bool=False, 
-				 readOnly:bool=False, rn:str=None, isVirtual:bool=False, isAnnounced:bool=False) -> None:
+	def __init__(self, 
+				 ty:T, dct:JSON = None, 
+				 pi:str = None, 
+				 tpe:str = None,
+				 create:bool = False,
+				 inheritACP:bool = False, 
+				 readOnly:bool = False, 
+				 rn:str = None, 
+				 isVirtual:bool = False, 
+				 isAnnounced:bool = False) -> None:
 		self.tpe = tpe
 		if ty not in [ T.FCNT, T.FCI ]: 	# For some types the tpe/root is empty and will be set later in this method
 			self.tpe = ty.tpe() if not tpe else tpe
@@ -60,21 +68,16 @@ class Resource(object):
 			self.dict = deepcopy(dct.get(self.tpe))
 			if not self.dict:
 				self.dict = deepcopy(dct)
-			# if self.tpe in dct:
-			# 	self.dict = deepcopy(dct[self.tpe])
-			# else:
-			# 	self.dict = deepcopy(dct)
 			self._originalDict = deepcopy(dct)	# keep for validation in activate() later
 		else:
 			# no Dict, so the resource is instantiated programmatically
 			self.setAttribute(self._isInstantiated, True)
 
-
 		if self.dict:
 			if not self.tpe: # and _rtype in self:
 				self.tpe = self.__rtype__
 			if not self.hasAttribute('ri'):
-				self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite=False)
+				self.setAttribute('ri', Utils.uniqueRI(self.tpe), overwrite = False)
 			if pi is not None: # test for None bc pi might be '' (for cse). pi is used subsequently here
 				self.setAttribute('pi', pi)
 
@@ -102,14 +105,14 @@ class Resource(object):
 			# Set some more attributes
 			if not (self.hasAttribute('ct') and self.hasAttribute('lt')):
 				ts = DateUtils.getResourceDate()
-				self.setAttribute('ct', ts, overwrite=False)
-				self.setAttribute('lt', ts, overwrite=False)
+				self.setAttribute('ct', ts, overwrite = False)
+				self.setAttribute('lt', ts, overwrite = False)
 
 			if self.ty not in [ T.CSEBase ] and not self.hasAttribute('et'):
-				self.setAttribute('et', DateUtils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite=False) 
+				self.setAttribute('et', DateUtils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite = False) 
 			if ty is not None:	# ty is an int
 				if T.isStateTagResourceTypes(ty):		# Only for allowed resources
-					self.setAttribute('st', 0, overwrite=False)
+					self.setAttribute('st', 0, overwrite = False)
 				self.setAttribute('ty', int(ty))
 
 			#
@@ -121,7 +124,7 @@ class Resource(object):
 			self.dict = Utils.removeNoneValuesFromDict(self.dict, ['cr'])	# allow the ct attribute to stay in the dictionary. It will be handled with in the RegistrationManager
 
 			self[self._rtype] = self.tpe
-			self.setAttribute(self._announcedTo, [], overwrite=False)
+			self.setAttribute(self._announcedTo, [], overwrite = False)
 
 
 
@@ -129,19 +132,6 @@ class Resource(object):
 	_excludeFromUpdate = [ 'ri', 'ty', 'pi', 'ct', 'lt', 'st', 'rn', 'mgd' ]
 	def asDict(self, embedded:bool=True, update:bool=False, noACP: bool=False) -> JSON:
 		# remove (from a copy) all internal attributes before printing
-		# dct = deepcopy(self.dict)
-		# for k in self.internalAttributes:
-		# 	if k in dct: 
-		# 		del dct[k]
-
-		# if noACP:
-		# 	if 'acpi' in dct:
-		# 		del dct['acpi']
-
-		# if update:
-		# 	for k in [ 'ri', 'ty', 'pi', 'ct', 'lt', 'st', 'rn', 'mgd']:
-		# 		dct.pop(k, None) # instead of using "del dct[k]" this doesn't throw an exception if k doesn't exist
-
 		dct = { k:deepcopy(v) for k,v in self.dict.items() 				# Copy k:v to the new dictionary, ...
 					if k not in self.internalAttributes 				# if k is not in internal attributes (starting with __), AND
 					and not (noACP and k == 'acpi')						# if not noACP is True and k is 'acpi', AND
@@ -149,7 +139,6 @@ class Resource(object):
 				}
 
 		return { self.tpe : dct } if embedded else dct
-
 
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
@@ -195,7 +184,8 @@ class Resource(object):
 		self.setAttribute(self._originator, originator, overwrite = False)
 		self.setAttribute(self._rtype, self.tpe, overwrite = False) 
 
-		return Result(status = True, rsc = RC.OK)
+		# return Result(status = True, rsc = RC.OK)
+		return Result.successResult()
 
 
 	# Deactivate an active resource.
@@ -222,7 +212,7 @@ class Resource(object):
 		if dct:
 			if self.tpe not in dct and self.ty not in [T.FCNTAnnc]:	# Don't check announced versions of announced FCNT
 				L.isWarn and L.logWarn("Update type doesn't match target")
-				return Result(status = False, rsc = RC.contentsUnacceptable, dbg = 'resource types mismatch')
+				return Result.errorResult(rsc = RC.contentsUnacceptable, dbg = 'resource types mismatch')
 
 			# validate the attributes
 			if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self._attributes, create = False, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())).status:
@@ -239,7 +229,7 @@ class Resource(object):
 																						# acpi can be None! Therefore the complicated test
 				# Test wether an empty array is provided				
 				if len(ua := updatedAttributes['acpi']) == 0:
-					return Result(status = False, rsc = RC.badRequest, dbg = 'acpi must not be an empty list')
+					return Result.errorResult(dbg = 'acpi must not be an empty list')
 				# Check whether referenced <ACP> exists. If yes, change ID also to CSE relative unstructured
 				if not (res := self._checkAndFixACPIreferences(ua)).status:
 					return res
@@ -291,10 +281,10 @@ class Resource(object):
 		# Notify parent that a child has been updated
 		if not (parent := cast(Resource, self.retrieveParentResource())):
 			L.logErr(dbg := f'cannot retrieve parent resource')
-			return Result(status = False, rsc = RC.internalServerError, dbg = dbg)
+			return Result.errorResult(rsc = RC.internalServerError, dbg = dbg)
 		parent.childUpdated(self, updatedAttributes, originator)
 
-		return Result(status = True)
+		return Result.successResult()
 
 
 	def updated(self, dct:JSON = None, originator:str = None) -> None:
@@ -320,7 +310,7 @@ class Resource(object):
 		if subCheck:
 			if not (res := CSE.notification.checkPerformBlockingRetrieve(self, originator, request, finished = lambda: self.dbReloadDict())).status:
 				return res
-		return Result(status = True)
+		return Result.successResult()
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
@@ -332,7 +322,7 @@ class Resource(object):
 			Return:
 				A Result object with status True, or Fale case the adding must be rejected, and an error code.
 		"""
-		return Result(status = True)
+		return Result.successResult()
 
 
 	def childAdded(self, childResource:Resource, originator:str) -> None:
@@ -384,20 +374,20 @@ class Resource(object):
 				 Utils.isValidID(self.pi, allowEmpty = self.ty == T.CSEBase) and # pi is empty for CSEBase
 				 Utils.isValidID(self.rn)):
 			L.logDebug(dbg := f'Invalid ID: ri: {self.ri}, pi: {self.pi}, or rn: {self.rn})')
-			return Result(status = False, rsc = RC.contentsUnacceptable, dbg = dbg)
+			return Result.errorResult(rsc = RC.contentsUnacceptable, dbg = dbg)
 
 		# expirationTime handling
 		if et := self.et:
 			if self.ty == T.CSEBase:
 				L.logWarn(dbg := 'expirationTime is not allowed in CSEBase')
-				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				return Result.errorResult(dbg = dbg)
 			if len(et) > 0 and et < (etNow := DateUtils.getResourceDate()):
 				L.logWarn(dbg := f'expirationTime is in the past: {et} < {etNow}')
-				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				return Result.errorResult(dbg = dbg)
 			if et > (etMax := DateUtils.getResourceDate(Configuration.get('cse.maxExpirationDelta'))):
 				L.isDebug and L.logDebug(f'Correcting expirationDate to maxExpiration: {et} -> {etMax}')
 				self['et'] = etMax
-		return Result(status=True)
+		return Result.successResult()
 
 
 	def createAnnouncedDict(self) -> Tuple[JSON, int, str]:
@@ -490,7 +480,7 @@ class Resource(object):
 				default: A default to return if the attribute is not set
 			Return:
 				The attribute's value, the `default`, or None
-				"""
+		"""
 		return Utils.findXPath(self.dict, key, default)
 
 
@@ -565,7 +555,7 @@ class Resource(object):
 
 				if not (acp := CSE.dispatcher.retrieveResource(ri).resource):
 					L.logDebug(dbg := f'Referenced <ACP> resource not found: {ri}')
-					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+					return Result.errorResult(dbg = dbg)
 
 
 
@@ -577,7 +567,7 @@ class Resource(object):
 				newACPIList.append(acp.ri)
 			else:
 				newACPIList.append(ri)
-		return Result(status=True, data=newACPIList)
+		return Result(status = True, data = newACPIList)
 
 
 
@@ -691,7 +681,4 @@ class Resource(object):
 		# It is *not* a remote resource when the __remoteID__ is set
 		if not self[self._remoteID]:
 			self[self._srn] = Utils.structuredPath(self)
-		# L.logWarn(self[self._srn])
-		
-
 

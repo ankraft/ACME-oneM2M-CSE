@@ -48,8 +48,8 @@ class REQ(Resource):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.REQ, dct, pi, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.REQ, dct, pi, create = create)
 
 
 	@staticmethod
@@ -120,8 +120,8 @@ class REQ(Resource):
 			Utils.setXPath(dct, 'm2m:req/mi/rt/nu', [ u for u in rtu if len(u) > 0] )
 
 		if not (cseres := Utils.getCSE()).resource:
-			return Result(rsc=RC.badRequest, dbg=cseres.dbg)
+			return Result.errorResult(dbg = cseres.dbg)
 
-		return Factory.resourceFromDict(dct, pi=cseres.resource.ri, ty=T.REQ)
+		return Factory.resourceFromDict(dct, pi = cseres.resource.ri, ty = T.REQ)
 
 

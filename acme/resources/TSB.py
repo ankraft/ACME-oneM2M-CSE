@@ -106,12 +106,12 @@ class TSB(AnnounceableResource):
 		# Check length of beaconNotificationURI
 		if len(self.bcnu) == 0:
 			L.logWarn(dbg := f'beaconNotificationURI attribute shall shall contain at least one URI')
-			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+			return Result.errorResult(dbg = dbg)
 
 		# Check beaconInterval
 		if self.hasAttribute('bcni') and self.bcnc != BeaconCriteria.PERIODIC:
 			L.logWarn(dbg := f'beaconInterval attribute shall only be present when beaconCriteria is PERIODIC')
-			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+			return Result.errorResult(dbg = dbg)
 		if self.bcnc == BeaconCriteria.PERIODIC and not self.hasAttribute('bcni'):
 			self.setAttribute('bcni', Configuration.get('cse.tsb.bcni'))
 		if self.hasAttribute('bcni'):
@@ -120,7 +120,7 @@ class TSB(AnnounceableResource):
 		# Check beaconThreshold
 		if self.hasAttribute('bcnt') and self.bcnc != BeaconCriteria.LOSS_OF_SYNCHRONIZATION:
 			L.logWarn(dbg := f'beaconThreshold attribute shall only be present when beaconCriteria is LOSS_OF_SYNCHRONIZATION')
-			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+			return Result.errorResult(dbg = dbg)
 		if self.bcnc == BeaconCriteria.LOSS_OF_SYNCHRONIZATION and not self.hasAttribute('bcnt'):
 			self.setAttribute('bcnt', Configuration.get('cse.tsb.bcnt'))
 		if self.hasAttribute('bcnt'):
@@ -130,13 +130,13 @@ class TSB(AnnounceableResource):
 		if self.hasAttribute('bcnr'):
 			if self.bcnc == BeaconCriteria.PERIODIC:
 				L.logWarn(dbg := f'beaconRequester attribute shall only be present when beaconCriteria is LOSS_OF_SYNCHRONIZATION')
-				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				return Result.errorResult(dbg = dbg)
 		else:
 			if self.bcnc == BeaconCriteria.LOSS_OF_SYNCHRONIZATION:
 				L.logWarn(dbg := f'beaconRequester attribute shall be present when beaconCriteria is PERIODIC')
-				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				return Result.errorResult(dbg = dbg)
 
-		return Result(status = True)
+		return Result.successResult()
 		
 
 	def getInterval(self) -> float:

@@ -1072,13 +1072,13 @@ class Result:
 
 
 	@classmethod
-	def positiveResult(cls) -> Result:
+	def successResult(cls) -> Result:
 		"""	Create and return a Result object with `status = True`.
 
 			Return:
-				Correct Result instance. This is always the same Result instance!
+				Success Result instance. This is always the same Result instance!
 		"""
-		return _positiveResult
+		return _successResult
 
 
 	def toData(self, ct:ContentSerializationType=None) -> str|bytes|JSON:
@@ -1135,7 +1135,7 @@ class Result:
 
 
 # Result instance to be re-used all over the place
-_positiveResult = Result(status = True)
+_successResult = Result(status = True)
 
 
 ##############################################################################

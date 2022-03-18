@@ -476,6 +476,8 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTBatchDuration(self) -> None:
 		""" CREATE n <CNT> -> Send batch notification with all outstanding notifications after the timeout"""
+		time.sleep(durationForBatchNotifications) 	# wait a moment for other notifications
+		clearLastNotification()
 		for i in range(0, numberOfBatchNotifications):
 			dct = 	{ 'm2m:cnt' : {
 						'lbl' : [ '%d' % i ]
@@ -483,6 +485,7 @@ class TestSUB(unittest.TestCase):
 			_, rsc = UPDATE(cntURL, TestSUB.originator, dct)
 			self.assertEqual(rsc, RC.updated)
 		lastNotification = getLastNotification()	# Notifications should not have arrived yes
+		self.assertIsNone(lastNotification)
 		self.assertIsNone(findXPath(lastNotification, 'm2m:agn'))
 
 		time.sleep(durationForBatchNotifications * 2) 	# wait a moment

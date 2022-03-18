@@ -8,7 +8,6 @@
 #
 
 from __future__ import annotations
-from typing import cast, Optional
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseStatusCode as RC, Result, JSON, CSERequest
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
@@ -34,23 +33,23 @@ class FCNT_LA(Resource):
 		""" Handle a RETRIEVE request. Return resource """
 		if L.isDebug: L.logDebug('Retrieving latest FCI from FCNT')
 		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.FCI)):
-			return Result(status = False, rsc = RC.notFound, dbg = 'no instance for <latest>')
+			return Result.errorResult(rsc = RC.notFound, dbg = 'no instance for <latest>')
 		return Result(status = True, rsc = RC.OK, resource = r)
 
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a CREATE request. Fail with error code. """
-		return Result(status = False, rsc = RC.operationNotAllowed, dbg = 'CREATE operation not allowed for <latest> resource type')
+		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'CREATE operation not allowed for <latest> resource type')
 
 
 	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a UPDATE request. Fail with error code. """
-		return Result(status = False, rsc = RC.operationNotAllowed, dbg = 'UPDATE operation not allowed for <latest> resource type')
+		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'UPDATE operation not allowed for <latest> resource type')
 
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a DELETE request. Delete the latest resource. """
 		if L.isDebug: L.logDebug('Deleting latest FCI from FCNT')
 		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.FCI)):
-			return Result(status = False, rsc = RC.notFound, dbg = 'no instance for <latest>')
+			return Result.errorResult(rsc = RC.notFound, dbg = 'no instance for <latest>')
 		return CSE.dispatcher.deleteResource(r, originator, withDeregistration = True)

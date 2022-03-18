@@ -76,13 +76,13 @@ class AE(AnnounceableResource):
 			# Check correct originator. Even the ADMIN is not allowed that		
 			if self.aei != originator:
 				L.logDebug(dbg := f'Originator must be the parent <AE>')
-				return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = dbg)
+				return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = dbg)
 
 			# check that there will only by one PCH as a child
 			if CSE.dispatcher.countDirectChildResources(self.ri, ty=T.PCH) > 0:
-				return Result(status = False, rsc = RC.badRequest, dbg = 'Only one PCH per AE is allowed')
+				return Result.errorResult(rsc = RC.badRequest, dbg = 'Only one PCH per AE is allowed')
 
-		return Result(status = True)
+		return Result.successResult()
 
 
 	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
@@ -120,21 +120,21 @@ class AE(AnnounceableResource):
 		if csz := self.csz:
 			for c in csz:
 				if c not in CST.supportedContentSerializations():
-					return Result(status = False, rsc = RC.badRequest, dbg  = 'unsupported content serialization: {c}')
+					return Result.errorResult(dbg  = 'unsupported content serialization: {c}')
 		
 		# check api attribute
 		if not (api := self['api']) or len(api) < 2:	# at least R|N + another char
-			return Result(status = False, rsc = RC.badRequest, dbg = 'missing or empty attribute: "api"')
+			return Result.errorResult(dbg = 'missing or empty attribute: "api"')
 		if api.startswith('N'):
 			pass # simple format
 		elif api.startswith('R'):
 			if len((apiElements := api.split('.'))) < 3:
-				return Result(status = False, rsc = RC.badRequest, dbg = 'wrong format for registered ID in attribute "api": to few elements')
+				return Result.errorResult(dbg = 'wrong format for registered ID in attribute "api": to few elements')
 		else:
 			L.logWarn(dbg := f'wrong format for ID in attribute "api": {api} (must start with "R" or "N")')
-			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+			return Result.errorResult(dbg = dbg)
 
-		return Result(status = True)
+		return Result.successResult()
 
 
 	def deactivate(self, originator:str) -> None:

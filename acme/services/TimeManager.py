@@ -116,7 +116,7 @@ class TimeManager(object):
 												f'tsbPeriodic_{ri}', 
 												startWithDelay = True).start()
 		self.periodicTimeSyncBeacons[ri] = worker
-		return Result.positiveResult()
+		return Result.successResult()
 
 
 	def addLoSTimeSyncBeacon(self, tsb:TSB) -> Result:
@@ -128,7 +128,7 @@ class TimeManager(object):
 			L.isDebug and L.logDebug(dbg := f'TimeSyncBeacon already defined for requester: {bcnr}')	# TODO wait for discussion whether multiple bcnr are allowed
 			return Result.errorResult(dbg = dbg)
 		self.losTimeSyncBeacons[bcnr] = (tsb.bcnt, tsb.ri)
-		return Result.positiveResult()
+		return Result.successResult()
 
 
 	
@@ -142,8 +142,7 @@ class TimeManager(object):
 		if tsb.bcnc == BeaconCriteria.PERIODIC:
 			self.removePeriodicTimeSyncBeacon(tsb)
 		else:	# Loss of sync
-			# TODO
-			...
+			self.removeLosTimeSyncBeacon(tsb)
 
 
 	def removePeriodicTimeSyncBeacon(self, tsb:TSB) -> None:
@@ -155,6 +154,10 @@ class TimeManager(object):
 		if (ri := tsb.ri) in self.periodicTimeSyncBeacons:
 			self.periodicTimeSyncBeacons[ri].stop()
 			del self.periodicTimeSyncBeacons[tsb.ri]
+	
+
+	def removeLosTimeSyncBeacon(self, tsb:TSB) -> None:
+		...
 
 
 	def getCSETimestamp(self) -> str:

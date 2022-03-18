@@ -204,7 +204,7 @@ class ACMEPContext(PContext):
 				The scripts "PContext" object, or None in case of an error.
 		"""
 		if CSE.isHeadless:
-			return
+			return pcontext
 		L.consoleClear()
 		return pcontext
 
@@ -329,7 +329,7 @@ class ACMEPContext(PContext):
 				The scripts "PContext" object, or None in case of an error.
 		 """
 		if CSE.isHeadless:
-			return
+			return pcontext
 		try:
 			L.console(json.loads(arg))
 		except Exception as e:

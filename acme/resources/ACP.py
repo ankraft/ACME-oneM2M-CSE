@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import List
 from ..helpers.TextTools import simpleMatch
 from ..etc import Utils as Utils
-from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseStatusCode as RC, Result, Permission, JSON
+from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, Permission, JSON
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
 from ..resources.Resource import *
@@ -58,32 +58,32 @@ class ACP(AnnounceableResource):
 
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		
 		if dct and (pvs := Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs')):
 			if len(pvs) == 0:
-				return Result(status=False, rsc=RC.badRequest, dbg='pvs must not be empty')
+				return Result.errorResult(dbg = 'pvs must not be empty')
 		if not self.pvs:
-			return Result(status=False, rsc=RC.badRequest, dbg='pvs must not be empty')
+			return Result.errorResult(dbg = 'pvs must not be empty')
 
 		# Check acod
 		def _checkAcod(acrs:list) -> Result:
 			if not acrs:
-				return Result(status=True)
+				return Result.successResult()
 			for acr in acrs:
 				if (acod := acr.get('acod')):
 					if not (acod := acod.get('chty')) or not isinstance(acod, list):
-						return Result(status=False, rsc=RC.badRequest, dbg='chty is mandatory in acod')
-			return Result(status=True)
+						return Result.errorResult(dbg = 'chty is mandatory in acod')
+			return Result.successResult()
 
 		if not (res := _checkAcod(Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pv/acr'))).status:
 			return res
 		if not (res := _checkAcod(Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pvs/acr'))).status:
 			return res
 
-		return Result(status=True)
+		return Result.successResult()
 
 
 	def deactivate(self, originator:str) -> None:

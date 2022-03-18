@@ -7,7 +7,7 @@
 #	Managing entity for resource groups
 #
 
-from typing import Union, List, cast
+from typing import cast
 from ..etc.Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseStatusCode as RC, CSERequest, JSON
 from ..etc import Utils as Utils
 from ..resources.FCNT import FCNT
@@ -62,15 +62,16 @@ class GroupManager(object):
 			try: 							# mnm may not be a number
 				if len(group.mid) > int(group.mnm):
 					L.logDebug(dbg := 'max number of members exceeded')
-					return Result(status = False, rsc = RC.maxNumberOfMemberExceeded, dbg = dbg)
+					return Result.errorResult(rsc = RC.maxNumberOfMemberExceeded, dbg = dbg)
 			except ValueError:
 				L.logWarn(dbg := f'invalid argument or type: {group.mnm}')
-				return Result(status = False, rsc = RC.invalidArguments, dbg = dbg)
+				return Result.errorResult(rsc = RC.invalidArguments, dbg = dbg)
 
 
 		group.dbUpdate()
 		# TODO: check virtual resources
-		return Result(status = True, rsc = RC.OK)
+		# return Result(status = True, rsc = RC.OK)
+		return Result.successResult()
 
 
 	def _checkMembersAndPrivileges(self, group:Resource, originator:str) -> Result:
@@ -97,7 +98,7 @@ class GroupManager(object):
 					# RETRIEVE member from a remote CSE
 					isLocalResource = False
 					if not (url := CSE.request._getForwardURL(mid)):
-						return Result(status = False, rsc = RC.notFound, dbg = f'forwarding URL not found for group member: {mid}')
+						return Result.errorResult(rsc = RC.notFound, dbg = f'forwarding URL not found for group member: {mid}')
 					L.isDebug and L.logDebug(f'Retrieve request to: {url}')
 					remoteResult = CSE.request.sendRetrieveRequest(url, CSE.cseCsi)
 
@@ -107,14 +108,14 @@ class GroupManager(object):
 				hasFopt = mid.endswith('/fopt')
 				id = mid[:-5] if len(mid) > 5 and hasFopt else mid 	# remove /fopt to retrieve the resource
 				if not (res := CSE.dispatcher.retrieveResource(id)).resource:
-					return Result(status = False, rsc = RC.notFound, dbg = res.dbg)
+					return Result.errorResult(rsc = RC.notFound, dbg = res.dbg)
 				resource = res.resource
 			else:
 				if not remoteResult.data or len(remoteResult.data) == 0:
 					if remoteResult.rsc == RC.originatorHasNoPrivilege:  # CSE has no privileges for retrieving the member
-						return Result(status = False, rsc = RC.receiverHasNoPrivileges, dbg = 'insufficient privileges for CSE to retrieve remote resource')
+						return Result.errorResult(rsc = RC.receiverHasNoPrivileges, dbg = 'insufficient privileges for CSE to retrieve remote resource')
 					else:  # Member not found
-						return Result(status = False, rsc = RC.notFound, dbg = f'remote resource not found: {mid}')
+						return Result.errorResult(rsc = RC.notFound, dbg = f'remote resource not found: {mid}')
 				else:
 					resource = Factory.resourceFromDict(cast(JSON, remoteResult.data)).resource
 
@@ -129,7 +130,7 @@ class GroupManager(object):
 			# check privileges
 			if isLocalResource:
 				if not CSE.security.hasAccess(originator, resource, Permission.RETRIEVE):
-					return Result(status = False, rsc = RC.receiverHasNoPrivileges, dbg = f'insufficient privileges for originator to retrieve local resource: {mid}')
+					return Result.errorResult(rsc = RC.receiverHasNoPrivileges, dbg = f'insufficient privileges for originator to retrieve local resource: {mid}')
 
 			# if it is a group + fopt, then recursively check members
 			if (ty := resource.ty) == T.GRP and hasFopt:
@@ -142,10 +143,10 @@ class GroupManager(object):
 			if (spty := group.spty):
 				if isinstance(spty, int):				# mgmtobj type
 					if isinstance(resource, MgmtObj) and ty != spty:
-						return Result(status = False, rsc = RC.groupMemberTypeInconsistent, dbg = f'resource and group member types mismatch: {ty} != {spty} for: {mid}')
+						return Result.errorResult(rsc = RC.groupMemberTypeInconsistent, dbg = f'resource and group member types mismatch: {ty} != {spty} for: {mid}')
 				elif isinstance(spty, str):				# fcnt specialization
 					if isinstance(resource, FCNT) and resource.cnd != spty:
-						return Result(status = False, rsc = RC.groupMemberTypeInconsistent, dbg = f'resource and group member specialization types mismatch: {resource.cnd} != {spty} for: {mid}')
+						return Result.errorResult(rsc = RC.groupMemberTypeInconsistent, dbg = f'resource and group member specialization types mismatch: {resource.cnd} != {spty} for: {mid}')
 
 			# check type of resource and member type of group
 			mt = group.mt
@@ -157,7 +158,7 @@ class GroupManager(object):
 					mt = T.MIXED
 					group['mt'] = T.MIXED
 				else:												# abandon group
-					return Result(status = False, rsc = RC.groupMemberTypeInconsistent, dbg = 'group consistency strategy and type "mixed" mismatch')
+					return Result.errorResult(rsc = RC.groupMemberTypeInconsistent, dbg = 'group consistency strategy and type "mixed" mismatch')
 
 			# member seems to be ok, so add ri to the list
 			if isLocalResource:
@@ -171,7 +172,8 @@ class GroupManager(object):
 		group['cnm'] = len(midsList)
 		group['mtv'] = True
 		
-		return Result(status = True, rsc = RC.OK)
+		# return Result(status = True, rsc = RC.OK)
+		return Result.successResult()
 
 
 	def foptRequest(self, operation:Operation, fopt:GRP_FOPT, request:CSERequest, id:str, originator:str) -> Result:
@@ -189,14 +191,14 @@ class GroupManager(object):
 
 		# get parent / group and check permissions
 		if not (group := fopt.retrieveParentResource()):
-			return Result(status = False, rsc = RC.notFound, dbg = 'group resource not found')
+			return Result.errorResult(rsc = RC.notFound, dbg = 'group resource not found')
 
 		# get the permission flags for the request operation
 		permission = operation.permission()
 
 		#check access rights for the originator through memberAccessControlPolicies
 		if CSE.security.hasAccess(originator, group, requestedPermission = permission, ty = request.headers.resourceType, isCreateRequest = True if operation == Operation.CREATE else False) == False:
-			return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = 'insufficient privileges for originator')
+			return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = 'insufficient privileges for originator')
 
 		# check whether there is something after the /fopt ...
 
@@ -229,7 +231,7 @@ class GroupManager(object):
 				if not (res := CSE.dispatcher.processDeleteRequest(request, originator, mid)).status:
 					return res 
 			else:
-				return Result(status = False, rsc = RC.operationNotAllowed, dbg = 'operation not allowed')
+				return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'operation not allowed')
 			resultList.append(res)
 
 		# construct aggregated response

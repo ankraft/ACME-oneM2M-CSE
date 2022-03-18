@@ -203,7 +203,7 @@ class MQTTClientHandler(MQTTHandler):
 				# Registration type must be AE
 				_logRequest(dissectResult)
 				L.logWarn(dbg := f'Invalid resource type for registration: {dissectResult.request.headers.resourceType}')
-				_sendResponse(Result(rsc=RC.badRequest, request=dissectResult.request, dbg=f'Invalid resource type for registration: {dissectResult.request.headers.resourceType.name}'))
+				_sendResponse(Result(status = False, rsc = RC.badRequest, request = dissectResult.request, dbg = f'Invalid resource type for registration: {dissectResult.request.headers.resourceType.name}'))
 				return
 			
 			# TODO Is it necessary to check here the originator for None, empty, C, S?
@@ -213,7 +213,7 @@ class MQTTClientHandler(MQTTHandler):
 
 		# handle request
 		if self.mqttClient.isStopped:
-			_sendResponse(Result(rsc=RC.internalServerError, request=dissectResult.request, dbg='mqtt server not running', status=False))
+			_sendResponse(Result(status = False, rsc = RC.internalServerError, request = dissectResult.request, dbg = 'mqtt server not running'))
 			return
 		
 		# send events for the MQTT operations
@@ -372,7 +372,7 @@ class MQTTClient(object):
 		"""
 
 		if self.isStopped:
-			 return Result(status=False, rsc = RC.internalServerError, dbg = 'MQTT client is not running')
+			 return Result.errorResult(rsc = RC.internalServerError, dbg = 'MQTT client is not running')
 
 		# deconstruct URL
 		u = urlparse(url)
@@ -414,7 +414,7 @@ class MQTTClient(object):
 		elif not topic.startswith('/oneM2M/') and len(topic) > 0 and topic[0] == '/':	# remove leading "/" if not /oneM2M
 			topic = topic[1:]
 		else:
-			 return Result(status=False, rsc=RC.internalServerError, dbg='Cannot build topic')
+			return Result.errorResult(rsc = RC.internalServerError, dbg = 'Cannot build topic')
 
 		# Get the broker, or connect to a new MQTTBroker for this address
 		if not (mqttConnection := self.getMqttBroker(mqttHost, mqttPort)):
@@ -431,7 +431,7 @@ class MQTTClient(object):
 		# We are not connected, so -> fail
 		if not mqttConnection or not mqttConnection.isConnected:
 			L.logWarn(dbg := f'Cannot connect to MQTT broker at: {mqttHost}:{mqttPort}')
-			return Result(status=False, rsc=RC.targetNotReachable, dbg=dbg)
+			return Result.errorResult(rsc = RC.targetNotReachable, dbg = dbg)
 
 		# Publish the request and wait for the response.
 		# Then return the response as result
@@ -466,7 +466,7 @@ class MQTTClient(object):
 			return False
 			
 		if not DateUtils.waitFor(timeOut, _receivedResponse):
-			return Result(status=False, rsc=RC.targetNotReachable, dbg='Target not reachable or timeout'), None
+			return Result.errorResult(rsc = RC.targetNotReachable, dbg = 'Target not reachable or timeout'), None
 		return resp, topic
 
 

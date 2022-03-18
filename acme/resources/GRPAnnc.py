@@ -50,6 +50,6 @@ class GRPAnnc(AnnouncedResource):
 		'nar': None
 	}
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.GRPAnnc, dct, pi=pi, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.GRPAnnc, dct, pi = pi, create = create)
 

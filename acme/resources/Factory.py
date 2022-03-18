@@ -7,7 +7,7 @@
 #	Create Resources
 #
 
-from typing import Dict, Callable, Any, Tuple, cast
+from typing import Dict, Callable, Tuple, cast
 from ..etc.Types import ResourceTypes as T
 from ..etc.Types import ResponseStatusCode as RC
 from ..etc.Types import Result, JSON
@@ -173,22 +173,22 @@ def resourceFromDict(resDict:JSON = {}, pi:str = None, ty:T = None, create:bool 
 	typ = resDict['ty'] if 'ty' in resDict else ty
 	if not typ and (typ := T.fromTPE(tpe)) is  None:
 		L.logWarn(dbg := f'cannot determine type for resource: {tpe}')
-		return Result(status = False, dbg = dbg, rsc = RC.badRequest)
+		return Result.errorResult(dbg = dbg)
 	
 	# Check for Parent
 	if not pi and typ != T.CSEBase and (not (pi := resDict.get('pi')) or len(pi) == 0):
 		L.logWarn(dbg := f'pi missing in resource: {tpe}')
-		return Result(status=False, dbg=dbg, rsc=RC.badRequest)
+		return Result.errorResult(dbg = dbg)
 
 	# Check whether given type during CREATE matches the resource's ty attribute
 	if typ != None and ty != None and typ != ty:
 		L.logWarn(dbg := f'parameter type ({ty}) and resource type ({typ}) mismatch')
-		return Result(dbg = dbg, rsc = RC.badRequest)
+		return Result.errorResult(dbg = dbg)
 	
 	# Check whether given type during CREATE matches the resource type specifier
 	if ty != None and tpe != None and ty not in [ T.FCNT, T.FCNTAnnc, T.FCI, T.MGMTOBJ, T.MGMTOBJAnnc ]  and ty.tpe() != tpe:
 		L.logWarn(dbg := f'parameter type ({ty}) and resource type specifier ({tpe}) mismatch')
-		return Result(dbg = dbg, rsc = RC.badRequest)
+		return Result.errorResult(dbg = dbg)
 	
 	# store the import status in the original resDict
 	if isImported:

@@ -52,9 +52,9 @@ class ANDI(MgmtObj):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(dct, pi, mgd=T.ANDI, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(dct, pi, mgd = T.ANDI, create = create)
 
-		self.setAttribute('dvd', defaultDeviceID, overwrite=False)
-		self.setAttribute('dvt', '', overwrite=False)
-		self.setAttribute('awi', '', overwrite=False)
+		self.setAttribute('dvd', defaultDeviceID, overwrite = False)
+		self.setAttribute('dvt', '', overwrite = False)
+		self.setAttribute('awi', '', overwrite = False)

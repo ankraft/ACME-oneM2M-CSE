@@ -10,7 +10,6 @@
 from __future__ import annotations
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
 from ..resources.Resource import *
-from ..resources.AnnounceableResource import AnnounceableResource
 
 
 class FCI(Resource):
@@ -36,11 +35,11 @@ class FCI(Resource):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
-		super().__init__(T.FCI, dct, pi, tpe=fcntType, create=create, inheritACP=True, readOnly=True)
+	def __init__(self, dct:JSON = None, pi:str = None, fcntType:str = None, create:bool = False) -> None:
+		super().__init__(T.FCI, dct, pi, tpe = fcntType, create = create, inheritACP = True, readOnly = True)
 
 
 	# Forbidd updating
 	def update(self, dct:JSON=None, originator:str=None) -> Result:
-		return Result(status=False, rsc=RC.operationNotAllowed, dbg='updating FCIN is forbidden')
+		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'updating FCIN is forbidden')
 

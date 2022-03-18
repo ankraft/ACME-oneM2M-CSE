@@ -42,7 +42,7 @@ class CNT_LA(Resource):
 
 		# Then retrieve it, either for the first time or again
 		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.CIN)):
-			return Result(status = False, rsc = RC.notFound, dbg = 'no instance for <latest>')
+			return Result.errorResult(rsc = RC.notFound, dbg = 'no instance for <latest>')
 		
 		# Do again some checks with the final resource, but no subscription checks!
 		if not (res := r.willBeRetrieved(originator, request, subCheck = False)).status:
@@ -65,17 +65,17 @@ class CNT_LA(Resource):
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a CREATE request. Fail with error code. """
-		return Result(status = False, rsc = RC.operationNotAllowed, dbg = 'CREATE operation not allowed for <latest> resource type')
+		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'CREATE operation not allowed for <latest> resource type')
 
 
 	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a UPDATE request. Fail with error code. """
-		return Result(status = False, rsc = RC.operationNotAllowed, dbg = 'UPDATE operation not allowed for <latest> resource type')
+		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'UPDATE operation not allowed for <latest> resource type')
 
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a DELETE request. Delete the latest resource. """
 		L.isDebug and L.logDebug('Deleting latest CIN from CNT')
 		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.CIN)):
-			return Result(status = False, rsc = RC.notFound, dbg='no instance for <latest>')
+			return Result.errorResult(rsc = RC.notFound, dbg='no instance for <latest>')
 		return CSE.dispatcher.deleteResource(r, originator, withDeregistration = True)

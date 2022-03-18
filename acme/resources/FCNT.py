@@ -86,7 +86,7 @@ class FCNT(AnnounceableResource):
 			if not (res := self._addLaOl()).status:
 				return res
 
-		return Result(status=True)
+		return Result.successResult()
 
 
 	def update(self, dct:JSON = None, originator:str = None) -> Result:
@@ -105,9 +105,8 @@ class FCNT(AnnounceableResource):
 				return res
 			self.setAttribute('cni', None)
 			self.setAttribute('cbs', None)
-			
 
-		return Result(status = True)
+		return Result.successResult()
 
 
 
@@ -120,8 +119,8 @@ class FCNT(AnnounceableResource):
 
 		# Check whether the child's rn is "ol" or "la".
 		if (rn := childResource['rn']) and rn in ['ol', 'la']:
-			return Result(status = False, rsc = RC.operationNotAllowed, dbg = 'resource types "latest" or "oldest" cannot be added')
-		return Result(status = True)
+			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'resource types "latest" or "oldest" cannot be added')
+		return Result.successResult()
 
 
 	# Handle the removal of a FCIN. 
@@ -136,7 +135,7 @@ class FCNT(AnnounceableResource):
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		self._validateChildren(originator, dct = dct)
-		return Result(status = True)
+		return Result.successResult()
 
 
 	def _validateChildren(self, originator:str, deletingFCI:bool = False, dct:JSON = None) -> None:
@@ -259,16 +258,20 @@ class FCNT(AnnounceableResource):
 
 		# add latest
 		resource = Factory.resourceFromDict({}, pi=self.ri, ty = T.FCNT_LA).resource	# rn is assigned by resource itself
-		if not (res := CSE.dispatcher.createResource(resource)).resource:
-			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
+		# if not (res := CSE.dispatcher.createResource(resource)).resource:
+		# 	return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
+		if not (res := CSE.dispatcher.createResource(resource)).status:
+			return res
 
 		# add oldest
 		resource = Factory.resourceFromDict({}, pi = self.ri, ty = T.FCNT_OL).resource	# rn is assigned by resource itself
-		if not (res := CSE.dispatcher.createResource(resource)).resource:
-			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
+		# if not (res := CSE.dispatcher.createResource(resource)).resource:
+		# 	return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
+		if not (res := CSE.dispatcher.createResource(resource)).status:
+			return res
 		
 		self.setAttribute(self._hasFCI, True)
-		return Result(status = True)
+		return Result.successResult()
 
 
 	def _removeLaOl(self) -> Result:
@@ -284,7 +287,7 @@ class FCNT(AnnounceableResource):
 			CSE.dispatcher.deleteResource(res[0])	# ignore errors
 	
 		self.setAttribute(self._hasFCI, False)
-		return Result(status = True)
+		return Result.successResult()
 
 
 	def _removeFCIs(self) -> Result:
@@ -296,4 +299,4 @@ class FCNT(AnnounceableResource):
 			# self.childRemoved(r, originator) # It should not be necessary to notify self at this point.
 			if not (res := CSE.dispatcher.deleteResource(r, parentResource = self)).status:
 				return res
-		return Result(status = True)
+		return Result.successResult()

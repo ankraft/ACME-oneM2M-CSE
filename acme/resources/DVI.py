@@ -67,11 +67,11 @@ class DVI(MgmtObj):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(dct, pi, mgd=T.DVI, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(dct, pi, mgd = T.DVI, create = create)
 
-		self.setAttribute('dty', defaultDeviceType, overwrite=False)
-		self.setAttribute('mod', defaultModel, overwrite=False)
-		self.setAttribute('man', defaultManufacturer, overwrite=False)
-		self.setAttribute('dlb', defaultDeviceLabel, overwrite=False)
+		self.setAttribute('dty', defaultDeviceType, overwrite = False)
+		self.setAttribute('mod', defaultModel, overwrite = False)
+		self.setAttribute('man', defaultManufacturer, overwrite = False)
+		self.setAttribute('dlb', defaultDeviceLabel, overwrite = False)
 

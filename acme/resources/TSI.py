@@ -44,12 +44,12 @@ class TSI(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.TSI, dct, pi, create=create, inheritACP=True, readOnly=True)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.TSI, dct, pi, create = create, inheritACP = True, readOnly = True)
 		self.setAttribute('cs', Utils.getAttributeSize(self['con']))       # Set contentSize
 
 
 	# Forbid updating
-	def update(self, dct:JSON=None, originator:str=None) -> Result:
-		return Result(status=False, rsc=RC.operationNotAllowed, dbg='updating CIN is forbidden')
+	def update(self, dct:JSON = None, originator:str = None) -> Result:
+		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'updating CIN is forbidden')
 

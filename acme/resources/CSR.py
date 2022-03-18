@@ -83,18 +83,18 @@ class CSR(AnnounceableResource):
 			# Check correct originator. Even the ADMIN is not allowed that		
 			if self.csi != originator:
 				L.logDebug(dbg := f'Originator must be the parent <CSR>')
-				return Result(status = False, rsc = RC.originatorHasNoPrivilege, dbg = dbg)
+				return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = dbg)
 
 			# check that there will only by one PCH as a child
 			if CSE.dispatcher.countDirectChildResources(self.ri, ty=T.PCH) > 0:
 				L.logDebug(dbg := 'Only one <PCH> per <CSR> is allowed')
-				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				return Result.errorResult(dbg = dbg)
 
-		return Result(status=True)
+		return Result.successResult()
 
 
 	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 		self._normalizeURIAttribute('poa')
-		return Result(status=True)
+		return Result.successResult()

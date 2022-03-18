@@ -57,14 +57,14 @@ class CNT(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
 		super().__init__(T.CNT, dct, pi, create=create)
 
 		if Configuration.get('cse.cnt.enableLimits'):	# Only when limits are enabled
-			self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite=False)
-			self.setAttribute('mbs', Configuration.get('cse.cnt.mbs'), overwrite=False)
-		self.setAttribute('cni', 0, overwrite=False)
-		self.setAttribute('cbs', 0, overwrite=False)
+			self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite = False)
+			self.setAttribute('mbs', Configuration.get('cse.cnt.mbs'), overwrite = False)
+		self.setAttribute('cni', 0, overwrite = False)
+		self.setAttribute('cbs', 0, overwrite = False)
 
 		self.__validating = False	# semaphore for validating
 
@@ -77,16 +77,16 @@ class CNT(AnnounceableResource):
 		if L.isDebug: L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		latestResource = Factory.resourceFromDict({}, pi=self.ri, ty=T.CNT_LA).resource		# rn is assigned by resource itself
+		latestResource = Factory.resourceFromDict({}, pi = self.ri, ty = T.CNT_LA).resource		# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createResource(latestResource)).resource:
-			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
 
 		# add oldest
-		oldestResource = Factory.resourceFromDict({}, pi=self.ri, ty=T.CNT_OL).resource		# rn is assigned by resource itself
+		oldestResource = Factory.resourceFromDict({}, pi = self.ri, ty = T.CNT_OL).resource		# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createResource(oldestResource)).resource:
-			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
 
-		return Result(status=True)
+		return Result.successResult()
 
 
 	def update(self, dct:JSON = None, originator:str = None) -> Result:
@@ -104,7 +104,7 @@ class CNT(AnnounceableResource):
 		if disrOrg and disrNew == False:
 			CSE.dispatcher.deleteChildResources(self, originator, ty=T.CIN)
 
-		return Result(status=True)
+		return Result.successResult()
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
@@ -113,13 +113,13 @@ class CNT(AnnounceableResource):
 		
 		# Check whether the child's rn is "ol" or "la".
 		if (rn := childResource.rn) is not None and rn in ['ol', 'la']:
-			return Result(status=False, rsc=RC.operationNotAllowed, dbg='resource types "latest" or "oldest" cannot be added')
+			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'resource types "latest" or "oldest" cannot be added')
 	
 		# Check whether the size of the CIN doesn't exceed the mbs
 		if childResource.ty == T.CIN and self.mbs is not None:
 			if childResource.cs is not None and childResource.cs > self.mbs:
-				return Result(status=False, rsc=RC.notAcceptable, dbg='child content sizes would exceed mbs')
-		return Result(status=True)
+				return Result.errorResult(rsc = RC.notAcceptable, dbg = 'child content sizes would exceed mbs')
+		return Result.successResult()
 
 
 	# Handle the addition of new CIN. Basically, get rid of old ones.
@@ -139,6 +139,7 @@ class CNT(AnnounceableResource):
 
 			self.validate(originator)
 
+
 	# Handle the removal of a CIN. 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
 		if L.isDebug: L.logDebug(f'Child resource removed: {childResource.ri}')
@@ -149,11 +150,11 @@ class CNT(AnnounceableResource):
 
 	# Validating the Container. This means recalculating cni, cbs as well as
 	# removing ContentInstances when the limits are met.
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+	def validate(self, originator:str=None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 		self._validateChildren()
-		return Result(status=True)
+		return Result.successResult()
 
 
 	# TODO Align this and FCNT implementations

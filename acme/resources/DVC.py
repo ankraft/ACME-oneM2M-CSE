@@ -51,27 +51,27 @@ class DVC(MgmtObj):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(dct, pi, mgd=T.DVC, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(dct, pi, mgd = T.DVC, create = create)
 
-		self.setAttribute('can', 'unknown', overwrite=False)
-		self.setAttribute('att', False, overwrite=False)
-		self.setAttribute('cas', {	"acn" : "unknown", "sus" : 0 }, overwrite=False)
-		self.setAttribute('cus', False, overwrite=False)
-		self.setAttribute('ena', True, overwrite=True)	# always True
-		self.setAttribute('dis', True, overwrite=True)	# always True
+		self.setAttribute('can', 'unknown', overwrite = False)
+		self.setAttribute('att', False, overwrite = False)
+		self.setAttribute('cas', {	"acn" : "unknown", "sus" : 0 }, overwrite = False)
+		self.setAttribute('cus', False, overwrite = False)
+		self.setAttribute('ena', True, overwrite = True)	# always True
+		self.setAttribute('dis', True, overwrite = True)	# always True
 
 	#
 	#	Handling the special behaviour for ena and dis attributes in 
 	#	validate() and update()
 	#
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
-		self.setAttribute('ena', True, overwrite=True)	# always set (back) to True
-		self.setAttribute('dis', True, overwrite=True)	# always set (back) to True
-		return Result(status=True)
+		self.setAttribute('ena', True, overwrite = True)	# always set (back) to True
+		self.setAttribute('dis', True, overwrite = True)	# always set (back) to True
+		return Result.successResult()
 
 
 	def update(self, dct:JSON=None, originator:str=None) -> Result:

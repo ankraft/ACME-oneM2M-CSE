@@ -201,7 +201,7 @@ class HttpServer(object):
 		# Send and error message when the CSE is shutting down, or the http server is stopped
 		if self.isStopped:
 			# Return an error if the server is stopped
-			return self._prepareResponse(Result(rsc=RC.internalServerError, request=dissectResult.request, dbg='http server not running', status=False))
+			return self._prepareResponse(Result(status = False, rsc = RC.internalServerError, request = dissectResult.request, dbg = 'http server not running'))
 		if not dissectResult.status:
 			# Something went wrong during dissection
 			return self._prepareResponse(dissectResult)
@@ -450,8 +450,8 @@ class HttpServer(object):
 			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
 		except Exception as e:
 			L.isWarn and L.logWarn(f'Failed to send request: {str(e)}')
-			return Result(status = False, rsc = RC.targetNotReachable, dbg = 'target not reachable')
-		return Result(status = True, data = RequestUtils.deserializeData(r.content, responseCt), rsc = rc)
+			return Result.errorResult(rsc = RC.targetNotReachable, dbg = 'target not reachable')
+		return Result(status = True, rsc = rc, data = RequestUtils.deserializeData(r.content, responseCt))
 		
 
 	#########################################################################
@@ -643,7 +643,7 @@ class HttpServer(object):
 
 		# De-Serialize the content
 		if not (contentResult := CSE.request.deserializeContent(cseRequest.originalData, cseRequest.headers.contentType)).status:
-			return Result(rsc=contentResult.rsc, request=cseRequest, dbg=contentResult.dbg, status=False)
+			return Result(status = False, rsc = contentResult.rsc, request = cseRequest, dbg = contentResult.dbg)
 		
 		# Remove 'None' fields *before* adding the pc, because the pc may contain 'None' fields that need to be preserved
 		req = Utils.removeNoneValuesFromDict(req)
@@ -659,10 +659,10 @@ class HttpServer(object):
 			if not (res := CSE.request.fillAndValidateCSERequest(cseRequest)).status:
 				return res
 		except Exception as e:
-			return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'invalid arguments/attributes ({str(e)})', status=False)
+			return Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = f'invalid arguments/attributes ({str(e)})')
 
 		# Here, if everything went okay so far, we have a request to the CSE
-		return Result(request=cseRequest, status=True)
+		return Result(status = True, request = cseRequest)
 
 
 	def _hasContentType(self) -> bool:

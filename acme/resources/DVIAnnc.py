@@ -60,6 +60,6 @@ class DVIAnnc(MgmtObjAnnc):
 	}
 
 	
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(dct, pi, mgd=T.DVI, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(dct, pi, mgd = T.DVI, create = create)
 

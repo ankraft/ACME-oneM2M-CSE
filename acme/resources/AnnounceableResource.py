@@ -29,7 +29,7 @@ class AnnounceableResource(Resource):
 
 		# Check announcements
 		if self.at:
-			res = CSE.announce.announceResource(self)
+			return CSE.announce.announceResource(self)
 		return res
 
 
@@ -47,7 +47,6 @@ class AnnounceableResource(Resource):
 		self._origAT = self.at
 		if not (res := super().update(dct = dct, originator = originator)).status:
 			return res
-
 
 		# TODO handle update from announced resource. Check originator???
 
@@ -71,7 +70,7 @@ class AnnounceableResource(Resource):
 			for aa in self.aa:
 				if not aa in self._attributes:
 					L.logDebug(dbg := f'Non-resource attribute in aa: {aa}')
-					return Result(status=False, rsc=RC.badRequest, dbg=dbg)
+					return Result.errorResult(dbg = dbg)
 
 			# deep-copy the announcedAttributes
 			announceableAttributes = deepcopy(self.aa)
@@ -88,7 +87,7 @@ class AnnounceableResource(Resource):
 
 		# If announceableAttributes is now an empty list, set aa to None
 		self['aa'] = None if len(announceableAttributes) == 0 else announceableAttributes
-		return Result(status=True)
+		return Result.successResult()
 
 
 	def createAnnouncedResourceDict(self, isCreate:bool = False) -> JSON:

@@ -130,7 +130,7 @@ class Storage(object):
 				self.db.insertResource(resource)
 			else:
 				L.isWarn and L.logWarn(f'Resource already exists (Skipping): {resource} ri: {ri} srn:{srn}')
-				return Result(status = False, rsc = RC.conflict, dbg = 'resource already exists')
+				return Result.errorResult(rsc = RC.conflict, dbg = 'resource already exists')
 
 		# Add path to identifiers db
 		self.db.insertIdentifier(resource, ri, srn)
@@ -169,9 +169,9 @@ class Storage(object):
 		if (l := len(resources)) == 1:
 			return Result(status = True, resource = resources[0]) if raw else Factory.resourceFromDict(resources[0])
 		elif l == 0:
-			return Result(status = False, rsc = RC.notFound, dbg = 'resource not found')
+			return Result.errorResult(rsc = RC.notFound, dbg = 'resource not found')
 
-		return Result(status = False, rsc = RC.internalServerError, dbg = 'database inconsistency')
+		return Result.errorResult(rsc = RC.internalServerError, dbg = 'database inconsistency')
 
 
 	def retrieveResourcesByType(self, ty:T) -> list[Document]:

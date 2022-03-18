@@ -69,10 +69,10 @@ class ACTR(AnnounceableResource):
 		if self.sri is not None: # sri is optional
 			if not (res := CSE.dispatcher.retrieveLocalResource(self.sri)).status:
 				L.logDebug(dbg := f'sri - referenced resource not found: {res.dbg})')
-				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				return Result.errorResult(dbg = dbg)
 		if not (res := CSE.dispatcher.retrieveLocalResource(self.orc)).status:
 			L.logDebug(dbg := f'orc - referenced resource not found: {res.dbg})')
-			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+			return Result.errorResult(dbg = dbg)
 		
 
 
@@ -90,7 +90,7 @@ class ACTR(AnnounceableResource):
 		evm = self.evm
 		if not (EvalMode.off <= evm <= EvalMode.continous):
 			L.logDebug(dbg := f'evm - invalid EvalMode: {evm})')
-			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+			return Result.errorResult(dbg = dbg)
 		# TODO check above	
 
 

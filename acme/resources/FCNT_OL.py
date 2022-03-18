@@ -34,23 +34,23 @@ class FCNT_OL(Resource):
 		""" Handle a RETRIEVE request. Return resource """
 		if L.isDebug: L.logDebug('Retrieving oldest FCI from FCNT')
 		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.FCI, oldest = True)):
-			return Result(status = False, rsc = RC.notFound, dbg = 'no instance for <oldest>')
+			return Result.errorResult(rsc = RC.notFound, dbg = 'no instance for <oldest>')
 		return Result(status = True, rsc = RC.OK, resource = r)
 
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a CREATE request. Fail with error code. """
-		return Result(status = False, rsc = RC.operationNotAllowed, dbg = 'operation not allowed for <oldest> resource type')
+		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'operation not allowed for <oldest> resource type')
 
 
 	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a UPDATE request. Fail with error code. """
-		return Result(status = False, rsc = RC.operationNotAllowed, dbg = 'operation not allowed for <oldest> resource type')
+		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'operation not allowed for <oldest> resource type')
 
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a DELETE request. Delete the latest resource. """
 		if L.isDebug: L.logDebug('Deleting oldest FCI from FCNT')
 		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.FCI, oldest = True)):
-			return Result(status = False, rsc = RC.notFound, dbg = 'no instance for <oldest>')
+			return Result.errorResult(rsc = RC.notFound, dbg = 'no instance for <oldest>')
 		return CSE.dispatcher.deleteResource(r, originator, withDeregistration = True)

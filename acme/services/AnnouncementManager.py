@@ -9,7 +9,6 @@
 
 from __future__ import annotations
 import time
-from copy import deepcopy
 from typing import Optional, Tuple, List, cast
 from ..etc import Utils
 from ..etc import RequestUtils

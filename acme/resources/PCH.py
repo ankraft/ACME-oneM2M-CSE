@@ -42,9 +42,9 @@ class PCH(Resource):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
 		# PCH inherits from its parent, the <AE>
-		super().__init__(T.PCH, dct, pi, create=create, inheritACP=True)
+		super().__init__(T.PCH, dct, pi, create = create, inheritACP = True)
 
 
 # TODO test Retrieve by originator AE only! Add new willBeRetrieved() function
@@ -66,9 +66,9 @@ class PCH(Resource):
 		}
 		pcu = Factory.resourceFromDict(dct, pi=self.ri, ty=T.PCH_PCU).resource	# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createResource(pcu, originator=originator)).resource:
-			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+			return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
 		
 
-		return Result(status=True)
+		return Result.successResult()
 
 

@@ -91,15 +91,15 @@ class TS(AnnounceableResource):
 		# add latest
 		resource = Factory.resourceFromDict({}, pi = self.ri, ty = T.TS_LA).resource	# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createResource(resource)).resource:
-			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
+			return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
 
 		# add oldest
 		resource = Factory.resourceFromDict({}, pi = self.ri, ty = T.TS_OL).resource	# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createResource(resource)).resource:
-			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
+			return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
 		
 		self._validateDataDetect()
-		return Result(status = True)
+		return Result.successResult()
 
 
 	def deactivate(self, originator:str) -> None:
@@ -119,13 +119,13 @@ class TS(AnnounceableResource):
 			# Check that mdd is updated alone
 			if any(key in ['mdt', 'mdn', 'peid', 'pei'] for key in updatedAttributes.keys()):
 				L.logDebug(dbg := 'mdd must not be updated together with mdt, mdn, pei or peid.')
-				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				return Result.errorResult(dbg = dbg)
 
 			if mddNew == True:
 				if self.mdn is None:	# TODO Change after spec clarification.
 					# mdd can not be enabled when there is no mdn!
 					L.logDebug(dbg := 'mdn is not set. Missing data detect cannot be enabled.')
-					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+					return Result.errorResult(dbg = dbg)
 
 				clearMdlt()
 
@@ -140,7 +140,7 @@ class TS(AnnounceableResource):
 			# Check that certain attributes are not updated when mdd is true
 			if any(key in ['mdt', 'mdn', 'peid', 'pei'] for key in updatedAttributes.keys()):
 				L.logDebug(dbg := 'mdd must not be True when mdt, mdn, pei or peid are updated.')
-				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				return Result.errorResult(dbg = dbg)
 
 			if not (peidNew := updatedAttributes.get('peid')):
 				peidNew = self.peid	# If no new peid is provided then take the old value
@@ -150,7 +150,7 @@ class TS(AnnounceableResource):
 				peidNew = self.peid	# If no new peid is provided then take the old value
 			if peidNew > (peiNew / 2):
 				L.logDebug(dbg := 'peid must be <= pei/2')
-				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				return Result.errorResult(dbg = dbg)
 		
 			# Set peid if not present and not provided
 			if 'peid' not in updatedAttributes and not self.peid:
@@ -163,7 +163,7 @@ class TS(AnnounceableResource):
 				peid = self.peid
 			if mdt is not None and peid is not None and mdt <= peid:
 				L.logDebug(dbg := 'mdt must be > peid')
-				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				return Result.errorResult(dbg = dbg)
 		
 
 		# If any of the parameters (mdt, mdn, peid, pei) related to the missing data detection process is
@@ -187,7 +187,7 @@ class TS(AnnounceableResource):
 		self._validateChildren()	# Check consequences from the update
 		self._validateDataDetect(updatedAttributes)
 
-		return (Result(status = True))
+		return Result.successResult()
 
  
 	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
@@ -198,23 +198,23 @@ class TS(AnnounceableResource):
 		# Check the format of the CNF attribute
 		if cnf := self.cnf:
 			if not (res := CSE.validator.validateCNF(cnf)).status:
-				return Result(status = False, rsc = RC.badRequest, dbg = res.dbg)
+				return Result.errorResult(dbg = res.dbg)
 
 		# Check peid
 		if self.peid is not None and self.pei is not None:	# pei(d) is an int
 			if not self.peid <= self.pei/2:	# complicated, but reflects the text in the spec
 				L.logDebug(dbg := 'peid must be <= pei/2')
-				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				return Result.errorResult(dbg = dbg)
 		elif self.pei is not None:	# pei is an int
 			self.setAttribute('peid', int(self.pei/2), False)	# CSE internal policy
 		
 		# Check MDT
 		if self.mdd and self.mdt is not None and self.peid is not None and self.mdt <= self.peid:
 			L.isDebug and L.logDebug(dbg := 'mdt must be > peid')
-			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+			return Result.errorResult(dbg = dbg)
 		
 		self._validateChildren()
-		return Result(status=True)
+		return Result.successResult()
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
@@ -223,12 +223,12 @@ class TS(AnnounceableResource):
 		
 		# Check whether the child's rn is "ol" or "la".
 		if (rn := childResource['rn']) and rn in ['ol', 'la']:
-			return Result(status=False, rsc=RC.operationNotAllowed, dbg='resource types "latest" or "oldest" cannot be added')
+			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'resource types "latest" or "oldest" cannot be added')
 	
 		# Check whether the size of the TSI doesn't exceed the mbs
 		if childResource.ty == T.TSI and self.mbs is not None:					# mbs is an int
 			if childResource.cs is not None and childResource.cs > self.mbs:	# cs is an int
-				return Result(status=False, rsc=RC.notAcceptable, dbg='child content sizes would exceed mbs')
+				return Result.errorResult(rsc = RC.notAcceptable, dbg = 'child content sizes would exceed mbs')
 
 		# Check whether another TSI has the same dgt value set
 		tsis = CSE.storage.searchByFragment({ 	'ty'	: T.TSI,
@@ -236,9 +236,9 @@ class TS(AnnounceableResource):
 												'dgt'	: childResource.dgt
 		})
 		if len(tsis) > 0:	# Error if yes
-			return Result(status=False, rsc=RC.conflict, dbg=f'timeSeriesInstance with the same dgt: {childResource.dgt} already exists')
+			return Result.errorResult(rsc = RC.conflict, dbg = f'timeSeriesInstance with the same dgt: {childResource.dgt} already exists')
 
-		return Result(status=True)
+		return Result.successResult()
 
 
 	# Handle the addition of new TSI. Basically, get rid of old ones.

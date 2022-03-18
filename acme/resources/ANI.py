@@ -48,7 +48,7 @@ class ANI(MgmtObj):
 	}
 	
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(dct, pi, mgd=T.ANI, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(dct, pi, mgd = T.ANI, create = create)
 
-		self.setAttribute('ant', defaultAreaNwkType, overwrite=False)
+		self.setAttribute('ant', defaultAreaNwkType, overwrite = False)

@@ -63,16 +63,16 @@ class SWR(MgmtObj):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(dct, pi, mgd=T.SWR, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(dct, pi, mgd = T.SWR, create = create)
 
-		self.setAttribute('vr', defaultVersion, overwrite=False)
-		self.setAttribute('swn', defaultSoftwareName, overwrite=False)
-		self.setAttribute('url', defaultURL, overwrite=False)
-		self.setAttribute('ins', defaultStatus, overwrite=False)
-		self.setAttribute('acts', defaultStatus, overwrite=False)
-		self.setAttribute('in', False, overwrite=False)
-		self.setAttribute('un', False, overwrite=False)
-		self.setAttribute('act', False, overwrite=False)
-		self.setAttribute('dea', False, overwrite=False)
+		self.setAttribute('vr', defaultVersion, overwrite = False)
+		self.setAttribute('swn', defaultSoftwareName, overwrite = False)
+		self.setAttribute('url', defaultURL, overwrite = False)
+		self.setAttribute('ins', defaultStatus, overwrite = False)
+		self.setAttribute('acts', defaultStatus, overwrite = False)
+		self.setAttribute('in', False, overwrite = False)
+		self.setAttribute('un', False, overwrite = False)
+		self.setAttribute('act', False, overwrite = False)
+		self.setAttribute('dea', False, overwrite = False)
 

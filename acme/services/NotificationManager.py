@@ -421,6 +421,8 @@ class NotificationManager(object):
 	def _flushBatchNotifications(self, subscription:Resource) -> None:
 		"""	Send and remove any outstanding batch notifications for a subscription.
 		"""
+		L.isDebug and L.logDebug(f'Flush batch notification')
+
 		ri = subscription.ri
 		# Get the subscription information (not the <sub> resource itself!).
 		# Then get all the URIs/notification targets from that subscription. They might already
@@ -435,6 +437,8 @@ class NotificationManager(object):
 	def _storeBatchNotification(self, nu:str, sub:JSON, notificationRequest:JSON) -> bool:
 		"""	Store a subscription's notification for later sending. For a single nu.
 		"""
+		L.isDebug and L.logDebug(f'Store batch notification nu: {nu}')
+
 		# Rename key name
 		if 'm2m:sgn' in notificationRequest:
 			notificationRequest['sgn'] = notificationRequest.pop('m2m:sgn')
@@ -444,7 +448,9 @@ class NotificationManager(object):
 		CSE.storage.addBatchNotification(ri, nu, notificationRequest)
 
 		#  Check for actions
-		if (num := Utils.findXPath(sub, 'bn/num')) and CSE.storage.countBatchNotifications(ri, nu) >= num:
+		if (num := Utils.findXPath(sub, 'bn/num')) and (cnt := CSE.storage.countBatchNotifications(ri, nu)) >= num:
+			L.isDebug and L.logDebug(f'Sending batch notification: bn/num: {num}  countBatchNotifications: {cnt}')
+
 			ln = sub['ln'] if 'ln' in sub else False
 			self._stopNotificationBatchWorker(ri, nu)	# Stop the worker, not needed
 			self._sendSubscriptionAggregatedBatchNotification(ri, nu, ln)
@@ -513,11 +519,10 @@ class NotificationManager(object):
 		if dur is None or dur < 1:	
 			L.logErr('BatchNotification duration is < 1')
 			return False
-		L.isDebug and L.logDebug(f'Starting new batchNotificationsWorker. Duration : {dur:f} seconds')
-
 		# Check and start a notification worker to send notifications after some time
 		if len(BackgroundWorkerPool.findWorkers(self._workerID(ri, nu))) > 0:	# worker started, return
 			return True
+		L.isDebug and L.logDebug(f'Starting new batchNotificationsWorker. Duration : {dur:f} seconds')
 		BackgroundWorkerPool.newActor(self._sendSubscriptionAggregatedBatchNotification, delay=dur, name=self._workerID(ri, nu)).start(ri=ri, nu=nu)
 		return True
 

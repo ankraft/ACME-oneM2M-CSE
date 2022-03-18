@@ -56,9 +56,9 @@ class NOD(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.NOD, dct, pi, create=create)
-		self.setAttribute('ni', Utils.uniqueID(), overwrite=False)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.NOD, dct, pi, create = create)
+		self.setAttribute('ni', Utils.uniqueID(), overwrite = False)
 
 
 	def deactivate(self, originator:str) -> None:

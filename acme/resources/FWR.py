@@ -60,12 +60,12 @@ class FWR(MgmtObj):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(dct, pi, mgd=T.FWR, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(dct, pi, mgd = T.FWR, create = create)
 
-		self.setAttribute('vr', defaultVersion, overwrite=False)
-		self.setAttribute('fwn', defaultFirmwareName, overwrite=False)
-		self.setAttribute('url', defaultURL, overwrite=False)
-		self.setAttribute('uds', defaultUDS, overwrite=False)
-		self.setAttribute('ud', False, overwrite=False)
+		self.setAttribute('vr', defaultVersion, overwrite = False)
+		self.setAttribute('fwn', defaultFirmwareName, overwrite = False)
+		self.setAttribute('url', defaultURL, overwrite = False)
+		self.setAttribute('uds', defaultUDS, overwrite = False)
+		self.setAttribute('ud', False, overwrite = False)
 

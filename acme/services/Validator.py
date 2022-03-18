@@ -72,12 +72,12 @@ class Validator(object):
 
 		# Just return in case the resource instance is imported
 		if isImported:
-			return Result(status = True)
+			return Result.successResult()
 
 		# No policies?
 		if not attributes:
 			L.isWarn and L.logWarn(f'No attribute policies: {resource}')
-			return Result(status = True)
+			return Result.successResult()
 
 		# Set an index into the policy dataclass, depending on the validation type
 		optionalIndex = 2 if create else 3	# index to create or update
@@ -102,7 +102,7 @@ class Validator(object):
 				attributePolicies.update(fca)
 			else:
 				L.logWarn(dbg := f'Unknown resource type: {tpe}')
-				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				return Result.errorResult(dbg = dbg)
 
 		# L.logDebug(attributePolicies.items())
 		# L.logWarn(pureResDict)
@@ -111,7 +111,7 @@ class Validator(object):
 		for attributeName in pureResDict.keys():
 			if attributeName not in attributePolicies.keys():
 				L.logWarn(dbg := f'Unknown attribute: {attributeName} in resource: {tpe}')
-				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+				return Result.errorResult(dbg = dbg)
 
 		for attributeName, policy in attributePolicies.items():
 			if not policy:
@@ -133,12 +133,12 @@ class Validator(object):
 					
 				if policyOptional == RO.M:		# Not okay, this attribute is mandatory but absent
 					L.logWarn(dbg := f'Cannot find mandatory attribute: {attributeName}')
-					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+					return Result.errorResult(dbg = dbg)
 
 				# TODO Is the following actually executed??? Should it be somewhere else? Write a test
 				if attributeName in pureResDict and policy.cardinality == CAR.CAR1: 	# but ignore CAR.car1N (which may be Null/None)
 					L.logWarn(dbg := f'Cannot delete a mandatory attribute: {attributeName}')
-					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+					return Result.errorResult(dbg = dbg)
 
 				if policyOptional in [ RO.NP, RO.O ]:		# Okay that the attribute is not in the dict, since it is provided or optional
 					continue
@@ -146,18 +146,18 @@ class Validator(object):
 				if not createdInternally:
 					if policyOptional == RO.NP:
 						L.logWarn(dbg := f'Found non-provision attribute: {attributeName}')
-						return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+						return Result.errorResult(dbg = dbg)
 
 				# check the the announced cases
 				if isAnnounced:
 					if policy.announcement == AN.NA:	# Not okay, attribute is not announced
 						L.logWarn(dbg := f'Found non-announced attribute: {attributeName}')
-						return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+						return Result.errorResult(dbg = dbg)
 					continue
 
 				# Special handling for the ACP's pvs attribute
 				if attributeName == 'pvs' and not (res := self.validatePvs(pureResDict)).status:
-					return Result(status = False, rsc = RC.badRequest, dbg = res.dbg)
+					return Result.errorResult(dbg = res.dbg)
 
 			# Check whether the value is of the correct type
 			if (res := self._validateType(policy.type, attributeValue)).status:
@@ -166,29 +166,35 @@ class Validator(object):
 				# Check list. May be empty or needs to contain at least one member
 				if policy.cardinality == CAR.CAR1LN and len(attributeValue) == 0:
 					L.logWarn(dbg := f'List attribute must be non-empty: {attributeName}')
-					return Result(status = False, rsc = RC.badRequest, dbg = res.dbg)
+					return Result.errorResult(dbg = res.dbg)
 
 				continue
 		
 
 			# fall-through means: not validated
 			L.logWarn(dbg := f'Attribute/value validation error: {attributeName}={str(attributeValue)} ({res.dbg})')
-			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+			return Result.errorResult(dbg = dbg)
 
-		return Result(status = True)
+		return Result.successResult()
 
 
 
-	def validateAttribute(self, attribute:str, value:Any, attributeType:BT=None, rtype:T=T.ALL) -> Result:
+	def validateAttribute(self, attribute:str, value:Any, attributeType:BT = None, rtype:T = T.ALL) -> Result:
 		""" Validate a single attribute. 
-			If `attributeType` is set then that type is taken to perform the check, otherwise the attribute
-			type is determined.
+		
+			Args:
+				attribute: Name of the attribute to perform the check.
+				value: Value to validate for the attribute.
+				attributeType: If `attributeType` is set then that type is taken to perform the check, otherwise the attribute type is determined.
+				rtype: ResourceType. Some attributes depend on the resource type.
+			Return:
+				Result. If successful then Result.data contains the determined attribute.
 		"""
 		if attributeType is not None:	# use the given attribute type instead of determining it
 			return self._validateType(attributeType, value, True)
 		if policy := self.getAttributePolicy(rtype, attribute):
 			return self._validateType(policy.type, value, True)
-		return Result(status=False, dbg=f'validation for attribute {attribute} not defined')
+		return Result.errorResult(dbg = f'validation for attribute {attribute} not defined')
 
 
 	#
@@ -232,17 +238,17 @@ class Validator(object):
 		
 		# None - pc is ok
 		if pc is None:
-			return Result(status=True)
+			return Result.successResult()
 		
 		# Check number of elements == 1
 		if len(pc.keys()) != 1:	# TODO is this correct?
-			return Result(status=False, rsc=RC.badRequest, dbg=f'primitive content shall contain exactly one element')
+			return Result.errorResult(dbg = f'primitive content shall contain exactly one element')
 		
 		name,obj = list(pc.items())[0]
 		if ap := self.complexAttributePolicies.get(name):
 			return self.validateAttributes(obj, tpe=name, attributes=ap)
 		
-		return Result(status=True)
+		return Result.successResult()
 
 
 	#
@@ -254,20 +260,20 @@ class Validator(object):
 
 		if (l :=len(dct['pvs'])) == 0:
 			L.logWarn(dbg := 'Attribute pvs must not be an empty list')
-			return Result(status=False, dbg=dbg)
+			return Result.errorResult(dbg = dbg)
 		elif l > 1:
 			L.logWarn(dbg := 'Attribute pvs must contain only one item')
-			return Result(status=False, dbg=dbg)
+			return Result.errorResult(dbg = dbg)
 		if not (acr := Utils.findXPath(dct, 'pvs/acr')):
 			L.logWarn(dbg := 'Attribute pvs/acr not found')
-			return Result(status=False, dbg=dbg)
+			return Result.errorResult(dbg = dbg)
 		if not isinstance(acr, list):
 			L.logWarn(dbg := 'Attribute pvs/acr must be a list')
-			return Result(status=False, dbg=dbg)
+			return Result.errorResult(dbg = dbg)
 		if len(acr) == 0:
 			L.logWarn(dbg := 'Attribute pvs/acr must not be an empty list')
-			return Result(status=False, dbg=dbg)
-		return Result(status=True)
+			return Result.errorResult(dbg = dbg)
+		return Result.successResult()
 
 
 	# TODO allowed media type chars
@@ -279,8 +285,8 @@ class Validator(object):
 	def validateCNF(self, value:str) -> Result:
 		"""	Validate the contents of the `contentInfo` attribute. """
 		if isinstance(value, str) and re.match(self.cnfRegex, value) is not None:
-			return Result(status=True)
-		return Result(status=False, dbg=f'validation of cnf attribute failed: {value}')
+			return Result.successResult()
+		return Result.errorResult(dbg = f'validation of cnf attribute failed: {value}')
 
 
 	def validateCSICB(self, val:str, name:str) -> Result:
@@ -289,11 +295,11 @@ class Validator(object):
 		# TODO Decide whether to correct this automatically, like in RemoteCSEManager._retrieveRemoteCSE()
 		if not val:
 			L.logDebug(dbg := f"{name} is missing")
-			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+			return Result.errorResult(dbg = dbg)
 		if not val.startswith('/'):
 			L.logDebug(dbg := f"{name} must start with '/': {val}")
-			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
-		return Result(status = True)
+			return Result.errorResult(dbg = dbg)
+		return Result.successResult()
 
 
 	def validateEvalCriteria(self, dct:JSON) -> Result:
@@ -301,29 +307,27 @@ class Validator(object):
 		"""
 		if (optr := dct.get('optr')) is None:
 			L.logDebug(dbg := f'evc/optr is missing in evalCriteria')
-			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+			return Result.errorResult(dbg = dbg)
 		if not (res := self.validateAttribute('optr', optr)).status:
 			return res
 		if not (EvalCriteriaOperator.equal <= optr <= EvalCriteriaOperator.lessThanEqual):
 			L.logDebug(dbg := f'evc/optr is out of range')
-			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+			return Result.errorResult(dbg = dbg)
 		
 		if (sbjt := dct.get('sbjt')) is None:
 			L.logDebug(dbg := f'evc/sbjt is missing in evalCriteria')
-			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+			return Result.errorResult(dbg = dbg)
 		if not (res := self.validateAttribute('sbjt', sbjt)).status:
 			return res
 
 		if (thld := dct.get('thld')) is None:
 			L.logDebug(dbg := f'evc/thld is missing in evalCriteria')
-			return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+			return Result.errorResult(dbg = dbg)
 		if not (res := self.validateAttribute('thld', sbjt)).status:
 			return res
 
-		return Result(status = True)
+		return Result.successResult()
 	
-
-
 
 	def isExtraResourceAttribute(self, attr:str, resource:Resource) -> bool:
 		"""	Check whether the attribute `attr` is neither a universal, common, or resource attribute,
@@ -401,59 +405,62 @@ class Validator(object):
 	#
 
 	def _validateType(self, dataType:BT, value:Any, convert:bool = False) -> Result:
-		""" Check a value for its type. If the convert parameter is True then it
-			is assumed that the value could be a stringified value and the method
-			will attempt to convert the value to its target type; otherwise this
-			is an error. 
-
-			If the check is positive (Result.status==True) then Result.data is set
-			to the determined data type.
+		""" Check a value for its type. 
+					
+			Args:
+				dataType: Required data type for the value to check against.
+				value: Value to validate.
+				convert: If the convert parameter is True then it is assumed that the value could be a stringified
+					value and the method will attempt to convert the value to its target type; otherwise this
+					is an error. 
+			Return:
+				Result. If the check is positive (Result.status = =True) then Result.data is set to the determined data type.
 		"""
 
 		if dataType == BT.positiveInteger:
 			if isinstance(value, int):
 				if value > 0:
-					return Result(status=True, data=dataType)
-				return Result(status=False, dbg='value must be > 0')
+					return Result(status = True, data = dataType)
+				return Result.errorResult(dbg = 'value must be > 0')
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
 					if int(value) > 0:
-						return Result(status=True, data=dataType)
+						return Result(status = True, data = dataType)
 				except Exception as e:
-					return Result(status=False, dbg=str(e))
-			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: positive integer')
+					return Result.errorResult(dbg = str(e))
+			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: positive integer')
 
 		if dataType == BT.nonNegInteger:
 			if isinstance(value, int):
 				if value >= 0:
-					return Result(status=True, data=dataType)
-				return Result(status=False, dbg='value must be >= 0')
+					return Result(status = True, data = dataType)
+				return Result.errorResult(dbg = 'value must be >= 0')
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
 					if int(value) >= 0:
-						return Result(status=True, data=BT.nonNegInteger)
+						return Result(status = True, data = BT.nonNegInteger)
 				except Exception as e:
-					return Result(status=False, dbg=str(e))
-			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: non-negative integer')
+					return Result.errorResult(dbg = str(e))
+			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: non-negative integer')
 
 		if dataType in [ BT.unsignedInt, BT.unsignedLong ]:
 			if isinstance(value, int):
-				return Result(status=True, data=dataType)
+				return Result(status = True, data = dataType)
 			# try to convert string to number 
 			if convert and isinstance(value, str):
 				try:
 					int(value)
-					return Result(status=True, data=dataType)
+					return Result(status = True, data = dataType)
 				except Exception as e:
-					return Result(status=False, dbg=str(e))
-			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: unsigned integer')
+					return Result.errorResult(dbg = str(e))
+			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: unsigned integer')
 
 		if dataType == BT.timestamp and isinstance(value, str):
 			if DateUtils.fromAbsRelTimestamp(value) == 0.0:
-				return Result(status=False, dbg=f'format error in timestamp: {value}')
-			return Result(status=True, data=dataType)
+				return Result.errorResult(dbg = f'format error in timestamp: {value}')
+			return Result(status = True, data = dataType)
 
 		if dataType == BT.absRelTimestamp:
 			if isinstance(value, str):
@@ -462,53 +469,53 @@ class Validator(object):
 					# fallthrough
 				except Exception as e:	# could happen if this is a string with an iso timestamp. Then try next test
 					if DateUtils.fromAbsRelTimestamp(value) == 0.0:
-						return Result(status=False, dbg=f'format error in absRelTimestamp: {value}')
+						return Result.errorResult(dbg = f'format error in absRelTimestamp: {value}')
 				# fallthrough
 			elif not isinstance(value, int):
-				return Result(status=False, dbg=f'unsupported data type for absRelTimestamp')
-			return Result(status=True, data=dataType)		# int/long is ok
+				return Result.errorResult(dbg = f'unsupported data type for absRelTimestamp')
+			return Result(status = True, data = dataType)		# int/long is ok
 
 		if dataType in [ BT.string, BT.anyURI ] and isinstance(value, str):
-			return Result(status=True, data=dataType)
+			return Result(status = True, data = dataType)
 
 		if dataType == BT.list and isinstance(value, list):
-			return Result(status=True, data=dataType)
+			return Result(status = True, data = dataType)
 
 		if dataType == BT.listNE and isinstance(value, list):
 			if len(value) == 0:
-				return Result(status=False, dbg='empty list is not allowed')
-			return Result(status=True, data=dataType)
+				return Result.errorResult(dbg = 'empty list is not allowed')
+			return Result(status = True, data = dataType)
 		
 		if dataType == BT.dict and isinstance(value, dict):
-			return Result(status=True, data=dataType)
+			return Result(status = True, data = dataType)
 		
 		if dataType == BT.boolean:
 			if isinstance(value, bool):
-				return Result(status=True, data=dataType)
+				return Result(status = True, data = dataType)
 			# try to convert string to bool
 			if convert and isinstance(value, str):	# "true"/"false"
 				try:
 					bool(value)
-					return Result(status=True, data=dataType)
+					return Result(status = True, data = dataType)
 				except Exception as e:
-					return Result(status=False, dbg=str(e))
-			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: bool')
+					return Result.errorResult(dbg = str(e))
+			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: bool')
 
 		if dataType == BT.float:
 			if isinstance(value, (float, int)):
-				return Result(status=True, data=dataType)
+				return Result(status = True, data = dataType)
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
 					float(value)
-					return Result(status=True, data=dataType)
+					return Result(status = True, data = dataType)
 				except Exception as e:
-					return Result(status=False, dbg=str(e))
-			return Result(status=False, dbg=f'invalid type: {type(value).__name__}. Expected: float')
+					return Result.errorResult(dbg = str(e))
+			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: float')
 
 		if dataType == BT.integer:
 			if isinstance(value, int):
-				return Result(status=True, data=dataType)
+				return Result(status = True, data = dataType)
 			# try to convert string to number and compare
 			if convert and isinstance(value, str):
 				try:
@@ -516,7 +523,7 @@ class Validator(object):
 					return Result(status = True, data = dataType)
 				except Exception as e:
 					return Result(status = False, dbg = str(e))
-			return Result(status = False, dbg = f'invalid type: {type(value).__name__}. Expected: integer')
+			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: integer')
 
 		if dataType == BT.geoCoordinates and isinstance(value, dict):
 			return Result(status = True, data = dataType)
@@ -525,11 +532,11 @@ class Validator(object):
 			try:
 				isodate.parse_duration(value)
 			except Exception as e:
-				return Result(status = False, dbg = f'must be an ISO duration: {str(e)}')
+				return Result.errorResult(dbg = f'must be an ISO duration: {str(e)}')
 			return Result(status = True, data = dataType)
 		
 		if dataType == BT.any:
 			return Result(status = True, data = dataType)
 
-		return Result(status = False, dbg = f'unknown type: {str(dataType)}, value type:{type(value)}')
+		return Result.errorResult(dbg = f'unknown type: {str(dataType)}, value type:{type(value)}')
 

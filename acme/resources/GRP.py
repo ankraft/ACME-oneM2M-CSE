@@ -55,15 +55,15 @@ class GRP(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, fcntType:str=None, create:bool=False) -> None:
-		super().__init__(T.GRP, dct, pi, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, fcntType:str = None, create:bool = False) -> None:
+		super().__init__(T.GRP, dct, pi, create = create)
 
-		self.setAttribute('mt', int(T.MIXED), overwrite=False)
-		self.setAttribute('ssi', False, overwrite=True)
-		self.setAttribute('cnm', 0, overwrite=False)	# calculated later
-		self.setAttribute('mid', [], overwrite=False)			
-		self.setAttribute('mtv', False, overwrite=False)
-		self.setAttribute('csy', ConsistencyStrategy.abandonMember, overwrite=False)
+		self.setAttribute('mt', int(T.MIXED), overwrite = False)
+		self.setAttribute('ssi', False, overwrite = True)
+		self.setAttribute('cnm', 0, overwrite = False)	# calculated later
+		self.setAttribute('mid', [], overwrite = False)			
+		self.setAttribute('mtv', False, overwrite = False)
+		self.setAttribute('csy', ConsistencyStrategy.abandonMember, overwrite = False)
 
 		# These attributes are not provided by default: mnm (no default), macp (no default)
 		# optional set: spty, gn, nar
@@ -76,13 +76,13 @@ class GRP(AnnounceableResource):
 		# add fanOutPoint
 		ri = self.ri
 		if L.isDebug: L.logDebug(f'Registering fanOutPoint resource for: {ri}')
-		fanOutPointResource = Factory.resourceFromDict({ 'pi' : ri }, ty=T.GRP_FOPT).resource
+		fanOutPointResource = Factory.resourceFromDict({ 'pi' : ri }, ty = T.GRP_FOPT).resource
 		if not (res := CSE.dispatcher.createResource(fanOutPointResource, self, originator)).resource:
-			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
-		return Result(status=True)
+			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
+		return Result.successResult()
 
 
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 		return CSE.group.validateGroup(self, originator)

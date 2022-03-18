@@ -43,8 +43,8 @@ class ACPAnnc(AnnouncedResource):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.ACPAnnc, dct, pi=pi, create=create)
+	def __init__(self, dct:JSON=None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.ACPAnnc, dct, pi = pi, create = create)
 
 
 	def checkSelfPermission(self, origin:str, requestedPermission:int) -> bool:
