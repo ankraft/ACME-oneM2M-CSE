@@ -1065,7 +1065,7 @@ class RequestManager(object):
 				errorResult = Result(status = False, rsc = RC.notFound, request = cseRequest, dbg = dbg)
 
 			# OT - originating timestamp
-			if ot := gget(cseRequest.originalRequest, 'ot', greedy=False):
+			if ot := gget(cseRequest.originalRequest, 'ot', greedy = False):
 				if (_ts := DateUtils.fromAbsRelTimestamp(ot)) == 0.0:
 					L.logDebug(dbg := 'Error in provided Originating Timestamp')
 					errorResult = Result(status = False, request = cseRequest, rsc = RC.badRequest, dbg = dbg)

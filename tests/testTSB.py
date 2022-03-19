@@ -163,8 +163,8 @@ class TestTSB(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSBPeriodic(self) -> None:
-		clearLastNotification()
 		""" Create <TSB> with periodic notification"""
+		clearLastNotification()
 		dct = 	{ 'm2m:tsb' : { 
 					'rn'	: tsbRN,
 					'bcnc'	: BeaconCriteria.PERIODIC,

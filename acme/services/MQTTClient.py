@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 from dataclasses import field
+from sqlite3 import Date
 from typing import ForwardRef, Tuple, cast, Dict
 from urllib.parse import urlparse
 from copy import deepcopy
@@ -393,13 +394,14 @@ class MQTTClient(object):
 		req.request.headers.originator				= originator
 		req.request.headers.requestIdentifier		= Utils.uniqueRI()
 		req.request.headers.releaseVersionIndicator	= CSE.releaseVersion						# TODO this actually depends in the originator
+		req.request.headers.originatingTimestamp	= DateUtils.getResourceDate()
 		req.rsc										= RC.UNKNOWN								# explicitly remove the provided OK because we don't want have any
 		req.request.ct								= ct if ct else CSE.defaultSerialization 	# get the serialization
 		req.request.parameters						= parameters
 
 		# construct the actual request and topic.
 		# Some work is needed here because we take a normal URL
-		preq = prepareMqttRequest(req, originator = originator, ty = ty, op = operation, raw=raw)
+		preq = prepareMqttRequest(req, originator = originator, ty = ty, op = operation, raw = raw)
 		topic = u.path
 		pathSplit = u.path.split('/')
 		ct = ct if ct else CSE.defaultSerialization
@@ -480,11 +482,13 @@ def prepareMqttRequest(inResult:Result, originator:str = None, ty:T = None, op:O
 	"""
 	result = RequestUtils.requestFromResult(inResult, originator, ty, op = op, isResponse=isResponse)
 
-	# When raw: Replace the data with its own primitive content, the rest of the result is fine
+	# When raw: Replace the data with its own primitive content, and a couple of headers
 	if raw and (pc := cast(JSON, result.data).get('pc')):
 		result.data = pc
 		if 'rqi' in pc:
 			result.request.headers.requestIdentifier = pc['rqi']
+		if 'ot' in pc:
+			result.request.headers.originatingTimestamp = pc['ot']
 
 	result.data = (result.data, cast(bytes, RequestUtils.serializeData(cast(JSON, result.data), result.request.ct)))
 	return result

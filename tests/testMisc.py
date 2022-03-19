@@ -10,6 +10,7 @@
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
+import isodate
 from typing import Tuple
 from acme.etc.Types import ResponseStatusCode as RC, ResourceTypes as T
 from acme.etc.DateUtils import getResourceDate
@@ -134,6 +135,21 @@ class TestMisc(unittest.TestCase):
 		"""	Check missing originator in request"""
 		_, rsc = RETRIEVE(cseURL, None, headers={C.hfRET : getResourceDate(10)}) # request expiration in 10 seconds
 		self.assertEqual(rsc, RC.badRequest)
+	
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_checkResponseOT(self) -> None:
+		"""	Check Originating Timestamp in response"""
+		r, rsc = RETRIEVE(cseURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(lastHeaders()[C.hfOT])
+		try:
+			raised = False
+			isodate.parse_time(lastHeaders()[C.hfOT])
+		except:
+			raised = True
+		finally:
+			self.assertFalse(raised, f'Error parsing timestamp: {lastHeaders()[C.hfOT]}')
 
 
 # TODO test for creating a resource with missing type parameter
@@ -155,6 +171,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestMisc('test_createAlphaResourceType'))
 	suite.addTest(TestMisc('test_createWithWrongResourceType'))
 	suite.addTest(TestMisc('test_checkHTTPmissingOriginator'))
+	suite.addTest(TestMisc('test_checkResponseOT'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

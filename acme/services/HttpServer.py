@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 import logging, sys, urllib3
+from sqlite3 import Date
 from copy import deepcopy
 from typing import Any, Callable, cast, Tuple
 
@@ -378,6 +379,7 @@ class HttpServer(object):
 			hds[C.hfOrigin] = originator
 			hds[C.hfRI] 	= Utils.uniqueRI()
 			hds[C.hfRVI]	= CSE.releaseVersion			# TODO this actually depends in the originator
+			hds[C.hfOT]		= DateUtils.getResourceDate()
 
 			# Add additional headers
 			if parameters:
@@ -404,6 +406,8 @@ class HttpServer(object):
 				hds[C.hfRTU] = data['rt']
 			if 'vsi' in data:
 				hds[C.hfVSI] = data['vsi']
+			if 'ot' in data:
+				hds[C.hfOT] = data['ot']
 
 			# Get filter criteria
 			filterCriteria = []
@@ -509,6 +513,7 @@ class HttpServer(object):
 			headers[C.hfRVI] = rvi
 		if vsi := Utils.findXPath(cast(JSON, outResult.data), 'vsi'):
 			headers[C.hfVSI] = vsi
+		headers[C.hfOT] = DateUtils.getResourceDate()
 
 		# HTTP status code
 		statusCode = result.rsc.httpStatusCode()
@@ -568,12 +573,12 @@ class HttpServer(object):
 		req['op']   				= operation.value		# Needed later for validation
 		req['to'] 		 			= path
 
-		# Get the request date
-		if date := request.date:
-			# req['ot'] = DateUtils.toISO8601Date(DateUtils.utcTime())
-			req['ot'] = DateUtils.toISO8601Date(date)
-		# else:
-		# 	req['ot'] = DateUtils.getResourceDate()
+		# # Get the request date
+		# if date := request.date:
+		# 	# req['ot'] = DateUtils.toISO8601Date(DateUtils.utcTime())
+		# 	req['ot'] = DateUtils.toISO8601Date(date)
+		# # else:
+		# # 	req['ot'] = DateUtils.getResourceDate()
 
 		# Copy and parse the original request headers
 		if f := request.headers.get(C.hfOrigin):
@@ -594,6 +599,8 @@ class HttpServer(object):
 			req['rt'] = rt					# req.rt.rtu
 		if f := request.headers.get(C.hfVSI):
 			req['vsi'] = f
+		if f := request.headers.get(C.hfOT):
+			req['ot'] = f
 
 		# parse and extract content-type header
 		if ct := request.content_type:

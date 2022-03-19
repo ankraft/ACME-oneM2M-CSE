@@ -13,6 +13,7 @@ import cbor2, json
 from typing import Any, cast
 from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode
 
+from ..etc import DateUtils
 from .Types import ContentSerializationType as CST, JSON, RequestType, ResponseStatusCode as RC, Result, ResourceTypes as T, Operation
 from .Constants import Constants as C
 from ..services.Logging import Logging as L
@@ -121,18 +122,34 @@ def requestFromResult(inResult:Result, originator:str = None, ty:T = None, op:Op
 		req['to'] = inResult.request.id if inResult.request.id else CSE.cseCsi
 
 
+	# Originating Timestamp
 	if inResult.request.headers.originatingTimestamp:
 		req['ot'] = inResult.request.headers.originatingTimestamp
+	else:
+		req['ot'] = DateUtils.getResourceDate()
+	
+	# Response Status Code
 	if inResult.rsc and inResult.rsc != RC.UNKNOWN:
 		req['rsc'] = int(inResult.rsc)
+	
+	# Operation
 	if op:
 		req['op'] = int(op)
+	
+	# Type
 	if ty:
 		req['ty'] = int(ty)
+	
+	# Request Identifier 
 	if inResult.request.headers.requestIdentifier:					# copy from the original request
 		req['rqi'] = inResult.request.headers.requestIdentifier
+	
+	# Release Version Indicator
+	# TODO handle version 1 correctly
 	if inResult.request.headers.releaseVersionIndicator:			# copy from the original request
 		req['rvi'] = inResult.request.headers.releaseVersionIndicator
+	
+	# Vendor Information
 	if inResult.request.headers.vendorInformation:					# copy from the original request
 		req['vsi'] = inResult.request.headers.vendorInformation
 	
