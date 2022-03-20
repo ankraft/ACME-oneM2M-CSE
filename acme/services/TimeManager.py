@@ -12,7 +12,7 @@ from typing import cast, List, Tuple
 from ..services.Logging import Logging as L
 from ..resources.TSB import TSB
 from ..services import CSE
-from ..etc.Types import BeaconCriteria, Result, ResourceTypes as T, ResponseStatusCode as RC
+from ..etc.Types import BeaconCriteria, CSERequest, Result, ResourceTypes as T, ResponseStatusCode as RC
 from ..etc import DateUtils
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 
@@ -31,6 +31,10 @@ class TimeManager(object):
 		# Read all periofics and add them (again)
 		for each in self._getAllPeriodicTimeSyncBeacons():
 			self.addPeriodicTimeSyncBeacon(each)
+		
+		# Register to receive events
+		CSE.event.addHandler(CSE.event.requestReceived, self.requestReveivedHandler)			# type: ignore
+		CSE.event.addHandler(CSE.event.responseReceived, self.responseReveivedHandler)			# type: ignore
 		
 		# Table for periodic timeSyncBeacons
 		self.periodicTimeSyncBeacons:dict[str, BackgroundWorker] = {}
@@ -66,6 +70,14 @@ class TimeManager(object):
 			each.stop()
 		self.periodicTimeSyncBeacons.clear()
 
+
+	def requestReveivedHandler(self, req:CSERequest):
+		#L.logErr(f'Received {reqResp}')
+		...
+
+	def responseReveivedHandler(self, resp:CSERequest):
+		#L.logErr(f'Received {jsn}')
+		...
 
 	
 

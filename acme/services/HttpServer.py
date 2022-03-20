@@ -449,13 +449,21 @@ class HttpServer(object):
 			# Actual sending the request
 			r = method(url, data = content, headers = hds, verify = CSE.security.verifyCertificateHttp)
 
+
+			# TODO Construct CSERequest object from the result
+
+			cseRequest = CSERequest()
+			# Continue
+
 			responseCt = CST.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
 			rc = RC(int(r.headers[C.hfRSC])) if C.hfRSC in r.headers else RC.internalServerError
 			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
 		except Exception as e:
 			L.isWarn and L.logWarn(f'Failed to send request: {str(e)}')
 			return Result.errorResult(rsc = RC.targetNotReachable, dbg = 'target not reachable')
-		return Result(status = True, rsc = rc, data = RequestUtils.deserializeData(r.content, responseCt))
+		res = Result(status = True, rsc = rc, data = RequestUtils.deserializeData(r.content, responseCt))
+		CSE.event.responseReceived(res.request)
+		return res
 		
 
 	#########################################################################

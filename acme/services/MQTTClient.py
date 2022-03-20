@@ -469,6 +469,7 @@ class MQTTClient(object):
 			
 		if not DateUtils.waitFor(timeOut, _receivedResponse):
 			return Result.errorResult(rsc = RC.targetNotReachable, dbg = 'Target not reachable or timeout'), None
+		CSE.event.responseReceived(resp.request)
 		return resp, topic
 
 
