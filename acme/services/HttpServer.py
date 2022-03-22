@@ -20,6 +20,7 @@ from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
 from werkzeug.datastructures import MultiDict
 import requests
+import isodate
 
 from ..etc.Constants import Constants as C
 from ..etc.Types import ReqResp, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
@@ -53,6 +54,7 @@ class HttpServer(object):
 		self.serverAddress		= Configuration.get('http.address')
 		self.listenIF			= Configuration.get('http.listenIF')
 		self.port 				= Configuration.get('http.port')
+		self.allowPatchForDelete= Configuration.get('http.allowPatchForDelete')
 		self.webuiRoot 			= Configuration.get('cse.webui.root')
 		self.webuiDirectory 	= f'{Configuration.get("packageDirectory")}/webui'
 		self.isStopped			= False
@@ -70,34 +72,36 @@ class HttpServer(object):
 
 		# Add endpoints
 
-		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handleGET, methods=['GET'])
-		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handlePOST, methods=['POST'])
-		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handlePUT, methods=['PUT'])
-		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handleDELETE, methods=['DELETE'])
-		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handlePATCH, methods=['PATCH'])		# TODO Experimentel
+		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handleGET, methods = ['GET'])
+		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handlePOST, methods = ['POST'])
+		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handlePUT, methods = ['PUT'])
+		self.addEndpoint(self.rootPath + '/<path:path>', handler=self.handleDELETE, methods = ['DELETE'])
 
 		# Register the endpoint for the web UI
 		# This is done by instancing the otherwise "external" web UI
 		self.webui = WebUI(self.flaskApp, 
-						   defaultRI=CSE.cseRi, 
-						   defaultOriginator=CSE.cseOriginator, 
-						   root=self.webuiRoot,
-						   webuiDirectory=self.webuiDirectory,
-						   version=C.version)
+						   defaultRI = CSE.cseRi, 
+						   defaultOriginator = CSE.cseOriginator, 
+						   root = self.webuiRoot,
+						   webuiDirectory = self.webuiDirectory,
+						   version = C.version)
 
 		# Enable the config endpoint
 		if Configuration.get('http.enableStructureEndpoint'):
 			structureEndpoint = f'{self.rootPath}/__structure__'
 			L.isInfo and L.log(f'Registering structure endpoint at: {structureEndpoint}')
-			self.addEndpoint(structureEndpoint, handler=self.handleStructure, methods=['GET'], strictSlashes=False)
-			self.addEndpoint(f'{structureEndpoint}/<path:path>', handler=self.handleStructure, methods=['GET', 'PUT'])
+			self.addEndpoint(structureEndpoint, handler = self.handleStructure, methods  =['GET'], strictSlashes = False)
+			self.addEndpoint(f'{structureEndpoint}/<path:path>', handler = self.handleStructure, methods = ['GET', 'PUT'])
 
 		# Enable the upper tester endpoint
 		if Configuration.get('http.enableUpperTesterEndpoint'):
 			upperTesterEndpoint = f'{self.rootPath}/__ut__'
 			L.isInfo and L.log(f'Registering upper tester endpoint at: {upperTesterEndpoint}')
-			self.addEndpoint(upperTesterEndpoint, handler=self.handleUpperTester, methods=['POST'], strictSlashes=False)
+			self.addEndpoint(upperTesterEndpoint, handler = self.handleUpperTester, methods = ['POST'], strictSlashes=False)
 
+		# Allow to use PATCH as a replacement for the DELETE method
+		if Configuration.get('http.allowPatchForDelete'):
+			self.addEndpoint(self.rootPath + '/<path:path>', handler = self.handlePATCH, methods = ['PATCH'])
 
 		# Add mapping / macro endpoints
 		self.mappings = {}
@@ -105,7 +109,7 @@ class HttpServer(object):
 			# mappings is a list of tuples
 			for (k, v) in mappings:
 				L.isInfo and L.log(f'Registering mapping: {self.rootPath}{k} -> {self.rootPath}{v}')
-				self.addEndpoint(self.rootPath + k, handler=self.requestRedirect, methods=['GET', 'POST', 'PUT', 'DELETE'])
+				self.addEndpoint(self.rootPath + k, handler = self.requestRedirect, methods = ['GET', 'POST', 'PUT', 'DELETE'])
 			self.mappings = dict(mappings)
 
 		# Disable most logs from requests and urllib3 library 
@@ -352,7 +356,15 @@ class HttpServer(object):
 		return content.decode('utf-8') if ct == CST.JSON else TextTools.toHex(content)
 
 
-	def sendHttpRequest(self, operation:Operation, url:str, originator:str, ty:T = None, data:Any = None, parameters:Parameters = None, ct:CST = None, raw:bool = False) -> Result:	 # type: ignore[type-arg]
+	def sendHttpRequest(self, 
+						operation:Operation, 
+						url:str, 
+						originator:str, 
+						ty:T = None, 
+						data:Any = None, 
+						parameters:Parameters = None, 
+						ct:CST = None, 
+						raw:bool = False) -> Result:	 # type: ignore[type-arg]
 		"""	Send an http request.
 		
 			The result is returned in *Result.data*.
@@ -449,20 +461,30 @@ class HttpServer(object):
 			# Actual sending the request
 			r = method(url, data = content, headers = hds, verify = CSE.security.verifyCertificateHttp)
 
+			# Construct CSERequest object from the result
+			resp = CSERequest(isResponse = True)
+			resp.ct = CST.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
+			resp.rsc = RC(int(r.headers[C.hfRSC])) if C.hfRSC in r.headers else RC.internalServerError
+			resp.pc = RequestUtils.deserializeData(r.content, resp.ct)
+			resp.headers.originator = r.headers.get(C.hfOrigin)
+			try: 
+				if (ot := r.headers.get(C.hfOT)):
+					isodate.parse_date(ot)
+				resp.headers.originatingTimestamp = ot
+			except Exception as ee:
+				L.logWarn(dbg := f'Received wrong format for X-M2M-OT: {ot} - {str(ee)}')
+				return Result.errorResult(dbg = dbg)
+			if (rqi := r.headers.get(C.hfRI)) != hds[C.hfRI]:
+				L.isWarn and L.logWarn(dbg := f'Received wrong request identifier: {resp.headers.requestIdentifier}')
+				return Result.errorResult(dbg = dbg)
+			resp.headers.requestIdentifier = rqi
 
-			# TODO Construct CSERequest object from the result
-
-			cseRequest = CSERequest()
-			# Continue
-
-			responseCt = CST.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
-			rc = RC(int(r.headers[C.hfRSC])) if C.hfRSC in r.headers else RC.internalServerError
-			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, responseCt)}\n')
+			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, resp.ct)}\n')
 		except Exception as e:
 			L.isWarn and L.logWarn(f'Failed to send request: {str(e)}')
 			return Result.errorResult(rsc = RC.targetNotReachable, dbg = 'target not reachable')
-		res = Result(status = True, rsc = rc, data = RequestUtils.deserializeData(r.content, responseCt))
-		CSE.event.responseReceived(res.request)
+		res = Result(status = True, rsc = resp.rsc, data = resp.pc, request = resp)
+		CSE.event.responseReceived(resp)	# type: ignore [attr-defined]
 		return res
 		
 

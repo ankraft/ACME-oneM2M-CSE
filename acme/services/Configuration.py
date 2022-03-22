@@ -161,6 +161,7 @@ class Configuration(object):
 				'http.address'							: config.get('server.http', 'address', 					fallback = 'http://127.0.0.1:8080'),
 				'http.enableStructureEndpoint'			: config.getboolean('server.http', 'enableStructureEndpoint', fallback = False),
 				'http.enableUpperTesterEndpoint'		: config.getboolean('server.http', 'enableUpperTesterEndpoint', fallback = False),
+				'http.allowPatchForDelete'				: config.getboolean('server.http', 'allowPatchForDelete', fallback = False),
 
 				#
 				#	HTTP Server Security

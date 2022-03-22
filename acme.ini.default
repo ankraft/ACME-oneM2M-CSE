@@ -212,6 +212,11 @@ enableStructureEndpoint=false
 ; ATTENTION: Enabling this feature may lead to a total loss of data.
 ; Default: False
 enableUpperTesterEndpoint=false
+; Allow the http PATCH method to be used as a replacement for the DELETE
+; method. This is useful for constraint devices that only support http/1.0,
+; which doesn't specify the DELETE method.
+; Default: False
+allowPatchForDelete=false
 
 
 ;

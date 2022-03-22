@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SCRIPTS] Added scripts tagged with "@uppertester" can be executed as upper tester commands.
 - [SCRIPTS] Added scripts scheduling vie the "@at" meta tag.
 - [SCRIPTS] Added possibility to run scripts on notifications, when using the "acme://" URL scheme.
+- [HTTP] Added workaround for missing http/1.0 missing DELETE method (by using PATCH instead).
 
 ### Changed
 - [CSE] Adapted Announcements to latest R4 changes. 

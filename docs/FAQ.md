@@ -22,6 +22,13 @@
    but doesn't have enough privileges to do so. This usually happens when an http port < 1024 is configured (e.g. 80) and 
    the CSE is run with normal user privileges. Either run the CSE with admin / superuser rights (NOT recommended), 
    or choose another TCP/IP port, larger than 1024.
+1. **Is there a work-around for the missing DELETE method in http/1.0?**  
+   Many constraint devices only support version 1.0 of the http protocol. This version of http, though, does not specify the
+   DELETE method, which means that those devices cannot invoke oneM2M's DELETE operation.  
+   The ACME CSE implements an experimental work-round by supporting the http PATCH operation in addition to the normal DELETE
+   operation: Instead of sending oneM2M DELETE requests using the http DELETE method one can send the same request with the http PATCH method.  
+   This feature is disabled by default and can be enabled by setting the configuration setting *[server.http].allowPatchForDelete*
+   to *true*.
 
 ## MQTT
 
