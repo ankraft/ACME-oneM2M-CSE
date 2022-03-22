@@ -23,7 +23,6 @@ from ..services.Configuration import Configuration
 from ..services import CSE as CSE
 from ..helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
 from ..helpers import TextTools
-from ..resources.Resource import Resource
 
 
 class MQTTClientHandler(MQTTHandler):
@@ -124,6 +123,7 @@ class MQTTClientHandler(MQTTHandler):
 			return
 		
 		# Add it to a response queue in the manager
+		dissectResult.request.isResponse = True
 		self.mqttClient.addResponse(dissectResult, topic)
 	
 
@@ -135,7 +135,7 @@ class MQTTClientHandler(MQTTHandler):
 		def _sendResponse(result:Result) -> None:
 			"""	Send a response for a request.
 			"""
-			if (response := prepareMqttRequest(result, isResponse=True)).status:
+			if (response := prepareMqttRequest(result, isResponse = True)).status:
 				topic = f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}'
 				logRequest(response, topic, isResponse=True, isIncoming=False)
 				if isinstance(cast(Tuple, response.data)[1], bytes):
@@ -469,7 +469,7 @@ class MQTTClient(object):
 			
 		if not DateUtils.waitFor(timeOut, _receivedResponse):
 			return Result.errorResult(rsc = RC.targetNotReachable, dbg = 'Target not reachable or timeout'), None
-		CSE.event.responseReceived(resp.request)
+		CSE.event.responseReceived(resp.request)	# type:ignore [attr-defined]
 		return resp, topic
 
 
@@ -490,6 +490,10 @@ def prepareMqttRequest(inResult:Result, originator:str = None, ty:T = None, op:O
 			result.request.headers.requestIdentifier = pc['rqi']
 		if 'ot' in pc:
 			result.request.headers.originatingTimestamp = pc['ot']
+	
+	# Always add the original timestamp in a response
+	if not result.request.headers.originatingTimestamp:
+		result.request.headers.originatingTimestamp = DateUtils.getResourceDate()
 
 	result.data = (result.data, cast(bytes, RequestUtils.serializeData(cast(JSON, result.data), result.request.ct)))
 	return result

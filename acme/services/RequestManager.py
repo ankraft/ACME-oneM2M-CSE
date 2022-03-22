@@ -120,7 +120,7 @@ class RequestManager(object):
 	def handleRequest(self, request:CSERequest) -> Result:
 		"""	Calls the fitting request handler for an operation and executes it.
 		"""
-		CSE.event.requestReceived(request)
+		CSE.event.requestReceived(request)	# type:ignore [attr-defined]
 		return self.requestHandlers[request.op].ownRequest(request)
 
 

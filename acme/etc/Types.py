@@ -1198,6 +1198,7 @@ class CSERequest:
 	rsc:ResponseStatusCode			= ResponseStatusCode.UNKNOWN	# Response Status Code
 	parameters:Parameters			= field(default_factory=dict)	# Any additional parameters
 	requestType:RequestType			= RequestType.NOTSET
+	isResponse:bool					= False	# Default this is a request
 
 
 ##############################################################################

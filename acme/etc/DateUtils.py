@@ -9,6 +9,7 @@
 
 
 from __future__ import annotations
+from pydoc import isdata
 from typing import Callable, Union, Tuple
 import time
 from email.utils import formatdate
@@ -85,6 +86,19 @@ def fromDuration(duration:str) -> float:
 	return 0.0
 
 
+def toDuration(ts:float) -> str:
+	"""	Convert a time stamp to ISO 8601 duration format.
+
+		Args:
+			ts: Float time stamp.
+		Return:
+			A string with an ISO 8601 duration.
+	"""
+	d = isodate.Duration()
+	d.tdelta = timedelta(seconds = ts)
+	return isodate.duration_isoformat(d)
+
+
 def rfc1123Date(timeval:float = None) -> str:
 	"""	Return a date time string in RFC 1123 format, e.g. for use in HTTP requests.
 		The time stamp is GMT-based.
@@ -124,6 +138,24 @@ def timeUntilAbsRelTimestamp(absRelTimestamp:str) -> float:
 	if (ts := fromAbsRelTimestamp(absRelTimestamp)) == 0.0:
 		return 0.0
 	return timeUntilTimestamp(ts)
+
+
+def isodateDelta(isoDateTime:str, now:float = None) -> float:
+	"""	Calculate the delta between and ISO 8601 date time string
+		and a timestamp.
+		
+		Args:
+			isoDateTime: ISO 8601 compatible string.
+			now: Optional float with a time stamp. If *None* then the current time (UTC-based) will be taken.
+		Return:
+			A signed float value indicating the delta (negative when the given ISO date time is earlier then `now`), or *None* in case of an error.
+	"""
+	if now is None:
+		now = utcTime()
+	try:
+		return now - isodate.parse_datetime(isoDateTime).timestamp()
+	except Exception as e:
+		return None
 
 
 def waitFor(timeout:float, condition:Callable[[], bool]=None) -> bool:

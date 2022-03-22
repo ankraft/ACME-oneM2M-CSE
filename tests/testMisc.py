@@ -139,10 +139,10 @@ class TestMisc(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_checkResponseOT(self) -> None:
-		"""	Check Originating Timestamp in response"""
-		r, rsc = RETRIEVE(cseURL, ORIGINATOR)
+		"""	Check Originating Timestamp in response """
+		r, rsc = RETRIEVE(cseURL, ORIGINATOR, headers = { C.hfOT : DateUtils.getResourceDate() } )
 		self.assertEqual(rsc, RC.OK)
-		self.assertIsNotNone(lastHeaders()[C.hfOT])
+		self.assertIn(C.hfOT, lastHeaders())
 		try:
 			raised = False
 			isodate.parse_time(lastHeaders()[C.hfOT])

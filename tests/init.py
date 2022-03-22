@@ -348,6 +348,9 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 		if C.hfRSC in headers:	# set RSC in header
 			hds[C.hfRSC] = str(headers[C.hfRSC])
 			del headers[C.hfRSC]
+		if C.hfOT in headers:	# set Originating Timestamo in header
+			hds[C.hfOT] = str(headers[C.hfOT])
+			del headers[C.hfOT]
 		hds.update(headers)
 	
 	# authentication
@@ -397,7 +400,6 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 	req['fr'] 	= originator
 	req['to'] 	= urlComponents.path[1:]	# remove the leading / of an url ( usually the root path)
 	req['op'] 	= operation.value
-	req['ot'] 	= DateUtils.getResourceDate()
 	req['rqi'] 	= (rqi := uniqueID())
 	req['rvi'] 	= RVI
 
@@ -442,7 +444,7 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 		req['fc'] = fc
 
 	if headers:			# extend with other headers
-		for hdr,attr in [ (C.hfRVI, 'rvi'), (C.hfVSI, 'vsi'), (C.hfRET, 'rqet'), (C.hfOET, 'oet')]:
+		for hdr,attr in [ (C.hfRVI, 'rvi'), (C.hfVSI, 'vsi'), (C.hfRET, 'rqet'), (C.hfOET, 'oet'), (C.hfOT, 'ot')]:
 			if (h := headers.get(hdr)) is not None:	# overwrite X-M2M-RVI header
 				req[attr] = h
 				del headers[hdr]
@@ -480,7 +482,7 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 	# Wait for response
 	while True: 	# Timeout?
 		try:
-			if not DateUtils.waitFor(timeout=60.0, condition=lambda:rqi in mqttHandler.responses):
+			if not DateUtils.waitFor(timeout = 60.0, condition = lambda:rqi in mqttHandler.responses):
 				print('MQTT Timeout')
 				return None, 5103
 			message = mqttHandler.responses.pop(rqi)
@@ -491,12 +493,11 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 			resp = message[1]
 			# resp = RequestUtils.deserializeData(message[1], ContentSerializationType.JSON)
 
-			# Since the tests usually work with http binding headers, some response attributes are converted
+			# Since the tests usually work with http binding headers, some response attributes are mapped
 			hds = dict()
-			if (rvi := resp.get('rvi')):
-				hds[C.hfRVI] = rvi
-			if (vsi := resp.get('vsi')):
-				hds[C.hfVSI] = vsi
+			for f, k in [ (C.hfRVI, 'rvi'), (C.hfVSI, 'vsi'), (C.hfOT, 'ot') ]:
+				if k in resp:
+					hds[f] = resp[k]
 			setLastHeaders(hds)
 
 			return resp['pc'] if 'pc' in resp else None, resp['rsc']
@@ -661,6 +662,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		# Always acknowledge the verification requests
 		self.send_response(200)
 		self.send_header(C.hfRSC, str(int(ResponseStatusCode.OK)))
+		self.send_header(C.hfOT, DateUtils.getResourceDate())
+		self.send_header(C.hfOrigin, ORIGINATORResp)
+		if C.hfRI in self.headers:
+			self.send_header(C.hfRI, self.headers[C.hfRI])
 		self.end_headers()
 
 		# Get headers and content data

@@ -48,6 +48,7 @@ CSERI				= 'id-in'
 CSEID				= '/id-in'
 SPID 				= 'sp-in'
 ORIGINATOR			= 'CAdmin'
+ORIGINATORResp		= 'CTester'
 
 
 #

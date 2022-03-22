@@ -65,18 +65,19 @@ class TimeManager(object):
 
 	
 	def _stopPeriodicBeacons(self) -> None:
-		# TODO 
+		"""	Stop all the running periodic timers. """
 		for each in self.periodicTimeSyncBeacons.values():
 			each.stop()
 		self.periodicTimeSyncBeacons.clear()
 
 
-	def requestReveivedHandler(self, req:CSERequest):
-		#L.logErr(f'Received {reqResp}')
+	def requestReveivedHandler(self, req:CSERequest) -> None:
+		# L.logErr(f'Received {req}')
 		...
 
-	def responseReveivedHandler(self, resp:CSERequest):
-		#L.logErr(f'Received {jsn}')
+	def responseReveivedHandler(self, resp:CSERequest) -> None:
+		# L.logErr(f'Received {resp}')
+		L.logWarn(self.isLossOfSynchronization(resp))
 		...
 
 	
@@ -142,7 +143,6 @@ class TimeManager(object):
 		self.losTimeSyncBeacons[bcnr] = (tsb.bcnt, tsb.ri)
 		return Result.successResult()
 
-
 	
 	def updateTimeSyncBeacon(self, tsb:TSB, originalBcnc:BeaconCriteria) -> Result:
 		# TODO
@@ -169,7 +169,28 @@ class TimeManager(object):
 	
 
 	def removeLosTimeSyncBeacon(self, tsb:TSB) -> None:
-		...
+		# TODO doc
+		if not (bcnr := tsb.bcnr):
+			L.isWarn and L.logWarn(f'bcnr missing in TSB: {tsb.ri}')
+			return
+		if bcnr in self.losTimeSyncBeacons:
+			del self.losTimeSyncBeacons[bcnr]
+
+
+	def isLossOfSynchronization(self, req:CSERequest) -> str:
+		if (tup := self.losTimeSyncBeacons.get(req.headers.originator)) and (ot := req.headers.originatingTimestamp):
+			tsd = abs(DateUtils.isodateDelta(ot))
+			L.logWarn(tsd)
+			if tsd is not None and tup[0] > tsd:
+				return DateUtils.toDuration(tsd)
+			return None
+
+		L.logWarn(req.headers.originatingTimestamp)
+		if (tsd := DateUtils.isodateDelta(req.headers.originatingTimestamp)) is not None:
+			L.logWarn(DateUtils.toDuration(tsd))
+			return str(abs(tsd))	# EXPERIMENTAL
+
+		return None
 
 
 	def getCSETimestamp(self) -> str:
@@ -179,3 +200,5 @@ class TimeManager(object):
 				ISO timestamp string
 		"""
 		return DateUtils.getResourceDate()
+
+	
