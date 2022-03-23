@@ -194,16 +194,17 @@ The following tables provide detailed descriptions of all the possible CSE confi
 <a name="logging"></a>
 ###	[logging] - Logging Settings
 
-| Keyword               | Description                                                                                                                                  | Configuration Name            |
-|:----------------------|:---------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------|
-| enableFileLogging     | Enable logging to file.<br/>Default: false                                                                                                   | logging.enableFileLogging     |
-| enableScreenLogging   | Enable logging to the screen.<br/>Default: true                                                                                              | logging.enableScreenLogging   |
-| path                  | Pathname for log files.<br />Default: ./logs                                                                                                 | logging.path                  |
-| level                 | Loglevel. Allowed values: debug, info, warning, error, off.<br/>See also command line argument [–log-level](Running.md).<br/> Default: debug | logging.level                 |
-| count                 | Number of files for log rotation.<br/>Default: 10                                                                                            | logging.count                 |
-| size                  | Size per log file.<br/>Default: 100.000 bytes                                                                                                | logging.size                  |
-| stackTraceOnError     | Print a stack trace when logging an 'error' level message.<br />Default: True                                                                | logging.stackTraceOnError     |
-| enableBindingsLogging | Enable logging of low-level HTTP & MQTT client events.<br />Default: False                                                                   | logging.enableBindingsLogging |
+| Keyword               | Description                                                                                                                                                 | Configuration Name            |
+|:----------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------|
+| enableFileLogging     | Enable logging to file.<br/>Default: false                                                                                                                  | logging.enableFileLogging     |
+| enableScreenLogging   | Enable logging to the screen.<br/>Default: true                                                                                                             | logging.enableScreenLogging   |
+| path                  | Pathname for log files.<br />Default: ./logs                                                                                                                | logging.path                  |
+| level                 | Loglevel. Allowed values: debug, info, warning, error, off.<br/>See also command line argument [–log-level](Running.md).<br/> Default: debug                | logging.level                 |
+| count                 | Number of files for log rotation.<br/>Default: 10                                                                                                           | logging.count                 |
+| size                  | Size per log file.<br/>Default: 100.000 bytes                                                                                                               | logging.size                  |
+| stackTraceOnError     | Print a stack trace when logging an 'error' level message.<br />Default: True                                                                               | logging.stackTraceOnError     |
+| enableBindingsLogging | Enable logging of low-level HTTP & MQTT client events.<br />Default: False                                                                                  | logging.enableBindingsLogging |
+| queueSize             | Number of log entries that can be added to the asynchronous queue before blocking. A queue size of 0 means disabling the queue.<br />Default: F5000 entries | logging.queueSize             |
 
 
 <a name="cse_registration"></a>

@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added support for *dataGenerationTime* attribute for &lt;contentInstance> (R5 feature).
 - [CSE] Added "acme://" URL scheme for notifications to run ACMEScript scripts.
 - [CSE] Added always setting *Originating Timestamp* in requests and responses.
+- [CSE] Added [logging].queueSize configuration to set the internal logging queue (or switch it off).
 - [WEB] Allow to open the WebUI of a registered CSE via the context menu.
 - [CONSOLE] Added config for dark (default) and light theme for better readability on consoles with light background.
 - [SCRIPTS] Added scripting to the CSE.

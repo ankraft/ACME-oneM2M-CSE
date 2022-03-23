@@ -378,6 +378,10 @@ stackTraceOnError=False
 ; Enable logging of low-level HTTP & MQTT client events.
 ; Default: False
 enableBindingsLogging=False
+; Number of log entries that can be added to the asynchronous queue before blocking.
+; A queue size of 0 means disabling the queue.
+; Default: 5000 entries
+queueSize=5000
 
 
 ;

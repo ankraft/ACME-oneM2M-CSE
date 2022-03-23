@@ -96,8 +96,7 @@ class Logging:
 	worker 							= None
 	queue:Queue						= None
 	enableQueue						= False		# Can be used to enable/disable the logging queue 
-
-	queueMaxsize:int				= 5000		# max number of items in the logging queue. Might otherwise grow forever on large load
+	queueSize:int					= 0			# max number of items in the logging queue. Might otherwise grow forever on large load
 
 	_console:Console				= None
 	_richHandler:ACMERichLogHandler	= None
@@ -121,9 +120,9 @@ class Logging:
 		Logging.enableScreenLogging		= Configuration.get('logging.enableScreenLogging')
 		Logging.stackTraceOnError		= Configuration.get('logging.stackTraceOnError')
 		Logging.enableBindingsLogging	= Configuration.get('logging.enableBindingsLogging')
+		Logging.queueSize				= Configuration.get('logging.queueSize')
 
 		Logging._configureColors(Configuration.get('cse.console.theme'))
-
 
 		Logging.logger					= logging.getLogger('logging')			# general logger
 		Logging.loggerConsole			= logging.getLogger('rich')				# Rich Console logger
@@ -133,8 +132,8 @@ class Logging:
 		Logging.setLogLevel(Configuration.get('logging.level'))					# Assign the initial log level
 
 		# Add logging queue
-		Logging.queue = Queue(maxsize = Logging.queueMaxsize)
-		Logging.enableQueue = True
+		Logging.queue = Queue(maxsize = Logging.queueSize)
+		Logging.queueOn()
 
 		# List of log handlers
 		Logging._handlers = [ Logging._richHandler ]
@@ -211,8 +210,6 @@ class Logging:
 		from ..etc.DateUtils import waitFor
 		if Logging.queue:
 			waitFor(5.0, Logging.queue.empty)
-			# while not Logging.queue.empty():
-			# 	time.sleep(0.5)
 		if Logging._logWorker:
 			Logging._logWorker.stop()
 		Logging.log('')
@@ -238,7 +235,7 @@ class Logging:
 		while Logging._logWorker.running:
 			# Check queue and give up the CPU
 			if Logging.queue.empty():
-				time.sleep(0.1)
+				time.sleep(0.3)
 				continue
 			level, msg, caller, thread = Logging.queue.get(block = True)
 			# if msg is None or (isinstance(msg, str) and not len(msg)):
@@ -429,6 +426,21 @@ class Logging:
 		Logging.isInfo 	= Logging.logLevel <= LogLevel.INFO
 		Logging.isWarn	= Logging.logLevel <= LogLevel.WARNING
 
+
+	@staticmethod
+	def queueOff() -> None:
+		"""	Disable the logging queue. This can be used to get immediate
+			feedback, e.g during startup.
+		"""
+		Logging.enableQueue = False
+	
+
+	@staticmethod
+	def queueOn() -> None:
+		"""	Enable the logging queue. Whether the usage of the queue really happens
+			depends on the configured queue size.
+		"""
+		Logging.enableQueue = Logging.queueSize > 0
 
 
 #

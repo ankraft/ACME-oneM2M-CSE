@@ -217,7 +217,7 @@ class Configuration(object):
 				'logging.count'							: config.getint('logging', 'count', 					fallback = 10),		# Number of log files
 				'logging.stackTraceOnError'				: config.getboolean('logging', 'stackTraceOnError',		fallback = True),
 				'logging.enableBindingsLogging'			: config.getboolean('logging', 'enableBindingsLogging',	fallback = False),
-
+				'logging.queueSize'						: config.getint('logging', 'queueSize', 				fallback = 5000),	# Size of the log queue
 
 				#
 				#	Registrar CSE
@@ -396,6 +396,11 @@ class Configuration(object):
 				Configuration._configuration['logging.level'] = LogLevel.ERROR
 			else:
 				Configuration._configuration['logging.level'] = LogLevel.DEBUG
+		
+		# Test for correct logging queue size
+		if (queueSize := Configuration._configuration['logging.queueSize']) < 0:
+			return False, f'Configuration Error: \[logging]:queueSize must be 0 or greater'
+
 
 		if Configuration._argsDBReset is True:					Configuration._configuration['db.resetOnStartup'] = True									# Override DB reset from command line
 		if Configuration._argsDBStorageMode is not None:		Configuration._configuration['db.inMemory'] = Configuration._argsDBStorageMode == 'memory'					# Override DB storage mode from command line
