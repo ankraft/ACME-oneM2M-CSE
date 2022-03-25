@@ -136,14 +136,17 @@ class Dispatcher(object):
 					return resCheck
 				return res
 
-			resource = res.resource	# root resource for the retrieval/discovery
+			resource = cast(Resource, res.resource)	# root resource for the retrieval/discovery
 
 			# if rcn == original-resource we retrieve the linked resource
 			if request.args.rcn == RCN.originalResource:
-				if not resource:	# continue only when there actually is a resource
-					return res
+				# Some checks for resource validity
+				if not resource.isAnnounced():
+					L.isDebug and L.logDebug(dbg := f'Resource {resource.ri} is not an announced resource')
+					return Result.errorResult(dbg = dbg)
 				if not (lnk := resource.lnk):	# no link attribute?
-					return Result.errorResult(dbg = 'missing lnk attribute in target resource')
+					L.logErr(dbg := 'Internal Error: missing lnk attribute in target resource')
+					return Result.errorResult(rsc = RC.internalServerError, dbg = 'missing lnk attribute in target resource')
 
 				# Retrieve and check the linked-to request
 				if (res := self.retrieveResource(lnk, originator, request)).resource:
@@ -220,7 +223,7 @@ class Dispatcher(object):
 		elif srn:
 			result = CSE.storage.retrieveResource(srn = srn) 	# retrieve via srn. Try to retrieve by srn (cases of ACPs created for AE and CSR by default)
 		else:
-			return Result.errorResult(rsc = RC.notFound, dbg = 'resource not found')
+			result = Result.errorResult(rsc = RC.notFound, dbg = 'resource not found')
 
 		# EXPERIMENTAL remove this
 		# if resource := cast(Resource, result.resource):	# Resource found
@@ -228,9 +231,9 @@ class Dispatcher(object):
 		# 	if resource.ty not in [T.GRP_FOPT, T.PCH_PCU] and resource.isVirtual(): # fopt, PCU are handled elsewhere
 		# 		return resource.handleRetrieveRequest(request=request, originator=originator)	# type: ignore[no-any-return]
 		# 	return result
-		
-		# error
-		L.isDebug and L.logDebug(f'{result.dbg}: ri:{ri} srn:{srn}')
+		# # error
+		# L.isDebug and L.logDebug(f'{result.dbg}: ri:{ri} srn:{srn}')
+
 		return result
 
 

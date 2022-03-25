@@ -386,6 +386,20 @@ class TestRemote_Annc(unittest.TestCase):
 
 
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_retrieveRCNOriginalResourceFail(self) -> None:
+		""" Retrieve original resource for remote CSEBase -> Fail """
+		r, rsc = RETRIEVE(f'{REMOTEcseURL}?rcn={int(RCN.originalResource)}', ORIGINATOR)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
+	def test_deleteRCNOriginalResourceFail(self) -> None:
+		""" Delete original resource from remote CSE -> Fail """
+		r, rsc = DELETE(f'{REMOTEURL}~{TestRemote_Annc.remoteBatRI}?rcn={int(RCN.originalResource)}', ORIGINATOR)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_updateMgmtObjAttribute(self) -> None:
 		"""	Update [Battery] """
 		dct = 	{ 'm2m:bat' : {
@@ -719,6 +733,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestRemote_Annc('test_announceMgmtobj'))
 	suite.addTest(TestRemote_Annc('test_retrieveAnnouncedMgmtobj'))
 	suite.addTest(TestRemote_Annc('test_retrieveRCNOriginalResource'))
+	suite.addTest(TestRemote_Annc('test_retrieveRCNOriginalResourceFail'))
+	suite.addTest(TestRemote_Annc('test_deleteRCNOriginalResourceFail'))
 	suite.addTest(TestRemote_Annc('test_updateMgmtObjAttribute'))
 	suite.addTest(TestRemote_Annc('test_addMgmtObjAttribute'))
 	suite.addTest(TestRemote_Annc('test_removeMgmtObjAttribute'))

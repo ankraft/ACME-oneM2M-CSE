@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added "acme://" URL scheme for notifications to run ACMEScript scripts.
 - [CSE] Added always setting *Originating Timestamp* in requests and responses.
 - [CSE] Added [logging].queueSize configuration to set the internal logging queue (or switch it off).
+- [CSE] Added validation of &lt;flexContainer>'s *containerDefinition* attribute during CREATE requests.
 - [WEB] Allow to open the WebUI of a registered CSE via the context menu.
 - [CONSOLE] Added config for dark (default) and light theme for better readability on consoles with light background.
 - [SCRIPTS] Added scripting to the CSE.
@@ -49,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - [CSE] Improved check that IDs contain only unreserved characters.
 - [CSE] Improved check for validating non-empty list attributes.
+- [CSE] Improved error detection and handling for RCN=7 (original-resource).
 - [HTTP] HTTP request will not be sent with a *Date* header field.
 
 
