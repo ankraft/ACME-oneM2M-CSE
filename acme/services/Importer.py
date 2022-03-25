@@ -140,19 +140,21 @@ class Importer(object):
 
 		L.isInfo and L.log(f'Importing flexContainer attribute policies from: {path}')
 		filenames = fnmatch.filter(os.listdir(path), '*.fcp')
-		for fno in filenames:
-			fn = os.path.join(path, fno)
-			L.isDebug and L.logDebug(f'Importing policies: {fno}')
+		for each in filenames:
+			fn = os.path.join(path, each)
+			L.isDebug and L.logDebug(f'Importing policies: {each}')
 			if os.path.exists(fn):
-				if (lst := cast(JSONLIST, self.readJSONFromFile(fn))) is None:
+				if (definitions := cast(JSONLIST, self.readJSONFromFile(fn))) is None:
 					return False
-				for ap in lst:
-					if not (tpe := findXPath(ap, 'type')):
+				for eachDefinition in definitions:
+					if not (tpe := findXPath(eachDefinition, 'type')):
 						L.logErr(f'Missing or empty resource type in file: {fn}')
 						return False
+					if not (cnd := findXPath(eachDefinition, 'cnd')):
+						L.logDebug(f'Missing or empty containerDefinition (cnd) for type: {tpe} in file: {fn}')
 					
 					# Attributes are optional. However, add a dummy entry
-					if not (attrs := findXPath(ap, 'attributes')):
+					if not (attrs := findXPath(eachDefinition, 'attributes')):
 						attrs = [ { "sname" : "__none__", "lname" : "__none__", "type" : "void", "car" : "01" } ]
 						
 					definedAttrs:list[str] = []
@@ -175,6 +177,16 @@ class Importer(object):
 							countFCP += 1
 						except Exception as e:
 							L.logErr(str(e))
+							return False
+					
+					# Add the available specialization information
+					if cnd:
+						if CSE.validator.hasFlexContainerContainerDefinition(cnd):
+							L.logErr(f'flexContainer containerDefinition: {cnd} already defined')
+							return False
+
+						if not CSE.validator.addFlexContainerSpecialization(tpe, cnd):
+							L.logErr(f'Cannot add flexContainer specialization for type: {tpe}')
 							return False
 
 		

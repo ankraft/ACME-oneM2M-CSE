@@ -15,7 +15,8 @@ from init import *
 from typing import Tuple
 
 
-CND = 'org.onem2m.home.moduleclass.temperature'
+CND = 'org.onem2m.common.moduleclass.temperature'
+CNDWRONG = 'wrong'
 GISCND = 'someCND'
 GISRN  = 'gis'
 gisURL = f'{aeURL}/{GISRN}'
@@ -43,6 +44,23 @@ class TestFCNT(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createFCNTWrongCND(self) -> None:
+		""" Create <FCNT> [cod:tempe] with wrong CND -> Fail"""
+		self.assertIsNotNone(TestFCNT.ae)
+		dct = 	{ 'cod:tempe' : { 
+					'rn'	: fcntRN,
+					'cnd' 	: CNDWRONG, 
+					'curT0'	: 23.0,
+					'unit'	: 1,
+					'minVe'	: -100.0,
+					'maxVe' : 100.0,
+					'steVe'	: 0.5
+				}}
+		r, rsc = CREATE(aeURL, TestFCNT.originator, T.FCNT, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -211,7 +229,7 @@ class TestFCNT(unittest.TestCase):
 					'rn'	: GISRN
 				}}
 		r, rsc = CREATE(aeURL, TestFCNT.originator, T.FCNT, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.created, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -301,6 +319,7 @@ class TestFCNT(unittest.TestCase):
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
+	suite.addTest(TestFCNT('test_createFCNTWrongCND'))
 	suite.addTest(TestFCNT('test_createFCNT'))
 	suite.addTest(TestFCNT('test_retrieveFCNT'))
 	suite.addTest(TestFCNT('test_retrieveFCNTWithWrongOriginator'))

@@ -8,6 +8,7 @@
 #
 
 from __future__ import annotations
+from zipapp import create_archive
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
 from ..etc import Utils, DateUtils
 from ..services import CSE
@@ -134,6 +135,15 @@ class FCNT(AnnounceableResource):
 	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
+		
+		# Validate containerDefinition
+		if create:
+			if (t := CSE.validator.getFlexContainerSpecialization(self.tpe))[0]:
+				if t[0] != self.cnd:
+					L.isDebug and L.logDebug(dbg := f'Wrong cnd: {self.cnd} for specialization: {self.tpe}. Must be: {t[0]}')
+					return Result.errorResult(dbg = dbg)
+
+		# Validate the child resources
 		self._validateChildren(originator, dct = dct)
 		return Result.successResult()
 

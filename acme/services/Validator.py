@@ -14,7 +14,7 @@ from typing import Any, List, Dict, Tuple
 import isodate
 
 from ..etc.Types import AttributePolicy, AttributePolicyDict, BasicType as BT, Cardinality as CAR, EvalCriteriaOperator, RequestOptionality as RO, Announced as AN, ResponseStatusCode as RC, AttributePolicy
-from ..etc.Types import JSON, FlexContainerAttributes
+from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations
 from ..etc.Types import Result, ResourceTypes as T
 from ..etc import Utils as Utils, DateUtils as DateUtils
 from ..services.Logging import Logging as L
@@ -34,9 +34,15 @@ attributePolicies:Dict[Tuple[T, str], AttributePolicy] 			= {}
 
 # Will be filled by further specialization definitions.
 flexContainerAttributes:FlexContainerAttributes = { }
-"""	FlexContainer specializations. 
+"""	FlexContainer specialization attributes. 
 
 	{ tpe : { sn : AttributePolicy } }
+"""
+
+flexContainerSpecializations:FlexContainerSpecializations = {}
+"""	FlexContainer specialization aspects.
+
+	{ tpe : cnd }
 """
 
 class Validator(object):
@@ -366,6 +372,11 @@ class Validator(object):
 			This is done by either creating a new entry, or adding the new policy
 			to the existing policies and then updating the old entry in the
 			global dictionary.
+
+			Args:
+				policy: AttributePolicy dictionary with a single attribute policy.
+			Return:
+				Boolean, indicating whether a policy was added successfully.
 		"""
 		if not (policiesForTPE := flexContainerAttributes.get(policy.tpe)):
 			defsForTPE = { policy.tpe : { policy.sname : policy } }					# No policy for TPE yes, so create it
@@ -376,8 +387,53 @@ class Validator(object):
 
 
 	def getFlexContainerAttributesFor(self, tpe:str) -> AttributePolicyDict:
-		""" Return the dictionary of additional attributes for a flexCOntainer type or None. """
+		""" Return the attribute policies for a flexContainer specialization.
+		
+			Args:
+				tpe: String, domain and short name of the flexContainer specialization.
+			Return:
+				Dictictionary of additional attributes for a flexCOntainer type or None.
+		 """
 		return flexContainerAttributes.get(tpe)
+
+
+	def addFlexContainerSpecialization(self, tpe:str, cnd:str) -> bool:
+		"""	Add flexContainer specialization information to the internal dictionary.
+		
+			Args:
+				tpe: String, domain and short name of the flexContainer specialization.
+				cnd: String, the containerDefinition of the flexContainer specialization.
+			Return:
+				Boolean, indicating whether a specialization was added successfully. 
+
+		"""
+		if not tpe in flexContainerSpecializations:
+			flexContainerSpecializations[tpe] = cnd
+			return True
+		return False
+
+
+	def getFlexContainerSpecialization(self, tpe:str) -> Tuple[str]:
+		"""	Return the availale data for a flexContainer specialization.
+		
+			Args:
+				tpe: String, domain and short name of the flexContainer specialization.
+			Return:
+				Tuple with the flexContainer specialization data (or None if none exists).
+		"""
+		return ( flexContainerSpecializations.get(tpe), )
+
+	
+	def hasFlexContainerContainerDefinition(self, cnd:str) -> bool:
+		"""	Test whether a flexContainer specialization with a containerDefinition exists.
+				
+			Args:
+				cnd: String, containerDefinition
+			Return:
+				Boolean, indicating existens.
+
+		"""
+		return any(( each for each in flexContainerSpecializations.values() if each == cnd ))
 
 
 	def addAttributePolicy(self, rtype:T, attr:str, attrPolicy:AttributePolicy) -> None:

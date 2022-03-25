@@ -521,49 +521,6 @@
         ]
     }, 
 
-    // DeviceClass: deviceThermostat
-    {
-        "type"      : "cod:devTt",
-        "lname"     : "deviceThermostat",
-        "sdttype"   : "device",
-        "cnd"       : "org.onem2m.common.device.deviceThermostat",
-        "attributes": [
-            // Property: nodeLink
-            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
-            // Property: flexNodeLink
-            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
-        ],
-        "children"  : [
-            "cod:runSe", 
-            "cod:timer", 
-            "cod:tempe"
-        ]
-    },        
-
-
-
-    // DeviceClass Announced: deviceThermostatAnnc
-    {
-        "type"      : "cod:devTtAnnc",
-        "lname"     : "deviceThermostatAnnc",
-        "sdttype"   : "device",
-        "cnd"       : "org.onem2m.common.device.deviceThermostatAnnc",
-        "attributes": [
-            // Property: nodeLink
-            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
-            // Property: flexNodeLink
-            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
-        ],
-        "children"  : [
-            "cod:runSe", 
-            "cod:runSeAnnc", 
-            "cod:timer", 
-            "cod:timerAnnc", 
-            "cod:tempe", 
-            "cod:tempeAnnc"
-        ]
-    }, 
-
     // DeviceClass: deviceServiceButton
     {
         "type"      : "cod:deSBn",
@@ -825,42 +782,6 @@
         ]
     }, 
 
-    // DeviceClass: deviceWaterValve
-    {
-        "type"      : "cod:deWVe",
-        "lname"     : "deviceWaterValve",
-        "sdttype"   : "device",
-        "cnd"       : "org.onem2m.common.device.deviceWaterValve",
-        "attributes": [
-            // Property: nodeLink
-            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
-            // Property: flexNodeLink
-            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
-        ],
-        "children"  : [
-            "cod:opeLl"
-        ]
-    },        
-
-
-
-    // DeviceClass Announced: deviceWaterValveAnnc
-    {
-        "type"      : "cod:deWVeAnnc",
-        "lname"     : "deviceWaterValveAnnc",
-        "sdttype"   : "device",
-        "cnd"       : "org.onem2m.common.device.deviceWaterValveAnnc",
-        "attributes": [
-            // Property: nodeLink
-            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
-            // Property: flexNodeLink
-            { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
-        ],
-        "children"  : [
-            "cod:opeLl", 
-            "cod:opeLlAnnc"
-        ]
-    }, 
 
     // DeviceClass: deviceThreeDDisplay
     {

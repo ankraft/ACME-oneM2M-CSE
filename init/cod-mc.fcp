@@ -569,11 +569,11 @@
         ]
     },
 
-    // Action: mute
+    // Action: audioMute
     {
-        "type"      : "cod:mute",
+        "type"      : "cod:audMe",
         "lname"     : "mute",
-        "cnd"       : "org.onem2m.common.action.mute",
+        "cnd"       : "org.onem2m.common.action.audioMute",
 		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
@@ -632,11 +632,11 @@
         ]
     }, 
 
-    // Action Announced: muteAnnc
+    // Action Announced: audioMuteAnnc
     {
-        "type"      : "cod:muteAnnc",
-        "lname"     : "muteAnnc",
-        "cnd"       : "org.onem2m.common.action.muteAnnc",
+        "type"      : "cod:audMeAnnc",
+        "lname"     : "audioMuteAnnc",
+        "cnd"       : "org.onem2m.common.action.audioMuteAnnc",
 		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
