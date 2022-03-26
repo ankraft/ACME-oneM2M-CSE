@@ -530,6 +530,7 @@ Available under the BSD 3-Clause License
 			pcontext = scripts[0]
 			L.on()	# Turn on log before running the script
 			CSE.script.runScript(pcontext, argument = argument, background = True, finished = finished)
+
 		L.on()
 
 

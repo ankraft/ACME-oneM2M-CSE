@@ -120,6 +120,8 @@ def loop(commands:Commands, quit:str = None, catchKeyboardInterrupt:bool = False
 					ch = '\x03'
 				else:
 					raise e 
+			except Exception:	# Exit the loop when there is any other problem
+				break
 
 			# handle "quit" key			
 			if quit is not None and ch == quit:
@@ -145,6 +147,8 @@ def loop(commands:Commands, quit:str = None, catchKeyboardInterrupt:bool = False
 		if ch in commands:
 			try:
 				commands[ch](ch)
+			except SystemExit:
+				raise
 			except Exception as e:
 				if not ignoreException:
 					raise e
@@ -179,6 +183,8 @@ def waitForKeypress(s:float) -> str:
 			ch = getch()	# returns after _timeout s
 		except KeyboardInterrupt as e:
 			ch = '\x03'
+		except Exception:
+			return None
 		if ch is not None:
 			return ch
 	return None

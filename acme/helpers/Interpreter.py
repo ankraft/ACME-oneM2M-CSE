@@ -768,6 +768,8 @@ def run(pcontext:PContext, verbose:bool = False, argument:str = '', procedure:st
 						pcontext = result
 					else:
 						pcontext.state = PState.terminatedWithError
+				except SystemExit:
+					raise
 				except Exception as e:
 					pcontext.setError(PError.unknown, f'Error: {e}')
 			else:

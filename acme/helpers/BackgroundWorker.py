@@ -191,7 +191,11 @@ class BackgroundWorker(object):
 						continue
 					raise
 
+		except SystemExit:
+			quit()
+
 		except Exception as e:
+
 			if BackgroundWorker._logger:
 				BackgroundWorker._logger(logging.ERROR, f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}\n{"".join(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))}')
 		finally:
