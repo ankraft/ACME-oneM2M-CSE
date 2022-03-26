@@ -7,7 +7,7 @@
 #	Starter for the ACME CSE
 #
 
-import sys
+import sys, re
 if sys.version_info.major != 3 or (sys.version_info.major == 3 and sys.version_info.minor < 8):
 	print('Python version >= 3.8 is required')
 	quit(1)
@@ -23,7 +23,9 @@ except ImportError as e:
 	if 'attempted relative import' in e.msg:
 		print(f'\nPlease run acme as a package:\n\n\t{sys.executable} -m {sys.argv[0]} [arguments]\n')
 	elif 'No module named' in e.msg:
-		print(f'\nOne or more required packages could not be found.\nPlease install the missing packages, e.g. by running the following command:\n\n\t{sys.executable} -m pip install -r requirements.txt\n')
+		m = re.search("'(.+?)'", e.msg)
+		package = f' ({m.group(1)}) ' if m else ' '
+		print(f'\nOne or more required packages{package}could not be found.\nPlease install the missing packages, e.g. by running the following command:\n\n\t{sys.executable} -m pip install -r requirements.txt\n')
 	quit(1)
 
 
