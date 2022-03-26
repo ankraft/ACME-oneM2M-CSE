@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 from copy import deepcopy
+from syslog import LOG_WARNING
 from typing import Callable, Dict, Union, Any, Tuple, cast
 from pathlib import Path
 import json, os, fnmatch
@@ -951,7 +952,7 @@ class ScriptManager(object):
 			Restart the script manager service, ie. clear the scripts and storage. 
 			They are reloaded during import.
 		"""
-		self.scripts.clear()
+		self.removeScripts()
 		self.storage.clear()
 		L.isDebug and L.logDebug('ScriptManager restarted')
 	
@@ -1135,6 +1136,12 @@ class ScriptManager(object):
 		return pcontext
 	
 
+	def removeScripts(self) -> None:
+		"""	Remove all scripts.
+		"""
+		self.scripts.clear()
+	
+
 	def findScripts(self, name:str = None, meta:Union[str, list[str]] = None) -> list[PContext]:
 		""" Find scripts by a filter: `name` is the name of the script. `meta` filters the meta data. 
 			Filters are and-combined.
@@ -1183,6 +1190,7 @@ class ScriptManager(object):
 		"""
 		def runCB(pcontext:PContext, argument:str) -> None:
 			pcontext.run(verbose = self.verbose, argument = argument)
+
 
 		if pcontext.state == PState.running:
 			L.isWarn and L.logWarn(f'Script "{pcontext.name}" is already running')

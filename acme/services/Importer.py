@@ -43,21 +43,39 @@ class Importer(object):
 
 			Return:
 				Boolean indicating success or failure
-		"""	
+		"""
+		# Remove previously imported structures before importing
+		self.removeImports()
+
+		# Do Imports
 		if not (self.importAttributePolicies() and \
 				self.importFlexContainerPolicies() and \
 				self.assignAttributePolicies() and \
 				self.importScripts()):
-					return False
+			return False
 		if CSE.script.scriptDirectories:
 			if not self.importScripts(CSE.script.scriptDirectories):
 				return False
 		return True		
 
 
-	def importScripts(self, path:str = None) -> bool:
-		# TODO
+	def removeImports(self) -> None:
+		"""	Remove all previous imported scripts and definitions.
+		"""
+		CSE.validator.clearAttributePolicies()
+		CSE.validator.clearFlexContainerAttributes()
+		CSE.validator.clearFlexContainerSpecializations()
+		CSE.script.removeScripts()
 
+
+	def importScripts(self, path:str = None) -> bool:
+		"""	Import the ACME script from a directory.
+		
+			Args:
+				path: Optional string with the path to a directory to look for scripts. Default is the CSE's data directory.
+			Return:
+				Boolean indicating success or failure.
+		"""
 		countScripts = 0
 
 		# Import

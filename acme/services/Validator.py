@@ -395,6 +395,12 @@ class Validator(object):
 				Dictictionary of additional attributes for a flexCOntainer type or None.
 		 """
 		return flexContainerAttributes.get(tpe)
+	
+
+	def clearFlexContainerAttributes(self) -> None:
+		"""	Clear the flexContainer attributes.
+		"""
+		flexContainerAttributes.clear()
 
 
 	def addFlexContainerSpecialization(self, tpe:str, cnd:str) -> bool:
@@ -434,6 +440,12 @@ class Validator(object):
 
 		"""
 		return any(( each for each in flexContainerSpecializations.values() if each == cnd ))
+	
+
+	def clearFlexContainerSpecializations(self) -> None:
+		"""	Clear the flexContainer specialization information.
+		"""
+		flexContainerSpecializations.clear()
 
 
 	def addAttributePolicy(self, rtype:T, attr:str, attrPolicy:AttributePolicy) -> None:
@@ -455,6 +467,13 @@ class Validator(object):
 		
 		# TODO look for other types, requests, filter...
 		return None
+
+
+	def clearAttributePolicies(self) -> None:
+		"""	Clear the attribute policies.
+		"""
+		attributePolicies.clear()
+
 
 	#
 	#	Internals.
