@@ -16,7 +16,7 @@ from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
 from init import *
 
 
-CND = 'org.onem2m.home.moduleclass.temperature'
+CND = 'org.onem2m.common.moduleclass.temperature'
 
 class TestFCNT_FCI(unittest.TestCase):
 

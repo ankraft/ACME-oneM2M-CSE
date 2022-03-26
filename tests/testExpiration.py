@@ -19,7 +19,7 @@ from acme.etc.DateUtils import getResourceDate
 from init import *
 
 
-CND = 'org.onem2m.home.moduleclass.temperature'
+CND = 'org.onem2m.common.moduleclass.temperature'
 
 class TestExpiration(unittest.TestCase):
 
@@ -221,7 +221,7 @@ class TestExpiration(unittest.TestCase):
 					'curT0'	: 23.0
 				}}
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.FCNT, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.created, r)
 		self.assertEqual(findXPath(r, 'cod:tempe/mia'), expirationCheckDelay)
 		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 1)
 		self.assertGreater(findXPath(r, 'cod:tempe/cbs'), 0)	
