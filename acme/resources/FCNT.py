@@ -140,7 +140,7 @@ class FCNT(AnnounceableResource):
 		if create:
 			if (t := CSE.validator.getFlexContainerSpecialization(self.tpe))[0]:
 				if t[0] != self.cnd:
-					L.isDebug and L.logDebug(dbg := f'Wrong cnd: {self.cnd} for specialization: {self.tpe}. Must be: {t[0]}')
+					L.logDebug(dbg := f'Wrong cnd: {self.cnd} for specialization: {self.tpe}. Must be: {t[0]}')
 					return Result.errorResult(dbg = dbg)
 
 		# Validate the child resources
