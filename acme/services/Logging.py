@@ -235,7 +235,7 @@ class Logging:
 		while Logging._logWorker.running:
 			# Check queue and give up the CPU
 			if Logging.queue.empty():
-				time.sleep(0.3)
+				time.sleep(0.1)
 				continue
 			level, msg, caller, thread = Logging.queue.get(block = True)
 			# if msg is None or (isinstance(msg, str) and not len(msg)):
