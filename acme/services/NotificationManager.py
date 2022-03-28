@@ -51,8 +51,8 @@ class NotificationManager(object):
 		"""	Add a new subscription. Check each receipient with verification requests. """
 		L.isDebug and L.logDebug('Adding subscription')
 		if not (res := self._verifyNusInSubscription(subscription, originator = originator)).status:	# verification requests happen here
-			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
-		return Result(status=True) if CSE.storage.addSubscription(subscription) else Result(status = False, rsc = RC.internalServerError, dbg = 'cannot add subscription to database')
+			return res
+		return Result.successResult() if CSE.storage.addSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot add subscription to database')
 
 
 	def removeSubscription(self, subscription:Resource) -> Result:
@@ -71,14 +71,14 @@ class NotificationManager(object):
 			self._sendDeletionNotification([ nu for nu in acrs ], subscription.ri)
 		
 		# Finally remove subscriptions from storage
-		return Result(status = True) if CSE.storage.removeSubscription(subscription) else Result(status=False, rsc=RC.internalServerError, dbg='cannot remove subscription from database')
+		return Result.successResult() if CSE.storage.removeSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot remove subscription from database')
 
 
 	def updateSubscription(self, subscription:Resource, previousNus:list[str], originator:str) -> Result:
 		L.isDebug and L.logDebug('Updating subscription')
 		if not (res := self._verifyNusInSubscription(subscription, previousNus, originator = originator)).status:	# verification requests happen here
-			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
-		return Result(status = True) if CSE.storage.updateSubscription(subscription) else Result(status = False, rsc = RC.internalServerError, dbg = 'cannot update subscription in database')
+			return res
+		return Result.successResult() if CSE.storage.updateSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot update subscription in database')
 
 
 	def getSubscriptionsByNetChty(self, ri:str, net:list[NotificationEventType] = None, chty:ResourceTypes = None) -> list[JSON]:
@@ -184,20 +184,20 @@ class NotificationManager(object):
 					maxAgeRequest = DateUtils.fromDuration(maxAgeS)
 				except Exception as e:
 					L.logWarn(dbg := f'error when parsing maxAge in request: {str(e)}')
-					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+					return Result.errorResult(dbg = dbg)
 
 			# Check for maxAge attribute provided in the subscription
-			if (maxAgeS := eachSub['ma']) is not None:	# TODO attribute name
+			if (maxAgeS := eachSub['ma']) is not None:	# EXPERIMENTAL
 				try:
 					maxAgeSubscription = DateUtils.fromDuration(maxAgeS)
 				except Exception as e:
 					L.logWarn(dbg := f'error when parsing maxAge in subscription: {str(e)}')
-					return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+					return Result.errorResult(dbg = dbg)
 				
 			# Return if neither the request nor the subscription have a maxAge set
 			if maxAgeRequest is None and maxAgeSubscription is None:
 				L.isDebug and L.logDebug(f'no maxAge configured, blocking RETRIEVE notification not necessary')
-				return Result(status = True)
+				return Result.successResult()
 
 
 			# Is one reached?
@@ -209,7 +209,7 @@ class NotificationManager(object):
 
 			if resource.lt > DateUtils.getResourceDate(-int(min(maxAgeRequest, maxAgeSubscription))):
 				L.isDebug and L.logDebug(f'too early, no blocking RETRIEVE notification necessary')
-				return Result(status = True)
+				return Result.successResult()
 			L.isDebug and L.logDebug(f'blocking RETRIEVE notification necessary')
 
 			notification = {
@@ -229,7 +229,7 @@ class NotificationManager(object):
 			if finished:
 				finished()
 
-		return Result(status = True)
+		return Result.successResult()
 
 		# pass
 
@@ -265,9 +265,9 @@ class NotificationManager(object):
 					# Send verification notification to target (either direct URL, or an entity)
 					if not self._sendVerificationRequest(nu, subscription.ri, originator = originator):
 						# Return when even a single verification request fails
-						return Result(status = False, rsc = RC.subscriptionVerificationInitiationFailed, dbg = f'Verification request failed for: {nu}')
+						return Result.errorResult(rsc = RC.subscriptionVerificationInitiationFailed, dbg = f'Verification request failed for: {nu}')
 
-		return Result(status=True)
+		return Result.successResult()
 
 
 	#########################################################################
@@ -286,6 +286,7 @@ class NotificationManager(object):
 					'sur' : Utils.spRelRI(ri)
 				}
 			}
+			# Set the creator attribute if there is an originator for the subscription
 			originator and Utils.setXPath(verificationRequest, 'm2m:sgn/cr', originator)
 	
 			if not (res := self._sendRequest(uri, verificationRequest, noAccessIsError = True)).status:
@@ -320,7 +321,7 @@ class NotificationManager(object):
 		return self._sendNotification(uri, sender) if uri else True	# Ignore if the uri is None
 
 
-	def _handleSubscriptionNotification(self, sub:JSON, reason:NotificationEventType, resource:Resource=None, modifiedAttributes:JSON=None, missingData:MissingData=None) ->  bool:
+	def _handleSubscriptionNotification(self, sub:JSON, reason:NotificationEventType, resource:Resource = None, modifiedAttributes:JSON = None, missingData:MissingData = None) ->  bool:
 		"""	Send a subscription notification.
 		"""
 		L.isDebug and L.logDebug(f'Handling notification for reason: {reason}')
@@ -338,9 +339,11 @@ class NotificationManager(object):
 					'sur' : Utils.spRelRI(sub['ri'])
 				}
 			}
-			data = None
+
 			nct = sub['nct']
-			# switch
+			creator = sub.get('cr')	# creator, might be None
+			# switch to poupate data
+			data = None
 			nct == NotificationContentType.all						and (data := resource.asDict())
 			nct == NotificationContentType.ri 						and (data := { 'm2m:uri' : resource.ri })
 			nct == NotificationContentType.modifiedAttributes		and (data := { resource.tpe : modifiedAttributes })
@@ -350,6 +353,7 @@ class NotificationManager(object):
 			# Add some values to the notification
 			reason is not None and Utils.setXPath(notificationRequest, 'm2m:sgn/nev/net', reason)
 			data is not None and Utils.setXPath(notificationRequest, 'm2m:sgn/nev/rep', data)
+			creator is not None and Utils.setXPath(notificationRequest, 'm2m:sgn/cr', creator)	# Set creator in notification if it was present in subscription
 
 			# Check for batch notifications
 			if sub['bn']:

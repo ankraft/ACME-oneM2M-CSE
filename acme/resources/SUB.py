@@ -54,7 +54,7 @@ class SUB(Resource):
 		'nec': None,
 		'su': None,
 		'acrs': None,
-		'ma': None,		# EXPERIMENTAL
+		'ma': None,		# EXPERIMENTAL maxage
 	}
 
 

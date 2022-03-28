@@ -76,7 +76,7 @@ class SecurityManager(object):
 			return True
 	
 		if ty is not None:	# ty is an int
-			# Special tests for some types
+			# Some Separate	 tests for some types
 
 			# Checking for AE	
 			if ty == T.AE and isCreateRequest:

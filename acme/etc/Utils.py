@@ -391,9 +391,9 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str, SPID:str) -> Tuple[str, st
 			return None, None, None, 'ID too short'
 		spi = ids[0]
 		csi = ids[1]
-		if spi != SPID:
+		if spi != SPID:							# Check for SP-ID
 			return None, None, None, f'SP-ID: {SPID} does not match the request\'s target ID SP-ID: {spi}'
-		if csi != csecsi:
+		if csi != csecsi:						# Check for CSE-ID
 			if vrPresent:						# append virtual last path element again
 				ids.append(vrPresent)
 			return id, csi, srn, None	# Not for this CSE? retargeting
