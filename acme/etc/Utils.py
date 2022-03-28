@@ -314,14 +314,14 @@ def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
 	return srn, id
 
 
-def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
+def retrieveIDFromPath(id:str, csern:str, csecsi:str, SPID:str) -> Tuple[str, str, str, str]:
 	""" Split a full path e.g. from a http request into its component and return a local ri .
 		Also handle retargeting paths.
-		The return tupple is (RI, CSI, SRN).
+		The return tupple is (RI, CSI, SRN, debug message).
 	"""
 
 	if not id:
-		return None, None, None
+		return None, None, None, 'ID must not be empty'
 		
 	csi 		= None
 	spi 		= None
@@ -335,7 +335,7 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
 
 	# Test for empty ID
 	if (idsLen := len(ids)) == 0:	# There must be something!
-		return None, None, None
+		return None, None, None, 'ID must not be empty'
 
 	# Remove the empty elements in the beginnig of the list
 	# and calculate from that the "level", which indicates CSE relative,
@@ -345,7 +345,7 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
 	lvl = idsLen - len(ids)
 	idsLen -= lvl
 	if lvl > 2:						# not more than 2 * / in front
-		return None, None, None
+		return None, None, None, 'Too many "/" level'
 
 	# Remove virtual resource shortname if it is present
 	if T.isVirtualResourceName(ids[-1]):
@@ -366,12 +366,12 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
 	elif lvl == 1:								
 		# L.logDebug("SP-Relative")
 		if idsLen < 1:
-			return None, None, None
+			return None, None, None, 'ID too short'
 		csi = ids[0]							# extract the csi
 		if csi != csecsi:						# Not for this CSE? retargeting
 			if vrPresent:						# append last path element again
 				ids.append(vrPresent)
-			return id, csi, srn					# Early return. ri is the (un)structured path
+			return id, csi, srn, None					# Early return. ri is the (un)structured path
 		if idsLen == 1:
 			ri = ids[0]
 		elif idsLen > 1:
@@ -382,19 +382,21 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
 			elif idsLen == 2:						# unstructured
 				ri = ids[1]
 			else:
-				return None, None, None
+				return None, None, None, 'Too many "/" level'
 
 	# Absolute (2 first elements are /)
 	elif lvl == 2: 								
 		# L.logDebug("Absolute")
 		if idsLen < 2:
-			return None, None, None
-		spi = ids[0] 							#TODO Check whether it is same SPID, otherwise forward it throw mcc'	see cse.sp configuration
+			return None, None, None, 'ID too short'
+		spi = ids[0]
 		csi = ids[1]
+		if spi != SPID:
+			return None, None, None, f'SP-ID: {SPID} does not match the request\'s target ID SP-ID: {spi}'
 		if csi != csecsi:
 			if vrPresent:						# append virtual last path element again
 				ids.append(vrPresent)
-			return id, csi, srn	# Not for this CSE? retargeting
+			return id, csi, srn, None	# Not for this CSE? retargeting
 		if idsLen == 2:
 			ri = ids[1]
 		elif idsLen > 2:
@@ -405,21 +407,21 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
 			elif idsLen == 3:						# unstructured
 				ri = ids[2]
 			else:
-				return None, None, None
+				return None, None, None, 'Too many "/" level'
 
 	# Now either csi, ri or structured srn is set
 	if ri:
 		if vrPresent:
 			ri = f'{ri}/{vrPresent}'
-		return ri, csi, srn
+		return ri, csi, srn, None
 	if srn:
 		if vrPresent:
 			srn = f'{srn}/{vrPresent}'
-		return riFromStructuredPath(srn), csi, srn
+		return riFromStructuredPath(srn), csi, srn, None
 	if csi:
-		return riFromCSI(f'/{csi}'), csi, srn
+		return riFromCSI(f'/{csi}'), csi, srn, None
 	# TODO do something with spi?
-	return None, None, None
+	return None, None, None, 'Unsupported ID'
 
 
 def riFromCSI(csi:str) -> str:

@@ -21,11 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added always setting *Originating Timestamp* in requests and responses.
 - [CSE] Added [logging].queueSize configuration to set the internal logging queue (or switch it off).
 - [CSE] Added validation of &lt;flexContainer>'s *containerDefinition* attribute during CREATE requests.
+- [CSE] Added check for correct Service Provider ID in absolute requests.
 - [WEB] Allow to open the WebUI of a registered CSE via the context menu.
 - [CONSOLE] Added config for dark (default) and light theme for better readability on consoles with light background.
 - [SCRIPTS] Added scripting to the CSE.
 - [SCRIPTS] A special startup script is now executed during startup. This is also used to import the base resources and replaces the JSON resource imports.
-- [SCRIPTS] Added executing scripts to the console
+- [SCRIPTS] Added executing scripts to the con	sole
 - [SCRIPTS] Added scripts tagged with "@uppertester" can be executed as upper tester commands.
 - [SCRIPTS] Added scripts scheduling vie the "@at" meta tag.
 - [SCRIPTS] Added possibility to run scripts on notifications, when using the "acme://" URL scheme.

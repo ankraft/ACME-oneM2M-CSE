@@ -680,7 +680,7 @@ class HttpServer(object):
 
 		# De-Serialize the content
 		if not (contentResult := CSE.request.deserializeContent(cseRequest.originalData, cseRequest.headers.contentType)).status:
-			return Result(status = False, rsc = contentResult.rsc, request = cseRequest, dbg = contentResult.dbg)
+			return Result.errorResult(rsc = contentResult.rsc, request = cseRequest, dbg = contentResult.dbg)
 		
 		# Remove 'None' fields *before* adding the pc, because the pc may contain 'None' fields that need to be preserved
 		req = Utils.removeNoneValuesFromDict(req)
@@ -692,11 +692,10 @@ class HttpServer(object):
 		
 		# do validation and copying of attributes of the whole request
 		try:
-			# L.logWarn(str(cseRequest))
 			if not (res := CSE.request.fillAndValidateCSERequest(cseRequest)).status:
 				return res
 		except Exception as e:
-			return Result(status = False, rsc = RC.badRequest, request = cseRequest, dbg = f'invalid arguments/attributes ({str(e)})')
+			return Result.errorResult(request = cseRequest, dbg = f'invalid arguments/attributes ({str(e)})')
 
 		# Here, if everything went okay so far, we have a request to the CSE
 		return Result(status = True, request = cseRequest)

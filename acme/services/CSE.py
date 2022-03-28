@@ -65,6 +65,7 @@ cseType:CSEType									= None
 cseCsi:str										= None
 cseCsiRelative:str								= None	# Without the leading /
 cseCsiSlash:str  								= None
+cseSpid:str										= None
 cseRi:str 										= None
 cseRn:str										= None
 cseOriginator:str								= None
@@ -87,7 +88,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	global announce, console, dispatcher, event, group, httpServer, importer, mqttClient, notification, registration
 	global remote, request, script, security, statistics, storage, time, timeSeries, validator
 	global aeStatistics
-	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiRelative, cseRi, cseRn, releaseVersion
+	global supportedReleaseVersions, cseType, defaultSerialization, cseCsi, cseCsiSlash, cseCsiRelative, cseSpid, cseRi, cseRn, releaseVersion
 	global cseOriginator
 	global isHeadless, cseStatus
 
@@ -120,6 +121,7 @@ def startup(args:argparse.Namespace, **kwargs: Dict[str, Any]) -> bool:
 	cseCsi					 = Configuration.get('cse.csi')
 	cseCsiRelative			 = cseCsi[1:]							# no leading slash
 	cseCsiSlash				 = f'{cseCsi}/'
+	cseSpid					 = Configuration.get('cse.spid')
 	cseRi					 = Configuration.get('cse.ri')
 	cseRn					 = Configuration.get('cse.rn')
 	cseOriginator			 = Configuration.get('cse.originator')

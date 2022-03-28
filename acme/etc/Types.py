@@ -1058,17 +1058,18 @@ class Result:
 	
 
 	@classmethod
-	def errorResult(cls, rsc:ResponseStatusCode = ResponseStatusCode.badRequest, dbg:str = '') -> Result:
+	def errorResult(cls, rsc:ResponseStatusCode = ResponseStatusCode.badRequest, dbg:str = '', request:CSERequest = None, data:Any = None) -> Result:
 		"""	Create and return a Result object with `status = False` and RSC and debug
 			message set.
 
 			Args:
 				rsc: ResponseStatusCode to return as an error.
 				dbg: String with the debug message.
+				request: CSERequest to return.
 			Return:
 				Error Result instance.
 		"""
-		return Result(status = False, rsc = rsc, dbg = dbg) 
+		return Result(status = False, rsc = rsc, request = request, dbg = dbg, data = data) 
 
 
 	@classmethod

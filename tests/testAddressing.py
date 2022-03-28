@@ -115,12 +115,32 @@ class TestAddressing(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK)
 		self.assertEqual(findXPath(r, 'm2m:cnt/rn'), cntRN)
 
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_absoluteStructuredWrongSPIDFail(self) -> None:
+		""" Test absolute structured with wrong SPID -> Fail"""
+		url = f'{URL}//wrong{CSEID}/{CSERN}/{aeRN}/{cntRN}'
+		r, rsc = RETRIEVE(url, TestAddressing.originator)
+		self.assertEqual(rsc, RC.badRequest)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_absoluteUnstructuredWrongSPIDFail(self) -> None:
+		""" Test absolute unstructured with wrong SPID -> Fail"""
+		url = f'{URL}//wrong{CSEID}/{TestAddressing.cntRI}'
+		r, rsc = RETRIEVE(url, TestAddressing.originator)
+		self.assertEqual(rsc, RC.badRequest)
+
+
+
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 	suite.addTest(TestAddressing('test_cseRelativeStructured'))
 	suite.addTest(TestAddressing('test_cseRelativeUnstructured'))
 	suite.addTest(TestAddressing('test_spRelativeStructured'))
 	suite.addTest(TestAddressing('test_spRelativeUnstructured'))
+	suite.addTest(TestAddressing('test_absoluteStructuredWrongSPIDFail'))
+	suite.addTest(TestAddressing('test_absoluteUnstructuredWrongSPIDFail'))
 	suite.addTest(TestAddressing('test_absoluteStructured'))
 	suite.addTest(TestAddressing('test_absoluteUnstructured'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

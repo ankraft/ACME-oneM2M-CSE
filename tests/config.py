@@ -46,7 +46,7 @@ ROOTPATH			= '/'
 CSERN				= 'cse-in'
 CSERI				= 'id-in'
 CSEID				= '/id-in'
-SPID 				= 'sp-in'
+SPID 				= 'acme.example.com'
 ORIGINATOR			= 'CAdmin'
 ORIGINATORResp		= 'CTester'
 
