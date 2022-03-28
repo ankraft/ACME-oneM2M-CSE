@@ -330,20 +330,21 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str, SPID:str) -> Tuple[str, st
 	vrPresent	= None
 
 	# split path
-	ids = id.split('/')
+	idsLen = len(ids := id.split('/'))
 	csecsi = csecsi[1:]	# remove leading / from csi for our comparisons here
 
-	# Test for empty ID
-	if (idsLen := len(ids)) == 0:	# There must be something!
-		return None, None, None, 'ID must not be empty'
+	# # Test for empty ID
+	# if (idsLen := len(ids)) == 0:	# There must be something!
+	# 	return None, None, None, 'ID must not be empty'
 
-	# Remove the empty elements in the beginnig of the list
+	# Remove the empty elements in the beginnig of the list (they result from a single "/")
 	# and calculate from that the "level", which indicates CSE relative,
 	# SP relative or absolute
+	lvl = 0
 	while not ids[0]:
 		ids.pop(0)
-	lvl = idsLen - len(ids)
-	idsLen -= lvl
+		lvl += 1
+		idsLen -= 1
 	if lvl > 2:						# not more than 2 * / in front
 		return None, None, None, 'Too many "/" level'
 

@@ -1059,9 +1059,10 @@ class RequestManager(object):
 				errorResult = Result.errorResult(request = cseRequest, dbg = dbg)
 			else:
 				cseRequest.to = to
-				cseRequest.id, cseRequest.csi, cseRequest.srn, dbg = Utils.retrieveIDFromPath(to, CSE.cseRn, CSE.cseCsi, CSE.cseSpid)
-				if dbg:
-					return Result.errorResult(request = cseRequest, dbg = dbg)
+				if to:
+					cseRequest.id, cseRequest.csi, cseRequest.srn, dbg = Utils.retrieveIDFromPath(to, CSE.cseRn, CSE.cseCsi, CSE.cseSpid)
+					if dbg:
+						return Result.errorResult(request = cseRequest, dbg = dbg)
 
 			# Check identifiers
 			if not isResponse and not cseRequest.id and not cseRequest.srn:
