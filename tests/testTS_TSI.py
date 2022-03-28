@@ -18,7 +18,7 @@ from init import *
 maxBS	= 30
 maxMdn	= 5
 pei 	= int(timeSeriesInterval * 1000)
-mdt 	= int(pei * 0.6) # peid % 20
+mdt 	= int(pei * 0.8) # peid % 20
 
 
 
@@ -381,17 +381,20 @@ class TestTS_TSI(unittest.TestCase):
 
 		self._startMonitoring()
 
-		date = datetime.datetime.utcnow().timestamp()
+		#date = datetime.datetime.utcnow().timestamp()
+
 		for i in range(3):
 			dct = 	{ 'm2m:tsi' : {
-						'dgt' : toISO8601Date(date),
+						# 'dgt' : toISO8601Date(date),
+						'dgt' : toISO8601Date(datetime.datetime.utcnow().timestamp()),
 						'con' : 'aValue',
 						'snr' : i
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
 			self.assertEqual(rsc, RC.created, r)
-			time.sleep(timeSeriesInterval - (datetime.datetime.utcnow().timestamp() - date)) # == pei
-			date += timeSeriesInterval
+			time.sleep(timeSeriesInterval) # == pei
+			# time.sleep(timeSeriesInterval - (datetime.datetime.utcnow().timestamp() - date)) # == pei
+			#date += timeSeriesInterval
 
 		# Check TS for missing TSI
 		r, rsc = RETRIEVE(tsURL, TestTS_TSI.originator)
