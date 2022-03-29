@@ -185,7 +185,7 @@ class SecurityManager(object):
 
 		# target is an ACP or ACPAnnc resource
 		if resource.ty in [T.ACP, T.ACPAnnc]:	
-			if resource.Permission(originator, requestedPermission):
+			if resource.checkSelfPermission(originator, requestedPermission):
 				L.isDebug and L.logDebug('Permission granted')
 				return True
 			# fall-through
@@ -280,7 +280,7 @@ class SecurityManager(object):
 					if not (acp := CSE.dispatcher.retrieveResource(ri).resource):
 						L.isWarn and L.logWarn(f'Access Check for acpi: referenced <ACP> resource not found: {ri}')
 						continue
-					if acp.Permission(originator, Permission.UPDATE):
+					if acp.checkSelfPermission(originator, Permission.UPDATE):
 						break
 				else:
 					L.logDebug(dbg := f'Originator: {originator} has no permission to update acpi for: {targetResource.ri}')
