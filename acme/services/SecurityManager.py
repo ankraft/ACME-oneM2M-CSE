@@ -60,10 +60,19 @@ class SecurityManager(object):
 	def hasAccess(self, originator:str, 
 						resource:Resource, 
 						requestedPermission:Permission, 
-						checkSelf:bool = False, 
 						ty:T = None, 
-						isCreateRequest:bool = False,
 						parentResource:Resource = None) -> bool:
+		""" Test whether an originator has access to a resource for the requested permission.
+		
+			Args:
+				originator: The originator to check for.
+				resource: The target resource of a request.
+				requestedPermission: The persmission to test.
+				ty: Mandatory for CREATE, else mandatory. The type of the resoure that is about to be created.
+				parentResource: Optional, the parent resource of a target resource.
+			Return:
+				Boolean indicating access.
+		"""
 
 		#  Do or ignore the check
 		if not self.enableACPChecks:
@@ -79,7 +88,7 @@ class SecurityManager(object):
 			# Some Separate	 tests for some types
 
 			# Checking for AE	
-			if ty == T.AE and isCreateRequest:
+			if ty == T.AE and requestedPermission == Permission.CREATE:
 				# originator may be None or empty or C or S. 
 				# That is okay if type is AE and this is a create request
 				# Originator == None or len == 0
@@ -88,7 +97,7 @@ class SecurityManager(object):
 					return True
 
 			# Checking for remoteCSE or CSEBaseAnnc
-			if ty in [ T.CSR, T.CSEBaseAnnc] and isCreateRequest:
+			if ty in [ T.CSR, T.CSEBaseAnnc] and requestedPermission == Permission.CREATE:
 				if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators):
 					L.isDebug and L.logDebug('Originator for CSR/CSEBaseAnnc CREATE. OK.')
 					return True
@@ -126,7 +135,7 @@ class SecurityManager(object):
 		if resource.ty == T.CSEBase and requestedPermission & Permission.RETRIEVE:
 
 			# Allow registered AEs to RETRIEVE the CSEBase
-			if CSE.storage.retrieveResource(aei=originator).resource:
+			if CSE.storage.retrieveResource(aei = originator).resource:
 				L.isDebug and L.logDebug(f'Allow registered AE Orignator {originator} to RETRIEVE CSEBase. OK.')
 				return True
 			
@@ -141,10 +150,7 @@ class SecurityManager(object):
 
 		# Checking for PollingChannel
 		if resource.ty == T.PCH:
-			if not parentResource:
-				if not (parentResource := resource.retrieveParentResource()):
-					return False
-			if originator != parentResource.getOriginator():
+			if originator != resource.getParentOriginator():
 				L.isWarn and L.logWarn('Access to <PCH> resource is only granted to the parent originator.')
 				return False
 			return True
@@ -154,7 +160,7 @@ class SecurityManager(object):
 			L.isWarn and L.logWarn('RequestedPermission must not be None, and between 0 and 63')
 			return False
 
-		L.isDebug and L.logDebug(f'Permission check originator: {originator} ri: {resource.ri} permission: {requestedPermission} selfPrivileges: {checkSelf}')
+		L.isDebug and L.logDebug(f'Permission check originator: {originator} ri: {resource.ri} permission: {requestedPermission}')
 		# L.logWarn(resource)
 
 		if resource.ty == T.GRP: # target is a group resource
@@ -179,7 +185,7 @@ class SecurityManager(object):
 
 		# target is an ACP or ACPAnnc resource
 		if resource.ty in [T.ACP, T.ACPAnnc]:	
-			if resource.checkSelfPermission(originator, requestedPermission):
+			if resource.Permission(originator, requestedPermission):
 				L.isDebug and L.logDebug('Permission granted')
 				return True
 			# fall-through
@@ -220,7 +226,7 @@ class SecurityManager(object):
 					L.isDebug and L.logDebug('Checking parent\'s permission')
 					if not parentResource:
 						parentResource = CSE.dispatcher.retrieveResource(resource.pi).resource
-					return self.hasAccess(originator, parentResource, requestedPermission, checkSelf, ty, isCreateRequest)
+					return self.hasAccess(originator, parentResource, requestedPermission, ty)
 
 			L.isDebug and L.logDebug('Permission NOT granted for resource w/o acpi')
 			return False
@@ -230,15 +236,20 @@ class SecurityManager(object):
 			if not (acp := CSE.dispatcher.retrieveResource(a).resource):
 				L.isDebug and L.logDebug(f'ACP resource not found: {a}')
 				continue
-			if checkSelf:	# forced check for self permissions
-				if acp.checkSelfPermission(originator, requestedPermission):
-					L.isDebug and L.logDebug('Permission granted')
-					return True				
-			else:
-				# L.isWarn and L.logWarn(acp)
-				if acp.checkPermission(originator, requestedPermission, ty):
-					L.isDebug and L.logDebug('Permission granted')
-					return True
+			# if checkSelf:	# forced check for self permissions
+			# 	if acp.checkSelfPermission(originator, requestedPermission):
+			# 		L.isDebug and L.logDebug('Permission granted')
+			# 		return True				
+			# else:
+			# 	# L.isWarn and L.logWarn(acp)
+			# 	if acp.checkPermission(originator, requestedPermission, ty):
+			# 		L.isDebug and L.logDebug('Permission granted')
+			# 		return True
+
+			# L.isWarn and L.logWarn(acp)
+			if acp.checkPermission(originator, requestedPermission, ty):
+				L.isDebug and L.logDebug('Permission granted')
+				return True
 
 		# no fitting permission identified
 		L.isDebug and L.logDebug('Permission NOT granted')
@@ -269,7 +280,7 @@ class SecurityManager(object):
 					if not (acp := CSE.dispatcher.retrieveResource(ri).resource):
 						L.isWarn and L.logWarn(f'Access Check for acpi: referenced <ACP> resource not found: {ri}')
 						continue
-					if acp.checkSelfPermission(originator, Permission.UPDATE):
+					if acp.Permission(originator, Permission.UPDATE):
 						break
 				else:
 					L.logDebug(dbg := f'Originator: {originator} has no permission to update acpi for: {targetResource.ri}')

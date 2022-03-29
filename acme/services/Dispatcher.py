@@ -479,7 +479,7 @@ class Dispatcher(object):
 			return Result.errorResult(rsc = RC.notFound, dbg = dbg)
 		parentResource = cast(Resource, res.resource)
 
-		if CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, isCreateRequest = True, parentResource = parentResource) == False:
+		if CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource) == False:
 			if ty == T.AE:
 				return Result.errorResult(rsc = RC.securityAssociationRequired, dbg = 'security association required')
 			else:

@@ -197,7 +197,7 @@ class GroupManager(object):
 		permission = operation.permission()
 
 		#check access rights for the originator through memberAccessControlPolicies
-		if CSE.security.hasAccess(originator, group, requestedPermission = permission, ty = request.headers.resourceType, isCreateRequest = True if operation == Operation.CREATE else False) == False:
+		if CSE.security.hasAccess(originator, group, requestedPermission = permission, ty = request.headers.resourceType) == False:
 			return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = 'insufficient privileges for originator')
 
 		# check whether there is something after the /fopt ...
