@@ -15,8 +15,7 @@ from dataclasses import dataclass, field
 from collections import namedtuple
 from enum import IntEnum, auto
 import datetime, time, re, copy, random
-from signal import SIG_DFL
-from typing import 	Any, Callable, Dict, Tuple, Union
+from typing import 	Callable, Dict, Tuple, Union
 
 _maxProcStackSize = 64	# max number of calls to procedures
 
@@ -76,15 +75,15 @@ class PContext():
 
 	def __init__(self, 
 				 script:Union[str,list[str]],
-				 commands:PCmdDict 			= None,
-				 macros:PMacroDict 			= None,
-				 logFunc:PLogCallable 		= lambda pcontext, msg: print(f'** {msg}'),
-				 logErrorFunc:PLogCallable	= lambda pcontext, msg: print(f'!! {msg}'),
-				 printFunc:PLogCallable 	= lambda pcontext, msg: print(msg),
-				 preFunc:PFuncCallable		= None,
-				 postFunc:PFuncCallable		= None,
-			 	 errorFunc:PFuncCallable	= None,
-				 maxRuntime:float			= None) -> None:
+				 commands:PCmdDict 				= None,
+				 macros:PMacroDict 				= None,
+				 logFunc:PLogCallable 			= lambda pcontext, msg: print(f'** {msg}'),
+				 logErrorFunc:PErrorLogCallable	= lambda pcontext, msg, exception: print(f'!! {msg}'),
+				 printFunc:PLogCallable 		= lambda pcontext, msg: print(msg),
+				 preFunc:PFuncCallable			= None,
+				 postFunc:PFuncCallable			= None,
+			 	 errorFunc:PFuncCallable		= None,
+				 maxRuntime:float				= None) -> None:
 		"""	Initialize the process context.
 
 			Args:
@@ -115,7 +114,7 @@ class PContext():
 		# State, result and error attributes
 		self.pc:int 						= 0
 		self.state:PState 					= PState.created
-		self.error:PErrorState				= PErrorState(PError.noError, 0, '' )
+		self.error:PErrorState				= PErrorState(PError.noError, 0, '', None )
 		self.meta:Dict[str, str]			= {}
 		self.variables:Dict[str,str]		= {}
 		self.environment:Dict[str,str]		= {}	# Similar to variables, but not cleared
@@ -280,14 +279,14 @@ class PContext():
 			method as well.
 		"""
 		self.pc = 0
-		self.error = PErrorState(PError.noError, 0, '')
+		self.error = PErrorState(PError.noError, 0, '', None)
 		self.variables.clear()
 		self._scopeStack.clear()
 		self.saveScope(pc = -1, name = self.meta.get('name'))
 		self.state = PState.ready
 
 
-	def setError(self, error:PError, msg:str, pc:int = -1, state:PState = PState.terminatedWithError) -> None:
+	def setError(self, error:PError, msg:str, pc:int = -1, state:PState = PState.terminatedWithError, exception:Exception = None) -> None:
 		"""	Set the internal state and error codes. These can be retrieved by accessing the state and error
 			attributes.
 
@@ -298,7 +297,7 @@ class PContext():
 				state: PState to indicate the state of the script. Default is "terminatedWithError".
 		"""
 		self.state = state
-		self.error = PErrorState(error, self.pc if pc == -1 else pc, msg)
+		self.error = PErrorState(error, self.pc if pc == -1 else pc, msg, exception)
 
 
 	@property
@@ -647,6 +646,10 @@ PLogCallable = Callable[[PContext, str], None]
 """	Function callback for log functions.
 """
 
+PErrorLogCallable = Callable[[PContext, str, Exception], None]
+"""	Function callback for error og functions.
+"""
+
 PCmdCallable = Callable[[PContext, str], PContext]
 """	Signature of a command callable.
 """
@@ -665,7 +668,7 @@ PMacroDict = Dict[str, PMacroCallable]
 	and returns a string.
 """
 
-PErrorState = namedtuple('PErrorState', [ 'error', 'line', 'message' ])
+PErrorState = namedtuple('PErrorState', [ 'error', 'line', 'message', 'exception' ])
 """	Named tuple that represents an error state. The error, the line numer,
 	and the error message.
 """
@@ -695,7 +698,7 @@ def run(pcontext:PContext, verbose:bool = False, argument:str = '', procedure:st
 				pcontext: Current PContext for the script.
 		"""
 		if pcontext.error.error not in [ PError.noError, PError.quitWithError ]:
-			_doLog(pcontext, f'{pcontext.error.line}: {pcontext.error.message}', isError = True)
+			_doLog(pcontext, f'{pcontext.error.line}: {pcontext.error.message}', isError = True, exception = pcontext.error.exception)
 			if pcontext.errorFunc:
 				pcontext.errorFunc(pcontext)
 		if pcontext.state != PState.ready and pcontext.postFunc:	# only when really running, after preFunc succeeded
@@ -771,7 +774,7 @@ def run(pcontext:PContext, verbose:bool = False, argument:str = '', procedure:st
 				except SystemExit:
 					raise
 				except Exception as e:
-					pcontext.setError(PError.unknown, f'Error: {e}')
+					pcontext.setError(PError.unknown, f'Error: {e}', exception = e)
 			else:
 				# Ignore "empty" (None) commands
 				pass
@@ -1037,7 +1040,7 @@ def _doIncDec(pcontext:PContext, arg:str, isInc:bool = True) -> PContext:
 	return pcontext
 
 
-def _doLog(pcontext:PContext, arg:str, isError:bool = False) -> PContext:
+def _doLog(pcontext:PContext, arg:str, isError:bool = False, exception:Exception = None) -> PContext:
 	"""	Print a message to the debug or to the error. Either the internal or a provided log function.
 
 		Args:
@@ -1049,7 +1052,7 @@ def _doLog(pcontext:PContext, arg:str, isError:bool = False) -> PContext:
 	"""
 	if isError:
 		if pcontext.logErrorFunc:
-			pcontext.logErrorFunc(pcontext, arg)
+			pcontext.logErrorFunc(pcontext, arg, exception)
 	else:
 		if pcontext.logFunc:
 			pcontext.logFunc(pcontext, arg)

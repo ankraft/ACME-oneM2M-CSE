@@ -136,14 +136,14 @@ class ACMEPContext(PContext):
 		L.isDebug and L.logDebug(msg)
 
 
-	def logError(self, pcontext:PContext, msg:str) -> None:
+	def logError(self, pcontext:PContext, msg:str, exception:Exception = None) -> None:
 		"""	Callback for error log messages.
 
 			Args:
 				pcontext: Script context.
 				msg: log message.
 		"""
-		L.logErr(msg)
+		L.logErr(msg, exc = exception)
 
 
 	def prnt(self, pcontext:PContext, msg:str) -> None:
@@ -772,7 +772,7 @@ class ACMEPContext(PContext):
 			if (rqi := rp.pop('rqi', None)) is not None:
 				req['rqi'] = rqi
 			# add remaining attributes to the filterCriteria of a request
-			for key in rp.keys():
+			for key in list(rp.keys()):
 				Utils.setXPath(req, f'fc/{key}', rp.pop(key))
 
 		# Get the resource for some operations
