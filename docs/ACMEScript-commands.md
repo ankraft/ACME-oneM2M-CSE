@@ -198,7 +198,7 @@ Usage:
 ENDPROCEDURE [&lt;result>]
 
 This command marks the end of a [PROCEDURE](#command_procedure). The command may have an optional result argument that is 
-returned as the result of the procedure. The result is stored in the vriable [result](ACMEScript-macros.md#macro_result).
+returned as the result of the procedure. The result is stored in the variable [result](ACMEScript-macros.md#macro_result).
 
 Example:
 ```text
@@ -335,7 +335,7 @@ Usage:
 PROCEDURE [&lt;result>]
 
 This command defines a procedure. A procedure is a named sequence of commands that is executed in its own context. 
-A procedure mqy have zero, one, or more arguments, which can be accessed via the [argc](ACMEScript-macros.md#macro_argc) and [argv](ACMEScript-macros.md#macro_argv)  macros. A procedure may also return a result, which is returned to the calling scope, 
+A procedure may have zero, one, or more arguments, which can be accessed via the [argc](ACMEScript-macros.md#macro_argc) and [argv](ACMEScript-macros.md#macro_argv)  macros. A procedure may also return a result, which is returned to the calling scope, 
 see [ENDPROCEDURE](#command_endprocedure) for details.
 
 One can regard a procedure as a script-local command definition.
