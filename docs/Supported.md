@@ -38,7 +38,7 @@ The ACME CSE supports the following oneM2M resource types:
 | Group (GRP)                     |  &check;  | The support includes requests via the *fopt* (fanOutPoint) virtual resource. Groups may contain remote resources.                                                                                                 |
 | Management Objects              |  &check;  | See also the list of supported [management objects](#mgmtobjs).                                                                                                                                                   |
 | Node (NOD)                      |  &check;  |                                                                                                                                                                                                                   |
-| Polling Channel (PCH)           |  &check;  | Support for Request and Notification long-polling via the *pcu* (pollingChannelURI) virtual resource.<br />*requestAggregation* is not yet supported.                                                             |
+| Polling Channel (PCH)           |  &check;  | Support for Request and Notification long-polling via the *pcu* (pollingChannelURI) virtual resource. *requestAggregation* functionality is supported, too.                                                       |
 | Remote CSE (CSR)                |  &check;  | Announced resources are  supported. Transit request to resources on registered CSE's are supported.                                                                                                               |
 | Request (REQ)                   |  &check;  | Support for non-blocking requests.                                                                                                                                                                                |
 | Subscription (SUB)              |  &check;  | Notifications via http(s) (direct url or an AE's Point-of-Access (POA)). BatchNotifications, attributes.                                                                                                          |
@@ -84,7 +84,7 @@ The following table presents the supported management object specifications.
 | Blocking requests             |  &check;  |                                                                                           |
 | Non-blocking requests         |  &check;  | Non-blocking synchronous and asynchronous, and flex-blocking, incl. *Result Persistence*. |
 | TimeSeries data handling      |  &check;  | Incl. missing data detection, monitoring and notifications.                               |
-| Long polling                  |  &check;  | Long polling for request unreachable AEs and CSEs through &lt;PollingChannel>.            |
+| Long polling                  |  &check;  | Long polling for request unreachable AEs and CSEs through &lt;pollingChannel>.            |
 | Request expiration            |  &check;  | Through the *Request Expiration Timestamp* request attribute                              |
 | Delayed request execution     |  &check;  | Through the *Operation Execution Timestamp* request attribute.                            |
 | Testing: Upper Tester         |  &check;  | Basic support for the Upper Tester protocol defined in TS-0019.                           |
