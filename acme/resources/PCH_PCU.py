@@ -18,6 +18,8 @@ from ..etc import DateUtils, Utils
 
 class PCH_PCU(Resource):
 
+	_aggregate = '__aggregate__'
+
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[T] = [ ]
 
@@ -29,13 +31,29 @@ class PCH_PCU(Resource):
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
 		super().__init__(T.PCH_PCU, dct, pi = pi, create = create, inheritACP = True, readOnly = True, rn = 'pcu', isVirtual = True)
+
+		# Add to internal attributes to ignore in validation etc
+		self.internalAttributes.append(self._aggregate)	
+
+		self.setAttribute(PCH_PCU._aggregate, False, overwrite = False)
 		
 
 	def handleRetrieveRequest(self, request:CSERequest = None, _:str = None, originator:str = None) -> Result:
 		""" Handle a RETRIEVE request. Return resource or block until available. At the PCU, only received requests are retrieved, otherwise
 			this function does not return until a reqeust timeout occurs. Only the AE's originator has access to this virtual resource.
+
+			Args:
+				request: Mandatory for PCU. The original RETRIEVE request.
+				originator: Request originator.
+			Return:
+				Result instance, with the response set to `embeddedRequest`.
 		"""
 		L.isDebug and L.logDebug(f'RETRIEVE request for polling channel. Originator: {originator}')
+
+		# A retrieve of PCU requires the original retrieve request
+		if not request:
+			L.logErr(dbg := 'Missing request in call to PCU')
+			return Result.errorResult(rsc = RC.internalServerError, dbg = dbg)
 
 		# Determine the request's timeout
 		if request.headers.requestExpirationTimestamp:
@@ -46,11 +64,11 @@ class PCH_PCU(Resource):
 			L.isDebug and L.logDebug(f'Polling timeout: indefinite')
 
 		# Return the response or time out
-		if not (r := CSE.request.waitForPollingRequest(originator, None, timeout=ret)).status:
+		if not (r := CSE.request.waitForPollingRequest(originator, None, timeout = ret, aggregate = self.getAggregate())).status:
 			L.logWarn(dbg := f'Request Expiration Timestamp reached. No request queued for originator: {self.getOriginator()}')
 			return Result.errorResult(rsc = RC.requestTimeout, dbg = dbg)
 		
-		return Result(status=True, rsc = RC.OK, request = request, embeddedRequest = r.request)
+		return Result(status = True, rsc = RC.OK, resource = r.resource, request = request, embeddedRequest = r.request)
 
 
 	def handleNotifyRequest(self, request:CSERequest, originator:str) -> Result:
@@ -110,3 +128,22 @@ class PCH_PCU(Resource):
 		"""
 		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'DELETE operation not allowed for <pollingChanelURI> resource type')
 
+
+	def setAggregate(self, aggregate:bool) -> None:
+		"""	Set the aggregated state for a polling channel. This usually reflects the state of the PCU's parent resource, and
+			is maintained by it.
+			This attribute is handled as an internal attribute.
+
+			Args:
+				aggregate: Boolean indicating whether requests shall be aggregated in a response.
+		"""
+		self.setAttribute(PCH_PCU._aggregate, aggregate)
+		
+
+	def getAggregate(self) -> bool:
+		"""	Return the aggregated state internal attribute.
+
+			Return:
+				Boolean, the agregated state.
+		"""
+		return self.attribute(PCH_PCU._aggregate)

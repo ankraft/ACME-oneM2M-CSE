@@ -164,6 +164,25 @@ class TestPCH(unittest.TestCase):
 		self.assertLessEqual(findXPath(r, 'm2m:pch/ct'), findXPath(r, 'm2m:pch/lt'))
 		self.assertLess(findXPath(r, 'm2m:pch/ct'), findXPath(r, 'm2m:pch/et'))
 
+	
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_setAggreagstionState(self) -> None:
+		"""	Set <PCH> pcra attribute"""
+		dct = 	{ 'm2m:pch' : { 
+					'pcra' : True,
+				}}
+		r, rsc = UPDATE(pchURL, TestPCH.originator, dct)
+		self.assertEqual(rsc, RC.updated)
+		self.assertEqual(findXPath(r, 'm2m:pch/pcra'), True)
+
+	
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_getAggreagstionState(self) -> None:
+		"""	Get <PCH> pcra attribute"""
+		r, rsc = RETRIEVE(pchURL, TestPCH.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'm2m:pch/pcra'), True)
+
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deletePCHwrongOriginatorFail(self) -> None:
@@ -199,6 +218,9 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestPCH('test_retrievePCHwithWrongOriginatorFail'))
 	suite.addTest(TestPCH('test_retrievePCHWithAE2Fail'))
 	suite.addTest(TestPCH('test_attributesPCH'))
+
+	suite.addTest(TestPCH('test_setAggreagstionState'))
+	suite.addTest(TestPCH('test_getAggreagstionState'))
 
 	# delete tests
 	suite.addTest(TestPCH('test_deletePCHwrongOriginatorFail'))

@@ -608,10 +608,10 @@ class RequestManager(object):
 			if lst := self._requests.get(originator):
 				requests = []
 				
-				# extract the queried request, and build a new list for the remaining
+				# extract the queried request or the first one found, and build a new list for the remaining
 				# Building a new list is faster than extracting and removing elements in place
 				for r,t in lst:	
-					if (requestID is None or requestID == r.headers.requestIdentifier) and t == reqType:	# Either get an uspecified reuqest, or a specific one
+					if (requestID is None or requestID == r.headers.requestIdentifier) and t == reqType and not resultRequest:	# Either get an uspecified reuqest, or a specific one
 						resultRequest = r
 					else:
 						requests.append( (r, t) )
@@ -626,17 +626,38 @@ class RequestManager(object):
 			return resultRequest
 
 
-	def waitForPollingRequest(self, originator:str, requestID:str, timeout:float, reqType:RequestType=RequestType.REQUEST) -> Result:
-		"""	Busy waiting for a polling request for the `originator`, `requestID` and `reqType`. 
+	def waitForPollingRequest(self, originator:str, requestID:str, timeout:float, reqType:RequestType = RequestType.REQUEST, aggregate:bool = False) -> Result:
+		"""	Busy waiting for a polling request.
 			The function returns when there is a new or pending matching request in the queue, or when the `timeout` (in seconds)
-			is met. The function returns a *Result* object with the 
+			is met.
+			
+			Args:
+				originator: Request originator to match.
+				requestID: Request Identifier to match. Might be None to match all request IDs.
+				reqType: Match request or response.
+				aggregate: Boolean indicating whether all the available requests shall be returned in one aggregation, or separately.
+			Return:
+				 The function returns a Result object with the request or aggregated requests in the `request` attribute.
 		"""
 		L.isDebug and L.logDebug(f'Waiting for: {reqType} for originator: {originator}, requestID: {requestID}')
 
 		if DateUtils.waitFor(timeout, lambda:self.hasPollingRequest(originator, requestID, reqType)):	# Wait until timeout, or the request of the correct type was found
-			L.isDebug and L.logDebug(f'Received {reqType} request for originator: {originator}, requestID: {requestID}')
-			if req := self.unqueuePollingRequest(originator, requestID, reqType):
-				return Result(status = True, request = req, rsc = req.rsc)
+			L.isDebug and L.logDebug(f'Received {reqType} request for originator: {originator}, requestID: {requestID}, aggregate: {aggregate}')
+
+			if aggregate:
+				lst:list[CSERequest] = []
+				while True:
+					if req := self.unqueuePollingRequest(originator, requestID, reqType):
+						lst.append(req)
+						continue
+					# if fall through then there is no further request available.
+					# build the aggregated request
+					agrp = { 'm2m:agrp' : [ RequestUtils.requestFromResult(Result(request = each)).data for each in lst ] }
+					return Result(status = True, resource = agrp, rsc = RC.OK)
+				
+			else:
+				if req := self.unqueuePollingRequest(originator, requestID, reqType):
+					return Result(status = True, request = req, rsc = req.rsc)
 			# fall-through
 		L.logWarn(dbg := f'Timeout while waiting for: {reqType} for originator: {originator}, requestID: {requestID}')
 		return Result.errorResult(rsc = RC.requestTimeout, dbg = dbg)
@@ -686,7 +707,7 @@ class RequestManager(object):
 	
 
 	def waitForResponseToPCH(self, request:CSERequest) -> Result:
-		"""	Wait for a RESPOONSE to a request.
+		"""	Wait for a RESPONSE to a request.
 		"""
 		L.isDebug and L.logDebug(f'Waiting for RESPONSE with request ID: {request.headers.requestIdentifier}')
 

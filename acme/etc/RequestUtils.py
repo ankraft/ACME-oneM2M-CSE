@@ -9,6 +9,7 @@
 
 
 from __future__ import annotations
+from urllib import request
 import cbor2, json
 from typing import Any, cast
 from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode
@@ -135,10 +136,14 @@ def requestFromResult(inResult:Result, originator:str = None, ty:T = None, op:Op
 	# Operation
 	if op:
 		req['op'] = int(op)
-	
+	elif inResult.request.op:
+		req['op'] = int(inResult.request.op)
+
 	# Type
 	if ty:
 		req['ty'] = int(ty)
+	elif inResult.request.headers.resourceType:
+		req['ty'] = int(inResult.request.headers.resourceType)
 	
 	# Request Identifier 
 	if inResult.request.headers.requestIdentifier:					# copy from the original request
