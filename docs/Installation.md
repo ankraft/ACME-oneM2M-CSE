@@ -44,7 +44,7 @@ configuration is saved to a configuration file. e.g. *acme.ini*.
 ![](images/bootstrapConfig.gif)
 
 1.  After terminating the CSE again you can edit that configuration file and add more settings if necessary.
-	There are a lot of individual things to configure here. Mostly, the defaults should be sufficient, but individual settings can be applied to each of the sections.  
+	There are a lot of individual settings to configure here. Mostly, the defaults should be sufficient, but individual settings can be applied to each of the sections.  
 
 
 ## Running the CSE

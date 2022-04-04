@@ -44,6 +44,7 @@ The ACME CSE supports the following oneM2M resource types:
 | Subscription (SUB)              |  &check;  | Notifications via http(s) (direct url or an AE's Point-of-Access (POA)). BatchNotifications, attributes.                                                                                                          |
 | TimeSeries (TS)                 |  &check;  | Including missing data notifications.                                                                                                                                                                             |
 | TimeSeriesInstance (TSI)        |  &check;  | *dataGenerationTime* attribute only supports absolute timestamps.                                                                                                                                                 |
+| TimeSyncBeacon (TSB)            |  &check;  | Experimental. Implemented functionality might change according to specification changes.                                                                                                                          |
 
 <a name="mgmtobjs"></a>
 

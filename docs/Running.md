@@ -75,7 +75,6 @@ The CSE has a command console interface to execute build-in commands. The follow
 	│ u     │ Open web UI                               │        │
 	│ w     │ Show workers status                       │        │
 	├───────┼───────────────────────────────────────────┼────────┤
-	│ 9     │ test operations                           │   ✔︎    │
 	│ Z     │ Reset and restart the CSE                 │   ✔︎    │
 	└───────┴───────────────────────────────────────────┴────────┘
 
