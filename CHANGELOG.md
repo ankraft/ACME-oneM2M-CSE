@@ -26,27 +26,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [WEB] Allow to open the WebUI of a registered CSE via the context menu.
 - [CONSOLE] Added config for dark (default) and light theme for better readability on consoles with light background.
 - [SCRIPTS] Added scripting to the CSE.
-- [SCRIPTS] A special startup script is now executed during startup. This is also used to import the base resources and replaces the JSON resource imports.
-- [SCRIPTS] Added executing scripts to the con	sole
+- [SCRIPTS] A dedicated startup script is now executed during startup. This is mainly used to import the base resources and resource structure, and replaces the JSON resource imports.
+- [SCRIPTS] Added executing scripts to the console
 - [SCRIPTS] Added scripts tagged with "@uppertester" can be executed as upper tester commands.
 - [SCRIPTS] Added scripts scheduling vie the "@at" meta tag.
 - [SCRIPTS] Added possibility to run scripts on notifications, when using the "acme://" URL scheme.
-- [HTTP] Added workaround for missing http/1.0 missing DELETE method (by using PATCH instead).
+- [HTTP] Added workaround for missing DELETE method in http/1.0 (by using PATCH instead).
 
 ### Changed
 - [CSE] Adapted Announcements to latest R4 changes. 
 - [CSE] Adapted TimeSeries to latest R4 changes. 
 - [CSE] Changed the default release version to 4. Also, the supported and the actual release versions are now fully configurable (in the config file).
 - [CSE] Indicated Release Version must now be the highest value in the list of supported release versions.
-- [CSE] Changed name of *holder* attribute to *custodian* according to spec change.
-- [CSE] Transit requests will now be handled after the resolution for blocking/non-blocking was handled. Non-blocking happens in the first receiver CSE.
+- [CSE] Changed name of *holder* attribute to *custodian* according to R4 spec change.
+- [CSE] Transit requests will now be handled after the resolution for blocking/non-blocking was handled. Non-blocking happens in the first CSE that received the original request.
 - [CSE] Improved feedback instructions when problems during startup are encountered, e.g. how to install missing packages.
 - [CSE] Introduced a thread pool to reuse threads.
 - [TESTS] Replaced CSE test cases' re-configurations with upper tester commands / script calls.
 - [DATABASE] Optimizations when working with resource lists.
 
 ### Removed
-- [HTTP] Removed the http server's configuration and reset endpoints. This functionality is now handled by the upper tester endpoint and scripts.
+- [HTTP] Removed the http server's configuration and reset endpoints. This functionality is now handled by the upper tester endpoint, commands and scripts.
 - [CSE] Removed import of JSON resources from the init directory during startup. This functionality is now provided by a startup script. 
 
 ### Fixed
@@ -54,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Improved check for validating non-empty list attributes.
 - [CSE] Improved error detection and handling for RCN=7 (original-resource).
 - [CSE] Added missing "creator" attribute in notifications when the creator was set in the &lt;subscription>.
-- [HTTP] HTTP request will not be sent with a *Date* header field.
+- [HTTP] HTTP requests will not be sent with a *Date* header field. Instead, the *Originating Timestamp* will be used.
 
 
 ## [0.9.1] - 2021-11-09
