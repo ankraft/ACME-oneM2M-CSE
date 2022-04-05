@@ -142,7 +142,7 @@ class Dispatcher(object):
 			if request.args.rcn == RCN.originalResource:
 				# Some checks for resource validity
 				if not resource.isAnnounced():
-					L.isDebug and L.logDebug(dbg := f'Resource {resource.ri} is not an announced resource')
+					L.logDebug(dbg := f'Resource {resource.ri} is not an announced resource')
 					return Result.errorResult(dbg = dbg)
 				if not (lnk := resource.lnk):	# no link attribute?
 					L.logErr(dbg := 'Internal Error: missing lnk attribute in target resource')
