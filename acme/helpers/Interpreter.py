@@ -14,6 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from collections import namedtuple
 from enum import IntEnum, auto
+from decimal import Decimal, ConversionSyntax, InvalidOperation
 import datetime, time, re, copy, random
 from typing import 	Callable, Dict, Tuple, Union
 
@@ -1032,9 +1033,9 @@ def _doIncDec(pcontext:PContext, arg:str, isInc:bool = True) -> PContext:
 		pcontext.setError(PError.undefined, f'undefined variable: {var}')
 		return None
 	try:
-		n = float(value) if len(value) > 0 else 1.0	# either a number or 1.0 (default)
-		pcontext.setVariable(var, str(float(variable) + n) if isInc else str(float(variable) - n))
-	except ValueError as e:
+		n = Decimal(value) if len(value) > 0 else Decimal(1.0)	# either a number or 1.0 (default)
+		pcontext.setVariable(var, str(Decimal(variable) + n) if isInc else str(Decimal(variable) - n))
+	except ConversionSyntax as e:
 		pcontext.setError(PError.notANumber, f'Not a number: {e}')
 		return None
 	return pcontext
@@ -1133,26 +1134,26 @@ def _doSet(pcontext:PContext, arg:str) -> PContext:
 
 
 	# Check whether this is an expression asignment
-	var, found, value = arg.partition('=')
-	if found:	# = means assignment
-		var = var.strip()
-		value = value.strip()
+	# var, found, value = arg.partition('=')
+	# if found:	# = means assignment
+	# 	var = var.strip()
+	# 	value = value.strip()
 
-		# Test for overwrite macro
-		if not testMacro(var):
-			return None
+	# 	# Test for overwrite macro
+	# 	if not testMacro(var):
+	# 		return None
 
-		try:
-			if (result := str(_calcExpression(pcontext, value))) is None:
-				return None
-		except ValueError as e:
-			pcontext.setError(PError.notANumber, f'Not a number: {e}')
-			return None
-		except ZeroDivisionError as e:
-			pcontext.setError(PError.divisionByZero, f'Division by zero: {arg}')
-			return None
-		pcontext.setVariable(var, str(result))
-		return pcontext
+	# 	try:
+	# 		if (result := str(_calcExpression(pcontext, value))) is None:
+	# 			return None
+	# 	except ConversionSyntax as e:
+	# 		pcontext.setError(PError.notANumber, f'Not a number: {e}')
+	# 		return None
+	# 	except ZeroDivisionError as e:
+	# 		pcontext.setError(PError.divisionByZero, f'Division by zero: {arg}')
+	# 		return None
+	# 	pcontext.setVariable(var, str(result))
+	# 	return pcontext
 
 	# Else: normal assignment
 	var, _, value = arg.partition(' ')
@@ -1293,6 +1294,21 @@ def _doArgc(pcontext:PContext, arg:str, line:str) -> str:
 	return '0'
 
 
+def _doEval(pcontext:PContext, arg:str, line:str) -> str:
+	"""	This macro returns the result of a calculation.
+
+		Args:
+			pcontext: Current PContext for the script.
+			arg: Not used.
+			line: Not used.
+		Return:
+			String, or None in case of an error.
+	"""
+	if pcontext.argument:
+		if (r := _evalExpression(pcontext, arg)) is not None:
+			return str(r)
+	return ''
+
 
 def _doRandom(pcontext:PContext, arg:str, line:str) -> str:
 	"""	Generate a random float number in the given range. The default for the
@@ -1343,20 +1359,20 @@ def _doRound(pcontext:PContext, arg:str, line:str) -> str:
 			String, or None in case of an error.
 	"""
 	try:
-		number = 0.0
+		number = Decimal(0.0)
 		ndigits = None
 		if arg:
 			args = arg.split()
 			if len(args) == 1:
-				number = float(args[0])
+				number = Decimal(args[0])
 			elif len(args) == 2:
-				number = float(args[0])
+				number = Decimal(args[0])
 				ndigits = int(args[1])
 			else:
 				pcontext.setError(PError.invalid, f'Wrong number of arguments for round: {len(args)}')
 				return None
 		return str(round(number, ndigits))
-	except ValueError as e:
+	except (ConversionSyntax, ValueError) as e:
 		pcontext.setError(PError.notANumber, f'Not a number: {e}')
 		return None
 
@@ -1398,6 +1414,7 @@ _builtinMacros:PMacroDict = {
 	'result':	lambda c, a, l: c.result,
 	'argc':		_doArgc,
 	'argv':		_doArgv,
+	'eval':		_doEval,
 	'loop':	lambda c, a, l: str(c.whileLoopCounter(l)),
 	'lower':	lambda c, a, l: a.lower(),
 	'random':	_doRandom,
@@ -1673,17 +1690,17 @@ def _compareExpression(pcontext:PContext, expr:str) -> bool:
 		Return:
 			Boolean.
 	"""
-	def _strFloat(val:str) -> Union[float, str]:
+	def _strDecimal(val:str) -> Union[Decimal, str]:
 		try:
-			return float(val)	# try to unify float values
-		except ValueError as e:
+			return Decimal(val)	# try to unify float values
+		except ConversionSyntax as e:
 			# print(str(e))
 			return val.strip()
 	
-	def _checkFloat(l:str, r:str) -> Tuple[float, float]:
-		_l = _strFloat(l)
-		_r = _strFloat(r)
-		if isinstance(_l, float) and isinstance(_r, float):
+	def _checkDecimal(l:str, r:str) -> Tuple[Decimal, Decimal]:
+		_l = _strDecimal(l)
+		_r = _strDecimal(r)
+		if isinstance(_l, Decimal) and isinstance(_r, Decimal):
 			return _l, _r
 		pcontext.setError(PError.unknown, f'Unknown expression: {expr}')
 		return None
@@ -1696,45 +1713,49 @@ def _compareExpression(pcontext:PContext, expr:str) -> bool:
 
 	# equality checks
 	if (t := expr.partition('==')) and t[1]:
-		return _strFloat(t[0]) == _strFloat(t[2])	# still convert to float to convert an int to a float, if necessary
+		return _strDecimal(t[0]) == _strDecimal(t[2])	# still convert to Decimal to convert an int to a Decimal, if necessary
 	if (t := expr.partition('!=')) and t[1]:
-		return _strFloat(t[0]) != _strFloat(t[2])	# still convert to float to convert an int to a float, if necessary
+		return _strDecimal(t[0]) != _strDecimal(t[2])	# still convert to Decimal to convert an int to a Decimal, if necessary
 
 	# order checks
 	if (t := expr.partition('<=')) and t[1]:
-		if not (lr := _checkFloat(t[0], t[2])):	# Error set in function
+		if not (lr := _checkDecimal(t[0], t[2])):	# Error set in function
 			return None
 		return lr[0] <= lr[1]
-		# return strFloat(t[0]) <= strFloat(t[2])
 	elif (t := expr.partition('>=')) and t[1]:
-		if not (lr := _checkFloat(t[0], t[2])):	# Error set in function
+		if not (lr := _checkDecimal(t[0], t[2])):	# Error set in function
 			return None
 		return lr[0] >= lr[1]
-		# return _strFloat(t[0]) >= _strFloat(t[2])
 	elif (t := expr.partition('<')) and t[1]:
-		if not (lr := _checkFloat(t[0], t[2])):	# Error set in function
+		if not (lr := _checkDecimal(t[0], t[2])):	# Error set in function
 			return None
 		return lr[0] < lr[1]
-		# return _strFloat(t[0]) < _strFloat(t[2])
 	elif (t := expr.partition('>')) and t[1]:
-		if not (lr := _checkFloat(t[0], t[2])):	# Error set in function
+		if not (lr := _checkDecimal(t[0], t[2])):	# Error set in function
 			return None
 		return lr[0] > lr[1]
-		# return _strFloat(t[0]) > _strFloat(t[2])
 	pcontext.setError(PError.unknown, f'Unknown expression: {expr}')
 	return None
 
 
-def _calcExpression(pcontext:PContext, expr:str) -> float:
+def _evalExpression(pcontext:PContext, expr:str) -> Decimal:
 	"""	Resolve a simple math expression. The operators +, -, *, /, % (mod), ^ are suppored.
-		The result is always a float.
+		The result is always a Decimal.
 
 		Args:
 			pcontext: Current PContext for the script.
 			expr: The expression to calculate
 		Return:
-			Float, the result of the calculation.
+			Decimal, the result of the calculation.
 	"""
+
+	def _evalSub(t:Tuple[str, str, str]) -> Tuple[Decimal, Decimal]:
+		a = _evalExpression(pcontext, t[0])
+		b = _evalExpression(pcontext, t[2])
+		if a is None or b is None:
+			return None
+		return a, b
+
 	expr = expr.strip()
 	
 	# The following is a hack to allow negative numbers to be used with the
@@ -1746,18 +1767,34 @@ def _calcExpression(pcontext:PContext, expr:str) -> float:
 		expr = f'0{expr}'
 	
 	if (t := expr.partition('+')) and t[1]:
-		return _calcExpression(pcontext, t[0]) + _calcExpression(pcontext, t[2])
+		if (r := _evalSub(t)) is None:
+			return None
+		return r[0] + r[1]
 	if (t := expr.partition('-')) and t[1]:
-		return _calcExpression(pcontext, t[0]) - _calcExpression(pcontext, t[2])
+		if (r := _evalSub(t)) is None:
+			return None
+		return r[0] - r[1]
 	if (t := expr.partition('*')) and t[1]:
-		return _calcExpression(pcontext, t[0]) * _calcExpression(pcontext, t[2])
+		if (r := _evalSub(t)) is None:
+			return None
+		return r[0] * r[1]
 	if (t := expr.partition('/')) and t[1]:
-		return _calcExpression(pcontext, t[0]) / _calcExpression(pcontext, t[2])
+		if (r := _evalSub(t)) is None:
+			return None
+		return r[0] / r[1]
 	if (t := expr.partition('%')) and t[1]:
-		return _calcExpression(pcontext, t[0]) % _calcExpression(pcontext, t[2])
+		if (r := _evalSub(t)) is None:
+			return None
+		return r[0] % r[1]
 	if (t := expr.partition('^')) and t[1]:
-		return _calcExpression(pcontext, t[0]) ** _calcExpression(pcontext, t[2])
-	return float(expr)
+		if (r := _evalSub(t)) is None:
+			return None
+		return r[0] ** r[1]
+	try:
+		return Decimal(expr)
+	except InvalidOperation as e:
+		pcontext.setError(PError.notANumber, f'Not a number: {expr}')
+		return None
 
 
 def _executeProcedure(pcontext:PContext, cmd:str, arg:str) -> PContext:

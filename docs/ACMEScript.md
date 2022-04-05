@@ -181,15 +181,15 @@ See also the [list of available commands](ACMEScript-commands.md).
 <a name="calc_comp"></a>
 ## Calculations and Comparisons
 
-ACMEScript has only limited support to do calculations. The only command that supports calculations is the [SET](#command_set) command when using the `=` operator:
+ACMEScript has only limited support to do calculations, which can be done through the [eval](ACMEScript-macros.md#macro_eval) macro:
 
 ```text
 # Calculate the answer to everything
-set answer = 6 * 7
+set answer ${eval 6 * 7}
 print ${answer}
 ```
 
-Some commands have a comparison expression, like the conditions for [IF](#command_if) and [WHILE](#command_while):
+Some commands have a comparison expression, like the conditions for [IF](ACMEScript-commands.md#command_if) and [WHILE](ACMEScript-commands.md#command_while):
 
 ```text
 # Check answer for correctness
@@ -203,23 +203,23 @@ endif
 
 The following arithmetic operators are supported:
 
-| Operator | Description    |
-|:--------:|----------------|
-|    +     | Addition       |
-|    -     | Subtraction    |
-|    *     | Multiplication |
-|    /     | Division       |
-|    %     | Remainder      |
-|    ^     | Exponentiation |
+| Operator | Description        |
+|:--------:|--------------------|
+|    +     | Addition           |
+|    -     | Subtraction        |
+|    *     | Multiplication     |
+|    /     | Division           |
+|    %     | Remainder (Modulo) |
+|    ^     | Exponentiation     |
 
 Example:
 ```text
-set asnwer = 21 * 2
+set answer ${eval 21 * 2}
 ```
 
 <a name="comp_op"></a>
 ### Comparison Operators
-Some commands have a comparison expression, like the conditions for [IF](#command_if) and [WHILE](#command_while):
+Some commands have a comparison expression, like the conditions for [IF](ACMEScript-commands.md#command_if) and [WHILE](ACMEScript-commands.md#command_while):
 
 | Operator | Description        |
 |:--------:|--------------------|
@@ -246,7 +246,7 @@ endwhile
 
 Each script runs in its own context, which holds the script's state, variables, arguments, result etc. 
 
-Also, a script defines has a stack of scopes. Many commands, when run, define a new scope. This allows for these commands to have arguments and also to return results. An obvious example are [procedures](#command_procedure), but also [WHILE](#command_while) loops run in their own scope and may return results.
+Also, a script defines has a stack of scopes. Many commands, when run, define a new scope. This allows for these commands to have arguments and also to return results. An obvious example are [procedures](ACMEScript-commands.md#command_procedure), but also [WHILE](ACMEScript-commands.md#command_while) loops run in their own scope and may return results.
 
 
 ### Arguments and results of procedures

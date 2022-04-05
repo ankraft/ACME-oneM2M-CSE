@@ -399,15 +399,12 @@ print ${result}
 
 Usage:   
 SET &lt;variable> &lt;value>  
-SET &lt;variable> =  &lt;calculate expression>  
 SET &lt;variable>
 
-This command has three different formats:
+This command has two different formats:
 
 - SET &lt;variable> &lt;value>  
 Set the variable `variable` to the value `value`. The variable is created if it does not exist.
-- SET &lt;variable> =  &lt;calculate expression>  
-Set the variable `variable` to the result of the [calculation expression](ACMEScript.md#calc_comp).
 - SET &lt;variable>  
 Deletes the variable `variable`.
 
@@ -416,7 +413,7 @@ Example:
 ```text
 set a 21
 set b 2
-set c = ${a} * ${b}
+set c ${eval ${a} * ${b}}
 print ${c}
 # -> 42
 set c

@@ -9,6 +9,7 @@
 | [Basic](#macros_basic)     | [argc](#macro_argc)                              | Get number of arguments                                                 |
 |                            | [argv](#macro_argv)                              | Get script or procedure arguments                                       |
 |                            | [datetime](#macro_datetime)                      | Get current date and time                                               |
+|                            | [eval](#macro_eval)                              | Evaluate a simple calculation                                           |
 |                            | [loop](#macro_loop)                              | Get the current while loop's loop count                                 |
 |                            | [lower](#macro_lower)                            | Get a lower-case version of the provided string argument                |
 |                            | [random](#random)                                | Generate a random number.                                               |
@@ -89,6 +90,32 @@ print ${datetime}
 print ${datetime %H:%M}
 # -> 22:26
 ```
+
+<a name="macro_eval"></a>
+### eval
+
+Usage:  
+${eval &lt;calculation>}
+
+Evaluate a calculation provided in the argument to the macro. The following arithmetic operators are supported:
+
+| Operator | Description        |
+|:--------:|--------------------|
+|    +     | Addition           |
+|    -     | Subtraction        |
+|    *     | Multiplication     |
+|    /     | Division           |
+|    %     | Remainder (Modulo) |
+|    ^     | Exponentiation     |
+
+The operator priority is from bottom (highest) to top (lowest).
+
+Example:
+
+```text
+set answer ${eval 21 * 2}
+```
+
 
 
 <a name="macro_loop"></a>

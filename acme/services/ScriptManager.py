@@ -116,7 +116,7 @@ class ACMEPContext(PContext):
 			try:
 				self.maxRuntime = float(t)
 			except ValueError as e:
-				self.setError(PError.invalid, f'"@timeout" invalid value, must be a float: {t}')
+				self.setError(PError.invalid, f'"@timeout" has an invalid value; it must be a float: {t}')
 				self.state = PState.invalid
 	
 
