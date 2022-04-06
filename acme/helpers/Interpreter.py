@@ -7,7 +7,7 @@
 #	Implementation of a simple batch command processor.
 #
 
-"""	The interpreter implements an extensible script runtime.
+"""	The interpreter module implements an extensible scripting and batch runtime.
 """
 
 from __future__ import annotations
@@ -18,21 +18,26 @@ from decimal import Decimal, ConversionSyntax, InvalidOperation
 import datetime, time, re, copy, random
 from typing import 	Callable, Dict, Tuple, Union
 
-_maxProcStackSize = 64	# max number of calls to procedures
-
-# return with return value. result in pcontext?
+_maxProcStackSize = 64	
+""" Max number of recursive procedures calls. """
 
 class PState(IntEnum):
-	"""	The states of a process/batch.
+	"""	The internal states of a script.
 	"""
 	created 				= auto()
+	"""	Script has been created. """
 	ready 					= auto()
+	"""	Script is read to run. """
 	running 				= auto()
+	""" Script is running. """
 	canceled 				= auto()
+	""" Running of the script is canceled externally. """
 	terminated 				= auto()
+	"""	Script terminated normally. """
 	terminatedWithResult	= auto()
+	""" Script terminated normally with a result. """
 	terminatedWithError 	= auto()
-	invalid					= auto()
+	""" Script terminated with an error. """
 
 
 class PError(IntEnum): 
@@ -47,13 +52,11 @@ class PError(IntEnum):
 	nestedProcedure			= auto()
 	noError 				= auto()
 	notANumber				= auto()
-	procedureWithoutEnd		= auto()
 	quitWithError			= auto()
 	timeout					= auto()
 	undefined				= auto()
 	unexpectedArgument		= auto()
 	unexpectedCommand		= auto()
-	unknown 				= auto()
 
 
 @dataclass
@@ -84,20 +87,22 @@ class PContext():
 				 preFunc:PFuncCallable			= None,
 				 postFunc:PFuncCallable			= None,
 			 	 errorFunc:PFuncCallable		= None,
+				 matchFunc:PMatchCallable		= lambda pcontext, l, r: l == r,
 				 maxRuntime:float				= None) -> None:
 		"""	Initialize the process context.
 
 			Args:
-				script: a single \\n-seprated string, or a list of strings.
-				commands: optional list of additional commands and their callbacks.
-				macros: optional list of additional commands and their callbacks.
-				logFunc: optional callback for log messages (and the LOG command).
-				logErrorFunc: optional callback for error log messages (and the ERROR command).
-				printFunc: optional callback for PRINT command messages.
-				preFunc: optional callback that is called with the PContext object just before the script is executed. Returning *None* prevents the script execution.
-				postFunc: optional callback that is called with the PContext object just after the script finished execution.
-				errorFunc: optional callback that is called with the PContext object when encountering an error during script execution.
-				maxRuntime: optional limitation for script runtime
+				script: A single \\n-seprated string, or a list of strings.
+				commands: An optional list of additional commands and their callbacks.
+				macros: An optional list of additional commands and their callbacks.
+				logFunc: An optional callback for log messages (and the LOG command). The default is the normal print() function.
+				logErrorFunc: An optional callback for error log messages (and the ERROR command). The default is the normal print() function.
+				printFunc: An optional callback for PRINT command messages. The default is the normal print() function.
+				preFunc: An optional callback that is called with the PContext object just before the script is executed. Returning *None* prevents the script execution.
+				postFunc: An optional callback that is called with the PContext object just after the script finished execution.
+				errorFunc: An optional callback that is called with the PContext object when encountering an error during script execution.
+				matchFunc: An optional callback that is called to perform matches. This could be, for example, a regex matcher. The default is just a normal compare for equality.
+				maxRuntime: An optional limitation for script runtime in seconds.
 		"""
 		
 		# Extra parameters that can be provided
@@ -110,6 +115,7 @@ class PContext():
 		self.preFunc						= preFunc
 		self.postFunc						= postFunc
 		self.errorFunc						= errorFunc
+		self.matchFunc						= matchFunc
 		self.maxRuntime						= maxRuntime
 
 		# State, result and error attributes
@@ -264,11 +270,13 @@ class PContext():
 	
 
 	def ignoreLine(self, line:str) -> bool:
-		"""	Test whether a line should be ignored, e.g. a comment (ie. the line starts with # or //), 
-			or meta data (ie, the line starts with @). White spaces before the characters are ignored.
+		"""	Test whether a line should be ignored.
+		
+			For example a comment (ie. the line starts with # or //), or meta data (ie, the line starts with @). 
+			White spaces before the characters are ignored.
 
 			Args:
-				line: The line to test
+				line: The line to test.
 			Return:
 				Boolean indicating whether a line shall be ignored.
 		"""
@@ -276,8 +284,10 @@ class PContext():
 	
 
 	def reset(self) -> None:
-		"""	Reset the context / script. May also be implemented in a sub-class, but the must then call this
-			method as well.
+		"""	Reset the context / script. 
+		
+			
+			This methoth ,ay also be implemented in a sub-class, but the must then call this method as well.
 		"""
 		self.pc = 0
 		self.error = PErrorState(PError.noError, 0, '', None)
@@ -288,14 +298,16 @@ class PContext():
 
 
 	def setError(self, error:PError, msg:str, pc:int = -1, state:PState = PState.terminatedWithError, exception:Exception = None) -> None:
-		"""	Set the internal state and error codes. These can be retrieved by accessing the state and error
-			attributes.
+		"""	Set the internal state and error codes. 
+		
+			These can be retrieved by accessing the state and error	attributes.
 
 			Args:
 				error: PError to indicate the type of error.
 				msg: String that further explains the error.
 				pc: Integer, the program counter pointing at the line causing the error. Default -1 means the current pc.
 				state: PState to indicate the state of the script. Default is "terminatedWithError".
+				exception: Optional exception to provide with the error message.
 		"""
 		self.state = state
 		self.error = PErrorState(error, self.pc if pc == -1 else pc, msg, exception)
@@ -664,6 +676,11 @@ PMacroCallable = Callable[[PContext, str, str], str]
 """	Signature of a macro callable.
 """
 
+PMatchCallable = Callable[[PContext, str, str], bool]
+"""	Signature of a match function callable.
+"""
+
+
 PMacroDict = Dict[str, PMacroCallable]
 """	Function callback for macros. The callback is called with a `PContext` object
 	and returns a string.
@@ -775,7 +792,7 @@ def run(pcontext:PContext, verbose:bool = False, argument:str = '', procedure:st
 				except SystemExit:
 					raise
 				except Exception as e:
-					pcontext.setError(PError.unknown, f'Error: {e}', exception = e)
+					pcontext.setError(PError.invalid, f'Error: {e}', exception = e)
 			else:
 				# Ignore "empty" (None) commands
 				pass
@@ -794,7 +811,7 @@ def run(pcontext:PContext, verbose:bool = False, argument:str = '', procedure:st
 	if pcontext.state not in endScriptStates:
 		# Check whether we reached the end of the script, but haven't ended a procedure
 		if len(pcontext._scopeStack) > 1:
-			pcontext.setError(PError.procedureWithoutEnd, f'PROCEDURE without return', pcontext.scope.returnPc )
+			pcontext.setError(PError.unexpectedCommand, f'PROCEDURE without return', pcontext.scope.returnPc )
 
 	# Return after running. Set the pcontext.state accordingly
 	pcontext.state = PState.terminated if pcontext.state == PState.running else pcontext.state
@@ -1081,7 +1098,7 @@ def _doProcedure(pcontext:PContext, arg:str) -> PContext:
 		if cmd == 'endprocedure':
 			return pcontext
 	# Reached end of script
-	pcontext.setError(PError.procedureWithoutEnd, 'PROCEDURE without ENDPROCEDURE')
+	pcontext.setError(PError.unexpectedCommand, 'PROCEDURE without ENDPROCEDURE')
 	return None
 
 
@@ -1299,7 +1316,7 @@ def _doEval(pcontext:PContext, arg:str, line:str) -> str:
 
 		Args:
 			pcontext: Current PContext for the script.
-			arg: Not used.
+			arg: The expression to be evaluated.
 			line: Not used.
 		Return:
 			String, or None in case of an error.
@@ -1308,6 +1325,23 @@ def _doEval(pcontext:PContext, arg:str, line:str) -> str:
 		if (r := _evalExpression(pcontext, arg)) is not None:
 			return str(r)
 	return ''
+
+
+def _doMatch(pcontext:PContext, arg:str, line:str) -> str:
+	"""	This macro returns the result of a match comparison.
+
+		Args:
+			pcontext: Current PContext for the script.
+			arg: Not used.
+			line: Not used.
+		Return:
+			String with *true* or *false, or None in case of an error.
+	"""
+	args = arg.split()
+	if len(args) == 2:
+		return str(pcontext.matchFunc(pcontext, args[0], args[1])).lower()
+	pcontext.setError(PError.invalid, f'Wrong number of arguments for match: {len(args)}. Must be 2.')
+	return None
 
 
 def _doRandom(pcontext:PContext, arg:str, line:str) -> str:
@@ -1415,8 +1449,9 @@ _builtinMacros:PMacroDict = {
 	'argc':		_doArgc,
 	'argv':		_doArgv,
 	'eval':		_doEval,
-	'loop':	lambda c, a, l: str(c.whileLoopCounter(l)),
+	'loop':		lambda c, a, l: str(c.whileLoopCounter(l)),
 	'lower':	lambda c, a, l: a.lower(),
+	'match':	_doMatch,		
 	'random':	_doRandom,
 	'round':	_doRound,
 	'runcount':	lambda c, a, l: str(c.runs),
@@ -1702,7 +1737,7 @@ def _compareExpression(pcontext:PContext, expr:str) -> bool:
 		_r = _strDecimal(r)
 		if isinstance(_l, Decimal) and isinstance(_r, Decimal):
 			return _l, _r
-		pcontext.setError(PError.unknown, f'Unknown expression: {expr}')
+		pcontext.setError(PError.invalid, f'Unknown expression: {expr}')
 		return None
 
 	# Boolean checks
@@ -1734,7 +1769,7 @@ def _compareExpression(pcontext:PContext, expr:str) -> bool:
 		if not (lr := _checkDecimal(t[0], t[2])):	# Error set in function
 			return None
 		return lr[0] > lr[1]
-	pcontext.setError(PError.unknown, f'Unknown expression: {expr}')
+	pcontext.setError(PError.invalid, f'Unknown expression: {expr}')
 	return None
 
 

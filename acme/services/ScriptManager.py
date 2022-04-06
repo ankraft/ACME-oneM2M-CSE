@@ -91,6 +91,7 @@ class ACMEPContext(PContext):
 						 printFunc = self.prnt,
 						 preFunc = preFunc, 
 						 postFunc = postFunc, 
+						 matchFunc = lambda p, l, r : TextTools.simpleMatch(l, r),
 						 errorFunc = errorFunc)
 
 		self.poas:Dict[str, str] = { CSE.cseCsi: None }		# Default: Own CSE
@@ -110,14 +111,14 @@ class ACMEPContext(PContext):
 		if _metaPrompt in self.meta:
 			if any(key in _metaPromptlessEvents for key in self.meta.keys()):
 				self.setError(PError.invalid, f'"@prompt" is not allowed together with any of: {_metaPromptlessEvents}')
-				self.state = PState.invalid
+				self.state = PState.terminatedWithError
 		if _metaTimeout in self.meta:
 			t = self.meta[_metaTimeout]
 			try:
 				self.maxRuntime = float(t)
 			except ValueError as e:
 				self.setError(PError.invalid, f'"@timeout" has an invalid value; it must be a float: {t}')
-				self.state = PState.invalid
+				self.state = PState.terminatedWithError
 	
 
 	def reset(self) -> None:
