@@ -698,7 +698,7 @@ PErrorState = namedtuple('PErrorState', [ 'error', 'line', 'message', 'exception
 #
 
 def run(pcontext:PContext, verbose:bool = False, argument:str = '', procedure:str = None) -> PContext:
-	"""	Run a script. An own, extended `PCcontext` instance can be provided, that supports  extra commands and macros.
+	"""	Run a script. An own, extended `PContext` instance can be provided, that supports  extra commands and macros.
 
 		Args:
 			pcontext: Current PContext for the script.
@@ -1193,8 +1193,9 @@ def _doSet(pcontext:PContext, arg:str) -> PContext:
 
 
 def _doSleep(pcontext:PContext, arg:str) -> PContext:
-	"""	Sleep for `arg` seconds. This command can be interrupted when the
-		script's state is set to `canceled`.
+	"""	Sleep for a number of seconds. 
+	
+		This command can be interrupted when the script's state is set to *canceled*.
 
 		Args:
 			pcontext: Current PContext for the script.
@@ -1216,7 +1217,9 @@ def _doSleep(pcontext:PContext, arg:str) -> PContext:
 
 
 def _doSwitch(pcontext:PContext, arg:str) -> PContext:
-	"""	Start a SWITCH block. SWITCH blocks might be nested.
+	"""	Start a SWITCH block. 
+	
+		SWITCH blocks might be nested.
 
 		Args:
 			pcontext: Current PContext for the script.
@@ -1258,9 +1261,8 @@ def _doWhile(pcontext:PContext, arg:str) -> PContext:
 #	Build-in Macros
 #
 
-
 def _doArgv(pcontext:PContext, arg:str, line:str) -> str:
-	"""	With the `argv` macro one can access the individual arguments of a script.
+	"""	With the *argv* macro one can access the individual arguments of a script.
 
 		Example:
 
@@ -1379,8 +1381,9 @@ def _doRandom(pcontext:PContext, arg:str, line:str) -> str:
 
 
 def _doRound(pcontext:PContext, arg:str, line:str) -> str:
-	"""	Return a number rounded to optional `ndigits` precision after the decimal point. If `ndigits` is omitted,
-		it returns the nearest integer.
+	"""	Return a number rounded to optional *ndigits* precision after the decimal point. 
+	
+		If *ndigits*, the second parameter, is omitted, it returns the nearest integer.
 
 		Examples:
 			- round 1.6 -> 2
@@ -1465,8 +1468,9 @@ _builtinMacros:PMacroDict = {
 #
 
 def checkMacros(pcontext:PContext, line:str) -> str:
-	"""	Replace all macros and variables in a line. Variables have precedence
-		over macros with the same name. Macros and variables are replaced recursively.
+	"""	Replace all macros and variables in a line. 
+	
+		Variables have precedence over macros with the same name. Macros and variables are replaced recursively.
 
 		Args:
 			pcontext: Current PContext for the script.
@@ -1476,7 +1480,9 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 	"""
 
 	def _replaceMacro(macro:str) -> str:
-		"""	Replace a single macro or variable. Do this recursively.
+		"""	Replace a single macro or variable. 
+		
+			This is done recursively.
 
 			Args:
 				macro: The name and argument of a macro. Everything between ${...}.
@@ -1602,8 +1608,9 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 
 
 def _skipIfElse(pcontext:PContext, isIf:bool) -> PContext:
-	"""	Skip to else or endif if `isIf` is False(!). Skip oer
-		"if", "else", or "endif" that are not part of the scope.
+	"""	Skip to else or endif if *isIf* is False(!).
+	
+		Skip over "IF", "ELSE", or "ENDIF" commands that are not part of the scope.
 
 		Args:
 			pcontext: Current PContext for the script.
@@ -1716,7 +1723,7 @@ def _skipWhile(pcontext:PContext) -> PContext:
 
 
 def _compareExpression(pcontext:PContext, expr:str) -> bool:
-	"""	Resolve a compare expression. boolean "true" and "false", and the
+	"""	Resolve a compare expression. boolean *true* and *false*, and the
 		comparison operators ==, !=, <, <=, >, >= are supported.
 
 		Args:
@@ -1833,9 +1840,10 @@ def _evalExpression(pcontext:PContext, expr:str) -> Decimal:
 
 
 def _executeProcedure(pcontext:PContext, cmd:str, arg:str) -> PContext:
-	"""	Execute a PROCEDURE in its own scope. Variables are still global. If the
-		procedure returns a result then it is available in the PContext's
-		`result` attribute.
+	"""	Execute a PROCEDURE in its own scope. 
+	
+		Variables are still global. If the procedure returns a result then it is
+		available in the PContext's	*result* attribute.
 
 		Args:
 			pcontext: Current PContext for the script.

@@ -113,7 +113,7 @@ class Validator(object):
 		# L.logDebug(attributePolicies.items())
 		# L.logWarn(pureResDict)
 		
-		# Check that all attributes have been defied
+		# Check that all attributes have been defined
 		for attributeName in pureResDict.keys():
 			if attributeName not in attributePolicies.keys():
 				L.logWarn(dbg := f'Unknown attribute: {attributeName} in resource: {tpe}')
