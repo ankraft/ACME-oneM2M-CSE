@@ -244,8 +244,8 @@ class PContext():
 			separated with \\n.
 
 			Args:
-				prefix: If `prefix` is given then it is added to the begining of the result.
-				upto:  If `upto` is given then only the lines up to the first line that starts with `upto` are returned.
+				prefix: If *prefix* is given then it is added to the begining of the result.
+				upto:  If *upto* is given then only the lines up to the first line that starts with *upto* are returned.
 				ignoreComments: If set to True then comment lines are not included in the result.
 			Return:
 				String with all the remaining lines in a single string.
@@ -698,12 +698,12 @@ PErrorState = namedtuple('PErrorState', [ 'error', 'line', 'message', 'exception
 #
 
 def run(pcontext:PContext, verbose:bool = False, argument:str = '', procedure:str = None) -> PContext:
-	"""	Run a script. An own, extended `contextClass` can be provided, that supports the `extraCommands`.
+	"""	Run a script. An own, extended `PCcontext` instance can be provided, that supports  extra commands and macros.
 
 		Args:
 			pcontext: Current PContext for the script.
 			verbose: Log each executed line.
-			argument: The argument to the script, available via the `argv` macro.
+			argument: The argument to the script, available via the *argv* macro.
 		Return:
 			PContext object, or None in case of an error.
 		"""
@@ -1335,7 +1335,7 @@ def _doMatch(pcontext:PContext, arg:str, line:str) -> str:
 			arg: Not used.
 			line: Not used.
 		Return:
-			String with *true* or *false, or None in case of an error.
+			String with *true* or *false*, or None in case of an error.
 	"""
 	args = arg.split()
 	if len(args) == 2:
@@ -1774,7 +1774,7 @@ def _compareExpression(pcontext:PContext, expr:str) -> bool:
 
 
 def _evalExpression(pcontext:PContext, expr:str) -> Decimal:
-	"""	Resolve a simple math expression. The operators +, -, *, /, % (mod), ^ are suppored.
+	"""	Resolve a simple math expression. The operators +, -, \*, /, % (mod), ^ are suppored.
 		The result is always a Decimal.
 
 		Args:
