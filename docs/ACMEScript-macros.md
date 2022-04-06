@@ -12,6 +12,7 @@
 |                            | [eval](#macro_eval)                              | Evaluate a simple calculation                                           |
 |                            | [loop](#macro_loop)                              | Get the current while loop's loop count                                 |
 |                            | [lower](#macro_lower)                            | Get a lower-case version of the provided string argument                |
+|                            | [match](#macro_match)                            | Evaluate an argument against a simple regular expression                |
 |                            | [random](#random)                                | Generate a random number.                                               |
 |                            | [result](#macro_result)                          | Get the last result of a while, procedure etc.                          |
 |                            | [round](#round)                                  | Round a float number.                                                   |
@@ -147,6 +148,40 @@ Example:
 
 ```text
 print ${upper Hello}
+# -> hello
+```
+
+
+<a name="macro_match"></a>
+### match
+
+Usage:  
+${match &lt;text:string> &lt;regex>}
+
+Match the `text` against the regular expression `regex`, and return the result as *true* or *false*.
+
+The regular expression format is a very simplified version that only supports the following expression operators:
+
+- ? : any single character
+- \* : zero or more characters
+- \+ : one or more characters
+- \\ : Escape an expression operator
+
+Examples:
+
+	"hello" - "h?llo" -> True
+	"hello" - "h?lo" -> False
+	"hello" - "h*lo" -> True
+	"hello" - "h*" -> True
+	"hello" - "*lo" -> True
+	"hello" - "*l?" -> True
+
+Example:
+
+```text
+if ${match hello h*o}
+	print found
+endif
 # -> hello
 ```
 

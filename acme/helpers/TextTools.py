@@ -69,9 +69,9 @@ def simpleMatch(st:str, pattern:str, star:str='*') -> bool:
 
 	
 		- '?' : any single character
-		- '*' _ zero or more characters
-		- '+' _ one or more characters
-		- '\\' - Escape an expression operator
+		- '*' : zero or more characters
+		- '+' : one or more characters
+		- '\\' : Escape an expression operator
 
 		Examples: 
 			"hello" - "h?llo" -> True
