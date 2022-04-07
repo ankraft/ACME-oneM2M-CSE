@@ -123,7 +123,7 @@ class SUB(Resource):
 		# Check necessary attributes
 		if not (nu := self.nu) or not isinstance(nu, list):
 			L.logDebug(dbg := f'"nu" attribute missing for subscription: {self.ri}')
-			return Result.errorResult(rsc = RC.insufficientArguments, dbg = dbg)
+			return Result.errorResult(dbg = dbg)
 		
 		# Check NotificationEventType
 		if (net := self['enc/net']) is not None:
