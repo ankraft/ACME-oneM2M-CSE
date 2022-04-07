@@ -57,6 +57,19 @@ class CIN(AnnounceableResource):
 		self.setAttribute('cs', Utils.getAttributeSize(self.con))
 
 
+	def activate(self, parentResource:Resource, originator:str) -> Result:
+		if not (res := super().activate(parentResource, originator)).status:
+			return res
+
+		# increment parent container's state tag
+		parentResource = parentResource.dbReload().resource	# Read the resource again in case it was updated in the DB
+		parentResource.setAttribute('st', parentResource.st + 1)
+		if not (res := parentResource.dbUpdate()).resource:
+			return res
+
+		return Result.successResult()
+
+
 	# Forbid updating
 	def update(self, dct:JSON = None, originator:str = None) -> Result:
 		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'updating CIN is forbidden')

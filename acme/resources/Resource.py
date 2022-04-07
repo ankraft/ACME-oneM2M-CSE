@@ -195,15 +195,8 @@ class Resource(object):
 		if not (res := self.validate(originator, create = True, parentResource = parentResource)).status:
 			return res
 		self.dbUpdate()
-		# increment parent resource's state tag
-		if parentResource and parentResource.st is not None:	# st is an int
-			parentResource = parentResource.dbReload().resource	# Read the resource again in case it was updated in the DB
-			parentResource['st'] = parentResource.st + 1
-			if not (res := parentResource.dbUpdate()).resource:
-				return Result(status = False, rsc = res.rsc, dbg = res.dbg)
 		
-		#
-		#	Various ACPI handling
+		# Various ACPI handling
 		# ACPI: Check <ACP> existence and convert <ACP> references to CSE relative unstructured
 		if self.acpi is not None and not self.isAnnounced():
 			# Test wether an empty array is provided				
@@ -302,7 +295,7 @@ class Resource(object):
 					self.setAttribute(key, value, overwrite = True) # copy new value or add new attributes
 			
 
-		# - state and lt
+		# Updte the - state and lt for those resources that have these attributes
 		if 'st' in self.dict:	# Update the state
 			self['st'] += 1
 		if 'lt' in self.dict:	# Update the lastModifiedTime
