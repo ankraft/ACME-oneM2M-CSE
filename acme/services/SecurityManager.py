@@ -189,6 +189,7 @@ class SecurityManager(object):
 				L.isDebug and L.logDebug('Permission granted')
 				return True
 			# fall-through
+			return False
 
 		# If subscription, check whether originator has retrieve permissions on the subscribed-to resource (parent)	
 		if ty == T.SUB and parentResource:
