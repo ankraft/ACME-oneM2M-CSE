@@ -263,13 +263,6 @@ class ResourceTypes(ACMEIntEnum):
 
 
 	@classmethod
-	def isStateTagResourceTypes(self, ty:int) -> bool:
-		"""	Check wether `ty` is a resource type that allowes the 
-			'stateTage' attribute.
-		"""
-		return ty in ResourceTypes._stateTagResourceTypes			# type: ignore
-
-	@classmethod
 	def isInstanceResource(cls, ty:int) -> bool:
 		"""	Test whether this is an instance data resource type
 
@@ -450,12 +443,6 @@ ResourceTypes._names 	= {											# type: ignore
 ResourceTypes._creatorAllowed = [ 							#  type: ignore
 		ResourceTypes.ACTR, ResourceTypes.CIN, ResourceTypes.CNT, ResourceTypes.GRP, 	
 		ResourceTypes.SUB, ResourceTypes.FCNT, ResourceTypes.TS 
-]
-
-
-# Resource types that allow state tags
-ResourceTypes._stateTagResourceTypes = [					#  type: ignore
-	 ResourceTypes.CNT, ResourceTypes.CIN, ResourceTypes.FCNT
 ]
 	
 

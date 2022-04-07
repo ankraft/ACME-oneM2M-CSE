@@ -106,7 +106,7 @@ class TestFCNT_FCI(unittest.TestCase):
 		self.assertIsInstance(findXPath(r, 'cod:tempe/tarTe'), float)
 		self.assertEqual(findXPath(r, 'cod:tempe/tarTe'), 5.0)
 		self.assertEqual(findXPath(r, 'cod:tempe/curT0'), 17.0)
-		self.assertEqual(findXPath(r, 'cod:tempe/st'), 1)
+		self.assertEqual(findXPath(r, 'cod:tempe/st'), 1, r)
 		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 2)
 		self.assertGreater(findXPath(r, 'cod:tempe/cbs'), 0)
 
@@ -118,13 +118,13 @@ class TestFCNT_FCI(unittest.TestCase):
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
 		self.assertIsNotNone(findXPath(r, 'cod:tempe/curT0'))
-		self.assertEqual(findXPath(r, 'cod:tempe/curT0'), 17.0)
+		self.assertEqual(findXPath(r, 'cod:tempe/curT0'), 17.0, r)
 
 		r, rsc = RETRIEVE(f'{fcntURL}/ol', TestFCNT_FCI.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(r)
 		self.assertIsNotNone(findXPath(r, 'cod:tempe/curT0'))
-		self.assertEqual(findXPath(r, 'cod:tempe/curT0'), 23.0)
+		self.assertEqual(findXPath(r, 'cod:tempe/curT0'), 23.0, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

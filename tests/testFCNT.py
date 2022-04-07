@@ -131,7 +131,7 @@ class TestFCNT(unittest.TestCase):
 		self.assertIsInstance(findXPath(r, 'cod:tempe/tarTe'), float)
 		self.assertEqual(findXPath(r, 'cod:tempe/tarTe'), 5.0)
 		self.assertEqual(findXPath(r, 'cod:tempe/curT0'), 23.0)
-		self.assertEqual(findXPath(r, 'cod:tempe/st'), 1)
+		self.assertEqual(findXPath(r, 'cod:tempe/st'), 1, r)
 		self.assertGreater(findXPath(r, 'cod:tempe/lt'), findXPath(r, 'cod:tempe/ct'))
 
 

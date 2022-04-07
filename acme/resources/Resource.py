@@ -132,8 +132,6 @@ class Resource(object):
 			if ty not in [ T.CSEBase ] and not self.hasAttribute('et'):
 				self.setAttribute('et', DateUtils.getResourceDate(Configuration.get('cse.expirationDelta')), overwrite = False) 
 			if ty is not None:
-				if T.isStateTagResourceTypes(ty):		# Only for allowed resources
-					self.setAttribute('st', 0, overwrite = False)
 				self.setAttribute('ty', int(ty))
 
 			#
@@ -295,9 +293,7 @@ class Resource(object):
 					self.setAttribute(key, value, overwrite = True) # copy new value or add new attributes
 			
 
-		# Updte the - state and lt for those resources that have these attributes
-		if 'st' in self.dict:	# Update the state
-			self['st'] += 1
+		# Update lt for those resources that have these attributes
 		if 'lt' in self.dict:	# Update the lastModifiedTime
 			self['lt'] = DateUtils.getResourceDate()
 

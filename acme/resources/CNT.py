@@ -65,6 +65,7 @@ class CNT(AnnounceableResource):
 			self.setAttribute('mbs', Configuration.get('cse.cnt.mbs'), overwrite = False)
 		self.setAttribute('cni', 0, overwrite = False)
 		self.setAttribute('cbs', 0, overwrite = False)
+		self.setAttribute('st', 0, overwrite = False)
 
 		self.__validating = False	# semaphore for validating
 
@@ -103,6 +104,9 @@ class CNT(AnnounceableResource):
 		#if disrOrg is not None and disrOrg == True and disrNew is not None and disrNew == False:
 		if disrOrg and disrNew == False:
 			CSE.dispatcher.deleteChildResources(self, originator, ty=T.CIN)
+
+		# Update stateTag when modified
+		self.setAttribute('st', self.st + 1)
 
 		return Result.successResult()
 

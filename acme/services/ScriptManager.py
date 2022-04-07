@@ -554,7 +554,6 @@ class ACMEPContext(PContext):
 		"""
 		# extract key path
 		key, found, res = arg.strip().partition(' ')
-		L.logWarn(arg)
 		if not found:
 			pcontext.setError(PError.invalid, f'Invalid format: attribute <key> <resource>')
 			return None

@@ -67,6 +67,7 @@ class FCNT(AnnounceableResource):
 		self.internalAttributes.append(self._hasFCI)	# Add to internal attributes to ignore in validation etc
 
 		self.setAttribute('cs', 0, overwrite = False)
+		self.setAttribute('st', 0, overwrite = False)
 
 		# Indicates whether this FC has flexContainerInstances. 
 		# Might change during the lifetime of a resource. Used for optimization
@@ -91,6 +92,14 @@ class FCNT(AnnounceableResource):
 
 
 	def update(self, dct:JSON = None, originator:str = None) -> Result:
+		
+		# Increment stateTag before all because it is needed later to name
+		# a FCI, but only when any custom attributes is updated
+		for attr in dct:
+			if attr not in self.ignoreAttributes:
+				self.setAttribute('st', self.st + 1)
+				break
+
 		if not (res := super().update(dct, originator)).status:
 			return res
 		
@@ -106,7 +115,7 @@ class FCNT(AnnounceableResource):
 				return res
 			self.setAttribute('cni', None)
 			self.setAttribute('cbs', None)
-
+		
 		return Result.successResult()
 
 
