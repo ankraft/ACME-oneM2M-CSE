@@ -97,7 +97,7 @@ class AE(AnnounceableResource):
 		# Update the nl attribute in the hosting node (similar to csebase) in case 
 		# the AE is now on a different node. This shouldn't be happen in reality,
 		# but technically it is allowed.
-		nl = self.nr
+		nl = self.nl
 		_nl_ = self.__node__
 		if nl or _nl_:
 			if nl != _nl_:	# if different node
