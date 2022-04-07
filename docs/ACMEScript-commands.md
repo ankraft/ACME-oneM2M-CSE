@@ -97,16 +97,20 @@ endwhile
 ### CASE
 
 Usage:  
-CASE [&lt;argument>]
+CASE [&lt;match>]
 
-This command starts a CASE block inside a [SWITCH](#command_switch) block. If present the *argument* will be compared against the argument
-of the surrounding SWITCH block. If it matches then the code lines up to the next CASE or [ENDSWITCH](#command_endswitch) are executed.
-
+This command starts a CASE block inside a [SWITCH](#command_switch) block. 
+If present the *match* argument will be compared against the argument of the surrounding SWITCH block.
+If it matches then the code lines up to the next CASE or [ENDSWITCH](#command_endswitch) are executed.
 If multiple CASE statements would match the comparison then only the first matching block is executed.
 
-If the *argument* is missing then the CASE block is always executed. This can be used as a default block of a [SWITCH](#command_switch).  
-An empty CASE should always be the last CASE statement in a [SWITCH](#command_switch) block, because the all following CASE commands will not
-be evaluated.
+If the *match* argument is missing then the CASE block is executed when encountered and no previous
+CASE statement did match before. It can be used as a default or catch-all block of a [SWITCH](#command_switch).
+An empty CASE should always be the last CASE statement in a [SWITCH](#command_switch) block, 
+because all the following CASE statements will be skipped.
+
+The *match* argument can be a simplified regular expression for fuzzy comparisons. See the description of the
+[match](ACMEScript-macros.md#macro_match) macro for a description of the supported operators and examples.
 
 
 Example:
@@ -116,7 +120,11 @@ switch ${variable}
 		...
 	case anotherValue
 		...
+	case aR*x
+		# e.g. matches aRegex
+		...
 	case
+		# always matches
 		...
 endSwitch
 ```
@@ -444,7 +452,6 @@ SWITCH &lt;argument>
 Start a SWITCH block. The argument is then matched against individual [CASE](#command_case) statement. The code block of the first matching 
 statement is executed. SWITCH blocks may be nested. A SWITCH block is closed by a [ENDSWITCH](#command_endswitch) command.
 
-
 Example:
 ```text
 switch ${variable}
@@ -452,7 +459,11 @@ switch ${variable}
 		...
 	case anotherValue
 		...
+	case aR*x
+		# e.g. matches aRegex
+		...
 	case
+		# always matches
 		...
 endSwitch
 ```

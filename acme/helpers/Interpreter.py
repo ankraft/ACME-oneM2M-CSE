@@ -1669,7 +1669,8 @@ def _skipSwitch(pcontext:PContext, compareTo:str, skip:bool = False) -> PContext
 		if cmd == 'case' and not skip:	# skip all cases if we just look for the end of the switch
 			if not arg:	# default case, always matches
 				break
-			if arg == compareTo: # found comparison
+			# use the provided match function to do the comparison.
+			if pcontext.matchFunc(pcontext, compareTo, arg):
 				break
 			continue			# not the right one, continue search
 		if cmd == 'endswitch':
