@@ -455,7 +455,7 @@ ResourceTypes._creatorAllowed = [ 							#  type: ignore
 
 # Resource types that allow state tags
 ResourceTypes._stateTagResourceTypes = [					#  type: ignore
-	 ResourceTypes.CNT, ResourceTypes.CIN, ResourceTypes.FCNT, ResourceTypes.FCI
+	 ResourceTypes.CNT, ResourceTypes.CIN, ResourceTypes.FCNT
 ]
 	
 
