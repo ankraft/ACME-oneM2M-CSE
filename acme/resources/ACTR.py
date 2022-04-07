@@ -8,9 +8,8 @@
 #
 
 from __future__ import annotations
-from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
+from ..etc.Types import AttributePolicyDict, EvalMode, ResourceTypes as T, Result, JSON
 from ..etc import Utils as Utils, DateUtils as DateUtils
-from ..services.Configuration import Configuration
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
 from ..resources.Resource import *
@@ -21,7 +20,8 @@ from ..resources import Factory as Factory
 class ACTR(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.SUB ] # TODO Dependecy
+	_allowedChildResourceTypes:list[T] = [ T.SUB ] # TODO Dependecy
+	""" The allowed child-resource types. """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer

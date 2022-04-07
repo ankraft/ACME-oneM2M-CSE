@@ -10,7 +10,7 @@
 from copy import deepcopy
 from typing import List, cast, Any
 
-from ..etc.Types import ResourceTypes as T, Result, ResponseStatusCode as RC, JSON, CSEType
+from ..etc.Types import Permission, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON, CSEType
 from ..etc import Utils as Utils, DateUtils as DateUtils
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
@@ -339,7 +339,7 @@ class RegistrationManager(object):
 	#########################################################################
 
 
-	def _createACP(self, parentResource:Resource = None, rn:str = None, createdByResource:str = None, originators:List[str] = None, permission:int = None, selfOriginators:List[str] = None, selfPermission:int = None) -> Result:
+	def _createACP(self, parentResource:Resource = None, rn:str = None, createdByResource:str = None, originators:List[str] = None, permission:Permission = None, selfOriginators:List[str] = None, selfPermission:Permission = None) -> Result:
 		""" Create an ACP with some given defaults. """
 		if not parentResource or not rn or not originators or permission is None:	# permission is an int
 			return Result.errorResult(dbg = 'missing attribute(s)')
@@ -350,7 +350,7 @@ class RegistrationManager(object):
 			CSE.dispatcher.deleteResource(acpRes.resource)	# ignore errors
 
 		# Create the ACP
-		selfPermission = selfPermission if selfPermission is not None else Configuration.get('cse.acp.pvs.acop')
+		selfPermission = selfPermission if selfPermission is not None else Permission(Configuration.get('cse.acp.pvs.acop'))
 
 		origs = deepcopy(originators)
 		origs.append(CSE.cseOriginator)	# always append cse originator
@@ -359,8 +359,8 @@ class RegistrationManager(object):
 		if selfOriginators:
 			selfOrigs.extend(selfOriginators)
 
-
-		acp = ACP(pi=parentResource.ri, rn=rn, createdInternally = createdByResource)
+		acp = ACP({}, pi = parentResource.ri, rn = rn)
+		acp.setCreatedInternally(createdByResource)
 		acp.addPermission(origs, permission)
 		acp.addSelfPermission(selfOrigs, selfPermission)
 

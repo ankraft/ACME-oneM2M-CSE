@@ -289,11 +289,11 @@ class RemoteCSEManager(object):
 				result = self._retrieveRegistrarCSE() # retrieve the remote CSE
 				self.registrarCSE = result.resource
 				if result.rsc == RC.OK:
-					if self.registrarCSE.isModifiedSince(localCSR):	# remote CSE modified
+					if self.registrarCSE.isModifiedAfter(localCSR):	# remote CSE modified
 						self._updateLocalCSR(localCSR, self.registrarCSE)
 						L.isInfo and L.log('Local CSR updated')
 				localCSE = Utils.getCSE().resource
-				if localCSE.isModifiedSince(self.ownCSRonRegistrar):	# local CSE modified
+				if localCSE.isModifiedAfter(self.ownCSRonRegistrar):	# local CSE modified
 					self._updateCSRonRegistrarCSE(localCSE)
 					L.isInfo and L.log('Remote CSR updated')
 

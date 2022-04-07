@@ -26,7 +26,7 @@ class FCNT_LA(Resource):
 	}
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.FCNT_LA, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'la', isVirtual = True)
+		super().__init__(T.FCNT_LA, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'la')
 
 
 	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:

@@ -185,19 +185,6 @@ def isStructured(uri:str) -> bool:
 	return False
 
 
-
-
-	
-
-
-def isAnnouncedResource(resource:Resource) -> bool:
-	"""	Test whether the `resource` is an announced resource. 
-	"""
-	if not resource:
-		return False
-	return resource[resource._isAnnounced]
-
-
 def isValidID(id:str, allowEmpty:bool = False) -> bool:
 	""" Test for a valid ID. 
 

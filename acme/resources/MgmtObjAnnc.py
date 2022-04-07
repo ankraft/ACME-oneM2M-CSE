@@ -20,6 +20,7 @@ class MgmtObjAnnc(AnnouncedResource):
 
 
 	def __init__(self, dct:JSON, pi:str, mgd:T, create:bool = False) -> None:
-		super().__init__(T.MGMTOBJAnnc, dct, pi, tpe = f'{mgd.tpe()}A', create = create)
+		# super().__init__(T.MGMTOBJAnnc, dct, pi, tpe = f'{mgd.tpe()}A', create = create)
+		super().__init__(T.MGMTOBJAnnc, dct, pi, tpe = mgd.announced().tpe(), create = create)
 		self.setAttribute('mgd', int(mgd), overwrite = True)
 

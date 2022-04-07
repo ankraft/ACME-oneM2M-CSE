@@ -50,7 +50,7 @@ class CSEBase(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:JSON = None, create:bool = False) -> None:
+	def __init__(self, dct:JSON, create:bool = False) -> None:
 		super().__init__(T.CSEBase, dct, '', create = create)
 
 		self.setAttribute('ri', 'cseid', overwrite = False)

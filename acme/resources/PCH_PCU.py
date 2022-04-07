@@ -30,7 +30,7 @@ class PCH_PCU(Resource):
 	}
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.PCH_PCU, dct, pi = pi, create = create, inheritACP = True, readOnly = True, rn = 'pcu', isVirtual = True)
+		super().__init__(T.PCH_PCU, dct, pi = pi, create = create, inheritACP = True, readOnly = True, rn = 'pcu')
 
 		# Add to internal attributes to ignore in validation etc
 		self.internalAttributes.append(self._aggregate)	

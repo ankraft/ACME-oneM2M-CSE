@@ -14,7 +14,7 @@ from ..resources.Resource import *
 class AnnouncedResource(Resource):
 
 	def __init__(self, ty:T, dct:JSON, pi:str = None, tpe:str = None, create:bool = False,) -> None:
-		super().__init__(ty, dct, pi, tpe = tpe, create = create, isAnnounced = True)
+		super().__init__(ty, dct, pi, tpe = tpe, create = create)
 
 
 	def updated(self, dct:JSON = None, originator:str = None) -> None:

@@ -105,7 +105,7 @@ class SecurityManager(object):
 					L.isWarn and L.logWarn(f'Originator for CSR/CSEBaseAnnc registration not found. Add "{originator}" to the configuration [cse.registration].allowedCSROriginators in the CSE\'s ini file to allow access for this originator.')
 					return False
 
-			if T(ty).isAnnounced():
+			if ty.isAnnounced():
 				if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators) or (parentResource and originator[1:] == parentResource.ri):
 					L.isDebug and L.logDebug('Originator for Announcement. OK.')
 					return True
@@ -119,7 +119,7 @@ class SecurityManager(object):
 			return False
 
 		# Allow originator for announced resource
-		if T(resource.ty).isAnnounced():
+		if resource.isAnnounced():
 			if self.isAllowedOriginator(originator, CSE.registration.allowedCSROriginators) and resource.lnk.startswith(f'{originator}/'):
 				L.isDebug and L.logDebug('Announcement originator. OK.')
 				return True

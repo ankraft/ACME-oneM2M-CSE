@@ -17,8 +17,8 @@ from .Resource import *
 
 class AnnounceableResource(Resource):
 
-	def __init__(self, ty:T, dct:JSON = None, pi:str = None, tpe:str = None, create:bool = False, inheritACP:bool = False, readOnly:bool = False, rn:str = None, isVirtual:bool = False) -> None:
-		super().__init__(ty, dct, pi, tpe = tpe, create = create, inheritACP = inheritACP, readOnly = readOnly, rn = rn, isVirtual = isVirtual)
+	def __init__(self, ty:T, dct:JSON = None, pi:str = None, tpe:str = None, create:bool = False, inheritACP:bool = False, readOnly:bool = False, rn:str = None) -> None:
+		super().__init__(ty, dct, pi, tpe = tpe, create = create, inheritACP = inheritACP, readOnly = readOnly, rn = rn,)
 		self._origAA = None	# hold original announceableAttributes when doing an update
 
 

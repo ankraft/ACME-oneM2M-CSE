@@ -194,13 +194,21 @@ class ResourceTypes(ACMEIntEnum):
 
 
 	def isAnnounced(self) -> bool:
-		"""	Test whether this is an announced resource type.
+		"""	Test whether this type is an announced resource type.
 		
 			Return:
-				Boolean
+				True if the type is an announced resource type.
 		"""
 		return self.value in ResourceTypes._announcedSetFull 		# type: ignore
-
+	
+	
+	def isVirtual(self) -> bool:
+		"""	Test whether this type is virtual resource type.
+		
+			Return:
+				True if the type is a virtual resource type.
+		"""
+		return self.value in ResourceTypes._virtualResourcesSet		#  type: ignore
 
 
 

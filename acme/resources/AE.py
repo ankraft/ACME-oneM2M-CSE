@@ -4,9 +4,9 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	ResourceType: Application Entity
-#
+""" Application Entity (AE) resource type """
 
+from __future__ import annotations
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ContentSerializationType as CST, Result, ResponseStatusCode as RC, JSON
 from ..etc import Utils as Utils
 from ..services.Logging import Logging as L
@@ -16,11 +16,11 @@ from ..resources.AnnounceableResource import AnnounceableResource
 
 
 class AE(AnnounceableResource):
+	""" Application Entity (AE) resource type """
 
-	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.ACP, T.ACTR, T.CNT, T.FCNT, T.GRP, T.PCH, T.SUB, T.TS, T.TSB ]
+	_allowedChildResourceTypes:list[T] = [ T.ACP, T.ACTR, T.CNT, T.FCNT, T.GRP, T.PCH, T.SUB, T.TS, T.TSB ]
+	""" The allowed child-resource types. """
 
-	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		
 			# Common and universal attributes
@@ -58,7 +58,8 @@ class AE(AnnounceableResource):
 			'ape': None,
 			'or': None,
 	}
-	
+	"""	Attributes and `AttributePolicy' for this resource type. """
+
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
 		super().__init__(T.AE, dct, pi, create = create)
@@ -68,6 +69,7 @@ class AE(AnnounceableResource):
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
+		# Inherited
 		if not (res := super().childWillBeAdded(childResource, originator)).status:
 			return res
 
@@ -86,6 +88,7 @@ class AE(AnnounceableResource):
 
 
 	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+		# Inherited
 		if not (res := super().validate(originator, create, dct, parentResource)).status:
 			return res
 
@@ -94,15 +97,15 @@ class AE(AnnounceableResource):
 		# Update the nl attribute in the hosting node (similar to csebase) in case 
 		# the AE is now on a different node. This shouldn't be happen in reality,
 		# but technically it is allowed.
-		nl = self['nl']
+		nl = self.nr
 		_nl_ = self.__node__
 		if nl or _nl_:
 			if nl != _nl_:	# if different node
-				ri = self['ri']
+				ri = self.ri
 
 				# Remove from old node first
 				if _nl_:
-					self._removeAEfromNOD(_nl_, ri)
+					self._removeAEfromNOD(_nl_)
 				self[Resource._node] = nl
 
 				# Add to new node
@@ -138,15 +141,26 @@ class AE(AnnounceableResource):
 
 
 	def deactivate(self, originator:str) -> None:
+		# Inherited
 		super().deactivate(originator)
 
 		# Remove itself from the node link in a hosting <node>
 		if nl := self.nl:
-			self._removeAEfromNOD(nl, self.ri)
+			self._removeAEfromNOD(nl)
 
 
-	def _removeAEfromNOD(self, nodeRi:str, ri:str) -> None:
-		""" Remove AE from hosting Node. """
+	#########################################################################
+	#
+	#	Resource specific
+	#
+
+	def _removeAEfromNOD(self, nodeRi:str) -> None:
+		""" Remove AE from hosting Node. 
+
+			Args:
+				nodeRI: The hosting node's resource ID.
+		"""
+		ri = self.ri
 		if node := CSE.dispatcher.retrieveResource(nodeRi).resource:
 			if (hael := node.hael) and isinstance(hael, list) and ri in hael:
 				hael.remove(ri)

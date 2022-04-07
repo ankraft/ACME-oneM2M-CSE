@@ -31,7 +31,7 @@ class GRP_FOPT(Resource):
 	}
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.GRP_FOPT, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'fopt', isVirtual = True)
+		super().__init__(T.GRP_FOPT, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'fopt')
 
 
 	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:
