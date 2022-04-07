@@ -1228,8 +1228,7 @@ def _doSwitch(pcontext:PContext, arg:str) -> PContext:
 			Current PContext object, or None in case of an error.
 	"""
 	if not arg:
-		pcontext.setError(PError.invalid, 'SWITCH without argument')
-		return None
+		arg = 'true'
 	pcontext.switchLevel += 1
 	return _skipSwitch(pcontext, arg)	# Skip to the correct switch block
 
@@ -1260,6 +1259,37 @@ def _doWhile(pcontext:PContext, arg:str) -> PContext:
 #
 #	Build-in Macros
 #
+
+def _doAnd(pcontext:PContext, arg:str, line:str) -> str:
+	"""	With the *and* macro one can evaluate boolean expressions and combine them with a boolean "and".
+
+		The *and* macro will evaluate to *true* (all boolean expressions are true) or *false* 
+		(one or many boolean expressions are false). 
+
+		Example:
+
+			${and <expression>+}
+
+		There must be at least one expression result as an argument.
+
+		Args:
+			pcontext: Current PContext for the script.
+			arg: The results of one or many boolean expressions.
+			line: The original code line.
+		Return:
+			String with either *false* or *false*, or None in case of an error.
+	"""
+	if len(args := arg.split()) == 0:
+		pcontext.setError(PError.invalid, f'Wrong number of arguments for and: {len(args)}. Must be >= 1.')
+		return None
+	for each in args:
+		if (l := each.lower()) not in ['true', 'false']:
+			pcontext.setError(PError.invalid, f'Invalid boolean value for and: {l}. Must be true or false.')
+			return None
+		if l != 'true':
+			return 'false'
+	return 'true'
+
 
 def _doArgv(pcontext:PContext, arg:str, line:str) -> str:
 	"""	With the *argv* macro one can access the individual arguments of a script.
@@ -1313,6 +1343,15 @@ def _doArgc(pcontext:PContext, arg:str, line:str) -> str:
 	return '0'
 
 
+def _doCompare(pcontext:PContext, arg:str, line:str, op:str) -> str:
+	# TODO doc
+	args = arg.split()
+	if len(args) != 2:
+		pcontext.setError(PError.invalid, f'Wrong number of arguments for operation: {op}. Must be == 2.')
+		return None
+	return str(_compareExpression(pcontext, f'{args[0]} {op} {args[1]}')).lower()
+
+
 def _doEval(pcontext:PContext, arg:str, line:str) -> str:
 	"""	This macro returns the result of a calculation.
 
@@ -1327,6 +1366,26 @@ def _doEval(pcontext:PContext, arg:str, line:str) -> str:
 		if (r := _evalExpression(pcontext, arg)) is not None:
 			return str(r)
 	return ''
+
+
+def _doIn(pcontext:PContext, arg:str, line:str) -> str:
+	"""	With the *in* macro one can test whether a string can be found in another string.
+
+		Example:
+
+			${in <text> <string>}
+
+		Args:
+			pcontext: Current PContext for the script.
+			arg: The arguments.
+			line: The original code line.
+		Return:
+			String with either *false* or *false*, or None in case of an error.
+	"""
+	if len(args := arg.split()) == 0:
+		pcontext.setError(PError.invalid, f'Wrong number of arguments for in: {len(args)}. Must be == 2.')
+		return None
+	return str(args[0] in args[1]).lower()
 
 
 def _doMatch(pcontext:PContext, arg:str, line:str) -> str:
@@ -1344,6 +1403,65 @@ def _doMatch(pcontext:PContext, arg:str, line:str) -> str:
 		return str(pcontext.matchFunc(pcontext, args[0], args[1])).lower()
 	pcontext.setError(PError.invalid, f'Wrong number of arguments for match: {len(args)}. Must be 2.')
 	return None
+
+
+def _doNot(pcontext:PContext, arg:str, line:str) -> str:
+	"""	With the *not* macro one can invert the result of a boolean expressions.
+
+		The *nor* macro will evaluate to *true* if the argument is *false*, and to *false* 
+		if the argument is *true*.
+
+		Example:
+
+			${not <expression>}
+
+		There must be exactly one expression result as an argument.
+
+		Args:
+			pcontext: Current PContext for the script.
+			arg: The results of one or many boolean expressions.
+			line: The original code line.
+		Return:
+			String with either *false* or *false*, or None in case of an error.
+	"""
+	if len(args := arg.split()) != 1:
+		pcontext.setError(PError.invalid, f'Wrong number of arguments for not: {len(args)}. Must be == 1.')
+		return None
+	if (l := args[0].lower()) not in ['true', 'false']:
+		pcontext.setError(PError.invalid, f'Invalid boolean value for or: {len(args)}. Must be true or false.')
+		return None
+	return 'false' if l == 'true' else 'true'
+
+
+def _doOr(pcontext:PContext, arg:str, line:str) -> str:
+	"""	With the *or* macro one can evaluate boolean expressions and combine them with a boolean "or".
+
+		The *or* macro will evaluate to *true* (at least one boolean expressions is true) or *false* 
+		(none of the boolean expressions is true). 
+
+		Example:
+
+			${or <expression>+}
+
+		There must be at least one expression result as an argument.
+
+		Args:
+			pcontext: Current PContext for the script.
+			arg: The results of one or many boolean expressions.
+			line: The original code line.
+		Return:
+			String with either *false* or *false*, or None in case of an error.
+	"""
+	if len(args := arg.split()) == 0:
+		pcontext.setError(PError.invalid, f'Wrong number of arguments for or: {len(args)}. Must be >= 1.')
+		return None
+	for each in args:
+		if (l := each.lower()) not in ['true', 'false']:
+			pcontext.setError(PError.invalid, f'Invalid boolean value for or: {l}. Must be true or false.')
+			return None
+		if l == 'true':
+			return 'true'
+	return 'false'
 
 
 def _doRandom(pcontext:PContext, arg:str, line:str) -> str:
@@ -1447,18 +1565,32 @@ _builtinCommands:PCmdDict = {
 _builtinMacros:PMacroDict = {
 	# !!! macro names must be lower case
 
-	'datetime':	lambda c, a, l: datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%S.%f' if not a else a),
-	'result':	lambda c, a, l: c.result,
+	'and':		_doAnd,
 	'argc':		_doArgc,
 	'argv':		_doArgv,
+	'datetime':	lambda c, a, l: datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%S.%f' if not a else a),
 	'eval':		_doEval,
+	'in':		_doIn,
 	'loop':		lambda c, a, l: str(c.whileLoopCounter(l)),
 	'lower':	lambda c, a, l: a.lower(),
-	'match':	_doMatch,		
+	'match':	_doMatch,
+	'not':		_doNot,
+	'or':		_doOr,
 	'random':	_doRandom,
+	'result':	lambda c, a, l: c.result,
 	'round':	_doRound,
 	'runcount':	lambda c, a, l: str(c.runs),
 	'upper':	lambda c, a, l: a.upper(),
+
+	'!':		_doNot,
+	'&&':		_doAnd,
+	'||':		_doOr,
+	'==':		lambda c, a, l: _doCompare(c, a, l, '=='),
+	'!=':		lambda c, a, l: _doCompare(c, a, l, '!='),
+	'>':		lambda c, a, l: _doCompare(c, a, l, '>'),
+	'>=':		lambda c, a, l: _doCompare(c, a, l, '>='),
+	'<':		lambda c, a, l: _doCompare(c, a, l, '<'),
+	'<=':		lambda c, a, l: _doCompare(c, a, l, '<='),
 }
 
 
@@ -1662,9 +1794,10 @@ def _skipSwitch(pcontext:PContext, compareTo:str, skip:bool = False) -> PContext
 			Current PContext object, or None in case of an error.
 	"""
 	level = 0		# level of switches
-	compareTo = compareTo.lower() if compareTo else compareTo
+	compareTo = compareTo.lower() if compareTo else 'true'
 	while pcontext.pc < pcontext._length and level >= 0:
 		cmd, _, arg, _ = pcontext.nextLinePartition()
+		arg = checkMacros(pcontext, arg)
 
 		if cmd == 'case' and not skip:	# skip all cases if we just look for the end of the switch
 			if not arg:	# default case, always matches
