@@ -63,9 +63,13 @@ class CIN(AnnounceableResource):
 
 		# increment parent container's state tag
 		parentResource = parentResource.dbReload().resource	# Read the resource again in case it was updated in the DB
-		parentResource.setAttribute('st', parentResource.st + 1)
+		st = parentResource.st + 1
+		parentResource.setAttribute('st',st)
 		if not (res := parentResource.dbUpdate()).resource:
 			return res
+
+		# Set stateTag attribute in self as well
+		self.setAttribute('st', st)
 
 		return Result.successResult()
 
@@ -109,10 +113,6 @@ class CIN(AnnounceableResource):
 		# Check the format of the CNF attribute
 		if (cnf := self.cnf) and not (res := CSE.validator.validateCNF(cnf)).status:
 			return Result.errorResult(dbg = res.dbg)
-
-		# Add ST attribute
-		if parentResource := parentResource.dbReload().resource:		# Read the resource again in case it was updated in the DB
-			self.setAttribute('st', parentResource.st)
 		
 		return Result.successResult()
 
