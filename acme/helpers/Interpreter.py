@@ -15,7 +15,8 @@ from dataclasses import dataclass, field
 from collections import namedtuple
 from enum import IntEnum, auto
 from decimal import Decimal, ConversionSyntax, InvalidOperation
-import datetime, time, re, copy, random
+import datetime, time, re, copy, random, shlex
+from lib2to3.pgen2 import token
 from typing import 	Callable, Dict, Tuple, Union
 
 _maxProcStackSize = 64	
@@ -818,6 +819,17 @@ def run(pcontext:PContext, verbose:bool = False, argument:str = '', procedure:st
 	_terminating(pcontext)
 	return pcontext
 
+
+##############################################################################
+#
+#	Extra utility functions
+#
+
+def tokenize(input:str) -> list[str]:
+	# TODO doc
+	return shlex.split(input)
+
+
 ##############################################################################
 #
 #	Build-in commands
@@ -1279,7 +1291,7 @@ def _doAnd(pcontext:PContext, arg:str, line:str) -> str:
 		Return:
 			String with either *false* or *false*, or None in case of an error.
 	"""
-	if len(args := arg.split()) == 0:
+	if len(args := tokenize(arg)) == 0:
 		pcontext.setError(PError.invalid, f'Wrong number of arguments for and: {len(args)}. Must be >= 1.')
 		return None
 	for each in args:
@@ -1319,7 +1331,7 @@ def _doArgv(pcontext:PContext, arg:str, line:str) -> str:
 		if i == 0:	# Traditionally argv[0] is the program name
 			return pcontext.name if pcontext.name else ''	
 		if pcontext.argument:
-			args = pcontext.argument.split()
+			args = tokenize(pcontext.argument)
 			if 0 < i <= len(args):
 				return args[i-1]
 			return None
@@ -1339,14 +1351,13 @@ def _doArgc(pcontext:PContext, arg:str, line:str) -> str:
 			String, or None in case of an error.
 	"""
 	if pcontext.argument:
-		return str(len(pcontext.argument.split()))
+		return str(len(tokenize(pcontext.argument)))
 	return '0'
 
 
 def _doCompare(pcontext:PContext, arg:str, line:str, op:str) -> str:
 	# TODO doc
-	args = arg.split()
-	if len(args) != 2:
+	if len(args := tokenize(arg)) != 2:
 		pcontext.setError(PError.invalid, f'Wrong number of arguments for operation: {op}. Must be == 2.')
 		return None
 	return str(_compareExpression(pcontext, f'{args[0]} {op} {args[1]}')).lower()
@@ -1382,7 +1393,7 @@ def _doIn(pcontext:PContext, arg:str, line:str) -> str:
 		Return:
 			String with either *false* or *false*, or None in case of an error.
 	"""
-	if len(args := arg.split()) == 0:
+	if len(args := tokenize(arg)) == 0:
 		pcontext.setError(PError.invalid, f'Wrong number of arguments for in: {len(args)}. Must be == 2.')
 		return None
 	return str(args[0] in args[1]).lower()
@@ -1398,8 +1409,7 @@ def _doMatch(pcontext:PContext, arg:str, line:str) -> str:
 		Return:
 			String with *true* or *false*, or None in case of an error.
 	"""
-	args = arg.split()
-	if len(args) == 2:
+	if len(args := tokenize(arg)) == 2:
 		return str(pcontext.matchFunc(pcontext, args[0], args[1])).lower()
 	pcontext.setError(PError.invalid, f'Wrong number of arguments for match: {len(args)}. Must be 2.')
 	return None
@@ -1424,7 +1434,7 @@ def _doNot(pcontext:PContext, arg:str, line:str) -> str:
 		Return:
 			String with either *false* or *false*, or None in case of an error.
 	"""
-	if len(args := arg.split()) != 1:
+	if len(args := tokenize(arg)) != 1:
 		pcontext.setError(PError.invalid, f'Wrong number of arguments for not: {len(args)}. Must be == 1.')
 		return None
 	if (l := args[0].lower()) not in ['true', 'false']:
@@ -1452,7 +1462,7 @@ def _doOr(pcontext:PContext, arg:str, line:str) -> str:
 		Return:
 			String with either *false* or *false*, or None in case of an error.
 	"""
-	if len(args := arg.split()) == 0:
+	if len(args := tokenize(arg)) == 0:
 		pcontext.setError(PError.invalid, f'Wrong number of arguments for or: {len(args)}. Must be >= 1.')
 		return None
 	for each in args:
@@ -1483,7 +1493,7 @@ def _doRandom(pcontext:PContext, arg:str, line:str) -> str:
 		start = 0.0
 		end = 1.0
 		if arg:
-			args = arg.split()
+			args = tokenize(arg)
 			if len(args) == 1:
 				end = float(args[0])
 			elif len(args) == 2:
@@ -1517,8 +1527,7 @@ def _doRound(pcontext:PContext, arg:str, line:str) -> str:
 		number = Decimal(0.0)
 		ndigits = None
 		if arg:
-			args = arg.split()
-			if len(args) == 1:
+			if len(args := tokenize(arg)) == 1:
 				number = Decimal(args[0])
 			elif len(args) == 2:
 				number = Decimal(args[0])
@@ -1794,7 +1803,7 @@ def _skipSwitch(pcontext:PContext, compareTo:str, skip:bool = False) -> PContext
 			Current PContext object, or None in case of an error.
 	"""
 	level = 0		# level of switches
-	compareTo = compareTo.lower() if compareTo else 'true'
+	compareTo = ' '.join(tokenize(compareTo)).lower() if compareTo else 'true'
 	while pcontext.pc < pcontext._length and level >= 0:
 		cmd, _, arg, _ = pcontext.nextLinePartition()
 		arg = checkMacros(pcontext, arg)
@@ -1803,6 +1812,7 @@ def _skipSwitch(pcontext:PContext, compareTo:str, skip:bool = False) -> PContext
 			if not arg:	# default case, always matches
 				break
 			# use the provided match function to do the comparison.
+			# This also matches any comparison against the default "true" value of the switch
 			if pcontext.matchFunc(pcontext, compareTo, arg):
 				break
 			continue			# not the right one, continue search
