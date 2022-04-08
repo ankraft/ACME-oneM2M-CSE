@@ -720,6 +720,11 @@ class Permission(ACMEIntEnum):
 	DISCOVERY			= 32
 	ALL					= 63
 
+	@classmethod
+	def allExcept(cls, permission:Permission) -> int:
+		p = Permission.ALL - permission
+		return p if Permission.NONE <= p <= Permission.ALL else Permission.NONE
+
 
 ##############################################################################
 #

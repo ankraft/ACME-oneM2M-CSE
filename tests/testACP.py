@@ -238,7 +238,7 @@ class TestACP(unittest.TestCase):
 
 	
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateAElblWithWildCardOriginator3Wrong(self) -> None:
+	def test_updateAElblWithWildCardOriginator3WrongFail(self) -> None:
 		"""	Update <AE> LBL with wrong wildcard Originator 3 -> Fail"""
 		dct =	{ 'm2m:ae': {
 					'lbl': [ '3Label' ]
@@ -248,7 +248,7 @@ class TestACP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateACPEmptyPVS(self) -> None:
+	def test_updateACPEmptyPVSFail(self) -> None:
 		"""	Update <ACP> with empty PVS -> Fail """
 		dct = 	{ 'm2m:acp' : {	# type: ignore
 					'pvs' : {}
@@ -258,7 +258,7 @@ class TestACP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateACPNoPVS(self) -> None:
+	def test_updateACPNoPVSFail(self) -> None:
 		"""	Update <ACP> with None PVS -> Fail """
 		dct = 	{ 'm2m:acp' : {
 					'pvs' : None
@@ -268,7 +268,7 @@ class TestACP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createACPNoPVS(self) -> None:
+	def test_createACPNoPVSFail(self) -> None:
 		"""	Create <ACP> with no PVS -> Fail """
 		dct = 	{ "m2m:acp": {
 					"rn": f'{acpRN}2',
@@ -283,7 +283,7 @@ class TestACP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createACPEmptyPVS(self) -> None:
+	def test_createACPEmptyPVSFail(self) -> None:
 		"""	Create <ACP> with empty PVS -> Fail """
 		dct = 	{ "m2m:acp": {
 					"rn": f'{acpRN}2',
@@ -622,6 +622,33 @@ class TestACP(unittest.TestCase):
 		self.assertEqual(len(findXPath(r, 'm2m:uril')), 1, r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_retrieveACPwithoutRETRIEVEAccessFail(self) -> None:
+		"""	Retrieve an ACP without RETRIEVE access in PVS -> Fail """
+		dct = 	{ "m2m:acp": {
+					"rn": acpRN,
+					"pv": {	},
+					"pvs": { 
+						"acr": [ {
+							"acor": [ TestACP.originator ],
+							"acop": Permission.allExcept(Permission.RETRIEVE)
+						} ]
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
+		self.assertEqual(rsc, RC.created)
+		self.assertIsNotNone(findXPath(r, 'm2m:acp/pvs/acr/{0}/acor'))
+		self.assertEqual(findXPath(r, 'm2m:acp/pvs/acr/{0}/acor/{0}'), TestACP.originator)
+		self.assertIsNotNone(findXPath(r, 'm2m:acp/pvs/acr/{0}/acop'))
+		self.assertEqual(findXPath(r, 'm2m:acp/pvs/acr/{0}/acop'), 61) # no RETRIEVE
+
+		# Retrieve the ACP by the originator
+		r, rsc = RETRIEVE(f'{aeURL}/{acpRN}', TestACP.originator)
+		self.assertEqual(rsc, RC.originatorHasNoPrivilege, r)
+
+
+
+
 
 # TODO reference a non-acp resource in acpi
 # TODO acod/specialization
@@ -636,8 +663,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestACP('test_attributesACP'))
 	suite.addTest(TestACP('test_updateACP'))
 	suite.addTest(TestACP('test_updateACPwrongOriginator'))
-	suite.addTest(TestACP('test_updateACPEmptyPVS'))
-	suite.addTest(TestACP('test_updateACPNoPVS'))
+	suite.addTest(TestACP('test_updateACPEmptyPVSFail'))
+	suite.addTest(TestACP('test_updateACPNoPVSFail'))
 	suite.addTest(TestACP('test_addACPtoAE'))
 	suite.addTest(TestACP('test_updateAEACPIWrong'))
 	suite.addTest(TestACP('test_updateAEACPIWrong2'))
@@ -647,10 +674,10 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	# wildcard tests
 	suite.addTest(TestACP('test_updateAElblWithWildCardOriginator'))
 	suite.addTest(TestACP('test_updateAElblWithWildCardOriginator2'))
-	suite.addTest(TestACP('test_updateAElblWithWildCardOriginator3Wrong'))
+	suite.addTest(TestACP('test_updateAElblWithWildCardOriginator3WrongFail'))
 
-	suite.addTest(TestACP('test_createACPNoPVS'))
-	suite.addTest(TestACP('test_createACPEmptyPVS'))
+	suite.addTest(TestACP('test_createACPNoPVSFail'))
+	suite.addTest(TestACP('test_createACPEmptyPVSFail'))
 
 	suite.addTest(TestACP('test_createCNTwithNoACPI'))
 	suite.addTest(TestACP('test_retrieveCNTwithNoACPI'))
@@ -680,6 +707,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestACP('test_accessCINwithDifferentAENoAcpi'))
 	suite.addTest(TestACP('test_accessCINwithDifferentAEWithAcpi'))
 	suite.addTest(TestACP('test_discoverCINwithDifferentAEWithAcpi'))
+
+	suite.addTest(TestACP('test_retrieveACPwithoutRETRIEVEAccessFail'))
 
 
 	#suite.addTest(TestACP('test_handleAE'))
