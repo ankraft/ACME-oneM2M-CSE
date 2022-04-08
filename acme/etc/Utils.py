@@ -285,7 +285,7 @@ def riFromStructuredPath(srn: str) -> str:
 			Resource ID
 	"""
 	try:
-		return CSE.storage.structuredPath(srn)[0]['ri']
+		return CSE.storage.structuredIdentifier(srn)[0]['ri']
 	except:
 		return None
 
@@ -426,7 +426,13 @@ def riFromCSI(csi:str) -> str:
 
 
 def getIdFromOriginator(originator: str, idOnly: bool = False) -> str:
-	""" Get AE-ID-Stem or CSE-ID from the originator (in case SP-relative or Absolute was used)
+	""" Get AE-ID-Stem or CSE-ID from the originator (in case SP-relative or Absolute was used).
+
+		Args:
+			originator: An originator.
+			idOnly: Indicator that only the CSE-local resource ID is provided.
+		Returns:
+			Resource ID.
 	"""
 	if idOnly:
 		return originator.split("/")[-1] if originator else originator
@@ -436,10 +442,33 @@ def getIdFromOriginator(originator: str, idOnly: bool = False) -> str:
 
 def toSPRelative(originator:str) -> str:
 	"""	Add the CSI to an originator (if not already present).
+
+		Args:
+			An originator.
+		Return:
+			A string in the format */<csi>/<originator*.
 	"""
 	if not isSPRelative(originator):
 		return  f'{CSE.cseCsi}/{originator}'
 	return originator
+
+
+def compareIDs(id1:str, id2:str) -> bool:
+	"""	Compare two resource IDs.
+
+		Both IDs can be either unstructured or structured resource IDs. They match
+		if they point to the same resource.
+
+		Args:
+			id1: First ID for the comparison.
+			id2: Second ID for the comparison
+		Return:
+			True if both IDs point to the same resource, False otherwise.
+	"""
+	ri1 = riFromStructuredPath(id1) if isStructured(id1) else id1
+	ri2 = riFromStructuredPath(id2) if isStructured(id2) else id2
+	return ri1 == ri2
+
 
 
 ##############################################################################

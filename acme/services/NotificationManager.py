@@ -260,7 +260,8 @@ class NotificationManager(object):
 			for nu in nus:
 				if not previousNus or (nu not in previousNus):	# send only to new entries in nu
 					# Skip notifications to originator
-					if nu == originator:
+					if nu == originator or Utils.compareIDs(nu, originator):
+						L.isDebug and L.logDebug(f'Notification URI skipped: uri: {nu} == originator: {originator}')
 						continue
 					# Send verification notification to target (either direct URL, or an entity)
 					if not self._sendVerificationRequest(nu, subscription.ri, originator = originator):

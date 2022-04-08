@@ -77,7 +77,7 @@ class TimeManager(object):
 
 	def responseReveivedHandler(self, resp:CSERequest) -> None:
 		# L.logErr(f'Received {resp}')
-		L.logWarn(self.isLossOfSynchronization(resp))
+		#L.logWarn(self.isLossOfSynchronization(resp))
 		...
 
 	
@@ -185,9 +185,9 @@ class TimeManager(object):
 				return DateUtils.toDuration(tsd)
 			return None
 
-		L.logWarn(req.headers.originatingTimestamp)
+		#L.logWarn(req.headers.originatingTimestamp)
 		if (tsd := DateUtils.isodateDelta(req.headers.originatingTimestamp)) is not None:
-			L.logWarn(DateUtils.toDuration(tsd))
+			#L.logWarn(DateUtils.toDuration(tsd))
 			return str(abs(tsd))	# EXPERIMENTAL
 
 		return None

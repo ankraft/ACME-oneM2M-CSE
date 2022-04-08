@@ -141,3 +141,5 @@ dmypy.json
 # VSCode
 .vscode/
 .VSCodeCounter
+ACME oneM2M CSE.docset
+apidocs

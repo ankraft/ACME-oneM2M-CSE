@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Improved check for validating non-empty list attributes.
 - [CSE] Improved error detection and handling for RCN=7 (original-resource).
 - [CSE] Added missing "creator" attribute in notifications when the creator was set in the &lt;subscription>.
+- [CSE] Improved support to recognize structured and unstructured resource IDs for verification notifications.
 - [HTTP] HTTP requests will not be sent with a *Date* header field. Instead, the *Originating Timestamp* will be used.
 
 

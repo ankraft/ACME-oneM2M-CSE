@@ -22,7 +22,9 @@ class TestSUB(unittest.TestCase):
 
 	ae 				= None
 	aeNoPoa 		= None
+	aePoa 			= None
 	originator 		= None
+	originatorPoa 	= None
 	cnt 			= None
 	cntRI 			= None
 	ae2URL 			= None
@@ -45,10 +47,12 @@ class TestSUB(unittest.TestCase):
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
 				 	'rr'  : True,
-				 	'srv' : [ '3' ]
+				 	'srv' : [ '3' ],
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
+		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
+
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : f'{aeRN}NoPOA', 
 					'api' : 'NMyApp1Id',
@@ -56,8 +60,19 @@ class TestSUB(unittest.TestCase):
 					'srv' : [ '3' ]
 				}}
 		cls.aeNoPoa, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create AE withoutt poa'
-		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
+		assert rsc == RC.created, 'cannot create AE without poa'
+
+		dct = 	{ 'm2m:ae' : {
+					'rn'  : f'{aeRN}POA', 
+					'api' : 'NMyApp1Id',
+				 	'rr'  : True,
+				 	'srv' : [ '3' ],
+					'poa' : [ NOTIFICATIONSERVER ],
+				}}
+		cls.aePoa, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
+		assert rsc == RC.created, 'cannot create parent AE with poa'
+		cls.originatorPoa = findXPath(cls.aePoa, 'm2m:ae/aei')
+
 		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
 				}}
@@ -74,7 +89,8 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
-		DELETE(f'{aeURL}NoPOA', ORIGINATOR)	# Just delete the NoPoa AE and everything below it. Ignore whether it exists or not
+		DELETE(f'{aeURL}NoPOA', ORIGINATOR)	# Just delete the NoPOA AE and everything below it. Ignore whether it exists or not
+		DELETE(f'{aeURL}POA', ORIGINATOR)	# Just delete the POA AE and everything below it. Ignore whether it exists or not
 		DELETE(cls.ae2URL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		stopNotificationServer()
 
@@ -1092,7 +1108,7 @@ class TestSUB(unittest.TestCase):
 # TODO delete missing data subscription
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createSUBForMissingDataWrongData(self) -> None:
+	def test_createSUBForMissingDataWrongDataFail(self) -> None:
 		""" CREATE <SUB> for Missing Data under <TS> with various wrong formats -> Fail"""
 
 		dct = 	{ 'm2m:ts' : {	# type:ignore[var-annotated]
@@ -1205,6 +1221,20 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, TestSUB.sub)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSUBWithStructuredNu(self) -> None:
+		""" CREATE <SUB> with structured ID in NU"""
+		clearLastNotification()
+		dct = 	{ 'm2m:sub' : { 
+					'nu': [ f'{CSERN}/{aeRN}POA' ],
+			        'enc': {
+			            'net':  [ NET.createDirectChild ],
+					},
+				}}
+		TestSUB.sub, rsc = CREATE(f'{aeURL}POA', TestSUB.originatorPoa, T.SUB, dct)	
+		self.assertEqual(rsc, RC.created, TestSUB.sub)
+		self.assertIsNone(getLastNotification())
+
 
 # TODO check different NET's (ae->cnt->sub, add cnt to cnt)
 
@@ -1288,10 +1318,12 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestSUB('test_createSUBForMissingData'))
 	suite.addTest(TestSUB('test_updateSUBForMissingData'))
 	suite.addTest(TestSUB('test_deleteSUBForMissingData'))
-	suite.addTest(TestSUB('test_createSUBForMissingDataWrongData'))
+	suite.addTest(TestSUB('test_createSUBForMissingDataWrongDataFail'))
 
 	suite.addTest(TestSUB('test_createSUBWithWrongCHTYFail'))
 	suite.addTest(TestSUB('test_updateSUBWithWrongCHTYFail'))
+
+	suite.addTest(TestSUB('test_createSUBWithStructuredNu'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

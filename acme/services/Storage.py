@@ -90,7 +90,7 @@ class Storage(object):
 			dbFile = 'resources'
 			self.hasResource('_')
 			dbFile = 'identifiers'
-			self.structuredPath('_')
+			self.structuredIdentifier('_')
 			dbFile = 'subscription'
 			self.getSubscription('_')
 			dbFile = 'batch notification'
@@ -216,7 +216,7 @@ class Storage(object):
 
 
 	def identifier(self, ri:str) -> list[Document]:
-		"""	Search for the resource with the given resource ID
+		"""	Search for the resource with the given resource ID,
 
 			Args:
 				ri: Resource ID for the resource to look for
@@ -226,7 +226,7 @@ class Storage(object):
 		return self.db.searchIdentifiers(ri = ri)
 
 
-	def structuredPath(self, srn:str) -> list[Document]:
+	def structuredIdentifier(self, srn:str) -> list[Document]:
 		return self.db.searchIdentifiers(srn = srn)
 
 
@@ -528,14 +528,15 @@ class TinyDBBinding(object):
 
 	def searchIdentifiers(self, ri:str = None, srn:str = None) -> list[Document]:
 		"""	Search for an resource ID OR for a structured name in the identifiers DB.
-			Only one `ri` or `srn` shall be given. If both are given then `srn`
+
+			Either *ri* or *srn* shall be given. If both are given then *srn*
 			is taken.
 		
 			Args:
-				ri: Resource ID to search for
-				srn: Structured path to search for
+				ri: Resource ID to search for.
+				srn: Structured path to search for.
 			Return:
-				A list of found documents, or an empty list if not found
+				A list of found identifier documents (see `insertIdentifier`), or an empty list if not found.
 		 """
 		with self.lockIdentifiers:
 			if srn:
