@@ -14,7 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from collections import namedtuple
 from enum import IntEnum, auto
-from decimal import Decimal, ConversionSyntax, InvalidOperation
+from decimal import Decimal, InvalidOperation
 import datetime, time, re, copy, random, shlex
 from lib2to3.pgen2 import token
 from typing import 	Callable, Dict, Tuple, Union
@@ -1064,7 +1064,7 @@ def _doIncDec(pcontext:PContext, arg:str, isInc:bool = True) -> PContext:
 	try:
 		n = Decimal(value) if len(value) > 0 else Decimal(1.0)	# either a number or 1.0 (default)
 		pcontext.setVariable(var, str(Decimal(variable) + n) if isInc else str(Decimal(variable) - n))
-	except ConversionSyntax as e:
+	except InvalidOperation as e:
 		pcontext.setError(PError.notANumber, f'Not a number: {e}')
 		return None
 	return pcontext
@@ -1536,7 +1536,7 @@ def _doRound(pcontext:PContext, arg:str, line:str) -> str:
 				pcontext.setError(PError.invalid, f'Wrong number of arguments for round: {len(args)}')
 				return None
 		return str(round(number, ndigits))
-	except (ConversionSyntax, ValueError) as e:
+	except (InvalidOperation, ValueError) as e:
 		pcontext.setError(PError.notANumber, f'Not a number: {e}')
 		return None
 
@@ -1806,14 +1806,14 @@ def _skipSwitch(pcontext:PContext, compareTo:str, skip:bool = False) -> PContext
 	compareTo = ' '.join(tokenize(compareTo)).lower() if compareTo else 'true'
 	while pcontext.pc < pcontext._length and level >= 0:
 		cmd, _, arg, _ = pcontext.nextLinePartition()
-		arg = checkMacros(pcontext, arg)
 
 		if cmd == 'case' and not skip:	# skip all cases if we just look for the end of the switch
 			if not arg:	# default case, always matches
 				break
-			# use the provided match function to do the comparison.
+
+			# Check all macros/variables, then use the provided match function to do the comparison.
 			# This also matches any comparison against the default "true" value of the switch
-			if pcontext.matchFunc(pcontext, compareTo, arg):
+			if pcontext.matchFunc(pcontext, compareTo, checkMacros(pcontext, arg)):
 				break
 			continue			# not the right one, continue search
 		if cmd == 'endswitch':
@@ -1879,7 +1879,7 @@ def _compareExpression(pcontext:PContext, expr:str) -> bool:
 	def _strDecimal(val:str) -> Union[Decimal, str]:
 		try:
 			return Decimal(val)	# try to unify float values
-		except ConversionSyntax as e:
+		except InvalidOperation as e:
 			# print(str(e))
 			return val.strip()
 	
