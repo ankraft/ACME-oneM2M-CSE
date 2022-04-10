@@ -8,8 +8,8 @@
 @usage status
 @uppertester
 
-if ${argc} > 0
-	error "status" command has no arguments
+if [> [argc] 0]
+	quitWithError \"status" command has no arguments
 endif
 
-quit ${cseStatus}
+quit [cseStatus]

@@ -22,6 +22,7 @@
 |                              | [LOGERROR](#command_logerror)                   | Print a message to the error-level log                                       |
 |                              | [PROCEDURE](#command_procedure)                 | Define a procedure                                                           |
 |                              | [QUIT](#command_quit)                           | Quit the running script                                                      |
+|                              | [QUITWITHERROR](#command_quiterror)             | Quit the running script with error result                                    |
 |                              | [RUN](#command_run)                             | Run another script                                                           |
 |                              | [SET](#command_set)                             | Set or remove a variable, or perform a calculation                           |
 |                              | [SLEEP](#command_sleep)                         | Pause the script execution                                                   |
@@ -59,20 +60,20 @@ The following basic commands for running scripts in general are available.
 ### ASSERT
 
 Usage:  
-ASSERT &lt;comparison>
+ASSERT &lt;boolean expression>
 
 The ASSERT command will terminate the script if its argument turns out to be false.
 
 Example:
 ```text
-assert ${cse.type} == IN
+assert [== [cse.type] IN]
 ```
 
 <a name="command_break"></a>
 ### BREAK
 
 Usage:  
-BREAK [&lt;result>]
+BREAK &lt;result>\*
 
 Break out of a [WHILE](#command_while) loop. The command may have an optional result argument that is returned as the result of the loop.
 
@@ -87,8 +88,8 @@ endwhile
 
 Example using the [loop](ACMEScript-macros.md#macro_loop) macro.
 ```text
-while ${loop} < 10
-	print ${loop}
+while [< [loop] 10]
+	print [loop]
 endwhile
 ```
 
@@ -97,10 +98,10 @@ endwhile
 ### CASE
 
 Usage:  
-CASE [&lt;match>]
+CASE &lt;match\*
 
 This command starts a CASE block inside a [SWITCH](#command_switch) block. 
-If present the *match* argument will be compared against the argument of the surrounding SWITCH block.
+If present then the *match* argument will be compared against the argument of the surrounding SWITCH block.
 If it matches then the code lines up to the next CASE or [ENDSWITCH](#command_endswitch) are executed.
 If multiple CASE statements would match the comparison then only the first matching block is executed.
 
@@ -114,8 +115,9 @@ The *match* argument can be a simplified regular expression for fuzzy comparison
 
 
 Example:
+
 ```text
-switch ${variable}
+switch [aVariable]
 	case aValue
 		...
 	case anotherValue
@@ -127,6 +129,23 @@ switch ${variable}
 		# always matches
 		...
 endSwitch
+```
+
+There is second form of the CASE statement: When the SWITCH statement does not have a parameter then
+CASE statements can have boolean expressions, or any procedure and macro, which, when those evaluate
+to *true*, will have their code blocks executed. As with the other format only the first CASE that 
+evaluates to *true* is executed.  
+This can be used to replace otherwise overly complicated IF code sequences.
+
+Example:
+
+```text
+switch
+	case [< 4 3]
+		print No
+	case [> 4 3]
+		print Yes
+endswitch
 ```
 
 
@@ -152,7 +171,7 @@ endwhile
 ### DEC
 
 Usage:  
-DEC &lt;variable> [&lt;step>]
+DEC &lt;variable> &lt;step>\*
 
 This command decrements a numeric variable by the optional value `step`. The default is 1.
 
@@ -160,7 +179,7 @@ Example:
 ```text
 set var 10
 dec var
-print ${var}
+print [var]
 # -> 9
 ```
 
@@ -203,7 +222,7 @@ endif
 ### ENDPROCEDURE
 
 Usage:  
-ENDPROCEDURE [&lt;result>]
+ENDPROCEDURE &lt;result>\*
 
 This command marks the end of a [PROCEDURE](#command_procedure). The command may have an optional result argument that is 
 returned as the result of the procedure. The result is stored in the variable [result](ACMEScript-macros.md#macro_result).
@@ -215,7 +234,7 @@ procedure aProcedure
 endProcedure aResult
 
 aProcedure
-print ${result}
+print [result]
 # -> aResult
 ```
 
@@ -231,7 +250,7 @@ This command marks the end of a [SWITCH](#command_switch) block.
 
 Example:
 ```text
-switch ${variable}
+switch [variable]
 	case aValue
 		...
 	case anotherValue
@@ -246,29 +265,15 @@ endSwitch
 ### ENDWHILE
 
 Usage:  
-ENDWHILE [&lt;result>] 
+ENDWHILE &lt;result>\*
 
 End a [WHILE](#command_while) loop. The command may have an optional result argument that is returned as the result of the procedure.
 
 Example:
 ```text
-while ${i} < 10	
+while [< [i] 10]
 	...
 endWhile aResult
-```
-
-
-<a name="command_error"></a>
-### ERROR
-
-Usage:  
-ERROR [&lt;result>]
-
-Terminate the running script with an error and return an optional result.
-
-Example:
-```text
-error aResult
 ```
 
 
@@ -276,14 +281,16 @@ error aResult
 ### IF
 
 Usage:  
-IF &lt;comparison expression>
+IF &lt;boolean expression>
 
-Check comparison condition and begin a conditional IF block. An IF block may have an optional [ELSE](#command_else) block that is executed instead in case the [comparison expression](ACMEScript.md#comp_op) turns out to be false.
+Check comparison condition and begin a conditional IF block. An IF block may have an optional
+[ELSE](#command_else) block that is executed instead in case the [comparison expression](ACMEScript.md#comp_op) 
+turns out to be false.
 
 
 Example:
 ```text
-if ${response.status} == 200
+if [== [response.status] 200]
 	...
 else
 	...
@@ -295,7 +302,7 @@ endif
 ### INC
 
 Usage:  
-INC &lt;variable> [&lt;step>]
+INC &lt;variable> &lt;step>\*
 
 This command increments a numeric variable by the optional value `step`. The default is 1.
 
@@ -303,7 +310,7 @@ Example:
 ```text
 set var 10
 inc var
-print ${var}
+print [var]
 # -> 11
 ```
 
@@ -340,7 +347,7 @@ LOGERROR Danger, Will Robinson!
 ### PROCEDURE
 
 Usage:  
-PROCEDURE [&lt;result>]
+PROCEDURE &lt;name>\*
 
 This command defines a procedure. A procedure is a named sequence of commands that is executed in its own context. 
 A procedure may have zero, one, or more arguments, which can be accessed via the [argc](ACMEScript-macros.md#macro_argc) and [argv](ACMEScript-macros.md#macro_argv)  macros. A procedure may also return a result, which is returned to the calling scope, 
@@ -354,11 +361,11 @@ Example:
 ```text
 # Define a procedure to double its argument
 procedure double
-	set x = ${argv 1} * 2
-endProcedure ${x}
+	set x [* [argv 1] 2]
+endProcedure [x]
 
 # Call procedure
-print ${double 21}
+print [double 21]
 ```
 
 Procedures may be called like normal commands as well. If they return a value then that is stored in the special 
@@ -368,14 +375,14 @@ this:
 ```text
 # Call procedure
 double 21
-print ${result}
+print [result]
 ```
 
 <a name="command_quit"></a>
 ### QUIT
 
 Usage:  
-QUIT [&lt;result>]
+QUIT &lt;result>\*
 
 Terminate the running script successfully and return an optional result.
 
@@ -385,11 +392,25 @@ quit aResult
 ```
 
 
+<a name="command_quiterror"></a>
+### QUITWITHERROR
+
+Usage:  
+QUITWITHERROR &lt;result>\*
+
+Terminate the running script with an error and return an optional result.
+
+Example:
+```text
+quitWithError aResult
+```
+
+
 <a name="command_run"></a>
 ### RUN
 
 Usage:  
-RUN &lt;script name> [&lt;arguments>]
+RUN &lt;script name> &lt;arguments>\*
 
 Run another script. The first argument is the name of the script as set in the [name](ACMEScript.md#meta_name) 
 [meta tag](ACMEScript.md#meta_tags) of that script. All other arguments are optional, and will be passed on as arguments to the called
@@ -398,7 +419,7 @@ script. The called script may return a result, which would then be available via
 Example:
 ```text
 run anotherScript arg1 arg2
-print ${result}
+print [result]
 ```
 
 
@@ -421,8 +442,8 @@ Example:
 ```text
 set a 21
 set b 2
-set c ${eval ${a} * ${b}}
-print ${c}
+set c [* [a] [b]]
+print [c]
 # -> 42
 set c
 ```
@@ -447,14 +468,14 @@ sleep 1.5
 ### SWITCH
 
 Usage:  
-SWITCH &lt;argument>
+SWITCH &lt;argument>\*
 
 Start a SWITCH block. The argument is then matched against individual [CASE](#command_case) statement. The code block of the first matching 
 statement is executed. SWITCH blocks may be nested. A SWITCH block is closed by a [ENDSWITCH](#command_endswitch) command.
 
 Example:
 ```text
-switch ${variable}
+switch [variable]
 	case aValue
 		...
 	case anotherValue
@@ -468,12 +489,29 @@ switch ${variable}
 endSwitch
 ```
 
+The SWITCH statement may also not have a parameter. In this case the CASE statements can have
+boolean expressions, or any procedure and macro, which, when those evaluate to *true*, will have 
+their code blocks executed. As with the other format only the first CASE that evaluates to *true*
+is executed.  
+This can be used to replace otherwise overly complicated IF code sequences.
+
+Example:
+
+```text
+switch
+	case [< 4 3]
+		print No
+	case [> 4 3]
+		print Yes
+endswitch
+```
+
 
 <a name="command_while"></a>
 ### WHILE
 
 Usage:  
-WHILE &lt;comparison expression>
+WHILE &lt;boolean expression>
 
 Start a WHILE loop. The loop is executed as long as the [comparison expression](ACMEScript.md#calc_comp) is true, or until the loop is 
 left through a [BREAK](#command_break) command.
@@ -481,12 +519,22 @@ left through a [BREAK](#command_break) command.
 Example:
 ```text
 set i = 0
-while ${i} < 10
+while [< [i] 10]
 	inc i
+	...
 endwhile
 ```
 
-See also the special variable [${loop}](ACME-macros.md#macro_loop) for an automated loop variable.
+See also the special variable [loop](ACME-macros.md#macro_loop) for an automated loop variable. It can
+be used to replace the variable in the example above:
+
+Example:
+```text
+while [< [loop] 10]
+	...
+endwhile
+```
+
 
 ---
 
@@ -537,7 +585,7 @@ Print a beautified JSON document to the console.
 
 Example:
 ```text
-printJSON ${response.resource}
+printJSON [response.resource]
 ```
 
 
@@ -617,13 +665,13 @@ Example:
 ```text
 originator CAdmin
 create /id-in/cse-in
-{ "m2m:cnt" : 
-	{
-		"rn": "myCnt"
+	{ "m2m:cnt" : 
+		{
+			"rn": "myCnt"
+		}
 	}
-}
-print ${response.status}
-print ${response.resource}
+print [response.status]
+print [response.resource]
 ```
 
 
@@ -645,7 +693,7 @@ Example:
 ```text
 originator CAdmin
 delete /id-in/cse-in/myCnt
-print ${response.resource}
+print [response.resource]
 ```
 
 
@@ -667,17 +715,17 @@ Example:
 ```text
 # Add an AE resource under the CSEBase
 importraw 
-{
-  "m2m:ae": {
-    "ri":  "CanAE",
-    "rn":  "CanAE",
-    "pi":  "${cse.ri}",
-    "rr":  true,
-    "api": "NanAppId",
-    "aei": "CanAE",
-    "csz": [ "application/json", "application/cbor" ]
-  }
-}
+	{
+	"m2m:ae": {
+		"ri":  "CanAE",
+		"rn":  "CanAE",
+		"pi":  "[cse.ri]",
+		"rr":  true,
+		"api": "NanAppId",
+		"aei": "CanAE",
+		"csz": [ "application/json", "application/cbor" ]
+	}
+	}
 ```
 
 
@@ -700,16 +748,16 @@ Example:
 ```text
 originator CAdmin
 notify http://localhost:8080
-{ "m2m:rqp" : 
-	{
-		"fr"  : "anOriginator",
-		"rqi" : "1234",
-		"rvi" : "4",
-		"rsc" : 2000
+	{ "m2m:rqp" : 
+		{
+			"fr"  : "anOriginator",
+			"rqi" : "1234",
+			"rvi" : "4",
+			"rsc" : 2000
+		}
 	}
-}
-print ${response.status}
-print ${response.resource}
+print [response.status]
+print [response.resource]
 ```
 
 
@@ -720,7 +768,7 @@ Usage:
 ORIGINATOR &lt;originator>
 
 Set the originator for following oneM2M requests.  
-This command also sets the variable `${request.originator}`.
+This command also sets the variable [request.originator](ACMEScript-macros.md#macro_req_originator).
 
 
 Example:
@@ -793,7 +841,7 @@ Example:
 ```text
 originator CAdmin
 retrieve /id-in/cse-in/myCnt
-print ${response.resource}
+print [response.resource]
 ```
 
 
@@ -816,13 +864,13 @@ Example:
 ```text
 originator CAdmin
 update /id-in/cse-in/myCnt
-{ "m2m:cnt" : 
-	{
-		"lbl": [ "aLabel" ]
+	{ "m2m:cnt" : 
+		{
+			"lbl": [ "aLabel" ]
+		}
 	}
-}
-print ${response.status}
-print ${response.resource}
+print [response.status]
+print [response.resource]
 ```
 
 ### CSE Commands

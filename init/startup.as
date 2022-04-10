@@ -18,12 +18,12 @@
 importraw 
 {	
 	"m2m:cb" : {
-			"ri":   "${cse.ri}",
-			"rn":   "${cse.rn}",
-			"csi":  "${cse.csi}",
+			"ri":   "[cse.ri]",
+			"rn":   "[cse.rn]",
+			"csi":  "[cse.csi]",
 			"rr":   true,
-			"csz":  [ "application/json", "application/cbor" ],
-			"acpi": [ "${cse.csi}/acpCreateACPs" ]
+			"csz":  \[ "application/json", "application/cbor" ],
+			"acpi": \[ "[cse.csi]/acpCreateACPs" ]
 	}
 }
 
@@ -38,25 +38,25 @@ importraw
 	"m2m:acp": {
 		"rn": "acpCreateACPs",
 		"ri": "acpCreateACPs",
-		"pi": "${cse.ri}",
+		"pi": "[cse.ri]",
 		"pv": {
-			"acr": [
+			"acr": \[
 				{
-					"acor": [
+					"acor": \[
 						"all"
 					],
 					"acod": {
-						"chty": [ 1 ]
+						"chty": \[ 1 ]
 					},
 					"acop": 1
 				}
 			]
 		},
 		"pvs": {
-			"acr": [
+			"acr": \[
 				{
-					"acor": [
-						"${cse.originator}"
+					"acor": \[
+						"[cse.originator]"
 					],
 					"acop": 63
 				}
@@ -74,12 +74,12 @@ importraw
 importraw 
 {
 	"m2m:ae": {
-		"ri":  "${cse.originator}",
-		"rn":  "${cse.originator}",
-		"pi":  "${cse.ri}",
+		"ri":  "[cse.originator]",
+		"rn":  "[cse.originator]",
+		"pi":  "[cse.ri]",
 		"rr":  true,
-		"api": "N${cse.originator}",
-		"aei": "${cse.originator}",
-		"csz": [ "application/json", "application/cbor" ]
+		"api": "N[cse.originator]",
+		"aei": "[cse.originator]",
+		"csz": \[ "application/json", "application/cbor" ]
 	}
 }

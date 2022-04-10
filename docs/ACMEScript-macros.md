@@ -9,11 +9,11 @@
 | [Basic](#macros_basic)     | [argc](#macro_argc)                              | Get number of arguments                                                 |
 |                            | [argv](#macro_argv)                              | Get script or procedure arguments                                       |
 |                            | [datetime](#macro_datetime)                      | Get current date and time                                               |
-|                            | [eval](#macro_eval)                              | Evaluate a simple calculation                                           |
+|                            | [in](#macro_in)                                  | Text whether a string exists in another string                          |
 |                            | [loop](#macro_loop)                              | Get the current while loop's loop count                                 |
 |                            | [lower](#macro_lower)                            | Get a lower-case version of the provided string argument                |
 |                            | [match](#macro_match)                            | Evaluate an argument against a simple regular expression                |
-|                            | [random](#random)                                | Generate a random number.                                               |
+|                            | [random](#macro_random)                          | Generate a random number.                                               |
 |                            | [result](#macro_result)                          | Get the last result of a while, procedure etc.                          |
 |                            | [round](#round)                                  | Round a float number.                                                   |
 |                            | [runCount](#macro_runcount)                      | Get the number of script runs.                                          |
@@ -41,15 +41,14 @@ The following builtin macros and variables are available.
 <a name="macro_argc"></a>
 ### argc
 
-Usage:  
-${argc}
+Usage:  [argc]
 
 Evaluates to the number of arguments to the script or the current scope.
 
 Example:
 
 ```text
-if ${argc} > 2
+if [> [argc] 2]
 	logError Wrong number of arguments
 	error
 endif
@@ -59,7 +58,7 @@ endif
 ### argv
 
 Usage:  
-${argv [&lt;n:integer>]}
+[argv &lt;n:integer>\*]
 
 Evaluates to the n-th argument to the script or a procedure. The index starts a 1, because the 0-th argument is the name 
 of the script or the procedure. If the `argv` macro is called without an argument then the original string of arguments
@@ -68,16 +67,16 @@ is returned (but without the script name).
 Example:
 
 ```text
-print The name of the script is: ${argv 0}
-print The first argument is: ${argv 1}
-print All arguments: ${argv}
+print The name of the script is: [argv 0]
+print The first argument is: [argv 1]
+print All arguments: [argv]
 ``` 
 
 <a name="macro_datetime"></a>
 ### datetime
 
 Usage:  
-${datetime [&lt;format pattern>]}
+[datetime &lt;format pattern>\* ]
 
 Evaluates to a UTC-based date/time string. With the optional format pattern one can specify the output format. The format is the same as the Python `strftime()` function. See [https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior](https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior) for further details.
 
@@ -86,53 +85,48 @@ The default is `%Y%m%dT%H%M%S.%f`, which evaluates to an ISO8901 timestamp.
 Example:
 
 ```text
-print ${datetime}
+print [datetime]
 # -> 20220107T221625.771604
-print ${datetime %H:%M}
+print [datetime %H:%M]
 # -> 22:26
 ```
 
-<a name="macro_eval"></a>
-### eval
+
+<a name="macro_in"></a>
+### in
 
 Usage:  
-${eval &lt;calculation>}
+[in &lt;text> &lt;string>]
 
-Evaluate a calculation provided in the argument to the macro. The following arithmetic operators are supported:
-
-| Operator | Description        |
-|:--------:|--------------------|
-|    +     | Addition           |
-|    -     | Subtraction        |
-|    *     | Multiplication     |
-|    /     | Division           |
-|    %     | Remainder (Modulo) |
-|    ^     | Exponentiation     |
-
-The operator priority is from bottom (highest) to top (lowest).
+Check whether a text can be found in a string. The macro returns *true* or *false* accordingly.
 
 Example:
 
 ```text
-set answer ${eval 21 * 2}
+print [in Hello "Hello World"]
 ```
-
 
 
 <a name="macro_loop"></a>
 ### loop
 
 Usage:  
-${loop}
+[loop]
 
-Return the current [while](ACMEScript-commands.md#command_while) loop's loop count. This counter is automatically incremented by 1 for every iteration of a while loop. It starts at 0 when the while loop is entered. Every (nested) while loop has its own loop counter.
+Return the current [while](ACMEScript-commands.md#command_while) loop's loop count. 
+This counter is automatically incremented by 1 for every iteration of a while loop. 
+It starts at 0 when the while loop is entered. Every (nested) while loop has its own loop counter.
+
+It is not defined outside a while loop.
 
 Example:
 
 ```text
-while ${loop} < 10
-	...
+while [< [loop] 10]
+	print [loop]
 endwhile
+print [loop]
+# -> yields an error because "loop" is not defined outside a while loop
 ```
 
 
@@ -140,14 +134,14 @@ endwhile
 ### lower
 
 Usage:  
-${lower &lt;text:string> }
+[lower &lt;text:string>]
 
 Return a lower-case version of the provided string `text`.
 
 Example:
 
 ```text
-print ${upper Hello}
+print [upper Hello]
 # -> hello
 ```
 
@@ -156,7 +150,7 @@ print ${upper Hello}
 ### match
 
 Usage:  
-${match &lt;text:string> &lt;regex>}
+[match &lt;text:string> &lt;regex>]
 
 Match the `text` against the regular expression `regex`, and return the result as *true* or *false*.
 
@@ -169,17 +163,19 @@ The regular expression format is a very simplified version that only supports th
 
 Examples:
 
-	"hello" - "h?llo" -> True
-	"hello" - "h?lo" -> False
-	"hello" - "h*lo" -> True
-	"hello" - "h*" -> True
-	"hello" - "*lo" -> True
-	"hello" - "*l?" -> True
+```text
+"hello" - "h?llo" -> true
+"hello" - "h?lo" -> false
+"hello" - "h*lo" -> true
+"hello" - "h*" -> true
+"hello" - "*lo" -> true
+"hello" - "*l?" -> true
+```
 
 Example:
 
 ```text
-if ${match hello h*o}
+if [match hello h*o[]
 	print found
 endif
 # -> hello
@@ -190,7 +186,9 @@ endif
 ### random
 
 Usage:  
-${random [ [&lt;start>] &lt;end> ] }
+[random]  
+[random &lt;end> ]  
+[random &lt;start> &lt;end> ]
 
 Generate a random number. If no argument is given then a random number in the range [0.0, 1.0] will be generated.
 
@@ -201,11 +199,11 @@ If two argument are given then these arguments are treated as the start and end 
 Example:
 
 ```text
-print ${random}
+print [random]
 # -> random number in the range [0.0, 1.0] 
-print ${random 10}
+print [random 10]
 # -> random number in the range [0.0, 10.0] 
-print ${random -5 5}
+print [random -5 5]
 # -> random number in the range [-5.0, 5.0]
 ``` 
 
@@ -214,7 +212,7 @@ print ${random -5 5}
 ### result
 
 Usage:  
-${result}
+[result]
 
 Evaluates to the result of the last scope, or nothing. See also [Context, Scopes, Arguments, and Results](ACMEScript.md#context_scope).
 
@@ -227,7 +225,7 @@ endprocedure nothing
 
 # Call the procedure and print the result afterwards
 getNothing
-print ${result}
+print [result]
 # -> nothing
 ``` 
 
@@ -236,7 +234,7 @@ print ${result}
 ### round
 
 Usage:  
-${round &lt;number:float> [ &lt; ndigits> ] }
+[round &lt;number:float> [ &lt; ndigits> ] ]
 
 Get a number rounded to `ndigits` precision after the decimal point. If `ndigits` is omitted, 
 then this macro returns the nearest integer. `ndigits` may be negative.
@@ -244,11 +242,11 @@ then this macro returns the nearest integer. `ndigits` may be negative.
 Example:
 
 ```text
-print ${round 1.6}
+print [round 1.6]
 # -> 2
-print ${round 1.678}
+print ]round 1.678]
 # -> 1.68
-print ${round 2361.678 -2}
+print ]round 2361.678 -2]
 # -> 2400.0
 ```
 
@@ -257,14 +255,14 @@ print ${round 2361.678 -2}
 ### runCount
 
 Usage:  
-${runCount}
+[runCount]
 
 Evaluates to the number of runs of the script.
 
 Example:
 
 ```text
-print ${runCount}
+print [runCount]
 # -> 42
 ``` 
 
@@ -273,7 +271,7 @@ print ${runCount}
 ### round
 
 Usage:  
-${round &lt;number:float> [ &lt; ndigits> ] }
+[round &lt;number:float> [ &lt; ndigits> ] ]
 
 Get a number rounded to `ndigits` precision after the decimal point. If `ndigits` is omitted, 
 then this macro returns the nearest integer. `ndigits` may be negative.
@@ -281,11 +279,11 @@ then this macro returns the nearest integer. `ndigits` may be negative.
 Example:
 
 ```text
-print ${round 1.6}
+print [round 1.6]
 # -> 2
-print ${round 1.678}
+print [round 1.678]
 # -> 1.68
-print ${round 2361.678 -2}
+print [round 2361.678 -2]
 # -> 2400.0
 ```
 
@@ -294,7 +292,7 @@ print ${round 2361.678 -2}
 ### upper
 
 Usage:  
-${upper &lt;text:string> }
+[upper &lt;text:string>]
 
 Return a upper-case version of the provided string `text`.
 
@@ -302,7 +300,7 @@ Return a upper-case version of the provided string `text`.
 Example:
 
 ```text
-print ${upper hello}
+print [upper hello]
 # -> HELLO
 ```
 
@@ -315,7 +313,7 @@ These macros help to access key/values in the [persistent storage](ACMEScript.md
 ### storageGet
 
 Usage:  
-${storageGet &lt;key:string>}
+[storageGet &lt;key:string>]
 
 Evaluates to the value stored for the key `key` that has previously been stored with the [storagePut](ACMEScript-commands.md#command_storageput) command in the persistent storage. If the key does not exist then the script is terminated with an error.
 
@@ -323,22 +321,22 @@ Example:
 
 ```text
 storagePut aKey aValue
-print ${storageGet aKey}
+print [storageGet aKey]
 # -> aValue
 ```
 
 <a name="macro_storagehas"></a>
 ### storageHas
 
-Usage ${storageHas &lt;key:string>}
+Usage [storageHas &lt;key:string>]
 
 Evaluates to the string `true` or `false`, depending whether the provided key exists in the persistent storage.
 
 Example:
 ```text
 storagePut aKey aValue
-if ${storageHas aKey}
-	print ${storageGet aKey}
+if [storageHas aKey]
+	print [storageGet aKey]
 endif
 # -> aValue
 ```
@@ -351,7 +349,7 @@ endif
 ### attribute
 
 Usage:  
-${attribute &lt;key:pattern> &lt;resource:JSON>}
+[attribute &lt;key:pattern> &lt;resource:JSON>]
 
 This macro finds a structured `key` in the JSON structure `resource` and returns its value. This could be a single value or a JSON structure.
 If `key` does not exists or could not be found then the script terminates with an error.
@@ -363,7 +361,7 @@ If `key` does not exists or could not be found then the script terminates with a
 Example: 
 
 ```text
-${attribute m2m:cin/{1}/lbl/{0} ${response.resource}}
+print [attribute m2m:cin/{1}/lbl/{0} [response.resource]]
 ```
 
 - If an element is specified as `{}` then all elements in that array are returned in an array.  
@@ -371,7 +369,7 @@ ${attribute m2m:cin/{1}/lbl/{0} ${response.resource}}
 Example: 
 
 ```text
-${attribute m2m:cin/{1}/lbl/{} ${response.resource}}
+print [attribute m2m:cin/{1}/lbl/{} [response.resource]]
 ```
 
 - If an element is specified as `{_}` and is targeting a dictionary then a single random path is chosen. This can be used to skip, for example, unknown first elements in a structure.  
@@ -379,7 +377,7 @@ ${attribute m2m:cin/{1}/lbl/{} ${response.resource}}
 Example:
 
 ```text
-${attribute {_}/rn ${response.resource}}
+print [attribute {_}/rn [response.resource]]
 ```
 
 
@@ -387,7 +385,7 @@ ${attribute {_}/rn ${response.resource}}
 ### hasAttribute
 
 Usage:  
-${hasAttribute &lt;key:pattern> &lt;resource:JSON>}
+[hasAttribute &lt;key:pattern> &lt;resource:JSON>]
 
 This macro checks whether an attribute exists in a JSON structure. It evaluates to `true` or `false`, respectively.
 
@@ -398,14 +396,14 @@ See the the description of the [attribute](#macro_attribute) macro for an explan
 ### notification.originator
 
 Usage:  
-${notification.originator}
+[notification.originator≤6
 
 Get a notification's originator. This variable is only set in a script that is a notification target.
 
 Example:
 
 ```text
-print ${notification.originator}
+print [notification.originator]
 # -> ... the notification's originator ...
 ```
 
@@ -414,14 +412,14 @@ print ${notification.originator}
 ### notification.resource
 
 Usage:  
-${notification.resource}
+[notification.resource]
 
 Get a notification's resource. This variable is only set in a script that is a notification target.
 
 Example:
 
 ```text
-printJSON ${notification.resource}
+printJSON [notification.resource]
 # -> ... the notification's resource ...
 ```
 
@@ -429,14 +427,14 @@ printJSON ${notification.resource}
 ### notification.uri
 
 Usage:  
-${notification.uri}
+[notification.uri]
 
 Get a notification's target URI. This variable is only set in a script that is a notification target.
 
 Example:
 
 ```text
-print ${notification.uri}
+print [notification.uri]
 # -> ... the notification's URI ...
 ```
 
@@ -445,7 +443,7 @@ print ${notification.uri}
 ### response.resource
 
 Usage:  
-${response.resource}
+[response.resource]
 
 Evaluates to the resource returned by the last oneM2M request, the debug message, or nothing.
 
@@ -453,7 +451,7 @@ Example:
 
 ```text
 retrieve cse-in
-print ${response.resource}
+print [response.resource]
 # -> ... the retrieved resource ...
 ```
 
@@ -462,14 +460,14 @@ print ${response.resource}
 ### request.originator
 
 Usage:  
-${request.originator}
+[request.originator]
 
 Evaluates to the assigned originator for all following oneM2M requests. See also the command [ORIGINATOR](ACMEScript-commands.md#command_originator).
 
 Example:
 
 ```text
-print ${request.originator}
+print [request.originator]
 # -> ... the originator ...
 ```
 
@@ -478,7 +476,7 @@ print ${request.originator}
 ### response.status
 
 Usage:  
-${response.status}
+[response.status]
 
 Evaluates to the response status code returned by the last oneM2M request, or nothing.
 
@@ -486,7 +484,7 @@ Example:
 
 ```text
 retrieve cse-in
-print ${response.status}
+print [response.status]
 # -> ... the request's status code ...
 ```
 
@@ -497,7 +495,7 @@ print ${response.status}
 ### cseStatus
 
 Usage:  
-${cseStatus}
+[cseStatus]
 
 Return the CSE's runtime status. This is one of the following values:
 
@@ -510,24 +508,23 @@ Return the CSE's runtime status. This is one of the following values:
 Example:
 ```text
 # Only reset when CSE is running
-if ${cseStatus} == RUNNING
+if [== [cseStatus] RUNNING]
 	reset
 endif
 ```
 
-x
 <a name="macro_isipython"></a>
 ### isIPython
 
 Usage:  
-${isIPython}
+[isIPython]
 
 This macro evaluates to `true` if the CSE is currently running in an IPython environment, such as Jupyter Notebooks,
 or to `false` otherwise.
 
 Example:
 ```text
-if ${isIPython}
+if [isIPython]
 	print Running in IPython
 endif
 ```
@@ -537,7 +534,7 @@ endif
 ### Configuration Settings
 
 Usage:  
-${&lt;CSE configuration>}
+[&lt;CSE configuration>]
 
 Any of the CSE's configuration settings that are defined in [Configuration](Configuration.md) can be used as a variable. It evaluates to the respective configuration value.
 
@@ -547,9 +544,9 @@ Also note, that not all configuration changes may have an immediate effect, but 
 
 Example:
 ```text
-print ${cse.type}
+print [cse.type]
 # -> IN
-print ${logging.level}
+print [logging.level]
 # -> DEBUG
 ```
 

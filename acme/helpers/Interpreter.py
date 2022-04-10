@@ -15,8 +15,7 @@ from dataclasses import dataclass, field
 from collections import namedtuple
 from enum import IntEnum, auto
 from decimal import Decimal, InvalidOperation
-import datetime, time, re, copy, random, shlex
-from lib2to3.pgen2 import token
+import datetime, time, re, copy, random, shlex, operator
 from typing import 	Callable, Dict, Tuple, Union
 
 _maxProcStackSize = 64	
@@ -128,13 +127,14 @@ class PContext():
 		self.environment:Dict[str,str]		= {}	# Similar to variables, but not cleared
 		self.runs:int						= 0
 
-		# Internal attributes that should not be accessed
+		# Internal attributes that should not be accessed from extern
 		self._length:int					= 0
 		self._maxRTimestamp:float			= None
 		self._scopeStack:list[PScope]		= []
 		self._commands:PCmdDict				= None		# builtins + provided commands
 		self._macros:PMacroDict				= None		# builtins + provided macros
 		self._verbose:bool					= None		# Store the runtime verbosity of the run() function
+		self._line:str						= ''		# Currently executed line
 
 		#
 		# Further initializations and copying of context information
@@ -198,7 +198,7 @@ class PContext():
 				Boolean that indicates the validation status.
 		"""
 		while (line := self.nextLine):
-			if line.startswith('${'):
+			if line.startswith('['):
 				self.setError(PError.invalid, f'Macros and variables are not allowed as command: {line}')
 				return False
 		return True
@@ -222,6 +222,7 @@ class PContext():
 			# Only return not-empty lines and no comments 			
 			if line and not self.ignoreLine(line):
 				break
+		self._line = line
 		return line
 	
 
@@ -485,7 +486,7 @@ class PContext():
 		return 0
 	
 
-	def whileLoopCounter(self, line:str) -> int:
+	def whileLoopCounter(self) -> int:
 		"""	Return the latest loop counter for a while loop.
 
 			Args:
@@ -498,9 +499,15 @@ class PContext():
 		# is not yet set. This is while we need to check the program counter instead, and return a 0 as a default
 		# if nothing has been assigned yet. Otherwise this would return the loop counter for that while.
 		# If the line isn't a "while ..." then we can savely return the normal loop counter for the while.
+		line = self._line
 		if line.lower().startswith('while'):
 			return self.scope.whileLoop.get(self.pc - 1, 0)
-		return self.scope.whileLoop.get(self.whilePc)
+		if (loop := self.scope.whileLoop.get(self.whilePc)) is None:
+			self.setError(PError.undefined, f'Undefined variable: loop')
+			return None
+		return loop
+
+
 
 
 	@property
@@ -508,7 +515,7 @@ class PContext():
 		"""	Return the latest saved program counter for a while loop.
 
 			Return:
-				Integer, the program counter that points to the top of the current while scope.
+				Integer, the program counter that points to the top of the current while scope, or *None* when the whileStack is empty.
 		"""
 		if not self.scope.whileStack:
 			return None
@@ -813,6 +820,8 @@ def run(pcontext:PContext, verbose:bool = False, argument:str = '', procedure:st
 		# Check whether we reached the end of the script, but haven't ended a procedure
 		if len(pcontext._scopeStack) > 1:
 			pcontext.setError(PError.unexpectedCommand, f'PROCEDURE without return', pcontext.scope.returnPc )
+		elif pcontext.whilePc is not None:
+			pcontext.setError(PError.unexpectedCommand, f'WHILE without ENDWHILE', pcontext.scope.returnPc )
 
 	# Return after running. Set the pcontext.state accordingly
 	pcontext.state = PState.terminated if pcontext.state == PState.running else pcontext.state
@@ -825,9 +834,18 @@ def run(pcontext:PContext, verbose:bool = False, argument:str = '', procedure:st
 #	Extra utility functions
 #
 
-def tokenize(input:str) -> list[str]:
-	# TODO doc
-	return shlex.split(input)
+def tokenize(line:str) -> list[str]:
+	"""	Tokenize an input string.
+
+		This function tokenizes a string like a shell command line. It takes quoted
+		arguments etc into account.
+
+		Args:
+			line: String with arguments, possibly quoted.
+		Return:
+			List of tokens / arguments.
+	"""
+	return shlex.split(line)
 
 
 ##############################################################################
@@ -844,7 +862,7 @@ def _doAssert(pcontext:PContext, arg:str) -> PContext:
 		Return:
 			The PContext object, or None in case of an error.
 	"""
-	if (result := _compareExpression(pcontext, arg)) is None:
+	if (result := _boolResult(pcontext, arg)) is None:
 		return None
 	if not result:
 		pcontext.setError(PError.assertionFailed, f'Assertion failed: {arg}')
@@ -1037,7 +1055,7 @@ def _doIf(pcontext:PContext, arg:str) -> PContext:
 			PContext object, or None in case of an error.
 	"""
 	pcontext.ifLevel += 1
-	if (result := _compareExpression(pcontext, arg)) is None:
+	if (result := _boolResult(pcontext, arg)) is None:
 		return None
 	if not result:
 		# Skip to else or endif if False(!).
@@ -1258,7 +1276,7 @@ def _doWhile(pcontext:PContext, arg:str) -> PContext:
 	if wpc is None or wpc != pcontext.pc:	# Only put this while on the stack if we just run into it for the first time
 		pcontext.saveWhileState()
 		pcontext.addWhileLoop()
-	if (result := _compareExpression(pcontext, arg)) is None:
+	if (result := _boolResult(pcontext, arg)) is None:
 		return None
 	if not result:
 		# Skip to endwhile if False(!).
@@ -1280,7 +1298,7 @@ def _doAnd(pcontext:PContext, arg:str, line:str) -> str:
 
 		Example:
 
-			${and <expression>+}
+			[and <expression>+]
 
 		There must be at least one expression result as an argument.
 
@@ -1308,7 +1326,7 @@ def _doArgv(pcontext:PContext, arg:str, line:str) -> str:
 
 		Example:
 
-			${argv [<index>]}
+			[argv [<index>] ]
 
 		- Without an index argument this macro returns the whole argument.
 		- If the index is 0 then script name is returned.
@@ -1355,40 +1373,16 @@ def _doArgc(pcontext:PContext, arg:str, line:str) -> str:
 	return '0'
 
 
-def _doCompare(pcontext:PContext, arg:str, line:str, op:str) -> str:
-	# TODO doc
-	if len(args := tokenize(arg)) != 2:
-		pcontext.setError(PError.invalid, f'Wrong number of arguments for operation: {op}. Must be == 2.')
-		return None
-	return str(_compareExpression(pcontext, f'{args[0]} {op} {args[1]}')).lower()
-
-
-def _doEval(pcontext:PContext, arg:str, line:str) -> str:
-	"""	This macro returns the result of a calculation.
-
-		Args:
-			pcontext: Current PContext for the script.
-			arg: The expression to be evaluated.
-			line: Not used.
-		Return:
-			String, or None in case of an error.
-	"""
-	if pcontext.argument:
-		if (r := _evalExpression(pcontext, arg)) is not None:
-			return str(r)
-	return ''
-
-
 def _doIn(pcontext:PContext, arg:str, line:str) -> str:
 	"""	With the *in* macro one can test whether a string can be found in another string.
 
 		Example:
 
-			${in <text> <string>}
+			[in <text> <string>]
 
 		Args:
 			pcontext: Current PContext for the script.
-			arg: The arguments.
+			arg: Two arguments: The first is the text to look for in the second argument.
 			line: The original code line.
 		Return:
 			String with either *false* or *false*, or None in case of an error.
@@ -1423,7 +1417,7 @@ def _doNot(pcontext:PContext, arg:str, line:str) -> str:
 
 		Example:
 
-			${not <expression>}
+		[not <expression>]
 
 		There must be exactly one expression result as an argument.
 
@@ -1451,7 +1445,7 @@ def _doOr(pcontext:PContext, arg:str, line:str) -> str:
 
 		Example:
 
-			${or <expression>+}
+			[or <expression>+]
 
 		There must be at least one expression result as an argument.
 
@@ -1556,7 +1550,6 @@ _builtinCommands:PCmdDict = {
 	'endprocedure':	_doEndProcedure,
 	'endswitch':	_doEndSwitch,
 	'endwhile':		_doEndWhile,
-	'error':		_doError,
 	'if':			_doIf,
 	'inc':			lambda p, a : _doIncDec(p, a),
 	'log':			lambda p, a : _doLog(p, a,),
@@ -1564,6 +1557,7 @@ _builtinCommands:PCmdDict = {
 	'print':		_doPrint,
 	'procedure':	_doProcedure,
 	'quit':			_doQuit,
+	'quitwitherror':_doError,
 	'set':			_doSet,
 	'sleep':		_doSleep,
 	'switch':		_doSwitch,
@@ -1574,32 +1568,43 @@ _builtinCommands:PCmdDict = {
 _builtinMacros:PMacroDict = {
 	# !!! macro names must be lower case
 
-	'and':		_doAnd,
 	'argc':		_doArgc,
 	'argv':		_doArgv,
 	'datetime':	lambda c, a, l: datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%S.%f' if not a else a),
-	'eval':		_doEval,
 	'in':		_doIn,
-	'loop':		lambda c, a, l: str(c.whileLoopCounter(l)),
+	'loop':		lambda c, a, l: str(x) if ((x := c.whileLoopCounter()) and x is not None) else x,	# type:ignore [dict-item, return-value]
 	'lower':	lambda c, a, l: a.lower(),
 	'match':	_doMatch,
-	'not':		_doNot,
-	'or':		_doOr,
 	'random':	_doRandom,
 	'result':	lambda c, a, l: c.result,
 	'round':	_doRound,
 	'runcount':	lambda c, a, l: str(c.runs),
 	'upper':	lambda c, a, l: a.upper(),
 
+	# Math operators
+	'+':		lambda c, a, l: _calculate(c, a, l, operator.add),
+	'-':		lambda c, a, l: _calculate(c, a, l, operator.sub),
+	'*':		lambda c, a, l: _calculate(c, a, l, operator.mul),
+	'/':		lambda c, a, l: _calculate(c, a, l, operator.truediv),
+	'//':		lambda c, a, l: _calculate(c, a, l, operator.floordiv),
+	'**':		lambda c, a, l: _calculate(c, a, l, operator.pow),
+	'%':		lambda c, a, l: _calculate(c, a, l, operator.mod),
+	
+	# Comparisons
+	'==':		lambda c, a, l: _compare(c, a, l, operator.eq),
+	'!=':		lambda c, a, l: _compare(c, a, l, operator.ne),
+	'>':		lambda c, a, l: _compare(c, a, l, operator.gt),
+	'>=':		lambda c, a, l: _compare(c, a, l, operator.ge),
+	'<':		lambda c, a, l: _compare(c, a, l, operator.lt),
+	'<=':		lambda c, a, l: _compare(c, a, l, operator.le),
+
+	# Logical operators
 	'!':		_doNot,
+	'not':		_doNot,
 	'&&':		_doAnd,
+	'and':		_doAnd,
 	'||':		_doOr,
-	'==':		lambda c, a, l: _doCompare(c, a, l, '=='),
-	'!=':		lambda c, a, l: _doCompare(c, a, l, '!='),
-	'>':		lambda c, a, l: _doCompare(c, a, l, '>'),
-	'>=':		lambda c, a, l: _doCompare(c, a, l, '>='),
-	'<':		lambda c, a, l: _doCompare(c, a, l, '<'),
-	'<=':		lambda c, a, l: _doCompare(c, a, l, '<='),
+	'or':		_doOr,
 }
 
 
@@ -1626,14 +1631,13 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 			This is done recursively.
 
 			Args:
-				macro: The name and argument of a macro. Everything between ${...}.
+				macro: The name and argument of a macro. Everything between [...].
 			Return:
 				The fully replaced macro.
 		"""
-		
 		# remove prefix & trailer
-		macro = macro[2:-1] 					
-		
+		macro = macro[1:-1] 			
+
 		# Resolve contained macros recursively
 		if (macro := checkMacros(pcontext, macro)) is None:
 			return None
@@ -1684,7 +1688,6 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 		return pcontext_.result
 
 
-
 	# replace macros
 	# _macroMatch = re.compile(r"\$\{[\s\w-.]+\}")
 	# items = re.findall(_macroMatch, line)
@@ -1695,6 +1698,7 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 
 	# The following might be easier with a regex, but we want to allow recursive macros, therefore
 	# parsing the string is simpler for now. Suggestions welcome!
+
 
 	i = 0
 	l = len(line)
@@ -1708,11 +1712,10 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 			result += line[i]
 			i += 1
 
-		# Found ${ in the input line
-		elif c == '$' and i < l and line[i] == '{':
-			macro = '${'
-			i += 1
-			oc = 0
+		# Found [ in the input line
+		elif c == '[':
+			macro = c
+			oc = 0	# macro deep level
 			# try to find the end of the macro.
 			# Skip contained macros in between. They will be
 			# resolved recursively later
@@ -1722,14 +1725,13 @@ def checkMacros(pcontext:PContext, line:str) -> str:
 				if c == '\\' and i < l:
 					macro += line[i]
 					i += 1
-				elif c == '$' and i < l and line[i] == '{':
+				elif c == '[':
 					oc += 1
-					i += 1
-					macro += '${'
-				elif c == '}':
+					macro += '['
+				elif c == ']':
 					if oc > 0:	# Skip if not end of _this_ macro
 						oc -= 1
-						macro += '}'
+						macro += ']'
 					else:	# End of macro. Might contain other macros! Those will be resolved later
 						macro += c
 						if (r := _replaceMacro(macro)) is None:
@@ -1866,121 +1868,164 @@ def _skipWhile(pcontext:PContext) -> PContext:
 	return pcontext
 
 
-def _compareExpression(pcontext:PContext, expr:str) -> bool:
-	"""	Resolve a compare expression. boolean *true* and *false*, and the
-		comparison operators ==, !=, <, <=, >, >= are supported.
+# # TODO delete
+# def _compareExpression(pcontext:PContext, expr:str) -> bool:
+# 	"""	Resolve a compare expression. boolean *true* and *false*, and the
+# 		comparison operators ==, !=, <, <=, >, >= are supported.
+
+# 		Args:
+# 			pcontext: Current PContext for the script.
+# 			expr: The compare expression.
+# 		Return:
+# 			Boolean.
+# 	"""
+# 	def _strDecimal(val:str) -> Union[Decimal, str]:
+# 		try:
+# 			return Decimal(val)	# try to unify float values
+# 		except InvalidOperation as e:
+# 			# print(str(e))
+# 			return val.strip()
+	
+# 	def _checkDecimal(l:str, r:str) -> Tuple[Decimal, Decimal]:
+# 		_l = _strDecimal(l)
+# 		_r = _strDecimal(r)
+# 		if isinstance(_l, Decimal) and isinstance(_r, Decimal):
+# 			return _l, _r
+# 		pcontext.setError(PError.invalid, f'Unknown expression: {expr}')
+# 		return None
+
+# 	# Boolean checks
+# 	if expr.lower() == 'true':
+# 		return True
+# 	if expr.lower() == 'false':
+# 		return False
+
+# 	# equality checks
+# 	if (t := expr.partition('==')) and t[1]:
+# 		return _strDecimal(t[0]) == _strDecimal(t[2])	# still convert to Decimal to convert an int to a Decimal, if necessary
+# 	if (t := expr.partition('!=')) and t[1]:
+# 		return _strDecimal(t[0]) != _strDecimal(t[2])	# still convert to Decimal to convert an int to a Decimal, if necessary
+
+# 	# order checks
+# 	if (t := expr.partition('<=')) and t[1]:
+# 		if not (lr := _checkDecimal(t[0], t[2])):	# Error set in function
+# 			return None
+# 		return lr[0] <= lr[1]
+# 	elif (t := expr.partition('>=')) and t[1]:
+# 		if not (lr := _checkDecimal(t[0], t[2])):	# Error set in function
+# 			return None
+# 		return lr[0] >= lr[1]
+# 	elif (t := expr.partition('<')) and t[1]:
+# 		if not (lr := _checkDecimal(t[0], t[2])):	# Error set in function
+# 			return None
+# 		return lr[0] < lr[1]
+# 	elif (t := expr.partition('>')) and t[1]:
+# 		if not (lr := _checkDecimal(t[0], t[2])):	# Error set in function
+# 			return None
+# 		return lr[0] > lr[1]
+# 	pcontext.setError(PError.invalid, f'Unknown expression: {expr}')
+# 	return None
+
+
+def _compare(pcontext:PContext, arg:str, line:str, op:Callable) -> str:
+	"""	Compare two arguments with a comparison operator.
+
+		If both arguments are numbers then a numeric comparison is done, other a string compare is performed.
+		The difference is that, for example, "4" > "30" when compared as a string.
 
 		Args:
 			pcontext: Current PContext for the script.
-			expr: The compare expression.
+			arg: The arguments for the compare. This string must contain two arguments.
+			line: The whole script line. Not used.
+			op: An `operator` method used for the comparison.
 		Return:
-			Boolean.
+			String with *true* or *false* depending on the result of the comparison.
 	"""
 	def _strDecimal(val:str) -> Union[Decimal, str]:
+		"""	Helper function to cast a comparable value.
+
+			Args:
+				val: The value to cast
+			Return:
+				Either a Decimal object (when the value is a number) as a string, or just a normal string.
+		"""
 		try:
 			return Decimal(val)	# try to unify float values
 		except InvalidOperation as e:
-			# print(str(e))
 			return val.strip()
-	
-	def _checkDecimal(l:str, r:str) -> Tuple[Decimal, Decimal]:
-		_l = _strDecimal(l)
-		_r = _strDecimal(r)
-		if isinstance(_l, Decimal) and isinstance(_r, Decimal):
-			return _l, _r
-		pcontext.setError(PError.invalid, f'Unknown expression: {expr}')
+
+	if len(args := tokenize(arg)) != 2:
+		pcontext.setError(PError.invalid, f'Wrong number of arguments for operation: Must be == 2.')
 		return None
-
-	# Boolean checks
-	if expr.lower() == 'true':
-		return True
-	if expr.lower() == 'false':
-		return False
-
-	# equality checks
-	if (t := expr.partition('==')) and t[1]:
-		return _strDecimal(t[0]) == _strDecimal(t[2])	# still convert to Decimal to convert an int to a Decimal, if necessary
-	if (t := expr.partition('!=')) and t[1]:
-		return _strDecimal(t[0]) != _strDecimal(t[2])	# still convert to Decimal to convert an int to a Decimal, if necessary
-
-	# order checks
-	if (t := expr.partition('<=')) and t[1]:
-		if not (lr := _checkDecimal(t[0], t[2])):	# Error set in function
-			return None
-		return lr[0] <= lr[1]
-	elif (t := expr.partition('>=')) and t[1]:
-		if not (lr := _checkDecimal(t[0], t[2])):	# Error set in function
-			return None
-		return lr[0] >= lr[1]
-	elif (t := expr.partition('<')) and t[1]:
-		if not (lr := _checkDecimal(t[0], t[2])):	# Error set in function
-			return None
-		return lr[0] < lr[1]
-	elif (t := expr.partition('>')) and t[1]:
-		if not (lr := _checkDecimal(t[0], t[2])):	# Error set in function
-			return None
-		return lr[0] > lr[1]
-	pcontext.setError(PError.invalid, f'Unknown expression: {expr}')
-	return None
+	
+	# Convert to strings if either argument is a string
+	l = _strDecimal(args[0])
+	r = _strDecimal(args[1])
+	if isinstance(l, str) or isinstance(r, str):
+		l = str(l)
+		r = str(r)
+	
+	# Compare and return
+	return str(op(l, r)).lower()
 
 
-def _evalExpression(pcontext:PContext, expr:str) -> Decimal:
-	"""	Resolve a simple math expression. The operators +, -, \*, /, % (mod), ^ are suppored.
-		The result is always a Decimal.
+def _boolResult(pcontext:PContext, arg:str) -> bool:
+	"""	Test whether an argument is either *true* or *false*.
 
 		Args:
 			pcontext: Current PContext for the script.
-			expr: The expression to calculate
+			arg: The argument for the compare. 
 		Return:
-			Decimal, the result of the calculation.
+			Boolean *True* or *False*, or *None* in case of an error.
 	"""
+	if arg.lower() == 'true':
+		return True
+	if arg.lower() == 'false':
+		return False
+	pcontext.setError(PError.invalid, f'Expression must be "true" or "false"')
+	return None
 
-	def _evalSub(t:Tuple[str, str, str]) -> Tuple[Decimal, Decimal]:
-		a = _evalExpression(pcontext, t[0])
-		b = _evalExpression(pcontext, t[2])
-		if a is None or b is None:
-			return None
-		return a, b
 
-	expr = expr.strip()
+def _calculate(pcontext:PContext, arg:str, line:str, op:Callable, single:bool = False) -> str:
+	"""	Perform a arithmetic calculation.
+
+		This function performs an arithmetic operation on multiple arguments. The same
+		operation is subsequentially performed on an argument to the result of the
+		last iteration.
+
+		Example:
+			[+ 1 2 3]
+			# yields 6
+		Args:
+			pcontext: Current PContext for the script.
+			arg: Line that contains all the arguments.
+			line: The whole script line. Not used.
+			op: An `operator` method used for the arithmetics operation.
+			single: Operation allows only one argument.
+		Return:
+			String with a number result of the operatio, or *None* in case of an error.
+	"""
 	
-	# The following is a hack to allow negative numbers to be used with the
-	# simple expression parser below. It just takes advantage that
-	# -n = 0 - n
-	# This way negative numbers are just a result of a calculation. 
-	# Not prestty but lazy.
-	if expr.startswith('-'):
-		expr = f'0{expr}'
-	
-	if (t := expr.partition('+')) and t[1]:
-		if (r := _evalSub(t)) is None:
-			return None
-		return r[0] + r[1]
-	if (t := expr.partition('-')) and t[1]:
-		if (r := _evalSub(t)) is None:
-			return None
-		return r[0] - r[1]
-	if (t := expr.partition('*')) and t[1]:
-		if (r := _evalSub(t)) is None:
-			return None
-		return r[0] * r[1]
-	if (t := expr.partition('/')) and t[1]:
-		if (r := _evalSub(t)) is None:
-			return None
-		return r[0] / r[1]
-	if (t := expr.partition('%')) and t[1]:
-		if (r := _evalSub(t)) is None:
-			return None
-		return r[0] % r[1]
-	if (t := expr.partition('^')) and t[1]:
-		if (r := _evalSub(t)) is None:
-			return None
-		return r[0] ** r[1]
-	try:
-		return Decimal(expr)
-	except InvalidOperation as e:
-		pcontext.setError(PError.notANumber, f'Not a number: {expr}')
+	if len(args := tokenize(arg)) < 2:
+		pcontext.setError(PError.invalid, f'Wrong number of arguments for operation: Must be >= 2')
 		return None
+	
+	# Convert strings to numbers
+	nums:list[Decimal] = []
+	try:
+		for each in args:
+			nums.append(Decimal(each))
+	except InvalidOperation as e:
+		pcontext.setError(PError.invalid, f'Not a number: {each}')
+		return None
+
+	# Do the calculation
+	while len(nums) > 1:
+		l = nums.pop(0)
+		r = nums.pop(0)
+		nums.insert(0, op(l, r)) # calculate and insert the result to the beginning of the list
+
+	return str(nums[0])	# final result is the only element in the list.
 
 
 def _executeProcedure(pcontext:PContext, cmd:str, arg:str) -> PContext:

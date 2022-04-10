@@ -10,15 +10,15 @@
 @usage enableShortRequestExpiration <seconds>
 @uppertester
 
-if ${argc} != 1
+if [!= [argc] 1]
 	logError Wrong number of arguments: enableShortRequestExpiration <expirationTimeout>
-	error
+	quitWithError
 endif
 
 ##################################################################
 
 # Store and then set the CSE's request expiration timeout 
-storagePut cse.requestExpirationDelta ${cse.requestExpirationDelta}
-setConfig cse.requestExpirationDelta ${argv 1}
+storagePut cse.requestExpirationDelta [cse.requestExpirationDelta]
+setConfig cse.requestExpirationDelta [argv 1]
 
-quit ${storageGet cse.requestExpirationDelta}
+quit [storageGet cse.requestExpirationDelta]

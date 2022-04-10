@@ -9,16 +9,16 @@
 @usage disableShortRequestExpiration
 @uppertester
 
-if ${argc} > 0
+if [> [argc] 0]
 	logError Wrong number of arguments: disableShortRequestExpiration
-	error
+	quitWithError
 endif
 
 ##################################################################
 
 # Restore the CSE's request expiration check
-if ${storageHas cse.requestExpirationDelta}
-	setConfig cse.requestExpirationDelta ${storageGet cse.requestExpirationDelta}
+if [storageHas cse.requestExpirationDelta]
+	setConfig cse.requestExpirationDelta [storageGet cse.requestExpirationDelta]
 	storageRemove cse.requestExpirationDelta
 endif
 

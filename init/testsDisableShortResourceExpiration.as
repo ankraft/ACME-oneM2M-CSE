@@ -9,21 +9,21 @@
 @usage disableShortResourceExpiration
 @uppertester
 
-if ${argc} > 0
+if [> [argc] 0]
 	logError Wrong number of arguments: disableShortResourceExpiration
-	error
+	quitWithError
 endif
 
 ##################################################################
 
 # Restore the CSE's expiration check expirationInterval
-if ${storageHas cse.checkExpirationsInterval}
-	setConfig cse.checkExpirationsInterval ${storageGet cse.checkExpirationsInterval}
+if [storageHas cse.checkExpirationsInterval]
+	setConfig cse.checkExpirationsInterval [storageGet cse.checkExpirationsInterval]
 	storageRemove cse.checkExpirationsInterval
 endif
 
 # Restore the CSE's minimum ET value for <request> resources
-if ${storageHas cse.req.minet}
-	setConfig cse.req.minet ${storageGet cse.req.minet}
+if [storageHas cse.req.minet]
+	setConfig cse.req.minet [storageGet cse.req.minet]
 	storageRemove cse.req.minet
 endif

@@ -122,7 +122,7 @@ Example:
 # Run the script when the '9' key is pressed
 @onkey 9
 
-print ${argv}
+print [argv]
 # -> onkey 9
 ```
 
@@ -131,7 +131,7 @@ print ${argv}
 ### @onNotification
 
 Usage:  
-@onNotification &lt;URI: acme://someId>
+@onNotification &lt;URI: acme://someID>
 
 With this meta tag a script acts as a receiver of a notification request from the CSE. 
 The ACME's own URL scheme "acme://&lt;identifier>" is used to define a URI that is
@@ -151,7 +151,7 @@ Example:
 # Run the script when the '9' key is pressed
 @onNotification acme://aNotification
 
-print ${notification.resource}
+print [notification.resource]
 # -> The notification resource
 ```
 

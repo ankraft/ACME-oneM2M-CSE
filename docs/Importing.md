@@ -32,23 +32,27 @@ Another option to import resources automatically whenever the CSE starts or rest
 
 ### Referencing Configuration Settings
 
-By using macros the initial resources can be kept independent from individual settings. Most [configuration](Configuration.md) settings can be referenced and used by a simple macro mechanism. For this a given macro name is enclosed by  ```${...}```, e.g. ```${cse.csi}```.
-
+By using macros the initial resources can be kept independent from individual settings. 
+Most [configuration](Configuration.md) settings can be referenced and used by a simple macro mechanism.
+For this a given macro name is enclosed by  ```[...]```, e.g. ```[cse.csi]```. 
 The following example shows the initial *CSEBase* resource definition from the *startup.as* script file:
 
 ```json
 importraw 
 {	
 	"m2m:cb" : {
-			"ri":   "${cse.ri}",
-			"rn":   "${cse.rn}",
-			"csi":  "${cse.csi}",
+			"ri":   "[cse.ri]",
+			"rn":   "[cse.rn]",
+			"csi":  "[cse.csi]",
 			"rr":   true,
-			"csz":  [ "application/json", "application/cbor" ],
-			"acpi": [ "${cse.csi}/acpCreateACPs" ]
+			"csz":  \[ "application/json", "application/cbor" ],
+			"acpi": \[ "[cse.csi]/acpCreateACPs" ]
 	}
 }
 ```
+
+Please note, that normal opening square brackets, e.g. in JSON lists, must be escaped.
+
 
 See the [documentation for scripts](ACMEScript.md).
 

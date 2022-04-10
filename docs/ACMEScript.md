@@ -13,9 +13,8 @@ The \[ACME] CSE supports a simple script language, called ACMEScript, that can b
 
 
 [ACMEScript Basics](#basics)  
-[Variables, Macros, and Procedures](#variables_macros_procedures)  
-[Commands](#commands)  
-[Calculations and Comparisons](#calc_comp)  
+[Commands, Variables, Macros, and Procedures](#commands_variables_macros_procedures)  
+[Arithmetics and Comparisons](#calc_comp)  
 [Context, Scopes, Arguments, and Results](#context_scope)  
 [Upper Tester Integration](#upper_tester)
 
@@ -75,6 +74,19 @@ There are different ways to run scripts:
 
 Scripts may have arguments that can be accessed with the [argc](ACMEScript-macros.md#macro_argc) and [argv](ACMEScript-macros.md#macro_argv) macros.
 
+
+#### Quoting strings
+
+In ACMEScript tokens, arguments, number etc. are separated by spaces. If a string or token needs to contain spaces
+then they must be wrapped by double quotes. Everything inside the quotes is then treated as a single token.
+
+Example:
+
+```text
+print [in "ab cd" "12 ab cd 34"]
+# -> true
+```
+
 #### Script Prompt
 
 A script may ask for input before it runs. This can be enabled with the [@prompt](ACMEScript-metatags.md#meta_prompt) meta tag. 
@@ -92,26 +104,38 @@ Data can be stored "persistently" during a CSE's runtime. This is intended to pa
 [Macros](ACMEScript-macros.md#macros_storage) and [commands](commands_storage) help to store, access, check and remove key/values.
 
 
-<a name="variables_macros_procedures"></a>
-## Variables, Macros, and Procedures
+<a name="commands_variables_macros_procedures"></a>
+## Commands, Variables, Macros, and Procedures
 
 ACMEScript supports variables, macros, and procedures. The difference is that variables are assigned during the script's flow, and
 macros are build-in functions evaluated during runtime, and may also have arguments. Procedures are named command sequences that
-are defined in the script.  
+are defined in the script itself.  
 
 See also the [list of available macros and variables](ACMEScript-macros.md).
 
 
-### Usage
-Variables, macros, and procedures are case insensitive, and they are evaluated by wrapping them like this: ```${name [<arguments>] }``` .
+### Commands
+
+Commands are built-in operations that perform special functions. They are identified as the first "word" on a line.
+
+Commands are used for control the script flow, perform checks, print messages to the log, execute oneM2M requests, etc. Depending on the command it may have none, one, or multiple arguments.
+
+See also the [list of available commands](ACMEScript-commands.md).
+
+### Variables, Macros, and Procedures
+Variables, macros, and procedures are case insensitive, and they are can be called by wrapping them like this: ```[name [<arguments>] ]``` .
 
 ```text
-# Assign the string "Hello, World!" to the variable "greeting"
+# Assign the string "Hello, World!" to the variable "greeting" and print the variable
 set greeting Hello, World!
-print ${greeting}
+print [greeting]
+
+# Print the current date and time
+print [datetime]
 ```
 
-Variables, macros, and procedures can be nested and are evaluated from the inside out:
+Variables, macros, and procedures can be nested and are evaluated from the inside out. This way one can perform 
+indirections when accessing macros, operations and variables.
 
 ```text
 set variable greeting
@@ -119,24 +143,24 @@ set greeting Hello, World!
 
 # The inner "variable" evaluates to "greeting", 
 # and is then taken as the name for the outer variable
-print ${${variable}}
+print [[variable]]
 ```
 
 Macros and procedures may have zero, one or more arguments:
 
 ```text
 # Print the name of the script, which is the script's argument with index 0
-print ${argv 0}
+print [argv 0]
 ```
-To print the string "${" one escape the special pattern with a backslash:
+To print the string "[" one must escape the special pattern with a backslash:
 
 ```text
-print \${datetime} = ${datetime}
+print \[datetime] = [datetime]
 ```
 
 This line will print:
 
->${datetime} = 20220107T221625.771604
+>[datetime] = 20220107T221625.771604
 
 ### Procedures
 The following example shows the definition of a procedure that returns a value, and its use:
@@ -144,11 +168,12 @@ The following example shows the definition of a procedure that returns a value, 
 ```text
 # Define a procedure to double its argument
 procedure double
-	set x = ${argv 1} * 2
-endProcedure ${x}
+	set x [* [argv 1] 2]
+endProcedure [x]
 
-# Call procedure
-print ${double 21}
+# Call the double procedure and print the result
+print [double 21]
+# -> 42
 ```
 
 One important difference for procedures is that they may be called like normal commands as well. They even might return a value, which is 
@@ -158,48 +183,50 @@ this:
 ```text
 # Call procedure
 double 21
-print ${result}
+print [result]
+# -> 42
 ```
 
-### Hierarchy
+Note that the *result* variable is overwritten with any subsequent procedure call.
 
-Please note, that the evaluation of variables, macros, and procedures happens in that order. If evaluating a ```${name}```
+### Evaluation Order
+
+Please note, that the evaluation of variables, macros, and procedures happens in this particular order. If evaluating a ```[name]```
 expression the ACMEScript interpreter first looks for a variable, then a macro, and lastly a procedure with that name.
 
 
 
-<a name="commands"></a>
-## Commands
-
-Commands are built-in operations that perform special functions. They are identified as the first "word" on a line.
-
-Commands are used for control the script flow, perform checks, print messages to the log, execute oneM2M requests, etc. Depending on the command it may have none, one, or multiple arguments.
-
-See also the [list of available commands](ACMEScript-commands.md).
-
-
 <a name="calc_comp"></a>
-## Calculations and Comparisons
+## Arithmetics and Comparisons
 
-ACMEScript has only limited support to do calculations, which can be done through the [eval](ACMEScript-macros.md#macro_eval) macro:
+### Arithmetic operations
+
+ACMEScript supports arithmetic calculations based on a functional approach. Arithmetic operators are defined as macros as it can
+be seen in the following example.
 
 ```text
 # Calculate the answer to everything
-set answer ${eval 6 * 7}
-print ${answer}
+set answer [* 6 7]
+print [answer]
 ```
 
-Some commands have a comparison expression, like the conditions for [IF](ACMEScript-commands.md#command_if) and [WHILE](ACMEScript-commands.md#command_while):
+There is no operator precedence, but the arithmetic operations can be nested:
 
 ```text
-# Check answer for correctness
-if ${answer} == 42
-	print Thanks for all the fish!
-endif
+# Calculate the answer to everything
+set answer [* 6 [+ 3 4] ]
+print [answer]
 ```
 
+Most arithmetic operations are not limited to 2 numerical arguments. Instead, there could be as many arguments to an operation as
+necessary:
 
-### Arithmetic Operators
+```text
+# Calculate the answer to everything
+set answer [* 2 3 3.5 2]
+print [answer]
+```
+
 
 The following arithmetic operators are supported:
 
@@ -209,63 +236,114 @@ The following arithmetic operators are supported:
 |    -     | Subtraction        |
 |    *     | Multiplication     |
 |    /     | Division           |
+|    //    | Rounding Division  |
 |    %     | Remainder (Modulo) |
-|    ^     | Exponentiation     |
+|    **    | Exponentiation     |
 
-Example:
+### Comparisons and boolean expressions
+
+Some commands evaluate the result of a comparison expression, for example [IF](ACMEScript-commands.md#command_if) 
+and [WHILE](ACMEScript-commands.md#command_while):
+
 ```text
-set answer ${eval 21 * 2}
+# Check answer for correctness
+if [== answer 42]
+	print Thanks for all the fish!
+endif
 ```
 
-<a name="comp_op"></a>
-### Comparison Operators
-Some commands have a comparison expression, like the conditions for [IF](ACMEScript-commands.md#command_if) and [WHILE](ACMEScript-commands.md#command_while):
+Comparison expressions work similar to the arithmetic expressions. One can call a macro that performs
+the comparison and evaluates either to *true* or *false.
 
-| Operator | Description        |
-|:--------:|--------------------|
-|    ==    | Equality           |
-|    !=    | Inequality         |
-|    <     | Less than          |
-|    <=    | Less or equal than |
-|    >     | Greater than       |
-|    >=    | Greater than       |
-|   true   | Explicit true      |
-|  false   | Explicit false     |
+Example for a while loop:
 
-Example:
 ```text
 set i = 0
-while ${i} < 10
+while [< [i] 10]
 	inc i
 endwhile
 ```
+
+Comparisons and boolean expressions can be nested like arithmetic expressions, and combined and evaluated 
+via the *and*, *or*, and *not* operators. However, there is no short-circuit evaluation of boolean
+expressions, ie. all elements of an expression are evaluated.
+
+```text
+procedure TrueOrFalse
+	print True or False?
+endprocedure true
+
+print [or [not false] [< 42 23] [TrueOrFalse] ]
+# -> True or False?
+# -> true
+```
+
+
+In addition to use comparison operators, one can always use the boolean values *true* and *false* in an expression.
+
+Example:
+
+```text
+if true
+	print This line is allways executed
+endif
+```
+
+The following comparison operators are supported:
+
+
+| Operator | Description        | Number of possible Arguments |
+|:--------:|--------------------|:----------------------------:|
+|    ==    | Equality           |              2               |
+|    !=    | Inequality         |              2               |
+|    <     | Less than          |              2               |
+|    <=    | Less or equal than |              2               |
+|    >     | Greater than       |              2               |
+|    >=    | Greater than       |              2               |
+| and, &&  | Logical AND        |            1 .. n            |
+| or, \|\| | Logical OR         |            1 .. n            |
+|  not, !  | Logical NOT        |              1               |
+
 
 
 <a name="context_scope"></a>
 ## Context, Scopes, Arguments, and Results
 
-Each script runs in its own context, which holds the script's state, variables, arguments, result etc. 
+Each script runs in its own context, which holds a script's state, variables, arguments, result etc. 
 
 Also, a script defines has a stack of scopes. Many commands, when run, define a new scope. This allows for these commands to have arguments and also to return results. An obvious example are [procedures](ACMEScript-commands.md#command_procedure), but also [WHILE](ACMEScript-commands.md#command_while) loops run in their own scope and may return results.
 
 
 ### Arguments and results of procedures
+
 ```text
 # Define a procedure to add two numbers and return the result
 procedure add
-	set r = ${argv 1} + ${argv 2}
-endprocedure ${r}
+	set r [+ [argv 1] [argv 2] ]
+endprocedure [r]
 
-# Call the procedure with arguments and print the result afterwards
+# Call the procedure with arguments and print the result
 add 16 7
-print ${result}
+print [result]
 
 ``` 
 
+### Use a procedure like a macro
+
+```text
+# Define a procedure to add two numbers and return the result
+procedure add
+	set r  [+ [argv 1] [argv 2] ]
+endprocedure [r]
+
+# Call the procedure with arguments and print the result
+
+print [add 16 7]
+``` 
 
 ### Result of a while loop
 ```text
-while ${x} < 100
+while [< x 100]
 
 	...do something...
 
@@ -273,13 +351,29 @@ while ${x} < 100
 		# "return" aResult
 		break aResult
 	endif
+	inc x
 # "return" anotherResult if while ends normally
 endwhile anotherResult
 
 # The `result` macro returns a scope's result
-print ${result}
-
+print [result]
 ```
+
+### "loop" Variable 
+
+For every *while* loop there is an implicit *loop* variable declared that it only valid in the scope of the *while* loop.
+It is incremented in every iteration, and can be used inside the *while* loop's comparison and body.
+
+Example:
+
+```text
+while [< [loop] 10]
+	print [loop]
+endwhile
+print [loop]
+# -> yields an error because "loop" is not defined outside a while loop
+```
+
 
 <a name="upper_tester"></a>
 ## Upper Tester Integration

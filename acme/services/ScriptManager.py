@@ -545,7 +545,7 @@ class ACMEPContext(PContext):
 		""" Retrieve an attribute of a resource via its key path. 
 		
 			Example:
-				${attribute <key path> <resource>}
+				[attribute <key path> <resource>]
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument(s) of the command.
@@ -571,7 +571,7 @@ class ACMEPContext(PContext):
 		""" Retrieve the CSE status . 
 		
 			Example:
-				${cseStatus}
+				[cseStatus]
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument(s) of the command.
@@ -585,7 +585,7 @@ class ACMEPContext(PContext):
 		""" Check whether an attribute exists for the given its key path . 
 		
 			Example:
-				${hasAttribute <key path> <resource>}
+			[hasAttribute <key path> <resource>]
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument(s) of the command.
@@ -611,7 +611,7 @@ class ACMEPContext(PContext):
 			such as Jupyter Notebooks.
 		
 			Example:
-				${isIPython}
+			[isIPython]
 			Args:
 				pcontext: PContext object of the runnig script.
 				arg: remaining argument(s) of the command. Shall be none.
