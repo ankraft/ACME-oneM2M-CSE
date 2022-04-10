@@ -509,8 +509,8 @@ class Configuration(object):
 			return False, 'Configuration Error: \[cse]:releaseVersion must not be empty'
 		if rvi not in srv:
 			return False, f'Configuration Error: \[cse]:releaseVersion: {rvi} not in \[cse].supportedReleaseVersions: {srv}'
-		if any([s for s in srv if str(rvi) < s]):
-			return False, f'Configuration Error: \[cse]:releaseVersion: {rvi} less than highest value in \[cse].supportedReleaseVersions: {srv}'
+		# if any([s for s in srv if str(rvi) < s]):
+		# 	return False, f'Configuration Error: \[cse]:releaseVersion: {rvi} less than highest value in \[cse].supportedReleaseVersions: {srv}'
 
 		# Check various intervals
 		if Configuration._configuration['cse.checkExpirationsInterval'] <= 0:
