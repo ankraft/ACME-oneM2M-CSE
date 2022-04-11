@@ -147,7 +147,7 @@ flexBlockingPreference=blocking
 ; A comma-separated list of supported release versions. This list can contain a single or multiple values.
 ; Default: 2a,3,4
 supportedReleaseVersions=2a,3,4
-; The release version indicator for requests. Allowed values: 1,2,3,3a,4. Default: 4
+; The release version indicator for requests. Allowed values: 2a,3,4. Default: 4
 releaseVersion=4
 ; Indicate the serialization format if none was given in a request and cannot be determined otherwise.
 ; Allowed values: json, cbor. Default: json

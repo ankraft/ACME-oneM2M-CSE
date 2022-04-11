@@ -133,7 +133,7 @@ class Configuration(object):
 				'cse.checkExpirationsInterval'			: config.getint('cse', 'checkExpirationsInterval',		fallback = 60),		# Seconds
 				'cse.flexBlockingPreference'			: config.get('cse', 'flexBlockingPreference',			fallback = 'blocking'),
 				'cse.supportedReleaseVersions'			: config.getlist('cse', 'supportedReleaseVersions',		fallback = ['2a', '3', '4']), # type: ignore [attr-defined]
-				'cse.releaseVersion'					: config.get('cse', 'releaseVersion',					fallback = '4'),
+				'cse.releaseVersion'					: config.get('cse', 'releaseVersion',					fallback = '3'),
 				'cse.defaultSerialization'				: config.get('cse', 'defaultSerialization',				fallback = 'json'),
 
 				#
@@ -510,7 +510,7 @@ class Configuration(object):
 		if rvi not in srv:
 			return False, f'Configuration Error: \[cse]:releaseVersion: {rvi} not in \[cse].supportedReleaseVersions: {srv}'
 		# if any([s for s in srv if str(rvi) < s]):
-		# 	return False, f'Configuration Error: \[cse]:releaseVersion: {rvi} less than highest value in \[cse].supportedReleaseVersions: {srv}'
+		#	return False, f'Configuration Error: \[cse]:releaseVersion: {rvi} less than highest value in \[cse].supportedReleaseVersions: {srv}. Either increase the [i]releaseVersion[/i] or reduce the set of [i]supportedReleaseVersions[/i].'
 
 		# Check various intervals
 		if Configuration._configuration['cse.checkExpirationsInterval'] <= 0:
