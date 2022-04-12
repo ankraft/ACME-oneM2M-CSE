@@ -48,8 +48,9 @@ class TestTS(unittest.TestCase):
 		self.assertIsNotNone(TestTS.ae)
 		dct = 	{ 'm2m:ts' : { 
 					'rn'	: tsRN,
-					'pei'	: 1000,
+					'pei'	: 10000,
 					'mdd'	: True,
+					'mdt'	: 5001,
 					'mdn'	: 10,
 					'cnf'	: 'text/plain:0'
 				}}
@@ -68,12 +69,14 @@ class TestTS(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:ts/cbs'), 0)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/cnf'))
 		self.assertEqual(findXPath(r, 'm2m:ts/cnf'), 'text/plain:0')
-		self.assertEqual(findXPath(r, 'm2m:ts/pei'), 1000)
-		self.assertEqual(findXPath(r, 'm2m:ts/peid'), 500)
+		self.assertEqual(findXPath(r, 'm2m:ts/pei'), 10000)
+		self.assertEqual(findXPath(r, 'm2m:ts/peid'), 5000)
 		self.assertTrue(findXPath(r, 'm2m:ts/mdd'))
 		self.assertEqual(findXPath(r, 'm2m:ts/mdn'), 10)
 		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'))		# empty mdlt is not created by default
 		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdt'))
+		self.assertEqual(findXPath(r, 'm2m:ts/mdt'), 5001)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -399,6 +402,21 @@ class TestTS(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createTSwithMissingMdtFail(self) -> None:
+		""" Create <TS> with missing mdtcnf -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = {	'm2m:ts': {
+					'rn':'TimeSeries2',
+					'mni': 10,
+					'pei': 5000,                          # milliseconds
+					'peid': 200,                           # milliseconds
+					'mdd': True
+				}
+			}
+		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 
@@ -436,6 +454,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestTS('test_createTSwithPeid'))
 	suite.addTest(TestTS('test_createTSwithPeidWrong'))
 	suite.addTest(TestTS('test_createTSwithCnfWrong'))
+
+	suite.addTest(TestTS('test_createTSwithMissingMdtFail'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

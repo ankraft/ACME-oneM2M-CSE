@@ -68,8 +68,6 @@ class TS(AnnounceableResource):
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
 		super().__init__(T.TS, dct, pi, create = create)
 
-		self.setAttribute('mdd', True, overwrite = False)	# Default is False if not provided
-
 		self.setAttribute('cni', 0, overwrite = False)
 		self.setAttribute('cbs', 0, overwrite = False)
 		if Configuration.get('cse.ts.enableLimits'):	# Only when limits are enabled
@@ -209,6 +207,10 @@ class TS(AnnounceableResource):
 			self.setAttribute('peid', int(self.pei/2), False)	# CSE internal policy
 		
 		# Check MDT
+		L.inspect(str(self.dict))
+		if self.mdd and self.mdt is None:
+			L.isDebug and L.logDebug(dbg := 'mdt must be set if mdd is True')
+			return Result.errorResult(dbg = dbg)
 		if self.mdd and self.mdt is not None and self.peid is not None and self.mdt <= self.peid:
 			L.isDebug and L.logDebug(dbg := 'mdt must be > peid')
 			return Result.errorResult(dbg = dbg)
