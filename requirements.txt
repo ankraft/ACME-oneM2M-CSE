@@ -34,6 +34,8 @@ paho-mqtt==1.6.1
     # via ACME-oneM2M-CSE (setup.py)
 pfzy==0.3.4
     # via inquirerpy
+plotext==4.2.0
+    # via ACME-oneM2M-CSE (setup.py)
 prompt-toolkit==3.0.28
     # via inquirerpy
 pygments==2.11.2

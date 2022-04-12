@@ -11,13 +11,13 @@ from __future__ import annotations
 from typing import List, cast
 import datetime, json, os, sys, webbrowser
 from enum import IntEnum, auto
-from xml.etree.ElementTree import iselement
 from rich.style import Style
 from rich.table import Table
 from rich.panel import Panel
 from rich.tree import Tree
 from rich.live import Live
 from rich.text import Text
+import plotext as plt
 
 
 
@@ -115,6 +115,7 @@ class Console(object):
 			'C'		: self.clearScreen,
 			'D'		: self.deleteResource,
 			'E'		: self.exportResources,
+			'G'		: self.plotGraph,
 			'i'		: self.inspectResource,
 			'I'		: self.inspectResourceChildren,
 			'k'		: self.katalogScripts,
@@ -179,6 +180,7 @@ class Console(object):
 			('D', 'Delete resource'),
 			('E', 'Export resource tree to *init* directory'),
 			('i', 'Inspect resource'),
+			('G', 'Plot graph (only for container)'),
 			('I', 'Inspect resource and child resources'),
 			('k', 'Catalog of scripts'),
 			('l', 'Toggle screen logging on/off'),
@@ -538,6 +540,39 @@ Available under the BSD 3-Clause License
 		"""	Open the web UI in the default web browser.
 		"""
 		webbrowser.open(f'{CSE.httpServer.serverAddress}?open')
+
+
+	def plotGraph(self, _:str) -> None:
+		L.console('Plot graph', isHeader = True)
+		L.off()		
+		if (ri := L.consolePrompt('Container ri')):
+			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
+				L.console(res.dbg, isError = True)
+			else:
+				if res.resource.ty != T.CNT:
+					L.console('resource must be a <container>', isError = True)
+				
+				# plot
+				try:
+					cins = CSE.dispatcher.directChildResources(res.resource.ri, T.CIN)
+					x = range(1, (lcins := len(cins)) + 1)
+					y = [ float(each.con) for each in cins ]
+					cols, rows = plt.terminal_size()
+
+					plt.canvas_color('default')
+					plt.axes_color('default')
+					plt.ticks_color(L.terminalStyleRGBTupple)
+					plt.frame(True)
+					plt.plot_size(None, rows/2)
+					plt.xticks([1, int(lcins/4), int(lcins/4) * 2, int(lcins/4) * 3, lcins])
+
+					plt.title(f'{res.resource[Resource._srn]} ({res.resource.ri})')
+					plt.plot(x, y, color = L.terminalStyleRGBTupple)
+					plt.show()
+					plt.clear_figure()
+				except Exception as e:
+					L.logErr(str(e), exc = e)
+		L.on()
 
 
 

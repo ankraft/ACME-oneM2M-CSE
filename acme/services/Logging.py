@@ -104,6 +104,7 @@ class Logging:
 	_logWorker:BackgroundWorker		= None
 
 	terminalStyle:Style				= Style(color = terminalColorDark)
+	terminalStyleRGBTupple			= (0,0,0)
 	terminalStyleError:Style		= Style(color = terminalColorErrorDark)
 	tableRowStyle:Style				= Style(bgcolor = tableRowColorDark)
 
@@ -174,7 +175,7 @@ class Logging:
 		Logging.terminalStyle 		= Style(color = terminalColorDark if theme == 'dark' else terminalColorLight)
 		Logging.tableRowStyle		= Style(bgcolor = tableRowColorDark if theme == 'dark' else tableRowColorLight)
 		Logging.terminalStyleError	= Style(color = terminalColorErrorDark if theme == 'dark' else terminalColorErrorLight)
-
+		Logging.terminalStyleRGBTupple = ( Logging.terminalStyle.color.triplet.red, Logging.terminalStyle.color.triplet.green, Logging.terminalStyle.color.triplet.blue )
 
 	@staticmethod
 	def configUpdate(key:str = None, value:Any = None) -> None:
