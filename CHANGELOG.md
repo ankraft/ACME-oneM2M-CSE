@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added support for &lt;pollingChannel>'s *requestAggregation* attribute and functionality.
 - [WEB] Allow to open the WebUI of a registered CSE via the context menu.
 - [CONSOLE] Added config for dark (default) and light theme for better readability on consoles with light background.
+- [CONSOLE] Added graph plotting for &lt;contentInstance> resources that contain numerical values.
 - [SCRIPTS] Added scripting to the CSE.
 - [SCRIPTS] A dedicated startup script is now executed during startup. This is mainly used to import the base resources and resource structure, and replaces the JSON resource imports.
 - [SCRIPTS] Added executing scripts to the console
