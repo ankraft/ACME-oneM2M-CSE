@@ -15,7 +15,8 @@ from threading import Lock
 from tinydb.utils import V
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import CSERequest, ContentSerializationType, MissingData, ResourceTypes, Result, NotificationContentType, NotificationEventType, ResponseStatusCode as RC
+from ..etc.Types import CSERequest, ContentSerializationType, MissingData, ResourceTypes, Result, NotificationContentType, NotificationEventType
+from ..etc.Types import ResponseStatusCode as RC, EventCategory
 from ..etc.Types import JSON, Parameters
 from ..etc import Utils, DateUtils
 from ..services.Logging import Logging as L
@@ -470,7 +471,7 @@ class NotificationManager(object):
 		return True
 
 
-	def _sendSubscriptionAggregatedBatchNotification(self, ri:str, nu:str, ln:bool=False) -> bool:
+	def _sendSubscriptionAggregatedBatchNotification(self, ri:str, nu:str, ln:bool = False) -> bool:
 		"""	Send and remove(!) the available BatchNotifications for an ri & nu.
 		"""
 		with self.lockBatchNotification:
@@ -478,7 +479,7 @@ class NotificationManager(object):
 
 			# Collect the stored notifications for the batch and aggregate them
 			notifications = []
-			for notification in sorted(CSE.storage.getBatchNotifications(ri, nu), key=lambda x: x['tstamp']):	# type: ignore[no-any-return] # sort by timestamp added
+			for notification in sorted(CSE.storage.getBatchNotifications(ri, nu), key = lambda x: x['tstamp']):	# type: ignore[no-any-return] # sort by timestamp added
 				if n := Utils.findXPath(notification['request'], 'sgn'):
 					notifications.append(n)
 			if len(notifications) == 0:	# This can happen when the subscription is deleted and there are no outstanding notifications
@@ -487,7 +488,7 @@ class NotificationManager(object):
 			additionalParameters = None
 			if ln:
 				notifications = notifications[-1:]
-				additionalParameters = { C.hfcEC : C.hfvECLatest }
+				additionalParameters = { 'ec' : EventCategory.Latest }	# event category
 
 			# Aggregate and send
 			notificationRequest = {

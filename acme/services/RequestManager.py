@@ -687,10 +687,10 @@ class RequestManager(object):
 			request.headers.originatingTimestamp		= DateUtils.getResourceDate()
 			request.headers.requestIdentifier			= Utils.uniqueRI()
 			request.headers.releaseVersionIndicator		= CSE.releaseVersion
-			if parameters:
-				if C.hfcEC in parameters:			
-					request.parameters[C.hfEC] 			= parameters[C.hfcEC]	# Event Category
 			request.pc 									= data
+			if parameters:
+				if 'ec' in parameters:			
+					request.parameters[C.hfEC] 			= parameters['ec']	# Event Category
 
 		# Always mark the request as a REQUEST
 		request.requestType = reqType

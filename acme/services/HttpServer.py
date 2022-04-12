@@ -395,8 +395,8 @@ class HttpServer(object):
 
 			# Add additional headers
 			if parameters:
-				if C.hfcEC in parameters:				# Event Category
-					hds[C.hfEC] = parameters[C.hfcEC]
+				if 'ec' in parameters:				# Event Category
+					hds[C.hfEC] = parameters['ec']
 			
 		else:	
 			# raw	-> "data" contains a whole requests

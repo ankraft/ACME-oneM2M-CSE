@@ -810,6 +810,18 @@ class RequestStatus(ACMEIntEnum):
 
 ##############################################################################
 #
+#	Event Category 
+#
+
+class EventCategory(ACMEIntEnum):
+	"""	Event Categories """
+	Immediate			= 2
+	BestEffort			= 3
+	Latest				= 4
+
+
+##############################################################################
+#
 #	Content Serializations
 #
 

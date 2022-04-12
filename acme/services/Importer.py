@@ -296,7 +296,15 @@ class Importer(object):
 
 
 	def _parseAttribute(self, attr:JSON, fn:str, tpe:str = None, sname:str = None) -> AttributePolicy:
-		"""	Parse a singel attribute definitions for normal as well as for flexContainer attributes.
+		"""	Parse a single attribute definitions for common as well as for flexContainer attributes.
+
+			Args:
+				attr: JSON dictionary with the attribute definition to parse.
+				fn: Filename that contains the attribute definition.
+				tpe: Domain and attribute name. Mandatory for a flexContainer specialization, optional otherwise.
+				sname: Shortname of the attribute.
+			Return:
+				The parsed definition in an `AttributePolicy`.
 		"""
 		if not sname:
 			if not (sname := findXPath(attr, 'sname')) or not isinstance(sname, str) or len(sname) == 0:

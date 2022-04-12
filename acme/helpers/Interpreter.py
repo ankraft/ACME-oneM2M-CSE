@@ -317,8 +317,10 @@ class PContext():
 
 	@property
 	def result(self) -> str:
-		"""	The last result of a procedure, while etc. .nly valid within a scope 
-			and before the next call to a procedure, while, etc.
+		"""	The last result of a procedure, while etc. 
+		
+			The result is only valid within the calling scope and before the next
+			call to a procedure, while, etc.
 
 			Return:
 				String with the result
@@ -489,8 +491,6 @@ class PContext():
 	def whileLoopCounter(self) -> int:
 		"""	Return the latest loop counter for a while loop.
 
-			Args:
-				line: The input line. Necessary to detect while commands
 			Return:
 				Integer, the loop counter for the current while loop.
 		"""
@@ -506,8 +506,6 @@ class PContext():
 			self.setError(PError.undefined, f'Undefined variable: loop')
 			return None
 		return loop
-
-
 
 
 	@property
@@ -658,6 +656,7 @@ class PContext():
 #	Type definitions
 #
 
+# TODO docs bellow
 
 PFuncCallable = Callable[[PContext], PContext]
 """	Function callback for pre, post and error functions.
@@ -678,25 +677,34 @@ PCmdCallable = Callable[[PContext, str], PContext]
 PCmdDict = Dict[str, PCmdCallable]
 """	Function callback for commands. The callback is called with a `PContext` object
 	and is supposed to return it again, or None in case of an error.
+	# TODO
 """
 
 PMacroCallable = Callable[[PContext, str, str], str]
 """	Signature of a macro callable.
+# TODO
 """
 
 PMatchCallable = Callable[[PContext, str, str], bool]
 """	Signature of a match function callable.
+
+	It will get called with the current `PContext` instance,
+	a regular expression, and the string to check. It must return
+	a boolean value that indicates the result of the match.
 """
 
 
 PMacroDict = Dict[str, PMacroCallable]
-"""	Function callback for macros. The callback is called with a `PContext` object
-	and returns a string.
+"""	Function callback for macros. 
+
+	The callback is called with a `PContext` object and returns a string.
 """
 
+
 PErrorState = namedtuple('PErrorState', [ 'error', 'line', 'message', 'exception' ])
-"""	Named tuple that represents an error state. The error, the line numer,
-	and the error message.
+"""	Named tuple that represents an error state. 
+
+	It contains the error code, the line number, and the error message.
 """
 
 
@@ -706,12 +714,19 @@ PErrorState = namedtuple('PErrorState', [ 'error', 'line', 'message', 'exception
 #
 
 def run(pcontext:PContext, verbose:bool = False, argument:str = '', procedure:str = None) -> PContext:
-	"""	Run a script. An own, extended `PContext` instance can be provided, that supports  extra commands and macros.
+	"""	Run a script. 
+		
+		An own, extended `PContext` instance can be provided, that supports extra commands and macros.
+		If the method is been called for running a whole script (not only a procedure), then the
+		*pcontext* instance is reset (see `PContext.reset()`).
 
 		Args:
 			pcontext: Current PContext for the script.
 			verbose: Log each executed line.
 			argument: The argument to the script, available via the *argv* macro.
+			procedure: Optional. If assigned then it must contain the name of a procedure.
+				In this case, a procedure defined in the script is called. Afterwards, execution
+				is stopped.
 		Return:
 			PContext object, or None in case of an error.
 		"""
@@ -1937,7 +1952,7 @@ def _compare(pcontext:PContext, arg:str, line:str, op:Callable) -> str:
 			pcontext: Current PContext for the script.
 			arg: The arguments for the compare. This string must contain two arguments.
 			line: The whole script line. Not used.
-			op: An `operator` method used for the comparison.
+			op: An "operator" method used for the comparison.
 		Return:
 			String with *true* or *false* depending on the result of the comparison.
 	"""
@@ -1987,7 +2002,7 @@ def _boolResult(pcontext:PContext, arg:str) -> bool:
 
 
 def _calculate(pcontext:PContext, arg:str, line:str, op:Callable, single:bool = False) -> str:
-	"""	Perform a arithmetic calculation.
+	"""	Perform an arithmetic calculation.
 
 		This function performs an arithmetic operation on multiple arguments. The same
 		operation is subsequentially performed on an argument to the result of the
@@ -2000,8 +2015,8 @@ def _calculate(pcontext:PContext, arg:str, line:str, op:Callable, single:bool = 
 			pcontext: Current PContext for the script.
 			arg: Line that contains all the arguments.
 			line: The whole script line. Not used.
-			op: An `operator` method used for the arithmetics operation.
-			single: Operation allows only one argument.
+			op: An "operator" method used for the arithmetics operation.
+			single: The operation allows only one argument.
 		Return:
 			String with a number result of the operatio, or *None* in case of an error.
 	"""

@@ -45,7 +45,7 @@ class ACP(AnnounceableResource):
 			'apri': None,
 			'airi': None
 	}
-	"""	Attributes and `AttributePolicy' for this resource type. """
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def __init__(self, dct:JSON, pi:str = None, rn:str = None, create:bool = False) -> None:

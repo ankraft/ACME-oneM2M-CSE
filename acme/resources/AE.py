@@ -58,7 +58,7 @@ class AE(AnnounceableResource):
 			'ape': None,
 			'or': None,
 	}
-	"""	Attributes and `AttributePolicy' for this resource type. """
+	"""	Attributes and `AttributePolicy` for this resource type. """
 
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
