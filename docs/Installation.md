@@ -18,6 +18,7 @@ You may consider to use a virtual environment manager like pyenv + virtualenv (s
 - **InquirerPy**: [InquirerPy](https://github.com/kazhala/InquirerPy/) is a collection of common interactive command-line interfaces.
 - **isodate**: The [isodate](https://github.com/gweis/isodate) package is used to parse and handle ISO 8601 time, date, and duration.
 - **paho-mqtt**	: The [paho-mqtt](https://www.eclipse.org/paho/) library provides a client class which enables applications to connect to an MQTT broker.
+- **plotext** : The [plotext](https://github.com/piccolomo/plotext) library offers functions to plot graphs in the text console.
 - **requests**: The CSE uses the [Requests](https://requests.readthedocs.io) HTTP Library to send requests vi http.
 - **Rich**: The CSE uses the [Rich](https://github.com/willmcgugan/rich) text formatter library to format various terminal output.
 - **tinydb 4.x** : To store resources the CSE uses the lightweight [TinyDB](https://github.com/msiemens/tinydb) document database.
@@ -79,6 +80,7 @@ The following third-party components are used by the ACME CSE.
 - InquirerPy: [https://github.com/kazhala/InquirerPy](https://github.com/kazhala/InquirerPy), MIT License
 - isodate: [https://github.com/gweis/isodate](https://github.com/gweis/isodate), BSD License
 - paho-mqtt: [https://www.eclipse.org/paho/](https://www.eclipse.org/paho/), Eclipse Public License 1.0 
+- plotext:[https://github.com/piccolomo/plotext](https://github.com/piccolomo/plotext), MIT License
 - Requests: [https://requests.readthedocs.io/en/master/](https://requests.readthedocs.io/en/master/), Apache2 License
 - Rich: [https://github.com/willmcgugan/rich](https://github.com/willmcgugan/rich), MIT License 
 - TinyDB: [https://github.com/msiemens/tinydb](https://github.com/msiemens/tinydb), MIT License
