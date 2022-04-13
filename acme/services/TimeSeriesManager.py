@@ -8,6 +8,7 @@
 #
 from __future__ import annotations
 from dataclasses import dataclass
+from sqlite3 import Date
 
 from ..etc.Types import NotificationEventType as NET, MissingData, LastTSInstance
 from ..services.Logging import Logging as L
@@ -79,7 +80,7 @@ class TimeSeriesManager(object):
 
 		if not ((rts.expectedDgt - rts.peid) < rts.dgt <= (rts.expectedDgt + rts.peid)):
 			L.isDebug and L.logDebug(f'rts.expectedDgt: {rts.expectedDgt}, rts.peid: {rts.peid}')
-			L.isWarn and L.logWarn(f'<tsi> not within expected dataGenerationTimeRange: {rts.expectedDgt - rts.peid} < rts.dgt:{rts.dgt} <= {rts.expectedDgt + rts.peid}')
+			L.isWarn and L.logWarn(f'<tsi> NOT within expected dataGenerationTimeRange: {rts.expectedDgt - rts.peid} < rts.dgt:{rts.dgt} <= {rts.expectedDgt + rts.peid}')
 
 			# If not, then add the expected arrival time as the dgt to the parent's mdlt list.
 			if not (tsRes := CSE.dispatcher.retrieveResource(tsRi).resource):
@@ -128,6 +129,7 @@ class TimeSeriesManager(object):
 			L.isWarn and L.logWarn(f'Error parsing <tsi>.dgt: {dgt}')
 			return
 		L.isDebug and L.logDebug(f'New <tsi> for <ts>:{timeSeries.ri} dgt:{dgt}')
+		#now = DateUtils.utcTime()
 		missingDataDetectionTime = dgt + pei + mdt # next runtime of the check
 
 		if not (rts := runningTimeserieses.get(tsRi)) or not rts.running:		# it is a new timeSeries

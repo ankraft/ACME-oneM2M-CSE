@@ -71,6 +71,8 @@ class TS(AnnounceableResource):
 		self.setAttribute('mdd', False, overwrite = False)	# Default is False if not provided
 		self.setAttribute('cni', 0, overwrite = False)
 		self.setAttribute('cbs', 0, overwrite = False)
+		self.setAttribute('mdlt', [], overwrite = False)	# created by the CSE 
+		self.setAttribute('mdc', 0, overwrite = False)		# created by the CSE
 		if Configuration.get('cse.ts.enableLimits'):	# Only when limits are enabled
 			self.setAttribute('mni', Configuration.get('cse.ts.mni'), overwrite = False)
 			self.setAttribute('mbs', Configuration.get('cse.ts.mbs'), overwrite = False)
@@ -114,39 +116,33 @@ class TS(AnnounceableResource):
 
 		# Extra checks if mdd is present in an update
 		updatedAttributes = Utils.findXPath(dct, 'm2m:ts')
-		if mddNew := updatedAttributes.get('mdd') is not None:
+		
+		mddNew = updatedAttributes.get('mdd')
+		if 'mdd' in updatedAttributes:	# could be None (when removed), True, False
 			# Check that mdd is updated alone
 			if any(key in ['mdt', 'mdn', 'peid', 'pei'] for key in updatedAttributes.keys()):
 				L.logDebug(dbg := 'mdd must not be updated together with mdt, mdn, pei or peid.')
 				return Result.errorResult(dbg = dbg)
 
+			# Clear the list if mddNew is deliberatly set to True
 			if mddNew == True:
-				if self.mdn is None:	# TODO Change after spec clarification.
-					# mdd can not be enabled when there is no mdn!
-					L.logDebug(dbg := 'mdn is not set. Missing data detect cannot be enabled.')
-					return Result.errorResult(dbg = dbg)
-
 				clearMdlt()
-
 				# Restart the monitoring process
+				# The actual "restart" is happening when the next TSI is received
 				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
-				# "restart" is happening when the next TSI is received
 			else:
 				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 		
-
+		# Check that certain attributes are not updated when mdd is true
 		if self.mdd  == True: # existing mdd
-			# Check that certain attributes are not updated when mdd is true
 			if any(key in ['mdt', 'mdn', 'peid', 'pei'] for key in updatedAttributes.keys()):
 				L.logDebug(dbg := 'mdd must not be True when mdt, mdn, pei or peid are updated.')
 				return Result.errorResult(dbg = dbg)
 
-			if not (peidNew := updatedAttributes.get('peid')):
-				peidNew = self.peid	# If no new peid is provided then take the old value
-
-		if peiNew := updatedAttributes.get('pei'):
-			if not (peidNew := updatedAttributes.get('peid')):
-				peidNew = self.peid	# If no new peid is provided then take the old value
+		if (peiNew := updatedAttributes.get('pei')) is not None: # integer
+			peidNew = updatedAttributes.get('peid', self.peid) # If no new peid is provided then take the old value
+			# if not (peidNew := updatedAttributes.get('peid')):
+			# 	peidNew = self.peid	# If no new peid is provided then take the old value
 			if peidNew > (peiNew / 2):
 				L.logDebug(dbg := 'peid must be <= pei/2')
 				return Result.errorResult(dbg = dbg)
@@ -155,28 +151,29 @@ class TS(AnnounceableResource):
 			if 'peid' not in updatedAttributes and not self.peid:
 				updatedAttributes['peid'] = int(self.pei/2)	# CSE internal policy
 
-		if mddNew == True or (mddNew is None and self.mdd == True):	# either mdd is set to True or was and stays True:
-			if (mdt := updatedAttributes.get('mdt')) is None:
-				mdt = self.mdt
-			if (peid := updatedAttributes.get('peid')) is None:
-				peid = self.peid
+		if mddNew == True or (mddNew is None and self.mdd == True):	# either mdd is set to True or was and stays True
+			mdt = updatedAttributes.get('mdt', self.mdt) 		# default: self.mdt
+			peid = updatedAttributes.get('peid', self.peid)		# default: self.peid
+			# if (mdt := updatedAttributes.get('mdt')) is None:
+			# 	mdt = self.mdt
+			# if (peid := updatedAttributes.get('peid')) is None:
+			# 	peid = self.peid
 			if mdt is not None and peid is not None and mdt <= peid:
 				L.logDebug(dbg := 'mdt must be > peid')
 				return Result.errorResult(dbg = dbg)
-		
 
-		# If any of the parameters (mdt, mdn, peid, pei) related to the missing data detection process is
-		# updated while the data detection process is paused the Hosting CSE will clear the missingDataList
-		# and missingDataCurrentNr. 
-		if self.mdd and any(key in ['mdt', 'mdn', 'peid', 'pei'] for key in updatedAttributes.keys()):
-			clearMdlt()
-			
+		# Check if mdn was changed and shorten mdlt accordingly, if exists
+		# shorten the mdlt if a limit is set in mdn
+		if (mdnNew := updatedAttributes.get('mdn') ) is not None:	# integer
+			if (mdlt := cast(list, self.mdlt)) and (l := len(mdlt)) > mdnNew:
+				mdlt = mdlt[l - mdnNew:]
+				self['mdlt'] = mdlt
 
-		# Remove mdlt and mdc if mdn is removed
-		# mdd is False, otherwise mdn could not be updated. See above
-		if 'mdn' in updatedAttributes and updatedAttributes.get('mdn') is None:	# nulled -> remove mdn
-			self.delAttribute('mdlt')
-			self.delAttribute('mdc')
+		# Check if mdt was changed in an update
+		# if 'mdt' in updatedAttributes:	# mdt is in the update, either True, False or None!
+		# 	mdtNew = updatedAttributes.get('mdt')
+		# 	if mdtNew is None and CSE.timeSeries.isMonitored(self.ri):	# it is in the update, but set to None, meaning remove the mdt from the TS
+		# 		CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 
 
 		# Do real update last
@@ -209,11 +206,12 @@ class TS(AnnounceableResource):
 		
 		# Check MDT
 		if self.mdd and self.mdt is None:
-			L.isDebug and L.logDebug(dbg := 'mdt must be set if mdd is True')
+			L.logDebug(dbg := 'mdt must be set if mdd is True')
 			return Result.errorResult(dbg = dbg)
 		if self.mdd and self.mdt is not None and self.peid is not None and self.mdt <= self.peid:
-			L.isDebug and L.logDebug(dbg := 'mdt must be > peid')
+			L.logDebug(dbg := 'mdt must be > peid')
 			return Result.errorResult(dbg = dbg)
+		
 		
 		self._validateChildren()
 		return Result.successResult()
@@ -296,6 +294,7 @@ class TS(AnnounceableResource):
 			return
 		self.__validating = True
 
+		# TODO Optimize: Do we really need the resources?
 		tsis = self.timeSeriesInstances()	# retrieve TIS child resources
 		cni = len(tsis)			
 			
@@ -334,44 +333,43 @@ class TS(AnnounceableResource):
 		self.__validating = False
 
 
-	def _validateDataDetect(self, updatedAttributes:JSON=None) -> None:
+	def _validateDataDetect(self, updatedAttributes:JSON = None) -> None:
 		"""	This method checks and enables or disables certain data detect monitoring attributes.
 		"""
 		L.isDebug and L.logDebug('Validating data detection')
 
-		# Check whether missing data detection is turned on
-		mdn = self.mdn
 		mdd = self.mdd
-		if mdd:
-			# When missingDataMaxNr is set
-			if mdn is not None:	# mdn is an int
-				self.setAttribute('mdc', 0, overwrite=False)	# add missing data count
-				# Monitoring is not started here, but happens when the first TSI is added
-			else:
-				# Remove the list and count when missing data number is not set
-				self.delAttribute('mdlt')	# remove list
-				self.delAttribute('mdc')	# remove counter
-				if CSE.timeSeries.isMonitored(self.ri):	# stop monitoring
-					CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
+		
+		# Check whether missing data detection is turned on
+		# if mdd:
+		# 	L.logWarn(mdd)
+		# 	# Empty the list and count when mdn is not set
+		# 	# Stop Monitoring for now
+		# 	self.setAttribute('mdlt', [])	# Empty the mdlt
+		# 	if CSE.timeSeries.isMonitored(self.ri):	# stop monitoring
+		# 		CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 
 		# If any of mdd, pei or mdt becomes None, or is mdd==False, then stop monitoring this TS
-		if not mdd or not self.pei or not self.mdt:
+		if not mdd or not self.pei or not self.mdt:	# 
 			if CSE.timeSeries.isMonitored(self.ri):
 				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 		
-		# Check if mdn was changed and shorten mdlt accordingly, if exists
-		if self.mdlt and updatedAttributes and (newMdn := updatedAttributes.get('mdn') ) is not None:	# Returns None if dct is None or not found in dct
-			mdlt = self.mdlt
-			if (l := len(mdlt)) > newMdn:
-				mdlt = mdlt[l-newMdn:]
-				self['mdlt'] = mdlt
-				self['mdc'] = newMdn
+		# # Check if mdn was changed and shorten mdlt accordingly, if exists
+		# if updatedAttributes:
+		# 	# shorten the mdlt if a limit is set in mdn
+		# 	if self.mdlt and (newMdn := updatedAttributes.get('mdn') ) is not None:	# Returns None if dct is None or not found in dct
+		# 		mdlt = self.mdlt
+		# 		if (l := len(mdlt)) > newMdn:
+		# 			mdlt = mdlt[l-newMdn:]
+		# 			self['mdlt'] = mdlt
 
-		# Check if mdt was changed in an update
-		if updatedAttributes and (newMdt := updatedAttributes.get('mdt')):	# mdt is in the update, either True, False or None!
-			isMonitored = CSE.timeSeries.isMonitored(self.ri)
-			if newMdt is None and isMonitored:				# it is in the update, but set to None, meaning remove the mdt from the TS
-				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
+		# 	# Check if mdt was changed in an update
+		# 	if (newMdt := updatedAttributes.get('mdt')):	# mdt is in the update, either True, False or None!
+		# 		if newMdt is None and CSE.timeSeries.isMonitored(self.ri):				# it is in the update, but set to None, meaning remove the mdt from the TS
+		# 			CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
+
+		# Always set the mdc to the length of mdlt
+		self.setAttribute('mdc', len(self.mdlt))
 
 		# Save changes
 		self.dbUpdate()
@@ -387,11 +385,11 @@ class TS(AnnounceableResource):
 	def addDgtToMdlt(self, dgtToAdd:float) -> None:
 		"""	Add the dataGenerationTime `dgtToAdd` to the mdlt of this resource.
 		"""
-		self.setAttribute('mdlt', [], overwrite=False)						# Add to mdlt, just in case it hasn't created before
+		self.setAttribute('mdlt', [], overwrite = False)						# Add to mdlt, just in case it hasn't created before
 		self.mdlt.append(DateUtils.toISO8601Date(dgtToAdd))						# Add missing dgt to TS.mdlt
 		if (mdn := self.mdn) is not None:									# mdn may not be set. Then this list grows forever
 			if len(self.mdlt) > mdn:										# If mdlt is bigger then mdn allows
-				self.setAttribute('mdlt', self.mdlt[1:], overwrite=True)	# Shorten the mdlt
-			self.setAttribute('mdc', len(self.mdlt), overwrite=True)		# Set the mdc
+				self.setAttribute('mdlt', self.mdlt[1:], overwrite = True)	# Shorten the mdlt
+			self.setAttribute('mdc', len(self.mdlt), overwrite = True)		# Set the mdc
 			self.dbUpdate()													# Update in DB
 

@@ -73,7 +73,7 @@ class TestTS(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:ts/peid'), 5000)
 		self.assertTrue(findXPath(r, 'm2m:ts/mdd'))
 		self.assertEqual(findXPath(r, 'm2m:ts/mdn'), 10)
-		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'))		# empty mdlt is not created by default
+		#self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'))		# empty mdlt is not created by default
 		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdt'))
 		self.assertEqual(findXPath(r, 'm2m:ts/mdt'), 5001)
@@ -322,16 +322,19 @@ class TestTS(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateTSremoveMdn(self) -> None:
-		""" Update <TS> remove mdn, mdlt also removed"""
+		""" Update <TS> remove mdn """
 		self.assertIsNotNone(TestTS.ae)
 		dct = 	{ 'm2m:ts' : { 
 					'mdn'	: None
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
 		self.assertEqual(rsc, RC.updated, r)
-		self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
+		# self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
+		# self.assertIsNone(findXPath(r, 'm2m:ts/mdn'), r)
+		# self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self.assertIsNone(findXPath(r, 'm2m:ts/mdn'), r)
-		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -347,13 +350,14 @@ class TestTS(unittest.TestCase):
 		self.assertIsNotNone(TestTS.ae)
 		dct = 	{ 'm2m:ts' : { 
 					'rn'	: tsRN,
-					'mdd'	: False
 				}}
 		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
 		self.assertEqual(rsc, RC.created, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
 		self.assertFalse(findXPath(r, 'm2m:ts/mdd'), r)
-		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
-		self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
+		#TODO after discussion with Bob. Decide whether to have or don't have initial
+		# self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		# self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
