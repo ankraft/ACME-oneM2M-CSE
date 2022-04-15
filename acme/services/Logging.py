@@ -264,10 +264,11 @@ class Logging:
 
 
 	@staticmethod
-	def logDebug(msg:Any, stackOffset:int = 0) -> None:
+	def logDebug(msg:Any, stackOffset:int = 0) -> str:
 		"""Print a log message with level DEBUG. 
 		"""
 		Logging._log(logging.DEBUG, msg, stackOffset = stackOffset)
+		return msg
 
 
 	@staticmethod

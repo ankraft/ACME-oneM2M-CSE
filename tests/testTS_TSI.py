@@ -545,26 +545,6 @@ class TestTS_TSI(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	@unittest.skipIf(maxMdn < 3, 'mdn is set to < 3')
-	def test_updateTSshortenMdlt(self) -> None:
-		"""	UPDATE <TS> MDN and shorten MDLT. MDLT is reset """
-
-		self._stopMonitoring()
-
-		dct = 	{ 'm2m:ts' : { 
-			'mdn' : maxMdn - 2
-		}}
-		r, rsc = UPDATE(tsURL, TestTS_TSI.originator, dct)
-		self.assertEqual(rsc, RC.updated, r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdn'), r)
-		self.assertEqual(findXPath(r, 'm2m:ts/mdn'), maxMdn - 2, r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
-		self.assertEqual(len(findXPath(r, 'm2m:ts/mdlt')),  maxMdn - 2, r)
-		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
-		self.assertEqual(findXPath(r, 'm2m:ts/mdc'),  maxMdn - 2, r)
-
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipIf(maxMdn < 3, 'mdn is set to < 3')
 	def test_updateTSMddEnable(self) -> None:
 		"""	UPDATE <TS> set mdd again and enable monitoring """
 		dct = 	{ 'm2m:ts' : { 
@@ -736,7 +716,6 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestTS_TSI('test_createTSInotInPeriodLarger'))		# run the test again to overflow mdlt
 	suite.addTest(TestTS_TSI('test_createTSIinPeriodDgtWayTooEarly'))	# dgt way to early
 
-	suite.addTest(TestTS_TSI('test_updateTSshortenMdlt'))
 	suite.addTest(TestTS_TSI('test_updateTSMddEnable'))
 
 	# Test MissingData subscriptions
