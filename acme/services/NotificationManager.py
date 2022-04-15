@@ -488,7 +488,7 @@ class NotificationManager(object):
 			additionalParameters = None
 			if ln:
 				notifications = notifications[-1:]
-				additionalParameters = { 'ec' : EventCategory.Latest }	# event category
+				additionalParameters = { 'ec' : str(EventCategory.Latest.value) }	# event category
 
 			# Aggregate and send
 			notificationRequest = {
