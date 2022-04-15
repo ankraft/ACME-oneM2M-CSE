@@ -332,13 +332,15 @@ Available under the BSD 3-Clause License
 		L.console()
 
 
+	previousTreeRi = ''
 	def childResourceTree(self, _:str) -> None:
 		"""	Render the CSE's resource tree, beginning with a child resource.
 		"""
 		L.console('Child Resource Tree', isHeader = True)
 		L.off()
 		
-		if not (ri := L.consolePrompt('ri')):
+		if not (ri := L.consolePrompt('ri', default = Console.previousTreeRi)):
+			Console.previousTreeRi = ri
 			L.console()
 		elif len(ri) > 0:
 			if tree := self.getResourceTreeRich(parent = ri):
@@ -426,13 +428,15 @@ Available under the BSD 3-Clause License
 		L.on()
 
 
+	previousInspectRi = ''
 	def inspectResource(self, _:str) -> None:
 		"""	Show a resource.
 		"""
 		L.console('Inspect Resource', isHeader = True)
 		L.off()
 
-		if (ri := L.consolePrompt('ri')):
+		if (ri := L.consolePrompt('ri', default = Console.previousInspectRi)):
+			Console.previousInspectRi = ri
 			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
 				L.console(res.dbg, isError = True)
 			else:
@@ -440,12 +444,14 @@ Available under the BSD 3-Clause License
 		L.on()		
 
 
+	previosInspectChildrenRi = ''
 	def inspectResourceChildren(self, _:str) -> None:
 		"""	Show a resource and its children.
 		"""
 		L.console('Inspect Resource and Children', isHeader = True)
 		L.off()		
-		if (ri := L.consolePrompt('ri')):
+		if (ri := L.consolePrompt('ri', default = Console.previosInspectChildrenRi)):
+			Console.previosInspectChildrenRi = ri
 			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
 				L.console(res.dbg, isError = True)
 			else: 
@@ -542,10 +548,12 @@ Available under the BSD 3-Clause License
 		webbrowser.open(f'{CSE.httpServer.serverAddress}?open')
 
 
+	previousGraphRi = ''
 	def plotGraph(self, _:str) -> None:
 		L.console('Plot graph', isHeader = True)
 		L.off()		
-		if (ri := L.consolePrompt('Container ri')):
+		if (ri := L.consolePrompt('Container ri', default = Console.previousGraphRi)):
+			Console.previousGraphRi = ri
 			if not (res := CSE.dispatcher.retrieveResource(ri)).resource:
 				L.console(res.dbg, isError = True)
 			else:
