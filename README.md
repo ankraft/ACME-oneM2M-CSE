@@ -52,6 +52,14 @@ With this release this is changed to running the script *startup.as* that [impor
 
 - TODO 
 
+- &lt;timeSyncBeacon> resource type support
+- Guided setup process to create the initial configuration file
+- Adapted announcements and time-series procedures to latest R4 changes
+- Support for the Upper Tester interface defined in oneM2M's TS-0019
+- Adding scripting support to the CSE that can be used through the console, the Upper Tester, CSE events and notifications, and other
+- Improved the CSE console (e.g. drawing graph diagrams from &lt;contentInstance> resources, dark & light theme)
+- And as usual many improvements, bug fixes, and performance improvements
+
 ## Acknowledgements
 
 Thank you for contributed code, patches, testing, bug fixes, time, and more!

@@ -66,7 +66,7 @@ The following table presents the supported management object specifications.
 | EventLog (EVL)           |
 | myCertFileCred (NYCFC)   |
 
-## Features
+## oneM2M Service Features
 
 | Functionality                 | Supported | Remark                                                                                    |
 |:------------------------------|:---------:|:------------------------------------------------------------------------------------------|
@@ -126,12 +126,12 @@ The following result contents are implemented for standard oneM2M requests & dis
 ## Protocols Bindings
 The following Protocol Bindings are supported:
 
-| Protocol Binding | Supported | Remark                            |
-|:-----------------|:---------:|:----------------------------------|
-| http             | &check;   | incl https.                       |
-| coap             | &cross;   |                                   |
-| mqtt             | &check;   | incl. mqtts                       |
-| WebSocket        | &cross;   |                                   |
+| Protocol Binding | Supported | Remark                                                                          |
+|:-----------------|:---------:|:--------------------------------------------------------------------------------|
+| http             |  &check;  | incl https.<br/>Experimental: Using PATCH to replace missing DELETE in http/1.0 |
+| coap             |  &cross;  |                                                                                 |
+| mqtt             |  &check;  | incl. mqtts                                                                     |
+| WebSocket        |  &cross;  |                                                                                 |
 
 The supported bindings can be used together, and combined and mixed in any way.
 

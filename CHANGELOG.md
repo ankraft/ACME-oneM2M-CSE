@@ -57,6 +57,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Improved support to recognize structured and unstructured resource IDs for verification notifications.
 - [HTTP] HTTP requests will not be sent with a *Date* header field. Instead, the *Originating Timestamp* will be used.
 
+### Experimental
+- [CSE] Blocking RETRIEVE notification event type: A RETRIEVE is blocked and a notification is sent to a target to give it a change to update the original RETRIEVE's target resource.
 
 ## [0.9.1] - 2021-11-09
 
