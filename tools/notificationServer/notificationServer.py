@@ -56,17 +56,21 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 		_responseHeaders:list = []
 
+		# Get headers and content data
+		length = int(self.headers['Content-Length'])
+		contentType = self.headers['Content-Type']
+		requestID = self.headers['X-M2M-RI']
+		post_data = self.rfile.read(length)
+
 		# Construct return header
 		# Always acknowledge the verification requests
 		self.send_response(200)
 		self.send_header('X-M2M-RSC', '2000' if not failVerification else '4101')
+		self.send_header('X-M2M-RI', requestID)
 		_responseHeaders = self._headers_buffer
 		self.end_headers()
 
-		# Get headers and content data
-		length = int(self.headers['Content-Length'])
-		contentType = self.headers['Content-Type']
-		post_data = self.rfile.read(length)
+
 		
 		# Print the content data
 		console.print(f'[{messageColor}]### Notification (http)')
