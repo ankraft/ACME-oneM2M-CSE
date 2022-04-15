@@ -505,7 +505,7 @@ class TestTS_TSI(unittest.TestCase):
 
 		_pei = findXPath(r, 'm2m:ts/pei') / 1000.0
 		_mdt = findXPath(r, 'm2m:ts/mdt') / 1000.0 
-		for i in range(expectedMdc):
+		for i in range(expectedMdc + 1):	# first doesn't count
 			tsidct = { 'm2m:tsi' : {
 						'dgt' : (date := getResourceDate()),
 						'con' : 'aValue',
