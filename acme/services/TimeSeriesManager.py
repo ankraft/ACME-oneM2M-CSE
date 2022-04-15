@@ -64,6 +64,7 @@ class TimeSeriesManager(object):
 			`tsRi` - resourceID of the respective <TS> resource. Can be used to retrieve infos from 'runningTimeserieses' dict.
 			`runtime` - The timestamp of the runtime of this function for tsRI 
 		"""
+		L.isDebug and L.logDebug(f'Running DGT-monitor for TS: {tsRi}')
 
 		# Check TSI arrival for this TS
 		if not (rts := runningTimeserieses.get(tsRi)):
@@ -78,32 +79,46 @@ class TimeSeriesManager(object):
 				# Just clear the data structures. The timeWindow might be set again further below
 				md.clear()
 
-		if not ((rts.expectedDgt - rts.peid) < rts.dgt <= (rts.expectedDgt + rts.peid)):
-			L.isDebug and L.logDebug(f'rts.expectedDgt: {rts.expectedDgt}, rts.peid: {rts.peid}')
-			L.isWarn and L.logWarn(f'<tsi> NOT within expected dataGenerationTimeRange: {rts.expectedDgt - rts.peid} < rts.dgt:{rts.dgt} <= {rts.expectedDgt + rts.peid}')
+		tsRes = None
+		# Iterate over all arrived dgt's till the last run of the monitor
+		dgt = rts.nextDgt()
+		while True:
+			dgt = -1 if dgt is None else dgt 
 
-			# If not, then add the expected arrival time as the dgt to the parent's mdlt list.
-			if not (tsRes := CSE.dispatcher.retrieveResource(tsRi).resource):
-				L.logErr(f'Cannot retrieve original <ts> resource: {tsRi}', showStackTrace = False)			# might (very rarely) happen when this monitor runs while the <ts> was deleted in another request
-				return False	# stop monitoring (actor not restarted)
-			tsRes.addDgtToMdlt(rts.expectedDgt)
+			min = rts.expectedDgt - rts.peid
+			max = rts.expectedDgt + rts.peid
+			L.isDebug and L.logDebug(f'Expected dataGenerationTimeRange: {min} < dgt:{dgt} <= {max}')
+			if not (min < dgt <= max):
+				L.isDebug and L.logDebug(f'rts.expectedDgt: {rts.expectedDgt}, rts.peid: {rts.peid}')
+				L.isWarn and L.logWarn(f'<tsi> NOT within expected dataGenerationTimeRange: {min} < dgt:{dgt} <= {max}')
 
-			# Add the dgt to the missing data of the subscriptions
-			for (subRi, md) in rts.missingData.items():
-				md.missingDataList.append(DateUtils.toISO8601Date(rts.expectedDgt))
-				md.missingDataCurrentNr += 1
-				if md.missingDataCurrentNr == 1:	# If it is the first missing data point in this run, then start an actor to react on the end of specified time window
-					md.timeWindowEndTimestamp = rts.missingDataDetectionTime + md.missingDataDuration
+				# If not, then add the expected arrival time as the dgt to the parent's mdlt list.
+				if tsRes is None:
+					if not (tsRes := CSE.dispatcher.retrieveResource(tsRi).resource):
+						L.logErr(f'Cannot retrieve original <ts> resource: {tsRi}', showStackTrace = False)			# might (very rarely) happen when this monitor runs while the <ts> was deleted in another request
+						return False	# stop monitoring (actor not restarted)
+				tsRes.addDgtToMdlt(rts.expectedDgt)
 
-			# Check for sending the missing data subscriptions in  general
-			CSE.notification.checkSubscriptions(None, NET.reportOnGeneratedMissingDataPoints, ri = tsRi, missingData = rts.missingData, now = rts.missingDataDetectionTime)
-		else:
-			L.isDebug and L.logDebug(f'<tsi> with dgt:{rts.dgt} within expected dataGenerationTimeRange')
+				# Add the dgt to the missing data of the subscriptions
+				for (subRi, md) in rts.missingData.items():
+					md.missingDataList.append(DateUtils.toISO8601Date(rts.expectedDgt))
+					md.missingDataCurrentNr += 1
+					if md.missingDataCurrentNr == 1:	
+						md.timeWindowEndTimestamp = rts.missingDataDetectionTime + md.missingDataDuration
 
-		# Prepare for the next DGT
-		rts.prepareNextRun()
+				# Check for sending the missing data subscriptions in  general
+				CSE.notification.checkSubscriptions(None, NET.reportOnGeneratedMissingDataPoints, ri = tsRi, missingData = rts.missingData, now = rts.missingDataDetectionTime)
+			else:
+				L.isDebug and L.logDebug(f'<tsi> with dgt:{dgt} within expected dataGenerationTimeRange')
+
+			# Prepare for the next DGT
+			# This increments the expected times etc
+			rts.prepareNextDgt()
+			if (dgt := rts.nextDgt()) == None:
+				break
 
 		# Schedule the next actor runtime
+		rts.prepareNextRun()
 		L.isDebug and L.logDebug(f'Next expected tsRi:{tsRi}, pei:{rts.pei}, peid:{rts.peid}, mdt:{rts.mdt}, missingDataDetectionTime:{rts.missingDataDetectionTime}, expectedDgt:{rts.expectedDgt}')
 		rts.actor = BackgroundWorkerPool.newActor(self.timeSeriesMonitor, at = rts.missingDataDetectionTime, name = f'tsMonitor_{tsRi}_{rts.missingDataDetectionTime}')
 		rts.actor.start(tsRi = tsRi) 				# Next running is in now+interval
@@ -147,8 +162,10 @@ class TimeSeriesManager(object):
 			#	It still needs to be filled
 			if not rts:
 				runningTimeserieses[tsRi] = (rts := LastTSInstance())
-			rts.dgt							= dgt
-			rts.arrivedAt					= arrivedAt
+
+			# Prepare runningTS structure after receiving a first TSI
+			# No dgt is added for the first tsi
+			rts.clearDgt()
 			rts.expectedDgt					= dgt + pei		# will be set in the monitor from hereon
 			rts.missingDataDetectionTime	= rts.expectedDgt + mdt
 			rts.pei							= pei
@@ -163,10 +180,9 @@ class TimeSeriesManager(object):
 				timeSeries.addDgtToMdlt(dgt)
 
 			# Add or update runningTimeserieses map.
-			rts.dgt = dgt
-			rts.arrivedAt = arrivedAt
+			rts.addDgt(dgt)
 
-		L.isDebug and L.logDebug(f'tsRi:{tsRi}, pei:{rts.pei}, peid:{rts.peid}, mdt:{rts.mdt}, missingDataDetectionTime:{rts.missingDataDetectionTime}, dgt:{rts.dgt}, expectedDgt:{rts.expectedDgt}')
+		L.isDebug and L.logDebug(f'tsRi:{tsRi}, pei:{rts.pei}, peid:{rts.peid}, mdt:{rts.mdt}, missingDataDetectionTime:{rts.missingDataDetectionTime}, dgt:{dgt}, expectedDgt:{rts.expectedDgt}')
 
 
 	def isMonitored(self, ri:str) -> bool:

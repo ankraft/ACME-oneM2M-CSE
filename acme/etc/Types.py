@@ -997,9 +997,8 @@ class LastTSInstance:
 	"""	Data class for a single TS's latest and next expected TSI/dgt, and other information """
 
 	# runtime attributes
-	dgt:float							= 0.0
+	dgt:list[float]						= field(default_factory = lambda: [0])
 	expectedDgt:float				 	= 0.0
-	arrivedAt:float						= 0.0
 	missingDataDetectionTime:float		= 0.0
 
 	# <TS> attributes
@@ -1008,17 +1007,48 @@ class LastTSInstance:
 	peid:float							= 0.0
 
 	# Subscriptions
-	missingData:dict[str, MissingData]	= field(default_factory=dict)
+	missingData:dict[str, MissingData]	= field(default_factory = dict)
 
 	# Internal
 	actor:BackgroundWorker				= None	#type:ignore[name-defined] # actor for this TS 
 	running:bool 						= False # for late activation of this 
 
-	def prepareNextRun(self) -> None:
-		"""	Set the next expectedDgt and missingDataDetectionTime.
+
+	def prepareNextDgt(self) -> None:
+		"""	Set the next expectedDgt.
 		"""
 		self.expectedDgt += self.pei
-		self.missingDataDetectionTime += self.pei
+	
+
+	def prepareNextRun(self) -> None:
+		"""	Set the next missingDataDetectionTime.
+		"""
+		self.missingDataDetectionTime += self.pei # mdt?
+	
+
+	def addDgt(self, dgt:float) -> None:
+		# TODO really support list. currently only one dgt is put, but 
+		# always overrides the old one. 
+		# Also change declaration of dgt above
+		if len(self.dgt) == 0:
+			self.dgt.append(dgt)
+		else:
+			self.dgt[0] = dgt
+	
+
+	def nextDgt(self) -> float:
+		if len(self.dgt) == 0:
+			return None
+		return self.dgt.pop(0)
+	
+
+	def hasDgt(self) -> bool:
+		return len(self.dgt) > 0
+	
+
+	def clearDgt(self) -> None:
+		self.dgt.clear()
+		
 
 
 ##############################################################################
