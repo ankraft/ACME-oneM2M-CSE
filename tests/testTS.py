@@ -408,18 +408,69 @@ class TestTS(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTSwithMissingMdtFail(self) -> None:
-		""" Create <TS> with missing mdtcnf -> Fail"""
+		""" Create <TS> with missing mdt -> Fail"""
 		self.assertIsNotNone(TestTS.ae)
 		dct = {	'm2m:ts': {
 					'rn':'TimeSeries2',
 					'mni': 10,
 					'pei': 5000,                          # milliseconds
-					'peid': 200,                           # milliseconds
+					'peid': 200,                          # milliseconds
 					'mdd': True
 				}
 			}
 		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
 		self.assertEqual(rsc, RC.badRequest, r)
+	
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_MddMdltMdcHandling(self) -> None:
+		""" Check mdd handling with mdlt and mdc """
+		self.assertIsNotNone(TestTS.ae)
+		dct = {	'm2m:ts': {
+					'rn': tsRN,
+					'mdt': 2000,
+				}
+			}
+		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
+		self.assertEqual(rsc, RC.created, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
+
+		# set mdd to False
+		dct2 = {	'm2m:ts': {
+					'mdd': False,
+				}
+			}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct2)
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
+
+		# add mdd with True
+		dct2 = {	'm2m:ts': {
+					'mdd': True,
+				}
+			}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct2)
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+
+		# set mdd to False again (mdlt, mdc stay in the resource)
+		dct2 = {	'm2m:ts': {
+					'mdd': False,
+				}
+			}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct2)
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+
+
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
@@ -460,6 +511,9 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestTS('test_createTSwithCnfWrong'))
 
 	suite.addTest(TestTS('test_createTSwithMissingMdtFail'))
+
+	suite.addTest(TestTS('test_deleteTS'))
+	suite.addTest(TestTS('test_MddMdltMdcHandling'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

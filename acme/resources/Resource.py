@@ -433,7 +433,7 @@ class Resource(object):
 			Args:
 				originator: Optional request originator
 				create: Optional indicator whether this is CREATE request
-				dct: Attributes to validate
+				dct: Updated attributes to validate
 				parentResource: The parent resource
 			Return:
 				A Result object with status True, or False (in which case the request will be rejected), and an error code.

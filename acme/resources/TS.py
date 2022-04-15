@@ -70,9 +70,7 @@ class TS(AnnounceableResource):
 
 		self.setAttribute('mdd', False, overwrite = False)	# Default is False if not provided
 		self.setAttribute('cni', 0, overwrite = False)
-		self.setAttribute('cbs', 0, overwrite = False)
-		self.setAttribute('mdlt', [], overwrite = False)	# created by the CSE 
-		self.setAttribute('mdc', 0, overwrite = False)		# created by the CSE
+		self.setAttribute('cb389s', 0, overwrite = False)
 		if Configuration.get('cse.ts.enableLimits'):	# Only when limits are enabled
 			self.setAttribute('mni', Configuration.get('cse.ts.mni'), overwrite = False)
 			self.setAttribute('mbs', Configuration.get('cse.ts.mbs'), overwrite = False)
@@ -175,7 +173,6 @@ class TS(AnnounceableResource):
 		# 	if mdtNew is None and CSE.timeSeries.isMonitored(self.ri):	# it is in the update, but set to None, meaning remove the mdt from the TS
 		# 		CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 
-
 		# Do real update last
 		if not (res := super().update(dct, originator)).status:
 			return res
@@ -196,7 +193,7 @@ class TS(AnnounceableResource):
 			if not (res := CSE.validator.validateCNF(cnf)).status:
 				return Result.errorResult(dbg = res.dbg)
 
-		# Check peid
+		# Check for peid
 		if self.peid is not None and self.pei is not None:	# pei(d) is an int
 			if not self.peid <= self.pei/2:	# complicated, but reflects the text in the spec
 				L.logDebug(dbg := 'peid must be <= pei/2')
@@ -204,13 +201,18 @@ class TS(AnnounceableResource):
 		elif self.pei is not None:	# pei is an int
 			self.setAttribute('peid', int(self.pei/2), False)	# CSE internal policy
 		
-		# Check MDT
-		if self.mdd and self.mdt is None:
-			L.logDebug(dbg := 'mdt must be set if mdd is True')
-			return Result.errorResult(dbg = dbg)
-		if self.mdd and self.mdt is not None and self.peid is not None and self.mdt <= self.peid:
-			L.logDebug(dbg := 'mdt must be > peid')
-			return Result.errorResult(dbg = dbg)
+		# Checks for MDT
+		if self.mdd: # present and True
+			# Add mdlt and mdc, if not already added ( No overwrite !)
+			self.setAttribute('mdlt', [], overwrite = False)	
+			self.setAttribute('mdc', 0, overwrite = False)
+
+			if self.mdt is None:
+				L.logDebug(dbg := 'mdt must be set if mdd is True')
+				return Result.errorResult(dbg = dbg)
+			if self.mdt is not None and self.peid is not None and self.mdt <= self.peid:
+				L.logDebug(dbg := 'mdt must be > peid')
+				return Result.errorResult(dbg = dbg)
 		
 		
 		self._validateChildren()
@@ -369,7 +371,8 @@ class TS(AnnounceableResource):
 		# 			CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 
 		# Always set the mdc to the length of mdlt
-		self.setAttribute('mdc', len(self.mdlt))
+		if self.hasAttribute('mdlt'):
+			self.setAttribute('mdc', len(self.mdlt))
 
 		# Save changes
 		self.dbUpdate()
