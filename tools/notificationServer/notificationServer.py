@@ -67,7 +67,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		self.send_response(200)
 		self.send_header('X-M2M-RSC', '2000' if not failVerification else '4101')
 		self.send_header('X-M2M-RI', requestID)
-		_responseHeaders = self._headers_buffer
+		_responseHeaders = self._headers_buffer	# type:ignore [attr-defined]
 		self.end_headers()
 
 
