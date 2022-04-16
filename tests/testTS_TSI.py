@@ -456,7 +456,7 @@ class TestTS_TSI(unittest.TestCase):
 		r, rsc = RETRIEVE(tsURL, TestTS_TSI.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
-		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 3, r)	# MissingDataCount == 3
+		self.assertGreaterEqual(findXPath(r, 'm2m:ts/mdc'), 3, r)	# MissingDataCount == 3
 
 		self._stopMonitoring()
 
