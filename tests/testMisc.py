@@ -12,7 +12,7 @@ if '..' not in sys.path:
 	sys.path.append('..')
 import isodate
 from typing import Tuple
-from acme.etc.Types import ResponseStatusCode as RC, ResourceTypes as T
+from acme.etc.Types import NotificationEventType, ResponseStatusCode as RC, ResourceTypes as T
 from acme.etc.DateUtils import getResourceDate
 from init import *
 
@@ -24,13 +24,18 @@ class TestMisc(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
-		pass
+		# Start notification server
+		startNotificationServer()
+
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
-		pass
+		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		# Stop notification server
+		stopNotificationServer()
+
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_checkHTTPRVI(self) -> None:
@@ -150,6 +155,43 @@ class TestMisc(unittest.TestCase):
 			raised = True
 		finally:
 			self.assertFalse(raised, f'Error parsing timestamp: {lastHeaders()[C.hfOT]}')
+	
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_checkTargetRVI(self) -> None:
+		"""	Check that RVI of the target is used in a request"""
+		clearLastNotification()
+
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN, 
+					'api': 'NMyApp1Id',
+				 	'rr': True,
+				 	'srv': [ '2' ],
+					'poa': [ NOTIFICATIONSERVER ]
+				}}
+		ae, rsc = CREATE(cseURL, 'Crvi', T.AE, dct)
+		self.assertEqual(rsc, RC.created, ae)
+
+		# Send a notification to the AE. Content is not important here
+		dct = 	{	'm2m:sgn' : {
+					'nev' : {
+						'rep' : {},
+						'net' : NotificationEventType.resourceUpdate
+					},
+				}
+			}
+
+		r, rsc = NOTIFY(aeURL, 'Crvi', data = dct)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(getLastNotification(), r)
+		self.assertIsNotNone(getLastNotificationHeaders(), r)
+		self.assertIsNotNone(rvi := getLastNotificationHeaders().get('X-M2M-RVI'), r)
+		self.assertEqual(rvi, '2', r)
+
+		# Remove AE
+		r, rsc = DELETE(aeURL, ORIGINATOR)
+		self.assertEqual(rsc, RC.deleted, r)
+
 
 
 # TODO test for creating a resource with missing type parameter
@@ -172,6 +214,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestMisc('test_createWithWrongResourceType'))
 	suite.addTest(TestMisc('test_checkHTTPmissingOriginator'))
 	suite.addTest(TestMisc('test_checkResponseOT'))
+	suite.addTest(TestMisc('test_checkTargetRVI'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

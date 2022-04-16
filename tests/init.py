@@ -745,6 +745,7 @@ def getLastNotification(clear:bool=False) -> JSON:
 def clearLastNotification() -> None:
 	global lastNotification
 	lastNotification = None
+	lastNotificationHeaders = None
 
 def setLastNotificationHeaders(headers:Parameters) -> None:
 	global lastNotificationHeaders

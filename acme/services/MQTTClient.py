@@ -368,7 +368,15 @@ class MQTTClient(object):
 	#	Send MQTT requests
 	#
 
-	def sendMqttRequest(self, operation:Operation, url:str, originator:str, ty:T = None, data:JSON = None, parameters:Parameters = None, ct:CST = None, raw:bool = False) -> Result:	 # type: ignore[type-arg]
+	def sendMqttRequest(self,
+						operation:Operation,
+						url:str, originator:str,
+						ty:T = None, 
+						data:JSON = None,
+						parameters:Parameters = None, 
+						ct:CST = None, 
+						rvi:str = None,
+						raw:bool = False) -> Result:	 # type: ignore[type-arg]
 		"""	Sending a request via MQTT.
 		"""
 
@@ -393,7 +401,7 @@ class MQTTClient(object):
 		req.resource								= data
 		req.request.headers.originator				= originator
 		req.request.headers.requestIdentifier		= Utils.uniqueRI()
-		req.request.headers.releaseVersionIndicator	= CSE.releaseVersion						# TODO this actually depends in the originator
+		req.request.headers.releaseVersionIndicator	= rvi if rvi is not None else CSE.releaseVersion
 		req.request.headers.originatingTimestamp	= DateUtils.getResourceDate()
 		req.rsc										= RC.UNKNOWN								# explicitly remove the provided OK because we don't want have any
 		req.request.ct								= ct if ct else CSE.defaultSerialization 	# get the serialization

@@ -364,6 +364,7 @@ class HttpServer(object):
 						data:Any = None, 
 						parameters:Parameters = None, 
 						ct:CST = None, 
+						rvi:str = None,
 						raw:bool = False) -> Result:	 # type: ignore[type-arg]
 		"""	Send an http request.
 		
@@ -390,7 +391,7 @@ class HttpServer(object):
 			# Not raw means we need to construct everything from the request
 			hds[C.hfOrigin] = originator
 			hds[C.hfRI] 	= Utils.uniqueRI()
-			hds[C.hfRVI]	= CSE.releaseVersion			# TODO this actually depends in the originator
+			hds[C.hfRVI]	= rvi if rvi is not None else CSE.releaseVersion
 			hds[C.hfOT]		= DateUtils.getResourceDate()
 
 			# Add additional headers
