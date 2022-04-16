@@ -111,7 +111,7 @@ class TS(AnnounceableResource):
 		# Extra checks if mdd is present in an update
 		updatedAttributes = Utils.findXPath(dct, 'm2m:ts')
 		
-		if (mddNew := updatedAttributes.get('mdd')):
+		if (mddNew := updatedAttributes.get('mdd')) is not None:	# boolean
 			# Check that mdd is updated alone
 			if any(key in ['mdt', 'mdn', 'peid', 'pei'] for key in updatedAttributes.keys()):
 				return Result.errorResult(dbg = L.logDebug('mdd must not be updated together with mdt, mdn, pei or peid.'))
