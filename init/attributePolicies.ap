@@ -1150,7 +1150,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "evalCriteria",
 			"ns": "m2m",
-			"type": "dict",	// m2m:evalCriteria
+			"type": "m2m:evalCriteria",
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -2050,19 +2050,6 @@
 			"annc": "NA"
 		}
 	],
-	"optr": [
-		{
-			"rtypes": [ "ALL"],
-			"lname": "operator",
-			"ns": "m2m",
-			"type": "positiveInteger",
-			"car": "1",
-			"oc": "M",
-			"ou": "O",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
 	"or": [
 		{
 			"rtypes": [ "ALL" ],
@@ -2401,19 +2388,6 @@
 			"annc": "NA"
 		}
 	],
-	"sbjt": [
-		{
-			"rtypes": [ "ALL"],
-			"lname": "operator",
-			"ns": "m2m",
-			"type": "string",
-			"car": "1",
-			"oc": "M",
-			"ou": "O",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
 	"scp": [
 		{
 			"rtypes": [ "ALL" ],
@@ -2644,19 +2618,6 @@
 			"car": "1",
 			"oc": "M",
 			"ou": "NP",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
-	"thld": [
-		{
-			"rtypes": [ "ALL"],
-			"lname": "threshold",
-			"ns": "m2m",
-			"type": "any",
-			"car": "1",
-			"oc": "M",
-			"ou": "O",
 			"od": "O",
 			"annc": "NA"
 		}
@@ -3160,11 +3121,7 @@
 			"annc": "NA"
 		}
 	]
-
 }
-
-
-
 
 
 

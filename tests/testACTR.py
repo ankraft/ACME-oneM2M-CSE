@@ -87,7 +87,7 @@ class TestACTR(unittest.TestCase):
 					'evc' : { 
 						'optr': 1,
 						'sbjt': 'rn',
-						'thlt': 'x'
+						'thld': 'x'
 					},
 					'evm': 0,
 					'orc': 'todo',
@@ -99,12 +99,32 @@ class TestACTR(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createACTRWrongEVCAttributeFail(self) -> None:
+		"""	Create <ACTR> with wrong EVC attribute -> Fail """
+		self.assertIsNotNone(TestACTR.ae)
+		dct = 	{ 'm2m:actr' : { 
+					'rn' : f'{actrRN}wrong',
+					'evc' : { 
+						'optr': 1,
+						'sbjt': 'rn',
+						'thlt': 'x'	# wrong attribute
+					},
+					'evm': 0,
+					'orc': TestACTR.cntRI,
+					'apv': { } 
+				}}
+		r, rsc = CREATE(aeURL, ORIGINATOR, T.ACTR, dct)	# Admin, should still fail
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 
 	# basic tests
 	suite.addTest(TestACTR('test_createACTR'))
 	suite.addTest(TestACTR('test_createACTRWrongORCFail'))
+	suite.addTest(TestACTR('test_createACTRWrongEVCAttributeFail'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

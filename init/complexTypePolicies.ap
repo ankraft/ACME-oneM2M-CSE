@@ -1,0 +1,43 @@
+//	complexTypePolicies.ap
+//
+//	(c) 2022 by Andreas Kraft
+//	License: BSD 3-Clause License. See the LICENSE file for further details.
+//
+//	Definitions for oneM2M complex type attributes.
+
+{
+	//
+	//	m2m:evalCriteria
+	//
+
+	"optr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:evalCriteria",
+			"lname": "operator",
+			"ns": "m2m",
+			"type": "positiveInteger",  // TODO m2m:evalCriteriaOperator
+			"car": "1"
+		}
+	],
+	"sbjt": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:evalCriteria",
+			"lname": "subject",
+			"ns": "m2m",
+			"type": "string", 			// TODO "type": "xs:NCName", 
+			"car": "1"
+		}
+	],
+	"thld": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:evalCriteria",
+			"lname": "threshold",
+			"ns": "m2m",
+			"type": "any",
+			"car": "1"
+		}
+	]
+}

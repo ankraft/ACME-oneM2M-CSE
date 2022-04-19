@@ -13,7 +13,8 @@ import re
 from typing import Any, List, Dict, Tuple
 import isodate
 
-from ..etc.Types import AttributePolicy, AttributePolicyDict, BasicType as BT, Cardinality as CAR, EvalCriteriaOperator, RequestOptionality as RO, Announced as AN, ResponseStatusCode as RC, AttributePolicy
+from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributePolicyDict, BasicType as BT, Cardinality as CAR
+from ..etc.Types import EvalCriteriaOperator, RequestOptionality as RO, Announced as AN, ResponseStatusCode as RC, AttributePolicy
 from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations
 from ..etc.Types import Result, ResourceTypes as T
 from ..etc import Utils as Utils, DateUtils as DateUtils
@@ -25,8 +26,7 @@ from ..resources.Resource import Resource
 # TODO AE CSE Not defined yet: enableTimeCompensation
 # TODO GRP: somecastEnable, somecastAlgorithm not defined yet (shortname)
 
-
-attributePolicies:Dict[Tuple[T, str], AttributePolicy] 			= {}
+attributePolicies:ResourceAttributePolicyDict 			= {}
 """ General attribute Policies.
 
 	{ ResourceType : AttributePolicy }
@@ -166,7 +166,7 @@ class Validator(object):
 					return Result.errorResult(dbg = res.dbg)
 
 			# Check whether the value is of the correct type
-			if (res := self._validateType(policy.type, attributeValue)).status:
+			if (res := self._validateType(policy.type, attributeValue, policy = policy)).status:
 				# Still some further checks are necessary
 
 				# Check list. May be empty or needs to contain at least one member
@@ -199,7 +199,7 @@ class Validator(object):
 		if attributeType is not None:	# use the given attribute type instead of determining it
 			return self._validateType(attributeType, value, True)
 		if policy := self.getAttributePolicy(rtype, attribute):
-			return self._validateType(policy.type, value, True)
+			return self._validateType(policy.type, value, True, policy = policy)
 		return Result.errorResult(dbg = f'validation for attribute {attribute} not defined')
 
 
@@ -308,31 +308,32 @@ class Validator(object):
 		return Result.successResult()
 
 
-	def validateEvalCriteria(self, dct:JSON) -> Result:
-		"""	Validate the format and content of an evc attribute.
-		"""
-		if (optr := dct.get('optr')) is None:
-			L.logDebug(dbg := f'evc/optr is missing in evalCriteria')
-			return Result.errorResult(dbg = dbg)
-		if not (res := self.validateAttribute('optr', optr)).status:
-			return res
-		if not (EvalCriteriaOperator.equal <= optr <= EvalCriteriaOperator.lessThanEqual):
-			L.logDebug(dbg := f'evc/optr is out of range')
-			return Result.errorResult(dbg = dbg)
+	# TODO REMOVEME
+	# def validateEvalCriteria(self, dct:JSON) -> Result:
+	# 	"""	Validate the format and content of an evc attribute.
+	# 	"""
+	# 	if (optr := dct.get('optr')) is None:
+	# 		L.logDebug(dbg := f'evc/optr is missing in evalCriteria')
+	# 		return Result.errorResult(dbg = dbg)
+	# 	if not (res := self.validateAttribute('optr', optr)).status:
+	# 		return res
+	# 	if not (EvalCriteriaOperator.equal <= optr <= EvalCriteriaOperator.lessThanEqual):
+	# 		L.logDebug(dbg := f'evc/optr is out of range')
+	# 		return Result.errorResult(dbg = dbg)
 		
-		if (sbjt := dct.get('sbjt')) is None:
-			L.logDebug(dbg := f'evc/sbjt is missing in evalCriteria')
-			return Result.errorResult(dbg = dbg)
-		if not (res := self.validateAttribute('sbjt', sbjt)).status:
-			return res
+	# 	if (sbjt := dct.get('sbjt')) is None:
+	# 		L.logDebug(dbg := f'evc/sbjt is missing in evalCriteria')
+	# 		return Result.errorResult(dbg = dbg)
+	# 	if not (res := self.validateAttribute('sbjt', sbjt)).status:
+	# 		return res
 
-		if (thld := dct.get('thld')) is None:
-			L.logDebug(dbg := f'evc/thld is missing in evalCriteria')
-			return Result.errorResult(dbg = dbg)
-		if not (res := self.validateAttribute('thld', sbjt)).status:
-			return res
+	# 	if (thld := dct.get('thld')) is None:
+	# 		L.logDebug(dbg := f'evc/thld is missing in evalCriteria')
+	# 		return Result.errorResult(dbg = dbg)
+	# 	if not (res := self.validateAttribute('thld', sbjt)).status:
+	# 		return res
 
-		return Result.successResult()
+	# 	return Result.successResult()
 	
 
 	def isExtraResourceAttribute(self, attr:str, resource:Resource) -> bool:
@@ -467,6 +468,10 @@ class Validator(object):
 		
 		# TODO look for other types, requests, filter...
 		return None
+	
+
+	def getAllAttributePolicies(self) -> ResourceAttributePolicyDict:
+		return attributePolicies
 
 
 	def clearAttributePolicies(self) -> None:
@@ -479,7 +484,7 @@ class Validator(object):
 	#	Internals.
 	#
 
-	def _validateType(self, dataType:BT, value:Any, convert:bool = False) -> Result:
+	def _validateType(self, dataType:BT, value:Any, convert:bool = False, policy:AttributePolicy = None) -> Result:
 		""" Check a value for its type. 
 					
 			Args:
@@ -612,6 +617,20 @@ class Validator(object):
 		
 		if dataType == BT.any:
 			return Result(status = True, data = dataType)
+		
+		if dataType == BT.complex:
+			if not policy:
+				L.logErr(f'policy is missing for validation of complex attribute')
+				return Result.errorResult(dbg = f'internal error: policy missing for validation')
+
+			if isinstance(value, dict):
+				for k, v in value.items():
+					if not (p := self.getAttributePolicy(T.COMPLEX, k)):
+						return Result.errorResult(dbg = f'unknown or undefined attribute:{k} in complex type: {policy.typeName}')
+					if not (res := self._validateType(p.type, v, convert = convert, policy = p)).status:
+						return res
+			return Result(status = True, data = dataType)
 
 		return Result.errorResult(dbg = f'unknown type: {str(dataType)}, value type:{type(value)}')
+
 

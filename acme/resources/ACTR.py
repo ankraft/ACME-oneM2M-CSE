@@ -101,8 +101,8 @@ class ACTR(AnnounceableResource):
 
 		# check evalCriteria attribute
 		evc = self.evc
-		if not (res := CSE.validator.validateEvalCriteria(evc)).status:
-			return res
+		# TODO
+
 
 
 

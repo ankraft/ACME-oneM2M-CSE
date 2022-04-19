@@ -258,8 +258,19 @@ class Importer(object):
 						for rtype in attributePolicy.rtypes:
 							ap = deepcopy(attributePolicy)
 							CSE.validator.addAttributePolicy(rtype, sname, ap)
-
+				
 					countAP += 1
+		
+		# Check whether there is an unresolved type used in any of the attributes
+		for p in CSE.validator.getAllAttributePolicies().values():
+			if p.type == BT.complex:
+				for each in CSE.validator.getAllAttributePolicies().values():
+					if p.typeName == each.ctype:	# found a definition
+						break
+				else:
+					L.logErr(f'No complex type definition found: {p.typeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
+					return False
+		
 		
 		L.isDebug and L.logDebug(f'Imported {countAP} attribute policies')
 		return True
@@ -323,9 +334,17 @@ class Importer(object):
 			L.logErr(f'Missing, empty, or wrong long name (lname) for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 
-		if not (tmp := findXPath(attr, 'type')) or not isinstance(tmp, str) or len(tmp) == 0 or not (typ := BT.to(tmp)):	# no default
-			L.logErr(f'Missing, empty, or wrong type name (type): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
+		if (ctype := findXPath(attr, 'ctype')) is not None:
+			if not isinstance(ctype, str) or len(ctype) == 0:
+				L.logErr(f'Wrong complex type name (ctype) for attribute: {tpe} in file: {fn}', showStackTrace=False)
+				return None
+
+		if not (typeName := findXPath(attr, 'type')) or not isinstance(typeName, str) or len(typeName) == 0:
+			L.logErr(f'Missing, empty, or wrong type name (type): {typeName} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
+		
+		if not (typ := BT.to(typeName)):	# automatically a complex type. Check for this happens later
+			typ = BT.complex
 
 		if not (tmp := findXPath(attr, 'car', '01')) or not isinstance(tmp, str) or len(tmp) == 0 or not (car := CAR.to(tmp, insensitive=True)):	# default car01
 			L.logErr(f'Empty, or wrong cardinality (car): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
@@ -351,21 +370,24 @@ class Importer(object):
 			if not isinstance(rtypes, list):
 				L.logErr(f'Empty, or wrong resourceTyoes (rtypes): {rtypes} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 				return None
-			if not T.has(tuple(rtypes)):	# type: ignore[arg-type]
-				L.logErr(f'"rtype" containes unknown resource type(s): {rtypes} for attribute: {tpe} in file: {fn}', showStackTrace=False)
-				return None
+			# if not T.has(tuple(rtypes)):	# type: ignore[arg-type]
+			# 	L.logErr(f'"rtype" containes unknown resource type(s): {rtypes} for attribute: {tpe} in file: {fn}', showStackTrace=False)
+			# 	return None
 
-		ap = AttributePolicy(	type=typ,
-								optionalCreate=oc,
-								optionalUpdate=ou,
-								optionalDiscovery=od,
-								cardinality=car,
-								announcement=annc,
-								namespace=ns,
-								lname=lname,
-								sname=sname,
-								tpe=tpe,
-								rtypes=T.to(tuple(rtypes)) if rtypes else None 	# type:ignore[arg-type]
+		ap = AttributePolicy(	type = typ,
+								typeName = typeName,
+								optionalCreate = oc,
+								optionalUpdate = ou,
+								optionalDiscovery = od,
+								cardinality = car,
+								announcement = annc,
+								namespace = ns,
+								lname = lname,
+								sname = sname,
+								tpe = tpe,
+								rtypes = T.to(tuple(rtypes)) if rtypes else None, 	# type:ignore[arg-type]
+								ctype = ctype,
+								fname = fn,
 							)
 		return ap
 

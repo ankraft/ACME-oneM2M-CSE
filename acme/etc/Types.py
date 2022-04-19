@@ -89,6 +89,7 @@ class ResourceTypes(ACMEIntEnum):
 	UNKNOWN			= -1
 	ALL 			= -2	# used to indicate that something applies to all resources
 	REQRESP			= -3
+	COMPLEX			= -4
 
 	# Resource Types
 
@@ -467,6 +468,7 @@ class BasicType(ACMEIntEnum):
 	void 			= auto()
 	duration 		= auto()
 	any				= auto()
+	complex 		= auto()
 	time			= timestamp	# alias type for time
 	date			= timestamp	# alias type for date
 
@@ -1265,6 +1267,9 @@ class AttributePolicy:
 	namespace:str				= None	# namespace
 	tpe:str   					= None	# namespace:type name
 	rtypes:List[ResourceTypes]	= None	# Optional list of multiple resourceTypes
+	ctype:str					= None	# Definition for a complex type attribute
+	typeName:str				= None	# The type as written in the definition
+	fname:str					= None 	# Name of the definition file
 
 	# TODO support annnouncedSyncType
 
@@ -1284,6 +1289,8 @@ class AttributePolicy:
 
 """	Represent a dictionary of attribute policies used in validation. """
 AttributePolicyDict = Dict[str, AttributePolicy]
+ResourceAttributePolicyDict = Dict[Tuple[ResourceTypes, str], AttributePolicy]
+
 FlexContainerAttributes = Dict[str, Dict[str, AttributePolicy]]
 FlexContainerSpecializations = Dict[str, str]
 
