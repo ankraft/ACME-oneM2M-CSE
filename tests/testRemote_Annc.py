@@ -337,7 +337,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertEqual(len(findXPath(r, 'm2m:bat/at')), 1)
 		self.assertEqual(findXPath(r, 'm2m:bat/btl'), 23)
 		self.assertEqual(findXPath(r, 'm2m:bat/bts'), 1)
-		self.assertTrue(findXPath(r, 'm2m:bat/at')[0].startswith(f'{REMOTECSEID}/'))
+		self.assertTrue(findXPath(r, 'm2m:bat/at')[0].startswith(f'{REMOTECSEID}/'), r)
 		TestRemote_Annc.remoteBatRI = findXPath(r, 'm2m:bat/at')[0]
 		self.assertIsNotNone(TestRemote_Annc.remoteBatRI)
 		self.assertIsNotNone(findXPath(r, 'm2m:bat/aa'))
@@ -354,7 +354,7 @@ class TestRemote_Annc(unittest.TestCase):
 			self.skipTest('remote bat.ri not found')
 		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
-		self.assertIsNotNone(findXPath(r, 'm2m:batA'))
+		self.assertIsNotNone(findXPath(r, 'm2m:batA'), r)
 		self.assertIsNotNone(findXPath(r, 'm2m:batA/ty'))
 		self.assertEqual(findXPath(r, 'm2m:batA/ty'), T.MGMTOBJAnnc)
 		self.assertIsNotNone(findXPath(r, 'm2m:batA/mgd'))

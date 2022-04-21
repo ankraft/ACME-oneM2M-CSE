@@ -193,7 +193,6 @@ class ResourceTypes(ACMEIntEnum):
 		return ResourceTypes.UNKNOWN
 
 
-
 	def isAnnounced(self) -> bool:
 		"""	Test whether this type is an announced resource type.
 		
@@ -212,26 +211,12 @@ class ResourceTypes(ACMEIntEnum):
 		return self.value in ResourceTypes._virtualResourcesSet		#  type: ignore
 
 
-
-	# def __str__(self) -> str:
-	# 	return str(self.value)
-	
-	# def __repr__(self) -> str:
-	# 	return self.__str__()
-
 	@classmethod
 	def fromTPE(cls, tpe:str) -> ResourceTypes:
 		try:
 			return next(key for key, value in ResourceTypes._names.items() if value == tpe)	# type: ignore
 		except StopIteration:
 			return None
-
-
-	@classmethod
-	def announcedMgd(cls, mgd:int) -> ResourceTypes:
-		if mgd in ResourceTypes._announcedMappingsMGD:				#  type: ignore
-			return ResourceTypes._announcedMappingsMGD[mgd] 		#  type: ignore
-		return ResourceTypes.UNKNOWN
 
 
 	@classmethod
@@ -290,10 +275,8 @@ ResourceTypes._announcedMappings = {								#  type: ignore
 	ResourceTypes.TSI 		: ResourceTypes.TSIAnnc,
 	ResourceTypes.TSB 		: ResourceTypes.TSBAnnc,
 	ResourceTypes.ACTR 		: ResourceTypes.ACTRAnnc,
-}
 
-
-ResourceTypes._announcedMappingsMGD = {								#  type: ignore
+	# ManagementObjs
 	ResourceTypes.FWR		: ResourceTypes.FWRAnnc,
 	ResourceTypes.SWR		: ResourceTypes.SWRAnnc,
 	ResourceTypes.MEM		: ResourceTypes.MEMAnnc,
@@ -1270,6 +1253,8 @@ class AttributePolicy:
 	ctype:str					= None	# Definition for a complex type attribute
 	typeName:str				= None	# The type as written in the definition
 	fname:str					= None 	# Name of the definition file
+	ltype:BasicType				= None	# sub-type of a list
+	lTypeName:str				= None	# sub-type of a list as writen in the definition
 
 	# TODO support annnouncedSyncType
 

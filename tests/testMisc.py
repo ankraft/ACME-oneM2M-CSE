@@ -193,6 +193,20 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(rsc, RC.deleted, r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_validateListFail(self) -> None:
+		"""	Check that list types are validated -> Fail"""
+		dct = 	{ 'm2m:ae' : {
+					'rn': aeRN, 
+					'api': 'NMyApp1Id',
+				 	'rr': True,
+				 	'srv': [ '2' ],
+					'lbl': [ 'aLabel', 23 ]
+				}}
+		ae, rsc = CREATE(cseURL, 'Crvi', T.AE, dct)
+		self.assertEqual(rsc, RC.badRequest, ae)
+
+
 
 # TODO test for creating a resource with missing type parameter
 # TODO test json with comments
@@ -215,6 +229,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestMisc('test_checkHTTPmissingOriginator'))
 	suite.addTest(TestMisc('test_checkResponseOT'))
 	suite.addTest(TestMisc('test_checkTargetRVI'))
+	suite.addTest(TestMisc('test_validateListFail'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

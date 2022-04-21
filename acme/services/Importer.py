@@ -177,7 +177,7 @@ class Importer(object):
 						
 					definedAttrs:list[str] = []
 					for attr in attrs:
-						if not (attributePolicy := self._parseAttribute(attr, fn, tpe)):
+						if not (attributePolicy := self._parseAttribute(attr, fn, tpe, checkListType = False)):		# TODO Handle list sub-types for flexContainers
 							return False
 
 						# Test whether an attribute has been defined twice
@@ -252,7 +252,7 @@ class Importer(object):
 
 					# for each definition for this attribute parse it and add one or more attribute Policies
 					for entry in attributeDefs:
-						if not (attributePolicy := self._parseAttribute(entry, fn, sname=sname)):
+						if not (attributePolicy := self._parseAttribute(entry, fn, sname = sname)):
 							return False
 						# L.isDebug and L.logDebug(attributePolicy)
 						for rtype in attributePolicy.rtypes:
@@ -261,7 +261,8 @@ class Importer(object):
 				
 					countAP += 1
 		
-		# Check whether there is an unresolved type used in any of the attributes
+		# Check whether there is an unresolved type used in any of the attributes (in the type and listType)
+		# TODO ? The following can be optimized sometimes, but since it is only called once during startup the small overhead may be neglectable.
 		for p in CSE.validator.getAllAttributePolicies().values():
 			if p.type == BT.complex:
 				for each in CSE.validator.getAllAttributePolicies().values():
@@ -270,6 +271,14 @@ class Importer(object):
 				else:
 					L.logErr(f'No complex type definition found: {p.typeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
 					return False
+			elif p.type == BT.list and p.ltype is not None:
+				if p.ltype == BT.complex:
+					for each in CSE.validator.getAllAttributePolicies().values():
+						if p.lTypeName == each.ctype:	# found a definition
+							break
+					else:
+						L.logErr(f'No list sub-type definition found: {p.lTypeName} for attribute: {p.sname} in file: {p.fname}', showStackTrace = False)
+						return False			
 		
 		
 		L.isDebug and L.logDebug(f'Imported {countAP} attribute policies')
@@ -306,7 +315,7 @@ class Importer(object):
 		return noErrors
 
 
-	def _parseAttribute(self, attr:JSON, fn:str, tpe:str = None, sname:str = None) -> AttributePolicy:
+	def _parseAttribute(self, attr:JSON, fn:str, tpe:str = None, sname:str = None, checkListType:bool = True) -> AttributePolicy:
 		"""	Parse a single attribute definitions for common as well as for flexContainer attributes.
 
 			Args:
@@ -317,11 +326,14 @@ class Importer(object):
 			Return:
 				The parsed definition in an `AttributePolicy`.
 		"""
+
+		#	Get the attribute short name
 		if not sname:
 			if not (sname := findXPath(attr, 'sname')) or not isinstance(sname, str) or len(sname) == 0:
 				L.logErr(f'Missing, empty, or wrong short name (sname) for attribute: {tpe}:{sname} in file: {fn}', showStackTrace=False)
 				return None
 
+		#	Get the name space and determine the full tpe
 		if not (ns := findXPath(attr, 'ns')):
 			ns = 'm2m'	# default
 		if not isinstance(ns, str) or not ns:
@@ -329,51 +341,77 @@ class Importer(object):
 			return None
 		if not tpe:
 			tpe = f'{ns}:{sname}'
-
+		
+		#	Get the attribute long name
 		if not (lname := findXPath(attr, 'lname')) or not isinstance(lname, str) or len(lname) == 0:
 			L.logErr(f'Missing, empty, or wrong long name (lname) for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 
+		#	Look for complex type first
 		if (ctype := findXPath(attr, 'ctype')) is not None:
 			if not isinstance(ctype, str) or len(ctype) == 0:
 				L.logErr(f'Wrong complex type name (ctype) for attribute: {tpe} in file: {fn}', showStackTrace=False)
 				return None
 
+		#	Determine the type name and assign the internal data type
 		if not (typeName := findXPath(attr, 'type')) or not isinstance(typeName, str) or len(typeName) == 0:
 			L.logErr(f'Missing, empty, or wrong type name (type): {typeName} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
-		
-		if not (typ := BT.to(typeName)):	# automatically a complex type. Check for this happens later
+		if not (typ := BT.to(typeName)):	# automatically a complex type if not found in the type definition. Check for this happens later
 			typ = BT.complex
 
+		#	Get the optional cardinality
 		if not (tmp := findXPath(attr, 'car', '01')) or not isinstance(tmp, str) or len(tmp) == 0 or not (car := CAR.to(tmp, insensitive=True)):	# default car01
 			L.logErr(f'Empty, or wrong cardinality (car): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 
+		# 	Get the create optionality
 		if not (tmp := findXPath(attr, 'oc', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (oc := RO.to(tmp, insensitive=True)):	# default O
 			L.logErr(f'Empty, or wrong optionalCreate (oc): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 
+		#	Get the update optionality
 		if not (tmp := findXPath(attr, 'ou', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (ou := RO.to(tmp, insensitive=True)):	# default O
 			L.logErr(f'Empty, or wrong optionalUpdate (ou): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 
+		#	Get the delete optionality
 		if not (tmp := findXPath(attr, 'od', 'o')) or not isinstance(tmp, str) or len(tmp) == 0 or not (od := RO.to(tmp, insensitive=True)):	# default O
 			L.logErr(f'Empty, or wrong optionalDiscovery (od): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 
+		#	Ge the announcement optionality
 		if not (tmp := findXPath(attr, 'annc', 'oa')) or not isinstance(tmp, str) or len(tmp) == 0 or not (annc := AN.to(tmp, insensitive=True)):	# default OA
 			L.logErr(f'Empty, or wrong announcement (annc): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
+		
+		#	Check and determine the list type
+		lTypeName:str = None
+		ltype:BT = None
+		if checkListType:	# TODO remove this when flexContainer definitions support list sub-types
+			if lTypeName := findXPath(attr, 'ltype'):
+				if not isinstance(lTypeName, str) or len(lTypeName) == 0:
+					L.logErr(f'Empty list type name (ltype): {lTypeName} for attribute: {tpe} in file: {fn}', showStackTrace=False)
+					return None
+				if typ not in [ BT.list, BT.listNE ]:
+					L.logErr(f'List type (ltype) defined for non-list attribute type: {typ} for attribute: {tpe} in file: {fn}', showStackTrace=False)
+					return None
+				if not (ltype := BT.to(lTypeName)):	# automatically a complex type if not found in the type definition. Check for this happens later
+					ltype = BT.complex
+			if typ == BT.list and lTypeName is None:
+					L.isDebug and L.logDebug(f'Missing list type for attribute: {tpe} in file: {fn}')
 
+		#	Check missing complex type definition
+		if typ == BT.dict or ltype == BT.dict:
+			L.isDebug and L.logDebug(f'Missing complex type definition for attribute: {tpe} in file: {fn}')
+
+		#	CHeck whether the mandatory rtypes field is set
 		if (rtypes := findXPath(attr, 'rtypes')):
 			if not isinstance(rtypes, list):
-				L.logErr(f'Empty, or wrong resourceTyoes (rtypes): {rtypes} for attribute: {tpe} in file: {fn}', showStackTrace=False)
+				L.logErr(f'Empty, or wrong resourceTypes (rtypes): {rtypes} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 				return None
-			# if not T.has(tuple(rtypes)):	# type: ignore[arg-type]
-			# 	L.logErr(f'"rtype" containes unknown resource type(s): {rtypes} for attribute: {tpe} in file: {fn}', showStackTrace=False)
-			# 	return None
 
+		#	Create an AttributePolicy instance and return it
 		ap = AttributePolicy(	type = typ,
 								typeName = typeName,
 								optionalCreate = oc,
@@ -388,6 +426,8 @@ class Importer(object):
 								rtypes = T.to(tuple(rtypes)) if rtypes else None, 	# type:ignore[arg-type]
 								ctype = ctype,
 								fname = fn,
+								ltype = ltype,
+								lTypeName = lTypeName
 							)
 		return ap
 

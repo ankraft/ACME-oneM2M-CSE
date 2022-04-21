@@ -113,7 +113,8 @@ class AnnounceableResource(Resource):
 		"""	Actually create the resource dict.
 		"""
 		# Stub
-		tpe = T.announcedMgd(self.mgd).tpe() if self.ty == T.MGMTOBJ else T(self.ty).announced().tpe()
+		#tpe = T.announcedMgd(self.mgd).tpe() if self.ty == T.MGMTOBJ else T(self.ty).announced().tpe()
+		tpe = T(self.ty).announced().tpe()
 		# if self.ty != T.MGMTOBJ:
 		# 	tpe = T(self.ty).announced().tpe()
 		# else:

@@ -558,14 +558,15 @@ class Validator(object):
 		if dataType in [ BT.string, BT.anyURI ] and isinstance(value, str):
 			return Result(status = True, data = dataType)
 
-		if dataType == BT.list and isinstance(value, list):
+		if dataType in [ BT.list, BT.listNE ] and isinstance(value, list):
+			if dataType == BT.listNE and len(value) == 0:
+				return Result.errorResult(dbg = 'empty list is not allowed')
+			if policy is not None and policy.ltype is not None:
+				for each in value:
+					if not (res := self._validateType(policy.ltype, each, convert = convert, policy = policy)).status:
+						return res
 			return Result(status = True, data = dataType)
 
-		if dataType == BT.listNE and isinstance(value, list):
-			if len(value) == 0:
-				return Result.errorResult(dbg = 'empty list is not allowed')
-			return Result(status = True, data = dataType)
-		
 		if dataType == BT.dict and isinstance(value, dict):
 			return Result(status = True, data = dataType)
 		
@@ -631,6 +632,6 @@ class Validator(object):
 						return res
 			return Result(status = True, data = dataType)
 
-		return Result.errorResult(dbg = f'unknown type: {str(dataType)}, value type:{type(value)}')
+		return Result.errorResult(dbg = f'type mismatch or unknown; expected type: {str(dataType)}, value type: {type(value).__name__}')
 
 

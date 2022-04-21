@@ -6,6 +6,59 @@
 //	Definitions for oneM2M complex type attributes.
 
 {
+
+	//
+	//	Multiple occurences
+	//
+
+	"nm": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:mgmtLinkRef",
+			"lname": "name",
+			"ns": "m2m",
+			"type": "string",	// m2m:resourceName
+			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:contentRef",
+			"lname": "name",
+			"ns": "m2m",
+			"type": "string",	// xs:NCName
+			"car": "1"
+		}
+	],
+	"typ": [
+
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:geoCoordinates",
+			"lname": "type",
+			"ns": "m2m",
+			"type": "positiveInteger",  // TODO m2m:geometryType -> enum
+			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:mgmtLinkRef",
+			"lname": "type",
+			"ns": "m2m",
+			"type": "positiveInteger",	// TODO m2m:mgmtDefinition -> enum
+			"car": "1"
+		}
+	],
+	"val": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:mgmtLinkRef",
+			"lname": "val",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01"
+		}
+	],
+
 	//
 	//	m2m:evalCriteria
 	//
@@ -39,5 +92,85 @@
 			"type": "any",
 			"car": "1"
 		}
+	],
+
+	//
+	//	m2m:geoCoordinates
+	//
+
+	// see also "typ" above
+
+	"crd": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:geoCoordinates",
+			"lname": "coordinates",
+			"ns": "m2m",
+			"type": "list",		// TODO m2m:listOfCoordinates -> list of list of floats or GeoJSON?
+			"ltype": "string",
+			"car": "1"
+		}
+	],
+
+
+	//
+	//	m2m:activityPattern
+	//
+	"se": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:activityPattern",
+			"lname": "scheduleElement",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "string", // ???
+			"car": "1"
+		}
+	],
+	"sti": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:activityPattern",
+			"lname": "stationaryIndication",
+			"ns": "m2m",
+			"type": "positiveInteger", // m2m:stationaryIndication -> TODO enum
+			"car": "01"
+		}
+	],
+	"dsi": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:activityPattern",
+			"lname": "dataSizeIndicator",
+			"ns": "m2m",
+			"type": "positiveInteger",
+			"car": "01"
+		}
+	],
+
+	//
+	//	m2m:mgmtLinkRef
+	//
+
+	// see also "nm", "val" and "typ" above
+
+
+	//
+	//	m2m:contentRef
+	//
+	
+	// see also "nm" above
+	
+	"uri": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:contentRef",
+			"lname": "URI",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "1"
+		}
 	]
+
+
 }

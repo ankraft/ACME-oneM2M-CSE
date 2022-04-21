@@ -201,7 +201,7 @@ def resourceFromDict(resDict:JSON = {}, pi:str = None, ty:T = None, create:bool 
 		factory = resourceFactoryMap.get(mgd)
 	elif typ == T.MGMTOBJAnnc:									# for <mgmtObjA>
 		mgd = resDict['mgd'] if 'mgd' in resDict else None		# Identify mdg in <mgmtObj>
-		factory = resourceFactoryMap.get(T.announcedMgd(mgd))	# Get the announced version
+		factory = resourceFactoryMap.get(T(mgd).announced())	# Get the announced version
 	else:
 		factory = resourceFactoryMap.get(typ)
 	if factory:
