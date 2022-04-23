@@ -9,6 +9,7 @@
     {
         "type"  : "m2m:gis",
         "lname" : "genericInterworkingService",
+		"cnd"    : "",
         "attributes" : [
             { "sname" : "gisn", "lname" : "serviceName",          "type" : "string", "car" : "01", "oc" : "M", "ou" : "NP", "od" : "O", "annc"  : "OA" },
             { "sname" : "giip", "lname" : "inputDataPointLinks",  "type" : "list",   "car" : "01", "oc" : "O", "ou" : "O",  "od" : "O", "annc"  : "OA" },

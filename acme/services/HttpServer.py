@@ -642,7 +642,12 @@ class HttpServer(object):
 				ct = p[0] 					# only the content-type without the resource type
 				t  = p[2].partition('=')[2]
 				if len(t) > 0:
-					req['ty'] = t			# Here we found the type for CREATE requests
+					try:
+						req['ty'] = int(t)			# Here we found the type for CREATE requests
+					except:
+						L.isWarn and L.logWarn(dbg := f'resource type must be an integer: {t}')
+						return Result.errorResult(rsc = RC.badRequest, request = cseRequest, dbg = dbg)
+
 		cseRequest.headers.contentType = ct
 
 		# parse accept header

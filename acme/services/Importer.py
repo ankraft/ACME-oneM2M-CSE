@@ -168,8 +168,8 @@ class Importer(object):
 					if not (tpe := findXPath(eachDefinition, 'type')):
 						L.logErr(f'Missing or empty resource type in file: {fn}')
 						return False
-					if not (cnd := findXPath(eachDefinition, 'cnd')):
-						L.logDebug(f'Missing or empty containerDefinition (cnd) for type: {tpe} in file: {fn}')
+					if (cnd := findXPath(eachDefinition, 'cnd')) is None:
+						L.logDebug(f'Missing containerDefinition (cnd) for type: {tpe} in file: {fn}')
 					
 					# Attributes are optional. However, add a dummy entry
 					if not (attrs := findXPath(eachDefinition, 'attributes')):
@@ -257,7 +257,7 @@ class Importer(object):
 						# L.isDebug and L.logDebug(attributePolicy)
 						for rtype in attributePolicy.rtypes:
 							ap = deepcopy(attributePolicy)
-							CSE.validator.addAttributePolicy(rtype, sname, ap)
+							CSE.validator.addAttributePolicy(rtype, sname, ap)	# TODO add ctype as well!
 				
 					countAP += 1
 		
@@ -385,6 +385,13 @@ class Importer(object):
 			L.logErr(f'Empty, or wrong announcement (annc): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
 		
+		#	Check and get enum definitions
+		evalues = None
+		if typ == BT.enum:
+			if not (evalues := findXPath(attr, 'evalues')) or not isinstance(evalues, list) or len(evalues) == 0:
+				L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {tpe} in file: {fn}', showStackTrace=False)
+				return None
+
 		#	Check and determine the list type
 		lTypeName:str = None
 		ltype:BT = None
@@ -398,12 +405,21 @@ class Importer(object):
 					return None
 				if not (ltype := BT.to(lTypeName)):	# automatically a complex type if not found in the type definition. Check for this happens later
 					ltype = BT.complex
+				if ltype == BT.enum:	# check sub-type enums
+					if not (evalues := findXPath(attr, 'evalues')) or not isinstance(evalues, list) or len(evalues) == 0:
+						L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {tpe} in file: {fn}', showStackTrace=False)
+						return None
 			if typ == BT.list and lTypeName is None:
 					L.isDebug and L.logDebug(f'Missing list type for attribute: {tpe} in file: {fn}')
 
 		#	Check missing complex type definition
 		if typ == BT.dict or ltype == BT.dict:
 			L.isDebug and L.logDebug(f'Missing complex type definition for attribute: {tpe} in file: {fn}')
+		# re-type an anonymous dict to a normal dict
+		if typ == BT.adict:
+			typ = BT.dict
+		
+
 
 		#	CHeck whether the mandatory rtypes field is set
 		if (rtypes := findXPath(attr, 'rtypes')):
@@ -427,7 +443,8 @@ class Importer(object):
 								ctype = ctype,
 								fname = fn,
 								ltype = ltype,
-								lTypeName = lTypeName
+								lTypeName = lTypeName,
+								evalues = evalues
 							)
 		return ap
 

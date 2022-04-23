@@ -494,53 +494,59 @@ class Validator(object):
 					value and the method will attempt to convert the value to its target type; otherwise this
 					is an error. 
 			Return:
-				Result. If the check is positive (Result.status = =True) then Result.data is set to the determined data type.
+				Result. If the check is positive (Result.status = =True) then Result.data is set to a tuple (the determined data type, the converted value).
 		"""
+
+		# convert some types if necessary
+		if convert:
+			if dataType in [ BT.positiveInteger, BT.nonNegInteger, BT.unsignedInt, BT.unsignedLong, BT.integer, BT.enum ] and isinstance(value, str):
+				try:
+					value = int(value)
+				except Exception as e:
+					return Result.errorResult(dbg = str(e))
+			elif dataType == BT.boolean and isinstance(value, str):	# "true"/"false"
+				try:
+					value = bool(value)
+				except Exception as e:
+					return Result.errorResult(dbg = str(e))
+			elif dataType == BT.float and isinstance(value, str):
+				try:
+					value = float(value)
+				except Exception as e:
+					return Result.errorResult(dbg = str(e))
+
+		# Check types and values
 
 		if dataType == BT.positiveInteger:
 			if isinstance(value, int):
 				if value > 0:
-					return Result(status = True, data = dataType)
+					return Result(status = True, data = (dataType, value))
 				return Result.errorResult(dbg = 'value must be > 0')
-			# try to convert string to number and compare
-			if convert and isinstance(value, str):
-				try:
-					if int(value) > 0:
-						return Result(status = True, data = dataType)
-				except Exception as e:
-					return Result.errorResult(dbg = str(e))
+			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: positive integer')
+		
+		if dataType == BT.enum:
+			if isinstance(value, int):
+				if policy is not None and len(policy.evalues) and value not in policy.evalues:
+					return Result.errorResult(dbg = 'undefined enum value')
+				return Result(status = True, data = (dataType, value))
 			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: positive integer')
 
 		if dataType == BT.nonNegInteger:
 			if isinstance(value, int):
 				if value >= 0:
-					return Result(status = True, data = dataType)
+					return Result(status = True, data = (dataType, value))
 				return Result.errorResult(dbg = 'value must be >= 0')
-			# try to convert string to number and compare
-			if convert and isinstance(value, str):
-				try:
-					if int(value) >= 0:
-						return Result(status = True, data = BT.nonNegInteger)
-				except Exception as e:
-					return Result.errorResult(dbg = str(e))
 			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: non-negative integer')
 
 		if dataType in [ BT.unsignedInt, BT.unsignedLong ]:
 			if isinstance(value, int):
-				return Result(status = True, data = dataType)
-			# try to convert string to number 
-			if convert and isinstance(value, str):
-				try:
-					int(value)
-					return Result(status = True, data = dataType)
-				except Exception as e:
-					return Result.errorResult(dbg = str(e))
+				return Result(status = True, data = (dataType, value))
 			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: unsigned integer')
 
 		if dataType == BT.timestamp and isinstance(value, str):
 			if DateUtils.fromAbsRelTimestamp(value) == 0.0:
 				return Result.errorResult(dbg = f'format error in timestamp: {value}')
-			return Result(status = True, data = dataType)
+			return Result(status = True, data = (dataType, value))
 
 		if dataType == BT.absRelTimestamp:
 			if isinstance(value, str):
@@ -553,10 +559,10 @@ class Validator(object):
 				# fallthrough
 			elif not isinstance(value, int):
 				return Result.errorResult(dbg = f'unsupported data type for absRelTimestamp')
-			return Result(status = True, data = dataType)		# int/long is ok
+			return Result(status = True, data = (dataType, value))		# int/long is ok
 
 		if dataType in [ BT.string, BT.anyURI ] and isinstance(value, str):
-			return Result(status = True, data = dataType)
+			return Result(status = True, data = (dataType, value))
 
 		if dataType in [ BT.list, BT.listNE ] and isinstance(value, list):
 			if dataType == BT.listNE and len(value) == 0:
@@ -565,59 +571,38 @@ class Validator(object):
 				for each in value:
 					if not (res := self._validateType(policy.ltype, each, convert = convert, policy = policy)).status:
 						return res
-			return Result(status = True, data = dataType)
+			return Result(status = True, data = (dataType, value))
 
 		if dataType == BT.dict and isinstance(value, dict):
-			return Result(status = True, data = dataType)
+			return Result(status = True, data = (dataType, value))
 		
 		if dataType == BT.boolean:
 			if isinstance(value, bool):
-				return Result(status = True, data = dataType)
-			# try to convert string to bool
-			if convert and isinstance(value, str):	# "true"/"false"
-				try:
-					bool(value)
-					return Result(status = True, data = dataType)
-				except Exception as e:
-					return Result.errorResult(dbg = str(e))
+				return Result(status = True, data = (dataType, value))
 			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: bool')
 
 		if dataType == BT.float:
 			if isinstance(value, (float, int)):
-				return Result(status = True, data = dataType)
-			# try to convert string to number and compare
-			if convert and isinstance(value, str):
-				try:
-					float(value)
-					return Result(status = True, data = dataType)
-				except Exception as e:
-					return Result.errorResult(dbg = str(e))
+				return Result(status = True, data = (dataType, value))
 			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: float')
 
 		if dataType == BT.integer:
 			if isinstance(value, int):
-				return Result(status = True, data = dataType)
-			# try to convert string to number and compare
-			if convert and isinstance(value, str):
-				try:
-					int(value)
-					return Result(status = True, data = dataType)
-				except Exception as e:
-					return Result(status = False, dbg = str(e))
+				return Result(status = True, data = (dataType, value))
 			return Result.errorResult(dbg = f'invalid type: {type(value).__name__}. Expected: integer')
 
 		if dataType == BT.geoCoordinates and isinstance(value, dict):
-			return Result(status = True, data = dataType)
+			return Result(status = True, data = (dataType, value))
 		
 		if dataType == BT.duration:
 			try:
 				isodate.parse_duration(value)
 			except Exception as e:
 				return Result.errorResult(dbg = f'must be an ISO duration: {str(e)}')
-			return Result(status = True, data = dataType)
+			return Result(status = True, data = (dataType, value))
 		
 		if dataType == BT.any:
-			return Result(status = True, data = dataType)
+			return Result(status = True, data = (dataType, value))
 		
 		if dataType == BT.complex:
 			if not policy:
@@ -626,11 +611,11 @@ class Validator(object):
 
 			if isinstance(value, dict):
 				for k, v in value.items():
-					if not (p := self.getAttributePolicy(T.COMPLEX, k)):
+					if not (p := self.getAttributePolicy(T.COMPLEX, k)):	# TODO also look for complex type name!!!!
 						return Result.errorResult(dbg = f'unknown or undefined attribute:{k} in complex type: {policy.typeName}')
 					if not (res := self._validateType(p.type, v, convert = convert, policy = p)).status:
 						return res
-			return Result(status = True, data = dataType)
+			return Result(status = True, data = (dataType, value))
 
 		return Result.errorResult(dbg = f'type mismatch or unknown; expected type: {str(dataType)}, value type: {type(value).__name__}')
 

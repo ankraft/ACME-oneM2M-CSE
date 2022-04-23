@@ -34,9 +34,10 @@
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:geoCoordinates",
-			"lname": "type",
 			"ns": "m2m",
-			"type": "positiveInteger",  // TODO m2m:geometryType -> enum
+			"lname": "type",
+			"type": "enum",  // m2m:geometryType
+			"evalues": [ 1, 2, 3, 4, 5, 6 ],
 			"car": "1"
 		},
 		{
@@ -44,7 +45,8 @@
 			"ctype": "m2m:mgmtLinkRef",
 			"lname": "type",
 			"ns": "m2m",
-			"type": "positiveInteger",	// TODO m2m:mgmtDefinition -> enum
+			"type": "enum",	// m2m:mgmtDefinition
+			"evalues": [ 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1023 ],
 			"car": "1"
 		}
 	],
@@ -60,6 +62,110 @@
 	],
 
 	//
+	//	m2m:actionStatus
+	//
+	"acn": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:actionStatus",
+			"lname": "action",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01"
+		}
+	],
+	"sus": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:actionStatus",
+			"lname": "status",
+			"ns": "m2m",
+			"type": "enum",
+			"evalues": [ 0, 1, 2, 3 ],
+			"car": "01"
+		}
+	],
+
+	//
+	//	m2m:activityPattern
+	//
+	"se": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:activityPattern",
+			"lname": "scheduleElement",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "string", // ???
+			"car": "1"
+		}
+	],
+	"sti": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:activityPattern",
+			"lname": "stationaryIndication",
+			"ns": "m2m",
+			"type": "enum", // m2m:stationaryIndication
+			"evalues": [ 1, 2 ],
+			"car": "01"
+		}
+	],
+	"dsi": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:activityPattern",
+			"lname": "dataSizeIndicator",
+			"ns": "m2m",
+			"type": "positiveInteger",
+			"car": "01"
+		}
+	],
+
+
+	//
+	//	m2m:batchNotify
+	//
+	"num": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:batchNotify",
+			"lname": "number",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "01"
+		}
+	],
+	"dur": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:batchNotify",
+			"lname": "duration",			
+			"ns": "m2m",
+			"type": "duration",
+			"car": "01"
+		}
+	],
+
+
+	//
+	//	m2m:contentRef
+	//
+	
+	// see also "nm" definition above
+	
+	"uri": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:contentRef",
+			"lname": "URI",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "1"
+		}
+	],
+
+	//
 	//	m2m:evalCriteria
 	//
 
@@ -69,7 +175,8 @@
 			"ctype": "m2m:evalCriteria",
 			"lname": "operator",
 			"ns": "m2m",
-			"type": "positiveInteger",  // TODO m2m:evalCriteriaOperator
+			"type": "enum",  // m2m:evalCriteriaOperator
+			"evalues": [ 1, 2, 3, 4, 5, 6 ],
 			"car": "1"
 		}
 	],
@@ -110,67 +217,13 @@
 			"ltype": "string",
 			"car": "1"
 		}
-	],
-
-
-	//
-	//	m2m:activityPattern
-	//
-	"se": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:activityPattern",
-			"lname": "scheduleElement",
-			"ns": "m2m",
-			"type": "list",
-			"ltype": "string", // ???
-			"car": "1"
-		}
-	],
-	"sti": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:activityPattern",
-			"lname": "stationaryIndication",
-			"ns": "m2m",
-			"type": "positiveInteger", // m2m:stationaryIndication -> TODO enum
-			"car": "01"
-		}
-	],
-	"dsi": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:activityPattern",
-			"lname": "dataSizeIndicator",
-			"ns": "m2m",
-			"type": "positiveInteger",
-			"car": "01"
-		}
-	],
+	]
 
 	//
 	//	m2m:mgmtLinkRef
 	//
 
-	// see also "nm", "val" and "typ" above
-
-
-	//
-	//	m2m:contentRef
-	//
-	
-	// see also "nm" above
-	
-	"uri": [
-		{
-			"rtypes": [ "COMPLEX" ],
-			"ctype": "m2m:contentRef",
-			"lname": "URI",
-			"ns": "m2m",
-			"type": "anyURI",
-			"car": "1"
-		}
-	]
+	// see also "nm", "val" and "typ" definitions above
 
 
 }

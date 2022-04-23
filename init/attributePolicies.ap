@@ -16,7 +16,9 @@
 			"rtypes": [ "ALL" ],
 			"lname": "resourceType",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "enum",	// m2m:resourceType
+			"evalues": [ 1, 2, 3, 4, 5, 9, 13, 14, 15, 16, 17, 23, 28, 29, 30, 58, 60, 63, 
+				10001, 10002, 10003, 10004, 10005, 10009, 10013, 10014, 10016, 10028, 10029, 10030, 10060, 10063  ], 
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -324,7 +326,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "activeStatus",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:actionStatus",	
 			"car": "01",
 			"oc": "NP",
 			"ou": "NP",
@@ -364,7 +366,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "actionResult",
 			"ns": "m2m",
-			"type": "dict",		// m2m:responsePrimitive
+			"type": "adict",		// m2m:responsePrimitive, anonymous
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -458,7 +460,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "actionPrimitive",
 			"ns": "m2m",
-			"type": "dict",	// m2m:requestPrimitive
+			"type": "adict",	// m2m:requestPrimitive
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -471,7 +473,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "actionPriority",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -576,7 +578,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "batchNotify",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:batchNotify",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -602,7 +604,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "batteryLevel",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -883,7 +885,7 @@
 			"lname": "contentSerialization",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "string",	// TODO m2m:serializations enum
+			"ltype": "string",	// m2m:serializations (string enum?)
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -922,7 +924,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "deletionCnt",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
@@ -1104,7 +1106,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "evalControlParam",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",		// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1195,7 +1197,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "expirationCounter",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",		// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1651,7 +1653,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "missingDataMaxNr",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1664,7 +1666,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "missingDataDetectTimer",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1835,7 +1837,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "maxNrOfMembers",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",		// non-enum
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -1874,7 +1876,8 @@
 			"rtypes": [ "ALL" ],
 			"lname": "multicastCapability",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "enum",		// m2m:multicastCapability
+			"evalues": [ 1, 2 ],
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1991,7 +1994,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "notificationStoragePriority",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2031,7 +2034,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "number",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2189,7 +2192,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "periodicInterval",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2202,7 +2205,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "periodicIntervalDelta",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
@@ -2242,7 +2245,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "preSubscriptionNotify",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
@@ -2531,7 +2534,9 @@
 			"lname": "supportedResourceType",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "positiveInteger", // m2m:resourceType -> TODO enum
+			"ltype": "enum", // m2m:resourceType
+			"evalues": [ 1, 2, 3, 4, 5, 9, 13, 14, 15, 16, 17, 23, 28, 29, 30, 58, 60, 63, 
+						 10001, 10002, 10003, 10004, 10005, 10009, 10013, 10014, 10016, 10028, 10029, 10030, 10060, 10063  ], 
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
@@ -2598,7 +2603,8 @@
 			"lname": "SUIDs",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "positiveInteger",		// m2m:suid -> TODO enum
+			"ltype": "positiveInteger",		// m2m:suid
+			"evalues": [ 10, 11, 12, 13, 14, 15, 21, 22, 23, 24, 25, 32, 33, 34, 35, 40, 41, 42, 43, 44, 45 ],
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -2838,7 +2844,8 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "desiredIdentifierResultType",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "enum",	// m2m:desIdResType
+			"evalues": [ 1, 2 ],
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2877,7 +2884,8 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "filterOperation",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "enum",	// m2m:filterOperation
+			"evalues": [ 1, 2, 3 ],
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2890,7 +2898,8 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "filterUsage",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "enum",	// m2m:filterUsage
+			"evalues": [ 1, 2, 3, 4 ],
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2929,7 +2938,7 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "labelsQuery",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2955,7 +2964,7 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "offset",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2994,7 +3003,7 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "stateTagSmaller",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -3020,7 +3029,7 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "sizeBelow",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -3137,7 +3146,8 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "responseTypeValue",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "enum",	// m2m:responseType
+			"evalues": [ 1, 2, 3, 4, 5 ],
 			"car": "01",
 			"oc": "O",
 			"ou": "O",

@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, field, astuple
+import enum
 from typing import Tuple, cast, Dict, Any, List, Union
 from enum import IntEnum,  auto
 from http import HTTPStatus
@@ -92,6 +93,7 @@ class ResourceTypes(ACMEIntEnum):
 	COMPLEX			= -4
 
 	# Resource Types
+	# NOTE Always apply changes also to the m2m:resourceTypes in attributePolicies.ap etc
 
 	MIXED			=  0
 	ACP 			=  1
@@ -114,6 +116,7 @@ class ResourceTypes(ACMEIntEnum):
 	ACTR			= 63
 
 
+
 	# Virtual resources (some are proprietary resource types)
 
 	CNT_OL			=  20001	# actually a memberType
@@ -127,6 +130,8 @@ class ResourceTypes(ACMEIntEnum):
 	TS_LA			=  -20008
 
 	# <mgmtObj> Specializations
+	# NOTE Always apply changes also to the m2m:mgmtDefinition in attributePolicies.ap etc
+	# TODO refactor this into a separate type
 
 	FWR				= 1001
 	SWR				= 1002
@@ -452,6 +457,8 @@ class BasicType(ACMEIntEnum):
 	duration 		= auto()
 	any				= auto()
 	complex 		= auto()
+	enum	 		= auto()
+	adict			= auto()	# anoymous dict structure
 	time			= timestamp	# alias type for time
 	date			= timestamp	# alias type for date
 
@@ -660,6 +667,7 @@ class FilterUsage(ACMEIntEnum):
 	discoveryCriteria		= 1
 	conditionalRetrieval	= 2 # default
 	ipeOnDemandDiscovery	= 3
+	discoveryBasedOperation	= 4
 
 
 class DesiredIdentifierResultType(ACMEIntEnum):
@@ -1066,13 +1074,13 @@ class BeaconCriteria(ACMEIntEnum):
 
 @dataclass
 class Result:
-	resource:Resource			= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
-	data:Any|List[Any]|JSON		= None 		# Anything, or list of anything, or a JSON dictionary	
-	rsc:ResponseStatusCode		= ResponseStatusCode.UNKNOWN	#	The resultStatusCode of a Result
-	dbg:str 					= None
-	request:CSERequest			= None  	# may contain the processed incoming request object
-	embeddedRequest:CSERequest 	= None		# May contain a request as a response, e.g. when polling
-	status:bool 				= None
+	resource:Resource				= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
+	data:Any|List[Any]|Tuple|JSON	= None 		# Anything, or list of anything, or a JSON dictionary	
+	rsc:ResponseStatusCode			= ResponseStatusCode.UNKNOWN	#	The resultStatusCode of a Result
+	dbg:str 						= None
+	request:CSERequest				= None  	# may contain the processed incoming request object
+	embeddedRequest:CSERequest 		= None		# May contain a request as a response, e.g. when polling
+	status:bool 					= None
 
 
 	def errorResultCopy(self) -> Result:
@@ -1255,6 +1263,7 @@ class AttributePolicy:
 	fname:str					= None 	# Name of the definition file
 	ltype:BasicType				= None	# sub-type of a list
 	lTypeName:str				= None	# sub-type of a list as writen in the definition
+	evalues:list[Any]			= None 	# List of enum values
 
 	# TODO support annnouncedSyncType
 

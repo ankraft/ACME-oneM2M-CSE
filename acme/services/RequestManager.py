@@ -1035,12 +1035,9 @@ class RequestManager(object):
 			if dct and (value := dct.get(attribute)) is not None:	# v may be int
 				if greedy:
 					del dct[attribute]
-				if not (res := CSE.validator.validateAttribute(attribute, value, attributeType, rtype=T.REQRESP)).status:
+				if not (res := CSE.validator.validateAttribute(attribute, value, attributeType, rtype = T.REQRESP)).status:
 					raise ValueError(f'attribute: {attribute}, value: {value} : {res.dbg}')
-				if res.data in [ BasicType.nonNegInteger, BasicType.positiveInteger, BasicType.integer]:
-					return int(value)
-				# TODO further automatic conversions?
-				return value
+				return res.data[1]	#type: ignore [index]
 			return default
 
 
@@ -1153,13 +1150,15 @@ class RequestManager(object):
 			# RVI - releaseVersionIndicator
 			if  (rvi := gget(cseRequest.originalRequest, 'rvi', greedy=False)):
 				if rvi not in CSE.supportedReleaseVersions:
-					L.logDebug(dbg := f'Release version unsupported: {rvi}')
-					errorResult = Result.errorResult(rsc = RC.releaseVersionNotSupported, request = cseRequest, dbg = dbg)
+					errorResult = Result.errorResult(rsc = RC.releaseVersionNotSupported, 
+													 request = cseRequest, 
+													 dbg = L.logDebug(f'Release version unsupported: {rvi}'))
 				else:
 					cseRequest.headers.releaseVersionIndicator = rvi	
 			else:
-				L.logDebug(dbg := f'Release Version Indicator is missing in request, falling back to RVI=\'1\'. But Release Version \'1\' is not supported. Use RVI with one of {CSE.supportedReleaseVersions}.')
-				errorResult = Result.errorResult(rsc = RC.releaseVersionNotSupported, request = cseRequest, dbg = dbg)
+				errorResult = Result.errorResult(rsc = RC.releaseVersionNotSupported, 
+												 request = cseRequest, 
+												 dbg = L.logDebug(f'Release Version Indicator is missing in request, falling back to RVI=\'1\'. But Release Version \'1\' is not supported. Use RVI with one of {CSE.supportedReleaseVersions}.'))
 
 			# VSI - vendorInformation
 			if (vsi := gget(cseRequest.originalRequest, 'vsi', greedy=False)):
