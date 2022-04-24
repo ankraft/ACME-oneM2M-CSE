@@ -217,7 +217,7 @@
 			"ltype": "string",
 			"car": "1"
 		}
-	]
+	],
 
 	//
 	//	m2m:mgmtLinkRef
@@ -226,4 +226,143 @@
 	// see also "nm", "val" and "typ" definitions above
 
 
+	//
+	//	m2m:operationResult
+	//
+	"rsc": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "responseStatusCode",
+			"ns": "m2m",
+			"type": "enum",
+			"evalues": [ 1000, 1001, 1002, 
+						2000, 2001, 2002, 2004,
+						4000, 4001, 4004, 4005, 4008, 4015, 4101, 4102, 4103, 4104, 4105, 4106, 4107, 4108, 4109, 4110,
+						4111, 4112, 4113, 4114, 4115, 4116, 4117, 4118, 4119, 4120, 4121, 4122, 4123, 4124, 4125, 4126,
+						4127, 4128, 4130, 4131, 4132, 4133, 4135, 4136, 4137, 4138, 4139, 4140, 4141, 4142, 4143,
+						5000, 5001, 5103, 5105, 5106, 5107, 5203, 5204, 5205, 5206, 5207, 5208, 5209, 5210, 5211, 5212, 5214,
+						5215, 5216, 5217, 5218, 5219, 5220, 5221, 5222, 5230, 5231, 5232,
+						6003, 6005, 6010, 6020, 6021, 6022, 6023, 6024, 6025, 6026, 6028, 6029, 6030, 6031, 6033, 6034
+			],
+			"car": "1"
+		}
+	],
+	"rqi": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "requestIdentifier",
+			"ns": "m2m",
+			"type": "string",
+			"car": "1"
+		}
+	],
+	"pc": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "primitiveContent",
+			"ns": "m2m",
+			"type": "dict",		//	m2m:primitiveContent
+			"car": "01"
+		}
+	],
+	"to": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "to",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01"
+		}
+	],
+	"fr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "from",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01"
+		}
+	],
+	"ot": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "originatingTimestamp",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01"
+		}
+	],
+	"rset": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "resultExpirationTimestamp",
+			"ns": "m2m",
+			"type": "absRelTimestamp",
+			"car": "01"
+		}
+	],
+	"ec": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "eventCategory",
+			"ns": "m2m",
+			"type": "positiveInteger",	// m2m:eventCat TODO Range of enums
+			"car": "01"
+		}
+	],
+	"cnst": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "contentStatus",
+			"ns": "m2m",
+			"type": "enum",
+			"evalues": [ 1, 2 ],
+			"car": "01"
+		}
+	],
+	"cnot": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "contentOffset",
+			"ns": "m2m",
+			"type": "positiveInteger",
+			"car": "01"
+		}
+	],
+
+	//
+	//	m2m:responseTypeInfo
+	//
+	"rtv": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responseTypeInfo",
+			"lname": "responseTypeValue",
+			"ns": "m2m",
+			"type": "enum",
+			"evalues": [ 1, 2, 3, 4, 5 ],
+			"car": "1"
+		}
+	],
+	"nu": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responseTypeInfo",
+			"lname": "notificationURI",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "anyURI",
+			"car": "01"
+		}
+	]
 }
