@@ -534,11 +534,15 @@ class Configuration(object):
 		if Configuration._configuration['cse.scripting.fileMonitoringInterval'] < 0.0:
 			return False, f'Configuration Error: \[cse.scripting]:fileMonitoringInterval must be >= 0.0'
 		if (scriptDirs := Configuration._configuration['cse.scripting.scriptDirectories']):
+			lst = []
 			for each in scriptDirs:
 				if not each:
 					continue
 				if not os.path.isdir(each):
 					return False, f'Configuration Error: \[cse.scripting]:scriptDirectory : directory "{each}" does not exist, is not a directory or is not accessible'
+				lst.append(each)
+			Configuration._configuration['cse.scripting.scriptDirectories'] = lst
+			
 
 		# TimeSyncBeacon defaults
 		bcni = Configuration._configuration['cse.tsb.bcni']

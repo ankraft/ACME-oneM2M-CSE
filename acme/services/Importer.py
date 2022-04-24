@@ -88,28 +88,30 @@ class Importer(object):
 		# 	return False
 
 		self._prepareImporting()
-		L.isInfo and L.log(f'Importing scripts from directories: {path}')
-		if (countScripts := CSE.script.loadScriptsFromDirectory(path)) == -1:
-			return False
+		try:
+			L.isInfo and L.log(f'Importing scripts from directories: {path}')
+			if (countScripts := CSE.script.loadScriptsFromDirectory(path)) == -1:
+				return False
 		
-		# Check that there is only one startup script, then execute it
-		if len(scripts := CSE.script.findScripts(meta = 'startup')) > 1:
-			L.logErr(f'Only one startup script allowed. Found: {[ s.scriptName for s in scripts ]}')
-			return False
+			# Check that there is only one startup script, then execute it
+			if len(scripts := CSE.script.findScripts(meta = 'startup')) > 1:
+				L.logErr(f'Only one startup script allowed. Found: {[ s.scriptName for s in scripts ]}')
+				return False
 
-		elif len(scripts) == 1:
-			# Check whether there is already a filled DB, then skip the imports
-			if CSE.dispatcher.countResources() > 0:
-				L.isInfo and L.log('Resources already imported, skipping boostrap')
-			else:
-				# Run the startup script. There shall only be one.
-				s = scripts[0]
-				L.isInfo and L.log(f'Running boostrap script: {s.scriptName}')
-				if not CSE.script.runScript(s):	
-					L.logErr(f'Error during startup: {s.error}')
-					return False
-
-		self._finishImporting()
+			elif len(scripts) == 1:
+				# Check whether there is already a filled DB, then skip the imports
+				if CSE.dispatcher.countResources() > 0:
+					L.isInfo and L.log('Resources already imported, skipping boostrap')
+				else:
+					# Run the startup script. There shall only be one.
+					s = scripts[0]
+					L.isInfo and L.log(f'Running boostrap script: {s.scriptName}')
+					if not CSE.script.runScript(s):	
+						L.logErr(f'Error during startup: {s.error}')
+						return False
+		finally:
+			# This is executed no matter whether the code above returned or just succeeded
+			self._finishImporting()
 
 		# But we still need the CSI etc of the CSE, and also check presence of CSE
 		if cse := getCSE().resource:
