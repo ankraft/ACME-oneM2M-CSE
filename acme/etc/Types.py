@@ -545,11 +545,13 @@ class ResponseStatusCode(ACMEIntEnum):
 	groupMemberTypeInconsistent					= 4110
 	originatorHasAlreadyRegistered				= 4117
 	appRuleValidationFailed						= 4126
+	operationDeniedByRemoteEntity				= 4127
 	internalServerError							= 5000
 	notImplemented								= 5001
 	targetNotReachable 							= 5103
 	receiverHasNoPrivileges						= 5105
 	alreadyExists								= 5106
+	remoteEntityNotReachable					= 5107
 	targetNotSubscribable						= 5203
 	subscriptionVerificationInitiationFailed	= 5204
 	subscriptionHostHasNoPrivilege				= 5205
@@ -587,7 +589,6 @@ ResponseStatusCode._httpStatusCodes = {																		# type: ignore
 		ResponseStatusCode.groupMemberTypeInconsistent				: HTTPStatus.BAD_REQUEST,				# GROUP MEMBER TYPE INCONSISTENT
 		ResponseStatusCode.originatorHasNoPrivilege					: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS NO PRIVILEGE
 		ResponseStatusCode.invalidChildResourceType					: HTTPStatus.FORBIDDEN,					# INVALID CHILD RESOURCE TYPE
-		ResponseStatusCode.targetNotReachable						: HTTPStatus.FORBIDDEN,					# TARGET NOT REACHABLE
 		ResponseStatusCode.alreadyExists							: HTTPStatus.FORBIDDEN,					# ALREAD EXISTS
 		ResponseStatusCode.targetNotSubscribable					: HTTPStatus.FORBIDDEN,					# TARGET NOT SUBSCRIBABLE
 		ResponseStatusCode.receiverHasNoPrivileges					: HTTPStatus.FORBIDDEN,					# RECEIVER HAS NO PRIVILEGE
@@ -596,8 +597,11 @@ ResponseStatusCode._httpStatusCodes = {																		# type: ignore
 		ResponseStatusCode.subscriptionHostHasNoPrivilege			: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION HOST HAS NO PRIVILEGE
 		ResponseStatusCode.originatorHasAlreadyRegistered			: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS ALREADY REGISTERED
 		ResponseStatusCode.appRuleValidationFailed					: HTTPStatus.FORBIDDEN,					# APP RULE VALIDATION FAILED
+		ResponseStatusCode.operationDeniedByRemoteEntity			: HTTPStatus.FORBIDDEN,					# OPERATION_DENIED_BY_REMOTE_ENTITY
 		ResponseStatusCode.requestTimeout							: HTTPStatus.FORBIDDEN,					# REQUEST TIMEOUT
 		ResponseStatusCode.notFound									: HTTPStatus.NOT_FOUND,					# NOT FOUND
+		ResponseStatusCode.targetNotReachable						: HTTPStatus.NOT_FOUND,					# TARGET NOT REACHABLE
+		ResponseStatusCode.remoteEntityNotReachable					: HTTPStatus.NOT_FOUND,					# REMOTE_ENTITY_NOT_REACHABLE
 		ResponseStatusCode.operationNotAllowed						: HTTPStatus.METHOD_NOT_ALLOWED,		# OPERATION NOT ALLOWED
 		ResponseStatusCode.notAcceptable 							: HTTPStatus.NOT_ACCEPTABLE,			# NOT ACCEPTABLE
 		ResponseStatusCode.conflict									: HTTPStatus.CONFLICT,					# CONFLICT
@@ -935,9 +939,10 @@ class NotificationEventType(ACMEIntEnum):
 	resourceDelete						=  2	# B
 	createDirectChild					=  3 # C
 	deleteDirectChild					=  4 # D	
-	retrieveCNTNoChild					=  5	# E # TODO not supported yet
+	retrieveCNTNoChild					=  5 # E # TODO not supported yet
 	triggerReceivedForAE				=  6 # F # TODO not supported yet
-	blockingUpdate 						=  7 # G # TODO not supported yet
+	blockingUpdate 						=  7 # G
+	# TODO spec and implementation for blockingUpdateDirectChild			=  ???
 	reportOnGeneratedMissingDataPoints	=  8 # H
 	blockingRetrieve					=  9 # I # EXPERIMENTAL
 	blockingRetrieveDirectChild			= 10 # J # EXPERIMENTAL

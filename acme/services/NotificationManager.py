@@ -160,6 +160,55 @@ class NotificationManager(object):
 				self._handleSubscriptionNotification(sub, reason, resource, modifiedAttributes = modifiedAttributes)
 
 
+	def checkPerformBlockingUpdate(self, resource:Resource, originator:str, updatedAttributes:JSON, finished:Callable = None) -> Result:
+		L.isDebug and L.logDebug('check blocking UPDATE')
+
+		# Get blockingUpdate <sub> for this resource , if any
+		subs = self.getSubscriptionsByNetChty(resource.ri, [NotificationEventType.blockingUpdate])
+		
+		# Later: BlockingUpdateDirectChild
+
+		# TODO 2) Prevent or block all other UPDATE request primitives to this target resource.
+
+		for eachSub in subs:
+
+			notification = {
+				'm2m:sgn' : {
+					'nev' : {
+						'net' : NotificationEventType.blockingUpdate.value
+					},
+					'sur' : Utils.spRelRI(eachSub['ri'])
+				}
+			}
+
+			# Check attributes in enc
+			if atr := eachSub['atr']:
+				jsn, _ = Utils.pureResource(updatedAttributes)
+				if len(set(jsn.keys()).intersection(atr)) == 0:	# if the intersection between updatedAttributes and the enc/atr contains is empty, then continue
+					L.isDebug and L.logDebug(f'skipping <SUB>: {eachSub["ri"]} because configured enc/attribute condition doesn\'t match')
+					continue
+
+			# Don't include virtual resources
+			if not resource.isVirtual():
+				# Add representation
+				Utils.setXPath(notification, 'm2m:sgn/nev/rep', updatedAttributes)
+				
+			if not (res := self._sendRequest(eachSub['nus'][0], notification)).status:
+				# Modify the result status code for some status codes
+				if res.rsc == RC.targetNotReachable:
+					res.rsc = RC.remoteEntityNotReachable
+				elif res.rsc == RC.operationNotAllowed:
+					res.rsc = RC.operationDeniedByRemoteEntity
+				return res
+
+			if finished:
+				finished()
+
+		# TODO 5) Allow all other UPDATE request primitives for this target resource.
+
+		return Result.successResult()
+
+
 	def checkPerformBlockingRetrieve(self, resource:Resource, originator:str, request:CSERequest, finished:Callable = None) -> Result:
 		# TODO originator in notification?
 		# TODO check notify permission for originator
@@ -223,16 +272,17 @@ class NotificationManager(object):
 			}
 			# Don't include virtual resources
 			if not resource.isVirtual():
+				# Add representation
 				Utils.setXPath(notification, 'm2m:sgn/nev/rep', resource.asDict())
 
 			if not (res := self._sendRequest(eachSub['nus'][0], notification)).status:
+				# TODO: correct RSC according to 7.3.2.9 
 				return res
 			if finished:
 				finished()
 
 		return Result.successResult()
 
-		# pass
 
 	###########################################################################
 	#

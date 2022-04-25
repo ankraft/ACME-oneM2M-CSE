@@ -326,6 +326,24 @@ class Resource(object):
 		return Result.successResult()
 
 
+	def willBeUpdated(self, dct:JSON = None, originator:str = None, subCheck:bool = True) -> Result:
+		""" This method is called before a resource will be updated and before calling the `update()` method.
+			
+			This method is implemented in some sub-classes.
+
+			Args:
+				originator: The request originator.
+				request: The RETRIEVE request.
+				subCheck: Optional indicator that a blocking Update shall be performed, if configured.
+			Return:
+				Result object indicating success or failure.
+		"""
+		# Perform BlockingUpdate check, and reload resource if necessary
+		if not (res := CSE.notification.checkPerformBlockingUpdate(self, originator, dct, finished = lambda: self.dbReloadDict())).status:
+			return res
+		return Result.successResult()
+
+
 	def updated(self, dct:JSON = None, originator:str = None) -> None:
 		"""	Signal to a resource that is was successfully updated. 
 		

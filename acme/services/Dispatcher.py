@@ -691,6 +691,8 @@ class Dispatcher(object):
 		"""
 		L.isDebug and L.logDebug(f'Updating resource ri: {resource.ri}, type: {resource.ty}')
 		if doUpdateCheck:
+			if not (res := resource.willBeUpdated(dct, originator)).status:
+				return res
 			if not (res := resource.update(dct, originator)).status:
 				# return res.errorResultCopy()
 				return res

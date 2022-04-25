@@ -119,7 +119,7 @@ The following result contents are implemented for standard oneM2M requests & dis
 | deleteDirectChild        |  &check;  |
 | retrieveCNTNoChild       |  &cross;  |
 | triggerReceivedForAE     |  &cross;  |
-| blockingUpdate           |  &cross;  |
+| blockingUpdate           |  &check;  |
 | missingData              |  &check;  |
 
 

@@ -28,6 +28,7 @@ class TestSUB(unittest.TestCase):
 	cnt 			= None
 	cntRI 			= None
 	ae2URL 			= None
+	aePOAURL		= None
 	ae2Originator	= None
 	excSub 			= None
 	sub 			= None
@@ -82,6 +83,7 @@ class TestSUB(unittest.TestCase):
 
 		# Add another AE URL
 		cls.ae2URL = f'{cseURL}/{aeRN}2'
+		cls.aePOAURL = f'{cseURL}/{aeRN}POA'
 
 
 
@@ -90,7 +92,7 @@ class TestSUB(unittest.TestCase):
 	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(f'{aeURL}NoPOA', ORIGINATOR)	# Just delete the NoPOA AE and everything below it. Ignore whether it exists or not
-		DELETE(f'{aeURL}POA', ORIGINATOR)	# Just delete the POA AE and everything below it. Ignore whether it exists or not
+		DELETE(cls.aePOAURL, ORIGINATOR)	# Just delete the POA AE and everything below it. Ignore whether it exists or not
 		DELETE(cls.ae2URL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		stopNotificationServer()
 
@@ -1231,8 +1233,81 @@ class TestSUB(unittest.TestCase):
 			            'net':  [ NET.createDirectChild ],
 					},
 				}}
-		TestSUB.sub, rsc = CREATE(f'{aeURL}POA', TestSUB.originatorPoa, T.SUB, dct)	
-		self.assertEqual(rsc, RC.created, TestSUB.sub)
+		r, rsc = CREATE(self.aePOAURL, TestSUB.originatorPoa, T.SUB, dct)	
+		self.assertEqual(rsc, RC.created, r)
+		self.assertIsNone(getLastNotification())
+
+		r, rsc = DELETE(f'{self.aePOAURL}/{findXPath(r, "m2m:sub/rn")}', TestSUB.originatorPoa)	
+		self.assertEqual(rsc, RC.deleted, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSubBlockingUpdateWrongNUFail(self) -> None:
+		""" CREATE <SUB> for blocking Update with wrong NU -> Fail"""
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+					'nu': [ NOTIFICATIONSERVER ],
+			        'enc': {
+			            'net':  [ NET.blockingUpdate ],
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)	
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSubBlockingUpdateMultipleNUFail(self) -> None:
+		""" CREATE <SUB> for blocking Update with multiple NU -> Fail"""
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+					'nu': [ f'{CSERN}/{aeRN}POA' ,NOTIFICATIONSERVER ],
+			        'enc': {
+			            'net':  [ NET.blockingUpdate ],
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)	
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSubBlockingUpdate(self) -> None:
+		""" CREATE <SUB> for blocking Update"""
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+					'nu': [ f'{CSERN}/{aeRN}POA' ],
+			        'enc': {
+			            'net': [ NET.blockingUpdate ],
+						'atr': [ 'lbl' ]
+					},
+				}}
+		r, rsc = CREATE(self.aePOAURL, TestSUB.originatorPoa, T.SUB, dct)	
+		self.assertEqual(rsc, RC.created, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_doBlockingUpdate(self) -> None:
+		""" Perform BLOCKING UPDATE on <AE>"""
+		clearLastNotification()
+		dct =	{ 'm2m:ae' : {
+					'lbl' : [ 'aLabel' ]
+				}}
+		r, rsc = UPDATE(self.aePOAURL, TestSUB.originatorPoa, dct)	
+		self.assertEqual(rsc, RC.updated, r)
+		lastNotification = getLastNotification()
+		self.assertIsNotNone(lastNotification)
+		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/net'), NET.blockingUpdate)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:ae/lbl'), lastNotification)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_doBlockingUpdateAttributeCondition(self) -> None:
+		""" Perform BLOCKING UPDATE on <AE> with not-set attribute condition"""
+		clearLastNotification()
+		dct =	{ 'm2m:ae' : {
+					'apn' : 'somethingElse'
+				}}
+		r, rsc = UPDATE(self.aePOAURL, TestSUB.originatorPoa, dct)	
+		self.assertEqual(rsc, RC.updated, r)
 		self.assertIsNone(getLastNotification())
 
 
@@ -1324,6 +1399,13 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestSUB('test_updateSUBWithWrongCHTYFail'))
 
 	suite.addTest(TestSUB('test_createSUBWithStructuredNu'))
+
+	# blocking update tests
+	suite.addTest(TestSUB('test_createSubBlockingUpdateWrongNUFail'))
+	suite.addTest(TestSUB('test_createSubBlockingUpdateMultipleNUFail'))
+	suite.addTest(TestSUB('test_createSubBlockingUpdate'))
+	suite.addTest(TestSUB('test_doBlockingUpdate'))
+	suite.addTest(TestSUB('test_doBlockingUpdateAttributeCondition'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

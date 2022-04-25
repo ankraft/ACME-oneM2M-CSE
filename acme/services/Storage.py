@@ -567,7 +567,7 @@ class TinyDBBinding(object):
 					{	'ri'  : ri, 
 						'pi'  : subscription.pi,
 						'nct' : subscription.nct,
-						'net' : subscription['enc/net'],
+						'net' : subscription['enc/net'],	# TODO perhaps store enc as a whole?
 						'atr' : subscription['enc/atr'],
 						'chty': subscription['enc/chty'],
 						'exc' : subscription.exc,

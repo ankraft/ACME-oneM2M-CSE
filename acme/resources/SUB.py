@@ -122,62 +122,55 @@ class SUB(Resource):
 
 		# Check necessary attributes
 		if not (nu := self.nu) or not isinstance(nu, list):
-			L.logDebug(dbg := f'"nu" attribute missing for subscription: {self.ri}')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logDebug(f'"nu" attribute missing for subscription: {self.ri}'))
 		
 		# Check NotificationEventType
 		if (net := self['enc/net']) is not None:
 			if not NotificationEventType.has(net):
-				L.logDebug(dbg := f'enc/net={str(net)} is not an allowed or supported NotificationEventType')
-				return Result.errorResult(dbg = dbg)
+				return Result.errorResult(dbg = L.logDebug(f'enc/net={str(net)} is not an allowed or supported NotificationEventType'))
 
-			# Check if blocking RETRIEVE is the only NET in the subscription, AND that there is no other NET for this resource
-			if NotificationEventType.blockingRetrieve in net or NotificationEventType.blockingRetrieveDirectChild in net:
+			# Check if blocking RETRIEVE or UPDATE is the only NET in the subscription, AND that there is no other NET for this resource
+			if NotificationEventType.blockingUpdate in net or NotificationEventType.blockingRetrieve in net or NotificationEventType.blockingRetrieveDirectChild in net:
 				if len(net) > 1:
-					L.logDebug(dbg := f'blockingRetrieve must be the only value in enc/net')
-					return Result.errorResult(dbg = dbg)
+					return Result.errorResult(dbg = L.logDebug(f'blockingRetrieve/blockingUpdate must be the only value in enc/net'))
 				if CSE.notification.getSubscriptionsByNetChty(parentResource.ri, net = net):
-					L.logDebug(dbg := f'a subscription with blockingRetrieve already exsists for this resource')
-					return Result.errorResult(dbg = dbg)
+					return Result.errorResult(dbg = L.logDebug(f'a subscription with blockingRetrieve/blockingUpdate already exsists for this resource'))
 				
 				if net[0] == NotificationEventType.blockingRetrieve:
 					if CSE.notification.getSubscriptionsByNetChty(parentResource.ri, net = [ NotificationEventType.blockingRetrieve ]):
-						L.logDebug(dbg := f'a subscription with blockingRetrieve already exsists for this resource')
-						return Result.errorResult(dbg = dbg)
+						return Result.errorResult(dbg = L.logDebug(f'a subscription with blockingRetrieve already exsists for this resource'))
 				
 				# TODO: check that only one NotificationEventType.blockingRetrieveDirectChild per chty. Or, if one without chty exists
-				if net[0] == NotificationEventType.blockingRetrieveDirectChild:
+				elif net[0] == NotificationEventType.blockingRetrieveDirectChild:
 					...
 
+				elif net[0] == NotificationEventType.blockingUpdate:
+					if CSE.notification.getSubscriptionsByNetChty(parentResource.ri, net = [ NotificationEventType.blockingUpdate ]):
+						return Result.errorResult(dbg = L.logDebug(f'a subscription with blockingUpdate already exsists for this resource'))
+
 				if len(nu) > 1:
-					L.logDebug(dbg := f'nu must contain only one target for blockingRetrieve(DIrectChild)')
-					return Result.errorResult(dbg = dbg)
+					return Result.errorResult(dbg = L.logDebug(f'nu must contain only one target for blockingRetrieve/blockingUpdate'))
 				parentOriginator = parentResource.getOriginator()
-				if nu[0] != parentOriginator:
-					L.logDebug(dbg := f'nu must target the parent resource\'s originator')
-					return Result.errorResult(dbg = dbg)
+				if not Utils.compareIDs(nu[0], parentOriginator):
+					return Result.errorResult(dbg = L.logDebug(f'nu must target the parent resource\'s originator'))
 
 
 		# check nct and net combinations
 		if (nct := self.nct) is not None and net is not None:
 			for n in net:
 				if not NotificationEventType(n).isAllowedNCT(NotificationContentType(nct)):
-					L.logDebug(dbg := f'nct={nct} is not allowed for one or more values in enc/net={net}')
-					return Result.errorResult(dbg = dbg)
+					return Result.errorResult(dbg = L.logDebug(f'nct={nct} is not allowed for one or more values in enc/net={net}'))
 				# fallthough
 			if n == NotificationEventType.reportOnGeneratedMissingDataPoints:
 				# Check that parent is a TimeSeries
 				if not (parent := self.retrieveParentResource()):
-					L.logErr(dbg := f'cannot retrieve parent resource')
-					return Result.errorResult(rsc = RC.internalServerError, dbg = dbg)
+					return Result.errorResult(rsc = RC.internalServerError, dbg = L.logErr(f'cannot retrieve parent resource'))
 				if parent.ty != T.TS:
-					L.logDebug(dbg := f'parent must be a <TS> resource for net==reportOnGeneratedMissingDataPoints')
-					return Result.errorResult(dbg = dbg)
+					return Result.errorResult(dbg = L.logDebug(f'parent must be a <TS> resource for net==reportOnGeneratedMissingDataPoints'))
 
 				# Check missing data structure
 				if (md := self['enc/md']) is None:	# enc/md is a boolean
-					L.logDebug(dbg := f'net==reportOnGeneratedMissingDataPoints is set, but enc/md is missing')
-					return Result.errorResult(dbg = dbg)
+					return Result.errorResult(dbg = L.logDebug(f'net==reportOnGeneratedMissingDataPoints is set, but enc/md is missing'))
 				if not (res := CSE.validator.validateAttribute('num', md.get('num'))).status:
 					L.isDebug and L.logDebug(res.dbg)
 					return Result.errorResult(dbg = res.dbg)

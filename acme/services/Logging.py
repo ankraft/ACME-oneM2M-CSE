@@ -272,7 +272,7 @@ class Logging:
 
 
 	@staticmethod
-	def logErr(msg:Any, showStackTrace:bool = True, exc:Exception = None, stackOffset:int = 0) -> None:
+	def logErr(msg:Any, showStackTrace:bool = True, exc:Exception = None, stackOffset:int = 0) -> str:
 		"""	Print a log message with level ERROR. 
 			`showStackTrace` indicates whether a stacktrace shall be logged together with the error
 			as well.
@@ -288,6 +288,7 @@ class Logging:
 			Logging._log(logging.ERROR, f'{msg}\n\n{strace}', stackOffset = stackOffset)
 		else:
 			Logging._log(logging.ERROR, msg, stackOffset = stackOffset)
+		return msg
 
 
 	@staticmethod

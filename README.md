@@ -58,6 +58,8 @@ With this release this is changed to running the script *startup.as* that [impor
 - Support for the Upper Tester interface defined in oneM2M's TS-0019
 - Adding scripting support to the CSE that can be used through the console, the Upper Tester, CSE events and notifications, and other
 - Improved the CSE console (e.g. drawing graph diagrams from &lt;contentInstance> resources, dark & light theme)
+- Added support for BLOCKING UPDATE notification event type.
+
 - And as usual many improvements, bug fixes, and performance improvements
 
 ## Acknowledgements
