@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 from argparse import OPTIONAL
+from glob import glob
 from urllib.parse import ParseResult, urlparse, parse_qs
 import sys, io, atexit
 import unittest
@@ -658,15 +659,18 @@ if not verifyCertificate:
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		
 	def do_POST(self) -> None:
+		global nextNotificationResult
+
 		# Construct return header
 		# Always acknowledge the verification requests
-		self.send_response(200)
-		self.send_header(C.hfRSC, str(int(ResponseStatusCode.OK)))
+		self.send_response(nextNotificationResult.httpStatusCode())
+		self.send_header(C.hfRSC, str(int(nextNotificationResult)))
 		self.send_header(C.hfOT, DateUtils.getResourceDate())
 		self.send_header(C.hfOrigin, ORIGINATORResp)
 		if C.hfRI in self.headers:
 			self.send_header(C.hfRI, self.headers[C.hfRI])
 		self.end_headers()
+		nextNotificationResult = ResponseStatusCode.OK
 
 		# Get headers and content data
 		length = int(self.headers['Content-Length'])
@@ -729,12 +733,14 @@ def isNotificationServerRunning() -> bool:
 	except Exception:
 		return False
 
-lastNotification:JSON				= None
-lastNotificationHeaders:Parameters 	= {}
+lastNotification:JSON						= None
+lastNotificationHeaders:Parameters 			= {}
+nextNotificationResult:ResponseStatusCode	= ResponseStatusCode.OK
 
 def setLastNotification(notification:JSON) -> None:
 	global lastNotification
 	lastNotification = notification
+
 
 def getLastNotification(clear:bool=False) -> JSON:
 	r = lastNotification
@@ -742,14 +748,18 @@ def getLastNotification(clear:bool=False) -> JSON:
 		clearLastNotification()
 	return r
 
-def clearLastNotification() -> None:
-	global lastNotification
+
+def clearLastNotification(nextResult:ResponseStatusCode = ResponseStatusCode.OK) -> None:
+	global lastNotification, lastNotificationHeaders, nextNotificationResult
 	lastNotification = None
 	lastNotificationHeaders = None
+	nextNotificationResult = nextResult
+
 
 def setLastNotificationHeaders(headers:Parameters) -> None:
 	global lastNotificationHeaders
 	lastNotificationHeaders = headers
+
 
 def getLastNotificationHeaders() -> Parameters:
 	return lastNotificationHeaders

@@ -1311,6 +1311,18 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNone(getLastNotification())
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_doBlockingUpdateNegativeNotificationResponse(self) -> None:
+		""" Perform BLOCKING UPDATE on <AE> and receive a negative response"""
+		clearLastNotification(nextResult = ResponseStatusCode.operationNotAllowed)
+		dct =	{ 'm2m:ae' : {
+					'lbl' : [ 'aLabel' ]
+				}}
+		r, rsc = UPDATE(self.aePOAURL, TestSUB.originatorPoa, dct)	
+		self.assertEqual(rsc, RC.operationDeniedByRemoteEntity, r)
+
+
+
 # TODO check different NET's (ae->cnt->sub, add cnt to cnt)
 
 
@@ -1406,6 +1418,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestSUB('test_createSubBlockingUpdate'))
 	suite.addTest(TestSUB('test_doBlockingUpdate'))
 	suite.addTest(TestSUB('test_doBlockingUpdateAttributeCondition'))
+	suite.addTest(TestSUB('test_doBlockingUpdateNegativeNotificationResponse'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
