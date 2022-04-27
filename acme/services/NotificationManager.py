@@ -568,13 +568,14 @@ class NotificationManager(object):
 			#		 if it is a resource. only determine which poa and the ct later (ie here).
 			#
 
-			if not self._sendRequest(nu, notificationRequest, parameters = additionalParameters).status:
-				L.isWarn and L.logWarn('Error sending aggregated batch notifications')
-				return False
-
 			# Delete old notifications
 			if not CSE.storage.removeBatchNotifications(ri, nu):
 				L.isWarn and L.logWarn('Error removing aggregated batch notifications')
+				return False
+
+			# Send the request
+			if not self._sendRequest(nu, notificationRequest, parameters = additionalParameters).status:
+				L.isWarn and L.logWarn('Error sending aggregated batch notifications')
 				return False
 
 			return True
