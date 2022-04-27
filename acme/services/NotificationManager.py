@@ -193,16 +193,30 @@ class NotificationManager(object):
 				# Add representation
 				Utils.setXPath(notification, 'm2m:sgn/nev/rep', updatedAttributes)
 				
-			if not (res := self._sendRequest(eachSub['nus'][0], notification)).status:
-				# Modify the result status code for some status codes
-				if res.rsc == RC.targetNotReachable:
-					res.rsc = RC.remoteEntityNotReachable
-				elif res.rsc == RC.operationNotAllowed:
-					res.rsc = RC.operationDeniedByRemoteEntity
-				return res
 
-			if finished:
-				finished()
+			# Send notification and handle possible negative response status codes
+			if not (res := self._sendRequest(eachSub['nus'][0], notification)).status:
+				return res	# Something else went wrong
+			if res.rsc == RC.OK:
+				if finished:
+					finished()
+				continue
+
+			# Modify the result status code for some failure response status codes
+			if res.rsc == RC.targetNotReachable:
+				res.dbg = L.logDebug(f'remote entity not reachable: {eachSub["nus"][0]}')
+				res.rsc = RC.remoteEntityNotReachable
+				res.status = False
+				return res
+			elif res.rsc == RC.operationNotAllowed:
+				res.dbg = L.logDebug(f'operation denied by remote entity: {eachSub["nus"][0]}')
+				res.rsc = RC.operationDeniedByRemoteEntity
+				res.status = False
+				return res
+			
+			# General negative response status code
+			res.status = False
+			return res
 
 		# TODO 5) Allow all other UPDATE request primitives for this target resource.
 
@@ -276,7 +290,7 @@ class NotificationManager(object):
 				Utils.setXPath(notification, 'm2m:sgn/nev/rep', resource.asDict())
 
 			if not (res := self._sendRequest(eachSub['nus'][0], notification)).status:
-				# TODO: correct RSC according to 7.3.2.9 
+				# TODO: correct RSC according to 7.3.2.9 - see above!
 				return res
 			if finished:
 				finished()
