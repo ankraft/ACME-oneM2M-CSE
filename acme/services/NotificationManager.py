@@ -342,7 +342,10 @@ class NotificationManager(object):
 			originator and Utils.setXPath(verificationRequest, 'm2m:sgn/cr', originator)
 	
 			if not (res := self._sendRequest(uri, verificationRequest, noAccessIsError = True)).status:
-				L.isDebug and L.logDebug(f'Verification request failed for: {uri}: {res.dbg}')
+				L.isDebug and L.logDebug(f'Sending verification request failed for: {uri}: {res.dbg}')
+				return False
+			if res.rsc != RC.OK:
+				L.isDebug and L.logDebug(f'Verification notification response if not OK: {res.rsc} for: {uri}: {res.dbg}')
 				return False
 			return True
 
