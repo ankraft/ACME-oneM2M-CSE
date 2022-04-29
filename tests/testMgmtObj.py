@@ -365,6 +365,7 @@ class TestMgmtObj(unittest.TestCase):
 		r, rsc = CREATE(nodURL, ORIGINATOR, T.MGMTOBJ, dct)
 		self.assertEqual(rsc, RC.created)
 		self.assertIsNotNone(findXPath(r, 'm2m:bat/ri'))
+		self.assertEqual(findXPath(r, 'm2m:bat/ty'), T.MGMTOBJ)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

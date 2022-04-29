@@ -55,7 +55,7 @@ class TestUpperTester(unittest.TestCase):
 		self.assertIsNotNone(oldCt := findXPath(cse, 'm2m:cb/ct'))
 
 		# Reset
-		resp = requests.post(UTURL, headers = { UTCMD: f'reset'})
+		resp = requests.post(UTURL, headers = { UTCMD: f'Reset'})
 		self.assertEqual(resp.status_code, 200)
 		self.assertIn(C.hfRSC, resp.headers)
 		self.assertEqual(resp.headers[C.hfRSC], '2000')
