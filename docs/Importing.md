@@ -4,7 +4,7 @@
 
 [Resources](#resources)  
 [Attribute and Hierarchy Policies for FlexContainers](#flexcontainers)  
-[Attribute Policies for Common Resources](#attributes)
+[Attribute Policies for Common Resources and Complex Types	](#attributes)
 
 
 <a name="resources"></a>
@@ -58,7 +58,7 @@ See the [documentation for scripts](ACMEScript.md).
 
 
 <a name="flexcontainers"></a>
-## Attribute and Hierarchy Policies for FlexContainers
+## FlexContainer Attribute and Hierarchy Policies
 
 The CSE uses attribute policies for validating the attributes of all supported resource types (internal to the *m2m* namespace). 
 But for all &lt;flexContainer> specializations, e.g. for oneM2M's TS-0023 ModuleClasses, those attribute policies and the allowed &lt;flexContainer> hierarchy must be provided. This can be done by adding attribute policy files for import. 
@@ -82,7 +82,7 @@ attributePolicies = [
 		// The specialisation's long name. Optional, and for future developments.
 		"lname"     : "attributePolicyLongname",
 
-		// The specialisation's containerDefinition. Optional, and for future developments.
+		// The specialisation's containerDefinition. Must be present for flexContainers, but can be empty to prevent warnings.
 		"cnd"       : "containerDefinition",
 
 		// The specialisation's SDT type. Could be "device", "subdevice", "moduleclass", or "action". Optional, and for future developments.
@@ -107,11 +107,24 @@ attributePolicies = [
 				//	- string
 				//	- timestamp
 				//	- list
-				//	- dict
+				//	- dict - any anonymous complex structure. This should be avoided and be replaced by a complex type name
+				//	- adict (anonymous dict)
 				//	- anyURI
 				// 	- boolean
+				//	- enum
 				//	- geoCoordinates
+				//
+				//	In addition, the *attributeType* can be the name of any defined complex type. This
+				//	complex type must be defined in any of the attribute policy files.
 				"type"	: "attributeType", 
+
+				// The sub-type of a list type.
+				//	This can be any of the types defined for *type*, or a complex type.
+				"ltype" : "type",
+
+				//	Definition of enumeration values. This can only be an integer value, or range definitions
+				//	in the format "start..end" that evaluate to all the integer values of the given range.
+				"evalues" : [ 1, 2, "3..5", 6 ],
 
 				// The "oc" field specifies the CREATE request optionality. Optional, and one from this list:
 				//	- O  : Optional provided (default)
@@ -201,9 +214,10 @@ The following examples show the attribute policies for the *binarySwitch* and *d
 ```
 
 <a name="attributes"></a>
-## Attribute Policies for Common Resources
+## Attribute Policies for Common Resources and Complex Types
 
-During startup the CSE reads the attribute policies for normal/common resources from the file [attributePolicies.ap](../init/attributePolicies.ap) in the import / init directory.
+During startup the CSE reads the attribute policies for normal/common resources from the file [attributePolicies.ap](../init/attributePolicies.ap) in the import / init directory.  
+The attributes for attribute policies are the same as for the &lt;flexContainer> attribute definitions above.
 
 ### Format
 
@@ -226,9 +240,15 @@ The format is a JSON structure that follows the structure described in the follo
 			// The rtypes definition is mandatory here. It defines a list of oneM2M
 			// resource types for which this definition is valid. This way slight
 			// differences in attributes in some resource can be distinguished.
-			// The special names "ALL" (short for all resource types) and "REQRESP"
-			// (for attributes in requests and responses) can be used accordingly.
-			"rtype" : [ "<resource type>", "<resource type>" ]
+			// The special names "ALL" (short for all resource types), "REQRESP"
+			// (for attributes in requests and responses), and "COMPLEX" (for an attribute
+			// that belongs to a complex type definition) can be used accordingly.
+			"rtype" : [ "<resource type>", "<resource type>" ],
+
+			// The name of a complex type this attribute defintion belongs to. This
+			// attribute is only be present in an attribute policy definition when
+			// "rtype" is set to "COMPLEX".
+			"ctype" : "<complex type name>",
 
 			// The other definitions that can be used are (see above for details):
 			//
@@ -262,6 +282,27 @@ The following gives an example for the attribute *ty* (*resourceType*).
 			"ou": "NP",
 			"od": "O",
 			"annc": "NA"
+		}
+	]
+}
+```
+
+**Complex Type Attribute**
+
+The following example shows the definition of the attribute *operator* (optr) that
+belongs to the complex type *m2m:evalCriteria*.
+
+```JSON
+{
+	"optr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:evalCriteria",
+			"lname": "operator",
+			"ns": "m2m",
+			"type": "enum",
+			"evalues": [ 1, 2, 3, 4, 5, 6 ],
+			"car": "1"
 		}
 	]
 }
