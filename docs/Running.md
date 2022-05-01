@@ -51,32 +51,34 @@ Please note, that the shutdown might take a moment (e.g. gracefully terminating 
 
 The CSE has a command console interface to execute build-in commands. The following commands are available:
 
-	┏━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┓
-	┃ Key   ┃ Description                               ┃ Script ┃
-	┡━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━┩
-	│ h, ?  │ This help                                 │        │
-	│ A     │ About                                     │        │
-	│ Q, ^C │ Shutdown CSE                              │        │
-	│ c     │ Show configuration                        │        │
-	│ C     │ Clear the console screen                  │        │
-	│ D     │ Delete resource                           │        │
-	│ E     │ Export resource tree to *init* directory  │        │
-	│ i     │ Inspect resource                          │        │
-	│ I     │ Inspect resource and child resources      │        │
-	│ k     │ Catalog of scripts                        │        │
-	│ l     │ Toggle screen logging on/off              │        │
-	│ L     │ Toggle through log levels                 │        │
-	│ r     │ Show CSE registrations                    │        │
-	│ s     │ Show statistics                           │        │
-	│ ^S    │ Show & refresh statistics continuously    │        │
-	│ t     │ Show resource tree                        │        │
-	│ T     │ Show child resource tree                  │        │
-	│ ^T    │ Show & refresh resource tree continuously │        │
-	│ u     │ Open web UI                               │        │
-	│ w     │ Show workers status                       │        │
-	├───────┼───────────────────────────────────────────┼────────┤
-	│ Z     │ Reset and restart the CSE                 │   ✔︎    │
-	└───────┴───────────────────────────────────────────┴────────┘
+	┏━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━┓
+	┃ Key   ┃ Description                                            ┃ Script ┃
+	┡━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━┩
+	│ h, ?  │ This help                                              │        │
+	│ A     │ About                                                  │        │
+	│ Q, ^C │ Shutdown CSE                                           │        │
+	│ c     │ Show configuration                                     │        │
+	│ C     │ Clear the console screen                               │        │
+	│ D     │ Delete resource                                        │        │
+	│ E     │ Export resource tree to *init* directory               │        │
+	│ G     │ Plot graph (only for container)                        │        │
+	│ ^G    │ Plot & refresh graph continuously (only for container) │        │
+	│ i     │ Inspect resource                                       │        │
+	│ I     │ Inspect resource and child resources                   │        │
+	│ k     │ Catalog of scripts                                     │        │
+	│ l     │ Toggle screen logging on/off                           │        │
+	│ L     │ Toggle through log levels                              │        │
+	│ r     │ Show CSE registrations                                 │        │
+	│ s     │ Show statistics                                        │        │
+	│ ^S    │ Show & refresh statistics continuously                 │        │
+	│ t     │ Show resource tree                                     │        │
+	│ T     │ Show child resource tree                               │        │
+	│ ^T    │ Show & refresh resource tree continuously              │        │
+	│ u     │ Open web UI                                            │        │
+	│ w     │ Show workers status                                    │        │
+	├───────┼────────────────────────────────────────────────────────┼────────┤
+	│ Z     │ Reset and restart the CSE                              │   ✔︎    │
+	└───────┴────────────────────────────────────────────────────────┴────────┘
 
 [Script commands](ACMEScript.md) with configured [key binding](ACMEScript-metatags.md#meta_onkey) are shown in addition to
 the build-in commands.

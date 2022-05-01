@@ -578,6 +578,7 @@ class Dispatcher(object):
 		# send a create event
 		CSE.event.createResource(resource)	# type: ignore
 
+
 		if parentResource:
 			parentResource = parentResource.dbReload().resource		# Read the resource again in case it was updated in the DB
 			if not parentResource:
@@ -585,6 +586,9 @@ class Dispatcher(object):
 				self.deleteResource(resource)
 				return Result.errorResult(rsc = RC.internalServerError, dbg = dbg)
 			parentResource.childAdded(resource, originator)			# notify the parent resource
+
+			# Send event for parent resource
+			CSE.event.createChildResource(parentResource)	# type: ignore
 
 		return Result(status = True, resource = resource, rsc = RC.created) 	# everything is fine. resource created.
 
