@@ -25,6 +25,9 @@ but rather copy it to a new file named *acme.ini*, which is the default configur
 but must then specify it with the *--config* command line argument when running the 
 (see [Running the CSE](Running.md#running-the-cse)).
 
+It is sufficient to only add the settings to the configuration file that need to be different from the default settings.
+All other settings are read from the default config file *acme.ini.default*.
+
 If the specified or the default *acme.ini* could not be found then an interactive procedure is started to generate a file
 with basic configuration settings. You can add further configurations if necessary by copying sections and settings from *acme.ini.default*.
 
