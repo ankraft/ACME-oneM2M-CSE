@@ -153,7 +153,11 @@ class SUB(Resource):
 				parentOriginator = parentResource.getOriginator()
 				if not Utils.compareIDs(nu[0], parentOriginator):
 					return Result.errorResult(dbg = L.logDebug(f'nu must target the parent resource\'s originator'))
-
+			
+			# Validate missingData
+		L.logDebug(self['enc/md'])
+		if (md := self['enc/md']) is not None and len(md.keys() & {'dur', 'num'}) != 2:
+			return Result.errorResult(dbg = L.logDebug(f'"dur" and/or "num" missing in "md" attribute'))
 
 		# check nct and net combinations
 		if (nct := self.nct) is not None and net is not None:

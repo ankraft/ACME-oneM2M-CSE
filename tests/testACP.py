@@ -71,7 +71,7 @@ class TestACP(unittest.TestCase):
 					},
 				}}
 		TestACP.acp, rsc = CREATE(cseURL, ORIGINATOR, T.ACP, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.created, TestACP.acp)
 	
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -442,7 +442,7 @@ class TestACP(unittest.TestCase):
 					},
 				}}
 		TestACP.acp, rsc = CREATE(cseURL, TestACP.originator, T.ACP, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.created, TestACP.acp)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -461,9 +461,9 @@ class TestACP(unittest.TestCase):
 						"acr": [ {
 							"acor": [ TestACP.originator ],
 							"acop": Permission.CREATE,
-							"acod": {
+							"acod": [ {
 								"chty": [ T.CNT ]	# Allow only a CNT to be created
-							}
+							} ]
 						}]
 					},
 					"pvs": { 
@@ -474,11 +474,11 @@ class TestACP(unittest.TestCase):
 					},
 				}}
 		r, rsc = CREATE(aeURL, TestACP.originator, T.ACP, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.created, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acod'))
-		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acod/chty'))
-		self.assertIsInstance(findXPath(r, 'm2m:acp/pv/acr/{0}/acod/chty'), list)
-		self.assertTrue(T.CNT in findXPath(r, 'm2m:acp/pv/acr/{0}/acod/chty'))
+		self.assertIsNotNone(findXPath(r, 'm2m:acp/pv/acr/{0}/acod/{0}/chty'))
+		self.assertIsInstance(findXPath(r, 'm2m:acp/pv/acr/{0}/acod/{0}/chty'), list)
+		self.assertTrue(T.CNT in findXPath(r, 'm2m:acp/pv/acr/{0}/acod/{0}/chty'))
 		TestACP.acp = r
 
 

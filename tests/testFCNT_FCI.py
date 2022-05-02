@@ -195,7 +195,7 @@ class TestFCNT_FCI(unittest.TestCase):
 					'curT0'	: 23.0,
 				}}
 		r, rsc = CREATE(fcntURL, TestFCNT_FCI.originator, T.FCI, dct)
-		self.assertEqual(rsc, RC.operationNotAllowed)
+		self.assertEqual(rsc, RC.operationNotAllowed, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

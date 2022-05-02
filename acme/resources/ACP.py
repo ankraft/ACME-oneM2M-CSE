@@ -72,8 +72,9 @@ class ACP(AnnounceableResource):
 				return Result.successResult()
 			for acr in acrs:
 				if (acod := acr.get('acod')):
-					if not (acod := acod.get('chty')) or not isinstance(acod, list):
-						return Result.errorResult(dbg = 'chty is mandatory in acod')
+					for each in acod:
+						if not (chty := each.get('chty')) or not isinstance(chty, list):
+							return Result.errorResult(dbg = 'chty is mandatory in acod')
 			return Result.successResult()
 
 		if not (res := _checkAcod(Utils.findXPath(dct, f'{T.ACPAnnc.tpe()}/pv/acr'))).status:
@@ -167,12 +168,18 @@ class ACP(AnnounceableResource):
 
 			# Check acod : chty
 			if acod := acr.get('acod'):
-				if requestedPermission == Permission.CREATE:
-					if ty is None or ty not in acod.get('chty'):	# ty is an int
-						continue								# for CREATE: type not in chty
+				for eachAcod in acod:
+					if requestedPermission == Permission.CREATE:
+						L.logWarn(eachAcod)
+						if ty is None or ty not in eachAcod.get('chty'):	# ty is an int
+							continue										# for CREATE: type not in chty
+					else:
+						if ty not in eachAcod.get('ty'):
+							continue								# any other Permission type: ty not in chty
+					break # found one
 				else:
-					if ty not in acod.get('ty'):
-						continue								# any other Permission type: ty not in chty
+					continue	# NOT found, so continue the overall search
+
 				# TODO support acod/specialization
 
 			# Check originator
