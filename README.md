@@ -3,7 +3,7 @@
 # ACME oneM2M CSE
 An open source CSE Middleware for Education.
 
-Version 0.10.0-dev
+Version 0.10.0
 
 [![oneM2M](https://img.shields.io/badge/oneM2M-f00)](https://www.onem2m.org) [![Python](https://img.shields.io/badge/Python-3.8-blue)](https://www.python.org) [![Maintenance](https://img.shields.io/badge/Maintained-Yes-green.svg)](https://github.com/ankraft/ACME-oneM2M-CSE/graphs/commit-activity) [![License](https://img.shields.io/badge/License-BSD%203--Clause-green)](LICENSE) [![MyPy](https://img.shields.io/badge/MyPy-covered-green)](LICENSE)  
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/acmeCSE.svg?style=social&label=%40acmeCSE)](https://twitter.com/acmeCSE)
@@ -50,23 +50,23 @@ With this release this is changed to running the script *startup.as* that [impor
 
 ### Highlights in this release
 
-- TODO 
-
 - &lt;timeSyncBeacon> resource type support
 - Guided setup process to create the initial configuration file
 - Adapted announcements and time-series procedures to latest R4 changes
 - Support for the Upper Tester interface defined in oneM2M's TS-0019
 - Adding scripting support to the CSE that can be used through the console, the Upper Tester, CSE events and notifications, and other
 - Improved the CSE console (e.g. drawing graph diagrams from &lt;contentInstance> resources, dark & light theme)
-- Added support for BLOCKING UPDATE notification event type.
-
-- And as usual many improvements, bug fixes, and performance improvements
+- Added support for BLOCKING UPDATE notification event type
+- Improved announced resources (e.g. bi-directional update)
+- Improved validation of complex attributes
+- And, as usual, many improvements, bug fixes, and performance improvements
 
 ## Acknowledgements
 
 Thank you for contributed code, patches, testing, bug fixes, time, and more!
 
 ![reinaortega](https://github.com/reinaortega.png?size=24) [Miguel Angel Reina Ortega](https://github.com/reinaortega)  
+![BobFIV](https://github.com/BobFIV.png?size=24) [BobFIV](https://github.com/BobFIV)  
 ![YannGarcia](https://github.com/YannGarcia.png?size=24) [Yann Garcia](https://github.com/YannGarcia)  
 <img src="https://github.com/massimov.png" width="24"> [Massimo Vanetti](https://github.com/massimov)  
 
