@@ -259,10 +259,11 @@ class Importer(object):
 						# L.isDebug and L.logDebug(attributePolicy)
 						for rtype in attributePolicy.rtypes:
 							ap = deepcopy(attributePolicy)
-							CSE.validator.addAttributePolicy(rtype, sname, ap)	# TODO add ctype as well!
+							CSE.validator.addAttributePolicy(rtype if ap.ctype is None else ap.ctype, sname, ap)
 				
 					countAP += 1
 		
+
 		# Check whether there is an unresolved type used in any of the attributes (in the type and listType)
 		# TODO ? The following can be optimized sometimes, but since it is only called once during startup the small overhead may be neglectable.
 		for p in CSE.validator.getAllAttributePolicies().values():
@@ -386,14 +387,7 @@ class Importer(object):
 		if not (tmp := findXPath(attr, 'annc', 'oa')) or not isinstance(tmp, str) or len(tmp) == 0 or not (annc := AN.to(tmp, insensitive=True)):	# default OA
 			L.logErr(f'Empty, or wrong announcement (annc): {tmp} for attribute: {tpe} in file: {fn}', showStackTrace=False)
 			return None
-		
-		#	Check and get enum definitions
-		evalues = None
-		if typ == BT.enum:
-			if not (evalues := findXPath(attr, 'evalues')) or not isinstance(evalues, list) or len(evalues) == 0:
-				L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {tpe} in file: {fn}', showStackTrace=False)
-				return None
-
+				
 		#	Check and determine the list type
 		lTypeName:str = None
 		ltype:BT = None
@@ -413,6 +407,38 @@ class Importer(object):
 						return None
 			if typ == BT.list and lTypeName is None:
 					L.isDebug and L.logDebug(f'Missing list type for attribute: {tpe} in file: {fn}')
+
+		#	Check and get enum definitions
+		evalues = None
+		if typ == BT.enum or (typ == BT.list and ltype == BT.enum):
+			if not (evalues := findXPath(attr, 'evalues')) or not isinstance(evalues, list) or len(evalues) == 0:
+				L.logErr(f'Missing, wrong of empty enum values (evalue) list for attribute: {tpe} in file: {fn}', showStackTrace=False)
+				return None
+			# get ranges in enums
+			_evalues:list[int] = []
+			for each in evalues:
+				if isinstance(each, int):
+					_evalues.append(each)
+					continue
+				if isinstance(each, str):
+					s, found, e = each.partition('..')
+					if not found:
+						L.logErr(f'Error in evalue range definition: {each} for enum attribute: {tpe} in file: {fn}', showStackTrace=False)
+						return None
+					try:
+						si = int(s)
+						ei = int(e)
+					except ValueError:
+						L.logErr(f'Error in evalue range definition: {each} (range shall consist of integer numbers) for enum attribute: {tpe} in file: {fn}', showStackTrace=False)
+						return None
+					if not si < ei:
+						L.logErr(f'Error in evalue range definition: {each} (begin >= end) for enum attribute: {tpe} in file: {fn}', showStackTrace=False)
+						return None
+					_evalues.extend(list(range(si, ei+1)))
+					continue
+				L.logErr(f'Unsupported value: {each} for enum attribute: {tpe} in file: {fn}', showStackTrace=False)
+				return None
+			evalues = _evalues
 
 		#	Check missing complex type definition
 		if typ == BT.dict or ltype == BT.dict:

@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Added check for correct Service Provider ID in absolute requests.
 - [CSE] Added support for &lt;pollingChannel>'s *requestAggregation* attribute and functionality.
 - [CSE] Added support for BLOCKING UPDATE notification event type.
+- [CSE] Added a first support for the &lt;timeSyncBeacon> resource type.
 - [WEB] Allow to open the WebUI of a registered CSE via the context menu.
 - [CONSOLE] Added config for dark (default) and light theme for better readability on consoles with light background.
 - [CONSOLE] Added graph plotting for &lt;contentInstance> resources that contain numerical values (also: continuous observation of a container).
@@ -150,6 +151,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Refactored internal request handling to support future protocol binding developments other than http.
 - [CSE] Changed the sorting of request result lists to type and creation time for &lt;contentInstance>, &lt;flexContainerInstance> and &lt;timeSeriesInstance>.
 - [CSE] Improved the validation when registering &lt;remoteCSE> resources for *csi* and *cb* attributes.
+- [CSE] Added validation of complex attributes in general.
 - [RUNTIME] The CSE is now started by running the *acme* module (```python3 acme```)
 
 ### Fixed

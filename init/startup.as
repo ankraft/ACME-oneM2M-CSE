@@ -45,9 +45,11 @@ importraw
 					"acor": \[
 						"all"
 					],
-					"acod": {
-						"chty": \[ 1 ]
-					},
+					"acod": \[
+						{
+							"chty": \[ 1 ]
+						}
+					],
 					"acop": 1
 				}
 			]

@@ -16,9 +16,9 @@
 			"rtypes": [ "ALL" ],
 			"lname": "resourceType",
 			"ns": "m2m",
-			"type": "enum",	// m2m:resourceType
-			"evalues": [ 1, 2, 3, 4, 5, 9, 13, 14, 15, 16, 17, 23, 28, 29, 30, 58, 60, 63, 
-				10001, 10002, 10003, 10004, 10005, 10009, 10013, 10014, 10016, 10028, 10029, 10030, 10060, 10063  ], 
+			"type": "enum",		// m2m:resourceType
+			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 58, 60, 63, 
+				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -366,7 +366,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "actionResult",
 			"ns": "m2m",
-			"type": "adict",		// m2m:responsePrimitive, anonymous
+			"type": "adict",		// m2m:responsePrimitive, anonymous TODO
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -460,7 +460,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "actionPrimitive",
 			"ns": "m2m",
-			"type": "adict",	// m2m:requestPrimitive
+			"type": "adict",	// m2m:requestPrimitive TODO
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -1145,7 +1145,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "eventNotificationCriteria",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:eventNotificationCriteria",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1223,7 +1223,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "filterCriteria",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:filterCriteria",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1381,7 +1381,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "input",
 			"ns": "m2m",
-			"type": "dict",		// m2m:actionInput
+			"type": "m2m:actionInput",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1531,7 +1531,7 @@
 	// EXPERIMENTAL
 	"ma": [
 		{
-			"rtypes": [ "SUB", "SUB", "REQRESP" ],
+			"rtypes": [ "SUB", "REQRESP" ],
 			"lname": "maxAge",
 			"ns": "m2m",
 			"type": "duration",
@@ -1732,7 +1732,8 @@
 			"rtypes": [ "ALL" ],
 			"lname": "mgmtDefinition",
 			"ns": "m2m",
-			"type": "nonNegInteger",
+			"type": "enum",	// m2m:mgmtDefinition
+			"evalues": [ "1001..1010", 1023 ],
 			"car": "1",
 			"oc": "M",
 			"ou": "NP",
@@ -1758,7 +1759,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "metaInformation",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:metaInformation",
 			"car": "1",
 			"oc": "M",
 			"ou": "NP",
@@ -2166,7 +2167,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "primitiveContent",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "adict",	// m2m:primitiveContent
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
@@ -2285,7 +2286,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "privileges",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:setOfAcrs",
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -2298,7 +2299,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "privileges",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:setOfAcrs",
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -2350,7 +2351,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "rateLimit",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:rateLimit",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2534,9 +2535,9 @@
 			"lname": "supportedResourceType",
 			"ns": "m2m",
 			"type": "list",
-			"ltype": "enum", // m2m:resourceType
-			"evalues": [ 1, 2, 3, 4, 5, 9, 13, 14, 15, 16, 17, 23, 28, 29, 30, 58, 60, 63, 
-						 10001, 10002, 10003, 10004, 10005, 10009, 10013, 10014, 10016, 10028, 10029, 10030, 10060, 10063  ], 
+			"ltype": "enum",	 // m2m:resourceType
+			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 58, 60, 63, 
+						 "10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ],    
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
@@ -2604,7 +2605,7 @@
 			"ns": "m2m",
 			"type": "list",
 			"ltype": "positiveInteger",		// m2m:suid
-			"evalues": [ 10, 11, 12, 13, 14, 15, 21, 22, 23, 24, 25, 32, 33, 34, 35, 40, 41, 42, 43, 44, 45 ],
+			"evalues": [ "10..15", "21..25", "32..35", "40..45" ],
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -2885,7 +2886,7 @@
 			"lname": "filterOperation",
 			"ns": "m2m",
 			"type": "enum",	// m2m:filterOperation
-			"evalues": [ 1, 2, 3 ],
+			"evalues": [ "1..3" ],
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2899,7 +2900,7 @@
 			"lname": "filterUsage",
 			"ns": "m2m",
 			"type": "enum",	// m2m:filterUsage
-			"evalues": [ 1, 2, 3, 4 ],
+			"evalues": [ "1..4" ],
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -3147,7 +3148,7 @@
 			"lname": "responseTypeValue",
 			"ns": "m2m",
 			"type": "enum",	// m2m:responseType
-			"evalues": [ 1, 2, 3, 4, 5 ],
+			"evalues": [ "1..5" ],
 			"car": "01",
 			"oc": "O",
 			"ou": "O",

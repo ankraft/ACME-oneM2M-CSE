@@ -452,6 +452,8 @@ class Validator(object):
 	def addAttributePolicy(self, rtype:T, attr:str, attrPolicy:AttributePolicy) -> None:
 		"""	Add a new attribute policy for normal resources. 
 		"""
+		if (rtype, attr) in attributePolicies:
+			L.logErr(f'Policy {(rtype, attr)} is already registered')
 		attributePolicies[(rtype, attr)] = attrPolicy
 
 
@@ -496,6 +498,12 @@ class Validator(object):
 			Return:
 				Result. If the check is positive (Result.status = =True) then Result.data is set to a tuple (the determined data type, the converted value).
 		"""
+
+
+		# Ignore None values
+		if value is None:
+			return Result(status = True, data = (dataType, value))
+
 
 		# convert some types if necessary
 		if convert:
@@ -610,9 +618,10 @@ class Validator(object):
 				return Result.errorResult(dbg = f'internal error: policy missing for validation')
 
 			if isinstance(value, dict):
+				typeName = policy.lTypeName if policy.type == BT.list else policy.typeName;
 				for k, v in value.items():
-					if not (p := self.getAttributePolicy(T.COMPLEX, k)):	# TODO also look for complex type name!!!!
-						return Result.errorResult(dbg = f'unknown or undefined attribute:{k} in complex type: {policy.typeName}')
+					if not (p := self.getAttributePolicy(typeName, k)):
+						return Result.errorResult(dbg = f'unknown or undefined attribute:{k} in complex type: {typeName}')
 					if not (res := self._validateType(p.type, v, convert = convert, policy = p)).status:
 						return res
 			return Result(status = True, data = (dataType, value))
