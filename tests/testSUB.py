@@ -1108,6 +1108,7 @@ class TestSUB(unittest.TestCase):
 
 # TODO update missing data subscription
 # TODO delete missing data subscription
+# TODO add test for subscription with enc/md subscription to a non-TS parent
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBForMissingDataWrongDataFail(self) -> None:

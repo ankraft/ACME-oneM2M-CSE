@@ -271,13 +271,11 @@ class Job(Thread):
 				break
 			if self.task:
 				self.task()
-
-			self.pause()
-			self.task = None
-
+				self.task = None
 			if self.finished:
 				self.finished(self)
 				self.finished = None
+			self.pause()
 
 
 	def pause(self) -> Job:
