@@ -154,10 +154,13 @@ class SUB(Resource):
 				if not Utils.compareIDs(nu[0], parentOriginator):
 					return Result.errorResult(dbg = L.logDebug(f'nu must target the parent resource\'s originator'))
 			
-			# Validate missingData
+		# Validate missingData
 		L.logDebug(self['enc/md'])
-		if (md := self['enc/md']) is not None and len(md.keys() & {'dur', 'num'}) != 2:
-			return Result.errorResult(dbg = L.logDebug(f'"dur" and/or "num" missing in "md" attribute'))
+		if (md := self['enc/md']) is not None:
+			if len(md.keys() & {'dur', 'num'}) != 2:
+				return Result.errorResult(dbg = L.logDebug(f'"dur" and/or "num" missing in "enc/md" attribute'))
+			if parentResource is not None and parentResource.ty != T.TS:
+				return Result.errorResult(dbg = L.logDebug(f'parent resource must be a TimeSeries resource when "enc/md" is provided'))
 
 		# check nct and net combinations
 		if (nct := self.nct) is not None and net is not None:
@@ -166,6 +169,7 @@ class SUB(Resource):
 					return Result.errorResult(dbg = L.logDebug(f'nct={nct} is not allowed for one or more values in enc/net={net}'))
 				# fallthough
 			if n == NotificationEventType.reportOnGeneratedMissingDataPoints:
+				# TODO is this necessary, parent resource should be provided
 				# Check that parent is a TimeSeries
 				if not (parent := self.retrieveParentResource()):
 					return Result.errorResult(rsc = RC.internalServerError, dbg = L.logErr(f'cannot retrieve parent resource'))
