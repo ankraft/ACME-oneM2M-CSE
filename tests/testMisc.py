@@ -207,6 +207,37 @@ class TestMisc(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, ae)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_resourceWithoutRN(self) -> None:
+		"""	Create and retrieve a <CNT> without RN"""
+		dct = 	{ 'm2m:cnt' : {
+				}}
+		cnt, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
+		self.assertEqual(rsc, RC.created, cnt)
+		rn = findXPath(cnt, 'm2m:cnt/rn')
+		url = f'{URL}{CSERN}/{rn}'
+		cnt2, rsc = RETRIEVE(url, ORIGINATOR)
+		self.assertEqual(rsc, RC.OK, cnt2)
+		r, rsc = DELETE(url, ORIGINATOR)
+		self.assertEqual(rsc, RC.deleted, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_subWithoutRN(self) -> None:
+		"""	Create and retrieve a <SUB> without RN"""
+		dct = 	{ 'm2m:sub' : { 
+					'nu': [ NOTIFICATIONSERVER ],
+				}}
+
+		sub, rsc = CREATE(cseURL, ORIGINATOR, T.SUB, dct)
+		self.assertEqual(rsc, RC.created, sub)
+		rn = findXPath(sub, 'm2m:sub/rn')
+		url = f'{URL}{CSERN}/{rn}'
+		sub2, rsc = RETRIEVE(url, ORIGINATOR)
+		self.assertEqual(rsc, RC.OK, sub2)
+		r, rsc = DELETE(url, ORIGINATOR)
+		self.assertEqual(rsc, RC.deleted, r)
+		
 
 # TODO test for creating a resource with missing type parameter
 # TODO test json with comments
@@ -230,6 +261,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestMisc('test_checkResponseOT'))
 	suite.addTest(TestMisc('test_checkTargetRVI'))
 	suite.addTest(TestMisc('test_validateListFail'))
+	suite.addTest(TestMisc('test_resourceWithoutRN'))
+	suite.addTest(TestMisc('test_subWithoutRN'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
