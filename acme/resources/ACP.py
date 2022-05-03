@@ -170,7 +170,6 @@ class ACP(AnnounceableResource):
 			if acod := acr.get('acod'):
 				for eachAcod in acod:
 					if requestedPermission == Permission.CREATE:
-						L.logWarn(eachAcod)
 						if ty is None or ty not in eachAcod.get('chty'):	# ty is an int
 							continue										# for CREATE: type not in chty
 					else:
