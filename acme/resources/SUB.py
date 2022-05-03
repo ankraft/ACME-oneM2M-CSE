@@ -61,7 +61,7 @@ class SUB(Resource):
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
 		super().__init__(T.SUB, dct, pi, create = create)
 
-		self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate ], overwrite = False)
+		self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate.value ], overwrite = False)
 
 		# Apply the nct only on the first element of net. Do the combination checks later in validate()
 		net = self['enc/net']
