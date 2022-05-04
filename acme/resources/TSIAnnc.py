@@ -29,8 +29,6 @@ class TSIAnnc(AnnouncedResource):
 		'lt': None,
 		'et': None,
 		'lbl': None,
-		'acpi':None,
-		'daci': None,
 		'ast': None,
 		'loc': None,
 		'lnk': None,
@@ -44,5 +42,5 @@ class TSIAnnc(AnnouncedResource):
 
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
-		super().__init__(T.TSIAnnc, dct, pi = pi, create = create)
+		super().__init__(T.TSIAnnc, dct, pi = pi, inheritACP = True, create = create)
 		 

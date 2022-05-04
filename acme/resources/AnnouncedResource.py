@@ -13,8 +13,8 @@ from ..resources.Resource import *
 
 class AnnouncedResource(Resource):
 
-	def __init__(self, ty:T, dct:JSON, pi:str = None, tpe:str = None, create:bool = False,) -> None:
-		super().__init__(ty, dct, pi, tpe = tpe, create = create)
+	def __init__(self, ty:T, dct:JSON, pi:str = None, tpe:str = None, inheritACP:bool = False, create:bool = False,) -> None:
+		super().__init__(ty, dct, pi, tpe = tpe, inheritACP = inheritACP, create = create)
 
 
 	def updated(self, dct:JSON = None, originator:str = None) -> None:
