@@ -1288,7 +1288,7 @@ class AttributePolicy:
 
 """	Represent a dictionary of attribute policies used in validation. """
 AttributePolicyDict = Dict[str, AttributePolicy]
-ResourceAttributePolicyDict = Dict[Tuple[ResourceTypes, str], AttributePolicy]
+ResourceAttributePolicyDict = Dict[Tuple[Union[ResourceTypes, str], str], AttributePolicy]
 
 FlexContainerAttributes = Dict[str, Dict[str, AttributePolicy]]
 FlexContainerSpecializations = Dict[str, str]

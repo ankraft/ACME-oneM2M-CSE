@@ -210,7 +210,7 @@ class TestMisc(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_resourceWithoutRN(self) -> None:
 		"""	Create and retrieve a <CNT> without RN"""
-		dct = 	{ 'm2m:cnt' : {
+		dct = 	{ 'm2m:cnt' : {			# type:ignore [var-annotated]
 				}}
 		cnt, rsc = CREATE(cseURL, ORIGINATOR, T.CNT, dct)
 		self.assertEqual(rsc, RC.created, cnt)

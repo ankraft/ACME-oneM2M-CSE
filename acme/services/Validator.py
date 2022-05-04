@@ -10,11 +10,11 @@
 from __future__ import annotations
 from copy import deepcopy
 import re
-from typing import Any, List, Dict, Tuple
+from typing import Any, Dict, Tuple
 import isodate
 
 from ..etc.Types import AttributePolicy, ResourceAttributePolicyDict, AttributePolicyDict, BasicType as BT, Cardinality as CAR
-from ..etc.Types import EvalCriteriaOperator, RequestOptionality as RO, Announced as AN, ResponseStatusCode as RC, AttributePolicy
+from ..etc.Types import RequestOptionality as RO, Announced as AN, AttributePolicy
 from ..etc.Types import JSON, FlexContainerAttributes, FlexContainerSpecializations
 from ..etc.Types import Result, ResourceTypes as T
 from ..etc import Utils as Utils, DateUtils as DateUtils
@@ -449,7 +449,7 @@ class Validator(object):
 		flexContainerSpecializations.clear()
 
 
-	def addAttributePolicy(self, rtype:T, attr:str, attrPolicy:AttributePolicy) -> None:
+	def addAttributePolicy(self, rtype:T|str, attr:str, attrPolicy:AttributePolicy) -> None:
 		"""	Add a new attribute policy for normal resources. 
 		"""
 		if (rtype, attr) in attributePolicies:
@@ -457,7 +457,7 @@ class Validator(object):
 		attributePolicies[(rtype, attr)] = attrPolicy
 
 
-	def getAttributePolicy(self, rtype:T, attr:str) -> AttributePolicy:
+	def getAttributePolicy(self, rtype:T|str, attr:str) -> AttributePolicy:
 		"""	Return the attributePolicy for a resource type.
 		"""
 		# Search for the specific type first

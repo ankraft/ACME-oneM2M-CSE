@@ -611,7 +611,7 @@ Available under the BSD 3-Clause License
 					L.console('resource must be a <container>', isError = True)
 			
 				# Register for chil-added event (which would lead to a re-drawing of the graph)
-				CSE.event.addHandler(CSE.event.createChildResource,  _plot)		# type:ignore[attr-defined]+
+				CSE.event.addHandler(CSE.event.createChildResource,  _plot)		# type:ignore [attr-defined]
 
 				# Remember the parent ri
 				pri = res.resource.ri
