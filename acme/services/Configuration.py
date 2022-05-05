@@ -11,7 +11,7 @@
 import configparser, argparse, os, os.path, pathlib, ipaddress, re
 from datetime import datetime
 
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, List
 from InquirerPy.utils import InquirerPySessionResult
 from rich.console import Console
 from InquirerPy import prompt, inquirer
@@ -808,7 +808,7 @@ class Configuration(object):
 			)
 
 		Console().clear()
-		cnf:list[str] = []
+		cnf:List[str] = []
 
 		try:
 			Configuration._print(f'[b]Creating a new [/b]{C.textLogo}[b] configuration file\n')

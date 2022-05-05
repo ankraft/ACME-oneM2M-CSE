@@ -7,7 +7,7 @@
 #	Managing entity for resource groups
 #
 
-from typing import cast
+from typing import cast, List
 from ..etc.Types import ResourceTypes as T, Result, ConsistencyStrategy, Permission, Operation, ResponseStatusCode as RC, CSERequest, JSON
 from ..etc import Utils as Utils
 from ..resources.FCNT import FCNT
@@ -208,7 +208,7 @@ class GroupManager(object):
 		L.isDebug and L.logDebug(f'Adding additional path elements: {tail}')
 
 		# walk through all members
-		resultList:list[Result] = []
+		resultList:List[Result] = []
 
 		tail = '/' + tail if len(tail) > 0 else '' # add remaining path, if any
 		for mid in group.mid.copy():	# copy mi because it is changed in the loop
