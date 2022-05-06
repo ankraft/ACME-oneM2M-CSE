@@ -323,7 +323,8 @@ class HttpServer(object):
 		Utils.renameCurrentThread()
 		L.isDebug and L.logDebug(f'==> Upper Tester Request:') 
 		L.isDebug and L.logDebug(f'Headers: \n{str(request.headers).rstrip()}')
-		L.isDebug and L.logDebug(f'Body: \n{request.json}')
+		if request.data:
+			L.isDebug and L.logDebug(f'Body: \n{request.json}')
 
 		# Handle special commands
 		if (cmd := request.headers.get('X-M2M-UTCMD')) is not None:
