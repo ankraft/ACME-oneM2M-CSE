@@ -7,21 +7,32 @@
 #	Starter for the ACME CSE
 #
 
-import argparse, sys
-from rich.console import Console
+import sys, re
+if sys.version_info < (3, 8):
+	print('Python version >= 3.8 is required')
+	quit(1)
+
+import argparse
 # parent = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent
 # # sys.path.append(f'{parent}/acme')
 try:
 	from .etc.Constants import Constants as C
 	from .services import CSE as CSE
+	from rich.console import Console
 except ImportError as e:
-	Console().print(f'\n[red]Please run acme as a package, e.g. [red bold]python -m {sys.argv[0]}\n')
-	quit()
+	if 'attempted relative import' in e.msg:
+		print(f'\nPlease run acme as a package:\n\n\t{sys.executable} -m {sys.argv[0]} [arguments]\n')
+	elif 'No module named' in e.msg:
+		m = re.search("'(.+?)'", e.msg)
+		package = f' ({m.group(1)}) ' if m else ' '
+		print(f'\nOne or more required packages{package}could not be found.\nPlease install the missing packages, e.g. by running the following command:\n\n\t{sys.executable} -m pip install -r requirements.txt\n')
+	quit(1)
+
 
 # Handle command line arguments
 def parseArgs() -> argparse.Namespace:
 	parser = argparse.ArgumentParser(prog='acme')
-	parser.add_argument('--config', action='store', dest='configfile', default=C.defaultConfigFile, metavar='<filename>', help='specify the configuration file')
+	parser.add_argument('--config', action='store', dest='configfile', default=C.defaultUserConfigFile, metavar='<filename>', help='specify the configuration file')
 
 	# two mutual exlcusive arguments
 	groupEnableHttp = parser.add_mutually_exclusive_group()
@@ -40,21 +51,17 @@ def parseArgs() -> argparse.Namespace:
 	groupEnableStats.add_argument('--statistics', action='store_true', dest='statisticsenabled', default=None, help='enable collecting CSE statistics')
 	groupEnableStats.add_argument('--no-statistics', action='store_false', dest='statisticsenabled', default=None, help='disable collecting CSE statistics')
 
-	groupRemoteConfig = parser.add_mutually_exclusive_group()
-	groupRemoteConfig.add_argument('--remote-configuration', action='store_true', dest='remoteconfigenabled', default=None, help='enable http remote configuration endpoint')
-	groupRemoteConfig.add_argument('--no-remote-configuration', action='store_false', dest='remoteconfigenabled', default=None, help='disable http remote configuration endpoint')
-
 	parser.add_argument('--db-reset', action='store_true', dest='dbreset', default=None, help='reset the DB when starting the CSE')
 	parser.add_argument('--db-storage', action='store', dest='dbstoragemode', default=None, choices=[ 'memory', 'disk' ], type=str.lower, help='specify the DB´s storage mode')
-	parser.add_argument('--http-address', action='store', dest='httpaddress', metavar='<server URL>',  help='specify the CSE\'s http server URL')
+	parser.add_argument('--http-address', action='store', dest='httpaddress', metavar='<server-URL>', help='specify the CSE\'s http server URL')
+	parser.add_argument('--http-port', action='store', dest='httpport', metavar='<http-port>',  type=int, help='specify the CSE\'s http port')
 	parser.add_argument('--import-directory', action='store', dest='importdirectory', default=None, metavar='<directory>', help='specify the import directory')
-	parser.add_argument('--network-interface', action='store', dest='listenif', metavar='<ip address>', default=None, help='specify the network interface/IP address to bind to')
+	parser.add_argument('--network-interface', action='store', dest='listenif', metavar='<ip-address>', default=None, help='specify the network interface/IP address to bind to')
 	parser.add_argument('--log-level', action='store', dest='loglevel', default=None, choices=[ 'info', 'error', 'warn', 'debug', 'off'], type=str.lower, help='set the log level, or turn logging off')
 	parser.add_argument('--headless', action='store_true', dest='headless', default=None, help='operate the CSE in headless mode')
 	
 	return parser.parse_args()
 
-	# TODO init directory
 
 
 def main() -> None:
@@ -66,10 +73,9 @@ def main() -> None:
 	#		CSE.startup(None, configfile=defaultConfigFile, loglevel='error', resetdb=None)
 	#
 	#	Note: Always pass at least 'None' as first and then the 'configfile' parameter.
-	Console().print('\n[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim] ' + C.version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight=False)
+	Console().print(f'\n{C.textLogo} ' + C.version + ' - [bold]An open source CSE Middleware for Education[/bold]\n\n', highlight = False)
 	if CSE.startup(parseArgs()):
 		CSE.run()
-
 
 if __name__ == '__main__':
 	main()

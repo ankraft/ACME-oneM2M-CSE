@@ -12,6 +12,7 @@ if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
 from acme.etc.Types import ResourceTypes as T, ResponseStatusCode as RC
+from acme.etc.DateUtils import getResourceDate
 from init import *
 
 class TestCIN(unittest.TestCase):
@@ -92,7 +93,7 @@ class TestCIN(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCIN(self) -> None:
+	def test_updateCINFail(self) -> None:
 		""" Update <CIN> -> Fail """
 		dct = 	{ 'm2m:cin' : {
 					'con' : 'NewValue'
@@ -249,6 +250,27 @@ class TestCIN(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCINwithDgt(self) -> None:
+		""" Create a <CIN> resource with dgt attribute"""
+		self.assertIsNotNone(TestCIN.ae)
+		self.assertIsNotNone(TestCIN.cnt)
+		dgt = getResourceDate()
+		dct = 	{ 'm2m:cin' : {
+					'rn'  : f'{cinRN}dgt',
+					'cnf' : 'text/plain:0',
+					'con' : 'AnyValue',
+					'dgt' : dgt
+				}}
+		r, rsc = CREATE(cntURL, TestCIN.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.created, r)
+
+		# RETRIEVE the CIN with the dgt
+		r, rsc = RETRIEVE(f'{cntURL}/{cinRN}dgt', TestCIN.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertEqual(findXPath(r, 'm2m:cin/dgt'), dgt)
+
+
 
 # More tests of la, ol etc in testCNT_CNI.py
 
@@ -257,7 +279,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCIN('test_createCIN'))
 	suite.addTest(TestCIN('test_retrieveCIN'))
 	suite.addTest(TestCIN('test_attributesCIN'))
-	suite.addTest(TestCIN('test_updateCIN'))
+	suite.addTest(TestCIN('test_updateCINFail'))
 	suite.addTest(TestCIN('test_createCINUnderAE'))
 	suite.addTest(TestCIN('test_createCINwithNoneString'))
 	suite.addTest(TestCIN('test_deleteCIN'))
@@ -270,6 +292,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCIN('test_createCINWithCreator'))
 	suite.addTest(TestCIN('test_createRetrieveCINWithDcnt'))
 	suite.addTest(TestCIN('test_createCINwithAcpi'))
+	suite.addTest(TestCIN('test_createCINwithDgt'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

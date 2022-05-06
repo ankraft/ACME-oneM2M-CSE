@@ -316,6 +316,19 @@ class TestAE(unittest.TestCase):
 		self.assertEqual(rsc, RC.deleted)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createAEInvalidRNFail(self) -> None:
+		""" Create <AE> with an invalid rn -> Fail"""
+		dct = 	{ 'm2m:ae' : {
+					'rn': 'test?',	# not from unreserved character
+					'api': 'Nacme',
+				 	'rr': False,
+				 	'srv': [ '3' ]
+				}}
+		ae, rsc = CREATE(cseURL, '', T.AE, dct)
+		self.assertEqual(rsc, RC.contentsUnacceptable)
+
+
 # TODO register multiple AEs
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
@@ -342,6 +355,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestAE('test_createAEAPICorrectN'))	
 	suite.addTest(TestAE('test_createAENoOriginator'))	
 	suite.addTest(TestAE('test_createAEEmptyOriginator'))	
+	suite.addTest(TestAE('test_createAEInvalidRNFail'))	
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)

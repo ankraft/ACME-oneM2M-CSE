@@ -36,6 +36,7 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('updateResource')
 		self.addEvent('deleteResource')
 		self.addEvent('expireResource')
+		self.addEvent('createChildResource')
 		self.addEvent('mqttRetrieve')
 		self.addEvent('mqttCreate')
 		self.addEvent('mqttDelete')
@@ -47,9 +48,12 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('mqttSendUpdate')
 		self.addEvent('mqttSendDelete')
 		self.addEvent('mqttSendNotify')
-		self.addEvent('cseStartup')
-		self.addEvent('cseShutdown', runInBackground=False)
-		self.addEvent('cseReset', runInBackground=False)
+		self.addEvent('requestReceived')								# Thrown whenever a request is received
+		self.addEvent('responseReceived')								# Thrown whenever a response is received
+		self.addEvent('cseStartup')										# After the CSE started
+		self.addEvent('cseShutdown', runInBackground = False)			# When the CSE is shutdown
+		self.addEvent('cseReset', runInBackground = False)				# When the CSE is reset
+		self.addEvent('cseRestarted', runInBackground = False)			# After the CSE finished the reset
 		self.addEvent('logError')
 		self.addEvent('logWarning')
 		self.addEvent('registeredToRemoteCSE')
@@ -58,6 +62,10 @@ class EventManager(HelpersEventManager.EventManager):
 		self.addEvent('remoteCSEUpdate')
 		self.addEvent('remoteCSEHasDeregistered')
 		self.addEvent('notification')
+		self.addEvent('configUpdate', runInBackground = False)
+		self.addEvent('keyboard', runInBackground = False)
+		self.addEvent('acmeNotification', runInBackground = False)		# Special event if a notification targets a URL scheme "acme://"
+		# No finished message bc logging is not not initialized yes
 
 
 	def shutdown(self) -> bool:

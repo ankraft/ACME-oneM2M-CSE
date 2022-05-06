@@ -69,7 +69,7 @@ const shortNames = {
   "disr"  : { "ln" : "disableRetrieval", "type": "" },
   "dlb"   : { "ln" : "deviceLabel", "type": "custom" },
   "dNOCs" : { "ln" : "dailyNumberOfConnections", "type": "custom" },
-  "dsce"  : { "ln" : "descendantCSEs", "type": "" },
+  "dcse"  : { "ln" : "descendantCSEs", "type": "" },
   "dty"   : { "ln" : "deviceType", "type": "custom" },
   "dvd"   : { "ln" : "devId", "type": "custom" },
   "dvi"   : { "ln" : "deviceInfo", "type": "" },

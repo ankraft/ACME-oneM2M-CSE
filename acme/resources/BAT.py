@@ -37,7 +37,7 @@ class BAT(MgmtObj):
 			'lt': None,
 			'et': None,
 			'lbl': None,
-			'hld': None,
+			'cstn': None,
 			'acpi':None,
 			'at': None,
 			'aa': None,
@@ -58,9 +58,9 @@ class BAT(MgmtObj):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(dct, pi, mgd=T.BAT, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(dct, pi, mgd = T.BAT, create = create)
 
-		self.setAttribute('btl', defaultBatteryLevel, overwrite=False)
-		self.setAttribute('bts', defaultBatteryStatus, overwrite=False)
+		self.setAttribute('btl', defaultBatteryLevel, overwrite = False)
+		self.setAttribute('bts', defaultBatteryStatus, overwrite = False)
 

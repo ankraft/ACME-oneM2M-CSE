@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 from argparse import OPTIONAL
+from glob import glob
 from urllib.parse import ParseResult, urlparse, parse_qs
 import sys, io, atexit
 import unittest
@@ -32,9 +33,6 @@ from acme.etc.Constants import Constants as C
 from config import *
 
 
-CONFIGURL					= f'{CONFIGSERVER}{ROOTPATH}__config__'
-
-
 verifyCertificate			= False	# verify the certificate when using https?
 oauthToken					= None	# current OAuth Token
 
@@ -47,15 +45,19 @@ expirationCheckDelay 		= 2	# seconds
 expirationSleep				= expirationCheckDelay * 3
 
 requestETDuration 			= f'PT{expirationCheckDelay:d}S'
+requestETDuration2 			= f'PT{expirationCheckDelay*2:d}S'
 requestETDurationInteger	= expirationCheckDelay * 1000
 requestCheckDelay			= 1	#seconds
-sentRequestExpirationDelay	= 3.0
+requestExpirationDelay		= 3.0
 
 # TimeSeries Interval
-timeSeriesInterval 		= 2.0 # seconds
+timeSeriesInterval 			= 2.0 # seconds
+
+# TimeSyncBeacon
+tsbPeriodicInterval			= 1.0
 
 # ReleaseVersionIndicator
-RVI						 ='3'
+RVI							='3'
 
 from dataclasses import dataclass, field
 
@@ -63,7 +65,7 @@ from dataclasses import dataclass, field
 class MQTTTopics:
 	reqTopic:str
 	respTopic:str
-	subscribed:bool					= False
+	subscribed:bool			= False
 
 
 # TODO think about to move this?
@@ -185,6 +187,7 @@ console = Console()
 
 ###############################################################################
 
+actrRN	= 'testACTR'
 aeRN	= 'testAE'
 acpRN	= 'testACP'
 batRN	= 'testBAT'
@@ -198,6 +201,7 @@ pchRN 	= 'testPCH'
 reqRN	= 'testREQ'
 subRN	= 'testSUB'
 tsRN	= 'testTS'
+tsbRN	= 'testTSB'
 tsiRN	= 'testTSI'
 memRN	= 'mem'
 batRN	= 'bat'
@@ -218,6 +222,9 @@ pchURL 	= f'{aeURL}/{pchRN}'
 pcuURL 	= f'{pchURL}/pcu'
 subURL 	= f'{cntURL}/{subRN}'	# under the <cnt>
 tsURL 	= f'{aeURL}/{tsRN}'
+tsBURL 	= f'{aeURL}/{tsbRN}'
+actrURL = f'{aeURL}/{actrRN}'
+
 batURL 	= f'{nodURL}/{batRN}'	# under the <nod>
 memURL	= f'{nodURL}/{memRN}'	# under the <nod>
 
@@ -233,6 +240,7 @@ remoteCsrURL 	= f'{REMOTEcseURL}{CSEID}'
 @atexit.register
 def shutdown() -> None:
 	if mqttClient:
+		print(222)
 		mqttClient.shutdown()
 
 ###############################################################################
@@ -341,6 +349,9 @@ def sendHttpRequest(method:Callable, url:str, originator:str, ty:ResourceTypes=N
 		if C.hfRSC in headers:	# set RSC in header
 			hds[C.hfRSC] = str(headers[C.hfRSC])
 			del headers[C.hfRSC]
+		if C.hfOT in headers:	# set Originating Timestamo in header
+			hds[C.hfOT] = str(headers[C.hfOT])
+			del headers[C.hfOT]
 		hds.update(headers)
 	
 	# authentication
@@ -390,7 +401,6 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 	req['fr'] 	= originator
 	req['to'] 	= urlComponents.path[1:]	# remove the leading / of an url ( usually the root path)
 	req['op'] 	= operation.value
-	req['ot'] 	= DateUtils.getResourceDate()
 	req['rqi'] 	= (rqi := uniqueID())
 	req['rvi'] 	= RVI
 
@@ -435,7 +445,7 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 		req['fc'] = fc
 
 	if headers:			# extend with other headers
-		for hdr,attr in [ (C.hfRVI, 'rvi'), (C.hfVSI, 'vsi'), (C.hfRET, 'rqet'), (C.hfOET, 'oet')]:
+		for hdr,attr in [ (C.hfRVI, 'rvi'), (C.hfVSI, 'vsi'), (C.hfRET, 'rqet'), (C.hfOET, 'oet'), (C.hfOT, 'ot')]:
 			if (h := headers.get(hdr)) is not None:	# overwrite X-M2M-RVI header
 				req[attr] = h
 				del headers[hdr]
@@ -473,7 +483,7 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 	# Wait for response
 	while True: 	# Timeout?
 		try:
-			if not DateUtils.waitFor(timeout=60.0, condition=lambda:rqi in mqttHandler.responses):
+			if not DateUtils.waitFor(timeout = 60.0, condition = lambda:rqi in mqttHandler.responses):
 				print('MQTT Timeout')
 				return None, 5103
 			message = mqttHandler.responses.pop(rqi)
@@ -484,12 +494,11 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 			resp = message[1]
 			# resp = RequestUtils.deserializeData(message[1], ContentSerializationType.JSON)
 
-			# Since the tests usually work with http binding headers, some response attributes are converted
+			# Since the tests usually work with http binding headers, some response attributes are mapped
 			hds = dict()
-			if (rvi := resp.get('rvi')):
-				hds[C.hfRVI] = rvi
-			if (vsi := resp.get('vsi')):
-				hds[C.hfVSI] = vsi
+			for f, k in [ (C.hfRVI, 'rvi'), (C.hfVSI, 'vsi'), (C.hfOT, 'ot') ]:
+				if k in resp:
+					hds[f] = resp[k]
 			setLastHeaders(hds)
 
 			return resp['pc'] if 'pc' in resp else None, resp['rsc']
@@ -499,6 +508,11 @@ def sendMqttRequest(operation:Operation, url:str, originator:str, ty:int=None, d
 _lastRequstID = None
 
 def setLastRequestID(rid:str) -> None:
+	"""	Set the last request's ID.
+	
+		Args:
+			rid: Request ID	
+	"""
 	global _lastRequstID
 	_lastRequstID = rid
 
@@ -506,7 +520,18 @@ def setLastRequestID(rid:str) -> None:
 def lastRequestID() -> str:
 	return _lastRequstID
 
+
 def connectionPossible(url:str) -> bool:
+	"""	Check whether a connection to the CSE is possible and the CSE is running. This is
+		done by retrieving the CSEBase using the protocol binding that tis used also
+		for the rest of the tests. So, it the Upper Tester interface is not used.
+
+		Args:
+			url: The URL of the CSEBase
+		
+		Return:
+			Return the status (reachable and available).
+	"""
 	try:
 		# The following request is not supposed to return a resource, it just
 		# tests whether a connection can be established at all.
@@ -527,125 +552,97 @@ def lastHeaders() -> Parameters:
 
 ###############################################################################
 #
-#	Expirations
+#	Reconfiguring CSE via the upper tester interface
 #
-
-def setExpirationCheck(interval:int) -> int:
-	c, rc = RETRIEVESTRING(CONFIGURL, '')
-	if rc == 200 and c.startswith('Configuration:'):
-		# retrieve the old value
-		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.checkExpirationsInterval', '')
-		oldValue = int(c)
-		c, rc = UPDATESTRING(f'{CONFIGURL}/cse.checkExpirationsInterval', '', str(interval))
-		return oldValue if c == 'ack' else -1
-	return -1
-
-
-def getMaxExpiration() -> int:
-	c, rc = RETRIEVESTRING(CONFIGURL, '')
-	if rc == 200 and c.startswith('Configuration:'):
-		# retrieve the old value
-		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.maxExpirationDelta', '')
-		return int(c)
-	return -1
-
 
 _orgExpCheck = -1
 _orgREQExpCheck = -1
 _maxExpiration = -1
-_tooLargeExpirationDelta = -1
-_orgSentRequestExpirationDelta = -1.0
-
-#	Request expirations
-
-def setRequestMinET(interval:int) -> int:
-	c, rc = RETRIEVESTRING(CONFIGURL, '')
-	if rc == 200 and c.startswith('Configuration:'):
-		# retrieve the old value
-		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.req.minet', '')
-		oldValue = int(c)
-		c, rc = UPDATESTRING(f'{CONFIGURL}/cse.req.minet', '', str(interval))
-		return oldValue if c == 'ack' else -1
-	return -1
-
-
-def getRequestMinET() -> int:
-	c, rc = RETRIEVESTRING(CONFIGURL, '')
-	if rc == 200 and c.startswith('Configuration:'):
-		# retrieve the old value
-		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.req.minet', '')
-		return int(c)
-	return -1
-
-
-def setSentRequestExpirationDelta(interval:float) -> float:
-	c, rc = RETRIEVESTRING(CONFIGURL, '')
-	if rc == 200 and c.startswith('Configuration:'):
-		# retrieve the old value
-		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.requestExpirationDelta', '')
-		oldValue = float(c)
-		c, rc = UPDATESTRING(f'{CONFIGURL}/cse.requestExpirationDelta', '', str(interval))
-		return oldValue if c == 'ack' else -1
-	return -1
-
-
-def getSentRequestExpirationDelta() -> float:
-	c, rc = RETRIEVESTRING(CONFIGURL, '')
-	if rc == 200 and c.startswith('Configuration:'):
-		# retrieve the old value
-		c, rc = RETRIEVESTRING(f'{CONFIGURL}/cse.requestExpirationDelta', '')
-		return float(c)
-	return -1
-	
+_tooLargeResourceExpirationDelta = -1
+_orgRequestExpirationDelta = -1.0
 
 
 # Reconfigure the server to check faster for expirations. This is set to the
 # old value in the tearDowndClass() method.
-def enableShortExpirations() -> None:
-	global _orgExpCheck, _orgREQExpCheck, _maxExpiration, _tooLargeExpirationDelta
-	try:
-		_orgExpCheck = setExpirationCheck(expirationCheckDelay)
-		_orgREQExpCheck = setRequestMinET(expirationCheckDelay)
-		# Retrieve the max expiration delta from the CSE
-		_maxExpiration = getMaxExpiration()
-		_tooLargeExpirationDelta = _maxExpiration * 2	# double of what is allowed
-	except:
-		pass
+def enableShortResourceExpirations() -> None:
+	"""	Enable the short resource expiration in the CSE.
+	"""
+	global _orgExpCheck, _maxExpiration, _tooLargeResourceExpirationDelta
 
-def disableShortExpirations() -> None:
+	# Send UT request
+	resp = requests.post(UTURL, headers = { UTCMD: f'enableShortResourceExpiration {expirationCheckDelay}'})
+	_maxExpiration = -1
+	_orgExpCheck = -1
+	if resp.status_code == 200:
+		if UTRSP in resp.headers:
+			rsp = resp.headers[UTRSP].split(',')
+			_orgExpCheck = int(rsp[0])
+			_maxExpiration = int(rsp[1])
+			_tooLargeResourceExpirationDelta = _maxExpiration * 2	# double of what is allowed
+
+
+def disableShortResourceExpirations() -> None:
+	"""	Disable the short resource expiration in the CSE.
+	"""
 	global _orgExpCheck, _orgREQExpCheck
 	if _orgExpCheck != -1:
-		setExpirationCheck(_orgExpCheck)
-		_orgExpCheck = -1
-	if _orgREQExpCheck != -1:
-		setRequestMinET(_orgREQExpCheck)
-		_orgREQExpCheck = -1
+		# Send UT request
+		resp = requests.post(UTURL, headers = { UTCMD: f'disableShortResourceExpiration'})
+		if resp.status_code == 200:
+			_orgExpCheck = -1
+			_orgREQExpCheck = -1
 
-def isTestExpirations() -> bool:
+
+def isTestResourceExpirations() -> bool:
+	"""	Test whether the resource expiration values have been configured for testing.
+
+		Return:
+			Boolean.
+	"""
 	return _orgExpCheck != -1
 
 
-def tooLargeExpirationDelta() -> int:
-	return _tooLargeExpirationDelta
+def tooLargeResourceExpirationDelta() -> int:
+	"""	Return the configured "too large" value for resource expiration delta.
+
+		Return:
+			Integer, the too large expiration delta, or -1 of it is not configured.
+	"""
+	return _tooLargeResourceExpirationDelta
 
 
 # Reconfigure the server to check faster for sent request expirations. This is set to the
 # old value in the tearDowndClass() method.
-def enableShortSentRequestExpirations() -> None:
-	global _orgSentRequestExpirationDelta
-	try:
-		_orgSentRequestExpirationDelta = setSentRequestExpirationDelta(sentRequestExpirationDelay)
-	except Exception as e:
-		pass
+def enableShortRequestExpirations() -> None:
+	"""	Enable the short request expiration in the CSE.
+	"""
+	global _orgRequestExpirationDelta
 
-def disableShortSentRequestExpirations() -> None:
-	global _orgSentRequestExpirationDelta
-	setSentRequestExpirationDelta(_orgSentRequestExpirationDelta)
-	_orgSentRequestExpirationDelta = -1
+	# Send UT request
+	resp = requests.post(UTURL, headers = { UTCMD: f'enableShortRequestExpiration {requestExpirationDelay}'})
+	if resp.status_code == 200:
+		if UTRSP in resp.headers:
+			_orgRequestExpirationDelta = float(resp.headers[UTRSP])
+
+
+def disableShortRequestExpirations() -> None:
+	"""	Disable the short request expiration in the CSE.
+	"""
+	global _orgRequestExpirationDelta
+	
+	# Send UT request
+	resp = requests.post(UTURL, headers = { UTCMD: f'disableShortRequestExpiration'})
+	if resp.status_code == 200:
+		_orgRequestExpirationDelta = -1.0
 	
 
-def isShortSentRequestExpirations() -> bool:
-	return _orgSentRequestExpirationDelta != -1.0
+def isShortRequestExpirations() -> bool:
+	"""	Test whether the request expiration have been configured for testing.
+
+		Return:
+			Boolean.
+	"""
+	return _orgRequestExpirationDelta != -1.0
 
 ###############################################################################
 
@@ -655,7 +652,6 @@ if not verifyCertificate:
 	urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning) 
 
 
-
 #
 #	Notification Server
 #
@@ -663,11 +659,18 @@ if not verifyCertificate:
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		
 	def do_POST(self) -> None:
+		global nextNotificationResult
+
 		# Construct return header
 		# Always acknowledge the verification requests
-		self.send_response(200)
-		self.send_header(C.hfRSC, str(int(ResponseStatusCode.OK)))
+		self.send_response(nextNotificationResult.httpStatusCode())
+		self.send_header(C.hfRSC, str(int(nextNotificationResult)))
+		self.send_header(C.hfOT, DateUtils.getResourceDate())
+		self.send_header(C.hfOrigin, ORIGINATORResp)
+		if C.hfRI in self.headers:
+			self.send_header(C.hfRI, self.headers[C.hfRI])
 		self.end_headers()
+		nextNotificationResult = ResponseStatusCode.OK
 
 		# Get headers and content data
 		length = int(self.headers['Content-Length'])
@@ -709,7 +712,7 @@ def runNotificationServer() -> None:
 def startNotificationServer() -> None:
 	notificationThread = Thread(target=runNotificationServer)
 	notificationThread.start()
-	time.sleep(0.1)	# give the server a moment to start
+	waitMessage('Starting notification server', 2)
 
 
 def stopNotificationServer() -> None:
@@ -719,6 +722,8 @@ def stopNotificationServer() -> None:
 		requests.post(NOTIFICATIONSERVER, verify=verifyCertificate)	# send empty/termination request
 	except Exception:
 		pass
+	waitMessage('Stopping notification server', 2.0)
+
 
 
 def isNotificationServerRunning() -> bool:
@@ -728,12 +733,14 @@ def isNotificationServerRunning() -> bool:
 	except Exception:
 		return False
 
-lastNotification:JSON				= None
-lastNotificationHeaders:Parameters 	= {}
+lastNotification:JSON						= None
+lastNotificationHeaders:Parameters 			= {}
+nextNotificationResult:ResponseStatusCode	= ResponseStatusCode.OK
 
 def setLastNotification(notification:JSON) -> None:
 	global lastNotification
 	lastNotification = notification
+
 
 def getLastNotification(clear:bool=False) -> JSON:
 	r = lastNotification
@@ -741,13 +748,18 @@ def getLastNotification(clear:bool=False) -> JSON:
 		clearLastNotification()
 	return r
 
-def clearLastNotification() -> None:
-	global lastNotification
+
+def clearLastNotification(nextResult:ResponseStatusCode = ResponseStatusCode.OK) -> None:
+	global lastNotification, lastNotificationHeaders, nextNotificationResult
 	lastNotification = None
+	lastNotificationHeaders = None
+	nextNotificationResult = nextResult
+
 
 def setLastNotificationHeaders(headers:Parameters) -> None:
 	global lastNotificationHeaders
 	lastNotificationHeaders = headers
+
 
 def getLastNotificationHeaders() -> Parameters:
 	return lastNotificationHeaders
@@ -768,6 +780,13 @@ def printResult(result:unittest.TestResult) -> None:
 		console.print(f'\n[bold][red]{f[0]}')
 		console.print(f'[dim]{f[0].shortDescription()}')
 		console.print(f[1])
+
+def waitMessage(msg:str, delay:float) -> None:
+	if delay:
+		with console.status(f'[bright_blue]{msg}') as status:
+			time.sleep(delay)
+	else:
+		console.print(f'[bright_blue]{msg}')
 
 
 def uniqueID() -> str:
@@ -871,4 +890,13 @@ if PROTOCOL == 'mqtt':
 # It checks whether there actually is a CSE running.
 noCSE = not connectionPossible(cseURL)
 noRemote = not connectionPossible(REMOTEcseURL)
+
+try:
+	if requests.post(UTURL, headers = { UTCMD: f'status'}).status_code == 501:
+		console.print('[red]Upper Tester Interface not enabeled in CSE')
+		console.print('Enable with configuration setting: "\[server.http]:enableUpperTesterEndpoint=True"')
+		quit(-1)
+except (ConnectionRefusedError, requests.exceptions.ConnectionError):
+	console.print('[red]Connection to CSE not possible[/red]\nIs it running?')
+	quit(-1)
 

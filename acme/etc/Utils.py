@@ -11,7 +11,7 @@
 from __future__ import annotations
 import random, string, sys, re, threading
 import traceback
-from typing import Any, Tuple, cast
+from typing import Any, Callable, Tuple, cast
 
 from .Constants import Constants as C
 from .Types import ResourceTypes as T, ResponseStatusCode
@@ -27,117 +27,224 @@ from ..services import CSE as CSE
 #	Identifier and path related
 #
 
-def uniqueRI(prefix:str='') -> str:
-	return noNamespace(prefix) + uniqueID()
+def uniqueRI(prefix:str = '') -> str:
+	"""	Generate a unique resource ID. Beside a random number it
+		can have a prefix.
+		
+		Args:
+			prefix: Prefix for the ID
+		Return:
+			String with the new ID
+	"""
+	return f'{noNamespace(prefix)}{uniqueID()}'
 
 
 def uniqueID() -> str:
+	"""	Generate a unique ID. This is for the moment just a large random number.
+		NO check for uniqueness is done.
+		
+		Return:
+			String with the identifier
+	"""
 	return str(random.randint(1,sys.maxsize))
 
 
 def isUniqueRI(ri:str) -> bool:
-	return len(CSE.storage.identifier(ri)) == 0
+	"""	Test whether a resource ID does not yet exists.
+	
+		Args:
+			ri: Resource ID to check
+		Return:
+			Boolean indicating the result of the test
+	"""
+	return not CSE.storage.identifier(ri)
 
 
-def uniqueRN(prefix:str='un') -> str:
+def uniqueRN(prefix:str) -> str:
+	"""	Generate a unique resource name. A resource name has a prefix and 
+		a random alpha-numeric string.
+
+		Args:
+			prefix: String prefix. If it contains a domain then that is removed
+		Return:
+			String with the resource name
+
+	"""
 	return f'{noNamespace(prefix)}_{_randomID()}'
 
+
 def announcedRN(resource:Resource) -> str:
-	""" Create the announced rn for a resource.
+	""" Create the announced resource name for a resource.
+
+		Args:
+			resource: The Resource for which to generate the announced resource name
+		Return:
+			String with the announced resource name
 	"""
 	return f'{resource.rn}_Annc'
 
 
 # create a unique aei, M2M-SP type
-def uniqueAEI(prefix:str='S') -> str:
+def uniqueAEI(prefix:str = 'S') -> str:
+	"""	Create a new AE ID. An AE ID must always start with either "S" or "C".
+	
+		Args:
+			prefix: "S" or "C"
+		Return:
+			String with the AE ID
+	"""
 	return f'{prefix}{_randomID()}'
 
 
 def noNamespace(id:str) -> str:
 	"""	Remove the namespace part of an identifier and return the remainder.
 
-		Example: 'm2m:cnt' -> 'cnt'
+		Example: 
+			'm2m:cnt' -> 'cnt'
+		
+		Args:
+			id: String with the identifier. May be prefixed with a domain.
+		Return:
+			String that only contains the ID
 	"""
-	p = id.split(':')
-	return p[1] if len(p) == 2 else p[0]
+	_, found, tail = id.partition(':')
+	return tail if found else id
 
 
+_randomIDCharSet = string.ascii_uppercase + string.digits + string.ascii_lowercase
 def _randomID() -> str:
-	""" Generate an ID. Prevent certain patterns in the ID. """
+	""" Generate an ID. Prevent certain patterns in the ID.
+
+		Return:
+			String with a random ID
+	"""
 	while True:
-		result = ''.join(random.choices(string.ascii_uppercase + string.digits + string.ascii_lowercase, k=C.maxIDLength))
-		if 'fopt' not in result:	# prevent 'fopt' in ID
+		result = ''.join(random.choices(_randomIDCharSet, k = C.maxIDLength))
+		if 'fopt' not in result:	# prevent 'fopt' in ID	# TODO really necessary?
 			return result
 
 
-def fullRI(ri:str) -> str:
+def spRelRI(ri:str) -> str:
+	"""	Return a SP-relative resource ID for a resource ID.
+	
+		Args:
+			ri: Resource ID
+		Return:
+			The SP-relative form of the provided resource ID
+	"""
 	return f'{CSE.cseCsi}/{ri}'
 
 
 def isSPRelative(uri:str) -> bool:
-	""" Check whether a URI is SP-Relative. """
+	""" Test whether a URI is SP-Relative. 
+
+		Args:
+			uri: The URI to check
+		Return:
+			Boolean
+	"""
 	return uri is not None and len(uri) >= 2 and uri[0] == '/' and uri [1] != '/'
 
 
 def isAbsolute(uri:str) -> bool:
-	""" Check whether a URI is Absolute. """
+	""" Test whether a URI is in absolute format.
+	
+		Args:
+			uri: The URI to check
+		Return:
+			Boolean if the URI is in absolute format
+	"""
 	return uri is not None and uri.startswith('//')
 
 
 def isCSERelative(uri:str) -> bool:
-	""" Check whether a URI is CSE-Relative. """
+	""" Test whether a URI is in CSE-relative format.
+
+		Args:
+			uri: The URI to check
+		Return:
+			Boolean if the URI is in CSE-relative format
+	"""
 	return uri is not None and not uri.startswith('/')
 
 
 def isStructured(uri:str) -> bool:
+	""" Test whether a URI is in structured format.
+	
+		Args:
+			uri: The URI to check
+		Return:
+			Boolean if the URI is in structured format
+	"""
 	if isCSERelative(uri):
-		if '/' in uri or uri == CSE.cseRn:
-			return True
+		return '/' in uri or uri == CSE.cseRn
 	elif isSPRelative(uri):
-		if uri.count('/') > 2:
-			return True
+		return uri.count('/') > 2
 	elif isAbsolute(uri):
-		if uri.count('/') > 4:
-			return True
+		return uri.count('/') > 4
 	return False
 
 
-def isVirtualResource(resource: Resource) -> bool:
-	"""	Check whether the `resource` is a virtual resource. 
-		The function returns `False` when the resource is not a virtual resource, or when it is `None`.
+def isValidID(id:str, allowEmpty:bool = False) -> bool:
+	""" Test for a valid ID. 
+
+		Args:
+			id: The ID to check
+			allowedEmpty: Indicate whether an ID can be empty.
+		Returns:
+			Boolean
 	"""
-	if not resource:
-		return False
-	return resource[resource._isVirtual]
-	# result:bool = resource[resource._isVirtual]
-	# return result if result else False
-	# return (ty := r.ty) and ty in C.virtualResources
+	if allowEmpty:
+		return id is not None and '/' not in id	# pi might be ""
+	return id is not None and len(id) > 0 and hasOnlyUnreserved(id)
 
 
-def isAnnouncedResource(resource:Resource) -> bool:
-	"""	Check whether the `resource` is an announced resource. 
+_unreserved = re.compile(r'^[\w\-.~]*$')
+def hasOnlyUnreserved(id:str) -> bool:
+	"""	Test that an ID only contains characters from the unreserved character set of 
+		RFC 3986.
+		
+		Args:
+			id: the ID to check.
+		Returns:
+			Boolean
 	"""
-	if not resource:
-		return False
-	return resource[resource._isAnnounced]
-	# result:bool = resource[resource._isAnnounced]
-	# return result if result is not None else False
-
-
-def isValidID(id:str) -> bool:
-	""" Check for valid ID. """
-	#return len(id) > 0 and '/' not in id 	# pi might be ""
-	return id is not None and '/' not in id	# pi might be ""
+	return re.match(_unreserved, id) is not None
 
 
 csiRx = re.compile('^/[^/\s]+') # Must start with a / and must not contain a further / or white space
 def isValidCSI(csi:str) -> bool:
-	"""	Check for valid CSE-ID format. """
+	"""	Test for valid CSE-ID format.
+
+		Args:
+			csi: The CSE-ID to check
+		Return:
+			Boolean
+	"""
 	return re.fullmatch(csiRx, csi) is not None
+
+
+def csiFromSPRelative(ri:str) -> str:
+	"""	Return the csi from a SP-relative resource ID. It is assumed that
+		the passed `ri` is in SP-relative format.
+		
+		Args:
+			ri: A SP-relative resource ID
+		Return:
+			The csi of the resource ID, or None
+	"""
+	ids = ri.split('/')
+	# return f'/{ids[0]}' if len(ids) > 0 else None
+	return f'/{ids[1]}' if len(ids) > 1 else None
 
 
 def structuredPath(resource:Resource) -> str:
 	""" Determine the structured path of a resource.
+
+		Args:
+			resource: The resource for which to get the structured path
+		Return:
+			Structured path or None
 	"""
 	rn:str = resource.rn
 	if resource.ty == T.CSEBase: # if CSE
@@ -147,49 +254,61 @@ def structuredPath(resource:Resource) -> str:
 	if not (pi := resource.pi):
 		# L.logErr('PI is None')
 		return rn
-	rpi = CSE.storage.identifier(pi) 
-	if len(rpi) == 1:
-		return cast(str, rpi[0]['srn'] + '/' + rn)
+	if len(rpi := CSE.storage.identifier(pi)) == 1:
+		return cast(str, f'{rpi[0]["srn"]}/{rn}')
 	# L.logErr(traceback.format_stack())
 	L.logErr(f'Parent {pi} not found in DB')
 	return rn # fallback
 
 
 def structuredPathFromRI(ri:str) -> str:
-	""" Get the structured path of a resource by its ri. """
-	if len((identifiers := CSE.storage.identifier(ri))) == 1:
-		return cast(str, identifiers[0]['srn'])
-	return None
+	""" Get the structured path of a resource by its ri.
+	
+		Args:
+			ri: Resource ID
+		Return:
+			Structured path
+	"""
+	try:
+		return CSE.storage.identifier(ri)[0]['srn']
+	except:
+		return None
 
 
 def riFromStructuredPath(srn: str) -> str:
-	""" Get the ri from a resource by its structured path. 
+	""" Get the resource ID from a resource by its structured path. 
 		Makes a lookup to a table in the DB.
+
+		Args:
+			srn: structured path
+		Return:
+			Resource ID
 	"""
-	if len((paths := CSE.storage.structuredPath(srn))) == 1:
-		return cast(str, paths[0]['ri'])
-	return None
+	try:
+		return CSE.storage.structuredIdentifier(srn)[0]['ri']
+	except:
+		return None
 
 
 def srnFromHybrid(srn:str, id:str) -> Tuple[str, str]:
 	""" Handle Hybrid ID. """
 	if id:
 		ids = id.split('/')
-		if not srn and len(ids) > 1  and ids[-1] in C.virtualResourcesNames: # Hybrid
+		if not srn and len(ids) > 1  and T.isVirtualResourceName(ids[-1]): # Hybrid
 			if (srn := structuredPathFromRI('/'.join(ids[:-1]))):
 				srn = '/'.join([srn, ids[-1]])
 				id = riFromStructuredPath(srn) # id becomes the ri of the fopt
 	return srn, id
 
 
-def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
-	""" Split a ful path e.g. from a http request into its component and return a local ri .
+def retrieveIDFromPath(id:str, csern:str, csecsi:str, SPID:str) -> Tuple[str, str, str, str]:
+	""" Split a full path e.g. from a http request into its component and return a local ri .
 		Also handle retargeting paths.
-		The return tupple is (RI, CSI, SRN).
+		The return tupple is (RI, CSI, SRN, debug message).
 	"""
 
 	if not id:
-		return None, None, None
+		return None, None, None, 'ID must not be empty'
 		
 	csi 		= None
 	spi 		= None
@@ -198,25 +317,26 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
 	vrPresent	= None
 
 	# split path
-	ids = id.split('/')
+	idsLen = len(ids := id.split('/'))
 	csecsi = csecsi[1:]	# remove leading / from csi for our comparisons here
 
-	# Test for empty ID
-	if (idsLen := len(ids)) == 0:	# There must be something!
-		return None, None, None
+	# # Test for empty ID
+	# if (idsLen := len(ids)) == 0:	# There must be something!
+	# 	return None, None, None, 'ID must not be empty'
 
-	# Remove the empty elements in the beginnig of the list
+	# Remove the empty elements in the beginnig of the list (they result from a single "/")
 	# and calculate from that the "level", which indicates CSE relative,
 	# SP relative or absolute
+	lvl = 0
 	while not ids[0]:
 		ids.pop(0)
-	lvl = idsLen - len(ids)
-	idsLen -= lvl
+		lvl += 1
+		idsLen -= 1
 	if lvl > 2:						# not more than 2 * / in front
-		return None, None, None
+		return None, None, None, 'Too many "/" level'
 
 	# Remove virtual resource shortname if it is present
-	if ids[-1] in C.virtualResourcesNames:
+	if T.isVirtualResourceName(ids[-1]):
 		vrPresent = ids.pop()	# remove and return last path element
 		idsLen -= 1
 	
@@ -234,12 +354,12 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
 	elif lvl == 1:								
 		# L.logDebug("SP-Relative")
 		if idsLen < 1:
-			return None, None, None
+			return None, None, None, 'ID too short'
 		csi = ids[0]							# extract the csi
 		if csi != csecsi:						# Not for this CSE? retargeting
 			if vrPresent:						# append last path element again
 				ids.append(vrPresent)
-			return id, csi, srn					# Early return. ri is the (un)structured path
+			return id, csi, srn, None					# Early return. ri is the (un)structured path
 		if idsLen == 1:
 			ri = ids[0]
 		elif idsLen > 1:
@@ -250,19 +370,21 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
 			elif idsLen == 2:						# unstructured
 				ri = ids[1]
 			else:
-				return None, None, None
+				return None, None, None, 'Too many "/" level'
 
 	# Absolute (2 first elements are /)
 	elif lvl == 2: 								
 		# L.logDebug("Absolute")
 		if idsLen < 2:
-			return None, None, None
-		spi = ids[0] 							#TODO Check whether it is same SPID, otherwise forward it throw mcc'	see cse.sp configuration
+			return None, None, None, 'ID too short'
+		spi = ids[0]
 		csi = ids[1]
-		if csi != csecsi:
+		if spi != SPID:							# Check for SP-ID
+			return None, None, None, f'SP-ID: {SPID} does not match the request\'s target ID SP-ID: {spi}'
+		if csi != csecsi:						# Check for CSE-ID
 			if vrPresent:						# append virtual last path element again
 				ids.append(vrPresent)
-			return id, csi, srn	# Not for this CSE? retargeting
+			return id, csi, srn, None	# Not for this CSE? retargeting
 		if idsLen == 2:
 			ri = ids[1]
 		elif idsLen > 2:
@@ -273,32 +395,44 @@ def retrieveIDFromPath(id:str, csern:str, csecsi:str) -> Tuple[str, str, str]:
 			elif idsLen == 3:						# unstructured
 				ri = ids[2]
 			else:
-				return None, None, None
+				return None, None, None, 'Too many "/" level'
 
 	# Now either csi, ri or structured srn is set
 	if ri:
 		if vrPresent:
 			ri = f'{ri}/{vrPresent}'
-		return ri, csi, srn
+		return ri, csi, srn, None
 	if srn:
 		if vrPresent:
 			srn = f'{srn}/{vrPresent}'
-		return riFromStructuredPath(srn), csi, srn
+		return riFromStructuredPath(srn), csi, srn, None
 	if csi:
-		return riFromCSI(f'/{csi}'), csi, srn
+		return riFromCSI(f'/{csi}'), csi, srn, None
 	# TODO do something with spi?
-	return None, None, None
+	return None, None, None, 'Unsupported ID'
 
 
-def riFromCSI(csi: str) -> str:
-	""" Get the ri from an CSEBase resource by its csi. """
+def riFromCSI(csi:str) -> str:
+	""" Get the resource ID from any CSEBase or remoteCSE resource by its csi.
+	
+		Args:
+			csi: The CSE-ID to search for
+		Return:
+			The resource ID of the resource with the `csi`, or None
+	 """
 	if not (res := resourceFromCSI(csi).resource):
 		return None
 	return cast(str, res.ri)
 
 
 def getIdFromOriginator(originator: str, idOnly: bool = False) -> str:
-	""" Get AE-ID-Stem or CSE-ID from the originator (in case SP-relative or Absolute was used)
+	""" Get AE-ID-Stem or CSE-ID from the originator (in case SP-relative or Absolute was used).
+
+		Args:
+			originator: An originator.
+			idOnly: Indicator that only the CSE-local resource ID is provided.
+		Returns:
+			Resource ID.
 	"""
 	if idOnly:
 		return originator.split("/")[-1] if originator else originator
@@ -308,10 +442,33 @@ def getIdFromOriginator(originator: str, idOnly: bool = False) -> str:
 
 def toSPRelative(originator:str) -> str:
 	"""	Add the CSI to an originator (if not already present).
+
+		Args:
+			An originator.
+		Return:
+			A string in the format */<csi>/<originator*.
 	"""
 	if not isSPRelative(originator):
 		return  f'{CSE.cseCsi}/{originator}'
 	return originator
+
+
+def compareIDs(id1:str, id2:str) -> bool:
+	"""	Compare two resource IDs.
+
+		Both IDs can be either unstructured or structured resource IDs. They match
+		if they point to the same resource.
+
+		Args:
+			id1: First ID for the comparison.
+			id2: Second ID for the comparison
+		Return:
+			True if both IDs point to the same resource, False otherwise.
+	"""
+	ri1 = riFromStructuredPath(id1) if isStructured(id1) else id1
+	ri2 = riFromStructuredPath(id2) if isStructured(id2) else id2
+	return ri1 == ri2
+
 
 
 ##############################################################################
@@ -336,15 +493,36 @@ def isURL(url: str) -> bool:
 
 
 def isHttpUrl(url:str) -> bool:
-	"""	Check whether a URL is a http URL. 
+	"""	Test whether a URL is a http URL. 
+
+		Args:
+			url: URL to check
+		Returns:
+			Boolean True or False
 	"""
 	return url.startswith(('http', 'https'))
 
 
 def isMQTTUrl(url:str) -> bool:
-	"""	Check whether a URL is a mqtt URL. 
+	"""	Test whether a URL is an mqtt URL. 
+
+		Args:
+			url: URL to check
+		Returns:
+			Boolean True or False
 	"""
 	return url.startswith(('mqtt', 'mqtts'))
+
+
+def isAcmeUrl(url:str) -> bool:
+	"""	Test whether a URL is an internal ACME event URL. 
+
+		Args:
+			url: URL to check
+		Returns:
+			Boolean True or False
+	"""
+	return url.startswith('acme')
 
 
 def normalizeURL(url: str) -> str:
@@ -372,8 +550,14 @@ mgmtObjAnncTPEs = 	[	T.FWRAnnc.tpe(), T.SWRAnnc.tpe(), T.MEMAnnc.tpe(), T.ANIAnn
 
 excludeFromRoot = [ 'pi' ]
 pureResourceRegex = re.compile('[\w]+:[\w]')
+
 def pureResource(dct:JSON) -> Tuple[JSON, str]:
-	"""	Return the "pure" structure without the "m2m:xxx" or "<domain>:id" resource specifier, and the oneM2M type identifier. 
+	"""	Return the "pure" structure without "<domain>:xxx" resource specifier, and the oneM2M type identifier. 
+
+		Args:
+			dct: JSON dictionary with the resource attributes
+		Return:
+			Tupple with the inner JSON and the tpe
 	"""
 	rootKeys = list(dct.keys())
 	# Try to determine the root identifier 
@@ -400,26 +584,33 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 	""" Find a structured `key` in the dictionary `dct`. If `key` does not exists then
 		`default` is returned.
 
-		It is possible to address a specific element in an array. This is done be
+		- It is possible to address a specific element in an array. This is done be
 		specifying the element as `{n}`.
 
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
 
-		If an element if specified as '{}' then all elements in that array are returned in
+		- If an element is specified as `{}` then all elements in that array are returned in
 		an array.
 
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{}') or findXPath(input, 'm2m:cnt/m2m:cin/{}/rn')
+
+		- If an element is specified as `{_}` and is targeting a dictionary then a single random path is chosen.
+		This can be used to skip, for example, unknown first elements in a structure.
+
+		Example: findXPath(resource, '{_}/rn') 
 
 	"""
 
 	if not key or not dct:
 		return default
+	if key in dct:
+		return dct[key]
 
 	paths = key.split("/")
 	data:Any = dct
 	for i in range(0,len(paths)):
 		if not data:
-		 	return default
+			return default
 		pathElement = paths[i]
 		if len(pathElement) == 0:	# return if there is an empty path element
 			return default
@@ -439,11 +630,21 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 				return data
 			return [ findXPath(d, '/'.join(paths[i+1:]), default) for d in data  ]	# recursively build an array with remnainder of the selector
 
+		elif pathElement == '{_}':
+			if isinstance(data, dict):
+				if keys := list(data.keys()):
+					data = data[keys[0]]
+				else:
+					return default
+			else:
+				return default
+
 		elif pathElement not in data:	# if key not in dict
 			return default
 		else:
 			data = data[pathElement]	# found data for the next level down
 	return data
+
 
 def setXPath(dct:JSON, key:str, value:Any, overwrite:bool=True) -> bool:
 	"""	Set a structured `key` and `value` in the dictionary `dict`. 
@@ -464,6 +665,15 @@ def setXPath(dct:JSON, key:str, value:Any, overwrite:bool=True) -> bool:
 		return True # don't overwrite
 	data[paths[ln1]] = value
 	return True
+
+
+def removeKeyFromDict(dct:dict, keys:list[str]) -> Any:
+	"""	Recursively remove all occurences of `keys` from a dictionary `dct`.
+	"""
+	if not isinstance(dct, dict):
+		return dct
+	return {key:value for key, value in ((key, removeKeyFromDict(value, keys)) for key, value in dct.items()) if key not in keys}
+
 
 
 def removeNoneValuesFromDict(dct:JSON, allowedNull:list[str]=[]) -> JSON:
@@ -523,49 +733,81 @@ def getCSE() -> Result:
 
 def resourceFromCSI(csi:str) -> Result:
 	""" Get the CSEBase resource by its csi. """
-	return CSE.storage.retrieveResource(csi=csi)
+	return CSE.storage.retrieveResource(csi = csi)
 
 	
-def fanoutPointResource(id: str) -> Resource:
-	"""	Check whether the target contains a fanoutPoint in between or as the target.
+def fanoutPointResource(id:str) -> Resource:
+	"""	Check whether the target resource contains a fanoutPoint along its path,
+		is a fanoutPoint itself.
 
-		Return either the virtual fanoutPoint resource or None.
+		Args:
+			id: the target's resource ID.
+		Return:
+			Return either the virtual fanoutPoint resource or None.
 	"""
-	if not id:
-		return None
+	# if not id:
+	# 	return None
 	# Convert to srn
 	if not isStructured(id):
-		id = structuredPathFromRI(id)
-	if not id:
-		return None
+		if not (id := structuredPathFromRI(id)):
+			return None
+	# from here on id is a srn
 	nid = None
 	if id.endswith('/fopt'):
 		nid = id
-	elif '/fopt/' in id:
-		(head, sep, tail) = id.partition('/fopt/')
-		nid = head + '/fopt'
+	else:
+		(head, found, _) = id.partition('/fopt/')
+		if found:
+			nid = head + '/fopt'
+	# elif '/fopt/' in id:
+	# 	(head, sep, tail) = id.partition('/fopt/')
+	# 	nid = head + '/fopt'
+
 	if nid and (result := CSE.dispatcher.retrieveResource(nid)).resource:
 		return cast(Resource, result.resource)
 	return None
 
 
-def pollingChannelURIResource(id: str) -> PCH_PCU:
+def pollingChannelURIResource(id:str) -> PCH_PCU:
 	"""	Check whether the target is a PollingChannelURI resource and return it.
 
-		Return either the virtual PollingChannelURI resource or None.
+		Args:
+			id: Target resource ID
+		Return:
+			Return either the virtual PollingChannelURI resource or None.
 	"""
 	if not id:
 		return None
 	if id.endswith('pcu'):
 		# Convert to srn
 		if not isStructured(id):
-			id = structuredPathFromRI(id)
-		if not id:
-			return None
+			if not (id := structuredPathFromRI(id)):
+				return None
 		if (result := CSE.dispatcher.retrieveResource(id)).resource and result.resource.ty == T.PCH_PCU:
 			return cast(PCH_PCU, result.resource)
+		# Fallthrough
 	return None
 
+
+def latestOldestResource(id:str) -> Resource:
+	"""	Check whether the target is a latest or oldest virtual resource and return it.
+
+		Args:
+			id: Target resource ID
+		Return:
+			Return either the virtual resource or None.
+	"""
+	if not id:
+		return None
+	if id.endswith(('la', 'ol')):
+		# Convert to srn
+		if not isStructured(id):
+			if not (id := structuredPathFromRI(id)):
+				return None
+		if (result := CSE.dispatcher.retrieveResource(id)).resource and result.resource.ty in [ T.CNT_LA, T.CNT_OL, T.FCNT_LA, T.FCNT_OL, T.TS_LA, T.TS_OL ]:
+			return result.resource
+		# Fallthrough
+	return None
 
 def getAttributeSize(attribute:Any) -> int:
 	"""	Return a realistic size for the content of an attribute.
@@ -602,9 +844,19 @@ def hasRegisteredAE(originator:str) -> bool:
 #	Threads
 #
 
+# TODO Doc
 def renameCurrentThread(name:str = None, thread:threading.Thread = None) -> None:
 	thread = threading.current_thread() if not thread else thread
 	thread.name = name if name else str(thread.native_id)
+
+
+# TODO Doc
+def runAsThread(task:Callable, *args:Any, **kwargs:Any) -> None:
+	thread = threading.Thread(target = task, args = args, kwargs = kwargs)
+	thread.setDaemon(True)		# Make the thread a daemon of the main thread
+	thread.start()
+	thread.name = str(thread.native_id)
+
 
 
 ##############################################################################
@@ -612,7 +864,30 @@ def renameCurrentThread(name:str = None, thread:threading.Thread = None) -> None
 #	Various
 
 def exceptionToResult(e:Exception) -> Result:
+	"""	Transform a Python exception to a result.
+	
+		Args:
+			e: Exception
+		Return:
+			Result object, with "rsc" set to internal server error, and "dbg" to the exception message.
+		"""
 	tb = traceback.format_exc()
 	L.logErr(tb, exc=e)
 	tbs = tb.replace('"', '\\"').replace('\n', '\\n')
-	return Result(rsc=ResponseStatusCode.internalServerError, dbg=f'encountered exception: {tbs}')
+	return Result(rsc = ResponseStatusCode.internalServerError, dbg = f'encountered exception: {tbs}')
+
+
+
+def runsInIPython() -> bool:
+	"""	Check whether the current runtime environment is IPython or not.
+
+		This is a hack!
+
+		Return:
+			True if run in IPython, otherwise False.
+	"""
+	import traceback
+	for each in traceback.extract_stack():
+		if each.filename.startswith('<ipython'):
+			return True
+	return False

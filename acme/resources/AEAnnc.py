@@ -4,20 +4,20 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	AE : Announceable variant
-#
+""" Application Entity announced (AEA) resource type """
 
+from __future__ import annotations
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
 from ..resources.Resource import *
 
 
 class AEAnnc(AnnouncedResource):
+	""" Application Entity announced (AEA) resource type """
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.ACP, T.ACPAnnc, T.CNT, T.CNTAnnc, T.FCNT, T.FCNTAnnc, T.GRP, T.GRPAnnc, T.TS, T.TSAnnc ]
+	_allowedChildResourceTypes:list[T] = [ T.ACP, T.ACPAnnc, T.ACTR, T.ACTRAnnc, T.CNT, T.CNTAnnc, T.FCNT, T.FCNTAnnc, T.GRP, T.GRPAnnc, T.TS, T.TSAnnc ]
 
-	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
 	_attributes:AttributePolicyDict = {		
 			# Common and universal attributes for announced resources
@@ -55,8 +55,9 @@ class AEAnnc(AnnouncedResource):
 			'ape': None,
 			'or': None,
 	}
+	"""	Attributes and `AttributePolicy' for this resource type. """
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.AEAnnc, dct, pi=pi, create=create)
+	def __init__(self, dct:JSON=None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.AEAnnc, dct, pi = pi, create = create)
 

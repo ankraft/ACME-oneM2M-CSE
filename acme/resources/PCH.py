@@ -13,11 +13,17 @@ from ..etc.Types import AttributePolicyDict, ContentSerializationType, Operation
 from ..etc import RequestUtils as RU
 from ..resources.Resource import *
 from ..resources import Factory as Factory
+from ..resources import PCH_PCU as PCH_PCU
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
 
 
+# Tests for special access to PCH resource is done in SecurityManager.hasAccess()
+
 class PCH(Resource):
+
+	_parentOriginator = '__parentOriginator__'
+	_pcuRI = '__pcuRI__'
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes = [ T.PCH_PCU ]
@@ -36,39 +42,71 @@ class PCH(Resource):
 		'lbl': None,
 
 		# Resource attributes
-
-		# TODO requestAggregation attribute as soon as it has been specified in TS-0004
-
+		'pcra': None,
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
 		# PCH inherits from its parent, the <AE>
-		super().__init__(T.PCH, dct, pi, create=create, inheritACP=True)
+		super().__init__(T.PCH, dct, pi, create = create, inheritACP = True)
 
+		# Add to internal attributes to ignore in validation etc
+		self.internalAttributes.append(self._parentOriginator)	
+		self.internalAttributes.append(self._pcuRI)
 
-# TODO test Retrieve by originator AE only! Add new willBeRetrieved() function
-# TODO continue with 10.2.5.14 Retrieve <pollingChannel>
+		# Set optional default for requestAggregation
+		self.setAttribute('pcra', False, overwrite = False)	
 
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
-		if not (res := super().activate(parentResource, originator)).status:
-			return res
-
-		# NOTE Check for uniqueness is done in <AE>.childWillBeAdded()
-		
-		# register pollingChannelURI virtual resource
+		# register pollingChannelURI PCU virtual resource before anything else, because
+		# it will be needed during validation, 
 		if L.isDebug: L.logDebug(f'Registering <PCU> for: {self.ri}')
 		dct = {
 			'm2m:pcu' : {
 				'rn' : 'pcu'
 			}
 		}
-		pcu = Factory.resourceFromDict(dct, pi=self.ri, ty=T.PCH_PCU).resource	# rn is assigned by resource itself
-		if not (res := CSE.dispatcher.createResource(pcu, originator=originator)).resource:
-			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+		pcu = Factory.resourceFromDict(dct, pi = self.ri, ty = T.PCH_PCU).resource	# rn is assigned by resource itself
+		if not (res := CSE.dispatcher.createResource(pcu, originator = originator)).resource:
+			return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
+		self.setAttribute(PCH._pcuRI, res.resource.ri)	# store own PCU ri
+
+		# General activation + validation
+		if not (res := super().activate(parentResource, originator)).status:
+			return res
+
+		# Store the parent's orginator/AE-ID/CSE-ID
+		if parentResource.ty in [ T.CSEBase, T.AE]:
+			self.setAttribute(PCH._parentOriginator, parentResource.getOriginator())
+		else:
+			L.logWarn(dbg := f'PCH must be registered under CSE or AE, not {str(T(parentResource.ty))}')
+			return Result.errorResult(dbg = dbg)
+
+		# NOTE Check for uniqueness is done in <AE>.childWillBeAdded()
+		
+		return Result.successResult()
+
+
+	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
+		if not (res := super().validate(originator, create, dct, parentResource)).status:
+			return res
+
+		# Set the aggregation state in the own PCU
+		# This is done in activate and update
+		if not (res := CSE.dispatcher.retrieveLocalResource(self.attribute(PCH._pcuRI))).status:
+			return res
+		pcu = cast(PCH_PCU.PCH_PCU, res.resource)
+		pcu.setAggregate(self.pcra)
+		pcu.dbUpdate()
+
+		return Result.successResult()
 		
 
-		return Result(status=True)
-
-
+	def getParentOriginator(self) -> str:
+		"""	Return the <PCU>'s parent originator.
+		
+			Return:
+				The <PCU>'s parent originator.
+		"""
+		return self.attribute(PCH._parentOriginator)

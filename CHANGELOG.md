@@ -7,6 +7,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.10.0] - 2022-05-06
+
+### Added
+- [CSE] Added *--http-port* command line argument.
+- [CSE] Added initial support for the Upper Tester protocol defined in TS-0019.
+- [CSE] Added guided setup of a configuration file when the CSE is started without a config file.
+- [CSE] Added bi-directional update of announced resources.
+- [CSE] Added remote resources support for &lt;group>.
+- [CSE] Added support for *dataGenerationTime* attribute for &lt;contentInstance> (R5 feature).
+- [CSE] Added "acme://" URL scheme for notifications to run ACMEScript scripts.
+- [CSE] Added always setting *Originating Timestamp* in requests and responses.
+- [CSE] Added [logging].queueSize configuration to set the internal logging queue (or switch it off).
+- [CSE] Added validation of &lt;flexContainer>'s *containerDefinition* attribute during CREATE requests.
+- [CSE] Added check for correct Service Provider ID in absolute requests.
+- [CSE] Added support for &lt;pollingChannel>'s *requestAggregation* attribute and functionality.
+- [CSE] Added support for BLOCKING UPDATE notification event type.
+- [CSE] Added a first support for the &lt;timeSyncBeacon> resource type.
+- [WEB] Allow to open the WebUI of a registered CSE via the context menu.
+- [CONSOLE] Added config for dark (default) and light theme for better readability on consoles with light background.
+- [CONSOLE] Added graph plotting for &lt;contentInstance> resources that contain numerical values (also: continuous observation of a container).
+- [SCRIPTS] Added scripting to the CSE.
+- [SCRIPTS] A dedicated startup script is now executed during startup. This is mainly used to import the base resources and resource structure, and replaces the JSON resource imports.
+- [SCRIPTS] Added executing scripts to the console
+- [SCRIPTS] Added scripts tagged with "@uppertester" can be executed as upper tester commands.
+- [SCRIPTS] Added scripts scheduling vie the "@at" meta tag.
+- [SCRIPTS] Added possibility to run scripts on notifications, when using the "acme://" URL scheme.
+- [HTTP] Added workaround for missing DELETE method in http/1.0 (by using PATCH instead).
+
+### Changed
+- [CSE] Adapted Announcements to latest R4 changes. 
+- [CSE] Adapted TimeSeries to latest R4 changes. 
+- [CSE] Changed the default release version to 4. Also, the supported and the actual release versions are now fully configurable (in the config file).
+- [CSE] Changed name of *holder* attribute to *custodian* according to R4 spec change.
+- [CSE] Transit requests will now be handled after the resolution for blocking/non-blocking was handled. Non-blocking happens in the first CSE that received the original request.
+- [CSE] Improved feedback instructions when problems during startup are encountered, e.g. how to install missing packages.
+- [CSE] Introduced a thread pool to reuse threads.
+- [TESTS] Replaced CSE test cases' re-configurations with upper tester commands / script calls.
+- [DATABASE] Optimizations when working with resource lists.
+
+### Removed
+- [HTTP] Removed the http server's configuration and reset endpoints. This functionality is now handled by the upper tester endpoint, commands and scripts.
+- [CSE] Removed import of JSON resources from the init directory during startup. This functionality is now provided by a startup script. 
+
+### Fixed
+- [CSE] Improved check that IDs contain only unreserved characters.
+- [CSE] Improved check for validating non-empty list attributes.
+- [CSE] Improved error detection and handling for RCN=7 (original-resource).
+- [CSE] Added missing "creator" attribute in notifications when the creator was set in the &lt;subscription>.
+- [CSE] Improved support to recognize structured and unstructured resource IDs for verification notifications.
+- [HTTP] HTTP requests will not be sent with a *Date* header field. Instead, the *Originating Timestamp* will be used.
+
+### Experimental
+- [CSE] Blocking RETRIEVE notification event type: A RETRIEVE is blocked and a notification is sent to a target to give it a change to update the original RETRIEVE's target resource.
+
 ## [0.9.1] - 2021-11-09
 
 ### Fixed
@@ -41,8 +96,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Changed optionality of and originator assignment to CSR.csi according to TS-0004 spec change.
 - [HTTP] Moved the security setting for http to the separate section *server.http.security*.
 - [IMPORTING] Changed the file extension for &lt;flexContainer> attribute policies from ".ap" to ".fcp".
+- [IMPORTING] Updated the &lt;flexContainer> attribute policies to the latest version of TS-0023.
 - [Logging] Changed the internal handling of log messages. Output should be more immediate than before.
 - [RUNTIME] Due to the restructuring of the project structure the CSE must now be started like this: ```python3 -m acme```
+
 
 ### Removed
 - [CSE] Removed "cse.enableNotifications" configuration option. Notifications are now always enabled.
@@ -94,6 +151,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Refactored internal request handling to support future protocol binding developments other than http.
 - [CSE] Changed the sorting of request result lists to type and creation time for &lt;contentInstance>, &lt;flexContainerInstance> and &lt;timeSeriesInstance>.
 - [CSE] Improved the validation when registering &lt;remoteCSE> resources for *csi* and *cb* attributes.
+- [CSE] Added validation of complex attributes in general.
 - [RUNTIME] The CSE is now started by running the *acme* module (```python3 acme```)
 
 ### Fixed

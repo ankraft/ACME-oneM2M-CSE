@@ -1,5 +1,5 @@
 // Created by SDTTool
-// oneM2M Release: 4.5.0
+// oneM2M Release: 4.9.0
 // Domain:         org.onem2m.agriculture
 [
 
@@ -7,10 +7,11 @@
     {
         "type"      : "agd:dCAMr",
         "lname"     : "deviceCowActivityMonitor",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.agriculture.device.deviceCowActivityMonitor",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],
@@ -28,10 +29,11 @@
     {
         "type"      : "agd:dCAMrAnnc",
         "lname"     : "deviceCowActivityMonitorAnnc",
+        "sdttype"   : "device",
         "cnd"       : "org.onem2m.agriculture.device.deviceCowActivityMonitorAnnc",
         "attributes": [
             // Property: nodeLink
-            { "sname" : "nl", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
+            { "sname" : "nodLk", "lname" : "nodeLink", "type" : "string", "car" : "01" }, 
             // Property: flexNodeLink
             { "sname" : "flNLk", "lname" : "flexNodeLink", "type" : "string", "car" : "01" }
         ],

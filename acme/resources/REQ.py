@@ -32,7 +32,7 @@ class REQ(Resource):
 		'lt': None,
 		'et': None,
 		'lbl': None,
-		'hld': None,
+		'cstn': None,
 		'acpi':None,
 		'daci': None,
 
@@ -48,8 +48,8 @@ class REQ(Resource):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.REQ, dct, pi, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.REQ, dct, pi, create = create)
 
 
 	@staticmethod
@@ -99,12 +99,12 @@ class REQ(Resource):
 						'fo'	: request.args.fo,
 					},
 					'drt'	: request.args.drt,
-					'rvi'	: request.headers.releaseVersionIndicator if request.headers.releaseVersionIndicator else Configuration.get('cse.releaseVersion'),
+					'rvi'	: request.headers.releaseVersionIndicator if request.headers.releaseVersionIndicator else CSE.releaseVersion,
 					'vsi'	: request.headers.vendorInformation,
 				},
 				'rs'	: RequestStatus.PENDING,
-				'ors'	: {
-				}
+				# 'ors'	: {
+				# }
 		}}
 
 		# add handlings, conditions and attributes from filter
@@ -120,8 +120,8 @@ class REQ(Resource):
 			Utils.setXPath(dct, 'm2m:req/mi/rt/nu', [ u for u in rtu if len(u) > 0] )
 
 		if not (cseres := Utils.getCSE()).resource:
-			return Result(rsc=RC.badRequest, dbg=cseres.dbg)
+			return Result.errorResult(dbg = cseres.dbg)
 
-		return Factory.resourceFromDict(dct, pi=cseres.resource.ri, ty=T.REQ)
+		return Factory.resourceFromDict(dct, pi = cseres.resource.ri, ty = T.REQ)
 
 

@@ -49,17 +49,17 @@
 ; IN Configuration
 ;
 
-[basic.config]
-cseType=IN
-cseID=id-in
-cseName=cse-in
-adminID=CAdmin
-dataDirectory=${baseDirectory}
-networkInterface=0.0.0.0
-cseHost=127.0.0.1
-httpPort=8080
-logLevel=debug
-databaseInMemory=False
+; [basic.config]
+; cseType=IN
+; cseID=id-in
+; cseName=cse-in
+; adminID=CAdmin
+; dataDirectory=${baseDirectory}
+; networkInterface=0.0.0.0
+; cseHost=127.0.0.1
+; httpPort=8080
+; logLevel=debug
+; databaseInMemory=False
 
 ;
 ; MN Configuration
@@ -100,9 +100,9 @@ databaseInMemory=False
 ; databaseInMemory=False
 
 ; registrarCseHost=127.0.0.1
-; registrarCsePort=8080
-; registrarCseID=id-in
-; registrarCseName=cse-in
+; registrarCsePort=8081
+; registrarCseID=id-mn
+; registrarCseName=cse-mn
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -141,11 +141,14 @@ enableRemoteCSE=true
 sortDiscoveredResources=true
 ; Interval to check for expired resources. 0 means "no checking". Default: 60 seconds
 checkExpirationsInterval=60
+; Indicate the preference for flexBlocking response types. Allowed values: "blocking", "nonblocking".
+; Default: blocking
+flexBlockingPreference=blocking
 ; A comma-separated list of supported release versions. This list can contain a single or multiple values.
 ; Default: 2a,3,4
 supportedReleaseVersions=2a,3,4
-; The release version indicator for requests. Allowed values: 1,2,3,3a,4. Default: 3
-releaseVersion=3
+; The release version indicator for requests. Allowed values: 2a,3,4. Default: 4
+releaseVersion=4
 ; Indicate the serialization format if none was given in a request and cannot be determined otherwise.
 ; Allowed values: json, cbor. Default: json
 defaultSerialization=json
@@ -164,6 +167,24 @@ fullAccessAdmin=True
 
 
 ;
+;	Settings for CSE operation
+;
+
+[cse.operation]
+; Thread Pool Management: Target balance between paused and running jobs (n paused for 1 running threads).
+; Default: 3.0
+jobBalanceTarget=3.0
+; Thread Pool Management: Number of get / create requests for a new thread before performing a balance check.
+; A latency of 0 disables the thread pool balancing.
+; Default: 1000
+jobBalanceLatency=1000
+; Thread Pool Management: The Factor to reduce the paused jobs (number of paused / balanceReduceFactor) in a balance check.
+; Example: a factor of 2.0 reduces the number of paused threads by half in a single balance check.
+; Default: 2.0
+jobBalanceReduceFactor=2.0
+
+
+;
 ;	HTTP Server settings
 ;
 
@@ -172,7 +193,8 @@ fullAccessAdmin=True
 port=${basic.config:httpPort}
 ; Interface to listen to. Use 0.0.0.0 for "all" interfaces. Default:127.0.0.1
 listenIF=${basic.config:networkInterface}
-; Own address. Should be a local/public reachable address. Default: http://127.0.0.1:8080
+; Own address. Should be a local/public reachable address.
+; Default: http://127.0.0.1:8080
 address=http://${basic.config:cseHost}:${basic.config:httpPort}
 ; CSE Server root. Always provide a trailing /. Default: /
 root=/
@@ -180,18 +202,21 @@ root=/
 ; REST interface.
 ; ATTENTION: Enabling this feature exposes configuration values, IDs and
 ; passwords, and is a security risk.
-; Default: False
-enableRemoteConfiguration=false
-; Enable an endpoint for getting a structured overview about a CSE's resource
-; tree and deployment infrastructure (remote CSE's)
-; ATTENTION: Enabling this feature exposes various potentially sensitive information.
+; See also the [cse.console].hideResources setting to hide resources
+; from the tree.
 ; Default: False
 enableStructureEndpoint=false
-; Enable an endpoint for resetting the CSE (remove all resources and import
-; the init directory again)
+; Enable an endpoint for supporting Upper Tester commands to the CSE.
+; This is to support certain testing and certification systems.
+; See oneM2M's TS-0019 for further details.
 ; ATTENTION: Enabling this feature may lead to a total loss of data.
 ; Default: False
-enableResetEndpoint=false
+enableUpperTesterEndpoint=false
+; Allow the http PATCH method to be used as a replacement for the DELETE
+; method. This is useful for constraint devices that only support http/1.0,
+; which doesn't specify the DELETE method.
+; Default: False
+allowPatchForDelete=false
 
 
 ;
@@ -303,7 +328,7 @@ allowedAEOriginators=C*,S*
 ; Wildcards (* and ?) are supported.
 ; Note: No leading "/"
 ; Default: empty list
-allowedCSROriginators=id-mn,id-asn
+allowedCSROriginators=
 ; Check the liveliness if the registrations to the registrar CSE and also from the registree CSEs. Default: True
 checkLiveliness=True
 
@@ -315,8 +340,8 @@ checkLiveliness=True
 [cse.registrar]
 ; URL of the Registrar CSE. Default: no default
 address=http://${basic.config:registrarCseHost}:${basic.config:registrarCsePort}
-; Registrar CSE root path. Default: /
-root=/
+; Registrar CSE root path. Never provide a trailing /. Default: empty string
+root=
 ; CSE-ID of the Registrar CSE. Default: None
 cseID=/${basic.config:registrarCseID}
 ; The Registrar CSE's resource name. Default: None
@@ -353,6 +378,10 @@ stackTraceOnError=False
 ; Enable logging of low-level HTTP & MQTT client events.
 ; Default: False
 enableBindingsLogging=False
+; Number of log entries that can be added to the asynchronous queue before blocking.
+; A queue size of 0 means disabling the queue.
+; Default: 5000 entries
+queueSize=5000
 
 
 ;
@@ -416,6 +445,21 @@ mdn=10
 
 
 ;
+;	Resurce defaults: TimeSyncBeacon
+;
+
+[cse.resource.tsb]
+; Default timeSyncBeacon interval. This is the duration between to beacon notifications sent by the CSE
+; to an AE or CSE. The format must be an ISO8601 duration.
+; Default: PT1H = 1 hour
+bcni=PT1H
+; Default timeSyncBeacon threshold. When this time threshold is passed then a beacon notifications
+; is sent to an AE or CSE.
+; Default: 10.0 seconds
+bcnt=10.0
+
+
+;
 ;	Resource defaults: Request
 ;
 
@@ -458,14 +502,38 @@ refreshInterval=2.0
 ; Wildcards are allowed.
 ; Default: Empty list
 hideResources=
-; Set the mode how resources and their content are presented in the console's tree view. 
+; Set the mode how resources and their content are presented in the console's and structure endpoint tree view. 
 ; Allowed values: normal, compact, content, contentOnly
 ; Default: normal
 treeMode=normal
+; Show virtual resources in the console's and structure endpoint's tree view.
+; Default: False
+treeIncludeVirtualResources=False
 ; Quitting the console needs to be confirmed.
 ; This may not work under Windows, so it should be switched off.
 ; Default: False
 confirmQuit=False
+; Set the color theme for the console. Allowed values are "dark" and "light".
+; Default: dark
+theme=dark
+
+
+;
+;	Scripting settings
+;
+
+[cse.scripting]
+; Add one or multiple directory paths to look for scripts, in addition to the ones in the "init" directory.
+; Must be a comma-separated list.
+; Default: not set
+scriptDirectories=
+; Enable debug output during script execution, such as the current executed line.
+; Default: False
+verbose=false
+; Set the interval to check for new files in the script (init) directory.
+; 0 means disable monitoring.
+; Default: 2.0 seconds
+fileMonitoringInterval=2.0
 
 
 ;

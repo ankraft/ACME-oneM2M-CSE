@@ -133,7 +133,7 @@ class TestNOD(unittest.TestCase):
 
 		nod, rsc = RETRIEVE(nodURL, ORIGINATOR)
 		self.assertEqual(rsc, RC.OK)
-		self.assertIsNotNone(findXPath(nod, 'm2m:nod/hael'))
+		self.assertIsNotNone(findXPath(nod, 'm2m:nod/hael'), nod)
 		self.assertIn(findXPath(TestNOD.ae, 'm2m:ae/ri'), findXPath(nod, 'm2m:nod/hael'))	# ae.ri in nod.hael?
 
 

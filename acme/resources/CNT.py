@@ -7,20 +7,21 @@
 #	ResourceType: Container
 #
 
+from __future__ import annotations
 from typing import List
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, ResponseStatusCode as RC, JSON
-from ..etc import Utils as Utils, DateUtils as DateUtils
+from ..etc import Utils, DateUtils
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
 from ..resources.Resource import *
-from ..resources.AnnounceableResource import AnnounceableResource
-from ..resources import Factory as Factory
+from .AnnounceableResource import AnnounceableResource
+from ..resources import Factory
 
 
 class CNT(AnnounceableResource):
 
-	_allowedChildResourceTypes =  [ T.CNT, T.CIN, T.FCNT, T.SUB, T.TS ]
+	_allowedChildResourceTypes =  [ T.ACTR, T.CNT, T.CIN, T.FCNT, T.SUB, T.TS ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -34,7 +35,7 @@ class CNT(AnnounceableResource):
 			'lt': None,
 			'et': None,
 			'lbl': None,
-			'hld': None,
+			'cstn': None,
 			'acpi':None,
 			'at': None,
 			'aa': None,
@@ -56,14 +57,15 @@ class CNT(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
 		super().__init__(T.CNT, dct, pi, create=create)
 
 		if Configuration.get('cse.cnt.enableLimits'):	# Only when limits are enabled
-			self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite=False)
-			self.setAttribute('mbs', Configuration.get('cse.cnt.mbs'), overwrite=False)
-		self.setAttribute('cni', 0, overwrite=False)
-		self.setAttribute('cbs', 0, overwrite=False)
+			self.setAttribute('mni', Configuration.get('cse.cnt.mni'), overwrite = False)
+			self.setAttribute('mbs', Configuration.get('cse.cnt.mbs'), overwrite = False)
+		self.setAttribute('cni', 0, overwrite = False)
+		self.setAttribute('cbs', 0, overwrite = False)
+		self.setAttribute('st', 0, overwrite = False)
 
 		self.__validating = False	# semaphore for validating
 
@@ -76,19 +78,19 @@ class CNT(AnnounceableResource):
 		if L.isDebug: L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		latestResource = Factory.resourceFromDict({}, pi=self.ri, ty=T.CNT_LA).resource		# rn is assigned by resource itself
+		latestResource = Factory.resourceFromDict({}, pi = self.ri, ty = T.CNT_LA).resource		# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createResource(latestResource)).resource:
-			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
 
 		# add oldest
-		oldestResource = Factory.resourceFromDict({}, pi=self.ri, ty=T.CNT_OL).resource		# rn is assigned by resource itself
+		oldestResource = Factory.resourceFromDict({}, pi = self.ri, ty = T.CNT_OL).resource		# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createResource(oldestResource)).resource:
-			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+			return Result(status = False, rsc = res.rsc, dbg = res.dbg)
 
-		return Result(status=True)
+		return Result.successResult()
 
 
-	def update(self, dct:JSON=None, originator:str=None) -> Result:
+	def update(self, dct:JSON = None, originator:str = None) -> Result:
 
 		# remember disr update first, handle later after the update
 		disrOrg = self.disr
@@ -103,12 +105,10 @@ class CNT(AnnounceableResource):
 		if disrOrg and disrNew == False:
 			CSE.dispatcher.deleteChildResources(self, originator, ty=T.CIN)
 
-		return Result(status=True)
+		# Update stateTag when modified
+		self.setAttribute('st', self.st + 1)
 
-
-	# Get all content instances of a resource and return a sorted (by ct) list 
-	def contentInstances(self) -> List[Resource]:
-		return sorted(CSE.dispatcher.directChildResources(self.ri, T.CIN), key=lambda x: (x.ct))	# type: ignore[no-any-return]
+		return Result.successResult()
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
@@ -117,13 +117,13 @@ class CNT(AnnounceableResource):
 		
 		# Check whether the child's rn is "ol" or "la".
 		if (rn := childResource.rn) is not None and rn in ['ol', 'la']:
-			return Result(status=False, rsc=RC.operationNotAllowed, dbg='resource types "latest" or "oldest" cannot be added')
+			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'resource types "latest" or "oldest" cannot be added')
 	
 		# Check whether the size of the CIN doesn't exceed the mbs
 		if childResource.ty == T.CIN and self.mbs is not None:
 			if childResource.cs is not None and childResource.cs > self.mbs:
-				return Result(status=False, rsc=RC.notAcceptable, dbg='child content sizes would exceed mbs')
-		return Result(status=True)
+				return Result.errorResult(rsc = RC.notAcceptable, dbg = 'child content sizes would exceed mbs')
+		return Result.successResult()
 
 
 	# Handle the addition of new CIN. Basically, get rid of old ones.
@@ -143,6 +143,7 @@ class CNT(AnnounceableResource):
 
 			self.validate(originator)
 
+
 	# Handle the removal of a CIN. 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
 		if L.isDebug: L.logDebug(f'Child resource removed: {childResource.ri}')
@@ -153,14 +154,15 @@ class CNT(AnnounceableResource):
 
 	# Validating the Container. This means recalculating cni, cbs as well as
 	# removing ContentInstances when the limits are met.
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+	def validate(self, originator:str=None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
 		self._validateChildren()
-		return Result(status=True)
+		return Result.successResult()
 
 
 	# TODO Align this and FCNT implementations
+	# TODO use raw for TS and TCNT
 	
 	def _validateChildren(self) -> None:
 		""" Internal validation and checks. This called more often then just from
@@ -171,42 +173,39 @@ class CNT(AnnounceableResource):
 			return
 		self.__validating = True
 
-		cs = self.contentInstances()	# retrieve CIN child resources
-		cni = len(cs)			
+		# Only get the CINs in raw format. Instantiate them as resources if needed
+		cinsRaw = cast(List[JSON], sorted(CSE.storage.directChildResources(self.ri, T.CIN, raw = True), key = lambda x: x['ct']))
+		cni = len(cinsRaw)			
 			
 		# Check number of instances
 		if (mni := self.mni) is not None:
-			i = 0
-			l = cni
-			while cni > mni and i < l:
-				if L.isDebug: L.logDebug(f'cni > mni: Removing <cin>: {cs[i].ri}')
+			while cni > mni and cni > 0:
+				# Only instantiate the <cin> when needed here for deletion
+				cin = Factory.resourceFromDict(cinsRaw[0]).resource
+				L.isDebug and L.logDebug(f'cni > mni: Removing <cin>: {cin.ri}')
 				# remove oldest
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that CNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteResource(cs[i], parentResource=self, doDeleteCheck=False)
+				CSE.dispatcher.deleteResource(cin, parentResource = self, doDeleteCheck = False)
+				del cinsRaw[0]	# Remove from list
 				cni -= 1	# decrement cni when deleting a <cin>
-				i += 1
-			cs = self.contentInstances()	# retrieve CIN child resources again
-			cni = len(cs)
 
-		# Calculate cbs
-		cbs = 0
-		for c in cs:
-			cbs += c.cs
+		# Calculate cbs of remaining cins
+		cbs = sum([ each['cs'] for each in cinsRaw])
 
 		# check size
 		if (mbs := self.mbs) is not None:
-			i = 0
-			l = len(cs)
-			while cbs > mbs and i < l:
-				if L.isDebug: L.logDebug(f'cbs > mbs: Removing <cin>: {cs[i].ri}')
+			while cbs > mbs and cbs > 0:
+				# Only instantiate the <cin> when needed here for deletion
+				cin = Factory.resourceFromDict(cinsRaw[0]).resource
+				L.isDebug and L.logDebug(f'cbs > mbs: Removing <cin>: {cin.ri}')
 				# remove oldest
-				cbs -= cs[i]['cs']
+				cbs -= cin.cs
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that CNT.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteResource(cs[i], parentResource=self, doDeleteCheck=False)
+				CSE.dispatcher.deleteResource(cin, parentResource = self, doDeleteCheck = False)
+				del cinsRaw[0]	# Remove from list
 				cni -= 1	# decrement cni when deleting a <cin>
-				i += 1
 
 		# Some attributes may have been updated, so store the resource 
 		self['cni'] = cni

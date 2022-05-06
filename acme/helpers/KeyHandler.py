@@ -26,6 +26,12 @@ except ImportError:
 		raise ImportError('getch not available')
 	else:
 		getch = msvcrt.getch	# type: ignore
+
+		def flushInput() -> None:
+			pass
+			# while msvcrt.kbhit():	# type: ignore
+			# 	msvcrt.getch()		# type: ignore
+
 else:
 	_errorInGetch:bool = False
 	def getch() -> str:
@@ -56,11 +62,19 @@ else:
 			tty.setcbreak(fd)	# Not extra lines in input
 			if select.select([sys.stdin,], [], [], _timeout)[0]:
 				ch = sys.stdin.read(1)
+				if ch == '\x1b':
+					ch2 = sys.stdin.read(1)
+					if ch2 == '[':
+						ch3 = sys.stdin.read(1)
+						ch += ch2 + ch3
 			else:
 				ch = None
 		finally:
 			termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 		return ch
+	
+	def flushInput() -> None:
+		sys.stdin.flush()
 
 
 Commands = Dict[str, Callable[[str], None]]
@@ -70,16 +84,24 @@ _stopLoop = False
 """ Internal variable to indicate to stop the keyboard loop. """
 
 
-def loop(commands:Commands, quit:str=None, catchKeyboardInterrupt:bool=False, headless:bool=False) -> None:
+def loop(commands:Commands, quit:str = None, catchKeyboardInterrupt:bool = False, headless:bool = False, ignoreException:bool = True, catchAll:Callable = None) -> None:
 	"""	Endless loop that reads single chars from the keyboard and then executes
-		a handler function for that key (from the dictionary 'commands').
-		If a single 'key' value is set in 'quit' and this key is pressed, then
+		a handler function for that key (from the dictionary `commands`).
+		If a single 'key' value is set in `quit` and this key is pressed, then
 		the loop terminates.
-		If 'catchKeyboardInterrupt' is True, then this key is handled as the ^C key,
+
+		If `catchKeyboardInterrupt` is True, then this key is handled as the ^C key,
 		otherweise a KeyboardInterrupt event is raised.
-		If 'headless' is True, then operate differently. Ignore all key inputs, but handle
-		a keyboard interrupt. If the 'quit' key is set then the loop is just interrupted. Otherwise
-		tread the keyboard interrupt as ^C key. It must be hanled in the commands.
+
+		If `headless` is True, then operate differently. Ignore all key inputs, but handle
+		a keyboard interrupt. If the `quit` key is set then the loop is just interrupted. Otherwise
+		tread the keyboard interrupt as ^C key. It must be hanled in the `commands`.
+
+		If `ignoreException` is True, then exceptions raised during command execution is ignore, or
+		passed on otherwise.
+
+		If `catchAll` is given then this callback is called in case the pressed key was not found
+		in `commands`.
 	"""
 	
 	# main loop
@@ -93,10 +115,13 @@ def loop(commands:Commands, quit:str=None, catchKeyboardInterrupt:bool=False, he
 				if isinstance(ch, bytes):	# Windows getch() returns a byte-string
 					ch = ch.decode('utf-8') # type: ignore [attr-defined]
 			except KeyboardInterrupt as e:
+				flushInput()
 				if catchKeyboardInterrupt:
 					ch = '\x03'
 				else:
 					raise e 
+			except Exception:	# Exit the loop when there is any other problem
+				break
 
 			# handle "quit" key			
 			if quit is not None and ch == quit:
@@ -120,7 +145,15 @@ def loop(commands:Commands, quit:str=None, catchKeyboardInterrupt:bool=False, he
 
 		# handle all other keys
 		if ch in commands:
-			commands[ch](ch)
+			try:
+				commands[ch](ch)
+			except SystemExit:
+				raise
+			except Exception as e:
+				if not ignoreException:
+					raise e
+		elif ch and catchAll:
+			catchAll(ch)
 
 
 def stopLoop() -> None:
@@ -150,6 +183,8 @@ def waitForKeypress(s:float) -> str:
 			ch = getch()	# returns after _timeout s
 		except KeyboardInterrupt as e:
 			ch = '\x03'
+		except Exception:
+			return None
 		if ch is not None:
 			return ch
 	return None

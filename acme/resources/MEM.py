@@ -29,7 +29,7 @@ class MEM(MgmtObj):
 		'lt': None,
 		'et': None,
 		'lbl': None,
-		'hld': None,
+		'cstn': None,
 		'acpi':None,
 		'at': None,
 		'aa': None,
@@ -50,9 +50,9 @@ class MEM(MgmtObj):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(dct, pi, mgd=T.MEM, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(dct, pi, mgd = T.MEM, create = create)
 
-		self.setAttribute('mma', defaultMemoryAvailable, overwrite=False)
-		self.setAttribute('mmt', defaultMemTotal, overwrite=False)
+		self.setAttribute('mma', defaultMemoryAvailable, overwrite = False)
+		self.setAttribute('mmt', defaultMemTotal, overwrite = False)
 

@@ -3,59 +3,62 @@
 # Importing
 
 [Resources](#resources)  
-[Attribute and Hierarchy Policies for FlexContainers](#attribute-and-hierarchy-policies-for-flexcontainers)  
-[Attribute Policies for Common Resources](#attribute-policies-for-common-resources)
+[Attribute and Hierarchy Policies for FlexContainers](#flexcontainers)  
+[Attribute Policies for Common Resources and Complex Types	](#attributes)
 
 
+<a name="resources"></a>
 ## Resources
 
-During startup it is necessary to import resources into to CSE. Each resource is read from a file in the [init](../init) resource directory specified in the configuration file. Besides of a few mandatory resources additional resources can be imported to create a default resource structure for the CSE.
+During startup and CSE restart it is necessary to import a first set of resources to the CSE. This is done automatically by the CSE by running the script *startup.as* from the
+[init](../init) directory.
 
-Not much validation, access control, or registration procedures are performed for imported resources.
+Besides of a few mandatory resources additional resources can be imported to create a default resource structure for the CSE.
 
-### Importing Mandatory Resources
+Not much validation, access control, or registration procedures are performed when importing resources this way.
 
-**Please note** that importing is required for creating the CSEBase, the admin AE, and a general-access ACP resources. Those are imported before all other resources, so that the CSEBase resource can act as the root for the resource tree.
+### Mandatory Resources to the CSE
 
-The filenames for these resources must be:
+**Please note** that importing is required for creating the CSEBase, the administration AE, and a general-access ACP resources. Those are imported before all other resources, so that the CSEBase resource can act as the root for the resource tree and the permissions for 
+the admin originator are created.
 
-- [csebase.json](../init/csebase.json) for the CSEBase.
-- [ae.admin.json](../init/ae.admin.json) for the Admin AE
-- [acp.createACP.json](../init/acp.createACP.json) for granting AE's and remote CSE's access to the CSEBase.
 
 ### Importing Other Resources
 
-After importing the mandatory resources all other resources in the [init](../init) directory are read in alphabetical order and are added (created) to the CSE's resource tree. Imported resources must have a valid *acpi* attribute, because no default *acpi* is assigned during importing.
+The script *startup.as* can be extended to import other resources as well, or it can call other scripts.
 
-### Updating Resources
+Another option to import resources automatically whenever the CSE starts or restarts is to have a script as an event handler for the [onStartup](ACMEScript-metatags.md#meta_onstartup) and *[onRestart](ACMEScript-metatags.md#meta_onrestart)* events.
 
-If the filename contains the substring *update*, then the resource specified by the resource's *ri* attribute is updated instead of created.
 
 ### Referencing Configuration Settings
 
-By using macros the initial resources can be kept rather independent from individual settings. Most [configuration](Configuration.md) settings can be referenced and used by a simple macro mechanism. For this a given macro name is enclosed by  ```${...}```, e.g. ```${cse.csi}```.
+By using macros the initial resources can be kept independent from individual settings. 
+Most [configuration](Configuration.md) settings can be referenced and used by a simple macro mechanism.
+For this a given macro name is enclosed by  ```[...]```, e.g. ```[cse.csi]```. 
+The following example shows the initial *CSEBase* resource definition from the *startup.as* script file:
 
-The following example shows the initial *CSEBase* resource definition.
-
-```js
-{	"m2m:cb" : {
-		"ri" : "${cse.ri}",
-		"ty" : 5,
-		"rn" : "${cse.rn}",
-		"csi" : "${cse.csi}",
-		"acpi" : [ "${cse.security.adminACPI}" ]
+```jsonc
+importraw 
+{	
+	"m2m:cb" : {
+			"ri":   "[cse.ri]",
+			"rn":   "[cse.rn]",
+			"csi":  "[cse.csi]",
+			"rr":   true,
+			"csz":  \[ "application/json", "application/cbor" ],
+			"acpi": \[ "[cse.csi]/acpCreateACPs" ]
 	}
 }
 ```
 
-### Examples & Templates
-
-A minimal set of resources is provided in the [init](../init) directory. Definitions for a more sophisticated setup can be found in the [tools/init.example](../tools/init.example) directory. To use these examples, you can either copy the resources to the *init* directory or change the "cse -> resourcesPath" entry in the *acme.ini* configuration file.
-
-The directory [tools/resourceTemplates](../tools/resourceTemplates) contains templates for supported resource types. Please see the [README](../tools/resourceTemplates/README.md) there for further details.
+Please note, that normal opening square brackets, e.g. in JSON lists, must be escaped.
 
 
-## Attribute and Hierarchy Policies for FlexContainers
+See the [documentation for scripts](ACMEScript.md).
+
+
+<a name="flexcontainers"></a>
+## FlexContainer Attribute and Hierarchy Policies
 
 The CSE uses attribute policies for validating the attributes of all supported resource types (internal to the *m2m* namespace). 
 But for all &lt;flexContainer> specializations, e.g. for oneM2M's TS-0023 ModuleClasses, those attribute policies and the allowed &lt;flexContainer> hierarchy must be provided. This can be done by adding attribute policy files for import. 
@@ -67,7 +70,7 @@ Those files are imported from the common import / init directory. More than one 
 The format is a JSON structure that follows the structure described in the following code.  
 Some of the fields are not yet used, but will supported by a future version of the CSE.
 
-```js
+```jsonc
 // A file contains a list of Attribute Policies
 attributePolicies = [
 	
@@ -79,8 +82,11 @@ attributePolicies = [
 		// The specialisation's long name. Optional, and for future developments.
 		"lname"     : "attributePolicyLongname",
 
-		// The specialisation's containerDefinition. Optional, and for future developments.
+		// The specialisation's containerDefinition. Must be present for flexContainers, but can be empty to prevent warnings.
 		"cnd"       : "containerDefinition",
+
+		// The specialisation's SDT type. Could be "device", "subdevice", "moduleclass", or "action". Optional, and for future developments.
+		"sdttype"   : "SDTcontainerType",
 
 		// A list of attributes. Each entry specifies a single attribute of the specialization. Optional.
         "attributes": [
@@ -101,11 +107,24 @@ attributePolicies = [
 				//	- string
 				//	- timestamp
 				//	- list
-				//	- dict
+				//	- dict - any anonymous complex structure. This should be avoided and be replaced by a complex type name
+				//	- adict (anonymous dict)
 				//	- anyURI
 				// 	- boolean
+				//	- enum
 				//	- geoCoordinates
+				//
+				//	In addition, the *attributeType* can be the name of any defined complex type. This
+				//	complex type must be defined in any of the attribute policy files.
 				"type"	: "attributeType", 
+
+				// The sub-type of a list type.
+				//	This can be any of the types defined for *type*, or a complex type.
+				"ltype" : "type",
+
+				//	Definition of enumeration values. This can only be an integer value, or range definitions
+				//	in the format "start..end" that evaluate to all the integer values of the given range.
+				"evalues" : [ 1, 2, "3..5", 6 ],
 
 				// The "oc" field specifies the CREATE request optionality. Optional, and one from this list:
 				//	- O  : Optional provided (default)
@@ -162,7 +181,7 @@ attributePolicies = [
 
 The following examples show the attribute policies for the *binarySwitch* and *deviceLight* specialisations, both defined in oneM2M's TS-0023 specification.
 
-```js
+```jsonc
 [
     // ModuleClass: binarySwitch (binSh)
     {
@@ -194,15 +213,17 @@ The following examples show the attribute policies for the *binarySwitch* and *d
 ]
 ```
 
-## Attribute Policies for Common Resources
+<a name="attributes"></a>
+## Attribute Policies for Common Resources and Complex Types
 
-During startup the CSE reads the attribute policies for normal/common resources from the file [attributePolicies.ap](../init/attributePolicies.ap) in the import / init directory.
+During startup the CSE reads the attribute policies for normal/common resources from the file [attributePolicies.ap](../init/attributePolicies.ap) in the import / init directory.  
+The attributes for attribute policies are the same as for the &lt;flexContainer> attribute definitions above.
 
 ### Format
 
 The format is a JSON structure that follows the structure described in the following code.  
 
-```js
+```jsonc
 // The attributePolicy.ap file contains a dictionary of AttributePolicies
 {
 
@@ -219,20 +240,26 @@ The format is a JSON structure that follows the structure described in the follo
 			// The rtypes definition is mandatory here. It defines a list of oneM2M
 			// resource types for which this definition is valid. This way slight
 			// differences in attributes in some resource can be distinguished.
-			// The special names "ALL" (short for all resource types) and "REQRESP"
-			// (for attributes in requests and responses) can be used accordingly.
-			"rtype" : [ "<resource type>", "<resource type>" ]
+			// The special names "ALL" (short for all resource types), "REQRESP"
+			// (for attributes in requests and responses), and "COMPLEX" (for an attribute
+			// that belongs to a complex type definition) can be used accordingly.
+			"rtype" : [ "<resource type>", "<resource type>" ],
+
+			// The name of a complex type this attribute defintion belongs to. This
+			// attribute is only be present in an attribute policy definition when
+			// "rtype" is set to "COMPLEX".
+			"ctype" : "<complex type name>",
 
 			// The other definitions that can be used are (see above for details):
 			//
-			//	- lname
-			//	- ns
-			//	- type
-			//	- car
-			//	- oc
-			//	- ou
-			//	- od
-			//	- annc
+			"lname" : ...
+			"ns" : ...
+			"type" : ...
+			"car" : ...
+			"oc" : ...
+			"ou" : ...
+			"od" : ...
+			"annc" : ...
 		}
 	]
 }
@@ -242,7 +269,7 @@ The format is a JSON structure that follows the structure described in the follo
 
 The following gives an example for the attribute *ty* (*resourceType*).
 
-```js
+```jsonc
 {
 	"ty": [
 		{
@@ -255,6 +282,27 @@ The following gives an example for the attribute *ty* (*resourceType*).
 			"ou": "NP",
 			"od": "O",
 			"annc": "NA"
+		}
+	]
+}
+```
+
+**Complex Type Attribute**
+
+The following example shows the definition of the attribute *operator* (optr) that
+belongs to the complex type *m2m:evalCriteria*.
+
+```jsonc
+{
+	"optr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:evalCriteria",
+			"lname": "operator",
+			"ns": "m2m",
+			"type": "enum",
+			"evalues": [ 1, 2, 3, 4, 5, 6 ],
+			"car": "1"
 		}
 	]
 }

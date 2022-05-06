@@ -1,0 +1,36 @@
+// Created by SDTTool
+// oneM2M Release: 4.9.0
+// Domain:         org.onem2m.health
+[
+    // SubDevice: subDeviceCuff
+    {
+        "type"      : "hed:suDC0",
+        "lname"     : "suDCf",
+        "sdttype"   : "subdevice",
+        "cnd"       : "org.onem2m.health.subdevice.subDeviceCuff",
+        "children"  : [
+            "hod:binSh", 
+            "hod:sphyr", 
+            "hod:pulsr"
+        ]
+    },
+
+    // SubDevice Announced: subDeviceCuffAnnc
+    {
+        "type"      : "hed:suDC0Annc",
+        "lname"     : "suDCfAnnc",
+        "sdttype"   : "subdevice",
+        "cnd"       : "org.onem2m.health.subdevice.subDeviceCuffAnnc",
+        "children"  : [
+            "hod:binSh", 
+            "hod:binShAnnc", 
+            "hod:sphyr", 
+            "hod:sphyrAnnc", 
+            "hod:pulsr", 
+            "hod:pulsrAnnc"
+        ]
+    }
+
+
+
+]

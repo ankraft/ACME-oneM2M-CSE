@@ -7,13 +7,12 @@
 #	Unit tests for PollingChannelURI functionality
 #
 
+from http.client import OK
 import unittest, sys, time
-from unittest.loader import findTestCases
-import requests
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
-from acme.etc.Types import ResourceTypes as T, NotificationEventType as NET, ResourceTypes as T, NotificationContentType, ResponseStatusCode as RC, Permission
+from acme.etc.Types import ResourceTypes as T, NotificationEventType as NET, ResourceTypes as T, ResponseStatusCode as RC, Permission
 from init import *
 
 aeRN2 = f'{aeRN}2'
@@ -21,7 +20,7 @@ ae2URL = f'{aeURL}2'
 pch2URL = f'{ae2URL}/{pchRN}'
 pcu2URL = f'{pch2URL}/pcu'
 
-waitBetweenPollingRequests = sentRequestExpirationDelay/2.0 # seconds
+waitBetweenPollingRequests = requestExpirationDelay/2.0 # seconds
 
 class TestPCH_PCU(unittest.TestCase):
 
@@ -121,59 +120,83 @@ class TestPCH_PCU(unittest.TestCase):
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(ae2URL, ORIGINATOR)	# Just delete the 2nd AE and everything below it. Ignore whether it exists or not
 
-		with console.status('[bright_blue]Waiting for polling requests to timeout...') as status:
-			time.sleep(sentRequestExpirationDelay)
+		waitMessage('Waiting for polling requests to timeout...', requestExpirationDelay)
 
 
-	def _pollForRequest(self, originator:str, rcs:RC, isCreate:bool=False, isDelete:bool=False, emptyAnswer:bool=False, wrongAnswer:bool=False) -> None:
+	def _pollForRequest(self, 
+						originator:str, 
+						rcs:RC, 
+						isCreate:bool = False, 
+						isDelete:bool = False, 
+						emptyAnswer:bool = False, 
+						wrongAnswer:bool = False,
+						aggregated:bool = False) -> None:
 		r, rsc = RETRIEVE(pcu2URL, originator)	# polling request
 		self.assertEqual(rsc, rcs, r)
 		if rcs in [ RC.originatorHasNoPrivilege, RC.requestTimeout ]:
 			return
+		
+		def checkRequest(r:JSON) -> None:
+			if aggregated:
+				prefix = ''
+			else:
+				prefix = 'm2m:rqp/'
+				self.assertIsNotNone(findXPath(r, 'm2m:rqp'), r)
 
-		# response is a oneM2M request			
-		self.assertIsNotNone(findXPath(r, 'm2m:rqp'), r)
-		self.assertIsNotNone(findXPath(r, 'm2m:rqp/pc'), r)
-		self.assertIsNotNone(findXPath(r, 'm2m:rqp/pc/m2m:sgn'), r)
-		if isCreate: self.assertIsNotNone(findXPath(r, 'm2m:rqp/pc/m2m:sgn/vrq'), r)
-		if isCreate: self.assertTrue(findXPath(r, 'm2m:rqp/pc/m2m:sgn/vrq'))
-		if isDelete: self.assertIsNotNone(findXPath(r, 'm2m:rqp/pc/m2m:sgn/sud'))
-		if isDelete: self.assertTrue(findXPath(r, 'm2m:rqp/pc/m2m:sgn/sud'))
-		self.assertIsNotNone(findXPath(r, 'm2m:rqp/pc/m2m:sgn/sur'))
-		if isCreate: self.assertIsNotNone(findXPath(r, 'm2m:rqp/pc/m2m:sgn/cr'))
-		self.assertIsNotNone(findXPath(r, 'm2m:rqp/rqi'))
-		rqi = findXPath(r, 'm2m:rqp/rqi')
+			
+			# response is a oneM2M request			
+			self.assertIsNotNone(findXPath(r, f'{prefix}pc'), r)
+			self.assertIsNotNone(findXPath(r, f'{prefix}pc/m2m:sgn'), r)
+			if isCreate: self.assertIsNotNone(findXPath(r, f'{prefix}pc/m2m:sgn/vrq'), r)
+			if isCreate: self.assertTrue(findXPath(r, f'{prefix}pc/m2m:sgn/vrq'))
+			if isDelete: self.assertIsNotNone(findXPath(r, f'{prefix}pc/m2m:sgn/sud'))
+			if isDelete: self.assertTrue(findXPath(r, f'{prefix}pc/m2m:sgn/sud'))
+			self.assertIsNotNone(findXPath(r, f'{prefix}pc/m2m:sgn/sur'))
+			if isCreate: self.assertIsNotNone(findXPath(r, f'{prefix}pc/m2m:sgn/cr'))
+			self.assertIsNotNone(findXPath(r, f'{prefix}rqi'))
+			rqi = findXPath(r, f'{prefix}rqi')
 
-		# Build and send OK response as a Notification
-		dct = {
-			'm2m:rsp' : {
-				'fr'  : originator,	# TODO Configurable
-				'rqi' : rqi,
-				'rvi' : RVI,
-				'rsc' : int(RC.OK)
-			}
-		}
-		if emptyAnswer:
-			dct = {}
-		if wrongAnswer:
+			# Build and send OK response as a Notification
 			dct = {
-				'm2m:rqp' : {
-					'fr'  : originator,
+				'm2m:rsp' : {
+					'fr'  : originator,	# TODO Configurable
 					'rqi' : rqi,
 					'rvi' : RVI,
 					'rsc' : int(RC.OK)
 				}
 			}
-		r, rsc = NOTIFY(pcu2URL, originator, data=dct)
+			if emptyAnswer:
+				dct = {}
+			if wrongAnswer:
+				dct = {
+					'm2m:rqp' : {
+						'fr'  : originator,
+						'rqi' : rqi,
+						'rvi' : RVI,
+						'rsc' : int(RC.OK)
+					}
+				}
+			r, rsc = NOTIFY(pcu2URL, originator, data=dct)
+
+
+		if aggregated:
+			self.assertIsNotNone(findXPath(r, 'm2m:agrp'), r)
+			self.assertGreater(len(findXPath(r, 'm2m:agrp')), 0, r)
+			for each in findXPath(r, 'm2m:agrp'):
+				checkRequest(each)
+		else:
+			checkRequest(r)
+
 	
 
-	def _pollWhenCreating(self, originator:str, rcs:RC=RC.OK, emptyAnswer:bool=False, wrongAnswer:bool=False) -> Thread:
+	def _pollWhenCreating(self, originator:str, rcs:RC = RC.OK, emptyAnswer:bool = False, wrongAnswer:bool = False, aggregated:bool = False) -> Thread:
 		# Start polling thread and wait moment before sending next request
-		thread = Thread(target=self._pollForRequest, kwargs={'originator':originator, 
-															 'rcs':rcs,
-															 'isCreate':True,
-															 'emptyAnswer':emptyAnswer,
-															 'wrongAnswer':wrongAnswer
+		thread = Thread(target=self._pollForRequest, kwargs={'originator': originator, 
+															 'rcs': rcs,
+															 'isCreate': True,
+															 'emptyAnswer': emptyAnswer,
+															 'wrongAnswer': wrongAnswer,
+															 'aggregated': aggregated,
 															})
 		thread.start()
 		time.sleep(waitBetweenPollingRequests)	# Wait for delete notification
@@ -214,6 +237,7 @@ class TestPCH_PCU(unittest.TestCase):
 		self.assertIsNotNone(TestPCH_PCU.ae)
 		dct = 	{ 'm2m:pch' : { 
 					'rn' : pchRN,
+					'pcra': False,
 				}}
 		r, rsc = CREATE(ae2URL, TestPCH_PCU.originator2, T.PCH, dct)
 		self.assertEqual(rsc, RC.created, r)
@@ -277,7 +301,7 @@ class TestPCH_PCU(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUB2underCNTAnswerWithEmptyAnswerFail(self) -> None:
-		"""	CREATE <SUB> under <CNT> with <PCH> (empüty answer) -> Fail"""
+		"""	CREATE <SUB> under <CNT> with <PCH> (empty answer) -> Fail"""
 
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
@@ -323,8 +347,68 @@ class TestPCH_PCU(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_accessPCUwithshortExpiration(self) -> None:
 		"""	RETRIEVE <PCU> with short expiration -> Fail"""
-		r, rsc = RETRIEVE(pcu2URL, TestPCH_PCU.originator2, headers={C.hfRET : str(sentRequestExpirationDelay/2.0*1000)})	# polling request
+		r, rsc = RETRIEVE(pcu2URL, TestPCH_PCU.originator2, headers={C.hfRET : str(requestExpirationDelay/2.0*1000)})	# polling request
 		self.assertEqual(rsc, RC.requestTimeout, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updatePCHaggregate(self) -> None:
+		"""	Enable <PCU> request aggregation"""
+		self.assertIsNotNone(TestPCH_PCU.ae)
+		dct = 	{ 'm2m:pch' : { 
+					'pcra': True,
+				}}
+		r, rsc = UPDATE(pch2URL, TestPCH_PCU.originator2, dct)
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(findXPath(r, 'm2m:pch/pcra'), True)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_aggregation(self) -> None:
+		"""	Test response aggregation"""
+
+		# create a subscription first
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+			        'enc': {
+			            'net': [ NET.createDirectChild ]
+					},
+					'nu': [ TestPCH_PCU.originator2 ],
+					'su': TestPCH_PCU.originator2
+				}}
+
+		thread = self._pollWhenCreating(TestPCH_PCU.originator2)
+		r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.created, r)
+		self._waitForPolling(thread)
+	
+		# enable aggregation
+		dct = 	{ 'm2m:pch' : { 
+					'pcra': True,
+				}}
+		r, rsc = UPDATE(pch2URL, TestPCH_PCU.originator2, dct)
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertEqual(findXPath(r, 'm2m:pch/pcra'), True)
+
+		# Add CIN
+		def _createCin() -> None:
+			dct = 	{ 'm2m:cin' : {
+				'con' : 'test'
+			}}
+			r, rsc = CREATE(cntURL, TestPCH_PCU.originator, T.CIN, dct)
+			self.assertEqual(rsc, RC.created, r)
+
+		for _ in range(5):
+			t = Thread(target = _createCin)
+			t.start()
+		time.sleep(waitBetweenPollingRequests)	# Wait for delete notification
+
+		# get and answer aggregated polling request
+		self._pollForRequest(TestPCH_PCU.originator2, RC.OK, aggregated = True)
+			
+
+
+
 
 
 	def test_createNotificationDoPolling(self) -> None:
@@ -351,8 +435,8 @@ class TestPCH_PCU(unittest.TestCase):
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
-	enableShortSentRequestExpirations()
-	if not isShortSentRequestExpirations():
+	enableShortRequestExpirations()
+	if not isShortRequestExpirations():
 		console.print('\n[red reverse] Error configuring the CSE\'s test settings ')
 		console.print('Did you enable [i]remote configuration[/i] for the CSE?\n')
 		return 0,0,1	
@@ -369,12 +453,15 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestPCH_PCU('test_createSUB2underCNTAnswerWithEmptyAnswerFail'))
 	suite.addTest(TestPCH_PCU('test_createSUB2underCNTAnswerWithWrongAnswerFail'))
 
+	suite.addTest(TestPCH_PCU('test_aggregation'))
+
+
 	# TODO suite.addTest(TestPCH_PCU('test_createNotificationDoPolling'))
 
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
-	disableShortSentRequestExpirations()
+	disableShortRequestExpirations()
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 

@@ -16,7 +16,9 @@
 			"rtypes": [ "ALL" ],
 			"lname": "resourceType",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "enum",		// m2m:resourceType
+			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 58, 60, 63, 
+				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
 			"car": "1",
 			"oc": "NP",
 			"ou": "NP",
@@ -50,7 +52,8 @@
 			"annc": "NA"
 		},
 		{
-			"rtypes": [ 	"ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "DVCAnnc",
+			"rtypes": [ "ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "DVCAnnc", "CNTAnnc",
+						"FCNTAnnc", "TSAnnc", "CSEBaseAnnc",
 						"DVIAnnc", "EVLAnnc", "FWRAnnc", "MEMAnnc", "NYCFCAnnc", "RBOAnnc",
 						"SWRAnnc" ],
 			"lname": "resourceName",
@@ -82,6 +85,7 @@
 			"lname": "accessControlPolicyIDs",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "string",
 			"car": "01L",
 			"oc": "O",
 			"ou": "O",
@@ -115,7 +119,7 @@
 			"annc": "MA"
 		},
 		{
-			"rtypes": [ 	"ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "DVCAnnc",
+			"rtypes": [ "ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "DVCAnnc",
 						"DVIAnnc", "EVLAnnc", "FWRAnnc", "MEMAnnc", "NYCFCAnnc", "RBOAnnc",
 						"SWRAnnc" ],
 			"lname": "expirationTime",
@@ -160,6 +164,7 @@
 			"lname": "labels",
 			"ns": "m2m",
 			"type": "list",
+			"ltype" : "string",
 			"car": "01L",
 			"oc": "O",
 			"ou": "O",
@@ -167,12 +172,25 @@
 			"annc": "MA"
 		}
 	],
-	"at": [
+	"aa": [
 		{
-			"rtypes": [ "ALL"	],
-			"lname": "announceTo",
+			"rtypes": [ "CSEBase" ], 
+			"lname": "announcedAttribute",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "string",
+			"car": "01L",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "NA"
+		},
+		{
+			"rtypes": [ "ALL" ], 
+			"lname": "announcedAttribute",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "string",
 			"car": "01L",
 			"oc": "O",
 			"ou": "O",
@@ -180,12 +198,25 @@
 			"annc": "NA"
 		}
 	],
-	"aa": [
+	"at": [
 		{
-			"rtypes": [ "ALL"	], 
-			"lname": "announcedAttribute",
+			"rtypes": [ "CSEBase" ],
+			"lname": "announceTo",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "anyURI",
+			"car": "01L",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "NA"
+		},
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "announceTo",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "anyURI",
 			"car": "01L",
 			"oc": "O",
 			"ou": "O",
@@ -199,6 +230,7 @@
 			"lname": "dynamicAuthorizationConsultationIDs",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "anyURI",
 			"car": "01L",
 			"oc": "O",
 			"ou": "O",
@@ -212,6 +244,7 @@
 			"lname": "location",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "m2m:geoCoordinates",
 			"car": "01L",
 			"oc": "O",
 			"ou": "O",
@@ -230,10 +263,10 @@
 			"annc": "OA"
 		}
 	],
-	"hld": [
+	"cstn": [
 		{
 			"rtypes": [ "ALL" ],
-			"lname": "holder",
+			"lname": "custodian",
 			"ns": "m2m",
 			"type": "string",
 			"car": "01",
@@ -267,6 +300,7 @@
 			"lname": "associatedCrossResourceSub",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "anyURI",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -292,7 +326,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "activeStatus",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:actionStatus",	
 			"car": "01",
 			"oc": "NP",
 			"ou": "NP",
@@ -306,6 +340,7 @@
 			"lname": "authorizationDecisionResourceIDs",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "anyURI",
 			"car": "1",
 			"oc": "O",
 			"ou": "O",
@@ -326,12 +361,26 @@
 			"annc": "OA"
 		}
 	],
+	"air": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "actionResult",
+			"ns": "m2m",
+			"type": "adict",		// m2m:responsePrimitive, anonymous TODO
+			"car": "1",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"airi": [
 		{
 			"rtypes": [ "ALL" ],
 			"lname": "authorizationInformationResourceIDs",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "anyURI",
 			"car": "1",
 			"oc": "O",
 			"ou": "O",
@@ -358,6 +407,7 @@
 			"lname": "activityPatternElements",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "m2m:activityPattern",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -397,11 +447,38 @@
 			"lname": "authorizationPolicyResourceIDs",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "anyURI",
 			"car": "1",
 			"oc": "O",
 			"ou": "O",
 			"od": "O",
 			"annc": "MA"
+		}
+	],
+	"apv": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "actionPrimitive",
+			"ns": "m2m",
+			"type": "adict",	// m2m:requestPrimitive TODO
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "MA"
+		}
+	],
+	"apy": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "actionPriority",
+			"ns": "m2m",
+			"type": "positiveInteger",	// non-enum
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
 		}
 	],
 	"att": [
@@ -430,12 +507,78 @@
 			"annc": "OA"
 		}
 	],
+	"bcnc": [
+		{
+			"rtypes": [ "TSB", "REQRESP" ],
+			"lname": "beaconCriteria",
+			"ns": "m2m",
+			"type": "nonNegInteger",	// m2m:beaconCriteria
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"bcni": [
+		{
+			"rtypes": [ "TSB", "REQRESP" ],
+			"lname": "beaconInterval",
+			"ns": "m2m",
+			"type": "duration",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"bcnr": [
+		{
+			"rtypes": [ "TSB", "REQRESP" ],
+			"lname": "beaconRequester",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01",
+			"oc": "O",
+			"ou": "NP",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"bcnt": [
+		{
+			"rtypes": [ "TSB", "REQRESP" ],
+			"lname": "beaconThreshold",
+			"ns": "m2m",
+			"type": "duration",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"bcnu": [
+		{
+			"rtypes": [ "TSB", "REQRESP" ],
+			"lname": "beaconNotificationURIs",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "anyURI",
+			"car": "1LN",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"bn": [
 		{
 			"rtypes": [ "ALL" ],
 			"lname": "batchNotify",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:batchNotify",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -461,7 +604,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "batteryLevel",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -487,7 +630,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "capabilityActionStatus",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:actionStatus",
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -527,6 +670,7 @@
 			"lname": "mgmtLink",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "m2m:mgmtLinkRef",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -629,6 +773,7 @@
 			"lname": "contentRef",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "m2m:contentRef",
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
@@ -641,7 +786,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "creator",
 			"ns": "m2m",
-			"type": "list",
+			"type": "string",
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
@@ -740,6 +885,7 @@
 			"lname": "contentSerialization",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "string",	// m2m:serializations (string enum?)
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -778,7 +924,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "deletionCnt",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
@@ -792,6 +938,7 @@
 			"lname": "descendantCSEs",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "string",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -812,9 +959,23 @@
 			"annc": "OA"
 		}
 	],
+	"dep": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "dependencies",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "anyURI",
+			"car": "01L",
+			"oc": "NP",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"dgt": [
 		{
-			"rtypes": [ "FCNT", "REQRESP" ],
+			"rtypes": [ "CIN", "FCNT", "REQRESP" ],
 			"lname": "dataGenerationTime",
 			"ns": "m2m",
 			"type": "absRelTimestamp",
@@ -940,6 +1101,19 @@
 			"annc": "OA"
 		}
 	],
+	"ecp": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "evalControlParam",
+			"ns": "m2m",
+			"type": "positiveInteger",		// non-enum
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"egid": [
 		{
 			"rtypes": [ "ALL" ],
@@ -971,7 +1145,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "eventNotificationCriteria",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:eventNotificationCriteria",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -992,12 +1166,38 @@
 			"annc": "MA"
 		}
 	],
+	"evc": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "evalCriteria",
+			"ns": "m2m",
+			"type": "m2m:evalCriteria",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"evm": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "evalMode",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"exc": [
 		{
 			"rtypes": [ "ALL" ],
 			"lname": "expirationCounter",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",		// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1023,7 +1223,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "filterCriteria",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:filterCriteria",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1102,6 +1302,7 @@
 			"lname": "hostedAELinks",
 			"ns": "m2m",
 			"type": "listNE",
+			"ltype": "string",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1128,6 +1329,7 @@
 			"lname": "hostedServiceLinks",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "string",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1166,7 +1368,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "installStatus",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:actionStatus",
 			"car": "01",
 			"oc": "NP",
 			"ou": "NP",
@@ -1174,12 +1376,28 @@
 			"annc": "NA"
 		}
 	],
+	"ipu": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "input",
+			"ns": "m2m",
+			"type": "m2m:actionInput",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+
+
 	"ldv": [
 		{
 			"rtypes": [ "ALL" ],
 			"lname": "listOfDevices",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "anyURI",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1284,6 +1502,7 @@
 			"lname": "listOfNeighbors",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "anyURI",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1293,10 +1512,11 @@
 	],
 	"lnk": [
 		{
-			"rtypes": [ 	"ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "CINAnnc", 
-						"CNTAnnc", "CSRAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc", "FCNTAnnc",
-						"FWRAnnc", "GRPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
-						"SWRAnnc", "TSAnnc", "TSIAnnc" ],
+			"rtypes": [ "ACPAnnc", "AEAnnc", "ANDIAnnc", "ANIAnnc", "BATAnnc", "CINAnnc", 
+						"CNTAnnc", "CSEBaseAnnc", "CSRAnnc", "DVCAnnc", "DVIAnnc", "EVLAnnc",
+						"FCNTAnnc", "FWRAnnc", "GRPAnnc", "MEMAnnc", "NODAnnc", "NYCFCAnnc", "RBOAnnc",
+						"SWRAnnc", "TSAnnc", "TSIAnnc",
+						"REQRESP" ],
 			"lname": "link",
 			"ns": "m2m",
 			"type": "anyURI",
@@ -1307,12 +1527,28 @@
 			"annc": "MA"
 		}
 	],
+	// TODO Align later
+	// EXPERIMENTAL
+	"ma": [
+		{
+			"rtypes": [ "SUB", "REQRESP" ],
+			"lname": "maxAge",
+			"ns": "m2m",
+			"type": "duration",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"macp": [
 		{
 			"rtypes": [ "ALL" ],
 			"lname": "membersAccessControlPolicyIDs",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "anyURI",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1391,9 +1627,9 @@
 			"lname": "missingDataDetect",
 			"ns": "m2m",
 			"type": "boolean",
-			"car": "01",
+			"car": "1",
 			"oc": "O",
-			"ou": "NP",
+			"ou": "O",
 			"od": "O",
 			"annc": "NA"
 		}
@@ -1404,6 +1640,7 @@
 			"lname": "missingDataList",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "absRelTimestamp",
 			"car": "01",
 			"oc": "NP",
 			"ou": "NP",
@@ -1416,7 +1653,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "missingDataMaxNr",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1429,7 +1666,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "missingDataDetectTimer",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1482,6 +1719,7 @@
 			"lname": "mgmtClientAddress",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "string",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1494,7 +1732,8 @@
 			"rtypes": [ "ALL" ],
 			"lname": "mgmtDefinition",
 			"ns": "m2m",
-			"type": "nonNegInteger",
+			"type": "enum",	// m2m:mgmtDefinition
+			"evalues": [ "1001..1010", 1023 ],
 			"car": "1",
 			"oc": "M",
 			"ou": "NP",
@@ -1520,7 +1759,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "metaInformation",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:metaInformation",
 			"car": "1",
 			"oc": "M",
 			"ou": "NP",
@@ -1547,6 +1786,7 @@
 			"lname": "memberIDs",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "anyURI",
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -1598,7 +1838,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "maxNrOfMembers",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",		// non-enum
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -1637,7 +1877,8 @@
 			"rtypes": [ "ALL" ],
 			"lname": "multicastCapability",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "enum",		// m2m:multicastCapability
+			"evalues": [ 1, 2 ],
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1663,7 +1904,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "notifyAggregation",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:batchNotify",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1754,7 +1995,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "notificationStoragePriority",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1781,7 +2022,8 @@
 			"lname": "notificationURI",
 			"ns": "m2m",
 			"type": "list",
-			"car": "1",
+			"ltype": "anyURI",
+			"car": "1LN",
 			"oc": "M",
 			"ou": "O",
 			"od": "O",
@@ -1793,7 +2035,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "number",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1807,6 +2049,7 @@
 			"lname": "objectIDs",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "anyURI",
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
@@ -1820,6 +2063,7 @@
 			"lname": "objectPaths",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "anyURI",
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
@@ -1853,17 +2097,17 @@
 			"annc": "OA"
 		}
 	],
-	"ot": [
+	"orc": [
 		{
 			"rtypes": [ "ALL" ],
-			"lname": "originatingTimestamp",
+			"lname": "objectResourceID",
 			"ns": "m2m",
-			"type": "timestamp",
-			"car": "01",
-			"oc": "O",
+			"type": "anyURI",
+			"car": "1",
+			"oc": "M",
 			"ou": "O",
 			"od": "O",
-			"annc": "OA"
+			"annc": "MA"
 		}
 	],
 	"org": [
@@ -1884,7 +2128,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "operationResult",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:operationResult",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1905,17 +2149,43 @@
 			"annc": "OA"
 		}
 	],
+	"ot": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "originatingTimestamp",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"pc": [
 		{
 			"rtypes": [ "ALL" ],
 			"lname": "primitiveContent",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "adict",	// m2m:primitiveContent
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
 			"od": "O",
 			"annc": "OA"
+		}
+	],
+	"pcra": [
+		{
+			"rtypes": [ "PCH", "REQRESP" ],
+			"lname": "requestAggregation",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
 		}
 	],
 	"pei": [
@@ -1923,20 +2193,20 @@
 			"rtypes": [ "ALL" ],
 			"lname": "periodicInterval",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
-			"ou": "NP",
+			"ou": "O",
 			"od": "O",
 			"annc": "OA"
 		}
 	],
-	"peid": [	// TODO check after TS-0004 consolidation
+	"peid": [
 		{
 			"rtypes": [ "ALL" ],
 			"lname": "periodicIntervalDelta",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
@@ -1963,6 +2233,7 @@
 			"lname": "pointOfAccess",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "anyURI",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -1975,7 +2246,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "preSubscriptionNotify",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
@@ -1989,6 +2260,7 @@
 			"lname": "protocol",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "string",	// m2m:protocolList
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2014,7 +2286,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "privileges",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:setOfAcrs",
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -2027,7 +2299,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "privileges",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:setOfAcrs",
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -2079,7 +2351,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "rateLimit",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:rateLimit",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2158,6 +2430,7 @@
 			"lname": "sessionCapabilities",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "string",	// m2m:sessionCapabilities
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2243,12 +2516,28 @@
 			"annc": "OA"
 		}
 	],
+	"sri": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "subjectResourceID",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"srt": [
 		{
 			"rtypes": [ "ALL" ],
 			"lname": "supportedResourceType",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "enum",	 // m2m:resourceType
+			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 58, 60, 63, 
+						 "10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ],    
 			"car": "01",
 			"oc": "O",
 			"ou": "NP",
@@ -2262,6 +2551,7 @@
 			"lname": "supportedReleaseVersions",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "string",
 			"car": "01",
 			"oc": "M",
 			"ou": "O",
@@ -2314,6 +2604,8 @@
 			"lname": "SUIDs",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "positiveInteger",		// m2m:suid
+			"evalues": [ "10..15", "21..25", "32..35", "40..45" ],
 			"car": "1",
 			"oc": "M",
 			"ou": "O",
@@ -2456,7 +2748,7 @@
 			"rtypes": [ "ALL" ],
 			"lname": "updateStatus",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:actionStatus",
 			"car": "01",
 			"oc": "NP",
 			"ou": "O",
@@ -2540,6 +2832,7 @@
 			"lname": "contentType",
 			"ns": "m2m",
 			"type": "list",
+			"ltype": "string", // m2m:typeOfContent
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2552,7 +2845,8 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "desiredIdentifierResultType",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "enum",	// m2m:desIdResType
+			"evalues": [ 1, 2 ],
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2591,7 +2885,8 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "filterOperation",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "enum",	// m2m:filterOperation
+			"evalues": [ "1..3" ],
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2604,7 +2899,8 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "filterUsage",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "enum",	// m2m:filterUsage
+			"evalues": [ "1..4" ],
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2643,7 +2939,7 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "labelsQuery",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2669,7 +2965,7 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "offset",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2708,7 +3004,7 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "stateTagSmaller",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2734,7 +3030,7 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "sizeBelow",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "positiveInteger",	// non-enum
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2773,7 +3069,7 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "responseType",
 			"ns": "m2m",
-			"type": "dict",
+			"type": "m2m:responseTypeInfo",
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2851,7 +3147,8 @@
 			"rtypes": [ "ALL", "REQRESP" ],
 			"lname": "responseTypeValue",
 			"ns": "m2m",
-			"type": "positiveInteger",
+			"type": "enum",	// m2m:responseType
+			"evalues": [ "1..5" ],
 			"car": "01",
 			"oc": "O",
 			"ou": "O",
@@ -2872,11 +3169,7 @@
 			"annc": "NA"
 		}
 	]
-
 }
-
-
-
 
 
 

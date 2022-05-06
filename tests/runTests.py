@@ -4,6 +4,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.style import Style
 import init
+from acme.etc.Constants import Constants as C
 
 
 # TODO testTransferRequests.py
@@ -89,7 +90,7 @@ if __name__ == '__main__':
 
 	# Print Summary
 	console.print()
-	table = Table(show_header=True, header_style='bright_blue', show_footer=True, footer_style='', title='[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim] - Test Results')
+	table = Table(show_header=True, header_style='bright_blue', show_footer=True, footer_style='', title=f'{C.textLogo} - Test Results')
 	table.add_column('Test Suite', footer='Totals', no_wrap=True)
 	table.add_column('Count', footer=f'[spring_green3]{totalRunTests if totalErrors == 0 else str(totalRunTests)}[/spring_green3]', justify='right')
 	table.add_column('Skipped', footer=f'[yellow]{totalSkipped}[/yellow]' if totalSkipped > 0 else '[spring_green3]0[spring_green3]', justify='right')

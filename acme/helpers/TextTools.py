@@ -26,7 +26,7 @@ def removeCommentsFromJSON(data:str) -> str:
 		# if the 2nd group (capturing comments) is not None,
 		# it means we have captured a non-quoted (real) comment string.
 		if match.group(2):
-			return "" # so we will return empty to remove the comment
+			return '' # so we will return empty to remove the comment
 		else: # otherwise, we will return the 1st group
 			return match.group(1) # captured quoted-string
 	return commentRegex.sub(_replacer, data)
@@ -65,13 +65,13 @@ def toHex(bts:bytes, toBinary:bool=False, withLength:bool=False) -> str:
 
 def simpleMatch(st:str, pattern:str, star:str='*') -> bool:
 	"""	Simple string match function. 
-		This class supports the following expression operators:
 
+		This class supports the following expression operators:
 	
 		- '?' : any single character
-		- '*' _ zero or more characters
-		- '+' _ one or more characters
-		- '\\' - Escape an expression operator
+		- '*' : zero or more characters
+		- '+' : one or more characters
+		- '\\' : Escape an expression operator
 
 		Examples: 
 			"hello" - "h?llo" -> True
@@ -118,6 +118,10 @@ def simpleMatch(st:str, pattern:str, star:str='*') -> bool:
 		last:int		= 0
 		matched:bool	= False
 		reverse:bool	= False
+
+		if st is None or pattern is None:
+			return False
+			
 		stLen			= len(st)
 		patternLen 		= len(pattern)
 

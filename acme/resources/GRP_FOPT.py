@@ -30,11 +30,11 @@ class GRP_FOPT(Resource):
 		# None for virtual resources
 	}
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.GRP_FOPT, dct, pi, create=create, inheritACP=True, readOnly=True, rn='fopt', isVirtual=True)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.GRP_FOPT, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'fopt')
 
 
-	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:
+	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:
 		if L.isDebug: L.logDebug('Retrieving resources from fopt')
 		return CSE.group.foptRequest(Operation.RETRIEVE, self, request, id, originator)	
 

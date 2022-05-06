@@ -1,12 +1,57 @@
 // Created by SDTTool
-// oneM2M Release: 4.5.0
+// oneM2M Release: 4.9.0
 // Domain:         org.onem2m.common
 [
-    // ModuleClass: threeDPrinter (thDPr)
+    // ModuleClass: threeDDisplay (thDDy)
     {
-        "type"      : "cod:thDPr",
+        "type"      : "cod:thDDy",
+        "lname"     : "threeDDisplay",
+        "cnd"       : "org.onem2m.common.moduleclass.threeDDisplay",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: threeDDisplayType
+            { "sname" : "tDDTe", "lname" : "threeDDisplayType", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: threeDDisplayViewAngle
+            { "sname" : "tDDVA", "lname" : "threeDDisplayViewAngle", "type" : "integer", "car" : "01" }, 
+            // DataPoint: threeDDisplayResolutionX
+            { "sname" : "tDDRX", "lname" : "threeDDisplayResolutionX", "type" : "integer", "car" : "01" }, 
+            // DataPoint: threeDDisplayResolutionY
+            { "sname" : "tDDRY", "lname" : "threeDDisplayResolutionY", "type" : "integer", "car" : "01" }, 
+            // DataPoint: threeDGlasses
+            { "sname" : "thDGs", "lname" : "threeDGlasses", "type" : "boolean", "car" : "01" }
+        ]
+    },
+
+    // ModuleClass Announced: threeDDisplayAnnc (thDDyAnnc)
+    {
+        "type"      : "cod:thDDyAnnc",
+        "lname"     : "threeDDisplayAnnc",
+        "cnd"       : "org.onem2m.common.moduleclass.threeDDisplayAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: threeDDisplayType
+            { "sname" : "tDDTe", "lname" : "threeDDisplayType", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: threeDDisplayViewAngle
+            { "sname" : "tDDVA", "lname" : "threeDDisplayViewAngle", "type" : "integer", "car" : "01" }, 
+            // DataPoint: threeDDisplayResolutionX
+            { "sname" : "tDDRX", "lname" : "threeDDisplayResolutionX", "type" : "integer", "car" : "01" }, 
+            // DataPoint: threeDDisplayResolutionY
+            { "sname" : "tDDRY", "lname" : "threeDDisplayResolutionY", "type" : "integer", "car" : "01" }, 
+            // DataPoint: threeDGlasses
+            { "sname" : "thDGs", "lname" : "threeDGlasses", "type" : "boolean", "car" : "01" }
+        ]
+    }, 
+
+    // ModuleClass: threeDPrinter (thDP0)
+    {
+        "type"      : "cod:thDP0",
         "lname"     : "threeDPrinter",
         "cnd"       : "org.onem2m.common.moduleclass.threeDPrinter",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -34,6 +79,7 @@
         "type"      : "cod:staDt",
         "lname"     : "start3Dprint",
         "cnd"       : "org.onem2m.common.action.start3Dprint",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -45,17 +91,19 @@
         "type"      : "cod:stoDt",
         "lname"     : "stop3Dprint",
         "cnd"       : "org.onem2m.common.action.stop3Dprint",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
         ]
     },
 
-    // ModuleClass Announced: threeDPrinterAnnc (thDPrAnnc)
+    // ModuleClass Announced: threeDPrinterAnnc (thDP0Annc)
     {
-        "type"      : "cod:thDPrAnnc",
+        "type"      : "cod:thDP0Annc",
         "lname"     : "threeDPrinterAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.threeDPrinterAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -84,6 +132,7 @@
         "type"      : "cod:staDtAnnc",
         "lname"     : "start3DprintAnnc",
         "cnd"       : "org.onem2m.common.action.start3DprintAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -95,6 +144,7 @@
         "type"      : "cod:stoDtAnnc",
         "lname"     : "stop3DprintAnnc",
         "cnd"       : "org.onem2m.common.action.stop3DprintAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -102,11 +152,56 @@
     }
 , 
 
+    // ModuleClass: threeDScanner (thDSr)
+    {
+        "type"      : "cod:thDSr",
+        "lname"     : "threeDScanner",
+        "cnd"       : "org.onem2m.common.moduleclass.threeDScanner",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: threeDScannerType
+            { "sname" : "tDSTe", "lname" : "threeDScannerType", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: threeDScanResolution
+            { "sname" : "tDSRn", "lname" : "threeDScanResolution", "type" : "integer", "car" : "01" }, 
+            // DataPoint: maxSizeX
+            { "sname" : "maxSX", "lname" : "maxSizeX", "type" : "float", "car" : "01" }, 
+            // DataPoint: maxSizeY
+            { "sname" : "maxSY", "lname" : "maxSizeY", "type" : "float", "car" : "01" }, 
+            // DataPoint: maxSizeZ
+            { "sname" : "maxSZ", "lname" : "maxSizeZ", "type" : "float", "car" : "01" }
+        ]
+    },
+
+    // ModuleClass Announced: threeDScannerAnnc (thDSrAnnc)
+    {
+        "type"      : "cod:thDSrAnnc",
+        "lname"     : "threeDScannerAnnc",
+        "cnd"       : "org.onem2m.common.moduleclass.threeDScannerAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: threeDScannerType
+            { "sname" : "tDSTe", "lname" : "threeDScannerType", "type" : "nonNegInteger", "car" : "1" }, 
+            // DataPoint: threeDScanResolution
+            { "sname" : "tDSRn", "lname" : "threeDScanResolution", "type" : "integer", "car" : "01" }, 
+            // DataPoint: maxSizeX
+            { "sname" : "maxSX", "lname" : "maxSizeX", "type" : "float", "car" : "01" }, 
+            // DataPoint: maxSizeY
+            { "sname" : "maxSY", "lname" : "maxSizeY", "type" : "float", "car" : "01" }, 
+            // DataPoint: maxSizeZ
+            { "sname" : "maxSZ", "lname" : "maxSizeZ", "type" : "float", "car" : "01" }
+        ]
+    }, 
+
     // ModuleClass: acousticSensor (acoSr)
     {
         "type"      : "cod:acoSr",
         "lname"     : "acousticSensor",
         "cnd"       : "org.onem2m.common.moduleclass.acousticSensor",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -122,6 +217,7 @@
         "type"      : "cod:acoSrAnnc",
         "lname"     : "acousticSensorAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.acousticSensorAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -137,6 +233,7 @@
         "type"      : "cod:aCJMe",
         "lname"     : "airConJobMode",
         "cnd"       : "org.onem2m.common.moduleclass.airConJobMode",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -154,6 +251,7 @@
         "type"      : "cod:aCJMeAnnc",
         "lname"     : "airConJobModeAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.airConJobModeAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -171,6 +269,7 @@
         "type"      : "cod:airFw",
         "lname"     : "airFlow",
         "cnd"       : "org.onem2m.common.moduleclass.airFlow",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -198,6 +297,7 @@
         "type"      : "cod:airFwAnnc",
         "lname"     : "airFlowAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.airFlowAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -225,6 +325,7 @@
         "type"      : "cod:aPJMe",
         "lname"     : "airPurifierJobMode",
         "cnd"       : "org.onem2m.common.moduleclass.airPurifierJobMode",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -242,6 +343,7 @@
         "type"      : "cod:aPJMeAnnc",
         "lname"     : "airPurifierJobModeAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.airPurifierJobModeAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -259,6 +361,7 @@
         "type"      : "cod:aiQSr",
         "lname"     : "airQualitySensor",
         "cnd"       : "org.onem2m.common.moduleclass.airQualitySensor",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -308,6 +411,7 @@
         "type"      : "cod:aiQSrAnnc",
         "lname"     : "airQualitySensorAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.airQualitySensorAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -357,6 +461,7 @@
         "type"      : "cod:alaSr",
         "lname"     : "alarmSpeaker",
         "cnd"       : "org.onem2m.common.moduleclass.alarmSpeaker",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -374,6 +479,7 @@
         "type"      : "cod:alaSrAnnc",
         "lname"     : "alarmSpeakerAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.alarmSpeakerAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -391,6 +497,7 @@
         "type"      : "cod:anemr",
         "lname"     : "anemometer",
         "cnd"       : "org.onem2m.common.moduleclass.anemometer",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -404,6 +511,7 @@
         "type"      : "cod:anemrAnnc",
         "lname"     : "anemometerAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.anemometerAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -417,6 +525,7 @@
         "type"      : "cod:audVe",
         "lname"     : "audioVolume",
         "cnd"       : "org.onem2m.common.moduleclass.audioVolume",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -431,7 +540,8 @@
         ], 
         "children"  : [
             "cod:upoVe", 
-            "cod:dowVe"
+            "cod:dowVe", 
+            "cod:mute"
         ]
     },
 
@@ -440,6 +550,7 @@
         "type"      : "cod:upoVe",
         "lname"     : "upVolume",
         "cnd"       : "org.onem2m.common.action.upVolume",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -451,6 +562,19 @@
         "type"      : "cod:dowVe",
         "lname"     : "downVolume",
         "cnd"       : "org.onem2m.common.action.downVolume",
+		"sdttype"	: "action",	
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    },
+
+    // Action: audioMute
+    {
+        "type"      : "cod:audMe",
+        "lname"     : "mute",
+        "cnd"       : "org.onem2m.common.action.audioMute",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -462,6 +586,7 @@
         "type"      : "cod:audVeAnnc",
         "lname"     : "audioVolumeAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.audioVolumeAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -478,7 +603,9 @@
             "cod:upoVe",
             "cod:upoVeAnnc", 
             "cod:dowVe",
-            "cod:dowVeAnnc"
+            "cod:dowVeAnnc", 
+            "cod:mute",
+            "cod:muteAnnc"
         ]
     }, 
     // Action Announced: upVolumeAnnc
@@ -486,6 +613,7 @@
         "type"      : "cod:upoVeAnnc",
         "lname"     : "upVolumeAnnc",
         "cnd"       : "org.onem2m.common.action.upVolumeAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -497,6 +625,19 @@
         "type"      : "cod:dowVeAnnc",
         "lname"     : "downVolumeAnnc",
         "cnd"       : "org.onem2m.common.action.downVolumeAnnc",
+		"sdttype"	: "action",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }, 
+
+    // Action Announced: audioMuteAnnc
+    {
+        "type"      : "cod:audMeAnnc",
+        "lname"     : "audioMuteAnnc",
+        "cnd"       : "org.onem2m.common.action.audioMuteAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -509,6 +650,7 @@
         "type"      : "cod:auDFr",
         "lname"     : "autoDocumentFeeder",
         "cnd"       : "org.onem2m.common.moduleclass.autoDocumentFeeder",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -524,6 +666,7 @@
         "type"      : "cod:auDFrAnnc",
         "lname"     : "autoDocumentFeederAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.autoDocumentFeederAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -539,6 +682,7 @@
         "type"      : "cod:baror",
         "lname"     : "barometer",
         "cnd"       : "org.onem2m.common.moduleclass.barometer",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -548,8 +692,8 @@
             { "sname" : "atmPe", "lname" : "atmosphericPressure", "type" : "float", "car" : "1" }, 
             // DataPoint: minPressureThreshold
             { "sname" : "miPTd", "lname" : "minPressureThreshold", "type" : "integer", "car" : "01" }, 
-            // DataPoint: minPressureThreshold
-            { "sname" : "miPTd", "lname" : "minPressureThreshold", "type" : "integer", "car" : "01" }
+            // DataPoint: maxPressureThreshold
+            { "sname" : "maPTd", "lname" : "maxPressureThreshold", "type" : "integer", "car" : "01" }
         ]
     },
 
@@ -558,6 +702,7 @@
         "type"      : "cod:barorAnnc",
         "lname"     : "barometerAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.barometerAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -567,8 +712,8 @@
             { "sname" : "atmPe", "lname" : "atmosphericPressure", "type" : "float", "car" : "1" }, 
             // DataPoint: minPressureThreshold
             { "sname" : "miPTd", "lname" : "minPressureThreshold", "type" : "integer", "car" : "01" }, 
-            // DataPoint: minPressureThreshold
-            { "sname" : "miPTd", "lname" : "minPressureThreshold", "type" : "integer", "car" : "01" }
+            // DataPoint: maxPressureThreshold
+            { "sname" : "maPTd", "lname" : "maxPressureThreshold", "type" : "integer", "car" : "01" }
         ]
     }, 
 
@@ -577,6 +722,7 @@
         "type"      : "cod:bat",
         "lname"     : "battery",
         "cnd"       : "org.onem2m.common.moduleclass.battery",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -584,6 +730,8 @@
             { "sname" : "lvl", "lname" : "level", "type" : "integer", "car" : "1" }, 
             // DataPoint: capacity
             { "sname" : "capay", "lname" : "capacity", "type" : "integer", "car" : "01" }, 
+            // DataPoint: rechargeable
+            { "sname" : "reche", "lname" : "rechargeable", "type" : "boolean", "car" : "01" }, 
             // DataPoint: charging
             { "sname" : "charg", "lname" : "charging", "type" : "boolean", "car" : "01" }, 
             // DataPoint: discharging
@@ -592,12 +740,18 @@
             { "sname" : "lowBy", "lname" : "lowBattery", "type" : "boolean", "car" : "01" }, 
             // DataPoint: batteryThreshold
             { "sname" : "batTd", "lname" : "batteryThreshold", "type" : "integer", "car" : "01" }, 
-            // DataPoint: electricEnergy
-            { "sname" : "eleEy", "lname" : "electricEnergy", "type" : "integer", "car" : "01" }, 
-            // DataPoint: voltage
-            { "sname" : "volte", "lname" : "voltage", "type" : "integer", "car" : "01" }, 
-            // DataPoint: material
-            { "sname" : "matel", "lname" : "material", "type" : "string", "car" : "01" }
+            // DataPoint: chargingVoltage
+            { "sname" : "chaVe", "lname" : "chargingVoltage", "type" : "float", "car" : "01" }, 
+            // DataPoint: chargingAmpere
+            { "sname" : "chaAe", "lname" : "chargingAmpere", "type" : "float", "car" : "01" }, 
+            // DataPoint: dischargingVoltage
+            { "sname" : "disVe", "lname" : "dischargingVoltage", "type" : "float", "car" : "01" }, 
+            // DataPoint: dischargingAmpere
+            { "sname" : "disAe", "lname" : "dischargingAmpere", "type" : "float", "car" : "01" }, 
+            // DataPoint: batteryMaterial
+            { "sname" : "batMl", "lname" : "batteryMaterial", "type" : "nonNegInteger", "car" : "01" }, 
+            // DataPoint: batteryShape
+            { "sname" : "batSe", "lname" : "batteryShape", "type" : "nonNegInteger", "car" : "01" }
         ]
     },
 
@@ -606,6 +760,7 @@
         "type"      : "cod:batAnnc",
         "lname"     : "batteryAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.batteryAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -613,6 +768,8 @@
             { "sname" : "lvl", "lname" : "level", "type" : "integer", "car" : "1" }, 
             // DataPoint: capacity
             { "sname" : "capay", "lname" : "capacity", "type" : "integer", "car" : "01" }, 
+            // DataPoint: rechargeable
+            { "sname" : "reche", "lname" : "rechargeable", "type" : "boolean", "car" : "01" }, 
             // DataPoint: charging
             { "sname" : "charg", "lname" : "charging", "type" : "boolean", "car" : "01" }, 
             // DataPoint: discharging
@@ -621,12 +778,98 @@
             { "sname" : "lowBy", "lname" : "lowBattery", "type" : "boolean", "car" : "01" }, 
             // DataPoint: batteryThreshold
             { "sname" : "batTd", "lname" : "batteryThreshold", "type" : "integer", "car" : "01" }, 
-            // DataPoint: electricEnergy
-            { "sname" : "eleEy", "lname" : "electricEnergy", "type" : "integer", "car" : "01" }, 
-            // DataPoint: voltage
-            { "sname" : "volte", "lname" : "voltage", "type" : "integer", "car" : "01" }, 
-            // DataPoint: material
-            { "sname" : "matel", "lname" : "material", "type" : "string", "car" : "01" }
+            // DataPoint: chargingVoltage
+            { "sname" : "chaVe", "lname" : "chargingVoltage", "type" : "float", "car" : "01" }, 
+            // DataPoint: chargingAmpere
+            { "sname" : "chaAe", "lname" : "chargingAmpere", "type" : "float", "car" : "01" }, 
+            // DataPoint: dischargingVoltage
+            { "sname" : "disVe", "lname" : "dischargingVoltage", "type" : "float", "car" : "01" }, 
+            // DataPoint: dischargingAmpere
+            { "sname" : "disAe", "lname" : "dischargingAmpere", "type" : "float", "car" : "01" }, 
+            // DataPoint: batteryMaterial
+            { "sname" : "batMl", "lname" : "batteryMaterial", "type" : "nonNegInteger", "car" : "01" }, 
+            // DataPoint: batteryShape
+            { "sname" : "batSe", "lname" : "batteryShape", "type" : "nonNegInteger", "car" : "01" }
+        ]
+    }, 
+
+    // ModuleClass: billDeposit (bilDt)
+    {
+        "type"      : "cod:bilDt",
+        "lname"     : "billDeposit",
+        "cnd"       : "org.onem2m.common.moduleclass.billDeposit",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: depositStatus
+            { "sname" : "depSs", "lname" : "depositStatus", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: balance
+            { "sname" : "balae", "lname" : "balance", "type" : "float", "car" : "1" }, 
+            // DataPoint: count
+            { "sname" : "count", "lname" : "count", "type" : "integer", "car" : "1" }, 
+            // DataPoint: currency
+            { "sname" : "curry", "lname" : "currency", "type" : "string", "car" : "01" }, 
+            // DataPoint: fakeStatus
+            { "sname" : "fakSs", "lname" : "fakeStatus", "type" : "boolean", "car" : "1" }
+        ]
+    },
+
+    // ModuleClass Announced: billDepositAnnc (bilDtAnnc)
+    {
+        "type"      : "cod:bilDtAnnc",
+        "lname"     : "billDepositAnnc",
+        "cnd"       : "org.onem2m.common.moduleclass.billDepositAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: depositStatus
+            { "sname" : "depSs", "lname" : "depositStatus", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: balance
+            { "sname" : "balae", "lname" : "balance", "type" : "float", "car" : "1" }, 
+            // DataPoint: count
+            { "sname" : "count", "lname" : "count", "type" : "integer", "car" : "1" }, 
+            // DataPoint: currency
+            { "sname" : "curry", "lname" : "currency", "type" : "string", "car" : "01" }, 
+            // DataPoint: fakeStatus
+            { "sname" : "fakSs", "lname" : "fakeStatus", "type" : "boolean", "car" : "1" }
+        ]
+    }, 
+
+    // ModuleClass: billWithdrawal (bilWl)
+    {
+        "type"      : "cod:bilWl",
+        "lname"     : "billWithdrawal",
+        "cnd"       : "org.onem2m.common.moduleclass.billWithdrawal",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: withdrawalStatus
+            { "sname" : "witSs", "lname" : "withdrawalStatus", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: balance
+            { "sname" : "balae", "lname" : "balance", "type" : "float", "car" : "1" }, 
+            // DataPoint: count
+            { "sname" : "count", "lname" : "count", "type" : "integer", "car" : "1" }
+        ]
+    },
+
+    // ModuleClass Announced: billWithdrawalAnnc (bilWlAnnc)
+    {
+        "type"      : "cod:bilWlAnnc",
+        "lname"     : "billWithdrawalAnnc",
+        "cnd"       : "org.onem2m.common.moduleclass.billWithdrawalAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: withdrawalStatus
+            { "sname" : "witSs", "lname" : "withdrawalStatus", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: balance
+            { "sname" : "balae", "lname" : "balance", "type" : "float", "car" : "1" }, 
+            // DataPoint: count
+            { "sname" : "count", "lname" : "count", "type" : "integer", "car" : "1" }
         ]
     }, 
 
@@ -635,6 +878,7 @@
         "type"      : "cod:binOt",
         "lname"     : "binaryObject",
         "cnd"       : "org.onem2m.common.moduleclass.binaryObject",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -654,6 +898,7 @@
         "type"      : "cod:binOtAnnc",
         "lname"     : "binaryObjectAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.binaryObjectAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -673,6 +918,7 @@
         "type"      : "cod:binSh",
         "lname"     : "binarySwitch",
         "cnd"       : "org.onem2m.common.moduleclass.binarySwitch",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -689,6 +935,7 @@
         "type"      : "cod:togge",
         "lname"     : "toggle",
         "cnd"       : "org.onem2m.common.action.toggle",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -700,6 +947,7 @@
         "type"      : "cod:binShAnnc",
         "lname"     : "binarySwitchAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.binarySwitchAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -716,6 +964,7 @@
         "type"      : "cod:toggeAnnc",
         "lname"     : "toggleAnnc",
         "cnd"       : "org.onem2m.common.action.toggleAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -728,6 +977,7 @@
         "type"      : "cod:bEIAs",
         "lname"     : "bioElectricalImpedanceAnalysis",
         "cnd"       : "org.onem2m.common.moduleclass.bioElectricalImpedanceAnalysis",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -753,6 +1003,7 @@
         "type"      : "cod:bEIAsAnnc",
         "lname"     : "bioElectricalImpedanceAnalysisAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.bioElectricalImpedanceAnalysisAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -778,6 +1029,7 @@
         "type"      : "cod:boCAr",
         "lname"     : "bodyCompositionAnalyser",
         "cnd"       : "org.onem2m.common.moduleclass.bodyCompositionAnalyser",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -811,6 +1063,7 @@
         "type"      : "cod:boCArAnnc",
         "lname"     : "bodyCompositionAnalyserAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.bodyCompositionAnalyserAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -844,6 +1097,7 @@
         "type"      : "cod:boilr",
         "lname"     : "boiler",
         "cnd"       : "org.onem2m.common.moduleclass.boiler",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -857,6 +1111,7 @@
         "type"      : "cod:boilrAnnc",
         "lname"     : "boilerAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.boilerAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -870,6 +1125,7 @@
         "type"      : "cod:brewg",
         "lname"     : "brewing",
         "cnd"       : "org.onem2m.common.moduleclass.brewing",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -885,6 +1141,7 @@
         "type"      : "cod:brewgAnnc",
         "lname"     : "brewingAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.brewingAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -900,6 +1157,7 @@
         "type"      : "cod:brigs",
         "lname"     : "brightness",
         "cnd"       : "org.onem2m.common.moduleclass.brightness",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -913,6 +1171,7 @@
         "type"      : "cod:brigsAnnc",
         "lname"     : "brightnessAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.brightnessAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -921,11 +1180,84 @@
         ]
     }, 
 
+    // ModuleClass: cardScanner (carSr)
+    {
+        "type"      : "cod:carSr",
+        "lname"     : "cardScanner",
+        "cnd"       : "org.onem2m.common.moduleclass.cardScanner",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: scanStatus
+            { "sname" : "scaSs", "lname" : "scanStatus", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: cardInfo
+            { "sname" : "carIo", "lname" : "cardInfo", "type" : "integer", "car" : "1" }
+        ]
+    },
+
+    // ModuleClass Announced: cardScannerAnnc (carSrAnnc)
+    {
+        "type"      : "cod:carSrAnnc",
+        "lname"     : "cardScannerAnnc",
+        "cnd"       : "org.onem2m.common.moduleclass.cardScannerAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: scanStatus
+            { "sname" : "scaSs", "lname" : "scanStatus", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: cardInfo
+            { "sname" : "carIo", "lname" : "cardInfo", "type" : "integer", "car" : "1" }
+        ]
+    }, 
+
+    // ModuleClass: cashDispenser (casDr)
+    {
+        "type"      : "cod:casDr",
+        "lname"     : "cashDispenser",
+        "cnd"       : "org.onem2m.common.moduleclass.cashDispenser",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: dispenseStatus
+            { "sname" : "disSs", "lname" : "dispenseStatus", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: balance
+            { "sname" : "balae", "lname" : "balance", "type" : "float", "car" : "1" }, 
+            // DataPoint: count
+            { "sname" : "count", "lname" : "count", "type" : "integer", "car" : "1" }, 
+            // DataPoint: currency
+            { "sname" : "curry", "lname" : "currency", "type" : "string", "car" : "01" }
+        ]
+    },
+
+    // ModuleClass Announced: cashDispenserAnnc (casDrAnnc)
+    {
+        "type"      : "cod:casDrAnnc",
+        "lname"     : "cashDispenserAnnc",
+        "cnd"       : "org.onem2m.common.moduleclass.cashDispenserAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: dispenseStatus
+            { "sname" : "disSs", "lname" : "dispenseStatus", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: balance
+            { "sname" : "balae", "lname" : "balance", "type" : "float", "car" : "1" }, 
+            // DataPoint: count
+            { "sname" : "count", "lname" : "count", "type" : "integer", "car" : "1" }, 
+            // DataPoint: currency
+            { "sname" : "curry", "lname" : "currency", "type" : "string", "car" : "01" }
+        ]
+    }, 
+
     // ModuleClass: clock (clock)
     {
         "type"      : "cod:clock",
         "lname"     : "clock",
         "cnd"       : "org.onem2m.common.moduleclass.clock",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -943,6 +1275,7 @@
         "type"      : "cod:clockAnnc",
         "lname"     : "clockAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.clockAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -960,6 +1293,7 @@
         "type"      : "cod:cDJMe",
         "lname"     : "clothesDryerJobMode",
         "cnd"       : "org.onem2m.common.moduleclass.clothesDryerJobMode",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -977,6 +1311,7 @@
         "type"      : "cod:cDJMeAnnc",
         "lname"     : "clothesDryerJobModeAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.clothesDryerJobModeAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -994,6 +1329,7 @@
         "type"      : "cod:cWDJM",
         "lname"     : "clothesWasherDryerJobMode",
         "cnd"       : "org.onem2m.common.moduleclass.clothesWasherDryerJobMode",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1011,6 +1347,7 @@
         "type"      : "cod:cWDJMAnnc",
         "lname"     : "clothesWasherDryerJobModeAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.clothesWasherDryerJobModeAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1028,6 +1365,7 @@
         "type"      : "cod:cWJMe",
         "lname"     : "clothesWasherJobMode",
         "cnd"       : "org.onem2m.common.moduleclass.clothesWasherJobMode",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1045,6 +1383,7 @@
         "type"      : "cod:cWJMeAnnc",
         "lname"     : "clothesWasherJobModeAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.clothesWasherJobModeAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1062,6 +1401,7 @@
         "type"      : "cod:cWJMO",
         "lname"     : "clothesWasherJobModeOption",
         "cnd"       : "org.onem2m.common.moduleclass.clothesWasherJobModeOption",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1089,6 +1429,7 @@
         "type"      : "cod:cWJMOAnnc",
         "lname"     : "clothesWasherJobModeOptionAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.clothesWasherJobModeOptionAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1111,11 +1452,56 @@
         ]
     }, 
 
+    // ModuleClass: coinDeposit (coiDt)
+    {
+        "type"      : "cod:coiDt",
+        "lname"     : "coinDeposit",
+        "cnd"       : "org.onem2m.common.moduleclass.coinDeposit",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: depositStatus
+            { "sname" : "depSs", "lname" : "depositStatus", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: balance
+            { "sname" : "balae", "lname" : "balance", "type" : "float", "car" : "1" }, 
+            // DataPoint: count
+            { "sname" : "count", "lname" : "count", "type" : "integer", "car" : "1" }, 
+            // DataPoint: currency
+            { "sname" : "curry", "lname" : "currency", "type" : "string", "car" : "01" }, 
+            // DataPoint: fakeStatus
+            { "sname" : "fakSs", "lname" : "fakeStatus", "type" : "boolean", "car" : "1" }
+        ]
+    },
+
+    // ModuleClass Announced: coinDepositAnnc (coiDtAnnc)
+    {
+        "type"      : "cod:coiDtAnnc",
+        "lname"     : "coinDepositAnnc",
+        "cnd"       : "org.onem2m.common.moduleclass.coinDepositAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: depositStatus
+            { "sname" : "depSs", "lname" : "depositStatus", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: balance
+            { "sname" : "balae", "lname" : "balance", "type" : "float", "car" : "1" }, 
+            // DataPoint: count
+            { "sname" : "count", "lname" : "count", "type" : "integer", "car" : "1" }, 
+            // DataPoint: currency
+            { "sname" : "curry", "lname" : "currency", "type" : "string", "car" : "01" }, 
+            // DataPoint: fakeStatus
+            { "sname" : "fakSs", "lname" : "fakeStatus", "type" : "boolean", "car" : "1" }
+        ]
+    }, 
+
     // ModuleClass: colour (color)
     {
         "type"      : "cod:color",
         "lname"     : "colour",
         "cnd"       : "org.onem2m.common.moduleclass.colour",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1133,6 +1519,7 @@
         "type"      : "cod:colorAnnc",
         "lname"     : "colourAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.colourAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1150,6 +1537,7 @@
         "type"      : "cod:colSn",
         "lname"     : "colourSaturation",
         "cnd"       : "org.onem2m.common.moduleclass.colourSaturation",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1163,6 +1551,7 @@
         "type"      : "cod:colSnAnnc",
         "lname"     : "colourSaturationAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.colourSaturationAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1176,6 +1565,7 @@
         "type"      : "cod:conny",
         "lname"     : "connectivity",
         "cnd"       : "org.onem2m.common.moduleclass.connectivity",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1215,6 +1605,7 @@
         "type"      : "cod:connyAnnc",
         "lname"     : "connectivityAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.connectivityAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1254,6 +1645,7 @@
         "type"      : "cod:cHJMe",
         "lname"     : "cookerHoodJobMode",
         "cnd"       : "org.onem2m.common.moduleclass.cookerHoodJobMode",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1271,6 +1663,7 @@
         "type"      : "cod:cHJMeAnnc",
         "lname"     : "cookerHoodJobModeAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.cookerHoodJobModeAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1288,6 +1681,7 @@
         "type"      : "cod:creds",
         "lname"     : "credentials",
         "cnd"       : "org.onem2m.common.moduleclass.credentials",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1305,6 +1699,7 @@
         "type"      : "cod:credsAnnc",
         "lname"     : "credentialsAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.credentialsAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1317,11 +1712,48 @@
         ]
     }, 
 
+    // ModuleClass: crossingBarrier (croBr)
+    {
+        "type"      : "cod:croBr",
+        "lname"     : "crossingBarrier",
+        "cnd"       : "org.onem2m.common.moduleclass.crossingBarrier",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: barrierDefault
+            { "sname" : "barDt", "lname" : "barrierDefault", "type" : "boolean", "car" : "01" }, 
+            // DataPoint: barrierStatus
+            { "sname" : "barSs", "lname" : "barrierStatus", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: timer
+            { "sname" : "timer", "lname" : "timer", "type" : "time", "car" : "01" }
+        ]
+    },
+
+    // ModuleClass Announced: crossingBarrierAnnc (croBrAnnc)
+    {
+        "type"      : "cod:croBrAnnc",
+        "lname"     : "crossingBarrierAnnc",
+        "cnd"       : "org.onem2m.common.moduleclass.crossingBarrierAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: barrierDefault
+            { "sname" : "barDt", "lname" : "barrierDefault", "type" : "boolean", "car" : "01" }, 
+            // DataPoint: barrierStatus
+            { "sname" : "barSs", "lname" : "barrierStatus", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: timer
+            { "sname" : "timer", "lname" : "timer", "type" : "time", "car" : "01" }
+        ]
+    }, 
+
     // ModuleClass: dehumidifierJobMode (deJMe)
     {
         "type"      : "cod:deJMe",
         "lname"     : "dehumidifierJobMode",
         "cnd"       : "org.onem2m.common.moduleclass.dehumidifierJobMode",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1339,6 +1771,7 @@
         "type"      : "cod:deJMeAnnc",
         "lname"     : "dehumidifierJobModeAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.dehumidifierJobModeAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1351,11 +1784,40 @@
         ]
     }, 
 
+    // ModuleClass: directionPanel (dirPl)
+    {
+        "type"      : "cod:dirPl",
+        "lname"     : "directionPanel",
+        "cnd"       : "org.onem2m.common.moduleclass.directionPanel",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: direction
+            { "sname" : "diren", "lname" : "direction", "type" : "boolean", "car" : "1" }
+        ]
+    },
+
+    // ModuleClass Announced: directionPanelAnnc (dirPlAnnc)
+    {
+        "type"      : "cod:dirPlAnnc",
+        "lname"     : "directionPanelAnnc",
+        "cnd"       : "org.onem2m.common.moduleclass.directionPanelAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: direction
+            { "sname" : "diren", "lname" : "direction", "type" : "boolean", "car" : "1" }
+        ]
+    }, 
+
     // ModuleClass: dishWasherJobMode (dWJMe)
     {
         "type"      : "cod:dWJMe",
         "lname"     : "dishWasherJobMode",
         "cnd"       : "org.onem2m.common.moduleclass.dishWasherJobMode",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1373,6 +1835,7 @@
         "type"      : "cod:dWJMeAnnc",
         "lname"     : "dishWasherJobModeAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.dishWasherJobModeAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1390,11 +1853,12 @@
         "type"      : "cod:displ",
         "lname"     : "disposal",
         "cnd"       : "org.onem2m.common.moduleclass.disposal",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: disposalStatus
-            { "sname" : "disSs", "lname" : "disposalStatus", "type" : "boolean", "car" : "1" }
+            { "sname" : "disS0", "lname" : "disposalStatus", "type" : "boolean", "car" : "1" }
         ]
     },
 
@@ -1403,11 +1867,12 @@
         "type"      : "cod:displAnnc",
         "lname"     : "disposalAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.disposalAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: disposalStatus
-            { "sname" : "disSs", "lname" : "disposalStatus", "type" : "boolean", "car" : "1" }
+            { "sname" : "disS0", "lname" : "disposalStatus", "type" : "boolean", "car" : "1" }
         ]
     }, 
 
@@ -1416,6 +1881,7 @@
         "type"      : "cod:dooSs",
         "lname"     : "doorStatus",
         "cnd"       : "org.onem2m.common.moduleclass.doorStatus",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1433,6 +1899,7 @@
         "type"      : "cod:dooSsAnnc",
         "lname"     : "doorStatusAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.doorStatusAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1450,6 +1917,7 @@
         "type"      : "cod:elVCr",
         "lname"     : "electricVehicleConnector",
         "cnd"       : "org.onem2m.common.moduleclass.electricVehicleConnector",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1467,6 +1935,7 @@
         "type"      : "cod:elVCrAnnc",
         "lname"     : "electricVehicleConnectorAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.electricVehicleConnectorAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1484,6 +1953,7 @@
         "type"      : "cod:eneCn",
         "lname"     : "energyConsumption",
         "cnd"       : "org.onem2m.common.moduleclass.energyConsumption",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1513,6 +1983,7 @@
         "type"      : "cod:eneCnAnnc",
         "lname"     : "energyConsumptionAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.energyConsumptionAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1542,6 +2013,7 @@
         "type"      : "cod:eneGn",
         "lname"     : "energyGeneration",
         "cnd"       : "org.onem2m.common.moduleclass.energyGeneration",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1563,6 +2035,7 @@
         "type"      : "cod:eneGnAnnc",
         "lname"     : "energyGenerationAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.energyGenerationAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1584,6 +2057,7 @@
         "type"      : "cod:fauDn",
         "lname"     : "faultDetection",
         "cnd"       : "org.onem2m.common.moduleclass.faultDetection",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1601,6 +2075,7 @@
         "type"      : "cod:fauDnAnnc",
         "lname"     : "faultDetectionAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.faultDetectionAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1618,6 +2093,7 @@
         "type"      : "cod:filIo",
         "lname"     : "filterInfo",
         "cnd"       : "org.onem2m.common.moduleclass.filterInfo",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1635,6 +2111,7 @@
         "type"      : "cod:filIoAnnc",
         "lname"     : "filterInfoAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.filterInfoAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1652,6 +2129,7 @@
         "type"      : "cod:foamg",
         "lname"     : "foaming",
         "cnd"       : "org.onem2m.common.moduleclass.foaming",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1665,6 +2143,7 @@
         "type"      : "cod:foamgAnnc",
         "lname"     : "foamingAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.foamingAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1678,6 +2157,7 @@
         "type"      : "cod:galMe",
         "lname"     : "galleryMode",
         "cnd"       : "org.onem2m.common.moduleclass.galleryMode",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1695,6 +2175,7 @@
         "type"      : "cod:galMeAnnc",
         "lname"     : "galleryModeAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.galleryModeAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1712,6 +2193,7 @@
         "type"      : "cod:gaCCl",
         "lname"     : "gasChargingControl",
         "cnd"       : "org.onem2m.common.moduleclass.gasChargingControl",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1733,6 +2215,7 @@
         "type"      : "cod:gaCClAnnc",
         "lname"     : "gasChargingControlAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.gasChargingControlAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1754,6 +2237,7 @@
         "type"      : "cod:gaMAm",
         "lname"     : "gasMeterAlarm",
         "cnd"       : "org.onem2m.common.moduleclass.gasMeterAlarm",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1779,6 +2263,7 @@
         "type"      : "cod:gaMAmAnnc",
         "lname"     : "gasMeterAlarmAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.gasMeterAlarmAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1804,6 +2289,7 @@
         "type"      : "cod:gMRIo",
         "lname"     : "gasMeterReportInfo",
         "cnd"       : "org.onem2m.common.moduleclass.gasMeterReportInfo",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1819,6 +2305,7 @@
         "type"      : "cod:gMRIoAnnc",
         "lname"     : "gasMeterReportInfoAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.gasMeterReportInfoAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1834,6 +2321,7 @@
         "type"      : "cod:geoLn",
         "lname"     : "geoLocation",
         "cnd"       : "org.onem2m.common.moduleclass.geoLocation",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1865,6 +2353,7 @@
         "type"      : "cod:geoLnAnnc",
         "lname"     : "geoLocationAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.geoLocationAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1896,6 +2385,7 @@
         "type"      : "cod:glucr",
         "lname"     : "glucometer",
         "cnd"       : "org.onem2m.common.moduleclass.glucometer",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1927,6 +2417,7 @@
         "type"      : "cod:glucrAnnc",
         "lname"     : "glucometerAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.glucometerAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1958,6 +2449,7 @@
         "type"      : "cod:grinr",
         "lname"     : "grinder",
         "cnd"       : "org.onem2m.common.moduleclass.grinder",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1975,6 +2467,7 @@
         "type"      : "cod:grinrAnnc",
         "lname"     : "grinderAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.grinderAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -1992,6 +2485,7 @@
         "type"      : "cod:heaZe",
         "lname"     : "heatingZone",
         "cnd"       : "org.onem2m.common.moduleclass.heatingZone",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2007,6 +2501,7 @@
         "type"      : "cod:heaZeAnnc",
         "lname"     : "heatingZoneAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.heatingZoneAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2022,6 +2517,7 @@
         "type"      : "cod:heigt",
         "lname"     : "height",
         "cnd"       : "org.onem2m.common.moduleclass.height",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2035,6 +2531,7 @@
         "type"      : "cod:heigtAnnc",
         "lname"     : "heightAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.heightAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2048,6 +2545,7 @@
         "type"      : "cod:hoWSy",
         "lname"     : "hotWaterSupply",
         "cnd"       : "org.onem2m.common.moduleclass.hotWaterSupply",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2061,6 +2559,7 @@
         "type"      : "cod:hoWSyAnnc",
         "lname"     : "hotWaterSupplyAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.hotWaterSupplyAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2074,6 +2573,7 @@
         "type"      : "cod:impSr",
         "lname"     : "impactSensor",
         "cnd"       : "org.onem2m.common.moduleclass.impactSensor",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2093,6 +2593,7 @@
         "type"      : "cod:impSrAnnc",
         "lname"     : "impactSensorAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.impactSensorAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2112,6 +2613,7 @@
         "type"      : "cod:infSr",
         "lname"     : "infraredSensor",
         "cnd"       : "org.onem2m.common.moduleclass.infraredSensor",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2127,6 +2629,7 @@
         "type"      : "cod:infSrAnnc",
         "lname"     : "infraredSensorAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.infraredSensorAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2142,6 +2645,7 @@
         "type"      : "cod:keeWm",
         "lname"     : "keepWarm",
         "cnd"       : "org.onem2m.common.moduleclass.keepWarm",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2157,6 +2661,7 @@
         "type"      : "cod:keeWmAnnc",
         "lname"     : "keepWarmAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.keepWarmAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2172,6 +2677,7 @@
         "type"      : "cod:keypd",
         "lname"     : "keypad",
         "cnd"       : "org.onem2m.common.moduleclass.keypad",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2185,6 +2691,7 @@
         "type"      : "cod:keypdAnnc",
         "lname"     : "keypadAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.keypadAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2198,6 +2705,7 @@
         "type"      : "cod:liqLl",
         "lname"     : "liquidLevel",
         "cnd"       : "org.onem2m.common.moduleclass.liquidLevel",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2211,6 +2719,7 @@
         "type"      : "cod:liqLlAnnc",
         "lname"     : "liquidLevelAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.liquidLevelAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2224,6 +2733,7 @@
         "type"      : "cod:liqRg",
         "lname"     : "liquidRemaining",
         "cnd"       : "org.onem2m.common.moduleclass.liquidRemaining",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2237,6 +2747,7 @@
         "type"      : "cod:liqRgAnnc",
         "lname"     : "liquidRemainingAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.liquidRemainingAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2250,6 +2761,7 @@
         "type"      : "cod:lock",
         "lname"     : "lock",
         "cnd"       : "org.onem2m.common.moduleclass.lock",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2263,6 +2775,7 @@
         "type"      : "cod:lockAnnc",
         "lname"     : "lockAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.lockAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2276,6 +2789,7 @@
         "type"      : "cod:maSPs",
         "lname"     : "magneticSensorParameters",
         "cnd"       : "org.onem2m.common.moduleclass.magneticSensorParameters",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2295,6 +2809,7 @@
         "type"      : "cod:maSPsAnnc",
         "lname"     : "magneticSensorParametersAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.magneticSensorParametersAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2314,6 +2829,7 @@
         "type"      : "cod:medSt",
         "lname"     : "mediaSelect",
         "cnd"       : "org.onem2m.common.moduleclass.mediaSelect",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2335,6 +2851,7 @@
         "type"      : "cod:medStAnnc",
         "lname"     : "mediaSelectAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.mediaSelectAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2356,6 +2873,7 @@
         "type"      : "cod:motSr",
         "lname"     : "motionSensor",
         "cnd"       : "org.onem2m.common.moduleclass.motionSensor",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2373,6 +2891,7 @@
         "type"      : "cod:motSrAnnc",
         "lname"     : "motionSensorAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.motionSensorAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2390,6 +2909,7 @@
         "type"      : "cod:numVe",
         "lname"     : "numberValue",
         "cnd"       : "org.onem2m.common.moduleclass.numberValue",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2416,6 +2936,7 @@
         "type"      : "cod:deNVe",
         "lname"     : "decrementNumberValue",
         "cnd"       : "org.onem2m.common.action.decrementNumberValue",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2427,6 +2948,7 @@
         "type"      : "cod:inNVe",
         "lname"     : "incrementNumberValue",
         "cnd"       : "org.onem2m.common.action.incrementNumberValue",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2438,6 +2960,7 @@
         "type"      : "cod:reNVe",
         "lname"     : "resetNumberValue",
         "cnd"       : "org.onem2m.common.action.resetNumberValue",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2449,6 +2972,7 @@
         "type"      : "cod:numVeAnnc",
         "lname"     : "numberValueAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.numberValueAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2477,6 +3001,7 @@
         "type"      : "cod:deNVeAnnc",
         "lname"     : "decrementNumberValueAnnc",
         "cnd"       : "org.onem2m.common.action.decrementNumberValueAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2488,6 +3013,7 @@
         "type"      : "cod:inNVeAnnc",
         "lname"     : "incrementNumberValueAnnc",
         "cnd"       : "org.onem2m.common.action.incrementNumberValueAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2499,6 +3025,7 @@
         "type"      : "cod:reNVeAnnc",
         "lname"     : "resetNumberValueAnnc",
         "cnd"       : "org.onem2m.common.action.resetNumberValueAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2511,6 +3038,7 @@
         "type"      : "cod:opeLl",
         "lname"     : "openLevel",
         "cnd"       : "org.onem2m.common.moduleclass.openLevel",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2534,6 +3062,7 @@
         "type"      : "cod:open",
         "lname"     : "open",
         "cnd"       : "org.onem2m.common.action.open",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2545,6 +3074,7 @@
         "type"      : "cod:close",
         "lname"     : "close",
         "cnd"       : "org.onem2m.common.action.close",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2556,6 +3086,7 @@
         "type"      : "cod:opeLlAnnc",
         "lname"     : "openLevelAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.openLevelAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2580,6 +3111,7 @@
         "type"      : "cod:openAnnc",
         "lname"     : "openAnnc",
         "cnd"       : "org.onem2m.common.action.openAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2591,6 +3123,7 @@
         "type"      : "cod:closeAnnc",
         "lname"     : "closeAnnc",
         "cnd"       : "org.onem2m.common.action.closeAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2603,6 +3136,7 @@
         "type"      : "cod:opeMe",
         "lname"     : "operationMode",
         "cnd"       : "org.onem2m.common.moduleclass.operationMode",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2616,6 +3150,7 @@
         "type"      : "cod:opeMeAnnc",
         "lname"     : "operationModeAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.operationModeAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2629,6 +3164,7 @@
         "type"      : "cod:oveSr",
         "lname"     : "overcurrentSensor",
         "cnd"       : "org.onem2m.common.moduleclass.overcurrentSensor",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2646,6 +3182,7 @@
         "type"      : "cod:oveSrAnnc",
         "lname"     : "overcurrentSensorAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.overcurrentSensorAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2663,6 +3200,7 @@
         "type"      : "cod:oximr",
         "lname"     : "oximeter",
         "cnd"       : "org.onem2m.common.moduleclass.oximeter",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2676,6 +3214,7 @@
         "type"      : "cod:oximrAnnc",
         "lname"     : "oximeterAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.oximeterAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2689,6 +3228,7 @@
         "type"      : "cod:ozoMr",
         "lname"     : "ozoneMeter",
         "cnd"       : "org.onem2m.common.moduleclass.ozoneMeter",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2708,6 +3248,7 @@
         "type"      : "cod:ozoMrAnnc",
         "lname"     : "ozoneMeterAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.ozoneMeterAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2727,6 +3268,7 @@
         "type"      : "cod:parSs",
         "lname"     : "parkingStatus",
         "cnd"       : "org.onem2m.common.moduleclass.parkingStatus",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2740,6 +3282,7 @@
         "type"      : "cod:parSsAnnc",
         "lname"     : "parkingStatusAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.parkingStatusAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2753,6 +3296,7 @@
         "type"      : "cod:peRCg",
         "lname"     : "periodicalReportConfig",
         "cnd"       : "org.onem2m.common.moduleclass.periodicalReportConfig",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2772,6 +3316,7 @@
         "type"      : "cod:peRCgAnnc",
         "lname"     : "periodicalReportConfigAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.periodicalReportConfigAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2791,6 +3336,7 @@
         "type"      : "cod:phoCl",
         "lname"     : "phoneCall",
         "cnd"       : "org.onem2m.common.moduleclass.phoneCall",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2813,6 +3359,7 @@
         "type"      : "cod:call",
         "lname"     : "call",
         "cnd"       : "org.onem2m.common.action.call",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2824,6 +3371,7 @@
         "type"      : "cod:answr",
         "lname"     : "answer",
         "cnd"       : "org.onem2m.common.action.answer",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2835,6 +3383,7 @@
         "type"      : "cod:hangp",
         "lname"     : "hangup",
         "cnd"       : "org.onem2m.common.action.hangup",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2846,6 +3395,7 @@
         "type"      : "cod:phoClAnnc",
         "lname"     : "phoneCallAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.phoneCallAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2870,6 +3420,7 @@
         "type"      : "cod:callAnnc",
         "lname"     : "callAnnc",
         "cnd"       : "org.onem2m.common.action.callAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2881,6 +3432,7 @@
         "type"      : "cod:answrAnnc",
         "lname"     : "answerAnnc",
         "cnd"       : "org.onem2m.common.action.answerAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2892,6 +3444,7 @@
         "type"      : "cod:hangpAnnc",
         "lname"     : "hangupAnnc",
         "cnd"       : "org.onem2m.common.action.hangupAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2904,6 +3457,7 @@
         "type"      : "cod:plaCl",
         "lname"     : "playerControl",
         "cnd"       : "org.onem2m.common.moduleclass.playerControl",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2927,6 +3481,7 @@
         "type"      : "cod:nexTk",
         "lname"     : "nextTrack",
         "cnd"       : "org.onem2m.common.action.nextTrack",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2938,6 +3493,7 @@
         "type"      : "cod:preTk",
         "lname"     : "previousTrack",
         "cnd"       : "org.onem2m.common.action.previousTrack",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2949,6 +3505,7 @@
         "type"      : "cod:plaClAnnc",
         "lname"     : "playerControlAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.playerControlAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -2973,6 +3530,7 @@
         "type"      : "cod:nexTkAnnc",
         "lname"     : "nextTrackAnnc",
         "cnd"       : "org.onem2m.common.action.nextTrackAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2984,6 +3542,7 @@
         "type"      : "cod:preTkAnnc",
         "lname"     : "previousTrackAnnc",
         "cnd"       : "org.onem2m.common.action.previousTrackAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -2996,6 +3555,7 @@
         "type"      : "cod:powS0",
         "lname"     : "powerSave",
         "cnd"       : "org.onem2m.common.moduleclass.powerSave",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3009,6 +3569,7 @@
         "type"      : "cod:powS0Annc",
         "lname"     : "powerSaveAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.powerSaveAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3017,18 +3578,59 @@
         ]
     }, 
 
+    // ModuleClass: prePaidCardReader (pPCRr)
+    {
+        "type"      : "cod:pPCRr",
+        "lname"     : "prePaidCardReader",
+        "cnd"       : "org.onem2m.common.moduleclass.prePaidCardReader",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: readStatus
+            { "sname" : "reaSs", "lname" : "readStatus", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: cardInfo
+            { "sname" : "carIo", "lname" : "cardInfo", "type" : "integer", "car" : "1" }, 
+            // DataPoint: balance
+            { "sname" : "balae", "lname" : "balance", "type" : "float", "car" : "1" }, 
+            // DataPoint: currency
+            { "sname" : "curry", "lname" : "currency", "type" : "string", "car" : "01" }
+        ]
+    },
+
+    // ModuleClass Announced: prePaidCardReaderAnnc (pPCRrAnnc)
+    {
+        "type"      : "cod:pPCRrAnnc",
+        "lname"     : "prePaidCardReaderAnnc",
+        "cnd"       : "org.onem2m.common.moduleclass.prePaidCardReaderAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: readStatus
+            { "sname" : "reaSs", "lname" : "readStatus", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: cardInfo
+            { "sname" : "carIo", "lname" : "cardInfo", "type" : "integer", "car" : "1" }, 
+            // DataPoint: balance
+            { "sname" : "balae", "lname" : "balance", "type" : "float", "car" : "1" }, 
+            // DataPoint: currency
+            { "sname" : "curry", "lname" : "currency", "type" : "string", "car" : "01" }
+        ]
+    }, 
+
     // ModuleClass: printQueue (priQe)
     {
         "type"      : "cod:priQe",
         "lname"     : "printQueue",
         "cnd"       : "org.onem2m.common.moduleclass.printQueue",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: uri
             { "sname" : "ur0", "lname" : "uri", "type" : "list", "car" : "1" }, 
             // DataPoint: printingState
-            { "sname" : "priSe", "lname" : "printingState", "type" : "list", "car" : "1" }
+            { "sname" : "priS0", "lname" : "printingState", "type" : "list", "car" : "1" }
         ]
     },
 
@@ -3037,13 +3639,14 @@
         "type"      : "cod:priQeAnnc",
         "lname"     : "printQueueAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.printQueueAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: uri
             { "sname" : "ur0", "lname" : "uri", "type" : "list", "car" : "1" }, 
             // DataPoint: printingState
-            { "sname" : "priSe", "lname" : "printingState", "type" : "list", "car" : "1" }
+            { "sname" : "priS0", "lname" : "printingState", "type" : "list", "car" : "1" }
         ]
     }, 
 
@@ -3052,6 +3655,7 @@
         "type"      : "cod:pulsr",
         "lname"     : "pulsemeter",
         "cnd"       : "org.onem2m.common.moduleclass.pulsemeter",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3071,6 +3675,7 @@
         "type"      : "cod:pulsrAnnc",
         "lname"     : "pulsemeterAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.pulsemeterAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3090,6 +3695,7 @@
         "type"      : "cod:pusBn",
         "lname"     : "pushButton",
         "cnd"       : "org.onem2m.common.moduleclass.pushButton",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3103,6 +3709,7 @@
         "type"      : "cod:pusBnAnnc",
         "lname"     : "pushButtonAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.pushButtonAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3116,6 +3723,7 @@
         "type"      : "cod:raiGe",
         "lname"     : "rainGauge",
         "cnd"       : "org.onem2m.common.moduleclass.rainGauge",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3123,15 +3731,16 @@
             { "sname" : "heigt", "lname" : "height", "type" : "integer", "car" : "1" }
         ], 
         "children"  : [
-            "cod:rst"
+            "cod:reset"
         ]
     },
 
     // Action: reset
     {
-        "type"      : "cod:rst",
+        "type"      : "cod:reset",
         "lname"     : "reset",
         "cnd"       : "org.onem2m.common.action.reset",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -3143,6 +3752,7 @@
         "type"      : "cod:raiGeAnnc",
         "lname"     : "rainGaugeAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.rainGaugeAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3150,15 +3760,16 @@
             { "sname" : "heigt", "lname" : "height", "type" : "integer", "car" : "1" }
         ], 
         "children"  : [
-            "cod:rst",
-            "cod:rstAnnc"
+            "cod:reset",
+            "cod:resetAnnc"
         ]
     }, 
     // Action Announced: resetAnnc
     {
-        "type"      : "cod:rstAnnc",
+        "type"      : "cod:resetAnnc",
         "lname"     : "resetAnnc",
         "cnd"       : "org.onem2m.common.action.resetAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -3171,6 +3782,7 @@
         "type"      : "cod:recor",
         "lname"     : "recorder",
         "cnd"       : "org.onem2m.common.moduleclass.recorder",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3184,6 +3796,7 @@
         "type"      : "cod:recorAnnc",
         "lname"     : "recorderAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.recorderAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3197,6 +3810,7 @@
         "type"      : "cod:refrn",
         "lname"     : "refrigeration",
         "cnd"       : "org.onem2m.common.moduleclass.refrigeration",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3218,6 +3832,7 @@
         "type"      : "cod:refrnAnnc",
         "lname"     : "refrigerationAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.refrigerationAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3239,6 +3854,7 @@
         "type"      : "cod:relHy",
         "lname"     : "relativeHumidity",
         "cnd"       : "org.onem2m.common.moduleclass.relativeHumidity",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3254,6 +3870,7 @@
         "type"      : "cod:relHyAnnc",
         "lname"     : "relativeHumidityAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.relativeHumidityAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3269,6 +3886,7 @@
         "type"      : "cod:reCEe",
         "lname"     : "remoteControlEnable",
         "cnd"       : "org.onem2m.common.moduleclass.remoteControlEnable",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3282,6 +3900,7 @@
         "type"      : "cod:reCEeAnnc",
         "lname"     : "remoteControlEnableAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.remoteControlEnableAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3295,6 +3914,7 @@
         "type"      : "cod:rCJMe",
         "lname"     : "robotCleanerJobMode",
         "cnd"       : "org.onem2m.common.moduleclass.robotCleanerJobMode",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3312,6 +3932,7 @@
         "type"      : "cod:rCJMeAnnc",
         "lname"     : "robotCleanerJobModeAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.robotCleanerJobModeAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3329,6 +3950,7 @@
         "type"      : "cod:runSe",
         "lname"     : "runState",
         "cnd"       : "org.onem2m.common.moduleclass.runState",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3350,6 +3972,7 @@
         "type"      : "cod:runSeAnnc",
         "lname"     : "runStateAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.runStateAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3371,6 +3994,7 @@
         "type"      : "cod:secMe",
         "lname"     : "securityMode",
         "cnd"       : "org.onem2m.common.moduleclass.securityMode",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3386,6 +4010,7 @@
         "type"      : "cod:secMeAnnc",
         "lname"     : "securityModeAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.securityModeAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3401,6 +4026,7 @@
         "type"      : "cod:sesDn",
         "lname"     : "sessionDescription",
         "cnd"       : "org.onem2m.common.moduleclass.sessionDescription",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3416,6 +4042,7 @@
         "type"      : "cod:sesDnAnnc",
         "lname"     : "sessionDescriptionAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.sessionDescriptionAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3431,6 +4058,7 @@
         "type"      : "cod:sigSh",
         "lname"     : "signalStrength",
         "cnd"       : "org.onem2m.common.moduleclass.signalStrength",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3446,6 +4074,7 @@
         "type"      : "cod:sigShAnnc",
         "lname"     : "signalStrengthAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.signalStrengthAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3456,11 +4085,96 @@
         ]
     }, 
 
+    // ModuleClass: slcAlarm (slcAm)
+    {
+        "type"      : "cod:slcAm",
+        "lname"     : "slcAlarm",
+        "cnd"       : "org.onem2m.common.moduleclass.slcAlarm",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: overCurrentThreshold
+            { "sname" : "ovCTd", "lname" : "overCurrentThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: overCurrentDuration
+            { "sname" : "ovCDn", "lname" : "overCurrentDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: underCurrentThreshold
+            { "sname" : "unCTd", "lname" : "underCurrentThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: underCurrentDuration
+            { "sname" : "unCDn", "lname" : "underCurrentDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: overVoltageThreshold
+            { "sname" : "ovVTd", "lname" : "overVoltageThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: overVoltageDuration
+            { "sname" : "ovVDn", "lname" : "overVoltageDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: underVoltageThreshold
+            { "sname" : "unVTd", "lname" : "underVoltageThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: underVoltageDuration
+            { "sname" : "unVDn", "lname" : "underVoltageDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: overVoltagePercent
+            { "sname" : "ovVPt", "lname" : "overVoltagePercent", "type" : "integer", "car" : "01" }, 
+            // DataPoint: underVoltagePercent
+            { "sname" : "unVPt", "lname" : "underVoltagePercent", "type" : "integer", "car" : "01" }, 
+            // DataPoint: standardreferenceVoltage
+            { "sname" : "staVe", "lname" : "standardreferenceVoltage", "type" : "integer", "car" : "01" }, 
+            // DataPoint: overCurrentAlarm
+            { "sname" : "ovCAm", "lname" : "overCurrentAlarm", "type" : "boolean", "car" : "01" }, 
+            // DataPoint: underCurrentAlarm
+            { "sname" : "unCAm", "lname" : "underCurrentAlarm", "type" : "boolean", "car" : "01" }, 
+            // DataPoint: overVoltageAlarm
+            { "sname" : "ovVAm", "lname" : "overVoltageAlarm", "type" : "boolean", "car" : "01" }, 
+            // DataPoint: underVoltageAlarm
+            { "sname" : "unVAm", "lname" : "underVoltageAlarm", "type" : "boolean", "car" : "01" }
+        ]
+    },
+
+    // ModuleClass Announced: slcAlarmAnnc (slcAmAnnc)
+    {
+        "type"      : "cod:slcAmAnnc",
+        "lname"     : "slcAlarmAnnc",
+        "cnd"       : "org.onem2m.common.moduleclass.slcAlarmAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: overCurrentThreshold
+            { "sname" : "ovCTd", "lname" : "overCurrentThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: overCurrentDuration
+            { "sname" : "ovCDn", "lname" : "overCurrentDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: underCurrentThreshold
+            { "sname" : "unCTd", "lname" : "underCurrentThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: underCurrentDuration
+            { "sname" : "unCDn", "lname" : "underCurrentDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: overVoltageThreshold
+            { "sname" : "ovVTd", "lname" : "overVoltageThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: overVoltageDuration
+            { "sname" : "ovVDn", "lname" : "overVoltageDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: underVoltageThreshold
+            { "sname" : "unVTd", "lname" : "underVoltageThreshold", "type" : "float", "car" : "01" }, 
+            // DataPoint: underVoltageDuration
+            { "sname" : "unVDn", "lname" : "underVoltageDuration", "type" : "integer", "car" : "01" }, 
+            // DataPoint: overVoltagePercent
+            { "sname" : "ovVPt", "lname" : "overVoltagePercent", "type" : "integer", "car" : "01" }, 
+            // DataPoint: underVoltagePercent
+            { "sname" : "unVPt", "lname" : "underVoltagePercent", "type" : "integer", "car" : "01" }, 
+            // DataPoint: standardreferenceVoltage
+            { "sname" : "staVe", "lname" : "standardreferenceVoltage", "type" : "integer", "car" : "01" }, 
+            // DataPoint: overCurrentAlarm
+            { "sname" : "ovCAm", "lname" : "overCurrentAlarm", "type" : "boolean", "car" : "01" }, 
+            // DataPoint: underCurrentAlarm
+            { "sname" : "unCAm", "lname" : "underCurrentAlarm", "type" : "boolean", "car" : "01" }, 
+            // DataPoint: overVoltageAlarm
+            { "sname" : "ovVAm", "lname" : "overVoltageAlarm", "type" : "boolean", "car" : "01" }, 
+            // DataPoint: underVoltageAlarm
+            { "sname" : "unVAm", "lname" : "underVoltageAlarm", "type" : "boolean", "car" : "01" }
+        ]
+    }, 
+
     // ModuleClass: slcParameterSetting (slPSg)
     {
         "type"      : "cod:slPSg",
         "lname"     : "slcParameterSetting",
         "cnd"       : "org.onem2m.common.moduleclass.slcParameterSetting",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3480,6 +4194,7 @@
         "type"      : "cod:slPSgAnnc",
         "lname"     : "slcParameterSettingAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.slcParameterSettingAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3499,6 +4214,7 @@
         "type"      : "cod:slRIo",
         "lname"     : "slcReportInfo",
         "cnd"       : "org.onem2m.common.moduleclass.slcReportInfo",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3536,6 +4252,7 @@
         "type"      : "cod:slRIoAnnc",
         "lname"     : "slcReportInfoAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.slcReportInfoAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3573,6 +4290,7 @@
         "type"      : "cod:smoSr",
         "lname"     : "smokeSensor",
         "cnd"       : "org.onem2m.common.moduleclass.smokeSensor",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3581,7 +4299,7 @@
             // DataPoint: detectedTime
             { "sname" : "detTe", "lname" : "detectedTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: smokeThreshold
-            { "sname" : "smoTd", "lname" : "smokeThreshold", "type" : "integer", "car" : "01" }, 
+            { "sname" : "smoT0", "lname" : "smokeThreshold", "type" : "integer", "car" : "01" }, 
             // DataPoint: currentValue
             { "sname" : "crv", "lname" : "currentValue", "type" : "integer", "car" : "01" }, 
             // DataPoint: sensorFault
@@ -3594,7 +4312,8 @@
             { "sname" : "powOn", "lname" : "powerOn", "type" : "boolean", "car" : "01" }
         ], 
         "children"  : [
-            "cod:mute"
+            "cod:mute", 
+            "cod:test"
         ]
     },
 
@@ -3603,6 +4322,19 @@
         "type"      : "cod:mute",
         "lname"     : "mute",
         "cnd"       : "org.onem2m.common.action.mute",
+		"sdttype"	: "action",	
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    },
+
+    // Action: test
+    {
+        "type"      : "cod:test",
+        "lname"     : "test",
+        "cnd"       : "org.onem2m.common.action.test",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -3614,6 +4346,7 @@
         "type"      : "cod:smoSrAnnc",
         "lname"     : "smokeSensorAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.smokeSensorAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3622,7 +4355,7 @@
             // DataPoint: detectedTime
             { "sname" : "detTe", "lname" : "detectedTime", "type" : "timestamp", "car" : "01" }, 
             // DataPoint: smokeThreshold
-            { "sname" : "smoTd", "lname" : "smokeThreshold", "type" : "integer", "car" : "01" }, 
+            { "sname" : "smoT0", "lname" : "smokeThreshold", "type" : "integer", "car" : "01" }, 
             // DataPoint: currentValue
             { "sname" : "crv", "lname" : "currentValue", "type" : "integer", "car" : "01" }, 
             // DataPoint: sensorFault
@@ -3636,7 +4369,9 @@
         ], 
         "children"  : [
             "cod:mute",
-            "cod:muteAnnc"
+            "cod:muteAnnc", 
+            "cod:test",
+            "cod:testAnnc"
         ]
     }, 
     // Action Announced: muteAnnc
@@ -3644,6 +4379,19 @@
         "type"      : "cod:muteAnnc",
         "lname"     : "muteAnnc",
         "cnd"       : "org.onem2m.common.action.muteAnnc",
+		"sdttype"	: "action",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
+        ]
+    }, 
+
+    // Action Announced: testAnnc
+    {
+        "type"      : "cod:testAnnc",
+        "lname"     : "testAnnc",
+        "cnd"       : "org.onem2m.common.action.testAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -3656,6 +4404,7 @@
         "type"      : "cod:sphyr",
         "lname"     : "sphygmomanometer",
         "cnd"       : "org.onem2m.common.moduleclass.sphygmomanometer",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3673,6 +4422,7 @@
         "type"      : "cod:sphyrAnnc",
         "lname"     : "sphygmomanometerAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.sphygmomanometerAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3690,6 +4440,7 @@
         "type"      : "cod:spiLl",
         "lname"     : "spinLevel",
         "cnd"       : "org.onem2m.common.moduleclass.spinLevel",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3703,6 +4454,7 @@
         "type"      : "cod:spiLlAnnc",
         "lname"     : "spinLevelAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.spinLevelAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3716,6 +4468,7 @@
         "type"      : "cod:sCJMe",
         "lname"     : "steamClosetJobMode",
         "cnd"       : "org.onem2m.common.moduleclass.steamClosetJobMode",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3733,6 +4486,7 @@
         "type"      : "cod:sCJMeAnnc",
         "lname"     : "steamClosetJobModeAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.steamClosetJobModeAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3750,6 +4504,7 @@
         "type"      : "cod:telCl",
         "lname"     : "televisionChannel",
         "cnd"       : "org.onem2m.common.moduleclass.televisionChannel",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3773,6 +4528,7 @@
         "type"      : "cod:uphCl",
         "lname"     : "upChannel",
         "cnd"       : "org.onem2m.common.action.upChannel",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -3784,6 +4540,7 @@
         "type"      : "cod:dowCl",
         "lname"     : "downChannel",
         "cnd"       : "org.onem2m.common.action.downChannel",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -3795,6 +4552,7 @@
         "type"      : "cod:telClAnnc",
         "lname"     : "televisionChannelAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.televisionChannelAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3819,6 +4577,7 @@
         "type"      : "cod:uphClAnnc",
         "lname"     : "upChannelAnnc",
         "cnd"       : "org.onem2m.common.action.upChannelAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -3830,6 +4589,7 @@
         "type"      : "cod:dowClAnnc",
         "lname"     : "downChannelAnnc",
         "cnd"       : "org.onem2m.common.action.downChannelAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -3842,6 +4602,7 @@
         "type"      : "cod:tempe",
         "lname"     : "temperature",
         "cnd"       : "org.onem2m.common.moduleclass.temperature",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3865,6 +4626,7 @@
         "type"      : "cod:tempeAnnc",
         "lname"     : "temperatureAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.temperatureAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3888,6 +4650,7 @@
         "type"      : "cod:temAm",
         "lname"     : "temperatureAlarm",
         "cnd"       : "org.onem2m.common.moduleclass.temperatureAlarm",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3898,7 +4661,7 @@
             // DataPoint: temperature
             { "sname" : "tempe", "lname" : "temperature", "type" : "float", "car" : "01" }, 
             // DataPoint: temperatureThreshold
-            { "sname" : "temTd", "lname" : "temperatureThreshold", "type" : "integer", "car" : "01" }
+            { "sname" : "temT0", "lname" : "temperatureThreshold", "type" : "integer", "car" : "01" }
         ]
     },
 
@@ -3907,6 +4670,7 @@
         "type"      : "cod:temAmAnnc",
         "lname"     : "temperatureAlarmAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.temperatureAlarmAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3917,7 +4681,7 @@
             // DataPoint: temperature
             { "sname" : "tempe", "lname" : "temperature", "type" : "float", "car" : "01" }, 
             // DataPoint: temperatureThreshold
-            { "sname" : "temTd", "lname" : "temperatureThreshold", "type" : "integer", "car" : "01" }
+            { "sname" : "temT0", "lname" : "temperatureThreshold", "type" : "integer", "car" : "01" }
         ]
     }, 
 
@@ -3926,6 +4690,7 @@
         "type"      : "cod:texMe",
         "lname"     : "textMessage",
         "cnd"       : "org.onem2m.common.moduleclass.textMessage",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3952,6 +4717,7 @@
         "type"      : "cod:reTMe",
         "lname"     : "resetTextMessage",
         "cnd"       : "org.onem2m.common.action.resetTextMessage",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -3963,6 +4729,7 @@
         "type"      : "cod:texMeAnnc",
         "lname"     : "textMessageAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.textMessageAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -3989,6 +4756,7 @@
         "type"      : "cod:reTMeAnnc",
         "lname"     : "resetTextMessageAnnc",
         "cnd"       : "org.onem2m.common.action.resetTextMessageAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -4001,6 +4769,7 @@
         "type"      : "cod:timer",
         "lname"     : "timer",
         "cnd"       : "org.onem2m.common.moduleclass.timer",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4032,6 +4801,7 @@
         "type"      : "cod:acCTr",
         "lname"     : "activateClockTimer",
         "cnd"       : "org.onem2m.common.action.activateClockTimer",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -4043,6 +4813,7 @@
         "type"      : "cod:deCTr",
         "lname"     : "deactivateClockTimer",
         "cnd"       : "org.onem2m.common.action.deactivateClockTimer",
+		"sdttype"	: "action",	
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -4054,6 +4825,7 @@
         "type"      : "cod:timerAnnc",
         "lname"     : "timerAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.timerAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4086,6 +4858,7 @@
         "type"      : "cod:acCTrAnnc",
         "lname"     : "activateClockTimerAnnc",
         "cnd"       : "org.onem2m.common.action.activateClockTimerAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -4097,6 +4870,7 @@
         "type"      : "cod:deCTrAnnc",
         "lname"     : "deactivateClockTimerAnnc",
         "cnd"       : "org.onem2m.common.action.deactivateClockTimerAnnc",
+		"sdttype"	: "action",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }
@@ -4104,11 +4878,44 @@
     }
 , 
 
+    // ModuleClass: traceSensor (traSr)
+    {
+        "type"      : "cod:traSr",
+        "lname"     : "traceSensor",
+        "cnd"       : "org.onem2m.common.moduleclass.traceSensor",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: heading
+            { "sname" : "headg", "lname" : "heading", "type" : "float", "car" : "01" }, 
+            // DataPoint: headingAccuracy
+            { "sname" : "heaAy", "lname" : "headingAccuracy", "type" : "float", "car" : "01" }
+        ]
+    },
+
+    // ModuleClass Announced: traceSensorAnnc (traSrAnnc)
+    {
+        "type"      : "cod:traSrAnnc",
+        "lname"     : "traceSensorAnnc",
+        "cnd"       : "org.onem2m.common.moduleclass.traceSensorAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: heading
+            { "sname" : "headg", "lname" : "heading", "type" : "float", "car" : "01" }, 
+            // DataPoint: headingAccuracy
+            { "sname" : "heaAy", "lname" : "headingAccuracy", "type" : "float", "car" : "01" }
+        ]
+    }, 
+
     // ModuleClass: turbo (turbo)
     {
         "type"      : "cod:turbo",
         "lname"     : "turbo",
         "cnd"       : "org.onem2m.common.moduleclass.turbo",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4122,6 +4929,7 @@
         "type"      : "cod:turboAnnc",
         "lname"     : "turboAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.turboAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4130,11 +4938,48 @@
         ]
     }, 
 
+    // ModuleClass: touchScreen (touSn)
+    {
+        "type"      : "cod:touSn",
+        "lname"     : "touchScreen",
+        "cnd"       : "org.onem2m.common.moduleclass.touchScreen",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: pushed
+            { "sname" : "pushd", "lname" : "pushed", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: positionX
+            { "sname" : "posiX", "lname" : "positionX", "type" : "integer", "car" : "1" }, 
+            // DataPoint: positionY
+            { "sname" : "posiY", "lname" : "positionY", "type" : "integer", "car" : "1" }
+        ]
+    },
+
+    // ModuleClass Announced: touchScreenAnnc (touSnAnnc)
+    {
+        "type"      : "cod:touSnAnnc",
+        "lname"     : "touchScreenAnnc",
+        "cnd"       : "org.onem2m.common.moduleclass.touchScreenAnnc",
+		"sdttype"	: "moduleclass",
+        "attributes": [
+            // DataPoint: dataGenerationTime
+            { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
+            // DataPoint: pushed
+            { "sname" : "pushd", "lname" : "pushed", "type" : "boolean", "car" : "1" }, 
+            // DataPoint: positionX
+            { "sname" : "posiX", "lname" : "positionX", "type" : "integer", "car" : "1" }, 
+            // DataPoint: positionY
+            { "sname" : "posiY", "lname" : "positionY", "type" : "integer", "car" : "1" }
+        ]
+    }, 
+
     // ModuleClass: uvSensor (uveSr)
     {
         "type"      : "cod:uveSr",
         "lname"     : "uvSensor",
         "cnd"       : "org.onem2m.common.moduleclass.uvSensor",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4150,6 +4995,7 @@
         "type"      : "cod:uveSrAnnc",
         "lname"     : "uvSensorAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.uvSensorAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4165,6 +5011,7 @@
         "type"      : "cod:waFTe",
         "lname"     : "waterFilterType",
         "cnd"       : "org.onem2m.common.moduleclass.waterFilterType",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4178,6 +5025,7 @@
         "type"      : "cod:waFTeAnnc",
         "lname"     : "waterFilterTypeAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.waterFilterTypeAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4191,6 +5039,7 @@
         "type"      : "cod:watFw",
         "lname"     : "waterFlow",
         "cnd"       : "org.onem2m.common.moduleclass.waterFlow",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4204,6 +5053,7 @@
         "type"      : "cod:watFwAnnc",
         "lname"     : "waterFlowAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.waterFlowAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4217,6 +5067,7 @@
         "type"      : "cod:waMAm",
         "lname"     : "waterMeterAlarm",
         "cnd"       : "org.onem2m.common.moduleclass.waterMeterAlarm",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4292,6 +5143,7 @@
         "type"      : "cod:waMAmAnnc",
         "lname"     : "waterMeterAlarmAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.waterMeterAlarmAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4367,6 +5219,7 @@
         "type"      : "cod:wMRIo",
         "lname"     : "waterMeterReportInfo",
         "cnd"       : "org.onem2m.common.moduleclass.waterMeterReportInfo",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4410,6 +5263,7 @@
         "type"      : "cod:wMRIoAnnc",
         "lname"     : "waterMeterReportInfoAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.waterMeterReportInfoAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4453,6 +5307,7 @@
         "type"      : "cod:waMSg",
         "lname"     : "waterMeterSetting",
         "cnd"       : "org.onem2m.common.moduleclass.waterMeterSetting",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4478,6 +5333,7 @@
         "type"      : "cod:waMSgAnnc",
         "lname"     : "waterMeterSettingAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.waterMeterSettingAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4503,6 +5359,7 @@
         "type"      : "cod:watSr",
         "lname"     : "waterSensor",
         "cnd"       : "org.onem2m.common.moduleclass.waterSensor",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4516,6 +5373,7 @@
         "type"      : "cod:watSrAnnc",
         "lname"     : "waterSensorAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.waterSensorAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4529,6 +5387,7 @@
         "type"      : "cod:waQMr",
         "lname"     : "waterQualityMonitor",
         "cnd"       : "org.onem2m.common.moduleclass.waterQualityMonitor",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4598,6 +5457,7 @@
         "type"      : "cod:waQMrAnnc",
         "lname"     : "waterQualityMonitorAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.waterQualityMonitorAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4667,6 +5527,7 @@
         "type"      : "cod:weigt",
         "lname"     : "weight",
         "cnd"       : "org.onem2m.common.moduleclass.weight",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 
@@ -4682,6 +5543,7 @@
         "type"      : "cod:weigtAnnc",
         "lname"     : "weightAnnc",
         "cnd"       : "org.onem2m.common.moduleclass.weightAnnc",
+		"sdttype"	: "moduleclass",
         "attributes": [
             // DataPoint: dataGenerationTime
             { "sname" : "dgt", "lname" : "dataGenerationTime", "type" : "timestamp", "car" : "01" }, 

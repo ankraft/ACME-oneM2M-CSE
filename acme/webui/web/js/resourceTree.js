@@ -31,6 +31,7 @@ const types = {
      5 : "CSEBase",
      9 : "Group",
     14 : "Node",
+	15 : "PollingChannel",
     16 : "RemoteCSE",
     17 : "Request",
     23 : "Subscription",
@@ -197,8 +198,9 @@ function fillAttributesTable(resource) {
   // fill attribute table with resource attributes
   var table = document.getElementById("details");
   var tb = table.getElementsByTagName('tbody')[0]
-
-  for (var key in resource) {
+  var keys = Object.keys(resource).sort()	// sort the attributes
+  for (var i=0; i<keys.length; i++) {
+    var key = keys[i];
     var newRow = tb.insertRow()
     var keyCell  = newRow.insertCell(0)
     var valueCell  = newRow.insertCell(1);
@@ -330,6 +332,24 @@ function removeNode(node) {
   null);
 }
 
+
+
+function openPOA(node) {
+  for (poa of node.resource.poa) {
+	let url;
+    try {
+      url = new URL(poa);
+	  if (url.protocol === "http:" || url.protocol === "https:") {
+		//window.open(url, '_blank').focus();
+		window.open(poa + "?open", poa).focus();
+		return
+	  }
+	} catch (_) {
+      return;
+	}
+  }
+}
+  
 
 
 function setNodeAsRoot(node) {

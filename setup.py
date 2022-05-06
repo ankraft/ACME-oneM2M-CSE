@@ -1,4 +1,5 @@
-from setuptools import setup, find_packages
+from setuptools import setup
+
 import pathlib
 
 # The directory containing this file
@@ -9,7 +10,7 @@ README = (HERE / 'README.md').read_text()
 
 setup(
     name='ACME-oneM2M-CSE',
-    version='0.9.0',
+    version='0.10.0',
     url='https://github.com/ankraft/ACME-oneM2M-CSE',
     author='Andreas Kraft',
     author_email='an.kraft@gmail.com',
@@ -28,8 +29,10 @@ setup(
 	install_requires=[
 		'cbor2',
 		'flask',
+		'InquirerPy',
 		'isodate',
 		'paho-mqtt',
+		'plotext',
 		'requests', 
 		'rich', 
 		'tinydb',

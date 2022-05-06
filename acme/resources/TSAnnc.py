@@ -15,7 +15,7 @@ from ..resources.AnnouncedResource import AnnouncedResource
 class TSAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.SUB, T.TSI,	T.TSIAnnc ]
+	_allowedChildResourceTypes = [ T.ACTR, T.ACTRAnnc, T.SUB, T.TSI, T.TSIAnnc ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -48,6 +48,6 @@ class TSAnnc(AnnouncedResource):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.TSAnnc, dct, pi=pi, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.TSAnnc, dct, pi = pi, create = create)
 

@@ -26,39 +26,33 @@ class CNT_OL(Resource):
 		# None for virtual resources
 	}
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.CNT_OL, dct, pi, create=create, inheritACP=True, readOnly=True, rn='ol', isVirtual=True)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.CNT_OL, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'ol')
 
 
-	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:
+	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:
 		""" Handle a RETRIEVE request. Return resource """
 		if L.isDebug: L.logDebug('Retrieving oldest CIN from CNT')
-		if not (r := self._getOldest()):
-			return Result(status=False, rsc=RC.notFound, dbg='no instance for <oldest>')
-		if not (res := r.willBeRetrieved(originator)).status:
+		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.CIN, oldest = True)):
+			return Result.errorResult(rsc = RC.notFound, dbg = 'no instance for <oldest>')
+		if not (res := r.willBeRetrieved(originator, request)).status:
 			return res
-		return Result(status=True, rsc=RC.OK, resource=r)
+		return Result(status = True, rsc = RC.OK, resource = r)
 
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a CREATE request. Fail with error code. """
-		return Result(status=False, rsc=RC.operationNotAllowed, dbg='CREATE operation not allowed for <oldest> resource type')
+		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'CREATE operation not allowed for <oldest> resource type')
 
 
 	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a UPDATE request. Fail with error code. """
-		return Result(status=False, rsc=RC.operationNotAllowed, dbg='UPDATE operation not allowed for <oldest> resource type')
+		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'UPDATE operation not allowed for <oldest> resource type')
 
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a DELETE request. Delete the oldest resource. """
 		if L.isDebug: L.logDebug('Deleting oldest CIN from CNT')
-		if not (r := self._getOldest()):
-			return Result(status=False, rsc=RC.notFound, dbg='no instance for <oldest>')
-		return CSE.dispatcher.deleteResource(r, originator, withDeregistration=True)
-
-
-	def _getOldest(self) -> Resource:
-		rs = self.retrieveParentResource().contentInstances()		# ask parent for all CIN
-		return cast(Resource, rs[0]) if len(rs) > 0 else None	
-
+		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.CIN, oldest = True)):
+			return Result.errorResult(rsc = RC.notFound, dbg = 'no instance for <oldest>')
+		return CSE.dispatcher.deleteResource(r, originator, withDeregistration = True)

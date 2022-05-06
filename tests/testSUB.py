@@ -22,10 +22,13 @@ class TestSUB(unittest.TestCase):
 
 	ae 				= None
 	aeNoPoa 		= None
+	aePoa 			= None
 	originator 		= None
+	originatorPoa 	= None
 	cnt 			= None
 	cntRI 			= None
 	ae2URL 			= None
+	aePOAURL		= None
 	ae2Originator	= None
 	excSub 			= None
 	sub 			= None
@@ -45,10 +48,12 @@ class TestSUB(unittest.TestCase):
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
 				 	'rr'  : True,
-				 	'srv' : [ '3' ]
+				 	'srv' : [ '3' ],
 				}}
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
+		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
+
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : f'{aeRN}NoPOA', 
 					'api' : 'NMyApp1Id',
@@ -56,8 +61,19 @@ class TestSUB(unittest.TestCase):
 					'srv' : [ '3' ]
 				}}
 		cls.aeNoPoa, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
-		assert rsc == RC.created, 'cannot create AE withoutt poa'
-		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
+		assert rsc == RC.created, 'cannot create AE without poa'
+
+		dct = 	{ 'm2m:ae' : {
+					'rn'  : f'{aeRN}POA', 
+					'api' : 'NMyApp1Id',
+				 	'rr'  : True,
+				 	'srv' : [ '3' ],
+					'poa' : [ NOTIFICATIONSERVER ],
+				}}
+		cls.aePoa, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
+		assert rsc == RC.created, 'cannot create parent AE with poa'
+		cls.originatorPoa = findXPath(cls.aePoa, 'm2m:ae/aei')
+
 		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN
 				}}
@@ -67,6 +83,7 @@ class TestSUB(unittest.TestCase):
 
 		# Add another AE URL
 		cls.ae2URL = f'{cseURL}/{aeRN}2'
+		cls.aePOAURL = f'{cseURL}/{aeRN}POA'
 
 
 
@@ -74,7 +91,8 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
-		DELETE(f'{aeURL}NoPOA', ORIGINATOR)	# Just delete the NoPoa AE and everything below it. Ignore whether it exists or not
+		DELETE(f'{aeURL}NoPOA', ORIGINATOR)	# Just delete the NoPOA AE and everything below it. Ignore whether it exists or not
+		DELETE(cls.aePOAURL, ORIGINATOR)	# Just delete the POA AE and everything below it. Ignore whether it exists or not
 		DELETE(cls.ae2URL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		stopNotificationServer()
 
@@ -476,6 +494,8 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTBatchDuration(self) -> None:
 		""" CREATE n <CNT> -> Send batch notification with all outstanding notifications after the timeout"""
+		time.sleep(durationForBatchNotifications) 	# wait a moment for other notifications
+		clearLastNotification()
 		for i in range(0, numberOfBatchNotifications):
 			dct = 	{ 'm2m:cnt' : {
 						'lbl' : [ '%d' % i ]
@@ -483,6 +503,7 @@ class TestSUB(unittest.TestCase):
 			_, rsc = UPDATE(cntURL, TestSUB.originator, dct)
 			self.assertEqual(rsc, RC.updated)
 		lastNotification = getLastNotification()	# Notifications should not have arrived yes
+		self.assertIsNone(lastNotification)
 		self.assertIsNone(findXPath(lastNotification, 'm2m:agn'))
 
 		time.sleep(durationForBatchNotifications * 2) 	# wait a moment
@@ -937,7 +958,9 @@ class TestSUB(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBWithCreatorNull(self) -> None:
-		""" CREATE <SUB> with creator attribute set to Null """
+		""" UPDATE <SUB> with creator attribute set to Null """#
+
+		clearLastNotification()
 		dct = 	{ 'm2m:sub' : { 
 					'nu': [NOTIFICATIONSERVER ],
 					'cr' : None,
@@ -946,6 +969,13 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(rsc, RC.created)
 		self.assertEqual(findXPath(r, 'm2m:sub/cr'), TestSUB.originator)	# Creator should now be set to originator
 
+		# Check the latest verification Request
+		notification = getLastNotification()
+		self.assertIsNotNone(notification)
+		self.assertIsNotNone(findXPath(notification, 'm2m:sgn/vrq'), notification)
+		self.assertIsNotNone(findXPath(notification, 'm2m:sgn/cr'), notification)
+		self.assertEqual(findXPath(notification, 'm2m:sgn/cr'), TestSUB.originator, notification)
+
 		# Check whether creator is there in a RETRIEVE
 		r, rsc = RETRIEVE(f'{cntURL}/{findXPath(r, "m2m:sub/rn")}', TestSUB.originator)
 		self.assertEqual(rsc, RC.OK)
@@ -953,8 +983,47 @@ class TestSUB(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_notifySUBWithCreatorNull(self) -> None:
+		"""Notifification for <SUB> with creator attribute set to Null """#
+
+		clearLastNotification()
+		dct = 	{ 'm2m:sub' : { 
+					'nu': [NOTIFICATIONSERVER ],
+					'cr' : None,
+			        'enc': {
+			            'net': [ NET.resourceUpdate]
+					},
+				}}
+		r, rsc = CREATE(cntURL, TestSUB.originator, T.SUB, dct)	
+		self.assertEqual(rsc, RC.created)
+		self.assertEqual(findXPath(r, 'm2m:sub/cr'), TestSUB.originator)	# Creator should now be set to originator
+
+		# Check the latest verification Request
+		notification = getLastNotification()
+		self.assertIsNotNone(notification)
+		self.assertIsNotNone(findXPath(notification, 'm2m:sgn/vrq'), notification)
+		self.assertIsNotNone(findXPath(notification, 'm2m:sgn/cr'), notification)
+		self.assertEqual(findXPath(notification, 'm2m:sgn/cr'), TestSUB.originator, notification)
+
+		# UPDATE CNT and generate notification
+		clearLastNotification()
+		dct = 	{ 'm2m:cnt': {
+					'lbl' : [ 'aLabel' ],
+				}}
+		r, rsc = UPDATE(cntURL, TestSUB.originator, dct)
+		self.assertEqual(rsc, RC.updated)
+
+		# Check the latest notification 
+		notification = getLastNotification()
+		self.assertIsNotNone(notification)
+		self.assertIsNotNone(findXPath(notification, 'm2m:sgn/cr'), notification)
+		self.assertEqual(findXPath(notification, 'm2m:sgn/cr'), TestSUB.originator, notification)
+		self.assertEqual(findXPath(notification, 'm2m:sgn/nev/net'), NET.resourceUpdate)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBForMissingDataFail(self) -> None:
-		""" CREATE <SUB> for Missing Data unter <CNT> -> Fail"""
+		""" CREATE <SUB> for Missing Data under <CNT> -> Fail"""
 		dct = 	{ 'm2m:sub' : { 
 					'nu': [NOTIFICATIONSERVER ],
 			        'enc': {
@@ -967,7 +1036,7 @@ class TestSUB(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBForMissingDataFail2(self) -> None:
-		""" CREATE <SUB> for Missing Data unter <TS> with missing "missingData" -> Fail"""
+		""" CREATE <SUB> for Missing Data under <TS> with missing "missingData" -> Fail"""
 
 		dct = 	{ 'm2m:ts' : { 	# type:ignore[var-annotated]
 				}}
@@ -986,7 +1055,7 @@ class TestSUB(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUBForMissingData(self) -> None:
-		""" CREATE <SUB> for Missing Data unter <TS>"""
+		""" CREATE <SUB> for Missing Data under <TS>"""
 
 		dct = 	{ 'm2m:ts' : {	# type:ignore[var-annotated]
 				}}
@@ -1012,7 +1081,7 @@ class TestSUB(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateSUBForMissingData(self) -> None:
-		""" UPDATE <SUB> for Missing Data unter <TS>"""
+		""" UPDATE <SUB> for Missing Data under <TS>"""
 		dct = 	{ 'm2m:sub' : { 
 			        'enc': {
 			            'net': [ NET.reportOnGeneratedMissingDataPoints ],
@@ -1031,7 +1100,7 @@ class TestSUB(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteSUBForMissingData(self) -> None:
-		""" DELETE <SUB> for Missing Data unter <TS>"""
+		""" DELETE <SUB> for Missing Data under <TS>"""
 		r, rsc = DELETE(f'{aeURL}/{findXPath(TestSUB.ts, "m2m:ts/rn")}/{findXPath(TestSUB.sub, "m2m:sub/rn")}', TestSUB.originator)
 		self.assertEqual(rsc, RC.deleted, r)
 
@@ -1039,10 +1108,11 @@ class TestSUB(unittest.TestCase):
 
 # TODO update missing data subscription
 # TODO delete missing data subscription
+# TODO add test for subscription with enc/md subscription to a non-TS parent
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_createSUBForMissingDataWrongData(self) -> None:
-		""" CREATE <SUB> for Missing Data unter <TS> with various wrong formats -> Fail"""
+	def test_createSUBForMissingDataWrongDataFail(self) -> None:
+		""" CREATE <SUB> for Missing Data under <TS> with various wrong formats -> Fail"""
 
 		dct = 	{ 'm2m:ts' : {	# type:ignore[var-annotated]
 				}}
@@ -1154,6 +1224,105 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, TestSUB.sub)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSUBWithStructuredNu(self) -> None:
+		""" CREATE <SUB> with structured ID in NU"""
+		clearLastNotification()
+		dct = 	{ 'm2m:sub' : { 
+					'nu': [ f'{CSERN}/{aeRN}POA' ],
+			        'enc': {
+			            'net':  [ NET.createDirectChild ],
+					},
+				}}
+		r, rsc = CREATE(self.aePOAURL, TestSUB.originatorPoa, T.SUB, dct)	
+		self.assertEqual(rsc, RC.created, r)
+		self.assertIsNone(getLastNotification())
+
+		r, rsc = DELETE(f'{self.aePOAURL}/{findXPath(r, "m2m:sub/rn")}', TestSUB.originatorPoa)	
+		self.assertEqual(rsc, RC.deleted, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSubBlockingUpdateWrongNUFail(self) -> None:
+		""" CREATE <SUB> for blocking Update with wrong NU -> Fail"""
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+					'nu': [ NOTIFICATIONSERVER ],
+			        'enc': {
+			            'net':  [ NET.blockingUpdate ],
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)	
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSubBlockingUpdateMultipleNUFail(self) -> None:
+		""" CREATE <SUB> for blocking Update with multiple NU -> Fail"""
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+					'nu': [ f'{CSERN}/{aeRN}POA' ,NOTIFICATIONSERVER ],
+			        'enc': {
+			            'net':  [ NET.blockingUpdate ],
+					},
+				}}
+		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)	
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSubBlockingUpdate(self) -> None:
+		""" CREATE <SUB> for blocking Update"""
+		dct = 	{ 'm2m:sub' : { 
+					'rn' : subRN,
+					'nu': [ f'{CSERN}/{aeRN}POA' ],
+			        'enc': {
+			            'net': [ NET.blockingUpdate ],
+						'atr': [ 'lbl' ]
+					},
+				}}
+		r, rsc = CREATE(self.aePOAURL, TestSUB.originatorPoa, T.SUB, dct)	
+		self.assertEqual(rsc, RC.created, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_doBlockingUpdate(self) -> None:
+		""" Perform BLOCKING UPDATE on <AE>"""
+		clearLastNotification()
+		dct =	{ 'm2m:ae' : {
+					'lbl' : [ 'aLabel' ]
+				}}
+		r, rsc = UPDATE(self.aePOAURL, TestSUB.originatorPoa, dct)	
+		self.assertEqual(rsc, RC.updated, r)
+		lastNotification = getLastNotification()
+		self.assertIsNotNone(lastNotification)
+		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/net'), NET.blockingUpdate)
+		self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:ae/lbl'), lastNotification)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_doBlockingUpdateAttributeCondition(self) -> None:
+		""" Perform BLOCKING UPDATE on <AE> with not-set attribute condition"""
+		clearLastNotification()
+		dct =	{ 'm2m:ae' : {
+					'apn' : 'somethingElse'
+				}}
+		r, rsc = UPDATE(self.aePOAURL, TestSUB.originatorPoa, dct)	
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertIsNone(getLastNotification())
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_doBlockingUpdateNegativeNotificationResponse(self) -> None:
+		""" Perform BLOCKING UPDATE on <AE> and receive a negative response"""
+		clearLastNotification(nextResult = ResponseStatusCode.operationNotAllowed)
+		dct =	{ 'm2m:ae' : {
+					'lbl' : [ 'aLabel' ]
+				}}
+		r, rsc = UPDATE(self.aePOAURL, TestSUB.originatorPoa, dct)	
+		self.assertEqual(rsc, RC.operationDeniedByRemoteEntity, r)
+
+
 
 # TODO check different NET's (ae->cnt->sub, add cnt to cnt)
 
@@ -1230,16 +1399,27 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestSUB('test_createSUBwithUnknownPoa'))
 	suite.addTest(TestSUB('test_createSUBWithCreatorWrong'))
 	suite.addTest(TestSUB('test_createSUBWithCreatorNull'))
+	suite.addTest(TestSUB('test_notifySUBWithCreatorNull'))
 
 	suite.addTest(TestSUB('test_createSUBForMissingDataFail'))
 	suite.addTest(TestSUB('test_createSUBForMissingDataFail2'))
 	suite.addTest(TestSUB('test_createSUBForMissingData'))
 	suite.addTest(TestSUB('test_updateSUBForMissingData'))
 	suite.addTest(TestSUB('test_deleteSUBForMissingData'))
-	suite.addTest(TestSUB('test_createSUBForMissingDataWrongData'))
+	suite.addTest(TestSUB('test_createSUBForMissingDataWrongDataFail'))
 
 	suite.addTest(TestSUB('test_createSUBWithWrongCHTYFail'))
 	suite.addTest(TestSUB('test_updateSUBWithWrongCHTYFail'))
+
+	suite.addTest(TestSUB('test_createSUBWithStructuredNu'))
+
+	# blocking update tests
+	suite.addTest(TestSUB('test_createSubBlockingUpdateWrongNUFail'))
+	suite.addTest(TestSUB('test_createSubBlockingUpdateMultipleNUFail'))
+	suite.addTest(TestSUB('test_createSubBlockingUpdate'))
+	suite.addTest(TestSUB('test_doBlockingUpdate'))
+	suite.addTest(TestSUB('test_doBlockingUpdateAttributeCondition'))
+	suite.addTest(TestSUB('test_doBlockingUpdateNegativeNotificationResponse'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

@@ -1,4 +1,4 @@
- #
+#
 #	testTS.py
 #
 #	(c) 2021 by Andreas Kraft
@@ -48,8 +48,9 @@ class TestTS(unittest.TestCase):
 		self.assertIsNotNone(TestTS.ae)
 		dct = 	{ 'm2m:ts' : { 
 					'rn'	: tsRN,
-					'pei'	: 1000,
+					'pei'	: 10000,
 					'mdd'	: True,
+					'mdt'	: 5001,
 					'mdn'	: 10,
 					'cnf'	: 'text/plain:0'
 				}}
@@ -68,12 +69,14 @@ class TestTS(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:ts/cbs'), 0)
 		self.assertIsNotNone(findXPath(r, 'm2m:ts/cnf'))
 		self.assertEqual(findXPath(r, 'm2m:ts/cnf'), 'text/plain:0')
-		self.assertEqual(findXPath(r, 'm2m:ts/pei'), 1000)
-		self.assertEqual(findXPath(r, 'm2m:ts/peid'), 500)
+		self.assertEqual(findXPath(r, 'm2m:ts/pei'), 10000)
+		self.assertEqual(findXPath(r, 'm2m:ts/peid'), 5000)
 		self.assertTrue(findXPath(r, 'm2m:ts/mdd'))
 		self.assertEqual(findXPath(r, 'm2m:ts/mdn'), 10)
-		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'))		# empty mdlt is not created by default
+		#self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'))		# empty mdlt is not created by default
 		self.assertEqual(findXPath(r, 'm2m:ts/mdc'), 0)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdt'))
+		self.assertEqual(findXPath(r, 'm2m:ts/mdt'), 5001)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -136,11 +139,137 @@ class TestTS(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateTSmdd(self) -> None:
-		""" Update <TS> mdd -> Fail"""
+	def test_updateTSmddTrue(self) -> None:
+		""" Update <TS> mdd = True"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'mdd'	: True,
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.updated, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddTrueAndMdtFail(self) -> None:
+		""" Update <TS> mdd = True with mdt -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'mdn'	: 2000
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddTrueAndMdnFail(self) -> None:
+		""" Update <TS> mdd = True with mdn -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'mdn'	: 2000
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddTrueAndMdnNoneFail(self) -> None:
+		""" Update <TS> mdd = True with remove mdn -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'mdn'	: None
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddTrueAndPeiFail(self) -> None:
+		""" Update <TS> mdd = True with pei -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'pei'	: 2000
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddTrueAndPeidFail(self) -> None:
+		""" Update <TS> mdd = True with peid -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'pei'	: 200
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddFalse(self) -> None:
+		""" Update <TS> mdd"""
 		self.assertIsNotNone(TestTS.ae)
 		dct = 	{ 'm2m:ts' : { 
 					'mdd'	: False
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.updated, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddWithMdtFail(self) -> None:
+		""" Update <TS> mdd with mdt -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'mdd'	: False,
+					'mdt'	: 2000
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddWithMdnFail(self) -> None:
+		""" Update <TS> mdd with mdn -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'mdd'	: False,
+					'mdn'	: 10
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddWithPeiFail(self) -> None:
+		""" Update <TS> mdd with pei -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'mdd'	: False,
+					'pei'	: 1000
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddWithPeidFail(self) -> None:
+		""" Update <TS> mdd with peid -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'mdd'	: False,
+					'peid'	: 200
+				}}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateTSmddWithWrongPeiPeidFail(self) -> None:
+		""" Update <TS> mdd with wrong pei and peid -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = 	{ 'm2m:ts' : { 
+					'pei'	: 2000,
+					'peid'	: 2000
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
 		self.assertEqual(rsc, RC.badRequest, r)
@@ -171,7 +300,7 @@ class TestTS(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateTSmdlt(self) -> None:
-		""" Update <TS> mdc -> Fail"""
+		""" Update <TS> mdlt -> Fail"""
 		self.assertIsNotNone(TestTS.ae)
 		dct = 	{ 'm2m:ts' : { 			# type: ignore [var-annotated]
 					'mdlt'	: [ ]
@@ -193,16 +322,19 @@ class TestTS(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateTSremoveMdn(self) -> None:
-		""" Update <TS> remove mdn, mdlt also removed"""
+		""" Update <TS> remove mdn """
 		self.assertIsNotNone(TestTS.ae)
 		dct = 	{ 'm2m:ts' : { 
 					'mdn'	: None
 				}}
 		r, rsc = UPDATE(tsURL, TestTS.originator, dct)
 		self.assertEqual(rsc, RC.updated, r)
-		self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
+		# self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
+		# self.assertIsNone(findXPath(r, 'm2m:ts/mdn'), r)
+		# self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
 		self.assertIsNone(findXPath(r, 'm2m:ts/mdn'), r)
-		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -218,13 +350,14 @@ class TestTS(unittest.TestCase):
 		self.assertIsNotNone(TestTS.ae)
 		dct = 	{ 'm2m:ts' : { 
 					'rn'	: tsRN,
-					'mdd'	: False
 				}}
 		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
 		self.assertEqual(rsc, RC.created, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
 		self.assertFalse(findXPath(r, 'm2m:ts/mdd'), r)
-		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
-		self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
+		#TODO after discussion with Bob. Decide whether to have or don't have initial
+		# self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		# self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -273,6 +406,72 @@ class TestTS(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createTSwithMissingMdtFail(self) -> None:
+		""" Create <TS> with missing mdt -> Fail"""
+		self.assertIsNotNone(TestTS.ae)
+		dct = {	'm2m:ts': {
+					'rn':'TimeSeries2',
+					'mni': 10,
+					'pei': 5000,                          # milliseconds
+					'peid': 200,                          # milliseconds
+					'mdd': True
+				}
+			}
+		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+	
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_MddMdltMdcHandling(self) -> None:
+		""" Check mdd handling with mdlt and mdc """
+		self.assertIsNotNone(TestTS.ae)
+		dct = {	'm2m:ts': {
+					'rn': tsRN,
+					'mdt': 2000,
+				}
+			}
+		r, rsc = CREATE(aeURL, TestTS.originator, T.TS, dct)
+		self.assertEqual(rsc, RC.created, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
+
+		# set mdd to False
+		dct2 = {	'm2m:ts': {
+					'mdd': False,
+				}
+			}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct2)
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		self.assertIsNone(findXPath(r, 'm2m:ts/mdc'), r)
+
+		# add mdd with True
+		dct2 = {	'm2m:ts': {
+					'mdd': True,
+				}
+			}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct2)
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+
+		# set mdd to False again (mdlt, mdc stay in the resource)
+		dct2 = {	'm2m:ts': {
+					'mdd': False,
+				}
+			}
+		r, rsc = UPDATE(tsURL, TestTS.originator, dct2)
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdd'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
+		self.assertIsNotNone(findXPath(r, 'm2m:ts/mdc'), r)
+
+
+
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 
@@ -283,7 +482,22 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestTS('test_updateTSmbs'))
 	suite.addTest(TestTS('test_updateTSpei'))
 	suite.addTest(TestTS('test_updateTSpeid'))
-	suite.addTest(TestTS('test_updateTSmdd'))
+
+	suite.addTest(TestTS('test_updateTSmddTrue'))
+	suite.addTest(TestTS('test_updateTSmddTrueAndMdtFail'))
+	suite.addTest(TestTS('test_updateTSmddTrueAndMdnFail'))
+	suite.addTest(TestTS('test_updateTSmddTrueAndMdnNoneFail'))
+	suite.addTest(TestTS('test_updateTSmddTrueAndPeiFail'))
+	suite.addTest(TestTS('test_updateTSmddTrueAndPeidFail'))
+	
+	suite.addTest(TestTS('test_updateTSmddFalse'))
+	suite.addTest(TestTS('test_updateTSmddWithMdtFail'))
+	suite.addTest(TestTS('test_updateTSmddWithMdnFail'))
+	suite.addTest(TestTS('test_updateTSmddWithPeiFail'))
+	suite.addTest(TestTS('test_updateTSmddWithPeidFail'))
+	suite.addTest(TestTS('test_updateTSmddWithWrongPeiPeidFail'))
+
+	
 	suite.addTest(TestTS('test_updateTSmdn'))
 	suite.addTest(TestTS('test_updateTSmdc'))
 	suite.addTest(TestTS('test_updateTSmdlt'))
@@ -295,6 +509,11 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestTS('test_createTSwithPeid'))
 	suite.addTest(TestTS('test_createTSwithPeidWrong'))
 	suite.addTest(TestTS('test_createTSwithCnfWrong'))
+
+	suite.addTest(TestTS('test_createTSwithMissingMdtFail'))
+
+	suite.addTest(TestTS('test_deleteTS'))
+	suite.addTest(TestTS('test_MddMdltMdcHandling'))
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

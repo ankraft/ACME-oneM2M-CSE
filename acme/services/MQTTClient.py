@@ -9,20 +9,20 @@
 
 from __future__ import annotations
 from dataclasses import field
+from sqlite3 import Date
 from typing import ForwardRef, Tuple, cast, Dict
 from urllib.parse import urlparse
 from copy import deepcopy
 from threading import Lock
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType, RequestType, ResourceTypes, Result, Parameters, ResponseStatusCode as RC, ResourceTypes as T
+from ..etc.Types import JSON, Operation, CSERequest, ContentSerializationType as CST, ResourceTypes, Result, Parameters, ResponseStatusCode as RC, ResourceTypes as T
 from ..etc import Utils as Utils, DateUtils as DateUtils, RequestUtils as RequestUtils
 from ..services.Logging import Logging as L
 from ..services.Configuration import Configuration
 from ..services import CSE as CSE
 from ..helpers.MQTTConnection import MQTTConnection, MQTTHandler, idToMQTT, idToMQTTClientID
 from ..helpers import TextTools
-from ..resources.Resource import Resource
 
 
 class MQTTClientHandler(MQTTHandler):
@@ -119,10 +119,11 @@ class MQTTClientHandler(MQTTHandler):
 		
 		# Dissect Body
 		contentType:str = ts[-1]
-		if not (dissectResult := self._dissectMQTTRequest(data, contentType, isResponse=True)).status:
+		if not (dissectResult := CSE.request.dissectRequestFromBytes(data, contentType, isResponse=True)).status:
 			return
 		
 		# Add it to a response queue in the manager
+		dissectResult.request.isResponse = True
 		self.mqttClient.addResponse(dissectResult, topic)
 	
 
@@ -134,7 +135,7 @@ class MQTTClientHandler(MQTTHandler):
 		def _sendResponse(result:Result) -> None:
 			"""	Send a response for a request.
 			"""
-			if (response := prepareMqttRequest(result, isResponse=True)).status:
+			if (response := prepareMqttRequest(result, isResponse = True)).status:
 				topic = f'{self.topicPrefix}/oneM2M/{responseTopicType}/{requestOriginator}/{requestReceiver}/{contentType}'
 				logRequest(response, topic, isResponse=True, isIncoming=False)
 				if isinstance(cast(Tuple, response.data)[1], bytes):
@@ -147,7 +148,7 @@ class MQTTClientHandler(MQTTHandler):
 			"""	Log request.
 			"""
 			L.isDebug and L.logDebug(f'Operation: {result.request.op.name}')
-			if contentType == ContentSerializationType.JSON:
+			if contentType == CST.JSON:
 				L.isDebug and L.logDebug(f'Body: \n{cast(str, data.decode())}')
 			else:
 				L.isDebug and L.logDebug(f'Body: \n{TextTools.toHex(cast(bytes, data))}\n=>\n{result.request.originalRequest}')
@@ -169,14 +170,14 @@ class MQTTClientHandler(MQTTHandler):
 		contentType:str   		= ts[-1]
 
 		# Check supported contentTypes, and send an error message if not supported
-		if contentType not in C.supportedContentSerializationsSimple:
+		if contentType not in CST.supportedContentSerializationsSimple():
 			L.logErr(f'Unsupported content serialization type: {contentType}, topic: {topic}', showStackTrace=False)
 			# We cannot do much about an unsupported content serialization type since we cannot parse the request
 			# sendResponse(Result(rsc=RC.badRequest, dbg=f'Unsupported content serialization type: {contentType}'))
 			return
 
 		# dissect and validate request
-		if not (dissectResult := self._dissectMQTTRequest(data, contentType)).status:
+		if not (dissectResult := CSE.request.dissectRequestFromBytes(data, contentType)).status:
 			# something went wrong during dissection
 			_logRequest(dissectResult)
 			_sendResponse(dissectResult)
@@ -203,7 +204,7 @@ class MQTTClientHandler(MQTTHandler):
 				# Registration type must be AE
 				_logRequest(dissectResult)
 				L.logWarn(dbg := f'Invalid resource type for registration: {dissectResult.request.headers.resourceType}')
-				_sendResponse(Result(rsc=RC.badRequest, request=dissectResult.request, dbg=f'Invalid resource type for registration: {dissectResult.request.headers.resourceType.name}'))
+				_sendResponse(Result(status = False, rsc = RC.badRequest, request = dissectResult.request, dbg = f'Invalid resource type for registration: {dissectResult.request.headers.resourceType.name}'))
 				return
 			
 			# TODO Is it necessary to check here the originator for None, empty, C, S?
@@ -213,7 +214,7 @@ class MQTTClientHandler(MQTTHandler):
 
 		# handle request
 		if self.mqttClient.isStopped:
-			_sendResponse(Result(rsc=RC.internalServerError, request=dissectResult.request, dbg='mqtt server not running', status=False))
+			_sendResponse(Result(status = False, rsc = RC.internalServerError, request = dissectResult.request, dbg = 'mqtt server not running'))
 			return
 		
 		# send events for the MQTT operations
@@ -236,32 +237,7 @@ class MQTTClientHandler(MQTTHandler):
 		# TODO Also change in http
 		responseResult.prepareResultFromRequest(dissectResult.request)	# Add some fields from the original request
 		_sendResponse(responseResult)
-
-
-	def _dissectMQTTRequest(self, data:bytes, contenType:str, isResponse:bool=False) -> Result:
-		"""	Dissect an MQTT request. Return it in `Result.request` .
-		"""
-		cseRequest = CSERequest()
-		cseRequest.originalData = data
-		cseRequest.headers.contentType = contenType.lower()
-
-		# De-Serialize the content
-		if not (contentResult := CSE.request.deserializeContent(cseRequest.originalData, cseRequest.headers.contentType)).status:
-			_, cseRequest.ct = contentResult.data	# type: ignore[assignment] # Actual, .data contains a tuple
-			return Result(rsc=contentResult.rsc, request=cseRequest, dbg=contentResult.dbg, status=False)
-		cseRequest.originalRequest, cseRequest.ct = contentResult.data	# type: ignore[assignment] # Actual, .data contains a tuple
-
-		# Validate the request
-		try:
-			if not (res := CSE.request.fillAndValidateCSERequest(cseRequest, isResponse)).status:
-				#return Result(rsc=res.rsc, request=cseRequest, dbg=res.dbg, status=res.status)
-				return res
-		except Exception as e:
-			import traceback
-			traceback.print_exc()
-			return Result(rsc=RC.badRequest, request=cseRequest, dbg=f'invalid arguments/attributes ({str(e)})', status=False)
-		
-		return res	
+	
 	
 
 
@@ -313,6 +289,20 @@ class MQTTClient(object):
 		self.mqttConnection = None
 		return True
 	
+
+	def pause(self) -> None:
+		"""	Stop handling requests.
+		"""
+		L.isInfo and L.log('MqttClient paused')
+		self.isStopped = True
+		
+	
+	def unpause(self) -> None:
+		"""	Continue handling requests.
+		"""
+		L.isInfo and L.log('MqttClient unpaused')
+		self.isStopped = False
+
 
 	#
 	#	Additional methods
@@ -378,12 +368,20 @@ class MQTTClient(object):
 	#	Send MQTT requests
 	#
 
-	def sendMqttRequest(self, operation:Operation, url:str, originator:str, ty:T=None, data:JSON=None, parameters:Parameters=None, ct:ContentSerializationType=None, targetResource:Resource=None, targetOriginator:str=None, raw:bool=False, id:str=None) -> Result:	 # type: ignore[type-arg]
+	def sendMqttRequest(self,
+						operation:Operation,
+						url:str, originator:str,
+						ty:T = None, 
+						data:JSON = None,
+						parameters:Parameters = None, 
+						ct:CST = None, 
+						rvi:str = None,
+						raw:bool = False) -> Result:	 # type: ignore[type-arg]
 		"""	Sending a request via MQTT.
 		"""
 
 		if self.isStopped:
-			 return Result(status=False, rsc=RC.internalServerError, dbg='MQTT client is not running')
+			 return Result.errorResult(rsc = RC.internalServerError, dbg = 'MQTT client is not running')
 
 		# deconstruct URL
 		u = urlparse(url)
@@ -397,29 +395,28 @@ class MQTTClient(object):
 
 		# Pack everything that is needed in a Result object as if this is a normal "response" (for MQTT this doesn't matter)
 		# This seems to be a bit complicated, but we fill in the necessary values as if this is a normal "response"
-		req 										= Result(request=CSERequest())
-		req.request.id								= id
+		req 										= Result(request = CSERequest())
+		req.request.id								= u.path[1:]
 		req.request.op								= operation
 		req.resource								= data
-		req.request.headers.originator				= targetOriginator if targetOriginator else u.path[1:]
+		req.request.headers.originator				= originator
 		req.request.headers.requestIdentifier		= Utils.uniqueRI()
-		req.request.headers.releaseVersionIndicator	= CSE.releaseVersion						# TODO this actually depends in the originator
+		req.request.headers.releaseVersionIndicator	= rvi if rvi is not None else CSE.releaseVersion
+		req.request.headers.originatingTimestamp	= DateUtils.getResourceDate()
 		req.rsc										= RC.UNKNOWN								# explicitly remove the provided OK because we don't want have any
 		req.request.ct								= ct if ct else CSE.defaultSerialization 	# get the serialization
 		req.request.parameters						= parameters
 
 		# construct the actual request and topic.
 		# Some work is needed here because we take a normal URL
-		preq = prepareMqttRequest(req, originator=originator, ty=ty, op=operation, raw=raw)
+		preq = prepareMqttRequest(req, originator = originator, ty = ty, op = operation, raw = raw)
 		topic = u.path
 		pathSplit = u.path.split('/')
 		ct = ct if ct else CSE.defaultSerialization
 
-		if targetOriginator:
-			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(Utils.toSPRelative(targetOriginator))}/{ct.name.lower()}'
-		elif not len(topic):
+		# Build the topic
+		if not len(topic):
 			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(Utils.toSPRelative(originator))}/{ct.name.lower()}'
-
 		elif topic.startswith('///'):
 			topic = f'/oneM2M/req/{idToMQTT(CSE.cseCsi)}/{idToMQTT(pathSplit[3])}/{ct.name.lower()}'		# TODO Investigate whether this needs to be SP-Relative as well
 		elif topic.startswith('//'):
@@ -427,7 +424,7 @@ class MQTTClient(object):
 		elif not topic.startswith('/oneM2M/') and len(topic) > 0 and topic[0] == '/':	# remove leading "/" if not /oneM2M
 			topic = topic[1:]
 		else:
-			 return Result(status=False, rsc=RC.internalServerError, dbg='Cannot build topic')
+			return Result.errorResult(rsc = RC.internalServerError, dbg = 'Cannot build topic')
 
 		# Get the broker, or connect to a new MQTTBroker for this address
 		if not (mqttConnection := self.getMqttBroker(mqttHost, mqttPort)):
@@ -439,12 +436,12 @@ class MQTTClient(object):
 													  password	= mqttPassword)
 
 			# Wait a moment until we are connected.
-			DateUtils.waitFor(self.requestTimeout, lambda:mqttConnection.isConnected)
+			DateUtils.waitFor(self.requestTimeout, lambda: mqttConnection is not None and mqttConnection.isConnected)
 
 		# We are not connected, so -> fail
-		if not mqttConnection.isConnected:
+		if not mqttConnection or not mqttConnection.isConnected:
 			L.logWarn(dbg := f'Cannot connect to MQTT broker at: {mqttHost}:{mqttPort}')
-			return Result(status=False, rsc=RC.targetNotReachable, dbg=dbg)
+			return Result.errorResult(rsc = RC.targetNotReachable, dbg = dbg)
 
 		# Publish the request and wait for the response.
 		# Then return the response as result
@@ -479,31 +476,38 @@ class MQTTClient(object):
 			return False
 			
 		if not DateUtils.waitFor(timeOut, _receivedResponse):
-			return Result(status=False, rsc=RC.targetNotReachable, dbg='Target not reachable or timeout'), None
+			return Result.errorResult(rsc = RC.targetNotReachable, dbg = 'Target not reachable or timeout'), None
+		CSE.event.responseReceived(resp.request)	# type:ignore [attr-defined]
 		return resp, topic
 
 
 ##############################################################################
 
 
-def prepareMqttRequest(inResult:Result, originator:str=None, ty:T=None, op:Operation=None, isResponse:bool=False, raw:bool=False) -> Result:
+def prepareMqttRequest(inResult:Result, originator:str = None, ty:T = None, op:Operation = None, isResponse:bool = False, raw:bool = False) -> Result:
 	"""	Prepare a new request for MQTT. Remember, a response is actually just a new request.
 	
 		The constructed and serialized content is returned in a tuple in `Result.data`: the content as a dictionary and the serialized content.
 	"""
-	result = RequestUtils.requestFromResult(inResult, originator, ty, op=op, isResponse=isResponse)
+	result = RequestUtils.requestFromResult(inResult, originator, ty, op = op, isResponse=isResponse)
 
-	# When raw: Replace the data with its own primitive content, the rest of the result is fine
+	# When raw: Replace the data with its own primitive content, and a couple of headers
 	if raw and (pc := cast(JSON, result.data).get('pc')):
 		result.data = pc
 		if 'rqi' in pc:
 			result.request.headers.requestIdentifier = pc['rqi']
+		if 'ot' in pc:
+			result.request.headers.originatingTimestamp = pc['ot']
+	
+	# Always add the original timestamp in a response
+	if not result.request.headers.originatingTimestamp:
+		result.request.headers.originatingTimestamp = DateUtils.getResourceDate()
 
 	result.data = (result.data, cast(bytes, RequestUtils.serializeData(cast(JSON, result.data), result.request.ct)))
 	return result
 
 
-def logRequest(reqResult:Result, topic:str, isResponse:bool=False, isIncoming:bool=False) -> None:
+def logRequest(reqResult:Result, topic:str, isResponse:bool = False, isIncoming:bool = False) -> None:
 	"""	Log a request. Make some adjustments, depending on the request or response type.
 	"""
 	if isIncoming:
@@ -519,12 +523,12 @@ def logRequest(reqResult:Result, topic:str, isResponse:bool=False, isIncoming:bo
 
 	body   = ''
 	if reqResult.request and reqResult.request.headers:
-		if reqResult.request.headers.contentType == ContentSerializationType.CBOR or reqResult.request.ct == ContentSerializationType.CBOR:
+		if reqResult.request.headers.contentType == CST.CBOR or reqResult.request.ct == CST.CBOR:
 			if isResponse and reqResult.request.originalData:
 				body = f'\nBody: \n{TextTools.toHex(reqResult.request.originalData)}\n=>\n{str(reqResult.request.originalRequest)}'
 			else:
 				body = f'\nBody: \n{TextTools.toHex(cast(bytes, cast(Tuple, reqResult.data)[1]))}\n=>\n{cast(Tuple, reqResult.data)[0]}'
-		elif reqResult.request.headers.contentType == ContentSerializationType.JSON or reqResult.request.ct == ContentSerializationType.JSON:
+		elif reqResult.request.headers.contentType == CST.JSON or reqResult.request.ct == CST.JSON:
 
 			if reqResult.data:
 				if isinstance(reqResult.data, tuple):

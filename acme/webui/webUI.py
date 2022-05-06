@@ -11,10 +11,10 @@ from __future__ import annotations
 import flask, sys, argparse, logging, ssl, collections, time, webbrowser
 from rich.console import Console
 import requests
-from flask import Flask, Request, make_response, request
+from flask import Flask, request
 from werkzeug.wrappers import Response
 from werkzeug.serving import WSGIRequestHandler
-from typing import Callable, List, Any
+from typing import Callable
 
 
 FlaskHandler = 	Callable[[str], Response]
@@ -58,7 +58,7 @@ class WebUI(object):
 	def redirectRoot(self, path:str=None) -> Response:
 		"""	Redirect request to / to webui.
 		"""
-		return flask.redirect(self.webuiRoot, code=302)
+		return flask.redirect(f'{self.webuiRoot}{"?" + request.query_string.decode() if request.query_string else ""}', code=302)
 
 
 	def getVersion(self, path:str=None) -> Response:
@@ -75,9 +75,10 @@ class WebUI(object):
 			return Response(status=404)
 
 		# Redirect to index file. Also include base / cse RI
-		if path == None or len(path) == 0 or (path.endswith('index.html') and len(request.args) != 2):
+		# if path == None or len(path) == 0 or (path.endswith('index.html') and len(request.args) != 2):
+		if not path:
 			# print(f'{self.webuiRoot}/index.html?ri=/{self.defaultRII}&or={self.defaultOriginator}')
-			return flask.redirect(f'{self.webuiRoot}/index.html?ri={self.defaultRI}&or={self.defaultOriginator}', code=302)
+			return flask.redirect(f'{self.webuiRoot}/index.html?ri={self.defaultRI}&or={self.defaultOriginator}{"&" + request.query_string.decode() if request.query_string else ""}', code=302)
 		else:
 			filename = f'{self.webuiDirectory}/{path}'	# return any file in the web directory
 		try:
@@ -155,8 +156,8 @@ def runServer(flaskApp:Flask, host:str, port:int, useTLS:bool, certFile:str=None
 		try:
 			context = None
 			if useTLS:
-			    context = ssl.SSLContext(ssl.PROTOCOL_TLS)
-			    context.load_cert_chain(certFile, privateKey)
+				context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+				context.load_cert_chain(certFile, privateKey)
 			flaskApp.run(	host=host, 
 							port=port,
 							threaded=True,

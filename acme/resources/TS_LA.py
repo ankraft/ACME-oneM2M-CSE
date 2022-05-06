@@ -8,7 +8,6 @@
 #
 
 from __future__ import annotations
-from typing import cast, Optional
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, ResponseStatusCode as RC, Result, JSON, CSERequest
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
@@ -27,36 +26,31 @@ class TS_LA(Resource):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.TS_LA, dct, pi, create=create, inheritACP=True, readOnly=True, rn='la', isVirtual=True)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.TS_LA, dct, pi, create = create, inheritACP = True, readOnly = True, rn = 'la')
 
 
-	def handleRetrieveRequest(self, request:CSERequest=None, id:str=None, originator:str=None) -> Result:
+	def handleRetrieveRequest(self, request:CSERequest = None, id:str = None, originator:str = None) -> Result:
 		""" Handle a RETRIEVE request. Return resource """
 		if L.isDebug: L.logDebug('Retrieving latest TSI from TS')
-		if not (r := self._getLatest()):
-			return Result(status=False, rsc=RC.notFound, dbg='no instance for <latest>')
-		return Result(status=True, rsc=RC.OK, resource=r)
+		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.TSI)):
+			return Result.errorResult(rsc = RC.notFound, dbg = 'no instance for <latest>')
+		return Result(status = True, rsc = RC.OK, resource = r)
 
 
 	def handleCreateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a CREATE request. Fail with error code. """
-		return Result(status=False, rsc=RC.operationNotAllowed, dbg='CREATE operation not allowed for <latest> resource type')
+		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'CREATE operation not allowed for <latest> resource type')
 
 
 	def handleUpdateRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a UPDATE request. Fail with error code. """
-		return Result(status=False, rsc=RC.operationNotAllowed, dbg='UPDATE operation not allowed for <latest> resource type')
+		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'UPDATE operation not allowed for <latest> resource type')
 
 
 	def handleDeleteRequest(self, request:CSERequest, id:str, originator:str) -> Result:
 		""" Handle a DELETE request. Delete the latest resource. """
 		if L.isDebug: L.logDebug('Deleting latest TSI from TS')
-		if not (r := self._getLatest()):
-			return Result(status=False, rsc=RC.notFound, dbg='no instance for <latest>')
-		return CSE.dispatcher.deleteResource(r, originator, withDeregistration=True)
-
-
-	def _getLatest(self) -> Optional[Resource]:
-		rs = self.retrieveParentResource().timeSeriesInstances()						# ask parent for all FCI
-		return cast(Resource, rs[-1]) if len(rs) > 0 else None
+		if not (r := CSE.dispatcher.retrieveLatestOldestInstance(self.pi, T.TSI)):
+			return Result.errorResult(rsc = RC.notFound, dbg = 'no instance for <latest>')
+		return CSE.dispatcher.deleteResource(r, originator, withDeregistration = True)

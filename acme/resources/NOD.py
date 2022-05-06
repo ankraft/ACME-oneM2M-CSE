@@ -22,7 +22,7 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class NOD(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.MGMTOBJ, T.SUB ]
+	_allowedChildResourceTypes = [ T.ACTR, T.MGMTOBJ, T.SUB ]
 
 
 	# Attributes and Attribute policies for this Resource Class
@@ -37,7 +37,7 @@ class NOD(AnnounceableResource):
 		'lt': None,
 		'et': None,
 		'lbl': None,
-		'hld': None,
+		'cstn': None,
 		'acpi':None,
 		'at': None,
 		'aa': None,
@@ -56,9 +56,9 @@ class NOD(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.NOD, dct, pi, create=create)
-		self.setAttribute('ni', Utils.uniqueID(), overwrite=False)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.NOD, dct, pi, create = create)
+		self.setAttribute('ni', Utils.uniqueID(), overwrite = False)
 
 
 	def deactivate(self, originator:str) -> None:

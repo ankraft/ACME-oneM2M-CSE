@@ -1,0 +1,1588 @@
+//	complexTypePolicies.ap
+//
+//	(c) 2022 by Andreas Kraft
+//	License: BSD 3-Clause License. See the LICENSE file for further details.
+//
+//	Definitions for oneM2M complex type attributes.
+
+{
+
+	//
+	//	Multiple occurences
+	//
+	"atr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "attribute",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "m2m:attribute",
+			"car": "01L"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "attribute",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "m2m:attribute",
+			"car": "01L"
+		}
+	],
+	"chty": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "accessControlObjectDetails",
+			"lname": "childResourceType",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "enum", 	// m2m:resourceType
+			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 58, 60, 63, 
+				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
+			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "childResourceType",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "enum", 	// m2m:resourceType
+			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 58, 60, 63, 
+				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
+			"car": "01L"
+		}, 
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "childResourceType",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "enum", 	// m2m:resourceType
+			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 58, 60, 63, 
+				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
+			"car": "01L"
+		}
+	],
+	"cra": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "createdAfter",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "createdAfter",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01"
+		}
+	],
+	"crb": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "createdBefore",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "createdBefore",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01"
+		}
+	],
+	"dur": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:batchNotify",
+			"lname": "duration",			
+			"ns": "m2m",
+			"type": "duration",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:missingData",
+			"lname": "duration",			
+			"ns": "m2m",
+			"type": "duration",
+			"car": "1"
+		}
+	],
+	"ec": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "eventCategory",
+			"ns": "m2m",
+			"type": "enum",
+			"evalues": [ "2..4", "100..999"],
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "eventCategory",
+			"ns": "m2m",
+			"type": "enum",
+			"evalues": [ "2..4", "100..999"],
+			"car": "01"
+		}
+	],
+	"exa": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "expireAfter",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "expireAfter",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01"
+		}
+	],
+	"exb": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "expireBefore",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "expireBefore",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01"
+		}
+	],
+	"fo": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "filterOperation",
+			"ns": "m2m",
+			"type": "enum",		// m2m:filterOperation
+			"evalues" : [ "1..3" ],
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "filterOperation",
+			"ns": "m2m",
+			"type": "enum",		// m2m:filterOperation
+			"evalues" : [ "1..3" ],
+			"car": "01"
+		}
+	],
+	"ms": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "modifiedSince",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "modifiedSince",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01"
+		}
+	],
+	"nm": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:mgmtLinkRef",
+			"lname": "name",
+			"ns": "m2m",
+			"type": "string",	// m2m:resourceName
+			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:contentRef",
+			"lname": "name",
+			"ns": "m2m",
+			"type": "string",	// xs:NCName
+			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:attribute",
+			"lname": "name",
+			"ns": "m2m",
+			"type": "string",
+			"car": "1"
+		}
+	],
+	"num": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:batchNotify",
+			"lname": "number",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:missingData",
+			"lname": "number",
+			"ns": "m2m",
+			"type": "positiveInteger",
+			"car": "1"
+		}
+	],
+	"ops": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "accessControlOperations",
+			"ns": "m2m",
+			"type": "nonNegInteger", // m2m:accessControlOperations. Not just an enum, but a bitmap
+			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationMonitor",
+			"lname": "accessControlOperations",
+			"ns": "m2m",
+			"type": "nonNegInteger", // m2m:accessControlOperations. Not just an enum, but a bitmap
+			"car": "01"
+		}
+	],
+	"ot": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "originatingTimestamp",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "originatingTimestamp",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01"
+		}
+	],
+	"rset": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "resultExpirationTimestamp",
+			"ns": "m2m",
+			"type": "absRelTimestamp",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "resultExpirationTimestamp",
+			"ns": "m2m",
+			"type": "absRelTimestamp",
+			"car": "01"
+		}
+	],
+	"stb": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "stateTagBigger",
+			"ns": "m2m",
+			"type": "positiveInteger",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "stateTagBigger",
+			"ns": "m2m",
+			"type": "positiveInteger",
+			"car": "01"
+		}
+	],
+	"sts": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "stateTagSmaller",
+			"ns": "m2m",
+			"type": "positiveInteger",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "stateTagSmaller",
+			"ns": "m2m",
+			"type": "positiveInteger",
+			"car": "01"
+		}
+	],
+	"sza": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "sizeAbove",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "sizeAbove",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "01"
+		}
+	],
+	"szb": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "sizeBelow",
+			"ns": "m2m",
+			"type": "positiveInteger",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "sizeBelow",
+			"ns": "m2m",
+			"type": "positiveInteger",
+			"car": "01"
+		}
+	],
+	"ty": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "accessControlObjectDetails",
+			"lname": "resourceType",
+			"ns": "m2m",
+			"type": "enum",  	// m2m:resourceType
+			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 58, 63, 
+				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "resourceType",
+			"ns": "m2m",
+			"type": "enum",  	// m2m:resourceType
+			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 58, 63, 
+				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "resourceType",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "enum",  	// m2m:resourceType
+			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 58, 63, 
+				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
+			"car": "01l"
+		}
+	],
+	"typ": [
+
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:geoCoordinates",
+			"ns": "m2m",
+			"lname": "type",
+			"type": "enum",  // m2m:geometryType
+			"evalues": [ "1..6" ],
+			"car": "1"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:mgmtLinkRef",
+			"lname": "type",
+			"ns": "m2m",
+			"type": "enum",	// m2m:mgmtDefinition
+			"evalues": [ "1001..1010", 1023 ],
+			"car": "1"
+		}
+	],
+	"us": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "unmodifiedSince",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "unmodifiedSince",
+			"ns": "m2m",
+			"type": "timestamp",
+			"car": "01"
+		}
+	],
+	"val": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:mgmtLinkRef",
+			"lname": "val",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01"
+		},
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:attribute",
+			"lname": "value",
+			"ns": "m2m",
+			"type": "any",
+			"car": "1"
+		}
+	],
+
+	//
+	//	accessControlContexts (embedded complex type)
+	//
+	"actw": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "accessControlContexts",
+			"lname": "accessControlWindow",
+			"ns": "m2m",
+			"type": "list", 
+			"ltype": "string", 	// TODO m2m:scheduleEntry string format check
+			"car": "01L"
+		}
+	],
+	"acip": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "accessControlContexts",
+			"lname": "accessControlIpAddresses",
+			"ns": "m2m",
+			"type": "accessControlIpAddresses", 
+			"car": "01"
+		}
+	],
+	"acre": [	// TODO preliminary bv not yet defined in TS-0004
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "accessControlContexts",
+			"lname": "accessControlLocationRegions",
+			"ns": "m2m",
+			"type": "m2m:locationRegion", 
+			"car": "01"
+		}
+	],
+	"acui": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "accessControlContexts",
+			"lname": "accessControlUserIDs",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "string",
+			"car": "01L"
+		}
+	],
+	"acec": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "accessControlContexts",
+			"lname": "accessControlEvalCriteria",
+			"ns": "m2m",
+			"type": "m2m:evalCriteria",
+			"car": "01"
+		}
+	],
+	"acl": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "accessControlContexts",
+			"lname": "accessControlLimit",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "01"
+		}
+	],
+
+
+	//
+	//	accessControlIpAddresses (embedded complex type)
+	//
+
+	"ipv4": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "accessControlIpAddresses",
+			"lname": "ipv4Addresses",
+			"ns": "m2m",
+			"type": "list", 
+			"ltype": "string",
+			"car": "01L"
+		}
+	],
+	"ipv6": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "accessControlIpAddresses",
+			"lname": "ipv6Addresses",
+			"ns": "m2m",
+			"type": "list", 
+			"ltype": "string",
+			"car": "01L"
+		}
+	],
+
+
+	//
+	//	accessControlObjectDetails (embedded complex type)
+	//
+	// see also "ty", "chty" above
+	"spty": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "accessControlObjectDetails",
+			"lname": "specializationType",
+			"ns": "m2m",
+			"type": "m2m:specializationType", 
+			"car": "01"
+		}
+	],
+
+
+	//
+	//	m2m:accessControlRule
+	//
+	"acor": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:accessControlRule",
+			"lname": "accessControlOriginators",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "anyURI",
+			"car": "1"
+		}
+	],
+	"acop": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:accessControlRule",
+			"lname": "accessControlOperations",
+			"ns": "m2m",
+			"type": "nonNegInteger", // m2m:accessControlOperations. Not just an enum, but a bitmap
+			"car": "1"
+		}
+	],
+	"acco": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:accessControlRule",
+			"lname": "accessControlContexts",
+			"ns": "m2m",
+			"type": "accessControlContexts", // Actually an internal sub-structure, not a complex type, but we need to tread it as one
+			"car": "01"
+		}
+	],
+	"acaf": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:accessControlRule",
+			"lname": "accessControlAuthenticationFlag",
+			"ns": "m2m",
+			"type": "boolean", 
+			"car": "01"
+		}
+	],
+	"acod": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:accessControlRule",
+			"lname": "accessControlObjectDetails",
+			"ns": "m2m",
+			"type": "list", 
+			"ltype": "accessControlObjectDetails",
+			"car": "01L"
+		}
+	],
+	"aca": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:accessControlRule",
+			"lname": "accessControlAttributes",
+			"ns": "m2m",
+			"type": "list", 	// m2m:attributeList
+			"ltype": "string",
+			"car": "01"
+		}
+	],
+
+	
+	//
+	//	m2m:actionInput
+	//
+	"cstr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:actionInput",
+			"lname": "contentString",
+			"ns": "m2m",
+			"type": "string",	// xs:NCName
+			"car": "01"
+		}
+	],
+	"ri": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:actionInput",
+			"lname": "resourceID",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01"
+		}
+	],
+	"raid": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:actionInput",
+			"lname": "resourceAttributeID",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01"
+		}
+	],
+
+
+	//
+	//	m2m:actionStatus
+	//
+	"acn": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:actionStatus",
+			"lname": "action",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01"
+		}
+	],
+	"sus": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:actionStatus",
+			"lname": "status",
+			"ns": "m2m",
+			"type": "enum",
+			"evalues": [ "0..3" ],
+			"car": "01"
+		}
+	],
+
+	//
+	//	m2m:activityPattern
+	//
+	"se": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:activityPattern",
+			"lname": "scheduleElement",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "string", // ???
+			"car": "1"
+		}
+	],
+	"sti": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:activityPattern",
+			"lname": "stationaryIndication",
+			"ns": "m2m",
+			"type": "enum", // m2m:stationaryIndication
+			"evalues": [ 1, 2 ],
+			"car": "01"
+		}
+	],
+	"dsi": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:activityPattern",
+			"lname": "dataSizeIndicator",
+			"ns": "m2m",
+			"type": "positiveInteger",
+			"car": "01"
+		}
+	],
+
+
+	//
+	//	m2m:attribute
+	//
+	//	See "nm", "val" attributes above
+
+
+	//
+	//	m2m:batchNotify
+	//
+	//	See also "num", "dur" above
+
+
+	//
+	//	m2m:contentRef
+	//
+	
+	// see also "nm" definition above
+	
+	"uri": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:contentRef",
+			"lname": "URI",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "1"
+		}
+	],
+
+
+	//
+	//	m2m:eventNotificationCriteria
+	//
+	//	See also "atr", "cra", "crb", "chty", "exa", "exb", "ms" "us",
+	//	"sts", "stb", "sza", "szb", "fo" above
+	"om": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:contentRef",
+			"lname": "operationMonitor",
+			"ns": "m2m",
+			"type": "m2m:operationMonitor",
+			"car": "01L"
+		}
+	],
+	"net": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "notificationEventType",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "enum",	// m2m:notificationEventType
+			"evalues": [ "1..8", 9, 10 ],	// 9, 10 experimental
+			"car": "01"	// 0..5
+		}
+	],
+	"md": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:eventNotificationCriteria",
+			"lname": "missingData",
+			"ns": "m2m",
+			"type": "m2m:missingData",
+			"car": "01"
+		}
+	],
+
+
+	//
+	//	m2m:evalCriteria
+	//
+	"optr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:evalCriteria",
+			"lname": "operator",
+			"ns": "m2m",
+			"type": "enum",  // m2m:evalCriteriaOperator
+			"evalues": [ "1..6" ],
+			"car": "1"
+		}
+	],
+	"sbjt": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:evalCriteria",
+			"lname": "subject",
+			"ns": "m2m",
+			"type": "string", 			// TODO "type": "xs:NCName", 
+			"car": "1"
+		}
+	],
+	"thld": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:evalCriteria",
+			"lname": "threshold",
+			"ns": "m2m",
+			"type": "any",
+			"car": "1"
+		}
+	],
+
+
+	//
+	//	m2m:filterCriteria
+	//
+	//	See also "atr", "cra", "crb", "exa", "exb", "ms", "us", "sts", "stb", "ty", "chty", 
+	//	"sza", "szb", "fo", "ops" above
+	"lbl": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "labels",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "string",
+			"car": "01L"
+		}
+	],
+	"clbl": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "childLabels",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "string",
+			"car": "01L"
+		}
+	],
+	"palb": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "parentLabels",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "string",
+			"car": "01L"
+		}
+	],
+	"lbq": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "labelsQuery",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01"
+		}
+	],
+	"pty": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "parentResourceType",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "enum", 	// m2m:resourceType
+			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 58, 60, 63, 
+				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
+			"car": "01l"
+		}
+	],
+	"cty": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "contentType",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "string",	// m2m:typeOfContent
+			"car": "01L"
+		}
+	],
+	"catr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "childAttribute",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "m2m:attribute",
+			"car": "01L"
+		}
+	],
+	"patr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "parentAttribute",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "m2m:attribute",
+			"car": "01L"
+		}
+	],
+	"fu": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "filterUsage",
+			"ns": "m2m",
+			"type": "enum",	// m2m:filterUsage
+			"evalues" : [ "1..4" ],
+			"car": "01"
+		}
+	],
+	"lim": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "limit",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "01"
+		}
+	],
+	"smf": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "semanticsFilter",
+			"ns": "m2m",
+			"type": "list",		// m2m:sparql
+			"ltype": "string",
+			"car": "01L"
+		}
+	],
+	"cfs": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "contentFilterSyntax",
+			"ns": "m2m",
+			"type": "enum",		// m2m:contentFilterSyntax
+			"evalues" : [ 1 ],
+			"car": "01"
+		}
+	],
+	"cfq": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "contentFilterQuery",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01"
+		}
+	],
+	"lvl": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "level",
+			"ns": "m2m",
+			"type": "positiveInteger",
+			"car": "01"
+		}
+	],
+	"ofst": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "offset",
+			"ns": "m2m",
+			"type": "positiveInteger",
+			"car": "01"
+		}
+	],
+	"arp": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "applyRelativePath",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01"
+		}
+	],
+	"gq": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:filterCriteria",
+			"lname": "geoQuery",
+			"ns": "m2m",
+			"type": "m2m:geoQuery",
+			"car": "01"
+		}
+	],
+
+
+	//
+	//	m2m:geoCoordinates
+	//
+	// see also "typ" above
+	"crd": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:geoCoordinates",
+			"lname": "coordinates",
+			"ns": "m2m",
+			"type": "list",		// TODO m2m:listOfCoordinates -> list of list of floats or GeoJSON?
+			"ltype": "string",
+			"car": "1"
+		}
+	],
+
+
+	//
+	//	m2m:geoQuery
+	//
+	"gmty": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:geoQuery",
+			"lname": "geometryType",
+			"ns": "m2m",
+			"type": "enum", 		 // m2m:geometryType
+			"evalues": [ "1..6" ],
+			"car": "1"
+		}
+	],
+	"geom": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:geoQuery",
+			"lname": "geometryType",
+			"ns": "m2m",
+			"type": "list",		// TODO m2m:listOfCoordinates -> list of list of floats or GeoJSON?
+			"ltype": "string",
+			"car": "1"
+		}
+	],
+	"gsf": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:geoQuery",
+			"lname": "geoSpatialFunction",
+			"ns": "m2m",
+			"type": "enum",		// m2m:geoSpatialFunctionType
+			"evalues": [ "1..3" ],
+			"car": "1"
+		}
+	],
+
+
+	//
+	//	m2m:locationRegion
+	//
+	"accr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:locationRegion",
+			"lname": "circRegion",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "float",
+			"car": "01"
+		}
+	],
+	"accc": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:locationRegion",
+			"lname": "countryCode",
+			"ns": "m2m",
+			"type": "list",		// m2m:countryCode
+			"ltype": "string",
+			"car": "01"
+		}
+	],
+
+
+	//
+	//	m2m:metaInformation
+	//
+	// see ty, ot, rset, ec above
+	"rqet": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "requestExpirationTimestamp",
+			"ns": "m2m",
+			"type": "absRelTimestamp",
+			"car": "01"
+		}
+	],
+	"oet": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "operationExecutionTime",
+			"ns": "m2m",
+			"type": "absRelTimestamp",
+			"car": "01"
+		}
+	],
+	"rt": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "responseType",
+			"ns": "m2m",
+			"type": "m2m:responseTypeInfo",
+			"car": "01"
+		}
+	],
+	"rp": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "resultPersistence",
+			"ns": "m2m",
+			"type": "absRelTimestamp",
+			"car": "01"
+		}
+	],
+	"rcn": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "resultContent",
+			"ns": "m2m",
+			"type": "enum",
+			"evalues": [ "0..12" ],
+			"car": "01"
+		}
+	],
+	"da": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "deliveryAggregation",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01"
+		}
+	],
+	"gid": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "groupRequestIdentifier",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01"
+		}
+	],
+	"fc": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "filterCriteria",
+			"ns": "m2m",
+			"type": "m2m:filterCriteria",
+			"car": "01"
+		}
+	],
+	"drf": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "desiredIdentifierResultType",
+			"ns": "m2m",
+			"type": "enum",	// m2m:desIdResType
+			"evalues": [ 1, 2],
+			"car": "01"
+		}
+	],
+	"rids": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "roleIDs",
+			"ns": "m2m",
+			"type": "list",	
+			"ltype": "string",	// TODO:  m2m:roleIDs validation
+			"car": "01"
+		}
+	],
+	"tqi": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "tokenRequestIndicator",
+			"ns": "m2m",
+			"type": "boolean",	
+			"car": "01"
+		}
+	],
+	"tkns": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "tokens",
+			"ns": "m2m",
+			"type": "list",	
+			"ltype": "string", // 	m2m:dynAuthJWT
+			"car": "01"
+		}
+	],
+	"tids": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "tokenIDs",
+			"ns": "m2m",
+			"type": "list",	
+			"ltype": "string", // 	m2m:tokenID TODO validate
+			"car": "01L"
+		}
+	],
+	"ltids": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "tokenIDs",
+			"ns": "m2m",
+			"type": "list",	
+			"ltype": "string", // 	xs:NCName TODO validate
+			"car": "01L"
+		}
+	],
+	"grtm": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "groupRequestTargetMembers",
+			"ns": "m2m",
+			"type": "list",	
+			"ltype": "anyURI",
+			"car": "01L"
+		}
+	],
+	"gstn": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "groupSomecastTargetNumber",
+			"ns": "m2m",
+			"type": "positiveInteger",	
+			"car": "01"
+		}
+	],
+	"asi": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "authorSignIndicator",
+			"ns": "m2m",
+			"type": "boolean",	
+			"car": "01"
+		}
+	],
+	"aus": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "authorSigns",
+			"ns": "m2m",
+			"type": "list",	
+			"ltype": "string", // m2m:signatureList base 64 encoded string
+			"car": "01"
+		}
+	],
+	"auri": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "authorRelIndicator",
+			"ns": "m2m",
+			"type": "boolean",	
+			"car": "01"
+		}
+	],
+	"sqi": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "semanticQueryIndicator",
+			"ns": "m2m",
+			"type": "boolean",	
+			"car": "01"
+		}
+	],
+	"omr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "ontologyMappingResources",
+			"ns": "m2m",
+			"type": "list",	
+			"ltype": "string", 	// m2m:listOfM2MID
+			"car": "01"
+		}
+	],
+	"rvi": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "ReleaseVersionIndicator",
+			"ns": "m2m",
+			"type": "string",	// m2m:releaseVersion
+			"car": "1"
+		}
+	],
+	"vsi": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "vendorInformation",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01"
+		}
+	],
+	"msu": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:metaInformation",
+			"lname": "m2mServiceUser",
+			"ns": "m2m",
+			"type": "string",	// m2m:ID
+			"car": "01"
+		}
+	],
+
+
+	//
+	//	m2m:missingData
+	//
+	//	See also "num", "dur" above
+
+
+	//
+	//	m2m:mgmtLinkRef
+	//
+	// 	see also "nm", "val" and "typ" definitions above
+
+
+	//
+	//	m2m:operationMonitor
+	//
+	//	See also "ops" above
+	"or": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationMonitor",
+			"lname": "originator",
+			"ns": "m2m",
+			"type": "string",	// m2m:ID
+			"car": "01"
+		}
+	],
+
+
+	//
+	//	m2m:operationResult
+	//
+	"rsc": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "responseStatusCode",
+			"ns": "m2m",
+			"type": "enum",
+			"evalues": [ "1000..1002", 
+				"2000..2002", 2004,
+				4000, 4001, 4004, 4005, 4008, 4015, "4101..4133", "4135..4143",
+				5000, 5001, 5103, "5105..5107", "5203..5222", "5230..5232",
+				6003, 6005, 6010, "6020..6026", "6028..6034"
+			],
+			"car": "1"
+		}
+	],
+	"rqi": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "requestIdentifier",
+			"ns": "m2m",
+			"type": "string",
+			"car": "1"
+		}
+	],
+	"pc": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "primitiveContent",
+			"ns": "m2m",
+			"type": "adict",		//	m2m:primitiveContent
+			"car": "01"
+		}
+	],
+	"to": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "to",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01"
+		}
+	],
+	"fr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "from",
+			"ns": "m2m",
+			"type": "string",
+			"car": "01"
+		}
+	],
+	// see ot, rset, ec above 
+
+	"cnst": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "contentStatus",
+			"ns": "m2m",
+			"type": "enum",
+			"evalues": [ 1, 2 ],
+			"car": "01"
+		}
+	],
+	"cnot": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:operationResult",
+			"lname": "contentOffset",
+			"ns": "m2m",
+			"type": "positiveInteger",
+			"car": "01"
+		}
+	],
+
+
+	//
+	//	m2m:rateLimit
+	//
+	"mnn": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:rateLimit",
+			"lname": "maxNrOfNotify",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "01"
+		}
+	],
+	"tww": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:rateLimit",
+			"lname": "timeWindow",
+			"ns": "m2m",
+			"type": "duration",
+			"car": "01"
+		}
+	],
+	
+
+	//
+	//	m2m:responseTypeInfo
+	//
+	"rtv": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responseTypeInfo",
+			"lname": "responseTypeValue",
+			"ns": "m2m",
+			"type": "enum",
+			"evalues": [ "1..5" ],
+			"car": "1"
+		}
+	],
+	"nu": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:responseTypeInfo",
+			"lname": "notificationURI",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "anyURI",
+			"car": "01"
+		}
+	],
+
+
+	//
+	//	m2m:setOfAcrs
+	//
+	"acr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:setOfAcrs",
+			"lname": "accessControlRule",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "m2m:accessControlRule",
+			"car": "01"
+		}
+	],
+
+
+	//
+	//	m2m:m2m:specializationType
+	//
+	"cnd": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:specializationType",
+			"lname": "containerDefinition",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "01"
+		}
+	],
+	"mgd": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:specializationType",
+			"lname": "mgmtDefinition",
+			"ns": "m2m",
+			"type": "enum",		// m2m:mgmtDefinition
+			"evalues": [ "1001..1010", 1023 ],			"car": "01"
+		}
+	]
+
+}

@@ -368,7 +368,6 @@ class TestCNT_CIN(unittest.TestCase):
 	def test_autoDeleteCINnoNotifiction(self) -> None:
 		"""	Automatic delete of <CIN> must not generate a notification for deleteDirectChild """
 
-
 		# Create <CNT>
 		dct = 	{ 'm2m:cnt' : { 
 					'rn'  : cntRN,
@@ -401,6 +400,62 @@ class TestCNT_CIN(unittest.TestCase):
 		self.assertIsNone(getLastNotification())	# No notifications
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCNT5CIN(self) -> None:
+		""" Create <CNT> and 5 <CIN> """
+		# Create <CNT>
+		dct = 	{ 'm2m:cnt' : { 
+					'rn'  : cntRN,
+					'mni' : 10
+				}}
+		TestCNT_CIN.cnt, rsc = CREATE(aeURL, TestCNT_CIN.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.created, TestCNT_CIN.cnt)
+
+		dct = 	{ 'm2m:cin' : {
+					'cnf' : 'text/plain:0',
+					'con' : 'aValue'
+				}}
+		for _ in range(5):
+			r, rsc = CREATE(cntURL, TestCNT_CIN.originator, T.CIN, dct)
+			self.assertEqual(rsc, RC.created, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteCNTOl(self) -> None:
+		""" Delete <CNT>.OL """
+
+		# Retrieve oldest
+		ol, rsc = RETRIEVE(f'{cntURL}/ol', TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.OK)
+
+		# Delete oldest
+		_, rsc = DELETE(f'{cntURL}/ol', TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.deleted)
+
+		# Retrieve new oldest and compare
+		r, rsc = RETRIEVE(f'{cntURL}/ol', TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertNotEqual(findXPath(r, 'm2m:cin/ri'), findXPath(ol, 'm2m:cin/ri'))
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteCNTLA(self) -> None:
+		""" Delete <CNT>.LA """
+
+		# Retrieve latest
+		ol, rsc = RETRIEVE(f'{cntURL}/la', TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.OK)
+
+		# Delete latest
+		_, rsc = DELETE(f'{cntURL}/la', TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.deleted)
+
+		# Retrieve new latest and compare
+		r, rsc = RETRIEVE(f'{cntURL}/la', TestCNT_CIN.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertNotEqual(findXPath(r, 'm2m:cin/ri'), findXPath(ol, 'm2m:cin/ri'))
+
+
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
@@ -428,7 +483,12 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCNT_CIN('test_deleteCNT'))
 
 	suite.addTest(TestCNT_CIN('test_autoDeleteCINnoNotifiction'))
+	suite.addTest(TestCNT_CIN('test_deleteCNT'))
 
+	suite.addTest(TestCNT_CIN('test_createCNT5CIN'))
+	suite.addTest(TestCNT_CIN('test_deleteCNTOl'))
+	suite.addTest(TestCNT_CIN('test_deleteCNTLA'))
+	suite.addTest(TestCNT_CIN('test_deleteCNT'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)

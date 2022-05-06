@@ -16,8 +16,8 @@ from ..resources.Resource import *
 class CSRAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [	T.CNT, T.CNTAnnc, T.CINAnnc, T.FCNT, T.FCNTAnnc, T.GRP, T.GRPAnnc, T.ACP, T.ACPAnnc,
-									T.SUB, T.TS, T.TSAnnc, T.CSRAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.AEAnnc ]
+	_allowedChildResourceTypes = [	T.ACTR, T.ACTRAnnc,  T.CNT, T.CNTAnnc, T.CINAnnc, T.FCNT, T.FCNTAnnc, T.GRP, T.GRPAnnc, T.ACP, T.ACPAnnc,
+									T.SUB, T.TS, T.TSAnnc, T.CSRAnnc, T.MGMTOBJAnnc, T.NODAnnc, T.AEAnnc, T.TSB, T.TSBAnnc ]
 
 
 	# Attributes and Attribute policies for this Resource Class
@@ -56,7 +56,7 @@ class CSRAnnc(AnnouncedResource):
 	}
 		
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.CSRAnnc, dct, pi=pi, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.CSRAnnc, dct, pi = pi, create = create)
 
 

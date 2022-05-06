@@ -334,6 +334,49 @@ class TestGRP(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_addDeleteContainerCheckMID(self) -> None:
+		"""	Add and delete <CNT>, check <GRP> MID"""
+		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'm2m:grp/cnm'))
+		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), 2)
+
+		# Add container
+		dct = 	{ 'm2m:cnt' : { 
+					'rn'  : f'{cntRN}4' 
+				}}
+		self.cnt4, rsc = CREATE(aeURL, self.originator, T.CNT, dct)
+		self.assertEqual(rsc, RC.created, self.cnt4)
+		self.cnt4RI = findXPath(self.cnt4, 'm2m:cnt/ri')
+	
+		# Add container to group
+		mid = findXPath(r, 'm2m:grp/mid')
+		mid.append(self.cnt4RI)
+		dct = 	{ 'm2m:grp' : { 
+					'mid'  : mid
+				}}
+		r, rsc = UPDATE(grpURL, TestGRP.originator, dct)
+		self.assertEqual(rsc, RC.updated)
+		self.assertIsNotNone(findXPath(r, 'm2m:grp/cnm'))
+		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), 3)
+
+		# Delete container
+		r, rsc = DELETE(f'{aeURL}/{cntRN}4', self.originator)
+		self.assertEqual(rsc, RC.deleted)
+
+		# Check group 
+		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
+		self.assertEqual(rsc, RC.OK)
+		self.assertIsNotNone(findXPath(r, 'm2m:grp/cnm'))
+		self.assertEqual(findXPath(r, 'm2m:grp/cnm'), 2)
+		self.assertNotIn(self.cnt4RI, findXPath(r, 'm2m:grp/mid'))
+
+
+
+
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_attributesGRP2(self) -> None:
 		""" Validate <GRP> attributes after failed MID update"""
 		r, rsc = RETRIEVE(grpURL, TestGRP.originator)
@@ -414,6 +457,11 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 
 	suite.addTest(TestGRP('test_createGRPWithCreatorWrong'))
 	suite.addTest(TestGRP('test_createGRPWithCreator'))
+	suite.addTest(TestGRP('test_deleteGRPByAssignedOriginator'))
+
+	suite.addTest(TestGRP('test_createGRP'))	# create <GRP> again
+	suite.addTest(TestGRP('test_addDeleteContainerCheckMID'))	
+	
 
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)

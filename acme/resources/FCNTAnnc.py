@@ -4,9 +4,7 @@
 #	(c) 2020 by Andreas Kraft
 #	License: BSD 3-Clause License. See the LICENSE file for further details.
 #
-#	FCNT : Announceable variant
-#
-
+""" FlexContainerAnnounced resource class """
 
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, JSON
 from ..resources.AnnouncedResource import AnnouncedResource
@@ -14,10 +12,12 @@ from ..resources.Resource import *
 
 
 class FCNTAnnc(AnnouncedResource):
+	""" FlexContainerAnnounced resource class """
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [	T.CNT, T.CNTAnnc, T.CIN, T.CINAnnc, T.FCNT, T.FCNTAnnc, T.FCI, 
-									T.TS, T.TSAnnc, T.SUB ]
+	_allowedChildResourceTypes = [	T.ACTR, T.ACTRAnnc, T.CNT, T.CNTAnnc, T.CIN, T.CINAnnc, 
+									T.FCNT, T.FCNTAnnc, T.FCI, T.TS, T.TSAnnc, T.SUB ]
+	"""	List of allowed child resource types """
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -45,8 +45,9 @@ class FCNTAnnc(AnnouncedResource):
 		'mia': None,
 		'mbs': None
 	}
+	"""	List of universal, common, and resource specific attributes """
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.FCNTAnnc, dct, pi=pi, create=create)
+	def __init__(self, dct:JSON, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.FCNTAnnc, dct, pi = pi, create = create)
 

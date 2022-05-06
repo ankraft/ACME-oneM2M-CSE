@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 from dataclasses import dataclass, field, astuple
+import enum
 from typing import Tuple, cast, Dict, Any, List, Union
 from enum import IntEnum,  auto
 from http import HTTPStatus
@@ -18,7 +19,7 @@ from collections import namedtuple
 class ACMEIntEnum(IntEnum):
 
 	@classmethod
-	def has(cls, value:int|str|Tuple[int|str]) -> bool:
+	def has(cls, value:int|str|List[int|str]|Tuple[int|str]) -> bool:
 		"""	Check whether the enum type has an entry with
 			either the given int value or string name. 
 
@@ -31,6 +32,12 @@ class ACMEIntEnum(IntEnum):
 				return value in cls.__members__.values()
 			else:
 				return value in cls.__members__
+
+		if isinstance(value, list):	# Checks if list
+			for v in cast(list, value):
+				if not _check(v):
+					return False
+			return True
 
 		if isinstance(value, tuple):	# Checks if tuple
 			for v in cast(tuple, value):
@@ -66,7 +73,7 @@ class ACMEIntEnum(IntEnum):
 
 
 	def __str__(self) -> str:
-		return str(self.name)
+		return self.name
 
 
 	def __repr__(self) -> str:
@@ -83,8 +90,10 @@ class ResourceTypes(ACMEIntEnum):
 	UNKNOWN			= -1
 	ALL 			= -2	# used to indicate that something applies to all resources
 	REQRESP			= -3
+	COMPLEX			= -4
 
 	# Resource Types
+	# NOTE Always apply changes also to the m2m:resourceTypes in attributePolicies.ap etc
 
 	MIXED			=  0
 	ACP 			=  1
@@ -103,6 +112,9 @@ class ResourceTypes(ACMEIntEnum):
 	TS				= 29
 	TSI   			= 30
 	FCI 			= 58
+	TSB				= 60
+	ACTR			= 63
+
 
 
 	# Virtual resources (some are proprietary resource types)
@@ -118,6 +130,8 @@ class ResourceTypes(ACMEIntEnum):
 	TS_LA			=  -20008
 
 	# <mgmtObj> Specializations
+	# NOTE Always apply changes also to the m2m:mgmtDefinition in attributePolicies.ap etc
+	# TODO refactor this into a separate type
 
 	FWR				= 1001
 	SWR				= 1002
@@ -137,6 +151,7 @@ class ResourceTypes(ACMEIntEnum):
 	AEAnnc 			= 10002	
 	CNTAnnc 		= 10003
 	CINAnnc 		= 10004
+	CSEBaseAnnc 	= 10005
 	GRPAnnc 		= 10009
 	MGMTOBJAnnc 	= 10013
 	NODAnnc 		= 10014
@@ -144,6 +159,8 @@ class ResourceTypes(ACMEIntEnum):
 	FCNTAnnc 		= 10028
 	TSAnnc			= 10029
 	TSIAnnc			= 10030
+	TSBAnnc			= 10060
+	ACTRAnnc		= 10063
 
 	FWRAnnc			= -30001
 	SWRAnnc			= -30002
@@ -169,15 +186,35 @@ class ResourceTypes(ACMEIntEnum):
 		return ResourceTypes.UNKNOWN
 
 
+	def fromAnnounced(self) -> ResourceTypes:
+		"""	Get the orginal resource type for an announced type.
+
+			Return:
+				Not-announced resource type, or UNKNOWN
+		"""
+		for (k, v) in ResourceTypes._announcedMappings.items():		#  type: ignore
+			if self.value == v:
+				return k
+		return ResourceTypes.UNKNOWN
+
+
 	def isAnnounced(self) -> bool:
-		return self.value in ResourceTypes._announcedSet 			# type: ignore
-
-
-	# def __str__(self) -> str:
-	# 	return str(self.value)
+		"""	Test whether this type is an announced resource type.
+		
+			Return:
+				True if the type is an announced resource type.
+		"""
+		return self.value in ResourceTypes._announcedSetFull 		# type: ignore
 	
-	# def __repr__(self) -> str:
-	# 	return self.__str__()
+	
+	def isVirtual(self) -> bool:
+		"""	Test whether this type is virtual resource type.
+		
+			Return:
+				True if the type is a virtual resource type.
+		"""
+		return self.value in ResourceTypes._virtualResourcesSet		#  type: ignore
+
 
 	@classmethod
 	def fromTPE(cls, tpe:str) -> ResourceTypes:
@@ -188,17 +225,52 @@ class ResourceTypes(ACMEIntEnum):
 
 
 	@classmethod
-	def announcedMgd(cls, mgd:int) -> ResourceTypes:
-		if mgd in ResourceTypes._announcedMappingsMGD:				#  type: ignore
-			return ResourceTypes._announcedMappingsMGD[mgd] 		#  type: ignore
-		return ResourceTypes.UNKNOWN
+	def isVirtualResource(cls, ty:int) -> bool:
+		"""	Check whether `ty` is a virtual resource.
+		"""
+		return ty in ResourceTypes._virtualResourcesSet				#  type: ignore
 
 
-ResourceTypes._announcedMappings = {							#  type: ignore
+	@classmethod
+	def isVirtualResourceName(cls, name:str) -> bool:
+		"""	Check whether `name` is the name of a virtual resource.
+		"""
+		return name in ResourceTypes._virtualResourcesNames			#  type: ignore
+	
+
+	@classmethod
+	def isCreatorAllowed(self, ty:int) -> bool:
+		"""	Check whether the type `ty` allows the 'creator' attribute.
+		"""
+		return ty in ResourceTypes._creatorAllowed					# type: ignore
+
+
+	@classmethod
+	def supportedResourceTypes(self) -> list[ResourceTypes]:
+		"""	Return the supported resource types, including the 
+			announced resource types.
+		"""
+		return ResourceTypes._supportedResourceTypes				# type: ignore
+
+
+	@classmethod
+	def isInstanceResource(cls, ty:int) -> bool:
+		"""	Test whether this is an instance data resource type
+
+			Args:
+				ty: Type to test
+			Return:
+				Boolean
+		"""
+		return ty in ResourceTypes._instanceResourcesSet	# type: ignore
+
+
+ResourceTypes._announcedMappings = {								#  type: ignore
 	ResourceTypes.ACP 		: ResourceTypes.ACPAnnc,
 	ResourceTypes.AE 		: ResourceTypes.AEAnnc,
 	ResourceTypes.CNT		: ResourceTypes.CNTAnnc,
 	ResourceTypes.CIN 		: ResourceTypes.CINAnnc,
+	ResourceTypes.CSEBase 	: ResourceTypes.CSEBaseAnnc,
 	ResourceTypes.GRP		: ResourceTypes.GRPAnnc,
 	ResourceTypes.MGMTOBJ	: ResourceTypes.MGMTOBJAnnc,
 	ResourceTypes.NOD		: ResourceTypes.NODAnnc,
@@ -206,10 +278,10 @@ ResourceTypes._announcedMappings = {							#  type: ignore
 	ResourceTypes.FCNT		: ResourceTypes.FCNTAnnc,
 	ResourceTypes.TS 		: ResourceTypes.TSAnnc,
 	ResourceTypes.TSI 		: ResourceTypes.TSIAnnc,
-}
+	ResourceTypes.TSB 		: ResourceTypes.TSBAnnc,
+	ResourceTypes.ACTR 		: ResourceTypes.ACTRAnnc,
 
-
-ResourceTypes._announcedMappingsMGD = {							#  type: ignore
+	# ManagementObjs
 	ResourceTypes.FWR		: ResourceTypes.FWRAnnc,
 	ResourceTypes.SWR		: ResourceTypes.SWRAnnc,
 	ResourceTypes.MEM		: ResourceTypes.MEMAnnc,
@@ -223,24 +295,68 @@ ResourceTypes._announcedMappingsMGD = {							#  type: ignore
 	ResourceTypes.NYCFC		: ResourceTypes.NYCFCAnnc,
 }
 
-ResourceTypes._announcedSet = [									#  type: ignore
-	ResourceTypes.ACPAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc, ResourceTypes.CINAnnc,
-	ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc, 
-	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.TSAnnc, ResourceTypes.TSIAnnc,
+
+ResourceTypes._announcedSetFull = [									#  type: ignore
+	ResourceTypes.ACPAnnc, ResourceTypes.ACTRAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc,
+	ResourceTypes.CINAnnc,
+	ResourceTypes.CSEBaseAnnc, ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc, 
+	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.TSAnnc, 
+	ResourceTypes.TSBAnnc, ResourceTypes.TSIAnnc,
 
 	ResourceTypes.FWRAnnc, ResourceTypes.SWRAnnc, ResourceTypes.MEMAnnc, ResourceTypes.ANIAnnc,
 	ResourceTypes.ANDIAnnc, ResourceTypes.BATAnnc, ResourceTypes.DVIAnnc, ResourceTypes.DVCAnnc, 
 	ResourceTypes.RBOAnnc, ResourceTypes.EVLAnnc, ResourceTypes.NYCFCAnnc,
 ]
 
-# Mapping between oneM2M resource types to type identifies
 
-ResourceTypes._names 	= {										# type: ignore
+# List of announceable resource types in order
+ResourceTypes._announcedResourceTypes = [ 							#  type: ignore
+	ResourceTypes.ACPAnnc, ResourceTypes.AEAnnc, ResourceTypes.CNTAnnc, ResourceTypes.CINAnnc,
+	ResourceTypes.GRPAnnc, ResourceTypes.MGMTOBJAnnc, ResourceTypes.NODAnnc,
+	ResourceTypes.CSRAnnc, ResourceTypes.FCNTAnnc, ResourceTypes.ACTRAnnc, 
+	ResourceTypes.TSBAnnc
+]
+
+
+# Supported resource types by this CSE, including the announced resource types
+ResourceTypes._supportedResourceTypes = [							#  type: ignore
+	ResourceTypes.ACP, ResourceTypes.AE, ResourceTypes.CNT, ResourceTypes.CIN, 
+	ResourceTypes.CSEBase, ResourceTypes.GRP, ResourceTypes.MGMTOBJ, ResourceTypes.NOD,
+	ResourceTypes.PCH, ResourceTypes.CSR, ResourceTypes.REQ, ResourceTypes.SUB,
+	ResourceTypes.FCNT, ResourceTypes.FCI, ResourceTypes.TS, ResourceTypes.TSI,
+	ResourceTypes.TSB, ResourceTypes.ACTR,
+] + ResourceTypes._announcedResourceTypes							#  type: ignore
+
+
+# List of virtual resources
+ResourceTypes._virtualResourcesSet = [								#  type: ignore
+	ResourceTypes.CNT_LA, ResourceTypes.CNT_OL,
+	ResourceTypes.FCNT_LA, ResourceTypes.FCNT_OL,
+	ResourceTypes.TS_LA, ResourceTypes.TS_OL,
+	ResourceTypes.GRP_FOPT,
+	ResourceTypes.PCH_PCU 
+]
+
+
+ResourceTypes._instanceResourcesSet = [								#  type: ignore
+	ResourceTypes.CIN, ResourceTypes.FCI, ResourceTypes.TSI
+]
+
+
+# List of possible virtual resource names
+ResourceTypes._virtualResourcesNames = [							#  type: ignore
+	'la', 'ol', 'fopt', 'pcu' 
+]
+
+
+# Mapping between oneM2M resource types to type identifies
+ResourceTypes._names 	= {											# type: ignore
 		ResourceTypes.UNKNOWN		: 'unknown',
 		ResourceTypes.ALL 			: 'all',
 
 		ResourceTypes.MIXED			: 'mixed',
 		ResourceTypes.ACP 			: 'm2m:acp',
+		ResourceTypes.ACTR			: 'm2m:actr',
 		ResourceTypes.AE 			: 'm2m:ae',
 		ResourceTypes.CNT			: 'm2m:cnt',
 		ResourceTypes.CIN 			: 'm2m:cin',
@@ -254,19 +370,23 @@ ResourceTypes._names 	= {										# type: ignore
 		ResourceTypes.PCH			: 'm2m:pch',
 		ResourceTypes.REQ			: 'm2m:req',
 		ResourceTypes.TS 			: 'm2m:ts',
+		ResourceTypes.TSB 			: 'm2m:tsb',
 		ResourceTypes.TSI 			: 'm2m:tsi',
 		ResourceTypes.SUB			: 'm2m:sub',
 
 		ResourceTypes.ACPAnnc 		: 'm2m:acpA',
+		ResourceTypes.ACTRAnnc 		: 'm2m:actrA',
 		ResourceTypes.AEAnnc 		: 'm2m:aeA',
 		ResourceTypes.CNTAnnc 		: 'm2m:cntA',
 		ResourceTypes.CINAnnc 		: 'm2m:cinA',
+		ResourceTypes.CSEBaseAnnc	: 'm2m:cbA',
 		ResourceTypes.GRPAnnc 		: 'm2m:grpA',
 		ResourceTypes.MGMTOBJAnnc 	: 'm2m:mgoA',
 		ResourceTypes.NODAnnc 		: 'm2m:nodA',
 		ResourceTypes.CSRAnnc 		: 'm2m:csrA',
 		ResourceTypes.FCNTAnnc 		: 'm2m:fcntA',
 		ResourceTypes.TSAnnc 		: 'm2m:tsA',
+		ResourceTypes.TSBAnnc 		: 'm2m:tsbA',
 		ResourceTypes.TSIAnnc 		: 'm2m:tsiA',
 
 		ResourceTypes.CNT_OL		: 'm2m:ol',
@@ -306,6 +426,13 @@ ResourceTypes._names 	= {										# type: ignore
 
 	}
 
+# List of resource types for which "creator" is allowed
+# Also add later: eventConfig, statsCollect, statsConfig, semanticDescriptor,
+# notificationTargetPolicy, crossResourceSubscription, backgroundDataTransfer
+ResourceTypes._creatorAllowed = [ 							#  type: ignore
+		ResourceTypes.ACTR, ResourceTypes.CIN, ResourceTypes.CNT, ResourceTypes.GRP, 	
+		ResourceTypes.SUB, ResourceTypes.FCNT, ResourceTypes.TS 
+]
 	
 
 
@@ -328,6 +455,10 @@ class BasicType(ACMEIntEnum):
 	integer			= auto()
 	void 			= auto()
 	duration 		= auto()
+	any				= auto()
+	complex 		= auto()
+	enum	 		= auto()
+	adict			= auto()	# anoymous dict structure
 	time			= timestamp	# alias type for time
 	date			= timestamp	# alias type for date
 
@@ -340,6 +471,7 @@ class Cardinality(ACMEIntEnum):
 	""" Resource attribute cardinalities """
 	CAR1			= auto()
 	CAR1L			= auto()
+	CAR1LN			= auto() # mandatory list AND not empty
 	CAR01			= auto()
 	CAR01L			= auto()
 	CAR1N			= auto() # mandatory, but may be Null/None
@@ -353,6 +485,7 @@ class Cardinality(ACMEIntEnum):
 			Example: `hasCar('01')`
 		"""
 		return cls.has(f'CAR{name}')
+	
 	
 	@classmethod
 	def to(cls, name:str|Tuple[str], insensitive:bool=True) -> Cardinality:
@@ -412,11 +545,13 @@ class ResponseStatusCode(ACMEIntEnum):
 	groupMemberTypeInconsistent					= 4110
 	originatorHasAlreadyRegistered				= 4117
 	appRuleValidationFailed						= 4126
+	operationDeniedByRemoteEntity				= 4127
 	internalServerError							= 5000
 	notImplemented								= 5001
 	targetNotReachable 							= 5103
 	receiverHasNoPrivileges						= 5105
 	alreadyExists								= 5106
+	remoteEntityNotReachable					= 5107
 	targetNotSubscribable						= 5203
 	subscriptionVerificationInitiationFailed	= 5204
 	subscriptionHostHasNoPrivilege				= 5205
@@ -454,7 +589,6 @@ ResponseStatusCode._httpStatusCodes = {																		# type: ignore
 		ResponseStatusCode.groupMemberTypeInconsistent				: HTTPStatus.BAD_REQUEST,				# GROUP MEMBER TYPE INCONSISTENT
 		ResponseStatusCode.originatorHasNoPrivilege					: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS NO PRIVILEGE
 		ResponseStatusCode.invalidChildResourceType					: HTTPStatus.FORBIDDEN,					# INVALID CHILD RESOURCE TYPE
-		ResponseStatusCode.targetNotReachable						: HTTPStatus.FORBIDDEN,					# TARGET NOT REACHABLE
 		ResponseStatusCode.alreadyExists							: HTTPStatus.FORBIDDEN,					# ALREAD EXISTS
 		ResponseStatusCode.targetNotSubscribable					: HTTPStatus.FORBIDDEN,					# TARGET NOT SUBSCRIBABLE
 		ResponseStatusCode.receiverHasNoPrivileges					: HTTPStatus.FORBIDDEN,					# RECEIVER HAS NO PRIVILEGE
@@ -463,8 +597,11 @@ ResponseStatusCode._httpStatusCodes = {																		# type: ignore
 		ResponseStatusCode.subscriptionHostHasNoPrivilege			: HTTPStatus.FORBIDDEN,					# SUBSCRIPTION HOST HAS NO PRIVILEGE
 		ResponseStatusCode.originatorHasAlreadyRegistered			: HTTPStatus.FORBIDDEN,					# ORIGINATOR HAS ALREADY REGISTERED
 		ResponseStatusCode.appRuleValidationFailed					: HTTPStatus.FORBIDDEN,					# APP RULE VALIDATION FAILED
+		ResponseStatusCode.operationDeniedByRemoteEntity			: HTTPStatus.FORBIDDEN,					# OPERATION_DENIED_BY_REMOTE_ENTITY
 		ResponseStatusCode.requestTimeout							: HTTPStatus.FORBIDDEN,					# REQUEST TIMEOUT
 		ResponseStatusCode.notFound									: HTTPStatus.NOT_FOUND,					# NOT FOUND
+		ResponseStatusCode.targetNotReachable						: HTTPStatus.NOT_FOUND,					# TARGET NOT REACHABLE
+		ResponseStatusCode.remoteEntityNotReachable					: HTTPStatus.NOT_FOUND,					# REMOTE_ENTITY_NOT_REACHABLE
 		ResponseStatusCode.operationNotAllowed						: HTTPStatus.METHOD_NOT_ALLOWED,		# OPERATION NOT ALLOWED
 		ResponseStatusCode.notAcceptable 							: HTTPStatus.NOT_ACCEPTABLE,			# NOT ACCEPTABLE
 		ResponseStatusCode.conflict									: HTTPStatus.CONFLICT,					# CONFLICT
@@ -478,6 +615,28 @@ ResponseStatusCode._httpStatusCodes = {																		# type: ignore
 
 	}
 
+
+##############################################################################
+#
+#	Gweneric Enums
+#
+
+class EvalCriteriaOperator(ACMEIntEnum):
+	"""	Eval Criteria Operator """
+	equal				= 1
+	notEqual			= 2
+	greaterThan			= 3
+	lessThan			= 4
+	greaterThanEqual	= 5
+	lessThanEqual		= 6
+
+
+class EvalMode(ACMEIntEnum):
+	"""	Eval Mode """
+	off					= 0
+	once				= 1
+	periodic			= 2
+	continous 			= 3
 
 
 ##############################################################################
@@ -512,13 +671,13 @@ class FilterUsage(ACMEIntEnum):
 	discoveryCriteria		= 1
 	conditionalRetrieval	= 2 # default
 	ipeOnDemandDiscovery	= 3
+	discoveryBasedOperation	= 4
 
 
 class DesiredIdentifierResultType(ACMEIntEnum):
 	""" Desired Identifier Result Type """
 	structured		= 1 # default
 	unstructured	= 2
-
 
 
 ##############################################################################
@@ -532,6 +691,14 @@ class CSEType(ACMEIntEnum):
 	MN					=  2
 	ASN					=  3
 
+
+class CSEStatus(ACMEIntEnum):
+	"""	CSE Status """
+	STOPPED				= auto()
+	STARTING			= auto()
+	RUNNING				= auto()
+	STOPPING			= auto()
+	RESETTING			= auto()
 
 
 ##############################################################################
@@ -549,6 +716,11 @@ class Permission(ACMEIntEnum):
 	NOTIFY 				= 16
 	DISCOVERY			= 32
 	ALL					= 63
+
+	@classmethod
+	def allExcept(cls, permission:Permission) -> int:
+		p = Permission.ALL - permission
+		return p if Permission.NONE <= p <= Permission.ALL else Permission.NONE
 
 
 ##############################################################################
@@ -635,6 +807,108 @@ class RequestStatus(ACMEIntEnum):
 
 ##############################################################################
 #
+#	Event Category 
+#
+
+class EventCategory(ACMEIntEnum):
+	"""	Event Categories """
+	Immediate			= 2
+	BestEffort			= 3
+	Latest				= 4
+
+
+##############################################################################
+#
+#	Content Serializations
+#
+
+class ContentSerializationType(ACMEIntEnum):
+	"""	Content Serialization Types 
+	"""
+
+	XML					= auto()
+	JSON				= auto()
+	CBOR				= auto()
+	PLAIN				= auto()
+	NA	 				= auto()
+	UNKNOWN				= auto()
+
+	def toHeader(self) -> str:
+		"""	Return the mime header for a enum value.
+		"""
+		if self.value == self.JSON:	return 'application/json'
+		if self.value == self.CBOR:	return 'application/cbor'
+		if self.value == self.XML:	return 'application/xml'
+		return None
+	
+	def toSimple(self) -> str:
+		"""	Return the simple string for a enum value.
+		"""
+		if self.value == self.JSON:	return 'json'
+		if self.value == self.CBOR:	return 'cbor'
+		if self.value == self.XML:	return 'xml'
+		return None
+
+	@classmethod
+	def toContentSerialization(cls, t:str) -> ContentSerializationType:
+		"""	Return the enum from a string.
+		"""
+		t = t.lower()
+		if t in [ 'cbor', 'application/cbor' ]:	return cls.CBOR
+		if t in [ 'json', 'application/json' ]:	return cls.JSON
+		if t in [ 'xml',  'application/xml'  ]:	return cls.XML
+		return cls.UNKNOWN
+
+	
+	@classmethod
+	def getType(cls, hdr:str, default:ContentSerializationType=None) -> ContentSerializationType:
+		"""	Return the enum from a header definition.
+		"""
+		default = cls.UNKNOWN if not default else default
+		if not hdr:														return default
+		hdr = hdr.lower()
+
+		if hdr.lower() == 'json':										return cls.JSON
+		if hdr.lower().startswith('application/json'):					return cls.JSON
+		if hdr.lower().startswith('application/vnd.onem2m-res+json'):	return cls.JSON
+
+		if hdr.lower() == 'cbor':										return cls.CBOR
+		if hdr.lower().startswith('application/cbor'):					return cls.CBOR
+		if hdr.lower().startswith('application/vnd.onem2m-res+cbor'):	return cls.CBOR
+		
+		if hdr.lower() == 'xml':										return cls.XML
+		if hdr.lower().startswith('application/xml'):					return cls.XML
+		if hdr.lower().startswith('application/vnd.onem2m-res+XML'):	return cls.XML
+
+		return cls.UNKNOWN
+	
+
+	@classmethod
+	def supportedContentSerializations(cls) -> list[str]:
+		"""	Return a list of supported media types for content serialization.
+		"""
+		return [ 'application/json',
+				 'application/vnd.onem2m-res+json', 
+				 'application/cbor',
+				 'application/vnd.onem2m-res+cbor' ]
+
+
+	@classmethod
+	def supportedContentSerializationsSimple(cls) -> list[str]:
+		"""	Return a simplified (only the names of the serializations)
+			list of supported media types for content serialization.
+		"""
+		return [ cls.JSON.toSimple(), cls.CBOR.toSimple() ]
+
+
+	def __eq__(self, other:object) -> bool:
+		if not isinstance(other, str):
+			return NotImplemented
+		return self.value == self.getType(str(other))
+
+
+##############################################################################
+#
 #	Group related
 #
 
@@ -643,6 +917,7 @@ class ConsistencyStrategy(ACMEIntEnum):
 	abandonMember		= 1	# default
 	abandonGroup		= 2
 	setMixed			= 3
+
 
 ##############################################################################
 #
@@ -660,14 +935,17 @@ class NotificationContentType(ACMEIntEnum):
 
 class NotificationEventType(ACMEIntEnum):
 	""" eventNotificationCriteria/NotificationEventTypes """
-	resourceUpdate						= 1	# A, default
-	resourceDelete						= 2	# B
-	createDirectChild					= 3 # C
-	deleteDirectChild					= 4 # D	
-	retrieveCNTNoChild					= 5	# E # TODO not supported yet
-	triggerReceivedForAE				= 6 # F # TODO not supported yet
-	blockingUpdate 						= 7 # G # TODO not supported yet
-	reportOnGeneratedMissingDataPoints	= 8 # H
+	resourceUpdate						=  1	# A, default
+	resourceDelete						=  2	# B
+	createDirectChild					=  3 # C
+	deleteDirectChild					=  4 # D	
+	retrieveCNTNoChild					=  5 # E # TODO not supported yet
+	triggerReceivedForAE				=  6 # F # TODO not supported yet
+	blockingUpdate 						=  7 # G
+	# TODO spec and implementation for blockingUpdateDirectChild			=  ???
+	reportOnGeneratedMissingDataPoints	=  8 # H
+	blockingRetrieve					=  9 # I # EXPERIMENTAL
+	blockingRetrieveDirectChild			= 10 # J # EXPERIMENTAL
 
 
 	def isAllowedNCT(self, nct:NotificationContentType) -> bool:
@@ -686,7 +964,7 @@ class NotificationEventType(ACMEIntEnum):
 
 ##############################################################################
 #
-#	TimeSeries related.
+#	TimeSeries related
 #
 
 @dataclass
@@ -712,16 +990,14 @@ class MissingData:
 
 
 
-
 @dataclass
 class LastTSInstance:
 	"""	Data class for a single TS's latest and next expected TSI/dgt, and other information """
 
 	# runtime attributes
-	lastSeenDgt:float					= 0.0
-	tsiArrivedAt:float					= 0.0
-	nextExpectedDgt:float				= 0.0
-	nextRuntime:float					= 0.0
+	dgt:list[float]						= field(default_factory = lambda: [0])
+	expectedDgt:float				 	= 0.0
+	missingDataDetectionTime:float		= 0.0
 
 	# <TS> attributes
 	pei:float							= 0.0
@@ -729,83 +1005,70 @@ class LastTSInstance:
 	peid:float							= 0.0
 
 	# Subscriptions
-	missingData:dict[str, MissingData]	= field(default_factory=dict)
+	missingData:dict[str, MissingData]	= field(default_factory = dict)
 
 	# Internal
 	actor:BackgroundWorker				= None	#type:ignore[name-defined] # actor for this TS 
 	running:bool 						= False # for late activation of this 
 
 
+	def prepareNextDgt(self) -> None:
+		"""	Set the next expectedDgt.
+		"""
+		self.expectedDgt += self.pei
+	
+
+	def prepareNextRun(self) -> None:
+		"""	Set the next missingDataDetectionTime.
+		"""
+		self.missingDataDetectionTime += self.pei # mdt?
+	
+
+	def addDgt(self, dgt:float) -> None:
+		# TODO really support list. currently only one dgt is put, but 
+		# always overrides the old one. 
+		# Also change declaration of dgt above
+		if len(self.dgt) == 0:
+			self.dgt.append(dgt)
+		else:
+			self.dgt[0] = dgt
+	
+
+	def nextDgt(self) -> float:
+		if len(self.dgt) == 0:
+			return None
+		return self.dgt.pop(0)
+	
+
+	def hasDgt(self) -> bool:
+		return len(self.dgt) > 0
+	
+
+	def clearDgt(self) -> None:
+		self.dgt.clear()
+		
+
 
 ##############################################################################
 #
-#	Content Serializations
+#	Announcement related
 #
 
-# TODO ACMEIntEnum ?
-class ContentSerializationType(IntEnum):
-	"""	Content Serialization Types """
-	XML					= auto()
-	JSON				= auto()
-	CBOR				= auto()
-	PLAIN				= auto()
-	NA	 				= auto()
-	UNKNOWN				= auto()
+class AnnounceSyncType(ACMEIntEnum):
+	""" Announce Sync Types """
+	UNI_DIRECTIONAL = 1
+	BI_DIRECTIONAL = 2
 
-	def toHeader(self) -> str:
-		"""	Return the mime header for a enum value.
-		"""
-		if self.value == self.JSON:	return 'application/json'
-		if self.value == self.CBOR:	return 'application/cbor'
-		if self.value == self.XML:	return 'application/xml'
-		return None
-	
-	def toSimple(self) -> str:
-		"""	Return the simple string for a enum value.
-		"""
-		if self.value == self.JSON:	return 'json'
-		if self.value == self.CBOR:	return 'cbor'
-		if self.value == self.XML:	return 'xml'
-		return None
 
-	@classmethod
-	def to(cls, t:str) -> ContentSerializationType:
-		"""	Return the enum from a string.
-		"""
-		t = t.lower()
-		if t in [ 'cbor', 'application/cbor' ]:	return cls.CBOR
-		if t in [ 'json', 'application/json' ]:	return cls.JSON
-		if t in [ 'xml',  'application/xml'  ]:	return cls.XML
-		return cls.UNKNOWN
+##############################################################################
+#
+#	TimeSyncBeacon related
+#
 
-	
-	@classmethod
-	def getType(cls, hdr:str, default:ContentSerializationType=None) -> ContentSerializationType:
-		"""	Return the enum from a header definition.
-		"""
-		default = cls.UNKNOWN if not default else default
-		if not hdr:														return default
-		if hdr.lower() == 'json':										return cls.JSON
-		if hdr.lower().startswith('application/json'):					return cls.JSON
-		if hdr.lower().startswith('application/vnd.onem2m-res+json'):	return cls.JSON
-		if hdr.lower() == 'cbor':										return cls.CBOR
-		if hdr.lower().startswith('application/cbor'):					return cls.CBOR
-		if hdr.lower().startswith('application/vnd.onem2m-res+cbor'):	return cls.CBOR
-		if hdr.lower() == 'xml':										return cls.XML
-		if hdr.lower().startswith('application/xml'):					return cls.XML
-		if hdr.lower().startswith('application/vnd.onem2m-res+XML'):	return cls.XML
-		return cls.UNKNOWN
-	
-
-	def __eq__(self, other:object) -> bool:
-		if not isinstance(other, str):
-			return NotImplemented
-		return self.value == self.getType(str(other))
-	
-
-	def __repr__(self) -> str:
-		return self.name
-
+class BeaconCriteria(ACMEIntEnum):
+	""" TimeSyncBeacon criteria """
+	PERIODIC = 1	# default
+	LOSS_OF_SYNCHRONIZATION = 2
 
 
 ##############################################################################
@@ -813,21 +1076,51 @@ class ContentSerializationType(IntEnum):
 #	Result and Argument and Header Data Classes
 #
 
+
 @dataclass
 class Result:
-	resource:Resource			= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
-	data:Any|List[Any]|JSON		= None 		# Anything, or list of anything, or a JSON dictionary	
-	rsc:ResponseStatusCode		= ResponseStatusCode.UNKNOWN	#	The resultStatusCode of a Result
-	dbg:str 					= None
-	request:CSERequest			= None  	# may contain the processed incoming request object
-	embeddedRequest:CSERequest 	= None		# May contain a request as a response, e.g. when polling
-	status:bool 				= None
+	resource:Resource				= None		# type: ignore # Actually this is a Resource type, but have a circular import problem.
+	data:Any|List[Any]|Tuple|JSON	= None 		# Anything, or list of anything, or a JSON dictionary	
+	rsc:ResponseStatusCode			= ResponseStatusCode.UNKNOWN	#	The resultStatusCode of a Result
+	dbg:str 						= None
+	request:CSERequest				= None  	# may contain the processed incoming request object
+	embeddedRequest:CSERequest 		= None		# May contain a request as a response, e.g. when polling
+	status:bool 					= None
 
 
-	def errorResult(self) -> Result:
+	def errorResultCopy(self) -> Result:
 		""" Copy only the rsc and dbg to a new result instance.
+
+			Return:
+				Result instance.
 		"""
-		return Result(status=self.status, rsc=self.rsc, dbg=self.dbg)
+		return Result(status = self.status, rsc = self.rsc, dbg = self.dbg)
+	
+
+	@classmethod
+	def errorResult(cls, rsc:ResponseStatusCode = ResponseStatusCode.badRequest, dbg:str = '', request:CSERequest = None, data:Any = None) -> Result:
+		"""	Create and return a Result object with `status = False` and RSC and debug
+			message set.
+
+			Args:
+				rsc: ResponseStatusCode to return as an error.
+				dbg: String with the debug message.
+				request: CSERequest to return.
+			Return:
+				Error Result instance.
+		"""
+		return Result(status = False, rsc = rsc, request = request, dbg = dbg, data = data) 
+
+
+	@classmethod
+	def successResult(cls) -> Result:
+		"""	Create and return a Result object with `status = True`.
+
+			Return:
+				Success Result instance. This is always the same Result instance!
+		"""
+		return _successResult
+
 
 	def toData(self, ct:ContentSerializationType=None) -> str|bytes|JSON:
 		from ..resources.Resource import Resource
@@ -848,9 +1141,9 @@ class Result:
 		elif self.request and self.request.pc:		# Return the dict if the request is set and has a dict
 			r = self.request.pc
 		else:
-		 	r = ''
+			r = ''
 		return r
-	
+
 
 	def prepareResultFromRequest(self, originalRequest:CSERequest) -> None:
 		"""	Copy the necessary fields from an original request. Existing
@@ -882,11 +1175,9 @@ class Result:
 						self.request.parameters[k] = v
 
 
-	# def __str__(self) -> str:
-	# 	return str(self.toData())
-		
-	# def __repr__(self) -> str:
-	# 	return self.__str__()
+# Result instance to be re-used all over the place
+_successResult = Result(status = True)
+
 
 ##############################################################################
 #
@@ -922,6 +1213,7 @@ class RequestHeaders:
 	resourceType:ResourceTypes				= None
 	requestExpirationTimestamp:str 			= None 	# X-M2M-RET
 	_retUTCts:float							= None 	# X-M2M-RET as UTC based timestamp
+	""" request expiration timeout as UTC-based timestamp """
 	resultExpirationTimestamp:str			= None 	# X-M2M-RST
 	operationExecutionTime:str 				= None 	# X-M2M-OET
 	releaseVersionIndicator:str 			= None 	# X-M2M-RVI
@@ -941,11 +1233,13 @@ class CSERequest:
 	pc:JSON 						= None	# The request's primitive content as a dictionary
 	id:str 							= None 	# target ID / to
 	srn:str 						= None 	# target structured resource name
+	to:str 							= None	# original to
 	csi:str 						= None 	# target csi
 	op:Operation					= None	# request operation
 	rsc:ResponseStatusCode			= ResponseStatusCode.UNKNOWN	# Response Status Code
 	parameters:Parameters			= field(default_factory=dict)	# Any additional parameters
 	requestType:RequestType			= RequestType.NOTSET
+	isResponse:bool					= False	# Default this is a request
 
 
 ##############################################################################
@@ -955,6 +1249,9 @@ class CSERequest:
 
 @dataclass
 class AttributePolicy:
+	
+	# !!! DON'T CHANGE the order of the attributes!
+
 	type:BasicType
 	cardinality:Cardinality
 	optionalCreate:RequestOptionality
@@ -966,11 +1263,22 @@ class AttributePolicy:
 	namespace:str				= None	# namespace
 	tpe:str   					= None	# namespace:type name
 	rtypes:List[ResourceTypes]	= None	# Optional list of multiple resourceTypes
+	ctype:str					= None	# Definition for a complex type attribute
+	typeName:str				= None	# The type as written in the definition
+	fname:str					= None 	# Name of the definition file
+	ltype:BasicType				= None	# sub-type of a list
+	lTypeName:str				= None	# sub-type of a list as writen in the definition
+	evalues:list[Any]			= None 	# List of enum values
 
 	# TODO support annnouncedSyncType
 
 	def select(self, index:int) -> Any:
 		"""	Return the n-th attributes in the dataclass.
+
+			Args:
+				index: Attribute index
+			Return:
+				n-th attribute from the dataclass
 		"""
 		try:
 			return astuple(self)[index]
@@ -980,7 +1288,10 @@ class AttributePolicy:
 
 """	Represent a dictionary of attribute policies used in validation. """
 AttributePolicyDict = Dict[str, AttributePolicy]
+ResourceAttributePolicyDict = Dict[Tuple[Union[ResourceTypes, str], str], AttributePolicy]
+
 FlexContainerAttributes = Dict[str, Dict[str, AttributePolicy]]
+FlexContainerSpecializations = Dict[str, str]
 
 
 ##############################################################################

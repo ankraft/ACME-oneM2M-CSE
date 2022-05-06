@@ -19,7 +19,7 @@ from acme.etc.DateUtils import getResourceDate
 from init import *
 
 
-CND = 'org.onem2m.home.moduleclass.temperature'
+CND = 'org.onem2m.common.moduleclass.temperature'
 
 class TestExpiration(unittest.TestCase):
 
@@ -49,7 +49,7 @@ class TestExpiration(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_expireCNT(self) -> None:
 		""" Create and expire <CNT> """
-		self.assertTrue(isTestExpirations())
+		self.assertTrue(isTestResourceExpirations())
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
@@ -66,7 +66,7 @@ class TestExpiration(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_expireCNTAndCIN(self) -> None:
 		""" Create and expire <CNT> and <CIN> """
-		self.assertTrue(isTestExpirations())
+		self.assertTrue(isTestResourceExpirations())
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
 					'et' : getResourceDate(expirationCheckDelay), # 2 seconds in the future
@@ -147,7 +147,7 @@ class TestExpiration(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_expireCNTViaMIA(self) -> None:
 		""" Expire <CNT> via MIA """
-		self.assertTrue(isTestExpirations())
+		self.assertTrue(isTestResourceExpirations())
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
@@ -179,21 +179,21 @@ class TestExpiration(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_expireCNTViaMIALarge(self) -> None:
 		""" Expire <CNT> via too large MIA """
-		self.assertTrue(isTestExpirations())
+		self.assertTrue(isTestResourceExpirations())
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'm2m:cnt' : { 
 					'rn' : cntRN,
-					'mia': tooLargeExpirationDelta()
+					'mia': tooLargeResourceExpirationDelta()
 				}}
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
-		self.assertEqual(findXPath(r, 'm2m:cnt/mia'), tooLargeExpirationDelta())
+		self.assertEqual(findXPath(r, 'm2m:cnt/mia'), tooLargeResourceExpirationDelta())
 
 		dct = 	{ 'm2m:cin' : {
 					'cnf' : 'text/plain:0',
 					'con' : 'AnyValue'
 				}}
-		tooLargeET = getResourceDate(tooLargeExpirationDelta())
+		tooLargeET = getResourceDate(tooLargeResourceExpirationDelta())
 		for _ in range(0, 5):
 			r, rsc = CREATE(cntURL, TestExpiration.originator, T.CIN, dct)
 			self.assertEqual(rsc, RC.created)
@@ -212,7 +212,7 @@ class TestExpiration(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_expireFCNTViaMIA(self) -> None:
 		""" Expire <FCNT> via MIA """
-		self.assertTrue(isTestExpirations())
+		self.assertTrue(isTestResourceExpirations())
 		self.assertIsNotNone(TestExpiration.ae)
 		dct = 	{ 'cod:tempe' : { 
 					'rn'	: fcntRN,
@@ -221,7 +221,7 @@ class TestExpiration(unittest.TestCase):
 					'curT0'	: 23.0
 				}}
 		r, rsc = CREATE(aeURL, TestExpiration.originator, T.FCNT, dct)
-		self.assertEqual(rsc, RC.created)
+		self.assertEqual(rsc, RC.created, r)
 		self.assertEqual(findXPath(r, 'cod:tempe/mia'), expirationCheckDelay)
 		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 1)
 		self.assertGreater(findXPath(r, 'cod:tempe/cbs'), 0)	
@@ -248,8 +248,8 @@ class TestExpiration(unittest.TestCase):
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	# Reconfigure the server to check faster for expirations.
-	enableShortExpirations()
-	if not isTestExpirations():
+	enableShortResourceExpirations()
+	if not isTestResourceExpirations():
 		print('\n[red reverse] Error configuring the CSE\'s test settings ')
 		print('Did you enable [i]remote configuration[/i] for the CSE?\n')
 		return 0,0,1	
@@ -265,7 +265,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestExpiration('test_expireFCNTViaMIA'))
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
-	disableShortExpirations()
+	disableShortResourceExpirations()
 	printResult(result)
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 

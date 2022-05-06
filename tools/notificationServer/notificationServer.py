@@ -9,15 +9,16 @@
 #
 
 from __future__ import annotations
+from http.client import HTTPMessage
 from typing import cast
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import json, argparse, sys, ssl
-from copy import deepcopy
+import email.parser
+import json, argparse, sys, ssl, signal
 import cbor2
 from rich.console import Console
 from rich.syntax import Syntax
 
-import pathlib, os, signal
+import pathlib, os
 parent = pathlib.Path(os.path.abspath(os.path.dirname(__file__))).parent.parent
 sys.path.append(f'{parent}')
 from acme.helpers.MQTTConnection import MQTTConnection, MQTTHandler
@@ -25,6 +26,7 @@ from acme.helpers.TextTools import toHex
 from acme.etc.RequestUtils import serializeData
 from acme.etc.DateUtils import getResourceDate
 from acme.etc.Types import ContentSerializationType
+from acme.etc.Constants import Constants as C
 
 ##############################################################################
 #
@@ -52,20 +54,27 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		"""	Handle notification.
 		"""
 
-		# Construct return header
-		# Always acknowledge the verification requests
-		self.send_response(200)
-		self.send_header('X-M2M-RSC', '2000' if not failVerification else '4101')
-		self.end_headers()
+		_responseHeaders:list = []
 
 		# Get headers and content data
 		length = int(self.headers['Content-Length'])
 		contentType = self.headers['Content-Type']
+		requestID = self.headers['X-M2M-RI']
 		post_data = self.rfile.read(length)
+
+		# Construct return header
+		# Always acknowledge the verification requests
+		self.send_response(200)
+		self.send_header('X-M2M-RSC', '2000' if not failVerification else '4101')
+		self.send_header('X-M2M-RI', requestID)
+		_responseHeaders = self._headers_buffer	# type:ignore [attr-defined]
+		self.end_headers()
+
+
 		
 		# Print the content data
 		console.print(f'[{messageColor}]### Notification (http)')
-		console.print(self.headers, highlight=False)
+		console.print(self.headers, highlight = False)
 
 		# Print JSON
 		if contentType in [ 'application/json', 'application/vnd.onem2m-res+json' ]:
@@ -87,11 +96,16 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		# Print other binary content
 		else:
 			console.print(toHex(post_data), highlight=False)
+		
+		# Print HTTP Response
+		# This looks a it more complicated but is necessary to render nicely in Jupyter
+		console.print(f'[{messageColor}]### Notification Response (http)')
+		console.print(email.parser.Parser(_class = HTTPMessage).parsestr(b''.join(_responseHeaders).decode('iso-8859-1')), highlight = False)
 
 
 	def log_message(self, format:str, *args:int) -> None:
 		if (msg := format%args).startswith('"GET'):	return	# ignore GET log messages
-		console.print(f'[{messageColor} reverse]{msg}')
+		console.print(f'[{messageColor} reverse]{msg}', highlight = False)
 
 
 ##############################################################################
@@ -251,7 +265,7 @@ signal.signal(signal.SIGUSR1, exitSignalHandler)
 	
 if __name__ == '__main__':
 	console = Console()
-	console.print('\n[dim][[/dim][red][i]ACME[/i][/red][dim]][/dim] - [bold]Notification Server[/bold]\n\n')
+	console.print(f'\n{C.textLogo} - [bold]Notification Server[/bold]\n\n')
 
 
 	# parse command line argiments

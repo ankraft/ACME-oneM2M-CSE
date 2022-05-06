@@ -18,14 +18,13 @@ from ..resources.AnnounceableResource import AnnounceableResource
 from ..resources import Factory as Factory
 
 
-# TODO periodicIntervalDelta missing in TS-0004? Shortname for validation
-# TODO periodicIntervalDelta default
-
+# CSE default:
+#	- peid is set to pei/2 if ommitted, and pei is set
 
 class TS(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.TSI, T.SUB ]
+	_allowedChildResourceTypes = [ T.ACTR, T.TSI, T.SUB ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -39,7 +38,7 @@ class TS(AnnounceableResource):
 		'lt': None,
 		'et': None,
 		'lbl': None,
-		'hld': None,
+		'cstn': None,
 		'acpi':None,
 		'at': None,
 		'aa': None,
@@ -66,15 +65,16 @@ class TS(AnnounceableResource):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.TS, dct, pi, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.TS, dct, pi, create = create)
 
-		self.setAttribute('cni', 0, overwrite=False)
-		self.setAttribute('cbs', 0, overwrite=False)
+		self.setAttribute('mdd', False, overwrite = False)	# Default is False if not provided
+		self.setAttribute('cni', 0, overwrite = False)
+		self.setAttribute('cb389s', 0, overwrite = False)
 		if Configuration.get('cse.ts.enableLimits'):	# Only when limits are enabled
-			self.setAttribute('mni', Configuration.get('cse.ts.mni'), overwrite=False)
-			self.setAttribute('mbs', Configuration.get('cse.ts.mbs'), overwrite=False)
-			self.setAttribute('mdn', Configuration.get('cse.ts.mdn'), overwrite=False)
+			self.setAttribute('mni', Configuration.get('cse.ts.mni'), overwrite = False)
+			self.setAttribute('mbs', Configuration.get('cse.ts.mbs'), overwrite = False)
+			self.setAttribute('mdn', Configuration.get('cse.ts.mdn'), overwrite = False)
 
 		self.__validating = False	# semaphore for validating
 
@@ -82,22 +82,23 @@ class TS(AnnounceableResource):
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (res := super().activate(parentResource, originator)).status:
 			return res
+		# Validation of CREATE is done in self.validate()
 
 		# register latest and oldest virtual resources
 		L.isDebug and L.logDebug(f'Registering latest and oldest virtual resources for: {self.ri}')
 
 		# add latest
-		resource = Factory.resourceFromDict({}, pi=self.ri, ty=T.TS_LA).resource	# rn is assigned by resource itself
+		resource = Factory.resourceFromDict({}, pi = self.ri, ty = T.TS_LA).resource	# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createResource(resource)).resource:
-			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+			return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
 
 		# add oldest
-		resource = Factory.resourceFromDict({}, pi=self.ri, ty=T.TS_OL).resource	# rn is assigned by resource itself
+		resource = Factory.resourceFromDict({}, pi = self.ri, ty = T.TS_OL).resource	# rn is assigned by resource itself
 		if not (res := CSE.dispatcher.createResource(resource)).resource:
-			return Result(status=False, rsc=res.rsc, dbg=res.dbg)
+			return Result.errorResult(rsc = res.rsc, dbg = res.dbg)
 		
 		self._validateDataDetect()
-		return Result(status=True)
+		return Result.successResult()
 
 
 	def deactivate(self, originator:str) -> None:
@@ -105,14 +106,67 @@ class TS(AnnounceableResource):
 		CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 
 
-	def update(self, dct:JSON=None, originator:str=None) -> Result:
+	def update(self, dct:JSON = None, originator:str = None) -> Result:
+
+		# Extra checks if mdd is present in an update
+		updatedAttributes = Utils.findXPath(dct, 'm2m:ts')
+		
+		if (mddNew := updatedAttributes.get('mdd')) is not None:	# boolean
+			# Check that mdd is updated alone
+			if any(key in ['mdt', 'mdn', 'peid', 'pei'] for key in updatedAttributes.keys()):
+				return Result.errorResult(dbg = L.logDebug('mdd must not be updated together with mdt, mdn, pei or peid.'))
+
+			# Clear the list if mddNew is deliberatly set to True
+			if mddNew == True:
+				self._clearMdlt()
+				# Restart the monitoring process
+				# The actual "restart" is happening when the next TSI is received
+				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
+			else:
+				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
+		
+		# Check that certain attributes are not updated when mdd is true
+		if self.mdd  == True: # existing mdd
+			if any(key in ['mdt', 'mdn', 'peid', 'pei'] for key in updatedAttributes.keys()):
+				return Result.errorResult(dbg = L.logDebug('mdd must not be True when mdt, mdn, pei or peid are updated.'))
+
+		if (peiNew := updatedAttributes.get('pei')) is not None: # integer
+			if 'peid' not in updatedAttributes:
+				# Add peid if not provided to new attributes, real update below (!)
+				updatedAttributes['peid'] = int(peiNew / 2)	# CSE internal policy
+		# further pei / peid checks are done in validate()
+
+
+		if mddNew == True or (mddNew is None and self.mdd == True):	# either mdd is set to True or was and stays True
+			mdt = updatedAttributes.get('mdt', self.mdt) 		# old or new value,  default: self.mdt
+			peid = updatedAttributes.get('peid', self.peid)		# old or new value, default: self.peid
+			if mdt is not None and peid is not None and mdt <= peid:
+				return Result.errorResult(dbg = L.logDebug('mdt must be > peid'))
+
+		# Check if mdn was changed and shorten mdlt accordingly, if exists
+		# shorten the mdlt if a limit is set in mdn
+		# if (mdnNew := updatedAttributes.get('mdn') ) is not None:	# integer
+		# 	if (mdlt := cast(list, self.mdlt)) and (l := len(mdlt)) > mdnNew:
+		# 		mdlt = mdlt[l - mdnNew:]
+		# 		self['mdlt'] = mdlt
+
+		# Check if mdt was changed in an update
+		# if 'mdt' in updatedAttributes:	# mdt is in the update, either True, False or None!
+		# 	mdtNew = updatedAttributes.get('mdt')
+		# 	if mdtNew is None and CSE.timeSeries.isMonitored(self.ri):	# it is in the update, but set to None, meaning remove the mdt from the TS
+		# 		CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
+
+		# Do real update last
 		if not (res := super().update(dct, originator)).status:
 			return res
-		self._validateDataDetect(dct)
-		return res
+		
+		self._validateChildren()	# Check consequences from the update
+		self._validateDataDetect(updatedAttributes)
+
+		return Result.successResult()
 
  
-	def validate(self, originator:str=None, create:bool=False, dct:JSON=None, parentResource:Resource=None) -> Result:
+	def validate(self, originator:str = None, create:bool = False, dct:JSON = None, parentResource:Resource = None) -> Result:
 		L.isDebug and L.logDebug(f'Validating timeSeries: {self.ri}')
 		if (res := super().validate(originator, create, dct, parentResource)).status == False:
 			return res
@@ -120,18 +174,26 @@ class TS(AnnounceableResource):
 		# Check the format of the CNF attribute
 		if cnf := self.cnf:
 			if not (res := CSE.validator.validateCNF(cnf)).status:
-				return Result(status = False, rsc = RC.badRequest, dbg = res.dbg)
+				return Result.errorResult(dbg = res.dbg)
 
-		# Check peid
+		# Check for peid
 		if self.peid is not None and self.pei is not None:	# pei(d) is an int
-			if self.peid > self.pei/2:
-				L.logWarn(dbg := 'peid must be <= pei/2')
-				return Result(status = False, rsc = RC.badRequest, dbg = dbg)
+			if not self.peid <= self.pei/2:	# complicated, but reflects the text in the spec
+				return Result.errorResult(dbg = L.logDebug('peid must be <= pei/2'))
 		elif self.pei is not None:	# pei is an int
-			self.setAttribute('peid', int(self.pei/2), False)
-
+			self.setAttribute('peid', int(self.pei/2), False)	# CSE internal policy
+		
+		# Checks for MDT
+		if self.mdd: # present and True
+			# Add mdlt and mdc, if not already added ( No overwrite !)
+			self._clearMdlt(False)
+			if self.mdt is None:
+				return Result.errorResult(dbg = L.logDebug('mdt must be set if mdd is True'))
+			if self.mdt is not None and self.peid is not None and self.mdt <= self.peid:
+				return Result.errorResult(dbg = L.logDebug('mdt must be > peid'))
+		
 		self._validateChildren()
-		return Result(status=True)
+		return Result.successResult()
 
 
 	def childWillBeAdded(self, childResource:Resource, originator:str) -> Result:
@@ -140,12 +202,12 @@ class TS(AnnounceableResource):
 		
 		# Check whether the child's rn is "ol" or "la".
 		if (rn := childResource['rn']) and rn in ['ol', 'la']:
-			return Result(status=False, rsc=RC.operationNotAllowed, dbg='resource types "latest" or "oldest" cannot be added')
+			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'resource types "latest" or "oldest" cannot be added')
 	
 		# Check whether the size of the TSI doesn't exceed the mbs
 		if childResource.ty == T.TSI and self.mbs is not None:					# mbs is an int
 			if childResource.cs is not None and childResource.cs > self.mbs:	# cs is an int
-				return Result(status=False, rsc=RC.notAcceptable, dbg='child content sizes would exceed mbs')
+				return Result.errorResult(rsc = RC.notAcceptable, dbg = 'child content sizes would exceed mbs')
 
 		# Check whether another TSI has the same dgt value set
 		tsis = CSE.storage.searchByFragment({ 	'ty'	: T.TSI,
@@ -153,9 +215,9 @@ class TS(AnnounceableResource):
 												'dgt'	: childResource.dgt
 		})
 		if len(tsis) > 0:	# Error if yes
-			return Result(status=False, rsc=RC.conflict, dbg=f'timeSeriesInstance with the same dgt: {childResource.dgt} already exists')
+			return Result.errorResult(rsc = RC.conflict, dbg = f'timeSeriesInstance with the same dgt: {childResource.dgt} already exists')
 
-		return Result(status=True)
+		return Result.successResult()
 
 
 	# Handle the addition of new TSI. Basically, get rid of old ones.
@@ -173,10 +235,10 @@ class TS(AnnounceableResource):
 					childResource.setAttribute('et', maxEt)
 					childResource.dbUpdate()
 
-			self.validate(originator)
+			self.validate(originator)	# Handle old TSI removals
 		
 			# Add to monitoring if this is enabled for this TS (mdd & pei & mdt are not None, and mdd==True)
-			if (mdd := self.mdd) and self.pei is not None and self.mdt is not None:
+			if self.mdd and self.pei is not None and self.mdt is not None:
 				CSE.timeSeries.updateTimeSeries(self, childResource)
 		
 		elif childResource.ty == T.SUB:		# start monitoring
@@ -184,7 +246,7 @@ class TS(AnnounceableResource):
 				CSE.timeSeries.addSubscription(self, childResource)
 
 
-	# Handle the removal of a CIN. 
+	# Handle the removal of a TSI. 
 	def childRemoved(self, childResource:Resource, originator:str) -> None:
 		L.isDebug and L.logDebug(f'Child resource removed: {childResource.ri}')
 		super().childRemoved(childResource, originator)
@@ -211,42 +273,35 @@ class TS(AnnounceableResource):
 			return
 		self.__validating = True
 
-		cs = self.timeSeriesInstances()	# retrieve TIS child resources
-		cni = len(cs)			
+		# TODO Optimize: Do we really need the resources?
+		tsis = self.timeSeriesInstances()	# retrieve TIS child resources
+		cni = len(tsis)			
 			
 		# Check number of instances
 		if (mni := self.mni) is not None:	# mni is an int
-			i = 0
-			l = cni
-			while cni > mni and i < l:
-				L.isDebug and L.logDebug(f'cni > mni: Removing <tsi>: {cs[i].ri}')
+			while cni > mni and cni > 0:
+				L.isDebug and L.logDebug(f'cni > mni: Removing <tsi>: {tsis[0].ri}')
 				# remove oldest
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that TS.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteResource(cs[i], parentResource=self, doDeleteCheck=False)
+				CSE.dispatcher.deleteResource(tsis[0], parentResource = self, doDeleteCheck = False)
+				del tsis[0]
 				cni -= 1	# decrement cni when deleting a <cin>
-				i += 1
-			cs = self.timeSeriesInstances()	# retrieve TSI child resources again
-			cni = len(cs)
 
 		# Calculate cbs
-		cbs = 0
-		for c in cs:
-			cbs += c.cs
+		cbs = sum([ each.cs for each in tsis])
 
 		# check size
 		if (mbs := self.mbs) is not None:
-			i = 0
-			l = len(cs)
-			while cbs > mbs and i < l:
-				L.isDebug and L.logDebug(f'cbs > mbs: Removing <tsi>: {cs[i].ri}')
+			while cbs > mbs and cbs > 0:
+				L.isDebug and L.logDebug(f'cbs > mbs: Removing <tsi>: {tsis[0].ri}')
 				# remove oldest
-				cbs -= cs[i]['cs']
+				cbs -= tsis[0]['cs']
 				# Deleting a child must not cause a notification for 'deleteDirectChild'.
 				# Don't do a delete check means that TS.childRemoved() is not called, where subscriptions for 'deleteDirectChild'  is tested.
-				CSE.dispatcher.deleteResource(cs[i], parentResource=self, doDeleteCheck=False)
+				CSE.dispatcher.deleteResource(tsis[0], parentResource = self, doDeleteCheck = False)
+				del tsis[0]
 				cni -= 1	# decrement cni when deleting a <tsi>
-				i += 1
 
 		# Some attributes may have been updated, so store the resource 
 		self['cni'] = cni
@@ -257,51 +312,57 @@ class TS(AnnounceableResource):
 		self.__validating = False
 
 
-	def _validateDataDetect(self, dct:JSON=None) -> None:
+	def _validateDataDetect(self, updatedAttributes:JSON = None) -> None:
+		"""	This method checks and enables or disables certain data detect monitoring attributes.
+		"""
 		L.isDebug and L.logDebug('Validating data detection')
 
-		# Check whether missing data detection is turned on
-		mdn = self.mdn
 		mdd = self.mdd
-		if mdd:
-			# When missingDataMaxNr is set
-			if mdn is not None:	# mdn is an int
-				self.setAttribute('mdc', 0, overwrite=False)	# add missing data count
-				# Monitoring is not started here, but happens when the first TSI is added
-			else:
-				# Remove the list and count when missing data number is not set
-				self.delAttribute('mdlt')	# remove list
-				self.delAttribute('mdc')	# remove counter
-				if CSE.timeSeries.isMonitored(self.ri):	# stop monitoring
-					CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
-
+		
 		# If any of mdd, pei or mdt becomes None, or is mdd==False, then stop monitoring this TS
 		if not mdd or not self.pei or not self.mdt:
 			if CSE.timeSeries.isMonitored(self.ri):
 				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
+
+
+        # If any parameters related to the missing data detection process (missingDataDetectTimer, missingDataMaxNr,
+        # periodicIntervalDelta, periodicInterval) are updated while the data detection process is paused the Hosting CSE
+        # will clear the missingDataList and missingDataCurrentNr.
+		if self.mdd  == False:
+			if updatedAttributes and any(key in ['mdt', 'mdn', 'peid', 'pei'] for key in updatedAttributes.keys()):
+				self._clearMdlt()
+
 		
-		# Check if mdn was changed and shorten mdlt accordingly, if exists
-		if self.mdlt and (newMdn := Utils.findXPath(dct, 'm2m:ts/mdn')) is not None:	# Returns None if dct is None or not found in dct
-			mdlt = self.mdlt
-			if (l := len(mdlt)) > newMdn:
-				mdlt = mdlt[l-newMdn:]
-				self['mdlt'] = mdlt
-				self['mdc'] = newMdn
+		# # Check if mdn was changed and shorten mdlt accordingly, if exists
+		# if updatedAttributes:
+		# 	# shorten the mdlt if a limit is set in mdn
+		# 	if self.mdlt and (newMdn := updatedAttributes.get('mdn') ) is not None:	# Returns None if dct is None or not found in dct
+		# 		mdlt = self.mdlt
+		# 		if (l := len(mdlt)) > newMdn:
+		# 			mdlt = mdlt[l-newMdn:]
+		# 			self['mdlt'] = mdlt
 
-		# Check if mdt was changed in an update
-		if dct and 'mdt' in dct['m2m:ts']:	# mdt is in the update
-			mdt = Utils.findXPath(dct, 'm2m:ts/mdt')
-			isMonitored = CSE.timeSeries.isMonitored(self.ri)
-			if mdt is None and isMonitored:				# it is in the update, but set to None, meaning remove the mdt from the TS
-				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
-			# akr: not sure about the following. mdt is checked in the next period
-			# elif mdt is not None and isMonitored:		# it is in the update and has a value, so update the monitor
-			# 	CSE.timeSeries.updateTimeSeries(self)	# This will implicitly start monitoring
+		# 	# Check if mdt was changed in an update
+		# 	if (newMdt := updatedAttributes.get('mdt')):	# mdt is in the update, either True, False or None!
+		# 		if newMdt is None and CSE.timeSeries.isMonitored(self.ri):				# it is in the update, but set to None, meaning remove the mdt from the TS
+		# 			CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 
+		# Always set the mdc to the length of mdlt
+		if self.hasAttribute('mdlt'):
+			self.setAttribute('mdc', len(self.mdlt))
 
 		# Save changes
 		self.dbUpdate()
 
+
+	def _clearMdlt(self, overwrite:bool = True) -> None:
+		"""	Clear the missingDataList and missingDataCurrentNr attributes.
+
+			Args:
+				overwrite: Force overwrite.
+		"""
+		self.setAttribute('mdlt', [], overwrite)
+		self.setAttribute('mdc', 0, overwrite)
 
 
 	def timeSeriesInstances(self) -> list[Resource]:
@@ -313,11 +374,11 @@ class TS(AnnounceableResource):
 	def addDgtToMdlt(self, dgtToAdd:float) -> None:
 		"""	Add the dataGenerationTime `dgtToAdd` to the mdlt of this resource.
 		"""
-		self.setAttribute('mdlt', [], overwrite=False)						# Add to mdlt, just in case it hasn't created before
-		self.mdlt.append(DateUtils.toISO8601Date(dgtToAdd))						# Add missing dgt to TS.mdlt
+		self._clearMdlt(False)												# Add to mdlt, just in case it hasn't created before
+		self.mdlt.append(DateUtils.toISO8601Date(dgtToAdd))					# Add missing dgt to TS.mdlt
 		if (mdn := self.mdn) is not None:									# mdn may not be set. Then this list grows forever
 			if len(self.mdlt) > mdn:										# If mdlt is bigger then mdn allows
-				self.setAttribute('mdlt', self.mdlt[1:], overwrite=True)	# Shorten the mdlt
-			self.setAttribute('mdc', len(self.mdlt), overwrite=True)		# Set the mdc
+				self.setAttribute('mdlt', self.mdlt[1:], overwrite = True)	# Shorten the mdlt
+			self.setAttribute('mdc', len(self.mdlt), overwrite = True)		# Set the mdc
 			self.dbUpdate()													# Update in DB
 

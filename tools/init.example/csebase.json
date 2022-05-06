@@ -1,9 +1,0 @@
-{	"m2m:cb" : {
-		"ri" : "${cse.ri}",
-		"pi" : "",
-		"ty" : 5,
-		"rn" : "${cse.rn}",
-		"csi" : "${cse.csi}",
-		"acpi" : [ "${cse.security.adminACPI}", "${cse.security.csebaseAccessACPI}" ]
-	}
-}

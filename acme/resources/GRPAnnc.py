@@ -16,7 +16,7 @@ from ..resources.Resource import *
 class GRPAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.SUB ]
+	_allowedChildResourceTypes = [ T.ACTR, T.ACTRAnnc, T.SUB ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -50,6 +50,6 @@ class GRPAnnc(AnnouncedResource):
 		'nar': None
 	}
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.GRPAnnc, dct, pi=pi, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.GRPAnnc, dct, pi = pi, create = create)
 

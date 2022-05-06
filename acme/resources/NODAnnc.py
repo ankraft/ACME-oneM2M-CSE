@@ -16,7 +16,7 @@ from ..resources.Resource import *
 class NODAnnc(AnnouncedResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.MGMTOBJAnnc, T.SUB ]
+	_allowedChildResourceTypes = [ T.ACTR, T.ACTRAnnc, T.MGMTOBJAnnc, T.SUB ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer
@@ -48,6 +48,6 @@ class NODAnnc(AnnouncedResource):
 	}
 
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(T.NODAnnc, dct, pi=pi, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(T.NODAnnc, dct, pi = pi, create = create)
 

@@ -44,9 +44,11 @@ SERVER				= f'{PROTOCOL}://localhost:8080'	# Remember: no trailing '/'
 CONFIGSERVER		= f'{CONFIGPROTOCOL}://localhost:8080'
 ROOTPATH			= '/'
 CSERN				= 'cse-in'
+CSERI				= 'id-in'
 CSEID				= '/id-in'
-SPID 				= 'sp-in'
+SPID 				= 'acme.example.com'
 ORIGINATOR			= 'CAdmin'
+ORIGINATORResp		= 'CTester'
 
 
 #
@@ -84,6 +86,7 @@ oauthClientSecret 	= ''
 REMOTESERVER		= f'{REMOTEPROTOCOL}://localhost:8081'
 REMOTEROOTPATH		= '/'
 REMOTECSERN			= 'cse-mn'
+REMOTECSERI			= 'id-mn'
 REMOTECSEID			= '/id-mn'
 REMOTESPID 			= 'sp-mn'
 REMOTEORIGINATOR	= 'CAdmin'
@@ -97,3 +100,11 @@ NOTIFICATIONPORT 	= 9990
 NOTIFICATIONSERVER	= f'{NOTIFICATIONPROTOCOL}://localhost:{NOTIFICATIONPORT}' 
 NOTIFICATIONSERVERW	= f'{NOTIFICATIONPROTOCOL}://localhost:6666'
 
+
+#
+#	Upper Tester
+#
+
+UTURL = f'{CONFIGSERVER}{ROOTPATH}__ut__'
+UTCMD = 'X-M2M-UTCMD'
+UTRSP = 'X-M2M-UTRSP'

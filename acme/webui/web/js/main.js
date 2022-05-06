@@ -152,6 +152,9 @@ function _getResource(ri, node, callback, errorCallback) {
     } else if (oldUserObject.endsWith("/fopt")) {
       node.setUserObject("fopt")
       node.hasDetails = false
+	} else if (oldUserObject.endsWith("/pcu")) {
+	  node.setUserObject("pcu")
+      node.hasDetails = false
     } else {
       node.setUserObject(resource[k].rn)  
     }
@@ -246,7 +249,12 @@ function setup() {
   var orField = document.getElementById("originator");
   originator = getUrlParameterByName("or")
   orField.value = originator
+  
+  // open the UI immediately if the parameter is present
+  openOnStart = getUrlParameterByName("open")
+  
   document.title = "ACME CSE - " + cseid
+
 
   getTextFromServer("/__version__", function(version) {
     var f = document.getElementById("version");
@@ -288,15 +296,22 @@ function setup() {
       index = p.getIndexOfChild(nodeClicked)
       count = p.getChildCount()
     }
-    if (keyCode == 40 && typeof p !== "undefined") { // down
-      index = (index + 1) % count
-      newnode = p.getChildren()[index]
-      clickOnNode(null, newnode)
+    if (keyCode == 40) {  // down
+		e.preventDefault();
+		if (typeof p !== "undefined") {
+        index = (index + 1) % count
+        newnode = p.getChildren()[index]
+	 	clickOnNode(null, newnode)
+	  }
+	  e.preventDefault();
+
     } else if (keyCode == 38 && typeof p !== "undefined") { // up
       index = (index + count - 1) % count
       newnode = p.getChildren()[index]
+      e.preventDefault();
       clickOnNode(null, newnode)
-    } else if (keyCode == 39) { // right or open an unexpanded subtree
+
+	} else if (keyCode == 39) { // right or open an unexpanded subtree
       if (nodeClicked.isLeaf()) {
         return
       }
@@ -322,9 +337,14 @@ function setup() {
       e.preventDefault();
       e.stopPropagation();
     }
+
   }
 
   initRestUI();
+
+  if (openOnStart != null) {
+	  connectToCSE()
+  }
 }
 
 

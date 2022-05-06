@@ -40,7 +40,7 @@ class EVL(MgmtObj):
 		'lt': None,
 		'et': None,
 		'lbl': None,
-		'hld': None,
+		'cstn': None,
 		'acpi':None,
 		'at': None,
 		'aa': None,
@@ -64,12 +64,12 @@ class EVL(MgmtObj):
 	}
 	
 
-	def __init__(self, dct:JSON=None, pi:str=None, create:bool=False) -> None:
-		super().__init__(dct, pi, mgd=T.EVL, create=create)
+	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
+		super().__init__(dct, pi, mgd = T.EVL, create = create)
 
-		self.setAttribute('lgt', defaultLogTypeId, overwrite=False)
-		self.setAttribute('lgd', '', overwrite=False)
-		self.setAttribute('lgst', defaultLogStatus, overwrite=False)
-		self.setAttribute('lga', False, overwrite=False)
-		self.setAttribute('lgo', False, overwrite=False)
+		self.setAttribute('lgt', defaultLogTypeId, overwrite = False)
+		self.setAttribute('lgd', '', overwrite = False)
+		self.setAttribute('lgst', defaultLogStatus, overwrite = False)
+		self.setAttribute('lga', False, overwrite = False)
+		self.setAttribute('lgo', False, overwrite = False)
 
