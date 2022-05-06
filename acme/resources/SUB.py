@@ -151,9 +151,10 @@ class SUB(Resource):
 				if len(nu) > 1:
 					return Result.errorResult(dbg = L.logDebug(f'nu must contain only one target for blockingRetrieve/blockingUpdate'))
 				parentOriginator = parentResource.getOriginator()
-				if not Utils.compareIDs(nu[0], parentOriginator):
-					return Result.errorResult(dbg = L.logDebug(f'nu must target the parent resource\'s originator'))
-			
+				if net[0] != NotificationEventType.blockingUpdate:
+					if not Utils.compareIDs(nu[0], parentOriginator):
+						return Result.errorResult(dbg = L.logDebug(f'nu must target the parent resource\'s originator'))
+				
 		# Validate missingData
 		L.logDebug(self['enc/md'])
 		if (md := self['enc/md']) is not None:
