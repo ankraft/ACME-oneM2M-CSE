@@ -201,7 +201,11 @@ class BackgroundWorker(object):
 		except Exception as e:
 
 			if BackgroundWorker._logger:
-				BackgroundWorker._logger(logging.ERROR, f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}\n{"".join(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))}')
+				# FIXME remove when really supporting 3.10
+				if sys.version_info < (3, 10):
+					BackgroundWorker._logger(logging.ERROR, f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}\n{"".join(traceback.format_exception(etype = type(e), value = e, tb = e.__traceback__))}')
+				else:
+					BackgroundWorker._logger(logging.ERROR, f'Worker "{self.name}" exception during callback {self.callback.__name__}: {str(e)}\n{"".join(traceback.format_exception(type(e), value = e, tb = e.__traceback__))}')
 		finally:
 			self.executing = False
 			if not result or (self.maxCount and self.numberOfRuns >= self.maxCount):
