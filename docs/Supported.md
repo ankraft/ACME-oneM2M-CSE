@@ -144,7 +144,7 @@ The following serialization types are supported:
 The supported serializations can be used together, e.g. between different or even the same entity.
 
 
-
+<a name="limitations"></a>
 # Limitations
 - **This is by no means a fully compliant, secure, fast, or stable CSE! Don't use it in production.**
 - This CSE is intended for educational purposes. The underlying database system is not optimized in any way for high-volume, high-availability, or high-reliability.
