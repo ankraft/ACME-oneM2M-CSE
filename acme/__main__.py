@@ -8,7 +8,7 @@
 #
 
 import sys, re
-if sys.version_info.major != 3 or (sys.version_info.major == 3 and sys.version_info.minor < 8):
+if sys.version_info < (3, 8):
 	print('Python version >= 3.8 is required')
 	quit(1)
 
