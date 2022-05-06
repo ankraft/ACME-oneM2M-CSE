@@ -37,7 +37,7 @@ Most [configuration](Configuration.md) settings can be referenced and used by a 
 For this a given macro name is enclosed by  ```[...]```, e.g. ```[cse.csi]```. 
 The following example shows the initial *CSEBase* resource definition from the *startup.as* script file:
 
-```json
+```jsonc
 importraw 
 {	
 	"m2m:cb" : {
@@ -70,7 +70,7 @@ Those files are imported from the common import / init directory. More than one 
 The format is a JSON structure that follows the structure described in the following code.  
 Some of the fields are not yet used, but will supported by a future version of the CSE.
 
-```JSON
+```jsonc
 // A file contains a list of Attribute Policies
 attributePolicies = [
 	
@@ -181,7 +181,7 @@ attributePolicies = [
 
 The following examples show the attribute policies for the *binarySwitch* and *deviceLight* specialisations, both defined in oneM2M's TS-0023 specification.
 
-```JSON
+```jsonc
 [
     // ModuleClass: binarySwitch (binSh)
     {
@@ -223,7 +223,7 @@ The attributes for attribute policies are the same as for the &lt;flexContainer>
 
 The format is a JSON structure that follows the structure described in the following code.  
 
-```JSON
+```jsonc
 // The attributePolicy.ap file contains a dictionary of AttributePolicies
 {
 
@@ -269,7 +269,7 @@ The format is a JSON structure that follows the structure described in the follo
 
 The following gives an example for the attribute *ty* (*resourceType*).
 
-```JSON
+```jsonc
 {
 	"ty": [
 		{
@@ -292,7 +292,7 @@ The following gives an example for the attribute *ty* (*resourceType*).
 The following example shows the definition of the attribute *operator* (optr) that
 belongs to the complex type *m2m:evalCriteria*.
 
-```JSON
+```jsonc
 {
 	"optr": [
 		{
