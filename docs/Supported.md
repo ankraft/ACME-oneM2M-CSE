@@ -149,7 +149,7 @@ The supported serializations can be used together, e.g. between different or eve
 
 <a name="limitations"></a>
 # Limitations
-- **This is by no means a fully compliant, secure, fast, or stable CSE! Don't use it in production.**
+- **This CSE implementation is intended to be used for education, experimentations, and demonstrations, but not in a production environment!**
 - This CSE is intended for educational purposes. The underlying database system is not optimized in any way for high-volume, high-availability, or high-reliability.
 - Unsupported resource types are just stored, but no validations or functionality are provided for those resources. 
 
