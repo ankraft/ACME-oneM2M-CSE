@@ -1247,13 +1247,13 @@ class TestSUB(unittest.TestCase):
 		""" CREATE <SUB> for blocking Update with wrong NU -> Fail"""
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
-					'nu': [ NOTIFICATIONSERVER ],
+					'nu': [ NOTIFICATIONSERVERW ],
 			        'enc': {
 			            'net':  [ NET.blockingUpdate ],
 					},
 				}}
 		r, rsc = CREATE(aeURL, TestSUB.originator, T.SUB, dct)	
-		self.assertEqual(rsc, RC.badRequest, r)
+		self.assertEqual(rsc, RC.subscriptionVerificationInitiationFailed, r)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -1261,7 +1261,7 @@ class TestSUB(unittest.TestCase):
 		""" CREATE <SUB> for blocking Update with multiple NU -> Fail"""
 		dct = 	{ 'm2m:sub' : { 
 					'rn' : subRN,
-					'nu': [ f'{CSERN}/{aeRN}POA' ,NOTIFICATIONSERVER ],
+					'nu': [ f'{CSERN}/{aeRN}POA', NOTIFICATIONSERVER ],
 			        'enc': {
 			            'net':  [ NET.blockingUpdate ],
 					},
