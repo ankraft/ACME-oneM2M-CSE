@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased] - xxxx-xx-xx
 
+### Changed
+- [CSE] Renamed the &lt;pollingChannel> attribute *pcra* to *rqag* (R4 spec change).
+
 
 ## [0.10.0] - 2022-05-06
 

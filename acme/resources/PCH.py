@@ -42,7 +42,7 @@ class PCH(Resource):
 		'lbl': None,
 
 		# Resource attributes
-		'pcra': None,
+		'rqag': None,
 	}
 
 
@@ -55,7 +55,7 @@ class PCH(Resource):
 		self.internalAttributes.append(self._pcuRI)
 
 		# Set optional default for requestAggregation
-		self.setAttribute('pcra', False, overwrite = False)	
+		self.setAttribute('rqag', False, overwrite = False)	
 
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
@@ -97,7 +97,7 @@ class PCH(Resource):
 		if not (res := CSE.dispatcher.retrieveLocalResource(self.attribute(PCH._pcuRI))).status:
 			return res
 		pcu = cast(PCH_PCU.PCH_PCU, res.resource)
-		pcu.setAggregate(self.pcra)
+		pcu.setAggregate(self.rqag)
 		pcu.dbUpdate()
 
 		return Result.successResult()

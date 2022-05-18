@@ -2175,19 +2175,6 @@
 			"annc": "OA"
 		}
 	],
-	"pcra": [
-		{
-			"rtypes": [ "PCH", "REQRESP" ],
-			"lname": "requestAggregation",
-			"ns": "m2m",
-			"type": "boolean",
-			"car": "01",
-			"oc": "O",
-			"ou": "O",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
 	"pei": [
 		{
 			"rtypes": [ "ALL" ],
@@ -2370,6 +2357,19 @@
 			"ou": "NP",
 			"od": "O",
 			"annc": "OA"
+		}
+	],
+	"rqag": [
+		{
+			"rtypes": [ "PCH", "REQRESP" ],
+			"lname": "requestAggregation",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
 		}
 	],
 	"rqi": [
