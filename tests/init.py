@@ -56,6 +56,9 @@ timeSeriesInterval 			= 2.0 # seconds
 # TimeSyncBeacon
 tsbPeriodicInterval			= 1.0
 
+# crossResourceSubscription Time Window Size (s)
+crsTimeWindowSize			= 2.0
+
 # ReleaseVersionIndicator
 RVI							='3'
 
