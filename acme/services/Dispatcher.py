@@ -465,8 +465,7 @@ class Dispatcher(object):
 			return fanoutPointResource.handleCreateRequest(request, fopsrn, request.headers.originator)
 
 		if (ty := request.headers.resourceType) is None:	# Check for type parameter in request, integer
-			L.logDebug(dbg := 'type parameter missing in CREATE request')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logDebug('type parameter missing in CREATE request'))
 
 		# Some Resources are not allowed to be created in a request, return immediately
 		if ty in [ T.CSEBase, T.REQ, T.FCI ]:	# TODO: move to constants
@@ -475,8 +474,7 @@ class Dispatcher(object):
 		# Get parent resource and check permissions
 		L.isDebug and L.logDebug(f'Get parent resource and check permissions: {id}')
 		if not (res := CSE.dispatcher.retrieveResource(id)).resource:
-			L.logWarn(dbg := f'Parent/target resource: {id} not found')
-			return Result.errorResult(rsc = RC.notFound, dbg = dbg)
+			return Result.errorResult(rsc = RC.notFound, dbg = L.logWarn(f'Parent/target resource: {id} not found'))
 		parentResource = cast(Resource, res.resource)
 
 		if CSE.security.hasAccess(originator, parentResource, Permission.CREATE, ty = ty, parentResource = parentResource) == False:
@@ -490,34 +488,32 @@ class Dispatcher(object):
 			return parentResource.handleCreateRequest(request, id, originator)	# type: ignore[no-any-return]
 
 		# Create resource from the dictionary
-		if not (nres := Factory.resourceFromDict(deepcopy(request.pc), pi=parentResource.ri, ty=ty)).resource:	# something wrong, perhaps wrong type
-			return Result.errorResult(dbg=nres.dbg)
-		nresource = nres.resource
+		if not (nres := Factory.resourceFromDict(deepcopy(request.pc), pi = parentResource.ri, ty = ty)).status:	# something wrong, perhaps wrong type
+			return nres
+		newResource = nres.resource
 
 		# Check whether the parent allows the adding
-		if not (res := parentResource.childWillBeAdded(nresource, originator)).status:
+		if not (res := parentResource.childWillBeAdded(newResource, originator)).status:
 			return res.errorResultCopy()
 
 		# Check resource creation
-		if not (rres := CSE.registration.checkResourceCreation(nresource, originator, parentResource)).status:
+		if not (rres := CSE.registration.checkResourceCreation(newResource, originator, parentResource)).status:
 			return rres.errorResultCopy()
 
 		# check whether the resource already exists, either via ri or srn
 		# hasResource() may actually perform the test in one call, but we want to give a distinguished debug message
-		if CSE.storage.hasResource(ri = nresource.ri):
-			L.logWarn(dbg := f'Resource with ri: {nresource.ri} already exists')
-			return Result.errorResult(rsc = RC.conflict, dbg = dbg)
-		if CSE.storage.hasResource(srn = nresource.__srn__):
-			L.logWarn(dbg := f'Resource with structured id: {nresource.__srn__} already exists')
-			return Result.errorResult(rsc = RC.conflict, dbg = dbg)
+		if CSE.storage.hasResource(ri = newResource.ri):
+			return Result.errorResult(rsc = RC.conflict, dbg = L.logWarn(f'Resource with ri: {newResource.ri} already exists'))
+		if CSE.storage.hasResource(srn = newResource.__srn__):
+			return Result.errorResult(rsc = RC.conflict, dbg = L.logWarn(f'Resource with structured id: {newResource.__srn__} already exists'))
 
 		# originator might have changed during this check. Result.data contains this new originator
 		originator = cast(str, rres.data) 					
 		request.headers.originator = originator	
 
 		# Create the resource. If this fails we deregister everything
-		if not (res := CSE.dispatcher.createResource(nresource, parentResource, originator)).resource:
-			CSE.registration.checkResourceDeletion(nresource) # deregister resource. Ignore result, we take this from the creation
+		if not (res := CSE.dispatcher.createResource(newResource, parentResource, originator)).resource:
+			CSE.registration.checkResourceDeletion(newResource) # deregister resource. Ignore result, we take this from the creation
 			return res
 
 		#
@@ -549,11 +545,9 @@ class Dispatcher(object):
 			L.isDebug and L.logDebug(f'Parent ri: {parentResource.ri}')
 			if not parentResource.canHaveChild(resource):
 				if resource.ty == T.SUB:
-					L.logWarn(dbg := 'Parent resource is not subscribable')
-					return Result.errorResult(rsc = RC.targetNotSubscribable, dbg = dbg)
+					return Result.errorResult(rsc = RC.targetNotSubscribable, dbg = L.logWarn('Parent resource is not subscribable'))
 				else:
-					L.logWarn(dbg := f'Invalid child resource type: {T(resource.ty).value}')
-					return Result.errorResult(rsc = RC.invalidChildResourceType, dbg = dbg)
+					return Result.errorResult(rsc = RC.invalidChildResourceType, dbg = L.logWarn(f'Invalid child resource type: {T(resource.ty).value}'))
 
 		# if not already set: determine and add the srn
 		if not resource.__srn__:
@@ -582,9 +576,8 @@ class Dispatcher(object):
 		if parentResource:
 			parentResource = parentResource.dbReload().resource		# Read the resource again in case it was updated in the DB
 			if not parentResource:
-				L.logWarn(dbg := 'Parent resource not found. Probably removed in between?')
 				self.deleteResource(resource)
-				return Result.errorResult(rsc = RC.internalServerError, dbg = dbg)
+				return Result.errorResult(rsc = RC.internalServerError, dbg = L.logWarn('Parent resource not found. Probably removed in between?'))
 			parentResource.childAdded(resource, originator)			# notify the parent resource
 
 			# Send event for parent resource

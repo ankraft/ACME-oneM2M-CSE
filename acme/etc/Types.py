@@ -111,6 +111,7 @@ class ResourceTypes(ACMEIntEnum):
 	FCNT	 		= 28
 	TS				= 29
 	TSI   			= 30
+	CRS				= 48
 	FCI 			= 58
 	TSB				= 60
 	ACTR			= 63
@@ -177,7 +178,7 @@ class ResourceTypes(ACMEIntEnum):
 
 
 	def tpe(self) -> str:
-		return ResourceTypes._names[self.value] 					#  type: ignore
+		return ResourceTypes._names.get(self.value) 				#  type: ignore
 
 
 	def announced(self) -> ResourceTypes:
@@ -361,6 +362,7 @@ ResourceTypes._names 	= {											# type: ignore
 		ResourceTypes.CNT			: 'm2m:cnt',
 		ResourceTypes.CIN 			: 'm2m:cin',
 		ResourceTypes.CSEBase		: 'm2m:cb',
+		ResourceTypes.CRS 			: 'm2m:crs',
 		ResourceTypes.CSR 			: 'm2m:csr',
 		ResourceTypes.FCI			: 'm2m:fci',				# not an official shortname
 		ResourceTypes.FCNT			: 'm2m:fcnt',				# not an official shortname

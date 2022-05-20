@@ -21,7 +21,7 @@ from ..services.Logging import Logging as L
 class CSEBase(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [ T.ACP, T.ACTR, T.AE, T.CSR, T.CNT, T.FCNT, T.GRP, T.NOD, T.REQ, T.SUB, T.TS, T.TSB, T.CSEBaseAnnc ]
+	_allowedChildResourceTypes = [ T.ACP, T.ACTR, T.AE, T.CRS, T.CSR, T.CNT, T.FCNT, T.GRP, T.NOD, T.REQ, T.SUB, T.TS, T.TSB, T.CSEBaseAnnc ]
 
 	# Attributes and Attribute policies for this Resource Class
 	# Assigned during startup in the Importer

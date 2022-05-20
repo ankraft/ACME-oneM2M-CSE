@@ -15,8 +15,8 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class CSR(AnnounceableResource):
 
 	# Specify the allowed child-resource types
-	_allowedChildResourceTypes = [	T.ACP, T.ACPAnnc, T.ACTR, T.ACTRAnnc, T.AEAnnc, T.CNT, T.CNTAnnc, 
-									T.CINAnnc, T.CSRAnnc, T.FCNT, T.FCNTAnnc, T.FCI, T.GRP, T.GRPAnnc, 
+	_allowedChildResourceTypes = [	T.ACP, T.ACPAnnc, T.ACTR, T.ACTRAnnc, T.AEAnnc, T.CINAnnc, T.CNT, T.CNTAnnc, 
+									T.CRS, T.CSRAnnc, T.FCNT, T.FCNTAnnc, T.FCI, T.GRP, T.GRPAnnc, 
 									T.MGMTOBJAnnc, T.NODAnnc, T.PCH, T.SUB, T.TS, T.TSAnnc, T.TSB ]
 
 
