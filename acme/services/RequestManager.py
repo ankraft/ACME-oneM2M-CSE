@@ -761,6 +761,7 @@ class RequestManager(object):
 
 	# TODO id????
 
+
 	def sendRetrieveRequest(self, uri:str, originator:str, data:Any = None, parameters:Parameters = None, ct:ContentSerializationType = None, appendID:str = '', raw:bool = False) -> Result:
 		"""	Send a RETRIEVE request via the appropriate channel or transport protocol.
 		"""
@@ -803,12 +804,12 @@ class RequestManager(object):
 		return Result.errorResult(rsc = RC.notFound, dbg = f'No target found for uri: {uri}')
 
 
-	def sendCreateRequest(self, uri:str, originator:str, ty:T = None, data:Any = None, parameters:Parameters = None, ct:ContentSerializationType = None, appendID:str = '', raw:bool = False) -> Result:
+	def sendCreateRequest(self, uri:str, originator:str, ty:T = None, data:Any = None, parameters:Parameters = None, ct:ContentSerializationType = None, appendID:str = '', raw:bool = False, noAccessIsError:bool = False) -> Result:
 		"""	Send a CREATE request via the appropriate channel or transport protocol.
 		"""
 		L.isDebug and L.logDebug(f'Sending CREATE request to: {uri} id: {appendID}')
 
-		for url, csz, rvi, pch in self.resolveTargetURIetc(uri, appendID = appendID, originator = originator, permission = Permission.CREATE, raw = raw):
+		for url, csz, rvi, pch in self.resolveTargetURIetc(uri, appendID = appendID, originator = originator, permission = Permission.CREATE, noAccessIsError = noAccessIsError, raw = raw):
 
 			# Send the request via a PCH, if present
 			if pch:
@@ -1379,6 +1380,7 @@ class RequestManager(object):
 				return sorted(srv)[-1]	# return highest srv
 			return CSE.releaseVersion
 				
+		#L.logWarn(uri)
 
 		# TODO check whether noAccessIsError is needed anymore
 
@@ -1388,10 +1390,15 @@ class RequestManager(object):
 
 		targetResource = None
 		if Utils.isSPRelative(uri) or Utils.isAbsolute(uri):
-			if (t := CSE.remote.getCSRFromPath(uri)):
+			if uri.startswith(f'{CSE.cseCsi}/'):	# If this the local CSE
+				targetResource = Utils.getCSE().resource
+			elif (t := CSE.remote.getCSRFromPath(uri)):
 				targetResource, _ = t
-			# L.logWarn(targetResource)
-			# L.logWarn(uri)
+			# HACK if the target is a /csi/something AND there is no extra ID given, we add that extra ID to address the resource on that CSE
+			if not appendID:
+				appendID = uri
+			#L.logWarn(targetResource)
+			#L.logWarn(uri)
 
 		# The uri is an indirect resource with poa, retrieve one or more URIs from it
 		if not targetResource and not (targetResource := CSE.dispatcher.retrieveResource(uri).resource):
@@ -1399,13 +1406,14 @@ class RequestManager(object):
 			return []
 		
 		# Checking permissions
-		if originator == CSE.cseCsi:
-			L.isDebug and L.logDebug(f'Originator: {originator} is CSE -> Permission granted.')
-		elif not raw and not CSE.security.hasAccess(originator, targetResource, permission):
-			L.isWarn and L.logWarn(f'Originator: {originator} has no permission: {permission} for {targetResource.ri}')
-			if noAccessIsError:
-				return None
-			return []
+		if not uri.startswith(f'{CSE.cseCsi}/'):	# TODO make a utility out of this
+			if originator == CSE.cseCsi:
+				L.isDebug and L.logDebug(f'Originator: {originator} is CSE -> Permission granted.')
+			elif not raw and not CSE.security.hasAccess(originator, targetResource, permission):
+				L.isWarn and L.logWarn(f'Originator: {originator} has no permission: {permission} for {targetResource.ri}')
+				if noAccessIsError:
+					return None
+				return []
 
 		# Check requestReachability
 		# If the target is NOT reachable then try to retrieve a potential

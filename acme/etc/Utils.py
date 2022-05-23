@@ -124,17 +124,6 @@ def _randomID() -> str:
 			return result
 
 
-def spRelRI(ri:str) -> str:
-	"""	Return a SP-relative resource ID for a resource ID.
-	
-		Args:
-			ri: Resource ID
-		Return:
-			The SP-relative form of the provided resource ID
-	"""
-	return f'{CSE.cseCsi}/{ri}'
-
-
 def isSPRelative(uri:str) -> bool:
 	""" Test whether a URI is SP-Relative. 
 
