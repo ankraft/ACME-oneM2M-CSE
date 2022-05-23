@@ -57,6 +57,11 @@ class SUB(Resource):
 		'ma': None,		# EXPERIMENTAL maxage
 	}
 
+	# TODO notificationStatsEnable - nse  support
+	# TODO notificationStatsInfo - nsi	support
+
+	# TODO associatedCrossResourceSub
+
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
 		super().__init__(T.SUB, dct, pi, create = create)

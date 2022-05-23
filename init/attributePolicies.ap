@@ -17,7 +17,7 @@
 			"lname": "resourceType",
 			"ns": "m2m",
 			"type": "enum",		// m2m:resourceType
-			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 58, 60, 63, 
+			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 48, 58, 60, 63, 
 				"10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ], 
 			"car": "1",
 			"oc": "NP",
@@ -1153,6 +1153,20 @@
 			"annc": "NA"
 		}
 	],
+	"encs": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "eventNotificationCriteriaSet",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "m2m:eventNotificationCriteriaSet",
+			"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
 	"esi": [
 		{
 			"rtypes": [ "ALL" ],
@@ -2175,19 +2189,6 @@
 			"annc": "OA"
 		}
 	],
-	"pcra": [
-		{
-			"rtypes": [ "PCH", "REQRESP" ],
-			"lname": "requestAggregation",
-			"ns": "m2m",
-			"type": "boolean",
-			"car": "01",
-			"oc": "O",
-			"ou": "O",
-			"od": "O",
-			"annc": "NA"
-		}
-	],
 	"pei": [
 		{
 			"rtypes": [ "ALL" ],
@@ -2372,6 +2373,19 @@
 			"annc": "OA"
 		}
 	],
+	"rqag": [
+		{
+			"rtypes": [ "PCH", "REQRESP" ],
+			"lname": "requestAggregation",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
 	"rqi": [
 		{
 			"rtypes": [ "ALL" ],
@@ -2393,6 +2407,20 @@
 			"type": "boolean",
 			"car": "1",
 			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
+	"rrat": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "regularResourcesAsTarget",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "anyURI",
+			"car": "01L",
+			"oc": "O",
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
@@ -2516,6 +2544,20 @@
 			"annc": "OA"
 		}
 	],
+	"srat": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "subscriptionResourcesAsTarget",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "anyURI",
+			"car": "01L",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "OA"
+		}
+	],
 	"sri": [
 		{
 			"rtypes": [ "ALL" ],
@@ -2536,7 +2578,7 @@
 			"ns": "m2m",
 			"type": "list",
 			"ltype": "enum",	 // m2m:resourceType
-			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 58, 60, 63, 
+			"evalues": [ "1..5", 9, "13..17", 23, "28..30", 48, 58, 60, 63, 
 						 "10001..10005", 10009, "10013..10014", 10016, "10028..10030", 10060, 10063 ],    
 			"car": "01",
 			"oc": "O",
@@ -2728,6 +2770,33 @@
 			"ou": "O",
 			"od": "O",
 			"annc": "OA"
+		}
+	],
+	"tws": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "timeWindowSize",
+			"ns": "m2m",
+			"type": "duration",
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
+	"twt": [
+		{
+			"rtypes": [ "ALL" ],
+			"lname": "timeWindowType",
+			"ns": "m2m",
+			"type": "enum",
+			"evalues": [ 1, 2 ],    
+			"car": "1",
+			"oc": "M",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
 		}
 	],
 	"ud": [

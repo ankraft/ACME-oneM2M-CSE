@@ -292,13 +292,14 @@ class Logging:
 
 
 	@staticmethod
-	def logWarn(msg:Any, stackOffset:int = 0) -> None:
+	def logWarn(msg:Any, stackOffset:int = 0) -> str:
 		"""Print a log message with level WARNING. 
 		"""
 		from ..services import CSE as CSE
 		# raise logWarning event
 		CSE.event.logWarning() 	# type: ignore
 		Logging._log(logging.WARNING, msg, stackOffset = stackOffset)
+		return msg
 
 
 	@staticmethod

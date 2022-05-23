@@ -23,7 +23,8 @@ importraw
 			"csi":  "[cse.csi]",
 			"rr":   true,
 			"csz":  \[ "application/json", "application/cbor" ],
-			"acpi": \[ "[cse.csi]/acpCreateACPs" ]
+			"acpi": \[ "[cse.csi]/acpCreateACPs" ],
+			"poa":  \[ "[http.address]" ]
 	}
 }
 

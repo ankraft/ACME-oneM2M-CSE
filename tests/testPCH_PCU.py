@@ -237,7 +237,7 @@ class TestPCH_PCU(unittest.TestCase):
 		self.assertIsNotNone(TestPCH_PCU.ae)
 		dct = 	{ 'm2m:pch' : { 
 					'rn' : pchRN,
-					'pcra': False,
+					'rqag': False,
 				}}
 		r, rsc = CREATE(ae2URL, TestPCH_PCU.originator2, T.PCH, dct)
 		self.assertEqual(rsc, RC.created, r)
@@ -356,11 +356,11 @@ class TestPCH_PCU(unittest.TestCase):
 		"""	Enable <PCU> request aggregation"""
 		self.assertIsNotNone(TestPCH_PCU.ae)
 		dct = 	{ 'm2m:pch' : { 
-					'pcra': True,
+					'rqag': True,
 				}}
 		r, rsc = UPDATE(pch2URL, TestPCH_PCU.originator2, dct)
 		self.assertEqual(rsc, RC.updated, r)
-		self.assertEqual(findXPath(r, 'm2m:pch/pcra'), True)
+		self.assertEqual(findXPath(r, 'm2m:pch/rqag'), True)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -384,11 +384,11 @@ class TestPCH_PCU(unittest.TestCase):
 	
 		# enable aggregation
 		dct = 	{ 'm2m:pch' : { 
-					'pcra': True,
+					'rqag': True,
 				}}
 		r, rsc = UPDATE(pch2URL, TestPCH_PCU.originator2, dct)
 		self.assertEqual(rsc, RC.updated, r)
-		self.assertEqual(findXPath(r, 'm2m:pch/pcra'), True)
+		self.assertEqual(findXPath(r, 'm2m:pch/rqag'), True)
 
 		# Add CIN
 		def _createCin() -> None:

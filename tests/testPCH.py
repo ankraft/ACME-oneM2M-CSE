@@ -167,21 +167,21 @@ class TestPCH(unittest.TestCase):
 	
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_setAggreagstionState(self) -> None:
-		"""	Set <PCH> pcra attribute"""
+		"""	Set <PCH> rqag attribute"""
 		dct = 	{ 'm2m:pch' : { 
-					'pcra' : True,
+					'rqag' : True,
 				}}
 		r, rsc = UPDATE(pchURL, TestPCH.originator, dct)
 		self.assertEqual(rsc, RC.updated)
-		self.assertEqual(findXPath(r, 'm2m:pch/pcra'), True)
+		self.assertEqual(findXPath(r, 'm2m:pch/rqag'), True)
 
 	
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_getAggreagstionState(self) -> None:
-		"""	Get <PCH> pcra attribute"""
+		"""	Get <PCH> rqag attribute"""
 		r, rsc = RETRIEVE(pchURL, TestPCH.originator)
 		self.assertEqual(rsc, RC.OK)
-		self.assertEqual(findXPath(r, 'm2m:pch/pcra'), True)
+		self.assertEqual(findXPath(r, 'm2m:pch/rqag'), True)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

@@ -28,6 +28,7 @@ from ..resources.CNT_LA import CNT_LA
 from ..resources.CNT_OL import CNT_OL
 from ..resources.CSEBase import CSEBase
 from ..resources.CSEBaseAnnc import CSEBaseAnnc
+from ..resources.CRS import CRS
 from ..resources.CSR import CSR
 from ..resources.CSRAnnc import CSRAnnc
 from ..resources.FCI import FCI
@@ -94,6 +95,7 @@ resourceFactoryMap:Dict[T, FactoryT] = {
 	T.CNT_LA		: (CNT_LA,		lambda dct, tpe, pi, create : CNT_LA(dct, pi = pi, create = create)),
 	T.CNT_OL		: (CNT_OL,		lambda dct, tpe, pi, create : CNT_OL(dct, pi = pi, create = create)),
 	T.CSEBase		: (CSEBase,		lambda dct, tpe, pi, create : CSEBase(dct, create = create)),
+	T.CRS			: (CRS,			lambda dct, tpe, pi, create : CRS(dct, pi = pi, create = create)),
 	T.CSR			: (CSR,			lambda dct, tpe, pi, create : CSR(dct, pi = pi, create = create)),
 	T.FCNT			: (FCNT,		lambda dct, tpe, pi, create : FCNT(dct, pi = pi, fcntType = tpe, create = create)),
 	T.FCNT_LA		: (FCNT_LA,		lambda dct, tpe, pi, create : FCNT_LA(dct, pi = pi, create = create)),
@@ -172,23 +174,19 @@ def resourceFromDict(resDict:JSON = {}, pi:str = None, ty:T = None, create:bool 
 	# Determine type
 	typ = resDict['ty'] if 'ty' in resDict else ty
 	if not typ and (typ := T.fromTPE(tpe)) is  None:
-		L.logWarn(dbg := f'cannot determine type for resource: {tpe}')
-		return Result.errorResult(dbg = dbg)
+		return Result.errorResult(dbg = L.logWarn(f'cannot determine type for resource: {tpe}'))
 	
 	# Check for Parent
 	if not pi and typ != T.CSEBase and (not (pi := resDict.get('pi')) or len(pi) == 0):
-		L.logWarn(dbg := f'pi missing in resource: {tpe}')
-		return Result.errorResult(dbg = dbg)
+		return Result.errorResult(dbg = L.logWarn(f'pi missing in resource: {tpe}'))
 
 	# Check whether given type during CREATE matches the resource's ty attribute
 	if typ != None and ty != None and typ != ty:
-		L.logWarn(dbg := f'parameter type ({ty}) and resource type ({typ}) mismatch')
-		return Result.errorResult(dbg = dbg)
+		return Result.errorResult(dbg = L.logWarn(f'parameter type ({ty}) and resource type ({typ}) mismatch'))
 	
 	# Check whether given type during CREATE matches the resource type specifier
 	if ty != None and tpe != None and ty not in [ T.FCNT, T.FCNTAnnc, T.FCI, T.MGMTOBJ, T.MGMTOBJAnnc ]  and ty.tpe() != tpe:
-		L.logWarn(dbg := f'parameter type ({ty}) and resource type specifier ({tpe}) mismatch')
-		return Result.errorResult(dbg = dbg)
+		return Result.errorResult(dbg = L.logWarn(f'parameter type ({ty}) and resource type specifier ({tpe}) mismatch'))
 	
 	# store the import status in the original resDict
 	if isImported:

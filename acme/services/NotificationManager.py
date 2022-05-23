@@ -8,6 +8,7 @@
 #
 
 from __future__ import annotations
+from lib2to3.pgen2.token import OP
 import sys
 import isodate
 from typing import Callable, Union
@@ -15,7 +16,7 @@ from threading import Lock
 from tinydb.utils import V
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import CSERequest, ContentSerializationType, MissingData, ResourceTypes, Result, NotificationContentType, NotificationEventType
+from ..etc.Types import CSERequest, ContentSerializationType, MissingData, Operation, ResourceTypes, Result, NotificationContentType, NotificationEventType
 from ..etc.Types import ResponseStatusCode as RC, EventCategory
 from ..etc.Types import JSON, Parameters
 from ..etc import Utils, DateUtils
@@ -177,7 +178,7 @@ class NotificationManager(object):
 					'nev' : {
 						'net' : NotificationEventType.blockingUpdate.value
 					},
-					'sur' : Utils.spRelRI(eachSub['ri'])
+					'sur' : Utils.toSPRelative(eachSub['ri'])
 				}
 			}
 
@@ -195,7 +196,9 @@ class NotificationManager(object):
 				
 
 			# Send notification and handle possible negative response status codes
-			if not (res := self._sendRequest(eachSub['nus'][0], notification)).status:
+			if not (res := CSE.request.sendNotifyRequest(eachSub['nus'][0], 
+														 originator = CSE.cseCsi,
+														 data = notification)).status:
 				return res	# Something else went wrong
 			if res.rsc == RC.OK:
 				if finished:
@@ -281,7 +284,7 @@ class NotificationManager(object):
 					'nev' : {
 						'net' : eachSub['net'][0],	# Add the first and hopefully only NET to the notification
 					},
-					'sur' : Utils.spRelRI(eachSub['ri'])
+					'sur' : Utils.toSPRelative(eachSub['ri'])
 				}
 			}
 			# Don't include virtual resources
@@ -289,7 +292,9 @@ class NotificationManager(object):
 				# Add representation
 				Utils.setXPath(notification, 'm2m:sgn/nev/rep', resource.asDict())
 
-			if not (res := self._sendRequest(eachSub['nus'][0], notification)).status:
+			if not (res := CSE.request.sendNotifyRequest(eachSub['nus'][0], 
+														 originator = CSE.cseCsi,
+														 data = notification)).status:
 				# TODO: correct RSC according to 7.3.2.9 - see above!
 				return res
 			if finished:
@@ -309,7 +314,9 @@ class NotificationManager(object):
 			actually sending the notification.
 		"""
 		for nu in nus:
-			self._sendRequest(nu, data, originator = originator)
+			CSE.request.sendNotifyRequest(nu, 
+										  originator = originator,
+										  data = data)
 
 
 	#########################################################################
@@ -349,13 +356,16 @@ class NotificationManager(object):
 			verificationRequest = {
 				'm2m:sgn' : {
 					'vrq' : True,
-					'sur' : Utils.spRelRI(ri)
+					'sur' : Utils.toSPRelative(ri)
 				}
 			}
 			# Set the creator attribute if there is an originator for the subscription
 			originator and Utils.setXPath(verificationRequest, 'm2m:sgn/cr', originator)
 	
-			if not (res := self._sendRequest(uri, verificationRequest, noAccessIsError = True)).status:
+			if not (res := CSE.request.sendNotifyRequest(uri, 
+														 originator = CSE.cseCsi,
+														 data = verificationRequest, 
+														 noAccessIsError = True)).status:
 				L.isDebug and L.logDebug(f'Sending verification request failed for: {uri}: {res.dbg}')
 				return False
 			if res.rsc != RC.OK:
@@ -377,11 +387,13 @@ class NotificationManager(object):
 			deletionNotification = {
 				'm2m:sgn' : {
 					'sud' : True,
-					'sur' : Utils.spRelRI(ri)
+					'sur' : Utils.toSPRelative(ri)
 				}
 			}
 
-			if not (res := self._sendRequest(uri, deletionNotification)).status:
+			if not (res := CSE.request.sendNotifyRequest(uri, 
+														 originator = CSE.cseCsi,
+														 data = deletionNotification)).status:
 				L.isDebug and L.logDebug(f'Deletion request failed for: {uri}: {res.dbg}')
 				return False
 			return True
@@ -405,7 +417,7 @@ class NotificationManager(object):
 						'rep' : {},
 						'net' : NotificationEventType.resourceUpdate
 					},
-					'sur' : Utils.spRelRI(sub['ri'])
+					'sur' : Utils.toSPRelative(sub['ri'])
 				}
 			}
 
@@ -428,7 +440,9 @@ class NotificationManager(object):
 			if sub['bn']:
 				return self._storeBatchNotification(uri, sub, notificationRequest)
 			else:
-				if not self._sendRequest(uri, notificationRequest).status:
+				if not CSE.request.sendNotifyRequest(uri, 
+													 originator = CSE.cseCsi,
+													 data = notificationRequest).status:
 					L.isDebug and L.logDebug(f'Notification failed for: {uri}')
 					return False
 				return True
@@ -468,22 +482,6 @@ class NotificationManager(object):
 				if not senderFunction(uri):
 					return False
 		return True
-
-
-	def _sendRequest(self, uri:str, 
-						   notificationRequest:JSON, 
-						   parameters:Parameters = None, 
-						   originator:str = None,
-						   noAccessIsError:bool = False,
-						   ct:ContentSerializationType = None) -> Result:
-		"""	Send a Notification request to a single target.
-		"""
-		return CSE.request.sendNotifyRequest(	uri, 
-												originator if originator else CSE.cseCsi,
-												data = notificationRequest,
-												parameters = parameters,
-												ct = ct,
-												noAccessIsError = noAccessIsError)
 
 
 	##########################################################################
@@ -574,7 +572,10 @@ class NotificationManager(object):
 				return False
 
 			# Send the request
-			if not self._sendRequest(nu, notificationRequest, parameters = additionalParameters).status:
+			if not CSE.request.sendNotifyRequest(nu, 
+												 originator = CSE.cseCsi,
+												 data = notificationRequest, 
+												 parameters = additionalParameters).status:
 				L.isWarn and L.logWarn('Error sending aggregated batch notifications')
 				return False
 

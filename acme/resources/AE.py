@@ -18,7 +18,7 @@ from ..resources.AnnounceableResource import AnnounceableResource
 class AE(AnnounceableResource):
 	""" Application Entity (AE) resource type """
 
-	_allowedChildResourceTypes:list[T] = [ T.ACP, T.ACTR, T.CNT, T.FCNT, T.GRP, T.PCH, T.SUB, T.TS, T.TSB ]
+	_allowedChildResourceTypes:list[T] = [ T.ACP, T.ACTR, T.CNT, T.CRS, T.FCNT, T.GRP, T.PCH, T.SUB, T.TS, T.TSB ]
 	""" The allowed child-resource types. """
 
 	# Assigned during startup in the Importer
