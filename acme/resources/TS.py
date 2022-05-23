@@ -70,7 +70,7 @@ class TS(AnnounceableResource):
 
 		self.setAttribute('mdd', False, overwrite = False)	# Default is False if not provided
 		self.setAttribute('cni', 0, overwrite = False)
-		self.setAttribute('cb389s', 0, overwrite = False)
+		self.setAttribute('cbs', 0, overwrite = False)
 		if Configuration.get('cse.ts.enableLimits'):	# Only when limits are enabled
 			self.setAttribute('mni', Configuration.get('cse.ts.mni'), overwrite = False)
 			self.setAttribute('mbs', Configuration.get('cse.ts.mbs'), overwrite = False)
