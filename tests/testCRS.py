@@ -63,7 +63,7 @@ class TestCRS(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
-		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		#DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		stopNotificationServer()
 
 
@@ -137,6 +137,69 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSemptyEncsFail(self) -> None:
+		"""	CREATE <CRS> with empty encs -> FAIL """
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : 'failCSR',
+					'nu' : [ NOTIFICATIONSERVER ],
+					'twt': 1,
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': [],
+				}}
+		r, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.badRequest, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSWrongNumberEncsFail(self) -> None:
+		"""	CREATE <CRS> with wrong number of encs -> FAIL """
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : 'failCSR',
+					'nu' : [ NOTIFICATIONSERVER ],
+					'twt': 1,
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': [
+						{ 'enc' : {
+								'net': [ NET.createDirectChild ],
+							}
+						},
+						{ 'enc' : {
+								'net': [ NET.createDirectChild ],
+							}
+						},
+						{ 'enc' : {
+								'net': [ NET.createDirectChild ],
+							}
+						}
+					],
+				}}
+		
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSwithrrat(self) -> None:
+		"""	CREATE <CRS> with rrat, one encs"""
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : csrRN,
+					'nu' : [ NOTIFICATIONSERVER ],
+					'twt': 1,
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': [
+						{ 'enc' : {
+								'net': [ NET.createDirectChild ],
+							}
+						}
+					]
+				}}
+
+		r, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.created, r)
+
+
+
 # TODO test twt missing, oiut of range
 # TODO test tws
 
@@ -148,6 +211,9 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCRS('test_createCRSmissingTwtFail'))
 	suite.addTest(TestCRS('test_createCRSwrongTwtFail'))
 	suite.addTest(TestCRS('test_createCRSmissingTwsFail'))
+	suite.addTest(TestCRS('test_createCRSemptyEncsFail'))
+	suite.addTest(TestCRS('test_createCRSWrongNumberEncsFail'))
+	suite.addTest(TestCRS('test_createCRSwithrrat'))
 
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	printResult(result)

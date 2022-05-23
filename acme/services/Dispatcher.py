@@ -12,6 +12,7 @@ from cgitb import reset
 import operator
 import sys
 from copy import deepcopy
+from syslog import LOG_DAEMON
 from typing import Any, List, Tuple, Dict, cast
 
 from ..helpers import TextTools as TextTools
@@ -854,20 +855,20 @@ class Dispatcher(object):
 		# This is also the only resource type supported that can receive notifications, yet
 		if targetResource.ty == T.PCH_PCU :
 			if not CSE.security.hasAccessToPollingChannel(originator, targetResource):
-				L.logDebug(dbg := f'Originator: {originator} has not access to <pollingChannelURI>: {id}')
-				return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = dbg)
+				return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = L.logDebug(f'Originator: {originator} has not access to <pollingChannelURI>: {id}'))
 			return targetResource.handleNotifyRequest(request, originator)	# type: ignore[no-any-return]
 
 		if targetResource.ty in [ T.AE, T.CSR, T.CSEBase ]:
 			if not CSE.security.hasAccess(originator, targetResource, Permission.NOTIFY):
-				L.logDebug(dbg := f'Originator has no NOTIFY privilege for: {id}')
-				return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = dbg)
+				return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = L.logDebug('fOriginator has no NOTIFY privilege for: {id}'))
 			#  A Notification to one of these resources will always be a Received Notify Request
 			return CSE.request.handleReceivedNotifyRequest(id, request = request, originator = originator)
+		
+		if targetResource.ty == T.CRS:
+			return targetResource.handleNotification(request, originator)
 
 		# error
-		L.logDebug(dbg := f'Unsupported resource type: {targetResource.ty} for notifications. Supported: <PCU>.')
-		return Result.errorResult(dbg = dbg)
+		return Result.errorResult(dbg = L.logDebug(f'Unsupported resource type: {targetResource.ty} for notifications.'))
 
 
 
