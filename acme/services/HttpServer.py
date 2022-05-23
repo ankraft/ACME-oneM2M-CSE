@@ -477,7 +477,7 @@ class HttpServer(object):
 				L.logWarn(dbg := f'Received wrong format for X-M2M-OT: {ot} - {str(ee)}')
 				return Result.errorResult(dbg = dbg)
 			if (rqi := r.headers.get(C.hfRI)) != hds[C.hfRI]:
-				L.isWarn and L.logWarn(dbg := f'Received wrong request identifier: {resp.headers.requestIdentifier}')
+				L.isWarn and L.logWarn(dbg := f'Received wrong or missing request identifier: {resp.headers.requestIdentifier}')
 				return Result.errorResult(dbg = dbg)
 			resp.headers.requestIdentifier = rqi
 
