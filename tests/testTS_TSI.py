@@ -569,6 +569,7 @@ class TestTS_TSI(unittest.TestCase):
 			'rn' : subRN,
 			'enc': {
 				'net': [ 8 ],
+				'nct': 5,
 				'md' : {
 					'dur': f'PT{pei*maxMdn/1000}S',
 					'num': maxMdn - 2,
@@ -617,14 +618,10 @@ class TestTS_TSI(unittest.TestCase):
 
 			# Check notifications
 			lastNotification = getLastNotification(True)
-			if i % maxMdn == (maxMdn-2-1):
+			if i % (maxMdn-2) == maxMdn-2-1:
 				self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:tsn'), lastNotification)
 				self.assertEqual(len(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:tsn/mdlt')), maxMdn-2, lastNotification)
 				self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:tsn/mdc'), maxMdn-2, lastNotification)
-			elif i % maxMdn >= maxMdn-2:
-				self.assertIsNotNone(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:tsn'), lastNotification)
-				self.assertEqual(len(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:tsn/mdlt')), 1, lastNotification)
-				self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:tsn/mdc'), (i%maxMdn)+1, lastNotification)
 			else:
 				self.assertIsNone(lastNotification, lastNotification)
 

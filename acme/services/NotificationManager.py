@@ -11,6 +11,7 @@ from __future__ import annotations
 from lib2to3.pgen2.token import OP
 import sys
 import isodate
+import copy
 from typing import Callable, Union
 from threading import Lock
 from tinydb.utils import V
@@ -154,8 +155,8 @@ class NotificationManager(object):
 			elif reason == NotificationEventType.reportOnGeneratedMissingDataPoints and missingData:
 				md = missingData[sub['ri']]
 				if md.missingDataCurrentNr >= md.missingDataNumber:	# Always send missing data if the count is greater then the minimum number
-					self._handleSubscriptionNotification(sub, NotificationEventType.reportOnGeneratedMissingDataPoints, missingData=md)
-					md.missingDataList = []	# delete only the sent missing data points
+					self._handleSubscriptionNotification(sub, NotificationEventType.reportOnGeneratedMissingDataPoints, missingData = copy.deepcopy(md))
+					md.clearMissingDataList()
 
 			else: # all other reasons that target the resource
 				self._handleSubscriptionNotification(sub, reason, resource, modifiedAttributes = modifiedAttributes)
@@ -421,9 +422,11 @@ class NotificationManager(object):
 				}
 			}
 
+			# L.logDebug(missingData)
+
 			nct = sub['nct']
 			creator = sub.get('cr')	# creator, might be None
-			# switch to poupate data
+			# switch to populate data
 			data = None
 			nct == NotificationContentType.all						and (data := resource.asDict())
 			nct == NotificationContentType.ri 						and (data := { 'm2m:uri' : resource.ri })

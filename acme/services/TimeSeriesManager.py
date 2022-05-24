@@ -105,7 +105,8 @@ class TimeSeriesManager(object):
 					md.missingDataCurrentNr += 1
 					if md.missingDataCurrentNr == 1:	
 						md.timeWindowEndTimestamp = rts.missingDataDetectionTime + md.missingDataDuration
-
+				
+				# L.logDebug(rts.missingData)
 				# Check for sending the missing data subscriptions in  general
 				CSE.notification.checkSubscriptions(None, NET.reportOnGeneratedMissingDataPoints, ri = tsRi, missingData = rts.missingData, now = rts.missingDataDetectionTime)
 			else:
@@ -155,13 +156,16 @@ class TimeSeriesManager(object):
 			
 			else:
 				# Create and start monitoring worker 
-				L.isDebug and L.logDebug(f'First <tsi> for this <ts>: {tsRi} Starting monitoring. Next runtime:{missingDataDetectionTime}')
+				L.isDebug and L.logDebug(f'First <tsi> for this <ts>: {tsRi}. Starting monitoring. Next runtime:{missingDataDetectionTime}')
 				actor = BackgroundWorkerPool.newActor(self.timeSeriesMonitor, at = missingDataDetectionTime, name = f'tsMonitor_{tsRi}_{missingDataDetectionTime}').start(tsRi = tsRi)
 			
 			#	runningTimeserieses structure could have been created earlier (or not), eg. by adding a subscription earlier, but is not running yet
 			#	It still needs to be filled
 			if not rts:
+				L.isDebug and L.logDebug('Creating a new LastTSInstance monitor')
 				runningTimeserieses[tsRi] = (rts := LastTSInstance())
+			else:
+				L.isDebug and L.logDebug(f'Re-using existing LastTSInstance monitor')
 
 			# Prepare runningTS structure after receiving a first TSI
 			# No dgt is added for the first tsi
@@ -175,6 +179,7 @@ class TimeSeriesManager(object):
 			rts.running 					= True
 
 		else:
+			L.isDebug and L.logDebug(f'Using existing LastTSInstance monitor')
 			if missingDataDetectionTime < arrivedAt:
 				# If the next runtime is too way back in the past then we don't start a monitor for that but add THIS TSI's dgt
 				timeSeries.addDgtToMdlt(dgt)
@@ -195,9 +200,9 @@ class TimeSeriesManager(object):
 		"""
 		L.isDebug and L.logDebug(f'Remove <ts> from monitoring: {tsRi}')
 		if tsRi in runningTimeserieses:
-			lastTsi = runningTimeserieses.pop(tsRi)	# removes it also from the dict
-			if lastTsi.actor:
-				lastTsi.actor.stop()
+			rts = runningTimeserieses.pop(tsRi)	# Stop and remove timeSeries monitor
+			if rts.actor:
+				rts.actor.stop()
 		return True
 
 
@@ -209,7 +214,7 @@ class TimeSeriesManager(object):
 		"""	Add a subscription for the <TS> resource. Setup the internal structures.
 		"""
 		if NET.reportOnGeneratedMissingDataPoints in subscription['enc/net']:
-			L.isDebug and L.logDebug(f'Adding missing data <sub>: {subscription.ri}')
+			L.isDebug and L.logDebug(f'Adding missing-data <sub>: {subscription.ri}. Not started yet.')
 			tsRi = timeSeries.ri
 			if not (rts := runningTimeserieses.get(timeSeries.ri)):
 				runningTimeserieses[tsRi] = (rts := LastTSInstance())

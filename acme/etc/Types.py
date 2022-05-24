@@ -980,9 +980,14 @@ class MissingData:
 	missingDataCurrentNr:int 		= 0
 
 	def clear(self) -> None:
-		self.missingDataList		= []
 		self.timeWindowEndTimestamp	= None
+		self.clearMissingDataList()
+
+
+	def clearMissingDataList(self) -> None:
+		self.missingDataList		= []
 		self.missingDataCurrentNr	= 0
+
 	
 	def asDict(self) -> JSON:
 		return {

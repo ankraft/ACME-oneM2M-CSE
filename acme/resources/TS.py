@@ -121,8 +121,10 @@ class TS(AnnounceableResource):
 				self._clearMdlt()
 				# Restart the monitoring process
 				# The actual "restart" is happening when the next TSI is received
+				L.isDebug and L.logDebug(f'(Re)Start monitoring <TS>: {self.ri}. Actual monitoring begins when first <TSI> is received.')
 				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 			else:
+				L.isDebug and L.logDebug(f'Stop monitoring <TS>: {self.ri}')
 				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 		
 		# Check that certain attributes are not updated when mdd is true
