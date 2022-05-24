@@ -385,6 +385,13 @@ class Logging:
 		except Exception:
 			pass
 		return answer
+	
+
+	@staticmethod
+	def consoleWidth() -> int:
+		"""	Return the current console width.
+		"""
+		return Logging._console.width
 
 	
 	@staticmethod
@@ -503,6 +510,8 @@ class ACMERichLogHandler(RichHandler):
 			r"(?P<number>\nBody: )",
 			r"(?P<number> \- Body: )",
 			r"(?P<number> \- Operation: )",
+			r"(?P<start>=+$)",
+
 			# r"(?P<request>CSE started$)",					# CSE startup message
 			# r"(?P<request>CSE shutdown$)",					# CSE shutdown message
 			# r"(?P<start>CSE shutting down$)",				# CSE shutdown message

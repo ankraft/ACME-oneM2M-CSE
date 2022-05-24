@@ -132,9 +132,9 @@ class Console(object):
 			'T'		: self.childResourceTree,
 			'u'		: self.openWebUI,
 			'w'		: self.workers,
+			'='		: self.printLine,
 			#'Z'		: self.resetCSE,
 		}
-
 		#	Endless runtime loop. This handles key input & commands
 		#	The CSE's shutdown happens in one of the key handlers below
 		if not CSE.isHeadless:
@@ -195,6 +195,7 @@ class Console(object):
 			('^T', 'Show & refresh resource tree continuously'),
 			('u', 'Open web UI'),
 			('w', 'Show workers and threads status'),
+			('=', 'Print a separator line to the log'),
 		]
 
 		table = Table(row_styles = [ '', L.tableRowStyle])
@@ -271,6 +272,13 @@ Available under the BSD 3-Clause License
 		"""
 		L.setLogLevel(L.logLevel.next())
 		L.console(f'New log level -> **{str(L.logLevel)}**')
+	
+
+	def printLine(self, key:str) -> None:
+		"""	Print a separator Line to the log.
+		"""
+		L._console.width
+		L.logWithLevel(L.logLevel, '=' * (L.consoleWidth()-50))
 
 
 	def workers(self, key:str) -> None:
