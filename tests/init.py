@@ -196,6 +196,7 @@ acpRN	= 'testACP'
 batRN	= 'testBAT'
 cinRN	= 'testCIN'
 cntRN	= 'testCNT'
+crsRN	= 'testCRS'
 csrRN	= 'testCSR'
 grpRN	= 'testGRP'
 fcntRN	= 'testFCNT'
@@ -217,6 +218,7 @@ aeURL 	= f'{cseURL}/{aeRN}'
 acpURL 	= f'{cseURL}/{acpRN}'
 cntURL 	= f'{aeURL}/{cntRN}'
 cinURL 	= f'{cntURL}/{cinRN}'	# under the <cnt>
+crsURL	= f'{aeURL}/{crsRN}'
 csrURL	= f'{cseURL}/{csrRN}'
 fcntURL	= f'{aeURL}/{fcntRN}'
 grpURL 	= f'{aeURL}/{grpRN}'
@@ -526,8 +528,8 @@ def lastRequestID() -> str:
 
 def connectionPossible(url:str) -> bool:
 	"""	Check whether a connection to the CSE is possible and the CSE is running. This is
-		done by retrieving the CSEBase using the protocol binding that tis used also
-		for the rest of the tests. So, it the Upper Tester interface is not used.
+		done by retrieving the CSEBase using the protocol binding that is used also
+		for the rest of the tests. So, the Upper Tester interface is not used.
 
 		Args:
 			url: The URL of the CSEBase
@@ -646,6 +648,25 @@ def isShortRequestExpirations() -> bool:
 			Boolean.
 	"""
 	return _orgRequestExpirationDelta != -1.0
+
+
+def testCaseStart(name:str) -> None:
+	"""	Indicate the start of a new test case to the CSE via the UT interface.
+		
+		Args:
+			name: Name of the test case.
+	"""
+	requests.post(UTURL, headers = { UTCMD: f'testCaseStart {name}'})
+
+
+def testCaseEnd(name:str) -> None:
+	"""	Indicate the end of a test case to the CSE via the UT interface.
+		
+		Args:
+			name: Name of the test case.
+	"""
+	requests.post(UTURL, headers = { UTCMD: f'testCaseEnd {name}'})
+
 
 ###############################################################################
 
