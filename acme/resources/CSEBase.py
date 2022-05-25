@@ -8,7 +8,6 @@
 #
 
 from __future__ import annotations
-from urllib import request
 from ..etc.Types import AttributePolicyDict, CSERequest, ResourceTypes as T, ContentSerializationType as CST, Result, JSON
 from ..etc import Utils
 from ..resources.Resource import Resource

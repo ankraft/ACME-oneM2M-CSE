@@ -558,6 +558,7 @@ class ResponseStatusCode(ACMEIntEnum):
 	subscriptionVerificationInitiationFailed	= 5204
 	subscriptionHostHasNoPrivilege				= 5205
 	notAcceptable 								= 5207
+	crossResourceOperationFailure 				= 5221
 	maxNumberOfMemberExceeded					= 6010
 	invalidArguments							= 6023
 	insufficientArguments						= 6024
@@ -606,6 +607,7 @@ ResponseStatusCode._httpStatusCodes = {																		# type: ignore
 		ResponseStatusCode.remoteEntityNotReachable					: HTTPStatus.NOT_FOUND,					# REMOTE_ENTITY_NOT_REACHABLE
 		ResponseStatusCode.operationNotAllowed						: HTTPStatus.METHOD_NOT_ALLOWED,		# OPERATION NOT ALLOWED
 		ResponseStatusCode.notAcceptable 							: HTTPStatus.NOT_ACCEPTABLE,			# NOT ACCEPTABLE
+		ResponseStatusCode.crossResourceOperationFailure			: HTTPStatus.INTERNAL_SERVER_ERROR,		# CROSS RESOURCE OPERATION FAILURE
 		ResponseStatusCode.conflict									: HTTPStatus.CONFLICT,					# CONFLICT
 		ResponseStatusCode.unsupportedMediaType						: HTTPStatus.UNSUPPORTED_MEDIA_TYPE,	# UNSUPPORTED_MEDIA_TYPE
 		ResponseStatusCode.internalServerError 						: HTTPStatus.INTERNAL_SERVER_ERROR,		# INTERNAL SERVER ERROR
