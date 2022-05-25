@@ -1223,7 +1223,7 @@ class ScriptManager(object):
 			return (False, dbg)
 		script = scripts[0]
 		if CSE.script.runScript(script, argument = argument, background = False):
-			L.isDebug and L.logDebug(f'Script: "{scriptName}"" finished successfully')
+			L.isDebug and L.logDebug(f'Script: "{scriptName}" finished successfully')
 			return (True, script.result if script.result else '')
 			
 		L.isWarn and L.logWarn(f'Script "{scriptName}" finished with error: {script.error.error.name} ({script.error.line}) : {script.error.message}')

@@ -510,7 +510,7 @@ class ACMERichLogHandler(RichHandler):
 			r"(?P<number>\nBody: )",
 			r"(?P<number> \- Body: )",
 			r"(?P<number> \- Operation: )",
-			r"(?P<start>=+$)",
+			r"(?P<start>=+[^=]*=+$)",
 
 			# r"(?P<request>CSE started$)",					# CSE startup message
 			# r"(?P<request>CSE shutdown$)",					# CSE shutdown message

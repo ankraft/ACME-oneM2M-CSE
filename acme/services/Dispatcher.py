@@ -1010,8 +1010,7 @@ class Dispatcher(object):
 				 A negative Result status when the timeout timestamp has been reached or passed.
 		"""
 		if request.headers._retUTCts is not None and DateUtils.timeUntilTimestamp(request.headers._retUTCts) <= 0.0:
-			L.logDebug(dbg := 'Request timed out')
-			return Result.errorResult(rsc = RC.requestTimeout, dbg = dbg)
+			return Result.errorResult(rsc = RC.requestTimeout, dbg = L.logDebug('Request timed out'))
 		return Result.successResult()
 
 
