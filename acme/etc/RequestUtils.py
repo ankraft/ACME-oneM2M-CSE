@@ -14,7 +14,7 @@ import cbor2, json
 from typing import Any, cast
 from urllib.parse import urlparse, urlunparse, parse_qs, urlunparse, urlencode
 
-from ..etc import DateUtils
+from . import DateUtils
 from .Types import ContentSerializationType as CST, JSON, RequestType, ResponseStatusCode as RC, Result, ResourceTypes as T, Operation
 from .Constants import Constants as C
 from ..services.Logging import Logging as L

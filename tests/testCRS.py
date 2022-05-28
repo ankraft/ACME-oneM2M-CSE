@@ -18,6 +18,8 @@ from init import *
 cntRN1 = f'{cntRN}1'
 cntRN2 = f'{cntRN}2'
 cntRN3 = f'{cntRN}3'
+subRN1 = f'{subRN}1'
+subRN2 = f'{subRN}2'
 
 class TestCRS(unittest.TestCase):
 	ae 				= None
@@ -27,6 +29,10 @@ class TestCRS(unittest.TestCase):
 	cnt1RI 			= None
 	cnt2RI 			= None
 	cnt3RI 			= None
+	sub1 			= None
+	sub2 			= None
+	sub1RI 			= None
+	sub2RI 			= None
 	crs 			= None
 	originator 		= None
 
@@ -38,6 +44,8 @@ class TestCRS(unittest.TestCase):
 
 		# look for notification server
 		assert isNotificationServerRunning(), 'Notification server cannot be reached'
+
+		testCaseStart('Setup TestCRS')
 
 		# create AE
 		dct = 	{ 'm2m:ae' : {
@@ -70,11 +78,15 @@ class TestCRS(unittest.TestCase):
 		assert rsc == RC.created, 'cannot create container'
 		cls.cnt3RI = findXPath(cls.cnt3, 'm2m:cnt/ri')
 
+		testCaseEnd('Setup TestCRS')
+
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		testCaseStart('TearDown TestCRS')
 		#DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		testCaseEnd('TearDown TestCRS')
 		stopNotificationServer()
 
 
@@ -263,6 +275,22 @@ class TestCRS(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCRSwithWrongRratFail(self) -> None:
+		"""	CREATE <CRS> with a wrong rrat (check rollback) -> Fail"""
+		dct = 	{ 'm2m:crs' : { 
+					'rrat': [ self.cnt1RI, self.cnt2RI, 'wrongRI' ],
+				}}
+
+		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
+		self.assertEqual(rsc, RC.crossResourceOperationFailure, TestCRS.crs)
+
+		# check subscriptions (should be still the old ones!)
+		self._testSubscriptionForCnt(cntRN1)		# should still be there
+		self._testSubscriptionForCnt(cntRN2, False)	# should not be added
+		self._testSubscriptionForCnt(cntRN3)		# should still be there
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCRSwithRrat(self) -> None:
 		"""	DELETE <CRS> with rrat"""
 		r, rsc = DELETE(crsURL, TestCRS.originator)
@@ -270,6 +298,132 @@ class TestCRS(unittest.TestCase):
 		self._testSubscriptionForCnt(cntRN1, False)
 		self._testSubscriptionForCnt(cntRN2, False)
 		self._testSubscriptionForCnt(cntRN3, False)
+
+
+	#
+	#	SRAT testing
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSwithSratNonSubFail(self) -> None:
+		"""	CREATE <CRS> with srat pointing to non-<sub> -> Fail"""
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ NOTIFICATIONSERVER ],
+					'twt': 1,
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI ],	# should succeed
+					'srat': [ self.cnt1RI ],
+			        'encs': [
+						{ 'enc' : {
+								'net': [ NET.createDirectChild ],
+							}
+						}
+					]
+				}
+		}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
+		self._testSubscriptionForCnt(cntRN1, False)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSubscriptions(self) -> None:
+		"""	CREATE <SUB> resources for with srat tests"""
+
+		# create SUB1 & SUB2
+		dct = { 'm2m:sub' : {
+					'rn' : subRN1,
+					'nu' : [ NOTIFICATIONSERVER ],
+					'enc' : {
+						'net': [ NET.createDirectChild ],
+					},
+				}}
+		TestCRS.sub1, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.created, self.sub1)
+		TestCRS.sub1RI = findXPath(self.sub1, 'm2m:sub/ri')
+
+		dct = { 'm2m:sub' : {
+					'rn' : subRN2,
+					'nu' : [ NOTIFICATIONSERVER ],
+					'enc' : {
+						'net': [ NET.createDirectChild ],
+					},
+				}}
+		TestCRS.sub2, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.SUB, dct)
+		self.assertEqual(rsc, RC.created, self.sub2)
+		TestCRS.sub2RI = findXPath(self.sub2, 'm2m:sub/ri')
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSwithSrat(self) -> None:
+		"""	CREATE <CRS> with srat"""
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ NOTIFICATIONSERVER ],
+					'twt': 1,
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'srat': [ self.sub1RI, self.sub2RI ],
+			        'encs': [
+						{ 'enc' : {
+								'net': [ NET.createDirectChild ],
+							}
+						}
+					]
+				}
+		}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.created, TestCRS.crs)
+
+		# check subscriptions
+		self._testSubscriptionForCnt(cntRN1)
+		self._testSubscriptionForCnt(cntRN2)
+		self._testSubscriptionForCnt(cntRN3, False)
+
+		# retrieve subs and check them directly
+		spCrsRi = toSPRelative(findXPath(TestCRS.crs, 'm2m:crs/ri'))
+
+		r, rsc = RETRIEVE(f'{csiURL}/{TestCRS.sub1RI}', TestCRS.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIn(spCrsRi, findXPath(r, 'm2m:sub/nu'))
+		self.assertIn(spCrsRi, findXPath(r, 'm2m:sub/acrs'))
+
+		r, rsc = RETRIEVE(f'{csiURL}/{TestCRS.sub2RI}', TestCRS.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIn(spCrsRi, findXPath(r, 'm2m:sub/nu'))
+		self.assertIn(spCrsRi, findXPath(r, 'm2m:sub/acrs'))
+
+
+
+
+# TODO test: delete crs, then check subs (no acrs, not in nu)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteCRSwithSrat(self) -> None:
+		"""	DELETE <CRS> with srat"""
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.deleted, r)
+
+
+		# retrieve subs and check them directly
+		spCrsRi = toSPRelative(findXPath(TestCRS.crs, 'm2m:crs/ri'))
+
+		r, rsc = RETRIEVE(f'{csiURL}/{TestCRS.sub1RI}', TestCRS.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertNotIn(spCrsRi, findXPath(r, 'm2m:sub/nu'), r)
+		self.assertIsNone(findXPath(r, 'm2m:sub/acrs'), r)
+
+		r, rsc = RETRIEVE(f'{csiURL}/{TestCRS.sub2RI}', TestCRS.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertNotIn(spCrsRi, findXPath(r, 'm2m:sub/nu'), r)
+		self.assertIsNone(findXPath(r, 'm2m:sub/acrs'), r)
+
+
+
+# TODO delete subs?
 
 
 	def _testSubscriptionForCnt(self, cnt:str, present:bool = True) -> None:
@@ -282,10 +436,9 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 1 if present else 0)
 
 
-# TODO rrat to unknown cnt
 # TODO test  : delete crs, subs need to be removed as well
-# TODO test twt missing, oiut of range
 # TODO test tws
+# TODO test sub delete - acrs working?
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
@@ -302,7 +455,15 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCRS('test_createCRSwithRrat'))
 	suite.addTest(TestCRS('test_updateCRSwithNewRrat'))
 	suite.addTest(TestCRS('test_updateCRSwithLessRrat'))
+	suite.addTest(TestCRS('test_updateCRSwithWrongRratFail'))
+	# TODO check subscriptions here
 	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
+
+	# Test srat
+	suite.addTest(TestCRS('test_createCRSwithSratNonSubFail'))
+	suite.addTest(TestCRS('test_createSubscriptions'))
+	suite.addTest(TestCRS('test_createCRSwithSrat'))
+	suite.addTest(TestCRS('test_deleteCRSwithSrat'))
 
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	printResult(result)
