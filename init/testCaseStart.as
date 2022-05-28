@@ -9,7 +9,7 @@
 @usage testCaseStart <test case name>
 @uppertester
 
-if [!= [argc] 1]
+if [< [argc] 1]
 	logError Wrong number of arguments: testCaseStart <test case name>
 	quitWithError
 endif
@@ -17,5 +17,5 @@ endif
 ##################################################################
 
 # Print start line to the debug log
-log =============================== Begin of [argv 1] ===============================
+log =============================== Begin of [argv] ===============================
 

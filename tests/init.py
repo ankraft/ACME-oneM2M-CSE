@@ -71,6 +71,8 @@ class MQTTTopics:
 	subscribed:bool			= False
 
 
+# TODO move utility functions somewhere else?
+
 # TODO think about to move this?
 class MQTTClientHandler(MQTTHandler):
 	"""	Class for handling receiced MQTT requests.
@@ -823,32 +825,62 @@ def uniqueRN(prefix:str='') -> str:
 	return f'{prefix}{round(time.time() * 1000)}-{uniqueID()}'
 
 
+def toSPRelative(originator:str) -> str:
+	"""	Add the CSI to an originator (if not already present).
+
+		Args:
+			An originator.
+		Return:
+			A string in the format */<csi>/<originator*.
+	"""
+	if not isSPRelative(originator):
+		return  f'{CSEID}/{originator}'
+	return originator
+
+
+def isSPRelative(uri:str) -> bool:
+	""" Test whether a URI is SP-Relative. 
+
+		Args:
+			uri: The URI to check
+		Return:
+			Boolean
+	"""
+	return uri is not None and len(uri) >= 2 and uri[0] == '/' and uri [1] != '/'
+
 
 decimalMatch = re.compile(r'{(\d+)}')
 def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 	""" Find a structured `key` in the dictionary `dct`. If `key` does not exists then
 		`default` is returned.
 
-		It is possible to address a specific element in an array. This is done be
+		- It is possible to address a specific element in an array. This is done be
 		specifying the element as `{n}`.
 
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{0}')
 
-		If an element if specified as '{}' then all elements in that array are returned in
+		- If an element is specified as `{}` then all elements in that array are returned in
 		an array.
 
 		Example: findXPath(resource, 'm2m:cin/{1}/lbl/{}') or findXPath(input, 'm2m:cnt/m2m:cin/{}/rn')
+
+		- If an element is specified as `{_}` and is targeting a dictionary then a single random path is chosen.
+		This can be used to skip, for example, unknown first elements in a structure.
+
+		Example: findXPath(resource, '{_}/rn') 
 
 	"""
 
 	if not key or not dct:
 		return default
+	if key in dct:
+		return dct[key]
 
 	paths = key.split("/")
 	data:Any = dct
 	for i in range(0,len(paths)):
 		if not data:
-		 	return default
+			return default
 		pathElement = paths[i]
 		if len(pathElement) == 0:	# return if there is an empty path element
 			return default
@@ -868,6 +900,15 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 				return data
 			return [ findXPath(d, '/'.join(paths[i+1:]), default) for d in data  ]	# recursively build an array with remnainder of the selector
 
+		elif pathElement == '{_}':
+			if isinstance(data, dict):
+				if keys := list(data.keys()):
+					data = data[keys[0]]
+				else:
+					return default
+			else:
+				return default
+
 		elif pathElement not in data:	# if key not in dict
 			return default
 		else:
@@ -875,25 +916,6 @@ def findXPath(dct:JSON, key:str, default:Any=None) -> Any:
 	return data
 
 
-def setXPath(dct:JSON, key:str, value:Any, overwrite:bool=True) -> bool:
-	"""	Set a structured `key` and `value` in the dictionary `dict`. 
-		Create if necessary, and observe the `overwrite` option (True overwrites an
-		existing key/value).
-	"""
-	paths = key.split("/")
-	ln1 = len(paths)-1
-	data = dct
-	if ln1 > 0:	# Small optimization. don't check if there is no extended path
-		for i in range(0,ln1):
-			if paths[i] not in data:
-				data[paths[i]] = {}
-			data = data[paths[i]]
-	# if not isinstance(data, dict):
-	# 	return False
-	if not overwrite and paths[ln1] in data: # test overwrite first, it's faster
-		return True # don't overwrite
-	data[paths[ln1]] = value
-	return True
 
 ###############################################################################
 
