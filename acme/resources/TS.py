@@ -122,10 +122,10 @@ class TS(AnnounceableResource):
 				# Restart the monitoring process
 				# The actual "restart" is happening when the next TSI is received
 				L.isDebug and L.logDebug(f'(Re)Start monitoring <TS>: {self.ri}. Actual monitoring begins when first <TSI> is received.')
-				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
+				CSE.timeSeries.pauseMonitoringTimeSeries(self.ri)
 			else:
-				L.isDebug and L.logDebug(f'Stop monitoring <TS>: {self.ri}')
-				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
+				L.isDebug and L.logDebug(f'Pause monitoring <TS>: {self.ri}')
+				CSE.timeSeries.pauseMonitoringTimeSeries(self.ri)
 		
 		# Check that certain attributes are not updated when mdd is true
 		if self.mdd  == True: # existing mdd
@@ -324,7 +324,7 @@ class TS(AnnounceableResource):
 		# If any of mdd, pei or mdt becomes None, or is mdd==False, then stop monitoring this TS
 		if not mdd or not self.pei or not self.mdt:
 			if CSE.timeSeries.isMonitored(self.ri):
-				CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
+				CSE.timeSeries.pauseMonitoringTimeSeries(self.ri)
 
 
         # If any parameters related to the missing data detection process (missingDataDetectTimer, missingDataMaxNr,

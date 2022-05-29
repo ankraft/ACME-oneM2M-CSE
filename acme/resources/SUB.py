@@ -179,24 +179,24 @@ class SUB(Resource):
 			for n in net:
 				if not NotificationEventType(n).isAllowedNCT(NotificationContentType(nct)):
 					return Result.errorResult(dbg = L.logDebug(f'nct={nct} is not allowed for one or more values in enc/net={net}'))
-				# fallthough
-			if n == NotificationEventType.reportOnGeneratedMissingDataPoints:
-				# TODO is this necessary, parent resource should be provided
-				# Check that parent is a TimeSeries
-				if not (parent := self.retrieveParentResource()):
-					return Result.errorResult(rsc = RC.internalServerError, dbg = L.logErr(f'cannot retrieve parent resource'))
-				if parent.ty != T.TS:
-					return Result.errorResult(dbg = L.logDebug(f'parent must be a <TS> resource for net==reportOnGeneratedMissingDataPoints'))
+				# fallthrough
+				if n == NotificationEventType.reportOnGeneratedMissingDataPoints:
+					# TODO is this necessary, parent resource should be provided
+					# Check that parent is a TimeSeries
+					if not (parent := self.retrieveParentResource()):
+						return Result.errorResult(rsc = RC.internalServerError, dbg = L.logErr(f'cannot retrieve parent resource'))
+					if parent.ty != T.TS:
+						return Result.errorResult(dbg = L.logDebug(f'parent must be a <TS> resource for net==reportOnGeneratedMissingDataPoints'))
 
-				# Check missing data structure
-				if (md := self['enc/md']) is None:	# enc/md is a boolean
-					return Result.errorResult(dbg = L.logDebug(f'net==reportOnGeneratedMissingDataPoints is set, but enc/md is missing'))
-				if not (res := CSE.validator.validateAttribute('num', md.get('num'))).status:
-					L.isDebug and L.logDebug(res.dbg)
-					return Result.errorResult(dbg = res.dbg)
-				if not (res := CSE.validator.validateAttribute('dur', md.get('dur'))).status:
-					L.isDebug and L.logDebug(res.dbg)
-					return Result.errorResult(dbg = res.dbg)
+					# Check missing data structure
+					if (md := self['enc/md']) is None:	# enc/md is a boolean
+						return Result.errorResult(dbg = L.logDebug(f'net==reportOnGeneratedMissingDataPoints is set, but enc/md is missing'))
+					if not (res := CSE.validator.validateAttribute('num', md.get('num'))).status:
+						L.isDebug and L.logDebug(res.dbg)
+						return Result.errorResult(dbg = res.dbg)
+					if not (res := CSE.validator.validateAttribute('dur', md.get('dur'))).status:
+						L.isDebug and L.logDebug(res.dbg)
+						return Result.errorResult(dbg = res.dbg)
 
 
 		# TODO: Validate enc/missing/data
