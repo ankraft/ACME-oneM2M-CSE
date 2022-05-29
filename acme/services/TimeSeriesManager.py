@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from sqlite3 import Date
 
-from ..etc.Types import NotificationEventType as NET, MissingData, LastTSInstance
+from ..etc.Types import NotificationEventType as NET, MissingData, LastTSInstance, ResourceTypes as T
 from ..services.Logging import Logging as L
 from ..resources.Resource import Resource
 from ..services import CSE as CSE
@@ -23,8 +23,7 @@ runningTimeserieses:dict[str, LastTSInstance] = {}	# Holds and maps the active T
 class TimeSeriesManager(object):
 
 	def __init__(self) -> None:
-		global runningTimeserieses
-		runningTimeserieses = {}	# Initialize or clear
+		self._restoreTimeSeriesStructures()	# Restore structures after a complete restart
 		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
 		L.isInfo and L.log('TimeSeriesManager initialized')
 
@@ -40,10 +39,20 @@ class TimeSeriesManager(object):
 	def restart(self) -> None:
 		"""	Restart the TimeSeriesManager service.
 		"""
-		global runningTimeserieses
 		self.stopMonitoring()
 		runningTimeserieses.clear()
 		L.isDebug and L.logDebug('TimeSeriesManager restarted')
+
+
+	def _restoreTimeSeriesStructures(self) -> bool:
+		"""	Restore the necessary internal in-memory structures when (re)starting
+			a CSE.
+		"""
+		for each in CSE.dispatcher.retrieveResourcesByType(T.SUB):
+			if NET.reportOnGeneratedMissingDataPoints in each.attribute('enc/net'):
+				L.isDebug and L.logDebug(f'Restoring structures for TSI subscription: {each.ri}')
+				self.addSubscription(each.retrieveParentResource(), each)
+		return True
 
 
 	#
@@ -161,6 +170,7 @@ class TimeSeriesManager(object):
 			#	runningTimeserieses structure could have been created earlier (or not), eg. by adding a subscription earlier, but is not running yet
 			#	It still needs to be filled
 			if not rts:
+				L.logWarn(f'Adding new instance for {tsRi}')
 				runningTimeserieses[tsRi] = (rts := LastTSInstance())
 
 			# Prepare runningTS structure after receiving a first TSI
@@ -191,13 +201,34 @@ class TimeSeriesManager(object):
 
 
 	def stopMonitoringTimeSeries(self, tsRi:str) -> bool:
-		"""	Remove a timeSeries from monitoring. No other attributes are updated.
+		"""	Remove a <TS> resource from monitoring. No other attributes are updated.
+
+			Args:
+				tsRi: ResourceID of the TimeSeries resource.
+			Return:
+				Boolean indicating success.
 		"""
 		L.isDebug and L.logDebug(f'Remove <ts> from monitoring: {tsRi}')
 		if tsRi in runningTimeserieses:
-			lastTsi = runningTimeserieses.pop(tsRi)	# removes it also from the dict
-			if lastTsi.actor:
-				lastTsi.actor.stop()
+			rts = runningTimeserieses.pop(tsRi)	# removes (!) it also from the dict
+			if rts.actor:
+				rts.actor.stop()
+		return True
+
+	
+	def pauseMonitoringTimeSeries(self, tsRi:str) -> bool:
+		"""	Pause the monitoring of a <TS> resource.
+
+			Args:
+				tsRi: ResourceID of the TimeSeries resource.
+			Return:
+				Boolean indicating success.
+		"""
+		if tsRi in runningTimeserieses:
+			rts = runningTimeserieses.get(tsRi)
+			rts.running = False
+			if rts.actor:
+				rts.actor.stop()
 		return True
 
 
