@@ -105,7 +105,7 @@ class CRS(Resource):
 
 	def update(self, dct:JSON = None, originator:str = None) -> Result:
 
-		# Structures for roleback
+		# Structures for rollback
 		_createdRrat:list[str] = []
 		_deletedRrat:list[str] = []
 
@@ -152,14 +152,7 @@ class CRS(Resource):
 		# e)If any of the above Update procedures are unsuccessful the receiver shall send an unsuccessful response with a
 		# 	 "CROSS_RESOURCE_OPERATION_FAILURE" Response Status Code to the Originator; the receiver shall also restore all resources to
 		#  the states they were in prior to this request.
-		# 
-		# f)If the notificationStatsEnable attribute in the resource is true and the notificationStatsEnable attribute in the request
-		#  is false, the Hosting CSE shall stop collecting notification statistics for the <crossResourceSubscription> resource. 
-		#  The Hosting CSE shall maintain the current value of the notificationStatsInfo attribute.
-		#
-		# g)If the notificationStatsEnable attribute in the resource is false and the notificationStatsEnable attribute in the request is
-		#  true, the Hosting CSE shall update the value of the notificationStatsEnable attribute in the resource to true, delete any
-		# values stored in the notificationStatsInfo attribute of the resource and then start recording notification statistics.
+
 		
 		return super().update(dct, originator)
 
@@ -170,12 +163,10 @@ class CRS(Resource):
 
 		# Delete rrat and srat subscriptions
 		self._deleteSubscriptions(originator)
+
+		# TODO deactivate timer
 		
-		# TODO Remove self from nu of srat subscriptions
-		# b) The Hosting CSE shall UPDATE the <subscription> resource of each target resource indicated in the 
-		# subscriptionResourcesAsTarget attribute using the procedure in clause 7.4.8.2.3 to remove the
-		# resource identifier of this <crossResourceSubscription> from the <subscription> resource's 
-		# associatedCrossResourceSub attribute. The Receiver shall use the From of the current request for these requests.
+
 		return super().deactivate(originator)
 
 

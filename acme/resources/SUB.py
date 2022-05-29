@@ -16,6 +16,12 @@ from ..services.Logging import Logging as L
 from ..resources.Resource import *
 
 
+# TODO notificationStatsEnable - nse  support
+# TODO notificationStatsInfo - nsi	support
+
+# TODO associatedCrossResourceSub
+
+
 class SUB(Resource):
 
 	# Specify the allowed child-resource types
@@ -161,7 +167,7 @@ class SUB(Resource):
 						return Result.errorResult(dbg = L.logDebug(f'nu must target the parent resource\'s originator'))
 				
 		# Validate missingData
-		#L.logDebug(self['enc/md'])
+		L.logDebug(self['enc/md'])
 		if (md := self['enc/md']) is not None:
 			if len(md.keys() & {'dur', 'num'}) != 2:
 				return Result.errorResult(dbg = L.logDebug(f'"dur" and/or "num" missing in "enc/md" attribute'))
