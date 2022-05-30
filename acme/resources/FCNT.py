@@ -64,7 +64,7 @@ class FCNT(AnnounceableResource):
 
 	def __init__(self, dct:JSON = None, pi:str = None, fcntType:str = None, create:bool = False) -> None:
 		super().__init__(T.FCNT, dct, pi, tpe = fcntType, create = create)
-		self.internalAttributes.append(self._hasFCI)	# Add to internal attributes to ignore in validation etc
+		self._addToInternalAttributes(self._hasFCI)	# Add to internal attributes to ignore in validation etc
 
 		self.setAttribute('cs', 0, overwrite = False)
 		self.setAttribute('st', 0, overwrite = False)

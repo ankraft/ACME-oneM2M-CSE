@@ -69,8 +69,8 @@ class TSB(AnnounceableResource):
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
 		super().__init__(T.TSB, dct, pi, create = create)
 		# Add to internal attributes to ignore in validation etc
-		self.internalAttributes.append(self._bcni)	
-		self.internalAttributes.append(self._bcnt)
+		self._addToInternalAttributes(self._bcni)	
+		self._addToInternalAttributes(self._bcnt)
 
 		self.setAttribute('bcnc', BeaconCriteria.PERIODIC, overwrite = False)
 

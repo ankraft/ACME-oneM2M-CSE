@@ -51,8 +51,8 @@ class PCH(Resource):
 		super().__init__(T.PCH, dct, pi, create = create, inheritACP = True)
 
 		# Add to internal attributes to ignore in validation etc
-		self.internalAttributes.append(self._parentOriginator)	
-		self.internalAttributes.append(self._pcuRI)
+		self._addToInternalAttributes(self._parentOriginator)	
+		self._addToInternalAttributes(self._pcuRI)
 
 		# Set optional default for requestAggregation
 		self.setAttribute('rqag', False, overwrite = False)	

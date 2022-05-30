@@ -717,7 +717,6 @@ class Resource(object):
 
 
 	#########################################################################
-
 	#
 	#	Attribute specific helpers
 	#
@@ -762,6 +761,18 @@ class Resource(object):
 			else:
 				newACPIList.append(ri)
 		return Result(status = True, data = newACPIList)
+	
+
+	def _addToInternalAttributes(self, name:str) -> None:
+		"""	Add a `name` to the names of internal attributes. `name` is only added if
+			it is not already present.
+
+			Args:
+				name: Attribute name to add.
+		"""
+		if name not in self.internalAttributes:
+			self.internalAttributes.append(name)
+
 
 
 	#########################################################################

@@ -33,7 +33,7 @@ class PCH_PCU(Resource):
 		super().__init__(T.PCH_PCU, dct, pi = pi, create = create, inheritACP = True, readOnly = True, rn = 'pcu')
 
 		# Add to internal attributes to ignore in validation etc
-		self.internalAttributes.append(self._aggregate)	
+		self._addToInternalAttributes(self._aggregate)	
 
 		self.setAttribute(PCH_PCU._aggregate, False, overwrite = False)
 		
