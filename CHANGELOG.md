@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSS] Corrected &lt;timeSeries>'s *cbs* attribute name.
 - [TESTS] Corrected test cases.
 
+## [0.10.1] - 2022-05-30
+
+### Fixed
+- [CSE] Fixed crash when restarting &lt;timeSeries> monitoring.
 
 ## [0.10.0] - 2022-05-06
 
