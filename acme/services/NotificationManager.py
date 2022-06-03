@@ -8,24 +8,23 @@
 #
 
 from __future__ import annotations
-from lib2to3.pgen2.token import OP
+from sqlite3 import Date
 import sys
 import isodate
 import copy
-from typing import Callable, Union
+from typing import Callable, Union, Any
 from threading import Lock
 from tinydb.utils import V
 
 from ..etc.Constants import Constants as C
-from ..etc.Types import CSERequest, ContentSerializationType, MissingData, Operation, ResourceTypes, Result, NotificationContentType, NotificationEventType
+from ..etc.Types import CSERequest, MissingData, Operation, ResourceTypes, Result, NotificationContentType, NotificationEventType, TimeWindowType
 from ..etc.Types import ResponseStatusCode as RC, EventCategory
 from ..etc.Types import JSON, Parameters
 from ..etc import Utils, DateUtils
 from ..services.Logging import Logging as L
-from ..services.Configuration import Configuration
 from ..services import CSE
 from ..resources.Resource import Resource
-from ..helpers.BackgroundWorker import BackgroundWorkerPool
+from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 
 # TODO: removal policy (e.g. unsuccessful tries)
 
@@ -38,12 +37,24 @@ class NotificationManager(object):
 
 	def __init__(self) -> None:
 		self.lockBatchNotification = Lock()	# Lock for batchNotifications
+		CSE.event.addHandler(CSE.event.cseReset, self.restart)		# type: ignore
 		L.isInfo and L.log('NotificationManager initialized')
 
 
 	def shutdown(self) -> bool:
 		L.isInfo and L.log('NotificationManager shut down')
 		return True
+
+
+	def restart(self) -> None:
+		"""	Restart the NotificationManager service.
+		"""
+		L.isInfo and L.log('NotificationManager: Stopping all <CRS> window workers')
+		BackgroundWorkerPool.stopWorkers('crsPeriodic_*')
+		BackgroundWorkerPool.stopWorkers('crsSliding_*')
+		L.isDebug and L.logDebug('NotificationManager restarted')
+
+
 
 	###########################################################################
 	#
@@ -53,7 +64,7 @@ class NotificationManager(object):
 	def addSubscription(self, subscription:Resource, originator:str) -> Result:
 		"""	Add a new subscription. Check each receipient with verification requests. """
 		L.isDebug and L.logDebug('Adding subscription')
-		if not (res := self._verifyNusInSubscription(subscription, originator = originator)).status:	# verification requests happen here
+		if not (res := self._verifyNusInSubscription(subscription.ri, subscription.nu, originator = originator)).status:	# verification requests happen here
 			return res
 		return Result.successResult() if CSE.storage.addSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot add subscription to database')
 
@@ -79,7 +90,7 @@ class NotificationManager(object):
 
 	def updateSubscription(self, subscription:Resource, previousNus:list[str], originator:str) -> Result:
 		L.isDebug and L.logDebug('Updating subscription')
-		if not (res := self._verifyNusInSubscription(subscription, previousNus, originator = originator)).status:	# verification requests happen here
+		if not (res := self._verifyNusInSubscription(subscription.ri, subscription.nu, previousNus, originator = originator)).status:	# verification requests happen here
 			return res
 		return Result.successResult() if CSE.storage.updateSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot update subscription in database')
 
@@ -306,6 +317,116 @@ class NotificationManager(object):
 
 	###########################################################################
 	#
+	#	CrossResourceSubscriptions
+	#
+
+	def addCrossResourceSubscription(self, crs:Resource, originator:str) -> Result:
+		"""	Add a new crossResourceubscription. Check each receipient with verification requests. """
+		L.isDebug and L.logDebug('Adding crossResourceSubscription')
+		if not (res := self._verifyNusInSubscription(crs.ri, crs.nu, originator = originator)).status:	# verification requests happen here
+			return res
+		return Result.successResult()
+
+
+	def updateCrossResourceSubscription(self, ri:str, newNu:list[str], previousNus:list[str], originator:str) -> Result:
+		L.isDebug and L.logDebug('Updating crossResourceSubscription')
+		if not (res := self._verifyNusInSubscription(ri, newNu, previousNus, originator = originator)).status:	# verification requests happen here
+			return res
+		return Result.successResult()
+
+
+	def _crsCheckForNotification(self, data:list, crsRi:str, subCount:int) -> None:
+		L.inspect(data)
+
+		if len(data) == subCount:
+			L.isDebug and L.logDebug(f'xxxxxx')
+			...
+			# Send notification
+		
+		data.clear()
+
+
+
+	# Time Window Monitor : Periodic
+
+	def _getPeriodicWorkerName(self, ri:str) -> str:
+		return f'crsPeriodic_{ri}'
+
+	def startCRSPeriodicWindow(self, crsRi:str, tws:str, subCount:int) -> None:
+		crsTws = DateUtils.fromDuration(tws)
+		L.isDebug and L.logDebug(f'Starting PeriodicWindow for crs: {crsRi}. TimeWindowSize: {crsTws}')
+
+		# Start a background worker. "data", which will contain the RI's later is empty
+		BackgroundWorkerPool.newWorker(crsTws, 
+									   self._crsPeriodicWindowMonitor, 
+									   name = self._getPeriodicWorkerName(crsRi), 
+									   startWithDelay = True,
+									   data = []).start(crsRi = crsRi, subCount = subCount)
+
+
+	def stopCRSPeriodicWindow(self, crsRi:str) -> None:
+		L.isDebug and L.logDebug(f'Stopping PeriodicWindow for crs: {crsRi}')
+		BackgroundWorkerPool.stopWorkers(self._getPeriodicWorkerName(crsRi))
+
+
+	def _crsPeriodicWindowMonitor(self, _data:list[str], crsRi:str, subCount:int) -> bool: 
+		L.isDebug and L.logDebug(f'Checking periodic window for <crs>: {crsRi}')
+		self._crsCheckForNotification(_data, crsRi, subCount)
+		return True
+
+
+	# Time Window Monitor : Sliding
+
+	def _getSlidingWorkerName(self, ri:str) -> str:
+		return f'crsSliding_{ri}'
+
+
+	def startCRSSlidingWindow(self, crsRi:str, tws:str, sur:str, subCount:int) -> BackgroundWorker:
+		crsTws = DateUtils.fromDuration(tws)
+		L.isDebug and L.logDebug(f'Starting SlidingWindow for crs: {crsRi}. TimeWindowSize: {crsTws}')
+
+		# Start an actor for the sliding window. "data" already contains the first notification source in an array
+		return BackgroundWorkerPool.newActor(self._crsSlidingWindowMonitor, 
+											 crsTws,
+											 name = self._getPeriodicWorkerName(crsRi), 
+											 data = [ sur ]).start(crsRi = crsRi, subCount = subCount)
+
+
+	def stopCRSSlidingWindow(self, crs:Resource) -> None:
+		crsRi = crs.ri
+		L.isDebug and L.logDebug(f'Stopping SlidingWindow for crs: {crsRi}')
+		BackgroundWorkerPool.stopWorkers(self._getSlidingWorkerName(crsRi))
+
+
+	def _crsSlidingWindowMonitor(self, _data:Any, crsRi:str, subCount:int) -> bool:
+		L.isDebug and L.logDebug(f'Checking sliding window for <crs>: {crsRi}')
+		self._crsCheckForNotification(_data, crsRi, subCount)
+		return True
+
+
+	# Received Notification handling
+
+	def receivedCrossResourceSubscriptionNotification(self, sur:str, crs:Resource) -> None:
+		crsRi = crs.ri
+		crsTwt = crs.twt
+		crsTws = crs.tws
+		if crsTwt == TimeWindowType.SLIDINGWINDOW:
+			if (workers := BackgroundWorkerPool.findWorkers(self._getSlidingWorkerName(crsRi))):
+				if sur not in workers[0].data:
+					workers[0].data.append(sur)
+			else:
+				self.startCRSSlidingWindow(crsRi, crsTws, sur, crs._countSubscriptions())	# sur is added automatically when creating actor
+		elif crsTwt == TimeWindowType.PERIODICWINDOW:
+			if (workers := BackgroundWorkerPool.findWorkers(self._getPeriodicWorkerName(crsRi))):
+				if sur not in workers[0].data:
+					workers[0].data.append(sur)
+
+			# No else: Periodic is running or not
+		
+
+
+	###########################################################################
+	#
 	#	Notifications in general
 	#
 
@@ -323,12 +444,12 @@ class NotificationManager(object):
 	#########################################################################
 
 
-	def _verifyNusInSubscription(self, subscription:Resource, previousNus:list[str] = None, originator:str = None) -> Result:
+	def _verifyNusInSubscription(self, ri:str, nus:list[str], previousNus:list[str] = None, originator:str = None) -> Result:
 		"""	Check all the notification URI's in a subscription. A verification request is sent to new URI's. Notifications to the originator are not sent.
 
 			If `previousNus` is given then only new nus are notified.
 		"""
-		if nus := subscription.nu:
+		if nus:
 			# notify new nus (verification request). New ones are the ones that are not in the previousNU list
 			for nu in nus:
 				if not previousNus or (nu not in previousNus):	# send only to new entries in nu
@@ -337,7 +458,7 @@ class NotificationManager(object):
 						L.isDebug and L.logDebug(f'Notification URI skipped: uri: {nu} == originator: {originator}')
 						continue
 					# Send verification notification to target (either direct URL, or an entity)
-					if not self._sendVerificationRequest(nu, subscription.ri, originator = originator):
+					if not self._sendVerificationRequest(nu, ri, originator = originator):
 						# Return when even a single verification request fails
 						return Result.errorResult(rsc = RC.subscriptionVerificationInitiationFailed, dbg = f'Verification request failed for: {nu}')
 

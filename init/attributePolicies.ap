@@ -2032,7 +2032,7 @@
 	],
 	"nu": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "CRS", "SUB", "REQRESP" ],
 			"lname": "notificationURI",
 			"ns": "m2m",
 			"type": "list",

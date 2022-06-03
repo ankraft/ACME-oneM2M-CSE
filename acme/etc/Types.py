@@ -1082,6 +1082,18 @@ class BeaconCriteria(ACMEIntEnum):
 
 ##############################################################################
 #
+#	CrossResourceSubscription related
+#
+
+class TimeWindowType(ACMEIntEnum):
+	""" Time window type """
+	PERIODICWINDOW = 1
+	SLIDINGWINDOW = 2
+
+
+
+##############################################################################
+#
 #	Result and Argument and Header Data Classes
 #
 

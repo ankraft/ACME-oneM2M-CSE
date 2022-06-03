@@ -43,6 +43,7 @@ class TestSUB(unittest.TestCase):
 		# look for notification server
 		assert isNotificationServerRunning(), 'Notification server cannot be reached'
 
+		testCaseStart('Setup TestSub')
 		# create other resources
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
@@ -85,16 +86,27 @@ class TestSUB(unittest.TestCase):
 		cls.ae2URL = f'{cseURL}/{aeRN}2'
 		cls.aePOAURL = f'{cseURL}/{aeRN}POA'
 
+		testCaseEnd('Setup TestSub')
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		testCaseStart('TearDown TestSub')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(f'{aeURL}NoPOA', ORIGINATOR)	# Just delete the NoPOA AE and everything below it. Ignore whether it exists or not
 		DELETE(cls.aePOAURL, ORIGINATOR)	# Just delete the POA AE and everything below it. Ignore whether it exists or not
 		DELETE(cls.ae2URL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		testCaseEnd('TearDown TestSub')
 		stopNotificationServer()
+
+
+	def setUp(self) -> None:
+		testCaseStart(self._testMethodName)
+	
+
+	def tearDown(self) -> None:
+		testCaseEnd(self._testMethodName)
 
 	
 	@unittest.skipIf(noCSE, 'No CSEBase')

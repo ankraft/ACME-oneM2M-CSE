@@ -57,7 +57,7 @@ timeSeriesInterval 			= 2.0 # seconds
 tsbPeriodicInterval			= 1.0
 
 # crossResourceSubscription Time Window Size (s)
-crsTimeWindowSize			= 2.0
+crsTimeWindowSize			= 4.0
 
 # ReleaseVersionIndicator
 RVI							='3'
@@ -719,7 +719,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 		pass
 
 
-keepNotificationServerRunning = True
+keepNotificationServerRunning = False
 
 def runNotificationServer() -> None:
 	global keepNotificationServerRunning
@@ -743,12 +743,14 @@ def startNotificationServer() -> None:
 
 def stopNotificationServer() -> None:
 	global keepNotificationServerRunning
-	keepNotificationServerRunning = False
-	try:
-		requests.post(NOTIFICATIONSERVER, verify=verifyCertificate)	# send empty/termination request
-	except Exception:
-		pass
-	waitMessage('Stopping notification server', 2.0)
+
+	if keepNotificationServerRunning:
+		keepNotificationServerRunning = False
+		try:
+			requests.post(NOTIFICATIONSERVER, verify=verifyCertificate)	# send empty/termination request
+		except Exception:
+			pass
+		waitMessage('Stopping notification server', 2.0)
 
 
 

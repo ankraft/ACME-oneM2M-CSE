@@ -257,8 +257,7 @@ class RequestManager(object):
 
 		# Check contentType and resourceType
 		if request.args.rt == ResponseType.blockingRequest:
-			res = CSE.dispatcher.processNotifyRequest(request, request.headers.originator)
-			return res
+			return CSE.dispatcher.processNotifyRequest(request, request.headers.originator)
 
 		elif request.args.rt in [ ResponseType.nonBlockingRequestSynch, ResponseType.nonBlockingRequestAsynch ]:
 			return self._handleNonBlockingRequest(request)

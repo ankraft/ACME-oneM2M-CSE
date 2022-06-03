@@ -131,10 +131,6 @@ class SUB(Resource):
 			return res
 		L.isDebug and L.logDebug(f'Validating subscription: {self.ri}')
 
-		# Check necessary attributes
-		if not (nu := self.nu) or not isinstance(nu, list):
-			return Result.errorResult(dbg = L.logDebug(f'"nu" attribute missing for subscription: {self.ri}'))
-		
 		# Check NotificationEventType
 		if (net := self['enc/net']) is not None:
 			if not NotificationEventType.has(net):
@@ -159,12 +155,12 @@ class SUB(Resource):
 					if CSE.notification.getSubscriptionsByNetChty(parentResource.ri, net = [ NotificationEventType.blockingUpdate ]):
 						return Result.errorResult(dbg = L.logDebug(f'a subscription with blockingUpdate already exsists for this resource'))
 
-				if len(nu) > 1:
+				if len(self.nu) > 1:
 					return Result.errorResult(dbg = L.logDebug(f'nu must contain only one target for blockingRetrieve/blockingUpdate'))
 				parentOriginator = parentResource.getOriginator()
 				if net[0] != NotificationEventType.blockingUpdate:
-					if not Utils.compareIDs(nu[0], parentOriginator):
-						return Result.errorResult(dbg = L.logDebug(f'nu must target the parent resource\'s originator'))
+					if not Utils.compareIDs(self.nu[0], parentOriginator):
+						return Result.errorResult(dbg = L.logDebug(f'nu must target the parent resource\'s originator for blocking notifications'))
 				
 		# Validate missingData
 		L.logDebug(self['enc/md'])

@@ -71,6 +71,8 @@ if __name__ == '__main__':
 				startPerfTime = time.perf_counter()
 				startRequestCount = init.requestCount
 				testExecuted, errors, skipped = module.run(testVerbosity=args.verbosity, testFailFast=args.failFast)	# type: ignore
+				init.stopNotificationServer()
+
 				durationProcess = time.process_time() - startProcessTime
 				duration = time.perf_counter() - startPerfTime
 				if testExecuted > 0:	# don't count none-run tests
