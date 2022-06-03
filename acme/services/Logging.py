@@ -315,7 +315,7 @@ class Logging:
 
 
 	@staticmethod
-	def _log(level:int, msg:Any, stackOffset:int = 0) -> None:
+	def _log(level:int, msg:Any, stackOffset:int = 0, immediate:bool = False) -> None:
 		"""	Internally adding various information to the log output. The `stackOffset` is used to determine 
 			the correct caller. It is set by a calling method in case the log information are re-routed.
 
@@ -328,11 +328,10 @@ class Logging:
 				# Queue a log message : (level, message, caller from stackframe, current thread)
 				caller = inspect.getframeinfo(inspect.stack()[stackOffset + 2][0])
 				thread = threading.current_thread()
-				if Logging.enableQueue:
+				if Logging.enableQueue and not immediate:
 					Logging.queue.put((level, msg, caller, thread))
 				else:
-					if msg:
-						Logging._logMessageToLoggerConsole(level, msg, caller, thread)
+					Logging._logMessageToLoggerConsole(level, msg, caller, thread)
 			except Exception as e:
 				print(e)
 				# sometimes this raises an exception. Just ignore it.
@@ -401,7 +400,7 @@ class Logging:
 			Args:
 				obj: The object to inspect.
 		"""
-		Logging._log(Logging.logLevel, obj)
+		Logging._log(Logging.logLevel, obj, immediate = True)
 
 
 	@staticmethod
