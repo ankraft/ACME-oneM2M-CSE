@@ -8,9 +8,12 @@
 #
 
 from __future__ import annotations
+from codecs import strict_errors
+from os import times
+from sqlite3 import Timestamp
 from .TextTools import simpleMatch
 import random, sys, heapq, datetime, traceback, time
-from threading import Thread, Timer, Event, RLock, enumerate as threadsEnumerate
+from threading import Thread, Timer, Event, RLock, Lock, enumerate as threadsEnumerate
 from typing import Callable, List, Dict, Any, Tuple
 import logging
 
@@ -22,6 +25,7 @@ def _utcTime() -> float:
 			Float UTC-based timestamp
 	"""
 	return datetime.datetime.utcnow().timestamp()
+
 
 class BackgroundWorker(object):
 	"""	This class provides the functionality for background worker or a single actor instance.
@@ -43,7 +47,8 @@ class BackgroundWorker(object):
 						runOnTime:bool = True, 
 						runPastEvents:bool = False, 
 						finished:Callable = None,
-						ignoreException:bool = False) -> None:
+						ignoreException:bool = False,
+						data:Any = None) -> None:
 		self.interval 				= interval
 		self.runOnTime				= runOnTime			# Compensate for processing time
 		self.runPastEvents			= runPastEvents		# Run events that are in the past
@@ -59,6 +64,8 @@ class BackgroundWorker(object):
 		self.finished				= finished			# Callback after worker finished
 		self.ignoreException		= ignoreException	# Ignore exception when running workers
 		self.id 					= id
+		self.data					= data				# Any extra data
+
 
 
 	def start(self, **args:Any) -> BackgroundWorker:
@@ -182,7 +189,14 @@ class BackgroundWorker(object):
 			# - ignoreException is False then the exception is raised again
 			while True:
 				try:
-					result = self.callback(**self.args)
+					if self.data is not None:
+						# args = self.args.copy()
+						# args['data'] = self.data
+						# print(args)
+
+						result = self.callback(_data = self.data, **self.args)
+					else:
+						result = self.callback(**self.args)
 					break
 				except Exception as e:
 					if BackgroundWorker._logger:
@@ -400,15 +414,40 @@ class Job(Thread):
 		cls.balanceReduceFactor = balanceReduceFactor
 
 
+class WorkerEntry(object):
+	timestamp:float = 0.0
+	workerID:int = None
+	workerName:str = None
+
+	def __init__(self, timestamp:float, workerID:int, workerName:str) -> None:
+		self.timestamp = timestamp
+		self.workerID = workerID
+		self.workerName = workerName
+
+
+	def __lt__(self, other:WorkerEntry) -> bool:
+		return self.timestamp < other.timestamp
+
+	
+	def __str__(self) -> str:
+		return f'(ts: {self.timestamp} id: {self.workerID} name: {self.workerName})'
+	
+
+	def __repr__(self) -> str:
+		return self.__str__()
+
+
 class BackgroundWorkerPool(object):
 	"""	Pool and factory for background workers and actors.
 	"""
 	backgroundWorkers:Dict[int, BackgroundWorker]	= {}
-	workerQueue:List 								= []
-	""" Priority queue. Contains tuples (nextExecution timestamp, workerID). """
+	workerQueue:list[WorkerEntry] 					= []
+	""" Priority queue. Contains tuples (next execution timestamp, worker ID, worker name). """
 	workerTimer:Timer								= None
+	"""	A single timer to run the next task in the *workerQueue*. """
 
-	queueLock:RLock					 				= RLock()
+	queueLock:Lock					 				= Lock()
+	timerLock:Lock					 				= Lock()
 
 
 	def __new__(cls, *args:str, **kwargs:str) -> BackgroundWorkerPool:
@@ -447,7 +486,8 @@ class BackgroundWorkerPool(object):
 						runOnTime:bool = True, 
 						runPastEvents:bool = False, 
 						finished:Callable = None, 
-						ignoreException:bool = False) -> BackgroundWorker:	# type:ignore[type-arg]
+						ignoreException:bool = False,
+						data:Any = None) -> BackgroundWorker:	# type:ignore[type-arg]
 		"""	Create a new background worker that periodically executes the callback.
 
 			Args:
@@ -460,6 +500,9 @@ class BackgroundWorkerPool(object):
 				runOnTime: If True then the worker is always run *at* the interval, otherwise the interval starts *after* the worker execution
 				runPastEvents: If True then runs in the past are executed, otherwise they are dismissed
 				finished: Callable that is executed after the worker finished
+				ignoreExceptions: Restart the actor in case an exception is encountered
+				data: Any data structure that is then passed in the *_data* parameter of the `workerCallback`.
+
 			Return:
 				BackgroundWorker
 
@@ -468,7 +511,17 @@ class BackgroundWorkerPool(object):
 		while True:
 			if (id := random.randint(1,sys.maxsize)) not in cls.backgroundWorkers:
 				break
-		worker = BackgroundWorker(interval, workerCallback, name, startWithDelay, maxCount = maxCount, dispose = dispose, id = id, runOnTime = runOnTime, runPastEvents = runPastEvents, finished = finished)
+		worker = BackgroundWorker(interval, 
+								  workerCallback, 
+								  name, 
+								  startWithDelay, 
+								  maxCount = maxCount, 
+								  dispose = dispose, 
+								  id = id, 
+								  runOnTime = runOnTime, 
+								  runPastEvents = runPastEvents, 
+								  ignoreException = ignoreException,
+								  data = data)
 		cls.backgroundWorkers[id] = worker
 		return worker
 
@@ -480,7 +533,8 @@ class BackgroundWorkerPool(object):
 						name:str = None, 
 						dispose:bool = True, 
 						finished:Callable = None, 
-						ignoreException:bool = False) -> BackgroundWorker:
+						ignoreException:bool = False,
+						data:Any = None) -> BackgroundWorker:
 		"""	Create a new background worker that runs only once after a `delay`
 			(the 'delay' may be 0.0s, though), or `at` a sepcific time (UTC timestamp).
 			The `at` argument provide convenience to calculate the delay to wait before the
@@ -492,12 +546,13 @@ class BackgroundWorkerPool(object):
 
 			Args:
 				workerCallback: Callback to run as an actor
-				dekay: Delay in seconds after which the actor callback is executed
+				delay: Delay in seconds after which the actor callback is executed
 				at: Run the actor at a specific time (timestamp)
 				name: Name of the actor
 				dispose: If True then dispose the actor after finish
 				finished: Callable that is executed after the worker finished
 				ignoreExceptions: Restart the actor in case an exception is encountered
+				data: Any data structure that is then passed in the *_data* parameter of the `workerCallback`.
 			Return:
 				BackgroundWorker
 		"""
@@ -505,7 +560,15 @@ class BackgroundWorkerPool(object):
 			if delay != 0.0:
 				raise ValueError('Cannot set both "delay" and "at" arguments')
 			delay = at - _utcTime()
-		return cls.newWorker(delay, workerCallback, name = name, startWithDelay = delay>0.0, maxCount = 1, dispose = dispose, finished = finished, ignoreException = ignoreException)
+		return cls.newWorker(delay, 
+							 workerCallback, 
+							 name = name, 
+							 startWithDelay = delay > 0.0, 
+							 maxCount = 1, 
+							 dispose = dispose, 
+							 finished = finished, 
+							 ignoreException = ignoreException,
+							 data = data)
 
 
 	@classmethod
@@ -608,18 +671,18 @@ class BackgroundWorkerPool(object):
 
 
 	@classmethod
-	def _queueWorker(cls, delay:float, worker:BackgroundWorker) -> None:
-		"""	Queue a `worker` for execution after `delay` seconds.
+	def _queueWorker(cls, ts:float, worker:BackgroundWorker) -> None:
+		"""	Queue a `worker` for execution at the `ts` timestamp.
 
 			Args:
-				delay: Time in seconds after which the worker shall be executed
+				ts: Timestamp at which the worker shall be executed
 				worker: Backgroundworker to unqueue
 		"""
 		top = cls.workerQueue[0] if cls.workerQueue else None
 		with cls.queueLock:
-			heapq.heappush(cls.workerQueue, (delay, worker.id, worker.name	))
 			cls._stopTimer()
-		cls._startTimer()
+			heapq.heappush(cls.workerQueue, WorkerEntry(ts, worker.id, worker.name))
+			cls._startTimer()
 
 
 	@classmethod
@@ -631,9 +694,9 @@ class BackgroundWorkerPool(object):
 		"""
 		with cls.queueLock:
 			cls._stopTimer()
-			for h in cls.workerQueue:
-				if h[1] == worker.id:
-					cls.workerQueue.remove(h)
+			for each in cls.workerQueue:
+				if each.workerID == worker.id:
+					cls.workerQueue.remove(each)
 					heapq.heapify(cls.workerQueue)
 					break	# Only 1 worker
 			cls._startTimer()
@@ -644,17 +707,22 @@ class BackgroundWorkerPool(object):
 		""" Start the workers queue timer.
 		"""
 		if cls.workerQueue:
-			cls.workerTimer = Timer(cls.workerQueue[0][0] - _utcTime(), cls._execQueue)
-			cls.workerTimer.setDaemon(True)	# Make the Timer thread a daemon of the main thread
-			cls.workerTimer.start()
+			with cls.timerLock:
+				if cls.workerTimer is not None:	# don't start another timer!
+					return
+				cls.workerTimer = Timer(cls.workerQueue[0].timestamp - _utcTime(), cls._execQueue)
+				cls.workerTimer.setDaemon(True)	# Make the Timer thread a daemon of the main thread
+				cls.workerTimer.start()
 	
 
 	@classmethod
 	def _stopTimer(cls) -> None:
 		"""	Cancel/interrupt the workers queue timer.
 		"""
-		if cls.workerTimer:
-			cls.workerTimer.cancel()
+		with cls.timerLock:
+			if cls.workerTimer is not None:
+				cls.workerTimer.cancel()
+				cls.workerTimer = None
 
 
 	@classmethod
@@ -663,8 +731,8 @@ class BackgroundWorkerPool(object):
 		"""
 		with cls.queueLock:
 			if cls.workerQueue:
-				_, workerID, name = heapq.heappop(cls.workerQueue)
-				if worker := cls.backgroundWorkers.get(workerID):
-					cls.runJob(worker._work, name)
+				w = heapq.heappop(cls.workerQueue)
+				if worker := cls.backgroundWorkers.get(w.workerID):
+					cls.runJob(worker._work, w.workerName)
 			cls._startTimer()	# start timer again
 
