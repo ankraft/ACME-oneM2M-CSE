@@ -11,7 +11,7 @@ import unittest, sys, time
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
-from acme.etc.Types import NotificationEventType as NET, ResourceTypes as T, ResponseStatusCode as RC
+from acme.etc.Types import NotificationEventType as NET, ResourceTypes as T, ResponseStatusCode as RC, TimeWindowType
 from acme.etc.Types import ResultContentType as RCN
 from init import *
 
@@ -564,13 +564,12 @@ class TestCRS(unittest.TestCase):
 
 	#########################################################################
 	#
-	#	Handle notifications testing
+	#	Periodic notifications testing
 	#
-
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSingleNotificationNoNotification(self) -> None:
-		"""	CREATE <CIN> to raise a single notification (no notification)"""
+		"""	CREATE <CIN> to raise a single notification (no notification from crs)"""
 		clearLastNotification()
 		dct:JSON = 	{ 'm2m:cin' : {
 			'con' : 'AnyValue',
@@ -581,47 +580,114 @@ class TestCRS(unittest.TestCase):
 		self.assertIsNone(getLastNotification())
 
 
-# TODO test tws update
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createTwoSingleNotificationNoNotifications(self) -> None:
+		"""	CREATE two <CIN> with delay to raise a two notification (no notification from crs)"""
+		clearLastNotification()
+		dct:JSON = 	{ 'm2m:cin' : {
+			'con' : 'AnyValue',
+		}}
 
-# TODO twt: change from sliding to periodic
-# TODO twt: change from periodic to sliding
-# TODO tws: change period
+		# CIN to first CNT
+		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.created, self.sub1)
+		time.sleep(crsTimeWindowSize + 1)
+		self.assertIsNone(getLastNotification())
+
+		# CIN two second CNT
+		r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.created, self.sub1)
+		time.sleep(crsTimeWindowSize + 1)
+		self.assertIsNone(getLastNotification())
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createTwoNotificationOneNotification(self) -> None:
+		"""	CREATE two <CIN> to raise two notifications (plus notification from crs)"""
+		clearLastNotification()
+		
+		# Create 
+		dct:JSON = 	{ 'm2m:cin' : {
+			'con' : 'AnyValue',
+		}}
+		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.created, r)
+		r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.created, r)	
+
+		# wait and check notification
+		time.sleep(crsTimeWindowSize + 1)
+		self.assertIsNotNone(notification := getLastNotification())
+		self.assertIsNotNone(findXPath(notification, 'm2m:sgn'))
+		self.assertEqual(findXPath(notification, 'm2m:sgn/sur'), toSPRelative(findXPath(self.crs, 'm2m:crs/ri')))
+
+
+	#########################################################################
+	#
+	#	Sliding window testing
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_enableSlidingWindow(self) -> None:
+		"""	UPDATE <CRS> with a twt = SLIDING"""
+		dct = 	{ 'm2m:crs' : { 
+					'twt': TimeWindowType.SLIDINGWINDOW,
+				}}
+
+		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
+		self.assertEqual(rsc, RC.updated, TestCRS.crs)
+
+
+
+
+
+# TODO tws: change period . What happens?
+# TODO delete sub
+# TODO empty sub.acrs
 
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 
-	# suite.addTest(TestCRS('test_createCRSmissingRratSratFail'))
-	# suite.addTest(TestCRS('test_createCRSmissingNuFail'))
-	# suite.addTest(TestCRS('test_createCRSmissingTwtFail'))
-	# suite.addTest(TestCRS('test_createCRSwrongTwtFail'))
-	# suite.addTest(TestCRS('test_createCRSmissingTwsFail'))
-	# suite.addTest(TestCRS('test_createCRSemptyEncsFail'))
-	# suite.addTest(TestCRS('test_createCRSWrongNumberEncsFail'))
+	suite.addTest(TestCRS('test_createCRSmissingRratSratFail'))
+	suite.addTest(TestCRS('test_createCRSmissingNuFail'))
+	suite.addTest(TestCRS('test_createCRSmissingTwtFail'))
+	suite.addTest(TestCRS('test_createCRSwrongTwtFail'))
+	suite.addTest(TestCRS('test_createCRSmissingTwsFail'))
+	suite.addTest(TestCRS('test_createCRSemptyEncsFail'))
+	suite.addTest(TestCRS('test_createCRSWrongNumberEncsFail'))
 
-	# # Test rrat
-	# suite.addTest(TestCRS('test_createCRSwithRrat'))
-	# suite.addTest(TestCRS('test_updateCRSwithNewRrat'))
-	# suite.addTest(TestCRS('test_updateCRSwithLessRrat'))
-	# suite.addTest(TestCRS('test_updateCRSwithWrongRratFail'))
-	# suite.addTest(TestCRS('test_updateCRSwithDeletedEncFail'))
-	# suite.addTest(TestCRS('test_updateCRSwithWrongNumberOfEncFail'))
-	# suite.addTest(TestCRS('test_deleteCRSwithRrat'))
+	# Test rrat
+	suite.addTest(TestCRS('test_createCRSwithRrat'))
+	suite.addTest(TestCRS('test_updateCRSwithNewRrat'))
+	suite.addTest(TestCRS('test_updateCRSwithLessRrat'))
+	suite.addTest(TestCRS('test_updateCRSwithWrongRratFail'))
+	suite.addTest(TestCRS('test_updateCRSwithDeletedEncFail'))
+	suite.addTest(TestCRS('test_updateCRSwithWrongNumberOfEncFail'))
+	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
 
-	# # Test srat
-	# suite.addTest(TestCRS('test_createCRSwithSratNonSubFail'))
-	# suite.addTest(TestCRS('test_createSubscriptions'))
-	# suite.addTest(TestCRS('test_createCRSwithSrat'))
-	# suite.addTest(TestCRS('test_updateCRSwithNewSrat'))
-	# suite.addTest(TestCRS('test_updateCRSwithRemovedSrat'))
-	# suite.addTest(TestCRS('test_updateCRSwithWrongSratFail'))
-	# suite.addTest(TestCRS('test_updateCRSwithRratAndSrat'))
-	# suite.addTest(TestCRS('test_deleteCRSwithSrat'))
-	# suite.addTest(TestCRS('test_deleteSubscriptions'))	# TODO change this to one! subscrription delete and move up one test case
+	# Test srat
+	suite.addTest(TestCRS('test_createCRSwithSratNonSubFail'))
+	suite.addTest(TestCRS('test_createSubscriptions'))
+	suite.addTest(TestCRS('test_createCRSwithSrat'))
+	suite.addTest(TestCRS('test_updateCRSwithNewSrat'))
+	suite.addTest(TestCRS('test_updateCRSwithRemovedSrat'))
+	suite.addTest(TestCRS('test_updateCRSwithWrongSratFail'))
+	suite.addTest(TestCRS('test_updateCRSwithRratAndSrat'))
+	suite.addTest(TestCRS('test_deleteCRSwithSrat'))
+	suite.addTest(TestCRS('test_deleteSubscriptions'))	# TODO change this to one! subscrription delete and move up one test case
 
 	# Test Periodic Window
 	suite.addTest(TestCRS('test_createCRSwithRrat'))
 	suite.addTest(TestCRS('test_createSingleNotificationNoNotification'))
+	suite.addTest(TestCRS('test_createTwoSingleNotificationNoNotifications'))
+	suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
+
+	# Test Sliding Window
+	suite.addTest(TestCRS('test_enableSlidingWindow'))
+	suite.addTest(TestCRS('test_createSingleNotificationNoNotification'))
+	suite.addTest(TestCRS('test_createTwoSingleNotificationNoNotifications'))
+	suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
 
 
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)

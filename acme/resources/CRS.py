@@ -215,6 +215,7 @@ class CRS(Resource):
 				CSE.notification.stopCRSSlidingWindow(self.ri)
 			
 			# Start periodic window with new tws if given, and when twt is still periodic
+			# Sliding window will be activated when first notification is received
 			if (newTwt is not None and newTwt == TimeWindowType.PERIODICWINDOW) or \
 			   (newTwt is None     and oldTwt == TimeWindowType.PERIODICWINDOW):
 				CSE.notification.startCRSPeriodicWindow(self.ri, self.tws if newTws is None else newTws, self._countSubscriptions())

@@ -8,14 +8,11 @@
 #
 
 from __future__ import annotations
-from sqlite3 import Date
-import sys
-import isodate
-import copy
+import sys, copy
 from typing import Callable, Union, Any
-from threading import Lock
-from tinydb.utils import V
+from threading import Lock, current_thread
 
+import isodate
 from ..etc.Constants import Constants as C
 from ..etc.Types import CSERequest, MissingData, Operation, ResourceTypes, Result, NotificationContentType, NotificationEventType, TimeWindowType
 from ..etc.Types import ResponseStatusCode as RC, EventCategory
@@ -62,7 +59,17 @@ class NotificationManager(object):
 	#
 
 	def addSubscription(self, subscription:Resource, originator:str) -> Result:
-		"""	Add a new subscription. Check each receipient with verification requests. """
+		"""	Add a new subscription. 
+
+			Check each receipient with verification requests.
+			
+			Args:
+				subscription: The new <sub> resource.
+				originator: The request originator.
+			
+			Return:
+				Result object.
+		"""
 		L.isDebug and L.logDebug('Adding subscription')
 		if not (res := self._verifyNusInSubscription(subscription.ri, subscription.nu, originator = originator)).status:	# verification requests happen here
 			return res
@@ -70,7 +77,16 @@ class NotificationManager(object):
 
 
 	def removeSubscription(self, subscription:Resource) -> Result:
-		""" Remove a subscription. Send the deletion notifications, if possible. """
+		""" Remove a subscription. 
+
+			Send the deletion notifications, if possible.
+
+			Args:
+				subscription: The <sub> resource to remove.
+			
+			Return:
+				Result object.
+		"""
 		L.isDebug and L.logDebug('Removing subscription')
 
 		# Send outstanding batchNotifications for a subscription
@@ -78,7 +94,7 @@ class NotificationManager(object):
 
 		# Send a deletion request to the subscriberURI
 		if not self._sendDeletionNotification(su := subscription['su'], subscription.ri):
-			L.isDebug and L.logDebug(f'Deletion request failed for: {su}') # but ignore the error
+			L.isWarn and L.logWarn(f'Deletion request failed for: {su}') # but ignore the error
 
 		# Send a deletion request to the associatedCrossResourceSub
 		if (acrs := subscription['acrs']):
@@ -89,6 +105,16 @@ class NotificationManager(object):
 
 
 	def updateSubscription(self, subscription:Resource, previousNus:list[str], originator:str) -> Result:
+		"""	Update a subscription.
+		
+			Args:
+				subscription: The <sub> resource to update.
+				previousNus: List of previous NUs of the same <sub> resoure.
+				originator: The request originator.
+			
+			Return:
+				Result object.
+			"""
 		L.isDebug and L.logDebug('Updating subscription')
 		if not (res := self._verifyNusInSubscription(subscription.ri, subscription.nu, previousNus, originator = originator)).status:	# verification requests happen here
 			return res
@@ -96,13 +122,15 @@ class NotificationManager(object):
 
 
 	def getSubscriptionsByNetChty(self, ri:str, net:list[NotificationEventType] = None, chty:ResourceTypes = None) -> list[JSON]:
-		"""	Returns a (possible empty) list of subscriptions for a resource. An optional filter can be used 
-			to return only those subscriptions with a specific enc/net.
+		"""	Returns a (possible empty) list of subscriptions for a resource. 
+		
+			An optional filter can be used 	to return only those subscriptions with a specific enc/net.
 			
 			Args:
 				resource: the parent resource for the subscriptions
 				net: optional filter for enc/net
 				chty: optional single child resource typ
+
 			Return:
 				List of storage subscription documents, NOT Subscription resources.
 			"""
@@ -127,6 +155,7 @@ class NotificationManager(object):
 								 ri:str = None,
 								 missingData:dict[str, MissingData] = None,
 								 now:float = None) -> None:
+		# TODO doc
 		if resource and resource.isVirtual():
 			return 
 		ri = resource.ri if not ri else ri
@@ -174,6 +203,7 @@ class NotificationManager(object):
 
 
 	def checkPerformBlockingUpdate(self, resource:Resource, originator:str, updatedAttributes:JSON, finished:Callable = None) -> Result:
+		# TODO doc
 		L.isDebug and L.logDebug('check blocking UPDATE')
 
 		# Get blockingUpdate <sub> for this resource , if any
@@ -239,6 +269,7 @@ class NotificationManager(object):
 
 
 	def checkPerformBlockingRetrieve(self, resource:Resource, originator:str, request:CSERequest, finished:Callable = None) -> Result:
+		# TODO doc
 		# TODO originator in notification?
 		# TODO check notify permission for originator
 		# TODO blockingRetrieveDirectChildren.
@@ -321,7 +352,17 @@ class NotificationManager(object):
 	#
 
 	def addCrossResourceSubscription(self, crs:Resource, originator:str) -> Result:
-		"""	Add a new crossResourceubscription. Check each receipient with verification requests. """
+		"""	Add a new crossResourceSubscription. 
+		
+			Check each receipient in the *nu* attribute with verification requests. 
+
+			Args:
+				crs: The new <crs> resource to check.
+				originator: The request originator.
+			
+			Return:
+				Result object.
+		"""
 		L.isDebug and L.logDebug('Adding crossResourceSubscription')
 		if not (res := self._verifyNusInSubscription(crs.ri, crs.nu, originator = originator)).status:	# verification requests happen here
 			return res
@@ -329,20 +370,47 @@ class NotificationManager(object):
 
 
 	def updateCrossResourceSubscription(self, ri:str, newNu:list[str], previousNus:list[str], originator:str) -> Result:
+		"""	Update a crossResourcesubscription. 
+		
+			Check each new receipient in the *nu* attribute with verification requests. 
+
+			Args:
+				crs: The new <crs> resource to check.
+				previousNus: A list of the resource's previous NUs.
+				originator: The request originator.
+			
+			Return:
+				Result object.
+		"""
 		L.isDebug and L.logDebug('Updating crossResourceSubscription')
 		if not (res := self._verifyNusInSubscription(ri, newNu, previousNus, originator = originator)).status:	# verification requests happen here
 			return res
 		return Result.successResult()
 
 
-	def _crsCheckForNotification(self, data:list, crsRi:str, subCount:int) -> None:
-		L.inspect(data)
-
+	def _crsCheckForNotification(self, data:list[str], crsRi:str, subCount:int) -> None:
+		"""	Test whether a notification must be sent for a a <crs> window.
+			This also sends the notification(s) if the window requirements are met.
+			
+			Args:
+				data: List of unique resource IDs.
+				crsRI: The resource ID of the <crs> resource for the window.
+				subCount: Maximum number of expected resource IDs in `data`.
+		"""
+		L.isDebug and L.logDebug(f'Checking <crs>: {crsRi} window properties: unique notification count: {len(data)}, expected count: {subCount}')
 		if len(data) == subCount:
-			L.isDebug and L.logDebug(f'xxxxxx')
-			...
-			# Send notification
-		
+			L.isDebug and L.logDebug(f'Received sufficient notifications - sending notification')
+			if not (res := CSE.dispatcher.retrieveResource(crsRi)).status:
+				L.logWarn(f'Cannot retrieve <crs> resource: {crsRi}')	# Not much we can do here
+				data.clear()
+				return
+
+			# Send notification			
+			dct:JSON = { 'm2m:sgn' : {
+					'sur' : Utils.toSPRelative(res.resource.ri)
+				}
+			}
+			self.sendNotificationWithDict(dct, res.resource.nu, background = True)
 		data.clear()
 
 
@@ -350,9 +418,18 @@ class NotificationManager(object):
 	# Time Window Monitor : Periodic
 
 	def _getPeriodicWorkerName(self, ri:str) -> str:
+		"""	Return the name of a periodic window worker.
+		
+			Args:
+				ri: Resource ID for which the worker is running.
+			
+			Return:
+				String with the worker name.
+		"""
 		return f'crsPeriodic_{ri}'
 
 	def startCRSPeriodicWindow(self, crsRi:str, tws:str, subCount:int) -> None:
+
 		crsTws = DateUtils.fromDuration(tws)
 		L.isDebug and L.logDebug(f'Starting PeriodicWindow for crs: {crsRi}. TimeWindowSize: {crsTws}')
 
@@ -378,6 +455,14 @@ class NotificationManager(object):
 	# Time Window Monitor : Sliding
 
 	def _getSlidingWorkerName(self, ri:str) -> str:
+		"""	Return the name of a sliding window worker.
+		
+			Args:
+				ri: Resource ID for which the worker is running.
+			
+			Return:
+				String with the worker name.
+		"""
 		return f'crsSliding_{ri}'
 
 
@@ -388,7 +473,7 @@ class NotificationManager(object):
 		# Start an actor for the sliding window. "data" already contains the first notification source in an array
 		return BackgroundWorkerPool.newActor(self._crsSlidingWindowMonitor, 
 											 crsTws,
-											 name = self._getPeriodicWorkerName(crsRi), 
+											 name = self._getSlidingWorkerName(crsRi), 
 											 data = [ sur ]).start(crsRi = crsRi, subCount = subCount)
 
 
@@ -416,6 +501,8 @@ class NotificationManager(object):
 					workers[0].data.append(sur)
 			else:
 				self.startCRSSlidingWindow(crsRi, crsTws, sur, crs._countSubscriptions())	# sur is added automatically when creating actor
+			L.inspect(BackgroundWorkerPool.backgroundWorkers)
+			L.inspect(workers)
 		elif crsTwt == TimeWindowType.PERIODICWINDOW:
 			if (workers := BackgroundWorkerPool.findWorkers(self._getPeriodicWorkerName(crsRi))):
 				if sur not in workers[0].data:
@@ -430,24 +517,56 @@ class NotificationManager(object):
 	#	Notifications in general
 	#
 
-	def sendNotificationWithDict(self, data:JSON, nus:list[str]|str, originator:str = None) -> None:
-		"""	Send a notification to a single URI or a list of URIs. A URI may be a resource ID, then
-			the *poa* of that resource is taken. Also, the serialization is determined when 
-			actually sending the notification.
+	def sendNotificationWithDict(self, dct:JSON, nus:list[str]|str, originator:str = None, background:bool = False) -> None:
+		"""	Send a notification to a single URI or a list of URIs. 
+		
+			A URI may be a resource ID, then the *poa* of that resource is taken. 
+			Also, the serialization is determined when each of the notifications is actually sent.
+			
+			Args:
+				dct: Dictionary to send as the notification. It already contains the full request.
+				nus: A single URI or a list of URIs.
+				originator: The originator on which behalf to send the notification. 
+				background: Send the notifications in a background task.
 		"""
-		for nu in nus:
+
+		def _sender(nu: str, originator:str, data:JSON) -> bool:
 			CSE.request.sendNotifyRequest(nu, 
 										  originator = originator,
-										  data = data)
+										  data = dct)
+			return True
+
+		if isinstance(nus, str):
+			nus = [ nus ]
+		for nu in nus:
+			if background:
+				BackgroundWorkerPool.newActor(_sender, 
+											  name = f'NO_{current_thread().name}').start(nu = nu, 
+																						  originator = originator,
+																						  data = dct)
+			else:
+				_sender(nu, originator = originator, data = dct)
 
 
 	#########################################################################
 
 
 	def _verifyNusInSubscription(self, ri:str, nus:list[str], previousNus:list[str] = None, originator:str = None) -> Result:
-		"""	Check all the notification URI's in a subscription. A verification request is sent to new URI's. Notifications to the originator are not sent.
+		"""	Check all the notification URI's in a subscription. 
+		
+			A verification request is sent to new URI's. 
+			Notifications to the originator are not sent.
 
 			If `previousNus` is given then only new nus are notified.
+
+			Args:
+				ri: Resource ID of the <sub> or <crs> resource.
+				nus: List of resource IDs or URIs to check.
+				previousNus: The list of previous NUs.
+				originator: The originator on which behalf to send the notification. 
+			
+			Return:
+				Result object with the overall result of the test.
 		"""
 		if nus:
 			# notify new nus (verification request). New ones are the ones that are not in the previousNU list
@@ -472,6 +591,7 @@ class NotificationManager(object):
 		""""	Define the callback function for verification notifications and send
 				the notification.
 		"""
+		# TODO doc
 
 		def sender(uri:str) -> bool:
 			L.isDebug and L.logDebug(f'Sending verification request to: {uri}')
@@ -503,6 +623,7 @@ class NotificationManager(object):
 		"""	Define the callback function for deletion notifications and send
 			the notification
 		"""
+		# TODO doc
 
 		def sender(uri:str) -> bool:
 			L.isDebug and L.logDebug(f'Sending deletion notification to: {uri}')
@@ -527,6 +648,7 @@ class NotificationManager(object):
 	def _handleSubscriptionNotification(self, sub:JSON, reason:NotificationEventType, resource:Resource = None, modifiedAttributes:JSON = None, missingData:MissingData = None) ->  bool:
 		"""	Send a subscription notification.
 		"""
+		# TODO doc
 		L.isDebug and L.logDebug(f'Handling notification for reason: {reason}')
 
 		def sender(uri:str) -> bool:
@@ -594,7 +716,12 @@ class NotificationManager(object):
 		
 			Call the infividual callback functions to do the resource preparation and the the actual sending.
 
-			Returns True, even when nothing was sent.
+			Args:
+				uris: Either a string or a list of strings of notification receivers.
+				senderFunction: A function that is called to perform the actual notification sending.
+			
+			Return:
+				Returns True, even when nothing was sent, and False when any `senderFunction` returned False.
 		"""
 		#	Event when notification is happening, not sent
 		CSE.event.notification() # type: ignore
@@ -616,6 +743,7 @@ class NotificationManager(object):
 	def _flushBatchNotifications(self, subscription:Resource) -> None:
 		"""	Send and remove any outstanding batch notifications for a subscription.
 		"""
+		# TODO doc
 		L.isDebug and L.logDebug(f'Flush batch notification')
 
 		ri = subscription.ri
@@ -632,6 +760,7 @@ class NotificationManager(object):
 	def _storeBatchNotification(self, nu:str, sub:JSON, notificationRequest:JSON) -> bool:
 		"""	Store a subscription's notification for later sending. For a single nu.
 		"""
+		# TODO doc
 		L.isDebug and L.logDebug(f'Store batch notification nu: {nu}')
 
 		# Rename key name
@@ -663,6 +792,7 @@ class NotificationManager(object):
 	def _sendSubscriptionAggregatedBatchNotification(self, ri:str, nu:str, ln:bool = False) -> bool:
 		"""	Send and remove(!) the available BatchNotifications for an ri & nu.
 		"""
+		# TODO doc
 		with self.lockBatchNotification:
 			L.isDebug and L.logDebug(f'Sending aggregated subscription notifications for ri: {ri}')
 
@@ -715,6 +845,7 @@ class NotificationManager(object):
 
 
 	def _startNewBatchNotificationWorker(self, ri:str, nu:str, dur:float) -> bool:
+		# TODO doc
 		if dur is None or dur < 1:	
 			L.logErr('BatchNotification duration is < 1')
 			return False
@@ -727,9 +858,11 @@ class NotificationManager(object):
 
 
 	def _stopNotificationBatchWorker(self, ri:str, nu:str) -> None:
+		# TODO doc
 		BackgroundWorkerPool.stopWorkers(self._workerID(ri, nu))
 
 
 	def _workerID(self, ri:str, nu:str) -> str:
+		# TODO doc
 		return f'{ri};{nu}'
 
