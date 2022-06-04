@@ -321,11 +321,12 @@ ResourceTypes._announcedResourceTypes = [ 							#  type: ignore
 
 # Supported resource types by this CSE, including the announced resource types
 ResourceTypes._supportedResourceTypes = [							#  type: ignore
-	ResourceTypes.ACP, ResourceTypes.AE, ResourceTypes.CNT, ResourceTypes.CIN, 
+	ResourceTypes.ACP, ResourceTypes.ACTR, ResourceTypes.AE, ResourceTypes.CNT, 
+	ResourceTypes.CIN, ResourceTypes.CRS, 
 	ResourceTypes.CSEBase, ResourceTypes.GRP, ResourceTypes.MGMTOBJ, ResourceTypes.NOD,
 	ResourceTypes.PCH, ResourceTypes.CSR, ResourceTypes.REQ, ResourceTypes.SUB,
 	ResourceTypes.FCNT, ResourceTypes.FCI, ResourceTypes.TS, ResourceTypes.TSI,
-	ResourceTypes.TSB, ResourceTypes.ACTR,
+	ResourceTypes.TSB, 
 ] + ResourceTypes._announcedResourceTypes							#  type: ignore
 
 
