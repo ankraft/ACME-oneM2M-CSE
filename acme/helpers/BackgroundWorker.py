@@ -355,9 +355,9 @@ class Job(Thread):
 			Return:
 				The Job object.
 		"""
+		self.setName(name)
 		self.task = task
 		self.finished = finished
-		self.setName(name)
 		return self
 	
 

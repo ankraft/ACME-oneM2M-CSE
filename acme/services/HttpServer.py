@@ -219,29 +219,30 @@ class HttpServer(object):
 
 
 	def handleGET(self, path:str=None) -> Response:
-		Utils.renameCurrentThread()
+		Utils.renameCurrentThread(prefix = 'HTRE')
 		CSE.event.httpRetrieve() # type: ignore [attr-defined]
 		return self._handleRequest(path, Operation.RETRIEVE)
 
 
 	def handlePOST(self, path:str=None) -> Response:
-		Utils.renameCurrentThread()
 		if self._hasContentType():
+			Utils.renameCurrentThread(prefix = 'HTCR')
 			CSE.event.httpCreate()		# type: ignore [attr-defined]
 			return self._handleRequest(path, Operation.CREATE)
 		else:
+			Utils.renameCurrentThread(prefix = 'HTNO')
 			CSE.event.httpNotify()	# type: ignore [attr-defined]
 			return self._handleRequest(path, Operation.NOTIFY)
 
 
 	def handlePUT(self, path:str=None) -> Response:
-		Utils.renameCurrentThread()
+		Utils.renameCurrentThread(prefix = 'HTUP')
 		CSE.event.httpUpdate()	# type: ignore [attr-defined]
 		return self._handleRequest(path, Operation.UPDATE)
 
 
 	def handleDELETE(self, path:str=None) -> Response:
-		Utils.renameCurrentThread()
+		Utils.renameCurrentThread(prefix = 'HTDE')
 		CSE.event.httpDelete()	# type: ignore [attr-defined]
 		return self._handleRequest(path, Operation.DELETE)
 
@@ -252,7 +253,7 @@ class HttpServer(object):
 		if request.environ.get('SERVER_PROTOCOL') != 'HTTP/1.0':
 			L.logWarn(dbg := 'PATCH method is only allowed for HTTP/1.0. Rejected.')
 			return Response(dbg, status=405)
-		Utils.renameCurrentThread()
+		Utils.renameCurrentThread(prefix = 'HTDE')
 		CSE.event.httpDelete()	# type: ignore [attr-defined]
 		return self._handleRequest(path, Operation.DELETE)
 
@@ -320,7 +321,7 @@ class HttpServer(object):
 			L.isDebug and L.logDebug(f'Headers: \n{str(resp.headers).rstrip()}')
 			return resp
 
-		Utils.renameCurrentThread()
+		Utils.renameCurrentThread(prefix = 'UT')
 		L.isDebug and L.logDebug(f'==> Upper Tester Request:') 
 		L.isDebug and L.logDebug(f'Headers: \n{str(request.headers).rstrip()}')
 		if request.data:

@@ -834,9 +834,14 @@ def hasRegisteredAE(originator:str) -> bool:
 #
 
 # TODO Doc
-def renameCurrentThread(name:str = None, thread:threading.Thread = None) -> None:
+def renameCurrentThread(name:str = None, thread:threading.Thread = None, prefix:str = None) -> None:
 	thread = threading.current_thread() if not thread else thread
-	thread.name = name if name else str(thread.native_id)
+	if name is not None:
+		thread.name = name 
+	elif prefix is not None:
+		thread.name = f'{prefix}_{thread.native_id}'
+	else:
+		thread.name = str(thread.native_id)
 
 
 # TODO Doc

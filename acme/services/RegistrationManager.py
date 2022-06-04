@@ -107,6 +107,7 @@ class RegistrationManager(object):
 		"""	Check for set creator attribute as well as assign it to allowed resources.
 		"""
 		if resource.hasAttribute('cr'):	# not get, might be empty
+			# TODO get this from the resource itself!
 			if not T.isCreatorAllowed(resource.ty):
 				return Result.errorResult(dbg = f'"creator" attribute is not allowed for resource type: {resource.ty}')
 			if resource.cr:		# Check whether cr is set to a value in the request. This is wrong

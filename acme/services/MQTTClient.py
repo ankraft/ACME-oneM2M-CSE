@@ -218,6 +218,7 @@ class MQTTClientHandler(MQTTHandler):
 			return
 		
 		# send events for the MQTT operations
+		# TODO rename current thread similar to http requests
 		if dissectResult.request.op == Operation.CREATE:
 			CSE.event.mqttCreate()		# type: ignore [attr-defined]
 		elif dissectResult.request.op == Operation.RETRIEVE:
