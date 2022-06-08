@@ -107,8 +107,7 @@ class Validator(object):
 				attributePolicies = deepcopy(attributePolicies)
 				attributePolicies.update(fca)
 			else:
-				L.logWarn(dbg := f'Unknown resource type: {tpe}')
-				return Result.errorResult(dbg = dbg)
+				return Result.errorResult(dbg = L.logWarn(f'Unknown resource type: {tpe}'))
 
 		# L.logDebug(attributePolicies.items())
 		# L.logWarn(pureResDict)
@@ -116,8 +115,7 @@ class Validator(object):
 		# Check that all attributes have been defined
 		for attributeName in pureResDict.keys():
 			if attributeName not in attributePolicies.keys():
-				L.logWarn(dbg := f'Unknown attribute: {attributeName} in resource: {tpe}')
-				return Result.errorResult(dbg = dbg)
+				return Result.errorResult(dbg = L.logWarn(f'Unknown attribute: {attributeName} in resource: {tpe}'))
 
 		for attributeName, policy in attributePolicies.items():
 			if not policy:
@@ -138,27 +136,23 @@ class Validator(object):
 					continue
 					
 				if policyOptional == RO.M:		# Not okay, this attribute is mandatory but absent
-					L.logWarn(dbg := f'Cannot find mandatory attribute: {attributeName}')
-					return Result.errorResult(dbg = dbg)
+					return Result.errorResult(dbg = L.logWarn(f'Cannot find mandatory attribute: {attributeName}'))
 
 				# TODO Is the following actually executed??? Should it be somewhere else? Write a test
 				if attributeName in pureResDict and policy.cardinality == CAR.CAR1: 	# but ignore CAR.car1N (which may be Null/None)
-					L.logWarn(dbg := f'Cannot delete a mandatory attribute: {attributeName}')
-					return Result.errorResult(dbg = dbg)
+					return Result.errorResult(dbg = L.logWarn(f'Cannot delete a mandatory attribute: {attributeName}'))
 
 				if policyOptional in [ RO.NP, RO.O ]:		# Okay that the attribute is not in the dict, since it is provided or optional
 					continue
 			else:
 				if not createdInternally:
 					if policyOptional == RO.NP:
-						L.logWarn(dbg := f'Found non-provision attribute: {attributeName}')
-						return Result.errorResult(dbg = dbg)
+						return Result.errorResult(dbg = L.logWarn(f'Found non-provision attribute: {attributeName}'))
 
 				# check the the announced cases
 				if isAnnounced:
 					if policy.announcement == AN.NA:	# Not okay, attribute is not announced
-						L.logWarn(dbg := f'Found non-announced attribute: {attributeName}')
-						return Result.errorResult(dbg = dbg)
+						return Result.errorResult(dbg = L.logWarn(f'Found non-announced attribute: {attributeName}'))
 					continue
 
 				# Special handling for the ACP's pvs attribute
@@ -171,15 +165,17 @@ class Validator(object):
 
 				# Check list. May be empty or needs to contain at least one member
 				if policy.cardinality == CAR.CAR1LN and len(attributeValue) == 0:
-					L.logWarn(dbg := f'List attribute must be non-empty: {attributeName}')
-					return Result.errorResult(dbg = res.dbg)
+					return Result.errorResult(dbg = L.logWarn(f'List attribute must be non-empty: {attributeName}'))
 
+				# Check list. May be empty or needs to contain at least one member
+				# L.isWarn and L.logWarn(f'CAR: {policy.cardinality.name}: {attributeValue}')
+				if policy.cardinality == CAR.CAR01L and attributeValue is not None and len(attributeValue) == 0:
+					return Result.errorResult(dbg = L.logWarn(f'Optional list attribute must be non-empty: {attributeName}'))
 				continue
 		
 
 			# fall-through means: not validated
-			L.logWarn(dbg := f'Attribute/value validation error: {attributeName}={str(attributeValue)} ({res.dbg})')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logWarn(f'Attribute/value validation error: {attributeName}={str(attributeValue)} ({res.dbg})'))
 
 		return Result.successResult()
 
@@ -265,20 +261,15 @@ class Validator(object):
 		""" Validating special case for lists that are not allowed to be empty (pvs in ACP). """
 
 		if (l :=len(dct['pvs'])) == 0:
-			L.logWarn(dbg := 'Attribute pvs must not be an empty list')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logWarn('Attribute pvs must not be an empty list'))
 		elif l > 1:
-			L.logWarn(dbg := 'Attribute pvs must contain only one item')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logWarn('Attribute pvs must contain only one item'))
 		if not (acr := Utils.findXPath(dct, 'pvs/acr')):
-			L.logWarn(dbg := 'Attribute pvs/acr not found')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logWarn('Attribute pvs/acr not found'))
 		if not isinstance(acr, list):
-			L.logWarn(dbg := 'Attribute pvs/acr must be a list')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logWarn('Attribute pvs/acr must be a list'))
 		if len(acr) == 0:
-			L.logWarn(dbg := 'Attribute pvs/acr must not be an empty list')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logWarn('Attribute pvs/acr must not be an empty list'))
 		return Result.successResult()
 
 
@@ -300,11 +291,9 @@ class Validator(object):
 		"""
 		# TODO Decide whether to correct this automatically, like in RemoteCSEManager._retrieveRemoteCSE()
 		if not val:
-			L.logDebug(dbg := f"{name} is missing")
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logDebug(f"{name} is missing"))
 		if not val.startswith('/'):
-			L.logDebug(dbg := f"{name} must start with '/': {val}")
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logDebug(f"{name} must start with '/': {val}"))
 		return Result.successResult()
 
 

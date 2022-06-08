@@ -87,7 +87,7 @@ class CRS(Resource):
 		# Handle regularResourcesAsTarget
 		if self.rrat:
 			for rrat in self.rrat:
-				if not (res := self._addRratSubscription(rrat, self.encs, self.rrat, originator)).status:
+				if not (res := self._addRratSubscription(rrat, self.attribute('encs/enc'), self.rrat, originator)).status:
 					self._deleteSubscriptions(originator)
 					return res
 		
@@ -131,8 +131,8 @@ class CRS(Resource):
 		rrats = _dctRrats if _dctRrats else self.rrat	
 
 		# Check enc attribute from the update, otherwise from the current resource
-		_dctEncs = findXPath(dct, 'm2m:crs/encs')
-		encs = _dctEncs if _dctEncs else self.encs
+		_dctEncs = findXPath(dct, 'm2m:crs/encs/enc')
+		encs = _dctEncs if _dctEncs else self.attribute('encs/enc')
 		if rrats and not encs:
 			return Result.errorResult(dbg = L.logDebug(f'"encs" must not be empty when "rrat" is provided'))
 		if encs and len(encs) != 1 and len(encs) != len(rrats):
@@ -191,7 +191,7 @@ class CRS(Resource):
 						_createdSrat.append(srat)
 		
 		# Update of the eventNotificationCriteriaSet
-		if newEncs := findXPath(dct, 'm2m:crs/encs'):
+		if newEncs := findXPath(dct, 'm2m:crs/encs/enc'):
 			# Check of the correct encs length is done above already
 
 			# Update all in rrats (either existing, or provided in the update)
@@ -248,10 +248,9 @@ class CRS(Resource):
 
 		# Check when rrat is set that enc is correctly set and filled
 		if self.rrat:
-			if not self.encs:
+			if not self.encs or not self.attribute('encs/enc'):
 				return Result.errorResult(dbg = L.logDebug(f'eventNotificationCriteriaSet must not be empty when regularResourcesAsTarget is provided'))
-			if (_l := len(self
-			.encs)) != 1 and _l != len(self.rrat):
+			if (_l := len(self.attribute('encs/enc'))) != 1 and _l != len(self.rrat):
 				return Result.errorResult(dbg = L.logDebug(f'Number of entries in eventNotificationCriteriaSet must be 1 or the same number as regularResourcesAsTarget entries'))
 
 		return Result.successResult()
@@ -316,14 +315,11 @@ class CRS(Resource):
 					'nu' : [ (_spri := toSPRelative(self.ri)) ],
 					'acrs': [ _spri ],
 				}}
-		if len(encs) == 1:
-			setXPath(dct, 'm2m:sub/enc', findXPath(encs[0], 'enc'))
-		else:
-			setXPath(dct, 'm2m:sub/enc', findXPath(encs[rrats.index(rrat)], 'enc'))	# position of rrat in the list of rrats
+		setXPath(dct, 'm2m:sub/enc', encs[0] if len(encs) == 1 else encs[rrats.index(rrat)] ) # position of rrat in the list of rrats
 		if self.nec:
 			setXPath(dct, 'm2m:sub/nec', self.nec)
 		# create (possibly remote) subscription
-		L.logDebug(f'Adding <sub> to {rrat}')
+		L.logDebug(f'Adding <sub> to {rrat}: ')
 		res = CSE.request.sendCreateRequest((_rratSpRelative := toSPRelative(rrat)), 
 											originator = originator,
 											ty = T.SUB,
@@ -405,10 +401,7 @@ class CRS(Resource):
 		dct:JSON = { 'm2m:sub' : {
 				}}
 
-		if len(encs) == 1:
-			setXPath(dct, 'm2m:sub/enc', findXPath(encs[0], 'enc'))
-		else:
-			setXPath(dct, 'm2m:sub/enc', findXPath(encs[rrats.index(rrat)], 'enc'))	# position of rrat in the list of rrats
+		setXPath(dct, 'm2m:sub/enc', encs[0] if len(encs) == 1 else encs[rrats.index(rrat)] )	# position of rrat in the list of rrats
 
 		# update (possibly remote) subscription
 		subRI = self.attribute(self._subRratRIs).get(rrat)
@@ -510,7 +503,7 @@ class CRS(Resource):
 					self._deleteSubscriptionForRrat(rrat, originator)
 			for rrat in deletedRrats:
 				if rrat in self.rrat:		# originally exists, so re-add <sub>
-					self._addRratSubscription(rrat, self.encs, self.rrat, originator)
+					self._addRratSubscription(rrat, self.attribute('encs/enc'), self.rrat, originator)
 
 
 	def _rollbackSrats(self, createdSrats:list[str], deletedSrats:list[str], originator:str) -> None:
@@ -541,6 +534,6 @@ class CRS(Resource):
 		if self.rrat:
 			for rrat in self.rrat:
 				# rollback to the current resource values
-				self._updateRratSubscription(rrat, self.encs, self.rrat, originator)	# ignore results. What should we do?
+				self._updateRratSubscription(rrat, self.attribute('encs/enc'), self.rrat, originator)	# ignore results. What should we do?
 
 

@@ -181,7 +181,7 @@ class TestCRS(unittest.TestCase):
 					'twt': 1,
 					'tws' : f'PT{crsTimeWindowSize}S',
 					'rrat': [ self.cnt1RI, self.cnt2RI],
-			        'encs': [],
+			        'encs': {},
 				}}
 		r, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
 		self.assertEqual(rsc, RC.badRequest, r)
@@ -196,20 +196,19 @@ class TestCRS(unittest.TestCase):
 					'twt': 1,
 					'tws' : f'PT{crsTimeWindowSize}S',
 					'rrat': [ self.cnt1RI, self.cnt2RI],
-			        'encs': [
-						{ 'enc' : {
+			        'encs': { 
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							},
+							{
+								'net': [ NET.createDirectChild ],
+							},
+							{
 								'net': [ NET.createDirectChild ],
 							}
-						},
-						{ 'enc' : {
-								'net': [ NET.createDirectChild ],
-							}
-						},
-						{ 'enc' : {
-								'net': [ NET.createDirectChild ],
-							}
+							]
 						}
-					],
 				}}
 		r, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
 		self.assertEqual(rsc, RC.badRequest, r)
@@ -228,12 +227,13 @@ class TestCRS(unittest.TestCase):
 					'twt': 1,
 					'tws' : f'PT{crsTimeWindowSize}S',
 					'rrat': [ self.cnt1RI, self.cnt2RI],
-			        'encs': [
-						{ 'enc' : {
+			        'encs': {
+						'enc' : [
+							{
 								'net': [ NET.createDirectChild ],
 							}
+							]
 						}
-					]
 				}}
 
 		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
@@ -309,20 +309,19 @@ class TestCRS(unittest.TestCase):
 	def test_updateCRSwithWrongNumberOfEncFail(self) -> None:
 		"""	UPDATE <CRS> with wrong number of enc -> Fails"""
 		dct = 	{ 'm2m:crs' : { 
-			        'encs': [
-						{ 'enc' : {
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							},
+							{
+								'net': [ NET.createDirectChild ],
+							},
+							{
 								'net': [ NET.createDirectChild ],
 							}
-						},
-						{ 'enc' : {
-								'net': [ NET.createDirectChild ],
-							}
-						},
-						{ 'enc' : {
-								'net': [ NET.createDirectChild ],
-							}
+							]
 						}
-					]		
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
@@ -483,12 +482,13 @@ class TestCRS(unittest.TestCase):
 		dct = 	{ 'm2m:crs' : { 
 					'rrat': [ self.cnt3RI ],
 					'srat': [ self.sub1RI, self.sub2RI ],
-			        'encs': [
-						{ 'enc' : {
+			        'encs': {
+						'enc' : [
+							{
 								'net': [ NET.createDirectChild ],
 							}
-						}
-					]
+						]
+					}
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)

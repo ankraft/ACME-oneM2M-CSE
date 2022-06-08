@@ -501,8 +501,6 @@ class NotificationManager(object):
 					workers[0].data.append(sur)
 			else:
 				self.startCRSSlidingWindow(crsRi, crsTws, sur, crs._countSubscriptions())	# sur is added automatically when creating actor
-			L.inspect(BackgroundWorkerPool.backgroundWorkers)
-			L.inspect(workers)
 		elif crsTwt == TimeWindowType.PERIODICWINDOW:
 			if (workers := BackgroundWorkerPool.findWorkers(self._getPeriodicWorkerName(crsRi))):
 				if sur not in workers[0].data:

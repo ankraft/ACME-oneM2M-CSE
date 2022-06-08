@@ -858,16 +858,27 @@
 	//
 	//	m2m:eventNotificationCriteriaSet
 	//
-	"encn": [
+
+	"enc": [
 		{
 			"rtypes": [ "COMPLEX" ],
 			"ctype": "m2m:eventNotificationCriteriaSet",
-			"lname": "eventNotificationCriteriaEntry",
+			"lname": "eventNotificationCriteria",
 			"ns": "m2m",
 			"type": "list",
 			"ltype": "m2m:eventNotificationCriteria",
 			"car": "1LN"
 		}
+
+		// {
+		// 	"rtypes": [ "COMPLEX" ],
+		// 	"ctype": "m2m:eventNotificationCriteriaSet",
+		// 	"lname": "eventNotificationCriteriaEntry",
+		// 	"ns": "m2m",
+		// 	"type": "list",
+		// 	"ltype": "m2m:eventNotificationCriteria",
+		// 	"car": "1LN"
+		// }
 	],
 	//
 	//	m2m:filterCriteria

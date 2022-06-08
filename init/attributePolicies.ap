@@ -1142,7 +1142,7 @@
 	],
 	"enc": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "SUB", "REQRESP" ],
 			"lname": "eventNotificationCriteria",
 			"ns": "m2m",
 			"type": "m2m:eventNotificationCriteria",
@@ -1155,11 +1155,10 @@
 	],
 	"encs": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "CRS", "REQRESP" ],
 			"lname": "eventNotificationCriteriaSet",
 			"ns": "m2m",
-			"type": "list",
-			"ltype": "m2m:eventNotificationCriteriaSet",
+			"type": "m2m:eventNotificationCriteriaSet",
 			"car": "01L",
 			"oc": "O",
 			"ou": "O",
