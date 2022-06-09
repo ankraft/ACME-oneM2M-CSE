@@ -730,6 +730,7 @@ class BackgroundWorkerPool(object):
 		"""	Execute the actual BackgroundWorker's callback in a thread.
 		"""
 		with cls.queueLock:
+			cls._stopTimer()
 			if cls.workerQueue:
 				w = heapq.heappop(cls.workerQueue)
 				if worker := cls.backgroundWorkers.get(w.workerID):
