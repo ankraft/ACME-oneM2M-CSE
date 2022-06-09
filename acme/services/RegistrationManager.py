@@ -106,16 +106,15 @@ class RegistrationManager(object):
 	def handleCreator(self, resource:Resource, originator:str) -> Result:
 		"""	Check for set creator attribute as well as assign it to allowed resources.
 		"""
+
 		if resource.hasAttribute('cr'):	# not get, might be empty
-			# TODO get this from the resource itself!
-			if not T.isCreatorAllowed(resource.ty):
+			if not resource.hasAttributeDefined('cr'):
 				return Result.errorResult(dbg = f'"creator" attribute is not allowed for resource type: {resource.ty}')
-			if len(resource.cr):		# Check whether cr is set to a value in the request. This is wrong
-				L.isWarn and L.logWarn('Setting a value to "creator" attribute is not allowed.')
-				return Result.errorResult(dbg = 'setting "creator" attribute is not allowed')
-			else:
-				resource['cr'] = originator
-				# fall-through
+			if resource.cr is not None:		# Check whether cr is set to a value in the request. This is wrong
+				L.isWarn and L.logWarn(dbg := 'Setting a value to "creator" attribute is not allowed.')
+				return Result.errorResult(dbg = dbg)
+			resource.setAttribute('cr', originator)
+			# fall-through
 		return Result.successResult() # implicit OK
 
 

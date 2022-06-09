@@ -237,13 +237,6 @@ class ResourceTypes(ACMEIntEnum):
 		"""	Check whether `name` is the name of a virtual resource.
 		"""
 		return name in ResourceTypes._virtualResourcesNames			#  type: ignore
-	
-
-	@classmethod
-	def isCreatorAllowed(self, ty:int) -> bool:
-		"""	Check whether the type `ty` allows the 'creator' attribute.
-		"""
-		return ty in ResourceTypes._creatorAllowed					# type: ignore
 
 
 	@classmethod
@@ -428,15 +421,6 @@ ResourceTypes._names 	= {											# type: ignore
 		ResourceTypes.NYCFCAnnc		: 'm2m:nycfcA',
 
 	}
-
-# List of resource types for which "creator" is allowed
-# Also add later: eventConfig, statsCollect, statsConfig, semanticDescriptor,
-# notificationTargetPolicy, crossResourceSubscription, backgroundDataTransfer
-ResourceTypes._creatorAllowed = [ 							#  type: ignore
-		ResourceTypes.ACTR, ResourceTypes.CIN, ResourceTypes.CNT, ResourceTypes.GRP, 	
-		ResourceTypes.SUB, ResourceTypes.FCNT, ResourceTypes.TS 
-]
-	
 
 
 class BasicType(ACMEIntEnum):

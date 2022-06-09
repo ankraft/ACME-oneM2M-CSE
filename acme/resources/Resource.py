@@ -774,6 +774,16 @@ class Resource(object):
 			self.internalAttributes.append(name)
 
 
+	def hasAttributeDefined(self, name:str) -> bool:
+		"""	Test wether a resource supports the specified attribute.
+		
+			Args:
+				name: Attribute to test.
+			Return:
+				Boolean with the result of the test.
+		"""
+		return self._attributes.get(name) is not None
+
 
 	#########################################################################
 	#
