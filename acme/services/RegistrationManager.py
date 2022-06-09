@@ -110,8 +110,8 @@ class RegistrationManager(object):
 			# TODO get this from the resource itself!
 			if not T.isCreatorAllowed(resource.ty):
 				return Result.errorResult(dbg = f'"creator" attribute is not allowed for resource type: {resource.ty}')
-			if resource.cr:		# Check whether cr is set to a value in the request. This is wrong
-				L.isWarn and L.logWarn('Setting "creator" attribute is not allowed.')
+			if len(resource.cr):		# Check whether cr is set to a value in the request. This is wrong
+				L.isWarn and L.logWarn('Setting a value to "creator" attribute is not allowed.')
 				return Result.errorResult(dbg = 'setting "creator" attribute is not allowed')
 			else:
 				resource['cr'] = originator

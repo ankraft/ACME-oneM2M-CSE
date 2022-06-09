@@ -40,6 +40,6 @@ class FCI(Resource):
 
 
 	# Forbidd updating
-	def update(self, dct:JSON=None, originator:str=None) -> Result:
+	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
 		return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'updating FCIN is forbidden')
 

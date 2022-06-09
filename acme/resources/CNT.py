@@ -90,7 +90,7 @@ class CNT(AnnounceableResource):
 		return Result.successResult()
 
 
-	def update(self, dct:JSON = None, originator:str = None) -> Result:
+	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
 
 		# remember disr update first, handle later after the update
 		disrOrg = self.disr

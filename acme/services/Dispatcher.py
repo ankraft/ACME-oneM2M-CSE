@@ -789,7 +789,7 @@ class Dispatcher(object):
 		return Result(status = res.status, resource = result, rsc = res.rsc, dbg = res.dbg)
 
 
-	def deleteResource(self, resource:Resource, originator:str=None, withDeregistration:bool=False, parentResource:Resource=None, doDeleteCheck:bool=True) -> Result:
+	def deleteResource(self, resource:Resource, originator:str = None, withDeregistration:bool = False, parentResource:Resource  =None, doDeleteCheck:bool = True) -> Result:
 		L.isDebug and L.logDebug(f'Removing resource ri: {resource.ri}, type: {resource.ty}')
 
 		resource.deactivate(originator)	# deactivate it first

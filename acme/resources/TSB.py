@@ -85,7 +85,7 @@ class TSB(AnnounceableResource):
 		return CSE.time.addTimeSyncBeacon(self)
 	
 
-	def update(self, dct: JSON = None, originator: str = None) -> Result:
+	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
 		originalBcnc = self.bcnc
 		if not (res := super().update(dct, originator)).status:
 			return res
@@ -110,8 +110,7 @@ class TSB(AnnounceableResource):
 
 		# Check beaconInterval
 		if self.hasAttribute('bcni') and self.bcnc != BeaconCriteria.PERIODIC:
-			L.logWarn(dbg := f'beaconInterval attribute shall only be present when beaconCriteria is PERIODIC')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logWarn(f'beaconInterval attribute shall only be present when beaconCriteria is PERIODIC'))
 		if self.bcnc == BeaconCriteria.PERIODIC and not self.hasAttribute('bcni'):
 			self.setAttribute('bcni', Configuration.get('cse.tsb.bcni'))
 		if self.hasAttribute('bcni'):
@@ -119,8 +118,7 @@ class TSB(AnnounceableResource):
 		
 		# Check beaconThreshold
 		if self.hasAttribute('bcnt') and self.bcnc != BeaconCriteria.LOSS_OF_SYNCHRONIZATION:
-			L.logWarn(dbg := f'beaconThreshold attribute shall only be present when beaconCriteria is LOSS_OF_SYNCHRONIZATION')
-			return Result.errorResult(dbg = dbg)
+			return Result.errorResult(dbg = L.logWarn(f'beaconThreshold attribute shall only be present when beaconCriteria is LOSS_OF_SYNCHRONIZATION'))
 		if self.bcnc == BeaconCriteria.LOSS_OF_SYNCHRONIZATION and not self.hasAttribute('bcnt'):
 			self.setAttribute('bcnt', Configuration.get('cse.tsb.bcnt'))
 		if self.hasAttribute('bcnt'):
@@ -129,12 +127,10 @@ class TSB(AnnounceableResource):
 		# Check beaconRequester
 		if self.hasAttribute('bcnr'):
 			if self.bcnc == BeaconCriteria.PERIODIC:
-				L.logWarn(dbg := f'beaconRequester attribute shall only be present when beaconCriteria is LOSS_OF_SYNCHRONIZATION')
-				return Result.errorResult(dbg = dbg)
+				return Result.errorResult(dbg = L.logWarn(f'beaconRequester attribute shall only be present when beaconCriteria is LOSS_OF_SYNCHRONIZATION'))
 		else:
 			if self.bcnc == BeaconCriteria.LOSS_OF_SYNCHRONIZATION:
-				L.logWarn(dbg := f'beaconRequester attribute shall be present when beaconCriteria is PERIODIC')
-				return Result.errorResult(dbg = dbg)
+				return Result.errorResult(dbg = L.logWarn(f'beaconRequester attribute shall be present when beaconCriteria is PERIODIC'))
 
 		return Result.successResult()
 		

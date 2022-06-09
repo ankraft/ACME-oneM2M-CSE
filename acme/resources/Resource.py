@@ -140,7 +140,7 @@ class Resource(object):
 
 			# Remove empty / null attributes from dict
 			# But see also the comment in update() !!!
-			self.dict = Utils.removeNoneValuesFromDict(self.dict, ['cr'])	# allow the ct attribute to stay in the dictionary. It will be handled with in the RegistrationManager
+			self.dict = Utils.removeNoneValuesFromDict(self.dict, ['cr'])	# allow the cr attribute to stay in the dictionary. It will be handled with in the RegistrationManager
 
 			self[self._rtype] = self.tpe
 			self.setAttribute(self._announcedTo, [], overwrite = False)
@@ -234,7 +234,7 @@ class Resource(object):
 		# asynchronously in GroupManager, triggered by an event.
 
 
-	def update(self, dct:JSON = None, originator:str = None) -> Result:
+	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
 		"""	Update, add or remove resource attributes.
 
 			A subscription check for update is performed.
@@ -256,7 +256,7 @@ class Resource(object):
 				return Result.errorResult(rsc = RC.contentsUnacceptable, dbg = 'resource types mismatch')
 
 			# validate the attributes
-			if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self._attributes, create = False, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())).status:
+			if doValidateAttributes and not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self._attributes, create = False, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())).status:
 				return res
 
 			if self.ty not in [T.FCNTAnnc]:

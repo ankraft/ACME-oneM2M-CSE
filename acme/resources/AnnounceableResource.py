@@ -41,7 +41,7 @@ class AnnounceableResource(Resource):
 		super().deactivate(originator)
 
 
-	def update(self, dct:JSON = None, originator:str = None) -> Result:
+	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
 		# L.isDebug and L.logDebug(f'Updating AnnounceableResource: {self.ri}')
 		self._origAA = self.aa
 		self._origAT = self.at

@@ -91,7 +91,7 @@ class FCNT(AnnounceableResource):
 		return Result.successResult()
 
 
-	def update(self, dct:JSON = None, originator:str = None) -> Result:
+	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
 		
 		# Increment stateTag before all because it is needed later to name
 		# a FCI, but only when any custom attributes is updated
@@ -149,8 +149,7 @@ class FCNT(AnnounceableResource):
 		if create:
 			if (t := CSE.validator.getFlexContainerSpecialization(self.tpe))[0]:
 				if t[0] != self.cnd:
-					L.logDebug(dbg := f'Wrong cnd: {self.cnd} for specialization: {self.tpe}. Must be: {t[0]}')
-					return Result.errorResult(dbg = dbg)
+					return Result.errorResult(dbg = L.logDebug(f'Wrong cnd: {self.cnd} for specialization: {self.tpe}. Must be: {t[0]}'))
 
 		# Validate the child resources
 		self._validateChildren(originator, dct = dct)

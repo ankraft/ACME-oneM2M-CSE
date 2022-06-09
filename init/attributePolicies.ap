@@ -2003,6 +2003,19 @@
 			"annc": "OA"
 		}
 	],
+	"nse": [
+		{
+			"rtypes": [ "SUB", "REQRESP" ],
+			"lname": "notificationStatsEnable",
+			"ns": "m2m",
+			"type": "boolean",
+			"car": "01",
+			"oc": "O",
+			"ou": "O",
+			"od": "O",
+			"annc": "NA"
+		}
+	],
 	"nsp": [
 		{
 			"rtypes": [ "ALL" ],

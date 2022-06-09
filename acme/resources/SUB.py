@@ -60,13 +60,11 @@ class SUB(Resource):
 		'nec': None,
 		'su': None,
 		'acrs': None,
+		'nse': None,
 		'ma': None,		# EXPERIMENTAL maxage
 	}
 
-	# TODO notificationStatsEnable - nse  support
 	# TODO notificationStatsInfo - nsi	support
-
-	# TODO associatedCrossResourceSub
 
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
@@ -110,16 +108,34 @@ class SUB(Resource):
 		CSE.notification.removeSubscription(self)
 
 
-	def update(self, dct:JSON=None, originator:str=None) -> Result:
+	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
 		previousNus = deepcopy(self.nu)
-		if not (res := super().update(dct, originator)).status:
+
+		# We are validating the attributes here already because this actual update of the resource
+		# (where this happens) is done only after a lot of other stuff hapened.
+		# So, the resource is validated twice in an update :()
+		if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self._attributes, create = False, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())).status:
+			return res
+
+		# Handle update nse attribute
+		# TODO
+
+		# 2) If the notificationStatsEnable attribute in the resource is true and the notificationStatsEnable attribute 
+		# in the request is false, the Hosting CSE shall stop collecting notification statistics for the <subscription> resource.
+		#  The Hosting CSE shall maintain the current value of the notificationStatsInfo attribute.
+
+		# 3) If the notificationStatsEnable attribute in the resource is false and the notificationStatsEnable attribute 
+		# in the request is true, the Hosting CSE shall update the value of the notificationStatsEnable attribute in the resource
+		#  to true, delete any values stored in the notificationStatsInfo attribute of the resource and then start recording 
+		# notification statistics.
+
+		if not (res := super().update(dct, originator, doValidateAttributes = False)).status:
 			return res
 
 		# check whether an observed child resource type is actually allowed by the parent
 		if chty := self['enc/chty']:
 			if not (parentResource := self.retrieveParentResource()):
-				L.logErr(dbg := f'cannot retrieve parent resource')
-				return Result(status = False, rsc = RC.internalServerError, dbg = dbg)
+				return Result(status = False, rsc = RC.internalServerError, dbg = L.logErr(f'cannot retrieve parent resource'))
 			if  not (res := self._checkAllowedCHTY(parentResource, chty)).status:
 				return res
 
@@ -209,8 +225,7 @@ class SUB(Resource):
 	def _checkAllowedCHTY(self, parentResource:Resource, chty:list[T]) -> Result:
 		""" Check whether an observed child resource type is actually allowed by the parent. """
 		for ty in chty:
-			if ty not in parentResource._allowedChildResourceTypes:
-				L.logDebug(dbg := f'ChildResourceType {T(ty).name} is not an allowed child resource of {T(parentResource.ty).name}')
-				return Result.errorResult(dbg = dbg)
+			if ty not in parentResource._allowedChildResourceTypes:		
+				return Result.errorResult(dbg = L.logDebug(f'ChildResourceType {T(ty).name} is not an allowed child resource of {T(parentResource.ty).name}'))
 		return Result.successResult()
 

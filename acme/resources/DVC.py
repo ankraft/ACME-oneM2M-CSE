@@ -74,7 +74,7 @@ class DVC(MgmtObj):
 		return Result.successResult()
 
 
-	def update(self, dct:JSON=None, originator:str=None) -> Result:
+	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
 		# Check for ena & dis updates 
 		if dct and self.tpe in dct:
 			ena = Utils.findXPath(dct, 'm2m:dvc/ena')

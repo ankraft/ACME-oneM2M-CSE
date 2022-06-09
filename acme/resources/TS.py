@@ -106,7 +106,7 @@ class TS(AnnounceableResource):
 		CSE.timeSeries.stopMonitoringTimeSeries(self.ri)
 
 
-	def update(self, dct:JSON = None, originator:str = None) -> Result:
+	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
 
 		# Extra checks if mdd is present in an update
 		updatedAttributes = Utils.findXPath(dct, 'm2m:ts')

@@ -68,12 +68,12 @@ class RBO(MgmtObj):
 		return Result.successResult()
 
 
-	def update(self, dct:JSON = None, originator:str = None) -> Result:
+	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
 		# Check for rbo & far updates 
 		if dct and self.tpe in dct:
 			rbo = Utils.findXPath(dct, 'm2m:rbo/rbo')
 			far = Utils.findXPath(dct, 'm2m:rbo/far')
 			if rbo and far:
-				return Result.errorResult(dbg='update both rbo and far to True is not allowed')
+				return Result.errorResult(dbg = 'update both rbo and far to True is not allowed')
 
 		return super().update(dct, originator)

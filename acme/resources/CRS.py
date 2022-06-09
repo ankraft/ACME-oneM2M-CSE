@@ -23,6 +23,7 @@ class CRS(Resource):
 
 	_subRratRIs = '__subRratRIs__'	# dict rrat-ri -> sub-ri
 	_subSratRIs = '__subSratRIs__'	# dict srat-ri -> sub-ri
+	_sudRI		= '__sudRI__'		# Reference when the resource is been deleted because of the deletion of a rrat or srat subscription. Usually empty
 
 	# Specify the allowed child-resource types
 	_allowedChildResourceTypes:list[T] = [ ]
@@ -71,8 +72,11 @@ class CRS(Resource):
 		# Add to internal attributes to ignore in validation etc
 		self._addToInternalAttributes(self._subRratRIs)
 		self._addToInternalAttributes(self._subSratRIs)
+		self._addToInternalAttributes(self._sudRI)
 		self.setAttribute(self._subRratRIs, {}, overwrite = False)	
 		self.setAttribute(self._subSratRIs, {}, overwrite = False)	
+
+		# TODO NSE to False
 
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
@@ -105,7 +109,7 @@ class CRS(Resource):
 		return Result.successResult()
 	
 
-	def update(self, dct:JSON = None, originator:str = None) -> Result:
+	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
 		L.isDebug and L.logDebug(f'Updating crossResourceSubscription: {self.ri}')
 		# We are validating the attributes here already because this actual update of the resource
 		# (where this happens) is done only after a lot of other stuff hapened.
@@ -220,7 +224,7 @@ class CRS(Resource):
 			   (newTwt is None     and oldTwt == TimeWindowType.PERIODICWINDOW):
 				CSE.notification.startCRSPeriodicWindow(self.ri, self.tws if newTws is None else newTws, self._countSubscriptions())
 		
-		return super().update(dct, originator)
+		return super().update(dct, originator, doValidateAttributes = False)
 	
 
 	def deactivate(self, originator:str) -> None:
@@ -274,11 +278,15 @@ class CRS(Resource):
 		
 		# Deletion request
 		if (_sud := findXPath(request.pc, 'm2m:sgn/sud')) is not None and _sud == True:
-			L.isDebug and L.logDebug('Received subscription deletion request to CRS resource')
+			_sur = findXPath(request.pc, 'm2m:sgn/sur')
+			L.isDebug and L.logDebug(f'Received subscription deletion request from: {_sur} to CRS resource')
+			# Store the 'sur' to leave it out during deletion
+			self.setAttribute(self._sudRI, _sur)
+			self.dbUpdate()
 
-			# TODO delete entries in crs
-
+			# TODO originator = original creator of the <crs> resource? 
 			
+			CSE.dispatcher.deleteResource(self, withDeregistration = True)
 			return Result(status = True, rsc = RC.OK)
 		
 		# Log any other notification
@@ -424,15 +432,20 @@ class CRS(Resource):
 			Args:
 				originator: The originator to use for the DELETE requests.
 		"""
+		sudRI = self.attribute(self._sudRI)	# Optional RI given in a subscription deletion notification. Leave it out!
 		# rrat
 		if _subRratRIs := self.attribute(self._subRratRIs):
 			for rrat in list(_subRratRIs.keys()):
+				if sudRI and sudRI == rrat:	# Continue when this is the resource ID of a deletion notification
+					continue
 				if not (res := self._deleteSubscriptionForRrat(rrat, originator)).status:
 					return res
 		
 		#srat
 		if _subSratRIs := self.attribute(self._subSratRIs):
 			for srat in list(_subSratRIs.keys()):
+				if sudRI and sudRI == srat:	# Continue when this is the resource ID of a deletion notification
+					continue
 				if not (res := self._deleteFromSubscriptionsForSrat(srat, originator)).status:
 					return res
 		return Result.successResult()
