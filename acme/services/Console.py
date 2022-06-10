@@ -277,7 +277,7 @@ Available under the BSD 3-Clause License
 	def printLine(self, key:str) -> None:
 		"""	Print a separator Line to the log.
 		"""
-		L.logWithLevel(L.logLevel, '=' * (L.consoleWidth()-50))
+		L.logDivider()
 
 
 	def workers(self, key:str) -> None:

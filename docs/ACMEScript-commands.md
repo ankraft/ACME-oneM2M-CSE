@@ -8,7 +8,7 @@
 |------------------------------|-------------------------------------------------|------------------------------------------------------------------------------|
 | [Basic](#commands_basic)     | [ASSERT](#command_assert)                       | Assert a condition                                                           |
 |                              | [BREAK](#command_break)                         | Break out of a [WHILE](#command_while) loop                                  |
-|                              | [CASE](#command_case)                           | Conditional command block for a  [SWITCH](#command_switch) block          M  |
+|                              | [CASE](#command_case)                           | Conditional command block for a [SWITCH](#command_switch) block              |
 |                              | [CONTINUE](#command_break)                      | Continue with the next iteration of a [WHILE](#command_while) loop           |
 |                              | [DEC](#command_dec)                             | Decrements a numeric variable                                                |
 |                              | [ELSE](#command_else)                           | Start the ELSE part of an [IF](#command_if) block                            |
@@ -19,6 +19,7 @@
 |                              | [IF](#command_if)                               | Check comparison condition and begin a conditional IF block                  |
 |                              | [INC](#command_inc)                             | Increments a numeric variable                                                |
 |                              | [LOG](#command_log)                             | Print a message to the debug-level log                                       |
+|                              | [LOGDIVIDER](#command_logdiv)                   | Print a divider line to the log                                              |
 |                              | [LOGERROR](#command_logerror)                   | Print a message to the error-level log                                       |
 |                              | [PROCEDURE](#command_procedure)                 | Define a procedure                                                           |
 |                              | [QUIT](#command_quit)                           | Quit the running script                                                      |
@@ -342,6 +343,21 @@ Example:
 LOGERROR Danger, Will Robinson!
 ```
 
+
+<a name="command_logdiv"></a>
+### LOGDIVIDER
+
+Usage:  
+LOGDIVIDER [&lt;message>]
+
+Print a line to the debug-level log. 
+
+An optional message can be provided. That message is then centered on the line.
+
+Example:
+```text
+LOGDIVIDER Something important follows
+```
 
 <a name="command_procedure"></a>
 ### PROCEDURE

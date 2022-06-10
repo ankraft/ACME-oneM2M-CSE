@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - [Console] Added command to add a separator line to the screen and log (at the current log level).
+- [SCRIPTS] Added *logDivider* command.
 
 ### Changed
 - [CSE] Renamed the &lt;pollingChannel> attribute *pcra* to *rqag* (R4 spec change).

@@ -17,5 +17,5 @@ endif
 ##################################################################
 
 # Print start line to the debug log
-log =============================== Start of [argv] ===============================
+logDivider Start of [argv]
 

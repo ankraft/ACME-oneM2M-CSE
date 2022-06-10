@@ -19,7 +19,7 @@ from ..services.Configuration import Configuration
 from ..helpers.Interpreter import PContext, checkMacros, PError, PState, PFuncCallable
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 from ..helpers import TextTools
-from ..services.Logging import Logging as L
+from ..services.Logging import Logging as L, LogLevel
 from ..services import CSE
 from ..etc import Utils, DateUtils
 from ..resources import Factory
@@ -62,6 +62,7 @@ class ACMEPContext(PContext):
 							 			'create':				self.doCreate,
 							 			'delete':				self.doDelete,
 										'importraw':			self.doImportRaw,
+										'logdivider':			self.doLogDivider,
 							 			'notify':				self.doNotify,
 						 				'originator':			self.doOriginator,
 										'printjson':			self.doPrintJSON,
@@ -265,6 +266,23 @@ class ACMEPContext(PContext):
 			L.logErr(f'Error during import: {res.dbg}', showStackTrace = False)
 			return None
 			
+		return pcontext
+
+
+	def doLogDivider(self, pcontext:PContext, arg:str = '') -> PContext:
+		"""	Print a divider line to the log (on DEBUG level).
+			
+			Optionally add a message that is centered on the line.
+			
+			Example:
+				LOGDIVIDER a message
+			Args:
+				pcontext: PContext object of the runnig script.
+				arg: remaining argument(s) of the command.
+			Returns:
+				The scripts "PContext" object, or None in case of an error.
+			"""
+		L.logDivider(LogLevel.DEBUG, arg)
 		return pcontext
 
 

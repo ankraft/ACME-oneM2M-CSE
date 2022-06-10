@@ -315,6 +315,20 @@ class Logging:
 
 
 	@staticmethod
+	def logDivider(level:int = None, message:str = '') -> None:
+		"""	Add a divider line to the log.
+		
+			Args:
+				level: Loglevel for the message. If None, the the current log level is taken
+				message: Optional message that is centered on the line.
+		"""
+		message = f'[ {message} ]' if message else ''	# add spaces if there is a message
+		ln  = '=' * int((Logging.consoleWidth() - 50 - len(message)) / 2)
+		Logging.logWithLevel(level if level is not None else Logging.logLevel, 
+							 f'{ln}{message}{ln}')
+
+
+	@staticmethod
 	def _log(level:int, msg:Any, stackOffset:int = 0, immediate:bool = False) -> None:
 		"""	Internally adding various information to the log output. The `stackOffset` is used to determine 
 			the correct caller. It is set by a calling method in case the log information are re-routed.
