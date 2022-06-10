@@ -477,8 +477,7 @@ class NotificationManager(object):
 											 data = [ sur ]).start(crsRi = crsRi, subCount = subCount)
 
 
-	def stopCRSSlidingWindow(self, crs:Resource) -> None:
-		crsRi = crs.ri
+	def stopCRSSlidingWindow(self, crsRi:str) -> None:
 		L.isDebug and L.logDebug(f'Stopping SlidingWindow for crs: {crsRi}')
 		BackgroundWorkerPool.stopWorkers(self._getSlidingWorkerName(crsRi))
 
