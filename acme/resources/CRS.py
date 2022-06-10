@@ -284,8 +284,10 @@ class CRS(Resource):
 			self.setAttribute(self._sudRI, _sur)
 			self.dbUpdate()
 
-			# TODO originator = original creator of the <crs> resource? 
-			
+			# TODO originator = original creator of the <crs> resource
+
+			# TODO ignore all any further notifications, Resource internal attribute
+
 			CSE.dispatcher.deleteResource(self, withDeregistration = True)
 			return Result(status = True, rsc = RC.OK)
 		
@@ -294,7 +296,9 @@ class CRS(Resource):
 			return Result.errorResult(dbg = L.logWarn('No or empty "sur" attribute in notification'))
 		if sur in self.attribute(self._subRratRIs).values() or sur in self.attribute(self._subSratRIs).values():
 			CSE.notification.receivedCrossResourceSubscriptionNotification(sur, self)
-		
+		else:
+			L.isDebug and L.logDebug(f'Handling notification: sur: {sur} not in _subRratRIs: {self.attribute(self._subRratRIs).values()} or _subSratRIs: {self.attribute(self._subSratRIs).values()}')
+
 		return Result(status = True, rsc = RC.OK)
 
 
@@ -399,7 +403,8 @@ class CRS(Resource):
 
 		# Add <sub> to internal references
 		_subRIs = self.attribute(self._subSratRIs)
-		_subRIs[srat] = f'{csiFromSPRelative(_sratSpRelative)}/{srat}'
+		#_subRIs[srat] = f'{csiFromSPRelative(_sratSpRelative)}/{srat}'
+		_subRIs[srat] = _sratSpRelative
 		self.setAttribute(self._subSratRIs, _subRIs)
 
 		return Result.successResult()

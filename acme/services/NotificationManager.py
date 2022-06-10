@@ -494,6 +494,7 @@ class NotificationManager(object):
 		crsRi = crs.ri
 		crsTwt = crs.twt
 		crsTws = crs.tws
+		L.isDebug and L.logDebug(f'Received notification for <crs>: {crsRi}, twt: {crsTwt}, tws: {crsTws}')
 		if crsTwt == TimeWindowType.SLIDINGWINDOW:
 			if (workers := BackgroundWorkerPool.findWorkers(self._getSlidingWorkerName(crsRi))):
 				if sur not in workers[0].data:
