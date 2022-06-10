@@ -55,11 +55,11 @@ class CRS(Resource):
 		'twt': None,
 		'tws': None,
 		'encs': None, 
-
 	}
 
 	# TODO notificationStatsEnable - nse  support
 	# TODO notificationStatsInfo - nsi	support
+	# TODO expirationCounter
 
 	# TODO Restart support (in NotificationManager)
 
@@ -375,6 +375,8 @@ class CRS(Resource):
 			self._deleteSubscriptions(originator)
 			return Result.errorResult(dbg = L.logWarn(f'Resource is not a subscription for {srat} uri: {_sratSpRelative}'))
 
+
+		subRI = findXPath(subDct, 'm2m:sub/ri')	# Let's assume that there actually is an RI
 		newDct:JSON = { 'm2m:sub': {} }	# new request dct
 
 		# Add to the sub's nu
@@ -404,7 +406,7 @@ class CRS(Resource):
 		# Add <sub> to internal references
 		_subRIs = self.attribute(self._subSratRIs)
 		#_subRIs[srat] = f'{csiFromSPRelative(_sratSpRelative)}/{srat}'
-		_subRIs[srat] = _sratSpRelative
+		_subRIs[srat] = toSPRelative(subRI)
 		self.setAttribute(self._subSratRIs, _subRIs)
 
 		return Result.successResult()

@@ -560,6 +560,7 @@ class TestCRS(unittest.TestCase):
 
 
 # TODO test sub delete - acrs working? Delete a sub and check the <crs> resource
+# TODO srat test with structured RIs as targets
 
 
 	#########################################################################
