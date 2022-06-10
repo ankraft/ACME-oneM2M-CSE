@@ -111,8 +111,7 @@ class RegistrationManager(object):
 			if not resource.hasAttributeDefined('cr'):
 				return Result.errorResult(dbg = f'"creator" attribute is not allowed for resource type: {resource.ty}')
 			if resource.cr is not None:		# Check whether cr is set to a value in the request. This is wrong
-				L.isWarn and L.logWarn(dbg := 'Setting a value to "creator" attribute is not allowed.')
-				return Result.errorResult(dbg = dbg)
+				return Result.errorResult(dbg = L.logWarn('Setting a value to "creator" attribute is not allowed.'))
 			resource.setAttribute('cr', originator)
 			# fall-through
 		return Result.successResult() # implicit OK
@@ -156,8 +155,7 @@ class RegistrationManager(object):
 		# Check for allowed orginator
 		# TODO also allow when there is an ACP?
 		if not CSE.security.isAllowedOriginator(originator, self.allowedAEOriginators):
-			L.logDebug(dbg := 'Originator not allowed')
-			return Result.errorResult(rsc = RC.appRuleValidationFailed, dbg = dbg)
+			return Result.errorResult(rsc = RC.appRuleValidationFailed, dbg = L.logDebug('Originator not allowed'))
 
 		# Assign originator for the AE
 		if originator == 'C':
@@ -171,8 +169,7 @@ class RegistrationManager(object):
 
 		# Check whether an originator has already registered with the same AE-ID
 		if Utils.hasRegisteredAE(originator):
-			L.logWarn(dbg := f'Originator has already registered: {originator}')
-			return Result.errorResult(rsc = RC.originatorHasAlreadyRegistered, dbg = dbg)
+			return Result.errorResult(rsc = RC.originatorHasAlreadyRegistered, dbg = L.logWarn(f'Originator has already registered: {originator}'))
 		
 		# Make some adjustments to set the originator in the <AE> resource
 		L.isDebug and L.logDebug(f'Registering AE. aei: {originator}')
@@ -209,8 +206,7 @@ class RegistrationManager(object):
 		# Check whether an AE with the same originator has already registered
 
 		if originator != CSE.cseOriginator and Utils.hasRegisteredAE(originator):
-			L.logWarn(dbg := f'Originator has already registered an AE: {originator}')
-			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = dbg)
+			return Result.errorResult(rsc = RC.operationNotAllowed, dbg = L.logWarn(f'Originator has already registered an AE: {originator}'))
 		
 		# Always replace csi with the originator (according to TS-0004, 7.4.4.2.1)
 		if not CSE.importer.isImporting:	# ... except when the resource was just been imported
@@ -263,8 +259,7 @@ class RegistrationManager(object):
 		# Check whether the same CSEBase has already registered (-> only once)
 		if (lnk := cbA.lnk):
 			if len(list := CSE.storage.searchByFragment({'lnk': lnk})) > 0:
-				L.logDebug(dbg := f'CSEBaseAnnc with lnk: {lnk} already exists')
-				return Result.errorResult(rsc = RC.conflict, dbg = dbg)
+				return Result.errorResult(rsc = RC.conflict, dbg = L.logDebug(f'CSEBaseAnnc with lnk: {lnk} already exists'))
 
 		# Assign a rn
 		cbA.setResourceName(Utils.uniqueRN(f'{cbA.tpe}_{Utils.getIdFromOriginator(originator)}'))
