@@ -40,6 +40,7 @@ class TestDiscovery(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
+		testCaseStart('Setup TestDiscovery')
 		cls.crTimestamp1 = getResourceDate(-timeDelta)	# first timestamp
 
 		dct = 	{ 'm2m:ae' : {
@@ -119,13 +120,27 @@ class TestDiscovery(unittest.TestCase):
 		assert rsc == RC.created, 'cannot create m2m:bat (2)'
 
 		cls.crTimestamp2 = getResourceDate()	# Second timestamp
+		testCaseEnd('Setup TestDiscovery')
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		testCaseStart('TearDown TestDiscovery')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
+		testCaseEnd('TearDown TestDiscovery')
+
+
+	def setUp(self) -> None:
+		testCaseStart(self._testMethodName)
+	
+
+	def tearDown(self) -> None:
+		testCaseEnd(self._testMethodName)
+
+
+	#########################################################################
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

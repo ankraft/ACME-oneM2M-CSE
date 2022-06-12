@@ -31,16 +31,31 @@ class TestNOD(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
+		testCaseStart('Setup TestNOD')
 		cls.cse, rsc = RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
+		testCaseEnd('Setup TestNOD')
 		
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		testCaseStart('TearDown TestNOD')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
 		DELETE(nod2URL, ORIGINATOR)	# Just delete the Node 2 and everything below it. Ignore whether it exists or not
+		testCaseEnd('TearDown TestNOD')
+
+
+	def setUp(self) -> None:
+		testCaseStart(self._testMethodName)
+	
+
+	def tearDown(self) -> None:
+		testCaseEnd(self._testMethodName)
+
+
+	#########################################################################
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

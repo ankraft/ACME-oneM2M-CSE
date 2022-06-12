@@ -26,16 +26,31 @@ class TestAE(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
+		testCaseStart('Setup TestACP')
 		cls.originator 	= None 	# actually the AE.aei
 		cls.aeACPI 		= None
 		cls.cse, rsc 	= RETRIEVE(cseURL, ORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve CSEBase: {cseURL}'
+		testCaseEnd('Setup TestAE')
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		testCaseStart('TearDown TestAE')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
+		testCaseEnd('TearDown TestAE')
+
+
+	def setUp(self) -> None:
+		testCaseStart(self._testMethodName)
+	
+
+	def tearDown(self) -> None:
+		testCaseEnd(self._testMethodName)
+
+
+	#########################################################################
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

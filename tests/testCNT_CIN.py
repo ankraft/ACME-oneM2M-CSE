@@ -26,6 +26,7 @@ class TestCNT_CIN(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
+		testCaseStart('Setup TestCNT_CIN')
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
@@ -47,13 +48,27 @@ class TestCNT_CIN(unittest.TestCase):
 		startNotificationServer()
 		# look for notification server
 		assert isNotificationServerRunning(), 'Notification server cannot be reached'
+		testCaseEnd('Setup TestCNT_CIN')
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		testCaseStart('TearDown TestCNT_CIN')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		stopNotificationServer()
+		testCaseEnd('TearDown TestCNT_CIN')
+
+
+	def setUp(self) -> None:
+		testCaseStart(self._testMethodName)
+	
+
+	def tearDown(self) -> None:
+		testCaseEnd(self._testMethodName)
+
+
+	#########################################################################
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

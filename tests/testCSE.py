@@ -22,13 +22,28 @@ class TestCSE(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
+		testCaseStart('Setup TestCSE')
 		pass
+		testCaseEnd('Setup TestCSE')
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		testCaseStart('TearDown TestCSE')
 		pass
+		testCaseEnd('TearDown TestCSE')
+
+
+	def setUp(self) -> None:
+		testCaseStart(self._testMethodName)
+	
+
+	def tearDown(self) -> None:
+		testCaseEnd(self._testMethodName)
+
+
+	#########################################################################
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

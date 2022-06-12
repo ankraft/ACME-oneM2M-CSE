@@ -23,6 +23,7 @@ class TestCNT(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
+		testCaseStart('Setup testCNT')
 		dct = 	{ 'm2m:ae' : {
 					'rn': aeRN, 
 					'api': 'NMyApp1Id',
@@ -32,18 +33,22 @@ class TestCNT(unittest.TestCase):
 		cls.ae, rsc = CREATE(cseURL, 'C', T.AE, dct)	# AE to work under
 		assert rsc == RC.created, 'cannot create parent AE'
 		cls.originator = findXPath(cls.ae, 'm2m:ae/aei')
+		testCaseEnd('Setup testCNT')
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		testCaseStart('TearDown testCNT')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)
+		testCaseEnd('TearDown testCNT')
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNT(self) -> None:
 		"""	Create <CNT> """
+		testCaseStart('TearDown testCNT')
 		self.assertIsNotNone(TestCNT)
 		self.assertIsNotNone(TestCNT.ae)
 		dct = 	{ 'm2m:cnt' : { 
@@ -51,6 +56,18 @@ class TestCNT(unittest.TestCase):
 				}}
 		r, rsc = CREATE(aeURL, TestCNT.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
+		testCaseEnd('TearDown testCNT')
+
+
+	def setUp(self) -> None:
+		testCaseStart(self._testMethodName)
+	
+
+	def tearDown(self) -> None:
+		testCaseEnd(self._testMethodName)
+
+
+	#########################################################################
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

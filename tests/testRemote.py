@@ -24,17 +24,32 @@ class TestRemote(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def setUpClass(cls) -> None:
+		testCaseStart('Setup TestRemote')
 		# check connection to CSE's
 		cls.remoteCse, rsc = RETRIEVE(REMOTEcseURL, REMOTEORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve remote CSEBase: {REMOTEcseURL}'
+		testCaseEnd('Setup TestRemote')
 
 
 	@classmethod
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def tearDownClass(cls) -> None:
+		testCaseStart('TearDown TestRemote')
 		DELETE(csrURL, ORIGINATOR)
 		DELETE(aeURL, ORIGINATOR)
-		
+		testCaseEnd('TearDown TestRemote')
+
+
+	def setUp(self) -> None:
+		testCaseStart(self._testMethodName)
+	
+
+	def tearDown(self) -> None:
+		testCaseEnd(self._testMethodName)
+
+
+	#########################################################################
+
 
 	# Retrieve the CSR on the local CSE
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')

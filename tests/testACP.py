@@ -41,16 +41,31 @@ class TestACP(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
+		testCaseStart('Setup TestACP')
 		pass
+		testCaseEnd('Setup TestACP')
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		testCaseStart('TearDown TestACP')
 		DELETE(acpURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE. Ignore whether it exists or not
 		DELETE(ae1URL, ORIGINATOR)
 		DELETE(ae2URL, ORIGINATOR)
+		testCaseEnd('TearDown TestACP')
+
+
+	def setUp(self) -> None:
+		testCaseStart(self._testMethodName)
+	
+
+	def tearDown(self) -> None:
+		testCaseEnd(self._testMethodName)
+
+
+	#########################################################################
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')

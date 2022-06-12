@@ -26,18 +26,33 @@ class TestMgmtObj(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
+		testCaseStart('Setup TestMgmtObj')
 		dct = 	{ 'm2m:nod' : { 
 					'rn' 	: nodRN,
 					'ni'	: nodeID
 				}}
 		cls.nod, rsc = CREATE(cseURL, ORIGINATOR, T.NOD, dct)
 		assert rsc == RC.created, 'cannot create <node>'
+		testCaseEnd('Setup TestMgmtObj')
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		testCaseStart('TearDown TestMgmtObj')
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
+		testCaseEnd('TearDown TestMgmtObj')
+
+
+	def setUp(self) -> None:
+		testCaseStart(self._testMethodName)
+	
+
+	def tearDown(self) -> None:
+		testCaseEnd(self._testMethodName)
+
+
+	#########################################################################
 
 	#
 	#	FWR

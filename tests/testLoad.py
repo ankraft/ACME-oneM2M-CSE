@@ -32,14 +32,29 @@ class TestLoad(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
+		testCaseStart('Setup TestLoad')
 		pass
+		testCaseEnd('Setup TestLoad')
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		testCaseStart('TearDown TestLoad')
 		for ae in cls.aes:
 			DELETE(f'{cseURL}/{ae[1]}', ORIGINATOR)
+		testCaseEnd('TearDown TestLoad')
+
+
+	def setUp(self) -> None:
+		testCaseStart(self._testMethodName)
+	
+
+	def tearDown(self) -> None:
+		testCaseEnd(self._testMethodName)
+
+
+	#########################################################################
 
 
 	@classmethod

@@ -39,18 +39,33 @@ class TestRemote_Annc(unittest.TestCase):
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def setUpClass(cls) -> None:
 		# check connection to CSE's
+		testCaseStart('Setup TestRemote_Annc')
 		cls.remoteCse, rsc = RETRIEVE(REMOTEcseURL, REMOTEORIGINATOR)
 		assert rsc == RC.OK, f'Cannot retrieve remote CSEBase: {REMOTEcseURL}'
+		testCaseEnd('Setup TestRemote_Annc')
 
 
 	@classmethod
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def tearDownClass(cls) -> None:
+		testCaseStart('TearDown TestRemote_Annc')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(nodURL, ORIGINATOR)	# Just delete the Node and everything below it. Ignore whether it exists or not
 		DELETE(acpURL, ORIGINATOR)	# Just delete the ACP 
 		if TestRemote_Annc.cnt is not None:
 			DELETE(f'{cseURL}/{cntRN}', ORIGINATOR)		# Delete the extra container
+		testCaseEnd('TearDown TestRemote_Annc')
+
+
+	def setUp(self) -> None:
+		testCaseStart(self._testMethodName)
+	
+
+	def tearDown(self) -> None:
+		testCaseEnd(self._testMethodName)
+
+
+	#########################################################################
 
 
 	# Create an AE with AT, but no AA

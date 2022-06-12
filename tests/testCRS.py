@@ -39,13 +39,13 @@ class TestCRS(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
+		testCaseStart('Setup TestCRS')
 		# Start notification server
 		startNotificationServer()
 
 		# look for notification server
 		assert isNotificationServerRunning(), 'Notification server cannot be reached'
 
-		testCaseStart('Setup TestCRS')
 
 		# create AE
 		dct = 	{ 'm2m:ae' : {

@@ -108,6 +108,9 @@ class TestSUB(unittest.TestCase):
 	def tearDown(self) -> None:
 		testCaseEnd(self._testMethodName)
 
+
+	#########################################################################
+
 	
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createSUB(self) -> None:

@@ -49,6 +49,7 @@ class TestPCH_PCU(unittest.TestCase):
 		"""
 
 
+		testCaseStart('Setup TestPCH_PCU')
 		# Add first AE
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
@@ -112,15 +113,29 @@ class TestPCH_PCU(unittest.TestCase):
 		cls.cnt, rsc = CREATE(aeURL, cls.originator, T.CNT, dct)
 		assert rsc == RC.created, 'cannot create container'
 		cls.cntRI = findXPath(cls.cnt, 'm2m:cnt/ri')
+		testCaseEnd('Setup TestPCH_PCU')
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		testCaseStart('TearDown TestPCH_PCU')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		DELETE(ae2URL, ORIGINATOR)	# Just delete the 2nd AE and everything below it. Ignore whether it exists or not
 
 		waitMessage('Waiting for polling requests to timeout...', requestExpirationDelay)
+		testCaseEnd('TearDown TestPCH_PCU')
+
+
+	def setUp(self) -> None:
+		testCaseStart(self._testMethodName)
+	
+
+	def tearDown(self) -> None:
+		testCaseEnd(self._testMethodName)
+
+
+	#########################################################################
 
 
 	def _pollForRequest(self, 

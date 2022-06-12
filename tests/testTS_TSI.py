@@ -33,6 +33,7 @@ class TestTS_TSI(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
+		testCaseStart('Setup TestTS_TSI')
 
 		# Start notification server
 		startNotificationServer()
@@ -56,13 +57,27 @@ class TestTS_TSI(unittest.TestCase):
 		cls.ts, rsc = CREATE(aeURL, cls.originator, T.TS, dct)
 		assert rsc == RC.created, 'cannot create <timeSeries>'
 		assert findXPath(cls.ts, 'm2m:ts/mni') == 3, 'mni is not correct'
+		testCaseEnd('Setup TestTS_TSI')
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
+		testCaseStart('TearDown TestTS_TSI')
 		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		stopNotificationServer()
+		testCaseEnd('TearDown TestTS_TSI')
+
+
+	def setUp(self) -> None:
+		testCaseStart(self._testMethodName)
+	
+
+	def tearDown(self) -> None:
+		testCaseEnd(self._testMethodName)
+
+
+	#########################################################################
 
 
 
