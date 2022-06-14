@@ -119,8 +119,12 @@ class CRS(Resource):
 
 
 		# Check NU's etc
+		# TODO call parent update before this!!!
 		if (newNus := findXPath(dct, 'm2m:crs/nu')):
-			if not (res := CSE.notification.updateCrossResourceSubscription(self.ri, newNus, self.nu, originator)).status:
+			previousNus = deepcopy(self.nu)
+			# FIXME The following is just a hack. Remove this when update() is called before this
+			self.setAttribute('nu', newNus)
+			if not (res := CSE.notification.updateCrossResourceSubscription(self, previousNus, originator)).status:
 				return res
 		
 		# Structures for rollbacks

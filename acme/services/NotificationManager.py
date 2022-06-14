@@ -8,6 +8,7 @@
 #
 
 from __future__ import annotations
+from operator import sub
 import sys, copy
 from typing import Callable, Union, Any
 from threading import Lock, current_thread
@@ -21,6 +22,8 @@ from ..etc import Utils, DateUtils
 from ..services.Logging import Logging as L
 from ..services import CSE
 from ..resources.Resource import Resource
+from ..resources.CRS import CRS
+from ..resources.SUB import SUB
 from ..helpers.BackgroundWorker import BackgroundWorker, BackgroundWorkerPool
 
 # TODO: removal policy (e.g. unsuccessful tries)
@@ -58,7 +61,7 @@ class NotificationManager(object):
 	#	Subscriptions
 	#
 
-	def addSubscription(self, subscription:Resource, originator:str) -> Result:
+	def addSubscription(self, subscription:SUB, originator:str) -> Result:
 		"""	Add a new subscription. 
 
 			Check each receipient with verification requests.
@@ -71,7 +74,7 @@ class NotificationManager(object):
 				Result object.
 		"""
 		L.isDebug and L.logDebug('Adding subscription')
-		if not (res := self._verifyNusInSubscription(subscription.ri, subscription.nu, originator = originator)).status:	# verification requests happen here
+		if not (res := self._verifyNusInSubscription(subscription, originator = originator)).status:	# verification requests happen here
 			return res
 		return Result.successResult() if CSE.storage.addSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot add subscription to database')
 
@@ -104,7 +107,7 @@ class NotificationManager(object):
 		return Result.successResult() if CSE.storage.removeSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot remove subscription from database')
 
 
-	def updateSubscription(self, subscription:Resource, previousNus:list[str], originator:str) -> Result:
+	def updateSubscription(self, subscription:SUB, previousNus:list[str], originator:str) -> Result:
 		"""	Update a subscription.
 		
 			Args:
@@ -116,7 +119,7 @@ class NotificationManager(object):
 				Result object.
 			"""
 		L.isDebug and L.logDebug('Updating subscription')
-		if not (res := self._verifyNusInSubscription(subscription.ri, subscription.nu, previousNus, originator = originator)).status:	# verification requests happen here
+		if not (res := self._verifyNusInSubscription(subscription, previousNus, originator = originator)).status:	# verification requests happen here
 			return res
 		return Result.successResult() if CSE.storage.updateSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot update subscription in database')
 
@@ -351,7 +354,7 @@ class NotificationManager(object):
 	#	CrossResourceSubscriptions
 	#
 
-	def addCrossResourceSubscription(self, crs:Resource, originator:str) -> Result:
+	def addCrossResourceSubscription(self, crs:CRS, originator:str) -> Result:
 		"""	Add a new crossResourceSubscription. 
 		
 			Check each receipient in the *nu* attribute with verification requests. 
@@ -364,12 +367,12 @@ class NotificationManager(object):
 				Result object.
 		"""
 		L.isDebug and L.logDebug('Adding crossResourceSubscription')
-		if not (res := self._verifyNusInSubscription(crs.ri, crs.nu, originator = originator)).status:	# verification requests happen here
+		if not (res := self._verifyNusInSubscription(crs, originator = originator)).status:	# verification requests happen here
 			return res
 		return Result.successResult()
 
 
-	def updateCrossResourceSubscription(self, ri:str, newNu:list[str], previousNus:list[str], originator:str) -> Result:
+	def updateCrossResourceSubscription(self, crs:CRS, previousNus:list[str], originator:str) -> Result:
 		"""	Update a crossResourcesubscription. 
 		
 			Check each new receipient in the *nu* attribute with verification requests. 
@@ -383,7 +386,7 @@ class NotificationManager(object):
 				Result object.
 		"""
 		L.isDebug and L.logDebug('Updating crossResourceSubscription')
-		if not (res := self._verifyNusInSubscription(ri, newNu, previousNus, originator = originator)).status:	# verification requests happen here
+		if not (res := self._verifyNusInSubscription(crs, previousNus, originator = originator)).status:	# verification requests happen here
 			return res
 		return Result.successResult()
 
@@ -546,10 +549,48 @@ class NotificationManager(object):
 				_sender(nu, originator = originator, data = dct)
 
 
+	###########################################################################
+	#
+	#	Notification Statistics
+	#
+
+	def countSentReceivedNotification(self, subscription:SUB|CRS, target:str, isResponse:bool = False) -> None:
+		"""	If Notification Stats are enabled for a <sub> or <crs> resource, then
+			increase the count for sent notifications or received responses.
+
+			Args:
+				subscription: <sub> or <crs> resource.
+				target: URI of the notification target.
+				isResponse: Boolean indicating whether a sent notification or a received response should be counted for.
+		"""
+
+		if not subscription.nse:	# Don't count if disabled
+			return
+		
+		L.isDebug and L.logDebug(f'Incrementing notification stats for: {subscription.ri} ({"response" if isResponse else "request"})')
+
+		activeField  = 'rsr' if isResponse else 'rqs'
+		passiveField = 'rqs' if isResponse else 'rsr'
+		
+		# Search and add to existing target
+		for each in subscription.nsi:
+			if each['tg'] == target:
+				each[activeField] += 1
+				break
+		else:
+			# target not found, create target
+			subscription.nsi.append({	'tg': target,
+										activeField: 1,
+										passiveField: 0
+									})
+		subscription.dbUpdate()
+
+
+
 	#########################################################################
 
 
-	def _verifyNusInSubscription(self, ri:str, nus:list[str], previousNus:list[str] = None, originator:str = None) -> Result:
+	def _verifyNusInSubscription(self, subscription:SUB|CRS, previousNus:list[str] = None, originator:str = None) -> Result:
 		"""	Check all the notification URI's in a subscription. 
 		
 			A verification request is sent to new URI's. 
@@ -558,15 +599,14 @@ class NotificationManager(object):
 			If `previousNus` is given then only new nus are notified.
 
 			Args:
-				ri: Resource ID of the <sub> or <crs> resource.
-				nus: List of resource IDs or URIs to check.
+				subscription: <sub> or <crs> resource.
 				previousNus: The list of previous NUs.
 				originator: The originator on which behalf to send the notification. 
-			
 			Return:
 				Result object with the overall result of the test.
 		"""
-		if nus:
+		if (nus := subscription.nu):
+			ri = subscription.ri
 			# notify new nus (verification request). New ones are the ones that are not in the previousNU list
 			for nu in nus:
 				if not previousNus or (nu not in previousNus):	# send only to new entries in nu
@@ -575,9 +615,11 @@ class NotificationManager(object):
 						L.isDebug and L.logDebug(f'Notification URI skipped: uri: {nu} == originator: {originator}')
 						continue
 					# Send verification notification to target (either direct URL, or an entity)
+					self.countSentReceivedNotification(subscription, nu)
 					if not self._sendVerificationRequest(nu, ri, originator = originator):
 						# Return when even a single verification request fails
 						return Result.errorResult(rsc = RC.subscriptionVerificationInitiationFailed, dbg = f'Verification request failed for: {nu}')
+					self.countSentReceivedNotification(subscription, nu, isResponse = True)
 
 		return Result.successResult()
 
@@ -684,11 +726,25 @@ class NotificationManager(object):
 			if sub['bn']:
 				return self._storeBatchNotification(uri, sub, notificationRequest)
 			else:
+				# If nse is set to True then count this notification request
+				if sub['nse']:
+					if not (res := CSE.dispatcher.retrieveResource(sub['ri'])).status:
+						L.logErr(f'Cannot retrieve <sub> resource: {sub["ri"]}: {res.dbg}')
+						return False
+					subscription = res.resource
+					self.countSentReceivedNotification(subscription, uri)	# count sent notification
+				
+				# Send the notification
 				if not CSE.request.sendNotifyRequest(uri, 
 													 originator = CSE.cseCsi,
 													 data = notificationRequest).status:
 					L.isDebug and L.logDebug(f'Notification failed for: {uri}')
 					return False
+				
+				# If nse is set to True then count the response
+				if sub['nse']:
+					self.countSentReceivedNotification(subscription, uri, isResponse = True) # count received notification
+
 				return True
 
 		result = self._sendNotification(sub['nus'], sender)	# ! This is not a <sub> resource, but the internal data structure, therefore 'nus
@@ -752,7 +808,7 @@ class NotificationManager(object):
 			ln = sub['ln'] if 'ln' in sub else False
 			for nu in sub['nus']:
 				self._stopNotificationBatchWorker(ri, nu)						# Stop a potential worker for that particular batch
-				self._sendSubscriptionAggregatedBatchNotification(ri, nu, ln)	# Send all remaining notifications
+				self._sendSubscriptionAggregatedBatchNotification(ri, nu, ln, sub)	# Send all remaining notifications
 
 
 	def _storeBatchNotification(self, nu:str, sub:JSON, notificationRequest:JSON) -> bool:
@@ -775,7 +831,7 @@ class NotificationManager(object):
 
 			ln = sub['ln'] if 'ln' in sub else False
 			self._stopNotificationBatchWorker(ri, nu)	# Stop the worker, not needed
-			self._sendSubscriptionAggregatedBatchNotification(ri, nu, ln)
+			self._sendSubscriptionAggregatedBatchNotification(ri, nu, ln, sub)
 
 		# Check / start Timer worker to guard the batch notification duration
 		else:
@@ -787,7 +843,7 @@ class NotificationManager(object):
 		return True
 
 
-	def _sendSubscriptionAggregatedBatchNotification(self, ri:str, nu:str, ln:bool = False) -> bool:
+	def _sendSubscriptionAggregatedBatchNotification(self, ri:str, nu:str, ln:bool, sub:JSON) -> bool:
 		"""	Send and remove(!) the available BatchNotifications for an ri & nu.
 		"""
 		# TODO doc
@@ -812,24 +868,33 @@ class NotificationManager(object):
 				'm2m:agn' : { 'm2m:sgn' : notifications }
 			}
 
-			#	TODO check whether nu is an RI. Get that resource as target reosurce and pass it on to the send request
-			#
-			#	TODO This could actually be the part to handle batch notifications correctly. always store the target's ri
-			#		 if it is a resource. only determine which poa and the ct later (ie here).
-			#
-
 			# Delete old notifications
 			if not CSE.storage.removeBatchNotifications(ri, nu):
 				L.isWarn and L.logWarn('Error removing aggregated batch notifications')
 				return False
 
+			# If nse is set to True then count this notification request
+			if sub['nse']:
+				if not (res := CSE.dispatcher.retrieveResource(sub['ri'])).status:
+					L.logErr(f'Cannot retrieve <sub> resource: {sub["ri"]}: {res.dbg}')
+					return False
+				subscription = res.resource
+				self.countSentReceivedNotification(subscription, nu)	# count sent notification
+				
 			# Send the request
 			if not CSE.request.sendNotifyRequest(nu, 
-												 originator = CSE.cseCsi,
-												 data = notificationRequest, 
-												 parameters = additionalParameters).status:
+													originator = CSE.cseCsi,
+													data = notificationRequest, 
+													parameters = additionalParameters).status:
 				L.isWarn and L.logWarn('Error sending aggregated batch notifications')
 				return False
+
+			# If nse is set to True then count the response
+			if sub['nse']:
+				self.countSentReceivedNotification(subscription, nu, isResponse = True) # count received notification
+
+
+
 
 			return True
 

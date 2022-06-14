@@ -9,15 +9,13 @@
 
 from __future__ import annotations
 from copy import deepcopy
+
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, NotificationContentType, NotificationEventType as NET, ResponseStatusCode as RC, JSON
 from ..services.Configuration import Configuration
 from ..services import CSE as CSE
 from ..services.Logging import Logging as L
 from ..resources.Resource import *
 
-
-# TODO notificationStatsEnable - nse  support
-# TODO notificationStatsInfo - nsi	support
 
 # TODO associatedCrossResourceSub
 
@@ -61,16 +59,17 @@ class SUB(Resource):
 		'su': None,
 		'acrs': None,
 		'nse': None,
+		'nsi': None,
 		'ma': None,		# EXPERIMENTAL maxage
 	}
-
-	# TODO notificationStatsInfo - nsi	support
-
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
 		super().__init__(T.SUB, dct, pi, create = create)
 
+		# Set defaults for some attribute
 		self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate.value ], overwrite = False)
+		self.setAttribute('nse', False, overwrite = False)
+		self.setAttribute('nsi', [], overwrite = False)		# initialize the notificationStatsInfo to empty, if not present
 
 		# Apply the nct only on the first element of net. Do the combination checks later in validate()
 		net = self['enc/net']
@@ -86,8 +85,7 @@ class SUB(Resource):
 
 		if self.bn:		# set batchNotify default attributes
 			self.setAttribute('bn/dur', Configuration.get('cse.sub.dur'), overwrite = False)
-
-
+		
 
 # TODO notificationForwardingURI
 
@@ -114,20 +112,27 @@ class SUB(Resource):
 		# We are validating the attributes here already because this actual update of the resource
 		# (where this happens) is done only after a lot of other stuff hapened.
 		# So, the resource is validated twice in an update :()
-		if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self._attributes, create = False, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())).status:
+		if not (res := CSE.validator.validateAttributes(dct, 
+														self.tpe, 
+														self.ty, 
+														self._attributes, 
+														create = False, 
+														createdInternally = self.isCreatedInternally(),
+														isAnnounced = self.isAnnounced())).status:
 			return res
 
 		# Handle update nse attribute
-		# TODO
-
-		# 2) If the notificationStatsEnable attribute in the resource is true and the notificationStatsEnable attribute 
-		# in the request is false, the Hosting CSE shall stop collecting notification statistics for the <subscription> resource.
-		#  The Hosting CSE shall maintain the current value of the notificationStatsInfo attribute.
-
-		# 3) If the notificationStatsEnable attribute in the resource is false and the notificationStatsEnable attribute 
-		# in the request is true, the Hosting CSE shall update the value of the notificationStatsEnable attribute in the resource
-		#  to true, delete any values stored in the notificationStatsInfo attribute of the resource and then start recording 
-		# notification statistics.
+		# nse is not deleted, it is a mandatory attribute
+		oldNse = self.nse
+		if (newNse := Utils.findXPath(dct, 'm2m:sub/nse')) is not None:	# present in the request
+			if oldNse: # self.nse == True
+				if newNse == False:
+					pass # Stop collecting, but keep notificationStatsInfo
+				else: # Both are True
+					self.setAttribute('nsi', [])
+			else:	# self.nse == False
+				if newNse == True:
+					self.setAttribute('nsi', [])
 
 		if not (res := super().update(dct, originator, doValidateAttributes = False)).status:
 			return res
@@ -221,6 +226,7 @@ class SUB(Resource):
 		self._normalizeURIAttribute('su')
 
 		return Result.successResult()
+
 
 	def _checkAllowedCHTY(self, parentResource:Resource, chty:list[T]) -> Result:
 		""" Check whether an observed child resource type is actually allowed by the parent. """

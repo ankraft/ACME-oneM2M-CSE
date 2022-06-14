@@ -576,6 +576,7 @@ class TinyDBBinding(object):
 						'bn'  : subscription.bn,
 						'cr'  : subscription.cr,
 						'ma'  : subscription.ma, # EXPERIMENTAL ma = maxAge
+						'nse' : subscription.nse
 					}, 
 					self.subscriptionQuery.ri == ri) is not None
 

@@ -138,7 +138,6 @@ class Validator(object):
 				if policyOptional == RO.M:		# Not okay, this attribute is mandatory but absent
 					return Result.errorResult(dbg = L.logWarn(f'Cannot find mandatory attribute: {attributeName}'))
 
-				# TODO Is the following actually executed??? Should it be somewhere else? Write a test
 				if attributeName in pureResDict and policy.cardinality == CAR.CAR1: 	# but ignore CAR.car1N (which may be Null/None)
 					return Result.errorResult(dbg = L.logWarn(f'Cannot delete a mandatory attribute: {attributeName}'))
 

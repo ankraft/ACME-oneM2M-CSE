@@ -2009,10 +2009,24 @@
 			"lname": "notificationStatsEnable",
 			"ns": "m2m",
 			"type": "boolean",
-			"car": "01",
+			"car": "1",
 			"oc": "O",
 			"ou": "O",
 			"od": "O",
+			"annc": "NA"
+		}
+	],
+	"nsi": [
+		{
+			"rtypes": [ "SUB", "REQRESP" ],
+			"lname": "notificationStatsInfo",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "m2m:setOfNotificationStatsInfo",
+			"car": "01",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
 			"annc": "NA"
 		}
 	],

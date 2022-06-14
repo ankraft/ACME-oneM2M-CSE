@@ -1587,7 +1587,42 @@
 
 
 	//
-	//	m2m:m2m:specializationType
+	//	m2m:setOfNotificationStatsInfo
+	//
+	"tg": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:setOfNotificationStatsInfo",
+			"lname": "target",
+			"ns": "m2m",
+			"type": "anyURI",
+			"car": "1"
+		}
+	],
+	"rqs": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:setOfNotificationStatsInfo",
+			"lname": "requestsSent",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "1"
+		}
+	],
+	"rsr": [
+		{
+			"rtypes": [ "COMPLEX" ],
+			"ctype": "m2m:setOfNotificationStatsInfo",
+			"lname": "responsesReceived",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "1"
+		}
+	],
+
+
+	//
+	//	m2m:specializationType
 	//
 	"cnd": [
 		{
