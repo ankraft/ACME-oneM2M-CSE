@@ -204,7 +204,7 @@ class TestGRP(unittest.TestCase):
 		for c in rsp:
 			self.assertEqual(findXPath(c, 'rsc'), RC.created)
 			self.assertIsNotNone(findXPath(c, 'pc/m2m:cin'))
-			to = findXPath(c, 'to')
+			to = findXPath(c, 'pc/m2m:cin/ri')
 			self.assertIsNotNone(to)
 			r, rsc = RETRIEVE(f'{URL}{to}', TestGRP.originator)	# retrieve the CIN by the returned ri
 			self.assertEqual(rsc, RC.OK)
@@ -237,7 +237,7 @@ class TestGRP(unittest.TestCase):
 		for c in rsp:
 			self.assertEqual(findXPath(c, 'rsc'), RC.OK)
 			self.assertIsNotNone(findXPath(c, 'pc/m2m:cin'))
-			to = findXPath(c, 'to')
+			to = findXPath(c, 'pc/m2m:cin/ri')
 			self.assertIsNotNone(to)
 			r, rsc = RETRIEVE(f'{URL}{to}', TestGRP.originator)	# retrieve the CIN by the returned ri
 			self.assertEqual(rsc, RC.OK)
@@ -262,7 +262,7 @@ class TestGRP(unittest.TestCase):
 		for c in rsp:
 			self.assertEqual(findXPath(c, 'rsc'), RC.updated)
 			self.assertIsNotNone(findXPath(c, 'pc/m2m:cnt'))
-			to = findXPath(c, 'to')
+			to = findXPath(c, 'pc/m2m:cnt/ri')
 			self.assertIsNotNone(to)
 			r, rsc = RETRIEVE(f'{URL}{to}', TestGRP.originator)	# retrieve the CIN by the returned ri
 			self.assertEqual(rsc, RC.OK)
