@@ -436,8 +436,9 @@ class HttpServer(object):
 
 			# Add to to URL
 			# TODO improve http URL handling. Don't assume SP-Relative, could be absolute
-			delim = '~'	if url.endswith('/') else '/~'
-			url = f'{url}{delim}{data["to"]}'
+			if not url.endswith(to := data["to"]):	# Do not append to when forwarding. The URL already contains the target
+				delim = '~'	if url.endswith('/') else '/~'
+				url = f'{url}{delim}{to}'
 
 			# Add filtercriteria to URL
 			if filterCriteria:
