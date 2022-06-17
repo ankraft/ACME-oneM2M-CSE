@@ -242,13 +242,12 @@ class GroupManager(object):
 					item = 	{ 'rsc' : result.rsc, 
 							  'rqi' : request.headers.requestIdentifier,
 							  'pc'  : result.resource.asDict() if isinstance(result.resource, Resource) else result.resource, # in case 'resource' is a dict
-							  'to'  : result.resource[Resource._srn],
-							  'rvi'	: CSE.releaseVersion
+							  'rvi'	: request.headers.releaseVersionIndicator,
 							}
 				else:	# e.g. when deleting
 					item = 	{ 'rsc' : result.rsc, 
 							  'rqi' : request.headers.requestIdentifier,
-							  'rvi'	: CSE.releaseVersion
+							  'rvi'	: request.headers.releaseVersionIndicator,
 							}
 				items.append(item)
 			rsp = { 'm2m:rsp' : items}
