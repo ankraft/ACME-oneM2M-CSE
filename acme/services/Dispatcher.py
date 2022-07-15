@@ -1086,7 +1086,10 @@ class Dispatcher(object):
 		for r in resources:
 			if r.ty in [ T.CNT_OL, T.CNT_LA, T.FCNT_OL, T.FCNT_LA ]:	# Skip latest, oldest virtual resources
 				continue
-			ref = { 'nm' : r['rn'], 'typ' : r['ty'], 'val' :  Utils.structuredPath(r) if drt == DRT.structured else r.ri}
+			ref = { 'nm' : r['rn'], 
+					'typ' : r['ty'], 
+					'val' : Utils.toSPRelative(Utils.structuredPath(r) if drt == DRT.structured else r.ri)
+			}
 			if r.ty == T.FCNT:
 				ref['spty'] = r.cnd		# TODO Is this correct? Actually specializationID in TS-0004 6.3.5.29, but this seems to be wrong
 			t.append(ref)
