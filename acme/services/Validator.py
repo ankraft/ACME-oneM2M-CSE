@@ -275,7 +275,7 @@ class Validator(object):
 	# TODO allowed media type chars
 	cnfRegex = re.compile(
 		r'^[^:/]+/[^:/]+:[0-2]$'
-		r'|^[^:/]+/[^:/]+:[0-2]$'
+		r'|^[^:/]+/[^:/]+:[0-2]$'	# TODO why twice?
 		r'|^[^:/]+/[^:/]+:[0-2]:[0-5]$'
 	)
 	def validateCNF(self, value:str) -> Result:
