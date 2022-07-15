@@ -9,7 +9,7 @@ installing the CSE and setting up the CSE's configuration.
 
 ## Running the CSE
 
-You can start the CSE by simply running it from a command line:
+You can start the CSE by simply running it from the command line:
 
 	python3 -m acme
 

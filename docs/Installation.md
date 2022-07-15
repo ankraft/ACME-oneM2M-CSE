@@ -38,7 +38,11 @@ configuration is saved to a configuration file. e.g. *acme.ini* by default.
 
 ## Running the CSE
 
-Please refer to the [Running](Running.md) documentation for instructions how to start and run the ACME CSE next.
+You can start the CSE by simply running it from the command line:
+
+	python3 -m acme
+
+Please refer to the [Running](Running.md) documentation for more detailed instructions how to start and run the ACME CSE.
 
 ---
 ## Certificates and Support for https
