@@ -14,10 +14,8 @@ from typing import Callable, Union, Any
 from threading import Lock, current_thread
 
 import isodate
-from ..etc.Constants import Constants as C
-from ..etc.Types import CSERequest, MissingData, Operation, ResourceTypes, Result, NotificationContentType, NotificationEventType, TimeWindowType
-from ..etc.Types import ResponseStatusCode as RC, EventCategory
-from ..etc.Types import JSON, Parameters
+from ..etc.Types import CSERequest, MissingData, ResourceTypes, Result, NotificationContentType, NotificationEventType, TimeWindowType
+from ..etc.Types import ResponseStatusCode as RC, EventCategory, JSON, ResourceTypes as T
 from ..etc import Utils, DateUtils
 from ..services.Logging import Logging as L
 from ..services import CSE
@@ -79,14 +77,13 @@ class NotificationManager(object):
 		return Result.successResult() if CSE.storage.addSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot add subscription to database')
 
 
-	def removeSubscription(self, subscription:Resource) -> Result:
+	def removeSubscription(self, subscription:SUB|CRS, originator:str) -> Result:
 		""" Remove a subscription. 
 
 			Send the deletion notifications, if possible.
 
 			Args:
 				subscription: The <sub> resource to remove.
-			
 			Return:
 				Result object.
 		"""
@@ -96,12 +93,12 @@ class NotificationManager(object):
 		self._flushBatchNotifications(subscription)
 
 		# Send a deletion request to the subscriberURI
-		if not self._sendDeletionNotification(su := subscription['su'], subscription.ri):
+		if not self.sendDeletionNotification(su := subscription.su, subscription.ri):
 			L.isWarn and L.logWarn(f'Deletion request failed for: {su}') # but ignore the error
 
 		# Send a deletion request to the associatedCrossResourceSub
-		if (acrs := subscription['acrs']):
-			self._sendDeletionNotification([ nu for nu in acrs ], subscription.ri)
+		if (acrs := subscription.acrs):
+			self.sendDeletionNotification([ nu for nu in acrs ], subscription.ri)
 		
 		# Finally remove subscriptions from storage
 		return Result.successResult() if CSE.storage.removeSubscription(subscription) else Result.errorResult(rsc = RC.internalServerError, dbg = 'cannot remove subscription from database')
@@ -413,7 +410,12 @@ class NotificationManager(object):
 					'sur' : Utils.toSPRelative(res.resource.ri)
 				}
 			}
+			
+			
+			#pre and post function!
 			self.sendNotificationWithDict(dct, res.resource.nu, background = True)
+
+
 		data.clear()
 
 
@@ -431,7 +433,8 @@ class NotificationManager(object):
 		"""
 		return f'crsPeriodic_{ri}'
 
-	def startCRSPeriodicWindow(self, crsRi:str, tws:str, subCount:int) -> None:
+
+	def startCRSPeriodicWindow(self, crsRi:str, tws:str, expectedCount:int) -> None:
 
 		crsTws = DateUtils.fromDuration(tws)
 		L.isDebug and L.logDebug(f'Starting PeriodicWindow for crs: {crsRi}. TimeWindowSize: {crsTws}')
@@ -441,7 +444,7 @@ class NotificationManager(object):
 									   self._crsPeriodicWindowMonitor, 
 									   name = self._getPeriodicWorkerName(crsRi), 
 									   startWithDelay = True,
-									   data = []).start(crsRi = crsRi, subCount = subCount)
+									   data = []).start(crsRi = crsRi, expectedCount = expectedCount)
 
 
 	def stopCRSPeriodicWindow(self, crsRi:str) -> None:
@@ -449,9 +452,9 @@ class NotificationManager(object):
 		BackgroundWorkerPool.stopWorkers(self._getPeriodicWorkerName(crsRi))
 
 
-	def _crsPeriodicWindowMonitor(self, _data:list[str], crsRi:str, subCount:int) -> bool: 
+	def _crsPeriodicWindowMonitor(self, _data:list[str], crsRi:str, expectedCount:int) -> bool: 
 		L.isDebug and L.logDebug(f'Checking periodic window for <crs>: {crsRi}')
-		self._crsCheckForNotification(_data, crsRi, subCount)
+		self._crsCheckForNotification(_data, crsRi, expectedCount)
 		return True
 
 
@@ -471,7 +474,7 @@ class NotificationManager(object):
 
 	def startCRSSlidingWindow(self, crsRi:str, tws:str, sur:str, subCount:int) -> BackgroundWorker:
 		crsTws = DateUtils.fromDuration(tws)
-		L.isDebug and L.logDebug(f'Starting SlidingWindow for crs: {crsRi}. TimeWindowSize: {crsTws}')
+		L.isDebug and L.logDebug(f'Starting SlidingWindow for crs: {crsRi}. TimeWindowSize: {crsTws}. SubScount: {subCount}')
 
 		# Start an actor for the sliding window. "data" already contains the first notification source in an array
 		return BackgroundWorkerPool.newActor(self._crsSlidingWindowMonitor, 
@@ -500,16 +503,19 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug(f'Received notification for <crs>: {crsRi}, twt: {crsTwt}, tws: {crsTws}')
 		if crsTwt == TimeWindowType.SLIDINGWINDOW:
 			if (workers := BackgroundWorkerPool.findWorkers(self._getSlidingWorkerName(crsRi))):
+				L.isDebug and L.logDebug(f'Adding notification to worker: {workers[0].name}')
 				if sur not in workers[0].data:
 					workers[0].data.append(sur)
 			else:
-				self.startCRSSlidingWindow(crsRi, crsTws, sur, crs._countSubscriptions())	# sur is added automatically when creating actor
+				workers = [ self.startCRSSlidingWindow(crsRi, crsTws, sur, crs._countSubscriptions()) ]	# sur is added automatically when creating actor
 		elif crsTwt == TimeWindowType.PERIODICWINDOW:
 			if (workers := BackgroundWorkerPool.findWorkers(self._getPeriodicWorkerName(crsRi))):
 				if sur not in workers[0].data:
 					workers[0].data.append(sur)
 
 			# No else: Periodic is running or not
+
+		workers and L.isDebug and L.logDebug(f'Worker data: {workers[0].data}')
 		
 
 
@@ -586,6 +592,29 @@ class NotificationManager(object):
 		subscription.dbUpdate()
 
 
+	def updateOfNSEAttribute(self, sub:CRS|SUB, newNse:bool) -> None:
+		""" Handle an update of the *notificationStatsEnable* attribute of a <sub> or <crs>
+			resource.
+
+			Args:
+				sub: Either a <sub> or <crs> resource.
+				newNse: The new value for the *nse* attribute. This may be empty if not present in the update.
+			
+		"""
+		# nse is not deleted, it is a mandatory attribute
+		if newNse is not None:	# present in the request
+			oldNse = sub.nse
+			if oldNse: # self.nse == True
+				if newNse == False:
+					pass # Stop collecting, but keep notificationStatsInfo
+				else: # Both are True
+					sub.setAttribute('nsi', [])
+			else:	# self.nse == False
+				if newNse == True:
+					sub.setAttribute('nsi', [])
+
+
+
 
 	#########################################################################
 
@@ -616,7 +645,7 @@ class NotificationManager(object):
 						continue
 					# Send verification notification to target (either direct URL, or an entity)
 					self.countSentReceivedNotification(subscription, nu)
-					if not self._sendVerificationRequest(nu, ri, originator = originator):
+					if not self.sendVerificationRequest(nu, ri, originator = originator):
 						# Return when even a single verification request fails
 						return Result.errorResult(rsc = RC.subscriptionVerificationInitiationFailed, dbg = f'Verification request failed for: {nu}')
 					self.countSentReceivedNotification(subscription, nu, isResponse = True)
@@ -627,7 +656,7 @@ class NotificationManager(object):
 	#########################################################################
 
 
-	def _sendVerificationRequest(self, uri:Union[str, list[str]], ri:str, originator:str = None) -> bool:
+	def sendVerificationRequest(self, uri:Union[str, list[str]], ri:str, originator:str = None) -> bool:
 		""""	Define the callback function for verification notifications and send
 				the notification.
 		"""
@@ -659,11 +688,15 @@ class NotificationManager(object):
 		return self._sendNotification(uri, sender)
 
 
-	def _sendDeletionNotification(self, uri:Union[str, list[str]], ri:str) -> bool:
-		"""	Define the callback function for deletion notifications and send
-			the notification
+	def sendDeletionNotification(self, uri:Union[str, list[str]], ri:str) -> bool:
+		"""	Send a Deletion Notification to a single or a list of target.
+
+			Args:
+				uri: Single or a list of notification target URIs.
+				ri: ResourceID of the subscription.
+			Return:
+				Boolean indicat
 		"""
-		# TODO doc
 
 		def sender(uri:str) -> bool:
 			L.isDebug and L.logDebug(f'Sending deletion notification to: {uri}')
