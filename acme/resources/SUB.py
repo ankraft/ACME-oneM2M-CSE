@@ -10,6 +10,7 @@
 from __future__ import annotations
 from copy import deepcopy
 
+from ..etc.Utils import findXPath
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, NotificationContentType, NotificationEventType as NET, ResponseStatusCode as RC, JSON
 from ..services.Configuration import Configuration
 from ..services import CSE as CSE
@@ -103,7 +104,7 @@ class SUB(Resource):
 
 	def deactivate(self, originator:str) -> None:
 		super().deactivate(originator)
-		CSE.notification.removeSubscription(self)
+		CSE.notification.removeSubscription(self, originator)
 
 
 	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
@@ -122,18 +123,28 @@ class SUB(Resource):
 			return res
 
 		# Handle update nse attribute
-		# nse is not deleted, it is a mandatory attribute
-		oldNse = self.nse
-		if (newNse := Utils.findXPath(dct, 'm2m:sub/nse')) is not None:	# present in the request
-			if oldNse: # self.nse == True
-				if newNse == False:
-					pass # Stop collecting, but keep notificationStatsInfo
-				else: # Both are True
-					self.setAttribute('nsi', [])
-			else:	# self.nse == False
-				if newNse == True:
-					self.setAttribute('nsi', [])
+		CSE.notification.updateOfNSEAttribute(self, Utils.findXPath(dct, 'm2m:sub/nse'))
 
+		# # nse is not deleted, it is a mandatory attribute
+		# oldNse = self.nse
+		# if (newNse := Utils.findXPath(dct, 'm2m:sub/nse')) is not None:	# present in the request
+		# 	if oldNse: # self.nse == True
+		# 		if newNse == False:
+		# 			pass # Stop collecting, but keep notificationStatsInfo
+		# 		else: # Both are True
+		# 			self.setAttribute('nsi', [])
+		# 	else:	# self.nse == False
+		# 		if newNse == True:
+		# 			self.setAttribute('nsi', [])
+
+
+		# Handle changes to acrs (send deletion notifications)
+		if (newAcrs := findXPath(dct, 'm2m:sub/acrs')) is not None and self.acrs is not None:
+			for crsRI in set(self.acrs) - set(newAcrs):
+				L.isDebug and L.logDebug(f'Update of acrs: {crsRI} removed. Sending deletion notification')
+				CSE.notification.sendDeletionNotification(crsRI, self.ri)	# TODO ignore result?
+
+		# Do actual update
 		if not (res := super().update(dct, originator, doValidateAttributes = False)).status:
 			return res
 
@@ -219,7 +230,6 @@ class SUB(Resource):
 		# TODO: Validate enc/missing/data
 		# TODO: check missingData only if parent if TS. Add test for that
 
-		
 		# check other attributes
 		self._normalizeURIAttribute('nfu')
 		self._normalizeURIAttribute('nu')

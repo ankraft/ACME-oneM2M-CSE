@@ -941,7 +941,7 @@ class RequestManager(object):
 	def sendNotifyRequest(self, uri:str, originator:str, data:Any = None, parameters:Parameters = None, ct:ContentSerializationType = None, appendID:str = '', noAccessIsError:bool = False, raw:bool = False) -> Result:
 		"""	Send a NOTIFY request via the appropriate channel or transport protocol.
 		"""
-		L.isDebug and L.logDebug(f'Sending NOTIFY request to: {uri} id: {appendID} for Originator: {originator}')
+		L.isDebug and L.logDebug(f'Sending NOTIFY request to: {uri} + id: {appendID} for Originator: {originator}')
 
 		if (resolved := self.resolveTargetURIetc(uri, appendID = appendID, originator = originator, permission = Permission.NOTIFY, noAccessIsError = noAccessIsError, raw = raw)) is None:
 			return Result.errorResult()

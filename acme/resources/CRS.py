@@ -10,7 +10,7 @@
 from __future__ import annotations
 from copy import deepcopy
 
-from ..etc.Utils import toSPRelative, csiFromSPRelative, findXPath, setXPath
+from ..etc.Utils import toSPRelative, csiFromSPRelative, findXPath, setXPath, resourceState, getResourceState
 from ..etc.Types import AttributePolicyDict, ResourceTypes as T, Result, JSON, TimeWindowType
 from ..resources.Resource import *
 from ..resources import Factory as Factory
@@ -21,8 +21,7 @@ from ..services.Logging import Logging as L
 
 class CRS(Resource):
 
-	_subRratRIs = '__subRratRIs__'	# dict rrat-ri -> sub-ri
-	_subSratRIs = '__subSratRIs__'	# dict srat-ri -> sub-ri
+	_subSratRIs = '__subSratRIs__'	# dict of really modified <sub> resources
 	_sudRI		= '__sudRI__'		# Reference when the resource is been deleted because of the deletion of a rrat or srat subscription. Usually empty
 
 	# Specify the allowed child-resource types
@@ -52,14 +51,18 @@ class CRS(Resource):
 		'su': None,
 		'rrat': None,
 		'srat': None,
+		'rrats': None,
 		'twt': None,
 		'tws': None,
-		'encs': None, 
+		'encs': None,
+		'nse': None,
+		'nsi': None,
 	}
 
 	# TODO notificationStatsEnable - nse  support
 	# TODO notificationStatsInfo - nsi	support
 	# TODO expirationCounter
+	# TODO subscriber URI - su support
 
 	# TODO Restart support (in NotificationManager)
 
@@ -70,13 +73,13 @@ class CRS(Resource):
 
 		# add internal attribute to store the references to the created <sub> resources
 		# Add to internal attributes to ignore in validation etc
-		self._addToInternalAttributes(self._subRratRIs)
 		self._addToInternalAttributes(self._subSratRIs)
 		self._addToInternalAttributes(self._sudRI)
-		self.setAttribute(self._subRratRIs, {}, overwrite = False)	
 		self.setAttribute(self._subSratRIs, {}, overwrite = False)	
 
-		# TODO NSE to False
+		# Add notificationStats attributes
+		self.setAttribute('nse', False, overwrite = False)
+		self.setAttribute('nsi', [], overwrite = False)		# initialize the notificationStatsInfo to empty, if not present
 
 
 	def activate(self, parentResource:Resource, originator:str) -> Result:
@@ -84,23 +87,28 @@ class CRS(Resource):
 			return res
 		L.isDebug and L.logDebug(f'Activating crossResourceSubscription: {self.ri}')
 
-		# Check NU's etc
+		# encs validation happens in validate()
+
+		# Check owns NU's etc
 		if not (res := CSE.notification.addCrossResourceSubscription(self, originator)).status:
 			return res
 		
-		# Handle regularResourcesAsTarget
-		if self.rrat:
-			for rrat in self.rrat:
-				if not (res := self._addRratSubscription(rrat, self.attribute('encs/enc'), self.rrat, originator)).status:
-					self._deleteSubscriptions(originator)
-					return res
-		
 		# Handle subscriptionResourcesAsTarget
-		if self.srat:
-			for srat in self.srat:
-				if not (res := self._addSratSubscription(srat, originator)).status:
+		if (_srat := self.srat):
+			for ri in _srat:
+				if not (res := self._addSratSubscription(ri, originator)).status:
 					self._deleteSubscriptions(originator)
 					return res
+
+		# Handle regularResourcesAsTarget
+		if (_rrat := self.rrat):
+			self.setAttribute('rrats', [ None ] * len(_rrat))	# add and initialize the rrats list
+			_encs = self.attribute('encs/enc')
+			for ri in _rrat:
+				if not (res := self._addRratSubscription(ri, _encs, _rrat.index(ri), originator)).status:
+					self._deleteSubscriptions(originator)
+					return res
+	
 
 		if self.twt == TimeWindowType.PERIODICWINDOW:
 			CSE.notification.startCRSPeriodicWindow(self.ri, self.tws, self._countSubscriptions())
@@ -111,109 +119,22 @@ class CRS(Resource):
 
 	def update(self, dct:JSON = None, originator:str = None, doValidateAttributes:bool = True) -> Result:
 		L.isDebug and L.logDebug(f'Updating crossResourceSubscription: {self.ri}')
-		# We are validating the attributes here already because this actual update of the resource
-		# (where this happens) is done only after a lot of other stuff hapened.
-		# So, the resource is validated twice in an update :()
+		
+		# We are validating the attributes already here because the actual update of the resource
+		# (where this happens) is done only after other procedures hapened.
 		if not (res := CSE.validator.validateAttributes(dct, self.tpe, self.ty, self._attributes, create = False, createdInternally = self.isCreatedInternally(), isAnnounced = self.isAnnounced())).status:
 			return res
 
-
-		# Check NU's etc
-		# TODO call parent update before this!!!
+		# Check new NU's
 		if (newNus := findXPath(dct, 'm2m:crs/nu')):
 			previousNus = deepcopy(self.nu)
-			# FIXME The following is just a hack. Remove this when update() is called before this
 			self.setAttribute('nu', newNus)
 			if not (res := CSE.notification.updateCrossResourceSubscription(self, previousNus, originator)).status:
 				return res
-		
-		# Structures for rollbacks
-		_createdRrat:list[str] = []
-		_deletedRrat:list[str] = []
-		_createdSrat:list[str] = []
-		_deletedSrat:list[str] = []
-
-		# Check the state of enc first before doing any more complicated changes
-		# take the rrat to work with from the update, otherwise from the current resource
-		_dctRrats = findXPath(dct, 'm2m:crs/rrat')
-		rrats = _dctRrats if _dctRrats else self.rrat	
-
-		# Check enc attribute from the update, otherwise from the current resource
-		_dctEncs = findXPath(dct, 'm2m:crs/encs/enc')
-		encs = _dctEncs if _dctEncs else self.attribute('encs/enc')
-		if rrats and not encs:
-			return Result.errorResult(dbg = L.logDebug(f'"encs" must not be empty when "rrat" is provided'))
-		if encs and len(encs) != 1 and len(encs) != len(rrats):
-			return Result.errorResult(dbg = L.logDebug(f'Length of "encs" must be 1 or equal to length of "rrat"'))
-			
-
-		# Update for regularResourcesAsTarget
-		if newRrat := findXPath(dct, 'm2m:crs/rrat'):
-
-			# More preparations
-			oldRrat =  deepcopy(self.rrat)
-
-			# Add subscriptions for added rrats
-			for rrat in newRrat:
-				if not oldRrat or rrat not in oldRrat:	# when oldRrat does not exist, OR when rrat is not in oldRrat
-					L.isDebug and L.logDebug(f'Adding rrat: {rrat}')
-					if not (res := self._addRratSubscription(rrat, encs, rrats, originator)).status:
-						self._rollbackRrats(_createdRrat, _deletedRrat, originator)
-						return res
-					_createdRrat.append(rrat)
-				
-			# Delete subscriptions for removed rrats
-			if oldRrat:
-				for rrat in oldRrat:
-					if rrat not in newRrat:
-						L.isDebug and L.logDebug(f'Removing rrat: {rrat}')
-						if not (res := self._deleteSubscriptionForRrat(rrat, originator)).status:
-							self._rollbackRrats(_createdRrat, _deletedRrat, originator)
-							return res
-					_deletedRrat.append(rrat)
-		
-
-		# Update for subscriptionResourcesAsTarget
-		if newSrat := findXPath(dct, 'm2m:crs/srat'):
-			oldSrat = deepcopy(self.srat)
-
-			# Delete subscriptions for removed srats
-			for srat in oldSrat:
-				if srat not in newSrat:
-					L.isDebug and L.logDebug(f'Removing srat: {srat}')
-					if not (res := self._deleteFromSubscriptionsForSrat(srat, originator)).status:
-						self._rollbackRrats(_createdRrat, _deletedRrat, originator)
-						self._rollbackSrats(_createdSrat, _deletedSrat, originator)
-						return res
-				_deletedSrat.append(srat)
-
-			# Add subscriptions for added srats
-			if oldSrat:
-				for srat in newSrat:
-					if not oldSrat or srat not in oldSrat:	# when oldSrat does not exist, OR when srat is not in oldSrat
-						L.isDebug and L.logDebug(f'Adding srat: {srat}')
-						if not (res := self._addSratSubscription(srat, originator)).status:
-							self._rollbackRrats(_createdRrat, _deletedRrat, originator)
-							self._rollbackSrats(_createdSrat, _deletedSrat, originator)
-							return res
-						_createdSrat.append(srat)
-		
-		# Update of the eventNotificationCriteriaSet
-		if newEncs := findXPath(dct, 'm2m:crs/encs/enc'):
-			# Check of the correct encs length is done above already
-
-			# Update all in rrats (either existing, or provided in the update)
-			for rrat in rrats:
-				if not (res := self._updateRratSubscription(rrat, newEncs, rrats, originator)).status:
-					self._rollbackRrats(_createdRrat, _deletedRrat, originator)
-					self._rollbackSrats(_createdSrat, _deletedSrat, originator)
-					self._rollbackEncs(originator)
-					return res
 
 		# Update TimeWindowType and TimeWindowSize
 		oldTwt = self.twt
 		newTwt = findXPath(dct, 'm2m:crs/twt')
-		oldTws = self.tws
 		newTws = findXPath(dct, 'm2m:crs/tws')
 
 		if newTwt is not None or newTws is not None:
@@ -228,19 +149,23 @@ class CRS(Resource):
 			   (newTwt is None     and oldTwt == TimeWindowType.PERIODICWINDOW):
 				CSE.notification.startCRSPeriodicWindow(self.ri, self.tws if newTws is None else newTws, self._countSubscriptions())
 		
-		return super().update(dct, originator, doValidateAttributes = False)
+		# Handle update notificationStatsEnable attribute
+		CSE.notification.updateOfNSEAttribute(self, Utils.findXPath(dct, 'm2m:crs/nse'))
+
+		return super().update(dct, originator, doValidateAttributes = False)	# Was vaildated before
 	
 
+	@resourceState('deactivate')
 	def deactivate(self, originator:str) -> None:
 
-		# Delete rrat and srat subscriptions
-		self._deleteSubscriptions(originator)
-
-		# Deactivate windows
+		# Deactivate time windows
 		if self.twt == TimeWindowType.PERIODICWINDOW:
 			CSE.notification.stopCRSPeriodicWindow(self.ri)
 		elif self.twt == TimeWindowType.SLIDINGWINDOW:
 			CSE.notification.stopCRSSlidingWindow(self.ri)
+
+		# Delete rrat and srat subscriptions
+		self._deleteSubscriptions(originator)
 
 		return super().deactivate(originator)
 
@@ -283,25 +208,25 @@ class CRS(Resource):
 		# Deletion request
 		if (_sud := findXPath(request.pc, 'm2m:sgn/sud')) is not None and _sud == True:
 			_sur = findXPath(request.pc, 'm2m:sgn/sur')
+			if getResourceState(self.ri) in ['deactivate']:
+				L.isDebug and L.logDebug(f'Received subscription deletion notification from subscription: {_sur}. Already in delete. Ignored.')
+				return Result(status = True, rsc = RC.OK)
 			L.isDebug and L.logDebug(f'Received subscription deletion request from: {_sur} to CRS resource')
-			# Store the 'sur' to leave it out during deletion
+			# Store the 'sur' to ignore that subscription resource during deletion
 			self.setAttribute(self._sudRI, _sur)
 			self.dbUpdate()
 
-			# TODO originator = original creator of the <crs> resource
-
-			# TODO ignore all any further notifications, Resource internal attribute
-
-			CSE.dispatcher.deleteResource(self, withDeregistration = True)
+			# Delete self. Use the resource's creator for the creator
+			CSE.dispatcher.deleteResource(self, originator = self.getOriginator(), withDeregistration = True)
 			return Result(status = True, rsc = RC.OK)
 		
 		# Log any other notification
 		if not (sur := findXPath(request.pc, 'm2m:sgn/sur')) :
 			return Result.errorResult(dbg = L.logWarn('No or empty "sur" attribute in notification'))
-		if sur in self.attribute(self._subRratRIs).values() or sur in self.attribute(self._subSratRIs).values():
+		if sur in self.rrats or sur in self.srat:
 			CSE.notification.receivedCrossResourceSubscriptionNotification(sur, self)
 		else:
-			L.isDebug and L.logDebug(f'Handling notification: sur: {sur} not in _subRratRIs: {self.attribute(self._subRratRIs).values()} or _subSratRIs: {self.attribute(self._subSratRIs).values()}')
+			L.isDebug and L.logDebug(f'Handling notification: sur: {sur} not in rrats: {self.rrats} or srat: {self.srat}')
 
 		return Result(status = True, rsc = RC.OK)
 
@@ -309,29 +234,35 @@ class CRS(Resource):
 	#########################################################################
 
 	def _countSubscriptions(self) -> int:
-		"""	Return the number of subscriptions created by this <crs>.
+		"""	Return the number of subscriptions created by this <crs>. This is the
+			sum of the subscriptions in rrat and and srat.
 		
 			Return:
-				Integer value, the number of subscriptions.
+				The number of subscriptions.
 		"""
-		return len(self.attribute(self._subRratRIs)) + len(self.attribute(self._subSratRIs))
+		_rrat = self.rrat
+		_srat = self.srat
+		return (len(_rrat) if _rrat else 0) + (len(_srat) if _srat else 0)
 
 
-	def _addRratSubscription(self, rrat:str, encs:list[dict], rrats:list[str], originator:str) -> Result:
+	def _addRratSubscription(self, rrat:str, encs:list[dict], rratIndex:int, originator:str) -> Result:
 		"""	Add a single subscription for a rrat.
 			
 			Args:
 				rrat: The target resource's uri.
 				encs: eventNotificationCriteriaSet to add to the new <sub>.
+				rratList: The list of rrat entries.
 				originator: The originator of the request.
 			Return:
 				Result object.
 		"""
 		dct = { 'm2m:sub' : {
-					'nu' : [ (_spri := toSPRelative(self.ri)) ],
+					'et':	self.et,		# set <sub>'s et to the same value as self
+					'nu': 	[ (_spri := toSPRelative(self.ri)) ],
 					'acrs': [ _spri ],
 				}}
-		setXPath(dct, 'm2m:sub/enc', encs[0] if len(encs) == 1 else encs[rrats.index(rrat)] ) # position of rrat in the list of rrats
+		setXPath(dct, 'm2m:sub/enc', encs[0] if len(encs) == 1 else encs[rratIndex] ) # position of rrat in the list of rrats
+		# Add nec if present in <crs> resource
 		if self.nec:
 			setXPath(dct, 'm2m:sub/nec', self.nec)
 		# create (possibly remote) subscription
@@ -346,10 +277,10 @@ class CRS(Resource):
 		if not res.status or res.rsc != RC.created:
 			return Result.errorResult(rsc = RC.crossResourceOperationFailure, dbg = L.logWarn(f'Cannot create subscription for {rrat} uri: {_rratSpRelative}'))
 
-		# Add <sub> to internal references
-		_subRIs = self.attribute(self._subRratRIs)
-		_subRIs[rrat] = f'{csiFromSPRelative(_rratSpRelative)}/{findXPath(res.request.pc, "m2m:sub/ri")}'
-		self.setAttribute(self._subRratRIs, _subRIs)
+		# Add the created <sub>'s full RI to the correct position in the rrats list
+		_rrats = self.rrats
+		_rrats[rratIndex] = f'{csiFromSPRelative(_rratSpRelative)}/{findXPath(res.request.pc, "m2m:sub/ri")}'
+		self.setAttribute('rrats', _rrats)
 
 		return Result.successResult()
 
@@ -385,14 +316,14 @@ class CRS(Resource):
 
 		# Add to the sub's nu
 		if (nu := findXPath(subDct, 'm2m:sub/nu')) is None:
-			nu = [ ]
+			nu = []		# Add nu if not present
 		if (spRi := toSPRelative(self.ri)) not in nu:
 			nu.append(spRi)
 		setXPath(newDct, 'm2m:sub/nu', nu)
 
 		# Add to the sub's associatedCrossResourceSub
 		if (acrs := findXPath(subDct, 'm2m:sub/acrs')) is None:
-			acrs = [ ]
+			acrs = []	# Add acrs if not present
 		if spRi not in acrs:
 			acrs.append(spRi)
 		setXPath(newDct, 'm2m:sub/acrs', acrs)
@@ -409,7 +340,6 @@ class CRS(Resource):
 
 		# Add <sub> to internal references
 		_subRIs = self.attribute(self._subSratRIs)
-		#_subRIs[srat] = f'{csiFromSPRelative(_sratSpRelative)}/{srat}'
 		_subRIs[srat] = toSPRelative(subRI)
 		self.setAttribute(self._subSratRIs, _subRIs)
 
@@ -443,33 +373,43 @@ class CRS(Resource):
 			Args:
 				originator: The originator to use for the DELETE requests.
 		"""
+		L.isDebug and L.logDebug(f'Deleting all subscriptions for <CRS>: {self.ri}')
 		sudRI = self.attribute(self._sudRI)	# Optional RI given in a subscription deletion notification. Leave it out!
-		# rrat
-		if _subRratRIs := self.attribute(self._subRratRIs):
-			for rrat in list(_subRratRIs.keys()):
-				if sudRI and sudRI == rrat:	# Continue when this is the resource ID of a deletion notification
+
+		# Remove subscriptions for rrat. For this use the RI stored in the rrats attribute
+		if rrats := self.rrats:
+			for subRI in rrats:
+				if not subRI:	# could be None!
 					continue
-				if not (res := self._deleteSubscriptionForRrat(rrat, originator)).status:
+				if Utils.compareIDs(sudRI, subRI):	# Continue when this is the resource ID of a deletion notification
+					L.isDebug and L.logDebug(f'Skipping deleton initiating subscription: {sudRI}')
+					continue
+				if not (res := self._deleteSubscriptionForRrat(subRI, originator)).status:
 					return res
 		
-		#srat
+		# Remove self from successfully done srat subscriptions
+		# This is the internal list, not srat, bc this list may be smaller
 		if _subSratRIs := self.attribute(self._subSratRIs):
-			for srat in list(_subSratRIs.keys()):
-				if sudRI and sudRI == srat:	# Continue when this is the resource ID of a deletion notification
+			for subRI in list(_subSratRIs.keys()):
+				if Utils.compareIDs(sudRI, subRI):	# Continue when this is the resource ID of a deletion notification
+					L.isDebug and L.logDebug(f'Skipping deleton initiating subscription: {sudRI}')
 					continue
-				if not (res := self._deleteFromSubscriptionsForSrat(srat, originator)).status:
+				if not (res := self._deleteFromSubscriptionsForSrat(subRI, originator)).status:
 					return res
 		return Result.successResult()
 
 
-	def _deleteSubscriptionForRrat(self, rrat:str, originator:str) -> Result:
-		_subRIs = self.attribute(self._subRratRIs)
-		if (subRI := _subRIs.get(rrat)) is not None:
-			L.isDebug and L.logDebug(f'Deleting <sub>: {subRI} from rrat: {rrat}')
+	def _deleteSubscriptionForRrat(self, subRI:str, originator:str) -> Result:
+		if subRI is not None:
+			L.isDebug and L.logDebug(f'Deleting <sub>: {subRI}')
 			if not (res := CSE.request.sendDeleteRequest(subRI, originator = originator)).status:
 				return res
-			del _subRIs[rrat]
-			self.setAttribute(self._subRratRIs, _subRIs)
+			
+			# To be sure: Set the RI in the rrats list to None
+			_rrats = self.rrats
+			_index = _rrats.index(subRI)
+			_rrats[_index] = None
+			self.setAttribute('rrats', _rrats)
 		return Result.successResult()
 
 
@@ -480,7 +420,7 @@ class CRS(Resource):
 												  originator = originator,
 												  appendID = subRI)
 			if not res.status or res.rsc != RC.OK:
-				return Result.errorResult(rsc = RC.badRequest, dbg = L.logWarn(f'Cannot create subscription for {srat} uri: {subRI}'))
+				return Result.errorResult(rsc = RC.badRequest, dbg = L.logWarn(f'Cannot retrieve subscription for {srat} uri: {subRI}'))
 			
 			subDct:JSON = cast(JSON, res.data)
 			newDct:JSON = { 'm2m:sub': {} }	# new request dct
@@ -510,54 +450,4 @@ class CRS(Resource):
 			del _subRIs[srat]
 			self.setAttribute(self._subSratRIs, _subRIs)
 		return Result.successResult()
-
-
-	def _rollbackRrats(self, createdRrats:list[str], deletedRrats:list[str], originator:str) -> None:
-		"""	Rollback of changes done for rrat updates.
-		
-			Args:
-				createdRrats: List of created rrat resources.
-				deletedRrats: List of deleted rrat resources.
-				originator: originator of the request.
-			"""
-		L.isDebug and L.logDebug('Rollback rrat additions and deletions')
-		if self.rrat:
-			for rrat in createdRrats:	# delete those that are not in the original rrat list
-				if rrat not in self.rrat:	# new, so delete <sub>
-					self._deleteSubscriptionForRrat(rrat, originator)
-			for rrat in deletedRrats:
-				if rrat in self.rrat:		# originally exists, so re-add <sub>
-					self._addRratSubscription(rrat, self.attribute('encs/enc'), self.rrat, originator)
-
-
-	def _rollbackSrats(self, createdSrats:list[str], deletedSrats:list[str], originator:str) -> None:
-		"""	Rollback of changes done for srat updates.
-		
-			Args:
-				createdSrats: List of created srat resources.
-				deletedSrats: List of deleted srat resources.
-				originator: originator of the request.
-			"""
-		L.isDebug and L.logDebug('Rollback rrat additions and deletions')
-		if self.srat:
-			for srat in createdSrats:	# delete those that are not in the original srat list
-				if srat not in self.srat:	# new, so delete <sub>
-					self._deleteFromSubscriptionsForSrat(srat, originator)
-			for srat in deletedSrats:
-				if srat in self.srat:		# originally exists, so re-add <sub>
-					self._addSratSubscription(srat, originator)
-
-
-	def _rollbackEncs(self, originator:str) -> None:
-		"""	Rollback the encs changes made to remote subscriptions.
-		
-			Args:
-				originator: originator of the request.
-		"""
-		L.isDebug and L.logDebug('Rollback encs updates')
-		if self.rrat:
-			for rrat in self.rrat:
-				# rollback to the current resource values
-				self._updateRratSubscription(rrat, self.attribute('encs/enc'), self.rrat, originator)	# ignore results. What should we do?
-
 

@@ -1161,7 +1161,7 @@
 			"type": "m2m:eventNotificationCriteriaSet",
 			"car": "01L",
 			"oc": "O",
-			"ou": "O",
+			"ou": "NP",
 			"od": "O",
 			"annc": "NA"
 		}
@@ -1927,6 +1927,17 @@
 	],
 	"nec": [
 		{
+			"rtypes": [ "CRS" ],
+			"lname": "notificationEventCat",
+			"ns": "m2m",
+			"type": "nonNegInteger",
+			"car": "01",
+			"oc": "O",
+			"ou": "NP",
+			"od": "O",
+			"annc": "NA"
+		},
+		{
 			"rtypes": [ "ALL" ],
 			"lname": "notificationEventCat",
 			"ns": "m2m",
@@ -2005,7 +2016,7 @@
 	],
 	"nse": [
 		{
-			"rtypes": [ "SUB", "REQRESP" ],
+			"rtypes": [ "CRS", "SUB", "REQRESP" ],
 			"lname": "notificationStatsEnable",
 			"ns": "m2m",
 			"type": "boolean",
@@ -2018,7 +2029,7 @@
 	],
 	"nsi": [
 		{
-			"rtypes": [ "SUB", "REQRESP" ],
+			"rtypes": [ "CRS", "SUB", "REQRESP" ],
 			"lname": "notificationStatsInfo",
 			"ns": "m2m",
 			"type": "list",
@@ -2440,16 +2451,30 @@
 	],
 	"rrat": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "CRS", "REQRESP" ],
 			"lname": "regularResourcesAsTarget",
 			"ns": "m2m",
 			"type": "list",
 			"ltype": "anyURI",
 			"car": "01L",
 			"oc": "O",
-			"ou": "O",
+			"ou": "NP",
 			"od": "O",
-			"annc": "OA"
+			"annc": "NA"
+		}
+	],
+	"rrats": [
+		{
+			"rtypes": [ "CRS", "REQRESP" ],
+			"lname": "regularResourcesAsTargetSubscriptions",
+			"ns": "m2m",
+			"type": "list",
+			"ltype": "anyURI",
+			"car": "01L",
+			"oc": "NP",
+			"ou": "NP",
+			"od": "NP",
+			"annc": "NA"
 		}
 	],
 	"rs": [
@@ -2572,16 +2597,16 @@
 	],
 	"srat": [
 		{
-			"rtypes": [ "ALL" ],
+			"rtypes": [ "CRS", "REQRESP" ],
 			"lname": "subscriptionResourcesAsTarget",
 			"ns": "m2m",
 			"type": "list",
 			"ltype": "anyURI",
 			"car": "01L",
 			"oc": "O",
-			"ou": "O",
+			"ou": "NP",
 			"od": "O",
-			"annc": "OA"
+			"annc": "NA"
 		}
 	],
 	"sri": [

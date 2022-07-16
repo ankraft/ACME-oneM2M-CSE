@@ -8,11 +8,13 @@
 #
 
 import unittest, sys, time
+from unittest.result import failfast
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
-from acme.etc.Types import NotificationEventType as NET, ResourceTypes as T, ResponseStatusCode as RC, TimeWindowType
+from acme.etc.Types import DesiredIdentifierResultType as DRT, NotificationEventType as NET, ResourceTypes as T, ResponseStatusCode as RC, TimeWindowType
 from acme.etc.Types import ResultContentType as RCN
+from acme.etc.DateUtils import getResourceDate
 from init import *
 
 cntRN1 = f'{cntRN}1'
@@ -85,7 +87,7 @@ class TestCRS(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
 		testCaseStart('TearDown TestCRS')
-		#DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
+		DELETE(aeURL, ORIGINATOR)	# Just delete the AE and everything below it. Ignore whether it exists or not
 		testCaseEnd('TearDown TestCRS')
 		stopNotificationServer()
 
@@ -214,6 +216,29 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSwithRratsFail(self) -> None:
+		"""	CREATE <CRS> with rrats -> Fail"""
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ NOTIFICATIONSERVER ],
+					'twt': 1,
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+					'rrat2': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						}
+				}}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
+
+
 	#
 	#	RRAT testing
 	#
@@ -240,83 +265,52 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(rsc, RC.created, TestCRS.crs)
 
 		# check subscriptions
-		self._testSubscriptionForCnt(cntRN1)
-		self._testSubscriptionForCnt(cntRN2)
+		self.assertIsNotNone(rrats := findXPath(TestCRS.crs, 'm2m:crs/rrats'))
+		self.assertEqual(len(rrats), 2)
+		self.assertEqual(rrats[0], self._testSubscriptionForCnt(cntRN1), TestCRS.crs)
+		self.assertEqual(rrats[1], self._testSubscriptionForCnt(cntRN2))
 		self._testSubscriptionForCnt(cntRN3, False)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCRSwithNewRrat(self) -> None:
-		"""	UPDATE <CRS> with a new rrat, one encs"""
+	def test_updateCRSwithNewRratFail(self) -> None:
+		"""	UPDATE <CRS> with a new rrat -> Fail"""
 		dct = 	{ 'm2m:crs' : { 
 					'rrat': [ self.cnt1RI, self.cnt2RI, self.cnt3RI ],
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.updated, TestCRS.crs)
-
-		# check subscriptions
-		self._testSubscriptionForCnt(cntRN1)
-		self._testSubscriptionForCnt(cntRN2)
-		self._testSubscriptionForCnt(cntRN3)
+		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCRSwithLessRrat(self) -> None:
-		"""	UPDATE <CRS> with a removed rrat, one encs"""
+	def test_updateCRSwithrratsFail(self) -> None:
+		"""	UPDATE <CRS> with a rrats -> Fail"""
 		dct = 	{ 'm2m:crs' : { 
-					'rrat': [ self.cnt1RI, self.cnt3RI ],
-				}}
-
-		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.updated, TestCRS.crs)
-
-		# check subscriptions
-		self._testSubscriptionForCnt(cntRN1)
-		self._testSubscriptionForCnt(cntRN2, False)	# should be deleted
-		self._testSubscriptionForCnt(cntRN3)
-
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCRSwithWrongRratFail(self) -> None:
-		"""	CREATE <CRS> with a wrong rrat (check rollback) -> Fail"""
-		dct = 	{ 'm2m:crs' : { 
-					'rrat': [ self.cnt1RI, self.cnt2RI, 'wrongRI' ],
-				}}
-
-		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.crossResourceOperationFailure, TestCRS.crs)
-
-		# check subscriptions (should be still the old ones!)
-		self._testSubscriptionForCnt(cntRN1)		# should still be there
-		self._testSubscriptionForCnt(cntRN2, False)	# should not be added
-		self._testSubscriptionForCnt(cntRN3)		# should still be there
-
-
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCRSwithDeletedEncFail(self) -> None:
-		"""	UPDATE <CRS> with deleted enc while rrat is present -> Fails"""
-		dct = 	{ 'm2m:crs' : { 
-			        'encs': None
+					'rrats': [ self.cnt1RI, self.cnt2RI, self.cnt3RI ],
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
 		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
 
-	
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCRSwithWrongNumberOfEncFail(self) -> None:
-		"""	UPDATE <CRS> with wrong number of enc -> Fails"""
+	def test_updateCRSwithNecFail(self) -> None:
+		"""	UPDATE <CRS> with nec -> Fails"""
+		dct = 	{ 'm2m:crs' : { 
+			        'nec': 1
+				}}
+
+		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCRSwithEncsFail(self) -> None:
+		"""	UPDATE <CRS> with encs -> Fails"""
 		dct = 	{ 'm2m:crs' : { 
 			        'encs': {
 						'enc' : [
-							{
-								'net': [ NET.createDirectChild ],
-							},
-							{
-								'net': [ NET.createDirectChild ],
-							},
 							{
 								'net': [ NET.createDirectChild ],
 							}
@@ -328,6 +322,51 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCRSwithDeletedEncsFail(self) -> None:
+		"""	UPDATE <CRS> with deleted encs while rrat is present -> Fails"""
+		dct = 	{ 'm2m:crs' : { 
+			        'encs': None
+				}}
+
+		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSwithRratAndEt(self) -> None:
+		"""	CREATE <CRS> with rrat, one encs, and et set"""
+		et = getResourceDate(60)	# 1 minute in the future
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'et' : et, 
+					'nu' : [ NOTIFICATIONSERVER ],
+					'twt' : 1,
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						}
+				}}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.created, TestCRS.crs)
+		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/et'), et)
+		self.assertIsNotNone(rrats := findXPath(TestCRS.crs, 'm2m:crs/rrats'))
+
+		# check both subscriptions' et
+		r, rsc = RETRIEVE(f'{URL}/{rrats[0][1:]}', TestCRS.originator)
+		self.assertEqual(rsc, RC.OK, TestCRS.crs)
+		self.assertEqual(findXPath(r, 'm2m:sub/et'), et)
+		r, rsc = RETRIEVE(f'{URL}/{rrats[1][1:]}', TestCRS.originator)
+		self.assertEqual(rsc, RC.OK, TestCRS.crs)
+		self.assertEqual(findXPath(r, 'm2m:sub/et'), et)
+
+	
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCRSwithRrat(self) -> None:
 		"""	DELETE <CRS> with rrat"""
@@ -351,7 +390,7 @@ class TestCRS(unittest.TestCase):
 					'nu' : [ NOTIFICATIONSERVER ],
 					'twt': 1,
 					'tws' : f'PT{crsTimeWindowSize}S',
-					'srat': [ self.cnt1RI ],	# should succeed
+					'srat': [ self.cnt1RI ],	# Fail, no subscription
 				}
 		}
 
@@ -418,97 +457,14 @@ class TestCRS(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCRSwithNewSrat(self) -> None:
-		"""	UPDATE <CRS> with a new srat"""
-		dct = 	{ 'm2m:crs' : { 
-					'srat': [ self.sub1RI, self.sub2RI ],
-				}}
-
-		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.updated, TestCRS.crs)
-
-		# retrieve subs and check them directly
-		spCrsRi = toSPRelative(findXPath(TestCRS.crs, 'm2m:crs/ri'))
-
-		r, rsc = RETRIEVE(f'{csiURL}/{TestCRS.sub1RI}', TestCRS.originator)
-		self.assertEqual(rsc, RC.OK, r)
-		self.assertIn(spCrsRi, findXPath(r, 'm2m:sub/nu'))
-		self.assertIn(spCrsRi, findXPath(r, 'm2m:sub/acrs'))
-
-		r, rsc = RETRIEVE(f'{csiURL}/{TestCRS.sub2RI}', TestCRS.originator)
-		self.assertEqual(rsc, RC.OK, r)
-		self.assertIn(spCrsRi, findXPath(r, 'm2m:sub/nu'))
-		self.assertIn(spCrsRi, findXPath(r, 'm2m:sub/acrs'))
-
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCRSwithRemovedSrat(self) -> None:
-		"""	UPDATE <CRS> with a new srat"""
-		dct = 	{ 'm2m:crs' : { 
-					'srat': [ self.sub1RI ],
-				}}
-
-		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.updated, TestCRS.crs)
-
-		# retrieve subs and check them directly
-		spCrsRi = toSPRelative(findXPath(TestCRS.crs, 'm2m:crs/ri'))
-
-		r, rsc = RETRIEVE(f'{csiURL}/{TestCRS.sub1RI}', TestCRS.originator)
-		self.assertEqual(rsc, RC.OK, r)
-		self.assertIn(spCrsRi, findXPath(r, 'm2m:sub/nu'))
-		self.assertIn(spCrsRi, findXPath(r, 'm2m:sub/acrs'))
-
-		r, rsc = RETRIEVE(f'{csiURL}/{TestCRS.sub2RI}', TestCRS.originator)
-		self.assertEqual(rsc, RC.OK, r)
-		self.assertNotIn(spCrsRi, findXPath(r, 'm2m:sub/nu'))
-		self.assertIsNone(findXPath(r, 'm2m:sub/acrs'))
-
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCRSwithWrongSratFail(self) -> None:
+	def test_updateCRSwithNewSratFail(self) -> None:
 		"""	UPDATE <CRS> with a new srat -> Fail"""
 		dct = 	{ 'm2m:crs' : { 
-					'srat': [ self.sub1RI, self.cnt1RI ],
+					'srat': [ self.sub1RI, self.sub2RI ],
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
 		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
-
-
-	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_updateCRSwithRratAndSrat(self) -> None:
-		"""	UPDATE <CRS> with a new rrat and srat"""
-		dct = 	{ 'm2m:crs' : { 
-					'rrat': [ self.cnt3RI ],
-					'srat': [ self.sub1RI, self.sub2RI ],
-			        'encs': {
-						'enc' : [
-							{
-								'net': [ NET.createDirectChild ],
-							}
-						]
-					}
-				}}
-
-		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
-		self.assertEqual(rsc, RC.updated, TestCRS.crs)
-
-		# retrieve subs and check them directly
-		spCrsRi = toSPRelative(findXPath(TestCRS.crs, 'm2m:crs/ri'))
-
-		r, rsc = RETRIEVE(f'{csiURL}/{TestCRS.sub1RI}', TestCRS.originator)
-		self.assertEqual(rsc, RC.OK, r)
-		self.assertIn(spCrsRi, findXPath(r, 'm2m:sub/nu'))
-		self.assertIn(spCrsRi, findXPath(r, 'm2m:sub/acrs'))
-
-		r, rsc = RETRIEVE(f'{csiURL}/{TestCRS.sub2RI}', TestCRS.originator)
-		self.assertEqual(rsc, RC.OK, r)
-		self.assertIn(spCrsRi, findXPath(r, 'm2m:sub/nu'))
-		self.assertIn(spCrsRi, findXPath(r, 'm2m:sub/acrs'))
-
-		# check CNT's sub
-		self._testSubscriptionForCnt(cntRN3)		# should be there
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -534,38 +490,99 @@ class TestCRS(unittest.TestCase):
 		self._testSubscriptionForCnt(cntRN3, False)		# should not be there
 
 
+	#########################################################################
+	#
+	#	Delete Subscriptions
+	# 
+
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	def test_deleteSubscriptions(self) -> None:
-		"""	DELETE <SUB> resource"""
-		r, rsc = DELETE(f'{csiURL}/{TestCRS.sub1RI}', TestCRS.originator)
+	def test_deleteRratSubscription(self) -> None:
+		"""	DELETE <SUB> resource (<CRS> and second <SUB> shall be deleted as well)"""
+		self.assertIsNotNone(rrats := findXPath(TestCRS.crs, 'm2m:crs/rrats'))
+		self.assertEqual(len(rrats), 2)
+
+		r, rsc = DELETE(f'{URL}/{rrats[0][1:]}', TestCRS.originator)
 		self.assertEqual(rsc, RC.deleted, r)
+
+		# Look for the other subscription and crs
+		r, rsc = RETRIEVE(f'{URL}/{rrats[1][1:]}', TestCRS.originator)
+		self.assertEqual(rsc, RC.notFound, r)
+		r, rsc = RETRIEVE(f'{crsURL}', TestCRS.originator)
+		self.assertEqual(rsc, RC.notFound, r)
+
 		TestCRS.sub1RI = None
-
-		# TODO delete the following when the <sub> deletion functionality is implemented 
-
-		r, rsc = DELETE(f'{csiURL}/{TestCRS.sub2RI}', TestCRS.originator)
-		self.assertEqual(rsc, RC.deleted, r)
 		TestCRS.sub2RI = None
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createSrat2Subscriptions(self) -> None:
+		"""	CREATE <CRS> with two <SUB> in srat"""
+		self.assertIsNotNone(self.sub1RI)
+		self.assertIsNotNone(self.sub2RI)
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ NOTIFICATIONSERVER ],
+					'twt': 1,
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'srat': [ self.sub1RI, self.sub2RI ],	
+				}}
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.created, TestCRS.crs)
 
-	def _testSubscriptionForCnt(self, cnt:str, present:bool = True) -> None:
-		"""	Test whether there is exactly one or none subscription for a container.
-		"""
-		r, rsc = RETRIEVE(f'{aeURL}/{cnt}?fu=1&rcn={int(RCN.childResourceReferences)}&ty={int(T.SUB)}', TestCRS.originator)
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteSratSubscription(self) -> None:
+		"""	DELETE <SUB> resource (CRS and second SUB shall be deleted as well)"""
+		self.assertIsNotNone(srat := findXPath(TestCRS.crs, 'm2m:crs/srat'))
+		self.assertEqual(len(srat), 2)
+
+		r, rsc = DELETE(f'{csiURL}/{TestCRS.sub1RI}', TestCRS.originator)
+		self.assertEqual(rsc, RC.deleted, r)
+
+		# Look for the other subscription and crs
+		r, rsc = RETRIEVE(f'{csiURL}/{TestCRS.sub2RI}', TestCRS.originator)
 		self.assertEqual(rsc, RC.OK, r)
-		self.assertIsNotNone(findXPath(r, 'm2m:rrl'), r)
-		self.assertIsNotNone(findXPath(r, 'm2m:rrl/rrf'))
-		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 1 if present else 0)
+		r, rsc = RETRIEVE(f'{crsURL}', TestCRS.originator)
+		self.assertEqual(rsc, RC.notFound, r)
+
+		TestCRS.sub1RI = None # Only sub1 is deleted, not sub2
 
 
-# TODO test sub delete - acrs working? Delete a sub and check the <crs> resource
-# TODO srat test with structured RIs as targets
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_deleteSubscriptions(self) -> None:
+		"""	DELETE <SUB> resources if present"""
+		if TestCRS.sub1RI:
+			r, rsc = DELETE(f'{csiURL}/{TestCRS.sub1RI}', TestCRS.originator)
+			self.assertEqual(rsc, RC.deleted, r)
+			TestCRS.sub1RI = None
 
+		if TestCRS.sub2RI:
+			r, rsc = DELETE(f'{csiURL}/{TestCRS.sub2RI}', TestCRS.originator)
+			self.assertEqual(rsc, RC.deleted, r)
+			TestCRS.sub2RI = None
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateSubAcrs(self) -> None:
+		"""	UPDATE <SUB> acrs (delete <CRS>)"""
+		dct:JSON = { 'm2m:sub' : {
+					'acrs' : []
+		}}
+		r, rsc = UPDATE(f'{csiURL}/{TestCRS.sub1RI}', TestCRS.originator, dct)
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertNotIn(findXPath(TestCRS.crs, 'm2m:crs/ri'), findXPath(r, 'm2m:sub/acrs'))
+
+		# Check that CRS was deleted
+		r, rsc = RETRIEVE(f'{crsURL}', TestCRS.originator)
+		self.assertEqual(rsc, RC.notFound, r)
+		# Check that CRS was removed from second <SUB>
+		r, rsc = RETRIEVE(f'{csiURL}/{TestCRS.sub2RI}', TestCRS.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertTrue( not findXPath(r, 'm2m:sub/acrs')) # either None or empty
 
 	#########################################################################
 	#
-	#	Periodic notifications testing
+	#	Sliding Window notifications testing
 	#
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
@@ -583,7 +600,7 @@ class TestCRS(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTwoSingleNotificationNoNotifications(self) -> None:
-		"""	CREATE two <CIN> with delay to raise a two notification (no notification from crs)"""
+		"""	CREATE two <CIN> with delay to raise two notification (no notification from crs)"""
 		clearLastNotification()
 		dct:JSON = 	{ 'm2m:cin' : {
 			'con' : 'AnyValue',
@@ -604,7 +621,7 @@ class TestCRS(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createTwoNotificationOneNotification(self) -> None:
-		"""	CREATE two <CIN> to raise two notifications (plus notification from crs)"""
+		"""	CREATE two <CIN> to raise two notifications (plus one notification from crs)"""
 		clearLastNotification()
 		
 		# Create 
@@ -642,10 +659,35 @@ class TestCRS(unittest.TestCase):
 
 
 
-# TODO tws: change period . What happens?
-# TODO delete sub
-# TODO empty sub.acrs
+# TODO test nse - count of verification request
+# TODO test nse: delete nse fail
+# TODO test nse: set to false
+# TODO test nse: set to true
+# TODO test nse: set to true again
 
+
+# TODO tws: change period . What happens?
+
+
+	#########################################################################
+
+	def _testSubscriptionForCnt(self, cnt:str, present:bool = True) -> str:
+		"""	Test whether there is exactly one or none subscription for a container.
+			
+			Args:
+				cnt: ResourceID of the container.
+				present: Whether the <SUB> shall or shall not be present
+			Return:
+				The resourceID of the found <SUB> resource
+		"""
+		r, rsc = RETRIEVE(f'{aeURL}/{cnt}?fu=1&rcn={int(RCN.childResourceReferences)}&ty={int(T.SUB)}&drt={int(DRT.unstructured)}', TestCRS.originator)
+		self.assertEqual(rsc, RC.OK, r)
+		self.assertIsNotNone(findXPath(r, 'm2m:rrl'), r)
+		self.assertIsNotNone(rrf := findXPath(r, 'm2m:rrl/rrf'))
+		self.assertEqual(len(findXPath(r, 'm2m:rrl/rrf')), 1 if present else 0, r)
+		return findXPath(rrf, '{0}/val')
+
+	#########################################################################
 
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
@@ -657,26 +699,41 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCRS('test_createCRSmissingTwsFail'))
 	suite.addTest(TestCRS('test_createCRSemptyEncsFail'))
 	suite.addTest(TestCRS('test_createCRSWrongNumberEncsFail'))
+	suite.addTest(TestCRS('test_createCRSwithRratsFail'))
 
 	# Test rrat
 	suite.addTest(TestCRS('test_createCRSwithRrat'))
-	suite.addTest(TestCRS('test_updateCRSwithNewRrat'))
-	suite.addTest(TestCRS('test_updateCRSwithLessRrat'))
-	suite.addTest(TestCRS('test_updateCRSwithWrongRratFail'))
-	suite.addTest(TestCRS('test_updateCRSwithDeletedEncFail'))
-	suite.addTest(TestCRS('test_updateCRSwithWrongNumberOfEncFail'))
+	suite.addTest(TestCRS('test_updateCRSwithNewRratFail'))
+	suite.addTest(TestCRS('test_updateCRSwithrratsFail'))
+	suite.addTest(TestCRS('test_updateCRSwithNecFail'))
+	suite.addTest(TestCRS('test_updateCRSwithEncsFail'))
+	suite.addTest(TestCRS('test_updateCRSwithDeletedEncsFail'))
+	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
+	suite.addTest(TestCRS('test_createCRSwithRratAndEt'))
 	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
 
 	# Test srat
 	suite.addTest(TestCRS('test_createCRSwithSratNonSubFail'))
 	suite.addTest(TestCRS('test_createSubscriptions'))
 	suite.addTest(TestCRS('test_createCRSwithSrat'))
-	suite.addTest(TestCRS('test_updateCRSwithNewSrat'))
-	suite.addTest(TestCRS('test_updateCRSwithRemovedSrat'))
-	suite.addTest(TestCRS('test_updateCRSwithWrongSratFail'))
-	suite.addTest(TestCRS('test_updateCRSwithRratAndSrat'))
+	suite.addTest(TestCRS('test_updateCRSwithNewSratFail'))
 	suite.addTest(TestCRS('test_deleteCRSwithSrat'))
-	suite.addTest(TestCRS('test_deleteSubscriptions'))	# TODO change this to one! subscrription delete and move up one test case
+	suite.addTest(TestCRS('test_deleteSubscriptions'))
+
+
+	# Test Delete and Update via Subscription
+	suite.addTest(TestCRS('test_createCRSwithRrat'))
+	suite.addTest(TestCRS('test_deleteRratSubscription'))
+
+	suite.addTest(TestCRS('test_createSubscriptions'))			# create subs again
+	suite.addTest(TestCRS('test_createSrat2Subscriptions'))
+	suite.addTest(TestCRS('test_deleteSratSubscription'))
+	suite.addTest(TestCRS('test_deleteSubscriptions'))
+
+	suite.addTest(TestCRS('test_createSubscriptions'))			# create subs again
+	suite.addTest(TestCRS('test_createSrat2Subscriptions'))		# create crs again
+	suite.addTest(TestCRS('test_updateSubAcrs'))
+	suite.addTest(TestCRS('test_deleteSubscriptions'))
 
 	# Test Periodic Window
 	suite.addTest(TestCRS('test_createCRSwithRrat'))
