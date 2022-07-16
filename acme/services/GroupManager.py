@@ -241,8 +241,8 @@ class GroupManager(object):
 				if result.resource and isinstance(result.resource, Resource):
 					item = 	{ 'rsc' : result.rsc, 
 							  'rqi' : request.headers.requestIdentifier,
-							  'pc'  : result.resource.asDict() if isinstance(result.resource, Resource) else result.resource, # in case 'resource' is a dict
 							  'rvi'	: request.headers.releaseVersionIndicator,
+							  'pc'  : result.resource.asDict() if isinstance(result.resource, Resource) else result.resource, # in case 'resource' is a dict
 							}
 				else:	# e.g. when deleting
 					item = 	{ 'rsc' : result.rsc, 
