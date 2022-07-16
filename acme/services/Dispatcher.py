@@ -13,7 +13,7 @@ import operator
 import sys
 from copy import deepcopy
 from syslog import LOG_DAEMON
-from typing import Any, List, Tuple, Dict, cast
+from typing import Any, List, Tuple, cast
 
 from ..helpers import TextTools as TextTools
 from ..etc.Constants import Constants as C
@@ -453,7 +453,8 @@ class Dispatcher(object):
 
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 		if not id:
-			id = request.id
+			if not (id := request.id):
+				return Result.errorResult(rsc = RC.notFound, dbg = L.logDebug('resource not found'))
 
 		# Handle operation execution time and check request expiration
 		self._handleOperationExecutionTime(request)
@@ -608,6 +609,10 @@ class Dispatcher(object):
 
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
 
+		# Unknown resource ?
+		if not id:
+			return Result.errorResult(rsc = RC.notFound, dbg = L.logDebug('resource not found'))
+
 		# Handle operation execution time and check request expiration
 		self._handleOperationExecutionTime(request)
 		if not (res := self._checkRequestExpiration(request)).status:
@@ -726,6 +731,10 @@ class Dispatcher(object):
 			return CSE.request.handleTransitDeleteRequest(request)
 
 		fopsrn, id = self._checkHybridID(request, id) # overwrite id if another is given
+
+		# Unknown resource ?
+		if not id:
+			return Result.errorResult(rsc = RC.notFound, dbg = L.logDebug('resource not found'))
 
 		# Handle operation execution time and check request expiration
 		self._handleOperationExecutionTime(request)
@@ -979,7 +988,6 @@ class Dispatcher(object):
 			if ty is None or r.ty == ty:	# ty is an int
 				parentResource.childRemoved(r, originator)	# recursion here
 				self.deleteResource(r, originator, parentResource=parentResource)
-
 
 	#########################################################################
 	#
