@@ -456,6 +456,17 @@ def compareIDs(id1:str, id2:str) -> bool:
 		Return:
 			True if both IDs point to the same resource, False otherwise.
 	"""
+
+	# Compare two unstrutured IDs
+	if not isStructured(id1) and not isStructured(id2):
+		ri1 = id1
+		ri2 = id2
+		if isCSERelative(id1):
+			ri1 = toSPRelative(id1)
+		if isCSERelative(id2):
+			ri2 = toSPRelative(id2)
+		return ri1 == ri2
+
 	ri1 = riFromStructuredPath(id1) if isStructured(id1) else id1
 	ri2 = riFromStructuredPath(id2) if isStructured(id2) else id2
 	return ri1 == ri2
