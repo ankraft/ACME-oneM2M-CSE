@@ -11,7 +11,9 @@
 from __future__ import annotations
 import random, string, sys, re, threading
 import traceback
-from typing import Any, Callable, Tuple, cast
+from typing import Any, Callable, Tuple, cast, Dict
+from functools import wraps
+
 
 from .Constants import Constants as C
 from .Types import ResourceTypes as T, ResponseStatusCode
@@ -851,6 +853,65 @@ def runAsThread(task:Callable, *args:Any, **kwargs:Any) -> None:
 	thread.start()
 	thread.name = str(thread.native_id)
 
+
+##############################################################################
+#
+#	Resource States
+#
+		
+_resourceStates:Dict[str, str]	= {}
+
+def setResourceState(id:str, state:str) -> None:
+	"""	Store the state of a resource.
+
+		This can be used by resources to store individual transient states
+		(only in memory).
+	
+		Args:
+			id: Resource ID
+			state: Individual state or marker
+			"""
+	_resourceStates[id] = state
+
+
+def getResourceState(id:str) -> str:
+	"""	Retrieve the state of a resource.
+	
+		Args:
+			id: Resource ID
+		Return:
+			The resource state, or None.
+		"""
+	return _resourceStates.get(id)
+
+
+def clearResourceState(id:str) -> None:
+	"""	Clear the state of a resource.
+	
+		Args:
+			id: Resource ID
+	"""
+	if id in _resourceStates:
+		del _resourceStates[id]
+
+
+def resourceState(state:str) -> Callable:
+	"""	Decorator to set and remove a state when a resource method is called.
+	
+		Args:
+			state: The state to set.
+		Return:
+			Wrapped decorator.
+	"""
+	def decorate(func:Callable) -> Callable:
+		@wraps(func)
+		def wrapper(*args:Any, **kwargs:Any) -> Any:
+			setResourceState(args[0].ri, state)
+			r = func(*args, **kwargs)
+			clearResourceState(args[0].ri)
+			return r
+		return wrapper
+	return decorate
 
 
 ##############################################################################
