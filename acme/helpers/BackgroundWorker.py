@@ -190,10 +190,6 @@ class BackgroundWorker(object):
 			while True:
 				try:
 					if self.data is not None:
-						# args = self.args.copy()
-						# args['data'] = self.data
-						# print(args)
-
 						result = self.callback(_data = self.data, **self.args)
 					else:
 						result = self.callback(**self.args)
@@ -394,7 +390,6 @@ class Job(Thread):
 		Job._balanceCount += 1
 		if Job._balanceCount >= Job.balanceLatency:		# check after balancyLatency runs
 			if float(lp := len(Job.pausedJobs)) / float(len(Job.runningJobs)) > Job.balanceTarget:				# out of balance?
-				#print(f'balance: {float(lp := len(Job.pausedJobs)) / float(len(Job.runningJobs))} reducing: {int(lp / Job.balanceReduceFactor)} lp: {lp} lr: {len(Job.runningJobs)}')
 				for _ in range((int(lp / Job.balanceReduceFactor))):
 					Job.pausedJobs.pop(0).stop()
 			Job._balanceCount = 0
@@ -501,7 +496,7 @@ class BackgroundWorkerPool(object):
 				runPastEvents: If True then runs in the past are executed, otherwise they are dismissed
 				finished: Callable that is executed after the worker finished
 				ignoreExceptions: Restart the actor in case an exception is encountered
-				data: Any data structure that is then passed in the *_data* parameter of the `workerCallback`.
+				data: Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed as the first argument in the *_data* argument of the `workerCallback`.
 
 			Return:
 				BackgroundWorker
