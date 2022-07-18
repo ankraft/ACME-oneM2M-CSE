@@ -446,6 +446,10 @@ class BackgroundWorkerPool(object):
 
 
 	def __new__(cls, *args:str, **kwargs:str) -> BackgroundWorkerPool:
+		"""	Prevent from instantiation.
+		
+			This class has static functions only.
+		"""
 		raise TypeError(f'{BackgroundWorkerPool.__name__} must not be instantiated')
 	
 
@@ -496,7 +500,7 @@ class BackgroundWorkerPool(object):
 				runPastEvents: If True then runs in the past are executed, otherwise they are dismissed
 				finished: Callable that is executed after the worker finished
 				ignoreExceptions: Restart the actor in case an exception is encountered
-				data: Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed as the first argument in the *_data* argument of the `workerCallback`.
+				data: Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed as the first argument in the *_data* argument of the `workerCallback` if not *None*.
 
 			Return:
 				BackgroundWorker
@@ -532,6 +536,7 @@ class BackgroundWorkerPool(object):
 						data:Any = None) -> BackgroundWorker:
 		"""	Create a new background worker that runs only once after a `delay`
 			(the 'delay' may be 0.0s, though), or `at` a sepcific time (UTC timestamp).
+
 			The `at` argument provide convenience to calculate the delay to wait before the
 			actor runs.
 			`finished` is an optional callback that is called after the actor finished. It will
@@ -547,7 +552,7 @@ class BackgroundWorkerPool(object):
 				dispose: If True then dispose the actor after finish
 				finished: Callable that is executed after the worker finished
 				ignoreExceptions: Restart the actor in case an exception is encountered
-				data: Any data structure that is then passed in the *_data* parameter of the `workerCallback`.
+				data: Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed as the first argument in the *_data* argument of the `workerCallback` if not *None*.
 			Return:
 				BackgroundWorker
 		"""

@@ -7,20 +7,32 @@
 #	Various helpers for working with strings and texts
 #
 
+""" Utility functions for strings, JSON, and texts.
+"""
+
 import re
-commentPattern = r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$)'	# recognized escaped comments
-commentRegex = re.compile(commentPattern, re.MULTILINE|re.DOTALL)
+_commentPattern = r'(\".*?(?<!\\)\"|\'.*?(?<!\\)\')|(/\*.*?\*/|//[^\r\n]*$|#[^\r\n]*$)'	# recognized escaped comments
+_commentRegex = re.compile(_commentPattern, re.MULTILINE|re.DOTALL)
 
 def removeCommentsFromJSON(data:str) -> str:
-	"""	This WILL remove:
-			/* multi-line comments */
-			// single-line comments
-			# single-line comments
+	"""	Remove comments from JSON string input.
+
+		This will remove:
+
+		- \/\* multi-line comments \*\/
+		- \// single-line comments
+		- \# single-line comments
 		
-		Will NOT remove:
-			String var1 = "this is /* not a comment. */";
-			char *var2 = "this is // not a comment, either.";
-			url = 'http://not.comment.com';
+		It will **NOT** remove:
+		
+		- String var1 = "this is \/\* not a comment. \*\/";
+		- char \*var2 = "this is \/\/ not a comment, either.";
+		- url = 'http://not.comment.com';
+
+		Args:
+			data: JSON string
+		Return:
+			JSON string without comments.
 	"""
 	def _replacer(match):	# type: ignore
 		# if the 2nd group (capturing comments) is not None,
@@ -29,11 +41,19 @@ def removeCommentsFromJSON(data:str) -> str:
 			return '' # so we will return empty to remove the comment
 		else: # otherwise, we will return the 1st group
 			return match.group(1) # captured quoted-string
-	return commentRegex.sub(_replacer, data)
+	return _commentRegex.sub(_replacer, data)
 
 
 def toHex(bts:bytes, toBinary:bool=False, withLength:bool=False) -> str:
-	"""	Print bts as hex output, similar to the 'od' command.
+	"""	Print a byte string as hex output, similar to the 'od' command.
+
+		Args:
+			bts: Byte string to print.
+			toBinary: Print bytes as bit patterns.
+			withLength: Additionally print length.
+		
+		Return:
+			Formatted string with the output.
 	"""
 	if not bts or (len(bts) == 0 and not withLength): return ''
 	result = ''
@@ -73,18 +93,26 @@ def simpleMatch(st:str, pattern:str, star:str='*') -> bool:
 		- '+' : one or more characters
 		- '\\' : Escape an expression operator
 
-		Examples: 
+		Examples:
 			"hello" - "h?llo" -> True
-	 		"hello" - "h?lo" -> False
-	 		"hello" - "h*lo" -> True
-			"hello" - "h*" -> True
-			"hello" - "*lo" -> True
-			"hello" - "*l?" -> True
+			
+			"hello" - "h?lo" -> False
 
-		Parameter:
-			- st : string to test
-			- pattern : the pattern string
-			- star : optionally specify a different character as the star character
+			"hello" - "h\*lo" -> True
+
+			"hello" - "h\*" -> True  
+
+			"hello" - "\*lo" -> True  
+
+			"hello" - "\*l?" -> True  
+
+		Args:
+			st : string to test
+			pattern : the pattern string
+			star : optionally specify a different character as the star character
+		
+		Return:
+			Boolean indicating a match.
 	"""
 
 	def _simpleMatchStar(st:str, pattern:str) -> bool:
