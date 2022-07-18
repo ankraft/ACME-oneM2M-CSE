@@ -2034,7 +2034,7 @@
 			"ns": "m2m",
 			"type": "list",
 			"ltype": "m2m:setOfNotificationStatsInfo",
-			"car": "01",
+			"car": "01L",
 			"oc": "NP",
 			"ou": "NP",
 			"od": "NP",

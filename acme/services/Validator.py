@@ -138,8 +138,11 @@ class Validator(object):
 				if policyOptional == RO.M:		# Not okay, this attribute is mandatory but absent
 					return Result.errorResult(dbg = L.logWarn(f'Cannot find mandatory attribute: {attributeName}'))
 
-				if attributeName in pureResDict and policy.cardinality == CAR.CAR1: 	# but ignore CAR.car1N (which may be Null/None)
-					return Result.errorResult(dbg = L.logWarn(f'Cannot delete a mandatory attribute: {attributeName}'))
+				if attributeName in pureResDict:
+					if policy.cardinality == CAR.CAR1: 	# but ignore CAR.car1N (which may be Null/None)
+						return Result.errorResult(dbg = L.logWarn(f'Cannot delete a mandatory attribute: {attributeName}'))
+					if policyOptional == RO.NP: # present with any value or None/null? Then this is an error for NP
+						return Result.errorResult(dbg = L.logWarn(f'Attribute: {attributeName} is NP for operation'))
 
 				if policyOptional in [ RO.NP, RO.O ]:		# Okay that the attribute is not in the dict, since it is provided or optional
 					continue
