@@ -625,7 +625,7 @@ class TestCRS(unittest.TestCase):
 		}}
 		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
 		self.assertEqual(rsc, RC.created, self.sub1)
-		time.sleep(crsTimeWindowSize + 1)
+		time.sleep(crsTimeWindowSize + 1.0)
 		self.assertIsNone(getLastNotification())
 
 
@@ -640,13 +640,13 @@ class TestCRS(unittest.TestCase):
 		# CIN to first CNT
 		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
 		self.assertEqual(rsc, RC.created, self.sub1)
-		time.sleep(crsTimeWindowSize + 1)
+		time.sleep(crsTimeWindowSize + 1.0)
 		self.assertIsNone(getLastNotification())
 
 		# CIN two second CNT
 		r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
 		self.assertEqual(rsc, RC.created, self.sub1)
-		time.sleep(crsTimeWindowSize + 1)
+		time.sleep(crsTimeWindowSize + 1.0)
 		self.assertIsNone(getLastNotification())
 
 
@@ -665,7 +665,7 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(rsc, RC.created, r)	
 
 		# wait and check notification
-		time.sleep(crsTimeWindowSize + 1)
+		time.sleep(crsTimeWindowSize + 1.0)
 		self.assertIsNotNone(notification := getLastNotification())
 		self.assertIsNotNone(findXPath(notification, 'm2m:sgn'))
 		self.assertEqual(findXPath(notification, 'm2m:sgn/sur'), toSPRelative(findXPath(self.crs, 'm2m:crs/ri')))
@@ -696,7 +696,7 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(rsc, RC.created, r)	
 
 		# wait and check notification at half the time
-		time.sleep(crsTimeWindowSize + 1)
+		time.sleep(crsTimeWindowSize + 1.0)
 		self.assertIsNone(notification := getLastNotification())
 
 		# wait second half
@@ -748,7 +748,7 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(rsc, RC.created, r)
 
 		# wait and check notification at half the time
-		time.sleep(crsTimeWindowSize + 1)
+		time.sleep(crsTimeWindowSize + 1.0)
 		self.assertIsNone(notification := getLastNotification())
 
 		# wait a bit longer to wait the second notification
@@ -834,7 +834,7 @@ class TestCRS(unittest.TestCase):
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
 		self.assertEqual(rsc, RC.updated, TestCRS.crs)
 		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
-		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/nsi'), 0)
+		self.assertEqual(len(findXPath(TestCRS.crs, 'm2m:crs/nsi')), 0)
 
 
 	#########################################################################
@@ -872,7 +872,7 @@ class TestCRS(unittest.TestCase):
 			self.assertEqual(rsc, RC.created, self.sub1)
 			r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
 			self.assertEqual(rsc, RC.created, self.sub1)
-			time.sleep(crsTimeWindowSize + 1)
+			time.sleep(crsTimeWindowSize + 1.0)
 		
 		# Check that the <crs> is not present anymore
 		TestCRS.crs, rsc = RETRIEVE(crsURL, TestCRS.originator)

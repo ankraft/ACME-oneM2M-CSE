@@ -8,6 +8,8 @@
 #	the CSE is actually started.
 #
 
+"""	Import various resources, scripts, policies etc into the CSE. """
+
 from __future__ import annotations
 import json, os, fnmatch, re
 from typing import cast
@@ -26,6 +28,9 @@ from ..helpers.TextTools import removeCommentsFromJSON
 # TODO Support child specialization in attribute definitionsEv
 
 class Importer(object):
+	""" Importer class to import various objects, configurations etc.
+	
+		It is mainly run before the CSE is actually started or restarted."""
 
 	# List of "priority" resources that must be imported first for correct CSE operation
 	_firstImporters = [ 'csebase.json']
@@ -493,8 +498,13 @@ class Importer(object):
 
 
 	def readJSONFromFile(self, filename:str) -> JSON|JSONLIST:		# TODO move to helper
-		"""	Read and parse a JSON data structure from a file `filename`. 
-			Return the parsed structure, or `None` in case of an error.
+		"""	Read and parse a JSON data structure from a file *filename*. 
+
+			Args:
+				filename: The full filename of the input file.
+
+			Return:
+				Return the parsed structure, or *None* in case of an error.
 		"""
 		# read the file
 		with open(filename) as file:

@@ -54,10 +54,10 @@ class NotificationManager(object):
 		periodicWorkers = BackgroundWorkerPool.stopWorkers('crsPeriodic_*')
 		BackgroundWorkerPool.stopWorkers('crsSliding_*')
 
-		# Restart the periodic crossResourceSubscription workers
+		# Restart the periodic crossResourceSubscription workers with its old arguments
 		for worker in periodicWorkers:
-			worker.start()
-			
+			worker.start(**worker.args)
+
 		L.isDebug and L.logDebug('NotificationManager restarted')
 
 
@@ -630,7 +630,6 @@ class NotificationManager(object):
 		L.isDebug and L.logDebug(f'Incrementing notification stats for: {subscription.ri} ({"response" if isResponse else "request"})')
 
 		activeField  = 'rsr' if isResponse else 'rqs'
-		passiveField = 'rqs' if isResponse else 'rsr'
 		
 		# Search and add to existing target
 		for each in subscription.nsi:
@@ -638,11 +637,13 @@ class NotificationManager(object):
 				each[activeField] += count
 				break
 		else:
-			# target not found, create target
-			subscription.nsi.append({	'tg': target,
-										activeField: 1,
-										passiveField: 0
-									})
+			# target not found in nsi, add it
+			element = {	'tg': target,
+						'rqs': 0,
+						'rsr': 0
+			}
+			element[activeField] = count
+			subscription.nsi.append(element)
 		subscription.dbUpdate()
 
 
@@ -910,10 +911,10 @@ class NotificationManager(object):
 		CSE.storage.addBatchNotification(ri, nu, notificationRequest)
 
 		#  Check for actions
+		ln = sub['ln'] if 'ln' in sub else False
 		if (num := Utils.findXPath(sub, 'bn/num')) and (cnt := CSE.storage.countBatchNotifications(ri, nu)) >= num:
 			L.isDebug and L.logDebug(f'Sending batch notification: bn/num: {num}  countBatchNotifications: {cnt}')
 
-			ln = sub['ln'] if 'ln' in sub else False
 			self._stopNotificationBatchWorker(ri, nu)	# Stop the worker, not needed
 			self._sendSubscriptionAggregatedBatchNotification(ri, nu, ln, sub)
 
@@ -923,14 +924,25 @@ class NotificationManager(object):
 				dur = isodate.parse_duration(Utils.findXPath(sub, 'bn/dur')).total_seconds()
 			except Exception:
 				return False
-			self._startNewBatchNotificationWorker(ri, nu, dur)
+			self._startNewBatchNotificationWorker(ri, nu, ln, sub, dur)
 		return True
 
 
 	def _sendSubscriptionAggregatedBatchNotification(self, ri:str, nu:str, ln:bool, sub:JSON) -> bool:
 		"""	Send and remove(!) the available BatchNotifications for an ri & nu.
+
+			While the sent notifications and the respective received responses are counted here, the
+			expiration counter is not. It depends on the events, not the notifications.
+
+			Args:
+				ri: Resource ID of the <sub> or <crs> resource.
+				nu: A single notification URI.
+				ln: *latestNotify*, if *True* then only send the latest notification.
+				sub: The internal *sub* structure.
+			
+			Return:
+				Indication of the success of the sending.
 		"""
-		# TODO doc
 		with self.lockBatchNotification:
 			L.isDebug and L.logDebug(f'Sending aggregated subscription notifications for ri: {ri}')
 
@@ -959,7 +971,8 @@ class NotificationManager(object):
 
 			# If nse is set to True then count this notification request
 			subscription = None
-			if sub['nse']:
+			nse = sub['nse']
+			if nse:
 				if not (res := CSE.dispatcher.retrieveResource(sub['ri'])).status:
 					L.logErr(f'Cannot retrieve <sub> resource: {sub["ri"]}: {res.dbg}')
 					return False
@@ -973,23 +986,13 @@ class NotificationManager(object):
 													parameters = additionalParameters).status:
 				L.isWarn and L.logWarn('Error sending aggregated batch notifications')
 				return False
-			self.countSentReceivedNotification(subscription, nu, isResponse = True, count = notificationCount) # count received notification
-
-
-
+			if nse:
+				self.countSentReceivedNotification(subscription, nu, isResponse = True, count = notificationCount) # count received notification
 
 			return True
 
-# TODO expiration counter
 
-	# def _checkExpirationCounter(self, sub:dict) -> bool:
-	# 	if 'exc' in sub and (exc := sub['exc'] is not None:
-	# 		if (subscription := CSE.dispatcher.retrieveResource(sub['ri']).resource) is None:
-	# 			return False
-	# 	return Result(status=True) if CSE.storage.updateSubscription(subscription) else Result(status=False, rsc=RC.internalServerError, dbg='cannot update subscription in database')
-
-
-	def _startNewBatchNotificationWorker(self, ri:str, nu:str, dur:float) -> bool:
+	def _startNewBatchNotificationWorker(self, ri:str, nu:str, ln:bool, sub:JSON, dur:float) -> bool:
 		# TODO doc
 		if dur is None or dur < 1:	
 			L.logErr('BatchNotification duration is < 1')
@@ -998,7 +1001,9 @@ class NotificationManager(object):
 		if len(BackgroundWorkerPool.findWorkers(self._workerID(ri, nu))) > 0:	# worker started, return
 			return True
 		L.isDebug and L.logDebug(f'Starting new batchNotificationsWorker. Duration : {dur:f} seconds')
-		BackgroundWorkerPool.newActor(self._sendSubscriptionAggregatedBatchNotification, delay=dur, name=self._workerID(ri, nu)).start(ri=ri, nu=nu)
+		BackgroundWorkerPool.newActor(self._sendSubscriptionAggregatedBatchNotification, 
+									  delay = dur,
+									  name = self._workerID(ri, nu)).start(ri = ri, nu = nu, ln = ln, sub = sub)
 		return True
 
 
@@ -1008,6 +1013,14 @@ class NotificationManager(object):
 
 
 	def _workerID(self, ri:str, nu:str) -> str:
-		# TODO doc
+		"""	Return an ID for a batch notification background worker.
+		
+			Args:
+				ri: ResourceID of a subscription.
+				nu: Notification URI of a notification target.
+			
+			Return:
+				String with the ID.
+		"""
 		return f'{ri};{nu}'
 
