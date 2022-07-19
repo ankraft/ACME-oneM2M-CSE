@@ -8,9 +8,10 @@
 #
 
 from __future__ import annotations
+from ast import Call
 from operator import sub
 import sys, copy
-from typing import Callable, Union, Any
+from typing import Callable, Union, Any, cast
 from threading import Lock, current_thread
 
 import isodate
@@ -48,8 +49,15 @@ class NotificationManager(object):
 		"""	Restart the NotificationManager service.
 		"""
 		L.isInfo and L.log('NotificationManager: Stopping all <CRS> window workers')
-		BackgroundWorkerPool.stopWorkers('crsPeriodic_*')
+
+		# Stop all crossResourceSubscription workers
+		periodicWorkers = BackgroundWorkerPool.stopWorkers('crsPeriodic_*')
 		BackgroundWorkerPool.stopWorkers('crsSliding_*')
+
+		# Restart the periodic crossResourceSubscription workers
+		for worker in periodicWorkers:
+			worker.start()
+			
 		L.isDebug and L.logDebug('NotificationManager restarted')
 
 
@@ -93,8 +101,9 @@ class NotificationManager(object):
 		self._flushBatchNotifications(subscription)
 
 		# Send a deletion request to the subscriberURI
-		if not self.sendDeletionNotification(su := subscription.su, subscription.ri):
-			L.isWarn and L.logWarn(f'Deletion request failed for: {su}') # but ignore the error
+		if (su := subscription.su):
+			if not self.sendDeletionNotification(su, subscription.ri):
+				L.isWarn and L.logWarn(f'Deletion request failed for: {su}') # but ignore the error
 
 		# Send a deletion request to the associatedCrossResourceSub
 		if (acrs := subscription.acrs):
@@ -388,14 +397,36 @@ class NotificationManager(object):
 		return Result.successResult()
 
 
+	def removeCrossResourceSubscription(self, crs:CRS) -> Result:
+		"""	Remove a crossResourcesubscription. 
+		
+			Send a deletion request to the *subscriberURI* target.
+
+			Args:
+				crs: The new <crs> resource to remove.
+			
+			Return:
+				Result object.
+		"""
+		L.isDebug and L.logDebug('Removing crossResourceSubscription')
+
+		# Send a deletion request to the subscriberURI
+		if (su := crs.su):
+			if not self.sendDeletionNotification(su, crs.ri):
+				L.isWarn and L.logWarn(f'Deletion request failed for: {su}') # but ignore the error
+		return Result.successResult()
+
+
+
 	def _crsCheckForNotification(self, data:list[str], crsRi:str, subCount:int) -> None:
 		"""	Test whether a notification must be sent for a a <crs> window.
-			This also sends the notification(s) if the window requirements are met.
+
+			This method also sends the notification(s) if the window requirements are met.
 			
 			Args:
 				data: List of unique resource IDs.
 				crsRI: The resource ID of the <crs> resource for the window.
-				subCount: Maximum number of expected resource IDs in `data`.
+				subCount: Maximum number of expected resource IDs in *data*.
 		"""
 		L.isDebug and L.logDebug(f'Checking <crs>: {crsRi} window properties: unique notification count: {len(data)}, expected count: {subCount}')
 		if len(data) == subCount:
@@ -404,17 +435,30 @@ class NotificationManager(object):
 				L.logWarn(f'Cannot retrieve <crs> resource: {crsRi}')	# Not much we can do here
 				data.clear()
 				return
+			crs = cast(CRS, res.resource)
 
-			# Send notification			
+			# Send the notification directly. Handle the counting of sent notifications and received responses
+			# in pre and post functions for the notifications of each target
 			dct:JSON = { 'm2m:sgn' : {
-					'sur' : Utils.toSPRelative(res.resource.ri)
+					'sur' : Utils.toSPRelative(crs.ri)
 				}
 			}
+			self.sendNotificationWithDict(dct, 
+										  crs.nu, 
+										  background = True,
+										  preFunc = lambda target: self.countSentReceivedNotification(crs, target),
+										  postFunc = lambda target: self.countSentReceivedNotification(crs, target, isResponse = True)
+										 )
 			
-			
-			#pre and post function!
-			self.sendNotificationWithDict(dct, res.resource.nu, background = True)
-
+			# Check for <crs> expiration
+			if (exc := crs.exc):
+				exc -= 1
+				crs.setAttribute('exc', exc)
+				L.isDebug and L.logDebug(f'Reducing <crs> expiration counter to {exc}')
+				crs.dbUpdate()
+				if exc <= 0:
+					L.isDebug and L.logDebug(f'<crs>: {crs.ri} expiration counter expired. Deleting resources.')
+					CSE.dispatcher.deleteResource(crs, originator = crs.getOriginator())
 
 		data.clear()
 
@@ -524,23 +568,32 @@ class NotificationManager(object):
 	#	Notifications in general
 	#
 
-	def sendNotificationWithDict(self, dct:JSON, nus:list[str]|str, originator:str = None, background:bool = False) -> None:
+	def sendNotificationWithDict(self, dct:JSON, nus:list[str]|str, originator:str = None, background:bool = False, preFunc:Callable = None, postFunc:Callable = None) -> None:
 		"""	Send a notification to a single URI or a list of URIs. 
 		
 			A URI may be a resource ID, then the *poa* of that resource is taken. 
 			Also, the serialization is determined when each of the notifications is actually sent.
+
+			Pre- and post-functions can be given that are called before and after sending each
+			notification.
 			
 			Args:
 				dct: Dictionary to send as the notification. It already contains the full request.
 				nus: A single URI or a list of URIs.
 				originator: The originator on which behalf to send the notification. 
 				background: Send the notifications in a background task.
+				preFunc: Function that is called before each notification sending, with the notification target as a single argument.
+				postFunc: Function that is called after each notification sending, with the notification target as a single argument.
 		"""
 
 		def _sender(nu: str, originator:str, data:JSON) -> bool:
+			if preFunc:
+				preFunc(nu)
 			CSE.request.sendNotifyRequest(nu, 
 										  originator = originator,
-										  data = dct)
+										  data = data)
+			if postFunc:
+				postFunc(nu)
 			return True
 
 		if isinstance(nus, str):
@@ -560,17 +613,18 @@ class NotificationManager(object):
 	#	Notification Statistics
 	#
 
-	def countSentReceivedNotification(self, subscription:SUB|CRS, target:str, isResponse:bool = False) -> None:
+	def countSentReceivedNotification(self, subscription:SUB|CRS, target:str, isResponse:bool = False, count:int = 1) -> None:
 		"""	If Notification Stats are enabled for a <sub> or <crs> resource, then
 			increase the count for sent notifications or received responses.
 
 			Args:
 				subscription: <sub> or <crs> resource.
 				target: URI of the notification target.
-				isResponse: Boolean indicating whether a sent notification or a received response should be counted for.
+				isResponse: Indicates whether a sent notification or a received response should be counted for.
+				count: Number of notifications to count.
 		"""
 
-		if not subscription.nse:	# Don't count if disabled
+		if not subscription or not subscription.nse:	# Don't count if disabled
 			return
 		
 		L.isDebug and L.logDebug(f'Incrementing notification stats for: {subscription.ri} ({"response" if isResponse else "request"})')
@@ -581,7 +635,7 @@ class NotificationManager(object):
 		# Search and add to existing target
 		for each in subscription.nsi:
 			if each['tg'] == target:
-				each[activeField] += 1
+				each[activeField] += count
 				break
 		else:
 			# target not found, create target
@@ -644,11 +698,9 @@ class NotificationManager(object):
 						L.isDebug and L.logDebug(f'Notification URI skipped: uri: {nu} == originator: {originator}')
 						continue
 					# Send verification notification to target (either direct URL, or an entity)
-					self.countSentReceivedNotification(subscription, nu)
 					if not self.sendVerificationRequest(nu, ri, originator = originator):
 						# Return when even a single verification request fails
 						return Result.errorResult(rsc = RC.subscriptionVerificationInitiationFailed, dbg = f'Verification request failed for: {nu}')
-					self.countSentReceivedNotification(subscription, nu, isResponse = True)
 
 		return Result.successResult()
 
@@ -718,16 +770,16 @@ class NotificationManager(object):
 		return self._sendNotification(uri, sender) if uri else True	# Ignore if the uri is None
 
 
-	def _handleSubscriptionNotification(self, sub:JSON, reason:NotificationEventType, resource:Resource = None, modifiedAttributes:JSON = None, missingData:MissingData = None) ->  bool:
+	def _handleSubscriptionNotification(self, sub:JSON, notificationEventType:NotificationEventType, resource:Resource = None, modifiedAttributes:JSON = None, missingData:MissingData = None) ->  bool:
 		"""	Send a subscription notification.
 		"""
 		# TODO doc
-		L.isDebug and L.logDebug(f'Handling notification for reason: {reason}')
+		L.isDebug and L.logDebug(f'Handling notification for notificationEventType: {notificationEventType}')
 
 		def sender(uri:str) -> bool:
 			"""	Sender callback function for a single normal subscription notifications
 			"""
-			L.isDebug and L.logDebug(f'Sending notification to: {uri}, reason: {reason}	')
+			L.isDebug and L.logDebug(f'Sending notification to: {uri}, reason: {notificationEventType}	')
 			notificationRequest = {
 				'm2m:sgn' : {
 					'nev' : {
@@ -751,7 +803,7 @@ class NotificationManager(object):
 			# TODO nct == NotificationContentType.triggerPayload
 
 			# Add some values to the notification
-			reason is not None and Utils.setXPath(notificationRequest, 'm2m:sgn/nev/net', reason)
+			notificationEventType is not None and Utils.setXPath(notificationRequest, 'm2m:sgn/nev/net', notificationEventType)
 			data is not None and Utils.setXPath(notificationRequest, 'm2m:sgn/nev/rep', data)
 			creator is not None and Utils.setXPath(notificationRequest, 'm2m:sgn/cr', creator)	# Set creator in notification if it was present in subscription
 
@@ -760,6 +812,7 @@ class NotificationManager(object):
 				return self._storeBatchNotification(uri, sub, notificationRequest)
 			else:
 				# If nse is set to True then count this notification request
+				subscription = None
 				if sub['nse']:
 					if not (res := CSE.dispatcher.retrieveResource(sub['ri'])).status:
 						L.logErr(f'Cannot retrieve <sub> resource: {sub["ri"]}: {res.dbg}')
@@ -774,9 +827,7 @@ class NotificationManager(object):
 					L.isDebug and L.logDebug(f'Notification failed for: {uri}')
 					return False
 				
-				# If nse is set to True then count the response
-				if sub['nse']:
-					self.countSentReceivedNotification(subscription, uri, isResponse = True) # count received notification
+				self.countSentReceivedNotification(subscription, uri, isResponse = True) # count received notification
 
 				return True
 
@@ -888,7 +939,7 @@ class NotificationManager(object):
 			for notification in sorted(CSE.storage.getBatchNotifications(ri, nu), key = lambda x: x['tstamp']):	# type: ignore[no-any-return] # sort by timestamp added
 				if n := Utils.findXPath(notification['request'], 'sgn'):
 					notifications.append(n)
-			if len(notifications) == 0:	# This can happen when the subscription is deleted and there are no outstanding notifications
+			if (notificationCount := len(notifications)) == 0:	# This can happen when the subscription is deleted and there are no outstanding notifications
 				return False
 
 			additionalParameters = None
@@ -907,12 +958,13 @@ class NotificationManager(object):
 				return False
 
 			# If nse is set to True then count this notification request
+			subscription = None
 			if sub['nse']:
 				if not (res := CSE.dispatcher.retrieveResource(sub['ri'])).status:
 					L.logErr(f'Cannot retrieve <sub> resource: {sub["ri"]}: {res.dbg}')
 					return False
 				subscription = res.resource
-				self.countSentReceivedNotification(subscription, nu)	# count sent notification
+				self.countSentReceivedNotification(subscription, nu, count = notificationCount)	# count sent notification
 				
 			# Send the request
 			if not CSE.request.sendNotifyRequest(nu, 
@@ -921,10 +973,7 @@ class NotificationManager(object):
 													parameters = additionalParameters).status:
 				L.isWarn and L.logWarn('Error sending aggregated batch notifications')
 				return False
-
-			# If nse is set to True then count the response
-			if sub['nse']:
-				self.countSentReceivedNotification(subscription, nu, isResponse = True) # count received notification
+			self.countSentReceivedNotification(subscription, nu, isResponse = True, count = notificationCount) # count received notification
 
 
 

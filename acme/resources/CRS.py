@@ -7,6 +7,8 @@
 #	ResourceType: CrossResourceSubscription
 #
 
+"""	<crossResourceSubscription> submodule. """
+
 from __future__ import annotations
 from copy import deepcopy
 
@@ -20,6 +22,7 @@ from ..services.Logging import Logging as L
 
 
 class CRS(Resource):
+	"""	This class implements the <crossResourceSubscription> resource type. """
 
 	_subSratRIs = '__subSratRIs__'	# dict of really modified <sub> resources
 	_sudRI		= '__sudRI__'		# Reference when the resource is been deleted because of the deletion of a rrat or srat subscription. Usually empty
@@ -58,13 +61,6 @@ class CRS(Resource):
 		'nse': None,
 		'nsi': None,
 	}
-
-	# TODO notificationStatsEnable - nse  support
-	# TODO notificationStatsInfo - nsi	support
-	# TODO expirationCounter
-	# TODO subscriber URI - su support
-
-	# TODO Restart support (in NotificationManager)
 
 
 	def __init__(self, dct:JSON = None, pi:str = None, create:bool = False) -> None:
@@ -167,6 +163,9 @@ class CRS(Resource):
 		# Delete rrat and srat subscriptions
 		self._deleteSubscriptions(originator)
 
+		# Handle removing the csr by the notification manager
+		CSE.notification.removeCrossResourceSubscription(self)
+
 		return super().deactivate(originator)
 
 
@@ -251,7 +250,7 @@ class CRS(Resource):
 			Args:
 				rrat: The target resource's uri.
 				encs: eventNotificationCriteriaSet to add to the new <sub>.
-				rratList: The list of rrat entries.
+				rratIndex: The index of *rrat* in the list.
 				originator: The originator of the request.
 			Return:
 				Result object.
@@ -286,7 +285,7 @@ class CRS(Resource):
 
 
 	def _addSratSubscription(self, srat:str, originator:str) -> Result:
-		"""	Update another subscription, pointed to by a srat entry, to
+		"""	Update another subscription, pointed to by a *srat* entry, to
 			notify this <crs> resource.
 			
 			Args:

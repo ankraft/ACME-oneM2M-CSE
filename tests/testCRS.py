@@ -245,7 +245,7 @@ class TestCRS(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCRSwithRrat(self) -> None:
-		"""	CREATE <CRS> with rrat, one encs"""
+		"""	CREATE <CRS> with rrat, one encs, periodic window"""
 		dct = 	{ 'm2m:crs' : { 
 					'rn' : crsRN,
 					'nu' : [ NOTIFICATIONSERVER ],
@@ -263,6 +263,37 @@ class TestCRS(unittest.TestCase):
 
 		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
 		self.assertEqual(rsc, RC.created, TestCRS.crs)
+
+		# check subscriptions
+		self.assertIsNotNone(rrats := findXPath(TestCRS.crs, 'm2m:crs/rrats'))
+		self.assertEqual(len(rrats), 2)
+		self.assertEqual(rrats[0], self._testSubscriptionForCnt(cntRN1), TestCRS.crs)
+		self.assertEqual(rrats[1], self._testSubscriptionForCnt(cntRN2))
+		self._testSubscriptionForCnt(cntRN3, False)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSwithRratSlidingStatsEnabled(self) -> None:
+		"""	CREATE <CRS> with rrat, one encs, sliding window, stats enabled"""
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ NOTIFICATIONSERVER ],
+					'twt': 2,
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						},
+					'nse': True
+				}}
+
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.created, TestCRS.crs)
+		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
 
 		# check subscriptions
 		self.assertIsNotNone(rrats := findXPath(TestCRS.crs, 'm2m:crs/rrats'))
@@ -640,33 +671,246 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(findXPath(notification, 'm2m:sgn/sur'), toSPRelative(findXPath(self.crs, 'm2m:crs/ri')))
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCRSPeriodicWindowSize(self) -> None:
+		"""	UPDATE CRS with new Periodic window size and create two notifications"""
+		
+		# update 
+		tws = f'PT{crsTimeWindowSize * 2}S'
+		dct:JSON = { 'm2m:crs' : {
+					'tws' : tws,
+		}}
+		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
+		self.assertEqual(rsc, RC.updated, TestCRS.crs)
+		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/tws'), tws)
+
+		clearLastNotification()
+
+		# create <cin>
+		dct = { 'm2m:cin' : {
+					'con' : 'AnyValue',
+		}}
+		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.created, r)
+		r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.created, r)	
+
+		# wait and check notification at half the time
+		time.sleep(crsTimeWindowSize + 1)
+		self.assertIsNone(notification := getLastNotification())
+
+		# wait second half
+		time.sleep(crsTimeWindowSize)
+		self.assertIsNotNone(notification := getLastNotification())
+		self.assertIsNotNone(findXPath(notification, 'm2m:sgn'))
+		self.assertEqual(findXPath(notification, 'm2m:sgn/sur'), toSPRelative(findXPath(self.crs, 'm2m:crs/ri')))
+
+
+
 	#########################################################################
 	#
 	#	Sliding window testing
 	#
+
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_enableSlidingWindow(self) -> None:
 		"""	UPDATE <CRS> with a twt = SLIDING"""
 		dct = 	{ 'm2m:crs' : { 
 					'twt': TimeWindowType.SLIDINGWINDOW,
+					'tws': f'PT{crsTimeWindowSize * 2}S'
 				}}
 
 		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
 		self.assertEqual(rsc, RC.updated, TestCRS.crs)
 
 
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCRSSlidingWindowSize(self) -> None:
+		"""	UPDATE CRS with new Sliding window size and create two notifications"""
+		
+		# update 
+		tws = f'PT{crsTimeWindowSize * 2}S'
+		dct:JSON = { 'm2m:crs' : {
+					'tws' : tws,
+		}}
+		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
+		self.assertEqual(rsc, RC.updated, TestCRS.crs)
+		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/tws'), tws)
+
+		clearLastNotification()
+
+		# create <cin>
+		dct = { 'm2m:cin' : {
+					'con' : 'AnyValue',
+		}}
+		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.created, r)
+
+		# wait and check notification at half the time
+		time.sleep(crsTimeWindowSize + 1)
+		self.assertIsNone(notification := getLastNotification())
+
+		# wait a bit longer to wait the second notification
+		time.sleep(crsTimeWindowSize * 0.2)
+		r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
+		self.assertEqual(rsc, RC.created, r)	
+		time.sleep(crsTimeWindowSize * 0.8)
+
+		self.assertIsNotNone(notification := getLastNotification())
+		self.assertIsNotNone(findXPath(notification, 'm2m:sgn'))
+		self.assertEqual(findXPath(notification, 'm2m:sgn/sur'), toSPRelative(findXPath(self.crs, 'm2m:crs/ri')))
 
 
-
-# TODO test nse - count of verification request
-# TODO test nse: delete nse fail
-# TODO test nse: set to false
-# TODO test nse: set to true
-# TODO test nse: set to true again
+	#########################################################################
+	#
+	#	Notification Stats
+	#
 
 
-# TODO tws: change period . What happens?
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCRSwithDeletedNse(self) -> None:
+		"""	UPDATE <CRS> with deleted NSE -> Fail """
+		dct = 	{ 'm2m:crs' : { 
+					'nse': None,
+				}}
+
+		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCRSwithDeletedNsi(self) -> None:
+		"""	UPDATE <CRS> with deleted NSI -> Fail"""
+		dct = 	{ 'm2m:crs' : { 
+					'nsi': None,
+				}}
+
+		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
+		self.assertEqual(rsc, RC.badRequest, TestCRS.crs)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_testEmptyNsi(self) -> None:
+		"""	Test for empty NSE """
+		TestCRS.crs, rsc = RETRIEVE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.OK, TestCRS.crs)
+		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
+		self.assertEqual(len( nsi := findXPath(TestCRS.crs, 'm2m:crs/nsi')), 0) # verification request doesn't count
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_testNonEmptyNsi(self) -> None:
+		"""	Test for non-empty NSE """
+		TestCRS.crs, rsc = RETRIEVE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.OK, TestCRS.crs)
+		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
+		self.assertEqual(len( nsi := findXPath(TestCRS.crs, 'm2m:crs/nsi')), 1)
+		self.assertEqual(findXPath(nsi, '{0}/tg'), NOTIFICATIONSERVER)	
+		self.assertEqual(findXPath(nsi, '{0}/rqs'), 1)	
+		self.assertEqual(findXPath(nsi, '{0}/rsr'), 1)	
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCRSwithNseFalse(self) -> None:
+		"""	UPDATE <CRS> with NSE False"""
+		dct = 	{ 'm2m:crs' : { 
+					'nse': False,
+				}}
+
+		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
+		self.assertEqual(rsc, RC.updated, TestCRS.crs)
+		self.assertFalse(findXPath(TestCRS.crs, 'm2m:crs/nse'))
+		self.assertEqual(len( nsi := findXPath(TestCRS.crs, 'm2m:crs/nsi')), 1)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateCRSwithNseTrue(self) -> None:
+		"""	UPDATE <CRS> with NSE True"""
+		dct = 	{ 'm2m:crs' : { 
+					'nse': True,
+				}}
+
+		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
+		self.assertEqual(rsc, RC.updated, TestCRS.crs)
+		self.assertTrue(findXPath(TestCRS.crs, 'm2m:crs/nse'))
+		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/nsi'), 0)
+
+
+	#########################################################################
+	#
+	#	Expiration Counter
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_createCRSwithExpiration(self) -> None:
+		"""	CREATE <CRS> with expiration """
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ NOTIFICATIONSERVER ],
+					'twt': 2,
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						},
+					'exc': 2
+				}}
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.created, TestCRS.crs)
+
+		# create CIN to cause notifications
+		for _ in range(2):
+			dct = 	{ 'm2m:cin' : {
+				'con' : 'AnyValue',
+			}}
+			r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
+			self.assertEqual(rsc, RC.created, self.sub1)
+			r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
+			self.assertEqual(rsc, RC.created, self.sub1)
+			time.sleep(crsTimeWindowSize + 1)
+		
+		# Check that the <crs> is not present anymore
+		TestCRS.crs, rsc = RETRIEVE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.notFound, TestCRS.crs)
+
+
+	#########################################################################
+	#
+	#	Deletion Notification
+	#
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_testCRSwithSu(self) -> None:
+		"""	CREATE <CRS> subscriber URI and DELETE"""
+		dct = 	{ 'm2m:crs' : { 
+					'rn' : crsRN,
+					'nu' : [ NOTIFICATIONSERVER ],
+					'twt': 2,
+					'tws' : f'PT{crsTimeWindowSize}S',
+					'rrat': [ self.cnt1RI, self.cnt2RI],
+			        'encs': {
+						'enc' : [
+							{
+								'net': [ NET.createDirectChild ],
+							}
+							]
+						},
+					'su': NOTIFICATIONSERVER
+				}}
+		TestCRS.crs, rsc = CREATE(aeURL, TestCRS.originator, T.CRS, dct)
+		self.assertEqual(rsc, RC.created, TestCRS.crs)
+		self.assertEqual(findXPath(TestCRS.crs, 'm2m:crs/su'), NOTIFICATIONSERVER)
+
+		clearLastNotification()
+		r, rsc = DELETE(crsURL, TestCRS.originator)
+		self.assertEqual(rsc, RC.deleted, r)
+		notification = getLastNotification()
+		self.assertTrue(findXPath(notification, 'm2m:sgn/sud'))
 
 
 	#########################################################################
@@ -689,9 +933,11 @@ class TestCRS(unittest.TestCase):
 
 	#########################################################################
 
+
 def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
 
+	# General test cases
 	suite.addTest(TestCRS('test_createCRSmissingRratSratFail'))
 	suite.addTest(TestCRS('test_createCRSmissingNuFail'))
 	suite.addTest(TestCRS('test_createCRSmissingTwtFail'))
@@ -740,12 +986,37 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestCRS('test_createSingleNotificationNoNotification'))
 	suite.addTest(TestCRS('test_createTwoSingleNotificationNoNotifications'))
 	suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
+	suite.addTest(TestCRS('test_updateCRSPeriodicWindowSize'))
 
 	# Test Sliding Window
 	suite.addTest(TestCRS('test_enableSlidingWindow'))
 	suite.addTest(TestCRS('test_createSingleNotificationNoNotification'))
 	suite.addTest(TestCRS('test_createTwoSingleNotificationNoNotifications'))
 	suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
+	suite.addTest(TestCRS('test_updateCRSSlidingWindowSize'))
+	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
+
+	# Test Notification Stats
+	suite.addTest(TestCRS('test_createCRSwithRratSlidingStatsEnabled'))		# Sliding
+	suite.addTest(TestCRS('test_updateCRSwithDeletedNse'))
+	suite.addTest(TestCRS('test_updateCRSwithDeletedNsi'))
+	suite.addTest(TestCRS('test_testEmptyNsi'))
+	suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
+	suite.addTest(TestCRS('test_testNonEmptyNsi'))
+	suite.addTest(TestCRS('test_updateCRSwithNseFalse'))
+	suite.addTest(TestCRS('test_updateCRSwithNseTrue'))	# NSI should be empty
+	suite.addTest(TestCRS('test_testEmptyNsi'))
+	suite.addTest(TestCRS('test_createTwoNotificationOneNotification'))
+	suite.addTest(TestCRS('test_testNonEmptyNsi'))
+	suite.addTest(TestCRS('test_updateCRSwithNseTrue'))	# NSI should be empty
+	suite.addTest(TestCRS('test_testEmptyNsi'))
+	suite.addTest(TestCRS('test_deleteCRSwithRrat'))
+
+	# Test Expiration
+	suite.addTest(TestCRS('test_createCRSwithExpiration'))
+
+	# Test Deletion Notification
+	suite.addTest(TestCRS('test_testCRSwithSu'))
 
 
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
