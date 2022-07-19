@@ -251,8 +251,7 @@ class HttpServer(object):
 		"""	Support instead of DELETE for http/1.0.
 		"""
 		if request.environ.get('SERVER_PROTOCOL') != 'HTTP/1.0':
-			L.logWarn(dbg := 'PATCH method is only allowed for HTTP/1.0. Rejected.')
-			return Response(dbg, status=405)
+			return Response(L.logWarn('PATCH method is only allowed for HTTP/1.0. Rejected.'), status = 405)
 		Utils.renameCurrentThread(prefix = 'HTDE')
 		CSE.event.httpDelete()	# type: ignore [attr-defined]
 		return self._handleRequest(path, Operation.DELETE)
@@ -476,11 +475,9 @@ class HttpServer(object):
 					isodate.parse_date(ot)
 				resp.headers.originatingTimestamp = ot
 			except Exception as ee:
-				L.logWarn(dbg := f'Received wrong format for X-M2M-OT: {ot} - {str(ee)}')
-				return Result.errorResult(dbg = dbg)
+				return Result.errorResult(dbg = L.logWarn(f'Received wrong format for X-M2M-OT: {ot} - {str(ee)}'))
 			if (rqi := r.headers.get(C.hfRI)) != hds[C.hfRI]:
-				L.isWarn and L.logWarn(dbg := f'Received wrong or missing request identifier: {resp.headers.requestIdentifier}')
-				return Result.errorResult(dbg = dbg)
+				return Result.errorResult(dbg = L.logWarn(f'Received wrong or missing request identifier: {resp.headers.requestIdentifier}'))
 			resp.headers.requestIdentifier = rqi
 
 			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, resp.ct)}\n')
@@ -648,8 +645,7 @@ class HttpServer(object):
 					try:
 						req['ty'] = int(t)			# Here we found the type for CREATE requests
 					except:
-						L.isWarn and L.logWarn(dbg := f'resource type must be an integer: {t}')
-						return Result.errorResult(rsc = RC.badRequest, request = cseRequest, dbg = dbg)
+						return Result.errorResult(rsc = RC.badRequest, request = cseRequest, dbg = L.logWarn(f'resource type must be an integer: {t}'))
 
 		cseRequest.headers.contentType = ct
 
