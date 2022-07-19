@@ -102,7 +102,7 @@ class SecurityManager(object):
 					L.isDebug and L.logDebug('Originator for CSR/CSEBaseAnnc CREATE. OK.')
 					return True
 				else:
-					L.isWarn and L.logWarn(f'Originator for CSR/CSEBaseAnnc registration not found. Add "{originator}" to the configuration [cse.registration].allowedCSROriginators in the CSE\'s ini file to allow access for this originator.')
+					L.isWarn and L.logWarn(f'Originator for CSR/CSEBaseAnnc registration not found. Add "{Utils.getIdFromOriginator(originator)}" to the configuration [cse.registration].allowedCSROriginators in the CSE\'s ini file to allow access for this originator.')
 					return False
 
 			if ty.isAnnounced():
@@ -296,16 +296,14 @@ class SecurityManager(object):
 		""" Check whether an Originator is in the provided list of allowed 
 			originators. This list may contain regex.
 		"""
-		if L.isDebug: L.logDebug(f'Originator: {originator}')
-		if L.isDebug: L.logDebug(f'Allowed originators: {allowedOriginators}')
+		_originator = Utils.getIdFromOriginator(originator)
+		L.isDebug and L.logDebug(f'Originator: {_originator} - allowed originators: {allowedOriginators}')
 
 		if not originator or not allowedOriginators:
 			return False
-		_id = Utils.getIdFromOriginator(originator)
-		if L.isDebug: L.logDebug(f'ID: {_id}')
 
 		for ao in allowedOriginators:
-			if TextTools.simpleMatch(_id, ao):
+			if TextTools.simpleMatch(_originator, ao):
 				return True
 		return False
 

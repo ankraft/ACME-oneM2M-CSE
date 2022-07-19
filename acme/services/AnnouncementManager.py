@@ -210,7 +210,6 @@ class AnnouncementManager(object):
 		# Create announced resource & type
 		data = resource.createAnnouncedResourceDict(isCreate = True)
 		tyAnnc = T(resource.ty).announced()
-		L.logWarn(f'-- {tyAnnc}')
 		targetID = ''
 
 		if resource.ty != T.CSEBase:	# CSEBase is just announced below
