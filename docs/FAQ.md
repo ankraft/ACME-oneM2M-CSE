@@ -48,16 +48,27 @@
 
 ## CSE Registrations
 
-1. **Why does my CSE cannot register to another CSE?**  
-   One problem could be that the CSE has no access rights to register to the target CSE. To solve this, the CSE's originator (ie. the CSE's CSE-ID, for example "/id-mn") must be added to the
-   target CSE's configuration file. The configuration section [cse.registration] has a setting *allowedCSROriginators*, which is a comma separated list of originators. Add the registering CSE's
-   CSE-ID (without a leading slash!) to this setting to allow access for this originator.  
-   Example:
+1. **Why does my CSE cannot register to another CSE or announce resources?**  
+   One problem could be that the CSE has no access rights to register to the target CSE. To solve this, the CSE's originator (ie. the CSE's CSE-ID, for example "/id-mn") must be added to the target CSE's configuration file. The configuration section [cse.registration] has a setting *allowedCSROriginators*, which is a comma separated list of originators. Add the registering CSE's
+   CSE-ID (**without a leading slash!**) to this configuration section to allow access for this originator.  
+   
+   This must be done for both the CSEs that want to register and announce resources.  
 
-```ini
-[cse.registration]
-allowedCSROriginators=id-mn
-```
+   Example for an IN-CSE with the CSE-ID "*/id-in*":
+
+	```ini
+	[cse.registration]
+	allowedCSROriginators=id-mn
+	```
+  
+   And for an MN-CSE with the CSE-ID "*/id-mn*":
+
+	```ini
+	[cse.registration]
+	allowedCSROriginators=id-in
+	```
+
+  
 
 ## Performance
 
