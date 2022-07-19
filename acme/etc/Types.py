@@ -178,12 +178,21 @@ class ResourceTypes(ACMEIntEnum):
 
 
 	def tpe(self) -> str:
-		return ResourceTypes._names.get(self.value) 				#  type: ignore
+		return ResourceTypes._names.get(self.value) 					#  type: ignore
 
 
-	def announced(self) -> ResourceTypes:
-		if self.value in ResourceTypes._announcedMappings:			#  type: ignore
-			return ResourceTypes._announcedMappings[self.value] 	#  type: ignore
+	def announced(self, mgd:int = None) -> ResourceTypes:
+		if self.value != self.MGMTOBJ:
+			# Handling for non-mgmtObjs
+			if self.value in ResourceTypes._announcedMappings:			#  type: ignore
+				return ResourceTypes._announcedMappings[self.value] 	#  type: ignore
+		else:
+			# Handling for mgmtObjs
+			if mgd is not None:
+				if mgd in ResourceTypes._announcedMappings:				#  type: ignore
+					return ResourceTypes._announcedMappings[mgd]		#  type: ignore
+			else:
+				return ResourceTypes._announcedMappings[self.MGMTOBJ] 	#  type: ignore
 		return ResourceTypes.UNKNOWN
 
 

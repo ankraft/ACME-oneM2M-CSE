@@ -84,7 +84,7 @@ class TestRemote_Annc(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:ae/at'))
 		self.assertIsInstance(findXPath(r, 'm2m:ae/at'), list)
 		self.assertEqual(len(findXPath(r, 'm2m:ae/at')), 1)
-		self.assertTrue(findXPath(r, 'm2m:ae/at')[0].startswith(f'{REMOTECSEID}/'), r)
+		self.assertTrue(findXPath(r, 'm2m:ae/at/{0}').startswith(f'{REMOTECSEID}/'), r)
 		TestRemote_Annc.remoteAeRI = findXPath(r, 'm2m:ae/at')[0]
 		self.assertIsNotNone(self.remoteAeRI)
 		self.assertIsNone(findXPath(r, 'm2m:ae/aa'))
@@ -498,14 +498,12 @@ class TestRemote_Annc(unittest.TestCase):
 	@unittest.skipIf(noRemote or noCSE, 'No CSEBase or remote CSEBase')
 	def test_removeMgmtObjCSIfromAT(self) -> None:
 		""" Unanounce [Battery] (remove target CSI from AT) """
-		at = findXPath(TestRemote_Annc.bat, 'm2m:bat/at').copy()
-		at.pop(0) # remove REMOTECSEID
 		dct = 	{ 'm2m:bat' : {
-					'at' : at 			# with REMOTECSEID removed
+					'at' : None 			# remove attribute
 				}}
 		r, rsc = UPDATE(batURL, ORIGINATOR, dct)
-		self.assertEqual(rsc, RC.updated)
-		self.assertEqual(len(findXPath(r, 'm2m:bat/at')), 0)
+		self.assertEqual(rsc, RC.updated, r)
+		self.assertIsNone(findXPath(r, 'm2m:bat/at'), r)
 
 		r, rsc = RETRIEVE(f'{REMOTEURL}~{TestRemote_Annc.remoteBatRI}', ORIGINATOR)
 		self.assertEqual(rsc, RC.notFound)

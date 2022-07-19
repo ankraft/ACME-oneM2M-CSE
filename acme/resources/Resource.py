@@ -907,7 +907,6 @@ class Resource(object):
 		return CSE.storage.retrieveResource(self.pi, raw = True).resource
 
 
-
 	def getOriginator(self) -> str:
 		"""	Retrieve a resource's originator.
 

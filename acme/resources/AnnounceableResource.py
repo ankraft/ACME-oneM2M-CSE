@@ -113,12 +113,7 @@ class AnnounceableResource(Resource):
 		"""	Actually create the resource dict.
 		"""
 		# Stub
-		#tpe = T.announcedMgd(self.mgd).tpe() if self.ty == T.MGMTOBJ else T(self.ty).announced().tpe()
-		tpe = T(self.ty).announced().tpe()
-		# if self.ty != T.MGMTOBJ:
-		# 	tpe = T(self.ty).announced().tpe()
-		# else:
-		# 	tpe = T.announcedMgd(self.mgd).tpe()
+		tpe = T(self.ty).announced(self.mgd).tpe()	# Hack, bc management objects do it a bit differently
 
 		# get  all resource specific policies and add the mandatory ones
 		announcedAttributes = self._getAnnouncedAttributes(attributes)

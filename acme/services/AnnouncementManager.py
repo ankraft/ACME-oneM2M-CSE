@@ -160,7 +160,8 @@ class AnnouncementManager(object):
 		def checkCSEBaseAnnouncement(cseBase:AnnounceableResource) -> Result:
 			if t := self._announcedInfos(cseBase, csi):
 				# CSEBase has "old" announcement infos
-				if CSE.dispatcher.retrieveResource(f'{csi}/{t[1]}', CSE.cseCsi).rsc != RC.OK:	# Not a local resource
+				remoteRi = t[1] if Utils.isSPRelative(t[1]) else f'{csi}/{t[1]}'
+				if CSE.dispatcher.retrieveResource(remoteRi, CSE.cseCsi).rsc != RC.OK:	# Not a local resource
 					# No, it's not there anymore -> announce it again.
 					self._removeAnnouncementFromResource(cseBase, csi)
 					# announce CSE recursively
@@ -182,10 +183,10 @@ class AnnouncementManager(object):
 					return res
 				if res.rsc == RC.OK and res.data:	# Found a remote CSEBaseAnnc
 					# Assign to the local CSEBase
-					if (ri := Utils.findXPath(cast(dict, res.data), 'm2m:rrl/rrf/{0}/val')):
-						atri = f'{csi}/{ri}'
+					if (remoteRi := Utils.findXPath(cast(dict, res.data), 'm2m:rrl/rrf/{0}/val')):
+						atri = remoteRi if Utils.isSPRelative(remoteRi) else f'{csi}/{remoteRi}'
 						L.isDebug and L.logDebug(f'CSEBase already announced: {atri}. Updating CSEBase announcement')
-						cseBase.addAnnouncementToResource(csi, ri)
+						cseBase.addAnnouncementToResource(csi, remoteRi)
 						# !! CSEBase has no (exposed) at attribute, therefore the following code shall not
 						# !! be run for the CSEBase. Only the internal attribute is updated (previous code line).
 						# at:list[str] = cseBase.attribute('at', [])
@@ -209,6 +210,7 @@ class AnnouncementManager(object):
 		# Create announced resource & type
 		data = resource.createAnnouncedResourceDict(isCreate = True)
 		tyAnnc = T(resource.ty).announced()
+		L.logWarn(f'-- {tyAnnc}')
 		targetID = ''
 
 		if resource.ty != T.CSEBase:	# CSEBase is just announced below
@@ -232,6 +234,7 @@ class AnnouncementManager(object):
 				parentResource.dbReload() 	# parent is already the CSEBase, just reload from DB
 
 			else:	# parent is not a CSEBase
+
 				if not self._isResourceAnnouncedTo(parentResource, csi):
 					L.isDebug and L.logDebug(f'Parent resource is not announced: {parentResource.ri}')
 					# parent resource is not announced -> announce the resource directly under the CSEBaseAnnc
@@ -252,10 +255,10 @@ class AnnouncementManager(object):
 			if not (at := self._announcedInfos(parentResource, csi)):
 				L.logWarn(dbg := f'No announcement for parent resource: {parentResource.ri} to: {csi}')
 				return Result(status=False, rsc=RC.badRequest, dbg=dbg)
-			targetID = f'/{at[1]}'
+			targetID = at[1]
 
 		# Create the announed resource on the remote CSE
-		spRi = f'{csi}{targetID}'
+		spRi = targetID if Utils.isSPRelative(targetID) else f'{csi}/{targetID}'
 		L.isDebug and L.logDebug(f'Creating announced resource at: {csi} ID: {spRi}')	
 		res = CSE.request.sendCreateRequest(csi, CSE.cseCsi, appendID = spRi, ty = tyAnnc, data = data)
 		if res.rsc not in [ RC.created, RC.OK ]:
@@ -353,9 +356,10 @@ class AnnouncementManager(object):
 				self.announceResourceToCSI(resource, csi)
 
 
-	def updateResourceOnCSI(self, resource:Resource, csi:str, remoteRI:str) -> None:
+	def updateResourceOnCSI(self, resource:AnnounceableResource, csi:str, remoteRI:str) -> None:
 		"""	Update an announced resource to a specific CSR.
 		"""
+		# TODO doc
 		data = resource.createAnnouncedResourceDict(isCreate = False)
 		spRi = f'{csi}/{remoteRI}'
 
