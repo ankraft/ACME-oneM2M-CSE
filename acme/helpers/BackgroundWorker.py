@@ -7,6 +7,8 @@
 #	This class implements a background process.
 #
 
+""" A pool for background workers, actors, and jobs. """
+
 from __future__ import annotations
 from codecs import strict_errors
 from os import times
@@ -68,12 +70,13 @@ class BackgroundWorker(object):
 
 
 
-	def start(self, **args:Any) -> BackgroundWorker:
-		"""	Start the background worker in a thread. If the background worker is already
-			running then it is stopped and started again.
+	def start(self, **kwargs:Any) -> BackgroundWorker:
+		"""	Start the background worker in a thread. 
+		
+			If the background worker is already	running then it is stopped and started again.
 
 			Args:
-				Any number of arguments are passed to the worker.
+				kwargs: Any number of keyword arguments are passed to the worker.
 
 			Return:
 				The background worker instance.
@@ -85,7 +88,7 @@ class BackgroundWorker(object):
 				BackgroundWorker._logger(logging.DEBUG, f'Starting {"actor" if self.maxCount and self.maxCount > 0 else "worker"}: {self.name}')
 		# L.isDebug and L.logDebug(f'Starting {"worker" if self.interval > 0.0 else "actor"}: {self.name}')
 		self.numberOfRuns	= 0
-		self.args 			= args
+		self.args 			= kwargs
 		self.running 		= True
 		realInterval 		= self.interval if self.startWithDelay else 0	# first interval
 		self.nextRunTime 	= _utcTime() + realInterval			# now + interval (or 0)
@@ -144,9 +147,9 @@ class BackgroundWorker(object):
 		""" Continue the running of a worker. 
 
 			Args:
-				immediately: If `immediately` is True then the worker is executed immediately and then the normal schedule continues.
+				immediately: If True then the worker is executed immediately, and then the normal schedule continues.
 			Return:
-				self, BackgroundWorker
+				self.
 		"""
 		if not self.running:
 			return None
@@ -159,7 +162,7 @@ class BackgroundWorker(object):
 		"""	Execute the worker right immediately and outside the normal schedule.
 
 			Return:
-				self, BackgroundWorker
+				self.
 		"""
 		if self.executing:
 			return self
@@ -250,8 +253,11 @@ class BackgroundWorker(object):
 
 
 class Job(Thread):
-	"""	Job class that extends Thread with pause, resume, stop functionalities, and lists of
+	"""	Job class that extends the *Thread* class with pause, resume, stop functionalities, and lists of
 		running and paused jobs for reuse.
+
+		Job objects are not deleted immediately after they finished but pooled for reuse. They are
+		only destroyed when the pressure on the pool was low for a certain time.
 	"""
 
 	jobListLock	= RLock()			# Re-entrent lock (for the same thread)
@@ -261,31 +267,46 @@ class Job(Thread):
 	runningJobs:list[Job] = []
 
 	# Defaults for reducing overhead jobs
-	balanceTarget:float = 3.0		# Target balance between paused and running jobs (n paused for 1 running)
-	balanceLatency:int = 1000		# Number of requests for getting a new Job before a check
-	balanceReduceFactor:float = 2.0	# Factor to reduce the paused jobs (number of paused / balanceReduceFactor)
-	_balanceCount:int = 0			# Counter for current runs. Compares against balance
+	_balanceTarget:float = 3.0			# Target balance between paused and running jobs (n paused for 1 running)
+	_balanceLatency:int = 1000			# Number of requests for getting a new Job before a check
+	_balanceReduceFactor:float = 2.0	# Factor to reduce the paused jobs (number of paused / balanceReduceFactor)
+	_balanceCount:int = 0				# Counter for current runs. Compares against balance
 
 
 	def __init__(self, *args:Any, **kwargs:Any) -> None:
+		"""	Initialize a Job object.
+		
+			Args:
+				args: Positional job arguments.
+				kwargs: Keyword job arguments.
+		"""
+
 		super(Job, self).__init__(*args, **kwargs)
 		self.setDaemon(True)
 
-		self.pauseFlag = Event() # The flag used to pause the thread
-		self.pauseFlag.set() # Set to True, means the job is not paused
-		self.runningFlag = Event() # Used to stop the thread identification
-		self.runningFlag.set() # Set running to True
+		self.pauseFlag = Event()
+		""" The flag used to pause the thread """
+
+		self.pauseFlag.set()
+		""" Set to True when the job is **not** paused. """
+
+		self.activeFlag = Event() 
+		""" Indicates that a job is active. An active job might be paused. """
+		self.activeFlag.set() # Set active to True
 
 		self.task:Callable = None
+		""" Callback for the job's task. """
+
 		self.finished:Callable = None
+		""" Optional callback that is called after the `task` finished. """
 
 
 	def run(self) -> None:
-		"""	Internal runner function for a thread job.
+		"""	Internal runner function for a job.
 		"""
-		while self.runningFlag.is_set():
+		while self.activeFlag.is_set():
 			self.pauseFlag.wait() # return immediately when it is True, block until the internal flag is True when it is False
-			if not self.runningFlag.is_set():
+			if not self.activeFlag.is_set():
 				break
 			if self.task:
 				self.task()
@@ -332,7 +353,7 @@ class Job(Thread):
 			Return:
 				The Job object.
 		"""
-		self.runningFlag.clear() # Stop the thread
+		self.activeFlag.clear() # Stop the thread
 		self.pauseFlag.set() # Resume the thread from the suspended state
 		if self in Job.runningJobs:
 			Job.runningJobs.remove(self)
@@ -385,12 +406,12 @@ class Job(Thread):
 
 	@classmethod
 	def _balanceJobs(cls) -> None:
-		if not Job.balanceLatency:
+		if not Job._balanceLatency:
 			return
 		Job._balanceCount += 1
-		if Job._balanceCount >= Job.balanceLatency:		# check after balancyLatency runs
-			if float(lp := len(Job.pausedJobs)) / float(len(Job.runningJobs)) > Job.balanceTarget:				# out of balance?
-				for _ in range((int(lp / Job.balanceReduceFactor))):
+		if Job._balanceCount >= Job._balanceLatency:		# check after balancyLatency runs
+			if float(lp := len(Job.pausedJobs)) / float(len(Job.runningJobs)) > Job._balanceTarget:				# out of balance?
+				for _ in range((int(lp / Job._balanceReduceFactor))):
 					Job.pausedJobs.pop(0).stop()
 			Job._balanceCount = 0
 
@@ -404,9 +425,9 @@ class Job(Thread):
 				balanceLatency: Number of requests for getting a new Job before a balance check.
 				balanceReduceFactor: Factor to reduce the paused jobs (number of paused / balanceReduceFactor).	
 		"""
-		cls.balanceTarget = balanceTarget
-		cls.balanceLatency = balanceLatency
-		cls.balanceReduceFactor = balanceReduceFactor
+		cls._balanceTarget = balanceTarget
+		cls._balanceLatency = balanceLatency
+		cls._balanceReduceFactor = balanceReduceFactor
 
 
 class WorkerEntry(object):
@@ -495,12 +516,12 @@ class BackgroundWorkerPool(object):
 				name: Name of the worker
 				startWithDelay: If True then start the worker after a `interval` delay 
 				maxCount: Maximum number runs
-				dispose: If True then dispose the worker after finish
-				runOnTime: If True then the worker is always run *at* the interval, otherwise the interval starts *after* the worker execution
-				runPastEvents: If True then runs in the past are executed, otherwise they are dismissed
-				finished: Callable that is executed after the worker finished
-				ignoreExceptions: Restart the actor in case an exception is encountered
-				data: Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed as the first argument in the *_data* argument of the `workerCallback` if not *None*.
+				dispose: If True then dispose the worker after finish.
+				runOnTime: If True then the worker is always run *at* the interval, otherwise the interval starts *after* the worker execution.
+				runPastEvents: If True then runs in the past are executed, otherwise they are dismissed.
+				finished: Callable that is executed after the worker finished.
+				ignoreException: Restart the actor in case an exception is encountered.
+				data: Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed as the first argument in the *_data* argument of the *workerCallback* if not *None*.
 
 			Return:
 				BackgroundWorker
@@ -534,27 +555,25 @@ class BackgroundWorkerPool(object):
 						finished:Callable = None, 
 						ignoreException:bool = False,
 						data:Any = None) -> BackgroundWorker:
-		"""	Create a new background worker that runs only once after a `delay`
-			(the 'delay' may be 0.0s, though), or `at` a sepcific time (UTC timestamp).
-
-			The `at` argument provide convenience to calculate the delay to wait before the
-			actor runs.
-			`finished` is an optional callback that is called after the actor finished. It will
-			receive the same arguments as the normal workerCallback.
-			The "actor" is only a BackgroundWorker object and needs to be started manuall
-			with the `start()` method.
+		"""	Create a new background worker that runs only once after a *delay*
+			(it may be 0.0s, though), or *at* a specific time (UTC timestamp).
 
 			Args:
-				workerCallback: Callback to run as an actor
-				delay: Delay in seconds after which the actor callback is executed
-				at: Run the actor at a specific time (timestamp)
-				name: Name of the actor
-				dispose: If True then dispose the actor after finish
-				finished: Callable that is executed after the worker finished
-				ignoreExceptions: Restart the actor in case an exception is encountered
-				data: Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed as the first argument in the *_data* argument of the `workerCallback` if not *None*.
+				workerCallback: Callback that is executed to perform the action for the actor.
+				delay: Delay in seconds after which the actor callback is executed.
+					This is an alternative to *at*.
+					Only one of *at* or *delay* must be specified.
+				at: Run the actor at a specific time (timestamp). 
+					This is an alternative to *delay*.
+					Only one of *at* or *delay* must be specified.
+				name: Name of the actor.
+				dispose: If True then dispose the actor after finish.
+				finished: Callable that is executed after the worker finished.
+					It will	receive the same arguments as the *workerCallback* callback.
+				ignoreException: Restart the actor in case an exception is encountered.
+				data: Any data structure that is stored in the worker and accessible by the *data* attribute, and which is passed as the first argument in the *_data* argument of the *workerCallback* if not *None*.
 			Return:
-				BackgroundWorker
+				`BackgroundWorker` object. It is only an initialized object and needs to be started manually with its `start()` method.
 		"""
 		if at:
 			if delay != 0.0:
@@ -576,20 +595,25 @@ class BackgroundWorkerPool(object):
 		"""	Find and return a list of worker(s) that match the search criteria.
 
 			Args:
-				name: Name of the worker. It may contain simple wildcards (* and ?)
+				name: Name of the worker. It may contain simple wildcards (* and ?).
+					If *name* is None then stop all workers.
 				running: The running status of the worker to match
+			
+			Return:
+				A list of `BackgroundWorker` objects, or an empty list.
 		"""
 		return [ w for w in cls.backgroundWorkers.values() if (not name or simpleMatch(w.name, name)) and (not running or running == w.running) ]
 
 
 	@classmethod
 	def stopWorkers(cls, name:str = None) -> List[BackgroundWorker]:
-		"""	Stop the worker(s) that match the optional `name` parameter. 
+		"""	Stop the worker(s) that match the optional *name* parameter. 
 
 			Args:
-				name: Name of the worker(s) to remove. This could be a simple regex. If None then stop all workers.
+				name: Name of the worker(s) to remove. It may contain simple wildcards (* and ?).
+					If *name* is None then stop all workers.
 			Return:
-				The list of removed BackgroundWorker(s)
+				The list of removed `BackgroundWorker` objects.
 		"""
 		workers = cls.findWorkers(name = name)
 		for w in workers:
@@ -600,12 +624,13 @@ class BackgroundWorkerPool(object):
 	@classmethod
 	def removeWorkers(cls, name:str) -> List[BackgroundWorker]:
 		"""	Remove workers from the pool. Before removal they will be stopped first.
-			Only workers that match the `name` are removed.
+
+			Only workers that match the *name* are removed.
 
 			Args:
-				name: Name of the worker(s) to remove. This could be a simple regex.
+				name: Name of the worker(s) to remove. It may contain simple wildcards (* and ?).
 			Return:
-				The list of removed BackgroundWorker(s)
+				The list of removed `BackgroundWorker` objects.
 		"""
 		workers = cls.stopWorkers(name)
 		# Most workers should be removed when stopped, but remove the rest here
@@ -623,13 +648,12 @@ class BackgroundWorkerPool(object):
 		"""	Run a task as a Thread. Reuse finished threads if possible.
 
 			Args:
-				task: A Callable. This must include arguments, so a lambda can be used here.
+				task: A Callable that is run as a job. This must include arguments, so a lambda can be used here.
 				name: Optional name of the job.
 			Return:
-				Job instance
+				`Job` instance.
 		"""
 		return Job.getJob(task, name = name).resume()
-		# job.setName(name if name else str(job.native_id))
 
 
 	@classmethod
@@ -637,7 +661,7 @@ class BackgroundWorkerPool(object):
 		"""	Return the number of running and paused Jobs.
 		
 			Return:
-				Tuple (running Jobs, paused Jobs). Both are integers
+				Tuple of the integer numbers (count of running and paused `Job` instances).
 		"""
 		return (len(Job.runningJobs), len(Job.pausedJobs))
 
@@ -661,10 +685,10 @@ class BackgroundWorkerPool(object):
 
 	@classmethod
 	def _removeBackgroundWorkerFromPool(cls, worker:BackgroundWorker) -> None:
-		"""	Remove a BackgroundWorker from the internal pool.
+		"""	Remove a *BackgroundWorker* object from the internal pool.
 		
 			Args:
-				worker: Backgroundworker to remove
+				worker: Backgroundworker objects to remove.
 			"""
 		if worker and worker.id in cls.backgroundWorkers:
 			del cls.backgroundWorkers[worker.id]
@@ -672,11 +696,11 @@ class BackgroundWorkerPool(object):
 
 	@classmethod
 	def _queueWorker(cls, ts:float, worker:BackgroundWorker) -> None:
-		"""	Queue a `worker` for execution at the `ts` timestamp.
+		"""	Queue a `BackgroundWorker` object for execution at the *ts* timestamp.
 
 			Args:
-				ts: Timestamp at which the worker shall be executed
-				worker: Backgroundworker to unqueue
+				ts: Timestamp at which the worker shall be executed.
+				worker: Backgroundworker object to queue.
 		"""
 		top = cls.workerQueue[0] if cls.workerQueue else None
 		with cls.queueLock:

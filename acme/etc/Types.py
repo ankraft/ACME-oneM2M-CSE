@@ -489,17 +489,25 @@ class Cardinality(ACMEIntEnum):
 
 
 class RequestOptionality(ACMEIntEnum):
-	""" request optionalities """
+	""" Request optionality enum values.
+	"""
 	NP				= auto()
+	""" Not provided. """
 	O 				= auto()
+	""" Optional. """
 	M 				= auto()
+	""" Mandatory. """
 
 
 class Announced(ACMEIntEnum):
-	""" anouncent attribute indications """
+	""" Anouncent attribute enum values.
+	"""
 	NA				= auto()
+	"""	Not announced. """
 	OA				= auto()
+	""" Optionally announced. """
 	MA				= auto()
+	"""	Mandatory announced. """
 
 
 ##############################################################################
@@ -611,21 +619,41 @@ ResponseStatusCode._httpStatusCodes = {																		# type: ignore
 #
 
 class EvalCriteriaOperator(ACMEIntEnum):
-	"""	Eval Criteria Operator """
+	"""	Eval Criteria Operator enum values."""
+	
 	equal				= 1
+	""" Equal. """
+	
 	notEqual			= 2
+	""" Not equal. """
+	
 	greaterThan			= 3
+	""" Greater than. """
+	
 	lessThan			= 4
+	""" Less than. """
+
 	greaterThanEqual	= 5
+	""" Greater than or equal. """
+
 	lessThanEqual		= 6
+	""" Less than or equal. """
 
 
 class EvalMode(ACMEIntEnum):
-	"""	Eval Mode """
+	"""	Eval Mode enum values. """
+	
 	off					= 0
+	""" Evaluation off. """
+
 	once				= 1
+	""" Evaluation once. """
+
 	periodic			= 2
+	""" Evaluation periodic. """
+
 	continous 			= 3
+	""" Evaluation continous. """
 
 
 ##############################################################################
@@ -772,12 +800,21 @@ Operation._permissionsMapping =	{				# type: ignore
 #
 
 class ResponseType(ACMEIntEnum):
-	"""	Reponse Types """
+	"""	Reponse Types enum values. """
+
 	nonBlockingRequestSynch		= 1
+	""" Non-blocking synchronous. """
+
 	nonBlockingRequestAsynch	= 2
+	""" Non-blocking asynchronous. """
 	blockingRequest				= 3	# default
+	""" Blocking request (default). """
+
 	flexBlocking				= 4
+	""" Flex-blocking (CSE decides). """
+
 	noResponse					= 5
+	""" No response. """
 	
 
 ##############################################################################

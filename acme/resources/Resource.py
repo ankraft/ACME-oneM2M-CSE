@@ -929,10 +929,10 @@ class Resource(object):
 	
 
 	def getAnnouncedTo(self) -> list[Tuple[str, str]]:
-		"""	Return the internal announcedTo list of a resource.
+		"""	Return the internal *announcedTo* list attribute of a resource.
 
 			Return:
-				The internal list of announcedTo tupples (csi, remote resource ID) for this resource.
+				The internal list of *announcedTo* tupples (csi, remote resource ID) for this resource.
 		"""
 		return self[self._announcedTo]
 
