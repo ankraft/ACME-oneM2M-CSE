@@ -6,6 +6,7 @@
 [Integration Into Other Applications](#integration)  
 [Running Test Cases](#test_cases)  
 [MyPy Static Type Checker](#mypy)  
+[Debug Mode](#debug-mode)  
 
 
 <a name="messy_details"></a>
@@ -144,5 +145,14 @@ The CSE code is statically type-checked with [mypy](http://mypy-lang.org).
 
 Just execute the ```mypy``` command in the project's root directory. It will read its configuration from the configuration file [mypy.ini](../mypy.ini).
 
+
+## Debug Mode
+
+The CSE tries to catch errors and give helpful advice as much as possible during runtime.
+However, there are circumstances when this could not done easily, e.g. during startup.
+
+In order to provide additional information in these situations one can set the *ACME_DEBUG* environment (to any value):
+
+	$ export ACME_DEBUG=1
 
 [← README](../README.md) 

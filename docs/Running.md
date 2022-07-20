@@ -35,6 +35,10 @@ In additions, you can provide additional command line arguments that will overri
 | --remote-cse, --no-remote-cse                     | Enable or disable remote CSE connections and checking.<br />This overrides the [enableRemoteCSE](Configuration.md#general) configuration setting.               |
 | --statistics, --no-statistics                     | Enable or disable collecting CSE statistics.<br />This overrides the [enable](Configuration.md#statistics) configuration setting.                               |
 
+### Debug Mode
+
+Please see [Development - Debug Mode](Development.md#debug-mode) how to enable the debug mode to see further information in case you run into problems when trying to run the CSE.
+
 
 ## Stopping the CSE
 
@@ -45,6 +49,7 @@ The CSE can be stopped by pressing pressing the uppercase *Q* key or *CTRL-C* **
 Please note, that the shutdown might take a moment (e.g. gracefully terminating background processes, writing database caches, sending notifications etc). 
 
 **Being impatient and hitting *CTRL-C* twice might lead to data corruption.**
+
 
 
 ## Command Console
