@@ -12,7 +12,6 @@ from cgitb import reset
 import operator
 import sys
 from copy import deepcopy
-from syslog import LOG_DAEMON
 from typing import Any, List, Tuple, cast
 
 from ..helpers import TextTools as TextTools

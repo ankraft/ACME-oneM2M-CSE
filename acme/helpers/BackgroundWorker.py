@@ -108,7 +108,7 @@ class BackgroundWorker(object):
 		if BackgroundWorker._logger:
 				BackgroundWorker._logger(logging.DEBUG, f'Stopping {"actor" if self.maxCount and self.maxCount > 0 else "worker"}: {self.name}')
 		BackgroundWorkerPool._unqueueWorker(self)		# Stop the timer and remove from queue
-		self._postCall()									# Note: worker is removed in _postCall()
+		self._postCall()								# Note: worker is removed in _postCall()
 		return self
 	
 
@@ -239,7 +239,7 @@ class BackgroundWorker(object):
 
 
 	def _postCall(self) -> None:
-		"""	Internal cleanup after execution finished.
+		"""	Internal cleanup after execution finished or a worker has been stopped.
 		"""
 		if self.finished:
 			self.finished(**self.args)
@@ -613,7 +613,7 @@ class BackgroundWorkerPool(object):
 				name: Name of the worker(s) to remove. It may contain simple wildcards (* and ?).
 					If *name* is None then stop all workers.
 			Return:
-				The list of removed `BackgroundWorker` objects.
+				The list of stopped `BackgroundWorker` objects.
 		"""
 		workers = cls.findWorkers(name = name)
 		for w in workers:

@@ -18,7 +18,7 @@ from ..services.Logging import Logging as L
 from ..resources.Resource import *
 
 
-# TODO associatedCrossResourceSub
+# TODO notificationForwardingURI
 
 
 class SUB(Resource):
@@ -88,8 +88,6 @@ class SUB(Resource):
 			self.setAttribute('bn/dur', Configuration.get('cse.sub.dur'), overwrite = False)
 		
 
-# TODO notificationForwardingURI
-
 	def activate(self, parentResource:Resource, originator:str) -> Result:
 		if not (result := super().activate(parentResource, originator)).status:
 			return result
@@ -124,19 +122,6 @@ class SUB(Resource):
 
 		# Handle update nse attribute
 		CSE.notification.updateOfNSEAttribute(self, Utils.findXPath(dct, 'm2m:sub/nse'))
-
-		# # nse is not deleted, it is a mandatory attribute
-		# oldNse = self.nse
-		# if (newNse := Utils.findXPath(dct, 'm2m:sub/nse')) is not None:	# present in the request
-		# 	if oldNse: # self.nse == True
-		# 		if newNse == False:
-		# 			pass # Stop collecting, but keep notificationStatsInfo
-		# 		else: # Both are True
-		# 			self.setAttribute('nsi', [])
-		# 	else:	# self.nse == False
-		# 		if newNse == True:
-		# 			self.setAttribute('nsi', [])
-
 
 		# Handle changes to acrs (send deletion notifications)
 		if (newAcrs := findXPath(dct, 'm2m:sub/acrs')) is not None and self.acrs is not None:
