@@ -8,8 +8,6 @@
 #
 
 from __future__ import annotations
-from argparse import OPTIONAL
-from glob import glob
 from urllib.parse import ParseResult, urlparse, parse_qs
 import sys, io, atexit
 import unittest
@@ -150,7 +148,7 @@ class MQTTClientHandler(MQTTHandler):
 		while True:		# TODO Timeout
 			if self.topics[originator].respTopic:
 				break
-			time.sleep(0.01)
+			testSleep(0.01)
 
 		return topics
 	
@@ -654,7 +652,7 @@ def isShortRequestExpirations() -> bool:
 
 def testCaseStart(name:str) -> None:
 	"""	Indicate the start of a new test case to the CSE via the UT interface.
-		
+
 		Args:
 			name: Name of the test case.
 	"""
@@ -793,21 +791,21 @@ def getLastNotificationHeaders() -> Parameters:
 	return lastNotificationHeaders
 
 
-sleepCount:float = 0.0
+_sleepTimeCount:float = 0.0
 
 def testSleep(ti:float) -> None:
-	global sleepCount
-	sleepCount += ti
+	global _sleepTimeCount
+	_sleepTimeCount += ti
 	time.sleep(ti)
 
 
-def clearSleepCount() -> None:
-	global sleepCount
-	sleepCount = 0
+def clearSleepTimeCount() -> None:
+	global _sleepTimeCount
+	_sleepTimeCount = 0
 
 
-def getSleepCount() -> float:
-	return sleepCount
+def getSleepTimeCount() -> float:
+	return _sleepTimeCount
 
 
 
@@ -830,7 +828,7 @@ def printResult(result:unittest.TestResult) -> None:
 def waitMessage(msg:str, delay:float) -> None:
 	if delay:
 		with console.status(f'[bright_blue]{msg}') as status:
-			time.sleep(delay)
+			testSleep(delay)
 	else:
 		console.print(f'[bright_blue]{msg}')
 
@@ -946,7 +944,7 @@ if PROTOCOL == 'mqtt':
 	mqttClient = MQTTConnection(mqttAddress, mqttPort, clientID=mqttClientID, username=mqttUsername, password=mqttPassword, messageHandler=mqttHandler)
 	mqttClient.run()
 	while not mqttHandler.connection:
-		time.sleep(1)
+		testSleep(1)
 
 
 ###############################################################################

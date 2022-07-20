@@ -59,6 +59,7 @@ if __name__ == '__main__':
 	# Run the tests and get some measurements
 	totalTimeStart		  = time.perf_counter()
 	totalProcessTimeStart = time.process_time()
+	totalSleepTime		  = 0.0
 	init.requestCount	  = 0
 	
 	for module in modules:
@@ -70,7 +71,7 @@ if __name__ == '__main__':
 				startProcessTime = time.process_time()
 				startPerfTime = time.perf_counter()
 				startRequestCount = init.requestCount
-				testExecuted, errors, skipped = module.run(testVerbosity=args.verbosity, testFailFast=args.failFast)	# type: ignore
+				testExecuted, errors, skipped, sleepTimeCount = module.run(testVerbosity=args.verbosity, testFailFast=args.failFast)	# type: ignore
 				init.stopNotificationServer()
 
 				durationProcess = time.process_time() - startProcessTime
@@ -79,13 +80,14 @@ if __name__ == '__main__':
 					totalErrors += errors
 					totalRunTests += testExecuted
 				totalSkipped += skipped
-				results[name] = ( testExecuted, errors, duration, durationProcess, skipped, init.requestCount - startRequestCount )
+				totalSleepTime += sleepTimeCount
+				results[name] = ( testExecuted, errors, duration, durationProcess, skipped, init.requestCount - startRequestCount, sleepTimeCount )
 				console.print(f'[spring_green3]Successfully executed tests: {testExecuted}')
 				if errors > 0:
 					console.print(f'[red]Errors: {errors}')
 			else:
 				if args.showSkipped:
-					results[name] = ( 0, 0, 0, 0, 1, init.requestCount - startRequestCount )
+					results[name] = ( 0, 0, 0, 0, 1, init.requestCount - startRequestCount, 0.0 )
 
 	totalProcessTime	= time.process_time() - totalProcessTimeStart
 	totalExecTime 		= time.perf_counter() - totalTimeStart
@@ -97,9 +99,12 @@ if __name__ == '__main__':
 	table.add_column('Count', footer=f'[spring_green3]{totalRunTests if totalErrors == 0 else str(totalRunTests)}[/spring_green3]', justify='right')
 	table.add_column('Skipped', footer=f'[yellow]{totalSkipped}[/yellow]' if totalSkipped > 0 else '[spring_green3]0[spring_green3]', justify='right')
 	table.add_column('Errors', footer=f'[red]{totalErrors}[/red]' if totalErrors > 0 else '[spring_green3]0[spring_green3]', justify='right')
-	table.add_column('Exec Time', footer=f'{totalExecTime:.4f}', justify='right')
-	table.add_column('Process Time', footer=f'{totalProcessTime:.4f}', justify='right')
-	table.add_column('Time / Test', footer=f'{totalExecTime/totalRunTests:.4f}' if totalRunTests != 0 else '', justify='right')
+	table.add_column('Times\nExec | Sleep | Proc', footer=f'{totalExecTime:.4f} | {totalSleepTime:.2f} | {totalProcessTime:.4f}', justify='center')
+	# table.add_column('Exec Time', footer=f'{totalExecTime:.4f}', justify='right')
+	# table.add_column('Sleep Time', footer=f'{totalSleepTime:.2f}' if totalRunTests != 0 else '0.0', justify='right')
+	# table.add_column('Proc Time', footer=f'{totalProcessTime:.4f}', justify='right')
+	table.add_column('Exec Time per\nTest | Request', footer=f'{totalExecTime/totalRunTests:.4f} | {totalExecTime/init.requestCount:.4f}' if totalRunTests != 0 else '0.0000 | 0.0000', justify='center')
+	table.add_column('Proc Time per\nTest | Request', footer=f'{totalProcessTime/totalRunTests:.4f} | {totalProcessTime/init.requestCount:.4f}' if totalRunTests != 0 else '0.0000 | 0.0000', justify='right')
 	table.add_column('Requests', footer=f'{init.requestCount}', justify='right')
 	# Styles
 	styleDisabled = Style(dim=True)
@@ -117,9 +122,11 @@ if __name__ == '__main__':
 						str(v[0]), 
 						f'[yellow]{v[4]}[/yellow]' if v[4] > 0 and v[0] > 0 else str(v[4]),
 						f'[red]{v[1]}[/red]' if v[1] > 0 and v[0] > 0 else str(v[1]),
-						f'{v[2]:.4f}' if v[0] > 0 else '', 
-						f'{v[3]:.4f}' if v[0] > 0 else '',
-						f'{(v[2]/v[0]):.4f}' if v[0] > 0 else '',
+						f'{v[2]:.4f} | {v[6]:.2f} | {v[3]:.4f}' if v[0] > 0 else '', 
+						# f'{v[6]:.2f}',
+						# f'{v[3]:.4f}' if v[0] > 0 else '',
+						f'{(v[2]/v[0]):.4f} | {(v[2]/v[5]):.4f}' if v[0] > 0 else '',
+						f'{(v[3]/v[0]):.4f} | {(v[3]/v[5]):.4f}' if v[0] > 0 else '',
 						f'{v[5]}',
 						style=style)
 	console.print(table)

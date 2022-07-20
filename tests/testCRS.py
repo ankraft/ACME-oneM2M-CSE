@@ -7,8 +7,7 @@
 #	Unit tests for CRS functionality & notifications
 #
 
-import unittest, sys, time
-from unittest.result import failfast
+import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
@@ -42,7 +41,6 @@ class TestCRS(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
 		testCaseStart('Setup TestCRS')
-		clearSleepCount()
 
 		# Start notification server
 		startNotificationServer()
@@ -944,8 +942,11 @@ class TestCRS(unittest.TestCase):
 	#########################################################################
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
+	
+	# Clear counters
+	clearSleepTimeCount()
 
 	# General test cases
 	suite.addTest(TestCRS('test_createCRSmissingRratSratFail'))
@@ -1031,9 +1032,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	printResult(result)
-	print(getSleepCount())
-	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	_, errors, _ = run(2, True)
+	r, errors, s, t = run(2, True)
 	sys.exit(errors)

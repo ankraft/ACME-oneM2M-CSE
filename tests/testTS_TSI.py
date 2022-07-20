@@ -407,8 +407,8 @@ class TestTS_TSI(unittest.TestCase):
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
 			self.assertEqual(rsc, RC.created, r)
-			# time.sleep(pei / 1000)
-			time.sleep(timeSeriesInterval - (datetime.datetime.utcnow().timestamp() - date)) # == pei
+			# testSleep(pei / 1000)
+			testSleep(timeSeriesInterval - (datetime.datetime.utcnow().timestamp() - date)) # == pei
 			date += timeSeriesInterval
 
 		# Check TS for missing TSI
@@ -435,7 +435,7 @@ class TestTS_TSI(unittest.TestCase):
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
 			self.assertEqual(rsc, RC.created, r)
-			time.sleep(timeSeriesInterval) # == pei
+			testSleep(timeSeriesInterval) # == pei
 			dgt += timeSeriesInterval
 
 		# Check TS for missing TSI
@@ -464,7 +464,7 @@ class TestTS_TSI(unittest.TestCase):
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
 			self.assertEqual(rsc, RC.created, r)
-			time.sleep(timeSeriesInterval) # == pei
+			testSleep(timeSeriesInterval) # == pei
 			dgt += timeSeriesInterval * 2	# too late
 
 		# Check TS for missing TSI
@@ -491,7 +491,7 @@ class TestTS_TSI(unittest.TestCase):
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
 			self.assertEqual(rsc, RC.created, r)
-			time.sleep(timeSeriesInterval) # == pei
+			testSleep(timeSeriesInterval) # == pei
 			dgt += 1	# minimal different
 
 		# Check TS for missing TSI
@@ -528,7 +528,7 @@ class TestTS_TSI(unittest.TestCase):
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, tsidct)
 			self.assertEqual(rsc, RC.created, r)
-			time.sleep(_pei + (_mdt * 2.0))
+			testSleep(_pei + (_mdt * 2.0))
 
 			# r, rsc = RETRIEVE(tsURL, TestTS_TSI.originator)
 			# self.assertIsNotNone(findXPath(r, 'm2m:ts/mdlt'), r)
@@ -613,8 +613,8 @@ class TestTS_TSI(unittest.TestCase):
 				}}
 		r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
 		self.assertEqual(rsc, RC.created, r)
-		time.sleep(timeSeriesInterval) # == pei
-		# time.sleep(timeSeriesInterval + 0.1) # == pei + a short offset
+		testSleep(timeSeriesInterval) # == pei
+		# testSleep(timeSeriesInterval + 0.1) # == pei + a short offset
 		start = time.time()
 		dgt += timeSeriesInterval * 2
 
@@ -627,7 +627,7 @@ class TestTS_TSI(unittest.TestCase):
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
 			self.assertEqual(rsc, RC.created, r)
-			time.sleep(timeSeriesInterval - (time.time() - start) ) # == pei - processing time
+			testSleep(timeSeriesInterval - (time.time() - start) ) # == pei - processing time
 			start = time.time()
 			dgt += timeSeriesInterval
 
@@ -672,8 +672,8 @@ class TestTS_TSI(unittest.TestCase):
 					}}
 			r, rsc = CREATE(tsURL, TestTS_TSI.originator, T.TSI, dct)
 			self.assertEqual(rsc, RC.created, r)
-			time.sleep(0.5)
-		time.sleep(timeSeriesInterval * 2)
+			testSleep(0.5)
+		testSleep(timeSeriesInterval * 2)
 
 		# Check TS
 		r, rsc = RETRIEVE(tsURL, TestTS_TSI.originator)
@@ -699,8 +699,12 @@ class TestTS_TSI(unittest.TestCase):
 # TODO: instead of mdt:9999 set the mdn to None etc.
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
+		
+	# Clear counters
+	clearSleepTimeCount()
+	
 	suite.addTest(TestTS_TSI('test_addTSI'))
 	suite.addTest(TestTS_TSI('test_addMoreTSI'))
 	suite.addTest(TestTS_TSI('test_retrieveTSLa'))
@@ -740,9 +744,9 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	
 	printResult(result)
-	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 
 if __name__ == '__main__':
-	_, errors, _ = run(2, True)
+	r, errors, s, t = run(2, True)
 	sys.exit(errors)

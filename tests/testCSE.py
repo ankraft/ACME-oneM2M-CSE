@@ -23,7 +23,7 @@ class TestCSE(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
 		testCaseStart('Setup TestCSE')
-		pass
+		...
 		testCaseEnd('Setup TestCSE')
 
 
@@ -31,7 +31,7 @@ class TestCSE(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
 		testCaseStart('TearDown TestCSE')
-		pass
+		...
 		testCaseEnd('TearDown TestCSE')
 
 
@@ -132,8 +132,12 @@ class TestCSE(unittest.TestCase):
 		self.assertEqual(rsc, RC.operationNotAllowed)
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
+		
+	# Clear counters
+	clearSleepTimeCount()
+	
 	suite.addTest(TestCSE('test_retrieveCSE'))
 	suite.addTest(TestCSE('test_retrieveCSEWithWrongOriginator'))
 	suite.addTest(TestCSE('test_attributesCSE'))
@@ -145,8 +149,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
-	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	_, errors, _ = run(2, True)
+	r, errors, s, t = run(2, True)
 	sys.exit(errors)

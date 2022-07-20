@@ -133,9 +133,12 @@ class TestACTR(unittest.TestCase):
 		self.assertEqual(rsc, RC.badRequest, r)
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
-
+	
+	# Clear counters
+	clearSleepTimeCount()
+	
 	# basic tests
 	suite.addTest(TestACTR('test_createACTR'))
 	suite.addTest(TestACTR('test_createACTRWrongORCFail'))
@@ -143,9 +146,9 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
-	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 
 if __name__ == '__main__':
-	_, errors, _ = run(2, True)
+	r, errors, s, t = run(2, True)
 	sys.exit(errors)

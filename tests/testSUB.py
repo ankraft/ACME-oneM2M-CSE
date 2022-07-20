@@ -7,7 +7,7 @@
 #	Unit tests for SUB functionality & notifications
 #
 
-import unittest, sys, time
+import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
@@ -514,7 +514,7 @@ class TestSUB(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_updateCNTBatchDuration(self) -> None:
 		""" CREATE n <CNT> -> Send batch notification with all outstanding notifications after the timeout"""
-		time.sleep(durationForBatchNotifications) 	# wait a moment for other notifications
+		testSleep(durationForBatchNotifications) 	# wait a moment for other notifications
 		clearLastNotification()
 		for i in range(0, numberOfBatchNotifications):
 			dct = 	{ 'm2m:cnt' : {
@@ -526,7 +526,7 @@ class TestSUB(unittest.TestCase):
 		self.assertIsNone(lastNotification)
 		self.assertIsNone(findXPath(lastNotification, 'm2m:agn'))
 
-		time.sleep(durationForBatchNotifications * 2) 	# wait a moment
+		testSleep(durationForBatchNotifications * 2) 	# wait a moment
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn'))	# Should have arrived now
 		for i in range(0, numberOfBatchNotifications):	# check availability and correct order
@@ -929,7 +929,7 @@ class TestSUB(unittest.TestCase):
 		self.assertEqual(findXPath(lastNotification, 'm2m:sgn/nev/rep/m2m:cnt/rn'), f'{cntRN}3')
 
 		# Retrieve subscription
-		time.sleep(1) 	# wait a moment
+		testSleep(1) 	# wait a moment
 		_, rsc = RETRIEVE(f'{aeURL}/{subRN}EXC', TestSUB.originator)
 		self.assertEqual(rsc, RC.OK)
 
@@ -939,12 +939,12 @@ class TestSUB(unittest.TestCase):
 				}}
 		TestSUB.cnt, rsc = CREATE(aeURL, TestSUB.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
-		time.sleep(durationForBatchNotifications) 	# wait a moment
+		testSleep(durationForBatchNotifications) 	# wait a moment
 		lastNotification = getLastNotification()
 		self.assertTrue(findXPath(lastNotification, 'm2m:sgn/sud'))
 
 		# Retrieve subscription
-		time.sleep(1) 	# wait a moment
+		testSleep(1) 	# wait a moment
 		_, rsc = RETRIEVE(f'{aeURL}/{subRN}EXC', TestSUB.originator)
 		self.assertEqual(rsc, RC.notFound)
 
@@ -1483,7 +1483,7 @@ class TestSUB(unittest.TestCase):
 					}}
 			r, rsc = UPDATE(f'{self.aePOAURL}', TestSUB.originatorPoa, dct)	
 			self.assertEqual(rsc, RC.updated, r)
-		time.sleep(1)	# Just wait a moment to give the CSE some time
+		testSleep(1)	# Just wait a moment to give the CSE some time
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn'), lastNotification)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:agn/m2m:sgn'), lastNotification)
@@ -1500,8 +1500,11 @@ class TestSUB(unittest.TestCase):
 
 
 # TODO check different NET's (ae->cnt->sub, add cnt to cnt)
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
+		
+	# Clear counters
+	clearSleepTimeCount()
 
 	suite.addTest(TestSUB('test_createSUB'))
 	suite.addTest(TestSUB('test_retrieveSUB'))
@@ -1607,8 +1610,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
-	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	_, errors, _ = run(2, True)
+	r, errors, s, t = run(2, True)
 	sys.exit(errors)

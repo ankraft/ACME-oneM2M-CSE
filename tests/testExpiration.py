@@ -8,7 +8,7 @@
 #	remote CSE
 #
 
-import unittest, sys, time
+import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
@@ -30,6 +30,7 @@ class TestExpiration(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
 		testCaseStart('Setup TestExpiration')
+
 		dct = 	{ 'm2m:ae' : {
 					'rn'  : aeRN, 
 					'api' : 'NMyApp1Id',
@@ -73,7 +74,7 @@ class TestExpiration(unittest.TestCase):
 				}}
 		_, rsc = CREATE(aeURL, TestExpiration.originator, T.CNT, dct)
 		self.assertEqual(rsc, RC.created)
-		time.sleep(expirationSleep)	# give the server a moment to expire the resource
+		testSleep(expirationSleep)	# give the server a moment to expire the resource
 		
 		_, rsc = RETRIEVE(cntURL, TestExpiration.originator)
 		self.assertEqual(rsc, RC.notFound)
@@ -102,7 +103,7 @@ class TestExpiration(unittest.TestCase):
 
 		r, rsc = RETRIEVE(f'{cntURL}/{cinRn}', TestExpiration.originator)
 		self.assertEqual(rsc, RC.OK)
-		time.sleep(expirationSleep)	# give the server a moment to expire the resource
+		testSleep(expirationSleep)	# give the server a moment to expire the resource
 
 		r, rsc = RETRIEVE(cntURL, TestExpiration.originator)	# retrieve CNT again
 		self.assertEqual(rsc, RC.notFound)
@@ -182,7 +183,7 @@ class TestExpiration(unittest.TestCase):
 			r, rsc = CREATE(cntURL, TestExpiration.originator, T.CIN, dct)
 			self.assertEqual(rsc, RC.created)
 
-		time.sleep(expirationSleep)	# give the server a moment to expire the CIN's
+		testSleep(expirationSleep)	# give the server a moment to expire the CIN's
 
 		r, rsc = RETRIEVE(cntURL, TestExpiration.originator)
 		self.assertEqual(rsc, RC.OK)
@@ -215,7 +216,7 @@ class TestExpiration(unittest.TestCase):
 			self.assertEqual(rsc, RC.created)
 			self.assertLess(findXPath(r, 'm2m:cin/et'), tooLargeET)
 
-		time.sleep(expirationSleep)	# give the server a moment to expire the CIN's (which should not happen this time)
+		testSleep(expirationSleep)	# give the server a moment to expire the CIN's (which should not happen this time)
 
 		r, rsc = RETRIEVE(cntURL, TestExpiration.originator)
 		self.assertEqual(rsc, RC.OK)
@@ -251,7 +252,7 @@ class TestExpiration(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'cod:tempe/cni'), 6)
 		self.assertGreater(findXPath(r, 'cod:tempe/cbs'), 0)	
 
-		time.sleep(expirationSleep)	# give the server a moment to expire the CIN's
+		testSleep(expirationSleep)	# give the server a moment to expire the CIN's
 
 		r, rsc = RETRIEVE(fcntURL, TestExpiration.originator)
 		self.assertEqual(rsc, RC.OK)
@@ -262,15 +263,19 @@ class TestExpiration(unittest.TestCase):
 		self.assertEqual(rsc, RC.deleted)
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	# Reconfigure the server to check faster for expirations.
 	enableShortResourceExpirations()
 	if not isTestResourceExpirations():
 		print('\n[red reverse] Error configuring the CSE\'s test settings ')
 		print('Did you enable [i]remote configuration[/i] for the CSE?\n')
-		return 0,0,1	
+		return 0,0,1,0.0	
 
 	suite = unittest.TestSuite()
+		
+	# Clear counters
+	clearSleepTimeCount()
+	
 	suite.addTest(TestExpiration('test_expireCNT'))
 	suite.addTest(TestExpiration('test_expireCNTAndCIN'))
 	suite.addTest(TestExpiration('test_createCNTWithToLargeET'))
@@ -283,8 +288,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	disableShortResourceExpirations()
 	printResult(result)
-	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	_, errors, _ = run(2, True)
+	r, errors, s, t = run(2, True)
 	sys.exit(errors)

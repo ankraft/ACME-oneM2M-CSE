@@ -12,6 +12,7 @@ import unittest, sys, time
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
+from copy import deepcopy
 import threading
 from acme.etc.Types import ResponseStatusCode as RC, ResourceTypes as T
 from init import *
@@ -32,29 +33,14 @@ class TestLoad(unittest.TestCase):
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
-		testCaseStart('Setup TestLoad')
 		pass
-		testCaseEnd('Setup TestLoad')
 
 
 	@classmethod
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def tearDownClass(cls) -> None:
-		testCaseStart('TearDown TestLoad')
 		for ae in cls.aes:
 			DELETE(f'{cseURL}/{ae[1]}', ORIGINATOR)
-		testCaseEnd('TearDown TestLoad')
-
-
-	def setUp(self) -> None:
-		testCaseStart(self._testMethodName)
-	
-
-	def tearDown(self) -> None:
-		testCaseEnd(self._testMethodName)
-
-
-	#########################################################################
 
 
 	@classmethod
@@ -154,7 +140,7 @@ class TestLoad(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createAEs(self) -> None:
-		"""	Create n AEs """
+		"""	Create n AEs. This might take a moment. """
 		TestLoad.startTimer()
 		print(f'{self.count} ... ', end='', flush=True)
 		TestLoad.aes.extend(self._createAEs(self.count))
@@ -163,7 +149,7 @@ class TestLoad(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_retrieveAEs(self) -> None:
-		"""	Retrieve n AEs """
+		"""	Retrieve n AEs. This might take a moment. """
 		TestLoad.startTimer()
 		print(f'{self.count} ... ', end='', flush=True)
 		self._retrieveAEs(self.count)
@@ -172,7 +158,7 @@ class TestLoad(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteAEs(self) -> None:
-		"""	Delete n AEs """
+		"""	Delete n AEs. This might take a moment. """
 		TestLoad.startTimer()
 		print(f'{self.count} ... ', end='', flush=True)
 		self._deleteAEs(self.count)
@@ -180,9 +166,8 @@ class TestLoad(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipIf(BINDING=='mqtt', 'No parallel execution for MQTT binding yet')
 	def test_createAEsParallel(self) -> None:
-		"""	Create n AEs in m threads in parallel"""
+		"""	Create n AEs in m threads in parallel. This might take a moment. """
 		print(f'{self.count} * {self.parallel} Threads ... ', end='', flush=True)
 		threads = [threading.Thread(target=lambda: TestLoad.aes.extend(self._createAEs(self.count))) for _ in range(self.parallel)]
 		TestLoad.startTimer()
@@ -192,9 +177,8 @@ class TestLoad(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipIf(BINDING=='mqtt', 'No parallel execution for MQTT binding yet')
 	def test_deleteAEsParallel(self) -> None:
-		"""	Delete n AEs in m threads in parallel """
+		"""	Delete n AEs in m threads in parallel. This might take a moment. """
 		print(f'{self.count} * {self.parallel} Threads ... ', end='', flush=True)
 		nrPerList = int(len(TestLoad.aes)/self.parallel)
 		deleteLists = [TestLoad.aes[x:x+nrPerList] for x in range(0, len(TestLoad.aes), nrPerList)]
@@ -208,7 +192,7 @@ class TestLoad(unittest.TestCase):
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_createCNTCINs(self) -> None:
-		"""	Create 1 AE + n CNTs * 20 CINs"""
+		"""	Create 1 AE + n CNTs * 20 CINs. This might take a moment. """
 		self.assertEqual(len(TestLoad.aes), 0)
 		print(f'{self.count} ... ', end='', flush=True)
 		TestLoad.startTimer()
@@ -225,13 +209,12 @@ class TestLoad(unittest.TestCase):
 		for cnt in cnts:
 			self._createCINs(ae[1], cnt[1], ae[0], 20)
 
-		print(f'{TestLoad.stopTimer(self.count, 1, divider=20)} ... ', end='', flush=True)
+		print(f'{TestLoad.stopTimer(self.count, len(cnts), divider=20)} ... ', end='', flush=True)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
-	@unittest.skipIf(BINDING=='mqtt', 'No parallel execution for MQTT binding yet')
 	def test_createCNTCINsParallel(self) -> None:
-		"""	Create 1 AE + n CNTs * 20 CINs in n threads"""
+		"""	Create 1 AE + n CNTs * 20 CINs in n threads. This might take a moment. """
 		self.assertEqual(len(TestLoad.aes), 0)
 		print(f'{self.count} ... ', end='', flush=True)
 		TestLoad.startTimer()
@@ -249,12 +232,12 @@ class TestLoad(unittest.TestCase):
 			threads.append(t := threading.Thread(target=lambda: self._createCINs(ae[1], cnt[1], ae[0], 20)))
 			t.start()
 		[t.join() for t in threads]		# type: ignore [func-returns-value]
-		print(f'{TestLoad.stopTimer(self.count, 1, divider=20)} ... ', end='', flush=True)
+		print(f'{TestLoad.stopTimer(self.count, len(cnts), divider=20)} ... ', end='', flush=True)
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteCNTCINs(self) -> None:
-		"""	Delete 1 AE  + n CNTs + 20 CINs"""
+		"""	Delete 1 AE  + n CNTs + 20 CINs. This might take a moment. """
 		self.assertEqual(len(TestLoad.aes), 1)
 		print(f'{self.count} ... ', end='', flush=True)
 		TestLoad.startTimer()
@@ -272,11 +255,9 @@ class TestLoad(unittest.TestCase):
 # TODO CNT + CIN
 # TODO CNT + CIN + SUB
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite = unittest.TestSuite()
-	
-	# Clear counters
-	clearSleepTimeCount()
+
 
 	suite.addTest(TestLoad('test_createAEs', 10))
 	suite.addTest(TestLoad('test_retrieveAEs', 10))
@@ -309,8 +290,8 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
-	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':
-	r, errors, s, t = run(2, True)
+	_, errors, _ = run(2, True)
 	sys.exit(errors)

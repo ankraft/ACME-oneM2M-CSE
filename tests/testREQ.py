@@ -7,7 +7,7 @@
 #	Unit tests for REQ functionality
 #
 
-import unittest, sys, time
+import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
@@ -97,7 +97,7 @@ class TestREQ(unittest.TestCase):
 		requestURI = findXPath(r, 'm2m:uri')
 
 		# get and check resource
-		time.sleep(requestCheckDelay)
+		testSleep(requestCheckDelay)
 		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertIsNotNone(findXPath(r, 'm2m:req'))
@@ -146,7 +146,7 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNone(findXPath(r, 'm2m:req/ors'))
 
 		# get and check <request> after a delay to give the operation time to run
-		time.sleep(requestCheckDelay * 2)
+		testSleep(requestCheckDelay * 2)
 		r2, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK, r2)
 		self.assertIsNotNone(findXPath(r, 'm2m:req/lt'))
@@ -167,12 +167,12 @@ class TestREQ(unittest.TestCase):
 		requestURI = findXPath(r, 'm2m:uri')
 
 		# get and check resource
-		time.sleep(requestCheckDelay)
+		testSleep(requestCheckDelay)
 		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK, r)
 
 		# Wait a bit longer. The <req> should have been deleted.
-		time.sleep(expirationCheckDelay * 2)
+		testSleep(expirationCheckDelay * 2)
 		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.notFound, r)
 
@@ -187,7 +187,7 @@ class TestREQ(unittest.TestCase):
 
 		# Default should be applied by the CSE
 		# get and check resource
-		time.sleep(requestCheckDelay)
+		testSleep(requestCheckDelay)
 		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK)
 
@@ -208,7 +208,7 @@ class TestREQ(unittest.TestCase):
 		requestURI = findXPath(r, 'm2m:uri')
 
 		# Sleep "too" long
-		time.sleep(expirationSleep)
+		testSleep(expirationSleep)
 
 		# get and check resource
 		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
@@ -224,7 +224,7 @@ class TestREQ(unittest.TestCase):
 		requestURI = findXPath(r, 'm2m:uri')
 
 		# get and check resource
-		time.sleep(requestCheckDelay)
+		testSleep(requestCheckDelay)
 		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:req'))
@@ -272,7 +272,7 @@ class TestREQ(unittest.TestCase):
 		requestURI = findXPath(r, 'm2m:uri')
 
 		# get and check resource
-		time.sleep(requestCheckDelay)
+		testSleep(requestCheckDelay)
 		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:req'))
@@ -301,7 +301,7 @@ class TestREQ(unittest.TestCase):
 		requestURI = findXPath(r, 'm2m:uri')
 
 		# get and check resource
-		time.sleep(requestCheckDelay)
+		testSleep(requestCheckDelay)
 		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:req'))
@@ -329,7 +329,7 @@ class TestREQ(unittest.TestCase):
 		requestURI = findXPath(r, 'm2m:uri')
 
 		# get and check resource
-		time.sleep(requestCheckDelay)
+		testSleep(requestCheckDelay)
 		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK)
 		self.assertIsNotNone(findXPath(r, 'm2m:req'))
@@ -349,7 +349,7 @@ class TestREQ(unittest.TestCase):
 		requestURI = findXPath(r, 'm2m:uri')
 
 		# get and check resource
-		time.sleep(requestCheckDelay)
+		testSleep(requestCheckDelay)
 		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK)
 
@@ -363,7 +363,7 @@ class TestREQ(unittest.TestCase):
 		requestURI = findXPath(r, 'm2m:uri')
 
 		# get and check resource. Should not be found anymore
-		time.sleep(expirationSleep)
+		testSleep(expirationSleep)
 		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.notFound, r)
 
@@ -378,7 +378,7 @@ class TestREQ(unittest.TestCase):
 		requestURI = findXPath(r, 'm2m:uri')
 
 		# get and check resource
-		time.sleep(requestCheckDelay)
+		testSleep(requestCheckDelay)
 		r, rsc = RETRIEVE(f'{csiURL}/{requestURI}', TestREQ.originator)
 		self.assertEqual(rsc, RC.OK, r)
 		self.assertEqual(findXPath(r, 'm2m:req/mi/vsi'), vsi, r)
@@ -393,7 +393,7 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 
 		# Wait and then check notification
-		time.sleep(requestCheckDelay)
+		testSleep(requestCheckDelay)
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
@@ -420,7 +420,7 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 
 		# Wait and then check notification
-		time.sleep(requestCheckDelay)
+		testSleep(requestCheckDelay)
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp/rsc'))
@@ -447,7 +447,7 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 
 		# Wait and then check notification
-		time.sleep(requestCheckDelay)
+		testSleep(requestCheckDelay)
 		lastNotification = getLastNotification()
 		self.assertIsNone(lastNotification)
 
@@ -463,7 +463,7 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 
 		# Wait and then check notification
-		time.sleep(requestCheckDelay)
+		testSleep(requestCheckDelay)
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(lastNotification)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
@@ -491,7 +491,7 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 
 		# Wait and then check notification
-		time.sleep(requestCheckDelay)
+		testSleep(requestCheckDelay)
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(lastNotification)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
@@ -514,7 +514,7 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 
 		# Wait and then check notification
-		time.sleep(requestCheckDelay)
+		testSleep(requestCheckDelay)
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(lastNotification)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
@@ -540,7 +540,7 @@ class TestREQ(unittest.TestCase):
 		self.assertIsNotNone(findXPath(r, 'm2m:uri'))
 
 		# Wait and then check notification
-		time.sleep(requestCheckDelay)
+		testSleep(requestCheckDelay)
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(lastNotification)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
@@ -570,7 +570,7 @@ class TestREQ(unittest.TestCase):
 		requestURI = findXPath(r, 'm2m:uri')
 
 		# Wait and then check notification
-		time.sleep(requestCheckDelay)
+		testSleep(requestCheckDelay)
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(lastNotification)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:rsp'))
@@ -580,15 +580,18 @@ class TestREQ(unittest.TestCase):
 		self.assertEqual(findXPath(lastNotification, 'm2m:rsp/rqi'), rqi)
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	# Reconfigure the server to check faster for expirations.
 	enableShortResourceExpirations()
 	if not isTestResourceExpirations():
 		print('\n[red reverse] Error configuring the CSE\'s test settings ')
 		print('Did you enable [i]remote configuration[/i] for the CSE?\n')
-		return 0,0,1	
+		return 0,0,1,0.0
 
 	suite = unittest.TestSuite()
+		
+	# Clear counters
+	clearSleepTimeCount()
 
 	suite.addTest(TestREQ('test_createREQFail'))
 
@@ -626,10 +629,10 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 		#disableShortResourceExpirations()
 	finally:
 		stopNotificationServer()
-		time.sleep(expirationSleep)	# give the server a moment to expire the resource
-	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
+		testSleep(expirationSleep)	# give the server a moment to expire the resource
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	_, errors, _ = run(2, True)
+	r, errors, s, t = run(2, True)
 	sys.exit(errors)
 

@@ -259,8 +259,12 @@ class TestFCNT_FCI(unittest.TestCase):
 # TODO other FCNT controlling attributes
 # TODO Add similar tests from testCNT_CIN for mni, etc
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
+		
+	# Clear counters
+	clearSleepTimeCount()
+	
 	suite.addTest(TestFCNT_FCI('test_createFCNT'))
 	suite.addTest(TestFCNT_FCI('test_attributesFCNT'))
 	suite.addTest(TestFCNT_FCI('test_updateFCNT'))
@@ -274,10 +278,10 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	suite.addTest(TestFCNT_FCI('test_deleteFCNT'))
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
-	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 
 if __name__ == '__main__':
-	_, errors, _ = run(2, True)
+	r, errors, s, t = run(2, True)
 	sys.exit(errors)
 

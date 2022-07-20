@@ -7,8 +7,7 @@
 #	Unit tests for PollingChannelURI functionality
 #
 
-from http.client import OK
-import unittest, sys, time
+import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
 from typing import Tuple
@@ -214,7 +213,7 @@ class TestPCH_PCU(unittest.TestCase):
 															 'aggregated': aggregated,
 															})
 		thread.start()
-		time.sleep(waitBetweenPollingRequests)	# Wait for delete notification
+		testSleep(waitBetweenPollingRequests)	# Wait for delete notification
 		return thread
 
 
@@ -222,7 +221,7 @@ class TestPCH_PCU(unittest.TestCase):
 		# Start polling thread and wait moment before sending next request
 		thread = Thread(target=self._pollForRequest, kwargs={'originator':originator, 'rcs':rcs, 'isDelete':True})
 		thread.start()
-		time.sleep(waitBetweenPollingRequests)	# Wait for delete notification
+		testSleep(waitBetweenPollingRequests)	# Wait for delete notification
 		return thread
 
 
@@ -416,7 +415,7 @@ class TestPCH_PCU(unittest.TestCase):
 		for _ in range(5):
 			t = Thread(target = _createCin)
 			t.start()
-		time.sleep(waitBetweenPollingRequests)	# Wait for delete notification
+		testSleep(waitBetweenPollingRequests)	# Wait for delete notification
 
 		# get and answer aggregated polling request
 		self._pollForRequest(TestPCH_PCU.originator2, RC.OK, aggregated = True)
@@ -448,13 +447,17 @@ class TestPCH_PCU(unittest.TestCase):
 
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
-	suite = unittest.TestSuite()
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	enableShortRequestExpirations()
 	if not isShortRequestExpirations():
 		console.print('\n[red reverse] Error configuring the CSE\'s test settings ')
 		console.print('Did you enable [i]remote configuration[/i] for the CSE?\n')
-		return 0,0,1	
+		return 0,0,1,0.0
+	
+	suite = unittest.TestSuite()
+	
+	# Clear counters
+	clearSleepTimeCount()
 
 	# basic tests
 	suite.addTest(TestPCH_PCU('test_createSUBunderCNTFail'))
@@ -478,9 +481,9 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	disableShortRequestExpirations()
 	printResult(result)
-	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	_, errors, _ = run(2, True)
+	r, errors, s, t = run(2, True)
 	sys.exit(errors)
 

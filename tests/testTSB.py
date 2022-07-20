@@ -195,7 +195,7 @@ class TestTSB(unittest.TestCase):
 		self.assertEqual(findXPath(r, 'm2m:tsb/bcnc'), BeaconCriteria.PERIODIC)
 
 		# Check notification
-		time.sleep(tsbPeriodicInterval * 2)	# wait a moment
+		testSleep(tsbPeriodicInterval * 2)	# wait a moment
 		lastNotification = getLastNotification()
 		self.assertIsNotNone(lastNotification)
 		self.assertIsNotNone(findXPath(lastNotification, 'm2m:tsbn'), lastNotification)
@@ -215,9 +215,12 @@ class TestTSB(unittest.TestCase):
 		self.assertEqual(rsc, RC.deleted, r)
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
-
+	
+	# Clear counters
+	clearSleepTimeCount()
+	
 	suite.addTest(TestTSB('test_createTSB'))
 	suite.addTest(TestTSB('test_createTSBEmptyNuFail'))
 	suite.addTest(TestTSB('test_createTSBBcniFail'))
@@ -229,9 +232,9 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	printResult(result)
-	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 if __name__ == '__main__':
-	_, errors, _ = run(2, True)
+	r, errors, s, t = run(2, True)
 	sys.exit(errors)
 

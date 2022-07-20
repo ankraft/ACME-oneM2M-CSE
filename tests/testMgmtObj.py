@@ -7,6 +7,7 @@
 #	Unit tests for all kind of MgmtObj specialisations
 #
 
+from audioop import getsample
 import unittest, sys
 if '..' not in sys.path:
 	sys.path.append('..')
@@ -915,8 +916,12 @@ class TestMgmtObj(unittest.TestCase):
 
 
 
-def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
+def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite = unittest.TestSuite()
+		
+	# Clear counters
+	clearSleepTimeCount()
+	
 	suite.addTest(TestMgmtObj('test_createFWR'))
 	suite.addTest(TestMgmtObj('test_retrieveFWR'))
 	suite.addTest(TestMgmtObj('test_attributesFWR'))
@@ -977,9 +982,9 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 		
 	result = unittest.TextTestRunner(verbosity=testVerbosity, failfast=testFailFast).run(suite)
 	printResult(result)
-	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
+	return result.testsRun, len(result.errors + result.failures), len(result.skipped), getSleepTimeCount()
 
 
 if __name__ == '__main__':
-	_, errors, _ = run(2, True)
+	r, errors, s, t = run(2, True)
 	sys.exit(errors)
