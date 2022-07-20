@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - [CSE] Renamed the &lt;pollingChannel> attribute *pcra* to *rqag* (R4 spec change).
+- [TESTS] split timing calculations into user & proc times, and take sleep times into account. Improved result table.
 
 ### Fixed
 - [CSS] Corrected &lt;timeSeries>'s *cbs* attribute name.
