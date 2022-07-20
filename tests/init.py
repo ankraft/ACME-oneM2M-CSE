@@ -793,6 +793,24 @@ def getLastNotificationHeaders() -> Parameters:
 	return lastNotificationHeaders
 
 
+sleepCount:float = 0.0
+
+def testSleep(ti:float) -> None:
+	global sleepCount
+	sleepCount += ti
+	time.sleep(ti)
+
+
+def clearSleepCount() -> None:
+	global sleepCount
+	sleepCount = 0
+
+
+def getSleepCount() -> float:
+	return sleepCount
+
+
+
 #
 #	Utilities
 #	Some are copied from acme.etc.Utils . 

@@ -42,6 +42,8 @@ class TestCRS(unittest.TestCase):
 	@unittest.skipIf(noCSE, 'No CSEBase')
 	def setUpClass(cls) -> None:
 		testCaseStart('Setup TestCRS')
+		clearSleepCount()
+
 		# Start notification server
 		startNotificationServer()
 
@@ -625,7 +627,7 @@ class TestCRS(unittest.TestCase):
 		}}
 		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
 		self.assertEqual(rsc, RC.created, self.sub1)
-		time.sleep(crsTimeWindowSize + 1.0)
+		testSleep(crsTimeWindowSize + 1.0)
 		self.assertIsNone(getLastNotification())
 
 
@@ -640,13 +642,13 @@ class TestCRS(unittest.TestCase):
 		# CIN to first CNT
 		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
 		self.assertEqual(rsc, RC.created, self.sub1)
-		time.sleep(crsTimeWindowSize + 1.0)
+		testSleep(crsTimeWindowSize + 1.0)
 		self.assertIsNone(getLastNotification())
 
 		# CIN two second CNT
 		r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
 		self.assertEqual(rsc, RC.created, self.sub1)
-		time.sleep(crsTimeWindowSize + 1.0)
+		testSleep(crsTimeWindowSize + 1.0)
 		self.assertIsNone(getLastNotification())
 
 
@@ -654,9 +656,17 @@ class TestCRS(unittest.TestCase):
 	def test_createTwoNotificationOneNotification(self) -> None:
 		"""	CREATE two <CIN> to raise two notifications (plus one notification from crs)"""
 		clearLastNotification()
-		
+
+		# Restart the window timer
+		dct:JSON = 	{ 'm2m:crs' : { 
+			'twt': findXPath(TestCRS.crs, 'm2m:crs/twt'),
+			'tws': f'PT{crsTimeWindowSize}S',
+		}}
+		TestCRS.crs, rsc = UPDATE(crsURL, TestCRS.originator, dct)
+		self.assertEqual(rsc, RC.updated, TestCRS.crs)
+
 		# Create 
-		dct:JSON = 	{ 'm2m:cin' : {
+		dct = 	{ 'm2m:cin' : {
 			'con' : 'AnyValue',
 		}}
 		r, rsc = CREATE(f'{aeURL}/{cntRN1}', self.originator, T.CIN, dct)
@@ -665,7 +675,7 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(rsc, RC.created, r)	
 
 		# wait and check notification
-		time.sleep(crsTimeWindowSize + 1.0)
+		testSleep(crsTimeWindowSize + 1.0)
 		self.assertIsNotNone(notification := getLastNotification())
 		self.assertIsNotNone(findXPath(notification, 'm2m:sgn'))
 		self.assertEqual(findXPath(notification, 'm2m:sgn/sur'), toSPRelative(findXPath(self.crs, 'm2m:crs/ri')))
@@ -696,11 +706,11 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(rsc, RC.created, r)	
 
 		# wait and check notification at half the time
-		time.sleep(crsTimeWindowSize + 1.0)
+		testSleep(crsTimeWindowSize + 1.0)
 		self.assertIsNone(notification := getLastNotification())
 
 		# wait second half
-		time.sleep(crsTimeWindowSize)
+		testSleep(crsTimeWindowSize)
 		self.assertIsNotNone(notification := getLastNotification())
 		self.assertIsNotNone(findXPath(notification, 'm2m:sgn'))
 		self.assertEqual(findXPath(notification, 'm2m:sgn/sur'), toSPRelative(findXPath(self.crs, 'm2m:crs/ri')))
@@ -748,14 +758,14 @@ class TestCRS(unittest.TestCase):
 		self.assertEqual(rsc, RC.created, r)
 
 		# wait and check notification at half the time
-		time.sleep(crsTimeWindowSize + 1.0)
+		testSleep(crsTimeWindowSize + 1.0)
 		self.assertIsNone(notification := getLastNotification())
 
 		# wait a bit longer to wait the second notification
-		time.sleep(crsTimeWindowSize * 0.2)
+		testSleep(crsTimeWindowSize * 0.2)
 		r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
 		self.assertEqual(rsc, RC.created, r)	
-		time.sleep(crsTimeWindowSize * 0.8)
+		testSleep(crsTimeWindowSize * 0.8)
 
 		self.assertIsNotNone(notification := getLastNotification())
 		self.assertIsNotNone(findXPath(notification, 'm2m:sgn'))
@@ -872,7 +882,7 @@ class TestCRS(unittest.TestCase):
 			self.assertEqual(rsc, RC.created, self.sub1)
 			r, rsc = CREATE(f'{aeURL}/{cntRN2}', self.originator, T.CIN, dct)
 			self.assertEqual(rsc, RC.created, self.sub1)
-			time.sleep(crsTimeWindowSize + 1.0)
+			testSleep(crsTimeWindowSize + 1.0)
 		
 		# Check that the <crs> is not present anymore
 		TestCRS.crs, rsc = RETRIEVE(crsURL, TestCRS.originator)
@@ -1021,6 +1031,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int]:
 
 	result = unittest.TextTestRunner(verbosity = testVerbosity, failfast = testFailFast).run(suite)
 	printResult(result)
+	print(getSleepCount())
 	return result.testsRun, len(result.errors + result.failures), len(result.skipped)
 
 if __name__ == '__main__':
