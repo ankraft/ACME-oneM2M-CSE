@@ -99,12 +99,12 @@ if __name__ == '__main__':
 	table.add_column('Count', footer=f'[spring_green3]{totalRunTests if totalErrors == 0 else str(totalRunTests)}[/spring_green3]', justify='right')
 	table.add_column('Skipped', footer=f'[yellow]{totalSkipped}[/yellow]' if totalSkipped > 0 else '[spring_green3]0[spring_green3]', justify='right')
 	table.add_column('Errors', footer=f'[red]{totalErrors}[/red]' if totalErrors > 0 else '[spring_green3]0[spring_green3]', justify='right')
-	table.add_column('Times\nExec | Sleep | Proc', footer=f'{totalExecTime:.4f} | {totalSleepTime:.2f} | {totalProcessTime:.4f}', justify='center')
+	table.add_column('Times\nExec | Sleep | Proc', footer=f'{totalExecTime:8.4f} | {totalSleepTime:6.2f} | {totalProcessTime:8.4f}', justify='center')
 	# table.add_column('Exec Time', footer=f'{totalExecTime:.4f}', justify='right')
 	# table.add_column('Sleep Time', footer=f'{totalSleepTime:.2f}' if totalRunTests != 0 else '0.0', justify='right')
 	# table.add_column('Proc Time', footer=f'{totalProcessTime:.4f}', justify='right')
-	table.add_column('Exec Time per\nTest | Request', footer=f'{totalExecTime/totalRunTests:.4f} | {totalExecTime/init.requestCount:.4f}' if totalRunTests != 0 else '0.0000 | 0.0000', justify='center')
-	table.add_column('Proc Time per\nTest | Request', footer=f'{totalProcessTime/totalRunTests:.4f} | {totalProcessTime/init.requestCount:.4f}' if totalRunTests != 0 else '0.0000 | 0.0000', justify='right')
+	table.add_column('Exec Time per\nTest | Request', footer=f'{totalExecTime/totalRunTests:7.4f} | {totalExecTime/init.requestCount:7.4f}' if totalRunTests != 0 else '000.0000 | 000.0000', justify='center')
+	table.add_column('Proc Time per\nTest | Request', footer=f'{totalProcessTime/totalRunTests:7.4f} | {totalProcessTime/init.requestCount:7.4f}' if totalRunTests != 0 else '000.0000 | 000.0000', justify='center')
 	table.add_column('Requests', footer=f'{init.requestCount}', justify='right')
 	# Styles
 	styleDisabled = Style(dim=True)
@@ -122,11 +122,11 @@ if __name__ == '__main__':
 						str(v[0]), 
 						f'[yellow]{v[4]}[/yellow]' if v[4] > 0 and v[0] > 0 else str(v[4]),
 						f'[red]{v[1]}[/red]' if v[1] > 0 and v[0] > 0 else str(v[1]),
-						f'{v[2]:.4f} | {v[6]:.2f} | {v[3]:.4f}' if v[0] > 0 else '', 
+						f'{v[2]:8.4f} | {v[6]:6.2f} | {v[3]:8.4f}' if v[0] > 0 else '', 
 						# f'{v[6]:.2f}',
 						# f'{v[3]:.4f}' if v[0] > 0 else '',
-						f'{(v[2]/v[0]):.4f} | {(v[2]/v[5]):.4f}' if v[0] > 0 else '',
-						f'{(v[3]/v[0]):.4f} | {(v[3]/v[5]):.4f}' if v[0] > 0 else '',
+						f'{(v[2]/v[0]):7.4f} | {(v[2]/v[5]):7.4f}' if v[0] > 0 else '',
+						f'{(v[3]/v[0]):7.4f} | {(v[3]/v[5]):7.4f}' if v[0] > 0 else '',
 						f'{v[5]}',
 						style=style)
 	console.print(table)
