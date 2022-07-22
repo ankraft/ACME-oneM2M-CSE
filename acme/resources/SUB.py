@@ -132,6 +132,11 @@ class SUB(Resource):
 		# Do actual update
 		if not (res := super().update(dct, originator, doValidateAttributes = False)).status:
 			return res
+		
+		# Check whether 'enc' is removed in the update
+		if 'enc' in dct['m2m:sub'] and dct['m2m:sub']['enc'] is None:
+			self.setAttribute('enc/net', [ NotificationEventType.resourceUpdate.value ])
+
 
 		# check whether an observed child resource type is actually allowed by the parent
 		if chty := self['enc/chty']:
@@ -210,10 +215,6 @@ class SUB(Resource):
 					if not (res := CSE.validator.validateAttribute('dur', md.get('dur'))).status:
 						L.isDebug and L.logDebug(res.dbg)
 						return Result.errorResult(dbg = res.dbg)
-
-
-		# TODO: Validate enc/missing/data
-		# TODO: check missingData only if parent if TS. Add test for that
 
 		# check other attributes
 		self._normalizeURIAttribute('nfu')

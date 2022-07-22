@@ -595,6 +595,18 @@ class TestSUB(unittest.TestCase):
 
 
 	@unittest.skipIf(noCSE, 'No CSEBase')
+	def test_updateSUBWithEncRemoved(self) -> None:
+		""" UPDATE <sub> and remove ENC attribute"""
+		dct = 	{ 'm2m:sub' : {
+					'enc' : None
+				}}
+		r, rsc = UPDATE(subURL, TestSUB.originator, dct)
+		self.assertEqual(rsc, RC.updated)
+		self.assertIsNotNone(findXPath(r, 'm2m:sub/enc'), r)
+		self.assertEqual(findXPath(r, 'm2m:sub/enc/net/{0}'), NET.resourceUpdate, r)
+
+
+	@unittest.skipIf(noCSE, 'No CSEBase')
 	def test_deleteSUBWithEncAtr(self) -> None:
 		""" DELETE <SUB> """
 		# Delete the sub
@@ -1533,6 +1545,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite.addTest(TestSUB('test_updateCNTRI'))
 	suite.addTest(TestSUB('test_deleteSUBByAssignedOriginator'))
 
+	# Batch Notify
 	suite.addTest(TestSUB('test_createSUBForBatchNotificationNumber'))
 	suite.addTest(TestSUB('test_updateCNTBatch'))
 	suite.addTest(TestSUB('test_deleteSUBForBatchReceiveRemainingNotifications'))
@@ -1541,9 +1554,11 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite.addTest(TestSUB('test_updateCNTBatchDuration'))
 	suite.addTest(TestSUB('test_deleteSUBForBatchNotificationDuration'))
 
+
 	suite.addTest(TestSUB('test_createSUBWithEncAtr'))	# attribute
 	suite.addTest(TestSUB('test_updateCNTWithEncAtrLbl'))
 	suite.addTest(TestSUB('test_updateCNTWithEncAtrLblWrong'))
+	suite.addTest(TestSUB('test_updateSUBWithEncRemoved'))	# Check default enc in UPDATE
 	suite.addTest(TestSUB('test_deleteSUBWithEncAtr'))
 
 	suite.addTest(TestSUB('test_createSUBBatchNotificationNumberWithLn'))	# Batch + latestNotify
@@ -1569,6 +1584,7 @@ def run(testVerbosity:int, testFailFast:bool) -> Tuple[int, int, int, float]:
 	suite.addTest(TestSUB('test_createCNTwithURIctCBOR'))
 	suite.addTest(TestSUB('test_deleteAEwithURIctCBOR'))
 
+	# ExpirationCounter
 	suite.addTest(TestSUB('test_createSUBwithEXC'))
 	suite.addTest(TestSUB('test_createCNTforEXC'))
 

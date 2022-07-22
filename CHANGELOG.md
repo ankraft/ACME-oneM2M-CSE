@@ -15,13 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [SCRIPTS] Added *logDivider* command.
 - [CSE] Added support for &lt;crossResourceSubscription> resource type.
 - [CSE] Added support for notification statistics in (*nse* and *nsi* attributes).
+- [CSE] Added support for *expirationCounter* (&lt;subscription>, &lt;crossResourceSubscription>)
 
 ### Changed
 - [CSE] Renamed the &lt;pollingChannel> attribute *pcra* to *rqag* (R4 spec change).
 - [TESTS] split timing calculations into user & proc times, and take sleep times into account. Improved result table.
 
 ### Fixed
-- [CSS] Corrected &lt;timeSeries>'s *cbs* attribute name.
+- [CSE] Corrected &lt;timeSeries>'s *cbs* attribute name.
+- [CSE] Adding default value when removing &lt;subscription>'s *enc* attribute in an UPDATE.
 - [TESTS] Corrected test cases.
 
 ## [0.10.1] - 2022-05-30
