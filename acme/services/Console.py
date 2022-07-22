@@ -110,6 +110,7 @@ class Console(object):
 			'h'		: self.help,
 			'A'		: self.about,
 			'\n'	: lambda c: L.console(),	# 1 empty line
+			'\r'	: lambda c: L.console(),	# 1 empty line
 			'\x03'  : self.shutdownCSE,			# See handler below
 			'c'		: self.configuration,
 			'C'		: self.clearScreen,

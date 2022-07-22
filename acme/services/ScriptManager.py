@@ -10,7 +10,6 @@
 
 from __future__ import annotations
 from copy import deepcopy
-from syslog import LOG_WARNING
 from typing import Callable, Dict, Union, Any, Tuple, cast
 from pathlib import Path
 import json, os, fnmatch

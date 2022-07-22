@@ -7,7 +7,7 @@
 #	Starter for the ACME CSE
 #
 
-import sys, re
+import os, re, sys
 if sys.version_info < (3, 8):
 	print('Python version >= 3.8 is required')
 	quit(1)
@@ -20,12 +20,20 @@ try:
 	from .services import CSE as CSE
 	from rich.console import Console
 except ImportError as e:
+	# Raise the exception when in debug mode
+	if 'ACME_DEBUG' in os.environ:
+		raise e
+	
+	# Give hint to run ACME as a module
 	if 'attempted relative import' in e.msg:
 		print(f'\nPlease run acme as a package:\n\n\t{sys.executable} -m {sys.argv[0]} [arguments]\n')
+	
+	# Give hint how to do the installation
 	elif 'No module named' in e.msg:
 		m = re.search("'(.+?)'", e.msg)
 		package = f' ({m.group(1)}) ' if m else ' '
 		print(f'\nOne or more required packages{package}could not be found.\nPlease install the missing packages, e.g. by running the following command:\n\n\t{sys.executable} -m pip install -r requirements.txt\n')
+
 	quit(1)
 
 

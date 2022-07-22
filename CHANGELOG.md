@@ -26,6 +26,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [CSE] Adding default value when removing &lt;subscription>'s *enc* attribute in an UPDATE.
 - [TESTS] Corrected test cases.
 
+
+## [0.10.2] - 2022-07-20
+
+### Added
+- [CSE] Added debug mode to display hidden exceptions during start-up.
+
+### Fixed
+- [CSE] Fixed problems with missing *syslog* module under MS Windows.
+- [CONSOLE] Fixed Return-key handling for MS Windows cmd terminal.
+
+
 ## [0.10.1] - 2022-05-30
 
 ### Fixed
