@@ -178,7 +178,7 @@ class TimeManager(object):
 
 
 	def isLossOfSynchronization(self, req:CSERequest) -> str:
-		if (tup := self.losTimeSyncBeacons.get(req.headers.originator)) and (ot := req.headers.originatingTimestamp):
+		if (tup := self.losTimeSyncBeacons.get(req.originator)) and (ot := req.headers.originatingTimestamp):
 			tsd = abs(DateUtils.isodateDelta(ot))
 			L.logWarn(tsd)
 			if tsd is not None and tup[0] > tsd:

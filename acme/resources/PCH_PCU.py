@@ -94,8 +94,8 @@ class PCH_PCU(Resource):
 			return Result.errorResult(dbg = dbg)
 		
 		if not innerPC.get('fr'):
-			L.isDebug and L.logDebug(f'Adding originator: {request.headers.originator} to request')
-			innerPC['fr'] = request.headers.originator
+			L.isDebug and L.logDebug(f'Adding originator: {request.originator} to request')
+			innerPC['fr'] = request.originator
 
 		nrequest 									= CSERequest()
 		nrequest.originalRequest = innerPC

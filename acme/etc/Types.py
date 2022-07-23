@@ -433,7 +433,9 @@ ResourceTypes._names 	= {											# type: ignore
 
 
 class BasicType(ACMEIntEnum):
-	""" Basic resource types """
+	""" Basic resource types.
+	"""
+
 	positiveInteger	= auto()
 	nonNegInteger	= auto()
 	unsignedInt		= auto()
@@ -459,32 +461,59 @@ class BasicType(ACMEIntEnum):
 	date			= timestamp	# alias type for date
 
 	@classmethod
-	def to(cls, name:str|Tuple[str], insensitive:bool=True) -> BasicType:
+	def to(cls, name:str|Tuple[str], insensitive:bool = True) -> BasicType:
+		""" Convert a type name string to an enum value.
+		
+			Args:
+				name: String or a Tuple of strings with names.
+				insensitive: Whether to handle the type case-insensitive.
+			Return:
+				Enum value.
+		"""
 		return super().to(name, insensitive=insensitive)
 
 
 class Cardinality(ACMEIntEnum):
-	""" Resource attribute cardinalities """
+	""" Resource attribute cardinalities.
+	"""
 	CAR1			= auto()
+	"""	Mandatory."""
 	CAR1L			= auto()
-	CAR1LN			= auto() # mandatory list AND not empty
+	"""	Mandatory list. """
+	CAR1LN			= auto()
+	"""	Mandatory list that shall not be empty. """
 	CAR01			= auto()
+	""" Optional. """
 	CAR01L			= auto()
-	CAR1N			= auto() # mandatory, but may be Null/None
-
+	""" Optional list."""
+	CAR1N			= auto()
+	""" Mandatory but may be Null/None. """
 
 	@classmethod
 	def hasCar(cls, name:str) -> bool:
 		"""	Check whether an Cardinality without the 'car'
 			prefix exists. 
 			
-			Example: `hasCar('01')`
+			Example: 
+				hasCar('01')
+			Args:
+				name: Cardinality.
+			Return:
+				Retun *True* if the cardinality exists.
 		"""
 		return cls.has(f'CAR{name}')
 	
 	
 	@classmethod
-	def to(cls, name:str|Tuple[str], insensitive:bool=True) -> Cardinality:
+	def to(cls, name:str|Tuple[str], insensitive:bool = True) -> Cardinality:
+		""" Convert a cardinality name string to an enum value.
+		
+			Args:
+				name: String or a Tuple of strings with names.
+				insensitive: Whether to handle the name case-insensitive.
+			Return:
+				Enum value.
+		"""
 
 		def _prepare(name:str) -> str:
 			return name if name.lower().startswith('car') else f'CAR{name}'
@@ -1106,9 +1135,13 @@ class AnnounceSyncType(ACMEIntEnum):
 #
 
 class BeaconCriteria(ACMEIntEnum):
-	""" TimeSyncBeacon criteria """
-	PERIODIC = 1	# default
+	""" TimeSyncBeacon criteria.
+	"""
+	
+	PERIODIC = 1
+	"""	Periodic check (default). """
 	LOSS_OF_SYNCHRONIZATION = 2
+	""" When loss of synchronization happens. """
 
 
 ##############################################################################
@@ -1117,9 +1150,13 @@ class BeaconCriteria(ACMEIntEnum):
 #
 
 class TimeWindowType(ACMEIntEnum):
-	""" Time window type """
+	""" Time window type.
+	"""
+	
 	PERIODICWINDOW = 1
+	"""	Periodic Window (default)."""
 	SLIDINGWINDOW = 2
+	"""	Sliding Window. """
 
 
 
@@ -1207,18 +1244,18 @@ class Result:
 			if not self.request.ct:
 				self.request.ct = originalRequest.ct
 			if originalRequest.headers:
-				if not self.request.headers.requestIdentifier:
-					self.request.headers.requestIdentifier = originalRequest.headers.requestIdentifier
-				if not self.request.headers.releaseVersionIndicator:
-					self.request.headers.releaseVersionIndicator = originalRequest.headers.releaseVersionIndicator
-				if not self.request.headers.vendorInformation:
-					self.request.headers.vendorInformation = originalRequest.headers.vendorInformation
+				if not self.request.requestIdentifier:
+					self.request.requestIdentifier = originalRequest.requestIdentifier
+				if not self.request.releaseVersionIndicator:
+					self.request.releaseVersionIndicator = originalRequest.releaseVersionIndicator
+				if not self.request.vendorInformation:
+					self.request.vendorInformation = originalRequest.vendorInformation
 				if not self.request.headers.accept:
 					self.request.headers.accept = originalRequest.headers.accept
 				if not self.request.headers.contentType:
 					self.request.headers.contentType = originalRequest.headers.contentType
-				if not self.request.headers.originator:
-					self.request.headers.originator = originalRequest.headers.originator
+				if not self.request.originator:
+					self.request.originator = originalRequest.originator
 				
 				# TODO more headers?
 			if originalRequest.parameters:
@@ -1258,26 +1295,42 @@ class RequestArguments:
 
 @dataclass
 class RequestHeaders:
-	originator:str 							= None 	# X-M2M-Origin, from
-	requestIdentifier:str 					= None	# X-M2M-RI
 	contentType:str 						= None	# Content-Type
 	accept:list[str]						= None	# Accept
-	resourceType:ResourceTypes				= None
 	requestExpirationTimestamp:str 			= None 	# X-M2M-RET
 	_retUTCts:float							= None 	# X-M2M-RET as UTC based timestamp
 	""" request expiration timeout as UTC-based timestamp """
 	resultExpirationTimestamp:str			= None 	# X-M2M-RST
 	operationExecutionTime:str 				= None 	# X-M2M-OET
-	releaseVersionIndicator:str 			= None 	# X-M2M-RVI
 	responseTypeNUs:list[str]				= None	# X-M2M-RTU
-	vendorInformation:str					= None	# X-M2M-VSI
 	originatingTimestamp:str				= None  # ot in request
 
 
 @dataclass
 class CSERequest:
+	"""	Structure that holds a Request (or Response) to a CSE.
+	"""
 	headers:RequestHeaders 			= field(default_factory=RequestHeaders)	# always initialize with a new(!) RequestHeaders object	
 	args:RequestArguments 			= field(default_factory=RequestArguments)
+	
+	op:Operation					= None
+	"""	Request Operation. """
+
+	originator:str 					= None 
+	"""	Request originator (from, X-M2M-Origin). """
+	requestIdentifier:str 			= None
+	"""	Request Identifier (X-M2M-RI). """
+	releaseVersionIndicator:str		= None
+	"""	Release Version Identifier (X-M2M-RVI). """
+	resourceType:ResourceTypes		= None
+	""" Resource type. """
+	vendorInformation:str			= None
+	"""	Vendor Information (X-M2M-VSI). """
+
+
+
+
+
 	ct:ContentSerializationType		= None
 	originalHttpArgs:Any 			= None	# Actually a MultiDict
 	originalData:bytes				= None 	# The request original data
@@ -1287,7 +1340,6 @@ class CSERequest:
 	srn:str 						= None 	# target structured resource name
 	to:str 							= None	# original to
 	csi:str 						= None 	# target csi
-	op:Operation					= None	# request operation
 	rsc:ResponseStatusCode			= ResponseStatusCode.UNKNOWN	# Response Status Code
 	parameters:Parameters			= field(default_factory=dict)	# Any additional parameters
 	requestType:RequestType			= RequestType.NOTSET

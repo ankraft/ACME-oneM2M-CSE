@@ -200,11 +200,14 @@ class MQTTClientHandler(MQTTHandler):
 				_sendResponse(Result(rsc = RC.badRequest, request = dissectResult.request, dbg = dbg))
 				return
 
-			if dissectResult.request.headers.resourceType not in [ ResourceTypes.AE, ResourceTypes.CSR]:
+			if dissectResult.request.resourceType not in [ ResourceTypes.AE, ResourceTypes.CSR]:
 				# Registration type must be AE
 				_logRequest(dissectResult)
-				L.logWarn(dbg := f'Invalid resource type for registration: {dissectResult.request.headers.resourceType}')
-				_sendResponse(Result(status = False, rsc = RC.badRequest, request = dissectResult.request, dbg = f'Invalid resource type for registration: {dissectResult.request.headers.resourceType.name}'))
+				L.logWarn(dbg := f'Invalid resource type for registration: {dissectResult.request.resourceType}')
+				_sendResponse(Result(status = False, 
+									 rsc = RC.badRequest, 
+									 request = dissectResult.request, 
+									 dbg = f'Invalid resource type for registration: {dissectResult.request.resourceType.name}'))
 				return
 			
 			# TODO Is it necessary to check here the originator for None, empty, C, S?
@@ -400,9 +403,9 @@ class MQTTClient(object):
 		req.request.id								= u.path[1:]
 		req.request.op								= operation
 		req.resource								= data
-		req.request.headers.originator				= originator
-		req.request.headers.requestIdentifier		= Utils.uniqueRI()
-		req.request.headers.releaseVersionIndicator	= rvi if rvi is not None else CSE.releaseVersion
+		req.request.originator						= originator
+		req.request.requestIdentifier				= Utils.uniqueRI()
+		req.request.releaseVersionIndicator			= rvi if rvi is not None else CSE.releaseVersion
 		req.request.headers.originatingTimestamp	= DateUtils.getResourceDate()
 		req.rsc										= RC.UNKNOWN								# explicitly remove the provided OK because we don't want have any
 		req.request.ct								= ct if ct else CSE.defaultSerialization 	# get the serialization
@@ -448,7 +451,7 @@ class MQTTClient(object):
 		# Then return the response as result
 		logRequest(preq, topic, isResponse=False, isIncoming=False)
 		mqttConnection.publish(topic, cast(bytes, cast(Tuple, preq.data)[1]))
-		response, responseTopic = self.waitForResponse(preq.request.headers.requestIdentifier, self.requestTimeout)
+		response, responseTopic = self.waitForResponse(preq.request.requestIdentifier, self.requestTimeout)
 		logRequest(response, responseTopic, isResponse=True, isIncoming=True)
 		return response
 
@@ -457,7 +460,7 @@ class MQTTClient(object):
 		"""	Add a response and topic to the response dictionary. The key is the `rqi` (requestIdentifier) of
 			the response. 
 		"""
-		if (rqi := response.request.headers.requestIdentifier):
+		if (rqi := response.request.requestIdentifier):
 			with self.receivedResponsesLock:
 				self.receivedResponses[rqi] = (response, topic)
 
@@ -496,7 +499,7 @@ def prepareMqttRequest(inResult:Result, originator:str = None, ty:T = None, op:O
 	if raw and (pc := cast(JSON, result.data).get('pc')):
 		result.data = pc
 		if 'rqi' in pc:
-			result.request.headers.requestIdentifier = pc['rqi']
+			result.request.requestIdentifier = pc['rqi']
 		if 'ot' in pc:
 			result.request.headers.originatingTimestamp = pc['ot']
 	

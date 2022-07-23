@@ -197,7 +197,7 @@ class GroupManager(object):
 		permission = operation.permission()
 
 		#check access rights for the originator through memberAccessControlPolicies
-		if CSE.security.hasAccess(originator, group, requestedPermission = permission, ty = request.headers.resourceType) == False:
+		if CSE.security.hasAccess(originator, group, requestedPermission = permission, ty = request.resourceType) == False:
 			return Result.errorResult(rsc = RC.originatorHasNoPrivilege, dbg = 'insufficient privileges for originator')
 
 		# check whether there is something after the /fopt ...
@@ -218,37 +218,22 @@ class GroupManager(object):
 			else:
 				mid = mid + tail
 			# Invoke the request
-			if operation == Operation.RETRIEVE:
-				if not (res := CSE.dispatcher.processRetrieveRequest(request, originator, mid)).resource:
-					return res
-			elif operation == Operation.CREATE:
-				if not (res := CSE.dispatcher.processCreateRequest(request, originator, mid)).resource:
-					return res
-			elif operation == Operation.UPDATE:
-				if not (res := CSE.dispatcher.processUpdateRequest(request, originator, mid)).resource:
-					return res 
-			elif operation == Operation.DELETE:
-				if not (res := CSE.dispatcher.processDeleteRequest(request, originator, mid)).status:
-					return res 
-			else:
-				return Result.errorResult(rsc = RC.operationNotAllowed, dbg = 'operation not allowed')
+			if not (res := CSE.request.processRequest(request, originator, mid)).status:
+				return res
+
 			resultList.append(res)
 
 		# construct aggregated response
 		if len(resultList) > 0:
 			items = []
 			for result in resultList:
+				item = 	{	'rsc' : result.rsc, 
+							'rqi' : request.requestIdentifier,
+							'rvi'	: request.releaseVersionIndicator,
+						}
 				if result.resource and isinstance(result.resource, Resource):
-					item = 	{ 'rsc' : result.rsc, 
-							  'rqi' : request.headers.requestIdentifier,
-							  'rvi'	: request.headers.releaseVersionIndicator,
-							  'pc'  : result.resource.asDict() if isinstance(result.resource, Resource) else result.resource, # in case 'resource' is a dict
-							}
-				else:	# e.g. when deleting
-					item = 	{ 'rsc' : result.rsc, 
-							  'rqi' : request.headers.requestIdentifier,
-							  'rvi'	: request.headers.releaseVersionIndicator,
-							}
+					item['pc'] = result.resource.asDict()
+
 				items.append(item)
 			rsp = { 'm2m:rsp' : items}
 			agr = { 'm2m:agr' : rsp }

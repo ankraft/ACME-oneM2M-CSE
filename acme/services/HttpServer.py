@@ -469,7 +469,7 @@ class HttpServer(object):
 			resp.ct = CST.getType(r.headers['Content-Type']) if 'Content-Type' in r.headers else ct
 			resp.rsc = RC(int(r.headers[C.hfRSC])) if C.hfRSC in r.headers else RC.internalServerError
 			resp.pc = RequestUtils.deserializeData(r.content, resp.ct)
-			resp.headers.originator = r.headers.get(C.hfOrigin)
+			resp.originator = r.headers.get(C.hfOrigin)
 			try: 
 				if (ot := r.headers.get(C.hfOT)):
 					isodate.parse_date(ot)
@@ -477,8 +477,8 @@ class HttpServer(object):
 			except Exception as ee:
 				return Result.errorResult(dbg = L.logWarn(f'Received wrong format for X-M2M-OT: {ot} - {str(ee)}'))
 			if (rqi := r.headers.get(C.hfRI)) != hds[C.hfRI]:
-				return Result.errorResult(dbg = L.logWarn(f'Received wrong or missing request identifier: {resp.headers.requestIdentifier}'))
-			resp.headers.requestIdentifier = rqi
+				return Result.errorResult(dbg = L.logWarn(f'Received wrong or missing request identifier: {resp.requestIdentifier}'))
+			resp.requestIdentifier = rqi
 
 			L.isDebug and L.logDebug(f'HTTP Response <== ({str(r.status_code)}):\nHeaders: {str(r.headers)}\nBody: \n{self._prepContent(r.content, resp.ct)}\n')
 		except Exception as e:
@@ -509,15 +509,15 @@ class HttpServer(object):
 			# Determine contentType for the response. Check the 'accept' header first, then take the
 			# original request's contentType. If this is not possible, the fallback is still the
 			# CSE's default
-			result.request.headers.originator = originalRequest.headers.originator
+			result.request.originator = originalRequest.originator
 			if originalRequest.headers.accept:																# accept / contentType
 				result.request.ct = CST.getType(originalRequest.headers.accept[0])
-			elif csz := CSE.request.getSerializationFromOriginator(originalRequest.headers.originator):
+			elif csz := CSE.request.getSerializationFromOriginator(originalRequest.originator):
 				result.request.ct = csz[0]
 
-			result.request.headers.requestIdentifier = originalRequest.headers.requestIdentifier
-			result.request.headers.releaseVersionIndicator = originalRequest.headers.releaseVersionIndicator
-			result.request.headers.vendorInformation = originalRequest.headers.vendorInformation
+			result.request.requestIdentifier = originalRequest.requestIdentifier
+			result.request.releaseVersionIndicator = originalRequest.releaseVersionIndicator
+			result.request.vendorInformation = originalRequest.vendorInformation
 	
 			# Add additional parameters
 			if ec := originalRequest.parameters.get(C.hfEC):												# Event Category, copy from the original request

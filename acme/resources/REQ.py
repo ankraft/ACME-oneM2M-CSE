@@ -79,13 +79,13 @@ class REQ(Resource):
 		dct:Dict[str, Any] = {
 			'm2m:req' : {
 				'et'	: et,
-				'lbl'	: [ request.headers.originator ],
+				'lbl'	: [ request.originator ],
 				'op'	: request.op,
 				'tg'	: request.id,
-				'org'	: request.headers.originator,
-				'rid'	: request.headers.requestIdentifier,
+				'org'	: request.originator,
+				'rid'	: request.requestIdentifier,
 				'mi'	: {
-					'ty'	: request.headers.resourceType,
+					'ty'	: request.resourceType,
 					'ot'	: DateUtils.getResourceDate(),
 					'rqet'	: request.headers.requestExpirationTimestamp,
 					'rset'	: request.headers.resultExpirationTimestamp,
@@ -99,8 +99,8 @@ class REQ(Resource):
 						'fo'	: request.args.fo,
 					},
 					'drt'	: request.args.drt,
-					'rvi'	: request.headers.releaseVersionIndicator if request.headers.releaseVersionIndicator else CSE.releaseVersion,
-					'vsi'	: request.headers.vendorInformation,
+					'rvi'	: request.releaseVersionIndicator if request.releaseVersionIndicator else CSE.releaseVersion,
+					'vsi'	: request.vendorInformation,
 				},
 				'rs'	: RequestStatus.PENDING,
 				# 'ors'	: {

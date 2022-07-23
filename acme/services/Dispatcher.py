@@ -88,7 +88,7 @@ class Dispatcher(object):
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(srn)) and fanoutPointResource.ty == T.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
-			return fanoutPointResource.handleRetrieveRequest(request, srn, request.headers.originator)
+			return fanoutPointResource.handleRetrieveRequest(request, srn, request.originator)
 
 		# Handle PollingChannelURI RETRIEVE
 		if (pollingChannelURIResource := Utils.pollingChannelURIResource(srn)):		# We need to check the srn here
@@ -463,9 +463,9 @@ class Dispatcher(object):
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == T.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
-			return fanoutPointResource.handleCreateRequest(request, fopsrn, request.headers.originator)
+			return fanoutPointResource.handleCreateRequest(request, fopsrn, request.originator)
 
-		if (ty := request.headers.resourceType) is None:	# Check for type parameter in request, integer
+		if (ty := request.resourceType) is None:	# Check for type parameter in request, integer
 			return Result.errorResult(dbg = L.logDebug('type parameter missing in CREATE request'))
 
 		# Some Resources are not allowed to be created in a request, return immediately
@@ -510,7 +510,7 @@ class Dispatcher(object):
 
 		# originator might have changed during this check. Result.data contains this new originator
 		originator = cast(str, rres.data) 					
-		request.headers.originator = originator	
+		request.originator = originator	
 
 		# Create the resource. If this fails we deregister everything
 		if not (res := CSE.dispatcher.createResource(newResource, parentResource, originator)).resource:
@@ -620,7 +620,7 @@ class Dispatcher(object):
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == T.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
-			return fanoutPointResource.handleUpdateRequest(request, fopsrn, request.headers.originator)
+			return fanoutPointResource.handleUpdateRequest(request, fopsrn, request.originator)
 
 		# Get resource to update
 		if not (res := self.retrieveResource(id)).resource:
@@ -743,7 +743,7 @@ class Dispatcher(object):
 		# handle fanout point requests
 		if (fanoutPointResource := Utils.fanoutPointResource(fopsrn)) and fanoutPointResource.ty == T.GRP_FOPT:
 			L.isDebug and L.logDebug(f'Redirecting request to fanout point: {fanoutPointResource.__srn__}')
-			return fanoutPointResource.handleDeleteRequest(request, fopsrn, request.headers.originator)
+			return fanoutPointResource.handleDeleteRequest(request, fopsrn, request.originator)
 
 		# get resource to be removed and check permissions
 		if not (res := self.retrieveResource(id)).resource:
@@ -762,39 +762,38 @@ class Dispatcher(object):
 		# Handle RCN's first. Afterward the resource & children are no more
 		#
 
-		tpe = resource.tpe
-		result: Any = None
+		resultContent:Resource|JSON = None
 		if request.args.rcn is None or request.args.rcn == RCN.nothing:	# rcn is an int
-			result = None
+			resultContent = None
 		elif request.args.rcn == RCN.attributes:
-			result = resource
+			resultContent = resource
 		# resource and child resources, full attributes
 		elif request.args.rcn == RCN.attributesAndChildResources:
 			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
 			self._childResourceTree(children, resource)	# the function call add attributes to the result resource. Don't use the return value directly
-			result = resource
+			resultContent = resource
 		# direct child resources, NOT the root resource
 		elif request.args.rcn == RCN.childResources:
 			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
 			childResources:JSON = { resource.tpe : {} }			# Root resource as a dict with no attributes
 			self.resourceTreeDict(children, childResources[resource.tpe])
-			result = childResources
+			resultContent = childResources
 		elif request.args.rcn == RCN.attributesAndChildResourceReferences:
 			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
 			self._resourceTreeReferences(children, resource, request.args.drt, 'ch')	# the function call add attributes to the result resource
-			result = resource
+			resultContent = resource
 		elif request.args.rcn == RCN.childResourceReferences: # child resource references
 			children = self.discoverChildren(id, resource, originator, request.args.handling, Permission.DELETE)
 			childResourcesRef:JSON = { resource.tpe: {} }  # Root resource with no attribute
 			self._resourceTreeReferences(children, childResourcesRef[resource.tpe], request.args.drt, 'm2m:rrl')
-			result = childResourcesRef
+			resultContent = childResourcesRef
 		# TODO RCN.discoveryResultReferences
 		else:
 			return Result.errorResult(rsc = RC.badRequest, dbg = 'wrong rcn for DELETE')
 
 		# remove resource
 		res = self.deleteResource(resource, originator, withDeregistration = True)
-		return Result(status = res.status, resource = result, rsc = res.rsc, dbg = res.dbg)
+		return Result(status = res.status, resource = resultContent, rsc = res.rsc, dbg = res.dbg)
 
 
 	def deleteResource(self, resource:Resource, originator:str = None, withDeregistration:bool = False, parentResource:Resource  =None, doDeleteCheck:bool = True) -> Result:

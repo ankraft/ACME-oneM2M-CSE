@@ -115,9 +115,9 @@ def requestFromResult(inResult:Result, originator:str = None, ty:T = None, op:Op
 	if originator:
 		req['fr'] = CSE.cseCsi if isResponse else originator
 		req['to'] = inResult.request.id if inResult.request.id else originator
-	elif inResult.request.headers.originator:
-		req['fr'] = CSE.cseCsi if isResponse else inResult.request.headers.originator
-		req['to'] = inResult.request.headers.originator if isResponse else inResult.request.id
+	elif inResult.request.originator:
+		req['fr'] = CSE.cseCsi if isResponse else inResult.request.originator
+		req['to'] = inResult.request.originator if isResponse else inResult.request.id
 	else:
 		req['fr'] = CSE.cseCsi
 		req['to'] = inResult.request.id if inResult.request.id else CSE.cseCsi
@@ -142,21 +142,21 @@ def requestFromResult(inResult:Result, originator:str = None, ty:T = None, op:Op
 	# Type
 	if ty:
 		req['ty'] = int(ty)
-	elif inResult.request.headers.resourceType:
-		req['ty'] = int(inResult.request.headers.resourceType)
+	elif inResult.request.resourceType:
+		req['ty'] = int(inResult.request.resourceType)
 	
 	# Request Identifier 
-	if inResult.request.headers.requestIdentifier:					# copy from the original request
-		req['rqi'] = inResult.request.headers.requestIdentifier
+	if inResult.request.requestIdentifier:					# copy from the original request
+		req['rqi'] = inResult.request.requestIdentifier
 	
 	# Release Version Indicator
 	# TODO handle version 1 correctly
-	if inResult.request.headers.releaseVersionIndicator:			# copy from the original request
-		req['rvi'] = inResult.request.headers.releaseVersionIndicator
+	if inResult.request.releaseVersionIndicator:			# copy from the original request
+		req['rvi'] = inResult.request.releaseVersionIndicator
 	
 	# Vendor Information
-	if inResult.request.headers.vendorInformation:					# copy from the original request
-		req['vsi'] = inResult.request.headers.vendorInformation
+	if inResult.request.vendorInformation:					# copy from the original request
+		req['vsi'] = inResult.request.vendorInformation
 	
 	# Add additional parameters
 	if inResult.request.parameters:
