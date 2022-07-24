@@ -394,7 +394,7 @@ class MQTTClient(object):
 		"""
 
 		if self.isStopped:
-			 return Result.errorResult(rsc = RC.internalServerError, dbg = 'MQTT client is not running')
+			return Result.errorResult(rsc = RC.internalServerError, dbg = 'MQTT client is not running')
 
 		# deconstruct URL
 		u = urlparse(url)
